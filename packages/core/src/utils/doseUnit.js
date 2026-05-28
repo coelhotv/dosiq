@@ -37,3 +37,106 @@ export function formatDoseUnit(qty) {
   const display = String(qty).replace('.', ',')
   return `${display} ${pluralizeDoseUnit(qty)}`
 }
+
+/**
+ * Retorna um hint de equivalência ligando a quantidade física (un.) à carga de dosagem.
+ * @example formatActiveIngredientHint(2, 100, 'ui') -> "2 un. = 200 UI"
+ * @example formatActiveIngredientHint(30, 500, 'mg') -> "30 un. = 15000 mg"
+ */
+export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
+  if (
+    qty == null ||
+    qty === '' ||
+    isNaN(Number(String(qty).replace(',', '.'))) ||
+    dosagePerPill == null ||
+    dosagePerPill <= 0
+  ) {
+    return ''
+  }
+  const qtyNum = Number(String(qty).replace(',', '.'))
+  const total = qtyNum * dosagePerPill
+  const displayQty = String(qtyNum).replace('.', ',')
+  const displayTotal = String(total).replace('.', ',')
+
+  const unitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    ml: 'ml',
+    ui: 'UI',
+    cp: qtyNum === 1 ? 'comprimido' : 'comprimidos',
+    gotas: qtyNum === 1 ? 'gota' : 'gotas',
+  }
+
+  const totalUnitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    ml: 'ml',
+    ui: 'UI',
+    cp: total === 1 ? 'comprimido' : 'comprimidos',
+    gotas: total === 1 ? 'gota' : 'gotas',
+  }
+
+  const displayUnit = unitLabels[unit] || unit || 'un.'
+  const displayTotalUnit = totalUnitLabels[unit] || unit || 'un.'
+
+  // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1
+  if ((unit === 'cp' || unit === 'gotas') && dosagePerPill === 1) {
+    return `${displayQty} ${displayUnit}`
+  }
+
+  // Se o medicamento for medido em comprimidos ou gotas com dosagem ativa em massa (ex: mg)
+  if (unit === 'cp') {
+    return `${displayQty} comp. = ${displayTotal} mg`
+  }
+  if (unit === 'gotas') {
+    return `${displayQty} ${displayUnit} = ${displayTotal} gotas`
+  }
+
+  return `${displayQty} un. = ${displayTotal} ${displayTotalUnit}`
+}
+
+/**
+ * Retorna a fórmula matemática explicativa para helpers de inputs.
+ * @example formatActiveIngredientFormula(1.5, 100, 'ui') -> "1,5 x 100 UI = 150 UI"
+ */
+export function formatActiveIngredientFormula(qty, dosagePerPill, unit) {
+  if (
+    qty == null ||
+    qty === '' ||
+    isNaN(Number(String(qty).replace(',', '.'))) ||
+    dosagePerPill == null ||
+    dosagePerPill <= 0
+  ) {
+    return ''
+  }
+  const qtyNum = Number(String(qty).replace(',', '.'))
+  const total = qtyNum * dosagePerPill
+  const displayQty = String(qtyNum).replace('.', ',')
+  const displayTotal = String(total).replace('.', ',')
+
+  const unitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    ml: 'ml',
+    ui: 'UI',
+    cp: 'comp.',
+    gotas: 'gotas',
+  }
+
+  const displayUnit = unitLabels[unit] || unit || 'un.'
+
+  if ((unit === 'cp' || unit === 'gotas') && dosagePerPill === 1) {
+    return `${displayQty} ${displayUnit === 'comp.' ? (qtyNum === 1 ? 'comprimido' : 'comprimidos') : (qtyNum === 1 ? 'gota' : 'gotas')}`
+  }
+
+  if (unit === 'cp') {
+    return `${displayQty} x ${dosagePerPill} mg = ${displayTotal} mg`
+  }
+
+  return `${displayQty} x ${dosagePerPill} ${displayUnit} = ${displayTotal} ${displayUnit}`
+}
+
+
