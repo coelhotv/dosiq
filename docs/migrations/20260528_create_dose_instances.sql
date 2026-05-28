@@ -62,7 +62,7 @@ CREATE POLICY dose_instances_owner ON public.dose_instances
 CREATE TABLE IF NOT EXISTS public.dose_adherence_monthly (
   user_id      uuid NOT NULL,
   protocol_id  uuid NOT NULL REFERENCES public.protocols(id) ON DELETE CASCADE,
-  month        date NOT NULL,            -- 1º dia do mês
+  month        date NOT NULL CHECK (extract(day from month) = 1),  -- sempre o 1º dia do mês (evita linhas duplicadas do mesmo mês sob PKs distintas)
   expected     int NOT NULL,
   taken        int NOT NULL,
   missed       int NOT NULL,

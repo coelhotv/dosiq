@@ -144,6 +144,17 @@ describe('generateInstances — tolerância dinâmica (§6)', () => {
     expect(out.map((i) => i.tolerance_minutes)).toEqual([30, 30, 90])
   })
 
+  it('considera wrap-around da meia-noite (00:30 e 23:30 → janela real 60min → tol 30)', () => {
+    // mesmo dia o gap parece 1380min, mas na virada são 60min → tolerância 30, sem sobrepor
+    const out = generateInstances(
+      { ...baseProtocol, time_schedule: ['00:30', '23:30'] },
+      '2026-05-10T00:00:00-03:00',
+      '2026-05-10T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out.map((i) => i.tolerance_minutes)).toEqual([30, 30])
+  })
+
   it('dose única diária: 120 fixo', () => {
     const out = generateInstances(
       { ...baseProtocol, time_schedule: ['08:00'] },

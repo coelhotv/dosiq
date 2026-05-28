@@ -22,7 +22,6 @@ import {
   getStartOfDayISO,
   getUserTime,
   formatLocalDate,
-  parseLocalDate,
   parseISO,
   parseTimestamp,
 } from './dateUtils.js'
@@ -65,6 +64,9 @@ function timeToMinutes(time) {
  *
  * - Diário multi-dose: por slot, metade do menor intervalo adjacente (anterior/próximo),
  *   com teto de 120 — garante que janelas de slots vizinhos não se sobreponham.
+ *   ⚠️ Considera o wrap-around da meia-noite: como o protocolo diário repete os mesmos
+ *   slots todo dia, a última dose do dia N e a primeira do dia N+1 são adjacentes no
+ *   tempo real. Sem isso, doses tipo 23:30/00:30 teriam janelas de 120min sobrepostas.
  * - Não-diário ou dose única: 120 fixo (§6 MASTER_PLAN).
  *
  * @param {number[]} sortedMinutes - minutos dos slots, ordenados ascendente
@@ -75,9 +77,16 @@ function computeTolerances(sortedMinutes, isDaily) {
   if (!isDaily || sortedMinutes.length < 2) {
     return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
   }
+  const len = sortedMinutes.length
+  const MINUTES_PER_DAY = 1440
   return sortedMinutes.map((minute, i) => {
-    const prevGap = i > 0 ? minute - sortedMinutes[i - 1] : Infinity
-    const nextGap = i < sortedMinutes.length - 1 ? sortedMinutes[i + 1] - minute : Infinity
+    // Para o 1º/último slot, o intervalo adjacente cruza a meia-noite (wrap-around).
+    const prevGap = i > 0
+      ? minute - sortedMinutes[i - 1]
+      : (MINUTES_PER_DAY - sortedMinutes[len - 1]) + minute
+    const nextGap = i < len - 1
+      ? sortedMinutes[i + 1] - minute
+      : (MINUTES_PER_DAY - minute) + sortedMinutes[0]
     const smallestAdjacent = Math.min(prevGap, nextGap)
     // metade do menor intervalo adjacente (arredonda p/ baixo), teto 120
     return Math.min(Math.floor(smallestAdjacent / 2), MAX_TOLERANCE_MINUTES)
@@ -107,12 +116,17 @@ function buildScheduledFor(dateStr, minutesOfDay, tz) {
  */
 function localDateRange(fromDate, toDate, tz) {
   const dates = []
-  // Cursor caminha por dia local; parseLocalDate dá aritmética estável de datas.
-  const cursor = parseLocalDate(formatLocalDate(getUserTime(fromDate, tz)))
-  const last = parseLocalDate(formatLocalDate(getUserTime(toDate, tz)))
+  // Itera em UTC (T00:00:00Z + setUTCDate): imune a DST e ao fuso do ambiente de
+  // execução (servidor Vercel ou device móvel em fuso arbitrário). UTC não tem
+  // transições, então cada incremento é exatamente 24h. parseISO mantém R-020.
+  const cursor = parseISO(formatLocalDate(getUserTime(fromDate, tz)) + 'T00:00:00Z')
+  const last = parseISO(formatLocalDate(getUserTime(toDate, tz)) + 'T00:00:00Z')
   while (cursor <= last) {
-    dates.push(formatLocalDate(cursor))
-    cursor.setDate(cursor.getDate() + 1)
+    const y = cursor.getUTCFullYear()
+    const m = String(cursor.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(cursor.getUTCDate()).padStart(2, '0')
+    dates.push(`${y}-${m}-${d}`)
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
   }
   return dates
 }
