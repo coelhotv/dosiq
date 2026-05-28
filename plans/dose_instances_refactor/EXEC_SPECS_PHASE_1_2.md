@@ -10,8 +10,8 @@
 | PR | Sprints | Status | Ref |
 |----|---------|--------|-----|
 | **PR-F1.1** tz core | S1.0, S1.1, S1.2, S1.3, S1.6 | ✅ **MERGED** | PR #597 (squash `6816ee99`) · migration aplicada em prod · ADR-049 accepted · CON-022 |
-| **PR-F1.2** tz UI | S1.4, S1.5 | 🔄 **em smoke PO** (código verde, pré-commit) | branch `feature/dose-instances-f1-tz-ui` |
-| **PR-F2.1** schema+lógica | S2.0–S2.3 | 🔄 **código verde** (G1+G2 ok; 24 testes novos; validate:agent 895/895) | branch `feature/dose-instances-f2-schema-engine`; aguarda migration preview→prod (humano) + Gemini + merge |
+| **PR-F1.2** tz UI | S1.4, S1.5 | ✅ **MERGED** | PR #598 |
+| **PR-F2.1** schema+lógica | S2.0–S2.3 | ✅ **MERGED** | PR #599 (`b7d26b3f`) · migration aplicada em prod · ADR-048 accepted · review Gemini (1 High wrap-around + 2 Medium) aplicado · AP-181 (FREQUENCY_MATCHERS stale) · 25 testes |
 | PR-F2.2 motor+lifecycle | S2.4, S2.5 | ⬜ pendente | |
 | PR-F2.3 âncora log | S2.6 | ⬜ pendente | |
 | PR-F2.4 backfill | S2.7 | ⬜ pendente | |
@@ -34,7 +34,18 @@ Fase 1 deixou o core tz-capable, mas ninguém injeta `user_settings.timezone` ai
 `scheduled_for` gerado no tz do usuário (F2) precisa ser lido/renderizado no mesmo tz (F4). A timeline cross-dia (F4) já planeja ordenar por `scheduled_for` absoluto — alinhado. Adicionar à DoD de S2.2/S2.4: documentar explicitamente em qual tz `scheduled_for` é gravado (instante absoluto UTC; o tz só governa o wall-clock de origem). Como é `timestamptz` (UTC absoluto), leitura é tz-agnóstica para ordenação — o tz só importa na geração e na exibição de "que horas são". Risco G1 mitigado por usar instante absoluto.
 
 **G3 — `quando_necessario` no DB usa acento (`quando_necessário`).**
-A migration `dose_instances` (S2.1) e o gerador (S2.2) devem casar com o CHECK real do DB: `frequency IN ('diário','dias_alternados','semanal','personalizado','quando_necessário')` — **com acentos** (confirmado via list_tables na F1.1). O gerador pula `quando_necessário` (PRN). Atualizar S2.2 para usar a string acentuada exata.
+A migration `dose_instances` (S2.1) e o gerador (S2.2) devem casar com o CHECK real do DB: `frequency IN ('diário','dias_alternados','semanal','personalizado','quando_necessário')` — **com acentos** (confirmado via list_tables na F1.1). O gerador pula `quando_necessário` (PRN). Atualizar S2.2 para usar a string acentuada exata. ✅ Resolvido em PR-F2.1.
+
+**G4 — Recorrência stale (AP-181, descoberto em PR-F2.1).**
+`FREQUENCY_MATCHERS` (em `adherenceLogic.isProtocolActiveOnDate`) está desatualizado vs o CHECK do DB: falta `dias_alternados` (cai no default → vira diário) e mapeia `personalizado` → `false` (nunca ativo). **Latente** (0 protocolos em prod usam essas frequências — 26 diário, 1 semanal, 1 PRN). O gerador reusa a função as-is → consistente com a adesão atual. **Fix na Fase 3** (muda comportamento de adesão = fora do zero-behavior-change da Fase 2). Ver `AP-181`.
+
+## 🩺 Future-proofing diabetes (ADR-050) — afeta Fases 2-4
+
+O refactor já constrói o esqueleto planned/applied que insulina exige. 4 decisões baratas deixam a arquitetura preparada **sem construir diabetes aqui**. Detalhe em [ADR-050](../../.agent/memory/decisions/data_and_schema/ADR-050.md) e §11 do MASTER_PLAN.
+
+- **FP-1 (planned↔applied)** — toca **S2.6**: ao popular `dose_instance_id`, `quantity_taken` é a dose *aplicada* (pode divergir de `expected_dose`); o link `status='taken'` não exige `aplicada == planejada`. Não introduzir validação que force igualdade.
+- **FP-4 (unidade)** — toca **S2.6**: preservar o fluxo de estoque atual (pill-cêntrico) **sem** cravar novas suposições que dificultem o caminho UI/volume futuro. Decremento continua na unidade do medicamento.
+- **FP-2 (tolerância por instância)** e **FP-3 (timeline event-agnóstica)** — entram nas Fases 3 e 4 (fora do escopo deste spec); registrados no MASTER_PLAN §8/§11 para não serem esquecidos no planning dessas fases.
 
 ---
 
@@ -251,6 +262,7 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 - **Aceite:** `<Tomar>` da dose de ontem 22:30 às 00:05 ancora na instância de ontem (não cria slot de hoje); avulsa = null; estoque intacto.
 - **Deps:** S2.3
 - **Nota:** AP do `res.json()`/Vercel não se aplica (não é serverless), mas validar Zod antes do insert.
+- **Future-proofing (ADR-050):** **FP-1** — `quantity_taken` é a dose *aplicada* e pode divergir de `expected_dose`; o link `status='taken'` não deve exigir igualdade (habilita bolus variável futuro). **FP-4** — manter o decremento de estoque na unidade do medicamento, sem cravar suposições novas que dificultem o caminho UI/volume.
 
 ### S2.7 — Backfill one-shot
 - **Agent:** `claude` · **Model:** sonnet

@@ -6,10 +6,13 @@
 >
 > **Progresso (2026-05-28):**
 > - ✅ **Fase 1 / PR-F1.1** — core tz-aware (`getUserTime` + param tz default SP, non-breaking ~250 callers) · `user_settings.timezone` (migration em prod) · CON-022. Merged #597.
-> - 🔄 **Fase 1 / PR-F1.2** — seletor de fuso UI web+mobile + revalidação no launch mobile. Código verde, em smoke PO.
-> - ⬜ **Fase 2** — bloqueada por: promover ADR-048→accepted + planning próprio.
+> - ✅ **Fase 1 / PR-F1.2** — seletor de fuso UI web+mobile + revalidação no launch mobile. Merged #598.
+> - ✅ **Fase 2 / PR-F2.1** — schema `dose_instances` + motor de geração (`doseInstanceGenerator`) + repository (`createDoseInstanceRepository`). Migration aplicada em prod. Merged #599 (`b7d26b3f`). ADR-048 accepted.
+> - ⬜ **Fase 2 / PR-F2.2+** — motor no scheduler, lifecycle, âncora de log, backfill.
 >
 > **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.
+>
+> **Future-proofing diabetes (ADR-050):** o refactor já constrói o esqueleto planned/applied que insulina bolus exige. 4 decisões baratas (FP-1..FP-4) deixam a arquitetura preparada **sem fundir o épico de diabetes aqui** — ver **§11**. Diabetes = épico próprio pós-refactor.
 
 ---
 
@@ -144,8 +147,10 @@ ALTER TABLE dose_instances ADD COLUMN tolerance_minutes int NOT NULL DEFAULT 120
 
 Entra na fase de adesão (Fase 3); não bloqueia as anteriores.
 
-### Follow-up (fora de escopo v1) — Strict tier por classe terapêutica
+### Follow-up (fora de escopo v1) — Strict tier por classe terapêutica → **FP-2 (ADR-050)**
 Adiado: aguarda opinião médica (usuário buscando contato na rede pessoal). Base ANVISA tem `therapeuticClass` (6807 meds, 410 classes, texto livre) — sinal **ruidoso**: `Antiretroviral` vem limpo (28 meds), mas imunossupressor espalhado em ~6 variantes e **insulina não é separável por classe** (enterrada em `Antidiabeticos`, misturada com orais flexíveis). Quando houver validação clínica: seed curado pequeno (allowlist por classe + princípio ativo) → janela estrita ±30-60min, **override por medicamento**, classe como sugestão nunca aplicação silenciosa.
+
+**FP-2 (ADR-050) — insulina basal é o caso de uso do strict tier.** A coluna `tolerance_minutes` já é **por instância** (não global) → o strict tier vira apenas uma regra de cálculo na geração, plugável depois **sem tocar schema**. Regra de ouro nas Fases 3/4: **nunca hardcodar 120 em runtime de leitura** — sempre ler `dose_instances.tolerance_minutes`.
 
 ---
 
@@ -180,9 +185,11 @@ Volume por usuário é **linear e pequeno** (~16k linhas em 3 anos). Eixo de esc
 
 ### Fase 3 — Adesão / streak por scheduled-time
 - `isProtocolFollowed`, `calculateAdherenceStats`, `getCurrentStreak`, `isDoseInToleranceWindow` passam a ler `dose_instances`
-- Janela clínica dinâmica derivada do intervalo (§6)
+- Janela clínica dinâmica derivada do intervalo (§6) — **ler `tolerance_minutes` por instância, nunca 120 hardcoded (FP-2)**
 - Recálculo histórico muda scores já vistos — **risco baixo**: adesão já é dinâmica (muda ao longo do dia em multi-protocolo) e base é mínima (app recém-lançada). Sem necessidade de freeze/comunicação elaborada
 - Rollup mensal ligado
+- **FP-1 (ADR-050) — contrato planned↔applied:** a adesão compara `expected_dose` (planejada) vs `quantity_taken` (aplicada) **sem assumir igualdade**. Para v1 dos atuais (dose fixa) são iguais; para bolus futuro divergem. Não escrever lógica que pressuponha `aplicada == planejada`.
+- **FP-4 (ADR-050) — semântica de unidade:** dose é expressa na unidade de administração (`medicines.dosage_unit`). A matemática de adesão **não pode cravar "comprimido"** — manter agnóstica à unidade (um "evento de dose" é tomado ou não; a quantidade é secundária à adesão binária e fica na unidade do medicamento).
 
 ### Fase 4 — UI timeline contínua (mata o bug visível)
 - `useDoseZones` (web) + `_useTodayDerived` (mobile) → janela deslizante cross-dia
@@ -192,6 +199,7 @@ Volume por usuário é **linear e pequeno** (~16k linhas em 3 anos). Eixo de esc
   - **Complex** (períodos Madrugada/Manhã/Tarde/Noite, day-bound): seção carry-over acima dos períodos; períodos de hoje inalterados
 - Seção só aparece se houver dose de ontem na janela — caso comum (sem carry-over) renderiza idêntico ao dashboard de hoje
 - Bug da meia-noite resolvido por construção
+- **FP-3 (ADR-050) — timeline event-source-agnóstica:** modelar a lista como **eventos tipados** (`{ type: 'dose', occurred_at, payload }`) com a interface aberta a outros tipos (`'biomarker'`, `'note'`), ordenados por instante absoluto. Popular só `dose` agora; plugar `biomarkers_log` (glicemia) no épico de diabetes **sem reescrever** a timeline. **FP de maior valor/menor custo** — decidir o shape do evento agora custa ~nada e evita refactor da timeline depois.
 
 ---
 
@@ -218,3 +226,25 @@ Volume por usuário é **linear e pequeno** (~16k linhas em 3 anos). Eixo de esc
 - **Wipe amplo demais** destrói histórico — regra `pending AND > now()` é inviolável.
 - **Pausa** não pode gerar "missed" falsa — `skipped_paused` neutro desde a v1.
 - **tz antes de gerar** — ordem não-negociável.
+
+---
+
+## 11. Future-proofing para diabetes (ADR-050) — preparar, não construir
+
+O refactor `dose_instances` já constrói, por acaso, o esqueleto que insulina exige: `expected_dose` (planejada) ↔ `quantity_taken` (aplicada), ligados por `medicine_logs.dose_instance_id`. Para não pagar um "refactor do refactor" quando o épico de diabetes chegar, as fases restantes adotam **4 decisões baratas**. Detalhe e contexto em [ADR-050](../../.agent/memory/decisions/data_and_schema/ADR-050.md). **Diabetes em si NÃO é construído aqui** — é épico próprio, depois do refactor (ver draft corrigido em [draft_plan_diabetic_support.md](./draft_plan_diabetic_support.md)).
+
+| FP | Decisão | Onde entra | Custo |
+|----|---------|-----------|-------|
+| **FP-1** | Contrato planned↔applied: `expected_dose` é sugestão editável, não valor fixo; adesão compara planejada vs aplicada sem assumir igualdade | Fase 3 (adesão) + já no LogForm | ~zero (campos já existem) |
+| **FP-2** | Tolerância por protocolo: `tolerance_minutes` por instância; nunca hardcodar 120 em runtime. Basal de insulina = caso do strict tier (§6) | Fases 3/4 (leitura) | ~zero (coluna já existe) |
+| **FP-3** | Timeline event-source-agnóstica: lista de eventos tipados (`dose`\|`biomarker`\|`note`) ordenados por instante absoluto; popular só `dose` agora | Fase 4 (timeline) | baixo (decisão de shape) |
+| **FP-4** | Semântica de unidade: dose na unidade de administração (`medicines.dosage_unit`); adesão e estoque NÃO cravam suposição pill-cêntrica | Fase 3 (adesão) | baixo (disciplina) |
+
+**Regra única para lembrar nas Fases 3 e 4:** uma dose é um **evento agendado, com tolerância própria e quantidade na unidade do medicamento, cuja aplicação pode divergir do plano**. Quem escrever a adesão/timeline assumindo "comprimido fixo, ±2h, aplicada=planejada" reintroduz as 3 paredes do diabetes.
+
+### O que o épico de diabetes ainda terá de construir de verdade (não coberto pelos FPs)
+- **Parede de unidades (UI/volume):** estoque por UI/volume (não contagem de cp), `formatDoseUnit` por unidade (hoje ADR-046 retorna sempre "unidade(s)"), limite Zod de `quantity_taken` revisto.
+- **`biomarkers_log` (glicemia):** tabela + input fast-logging + render na timeline (habilitado por FP-3).
+- **Validade biológica:** `stock.opened_at` + TTL (28-30d) + alerta dedicado (distinto de `expiration_date`).
+- **(Opcional) CGM** via HealthKit/Google Fit — alto valor, alto custo nativo.
+- **Linha SaMD:** registro passivo + relatório apenas; **nunca** calculadora de bolus (vira dispositivo médico regulado).
