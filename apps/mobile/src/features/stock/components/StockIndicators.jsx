@@ -8,7 +8,7 @@
 
 import { View, Text, StyleSheet } from 'react-native'
 import { Package, TrendingDown, Clock, Tag } from 'lucide-react-native'
-import { formatBRL } from '@dosiq/core'
+import { formatBRL, formatActiveIngredientShort } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 /**
@@ -19,6 +19,7 @@ import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
  *   dailyConsumption: number,      // consumo diário (un./dia)
  *   daysRemaining: number|null,    // dias restantes (null = sem consumo)
  *   avgUnitPrice: number,          // custo médio ponderado por unidade
+ *   medicine: object|null,         // objeto completo do medicamento
  * }} props
  */
 export default function StockIndicators({
@@ -26,6 +27,7 @@ export default function StockIndicators({
   dailyConsumption = 0,
   daysRemaining = null,
   avgUnitPrice = 0,
+  medicine = null,
 }) {
   // Cor de alerta para "Dias restantes": <7 vermelho · <14 amarelo · senão neutro.
   const daysColor =
@@ -44,12 +46,14 @@ export default function StockIndicators({
         label="Saldo"
         value={String(saldo)}
         suffix="un."
+        hint={formatActiveIngredientShort(saldo, medicine?.dosage_per_pill, medicine?.dosage_unit)}
       />
       <Kpi
         icon={<TrendingDown size={18} color={colors.primary[700]} />}
         label="Consumo / dia"
         value={String(dailyConsumption)}
         suffix="un."
+        hint={formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)}
       />
       <Kpi
         icon={<Clock size={18} color={colors.primary[700]} />}
@@ -68,7 +72,7 @@ export default function StockIndicators({
   )
 }
 
-function Kpi({ icon, label, value, suffix, valueColor }) {
+function Kpi({ icon, label, value, suffix, valueColor, hint }) {
   return (
     <View style={styles.card}>
       <View style={styles.iconWrap}>{icon}</View>
@@ -79,6 +83,7 @@ function Kpi({ icon, label, value, suffix, valueColor }) {
         </Text>
         {suffix ? <Text style={styles.suffix}>{suffix}</Text> : null}
       </View>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   )
 }
@@ -127,5 +132,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: colors.text.muted,
+  },
+  hint: {
+    fontSize: 11,
+    color: colors.text.muted,
+    marginTop: 2,
+    fontWeight: '500',
   },
 })

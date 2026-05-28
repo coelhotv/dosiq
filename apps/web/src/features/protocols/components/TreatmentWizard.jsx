@@ -89,6 +89,7 @@ export default function TreatmentWizard({
               goNext={state.goNext}
               handleComplete={state.handleComplete}
               isProtocolValid={state.isProtocolValid}
+              medicine={state.medicineMode === 'existing' ? state.selectedExistingMedicine : state.medicineData}
             />
           )}
 
@@ -100,6 +101,7 @@ export default function TreatmentWizard({
               goBack={state.goBack}
               handleComplete={state.handleComplete}
               isSubmitting={state.isSubmitting}
+              medicine={state.medicineMode === 'existing' ? state.selectedExistingMedicine : state.medicineData}
             />
           )}
 

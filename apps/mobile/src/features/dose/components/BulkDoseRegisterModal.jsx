@@ -19,7 +19,7 @@ import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp }
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
-import { getNow, cloneDate } from '@dosiq/core'
+import { getNow, cloneDate, formatActiveIngredientHint } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -69,7 +69,7 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
     const medicineName = item.protocol.medicine?.name ?? item.protocol.name ?? 'Medicamento'
-    const dose = `${item.protocol.dosage_per_intake ?? 1} cp`
+    const dose = formatActiveIngredientHint(item.protocol.dosage_per_intake ?? 1, item.protocol.medicine?.dosage_per_pill, item.protocol.medicine?.dosage_unit) || `${item.protocol.dosage_per_intake ?? 1} un.`
 
     return (
       <Pressable

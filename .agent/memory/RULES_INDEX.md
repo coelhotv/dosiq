@@ -19,6 +19,7 @@
 - **[R-131]** Queries Supabase com filtros de data DEVEM converter datas locais para UTC via p... -> [`rules/data_and_schema/R-131.md`](./rules/data_and_schema/R-131.md)
 - **[R-192]** Supabase: Utilizar .contains('<coluna>', [<valor>]) para arrays em vez de filtrar em memória -> [`rules/data_and_schema/R-192.md`](./rules/data_and_schema/R-192.md)
 - **[R-226]** FIFO de estoque DEVE usar `entry_type != 'legacy_unrecoverable'` — nunca `entry_type = 'purchase'`; adjustment entries são consumíveis (ver AP-142) -> [`rules/data_and_schema/R-226.md`](./rules/data_and_schema/R-226.md)
+- **[R-241]** Escalonamento Métrico Automático e Hints de Princípio Ativo (Físico vs. Ativo) -> [`rules/data_and_schema/R-241.md`](./rules/data_and_schema/R-241.md)
 
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)

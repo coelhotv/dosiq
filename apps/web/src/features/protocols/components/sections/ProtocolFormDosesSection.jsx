@@ -2,6 +2,7 @@ import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import Button from '@shared/components/ui/Button'
 import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
 import { getFieldDescribedBy } from '@utils/formUtils'
+import { formatActiveIngredientFormula } from '@dosiq/core'
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
@@ -24,6 +25,7 @@ export default function ProtocolFormDosesSection({
   setTimeInput,
   addTime,
   removeTime,
+  medicine,
 }) {
   const handleWeekdayToggle = (day) => {
     const currentWeekdays = formData.weekdays || []
@@ -94,6 +96,11 @@ export default function ProtocolFormDosesSection({
           {errors.dosage_per_intake && (
             <span id="dosage_per_intake-error" className="error-message">
               {errors.dosage_per_intake}
+            </span>
+          )}
+          {medicine && (
+            <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+              ✨ {formatActiveIngredientFormula(formData.dosage_per_intake, medicine.dosage_per_pill, medicine.dosage_unit)}
             </span>
           )}
         </div>

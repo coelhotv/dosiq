@@ -84,6 +84,9 @@ export {
 export {
   pluralizeDoseUnit,
   formatDoseUnit,
+  formatActiveIngredientHint,
+  formatActiveIngredientFormula,
+  formatActiveIngredientShort,
 } from './doseUnit.js'
 
 // Date presentation PT-BR (Fase 2)

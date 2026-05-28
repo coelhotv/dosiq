@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronLeft, Package } from 'lucide-react-native'
-import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow } from '@dosiq/core'
+import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
 import FormDatePicker from '@shared/components/form/FormDatePicker'
@@ -85,6 +85,8 @@ export default function PurchaseFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
   const navigation = useNavigation()
   const route = useRoute()
+  const [labLocked, setLabLocked] = useState(false)
+  const [medicine, setMedicine] = useState(null)
 
   const {
     mode = 'create',
@@ -133,9 +135,6 @@ export default function PurchaseFormScreen() {
 
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, updatePurchase, isLoading } = useStockMutation()
-
-  // States — laboratório travado p/ medicamentos de marca (Novo/Similar)
-  const [labLocked, setLabLocked] = useState(false)
   const { handleChange } = form
 
   // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
@@ -149,6 +148,7 @@ export default function PurchaseFormScreen() {
       .getById(medicineId)
       .then((med) => {
         if (cancelled || !med) return
+        setMedicine(med)
         if (FIXED_LAB_CATEGORIES.includes(med.regulatory_category) && med.laboratory) {
           handleChange('laboratory', med.laboratory)
           setLabLocked(true)
@@ -237,6 +237,19 @@ export default function PurchaseFormScreen() {
     [form.values.expiration_date]
   )
 
+  const quantityHelperText = useMemo(() => {
+    if (isEdit) {
+      return 'Corrija o saldo pelo "Acertar saldo"'
+    }
+    if (!medicine) return undefined
+    const shortHint = formatActiveIngredientShort(
+      form.values.quantity,
+      medicine.dosage_per_pill,
+      medicine.dosage_unit
+    )
+    return shortHint ? `✨ Equivale a ${shortHint} no total` : undefined
+  }, [isEdit, form.values.quantity, medicine])
+
   const screenTitle = isEdit ? 'Editar compra' : 'Registrar compra'
   const ctaLabel = isEdit ? 'Salvar alterações' : 'Registrar compra'
 
@@ -293,7 +306,7 @@ export default function PurchaseFormScreen() {
                   keyboardType="decimal-pad"
                   maxLength={10}
                   disabled={isEdit}
-                  helperText={isEdit ? 'Corrija o saldo pelo "Acertar saldo"' : undefined}
+                  helperText={quantityHelperText}
                   value={
                     form.values.quantity != null ? String(form.values.quantity) : ''
                   }

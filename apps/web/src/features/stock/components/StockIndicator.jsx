@@ -1,6 +1,7 @@
+import { formatActiveIngredientHint } from '@dosiq/core'
 import './StockIndicator.css'
 
-export default function StockIndicator({ quantity, lowThreshold = 10, isLow }) {
+export default function StockIndicator({ quantity, lowThreshold = 10, isLow, medicine }) {
   const getStatusColor = () => {
     if (quantity === 0) return 'var(--color-error)'
     if (isLow !== undefined) {
@@ -27,7 +28,9 @@ export default function StockIndicator({ quantity, lowThreshold = 10, isLow }) {
   return (
     <div className="stock-indicator">
       <div className="stock-header">
-        <span className="stock-quantity">{quantity} comprimidos</span>
+        <span className="stock-quantity">
+          {formatActiveIngredientHint(quantity, medicine?.dosage_per_pill, medicine?.dosage_unit) || `${quantity} un.`}
+        </span>
         <span className="stock-status" style={{ color: getStatusColor() }}>
           {getStatusText()}
         </span>

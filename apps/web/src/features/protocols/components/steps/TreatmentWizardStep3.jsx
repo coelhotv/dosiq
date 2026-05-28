@@ -1,4 +1,5 @@
 import Button from '@shared/components/ui/Button'
+import { formatActiveIngredientFormula } from '@dosiq/core'
 
 export default function TreatmentWizardStep3({
   stockData,
@@ -7,13 +8,18 @@ export default function TreatmentWizardStep3({
   goBack,
   handleComplete,
   isSubmitting,
+  medicine,
 }) {
   return (
     <div className="wizard__step">
       <h3 className="wizard__title">Estoque Atual</h3>
 
       <label className="wizard__label">
-        Quantidade (comprimidos)
+        {medicine?.dosage_unit === 'cp'
+          ? 'Quantidade (comprimidos)'
+          : medicine?.dosage_unit === 'gotas'
+            ? 'Quantidade (gotas)'
+            : 'Quantidade (un.)'}
         <input
           type="number"
           className="wizard__input"
@@ -21,7 +27,13 @@ export default function TreatmentWizardStep3({
           onChange={(e) => updateStock('quantity', e.target.value)}
           placeholder="60"
           min="0"
+          step="any"
         />
+        {medicine && (
+          <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+            ✨ {formatActiveIngredientFormula(stockData.quantity, medicine.dosage_per_pill, medicine.dosage_unit)}
+          </span>
+        )}
       </label>
 
       <label className="wizard__label">
