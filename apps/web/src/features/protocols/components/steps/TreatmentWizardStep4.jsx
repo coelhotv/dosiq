@@ -1,5 +1,6 @@
 import Button from '@shared/components/ui/Button'
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatActiveIngredientHint } from '@dosiq/core'
 
 export default function TreatmentWizardStep4({
   result,
@@ -18,7 +19,7 @@ export default function TreatmentWizardStep4({
       <p className="wizard__complete-summary">
         <strong>{result.medicine?.name || medicineData.name}</strong> cadastrado
         {result.protocol && ` com tratamento ${FREQUENCY_LABELS[protocolData.frequency]}`}
-        {stockData.quantity && ` e ${stockData.quantity} comprimidos em estoque`}.
+        {stockData.quantity && ` e ${formatActiveIngredientHint(stockData.quantity, result.medicine?.dosage_per_pill, result.medicine?.dosage_unit) || `${stockData.quantity} un.`} em estoque`}.
       </p>
       <div className="wizard__actions wizard__actions--center">
         <Button variant="primary" onClick={() => onComplete(result)}>
