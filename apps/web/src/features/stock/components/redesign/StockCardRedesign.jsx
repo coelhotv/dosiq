@@ -152,8 +152,8 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
         <p className="stock-card-r__quantity">
           {formatActiveIngredientHint(
             totalQuantity,
-            medicine.dosage_per_pill,
-            medicine.dosage_unit
+            medicine?.dosage_per_pill,
+            medicine?.dosage_unit
           ) || `${totalQuantity} un.`}
         </p>
       )}

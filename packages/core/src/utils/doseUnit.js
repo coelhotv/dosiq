@@ -35,8 +35,10 @@ export function pluralizeDoseUnit(qty) {
  * @example formatNumberPtBR(15000)  → '15.000'
  */
 export function formatNumberPtBR(num) {
-  if (num == null || isNaN(Number(num))) return ''
-  const parts = String(Number(num)).split('.')
+  if (num == null) return ''
+  const normalized = typeof num === 'string' ? num.replace(',', '.') : num
+  if (isNaN(Number(normalized))) return ''
+  const parts = String(Number(normalized)).split('.')
   // Formata a parte inteira com ponto de milhar
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   // Se houver parte decimal, junta com vírgula

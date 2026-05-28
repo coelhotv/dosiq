@@ -85,6 +85,8 @@ export default function PurchaseFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
   const navigation = useNavigation()
   const route = useRoute()
+  const [labLocked, setLabLocked] = useState(false)
+  const [medicine, setMedicine] = useState(null)
 
   const {
     mode = 'create',
@@ -133,10 +135,6 @@ export default function PurchaseFormScreen() {
 
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, updatePurchase, isLoading } = useStockMutation()
-
-  // States — laboratório travado p/ medicamentos de marca (Novo/Similar)
-  const [labLocked, setLabLocked] = useState(false)
-  const [medicine, setMedicine] = useState(null)
   const { handleChange } = form
 
   // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
