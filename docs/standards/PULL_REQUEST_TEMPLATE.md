@@ -191,7 +191,7 @@
   Remova se o versionamento for gerenciado automaticamente.
 -->
 
-**Tipo:** [Major / Minor / Patch]
+**Tipo:** [Major / Minor / Patch / No user impact]
 **Plataformas afetadas:** [Web/PWA / Mobile / Shared/Core / Backend/Infra]
 **Versão anterior:** [x.x.x]
 **Versão sugerida:** [x.x.x]
