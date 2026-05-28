@@ -24,6 +24,7 @@ export function useSettingsState() {
   const [digestTime, setDigestTime] = useState('08:30')
   const [webPushSupported, setWebPushSupported] = useState(false)
   const [channelWebPushEnabled, setChannelWebPushEnabled] = useState(false)
+  const [timezone, setTimezone] = useState('America/Sao_Paulo')
 
   const showMsg = (type, text) => {
     setMessage({ type, text })
@@ -53,6 +54,7 @@ export function useSettingsState() {
         setDigestTime(settings.digest_time || '09:00')
         setChannelWebPushEnabled(settings.channel_web_push_enabled || false)
         if (settings.complexity_override) setComplexityOverride(settings.complexity_override)
+        setTimezone(settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo')
       }
       setWebPushSupported('serviceWorker' in navigator && 'PushManager' in window)
     } catch (error) {
@@ -167,6 +169,17 @@ export function useSettingsState() {
     }
   }
 
+  const handleTimezoneChange = async (tz) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
+      setTimezone(tz)
+      showMsg('success', 'Fuso horário atualizado.')
+    } catch {
+      showMsg('error', 'Erro ao salvar fuso horário.')
+    }
+  }
+
   const getComplexityDisplayMode = () => {
     if (overrideMode === 'simple') return 'Ativo: Modo Padrão (simplificado)'
     if (overrideMode === 'complex') return 'Ativo: Modo Detalhado'
@@ -183,6 +196,6 @@ export function useSettingsState() {
       digestTime, setDigestTime, saveDigestTime, savingDigestTime,
     },
     integration: { isTelegramConnected, generateTelegramToken, telegramToken, handleDisconnectTelegram },
-    preference: { overrideMode, handleComplexityChange, getComplexityDisplayMode },
+    preference: { overrideMode, handleComplexityChange, getComplexityDisplayMode, timezone, handleTimezoneChange },
   }
 }

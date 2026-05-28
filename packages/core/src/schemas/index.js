@@ -159,6 +159,8 @@ export {
 export {
   userSettingsNotificationSchema,
   NOTIFICATION_MODES,
+  TIMEZONES_BR,
+  TIMEZONE_OPTIONS,
   deriveLegacyPreference,
 } from './userSettingsSchema.js'
 

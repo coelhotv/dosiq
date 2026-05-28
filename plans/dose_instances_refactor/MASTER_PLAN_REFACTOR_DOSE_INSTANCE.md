@@ -1,8 +1,15 @@
 # Plano — Refatoração para `dose_instances` (Schedule-Anchored Doses)
 
-> **Status:** Draft de planejamento (pré-bootstrap DEVFLOW)
+> **Status:** Em execução — **Fase 1 quase completa** (PR-F1.1 merged #597; PR-F1.2 em smoke PO).
 > **Origem:** bug reportado pós-lançamento App Store — dose das 22:30 deixa de ser registrável após meia-noite.
-> **Decisão arquitetural-mãe:** ADR-048 (a registrar no C5) — adotar tabela `dose_instances` materializada, modelo híbrido (ocorrência agendada + dose avulsa).
+> **Decisão arquitetural-mãe:** **ADR-048** (proposed — promover a accepted no planning da Fase 2) — tabela `dose_instances` materializada, modelo híbrido. **ADR-049** (accepted) — core tz-aware, fundação da Fase 1.
+>
+> **Progresso (2026-05-28):**
+> - ✅ **Fase 1 / PR-F1.1** — core tz-aware (`getUserTime` + param tz default SP, non-breaking ~250 callers) · `user_settings.timezone` (migration em prod) · CON-022. Merged #597.
+> - 🔄 **Fase 1 / PR-F1.2** — seletor de fuso UI web+mobile + revalidação no launch mobile. Código verde, em smoke PO.
+> - ⬜ **Fase 2** — bloqueada por: promover ADR-048→accepted + planning próprio.
+>
+> **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.
 
 ---
 

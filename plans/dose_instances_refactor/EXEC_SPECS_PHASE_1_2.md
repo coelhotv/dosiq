@@ -5,6 +5,39 @@
 
 ---
 
+## 📊 Status de execução (atualizado 2026-05-28)
+
+| PR | Sprints | Status | Ref |
+|----|---------|--------|-----|
+| **PR-F1.1** tz core | S1.0, S1.1, S1.2, S1.3, S1.6 | ✅ **MERGED** | PR #597 (squash `6816ee99`) · migration aplicada em prod · ADR-049 accepted · CON-022 |
+| **PR-F1.2** tz UI | S1.4, S1.5 | 🔄 **em smoke PO** (código verde, pré-commit) | branch `feature/dose-instances-f1-tz-ui` |
+| PR-F2.1 schema+lógica | S2.0–S2.3 | ⬜ pendente (Fase 2) | bloqueado: promover ADR-048 → accepted |
+| PR-F2.2 motor+lifecycle | S2.4, S2.5 | ⬜ pendente | |
+| PR-F2.3 âncora log | S2.6 | ⬜ pendente | |
+| PR-F2.4 backfill | S2.7 | ⬜ pendente | |
+
+**Aprendizados que afetam fases futuras:**
+- Blast radius tz confirmado: **~250 callers** de `getNow`/`getSaoPauloTime`/`getTodayLocal` seguem em **default SP**. A capacidade tz existe (`getUserTime`/param `tz`), mas o valor real só aparece quando consumidores **injetam** o tz do usuário. → ver **Gap G1** abaixo.
+- `getStartOfDayISO` migrado de `toLocaleString` para `getUserTime` (Hermes-safe) via review Gemini — padrão a seguir em qualquer extração de hora local.
+- Mobile reusa `FormSelect` (Modal+FlatList Android-safe) e `profileService.updateTimezone` (enum BR). Web persiste via `useSettingsState` (god-hook — já com warnings max-lines/complexity, candidato a refactor isolado futuro).
+- Edge multi-tz: device tz estrangeiro **não** é persistido (guard `TIMEZONES_BR.includes`) — usuário viajando mantém fuso BR salvo.
+
+## ⚠️ Gaps identificados (endereçados aqui)
+
+**G1 — Plumbing de injeção de tz (cross-cutting, entra na Fase 3).**
+Fase 1 deixou o core tz-capable, mas ninguém injeta `user_settings.timezone` ainda. Para o benefício multi-fuso materializar de ponta-a-ponta, é preciso um acessor consistente do tz do usuário:
+- **Web/Mobile:** hook/contexto `useUserTimezone()` (lê `user_settings.timezone` 1x, memoiza) que dashboards/adesão passam a `getNow(tz)`/`getTodayLocal(tz)`.
+- **Server (motor Fase 2 / bot):** o motor de geração e o `server/bot` leem `user_settings.timezone` por usuário ao gerar `scheduled_for` / computar lembretes.
+- **Sequenciamento:** enquanto não migrado, tudo opera em SP (default) — **consistente** (99% dos usuários são SP). Risco só aparece se a Fase 2 gerar `scheduled_for` com tz real do usuário enquanto o dashboard lê em SP → **mismatch**. **Regra:** Fase 2 motor e Fase 4 UI DEVEM injetar o mesmo tz; não misturar (ver G2).
+
+**G2 — Consistência tz entre geração (F2) e leitura (F4).**
+`scheduled_for` gerado no tz do usuário (F2) precisa ser lido/renderizado no mesmo tz (F4). A timeline cross-dia (F4) já planeja ordenar por `scheduled_for` absoluto — alinhado. Adicionar à DoD de S2.2/S2.4: documentar explicitamente em qual tz `scheduled_for` é gravado (instante absoluto UTC; o tz só governa o wall-clock de origem). Como é `timestamptz` (UTC absoluto), leitura é tz-agnóstica para ordenação — o tz só importa na geração e na exibição de "que horas são". Risco G1 mitigado por usar instante absoluto.
+
+**G3 — `quando_necessario` no DB usa acento (`quando_necessário`).**
+A migration `dose_instances` (S2.1) e o gerador (S2.2) devem casar com o CHECK real do DB: `frequency IN ('diário','dias_alternados','semanal','personalizado','quando_necessário')` — **com acentos** (confirmado via list_tables na F1.1). O gerador pula `quando_necessário` (PRN). Atualizar S2.2 para usar a string acentuada exata.
+
+---
+
 ## Modelo de orquestração
 
 **Main thread (eu) orquestra. Sub-agents executam. Quality gate é meu.**
@@ -130,7 +163,8 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 
 **Gates Fase 1:** G1 por sprint (lint + test:changed + reviewer do diff). G2 ao fechar **PR-F1.1** (S1.0-S1.3+S1.6) e **PR-F1.2** (S1.4+S1.5). Migration tz aplicada por humano antes do merge de F1.1.
 
-**Ordem Fase 1:** S1.0 → (S1.1 ∥ S1.2) → S1.3 → **[G2 → PR-F1.1 → merge]** → (S1.4 ∥ S1.5) [S1.6 dentro de F1.1] → **[G2 → PR-F1.2 → merge]** → G3
+**Ordem Fase 1:** S1.0 ✅ → (S1.1 ✅ ∥ S1.2 ✅) → S1.3 ✅ → **[G2 → PR-F1.1 ✅ MERGED #597]** → (S1.4 ✅ ∥ S1.5 ✅) [S1.6 ✅ em F1.1] → **[G2 → PR-F1.2 🔄 smoke PO]** → G3
+> Migration tz aplicada em prod (2026-05-28). S1.4/S1.5 código verde, aguardando smoke antes do commit.
 
 ---
 
@@ -161,8 +195,10 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 - **Files:** `packages/core/src/utils/doseInstanceGenerator.js` (novo) + teste
 - **Spec:**
   - `generateInstances(protocol, fromTs, toTs, tz)` → `[{ scheduled_for, expected_dose, tolerance_minutes }]`.
-  - **Reusa** `isProtocolActiveOnDate` + `FREQUENCY_MATCHERS` (não reimplementa recorrência). Trata `diario/dias_alternados/semanal/personalizado(weekdays)`.
-  - `quando_necessario` → retorna `[]` (PRN não gera).
+  - **Reusa** `isProtocolActiveOnDate` + `FREQUENCY_MATCHERS` (não reimplementa recorrência). Trata `diário/dias_alternados/semanal/personalizado(weekdays)`.
+  - ⚠️ **G3:** o CHECK real do DB usa **acentos** — `frequency IN ('diário','dias_alternados','semanal','personalizado','quando_necessário')`. Casar exato (não `quando_necessario`/`diario` sem acento).
+  - `quando_necessário` → retorna `[]` (PRN não gera).
+  - ⚠️ **G2:** `scheduled_for` é `timestamptz` (instante absoluto UTC) — tz só governa o wall-clock de origem na geração; leitura/ordenação é tz-agnóstica. Documentar isso na DoD.
   - `tolerance_minutes = min(metade_menor_intervalo_adjacente_no_dia, 120)`; não-diário/dose-única → 120 (§6 MASTER_PLAN).
   - `scheduled_for` = instante absoluto computado no `tz` recebido.
 - **Aceite:** tabela §6 reproduzida em teste; sem sobreposição de janelas entre slots adjacentes; PRN vazio; multi-fuso.
