@@ -18,7 +18,6 @@ import {
   CheckCircle2,
 } from 'lucide-react-native'
 import {
-  formatDoseUnit,
   formatDatePtBR,
   formatEndDate,
   getNow,
@@ -26,6 +25,7 @@ import {
   resolveTreatmentStatus,
   TREATMENT_STATUS,
   getProtocolDays,
+  formatActiveIngredientHint,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -262,7 +262,16 @@ export default function ProtocolDetailScreen() {
 
         {/* Dosagem & Frequência */}
         <SectionCard title="DOSAGEM & FREQUÊNCIA">
-          <DetailRow label="Dose por tomada" value={formatDoseUnit(protocol.dosage_per_intake)} />
+          <DetailRow
+            label="Dose por tomada"
+            value={
+              formatActiveIngredientHint(
+                protocol.dosage_per_intake,
+                medicine?.dosage_per_pill,
+                medicine?.dosage_unit
+              ) || `${protocol.dosage_per_intake} un.`
+            }
+          />
           <DetailRow label="Frequência" value={frequencyLabel} />
           {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
             <View style={styles.weekdaysBlock}>
@@ -306,7 +315,16 @@ export default function ProtocolDetailScreen() {
             </View>
           ) : null}
           {dailyIntakeTotal !== null ? (
-            <DetailRow label="Consumo diário" value={formatDoseUnit(dailyIntakeTotal)} />
+            <DetailRow
+              label="Consumo diário"
+              value={
+                formatActiveIngredientHint(
+                  dailyIntakeTotal,
+                  medicine?.dosage_per_pill,
+                  medicine?.dosage_unit
+                ) || `${dailyIntakeTotal} un.`
+              }
+            />
           ) : null}
         </SectionCard>
 

@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StatusBadge from '../../../shared/components/ui/StatusBadge'
 import { colors, spacing } from '../../../shared/styles/tokens'
-import { formatDatePtBR, getProtocolDays } from '@dosiq/core'
+import { formatDatePtBR, getProtocolDays, formatActiveIngredientHint } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -127,7 +127,10 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
 
         <View style={styles.row}>
           <Text style={styles.label}>Dose por tomada:</Text>
-          <Text style={styles.value}>{dosage_per_intake} unidade{dosage_per_intake !== 1 ? 's' : ''}</Text>
+          <Text style={styles.value}>
+            {formatActiveIngredientHint(dosage_per_intake, medicine?.dosage_per_pill, medicine?.dosage_unit) || 
+             `${dosage_per_intake} un.`}
+          </Text>
         </View>
 
         {time_schedule && time_schedule.length > 0 && (

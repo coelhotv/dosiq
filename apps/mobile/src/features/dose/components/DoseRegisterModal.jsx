@@ -15,7 +15,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { getNow } from '@dosiq/core'
+import { getNow, formatActiveIngredientFormula } from '@dosiq/core'
 import { registerDose } from '../services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
@@ -123,7 +123,13 @@ export default function DoseRegisterModal({
             )}
           </View>
 
-          <Text style={styles.label}>Quantidade (comprimidos)</Text>
+          <Text style={styles.label}>
+            {protocol.medicine?.dosage_unit === 'cp'
+              ? 'Quantidade (comprimidos)'
+              : protocol.medicine?.dosage_unit === 'gotas'
+              ? 'Quantidade (gotas)'
+              : 'Quantidade (unidades)'}
+          </Text>
           <TextInput
             style={styles.input}
             value={quantity}
@@ -134,6 +140,11 @@ export default function DoseRegisterModal({
             editable={!loading}
             selectTextOnFocus
           />
+          {protocol.medicine?.dosage_per_pill && (
+            <Text style={styles.formulaHint}>
+              ✨ {formatActiveIngredientFormula(quantity || defaultQty, protocol.medicine.dosage_per_pill, protocol.medicine.dosage_unit)}
+            </Text>
+          )}
 
           {error && <Text style={styles.error}>{error}</Text>}
 
@@ -231,6 +242,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     fontSize: 16,
     color: colors.text.primary,
+  },
+  formulaHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary[700],
+    marginTop: spacing[1],
   },
   error: {
     color: colors.status.error,

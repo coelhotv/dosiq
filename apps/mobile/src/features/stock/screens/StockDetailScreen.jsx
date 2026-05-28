@@ -260,6 +260,7 @@ export default function StockDetailScreen({ navigation }) {
                 dailyConsumption={dailyConsumption}
                 daysRemaining={daysRemaining}
                 avgUnitPrice={avgUnitPrice}
+                medicine={medicine}
               />
             </View>
 

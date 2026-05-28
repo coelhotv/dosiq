@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
+import { formatActiveIngredientHint } from '@dosiq/core'
 import { colors, spacing } from '../../../shared/styles/tokens'
 
 /**
@@ -18,6 +19,8 @@ export default function StockItem({ medicine }) {
     daysRemaining,
     hasActiveProtocol
   } = medicine
+
+  const hintText = formatActiveIngredientHint(totalQuantity, dosage_per_pill, dosage_unit)
 
   return (
     <SectionCard 
@@ -41,7 +44,7 @@ export default function StockItem({ medicine }) {
               <Text style={styles.lab}>{laboratory}</Text>
             ) : null}
             <Text style={styles.quantity}>
-              Saldo: <Text style={styles.bold}>{totalQuantity} unidades</Text>
+              Saldo: <Text style={styles.bold}>{hintText || `${totalQuantity} un.`}</Text>
             </Text>
           </View>
           

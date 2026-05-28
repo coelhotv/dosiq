@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { parseLocalDate } from '@dosiq/core'
+import { parseLocalDate, formatActiveIngredientFormula } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
 import FormDatePicker from '@shared/components/form/FormDatePicker'
@@ -51,6 +51,18 @@ export default function ProtocolFormBody({
       ? ''
       : String(form.values.dosage_per_intake).replace('.', ',')
 
+  const helperText = useMemo(() => {
+    if (!medicine) {
+      return 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+    }
+    const formula = formatActiveIngredientFormula(
+      form.values.dosage_per_intake,
+      medicine.dosage_per_pill,
+      medicine.dosage_unit
+    )
+    return formula ? `✨ ${formula}` : 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+  }, [form.values.dosage_per_intake, medicine])
+
   return (
     <>
       <Section title="Medicamento">
@@ -83,7 +95,7 @@ export default function ProtocolFormBody({
           placeholder="0"
           keyboardType="decimal-pad"
           maxLength={10}
-          helperText="Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)"
+          helperText={helperText}
           required
         />
       </Section>

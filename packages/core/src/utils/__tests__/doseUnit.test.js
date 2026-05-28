@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
 import {
   pluralizeDoseUnit,
   formatDoseUnit,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
+  formatActiveIngredientShort,
 } from '../doseUnit.js'
 
 describe('pluralizeDoseUnit (padronizado para unidade(s))', () => {
@@ -49,54 +49,69 @@ describe('formatDoseUnit', () => {
   })
 })
 
+describe('formatActiveIngredientShort', () => {
+  it('retorna apenas a concentração formatada', () => {
+    expect(formatActiveIngredientShort(2, 600, 'mg')).toBe('1.200 mg')
+    expect(formatActiveIngredientShort(1.5, 100, 'ui')).toBe('150 UI')
+    expect(formatActiveIngredientShort(3, 1, 'gotas')).toBe('')
+  })
+
+  it('trata decimais com vírgula PT-BR', () => {
+    expect(formatActiveIngredientShort(0.5, 500, 'mg')).toBe('250 mg')
+    expect(formatActiveIngredientShort(1.5, 1, 'gotas')).toBe('')
+  })
+
+  it('retorna string vazia para entradas inválidas', () => {
+    expect(formatActiveIngredientShort(null, 100, 'ui')).toBe('')
+    expect(formatActiveIngredientShort(2, null, 'ui')).toBe('')
+    expect(formatActiveIngredientShort(2, 0, 'ui')).toBe('')
+  })
+})
+
 describe('formatActiveIngredientHint', () => {
-  it('formata inteiros com diferentes unidades', () => {
-    expect(formatActiveIngredientHint(2, 100, 'ui')).toBe('2 un. = 200 UI')
-    expect(formatActiveIngredientHint(30, 500, 'mg')).toBe('30 un. = 15000 mg')
-    expect(formatActiveIngredientHint(1, 10, 'ml')).toBe('1 un. = 10 ml')
+  it('formata inteiros com diferentes unidades em parenteses', () => {
+    expect(formatActiveIngredientHint(2, 100, 'ui')).toBe('2 un. (200 UI)')
+    expect(formatActiveIngredientHint(30, 500, 'mg')).toBe('30 un. (15.000 mg)')
+    expect(formatActiveIngredientHint(1, 10, 'ml')).toBe('1 un. (10 ml)')
     expect(formatActiveIngredientHint(3, 1, 'gotas')).toBe('3 gotas')
     expect(formatActiveIngredientHint(1, 1, 'cp')).toBe('1 comprimido')
   })
 
   it('formata decimais com vírgula PT-BR', () => {
-    expect(formatActiveIngredientHint(1.5, 100, 'ui')).toBe('1,5 un. = 150 UI')
-    expect(formatActiveIngredientHint(0.5, 500, 'mg')).toBe('0,5 un. = 250 mg')
+    expect(formatActiveIngredientHint(1.5, 100, 'ui')).toBe('1,5 un. (150 UI)')
+    expect(formatActiveIngredientHint(0.5, 500, 'mg')).toBe('0,5 un. (250 mg)')
     expect(formatActiveIngredientHint(1.5, 1, 'gotas')).toBe('1,5 gotas')
   })
 
   it('aceita string como qty', () => {
-    expect(formatActiveIngredientHint('1.5', 100, 'ui')).toBe('1,5 un. = 150 UI')
+    expect(formatActiveIngredientHint('1.5', 100, 'ui')).toBe('1,5 un. (150 UI)')
   })
 
   it('retorna string vazia para entradas inválidas ou vazias', () => {
     expect(formatActiveIngredientHint(null, 100, 'ui')).toBe('')
     expect(formatActiveIngredientHint('', 100, 'ui')).toBe('')
     expect(formatActiveIngredientHint('abc', 100, 'ui')).toBe('')
-    expect(formatActiveIngredientHint(2, null, 'ui')).toBe('')
-    expect(formatActiveIngredientHint(2, 0, 'ui')).toBe('')
+    expect(formatActiveIngredientHint(2, null, 'ui')).toBe('2 UI')
   })
 })
 
 describe('formatActiveIngredientFormula', () => {
-  it('formata inteiros com a fórmula correta', () => {
-    expect(formatActiveIngredientFormula(2, 100, 'ui')).toBe('2 x 100 UI = 200 UI')
-    expect(formatActiveIngredientFormula(30, 500, 'mg')).toBe('30 x 500 mg = 15000 mg')
-    expect(formatActiveIngredientFormula(1, 1, 'cp')).toBe('1 comprimido')
-    expect(formatActiveIngredientFormula(3, 1, 'gotas')).toBe('3 gotas')
+  it('formata com equivalência direta em texto limpo', () => {
+    expect(formatActiveIngredientFormula(2, 100, 'ui')).toBe('Equivale a 200 UI')
+    expect(formatActiveIngredientFormula(30, 500, 'mg')).toBe('Equivale a 15.000 mg')
+    expect(formatActiveIngredientFormula(1, 1, 'cp')).toBe('Equivale a 1 comprimido')
+    expect(formatActiveIngredientFormula(3, 1, 'gotas')).toBe('Equivale a 3 gotas')
   })
 
   it('formata decimais com vírgula PT-BR', () => {
-    expect(formatActiveIngredientFormula(1.5, 100, 'ui')).toBe('1,5 x 100 UI = 150 UI')
-    expect(formatActiveIngredientFormula(0.5, 500, 'mg')).toBe('0,5 x 500 mg = 250 mg')
-    expect(formatActiveIngredientFormula(1.5, 1, 'gotas')).toBe('1,5 gotas')
+    expect(formatActiveIngredientFormula(1.5, 100, 'ui')).toBe('Equivale a 150 UI')
+    expect(formatActiveIngredientFormula(0.5, 500, 'mg')).toBe('Equivale a 250 mg')
   })
 
   it('retorna string vazia para entradas inválidas ou vazias', () => {
     expect(formatActiveIngredientFormula(null, 100, 'ui')).toBe('')
     expect(formatActiveIngredientFormula('', 100, 'ui')).toBe('')
     expect(formatActiveIngredientFormula('abc', 100, 'ui')).toBe('')
-    expect(formatActiveIngredientFormula(2, null, 'ui')).toBe('')
-    expect(formatActiveIngredientFormula(2, 0, 'ui')).toBe('')
   })
 })
 
