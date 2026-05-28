@@ -6,24 +6,29 @@ const HH_MM_REGEX = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 export const NOTIFICATION_MODES = ['realtime', 'digest_morning', 'silent']
 
 // Fusos horários do Brasil (IANA) — ADR-049. Enum BR-only é mais seguro que regex livre.
-export const TIMEZONES_BR = [
-  'America/Sao_Paulo',   // Brasília (GMT-3) — Sul/Sudeste/Nordeste/DF
-  'America/Manaus',      // Amazonas (GMT-4)
-  'America/Cuiaba',      // Mato Grosso (GMT-4)
-  'America/Campo_Grande',// Mato Grosso do Sul (GMT-4)
-  'America/Porto_Velho', // Rondônia (GMT-4)
-  'America/Boa_Vista',   // Roraima (GMT-4)
-  'America/Rio_Branco',  // Acre (GMT-5)
-  'America/Eirunepe',    // Amazonas oeste (GMT-5)
-  'America/Belem',       // Pará leste (GMT-3)
-  'America/Santarem',    // Pará oeste (GMT-3)
-  'America/Fortaleza',   // Ceará/PI/RN/PB/AL/SE (GMT-3)
-  'America/Recife',      // Pernambuco (GMT-3)
-  'America/Bahia',       // Bahia (GMT-3)
-  'America/Maceio',      // Alagoas (GMT-3)
-  'America/Araguaina',   // Tocantins (GMT-3)
-  'America/Noronha',     // Fernando de Noronha (GMT-2)
+// Ordenados leste→oeste por offset (GMT-2 → GMT-5); São Paulo primeiro dentro de GMT-3
+// (default + fuso mais populoso). Label inclui cidade + estado/região + offset para
+// reconhecimento (ex: "Rio Branco, Acre (GMT-5)" em vez de só "Rio Branco").
+export const TIMEZONE_OPTIONS = [
+  { value: 'America/Noronha',      label: 'Fernando de Noronha (GMT-2)',           offset: -2 },
+  { value: 'America/Sao_Paulo',    label: 'Brasília, São Paulo, Rio (GMT-3)',      offset: -3 },
+  { value: 'America/Belem',        label: 'Belém, Pará (leste), Amapá (GMT-3)',    offset: -3 },
+  { value: 'America/Fortaleza',    label: 'Fortaleza, Ceará e Nordeste (GMT-3)',   offset: -3 },
+  { value: 'America/Recife',       label: 'Recife, Pernambuco (GMT-3)',            offset: -3 },
+  { value: 'America/Maceio',       label: 'Maceió, Alagoas (GMT-3)',               offset: -3 },
+  { value: 'America/Bahia',        label: 'Salvador, Bahia (GMT-3)',               offset: -3 },
+  { value: 'America/Araguaina',    label: 'Araguaína, Tocantins (GMT-3)',          offset: -3 },
+  { value: 'America/Santarem',     label: 'Santarém, Pará (oeste) (GMT-3)',        offset: -3 },
+  { value: 'America/Campo_Grande', label: 'Campo Grande, Mato Grosso do Sul (GMT-4)', offset: -4 },
+  { value: 'America/Cuiaba',       label: 'Cuiabá, Mato Grosso (GMT-4)',           offset: -4 },
+  { value: 'America/Manaus',       label: 'Manaus, Amazonas (GMT-4)',              offset: -4 },
+  { value: 'America/Boa_Vista',    label: 'Boa Vista, Roraima (GMT-4)',            offset: -4 },
+  { value: 'America/Porto_Velho',  label: 'Porto Velho, Rondônia (GMT-4)',         offset: -4 },
+  { value: 'America/Rio_Branco',   label: 'Rio Branco, Acre (GMT-5)',              offset: -5 },
+  { value: 'America/Eirunepe',     label: 'Eirunepé, Amazonas (oeste) (GMT-5)',    offset: -5 },
 ]
+
+export const TIMEZONES_BR = TIMEZONE_OPTIONS.map((o) => o.value)
 
 const timeSchema = z.string()
   .regex(HH_MM_REGEX, 'Formato HH:MM inválido')

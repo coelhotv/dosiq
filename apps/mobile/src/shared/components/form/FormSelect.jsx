@@ -115,7 +115,7 @@ export default function FormSelect({
 
         {/* Sheet */}
         <View style={styles.sheet}>
-          <SafeAreaView edges={['bottom']}>
+          <SafeAreaView edges={['bottom']} style={styles.safe}>
             {/* Cabeçalho */}
             <View style={styles.sheetHeader}>
               <View style={styles.sheetHeaderSpacer} />
@@ -245,8 +245,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border.light,
     marginHorizontal: spacing[4],
   },
+  // flexShrink permite a lista encolher dentro do maxHeight do sheet e virar
+  // scrollável quando o conteúdo (ex: 16 fusos) excede 60% da tela — sem isso
+  // o último item ficava preso além da borda no iOS (flexGrow:0 + conteúdo > sheet).
+  safe: {
+    flexShrink: 1,
+  },
   list: {
-    flexGrow: 0,
+    flexShrink: 1,
   },
   listContent: {
     paddingTop: spacing[2],

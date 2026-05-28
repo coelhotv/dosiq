@@ -37,6 +37,7 @@
 - **[AP-179]** Entitlement novo no `app.config.js` (ex.: `associatedDomains`) → `expo run:ios` local falha (erro 65) porque o provisioning profile cacheado é anterior à capability. Habilitar no App ID não retroage ao profile. Fix: `rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/` + regerar (Xcode toggle auto-signing). EAS registra via API Apple automaticamente -> [`anti-patterns/infra_and_deploy/AP-179.md`](./anti-patterns/infra_and_deploy/AP-179.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[AP-180]** FlatList `flexGrow:0` em bottom-sheet `maxHeight` → lista longa transborda sem scroll (último item inalcançável iOS); fix `flexShrink:1` na lista + container -> [`anti-patterns/mobile_and_platform/AP-180.md`](./anti-patterns/mobile_and_platform/AP-180.md)
 - **[AP-173]** `signOut()` escopo global (default) trava o logout (iOS sim / Workbox PWA) — usar `signOut({ scope: 'local' })` + cleanup local -> [`anti-patterns/mobile_and_platform/AP-173.md`](./anti-patterns/mobile_and_platform/AP-173.md)
 - **[AP-174]** Bottom sheet/Modal RN + teclado + tab bar (Android API 24) corta campos/botões; KAV não mede em Modal. Fluxo destrutivo com input → tela cheia -> [`anti-patterns/mobile_and_platform/AP-174.md`](./anti-patterns/mobile_and_platform/AP-174.md)
 - **[AP-175]** Autocomplete RN: `setFocused(false)` sem blur nativo (keyboardShouldPersistTaps) → 2ª busca morta (effect aborta em `!focused`). `inputRef.blur()` no select -> [`anti-patterns/mobile_and_platform/AP-175.md`](./anti-patterns/mobile_and_platform/AP-175.md)

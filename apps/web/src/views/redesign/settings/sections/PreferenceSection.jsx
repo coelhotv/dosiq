@@ -1,4 +1,5 @@
 import { MonitorCog, Form, Wand2, Grid3x2 } from 'lucide-react'
+import { TIMEZONE_OPTIONS } from '@dosiq/core'
 
 /**
  * PreferenceSection — Preferências de interface e experiência de uso.
@@ -7,6 +8,8 @@ export default function PreferenceSection({
   overrideMode,
   handleComplexityChange,
   getComplexityDisplayMode,
+  timezone,
+  handleTimezoneChange,
 }) {
   return (
     <section className="sr-section">
@@ -50,6 +53,19 @@ export default function PreferenceSection({
         </div>
 
         <div className="sr-density__current">{getComplexityDisplayMode()}</div>
+      </div>
+
+      <div className="sr-section__card">
+        <h3 className="sr-section__card-header">Fuso Horário</h3>
+        <select
+          value={timezone}
+          onChange={(e) => handleTimezoneChange(e.target.value)}
+          className="sr-density__select"
+        >
+          {TIMEZONE_OPTIONS.map((tz) => (
+            <option key={tz.value} value={tz.value}>{tz.label}</option>
+          ))}
+        </select>
       </div>
     </section>
   )

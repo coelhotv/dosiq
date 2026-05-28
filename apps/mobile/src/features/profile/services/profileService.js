@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { userSettingsNotificationSchema, createProfileRepository } from '@dosiq/core'
+import { userSettingsNotificationSchema, createProfileRepository, TIMEZONES_BR } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -79,9 +79,9 @@ export async function getUserSettings() {
     const { data, error } = await supabase
       .from('user_settings')
       .select(`
-        user_id, 
-        telegram_chat_id, 
-        verification_token, 
+        user_id,
+        telegram_chat_id,
+        verification_token,
         notification_preference,
         notification_mode,
         quiet_hours_start,
@@ -91,7 +91,8 @@ export async function getUserSettings() {
         digest_time,
         channel_mobile_push_enabled,
         channel_web_push_enabled,
-        channel_telegram_enabled
+        channel_telegram_enabled,
+        timezone
       `)
       .eq('user_id', user.id)
       .maybeSingle()
@@ -139,6 +140,33 @@ export async function updateNotificationSettings(userId, settings) {
     return { success: true, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao salvar notificações:', err)
+    return { success: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Atualizar fuso horário do utilizador (ADR-049 — update isolado, não toca noutros campos).
+ * @param {string} timezone — IANA tz string (ex: 'America/Sao_Paulo')
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function updateTimezone(timezone) {
+  try {
+    const { data: user, error: userError } = await getCurrentUser()
+    if (userError || !user) throw new Error(userError || 'Utilizador não encontrado')
+
+    z.string().uuid().parse(user.id)
+    // Valida contra a lista canônica de fusos BR (rejeita IANA inválido/estrangeiro)
+    z.enum(TIMEZONES_BR).parse(timezone)
+
+    const { error } = await supabase
+      .from('user_settings')
+      .update({ timezone })
+      .eq('user_id', user.id)
+
+    if (error) throw error
+    return { success: true, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao salvar fuso horário:', err)
     return { success: false, error: mapErrorToMessage(err) }
   }
 }
