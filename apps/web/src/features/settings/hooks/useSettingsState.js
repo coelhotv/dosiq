@@ -171,7 +171,9 @@ export function useSettingsState() {
 
   const handleTimezoneChange = async (tz) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data } = await supabase.auth.getUser()
+      const user = data?.user
+      if (!user) throw new Error('Usuário não autenticado')
       await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
       setTimezone(tz)
       showMsg('success', 'Fuso horário atualizado.')

@@ -79,16 +79,16 @@ export function useProfile() {
    * Atualizar fuso horário manualmente (seletor em SettingsScreen — ADR-049).
    * Persiste no banco e actualiza o estado local.
    */
-  const updateTimezone = async (tz) => {
+  const updateTimezone = useCallback(async (tz) => {
     const res = await updateTimezoneService(tz)
     if (res.success) {
       setState(prev => ({
         ...prev,
-        settings: { ...prev.settings, timezone: tz }
+        settings: prev.settings ? { ...prev.settings, timezone: tz } : null
       }))
     }
     return res
-  }
+  }, [])
 
   /**
    * Gerar novo token de vinculação Telegram
