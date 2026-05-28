@@ -29,6 +29,8 @@ tsconfig.tsbuildinfo
 .env.production
 .env*.local
 .env.*
+!.env.example
+!*.env.example
 
 # Cache
 .vitest-cache/
@@ -71,24 +73,21 @@ run/
 #  NEW RULES (added 2026-04-23 — repo cleanup)
 # ──────────────────────────────────────────────
 
-# DEVFLOW memory — keep only indices
-.agent/memory/anti-patterns/
-.agent/memory/rules/
+# DEVFLOW memory — keep rules/anti-patterns/decisions/contracts/knowledge shared, ignore only local runtime/journals
 .agent/memory/journal/
-.agent/memory/knowledge/
-.agent/memory/decisions/
-.agent/memory/contracts/
+.agent/state.json
 .agent/snapshots/
 .agent/evolution/
 .agent/synthesis/
 
-# AI tool configs — agent-specific, not shared
-CLAUDE.md
-GEMINI.md
-AGENTS.md
-
-.agents/
-.claude/
+# AI tool configs — share instructions and hooks, ignore only personal runtime/cache
+!.agents/
+!.claude/
+!.gemini/
+!.kiro/
+!CLAUDE.md
+!GEMINI.md
+!AGENTS.md
 .kilocode
 .kilocodemodes
 .roomodes
