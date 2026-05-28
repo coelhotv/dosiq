@@ -1,6 +1,7 @@
 # DEVFLOW Decisions Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[ADR-050]** Future-proofing de `dose_instances` p/ diabetes (FP-1 planned↔applied · FP-2 tolerância por protocolo · FP-3 timeline event-agnóstica · FP-4 semântica de unidade) — diabetes como épico próprio pós-refactor [accepted] -> [`decisions/data_and_schema/ADR-050.md`](./decisions/data_and_schema/ADR-050.md)
 - **[ADR-049]** Core tz-aware + `user_settings.timezone` como fonte de verdade (gating Fase 1; non-breaking via wrappers) [accepted] -> [`decisions/data_and_schema/ADR-049.md`](./decisions/data_and_schema/ADR-049.md)
 - **[ADR-048]** Modelo `dose_instances` — ocorrências materializadas (schedule-anchored); umbrella Fase 2 [accepted] -> [`decisions/data_and_schema/ADR-048.md`](./decisions/data_and_schema/ADR-048.md)
 - **[ADR-017]** Profile Hub: Centralized User Data Management -> [`decisions/data_and_schema/ADR-017.md`](./decisions/data_and_schema/ADR-017.md)
