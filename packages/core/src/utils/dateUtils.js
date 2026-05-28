@@ -161,15 +161,11 @@ export function parseISO(isoString) {
  */
 export function getStartOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
   const d = new Date(dateStr + 'T00:00:00Z')
-  // Descobrir o offset do fuso para esta data específica
-  const spHour = parseInt(
-    d.toLocaleString('en-CA', {
-      hour: 'numeric',
-      hour12: false,
-      timeZone: tz,
-    }),
-    10
-  )
+  // Descobrir o offset do fuso para esta data específica.
+  // Reusa getUserTime (Intl.DateTimeFormat + formatToParts) em vez de
+  // toLocaleString('en-CA', hour12:false), que pode retornar AM/PM em
+  // engines sem ICU completo (Hermes/RN, navegadores antigos) — AP-155/R-199.
+  const spHour = getUserTime(d, tz).getHours()
   const offset = spHour >= 12 ? spHour - 24 : spHour
   return new Date(d.getTime() - offset * 60 * 60 * 1000).toISOString()
 }
