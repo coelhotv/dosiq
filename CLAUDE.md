@@ -1,8 +1,8 @@
 # CLAUDE.md — Dosiq
 
-> **DEVFLOW** = processo oficial. Skill: `/devflow` | Def: `.agent/DEVFLOW.md` | Memória: `.agent/memory/`
+> **DEVFLOW** = processo oficial. Skill: `/devflow` | Memória: `.agent/memory/`
 >
-> **Antes de qualquer tarefa:** ler `.agent/state.json` → `/devflow` (hot+warm; cold sob demanda) → `/deliver-sprint` para entregas → `/devflow distill` quando `journal_entries >= 15`.
+> **Antes de qualquer tarefa:** ler `.agent/state.json` → `/devflow` (hot+warm; cold sob demanda) → carregar `R-221 SQP` antes de alterar código → `/deliver-sprint` para entregas → `/devflow distill` quando `journal_entries >= 15`.
 
 ## Projeto
 
@@ -160,13 +160,20 @@ Rodar do root via workspace:
 
 ## DEVFLOW C5 (antes do commit)
 
-- Bug não-trivial → `AP-NNN` em `.agent/memory/anti-patterns.json` + `_detail/`
-- Padrão novo → `R-NNN` em `rules.json` + `rules_detail/`
-- Decisão arquitetural → `ADR-NNN` em `decisions.json` + `decisions_detail/`
+- Bug não-trivial → `AP-NNN` em `.agent/memory/ANTI_PATTERNS_INDEX.md` + `anti-patterns/_domain_/`
+- Padrão novo → `R-NNN` em `.agent/memory/RULES_INDEX.md` + `rules/_domain_/`
+- Decisão arquitetural → `ADR-NNN` em `.agent/memory/DECISIONS_INDEX.md` + `decisions/_domain_/`
 - Entrega significativa → `.agent/memory/journal/YYYY-WWW.jsonl` (append)
+- SQP release log → plataformas afetadas, tipo de bump, versões novas, entrada `CHANGELOG.md`, relevância para notas de loja
 - Atualizar `.agent/state.json` (`journal_entries_since_distillation`)
 
 `.memory/` aposentado (somente leitura W01-W11). Tudo novo → `.agent/memory/`.
+
+## SQP (R-221) — obrigatório antes de alterar código
+
+- Seguir `R-221` como porta de entrada para qualquer alteração de código.
+- SQP inclui classificação de impacto SemVer, bump de versão quando aplicável, changelog estruturado em português e logging no DEVFLOW C5.
+- Não atualizar changelog de forma avulsa; usar `docs/standards/CHANGELOG_AND_RELEASES.md` e regras `R-242`, `R-243`, `R-244`.
 
 ## Distill Policy (dosiq — pós-Fase 2.5)
 
@@ -194,14 +201,15 @@ Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
 ```
 1. /devflow bootstrap
 2. branch (feature/wave-X/nome)
-3. C1-C4
-4. rtk npm run validate:agent
-5. C5 — registrar lições
-6. commit semântico (PT)
-7. push + PR
-8. AGUARDAR Gemini review → aplicar
-9. AGUARDAR aprovação → USER faz merge (R-060 — agente nunca auto-merge)
-10. C5 pós-merge + distill se journal>=15
+3. R-221 SQP — classificar impacto, plataforma, versionamento e changelog
+4. C1-C4
+5. rtk npm run validate:agent
+6. C5 — registrar lições + release log SQP
+7. commit semântico (PT)
+8. push + PR
+9. AGUARDAR Gemini review → aplicar
+10. AGUARDAR aprovação → USER faz merge (R-060 — agente nunca auto-merge)
+11. C5 pós-merge + distill se journal>=15
 ```
 
 Tipos: `feat fix docs test refactor style chore`.

@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [Unreleased]
+
+### Web/PWA
+- Nenhuma mudança registrada.
+
+### Mobile
+- Nenhuma mudança registrada.
+
+### Shared/Core
+- Nenhuma mudança registrada.
+
+### Backend/Infra
+- **Process** (`no-user-impact`, PR #TBD): Padronizado o processo SQP para exigir classificação de impacto, versionamento, changelog estruturado em português e notas de loja deriváveis antes de novas entregas com alteração de código.
+
 ## [4.1.0] — 2026-04-28
 
 ### 📱 Mobile & Backend: Schema Alignment & Personalization
