@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   getUserSettings,
   getProfile,
+  updateTimezone as updateTimezoneService,
   generateTelegramToken as generateTokenService,
 } from '../services/profileService'
 
@@ -35,6 +36,11 @@ export function useProfile() {
       if (userRes.error) throw new Error(userRes.error)
       if (settingsRes.error) throw new Error(settingsRes.error)
       if (profileRes.error) throw new Error(profileRes.error)
+
+      // ADR-049 — fuso é definido manualmente pelo usuário no settings (fonte de verdade).
+      // NÃO auto-sobrescrever pelo fuso do device no launch: isso clobberava a escolha
+      // manual (device do emulador = SP sempre, revertia Manaus→SP a cada load).
+      // Auto-detect de viagem exige flag tz_source (auto|manual) — fora de escopo F1.2.
 
       setState({
         user: userRes.data,
@@ -70,6 +76,21 @@ export function useProfile() {
   )
 
   /**
+   * Atualizar fuso horário manualmente (seletor em SettingsScreen — ADR-049).
+   * Persiste no banco e actualiza o estado local.
+   */
+  const updateTimezone = useCallback(async (tz) => {
+    const res = await updateTimezoneService(tz)
+    if (res.success) {
+      setState(prev => ({
+        ...prev,
+        settings: prev.settings ? { ...prev.settings, timezone: tz } : null
+      }))
+    }
+    return res
+  }, [])
+
+  /**
    * Gerar novo token de vinculação Telegram
    */
   const generateToken = async () => {
@@ -101,6 +122,7 @@ export function useProfile() {
     location,
     hasProfile,
     refresh: loadProfile,
-    generateToken
+    generateToken,
+    updateTimezone,
   }
 }

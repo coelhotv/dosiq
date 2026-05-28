@@ -1,4 +1,4 @@
-// SettingsScreen.jsx — Configurações (Fase 4): densidade da interface + segurança
+// SettingsScreen.jsx — Configurações (Fase 4): densidade da interface + fuso horário + segurança
 // R-010: States → Memos → Effects → Handlers
 
 import { useCallback, useMemo } from 'react'
@@ -20,12 +20,15 @@ import {
   LayoutGrid,
   Shield,
   Trash2,
+  Globe,
 } from 'lucide-react-native'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useProfile } from '@profile/hooks/useProfile'
 import { useProfileMutation } from '@profile/hooks/useProfileMutation'
 import { useToast } from '@shared/components/feedback/Toast'
+import FormSelect from '@shared/components/form/FormSelect'
+import { TIMEZONE_OPTIONS } from '@dosiq/core'
 
 // ─── Opções de densidade ──────────────────────────────────────────────────────
 
@@ -55,6 +58,78 @@ function complexityLabel(value) {
   return match?.label ?? 'Automático'
 }
 
+// ─── Sub-componente: opções de densidade ─────────────────────────────────────
+
+function DensityOptions({ currentComplexity, activeLabel, onSelect }) {
+  return (
+    <>
+      <View style={styles.densityRow}>
+        {DENSITY_OPTIONS.map((option) => {
+          const selected = (option.value ?? null) === (currentComplexity ?? null)
+          return (
+            <Pressable
+              key={String(option.value)}
+              style={[styles.densityCard, selected && styles.densityCardSelected]}
+              onPress={() => onSelect(option.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={option.label}
+            >
+              <option.Icon
+                size={20}
+                color={selected ? colors.primary[600] : colors.text.muted}
+              />
+              <Text style={[styles.densityCardLabel, selected && styles.densityCardLabelSelected]}>
+                {option.label}
+              </Text>
+              <Text style={styles.densityCardDesc}>{option.description}</Text>
+            </Pressable>
+          )
+        })}
+      </View>
+      <Text style={styles.densityCaption}>Ativo: {activeLabel}</Text>
+    </>
+  )
+}
+
+// ─── Sub-componente: secção de segurança ─────────────────────────────────────
+
+function SecuritySection({ onChangePassword, onDeleteAccount }) {
+  return (
+    <>
+      <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
+        <Shield size={12} color={colors.text.muted} />
+        <Text style={styles.sectionLabelText}>SEGURANÇA</Text>
+      </View>
+      <View style={styles.card}>
+        <Pressable style={styles.securityRow} onPress={onChangePassword}
+          accessibilityRole="button" accessibilityLabel="Alterar senha">
+          <View style={styles.securityInfo}>
+            <Text style={styles.securityRowTitle}>Alterar senha</Text>
+            <Text style={styles.securityRowSub}>Última alteração: nunca</Text>
+          </View>
+          <Text style={styles.securityAction}>Alterar</Text>
+          <ChevronRight size={16} color={colors.primary[500]} />
+        </Pressable>
+        <View style={styles.divider} />
+        <Pressable style={styles.securityRow} onPress={onDeleteAccount}
+          accessibilityRole="button" accessibilityLabel="Excluir minha conta">
+          <View style={styles.deleteIconBg}>
+            <Trash2 size={16} color={colors.status.error} />
+          </View>
+          <View style={styles.securityInfo}>
+            <Text style={styles.securityRowTitle}>Excluir minha conta</Text>
+            <Text style={styles.securityRowSub}>
+              Remove acesso e dados. Bloqueante se houver tratamentos ativos.
+            </Text>
+          </View>
+          <ChevronRight size={16} color={colors.text.muted} />
+        </Pressable>
+      </View>
+    </>
+  )
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
@@ -62,7 +137,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation()
 
   // Memos/hooks de dados
-  const { profile, loading: profileLoading, refresh } = useProfile()
+  const { profile, settings, loading: profileLoading, refresh, updateTimezone } = useProfile()
   const { setComplexity, loading: mutating } = useProfileMutation()
   const toast = useToast()
 
@@ -76,7 +151,24 @@ export default function SettingsScreen() {
     [currentComplexity],
   )
 
+  const currentTimezone = useMemo(
+    () => settings?.timezone ?? 'America/Sao_Paulo',
+    [settings],
+  )
+
   // Handlers
+  const handleSelectTimezone = useCallback(
+    async (_name, value) => {
+      if (!value || value === currentTimezone) return
+      const res = await updateTimezone(value)
+      if (res.success) {
+        toast.show('Fuso horário salvo', { variant: 'success' })
+      } else {
+        toast.show(res.error ?? 'Erro ao salvar fuso horário', { variant: 'error' })
+      }
+    },
+    [currentTimezone, updateTimezone, toast],
+  )
   const handleSelectDensity = useCallback(
     async (value) => {
       // Não disparar se já selecionado ou mutando
@@ -92,14 +184,10 @@ export default function SettingsScreen() {
     [currentComplexity, mutating, setComplexity, toast, refresh],
   )
 
-  const handleChangePassword = useCallback(() => {
-    navigation.navigate(ROUTES.CHANGE_PASSWORD)
-  }, [navigation])
-
-  const handleDeleteAccount = useCallback(() => {
-    navigation.navigate(ROUTES.DELETE_ACCOUNT)
-  }, [navigation])
-
+  const handleChangePassword = useCallback(
+    () => navigation.navigate(ROUTES.CHANGE_PASSWORD), [navigation])
+  const handleDeleteAccount = useCallback(
+    () => navigation.navigate(ROUTES.DELETE_ACCOUNT), [navigation])
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
@@ -131,97 +219,46 @@ export default function SettingsScreen() {
           <Text style={styles.cardTitle}>Densidade da interface</Text>
 
           {profileLoading ? (
+            <ActivityIndicator size="small" color={colors.primary[500]} style={styles.loader} />
+          ) : (
+            <DensityOptions
+              currentComplexity={currentComplexity}
+              activeLabel={activeLabel}
+              onSelect={handleSelectDensity}
+            />
+          )}
+        </View>
+
+        {/* ── Seção FUSO HORÁRIO ── */}
+        <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
+          <Globe size={12} color={colors.text.muted} />
+          <Text style={styles.sectionLabelText}>FUSO HORÁRIO</Text>
+        </View>
+
+        <View style={styles.card}>
+          {profileLoading ? (
             <ActivityIndicator
               size="small"
               color={colors.primary[500]}
               style={styles.loader}
             />
           ) : (
-            <>
-              <View style={styles.densityRow}>
-                {DENSITY_OPTIONS.map((option) => {
-                  const selected =
-                    (option.value ?? null) === (currentComplexity ?? null)
-                  return (
-                    <Pressable
-                      key={String(option.value)}
-                      style={[
-                        styles.densityCard,
-                        selected && styles.densityCardSelected,
-                      ]}
-                      onPress={() => handleSelectDensity(option.value)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selected }}
-                      accessibilityLabel={option.label}
-                    >
-                      <option.Icon
-                        size={20}
-                        color={selected ? colors.primary[600] : colors.text.muted}
-                      />
-                      <Text
-                        style={[
-                          styles.densityCardLabel,
-                          selected && styles.densityCardLabelSelected,
-                        ]}
-                      >
-                        {option.label}
-                      </Text>
-                      <Text style={styles.densityCardDesc}>
-                        {option.description}
-                      </Text>
-                    </Pressable>
-                  )
-                })}
-              </View>
-
-              <Text style={styles.densityCaption}>Ativo: {activeLabel}</Text>
-            </>
+            <FormSelect
+              name="timezone"
+              label={null}
+              value={currentTimezone}
+              options={TIMEZONE_OPTIONS}
+              onChange={handleSelectTimezone}
+              placeholder="Selecionar fuso"
+            />
           )}
         </View>
 
         {/* ── Seção SEGURANÇA ── */}
-        <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
-          <Shield size={12} color={colors.text.muted} />
-          <Text style={styles.sectionLabelText}>SEGURANÇA</Text>
-        </View>
-
-        <View style={styles.card}>
-          {/* Alterar senha */}
-          <Pressable
-            style={styles.securityRow}
-            onPress={handleChangePassword}
-            accessibilityRole="button"
-            accessibilityLabel="Alterar senha"
-          >
-            <View style={styles.securityInfo}>
-              <Text style={styles.securityRowTitle}>Alterar senha</Text>
-              <Text style={styles.securityRowSub}>Última alteração: nunca</Text>
-            </View>
-            <Text style={styles.securityAction}>Alterar</Text>
-            <ChevronRight size={16} color={colors.primary[500]} />
-          </Pressable>
-
-          <View style={styles.divider} />
-
-          {/* Excluir conta */}
-          <Pressable
-            style={styles.securityRow}
-            onPress={handleDeleteAccount}
-            accessibilityRole="button"
-            accessibilityLabel="Excluir minha conta"
-          >
-            <View style={styles.deleteIconBg}>
-              <Trash2 size={16} color={colors.status.error} />
-            </View>
-            <View style={styles.securityInfo}>
-              <Text style={styles.securityRowTitle}>Excluir minha conta</Text>
-              <Text style={styles.securityRowSub}>
-                Remove acesso e dados. Bloqueante se houver tratamentos ativos.
-              </Text>
-            </View>
-            <ChevronRight size={16} color={colors.text.muted} />
-          </Pressable>
-        </View>
+        <SecuritySection
+          onChangePassword={handleChangePassword}
+          onDeleteAccount={handleDeleteAccount}
+        />
       </ScrollView>
     </SafeAreaView>
   )
