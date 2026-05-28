@@ -53,6 +53,11 @@ export {
   getDailyDoseRate,
 } from './adherenceLogic.js'
 
+// Dose instance generation engine (ADR-048, Fase 2)
+export {
+  generateInstances,
+} from './doseInstanceGenerator.js'
+
 // Form utilities
 export {
   getFieldDescribedBy,
