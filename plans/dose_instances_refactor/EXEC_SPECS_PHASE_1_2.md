@@ -11,7 +11,7 @@
 |----|---------|--------|-----|
 | **PR-F1.1** tz core | S1.0, S1.1, S1.2, S1.3, S1.6 | ✅ **MERGED** | PR #597 (squash `6816ee99`) · migration aplicada em prod · ADR-049 accepted · CON-022 |
 | **PR-F1.2** tz UI | S1.4, S1.5 | 🔄 **em smoke PO** (código verde, pré-commit) | branch `feature/dose-instances-f1-tz-ui` |
-| PR-F2.1 schema+lógica | S2.0–S2.3 | ⬜ pendente (Fase 2) | bloqueado: promover ADR-048 → accepted |
+| **PR-F2.1** schema+lógica | S2.0–S2.3 | 🔄 **código verde** (G1+G2 ok; 24 testes novos; validate:agent 895/895) | branch `feature/dose-instances-f2-schema-engine`; aguarda migration preview→prod (humano) + Gemini + merge |
 | PR-F2.2 motor+lifecycle | S2.4, S2.5 | ⬜ pendente | |
 | PR-F2.3 âncora log | S2.6 | ⬜ pendente | |
 | PR-F2.4 backfill | S2.7 | ⬜ pendente | |
@@ -228,7 +228,8 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 
 ### S2.5 — Lifecycle hooks de protocolo
 - **Agent:** `claude` · **Model:** sonnet
-- **Files:** `apps/web/.../protocolService.js` + `apps/mobile/.../protocolService.js` (espelhados)
+- ⚠️ **P1 finding (verificar antes):** o write-path de protocolo pode estar no **factory `createProtocolRepository` (`@dosiq/core/repositories/`)** (ADR-045/R-231), não em `protocolService.js` de feature. C1 da S2.5 DEVE localizar o caminho canônico de create/update/delete/pause (grep `from('protocols')` + `createProtocolRepository`) antes de editar — pode ser 1 ponto no core (compartilhado web+mobile) em vez de 2 espelhados.
+- **Files:** ponto(s) de escrita de protocolo (a confirmar: core repository factory OU `protocolService` web+mobile)
 - **Spec:**
   - create c/ `end_date` → gera tudo até fim; contínuo → até `now+30d` + set `generated_through`.
   - update (time_schedule/dosage/frequency) → `wipeFuturePending` + regenera.
