@@ -96,7 +96,8 @@ GPT-5.2 Prompting Guide.md
 
 # Temporary review/skill artifacts
 check_review_*.json
-SKILLS
+/SKILLS
+.claude/skills/
 
 # Xcode workspace user data
 *.xcuserstate
