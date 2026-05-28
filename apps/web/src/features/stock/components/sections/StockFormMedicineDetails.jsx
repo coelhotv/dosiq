@@ -1,4 +1,5 @@
 import { getFieldDescribedBy } from '@utils/formUtils'
+import { formatActiveIngredientFormula } from '@dosiq/core'
 
 export default function StockFormMedicineDetails({
   formData,
@@ -6,6 +7,8 @@ export default function StockFormMedicineDetails({
   handleChange,
   medicines,
 }) {
+  const selectedMedicine = medicines?.find((m) => m.id === formData.medicine_id) || null
+
   return (
     <>
       <div className="form-group">
@@ -59,6 +62,11 @@ export default function StockFormMedicineDetails({
           {errors.quantity && (
             <span id="quantity-error" className="error-message">
               {errors.quantity}
+            </span>
+          )}
+          {selectedMedicine && (
+            <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+              ✨ {formatActiveIngredientFormula(formData.quantity, selectedMedicine.dosage_per_pill, selectedMedicine.dosage_unit)}
             </span>
           )}
         </div>

@@ -26,6 +26,26 @@ export function pluralizeDoseUnit(qty) {
 }
 
 /**
+ * Formata um número com o separador de milhar brasileiro (ponto '.') e
+ * separador decimal brasileiro (vírgula ',').
+ * Seguro e de alto desempenho no Hermes (mobile) e V8 (web).
+ *
+ * @example formatNumberPtBR(3000)   → '3.000'
+ * @example formatNumberPtBR(1.5)    → '1,5'
+ * @example formatNumberPtBR(15000)  → '15.000'
+ */
+export function formatNumberPtBR(num) {
+  if (num == null) return ''
+  const normalized = typeof num === 'string' ? num.replace(',', '.') : num
+  if (isNaN(Number(normalized))) return ''
+  const parts = String(Number(normalized)).split('.')
+  // Formata a parte inteira com ponto de milhar
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  // Se houver parte decimal, junta com vírgula
+  return parts.length > 1 ? `${parts[0]},${parts[1]}` : parts[0]
+}
+
+/**
  * Formata quantidade + "unidade(s)" para exibição. Vírgula decimal PT-BR.
  *
  * @example formatDoseUnit(1)    → '1 unidade'
@@ -34,6 +54,168 @@ export function pluralizeDoseUnit(qty) {
  * @example formatDoseUnit(15.5) → '15,5 unidades'
  */
 export function formatDoseUnit(qty) {
-  const display = String(qty).replace('.', ',')
+  const display = formatNumberPtBR(qty)
   return `${display} ${pluralizeDoseUnit(qty)}`
 }
+
+/**
+ * Retorna apenas o valor de concentração do princípio ativo correspondente.
+ * Usado para hints em linhas separadas (como nos indicadores do Estoque).
+ *
+ * @example formatActiveIngredientShort(2, 600, 'mg')   → '1.200 mg'
+ * @example formatActiveIngredientShort(1.5, 100, 'ui')  → '150 UI'
+ * @example formatActiveIngredientShort(3, 1, 'gotas')  → ''
+ */
+export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
+  if (
+    qty == null ||
+    qty === '' ||
+    isNaN(Number(String(qty).replace(',', '.'))) ||
+    dosagePerPill == null ||
+    dosagePerPill <= 0
+  ) {
+    return ''
+  }
+  const qtyNum = Number(String(qty).replace(',', '.'))
+  let total = qtyNum * dosagePerPill
+  let currentUnit = unit
+
+  // Conversão de unidade métrica para valores maiores ou iguais a 5.000
+  if (total >= 5000) {
+    if (unit === 'mcg') {
+      total = total / 1000
+      currentUnit = 'mg'
+    } else if (unit === 'mg') {
+      total = total / 1000
+      currentUnit = 'g'
+    } else if (unit === 'g') {
+      total = total / 1000
+      currentUnit = 'kg'
+    } else if (unit === 'ml') {
+      total = total / 1000
+      currentUnit = 'l'
+    }
+  }
+
+  const displayTotal = formatNumberPtBR(total)
+
+  const totalUnitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    kg: 'kg',
+    ml: 'ml',
+    l: 'l',
+    ui: 'UI',
+    cp: total === 1 ? 'comprimido' : 'comprimidos',
+    gotas: total === 1 ? 'gota' : 'gotas',
+  }
+
+  const displayTotalUnit = totalUnitLabels[currentUnit] || currentUnit || ''
+
+  // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1,
+  // a quantidade física já é a quantidade ativa (ex: "3 gotas"). Não precisa de concentração separada.
+  if ((unit === 'cp' || unit === 'gotas') && dosagePerPill === 1) {
+    return ''
+  }
+
+  return `${displayTotal} ${displayTotalUnit}`.trim()
+}
+
+/**
+ * Retorna um hint de equivalência amigável em parênteses na mesma linha.
+ * Evita o sinal de igual ("=") que poluía visualmente.
+ *
+ * @example formatActiveIngredientHint(2, 100, 'ui')  → '2 un. (200 UI)'
+ * @example formatActiveIngredientHint(30, 500, 'mg') → '30 un. (15.000 mg)'
+ * @example formatActiveIngredientHint(3, 1, 'gotas') → '3 gotas'
+ * @example formatActiveIngredientHint(1, 1, 'cp')    → '1 comprimido'
+ */
+export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
+  if (
+    qty == null ||
+    qty === '' ||
+    isNaN(Number(String(qty).replace(',', '.')))
+  ) {
+    return ''
+  }
+  const qtyNum = Number(String(qty).replace(',', '.'))
+  const displayQty = formatNumberPtBR(qtyNum)
+
+  const unitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    ml: 'ml',
+    ui: 'UI',
+    cp: qtyNum === 1 ? 'comprimido' : 'comprimidos',
+    gotas: qtyNum === 1 ? 'gota' : 'gotas',
+  }
+
+  const displayUnit = unitLabels[unit] || 'un.'
+
+  // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1
+  if ((unit === 'cp' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
+    return `${displayQty} ${displayUnit}`
+  }
+
+  const shortVal = formatActiveIngredientShort(qty, dosagePerPill, unit)
+  if (!shortVal) {
+    return `${displayQty} ${displayUnit}`
+  }
+
+  // Se o medicamento for medido em comprimidos ou gotas com dosagem ativa em massa (ex: mg)
+  if (unit === 'cp') {
+    return `${displayQty} comp. (${shortVal})`
+  }
+  if (unit === 'gotas') {
+    return `${displayQty} gotas (${shortVal})`
+  }
+
+  return `${displayQty} un. (${shortVal})`
+}
+
+/**
+ * Retorna a frase explicativa simples de equivalência ativa para inputs.
+ * Substitui a fórmula de "1,5 x 100 UI = 150 UI" por uma declaração direta "Equivale a 150 UI".
+ *
+ * @example formatActiveIngredientFormula(1.5, 100, 'ui') → 'Equivale a 150 UI'
+ * @example formatActiveIngredientFormula(3, 1, 'gotas') → 'Equivale a 3 gotas'
+ */
+export function formatActiveIngredientFormula(qty, dosagePerPill, unit) {
+  if (
+    qty == null ||
+    qty === '' ||
+    isNaN(Number(String(qty).replace(',', '.')))
+  ) {
+    return ''
+  }
+  
+  const qtyNum = Number(String(qty).replace(',', '.'))
+  const displayQty = formatNumberPtBR(qtyNum)
+
+  const unitLabels = {
+    mg: 'mg',
+    mcg: 'mcg',
+    g: 'g',
+    ml: 'ml',
+    ui: 'UI',
+    cp: qtyNum === 1 ? 'comprimido' : 'comprimidos',
+    gotas: qtyNum === 1 ? 'gota' : 'gotas',
+  }
+
+  const displayUnit = unitLabels[unit] || 'un.'
+
+  if ((unit === 'cp' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
+    return `Equivale a ${displayQty} ${displayUnit}`
+  }
+
+  const shortVal = formatActiveIngredientShort(qty, dosagePerPill, unit)
+  if (!shortVal) {
+    return `Equivale a ${displayQty} ${displayUnit}`
+  }
+
+  return `Equivale a ${shortVal}`
+}
+
+

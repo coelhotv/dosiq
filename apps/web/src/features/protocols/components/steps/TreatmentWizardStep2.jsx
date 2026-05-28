@@ -1,5 +1,6 @@
 import Button from '@shared/components/ui/Button'
 import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatActiveIngredientFormula } from '@dosiq/core'
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
@@ -83,6 +84,7 @@ export default function TreatmentWizardStep2({
   goNext,
   handleComplete,
   isProtocolValid,
+  medicine,
 }) {
   const handleWeekdayToggle = (day) => {
     const currentWeekdays = protocolData.weekdays || []
@@ -159,15 +161,25 @@ export default function TreatmentWizardStep2({
       </div>
 
       <label className="wizard__label">
-        Comprimidos por dose
+        {medicine?.dosage_unit === 'cp'
+          ? 'Comprimidos por dose'
+          : medicine?.dosage_unit === 'gotas'
+            ? 'Gotas por dose'
+            : 'Dose por tomada (un.)'}
         <input
           type="number"
           className="wizard__input"
           value={protocolData.dosage_per_intake}
           onChange={(e) => updateProtocol('dosage_per_intake', e.target.value)}
-          min="1"
+          min="0.1"
+          step="0.1"
           max="100"
         />
+        {medicine && (
+          <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+            ✨ {formatActiveIngredientFormula(protocolData.dosage_per_intake, medicine.dosage_per_pill, medicine.dosage_unit)}
+          </span>
+        )}
       </label>
 
       <label className="wizard__label">

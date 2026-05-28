@@ -1,5 +1,5 @@
 import { getNow } from '@utils/dateUtils'
-import { resolveTreatmentStatus, getProtocolDays } from '@dosiq/core'
+import { resolveTreatmentStatus, getProtocolDays, formatActiveIngredientHint } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
 import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
 
@@ -80,10 +80,13 @@ export function resolveGroup(protocol) {
   }
 }
 
-function _computeIntakeLabel(dosage) {
+function _computeIntakeLabel(dosage, medicine) {
   if (dosage == null) return '—'
-  const n = dosage
-  return `${n} comprimido${n !== 1 ? 's' : ''}`
+  return formatActiveIngredientHint(
+    dosage,
+    medicine?.dosage_per_pill,
+    medicine?.dosage_unit
+  ) || `${dosage} un.`
 }
 
 function _computeNextDoseTime(timeSchedule) {
@@ -140,7 +143,7 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     protocols: [protocol],
   })
 
-  const intakeLabel = _computeIntakeLabel(protocol.dosage_per_intake)
+  const intakeLabel = _computeIntakeLabel(protocol.dosage_per_intake, protocol.medicine)
   const nextDoseTime = _computeNextDoseTime(protocol.time_schedule)
   const treatmentPlanInfo = _computeTreatmentPlanInfo(protocol.treatment_plan)
   const medicineInfo = _computeMedicineInfo(protocol.medicine, protocol.dosage_per_intake)

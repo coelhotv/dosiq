@@ -1,5 +1,6 @@
 import { Clock } from 'lucide-react'
 import { getNow } from '@utils/dateUtils'
+import { formatActiveIngredientHint } from '@dosiq/core'
 import './PriorityDoseCard.css'
 
 /**
@@ -69,7 +70,11 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
             <span className="priority-dose-card__bullet" aria-hidden="true" />
             <span className="priority-dose-card__item-text">
               <strong>{dose.medicineName}</strong>
-              &nbsp;·&nbsp;{dose.dosagePerIntake} comprimido{dose.dosagePerIntake !== 1 ? 's' : ''}
+              &nbsp;·&nbsp;{formatActiveIngredientHint(
+                dose.dosagePerIntake,
+                dose.dosagePerPill,
+                dose.dosageUnit
+              ) || `${dose.dosagePerIntake} un.`}
             </span>
           </li>
         ))}
