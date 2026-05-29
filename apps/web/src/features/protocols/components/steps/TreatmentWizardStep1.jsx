@@ -70,7 +70,7 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
       </label>
       <div className="wizard__row">
         <label className="wizard__label" style={{ flex: 1 }}>
-          Dosagem *
+          Concentração *
           <input
             type="number"
             className="wizard__input"

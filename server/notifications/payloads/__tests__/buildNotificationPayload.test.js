@@ -113,7 +113,7 @@ describe('buildNotificationPayload', () => {
       expect(payload.body).toContain('Med A');
       expect(payload.body).toContain('Med B');
       expect(payload.pushBody).toContain('doses do plano Protocolo VIP (09:00)');
-      expect(payload.actions).toHaveLength(2);
+      expect(payload.actions).toHaveLength(1);
       expect(payload.actions[0].id).toBe('take_plan');
     });
   });

@@ -73,7 +73,7 @@ export default function MedicineFormDosageInfo({
 
       <div className="form-group">
         <label htmlFor="dosage_per_pill">
-          Dosagem <strong>(Específica da sua prescrição)</strong>
+          Concentração <strong>(Específica da sua prescrição)</strong>
         </label>
         <div
           className="dosage-input-group"
@@ -114,6 +114,23 @@ export default function MedicineFormDosageInfo({
           <span id="dosage_per_pill-error" className="error-message">
             {errors.dosage_per_pill}
           </span>
+        )}
+        {formData.dosage_unit === 'un' && Number(formData.dosage_per_pill) > 1 && (
+          <div
+            className="warning-message"
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--color-warning-bg)',
+              border: '1px solid var(--color-warning-light)',
+              color: 'var(--color-warning)',
+              fontSize: '0.85rem',
+              lineHeight: '1.4',
+              marginTop: '8px'
+            }}
+          >
+            ⚠️ Dica: Para a unidade genérica 'un.', a concentração deveria ser 1. Caso seu medicamento tenha dosagem química ativa (ex: 500 mg), altere a unidade ao lado para 'mg', 'ui', etc.
+          </div>
         )}
       </div>
     </>

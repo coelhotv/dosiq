@@ -24,7 +24,7 @@ import FormActions from '@shared/components/form/FormActions'
 import { useMedicineMutation } from '@medications/hooks/useMedicineMutation'
 import { AnvisaBanner } from '@medications/components/AnvisaBanner'
 import { MedicineAnvisaSheet } from '@medications/components/MedicineAnvisaSheet'
-import { colors, spacing, typography } from '@shared/styles/tokens'
+import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 const TYPE_OPTIONS = MEDICINE_TYPES.map((value) => ({
   value,
@@ -167,7 +167,7 @@ export default function MedicineFormScreen() {
             <View style={styles.rowDose}>
               <FormInput
                 name="dosage_per_pill"
-                label="Dose por unidade"
+                label="Concentração"
                 required
                 keyboardType="decimal-pad"
                 {...formProps(form, 'dosage_per_pill')}
@@ -184,6 +184,13 @@ export default function MedicineFormScreen() {
               />
             </View>
           </View>
+          {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                ⚠️ Dica: Para a unidade genérica 'un.', a concentração deveria ser 1. Caso seu medicamento tenha dosagem química ativa (ex: 500 mg), altere a unidade ao lado para 'mg', 'ui', etc.
+              </Text>
+            </View>
+          )}
         </FormSection>
 
         <FormSection title="Classificação">
@@ -275,5 +282,18 @@ const styles = StyleSheet.create({
   },
   rowUnit: {
     flex: 1,
+  },
+  warningBox: {
+    padding: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+    marginTop: spacing[2],
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#d97706',
+    lineHeight: 18,
   },
 })

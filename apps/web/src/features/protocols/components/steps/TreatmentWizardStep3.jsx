@@ -15,11 +15,9 @@ export default function TreatmentWizardStep3({
       <h3 className="wizard__title">Estoque Atual</h3>
 
       <label className="wizard__label">
-        {medicine?.dosage_unit === 'cp'
-          ? 'Quantidade (comprimidos)'
-          : medicine?.dosage_unit === 'gotas'
-            ? 'Quantidade (gotas)'
-            : 'Quantidade (un.)'}
+        {medicine?.dosage_unit === 'gotas'
+          ? 'Quantidade (gotas)'
+          : 'Quantidade (un.)'}
         <input
           type="number"
           className="wizard__input"
