@@ -13,9 +13,11 @@
 > - ✅ **Hotfix** — `zodSetup.js` import ESM com extensão `.js` (motor prod-down `ERR_MODULE_NOT_FOUND`). Merged #605 (`1f6f933d`). AP-184.
 > - ✅ **Validação de prod (29/05)** — cron-job.org → `200 {processed:34, generated:1140, cleaned:0, durationMs:2352}`. Supabase confirma: 1140 instâncias `pending` (janela 30d), 34/34 protocolos ativos com `generated_through`, 0 dupes. Motor materializando `dose_instances` end-to-end em prod.
 > - ✅ **Fase 2 / PR-F2.3** — âncora de log: toda tomada (web `logService.create` + bot `<Tomar>`) liga `medicine_logs.dose_instance_id` via snap por tolerância (escopo protocol_id, nearest, cross-meia-noite) → instância vira `taken`. Best-effort (R-246), FP-1. Review Gemini: race no-op→elo órfão corrigido (AP-185). Merged #609 (`9b4857f5`). **Raiz do bug das 22:30 fechada na escrita.**
-> - ⬜ **Fase 2 / PR-F2.4** — backfill one-shot (instâncias passadas + casa logs históricos); roda manual pós-merge. **Último da Fase 2.**
+> - ✅ **Fase 2 / PR-F2.4** — backfill one-shot (#610, `46379b70`) + fix paginação (#611). **Executado em prod nos 15 usuários** (sub-agente Haiku + verificação MCP, AP-187): 1665 taken, 308 missed, 1118 pending, 0 dupes, taken===logs-com-elo. **Fase 2 fechada end-to-end.**
+> - ⬜ **Fase 3** — leitura: adesão/dashboard/bot ← `dose_instances` (torna o fix visível). Spec: [EXEC_SPECS_PHASE_3.md](./EXEC_SPECS_PHASE_3.md). 3 PRs, seams ADR-052.
+> - ⬜ **Fase 4** — timeline event-agnóstica (FP-3) + fecha G1 (tz). Spec: [EXEC_SPECS_PHASE_4.md](./EXEC_SPECS_PHASE_4.md). Fundação dos épicos líquidos/diabetes.
 >
-> **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.
+> **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** injeção de tz (parcial na F3, **fechado na F4**) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB com acento (resolvido F2.1) · **G5** `adherenceLogic` duplicado core/web (dedup F3) · **G6** view de adesão legada (resolver F3) · **G7** produtor de eventos desacoplado (F4).
 >
 > **Future-proofing diabetes (ADR-050):** o refactor já constrói o esqueleto planned/applied que insulina bolus exige. 4 decisões baratas (FP-1..FP-4) deixam a arquitetura preparada **sem fundir o épico de diabetes aqui** — ver **§11**. Diabetes = épico próprio pós-refactor.
 
