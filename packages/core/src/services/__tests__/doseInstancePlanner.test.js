@@ -160,4 +160,29 @@ describe('renewProtocolWindow (cron)', () => {
   it('respeita RENEWAL_THRESHOLD_DAYS exportado', () => {
     expect(RENEWAL_THRESHOLD_DAYS).toBe(7)
   })
+
+  describe('generatedThrough injetado (sem SELECT redundante — ADR-051)', () => {
+    it('usa o hwm injetado e NÃO chama getGeneratedThrough', async () => {
+      const now = new Date('2026-05-10T00:00:00Z')
+      const repo = makeRepo('nunca-deve-ser-lido')
+      const injected = new Date(now.getTime() + 3 * MS_DAY).toISOString() // dentro do threshold → renova
+      const n = await renewProtocolWindow({ protocol, doseInstanceRepo: repo, generatedThrough: injected, now })
+      expect(n).toBeGreaterThan(0)
+      expect(repo.getGeneratedThrough).not.toHaveBeenCalled()
+    })
+
+    it('generatedThrough=null injetado → trata como nunca gerado, sem SELECT', async () => {
+      const now = new Date('2026-05-10T00:00:00Z')
+      const repo = makeRepo('ignorado')
+      const n = await renewProtocolWindow({ protocol, doseInstanceRepo: repo, generatedThrough: null, now })
+      expect(n).toBe(WINDOW_DAYS)
+      expect(repo.getGeneratedThrough).not.toHaveBeenCalled()
+    })
+
+    it('generatedThrough omitido → fallback faz o SELECT (retrocompat)', async () => {
+      const repo = makeRepo(null)
+      await renewProtocolWindow({ protocol, doseInstanceRepo: repo, now: new Date('2026-05-10T00:00:00Z') })
+      expect(repo.getGeneratedThrough).toHaveBeenCalledOnce()
+    })
+  })
 })
