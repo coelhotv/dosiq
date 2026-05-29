@@ -1,7 +1,7 @@
 # Gemini Code Assist Integration
 
-> **Documentação oficial da integração GitHub Actions + Gemini Code Assist**  
-> **Versão:** 1.1.0 | Última atualização: 2026-02-24
+> **Documentação oficial da integração GitHub Actions + Gemini Code Assist (Arquitetura 100% Local)**  
+> **Versão:** 2.0.0 | Última atualização: 2026-05-29
 
 ---
 
@@ -9,148 +9,39 @@
 
 O projeto **Dosiq** utiliza o [Gemini Code Assist](https://cloud.google.com/gemini/docs/codeassist) para revisão automática de código em Pull Requests. Esta integração foi projetada para:
 
-- **Automatizar** a revisão de código com feedback em tempo real
-- **Estruturar** os comentários do Gemini para consumo por agentes de IA
-- **Otimizar** o tempo de revisão e reduzir minutos de GitHub Actions
+- **Automatizar** a revisão de código com feedback em tempo real diretamente no GitHub Actions.
+- **Estruturar** e parsear localmente os comentários do Gemini para consumo por desenvolvedores e agentes.
+- **Auditar** de forma estrita e 100% local a resolução de issues apontadas em commits passados.
+- **Garantir** qualidade total antes do merge (bloqueando PRs com issues críticas/altas pendentes).
 
 ---
 
 ## 🏗️ Arquitetura
 
-### Visão Geral da Arquitetura
+Toda a infraestrutura de parsing, resumo, classificação de segurança e auditoria de resoluções de PR opera de forma **100% local e offline**, rodando inteiramente em containers GitHub Actions, sem comunicação com endpoints externos, Supabase ou dependências de transporte como Vercel Blob.
+
+### Fluxo de Dados e Integração Local
 
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  GitHub Actions │────▶│  Vercel API      │────▶│  Supabase       │
-│  Workflow       │ JWT │  Endpoints       │ SRK │  Database       │
-│                 │     │                  │     │                 │
-│ • detect        │     │ • persist.js     │     │ • gemini_       │
-│ • parse         │     │ • create-issues  │     │   reviews       │
-│ • upload-to-blob│     │ • update-status  │     │                 │
-│ • persist       │     │                  │     │ SOURCE OF TRUTH │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-        │                        │
-        │                        ▼
-        │                 ┌──────────────┐
-        │                 │  GitHub API  │
-        │                 │  (Issues)    │
-        ▼                 └──────────────┘
-┌─────────────────┐
-│  Vercel Blob    │  ← Transporte temporário (7 dias TTL)
-│  (JSON cache)   │    NÃO é source of truth
-└─────────────────┘
+┌──────────────────┐      ┌─────────────────────────┐      ┌─────────────────┐
+│  PR Events/      │─────▶│  GitHub Actions         │─────▶│  PR Inline      │
+│  Gemini Review   │      │  Workflow               │      │  Comments /     │
+└──────────────────┘      │                         │      │  Smart Summary  │
+                          │ • parse & classification│      └─────────────────┘
+                          │ • check-critical        │
+                          │ • check-resolutions     │
+                          └─────────────────────────┘
 ```
 
-### Fluxo de Revisão
-
-```mermaid
-flowchart TD
-    subgraph Triggers
-        A[PR Opened] --> B[Gemini Code Assist]
-        A2[PR Synchronize] --> B
-        A3[Comment: /gemini review] --> B
-    end
-
-    subgraph Gemini Official
-        B --> C[Análise Automática]
-        C --> D[Posta Comentários Inline]
-        D --> E[Posta Review Summary]
-    end
-
-    subgraph GitHub Actions
-        E --> F{pull_request_review Event}
-        F --> G[gemini-review.yml]
-        G --> H[Polling para Inline Comments]
-        H --> I[Parse Comentários]
-        I --> J{Tipo de Issue?}
-        J -->|Lint/Format| K[Auto-fix Job]
-        J -->|Lógica/Arquitetura| L[Output Estruturado]
-        K --> M[Validate Build]
-        L --> N[Postar Resumo]
-        M --> N
-    end
-
-    subgraph Agentes Coder
-        N --> O[Ler Output JSON]
-        O --> P[Aplicar Correções]
-    end
-```
-
-### Componentes
+### Componentes Ativos
 
 | Componente | Arquivo | Função |
 |------------|---------|--------|
-| **Workflow** | `.github/workflows/gemini-review.yml` | Orquestra toda a integração |
-| **Parser** | `.github/scripts/parse-gemini-comments.js` | Extrai e categoriza comentários |
-| **Blob Upload** | `.github/scripts/upload-to-vercel-blob.cjs` | Upload de JSON para Vercel Blob |
-| **Testes** | `.github/scripts/__tests__/parse-gemini-comments.test.js` | Validação do parser |
-| **Config** | `.gemini/config.yaml` | Configuração do Gemini Code Assist |
-
----
-
-## 📦 Vercel Blob - Camada de Transporte
-
-### Propósito
-
-O Vercel Blob é usado como **camada de transporte temporário** para dados JSON entre jobs do GitHub Actions e endpoints Vercel. Isso permite que:
-
-1. Jobs do GitHub Actions compartilhem dados estruturados
-2. Endpoints Vercel acessem dados sem conexão direta ao GitHub Actions
-3. O fluxo seja resiliente a falhas de rede
-
-### Características
-
-| Característica | Valor | Descrição |
-|----------------|-------|-----------|
-| **TTL** | 7 dias | Armazenamento temporário, não persistente |
-| **Access** | Privado | Requer `VERCEL_BLOB_TOKEN` para acesso |
-| **Path Pattern** | `reviews/pr-{n}/review-{ts}.json` | Único por PR + timestamp |
-| **Content-Type** | `application/json` | Dados estruturados |
-
-### Fluxo de Dados
-
-```
-1. parse job        → Gera review-{pr_number}.json
-2. upload-to-blob   → Upload para Vercel Blob
-3. persist job      → Passa blob_url para endpoint /api/gemini-reviews/persist
-4. create-issues    → Passa blob_url para endpoint /api/gemini-reviews/create-issues
-5. Endpoints        → Baixam JSON do blob, processam, persistem no Supabase
-```
-
-### Importante
-
-⚠️ **O Vercel Blob NÃO é source of truth.** O Supabase mantém esse papel com:
-- Deduplicação por hash SHA-256
-- Persistência permanente
-- Query capability via SQL
-- RLS (Row Level Security)
-
-### Conteúdo do Blob
-
-```json
-{
-  "pr_number": 144,
-  "commit_sha": "abc123...",
-  "summary": {
-    "total_issues": 5,
-    "auto_fixable": 2,
-    "critical": 0,
-    "needs_agent": 1
-  },
-  "issues": [
-    {
-      "file_path": "src/utils/validationHelper.js",
-      "line_start": 13,
-      "line_end": 15,
-      "title": "Consider adding JSDoc documentation",
-      "description": "...",
-      "suggestion": "...",
-      "priority": "MEDIUM",
-      "category": "manutenibilidade"
-    }
-  ]
-}
-```
+| **Workflow** | `.github/workflows/gemini-review.yml` | Orquestra toda a integração e jobs de auditoria local |
+| **Parser** | `.github/scripts/parse-gemini-comments.cjs` | Extrai e categoriza comentários e prioridades do Gemini |
+| **Resolutions** | `.github/scripts/check-resolutions.cjs` | Analisa commits recentes para verificar resolução de threads no PR |
+| **Testes** | `.github/scripts/__tests__/parse-gemini-comments.test.js` | Validação do parser local |
+| **Config** | `.gemini/config.yaml` | Configuração do comportamento do Gemini Code Assist |
 
 ---
 
@@ -162,279 +53,98 @@ O Vercel Blob é usado como **camada de transporte temporário** para dados JSON
 on:
   pull_request_review:
     types: [submitted]
+  pull_request:
+    types: [synchronize]
   issue_comment:
     types: [created]
-  pull_request:
-    types: [opened, synchronize]
 ```
 
 | Evento | Condição | Descrição |
 |--------|----------|-----------|
-| `pull_request_review` | `submitted` | Dispara quando Gemini posta review |
-| `issue_comment` | Contém `/gemini review` | Trigger manual via comentário |
-| `pull_request` | `opened`, `synchronize` | Trigger inicial para detectar PR |
+| `pull_request_review` | `submitted` | Dispara quando Gemini posta uma review |
+| `issue_comment` | Contém `/gemini review` | Trigger manual via comentário no PR |
+| `pull_request` | `synchronize` | Disparado a cada novo commit pushado no PR (inicia validação) |
 
-### Jobs
+### Jobs Principais
 
-#### 1. Detect Gemini Review
+#### 1. Detect Gemini Review (`detect`)
+Detecta se o PR deve ser processado e extrai o número do PR, branch e SHA do commit.
 
-```yaml
-detect:
-  runs-on: ubuntu-latest
-  outputs:
-    pr_number: ${{ steps.detect.outputs.pr_number }}
-    should_run: ${{ steps.detect.outputs.should_run }}
-```
+#### 2. Poll for Gemini Review (`poll-review`)
+Apenas executa se o evento não é um review direto do bot. Aguarda a publicação do review inicial do bot com timeout de 10 minutos.
 
-**Função:** Detecta se o PR deve ser processado e extrai o número do PR.
+#### 3. Parse Gemini Comments (`parse`)
+Restaura o cache de reviews para otimizar execuções futuras, parseia todos os comentários inline do bot que não foram resolvidos ainda, e gera o output estruturado em `.gemini-output/review-{pr_number}.json` (salvo como artefato).
 
-#### 2. Poll for Gemini Review
+#### 4. Apply Auto-Fixes (`auto-fix`)
+Executa `npm run lint -- --fix` e prettier automaticamente se o parser sinalizar issues puramente de estilo auto-fixables.
 
-```yaml
-poll:
-  needs: detect
-  if: needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-```
+#### 5. Validate Build (`validate`)
+Executa linter, smoke tests e build de produção para assegurar conformidade estrutural.
 
-**Função:** Aguarda o Gemini postar o review inicial (polling com timeout de 5 minutos).
+#### 6. Apply Labels (`apply-labels`)
+Aplica dinamicamente labels no PR como `🤖 gemini-reviewed` baseadas na presença de issues.
 
-#### 3. Parse Gemini Comments
+#### 7. Post Summary (`summary`)
+Cria ou atualiza um único comentário de resumo inteligente (com marcadores GEMINI_REVIEW_SUMMARY) no PR contendo as estatísticas e tabela de issues detectados.
 
-```yaml
-parse:
-  needs: [detect, poll]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-```
+#### 8. Check Critical/High Issues (`check-critical`)
+Verifica a presença de issues classificados como `CRITICAL` ou `HIGH` (segurança ou crash). Se houver alguma issue bloqueante ativa, falha o pipeline para impedir o merge do PR.
 
-**Função:** 
-- Aguarda inline comments via polling (10 attempts × 15s = 2.5 min)
-- Executa parser para extrair issues
-- Gera output estruturado em `.gemini-output/review-{pr_number}.json`
-- Faz upload do artifact
-
-#### 4. Validate Build
-
-```yaml
-validate:
-  needs: [detect, parse]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-```
-
-**Função:** Executa lint, smoke tests, critical tests e build.
-
-#### 5. Apply Auto-Fixes
-
-```yaml
-auto-fix:
-  needs: [detect, parse]
-  if: always() && needs.parse.outputs.auto_fixable == 'true'
-  runs-on: ubuntu-latest
-```
-
-**Função:** Aplica correções automáticas para issues simples (formatting, style).
-
-#### 6. Post Summary
-
-```yaml
-post-summary:
-  needs: [detect, parse, validate]
-  if: always() && needs.detect.outputs.should_run == 'true'
-  runs-on: ubuntu-latest
-```
-
-**Função:** Posta resumo estruturado no PR com estatísticas e tabela de issues.
+#### 9. Check Resolutions Locally (`check-resolutions`)
+Roda localmente a verificação de resoluções. Compara a árvore de commits e arquivos modificados para identificar se as sugestões inline do Gemini foram implementadas e responde de forma automatizada e inline nas threads dos comentários.
 
 ---
 
-## 📝 Parser: `parse-gemini-comments.js`
+## 📝 Parser & Regras de Priorização
 
-### Funções Principais
+### Badges de Severidade do Gemini
 
-#### `parseGeminiComment(comment)`
+O Gemini Code Assist indica a severidade utilizando badges em SVG no início dos comentários. O parser identifica essas severidades utilizando regex:
 
-Extrai informações estruturadas de um comentário do Gemini.
-
-**Input:** Objeto de comentário da API do GitHub
-
-**Output:**
-```javascript
-{
-  id: 12345,
-  file: 'src/services/api/medicineService.js',
-  line: 42,
-  issue: 'Missing error handling',
-  suggestion: 'try { ... } catch (error) { ... }',
-  priority: 'HIGH', // CRITICAL | HIGH | MEDIUM
-  auto_fixable: false,
-  raw: '... corpo completo do comentário ...',
-  url: 'https://github.com/...'
-}
 ```
-
-#### `categorizeIssues(parsedComments)`
-
-Categoriza issues em três grupos:
-
-```javascript
-{
-  autoFixable: [...],   // Issues simples de estilo/formatação
-  needsAgent: [...],    // Issues de lógica/arquitetura
-  critical: [...]       // Issues de segurança ou críticos
-}
-```
-
-#### `normalizePriority(priority)`
-
-Normaliza a prioridade extraída do Gemini.
-
-| Input | Output |
-|-------|--------|
-| `critical` | `CRITICAL` |
-| `high` | `HIGH` |
-| `medium` | `MEDIUM` |
-
-### Formato de Prioridade do Gemini
-
-O Gemini Code Assist usa **image badges** para indicar prioridade:
-
-```markdown
-![critical](https://img.shields.io/badge/critical-critical.svg)
-![high](https://img.shields.io/badge/high-high.svg)
-![medium](https://img.shields.io/badge/medium-medium.svg)
-```
-
-O parser extrai a prioridade via regex:
-
-```javascript
-const priorityMatch = body.match(/!\[(critical|high|medium)\].*\.svg/);
+Critical:  badges/critical-priority.svg, security, vulnerability, injection, hardcoded secret
+High:      badges/high-priority.svg, error handling, missing validation, breaking change
+Medium:    badges/medium-priority.svg, consider, refactor, extract, missing test
+Low:       nit, nitpick, style, Prefer, rename, Cosmetic
 ```
 
 ---
 
-## 📁 Output Estruturado
+## 📁 Output Estruturado Local
 
-### Localização
+### Localização do Artefato
 
 ```
 .gemini-output/
 └── review-{pr_number}.json
 ```
 
-### Formato
+### Exemplo de Formato
 
 ```json
 {
-  "pr_number": 71,
-  "timestamp": "2026-02-19T02:17:30Z",
+  "pr_number": 608,
+  "timestamp": "2026-05-29T06:46:00Z",
   "summary": {
-    "total_issues": 7,
+    "total_issues": 1,
     "auto_fixable": 0,
-    "needs_agent": 7,
+    "needs_agent": 1,
     "critical": 0
   },
   "issues": [
     {
-      "id": 12345,
-      "file": "src/utils/validationHelper.js",
-      "line": 13,
-      "issue": "Consider adding JSDoc documentation",
-      "suggestion": "/** * Validates email format... */",
-      "priority": "MEDIUM",
+      "id": 3322635657,
+      "file": "packages/core/src/schemas/index.js",
+      "line": 76,
+      "issue": "O barrel export de geminiReviewSchema foi removido...",
+      "suggestion": "export { geminiReviewSchema } from './geminiReviewSchema.js'",
+      "priority": "HIGH",
       "auto_fixable": false,
-      "url": "https://github.com/..."
+      "url": "https://github.com/coelhotv/dosiq/pull/608#discussion_r..."
     }
-  ],
-  "critical_requires_human": false
+  ]
 }
-```
-
-### Consumo por Agentes Coder
-
-```javascript
-// Exemplo de uso por agente de IA
-const fs = require('fs');
-const output = JSON.parse(fs.readFileSync('.gemini-output/review-71.json'));
-
-// Filtrar issues que requerem intervenção
-const needsAttention = output.issues.filter(i => !i.auto_fixable);
-
-// Processar cada issue
-for (const issue of needsAttention) {
-  console.log(`File: ${issue.file}:${issue.line}`);
-  console.log(`Issue: ${issue.issue}`);
-  console.log(`Suggestion: ${issue.suggestion}`);
-}
-```
-
----
-
-## 🚀 Como Usar
-
-### Revisão Automática
-
-O Gemini Code Assist é invocado automaticamente quando:
-
-1. Um PR é aberto
-2. Um PR é atualizado (synchronize)
-3. Um comentário com `/gemini review` é postado
-
-### Revisão Manual
-
-Para solicitar uma nova revisão:
-
-```markdown
-/gemini review
-```
-
-Ou mencione o bot:
-
-```markdown
-@gemini-code-assist please review this PR
-```
-
-### Verificar Output
-
-1. Acesse a tab **Actions** no GitHub
-2. Selecione o workflow run do `Gemini Code Review Parser`
-3. Baixe o artifact `gemini-review-output`
-4. Extraia e leia o JSON
-
----
-
-## 📊 Resumo Postado no PR
-
-O workflow posta um comentário estruturado no PR:
-
-```markdown
-## 🤖 Gemini Code Review - Resumo
-
-### 📊 Estatísticas
-
-| Categoria | Quantidade |
-|-----------|------------|
-| Total de Issues | 7 |
-| Auto-fixable | 0 |
-| Requer Agente | 7 |
-| Críticos | 0 |
-
-### 📋 Issues Principais
-
-| Arquivo | Linha | Severidade | Auto-fixable |
-|---------|-------|------------|--------------|
-| validationHelper.js | 13 | MEDIUM | ❌ |
-| validationHelper.js | 26 | MEDIUM | ❌ |
-
-### ✅ Validação Pós-Fix
-
-- **Lint:** ✅ Passou
-- **Smoke Tests:** ✅ Passou
-
-### 📁 Output Estruturado
-
-O arquivo `.gemini-output/review-71.json` foi gerado com todos os issues parseados.
 ```
 
 ---
@@ -457,181 +167,29 @@ code_review:
     code_review: true
 ```
 
-### Variáveis de Ambiente
-
-| Variável | Descrição | Obrigatório |
-|----------|-----------|-------------|
-| `GITHUB_TOKEN` | Token automático do GitHub Actions | Sim (automático) |
-| `GEMINI_BOT_LOGIN` | Login do bot do Gemini | Sim (hardcoded) |
-
 ---
 
 ## 🧪 Testes
 
 ### Executar Testes do Parser
 
+Os testes validam a lógica local de extração de severidades, ignorar threads resolvidas e parsing estruturado:
+
 ```bash
-# Executar todos os testes
-node .github/scripts/__tests__/parse-gemini-comments.test.js
-
-# Executar com verbose
-node --test .github/scripts/__tests__/parse-gemini-comments.test.js
+rtk npm run test:critical
 ```
-
-### Cobertura
-
-- 11 testes unitários
-- Cobre parsing de prioridades, extração de issues, categorização
-- Usa dados reais do PR #25 como fixture
 
 ---
 
-## 🐛 Troubleshooting
+## 🤝 Protocolo de Resolução de PR (Review Gates)
 
-### Problema: Nenhum comentário encontrado
+Para desenvolvedores e agentes trabalhando no repositório:
 
-**Sintoma:** `Total de Issues: 0`
-
-**Causas possíveis:**
-1. Gemini ainda não postou inline comments
-2. Polling timeout excedido
-3. PR não tem mudanças de código
-
-**Solução:**
-- Aguarde alguns segundos e solicite nova revisão com `/gemini review`
-- Verifique logs do workflow para ver se polling encontrou comentários
-
-### Problema: Artifact não encontrado
-
-**Sintoma:** `No files were found with the provided path`
-
-**Causa:** Diretório `.gemini-output` é hidden (começa com `.`)
-
-**Solução:** Já corrigido com `include-hidden-files: true` no workflow
-
-### Problema: Workflow não dispara
-
-**Sintoma:** Workflow não aparece na tab Actions
-
-**Causas possíveis:**
-1. PR não atende aos critérios de trigger
-2. Gemini não está configurado para o repositório
-
-**Solução:**
-- Verifique se o app Gemini Code Assist está instalado no repositório
-- Use `/gemini review` para trigger manual
+1. **High e Critical são Mandatórios**: Issues críticas ou de segurança não são opcionais e devem ser corrigidas no PR antes do merge.
+2. **Decline com Justificativa**: Caso uma issue seja falso positivo, responda na thread justificando tecnicamente para auditoria local.
+3. **Não Auto-Merge (R-060)**: Mesmo com pipeline verde e correções aplicadas, o merge final deve sempre passar por aprovação humana.
 
 ---
 
-## 🔮 Evoluções Futuras (P2)
-
-### 1. Integração com Agentes Coder
-
-**Objetivo:** Permitir que agentes de IA (como Kilo Code) consumam automaticamente o output estruturado e apliquem correções.
-
-**Implementação proposta:**
-```yaml
-# Novo job no workflow
-agent-fix:
-  needs: parse
-  if: needs.parse.outputs.needs_agent == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Trigger Coder Agent
-      uses: actions/github-script@v7
-      with:
-        script: |
-          // Chamar API do agente coder
-          await fetch('https://api.kilocode.dev/fix', {
-            method: 'POST',
-            body: JSON.stringify({
-              pr_number: ${{ needs.detect.outputs.pr_number }},
-              issues: require('./.gemini-output/review-${{ needs.detect.outputs.pr_number }}.json').issues
-            })
-          });
-```
-
-### 2. Labels Automáticas
-
-**Objetivo:** Aplicar labels automaticamente baseado nos issues encontrados.
-
-**Labels propostas:**
-- `🤖 gemini-reviewed` - Review completo
-- `🔧 auto-fix-pending` - Aguardando auto-fix
-- `👀 needs-human-review` - Issues críticos
-- `🔒 security-issue` - Vulnerabilidades detectadas
-
-### 3. Métricas de Review
-
-**Objetivo:** Rastrear efetividade da integração.
-
-**Métricas propostas:**
-- Tempo médio de review
-- Taxa de auto-fix
-- Falsos positivos
-- Issues por categoria
-
-### 4. Cache de Reviews
-
-**Objetivo:** Evitar re-análise de código não alterado.
-
-**Implementação:**
-- Hash do conteúdo do arquivo
-- Comparar com review anterior
-- Reutilizar comentários para linhas não alteradas
-
-### 5. Filtros de Path Inteligentes (Atualizado P3.2)
-
-**Objetivo:** Focar em código crítico, ignorar logs e focar no monorepo e memória estruturada.
-
-**Paths a ignorar (excluded_paths):**
-```yaml
-ignore:
-  - 'docs/archive/**'
-  - 'dist/**'
-  - '*.md'
-  - '.github/**/*.yml'
-  - '.agent/memory/journal/**'  # Append-only records (DEVFLOW)
-  - '.agent/sessions/**'        # Temporary sync locks (DEVFLOW)
-  - 'apps/mobile/.expo/**'      # Cache do Expo
-```
-
-### 6. Notificações Slack/Discord
-
-**Objetivo:** Notificar equipe sobre issues críticos.
-
-**Implementação:**
-```yaml
-notify:
-  needs: parse
-  if: needs.parse.outputs.critical == 'true'
-  runs-on: ubuntu-latest
-  steps:
-    - name: Notify Slack
-      uses: slackapi/slack-github-action@v1
-      with:
-        channel-id: 'C0123456789'
-        slack-message: '🚨 Critical issues found in PR #${{ needs.detect.outputs.pr_number }}'
-```
-
-### 7. Suporte a DEVFLOW & Monorepo Híbrido
-
-A configuração do Gemini foi adaptada para o novo contexto arquitetural do projeto:
-
-**DEVFLOW**: O revisor automatizado agora prioriza arquivos como `.agent/memory/*.json` para identificar mudanças em contratos (`CON-NNN`) ou decisões arquiteturais (`ADR-NNN`).
-**Híbrido Web+Native**: A revisão ativamente valida se os diretórios compartilhados (`packages/core`, `packages/shared-data`) contêm contaminações acidentais por dependência de browser (`window`, `localStorage`) ou frameworks nativos, exigindo conformidade rigorosa.
-
----
-
-## 📚 Referências
-
-- [Gemini Code Assist Documentation](https://cloud.google.com/gemini/docs/codeassist)
-- [GitHub Pull Request Review Events](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#pull_request_review)
-- [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions)
-- [Plano de Refatoração Original](../../plans/archive_old/gemini_integration/PLANO_REFATORACAO_GEMINI_INTEGRATION.md)
-
----
-
-*Última atualização: 2026-02-19*  
-*Versão: 1.0.0*  
-*Status: ✅ Implementado e Validado*
+*Mantenedor: Dosiq Core Team*  
+*Status: ✅ Implementado Localmente e Ativo*
