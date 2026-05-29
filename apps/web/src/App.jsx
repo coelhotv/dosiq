@@ -127,6 +127,11 @@ function AppInner() {
         }
       }
     }
+
+    // Limpar o caminho e query params da URL para evitar reprocessamento ou inconsistências de estado
+    if (path !== '/' || params.toString() !== '') {
+      window.history.replaceState({}, document.title, '/')
+    }
   }, [session])
   /* eslint-enable react-hooks/set-state-in-effect */
 

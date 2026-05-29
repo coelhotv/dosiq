@@ -8,7 +8,7 @@ if (vapidPublicKey && vapidPrivateKey) {
   try {
     webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey)
   } catch (e) {
-    console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e.message)
+    console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e?.message || String(e))
   }
 }
 
@@ -61,12 +61,15 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
 
   const sendPromises = devices.map(async (device) => {
     try {
+      if (!device?.push_token) {
+        throw new Error('Token de push ausente ou inválido')
+      }
       const subscription = JSON.parse(device.push_token)
       await webpush.sendNotification(subscription, pushPayload)
       return { token: device.push_token, success: true }
     } catch (error) {
-      console.error('[webPushChannel] Falha no push individual', { correlationId, userId, token: device.push_token, error: error.message })
-      return { token: device.push_token, success: false, error }
+      console.error('[webPushChannel] Falha no push individual', { correlationId, userId, token: device?.push_token, error: error?.message || String(error) })
+      return { token: device?.push_token, success: false, error }
     }
   })
 
@@ -89,12 +92,14 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
       delivered++
     } else {
       failed++
-      const statusCode = error.statusCode
-      errors.push({ token, code: statusCode, message: error.message })
+      const statusCode = error?.statusCode
+      errors.push({ token, code: statusCode, message: error?.message || String(error) })
 
-      // Se 410 (Gone) ou 404 (Not Found), o token não é mais válido
-      if (statusCode === 410 || statusCode === 404) {
-        tokensToDeactivate.push(token)
+      // Se 410 (Gone), 404 (Not Found) ou erro de parse (SyntaxError), o token não é mais válido
+      if (statusCode === 410 || statusCode === 404 || error instanceof SyntaxError) {
+        if (token) {
+          tokensToDeactivate.push(token)
+        }
       }
     }
   }
