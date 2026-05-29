@@ -17,9 +17,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' })
   }
 
-  // Auth: mesmo padrão do notify (Bearer CRON_SECRET).
+  // Auth: Bearer CRON_SECRET. Falha-fechado se o segredo não estiver configurado —
+  // sem essa guarda, CRON_SECRET undefined viraria "Bearer undefined" e qualquer
+  // requisição com esse header burlaria a autenticação (Gemini #604, security-high).
   const authHeader = req.headers['authorization']
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     logger.warn('Tentativa não autorizada de gerar dose_instances')
     return res.status(401).json({ error: 'Unauthorized' })
   }
