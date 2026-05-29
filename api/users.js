@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   const { action } = req.query
-  const routeHandler = ROUTES[action]
+  const routeHandler = action && Object.hasOwn(ROUTES, action) ? ROUTES[action] : null
 
   if (!routeHandler) {
     return res.status(404).json({ error: 'Action not found' })
