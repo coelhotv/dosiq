@@ -5,7 +5,7 @@
 
 ---
 
-## 📊 Status de execução (atualizado 2026-05-28)
+## 📊 Status de execução (atualizado 2026-05-29)
 
 | PR | Sprints | Status | Ref |
 |----|---------|--------|-----|
@@ -13,9 +13,11 @@
 | **PR-F1.2** tz UI | S1.4, S1.5 | ✅ **MERGED** | PR #598 |
 | **PR-F2.1** schema+lógica | S2.0–S2.3 | ✅ **MERGED** | PR #599 (`b7d26b3f`) · migration aplicada em prod · ADR-048 accepted · review Gemini (1 High wrap-around + 2 Medium) aplicado · AP-181 (FREQUENCY_MATCHERS stale) · 25 testes |
 | **PR-F2.2** motor+lifecycle | S2.4, S2.5 | ✅ **MERGED** | PR #603 (`a6dc9a52`) · review Gemini (2 High paginação+N+1, 2 Medium) + reauditoria S2.4 (bug resume skipped_paused, clamp past-pending) · R-245 · 929 testes · ⚠️ cron node-cron = **dev-only** → corrigido em F2.2.1 |
-| **PR-F2.2.1** motor prod (cron isolado) | S2.4.1–S2.4.3 | ⬜ pendente (ADR-051) | corrige geração que não dispara em prod + isola raio de impacto dos reminders |
-| PR-F2.3 âncora log | S2.6 | ⬜ pendente | |
-| PR-F2.4 backfill | S2.7 | ⬜ pendente | |
+| **PR-F2.2.1** motor prod (cron isolado) | S2.4.1–S2.4.3 | ✅ **MERGED** | PR #604 (`f8b207a7`) · ADR-051 · endpoint dedicado `api/generate-doses.js` + due-only + auth fail-closed (AP-183, Gemini High) · 932 testes |
+| **Hotfix** ESM locale Zod | — | ✅ **MERGED** | PR #605 (`1f6f933d`) · `zodSetup.js` import `.js` explícito · motor estava prod-down `ERR_MODULE_NOT_FOUND` · AP-184 |
+| **Validação prod** | — | 🔧 **pendente** | cron-job.org configurado (`/api/generate-doses` 1×/dia ~03:00 SP); re-rodar test run pós-hotfix → confirmar materialização de `dose_instances` via Supabase MCP + runtime logs Vercel |
+| PR-F2.3 âncora log | S2.6 | ⬜ pendente | liga escrita de dose ao `dose_instance_id` (muda comportamento) |
+| PR-F2.4 backfill | S2.7 | ⬜ pendente | script one-shot isolado, roda manual pós-merge |
 
 **Aprendizados que afetam fases futuras:**
 - Blast radius tz confirmado: **~250 callers** de `getNow`/`getSaoPauloTime`/`getTodayLocal` seguem em **default SP**. A capacidade tz existe (`getUserTime`/param `tz`), mas o valor real só aparece quando consumidores **injetam** o tz do usuário. → ver **Gap G1** abaixo.
@@ -254,7 +256,9 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 
 ---
 
-# PR-F2.2.1 — Motor em produção: cron isolado + due-only (ADR-051) ⚠️ crítico
+# PR-F2.2.1 — Motor em produção: cron isolado + due-only (ADR-051) ✅ MERGED (#604)
+
+> **Status:** ✅ MERGED PR #604 (`f8b207a7`). Hotfix subsequente #605 (`1f6f933d`) corrigiu `ERR_MODULE_NOT_FOUND` no boot serverless (import ESM do locale Zod sem extensão, AP-184). Cron-job.org configurado; validação de prod pós-hotfix pendente.
 
 **Por quê:** PR-F2.2 cabeou o motor via `node-cron` (`server/index.js`) — **só roda em DEV**. Em prod o cron é `api/notify.js` (cron-job.org a cada minuto, gated por hora). Logo a geração diária + cleanup **não disparam em prod** (AP-182). E piggyback no `notify.js` faria o motor dividir o invoke de 60s com os reminders — caminho crítico de um app de saúde. **Decisão: endpoint dedicado + isolado** (ADR-051). Também otimiza para escala (due-only + sem SELECT redundante).
 

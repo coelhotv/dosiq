@@ -1,14 +1,18 @@
 # Plano — Refatoração para `dose_instances` (Schedule-Anchored Doses)
 
-> **Status:** Em execução — **Fase 1 quase completa** (PR-F1.1 merged #597; PR-F1.2 em smoke PO).
+> **Status:** Em execução — **Fase 1 completa · Fase 2 motor em produção** (próximo: PR-F2.3 âncora de log).
 > **Origem:** bug reportado pós-lançamento App Store — dose das 22:30 deixa de ser registrável após meia-noite.
-> **Decisão arquitetural-mãe:** **ADR-048** (proposed — promover a accepted no planning da Fase 2) — tabela `dose_instances` materializada, modelo híbrido. **ADR-049** (accepted) — core tz-aware, fundação da Fase 1.
+> **Decisão arquitetural-mãe:** **ADR-048** (accepted) — tabela `dose_instances` materializada, modelo híbrido. **ADR-049** (accepted) — core tz-aware, fundação da Fase 1. **ADR-050** (accepted) — future-proofing diabetes (4 FPs). **ADR-051** (accepted) — motor em endpoint serverless dedicado isolado + geração due-only.
 >
-> **Progresso (2026-05-28):**
+> **Progresso (2026-05-29):**
 > - ✅ **Fase 1 / PR-F1.1** — core tz-aware (`getUserTime` + param tz default SP, non-breaking ~250 callers) · `user_settings.timezone` (migration em prod) · CON-022. Merged #597.
 > - ✅ **Fase 1 / PR-F1.2** — seletor de fuso UI web+mobile + revalidação no launch mobile. Merged #598.
 > - ✅ **Fase 2 / PR-F2.1** — schema `dose_instances` + motor de geração (`doseInstanceGenerator`) + repository (`createDoseInstanceRepository`). Migration aplicada em prod. Merged #599 (`b7d26b3f`). ADR-048 accepted.
-> - ⬜ **Fase 2 / PR-F2.2+** — motor no scheduler, lifecycle, âncora de log, backfill.
+> - ✅ **Fase 2 / PR-F2.2** — `doseInstancePlanner` (orquestração) + scheduler node-cron (dev) + lifecycle hooks em `createProtocolRepository` (pause/resume/scheduling-change, best-effort R-245). Merged #603 (`a6dc9a52`).
+> - ✅ **Fase 2 / PR-F2.2.1** — endpoint serverless dedicado `api/generate-doses.js` (cron-job.org 1×/dia, isolado dos reminders) + geração due-only no DB + auth fail-closed. Merged #604 (`f8b207a7`). ADR-051.
+> - ✅ **Hotfix** — `zodSetup.js` import ESM com extensão `.js` (motor prod-down `ERR_MODULE_NOT_FOUND`). Merged #605 (`1f6f933d`). AP-184.
+> - 🔧 **Pós-merge humano** — cron-job.org configurado (`GET /api/generate-doses` 1×/dia ~03:00 SP, `Bearer CRON_SECRET`). **Validação de prod pendente** (re-rodar test run pós-hotfix → confirmar materialização de `dose_instances`).
+> - ⬜ **Fase 2 / PR-F2.3+** — âncora de log (liga escrita de dose ao `dose_instance_id`), backfill.
 >
 > **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.
 >
