@@ -12,7 +12,8 @@
 > - ✅ **Fase 2 / PR-F2.2.1** — endpoint serverless dedicado `api/generate-doses.js` (cron-job.org 1×/dia, isolado dos reminders) + geração due-only no DB + auth fail-closed. Merged #604 (`f8b207a7`). ADR-051.
 > - ✅ **Hotfix** — `zodSetup.js` import ESM com extensão `.js` (motor prod-down `ERR_MODULE_NOT_FOUND`). Merged #605 (`1f6f933d`). AP-184.
 > - ✅ **Validação de prod (29/05)** — cron-job.org → `200 {processed:34, generated:1140, cleaned:0, durationMs:2352}`. Supabase confirma: 1140 instâncias `pending` (janela 30d), 34/34 protocolos ativos com `generated_through`, 0 dupes. Motor materializando `dose_instances` end-to-end em prod.
-> - ⬜ **Fase 2 / PR-F2.3+** — âncora de log (liga escrita de dose ao `dose_instance_id`), backfill.
+> - ✅ **Fase 2 / PR-F2.3** — âncora de log: toda tomada (web `logService.create` + bot `<Tomar>`) liga `medicine_logs.dose_instance_id` via snap por tolerância (escopo protocol_id, nearest, cross-meia-noite) → instância vira `taken`. Best-effort (R-246), FP-1. Review Gemini: race no-op→elo órfão corrigido (AP-185). Merged #609 (`9b4857f5`). **Raiz do bug das 22:30 fechada na escrita.**
+> - ⬜ **Fase 2 / PR-F2.4** — backfill one-shot (instâncias passadas + casa logs históricos); roda manual pós-merge. **Último da Fase 2.**
 >
 > **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.
 >

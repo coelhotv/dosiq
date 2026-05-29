@@ -16,8 +16,8 @@
 | **PR-F2.2.1** motor prod (cron isolado) | S2.4.1–S2.4.3 | ✅ **MERGED** | PR #604 (`f8b207a7`) · ADR-051 · endpoint dedicado `api/generate-doses.js` + due-only + auth fail-closed (AP-183, Gemini High) · 932 testes |
 | **Hotfix** ESM locale Zod | — | ✅ **MERGED** | PR #605 (`1f6f933d`) · `zodSetup.js` import `.js` explícito · motor estava prod-down `ERR_MODULE_NOT_FOUND` · AP-184 |
 | **Validação prod** | — | ✅ **VALIDADA** (29/05) | cron-job.org → `200 {processed:34, generated:1140, cleaned:0, durationMs:2352}`. Supabase: 1140 `pending` (janela 30d), 34/34 protocolos com `generated_through`, 0 dupes (UNIQUE + ON CONFLICT). Motor end-to-end OK em prod. |
-| PR-F2.3 âncora log | S2.6 | ⬜ pendente | liga escrita de dose ao `dose_instance_id` (muda comportamento) |
-| PR-F2.4 backfill | S2.7 | ⬜ pendente | script one-shot isolado, roda manual pós-merge |
+| **PR-F2.3** âncora log | S2.6 | ✅ **MERGED** | PR #609 (`9b4857f5`) · snap por tolerância (escopo protocol_id AP-A03, nearest, cross-meia-noite) + `markTaken` FP-1 · web `logService.create` (LogForm+FAB+bulk) + bot `<Tomar>` single · best-effort (R-246) · review Gemini (3 High: race no-op→elo órfão, AP-185) · 939 testes · secundárias do bot (plan/bulk, conversational, medicineLogService) deferidas |
+| PR-F2.4 backfill | S2.7 | ⬜ pendente | script one-shot isolado, roda manual pós-merge (**último da Fase 2**) |
 
 **Aprendizados que afetam fases futuras:**
 - Blast radius tz confirmado: **~250 callers** de `getNow`/`getSaoPauloTime`/`getTodayLocal` seguem em **default SP**. A capacidade tz existe (`getUserTime`/param `tz`), mas o valor real só aparece quando consumidores **injetam** o tz do usuário. → ver **Gap G1** abaixo.
@@ -295,6 +295,10 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
 **Gate F2.2.1:** SQP (R-221) — Minor Backend, sem version bump (sem surface user-facing). Hard stop humano antes do commit/push. Sem migration.
 
 > **Nota de concorrência (ADR-051):** motor e reminders viram funções serverless **separadas** → invokes independentes na Vercel. Um pico/timeout do motor **não** afeta os reminders. Notificação de dose permanece prioritária e isolada.
+
+### S2.6 — Âncora de log ✅ MERGED (#609)
+
+> **Status:** ✅ MERGED PR #609 (`9b4857f5`). Snap implementado no core (`findAnchorInstance` escopo protocol_id/AP-A03, tolerância por linha, nearest por instante absoluto) + `markTaken` (FP-1, retorna boolean após review). Web `logService.create` (cobre LogForm+FAB+bulk via funnel) + bot `doseActions` single. Best-effort após estoque (R-246). Review Gemini: 3 High (race no-op → elo órfão) → AP-185. 939 testes. **Deferido (follow-up):** bot plan/bulk, `conversational.js`, `medicineLogService.js`.
 - **Agent:** `claude` · **Model:** **opus**
 - **Files:** `apps/web/src/shared/services/api/logService.js`, `server/bot/callbacks/doseActions.js`, LogForm web, FAB web (multi-superfície — splitável em 2 sub-tarefas se reviewer pedir)
 - **Spec:**
