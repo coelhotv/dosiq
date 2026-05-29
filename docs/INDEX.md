@@ -36,7 +36,7 @@
 | [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
 | [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório extraído | ✅ Completo (Fase 3) |
 | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
-| [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) | Integração GitHub Actions + Gemini Code Assist | ✅ Completo (v1.0.0) |
+| [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) | Integração GitHub Actions + Gemini Code Assist | ✅ Atualizado (v2.0.0) |
 
 **Nota**: PADROES_CODIGO.md permanece na raiz como documento primário (1500+ linhas). Consolidação futura opcional.
 
