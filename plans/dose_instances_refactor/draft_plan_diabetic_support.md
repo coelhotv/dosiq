@@ -4,6 +4,7 @@
 > **Revisão (2026-05-28):** documento original (consultor externo) corrigido contra o schema real do dosiq e contra o refactor `dose_instances` em andamento (ADR-048). A **Seção 0 (contexto clínico) foi preservada** — é sólida. As Seções 1-7 foram reescritas: nomes de tabela reais, campos no lugar certo, e a "parede de unidades" que o original subestimou.
 > **Pré-requisito:** depende do refactor `dose_instances` (Fases 2-4) aterrissado. Os *future-proofings* FP-1..FP-4 (**ADR-050**) já preparam a fundação; este épico constrói o que sobra.
 > **Decisão de roadmap:** **ADR-050** — diabetes é épico próprio pós-refactor, não fusão.
+> **Atualização (2026-05-29) — ADR-052:** (1) Colunas de dose já são `numeric` em prod (`expected_dose`/`quantity_taken`/`dosage_per_intake`) → UI fracionada já cabe, **sem migration de coluna** (a parede de unidade é cap Zod + decremento de estoque + display, não o tipo da coluna). (2) A parede de unidade é **compartilhada com o épico de líquidos** — uma fundação. **Sequência: líquidos ANTES de diabetes** (líquidos destrava a unidade sem biomarcadores/TTL/SaMD; diabetes reusa). (3) FP-1 vira seam concreto na Fase 3: **modo de adesão por protocolo** (binário-evento vs exatidão-de-dose).
 
 ---
 

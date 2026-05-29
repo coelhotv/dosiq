@@ -6,6 +6,15 @@ Ele detalha a transição conceitual de unidades discretas para volumes contínu
 
 ---
 
+> **⚠️ Revisão (2026-05-29) — alinhamento com o refactor `dose_instances` e schema real (ADR-052).** Ler antes das seções abaixo:
+> - **Colunas de dose JÁ são `numeric`** (`medicine_logs.quantity_taken`, `dose_instances.expected_dose`, `protocols.dosage_per_intake`, verificado em prod). A **dose fracionada (2,5 ml, 0,75 ml) já cabe sem migration de coluna.** Os `ALTER` deste draft que continuam válidos são só os de **estoque** (`current_volume_ml`, `drops_per_ml`, `total_volume_ml`) e **definição** (`is_liquid`), não os de dose.
+> - **Nomes de tabela reais:** `medicine_logs` (não `dose_logs`/`dose_log`), `stock` (não `stock_items`/`purchases`). O decremento fracionado deve espelhar o `consume_stock_fifo` existente (RPC), não um trigger paralelo solto — avaliar estender o RPC atual vs. criar um unit-aware.
+> - **Parede de unidade compartilhada:** este épico e o de diabetes ([draft](./draft_plan_diabetic_support.md)) batem na **mesma** parede (dose+estoque+display na `dosage_unit`). É **uma** fundação. **Sequência (ADR-052): líquidos ANTES de diabetes** — líquidos exercita a unidade sem biomarcadores/TTL/SaMD.
+> - **Adesão por razão já é unit-agnóstica** no refactor (`Σaplicado/Σesperado` por medicamento). O que falta é o decremento de estoque unit-aware + `formatDoseUnit` por unidade (ADR-046) + revisar o cap Zod 100 (R-022, pill-specific).
+> - **Pré-requisito:** refactor `dose_instances` aterrissado (Fases 2-4). Os seams da Fase 3 (ADR-052) preparam a leitura.
+
+---
+
 ## 🔍 1. O Problema e Descoberta Arquitetural
 
 Atualmente, o Dosiq funciona sob um modelo linear de **unidades discretas e inteiras** (ex: `-1 comprimido` no estoque). Contudo, apresentações líquidas exigem a coexistência de três grandezas independentes que não se alinham de forma linear:

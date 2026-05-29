@@ -50,6 +50,14 @@ O refactor já constrói o esqueleto planned/applied que insulina exige. 4 decis
 - **FP-4 (unidade)** — toca **S2.6**: preservar o fluxo de estoque atual (pill-cêntrico) **sem** cravar novas suposições que dificultem o caminho UI/volume futuro. Decremento continua na unidade do medicamento.
 - **FP-2 (tolerância por instância)** e **FP-3 (timeline event-agnóstica)** — entram nas Fases 3 e 4 (fora do escopo deste spec); registrados no MASTER_PLAN §8/§11 para não serem esquecidos no planning dessas fases.
 
+### Seams cross-épico para a Fase 3 (ADR-052 — líquidos ∩ diabetes)
+Verificação no schema de prod: `expected_dose`, `quantity_taken`, `dosage_per_intake` já são **`numeric`** → fração (UI/ml) já cabe, **sem migration de coluna** para nenhum dos dois épicos. A "parede de unidade" é compartilhada pelos épicos de **líquidos** e **diabetes** (uma fundação, não duas; sequência: **líquidos antes de diabetes**). A Fase 3 (leitura) DEVE nascer com:
+- **Seam A** — `expected_dose`/`quantity_taken` = "quantidade na `dosage_unit`", nunca comprimidos (contrato; reforça FP-4).
+- **Seam B** — **modo de adesão por protocolo** (binário-evento vs exatidão-de-dose); não cravar `Σaplicado/Σesperado` (R-112) como único modo — bolus variável quebra o denominador.
+- **Seam C** — cap Zod `quantity_taken ≤ 100` (R-022) é pill-specific; marcar para revisão por unidade (não mexer na F3, só não assumir universal).
+
+Detalhe em [ADR-052](../../.agent/memory/decisions/data_and_schema/ADR-052.md). Fronteira conhecida: gerador é clock-based; bolus meal-anchored é modo de geração futuro (épico diabetes).
+
 ---
 
 ## Modelo de orquestração
