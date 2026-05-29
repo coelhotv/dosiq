@@ -212,3 +212,4 @@
 - **[R-232]** Zod 4 — locale PT-BR + customError friendly via `z.config()` global em `@dosiq/core/zodSetup.js` (side-effect import). Não duplicar errorMap por schema -> [`rules/data_and_schema/R-232.md`](./rules/data_and_schema/R-232.md)
 
 - **[R-224]** Deep link auth handlers devem ser async + try/catch + suportar PKCE (`?code=` → `exchangeCodeForSession`) e implicit flow (`#access_token=` → `setSession`). -> [`rules/mobile_and_platform/R-224.md`](./rules/mobile_and_platform/R-224.md)
+- **[R-247]** Uso obrigatório do atributo `maxLength` em todos os campos de entrada de texto (Inputs/Textareas) de formulários na interface web e mobile -> [`rules/react_and_ui/R-247.md`](./rules/react_and_ui/R-247.md)
