@@ -74,6 +74,11 @@ export {
   getBulkLogErrorMessage,
 } from './logSchema.js'
 export {
+  geminiReviewSchema,
+  validateGeminiReview,
+} from './geminiReviewSchema.js'
+
+export {
   notificationLogSchema,
   notificationLogCreateSchema,
 } from './notificationLogSchema.js'
