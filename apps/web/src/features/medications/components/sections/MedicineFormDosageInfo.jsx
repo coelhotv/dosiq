@@ -121,9 +121,9 @@ export default function MedicineFormDosageInfo({
             style={{
               padding: '10px 12px',
               borderRadius: '8px',
-              backgroundColor: '#fffbeb',
-              border: '1px solid #fef3c7',
-              color: '#d97706',
+              backgroundColor: 'var(--color-warning-bg)',
+              border: '1px solid var(--color-warning-light)',
+              color: 'var(--color-warning)',
               fontSize: '0.85rem',
               lineHeight: '1.4',
               marginTop: '8px'
