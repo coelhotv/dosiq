@@ -26,7 +26,11 @@ async function anchorLogToInstance(log) {
     })
     if (!instance) return null
 
-    await doseInstanceRepo.markTaken(instance.id, log.id)
+    // Só grava o elo no log se a reserva da instância pegou (evita elo órfão em
+    // corrida: 2ª tomada acha a instância já taken → markTaken false → segue avulsa).
+    const marked = await doseInstanceRepo.markTaken(instance.id, log.id)
+    if (!marked) return null
+
     const { error } = await supabase
       .from('medicine_logs')
       .update({ dose_instance_id: instance.id })

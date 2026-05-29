@@ -243,19 +243,25 @@ export function createDoseInstanceRepository({ client }) {
      * Liga instância ↔ log: marca a ocorrência como `taken` e grava o `medicine_log_id`.
      * FP-1 (ADR-050): NÃO compara `quantity_taken` com `expected_dose` — a dose aplicada
      * pode divergir da planejada (bolus variável futuro). Só ancora se ainda `pending`
-     * (guard contra corrida/dupla-tomada). Idempotente por instância.
+     * (guard contra corrida/dupla-tomada).
+     *
+     * Retorna `true` SOMENTE se a reserva pegou (linha afetada). Em corrida, a 2ª tomada
+     * encontra a instância já `taken` → update no-op → retorna `false`, e o caller NÃO deve
+     * gravar `dose_instance_id` no log (evita elo unidirecional/órfão — Gemini #609).
      * @param {string} instanceId
      * @param {string} medicineLogId
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>} true se a instância foi efetivamente reservada
      */
     async markTaken(instanceId, medicineLogId) {
-      const { error } = await client
+      const { data, error } = await client
         .from(TABLE)
         .update({ status: 'taken', medicine_log_id: medicineLogId })
         .eq('id', instanceId)
         .eq('status', 'pending')
+        .select('id')
 
       if (error) throw error
+      return !!(data && data.length > 0)
     },
   }
 }

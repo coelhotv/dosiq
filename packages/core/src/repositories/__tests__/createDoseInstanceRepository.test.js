@@ -252,16 +252,25 @@ describe('createDoseInstanceRepository', () => {
   })
 
   describe('markTaken — elo instância↔log (FP-1)', () => {
-    it('marca taken + medicine_log_id, com guard status=pending', async () => {
-      const client = makeClient({ data: null, error: null })
+    it('marca taken + medicine_log_id, guard status=pending, retorna true se reservou', async () => {
+      const client = makeClient({ data: [{ id: 'di-1' }], error: null })
       const repo = createDoseInstanceRepository({ client })
-      await repo.markTaken('di-1', 'log-9')
+      const out = await repo.markTaken('di-1', 'log-9')
 
       const b = client._builder
       expect(client._from).toBe('dose_instances')
       expect(b.update).toHaveBeenCalledWith({ status: 'taken', medicine_log_id: 'log-9' })
       expect(b.eq).toHaveBeenCalledWith('id', 'di-1')
       expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(b.select).toHaveBeenCalledWith('id')
+      expect(out).toBe(true)
+    })
+
+    it('retorna false em no-op (corrida: instância já taken)', async () => {
+      const client = makeClient({ data: [], error: null })
+      const repo = createDoseInstanceRepository({ client })
+      const out = await repo.markTaken('di-1', 'log-9')
+      expect(out).toBe(false)
     })
 
     it('propaga erro do Supabase', async () => {

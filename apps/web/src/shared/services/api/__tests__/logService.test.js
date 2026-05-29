@@ -113,7 +113,7 @@ describe('logService', () => {
         .mockReturnValueOnce(buildLogUpdateChain({ error: null }))
       mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
       mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce({ id: 'di-7' })
-      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(undefined)
+      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(true)
 
       const result = await logService.create(baseLog)
 
@@ -123,6 +123,23 @@ describe('logService', () => {
       })
       expect(mocks.doseInstanceRepo.markTaken).toHaveBeenCalledWith('di-7', 'log-1')
       expect(result.dose_instance_id).toBe('di-7')
+    })
+
+    it('não grava elo se a reserva falha em corrida (markTaken=false)', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+
+      mocks.supabase.from.mockReturnValueOnce(
+        buildLogInsertChain({ data: createdLog, error: null })
+      )
+      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
+      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce({ id: 'di-7' })
+      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(false)
+
+      const result = await logService.create(baseLog)
+
+      expect(mocks.doseInstanceRepo.markTaken).toHaveBeenCalledWith('di-7', 'log-1')
+      // reserva não pegou → log segue avulso, sem elo unidirecional
+      expect(result.dose_instance_id).toBeUndefined()
     })
 
     it('deixa o log avulso (sem markTaken) quando nenhuma instância casa', async () => {
