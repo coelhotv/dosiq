@@ -22,5 +22,8 @@ export * from './utils/index.js'
 // Re-exporte de repositories (Fase 1 G2 — factory CRUD canônico)
 export * from './repositories/index.js'
 
+// Re-exporte de services (Fase 2 — orquestração de geração de dose_instances)
+export * from './services/index.js'
+
 // Re-exporte de protocols-utils (opcional, auditado em 2.4)
 // export * from './protocols-utils/index.js'

@@ -21,7 +21,7 @@ import { handleChatbotMessage } from './bot/commands/chatbot.js';
 import { handleCallbacks } from './bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from './bot/callbacks/conversational.js';
 import { handleInlineQueries } from './bot/inlineQuery.js';
-import { startScheduler, startDailyDigest } from './bot/scheduler.js';
+import { startScheduler, startDailyDigest, startDoseInstanceGeneration } from './bot/scheduler.js';
 import { startStockAlerts, startAdherenceReports, startTitrationAlerts, startMonthlyReport } from './bot/alerts.js';
 import { startAutoCleanup } from './services/sessionManager.js';
 import { BotFactory } from './bot/bot-factory.js';
@@ -90,6 +90,9 @@ bot.on('message', (msg) => handleChatbotMessage(bot, msg));
 // Start scheduler
 startScheduler(bot, schedulerOptions);
 startDailyDigest(bot, schedulerOptions);
+
+// Motor de geração de dose_instances (ADR-048, Fase 2)
+startDoseInstanceGeneration();
 
 // Start intelligent alerts (Phase 4)
 startStockAlerts(bot, schedulerOptions);
