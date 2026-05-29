@@ -5,8 +5,45 @@ import { calculateDaysRemaining, calculateStreak, escapeMarkdownV2 } from '../..
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
 import { getServerTimestamp } from '../../utils/dateUtils.js';
+import { createDoseInstanceRepository } from '@dosiq/core';
+import { createLogger } from '../logger.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
+
+const logger = createLogger('DoseActions');
+// Mesmo client service_role do bot; o snap/markTaken escopam por protocol_id (AP-A03).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
+
+/**
+ * Âncora de log → instância (S2.6/ADR-048, best-effort). Snap por tolerância (escopo
+ * protocol_id), marca a instância `taken` + grava o elo bidirecional. NUNCA lança: o
+ * log já está persistido; falha de âncora deixa a dose avulsa (reconciliável por backfill).
+ * @param {string} userId
+ * @param {string} protocolId
+ * @param {string} logId
+ * @param {string} takenAt - mesmo timestamp usado no insert do log
+ * @returns {Promise<void>}
+ */
+async function anchorLogToInstance(userId, protocolId, logId, takenAt) {
+  if (!protocolId) return;
+  try {
+    const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt });
+    if (!instance) return;
+
+    // Só grava o elo no log se a reserva da instância pegou (evita elo órfão em corrida).
+    const marked = await doseInstanceRepo.markTaken(instance.id, logId);
+    if (!marked) return;
+
+    const { error } = await supabase
+      .from('medicine_logs')
+      .update({ dose_instance_id: instance.id })
+      .eq('id', logId)
+      .eq('user_id', userId);
+    if (error) throw error;
+  } catch (anchorError) {
+    logger.warn('Falha ao ancorar log à instância (segue avulso)', anchorError);
+  }
+}
 
 export async function handleCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
@@ -40,6 +77,8 @@ async function resolveProtocolMedicine(protocolId) {
 }
 
 async function createLogAndConsumeStock(userId, protocolId, medicineId, quantity) {
+  // Captura o timestamp UMA vez: mesmo valor no insert e no snap da âncora.
+  const takenAt = getServerTimestamp();
   const { data: createdLogs, error: logError } = await supabase
     .from('medicine_logs')
     .insert([{
@@ -47,7 +86,7 @@ async function createLogAndConsumeStock(userId, protocolId, medicineId, quantity
       protocol_id: protocolId,
       medicine_id: medicineId,
       quantity_taken: quantity,
-      taken_at: getServerTimestamp()
+      taken_at: takenAt
     }])
     .select('id')
     .single();
@@ -65,6 +104,9 @@ async function createLogAndConsumeStock(userId, protocolId, medicineId, quantity
     await supabase.from('medicine_logs').delete().eq('id', createdLogs.id).eq('user_id', userId);
     throw consumeError;
   }
+
+  // Âncora de log → instância (best-effort, após estoque OK).
+  await anchorLogToInstance(userId, protocolId, createdLogs.id, takenAt);
 }
 
 async function calculateAdherenceAndStockWarnings(userId, medicineId) {
