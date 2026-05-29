@@ -17,7 +17,7 @@ A tabela `gemini_reviews` é um depósito contendo as críticas técnicas que os
   - Estrutura de Retornos / Condicionais Frágeis.
 
 ### Fase B: Auditoria Cruzada (O Crosscheck)
-- O desenvolvedor que executar esta tarefa DEVERÁ ler com profundidade a pasta `.agent/memory/anti-patterns/` (e a `RULES_INDEX`).
+- O desenvolvedor que executar esta tarefa DEVERÁ ler com profundidade a pasta `.agent/memory/` (e os seus indices, como o `RULES_INDEX`).
 - Deve-se *validar e quantificar*: Quais falhas apontadas pelo mining *JÁ SÃO* regras declaradas no nosso ambiente?
   - A quantificação indicará: O Agente errou "Regra X" num montante de N vezes.
 
