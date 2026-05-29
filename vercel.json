@@ -44,17 +44,14 @@
       "destination": "/api/generate-doses.js"
     },
     {
-      "source": "/api/beta-signup",
-      "destination": "/api/beta-signup.js"
+      "source": "/api/users/beta-signup",
+      "destination": "/api/users.js?action=beta-signup"
     },
     {
       "source": "/api/dlq",
       "destination": "/api/dlq.js"
     },
-    {
-      "source": "/api/health/:path*",
-      "destination": "/api/health/:path*.js"
-    },
+
     {
       "source": "/api/share",
       "destination": "/api/share.js"
@@ -64,8 +61,8 @@
       "destination": "/api/chatbot.js"
     },
     {
-      "source": "/api/register-webpush",
-      "destination": "/api/register-webpush.js"
+      "source": "/api/users/register-webpush",
+      "destination": "/api/users.js?action=register-webpush"
     },
     {
       "source": "/(.*)",

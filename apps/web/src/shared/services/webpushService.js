@@ -43,7 +43,7 @@ export const webpushService = {
       deviceName: navigator.userAgent
     }
 
-    const response = await fetch('/api/register-webpush', {
+    const response = await fetch('/api/users/register-webpush', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

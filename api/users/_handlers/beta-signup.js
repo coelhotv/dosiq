@@ -1,17 +1,11 @@
-// api/beta-signup.js — captura de e-mail para o closed testing (Android).
-// Escrita pública → roda no servidor com service_role (tabela beta_signups
-// NÃO tem grant para anon). Valida e-mail, rate-limit leve por IP, idempotente
-// (nunca revela se o e-mail já existe — evita enumeração).
 import { createClient } from '@supabase/supabase-js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ALLOWED_PLATFORMS = new Set(['android', 'ios', 'other'])
 
-// Rate-limit best-effort em memória (instância serverless é efêmera/reutilizável;
-// suficiente p/ captura de beta — não é controle de segurança forte).
 const RATE_WINDOW_MS = 60_000
 const RATE_MAX = 5
-const hits = new Map() // ip -> { count, resetAt }
+const hits = new Map()
 
 function rateLimited(ip) {
   const now = Date.now()
@@ -24,11 +18,7 @@ function rateLimited(ip) {
   return entry.count > RATE_MAX
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
+export async function handleBetaSignup(req, res) {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown'
   if (rateLimited(ip)) {
     return res.status(429).json({ error: 'Muitas tentativas. Tente novamente em instantes.' })
@@ -52,8 +42,6 @@ export default async function handler(req, res) {
       .from('beta_signups')
       .insert([{ email: normalized, platform: plat }])
 
-    // 23505 = unique_violation → já cadastrado: tratamos como sucesso idempotente
-    // (não revelar que o e-mail já existe na lista — evita enumeração).
     if (error && error.code !== '23505') {
       console.error('beta-signup insert error:', error)
       return res.status(500).json({ error: 'Não foi possível registrar agora. Tente mais tarde.' })
