@@ -95,12 +95,20 @@ function toIsoLike(value) {
  * Renova a janela de um protocolo se o high-water-mark se aproxima do fim
  * (usado pelo cron). Gera de `now` (ou do hwm) até `now + WINDOW_DAYS`.
  * Não regenera se o hwm ainda está longe do fim.
+ *
+ * @param {Object} params
+ * @param {string|null} [params.generatedThrough] - high-water-mark já conhecido (ex: vindo
+ *   da linha do protocolo já buscada com `select('*')`). Quando fornecido (inclui `null`
+ *   explícito), evita o SELECT redundante `getGeneratedThrough` — chave p/ escala (ADR-051).
+ *   Omitir (`undefined`) mantém o fallback que busca no repo.
  * @returns {Promise<number>} instâncias geradas (0 se não precisou renovar)
  */
-export async function renewProtocolWindow({ protocol, doseInstanceRepo, now = parseISO(getServerTimestamp()), tz = 'America/Sao_Paulo' }) {
+export async function renewProtocolWindow({ protocol, doseInstanceRepo, generatedThrough, now = parseISO(getServerTimestamp()), tz = 'America/Sao_Paulo' }) {
   const targetIso = computeWindowEnd(protocol, now)
   const targetMs = parseISO(targetIso).getTime()
-  const hwm = await doseInstanceRepo.getGeneratedThrough(protocol.id)
+  const hwm = generatedThrough !== undefined
+    ? generatedThrough
+    : await doseInstanceRepo.getGeneratedThrough(protocol.id)
 
   if (hwm) {
     const hwmMs = parseISO(hwm).getTime()

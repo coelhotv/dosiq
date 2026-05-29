@@ -5,7 +5,8 @@
   "installCommand": "npm install",
   "functions": {
     "api/notify.js": { "maxDuration": 60 },
-    "api/telegram.js": { "maxDuration": 10 }
+    "api/telegram.js": { "maxDuration": 10 },
+    "api/generate-doses.js": { "maxDuration": 60 }
   },
   "headers": [
     {
@@ -37,6 +38,10 @@
     {
       "source": "/api/notify",
       "destination": "/api/notify.js"
+    },
+    {
+      "source": "/api/generate-doses",
+      "destination": "/api/generate-doses.js"
     },
     {
       "source": "/api/beta-signup",
