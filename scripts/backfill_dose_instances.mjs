@@ -115,17 +115,29 @@ async function run() {
   console.log(`   Instâncias passadas candidatas (gerador): ${candidates.length}`)
 
   // 3. Logs históricos do usuário com protocol_id e ainda sem elo, mais antigos primeiro.
-  const { data: logs, error: logErr } = await supabase
-    .from('medicine_logs')
-    .select('id, protocol_id, taken_at')
-    .eq('user_id', userId)
-    .not('protocol_id', 'is', null)
-    .is('dose_instance_id', null)
-    .gte('taken_at', parseTimestamp(lookbackStartMs).toISOString())
-    .lte('taken_at', nowIso)
-    .order('taken_at', { ascending: true })
-  if (logErr) fail(`Falha ao buscar logs: ${logErr.message}`)
-  console.log(`   Logs históricos a casar: ${logs?.length ?? 0}`)
+  //    PAGINADO por .range(): PostgREST corta SELECT em ~1000 linhas por padrão —
+  //    sem paginar, usuários com >1000 logs ficariam sub-casados (truncados).
+  //    Lê TODAS as páginas antes de qualquer escrita (sem drift do filtro dose_instance_id IS NULL).
+  const LOG_PAGE = 1000
+  const lookbackIso = parseTimestamp(lookbackStartMs).toISOString()
+  const logs = []
+  for (let from = 0; ; from += LOG_PAGE) {
+    const { data: page, error: logErr } = await supabase
+      .from('medicine_logs')
+      .select('id, protocol_id, taken_at')
+      .eq('user_id', userId)
+      .not('protocol_id', 'is', null)
+      .is('dose_instance_id', null)
+      .gte('taken_at', lookbackIso)
+      .lte('taken_at', nowIso)
+      .order('taken_at', { ascending: true })
+      .range(from, from + LOG_PAGE - 1)
+    if (logErr) fail(`Falha ao buscar logs: ${logErr.message}`)
+    if (!page || page.length === 0) break
+    logs.push(...page)
+    if (page.length < LOG_PAGE) break
+  }
+  console.log(`   Logs históricos a casar: ${logs.length}`)
 
   if (DRY_RUN) {
     console.log('\n📋 DRY-RUN — nada escrito. Estimativa:')
