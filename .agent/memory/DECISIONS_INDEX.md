@@ -9,6 +9,7 @@
 - **[ADR-046]** `formatDoseUnit(qty)` SEMPRE retorna `"unidade(s)"` independente do `dosage_unit`; apresentação fica no DosagePill do hero (evita bug semântico Apidra 2ml dose=1 → "1 ml") -> [`decisions/data_and_schema/ADR-046.md`](./decisions/data_and_schema/ADR-046.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[ADR-051]** Motor de geração `dose_instances` em endpoint serverless dedicado (`api/generate-doses.js`) + cron-job.org próprio — isola raio de impacto dos reminders (notificação é prioritária); geração due-only no DB [accepted] -> [`decisions/infra_and_deploy/ADR-051.md`](./decisions/infra_and_deploy/ADR-051.md)
 - **[ADR-001]** Gradual Redesign Rollout via Feature Flags -> [`decisions/infra_and_deploy/ADR-001.md`](./decisions/infra_and_deploy/ADR-001.md)
 - **[ADR-002]** Environment-Aware Logger to Reduce Console Noise -> [`decisions/infra_and_deploy/ADR-002.md`](./decisions/infra_and_deploy/ADR-002.md)
 - **[ADR-003]** Groq Prompt Caching Optimization Strategy -> [`decisions/infra_and_deploy/ADR-003.md`](./decisions/infra_and_deploy/ADR-003.md)

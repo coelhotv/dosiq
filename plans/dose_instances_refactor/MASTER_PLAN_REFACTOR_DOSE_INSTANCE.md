@@ -90,9 +90,11 @@ CREATE TABLE dose_adherence_monthly (
 
 ---
 
-## 4. Motor de geração (`server/bot/scheduler.js`)
+## 4. Motor de geração
 
-Roda fora do Vercel — não consome o budget de 12 functions (R-090). Reusa `isProtocolActiveOnDate` + `FREQUENCY_MATCHERS` do core (já tratam `diario/dias_alternados/semanal/personalizado` — `personalizado` = weekday setting sobre `semanal`, PR #592). **Sem caso especial de frequência.**
+> **Caminho de produção (ADR-051):** o motor roda num **endpoint serverless dedicado** `api/generate-doses.js`, disparado por agendamento próprio do cron-job.org (1×/dia ~03:00), com invoke e orçamento de 60s **isolados** dos reminders (`api/notify.js`). O `node-cron` em `server/bot/scheduler.js` é **só paridade de DEV** — não dispara em prod serverless (AP-182). Isolamento porque notificação de dose é crítica/prioritária e não pode perder tempo para o motor.
+
+Lógica de geração compartilhada (`@dosiq/core` — `doseInstancePlanner` + `doseInstanceGenerator`). Reusa `isProtocolActiveOnDate` + `FREQUENCY_MATCHERS` do core (já tratam `diario/dias_alternados/semanal/personalizado` — `personalizado` = weekday setting sobre `semanal`, PR #592). **Sem caso especial de frequência.**
 
 Cada protocolo guarda `generated_through timestamptz` (high-water-mark).
 

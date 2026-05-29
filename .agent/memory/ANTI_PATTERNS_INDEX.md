@@ -16,6 +16,7 @@
 - **[AP-P17]** HTTP 400 Bad Request silencioso. UI mostra "Erro ao carregar dados" sem mensagem... -> [`anti-patterns/data_and_schema/AP-P17.md`](./anti-patterns/data_and_schema/AP-P17.md)
 - **[AP-S01]** 500 error on INSERT, data rejected by database -> [`anti-patterns/data_and_schema/AP-S01.md`](./anti-patterns/data_and_schema/AP-S01.md)
 - **[AP-S08]** Database error, failed writes -> [`anti-patterns/data_and_schema/AP-S08.md`](./anti-patterns/data_and_schema/AP-S08.md)
+- **[AP-182]** `node-cron` em `server/` só roda em DEV — cron de prod é endpoint serverless + cron-job.org gated por hora; job agendado novo precisa de caminho `api/` (ver ADR-051) -> [`anti-patterns/infra_and_deploy/AP-182.md`](./anti-patterns/infra_and_deploy/AP-182.md)
 - **[AP-SL01]** Logs não aparecem em Vercel. Função Node.js server context é invisível para Verc... -> [`anti-patterns/data_and_schema/AP-SL01.md`](./anti-patterns/data_and_schema/AP-SL01.md)
 - **[AP-SL02]** Handler chama `bot.sendChatAction()` que não existe no mock → `"is not a functio... -> [`anti-patterns/data_and_schema/AP-SL02.md`](./anti-patterns/data_and_schema/AP-SL02.md)
 - **[AP-T10]** Tests pass in GMT but fail in GMT-3 (local); date off by 1 day -> [`anti-patterns/data_and_schema/AP-T10.md`](./anti-patterns/data_and_schema/AP-T10.md)

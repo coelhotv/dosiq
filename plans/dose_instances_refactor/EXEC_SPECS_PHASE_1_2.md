@@ -12,7 +12,8 @@
 | **PR-F1.1** tz core | S1.0, S1.1, S1.2, S1.3, S1.6 | ✅ **MERGED** | PR #597 (squash `6816ee99`) · migration aplicada em prod · ADR-049 accepted · CON-022 |
 | **PR-F1.2** tz UI | S1.4, S1.5 | ✅ **MERGED** | PR #598 |
 | **PR-F2.1** schema+lógica | S2.0–S2.3 | ✅ **MERGED** | PR #599 (`b7d26b3f`) · migration aplicada em prod · ADR-048 accepted · review Gemini (1 High wrap-around + 2 Medium) aplicado · AP-181 (FREQUENCY_MATCHERS stale) · 25 testes |
-| PR-F2.2 motor+lifecycle | S2.4, S2.5 | ⬜ pendente | |
+| **PR-F2.2** motor+lifecycle | S2.4, S2.5 | ✅ **MERGED** | PR #603 (`a6dc9a52`) · review Gemini (2 High paginação+N+1, 2 Medium) + reauditoria S2.4 (bug resume skipped_paused, clamp past-pending) · R-245 · 929 testes · ⚠️ cron node-cron = **dev-only** → corrigido em F2.2.1 |
+| **PR-F2.2.1** motor prod (cron isolado) | S2.4.1–S2.4.3 | ⬜ pendente (ADR-051) | corrige geração que não dispara em prod + isola raio de impacto dos reminders |
 | PR-F2.3 âncora log | S2.6 | ⬜ pendente | |
 | PR-F2.4 backfill | S2.7 | ⬜ pendente | |
 
@@ -249,8 +250,47 @@ Testes (S1.6/S2.8) **viajam dentro do PR do código que cobrem** — não viram 
   - **Conecta o stub de regen-on-tz-change** de S1.5.
 - **Aceite:** toggle rápido (pausa <1d + religa) não perde instâncias; pausa não vira `missed`.
 - **Deps:** S2.3, S2.4
+- **Status:** ✅ em PR-F2.2 (`a6dc9a52`). Bug do resume (skipped_paused não revertido) corrigido na mesma PR via `reactivateFuturePaused`.
 
-### S2.6 — Wiring de escrita de log (âncora) ⚠️ crítico
+---
+
+# PR-F2.2.1 — Motor em produção: cron isolado + due-only (ADR-051) ⚠️ crítico
+
+**Por quê:** PR-F2.2 cabeou o motor via `node-cron` (`server/index.js`) — **só roda em DEV**. Em prod o cron é `api/notify.js` (cron-job.org a cada minuto, gated por hora). Logo a geração diária + cleanup **não disparam em prod** (AP-182). E piggyback no `notify.js` faria o motor dividir o invoke de 60s com os reminders — caminho crítico de um app de saúde. **Decisão: endpoint dedicado + isolado** (ADR-051). Também otimiza para escala (due-only + sem SELECT redundante).
+
+### S2.4.1 — Core: `renewProtocolWindow` aceita `generatedThrough` (sem SELECT redundante)
+- **Agent:** `claude` · **Model:** sonnet
+- **Files:** `packages/core/src/services/doseInstancePlanner.js` + teste
+- **Spec:**
+  - `renewProtocolWindow({ protocol, doseInstanceRepo, generatedThrough, now, tz })`: se `generatedThrough` for passado (vindo da linha já buscada com `select('*')`), **não** chamar `doseInstanceRepo.getGeneratedThrough` — usa o valor recebido. Fallback ao SELECT só quando `undefined` (retrocompat).
+  - Idem `ensureInstancesUpTo` se aplicável.
+- **Aceite:** quando `generatedThrough` é injetado, zero chamada a `getGeneratedThrough` (mock verifica); comportamento idêntico ao atual.
+- **Deps:** —
+
+### S2.4.2 — Server: geração due-only + paginada
+- **Agent:** `claude` · **Model:** **opus** (concorrência/escala)
+- **Files:** `server/bot/doseInstanceScheduler.js`
+- **Spec:**
+  - `generateDoseInstances` busca **apenas due**: `active AND (generated_through IS NULL OR generated_through < now + RENEWAL_THRESHOLD_DAYS)` — filtro no DB, não em JS. Mantém paginação `.range` sobre o due-set.
+  - Passa `protocol.generated_through` para `renewProtocolWindow` (S2.4.1) → elimina N SELECTs.
+  - `cleanupPausedProtocols` permanece (DELETE único `.in`).
+- **Aceite:** com 1k+ protocolos e poucos due, faz ~1 query de fetch + trabalho só nos due; não varre todos.
+- **Deps:** S2.4.1
+
+### S2.4.3 — API: endpoint dedicado `api/generate-doses.js` + vercel.json
+- **Agent:** `claude` · **Model:** sonnet
+- **Files:** `api/generate-doses.js` (novo), `vercel.json` (function + rewrite), remover/neutralizar o registro node-cron de prod em `server/index.js` (manter em `scheduler.js` só p/ dev)
+- **Spec:**
+  - Handler serverless: auth `CRON_SECRET` (igual notify), chama `generateDoseInstances()` + `cleanupPausedProtocols()`, `res.status().json()` (R-086), `maxDuration: 60`.
+  - `vercel.json`: adicionar `functions["api/generate-doses.js"].maxDuration=60` + rewrite `/api/generate-doses → /api/generate-doses.js` (antes do catch-all). Budget: 6→**7/12** (R-090 ok).
+  - **Não** tocar `api/notify.js` (reminders intocados — isolamento, ADR-051).
+- **Aceite:** endpoint responde 200 com `{processed, generated, cleaned}` sob `CRON_SECRET`; 401 sem; não compartilha invoke com notify.
+- **Deps:** S2.4.2
+- **Passo humano (pós-merge):** configurar agendamento no cron-job.org → `GET https://<app>/api/generate-doses` 1×/dia ~03:00 SP, header `Authorization: Bearer <CRON_SECRET>`. Documentar no PR.
+
+**Gate F2.2.1:** SQP (R-221) — Minor Backend, sem version bump (sem surface user-facing). Hard stop humano antes do commit/push. Sem migration.
+
+> **Nota de concorrência (ADR-051):** motor e reminders viram funções serverless **separadas** → invokes independentes na Vercel. Um pico/timeout do motor **não** afeta os reminders. Notificação de dose permanece prioritária e isolada.
 - **Agent:** `claude` · **Model:** **opus**
 - **Files:** `apps/web/src/shared/services/api/logService.js`, `server/bot/callbacks/doseActions.js`, LogForm web, FAB web (multi-superfície — splitável em 2 sub-tarefas se reviewer pedir)
 - **Spec:**
