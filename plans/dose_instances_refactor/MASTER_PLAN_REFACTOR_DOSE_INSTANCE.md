@@ -11,7 +11,7 @@
 > - ✅ **Fase 2 / PR-F2.2** — `doseInstancePlanner` (orquestração) + scheduler node-cron (dev) + lifecycle hooks em `createProtocolRepository` (pause/resume/scheduling-change, best-effort R-245). Merged #603 (`a6dc9a52`).
 > - ✅ **Fase 2 / PR-F2.2.1** — endpoint serverless dedicado `api/generate-doses.js` (cron-job.org 1×/dia, isolado dos reminders) + geração due-only no DB + auth fail-closed. Merged #604 (`f8b207a7`). ADR-051.
 > - ✅ **Hotfix** — `zodSetup.js` import ESM com extensão `.js` (motor prod-down `ERR_MODULE_NOT_FOUND`). Merged #605 (`1f6f933d`). AP-184.
-> - 🔧 **Pós-merge humano** — cron-job.org configurado (`GET /api/generate-doses` 1×/dia ~03:00 SP, `Bearer CRON_SECRET`). **Validação de prod pendente** (re-rodar test run pós-hotfix → confirmar materialização de `dose_instances`).
+> - ✅ **Validação de prod (29/05)** — cron-job.org → `200 {processed:34, generated:1140, cleaned:0, durationMs:2352}`. Supabase confirma: 1140 instâncias `pending` (janela 30d), 34/34 protocolos ativos com `generated_through`, 0 dupes. Motor materializando `dose_instances` end-to-end em prod.
 > - ⬜ **Fase 2 / PR-F2.3+** — âncora de log (liga escrita de dose ao `dose_instance_id`), backfill.
 >
 > **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** plumbing de injeção de tz (Fase 3, ~250 callers em SP default até lá) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB usa acento (`quando_necessário`/`diário`) — gerador deve casar exato.

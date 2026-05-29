@@ -15,7 +15,7 @@
 | **PR-F2.2** motor+lifecycle | S2.4, S2.5 | ✅ **MERGED** | PR #603 (`a6dc9a52`) · review Gemini (2 High paginação+N+1, 2 Medium) + reauditoria S2.4 (bug resume skipped_paused, clamp past-pending) · R-245 · 929 testes · ⚠️ cron node-cron = **dev-only** → corrigido em F2.2.1 |
 | **PR-F2.2.1** motor prod (cron isolado) | S2.4.1–S2.4.3 | ✅ **MERGED** | PR #604 (`f8b207a7`) · ADR-051 · endpoint dedicado `api/generate-doses.js` + due-only + auth fail-closed (AP-183, Gemini High) · 932 testes |
 | **Hotfix** ESM locale Zod | — | ✅ **MERGED** | PR #605 (`1f6f933d`) · `zodSetup.js` import `.js` explícito · motor estava prod-down `ERR_MODULE_NOT_FOUND` · AP-184 |
-| **Validação prod** | — | 🔧 **pendente** | cron-job.org configurado (`/api/generate-doses` 1×/dia ~03:00 SP); re-rodar test run pós-hotfix → confirmar materialização de `dose_instances` via Supabase MCP + runtime logs Vercel |
+| **Validação prod** | — | ✅ **VALIDADA** (29/05) | cron-job.org → `200 {processed:34, generated:1140, cleaned:0, durationMs:2352}`. Supabase: 1140 `pending` (janela 30d), 34/34 protocolos com `generated_through`, 0 dupes (UNIQUE + ON CONFLICT). Motor end-to-end OK em prod. |
 | PR-F2.3 âncora log | S2.6 | ⬜ pendente | liga escrita de dose ao `dose_instance_id` (muda comportamento) |
 | PR-F2.4 backfill | S2.7 | ⬜ pendente | script one-shot isolado, roda manual pós-merge |
 
