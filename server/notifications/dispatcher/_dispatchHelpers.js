@@ -3,6 +3,7 @@ import { notificationLogRepository } from '../repositories/notificationLogReposi
 import { createLogger } from '../../bot/logger.js'
 import { sendTelegramNotification } from '../channels/telegramChannel.js'
 import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
+import { sendWebPushNotification } from '../channels/webPushChannel.js'
 
 const logger = createLogger('DispatchHelpers')
 
@@ -13,6 +14,8 @@ export async function dispatchChannel({ channel, userId, payload, context, repos
       return await sendTelegramNotification({ userId, payload, context, bot })
     } else if (channel === 'mobile_push') {
       return await sendExpoPushNotification({ userId, payload, context, repositories, expoClient })
+    } else if (channel === 'web_push') {
+      return await sendWebPushNotification({ userId, payload, context, repositories })
     } else {
       logger.warn('canal desconhecido ignorado', { correlationId, channel })
       return null

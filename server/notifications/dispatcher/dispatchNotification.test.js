@@ -1,8 +1,16 @@
 // Testes para dispatchNotification
 // Cobre coexistência de canais, isolamento de falhas e casos-limite
 
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest'
 import { dispatchNotification } from './dispatchNotification.js'
+
+const mockSendNotification = vi.fn()
+vi.mock('web-push', () => ({
+  default: {
+    setVapidDetails: vi.fn(),
+    sendNotification: (...args) => mockSendNotification(...args)
+  }
+}))
 
 vi.mock('../repositories/notificationLogRepository.js', () => ({
   notificationLogRepository: {
@@ -59,8 +67,14 @@ vi.mock('../../services/supabase.js', () => ({
   },
 }))
 
+beforeAll(() => {
+  process.env.VAPID_PUBLIC_KEY = 'mock-public-key'
+  process.env.VAPID_PRIVATE_KEY = 'mock-private-key'
+})
+
 afterEach(() => {
   vi.clearAllMocks()
+  mockSendNotification.mockReset()
 })
 
 describe('dispatchNotification', () => {
@@ -177,5 +191,54 @@ describe('dispatchNotification', () => {
     expect(result.channels[0].attempted).toBe(0)
     expect(result.totalDelivered).toBe(0)
     expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+  })
+
+  // Caso 6: web_push — entrega com sucesso
+  it('caso 6: web_push — entrega com sucesso', async () => {
+    mockSendNotification.mockResolvedValue({ statusCode: 201 })
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: '{"endpoint":"https://fcm.googleapis.com","keys":{"p256dh":"abc","auth":"123"}}' }])
+
+    const result = await dispatchNotification({
+      userId: 'user-6',
+      kind: 'dose_reminder',
+      payload: mockPayload,
+      channels: ['web_push'],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.totalDelivered).toBe(1)
+    expect(result.totalFailed).toBe(0)
+    expect(result.channels[0].channel).toBe('web_push')
+    expect(mockSendNotification).toHaveBeenCalled()
+  })
+
+  // Caso 7: web_push com erro 410 (Gone) desativa o token
+  it('caso 7: web_push com erro 410 (Gone) desativa o token', async () => {
+    const error = new Error('Subscription no longer active')
+    error.statusCode = 410
+    mockSendNotification.mockRejectedValue(error)
+    
+    const mockToken = '{"endpoint":"https://fcm.googleapis.com","keys":{"p256dh":"bad","auth":"456"}}'
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: mockToken }])
+    mockRepositories.devices.deactivateByToken.mockResolvedValue()
+
+    const result = await dispatchNotification({
+      userId: 'user-7',
+      kind: 'dose_reminder',
+      payload: mockPayload,
+      channels: ['web_push'],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+
+    expect(mockRepositories.devices.deactivateByToken).toHaveBeenCalledWith(mockToken)
+    expect(result.channels[0].success).toBe(false)
+    expect(result.channels[0].deactivatedTokens).toContain(mockToken)
+    expect(result.totalFailed).toBe(1)
   })
 })

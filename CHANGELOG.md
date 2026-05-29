@@ -10,6 +10,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Web/PWA
+- **Push Routing** (Patch, Spec #2): Adicionado suporte a Deep Linking no PWA Web. O aplicativo agora intercepta parâmetros de busca (query params) e caminhos na inicialização para redirecionar o usuário para a view correspondente (como estoque, histórico ou tela principal) e abrir modais de tomadas individuais ou coletivas (planos/avulsos) pré-preenchidos.
 - **Wizard** (Minor, PR #601): Simplificados condicionais e labels de "comprimidos" para utilizar a unidade genérica "un." quando o medicamento for cadastrado como tal no Wizard (Steps 2 e 3).
 - **Form Wizard** (Minor, PR #601): Refatorada a label de `"Dosagem"` para `"Concentração"` no Passo 1 do wizard e formulário principal de medicamento para dirimir ambiguidades.
 - **Warning Alert** (Minor, PR #601): Adicionado alerta visual educativo condicional quando a unidade genérica `'un.'` for selecionada e a concentração for superior a `1`.
@@ -26,7 +27,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **dose_instances — motor de geração** (Minor, PR #603): Adicionado `doseInstancePlanner` (core) que orquestra a geração e persistência idempotente de ocorrências de dose, e os hooks de lifecycle de protocolo (`createProtocolRepository`) que materializam a janela ao criar/editar/pausar/religar tratamentos — best-effort (R-245). Sem impacto visível ao usuário até a Fase 3/4 (nenhuma UI consome ainda). ADR-048.
 
 ### Backend/Infra
-- **Serverless Consolidation** (Patch, PR #TBD): Refatoração para consolidação dos endpoints Vercel, combinando `api/beta-signup.js` e `api/register-webpush.js` dentro do roteador `api/users.js` para reduzir a contagem de funções consumidas do limite do plano Hobby (R-090). A rota sem uso `api/health/notifications.js` foi removida.
+- **Web Push Channel** (Patch, Spec #2): Implementado o canal de disparo `web_push` no Dispatcher Central de notificações usando chaves VAPID (`web-push` NPM). Suporta detecção proativa de erros 410 Gone / 404 Not Found para inativação instantânea de tokens inválidos na tabela `notification_devices`.
+- **Serverless Consolidation** (Patch, PR #606): Refatoração para consolidação dos endpoints Vercel, combinando `api/beta-signup.js` e `api/register-webpush.js` dentro do roteador `api/users.js` para reduzir a contagem de funções consumidas do limite do plano Hobby (R-090). A rota sem uso `api/health/notifications.js` foi removida.
 - **Telegram Bot** (Minor, PR #601): Ajustado o formatador de quantidade de tomadas do bot do Telegram para suportar "un", mantendo comprimidos ("cp") para dosagens em massa (mg/mcg/g) e melhorando líquidos ("ui") para que sejam representados de forma autônoma.
 - **dose_instances — cron de geração** (Minor, PR #603): Adicionado cron diário (03:15) no bot que renova a janela de 30 dias dos protocolos ativos e limpa pendentes de protocolos pausados há mais de 1 dia. Roda no processo Node persistente (sem consumir budget de funções Vercel). ADR-048.
 - **dose_instances — motor em produção** (Minor, PR #604): Endpoint serverless dedicado `api/generate-doses.js` (cron-job.org 1×/dia) executa o motor de geração em produção, isolado do invoke de notificações (ADR-051) — geração não compromete o caminho crítico de lembretes. Geração passa a buscar apenas protocolos "due" no banco (escala) e elimina SELECT redundante de high-water-mark. Corrige o motor que só rodava em dev via node-cron (AP-182).

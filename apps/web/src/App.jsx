@@ -86,6 +86,50 @@ function AppInner() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Tratar navegação profunda via URL (clique em push notificações PWA)
+  // Justificativa: Precisamos de setState no useEffect para ler queries da URL no mount/auth e navegar a view
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!session) return
+
+    const path = window.location.pathname
+    const params = new URLSearchParams(window.location.search)
+
+    if (path === '/stock') {
+      setCurrentView('stock')
+    } else if (path === '/history' || path === '/health-history') {
+      setCurrentView('history')
+    } else if (path === '/settings') {
+      setCurrentView('settings')
+    } else if (path === '/notifications') {
+      setCurrentView('notifications')
+    } else if (path === '/admin-dlq') {
+      setCurrentView('admin-dlq')
+    } else if (path === '/today' || path === '/') {
+      setCurrentView('dashboard')
+
+      const protocolId = params.get('protocolId')
+      if (protocolId) {
+        setDoseModalInitialValues({ protocol_id: protocolId, type: 'protocol' })
+        setIsDoseModalOpen(true)
+      } else if (params.get('bulkMode') === 'plan') {
+        const planId = params.get('planId')
+        if (planId) {
+          setDoseModalInitialValues({ treatment_plan_id: planId, type: 'plan' })
+          setIsDoseModalOpen(true)
+        }
+      } else if (params.get('bulkMode') === 'misc') {
+        const pids = params.get('protocolIds')
+        const protocolIds = pids ? pids.split(',') : []
+        if (protocolIds.length > 0) {
+          setDoseModalInitialValues({ protocol_id: protocolIds[0], type: 'protocol' })
+          setIsDoseModalOpen(true)
+        }
+      }
+    }
+  }, [session])
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   if (isLoading) {
     return (
       <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
