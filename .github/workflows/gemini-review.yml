@@ -441,239 +441,6 @@ jobs:
           include-hidden-files: true
 
   # ==========================================
-  # JOB 3.4: Upload para Vercel Blob
-  # ==========================================
-  # Faz upload do output estruturado para Vercel Blob.
-  # Permite que endpoints Vercel acessem os dados de review
-  # sem precisar acessar o GitHub Actions diretamente.
-  # ==========================================
-  upload-to-blob:
-    name: Upload Review to Vercel Blob
-    runs-on: ubuntu-latest
-    needs: [detect, parse]
-    # Executa sempre que parse rodou com sucesso
-    if: always() && needs.parse.result == 'success'
-    outputs:
-      blob_url: ${{ steps.upload.outputs.blob_url }}
-      blob_pathname: ${{ steps.upload.outputs.blob_pathname }}
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
-      - name: Install Dependencies
-        run: npm ci
-      
-      - name: Download Review Output
-        uses: actions/download-artifact@v4
-        with:
-          name: gemini-review-output
-          path: .gemini-output/
-        continue-on-error: false
-      
-      - name: Upload to Vercel Blob
-        id: upload
-        uses: actions/github-script@v7
-        env:
-          VERCEL_BLOB_TOKEN: ${{ secrets.VERCEL_BLOB_TOKEN }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            const { uploadToVercelBlob } = require('./.github/scripts/upload-to-vercel-blob.cjs');
-            
-            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
-            const outputDir = '.gemini-output';
-            
-            // Encontrar arquivo de review
-            const reviewFile = path.join(outputDir, `review-${prNumber}.json`);
-            
-            if (!fs.existsSync(reviewFile)) {
-              throw new Error(`Arquivo de review não encontrado: ${reviewFile}`);
-            }
-            
-            console.log(`🔄 Fazendo upload do review para PR #${prNumber}...`);
-            
-            try {
-              // Fazer upload com nome único incluindo timestamp
-              const timestamp = Date.now();
-              const remoteName = `reviews/pr-${prNumber}/review-${timestamp}.json`;
-              
-              const result = await uploadToVercelBlob(reviewFile, {
-                remoteName,
-                private: true // Arquivos privados, acessados via endpoint Vercel
-              });
-              
-              console.log('✅ Upload concluído:');
-              console.log(`   URL: ${result.url}`);
-              console.log(`   Pathname: ${result.pathname}`);
-              
-              // Outputs para próximos jobs
-              core.setOutput('blob_url', result.url);
-              core.setOutput('blob_pathname', result.pathname);
-              
-              // Salvar metadata para referência
-              const metadata = {
-                pr_number: prNumber,
-                blob_url: result.url,
-                blob_pathname: result.pathname,
-                uploaded_at: new Date().toISOString(),
-                timestamp
-              };
-              
-              fs.mkdirSync('.gemini-output/metadata', { recursive: true });
-              fs.writeFileSync(
-                `.gemini-output/metadata/blob-${prNumber}.json`,
-                JSON.stringify(metadata, null, 2)
-              );
-              
-            } catch (error) {
-              console.error('❌ Erro no upload para Blob:', error.message);
-              throw error;
-            }
-      
-      - name: Upload Blob Metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: blob-metadata
-          path: .gemini-output/metadata/*.json
-          retention-days: 7
-          if-no-files-found: warn
-
-  # ==========================================
-  # JOB 3.5: Persistir Reviews no Supabase (Sprint 6)
-  # ==========================================
-  # Persiste os reviews parseados no Supabase para rastreamento
-  # de Workflow Intelligence. Este job garante que todos os issues
-  # detectados pelo Gemini sejam armazenados para análise e follow-up.
-  # ==========================================
-  persist:
-    name: Persist Reviews to Supabase via Vercel API
-    runs-on: ubuntu-latest
-    needs: [detect, parse, upload-to-blob]
-    # Executa sempre que parse rodou com sucesso e blob foi uploadado
-    if: always() && needs.parse.result == 'success' && needs.upload-to-blob.result == 'success'
-    env:
-      VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://dosiq.app'
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
-      - name: Install Dependencies
-        run: npm ci
-      
-      - name: Download Blob Metadata
-        uses: actions/download-artifact@v4
-        with:
-          name: blob-metadata
-          path: .gemini-output/metadata/
-        continue-on-error: true
-      
-      - name: Persist Reviews via Vercel API
-        id: persist
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            // Gerar JWT para autenticação
-            const { SignJWT } = require('jose');
-            
-            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
-            const commitSha = "${{ needs.detect.outputs.commit_sha }}";
-            const metadataDir = '.gemini-output/metadata';
-            
-            // Buscar blob_url do metadata
-            const metadataFiles = fs.readdirSync(metadataDir).filter(f => f.startsWith('blob-'));
-            let blobUrl = null;
-            
-            for (const file of metadataFiles) {
-              const metadata = JSON.parse(fs.readFileSync(path.join(metadataDir, file), 'utf8'));
-              if (metadata.pr_number === prNumber) {
-                blobUrl = metadata.blob_url;
-                break;
-              }
-            }
-            
-            if (!blobUrl) {
-              console.log('⚠️ Blob URL não encontrada, pulando persistência');
-              return;
-            }
-            
-            console.log(`🔄 Gerando JWT e persistindo reviews para PR #${prNumber}...`);
-            console.log(`   Commit SHA: ${commitSha}`);
-            
-            try {
-              // Gerar JWT
-              const secret = new TextEncoder().encode(process.env.VERCEL_GITHUB_ACTIONS_SECRET);
-              const jwt = await new SignJWT({
-                iss: 'github-actions',
-                aud: 'vercel-api'
-              })
-                .setProtectedHeader({ alg: 'HS256' })
-                .setIssuedAt()
-                .setExpirationTime('5m')
-                .sign(secret);
-              
-              // Chamar endpoint Vercel
-              const response = await fetch(`${process.env.VERCEL_API_URL}/api/gemini-reviews/persist`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${jwt}`
-                },
-                body: JSON.stringify({
-                  pr_number: prNumber,
-                  commit_sha: commitSha,
-                  blob_url: blobUrl
-                })
-              });
-              
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(`API Error ${response.status}: ${error.error || 'Unknown'}`);
-              }
-              
-              const result = await response.json();
-              
-              console.log('✅ Persistência concluída:');
-              console.log(`   Criados: ${result.data?.created || 0}`);
-              console.log(`   Atualizados: ${result.data?.updated || 0}`);
-              console.log(`   Ignorados: ${result.data?.skipped || 0}`);
-              console.log(`   Reativados: ${result.data?.reactivated || 0}`);
-              
-              if (result.data?.errors?.length > 0) {
-                console.log(`   ⚠️ Erros: ${result.data.errors.length}`);
-                result.data.errors.forEach(err => console.log(`      - ${err}`));
-              }
-              
-              core.setOutput('created', result.data?.created || 0);
-              core.setOutput('updated', result.data?.updated || 0);
-              core.setOutput('skipped', result.data?.skipped || 0);
-              
-            } catch (error) {
-              console.error('❌ Erro ao persistir reviews:', error.message);
-              // Não falha o workflow, apenas loga o erro
-              console.log('Workflow continua normalmente...');
-            }
-
-  # ==========================================
   # JOB 3.6: Verificar Issues Críticas (P1 - Phase 2)
   # ==========================================
   # Verifica se existem issues CRITICAL ou HIGH (segurança/performance)
@@ -683,9 +450,9 @@ jobs:
   check-critical:
     name: Check Critical/High Issues
     runs-on: ubuntu-latest
-    needs: [detect, parse, persist]
-    # Executa sempre que persist rodou com sucesso
-    if: always() && needs.persist.result == 'success'
+    needs: [detect, parse]
+    # Executa sempre que parse rodou com sucesso
+    if: always() && needs.parse.result == 'success'
     outputs:
       has_blocking_issues: ${{ steps.check.outputs.has_blocking_issues }}
       has_critical: ${{ steps.check.outputs.has_critical }}
@@ -1075,151 +842,17 @@ jobs:
   #           }
 
   # ==========================================
-  # JOB 9: Criar Issues para Refactoring (P2.3)
-  # ==========================================
-  # Cria GitHub Issues automaticamente para issues MEDIUM
-  # que não podem ser auto-fixados. Isso move discussões de
-  # refactoring para fora da timeline do PR.
-  # ==========================================
-  create-issues:
-    name: Create GitHub Issues via Vercel API
-    runs-on: ubuntu-latest
-    needs: [detect, parse, upload-to-blob, persist, check-critical]
-    # DESABILITADO: Job de criação automática de issues foi desabilitado temporariamente (2026-03-10)
-    # Problema: Cria múltiplas duplicatas para a mesma sugestão sem validar se issue já existe
-    # TODO: Implementar deduplicação antes de reativar
-    # Só cria issues se NÃO houver issues bloqueantes (CRITICAL/HIGH security/performance)
-    if: false
-    env:
-      VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://dosiq.app'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install Dependencies
-        run: npm ci
-      
-      - name: Download Blob Metadata
-        uses: actions/download-artifact@v4
-        with:
-          name: blob-metadata
-          path: .gemini-output/metadata/
-        continue-on-error: true
-      
-      - name: Create Issues via Vercel API
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            // Gerar JWT para autenticação
-            const { SignJWT } = require('jose');
-            
-            const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
-            const metadataDir = '.gemini-output/metadata';
-            
-            // Buscar blob_url do metadata
-            const metadataFiles = fs.readdirSync(metadataDir).filter(f => f.startsWith('blob-'));
-            let blobUrl = null;
-            
-            for (const file of metadataFiles) {
-              const metadata = JSON.parse(fs.readFileSync(path.join(metadataDir, file), 'utf8'));
-              if (metadata.pr_number === prNumber) {
-                blobUrl = metadata.blob_url;
-                break;
-              }
-            }
-            
-            if (!blobUrl) {
-              console.log('⚠️ Blob URL não encontrada, pulando criação de issues');
-              return;
-            }
-            
-            console.log(`🔄 Gerando JWT e criando issues via Vercel API para PR #${prNumber}...`);
-            
-            try {
-              // Gerar JWT
-              const secret = new TextEncoder().encode(process.env.VERCEL_GITHUB_ACTIONS_SECRET);
-              const jwt = await new SignJWT({
-                iss: 'github-actions',
-                aud: 'vercel-api'
-              })
-                .setProtectedHeader({ alg: 'HS256' })
-                .setIssuedAt()
-                .setExpirationTime('5m')
-                .sign(secret);
-              
-              // Chamar endpoint Vercel
-              const response = await fetch(`${process.env.VERCEL_API_URL}/api/gemini-reviews/create-issues`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${jwt}`
-                },
-                body: JSON.stringify({
-                  blob_url: blobUrl,
-                  pr_number: prNumber,
-                  commit_sha: '${{ github.event.pull_request.head.sha || github.sha }}',
-                  owner: context.repo.owner,
-                  repo: context.repo.repo
-                })
-              });
-              
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(`API Error ${response.status}: ${error.error || 'Unknown'}`);
-              }
-              
-              const result = await response.json();
-              const createdIssues = result.data?.issues || [];
-              
-              if (createdIssues.length > 0) {
-                console.log(`✅ Criadas ${createdIssues.length} issues: ${createdIssues.map(i => '#' + i.github_issue_number).join(', ')}`);
-                
-                // Adicionar comentário no PR com link para as issues criadas
-                const issueLinks = createdIssues.map(i => `- #${i.github_issue_number}`).join('\n');
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: `## 🤖 Issues de Refactoring Criadas\n\nForam criadas as seguintes issues para acompanhamento de refactoring:\n\n${issueLinks}\n\nEstas issues podem ser implementadas em um PR futuro.`
-                });
-              } else {
-                console.log('Nenhuma issue nova criada (já existem issues similares ou não há issues MEDIUM)');
-              }
-              
-            } catch (error) {
-              console.error('❌ Erro ao criar issues:', error.message);
-              // Não falha o workflow, apenas loga o erro
-              console.log('Workflow continua normalmente...');
-            }
-
-  # ==========================================
-  # JOB 10: Check Resolutions via Vercel API (P2.4)
+  # JOB 9: Verificar Resoluções Localmente (P2.4)
   # ==========================================
   # Verifica se issues apontados pelo Gemini em comentários
   # inline foram resolvidos em novos commits e responde em
   # threads sem poluir a timeline principal do PR.
-  # Depois, atualiza o status no Supabase via Vercel API.
   # ==========================================
   check-resolutions:
-    name: Check Resolution via Vercel API
+    name: Check Resolution Locally
     runs-on: ubuntu-latest
-    needs: [detect, parse, persist]
-    # Executa após persist ter sucesso para ter dados atualizados no Supabase
-    # Remove restrição de synchronize para permitir execução em outros contextos
-    if: always() && needs.persist.result == 'success'
-    env:
-      VERCEL_GITHUB_ACTIONS_SECRET: ${{ secrets.VERCEL_GITHUB_ACTIONS_SECRET }}
-      VERCEL_API_URL: 'https://dosiq.app'
+    needs: [detect, parse]
+    if: always() && needs.parse.result == 'success'
 
     steps:
       - name: Checkout
@@ -1237,12 +870,10 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Check Resolutions and Update Status via Vercel API
+      - name: Check Resolutions via Local Processing
         uses: actions/github-script@v7
         with:
           script: |
-            const { SignJWT } = require('jose');
-            
             const prNumber = parseInt("${{ needs.detect.outputs.pr_number }}");
             
             console.log(`🔄 Verificando resoluções para PR #${prNumber}...`);
@@ -1257,70 +888,8 @@ jobs:
               return;
             }
             
-            // Executar verificação de resoluções localmente
+            // Executar verificação de resoluções localmente (posta replies nas threads do PR)
             const results = await checkResolutions(prNumber, github, context);
-            
-            // Preparar atualizações para enviar ao endpoint Vercel
-            const updates = [];
-            
-            // Mapear resoluções para o formato do endpoint
-            for (const resolution of results.resolutions || []) {
-              if (resolution.review_id) {
-                updates.push({
-                  review_id: resolution.review_id,
-                  status: resolution.resolved ? 'resolved' : (resolution.partial ? 'partial' : 'detected'),
-                  resolution_type: resolution.resolved ? 'fixed' : (resolution.partial ? 'partial' : null),
-                  commit_sha: '${{ github.event.after }}'
-                });
-              }
-            }
-            
-            if (updates.length === 0) {
-              console.log('ℹ️ Nenhuma atualização de status necessária');
-              return;
-            }
-            
-            console.log(`🔄 Atualizando ${updates.length} status via Vercel API...`);
-            
-            try {
-              // Gerar JWT
-              const secret = new TextEncoder().encode(process.env.VERCEL_GITHUB_ACTIONS_SECRET);
-              const jwt = await new SignJWT({
-                iss: 'github-actions',
-                aud: 'vercel-api'
-              })
-                .setProtectedHeader({ alg: 'HS256' })
-                .setIssuedAt()
-                .setExpirationTime('5m')
-                .sign(secret);
-              
-              // Chamar endpoint Vercel para atualização em batch
-              const response = await fetch(`${process.env.VERCEL_API_URL}/api/gemini-reviews/update-status`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${jwt}`
-                },
-                body: JSON.stringify({ updates })
-              });
-              
-              if (!response.ok) {
-                const error = await response.json();
-                throw new Error(`API Error ${response.status}: ${error.error || 'Unknown'}`);
-              }
-              
-              const result = await response.json();
-              
-              console.log('✅ Atualização de status concluída:');
-              console.log(`   Sucessos: ${result.updated || 0}`);
-              if (result.errors?.length > 0) {
-                console.log(`   Erros: ${result.errors.length}`);
-              }
-              
-            } catch (error) {
-              console.error('❌ Erro ao atualizar status:', error.message);
-              // Não falha o workflow
-            }
             
             // Output para debugging
             core.setOutput('checked', results.checked);
@@ -1328,6 +897,6 @@ jobs:
             core.setOutput('partial', results.partial);
             core.setOutput('rejected', results.rejected);
             core.setOutput('replies_count', results.replies.length);
-            core.setOutput('updated_status_count', updates.length);
+            core.setOutput('updated_status_count', 0);
 
             console.log('✅ Verificação de resoluções concluída');
