@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { createLogger } from './logger.js';
 import { checkReminders, runDailyDigest, checkPrescriptionAlerts } from './tasks.js';
+import { generateDoseInstances, cleanupPausedProtocols } from './doseInstanceScheduler.js';
 
 const logger = createLogger('Scheduler');
 
@@ -40,4 +41,14 @@ export function startPrescriptionAlerts(bot, options = {}) {
   // Run once daily at 8h to check for prescription alerts
   scheduleTask('checkPrescriptionAlerts', '0 8 * * *', () => checkPrescriptionAlerts(bot, options));
   console.log('✅ Alertas de prescrição configurados (diariamente às 8h)');
+}
+
+export function startDoseInstanceGeneration() {
+  // Motor de geração de dose_instances (ADR-048) — diário às 03:15 (baixo tráfego).
+  // Renova janelas de 30d dos protocolos ativos + limpa pendentes de pausados > 1 dia.
+  scheduleTask('generateDoseInstances', '15 3 * * *', async () => {
+    await generateDoseInstances();
+    await cleanupPausedProtocols();
+  });
+  console.log('✅ Motor de dose_instances configurado (diariamente às 3h15)');
 }

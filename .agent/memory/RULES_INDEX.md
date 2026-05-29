@@ -1,6 +1,7 @@
 # DEVFLOW Rules Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[R-245]** Geração de `dose_instances` em write-path é best-effort (try/catch); cron diário + `ensureInstancesUpTo` (rede lazy) são a malha de segurança — nunca bloquear CRUD de protocolo por erro de geração -> [`rules/data_and_schema/R-245.md`](./rules/data_and_schema/R-245.md)
 - **[R-236]** Mutation documenta TODOS os caches que invalida (matrix explícita) — evita bug latente quando snapshot adjacente é esquecido -> [`rules/data_and_schema/R-236.md`](./rules/data_and_schema/R-236.md)
 - **[R-020]** ALWAYS use parseLocalDate() or new Date(str + 'T00:00:00'). NEVER use new Date('... [AUTOMATED via ESLint] -> [`rules/data_and_schema/R-020.md`](./rules/data_and_schema/R-020.md)
 - **[R-021]** All Zod schema enum values must be in Portuguese. Always export labels for UI di... -> [`rules/data_and_schema/R-021.md`](./rules/data_and_schema/R-021.md)

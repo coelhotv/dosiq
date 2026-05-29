@@ -15,7 +15,68 @@ import {
   validateProtocolCreate,
   validateProtocolUpdate,
 } from '../schemas/protocolSchema.js'
-import { getTodayLocal, getServerTimestamp } from '../utils/dateUtils.js'
+import { getTodayLocal, getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
+import { createDoseInstanceRepository } from './createDoseInstanceRepository.js'
+import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js'
+
+// Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
+const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date']
+const PAUSE_GRACE_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Sincroniza dose_instances após escrita de protocolo (ADR-048, S2.5).
+ * BEST-EFFORT: nunca propaga erro — cron diário (generateDoseInstances) e a rede
+ * lazy (ensureInstancesUpTo) são a malha de segurança. Um erro de geração não pode
+ * bloquear a criação/edição do protocolo em si.
+ *
+ * @param {Object} params
+ * @param {Object} params.client    client Supabase (mesmo da factory)
+ * @param {Object} params.protocol  linha do protocolo recém-escrita
+ * @param {Object|null} params.updates  updates do update() (null em create)
+ */
+async function syncInstancesOnWrite({ client, protocol, updates }) {
+  try {
+    if (!protocol?.id) return
+    const repo = createDoseInstanceRepository({ client })
+
+    // Pausa: marca paused_at + próximas 24h como skipped_paused (trabalho leve);
+    // o cron limpa o resto após 1 dia. Não regenera.
+    if (updates && updates.active === false) {
+      // Captura UM timestamp e deriva o cutoff dele (evita duas leituras de relógio).
+      const nowIso = getServerTimestamp()
+      await repo.setPausedAt(protocol.id, nowIso)
+      const cutoffIso = parseTimestamp(parseISO(nowIso).getTime() + PAUSE_GRACE_MS).toISOString()
+      await repo.markSkippedPaused(protocol.id, cutoffIso)
+      return
+    }
+
+    const isResume = updates && updates.active === true
+    if (isResume) {
+      await repo.setPausedAt(protocol.id, null)
+      // Reverte as instâncias marcadas na pausa (skipped_paused → pending). O regen via
+      // upsert (ON CONFLICT DO NOTHING) não reverteria — sem isto, toggle rápido
+      // (pausa <1d + religa) deixaria as próximas 24h mortas. (S2.5 DoD)
+      await repo.reactivateFuturePaused(protocol.id)
+    }
+
+    const schedulingChanged = updates && SCHEDULING_FIELDS.some((f) => f in updates)
+    if (schedulingChanged) await repo.wipeFuturePending(protocol.id)
+
+    // (Re)gera a janela em: create (updates null), resume, ou mudança de agendamento.
+    const shouldRegen = !updates || isResume || schedulingChanged
+    if (shouldRegen) {
+      const now = parseISO(getServerTimestamp())
+      await planWindow({
+        protocol,
+        doseInstanceRepo: repo,
+        fromTs: now.toISOString(),
+        toTs: computeWindowEnd(protocol, now),
+      })
+    }
+  } catch {
+    // best-effort — silencioso; cron + rede lazy corrigem eventualmente
+  }
+}
 
 const DEFAULT_SELECT = `
         *,
@@ -147,6 +208,8 @@ export function createProtocolRepository({
         .single()
 
       if (error) throw error
+      // ADR-048 S2.5: materializa a janela inicial de dose_instances (best-effort)
+      await syncInstancesOnWrite({ client, protocol: data, updates: null })
       return detailTransform(data)
     },
 
@@ -164,6 +227,10 @@ export function createProtocolRepository({
         .single()
 
       if (error) throw error
+      // ADR-048 S2.5: pausa/resume/mudança de agendamento → sincroniza instâncias (best-effort).
+      // Usa `updates` CRU (não validation.data) — Zod pode injetar defaults e fazer toda
+      // edição parecer mudança de agendamento.
+      await syncInstancesOnWrite({ client, protocol: data, updates })
       return detailTransform(data)
     },
 

@@ -68,6 +68,24 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Versão em lote de wipeFuturePending: remove pendentes futuras de VÁRIOS protocolos
+     * num único DELETE (evita N+1 no cron). Mesma regra inviolável: só pending + futuro.
+     * @param {string[]} protocolIds
+     * @returns {Promise<void>}
+     */
+    async wipeFuturePendingForProtocols(protocolIds) {
+      if (!Array.isArray(protocolIds) || protocolIds.length === 0) return
+      const { error } = await client
+        .from(TABLE)
+        .delete()
+        .in('protocol_id', protocolIds)
+        .eq('status', 'pending')
+        .gt('scheduled_for', getServerTimestamp())
+
+      if (error) throw error
+    },
+
+    /**
      * Instâncias de um usuário dentro de [fromTs, toTs], ordenadas por scheduled_for.
      * @param {string} userId
      * @param {Date|string} fromTs
@@ -114,6 +132,39 @@ export function createDoseInstanceRepository({ client }) {
         .from(PROTOCOLS)
         .update({ generated_through: toIso(ts) })
         .eq('id', protocolId)
+
+      if (error) throw error
+    },
+
+    /**
+     * Grava (ou limpa) o timestamp de pausa do protocolo.
+     * @param {string} protocolId
+     * @param {Date|string|null} ts - null limpa a marca (resume)
+     * @returns {Promise<void>}
+     */
+    async setPausedAt(protocolId, ts) {
+      const { error } = await client
+        .from(PROTOCOLS)
+        .update({ paused_at: ts === null ? null : toIso(ts) })
+        .eq('id', protocolId)
+
+      if (error) throw error
+    },
+
+    /**
+     * Reativa instâncias futuras que estavam pausadas (skipped_paused → pending).
+     * Usado ao religar um protocolo: o upsert idempotente (ON CONFLICT DO NOTHING) não
+     * reverteria essas linhas, então a reativação é explícita. Nunca toca o passado.
+     * @param {string} protocolId
+     * @returns {Promise<void>}
+     */
+    async reactivateFuturePaused(protocolId) {
+      const { error } = await client
+        .from(TABLE)
+        .update({ status: 'pending' })
+        .eq('protocol_id', protocolId)
+        .eq('status', 'skipped_paused')
+        .gt('scheduled_for', getServerTimestamp())
 
       if (error) throw error
     },

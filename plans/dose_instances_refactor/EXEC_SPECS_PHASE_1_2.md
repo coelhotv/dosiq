@@ -61,7 +61,7 @@ Regras invioláveis (memória do projeto):
 **Touchpoints cavecrew:**
 - `cavecrew-investigator` — preflight de cada sprint que toca código existente (mapeia call sites). Output comprimido.
 - `cavecrew-builder` — **só tarefas ≤2 arquivos, escopo óbvio** (migration SQL, campo Zod, constante). Recusa 3+.
-- `cavecrew-reviewer` — audita diff de cada sprint antes do PR.
+- ~~`cavecrew-reviewer`~~ — **removido do gate** (decisão 2026-05-28): revisor oficial é `@gemini-code-assist` no PR (GitHub, budget de tokens separado). G1 = lint + testes; revisão de código fica no Gemini. Gates ficam com o humano no formato SQP. Evita gasto duplicado de tokens Claude.
 - Tarefas multi-arquivo / novo módulo / lógica crítica → agente `claude` (general-purpose) com `model` override (builder retornaria `too-big`).
 
 **Heurística de modelo:**
@@ -79,8 +79,8 @@ Regras invioláveis (memória do projeto):
 
 | Nível | Quando | Checks | Bloqueia |
 |-------|--------|--------|----------|
-| **G1 — por sprint** | ao fim de cada sprint, antes de empilhar o próximo | `rtk lint` + testes-alvo do sprint (`npm run test:changed`) + `cavecrew-reviewer` no diff só daquele sprint → corrijo 🔴/🟡 | empilhar próximo sprint |
-| **G2 — por PR** | antes de abrir cada PR | `rtk lint` + `rtk npm run validate:agent` (suite crítica) + `cavecrew-reviewer` no diff agregado + PO smoke se UI | abrir PR |
+| **G1 — por sprint** | ao fim de cada sprint, antes de empilhar o próximo | `rtk lint` + testes-alvo do sprint (`npm run test:changed`) → corrijo 🔴/🟡 | empilhar próximo sprint |
+| **G2 — por PR** | antes de abrir cada PR | SQP (R-221): classificação de impacto/SemVer + version bump + CHANGELOG + `rtk lint` + `rtk npm run validate:agent` + **Hard Stop p/ validação humana** + PO smoke se UI | abrir PR |
 | **G3 — pós-merge** | após humano mergear | C5 (registrar ADR/R/AP) + `/devflow distill` se journal≥15 | encerrar fase |
 
 **Lint roda em G1 e G2** — nunca commito sem `rtk lint` verde (evita regressão e quebra de CI remoto). G1 pega cedo; G2 confirma o conjunto.
