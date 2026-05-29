@@ -26,7 +26,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { generateInstances } from '../packages/core/src/utils/doseInstanceGenerator.js'
 import { createDoseInstanceRepository } from '../packages/core/src/repositories/createDoseInstanceRepository.js'
-import { getServerTimestamp, parseTimestamp, parseISO } from '../packages/core/src/utils/dateUtils.js'
+import { getServerTimestamp, parseTimestamp, parseISO, parseLocalDate } from '../packages/core/src/utils/dateUtils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 config({ path: path.join(__dirname, '.env.local') })
@@ -104,7 +104,8 @@ async function run() {
   // 2. Gera instâncias passadas de cada protocolo (janela clampada ao start do protocolo).
   let candidates = []
   for (const protocol of protocols ?? []) {
-    const startMs = protocol.start_date ? parseISO(protocol.start_date).getTime() : lookbackStartMs
+    // start_date é DATE (YYYY-MM-DD) → parseLocalDate (R-020); parseISO/new Date trataria como UTC midnight (dia anterior em GMT-3).
+    const startMs = protocol.start_date ? parseLocalDate(protocol.start_date).getTime() : lookbackStartMs
     const fromMs = Math.max(startMs, lookbackStartMs)
     if (fromMs >= nowMs) continue
     candidates = candidates.concat(
@@ -150,13 +151,15 @@ async function run() {
     if (!inst) continue
     const marked = await repo.markTaken(inst.id, log.id)
     if (!marked) continue
-    const { error: upErr } = await supabase
+    // .select('id') p/ confirmar a linha afetada — PostgREST não erra em no-op (AP-185).
+    const { data: upData, error: upErr } = await supabase
       .from('medicine_logs')
       .update({ dose_instance_id: inst.id })
       .eq('id', log.id)
       .eq('user_id', userId)
-    if (upErr) {
-      console.warn(`[backfill] Falha ao gravar elo no log ${log.id}: ${upErr.message}`)
+      .select('id')
+    if (upErr || !upData || upData.length === 0) {
+      console.warn(`[backfill] Falha ao gravar elo no log ${log.id}: ${upErr?.message || 'nenhuma linha afetada'}`)
       continue
     }
     matched++
