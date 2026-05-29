@@ -5,7 +5,10 @@
 // caem no locale PT padrão do Zod 4.
 
 import { z } from 'zod'
-import pt from 'zod/v4/locales/pt'
+// Extensão .js explícita: o exports glob do zod (`./v4/locales/*`) não anexa
+// extensão. Sem o .js, o Node ESM estrito (runtime Vercel) falha com
+// ERR_MODULE_NOT_FOUND — Vite/vitest resolvem sem, mas o serverless não (AP-184).
+import pt from 'zod/v4/locales/pt.js'
 
 // Mensagens base por código (sem mencionar tipo/recebido/expected etc).
 // eslint-disable-next-line complexity
