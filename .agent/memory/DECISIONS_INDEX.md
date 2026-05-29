@@ -10,6 +10,7 @@
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
 - **[ADR-051]** Motor de geração `dose_instances` em endpoint serverless dedicado (`api/generate-doses.js`) + cron-job.org próprio — isola raio de impacto dos reminders (notificação é prioritária); geração due-only no DB [accepted] -> [`decisions/infra_and_deploy/ADR-051.md`](./decisions/infra_and_deploy/ADR-051.md)
+- **[ADR-052]** Parede de unidade como fundação compartilhada (líquidos ∩ diabetes): colunas de dose já são `numeric` (sem migration), líquidos antes de diabetes, 3 seams na Fase 3 (semântica de unidade explícita · modo de adesão por protocolo · cap Zod por unidade). Estende ADR-050 [accepted] -> [`decisions/data_and_schema/ADR-052.md`](./decisions/data_and_schema/ADR-052.md)
 - **[ADR-001]** Gradual Redesign Rollout via Feature Flags -> [`decisions/infra_and_deploy/ADR-001.md`](./decisions/infra_and_deploy/ADR-001.md)
 - **[ADR-002]** Environment-Aware Logger to Reduce Console Noise -> [`decisions/infra_and_deploy/ADR-002.md`](./decisions/infra_and_deploy/ADR-002.md)
 - **[ADR-003]** Groq Prompt Caching Optimization Strategy -> [`decisions/infra_and_deploy/ADR-003.md`](./decisions/infra_and_deploy/ADR-003.md)
