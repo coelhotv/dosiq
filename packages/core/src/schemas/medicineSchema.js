@@ -6,7 +6,7 @@ import { z } from 'zod'
  */
 
 // Unidades de dosagem válidas (alinhadas com MedicineForm.jsx dropdown)
-export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
+export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'un', 'gotas']
 
 // Labels de unidade para exibição
 export const DOSAGE_UNIT_LABELS = {
@@ -15,7 +15,7 @@ export const DOSAGE_UNIT_LABELS = {
   g: 'g',
   ml: 'ml',
   ui: 'UI',
-  cp: 'cp/cap',
+  un: 'un.',
   gotas: 'gotas',
 }
 

@@ -134,7 +134,7 @@ export default function OnboardingMedicineStep() {
             <View style={styles.rowDose}>
               <FormInput
                 name="dosage_per_pill"
-                label="Dosagem"
+                label="Concentração"
                 required
                 keyboardType="decimal-pad"
                 {...formProps(form, 'dosage_per_pill')}
@@ -151,6 +151,14 @@ export default function OnboardingMedicineStep() {
               />
             </View>
           </View>
+
+          {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
+            <View style={styles.warningBox}>
+              <Text style={styles.warningText}>
+                ⚠️ Dica: Para a unidade genérica 'un.', a concentração deveria ser 1. Caso seu medicamento tenha dosagem química ativa (ex: 500 mg), altere a unidade ao lado para 'mg', 'ui', etc.
+              </Text>
+            </View>
+          )}
         </ScrollView>
 
         <FormActions
@@ -232,5 +240,18 @@ const styles = StyleSheet.create({
     color: colors.text.brand || colors.brand.primary,
     marginLeft: spacing[1],
     fontWeight: '700',
+  },
+  warningBox: {
+    padding: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+    marginTop: spacing[1],
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#d97706',
+    lineHeight: 18,
   },
 })

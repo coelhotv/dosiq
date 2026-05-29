@@ -161,11 +161,9 @@ export default function TreatmentWizardStep2({
       </div>
 
       <label className="wizard__label">
-        {medicine?.dosage_unit === 'cp'
-          ? 'Comprimidos por dose'
-          : medicine?.dosage_unit === 'gotas'
-            ? 'Gotas por dose'
-            : 'Dose por tomada (un.)'}
+        {medicine?.dosage_unit === 'gotas'
+          ? 'Gotas por dose'
+          : 'Dose por tomada (un.)'}
         <input
           type="number"
           className="wizard__input"

@@ -10,15 +10,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Web/PWA
-- Nenhuma mudança registrada.
+- **Wizard** (Minor, PR #601): Simplificados condicionais e labels de "comprimidos" para utilizar a unidade genérica "un." quando o medicamento for cadastrado como tal no Wizard (Steps 2 e 3).
+- **Form Wizard** (Minor, PR #601): Refatorada a label de `"Dosagem"` para `"Concentração"` no Passo 1 do wizard e formulário principal de medicamento para dirimir ambiguidades.
+- **Warning Alert** (Minor, PR #601): Adicionado alerta visual educativo condicional quando a unidade genérica `'un.'` for selecionada e a concentração for superior a `1`.
 
 ### Mobile
-- Nenhuma mudança registrada.
+- **Modal** (Minor, PR #601): Simplificada a label de quantidade no DoseRegisterModal para se adequar dinamicamente à unidade genérica "unidades".
+- **Labels** (Minor, PR #601): Refatorada a label `"Dose por unidade"` para `"Concentração"` nas telas de Onboarding, Detalhes e Formulário para clareza em relação à dosagem da tomada.
+- **Warning Alert** (Minor, PR #601): Adicionados alertas visuais de aviso correspondentes no Onboarding e Formulário completo de medicamentos quando a concentração for maior que `1` com unidade `'un.'`.
 
 ### Shared/Core
-- Nenhuma mudança registrada.
+- **Schema** (Minor, PR #601): Substituída a unidade de medida padrão de "cp" para "un" no Zod Schema para dar suporte a inalatórios, adesivos e tópicos.
+- **DoseUnit** (Minor, PR #601): Atualizados os formatadores centrais para tratar a unidade "un" de forma genérica ("unidade/unidades/un.") de acordo com o padrão gramatical brasileiro.
+- **Planning** (Minor, PR #601): Expandido e enriquecido extensivamente o rascunho de especificação técnica para o suporte nativo a medicamentos líquidos e controle de estoque decimal no documento [LIQUID_MEDICATIONS_EPIC_DRAFT.md](file:///Users/coelhotv/git/dosiq/plans/dose_instances_refactor/LIQUID_MEDICATIONS_EPIC_DRAFT.md) com análise de impacto de riscos.
 
 ### Backend/Infra
+- **Telegram Bot** (Minor, PR #601): Ajustado o formatador de quantidade de tomadas do bot do Telegram para suportar "un", mantendo comprimidos ("cp") para dosagens em massa (mg/mcg/g) e melhorando líquidos ("ui") para que sejam representados de forma autônoma.
 - **Process** (`no-user-impact`, PR #TBD): Padronizado o processo SQP para exigir classificação de impacto, versionamento, changelog estruturado em português e notas de loja deriváveis antes de novas entregas com alteração de código.
 
 ## [4.1.0] — 2026-04-28
