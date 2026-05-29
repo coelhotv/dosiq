@@ -41,6 +41,15 @@ export const logSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => val || null),
+
+  // Elo opcional com a ocorrência materializada (dose_instances) — populado por
+  // snap na escrita (S2.6/ADR-048). null = dose avulsa (fora de qualquer janela).
+  dose_instance_id: z
+    .string()
+    .uuid('ID da instância de dose deve ser um UUID válido')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
 })
 
 /**

@@ -9,6 +9,10 @@ const mocks = vi.hoisted(() => ({
   supabase: {
     from: vi.fn(),
   },
+  doseInstanceRepo: {
+    findAnchorInstance: vi.fn(),
+    markTaken: vi.fn(),
+  },
 }))
 
 vi.mock('@stock/services/stockService', () => ({
@@ -20,7 +24,22 @@ vi.mock('@shared/utils/supabase', () => ({
   getUserId: mocks.getUserId,
 }))
 
+// Repo de instâncias mockado — controla o snap/markTaken da âncora de log (S2.6).
+vi.mock('@dosiq/core', () => ({
+  createDoseInstanceRepository: () => mocks.doseInstanceRepo,
+}))
+
 import { logService } from '@shared/services/api/logService'
+
+function buildLogUpdateChain(result = { error: null }) {
+  return {
+    update: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue(result),
+      }),
+    }),
+  }
+}
 
 function buildLogInsertChain(result) {
   return {
@@ -63,6 +82,8 @@ describe('logService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: nenhuma instância casa (dose avulsa) — mantém os testes de estoque isolados.
+    mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValue(null)
   })
 
   describe('create', () => {
@@ -82,6 +103,58 @@ describe('logService', () => {
         createdLog.id
       )
       expect(result).toEqual(createdLog)
+    })
+
+    it('ancora o log à instância quando o snap casa (S2.6)', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+
+      mocks.supabase.from
+        .mockReturnValueOnce(buildLogInsertChain({ data: createdLog, error: null }))
+        .mockReturnValueOnce(buildLogUpdateChain({ error: null }))
+      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
+      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce({ id: 'di-7' })
+      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(undefined)
+
+      const result = await logService.create(baseLog)
+
+      expect(mocks.doseInstanceRepo.findAnchorInstance).toHaveBeenCalledWith({
+        protocolId: baseLog.protocol_id,
+        takenAt: baseLog.taken_at,
+      })
+      expect(mocks.doseInstanceRepo.markTaken).toHaveBeenCalledWith('di-7', 'log-1')
+      expect(result.dose_instance_id).toBe('di-7')
+    })
+
+    it('deixa o log avulso (sem markTaken) quando nenhuma instância casa', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+
+      mocks.supabase.from.mockReturnValueOnce(
+        buildLogInsertChain({ data: createdLog, error: null })
+      )
+      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
+      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce(null)
+
+      const result = await logService.create(baseLog)
+
+      expect(mocks.doseInstanceRepo.markTaken).not.toHaveBeenCalled()
+      expect(result.dose_instance_id).toBeUndefined()
+    })
+
+    it('falha de âncora não quebra o registro da dose (best-effort, R-245)', async () => {
+      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+
+      mocks.supabase.from.mockReturnValueOnce(
+        buildLogInsertChain({ data: createdLog, error: null })
+      )
+      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
+      mocks.doseInstanceRepo.findAnchorInstance.mockRejectedValueOnce(new Error('snap boom'))
+
+      const result = await logService.create(baseLog)
+
+      // dose registrada e estoque debitado permanecem válidos
+      expect(mocks.stockService.decrease).toHaveBeenCalled()
+      expect(result.id).toBe('log-1')
+      expect(result.dose_instance_id).toBeUndefined()
     })
 
     it('deletes the created log if stock consumption fails', async () => {

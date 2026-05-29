@@ -193,4 +193,81 @@ describe('createDoseInstanceRepository', () => {
       expect(b.eq).toHaveBeenCalledWith('id', 'p1')
     })
   })
+
+  describe('findAnchorInstance — snap por tolerância (S2.6)', () => {
+    const takenAt = '2026-05-10T22:35:00Z' // 22:35
+
+    it('escopa por protocol_id + status pending (AP-A03)', async () => {
+      const client = makeClient({ data: [], error: null })
+      const repo = createDoseInstanceRepository({ client })
+      await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
+
+      const b = client._builder
+      expect(client._from).toBe('dose_instances')
+      expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
+      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      // janela grosseira do SELECT usa gte/lte (±120min)
+      expect(b.gte).toHaveBeenCalled()
+      expect(b.lte).toHaveBeenCalled()
+    })
+
+    it('pega a instância mais próxima quando há várias dentro da tolerância', async () => {
+      const client = makeClient({
+        data: [
+          { id: 'far', scheduled_for: '2026-05-10T22:50:00Z', tolerance_minutes: 120 }, // 15min
+          { id: 'near', scheduled_for: '2026-05-10T22:30:00Z', tolerance_minutes: 120 }, // 5min
+        ],
+        error: null,
+      })
+      const repo = createDoseInstanceRepository({ client })
+      const out = await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
+      expect(out.id).toBe('near')
+    })
+
+    it('respeita a tolerância de CADA linha — exclui slot fora da própria janela', async () => {
+      // 21:00 está a 95min de 22:35; com tolerance 60 → fora; volta null.
+      const client = makeClient({
+        data: [{ id: 'tight', scheduled_for: '2026-05-10T21:00:00Z', tolerance_minutes: 60 }],
+        error: null,
+      })
+      const repo = createDoseInstanceRepository({ client })
+      const out = await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
+      expect(out).toBeNull()
+    })
+
+    it('sem candidatos → null (dose avulsa)', async () => {
+      const client = makeClient({ data: [], error: null })
+      const repo = createDoseInstanceRepository({ client })
+      const out = await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
+      expect(out).toBeNull()
+    })
+
+    it('protocolId ausente → null sem tocar no client', async () => {
+      const client = makeClient({ data: [], error: null })
+      const repo = createDoseInstanceRepository({ client })
+      const out = await repo.findAnchorInstance({ protocolId: null, takenAt })
+      expect(out).toBeNull()
+      expect(client.from).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('markTaken — elo instância↔log (FP-1)', () => {
+    it('marca taken + medicine_log_id, com guard status=pending', async () => {
+      const client = makeClient({ data: null, error: null })
+      const repo = createDoseInstanceRepository({ client })
+      await repo.markTaken('di-1', 'log-9')
+
+      const b = client._builder
+      expect(client._from).toBe('dose_instances')
+      expect(b.update).toHaveBeenCalledWith({ status: 'taken', medicine_log_id: 'log-9' })
+      expect(b.eq).toHaveBeenCalledWith('id', 'di-1')
+      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+    })
+
+    it('propaga erro do Supabase', async () => {
+      const client = makeClient({ data: null, error: new Error('boom') })
+      const repo = createDoseInstanceRepository({ client })
+      await expect(repo.markTaken('di-1', 'log-9')).rejects.toThrow('boom')
+    })
+  })
 })
