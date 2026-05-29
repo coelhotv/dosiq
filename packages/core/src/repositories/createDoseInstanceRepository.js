@@ -119,6 +119,21 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Grava (ou limpa) o timestamp de pausa do protocolo.
+     * @param {string} protocolId
+     * @param {Date|string|null} ts - null limpa a marca (resume)
+     * @returns {Promise<void>}
+     */
+    async setPausedAt(protocolId, ts) {
+      const { error } = await client
+        .from(PROTOCOLS)
+        .update({ paused_at: ts === null ? null : toIso(ts) })
+        .eq('id', protocolId)
+
+      if (error) throw error
+    },
+
+    /**
      * Marca instâncias pendentes futuras até `untilTs` como skipped_paused (pausa não penaliza).
      * @param {string} protocolId
      * @param {Date|string} untilTs
