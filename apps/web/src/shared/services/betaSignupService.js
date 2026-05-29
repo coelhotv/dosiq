@@ -18,7 +18,7 @@ export async function signupForBeta(email, platform = 'android') {
   }
 
   try {
-    const res = await fetch('/api/beta-signup', {
+    const res = await fetch('/api/users/beta-signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: normalized, platform }),
