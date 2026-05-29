@@ -66,6 +66,7 @@ export async function planWindow({ protocol, doseInstanceRepo, fromTs, toTs, tz 
  * @returns {Promise<number>} instâncias geradas no gap (0 se já coberto)
  */
 export async function ensureInstancesUpTo({ protocol, doseInstanceRepo, ts, tz = 'America/Sao_Paulo' }) {
+  const nowMs = parseISO(getServerTimestamp()).getTime()
   const requestedMs = parseISO(toIsoLike(ts)).getTime()
   // alvo efetivo = min(ts pedido, fim-alvo da janela do protocolo)
   const windowEndIso = computeWindowEnd(protocol, parseTimestamp(requestedMs))
@@ -75,15 +76,19 @@ export async function ensureInstancesUpTo({ protocol, doseInstanceRepo, ts, tz =
   const hwm = await doseInstanceRepo.getGeneratedThrough(protocol.id)
   if (hwm && parseISO(hwm).getTime() >= targetMs) return 0 // já coberto
 
-  const fromIso = hwm ?? getServerTimestamp()
-  return planWindow({ protocol, doseInstanceRepo, fromTs: fromIso, toTs: target, tz })
+  // Clamp: nunca gerar a partir do passado (evita criar `pending` retroativo se o
+  // hwm ficar atrás de `now` — backfill histórico é responsabilidade de outro fluxo).
+  const fromMs = Math.max(hwm ? parseISO(hwm).getTime() : nowMs, nowMs)
+  return planWindow({ protocol, doseInstanceRepo, fromTs: parseTimestamp(fromMs).toISOString(), toTs: target, tz })
 }
 
-/** Converte Date|ISO|ms em ISO (R-020: sem `new Date()` direto). */
+/** Converte Date|ISO|ms em ISO (R-020: sem `new Date()` direto). Null-safe. */
 function toIsoLike(value) {
+  if (value === null || value === undefined) return getServerTimestamp()
   if (typeof value === 'number') return parseTimestamp(value).toISOString()
   if (typeof value === 'string') return value
-  return parseTimestamp(value.getTime()).toISOString()
+  if (typeof value.getTime === 'function') return parseTimestamp(value.getTime()).toISOString()
+  return getServerTimestamp()
 }
 
 /**
@@ -102,7 +107,9 @@ export async function renewProtocolWindow({ protocol, doseInstanceRepo, now = pa
     if (hwmMs >= targetMs) return 0 // janela já cobre o alvo
     const thresholdMs = now.getTime() + RENEWAL_THRESHOLD_DAYS * MS_PER_DAY
     if (hwmMs > thresholdMs) return 0 // ainda longe do fim — não renova ainda
-    return planWindow({ protocol, doseInstanceRepo, fromTs: hwm, toTs: targetIso, tz })
+    // Clamp: nunca gerar a partir do passado (sem `pending` retroativo).
+    const fromMs = Math.max(hwmMs, now.getTime())
+    return planWindow({ protocol, doseInstanceRepo, fromTs: parseTimestamp(fromMs).toISOString(), toTs: targetIso, tz })
   }
   // nunca gerado: gera do agora até o alvo
   return planWindow({ protocol, doseInstanceRepo, fromTs: now.toISOString(), toTs: targetIso, tz })

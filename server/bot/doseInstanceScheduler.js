@@ -23,36 +23,52 @@ import { createLogger } from './logger.js'
 const logger = createLogger('DoseInstanceScheduler')
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
+/** Lote de paginação — Supabase corta SELECT em ~1000 linhas por padrão. */
+const BATCH_SIZE = 100
 
 /**
  * Renova a janela de geração de todos os protocolos ativos.
+ * Paginado por `.range()`: sem paginação, o limite padrão do Supabase (~1000 linhas)
+ * faria o cron pular usuários silenciosamente conforme a base cresce.
  * Idempotente: rodar 2x = mesmo estado (renewProtocolWindow não regenera o que já cobre,
  * e o upsert usa ON CONFLICT DO NOTHING).
  * @returns {Promise<{processed: number, generated: number}>}
  */
 export async function generateDoseInstances() {
-  const { data: protocols, error } = await supabase
-    .from('protocols')
-    .select('*')
-    .eq('active', true)
-
-  if (error) {
-    logger.error('Falha ao buscar protocolos ativos', error)
-    throw error
-  }
-
   const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  let processed = 0
   let generated = 0
-  for (const protocol of protocols ?? []) {
-    try {
-      generated += await renewProtocolWindow({ protocol, doseInstanceRepo })
-    } catch (err) {
-      // Best-effort por protocolo: um erro não derruba a varredura inteira.
-      logger.error(`Falha ao renovar janela do protocolo ${protocol.id}`, err)
+  let from = 0
+
+  for (;;) {
+    const { data: protocols, error } = await supabase
+      .from('protocols')
+      .select('*')
+      .eq('active', true)
+      .range(from, from + BATCH_SIZE - 1)
+
+    if (error) {
+      logger.error('Falha ao buscar protocolos ativos', error)
+      throw error
     }
+    if (!protocols || protocols.length === 0) break
+
+    for (const protocol of protocols) {
+      try {
+        generated += await renewProtocolWindow({ protocol, doseInstanceRepo })
+      } catch (err) {
+        // Best-effort por protocolo: um erro não derruba a varredura inteira.
+        logger.error(`Falha ao renovar janela do protocolo ${protocol.id}`, err)
+      }
+    }
+
+    processed += protocols.length
+    if (protocols.length < BATCH_SIZE) break
+    from += BATCH_SIZE
   }
-  logger.info('Geração de dose_instances concluída', { processed: protocols?.length ?? 0, generated })
-  return { processed: protocols?.length ?? 0, generated }
+
+  logger.info('Geração de dose_instances concluída', { processed, generated })
+  return { processed, generated }
 }
 
 /**
@@ -75,16 +91,16 @@ export async function cleanupPausedProtocols() {
     throw error
   }
 
-  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
-  let cleaned = 0
-  for (const { id } of paused ?? []) {
-    try {
-      await doseInstanceRepo.wipeFuturePending(id)
-      cleaned += 1
-    } catch (err) {
-      logger.error(`Falha ao limpar pendentes do protocolo pausado ${id}`, err)
-    }
+  const pausedIds = (paused ?? []).map((p) => p.id)
+  if (pausedIds.length === 0) {
+    logger.info('Limpeza de pausados concluída', { cleaned: 0 })
+    return { cleaned: 0 }
   }
-  logger.info('Limpeza de pausados concluída', { cleaned })
-  return { cleaned }
+
+  // DELETE único em lote (evita N+1): mesma regra inviolável (só pending + futuro).
+  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  await doseInstanceRepo.wipeFuturePendingForProtocols(pausedIds)
+
+  logger.info('Limpeza de pausados concluída', { cleaned: pausedIds.length })
+  return { cleaned: pausedIds.length }
 }

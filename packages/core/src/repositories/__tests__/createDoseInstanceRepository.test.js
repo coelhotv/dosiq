@@ -21,6 +21,7 @@ function makeBuilder(result) {
     update: vi.fn(function (...a) { this._calls.push(['update', a]); return this }),
     delete: vi.fn(function (...a) { this._calls.push(['delete', a]); return this }),
     eq:     vi.fn(function (...a) { this._calls.push(['eq', a]); return this }),
+    in:     vi.fn(function (...a) { this._calls.push(['in', a]); return this }),
     gt:     vi.fn(function (...a) { this._calls.push(['gt', a]); return this }),
     gte:    vi.fn(function (...a) { this._calls.push(['gte', a]); return this }),
     lte:    vi.fn(function (...a) { this._calls.push(['lte', a]); return this }),
@@ -113,6 +114,31 @@ describe('createDoseInstanceRepository', () => {
       expect(b.eq).toHaveBeenCalledWith('status', 'pending')
       const lteCall = b._calls.find(([n]) => n === 'lte')
       expect(new Date(lteCall[1][1]).toISOString()).toBe(new Date(until).toISOString())
+    })
+  })
+
+  describe('wipeFuturePendingForProtocols', () => {
+    it('DELETE único em lote com .in() + pending + futuro', async () => {
+      const client = makeClient({ data: null, error: null })
+      const repo = createDoseInstanceRepository({ client })
+      const before = Date.now()
+      await repo.wipeFuturePendingForProtocols(['p1', 'p2'])
+
+      const b = client._builder
+      expect(client._from).toBe('dose_instances')
+      expect(callNames(b)).toContain('delete')
+      expect(b.in).toHaveBeenCalledWith('protocol_id', ['p1', 'p2'])
+      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      const gtCall = b._calls.find(([n]) => n === 'gt')
+      expect(gtCall[1][0]).toBe('scheduled_for')
+      expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)
+    })
+
+    it('lista vazia → no-op (não toca client)', async () => {
+      const client = makeClient({ data: null, error: null })
+      const repo = createDoseInstanceRepository({ client })
+      await repo.wipeFuturePendingForProtocols([])
+      expect(client.from).not.toHaveBeenCalled()
     })
   })
 

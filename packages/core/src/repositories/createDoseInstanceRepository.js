@@ -68,6 +68,24 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Versão em lote de wipeFuturePending: remove pendentes futuras de VÁRIOS protocolos
+     * num único DELETE (evita N+1 no cron). Mesma regra inviolável: só pending + futuro.
+     * @param {string[]} protocolIds
+     * @returns {Promise<void>}
+     */
+    async wipeFuturePendingForProtocols(protocolIds) {
+      if (!Array.isArray(protocolIds) || protocolIds.length === 0) return
+      const { error } = await client
+        .from(TABLE)
+        .delete()
+        .in('protocol_id', protocolIds)
+        .eq('status', 'pending')
+        .gt('scheduled_for', getServerTimestamp())
+
+      if (error) throw error
+    },
+
+    /**
      * Instâncias de um usuário dentro de [fromTs, toTs], ordenadas por scheduled_for.
      * @param {string} userId
      * @param {Date|string} fromTs

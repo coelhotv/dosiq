@@ -42,8 +42,11 @@ async function syncInstancesOnWrite({ client, protocol, updates }) {
     // Pausa: marca paused_at + próximas 24h como skipped_paused (trabalho leve);
     // o cron limpa o resto após 1 dia. Não regenera.
     if (updates && updates.active === false) {
-      await repo.setPausedAt(protocol.id, getServerTimestamp())
-      await repo.markSkippedPaused(protocol.id, parseTimestamp(Date.now() + PAUSE_GRACE_MS).toISOString())
+      // Captura UM timestamp e deriva o cutoff dele (evita duas leituras de relógio).
+      const nowIso = getServerTimestamp()
+      await repo.setPausedAt(protocol.id, nowIso)
+      const cutoffIso = parseTimestamp(parseISO(nowIso).getTime() + PAUSE_GRACE_MS).toISOString()
+      await repo.markSkippedPaused(protocol.id, cutoffIso)
       return
     }
 

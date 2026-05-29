@@ -94,11 +94,12 @@ describe('ensureInstancesUpTo (rede lazy)', () => {
   })
 
   it('gera o gap entre hwm e ts quando descoberto', async () => {
-    const repo = makeRepo('2026-05-10T00:00:00.000Z')
+    // hwm logo à frente de agora; ts mais adiante → gap futuro real
+    const repo = makeRepo(new Date(Date.now() + 1 * MS_DAY).toISOString())
     const n = await ensureInstancesUpTo({
       protocol,
       doseInstanceRepo: repo,
-      ts: '2026-05-13T00:00:00-03:00',
+      ts: new Date(Date.now() + 4 * MS_DAY).toISOString(),
     })
     expect(n).toBeGreaterThan(0)
     expect(repo.upsertMany).toHaveBeenCalledOnce()
@@ -110,6 +111,22 @@ describe('ensureInstancesUpTo (rede lazy)', () => {
     const n = await ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: future })
     expect(n).toBeGreaterThan(0)
     expect(repo.setGeneratedThrough).toHaveBeenCalledOnce()
+  })
+
+  it('hwm no passado: clamp em now (não gera pending retroativo)', async () => {
+    const past = new Date(Date.now() - 10 * MS_DAY).toISOString()
+    const repo = makeRepo(past)
+    const future = new Date(Date.now() + 2 * MS_DAY).toISOString()
+    await ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: future })
+    // a janela gerada começa em >= now (nenhuma instância anterior a agora)
+    const upserted = repo.upsertMany.mock.calls[0]?.[0] ?? []
+    const nowMs = Date.now()
+    expect(upserted.every((i) => new Date(i.scheduled_for).getTime() >= nowMs - 60000)).toBe(true)
+  })
+
+  it('ts inválido (null) não lança — toIsoLike null-safe', async () => {
+    const repo = makeRepo('2026-06-01T00:00:00.000Z')
+    await expect(ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: null })).resolves.toBeTypeOf('number')
   })
 })
 
