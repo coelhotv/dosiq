@@ -12,23 +12,27 @@ Cada `.js` dentro de `api/` conta como funcao, EXCETO arquivos em diretorios pre
 
 | # | Funcao | Descricao | maxDuration |
 |---|--------|-----------|-------------|
-| 1 | `api/dlq.js` | Router DLQ (list + retry + discard) | default |
-| 2 | `api/gemini-reviews.js` | Router Gemini (persist + create-issues + update-status + batch-update) | default |
-| 3 | `api/health/notifications.js` | Health check do sistema de notificacoes | default |
-| 4 | `api/notify.js` | Cron orchestrator | 60s |
-| 5 | `api/share.js` | PDF sharing via Vercel Blob | default |
-| 6 | `api/telegram.js` | Telegram webhook | 10s |
+| 1 | `api/beta-signup.js` | Inscricao na beta | default |
+| 2 | `api/chatbot.js` | Chatbot AI Endpoint | default |
+| 3 | `api/dlq.js` | Router DLQ (list + retry + discard) | default |
+| 4 | `api/gemini-reviews.js` | Router Gemini (persist + create-issues + update-status + batch-update) | default |
+| 5 | `api/generate-doses.js` | Geracao batch de doses | 60s |
+| 6 | `api/health/notifications.js` | Health check do sistema de notificacoes | default |
+| 7 | `api/notify.js` | Cron orchestrator | 60s |
+| 8 | `api/register-webpush.js` | Registrar WebPush Subscriptions | default |
+| 9 | `api/share.js` | PDF sharing via Vercel Blob | default |
+| 10 | `api/telegram.js` | Telegram webhook | 10s |
 
-**Total: 6/12 funcoes → 6 slots livres**
+**Total: 10/12 funcoes → 2 slots livres**
 
 ### Projecao de Budget (Roadmap 2026)
 
 | Fase | Novos endpoints | Total | Livres |
 |------|----------------|-------|--------|
-| Fase 5 (atual) | `share.js` ja adicionado | 6 | 6 |
-| Fase 5.5 | Nenhum (client-side) | 6 | 6 |
-| Fase 6 | `whatsapp.js` | 7 | 5 |
-| Fase 7 | `portal.js`, `chatbot.js`, `ocr.js` | 8-10 | 2-4 |
+| Atual | — | 10 | 2 |
+| Consolidacao | Remover gemini-reviews, consolidar webpush/beta-signup | 7-8 | 4-5 |
+| Fase 6 | `whatsapp.js` | 8-9 | 3-4 |
+| Fase 7 | `portal.js`, `ocr.js` | 10-11 | 1-2 |
 
 ### Antes de Criar QUALQUER Novo Arquivo .js em api/
 
@@ -278,12 +282,14 @@ Para adicionar novo cron: estender a logica em `api/notify.js` com novo horario/
 ```
 api/
   CLAUDE.md                          ← este arquivo (nao e funcao)
-  dlq.js                             ← FUNCAO 1 (router DLQ)
+  beta-signup.js                     ← FUNCAO 1
+  chatbot.js                         ← FUNCAO 2
+  dlq.js                             ← FUNCAO 3 (router DLQ)
   dlq/
     _handlers/
       retry.js                       ← handler extraido (nao contado)
       discard.js                     ← handler extraido (nao contado)
-  gemini-reviews.js                  ← FUNCAO 2 (router Gemini)
+  gemini-reviews.js                  ← FUNCAO 4 (router Gemini)
   gemini-reviews/
     _shared/
       logger.js                      ← utilitario (nao contado)
@@ -293,14 +299,16 @@ api/
       create-issues.js               ← handler extraido (nao contado)
       update-status.js               ← handler extraido (nao contado)
       batch-update.js                ← handler extraido (nao contado)
+  generate-doses.js                  ← FUNCAO 5 (maxDuration: 60)
   health/
-    notifications.js                 ← FUNCAO 3
-  notify.js                          ← FUNCAO 4 (maxDuration: 60)
-  share.js                           ← FUNCAO 5
-  telegram.js                        ← FUNCAO 6 (maxDuration: 10)
+    notifications.js                 ← FUNCAO 6
+  notify.js                          ← FUNCAO 7 (maxDuration: 60)
+  register-webpush.js                ← FUNCAO 8
+  share.js                           ← FUNCAO 9
+  telegram.js                        ← FUNCAO 10 (maxDuration: 10)
 ```
 
 ---
 
-*Ultima atualizacao: 24/02/2026*
+*Ultima atualizacao: 2026-05-29*
 *Plano de consolidacao: `plans/SERVERLESS_CONSOLIDATION.md`*
