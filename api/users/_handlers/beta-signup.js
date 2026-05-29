@@ -42,6 +42,7 @@ export async function handleBetaSignup(req, res) {
       .from('beta_signups')
       .insert([{ email: normalized, platform: plat }])
 
+    // 23505 = unique_violation -> já cadastrado: tratamos como sucesso idempotente (evita enumeração de e-mails)
     if (error && error.code !== '23505') {
       console.error('beta-signup insert error:', error)
       return res.status(500).json({ error: 'Não foi possível registrar agora. Tente mais tarde.' })
