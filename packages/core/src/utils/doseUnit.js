@@ -107,15 +107,15 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
     ml: 'ml',
     l: 'l',
     ui: 'UI',
-    cp: total === 1 ? 'comprimido' : 'comprimidos',
+    un: total === 1 ? 'unidade' : 'unidades',
     gotas: total === 1 ? 'gota' : 'gotas',
   }
 
   const displayTotalUnit = totalUnitLabels[currentUnit] || currentUnit || ''
 
-  // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1,
+  // Se o próprio medicamento for medido em unidades ou gotas e a dosagem unitária for 1,
   // a quantidade física já é a quantidade ativa (ex: "3 gotas"). Não precisa de concentração separada.
-  if ((unit === 'cp' || unit === 'gotas') && dosagePerPill === 1) {
+  if ((unit === 'un' || unit === 'gotas') && dosagePerPill === 1) {
     return ''
   }
 
@@ -129,7 +129,7 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
  * @example formatActiveIngredientHint(2, 100, 'ui')  → '2 un. (200 UI)'
  * @example formatActiveIngredientHint(30, 500, 'mg') → '30 un. (15.000 mg)'
  * @example formatActiveIngredientHint(3, 1, 'gotas') → '3 gotas'
- * @example formatActiveIngredientHint(1, 1, 'cp')    → '1 comprimido'
+ * @example formatActiveIngredientHint(1, 1, 'un')    → '1 unidade'
  */
 export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
   if (
@@ -148,14 +148,14 @@ export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
     g: 'g',
     ml: 'ml',
     ui: 'UI',
-    cp: qtyNum === 1 ? 'comprimido' : 'comprimidos',
+    un: qtyNum === 1 ? 'unidade' : 'unidades',
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
   }
 
   const displayUnit = unitLabels[unit] || 'un.'
 
-  // Se o próprio medicamento for medido em comprimidos ou gotas e a dosagem unitária for 1
-  if ((unit === 'cp' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
+  // Se o próprio medicamento for medido em unidades ou gotas e a dosagem unitária for 1
+  if ((unit === 'un' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
     return `${displayQty} ${displayUnit}`
   }
 
@@ -164,9 +164,9 @@ export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
     return `${displayQty} ${displayUnit}`
   }
 
-  // Se o medicamento for medido em comprimidos ou gotas com dosagem ativa em massa (ex: mg)
-  if (unit === 'cp') {
-    return `${displayQty} comp. (${shortVal})`
+  // Se o medicamento for medido em unidades ou gotas com dosagem ativa em massa (ex: mg)
+  if (unit === 'un') {
+    return `${displayQty} un. (${shortVal})`
   }
   if (unit === 'gotas') {
     return `${displayQty} gotas (${shortVal})`
@@ -200,13 +200,13 @@ export function formatActiveIngredientFormula(qty, dosagePerPill, unit) {
     g: 'g',
     ml: 'ml',
     ui: 'UI',
-    cp: qtyNum === 1 ? 'comprimido' : 'comprimidos',
+    un: qtyNum === 1 ? 'unidade' : 'unidades',
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
   }
 
   const displayUnit = unitLabels[unit] || 'un.'
 
-  if ((unit === 'cp' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
+  if ((unit === 'un' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
     return `Equivale a ${displayQty} ${displayUnit}`
   }
 

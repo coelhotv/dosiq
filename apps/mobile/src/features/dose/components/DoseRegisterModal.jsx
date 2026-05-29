@@ -124,9 +124,7 @@ export default function DoseRegisterModal({
           </View>
 
           <Text style={styles.label}>
-            {protocol.medicine?.dosage_unit === 'cp'
-              ? 'Quantidade (comprimidos)'
-              : protocol.medicine?.dosage_unit === 'gotas'
+            {protocol.medicine?.dosage_unit === 'gotas'
               ? 'Quantidade (gotas)'
               : 'Quantidade (unidades)'}
           </Text>

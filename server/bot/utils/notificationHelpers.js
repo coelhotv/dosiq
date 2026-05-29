@@ -77,14 +77,14 @@ export function formatIntakeQuantity(quantity, medicineUnit) {
   const normalizedUnit = medicineUnit?.toLowerCase();
   
   // Unidades de peso indicam que a "peça" da tomada é um comprimido/cápsula
-  const weightUnits = ['mg', 'mcg', 'g', 'ui'];
+  const weightUnits = ['mg', 'mcg', 'g'];
   
   if (weightUnits.includes(normalizedUnit)) {
     return `${quantity} cp`;
   }
   
   // Unidades de volume ou contagem direta são mantidas
-  const keepUnits = ['ml', 'gotas', 'cp'];
+  const keepUnits = ['ml', 'gotas', 'un', 'ui'];
   if (keepUnits.includes(normalizedUnit)) {
     return `${quantity} ${normalizedUnit}`;
   }

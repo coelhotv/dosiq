@@ -25,13 +25,13 @@ describe('notificationHelpers', () => {
       expect(formatIntakeQuantity(3, 'mg')).toBe('3 cp');
       expect(formatIntakeQuantity(1, 'mcg')).toBe('1 cp');
       expect(formatIntakeQuantity(2, 'g')).toBe('2 cp');
-      expect(formatIntakeQuantity(1, 'ui')).toBe('1 cp');
+      expect(formatIntakeQuantity(1, 'ui')).toBe('1 ui');
     });
 
     it('should keep original unit for liquids and forms', () => {
       expect(formatIntakeQuantity(20, 'gotas')).toBe('20 gotas');
       expect(formatIntakeQuantity(5, 'ml')).toBe('5 ml');
-      expect(formatIntakeQuantity(2, 'cp')).toBe('2 cp');
+      expect(formatIntakeQuantity(2, 'un')).toBe('2 un');
     });
 
     it('should use "dose" for unknown or missing units', () => {

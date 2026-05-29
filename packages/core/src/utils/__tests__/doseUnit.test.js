@@ -92,7 +92,7 @@ describe('formatActiveIngredientHint', () => {
     expect(formatActiveIngredientHint(30, 500, 'mg')).toBe('30 un. (15 g)')
     expect(formatActiveIngredientHint(1, 10, 'ml')).toBe('1 un. (10 ml)')
     expect(formatActiveIngredientHint(3, 1, 'gotas')).toBe('3 gotas')
-    expect(formatActiveIngredientHint(1, 1, 'cp')).toBe('1 comprimido')
+    expect(formatActiveIngredientHint(1, 1, 'un')).toBe('1 unidade')
   })
 
   it('formata decimais com vírgula PT-BR', () => {
@@ -117,7 +117,7 @@ describe('formatActiveIngredientFormula', () => {
   it('formata com equivalência direta em texto limpo', () => {
     expect(formatActiveIngredientFormula(2, 100, 'ui')).toBe('Equivale a 200 UI')
     expect(formatActiveIngredientFormula(30, 500, 'mg')).toBe('Equivale a 15 g')
-    expect(formatActiveIngredientFormula(1, 1, 'cp')).toBe('Equivale a 1 comprimido')
+    expect(formatActiveIngredientFormula(1, 1, 'un')).toBe('Equivale a 1 unidade')
     expect(formatActiveIngredientFormula(3, 1, 'gotas')).toBe('Equivale a 3 gotas')
   })
 

@@ -272,7 +272,7 @@ export default function MedicineDetailScreen() {
           <Text style={styles.sectionTitle}>DOSAGEM</Text>
           <View style={styles.sectionCard}>
             <KVRow
-              label="Dose por unidade"
+              label="Concentração"
               value={
                 data.dosage_per_pill
                   ? `${data.dosage_per_pill} ${data.dosage_unit ?? ''}`.trim()
