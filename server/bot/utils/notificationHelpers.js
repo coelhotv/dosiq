@@ -86,7 +86,8 @@ export function formatIntakeQuantity(quantity, medicineUnit) {
   // Unidades de volume ou contagem direta são mantidas
   const keepUnits = ['ml', 'gotas', 'un', 'ui'];
   if (keepUnits.includes(normalizedUnit)) {
-    return `${quantity} ${normalizedUnit}`;
+    const displayUnit = normalizedUnit === 'ui' ? 'UI' : normalizedUnit;
+    return `${quantity} ${displayUnit}`;
   }
   
   // Fallback para unidades desconhecidas ou genéricas

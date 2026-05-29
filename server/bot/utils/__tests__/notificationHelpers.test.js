@@ -25,7 +25,7 @@ describe('notificationHelpers', () => {
       expect(formatIntakeQuantity(3, 'mg')).toBe('3 cp');
       expect(formatIntakeQuantity(1, 'mcg')).toBe('1 cp');
       expect(formatIntakeQuantity(2, 'g')).toBe('2 cp');
-      expect(formatIntakeQuantity(1, 'ui')).toBe('1 ui');
+      expect(formatIntakeQuantity(1, 'ui')).toBe('1 UI');
     });
 
     it('should keep original unit for liquids and forms', () => {
