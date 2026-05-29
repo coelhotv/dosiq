@@ -16,7 +16,7 @@
  * leituras críticas (dashboard / scheduler de notificação) — não vive aqui.
  */
 
-import { createDoseInstanceRepository, renewProtocolWindow, parseTimestamp } from '@dosiq/core'
+import { createDoseInstanceRepository, renewProtocolWindow, parseTimestamp, RENEWAL_THRESHOLD_DAYS } from '@dosiq/core'
 import { supabase } from '../services/supabase.js'
 import { createLogger } from './logger.js'
 
@@ -27,15 +27,22 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 const BATCH_SIZE = 100
 
 /**
- * Renova a janela de geração de todos os protocolos ativos.
- * Paginado por `.range()`: sem paginação, o limite padrão do Supabase (~1000 linhas)
- * faria o cron pular usuários silenciosamente conforme a base cresce.
- * Idempotente: rodar 2x = mesmo estado (renewProtocolWindow não regenera o que já cobre,
- * e o upsert usa ON CONFLICT DO NOTHING).
+ * Renova a janela de geração apenas dos protocolos ativos que estão "due"
+ * (ADR-051): `generated_through IS NULL OR generated_through < now + RENEWAL_THRESHOLD`.
+ * Empurrar o filtro pro DB é o que dá escala: em regime estável só ~1/23 dos
+ * protocolos vence por dia, então o trabalho diário fica pequeno mesmo com 10k+.
+ *
+ * Passa `generated_through` (já presente na linha) para `renewProtocolWindow` →
+ * elimina o SELECT redundante de high-water-mark por protocolo.
+ *
+ * Paginado por `.range()` sobre o due-set (defesa contra o limite ~1000 do Supabase).
+ * Idempotente: rodar 2x = mesmo estado (upsert ON CONFLICT DO NOTHING).
  * @returns {Promise<{processed: number, generated: number}>}
  */
 export async function generateDoseInstances() {
   const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  // Limiar: protocolos cujo hwm cai dentro da janela de renovação a partir de agora.
+  const renewalCutoffIso = parseTimestamp(Date.now() + RENEWAL_THRESHOLD_DAYS * MS_PER_DAY).toISOString()
   let processed = 0
   let generated = 0
   let from = 0
@@ -45,17 +52,23 @@ export async function generateDoseInstances() {
       .from('protocols')
       .select('*')
       .eq('active', true)
+      .or(`generated_through.is.null,generated_through.lt.${renewalCutoffIso}`)
       .range(from, from + BATCH_SIZE - 1)
 
     if (error) {
-      logger.error('Falha ao buscar protocolos ativos', error)
+      logger.error('Falha ao buscar protocolos ativos due', error)
       throw error
     }
     if (!protocols || protocols.length === 0) break
 
     for (const protocol of protocols) {
       try {
-        generated += await renewProtocolWindow({ protocol, doseInstanceRepo })
+        // Passa o hwm já buscado → renewProtocolWindow não faz SELECT extra.
+        generated += await renewProtocolWindow({
+          protocol,
+          doseInstanceRepo,
+          generatedThrough: protocol.generated_through ?? null,
+        })
       } catch (err) {
         // Best-effort por protocolo: um erro não derruba a varredura inteira.
         logger.error(`Falha ao renovar janela do protocolo ${protocol.id}`, err)

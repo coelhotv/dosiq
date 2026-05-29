@@ -330,8 +330,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' });
   }
 
+  // Falha-fechado se CRON_SECRET não estiver configurado — sem essa guarda,
+  // CRON_SECRET undefined viraria "Bearer undefined" e qualquer requisição com
+  // esse header burlaria a autenticação (mesma classe do Gemini #604, security-high).
   const authHeader = req.headers['authorization'];
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     logger.warn('Unauthorized cron attempt', { correlationId, authHeader });
     return res.status(401).json({ error: 'Unauthorized' });
   }
