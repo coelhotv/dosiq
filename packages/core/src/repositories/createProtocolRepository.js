@@ -48,7 +48,13 @@ async function syncInstancesOnWrite({ client, protocol, updates }) {
     }
 
     const isResume = updates && updates.active === true
-    if (isResume) await repo.setPausedAt(protocol.id, null)
+    if (isResume) {
+      await repo.setPausedAt(protocol.id, null)
+      // Reverte as instâncias marcadas na pausa (skipped_paused → pending). O regen via
+      // upsert (ON CONFLICT DO NOTHING) não reverteria — sem isto, toggle rápido
+      // (pausa <1d + religa) deixaria as próximas 24h mortas. (S2.5 DoD)
+      await repo.reactivateFuturePaused(protocol.id)
+    }
 
     const schedulingChanged = updates && SCHEDULING_FIELDS.some((f) => f in updates)
     if (schedulingChanged) await repo.wipeFuturePending(protocol.id)

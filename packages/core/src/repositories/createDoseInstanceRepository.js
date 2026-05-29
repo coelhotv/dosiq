@@ -134,6 +134,24 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Reativa instâncias futuras que estavam pausadas (skipped_paused → pending).
+     * Usado ao religar um protocolo: o upsert idempotente (ON CONFLICT DO NOTHING) não
+     * reverteria essas linhas, então a reativação é explícita. Nunca toca o passado.
+     * @param {string} protocolId
+     * @returns {Promise<void>}
+     */
+    async reactivateFuturePaused(protocolId) {
+      const { error } = await client
+        .from(TABLE)
+        .update({ status: 'pending' })
+        .eq('protocol_id', protocolId)
+        .eq('status', 'skipped_paused')
+        .gt('scheduled_for', getServerTimestamp())
+
+      if (error) throw error
+    },
+
+    /**
      * Marca instâncias pendentes futuras até `untilTs` como skipped_paused (pausa não penaliza).
      * @param {string} protocolId
      * @param {Date|string} untilTs

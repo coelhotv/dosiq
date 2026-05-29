@@ -116,6 +116,23 @@ describe('createDoseInstanceRepository', () => {
     })
   })
 
+  describe('reactivateFuturePaused', () => {
+    it('reverte skipped_paused → pending apenas no futuro', async () => {
+      const client = makeClient({ data: null, error: null })
+      const repo = createDoseInstanceRepository({ client })
+      const before = Date.now()
+      await repo.reactivateFuturePaused('p1')
+
+      const b = client._builder
+      expect(b.update).toHaveBeenCalledWith({ status: 'pending' })
+      expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
+      expect(b.eq).toHaveBeenCalledWith('status', 'skipped_paused')
+      const gtCall = b._calls.find(([n]) => n === 'gt')
+      expect(gtCall[1][0]).toBe('scheduled_for')
+      expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)
+    })
+  })
+
   describe('getWindow', () => {
     it('escopa por userId e ordena por scheduled_for ascendente', async () => {
       const client = makeClient({ data: [{ id: 'di-1' }], error: null })

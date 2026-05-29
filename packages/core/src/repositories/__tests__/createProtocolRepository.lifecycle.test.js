@@ -93,6 +93,21 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     expect(methods).not.toContain('upsert')
   })
 
+  it('update active:true (resume) → reativa skipped_paused (update status) + regen (upsert)', async () => {
+    await repo.update('p1', { active: true })
+    const diOps = tableOps(client, 'dose_instances')
+    const methods = diOps.flatMap((b) => b.calls.map(([m]) => m))
+    // reactivateFuturePaused = update em dose_instances filtrando status=skipped_paused
+    expect(methods).toContain('update')
+    const updatedToPending = diOps.some((b) =>
+      b.calls.some(([m, a]) => m === 'update' && a[0]?.status === 'pending') &&
+      b.calls.some(([m, a]) => m === 'eq' && a[0] === 'status' && a[1] === 'skipped_paused')
+    )
+    expect(updatedToPending).toBe(true)
+    // e regenera a janela
+    expect(methods).toContain('upsert')
+  })
+
   it('update time_schedule → wipe (delete) + regen (upsert)', async () => {
     await repo.update('p1', { time_schedule: ['08:00', '20:00'] })
     const methods = methodsFor(client, 'dose_instances')
