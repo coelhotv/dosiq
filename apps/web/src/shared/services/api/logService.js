@@ -3,6 +3,48 @@ import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
 import { getStartOfDayISO, getEndOfDayISO, getLastDayOfMonth } from '@utils/dateUtils'
+import { createDoseInstanceRepository } from '@dosiq/core'
+
+// Repo de instâncias para a âncora de log (S2.6/ADR-048). Usa o mesmo client da sessão
+// (RLS escopa por user_id) — o snap e o markTaken já filtram por protocol_id (AP-A03).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+
+/**
+ * Âncora de log (best-effort, R-245): liga o log recém-criado à ocorrência materializada.
+ * Faz snap por tolerância (escopo protocol_id) e, se casar, marca a instância `taken` +
+ * grava o elo bidirecional. NUNCA lança: o log é a fonte de verdade da tomada; a falha de
+ * âncora deixa o log avulso (dose_instance_id=null) e é reconciliável por backfill (S2.7).
+ * @param {{id: string, protocol_id?: string|null, taken_at: string}} log - log já persistido
+ * @returns {Promise<string|null>} dose_instance_id ancorado, ou null
+ */
+async function anchorLogToInstance(log) {
+  if (!log?.protocol_id) return null
+  try {
+    const instance = await doseInstanceRepo.findAnchorInstance({
+      protocolId: log.protocol_id,
+      takenAt: log.taken_at,
+    })
+    if (!instance) return null
+
+    // Só grava o elo no log se a reserva da instância pegou (evita elo órfão em
+    // corrida: 2ª tomada acha a instância já taken → markTaken false → segue avulsa).
+    const marked = await doseInstanceRepo.markTaken(instance.id, log.id)
+    if (!marked) return null
+
+    const { error } = await supabase
+      .from('medicine_logs')
+      .update({ dose_instance_id: instance.id })
+      .eq('id', log.id)
+      .eq('user_id', await getUserId())
+    if (error) throw error
+
+    return instance.id
+  } catch (anchorError) {
+    // Best-effort: dose registrada e estoque debitado continuam válidos.
+    console.warn('[logService] Falha ao ancorar log à instância (segue avulso):', anchorError)
+    return null
+  }
+}
 
 // Schemas de validação para todos os métodos de leitura
 const limitSchema = z.number().int().positive().max(5000).default(50)
@@ -153,6 +195,10 @@ export const logService = {
         .eq('user_id', await getUserId())
       throw new Error('Não foi possível consumir o estoque: ' + stockError.message)
     }
+
+    // Âncora de log → instância (S2.6, best-effort). Reflete o elo no objeto retornado.
+    const anchoredId = await anchorLogToInstance(data)
+    if (anchoredId) data.dose_instance_id = anchoredId
 
     return normalizeTimestamps([data])[0]
   },

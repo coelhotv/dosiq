@@ -14,10 +14,15 @@
 // - setGeneratedThrough(protocolId, ts)
 // - markSkippedPaused(protocolId, untilTs) → pendentes futuras até untilTs viram skipped_paused
 
-import { getServerTimestamp, parseISO } from '../utils/dateUtils.js'
+import { getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
 
 const TABLE = 'dose_instances'
 const PROTOCOLS = 'protocols'
+
+/** Teto de tolerância (min) — janela de busca grosseira no snap; filtro fino usa o
+ *  `tolerance_minutes` de cada linha. Casa com o default/cap da migration (§6 MASTER_PLAN). */
+const MAX_TOLERANCE_MINUTES = 120
+const MS_PER_MINUTE = 60 * 1000
 
 /** Converte Date|ISO em ISO string (R-020: sem `new Date()` fora de dateUtils). */
 const toIso = (value) => parseISO(value).toISOString()
@@ -185,6 +190,78 @@ export function createDoseInstanceRepository({ client }) {
         .lte('scheduled_for', toIso(untilTs))
 
       if (error) throw error
+    },
+
+    /**
+     * Snap: acha a instância PENDENTE a ancorar para uma tomada em `takenAt`.
+     * Escopa SEMPRE por `protocolId` (nunca por medicine_id — AP-A03: logs vazam
+     * entre protocolos do mesmo medicamento). Respeita a tolerância de CADA linha
+     * (`tolerance_minutes`, que varia por slot) e devolve a instância mais próxima
+     * de `takenAt`. Fora de toda janela → null (dose avulsa).
+     *
+     * A janela do SELECT usa o teto (120min); o filtro fino por linha é em JS,
+     * pois cada instância tem sua própria tolerância. Só `pending` é elegível —
+     * nunca re-ancora taken/missed/skipped.
+     *
+     * @param {Object} args
+     * @param {string} args.protocolId
+     * @param {Date|string} args.takenAt
+     * @returns {Promise<{id: string, scheduled_for: string, tolerance_minutes: number}|null>}
+     */
+    async findAnchorInstance({ protocolId, takenAt }) {
+      if (!protocolId) return null
+      const takenMs = parseISO(takenAt).getTime()
+      const lowIso = parseTimestamp(takenMs - MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
+      const highIso = parseTimestamp(takenMs + MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
+
+      const { data, error } = await client
+        .from(TABLE)
+        .select('id, scheduled_for, tolerance_minutes')
+        .eq('protocol_id', protocolId)
+        .eq('status', 'pending')
+        .gte('scheduled_for', lowIso)
+        .lte('scheduled_for', highIso)
+
+      if (error) throw error
+      if (!data || data.length === 0) return null
+
+      // Filtro fino: dentro da tolerância da própria linha; pega a mais próxima.
+      let best = null
+      let bestDiff = Infinity
+      for (const inst of data) {
+        const diff = Math.abs(parseISO(inst.scheduled_for).getTime() - takenMs)
+        const tol = (inst.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
+        if (diff <= tol && diff < bestDiff) {
+          best = inst
+          bestDiff = diff
+        }
+      }
+      return best
+    },
+
+    /**
+     * Liga instância ↔ log: marca a ocorrência como `taken` e grava o `medicine_log_id`.
+     * FP-1 (ADR-050): NÃO compara `quantity_taken` com `expected_dose` — a dose aplicada
+     * pode divergir da planejada (bolus variável futuro). Só ancora se ainda `pending`
+     * (guard contra corrida/dupla-tomada).
+     *
+     * Retorna `true` SOMENTE se a reserva pegou (linha afetada). Em corrida, a 2ª tomada
+     * encontra a instância já `taken` → update no-op → retorna `false`, e o caller NÃO deve
+     * gravar `dose_instance_id` no log (evita elo unidirecional/órfão — Gemini #609).
+     * @param {string} instanceId
+     * @param {string} medicineLogId
+     * @returns {Promise<boolean>} true se a instância foi efetivamente reservada
+     */
+    async markTaken(instanceId, medicineLogId) {
+      const { data, error } = await client
+        .from(TABLE)
+        .update({ status: 'taken', medicine_log_id: medicineLogId })
+        .eq('id', instanceId)
+        .eq('status', 'pending')
+        .select('id')
+
+      if (error) throw error
+      return !!(data && data.length > 0)
     },
   }
 }
