@@ -11,7 +11,7 @@
 
 | PR | Sprints | Status | Ref |
 |----|---------|--------|-----|
-| **PR-F3.1** core reader + agregação | S3.0–S3.2 | ⬜ pendente | sem mudança de comportamento (puro + read API) |
+| **PR-F3.1** core reader + agregação | S3.0–S3.2 | ✅ merged #612 (`c4ed5531`) | `computeAdherence/StreakFromInstances` + `countByStatus`; R-248; Gemini perf (Promise.all) aplicado |
 | **PR-F3.2** web adesão + dashboard | S3.3–S3.5 | ⬜ pendente | **muda leitura** (visível ao usuário) |
 | **PR-F3.3** mobile + bot paridade | S3.6–S3.7 | ⬜ pendente | espelha web |
 | (testes S3.8) | distribuídos | ⬜ | dentro de cada PR |
