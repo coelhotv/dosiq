@@ -253,20 +253,29 @@ export function createDoseInstanceRepository({ client }) {
      */
     async countByStatus({ userId, protocolId, fromTs, toTs }) {
       const statuses = ['taken', 'missed', 'pending', 'skipped_paused', 'skipped_user']
+      const fromIso = toIso(fromTs)
+      const toTsIso = toIso(toTs)
+
+      // Consultas independentes por status → paralelizar (Promise.all). `head:true`
+      // não traz linhas; `select('id')` mantém o head-count enxuto (Gemini #612).
+      const counts = await Promise.all(
+        statuses.map(async (s) => {
+          let q = client
+            .from(TABLE)
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', s)
+            .gte('scheduled_for', fromIso)
+            .lte('scheduled_for', toTsIso)
+          if (protocolId) q = q.eq('protocol_id', protocolId)
+          const { count, error } = await q
+          if (error) throw error
+          return count ?? 0
+        }),
+      )
+
       const result = {}
-      for (const s of statuses) {
-        let q = client
-          .from(TABLE)
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('status', s)
-          .gte('scheduled_for', toIso(fromTs))
-          .lte('scheduled_for', toIso(toTs))
-        if (protocolId) q = q.eq('protocol_id', protocolId)
-        const { count, error } = await q
-        if (error) throw error
-        result[s] = count ?? 0
-      }
+      statuses.forEach((s, i) => { result[s] = counts[i] })
       return result
     },
 
