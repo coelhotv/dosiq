@@ -80,7 +80,15 @@ export function DashboardProvider({ children }) {
   )
 
   const { results, isLoading, isFetching, hasError, refetchAll } = useCachedQueries(queries)
-  const [medicinesResult, protocolsResult, logsResult, doseInstancesResult] = results
+  // Defaults `{}` defendem a janela transiente de HMR em que `results` fica com o
+  // tamanho antigo (menos queries) por 1 render até o efeito re-sincronizar — evita
+  // `undefined.data` derrubar o Provider e cascatear "fora do DashboardProvider".
+  const [
+    medicinesResult = {},
+    protocolsResult = {},
+    logsResult = {},
+    doseInstancesResult = {},
+  ] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
   const { stockSummary, stats, protocolsWithNextDose, dailyAdherence } = useDashboardDerived(
