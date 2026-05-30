@@ -303,17 +303,25 @@ export function createDoseInstanceRepository({ client }) {
       const nowMs = parseISO(now).getTime()
       const nowIso = parseISO(now).toISOString()
 
-      // 1. Ler todas as pending já no passado (scheduled_for < now), paginado, SEM escrever.
+      // 1. Ler todas as pending já no passado (scheduled_for < now), SEM escrever.
+      // Paginação por CURSOR (keyset em `id`), não offset: durante o sweep um writer
+      // concorrente (markTaken via mobile/web) pode tirar uma linha do conjunto pending
+      // → com offset (.range) isso desloca a janela e PULA linhas. O cursor por id é
+      // imune a esse drift — nenhuma linha é pulada nem lida 2x (Gemini #613).
       const dueIds = []
-      let from = 0
+      let lastId = null
       for (;;) {
-        const { data, error } = await client
+        let query = client
           .from(TABLE)
           .select('id, scheduled_for, tolerance_minutes')
           .eq('status', 'pending')
           .lt('scheduled_for', nowIso)
-          .order('scheduled_for', { ascending: true })
-          .range(from, from + pageSize - 1)
+          .order('id', { ascending: true })
+          .limit(pageSize)
+
+        if (lastId) query = query.gt('id', lastId)
+
+        const { data, error } = await query
 
         if (error) throw error
         if (!data || data.length === 0) break
@@ -324,7 +332,7 @@ export function createDoseInstanceRepository({ client }) {
         }
 
         if (data.length < pageSize) break
-        from += pageSize
+        lastId = data[data.length - 1].id
       }
 
       if (dueIds.length === 0) return 0

@@ -18,10 +18,12 @@ function makeQueueClient(queue) {
     eq: vi.fn((...a) => { calls.push(['eq', a]); return builder }),
     in: vi.fn((...a) => { calls.push(['in', a]); return builder }),
     lt: vi.fn(() => builder),
+    gt: vi.fn(() => builder),
     gte: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
     range: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     then: (resolve) => resolve(queue.shift() ?? { data: [], error: null }),
   }
   const client = { from: vi.fn(() => builder), _calls: calls }
