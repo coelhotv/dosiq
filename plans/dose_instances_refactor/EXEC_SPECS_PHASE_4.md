@@ -83,7 +83,15 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 - **Files:** migration SQL (rewrite da fonte das views) + `apps/web/src/services/api/adherenceService.js` (`getDailyAdherenceFromView`/`getAdherencePatternFromView` — só se a forma mudar) + testes.
 - **Spec:** reescrever a FONTE de `v_daily_adherence` e `v_adherence_heatmap` de `medicine_logs` (inferência ±2h) → `dose_instances` (status real), **mantendo a mesma interface de saída** (colunas/shape que Reports/PDF/Consultation/HealthHistory já consomem) e a **agregação no servidor** (R-249 — NUNCA mover pro client). Alinhar a semântica com a F3 (taken/missed real). Grants + RLS conforme CLAUDE.md. Sem caminho duplicado (lição Sprint 7).
 - **Aceite:** views retornam de `dose_instances`; números batem com `adherenceService` core (F3); payload ao client inalterado (sem regressão OOM em low-mid); Reports/PDF/Consultation seguem funcionando.
+<<<<<<< Updated upstream
 - **🐞 BUG CONCRETO A MATAR (AP-191, descoberto F3.2b):** `v_daily_adherence` hoje calcula `expected` SÓ de `protocols WHERE active = true`, mas `taken` conta TODOS os logs (sem filtro de protocolo). Protocolo finalizado (ex: antibiótico 7d → `active=false`) some do denominador mas seus logs ficam no numerador → `taken > expected` → **`adherence_percentage > 100%`** em dias passados (visto no sparkline "Adesão 30 Dias": 118%↓). Além disso a view **não tem clamp 0-100**. Migrar p/ `dose_instances` corrige na raiz (expected = ocorrências materializadas reais, taken = `status='taken'`, simétrico) — **mas garantir clamp e simetria expected/taken** explicitamente no aceite. Validar especificamente um usuário com protocolo one-shot finalizado no meio da janela.
+=======
+- **🎯 CONVERGÊNCIA (ADR-054) — itens obrigatórios desta sprint:**
+  - **Migrar `consultationDataService`** (`features/consultation/services/`): hoje usa `calculateAdherenceStats(logs, protocols, 30/90)` legado (±2h) p/ o sumário do PDF/consulta. Trocar por `adherenceService`/core instances. É o ÚLTIMO consumidor JS do `calculateAdherenceStats` → depois dele, **aposentar `calculateAdherenceStats`** do core.
+  - **Consulta mistura 3 fontes hoje** (`Consultation.jsx`: legado em dataService + view `getDailyAdherenceFromView` + `stats` instances do contexto). Pós-migração: tudo da mesma fonte. Validar que PDF == anel do dashboard.
+  - **TESTE DE PARIDADE (trava schema drift, lição Sprint 7):** mesmo conjunto de `dose_instances` → `compute*FromInstances` (JS core) **==** resultado da view SQL. Sem isso, anel e relatório voltam a divergir.
+  - Cartão de emergência: **sem adesão** (verificado F3.2b) — não tocar.
+>>>>>>> Stashed changes
 - **Deps:** S4.2, Fase 3 (PR-F3.2a)
 
 ### S4.3 — Web: HealthHistoryView event-agnóstica + registry de renderizadores ⚠️ muda UI
