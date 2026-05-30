@@ -1,10 +1,18 @@
 /**
- * SparklineAdesao - Gráfico de linha para visualização de adesão
+ * SparklineAdesao - Gráfico de linha para visualização de adesão.
+ *
+ * Acessível (role="img" + dots role="button"/aria-label), com auto-escala vertical
+ * (computeDomain/projectY) e adesão clampada 0-100 (AP-191, defesa no componente).
  */
 import { useMemo, useCallback, useState } from 'react'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { useSparklineData } from '@dashboard/hooks/useSparklineData'
-import { generateSparklinePath, getAdherenceColor } from '@dashboard/utils/sparklineUtils'
+import {
+  generateSparklinePath,
+  getAdherenceColor,
+  computeDomain,
+  projectY,
+} from '@dashboard/utils/sparklineUtils'
 import SparklineTooltip from '@dashboard/components/SparklineTooltip'
 import './SparklineAdesao.css'
 
@@ -17,23 +25,66 @@ const SIZES = {
 }
 
 export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = null, showAxis = false, showTooltip = true, className = '', onDayClick }) {
+  // 1. States
   const [activePoint, setActivePoint] = useState(null)
+
+  // 2. Derived data + memos
   const { width, height, padding } = SIZES[size] || SIZES.medium
   const { chartData, stats } = useSparklineData(adherenceByDay, days ?? (size === 'expanded' ? 30 : 7))
 
+  const domain = useMemo(() => computeDomain(chartData), [chartData])
+  const sparklinePath = useMemo(
+    () => generateSparklinePath(chartData, width, height, padding, domain),
+    [chartData, width, height, padding, domain]
+  )
+  // Dots em todos os tamanhos exceto inline (inline = só a curva); habilita drill-down
+  // e tooltip mesmo sem o `showTooltip` da legenda HTML.
+  const dataPoints = useMemo(
+    () =>
+      size !== 'inline'
+        ? chartData.map((d, i) => ({
+            ...d,
+            x: padding + i * ((width - padding * 2) / (chartData.length - 1 || 1)),
+            y: projectY(d.adherence, domain, height, padding),
+            index: i,
+          }))
+        : [],
+    [chartData, width, height, padding, size, domain]
+  )
+
+  // 3. Handlers
   const handleDayClick = useCallback((dayData) => {
     analyticsService.track('sparkline_day_clicked', dayData)
     onDayClick?.(dayData)
   }, [onDayClick])
 
-  const sparklinePath = useMemo(() => generateSparklinePath(chartData, width, height, padding), [chartData, width, height, padding])
-  const dataPoints = useMemo(() => (showTooltip && size !== 'inline') ? chartData.map((d, i) => ({ ...d, x: padding + i * ((width - padding * 2) / (chartData.length - 1 || 1)), y: padding + (height - padding * 2) - (d.adherence / 100) * (height - padding * 2), index: i })) : [], [chartData, width, height, padding, showTooltip, size])
+  const handleDotActivate = useCallback((d) => {
+    setActivePoint((prev) => (prev === d.index ? null : d.index))
+    handleDayClick(d)
+  }, [handleDayClick])
 
-  if (!chartData.length) return <div className={`sparkline-adhesion sparkline-empty ${className}`}>Sem dados</div>
+  if (!chartData.length) {
+    return (
+      <div
+        className={`sparkline-adhesion sparkline-empty ${className}`}
+        role="img"
+        aria-label="Sem dados de adesão"
+      >
+        Sem dados
+      </div>
+    )
+  }
 
-  const Tag = onDayClick || showTooltip ? 'button' : 'div'
+  const ariaLabel = `Adesão dos últimos ${chartData.length} dias, média ${stats.average}%`
+
   return (
-    <Tag className={`sparkline-adhesion sparkline-adhesion--${size} ${className}`} onClick={() => setActivePoint(null)} type={Tag === 'button' ? 'button' : undefined}>
+    <button
+      type="button"
+      className={`sparkline-adhesion sparkline-adhesion--${size} ${className}`}
+      role="img"
+      aria-label={ariaLabel}
+      onClick={() => setActivePoint(null)}
+    >
       <svg viewBox={`0 0 ${width} ${height}`} className="sparkline-svg" preserveAspectRatio="none">
         <defs>
           <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.3" /><stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0.05" /></linearGradient>
@@ -43,7 +94,20 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
         <path d={sparklinePath} fill="url(#sparklineGradient)" />
         <path d={sparklinePath} fill="none" stroke="var(--color-primary)" strokeWidth="1" filter="url(#sparklineGlow)" />
         {dataPoints.map((d) => (
-          <circle key={d.date} cx={d.x} cy={d.y} r={size === 'small' ? 2.5 : 3} fill={getAdherenceColor(d.adherence)} className="sparkline-dot" onClick={(e) => { e.stopPropagation(); setActivePoint(activePoint === d.index ? null : d.index); handleDayClick(d); }} />
+          <circle
+            key={d.date}
+            cx={d.x}
+            cy={d.y}
+            r={size === 'small' ? 2.5 : 3}
+            fill={getAdherenceColor(d.adherence)}
+            className="sparkline-dot sparkline-dot--clickable"
+            data-testid={`sparkline-dot-${d.index}`}
+            role="button"
+            tabIndex={0}
+            aria-label={`${d.dayName}, ${d.adherence}% de adesão`}
+            onClick={(e) => { e.stopPropagation(); handleDotActivate(d) }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleDotActivate(d) } }}
+          />
         ))}
         <SparklineTooltip activePoint={activePoint} dataPoints={dataPoints} width={width} />
       </svg>
@@ -56,7 +120,7 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
         <span className="sparkline-average">{stats.average}%</span>
         <span className={`sparkline-trend sparkline-trend-${stats.trend}`}>{stats.trend === 'up' ? '↑' : stats.trend === 'down' ? '↓' : '→'}</span>
       </div>
-    </Tag>
+    </button>
   )
 }
 export default SparklineAdesao

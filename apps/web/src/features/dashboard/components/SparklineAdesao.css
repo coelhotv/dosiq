@@ -59,6 +59,10 @@ button.sparkline-adhesion {
     r 0.2s ease,
     transform 0.2s ease;
   r: 1.5;
+  /* scale em <circle> SVG por padrão usa origem do viewport (0,0) → o dot "dá drift"
+     no hover. fill-box + center ancora a escala no centro do próprio círculo. */
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .sparkline-dot:hover {
