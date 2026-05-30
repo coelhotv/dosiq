@@ -14,6 +14,7 @@ import {
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
+import { cachedAdherenceService } from '@shared/services'
 
 import { useDashboardDerived } from './_useDashboardDerived'
 
@@ -75,6 +76,13 @@ export function DashboardProvider({ children }) {
           )
         },
       },
+      {
+        // Resumo de adesão (30d) ← dose_instances (R-248). Substitui o cálculo legado
+        // por inferência ±2h sobre logs no anel/score/streak. Head-count + janela 90d
+        // bounded server-side (R-249). Capado 0-100 → sem o bug >100% do legado.
+        key: CACHE_KEYS.ADHERENCE_SUMMARY,
+        fetcher: () => cachedAdherenceService.getAdherenceSummary('30d'),
+      },
     ],
     [streakStartLimit]
   )
@@ -88,13 +96,15 @@ export function DashboardProvider({ children }) {
     protocolsResult = {},
     logsResult = {},
     doseInstancesResult = {},
+    adherenceSummaryResult = {},
   ] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
   const { stockSummary, stats, protocolsWithNextDose, dailyAdherence } = useDashboardDerived(
     medicinesResult,
     protocolsResult,
-    logsResult
+    logsResult,
+    adherenceSummaryResult
   )
 
 
@@ -108,6 +118,7 @@ export function DashboardProvider({ children }) {
         invalidateCache(CACHE_KEYS.PROTOCOLS)
         invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
         invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
+        invalidateCache(CACHE_KEYS.ADHERENCE_SUMMARY)
         refetchAll({ force: true })
       }
     })

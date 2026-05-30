@@ -314,8 +314,9 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
-    // Ocorrência do dia mudou de status (anchor → taken) — invalida o "hoje" (AP-168).
+    // Ocorrência do dia mudou de status (anchor → taken) — invalida "hoje" + adesão (AP-168).
     invalidateCache(`${CACHE_KEYS.DOSE_INSTANCES_TODAY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
     return result
   },
 
@@ -327,6 +328,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
     invalidateCache(`${CACHE_KEYS.DOSE_INSTANCES_TODAY}*`)
+    invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
     return result
   },
 
