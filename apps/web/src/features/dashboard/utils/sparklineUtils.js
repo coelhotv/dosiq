@@ -7,8 +7,12 @@
  * pontos (dots não descasam da linha).
  */
 
-/** Garante adesão no intervalo [0, 100] (defesa contra fonte que mande >100%, AP-191). */
-export const clampAdherence = (a) => Math.max(0, Math.min(100, Number.isFinite(a) ? a : 0))
+/** Garante adesão no intervalo [0, 100] (defesa contra fonte que mande >100%, AP-191).
+ *  Coage p/ número antes (fonte pode mandar string numérica, ex: "80"). */
+export const clampAdherence = (a) => {
+  const num = Number(a)
+  return Math.max(0, Math.min(100, Number.isFinite(num) ? num : 0))
+}
 
 /** Projeta adesão (0-100 fixo) para a coordenada y do SVG. */
 export const projectY = (adherence, height, padding) => {
