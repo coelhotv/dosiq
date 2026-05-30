@@ -62,7 +62,8 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
   }, [onDayClick])
 
   const handleDotActivate = useCallback((d) => {
-    setActivePoint((prev) => (prev === d.index ? null : d.index))
+    // chave por `date` (única) e não por índice — robusto a reorder/filtro dos dados.
+    setActivePoint((prev) => (prev === d.date ? null : d.date))
     handleDayClick(d)
   }, [handleDayClick])
 
@@ -79,7 +80,7 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
   }
 
   const ariaLabel = `Adesão dos últimos ${chartData.length} dias, média ${stats.average}%`
-  const active = activePoint !== null ? dataPoints[activePoint] : null
+  const active = activePoint !== null ? dataPoints.find((p) => p.date === activePoint) : null
 
   return (
     <button
