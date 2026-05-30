@@ -35,7 +35,12 @@ export default function DashboardColumnLeft({
           <PriorityDoseCard
             doses={urgentDoses}
             onRegister={(dose) =>
-              handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
+              handleRegisterDoseQuick(
+                dose.medicineId,
+                dose.protocolId,
+                dose.dosagePerIntake,
+                dose.instanceId
+              )
             }
             onRegisterAll={handleRegisterDosesAll}
             variant="priority"

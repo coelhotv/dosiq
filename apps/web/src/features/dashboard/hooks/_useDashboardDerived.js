@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import {
   calculateDailyIntake,
   calculateDaysRemaining,
-  calculateAdherenceStats,
   getNextDoseTime,
   getNextDoseWindowEnd,
   isInToleranceWindow,
@@ -16,11 +15,26 @@ import {
   parseISO,
 } from '@utils/dateUtils'
 
-function _deriveRawStats(protocols, logs) {
-  if (!protocols.length || !logs.length) {
-    return { score: 0, taken: 0, takenAnytime: 0, expected: 0, currentStreak: 0 }
+/**
+ * Stats de adesão do anel/score/streak a partir do resumo de `dose_instances`
+ * (F3.2b, R-248) — não mais inferência ±2h sobre logs (`calculateAdherenceStats`).
+ * `adherenceSummary` vem de `adherenceService.getAdherenceSummary('30d')`:
+ * `{ overallScore (0-100, capado), overallTaken, overallExpected, currentStreak, longestStreak }`.
+ */
+function _deriveRawStats(adherenceSummary) {
+  const s = adherenceSummary || {}
+  const expected = s.overallExpected ?? 0
+  const taken = s.overallTaken ?? 0
+  // overallScore já é taken/(taken+missed)*100, capado 0-100 (sem o bug >100% do legado).
+  const adherenceRate = expected > 0 ? Math.min(taken / expected, 1) : 1
+  return {
+    taken,
+    takenAnytime: taken, // instâncias `taken` já são "no tempo" (ancoradas dentro da tolerância)
+    expected,
+    adherenceRate,
+    currentStreak: s.currentStreak ?? 0,
+    longestStreak: s.longestStreak ?? 0,
   }
-  return calculateAdherenceStats(logs, protocols, 30)
 }
 
 function _deriveStockSummary(medicines, protocols) {
@@ -54,8 +68,10 @@ function _deriveHealthScore(rawStats, stockSummary) {
   const adherenceWeight = 0.6
   const punctualityWeight = 0.2
   const stockWeight = 0.2
-  const adherenceRate = rawStats.expected > 0 ? rawStats.takenAnytime / rawStats.expected : 1
-  const punctualityRate = rawStats.expected > 0 ? rawStats.taken / rawStats.expected : 1
+  // Adesão instances-based (capada 0-1). No modelo de ocorrências, "tomada" já é
+  // dentro da tolerância → pontualidade ≡ adesão (a distinção do legado some).
+  const adherenceRate = rawStats.adherenceRate ?? 1
+  const punctualityRate = adherenceRate
   const totalMeds = stockSummary.length
   const healthyStockMeds = stockSummary.filter((s) => !s.isLow && !s.isZero).length
   const stockRate = totalMeds > 0 ? healthyStockMeds / totalMeds : 1
@@ -120,12 +136,16 @@ function _deriveDailyAdherence(protocols, logs) {
  * Hook privado para processamento de dados derivados do Dashboard.
  * Extraído para reduzir linhas e complexidade do useDashboardContext.
  */
-export function useDashboardDerived(medicinesResult, protocolsResult, logsResult) {
+export function useDashboardDerived(medicinesResult, protocolsResult, logsResult, adherenceSummaryResult = {}) {
   const medicines = useMemo(() => medicinesResult.data || [], [medicinesResult.data])
   const protocols = useMemo(() => protocolsResult.data || [], [protocolsResult.data])
   const logs = useMemo(() => logsResult.data || [], [logsResult.data])
+  const adherenceSummary = useMemo(
+    () => adherenceSummaryResult.data || {},
+    [adherenceSummaryResult.data]
+  )
 
-  const rawStats = useMemo(() => _deriveRawStats(protocols, logs), [protocols, logs])
+  const rawStats = useMemo(() => _deriveRawStats(adherenceSummary), [adherenceSummary])
 
   const stockSummary = useMemo(() => _deriveStockSummary(medicines, protocols), [medicines, protocols])
 

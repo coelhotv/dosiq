@@ -8,6 +8,7 @@ export default function DashboardColumnRight({
   handleRegisterDoseQuick,
   complexityMode,
   now,
+  nowRaw,
   contextLoading,
   onNavigate,
   criticalStockItems
@@ -28,10 +29,16 @@ export default function DashboardColumnRight({
           <CronogramaPeriodo
             allDoses={scheduleAllDoses}
             onRegister={(dose) =>
-              handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake)
+              handleRegisterDoseQuick(
+                dose.medicineId,
+                dose.protocolId,
+                dose.dosagePerIntake,
+                dose.instanceId
+              )
             }
             variant={complexityMode === 'simple' ? 'simple' : 'complex'}
             now={now}
+            nowRaw={nowRaw}
           />
         </section>
       )}
