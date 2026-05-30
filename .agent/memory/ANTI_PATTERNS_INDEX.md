@@ -1,6 +1,7 @@
 # DEVFLOW Anti-Patterns Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[AP-190]** Modelo materializado sem writer de regime p/ uma transição de status: `dose_instances.missed` só era setado pelo backfill one-shot; nenhum cron fazia `pending→missed` → adesão inflada + streak não quebra (latente, degrada silencioso). Toda transição precisa writer recorrente + invariante de completude; backfill não conta; consumidor audita o produtor. Fix F2.5: sweep `markMissedDueInstances` + missed re-ancorável -> [`anti-patterns/data_and_schema/AP-190.md`](./anti-patterns/data_and_schema/AP-190.md)
 - **[AP-181]** `FREQUENCY_MATCHERS` (isProtocolActiveOnDate) desatualizado vs DB: falta `dias_alternados` (→ vira diário) e `personalizado` → false (→ nunca ativo); latente (0 protocolos afetados em prod), fix na Fase 3 -> [`anti-patterns/data_and_schema/AP-181.md`](./anti-patterns/data_and_schema/AP-181.md)
 - **[AP-164]** Função com mesmo nome em arquivos diferentes do mesmo package — barrel `export *` colide silenciosamente; consumer importa a errada (isProtocolActiveOnDate strict vs period-only) -> [`anti-patterns/data_and_schema/AP-164.md`](./anti-patterns/data_and_schema/AP-164.md)
 - **[AP-168]** Cache invalidation incompleto em mutation — esquece snapshots adjacentes (toggleActive invalidou só protocols, esqueceu treatments-snapshot) -> [`anti-patterns/data_and_schema/AP-168.md`](./anti-patterns/data_and_schema/AP-168.md)

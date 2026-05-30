@@ -11,6 +11,7 @@
  * Responsabilidades do cron diário:
  *  1. Renovar a janela de 30d dos protocolos ativos cujo high-water-mark se aproxima do fim.
  *  2. Limpar instâncias pendentes futuras de protocolos pausados há > 1 dia.
+ *  3. Varrer pending vencidas → missed (writer #3 da máquina de estados, F2.5).
  *
  * Rede de segurança lazy (`ensureInstancesUpTo`) é exportada pelo core e chamada por
  * leituras críticas (dashboard / scheduler de notificação) — não vive aqui.
@@ -116,4 +117,21 @@ export async function cleanupPausedProtocols() {
 
   logger.info('Limpeza de pausados concluída', { cleaned: pausedIds.length })
   return { cleaned: pausedIds.length }
+}
+
+/**
+ * Writer #3 da máquina de estados (F2.5): varre instâncias `pending` cuja janela de
+ * tolerância expirou (`scheduled_for + tolerance_minutes < now`) e marca `missed`.
+ *
+ * Sem este sweep, doses esquecidas ficam `pending` pra sempre → adesão inflada e streak
+ * que nunca quebra (gap detectado na F3.2 — AP-190). Idempotente e paginado (AP-186).
+ * Self-heal: um registro retroativo dentro da tolerância reverte missed→taken via o
+ * anchor (`findAnchorInstance`/`markTaken` aceitam missed).
+ * @returns {Promise<{missed: number}>}
+ */
+export async function sweepMissedInstances() {
+  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  const missed = await doseInstanceRepo.markMissedDueInstances({})
+  logger.info('Sweep de missed concluído', { missed })
+  return { missed }
 }
