@@ -221,13 +221,13 @@ button.sparkline-adhesion {
 }
 
 .sparkline-tooltip-date {
-  font-size: var(--text-base, 1.0rem);
+  font-size: var(--text-sm, 0.875rem);
   color: var(--text-secondary);
   font-family: var(--font-primary, system-ui);
 }
 
 .sparkline-tooltip-value {
-  font-size: var(--text-lg, 1.125rem);
+  font-size: var(--text-sm, 0.875rem);
   color: var(--text-primary);
   font-family: var(--font-primary, system-ui);
   font-weight: 600;
