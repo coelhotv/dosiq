@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useEffect } from 'react'
 import { useCachedQueries, invalidateCache } from '@shared/hooks/useCachedQuery'
-import { CACHE_KEYS } from '@dosiq/shared-data'
+import { CACHE_KEYS, generateCacheKey } from '@dosiq/shared-data'
 import { supabase, getUserId, onAuthStateChange } from '@shared/utils/supabase'
 import { createDoseInstanceRepository } from '@dosiq/core'
 import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
@@ -80,7 +80,9 @@ export function DashboardProvider({ children }) {
         // Resumo de adesão (30d) ← dose_instances (R-248). Substitui o cálculo legado
         // por inferência ±2h sobre logs no anel/score/streak. Head-count + janela 90d
         // bounded server-side (R-249). Capado 0-100 → sem o bug >100% do legado.
-        key: CACHE_KEYS.ADHERENCE_SUMMARY,
+        // Chave parametrizada idêntica à que o serviço gera internamente
+        // (generateCacheKey(..,{period})) — senão dupla gravação + invalidação não casa.
+        key: generateCacheKey(CACHE_KEYS.ADHERENCE_SUMMARY, { period: '30d' }),
         fetcher: () => cachedAdherenceService.getAdherenceSummary('30d'),
       },
     ],
@@ -118,7 +120,7 @@ export function DashboardProvider({ children }) {
         invalidateCache(CACHE_KEYS.PROTOCOLS)
         invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
         invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
-        invalidateCache(CACHE_KEYS.ADHERENCE_SUMMARY)
+        invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
         refetchAll({ force: true })
       }
     })
