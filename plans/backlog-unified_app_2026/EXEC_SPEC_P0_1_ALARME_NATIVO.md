@@ -1,12 +1,12 @@
-# EXEC SPEC — P0.1: Alarme Nativo Persistente (v1.0 — 2026-05-30)
+# EXEC SPEC — P0.1: Alarme Nativo Persistente (v2.0 — 2026-05-30)
 
-> **STATUS: 📋 SPEC PRONTA — AGUARDANDO CONCLUSÃO DO REFACTOR dose_instances**
+> **STATUS: 📋 SPEC ATUALIZADA E REFINADA — AGUARDANDO CONCLUSÃO DO REFACTOR dose_instances**
 > **Duração**: 2 sprints semanais (A1.1 + A1.2)
 > **Branch base**: `feat/alarme-nativo`
 > **Referência**: UNIFIED_ROADMAP_2026.md §3 (Pré-Fase 5) + §4.4
-> **Pré-condição**: ✅ Refactor dose_instances Fase 3 concluído e mergeado em `main`
+> **Pré-condição**: ✅ Refactor dose_instances Fase 3/4 concluído e mergeado em `main`
 > **Quality Gates**: G1 (Copy Android) → G2 (Copy iOS) → G3 (Merge)
-> **SQP vinculante**: v2.0 ([INDEX_EXEC_SPECS.md](../backlog-native_app/INDEX_EXEC_SPECS.md))
+> **SQP de Qualidade**: v2.0 ([INDEX_EXEC_SPECS.md](../backlog-native_app/INDEX_EXEC_SPECS.md))
 > **Plataforma**: 📱 Mobile ONLY — PWA não suporta alarme persistente (browser limitation)
 
 ---
@@ -47,16 +47,20 @@ O Dosiq mobile usa **somente** `expo-notifications` v0.31.5 para push remoto:
 - **iOS**: `UNNotificationSound` com som customizado + critical alert entitlement (requer aprovação Apple).
 - **Coexistência**: Funciona junto com `expo-notifications` sem conflito — notifee cuida do local, expo cuida do push remoto.
 
-### 0.4 Decisão pendente: Critical Alerts iOS
+### 0.4 Decisão estabelecida: Critical Alerts iOS
 
 > [!IMPORTANT]
 > iOS Critical Alerts **requer entitlement especial** da Apple (apps de saúde, 2-4 semanas de aprovação).
-> O sprint A1.2 (iOS) pode ser implementado sem Critical Alerts — usando som normal em full-screen intent.
-> Se a aprovação vier depois, upgrade para Critical Alert é um diff de ~10 linhas.
+> O sprint A1.2 (iOS) será implementado inicialmente usando som normal em full-screen intent/timeSensitive fallback.
+> Se a aprovação do entitlement vier depois, a ativação do Critical Alert é apenas um toggle de código local.
 > **Ação PO**: Submeter request de Critical Alert entitlement à Apple Developer em paralelo com Sprint A1.1.
 
 ### 0.5 Cuidados Aprendidos (consolidado de specs anteriores)
 
+- **Development Build Padronizado**: O projeto não utiliza mais Expo Go padrão devido às integrações preexistentes de Push Notifications remotos e Firebase. As builds são geradas usando `rtk expo run:android` e `rtk expo run:ios`.
+- **Assinatura Sonora Dupla**: Já constam na pasta `apps/mobile/assets/sounds/` os dois arquivos de áudio oficiais do projeto:
+  - `alarm_dose.wav` (1.2 MB): Som de tom clínico com padrão contínuo, ideal para alarme invasivo e persistente em lock screen.
+  - `push_chime.wav` (398 KB): Assinatura de tom sutil e curta, ideal para pushes remotos normais (aviso de dose atrasada, alertas de estoque).
 - **Hook order**: States → Memos → Effects → Handlers (R-010). Alarmes locais envolvem Effects com cleanup — cuidado com TDZ.
 - **Bottom sheet Android**: `<Modal statusBarTranslucent>` (R-233).
 - **Cache invalidation**: O alarme local NÃO passa pelo cache SWR. Mas quando dose é registrada via alarme full-screen, `useStockMutation` e `useDoseMutation` devem invalidar caches relevantes (R-236).
@@ -70,11 +74,11 @@ O Dosiq mobile usa **somente** `expo-notifications` v0.31.5 para push remoto:
 Implementar alarme nativo persistente que:
 1. **Toca alto** mesmo com telefone em modo silencioso / Doze mode / DND (Android) ou Focus (iOS).
 2. **Exibe full-screen** na lock screen com botão grande "Tomei" + "Pular".
-3. **Repete** a cada 5 minutos se não descartado (nagging mode — max 3 repetições).
+3. **Repete** a cada 5 minutos se não descartado (nagging mode — max 3 repetições agendadas dinamicamente).
 4. **Registra dose** diretamente do alarme sem abrir o app completo.
-5. **Coexiste** com push notifications existentes (expo-notifications não é removido).
+5. **Coexiste** com push notifications existentes (expo-notifications não é removido e passa a usar o `push_chime.wav`).
 
-**Fora do escopo P0.1 v1:**
+**Fora do escopo P0.1 v2:**
 - ❌ Alarme para estoque baixo (Fase 7A — cuidador)
 - ❌ Alarme para receita vencendo (Fase 6)
 - ❌ Som customizado por medicamento (futuro)
@@ -90,21 +94,21 @@ Implementar alarme nativo persistente que:
 > **Gate alvo**: G1 (Copy Android)
 > **Wave plan** (R-237):
 > - **Wave 1 inline Opus**: A1.0 (install + config notifee) + A1.1 (alarm service core)
-> - **Wave 2 spawn paralelo**: A1.2 (Sonnet: alarm scheduling hook), A1.3 (Haiku: alarm sound asset)
+> - **Wave 2 spawn paralelo**: A1.2 (Sonnet: alarm scheduling hook), A1.3 (Haiku: alarm sound asset mapping)
 > - **Wave 3 spawn**: A1.4 (Sonnet: full-screen alarm UI), A1.5 (Sonnet: dose registration from alarm)
 > - **Wave 4 spawn**: A1.6 (Sonnet: nagging mode + snooze), A1.7 (Haiku: alarm settings screen)
 > - **Wave 5 inline Opus**: A1.8 (integration + smoke) + smoke PO
 
 | # | Task | Arquivos | Agente | Complexidade |
 |---|------|----------|--------|-------------|
-| A1.0 | **Instalar `@notifee/react-native`** + config `app.config.js` (plugin expo) + Android channel de prioridade alta | `package.json`, `app.config.js` | 👤 Arquiteto | ⭐⭐ |
+| A1.0 | **Instalar `@notifee/react-native`** + config `app.config.js` (plugin expo) + Android channel de prioridade alta + permissões `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM` | `package.json`, `app.config.js` | 👤 Arquiteto | ⭐⭐ |
 | A1.1 | **Criar `alarmService.js`** — core de agendamento e cancelamento de alarmes locais | `apps/mobile/src/platform/alarms/alarmService.js` | 👤 Arquiteto | ⭐⭐⭐ |
-| A1.2 | **Hook `useAlarmScheduler`** — agenda alarmes ao carregar tratamentos ativos + reagenda em mutation | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | 🤖 Sonnet | ⭐⭐⭐ |
-| A1.3 | **Asset de som de alarme** — 1 arquivo `.wav` 5s (tom médico) + reference no notifee channel | `apps/mobile/assets/sounds/alarm_dose.wav` | 🤖 Haiku | ⭐ |
+| A1.2 | **Hook `useAlarmScheduler`** — agenda alarmes na janela Look-Ahead de **72 horas** baseando-se no refatoramento definitivo de `dose_instances` | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | 🤖 Sonnet | ⭐⭐⭐ |
+| A1.3 | **Mapeamento de som de alarme** — vincular `alarm_dose.wav` e `push_chime.wav` nativamente nas builds compiladas de Android/iOS | `apps/mobile/assets/sounds/` | 🤖 Haiku | ⭐ |
 | A1.4 | **Tela `AlarmFullScreen`** — full-screen intent Android lock screen com botão "Tomei" + "Pular" | `apps/mobile/src/platform/alarms/AlarmFullScreen.jsx` | 🤖 Sonnet | ⭐⭐⭐ |
-| A1.5 | **Quick dose registration** — registrar dose diretamente do full-screen (mutation + dismiss alarm) | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | 🤖 Sonnet | ⭐⭐ |
-| A1.6 | **Nagging mode** — re-agendar alarme 5 min depois se ignorado, max 3 tentativas | (expand `alarmService.js`) | 🤖 Sonnet | ⭐⭐ |
-| A1.7 | **Alarm Settings** — toggle on/off, horário de silêncio (ex: 22h-6h), em ProfileScreen | `apps/mobile/src/features/profile/components/AlarmSettings.jsx` | 🤖 Haiku | ⭐⭐ |
+| A1.5 | **Quick dose registration** — registrar dose diretamente do full-screen (mutation + dismiss alarm + invalidar cache local) | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | 🤖 Sonnet | ⭐⭐ |
+| A1.6 | **Nagging mode** — re-agendar alarme exato dinamicamente 5 min depois se ignorado, max 3 tentativas | (expand `alarmService.js`) | 🤖 Sonnet | ⭐⭐ |
+| A1.7 | **Alarm Settings** — toggle on/off, integrado em `SettingsScreen.jsx` | `apps/mobile/src/features/profile/screens/SettingsScreen.jsx` | 🤖 Haiku | ⭐⭐ |
 | A1.8 | **Integração** — conectar `useAlarmScheduler` ao App root + test E2E manual | (integration) | 👤 Arquiteto | ⭐⭐ |
 | A1.9 | Testes unitários: `alarmService.test.js`, `quickDoseRegistration.test.js` | `apps/mobile/src/platform/alarms/__tests__/` | 🤖 Haiku | ⭐⭐ |
 
@@ -123,8 +127,8 @@ Implementar alarme nativo persistente que:
 | # | Task | Arquivos | Agente | Complexidade |
 |---|------|----------|--------|-------------|
 | A2.1 | **iOS config notifee** — `Info.plist` additions, background modes, notification service extension | `app.config.js`, iOS-specific config | 👤 Arquiteto | ⭐⭐⭐ |
-| A2.2 | **Critical Alert handling** — conditional code path se entitlement aprovado; fallback para high priority | (expand `alarmService.js`) | 👤 Arquiteto | ⭐⭐ |
-| A2.3 | **Adapt `AlarmFullScreen` para iOS** — iOS não tem full-screen intent nativo; usar notification action buttons com rich notification | (expand `AlarmFullScreen.jsx`) | 🤖 Sonnet | ⭐⭐ |
+| A2.2 | **Critical Alert handling** — conditional code path se entitlement aprovado; fallback para high priority / timeSensitive | (expand `alarmService.js`) | 👤 Arquiteto | ⭐⭐ |
+| A2.3 | **Adapt `AlarmFullScreen` para iOS** — usar notification action buttons com rich notification | (expand `AlarmFullScreen.jsx`) | 🤖 Sonnet | ⭐⭐ |
 | A2.4 | **Permission prompt inteligente** — pedir permissão de alarme em ponto de intenção (após 1ª dose registrada com sucesso) | `apps/mobile/src/platform/alarms/alarmPermission.js` | 🤖 Haiku | ⭐⭐ |
 | A2.5 | **Re-scheduling hook** — quando protocol é editado/criado/deletado/pausado, recalcular alarmes | (expand `useAlarmScheduler.js`) | 🤖 Sonnet | ⭐⭐⭐ |
 | A2.6 | Testes iOS-specific + snapshot test cross-platform | `apps/mobile/src/platform/alarms/__tests__/` | 🤖 Haiku | ⭐⭐ |
@@ -142,7 +146,6 @@ Implementar alarme nativo persistente que:
 import notifee, { TriggerType, AndroidImportance, AndroidCategory } from '@notifee/react-native'
 import { parseLocalDate } from '@utils/dateUtils'
 
-// Canal Android de prioridade máxima (bypass Doze mode)
 const ALARM_CHANNEL_ID = 'dosiq-dose-alarm'
 const MAX_NAG_ATTEMPTS = 3
 const NAG_INTERVAL_MS = 5 * 60 * 1000 // 5 minutos
@@ -150,7 +153,6 @@ const NAG_INTERVAL_MS = 5 * 60 * 1000 // 5 minutos
 export const alarmService = {
   /**
    * Inicializa canal Android de alarme (chamado 1x no boot do app).
-   * iOS não precisa de canal — usa UNNotificationCategory.
    */
   async initialize() {
     await notifee.createChannel({
@@ -158,20 +160,15 @@ export const alarmService = {
       name: 'Alarmes de Medicamentos',
       description: 'Alarmes persistentes para horário de doses',
       importance: AndroidImportance.HIGH,
-      sound: 'alarm_dose',          // ref ao asset em res/raw/
+      sound: 'alarm_dose',          // mapeado para alarm_dose.wav em res/raw/
       vibration: true,
       vibrationPattern: [300, 500, 300, 500],
-      bypassDnd: true,              // Bypass Do Not Disturb
+      bypassDnd: true,              // Bypass Do Not Disturb (DND)
     })
   },
 
   /**
    * Agenda alarme local para uma dose_instance específica.
-   * @param {Object} params
-   * @param {string} params.doseInstanceId — PK da dose_instance
-   * @param {string} params.medicineName — ex: "Losartana 50mg"
-   * @param {string} params.scheduledFor — ISO timestamp (GMT-3 aware)
-   * @param {number} [params.nagAttempt=0] — contagem de re-tentativas
    */
   async scheduleAlarm({ doseInstanceId, medicineName, scheduledFor, nagAttempt = 0 }) {
     const triggerTime = parseLocalDate(scheduledFor).getTime()
@@ -199,7 +196,7 @@ export const alarmService = {
         },
         ios: {
           sound: 'alarm_dose.wav',
-          // critical: true,  // habilitar quando entitlement aprovado
+          // critical: true,  // Habilitar quando entitlement da Apple for aprovado
           interruptionLevel: 'timeSensitive',
           categoryId: 'DOSE_ALARM',
         },
@@ -215,7 +212,7 @@ export const alarmService = {
         type: TriggerType.TIMESTAMP,
         timestamp: triggerTime,
         alarmManager: {
-          allowWhileIdle: true,  // Bypass Doze mode
+          allowWhileIdle: true,  // Garante disparo preciso no Doze Mode do Android 12+
         },
       }
     )
@@ -231,11 +228,11 @@ export const alarmService = {
   },
 
   /**
-   * Reagenda alarme como nagging (+5 min) se não foi respondido.
-   * Max 3 tentativas.
+   * Reagenda alarme dinamicamente como nagging (+5 min) se não foi respondido.
+   * Agendamento dinâmico otimiza o uso do limite de alarmes exatos do SO.
    */
   async scheduleNag({ doseInstanceId, medicineName, scheduledFor, currentNagAttempt }) {
-    if (currentNagAttempt >= MAX_NAG_ATTEMPTS) return // desistir após 3
+    if (currentNagAttempt >= MAX_NAG_ATTEMPTS) return // Desistir após 3 tentativas
 
     const nextTime = new Date(Date.now() + NAG_INTERVAL_MS).toISOString()
     await this.scheduleAlarm({
@@ -260,17 +257,13 @@ export const alarmService = {
 ```javascript
 import { useEffect } from 'react'
 import { alarmService } from './alarmService'
-import { parseLocalDate } from '@utils/dateUtils'
+import { parseLocalDate, addDays } from '@utils/dateUtils'
+
+const LOOK_AHEAD_WINDOW_DAYS = 3 // Janela Look-Ahead de 72 horas para cobrir alternate/weekly doses
 
 /**
- * Agenda alarmes locais para todas as dose_instances pendentes do dia.
- * Re-executa sempre que treatments mudam (mutation) ou app volta ao foreground.
- *
- * REGRA: Alarmam APENAS dose_instances com status='pending' e scheduled_for > now.
- * dose_instances com status='taken', 'missed', 'skipped_user', 'skipped_paused' são IGNORADAS.
- *
- * Caches invalidados: nenhum (alarme local, não SWR)
- * Caches NÃO invalidados (intencionalmente): todos os SWR caches — alarme não lê SWR
+ * Hook que agenda alarmes locais para todas as dose_instances pendentes.
+ * Utiliza o modelo final pós-refatoramento obtido da base de dados.
  */
 export function useAlarmScheduler({ doseInstances, isAlarmEnabled }) {
   useEffect(() => {
@@ -279,16 +272,19 @@ export function useAlarmScheduler({ doseInstances, isAlarmEnabled }) {
     let cancelled = false
 
     async function syncAlarms() {
-      // 1. Cancelar todos os alarmes existentes (idempotente)
+      // 1. Limpar alarmes de agendamentos antigos (idempotente)
       await alarmService.cancelAll()
 
       if (cancelled) return
 
-      // 2. Agendar novos alarmes para instâncias pendentes
+      // 2. Agendar novos alarmes exatos dentro da janela de 72h
       const now = Date.now()
-      const pending = doseInstances.filter(
-        (di) => di.status === 'pending' && parseLocalDate(di.scheduled_for).getTime() > now
-      )
+      const endWindow = addDays(new Date(), LOOK_AHEAD_WINDOW_DAYS).getTime()
+      
+      const pending = doseInstances.filter((di) => {
+        const time = parseLocalDate(di.scheduled_for).getTime()
+        return di.status === 'pending' && time > now && time <= endWindow
+      })
 
       for (const di of pending) {
         if (cancelled) return
@@ -313,16 +309,13 @@ export function useAlarmScheduler({ doseInstances, isAlarmEnabled }) {
 
 ```jsx
 import React from 'react'
-import { View, Text, Pressable, StyleSheet, Vibration } from 'react-native'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 /**
- * Tela full-screen exibida na lock screen quando alarme dispara.
- * Design: fundo escuro, botões gigantes (>80px touch target), texto legível para idosos.
- *
- * NÃO é uma tela da navigation stack — é renderizada via notifee fullScreenAction.
+ * Tela de lock screen (full-screen action) com visual e usabilidade apropriados para idosos.
  */
-export function AlarmFullScreen({ notification, onDoseTaken, onDoseSkipped, onDismiss }) {
+export function AlarmFullScreen({ notification, onDoseTaken, onDoseSkipped }) {
   const { medicineName, scheduledFor } = notification.data
 
   return (
@@ -381,64 +374,50 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { alarmService } from './alarmService'
 
 /**
- * Registra dose diretamente do alarme (sem abrir app completo).
- * Chamado pelos notification action buttons.
- *
- * Caches invalidados:
- *   - @dosiq/dose-instances-snapshot (status pending → taken)
- *   - @dosiq/stock-snapshot (consume_stock_fifo consome lote)
- *   - @dosiq/adherence-snapshot (score recalculado)
- * Caches NÃO invalidados (intencionalmente):
- *   - @dosiq/protocols-snapshot (dose não muda protocolo)
+ * Manipula a tomada rápida de medicação através dos botões da notificação sem carregar a UI reativa principal.
  */
 export async function handleAlarmAction(type, event) {
   const { doseInstanceId, medicineName, nagAttempt } = event.detail.notification.data
 
   switch (event.detail.pressAction.id) {
     case 'dose-taken': {
-      // 1. Registrar dose via Supabase (offline queue se sem internet)
+      // 1. Sincronizar com banco (motor central de dose_instances)
       const { error } = await nativeSupabaseClient
         .from('dose_instances')
         .update({ status: 'taken', taken_at: new Date().toISOString() })
         .eq('id', doseInstanceId)
 
-      // 2. Consumir estoque FIFO (se stock feature habilitada)
-      // TODO: Integrar com consume_stock_fifo quando disponível
-
-      // 3. Cancelar nags pendentes
+      // 2. Limpar nags preventivos pendentes
       await alarmService.cancelAlarm(doseInstanceId)
 
-      // 4. Invalidar caches para que UI atualize quando abrir
+      // 3. Invalidar caches para sincronizar com a UI principal na abertura
       await AsyncStorage.multiRemove([
         '@dosiq/dose-instances-snapshot',
         '@dosiq/stock-snapshot',
         '@dosiq/adherence-snapshot',
+        '@dosiq/today-snapshot'
       ])
-
       break
     }
 
     case 'dose-skip': {
-      // 1. Marcar como skipped (usa status do dose_instances refactor)
       await nativeSupabaseClient
         .from('dose_instances')
         .update({ status: 'skipped_user' })
         .eq('id', doseInstanceId)
 
-      // 2. Cancelar nags pendentes
       await alarmService.cancelAlarm(doseInstanceId)
 
-      // 3. Invalidar cache
       await AsyncStorage.multiRemove([
         '@dosiq/dose-instances-snapshot',
         '@dosiq/adherence-snapshot',
+        '@dosiq/today-snapshot'
       ])
-
       break
     }
 
     default: {
-      // Alarme ignorado (swipe away) — agendar nag se não excedeu limite
+      // Alarme limpo/ignorado: Agenda nova insistência (Nag) dinamicamente pós-gatilho
       await alarmService.scheduleNag({
         doseInstanceId,
         medicineName,
@@ -450,12 +429,6 @@ export async function handleAlarmAction(type, event) {
   }
 }
 ```
-
----
-
-## Novas Rotas
-
-**Nenhuma rota de navegação nova.** O alarme full-screen é renderizado via `notifee.fullScreenAction`, NÃO pela navigation stack do app. A tela de settings do alarme é incorporada no `ProfileScreen` existente.
 
 ---
 
@@ -473,14 +446,15 @@ apps/mobile/src/
       __tests__/
         alarmService.test.js                 ← [NEW]
         quickDoseRegistration.test.js        ← [NEW]
-    notifications/                            ← existente — NÃO modificar (expo-notifications push)
+    notifications/                            ← existente (expo-notifications push)
   features/
     profile/
-      components/
-        AlarmSettings.jsx                    ← [NEW] toggle + horário silêncio
+      screens/
+        SettingsScreen.jsx                   ← existente (modificado para acomodar o toggle)
   assets/
     sounds/
-      alarm_dose.wav                         ← [NEW] tom de alarme (5s, loop-friendly)
+      alarm_dose.wav                         ← existente (tom do alarme principal, 1.2 MB)
+      push_chime.wav                         ← existente (assinatura de push sutil, 398 KB)
 ```
 
 ---
@@ -491,71 +465,50 @@ apps/mobile/src/
 
 | Critério | Validação |
 |----------|-----------|
-| `@notifee/react-native` instalado e build Android OK | `npx expo run:android` sem erros |
-| Canal de alarme criado com `importance: HIGH` + `bypassDnd: true` | Log `notifee.createChannel` OK |
-| Alarme dispara no horário exato em Doze mode | Smoke PO: device em Doze → alarme toca |
-| Full-screen intent exibe na lock screen | Smoke PO: device locked → tela aparece |
-| Botão "Tomei" registra dose no Supabase | Smoke PO: verificar `dose_instances.status='taken'` |
-| Botão "Pular" registra `status='skipped_user'` | Smoke PO: verificar `dose_instances.status='skipped_user'` |
-| Nagging mode: alarme repete 5 min depois se ignorado (max 3x) | Smoke PO: ignorar alarme → novo toca em 5 min |
-| AlarmSettings toggle funciona em ProfileScreen | Smoke PO |
-| Alarm coexiste com push notifications existentes | Smoke PO: push remoto ainda funciona normalmente |
-| `rtk lint` 0 erros | Output colado |
-| `rtk npm run validate:agent` 100% green | Output colado |
-| **Smoke PO (R-234) concluído antes de `gh pr create`** | Confirmação PO |
+| `@notifee/react-native` instalado e build Android OK | `rtk expo run:android` sem erros |
+| Canal de alarme criado com `importance: HIGH` + `bypassDnd: true` + `alarm_dose` som associado | Log `notifee.createChannel` OK |
+| Alarme dispara no horário exato com precisão de look-ahead de 72h | Smoke PO: dispositivo no Doze Mode → alarme toca |
+| Full-screen intent exibe na lock screen com botões acessíveis | Smoke PO |
+| Botão "Tomei" registra dose no Supabase na tabela `dose_instances` | Smoke PO: verificar status do registro |
+| Botão "Pular" altera status de dose para `'skipped_user'` | Smoke PO |
+| Nagging mode: insistência sônica repete dinamicamente após 5 min se ignorado | Smoke PO |
+| Toggle de ativação do alarme persiste nas configurações de Profile | Smoke PO |
+| Alarme coexiste e se integra perfeitamente com os pushes do Firebase/Expo | Smoke PO |
+| `rtk lint` 0 erros | Output verificado |
+| `rtk npm run validate:agent` 100% green | Output verificado |
 
 ### G2 — Gate de Cópia iOS
 
 | Critério | Validação |
 |----------|-----------|
-| Build iOS OK | `npx expo run:ios` sem erros |
-| Alarme toca com som em iPhone locked | Smoke PO iOS |
-| Notification actions "Tomei" / "Pular" funcionam via iOS categories | Smoke PO iOS |
-| Se Critical Alert entitlement aprovado: alarme toca em DND | Smoke PO iOS (condicional) |
-| Se NÃO aprovado: fallback `timeSensitive` funciona | Smoke PO iOS |
-| `npx expo export` 0 erros | Output colado |
-
-### G3 — Gate Final
-
-| Critério | Validação |
-|----------|-----------|
-| Android + iOS alarmes funcionais simultaneamente | Smoke PO cross-platform |
-| Push remoto (expo-notifications) ainda 100% funcional | Smoke PO |
-| `validate:agent` 100% green | Output colado |
-| `npx expo export` 0 erros | Output colado |
-| DEVFLOW C5 aplicado pós-merge | `.agent/` audit |
-| PR mergeado em `main` com aprovação PO (R-060) | Confirmação PO |
-
----
-
-## Delegação de Agentes
-
-| Task ID | Agente | Motivo |
-|---------|--------|--------|
-| A1.0, A1.1, A1.8 | 👤 Arquiteto (Opus) | Setup de lib nativa + decisões de API + integração cross-feature |
-| A1.2, A1.4, A1.5, A1.6, A2.3, A2.5 | 🤖 Sonnet ⭐⭐ | Hooks/UI complexos com pattern claro (notifee docs) |
-| A1.3, A1.7, A1.9, A2.4, A2.6 | 🤖 Haiku ⭐ | Assets, tests, settings simples |
-| A2.1, A2.2, A2.7 | 👤 Arquiteto (Opus) | Config iOS nativa + Critical Alert condicional + integração final |
+| Build iOS OK | `rtk expo run:ios` sem erros |
+| Alarme toca com som customizado em lock screen | Smoke PO iOS |
+| Ações rápidas de notificação funcionam nativamente via iOS categories | Smoke PO iOS |
+| Se Critical Alert entitlement aprovado: alarme contorna DND | Smoke PO iOS (condicional) |
+| Se não aprovado: fallback nativo `timeSensitive` opera com sucesso | Smoke PO iOS |
+| `rtk expo export` 0 erros | Output verificado |
 
 ---
 
 ## Riscos Especiais
 
 > [!WARNING]
-> **Expo Managed Workflow + notifee**: `@notifee/react-native` requer código nativo. Se o projeto usa Expo Go, será necessário migrar para **development build** (`npx expo prebuild` + `expo run:android`/`expo run:ios`). Verificar se o projeto já usa development builds antes de iniciar.
+> **Android 12+ (API 31+) Hard Limit (500 Exact Alarms)**
+> O sistema operacional Android limita a no máximo 500 alarmes exatos cadastrados simultaneamente por app. Nossa modelagem mitiga esse risco de duas formas:
+> * Janela Look-Ahead de **72 horas** mantém os registros de medicamentos futuros em baixíssima escala (máximo de 180 mesmo para tratamentos extremos).
+> * O **Nagging Mode** é agendado reativamente sob demanda na interceptação em background, evitando o agendamento preventivo de doses futuras de repetição.
 
 > [!WARNING]
-> **AlarmManager rate-limiting (Android 12+)**: A partir do Android 12, `setExactAndAllowWhileIdle()` é rate-limited a ~72 alarmes/dia pelo SO. Para pacientes com 5+ medicamentos × 4 doses/dia × 3 nags = 60 alarmes — está no limite. Monitorar. Se necessário, agrupar alarmes próximos (<15 min) em batch.
-
-> [!WARNING]
-> **Background execution iOS**: iOS mata processos background de forma agressiva. O nagging mode (re-agendar alarme em 5 min) DEVE usar `notifee.createTriggerNotification` (que agenda no iOS Notification Center, não no app process). Nunca usar `setTimeout` ou `setInterval` para nagging.
+> **Background Execution iOS**
+> O iOS impõe políticas drásticas de encerramento de threads em background. O agendamento da insistência (snooze/nag) **obrigatoriamente** delega a responsabilidade ao iOS Notification Center via `notifee.createTriggerNotification` (agendamento a nível de kernel do SO) em vez de processos JavaScript em background (`setTimeout`/`setInterval`).
 
 ---
 
 ## Changelog
 
-### v1.0 — 2026-05-30 (criação)
-- Sprint breakdown A1.1 (Android) + A1.2 (iOS)
-- Especificações técnicas: alarmService, useAlarmScheduler, AlarmFullScreen, quickDoseRegistration
-- Quality gates G1/G2/G3
-- Riscos: Expo managed workflow, AlarmManager rate-limiting, iOS background execution
+### v2.0 — 2026-05-30 (Revisão e Polish)
+- Atualização da janela Look-Ahead para **72 horas** (Look-Ahead Window).
+- Inclusão dos limites de 500 alarmes exatos ativos simultaneamente no Android 12+.
+- Mapeamento definitivo dos arquivos de som oficiais integrados pelo usuário: `alarm_dose.wav` e `push_chime.wav`.
+- Detalhamento de segurança sobre o agendamento sob demanda no Nagging Mode para economia de cota de alarmes exatos do SO.
+- Padronização em builds de desenvolvimento nativas (decommission do Expo Go).
