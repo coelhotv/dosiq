@@ -90,7 +90,7 @@ function AppInner() {
   // Justificativa: Precisamos de setState no useEffect para ler queries da URL no mount/auth e navegar a view
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!session) return
+    if (!session?.id) return
 
     const path = window.location.pathname
     const params = new URLSearchParams(window.location.search)
@@ -132,7 +132,10 @@ function AppInner() {
     if (path !== '/' || params.toString() !== '') {
       window.history.replaceState({}, document.title, '/')
     }
-  }, [session])
+    // Gatear por session?.id (não pelo objeto session): token refresh no refocus cria
+    // novo objeto com o MESMO user.id, que re-disparava o effect e resetava a view (AP-192).
+    // Login/confirmação de email/reset de senha são transições null→id → seguem disparando.
+  }, [session?.id])
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (isLoading) {
