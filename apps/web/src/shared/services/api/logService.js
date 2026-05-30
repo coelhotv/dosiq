@@ -36,7 +36,10 @@ async function anchorLogToInstance(log, preferInstanceId = null) {
         if (error) throw error
         return preferInstanceId
       }
-      // marcação direta não pegou (já taken / id inválido) → cai no snap por tolerância.
+      // markTaken falhou com instanceId explícito (já taken / duplo-clique / id inválido):
+      // NÃO cair no snap por tolerância — ancorar este log noutra pendente legítima
+      // (ex: dose do dia seguinte) seria pior que ficar avulso. Retorna null.
+      return null
     }
 
     const instance = await doseInstanceRepo.findAnchorInstance({
