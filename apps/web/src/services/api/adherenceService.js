@@ -1,6 +1,16 @@
 import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { isProtocolActiveOnDate, parseLocalDate, formatLocalDate, getNow, parseISO, addDays, getTodayLocal, getYesterdayLocal, getSaoPauloTime, cloneDate, parseTimestamp } from '@utils/dateUtils.js'
+import { addDays, getRawNow, parseISO, formatLocalDate, getUserTime } from '@utils/dateUtils.js'
+import {
+  createDoseInstanceRepository,
+  computeAdherenceFromInstances,
+  computeStreakFromInstances,
+  computeLongestStreakFromInstances,
+} from '@dosiq/core'
+
+// Repository de dose_instances (Fase 3 — leitura de adesão consulta ocorrências
+// materializadas por status em vez de inferir sobre logs ±2h, R-248).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
 
 // Schema para validação de parâmetros
 const GetDailyAdherenceFromViewSchema = z.object({
@@ -10,16 +20,85 @@ const GetDailyAdherenceFromViewSchema = z.object({
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 const PERIOD_NAMES = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
 
+/** tz default (G1 — injeção real do tz do usuário fica para a Fase 4; default SP). */
+const DEFAULT_TZ = 'America/Sao_Paulo'
+
 /**
- * Extrai intervalo de datas baseado em um período string
+ * Extrai intervalo de datas baseado em um período string.
+ * Usa instantes absolutos reais (getRawNow) — `scheduled_for` é timestamptz.
  * @param {string} period - Período: '7d', '30d', '90d'
  * @returns {{days: number, endDate: Date, startDate: Date}}
  */
 function _getDateRangeForPeriod(period) {
   const days = parseInt(period)
-  const endDate = getNow()
+  const endDate = getRawNow()
   const startDate = addDays(endDate, -days)
   return { startDate, endDate, days }
+}
+
+/**
+ * Score binário a partir de contagens por status: taken / (taken + missed).
+ * pending/skipped_* ficam fora do denominador (R-248). Sem dados → score 0
+ * (UI espera número, não null) e expected 0.
+ * @param {number} taken
+ * @param {number} missed
+ * @returns {{score: number, expected: number}}
+ */
+function _score(taken, missed) {
+  const expected = taken + missed
+  const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
+  return { score, expected }
+}
+
+/**
+ * Agrupa instâncias por `protocol_id`.
+ * @param {Array<Object>} instances
+ * @returns {Map<string, Array<Object>>}
+ */
+function _groupByProtocol(instances) {
+  const byProtocol = new Map()
+  for (const inst of instances || []) {
+    const key = inst?.protocol_id
+    if (!key) continue
+    let arr = byProtocol.get(key)
+    if (!arr) {
+      arr = []
+      byProtocol.set(key, arr)
+    }
+    arr.push(inst)
+  }
+  return byProtocol
+}
+
+/**
+ * Dia local (tz) de um instante (`scheduled_for` ISO ou Date).
+ * @param {string|Date} value
+ * @param {string} [tz]
+ * @returns {string} YYYY-MM-DD
+ */
+function _dayKey(value, tz = DEFAULT_TZ) {
+  const date = typeof value === 'string' ? parseISO(value) : value
+  return formatLocalDate(getUserTime(date, tz))
+}
+
+/**
+ * Monta o score de um protocolo a partir de suas instâncias na janela.
+ * @param {Object} protocol - { id, name, medicine }
+ * @param {Array<Object>} instances - instâncias do protocolo
+ * @returns {Object}
+ */
+function _protocolScore(protocol, instances) {
+  const agg = computeAdherenceFromInstances(instances)
+  const { score, expected } = _score(agg.taken, agg.missed)
+  return {
+    protocolId: protocol.id,
+    name: protocol.name,
+    medicineName: protocol.medicine?.name,
+    score,
+    taken: agg.taken,
+    expected,
+    error: false,
+  }
 }
 
 /**
@@ -93,59 +172,38 @@ function buildHeatmapNarrative(data, hasEnoughData) {
 /**
  * Adherence Service - Cálculo de adesão ao tratamento
  *
- * CÁLCULOS PRINCIPAIS:
- * - Adesão = (Doses Registradas / Doses Esperadas) × 100
- * - Doses Esperadas = Soma das frequências dos protocolos no período
- * - Doses Registradas = Logs confirmados no período
- * - Streak = Dias seguidos com adesão >= 80%
+ * Fase 3 (R-248): adesão é CONSULTADA das `dose_instances` por status
+ * (`taken`/`missed`/`pending`/`skipped_*`), não mais inferida por casamento ±2h
+ * sobre `medicine_logs`. Escalares usam `countByStatus` (head-count server-agg,
+ * R-249); summary/streak/daily usam `getWindow` em janelas curtas (volume bounded).
+ *
+ * Adesão = taken / (taken + missed) × 100. pending e skipped_* ficam fora do
+ * denominador (pausa/skip consciente não penaliza).
  *
  * @module adherenceService
  */
 export const adherenceService = {
   /**
-   * Calcula o score de adesão geral do usuário
+   * Calcula o score de adesão geral do usuário (todas as ocorrências na janela).
    * @param {string} period - Período: '7d', '30d', '90d'
-   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
+   * @param {string} [userId] - ID do usuário (evita getUser redundante)
    * @returns {Promise<{score: number, taken: number, expected: number, period: string}>}
    */
   async calculateAdherence(period = '30d', userId = null) {
-    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
-
-    // Usa userId fornecido ou busca do Supabase
+    const { startDate, endDate } = _getDateRangeForPeriod(period)
     const resolvedUserId = userId || (await getUserId())
 
-    // Buscar protocolos ativos no período
-    const { data: protocols, error: protocolError } = await supabase
-      .from('protocols')
-      .select('*')
-      .eq('user_id', resolvedUserId)
-      .eq('active', true)
-
-    if (protocolError) throw protocolError
-
-    // M7.2: HEAD request — apenas count, sem dados (zero bytes transferidos)
-    const { count, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', resolvedUserId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-
-    if (logError) throw logError
-
-    // Calcular doses esperadas (passar endDate para consistência)
-    const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
-
-    // Contar doses registradas
-    const takenDoses = count || 0
-
-    // Calcular score (0-100)
-    const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
+    const counts = await doseInstanceRepo.countByStatus({
+      userId: resolvedUserId,
+      fromTs: startDate,
+      toTs: endDate,
+    })
+    const { score, expected } = _score(counts.taken, counts.missed)
 
     return {
-      score: Math.min(score, 100), // Cap at 100%
-      taken: takenDoses,
-      expected: expectedDoses,
+      score,
+      taken: counts.taken,
+      expected,
       period,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -153,165 +211,89 @@ export const adherenceService = {
   },
 
   /**
-   * Calcula adesão por protocolo específico
-   * @param {string} protocolId - ID do protocolo
-   * @param {string} period - Período: '7d', '30d', '90d'
-   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
-   * @returns {Promise<{protocolId: string, name: string, score: number, taken: number, expected: number}>}
+   * Calcula adesão por protocolo específico.
+   * @param {string} protocolId
+   * @param {string} period - '7d', '30d', '90d'
+   * @param {string} [userId]
+   * @returns {Promise<{protocolId, name, medicineName, score, taken, expected}>}
    */
   async calculateProtocolAdherence(protocolId, period = '30d', userId = null) {
-    const days = parseInt(period)
-    const endDate = getNow()
-    const startDate = addDays(endDate, -days)
-
-    // Usa userId fornecido ou busca do Supabase
+    const { startDate, endDate } = _getDateRangeForPeriod(period)
     const resolvedUserId = userId || (await getUserId())
 
-    // Buscar protocolo específico
     const { data: protocol, error: protocolError } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(*)')
+      .select('name, medicine:medicines(name)')
       .eq('id', protocolId)
       .eq('user_id', resolvedUserId)
       .single()
 
     if (protocolError) throw protocolError
 
-    // Buscar logs do protocolo no período
-    const { data: logs, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('*')
-      .eq('protocol_id', protocolId)
-      .eq('user_id', resolvedUserId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-
-    if (logError) throw logError
-
-    // Calcular doses esperadas para este protocolo
-    const expectedDoses = calculateExpectedDoses([protocol], days)
-    const takenDoses = logs?.length || 0
-
-    const score = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0
+    const counts = await doseInstanceRepo.countByStatus({
+      userId: resolvedUserId,
+      protocolId,
+      fromTs: startDate,
+      toTs: endDate,
+    })
+    const { score, expected } = _score(counts.taken, counts.missed)
 
     return {
       protocolId,
       name: protocol.name,
       medicineName: protocol.medicine?.name,
-      score: Math.min(score, 100),
-      taken: takenDoses,
-      expected: expectedDoses,
+      score,
+      taken: counts.taken,
+      expected,
     }
   },
 
   /**
-   * Calcula adesão para todos os protocolos ativos
-   * @param {string} period - Período: '7d', '30d', '90d'
-   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
-   * @returns {Promise<Array<{protocolId: string, name: string, score: number}>>}
+   * Calcula adesão para todos os protocolos ativos.
+   * Uma janela de instâncias + agrupamento client-side (volume bounded, R-249).
+   * @param {string} period - '7d', '30d', '90d'
+   * @param {string} [userId]
+   * @returns {Promise<Array<{protocolId, name, score, taken, expected}>>}
    */
   async calculateAllProtocolsAdherence(period = '30d', userId = null) {
-    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
-
-    // Usa userId fornecido ou busca do Supabase
+    const { startDate, endDate } = _getDateRangeForPeriod(period)
     const resolvedUserId = userId || (await getUserId())
 
-    // Query 1: Buscar todos os protocolos ativos
     const { data: protocols, error } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(*)')
+      .select('id, name, medicine:medicines(name)')
       .eq('user_id', resolvedUserId)
       .eq('active', true)
 
     if (error) throw error
-
     if (!protocols || protocols.length === 0) return []
 
-    // M7.1: Query 2 (batch): Buscar APENAS protocol_id — não select('*')
-    // Transfere ~50 bytes por log ao invés de ~500 bytes (select '*')
-    const { data: allLogs, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('protocol_id')
-      .eq('user_id', resolvedUserId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
+    const instances = await doseInstanceRepo.getWindow(resolvedUserId, startDate, endDate)
+    const byProtocol = _groupByProtocol(instances)
 
-    if (logError) throw logError
-
-    // M7.1: Agrupar por protocol_id client-side — O(M) uma vez
-    // Em vez de O(M) × N separado (N = número de protocolos)
-    const takenByProtocol = new Map()
-    ;(allLogs || []).forEach((log) => {
-      if (log.protocol_id) {
-        takenByProtocol.set(log.protocol_id, (takenByProtocol.get(log.protocol_id) || 0) + 1)
-      }
-    })
-
-    // Calcular scores sem mais queries
-    return protocols.map((protocol) => {
-      const expected = calculateExpectedDoses([protocol], days, endDate)
-      const taken = takenByProtocol.get(protocol.id) || 0
-      const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
-      return {
-        protocolId: protocol.id,
-        name: protocol.name,
-        medicineName: protocol.medicine?.name,
-        score,
-        taken,
-        expected,
-        error: false,
-      }
-    })
+    return protocols.map((p) => _protocolScore(p, byProtocol.get(p.id) || []))
   },
 
   /**
-   * Calcula o streak atual (dias seguidos com adesão >= 80%)
-   * @param {string} [userId] - ID do usuário (opcional, evita chamadas redundantes ao getUser)
+   * Streak atual + maior streak, das ocorrências dos últimos 90 dias.
+   * @param {string} [userId]
    * @returns {Promise<{currentStreak: number, longestStreak: number}>}
    */
   async getCurrentStreak(userId = null) {
-    // Usa userId fornecido ou busca do Supabase
     const resolvedUserId = userId || (await getUserId())
-
-    // Buscar logs dos últimos 90 dias
-    const endDate = getNow()
+    const endDate = getRawNow()
     const startDate = addDays(endDate, -90)
 
-    const { data: logs, error } = await supabase
-      .from('medicine_logs')
-      .select('taken_at')
-      .eq('user_id', resolvedUserId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-      .order('taken_at', { ascending: false })
+    const instances = await doseInstanceRepo.getWindow(resolvedUserId, startDate, endDate)
 
-    if (error) throw error
-
-    // Buscar protocolos ativos para calcular doses esperadas por dia
-    const { data: protocols, error: protocolError } = await supabase
-      .from('protocols')
-      .select('*')
-      .eq('user_id', resolvedUserId)
-      .eq('active', true)
-
-    if (protocolError) throw protocolError
-
-    // Verificar se há protocolos ativos
-    if (!protocols || protocols.length === 0 || !logs || logs.length === 0) {
-      return { currentStreak: 0, longestStreak: 0 }
+    return {
+      currentStreak: computeStreakFromInstances(instances, { tz: DEFAULT_TZ }),
+      longestStreak: computeLongestStreakFromInstances(instances, { tz: DEFAULT_TZ }),
     }
-
-    // Agrupar logs por dia
-    const logsByDay = groupLogsByDay(logs)
-
-    // Calcular streaks (passa protocols para calcular expected por dia)
-    const { currentStreak, longestStreak } = calculateStreaks(logsByDay, protocols)
-
-    return { currentStreak, longestStreak }
   },
 
   /**
-   * Calcula o maior streak histórico
+   * Maior streak histórico (janela de 90 dias).
    * @returns {Promise<number>}
    */
   async getLongestStreak() {
@@ -320,101 +302,93 @@ export const adherenceService = {
   },
 
   /**
-   * Retorna resumo completo de adesão para o Dashboard
-   * @param {string} period - Período: '7d', '30d', '90d'
+   * Resumo completo de adesão para o Dashboard. Uma janela de 90d cobre tanto o
+   * período pedido (filtrado) quanto o streak — 1 fetch de instâncias + 1 de protocolos.
+   * @param {string} period - '7d', '30d', '90d'
    * @returns {Promise<Object>}
    */
   async getAdherenceSummary(period = '30d') {
     const userId = await getUserId()
+    const endDate = getRawNow()
+    const start90 = addDays(endDate, -90)
 
-    // Buscar protocols UMA VEZ — evita 3 queries idênticas nas sub-funções
     const { data: protocols, error: protocolError } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(*)')
+      .select('id, name, medicine:medicines(name)')
       .eq('user_id', userId)
       .eq('active', true)
 
     if (protocolError) throw protocolError
 
-    // Passa protocols pré-carregados para todas as sub-funções
-    const results = await Promise.allSettled([
-      this._calculateAdherenceWithProtocols(period, userId, protocols),
-      this._calculateAllProtocolsAdherenceWithProtocols(period, userId, protocols),
-      this._getCurrentStreakWithProtocols(userId, protocols),
-    ])
+    const instances = await doseInstanceRepo.getWindow(userId, start90, endDate)
 
-    const overall =
-      results[0].status === 'fulfilled' ? results[0].value : { score: 0, taken: 0, expected: 0 }
-    const protocolScores = results[1].status === 'fulfilled' ? results[1].value : []
-    const streaks =
-      results[2].status === 'fulfilled' ? results[2].value : { currentStreak: 0, longestStreak: 0 }
+    // Subconjunto do período pedido (período máximo é 90d, coberto pela janela).
+    const days = parseInt(period)
+    const periodMs = addDays(endDate, -days).getTime()
+    const periodInstances = (instances || []).filter((i) => i?.scheduled_for && parseISO(i.scheduled_for).getTime() >= periodMs)
+
+    const overallAgg = computeAdherenceFromInstances(periodInstances)
+    const { score: overallScore, expected: overallExpected } = _score(
+      overallAgg.taken,
+      overallAgg.missed
+    )
+
+    const byProtocol = _groupByProtocol(periodInstances)
+    const protocolScores = (protocols || []).map((p) =>
+      _protocolScore(p, byProtocol.get(p.id) || [])
+    )
 
     return {
-      overallScore: overall.score,
-      overallTaken: overall.taken,
-      overallExpected: overall.expected,
+      overallScore,
+      overallTaken: overallAgg.taken,
+      overallExpected,
       period,
       protocolScores,
-      currentStreak: streaks.currentStreak,
-      longestStreak: streaks.longestStreak,
+      currentStreak: computeStreakFromInstances(instances, { tz: DEFAULT_TZ }),
+      longestStreak: computeLongestStreakFromInstances(instances, { tz: DEFAULT_TZ }),
     }
   },
 
   /**
-   * Retorna dados de adesão por dia para sparkline
+   * Adesão por dia (sparkline). Deriva de `dose_instances` agrupadas por dia local.
    * @param {number} days - Número de dias (padrão: 7)
-   * @returns {Promise<Array<{date: string, adherence: number, taken: number, expected: number}>>}
+   * @returns {Promise<Array<{date, taken, expected, adherence}>>}
    */
   async getDailyAdherence(days = 7) {
     const userId = await getUserId()
-
-    const endDate = getNow()
+    const endDate = getRawNow()
     const startDate = addDays(endDate, -days)
 
-    // Buscar protocolos ativos
-    const { data: protocols, error: protocolError } = await supabase
-      .from('protocols')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('active', true)
+    // Pad ±1 dia para capturar instâncias na fronteira de fuso.
+    const instances = await doseInstanceRepo.getWindow(
+      userId,
+      addDays(startDate, -1),
+      addDays(endDate, 1)
+    )
 
-    if (protocolError) throw protocolError
+    // Agrupar instâncias por dia local.
+    const byDay = new Map()
+    for (const inst of instances || []) {
+      if (!inst?.scheduled_for) continue
+      const key = _dayKey(inst.scheduled_for)
+      let arr = byDay.get(key)
+      if (!arr) {
+        arr = []
+        byDay.set(key, arr)
+      }
+      arr.push(inst)
+    }
 
-    // Expandir range de busca para compensar fuso horário
-    // Doses tomadas em GMT-3 podem aparecer no dia seguinte em UTC
-    const adjustedStartDate = addDays(startDate, -1)
-    const adjustedEndDate = addDays(endDate, 1)
-
-    // Buscar logs no período (com range expandido para timezone)
-    const { data: logs, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('taken_at')
-      .eq('user_id', userId)
-      .gte('taken_at', adjustedStartDate.toISOString())
-      .lte('taken_at', adjustedEndDate.toISOString())
-
-    if (logError) throw logError
-
-    // Agrupar logs por dia
-    const logsByDay = groupLogsByDay(logs)
-
-    // Gerar array com dados para cada dia (usando data local)
     const dailyData = []
     for (let i = days - 1; i >= 0; i--) {
-      const date = addDays(endDate, -i)
-      const dateKey = formatLocalDate(date)
-
-      // Calcular doses esperadas para este dia específico (filtra por start_date/end_date)
-      const dayExpected = calculateDailyExpectedDoses(protocols, dateKey)
-
-      const taken = logsByDay.get(dateKey) || 0
-      const adherence = dayExpected > 0 ? Math.round((taken / dayExpected) * 100) : 0
-
+      const dateKey = _dayKey(addDays(endDate, -i))
+      const agg = computeAdherenceFromInstances(byDay.get(dateKey) || [])
+      const { score, expected } = _score(agg.taken, agg.missed)
       dailyData.push({
         date: dateKey,
-        taken,
-        expected: Math.round(dayExpected),
-        adherence: Math.min(adherence, 100),
+        taken: agg.taken,
+        expected,
+        adherence: score,
       })
     }
 
@@ -422,9 +396,11 @@ export const adherenceService = {
   },
 
   /**
-   * Retorna dados de adesão diária DIRETAMENTE DA VIEW (M3 — sem processamento client)
+   * Retorna dados de adesão diária DIRETAMENTE DA VIEW (M3 — sem processamento client).
+   * ⚠️ View server-agg (R-249, mitigação OOM low-mid). Migração da fonte para
+   * `dose_instances` é escopo da Fase 4 (G6/S4.2b) — NÃO tocar aqui.
    * @param {number} days - Número de dias (padrão: 30)
-   * @returns {Promise<Array<{date: string, adherence: number, taken: number, expected: number}>>}
+   * @returns {Promise<Array<{date, adherence, taken, expected}>>}
    */
   async getDailyAdherenceFromView(days = 30) {
     // Validar input com Zod
@@ -438,7 +414,7 @@ export const adherenceService = {
     }
 
     const { days: validDays } = validation.data
-    const endDate = getNow()
+    const endDate = getRawNow()
     const startDate = addDays(endDate, -validDays)
 
     const startDateStr = formatLocalDate(startDate)
@@ -466,9 +442,10 @@ export const adherenceService = {
   },
 
   /**
-   * Retorna padrões de adesão HEATMAP DIRETAMENTE DA VIEW (M3 — sem processamento client)
-   * Transforma array de linhas (28 = 7×4) em grid 7×4
-   * @returns {Promise<{grid: Array, worstCell: Object|null, narrative: string, hasEnoughData: boolean, dayOccurrences: Array}>}
+   * Retorna padrões de adesão HEATMAP DIRETAMENTE DA VIEW (M3 — sem processamento client).
+   * ⚠️ View server-agg (R-249). Migração da fonte para `dose_instances` é escopo
+   * da Fase 4 (G6/S4.2b) — NÃO tocar aqui.
+   * @returns {Promise<{grid, worstCell, narrative, hasEnoughData, dayOccurrences}>}
    */
   async getAdherencePatternFromView() {
     const { data, error } = await supabase
@@ -486,7 +463,6 @@ export const adherenceService = {
     const grid = buildAdherenceGrid(data)
 
     // Calcular hasEnoughData: pelo menos 7 células com expected_doses > 0
-    // (1 período por dia × 7 dias da semana — usuários com só manhã+noite têm 14 células max)
     const filledCells = (data || []).filter((row) => row.expected_doses > 0).length
     const hasEnoughData = filledCells >= 7
 
@@ -503,362 +479,26 @@ export const adherenceService = {
   },
 
   /**
-   * @private Variante de calculateAdherence que recebe protocols pré-carregados
+   * @private Variante de calculateAdherence que recebe protocols pré-carregados.
+   * (protocols não é mais necessário — adesão vem das instâncias; mantido por contrato.)
    */
-  async _calculateAdherenceWithProtocols(period, userId, protocols) {
-    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
-
-    // HEAD request — apenas count, zero dados transferidos
-    const { count, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-
-    if (logError) throw logError
-
-    const expectedDoses = calculateExpectedDoses(protocols, days, endDate)
-    const takenDoses = count || 0
-    const score =
-      expectedDoses > 0 ? Math.min(Math.round((takenDoses / expectedDoses) * 100), 100) : 0
-
-    return {
-      score,
-      taken: takenDoses,
-      expected: expectedDoses,
-      period,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-    }
+  async _calculateAdherenceWithProtocols(period, userId /* , protocols */) {
+    return this.calculateAdherence(period, userId)
   },
 
   /**
-   * @private Variante de calculateAllProtocolsAdherence que recebe protocols pré-carregados
+   * @private Variante de calculateAllProtocolsAdherence com protocols pré-carregados.
    */
-  async _calculateAllProtocolsAdherenceWithProtocols(period, userId, protocols) {
-    const { startDate, endDate, days } = _getDateRangeForPeriod(period)
-
-    if (!protocols || protocols.length === 0) return []
-
-    // Batch: APENAS protocol_id — ~50 bytes por log ao invés de ~500
-    const { data: allLogs, error: logError } = await supabase
-      .from('medicine_logs')
-      .select('protocol_id')
-      .eq('user_id', userId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-
-    if (logError) throw logError
-
-    // Agrupar por protocol_id client-side: O(M) uma vez
-    const takenByProtocol = new Map()
-    ;(allLogs || []).forEach((log) => {
-      if (log.protocol_id) {
-        takenByProtocol.set(log.protocol_id, (takenByProtocol.get(log.protocol_id) || 0) + 1)
-      }
-    })
-
-    return protocols.map((protocol) => {
-      const expected = calculateExpectedDoses([protocol], days, endDate)
-      const taken = takenByProtocol.get(protocol.id) || 0
-      const score = expected > 0 ? Math.min(Math.round((taken / expected) * 100), 100) : 0
-      return {
-        protocolId: protocol.id,
-        name: protocol.name,
-        medicineName: protocol.medicine?.name,
-        score,
-        taken,
-        expected,
-        error: false,
-      }
-    })
+  async _calculateAllProtocolsAdherenceWithProtocols(period, userId /* , protocols */) {
+    return this.calculateAllProtocolsAdherence(period, userId)
   },
 
   /**
-   * @private Variante de getCurrentStreak que recebe protocols pré-carregados
+   * @private Variante de getCurrentStreak com protocols pré-carregados.
    */
-  async _getCurrentStreakWithProtocols(userId, protocols) {
-    if (!protocols || protocols.length === 0) {
-      return { currentStreak: 0, longestStreak: 0 }
-    }
-
-    const endDate = getNow()
-    const startDate = addDays(endDate, -90)
-
-    const { data: logs, error } = await supabase
-      .from('medicine_logs')
-      .select('taken_at')
-      .eq('user_id', userId)
-      .gte('taken_at', startDate.toISOString())
-      .lte('taken_at', endDate.toISOString())
-      .order('taken_at', { ascending: false })
-
-    if (error) throw error
-
-    if (!logs || logs.length === 0) {
-      return { currentStreak: 0, longestStreak: 0 }
-    }
-
-    const logsByDay = groupLogsByDay(logs)
-    const { currentStreak, longestStreak } = calculateStreaks(logsByDay, protocols)
-
-    return { currentStreak, longestStreak }
+  async _getCurrentStreakWithProtocols(userId /* , protocols */) {
+    return this.getCurrentStreak(userId)
   },
-}
-
-/**
- * Calcula taxa de doses diárias para um protocolo conforme frequência.
- * @param {string} frequency - Frequência normalizada (lowercase)
- * @param {number} timesPerDay - Número de horários no time_schedule
- * @returns {number}
- */
-function _getDailyDoseRate(frequency, timesPerDay) {
-  switch (frequency) {
-    case 'weekly':
-    case 'semanal':
-    case 'semanalmente':
-      return timesPerDay / 7
-    case 'every_other_day':
-    case 'dia_sim_dia_nao':
-    case 'dia sim, dia não':
-      return timesPerDay / 2
-    default:
-      return timesPerDay
-  }
-}
-
-/**
- * Calcula dias efetivos de um protocolo dentro do período de análise.
- * @param {Object} protocol - Protocolo com start_date e end_date opcionais
- * @param {Date} periodStart - Início do período
- * @param {Date} periodEnd - Fim do período
- * @returns {number}
- */
-function _getEffectiveDays(protocol, periodStart, periodEnd) {
-  const protocolStartDate = protocol.start_date ? parseLocalDate(protocol.start_date) : periodStart
-  const protocolEndDate = protocol.end_date ? parseISO(protocol.end_date + 'T23:59:59') : periodEnd
-
-  const effectiveStart = parseTimestamp(Math.max(protocolStartDate.getTime(), periodStart.getTime()))
-  const effectiveEnd = parseTimestamp(Math.min(protocolEndDate.getTime(), periodEnd.getTime()))
-
-  if (effectiveEnd < effectiveStart) return 0
-  const diffTime = effectiveEnd.getTime() - effectiveStart.getTime()
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-}
-
-/**
- * Calcula doses totais de um protocolo para o período dado.
- * @param {Object} protocol - Protocolo
- * @param {Date} periodStart - Início do período
- * @param {Date} periodEnd - Fim do período
- * @returns {number}
- */
-function _computeProtocolDoses(protocol, periodStart, periodEnd) {
-  const timesPerDay = protocol.time_schedule?.length || 1
-  const frequency = (protocol.frequency || 'daily').toLowerCase()
-  const dailyDoses = _getDailyDoseRate(frequency, timesPerDay)
-  const effectiveDays = _getEffectiveDays(protocol, periodStart, periodEnd)
-  return dailyDoses * Math.max(effectiveDays, 0)
-}
-
-/**
- * Calcula doses esperadas para um conjunto de protocolos.
- * Considera start_date e end_date para calcular dias efetivos de cada protocolo.
- *
- * @param {Array} protocols - Array de protocolos
- * @param {number} days - Número de dias do período de análise
- * @param {Date} endDate - Data final do período (padrão: hoje)
- * @returns {number}
- */
-function calculateExpectedDoses(protocols, days, endDate = getNow()) {
-  if (!protocols || protocols.length === 0) return 0
-
-  // M9.0: Normalizar endDate para fuso de Brasília para evitar day-drift em servidores UTC
-  const normalizedEndDate = getSaoPauloTime(endDate)
-
-  // Calcular data de início do período de análise
-  const periodStart = addDays(normalizedEndDate, -days + 1)
-  periodStart.setHours(0, 0, 0, 0)
-
-  const periodEnd = cloneDate(normalizedEndDate)
-  periodEnd.setHours(23, 59, 59, 999)
-
-  return protocols.reduce((total, protocol) => {
-    return total + _computeProtocolDoses(protocol, periodStart, periodEnd)
-  }, 0)
-}
-
-/**
- * Calcula doses esperadas por dia para uma data específica.
- * Filtra protocolos que estavam ativos na data.
- *
- * @param {Array} protocols - Array de protocolos
- * @param {string} dateStr - Data no formato YYYY-MM-DD (opcional, padrão: hoje)
- * @returns {number}
- */
-function calculateDailyExpectedDoses(protocols, dateStr = null) {
-  if (!protocols || protocols.length === 0) return 0
-
-  // Se não houver data, usar hoje
-  const targetDate = dateStr || getTodayLocal()
-
-  return protocols.reduce((total, protocol) => {
-    // Verificar se o protocolo estava ativo nesta data
-    if (!isProtocolActiveOnDate(protocol, targetDate)) return total
-
-    const timesPerDay = protocol.time_schedule?.length || 1
-    return total + timesPerDay
-  }, 0)
-}
-
-/**
- * Agrupa logs por dia usando fuso horário local do usuário
- * @param {Array} logs - Array de logs
- * @returns {Map<string, number>}
- */
-function groupLogsByDay(logs) {
-  const days = new Map()
-
-  logs.forEach((log) => {
-    const dayKey = formatLocalDate(parseISO(log.taken_at))
-    days.set(dayKey, (days.get(dayKey) || 0) + 1)
-  })
-
-  return days
-}
-
-/**
- * Verifica se protocolo estava ativo numa data usando comparação de strings.
- * Strings YYYY-MM-DD são lexicograficamente ordenáveis — sem criar Date objects.
- * @param {string} dateStr - Data YYYY-MM-DD
- * @param {string|null} startStr - start_date do protocolo (ou null)
- * @param {string|null} endStr - end_date do protocolo (ou null)
- * @returns {boolean}
- */
-function isActiveOnDateFast(dateStr, startStr, endStr) {
-  if (startStr && dateStr < startStr) return false
-  if (endStr && dateStr > endStr) return false
-  return true
-}
-
-/**
- * Calcula doses esperadas por dia usando dados pré-parseados (zero Date objects).
- * @param {Array<{timesPerDay: number, startStr: string|null, endStr: string|null}>} parsed
- * @param {string} dateStr - Data YYYY-MM-DD
- * @returns {number}
- */
-function dailyExpectedFast(parsed, dateStr) {
-  let total = 0
-  for (let i = 0; i < parsed.length; i++) {
-    const p = parsed[i]
-    if (isActiveOnDateFast(dateStr, p.startStr, p.endStr)) {
-      total += p.timesPerDay
-    }
-  }
-  return total
-}
-
-/**
- * Verifica se o streak corrente ainda está ativo (tomou hoje ou ontem).
- * @param {Map} logsByDay - Logs agrupados por dia
- * @param {Array} parsed - Protocolos pré-parseados
- * @param {string} today - Data de hoje YYYY-MM-DD
- * @param {string} yesterdayKey - Data de ontem YYYY-MM-DD
- * @returns {boolean}
- */
-function _isStreakCurrent(logsByDay, parsed, today, yesterdayKey) {
-  const minAdherenceRate = 0.8
-  const dates = Array.from(logsByDay.keys()).sort().reverse()
-  const lastLogDate = dates[0]
-
-  const todayExpected = dailyExpectedFast(parsed, today)
-  const yesterdayExpected = dailyExpectedFast(parsed, yesterdayKey)
-
-  const hasTakenToday =
-    lastLogDate === today &&
-    todayExpected > 0 &&
-    (logsByDay.get(today) || 0) >= todayExpected * minAdherenceRate
-  const hasTakenYesterday =
-    lastLogDate === yesterdayKey ||
-    (dates.includes(yesterdayKey) &&
-      yesterdayExpected > 0 &&
-      (logsByDay.get(yesterdayKey) || 0) >= yesterdayExpected * minAdherenceRate)
-
-  return hasTakenToday || hasTakenYesterday
-}
-
-/**
- * Processa um dia de streak: retorna { currentStreak, longestStreak, tempStreak, isCurrent }.
- * @param {Object} state - Estado atual do streak
- * @param {string} dateKey - Data atual
- * @param {number} dayExpected - Doses esperadas no dia
- * @param {number} taken - Doses tomadas no dia
- * @param {string} today - Data de hoje
- * @returns {Object} Estado atualizado
- */
-function _processStreakDay(state, dateKey, dayExpected, taken, today) {
-  const minAdherenceRate = 0.8
-  let { currentStreak, longestStreak, tempStreak, isCurrent } = state
-
-  if (dayExpected === 0) {
-    return { currentStreak, longestStreak, tempStreak, isCurrent }
-  }
-
-  const adherenceRate = taken / dayExpected
-  if (adherenceRate >= minAdherenceRate) {
-    if (isCurrent) currentStreak++
-    tempStreak++
-  } else {
-    if (isCurrent && dateKey !== today) isCurrent = false
-    longestStreak = Math.max(longestStreak, tempStreak)
-    tempStreak = 0
-  }
-  return { currentStreak, longestStreak, tempStreak, isCurrent }
-}
-
-/**
- * Calcula streaks (atual e maior)
- * Considera start_date e end_date dos protocolos para calcular expected por dia.
- * Otimizado: pré-parseia datas dos protocolos e usa comparação de strings (R-128).
- *
- * @param {Map} logsByDay - Logs agrupados por dia
- * @param {Array} protocols - Array de protocolos ativos
- * @returns {{currentStreak: number, longestStreak: number}}
- */
-function calculateStreaks(logsByDay, protocols) {
-  const dates = Array.from(logsByDay.keys()).sort().reverse()
-
-  if (dates.length === 0 || !protocols || protocols.length === 0) {
-    return { currentStreak: 0, longestStreak: 0 }
-  }
-
-  // Pré-parsear protocolos UMA VEZ (evita ~2700 parseISO() no loop)
-  const parsed = protocols.map((p) => ({
-    timesPerDay: p.time_schedule?.length || 1,
-    startStr: p.start_date || null,
-    endStr: p.end_date || null,
-  }))
-
-  const today = getTodayLocal()
-  const yesterdayKey = getYesterdayLocal()
-  const isCurrent = _isStreakCurrent(logsByDay, parsed, today, yesterdayKey)
-
-  let state = { currentStreak: 0, longestStreak: 0, tempStreak: 0, isCurrent }
-
-  const MAX_ITERATIONS = 91
-  let checkDate = getNow()
-  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-    const dateKey = formatLocalDate(checkDate)
-    const dayExpected = dailyExpectedFast(parsed, dateKey)
-    const taken = logsByDay.get(dateKey) || 0
-    state = _processStreakDay(state, dateKey, dayExpected, taken, today)
-    checkDate.setDate(checkDate.getDate() - 1)
-    if (state.tempStreak === 0 && !state.isCurrent) break
-  }
-
-  const longestStreak = Math.max(state.longestStreak, state.tempStreak)
-  return { currentStreak: state.currentStreak, longestStreak }
 }
 
 export default adherenceService

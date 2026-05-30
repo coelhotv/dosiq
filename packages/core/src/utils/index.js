@@ -54,6 +54,7 @@ export {
   // Leitura de adesão a partir de dose_instances (Fase 3 — ADR-048/050/052)
   computeAdherenceFromInstances,
   computeStreakFromInstances,
+  computeLongestStreakFromInstances,
   ADHERENCE_MODE,
   INSTANCE_STATUS,
 } from './adherenceLogic.js'

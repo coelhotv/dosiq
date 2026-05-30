@@ -777,11 +777,15 @@ export function computeAdherenceFromInstances(instances, { mode = ADHERENCE_MODE
 /**
  * Streak de dias consecutivos sem `missed`, contando de hoje para trás.
  *
+ * Limiar de adesão diária (R-022, paridade com a lógica legada `calculateStreaks`):
+ * um dia "conta" se tomou ≥80% das doses esperadas (`taken/(taken+missed) >= 0.8`).
+ * Não é tolerância zero — quem toma muitas doses/dia e perde uma não vê o streak sumir.
+ *
  * Regras:
- * - um dia com ≥1 `missed` QUEBRA o streak (para a contagem);
- * - um dia com ≥1 `taken` (e sem missed) SOMA ao streak;
- * - dias só com `skipped_*`, ou sem dose (gap entre tratamentos), são NEUTROS:
- *   não somam nem quebram.
+ * - dia com `expected (taken+missed) == 0` (só `skipped_*` ou sem dose) → NEUTRO;
+ * - dia com ratio ≥ `minAdherenceRate` → SOMA;
+ * - dia passado com ratio < `minAdherenceRate` → QUEBRA;
+ * - HOJE com ratio < limiar → NEUTRO (dia não acabou; não zera o streak — paridade UX legada).
  *
  * Agrupa por dia no fuso do usuário — `scheduled_for` é instante absoluto (ISO/UTC),
  * então a fronteira de dia depende do tz (G1: injeção real do tz fica na F4; default SP).
@@ -793,25 +797,14 @@ export function computeAdherenceFromInstances(instances, { mode = ADHERENCE_MODE
  * @param {Object} [opts]
  * @param {string} [opts.tz='America/Sao_Paulo'] - fuso para a fronteira de dia
  * @param {string} [opts.today] - dia de referência "YYYY-MM-DD" (default: hoje no tz)
+ * @param {number} [opts.minAdherenceRate=0.8] - fração mínima de doses tomadas no dia
  * @returns {number} dias de streak
  */
-export function computeStreakFromInstances(instances, { tz = 'America/Sao_Paulo', today } = {}) {
-  const list = Array.isArray(instances) ? instances : []
-
-  // dia local (tz) -> { missed, taken }
-  const byDay = new Map()
-  for (const inst of list) {
-    if (!inst?.scheduled_for) continue
-    const dayKey = formatLocalDate(getUserTime(parseISO(inst.scheduled_for), tz))
-    let entry = byDay.get(dayKey)
-    if (!entry) {
-      entry = { missed: false, taken: false }
-      byDay.set(dayKey, entry)
-    }
-    if (inst.status === INSTANCE_STATUS.MISSED) entry.missed = true
-    else if (inst.status === INSTANCE_STATUS.TAKEN) entry.taken = true
-  }
-
+export function computeStreakFromInstances(
+  instances,
+  { tz = 'America/Sao_Paulo', today, minAdherenceRate = 0.8 } = {}
+) {
+  const byDay = _buildDayStatusMap(instances, tz)
   const todayKey = today ?? formatLocalDate(getNow(tz))
 
   // dias conhecidos até hoje, do mais recente para o mais antigo (gaps são neutros).
@@ -820,8 +813,75 @@ export function computeStreakFromInstances(instances, { tz = 'America/Sao_Paulo'
   let streak = 0
   for (const key of days) {
     const entry = byDay.get(key)
-    if (entry.missed) break // dia com missed quebra o streak
-    if (entry.taken) streak++ // dia produtivo soma; skipped-only é neutro
+    const expected = entry.taken + entry.missed
+    if (expected === 0) continue // dia neutro (skipped-only / sem dose)
+    if (entry.taken / expected >= minAdherenceRate) {
+      streak++ // dia bem-sucedido (≥ limiar)
+    } else if (key === todayKey) {
+      continue // hoje ainda não terminou — não quebra
+    } else {
+      break // dia passado abaixo do limiar quebra o streak
+    }
   }
   return streak
+}
+
+/**
+ * Agrupa instâncias por dia local (tz) → Map<dayKey, {missed, taken}> (CONTAGENS).
+ * `scheduled_for` é instante absoluto; o tz só governa a fronteira de dia.
+ * @param {Array<Object>} instances
+ * @param {string} tz
+ * @returns {Map<string, {missed: number, taken: number}>}
+ */
+function _buildDayStatusMap(instances, tz) {
+  const list = Array.isArray(instances) ? instances : []
+  const byDay = new Map()
+  for (const inst of list) {
+    if (!inst?.scheduled_for) continue
+    const dayKey = formatLocalDate(getUserTime(parseISO(inst.scheduled_for), tz))
+    let entry = byDay.get(dayKey)
+    if (!entry) {
+      entry = { missed: 0, taken: 0 }
+      byDay.set(dayKey, entry)
+    }
+    if (inst.status === INSTANCE_STATUS.MISSED) entry.missed++
+    else if (inst.status === INSTANCE_STATUS.TAKEN) entry.taken++
+  }
+  return byDay
+}
+
+/**
+ * Maior streak histórico: maior sequência de dias com adesão ≥ limiar, varrendo TODO
+ * o histórico fornecido. Mesma semântica do streak corrente (≥80% conta, <80% quebra,
+ * dia neutro mantém) — mas sem a graça de "hoje" (histórico já fechado).
+ *
+ * Função PURA.
+ *
+ * @param {Array<Object>} instances - linhas de `dose_instances` (status, scheduled_for)
+ * @param {Object} [opts]
+ * @param {string} [opts.tz='America/Sao_Paulo']
+ * @param {number} [opts.minAdherenceRate=0.8]
+ * @returns {number} maior streak
+ */
+export function computeLongestStreakFromInstances(
+  instances,
+  { tz = 'America/Sao_Paulo', minAdherenceRate = 0.8 } = {}
+) {
+  const byDay = _buildDayStatusMap(instances, tz)
+  const days = [...byDay.keys()].sort() // cronológico ascendente
+
+  let longest = 0
+  let run = 0
+  for (const key of days) {
+    const entry = byDay.get(key)
+    const expected = entry.taken + entry.missed
+    if (expected === 0) continue // dia neutro: mantém run
+    if (entry.taken / expected >= minAdherenceRate) {
+      run++ // dia bem-sucedido
+      if (run > longest) longest = run
+    } else {
+      run = 0 // dia abaixo do limiar quebra a sequência
+    }
+  }
+  return longest
 }
