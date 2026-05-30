@@ -142,8 +142,9 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 
 ### S3.7 — Bot Telegram: paridade de leitura
 - **Agent:** `claude` · **Modelo:** sonnet
-- **Files:** `server/bot/_adherenceHelpers.js` (+ comandos que mostram adesão: `/status`, `/hoje`, **relatório diário 23h**).
-- **Spec:** adesão/streak do bot de `dose_instances` via core. Manter formatação MarkdownV2 (R-031). `escapeMarkdownV2`.
+- **Files:** `server/bot/callbacks/doseActions.js` (`calculateAdherenceAndStockWarnings`/`calculateStreak(allLogs)` legado → `computeStreakFromInstances`), `server/bot/tasks.js` (formatters de `/status`, `/hoje`, digest/relatórios), `server/bot/_adherenceHelpers.js` (orquestração do relatório diário 23h). **+ comandos** `/status`, `/hoje`.
+- **✅ Write-path do bot JÁ ancora** (`doseActions.js` `anchorLogToInstance` via `findAnchorInstance`+`markTaken`, F2.3) — S3.7 migra **só a LEITURA** (diferente do mobile S3.6.2, que precisa da âncora). Não duplicar.
+- **Spec:** adesão/streak do bot de `dose_instances` via core (`compute*FromInstances`). Trocar `calculateStreak(logs)`/`calculateAdherenceStats` legados. Manter formatação MarkdownV2 (R-031). `escapeMarkdownV2`.
   - ⚠️ **Relatório 23h (E2/R-208):** ao migrar pra instances, o relatório das 23h lê o dia corrente ANTES do sweep das 3AM → doses vencidas cedo no dia ainda `pending`. **Rodar `sweepMissedInstances()` antes do relatório 23h** (idempotente) pra fechar o dia. Doses ainda na tolerância à noite (ex. 22:30) corretamente seguem pending.
 - **Aceite:** `/status`, `/hoje` e relatório 23h refletem instâncias; números batem com web.
 - **Deps:** S3.3
