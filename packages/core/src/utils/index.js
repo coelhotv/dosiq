@@ -51,6 +51,11 @@ export {
   isProtocolActiveOnDate,
   getProtocolDays,
   getDailyDoseRate,
+  // Leitura de adesão a partir de dose_instances (Fase 3 — ADR-048/050/052)
+  computeAdherenceFromInstances,
+  computeStreakFromInstances,
+  ADHERENCE_MODE,
+  INSTANCE_STATUS,
 } from './adherenceLogic.js'
 
 // Dose instance generation engine (ADR-048, Fase 2)
