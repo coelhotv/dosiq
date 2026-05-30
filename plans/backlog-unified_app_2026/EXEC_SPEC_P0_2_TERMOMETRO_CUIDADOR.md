@@ -1,13 +1,14 @@
-# EXEC SPEC — P0.2: Termômetro de Demanda Cuidador (v1.0 — 2026-05-30)
+# EXEC SPEC — P0.2: Termômetro de Demanda Cuidador (v1.1 — 2026-05-30)
 
 > **STATUS: 📋 SPEC PRONTA — AGUARDANDO CONCLUSÃO DO REFACTOR dose_instances**
 > **Duração**: 1 sprint (T1.1)
 > **Branch base**: `feat/termometro-cuidador`
 > **Referência**: UNIFIED_ROADMAP_2026.md §3 (Pré-Fase 5) + backlog_review_analysis.md §1
-> **Pré-condição**: ✅ Migration `rename_beta_signups_platform_to_feature.sql` aplicada pelo PO
+> **Pré-condição**: ✅ Migration `rename_beta_signups_platform_to_feature.sql` aplicada em produção (MCP ✅)
 > **Quality Gates**: G1 (Copy Mobile + PWA) → G2 (Merge)
 > **SQP vinculante**: v2.0 ([INDEX_EXEC_SPECS.md](../backlog-native_app/INDEX_EXEC_SPECS.md))
 > **Plataformas**: 📱 Mobile + 🌐 PWA
+> **Changelog v1.0→v1.1:** E-mail pré-preenchido com o e-mail do usuário autenticado (via `user?.email` de `useProfile()`). Usuário pode editar ou clicar direto em enviar.
 
 ---
 
@@ -41,14 +42,17 @@ Tela de Perfil (existente)
   │ • Receba alertas quando esquecerem      │
   │                                         │
   │ ┌─────────────────────────────────────┐ │
-  │ │ 📧 seu@email.com                    │ │
+  │ │ 📧 ana@email.com   ← pré-preenchido │ │
   │ └─────────────────────────────────────┘ │
+  │  (editável se quiser usar outro e-mail) │
   │                                         │
   │ [ 🔔 Quero ser avisado quando sair ]    │
   │                                         │
-  │ Já temos ___ interessados!              │
+  │              [ Fechar ]                 │
   └─────────────────────────────────────────┘
 ```
+
+**UX Rationale:** O usuário já está logado com um e-mail — pedir que o digite de novo é fricção desnecessária. O campo vem pré-preenchido com `user.email` mas permanece editável (caso queira usar outro e-mail, ex: profissional). O botão "Fechar" sem submeter é opt-out explícito.
 
 ### 0.3 KPI de Sucesso
 
@@ -201,10 +205,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * Captura e-mail de interessados via beta_signups (feature='caregiver_mode').
  *
  * NÃO é funcional — é um termômetro de demanda.
+ *
+ * @param {string} [userEmail] — e-mail do usuário autenticado (pré-preenche o campo).
+ *   Obtido de `user?.email` em ProfileScreen via useProfile().
  */
-export function CaregiverTeaserSheet({ visible, onClose }) {
-  // States
-  const [email, setEmail] = useState('')
+export function CaregiverTeaserSheet({ visible, onClose, userEmail }) {
+  // States — e-mail pré-preenchido com o do usuário autenticado (editável)
+  const [email, setEmail] = useState(userEmail ?? '')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
@@ -275,6 +282,8 @@ export function CaregiverTeaserSheet({ visible, onClose }) {
                 textContentType="emailAddress"
                 returnKeyType="send"
                 onSubmitEditing={handleSubmit}
+                // Campo editável: usuário pode trocar por outro e-mail
+                selectTextOnFocus // facilita edição ao tocar (seleciona tudo)
               />
               <Pressable
                 style={[styles.cta, loading && styles.ctaDisabled]}
@@ -336,7 +345,8 @@ const styles = StyleSheet.create({
 import { CaregiverTeaserButton } from '../components/CaregiverTeaserButton'
 import { CaregiverTeaserSheet } from '../components/CaregiverTeaserSheet'
 
-// Dentro do componente:
+// Dentro do componente (user já disponível via useProfile — linha 26 do ProfileScreen atual):
+// const { user, loading, ... } = useProfile()  ← já existe, não duplicar
 const [showCaregiverTeaser, setShowCaregiverTeaser] = useState(false)
 
 // No render, após a seção de alarmes (ou como último item antes de "Sobre"):
@@ -347,8 +357,12 @@ const [showCaregiverTeaser, setShowCaregiverTeaser] = useState(false)
 <CaregiverTeaserSheet
   visible={showCaregiverTeaser}
   onClose={() => setShowCaregiverTeaser(false)}
+  userEmail={user?.email}  // pré-preenche o campo — editável pelo usuário
 />
 ```
+
+> [!NOTE]
+> `user` já é desestruturado em `ProfileScreen.jsx` L26: `const { user, ... } = useProfile()`. O campo `user.email` é o e-mail de autenticação Supabase — sempre preenchido para usuários logados.
 
 ### T1.2 — PWA: CaregiverTeaserModal (Web)
 
@@ -358,8 +372,10 @@ Mesmo conceito visual, adaptado para web. Reutiliza `signupForBeta(email, 'careg
 // CaregiverTeaserModal.jsx — componente lazy-loaded no ProfileView.jsx
 import { signupForBeta } from '@shared/services/betaSignupService'
 
-export function CaregiverTeaserModal({ isOpen, onClose }) {
-  const [email, setEmail] = useState('')
+// userEmail: e-mail do usuário autenticado, obtido via Supabase session no ProfileView
+export function CaregiverTeaserModal({ isOpen, onClose, userEmail }) {
+  // pré-preenchido com o e-mail da sessão; editável
+  const [email, setEmail] = useState(userEmail ?? '')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
