@@ -113,13 +113,32 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 
 ### S3.6 — Mobile: paridade de leitura
 - **Agent:** `claude` · **Modelo:** sonnet
-- **Files:** `apps/mobile/src/features/dashboard/services/dashboardService.js`, `components/AdherenceRing.jsx`, `AdherenceDayCard.jsx`.
-- **Spec:** consumir a mesma lógica core (S3.1) via `@dosiq/core`. Adesão/ring/day-card de `dose_instances`. R-166 (texto espelha web). Sem Realtime (R-240); throttled focus-refresh.
-- **Aceite:** ring/day-card refletem instâncias; paridade numérica com web.
+- **Files:** `apps/mobile/src/features/dashboard/services/dashboardService.js`, `components/AdherenceRing.jsx`, `AdherenceDayCard.jsx` (leitura) · `apps/mobile/src/features/dose/services/doseService.js` (**write-path âncora — ver S3.6.2 🔴**).
+- **Spec:** consumir a mesma lógica core (S3.1) via `@dosiq/core`. Adesão/ring/day-card de `dose_instances`. R-166 (texto espelha web). Sem Realtime (R-240); throttled focus-refresh. **+ S3.6.2: implementar a âncora log↔instância no `doseService` (FAB + BulkModal) — sem isso a leitura de instâncias fica corrompida por falsos `missed`.**
+- **Aceite:** ring/day-card refletem instâncias; paridade numérica com web; **registro mobile ancora (S3.6.2 DoD)**.
 - **Deps:** S3.3 · **Smoke PO antes do PR** (R-234, `feedback_po_smoke_before_pr`).
 
 ### S3.6.1 — Mobile: garantir `taken_at` pretendido no registro retroativo (self-heal F2.5)
 - **Nota (não esquecer):** o FAB de dose mobile permite selecionar **data/hora** → registro retroativo. Para o **self-heal** da F2.5 funcionar (reverter `missed→taken`), o registro DEVE enviar `taken_at` = horário **pretendido** (não `now()`). Se cair dentro da tolerância da instância `missed`, a âncora reverte pra `taken`; senão (genuinamente tardio) segue missed (E1). Validar no smoke mobile.
+
+### S3.6.2 — 🔴 CRÍTICO — Mobile NÃO ancora log↔instância no write-path (fonte de falsos `missed`)
+- **Descoberto:** 2026-05-30 (investigação do streak: caiu 63→21 num usuário). Causa-raiz: o **mobile `doseService` nunca implementou a âncora** da F2.3. A F2.3 cobriu apenas web `logService.create` + bot Telegram; o mobile usa `apps/mobile/src/features/dose/services/doseService.js` próprio, que **insere o log + consome estoque e PARA** — sem `findAnchorInstance`/`markTaken`/`dose_instance_id`.
+- **Efeito:** TODO registro feito pelo mobile (FAB `registerDose` + BulkModal `registerDoseMany`) deixa o log **avulso** (`dose_instance_id=NULL`) → a instância fica `pending` → o sweep diário (writer #3, F2.5) vira pra **`missed`** → **falso missed** → quebra streak e degrada adesão das instâncias (sparkline da view, baseada em logs, segue 100% → divergência confusa).
+- **Evidência (conta real):** dia 05-28 com 14 logs, **0 ancorados / 14 avulsos** → 14 instâncias falso-`missed`. 142 logs avulsos no total no usuário; 21 reanchoráveis a `missed` na tolerância (corrigidos por SQL pontual em 2026-05-30 — ver reconcile abaixo).
+- **Auditoria dos 4 pontos de registro (2026-05-30):**
+  | Ponto | Ancora hoje? | Ação F3.3 |
+  |-------|--------------|-----------|
+  | PWA PriorityCard (`useDashboardHandlers` quick+batch) | ✅ passa `{instanceId}` (F3.2b) | nenhuma |
+  | PWA LogForm/GlobalDoseModal (manual/freeform) | ⚠️ snap por `taken_at` (sem instanceId — não tem instância; aceitável) | nenhuma (decisão PO 05-30: não é fonte de corrupção) |
+  | **Mobile FAB** (`registerDose`) | ❌ **não ancora** | **ANCORAR** |
+  | **Mobile BulkModal** (`registerDoseMany`) | ❌ **não ancora** | **ANCORAR** |
+- **DoD do fix (parte da S3.6):** após inserir o(s) log(s), o mobile DEVE ancorar à instância materializada, espelhando o web:
+  - Opção A (preferida): passar `instanceId` do dose item (quando o registro vem de um slot conhecido — paridade com PWA PriorityCard) → `markTaken(instanceId, logId)` direto.
+  - Opção B (fallback/registro manual): snap por tolerância via `findAnchorInstance({protocolId, takenAt})` → `markTaken` (já no `@dosiq/core` `createDoseInstanceRepository`). Reusar, **não** reimplementar.
+  - Best-effort (R-245/R-246): falha de âncora NÃO bloqueia o registro nem o estoque; log fica avulso e é reconciliável.
+  - Honrar S3.6.1: `taken_at` = horário pretendido (não `now()`) p/ o self-heal `missed→taken`.
+- **Aceite extra:** registrar 1 dose (FAB) e N doses (BulkModal) no mobile → confirmar `dose_instance_id` preenchido e instância `taken` (não cair em `missed` no sweep seguinte). Smoke PO mobile.
+- **Reconcile histórico (fatia própria, fora da F3.3):** os logs avulsos PRÉ-fix de TODOS os usuários precisam de um script one-shot (espelha o backfill F2.4) que re-ancora logs órfãos → instâncias `pending`/`missed` casáveis por tolerância, revertendo falsos `missed→taken`. Idempotente, `--dry-run`, escopado por `userId` (R-179). O SQL pontual de 05-30 cobriu só 1 usuário (21 linhas).
 
 ### S3.7 — Bot Telegram: paridade de leitura
 - **Agent:** `claude` · **Modelo:** sonnet
