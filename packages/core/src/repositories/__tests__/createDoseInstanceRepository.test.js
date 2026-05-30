@@ -197,7 +197,7 @@ describe('createDoseInstanceRepository', () => {
   describe('findAnchorInstance — snap por tolerância (S2.6)', () => {
     const takenAt = '2026-05-10T22:35:00Z' // 22:35
 
-    it('escopa por protocol_id + status pending (AP-A03)', async () => {
+    it('escopa por protocol_id + status pending|missed (AP-A03, re-anchor F2.5)', async () => {
       const client = makeClient({ data: [], error: null })
       const repo = createDoseInstanceRepository({ client })
       await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
@@ -205,7 +205,7 @@ describe('createDoseInstanceRepository', () => {
       const b = client._builder
       expect(client._from).toBe('dose_instances')
       expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
-      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'missed'])
       // janela grosseira do SELECT usa gte/lte (±120min)
       expect(b.gte).toHaveBeenCalled()
       expect(b.lte).toHaveBeenCalled()
@@ -261,7 +261,7 @@ describe('createDoseInstanceRepository', () => {
       expect(client._from).toBe('dose_instances')
       expect(b.update).toHaveBeenCalledWith({ status: 'taken', medicine_log_id: 'log-9' })
       expect(b.eq).toHaveBeenCalledWith('id', 'di-1')
-      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'missed'])
       expect(b.select).toHaveBeenCalledWith('id')
       expect(out).toBe(true)
     })

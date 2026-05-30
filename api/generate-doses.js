@@ -7,7 +7,7 @@
 // Roda no servidor com service_role (ignora RLS) → acesso escopado por protocolo/usuário
 // dentro do motor (R-042). Funções importadas de server/bot/doseInstanceScheduler.js.
 
-import { generateDoseInstances, cleanupPausedProtocols } from '../server/bot/doseInstanceScheduler.js'
+import { generateDoseInstances, cleanupPausedProtocols, sweepMissedInstances } from '../server/bot/doseInstanceScheduler.js'
 import { createLogger } from '../server/bot/logger.js'
 
 const logger = createLogger('GenerateDosesCron')
@@ -31,14 +31,16 @@ export default async function handler(req, res) {
   try {
     const gen = await generateDoseInstances()
     const cleanup = await cleanupPausedProtocols()
+    const sweep = await sweepMissedInstances()
     const durationMs = Date.now() - startedAt
 
-    logger.info('Cron de geração concluído', { ...gen, ...cleanup, durationMs })
+    logger.info('Cron de geração concluído', { ...gen, ...cleanup, ...sweep, durationMs })
     return res.status(200).json({
       success: true,
       processed: gen.processed,
       generated: gen.generated,
       cleaned: cleanup.cleaned,
+      missed: sweep.missed,
       durationMs,
     })
   } catch (err) {
