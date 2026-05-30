@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import {
   useDoseZones,
-  expandProtocolsToDoses,
-  filterTodayLogs,
+  buildDoseItemsFromInstances,
 } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser, supabase } from '@shared/utils/supabase'
@@ -80,6 +79,7 @@ export default function Dashboard({ onNavigate }) {
     stockSummary,
     protocols,
     logs,
+    doseInstances,
     refresh,
     isLoading: contextLoading,
   } = useDashboard()
@@ -101,16 +101,15 @@ export default function Dashboard({ onNavigate }) {
     return map
   }, [stockSummary])
 
-  // scheduleAllDoses: fonte separada para CronogramaPeriodo — todos os protocolos expandidos (sem filtro classifyDose)
+  // scheduleAllDoses: fonte separada para CronogramaPeriodo — todas as ocorrências do
+  // dia (sem filtro classifyDose), agora a partir de dose_instances (R-248).
   const scheduleAllDoses = useMemo(() => {
-    if (!protocols?.length) return []
-    const todayLogs = filterTodayLogs(logs || [])
-    return expandProtocolsToDoses(protocols, todayLogs).map((dose) => ({
+    return buildDoseItemsFromInstances(doseInstances || [], protocols || []).map((dose) => ({
       ...dose,
       stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
       stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
     }))
-  }, [protocols, logs, stockByMedicineId])
+  }, [doseInstances, protocols, stockByMedicineId])
 
   // urgentDoses: fonte separada para PriorityDoseCard — zonas late/now filtradas
   const urgentDoses = useMemo(

@@ -15,11 +15,30 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
  * grava o elo bidirecional. NUNCA lança: o log é a fonte de verdade da tomada; a falha de
  * âncora deixa o log avulso (dose_instance_id=null) e é reconciliável por backfill (S2.7).
  * @param {{id: string, protocol_id?: string|null, taken_at: string}} log - log já persistido
+ * @param {string|null} [preferInstanceId] - âncora direta (F3.2b): id da ocorrência que
+ *   originou o registro (botão "Tomar" do dashboard). Quando presente, evita o snap por
+ *   tolerância e marca essa instância diretamente — determinístico para doses cross-dia
+ *   (ex: 22:30 de ontem registrada às 00:05). Cai no snap se a marcação direta falhar.
  * @returns {Promise<string|null>} dose_instance_id ancorado, ou null
  */
-async function anchorLogToInstance(log) {
+async function anchorLogToInstance(log, preferInstanceId = null) {
   if (!log?.protocol_id) return null
   try {
+    // Âncora direta por id (F3.2b): markTaken já guarda status `pending`/`missed`.
+    if (preferInstanceId) {
+      const marked = await doseInstanceRepo.markTaken(preferInstanceId, log.id)
+      if (marked) {
+        const { error } = await supabase
+          .from('medicine_logs')
+          .update({ dose_instance_id: preferInstanceId })
+          .eq('id', log.id)
+          .eq('user_id', await getUserId())
+        if (error) throw error
+        return preferInstanceId
+      }
+      // marcação direta não pegou (já taken / id inválido) → cai no snap por tolerância.
+    }
+
     const instance = await doseInstanceRepo.findAnchorInstance({
       protocolId: log.protocol_id,
       takenAt: log.taken_at,
@@ -158,7 +177,7 @@ export const logService = {
    * VALIDAÇÃO: Dados são validados com Zod antes de enviar ao Supabase
    * @throws {Error} Se os dados forem inválidos
    */
-  async create(log) {
+  async create(log, { instanceId = null } = {}) {
     // Validação Zod
     const validation = validateLogCreate(log)
     if (!validation.success) {
@@ -196,8 +215,9 @@ export const logService = {
       throw new Error('Não foi possível consumir o estoque: ' + stockError.message)
     }
 
-    // Âncora de log → instância (S2.6, best-effort). Reflete o elo no objeto retornado.
-    const anchoredId = await anchorLogToInstance(data)
+    // Âncora de log → instância (S2.6, best-effort). Âncora direta por instanceId quando
+    // o registro veio de uma ocorrência específica (F3.2b). Reflete o elo no retorno.
+    const anchoredId = await anchorLogToInstance(data, instanceId)
     if (anchoredId) data.dose_instance_id = anchoredId
 
     return normalizeTimestamps([data])[0]

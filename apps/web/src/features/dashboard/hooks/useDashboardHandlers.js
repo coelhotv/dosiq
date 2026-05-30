@@ -12,14 +12,17 @@ import { getNow, getServerTimestamp } from '@utils/dateUtils'
 export function useDashboardHandlers({ refresh, reminderSuggestionData, protocols, setSnoozedAlerts, setDismissedSuggestionId }) {
   // Registra dose DIRETAMENTE sem modal (1-click experience)
   const handleRegisterDoseQuick = useCallback(
-    async (medicineId, protocolId, dosagePerIntake) => {
+    async (medicineId, protocolId, dosagePerIntake, instanceId = null) => {
       try {
-        await logService.create({
-          medicine_id: medicineId,
-          protocol_id: protocolId,
-          quantity_taken: dosagePerIntake,
-          taken_at: getServerTimestamp(),
-        })
+        await logService.create(
+          {
+            medicine_id: medicineId,
+            protocol_id: protocolId,
+            quantity_taken: dosagePerIntake,
+            taken_at: getServerTimestamp(),
+          },
+          { instanceId }
+        )
         analyticsService.track('dose_registered_quick', {
           timestamp: getNow().getTime(),
           method: 'priority-card',
@@ -39,12 +42,15 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
       if (!doses || doses.length === 0) return
       try {
         for (const dose of doses) {
-          await logService.create({
-            medicine_id: dose.medicineId,
-            protocol_id: dose.protocolId,
-            quantity_taken: dose.dosagePerIntake,
-            taken_at: getServerTimestamp(),
-          })
+          await logService.create(
+            {
+              medicine_id: dose.medicineId,
+              protocol_id: dose.protocolId,
+              quantity_taken: dose.dosagePerIntake,
+              taken_at: getServerTimestamp(),
+            },
+            { instanceId: dose.instanceId ?? null }
+          )
         }
         analyticsService.track('doses_registered_batch', {
           timestamp: getNow().getTime(),

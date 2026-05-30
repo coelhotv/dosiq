@@ -2,9 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import {
   classifyDose,
-  isDoseRegistered,
-  expandProtocolsToDoses,
-  filterTodayLogs,
+  buildDoseItemsFromInstances,
   useDoseZones,
 } from '@/features/dashboard/hooks/useDoseZones'
 
@@ -15,20 +13,14 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   useDashboard: () => mockUseDashboard(),
 }))
 
-// Mock de dateUtils para fixar a data
-vi.mock('@utils/dateUtils', async (importOriginal) => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    getTodayLocal: vi.fn(() => '2026-03-05'),
-  }
-})
+// "agora" fixo: 2026-03-05 09:30:00 BRT = 12:30:00 UTC
+const BASE_MS = new Date('2026-03-05T12:30:00.000Z').getTime()
+/** ISO absoluto a `offsetMin` minutos de "agora". */
+const iso = (offsetMin) => new Date(BASE_MS + offsetMin * 60_000).toISOString()
 
 beforeEach(() => {
   vi.useFakeTimers()
-  // Fixar "agora" como 2026-03-05 09:30:00 BRT (12:30:00 UTC)
-  const fakeNow = new Date('2026-03-05T09:30:00-03:00')
-  vi.setSystemTime(fakeNow)
+  vi.setSystemTime(new Date(BASE_MS))
 })
 
 afterEach(() => {
@@ -37,274 +29,205 @@ afterEach(() => {
 })
 
 // ─────────────────────────────────────────────
-// 1. classifyDose (pura — sem mocks)
+// 1. classifyDose (pura — instante ABSOLUTO)
 // ─────────────────────────────────────────────
 describe('classifyDose', () => {
-  // "agora" fixo: 09:30 LOCAL (São Paulo)
-  const now = new Date('2026-03-05T09:30:00-03:00')
+  const now = new Date(BASE_MS)
 
-  it('classifica dose registrada como done', () => {
-    expect(classifyDose('09:00', now, 120, 60, 240, true)).toBe('done')
+  it('dose registrada → done (independe do tempo)', () => {
+    expect(classifyDose(iso(-300), now, 120, 60, 240, true)).toBe('done')
   })
 
-  it('classifica dose 1h atrás como late', () => {
-    // 08:30 = 60 min atrás de 09:30 local
-    expect(classifyDose('08:30', now, 120, 60, 240, false)).toBe('late')
+  it('60min atrás → late', () => {
+    expect(classifyDose(iso(-60), now, 120, 60, 240, false)).toBe('late')
   })
 
-  it('classifica dose 3h atrás como null (fora da janela)', () => {
-    // 06:30 = 180 min atrás → > lateWindow(120)
-    expect(classifyDose('06:30', now, 120, 60, 240, false)).toBeNull()
+  it('180min atrás → null (fora da janela late)', () => {
+    expect(classifyDose(iso(-180), now, 120, 60, 240, false)).toBeNull()
   })
 
-  it('classifica dose no horário atual como now', () => {
-    // 09:30 = now exato → diffMin = 0 → now
-    expect(classifyDose('09:30', now, 120, 60, 240, false)).toBe('now')
+  it('instante exato → now', () => {
+    expect(classifyDose(iso(0), now, 120, 60, 240, false)).toBe('now')
   })
 
-  it('classifica dose em 30min como now', () => {
-    // 10:00 = 30 min no futuro → < nowWindow(60)
-    expect(classifyDose('10:00', now, 120, 60, 240, false)).toBe('now')
+  it('+30min → now', () => {
+    expect(classifyDose(iso(30), now, 120, 60, 240, false)).toBe('now')
   })
 
-  it('classifica dose em 2h como upcoming', () => {
-    // 11:30 = 120 min → >= nowWindow(60) e < upcomingWindow(240)
-    expect(classifyDose('11:30', now, 120, 60, 240, false)).toBe('upcoming')
+  it('+120min → upcoming', () => {
+    expect(classifyDose(iso(120), now, 120, 60, 240, false)).toBe('upcoming')
   })
 
-  it('classifica dose em 5h como later', () => {
-    // 14:30 = 300 min → > upcomingWindow(240)
-    expect(classifyDose('14:30', now, 120, 60, 240, false)).toBe('later')
-  })
-})
-
-// ─────────────────────────────────────────────
-// 2. isDoseRegistered
-// ─────────────────────────────────────────────
-describe('isDoseRegistered', () => {
-  // Criar taken_at em 08:05 LOCAL (São Paulo)
-  const takenAt0805 = new Date('2026-03-05T08:05:00-03:00')
-  const todayLogs = [{ protocol_id: 'p1', taken_at: takenAt0805.toISOString() }]
-
-  it('retorna true quando log existe dentro da tolerância de 30min', () => {
-    // dose às 08:00 → log às 08:05 local → diferença = 5min → dentro do limite
-    expect(isDoseRegistered('p1', '08:00', todayLogs)).toBe(true)
+  it('+300min → later', () => {
+    expect(classifyDose(iso(300), now, 120, 60, 240, false)).toBe('later')
   })
 
-  it('retorna false quando protocolo não bate', () => {
-    expect(isDoseRegistered('p2', '08:00', todayLogs)).toBe(false)
+  it('scheduledFor inválido → null', () => {
+    expect(classifyDose('lixo', now, 120, 60, 240, false)).toBeNull()
   })
 
-  it('retorna false para array vazio', () => {
-    expect(isDoseRegistered('p1', '08:00', [])).toBe(false)
+  it('aceita Date além de ISO string', () => {
+    expect(classifyDose(new Date(BASE_MS - 60 * 60_000), now, 120, 60, 240, false)).toBe('late')
   })
 })
 
 // ─────────────────────────────────────────────
-// 3. expandProtocolsToDoses
+// 2. buildDoseItemsFromInstances
 // ─────────────────────────────────────────────
-describe('expandProtocolsToDoses', () => {
+describe('buildDoseItemsFromInstances', () => {
   const protocols = [
     {
       id: 'p1',
       medicine_id: 'm1',
-      medicine: { name: 'Losartana' },
-      frequency: 'diário',
-      time_schedule: ['08:00', '22:00'],
-      dosage_per_intake: 1,
+      medicine: { name: 'Losartana', type: 'medicamento' },
       treatment_plan_id: null,
       treatment_plan: null,
-    },
-    {
-      id: 'p2',
-      medicine_id: 'm2',
-      medicine: { name: 'Vitamina D' },
-      frequency: 'quando_necessario', // deve ser excluído
-      time_schedule: ['08:00'],
       dosage_per_intake: 1,
-      treatment_plan_id: null,
-      treatment_plan: null,
     },
   ]
 
-  it('expande time_schedule em doses individuais', () => {
-    const doses = expandProtocolsToDoses(protocols, [])
-    // p1 tem 2 horários, p2 é quando_necessario (skip)
-    expect(doses).toHaveLength(2)
-    expect(doses[0].scheduledTime).toBe('08:00')
-    expect(doses[1].scheduledTime).toBe('22:00')
-  })
-
-  it('exclui protocolos quando_necessario', () => {
-    const doses = expandProtocolsToDoses(protocols, [])
-    expect(doses.every((d) => d.medicineName !== 'Vitamina D')).toBe(true)
-  })
-
-  it('popula campos do DoseItem corretamente', () => {
-    const doses = expandProtocolsToDoses(protocols, [])
+  it('mapeia instância → DoseItem com instanceId, scheduledFor e status', () => {
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2 }],
+      protocols
+    )
+    expect(doses).toHaveLength(1)
     expect(doses[0]).toMatchObject({
+      instanceId: 'i1',
       protocolId: 'p1',
       medicineId: 'm1',
       medicineName: 'Losartana',
-      dosagePerIntake: 1,
+      status: 'pending',
+      dosagePerIntake: 2, // expected_dose tem prioridade
       isRegistered: false,
     })
+    expect(doses[0].scheduledFor).toBe(iso(-30))
+  })
+
+  it('taken → isRegistered true + registeredAt', () => {
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-60), status: 'taken' }],
+      protocols
+    )
+    expect(doses[0].isRegistered).toBe(true)
+    expect(doses[0].registeredAt).toBe(iso(-60))
+  })
+
+  it('pula skipped_* (não é pendência)', () => {
+    const doses = buildDoseItemsFromInstances(
+      [
+        { id: 'i1', protocol_id: 'p1', scheduled_for: iso(0), status: 'skipped_paused' },
+        { id: 'i2', protocol_id: 'p1', scheduled_for: iso(10), status: 'skipped_user' },
+      ],
+      protocols
+    )
+    expect(doses).toHaveLength(0)
+  })
+
+  it('pula instância sem protocolo correspondente', () => {
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'fantasma', scheduled_for: iso(0), status: 'pending' }],
+      protocols
+    )
+    expect(doses).toHaveLength(0)
+  })
+
+  it('lista vazia / não-array → []', () => {
+    expect(buildDoseItemsFromInstances([], protocols)).toEqual([])
+    expect(buildDoseItemsFromInstances(null, protocols)).toEqual([])
+  })
+
+  it('missed continua visível (actionável p/ self-heal)', () => {
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-90), status: 'missed' }],
+      protocols
+    )
+    expect(doses).toHaveLength(1)
+    expect(doses[0].isRegistered).toBe(false)
   })
 })
 
 // ─────────────────────────────────────────────
-// 4. filterTodayLogs
-// ─────────────────────────────────────────────
-describe('filterTodayLogs', () => {
-  it('retorna apenas logs de hoje (2026-03-05 BRT)', () => {
-    const logs = [
-      { taken_at: '2026-03-05T11:00:00.000Z' }, // 08:00 BRT = hoje
-      { taken_at: '2026-03-04T11:00:00.000Z' }, // ontem BRT
-      // '2026-03-06T02:00:00.000Z' = 23:00 BRT do dia 05 = ainda hoje em BRT
-      // Para ser amanhã BRT (UTC-3), precisa ser >= 2026-03-06T03:00:00Z
-      { taken_at: '2026-03-06T04:00:00.000Z' }, // 01:00 BRT 06/03 = amanhã BRT
-    ]
-    const today = filterTodayLogs(logs)
-    expect(today).toHaveLength(1)
-    expect(today[0].taken_at).toBe('2026-03-05T11:00:00.000Z')
-  })
-
-  it('retorna array vazio para logs vazio', () => {
-    expect(filterTodayLogs([])).toHaveLength(0)
-  })
-})
-
-// ─────────────────────────────────────────────
-// 5. hook behavior
+// 3. hook behavior
 // ─────────────────────────────────────────────
 describe('useDoseZones — hook behavior', () => {
-  // Removido beforeEach duplicado, movido para o topo
+  const protocol = {
+    id: 'p1',
+    medicine_id: 'm1',
+    medicine: { name: 'A', type: 'medicamento' },
+    treatment_plan_id: null,
+    treatment_plan: null,
+    dosage_per_intake: 1,
+  }
 
-  function setupDashboard(protocols = [], logs = []) {
+  function setupDashboard(doseInstances = [], protocols = [protocol]) {
     mockUseDashboard.mockReturnValue({
       protocols,
-      logs,
+      doseInstances,
       isLoading: false,
       refresh: vi.fn(),
     })
   }
 
-  it('retorna zonas vazias quando não há protocolos', () => {
-    setupDashboard()
-    const { result } = renderHook(() => useDoseZones())
-    expect(result.current.zones.late).toHaveLength(0)
-    expect(result.current.zones.now).toHaveLength(0)
-    expect(result.current.zones.upcoming).toHaveLength(0)
-    expect(result.current.zones.later).toHaveLength(0)
-    expect(result.current.zones.done).toHaveLength(0)
+  const inst = (id, offsetMin, status = 'pending') => ({
+    id,
+    protocol_id: 'p1',
+    scheduled_for: iso(offsetMin),
+    status,
+    expected_dose: 1,
   })
 
-  it('distribui doses corretamente entre zonas', () => {
-    // 09:30 BRT = now
-    // - 08:00 → late (90min atrás)
-    // - 10:00 → now (30min futuro)
-    // - 12:00 → upcoming (150min)
-    // - 22:00 → later (750min)
+  it('zonas vazias quando não há instâncias', () => {
+    setupDashboard()
+    const { result } = renderHook(() => useDoseZones())
+    expect(Object.values(result.current.zones).flat()).toHaveLength(0)
+  })
+
+  it('distribui instâncias entre zonas por instante absoluto', () => {
     setupDashboard([
-      {
-        id: 'p1',
-        medicine_id: 'm1',
-        medicine: { name: 'A' },
-        frequency: 'diário',
-        time_schedule: ['08:00', '10:00', '12:00', '22:00'],
-        dosage_per_intake: 1,
-        treatment_plan_id: null,
-        treatment_plan: null,
-      },
+      inst('a', -90), // late
+      inst('b', 30), // now
+      inst('c', 150), // upcoming
+      inst('d', 750), // later
     ])
     const { result } = renderHook(() => useDoseZones())
     expect(result.current.zones.late).toHaveLength(1)
-    expect(result.current.zones.late[0].scheduledTime).toBe('08:00')
     expect(result.current.zones.now).toHaveLength(1)
     expect(result.current.zones.upcoming).toHaveLength(1)
     expect(result.current.zones.later).toHaveLength(1)
   })
 
-  it('exclui protocolos quando_necessario', () => {
-    setupDashboard([
-      {
-        id: 'p1',
-        medicine_id: 'm1',
-        medicine: { name: 'A' },
-        frequency: 'quando_necessario',
-        time_schedule: ['08:00'],
-        dosage_per_intake: 1,
-        treatment_plan_id: null,
-        treatment_plan: null,
-      },
-    ])
+  it('taken → zona done', () => {
+    setupDashboard([inst('a', -60, 'taken')])
     const { result } = renderHook(() => useDoseZones())
-    const allZones = Object.values(result.current.zones).flat()
-    expect(allZones).toHaveLength(0)
+    expect(result.current.zones.done).toHaveLength(1)
   })
 
   it('totals.pending = expected - taken', () => {
-    setupDashboard([
-      {
-        id: 'p1',
-        medicine_id: 'm1',
-        medicine: { name: 'A' },
-        frequency: 'diário',
-        time_schedule: ['10:00'],
-        dosage_per_intake: 1,
-        treatment_plan_id: null,
-        treatment_plan: null,
-      },
-    ])
+    setupDashboard([inst('a', 30), inst('b', -60, 'taken')])
     const { result } = renderHook(() => useDoseZones())
     const { expected, taken, pending } = result.current.totals
+    expect(taken).toBe(1)
     expect(pending).toBe(expected - taken)
   })
 
-  it('recalcula zonas quando now muda (setInterval 60s)', () => {
-    setupDashboard([
-      {
-        id: 'p1',
-        medicine_id: 'm1',
-        medicine: { name: 'A' },
-        frequency: 'diário',
-        time_schedule: ['09:50'], // 20min no futuro = 'now'
-        dosage_per_intake: 1,
-        treatment_plan_id: null,
-        treatment_plan: null,
-      },
-    ])
+  it('recalcula zonas quando now avança (setInterval 60s)', () => {
+    setupDashboard([inst('a', 20)]) // +20min = now
     const { result } = renderHook(() => useDoseZones())
-
-    // Inicialmente: 09:50 está a 20min → 'now'
     expect(result.current.zones.now).toHaveLength(1)
 
-    // Avançar 70 minutos → agora é 10:40 BRT → 09:50 está 50min atrás → 'late'
+    // +70min → instância agora 50min no passado → late
     act(() => {
       vi.advanceTimersByTime(70 * 60 * 1000)
     })
-
     expect(result.current.zones.now).toHaveLength(0)
     expect(result.current.zones.late).toHaveLength(1)
   })
 
-  it('ordena doses dentro de cada zona por scheduledTime', () => {
-    setupDashboard([
-      {
-        id: 'p1',
-        medicine_id: 'm1',
-        medicine: { name: 'A' },
-        frequency: 'diário',
-        time_schedule: ['22:00', '21:00', '20:00'],
-        dosage_per_intake: 1,
-        treatment_plan_id: null,
-        treatment_plan: null,
-      },
-    ])
+  it('ordena cada zona por instante agendado', () => {
+    setupDashboard([inst('c', 760), inst('a', 740), inst('b', 750)])
     const { result } = renderHook(() => useDoseZones())
     const later = result.current.zones.later
-    expect(later[0].scheduledTime).toBe('20:00')
-    expect(later[1].scheduledTime).toBe('21:00')
-    expect(later[2].scheduledTime).toBe('22:00')
+    expect(later.map((d) => d.instanceId)).toEqual(['a', 'b', 'c'])
   })
 })

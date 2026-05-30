@@ -1,14 +1,26 @@
 import React, { createContext, useContext, useMemo, useEffect } from 'react'
 import { useCachedQueries, invalidateCache } from '@shared/hooks/useCachedQuery'
 import { CACHE_KEYS } from '@dosiq/shared-data'
-import { onAuthStateChange } from '@shared/utils/supabase'
+import { supabase, getUserId, onAuthStateChange } from '@shared/utils/supabase'
+import { createDoseInstanceRepository } from '@dosiq/core'
 import { isDoseInToleranceWindow } from '@utils/adherenceLogic'
-import { formatLocalDate, getNow, getTodayLocal } from '@utils/dateUtils'
+import {
+  formatLocalDate,
+  getNow,
+  getTodayLocal,
+  getStartOfDayISO,
+  getEndOfDayISO,
+} from '@utils/dateUtils'
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
 
 import { useDashboardDerived } from './_useDashboardDerived'
+
+// Repository de dose_instances — o "hoje" do dashboard consome ocorrências
+// materializadas por status (pending/taken) em vez de inferir slots ±2h sobre
+// logs (R-248). Janela curta (1 dia) → OOM-safe (R-249).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
 
 const DashboardContext = createContext(null)
 
@@ -46,12 +58,29 @@ export function DashboardProvider({ children }) {
           return result.data
         },
       },
+      {
+        // Ocorrências do dia (pending/taken/missed) — fonte do "hoje" (R-248).
+        // Janela = dia local [00:00, 23:59] no tz do usuário. Cross-midnight:
+        // a dose de ontem 22:30 tem scheduled_for de ontem → não entra na janela
+        // de hoje → não cria slot fantasma de hoje (fix visível).
+        key: CACHE_KEYS.DOSE_INSTANCES_TODAY,
+        fetcher: async () => {
+          const userId = await getUserId()
+          if (!userId) return []
+          const today = getTodayLocal()
+          return doseInstanceRepo.getWindow(
+            userId,
+            getStartOfDayISO(today),
+            getEndOfDayISO(today)
+          )
+        },
+      },
     ],
     [streakStartLimit]
   )
 
   const { results, isLoading, isFetching, hasError, refetchAll } = useCachedQueries(queries)
-  const [medicinesResult, protocolsResult, logsResult] = results
+  const [medicinesResult, protocolsResult, logsResult, doseInstancesResult] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
   const { stockSummary, stats, protocolsWithNextDose, dailyAdherence } = useDashboardDerived(
@@ -70,6 +99,7 @@ export function DashboardProvider({ children }) {
         invalidateCache(CACHE_KEYS.MEDICINES)
         invalidateCache(CACHE_KEYS.PROTOCOLS)
         invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
+        invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
         refetchAll({ force: true })
       }
     })
@@ -82,6 +112,7 @@ export function DashboardProvider({ children }) {
       medicines: medicinesResult.data || [],
       protocols: protocolsWithNextDose,
       logs: logsResult.data || [],
+      doseInstances: doseInstancesResult.data || [],
       stockSummary,
       stats,
       dailyAdherence,
@@ -96,6 +127,7 @@ export function DashboardProvider({ children }) {
       medicinesResult.data,
       protocolsWithNextDose,
       logsResult.data,
+      doseInstancesResult.data,
       stockSummary,
       stats,
       dailyAdherence,

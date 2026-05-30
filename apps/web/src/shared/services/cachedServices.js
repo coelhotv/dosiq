@@ -306,14 +306,16 @@ export const cachedLogService = {
   },
 
   // Métodos de escrita (com invalidação de cache)
-  async create(log) {
-    const result = await logService.create(log)
+  async create(log, opts) {
+    const result = await logService.create(log, opts)
     _invalidateAllLogsCache()
     // Invalida estoque (foi decrementado)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    // Ocorrência do dia mudou de status (anchor → taken) — invalida o "hoje" (AP-168).
+    invalidateCache(`${CACHE_KEYS.DOSE_INSTANCES_TODAY}*`)
     return result
   },
 
@@ -324,6 +326,7 @@ export const cachedLogService = {
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_LOW}*`)
+    invalidateCache(`${CACHE_KEYS.DOSE_INSTANCES_TODAY}*`)
     return result
   },
 

@@ -48,6 +48,9 @@ export const CACHE_KEYS = {
   TREATMENT_PLANS: 'treatmentPlans',
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
 
+  // Ocorrências de dose materializadas (dose_instances)
+  DOSE_INSTANCES_TODAY: 'doseInstances:today',
+
   // Aderência
   ADHERENCE_SUMMARY: 'adherence:summary',
   ADHERENCE_DAILY: 'adherence:daily',
