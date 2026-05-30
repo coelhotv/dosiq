@@ -58,7 +58,7 @@ function _score(taken, missed) {
 function _groupByProtocol(instances) {
   const byProtocol = new Map()
   for (const inst of instances || []) {
-    const key = inst.protocol_id
+    const key = inst?.protocol_id
     if (!key) continue
     let arr = byProtocol.get(key)
     if (!arr) {
@@ -325,7 +325,7 @@ export const adherenceService = {
     // Subconjunto do período pedido (período máximo é 90d, coberto pela janela).
     const days = parseInt(period)
     const periodMs = addDays(endDate, -days).getTime()
-    const periodInstances = instances.filter((i) => parseISO(i.scheduled_for).getTime() >= periodMs)
+    const periodInstances = (instances || []).filter((i) => i?.scheduled_for && parseISO(i.scheduled_for).getTime() >= periodMs)
 
     const overallAgg = computeAdherenceFromInstances(periodInstances)
     const { score: overallScore, expected: overallExpected } = _score(
@@ -368,7 +368,8 @@ export const adherenceService = {
 
     // Agrupar instâncias por dia local.
     const byDay = new Map()
-    for (const inst of instances) {
+    for (const inst of instances || []) {
+      if (!inst?.scheduled_for) continue
       const key = _dayKey(inst.scheduled_for)
       let arr = byDay.get(key)
       if (!arr) {
