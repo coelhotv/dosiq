@@ -4,10 +4,39 @@
 // R-121: validação Zod antes de qualquer mutação
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { logSchema } from '@dosiq/core'
+import { logSchema, createDoseInstanceRepository } from '@dosiq/core'
 import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
+
+// Repo de instâncias para a âncora de log↔ocorrência (S3.6.2/AP-193). Usa o mesmo client
+// da sessão (RLS escopa por user_id); snap e markTaken filtram por protocol_id (AP-A03).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+
+/**
+ * Âncora de log → instância materializada (best-effort, R-245/R-246). Espelha o web
+ * (`logService.anchorLogToInstance`) e o bot (`doseActions.anchorLogToInstance`): faz snap
+ * por tolerância (escopo `protocol_id`, aceita `pending`/`missed`), marca a instância `taken`
+ * e grava o elo bidirecional. NUNCA lança — o `medicine_log` é a fonte de verdade da tomada;
+ * a falha deixa o log avulso (`dose_instance_id=null`), reconciliável por backfill.
+ * Sem isto, todo registro mobile orfanava o log → instância seguia `pending` → sweep
+ * diário marcava `missed` → falso missed corrompia streak/adesão (AP-193).
+ * @param {string} protocolId
+ * @param {string} logId
+ * @param {string} takenAt - mesmo timestamp usado no insert do log
+ */
+async function _anchorLogToInstance(protocolId, logId, takenAt) {
+  if (!protocolId) return
+  try {
+    const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt })
+    if (!instance) return
+    const marked = await doseInstanceRepo.markTaken(instance.id, logId)
+    if (!marked) return
+    await supabase.from('medicine_logs').update({ dose_instance_id: instance.id }).eq('id', logId)
+  } catch (anchorError) {
+    if (__DEV__) console.warn('[doseService] âncora falhou (log segue avulso):', anchorError)
+  }
+}
 
 /**
  * Regista uma dose tomada.
@@ -71,7 +100,7 @@ async function _insertDoseLog(parsedData, userId) {
   const { data: logEntry, error: insertError } = await supabase
     .from('medicine_logs')
     .insert({ ...parsedData, user_id: userId })
-    .select('id, taken_at, quantity_taken, medicine_id')
+    .select('id, taken_at, quantity_taken, medicine_id, protocol_id')
     .single()
   if (insertError) {
     if (__DEV__) console.error('[doseService] insert ERRO:', JSON.stringify(insertError))
@@ -103,6 +132,8 @@ export async function registerDose(logData) {
     if (stockError) return _rollbackLog(logEntry.id, stockError)
 
     debugLog('[doseService] stock consumido com sucesso')
+    // Âncora best-effort (S3.6.2/AP-193) — após o estoque, antes do retorno.
+    await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at)
     await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
     return { success: true, data: logEntry }
   } catch (err) {
@@ -156,7 +187,7 @@ async function _insertBatchLogs(validatedLogs, userId) {
   const { data: insertedLogs, error: insertError } = await supabase
     .from('medicine_logs')
     .insert(validatedLogs.map(l => ({ ...l, user_id: userId })))
-    .select('id, taken_at, quantity_taken, medicine_id')
+    .select('id, taken_at, quantity_taken, medicine_id, protocol_id')
   if (insertError) {
     if (__DEV__) console.error('[doseService] registerDoseMany insert ERRO:', insertError)
     const errMsg = _isNetworkError(insertError) ? _ERR_OFFLINE.error : insertError.message
@@ -185,7 +216,12 @@ export async function registerDoseMany(logsData) {
     // R-170: consume_stock_fifo por log — rollback individual se falhar
     const results = []
     for (const logEntry of insertedLogs) {
-      results.push(await _consumeStockBatch(logEntry))
+      const result = await _consumeStockBatch(logEntry)
+      // Âncora best-effort só se o estoque pegou (log não foi rollbacked) — S3.6.2/AP-193.
+      if (result.success) {
+        await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at)
+      }
+      results.push(result)
     }
 
     const successCount = results.filter(r => r.success).length
