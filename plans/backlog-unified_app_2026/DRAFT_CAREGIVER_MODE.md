@@ -1,11 +1,29 @@
 # Plano de Implementação — Modo Cuidador Híbrido Multidispositivo (Dosiq 2026)
 
-> **Versão:** 1.1 — Revisão de 30/05/2026  
+> **Versão:** 1.2 — Revisão de 30/05/2026  
+> **Changelog v1.1→v1.2:** Seção Pré-Fase adicionada com referência ao Termômetro de Demanda (P0.2), documentação da infra `beta_signups` (coluna `platform` renomeada para `feature`), e link para exec spec.  
 > **Changelog v1.0→v1.1:** C-02 (Médico Observador), C-03 (cuidador profissional N pacientes), C-04 (edge cases), C-05 (deeplink universal), C-06 (tabela de alertas), C-07 (TTL/rate-limiting em invites).
 
 Este documento apresenta o plano estratégico, a arquitetura técnica e o design de experiência (UX) para o **Modo Cuidador (Multi-device & Multi-role)** no ecossistema Dosiq. 
 
 Seguindo o feedback do PO, este design inverte a polaridade tradicional da saúde digital: **a carga cognitiva e configuração inicial iniciam-se no Cuidador (filha)**, reduzindo a fricção e as barreiras de letramento digital do Paciente (idoso/dona Maria), mantendo total conformidade com a LGPD e soberania do paciente através de consentimento explícito e revogabilidade imediata.
+
+---
+
+## 🌡️ Pré-Fase — Termômetro de Demanda (Validação antes do Build)
+
+Antes de investir ~40 SP na implementação completa do Modo Cuidador, o Dosiq valida a demanda real com um **painted door test** — um botão visualmente atraente na tela de Perfil que coleta e-mails de interessados sem funcionalidade real.
+
+| Componente | Detalhes |
+|-----------|----------|
+| **Exec Spec** | [EXEC_SPEC_P0_2_TERMOMETRO_CUIDADOR.md](EXEC_SPEC_P0_2_TERMOMETRO_CUIDADOR.md) |
+| **Esforço** | 3 SP (1 sprint) |
+| **Infra de waitlist** | Tabela `beta_signups` no Supabase (coluna `feature`, renomeada de `platform` via [migration](../../docs/migrations/rename_beta_signups_platform_to_feature.sql)). Handler em `api/users/_handlers/beta-signup.js`. Service em `apps/web/src/shared/services/betaSignupService.js`. |
+| **Valor do campo `feature`** | `'caregiver_mode'` (identifica a lista de interessados no Modo Cuidador). Valor `'android'` continua válido para testers Play Store. |
+| **Gate de decisão** | >50 signups com `feature='caregiver_mode'` → iniciar implementação completa (Fase 7A). |
+
+> [!IMPORTANT]
+> O Termômetro é **obrigatório** antes da Fase 7A. Se a demanda medida for < 50 signups em 3 meses, o Modo Cuidador é deprioritizado em favor de outras funcionalidades com demanda comprovada.
 
 ---
 
