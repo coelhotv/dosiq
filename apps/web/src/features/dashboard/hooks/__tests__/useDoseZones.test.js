@@ -69,6 +69,18 @@ describe('classifyDose', () => {
   it('aceita Date além de ISO string', () => {
     expect(classifyDose(new Date(BASE_MS - 60 * 60_000), now, 120, 60, 240, false)).toBe('late')
   })
+
+  it('cutoff de atraso usa toleranceMinutes da ocorrência, não 120 fixo', () => {
+    // 100min atrasada, tolerância 90 → passou (missed → null)
+    expect(classifyDose(iso(-100), now, 120, 60, 240, false, 90)).toBeNull()
+    // mesma dose sem tolerância (fallback 120) → ainda 'late'
+    expect(classifyDose(iso(-100), now, 120, 60, 240, false, null)).toBe('late')
+  })
+
+  it('adjacentes (gap 3h, tol 90) tilam: a de -91min sai, a de +89min fica', () => {
+    expect(classifyDose(iso(-91), now, 120, 60, 240, false, 90)).toBeNull() // 12:00 → missed
+    expect(classifyDose(iso(89), now, 120, 60, 240, false, 90)).not.toBeNull() // 15:00 → visível
+  })
 })
 
 // ─────────────────────────────────────────────
@@ -88,7 +100,7 @@ describe('buildDoseItemsFromInstances', () => {
 
   it('mapeia instância → DoseItem com instanceId, scheduledFor e status', () => {
     const doses = buildDoseItemsFromInstances(
-      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2 }],
+      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2, tolerance_minutes: 90 }],
       protocols
     )
     expect(doses).toHaveLength(1)
@@ -99,6 +111,7 @@ describe('buildDoseItemsFromInstances', () => {
       medicineName: 'Losartana',
       status: 'pending',
       dosagePerIntake: 2, // expected_dose tem prioridade
+      toleranceMinutes: 90,
       isRegistered: false,
     })
     expect(doses[0].scheduledFor).toBe(iso(-30))
@@ -169,16 +182,23 @@ describe('useDoseZones — hook behavior', () => {
     })
   }
 
-  const inst = (id, offsetMin, status = 'pending') => ({
+  const inst = (id, offsetMin, status = 'pending', toleranceMinutes = null) => ({
     id,
     protocol_id: 'p1',
     scheduled_for: iso(offsetMin),
     status,
     expected_dose: 1,
+    ...(toleranceMinutes != null ? { tolerance_minutes: toleranceMinutes } : {}),
   })
 
   it('zonas vazias quando não há instâncias', () => {
     setupDashboard()
+    const { result } = renderHook(() => useDoseZones())
+    expect(Object.values(result.current.zones).flat()).toHaveLength(0)
+  })
+
+  it('honra tolerance_minutes: dose 100min atrasada com tol 90 não aparece (missed)', () => {
+    setupDashboard([inst('a', -100, 'pending', 90)])
     const { result } = renderHook(() => useDoseZones())
     expect(Object.values(result.current.zones).flat()).toHaveLength(0)
   })

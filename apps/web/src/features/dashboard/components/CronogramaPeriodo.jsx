@@ -22,9 +22,13 @@ export default function CronogramaPeriodo({
   onRegister,
   variant = 'complex',
   now = getNow(),
+  nowRaw = null,
 }) {
   const { cascade } = useMotion()
   const currentHour = now.getHours()
+  // Instante absoluto p/ classificação das doses (cronograma agrupa por hora local
+  // via `now` shiftado; o item classifica por `nowRaw` absoluto vs scheduled_for).
+  const nowAbsolute = nowRaw ?? now
   const [manuallyToggledZones, setManuallyToggledZones] = useState({})
 
   const autoOpenZones = useMemo(() => {
@@ -71,7 +75,7 @@ export default function CronogramaPeriodo({
     return (
       <div className="cronograma-doses cronograma-doses--simple" aria-label="Cronograma de doses de hoje">
         {sorted.map((dose) => (
-          <CronogramaDoseItem key={`${dose.protocolId}-${dose.scheduledTime}`} dose={dose} onRegister={onRegister} stockDays={dose.stockDays} stockStatus={dose.stockStatus} now={now} />
+          <CronogramaDoseItem key={`${dose.protocolId}-${dose.scheduledTime}`} dose={dose} onRegister={onRegister} stockDays={dose.stockDays} stockStatus={dose.stockStatus} now={nowAbsolute} />
         ))}
       </div>
     )
@@ -101,7 +105,7 @@ export default function CronogramaPeriodo({
               ) : (
                 <div className="cronograma-doses">
                   {doses.map((dose) => (
-                    <CronogramaDoseItem key={`${dose.protocolId}-${dose.scheduledTime}`} dose={dose} onRegister={onRegister} stockDays={dose.stockDays} stockStatus={dose.stockStatus} now={now} />
+                    <CronogramaDoseItem key={`${dose.protocolId}-${dose.scheduledTime}`} dose={dose} onRegister={onRegister} stockDays={dose.stockDays} stockStatus={dose.stockStatus} now={nowAbsolute} />
                   ))}
                 </div>
               )

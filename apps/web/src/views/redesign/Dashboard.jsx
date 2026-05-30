@@ -83,7 +83,7 @@ export default function Dashboard({ onNavigate }) {
     refresh,
     isLoading: contextLoading,
   } = useDashboard()
-  const { zones, totals, now } = useDoseZones()
+  const { zones, totals, now, nowRaw } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
   // ── Estado local ──
@@ -239,6 +239,7 @@ export default function Dashboard({ onNavigate }) {
           handleRegisterDoseQuick={handleRegisterDoseQuick}
           complexityMode={complexityMode}
           now={now}
+          nowRaw={nowRaw}
           contextLoading={contextLoading}
           onNavigate={onNavigate}
           criticalStockItems={criticalStockItems}

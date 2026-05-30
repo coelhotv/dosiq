@@ -21,13 +21,6 @@ import { getRawNow, getUserTime, parseISO } from '@utils/dateUtils'
 /** tz default (G1 — injeção real do tz do usuário fica para a Fase 4; default SP). */
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
-/**
- * Janela de tolerância (ms) para dose registrada — ±120min, igual ao default de
- * `tolerance_minutes` das ocorrências e ao lateWindow das zonas. Consumida por
- * CronogramaDoseItem para o limiar de atraso.
- */
-export const DOSE_REGISTRATION_TOLERANCE_MS = 120 * 60 * 1000
-
 /** Status que representam dose efetivamente tomada (zona "done"). */
 const TAKEN_STATUS = 'taken'
 /** Status que não devem aparecer no "hoje" (pulados não são pendência). */
@@ -61,6 +54,12 @@ const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
  * @param {number} nowWindowMinutes - default 60
  * @param {number} upcomingWindowMinutes - default 240
  * @param {boolean} isRegistered
+ * @param {number|null} toleranceMinutes - tolerância dinâmica da ocorrência
+ *   (`dose_instances.tolerance_minutes`, ex: metade do gap entre doses adjacentes).
+ *   Define o cutoff de atraso: depois de `scheduled_for + tolerance` a dose é `missed`
+ *   (sai do actionável), espelhando o sweep `markMissedDueInstances`. Sem valor → usa
+ *   `lateWindowMinutes` (120). NÃO usar 120 fixo: doses próximas (gap < 4h) têm tolerância
+ *   menor, senão duas doses adjacentes ficam actionáveis ao mesmo tempo.
  * @returns {'done'|'late'|'now'|'upcoming'|'later'|null} null = fora da janela, não exibir
  */
 export function classifyDose(
@@ -69,7 +68,8 @@ export function classifyDose(
   lateWindowMinutes = 120,
   nowWindowMinutes = 60,
   upcomingWindowMinutes = 240,
-  isRegistered = false
+  isRegistered = false,
+  toleranceMinutes = null
 ) {
   if (isRegistered) return 'done'
 
@@ -78,9 +78,11 @@ export function classifyDose(
   if (Number.isNaN(scheduledMs)) return null
 
   const diffMinutes = (scheduledMs - now.getTime()) / 60000
+  // Cutoff de atraso = tolerância da própria ocorrência (não 120 fixo).
+  const lateCutoff = toleranceMinutes ?? lateWindowMinutes
 
-  if (diffMinutes < -lateWindowMinutes) return null // fora da janela — não mostrar
-  if (diffMinutes < 0) return 'late' // atrasada (0 a -lateWindow)
+  if (diffMinutes < -lateCutoff) return null // passou da tolerância → missed, não exibir
+  if (diffMinutes < 0) return 'late' // atrasada, ainda dentro da tolerância
   if (diffMinutes < nowWindowMinutes) return 'now' // agora
   if (diffMinutes < upcomingWindowMinutes) return 'upcoming' // próximas
   return 'later' // mais tarde
@@ -126,6 +128,7 @@ function createDoseItem(instance, protocol, tz) {
     dosageUnit: medicine.dosage_unit ?? null,
     scheduledTime: toLocalHHMM(instance.scheduled_for, tz),
     scheduledFor: instance.scheduled_for,
+    toleranceMinutes: instance.tolerance_minutes ?? null,
     status: instance.status,
     dosagePerIntake: instance.expected_dose ?? protocol.dosage_per_intake ?? 1,
     treatmentPlanId: protocol.treatment_plan_id || null,
@@ -227,7 +230,8 @@ export function useDoseZones({
         lateWindowMinutes,
         nowWindowMinutes,
         upcomingWindowMinutes,
-        dose.isRegistered
+        dose.isRegistered,
+        dose.toleranceMinutes
       )
       if (zone !== null && result[zone]) {
         result[zone].push(dose)
@@ -250,5 +254,7 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh, now: getUserTime(nowRaw, DEFAULT_TZ) }
+  // `now` shiftado (wall-clock SP) p/ exibição/agrupamento por hora; `nowRaw` absoluto
+  // p/ classificação por instante (classifyDose vs scheduled_for absoluto).
+  return { zones, totals, isLoading, refresh, now: getUserTime(nowRaw, DEFAULT_TZ), nowRaw }
 }
