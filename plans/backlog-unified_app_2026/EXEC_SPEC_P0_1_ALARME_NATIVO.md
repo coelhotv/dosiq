@@ -146,6 +146,7 @@ Implementar alarme nativo persistente que:
 import notifee, { TriggerType, AndroidImportance, AndroidCategory } from '@notifee/react-native'
 import { parseLocalDate } from '@utils/dateUtils'
 
+// Canal Android de prioridade máxima (bypass Doze mode)
 const ALARM_CHANNEL_ID = 'dosiq-dose-alarm'
 const MAX_NAG_ATTEMPTS = 3
 const NAG_INTERVAL_MS = 5 * 60 * 1000 // 5 minutos
@@ -153,6 +154,7 @@ const NAG_INTERVAL_MS = 5 * 60 * 1000 // 5 minutos
 export const alarmService = {
   /**
    * Inicializa canal Android de alarme (chamado 1x no boot do app).
+   * iOS não precisa de canal — usa UNNotificationCategory.
    */
   async initialize() {
     await notifee.createChannel({
@@ -169,6 +171,11 @@ export const alarmService = {
 
   /**
    * Agenda alarme local para uma dose_instance específica.
+   * @param {Object} params
+   * @param {string} params.doseInstanceId — PK da dose_instance
+   * @param {string} params.medicineName — ex: "Losartana 50mg"
+   * @param {string} params.scheduledFor — ISO timestamp (GMT-3 aware)
+   * @param {number} [params.nagAttempt=0] — contagem de re-tentativas
    */
   async scheduleAlarm({ doseInstanceId, medicineName, scheduledFor, nagAttempt = 0 }) {
     const triggerTime = parseLocalDate(scheduledFor).getTime()
@@ -374,7 +381,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { alarmService } from './alarmService'
 
 /**
- * Manipula a tomada rápida de medicação através dos botões da notificação sem carregar a UI reativa principal.
+ * Registra dose diretamente do alarme (sem abrir app completo).
+ * Chamado pelos notification action buttons.
+ *
+ * Caches invalidados:
+ *   - @dosiq/dose-instances-snapshot (status pending → taken)
+ *   - @dosiq/stock-snapshot (consume_stock_fifo consome lote)
+ *   - @dosiq/adherence-snapshot (score recalculado)
+ * Caches NÃO invalidados (intencionalmente):
+ *   - @dosiq/protocols-snapshot (dose não muda protocolo)
  */
 export async function handleAlarmAction(type, event) {
   const { doseInstanceId, medicineName, nagAttempt } = event.detail.notification.data
@@ -401,13 +416,16 @@ export async function handleAlarmAction(type, event) {
     }
 
     case 'dose-skip': {
+      // 1. Marcar como skipped (usa status do dose_instances refactor)
       await nativeSupabaseClient
         .from('dose_instances')
         .update({ status: 'skipped_user' })
         .eq('id', doseInstanceId)
 
+      // 2. Cancelar nags pendentes
       await alarmService.cancelAlarm(doseInstanceId)
 
+      // 3. Invalidar cache
       await AsyncStorage.multiRemove([
         '@dosiq/dose-instances-snapshot',
         '@dosiq/adherence-snapshot',
@@ -476,17 +494,40 @@ apps/mobile/src/
 | Alarme coexiste e se integra perfeitamente com os pushes do Firebase/Expo | Smoke PO |
 | `rtk lint` 0 erros | Output verificado |
 | `rtk npm run validate:agent` 100% green | Output verificado |
+| **Smoke PO (R-234) concluído antes de `gh pr create`** | Confirmação PO |
 
 ### G2 — Gate de Cópia iOS
 
 | Critério | Validação |
 |----------|-----------|
-| Build iOS OK | `rtk expo run:ios` sem erros |
-| Alarme toca com som customizado em lock screen | Smoke PO iOS |
-| Ações rápidas de notificação funcionam nativamente via iOS categories | Smoke PO iOS |
-| Se Critical Alert entitlement aprovado: alarme contorna DND | Smoke PO iOS (condicional) |
-| Se não aprovado: fallback nativo `timeSensitive` opera com sucesso | Smoke PO iOS |
-| `rtk expo export` 0 erros | Output verificado |
+| Build iOS OK | `npx expo run:ios` sem erros |
+| Alarme toca com som em iPhone locked | Smoke PO iOS |
+| Notification actions "Tomei" / "Pular" funcionam via iOS categories | Smoke PO iOS |
+| Se Critical Alert entitlement aprovado: alarme toca em DND | Smoke PO iOS (condicional) |
+| Se NÃO aprovado: fallback `timeSensitive` funciona | Smoke PO iOS |
+| `npx expo export` 0 erros | Output colado |
+
+### G3 — Gate Final
+
+| Critério | Validação |
+|----------|-----------|
+| Android + iOS alarmes funcionais simultaneamente | Smoke PO cross-platform |
+| Push remoto (expo-notifications) ainda 100% funcional | Smoke PO |
+| `validate:agent` 100% green | Output colado |
+| `npx expo export` 0 erros | Output colado |
+| DEVFLOW C5 aplicado pós-merge | `.agent/` audit |
+| PR mergeado em `main` com aprovação PO (R-060) | Confirmação PO |
+
+---
+
+## Delegação de Agentes
+
+| Task ID | Agente | Motivo |
+|---------|--------|--------|
+| A1.0, A1.1, A1.8 | 👤 Arquiteto (Opus) | Setup de lib nativa + decisões de API + integração cross-feature |
+| A1.2, A1.4, A1.5, A1.6, A2.3, A2.5 | 🤖 Sonnet ⭐⭐ | Hooks/UI complexos com pattern claro (notifee docs) |
+| A1.3, A1.7, A1.9, A2.4, A2.6 | 🤖 Haiku ⭐ | Assets, tests, settings simples |
+| A2.1, A2.2, A2.7 | 👤 Arquiteto (Opus) | Config iOS nativa + Critical Alert condicional + integração final |
 
 ---
 
