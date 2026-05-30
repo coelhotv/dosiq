@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const ALLOWED_PLATFORMS = new Set(['android', 'ios', 'other'])
+const ALLOWED_FEATURES = new Set(['android', 'ios', 'other', 'caregiver_mode'])
 
 const RATE_WINDOW_MS = 60_000
 const RATE_MAX = 5
@@ -25,13 +25,13 @@ export async function handleBetaSignup(req, res) {
   }
 
   try {
-    const { email, platform = 'android' } = req.body || {}
+    const { email, feature = 'android' } = req.body || {}
     const normalized = String(email ?? '').trim().toLowerCase()
 
     if (!EMAIL_RE.test(normalized)) {
       return res.status(400).json({ error: 'E-mail inválido' })
     }
-    const plat = ALLOWED_PLATFORMS.has(platform) ? platform : 'other'
+    const feat = ALLOWED_FEATURES.has(feature) ? feature : 'other'
 
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
@@ -40,7 +40,7 @@ export async function handleBetaSignup(req, res) {
 
     const { error } = await supabase
       .from('beta_signups')
-      .insert([{ email: normalized, platform: plat }])
+      .insert([{ email: normalized, feature: feat }])
 
     // 23505 = unique_violation -> já cadastrado: tratamos como sucesso idempotente (evita enumeração de e-mails)
     if (error && error.code !== '23505') {
