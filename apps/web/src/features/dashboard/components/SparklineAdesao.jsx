@@ -1,19 +1,20 @@
 /**
  * SparklineAdesao - Gráfico de linha para visualização de adesão.
  *
- * Acessível (role="img" + dots role="button"/aria-label), com auto-escala vertical
- * (computeDomain/projectY) e adesão clampada 0-100 (AP-191, defesa no componente).
+ * Acessível (role="img" + dots role="button"/aria-label), escala vertical FIXA 0-100
+ * (adesão absoluta; clamp AP-191), curva que passa pelos pontos (Catmull-Rom) e tooltip
+ * como overlay HTML (não SVG <text>, que esticava no preserveAspectRatio="none").
  */
 import { useMemo, useCallback, useState } from 'react'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { useSparklineData } from '@dashboard/hooks/useSparklineData'
 import {
   generateSparklinePath,
+  generateSparklineArea,
   getAdherenceColor,
-  computeDomain,
   projectY,
+  formatDate,
 } from '@dashboard/utils/sparklineUtils'
-import SparklineTooltip from '@dashboard/components/SparklineTooltip'
 import './SparklineAdesao.css'
 
 const SIZES = {
@@ -32,24 +33,26 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
   const { width, height, padding } = SIZES[size] || SIZES.medium
   const { chartData, stats } = useSparklineData(adherenceByDay, days ?? (size === 'expanded' ? 30 : 7))
 
-  const domain = useMemo(() => computeDomain(chartData), [chartData])
-  const sparklinePath = useMemo(
-    () => generateSparklinePath(chartData, width, height, padding, domain),
-    [chartData, width, height, padding, domain]
+  const linePath = useMemo(
+    () => generateSparklinePath(chartData, width, height, padding),
+    [chartData, width, height, padding]
   )
-  // Dots em todos os tamanhos exceto inline (inline = só a curva); habilita drill-down
-  // e tooltip mesmo sem o `showTooltip` da legenda HTML.
+  const areaPath = useMemo(
+    () => generateSparklineArea(chartData, width, height, padding),
+    [chartData, width, height, padding]
+  )
+  // Dots em todos os tamanhos exceto inline (inline = só a curva).
   const dataPoints = useMemo(
     () =>
       size !== 'inline'
         ? chartData.map((d, i) => ({
             ...d,
             x: padding + i * ((width - padding * 2) / (chartData.length - 1 || 1)),
-            y: projectY(d.adherence, domain, height, padding),
+            y: projectY(d.adherence, height, padding),
             index: i,
           }))
         : [],
-    [chartData, width, height, padding, size, domain]
+    [chartData, width, height, padding, size]
   )
 
   // 3. Handlers
@@ -76,6 +79,7 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
   }
 
   const ariaLabel = `Adesão dos últimos ${chartData.length} dias, média ${stats.average}%`
+  const active = activePoint !== null ? dataPoints[activePoint] : null
 
   return (
     <button
@@ -91,8 +95,8 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
           <filter id="sparklineGlow"><feGaussianBlur stdDeviation="0.5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
         {showAxis && <line x1={padding} y1={padding + (height - padding * 2) * 0.2} x2={width - padding} y2={padding + (height - padding * 2) * 0.2} className="sparkline-reference-line" strokeDasharray="2,2" />}
-        <path d={sparklinePath} fill="url(#sparklineGradient)" />
-        <path d={sparklinePath} fill="none" stroke="var(--color-primary)" strokeWidth="1" filter="url(#sparklineGlow)" />
+        <path d={areaPath} fill="url(#sparklineGradient)" />
+        <path d={linePath} fill="none" stroke="var(--color-primary)" strokeWidth="1" filter="url(#sparklineGlow)" />
         {dataPoints.map((d) => (
           <circle
             key={d.date}
@@ -109,8 +113,18 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleDotActivate(d) } }}
           />
         ))}
-        <SparklineTooltip activePoint={activePoint} dataPoints={dataPoints} width={width} />
       </svg>
+      {/* Tooltip como overlay HTML (posição em %), imune ao stretch do preserveAspectRatio. */}
+      {active && (
+        <div
+          className="sparkline-tooltip-overlay"
+          style={{ left: `${(active.x / width) * 100}%`, top: `${(active.y / height) * 100}%` }}
+          aria-hidden="true"
+        >
+          <span className="sparkline-tooltip-date">{formatDate(active.date)}</span>
+          <span className="sparkline-tooltip-value">{active.adherence}% · {active.taken}/{active.expected} doses</span>
+        </div>
+      )}
       {showTooltip && size !== 'inline' && size !== 'expanded' && (
         <div className="sparkline-tooltip-container">
           {chartData.map((d, i) => <div key={d.date} className="sparkline-day-tooltip" style={{ '--day-index': i }}><span className="sparkline-day-name">{d.dayName}</span><span style={{ color: getAdherenceColor(d.adherence) }}>{d.adherence}%</span></div>)}
