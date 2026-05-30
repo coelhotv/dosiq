@@ -1,37 +1,69 @@
 /**
  * SparklineUtils — Utilitários de desenho para o SparklineAdesao.
+ *
+ * Escala vertical FIXA 0-100 (adesão é métrica absoluta — 50% parece 50%; não
+ * auto-escala min-max, que distorce o nível). Clamp 0-100 defende contra fonte
+ * que mande >100% (AP-191). A curva usa Catmull-Rom → passa EXATAMENTE pelos
+ * pontos (dots não descasam da linha).
  */
 
-const createSmoothPath = (points, height) => {
-  if (points.length === 0) return ''
-  if (points.length === 1) {
-    const [x, y] = points[0].split(',').map(Number)
-    return `M ${x},${height} L ${x},${y} L ${x},${height}`
-  }
-  let path = `M ${points[0]},${height}`
-  for (let i = 0; i < points.length; i++) {
-    const [x, y] = points[i].split(',').map(Number)
-    if (i === 0) path = `M ${x},${height} L ${x},${y}`
-    else if (i < points.length - 1) {
-      const [nextX, nextY] = points[i + 1].split(',').map(Number)
-      const cpX = (x + nextX) / 2
-      path += ` Q ${cpX},${y} ${cpX},${(y + nextY) / 2}`
-    } else path += ` L ${x},${y} L ${x},${height}`
-  }
-  return path + ' Z'
+/** Garante adesão no intervalo [0, 100] (defesa contra fonte que mande >100%, AP-191).
+ *  Coage p/ número antes (fonte pode mandar string numérica, ex: "80"). */
+export const clampAdherence = (a) => {
+  const num = Number(a)
+  return Math.max(0, Math.min(100, Number.isFinite(num) ? num : 0))
 }
 
+/** Projeta adesão (0-100 fixo) para a coordenada y do SVG. */
+export const projectY = (adherence, height, padding) => {
+  const avail = height - padding * 2
+  return padding + avail - (clampAdherence(adherence) / 100) * avail
+}
+
+/** x igualmente espaçado por índice. */
+const projectX = (i, count, width, padding) =>
+  padding + i * ((width - padding * 2) / (count - 1 || 1))
+
+/**
+ * Curva suave que PASSA pelos pontos (Catmull-Rom → Bézier cúbica). Diferente da
+ * suavização por ponto-médio (que não toca os pontos → dots descasam).
+ */
+const catmullRomPath = (pts) => {
+  if (pts.length === 0) return ''
+  if (pts.length === 1) return `M ${pts[0].x},${pts[0].y}`
+  let d = `M ${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[i + 2] || p2
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+  }
+  return d
+}
+
+/** Path da linha (passa pelos pontos). */
 export const generateSparklinePath = (data, width, height, padding) => {
   if (!data?.length) return ''
-  const availableWidth = width - padding * 2
-  const availableHeight = height - padding * 2
-  const stepX = availableWidth / (data.length - 1 || 1)
-  const points = data.map((d, i) => {
-    const x = padding + i * stepX
-    const y = padding + availableHeight - (d.adherence / 100) * availableHeight
-    return `${x},${y}`
-  })
-  return createSmoothPath(points, availableHeight)
+  const pts = data.map((d, i) => ({
+    x: projectX(i, data.length, width, padding),
+    y: projectY(d.adherence, height, padding),
+  }))
+  return catmullRomPath(pts)
+}
+
+/** Path da área preenchida (linha + fecha na base). */
+export const generateSparklineArea = (data, width, height, padding) => {
+  const line = generateSparklinePath(data, width, height, padding)
+  if (!line) return ''
+  const baseY = height - padding
+  const firstX = projectX(0, data.length, width, padding)
+  const lastX = projectX(data.length - 1, data.length, width, padding)
+  return `${line} L ${lastX},${baseY} L ${firstX},${baseY} Z`
 }
 
 export const getAdherenceColor = (adherence) => {

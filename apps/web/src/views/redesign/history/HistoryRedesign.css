@@ -343,13 +343,6 @@
   filter: none !important;
 }
 
-/* Tooltip do sparkline — corrige overflow de texto */
-.hhr-view .sparkline-tooltip-date,
-.hhr-view .sparkline-tooltip-value {
-  font-size: 10px !important;
-  line-height: 1.2 !important;
-}
-
 /* Heatmap cell overrides */
 .hhr-view .heatmap-cell--high {
   background: var(--color-primary) !important;

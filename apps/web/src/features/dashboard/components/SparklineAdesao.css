@@ -17,6 +17,7 @@
   color: inherit;
   text-align: inherit;
   cursor: default;
+  position: relative; /* âncora p/ o tooltip overlay HTML (posição em %) */
 }
 
 button.sparkline-adhesion {
@@ -59,6 +60,10 @@ button.sparkline-adhesion {
     r 0.2s ease,
     transform 0.2s ease;
   r: 1.5;
+  /* scale em <circle> SVG por padrão usa origem do viewport (0,0) → o dot "dá drift"
+     no hover. fill-box + center ancora a escala no centro do próprio círculo. */
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .sparkline-dot:hover {
@@ -194,17 +199,36 @@ button.sparkline-adhesion {
 }
 
 /* ============================================
-   Tooltip interativo (SVG overlay — tap no ponto)
+   Tooltip interativo (overlay HTML — tap no ponto)
+   posicionado em % sobre o container; fonte proporcional à página
+   (não escala com o stretch do SVG preserveAspectRatio="none").
    ============================================ */
+.sparkline-tooltip-overlay {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 8px;
+  background: var(--bg-secondary, #1f2937);
+  border: 1px solid var(--color-border, #374151);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: var(--shadow-sm, 0 2px 6px rgb(0 0 0 / 0.2));
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .sparkline-tooltip-date {
-  font-size: 11px;
-  fill: var(--text-secondary);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-secondary);
   font-family: var(--font-primary, system-ui);
 }
 
 .sparkline-tooltip-value {
-  font-size: 10px;
-  fill: var(--text-primary);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-primary);
   font-family: var(--font-primary, system-ui);
   font-weight: 600;
 }
