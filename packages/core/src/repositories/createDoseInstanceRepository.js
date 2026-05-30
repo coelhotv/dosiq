@@ -10,6 +10,7 @@
 // - upsertMany(instances)            → INSERT ... ON CONFLICT (protocol_id, scheduled_for) DO NOTHING (idempotente)
 // - wipeFuturePending(protocolId)    → DELETE status='pending' AND scheduled_for > now() (nunca toca passado/taken/missed)
 // - getWindow(userId, fromTs, toTs)  → instâncias do usuário na janela, ordenadas
+// - countByStatus({userId, protocolId?, fromTs, toTs}) → head-count por status (Fase 3 leitura)
 // - getGeneratedThrough(protocolId)  → high-water-mark (protocols.generated_through)
 // - setGeneratedThrough(protocolId, ts)
 // - markSkippedPaused(protocolId, untilTs) → pendentes futuras até untilTs viram skipped_paused
@@ -237,6 +238,45 @@ export function createDoseInstanceRepository({ client }) {
         }
       }
       return best
+    },
+
+    /**
+     * Conta ocorrências por status numa janela [fromTs, toTs], opcionalmente de um protocolo.
+     * Usa head-count por status (count exact, head:true) → NÃO traz linhas, então
+     * imune ao truncamento de ~1000 do PostgREST (AP-186 não se aplica: sem fetch de rows).
+     * @param {Object} args
+     * @param {string} args.userId
+     * @param {string} [args.protocolId] - se presente, restringe ao protocolo
+     * @param {Date|string} args.fromTs
+     * @param {Date|string} args.toTs
+     * @returns {Promise<{taken:number, missed:number, pending:number, skipped_paused:number, skipped_user:number}>}
+     */
+    async countByStatus({ userId, protocolId, fromTs, toTs }) {
+      const statuses = ['taken', 'missed', 'pending', 'skipped_paused', 'skipped_user']
+      const fromIso = toIso(fromTs)
+      const toTsIso = toIso(toTs)
+
+      // Consultas independentes por status → paralelizar (Promise.all). `head:true`
+      // não traz linhas; `select('id')` mantém o head-count enxuto (Gemini #612).
+      const counts = await Promise.all(
+        statuses.map(async (s) => {
+          let q = client
+            .from(TABLE)
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', s)
+            .gte('scheduled_for', fromIso)
+            .lte('scheduled_for', toTsIso)
+          if (protocolId) q = q.eq('protocol_id', protocolId)
+          const { count, error } = await q
+          if (error) throw error
+          return count ?? 0
+        }),
+      )
+
+      const result = {}
+      statuses.forEach((s, i) => { result[s] = counts[i] })
+      return result
     },
 
     /**

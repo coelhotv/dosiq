@@ -5,15 +5,16 @@
  * @module adherenceLogic
  */
 
-import { 
-  parseLocalDate, 
-  formatLocalDate, 
-  getTodayLocal, 
+import {
+  parseLocalDate,
+  formatLocalDate,
+  getTodayLocal,
   isProtocolActiveOnDate as isProtocolInPeriod,
   getNow,
   parseISO,
   daysDifference,
   getSaoPauloTime,
+  getUserTime,
   cloneDate,
   parseTimestamp
 } from './dateUtils.js'
@@ -670,4 +671,157 @@ function _matchesFrequency(frequency, protocol, dayOfWeek, targetDate) {
   const matcher = FREQUENCY_MATCHERS.get(frequency)
   if (matcher) return matcher(protocol, dayOfWeek, targetDate)
   return true // default: assume ativo
+}
+
+// ============================================================================
+// Leitura de adesão a partir de ocorrências materializadas (Fase 3 — ADR-048/050/052)
+//
+// A adesão deixa de ser INFERIDA (casamento ±2h sobre logs + expected calculado)
+// e passa a ser CONSULTADA das `dose_instances`, onde cada ocorrência já carrega
+// a verdade: `taken` (elo a um log), `missed` (passou da tolerância), `pending`
+// (futura/na janela), `skipped_*` (neutro — pausa/skip consciente não penaliza).
+//
+// Seam A (ADR-052): somas em `dosage_unit`, NUNCA comprimidos.
+// Seam B (ADR-052): modo por protocolo — `binary` (default) vs `dose_exactness`.
+// Seam C (ADR-052): leitura NÃO valida contra o cap Zod 100 (pill-specific, R-022).
+// ============================================================================
+
+/** Modos de adesão (Seam B). `binary` = evento (default); `dose_exactness` = opt-in. */
+export const ADHERENCE_MODE = Object.freeze({
+  BINARY: 'binary',
+  DOSE_EXACTNESS: 'dose_exactness',
+})
+
+/** Status de `dose_instances`. `skipped_*` nunca entram no denominador de adesão. */
+export const INSTANCE_STATUS = Object.freeze({
+  TAKEN: 'taken',
+  MISSED: 'missed',
+  PENDING: 'pending',
+  SKIPPED_PAUSED: 'skipped_paused',
+  SKIPPED_USER: 'skipped_user',
+})
+
+/** Número finito ou fallback (R-104: `??`/isFinite, nunca `||` — 0 é dose válida). */
+function _numOrFallback(value, fallback) {
+  return Number.isFinite(value) ? value : fallback
+}
+
+/** Limita x a [0, 1]. */
+function _clamp01(x) {
+  return Math.max(0, Math.min(1, x))
+}
+
+/**
+ * Agrega adesão a partir de um conjunto de `dose_instances`.
+ *
+ * - `binary` (default): `rate = taken / (taken + missed)`. `pending` e `skipped_*`
+ *   ficam fora do denominador.
+ * - `dose_exactness` (opt-in, Seam B): `rate = Σ aplicado / Σ esperado` sobre as
+ *   ocorrências que contam (`taken` + `missed`), com clamp [0,1]. FP-1 (ADR-050):
+ *   não exige `aplicado == esperado`. O aplicado vem de `quantity_taken` (enriquecido
+ *   pelo elo ao log); ausente numa `taken` → assume o `expected_dose` (dose cheia).
+ *
+ * Denominador vazio → `rate = null` (não `NaN`/`0`) para o caller distinguir
+ * "sem dados" de "0% de adesão".
+ *
+ * Função PURA: sem I/O, sem mutação dos itens.
+ *
+ * @param {Array<Object>} instances - linhas de `dose_instances` (status, expected_dose, quantity_taken?)
+ * @param {Object} [opts]
+ * @param {string} [opts.mode='binary'] - ver ADHERENCE_MODE
+ * @returns {{taken:number, missed:number, pending:number, skipped:number, rate:(number|null)}}
+ */
+export function computeAdherenceFromInstances(instances, { mode = ADHERENCE_MODE.BINARY } = {}) {
+  const list = Array.isArray(instances) ? instances : []
+
+  let taken = 0
+  let missed = 0
+  let pending = 0
+  let skipped = 0
+  let sumApplied = 0
+  let sumExpected = 0
+
+  for (const inst of list) {
+    const status = inst?.status
+    const expected = _numOrFallback(inst?.expected_dose, 0)
+
+    if (status === INSTANCE_STATUS.TAKEN) {
+      taken++
+      // FP-1: aplicado pode divergir do esperado; ausente → dose cheia.
+      sumApplied += _numOrFallback(inst?.quantity_taken, expected)
+      sumExpected += expected
+    } else if (status === INSTANCE_STATUS.MISSED) {
+      missed++
+      sumExpected += expected
+    } else if (status === INSTANCE_STATUS.PENDING) {
+      pending++
+    } else if (
+      status === INSTANCE_STATUS.SKIPPED_PAUSED ||
+      status === INSTANCE_STATUS.SKIPPED_USER
+    ) {
+      skipped++
+    }
+  }
+
+  let rate
+  if (mode === ADHERENCE_MODE.DOSE_EXACTNESS) {
+    rate = sumExpected > 0 ? _clamp01(sumApplied / sumExpected) : null
+  } else {
+    const denom = taken + missed
+    rate = denom > 0 ? taken / denom : null
+  }
+
+  return { taken, missed, pending, skipped, rate }
+}
+
+/**
+ * Streak de dias consecutivos sem `missed`, contando de hoje para trás.
+ *
+ * Regras:
+ * - um dia com ≥1 `missed` QUEBRA o streak (para a contagem);
+ * - um dia com ≥1 `taken` (e sem missed) SOMA ao streak;
+ * - dias só com `skipped_*`, ou sem dose (gap entre tratamentos), são NEUTROS:
+ *   não somam nem quebram.
+ *
+ * Agrupa por dia no fuso do usuário — `scheduled_for` é instante absoluto (ISO/UTC),
+ * então a fronteira de dia depende do tz (G1: injeção real do tz fica na F4; default SP).
+ * Cross-meia-noite é natural: a ocorrência cai no dia do seu `scheduled_for` no tz.
+ *
+ * Função PURA.
+ *
+ * @param {Array<Object>} instances - linhas de `dose_instances` (status, scheduled_for)
+ * @param {Object} [opts]
+ * @param {string} [opts.tz='America/Sao_Paulo'] - fuso para a fronteira de dia
+ * @param {string} [opts.today] - dia de referência "YYYY-MM-DD" (default: hoje no tz)
+ * @returns {number} dias de streak
+ */
+export function computeStreakFromInstances(instances, { tz = 'America/Sao_Paulo', today } = {}) {
+  const list = Array.isArray(instances) ? instances : []
+
+  // dia local (tz) -> { missed, taken }
+  const byDay = new Map()
+  for (const inst of list) {
+    if (!inst?.scheduled_for) continue
+    const dayKey = formatLocalDate(getUserTime(parseISO(inst.scheduled_for), tz))
+    let entry = byDay.get(dayKey)
+    if (!entry) {
+      entry = { missed: false, taken: false }
+      byDay.set(dayKey, entry)
+    }
+    if (inst.status === INSTANCE_STATUS.MISSED) entry.missed = true
+    else if (inst.status === INSTANCE_STATUS.TAKEN) entry.taken = true
+  }
+
+  const todayKey = today ?? formatLocalDate(getNow(tz))
+
+  // dias conhecidos até hoje, do mais recente para o mais antigo (gaps são neutros).
+  const days = [...byDay.keys()].filter((k) => k <= todayKey).sort((a, b) => b.localeCompare(a))
+
+  let streak = 0
+  for (const key of days) {
+    const entry = byDay.get(key)
+    if (entry.missed) break // dia com missed quebra o streak
+    if (entry.taken) streak++ // dia produtivo soma; skipped-only é neutro
+  }
+  return streak
 }
