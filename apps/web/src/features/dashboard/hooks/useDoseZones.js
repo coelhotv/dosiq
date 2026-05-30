@@ -239,7 +239,8 @@ export function useDoseZones({
     }
 
     // Ordenar cada zona por instante agendado
-    const sortByInstant = (a, b) => parseISO(a.scheduledFor) - parseISO(b.scheduledFor)
+    // scheduled_for é ISO 8601 → ordenável lexicograficamente (sem parse por comparação).
+    const sortByInstant = (a, b) => a.scheduledFor.localeCompare(b.scheduledFor)
     Object.values(result).forEach((arr) => arr.sort(sortByInstant))
 
     return result
