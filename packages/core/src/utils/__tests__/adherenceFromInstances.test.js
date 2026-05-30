@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   computeAdherenceFromInstances,
   computeStreakFromInstances,
+  computeLongestStreakFromInstances,
   ADHERENCE_MODE,
 } from '../adherenceLogic'
 
@@ -150,12 +151,25 @@ describe('computeStreakFromInstances', () => {
     expect(streak).toBe(2)
   })
 
-  it('missed hoje → streak 0', () => {
+  it('missed HOJE não quebra (dia não acabou) — mantém streak de ontem', () => {
     const instances = [
-      inst('missed', { scheduled_for: at('2026-05-30') }),
+      inst('missed', { scheduled_for: at('2026-05-30') }), // hoje, ratio 0 → neutro
       inst('taken', { scheduled_for: at('2026-05-29') }),
     ]
-    expect(computeStreakFromInstances(instances, { today: '2026-05-30' })).toBe(0)
+    expect(computeStreakFromInstances(instances, { today: '2026-05-30' })).toBe(1)
+  })
+
+  it('limiar ≥80%: dia com 4/5 tomadas (80%) conta; 3/4 (75%) quebra', () => {
+    const day = (d, taken, missed) => [
+      ...Array.from({ length: taken }, () => inst('taken', { scheduled_for: at(d) })),
+      ...Array.from({ length: missed }, () => inst('missed', { scheduled_for: at(d) })),
+    ]
+    // 30: 4 taken + 1 missed = 80% (conta) ; 29: 3 taken + 1 missed = 75% (quebra)
+    const ok = computeStreakFromInstances([...day('2026-05-30', 4, 1), ...day('2026-05-29', 3, 1)], { today: '2026-05-30' })
+    expect(ok).toBe(1) // 30 conta, 29 quebra
+    // 30: 4/5 ; 29: 5/5 → streak 2
+    const two = computeStreakFromInstances([...day('2026-05-30', 4, 1), ...day('2026-05-29', 5, 0)], { today: '2026-05-30' })
+    expect(two).toBe(2)
   })
 
   it('cross-meia-noite: dose 22:30 local cai no dia correto no tz', () => {
@@ -179,5 +193,53 @@ describe('computeStreakFromInstances', () => {
     expect(computeStreakFromInstances([], { today: '2026-05-30' })).toBe(0)
     expect(computeStreakFromInstances([inst('taken')], { today: '2026-05-30' })).toBe(0)
     expect(computeStreakFromInstances(null, { today: '2026-05-30' })).toBe(0)
+  })
+})
+
+describe('computeLongestStreakFromInstances', () => {
+  const at = (isoLocalDay, hourUtc = '12') => `${isoLocalDay}T${hourUtc}:00:00.000Z`
+
+  it('maior sequência sem missed (não só a partir de hoje)', () => {
+    const instances = [
+      // run 1: 3 dias (10,11,12)
+      inst('taken', { scheduled_for: at('2026-05-10') }),
+      inst('taken', { scheduled_for: at('2026-05-11') }),
+      inst('taken', { scheduled_for: at('2026-05-12') }),
+      inst('missed', { scheduled_for: at('2026-05-13') }), // quebra
+      // run 2: 2 dias (14,15)
+      inst('taken', { scheduled_for: at('2026-05-14') }),
+      inst('taken', { scheduled_for: at('2026-05-15') }),
+    ]
+    expect(computeLongestStreakFromInstances(instances)).toBe(3)
+  })
+
+  it('skipped/gap neutros não quebram a sequência mais longa', () => {
+    const instances = [
+      inst('taken', { scheduled_for: at('2026-05-10') }),
+      inst('skipped_user', { scheduled_for: at('2026-05-11') }), // neutro
+      // gap 12
+      inst('taken', { scheduled_for: at('2026-05-13') }),
+      inst('taken', { scheduled_for: at('2026-05-14') }),
+    ]
+    expect(computeLongestStreakFromInstances(instances)).toBe(3) // 10,13,14
+  })
+
+  it('sem taken → 0; lista vazia/null → 0', () => {
+    expect(computeLongestStreakFromInstances([inst('missed', { scheduled_for: at('2026-05-10') })])).toBe(0)
+    expect(computeLongestStreakFromInstances([])).toBe(0)
+    expect(computeLongestStreakFromInstances(null)).toBe(0)
+  })
+
+  it('limiar ≥80%: dia 3/4 (75%) quebra a sequência', () => {
+    const instances = [
+      inst('taken', { scheduled_for: at('2026-05-10') }), // 100%
+      // 11: 3 taken + 1 missed = 75% → quebra
+      inst('taken', { scheduled_for: at('2026-05-11') }),
+      inst('taken', { scheduled_for: at('2026-05-11') }),
+      inst('taken', { scheduled_for: at('2026-05-11') }),
+      inst('missed', { scheduled_for: at('2026-05-11') }),
+      inst('taken', { scheduled_for: at('2026-05-12') }), // 100%
+    ]
+    expect(computeLongestStreakFromInstances(instances)).toBe(1) // nenhuma seq > 1
   })
 })
