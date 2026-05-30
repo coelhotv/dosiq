@@ -17,7 +17,7 @@
 > - ⬜ **Fase 3** — leitura: adesão/dashboard/bot ← `dose_instances` (torna o fix visível). Spec: [EXEC_SPECS_PHASE_3.md](./EXEC_SPECS_PHASE_3.md). 3 PRs, seams ADR-052.
 > - ⬜ **Fase 4** — timeline event-agnóstica (FP-3) + fecha G1 (tz). Spec: [EXEC_SPECS_PHASE_4.md](./EXEC_SPECS_PHASE_4.md). Fundação dos épicos líquidos/diabetes.
 >
-> **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** injeção de tz (parcial na F3, **fechado na F4**) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB com acento (resolvido F2.1) · **G5** `adherenceLogic` duplicado core/web (dedup F3) · **G6** view de adesão legada (resolver F3) · **G7** produtor de eventos desacoplado (F4).
+> **Gaps abertos** (detalhe em EXEC_SPECS §Gaps): **G1** injeção de tz (parcial na F3, **fechado na F4**) · **G2** consistência tz geração↔leitura (mitigado por `timestamptz` absoluto) · **G3** frequência DB com acento (resolvido F2.1) · **G5** `adherenceLogic` duplicado core/web (dedup F3) · **G6** view de adesão legada (resolver F3) · **G7** produtor de eventos desacoplado (F4) · **G8** `packages/core` fora do pipeline vitest (sem config/script de teste próprio; `doseUnit.test.js` depende de globals e falha sob runner root; testes core rodam só por invocação explícita, **não** no `validate:agent`). **Decisão arquitetural (config de teste do core + integração ao gate) adiada para depois do refactor** — não bloqueia F3/F4; mitigar rodando `npx vitest run packages/core/...` explícito em todo PR que tocar core.
 >
 > **Future-proofing diabetes (ADR-050):** o refactor já constrói o esqueleto planned/applied que insulina bolus exige. 4 decisões baratas (FP-1..FP-4) deixam a arquitetura preparada **sem fundir o épico de diabetes aqui** — ver **§11**. Diabetes = épico próprio pós-refactor.
 
@@ -174,7 +174,7 @@ Volume por usuário é **linear e pequeno** (~16k linhas em 3 anos). Eixo de esc
 
 ---
 
-## 8. Faseamento (4 PRs sequenciais)
+## 8. Faseamento (4 Fases sequenciais)
 
 ### Fase 1 — Timezone (fundação)
 - `user_settings.timezone` + UI de seleção
