@@ -34,6 +34,8 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 ## ⚠️ Gaps e decisões desta fase
 
 - **G1 — fechamento da injeção de tz.** A F1 deixou ~250 callers em SP-default (`getUserTime` com tz opcional, ADR-049/CON-022). A F4 fecha: o caminho de leitura/exibição da timeline injeta o tz do usuário ponta-a-ponta. **Não** é refactor dos 250 de uma vez — é injetar tz no fluxo da timeline (e nos leitores da F3 que ainda dependam de SP). Resto residual segue SP-default documentado.
+- **G6 — views de adesão legadas (herdado da F3).** `v_daily_adherence` + `v_adherence_heatmap` (consumidas por Reports/PDF/Consultation/HealthHistory via `getDailyAdherenceFromView`/`getAdherencePatternFromView`) ainda inferem sobre `medicine_logs`. A F4 resolve junto da timeline (S4.2b).
+  - ⚠️ **RESTRIÇÃO CRÍTICA:** essas views existem como **mitigação de OOM/loading em devices low-mid** — agregam **no servidor** (SQL), o client recebe ~28 linhas prontas, não N logs crus. A resolução **DEVE preservar a agregação server-side** (reescrever a FONTE da view `medicine_logs`→`dose_instances` em SQL, ou view materializada/RPC/`countByStatus`). **NUNCA** mover o cálculo long-range/heatmap pro client (classe AP-P03/AP-P14, R-249).
 - **G7 — produtor de eventos desacoplado.** O builder de timeline NÃO conhece `dose_instances` diretamente; recebe uma lista de eventos já normalizados. Um *adapter* converte `dose_instances`/`medicine_logs` → eventos. Outro adapter (futuro) converte `biomarkers_log`. O builder é agnóstico. (FP-3.)
 - **FP-3 realizado:** a partir desta fase, qualquer tipo novo de evento entra por adapter; UI itera sobre `event.type` com um registry de renderizadores.
 
@@ -75,6 +77,13 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
   - `getTimeline({ userId, fromTs, toTs, tz })` → busca instâncias (repo `getWindow`, paginado AP-186) + logs avulsos (sem `dose_instance_id`, para não sumir do histórico) → adapter → `buildTimeline`. Lazy net (`ensureInstancesUpTo`) best-effort antes (R-245).
 - **Aceite:** stream inclui taken/missed/pending + logs avulsos; ordenação correta; paginado; sem duplicar (instância taken + seu log = 1 evento, não 2).
 - **Deps:** S4.1, Fase 3 (read API)
+
+### S4.2b — Resolver views de adesão legadas (G6) preservando server-agg ⚠️ migration
+- **Agent:** `claude` · **Modelo:** **opus** (SQL + risco schema drift, decisão de fonte de verdade)
+- **Files:** migration SQL (rewrite da fonte das views) + `apps/web/src/services/api/adherenceService.js` (`getDailyAdherenceFromView`/`getAdherencePatternFromView` — só se a forma mudar) + testes.
+- **Spec:** reescrever a FONTE de `v_daily_adherence` e `v_adherence_heatmap` de `medicine_logs` (inferência ±2h) → `dose_instances` (status real), **mantendo a mesma interface de saída** (colunas/shape que Reports/PDF/Consultation/HealthHistory já consomem) e a **agregação no servidor** (R-249 — NUNCA mover pro client). Alinhar a semântica com a F3 (taken/missed real). Grants + RLS conforme CLAUDE.md. Sem caminho duplicado (lição Sprint 7).
+- **Aceite:** views retornam de `dose_instances`; números batem com `adherenceService` core (F3); payload ao client inalterado (sem regressão OOM em low-mid); Reports/PDF/Consultation seguem funcionando.
+- **Deps:** S4.2, Fase 3 (PR-F3.2a)
 
 ### S4.3 — Web: HealthHistoryView event-agnóstica + registry de renderizadores ⚠️ muda UI
 - **Agent:** `claude` · **Modelo:** sonnet
@@ -118,7 +127,7 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 
 | PR | Sprints | Racional | Branch |
 |----|---------|----------|--------|
-| **PR-F4.1** | S4.0 + S4.1 + S4.2 (+testes) | modelo de evento + adapter + read — **sem UI** → merge seguro | `feature/wave-f4/core-timeline` |
+| **PR-F4.1** | S4.0 + S4.1 + S4.2 + **S4.2b** (+testes) | modelo de evento + adapter + read + **rewrite das views legadas G6 (SQL, server-agg)** — **sem UI nova** | `feature/wave-f4/core-timeline` |
 | **PR-F4.2** | S4.3 + S4.4 (+testes) | UI event-agnóstica + fecha G1 (tz) — **muda histórico visível** | `feature/wave-f4/web-timeline` |
 | **PR-F4.3** | S4.5 (+testes) | paridade mobile | `feature/wave-f4/mobile-timeline` |
 
@@ -133,6 +142,7 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 | S4.0 | cavecrew-investigator | default | localizar/inventariar |
 | S4.1 | claude | **opus** | modelo de dados aberto + ordenação tz, decisão de longo prazo |
 | S4.2 | claude | sonnet | adapter + read service |
+| S4.2b | claude | **opus** | rewrite SQL das views G6 + risco schema drift |
 | S4.3 | claude | sonnet | UI + registry |
 | S4.4 | claude | **opus** | tz cross-callsite, double-shift sutil (classe S1.3) |
 | S4.5 | claude | sonnet | paridade nativa |
@@ -147,11 +157,11 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 | Campo | PR-F4.1 | PR-F4.2 | PR-F4.3 |
 |-------|---------|---------|---------|
 | Plataforma | Shared/Core | Web/PWA + Shared/Core | Mobile |
-| SemVer | `no-user-impact` | **Minor** (timeline nova + tz) | **Minor** (mobile visível) |
-| Version bump | Não | `apps/web/package.json` | `apps/mobile/app.config.js` APP_VERSION (R-182) |
-| CHANGELOG | Shared/Core | Web/PWA | Mobile |
+| SemVer | **Patch** (views mudam fonte; saída igual) | **Minor** (timeline nova + tz) | **Minor** (mobile visível) |
+| Version bump | `apps/web/package.json` (patch) | `apps/web/package.json` | `apps/mobile/app.config.js` APP_VERSION (R-182) |
+| CHANGELOG | Shared/Core + Backend/Infra (views) | Web/PWA | Mobile |
 | Store note | n/a | n/a | **sim** (R-244) |
-| Migration | não | não | não |
+| Migration | **sim — rewrite SQL das views G6** (grants+RLS) | não | não |
 | Gates | lint 0 · `validate:agent` · **hard stop** | idem + **smoke PO** | idem + **smoke PO mobile** (R-234) |
 
 **Hard stop (R-221 gate):** cada PR PARA antes de commit/push p/ validação humana. Gemini review → aplicar → **humano mergeia** (R-060). C5 pós-merge. **`/devflow distill` ao fechar a Fase 4 = fecha o refactor `dose_instances` inteiro** → RETRO + planning dos épicos (líquidos → diabetes, ADR-052).
@@ -162,6 +172,7 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 - [ ] Histórico é stream de eventos tipados, ordenada por instante absoluto, cross-meia-noite correta.
 - [ ] Renderização por registry — novo `event.type` = registrar um card, sem tocar a view (FP-3 provado com tipo fake no teste).
 - [ ] Adapter `dose_instances`→eventos isolado; logs avulsos não somem do histórico.
+- [ ] G6 resolvido (S4.2b): views legadas leem `dose_instances`, **agregação server-side preservada** (sem regressão OOM em low-mid, R-249); Reports/PDF/Consultation intactos; sem caminho duplicado.
 - [ ] G1 fechado no caminho da timeline; residual SP-default documentado; sem double-shift.
 - [ ] Multi-tz expat (S4.4b/ADR-053): enum curado estendido APÓS injeção de tz; brasileiro em Londres/NY com lembrete e dia corretos; IANA armazenado (sem offset).
 - [ ] Paridade web/mobile; `validate:agent` verde; smoke PO.

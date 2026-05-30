@@ -12,7 +12,8 @@
 | PR | Sprints | Status | Ref |
 |----|---------|--------|-----|
 | **PR-F3.1** core reader + agregação | S3.0–S3.2 | ✅ merged #612 (`c4ed5531`) | `computeAdherence/StreakFromInstances` + `countByStatus`; R-248; Gemini perf (Promise.all) aplicado |
-| **PR-F3.2** web adesão + dashboard | S3.3–S3.5 | ⬜ pendente | **muda leitura** (visível ao usuário) |
+| **PR-F3.2a** adherenceService core | S3.3 (parcial) | ⬜ pendente | **muda leitura** dos escalares de adesão (calculate*/summary/streak/daily); views `*FromView` adiadas p/ F4 |
+| **PR-F3.2b** dashboard "hoje" | S3.4 | ⬜ pendente | derived hook + fetch de `dose_instances` no contexto |
 | **PR-F3.3** mobile + bot paridade | S3.6–S3.7 | ⬜ pendente | espelha web |
 | (testes S3.8) | distribuídos | ⬜ | dentro de cada PR |
 
@@ -34,8 +35,9 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 ## ⚠️ Gaps e decisões desta fase
 
 - **G1 — injeção de tz (parcial aqui, fechado na F4).** As leituras de "hoje"/janela precisam do fuso do usuário para fronteiras de dia corretas (`getUserTime`, CON-022). A F3 injeta tz **nas leituras de adesão/dashboard** (escopo controlado); a varredura completa dos ~250 callers fica na F4. Até lá, default SP onde tz não for injetado (ADR-049). **Risco:** boundary de dia errado em fuso ≠ SP → mitigado porque `scheduled_for` é `timestamptz` (instante absoluto) e a contagem por status independe de tz; só a *seleção da janela* "hoje" usa tz.
-- **G5 — `adherenceLogic` duplicado.** Existe em `packages/core/src/utils/adherenceLogic.js` **e** `apps/web/src/utils/adherenceLogic.js`. A F3 consolida no core (fonte única, R-231/R-082); web passa a re-exportar. Verificar no S3.0 qual é o canônico e quem importa cada um.
-- **G6 — view de adesão legada.** `adherenceService` já tem `getDailyAdherenceFromView`/`getAdherencePatternFromView` (lê de uma VIEW SQL de inferência). Decidir no S3.0: substituir a view por leitura de `dose_instances`, ou apontar a view para a nova tabela. **Não** manter dois caminhos divergentes (schema drift, lição Sprint 7).
+- **G5 — `adherenceLogic` duplicado.** ✅ **Já resolvido** (pré-F3): `apps/web/src/utils/adherenceLogic.js` é proxy `export * from '@dosiq/core'`; canônico = `packages/core/src/utils/adherenceLogic.js`. Nada a fazer.
+- **G6 — views de adesão legadas → ADIADO PARA A F4.** `getDailyAdherenceFromView` (`v_daily_adherence`) e `getAdherencePatternFromView` (`v_adherence_heatmap`) inferem sobre `medicine_logs` e alimentam Reports/PDF/Consultation/HealthHistory — telas que a **F4 reescreve (timeline)**. **DECISÃO (2026-05-30):** não tocar essas views na F3; resolvê-las na F4 junto da timeline.
+  - ⚠️ **RESTRIÇÃO CRÍTICA (motivo de existência das views):** foram criadas como **mitigação de OOM/loading em devices low-mid** — agregam **no servidor** (SQL), o client recebe ~28 linhas prontas, não N logs crus pra calcular (classe AP-P03/AP-P14, R-249). A resolução G6 na F4 **DEVE preservar a agregação server-side** (reescrever a FONTE da view `medicine_logs`→`dose_instances` em SQL, ou view materializada/RPC). **NUNCA** mover o cálculo long-range/heatmap para o client. `countByStatus` (head-count, server agrega) é o equivalente OOM-safe.
 
 ### Seams obrigatórios (ADR-052) — esta fase DEVE nascer com eles
 - **Seam A — semântica de unidade:** `expected_dose`/`quantity_taken` são "quantidade na `medicines.dosage_unit`", **nunca** comprimidos. A matemática de adesão não pode cravar pill-centrismo (habilita líquidos/UI sem refactor-da-refactor).
@@ -85,33 +87,29 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 - **Aceite:** agregação correta + paginada; lazy net invocada nos leitores; testes de contagem por status + idempotência da lazy.
 - **Deps:** S3.1
 
-### S3.3 — Web: `adherenceService` lê de instâncias ⚠️ muda comportamento
-- **Agent:** `claude` · **Modelo:** **opus** (13 métodos, superfície ampla, regressão de adesão é crítica)
-- **Files:** `apps/web/src/services/api/adherenceService.js`; consolidar `apps/web/src/utils/adherenceLogic.js` → re-export do core (G5).
-- **Spec:**
-  - `calculateAdherence`/`calculateProtocolAdherence`/`calculateAllProtocolsAdherence`/`getCurrentStreak`/`getDailyAdherence`/`getAdherenceSummary` passam a consultar `dose_instances` via core (S3.1+S3.2) em vez de inferir. **Assinaturas preservadas** (CON — non-breaking; consumidores não mudam).
-  - `getDailyAdherenceFromView`/`getAdherencePatternFromView` (G6): apontar para `dose_instances` ou aposentar — sem caminho duplicado.
-  - Modo de adesão (Seam B): default `binary`; respeitar `protocols.adherence_mode` quando presente.
-  - Cache (R-125): manter a estratégia de cache existente; invalidar nas chaves certas (matriz explícita, R-236; evitar AP-168).
-- **Aceite:** todos os métodos retornam valores de `dose_instances`; adesão de um protocolo conhecido bate com a contagem SQL direta (validar via Supabase MCP num user real pós-merge); sem schema drift Zod/SQL.
-- **Deps:** S3.1, S3.2
+### S3.3 — Web: `adherenceService` lê de instâncias ⚠️ muda comportamento → **PR-F3.2a**
+- **Agent:** `claude` · **Modelo:** **opus** (superfície ampla, regressão de adesão é crítica)
+- **Files:** `apps/web/src/services/api/adherenceService.js`; `packages/core/src/utils/adherenceLogic.js` (+`computeLongestStreakFromInstances` — streak math no core, fonte única) + barrel.
+- **Spec (escopo PR-F3.2a):**
+  - `calculateAdherence`/`calculateProtocolAdherence`/`calculateAllProtocolsAdherence`/`getCurrentStreak`/`getLongestStreak`/`getAdherenceSummary`/`getDailyAdherence` (+`_*WithProtocols`) passam a consultar `dose_instances` via core (S3.1+S3.2). **Assinaturas preservadas** (CON-011/CON-018 non-breaking; muda a SEMÂNTICA: `expected` = `taken+missed` real, não inferido).
+  - **OOM-safe (R-249):** escalares usam `countByStatus` (head-count server-agg); summary/streak/daily usam `getWindow` com **colunas enxutas** sobre janelas curtas (7–90d, volume bounded < fetch de logs atual). Não puxar long-range cru pro client.
+  - `getDailyAdherenceFromView`/`getAdherencePatternFromView`: **NÃO TOCAR** — views server-agg adiadas p/ F4 (G6).
+  - Modo de adesão (Seam B): default `binary`. `protocols.adherence_mode` **não existe ainda** → `dose_exactness` fica como opt-in futuro (sem migration nesta PR).
+  - Cache (R-125): assinaturas iguais → chaves de cache intactas (R-236; evitar AP-168).
+- **Aceite:** métodos escalares/summary/streak/daily retornam de `dose_instances`; adesão de um protocolo conhecido bate com contagem SQL direta (validar via Supabase MCP num user real pós-merge — AP-187); sem schema drift Zod/SQL. **Smoke PO** (números mudam).
+- **Deps:** S3.1, S3.2 (✅ PR-F3.1)
 
-### S3.4 — Web: dashboard "hoje" ← instâncias ⚠️ muda comportamento
+### S3.4 — Web: dashboard "hoje" ← instâncias ⚠️ muda comportamento → **PR-F3.2b**
 - **Agent:** `claude` · **Modelo:** sonnet
+- **Nota:** o derived hook hoje deriva de `logs`+`protocols` já no contexto; consumir `dose_instances` exige adicionar fetch da janela do dia ao `useDashboardContext` (janela curta, OOM-safe).
 - **Files:** `apps/web/src/features/dashboard/hooks/_useDashboardDerived.js`, `components/TreatmentAccordion.jsx` (+ o que o S3.0 apontar).
 - **Spec:** doses do dia (pendentes/tomadas, `nextDose`, `urgentDoses`) derivam de `dose_instances` (`pending`/`taken` na janela do dia no tz do usuário). A dose das 22:30 de ontem registrável às 00:05 aparece ancorada em ontem (não cria slot de hoje). Botão "Tomar" usa o `id` da instância (âncora direta, complementa o snap da F2.3).
 - **Aceite:** cenário 22:30→00:05 visível correto; pendentes do dia = instâncias `pending` da janela; sem dupla-contagem.
 - **Deps:** S3.3
 
-### S3.5 — `dose_adherence_monthly` (decisão + wiring)
-- **Agent:** `claude` · **Modelo:** sonnet
-- **Files:** writer (hook de escrita de dose / cron) + reader no `adherenceService`; migration só se faltar índice.
-- **Spec:** a tabela existe (F2.1) mas está **virgem**. Decidir no S3.0/planning:
-  - **(a)** popular agregação mensal (writer no cron `generate-doses` ou no markTaken) + reader rápido para telas de histórico longo; **ou**
-  - **(b)** computar on-the-fly de `dose_instances` e **adiar** a tabela (YAGNI até a leitura mensal pesar).
-  - Recomendação: **(b)** salvo se o S3.0 achar tela que varre >1 ano (aí (a)). Registrar a decisão.
-- **Aceite:** decisão documentada; se (a), agregação idempotente + paginada (AP-186); se (b), nota no MASTER de que a tabela segue reservada.
-- **Deps:** S3.3
+### S3.5 — `dose_adherence_monthly` — ✅ DECISÃO TOMADA: ADIAR (Caminho b)
+- **Decisão (2026-05-30):** **(b) adiar a tabela** — computar on-the-fly de `dose_instances`. Inventário S3.0 confirmou: **nenhuma tela varre >1 ano** (períodos máximos 7d/30d/90d). A tabela `dose_adherence_monthly` (criada vazia na F2.1) segue **reservada/virgem** até a leitura mensal pesar (YAGNI). Sem writer, sem reader, sem migration nesta fase.
+- **Nota no MASTER:** tabela reservada; reavaliar (a) se surgir tela de histórico anual/multi-ano.
 
 ### S3.6 — Mobile: paridade de leitura
 - **Agent:** `claude` · **Modelo:** sonnet
@@ -139,10 +137,13 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 | PR | Sprints | Racional | Branch |
 |----|---------|----------|--------|
 | **PR-F3.1** | S3.0 + S3.1 + S3.2 (+testes) | core puro + read API — **sem mudança de comportamento** (nada chama ainda) → merge seguro | `feature/wave-f3/core-reader` |
-| **PR-F3.2** | S3.3 + S3.4 + S3.5 (+testes) | web passa a ler de instâncias — **comportamento visível muda** | `feature/wave-f3/web-read` |
+| **PR-F3.2a** | S3.3 (+testes) | `adherenceService` escalares/summary/streak/daily ← instâncias — **muda números** | `feature/wave-f3/web-adherence` |
+| **PR-F3.2b** | S3.4 (+testes) | dashboard "hoje" ← instâncias (fetch no contexto) | `feature/wave-f3/web-dashboard` |
 | **PR-F3.3** | S3.6 + S3.7 (+testes) | paridade mobile + bot | `feature/wave-f3/mobile-bot` |
 
-**Ordem:** S3.0 → S3.1 → S3.2 → **[G2 → PR-F3.1 → merge]** → S3.3 → S3.4 → S3.5 → **[G2 → PR-F3.2 → merge + validação prod via MCP]** → S3.6 ∥ S3.7 → **[G2 → PR-F3.3 → merge]**.
+> **Fatiamento (2026-05-30):** PR-F3.2 dividido em **F3.2a (service)** + **F3.2b (dashboard)** — superfície ampla (~8 consumidores), cada fatia com smoke/validação focada, menos blast-radius por merge. **S3.5 adiado** (não vira PR). **G6 adiado p/ F4.**
+
+**Ordem:** ✅[PR-F3.1] → S3.3 → **[PR-F3.2a → merge + valid prod MCP]** → S3.4 → **[PR-F3.2b → merge + smoke PO]** → S3.6 ∥ S3.7 → **[PR-F3.3 → merge]**.
 
 ---
 
@@ -165,16 +166,16 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 
 ## SQP (R-221) — por PR
 
-| Campo | PR-F3.1 | PR-F3.2 | PR-F3.3 |
-|-------|---------|---------|---------|
-| Plataforma | Shared/Core | Web/PWA + Shared/Core | Mobile + Backend/Infra |
-| SemVer | `no-user-impact` (read API sem consumidor) | **Minor** (adesão/hoje mudam de fonte; sem breaking) | **Minor** (mobile/bot visível) |
-| Version bump | Não | `apps/web/package.json` | `apps/mobile/app.config.js` APP_VERSION (R-182 paridade) |
-| CHANGELOG | entrada Shared/Core | entrada Web/PWA | entradas Mobile + Backend/Infra |
-| Store note | n/a | n/a (web) | **sim** — derivar do changelog (R-244) |
-| Migration | não (ou índice no S3.5a) | não | não |
-| Gates | lint 0 · `validate:agent` · **hard stop humano** antes de commit | idem + **smoke PO** (UI) | idem + **smoke PO mobile** (R-234) |
-| Contratos | CON de `adherenceService` preservado (non-breaking) | idem | idem |
+| Campo | PR-F3.1 | PR-F3.2a (service) | PR-F3.2b (dashboard) | PR-F3.3 |
+|-------|---------|--------------------|----------------------|---------|
+| Plataforma | Shared/Core | Web/PWA + Shared/Core | Web/PWA | Mobile + Backend/Infra |
+| SemVer | `no-user-impact` ✅ | **Minor** (adesão muda de fonte) | **Minor** ("hoje" muda de fonte) | **Minor** (mobile/bot visível) |
+| Version bump | Não ✅ | `apps/web/package.json` | `apps/web/package.json` | `apps/mobile/app.config.js` APP_VERSION (R-182) |
+| CHANGELOG | Shared/Core ✅ | Web/PWA | Web/PWA | Mobile + Backend/Infra |
+| Store note | n/a | n/a | n/a | **sim** (R-244) |
+| Migration | não ✅ | não | não | não |
+| Gates | lint 0 · `validate:agent` ✅ | idem + **smoke PO** + valid prod MCP | idem + **smoke PO** | idem + **smoke PO mobile** (R-234) |
+| Contratos | CON-011/018 ✅ | CON-011/018 preservados (semântica muda) | idem | idem |
 
 **Hard stop (R-221 gate):** cada PR PARA antes de commit/push aguardando validação humana. Pós-PR: Gemini review → aplicar → **humano mergeia** (R-060). C5 pós-merge (AP/R/ADR + journal + state). `/devflow distill` ao fechar a fase.
 
@@ -185,9 +186,9 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 ## DoD da Fase 3
 - [ ] Adesão (web/mobile/bot) lida de `dose_instances`, não inferida.
 - [ ] Dose 22:30→00:05 coerente no "hoje" e na adesão (fix visível).
-- [ ] Modo de adesão por protocolo operante (binary default; dose_exactness opt-in).
-- [ ] `adherenceLogic` dedup (core canônico).
-- [ ] Sem schema drift Zod/SQL; sem caminho de leitura duplicado (view legada resolvida).
+- [ ] Modo de adesão: `binary` default operante; `dose_exactness` fica opt-in futuro (coluna `adherence_mode` não criada nesta fase).
+- [x] `adherenceLogic` dedup (core canônico) — G5 já resolvido.
+- [ ] Sem schema drift Zod/SQL. Views legadas (`v_daily_adherence`/`v_adherence_heatmap`) **adiadas p/ F4** (G6) preservando agregação server-side (R-249).
 - [ ] Seams A/B/C honrados (sem pill-centrismo cravado).
 - [ ] `validate:agent` verde; smoke PO web+mobile; validação prod via MCP.
 
