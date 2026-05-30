@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   computeAdherenceFromInstances,
   computeStreakFromInstances,
+  computeLongestStreakFromInstances,
   ADHERENCE_MODE,
 } from '../adherenceLogic'
 
@@ -179,5 +180,40 @@ describe('computeStreakFromInstances', () => {
     expect(computeStreakFromInstances([], { today: '2026-05-30' })).toBe(0)
     expect(computeStreakFromInstances([inst('taken')], { today: '2026-05-30' })).toBe(0)
     expect(computeStreakFromInstances(null, { today: '2026-05-30' })).toBe(0)
+  })
+})
+
+describe('computeLongestStreakFromInstances', () => {
+  const at = (isoLocalDay, hourUtc = '12') => `${isoLocalDay}T${hourUtc}:00:00.000Z`
+
+  it('maior sequência sem missed (não só a partir de hoje)', () => {
+    const instances = [
+      // run 1: 3 dias (10,11,12)
+      inst('taken', { scheduled_for: at('2026-05-10') }),
+      inst('taken', { scheduled_for: at('2026-05-11') }),
+      inst('taken', { scheduled_for: at('2026-05-12') }),
+      inst('missed', { scheduled_for: at('2026-05-13') }), // quebra
+      // run 2: 2 dias (14,15)
+      inst('taken', { scheduled_for: at('2026-05-14') }),
+      inst('taken', { scheduled_for: at('2026-05-15') }),
+    ]
+    expect(computeLongestStreakFromInstances(instances)).toBe(3)
+  })
+
+  it('skipped/gap neutros não quebram a sequência mais longa', () => {
+    const instances = [
+      inst('taken', { scheduled_for: at('2026-05-10') }),
+      inst('skipped_user', { scheduled_for: at('2026-05-11') }), // neutro
+      // gap 12
+      inst('taken', { scheduled_for: at('2026-05-13') }),
+      inst('taken', { scheduled_for: at('2026-05-14') }),
+    ]
+    expect(computeLongestStreakFromInstances(instances)).toBe(3) // 10,13,14
+  })
+
+  it('sem taken → 0; lista vazia/null → 0', () => {
+    expect(computeLongestStreakFromInstances([inst('missed', { scheduled_for: at('2026-05-10') })])).toBe(0)
+    expect(computeLongestStreakFromInstances([])).toBe(0)
+    expect(computeLongestStreakFromInstances(null)).toBe(0)
   })
 })

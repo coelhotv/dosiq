@@ -796,22 +796,7 @@ export function computeAdherenceFromInstances(instances, { mode = ADHERENCE_MODE
  * @returns {number} dias de streak
  */
 export function computeStreakFromInstances(instances, { tz = 'America/Sao_Paulo', today } = {}) {
-  const list = Array.isArray(instances) ? instances : []
-
-  // dia local (tz) -> { missed, taken }
-  const byDay = new Map()
-  for (const inst of list) {
-    if (!inst?.scheduled_for) continue
-    const dayKey = formatLocalDate(getUserTime(parseISO(inst.scheduled_for), tz))
-    let entry = byDay.get(dayKey)
-    if (!entry) {
-      entry = { missed: false, taken: false }
-      byDay.set(dayKey, entry)
-    }
-    if (inst.status === INSTANCE_STATUS.MISSED) entry.missed = true
-    else if (inst.status === INSTANCE_STATUS.TAKEN) entry.taken = true
-  }
-
+  const byDay = _buildDayStatusMap(instances, tz)
   const todayKey = today ?? formatLocalDate(getNow(tz))
 
   // dias conhecidos até hoje, do mais recente para o mais antigo (gaps são neutros).
@@ -824,4 +809,60 @@ export function computeStreakFromInstances(instances, { tz = 'America/Sao_Paulo'
     if (entry.taken) streak++ // dia produtivo soma; skipped-only é neutro
   }
   return streak
+}
+
+/**
+ * Agrupa instâncias por dia local (tz) → Map<dayKey, {missed, taken}>.
+ * `scheduled_for` é instante absoluto; o tz só governa a fronteira de dia.
+ * @param {Array<Object>} instances
+ * @param {string} tz
+ * @returns {Map<string, {missed: boolean, taken: boolean}>}
+ */
+function _buildDayStatusMap(instances, tz) {
+  const list = Array.isArray(instances) ? instances : []
+  const byDay = new Map()
+  for (const inst of list) {
+    if (!inst?.scheduled_for) continue
+    const dayKey = formatLocalDate(getUserTime(parseISO(inst.scheduled_for), tz))
+    let entry = byDay.get(dayKey)
+    if (!entry) {
+      entry = { missed: false, taken: false }
+      byDay.set(dayKey, entry)
+    }
+    if (inst.status === INSTANCE_STATUS.MISSED) entry.missed = true
+    else if (inst.status === INSTANCE_STATUS.TAKEN) entry.taken = true
+  }
+  return byDay
+}
+
+/**
+ * Maior streak histórico: maior sequência de dias produtivos (`taken`) sem nenhum
+ * `missed` no meio. Mesma semântica do streak corrente — `missed` quebra; `taken`
+ * soma; `skipped_*`/gap são neutros — mas varre TODO o histórico fornecido (não só
+ * a partir de hoje) e devolve o máximo.
+ *
+ * Função PURA.
+ *
+ * @param {Array<Object>} instances - linhas de `dose_instances` (status, scheduled_for)
+ * @param {Object} [opts]
+ * @param {string} [opts.tz='America/Sao_Paulo']
+ * @returns {number} maior streak
+ */
+export function computeLongestStreakFromInstances(instances, { tz = 'America/Sao_Paulo' } = {}) {
+  const byDay = _buildDayStatusMap(instances, tz)
+  const days = [...byDay.keys()].sort() // cronológico ascendente
+
+  let longest = 0
+  let run = 0
+  for (const key of days) {
+    const entry = byDay.get(key)
+    if (entry.missed) {
+      run = 0 // missed quebra a sequência
+    } else if (entry.taken) {
+      run++ // dia produtivo soma
+      if (run > longest) longest = run
+    }
+    // skipped-only / sem taken: neutro (mantém run)
+  }
+  return longest
 }
