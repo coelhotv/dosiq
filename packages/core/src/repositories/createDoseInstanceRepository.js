@@ -11,6 +11,7 @@
 // - wipeFuturePending(protocolId)    → DELETE status='pending' AND scheduled_for > now() (nunca toca passado/taken/missed)
 // - getWindow(userId, fromTs, toTs)  → instâncias do usuário na janela, ordenadas
 // - countByStatus({userId, protocolId?, fromTs, toTs}) → head-count por status (Fase 3 leitura)
+// - markMissedDueInstances({now?}) → pending vencida (scheduled_for+tol < now) → missed (writer #3, F2.5)
 // - getGeneratedThrough(protocolId)  → high-water-mark (protocols.generated_through)
 // - setGeneratedThrough(protocolId, ts)
 // - markSkippedPaused(protocolId, untilTs) → pendentes futuras até untilTs viram skipped_paused
@@ -201,8 +202,11 @@ export function createDoseInstanceRepository({ client }) {
      * de `takenAt`. Fora de toda janela → null (dose avulsa).
      *
      * A janela do SELECT usa o teto (120min); o filtro fino por linha é em JS,
-     * pois cada instância tem sua própria tolerância. Só `pending` é elegível —
-     * nunca re-ancora taken/missed/skipped.
+     * pois cada instância tem sua própria tolerância. Elegíveis: `pending` E `missed`
+     * (F2.5 self-heal) — um registro retroativo (offline/FAB mobile com dia·hora) cujo
+     * `takenAt` cai dentro da tolerância re-ancora a ocorrência que o sweep marcou missed
+     * cedo demais. NUNCA re-ancora taken/skipped. Consistente com E1: só cura dentro da
+     * janela; tomada genuinamente fora dela (timestamp tardio) não casa → segue missed.
      *
      * @param {Object} args
      * @param {string} args.protocolId
@@ -219,7 +223,7 @@ export function createDoseInstanceRepository({ client }) {
         .from(TABLE)
         .select('id, scheduled_for, tolerance_minutes')
         .eq('protocol_id', protocolId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'missed'])
         .gte('scheduled_for', lowIso)
         .lte('scheduled_for', highIso)
 
@@ -280,14 +284,80 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Varre `pending` vencidas e marca `missed` (writer #3 da máquina de estados, F2.5).
+     * Uma instância vence quando `scheduled_for + tolerance_minutes < now` sem tomada.
+     * A tolerância varia por linha (slot), então o teste fino é em JS — o SELECT só
+     * estreita por `scheduled_for < now`.
+     *
+     * AP-186: lê TODAS as candidatas (paginado) ANTES de qualquer escrita — o UPDATE
+     * muda o filtro `status='pending'`, então ler-depois-escrever evita truncar/pular.
+     * AP-185: o UPDATE reafirma `status='pending'` (guard contra corrida com markTaken).
+     * Idempotente: rodar 2x não re-marca nada (já saíram do conjunto pending).
+     *
+     * @param {Object} [args]
+     * @param {Date|string} [args.now] - instante de referência (default: agora)
+     * @param {number} [args.pageSize=1000]
+     * @returns {Promise<number>} nº de instâncias marcadas como missed
+     */
+    async markMissedDueInstances({ now = getServerTimestamp(), pageSize = 1000 } = {}) {
+      const nowMs = parseISO(now).getTime()
+      const nowIso = parseISO(now).toISOString()
+
+      // 1. Ler todas as pending já no passado (scheduled_for < now), paginado, SEM escrever.
+      const dueIds = []
+      let from = 0
+      for (;;) {
+        const { data, error } = await client
+          .from(TABLE)
+          .select('id, scheduled_for, tolerance_minutes')
+          .eq('status', 'pending')
+          .lt('scheduled_for', nowIso)
+          .order('scheduled_for', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) throw error
+        if (!data || data.length === 0) break
+
+        for (const row of data) {
+          const tol = (row.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
+          if (parseISO(row.scheduled_for).getTime() + tol < nowMs) dueIds.push(row.id)
+        }
+
+        if (data.length < pageSize) break
+        from += pageSize
+      }
+
+      if (dueIds.length === 0) return 0
+
+      // 2. UPDATE em lotes por id, reafirmando pending (guard de corrida).
+      let updated = 0
+      const CHUNK = 500
+      for (let i = 0; i < dueIds.length; i += CHUNK) {
+        const chunk = dueIds.slice(i, i + CHUNK)
+        const { data, error } = await client
+          .from(TABLE)
+          .update({ status: 'missed' })
+          .in('id', chunk)
+          .eq('status', 'pending')
+          .select('id')
+
+        if (error) throw error
+        updated += data?.length ?? 0
+      }
+      return updated
+    },
+
+    /**
      * Liga instância ↔ log: marca a ocorrência como `taken` e grava o `medicine_log_id`.
      * FP-1 (ADR-050): NÃO compara `quantity_taken` com `expected_dose` — a dose aplicada
-     * pode divergir da planejada (bolus variável futuro). Só ancora se ainda `pending`
-     * (guard contra corrida/dupla-tomada).
+     * pode divergir da planejada (bolus variável futuro). Ancora a partir de `pending`
+     * OU `missed` (F2.5 self-heal: registro retroativo dentro da tolerância reverte um
+     * missed marcado cedo pelo sweep). NUNCA re-ancora `taken`/`skipped_*`.
      *
      * Retorna `true` SOMENTE se a reserva pegou (linha afetada). Em corrida, a 2ª tomada
-     * encontra a instância já `taken` → update no-op → retorna `false`, e o caller NÃO deve
-     * gravar `dose_instance_id` no log (evita elo unidirecional/órfão — Gemini #609).
+     * encontra a instância já `taken` → update no-op (filtro pending/missed não casa) →
+     * retorna `false`, e o caller NÃO deve gravar `dose_instance_id` no log (evita elo
+     * unidirecional/órfão — Gemini #609, AP-185).
      * @param {string} instanceId
      * @param {string} medicineLogId
      * @returns {Promise<boolean>} true se a instância foi efetivamente reservada
@@ -297,7 +367,7 @@ export function createDoseInstanceRepository({ client }) {
         .from(TABLE)
         .update({ status: 'taken', medicine_log_id: medicineLogId })
         .eq('id', instanceId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'missed'])
         .select('id')
 
       if (error) throw error

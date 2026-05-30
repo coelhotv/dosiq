@@ -1,7 +1,7 @@
 # EXEC SPEC — Fase 3: Camada de Leitura (adesão/dashboard ← `dose_instances`)
 
 > **Objetivo:** trocar a leitura de adesão e do "hoje" de **inferência** (`Σquantity_taken / expected`, casamento ±2h em runtime) para **consumo das ocorrências materializadas** (`dose_instances`: `taken`/`missed`/`pending`). É a fase que **torna o fix visível ao usuário** — a dose das 22:30 registrada após 00:00 aparece coerente na adesão e no histórico, sem slot fantasma.
-> **Pré-requisitos:** Fase 1 (tz) + Fase 2 (schema·motor·âncora·backfill) ✅ fechadas e verificadas em prod. Passado materializado (backfill: 1665 taken / 308 missed / 1118 pending em 15 users).
+> **Pré-requisitos:** Fase 1 (tz) + Fase 2 (schema·motor·âncora·backfill) ✅. **PR-F2.5** (sweep `pending→missed` no cron + missed re-ancorável) — **pré-requisito da F3.2a**: sem o writer #3, `missed` só existia no backfill e a adesão lida das instâncias degradava (AP-190). Passado materializado (backfill: 1665 taken / 308 missed / 1118 pending em 15 users).
 > **ADRs:** ADR-048 (modelo) · ADR-049 (tz core) · ADR-050 (FP-1/FP-2/FP-4) · **ADR-052** (3 seams desta fase).
 > **Status:** ⬜ planejada (não iniciada).
 
@@ -118,12 +118,18 @@ Exatidão(janela) = Σ quantity_taken / Σ expected_dose   ← modo "exatidão-d
 - **Aceite:** ring/day-card refletem instâncias; paridade numérica com web.
 - **Deps:** S3.3 · **Smoke PO antes do PR** (R-234, `feedback_po_smoke_before_pr`).
 
+### S3.6.1 — Mobile: garantir `taken_at` pretendido no registro retroativo (self-heal F2.5)
+- **Nota (não esquecer):** o FAB de dose mobile permite selecionar **data/hora** → registro retroativo. Para o **self-heal** da F2.5 funcionar (reverter `missed→taken`), o registro DEVE enviar `taken_at` = horário **pretendido** (não `now()`). Se cair dentro da tolerância da instância `missed`, a âncora reverte pra `taken`; senão (genuinamente tardio) segue missed (E1). Validar no smoke mobile.
+
 ### S3.7 — Bot Telegram: paridade de leitura
 - **Agent:** `claude` · **Modelo:** sonnet
-- **Files:** `server/bot/_adherenceHelpers.js` (+ comandos que mostram adesão: `/status`, `/hoje`).
+- **Files:** `server/bot/_adherenceHelpers.js` (+ comandos que mostram adesão: `/status`, `/hoje`, **relatório diário 23h**).
 - **Spec:** adesão/streak do bot de `dose_instances` via core. Manter formatação MarkdownV2 (R-031). `escapeMarkdownV2`.
-- **Aceite:** `/status` e `/hoje` refletem instâncias; números batem com web.
+  - ⚠️ **Relatório 23h (E2/R-208):** ao migrar pra instances, o relatório das 23h lê o dia corrente ANTES do sweep das 3AM → doses vencidas cedo no dia ainda `pending`. **Rodar `sweepMissedInstances()` antes do relatório 23h** (idempotente) pra fechar o dia. Doses ainda na tolerância à noite (ex. 22:30) corretamente seguem pending.
+- **Aceite:** `/status`, `/hoje` e relatório 23h refletem instâncias; números batem com web.
 - **Deps:** S3.3
+
+> ⚠️ **Divergência cross-plataforma (janela entre F3.2a e F3.3):** web já lê de `dose_instances` (missed real); mobile/bot ainda inferem ±2h até a F3.3. O **mesmo usuário pode ver % de adesão diferente entre web e mobile/bot** nesse intervalo. Avisar o PO no smoke — não é bug.
 
 ### S3.8 — Testes Fase 3 (distribuídos)
 - **Agent:** `claude` · **Modelo:** sonnet
