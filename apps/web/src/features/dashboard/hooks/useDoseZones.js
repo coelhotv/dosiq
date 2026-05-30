@@ -1,110 +1,88 @@
 /**
  * useDoseZones — Hook de classificação temporal de doses (W2-01)
  *
- * Organiza os protocolos ativos em zonas temporais deslizantes relativas ao
- * horário atual: ATRASADAS, AGORA, PRÓXIMAS, MAIS TARDE, REGISTRADAS.
+ * Organiza as doses do dia em zonas temporais deslizantes relativas ao horário
+ * atual: ATRASADAS, AGORA, PRÓXIMAS, MAIS TARDE, REGISTRADAS. Recalcula a cada 60s.
  *
- * As zonas recalculam automaticamente a cada 60 segundos.
+ * Fase 3 (F3.2b): consome `dose_instances` materializadas (status `pending`/`taken`/
+ * `missed`) em vez de inferir slots ±2h sobre logs (R-248). Cada ocorrência carrega
+ * `scheduled_for` ABSOLUTO (timestamptz) → a classificação usa o instante real, não
+ * `setHours()` no dia local. Isso elimina o bug cross-meia-noite (dose de ontem 22:30
+ * registrada às 00:05 não vira slot fantasma de hoje — ela é uma ocorrência de ontem,
+ * fora da janela do dia atual).
  *
  * @module useDoseZones
  */
 
 import { useState, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import {
-  parseLocalDate,
-  getRawNow,
-  getTodayLocal,
-  isProtocolActiveOnDate,
-  getSaoPauloTime,
-  parseISO,
-  cloneDate,
-} from '@utils/dateUtils'
+import { getRawNow, getUserTime, parseISO } from '@utils/dateUtils'
+
+/** tz default (G1 — injeção real do tz do usuário fica para a Fase 4; default SP). */
+const DEFAULT_TZ = 'America/Sao_Paulo'
+
+/** Status que representam dose efetivamente tomada (zona "done"). */
+const TAKEN_STATUS = 'taken'
+/** Status que não devem aparecer no "hoje" (pulados não são pendência). */
+const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
 
 /**
- * Tipo DoseItem — Representa uma dose individual expandida de um protocolo.
+ * Tipo DoseItem — Representa uma ocorrência de dose do dia.
  * @typedef {Object} DoseItem
+ * @property {string} instanceId - id da dose_instance (âncora direta p/ registro)
  * @property {string} protocolId
  * @property {string} medicineId
  * @property {string} medicineName
- * @property {string} medicineType - 'medicamento' | 'suplemento'
- * @property {string} scheduledTime - "HH:MM"
+ * @property {string} medicineType
+ * @property {string} scheduledTime - "HH:MM" local (derivado de scheduled_for)
+ * @property {string} scheduledFor - ISO absoluto (timestamptz da ocorrência)
+ * @property {string} status - 'pending' | 'taken' | 'missed'
  * @property {number} dosagePerIntake
  * @property {string|null} treatmentPlanId
  * @property {string|null} treatmentPlanName
  * @property {{ emoji: string, color: string }|null} planBadge
  * @property {boolean} isRegistered
- * @property {string|null} registeredAt - ISO timestamp
+ * @property {string|null} registeredAt - ISO timestamp (scheduled_for quando taken)
  */
 
 /**
- * Janela de tolerância para matching de dose registrada.
- * Deve ser idêntica a LATE_WINDOW_MINUTES em CronogramaPeriodo e lateWindowMinutes em classifyDose.
- * Regra: dose registrada dentro de ±120min do horário agendado conta como tomada.
- */
-export const DOSE_REGISTRATION_TOLERANCE_MS = 120 * 60 * 1000 // 120 minutos
-
-/**
- * Encontra o log correspondente a um horário agendado, com tolerância.
- * @private
- */
-function getLogForSchedule(protocolId, scheduledTime, todayLogs) {
-  if (!todayLogs || todayLogs.length === 0) return null
-  const [h, m] = scheduledTime.split(':').map(Number)
-  return todayLogs.find((log) => {
-    if (log.protocol_id !== protocolId) return false
-    const logDate = getSaoPauloTime(parseISO(log.taken_at))
-    const scheduled = cloneDate(logDate)
-    scheduled.setHours(h, m, 0, 0)
-    return Math.abs(logDate.getTime() - scheduled.getTime()) <= DOSE_REGISTRATION_TOLERANCE_MS
-  })
-}
-
-/**
- * Verifica se uma dose foi registrada hoje.
- */
-export function isDoseRegistered(protocolId, scheduledTime, todayLogs) {
-  return !!getLogForSchedule(protocolId, scheduledTime, todayLogs)
-}
-
-/**
- * Retorna o ISO timestamp do registro se encontrado.
- */
-export function findRegistrationTime(protocolId, scheduledTime, todayLogs) {
-  const log = getLogForSchedule(protocolId, scheduledTime, todayLogs)
-  return log ? log.taken_at : null
-}
-
-/**
- * Classifica uma dose em uma zona temporal.
- * @param {string} scheduledTime - "HH:MM"
- * @param {Date} now
+ * Classifica uma dose em uma zona temporal a partir do seu instante ABSOLUTO.
+ *
+ * @param {string|Date} scheduledFor - instante agendado (ISO timestamptz ou Date)
+ * @param {Date} now - "agora" bruto (getRawNow)
  * @param {number} lateWindowMinutes - default 120
  * @param {number} nowWindowMinutes - default 60
  * @param {number} upcomingWindowMinutes - default 240
  * @param {boolean} isRegistered
- * @returns {'done'|'late'|'now'|'upcoming'|'later'|null} null = muito antiga, não exibir
+ * @param {number|null} toleranceMinutes - tolerância dinâmica da ocorrência
+ *   (`dose_instances.tolerance_minutes`, ex: metade do gap entre doses adjacentes).
+ *   Define o cutoff de atraso: depois de `scheduled_for + tolerance` a dose é `missed`
+ *   (sai do actionável), espelhando o sweep `markMissedDueInstances`. Sem valor → usa
+ *   `lateWindowMinutes` (120). NÃO usar 120 fixo: doses próximas (gap < 4h) têm tolerância
+ *   menor, senão duas doses adjacentes ficam actionáveis ao mesmo tempo.
+ * @returns {'done'|'late'|'now'|'upcoming'|'later'|null} null = fora da janela, não exibir
  */
 export function classifyDose(
-  scheduledTime,
+  scheduledFor,
   now,
   lateWindowMinutes = 120,
   nowWindowMinutes = 60,
   upcomingWindowMinutes = 240,
-  isRegistered = false
+  isRegistered = false,
+  toleranceMinutes = null
 ) {
   if (isRegistered) return 'done'
 
-  const [hours, minutes] = scheduledTime.split(':').map(Number)
-  const nowSP = getSaoPauloTime(now)
-  const scheduled = cloneDate(nowSP)
-  scheduled.setHours(hours, minutes, 0, 0)
+  const scheduledMs =
+    scheduledFor instanceof Date ? scheduledFor.getTime() : parseISO(scheduledFor).getTime()
+  if (Number.isNaN(scheduledMs)) return null
 
-  const diffMs = scheduled.getTime() - nowSP.getTime()
-  const diffMinutes = diffMs / 60000
+  const diffMinutes = (scheduledMs - now.getTime()) / 60000
+  // Cutoff de atraso = tolerância da própria ocorrência (não 120 fixo).
+  const lateCutoff = toleranceMinutes ?? lateWindowMinutes
 
-  if (diffMinutes < -lateWindowMinutes) return null // muito antiga — não mostrar
-  if (diffMinutes < 0) return 'late' // atrasada (0 a -lateWindow)
+  if (diffMinutes < -lateCutoff) return null // passou da tolerância → missed, não exibir
+  if (diffMinutes < 0) return 'late' // atrasada, ainda dentro da tolerância
   if (diffMinutes < nowWindowMinutes) return 'now' // agora
   if (diffMinutes < upcomingWindowMinutes) return 'upcoming' // próximas
   return 'later' // mais tarde
@@ -123,68 +101,66 @@ function getPlanBadge(plan) {
 }
 
 /**
- * Cria um objeto DoseItem a partir de um protocolo e horário.
+ * Formata "HH:MM" local a partir de um instante absoluto, no tz informado.
  * @private
  */
-function createDoseItem(protocol, scheduledTime, registrationTime) {
+function toLocalHHMM(scheduledFor, tz) {
+  const local = getUserTime(parseISO(scheduledFor), tz)
+  const h = String(local.getHours()).padStart(2, '0')
+  const m = String(local.getMinutes()).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+/**
+ * Cria um DoseItem a partir de uma dose_instance e do protocolo correspondente.
+ * @private
+ */
+function createDoseItem(instance, protocol, tz) {
   const medicine = protocol.medicine || {}
+  const isRegistered = instance.status === TAKEN_STATUS
   return {
-    protocolId: protocol.id,
+    instanceId: instance.id,
+    protocolId: instance.protocol_id,
     medicineId: protocol.medicine_id,
     medicineName: medicine.name || 'Desconhecido',
     medicineType: medicine.type || 'medicamento',
     dosagePerPill: medicine.dosage_per_pill ?? null,
     dosageUnit: medicine.dosage_unit ?? null,
-    scheduledTime,
-    dosagePerIntake: protocol.dosage_per_intake ?? 1,
+    scheduledTime: toLocalHHMM(instance.scheduled_for, tz),
+    scheduledFor: instance.scheduled_for,
+    toleranceMinutes: instance.tolerance_minutes ?? null,
+    status: instance.status,
+    dosagePerIntake: instance.expected_dose ?? protocol.dosage_per_intake ?? 1,
     treatmentPlanId: protocol.treatment_plan_id || null,
     treatmentPlanName: protocol.treatment_plan?.name || null,
     planBadge: getPlanBadge(protocol.treatment_plan),
-    isRegistered: !!registrationTime,
-    registeredAt: registrationTime,
+    isRegistered,
+    registeredAt: isRegistered ? instance.scheduled_for : null,
   }
 }
 
 /**
- * Expande protocolos em DoseItems individuais.
+ * Constrói os DoseItems do dia a partir das ocorrências materializadas.
+ * Junta cada instância com o protocolo (metadata: medicamento, plano) já em contexto.
+ * Pula ocorrências `skipped_*` (não são pendência) e sem protocolo correspondente.
+ *
+ * @param {Array} instances - dose_instances do dia (já restritas à janela)
+ * @param {Array} protocols - protocolos do contexto (com .medicine / .treatment_plan)
+ * @param {string} [tz=DEFAULT_TZ]
+ * @returns {DoseItem[]}
  */
-export function expandProtocolsToDoses(protocols, todayLogs) {
+export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_TZ) {
+  if (!Array.isArray(instances) || instances.length === 0) return []
+  const byId = new Map((protocols || []).map((p) => [p.id, p]))
+
   const doses = []
-  const todayStr = getTodayLocal()
-
-  protocols.forEach((protocol) => {
-    // 1. Validar elegibilidade
-    if (protocol.frequency === 'quando_necessario') return
-    if (!isProtocolActiveOnDate(protocol, todayStr)) return
-
-    // 2. Expandir horários
-    const times = protocol.time_schedule || []
-    times.forEach((time) => {
-      const regTime = findRegistrationTime(protocol.id, time, todayLogs)
-      doses.push(createDoseItem(protocol, time, regTime))
-    })
-  })
-
+  for (const inst of instances) {
+    if (!inst?.scheduled_for || SKIPPED_STATUS.has(inst.status)) continue
+    const protocol = byId.get(inst.protocol_id)
+    if (!protocol) continue
+    doses.push(createDoseItem(inst, protocol, tz))
+  }
   return doses
-}
-
-/**
- * Filtra logs de hoje (mesma data local que getTodayLocal()).
- * @param {Array} logs
- * @returns {Array}
- */
-export function filterTodayLogs(logs) {
-  if (!logs || logs.length === 0) return []
-  const todayStr = getTodayLocal()
-  const todayDate = parseLocalDate(todayStr)
-  const todayStart = todayDate.getTime()
-  const todayEnd = todayStart + 24 * 60 * 60 * 1000
-
-  return logs.filter((log) => {
-    if (!log.taken_at) return false
-    const logTime = getSaoPauloTime(parseISO(log.taken_at)).getTime()
-    return logTime >= todayStart && logTime < todayEnd
-  })
 }
 
 /**
@@ -201,9 +177,9 @@ export function useDoseZones({
   nowWindowMinutes = 60,
   upcomingWindowMinutes = 240,
 } = {}) {
-  const { protocols, logs, isLoading, refresh } = useDashboard()
+  const { protocols, doseInstances, isLoading, refresh } = useDashboard()
 
-  // Estado de "agora" — usa Date bruto para o timer (evita double-shift em classifyDose)
+  // Estado de "agora" — usa Date bruto para o timer (diff absoluto em classifyDose)
   const [nowRaw, setNowRaw] = useState(() => getRawNow())
 
   useEffect(() => {
@@ -237,13 +213,10 @@ export function useDoseZones({
     }
   }, [])
 
-  // Filtrar logs de hoje
-  const todayLogs = useMemo(() => filterTodayLogs(logs), [logs])
-
-  // Expandir protocolos em doses individuais
+  // Construir DoseItems do dia a partir das ocorrências materializadas
   const allDoses = useMemo(
-    () => expandProtocolsToDoses(protocols || [], todayLogs),
-    [protocols, todayLogs]
+    () => buildDoseItemsFromInstances(doseInstances || [], protocols || []),
+    [doseInstances, protocols]
   )
 
   // Classificar doses em zonas
@@ -252,25 +225,23 @@ export function useDoseZones({
 
     for (const dose of allDoses) {
       const zone = classifyDose(
-        dose.scheduledTime,
+        dose.scheduledFor,
         nowRaw,
         lateWindowMinutes,
         nowWindowMinutes,
         upcomingWindowMinutes,
-        dose.isRegistered
+        dose.isRegistered,
+        dose.toleranceMinutes
       )
       if (zone !== null && result[zone]) {
         result[zone].push(dose)
       }
     }
 
-    // Ordenar cada zona por scheduledTime
-    const sortByTime = (a, b) => {
-      const [ah, am] = a.scheduledTime.split(':').map(Number)
-      const [bh, bm] = b.scheduledTime.split(':').map(Number)
-      return ah * 60 + am - (bh * 60 + bm)
-    }
-    Object.values(result).forEach((arr) => arr.sort(sortByTime))
+    // Ordenar cada zona por instante agendado
+    // scheduled_for é ISO 8601 → ordenável lexicograficamente (sem parse por comparação).
+    const sortByInstant = (a, b) => a.scheduledFor.localeCompare(b.scheduledFor)
+    Object.values(result).forEach((arr) => arr.sort(sortByInstant))
 
     return result
   }, [allDoses, nowRaw, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
@@ -284,5 +255,7 @@ export function useDoseZones({
     return { expected, taken, pending }
   }, [zones])
 
-  return { zones, totals, isLoading, refresh, now: getSaoPauloTime(nowRaw) }
+  // `now` shiftado (wall-clock SP) p/ exibição/agrupamento por hora; `nowRaw` absoluto
+  // p/ classificação por instante (classifyDose vs scheduled_for absoluto).
+  return { zones, totals, isLoading, refresh, now: getUserTime(nowRaw, DEFAULT_TZ), nowRaw }
 }

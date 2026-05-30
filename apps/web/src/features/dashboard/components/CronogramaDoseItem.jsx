@@ -4,35 +4,31 @@ import {
   CircleCheckBig, 
   CircleAlert 
 } from 'lucide-react'
-import { DOSE_REGISTRATION_TOLERANCE_MS } from '@dashboard/hooks/useDoseZones'
+import { classifyDose } from '@dashboard/hooks/useDoseZones'
 
 import { formatActiveIngredientHint } from '@dosiq/core'
 
-const LATE_WINDOW_MINUTES = DOSE_REGISTRATION_TOLERANCE_MS / 60_000
-
-function getMinutesDiff(scheduledTime, now) {
-  const [h, m] = scheduledTime.split(':').map(Number)
-  const scheduledMinutes = h * 60 + m
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
-  return nowMinutes - scheduledMinutes
-}
-
-function getDoseStatus(dose, now) {
-  if (dose.isRegistered) return 'done'
-  const diff = getMinutesDiff(dose.scheduledTime, now)
-  return diff > LATE_WINDOW_MINUTES ? 'missed' : 'pending'
-}
-
-function isWithinActionWindow(dose, now) {
-  const diff = getMinutesDiff(dose.scheduledTime, now)
-  return Math.abs(diff) <= LATE_WINDOW_MINUTES
-}
-
+/**
+ * Status do card a partir do instante ABSOLUTO da ocorrência + sua tolerância
+ * dinâmica (`dose.toleranceMinutes`), reusando `classifyDose` (fonte única).
+ * `now` é o instante absoluto (nowRaw), não o wall-clock shiftado — evita o bug
+ * cross-meia-noite e respeita a metade-do-gap entre doses adjacentes.
+ */
 export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockStatus, now }) {
-  const status = getDoseStatus(dose, now)
-  const canTake = status === 'pending' && isWithinActionWindow(dose, now)
-  const done = status === 'done'
-  const missed = status === 'missed'
+  const zone = classifyDose(
+    dose.scheduledFor,
+    now,
+    120,
+    60,
+    240,
+    dose.isRegistered,
+    dose.toleranceMinutes
+  )
+  const done = zone === 'done'
+  const missed = zone === null // passou da tolerância → perdida
+  const status = done ? 'done' : missed ? 'missed' : 'pending'
+  // Actionável: atrasada (dentro da tolerância), agora, ou em breve (não "mais tarde").
+  const canTake = !done && !missed && (zone === 'late' || zone === 'now' || zone === 'upcoming')
   const showStockBadge = !missed && (stockStatus === 'critical' || stockStatus === 'low')
   const isSupplement = dose.medicineType === 'suplemento'
   const MedicineIcon = isSupplement ? PillBottle : Pill
