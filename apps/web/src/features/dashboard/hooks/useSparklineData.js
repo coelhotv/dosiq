@@ -3,6 +3,7 @@
  */
 import { useMemo } from 'react'
 import { getNow, addDays, formatLocalDate, getTodayLocal } from '@utils/dateUtils'
+import { clampAdherence } from '@dashboard/utils/sparklineUtils'
 import { debugLog } from '@shared/utils/logger'
 
 function isDateVisibleInBrazil(dateStr) {
@@ -24,7 +25,7 @@ export function useSparklineData(adherenceByDay, daysCount) {
       data.push({
         date: dateKey,
         dayName: date.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'America/Sao_Paulo' }),
-        adherence: dayData?.adherence ?? 0,
+        adherence: clampAdherence(dayData?.adherence ?? 0),
         taken: dayData?.taken ?? 0,
         expected: dayData?.expected ?? 0,
       })
