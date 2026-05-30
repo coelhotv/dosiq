@@ -2,7 +2,7 @@
 
 > **Objetivo:** transformar o histórico de saúde numa **linha do tempo contínua de eventos tipados**, ordenada por instante absoluto, **aberta a múltiplos tipos** (`dose` agora; `biomarker`/`note` depois sem reescrever) — realização do **FP-3** (ADR-050). É a fundação que os épicos de **líquidos** e **diabetes** reusam (ADR-052). Fecha também o gap **G1** (injeção de tz nos ~250 callers em SP-default).
 > **Pré-requisitos:** Fase 3 (leitura ← `dose_instances`) ✅ mergeada. Adesão/hoje já consomem instâncias.
-> **ADRs:** ADR-048 · ADR-049 (tz) · **ADR-050 FP-3** · ADR-052 (fundação compartilhada).
+> **ADRs:** ADR-048 · ADR-049 (tz) · **ADR-050 FP-3** · ADR-052 (fundação compartilhada) · **ADR-053** (multi-tz expat: default→user-tz + enum curado Caminho B, ver S4.4b).
 > **Status:** ⬜ planejada (não iniciada).
 
 ---
@@ -93,6 +93,13 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 - **Aceite:** usuário em fuso ≠ SP vê dias/horas corretos na timeline; nenhum double-shift; residual SP-default documentado no MASTER.
 - **Deps:** S4.3
 
+### S4.4b — Multi-timezone para expat (Caminho B, ADR-053)
+- **Agent:** `claude` · **Modelo:** sonnet
+- **Files:** `packages/core/src/schemas/userSettingsSchema.js` (`TIMEZONE_OPTIONS`), testes do schema.
+- **Spec:** SÓ depois que a injeção de tz (S4.4) estiver fechada — antes disso, adicionar fuso ao enum **não muda o lembrete** (display/geração ainda SP). Estender `TIMEZONE_OPTIONS` com um punhado de destinos expat reais (`Europe/London`, `America/New_York`, `America/Lisbon`, `America/Los_Angeles`) além das 17 BR. DST resolvido pelo nome IANA via `Intl` (nunca por offset — offset≠identidade). Armazenar SEMPRE IANA. Não dropar a enum (Caminho C/IANA completo fica gated em "base expat > nacional", ADR-053). Manter ordenação BR-first.
+- **Aceite:** brasileiro em Londres/NY persiste o fuso real; lembrete e fronteira-de-dia corretos no fuso local; schema Zod ↔ DB sincronizados (R-082); cidades BR de mesmo offset seguem distintas.
+- **Deps:** S4.4 (injeção de tz fechada)
+
 ### S4.5 — Mobile: timeline paridade
 - **Agent:** `claude` · **Modelo:** sonnet
 - **Files:** tela de histórico mobile (S4.0 aponta) + cards por tipo.
@@ -156,6 +163,7 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 - [ ] Renderização por registry — novo `event.type` = registrar um card, sem tocar a view (FP-3 provado com tipo fake no teste).
 - [ ] Adapter `dose_instances`→eventos isolado; logs avulsos não somem do histórico.
 - [ ] G1 fechado no caminho da timeline; residual SP-default documentado; sem double-shift.
+- [ ] Multi-tz expat (S4.4b/ADR-053): enum curado estendido APÓS injeção de tz; brasileiro em Londres/NY com lembrete e dia corretos; IANA armazenado (sem offset).
 - [ ] Paridade web/mobile; `validate:agent` verde; smoke PO.
 
 ---

@@ -1,6 +1,7 @@
 # DEVFLOW Decisions Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[ADR-053]** Multi-timezone: escopo F4 (default→user-tz em geração/leitura/display/fronteira-de-dia), Caminho B enum curado (BR + punhado de destinos expat: Londres/NY/Lisboa/LA) após F4; Caminho C (IANA completo) gated em "base expat > nacional" (YAGNI); armazenar SEMPRE IANA (offset≠identidade por DST). Estende ADR-049 [accepted] -> [`decisions/data_and_schema/ADR-053.md`](./decisions/data_and_schema/ADR-053.md)
 - **[ADR-050]** Future-proofing de `dose_instances` p/ diabetes (FP-1 planned↔applied · FP-2 tolerância por protocolo · FP-3 timeline event-agnóstica · FP-4 semântica de unidade) — diabetes como épico próprio pós-refactor [accepted] -> [`decisions/data_and_schema/ADR-050.md`](./decisions/data_and_schema/ADR-050.md)
 - **[ADR-049]** Core tz-aware + `user_settings.timezone` como fonte de verdade (gating Fase 1; non-breaking via wrappers) [accepted] -> [`decisions/data_and_schema/ADR-049.md`](./decisions/data_and_schema/ADR-049.md)
 - **[ADR-048]** Modelo `dose_instances` — ocorrências materializadas (schedule-anchored); umbrella Fase 2 [accepted] -> [`decisions/data_and_schema/ADR-048.md`](./decisions/data_and_schema/ADR-048.md)
