@@ -15,7 +15,7 @@ Sem 1-3  4-6   7-9  10-11  ~12-13   ~14-16
     Req   Med   Trat Estoque  Perfil+  Analíticas
                               Landing+ (Hist/Ader/
                               Onboard  Consulta)
-    ✅    ✅    ✅   ✅       📋       📋
+    ✅    ✅    ✅   ✅       ✅       📋
 ```
 
 **Fases 0 → 3 entregues** (~11 sprints + Fase 2.5). **Fases 4-5 com spec pronta** (~4-5 sprints). Fase 6 a planejar.
@@ -31,7 +31,7 @@ Sem 1-3  4-6   7-9  10-11  ~12-13   ~14-16
 | **Fase 2** | [EXEC_SPEC_FASE2_PROTOCOLOS.md](EXEC_SPEC_FASE2_PROTOCOLOS.md) | T2.1 — T2.3 | ✅ Entregue |
 | **Fase 2.5** | [EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md](EXEC_SPEC_FASE2_5_STATUS_TRATAMENTOS.md) | T2.5.1 | ✅ Entregue |
 | **Fase 3** | [EXEC_SPEC_FASE3_ESTOQUE.md](EXEC_SPEC_FASE3_ESTOQUE.md) | S3.1 — S3.2 | ✅ Entregue |
-| **Fase 4** | [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) | S4.1 — S4.2 | 📋 Spec pronta |
+| **Fase 4** | [EXEC_SPEC_FASE4_PERFIL.md](EXEC_SPEC_FASE4_PERFIL.md) | S4.1 — S4.2 | ✅ Entregue |
 | **Fase 5** | [EXEC_SPEC_FASE5_ANALITICAS.md](EXEC_SPEC_FASE5_ANALITICAS.md) | S5.1 — S5.3 | 📋 Spec pronta |
 | **Fase 6** | _(a criar — Emergência · Chatbot · PDF · Export LGPD — **fecha paridade**)_ | — | ⏸️ A planejar |
 | **Fase 7** | _(a criar — mobile-only: camera · HealthKit · widgets · geolocation · watch · chatbot on-device)_ | — | ⏸️ A planejar |
