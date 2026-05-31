@@ -26,6 +26,7 @@ function makeBuilder(result) {
     gte:    vi.fn(function (...a) { this._calls.push(['gte', a]); return this }),
     lte:    vi.fn(function (...a) { this._calls.push(['lte', a]); return this }),
     order:  vi.fn(function (...a) { this._calls.push(['order', a]); return this }),
+    range:  vi.fn(function (...a) { this._calls.push(['range', a]); return this }),
     single: vi.fn(function ()     { this._calls.push(['single', []]); return Promise.resolve(result) }),
     then:   (resolve) => resolve(result),
   }

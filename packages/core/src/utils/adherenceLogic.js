@@ -8,7 +8,6 @@
 import {
   parseLocalDate,
   formatLocalDate,
-  getTodayLocal,
   isProtocolActiveOnDate as isProtocolInPeriod,
   getNow,
   parseISO,
@@ -109,103 +108,6 @@ export function calculateExpectedDoses(protocols, days, endDate = getNow()) {
     const effectiveDays = getEffectiveDays(protocol, periodStart, periodEnd)
     return total + dailyDoses * Math.max(effectiveDays, 0)
   }, 0)
-}
-
-/**
- * Calcula o streak e score baseado em logs e protocolos em memória
- * @param {Array} logs
- * @param {Array} protocols
- * @param {number} days
- * @returns {Object}
- */
-export function calculateAdherenceStats(logs, protocols, days = 30, offsetDays = 0) {
-  const logsByDay = new Map()
-  logs.forEach((log) => {
-    const dayKey = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
-    if (!logsByDay.has(dayKey)) logsByDay.set(dayKey, [])
-    logsByDay.get(dayKey).push(log)
-  })
-
-  let totalExpected = 0
-  let totalFollowed = 0
-  let totalTakenAnytime = 0
-  let currentStreak = 0
-  let streakBroken = false
-  const todayStr = getTodayLocal()
-
-  // Loop expandido para cobrir o streak além dos dias do score
-  // Limite de segurança de 365 dias para evitar loops infinitos em datasets mal formados
-  const maxDays = Math.max(days + offsetDays, 365)
-
-  for (let i = offsetDays; i < maxDays; i++) {
-    const date = getNow()
-    date.setDate(date.getDate() - i)
-    const dateStr = formatLocalDate(date)
-    const dayLogs = logsByDay.get(dateStr) || []
-
-    let dayExpected = 0
-    let dayFollowed = 0
-    let dayTakenAnytime = 0
-
-    protocols.forEach((protocol) => {
-      // Verificar se o protocolo estava ativo nesta data
-      if (!isProtocolActiveOnDate(protocol, dateStr)) return
-
-      const times = protocol.time_schedule || []
-      dayExpected += times.length
-
-      // Doses tomadas para este protocolo específico neste dia (independente de horário)
-      const protocolLogs = dayLogs.filter((l) => l.protocol_id === protocol.id)
-      dayTakenAnytime += Math.min(protocolLogs.length, times.length)
-
-      times.forEach((time) => {
-        if (isProtocolFollowed(time, dayLogs, dateStr)) {
-          dayFollowed++
-        }
-      })
-    })
-
-    // Acumula para o score apenas se estiver dentro da janela 'days'
-    if (i < offsetDays + days) {
-      totalExpected += dayExpected
-      totalFollowed += dayFollowed
-      totalTakenAnytime += dayTakenAnytime
-    }
-
-    // Lógica de Streak (continua enquanto não quebrar)
-    if (!streakBroken) {
-      const minAdherence = 0.8
-      // Para o STREAK, somos mais permissivos:
-      // 1. Se não havia nada previsto (gap entre tratamentos), o streak não quebra (mantém vivo)
-      // 2. Se havia doses, basta ter tomado (anytime) 80% delas (R-022)
-      const isDaySuccessful = dayExpected === 0 || dayTakenAnytime / dayExpected >= minAdherence
-      const isToday = dateStr === todayStr
-
-      if (isDaySuccessful) {
-        currentStreak++
-      } else if (isToday) {
-        // Hoje ainda não terminou, mantemos o streak vivo por UX positiva
-      } else if (dayExpected > 0) {
-        // Dia com doses esperadas que falhou (mesmo considerando anytime): quebra o streak
-        streakBroken = true
-      }
-      // Se dayExpected == 0, o streak continua (dia de folga/sem protocolo)
-    }
-
-    // Se já calculamos o score E o streak quebrou, podemos parar
-    if (i >= offsetDays + days && streakBroken) break
-  }
-
-  const score =
-    totalExpected > 0 ? Math.min(Math.round((totalFollowed / totalExpected) * 100), 100) : 0
-
-  return {
-    score,
-    taken: totalFollowed,
-    takenAnytime: totalTakenAnytime,
-    expected: totalExpected,
-    currentStreak,
-  }
 }
 
 /**

@@ -26,6 +26,9 @@ const PROTOCOLS = 'protocols'
 const MAX_TOLERANCE_MINUTES = 120
 const MS_PER_MINUTE = 60 * 1000
 
+/** Tamanho de página p/ paginar leituras (AP-186: PostgREST trunca em ~1000 sem erro). */
+const PAGE_SIZE = 1000
+
 /** Converte Date|ISO em ISO string (R-020: sem `new Date()` fora de dateUtils). */
 const toIso = (value) => parseISO(value).toISOString()
 
@@ -100,16 +103,31 @@ export function createDoseInstanceRepository({ client }) {
      * @returns {Promise<Array>}
      */
     async getWindow(userId, fromTs, toTs) {
-      const { data, error } = await client
-        .from(TABLE)
-        .select('*')
-        .eq('user_id', userId)
-        .gte('scheduled_for', toIso(fromTs))
-        .lte('scheduled_for', toIso(toTs))
-        .order('scheduled_for', { ascending: true })
+      // AP-186: PostgREST trunca em ~1000 linhas SEM erro. Uma janela de 90d de um
+      // usuário pesado passa de 1000 ocorrências (visto: 1590) → adesão/timeline
+      // truncadas (ex: "942/1000"). Paginar por offset (.range) — leitura pura, sem
+      // escrita que mute o filtro, então offset é seguro aqui (≠ sweep, que usa keyset).
+      const fromIso = toIso(fromTs)
+      const toTsIso = toIso(toTs)
+      const out = []
+      let from = 0
+      for (;;) {
+        const { data, error } = await client
+          .from(TABLE)
+          .select('*')
+          .eq('user_id', userId)
+          .gte('scheduled_for', fromIso)
+          .lte('scheduled_for', toTsIso)
+          .order('scheduled_for', { ascending: true })
+          .range(from, from + PAGE_SIZE - 1)
 
-      if (error) throw error
-      return data ?? []
+        if (error) throw error
+        if (!data || data.length === 0) break
+        out.push(...data)
+        if (data.length < PAGE_SIZE) break
+        from += PAGE_SIZE
+      }
+      return out
     },
 
     /**

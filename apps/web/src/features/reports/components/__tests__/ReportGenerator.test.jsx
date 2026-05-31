@@ -36,6 +36,15 @@ vi.mock('@shared/services/cachedServices', () => ({
         }))
       )
     ),
+    getAdherenceSummary: vi.fn((period) =>
+      Promise.resolve({
+        overallScore: 90,
+        overallTaken: 9,
+        overallExpected: 10,
+        currentStreak: 3,
+        period,
+      })
+    ),
   },
 }))
 
@@ -115,7 +124,12 @@ describe('ReportGenerator', () => {
         }),
         'Joao Silva',
         null,
-        'joao.silva@email.com'
+        'joao.silva@email.com',
+        null,
+        expect.objectContaining({
+          last30d: expect.objectContaining({ overallScore: 90 }),
+          last90d: expect.objectContaining({ overallScore: 90 }),
+        })
       )
     })
 

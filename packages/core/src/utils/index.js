@@ -38,7 +38,6 @@ export {
 // Adherence logic and calculations
 export {
   calculateExpectedDoses,
-  calculateAdherenceStats,
   isProtocolFollowed,
   isDoseInToleranceWindow,
   getNextDoseTime,
@@ -121,3 +120,12 @@ export {
 } from './stock.js'
 
 export { calculateAge, getInitials } from './profile.js'
+
+// Timeline event-model + builder puro (Fase 4 — FP-3 / ADR-050)
+export {
+  TIMELINE_EVENT_TYPES,
+  TIMELINE_ORDER,
+  buildTimeline,
+  groupByLocalDay,
+  deriveLocalDay,
+} from './timeline.js'
