@@ -49,7 +49,7 @@ Para otimizar o tempo de desenvolvimento em um time enxuto e bootstraped, as fea
 | **Interações ANVISA** | ✅ Alerta local no cadastro | ✅ Alerta na Ficha Médica | ❌ Não | `interactions.json` estático | 🟡 Spike feito — execução Fase 8 |
 | **Alarme Nativo Persistente** | ✅ P0 — AlarmManager/Critical Alerts | ❌ N/A (browser) | ❌ Não | — | 🔴 P0 — pré-Fase 5 |
 
-> **Nota sobre `@dosiq/core`:** O monorepo `packages/core` com Repositories + Zod schemas **ainda não existe no mobile**. A extração é prerequisito do Gate Loop G1→G2→G3 e deve ser planejada como parte da Fase 5 ou como sprint dedicada.
+> **Nota sobre `@dosiq/core`:** O monorepo `packages/core` com seus Repositories + Schemas Zod já está totalmente operacional e integrado ao ecossistema mobile. Toda nova lógica de negócios ou schema de dados compartilhável deve ser codificado e exposto diretamente no `@dosiq/core` usando aliases (`@dosiq/core/` ou `@core/`) para manter o alinhamento de qualidade e a paridade de contratos.
 
 ---
 
@@ -122,7 +122,8 @@ O Dosiq opera em infraestrutura online 100% gratuita nas fases de escala inicial
 
 Como o Dosiq é desenvolvido com forte apoio de agentes de IA coders, todo trabalho de implementação deve seguir as regras do **Standard Quality Protocol (SQP v2.0)**:
 *   **Checklist Obrigatório:** Antes de codificar, o agente deve expor o checklist `[ ]` das tarefas.
-*   **Gate Loop G1 ➔ G2 ➔ G3:** Toda funcionalidade comum deve começar local no Native (G1), ser extraída em formato de *Factory* purificada no `@dosiq/core` (G2) e finalmente adotada pela Web (G3). **Nota:** `@dosiq/core` monorepo ainda não existe no mobile — planejar extração.
+*   **Gate Loop G1 ➔ G2 ➔ G3:** Toda funcionalidade comum deve começar local no Native (G1), ser extraída em formato de *Factory* purificada no `@dosiq/core` (G2) e finalmente adotada pela Web (G3).
+*   **Decommission do Expo Go (Builds de Desenvolvimento Nativas):** O Dosiq utiliza dependências nativas (notifee, firebase, push notifications) incompatíveis com o cliente Expo Go padrão. Os agentes IA devem **abandonar qualquer expectativa de rodar no Expo Go** e trabalhar exclusivamente gerando e testando Builds de Desenvolvimento nativas no simulador ou device real (`rtk expo run:android` ou `rtk expo run:ios`).
 *   **Tags de Superfície Obrigatórias:** Todo item do backlog DEVE ter tags `[PORTAR]` (já existe em outra plataforma), `[NOVO]` (criar do zero), `[REFATORAR]` (reescrever existente), ou `[N/A]` por plataforma.
 *   **Validação Contínua:** Nenhum PR é aceito sem rodar o linter (`rtk lint`) e a suíte crítica de testes (`rtk npm run validate:agent`).
 *   **Zero Auto-Aprovação (R-060):** O agente nunca faz merge de código funcional por conta própria; ele cria o PR e aguarda a revisão e homologação do humano.

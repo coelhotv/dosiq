@@ -3,6 +3,9 @@
 > **Versão:** 1.1 — Revisão de 30/05/2026  
 > **Changelog v1.0→v1.1:** P56-01 (tags de superfície [PORTAR]/[NOVO]), P56-02 (ref spec deeplink), P56-03 (ref R-111→R-114), P56-04 (expo-file-system no mobile), P56-05 (dependência dose_instances refactor).
 
+> [!IMPORTANT]
+> **Decommission do Expo Go (Ambiente Nativo de Builds):** Como o projeto utiliza dependências nativas (notificações locais persistentes, firebase, etc.), o app não é compatível com o Expo Go padrão. Todos os testes locais e desenvolvimento no mobile devem ser gerados e validados exclusivamente por meio de Builds de Desenvolvimento nativas (`rtk expo run:android` ou `rtk expo run:ios`).
+
 Este documento especifica os requisitos de implementação para as **Fases 5 e 6**, focando em fechar a paridade de valor clínico entre o aplicativo nativo e a plataforma web de forma otimizada, introduzindo ferramentas analíticas, exportação segura e portabilidade médica.
 
 > **⚠️ Dependência Crítica:** As features de adesão desta fase dependem da conclusão da [Fase 3 do refactor dose_instances](../dose_instances_refactor/EXEC_SPECS_PHASE_3.md) — que migra cálculos de adesão de `medicine_logs` (inferência) para `dose_instances` (materializado). `isProtocolFollowed`, `calculateAdherenceStats` e `getCurrentStreak` passarão a ler `dose_instances` com tolerância dinâmica por instância (`tolerance_minutes`).
@@ -94,6 +97,28 @@ Esta fase resolve a portabilidade médica física, segurança e conformidade de 
     *   Exibe dados estritamente críticos de emergência (Alergias conhecidas, Tipo sanguíneo, Contatos de emergência do cuidador primário, Medicamentos que não podem ser interrompidos ou que possuem alta contraindicação - ex: anticoagulantes).
     *   **Nota:** Spec de deep link universal **já existe** em [EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md](../backlog-native_app/EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md) — reutilizar para o esquema de roteamento.
 *   **Segurança (LGPD):** A rota pública é protegida por uma chave de autenticação dinâmica salva em `profiles.emergency_token`. Se o paciente trocar de token ou revogar o cartão no app nativo, a URL pública antiga retorna imediatamente erro "404 - Acesso Revogado", apagando a exposição.
+*   **Contrato de Dados Zod (Schema):** Toda a estruturação e validação do Cartão de Emergência deve seguir rigorosamente a regra **R-021** (Zod 4). O schema deve ser implementado no pacote core e exportado sob `@dosiq/core/schemas/emergencyProfileSchema.js`:
+    ```javascript
+    import { z } from 'zod';
+
+    export const emergencyProfileSchema = z.object({
+      patient_id: z.string().uuid(),
+      emergency_token: z.string().length(32), // MD5/Hex token de acesso dinâmico
+      blood_type: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).nullable(),
+      known_allergies: z.string().max(1000, 'Limite de 1000 caracteres para alergias').default('Nenhuma declarada'),
+      critical_conditions: z.string().max(1000, 'Limite de 1000 caracteres para condições clínicas').nullable(),
+      emergency_contacts: z.array(z.object({
+        name: z.string().min(2, 'Nome do contato inválido').max(100),
+        phone: z.string().min(10, 'Telefone inválido (mínimo 10 dígitos)').max(20),
+        relationship: z.string().max(50).default('Familiar')
+      })).min(1, 'É obrigatório ter pelo menos 1 contato de emergência'),
+      critical_medicines: z.array(z.object({
+        medicine_name: z.string().min(1).max(200),
+        dosage: z.string().max(100).nullable(),
+        contraindication_alert: z.string().max(500, 'Alerta de contraindicação muito longo').nullable()
+      })).default([])
+    });
+    ```
 
 ### 🌐 F6.2 — Geração de PDF Médico
 

@@ -3,6 +3,9 @@
 > **Versão:** 1.1 — Revisão de 30/05/2026  
 > **Changelog v1.0→v1.1:** P8-01 (chatbot já existe — tag [PORTAR]), P8-02 (ref contextBuilder/safetyGuard existentes), P8-03 (decisão voice lib pendente), P8-04 (ref spike ANALISE_FONTES_INTERACOES), P8-05 (Safari iOS WebSpeech risk).
 
+> [!IMPORTANT]
+> **Decommission do Expo Go (Ambiente Nativo de Builds):** Como o projeto utiliza dependências nativas (notificações locais persistentes, firebase, etc.), o app não é compatível com o Expo Go padrão. Todos os testes locais e desenvolvimento no mobile devem ser gerados e validados exclusivamente por meio de Builds de Desenvolvimento nativas (`rtk expo run:android` ou `rtk expo run:ios`). Isto é de suma importância para o módulo de Voz (`react-native-voice`), que requer vinculação nativa e Config Plugins.
+
 Este documento especifica os requisitos de engenharia e a arquitetura técnica para a **Fase 8**, focando na implementação de recursos inteligentes de inteligência artificial (Groq SDK), interface de voz (Speech Recognition) e segurança clínica local (Interações Medicamentosas ANVISA).
 
 > **Estado real:** Ao contrário do que o backlog anterior sugeria, **vários componentes da Fase 8 já existem em produção** no PWA e Telegram. O trabalho é majoritariamente de port para mobile + execução de pipeline de dados.

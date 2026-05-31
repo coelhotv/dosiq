@@ -3,10 +3,16 @@
 > **Versão:** 1.1 — Revisão de 30/05/2026  
 > **Changelog v1.0→v1.1:** P7-01 (separação 7A/7B), P7-02 (Meta Business + cenário dev sem CNPJ), P7-03 (exec spec api/webhooks.js), P7-04 (templates WhatsApp), P7-05 (role observer para médico).
 
+> [!IMPORTANT]
+> **Decommission do Expo Go (Ambiente Nativo de Builds):** Como o projeto utiliza dependências nativas (notificações locais persistentes, firebase, etc.), o app não é compatível com o Expo Go padrão. Todos os testes locais e desenvolvimento no mobile devem ser gerados e validados exclusivamente por meio de Builds de Desenvolvimento nativas (`rtk expo run:android` ou `rtk expo run:ios`).
+
 Este documento especifica a engenharia de software e UX para a **Fase 7**, agora **separada em duas sub-fases independentes**:
 
-- **Fase 7A — Modo Cuidador Completo** (100% executável por agentes IA, sem dependências externas)
-- **Fase 7B — WhatsApp Bot via Meta Cloud API** (bloqueada por Meta Business verification + MEI)
+*   **Fase 7A — Modo Cuidador Completo** (100% executável por agentes IA, sem dependências externas)
+*   **Fase 7B — WhatsApp Bot via Meta Cloud API** (bloqueada por Meta Business verification + MEI)
+
+> [!NOTE]
+> **Memória de Longo Prazo (DEVFLOW):** Antes de iniciar qualquer alteração, o agente IA deve ler e respeitar as regras e anti-patterns históricos de timezone (GMT-3) e loops de renderização documentados ativamente na pasta `.agent/memory/` (particularmente em `.agent/memory/RULES_INDEX.md` e `.agent/memory/ANTI_PATTERNS_INDEX.md`).
 
 ---
 
@@ -50,11 +56,13 @@ Para anular a barreira de exclusão digital da terceira idade, a Cuidadora (Ana 
     *   Ana Paula clica em "Gerenciar Novo Paciente" e cadastra a mãe.
     *   Ela insere os medicamentos ativos da mãe, definindo doses e horários.
     *   Ao finalizar, o sistema exibe um **QR Code grande e legível** e um código de 6 dígitos (ex: `A7X-92B`).
+    *   **Compartilhamento Desacoplado (Share Nativo):** O painel do cuidador exibe um botão de "Compartilhar Convite". A nível mobile, ele utiliza a **API `Share` nativa do React Native** (e a Web API `navigator.share` na Web), permitindo enviar o código e o link de convite (`dosiq.app/invite?code=A7X-92B`) diretamente para o aplicativo de WhatsApp ou Telegram instalado localmente no celular do usuário.
+    *   *Benefício:* A Fase 7A fica **100% independente do WhatsApp Bot (7B)** e de burocracias com a aprovação da Meta Business API.
 2.  **No celular da mãe (Dona Maria):**
     *   O Dosiq é instalado e aberto na tela de primeiro uso.
     *   Aparecem duas opções grandes: `[ Sou Paciente ]` e `[ Sou Cuidador ]`.
     *   Ao clicar em `[ Sou Paciente ]`, o app abre a câmera nativa de leitura de QR Code.
-    *   Ao escanear a tela do celular da filha (ou digitar o código), o app da Dona Maria é preenchido instantaneamente com todos os remédios e horários programados.
+    *   Ao escanear a tela do celular da filha (ou digitar o código recebido pelo WhatsApp local), o app da Dona Maria é preenchido instantaneamente com todos os remédios e horários programados.
 
 ### 🔒 W7.2 — Consentimento LGPD & Revogação Soberana
 *   **O Aceite:** Assim que o código é verificado no celular do paciente, uma caixa de diálogo em tela cheia exibe os termos de conformidade e consentimento:
@@ -115,6 +123,44 @@ CREATE TABLE caregiver_links (
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   UNIQUE(patient_id, caregiver_id)
 );
+```
+
+### 🔒 2.1 Contratos de Validação Zod (Schemas)
+
+Toda a modelagem transacional e validação no frontend (Mobile e PWA) deve seguir rigorosamente a regra **R-021** (Zod 4). Os schemas canônicos do domínio do cuidador devem ser codificados diretamente no core em `@dosiq/core/schemas/caregiverSchemas.js`:
+
+```javascript
+import { z } from 'zod';
+
+export const caregiverInviteSchema = z.object({
+  code: z.string()
+    .length(6, 'O código de convite deve ter exatamente 6 caracteres')
+    .regex(/^[A-Z0-9]+$/, 'O código deve conter apenas letras maiúsculas e números'),
+  caregiver_user_id: z.string().uuid(),
+  patient_profile_id: z.string().uuid(),
+  expires_at: z.string().datetime('Data de expiração inválida')
+});
+
+export const caregiverLinkSchema = z.object({
+  id: z.string().uuid().optional(),
+  patient_id: z.string().uuid('ID do paciente inválido'),
+  caregiver_id: z.string().uuid('ID do cuidador inválido'),
+  role: z.enum(['manager', 'observer'], {
+    errorMap: () => ({ message: 'Perfil de permissão inválido. Escolha manager ou observer.' })
+  }),
+  notification_channel: z.enum(['whatsapp', 'telegram', 'both', 'none']).default('whatsapp'),
+  permissions: z.object({
+    view_schedule: z.boolean().default(true),
+    view_adherence: z.boolean().default(true),
+    view_stock: z.boolean().default(true),
+    receive_alerts: z.boolean().default(true)
+  }).default({
+    view_schedule: true,
+    view_adherence: true,
+    view_stock: true,
+    receive_alerts: true
+  })
+});
 ```
 
 ### Regras Críticas de RLS no Supabase

@@ -44,6 +44,7 @@ Para manter o foco nítido, algumas ideias antigas foram permanentemente descart
 *   **Offline-First Complexo na V1:** A fila de sincronização local de doses existente no mobile nativo e no PWA já atende 99% das quedas comuns de internet em trânsito no dia a dia.
 *   **Tradução para Português de Portugal (PT-PT):** Foco geográfico absoluto no Brasil para validação completa de Product-Market Fit (PMF) local primeiro.
 *   **Fluxo "Paciente convida Cuidador":** Descartado na revisão v1.1. No Brasil, idosos que precisam de cuidador geralmente não têm letramento digital suficiente para configurar apps e convidar outras pessoas. O fluxo principal é Cuidador→Paciente(s).
+*   **Parceiro de Responsabilidade (C02):** Descartado na revisão v1.1. O PO decidiu priorizar o desenvolvimento de vez do **Modo Cuidador Completo (Fase 7A)**, que atende ao caso de uso familiar robusto. O interesse real será avaliado previamente de forma barata por meio do **Termômetro de Demanda (P0.2)** (painted door test) no perfil do usuário, eliminando a necessidade de construir uma versão "leve" intermediária que adicionaria complexidade extra e custos desnecessários de manutenção de cota de bot.
 
 ---
 
