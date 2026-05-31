@@ -22,7 +22,10 @@ export default function HealthHistoryView({
   dosesThisMonth,
   selectedDate,
   markedDates,
-  dayLogs,
+  markedStatusesByDay,
+  monthPickerRange,
+  timezone,
+  dayEvents,
   isModalOpen,
   editingLog,
   protocols,
@@ -70,15 +73,18 @@ export default function HealthHistoryView({
             onDayClick={onDayClick}
             onLoadMonth={onLoadMonth}
             markedDates={markedDates}
+            markedStatusesByDay={markedStatusesByDay}
             enableLazyLoad={true}
             enableSwipe={true}
             enableMonthPicker={true}
+            monthPickerRange={monthPickerRange || { start: -12, end: 1 }}
           />
         </div>
 
         <HistoryDayPanel
           selectedDate={selectedDate}
-          dayLogs={dayLogs}
+          dayEvents={dayEvents}
+          timezone={timezone}
           onEditLog={onEditLog}
           onDeleteLog={onDeleteLog}
         />

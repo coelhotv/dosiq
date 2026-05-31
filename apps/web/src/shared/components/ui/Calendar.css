@@ -127,6 +127,33 @@
   bottom: 6px;
 }
 
+/* Dots acumulados por dia: um por status presente (🟢 tomada · ⚪ pendente · 🔴 perdida). */
+.log-dots {
+  position: absolute;
+  bottom: 5px;
+  display: flex;
+  gap: 2px;
+}
+.log-dots .log-dot {
+  position: static;
+  bottom: auto;
+  box-shadow: none;
+}
+
+/* Cor do dot por status. Sem status (legado/outros callers) mantém o verde default acima. */
+.log-dot[data-status='taken'] {
+  background: var(--color-success);
+  box-shadow: 0 0 10px var(--color-success);
+}
+.log-dot[data-status='pending'] {
+  background: var(--color-outline, #9e9e9e);
+  box-shadow: 0 0 10px var(--color-outline, #9e9e9e);
+}
+.log-dot[data-status='missed'] {
+  background: var(--color-error);
+  box-shadow: 0 0 10px var(--color-error);
+}
+
 .calendar-day:not(.empty):hover {
   background: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);

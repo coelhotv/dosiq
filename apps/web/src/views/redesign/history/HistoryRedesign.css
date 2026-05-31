@@ -152,6 +152,27 @@
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
   flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hhr-day-panel__heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hhr-day-panel__count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-on-surface);
+  opacity: 0.6;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+  cursor: default;
 }
 
 .hhr-day-panel__title {
@@ -188,8 +209,8 @@
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
+  min-height: 0; /* permite o flex item encolher e o overflow-y funcionar */
   overflow-y: auto;
-  max-height: 360px;
 }
 
 /* ── HistoryLogCard ────────────────────────────────────────── */
@@ -198,15 +219,52 @@
   border-radius: 0.75rem;
   padding: 0.75rem 0.875rem;
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.hlc-card__main {
+/* Coluna lateral: hora no topo, ações embaixo — ações alinham na altura do pill de status. */
+.hlc-card__side {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: space-between;
+  flex-shrink: 0;
   gap: 0.5rem;
+}
+
+/* ── Estado do evento (taken/missed/pending) ─────────────────── */
+/* Barra lateral colorida por status — reforça o estado além do badge (idoso-friendly). */
+.hlc-card--taken { border-left: 3px solid var(--color-success, #2e7d32); }
+.hlc-card--missed { border-left: 3px solid var(--color-error, #c62828); }
+.hlc-card--pending { border-left: 3px solid var(--color-outline, #9e9e9e); }
+
+.hlc-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  align-self: flex-start;
+  margin-top: 0.1rem;
+}
+
+.hlc-card__status[data-status='taken'] {
+  color: var(--color-success, #2e7d32);
+  background: color-mix(in srgb, var(--color-success, #2e7d32) 14%, transparent);
+}
+
+.hlc-card__status[data-status='missed'] {
+  color: var(--color-error, #c62828);
+  background: color-mix(in srgb, var(--color-error, #c62828) 14%, transparent);
+}
+
+.hlc-card__status[data-status='pending'] {
+  color: var(--color-on-surface);
+  background: color-mix(in srgb, var(--color-on-surface) 10%, transparent);
 }
 
 .hlc-card__info {
@@ -463,8 +521,14 @@
   .hhr-kpi-card__label {
     font-size: 0.65rem;
   }
+}
 
-  /* Calendar Section: stack vertical (calendário em cima, day panel embaixo) */
+/* ============================================================
+   RESPONSIVE — Calendar 1-coluna (< 1024px)
+   Abaixo de 1024 o calendário+lista empilham (calendário em cima,
+   lista embaixo) — a coluna lado-a-lado fica apertada nessa faixa.
+   ============================================================ */
+@media (max-width: 1023px) {
   .hhr-calendar-section {
     flex-direction: column;
   }
@@ -474,7 +538,35 @@
   }
 
   .hhr-day-panel__list {
-    max-height: none; /* sem scroll interno no mobile */
+    height: auto; /* empilhado: cresce com o conteúdo */
+    max-height: none; /* sem scroll interno */
+    overflow-y: visible;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Desktop 2-coluna (≥ 1024px)
+   Painel absoluto preenchendo a altura da seção (= altura do calendário,
+   único item em fluxo) → a lista de doses rola DENTRO, alinhada ao calendário.
+   Determinístico: a lista nunca dita a altura (evita a página rolar).
+   ============================================================ */
+@media (min-width: 1024px) {
+  .hhr-calendar-section {
+    position: relative;
+    align-items: flex-start;
+  }
+
+  .hhr-calendar-card {
+    margin-right: 356px; /* largura do painel (340) + gap (16) */
+  }
+
+  .hhr-day-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    flex: none;
   }
 }
 
@@ -486,8 +578,12 @@
     max-width: 1100px;
   }
 
+  .hhr-calendar-card {
+    margin-right: 416px; /* painel 400 + gap 16 */
+  }
+
   .hhr-day-panel {
-    flex: 0 0 400px;
+    width: 400px;
   }
 }
 

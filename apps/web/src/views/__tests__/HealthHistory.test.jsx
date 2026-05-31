@@ -32,6 +32,13 @@ vi.mock('@shared/services', () => ({
   },
 }))
 
+vi.mock('@services/api/timelineService', () => ({
+  timelineService: {
+    getMonthTimeline: vi.fn(() => Promise.resolve({ events: [], tz: 'America/Sao_Paulo' })),
+    getUserTimezone: vi.fn(() => Promise.resolve('America/Sao_Paulo')),
+  },
+}))
+
 vi.mock('@shared/components/ui/Calendar', () => ({
   default: () => <div data-testid="calendar" />,
 }))
