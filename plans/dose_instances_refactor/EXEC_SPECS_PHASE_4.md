@@ -110,7 +110,8 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 - **Aceite:** usuário em fuso ≠ SP vê dias/horas corretos na timeline; nenhum double-shift; residual SP-default documentado no MASTER.
 - **Deps:** S4.3
 
-### S4.4b — Multi-timezone para expat (Caminho B, ADR-053)
+### S4.4b — Multi-timezone para expat (Caminho B, ADR-053) ✅ mergeada (#622)
+- **Status:** ✅ entregue (PR #622, `8eb946bc`). `TIMEZONE_OPTIONS` += NY/LA/Lisboa/Londres; **sem migração** (coluna `text` livre, `z.enum` é o gate); DST por IANA. **Ordenação revista por decisão PO: GMT decrescente (relógio crescente)**, não BR-first — expat GMT+0 no topo, BR antes de expat no mesmo offset. Auto-detecção de fuso (Intl) → follow-up. web 3.7.0→3.8.0.
 - **Agent:** `claude` · **Modelo:** sonnet
 - **Files:** `packages/core/src/schemas/userSettingsSchema.js` (`TIMEZONE_OPTIONS`), testes do schema.
 - **Spec:** SÓ depois que a injeção de tz (S4.4) estiver fechada — antes disso, adicionar fuso ao enum **não muda o lembrete** (display/geração ainda SP). Estender `TIMEZONE_OPTIONS` com um punhado de destinos expat reais (`Europe/London`, `America/New_York`, `America/Lisbon`, `America/Los_Angeles`) além das 17 BR. DST resolvido pelo nome IANA via `Intl` (nunca por offset — offset≠identidade). Armazenar SEMPRE IANA. Não dropar a enum (Caminho C/IANA completo fica gated em "base expat > nacional", ADR-053). Manter ordenação BR-first.
