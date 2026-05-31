@@ -122,24 +122,26 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
   const enrich = makeEnricher(protocolsById)
   const consumedLogIds = collectConsumedLogIds(safeInstances, safeLogs)
 
-  // Slots representados por instância visível (p/ dedupe defensivo de avulsos, AP-193).
-  const representedSlots = []
+  // Slots representados por instância visível, indexados por protocol_id (p/ dedupe
+  // defensivo de avulsos, AP-193). Map por protocolo evita varrer todos os slots por
+  // log avulso — busca fica limitada aos slots do mesmo protocolo (Gemini #620).
+  const slotsByProtocol = new Map()
   const events = []
   for (const inst of safeInstances) {
     if (!VISIBLE_INSTANCE_STATUSES.has(inst.status)) continue
     events.push(instanceToEvent(inst, logById, enrich))
-    representedSlots.push({
-      protocolId: inst.protocol_id,
+    if (!slotsByProtocol.has(inst.protocol_id)) slotsByProtocol.set(inst.protocol_id, [])
+    slotsByProtocol.get(inst.protocol_id).push({
       ms: parseISO(inst.scheduled_for).getTime(),
       tolMs: (inst.tolerance_minutes ?? DEFAULT_TOLERANCE_MINUTES) * MS_PER_MINUTE,
     })
   }
 
   const isCoveredBySlot = (log) => {
+    const slots = slotsByProtocol.get(log.protocol_id)
+    if (!slots || slots.length === 0) return false
     const takenMs = parseISO(log.taken_at).getTime()
-    return representedSlots.some(
-      (s) => s.protocolId === log.protocol_id && Math.abs(s.ms - takenMs) <= s.tolMs,
-    )
+    return slots.some((s) => Math.abs(s.ms - takenMs) <= s.tolMs)
   }
 
   // Logs avulsos: sem elo (nenhuma direção) E não cobertos por slot representado.
