@@ -3,7 +3,7 @@
 > **Objetivo:** transformar o histórico de saúde numa **linha do tempo contínua de eventos tipados**, ordenada por instante absoluto, **aberta a múltiplos tipos** (`dose` agora; `biomarker`/`note` depois sem reescrever) — realização do **FP-3** (ADR-050). É a fundação que os épicos de **líquidos** e **diabetes** reusam (ADR-052). Fecha também o gap **G1** (injeção de tz nos ~250 callers em SP-default).
 > **Pré-requisitos:** Fase 3 (leitura ← `dose_instances`) ✅ mergeada. Adesão/hoje já consomem instâncias.
 > **ADRs:** ADR-048 · ADR-049 (tz) · **ADR-050 FP-3** · ADR-052 (fundação compartilhada) · **ADR-053** (multi-tz expat: default→user-tz + enum curado Caminho B, ver S4.4b).
-> **Status:** 🔄 em andamento — PR-F4.1 ✅ mergeada (#620, 2026-05-31); PR-F4.2/F4.3 pendentes.
+> **Status:** 🔄 em andamento — PR-F4.1 ✅ (#620) + PR-F4.2 ✅ (#621) mergeadas (2026-05-31); falta PR-F4.3 (mobile).
 
 ---
 
@@ -12,7 +12,7 @@
 | PR | Sprints | Status | Ref |
 |----|---------|--------|-----|
 | **PR-F4.1** core event-model + read | S4.0–S4.2b | ✅ mergeada (#620) | puro + read service + rewrite views G6 (sem UI) |
-| **PR-F4.2** web timeline UI + tz | S4.3–S4.4 | ⬜ pendente | **muda UI** + fecha G1 |
+| **PR-F4.2** web timeline UI + tz | S4.3–S4.4 | ✅ mergeada (#621) | UI event-agnóstica + registry + fecha G1 (tz) |
 | **PR-F4.3** mobile timeline | S4.5 | ⬜ pendente | paridade nativa |
 | (testes S4.6) | distribuídos | ⬜ | dentro de cada PR |
 
