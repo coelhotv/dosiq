@@ -76,22 +76,21 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
   - Adapter `doseInstancesToEvents(instances, logs)` → `TimelineEvent[]` de `type='dose'` (payload: medicine, dosagem na unidade, status taken/missed/pending, elo log). FP-3: adapter isolado.
   - `getTimeline({ userId, fromTs, toTs, tz })` → busca instâncias (repo `getWindow`, paginado AP-186) + logs avulsos (sem `dose_instance_id`, para não sumir do histórico) → adapter → `buildTimeline`. Lazy net (`ensureInstancesUpTo`) best-effort antes (R-245).
 - **Aceite:** stream inclui taken/missed/pending + logs avulsos; ordenação correta; paginado; sem duplicar (instância taken + seu log = 1 evento, não 2).
-- **Deps:** S4.1, Fase 3 (read API)
+- **⚠️ Interação com órfãos históricos (AP-193):** logs pré-fix sem `dose_instance_id` (mobile pré-0.7.0) aparecem na timeline como eventos `dose` avulsos (corretamente — não somem). Mas suas instâncias materializadas podem estar `missed` (falso) em paralelo → **risco de evento duplicado/contraditório** (1 log avulso "taken" + 1 instância "missed" no mesmo slot). O **reconcile histórico one-shot** (fatia própria pendente, todos usuários) deve rodar ANTES ou junto da F4 p/ a timeline não mostrar o mesmo slot 2×. Mínimo: o adapter deve dedupe por (protocol_id, slot-na-tolerância) preferindo o estado real.
+- **Deps:** S4.1, Fase 3 (read API). **Pré-requisito recomendado:** reconcile histórico de órfãos.
 
 ### S4.2b — Resolver views de adesão legadas (G6) preservando server-agg ⚠️ migration
 - **Agent:** `claude` · **Modelo:** **opus** (SQL + risco schema drift, decisão de fonte de verdade)
 - **Files:** migration SQL (rewrite da fonte das views) + `apps/web/src/services/api/adherenceService.js` (`getDailyAdherenceFromView`/`getAdherencePatternFromView` — só se a forma mudar) + testes.
 - **Spec:** reescrever a FONTE de `v_daily_adherence` e `v_adherence_heatmap` de `medicine_logs` (inferência ±2h) → `dose_instances` (status real), **mantendo a mesma interface de saída** (colunas/shape que Reports/PDF/Consultation/HealthHistory já consomem) e a **agregação no servidor** (R-249 — NUNCA mover pro client). Alinhar a semântica com a F3 (taken/missed real). Grants + RLS conforme CLAUDE.md. Sem caminho duplicado (lição Sprint 7).
 - **Aceite:** views retornam de `dose_instances`; números batem com `adherenceService` core (F3); payload ao client inalterado (sem regressão OOM em low-mid); Reports/PDF/Consultation seguem funcionando.
-<<<<<<< Updated upstream
 - **🐞 BUG CONCRETO A MATAR (AP-191, descoberto F3.2b):** `v_daily_adherence` hoje calcula `expected` SÓ de `protocols WHERE active = true`, mas `taken` conta TODOS os logs (sem filtro de protocolo). Protocolo finalizado (ex: antibiótico 7d → `active=false`) some do denominador mas seus logs ficam no numerador → `taken > expected` → **`adherence_percentage > 100%`** em dias passados (visto no sparkline "Adesão 30 Dias": 118%↓). Além disso a view **não tem clamp 0-100**. Migrar p/ `dose_instances` corrige na raiz (expected = ocorrências materializadas reais, taken = `status='taken'`, simétrico) — **mas garantir clamp e simetria expected/taken** explicitamente no aceite. Validar especificamente um usuário com protocolo one-shot finalizado no meio da janela.
-=======
+- **⏰ LIMITES DE JANELA EM UTC REAL (AP-194, descoberto F3.2 S3.7):** ao reescrever as views/RPCs, os limites de janela (`fromTs`/`toTs`, "últimos N dias", fronteira de dia) DEVEM usar UTC real — em SQL, `now()`/`date_trunc` no tz correto; **NUNCA** `getNow()`/`getSaoPauloTime().toISOString()` do JS (desloca 3h e omite doses recentes). Se algum caller JS montar a janela, usar `getServerTimestamp()` (UTC real) + `addDays`, 1 chamada de timestamp. Janelas adjacentes com limites inclusivos precisam de teto exclusivo (ms-1) p/ não double-contar boundary.
 - **🎯 CONVERGÊNCIA (ADR-054) — itens obrigatórios desta sprint:**
-  - **Migrar `consultationDataService`** (`features/consultation/services/`): hoje usa `calculateAdherenceStats(logs, protocols, 30/90)` legado (±2h) p/ o sumário do PDF/consulta. Trocar por `adherenceService`/core instances. É o ÚLTIMO consumidor JS do `calculateAdherenceStats` → depois dele, **aposentar `calculateAdherenceStats`** do core.
+  - **Migrar `consultationDataService`** (`features/consultation/services/`): hoje usa `calculateAdherenceStats(logs, protocols, 30/90)` legado (±2h) p/ o sumário do PDF/consulta. Trocar por `adherenceService`/core instances. **Confirmado pós-F3 como o ÚLTIMO consumidor JS real** do `calculateAdherenceStats` (F3 já migrou mobile `_useTodayDerived` e web `_useDashboardDerived`; as 2 menções remanescentes em `_useDashboardDerived`/`logService` são só comentários) → depois dele, **aposentar `calculateAdherenceStats`** do core (+ barrel `utils/index.js`).
   - **Consulta mistura 3 fontes hoje** (`Consultation.jsx`: legado em dataService + view `getDailyAdherenceFromView` + `stats` instances do contexto). Pós-migração: tudo da mesma fonte. Validar que PDF == anel do dashboard.
   - **TESTE DE PARIDADE (trava schema drift, lição Sprint 7):** mesmo conjunto de `dose_instances` → `compute*FromInstances` (JS core) **==** resultado da view SQL. Sem isso, anel e relatório voltam a divergir.
   - Cartão de emergência: **sem adesão** (verificado F3.2b) — não tocar.
->>>>>>> Stashed changes
 - **Deps:** S4.2, Fase 3 (PR-F3.2a)
 
 ### S4.3 — Web: HealthHistoryView event-agnóstica + registry de renderizadores ⚠️ muda UI
@@ -107,7 +106,7 @@ Hoje a stream é populada só com `dose` (de `dose_instances` + `medicine_logs`)
 ### S4.4 — Web: fechamento de tz (G1) no caminho da timeline
 - **Agent:** `claude` · **Modelo:** **opus** (cross-callsite sutil, double-shift — mesma classe da S1.3)
 - **Files:** os callers de histórico/leitura que o S4.0 delimitou (injeção de `tz` em `getUserTime`/dateUtils).
-- **Spec:** injetar o tz do usuário (de `user_settings.timezone`, F1) no fluxo de leitura/exibição da timeline e nos leitores da F3 que ainda usem SP-default. Documentar o residual que permanece SP-default (fora do escopo da timeline). Cuidado com double-shift (instante absoluto já é UTC; tz só governa o wall-clock exibido).
+- **Spec:** injetar o tz do usuário (de `user_settings.timezone`, F1) no fluxo de leitura/exibição da timeline e nos leitores da F3 que ainda usem SP-default. Documentar o residual que permanece SP-default (fora do escopo da timeline). Cuidado com double-shift (instante absoluto já é UTC; tz só governa o wall-clock exibido). **Ver AP-194:** `getSaoPauloTime()`/`getNow()` retornam Date no wall-clock SP — usar `.toISOString()` deles p/ comparar com coluna UTC desloca 3h. Limite de query/janela = UTC real (`getServerTimestamp()`); o tz só entra na DERIVAÇÃO do dia local p/ agrupar exibição, nunca no limite da query.
 - **Aceite:** usuário em fuso ≠ SP vê dias/horas corretos na timeline; nenhum double-shift; residual SP-default documentado no MASTER.
 - **Deps:** S4.3
 
