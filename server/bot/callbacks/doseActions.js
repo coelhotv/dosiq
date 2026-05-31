@@ -1,11 +1,11 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { medicineLogService } from '../../services/medicineLogService.js';
-import { calculateDaysRemaining, calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
+import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { getServerTimestamp } from '../../utils/dateUtils.js';
-import { createDoseInstanceRepository } from '@dosiq/core';
+import { getServerTimestamp, addDays, getNow } from '../../utils/dateUtils.js';
+import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 import { createLogger } from '../logger.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
@@ -129,12 +129,11 @@ async function calculateAdherenceAndStockWarnings(userId, medicineId) {
   const dailyUsage = activeProtocols?.reduce((sum, p) => sum + ((p.time_schedule?.length || 0) * (p.dosage_per_intake || 0)), 0) || 0;
   const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
   
-  const { data: allLogs } = await supabase
-    .from('medicine_logs')
-    .select('taken_at')
-    .eq('user_id', userId);
-  
-  const streak = calculateStreak(allLogs);
+  // Streak ← dose_instances (S3.7): dias consecutivos ≥80% por status, não infere sobre logs.
+  const instances = await doseInstanceRepo.getWindow(
+    userId, addDays(getNow(), -90).toISOString(), getNow().toISOString()
+  );
+  const streak = computeStreakFromInstances(instances);
   return { daysRemaining, streak };
 }
 

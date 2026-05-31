@@ -2,11 +2,21 @@ import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification } from '../services/notificationDeduplicator.js';
 import { getCurrentTimeInTimezone, getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getNow } from '../utils/dateUtils.js';
-import { getActiveProtocols } from '../services/protocolCache.js';
-import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
+import { createDoseInstanceRepository } from '@dosiq/core';
+import { sweepMissedInstances } from './doseInstanceScheduler.js';
 
 const logger = createLogger('AdherenceHelpers');
 const ADHERENCE_REPORT_TIME = '23:00';
+
+// Adesão do bot ← dose_instances (S3.7/ADR-054): % = taken/(taken+missed), skipped_* neutro.
+// countByStatus é head-count server-side (R-249 OOM-safe, imune a truncamento PostgREST AP-186).
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
+
+// % de adesão a partir das contagens por status (clamp 0-100, AP-191). denom vazio → 0.
+function _adherencePct(taken, missed) {
+  const denom = taken + missed;
+  return denom > 0 ? Math.min(100, Math.round((taken / denom) * 100)) : 0;
+}
 
 async function _getEligibleUsersForAdherence(users, correlationId) {
   const eligibleUsers = [];
@@ -31,47 +41,31 @@ async function _getEligibleUsersForAdherence(users, correlationId) {
 
 // _getAdherenceStorytelling removed — moved to Layer 2 (buildNotificationPayload.js)
 
-async function _processUserAdherence(user, protocolsByUser, dispatcher, correlationId) {
+async function _processUserAdherence(user, dispatcher, correlationId) {
   const { user_id: userId, display_name: displayName } = user;
   try {
     const dateToday = getTodayLocal();
     const startOfDay = parseLocalDate(dateToday);
     const dateYesterdayDate = addDays(startOfDay, -1);
-    const startOfYesterday = getTodayLocal(dateYesterdayDate);
-    
-    const { data: logs } = await supabase
-      .from('medicine_logs')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('taken_at', dateYesterdayDate.toISOString());
 
-    const todayLogs = logs?.filter(l => l.taken_at >= startOfDay.toISOString()) || [];
-    const yesterdayLogs = logs?.filter(l => l.taken_at < startOfDay.toISOString() && l.taken_at >= dateYesterdayDate.toISOString()) || [];
+    // Adesão de hoje e ontem ← dose_instances por status (head-count server-side).
+    // Janela por scheduled_for; o sweep das 23h (runDaily) já fechou as pending vencidas.
+    const todayCounts = await doseInstanceRepo.countByStatus({
+      userId, fromTs: startOfDay.toISOString(), toTs: addDays(startOfDay, 1).toISOString(),
+    });
+    const yesterdayCounts = await doseInstanceRepo.countByStatus({
+      userId, fromTs: dateYesterdayDate.toISOString(), toTs: startOfDay.toISOString(),
+    });
 
-    const protocols = protocolsByUser[userId] || [];
-    if (protocols.length === 0) return;
+    const takenDoses = todayCounts.taken;
+    const totalToday = todayCounts.taken + todayCounts.missed;
+    const percentage = _adherencePct(todayCounts.taken, todayCounts.missed);
+    const percentageYesterday = _adherencePct(yesterdayCounts.taken, yesterdayCounts.missed);
+    const hasYesterday = (yesterdayCounts.taken + yesterdayCounts.missed) > 0;
 
-    const timezone = user.timezone || 'America/Sao_Paulo';
-    const { weekday: todayWeekday } = getCurrentDatePartsInTimezone(timezone);
-    const yesterdayWeekday = (todayWeekday + 6) % 7;
-
-    const expectedDoses = protocols.reduce((sum, p) => {
-      if (!isProtocolActiveOnWeekday(p, todayWeekday, dateToday)) return sum;
-      return sum + (p.time_schedule?.length || 0);
-    }, 0);
-    const takenDoses = todayLogs.length;
-    const percentage = expectedDoses > 0 ? Math.min(100, Math.round((takenDoses / expectedDoses) * 100)) : 0;
-    
-    const expectedYesterday = protocols.reduce((sum, p) => {
-      if (p.start_date && p.start_date > startOfYesterday) return sum;
-      if (!isProtocolActiveOnWeekday(p, yesterdayWeekday, startOfYesterday)) return sum;
-      return sum + (p.time_schedule?.length || 0);
-    }, 0);
-    const percentageYesterday = expectedYesterday > 0 ? Math.min(100, Math.round((yesterdayLogs.length / expectedYesterday) * 100)) : 0;
-    
     const delta = percentage - percentageYesterday;
     const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
-    const comparison = expectedYesterday > 0
+    const comparison = hasYesterday
       ? { previousPercentage: percentageYesterday, deltaPercent: Math.abs(delta), trend }
       : undefined;
 
@@ -80,7 +74,7 @@ async function _processUserAdherence(user, protocolsByUser, dispatcher, correlat
       period: 'hoje',
       percentage,
       taken: takenDoses,
-      total: expectedDoses,
+      total: totalToday,
       comparison
     };
 
@@ -115,21 +109,17 @@ export async function runDailyAdherenceReportViaDispatcher(dispatcher, correlati
 
     logger.info(`Running daily adherence report for ${eligibleUsers.length} users`, { correlationId });
 
-    const userIds = eligibleUsers.map(u => u.user_id);
-    const { data: allProtocols } = await supabase
-      .from('protocols')
-      .select('*, medicine:medicines(name)')
-      .in('user_id', userIds)
-      .eq('active', true);
-
-    const protocolsByUser = {};
-    for (const p of allProtocols ?? []) {
-      if (!protocolsByUser[p.user_id]) protocolsByUser[p.user_id] = [];
-      protocolsByUser[p.user_id].push(p);
+    // E2/S3.7: fechar as pending vencidas ANTES de medir — o relatório das 23h lê o dia
+    // corrente antes do sweep das 3AM; sem isto doses esquecidas seguem pending e inflam a
+    // adesão. Idempotente (writer #3, AP-190). Global, mas roda 1× quando alguém bate 23h.
+    try {
+      await sweepMissedInstances();
+    } catch (sweepErr) {
+      logger.error('Falha no sweep pré-relatório 23h (segue best-effort)', sweepErr, { correlationId });
     }
 
     for (const user of eligibleUsers) {
-      await _processUserAdherence(user, protocolsByUser, dispatcher, correlationId);
+      await _processUserAdherence(user, dispatcher, correlationId);
     }
   } catch (error) {
     logger.error('Error in runDailyAdherenceReportViaDispatcher', error, { correlationId });
@@ -160,22 +150,13 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       const shouldSend = await shouldSendNotification(userId, null, 'weekly_adherence');
       if (!shouldSend) continue;
 
-      // Cálculo de adesão (últimos 7 dias)
-      const oneWeekAgo = addDays(getNow(), -7).toISOString();
-      const { data: logs } = await supabase
-        .from('medicine_logs')
-        .select('id')
-        .eq('user_id', userId)
-        .gte('taken_at', oneWeekAgo);
-
-      const protocols = await getActiveProtocols(userId, true);
-      const expectedDoses = protocols.reduce((sum, p) => {
-        const intakesPerDay = (p.time_schedule || []).length;
-        return sum + (intakesPerDay * 7);
-      }, 0);
-      
-      const takenDoses = logs?.length || 0;
-      const percentage = expectedDoses > 0 ? Math.min(100, Math.round((takenDoses / expectedDoses) * 100)) : 0;
+      // Adesão dos últimos 7 dias ← dose_instances (head-count server-side).
+      const counts = await doseInstanceRepo.countByStatus({
+        userId, fromTs: addDays(getNow(), -7).toISOString(), toTs: getNow().toISOString(),
+      });
+      const takenDoses = counts.taken;
+      const total = counts.taken + counts.missed;
+      const percentage = _adherencePct(counts.taken, counts.missed);
 
       await dispatcher.dispatch({
         userId,
@@ -184,7 +165,7 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
           firstName: user.display_name || 'Paciente',
           percentage,
           taken: takenDoses,
-          total: expectedDoses
+          total
         },
         context: { correlationId, jobType: 'weekly_adherence_report' }
       });
@@ -218,21 +199,13 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
       const shouldSend = await shouldSendNotification(userId, null, 'monthly_report');
       if (!shouldSend) continue;
 
-      const oneMonthAgo = addDays(getNow(), -30).toISOString();
-      const { data: logs } = await supabase
-        .from('medicine_logs')
-        .select('id')
-        .eq('user_id', userId)
-        .gte('taken_at', oneMonthAgo);
-
-      const protocols = await getActiveProtocols(userId, true);
-      const expectedDoses = protocols.reduce((sum, p) => {
-        const intakesPerDay = (p.time_schedule || []).length;
-        return sum + (intakesPerDay * 30);
-      }, 0);
-      
-      const takenDoses = logs?.length || 0;
-      const percentage = expectedDoses > 0 ? Math.round((takenDoses / expectedDoses) * 100) : 0;
+      // Adesão dos últimos 30 dias ← dose_instances (head-count server-side, R-249).
+      const counts = await doseInstanceRepo.countByStatus({
+        userId, fromTs: addDays(getNow(), -30).toISOString(), toTs: getNow().toISOString(),
+      });
+      const takenDoses = counts.taken;
+      const total = counts.taken + counts.missed;
+      const percentage = _adherencePct(counts.taken, counts.missed);
 
       await dispatcher.dispatch({
         userId,
@@ -241,7 +214,7 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
           firstName: user.display_name || 'Paciente',
           percentage,
           taken: takenDoses,
-          total: expectedDoses
+          total
         },
         context: { correlationId, jobType: 'monthly_report' }
       });
