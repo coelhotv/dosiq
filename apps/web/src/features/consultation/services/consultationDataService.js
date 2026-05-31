@@ -10,9 +10,8 @@
 import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionService'
 import { emergencyCardService } from '@emergency/services/emergencyCardService'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
-import { calculateAdherenceStats } from '@utils/adherenceLogic'
 import { calculateTitrationData } from '@utils/titrationUtils'
-import { getNow, getServerTimestamp, addDays, parseISO } from '@utils/dateUtils'
+import { getServerTimestamp } from '@utils/dateUtils'
 
 /**
  * Agrega todos os dados clínicos para o Modo Consulta Médica
@@ -25,6 +24,11 @@ import { getNow, getServerTimestamp, addDays, parseISO } from '@utils/dateUtils'
  * @param {Object} dashboardData.stats - Estatísticas de aderência
  * @param {string} [patientName] - Nome do paciente (opcional)
  * @param {number} [patientAge] - Idade do paciente (opcional)
+ * @param {string} [patientEmail] - Email do paciente (opcional)
+ * @param {string} [userId] - ID do usuário (isolamento do cartão offline)
+ * @param {{ last30d?: Object, last90d?: Object }} [adherenceSummaries] - Sumários
+ *        instance-based (de `adherenceService.getAdherenceSummary`) injetados pelo
+ *        caller (Opção A — service permanece sync/sem I/O). ADR-054.
  * @returns {Object} Objeto consolidado com todos os dados clínicos
  */
 export function getConsultationData(
@@ -32,9 +36,11 @@ export function getConsultationData(
   patientName = '',
   patientAge = null,
   patientEmail = '',
-  userId = null
+  userId = null,
+  adherenceSummaries = null
 ) {
-  const { medicines, protocols, logs, stockSummary } = dashboardData
+  // Guard defensivo: dashboardData pode chegar nulo em render inicial/loading (Gemini #620).
+  const { medicines, protocols, stockSummary } = dashboardData || {}
 
   // 1. Informações do paciente + cartão de emergência (offline, do localStorage)
   // userId obrigatório para isolamento entre usuários no mesmo dispositivo
@@ -50,8 +56,10 @@ export function getConsultationData(
   // 2. Medicamentos ativos (com protocolos ativos)
   const activeMedicines = _extractActiveMedicines(medicines, protocols)
 
-  // 3. Sumário de aderência (30d e 90d)
-  const adherenceSummary = _calculateAdherenceSummary(logs, protocols)
+  // 3. Sumário de aderência (30d e 90d) — fonte única dose_instances (ADR-054).
+  // O caller (Consultation.jsx) busca os summaries instance-based e injeta aqui,
+  // mantendo este service sync/sem I/O. PDF == anel do dashboard (mesma fonte).
+  const adherenceSummary = _calculateAdherenceSummary(adherenceSummaries)
 
   // 4. Alertas de estoque (críticos e baixos)
   const stockAlerts = _extractStockAlerts(stockSummary, medicines)
@@ -166,44 +174,35 @@ function _calculateDosageInfo(protocols, dosagePerPill) {
 }
 
 /**
- * Calcula sumário de aderência para 30 e 90 dias
+ * Mapeia os sumários de adesão instance-based (de `adherenceService.getAdherenceSummary`)
+ * para o shape do PDF/consulta. Fonte única `dose_instances` (ADR-054, R-248):
+ * `overallScore` já é `taken/(taken+missed)*100` capado — sem o bug >100% do legado.
+ * Não infere ±2h sobre logs (aposentou `calculateAdherenceStats`).
+ *
+ * @param {{ last30d?: Object, last90d?: Object }|null} adherenceSummaries
+ *        Cada summary: `{ overallScore, overallTaken, overallExpected, currentStreak }`.
  * @private
  */
-function _calculateAdherenceSummary(logs, protocols) {
-  if (!logs || !protocols) {
-    return {
-      last30d: { score: 0, taken: 0, expected: 0, punctuality: 0, currentStreak: 0 },
-      last90d: { score: 0, taken: 0, expected: 0, punctuality: 0, currentStreak: 0 },
-      currentStreak: 0,
-    }
+function _calculateAdherenceSummary(adherenceSummaries) {
+  const empty = { score: 0, taken: 0, expected: 0, punctuality: 0, currentStreak: 0 }
+  if (!adherenceSummaries) {
+    return { last30d: { ...empty }, last90d: { ...empty }, currentStreak: 0 }
   }
 
-  // Filtra logs dos últimos 90 dias
-  const ninetyDaysAgo = addDays(getNow(), -90)
-  const recentLogs = logs.filter((log) => parseISO(log.taken_at) >= ninetyDaysAgo)
+  const map = (s) => ({
+    score: s?.overallScore ?? 0,
+    taken: s?.overallTaken ?? 0,
+    expected: Math.round(s?.overallExpected ?? 0),
+    // No modelo de ocorrências, "tomada" já é dentro da tolerância → pontualidade ≡ adesão.
+    punctuality: s?.overallScore ?? 0,
+    currentStreak: s?.currentStreak ?? 0,
+  })
 
-  // Calcula stats para 30 dias
-  const stats30d = calculateAdherenceStats(logs, protocols, 30)
-
-  // Calcula stats para 90 dias
-  const stats90d = calculateAdherenceStats(recentLogs, protocols, 90)
-
+  const { last30d, last90d } = adherenceSummaries
   return {
-    last30d: {
-      score: stats30d.score || 0,
-      taken: stats30d.taken || 0,
-      expected: Math.round(stats30d.expected) || 0,
-      punctuality: stats30d.score || 0,
-      currentStreak: stats30d.currentStreak || 0,
-    },
-    last90d: {
-      score: stats90d.score || 0,
-      taken: stats90d.taken || 0,
-      expected: Math.round(stats90d.expected) || 0,
-      punctuality: stats90d.score || 0,
-      currentStreak: stats90d.currentStreak || 0,
-    },
-    currentStreak: stats30d.currentStreak || 0,
+    last30d: map(last30d),
+    last90d: map(last90d),
+    currentStreak: last30d?.currentStreak ?? 0,
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isDoseInToleranceWindow, calculateAdherenceStats } from '../adherenceLogic'
+import { isDoseInToleranceWindow, computeAdherenceFromInstances } from '../adherenceLogic'
 
 describe('Smoke: Adherence Logic', () => {
   it('detects dose within tolerance window', () => {
@@ -10,16 +10,17 @@ describe('Smoke: Adherence Logic', () => {
     expect(typeof result).toBe('boolean')
   })
 
-  it('calculates adherence stats correctly', () => {
-    const logs = [
-      { taken_at: new Date().toISOString(), protocol_id: 'p1' },
-      { taken_at: new Date().toISOString(), protocol_id: 'p1' },
+  it('computes adherence from instances (fonte única, ADR-054)', () => {
+    // adesão = taken/(taken+missed); skipped neutro
+    const instances = [
+      { status: 'taken' },
+      { status: 'taken' },
+      { status: 'missed' },
     ]
-    const protocols = [{ id: 'p1', time_schedule: ['08:00', '20:00'], frequency: 'diário' }]
-    const result = calculateAdherenceStats(logs, protocols, 1)
+    const result = computeAdherenceFromInstances(instances)
     expect(typeof result).toBe('object')
-    expect(typeof result.score).toBe('number')
-    expect(result.score).toBeGreaterThanOrEqual(0)
-    expect(result.score).toBeLessThanOrEqual(100)
+    expect(typeof result.rate).toBe('number')
+    expect(result.rate).toBeGreaterThanOrEqual(0)
+    expect(result.rate).toBeLessThanOrEqual(1)
   })
 })
