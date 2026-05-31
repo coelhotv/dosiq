@@ -66,6 +66,7 @@ export default function HealthHistory({ onNavigate }) {
   const [editingLog, setEditingLog] = useState(null)
   const [selectedDate, setSelectedDate] = useState(getTodayLocal())
   const [monthEvents, setMonthEvents] = useState([])
+  const [timezone, setTimezone] = useState('America/Sao_Paulo')
   const [dailyAdherence, setDailyAdherence] = useState([])
   const [adherencePattern, setAdherencePattern] = useState(null)
 
@@ -102,6 +103,7 @@ export default function HealthHistory({ onNavigate }) {
   const markedStatusesByDay = useMemo(() => {
     const byDay = {}
     for (const ev of monthEvents) {
+      if (ev.type !== 'dose') continue // só doses pintam dot de status (FP-3)
       const day = ev.localDay
       if (!day) continue
       const st = ev.payload?.status || 'pending'
@@ -148,8 +150,9 @@ export default function HealthHistory({ onNavigate }) {
       setIsLoading(true)
       setError(null)
       const now = getNow()
-      const { events } = await timelineService.getMonthTimeline(now.getFullYear(), now.getMonth())
+      const { events, tz } = await timelineService.getMonthTimeline(now.getFullYear(), now.getMonth())
       setMonthEvents(events)
+      setTimezone(tz)
       setIsLoading(false)
       loadAdherenceCharts()
     } catch (err) {
@@ -174,8 +177,9 @@ export default function HealthHistory({ onNavigate }) {
   // legado); senão → 1º dia do mês. Imune a refocus (identidade constante).
   const handleCalendarLoadMonth = useCallback(async (year, month) => {
     try {
-      const { events } = await timelineService.getMonthTimeline(year, month)
+      const { events, tz } = await timelineService.getMonthTimeline(year, month)
       setMonthEvents(events)
+      setTimezone(tz)
       const today = getTodayLocal() // 'YYYY-MM-DD'
       const isCurrentMonth = Number(today.slice(0, 4)) === year && Number(today.slice(5, 7)) - 1 === month
       setSelectedDate(isCurrentMonth ? today : `${year}-${String(month + 1).padStart(2, '0')}-01`)
@@ -243,6 +247,7 @@ export default function HealthHistory({ onNavigate }) {
       markedDates={markedDates}
       markedStatusesByDay={markedStatusesByDay}
       monthPickerRange={monthPickerRange}
+      timezone={timezone}
       dayEvents={dayEvents}
       isModalOpen={isModalOpen}
       editingLog={editingLog}

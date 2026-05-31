@@ -24,6 +24,7 @@ export default function HealthHistoryView({
   markedDates,
   markedStatusesByDay,
   monthPickerRange,
+  timezone,
   dayEvents,
   isModalOpen,
   editingLog,
@@ -83,6 +84,7 @@ export default function HealthHistoryView({
         <HistoryDayPanel
           selectedDate={selectedDate}
           dayEvents={dayEvents}
+          timezone={timezone}
           onEditLog={onEditLog}
           onDeleteLog={onDeleteLog}
         />

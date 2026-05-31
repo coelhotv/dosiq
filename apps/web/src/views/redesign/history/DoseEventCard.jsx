@@ -38,16 +38,19 @@ function eventToLog(event) {
  * @param {import('@dosiq/core').TimelineEvent} props.event - evento de `type='dose'`.
  * @param {Function} props.onEdit - callback(log) p/ abrir edição (só eventos com log).
  * @param {Function} props.onDelete - callback(logId) p/ excluir (só eventos com log).
+ * @param {string} [props.timezone='America/Sao_Paulo'] - fuso do usuário p/ exibir a hora
+ *        (occurred_at é UTC absoluto; sem timeZone o navegador usaria o fuso local → AP-194).
  */
-export default function DoseEventCard({ event, onEdit, onDelete }) {
+export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'America/Sao_Paulo' }) {
   const p = event.payload || {}
   const status = p.status || 'pending'
   const meta = STATUS_META[status] || STATUS_META.pending
   const { Icon } = meta
 
   // occurred_at: instante real da tomada (taken) ou horário agendado (missed/pending).
+  // Renderiza no fuso do usuário (timeZone) — nunca no fuso do navegador (AP-194).
   const timeLabel = event.occurred_at
-    ? parseISO(event.occurred_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    ? parseISO(event.occurred_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
     : ''
 
   const medicineName = p.medicineName ?? 'Medicamento'
@@ -60,11 +63,20 @@ export default function DoseEventCard({ event, onEdit, onDelete }) {
     return `${dose}${unit}`
   })()
 
-  // Quantidade tomada (só faz sentido em taken).
+  // Quantidade tomada (só faz sentido em taken). Unidade-aware (FP-4/ADR-050): não assume
+  // comprimido p/ líquido(ml)/inalador(un)/insulina(ui). 0 é válido (titulação) → checa null.
   const quantityLabel = (() => {
     const qty = p.quantityTaken
-    if (!qty) return null
-    return qty === 1 ? '1 comprimido' : `${qty} comprimidos`
+    if (qty === undefined || qty === null) return null
+    const unit = p.dosageUnit ?? ''
+    const u = unit.toLowerCase()
+    if (!u || ['mg', 'mcg', 'g'].includes(u)) {
+      return qty === 1 ? '1 comprimido' : `${qty} comprimidos`
+    }
+    if (u === 'un') {
+      return qty === 1 ? '1 unidade' : `${qty} unidades`
+    }
+    return `${qty} ${unit}`
   })()
 
   const log = eventToLog(event)

@@ -58,7 +58,7 @@ describe('HistoryDayPanel', () => {
     )
     // 1 card dose renderizado (nome aparece), biomarker ignorado sem quebrar.
     expect(screen.getByText('Med')).toBeInTheDocument()
-    // contagem reflete os eventos do dia (inclui o desconhecido): 1 taken / 2 total
-    expect(screen.getByText('1/2 doses')).toBeInTheDocument()
+    // contagem conta SÓ eventos type='dose' (biomarker excluído): 1 taken / 1 dose
+    expect(screen.getByText('1/1 dose')).toBeInTheDocument()
   })
 })

@@ -16,8 +16,9 @@ import { parseLocalDate } from '@utils/dateUtils'
  *   (já filtrados/ordenados pelo container). Cada um tem `{ id, type, occurred_at, payload }`.
  * @param {Function} props.onEditLog - callback(log) p/ editar (só eventos com log).
  * @param {Function} props.onDeleteLog - callback(logId) p/ excluir (só eventos com log).
+ * @param {string} [props.timezone] - fuso do usuário, repassado aos cards (exibição da hora).
  */
-export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLog, onDeleteLog }) {
+export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLog, onDeleteLog, timezone }) {
   // Formatar data para exibição
   const dateLabel = selectedDate
     ? (typeof selectedDate === 'string' ? parseLocalDate(selectedDate) : selectedDate)
@@ -31,8 +32,11 @@ export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLo
   // Capitalizar primeira letra (pt-BR retorna minúsculo)
   const formattedDate = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1)
 
-  const count = dayEvents.length
-  const takenCount = dayEvents.filter((ev) => ev.payload?.status === 'taken').length
+  // Conta SÓ eventos de dose (FP-3: a stream pode ter biomarker/note futuros que não
+  // devem inflar o denominador "Doses do Dia"). Status normalizado p/ minúsculas.
+  const doseEvents = dayEvents.filter((ev) => ev.type === 'dose')
+  const count = doseEvents.length
+  const takenCount = doseEvents.filter((ev) => ev.payload?.status?.toLowerCase() === 'taken').length
   const countLabel = `${takenCount}/${count} ${count === 1 ? 'dose' : 'doses'}`
   const countTooltip = `${takenCount} ${takenCount === 1 ? 'dose tomada' : 'doses tomadas'} de ${count} ${count === 1 ? 'agendada' : 'agendadas'}`
 
@@ -55,7 +59,7 @@ export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLo
           {dayEvents.map((event) => {
             const Card = resolveEventCard(event.type)
             if (!Card) return null // tipo não registrado: ignora sem quebrar a stream
-            return <Card key={event.id} event={event} onEdit={onEditLog} onDelete={onDeleteLog} />
+            return <Card key={event.id} event={event} onEdit={onEditLog} onDelete={onDeleteLog} timezone={timezone} />
           })}
         </div>
       )}
