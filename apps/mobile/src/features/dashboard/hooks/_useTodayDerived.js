@@ -5,8 +5,9 @@ import {
   parseISO,
   isProtocolActiveOnDate,
   calculateDosesByDate,
-  calculateAdherenceStats,
+  computeAdherenceFromInstances,
   parseLocalDate,
+  addDays,
   getNow,
   evaluateDoseTimelineState,
   getSaoPauloTime
@@ -36,15 +37,33 @@ export function useTodayDerived(data) {
       validProtocols
     )
 
-    // 3. Calcular estatísticas e tendências
-    const stats = calculateAdherenceStats(data.logs, validProtocols, 7, 0)
-    const statsPrevious = calculateAdherenceStats(data.logs, validProtocols, 7, 7)
-    const scoreTrend = statsPrevious.expected > 0 ? (stats.score - statsPrevious.score) : 0
+    // 3. Estatísticas e tendências ← dose_instances (S3.6/ADR-054): adesão =
+    // taken/(taken+missed), skipped_* neutro — não infere sobre logs ±2h.
+    // Janela 7d (atual) vs 7d (anterior) p/ o trend. scheduled_for é instante absoluto;
+    // o filtro por dia local usa boundaries via addDays (fronteira de dia no tz default).
+    const instances = data.doseInstances || []
+    const curStart = addDays(todayStr, -6).getTime()
+    const curEnd = addDays(todayStr, 1).getTime()
+    const prevStart = addDays(todayStr, -13).getTime()
+    const prevEnd = curStart
+    const inWindow = (inst, start, end) => {
+      if (!inst?.scheduled_for) return false
+      const t = parseISO(inst.scheduled_for).getTime()
+      return t >= start && t < end
+    }
+    const curAgg = computeAdherenceFromInstances(instances.filter(i => inWindow(i, curStart, curEnd)))
+    const prevAgg = computeAdherenceFromInstances(instances.filter(i => inWindow(i, prevStart, prevEnd)))
+    const score = Math.round((curAgg.rate ?? 0) * 100)
+    const prevScore = Math.round((prevAgg.rate ?? 0) * 100)
+    const hasPreviousData = (prevAgg.taken + prevAgg.missed) > 0
 
     const statsWithTrend = {
-      ...stats,
-      trend: scoreTrend,
-      hasPreviousData: statsPrevious.expected > 0
+      taken: curAgg.taken,
+      missed: curAgg.missed,
+      expected: curAgg.taken + curAgg.missed,
+      score,
+      trend: hasPreviousData ? (score - prevScore) : 0,
+      hasPreviousData
     }
 
     // Helper de ordenação

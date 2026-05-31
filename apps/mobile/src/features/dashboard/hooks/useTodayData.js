@@ -12,6 +12,7 @@ import {
   getLogsForPeriod,
   getMedicinesData,
   getUserSettings,
+  getDoseInstancesForPeriod,
 } from '../services/dashboardService'
 import { useTodayDerived } from './_useTodayDerived'
 
@@ -26,11 +27,12 @@ export function useTodayData() {
   const dataRef = useRef(null)
   const enhancedData = useTodayDerived(data)
 
-  const handleOnlineSuccess = useCallback(async (user, protocols, logs, medicines, userSettings, today) => {
+  const handleOnlineSuccess = useCallback(async (user, protocols, logs, medicines, userSettings, today, doseInstances) => {
     const enrichedProtocols = protocols.map(p => ({ ...p, medicine: medicines[p.medicine_id] || null }))
     const newData = {
       protocols: enrichedProtocols,
       logs,
+      doseInstances: doseInstances ?? [],
       medicines,
       user: {
         id: user.id,
@@ -69,6 +71,7 @@ export function useTodayData() {
     const safeData = {
       protocols: Array.isArray(parsed.protocols) ? parsed.protocols : [],
       logs: Array.isArray(parsed.logs) ? parsed.logs : [],
+      doseInstances: Array.isArray(parsed.doseInstances) ? parsed.doseInstances : [],
       medicines: parsed.medicines || {},
       user: parsed.user || null,
       capturedAt: parsed.capturedAt
@@ -87,14 +90,15 @@ export function useTodayData() {
       if (!user) throw new Error('Sessão expirada')
 
       const today = getTodayLocal()
-      const [protocols, logs, userSettings] = await Promise.all([
+      const [protocols, logs, userSettings, doseInstances] = await Promise.all([
         getActiveProtocols(user.id, today),
         getLogsForPeriod(user.id, 14),
-        getUserSettings(user.id)
+        getUserSettings(user.id),
+        getDoseInstancesForPeriod(user.id, 14)
       ])
 
       const medicines = await getMedicinesData([...new Set(protocols.map(p => p.medicine_id))])
-      await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, today)
+      await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, today, doseInstances)
     } catch (err) {
       try {
         await handleCacheFallback(err)

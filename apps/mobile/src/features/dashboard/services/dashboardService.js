@@ -4,8 +4,11 @@
 
 import { z } from 'zod'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
-import { parseLocalDate, getTodayLocal, addDays } from '@dosiq/core'
+import { parseLocalDate, getTodayLocal, addDays, createDoseInstanceRepository } from '@dosiq/core'
 import { debugLog } from '@shared/utils/debugLog'
+
+// Repo de instâncias (leitura de adesão ← dose_instances, S3.6). RLS escopa por user_id.
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
 
 /**
  * Busca protocolos ativos do utilizador.
@@ -134,7 +137,27 @@ export async function getLogsForPeriod(userId, days = 7) {
     .eq('user_id', userId)
     .gte('taken_at', startUTC)
     .lt('taken_at', endUTC)
-    
+
   if (error) throw error
   return data ?? []
+}
+
+/**
+ * Busca as ocorrências materializadas (`dose_instances`) do usuário numa janela de `days`
+ * dias até hoje (S3.6, ADR-054). Fonte da adesão/streak no mobile — `taken/(taken+missed)`,
+ * `skipped_*` neutro — em vez de inferir sobre logs ±2h. Janela curta (≤14d) é OOM-safe
+ * (R-249: agregação long-range fica server-side; aqui é bounded e reduzido em JS).
+ *
+ * @param {string} userId
+ * @param {number} days - dias para trás (default 14: 7d atual + 7d anterior p/ o trend)
+ * @returns {Promise<Array>} linhas de dose_instances (status, scheduled_for, ...)
+ */
+export async function getDoseInstancesForPeriod(userId, days = 14) {
+  z.string().uuid().parse(userId)
+
+  const todayStr = getTodayLocal()
+  const startUTC = addDays(todayStr, -(days - 1)).toISOString()
+  const endUTC = addDays(todayStr, 1).toISOString()
+
+  return doseInstanceRepo.getWindow(userId, startUTC, endUTC)
 }
