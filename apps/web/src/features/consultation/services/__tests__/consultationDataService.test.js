@@ -48,19 +48,9 @@ vi.mock('@prescriptions/services/prescriptionService', () => ({
   getExpiringPrescriptions: vi.fn(() => mocks.mockPrescriptions),
 }))
 
-// Mock do adherenceLogic - retorna zeros quando logs ou protocols são vazios/nulos
+// Mock do adherenceLogic — adesão agora vem de summaries instance-based injetados
+// pelo caller (não mais calculateAdherenceStats, aposentado na Fase 4/ADR-054).
 vi.mock('@utils/adherenceLogic', () => ({
-  calculateAdherenceStats: vi.fn((logs, protocols) => {
-    if (!logs || logs.length === 0 || !protocols || protocols.length === 0) {
-      return {
-        score: 0,
-        takenAnytime: 0,
-        expected: 0,
-        rates: { punctuality: 0 },
-      }
-    }
-    return mocks.mockAdherenceStats
-  }),
   calculateDailyIntake: vi.fn((medicineId, protocols) => {
     if (!protocols) return 0
     return protocols
@@ -412,22 +402,26 @@ describe('consultationDataService', () => {
       })
     })
 
-    it('deve calcular sumário de aderência para 30d e 90d', () => {
+    it('deve mapear summaries instance-based para 30d e 90d (ADR-054)', () => {
       const dashboardData = createMockDashboardData()
-      const result = getConsultationData(dashboardData)
+      const summaries = {
+        last30d: { overallScore: 85, overallTaken: 27, overallExpected: 30, currentStreak: 6 },
+        last90d: { overallScore: 82, overallTaken: 80, overallExpected: 98, currentStreak: 6 },
+      }
+      const result = getConsultationData(dashboardData, '', null, '', null, summaries)
 
       expect(result.adherenceSummary.last30d).toMatchObject({
         score: 85,
         taken: 27,
         expected: 30,
-        punctuality: 85,
+        punctuality: 85, // pontualidade ≡ adesão no modelo de ocorrências
         currentStreak: 6,
       })
       expect(result.adherenceSummary.last90d).toMatchObject({
-        score: 85,
-        taken: 27,
-        expected: 30,
-        punctuality: 85,
+        score: 82,
+        taken: 80,
+        expected: 98,
+        punctuality: 82,
         currentStreak: 6,
       })
       expect(result.adherenceSummary.currentStreak).toBe(6)
@@ -509,9 +503,9 @@ describe('consultationDataService', () => {
     })
   })
 
-  describe('sem logs de aderência', () => {
-    it('deve retornar zeros em adherenceSummary quando não há logs', () => {
-      const dashboardData = createMockDashboardData({ logs: [] })
+  describe('sem summaries de aderência', () => {
+    it('deve retornar zeros em adherenceSummary quando summaries não é fornecido', () => {
+      const dashboardData = createMockDashboardData()
       const result = getConsultationData(dashboardData)
 
       expect(result.adherenceSummary.last30d).toEqual({
@@ -530,19 +524,21 @@ describe('consultationDataService', () => {
       })
     })
 
-    it('deve retornar zeros quando logs é null', () => {
-      const dashboardData = createMockDashboardData({ logs: null })
-      const result = getConsultationData(dashboardData)
+    it('deve retornar zeros quando summaries é null explícito', () => {
+      const dashboardData = createMockDashboardData()
+      const result = getConsultationData(dashboardData, '', null, '', null, null)
 
       expect(result.adherenceSummary.last30d.score).toBe(0)
       expect(result.adherenceSummary.last90d.score).toBe(0)
     })
 
-    it('deve retornar zeros quando protocols é null', () => {
-      const dashboardData = createMockDashboardData({ protocols: null })
-      const result = getConsultationData(dashboardData)
+    it('tolera summary parcial (apenas last30d)', () => {
+      const dashboardData = createMockDashboardData()
+      const result = getConsultationData(dashboardData, '', null, '', null, {
+        last30d: { overallScore: 50, overallTaken: 5, overallExpected: 10, currentStreak: 2 },
+      })
 
-      expect(result.adherenceSummary.last30d.score).toBe(0)
+      expect(result.adherenceSummary.last30d.score).toBe(50)
       expect(result.adherenceSummary.last90d.score).toBe(0)
     })
   })

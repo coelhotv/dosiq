@@ -97,6 +97,15 @@ async function resolveAdherence(period, dailyAdherence) {
   return cachedAdherenceService.getDailyAdherenceFromView(days)
 }
 
+/** Busca sumários de adesão instance-based (30d + 90d) p/ injetar no PDF (ADR-054). */
+async function fetchAdherenceSummaries() {
+  const [last30d, last90d] = await Promise.all([
+    cachedAdherenceService.getAdherenceSummary('30d'),
+    cachedAdherenceService.getAdherenceSummary('90d'),
+  ])
+  return { last30d, last90d }
+}
+
 /** Executa o compartilhamento nativo em mobile se disponível. */
 async function tryNativeShare(url) {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -209,6 +218,7 @@ export default function ReportGenerator() {
   const [patientName, setPatientName] = useState('')
   const [patientEmail, setPatientEmail] = useState('')
   const [patientUserId, setPatientUserId] = useState(null)
+  const [adherenceSummaries, setAdherenceSummaries] = useState(null)
   const [period, setPeriod] = useState('30d')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -235,8 +245,8 @@ export default function ReportGenerator() {
   )
 
   const consultationData = useMemo(
-    () => getConsultationData(dashboardData, patientName, null, patientEmail, patientUserId),
-    [dashboardData, patientEmail, patientName, patientUserId]
+    () => getConsultationData(dashboardData, patientName, null, patientEmail, patientUserId, adherenceSummaries),
+    [dashboardData, patientEmail, patientName, patientUserId, adherenceSummaries]
   )
 
   useEffect(() => {
@@ -252,6 +262,11 @@ export default function ReportGenerator() {
         setPatientName(user?.user_metadata?.name || user?.user_metadata?.full_name || '')
         setPatientEmail(user?.email || '')
         setPatientUserId(user?.id || null)
+
+        // Sumários instance-based (ADR-054) — sem eles o PDF saía 0/0 (fallback vazio).
+        const summaries = await fetchAdherenceSummaries()
+        if (!isMounted) return
+        setAdherenceSummaries(summaries)
       } catch (err) {
         console.error('Erro ao carregar perfil para relatório clínico:', err)
       }
@@ -307,6 +322,11 @@ export default function ReportGenerator() {
     }
   }, [pdfBlob, period])
 
+  // Trocar período invalida o PDF gerado (volta o botão "Gerar"; evita baixar período antigo).
+  const handlePeriodChange = useCallback((p) => {
+    setPeriod(p); setPdfBlob(null); setShareUrl(null); setShareError(null); setCopied(false)
+  }, [])
+
   const handleCopyLink = useCallback(async () => {
     if (!shareUrl) return
     try {
@@ -325,7 +345,7 @@ export default function ReportGenerator() {
       <ReportHero />
 
       <div className="report-generator__content">
-        <PeriodPanel period={period} isGenerating={isGenerating} onPeriodChange={setPeriod} />
+        <PeriodPanel period={period} isGenerating={isGenerating} onPeriodChange={handlePeriodChange} />
         <ReportContentPanel />
       </div>
 

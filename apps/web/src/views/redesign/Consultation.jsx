@@ -16,6 +16,15 @@ import { generateConsultationPDF } from '@features/reports/services/consultation
 import { formatLocalDate, getNow } from '@utils/dateUtils.js'
 import './Consultation.css'
 
+/** Busca os sumários de adesão instance-based (30d + 90d) p/ injetar na consulta. */
+async function fetchAdherenceSummaries() {
+  const [last30d, last90d] = await Promise.all([
+    cachedAdherenceService.getAdherenceSummary('30d'),
+    cachedAdherenceService.getAdherenceSummary('90d'),
+  ])
+  return { last30d, last90d }
+}
+
 export default function Consultation({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
   const [consultationData, setConsultationData] = useState(null)
@@ -49,7 +58,11 @@ export default function Consultation({ onBack }) {
           }
           return
         }
-        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail, user?.id)
+        // Sumários de adesão instance-based (fonte única, ADR-054) — 30d e 90d.
+        // Buscados aqui (caller) p/ o service permanecer sync/sem I/O (Opção A).
+        const adherenceSummaries = await fetchAdherenceSummaries()
+        if (!isMounted) return
+        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail, user?.id, adherenceSummaries)
         setConsultationData(data)
       } catch {
         if (!isMounted) return

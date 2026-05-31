@@ -31,7 +31,12 @@ export const webQueryCache = createQueryCache({
   logger,
   staleTime: 30_000,
   maxEntries: 200,
-  persistKey: 'dosiq_query_cache',
+  // v2: bump em PR-F4.1 — reescrita das views de adesão (medicine_logs→dose_instances,
+  // G6/AP-191). O cache persistido em localStorage sobrevive a hard reload (Cmd+Shift+R
+  // só limpa HTTP/memória), então adesão pré-migração ficava "presa". Trocar a chave
+  // abandona o cache antigo no deploy → todo cliente refetcha as views novas, sem pedir
+  // refresh manual. Bumpar a cada mudança de FONTE/shape de dado cacheado server-side.
+  persistKey: 'dosiq_query_cache_v2',
 })
 
 // Hidratacao automatica no bootstrap web.
