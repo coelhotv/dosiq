@@ -21,7 +21,7 @@ export default function CalendarControls({
       <div className="calendar-controls">
         <button
           onClick={onPreviousMonth}
-          disabled={isLoading}
+          disabled={isLoading || !canGoPrev}
           className="calendar-nav-btn"
           aria-label="Mês anterior"
           type="button"
@@ -58,7 +58,7 @@ export default function CalendarControls({
     <div className="calendar-controls">
       <button
         onClick={onPreviousMonth}
-        disabled={isLoading}
+        disabled={isLoading || !canGoPrev}
         className="calendar-nav-btn"
         aria-label="Mês anterior"
         type="button"
