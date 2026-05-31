@@ -32,7 +32,13 @@ async function _anchorLogToInstance(protocolId, logId, takenAt) {
     if (!instance) return
     const marked = await doseInstanceRepo.markTaken(instance.id, logId)
     if (!marked) return
-    await supabase.from('medicine_logs').update({ dose_instance_id: instance.id }).eq('id', logId)
+    // Desestrutura e lança o erro (paridade com web logService) — falha de DB/rede
+    // cai no catch best-effort abaixo; sem isto o PostgREST não sinaliza no bloco try.
+    const { error: linkError } = await supabase
+      .from('medicine_logs')
+      .update({ dose_instance_id: instance.id })
+      .eq('id', logId)
+    if (linkError) throw linkError
   } catch (anchorError) {
     if (__DEV__) console.warn('[doseService] âncora falhou (log segue avulso):', anchorError)
   }
