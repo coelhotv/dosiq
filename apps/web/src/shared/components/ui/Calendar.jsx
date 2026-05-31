@@ -40,6 +40,7 @@ function generateMonthOptions(enableMonthPicker, monthPickerRange) {
  */
 export default function Calendar({
   markedDates = [],
+  markedStatusesByDay = {},
   selectedDate,
   onDayClick,
   enableLazyLoad = false,
@@ -65,8 +66,26 @@ export default function Calendar({
     return () => { isCancelled = true }
   }, [viewDate, enableLazyLoad, onLoadMonth])
 
-  const handlePreviousMonth = () => setViewDate((d) => { const n = cloneDate(d); n.setMonth(n.getMonth() - 1); return n })
-  const handleNextMonth = () => setViewDate((d) => { const n = cloneDate(d); n.setMonth(n.getMonth() + 1); return n })
+  // Limites de navegação relativos a hoje: frente = today + end (ex: m+1);
+  // passado = today + start (ex: piso jan/2026). Evita meses vazios (futuros sem
+  // doses pendentes / passados pré-backfill de dose_instances).
+  // setDate(1) antes de setMonth: evita o overflow clássico do Date (ex: 31/mai − 1 mês
+  // = "31/abr" → transborda p/ 01/mai, travando a navegação). Gemini #621.
+  const nowRef = getSaoPauloTime()
+  nowRef.setDate(1)
+  const maxView = addMonths(nowRef, monthPickerRange.end)
+  const minView = addMonths(nowRef, monthPickerRange.start)
+  const isAfterMax = (dt) =>
+    dt.getFullYear() > maxView.getFullYear() ||
+    (dt.getFullYear() === maxView.getFullYear() && dt.getMonth() > maxView.getMonth())
+  const isBeforeMin = (dt) =>
+    dt.getFullYear() < minView.getFullYear() ||
+    (dt.getFullYear() === minView.getFullYear() && dt.getMonth() < minView.getMonth())
+  const canGoNext = !isAfterMax((() => { const n = cloneDate(viewDate); n.setDate(1); n.setMonth(n.getMonth() + 1); return n })())
+  const canGoPrev = !isBeforeMin((() => { const n = cloneDate(viewDate); n.setDate(1); n.setMonth(n.getMonth() - 1); return n })())
+
+  const handlePreviousMonth = () => setViewDate((d) => { const n = cloneDate(d); n.setDate(1); n.setMonth(n.getMonth() - 1); return isBeforeMin(n) ? d : n })
+  const handleNextMonth = () => setViewDate((d) => { const n = cloneDate(d); n.setDate(1); n.setMonth(n.getMonth() + 1); return isAfterMax(n) ? d : n })
 
   const handleMonthSelect = (e) => {
     const [y, m] = e.target.value.split('-').map(Number)
@@ -88,7 +107,7 @@ export default function Calendar({
   const monthOptions = generateMonthOptions(enableMonthPicker, monthPickerRange)
 
   const days = buildCalendarDays({
-    year, month, monthNames: MONTH_NAMES, todayKey, selectedDate, markedDates,
+    year, month, monthNames: MONTH_NAMES, todayKey, selectedDate, markedDates, markedStatusesByDay,
     adherenceData, daysInMonth, firstDayOfMonth, parseLocalDate, formatLocalDate, onDayClick,
   })
 
@@ -104,6 +123,8 @@ export default function Calendar({
         onNextMonth={handleNextMonth}
         onMonthSelect={handleMonthSelect}
         generateMonthOptions={() => monthOptions}
+        canGoNext={canGoNext}
+        canGoPrev={canGoPrev}
       />
       <div className="calendar-weekdays" aria-hidden="true">
         <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div>
