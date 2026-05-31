@@ -4,7 +4,7 @@ import { medicineLogService } from '../../services/medicineLogService.js';
 import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { getServerTimestamp, addDays, getNow } from '../../utils/dateUtils.js';
+import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 import { createLogger } from '../logger.js';
 
@@ -130,8 +130,10 @@ async function calculateAdherenceAndStockWarnings(userId, medicineId) {
   const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
   
   // Streak ← dose_instances (S3.7): dias consecutivos ≥80% por status, não infere sobre logs.
+  // Janela UTC real via getServerTimestamp (getNow() é wall-clock SP → desloca 3h vs UTC). 1 chamada.
+  const nowIso = getServerTimestamp();
   const instances = await doseInstanceRepo.getWindow(
-    userId, addDays(getNow(), -90).toISOString(), getNow().toISOString()
+    userId, addDays(nowIso, -90).toISOString(), nowIso
   );
   const streak = computeStreakFromInstances(instances);
   return { daysRemaining, streak };

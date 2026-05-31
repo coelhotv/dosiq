@@ -4,7 +4,7 @@ import { getSession, setSession, clearSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 import { handleChatbotMessage } from '../commands/chatbot.js';
-import { getServerTimestamp, addDays, getNow } from '../../utils/dateUtils.js';
+import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 
 const logger = createLogger('ConversationalCallbacks');
@@ -375,8 +375,10 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
     }
 
     // 4. Streak ← dose_instances (S3.7): dias consecutivos ≥80% por status.
+    // Janela UTC real via getServerTimestamp (getNow() é wall-clock SP → desloca 3h vs UTC). 1 chamada.
+    const nowIso = getServerTimestamp();
     const instances = await doseInstanceRepo.getWindow(
-      userId, addDays(getNow(), -90).toISOString(), getNow().toISOString()
+      userId, addDays(nowIso, -90).toISOString(), nowIso
     );
     const streak = computeStreakFromInstances(instances);
     const unit = med?.dosage_unit || 'mg';

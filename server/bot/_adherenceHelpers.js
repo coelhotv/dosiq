@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTimeInTimezone, getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getNow } from '../utils/dateUtils.js';
+import { getCurrentTimeInTimezone, getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getServerTimestamp } from '../utils/dateUtils.js';
 import { createDoseInstanceRepository } from '@dosiq/core';
 import { sweepMissedInstances } from './doseInstanceScheduler.js';
 
@@ -16,6 +16,14 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
 function _adherencePct(taken, missed) {
   const denom = taken + missed;
   return denom > 0 ? Math.min(100, Math.round((taken / denom) * 100)) : 0;
+}
+
+// Janela rolante de N dias em UTC REAL. NÃO usar getNow()/getSaoPauloTime aqui: ele desloca
+// o instante pro wall-clock de SP, e .toISOString() sairia 3h atrás do UTC de `scheduled_for`
+// (omitiria as doses das últimas 3h). getServerTimestamp() = UTC real; 1 chamada (instante único).
+function _utcWindow(days) {
+  const nowIso = getServerTimestamp();
+  return { fromTs: addDays(nowIso, -days).toISOString(), toTs: nowIso };
 }
 
 async function _getEligibleUsersForAdherence(users, correlationId) {
@@ -50,11 +58,18 @@ async function _processUserAdherence(user, dispatcher, correlationId) {
 
     // Adesão de hoje e ontem ← dose_instances por status (head-count server-side).
     // Janela por scheduled_for; o sweep das 23h (runDaily) já fechou as pending vencidas.
+    // countByStatus usa limites inclusivos (gte/lte) → o teto de ontem deve excluir o
+    // exato startOfDay (senão uma instância às 00:00 conta nos dois dias — double-count).
+    // Nota G1 (ADR-053): startOfDay vem de parseLocalDate (meia-noite no tz do servidor),
+    // não da meia-noite real de SP — alinhamento fino de tz fica para a F4.
     const todayCounts = await doseInstanceRepo.countByStatus({
       userId, fromTs: startOfDay.toISOString(), toTs: addDays(startOfDay, 1).toISOString(),
     });
+    // Teto exclusivo de ontem (ms-1): aritmética de epoch, não o parse de string YYYY-MM-DD do R-020.
+    // eslint-disable-next-line no-restricted-syntax
+    const yesterdayEndExclusive = new Date(startOfDay.getTime() - 1).toISOString();
     const yesterdayCounts = await doseInstanceRepo.countByStatus({
-      userId, fromTs: dateYesterdayDate.toISOString(), toTs: startOfDay.toISOString(),
+      userId, fromTs: dateYesterdayDate.toISOString(), toTs: yesterdayEndExclusive,
     });
 
     const takenDoses = todayCounts.taken;
@@ -150,10 +165,8 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       const shouldSend = await shouldSendNotification(userId, null, 'weekly_adherence');
       if (!shouldSend) continue;
 
-      // Adesão dos últimos 7 dias ← dose_instances (head-count server-side).
-      const counts = await doseInstanceRepo.countByStatus({
-        userId, fromTs: addDays(getNow(), -7).toISOString(), toTs: getNow().toISOString(),
-      });
+      // Adesão dos últimos 7 dias ← dose_instances (head-count server-side, janela UTC real).
+      const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(7) });
       const takenDoses = counts.taken;
       const total = counts.taken + counts.missed;
       const percentage = _adherencePct(counts.taken, counts.missed);
@@ -199,10 +212,8 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
       const shouldSend = await shouldSendNotification(userId, null, 'monthly_report');
       if (!shouldSend) continue;
 
-      // Adesão dos últimos 30 dias ← dose_instances (head-count server-side, R-249).
-      const counts = await doseInstanceRepo.countByStatus({
-        userId, fromTs: addDays(getNow(), -30).toISOString(), toTs: getNow().toISOString(),
-      });
+      // Adesão dos últimos 30 dias ← dose_instances (head-count server-side, R-249, janela UTC real).
+      const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(30) });
       const takenDoses = counts.taken;
       const total = counts.taken + counts.missed;
       const percentage = _adherencePct(counts.taken, counts.missed);
