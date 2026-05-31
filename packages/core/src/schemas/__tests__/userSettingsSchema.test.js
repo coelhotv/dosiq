@@ -23,14 +23,20 @@ describe('userSettingsSchema — timezone (ADR-053)', () => {
     ]))
   })
 
-  it('mantém ordenação BR-first (São Paulo antes de qualquer expat)', () => {
+  it('ordena pelo relógio crescente = GMT decrescente (offset não-crescente)', () => {
+    const offsets = TIMEZONE_OPTIONS.map((o) => o.offset)
+    for (let i = 1; i < offsets.length; i++) {
+      expect(offsets[i]).toBeLessThanOrEqual(offsets[i - 1])
+    }
+  })
+
+  it('dentro do mesmo offset, BR vem antes do expat e São Paulo encabeça o GMT-3', () => {
     const values = TIMEZONE_OPTIONS.map((o) => o.value)
-    const spIdx = values.indexOf('America/Sao_Paulo')
-    const firstExpatIdx = Math.min(
-      ...['America/New_York', 'Europe/London', 'Europe/Lisbon', 'America/Los_Angeles'].map((v) => values.indexOf(v))
-    )
-    expect(spIdx).toBeGreaterThanOrEqual(0)
-    expect(spIdx).toBeLessThan(firstExpatIdx)
+    // GMT-5: BR (Rio Branco, Eirunepé) antes de Nova York
+    expect(values.indexOf('America/Rio_Branco')).toBeLessThan(values.indexOf('America/New_York'))
+    // GMT-3: São Paulo é o primeiro do bloco
+    const g3 = TIMEZONE_OPTIONS.filter((o) => o.offset === -3).map((o) => o.value)
+    expect(g3[0]).toBe('America/Sao_Paulo')
   })
 
   it('aceita fuso expat válido (brasileiro em Londres/NY persiste o IANA real)', () => {
