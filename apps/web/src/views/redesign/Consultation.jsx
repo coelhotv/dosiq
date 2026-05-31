@@ -16,13 +16,21 @@ import { generateConsultationPDF } from '@features/reports/services/consultation
 import { formatLocalDate, getNow } from '@utils/dateUtils.js'
 import './Consultation.css'
 
-/** Busca os sumários de adesão instance-based (30d + 90d) p/ injetar na consulta. */
+/**
+ * Busca os sumários de adesão instance-based (30d + 90d) p/ injetar na consulta.
+ * Swallow + DEV-log em falha (retorna null): não derruba o resto da consulta (Gemini #620).
+ */
 async function fetchAdherenceSummaries() {
-  const [last30d, last90d] = await Promise.all([
-    cachedAdherenceService.getAdherenceSummary('30d'),
-    cachedAdherenceService.getAdherenceSummary('90d'),
-  ])
-  return { last30d, last90d }
+  try {
+    const [last30d, last90d] = await Promise.all([
+      cachedAdherenceService.getAdherenceSummary('30d'),
+      cachedAdherenceService.getAdherenceSummary('90d'),
+    ])
+    return { last30d, last90d }
+  } catch (err) {
+    if (import.meta.env.DEV) console.error('Erro ao carregar sumários de adesão para consulta:', err)
+    return null
+  }
 }
 
 export default function Consultation({ onBack }) {
@@ -58,8 +66,7 @@ export default function Consultation({ onBack }) {
           }
           return
         }
-        // Sumários de adesão instance-based (fonte única, ADR-054) — 30d e 90d.
-        // Buscados aqui (caller) p/ o service permanecer sync/sem I/O (Opção A).
+        // Sumários instance-based (ADR-054, Opção A) — helper faz swallow em falha.
         const adherenceSummaries = await fetchAdherenceSummaries()
         if (!isMounted) return
         const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail, user?.id, adherenceSummaries)

@@ -39,7 +39,8 @@ export function getConsultationData(
   userId = null,
   adherenceSummaries = null
 ) {
-  const { medicines, protocols, stockSummary } = dashboardData
+  // Guard defensivo: dashboardData pode chegar nulo em render inicial/loading (Gemini #620).
+  const { medicines, protocols, stockSummary } = dashboardData || {}
 
   // 1. Informações do paciente + cartão de emergência (offline, do localStorage)
   // userId obrigatório para isolamento entre usuários no mesmo dispositivo

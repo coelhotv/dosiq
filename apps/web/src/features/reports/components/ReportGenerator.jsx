@@ -97,13 +97,22 @@ async function resolveAdherence(period, dailyAdherence) {
   return cachedAdherenceService.getDailyAdherenceFromView(days)
 }
 
-/** Busca sumários de adesão instance-based (30d + 90d) p/ injetar no PDF (ADR-054). */
+/**
+ * Busca sumários de adesão instance-based (30d + 90d) p/ injetar no PDF (ADR-054).
+ * Swallow + DEV-log em falha (retorna null): rede dos sumários não derruba o perfil/PDF
+ * — degrada p/ adesão 0 em vez de erro total (Gemini #620).
+ */
 async function fetchAdherenceSummaries() {
-  const [last30d, last90d] = await Promise.all([
-    cachedAdherenceService.getAdherenceSummary('30d'),
-    cachedAdherenceService.getAdherenceSummary('90d'),
-  ])
-  return { last30d, last90d }
+  try {
+    const [last30d, last90d] = await Promise.all([
+      cachedAdherenceService.getAdherenceSummary('30d'),
+      cachedAdherenceService.getAdherenceSummary('90d'),
+    ])
+    return { last30d, last90d }
+  } catch (err) {
+    if (import.meta.env.DEV) console.error('Erro ao carregar sumários de adesão:', err)
+    return null
+  }
 }
 
 /** Executa o compartilhamento nativo em mobile se disponível. */
@@ -263,10 +272,8 @@ export default function ReportGenerator() {
         setPatientEmail(user?.email || '')
         setPatientUserId(user?.id || null)
 
-        // Sumários instance-based (ADR-054) — sem eles o PDF saía 0/0 (fallback vazio).
         const summaries = await fetchAdherenceSummaries()
-        if (!isMounted) return
-        setAdherenceSummaries(summaries)
+        if (isMounted) setAdherenceSummaries(summaries)
       } catch (err) {
         console.error('Erro ao carregar perfil para relatório clínico:', err)
       }

@@ -170,7 +170,15 @@ async function _uploadToShareApi(base64Data, filename, expiresInHours, token) {
     logWarn('Falha no compartilhamento', { status: response.status, error: errorMessage })
     throw new Error(errorMessage)
   }
-  const result = await response.json()
+  // Mesmo com status ok (200), o corpo pode vir vazio/não-JSON (HTML de proxy/gateway)
+  // → .json() estoura "Unexpected end of JSON input" genérico (Gemini #620).
+  let result
+  try {
+    result = await response.json()
+  } catch (err) {
+    logWarn('Resposta do servidor não é JSON válido', { status: response.status, error: err.message })
+    throw new Error('Erro ao processar resposta do servidor (JSON inválido)')
+  }
   if (!result.success) {
     const errorMessage = result.error || 'Erro ao compartilhar relatório'
     logWarn('Falha no compartilhamento', { status: response.status, error: errorMessage })
