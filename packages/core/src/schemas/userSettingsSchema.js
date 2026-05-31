@@ -26,8 +26,19 @@ export const TIMEZONE_OPTIONS = [
   { value: 'America/Porto_Velho',  label: 'Porto Velho, Rondônia (GMT-4)',         offset: -4 },
   { value: 'America/Rio_Branco',   label: 'Rio Branco, Acre (GMT-5)',              offset: -5 },
   { value: 'America/Eirunepe',     label: 'Eirunepé, Amazonas (oeste) (GMT-5)',    offset: -5 },
+  // Destinos expat (Caminho B / ADR-053) — punhado curado de fusos para brasileiros
+  // no exterior, mantendo a ordenação BR-first. O DST (horário de verão) é resolvido
+  // pelo NOME IANA via Intl, nunca pelo `offset` (que é só dica de label/ordenação —
+  // offset≠identidade: dois fusos de mesmo offset divergem em datas de DST distintas).
+  // Armazenar SEMPRE o IANA. Caminho C (IANA completo) fica gated (YAGNI, ADR-053).
+  { value: 'America/New_York',     label: 'Nova York, EUA (leste) (GMT-5/-4)',     offset: -5 },
+  { value: 'America/Los_Angeles',  label: 'Los Angeles, EUA (oeste) (GMT-8/-7)',   offset: -8 },
+  { value: 'Europe/Lisbon',        label: 'Lisboa, Portugal (GMT+0/+1)',           offset: 0 },
+  { value: 'Europe/London',        label: 'Londres, Reino Unido (GMT+0/+1)',       offset: 0 },
 ]
 
+// Lista de fusos aceitos (BR-first + expat curados, ADR-053). Nome mantido por
+// retrocompat (importado por mobile/profileService + barrel) — hoje inclui não-BR.
 export const TIMEZONES_BR = TIMEZONE_OPTIONS.map((o) => o.value)
 
 const timeSchema = z.string()
