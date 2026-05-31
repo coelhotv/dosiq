@@ -1,8 +1,5 @@
-import { 
-  getTodayLocal, 
-  getCurrentTime as getLocalTime,
-  getSaoPauloTime,
-  addDays
+import {
+  getCurrentTime as getLocalTime
 } from './dateUtils.js';
 
 /**
@@ -72,50 +69,6 @@ export function formatProtocol(protocol) {
   }
   
   return msg;
-}
-
-/**
- * Calculate adherence streak (days in a row with at least one dose) 
- * in a specific timezone.
- */
-export function calculateStreak(logs) {
-  if (!logs || logs.length === 0) return 0;
-  
-  // Get unique local dates (YYYY-MM-DD) in Brazil timezone
-  const localDates = logs
-    .map(l => getTodayLocal(getSaoPauloTime(l.taken_at)))
-    .filter((v, i, a) => a.indexOf(v) === i)
-    .sort((a, b) => b.localeCompare(a)); // Descending "2026-01-21", "2026-01-20"...
-
-  const today = getTodayLocal();
-  const firstLogDate = localDates[0];
-
-  // If no logs at all for today OR yesterday, streak is broken
-  if (firstLogDate !== today) {
-    const yesterday = getTodayLocal(addDays(getSaoPauloTime(), -1));
-    if (firstLogDate !== yesterday) {
-      return 0;
-    }
-  }
-
-  let streak = 0;
-  let currentRef = getSaoPauloTime(firstLogDate + 'T12:00:00');
-  
-  for (let i = 0; i < localDates.length; i++) {
-    const dateStr = localDates[i];
-    const refStr = getTodayLocal(currentRef);
-    
-    if (dateStr === refStr) {
-      streak++;
-      // Move reference to yesterday
-      currentRef = addDays(currentRef, -1);
-    } else {
-      // Gap found
-      break;
-    }
-  }
-  
-  return streak;
 }
 
 /**
