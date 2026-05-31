@@ -53,6 +53,7 @@ export function buildCalendarDays({
   todayKey,
   selectedDate,
   markedDates,
+  markedStatusesByDay = {},
   adherenceData,
   daysInMonth,
   firstDayOfMonth,
@@ -76,6 +77,7 @@ export function buildCalendarDays({
     const isToday = dateKey === todayKey
     const isSelected = isDaySelected(dayDate, dateKey, selectedDate)
     const hasLog = markedDates.some((dateStr) => dateStr === dateKey)
+    const dayStatuses = markedStatusesByDay[dateKey] || []
     const adherenceDayData = adherenceData[dateKey]
     const heatColor = getDayColor(adherenceDayData)
     const hasHeatColor = heatColor !== 'transparent'
@@ -93,7 +95,17 @@ export function buildCalendarDays({
         onClick={() => onDayClick && onDayClick(dayDate)}
       >
         <span className="day-number">{d}</span>
-        {hasLog && !hasHeatColor && <div className="log-dot"></div>}
+        {hasLog && !hasHeatColor && (
+          dayStatuses.length > 0 ? (
+            <div className="log-dots">
+              {dayStatuses.map((s) => (
+                <span key={s} className="log-dot" data-status={s}></span>
+              ))}
+            </div>
+          ) : (
+            <div className="log-dot"></div>
+          )
+        )}
       </button>
     )
   }

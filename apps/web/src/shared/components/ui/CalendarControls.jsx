@@ -13,6 +13,8 @@ export default function CalendarControls({
   onNextMonth,
   onMonthSelect,
   generateMonthOptions,
+  canGoNext = true,
+  canGoPrev = true,
 }) {
   if (enableMonthPicker) {
     return (
@@ -41,7 +43,7 @@ export default function CalendarControls({
         </select>
         <button
           onClick={onNextMonth}
-          disabled={isLoading}
+          disabled={isLoading || !canGoNext}
           className="calendar-nav-btn"
           aria-label="Próximo mês"
           type="button"
@@ -68,7 +70,7 @@ export default function CalendarControls({
       </div>
       <button
         onClick={onNextMonth}
-        disabled={isLoading}
+        disabled={isLoading || !canGoNext}
         className="calendar-nav-btn"
         aria-label="Próximo mês"
         type="button"
