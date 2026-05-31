@@ -1,12 +1,14 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { getSession, setSession, clearSession } from '../state.js';
-import { calculateStreak, escapeMarkdownV2 } from '../../utils/formatters.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 import { handleChatbotMessage } from '../commands/chatbot.js';
-import { getServerTimestamp } from '../../utils/dateUtils.js';
+import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
+import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 
 const logger = createLogger('ConversationalCallbacks');
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
 
 export async function handleConversationalCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
@@ -372,13 +374,13 @@ async function processDoseRegistration(bot, chatId, protocolId, medicineId, quan
       return _handleDoseRegistrationError(bot, chatId, medicineId, logError, consumeError, quantity, editMessageId);
     }
 
-    // 4. Calcular streak
-    const { data: allLogs } = await supabase
-      .from('medicine_logs')
-      .select('taken_at')
-      .eq('user_id', userId);
-    
-    const streak = calculateStreak(allLogs);
+    // 4. Streak ← dose_instances (S3.7): dias consecutivos ≥80% por status.
+    // Janela UTC real via getServerTimestamp (getNow() é wall-clock SP → desloca 3h vs UTC). 1 chamada.
+    const nowIso = getServerTimestamp();
+    const instances = await doseInstanceRepo.getWindow(
+      userId, addDays(nowIso, -90).toISOString(), nowIso
+    );
+    const streak = computeStreakFromInstances(instances);
     const unit = med?.dosage_unit || 'mg';
     let message = `✅ Dose de *${quantity}${escapeMarkdownV2(unit)} ${escapeMarkdownV2(med?.name || '')}* registrada com sucesso\\!`;
     
