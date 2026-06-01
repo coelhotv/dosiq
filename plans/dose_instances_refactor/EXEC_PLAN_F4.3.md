@@ -79,10 +79,38 @@ A adesão/anel mobile JÁ consome `dose_instances` (F3.3) — só a timeline e o
 - **Aceite (SC):** registro em lote (plano/avulsos) ancora cada dose à sua ocorrência; fallback snap preservado.
 - **Gates:** lint + jest. Smoke PO mobile.
 
+### F4.3e — "Pendências de ontem" (carry-over cross-dia) — web + mobile
+> **Origem:** requisito da MASTER (Fase 4, ln 204-211) — *"janela deslizante cross-dia … seção fixa 'Pendências de ontem' no topo … Simple: carry-over no topo + listão de hoje; Complex: carry-over acima dos períodos"*. Escorregou na F3.2b (web `useDoseZones` ficou day-bound) e foi herdado pela F4.3b (mobile copiou o day-bound). Esta sub-fase fecha a lacuna nas DUAS plataformas.
+- **Plataforma:** Shared/Core + Web/PWA + Mobile · **SemVer:** Minor (web + mobile — comportamento visível novo)
+- **Deliverables:**
+  - CORE (CON-024, aditivo): helper de partição — ex. `splitDayTimeline(instances, protocols, { now, tz })` → `{ carryOver, today }`. **carry-over** = ocorrências cujo `scheduled_for` cai em dia(s) local(is) ANTERIOR(es) a hoje E ainda `pending`/`late` dentro da tolerância (`classifyDose != null` → actionável); **today** = janela do dia local atual (comportamento F3.2b/F4.3b). Doses de ontem já `missed`/pós-tolerância NÃO entram (não actionáveis).
+  - WEB: `useDoseZones`/`Dashboard.jsx` (redesign) — seção "Pendências de ontem" no topo da lista de hoje; só renderiza se `carryOver.length > 0`.
+  - MOBILE: `_useTodayDerived` expõe `carryOver`; `TodayScreen` renderiza seção "Pendências de ontem" — **Simple:** acima do listão; **Complex:** acima dos períodos (períodos de hoje inalterados, day-bound).
+  - Testes core (vitest) da partição + web (vitest) + mobile (jest) das seções.
+  - SQP: web minor + mobile minor (`app.config` APP_VERSION) + CHANGELOG ambos + store-note mobile.
+- **Aceite (SC):** dose de ontem 22:30 ainda `pending`/`late` dentro da tolerância aparece em "Pendências de ontem" (web+mobile, Simple+Complex); sem carry-over → render idêntico ao atual; períodos complex inalterados; bug do slot-fantasma segue resolvido (carry-over é seção própria, não slot de hoje).
+- **Gates:** lint 0 · vitest web+core · jest mobile · build web. Smoke PO web + mobile.
+
+### F4.3f — Injeção de tz ponta-a-ponta (fecha G1 fora do Histórico) — core + write-path + "hoje" web/mobile + regen on tz-change
+> **Origem:** princípio-mãe do refactor (MASTER §5 ln 132-134, ln 238 — *"tz antes de gerar — ordem não-negociável"*; Q-A/Q-I ln 220/228). Hoje o tz do perfil (`user_settings.timezone`) só é lido na timeline do **Histórico** (F4.2). **Geração** (`createProtocolRepository`→`planWindow`→`generateInstances`) e **"hoje"** (`useDoseZones` web + `_useTodayDerived` mobile) usam `'America/Sao_Paulo'` hardcoded (default de `planWindow`/`DEFAULT_TZ`). Resultado: usuário com tz ≠ SP (expat — habilitado na S4.4b/ADR-053) tem `scheduled_for` materializado no fuso errado E a virada-de-dia/HH:MM do "hoje" em SP. Sem isto, o refactor não cobre tz ≠ SP — esvazia o esforço.
+- **Plataforma:** Shared/Core + Web/PWA + Mobile (+ Backend/Infra: cron `server/bot` se gerar instâncias) · **SemVer:** Minor (web + mobile) · **DADOS:** requer regen das `pending` futuras dos usuários tz ≠ SP
+- **Deliverables:**
+  - **Write-path passa o tz do usuário** (não default SP):
+    - `createProtocolRepository.syncInstancesOnWrite` resolve `user_settings.timezone` (uma leitura) e passa `tz` a `planWindow`/`ensureInstancesUpTo` (web + mobile, mesma factory core — R-231).
+    - Rede lazy (`ensureInstancesUpTo`) e cron de renovação (`renewProtocolWindow`, `server/bot/scheduler.js`) idem — geração due-only com o tz do dono do protocolo.
+  - **tz-change → wipe + regen** (Q-I): `updateTimezone` (web `profileService` + mobile `profileService`) passa a, após persistir, disparar `wipeFuturePending` + `planWindow(fromTs=now, tz=novo)` das `pending` futuras de todos os protocolos ativos do usuário (reusa a mecânica do edit; passadas/`taken`/`missed` intactas — âncora travada Q-E). Best-effort (R-245/246).
+  - **Leitura "hoje" usa o tz do perfil:** `useDoseZones` (web) e `_useTodayDerived` (mobile) recebem o `timezone` do contexto (já buscado em `useDashboard`/`useTodayData`) e passam a `buildDoseItemsFromInstances`/fronteiras de dia em vez de `DEFAULT_TZ`. Fallback SP quando ausente.
+  - **Backfill one-shot** (se houver usuários tz ≠ SP em prod): script escopado por `userId` (R-179, `--dry-run`) que regenera `pending` futuras no tz correto. (Avaliar necessidade — base mínima; pode ser coberto pelo regen-on-change no próximo login/edição.)
+  - Testes: core (tz não-SP muda `scheduled_for`/fronteira), web (vitest), mobile (jest); regen-on-change.
+  - SQP: web minor + mobile minor + CHANGELOG ambos + store-note mobile.
+- **Aceite (SC):** usuário em `Europe/London` cria/edita tratamento "08:00" → `scheduled_for` materializa 08:00 **Londres** (não SP); "hoje" web+mobile deriva a virada-de-dia e HH:MM no fuso de Londres; trocar o fuso regenera as `pending` futuras no novo offset; SP segue idêntico (zero regressão maioria). Fecha G1 fora do Histórico.
+- **Gates:** lint 0 · vitest web+core · jest mobile · build web. Smoke PO web + mobile (cenário expat: setar Londres, conferir horários).
+- **Riscos:** (1) regen ao trocar tz pode recriar muitas linhas — escopar a `pending` futura + best-effort; (2) consistência geração↔leitura (G2) — ambos no mesmo tz do perfil mata a divergência; (3) cron `server/bot` precisa do tz por protocolo (lookup) — confirmar fonte; (4) instâncias legadas SP de usuários que viraram expat — regen-on-change cobre no próximo write/login.
+
 ---
 
 ## Ordem & gates
-`F4.3a → [smoke web + merge] → F4.3b → [smoke mobile + merge] → F4.3c → [smoke + merge] → F4.3d → [smoke + merge]` → **Fase 4 fechada → distill final + RETRO do refactor**.
+`F4.3a → [smoke web + merge] → F4.3b → [smoke mobile + merge] → F4.3c → [smoke + merge] → F4.3d → [smoke + merge] → F4.3e (carry-over web+mobile) → [smoke + merge] → F4.3f (tz ponta-a-ponta) → [smoke web+mobile expat + merge]` → **Fase 4 fechada → distill final + RETRO do refactor**.
 
 Cada PR: R-221 SQP, lint 0 + testes do workspace ANTES do commit, smoke PO ANTES do PR (constituição VII), Gemini review, merge humano (R-060). C5 pós-merge.
 
@@ -91,6 +119,7 @@ Cada PR: R-221 SQP, lint 0 + testes do workspace ANTES do commit, smoke PO ANTES
 - **Mapeamento de status** (F4.3b) card visual → conferir paridade de rótulos com web (R-166).
 - **tz mobile default SP** — residual G1 (auto-detecção/expat = follow-up); documentar, não é regressão.
 - **Bulk→instância** (F4.3d) ambiguidade de slot → fallback snap garante segurança.
+- **Carry-over (F4.3e)** corte da janela de ontem → usar `classifyDose != null` (dentro da tolerância) como critério de "actionável"; não puxar ontem já `missed` (vira ruído). Web e mobile precisam do MESMO helper core (R-231) p/ não divergir.
 
 ## Contratos / Memória
 - **CON-024** (novo, F4.3a): API core de zonas de dose. Aditivo, sem ADR.
@@ -100,6 +129,8 @@ Cada PR: R-221 SQP, lint 0 + testes do workspace ANTES do commit, smoke PO ANTES
 - [ ] Lógica de zonas no core, web reusa sem duplicata (CON-024).
 - [ ] Timeline do Hoje mobile vem de `dose_instances` (status real, scheduled_for absoluto, tolerância dinâmica, cross-meia-noite correto).
 - [ ] priorityCard + card refletem estado real.
+- [ ] "Pendências de ontem" (carry-over cross-dia) no topo do "hoje" — web + mobile, Simple + Complex (MASTER ln 204-211, F4.3e).
+- [ ] tz do perfil injetado ponta-a-ponta — geração (write-path + cron) + "hoje" web/mobile + regen on tz-change; tz ≠ SP correto (MASTER §5/Q-I, F4.3f). G1 fechado fora do Histórico.
 - [ ] Write individual + bulk ancoram por `instanceId` (determinístico), snap como fallback PRN.
 - [ ] Testes web+core (vitest) e mobile (jest) verdes; smoke PO por fase.
 - [ ] SQP por PR; CHANGELOG; versões mobile bumpadas.

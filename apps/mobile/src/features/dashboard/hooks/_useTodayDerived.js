@@ -1,47 +1,87 @@
 import { useMemo } from 'react'
 import {
   getTodayLocal,
-  formatLocalDate,
   parseISO,
-  isProtocolActiveOnDate,
-  calculateDosesByDate,
   computeAdherenceFromInstances,
-  parseLocalDate,
   addDays,
-  getNow,
-  evaluateDoseTimelineState,
-  getSaoPauloTime
+  getRawNow,
+  getStartOfDayISO,
+  getEndOfDayISO,
+  buildDoseItemsFromInstances,
+  classifyDose,
+  DEFAULT_TZ,
 } from '@dosiq/core'
 
 /**
- * Hook privado para derivação de dados do Dashboard Hoje
+ * Mapeia o estado real da ocorrência (`dose_instances.status` + zona temporal) para
+ * o rótulo de timeline consumido pelo card. Espelha o web (R-166): a zona vem de
+ * `classifyDose` pelo instante ABSOLUTO (`scheduled_for`), honrando a tolerância
+ * dinâmica da ocorrência (não 120min fixo) — cross-meia-noite correto (AP-194).
+ */
+function toTimelineStatus(item, nowRaw) {
+  if (item.isRegistered) return 'TOMADA'
+  if (item.status === 'missed') return 'PERDIDA'
+  const zone = classifyDose(item.scheduledFor, nowRaw, 120, 60, 240, false, item.toleranceMinutes)
+  if (zone === 'late') return 'ATRASADA'
+  if (zone === 'now') return 'PROXIMA'
+  if (zone === 'upcoming' || zone === 'later') return 'PLANEJADA'
+  // pending pós-tolerância (zona null): ainda não varrida p/ missed, mas fora do
+  // actionável — exibe como PERDIDA (espelha o sweep markMissedDueInstances).
+  return 'PERDIDA'
+}
+
+/**
+ * Hook privado para derivação de dados do Dashboard Hoje.
+ *
+ * F4.3b: a timeline do dia passa a vir de `dose_instances` materializadas (status
+ * real `taken`/`missed`/`pending` + `scheduled_for` absoluto) via core
+ * `buildDoseItemsFromInstances`/`classifyDose` (CON-024), em paridade com o web e
+ * com a adesão (F3.3). Sai a inferência ±2h sobre logs (`calculateDosesByDate`),
+ * que reintroduzia slot fantasma cross-meia-noite e tolerância fixa. tz default SP
+ * (residual G1 mobile — auto-detecção/expat é follow-up).
  */
 export function useTodayDerived(data) {
   return useMemo(() => {
     if (!data) return null
 
     const todayStr = getTodayLocal()
-    
-    // 0. Filtrar protocolos ativos hoje
-    const validProtocols = data.protocols.filter(p => isProtocolActiveOnDate(p, todayStr))
-
-    // 1. Filtrar logs de hoje
-    const todayLogs = data.logs.filter(l => {
-      return formatLocalDate(parseISO(l.taken_at)) === todayStr
-    })
-
-    // 2. Classificar doses em zonas
-    const { takenDoses, missedDoses, scheduledDoses } = calculateDosesByDate(
-      todayStr,
-      todayLogs,
-      validProtocols
-    )
-
-    // 3. Estatísticas e tendências ← dose_instances (S3.6/ADR-054): adesão =
-    // taken/(taken+missed), skipped_* neutro — não infere sobre logs ±2h.
-    // Janela 7d (atual) vs 7d (anterior) p/ o trend. scheduled_for é instante absoluto;
-    // o filtro por dia local usa boundaries via addDays (fronteira de dia no tz default).
+    const nowRaw = getRawNow()
+    const protocols = data.protocols || []
     const instances = data.doseInstances || []
+
+    // 1. Timeline do dia ← dose_instances (status real, instante absoluto).
+    // `data.doseInstances` traz a janela de 14d (p/ a tendência de adesão abaixo);
+    // a timeline é só do DIA → filtrar pelas fronteiras do dia local (tz) antes do build,
+    // senão renderiza as ocorrências dos dias anteriores (bug F4.3b smoke).
+    const dayStart = parseISO(getStartOfDayISO(todayStr, DEFAULT_TZ)).getTime()
+    const dayEnd = parseISO(getEndOfDayISO(todayStr, DEFAULT_TZ)).getTime()
+    const todayInstances = instances.filter((i) => {
+      if (!i?.scheduled_for) return false
+      const t = parseISO(i.scheduled_for).getTime()
+      return t >= dayStart && t <= dayEnd
+    })
+    const protocolById = new Map(protocols.filter(Boolean).map((p) => [p.id, p]))
+    const doseItems = buildDoseItemsFromInstances(todayInstances, protocols, DEFAULT_TZ)
+    const timeline = doseItems
+      .map((item) => {
+        const protocol = protocolById.get(item.protocolId) || null
+        return {
+          id: item.instanceId,
+          instanceId: item.instanceId,
+          scheduledTime: item.scheduledTime,
+          scheduledFor: item.scheduledFor,
+          status: item.status,
+          isRegistered: item.isRegistered,
+          timelineStatus: toTimelineStatus(item, nowRaw),
+          protocol,
+          medicine: protocol?.medicine || null,
+        }
+      })
+      .sort((a, b) => (a.scheduledTime || '').localeCompare(b.scheduledTime || ''))
+
+    // 2. Estatísticas e tendências ← dose_instances (S3.6/ADR-054): adesão =
+    // taken/(taken+missed), skipped_* neutro. Janela 7d (atual) vs 7d (anterior).
+    // scheduled_for é instante absoluto; o filtro por dia local usa boundaries via addDays.
     const curStart = addDays(todayStr, -6).getTime()
     const curEnd = addDays(todayStr, 1).getTime()
     const prevStart = addDays(todayStr, -13).getTime()
@@ -51,8 +91,8 @@ export function useTodayDerived(data) {
       const t = parseISO(inst.scheduled_for).getTime()
       return t >= start && t < end
     }
-    const curAgg = computeAdherenceFromInstances(instances.filter(i => inWindow(i, curStart, curEnd)))
-    const prevAgg = computeAdherenceFromInstances(instances.filter(i => inWindow(i, prevStart, prevEnd)))
+    const curAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, curStart, curEnd)))
+    const prevAgg = computeAdherenceFromInstances(instances.filter((i) => inWindow(i, prevStart, prevEnd)))
     const score = Math.round((curAgg.rate ?? 0) * 100)
     const prevScore = Math.round((prevAgg.rate ?? 0) * 100)
     const hasPreviousData = (prevAgg.taken + prevAgg.missed) > 0
@@ -63,58 +103,23 @@ export function useTodayDerived(data) {
       expected: curAgg.taken + curAgg.missed,
       score,
       trend: hasPreviousData ? (score - prevScore) : 0,
-      hasPreviousData
+      hasPreviousData,
     }
 
-    // Helper de ordenação
-    const sortByTime = (a, b) => {
-      const formatTime = (d) => {
-        if (d.scheduledTime) return d.scheduledTime
-        if (!d.taken_at) return '00:00'
-        const date = getSaoPauloTime(parseISO(d.taken_at))
-        const h = String(date.getHours()).padStart(2, '0')
-        const m = String(date.getMinutes()).padStart(2, '0')
-        return `${h}:${m}`
-      }
-      return formatTime(a).localeCompare(formatTime(b))
-    }
-
-    // 4. Zonas (Late, Now, Upcoming, Done)
-    const zones = {
-      late: missedDoses.sort(sortByTime),
-      now: scheduledDoses.filter(d => {
-        const [h, m] = d.scheduledTime.split(':').map(Number)
-        const scheduledDate = parseLocalDate(todayStr)
-        scheduledDate.setHours(h, m, 0, 0)
-        const diffHours = (getNow().getTime() - scheduledDate.getTime()) / (1000 * 60 * 60)
-        return diffHours >= -0.5 && diffHours <= 2
-      }).sort(sortByTime),
-      upcoming: scheduledDoses.sort(sortByTime),
-      done: takenDoses.sort(sortByTime)
-    }
-
-    // 5. Timeline Tática
-    const timeline = evaluateDoseTimelineState(todayStr, {
-      takenDoses,
-      missedDoses,
-      scheduledDoses
-    })
-
-    // 6. Alertas de estoque
+    // 3. Alertas de estoque
     const stockAlerts = Object.values(data.medicines || {})
-      .filter(m => (m.daysRemaining ?? Infinity) <= 7)
-      .map(m => ({
+      .filter((m) => m && (m.daysRemaining ?? Infinity) <= 7)
+      .map((m) => ({
         medicineId: m.id,
         medicineName: m.name,
-        daysRemaining: m.daysRemaining
+        daysRemaining: m.daysRemaining,
       }))
 
     return {
       ...data,
       stats: statsWithTrend,
-      zones,
       timeline,
-      stockAlerts
+      stockAlerts,
     }
   }, [data])
 }
