@@ -307,6 +307,16 @@ describe('splitDayTimeline (core / F4.3e)', () => {
     expect(splitDayTimeline(null, protocols, { now: NOW })).toEqual({ carryOver: [], today: [], lookAhead: [] })
   })
 
+  it('now inválido → shape vazia (sem RangeError do getUserTime)', () => {
+    expect(() => splitDayTimeline([], protocols, { now: 'lixo' })).not.toThrow()
+    expect(splitDayTimeline([], protocols, { now: 'lixo' })).toEqual({ carryOver: [], today: [], lookAhead: [] })
+  })
+
+  it('now omitido → fallback getRawNow (sem crash)', () => {
+    expect(() => splitDayTimeline([], protocols, {})).not.toThrow()
+    expect(splitDayTimeline([], protocols)).toEqual({ carryOver: [], today: [], lookAhead: [] })
+  })
+
   // ── lookAhead (espelho do carryOver — janela PARA FRENTE pela tolerância) ──
   describe('lookAhead (F4.3e bidirecional)', () => {
     // "agora" = 2026-03-05 23:30:00 BRT (2026-03-06 02:30 UTC) — fim do dia, p/ amanhã chegando.

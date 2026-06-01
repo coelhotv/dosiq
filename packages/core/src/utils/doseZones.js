@@ -23,6 +23,7 @@ import {
   formatLocalDate,
   getStartOfDayISO,
   getEndOfDayISO,
+  getRawNow,
 } from './dateUtils.js'
 
 /** tz default (G1 — injeção real do tz do usuário é follow-up; default SP). */
@@ -204,7 +205,10 @@ export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_T
  */
 export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ } = {}) {
   const list = Array.isArray(instances) ? instances : []
-  const nowDate = now instanceof Date ? now : parseISO(now)
+  // `now` ausente/inválido → fallback p/ getRawNow (respeita offset dev) + guard NaN:
+  // getUserTime usa Intl e estoura RangeError em Invalid Date (AP-194/PR #623).
+  const nowDate = now instanceof Date ? now : now ? parseISO(now) : getRawNow()
+  if (Number.isNaN(nowDate.getTime())) return { carryOver: [], today: [], lookAhead: [] }
   const nowMs = nowDate.getTime()
   const todayStr = formatLocalDate(getUserTime(nowDate, tz))
   const dayStart = parseISO(getStartOfDayISO(todayStr, tz)).getTime()
