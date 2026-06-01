@@ -83,7 +83,7 @@ A adesão/anel mobile JÁ consome `dose_instances` (F3.3) — só a timeline e o
 
 ### F4.3e — "Pendências de ontem" (carry-over cross-dia) — web + mobile
 > **Origem:** requisito da MASTER (Fase 4, ln 204-211) — *"janela deslizante cross-dia … seção fixa 'Pendências de ontem' no topo … Simple: carry-over no topo + listão de hoje; Complex: carry-over acima dos períodos"*. Escorregou na F3.2b (web `useDoseZones` ficou day-bound) e foi herdado pela F4.3b (mobile copiou o day-bound). Esta sub-fase fecha a lacuna nas DUAS plataformas.
-- **Plataforma:** Shared/Core + Web/PWA + Mobile · **SemVer:** Minor (web + mobile — comportamento visível novo)
+- **Plataforma:** Shared/Core + Web/PWA + Mobile · **SemVer:** Minor (web + mobile — comportamento visível novo) - para mobile ir a v0.7.1
 - **Deliverables:**
   - CORE (CON-024, aditivo): helper de partição — ex. `splitDayTimeline(instances, protocols, { now, tz })` → `{ carryOver, today }`. **carry-over** = ocorrências cujo `scheduled_for` cai em dia(s) local(is) ANTERIOR(es) a hoje E ainda `pending`/`late` dentro da tolerância (`classifyDose != null` → actionável); **today** = janela do dia local atual (comportamento F3.2b/F4.3b). Doses de ontem já `missed`/pós-tolerância NÃO entram (não actionáveis).
   - WEB: `useDoseZones`/`Dashboard.jsx` (redesign) — seção "Pendências de ontem" no topo da lista de hoje; só renderiza se `carryOver.length > 0`.
@@ -95,7 +95,7 @@ A adesão/anel mobile JÁ consome `dose_instances` (F3.3) — só a timeline e o
 
 ### F4.3f — Injeção de tz ponta-a-ponta (fecha G1 fora do Histórico) — core + write-path + "hoje" web/mobile + regen on tz-change
 > **Origem:** princípio-mãe do refactor (MASTER §5 ln 132-134, ln 238 — *"tz antes de gerar — ordem não-negociável"*; Q-A/Q-I ln 220/228). Hoje o tz do perfil (`user_settings.timezone`) só é lido na timeline do **Histórico** (F4.2). **Geração** (`createProtocolRepository`→`planWindow`→`generateInstances`) e **"hoje"** (`useDoseZones` web + `_useTodayDerived` mobile) usam `'America/Sao_Paulo'` hardcoded (default de `planWindow`/`DEFAULT_TZ`). Resultado: usuário com tz ≠ SP (expat — habilitado na S4.4b/ADR-053) tem `scheduled_for` materializado no fuso errado E a virada-de-dia/HH:MM do "hoje" em SP. Sem isto, o refactor não cobre tz ≠ SP — esvazia o esforço.
-- **Plataforma:** Shared/Core + Web/PWA + Mobile (+ Backend/Infra: cron `server/bot` se gerar instâncias) · **SemVer:** Minor (web + mobile) · **DADOS:** requer regen das `pending` futuras dos usuários tz ≠ SP
+- **Plataforma:** Shared/Core + Web/PWA + Mobile (+ Backend/Infra: cron `server/bot` se gerar instâncias) · **SemVer:** Minor (web + mobile) - para mobile ir a v0.7.2 · **DADOS:** requer regen das `pending` futuras dos usuários tz ≠ SP
 - **Deliverables:**
   - **Write-path passa o tz do usuário** (não default SP):
     - `createProtocolRepository.syncInstancesOnWrite` resolve `user_settings.timezone` (uma leitura) e passa `tz` a `planWindow`/`ensureInstancesUpTo` (web + mobile, mesma factory core — R-231).
