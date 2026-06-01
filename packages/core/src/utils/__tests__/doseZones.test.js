@@ -58,6 +58,11 @@ describe('classifyDose (core)', () => {
     expect(classifyDose('lixo', now, 120, 60, 240, false)).toBeNull()
   })
 
+  it('scheduledFor null/undefined → null (guard defensivo, PR #623)', () => {
+    expect(classifyDose(null, now, 120, 60, 240, false)).toBeNull()
+    expect(classifyDose(undefined, now, 120, 60, 240, false)).toBeNull()
+  })
+
   it('aceita Date além de ISO string', () => {
     expect(classifyDose(new Date(BASE_MS - 60 * 60_000), now, 120, 60, 240, false)).toBe('late')
   })
@@ -167,6 +172,29 @@ describe('buildDoseItemsFromInstances (core)', () => {
       'Europe/London'
     )
     expect(doses[0].scheduledTime).toBe('12:30')
+  })
+
+  it('scheduled_for inválido → scheduledTime "--:--" (fallback, PR #623)', () => {
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', scheduled_for: 'lixo', status: 'pending' }],
+      protocols
+    )
+    expect(doses[0].scheduledTime).toBe('--:--')
+  })
+
+  it('protocols não-array ou com nulos → não estoura (guard, PR #623)', () => {
+    expect(() =>
+      buildDoseItemsFromInstances(
+        [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(0), status: 'pending' }],
+        [null, undefined, ...protocols]
+      )
+    ).not.toThrow()
+    expect(
+      buildDoseItemsFromInstances(
+        [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(0), status: 'pending' }],
+        { not: 'array' }
+      )
+    ).toEqual([])
   })
 
   it('DEFAULT_TZ exportado é São Paulo', () => {

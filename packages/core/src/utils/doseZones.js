@@ -73,6 +73,7 @@ export function classifyDose(
   toleranceMinutes = null
 ) {
   if (isRegistered) return 'done'
+  if (!scheduledFor) return null // guard: null/undefined não chega ao parseISO
 
   const scheduledMs =
     scheduledFor instanceof Date ? scheduledFor.getTime() : parseISO(scheduledFor).getTime()
@@ -106,7 +107,10 @@ function getPlanBadge(plan) {
  * @private
  */
 function toLocalHHMM(scheduledFor, tz) {
-  const local = getUserTime(parseISO(scheduledFor), tz)
+  const parsed = parseISO(scheduledFor)
+  // Date inválido → fallback amigável (getUserTime/Intl estoura em Invalid Date).
+  if (Number.isNaN(parsed.getTime())) return '--:--'
+  const local = getUserTime(parsed, tz)
   const h = String(local.getHours()).padStart(2, '0')
   const m = String(local.getMinutes()).padStart(2, '0')
   return `${h}:${m}`
@@ -152,7 +156,8 @@ function createDoseItem(instance, protocol, tz) {
  */
 export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_TZ) {
   if (!Array.isArray(instances) || instances.length === 0) return []
-  const byId = new Map((protocols || []).map((p) => [p.id, p]))
+  const protocolsList = Array.isArray(protocols) ? protocols : []
+  const byId = new Map(protocolsList.filter(Boolean).map((p) => [p.id, p]))
 
   const doses = []
   for (const inst of instances) {
