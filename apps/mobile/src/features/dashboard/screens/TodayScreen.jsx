@@ -133,7 +133,7 @@ function TodayScreenContent({
   timeline, stockAlerts, protocols, stats, medicines,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
-  modalProtocol, modalScheduledTime, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
+  modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
   bulkModal, setBulkModal,
   handleOpenBulkDose,
   navigation,
@@ -175,7 +175,7 @@ function TodayScreenContent({
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
         {priorityDoses.length > 0 && (
-          <HeroDoseCard doses={priorityDoses} onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime)} />
+          <HeroDoseCard doses={priorityDoses} onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime, d.instanceId)} />
         )}
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
@@ -201,6 +201,7 @@ function TodayScreenContent({
         visible={modalProtocol !== null}
         protocol={modalProtocol}
         scheduledTime={modalScheduledTime}
+        instanceId={modalInstanceId}
         medicineName={medicineName}
         onClose={handleCloseRegister}
         onSuccess={handleRegisterSuccess}
@@ -285,6 +286,7 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
 export default function TodayScreen({ route, navigation }) {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
+  const [modalInstanceId, setModalInstanceId] = useState(null)
   // null | { mode, planId?, protocolIds?, scheduledTime, treatmentPlanName? }
   const [bulkModal, setBulkModal] = useState(null)
   const [expandedShifts, setExpandedShifts] = useState({})
@@ -365,19 +367,22 @@ export default function TodayScreen({ route, navigation }) {
 
   const medicineName = _resolveMedicineName(modalProtocol, medicines)
 
-  function handleOpenRegister(protocol, scheduledTime) {
+  function handleOpenRegister(protocol, scheduledTime, instanceId = null) {
     setModalProtocol(protocol)
     setModalScheduledTime(scheduledTime)
+    setModalInstanceId(instanceId)
   }
 
   function handleCloseRegister() {
     setModalProtocol(null)
     setModalScheduledTime(null)
+    setModalInstanceId(null)
   }
 
   function handleRegisterSuccess() {
     setModalProtocol(null)
     setModalScheduledTime(null)
+    setModalInstanceId(null)
     refresh()
   }
 
@@ -387,7 +392,7 @@ export default function TodayScreen({ route, navigation }) {
       timeline={timeline} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
-      modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime}
+      modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime} modalInstanceId={modalInstanceId}
       medicineName={medicineName} handleOpenRegister={handleOpenRegister}
       handleRegisterSuccess={handleRegisterSuccess} handleCloseRegister={handleCloseRegister}
       bulkModal={bulkModal} setBulkModal={setBulkModal}

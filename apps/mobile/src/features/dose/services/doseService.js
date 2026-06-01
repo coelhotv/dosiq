@@ -21,13 +21,31 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
  * a falha deixa o log avulso (`dose_instance_id=null`), reconciliável por backfill.
  * Sem isto, todo registro mobile orfanava o log → instância seguia `pending` → sweep
  * diário marcava `missed` → falso missed corrompia streak/adesão (AP-193).
+ * F4.3c — âncora DIRETA por `instanceId` (determinística, espelha web `logService`):
+ * quando a tomada parte de uma ocorrência conhecida da timeline, marca exatamente aquela
+ * instância. Se `markTaken` direto falhar (já `taken` / duplo-clique / id inválido) NÃO
+ * cai no snap por tolerância — ancorar noutra pendente legítima (ex: dose do dia seguinte)
+ * seria pior que ficar avulso. Sem `preferInstanceId` (PRN/avulso) → snap por tolerância.
  * @param {string} protocolId
  * @param {string} logId
  * @param {string} takenAt - mesmo timestamp usado no insert do log
+ * @param {string|null} preferInstanceId - âncora direta (timeline) ou null (snap)
  */
-async function _anchorLogToInstance(protocolId, logId, takenAt) {
+async function _anchorLogToInstance(protocolId, logId, takenAt, preferInstanceId = null) {
   if (!protocolId) return
   try {
+    // Âncora direta por id (F4.3c): determinística, sem snap-fallback se falhar.
+    if (preferInstanceId) {
+      const marked = await doseInstanceRepo.markTaken(preferInstanceId, logId)
+      if (!marked) return
+      const { error: linkError } = await supabase
+        .from('medicine_logs')
+        .update({ dose_instance_id: preferInstanceId })
+        .eq('id', logId)
+      if (linkError) throw linkError
+      return
+    }
+
     const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt })
     if (!instance) return
     const marked = await doseInstanceRepo.markTaken(instance.id, logId)
@@ -115,7 +133,7 @@ async function _insertDoseLog(parsedData, userId) {
   return { logEntry, err: null }
 }
 
-export async function registerDose(logData) {
+export async function registerDose(logData, { instanceId = null } = {}) {
   // R-121: validar com Zod antes de enviar ao Supabase
   debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
@@ -139,7 +157,8 @@ export async function registerDose(logData) {
 
     debugLog('[doseService] stock consumido com sucesso')
     // Âncora best-effort (S3.6.2/AP-193) — após o estoque, antes do retorno.
-    await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at)
+    // F4.3c: âncora direta por instanceId quando a tomada parte da timeline.
+    await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at, instanceId)
     await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
     return { success: true, data: logEntry }
   } catch (err) {

@@ -30,13 +30,14 @@ import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
  *   onSuccess: Function,         — chamado após registo bem-sucedido
  * }} props
  */
-export default function DoseRegisterModal({ 
-  visible, 
-  protocol, 
-  scheduledTime, 
-  medicineName, 
-  onClose, 
-  onSuccess 
+export default function DoseRegisterModal({
+  visible,
+  protocol,
+  scheduledTime,
+  instanceId = null,
+  medicineName,
+  onClose,
+  onSuccess
 }) {
   // States primeiro (R-010)
   const [quantity, setQuantity] = useState('')
@@ -68,14 +69,16 @@ export default function DoseRegisterModal({
     // Padrão do projecto: timestamps sempre em UTC (getNow().toISOString())
     const takenAt = getNow().toISOString()
 
-    const result = await registerDose({
-      protocol_id: protocol.id,
-      medicine_id: protocol.medicine_id,
-      taken_at: takenAt,
-      quantity_taken: qty,
-      // Nota: o schema logSchema ainda não suporta scheduled_time explicitamente, 
-      // mas podemos passar para serviços futuros se necessário.
-    })
+    const result = await registerDose(
+      {
+        protocol_id: protocol.id,
+        medicine_id: protocol.medicine_id,
+        taken_at: takenAt,
+        quantity_taken: qty,
+      },
+      // F4.3c: âncora direta na ocorrência da timeline (determinística); null → snap.
+      { instanceId }
+    )
 
     setLoading(false)
 

@@ -52,7 +52,7 @@ export default function DoseTimelineCard({ dose, onRegister }) {
         {(isAtrasada || isProxima) ? (
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => onRegister && onRegister(protocol, scheduledTime)}
+            onPress={() => onRegister && onRegister(protocol, scheduledTime, dose.instanceId)}
             activeOpacity={0.7}
           >
             <Text style={styles.actionButtonText}>Tomar</Text>
