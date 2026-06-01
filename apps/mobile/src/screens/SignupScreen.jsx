@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Mail, ShieldCheck, Info } from 'lucide-react-native'
 import { signUpWithEmail, verifyOtpWithEmail } from '../platform/auth/authService'
+import { captureDeviceTimezone } from '@profile/services/profileService'
 import { ROUTES } from '../navigation/routes'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
@@ -53,6 +54,9 @@ export default function SignupScreen({ navigation }) {
       setOtpError(verifyError)
       return
     }
+    // F4.3f.0: captura o fuso do device agora (conta confirmada, sessão ativa) —
+    // antes do onboarding, cobre quem pula o wizard. Best-effort (R-253).
+    await captureDeviceTimezone()
   }
 
   if (emailSent) {

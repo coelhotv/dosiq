@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { userSettingsNotificationSchema, createProfileRepository, TIMEZONES_BR } from '@dosiq/core'
+import { userSettingsNotificationSchema, createProfileRepository, TIMEZONES_BR, getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -280,9 +280,31 @@ export async function isOnboardingNeeded() {
  * Marca o onboarding como concluído (após concluir ou pular o wizard).
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
+/**
+ * Captura o fuso do device logo após a confirmação de signup (1º ponto
+ * determinístico da conta) — ANTES do onboarding, cobrindo quem pula o wizard e
+ * deixando o tz pronto p/ a geração do 1º tratamento. Best-effort: falha não
+ * bloqueia o fluxo de cadastro. GATE: chamar SÓ no signup/confirmação (R-253).
+ * @returns {Promise<{success: boolean, error: string|null}>}
+ */
+export async function captureDeviceTimezone() {
+  try {
+    const timezone = resolveSupportedTz(getDeviceTimezone())
+    await profileRepo.captureDeviceTimezone(timezone)
+    return { success: true, error: null }
+  } catch (err) {
+    if (__DEV__) console.error('[profileService] erro ao capturar fuso do device:', err)
+    return { success: false, error: mapErrorToMessage(err) }
+  }
+}
+
 export async function completeOnboarding() {
   try {
-    await profileRepo.completeOnboarding()
+    // F4.3f.0: captura silenciosa do fuso real do device (Intl/Hermes),
+    // normalizado p/ a lista suportada (ADR-053); fora dela → SP. Rede de
+    // segurança — a captura primária é no signup (captureDeviceTimezone).
+    const timezone = resolveSupportedTz(getDeviceTimezone())
+    await profileRepo.completeOnboarding(timezone)
     return { success: true, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao concluir onboarding:', err)

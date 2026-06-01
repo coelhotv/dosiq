@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import { signIn, signUp, sendPasswordReset, verifyOtp } from '@shared/utils/supabase'
+import { signIn, signUp, sendPasswordReset, verifyOtp, captureDeviceTimezone } from '@shared/utils/supabase'
 import './Auth.css'
 
 function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
@@ -125,8 +125,10 @@ function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
   )
 }
 
-export default function Auth({ onAuthSuccess, onClose }) {
-  const [isLogin, setIsLogin] = useState(true)
+export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
+  // Produto recém-lançado: o happy path da landing é o cadastro (defaultLogin=false).
+  // Usuários antigos alternam para login pelo "Já tem uma conta? Entrar".
+  const [isLogin, setIsLogin] = useState(defaultLogin)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -179,6 +181,9 @@ export default function Auth({ onAuthSuccess, onClose }) {
     }
     try {
       await verifyOtp(email, tokenClean, 'signup')
+      // F4.3f.0: captura o fuso do device agora (conta confirmada) — antes do
+      // onboarding, cobre quem pula o wizard. Best-effort (R-253).
+      await captureDeviceTimezone()
       if (onAuthSuccess) onAuthSuccess()
     } catch (err) {
       console.error(err)

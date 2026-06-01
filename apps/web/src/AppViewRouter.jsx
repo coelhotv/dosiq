@@ -57,6 +57,7 @@ export default function AppViewRouter({
   if (!session) {
     return showAuth ? (
       <Auth
+        defaultLogin={false}
         onAuthSuccess={() => { setShowAuth(false); setCurrentView('dashboard') }}
         onClose={() => setShowAuth(false)}
       />

@@ -137,6 +137,9 @@ export {
   NOTIFICATION_MODES,
   TIMEZONES_BR,
   TIMEZONE_OPTIONS,
+  DEFAULT_TIMEZONE,
+  getDeviceTimezone,
+  resolveSupportedTz,
   deriveLegacyPreference,
 } from './userSettingsSchema.js'
 

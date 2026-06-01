@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -132,6 +133,29 @@ export const verifyOtp = async (email, token, type = 'signup') => {
   })
   if (error) throw error
   return data
+}
+
+/**
+ * F4.3f.0 — captura o fuso real do device logo após a confirmação de signup
+ * (1º ponto determinístico da conta), ANTES do onboarding: cobre quem pula o
+ * wizard e deixa o tz pronto p/ a geração do 1º tratamento. Best-effort (não
+ * lança). GATE: chamar SÓ no fluxo de signup/confirmação — nunca em login de
+ * conta existente, que sobrescreveria a escolha manual (R-253).
+ */
+export const captureDeviceTimezone = async () => {
+  try {
+    const timezone = resolveSupportedTz(getDeviceTimezone())
+    const userId = await getUserId()
+    // Supabase não lança em falha de DB/RLS — retorna { error }. Sem checar,
+    // o catch nunca dispara e a falha some (AP-S01/S08).
+    const { error } = await supabase.from('user_settings').upsert(
+      { user_id: userId, timezone },
+      { onConflict: 'user_id' }
+    )
+    if (error) throw error
+  } catch (error) {
+    console.error('Erro ao capturar fuso do device:', error)
+  }
 }
 
 export const MOCK_USER_ID = '00000000-0000-0000-0000-000000000001'

@@ -8,6 +8,7 @@ import { useProfileState } from '@features/profile/hooks/useProfileState'
 import EmergencyCard from './profile/EmergencyCard'
 import ProfileTools from './profile/ProfileTools'
 import ProfileModals from './profile/ProfileModals'
+import TzNudge from './profile/TzNudge'
 import './profile/ProfileRedesign.css'
 
 export default function Profile({ onNavigate }) {
@@ -19,6 +20,7 @@ export default function Profile({ onNavigate }) {
 
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [showTzNudge, setShowTzNudge] = useState(() => !TzNudge.isDismissed())
 
   if (isLoading) return <Loading />
 
@@ -33,6 +35,8 @@ export default function Profile({ onNavigate }) {
 
       {message && <div className="ph-message ph-message--success">{message}</div>}
       {error && <div className="ph-message ph-message--error">{error}</div>}
+
+      {showTzNudge && <TzNudge onNavigate={onNavigate} onDismiss={() => setShowTzNudge(false)} />}
 
       <div className="ph-header">
         <div className="ph-header__avatar">{initials}</div>

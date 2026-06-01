@@ -171,14 +171,32 @@ export function createProfileRepository({ client, getUserId }) {
       return (count ?? 0) === 0
     },
 
-    async completeOnboarding() {
+    async captureDeviceTimezone(timezone) {
+      // F4.3f.0: captura do fuso real do device no PRIMEIRO ponto determinístico
+      // da conta (confirmação de signup), ANTES do onboarding — cobre quem pula o
+      // wizard e deixa o tz pronto para a geração do 1º tratamento (passo 3) no
+      // fuso correto. Grava só quando vier um tz válido (resolvido pelo caller).
+      // GATE de plataforma: chamar SOMENTE no fluxo de signup/confirmação, nunca
+      // em SIGNED_IN genérico — login de conta existente não pode sobrescrever a
+      // escolha manual (R-253).
+      if (!timezone) return
       const userId = await getUserId()
       const { error } = await client
         .from('user_settings')
-        .upsert(
-          { user_id: userId, onboarding_completed: true, updated_at: getServerTimestamp() },
-          { onConflict: 'user_id' },
-        )
+        .upsert({ user_id: userId, timezone }, { onConflict: 'user_id' })
+      if (error) throw error
+    },
+
+    async completeOnboarding(timezone) {
+      // F4.3f.0: contas novas nascem com o tz real do device (resolvido pelo
+      // caller de plataforma via resolveSupportedTz). Só grava se vier um tz
+      // válido — ausente mantém o DEFAULT do DB (R-082, sem sobrescrever com SP).
+      const userId = await getUserId()
+      const row = { user_id: userId, onboarding_completed: true, updated_at: getServerTimestamp() }
+      if (timezone) row.timezone = timezone
+      const { error } = await client
+        .from('user_settings')
+        .upsert(row, { onConflict: 'user_id' })
       if (error) throw error
     },
 

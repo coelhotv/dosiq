@@ -614,3 +614,75 @@
     background: var(--color-error-bg, rgba(239, 68, 68, 0.12));
   }
 }
+
+/* ── TzNudge — convite passivo de fuso horário (F4.3f.0) ──── */
+.ph-tz-nudge {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--color-surface-container, #f3f4f6);
+  border: 1px solid var(--color-outline-variant, #d1d5db);
+  border-radius: 0.75rem;
+}
+
+.ph-tz-nudge__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+  color: var(--color-primary, #006a5e);
+}
+
+.ph-tz-nudge__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ph-tz-nudge__title {
+  margin: 0 0 0.25rem;
+  font-size: var(--font-h6-size, 1rem);
+  font-weight: var(--font-h6-weight, 600);
+  color: var(--color-on-surface, #1f2937);
+}
+
+.ph-tz-nudge__text {
+  margin: 0 0 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-on-surface-variant, #4b5563);
+}
+
+.ph-tz-nudge__cta {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary, #006a5e);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ph-tz-nudge__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface-variant, #4b5563);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.ph-tz-nudge__close:hover {
+  background: var(--color-surface-container-high, #e5e7eb);
+}
