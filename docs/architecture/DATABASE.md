@@ -2,7 +2,7 @@
 
 O banco de dados do **Dosiq** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
 
-> **Última atualização**: 2026-04-19
+> **Última atualização**: 2026-06-01 (adicionadas `dose_instances` + `dose_adherence_monthly`; novas colunas em `protocols` e `medicine_logs` — refactor de doses persistidas, ver [`DOSE_INSTANCES.md`](./DOSE_INSTANCES.md))
 > **Fonte**: exportação real do schema atual do Supabase (DDL colado manualmente)
 > **Escopo desta documentação**: tabelas, colunas, FKs e `CHECK constraints` presentes no DDL. Índices, triggers, políticas RLS, views e funções não foram incluídos porque não aparecem no SQL de origem desta revisão.
 
@@ -39,8 +39,11 @@ erDiagram
 
     treatment_plans ||--o{ protocols : "agrupa"
     protocols ||--o{ medicine_logs : "gera"
+    protocols ||--o{ dose_instances : "materializa"
+    protocols ||--o{ dose_adherence_monthly : "agrega"
     protocols ||--o{ notification_log : "notifica"
     protocols ||--o{ failed_notification_queue : "falha"
+    medicine_logs ||--o| dose_instances : "ancora"
 
     purchases ||--o{ stock : "origina"
     stock ||--o{ stock_consumptions : "baixa"
@@ -55,6 +58,7 @@ erDiagram
 |--------|---------|
 | Usuário e preferências | `user_settings`, `bot_sessions` |
 | Catálogo e tratamento | `medicines`, `treatment_plans`, `protocols`, `medicine_logs` |
+| Doses materializadas | `dose_instances`, `dose_adherence_monthly` |
 | Compras e estoque | `purchases`, `stock`, `stock_adjustments`, `stock_consumptions` |
 | Notificações | `notification_devices`, `notification_log`, `failed_notification_queue`, `push_subscriptions`, `push_notification_logs` |
 | Revisão de código | `gemini_reviews`, `gemini_reviews_backup_20260222` |
@@ -171,6 +175,8 @@ Define a prescrição operacional: frequência, agenda, titulação e vínculo o
 | `status_ultima_notificacao` | varchar | `pendente`, `enviada`, `falhou`, `tentando_novamente` |
 | `start_date` | date | `NOT NULL` |
 | `end_date` | date | Nullable |
+| `generated_through` | timestamptz | Nullable; **high-water-mark** da geração de `dose_instances` (até quando a janela já foi materializada) |
+| `paused_at` | timestamptz | Nullable; marca a pausa do protocolo (alimenta o `skipped_paused` das ocorrências) |
 
 **Observação:** `protocols.user_id` não aparece com FK explícita no DDL colado.
 
@@ -189,8 +195,53 @@ Histórico de doses registradas.
 | `quantity_taken` | numeric | `NOT NULL` |
 | `notes` | text | Nullable |
 | `user_id` | uuid | `NOT NULL`, default `00000000-0000-0000-0000-000000000001` |
+| `dose_instance_id` | uuid | Nullable; elo p/ a ocorrência materializada quando a tomada é ancorada (avulsa/PRN fica `NULL`). Sem FK explícita — o vínculo canônico é `dose_instances.medicine_log_id` |
 
 **Observação:** `medicine_logs.user_id` não traz FK explícita no DDL colado.
+
+---
+
+### `dose_instances`
+
+Materializa **cada ocorrência agendada** de dose como uma linha (exista log ou não). Fonte única
+de adesão/timeline/hoje (refactor ADR-048/050/054). Ver [`DOSE_INSTANCES.md`](./DOSE_INSTANCES.md).
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `id` | uuid | PK, default `gen_random_uuid()` |
+| `user_id` | uuid | `NOT NULL` (sem FK explícita no schema) |
+| `protocol_id` | uuid | `NOT NULL`, FK `protocols(id)` `ON DELETE CASCADE` |
+| `scheduled_for` | timestamptz | `NOT NULL`; instante absoluto da ocorrência (depende do tz do usuário) |
+| `expected_dose` | numeric | `NOT NULL`; dosagem congelada na geração (versionamento de schedule) |
+| `status` | text | `NOT NULL`, default `'pending'`; `CHECK` ∈ `pending`, `taken`, `missed`, `skipped_paused`, `skipped_user` |
+| `medicine_log_id` | uuid | Nullable; FK `medicine_logs(id)` `ON DELETE SET NULL` (preenchido quando `taken`) |
+| `tolerance_minutes` | integer | `NOT NULL`, default `120`; janela dinâmica computada na geração (`min(½ intervalo, 120)`) |
+| `notified_at` | timestamptz | Nullable; idempotência da notificação |
+| `snoozed_until` | timestamptz | Nullable |
+| `created_at` | timestamptz | default `now()` |
+
+**Unicidade:** `UNIQUE (protocol_id, scheduled_for)` (`uq_dose_instance`) — habilita o upsert
+idempotente do motor de geração (`ON CONFLICT DO NOTHING`).
+
+**Semântica de status (adesão):** `taken` (num+den), `missed` (den), `skipped_paused`/`skipped_user`
+(neutros — fora do denominador), `pending` futuro (não conta).
+
+---
+
+### `dose_adherence_monthly`
+
+Rollup mensal (cold) de adesão por protocolo — agregação de mês fechado, podável sem perda.
+
+| Campo | Tipo | Restrições / Observações |
+|------|------|---------------------------|
+| `user_id` | uuid | `NOT NULL` (parte da PK) |
+| `protocol_id` | uuid | `NOT NULL`, FK `protocols(id)` `ON DELETE CASCADE` |
+| `month` | date | `NOT NULL`; `CHECK` exige o **1º dia do mês** (`EXTRACT(day) = 1`) |
+| `expected` | integer | `NOT NULL` |
+| `taken` | integer | `NOT NULL` |
+| `missed` | integer | `NOT NULL` |
+
+**PK composta:** `(user_id, protocol_id, month)`.
 
 ---
 
@@ -434,6 +485,8 @@ Backup histórico da tabela `gemini_reviews`, criado em **2026-02-22**.
 
 | Tabela | Campo | Valores aceitos |
 |--------|-------|-----------------|
+| `dose_instances` | `status` | `pending`, `taken`, `missed`, `skipped_paused`, `skipped_user` |
+| `dose_adherence_monthly` | `month` | dia = 1 (1º dia do mês) |
 | `failed_notification_queue` | `status` | `failed`, `pending`, `retrying`, `resolved`, `discarded` |
 | `medicines` | `type` | `medicamento`, `suplemento` |
 | `notification_devices` | `app_kind` | `native`, `pwa` |
@@ -458,6 +511,7 @@ Backup histórico da tabela `gemini_reviews`, criado em **2026-02-22**.
 - Algumas tabelas de domínio ainda usam `user_id` com default para UUID fixo sem FK explícita no DDL (`medicines`, `protocols`, `medicine_logs`, `stock`). Isso é importante para evitar assumir constraints que não estão realmente aplicadas no banco.
 - `treatment_plans` e `user_settings` também não exibem FK explícita no SQL colado, apesar de semanticamente dependerem do usuário autenticado.
 - Esta revisão removeu referências antigas a objetos não presentes no DDL atual, como view materializada `medicine_stock_summary` e função `get_dlq_stats()`.
+- O elo log↔ocorrência é **bidirecional mas com FK única**: só `dose_instances.medicine_log_id` tem FK (`ON DELETE SET NULL`); `medicine_logs.dose_instance_id` é um espelho aplicacional sem FK explícita. `dose_instances.user_id` segue o mesmo padrão das demais tabelas de domínio (sem FK explícita).
 
 ## Sincronização com a Aplicação
 
