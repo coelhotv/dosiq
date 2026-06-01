@@ -23,7 +23,7 @@ Este índice cataloga todos os arquivos legados de especificações e planos de 
 | `plans/backlog-unified_app_2026/UNIFIED_ROADMAP_2026.md` | `master_plan` | `plans/backlog-unified_app_2026/UNIFIED_ROADMAP_2026.md` (Revisão) | `migrated` | Roadmap estratégico do ecossistema. Atualizado. |
 | `plans/backlog-unified_app_2026/sound-identity-draft.md` | `strategy` | Referenciável em `001-native-alarm-persistent`. | `deferred` | Não migrar como spec executável. |
 | **Backlogs Antigos & Roadmap V4** | | | | |
-| `plans/backlog-native_app/EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md` | `active_exec_spec` | `plans/specs/019-universal-links-web-banner/` | `pending` | A ser migrado na Wave M2 (Deep Links). |
+| `plans/backlog-unified_app_2026/EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md` | `active_exec_spec` | `plans/specs/019-universal-links-web-banner/` | `migrated` | Deep Links e banners consolidados no SDD. |
 | `plans/backlog-native_app/EXEC_SPEC_FASE1_MEDICAMENTOS.md` | `active_exec_spec` | N/A (Mapeado como referência concluída) | `excluded` | Funcionalidade CRUD Medicamentos concluída em produção. |
 | `plans/backlog-native_app/EXEC_SPEC_FASE2_PROTOCOLOS.md` | `active_exec_spec` | N/A (Mapeado como referência concluída) | `excluded` | Funcionalidade CRUD Protocolos concluída em produção. |
 | `plans/backlog-native_app/EXEC_SPEC_FASE3_ESTOQUE.md` | `active_exec_spec` | N/A (Mapeado como referência concluída) | `excluded` | Funcionalidade CRUD Estoque concluída em produção. |
@@ -41,7 +41,10 @@ Este índice cataloga todos os arquivos legados de especificações e planos de 
 | `plans/backlog-roadmap_v4/PHASE_7_SPEC.md` | `prd` | Superado por `PHASE_7_COMMUNICATION_CUIDADOR.md`. | `excluded` | Versão antiga da spec de cuidador. |
 | `plans/backlog-roadmap_v4/PHASE_8_SPEC.md` | `prd` | Superado por `PHASE_8_SMART_WOW_FACTOR.md`. | `excluded` | Versão antiga da spec de chatbot/voz. |
 | `plans/backlog-roadmap_v4/ROADMAP_v4.md` | `master_plan` | Superado por `UNIFIED_ROADMAP_2026.md`. | `excluded` | Antigo roadmap v4.0. |
-| `plans/backlog-notifications/MASTER_PLAN_NOTIFICATIONS_REVAMP.md` | `master_plan` | A ser analisado na Wave M2 (Notificações). | `pending` | Escopo de notificações pendente. |
+| `plans/backlog-notifications/EXEC_SPEC_SNOOZE_DOSE.md` | `active_exec_spec` | `plans/specs/021-telegram-snooze-dose/` | `migrated` | Snooze re-arquitetado direto em `dose_instances`. |
+| `plans/backlog-notifications/EXEC_SPEC_WAVE_N3_COPY_METRICS.md` | `active_exec_spec` | `plans/specs/020-notification-copy-metrics/` | `migrated` | Log estendido com FK e copy determinístico contra fadiga. |
+| `plans/backlog-notifications/MASTER_PLAN_NOTIFICATIONS_REVAMP.md` | `master_plan` | `plans/specs/020-notification-copy-metrics/`<br>• `plans/specs/021-telegram-snooze-dose/` | `migrated` | Decomposição completa da Wave N3 e Snooze no formato SDD. |
+| `plans/backlog-notifications/VISION_NOTIFICATIONS_ARCHITECTURE.md` | `master_plan` | Referenciável em `020-notification-copy-metrics` | `deferred` | Visão arquitetural arquivada como referência técnica. |
 | **Arquivos Estratégicos Soltos** | | | | |
 | `plans/PRODUCT_STRATEGY_CONSOLIDATED.md` | `strategy` | N/A (Referência estratégica) | `excluded` | Visão estratégica de posicionamento de produto. |
 | `plans/DOSIQ_PRODUCT_BRIEF.md` | `strategy` | N/A (Referência estratégica) | `excluded` | Product brief original. |

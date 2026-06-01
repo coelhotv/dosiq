@@ -1,8 +1,8 @@
 # Dosiq Plans Migration Status
 
-> **Onda Atual:** M0 + M1 (Setup e Backlog Unificado)  
-> **Status:** 🟡 ETAPA 1 PARCIALMENTE MIGRADA — 2 FEATURES COMPLETAS  
-> **Data:** 31 de maio de 2026
+> **Onda Atual:** Wave M2 (Backlog Antigo Ativo)  
+> **Status:** 🟢 WAVE M2 CONCLUÍDA — 21 FEATURES MIGRADAS  
+> **Data:** 1 de junho de 2026
 
 Este painel quantifica e acompanha a evolução da migração de conhecimento de planejamento legados em especificações e planos estruturados SDD / DEVFLOW v1.8.
 
@@ -13,9 +13,9 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
 | Métrica | Contagem | Observações |
 |:---|:---|:---|
 | **Total de Arquivos Inventariados** | 31 | Todos os arquivos markdown sob `plans/` |
-| **Migrados (M0 + M1 + M2)** | 20 | Setup de índices concluído + `001` a `018` |
+| **Migrados (M0 + M1 + M2)** | 23 | Setup de índices + `001` a `021` |
 | **Pendentes (Wave M1 - Backlog Unificado)** | 0 | Todos os itens decompostos e migrados com absoluto sucesso |
-| **Pendentes (Wave M2 - Backlog Antigo)** | 2 | `plans/backlog-notifications/` + Deep Links |
+| **Pendentes (Wave M2 - Backlog Antigo)** | 0 | Deep Links + Notificações Wave N3 + Telegram Snooze migrados |
 | **Adiados (Deferred)** | 4 | Sound Identity, Caregiver Draft, ANVISA DDI spike, Signup Premium |
 | **Excluídos / Arquivados (Excluded)** | 5 | Antigos arquivos de produto / estratégia geral de referência |
 | **Excluídos por Obsolecência (Obsolete)** | 12 | Antigos planos de features já construídas ou versões de specs superadas |
@@ -51,12 +51,15 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/016-voice-dose-registration/`
     *   `plans/specs/017-voice-dose-summary/`
     *   `plans/specs/018-anvisa-interactions-local/`
-*   **Total de features atômicas restantes a criar:** 0 (IDs `015` a `018`)
-*   **Entregáveis por feature:** `spec.md`, `plan.md`, `tasks.md`, `analysis.md`, `checklists/requirements.md`
 
 ### ✉️ Wave M2 — Backlog Antigo Ativo (GATE 1)
-*   **Status:** ⬚ PENDENTE
-*   **Total de features atômicas a criar:** 2 (`019` Deep Links, `020` Notifications Revamp)
+*   **Status:** 🟢 CONCLUÍDO (01/06/2026)
+*   **Features Concluídas:**
+    *   `plans/specs/019-universal-links-web-banner/`
+    *   `plans/specs/020-notification-copy-metrics/`
+    *   `plans/specs/021-telegram-snooze-dose/`
+*   **Total de features atômicas restantes a criar:** 0
+*   **Entregáveis por feature:** `spec.md`, `plan.md`, `tasks.md`, `analysis.md`, `checklists/requirements.md`
 
 ### 📚 Wave M3 — Estratégia, Referências e Histórico
 *   **Status:** 🟢 CONCLUÍDO (Catalogado no M0 como deferred/excluded, sem tarefas ativas)
@@ -65,8 +68,8 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
 
 ## 📋 Qualidade e Rastreabilidade (Gate Loop)
 
-A migração de specs e planos da Wave M1 seguirá rigidamente as seguintes regras de governança para que agentes coders futuros as implementem com sucesso:
+A migração de specs e planos da Wave M2 seguiu rigidamente as seguintes regras de governança para que agentes coders futuros as implementem com sucesso:
 *   [x] **Zero placeholders**: todos os DoDs e critérios de aceitação legados mantidos.
 *   [x] **Zod 4 schemas**: schemas Zod especificados para validação em `@dosiq/core/schemas/` (Regra R-021).
-*   [x] **Decommission Expo Go**: aviso mandatório em todas as specs mobile exigindo Development Builds.
+*   [x] **Integração profunda com `dose_instances`**: acoplamento total de logs e snooze ao modelo materializado, eliminando redundâncias.
 *   [x] **SQP R-221 checkpoints**: tarefas de SemVer, changelog em português e validação de lint zero incluídas em todos os `plan.md` e `tasks.md`.
