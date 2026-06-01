@@ -21,12 +21,15 @@ jest.mock('@shared/utils/debugLog', () => ({ debugLog: jest.fn() }))
 const mockInsertSingle = jest.fn()
 const mockRpc = jest.fn(() => ({ error: null }))
 const mockGetUser = jest.fn(() => ({ data: { user: { id: 'user-1' } }, error: null }))
+// Batch (registerDoseMany): `.insert([]).select('...')` é aguardado direto → {data,error}.
+// Individual: `.insert({}).select('...').single()`. select() serve os dois (tem single + data/error).
+const mockBatch = { data: [], error: null }
 
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({
   supabase: {
     auth: { getUser: () => mockGetUser() },
     from: jest.fn(() => ({
-      insert: jest.fn(() => ({ select: jest.fn(() => ({ single: mockInsertSingle })) })),
+      insert: jest.fn(() => ({ select: jest.fn(() => ({ single: mockInsertSingle, data: mockBatch.data, error: mockBatch.error })) })),
       update: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
       delete: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
     })),
@@ -34,7 +37,7 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({
   },
 }))
 
-import { registerDose } from '../doseService'
+import { registerDose, registerDoseMany } from '../doseService'
 
 const PID = '11111111-1111-4111-8111-111111111111'
 const MID = '22222222-2222-4222-8222-222222222222'
@@ -77,5 +80,33 @@ describe('registerDose — âncora por instanceId (F4.3c)', () => {
     mockMarkTaken.mockRejectedValueOnce(new Error('db down'))
     const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
     expect(res.success).toBe(true)
+  })
+})
+
+describe('registerDoseMany — âncora por instance_id (F4.3d)', () => {
+  beforeEach(() => {
+    mockBatch.data = [
+      { id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
+      { id: 'log-b', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
+    ]
+    mockBatch.error = null
+  })
+
+  it('cada entrada com instance_id → markTaken direto na ocorrência (sem snap)', async () => {
+    const res = await registerDoseMany([
+      { ...INPUT, instance_id: 'inst-a' },
+      { ...INPUT, instance_id: 'inst-b' },
+    ])
+    expect(res.success).toBe(true)
+    expect(mockMarkTaken).toHaveBeenCalledWith('inst-a', 'log-a')
+    expect(mockMarkTaken).toHaveBeenCalledWith('inst-b', 'log-b')
+    expect(mockFindAnchorInstance).not.toHaveBeenCalled()
+  })
+
+  it('entrada sem instance_id → snap por tolerância (fallback)', async () => {
+    mockBatch.data = [{ id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID }]
+    const res = await registerDoseMany([{ ...INPUT }]) // sem instance_id
+    expect(res.success).toBe(true)
+    expect(mockFindAnchorInstance).toHaveBeenCalledWith({ protocolId: PID, takenAt: INPUT.taken_at })
   })
 })
