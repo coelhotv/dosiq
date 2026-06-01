@@ -144,9 +144,11 @@ export async function getLogsForPeriod(userId, days = 7) {
 
 /**
  * Busca as ocorrências materializadas (`dose_instances`) do usuário numa janela de `days`
- * dias até hoje (S3.6, ADR-054). Fonte da adesão/streak no mobile — `taken/(taken+missed)`,
- * `skipped_*` neutro — em vez de inferir sobre logs ±2h. Janela curta (≤14d) é OOM-safe
- * (R-249: agregação long-range fica server-side; aqui é bounded e reduzido em JS).
+ * dias até hoje + AMANHÃ (S3.6, ADR-054). Fonte da adesão/streak no mobile —
+ * `taken/(taken+missed)`, `skipped_*` neutro — em vez de inferir sobre logs ±2h.
+ * F4.3e: a janela superior vai até o FIM de amanhã (não fim de hoje) p/ o `lookAhead`
+ * ("Em breve") enxergar as doses do começo de amanhã dentro da tolerância — espelha o
+ * fetch web `[ontem, amanhã]`. Janela curta (≤15d) é OOM-safe (R-249).
  *
  * @param {string} userId
  * @param {number} days - dias para trás (default 14: 7d atual + 7d anterior p/ o trend)
@@ -157,7 +159,8 @@ export async function getDoseInstancesForPeriod(userId, days = 14) {
 
   const todayStr = getTodayLocal()
   const startUTC = addDays(todayStr, -(days - 1)).toISOString()
-  const endUTC = addDays(todayStr, 1).toISOString()
+  // +2 = início do dia depois de amanhã → cobre TODO o dia de amanhã (lookAhead F4.3e).
+  const endUTC = addDays(todayStr, 2).toISOString()
 
   return doseInstanceRepo.getWindow(userId, startUTC, endUTC)
 }

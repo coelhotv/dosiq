@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
-import {
-  useDoseZones,
-  buildDoseItemsFromInstances,
-} from '@dashboard/hooks/useDoseZones'
+import { useDoseZones, classifyDose } from '@dashboard/hooks/useDoseZones'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { getCurrentUser, supabase } from '@shared/utils/supabase'
 import { getTodayLocal, getNow } from '@utils/dateUtils'
@@ -79,11 +76,10 @@ export default function Dashboard({ onNavigate }) {
     stockSummary,
     protocols,
     logs,
-    doseInstances,
     refresh,
     isLoading: contextLoading,
   } = useDashboard()
-  const { zones, totals, now, nowRaw } = useDoseZones()
+  const { zones, totals, carryOver, lookAhead, todayDoses, now, nowRaw } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
 
   // ── Estado local ──
@@ -102,23 +98,51 @@ export default function Dashboard({ onNavigate }) {
   }, [stockSummary])
 
   // scheduleAllDoses: fonte separada para CronogramaPeriodo — todas as ocorrências do
-  // dia (sem filtro classifyDose), agora a partir de dose_instances (R-248).
+  // DIA (sem filtro classifyDose). F4.3e: usa a partição `todayDoses` (split day-bound),
+  // não `doseInstances` cru — a janela de fetch agora inclui ontem (carry-over), que NÃO
+  // deve aparecer no cronograma de hoje.
   const scheduleAllDoses = useMemo(() => {
-    return buildDoseItemsFromInstances(doseInstances || [], protocols || []).map((dose) => ({
+    return todayDoses.map((dose) => ({
       ...dose,
       stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
       stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
     }))
-  }, [doseInstances, protocols, stockByMedicineId])
+  }, [todayDoses, stockByMedicineId])
 
-  // urgentDoses: fonte separada para PriorityDoseCard — zonas late/now filtradas
-  const urgentDoses = useMemo(
-    () => [
+  // carryOverDoses: "Pendências de ontem" — enriquecidas com estoque, mesma forma do schedule.
+  const carryOverDoses = useMemo(() => {
+    return (carryOver || []).map((dose) => ({
+      ...dose,
+      stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
+      stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
+    }))
+  }, [carryOver, stockByMedicineId])
+
+  // lookAheadDoses: "Em breve" — doses de amanhã já dentro da tolerância (fim do dia).
+  const lookAheadDoses = useMemo(() => {
+    return (lookAhead || []).map((dose) => ({
+      ...dose,
+      stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
+      stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
+    }))
+  }, [lookAhead, stockByMedicineId])
+
+  // urgentDoses: fonte do PriorityDoseCard — janela actionável DESLIZANTE cross-dia (F4.3e):
+  //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas);
+  //  - hoje       → zonas late/now;
+  //  - lookAhead  → só as IMINENTES (classifyDose === 'now'); amanhã distante fica só em "Em breve".
+  // Ordenado por instante absoluto (mais antigo/atrasado primeiro). Paridade com o hero mobile (R-166).
+  const urgentDoses = useMemo(() => {
+    const aheadImminent = (lookAhead || []).filter(
+      (d) => classifyDose(d.scheduledFor, nowRaw, 120, 60, 240, false, d.toleranceMinutes) === 'now'
+    )
+    return [
+      ...(carryOver || []).filter((d) => !d.isRegistered),
       ...(zones.late || []).filter((d) => !d.isRegistered),
       ...(zones.now || []).filter((d) => !d.isRegistered),
-    ],
-    [zones]
-  )
+      ...aheadImminent,
+    ].sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
+  }, [carryOver, zones, lookAhead, nowRaw])
 
   const criticalStockItems = useMemo(() => {
     if (!stockSummary?.items) return []
@@ -235,6 +259,8 @@ export default function Dashboard({ onNavigate }) {
         {/* ═══ RIGHT COLUMN (2fr) ═══ */}
         <DashboardColumnRight
           scheduleAllDoses={scheduleAllDoses}
+          carryOverDoses={carryOverDoses}
+          lookAheadDoses={lookAheadDoses}
           today={today}
           handleRegisterDoseQuick={handleRegisterDoseQuick}
           complexityMode={complexityMode}

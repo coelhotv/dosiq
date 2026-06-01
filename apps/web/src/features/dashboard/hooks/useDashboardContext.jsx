@@ -8,6 +8,8 @@ import {
   formatLocalDate,
   getNow,
   getTodayLocal,
+  getYesterdayLocal,
+  addDays,
   getStartOfDayISO,
   getEndOfDayISO,
 } from '@utils/dateUtils'
@@ -60,19 +62,21 @@ export function DashboardProvider({ children }) {
         },
       },
       {
-        // Ocorrências do dia (pending/taken/missed) — fonte do "hoje" (R-248).
-        // Janela = dia local [00:00, 23:59] no tz do usuário. Cross-midnight:
-        // a dose de ontem 22:30 tem scheduled_for de ontem → não entra na janela
-        // de hoje → não cria slot fantasma de hoje (fix visível).
+        // Ocorrências (pending/taken/missed) — fonte do "hoje" + carry-over bidirecional
+        // (R-248). Janela = [ontem 00:00, amanhã 23:59] no tz do usuário (F4.3e: janela
+        // actionável deslizante cross-dia; `splitDayTimeline` particiona carryOver/today/
+        // lookAhead). Cross-midnight nos dois sentidos: dose de ontem 22:30 ainda no prazo
+        // vira carry-over; dose de amanhã 00:30 vista às 23:30 vira lookAhead. Nunca slot
+        // de hoje (preserva o fix do slot-fantasma).
         key: CACHE_KEYS.DOSE_INSTANCES_TODAY,
         fetcher: async () => {
           const userId = await getUserId()
           if (!userId) return []
-          const today = getTodayLocal()
+          const tomorrow = formatLocalDate(addDays(getTodayLocal(), 1))
           return doseInstanceRepo.getWindow(
             userId,
-            getStartOfDayISO(today),
-            getEndOfDayISO(today)
+            getStartOfDayISO(getYesterdayLocal()),
+            getEndOfDayISO(tomorrow)
           )
         },
       },

@@ -17,7 +17,13 @@
  * @module doseZones
  */
 
-import { getUserTime, parseISO } from './dateUtils.js'
+import {
+  getUserTime,
+  parseISO,
+  formatLocalDate,
+  getStartOfDayISO,
+  getEndOfDayISO,
+} from './dateUtils.js'
 
 /** tz default (G1 — injeção real do tz do usuário é follow-up; default SP). */
 export const DEFAULT_TZ = 'America/Sao_Paulo'
@@ -167,4 +173,66 @@ export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_T
     doses.push(createDoseItem(inst, protocol, tz))
   }
   return doses
+}
+
+/**
+ * Particiona ocorrências do contexto em `{ carryOver, today, lookAhead }` (F4.3e).
+ *
+ * Janela ACTIONÁVEL deslizante cross-dia, SIMÉTRICA em torno de `now` pela tolerância
+ * dinâmica de cada ocorrência (`tolerance_minutes`, default 120):
+ *
+ * - **today**: `scheduled_for` na janela do dia local atual (day-bound — comportamento
+ *   F3.2b/F4.3b inalterado; é o cronograma/períodos do dia).
+ * - **carryOver** ("Pendências de ontem"): ocorrências de dia(s) local(is) ANTERIOR(es),
+ *   `status === 'pending'`, ainda dentro da tolerância PARA TRÁS (`diff ≥ -tolerância`) —
+ *   atrasadas mas ainda registráveis.
+ * - **lookAhead** ("Em breve"): ocorrências do(s) próximo(s) dia(s) local(is),
+ *   `status === 'pending'`, já dentro da tolerância PARA FRENTE (`diff ≤ +tolerância`) —
+ *   chegando (ex.: às 23:30 a dose de amanhã 00:30 aparece). Espelha o carryOver.
+ *
+ * Doses de outro dia já `taken`/`missed` ou fora da tolerância NÃO entram (não são
+ * actionáveis → ruído). carryOver/lookAhead são seções PRÓPRIAS, nunca slots de hoje
+ * (preserva o fix do slot-fantasma cross-meia-noite).
+ *
+ * Helper PURO e tz-injetável: deriva o "hoje" do `now` injetado (não usa `new Date()`),
+ * compartilhado web↔mobile (R-231 — sem duplicar fronteiras de dia). CON-024 aditivo.
+ *
+ * @param {Array} instances - dose_instances do contexto (janela cobrindo ontem+hoje+amanhã)
+ * @param {Array} protocols - protocolos do contexto (com .medicine / .treatment_plan)
+ * @param {{ now: Date, tz?: string }} opts
+ * @returns {{ carryOver: DoseItem[], today: DoseItem[], lookAhead: DoseItem[] }}
+ */
+export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ } = {}) {
+  const list = Array.isArray(instances) ? instances : []
+  const nowDate = now instanceof Date ? now : parseISO(now)
+  const nowMs = nowDate.getTime()
+  const todayStr = formatLocalDate(getUserTime(nowDate, tz))
+  const dayStart = parseISO(getStartOfDayISO(todayStr, tz)).getTime()
+  const dayEnd = parseISO(getEndOfDayISO(todayStr, tz)).getTime()
+
+  const carry = []
+  const today = []
+  const ahead = []
+  for (const inst of list) {
+    if (!inst?.scheduled_for) continue
+    const t = parseISO(inst.scheduled_for).getTime()
+    if (Number.isNaN(t)) continue
+    if (t >= dayStart && t <= dayEnd) {
+      today.push(inst)
+      continue
+    }
+    if (inst.status !== 'pending') continue
+    const tol = inst.tolerance_minutes ?? 120
+    const diffMin = (t - nowMs) / 60000
+    if (t < dayStart && diffMin >= -tol) {
+      carry.push(inst) // dia anterior, atrasada dentro da tolerância
+    } else if (t > dayEnd && diffMin <= tol) {
+      ahead.push(inst) // próximo dia, chegando dentro da tolerância
+    }
+  }
+  return {
+    carryOver: buildDoseItemsFromInstances(carry, protocols, tz),
+    today: buildDoseItemsFromInstances(today, protocols, tz),
+    lookAhead: buildDoseItemsFromInstances(ahead, protocols, tz),
+  }
 }

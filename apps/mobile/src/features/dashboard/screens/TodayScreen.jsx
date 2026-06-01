@@ -130,7 +130,7 @@ function _buildHeaderData(user) {
 // Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
-  timeline, stockAlerts, protocols, stats, medicines,
+  timeline, carryOver, lookAhead, stockAlerts, protocols, stats, medicines,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
@@ -138,9 +138,18 @@ function TodayScreenContent({
   handleOpenBulkDose,
   navigation,
 }) {
-  const priorityDoses = useMemo(() => timeline
-    .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
-    .slice(0, 3), [timeline])
+  // F4.3e: hero = janela actionável DESLIZANTE cross-dia (não só hoje):
+  //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas entram);
+  //  - hoje       → late/now (ATRASADA/PROXIMA);
+  //  - lookAhead  → só as IMINENTES (zona now → PROXIMA); amanhã distante fica só em "Em breve".
+  // Ordena por instante absoluto (mais antigo/atrasado primeiro) e corta em 3.
+  const priorityDoses = useMemo(() => {
+    const todayUrgent = timeline.filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
+    const aheadImminent = lookAhead.filter(d => d.timelineStatus === 'PROXIMA')
+    return [...carryOver, ...todayUrgent, ...aheadImminent]
+      .sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
+      .slice(0, 3)
+  }, [carryOver, timeline, lookAhead])
   // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências do dia,
   // p/ o bulk (FAB/plano) ancorar cada entrada à sua instância (snap só como fallback).
   const instancesByKey = useMemo(() => timeline.reduce((map, d) => {
@@ -194,6 +203,19 @@ function TodayScreenContent({
         {priorityDoses.length > 0 && (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
         )}
+        {/* Pendências de ontem (carry-over cross-dia, F4.3e) — doses de ontem ainda
+            no prazo de registro. Seção própria acima da agenda (Simple: antes do listão;
+            Complex: antes dos períodos). Não é slot de hoje. */}
+        {carryOver.length > 0 && (
+          <View style={styles.carryOverSection}>
+            <View style={styles.agendaHeader}>
+              <Text style={styles.agendaTitle}>Pendências de ontem</Text>
+            </View>
+            {carryOver.map((dose) => (
+              <DoseTimelineCard key={`carry-${dose.id}`} dose={dose} onRegister={handleOpenRegister} />
+            ))}
+          </View>
+        )}
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
         </View>
@@ -203,6 +225,18 @@ function TodayScreenContent({
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
           hasMedicines={Object.keys(medicines || {}).length > 0} navigation={navigation}
         />
+        {/* Em breve (look-ahead cross-dia, F4.3e) — doses de amanhã já dentro da tolerância
+            (aparece no fim do dia). Espelha "Pendências de ontem"; rodapé da agenda. */}
+        {lookAhead.length > 0 && (
+          <View style={styles.carryOverSection}>
+            <View style={styles.agendaHeader}>
+              <Text style={styles.agendaTitle}>Em breve</Text>
+            </View>
+            {lookAhead.map((dose) => (
+              <DoseTimelineCard key={`ahead-${dose.id}`} dose={dose} onRegister={handleOpenRegister} />
+            ))}
+          </View>
+        )}
       </ScrollView>
       {protocols.length > 0 && (
         <Pressable
@@ -323,6 +357,8 @@ export default function TodayScreen({ route, navigation }) {
 
   // Pre-resolve optional chains do data para reduzir complexidade ciclomática
   const rawTimeline = data?.timeline
+  const rawCarryOver = data?.carryOver
+  const rawLookAhead = data?.lookAhead
   const rawProtocols = data?.protocols
   const rawMedicines = data?.medicines
   const rawStats = data?.stats
@@ -330,6 +366,8 @@ export default function TodayScreen({ route, navigation }) {
   const currentDay = data?.localDay
 
   const timeline = useMemo(() => rawTimeline ?? [], [rawTimeline])
+  const carryOver = useMemo(() => rawCarryOver ?? [], [rawCarryOver])
+  const lookAhead = useMemo(() => rawLookAhead ?? [], [rawLookAhead])
   const stockAlerts = data?.stockAlerts ?? []
   const protocols = useMemo(() => rawProtocols ?? [], [rawProtocols])
   const medicines = useMemo(() => rawMedicines ?? {}, [rawMedicines])
@@ -408,7 +446,7 @@ export default function TodayScreen({ route, navigation }) {
   return (
     <TodayScreenContent
       data={data} stale={stale} isDaySegregated={isDaySegregated} loading={loading} refresh={refresh}
-      timeline={timeline} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
+      timeline={timeline} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
       modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime} modalInstanceId={modalInstanceId}
@@ -468,6 +506,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: spacing[6],
     marginBottom: spacing[3],
+  },
+  carryOverSection: {
+    marginBottom: spacing[2],
   },
   agendaTitle: {
     fontSize: 22,

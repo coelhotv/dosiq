@@ -8,10 +8,16 @@ import { useTodayDerived } from '../_useTodayDerived'
 const NOW_MS = new Date('2026-05-31T12:00:00.000Z').getTime()
 const iso = (offsetMin) => new Date(NOW_MS + offsetMin * 60_000).toISOString()
 
+// `mock`-prefixados (guard de hoisting do jest.mock) e lidos LAZY dentro de
+// getRawNow/getTodayLocal (chamados no render, não no load) → sem TDZ. Permite
+// o describe de carry-over reposicionar "agora" p/ a madrugada.
+let mockNowISO = '2026-05-31T12:00:00.000Z'
+let mockToday = '2026-05-31'
+
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
-  getTodayLocal: () => '2026-05-31',
-  getRawNow: () => new Date('2026-05-31T12:00:00.000Z'),
+  getTodayLocal: () => mockToday,
+  getRawNow: () => new Date(mockNowISO),
 }))
 
 const protocols = [
@@ -43,6 +49,8 @@ const build = (instances) =>
 
 afterEach(() => {
   jest.clearAllMocks()
+  mockNowISO = '2026-05-31T12:00:00.000Z'
+  mockToday = '2026-05-31'
 })
 
 describe('useTodayDerived — timeline ← dose_instances (F4.3b)', () => {
@@ -115,5 +123,85 @@ describe('useTodayDerived — timeline ← dose_instances (F4.3b)', () => {
     expect(stats.taken).toBe(1)
     expect(stats.missed).toBe(1)
     expect(stats.score).toBe(50)
+  })
+
+  it('timeline NÃO inclui carry-over (ontem é seção própria)', () => {
+    // 09:00 BRT: dose de ontem fica fora da janela de hoje e não entra na timeline.
+    const { timeline, carryOver } = build([inst('ontem', -24 * 60, 'pending')])
+    expect(timeline).toHaveLength(0)
+    expect(carryOver).toHaveLength(0) // 24h atrás > tolerância → nem carry-over
+  })
+})
+
+describe('useTodayDerived — carry-over "Pendências de ontem" (F4.3e)', () => {
+  beforeEach(() => {
+    // "agora" = 2026-05-31 01:00 BRT (04:00 UTC) — madrugada, p/ ontem ainda no prazo.
+    mockNowISO = '2026-05-31T04:00:00.000Z'
+    mockToday = '2026-05-31'
+  })
+
+  const row = (id, schedUtc, status = 'pending', tol = 120) => ({
+    id,
+    protocol_id: 'p1',
+    scheduled_for: schedUtc,
+    status,
+    expected_dose: 1,
+    tolerance_minutes: tol,
+  })
+
+  it('dose de ontem pending dentro da tolerância → carryOver (não timeline)', () => {
+    // 2026-05-30 23:30 BRT = 05-31 02:30 UTC → 90min antes, late
+    const { timeline, carryOver } = build([row('y1', '2026-05-31T02:30:00.000Z')])
+    expect(carryOver).toHaveLength(1)
+    expect(carryOver[0].id).toBe('y1')
+    expect(carryOver[0].timelineStatus).toBe('ATRASADA')
+    expect(timeline).toHaveLength(0)
+  })
+
+  it('dose de hoje → timeline (não carryOver)', () => {
+    // 2026-05-31 08:00 BRT = 11:00 UTC
+    const { timeline, carryOver } = build([row('t1', '2026-05-31T11:00:00.000Z')])
+    expect(timeline).toHaveLength(1)
+    expect(timeline[0].id).toBe('t1')
+    expect(carryOver).toHaveLength(0)
+  })
+
+  it('dose de ontem fora da tolerância / já taken → não entra no carryOver', () => {
+    const { carryOver } = build([
+      row('y2', '2026-05-31T00:00:00.000Z'), // 240min antes > tol 120 → fora
+      row('y3', '2026-05-31T02:30:00.000Z', 'taken'), // já tomada → fora
+    ])
+    expect(carryOver).toHaveLength(0)
+  })
+})
+
+describe('useTodayDerived — look-ahead "Em breve" (F4.3e bidirecional)', () => {
+  beforeEach(() => {
+    // "agora" = 2026-05-31 23:30 BRT (2026-06-01 02:30 UTC) — fim do dia.
+    mockNowISO = '2026-06-01T02:30:00.000Z'
+    mockToday = '2026-05-31'
+  })
+
+  const row = (id, schedUtc, status = 'pending', tol = 120) => ({
+    id,
+    protocol_id: 'p1',
+    scheduled_for: schedUtc,
+    status,
+    expected_dose: 1,
+    tolerance_minutes: tol,
+  })
+
+  it('dose de amanhã dentro da tolerância → lookAhead (não timeline)', () => {
+    // 2026-06-01 00:30 BRT = 03:30 UTC → 60min à frente
+    const { timeline, lookAhead } = build([row('a1', '2026-06-01T03:30:00.000Z')])
+    expect(lookAhead).toHaveLength(1)
+    expect(lookAhead[0].id).toBe('a1')
+    expect(timeline).toHaveLength(0)
+  })
+
+  it('dose de amanhã longe → não entra no lookAhead', () => {
+    // 2026-06-01 09:00 BRT = 12:00 UTC → ~570min > tol 120
+    const { lookAhead } = build([row('a2', '2026-06-01T12:00:00.000Z')])
+    expect(lookAhead).toHaveLength(0)
   })
 })
