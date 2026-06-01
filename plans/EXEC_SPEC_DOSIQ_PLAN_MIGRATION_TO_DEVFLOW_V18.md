@@ -67,14 +67,10 @@ test -f .agent/constitution.md && sed -n '1,220p' .agent/constitution.md
 
 Inventário observado inicialmente:
 
-- `plans/dose_instances_refactor/`
-- `plans/native_app_ux_revamp/`
 - `plans/backlog-native_app/`
 - `plans/backlog-notifications/`
-- `plans/backlog-roadmap_v4/`
 - `plans/backlog-unified_app_2026/`
 - `plans/benchmarks/`
-- `plans/archive_old/`
 - arquivos estratégicos soltos: `PRODUCT_STRATEGY_CONSOLIDATED.md`, `DOSIQ_PRODUCT_BRIEF.md`, `UX_VISION_EXPERIENCIA_PACIENTE.md`, `DESIGN-SYSTEM.md`
 
 ## Classificação de Documentos
@@ -88,9 +84,7 @@ Cada arquivo legado deve receber uma classe antes da migração:
 | `prd` | `PRD_*.md`, `DRAFT_*.md`, `PHASE_*_SPEC.md` | Migrar para `spec.md`, gerar `plan.md` se houver base técnica |
 | `addendum` | `EXEC_SPEC_*_ADDENDUM_*.md` | Incorporar em spec/plan de feature principal ou criar linked spec |
 | `index` | `INDEX_EXEC_SPECS.md`, `README.md` | Não migrar como feature; usar para mapear fontes |
-| `retro` | `RETRO_*.md` | Não migrar; extrair lessons só se operador pedir memory update |
 | `strategy` | briefs, benchmarks, product strategy | Não migrar como executável; referenciar em assumptions/context |
-| `archive` | `plans/archive_old/**` | Excluir da Fase 2 padrão |
 
 ## Priorização de Migração
 
@@ -126,13 +120,9 @@ Status permitido:
 
 ### Wave M1 — Specs Ativas de Execução
 
-Migrar primeiro documentos em execução ou ainda relevantes:
+Migrar primeiro backlog unificado:
 
-- `plans/dose_instances_refactor/EXEC_SPECS_PHASE_4.md`
-- `plans/dose_instances_refactor/EXEC_SPECS_PHASE_3.md`
-- `plans/dose_instances_refactor/EXEC_SPECS_PHASE_1_2.md`
-- `plans/native_app_ux_revamp/EXEC_SPEC_NATIVE_APP_UX_SPRINT_PLAN.md`
-- `plans/native_app_ux_revamp/EXEC_SPEC_NATIVE_APP_UX_ARCHITECTURE.md`
+- `plans/backlog-unified_app_2026/`
 
 Critério: documento tem DoD, sprints, files, PRs, gates ou status de entrega.
 
@@ -140,32 +130,17 @@ Critério: documento tem DoD, sprints, files, PRs, gates ou status de entrega.
 
 Migrar PRDs/planos com valor futuro:
 
-- `plans/native_app_ux_revamp/PRD_NATIVE_APP_UX_REVAMP.md`
-- `plans/native_app_ux_revamp/MASTER_PLAN_NATIVE_UX_REVAMP.md`
-- `plans/backlog-unified_app_2026/UNIFIED_ROADMAP_2026.md`
-- `plans/backlog-roadmap_v4/ROADMAP_v4.md`
-- `plans/backlog-notifications/MASTER_PLAN_NOTIFICATIONS_REVAMP.md`
+- `plans/backlog-notifications/`
+- `plans/backlog-native_app/`
 
 Critério: documento ainda orienta roadmap ou próxima entrega.
 
-### Wave M3 — Backlog Executável
-
-Migrar specs backlog com escopo claro:
-
-- `plans/backlog-native_app/EXEC_SPEC_*.md`
-- `plans/backlog-notifications/EXEC_SPEC_*.md`
-- `plans/backlog-roadmap_v4/EXEC_SPEC_*.md`
-- `plans/backlog-unified_app_2026/EXEC_SPEC_*.md`
-
-Critério: arquivo tem ação implementável.
-
-### Wave M4 — Estratégia, Benchmarks e Arquivo
+### Wave M3 — Estratégia, Benchmarks e Arquivo
 
 Não migrar por padrão. Classificar:
 
 - `strategy`: referenciável em specs futuras.
-- `archive`: excluído.
-- `retro`: candidato a memory distillation, não spec.
+- `benchmark`: referenciável em specs futuras.
 
 Qualquer migração nesta onda exige aprovação explícita do operador.
 
