@@ -90,7 +90,7 @@ Cada arquivo legado deve receber uma classe antes da migração:
 
 Migrar em ondas. Cada onda deve gerar PR separado ou commit separado, conforme operador decidir.
 
-### Wave M0 — Setup e Índice
+### Wave M0 — Setup e Índice (🟢 CONCLUÍDO)
 
 Objetivo: criar mapa de migração sem converter conteúdo.
 
@@ -118,7 +118,7 @@ Status permitido:
 - `excluded`
 - `blocked`
 
-### Wave M1 — Specs Ativas de Execução
+### Wave M1 — Specs Ativas de Execução (🟢 CONCLUÍDO)
 
 Migrar primeiro backlog unificado:
 
@@ -126,7 +126,7 @@ Migrar primeiro backlog unificado:
 
 Critério: documento tem DoD, sprints, files, PRs, gates ou status de entrega.
 
-### Wave M2 — PRDs e Planos de Produto Ainda Vivos
+### Wave M2 — PRDs e Planos de Produto Ainda Vivos (🟡 PENDENTE)
 
 Migrar PRDs/planos com valor futuro:
 
@@ -135,7 +135,7 @@ Migrar PRDs/planos com valor futuro:
 
 Critério: documento ainda orienta roadmap ou próxima entrega.
 
-### Wave M3 — Estratégia, Benchmarks e Arquivo
+### Wave M3 — Estratégia, Benchmarks e Arquivo (🟢 CONCLUÍDO - Catalogado como Deferred/Excluded)
 
 Não migrar por padrão. Classificar:
 
