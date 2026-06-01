@@ -191,6 +191,12 @@ export default function BulkDoseRegisterModal({
   userId,
   isComplex = false,
   initialProtocols = null,
+  // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências de hoje.
+  // Permite âncora DIRETA por instância de cada entrada do bulk; ausência → snap.
+  instancesByKey = null,
+  // F4.3d: itens já instanciados (HeroDoseCard) — { id, protocol, scheduledTime, plan, instanceId }.
+  // Quando presente, são a lista exata (sem re-expandir time_schedule).
+  instancedItems = null,
 }) {
   const { show } = useToast()
 
@@ -208,12 +214,14 @@ export default function BulkDoseRegisterModal({
   const [prevItems, setPrevItems] = useState([])
   const [prevVisible, setPrevVisible] = useState(false)
 
+  // Hero (instancedItems) e initialProtocols dispensam o fetch do usePlanProtocols.
+  const bypassLoad = !!(initialProtocols || instancedItems)
   const { protocols: loadedProtocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
-    mode: initialProtocols ? 'active' : mode,
+    mode: bypassLoad ? 'active' : mode,
     planId,
-    protocolIds: initialProtocols ? [] : protocolIds,
+    protocolIds: bypassLoad ? [] : protocolIds,
     scheduledTime,
-    userId: initialProtocols ? 'demo-user' : userId,
+    userId: bypassLoad ? 'demo-user' : userId,
   })
 
   const protocols = useMemo(() => {
@@ -222,6 +230,8 @@ export default function BulkDoseRegisterModal({
 
   // 1. Desmembramento cronológico de múltiplos horários
   const expandedDoseItems = useMemo(() => {
+    // Hero: lista exata já instanciada (não re-expande time_schedule).
+    if (instancedItems) return instancedItems
     const items = []
     protocols.forEach(p => {
       const schedules = p.time_schedule && p.time_schedule.length > 0
@@ -246,7 +256,7 @@ export default function BulkDoseRegisterModal({
     })
     
     return items
-  }, [protocols])
+  }, [protocols, instancedItems])
 
   // Ajuste de Estado no Render (R-010 + React 19)
   if (expandedDoseItems !== prevItems || visible !== prevVisible) {
@@ -331,11 +341,16 @@ export default function BulkDoseRegisterModal({
         const item = expandedDoseItems.find(item => item.id === id)
         if (!item) return null
         const p = item.protocol
+        // F4.3d: âncora direta — item já instanciado (hero) tem instanceId; senão resolve
+        // a ocorrência do slot (protocol_id|HH:MM) no mapa do dia; senão null → snap.
+        const instanceId = item.instanceId
+          ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null)
         return {
           protocol_id: p.id,
           medicine_id: p.medicine?.id ?? p.medicine_id,
           taken_at: finalTakenAt,
           quantity_taken: p.dosage_per_intake ?? 1,
+          instance_id: instanceId,
         }
       })
       .filter(Boolean)
@@ -370,7 +385,9 @@ export default function BulkDoseRegisterModal({
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length
-  const header = mode === 'plan'
+  const header = instancedItems
+    ? 'Doses para tomar'
+    : mode === 'plan'
     ? (treatmentPlanName ?? 'Plano de tratamento')
     : mode === 'active'
     ? 'Doses de hoje'

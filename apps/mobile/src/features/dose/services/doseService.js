@@ -172,14 +172,20 @@ export async function registerDose(logData, { instanceId = null } = {}) {
  * Insert batch via Supabase (1 roundtrip) → consume_stock_fifo por log (sequencial).
  * Rollback individual por log se stock falhar — não aborta o batch inteiro.
  *
- * @param {Array<{ protocol_id: string|null, medicine_id: string, taken_at: string, quantity_taken: number }>} logsData
+ * F4.3d: cada entrada aceita `instance_id` opcional → âncora DIRETA por ocorrência
+ * (determinística, espelha web/F4.3c). Ausente → snap por tolerância (PRN/avulso).
+ *
+ * @param {Array<{ protocol_id: string|null, medicine_id: string, taken_at: string, quantity_taken: number, instance_id?: string|null }>} logsData
  * @returns {Promise<{ success: boolean, results: Array<{ id: string, success: boolean, error?: string }>, error?: string }>}
  */
 // Valida lista de logs com Zod; retorna { validatedLogs } ou { error }
+// `instance_id` é metadado de âncora — NÃO vai no insert do medicine_log (Zod o descarta);
+// extraído à parte por índice antes da validação.
 function _validateManyLogs(logsData) {
   const validatedLogs = []
   for (const logData of logsData) {
-    const parsed = logSchema.safeParse(logData)
+    const { instance_id: _omit, ...logForInsert } = logData
+    const parsed = logSchema.safeParse(logForInsert)
     if (!parsed.success) {
       if (__DEV__) console.warn('[doseService] registerDoseMany Zod FAILED:', parsed.error.issues[0])
       return { validatedLogs: null, error: parsed.error.issues[0].message }
@@ -230,6 +236,9 @@ export async function registerDoseMany(logsData) {
   const { validatedLogs, error: validationError } = _validateManyLogs(logsData)
   if (validationError) return { success: false, results: [], error: validationError }
 
+  // Âncoras por índice (alinha com a ordem de insert/select do PostgREST). null → snap.
+  const anchors = logsData.map((l) => l.instance_id ?? null)
+
   try {
     const { user, sessionError } = await _getAuthUser()
     if (sessionError) return { success: false, results: [], error: sessionError }
@@ -240,11 +249,13 @@ export async function registerDoseMany(logsData) {
 
     // R-170: consume_stock_fifo por log — rollback individual se falhar
     const results = []
-    for (const logEntry of insertedLogs) {
+    for (let i = 0; i < insertedLogs.length; i++) {
+      const logEntry = insertedLogs[i]
       const result = await _consumeStockBatch(logEntry)
       // Âncora best-effort só se o estoque pegou (log não foi rollbacked) — S3.6.2/AP-193.
+      // F4.3d: direta por instance_id quando resolvido; senão snap por tolerância.
       if (result.success) {
-        await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at)
+        await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at, anchors[i])
       }
       results.push(result)
     }
