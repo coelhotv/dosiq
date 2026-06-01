@@ -13,8 +13,8 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
 | Métrica | Contagem | Observações |
 |:---|:---|:---|
 | **Total de Arquivos Inventariados** | 31 | Todos os arquivos markdown sob `plans/` |
-| **Migrados (M0 + M1 + M2)** | 16 | Setup de índices concluído + `001` a `014` |
-| **Pendentes (Wave M1 - Backlog Unificado)** | 4 | Mapeados para serem migrados em diretórios atômicos nesta etapa |
+| **Migrados (M0 + M1 + M2)** | 20 | Setup de índices concluído + `001` a `018` |
+| **Pendentes (Wave M1 - Backlog Unificado)** | 0 | Todos os itens decompostos e migrados com absoluto sucesso |
 | **Pendentes (Wave M2 - Backlog Antigo)** | 2 | `plans/backlog-notifications/` + Deep Links |
 | **Adiados (Deferred)** | 4 | Sound Identity, Caregiver Draft, ANVISA DDI spike, Signup Premium |
 | **Excluídos / Arquivados (Excluded)** | 5 | Antigos arquivos de produto / estratégia geral de referência |
@@ -31,7 +31,7 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/MIGRATION_STATUS.md`
 
 ### 📱 Wave M1 — Backlog Unificado 2026 (Etapa 1 Combinada)
-*   **Status:** 🟡 EM ANDAMENTO (14/18 Features Concluídas — LOTE 2 COMPLETO)
+*   **Status:** 🟢 CONCLUÍDO (18/18 Features Concluídas — M1 100% MIGRADO)
 *   **Features Concluídas:**
     *   `plans/specs/001-native-alarm-persistent/`
     *   `plans/specs/002-caregiver-demand-teaser/`
@@ -47,7 +47,11 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/012-medical-observer-dashboard/`
     *   `plans/specs/013-whatsapp-bot-adapter/`
     *   `plans/specs/014-whatsapp-templates-webhook/`
-*   **Total de features atômicas restantes a criar:** 4 (IDs `015` a `018`)
+    *   `plans/specs/015-ai-chatbot-mobile/`
+    *   `plans/specs/016-voice-dose-registration/`
+    *   `plans/specs/017-voice-dose-summary/`
+    *   `plans/specs/018-anvisa-interactions-local/`
+*   **Total de features atômicas restantes a criar:** 0 (IDs `015` a `018`)
 *   **Entregáveis por feature:** `spec.md`, `plan.md`, `tasks.md`, `analysis.md`, `checklists/requirements.md`
 
 ### ✉️ Wave M2 — Backlog Antigo Ativo (GATE 1)
