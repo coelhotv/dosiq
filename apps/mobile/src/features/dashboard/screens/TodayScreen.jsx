@@ -51,7 +51,7 @@ function _groupTimeline(timeline, isComplex) {
     return acc
   }, {})
 
-  const allShifts = ['Manhã', 'Tarde', 'Noite', 'Madrugada']
+  const allShifts = ['Madrugada', 'Manhã', 'Tarde', 'Noite']
   const shifts = isComplex
     ? allShifts
     : allShifts.filter(s => grouped[s] && grouped[s].length > 0)
