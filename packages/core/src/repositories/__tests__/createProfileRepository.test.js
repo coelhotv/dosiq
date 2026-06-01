@@ -234,7 +234,36 @@ describe('createProfileRepository — parity', () => {
       await repo.completeOnboarding()
       const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
       expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, onboarding_completed: true })
+      expect(upsert[1][0]).not.toHaveProperty('timezone') // ausente preserva DEFAULT do DB
       expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
+    })
+
+    it('grava timezone quando informado (F4.3f.0 — captura de device tz)', async () => {
+      client = makeClient({ data: null, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      await repo.completeOnboarding('Europe/London')
+      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, onboarding_completed: true, timezone: 'Europe/London' })
+    })
+  })
+
+  // ── captureDeviceTimezone (F4.3f.0) ──
+  describe('captureDeviceTimezone', () => {
+    it('upsert só do timezone onConflict user_id', async () => {
+      client = makeClient({ data: null, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      await repo.captureDeviceTimezone('Europe/London')
+      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      expect(upsert[1][0]).toEqual({ user_id: FAKE_USER, timezone: 'Europe/London' })
+      expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
+    })
+
+    it('no-op quando timezone ausente (não escreve)', async () => {
+      client = makeClient({ data: null, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+      await repo.captureDeviceTimezone(null)
+      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      expect(upsert).toBeUndefined()
     })
   })
 

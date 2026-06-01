@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { calculateAge, getInitials } from '@dosiq/core'
 import {
   getCurrentUser,
@@ -86,6 +87,9 @@ export function useProfile() {
         ...prev,
         settings: prev.settings ? { ...prev.settings, timezone: tz } : null
       }))
+      // F4.3f.0: ajuste manual do fuso dispensa o nudge do Perfil (TzNudgeCard)
+      // — não reaparece após o usuário acertar o tz.
+      AsyncStorage.setItem('dosiq_tz_nudge_dismissed', '1').catch(() => {})
     }
     return res
   }, [])

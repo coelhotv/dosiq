@@ -2,6 +2,9 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
   TIMEZONE_OPTIONS,
   TIMEZONES_BR,
+  DEFAULT_TIMEZONE,
+  getDeviceTimezone,
+  resolveSupportedTz,
   userSettingsNotificationSchema,
 } from '../userSettingsSchema.js'
 
@@ -67,5 +70,49 @@ describe('userSettingsSchema — timezone (ADR-053)', () => {
     // vários GMT-3 distintos
     expect(values).toEqual(expect.arrayContaining(['America/Sao_Paulo', 'America/Belem', 'America/Fortaleza', 'America/Recife']))
     expect(new Set(values).size).toBe(values.length) // sem duplicatas
+  })
+})
+
+// F4.3f.0 / ADR-053 — captura de fuso do device no onboarding.
+describe('resolveSupportedTz / getDeviceTimezone (F4.3f.0)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('DEFAULT_TIMEZONE é São Paulo', () => {
+    expect(DEFAULT_TIMEZONE).toBe('America/Sao_Paulo')
+  })
+
+  it('mantém um fuso suportado (BR ou expat)', () => {
+    expect(resolveSupportedTz('Europe/London')).toBe('Europe/London')
+    expect(resolveSupportedTz('America/Manaus')).toBe('America/Manaus')
+  })
+
+  it('cai no default p/ fuso não suportado, nulo ou indefinido', () => {
+    expect(resolveSupportedTz('Asia/Tokyo')).toBe('America/Sao_Paulo')
+    expect(resolveSupportedTz(null)).toBe('America/Sao_Paulo')
+    expect(resolveSupportedTz(undefined)).toBe('America/Sao_Paulo')
+    expect(resolveSupportedTz('')).toBe('America/Sao_Paulo')
+  })
+
+  it('o resultado de resolveSupportedTz sempre passa no enum do schema', () => {
+    for (const tz of ['Europe/London', 'Asia/Tokyo', null, 'America/Manaus']) {
+      const resolved = resolveSupportedTz(tz)
+      expect(userSettingsNotificationSchema.safeParse({ timezone: resolved }).success).toBe(true)
+    }
+  })
+
+  it('getDeviceTimezone lê o fuso via Intl', () => {
+    vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
+      resolvedOptions: () => ({ timeZone: 'Europe/London' }),
+    })
+    expect(getDeviceTimezone()).toBe('Europe/London')
+  })
+
+  it('getDeviceTimezone retorna null quando Intl lança (Hermes legado)', () => {
+    vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(() => {
+      throw new Error('Intl indisponível')
+    })
+    expect(getDeviceTimezone()).toBeNull()
   })
 })

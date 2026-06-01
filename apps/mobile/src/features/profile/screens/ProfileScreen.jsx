@@ -9,6 +9,7 @@ import { logoutUser } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import LogoutSheet from '@profile/components/LogoutSheet'
+import TzNudgeCard from '@profile/components/TzNudgeCard'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
@@ -149,6 +150,9 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Convite passivo de fuso horário (F4.3f.0) — dispensável */}
+        <TzNudgeCard />
 
         {/* Ordem (PO feedback #6): AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
         <View style={styles.section}>

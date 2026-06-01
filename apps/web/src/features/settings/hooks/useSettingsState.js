@@ -176,6 +176,9 @@ export function useSettingsState() {
       if (!user) throw new Error('Usuário não autenticado')
       await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
       setTimezone(tz)
+      // F4.3f.0: ajuste manual do fuso dispensa o nudge do Perfil (chave de
+      // TzNudge.DISMISS_KEY) — não reaparece após o usuário acertar o tz.
+      try { localStorage.setItem('dosiq_tz_nudge_dismissed', '1') } catch { /* sem localStorage */ }
       showMsg('success', 'Fuso horário atualizado.')
     } catch {
       showMsg('error', 'Erro ao salvar fuso horário.')
