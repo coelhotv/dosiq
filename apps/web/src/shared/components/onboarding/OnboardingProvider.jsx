@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, startTransition } from 'react'
+import { getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { getNow } from '@utils/dateUtils.js'
 import { OnboardingContext } from './OnboardingContext'
@@ -56,10 +57,15 @@ export function OnboardingProvider({ children }) {
     try {
       const userId = await getUserId()
 
+      // F4.3f.0: captura silenciosa do fuso real do device na conta nova
+      // (Intl), normalizado p/ a lista suportada (ADR-053); fora dela → SP.
+      const timezone = resolveSupportedTz(getDeviceTimezone())
+
       const { error } = await supabase.from('user_settings').upsert(
         {
           user_id: userId,
           onboarding_completed: true,
+          timezone,
           updated_at: getNow().toISOString(),
         },
         {

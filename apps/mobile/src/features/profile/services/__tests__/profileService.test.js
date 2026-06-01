@@ -1,4 +1,4 @@
-import { getCurrentUser, logoutUser, getUserSettings, generateTelegramToken } from '../profileService'
+import { getCurrentUser, logoutUser, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone } from '../profileService'
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
 
 // Mock supabase
@@ -6,7 +6,8 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
   const maybeSingleMock = jest.fn()
   const eqMock = jest.fn(() => ({ maybeSingle: maybeSingleMock }))
   const selectMock = jest.fn(() => ({ eq: eqMock }))
-  const fromMock = jest.fn(() => ({ select: selectMock }))
+  const upsertMock = jest.fn(() => Promise.resolve({ error: null }))
+  const fromMock = jest.fn(() => ({ select: selectMock, upsert: upsertMock }))
   const rpcMock = jest.fn()
   const getUserMock = jest.fn()
   const getSessionMock = jest.fn()
@@ -86,10 +87,56 @@ describe('profileService', () => {
   describe('generateTelegramToken', () => {
     it('deve chamar rpc generate_telegram_token', async () => {
       supabase.rpc.mockResolvedValue({ data: 'TOKEN123', error: null })
-      
+
       const res = await generateTelegramToken()
       expect(supabase.rpc).toHaveBeenCalledWith('generate_telegram_token')
       expect(res.token).toBe('TOKEN123')
+    })
+  })
+
+  // F4.3f.0 — captura silenciosa do fuso do device ao concluir onboarding.
+  describe('completeOnboarding', () => {
+    let intlSpy
+    afterEach(() => {
+      intlSpy?.mockRestore()
+    })
+
+    it('grava o fuso do device (suportado) no upsert', async () => {
+      intlSpy = jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
+        resolvedOptions: () => ({ timeZone: 'Europe/London' }),
+      })
+      const res = await completeOnboarding()
+      expect(res.success).toBe(true)
+      const upsertMock = supabase.from().upsert
+      const row = upsertMock.mock.calls.at(-1)[0]
+      expect(row).toMatchObject({ user_id: VALID_USER_ID, onboarding_completed: true, timezone: 'Europe/London' })
+    })
+
+    it('fuso do device não suportado → grava São Paulo', async () => {
+      intlSpy = jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
+        resolvedOptions: () => ({ timeZone: 'Asia/Tokyo' }),
+      })
+      await completeOnboarding()
+      const row = supabase.from().upsert.mock.calls.at(-1)[0]
+      expect(row.timezone).toBe('America/Sao_Paulo')
+    })
+  })
+
+  // F4.3f.0 — captura no signup (ponto primário, antes do onboarding).
+  describe('captureDeviceTimezone', () => {
+    let intlSpy
+    afterEach(() => {
+      intlSpy?.mockRestore()
+    })
+
+    it('upsert só do fuso do device (suportado)', async () => {
+      intlSpy = jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
+        resolvedOptions: () => ({ timeZone: 'America/New_York' }),
+      })
+      const res = await captureDeviceTimezone()
+      expect(res.success).toBe(true)
+      const row = supabase.from().upsert.mock.calls.at(-1)[0]
+      expect(row).toEqual({ user_id: VALID_USER_ID, timezone: 'America/New_York' })
     })
   })
 })

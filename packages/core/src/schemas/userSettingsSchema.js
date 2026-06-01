@@ -39,6 +39,33 @@ export const TIMEZONE_OPTIONS = [
 // retrocompat (importado por mobile/profileService + barrel) — hoje inclui não-BR.
 export const TIMEZONES_BR = TIMEZONE_OPTIONS.map((o) => o.value)
 
+// Fuso padrão (DB DEFAULT + fallback universal de tz não suportado/indisponível).
+export const DEFAULT_TIMEZONE = 'America/Sao_Paulo'
+
+/**
+ * Lê o fuso IANA do dispositivo (browser ou React Native/Hermes) via Intl.
+ * Chamado em escopo de função (nunca module-scope) p/ respeitar R-199/AP-155
+ * — Hermes legado pode não ter Intl completo: try/catch retorna null → fallback.
+ * @returns {string|null} nome IANA (ex.: 'Europe/London') ou null se indisponível.
+ */
+export function getDeviceTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Normaliza um fuso de device p/ uma opção suportada (ADR-053, Caminho B curado).
+ * Fora da lista (ou nulo) → DEFAULT_TIMEZONE. Nunca lança.
+ * @param {string|null|undefined} deviceTz
+ * @returns {string} tz IANA suportado.
+ */
+export function resolveSupportedTz(deviceTz) {
+  return TIMEZONES_BR.includes(deviceTz) ? deviceTz : DEFAULT_TIMEZONE
+}
+
 const timeSchema = z.string()
   .regex(HH_MM_REGEX, 'Formato HH:MM inválido')
   .transform(v => v?.slice(0, 5))
