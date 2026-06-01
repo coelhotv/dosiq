@@ -138,25 +138,26 @@ function TodayScreenContent({
   handleOpenBulkDose,
   navigation,
 }) {
-  const priorityDoses = timeline
+  const priorityDoses = useMemo(() => timeline
     .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
-    .slice(0, 3)
+    .slice(0, 3), [timeline])
   // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências do dia,
   // p/ o bulk (FAB/plano) ancorar cada entrada à sua instância (snap só como fallback).
-  const instancesByKey = timeline.reduce((map, d) => {
+  const instancesByKey = useMemo(() => timeline.reduce((map, d) => {
     if (d.instanceId && d.protocol?.id && d.scheduledTime) {
       map[`${d.protocol.id}|${d.scheduledTime}`] = d.instanceId
     }
     return map
-  }, {})
+  }, {}), [timeline])
   // Itens exatos das doses prioritárias (já instanciados) p/ o hero abrir o bulk.
-  const heroItems = priorityDoses.map(d => ({
-    id: d.id,
+  // id = instanceId (explícito — não depende do aliasing id↔instanceId da timeline).
+  const heroItems = useMemo(() => priorityDoses.map(d => ({
+    id: d.instanceId,
     protocol: d.protocol,
     scheduledTime: d.scheduledTime,
     plan: d.protocol?.treatment_plan,
     instanceId: d.instanceId,
-  }))
+  })), [priorityDoses])
   const { greeting, todayFormatted } = _buildHeaderData(data?.user)
   const adherenceTrend = stats.hasPreviousData
     ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
