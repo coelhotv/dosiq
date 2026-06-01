@@ -146,10 +146,13 @@ export const captureDeviceTimezone = async () => {
   try {
     const timezone = resolveSupportedTz(getDeviceTimezone())
     const userId = await getUserId()
-    await supabase.from('user_settings').upsert(
+    // Supabase não lança em falha de DB/RLS — retorna { error }. Sem checar,
+    // o catch nunca dispara e a falha some (AP-S01/S08).
+    const { error } = await supabase.from('user_settings').upsert(
       { user_id: userId, timezone },
       { onConflict: 'user_id' }
     )
+    if (error) throw error
   } catch (error) {
     console.error('Erro ao capturar fuso do device:', error)
   }
