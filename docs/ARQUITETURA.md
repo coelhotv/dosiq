@@ -102,6 +102,7 @@ Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de d
 | **D0-D3** | Dashboard Perf | Lazy loading fixes + auth cache (13 → 1 roundtrip) + slim selects |
 | **F6.1-F6.5** | Fase 6 (4/5) | Refill Prediction, Risk Score, Dose Insights, Export PDF, Smart Alerts |
 | **F6.6** | Stock Refactor v4.0 | `purchases` + `stock_consumptions` + ANVISA + Telegram parity |
+| **dose_instances** | Doses persistidas | Ocorrências materializadas (`dose_instances`) substituem a inferência logs±2h — adesão/timeline/hoje viram **query**, não cálculo. Ver [DOSE_INSTANCES.md](./architecture/DOSE_INSTANCES.md) |
 
 ### Refactor de Estoque v4.0.0
 
@@ -119,6 +120,38 @@ Consequências arquiteturais:
 - o redesign `?redesign=1` é a superfície oficial desta onda
 - o bot Telegram usa os mesmos RPCs da aplicação web para compra e consumo
 - `medicines.regulatory_category` passa a suportar a UX de laboratório por compra
+
+### Doses persistidas — `dose_instances`
+
+Mudança arquitetural grande (ADR-048/050/051/052/054). Cada **ocorrência agendada** vira uma
+linha materializada em `dose_instances` (exista log ou não), em vez de ser inferida em runtime a
+partir de `medicine_logs` + `time_schedule` (casamento ±2h).
+
+Consequências arquiteturais:
+
+- **Adesão é query, não cálculo** — dose perdida é `status='missed'` (dado real); adesão =
+  `taken/(taken+missed)`, `skipped_*` neutro. Consistente entre web/mobile/bot (fonte única, R-248).
+- **Bug cross-meia-noite eliminado por construção** — classificação/ordenação pelo instante
+  absoluto `scheduled_for` (timestamptz), nunca por string HH:MM (AP-194). Dose de ontem 22:30
+  registrada após 00:00 fica ancorada em ontem.
+- **Tolerância dinâmica por ocorrência** (`tolerance_minutes = min(½ intervalo, 120)`) computada na
+  geração — mata a ambiguidade do ±2h fixo entre doses adjacentes.
+- **Notificação idempotente** — lembrete aponta `dose_instance.id` (resolve acoplamento
+  notificação↔dose); `expected_dose` congelado dá versionamento de schedule "de graça".
+- **Motor de geração** em endpoint serverless dedicado (`api/generate-doses.js`, ADR-051),
+  isolado dos reminders; lógica pura em `@dosiq/core` (`doseInstanceGenerator`/`doseInstancePlanner`),
+  high-water-mark (`protocols.generated_through`) + geração JIT. Wipe/geração nunca tocam o passado
+  nem `taken/missed/skipped`.
+- **Timeline event-agnóstica (FP-3/ADR-050)** — `TimelineEvent {id,type,occurred_at,payload}` com
+  `type` aberto; plugar `biomarker`/`note` no futuro = adapter + card, sem tocar builder/UI (CON-023).
+- **Zonas de dose compartilhadas** web↔mobile (`@dosiq/core/utils/doseZones.js`, CON-024) — sem
+  duplicação (R-231).
+- **Escrita ancora log↔ocorrência** — `markTaken` direto por `instanceId` (determinístico) com snap
+  por tolerância como fallback PRN/avulso, best-effort (R-245/246, AP-193).
+- **Timezone (ADR-049/053)** — `user_settings.timezone` (IANA) governa `scheduled_for`; injeção
+  ponta-a-ponta em curso (residual G1: geração + "hoje" fecham na F4.3f).
+
+**Documentação completa:** [`architecture/DOSE_INSTANCES.md`](./architecture/DOSE_INSTANCES.md)
 
 ### Sistema de Notificações v3.0.0
 
@@ -732,6 +765,7 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 - [LINT_COVERAGE.md](./archive/LINT_COVERAGE.md) - Configurações ESLint e boas práticas
 - [OTIMIZACAO_TESTES_ESTRATEGIA.md](./archive/OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia completa de testes
 - [PWA_WEB_PUSH.md](./architecture/PWA_WEB_PUSH.md) - Arquitetura e Fluxos do Web Push Nativo e Service Workers
+- [DOSE_INSTANCES.md](./architecture/DOSE_INSTANCES.md) - Modelo de doses persistido (`dose_instances`): schema, motor de geração, adesão, timeline FP-3, zonas de dose, âncora de log, tz
 - [HOOKS.md](./reference/HOOKS.md) - Hooks customizados
 
 ### Templates
@@ -747,4 +781,4 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 
 ---
 
-*Última atualização: 19/04/2026 — v4.0.0 + Fase 7 (monorepo): web app movido para `apps/web/`, paths atualizados, workspaces npm configurados. Histórico anterior: refactor de estoque/purchases, redesign, ANVISA, Telegram RPCs.*
+*Última atualização: 01/06/2026 — adicionada a seção **Doses persistidas (`dose_instances`)** + doc técnica dedicada [DOSE_INSTANCES.md](./architecture/DOSE_INSTANCES.md) (refactor ADR-048/050/051/052/054, Fases 1-4). Histórico anterior: Fase 7 monorepo (`apps/web/`), refactor de estoque/purchases, redesign, ANVISA, Telegram RPCs.*
