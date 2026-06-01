@@ -28,6 +28,7 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({
     from: jest.fn(() => ({
       insert: jest.fn(() => ({ select: jest.fn(() => ({ single: mockInsertSingle })) })),
       update: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
+      delete: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
     })),
     rpc: (...args) => mockRpc(...args),
   },
