@@ -20,6 +20,7 @@
 - **[CON-016]** useRedesign() -> [`contracts/infra_and_deploy/CON-016.md`](./contracts/infra_and_deploy/CON-016.md)
 - **[CON-018]** ⚰️ RETIRADO (PR-F4.1/S4.2b) — calculateAdherenceStats(logs, protocols, days, offsetDays). Inferência ±2h sobre logs aposentada; fonte única `dose_instances` via `computeAdherenceFromInstances` (ADR-054). Mantido p/ rastreabilidade -> [`contracts/infra_and_deploy/CON-018.md`](./contracts/infra_and_deploy/CON-018.md)
 - **[CON-023]** createTimelineService({client}).getTimeline({userId,fromTs,toTs,tz,order,protocolsById}) → TimelineEvent[] + doseInstancesToEvents(instances,logs,{protocolsById}) adapter puro (FP-3/ADR-050) -> [`contracts/data_and_schema/CON-023.md`](./contracts/data_and_schema/CON-023.md)
+- **[CON-024]** doseZones core API: classifyDose(scheduledFor,now,...,toleranceMinutes) → zona temporal + buildDoseItemsFromInstances(instances,protocols,tz) → DoseItem[] (puro, dose_instances, compartilhado web↔mobile; F4.3a) -> [`contracts/data_and_schema/CON-024.md`](./contracts/data_and_schema/CON-024.md)
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[CON-017]** resolveChannelsForUser({ userId, repositories }) -> `string[]` canais App/Telegram/Web -> [`contracts/mobile_and_platform/CON-017.md`](./contracts/mobile_and_platform/CON-017.md)
