@@ -129,3 +129,11 @@ export {
   groupByLocalDay,
   deriveLocalDay,
 } from './timeline.js'
+
+// Zonas de dose — classificação temporal + DoseItems de dose_instances
+// (Fase 4 / F4.3a — CON-024, compartilhado web↔mobile)
+export {
+  DEFAULT_TZ,
+  classifyDose,
+  buildDoseItemsFromInstances,
+} from './doseZones.js'
