@@ -141,6 +141,22 @@ function TodayScreenContent({
   const priorityDoses = timeline
     .filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
     .slice(0, 3)
+  // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências do dia,
+  // p/ o bulk (FAB/plano) ancorar cada entrada à sua instância (snap só como fallback).
+  const instancesByKey = timeline.reduce((map, d) => {
+    if (d.instanceId && d.protocol?.id && d.scheduledTime) {
+      map[`${d.protocol.id}|${d.scheduledTime}`] = d.instanceId
+    }
+    return map
+  }, {})
+  // Itens exatos das doses prioritárias (já instanciados) p/ o hero abrir o bulk.
+  const heroItems = priorityDoses.map(d => ({
+    id: d.id,
+    protocol: d.protocol,
+    scheduledTime: d.scheduledTime,
+    plan: d.protocol?.treatment_plan,
+    instanceId: d.instanceId,
+  }))
   const { greeting, todayFormatted } = _buildHeaderData(data?.user)
   const adherenceTrend = stats.hasPreviousData
     ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
@@ -175,7 +191,7 @@ function TodayScreenContent({
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
         {priorityDoses.length > 0 && (
-          <HeroDoseCard doses={priorityDoses} onPress={(d) => handleOpenRegister(d.protocol, d.scheduledTime, d.instanceId)} />
+          <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
         )}
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
@@ -215,6 +231,8 @@ function TodayScreenContent({
         treatmentPlanName={bulkModal?.treatmentPlanName}
         userId={userId}
         isComplex={isComplex}
+        instancesByKey={instancesByKey}
+        instancedItems={bulkModal?.items ?? null}
         onClose={() => setBulkModal(null)}
         onSuccess={() => { setBulkModal(null); refresh() }}
       />
