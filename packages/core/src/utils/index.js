@@ -136,4 +136,5 @@ export {
   DEFAULT_TZ,
   classifyDose,
   buildDoseItemsFromInstances,
+  splitDayTimeline,
 } from './doseZones.js'

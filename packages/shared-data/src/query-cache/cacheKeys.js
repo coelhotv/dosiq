@@ -49,7 +49,9 @@ export const CACHE_KEYS = {
   TREATMENT_PLAN_BY_ID: 'treatmentPlan',
 
   // Ocorrências de dose materializadas (dose_instances)
-  DOSE_INSTANCES_TODAY: 'doseInstances:today',
+  // :v2 — F4.3e alargou a janela p/ incluir ontem (carry-over "Pendências de ontem");
+  // bump da chave invalida cache antigo (só-hoje) que serviria sem as ocorrências de ontem.
+  DOSE_INSTANCES_TODAY: 'doseInstances:today:v2',
 
   // Aderência
   ADHERENCE_SUMMARY: 'adherence:summary',

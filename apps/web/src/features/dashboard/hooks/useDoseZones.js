@@ -19,7 +19,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { getRawNow, getUserTime } from '@utils/dateUtils'
 // F4.3a (CON-024): lógica pura de zonas extraída para o core (R-231, sem duplicata).
 // Re-exportada aqui para os consumidores web existentes (CronogramaDoseItem, Dashboard).
-import { DEFAULT_TZ, classifyDose, buildDoseItemsFromInstances } from '@dosiq/core'
+import { DEFAULT_TZ, classifyDose, buildDoseItemsFromInstances, splitDayTimeline } from '@dosiq/core'
 
 export { classifyDose, buildDoseItemsFromInstances }
 
@@ -73,10 +73,14 @@ export function useDoseZones({
     }
   }, [])
 
-  // Construir DoseItems do dia a partir das ocorrências materializadas
-  const allDoses = useMemo(
-    () => buildDoseItemsFromInstances(doseInstances || [], protocols || []),
-    [doseInstances, protocols]
+  // F4.3e: particiona as ocorrências (janela ontem+hoje+amanhã) — janela actionável
+  // deslizante cross-dia, simétrica pela tolerância:
+  // - todayDoses → zonas + cronograma do dia (day-bound de F3.2b);
+  // - carryOver  → "Pendências de ontem" (pending de ontem ainda dentro da tolerância);
+  // - lookAhead  → "Em breve" (pending de amanhã já dentro da tolerância — fim do dia).
+  const { carryOver, today: allDoses, lookAhead } = useMemo(
+    () => splitDayTimeline(doseInstances || [], protocols || [], { now: nowRaw, tz: DEFAULT_TZ }),
+    [doseInstances, protocols, nowRaw]
   )
 
   // Classificar doses em zonas
@@ -117,5 +121,15 @@ export function useDoseZones({
 
   // `now` shiftado (wall-clock SP) p/ exibição/agrupamento por hora; `nowRaw` absoluto
   // p/ classificação por instante (classifyDose vs scheduled_for absoluto).
-  return { zones, totals, isLoading, refresh, now: getUserTime(nowRaw, DEFAULT_TZ), nowRaw }
+  return {
+    zones,
+    totals,
+    carryOver,
+    lookAhead,
+    todayDoses: allDoses,
+    isLoading,
+    refresh,
+    now: getUserTime(nowRaw, DEFAULT_TZ),
+    nowRaw,
+  }
 }

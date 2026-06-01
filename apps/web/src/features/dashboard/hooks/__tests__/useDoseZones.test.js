@@ -251,3 +251,73 @@ describe('useDoseZones — hook behavior', () => {
     expect(later.map((d) => d.instanceId)).toEqual(['a', 'b', 'c'])
   })
 })
+
+// ─────────────────────────────────────────────
+// 4. carry-over "Pendências de ontem" (F4.3e)
+// ─────────────────────────────────────────────
+describe('useDoseZones — carry-over (F4.3e)', () => {
+  const protocol = {
+    id: 'p1',
+    medicine_id: 'm1',
+    medicine: { name: 'A', type: 'medicamento' },
+    treatment_plan_id: null,
+    treatment_plan: null,
+    dosage_per_intake: 1,
+  }
+  function setupDashboard(doseInstances = []) {
+    mockUseDashboard.mockReturnValue({
+      protocols: [protocol],
+      doseInstances,
+      isLoading: false,
+      refresh: vi.fn(),
+    })
+  }
+  const row = (id, schedUtc, status = 'pending', tol = 120) => ({
+    id,
+    protocol_id: 'p1',
+    scheduled_for: schedUtc,
+    status,
+    expected_dose: 1,
+    tolerance_minutes: tol,
+  })
+
+  beforeEach(() => {
+    // "agora" = 2026-03-05 01:00 BRT (04:00 UTC) — madrugada, p/ ontem ainda no prazo.
+    vi.setSystemTime(new Date('2026-03-05T04:00:00.000Z'))
+  })
+
+  it('dose de ontem pending dentro da tolerância → carryOver (não em zones)', () => {
+    // 2026-03-04 23:30 BRT = 03-05 02:30 UTC → 90min antes, late
+    setupDashboard([row('y1', '2026-03-05T02:30:00.000Z')])
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.carryOver).toHaveLength(1)
+    expect(result.current.carryOver[0].instanceId).toBe('y1')
+    // não deve poluir as zonas de hoje
+    expect(Object.values(result.current.zones).flat()).toHaveLength(0)
+  })
+
+  it('sem carry-over → carryOver vazio (dose só de hoje)', () => {
+    // 2026-03-05 08:00 BRT = 11:00 UTC → hoje
+    setupDashboard([row('t1', '2026-03-05T11:00:00.000Z')])
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.carryOver).toHaveLength(0)
+    expect(result.current.todayDoses).toHaveLength(1)
+  })
+
+  it('dose de ontem fora da tolerância → não entra no carryOver', () => {
+    // 03-05 00:00 UTC → 240min antes > tol 120 → null
+    setupDashboard([row('y2', '2026-03-05T00:00:00.000Z')])
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.carryOver).toHaveLength(0)
+  })
+
+  it('lookAhead: dose de amanhã dentro da tolerância (fim do dia)', () => {
+    // "agora" = 2026-03-05 23:30 BRT (03-06 02:30 UTC); dose amanhã 00:30 BRT = 03:30 UTC → 60min
+    vi.setSystemTime(new Date('2026-03-06T02:30:00.000Z'))
+    setupDashboard([row('a1', '2026-03-06T03:30:00.000Z')])
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.lookAhead).toHaveLength(1)
+    expect(result.current.lookAhead[0].instanceId).toBe('a1')
+    expect(result.current.carryOver).toHaveLength(0)
+  })
+})
