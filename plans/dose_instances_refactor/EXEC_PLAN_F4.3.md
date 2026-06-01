@@ -69,15 +69,17 @@ A adesão/anel mobile JÁ consome `dose_instances` (F3.3) — só a timeline e o
 - **Aceite (SC):** registro de dose passada/cross-meia-noite ancora na ocorrência certa (sem depender de tolerância de snap); PRN sem `instance_id` ainda funciona via snap.
 - **Gates:** lint + jest. Smoke PO mobile.
 
-### F4.3d — Write-path bulk por `instance_id`
-- **Plataforma:** Mobile · **SemVer:** Patch
+### F4.3d — Write-path bulk por `instance_id` + rewire HeroDoseCard → bulk
+- **Plataforma:** Mobile · **SemVer:** Minor (mudança de UX no hero) · **Deps:** F4.3c (âncora individual por instanceId)
 - **Deliverables:**
-  - MOD `BulkDoseRegisterModal` + `registerDoseMany` — cada entrada aceita `instance_id` opcional → `markTaken` direto por entrada; fallback snap quando ausente.
+  - MOD `BulkDoseRegisterModal` + `registerDoseMany` — cada entrada aceita `instance_id` opcional → `markTaken` direto por entrada; fallback snap quando ausente (espelha F4.3c/web: se markTaken direto falhar, NÃO snap).
   - Mapear instâncias do plano/slot às entradas do bulk (a partir dos itens da timeline já instance-based).
-  - Testes mobile (Jest) bulk determinístico + fallback.
-  - SQP: patch + CHANGELOG Mobile.
-- **Aceite (SC):** registro em lote (plano/avulsos) ancora cada dose à sua ocorrência; fallback snap preservado.
-- **Gates:** lint + jest. Smoke PO mobile.
+  - **REWIRE `HeroDoseCard` → bulk** (novo, decisão PO): hoje o tap no hero abre a modal **single** com UM tratamento → com 3 prioritárias o usuário repete o fluxo 3×. Trocar para **abrir o bulk** com as doses instanciadas do hero (as `priorityDoses` PROXIMA/ATRASADA já carregam `instanceId`/`protocolId`/`scheduledTime`). Paridade com o web (clique no card de prioridade registra o grupo). O bulk recebe as ocorrências exatas do hero (não re-expandir todo o `time_schedule`) → registro **referenciado** por `instance_id`. Avaliar passar via `initialProtocols`/nova prop de itens instanciados em vez de `protocolIds` (que re-expande o schedule no `usePlanProtocols`).
+  - `TodayScreen`: `HeroDoseCard.onPress` deixa de chamar `handleOpenRegister(single)` e passa a `setBulkModal({...})` com os itens do hero; remover o ramo single do hero (cards da lista seguem no single individual da F4.3c).
+  - Testes mobile (Jest): bulk determinístico + fallback; hero abre bulk com as N prioritárias.
+  - SQP: minor (`app.config` APP_VERSION) + CHANGELOG Mobile + store-note ("dose prioritária registra todas de uma vez").
+- **Aceite (SC):** tap no hero com N prioritárias → bulk pré-selecionado com as N, 1 confirmação registra todas, cada uma ancorada à sua ocorrência (`instance_id`); registro em lote (plano/avulsos via FAB) ancora cada dose; fallback snap preservado (PRN/avulso).
+- **Gates:** lint + jest. Smoke PO mobile (hero multi-dose + FAB).
 
 ### F4.3e — "Pendências de ontem" (carry-over cross-dia) — web + mobile
 > **Origem:** requisito da MASTER (Fase 4, ln 204-211) — *"janela deslizante cross-dia … seção fixa 'Pendências de ontem' no topo … Simple: carry-over no topo + listão de hoje; Complex: carry-over acima dos períodos"*. Escorregou na F3.2b (web `useDoseZones` ficou day-bound) e foi herdado pela F4.3b (mobile copiou o day-bound). Esta sub-fase fecha a lacuna nas DUAS plataformas.
@@ -132,5 +134,6 @@ Cada PR: R-221 SQP, lint 0 + testes do workspace ANTES do commit, smoke PO ANTES
 - [ ] "Pendências de ontem" (carry-over cross-dia) no topo do "hoje" — web + mobile, Simple + Complex (MASTER ln 204-211, F4.3e).
 - [ ] tz do perfil injetado ponta-a-ponta — geração (write-path + cron) + "hoje" web/mobile + regen on tz-change; tz ≠ SP correto (MASTER §5/Q-I, F4.3f). G1 fechado fora do Histórico.
 - [ ] Write individual + bulk ancoram por `instanceId` (determinístico), snap como fallback PRN.
+- [ ] HeroDoseCard abre o **bulk** com as N doses prioritárias instanciadas (1 confirmação registra todas, referenciado) — não mais single 1×N (F4.3d).
 - [ ] Testes web+core (vitest) e mobile (jest) verdes; smoke PO por fase.
 - [ ] SQP por PR; CHANGELOG; versões mobile bumpadas.
