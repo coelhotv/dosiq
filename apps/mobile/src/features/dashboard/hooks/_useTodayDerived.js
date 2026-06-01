@@ -60,7 +60,7 @@ export function useTodayDerived(data) {
       const t = parseISO(i.scheduled_for).getTime()
       return t >= dayStart && t <= dayEnd
     })
-    const protocolById = new Map(protocols.map((p) => [p.id, p]))
+    const protocolById = new Map(protocols.filter(Boolean).map((p) => [p.id, p]))
     const doseItems = buildDoseItemsFromInstances(todayInstances, protocols, DEFAULT_TZ)
     const timeline = doseItems
       .map((item) => {
@@ -108,7 +108,7 @@ export function useTodayDerived(data) {
 
     // 3. Alertas de estoque
     const stockAlerts = Object.values(data.medicines || {})
-      .filter((m) => (m.daysRemaining ?? Infinity) <= 7)
+      .filter((m) => m && (m.daysRemaining ?? Infinity) <= 7)
       .map((m) => ({
         medicineId: m.id,
         medicineName: m.name,
