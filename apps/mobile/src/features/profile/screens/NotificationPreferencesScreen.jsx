@@ -21,6 +21,7 @@ import { registerPushToken } from '@platform/notifications/registerPushToken'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { updateNotificationSettings } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
+import AlarmToggleSection from '@profile/components/AlarmToggleSection'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { parseLocalDate } from '@dosiq/core'
@@ -325,6 +326,9 @@ function NotificationPreferencesContent({
             Ative ao menos um canal para ser avisada fora do app.
           </Text>
         )}
+
+        {/* Alarme nativo persistente (Spec 001) — toggle auto-contido, default OFF. */}
+        <AlarmToggleSection />
 
         <Text style={styles.sectionLabel}>MODO DE ENVIO</Text>
         <NotificationModeSection
