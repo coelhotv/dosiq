@@ -65,8 +65,9 @@ Alarme nativo persistente é a **diferenciação de usabilidade #1** do Dosiq. P
 - **FR-004**: "Tomei" registra a dose via **`registerDose(logData, { instanceId })`** (mobile `@features/dose/services/doseService`) — cria `medicine_log`, dispara `consume_stock_fifo`, ancora `dose_instances` (`status='taken'` + `medicine_log_id`). "Pular" seta `status='skipped_user'` (sem log).
 - **FR-005**: Após interação, invalidar snapshots `AsyncStorage`. Chaves REAIS verificadas no repo (planning 2026-06-02): `@dosiq/today-snapshot`, `@dosiq/stock-snapshot`, `@dosiq/treatments-snapshot` (adesão). ⚠️ `@dosiq/dose-instances-snapshot` e `@dosiq/adherence-snapshot` **não existem** — eram chaves fantasmas da fonte legada (multiRemove = no-op silencioso, AP-168). Conjunto canônico confirmado em C1 (T004b).
 - **FR-006**: Agendamento por janela Look-Ahead de 72h sobre `dose_instances` `status='pending'`. Reusar a malha de `@dosiq/core` (ref. `docs/architecture/DOSE_INSTANCES.md`): `ensureInstancesUpTo(now+72h)` → `repo.getWindow` → `buildDoseItemsFromInstances` (CON-024) — `medicine_name` do lookup `protocols`, `scheduled_for` instante absoluto, `tolerance_minutes` dinâmico por instância. Re-sincroniza APÓS `syncInstancesOnWrite` (create/edit/pause/delete de protocolo), nunca em paralelo (evita race com wipe).
-- **FR-007**: Toggle on/off do alarme em `SettingsScreen.jsx` (persistido).
+- **FR-007**: Toggle global on/off do alarme **persistido**, **default OFF (opt-in)** — alarme invasivo (full-screen + bypass DND) nunca liga sozinho. Vive no **card "Notificações" do Perfil (R-197)** — única porta de entrada nativa de notificações; não fragmentar em outras abas no v1.
 - **FR-008**: `expo-notifications` (push remoto) preservado e funcional, usando `push_chime.wav`.
+- **FR-009**: **Nudge de anúncio da feature "Alarmes críticos"** (padrão do lançamento do fuso, R-253 — convite passivo, dispensável, não-bloqueante), com CTA que leva direto à página liga/desliga (FR-007). Mostrado uma vez (flag persistido), respeitando o opt-in (não ativa nada — só anuncia + leva ao toggle).
 
 ### Key Entities
 
@@ -82,6 +83,14 @@ Alarme nativo persistente é a **diferenciação de usabilidade #1** do Dosiq. P
 - **SC-003**: Zero loop de agendamento / vazamento de cota (janela 72h + nag reativo). Full-screen ≥ 55fps.
 
 ---
+
+## Out of Scope (v2 — spec separada depois)
+
+> **Motivação (PO 2026-06-02):** risco de tornar o app "insuportável" com alarmes invasivos sem controle fino → uninstall. O v1 resolve o piso com o toggle global opt-in (FR-007) + nudge (FR-009). O controle fino é v2.
+
+- **Toggle de alarme por protocolo** (ligar/desligar alarme de CADA tratamento). **Design v1 deixa a porta aberta**: o scheduler já itera por `dose_instance` com `protocol_id`; v2 = coluna/flag por protocolo + filtro adicional no `getWindow` (aditivo, zero refactor do v1). O coding v1 **NÃO** deve cravar premissa de "alarme é global e indivisível" que feche isso.
+- **Interação alarme × quiet hours (R-196/ADR-035):** alarme bypassa DND de propósito; quiet hours suprimem. v2 decide a política (ex.: med crítico bypassa sempre; não-crítico respeita quiet hours). v1 resolve só com o opt-in global.
+- **Criticidade por medicamento** (quais meds merecem alarme invasivo vs. push comum) — depende do per-protocolo acima.
 
 ## Assumptions
 

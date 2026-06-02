@@ -24,7 +24,8 @@
 - [ ] T008 [US1] `AlarmFullScreen.jsx`: full-screen intent, botões grandes (R-137/138).
 - [ ] T009 [US2] `quickDoseRegistration.js`: "Tomei" → `registerDose(logData,{instanceId})` (T004); "Pular" → `status='skipped_user'`; invalidar snapshots reais (T004b — `today/stock/treatments`, **não** chaves fantasmas). **Sem `taken_at`.**
 - [ ] T010 [US1] Nagging reativo (+5 min, máx 3) dentro do handler de background.
-- [ ] T011 [US1] Toggle on/off em `SettingsScreen.jsx`.
+- [ ] T011 [US1] Toggle global on/off em `NotificationPreferencesScreen.jsx` (R-197 card Notificações), **default OFF (opt-in)**, persistido (fonte confirmada em C1). `useAlarmScheduler` respeita o flag (OFF → cancelAll, não agenda). FR-007.
+- [ ] T011b [US1] `AlarmNudgeCard.jsx` (espelha `TzNudgeCard.jsx`, R-253): nudge "Alarmes críticos" no Perfil, flag "visto" persistido (1×), CTA → toggle. Não ativa nada. FR-009.
 - [ ] T012 [US1] Integrar `useAlarmScheduler` no app root + coexistência com `expo-notifications` (push usa `push_chime.wav`).
 
 ## Phase A2 — iOS (Sprint 2)
@@ -48,7 +49,7 @@
 T003/T003b/T004/T004b (gates C1) antes de A1. A1 → A2. T016–T018 após implementação.
 
 ## Traceability
-FR-001..003 → T005–T008,T010,T013 · FR-004 → T009 (via `registerDose`) · FR-005 → T009 (T004b) · FR-006 → T006 (T003/T003b) · FR-007 → T011 · FR-008 → T012.
+FR-001..003 → T005–T008,T010,T013 · FR-004 → T009 (via `registerDose`) · FR-005 → T009 (T004b) · FR-006 → T006 (T003/T003b) · FR-007 → T011 (default OFF) · FR-008 → T012 · FR-009 → T011b (nudge).
 
 ## Insumos DOSE_INSTANCES.md (integrados 2026-06-02)
 A `notified_at`/`snoozed_until` → T005 · B `getWindow`+`buildDoseItemsFromInstances` (CON-024) → T003/T006 · C `ensureInstancesUpTo` → T006 · D `tolerance_minutes` dinâmico → T005 · E re-sync pós-`syncInstancesOnWrite` → T003b/T006 · F `scheduled_for` absoluto → T005 · G `getWindow` exclui pausados → T006.

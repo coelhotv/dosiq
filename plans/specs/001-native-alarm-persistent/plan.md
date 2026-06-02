@@ -49,7 +49,9 @@
 | `apps/mobile/src/platform/alarms/AlarmFullScreen.jsx` | UI lock screen (a11y idoso). | [NEW] |
 | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | handler de ação → `registerDose` / skip + invalidação cache. | [NEW] |
 | `apps/mobile/src/platform/alarms/alarmPermission.js` | prompt de permissão em ponto de intenção. | [NEW] |
-| `apps/mobile/src/features/profile/screens/SettingsScreen.jsx` | toggle on/off. | [MOD] |
+| `apps/mobile/src/features/profile/screens/NotificationPreferencesScreen.jsx` | toggle global on/off, **default OFF** (R-197 card Notificações). | [MOD] |
+| `apps/mobile/src/features/profile/components/AlarmNudgeCard.jsx` | nudge "Alarmes críticos" + CTA → toggle (espelha `TzNudgeCard.jsx`, R-253; flag persistido, mostra 1×). | [NEW] |
+| `apps/mobile/src/features/profile/screens/ProfileScreen.jsx` | montar `AlarmNudgeCard` (precedente: `TzNudgeCard`). | [MOD] |
 | `apps/mobile/src/platform/alarms/__tests__/{alarmService,quickDoseRegistration}.test.js` | unit. | [NEW] |
 
 ---
@@ -183,6 +185,13 @@ A fonte canônica do wipe+regen de `dose_instances` em CRUD de protocolo é `syn
 **APÓS** `syncInstancesOnWrite` concluir — não em paralelo (race: re-agendar sobre instâncias que
 o wipe ainda vai apagar). Padrão: re-rodar `useAlarmScheduler.sync()` no mesmo ponto que invalida
 os snapshots pós-mutação de protocolo. Confirmar o hook de mutação real em C1 (T003b).
+
+### 6b. Toggle global + nudge (FR-007/FR-009) — opt-in
+- Toggle **default OFF** persistido (`AsyncStorage`/`user_settings` — confirmar fonte em C1), no card Notificações (`NotificationPreferencesScreen.jsx`, R-197). `useAlarmScheduler` lê esse flag (`isAlarmEnabled`); OFF → `cancelAll` + não agenda.
+- `AlarmNudgeCard.jsx` espelha `TzNudgeCard.jsx` (R-253): convite passivo dispensável no Perfil, flag "visto" persistido (mostra 1×), CTA navega ao toggle. **Não ativa nada** — só anuncia (respeita opt-in).
+
+### Out of Scope (v2 — ver spec §Out of Scope)
+Toggle **por protocolo** + interação com quiet hours. Design v1 não fecha a porta: scheduler já itera por `protocol_id`; v2 = flag por protocolo + filtro no `getWindow` (aditivo). **Não** cravar premissa de "alarme global indivisível" no coding v1.
 
 ### 7. iOS (Sprint 2)
 Config `Info.plist` + background modes; critical alert condicional (fallback `timeSensitive`); adaptar `AlarmFullScreen` p/ notification action buttons; re-scheduling em mutação de protocolo.
