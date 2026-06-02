@@ -86,7 +86,7 @@
 
 ## F4.3f.2 — Troca de tz → prompt de intenção (viagem vs mudança)
 
-> **SemVer:** Web Minor · Mobile Minor (→ **0.8.0** — **release de loja**, fecha a Fase 4). **DADOS:** só na opção "Me mudei" (regenera `pending` futuras). **Dep:** F4.3f.1 (geração já tz-aware).
+> **SemVer:** Web Major (**4.0.0** - fecha Fase 4)  · Mobile Minor (→ **0.8.0** — **release de loja**, fecha a Fase 4). **DADOS:** só na opção "Me mudei" (regenera `pending` futuras). **Dep:** F4.3f.1 (geração já tz-aware).
 > **Decisões PO (validadas):** prompt enquadrado por **intenção**; **viagem é a 1ª opção** (mais comum/segura); dismiss = mantém (b1) e **não repergunta**; regen só de **futuras** (passado imutável, Q-E); notificações = **follow-up separado**; backfill = **pulado** (base 100% SP hoje).
 
 ### Modelo (crucial)

@@ -34,6 +34,8 @@ export function useTodayData() {
       logs,
       doseInstances: doseInstances ?? [],
       medicines,
+      // F4.3f.1: fuso do perfil propagado p/ _useTodayDerived (timeline/carry-over no tz). SP fallback.
+      timezone: userSettings?.timezone || 'America/Sao_Paulo',
       user: {
         id: user.id,
         email: user.email,
@@ -58,9 +60,11 @@ export function useTodayData() {
     const diffHours = (getNow().getTime() - parseISO(parsed.capturedAt).getTime()) / (1000 * 60 * 60)
     if (diffHours >= 24) throw new Error('Cache expirado (> 24h)')
 
-    const today = getTodayLocal()
+    // F4.3f.1: virada de dia no fuso do snapshot (não SP fixo) — segregação correta p/ expat.
+    const tz = parsed.timezone || 'America/Sao_Paulo'
+    const today = getTodayLocal(tz)
     const snapshotDay = parsed.localDay || (parsed.capturedAt ?? '').split('T')[0]
-    
+
     if (snapshotDay && snapshotDay !== today) {
       parsed.logs = []
       setIsDaySegregated(true)
@@ -73,6 +77,7 @@ export function useTodayData() {
       logs: Array.isArray(parsed.logs) ? parsed.logs : [],
       doseInstances: Array.isArray(parsed.doseInstances) ? parsed.doseInstances : [],
       medicines: parsed.medicines || {},
+      timezone: tz,
       user: parsed.user || null,
       capturedAt: parsed.capturedAt
     }
@@ -97,8 +102,11 @@ export function useTodayData() {
         getDoseInstancesForPeriod(user.id, 14)
       ])
 
+      // F4.3f.1: localDay no fuso do perfil (segregação de cache cross-dia correta p/ expat).
+      const tz = userSettings?.timezone || 'America/Sao_Paulo'
+      const localDay = getTodayLocal(tz)
       const medicines = await getMedicinesData([...new Set(protocols.map(p => p.medicine_id))])
-      await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, today, doseInstances)
+      await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances)
     } catch (err) {
       try {
         await handleCacheFallback(err)
@@ -118,7 +126,7 @@ export function useTodayData() {
 
   useEffect(() => {
     const handleStateChange = (nextState) => {
-      if (nextState === 'active' && dataRef.current?.localDay && dataRef.current.localDay !== getTodayLocal()) {
+      if (nextState === 'active' && dataRef.current?.localDay && dataRef.current.localDay !== getTodayLocal(dataRef.current.timezone || 'America/Sao_Paulo')) {
         load()
       }
     }

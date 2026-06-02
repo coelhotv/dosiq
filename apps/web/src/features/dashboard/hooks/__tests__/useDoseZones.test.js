@@ -173,10 +173,11 @@ describe('useDoseZones — hook behavior', () => {
     dosage_per_intake: 1,
   }
 
-  function setupDashboard(doseInstances = [], protocols = [protocol]) {
+  function setupDashboard(doseInstances = [], protocols = [protocol], timezone) {
     mockUseDashboard.mockReturnValue({
       protocols,
       doseInstances,
+      timezone,
       isLoading: false,
       refresh: vi.fn(),
     })
@@ -249,6 +250,20 @@ describe('useDoseZones — hook behavior', () => {
     const { result } = renderHook(() => useDoseZones())
     const later = result.current.zones.later
     expect(later.map((d) => d.instanceId)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('F4.3f.1: deriva HH:MM/now no tz do perfil (Londres ≠ SP)', () => {
+    // BASE_MS = 2026-03-05 12:30 UTC → SP 09:30, Londres 12:30 (GMT em março).
+    setupDashboard([inst('a', 30)], [protocol], 'Europe/London')
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.now.getHours()).toBe(12) // wall-clock de Londres
+    expect(result.current.todayDoses[0].scheduledTime).toBe('13:00') // 12:30+30min em Londres
+  })
+
+  it('F4.3f.1: fallback SP quando timezone ausente', () => {
+    setupDashboard([inst('a', 30)]) // sem timezone
+    const { result } = renderHook(() => useDoseZones())
+    expect(result.current.now.getHours()).toBe(9) // 09:30 SP
   })
 })
 

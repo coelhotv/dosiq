@@ -42,7 +42,9 @@ export function useTodayDerived(data) {
   return useMemo(() => {
     if (!data) return null
 
-    const todayStr = getTodayLocal()
+    // F4.3f.1: fuso do perfil governa "hoje" + partição cross-dia. Fallback SP.
+    const tz = data.timezone || DEFAULT_TZ
+    const todayStr = getTodayLocal(tz)
     const nowRaw = getRawNow()
     const protocols = data.protocols || []
     const instances = data.doseInstances || []
@@ -56,7 +58,7 @@ export function useTodayDerived(data) {
     const { carryOver: carryItems, today: todayItems, lookAhead: aheadItems } = splitDayTimeline(
       instances,
       protocols,
-      { now: nowRaw, tz: DEFAULT_TZ }
+      { now: nowRaw, tz }
     )
     const mapToTimeline = (item) => {
       const protocol = protocolById.get(item.protocolId) || null

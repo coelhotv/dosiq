@@ -26,6 +26,7 @@
 - **[R-226]** FIFO de estoque DEVE usar `entry_type != 'legacy_unrecoverable'` — nunca `entry_type = 'purchase'`; adjustment entries são consumíveis (ver AP-142) -> [`rules/data_and_schema/R-226.md`](./rules/data_and_schema/R-226.md)
 - **[R-241]** Escalonamento Métrico Automático e Hints de Princípio Ativo (Físico vs. Ativo) -> [`rules/data_and_schema/R-241.md`](./rules/data_and_schema/R-241.md)
 - **[R-253]** Captura de fuso do device no onboarding via Intl (IANA, não offset, sem dep nativa; fallback SP curado) + reconciliação dos existentes por nudge passivo no Perfil — nunca prompt no load nem auto-write -> [`rules/data_and_schema/R-253.md`](./rules/data_and_schema/R-253.md)
+- **[R-254]** Geração (write-path + cron via resolveUserTz/resolveUserTzMap) e leitura "hoje" (web useDoseZones / mobile _useTodayDerived) de dose_instances no MESMO tz do dono, com fallback SP idêntico nos dois lados (G2 — sem divergência) -> [`rules/data_and_schema/R-254.md`](./rules/data_and_schema/R-254.md)
 
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)

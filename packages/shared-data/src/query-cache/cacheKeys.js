@@ -61,6 +61,8 @@ export const CACHE_KEYS = {
   // Usuário / Sessão
   USER_CURRENT: 'user:current',
   USER_SESSION: 'user:session',
+  // Fuso horário do perfil (F4.3f.1) — governa a derivação de "hoje"/HH:MM no dashboard
+  USER_TIMEZONE: 'user:timezone',
 
   // Notificações
   NOTIFICATIONS: 'notifications',

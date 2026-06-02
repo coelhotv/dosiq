@@ -37,7 +37,10 @@ export function useDoseZones({
   nowWindowMinutes = 60,
   upcomingWindowMinutes = 240,
 } = {}) {
-  const { protocols, doseInstances, isLoading, refresh } = useDashboard()
+  const { protocols, doseInstances, timezone, isLoading, refresh } = useDashboard()
+  // F4.3f.1: fuso do perfil governa a derivação de "hoje"/HH:MM e a partição
+  // cross-dia. Fallback SP quando ausente (G2 — mesmo fallback do write-path).
+  const tz = timezone || DEFAULT_TZ
 
   // Estado de "agora" — usa Date bruto para o timer (diff absoluto em classifyDose)
   const [nowRaw, setNowRaw] = useState(() => getRawNow())
@@ -79,8 +82,8 @@ export function useDoseZones({
   // - carryOver  → "Pendências de ontem" (pending de ontem ainda dentro da tolerância);
   // - lookAhead  → "Em breve" (pending de amanhã já dentro da tolerância — fim do dia).
   const { carryOver, today: allDoses, lookAhead } = useMemo(
-    () => splitDayTimeline(doseInstances || [], protocols || [], { now: nowRaw, tz: DEFAULT_TZ }),
-    [doseInstances, protocols, nowRaw]
+    () => splitDayTimeline(doseInstances || [], protocols || [], { now: nowRaw, tz }),
+    [doseInstances, protocols, nowRaw, tz]
   )
 
   // Classificar doses em zonas
@@ -129,7 +132,7 @@ export function useDoseZones({
     todayDoses: allDoses,
     isLoading,
     refresh,
-    now: getUserTime(nowRaw, DEFAULT_TZ),
+    now: getUserTime(nowRaw, tz),
     nowRaw,
   }
 }
