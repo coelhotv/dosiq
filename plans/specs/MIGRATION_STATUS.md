@@ -12,10 +12,10 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
 
 | Métrica | Contagem | Observações |
 |:---|:---|:---|
-| **Total de Arquivos Inventariados** | 31 | Todos os arquivos markdown sob `plans/` |
-| **Migrados (M0 + M1 + M2)** | 23 | Setup de índices + `001` a `021` |
+| **Total de Arquivos Inventariados** | 32 | Todos os arquivos markdown sob `plans/` |
+| **Migrados (M0 + M1 + M2)** | 26 | Setup de índices + `001` a `024` |
 | **Pendentes (Wave M1 - Backlog Unificado)** | 0 | Todos os itens decompostos e migrados com absoluto sucesso |
-| **Pendentes (Wave M2 - Backlog Antigo)** | 0 | Deep Links + Notificações Wave N3 + Telegram Snooze migrados |
+| **Pendentes (Wave M2 - Backlog Antigo)** | 0 | Deep Links + Notificações + Épico de Líquidos (decomposto em 3) migrados |
 | **Adiados (Deferred)** | 4 | Sound Identity, Caregiver Draft, ANVISA DDI spike, Signup Premium |
 | **Excluídos / Arquivados (Excluded)** | 5 | Antigos arquivos de produto / estratégia geral de referência |
 | **Excluídos por Obsolecência (Obsolete)** | 12 | Antigos planos de features já construídas ou versões de specs superadas |
@@ -58,6 +58,9 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/019-universal-links-web-banner/`
     *   `plans/specs/020-notification-copy-metrics/`
     *   `plans/specs/021-telegram-snooze-dose/`
+    *   `plans/specs/022-liquid-medications-db-backend/`
+    *   `plans/specs/023-liquid-medications-core-api/`
+    *   `plans/specs/024-liquid-medications-ui-bot/`
 *   **Total de features atômicas restantes a criar:** 0
 *   **Entregáveis por feature:** `spec.md`, `plan.md`, `tasks.md`, `analysis.md`, `checklists/requirements.md`
 

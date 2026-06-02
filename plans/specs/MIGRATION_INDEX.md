@@ -51,6 +51,9 @@ Este índice cataloga todos os arquivos legados de especificações e planos de 
 | `plans/UX_VISION_EXPERIENCIA_PACIENTE.md` | `strategy` | N/A (Referência de design) | `excluded` | Visão de experiência de paciente do Dosiq. |
 | `plans/DESIGN-SYSTEM.md` | `strategy` | N/A (Referência de CSS/Tokens) | `excluded` | Diretrizes de design e identidade visual. |
 | `plans/spec-driven.md` | `strategy` | N/A (Constituição do workflow) | `excluded` | Manifesto de Spec-Driven Development. |
+| `plans/dose_instances_refactor/LIQUID_MEDICATIONS_EPIC_DRAFT.md` | `active_exec_spec` | **Decomposição em 3 sub-features atômicas:**<br>• `plans/specs/022-liquid-medications-db-backend/`<br>• `plans/specs/023-liquid-medications-core-api/`<br>• `plans/specs/024-liquid-medications-ui-bot/` | `migrated` | Decomposição conceitual do épico de líquidos purificado e focado na experiência do paciente (Dona Maria). |
+
+
 
 ---
 
