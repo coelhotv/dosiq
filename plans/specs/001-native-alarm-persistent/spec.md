@@ -63,8 +63,8 @@ Alarme nativo persistente é a **diferenciação de usabilidade #1** do Dosiq. P
 - **FR-002**: Full-screen intent na lock screen Android com botões grandes (a11y idoso, R-137/138).
 - **FR-003**: Nagging — re-agenda alarme exato +5 min se ignorado, máx 3 tentativas, **reativamente** (economiza cota de alarmes exatos).
 - **FR-004**: "Tomei" registra a dose via **`registerDose(logData, { instanceId })`** (mobile `@features/dose/services/doseService`) — cria `medicine_log`, dispara `consume_stock_fifo`, ancora `dose_instances` (`status='taken'` + `medicine_log_id`). "Pular" seta `status='skipped_user'` (sem log).
-- **FR-005**: Após interação, invalidar snapshots `AsyncStorage` (`@dosiq/dose-instances-snapshot`, `@dosiq/stock-snapshot`, `@dosiq/adherence-snapshot`, `@dosiq/today-snapshot`).
-- **FR-006**: Agendamento por janela Look-Ahead de 72h sobre `dose_instances` `status='pending'`, lido via `createDoseInstanceRepository` (`@dosiq/core`); re-sincroniza quando protocolo é criado/editado/pausado/excluído.
+- **FR-005**: Após interação, invalidar snapshots `AsyncStorage`. Chaves REAIS verificadas no repo (planning 2026-06-02): `@dosiq/today-snapshot`, `@dosiq/stock-snapshot`, `@dosiq/treatments-snapshot` (adesão). ⚠️ `@dosiq/dose-instances-snapshot` e `@dosiq/adherence-snapshot` **não existem** — eram chaves fantasmas da fonte legada (multiRemove = no-op silencioso, AP-168). Conjunto canônico confirmado em C1 (T004b).
+- **FR-006**: Agendamento por janela Look-Ahead de 72h sobre `dose_instances` `status='pending'`. Reusar a malha de `@dosiq/core` (ref. `docs/architecture/DOSE_INSTANCES.md`): `ensureInstancesUpTo(now+72h)` → `repo.getWindow` → `buildDoseItemsFromInstances` (CON-024) — `medicine_name` do lookup `protocols`, `scheduled_for` instante absoluto, `tolerance_minutes` dinâmico por instância. Re-sincroniza APÓS `syncInstancesOnWrite` (create/edit/pause/delete de protocolo), nunca em paralelo (evita race com wipe).
 - **FR-007**: Toggle on/off do alarme em `SettingsScreen.jsx` (persistido).
 - **FR-008**: `expo-notifications` (push remoto) preservado e funcional, usando `push_chime.wav`.
 
