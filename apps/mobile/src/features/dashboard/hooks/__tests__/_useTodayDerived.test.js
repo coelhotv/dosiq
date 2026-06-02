@@ -42,9 +42,9 @@ const inst = (id, offsetMin, status, toleranceMinutes = 120) => ({
   tolerance_minutes: toleranceMinutes,
 })
 
-const build = (instances) =>
+const build = (instances, timezone) =>
   renderHook(() =>
-    useTodayDerived({ protocols, doseInstances: instances, logs: [], medicines: {} })
+    useTodayDerived({ protocols, doseInstances: instances, logs: [], medicines: {}, timezone })
   ).result.current
 
 afterEach(() => {
@@ -100,6 +100,12 @@ describe('useTodayDerived — timeline ← dose_instances (F4.3b)', () => {
     expect(timeline[0].protocol).toMatchObject({ id: 'p1' })
     expect(timeline[0].medicine).toMatchObject({ name: 'Losartana' })
     expect(timeline[0].scheduledTime).toMatch(/^\d{2}:\d{2}$/)
+  })
+
+  it('F4.3f.1: scheduledTime no fuso do perfil (Londres ≠ SP)', () => {
+    // NOW_MS = 2026-05-31 12:00 UTC; +30min = 12:30 UTC → Londres (BST) 13:30, SP 09:30.
+    expect(build([inst('i1', 30, 'pending')], 'Europe/London').timeline[0].scheduledTime).toBe('13:30')
+    expect(build([inst('i1', 30, 'pending')], 'America/Sao_Paulo').timeline[0].scheduledTime).toBe('09:30')
   })
 
   it('ordena por horário agendado', () => {

@@ -89,6 +89,21 @@ export function DashboardProvider({ children }) {
         key: generateCacheKey(CACHE_KEYS.ADHERENCE_SUMMARY, { period: '30d' }),
         fetcher: () => cachedAdherenceService.getAdherenceSummary('30d'),
       },
+      {
+        // Fuso do perfil (F4.3f.1) — governa a derivação do "hoje"/HH:MM e a partição
+        // cross-dia (splitDayTimeline). Fallback SP quando ausente. Leitura curta/cacheada.
+        key: CACHE_KEYS.USER_TIMEZONE,
+        fetcher: async () => {
+          const userId = await getUserId()
+          if (!userId) return null
+          const { data } = await supabase
+            .from('user_settings')
+            .select('timezone')
+            .eq('user_id', userId)
+            .maybeSingle()
+          return data?.timezone || null
+        },
+      },
     ],
     [streakStartLimit]
   )
@@ -103,6 +118,7 @@ export function DashboardProvider({ children }) {
     logsResult = {},
     doseInstancesResult = {},
     adherenceSummaryResult = {},
+    timezoneResult = {},
   ] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
@@ -124,6 +140,7 @@ export function DashboardProvider({ children }) {
         invalidateCache(CACHE_KEYS.PROTOCOLS)
         invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
         invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
+        invalidateCache(CACHE_KEYS.USER_TIMEZONE)
         invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
         refetchAll({ force: true })
       }
@@ -138,6 +155,7 @@ export function DashboardProvider({ children }) {
       protocols: protocolsWithNextDose,
       logs: logsResult.data || [],
       doseInstances: doseInstancesResult.data || [],
+      timezone: timezoneResult.data || 'America/Sao_Paulo',
       stockSummary,
       stats,
       dailyAdherence,
@@ -153,6 +171,7 @@ export function DashboardProvider({ children }) {
       protocolsWithNextDose,
       logsResult.data,
       doseInstancesResult.data,
+      timezoneResult.data,
       stockSummary,
       stats,
       dailyAdherence,
