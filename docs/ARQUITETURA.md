@@ -1,8 +1,8 @@
 # 🏗️ Arquitetura do Dosiq
 
-**Versão:** 4.0.0
-**Data:** 2026-04-02
-**Status:** Ativo (v4.0.0 — Refactor de estoque/purchases + rollout redesign-first + Mobile Performance Initiative M0-M8, P1-P4, D0-D3)
+**Versão:** Web 4.0.0 · Mobile 0.8.0
+**Data:** 2026-06-02
+**Status:** Ativo — **Fase 4 concluída** (refactor `dose_instances` completo: adesão/timeline/hoje viram query + fuso do usuário respeitado ponta-a-ponta, épico F4.3f #628/#629/#630). Histórico: refactor de estoque/purchases v4.0.0 + redesign-first + Mobile Performance Initiative M0-M8/P1-P4/D0-D3.
 
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
@@ -148,8 +148,11 @@ Consequências arquiteturais:
   duplicação (R-231).
 - **Escrita ancora log↔ocorrência** — `markTaken` direto por `instanceId` (determinístico) com snap
   por tolerância como fallback PRN/avulso, best-effort (R-245/246, AP-193).
-- **Timezone (ADR-049/053)** — `user_settings.timezone` (IANA) governa `scheduled_for`; injeção
-  ponta-a-ponta em curso (residual G1: geração + "hoje" fecham na F4.3f).
+- **Timezone (ADR-049/053) — fechado na F4.3f (G1 resolvido)** — `user_settings.timezone` (IANA)
+  governa `scheduled_for` ponta-a-ponta: captura no signup + nudge (F4.3f.0, R-253); geração no
+  fuso do dono no write-path + cron e "hoje" no fuso do perfil (F4.3f.1, R-254, invariante G2);
+  troca de fuso com prompt **viagem × mudança** + regen das doses futuras (F4.3f.2, `regenActiveProtocolsForTz`,
+  best-effort R-231/245/246). DST por nome IANA, nunca offset.
 
 **Documentação completa:** [`architecture/DOSE_INSTANCES.md`](./architecture/DOSE_INSTANCES.md)
 
@@ -781,4 +784,4 @@ Ver workflow completo em [`CLAUDE.md`](../CLAUDE.md) (seção Git Workflow).
 
 ---
 
-*Última atualização: 01/06/2026 — adicionada a seção **Doses persistidas (`dose_instances`)** + doc técnica dedicada [DOSE_INSTANCES.md](./architecture/DOSE_INSTANCES.md) (refactor ADR-048/050/051/052/054, Fases 1-4). Histórico anterior: Fase 7 monorepo (`apps/web/`), refactor de estoque/purchases, redesign, ANVISA, Telegram RPCs.*
+*Última atualização: 02/06/2026 — **Fase 4 concluída** (refactor `dose_instances` completo): épico F4.3f fecha o tz ponta-a-ponta (captura no signup, geração/leitura no fuso do dono, troca viagem×mudança + regen). Web 4.0.0 · Mobile 0.8.0 (loja). Ver [DOSE_INSTANCES.md](./architecture/DOSE_INSTANCES.md) e [releases/mobile-v0.8.0.md](./releases/mobile-v0.8.0.md). Histórico anterior: refactor de estoque/purchases v4.0.0, redesign, ANVISA, Telegram RPCs, Fase 7 monorepo.*
