@@ -29,7 +29,7 @@ tomou, o que ficou para trás e o que ainda vem.
 >   mudou de cidade? O app pergunta se quer manter os horários de casa ou usar os
 >   horários novos.
 > • **Mais rápido:** registre várias doses de uma vez.
-> • **Mais tipos de remédio:** melhor suporte a inaladores, adesivos e pomadas.
+> • **Mais tipos de remédio:** melhor suporte medicamentos que não são comprimidos.
 > • Cálculo de adesão mais fiel à sua rotina.
 
 ### Versão enxuta (limite ~500 caracteres — Play "O que há de novo")
@@ -39,7 +39,7 @@ tomou, o que ficou para trás e o que ainda vem.
 > prazo aparecem destacadas. A agenda agora segue o seu fuso horário — e, se você
 > viajar ou se mudar, o app pergunta se quer manter os horários de casa ou usar os
 > novos. Também ficou mais rápido registrar várias doses de uma vez, com melhor
-> suporte a inaladores, adesivos e pomadas.
+> suporte a medicamentos que não são comprimidos.
 
 ---
 
