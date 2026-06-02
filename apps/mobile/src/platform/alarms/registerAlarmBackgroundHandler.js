@@ -9,7 +9,6 @@
 // notificações (canal dose-alarm); push remoto segue pelo handler do Expo.
 
 import notifee, { EventType } from '@notifee/react-native'
-import { handleAlarmAction } from './quickDoseRegistration'
 
 let registered = false
 
@@ -17,10 +16,17 @@ export function registerAlarmBackgroundHandler() {
   if (registered) return
   registered = true
 
+  // IMPORTANTE: NÃO importar quickDoseRegistration no topo. Isso é chamado no
+  // entrypoint (index.js) antes do AppRegistry; importar a cadeia pesada
+  // (doseService → supabase client + firebase analytics) no cold start, antes
+  // dos módulos nativos inicializarem, crasha o app no launch (visto no emulador
+  // Android API 30). Lazy-require dentro do callback mantém o cold start leve —
+  // o handler só roda quando o SO entrega um evento, com o runtime já pronto.
   notifee.onBackgroundEvent(async (event) => {
     const { type } = event
     if (type === EventType.ACTION_PRESS || type === EventType.DISMISSED) {
       try {
+        const { handleAlarmAction } = require('./quickDoseRegistration')
         await handleAlarmAction(event)
       } catch (err) {
         // best-effort — não relançar no handler de background
