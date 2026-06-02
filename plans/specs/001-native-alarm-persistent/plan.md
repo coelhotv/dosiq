@@ -1,68 +1,167 @@
-# Implementation Plan: Native Alarm Persistent
+# Implementation Plan: Alarme Nativo Persistente (Mobile)
 
-**Feature Directory**: `plans/specs/001-native-alarm-persistent`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/001-native-alarm-persistent/spec.md)  
-**Legacy Sources**:
-- `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md`
+**Feature Directory**: `plans/specs/001-native-alarm-persistent`
+**Spec**: `spec.md` · **Revised**: 2026-06-02 · **Tier**: 1
+**Legacy Source**: `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md`
 
 ---
 
 ## Technical Context
 
-O Dosiq mobile utiliza `@notifee/react-native` para orquestrar alarmes e notificações locais persistentes. Esta lib substitui chamadas estáticas de `expo-notifications` locais e permite interagir com os serviços nativos de alarme do Android e iOS de forma precisa.
+`@notifee/react-native` para alarmes locais persistentes (Android `AlarmManager.setExactAndAllowWhileIdle` + full-screen intent + canal HIGH; iOS `UNNotificationSound` + critical alert/timeSensitive fallback). Coexiste com `expo-notifications` (push remoto).
+
+**Paths reais verificados:**
+- `apps/mobile/src/platform/supabase/nativeSupabaseClient.js` ✅
+- `apps/mobile/src/features/dose/services/doseService.js` → `registerDose(logData, { instanceId })` (`:136`), `registerDoseMany` (`:230`) ✅ — fluxo completo insert→`consume_stock_fifo`→âncora→rollback.
+- `apps/mobile/src/features/profile/screens/SettingsScreen.jsx` ✅
+- `@dosiq/core` exporta `parseLocalDate`, `addDays`, `getTodayLocal`, `createDoseInstanceRepository` (usado em `dashboardService.js:7`) ✅
+- `apps/mobile/assets/sounds/alarm_dose.wav` + `push_chime.wav` ✅
+- `apps/mobile/src/platform/alarms/` → **[NEW]** (não existe ainda).
+- Alias mobile (`babel.config.js`): `@utils` → `./src/utils` (**vazio** — não usar p/ datas); datas via `@dosiq/core`.
 
 ---
 
 ## Constitution Check
 
 | Principle | Status | Notes |
-|:---|:---|:---|
-| **I. Health Data Safety** | ✅ PASS | Notificações e alarmes locais operam com dados em cache local sem expor logs desnecessários. |
-| **II. Mobile-First Reliability** | ✅ PASS | Computação de agendamento em segundo plano restringida a look-ahead de 72h para não sobrecarregar recursos do aparelho. |
-| **IV. Timezone Correctness** | ✅ PASS | Agendamento usa `parseLocalDate()` para conversão segura de data e hora clínica, prevenindo bugs de GMT-3. |
-| **VI. Release and SQP Discipline** | ✅ PASS | Checklist R-221 de SemVer e CHANGELOG embutido como gate mandatório antes de commits e PR. |
+|-----------|--------|-------|
+| Health Data Safety | ✅ | Registro de tomada pela via canônica (`registerDose`), com consumo de estoque — sem bypass. |
+| Mobile-First Reliability | ✅ | Look-ahead 72h; nag reativo; sem JS background. |
+| Timezone Correctness | ✅ | `parseLocalDate`/`addDays` de `@dosiq/core`; `scheduled_for` é timestamptz absoluto. |
+| Release/SQP (R-221) | ✅ | Minor mobile; bump `app.config.js`; CHANGELOG + store-note. |
 
 ---
 
 ## Target Files
 
-| Path | Purpose | Source Evidence |
-|:---|:---|:---|
-| `apps/mobile/src/platform/alarms/alarmService.js` | Core de agendamento, cancelamento e nagging via Notifee. | `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md` |
-| `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | Hook de agendamento inteligente com janela Look-Ahead de 72 horas. | `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md` |
-| `apps/mobile/src/platform/alarms/AlarmFullScreen.jsx` | Componente de visualização em tela cheia na lock screen (Android full-screen intent). | `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md` |
-| `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | Mutation offline de registro e descarte de alarmes, com limpeza de snapshots. | `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md` |
-| `apps/mobile/src/features/profile/screens/SettingsScreen.jsx` | Modificado para expor o toggle de ativação dos alarmes clínicos locais. | `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md` |
+| Path | Purpose | Evidence |
+|------|---------|----------|
+| `apps/mobile/package.json` | dep `@notifee/react-native`. | [MOD] |
+| `apps/mobile/app.config.js` | plugin Notifee + permissões `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM` + iOS background modes. | [MOD] |
+| `apps/mobile/src/platform/alarms/alarmService.js` | canal HIGH, agendar/cancelar, nag. | [NEW] |
+| `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | hook look-ahead 72h sobre repo `dose_instances`. | [NEW] |
+| `apps/mobile/src/platform/alarms/AlarmFullScreen.jsx` | UI lock screen (a11y idoso). | [NEW] |
+| `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | handler de ação → `registerDose` / skip + invalidação cache. | [NEW] |
+| `apps/mobile/src/platform/alarms/alarmPermission.js` | prompt de permissão em ponto de intenção. | [NEW] |
+| `apps/mobile/src/features/profile/screens/SettingsScreen.jsx` | toggle on/off. | [MOD] |
+| `apps/mobile/src/platform/alarms/__tests__/{alarmService,quickDoseRegistration}.test.js` | unit. | [NEW] |
 
 ---
 
 ## Architectural Approach
 
-### 1. Expo Go Decommission & Build Constraints
-> [!IMPORTANT]
-> **COMPILAÇÃO NATIVA OBRIGATÓRIA (EXPO GO DECOMMISSION):**  
-> A biblioteca `@notifee/react-native` insere código nativo Java/Objective-C complexo. O uso de **Expo Go padrão é incompatível e falhará imediatamente**.
-> Os desenvolvedores IA e operadores **devem** rodar e testar exclusivamente via builds locais de desenvolvimento no emulador ou device real:
-> - Android: `rtk expo run:android`
-> - iOS: `rtk expo run:ios`
-> E devem configurar o Config Plugin no `app.config.js` correspondente para injetar as permissões (`SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`) e modos de background no `Info.plist` nativo.
+### 1. Expo Go Decommission
+Notifee tem código nativo Java/Obj-C → **Expo Go falha**. Testar só via `rtk expo run:android` / `rtk expo run:ios`. Config Plugin no `app.config.js` injeta permissões + background modes.
 
-### 2. Bypass DND e Doze Mode
-- No Android, o canal do Notifee deve ser criado com `importance: AndroidImportance.HIGH` e `bypassDnd: true`.
-- Agendamento exato usa `TriggerType.TIMESTAMP` com `alarmManager: { allowWhileIdle: true }` no Notifee.
-- No iOS, seções usam `interruptionLevel: 'timeSensitive'` como fallback caso o entitlement de *Critical Alerts* da Apple (lead time de 2-4 semanas) ainda não tenha sido concedido.
+### 2. Bypass DND/Doze
+- Canal Android: `importance: AndroidImportance.HIGH`, `bypassDnd: true`, `sound: 'alarm_dose'`.
+- Trigger: `TriggerType.TIMESTAMP` + `alarmManager: { allowWhileIdle: true }`.
+- iOS: `interruptionLevel: 'timeSensitive'` (fallback até critical alert entitlement).
+
+### 3. `alarmService.js` (core — referência da fonte, mantida)
+Canal HIGH + `scheduleAlarm({ doseInstanceId, medicineName, scheduledFor, nagAttempt })` via `notifee.createTriggerNotification` (full-screen action + actions "Tomei"/"Pular"), `cancelAlarm`, `scheduleNag` (máx 3), `cancelAll`. **Importar `parseLocalDate` de `@dosiq/core`**, não `@utils/dateUtils`.
+
+### 4. `useAlarmScheduler.js` (hook)
+```javascript
+import { useEffect } from 'react'
+import { parseLocalDate, addDays, createDoseInstanceRepository } from '@dosiq/core'
+import { alarmService } from './alarmService'
+
+const LOOK_AHEAD_DAYS = 3 // 72h
+
+export function useAlarmScheduler({ isAlarmEnabled, userId }) {
+  useEffect(() => {
+    if (!isAlarmEnabled || !userId) return
+    let cancelled = false
+
+    async function sync() {
+      const repo = createDoseInstanceRepository(/* client */)
+      // Lê pendentes na janela + JOIN p/ medicine_name (repo expõe o nome do medicamento;
+      // dose_instances NÃO tem coluna medicine_name — vem de protocols→medicines).
+      const now = Date.now()
+      const end = addDays(new Date(), LOOK_AHEAD_DAYS).getTime()
+      const pending = await repo.listPendingForAlarms({ userId, fromTs: now, toTs: end })
+
+      await alarmService.cancelAll()
+      if (cancelled) return
+      for (const di of pending) {
+        if (cancelled) return
+        await alarmService.scheduleAlarm({
+          doseInstanceId: di.id,
+          medicineName: di.medicine_name, // derivado pelo repo (JOIN), não coluna
+          scheduledFor: di.scheduled_for,
+        })
+      }
+    }
+    sync()
+    return () => { cancelled = true }
+  }, [isAlarmEnabled, userId])
+}
+```
+> Se o repo de `@dosiq/core` ainda não expõe um método de leitura com o nome do medicamento, **adicionar `listPendingForAlarms` no repository** (core) com o JOIN — confirmar a API real em C1 (T-preflight). Não inventar `di.medicine_name` cru.
+
+### 5. `quickDoseRegistration.js` — registro pela via canônica (CORREÇÃO CRÍTICA)
+```javascript
+import notifee from '@notifee/react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { registerDose } from '@features/dose/services/doseService'
+import { alarmService } from './alarmService'
+import { nativeSupabaseClient } from '../supabase/nativeSupabaseClient'
+
+const SNAPSHOTS_TAKEN = ['@dosiq/dose-instances-snapshot', '@dosiq/stock-snapshot',
+                         '@dosiq/adherence-snapshot', '@dosiq/today-snapshot']
+const SNAPSHOTS_SKIP  = ['@dosiq/dose-instances-snapshot', '@dosiq/adherence-snapshot',
+                         '@dosiq/today-snapshot']
+
+export async function handleAlarmAction(event) {
+  const { doseInstanceId, protocolId, medicineId, expectedDose, intakeUnit, nagAttempt }
+    = event.detail.notification.data
+
+  switch (event.detail.pressAction.id) {
+    case 'dose-taken': {
+      // VIA CANÔNICA: cria medicine_log + consume_stock_fifo + ancora a instance.
+      // registerDose já faz o elo bidirecional (status='taken' + medicine_log_id) e rollback.
+      await registerDose(
+        { protocol_id: protocolId, medicine_id: medicineId,
+          quantity_taken: expectedDose, /* + campos exigidos pelo logSchema */ },
+        { instanceId: doseInstanceId }
+      )
+      await alarmService.cancelAlarm(doseInstanceId)
+      await AsyncStorage.multiRemove(SNAPSHOTS_TAKEN)
+      break
+    }
+    case 'dose-skip': {
+      // Skip não cria log nem consome estoque — update direto é correto aqui.
+      await nativeSupabaseClient.from('dose_instances')
+        .update({ status: 'skipped_user' }).eq('id', doseInstanceId)
+      await alarmService.cancelAlarm(doseInstanceId)
+      await AsyncStorage.multiRemove(SNAPSHOTS_SKIP)
+      break
+    }
+    default: { // ignorado → nag reativo
+      await alarmService.scheduleNag({ doseInstanceId,
+        medicineName: event.detail.notification.data.medicineName,
+        currentNagAttempt: parseInt(nagAttempt || '0', 10) })
+    }
+  }
+}
+```
+> **Mudança vs. fonte**: a fonte fazia `dose_instances.update({ status:'taken', taken_at })` — **errado** (coluna `taken_at` inexistente + pula `medicine_log`/`consume_stock_fifo`). O payload de `registerDose` deve casar com `logSchema` (`@dosiq/core`) — confirmar campos obrigatórios em C1. A `data` da notificação passa a carregar `protocolId`/`medicineId`/`expectedDose`/`intakeUnit` (não só `medicineName`).
+
+### 6. iOS (Sprint 2)
+Config `Info.plist` + background modes; critical alert condicional (fallback `timeSensitive`); adaptar `AlarmFullScreen` p/ notification action buttons; re-scheduling em mutação de protocolo.
 
 ---
 
-## 🔒 3. Standard Quality Protocol Checklist (R-221)
+## SQP (R-221)
+Plataforma **Mobile** (+ possível adição de método no repo `@dosiq/core` = Shared). SemVer **minor**. Bump `apps/mobile/app.config.js`. CHANGELOG `[Unreleased]` (mobile) + store-note ("alarmes no horário certo, mesmo no silencioso").
 
-Toda tarefa e commit deste plano de feature deve prever a execução rígida dos seguintes passos do **SQP R-221**:
+---
 
-*   **Identificação de Plataformas:** Esta feature altera exclusivamente a plataforma **Mobile** e a lógica compartilhada em **Shared/Core** (se aplicável).
-*   **SemVer Impact:** Classificado como **minor** (nova funcionalidade clínica relevante de alarme persistente no mobile).
-*   **Version Update:** Bump da versão do aplicativo mobile no arquivo `apps/mobile/app.config.js` (atualizar a constante `APP_VERSION` ou equivalente).
-*   **Changelog:** Adicionar uma entrada em português no arquivo `CHANGELOG.md` sob a seção `[Unreleased]` explicando a chegada dos alarmes nativos via Notifee.
-*   **Store Note:** Preparar nota de atualização de loja (Play Store/App Store) focando na segurança que os alarmes trazem no horário correto dos remédios.
-*   **Quality Commands:**
-    *   `rtk lint` deve rodar limpo antes de qualquer commit.
-    *   `rtk npm run validate:agent` deve passar integralmente no diretório `apps/mobile` antes da abertura do PR.
+## Risks
+
+- **API do repo `dose_instances` p/ alarmes**: confirmar/adicionar `listPendingForAlarms` (com nome do medicamento) em `@dosiq/core` — C1 gate. Não usar coluna inexistente.
+- **Payload de `registerDose`**: casar com `logSchema` (campos obrigatórios: `quantity_taken`, unidades). C1 gate.
+- **500 alarmes exatos (Android 12+)**: janela 72h + nag reativo.
+- **iOS background**: nag só via `createTriggerNotification` (kernel), nunca JS timer.
+- **Critical Alert entitlement**: lead 2-4 semanas; v1 com fallback `timeSensitive`.

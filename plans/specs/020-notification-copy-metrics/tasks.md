@@ -1,68 +1,51 @@
-# Tasks: Notification Copy & Engagement Metrics (Wave N3)
+# Tasks: Copy de Notificação & Métricas (Wave N3)
 
-**Feature Directory**: `plans/specs/020-notification-copy-metrics`  
-**Input**: `spec.md`, `plan.md`, legacy sources  
-**Status**: Migrated Draft  
-
----
-
-## Phase 1: Setup / Preflight
-
-- [ ] **T001** [C1] Criar arquivo de migração SQL `20260601_notification_log_metrics.sql` estendendo a tabela `notification_log` com os novos campos e a FK `dose_instance_id`.
-- [ ] **T002** [C1] Aplicar a migração em ambiente local e validar a integridade estrutural do banco.
-- [ ] **T003** [C1] Sincronizar o schema Zod canônico em `packages/core/schemas/notificationLogSchema.js` para aceitar os campos de tracking e FK.
-- [ ] **T004** [C1] Criar a política RLS no Supabase permitindo que usuários autenticados realizem updates em seus próprios registros de log.
+**Feature Directory**: `plans/specs/020-notification-copy-metrics`
+**Input**: `spec.md`, `plan.md` · **Status**: Dev Ready · **Tier**: 1
 
 ---
 
-## Phase 2: Implementation
+## Phase 0 — Preflight & Reality Gates (C1)
 
-### Sprint 1: Refatoração do Dispatcher em Duas Fases
-- [ ] **T005** [US2] Modificar o dispatcher central `dispatchNotification.js` para realizar o preflight (criar log em estado `'pending'` contendo `dose_instance_id` antes do envio).
-- [ ] **T006** [US2] Enriquecer o payload de envio com o parâmetro `notificationLogId` na metadata do push Expo e do Telegram.
-- [ ] **T007** [US2] Implementar a fase final de MarkSent para atualizar o log com o status consolidado de entrega (`'sent'` ou `'failed'`).
-- [ ] **T008** [US2] Validar o fail-safe: erros na criação do log inicial não devem travar o envio real do push.
+- [ ] T001 [C1] **GATE**: ler `notificationLogRepository.js` + `_dispatchHelpers.js:138` — confirmar o ponto único onde o log é criado hoje. A refatoração **move** esse `create` p/ fase 1; **não** adicionar insert paralelo.
+- [ ] T002 [C1] **GATE**: confirmar colunas atuais de `notification_log` (`title,body,medicine_name,protocol_name,channels,protocol_id,status,sent_at`) e RLS vigente (não duplicar policy).
+- [ ] T003 [C1] **GATE**: confirmar a API de streak server-side em `server/bot/_adherenceHelpers.js` (assinatura + retorno de streak atual/anterior). Não usar `adherenceService` web.
 
-### Sprint 2: Biblioteca de Copy e Anti-Fadiga Determinístico
-- [ ] **T009** [US1] Criar a biblioteca `server/bot/notificationCopy.js` com a estrutura de pools de saudações horárias e linhas de streak.
-- [ ] **T010** [US1] Implementar a função de hash de seed determinística por (userId, dia) para seleção de mensagens.
-- [ ] **T011** [US1] Escrever testes unitários em `notificationCopy.test.js` comprovando determinismo e distribuição saudável de strings.
+## Phase 1 — DB + Schema
 
-### Sprint 3: Formatter de Daily Digest Enriquecido e Reminders
-- [ ] **T012** [US1] Criar a função `formatDailyDigestMessage` em `server/bot/tasks.js` agrupando instâncias de doses por faixas temporais e planos, aplicando cabeçalhos dinâmicos.
-- [ ] **T013** [US1] Substituir todos os textos de notificação estáticos dos formatters existentes por chamadas reativas à biblioteca de copy motivacional.
+- [ ] T004 [FR-001] Migração `docs/migrations/20260602_notification_log_metrics.sql` (4 colunas aditivas + índices + RLS update condicional). Aplicar local + validar.
+- [ ] T005 [FR-002] Sincronizar `packages/core/src/schemas/notificationLogSchema.js` (add 4 campos, mantém existentes).
 
-### Sprint 4: Hooks de Rastreamento de Conversão (Web/Mobile/Telegram)
-- [ ] **T014** [US2] Adicionar escuta ao parâmetro de busca `?notif=id` em `apps/web/src/App.jsx` para chamar de forma idempotente a atualização de `opened_at` no Supabase e limpar a URL via `history.replaceState`.
-- [ ] **T015** [US2] Integrar o tracking de aberturas no clique do push mobile em `apps/mobile/src/platform/notifications/usePushNotifications.js` populando `opened_at`.
-- [ ] **T016** [US2] Modificar handlers de callbacks do bot do Telegram (`doseActions.js`) para persistir `action_taken_at` e o `action_type` correspondente à ação de tomada de dose.
+## Phase 2 — Dispatcher 2-fases + Repositório
 
----
+- [ ] T006 [US2] Adicionar `update`/`markOpened`/`markAction` em `notificationLogRepository.js`.
+- [ ] T007 [US2] Refatorar `_dispatchHelpers.js`: fase 1 (`create status='pending'` + `dose_instance_id`, captura id) → enrich payload (`notificationLogId`) → dispatch → fase 2 (`update` markSent). Fail-safe na fase 1.
 
-## Phase 3: Validation
+## Phase 3 — Copy Lib + Digest
 
-- [ ] **T017** [C4] Executar testes unitários crítivos: `rtk jest` ou `rtk vitest` para atestar zero regressões nos formatters e dispatcher.
-- [ ] **T018** [C4] Rodar `rtk lint` e corrigir eventuais violações de formatação de código.
-- [ ] **T019** [C4] Simular fluxo de cliques em push móvel e comprovar a gravação reativa de `opened_at` e `action_taken_at` no Supabase.
-- [ ] **T020** [C4] Validar que as políticas RLS bloqueiam tentativas maliciosas de atualização de logs de outros usuários.
+- [ ] T008 [US1] `server/bot/notificationCopy.js` [NEW]: pools por bloco horário + `getSeedHash` + linhas de streak (via `_adherenceHelpers`).
+- [ ] T009 [P] [US1] Unit `notificationCopy.test.js`: determinismo (mesma seed→mesmo texto), distribuição (100 seeds cobrem todos os índices), streak (≥30/≥7/quebrado/<7).
+- [ ] T010 [US1] `server/bot/tasks.js`: digest enriquecido + substituir textos estáticos por chamadas à lib.
 
----
+## Phase 4 — Trackers (Web/Mobile/Telegram)
 
-## Phase 4: DEVFLOW Record (SQP R-221 Checkpoints)
+- [ ] T011 [US2] `apps/web/src/App.jsx`: `?notif=id` → `markOpened` idempotente + `history.replaceState`.
+- [ ] T012 [US2] `apps/mobile/.../usePushNotifications.js`: clique do push → `markOpened` (offline → DLQ).
+- [ ] T013 [US3] `server/bot/callbacks/doseActions.js`: tomadas gravam `action_taken_at` + `action_type` (callback <64 bytes — índice/short se UUID estourar).
 
-- [ ] **T021** [C5] Classificar o impacto de liberação da feature como **Medium** (altera estrutura crítica de log e fluxos do bot/dispatcher).
-- [ ] **T022** [C5] Realizar o bump de versão no core e web incrementando a patch version correspondente.
-- [ ] **T023** [C5] Registrar as modificações técnicas no `CHANGELOG.md` na seção `[Unreleased]` em português.
-- [ ] **T024** [C5] Gravar os detalhes SQP e a evidência de conclusão no diário final do DEVFLOW C5 (`.agent/memory/journal/`).
+## Phase 5 — Validation (C4)
 
----
+- [ ] T014 [C4] `rtk vitest`/`rtk jest` — zero regressão em formatters/dispatcher; assert log único (sem duplicação).
+- [ ] T015 [C4] `rtk lint` + `rtk npm run validate:agent`.
+- [ ] T016 [C4] Smoke: clique push popula `opened_at`; RLS bloqueia update de log alheio.
+
+## Phase 6 — Record (C5)
+
+- [ ] T017 [C5] SQP R-221: minor (core+web+server). Bump + CHANGELOG `[Unreleased]`.
+- [ ] T018 [C5] events.jsonl + journal + state.json. PR; Gemini + aprovação humana (R-060).
 
 ## Dependencies
+T001–T003 (gates) antes de tudo. T004/T005 antes de T006/T007. Copy lib (T008–T010) `[P]` ao dispatcher. Trackers dependem da migração (dose_instance_id) + payload (T007).
 
-- O refatoramento de `dose_instances` precisa estar concluído (já homologado e entregue).
-
----
-
-## Parallel Opportunities
-
-- A criação da biblioteca de copy e testes unitários de determinismo (Sprint 2) pode ocorrer de forma 100% paralela à refatoração do banco de dados e do dispatcher central (Sprint 1).
+## Traceability
+FR-001→T004 · FR-002→T005 · FR-003→T006/T007 · FR-004→T008–T010 · FR-005→T011–T013.
