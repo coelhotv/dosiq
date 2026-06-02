@@ -23,7 +23,7 @@ Ao final dele, você terá:
 
 ## 2. Decisão operacional para este projeto
 
-O Dosik é um app de rotina de medicamentos, com autenticação, dados de saúde informados pelo usuário e backend próprio.
+O Dosiq é um app de rotina de medicamentos, com autenticação, dados de saúde informados pelo usuário e backend próprio.
 
 Hoje, a leitura correta para o setup Apple é:
 
