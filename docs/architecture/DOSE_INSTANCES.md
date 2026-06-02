@@ -1,6 +1,6 @@
 # 💊 Arquitetura — `dose_instances` (modelo de doses persistido)
 
-**Status:** Ativo (Fase 4 em curso) · **Criado:** 2026-06-01
+**Status:** Ativo (Fase 4 **concluída** — refactor completo) · **Criado:** 2026-06-01 · **Atualizado:** 2026-06-02
 **ADRs:** ADR-048, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053, ADR-054
 **Contratos:** CON-022, CON-023, CON-024
 **Plano-mãe:** [`plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md`](../../plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md)
@@ -148,11 +148,21 @@ de janelas** entre doses adjacentes (mata a ambiguidade do ±2h fixo). É o cuto
 `getUserTime`/`parseISO` param `tz`, default São Paulo). Armazenar **sempre o IANA** — DST
 resolvido pelo nome via `Intl`, nunca por offset.
 
-> **Estado atual (G1):** o tz do perfil já é injetado ponta-a-ponta no **Histórico** (timeline
-> web, F4.2). A **geração** e o **"hoje"** (web `useDoseZones` + mobile `_useTodayDerived`)
-> ainda usam São Paulo hardcoded (default) — fechamento pendente na sub-fase **F4.3f** (injeção
-> no write-path + leitura do hoje + regen on tz-change). Janelas de query em **UTC real**; o tz
-> só governa a derivação do dia local (sem double-shift — AP-194).
+> **Estado atual (G1 — FECHADO na F4.3f):** o tz do perfil é injetado **ponta-a-ponta**:
+> - **Captura** (F4.3f.0): contas novas gravam o fuso real do device na confirmação do signup
+>   (`Intl`, normalizado contra a lista suportada; fora dela → SP); convite passivo no Perfil
+>   para usuários existentes. R-253.
+> - **Geração + leitura** (F4.3f.1): write-path (`createProtocolRepository`) e cron
+>   (`doseInstanceScheduler`) materializam `scheduled_for` no fuso do **dono** via
+>   `resolveUserTz`/`resolveUserTzMap`; o "hoje" (web `useDoseZones` + mobile `_useTodayDerived`)
+>   deriva virada-de-dia/HH:MM no fuso do perfil. Geração e leitura usam o **mesmo** fallback SP
+>   (invariante G2, R-254).
+> - **Troca de fuso** (F4.3f.2): com doses futuras pendentes, prompt de intenção —
+>   *viagem* (persiste o tz, não mexe nas doses; só muda o render) × *mudança*
+>   (`regenActiveProtocolsForTz`: wipe + re-ancora o wall-clock do `time_schedule` no fuso novo;
+>   best-effort R-231/245/246; nunca toca passado/`taken`/`missed`, AP-203).
+>
+> Janelas de query em **UTC real**; o tz só governa a derivação do dia local (sem double-shift — AP-194).
 
 ---
 
@@ -236,8 +246,14 @@ A âncora original fica **travada** (Q-E): editar `taken_at` não re-ancora; rea
 | 4.3b | Timeline do Hoje mobile ← instâncias | ✅ |
 | 4.3c | Registro individual mobile ancora por `instanceId` | ✅ |
 | 4.3d | Registro em lote por `instance_id` + Hero→bulk | ✅ |
-| 4.3e | Carry-over "Pendências de ontem" (web+mobile) | ⬜ |
-| 4.3f | Injeção de tz ponta-a-ponta (geração + hoje + regen) — fecha G1 | ⬜ |
+| 4.3e | Carry-over cross-dia "Pendências de ontem"/"Em breve" (web+mobile) | ✅ |
+| 4.3f.0 | Captura de tz no signup + nudge no Perfil (R-253) | ✅ |
+| 4.3f.1 | Geração no fuso do dono (write-path + cron) + "hoje" no fuso (R-254) | ✅ |
+| 4.3f.2 | Troca de fuso: prompt viagem × mudança + regen das doses — **fecha G1 / Fase 4** | ✅ |
+
+> **Fase 4 concluída** (épico F4.3f: PRs #628/#629/#630). Web 4.0.0 · Mobile 0.8.0 (loja).
+> O refactor de `dose_instances` está completo: adesão/timeline/hoje são query, não cálculo,
+> e o fuso do usuário é respeitado ponta-a-ponta (captura → geração → leitura → troca).
 
 ---
 
