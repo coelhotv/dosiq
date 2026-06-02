@@ -94,14 +94,25 @@ export function DashboardProvider({ children }) {
         // cross-dia (splitDayTimeline). Fallback SP quando ausente. Leitura curta/cacheada.
         key: CACHE_KEYS.USER_TIMEZONE,
         fetcher: async () => {
-          const userId = await getUserId()
-          if (!userId) return null
-          const { data } = await supabase
-            .from('user_settings')
-            .select('timezone')
-            .eq('user_id', userId)
-            .maybeSingle()
-          return data?.timezone || null
+          // Dado secundário (fallback SP no consumidor) — engole erro e retorna null
+          // pra NÃO propagar hasError e travar o Dashboard inteiro (degradação suave).
+          try {
+            const userId = await getUserId()
+            if (!userId) return null
+            const { data, error } = await supabase
+              .from('user_settings')
+              .select('timezone')
+              .eq('user_id', userId)
+              .maybeSingle()
+            if (error) {
+              console.error('Erro ao buscar timezone:', error)
+              return null
+            }
+            return data?.timezone || null
+          } catch (err) {
+            console.error('Erro ao buscar timezone:', err)
+            return null
+          }
         },
       },
     ],
