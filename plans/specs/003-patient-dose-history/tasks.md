@@ -1,38 +1,33 @@
-# Tasks: Patient Dose History
+# Tasks: Histórico de Doses do Paciente (Mobile)
 
-**Feature Directory**: `plans/specs/003-patient-dose-history`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/003-patient-dose-history/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/003-patient-dose-history/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/003-patient-dose-history`
+**Input**: `spec.md`, `plan.md` · **Status**: Dev Ready · **Tier**: 1
 
 ---
 
-## Phase 1: Setup & Preflight
+## Phase 0 — Reality Gates (C1)
+- [ ] T001 [C1] Build nativa (`rtk expo run:*`, não Expo Go).
+- [ ] T002 [C1] **GATE**: confirmar métodos de `createDoseInstanceRepository` (`@dosiq/core`); se faltar leitura por range de datas, estender o repo (não inventar `doseInstanceRepository.js`).
+- [ ] T003 [C1] **GATE**: ler `registerDose` (`doseService.js:136`) + `logSchema` → payload mínimo. Verificar se existe `undoDose`/delete de log ancorado; senão, planejar criar reusando o rollback do service.
 
-- [ ] **T001** [C1] Confirmar a integração do pacote `@dosiq/core` no mobile e verificar se chaves aliases estão ativas no `tsconfig.json`/`babel.config.js`.
-- [ ] **T002** [C1] Verificar se a branch base está sincronizada com a reta final da Fase 4 do refactor de `dose_instances`.
+## Phase 1 — UI
+- [ ] T004 [US1] `HistoryScreen.jsx` [NEW] (`features/history`) — agrega calendário + lista.
+- [ ] T005 [US1] `AdherenceCalendar.jsx` — calendário em linha, toque ≥60px.
+- [ ] T006 [US1] `DoseHistoryList.jsx` — virtualizada, chips por status; reusa derivações de `_useTodayDerived.js`.
 
-## Phase 2: Implementation
+## Phase 2 — Mutação
+- [ ] T007 [US2] `DoseActionSheet.jsx` — retroativo via `registerDose({...,taken_at},{instanceId})`.
+- [ ] T008 [US2] `undoDose(instanceId)` no `doseService` (delete log ancorado + revert status) — reusa rollback existente. Skip → só revert status.
+- [ ] T009 [US2] Invalidar `@dosiq/dose-instances-snapshot` + `@dosiq/adherence-snapshot` após mutação.
 
-### Core / Repositories
-- [ ] **T003** [US1] Adicionar métodos de busca por range de datas e mutação (taken/missed/pending) de `dose_instances` em `packages/core/src/repositories/doseInstanceRepository.js` de acordo com a R-021.
+## Phase 3 — Validation (C4)
+- [ ] T010 [P] [C4] Testes: retroativo cria log+consumo+ancora; desfazer remove log+reverte; sem `taken_at` em `dose_instances`.
+- [ ] T011 [C4] `rtk lint` + `rtk npm run validate:agent`.
+- [ ] T012 [C4] Smoke PO: ≥55fps; sync <200ms pós-mutação.
 
-### Mobile UI Components
-- [ ] **T004** [US1] Criar o componente de calendário expansível horizontal `apps/mobile/src/features/history/components/AdherenceCalendar.jsx` com botões acessíveis de área ≥ 60px.
-- [ ] **T005** [US1] Criar a lista cronológica virtualizada `apps/mobile/src/features/history/components/DoseHistoryList.jsx` baseada em `FlatList` nativo para garantir performance fluida.
-- [ ] **T006** [US1] Criar a bottom sheet nativa de ações retroativas e exclusão `apps/mobile/src/features/history/components/DoseActionSheet.jsx`.
-- [ ] **T007** [US1] Integrar os componentes na tela principal `apps/mobile/src/features/history/screens/HistoryScreen.jsx` utilizando o hook de SWR queries locais.
+## Phase 4 — Record (C5)
+- [ ] T013 [C5] SQP R-221 (minor mobile+core), bump + CHANGELOG + store-note.
+- [ ] T014 [C5] events/journal/state; PR; Gemini + aprovação humana (R-060).
 
-## Phase 3: Validation & QA Gates (C4)
-
-- [ ] **T008** [C4] Executar `rtk lint` em `packages/core` e `apps/mobile/` e corrigir warnings.
-- [ ] **T009** [C4] Escrever testes unitários para a lógica do repositório core e para os hooks de histórico do mobile nativo.
-- [ ] **T010** [C4] Executar `rtk npm run validate:agent` e certificar que todos os testes passaram.
-- [ ] **T011** [C4] **Verificação de DoD Independente (Mandatório):** Abrir `DoseActionSheet.jsx`, localizando e citando os trechos exatos de código que efetuam o descarte ou a gravação retroativa do status no Supabase e que invalidam o cache SWR.
-- [ ] **T012** [C4] **Smoke PO Manual:** Testar no simulador móvel o fluxo de clique no dia anterior, registro retroativo de Losartana e verificação da atualização imediata do layout do dia de hoje.
-
-## Phase 4: DEVFLOW & SQP Record (C5)
-
-- [ ] **T013** [C5] Atualizar a versão do aplicativo em `apps/mobile/app.config.js` (`APP_VERSION`).
-- [ ] **T014** [C5] Registrar a entrada descritiva em português no topo do arquivo `CHANGELOG.md` na seção `[Unreleased]`.
-- [ ] **T015** [C5] Gravar a evidência SQP R-221 nos registros de C5.
-- [ ] **T016** [C5] Registrar a entrada no journal e atualizar `state.json` com status `'completed'`.
+## Traceability
+FR-001→T005 · FR-002→T002/T006 · FR-003→T007/T008 · FR-004→T009.

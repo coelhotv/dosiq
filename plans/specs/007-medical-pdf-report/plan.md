@@ -1,62 +1,59 @@
-# Implementation Plan: Medical PDF Report
+# Implementation Plan: Relatório Médico em PDF (Mobile + Web)
 
-**Feature Directory**: `plans/specs/007-medical-pdf-report`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/007-medical-pdf-report/spec.md)  
-**Legacy Sources**:
-- `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §F6.2
+**Feature Directory**: `plans/specs/007-medical-pdf-report`
+**Spec**: `spec.md` · **Revised**: 2026-06-02 · **Tier**: 1
 
 ---
 
 ## Technical Context
 
-Esta feature realiza a extração local de dados do AsyncStorage snapshot e a compilação visual do layout médico. No mobile nativo, a compilação ocorre através do motor nativo do SO (`expo-print`), e na web via biblioteca dynamic imported `jsPDF`.
+Mobile: gerar PDF via `expo-print` (HTML inline) + `expo-sharing`. Web: já existe via `jsPDF` (lazy). Dados de adesão de `@dosiq/core`.
+
+**Paths reais verificados:**
+- Web: `apps/web/src/features/reports/services/pdfGeneratorService.js` (jsPDF; `drawHeader`/`drawAdherenceSummary`) + `consultationPdfService.js`. ✅ **Manter/otimizar, não reescrever.**
+- Mobile: `apps/mobile/src/features/reports/` = **[NEW]** (espelha a web).
+- Cálculo de adesão: `@dosiq/core/utils/adherenceLogic.js`. ✅
 
 ---
 
 ## Constitution Check
 
 | Principle | Status | Notes |
-|:---|:---|:---|
-| **I. Health Data Safety** | ✅ PASS | Geração puramente local e isolada, sem trafegar dados do histórico por servidores de terceiros. |
-| **II. Mobile-First Reliability** | ✅ PASS | Uso de renderizador nativo de visualização do SO, garantindo leveza. |
-| **IV. Timezone Correctness** | ✅ PASS | Datas e logs no PDF consolidados via `parseLocalDate()` locais (GMT-3). |
-| **VI. Release and SQP Discipline** | ✅ PASS | Processo inclui tarefas de versão, changelog e validação de linter. |
+|-----------|--------|-------|
+| Health Data Safety | ✅ | Geração local; sem trafegar histórico por terceiros. |
+| Mobile-First | ✅ | Renderizador nativo (`expo-print`). |
+| dry-principles | ✅ | Reusa `adherenceLogic` + layout web como referência. |
+| AP-B03 (bundle) | ✅ | Web mantém dynamic import. |
+| R-221 SQP | ✅ | Minor mobile+web. |
 
 ---
 
 ## Target Files
 
-| Path | Purpose | Source Evidence |
-|:---|:---|:---|
-| `apps/mobile/src/features/history/services/pdfGeneratorService.js` | Serviço gerador que compila dados em marcação HTML inline e invoca o `expo-print`. | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
-| `apps/mobile/src/features/history/components/ExportPdfButton.jsx` | Botão nativo que aciona o serviço e abre o menu do `expo-sharing`. | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
-| `apps/web/src/features/history/services/webPdfService.js` | Mantém/otimiza dynamic import e compilação do `jsPDF` + `jspdf-autotable` (AP-B03). | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
+| Path | Purpose | Evidence |
+|------|---------|----------|
+| `apps/mobile/src/features/reports/services/pdfGeneratorService.js` | HTML inline + `expo-print`. | [NEW] |
+| `apps/mobile/src/features/reports/components/ExportPdfButton.jsx` | aciona gerar + `expo-sharing`. | [NEW] |
+| `apps/web/src/features/reports/services/pdfGeneratorService.js` | manter/otimizar lazy-load (AP-B03). | [MOD] existe |
+
+> **Removido** o alvo da fonte `apps/web/src/features/history/services/webPdfService.js` (dir/arquivo inexistente; web real = `features/reports/pdfGeneratorService.js`).
 
 ---
 
 ## Architectural Approach
 
-### 1. Expo Go Decommission & Build Constraints
-> [!IMPORTANT]
-> **COMPILAÇÃO NATIVA OBRIGATÓRIA:**  
-> O uso de `expo-print` e `expo-sharing` requer compilação nativa. Todo teste local no mobile deve ocorrer via Development Builds locais (`rtk expo run:android` / `rtk expo run:ios`).
+### Mobile (port)
+1. `pdfGeneratorService.js`: monta string HTML (CSS inline WebKit/Blink) com cabeçalho + Medicamentos Ativos + Aderência (via `adherenceLogic` core) + histórico resumido. Espelha o layout do `pdfGeneratorService.js` web.
+2. `Print.printToFileAsync({ html })` → path temporário.
+3. `Sharing.shareAsync(uri)` → Share Sheet nativo.
 
-### 2. Geração Nativa por HTML Inline Styling
-* **Template HTML:** O serviço `pdfGeneratorService.js` monta uma string HTML estruturada, contendo CSS inline compatível com os padrões do motor WebKit/Blink dos dispositivos.
-* **Geração de Arquivo Temporário:** O método `Print.printToFileAsync({ html })` do `expo-print` é chamado, gravando o PDF gerado localmente na pasta de cache temporário do celular (`file:///.../Document.pdf`).
-* **Compartilhamento Nativo:** Logo após receber o path local, o serviço invoca `Sharing.shareAsync(uri)` da biblioteca `expo-sharing` para disponibilizar o arquivo no menu de envio do smartphone.
+### Web (manter)
+`features/reports/pdfGeneratorService.js` já funcional — só garantir que `jsPDF`/`jspdf-autotable` seguem por `import()` dinâmico (AP-B03), sem regressão de bundle.
 
----
+## SQP (R-221)
+Mobile (novo) + Web (sem regressão). Minor. Bump `app.config.js` + CHANGELOG + store-note.
 
-## 🔒 3. Standard Quality Protocol Checklist (R-221)
-
-Toda tarefa e commit desta feature deve seguir rigorosamente a regra **R-221 (SQP)**:
-* **Identificação de Plataformas:** Esta feature altera as plataformas **Mobile** e **Web**.
-* **SemVer Impact:** Classificado como **minor** (relatório clínico PDF nativo no mobile).
-* **Version Update:**
-  * Mobile: Atualizar `apps/mobile/app.config.js` (`APP_VERSION`).
-  * Web: Atualizar `apps/web/package.json` (`version`).
-* **Changelog:** Adicionar entrada em português no arquivo `CHANGELOG.md` na seção `[Unreleased]` documentando a chegada da exportação do Relatório Clínico em PDF no mobile.
-* **Quality Commands:**
-  * Executar `rtk lint` no core, web e mobile.
-  * Executar `rtk npm run validate:agent` e garantir sucesso de regressões.
+## Risks
+- **Reescrever a web à toa**: escopo web = manter; só otimizar lazy se preciso.
+- **Memória mobile em 90 dias**: tabelas enxutas/paginação no HTML.
+- **Deps `expo-print`/`expo-sharing`**: requerem build nativa (não Expo Go).

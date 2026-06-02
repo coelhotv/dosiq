@@ -1,42 +1,47 @@
-# Feature Specification: Medical PDF Report
+# Feature Specification: Relatório Médico em PDF (Mobile + Web)
 
-**Feature Directory**: `plans/specs/007-medical-pdf-report`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
-**Legacy Sources**:
-- `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §F6.2
+**Feature Directory**: `plans/specs/007-medical-pdf-report`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Dev Ready
+**Tier**: 1 (port mobile; web já existe)
+**Artifacts**: `spec.md` + `plan.md` + `tasks.md`
+**Legacy Source**: `PHASE_5_6_PARITY_AND_BEYOND.md` §F6.2
 
 ---
 
 ## Context
 
-Para facilitar a portabilidade física do histórico do tratamento aos profissionais de saúde, o aplicativo nativo e o PWA devem prover um gerador de relatórios clínicos em PDF de alta qualidade e com design limpo e estruturado. Enquanto o PWA já utiliza `jsPDF` com lazy-loading para esta entrega, o aplicativo nativo móvel deve portar esta funcionalidade utilizando as APIs de impressão nativa do sistema operacional (`expo-print`) para garantir performance fluida.
+Relatório clínico em PDF p/ levar/enviar ao médico. **PWA já gera** via `jsPDF`+`jspdf-autotable`. Esta feature **porta** p/ o **mobile nativo** via `expo-print` (HTML inline) + `expo-sharing`, reusando o mesmo layout/dados.
+
+> **Reality-check (revisão 2026-06-02):**
+> - **Web PDF já existe e funcional**: `apps/web/src/features/reports/services/pdfGeneratorService.js` (jsPDF, `drawHeader`/`drawAdherenceSummary`/...) + `consultationPdfService.js`. **NÃO** criar `apps/web/src/features/history/services/webPdfService.js` (dir `features/history` não existe na web; o real é `features/reports`). O escopo web = **manter/otimizar lazy-load** (AP-B03), não reescrever.
+> - **Mobile não tem `features/history` nem `features/reports`** (dirs: dashboard/dose/medications/notifications/onboarding/profile/stock/treatments). Criar `features/reports` no mobile (espelha a web) p/ o serviço nativo.
+> - Dados de adesão vêm de `@dosiq/core` (`adherenceLogic`) + `dose_instances`; datas via `@dosiq/core`.
 
 ---
 
 ## User Scenarios & Testing
 
-### User Story 1 - Geração de PDF no Celular (Priority: P1)
-**Why this priority**: Permite ao paciente salvar ou enviar seu relatório clínico diretamente de seu smartphone para a equipe médica.
-**Independent Test**: Clicar em "Gerar Relatório PDF" nas configurações/aba de histórico no aplicativo móvel nativo, verificar se abre o visualizador nativo de arquivos e se o PDF gerado é legível.
+### User Story 1 — Gerar PDF no Celular (P1)
+**Why**: salvar/enviar o relatório do smartphone.
+**Independent Test**: tocar "Exportar Relatório PDF" no mobile; abre o visualizador nativo; PDF legível com tratamentos ativos + adesão do mês.
 
 **Acceptance Scenarios**:
-1. Given que Dona Maria deseja levar seu histórico impresso para a consulta, When ela tocar em "Exportar Relatório PDF" no seu celular, Then o aplicativo deve renderizar uma estrutura HTML clínica inline e gerar o arquivo PDF estilizado contendo tratamentos ativos e taxas de adesão do mês.
+1. Given Dona Maria quer o histórico impresso, When toca "Exportar Relatório PDF", Then o app monta HTML clínico inline e gera o PDF via `expo-print` (`printToFileAsync`).
 
-### User Story 2 - Compartilhamento Instantâneo (Priority: P1)
-**Why this priority**: Facilita o envio por canais locais como WhatsApp ou e-mail.
-**Independent Test**: Confirmar que o fluxo de geração móvel abre o menu nativo do sistema operacional (`Share` nativo) permitindo enviar o arquivo PDF gerado diretamente.
+### User Story 2 — Compartilhamento Instantâneo (P1)
+**Why**: enviar por WhatsApp/e-mail.
+**Independent Test**: após gerar, "Compartilhar" abre o Share Sheet nativo (iOS/Android).
 
 **Acceptance Scenarios**:
-1. Given que o PDF de Dona Maria foi gerado com sucesso, When ela tocar em "Compartilhar", Then o menu nativo do sistema (iOS/Android Share Sheet) deve se abrir exibindo atalhos para WhatsApp, e-mail e salvar em arquivos.
+1. Given o PDF gerado, When "Compartilhar", Then `expo-sharing` (`shareAsync`) abre o menu nativo.
 
 ---
 
 ## Edge Cases
 
-- **Grandes Volumes de Dados:** Pacientes com dezenas de medicamentos cadastrados e centenas de instâncias de doses no histórico de 90 dias podem sobrecarregar a memória do dispositivo durante a compilação do relatório. O HTML inline que gera o PDF deve usar paginação simples ou tabelas enxutas e dinâmicas para evitar quebras.
-- **Carregamento Assíncrono das Bibliotecas na Web:** No PWA/Web, o carregamento do módulo gerador `jsPDF` e `jspdf-autotable` deve ocorrer de forma 100% dinâmica (lazy-loaded, AP-B03), garantindo que o bundle principal de download da Home da web permaneça inalterado.
+- **Grandes volumes (90 dias, dezenas de medicamentos)**: HTML inline com tabelas enxutas/paginação simples — não estourar memória.
+- **Web lazy-load (AP-B03)**: `jsPDF`/`jspdf-autotable` por dynamic import — bundle principal inalterado.
 
 ---
 
@@ -44,19 +49,19 @@ Para facilitar a portabilidade física do histórico do tratamento aos profissio
 
 ### Functional Requirements
 
-- **FR-001:** Geração de PDF no aplicativo nativo móvel utilizando a API de impressão do sistema (`expo-print`) a partir de uma folha de estilo e HTML enxuta inline.
-- **FR-002:** O layout do PDF gerado deve conter: cabeçalho com dados de identificação, lista detalhada de Medicamentos Ativos, gráficos/indicadores de Aderência e histórico cronológico resumido.
-- **FR-003:** Integração no aplicativo nativo com a biblioteca `expo-sharing` para permitir o envio do arquivo PDF gerado localmente nas pastas temporárias.
-- **FR-004:** O PWA/Web deve manter sua implementação funcional baseada em `jsPDF` + `jspdf-autotable` encapsulado em lazy-loading (AP-B03).
+- **FR-001**: Mobile gera PDF via `expo-print` (`printToFileAsync({ html })`) a partir de HTML+CSS inline.
+- **FR-002**: Layout: cabeçalho de identificação, Medicamentos Ativos, indicadores de Aderência (reusa `adherenceLogic` core), histórico cronológico resumido — espelhando o layout web (`pdfGeneratorService.js`).
+- **FR-003**: Mobile compartilha via `expo-sharing` (`shareAsync(uri)`) a partir do arquivo temporário.
+- **FR-004**: Web **mantém** `features/reports/pdfGeneratorService.js` com lazy-load (AP-B03) — sem regressão de bundle. (Sem reescrever.)
 
 ### Key Entities
 
-- **TreatmentDetails:** Resumo das posologias e dosagens em vigor.
-- **AdherenceAggregates:** Estatísticas de adesão consolidadas no fuso local.
+- **Dados do relatório**: posologias ativas + agregados de adesão (`@dosiq/core`).
 
 ---
 
 ## Success Criteria
 
-- **SC-001:** PDF gerado e pronto para visualização/compartilhamento em menos de 1.5 segundos no celular.
-- **SC-002:** Zero incremento no tamanho do bundle principal de download gzip do PWA (uso rigoroso de dynamic imports na web).
+- **SC-001**: PDF mobile pronto p/ visualização/compartilhamento em < 1.5s.
+- **SC-002**: Zero incremento no bundle gzip principal do PWA (dynamic imports mantidos).
+- **SC-003**: Layout mobile visualmente consistente com o web.

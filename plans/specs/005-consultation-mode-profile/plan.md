@@ -1,63 +1,66 @@
-# Implementation Plan: Consultation Mode Profile
+# Implementation Plan: Modo Consulta (Mobile + Web)
 
-**Feature Directory**: `plans/specs/005-consultation-mode-profile`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/005-consultation-mode-profile/spec.md)  
-**Legacy Sources**:
-- `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §M1.3
+**Feature Directory**: `plans/specs/005-consultation-mode-profile`
+**Spec**: `spec.md` · **Revised**: 2026-06-02 · **Tier**: 1 (2 se opção A)
+
+> ⚠️ **Bloqueado por decisão**: resolver o `[NEEDS CLARIFICATION]` (A live-token vs B snapshot via `api/share`) antes do C2. Plano abaixo detalha ambos; o caminho B é o recomendado.
 
 ---
 
 ## Technical Context
 
-Esta feature envolve a criação de componentes de acessibilidade visual de alto contraste no aplicativo móvel nativo e a implementação de endpoints e rotas temporárias com segurança criptográfica baseada em banco de dados Supabase na web.
+Mobile: tela full-screen AAA reusando a agregação de ficha. Web: reusar `features/consultation`. Link: **B** via `api/share.js` (blob TTL 24h) ou **A** tabela+rota pública.
+
+**Paths reais verificados:**
+- Web consulta: `apps/web/src/features/consultation/{components/ConsultationView.jsx, components/redesign/ConsultationViewRedesign.jsx, services/consultationDataService.js}`. ✅
+- Share: `api/share.js` (`expiresInHours`, default 72 / max 168 → usar 24). ✅
+- Sem tabela `profiles`; migração (se A) em `docs/migrations/`.
+- Mobile: `apps/mobile/src/features/profile/screens/ConsultationModeScreen.jsx` [NEW]; `components/ShareConsultButton.jsx` [NEW].
 
 ---
 
 ## Constitution Check
 
 | Principle | Status | Notes |
-|:---|:---|:---|
-| **I. Health Data Safety** | ✅ PASS | O link temporário expõe dados estritamente clínicos (posologias, estoques e histórico) sem credenciais pessoais, expirando rigidamente em 24h. |
-| **II. Mobile-First Reliability** | ✅ PASS | Tela travada em orientação retrato e sem complexidade de renderização pesada. |
-| **IV. Timezone Correctness** | ✅ PASS | A expiração do token de 24h baseia-se no timestamp UTC de expiração no Supabase. |
-| **VI. Release and SQP Discipline** | ✅ PASS | Processo inclui tarefas de versão, changelog e validação de linter. |
+|-----------|--------|-------|
+| R-090 (serverless ≤12) | ✅ (B) / ⚠️ (A) | B reusa `api/share` (zero função nova); A adiciona rota → consome budget. |
+| Health Data Safety | ✅ | Expira em 24h; só dados clínicos. |
+| dry-principles | ✅ | Reusa `consultationDataService`; extrair p/ `@dosiq/core` se mobile precisar. |
+| R-221 SQP | ✅ | Minor mobile+web (+core se extração). |
+
+---
+
+## Architecture / Approach
+
+### Comum
+- **Agregação da ficha**: `consultationDataService.getConsultationData(...)` (web, existente). Se o mobile precisar do mesmo cálculo, **extrair as funções puras p/ `@dosiq/core`** e reusar em ambos (não duplicar no mobile).
+- **Mobile UI**: `ConsultationModeScreen.jsx` full-screen retrato, contraste ≥7:1, abas (Medicamentos/Histórico/Aderência/Estoque).
+
+### Caminho B (recomendado — snapshot via api/share)
+- Gerar a ficha (HTML/PDF — reusa o gerador da spec 007 `features/reports`) → `api/share` `{ blob, filename, expiresInHours: 24 }` → recebe URL → `Share` nativo.
+- Web: a URL do blob abre o snapshot direto (sem rota nova). Expiração = TTL do blob (404 após 24h).
+
+### Caminho A (se o PO exigir live)
+- Migração `docs/migrations/<data>_consultation_tokens.sql`: tabela (`id`,`user_id`,`secure_key` 32 hex,`expires_at`) + GRANTs (CREATE TABLE → template obrigatório CLAUDE.md) + RLS (SELECT público condicionado a `expires_at > now()`).
+- Rota pública web (`views/` lazy ou rota dedicada) lendo por `secure_key`. **Custa +1 função serverless** se virar endpoint — validar budget R-090.
+- `WebConsultationView` reusa `ConsultationViewRedesign` em modo read-only/token.
 
 ---
 
 ## Target Files
 
-| Path | Purpose | Source Evidence |
-|:---|:---|:---|
-| `apps/mobile/src/features/profile/screens/ConsultationModeScreen.jsx` | Tela nativa mobile full-screen de alto contraste (AAA) com abas clínicas. | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
-| `apps/mobile/src/features/profile/components/ShareConsultButton.jsx` | Botão nativo acionando o `Share` API do React Native com link temporário. | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
-| `apps/web/src/features/profile/screens/WebConsultationView.jsx` | Rota web pública desktop read-only consumidora do token de 24h. | `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` |
-| `packages/core/src/repositories/consultationRepository.js` | Métodos para gerar e validar tokens temporários de 24h integrados no core. | `@dosiq/core` optimization |
-| `supabase/migrations/20260601000000_consultation_tokens.sql` | Migration de criação da tabela de tokens temporários e políticas de RLS. | Supabase DB Schema |
+| Path | Purpose | Caminho |
+|------|---------|---------|
+| `apps/mobile/src/features/profile/screens/ConsultationModeScreen.jsx` | tela AAA full-screen. | A+B [NEW] |
+| `apps/mobile/src/features/profile/components/ShareConsultButton.jsx` | Share nativo do link. | A+B [NEW] |
+| `apps/web/src/features/consultation/...` | reuso da ficha existente (read-only). | A+B [MOD] |
+| `packages/core/.../consultationData*.js` | extrair agregação pura (se mobile reusar). | A+B [MOD/NEW] |
+| `api/share.js` | reuso (TTL 24h). | **B** |
+| `docs/migrations/<data>_consultation_tokens.sql` + rota pública | tabela+RLS+rota. | **A** |
 
----
+> **Removidos** os alvos da fonte: `features/profile/WebConsultationView.jsx` (usar `features/consultation`) e `supabase/migrations/...` (usar `docs/migrations/`).
 
-## Architectural Approach
-
-### 1. Expo Go Decommission & Build Constraints
-> [!IMPORTANT]
-> **COMPILAÇÃO NATIVA OBRIGATÓRIA:**  
-> Devido ao uso de dependências do monorepo e ao compartilhamento nativo `Share`, todos os testes locais e validação da tela de Modo Consulta devem ocorrer via Development Builds locais (`rtk expo run:android` / `rtk expo run:ios`).
-
-### 2. Geração e Rota do Token Seguro
-* **Criação do Link:** O repositório core efetua uma chamada RPC ou INSERT na tabela `consultation_tokens` que gera uma chave `secure_key` criptograficamente segura (32 bytes em formato hex) e um prazo exato de `now() + interval '24 hours'`.
-* **Visualização Web:** A página pública `WebConsultationView.jsx` na web realiza a leitura fazendo SELECT baseado na `secure_key`. As políticas de RLS garantem que a consulta falhe imediatamente caso `expires_at` seja menor que a hora UTC atual do servidor Supabase (`expires_at < now()`).
-
----
-
-## 🔒 3. Standard Quality Protocol Checklist (R-221)
-
-Toda tarefa e commit desta feature deve seguir rigorosamente a regra **R-221 (SQP)**:
-* **Identificação de Plataformas:** Esta feature altera as plataformas **Mobile**, **Web** e **Shared/Core** (`packages/core`, `supabase`).
-* **SemVer Impact:** Classificado como **minor** (ficha médica do modo consulta e compartilhamento seguro).
-* **Version Update:**
-  * Mobile: Atualizar `apps/mobile/app.config.js` (`APP_VERSION`).
-  * Web: Atualizar `apps/web/package.json` (`version`).
-* **Changelog:** Adicionar entrada em português no arquivo `CHANGELOG.md` na seção `[Unreleased]` documentando a chegada do Modo Consulta acessível e link seguro para médicos.
-* **Quality Commands:**
-  * Executar `rtk lint` no core, web e mobile.
-  * Executar `rtk npm run validate:agent` e garantir sucesso de regressões.
+## Risks
+- **Decisão A/B não resolvida** → C2 bloqueado.
+- **A custa função serverless** (R-090) + migração; B não. Preferir B salvo necessidade de dado ao vivo.
+- **Mobile duplicar agregação**: extrair p/ core, não copiar `consultationDataService`.

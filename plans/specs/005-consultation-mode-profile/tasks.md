@@ -1,39 +1,31 @@
-# Tasks: Consultation Mode Profile
+# Tasks: Modo Consulta (Mobile + Web)
 
-**Feature Directory**: `plans/specs/005-consultation-mode-profile`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/005-consultation-mode-profile/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/005-consultation-mode-profile/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/005-consultation-mode-profile`
+**Input**: `spec.md`, `plan.md` · **Status**: Needs Clarification → Dev Ready · **Tier**: 1 (2 se A)
 
 ---
 
-## Phase 1: Setup & Preflight
+## Phase 0 — Decisão + Reality Gates
+- [ ] T001 [GATE] **Resolver `[NEEDS CLARIFICATION]`** com o PO: link **A** (live token+rota+migração, R-090) vs **B** (snapshot via `api/share`, recomendado). Registrar a escolha no plan.
+- [ ] T002 [C1] Ler `consultationDataService.js` (web) — confirmar a agregação reusável; decidir se extrai p/ `@dosiq/core` (mobile).
+- [ ] T003 [C1] **(B)** confirmar contrato de `api/share.js` (`expiresInHours`, retorno URL). **(A)** confirmar budget de funções serverless (R-090) antes de criar rota.
 
-- [ ] **T001** [C1] Criar arquivo de migração SQL `supabase/migrations/20260601000000_consultation_tokens.sql` contendo a tabela de tokens com expiração e políticas de RLS restritas para select baseado puramente no token UUID/hash.
-- [ ] **T002** [C1] Configurar as rotas no React Native e Next.js/Vite Web para a navegação do Modo Consulta.
+## Phase 1 — Mobile UI (A+B)
+- [ ] T004 [US1] `ConsultationModeScreen.jsx` full-screen retrato, contraste ≥7:1, abas (Medicamentos/Histórico/Aderência/Estoque).
+- [ ] T005 [US1] Reuso da agregação (web `consultationDataService` ou core extraído).
 
-## Phase 2: Implementation
+## Phase 2 — Link (conforme decisão)
+- [ ] T006 [US2] **(B)** gerar snapshot (reusa gerador PDF/HTML da 007) → `api/share` TTL 24h → `ShareConsultButton.jsx` (Share nativo).
+- [ ] T007 [US2] **(A)** migração `docs/migrations/<data>_consultation_tokens.sql` (tabela+GRANTs+RLS) + rota pública reusando `ConsultationViewRedesign` read-only.
 
-### Database & Core Repository
-- [ ] **T003** [US2] Executar a migration no Supabase local e mapear os métodos `generateToken` e `validateToken` em `packages/core/src/repositories/consultationRepository.js`.
+## Phase 3 — Validation (C4)
+- [ ] T008 [C4] Contraste ≥7:1 (a11y); expiração 24h funciona (B: 404 pós-TTL; A: RLS).
+- [ ] T009 [C4] `rtk lint` + `rtk npm run validate:agent`.
+- [ ] T010 [C4] Smoke PO: gerar link, abrir no desktop, validar expiração.
 
-### Mobile UI
-- [ ] **T004** [US1] Desenhar a tela nativa `ConsultationModeScreen.jsx` travando o aplicativo em retrato e implementando o contraste visual AAA superior a 7:1.
-- [ ] **T005** [US1] Organizar as abas simples: Medicamentos, Histórico (últimos 30 dias), Aderência e Estoque.
-- [ ] **T006** [US2] Criar o botão de compartilhamento `ShareConsultButton.jsx` integrado com a API nativa `Share`.
+## Phase 4 — Record (C5)
+- [ ] T011 [C5] SQP R-221 (minor mobile+web, +core se extração; +DB se A).
+- [ ] T012 [C5] events/journal/state; PR; Gemini + aprovação humana.
 
-### Web Client UI
-- [ ] **T007** [US2] Construir a tela desktop pública `WebConsultationView.jsx` consumidora do token dinâmico no fuso local.
-
-## Phase 3: Validation & QA Gates (C4)
-
-- [ ] **T008** [C4] Executar `rtk lint` em todos os diretórios do monorepo e corrigir warnings.
-- [ ] **T009** [C4] Criar testes unitários para a criação e expiração lógica de tokens temporários no core.
-- [ ] **T010** [C4] Executar `rtk npm run validate:agent` e certificar que todos os testes passaram.
-- [ ] **T011** [C4] **Verificação de DoD Independente (R-060/R-221):** Testar no simulador móvel o clique em "Gerar Modo Consulta", verificar que o link temporário foi copiado e que ao tentar ler o mesmo link após alterar manualmente a expiração no banco para o passado, a rota web bloqueia o acesso imediatamente.
-
-## Phase 4: DEVFLOW & SQP Record (C5)
-
-- [ ] **T012** [C5] Atualizar a versão do aplicativo no mobile (`app.config.js`) e na web (`package.json`).
-- [ ] **T013** [C5] Adicionar entrada no topo do `CHANGELOG.md` na seção `[Unreleased]` em português brasileiro.
-- [ ] **T014** [C5] Gravar evidência de qualidade do SQP.
-- [ ] **T015** [C5] Finalizar a escrita do journal e incrementar no status.
+## Traceability
+FR-001/002→T004/T005 · FR-003→T006 · FR-004→T006(B)/T007(A) · FR-005→T007(A)/T002(B).

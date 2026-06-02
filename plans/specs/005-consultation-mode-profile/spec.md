@@ -1,43 +1,58 @@
-# Feature Specification: Consultation Mode Profile
+# Feature Specification: Modo Consulta (Mobile + Web)
 
-**Feature Directory**: `plans/specs/005-consultation-mode-profile`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
-**Legacy Sources**:
-- `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §M1.3
+**Feature Directory**: `plans/specs/005-consultation-mode-profile`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Needs Clarification (1 decisão arquitetural aberta) → depois Dev Ready
+**Tier**: 1 (ou 2 se escolhida a opção A com migração/rota nova — ver Open Questions)
+**Artifacts**: `spec.md` + `plan.md` + `tasks.md`
+**Legacy Source**: `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.3
 
 ---
 
 ## Context
 
-Dona Maria, idosa com múltiplos medicamentos ativos, muitas vezes tem dificuldades de relatar com precisão sua rotina posológica e taxas de adesão na consulta presencial ao geriatra. O **Modo Consulta** resolve esse atrito clínico gerando uma tela limpa, de alta legibilidade e contraste aumentado (acessibilidade AAA) no celular, e um link temporário seguro para visualização em navegadores desktop do médico.
+Dona Maria precisa mostrar a ficha clínica ao médico. O **Modo Consulta** dá: tela mobile full-screen de alto contraste (AAA) com abas (Medicamentos/Histórico/Aderência/Estoque) + um link temporário p/ o médico ver no desktop.
+
+> **Reality-check (revisão 2026-06-02):**
+> - **Web já tem `features/consultation`**: `ConsultationView.jsx`, `ConsultationViewRedesign.jsx`, `consultationDataService.js` (`getConsultationData`, adesão, estoque, prescrições). O modo consulta **reusa** isso — **não** criar `apps/web/src/features/profile/WebConsultationView.jsx`.
+> - **Não existe tabela `profiles`** no dosiq (usa `user_settings`). Token, se houver, não vai em `profiles.*`.
+> - Migração, **se necessária**, vive em `docs/migrations/` (não `supabase/migrations/`).
+> - `api/share.js` existente = upload de **blob com TTL** (Vercel Blob, `expiresInHours`), retornando URL. Serve p/ compartilhar um **snapshot** (HTML/PDF) — não um read live com token.
+
+---
+
+## Open Questions — DECISÃO DO OPERADOR (resolver antes de codar)
+
+- **[NEEDS CLARIFICATION: mecanismo do link do médico]** Duas opções, trade-off real:
+  - **(A) Link "ao vivo"**: tabela `consultation_tokens` (`secure_key`, `expires_at`) + rota pública `dosiq.app/consult/:id?key=` lendo dados atuais + RLS por expiração. **Custo**: migração nova + **+1 função serverless (R-090: budget 12, CLAUDE.md)** + rota pública. Vira **Tier 2**.
+  - **(B, recomendada) Link "snapshot"**: gera a ficha (HTML/PDF de `consultationDataService`) e compartilha via **`api/share.js`** (blob TTL 24h). **Sem migração, sem função nova, sem rota pública** (reusa infra). Link mostra o estado no momento da geração (aceitável p/ consulta). **Tier 1.**
+  - Recomendação: **B** (mais barata, respeita R-090, zero superfície nova). Confirmar com o PO.
 
 ---
 
 ## User Scenarios & Testing
 
-### User Story 1 - Exibição no Consultório (Priority: P1)
-**Why this priority**: Ajuda Dona Maria a mostrar sua ficha médica física ao geriatra durante a consulta.
-**Independent Test**: Abrir o Modo Consulta no mobile, travar a tela em modo full-screen retrato e validar se o contraste AAA e as abas agrupadas (Medicamentos, Histórico, Aderência e Estoque) renderizam perfeitamente com fontes grandes.
+### User Story 1 — Exibição no Consultório (P1)
+**Why**: mostrar a ficha física ao geriatra.
+**Independent Test**: abrir Modo Consulta no mobile, full-screen retrato, contraste AAA, abas (Medicamentos/Histórico/Aderência/Estoque) com fontes grandes.
 
 **Acceptance Scenarios**:
-1. Given que Dona Maria está na consulta médica, When ela tocar no botão "Modo Consulta" na tela de perfil, Then o app deve abrir uma visualização em tela cheia com fontes aumentadas, agrupando medicamentos ativos e histórico dos últimos 30 dias em abas simples.
+1. Given Dona Maria na consulta, When toca "Modo Consulta" no perfil, Then full-screen com fontes aumentadas, medicamentos ativos + histórico 30 dias em abas simples (dados de `consultationDataService` ou equivalente mobile).
 
-### User Story 2 - Compartilhamento Clínico Web (Priority: P1)
-**Why this priority**: Permite ao médico visualizar a ficha do paciente diretamente no computador do consultório de forma segura.
-**Independent Test**: Gerar o link de consulta no celular, enviá-lo pelo Share nativo e carregar a rota correspondente (`dosiq.app/consult/patient_id?key=xxx`) na web, atestando que ela expira após 24 horas.
+### User Story 2 — Compartilhamento Clínico (P1)
+**Why**: médico ver no desktop.
+**Independent Test**: gerar link no celular, enviar via Share nativo, abrir o link; confirmar expiração em 24h.
 
-**Acceptance Scenarios**:
-1. Given que o médico prefere ver na tela grande da clínica, When o paciente clicar em "Compartilhar com o Médico", Then o sistema deve gerar um link com token temporário de 24h e abrir o compartilhamento nativo do celular (`Share` API).
-2. Given um link de Modo Consulta que foi gerado há mais de 24 horas, When o médico tentar acessá-lo na clínica, Then o sistema web deve retornar erro de permissão negada "Acesso Expirado".
+**Acceptance Scenarios** (dependem da decisão A/B):
+1. Given o médico prefere a tela grande, When "Compartilhar com o Médico", Then gera link temporário (24h) + abre o Share nativo. **(B)** o link aponta p/ o blob da ficha; **(A)** p/ a rota pública `?key=`.
+2. Given link com mais de 24h, When o médico acessa, Then "Acesso Expirado" **(A)** ou 404 do blob expirado **(B)**.
 
 ---
 
 ## Edge Cases
 
-- **Legibilidade em baixo brilho:** A paleta de cores deve possuir contraste de taxa superior a 7:1 entre texto e fundo, garantindo legibilidade extrema mesmo se a tela do celular estiver com economia de energia ativa ou brilho reduzido.
-- **Segurança de dados sensíveis:** O link temporário expõe apenas dados posológicos e históricos, sem expor endereço física ou credenciais do usuário. O token dinâmico é armazenado temporariamente em banco de dados e invalidado rigidamente no servidor após 24h.
+- **Legibilidade baixo brilho**: contraste ≥ 7:1 texto/fundo.
+- **Dados sensíveis**: o link expõe só posologia/histórico/adesão — sem endereço/credenciais.
 
 ---
 
@@ -45,20 +60,21 @@ Dona Maria, idosa com múltiplos medicamentos ativos, muitas vezes tem dificulda
 
 ### Functional Requirements
 
-- **FR-001:** Desenhar interface com alto contraste (Acessibilidade AAA, fontes grandes e botões visíveis).
-- **FR-002:** Interface Mobile full-screen travada em modo retrato contendo abas agrupadas: Medicamentos Ativos, Histórico (últimos 30 dias), Aderência e Estoque.
-- **FR-003:** Botão de Compartilhamento Nativo no mobile que aciona o módulo nativo `Share` do React Native para enviar o link seguro temporário.
-- **FR-004:** Geração no backend de um token temporário com prazo exato de expiração de 24 horas.
-- **FR-005:** Rota web pública temporária `dosiq.app/consult/:patient_id?key=:token` que consome o token e exibe a ficha clínica em formato read-only amigável para navegadores desktop.
+- **FR-001**: UI alto contraste (AAA, fontes grandes, toques amplos — R-137/138).
+- **FR-002**: Mobile full-screen retrato com abas: Medicamentos Ativos, Histórico (30 dias), Aderência, Estoque. Dados reusando a lógica de `consultationDataService` (web) — extrair o cálculo p/ `@dosiq/core` se precisar compartilhar com mobile.
+- **FR-003**: Botão Share nativo (RN `Share`) enviando o link temporário.
+- **FR-004**: Link com expiração de 24h — mecanismo conforme decisão A/B (B: `api/share.js` `expiresInHours: 24`).
+- **FR-005**: **(só se A)** rota web pública `dosiq.app/consult/:id?key=` read-only consumindo o token; RLS bloqueia `expires_at < now()`. **(B)** reusa `features/consultation` renderizando o snapshot.
 
 ### Key Entities
 
-- **ConsultationToken:** Entidade de tokens temporários com timestamp de expiração.
-- **PatientProfile:** Perfil do paciente e sua rotina de tratamentos.
+- **consultation data**: agregada por `consultationDataService` (web, existente).
+- **(A) consultation_tokens**: `secure_key`, `expires_at` (se opção A). **(B)**: nenhum — TTL no blob.
 
 ---
 
 ## Success Criteria
 
-- **SC-001:** Contraste de cores do texto principal de no mínimo 7:1.
-- **SC-002:** Expiração automática e rígida do link de visualização web 24 horas após sua criação no servidor.
+- **SC-001**: Contraste texto principal ≥ 7:1.
+- **SC-002**: Expiração rígida em 24h (A: RLS `expires_at`; B: TTL do blob).
+- **SC-003**: Zero superfície nova desnecessária (se B: sem migração/função — R-090).
