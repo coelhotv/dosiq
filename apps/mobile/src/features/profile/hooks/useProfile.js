@@ -6,6 +6,7 @@ import {
   getUserSettings,
   getProfile,
   updateTimezone as updateTimezoneService,
+  hasFuturePendingDoses as hasFuturePendingDosesService,
   generateTelegramToken as generateTokenService,
 } from '../services/profileService'
 
@@ -80,8 +81,9 @@ export function useProfile() {
    * Atualizar fuso horário manualmente (seletor em SettingsScreen — ADR-049).
    * Persiste no banco e actualiza o estado local.
    */
-  const updateTimezone = useCallback(async (tz) => {
-    const res = await updateTimezoneService(tz)
+  const updateTimezone = useCallback(async (tz, options = {}) => {
+    // F4.3f.2: options.regen=true ("Me mudei") re-ancora as doses futuras no fuso novo.
+    const res = await updateTimezoneService(tz, options)
     if (res.success) {
       setState(prev => ({
         ...prev,
@@ -93,6 +95,12 @@ export function useProfile() {
     }
     return res
   }, [])
+
+  /**
+   * F4.3f.2: há dose futura pendente? Decide se o prompt de intenção deve aparecer
+   * na troca de fuso (sem dose futura → persiste direto).
+   */
+  const checkFuturePendingDoses = useCallback(() => hasFuturePendingDosesService(), [])
 
   /**
    * Gerar novo token de vinculação Telegram
@@ -128,5 +136,6 @@ export function useProfile() {
     refresh: loadProfile,
     generateToken,
     updateTimezone,
+    checkFuturePendingDoses,
   }
 }
