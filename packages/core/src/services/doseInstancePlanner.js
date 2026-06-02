@@ -31,10 +31,10 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
  * @param {Date} baseDate - âncora (normalmente agora)
  * @returns {string} ISO UTC
  */
-export function computeWindowEnd(protocol, baseDate) {
+export function computeWindowEnd(protocol, baseDate, tz = 'America/Sao_Paulo') {
   const continuousEnd = parseTimestamp(baseDate.getTime() + WINDOW_DAYS * MS_PER_DAY).toISOString()
   if (!protocol.end_date) return continuousEnd
-  const endOfEndDate = getEndOfDayISO(protocol.end_date) // ISO do fim do dia de end_date (tz default SP)
+  const endOfEndDate = getEndOfDayISO(protocol.end_date, tz) // ISO do fim do dia de end_date no tz do dono
   // o menor entre (fim do protocolo) e (janela contínua)
   return parseISO(endOfEndDate).getTime() < parseISO(continuousEnd).getTime() ? endOfEndDate : continuousEnd
 }
@@ -69,7 +69,7 @@ export async function ensureInstancesUpTo({ protocol, doseInstanceRepo, ts, tz =
   const nowMs = parseISO(getServerTimestamp()).getTime()
   const requestedMs = parseISO(toIsoLike(ts)).getTime()
   // alvo efetivo = min(ts pedido, fim-alvo da janela do protocolo)
-  const windowEndIso = computeWindowEnd(protocol, parseTimestamp(requestedMs))
+  const windowEndIso = computeWindowEnd(protocol, parseTimestamp(requestedMs), tz)
   const targetMs = Math.min(requestedMs, parseISO(windowEndIso).getTime())
   const target = parseTimestamp(targetMs).toISOString()
 
@@ -104,7 +104,7 @@ function toIsoLike(value) {
  * @returns {Promise<number>} instâncias geradas (0 se não precisou renovar)
  */
 export async function renewProtocolWindow({ protocol, doseInstanceRepo, generatedThrough, now = parseISO(getServerTimestamp()), tz = 'America/Sao_Paulo' }) {
-  const targetIso = computeWindowEnd(protocol, now)
+  const targetIso = computeWindowEnd(protocol, now, tz)
   const targetMs = parseISO(targetIso).getTime()
   const hwm = generatedThrough !== undefined
     ? generatedThrough

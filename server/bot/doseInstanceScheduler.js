@@ -17,7 +17,7 @@
  * leituras críticas (dashboard / scheduler de notificação) — não vive aqui.
  */
 
-import { createDoseInstanceRepository, renewProtocolWindow, parseTimestamp, RENEWAL_THRESHOLD_DAYS } from '@dosiq/core'
+import { createDoseInstanceRepository, renewProtocolWindow, resolveUserTzMap, parseTimestamp, RENEWAL_THRESHOLD_DAYS } from '@dosiq/core'
 import { supabase } from '../services/supabase.js'
 import { createLogger } from './logger.js'
 
@@ -62,6 +62,10 @@ export async function generateDoseInstances() {
     }
     if (!protocols || protocols.length === 0) break
 
+    // F4.3f.1: resolve o tz do DONO de cada protocolo numa query por lote (evita N+1) —
+    // a renovação materializa `scheduled_for` no fuso do usuário; ausente → SP.
+    const tzMap = await resolveUserTzMap(supabase, protocols.map((p) => p.user_id))
+
     for (const protocol of protocols) {
       try {
         // Passa o hwm já buscado → renewProtocolWindow não faz SELECT extra.
@@ -69,6 +73,7 @@ export async function generateDoseInstances() {
           protocol,
           doseInstanceRepo,
           generatedThrough: protocol.generated_through ?? null,
+          tz: tzMap.get(protocol.user_id) ?? 'America/Sao_Paulo',
         })
       } catch (err) {
         // Best-effort por protocolo: um erro não derruba a varredura inteira.

@@ -18,6 +18,7 @@ import {
 import { getTodayLocal, getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
 import { createDoseInstanceRepository } from './createDoseInstanceRepository.js'
 import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js'
+import { resolveUserTz } from '../services/resolveUserTz.js'
 
 // Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
 const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date']
@@ -66,11 +67,15 @@ async function syncInstancesOnWrite({ client, protocol, updates }) {
     const shouldRegen = !updates || isResume || schedulingChanged
     if (shouldRegen) {
       const now = parseISO(getServerTimestamp())
+      // F4.3f.1: materializa `scheduled_for` no fuso do DONO do protocolo (não SP).
+      // best-effort com fallback SP (resolveUserTz nunca lança).
+      const tz = await resolveUserTz(client, protocol.user_id)
       await planWindow({
         protocol,
         doseInstanceRepo: repo,
         fromTs: now.toISOString(),
-        toTs: computeWindowEnd(protocol, now),
+        toTs: computeWindowEnd(protocol, now, tz),
+        tz,
       })
     }
   } catch {

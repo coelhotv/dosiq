@@ -50,6 +50,17 @@ describe('computeWindowEnd', () => {
     const localDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(end))
     expect(localDate).toBe('2026-05-15')
   })
+
+  it('end_date: fim do dia derivado no tz do dono (F4.3f.1)', () => {
+    const base = new Date('2026-05-10T00:00:00Z')
+    // Mesmo end_date, fusos diferentes → instantes UTC de "fim do dia" distintos.
+    const endSP = computeWindowEnd({ ...protocol, end_date: '2026-05-15' }, base, 'America/Sao_Paulo')
+    const endLondon = computeWindowEnd({ ...protocol, end_date: '2026-05-15' }, base, 'Europe/London')
+    expect(endSP).not.toBe(endLondon)
+    // Cada um é o fim do dia 15 no SEU fuso.
+    expect(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(endSP))).toBe('2026-05-15')
+    expect(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date(endLondon))).toBe('2026-05-15')
+  })
 })
 
 describe('planWindow', () => {
