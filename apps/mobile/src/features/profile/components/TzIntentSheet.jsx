@@ -46,12 +46,12 @@ export default function TzIntentSheet({ prompt, applying, onTravel, onMove, onCa
 
         <Pressable
           onPress={onTravel}
-          disabled={applying}
-          style={({ pressed }) => [styles.optionPrimary, (pressed || applying) && styles.pressed]}
+          disabled={!!applying}
+          style={({ pressed }) => [styles.optionPrimary, (pressed || !!applying) && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Estou aqui só de viagem"
         >
-          {applying ? (
+          {applying === 'travel' ? (
             <ActivityIndicator size="small" color={colors.text.inverse} />
           ) : (
             <View style={styles.optionInner}>
@@ -68,25 +68,29 @@ export default function TzIntentSheet({ prompt, applying, onTravel, onMove, onCa
 
         <Pressable
           onPress={onMove}
-          disabled={applying}
-          style={({ pressed }) => [styles.optionSecondary, (pressed || applying) && styles.pressed]}
+          disabled={!!applying}
+          style={({ pressed }) => [styles.optionSecondary, (pressed || !!applying) && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel={`Me mudei para ${cidadeNova}`}
         >
-          <View style={styles.optionInner}>
-            <Home size={20} color={colors.primary[600]} strokeWidth={2} />
-            <View style={styles.optionTextWrap}>
-              <Text style={styles.optionSecondaryLabel}>Me mudei para {cidadeNova}</Text>
-              <Text style={styles.optionSecondaryDesc}>
-                Alteramos a agenda de todas as suas doses para o horário local daqui.
-              </Text>
+          {applying === 'move' ? (
+            <ActivityIndicator size="small" color={colors.primary[600]} />
+          ) : (
+            <View style={styles.optionInner}>
+              <Home size={20} color={colors.primary[600]} strokeWidth={2} />
+              <View style={styles.optionTextWrap}>
+                <Text style={styles.optionSecondaryLabel}>Me mudei para {cidadeNova}</Text>
+                <Text style={styles.optionSecondaryDesc}>
+                  Alteramos a agenda de todas as suas doses para o horário local daqui.
+                </Text>
+              </View>
             </View>
-          </View>
+          )}
         </Pressable>
 
         <Pressable
           onPress={onCancel}
-          disabled={applying}
+          disabled={!!applying}
           style={({ pressed }) => [styles.btnCancel, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Cancelar"

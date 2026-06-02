@@ -190,9 +190,10 @@ export default function SettingsScreen() {
   )
 
   // "Estou aqui só de viagem": persiste o tz, sem regenerar.
+  // tzApplying='travel'/'move' → spinner só no botão acionado (TzIntentSheet).
   const handleTzTravel = useCallback(async () => {
     if (!tzPrompt) return
-    setTzApplying(true)
+    setTzApplying('travel')
     await persistTimezone(tzPrompt.toTz, { regen: false })
     setTzApplying(false)
     setTzPrompt(null)
@@ -201,7 +202,7 @@ export default function SettingsScreen() {
   // "Me mudei": persiste o tz e re-ancora as doses futuras.
   const handleTzMove = useCallback(async () => {
     if (!tzPrompt) return
-    setTzApplying(true)
+    setTzApplying('move')
     await persistTimezone(tzPrompt.toTz, { regen: true })
     setTzApplying(false)
     setTzPrompt(null)
