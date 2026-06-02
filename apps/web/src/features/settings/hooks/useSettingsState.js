@@ -183,7 +183,10 @@ export function useSettingsState() {
     const { data } = await supabase.auth.getUser()
     const user = data?.user
     if (!user) throw new Error('Usuário não autenticado')
-    await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
+    // Supabase não lança em falha de update (rede/RLS) — checar {error} senão
+    // o estado local muda e o usuário vê sucesso falso (lição Sprint 7).
+    const { error } = await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
+    if (error) throw error
     if (regen) {
       // Best-effort (R-245/246): falha na regeneração não desfaz o persist do tz.
       await regenActiveProtocolsForTz({ client: supabase, userId: user.id, tz })
