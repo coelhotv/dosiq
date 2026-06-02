@@ -58,9 +58,7 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/019-universal-links-web-banner/`
     *   `plans/specs/020-notification-copy-metrics/`
     *   `plans/specs/021-telegram-snooze-dose/`
-    *   `plans/specs/022-liquid-medications-db-backend/`
-    *   `plans/specs/023-liquid-medications-core-api/`
-    *   `plans/specs/024-liquid-medications-ui-bot/`
+    *   `plans/specs/022-liquid-medications/` (épico Tier 2 — consolida as antigas 022/023/024, que eram camadas DB/core/UI da mesma feature)
 *   **Total de features atômicas restantes a criar:** 0
 *   **Entregáveis por feature:** `spec.md`, `plan.md`, `tasks.md`, `analysis.md`, `checklists/requirements.md`
 
