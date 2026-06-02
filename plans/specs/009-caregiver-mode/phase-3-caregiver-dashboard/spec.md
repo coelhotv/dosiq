@@ -1,11 +1,18 @@
-# Feature Specification: Caregiver Dashboard
+# Feature Specification: Caregiver Dashboard (Caregiver Mode — Phase 3)
 
-**Feature Directory**: `plans/specs/011-caregiver-dashboard`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-3-caregiver-dashboard`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Phase**: 3 · **Depende de**: phase-1, phase-2
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Dev Ready
+**Gate de entrada**: G1 — multi-perfil só após tração mono-paciente comprovada (ver EPIC)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.3
+
+---
+
+> **Decisões deste round:**
+> - **Registro remoto de dose:** o cuidador `manager` pode **registrar a dose do paciente remotamente** (painel web/app) — fluxo do DRAFT §Motor ("filha liga, confirma, clica Confirmar Dose"). Insere via `registerDose(...)` com `source='caregiver'`; sync tempo-real no device do paciente. **FR-006**.
+> - **Faseamento por gate (G1):** o **switch multi-perfil (N pacientes)** só entra após o gate de adoção mono-paciente. A US1 mono-paciente é entregável independente; a expansão multi-perfil é gated.
 
 ---
 
@@ -45,11 +52,12 @@ Para que o cuidador consiga acompanhar múltiplos dependentes sem atrito ou comp
 
 ### Functional Requirements
 
-- **FR-001:** Adicionar dropdown na barra superior (Header) do aplicativo móvel nativo para alternância rápida de dependentes (multi-perfil).
-- **FR-002:** Menu do dropdown com área de toque mínima de 60px para fácil manipulação.
-- **FR-003:** Dashboard desktop consolidado na plataforma web exibindo cards individuais de cada paciente cadastrado.
-- **FR-004:** O painel web desktop exibe: últimas doses tomadas e alertas críticos de atrasos, progresso de adesão semanal e estimativa de esgotamento de estoque.
-- **FR-005:** Uso de chaves SWR isoladas por dependente UUID para evitar contaminação de cache.
+- **FR-001:** Dashboard de paciente único (mono-paciente) — entregável independente, **não gated**: cuidador vê agenda, adesão e estoque do paciente vinculado.
+- **FR-002:** Dashboard desktop consolidado na plataforma web exibindo cards individuais de cada paciente cadastrado.
+- **FR-003:** O painel web desktop exibe: últimas doses tomadas e alertas críticos de atrasos, progresso de adesão semanal e estimativa de esgotamento de estoque.
+- **FR-004:** Uso de chaves SWR isoladas por dependente UUID para evitar contaminação de cache.
+- **FR-005 [GATED por G1]:** Dropdown multi-perfil na barra superior (Header) mobile para alternância de dependentes (toque mínimo 60px) — **só implementar após o gate de tração mono-paciente** (ver EPIC). Antes do gate, header opera em modo single-patient.
+- **FR-006:** **Registro remoto de dose** pelo cuidador `manager` (painel web/app) via `registerDose(...)` com `source='caregiver'`; o device do paciente reflete em tempo real no próximo sync.
 
 ### Key Entities
 
@@ -60,5 +68,6 @@ Para que o cuidador consiga acompanhar múltiplos dependentes sem atrito ou comp
 
 ## Success Criteria
 
-- **SC-001:** Troca de perfil no mobile executada em menos de 200ms com recarregamento completo dos componentes da Home.
-- **SC-002:** Zero vazamento ou cruzamento de dados de saúde entre dependentes.
+- **SC-001:** Troca de perfil no mobile (quando G1 liberado) executada em menos de 200ms com recarregamento completo dos componentes da Home.
+- **SC-002:** Zero vazamento ou cruzamento de dados de saúde entre dependentes (chaves SWR isoladas por UUID).
+- **SC-003:** Dose registrada remotamente pelo cuidador (`source='caregiver'`) aparece no device do paciente no próximo sync, decrementa estoque e ancora a `dose_instance` correta — paridade com o registro local.

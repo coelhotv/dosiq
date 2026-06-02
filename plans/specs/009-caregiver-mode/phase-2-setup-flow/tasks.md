@@ -1,8 +1,8 @@
-# Tasks: Caregiver Setup Flow
+# Tasks: Setup Flow (Caregiver Mode — Phase 2)
 
-**Feature Directory**: `plans/specs/009-caregiver-setup-flow`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/009-caregiver-setup-flow/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/009-caregiver-setup-flow/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-2-setup-flow`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Input**: [spec.md](./spec.md), [plan.md](./plan.md)
+**Status**: Dev Ready
 
 ---
 
@@ -17,7 +17,7 @@
 - [ ] **T003** [US2] Construir a tela de boas-vindas `WelcomeScreen.jsx` com botões proeminentes AAA de toque mínimo de 60px.
 - [ ] **T006** [US1] Criar o leitor de QR Code integrado `QrScannerScreen.jsx` com input de texto de contingência para digitação do código.
 - [ ] **T007** [US2] Desenhar o diálogo em tela cheia `ConsentDialog.jsx` cobrando consentimento de privacidade e termos LGPD.
-- [ ] **T008** [US3] Construir a tela `CaregiverSettingsScreen.jsx` permitindo ver a listagem de conexões autorizadas e o botão "Revogar Acesso".
+- [ ] **T008** [US3] Construir a tela `CaregiverSettingsScreen.jsx` com listagem de conexões autorizadas e botão "Revogar Acesso" — revogar executa **apenas `DELETE FROM caregiver_links`** (dados ficam sob o `user_id` do paciente; sem migração de entidades).
 
 ### Shared / Core Integration
 - [ ] **T009** [US2] Implementar os métodos de importação, decodificação e processamento transacional de grade de medicamentos no arquivo `packages/core/src/repositories/caregiverFlowRepository.js`.

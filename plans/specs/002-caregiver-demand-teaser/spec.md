@@ -1,11 +1,14 @@
 # Feature Specification: Caregiver Demand Teaser
 
-**Feature Directory**: `plans/specs/002-caregiver-demand-teaser`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
+**Feature Directory**: `plans/specs/002-caregiver-demand-teaser`
+**Papel**: **GATE 0** do épico [Modo Cuidador](../009-caregiver-mode/EPIC.md) — painted-door standalone que valida demanda **antes** de qualquer build de 7A.
+**Created**: 2026-06-01
+**Status**: Migrated Draft
+**Migration Status**: migrated
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/EXEC_SPEC_P0_2_TERMOMETRO_CUIDADOR.md`
+
+> **Gate de decisão:** `beta_signups feature='caregiver_mode'` **> 50 signups em 3 meses** → libera build do épico (phase-1 + phase-2). < 50 → Modo Cuidador deprioritizado. Esta spec ship independente das demais fases.
 
 ---
 

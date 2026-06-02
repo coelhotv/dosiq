@@ -1,7 +1,7 @@
-# Implementation Plan: Caregiver Setup Flow
+# Implementation Plan: Setup Flow (Caregiver Mode — Phase 2)
 
-**Feature Directory**: `plans/specs/009-caregiver-setup-flow`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/009-caregiver-setup-flow/spec.md)  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-2-setup-flow`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Spec**: [spec.md](./spec.md)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.1, W7.2
 

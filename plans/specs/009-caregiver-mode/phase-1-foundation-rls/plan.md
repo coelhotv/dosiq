@@ -1,7 +1,7 @@
-# Implementation Plan: Caregiver Links & RLS
+# Implementation Plan: Foundation & RLS (Caregiver Mode — Phase 1)
 
-**Feature Directory**: `plans/specs/010-caregiver-links-rls`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/010-caregiver-links-rls/spec.md)  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-1-foundation-rls`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Spec**: [spec.md](./spec.md)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §2. Modelo de Dados, §2.1 Schemas Zod, RLS
 
@@ -30,7 +30,7 @@ Esta feature envolve a escrita e execução de migrations de banco de dados no S
 |:---|:---|:---|
 | `packages/core/src/schemas/caregiverSchemas.js` | Schemas Zod de validação `caregiverInviteSchema` e `caregiverLinkSchema` (R-021). | `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` |
 | `packages/core/src/repositories/caregiverLinksRepository.js` | Repositório de leitura e manipulação de vínculos integrados no core. | `@dosiq/core` integration |
-| `supabase/migrations/20260601002000_caregiver_relations.sql` | Migration SQL criando tabelas relacionais, constraints de rate limit e políticas de RLS. | Supabase DB Schema |
+| `docs/migrations/<data>_caregiver_relations.sql` | Migration SQL criando tabelas relacionais, constraints de rate limit e políticas de RLS. **Path obrigatório `docs/migrations/`** (CLAUDE.md), nunca `supabase/migrations/`. Inclui template GRANTs + `ENABLE ROW LEVEL SECURITY` após cada `CREATE TABLE`. | Supabase DB Schema |
 
 ---
 
@@ -54,7 +54,7 @@ Esta feature envolve a escrita e execução de migrations de banco de dados no S
     EXISTS (
       SELECT 1 FROM caregiver_links
       WHERE caregiver_links.caregiver_id = auth.uid()
-      AND caregiver_links.patient_id = medicines.patient_id
+      AND caregiver_links.patient_id = medicines.user_id  -- schema dosiq usa user_id (owner=paciente)
       AND caregiver_links.role = 'manager'
     )
   );
@@ -68,7 +68,7 @@ Esta feature envolve a escrita e execução de migrations de banco de dados no S
     EXISTS (
       SELECT 1 FROM caregiver_links
       WHERE caregiver_links.caregiver_id = auth.uid()
-      AND caregiver_links.patient_id = medicines.patient_id
+      AND caregiver_links.patient_id = medicines.user_id  -- schema dosiq usa user_id (owner=paciente)
       AND caregiver_links.role = 'observer'
     )
   );

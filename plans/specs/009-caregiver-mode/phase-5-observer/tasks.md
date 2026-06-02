@@ -1,15 +1,16 @@
-# Tasks: Medical Observer Dashboard
+# Tasks: Medical Observer Dashboard (Caregiver Mode — Phase 5)
 
-**Feature Directory**: `plans/specs/012-medical-observer-dashboard`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/012-medical-observer-dashboard/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/012-medical-observer-dashboard/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-5-observer`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Input**: [spec.md](./spec.md), [plan.md](./plan.md)
+**Status**: Dev Ready
 
 ---
 
 ## Phase 1: Setup & Preflight
 
-- [ ] **T001** [C1] Criar arquivo de migração SQL `supabase/migrations/20260601003000_observer_permissions.sql` contendo politicas RLS de leitura de medicamentos e instâncias exclusivas para `role='observer'`.
-- [ ] **T002** [C1] Confirmar o mapeamento de rotas Next.js/Vite para a visualização do médico no PWA.
+- [ ] **T001** [C1] Criar migração em `docs/migrations/<data>_observer_permissions.sql` (path CLAUDE.md) — RLS SELECT para `role='observer'` (filtra `<tabela>.user_id`) + **tabela/colunas de token observer TTL 24–72h**. Template GRANTs + RLS.
+- [ ] **T002** [C1] **GATE D2**: confirmar mecanismo de auth — sessão autenticada do médico OU token assinado mapeado ao vínculo. Validar reuso de `api/share` (TTL) sem nova função serverless (R-090).
+- [ ] **T002b** [US1] Geração/revogação de token observer pelo paciente/cuidador (FR-006); expiração no TTL; token expirado → 403.
 
 ## Phase 2: Implementation
 

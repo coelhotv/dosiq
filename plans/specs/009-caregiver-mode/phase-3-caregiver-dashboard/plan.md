@@ -1,7 +1,7 @@
-# Implementation Plan: Caregiver Dashboard
+# Implementation Plan: Caregiver Dashboard (Caregiver Mode — Phase 3)
 
-**Feature Directory**: `plans/specs/011-caregiver-dashboard`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/011-caregiver-dashboard/spec.md)  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-3-caregiver-dashboard`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Spec**: [spec.md](./spec.md)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.3
 

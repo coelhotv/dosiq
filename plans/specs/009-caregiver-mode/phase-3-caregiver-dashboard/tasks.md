@@ -1,8 +1,8 @@
-# Tasks: Caregiver Dashboard
+# Tasks: Caregiver Dashboard (Caregiver Mode — Phase 3)
 
-**Feature Directory**: `plans/specs/011-caregiver-dashboard`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/011-caregiver-dashboard/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/011-caregiver-dashboard/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-3-caregiver-dashboard`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Input**: [spec.md](./spec.md), [plan.md](./plan.md)
+**Status**: Dev Ready
 
 ---
 
@@ -22,6 +22,8 @@
 
 ### Web Client Components (PWA)
 - [ ] **T006** [US2] Construir o painel web desktop consolidado `WebCaregiverDashboard.jsx` com cards individuais, histórico consolidado, alertas atrasados e status de saldo de estoque estimado.
+- [ ] **T006b** [US1] **Registro remoto de dose** (FR-006): ação "Confirmar Dose" no card do paciente (web/app) chamando `registerDose(...)` com `source='caregiver'` (via RLS `role='manager'`); sync tempo-real no device do paciente. Reusa o service canônico — não duplicar lógica de ancoragem/estoque.
+- [ ] **T006c** [GATED G1] Dropdown multi-perfil (FR-005) — **só após gate de tração mono-paciente**. Marcar bloqueado até PO liberar G1.
 
 ## Phase 3: Validation & QA Gates (C4)
 

@@ -1,11 +1,19 @@
-# Feature Specification: Caregiver Setup Flow
+# Feature Specification: Setup Flow (Caregiver Mode — Phase 2)
 
-**Feature Directory**: `plans/specs/009-caregiver-setup-flow`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-2-setup-flow`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Phase**: 2 · **Depende de**: phase-1 (tabelas + RLS)
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Dev Ready
+**Gate de entrada**: G0 (junto da phase-1)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.1, W7.2
+
+---
+
+> **Decisões deste round:**
+> - **Revogação = só deleta `caregiver_links` (D1/P4):** os dados clínicos já são do paciente (`user_id` do paciente desde o setup — phase-1). Revogar **não migra nem re-aponta nenhuma entidade**; apenas remove a linha de vínculo → RLS corta o cuidador instantaneamente e o app volta a standalone. Zero janela de re-ownership.
+> - **Convite = link multi-canal (P-canais):** o botão "Compartilhar Convite" usa a **Share API nativa** (RN `Share` / web `navigator.share`). O usuário escolhe o canal no share sheet do SO — **WhatsApp, SMS, Telegram, e-mail, etc. são apenas canais**, não dependências. Nenhum vínculo a Meta/WhatsApp Business (isso é Fase 7B, épico à parte).
+> - **Deeplink universal:** o link `dosiq.app/invite/<code>` reconcilia com a spec [019-universal-links-web-banner](../../019-universal-links-web-banner/) (Universal Links iOS + App Links Android + fallback store). Esta fase **consome** 019, não reimplementa.
 
 ---
 
@@ -56,9 +64,10 @@ Para anular a barreira de exclusão digital na terceira idade, a Cuidadora reali
 
 - **FR-001:** Exibir tela de onboarding com opções proeminentes `[ Sou Paciente ]` e `[ Sou Cuidador ]` (área de toque mínima de 60px).
 - **FR-002:** Tela de leitura de QR Code integrada com câmera nativa e input manual alternativo de código de 6 dígitos.
-- **FR-003:** Geração de convite no painel do cuidador exibindo o QR Code físico e botão integrado à API `Share` nativa do React Native.
+- **FR-003:** Geração de convite no painel do cuidador exibindo QR Code + código de 6 díg + botão "Compartilhar Convite" via **Share API nativa** (RN `Share` / web `navigator.share`). O canal (WhatsApp/SMS/Telegram/e-mail/…) é escolhido no share sheet do SO — sem dependência de provedor específico.
 - **FR-004:** Exibição obrigatória de tela cheia de consentimento de privacidade e termos LGPD antes da conclusão do setup do paciente.
-- **FR-005:** Aba de controle em *Configurações > Cuidadores* no app do paciente com botão visível e acessível para revogação instantânea de conexões.
+- **FR-005:** Aba de controle em *Configurações > Cuidadores* no app do paciente com botão visível para **revogação soberana**. Revogar **deleta apenas a linha de `caregiver_links`** — os dados permanecem sob o `user_id` do paciente (owner desde o setup); o app reverte a standalone sem qualquer migração de entidades.
+- **FR-006:** Convite acessível por **deeplink universal** `dosiq.app/invite/<code>` — comportamento delegado à spec [019-universal-links-web-banner](../../019-universal-links-web-banner/) (app instalado → fluxo com código pré-preenchido; não instalado → store + preserva código).
 
 ### Key Entities
 
@@ -70,4 +79,4 @@ Para anular a barreira de exclusão digital na terceira idade, a Cuidadora reali
 ## Success Criteria
 
 - **SC-001:** Importação de toda a grade de medicamentos e alarmes em menos de 500ms após leitura bem-sucedida do código.
-- **SC-002:** Sincronização offline e desativação total via RLS imediatamente após a revogação de chaves.
+- **SC-002:** Após revogação, RLS bloqueia 100% dos acessos do cuidador no próximo request E **zero entidade do paciente foi migrada/re-apontada** (todas continuam sob o `user_id` do paciente). App standalone funcional offline.

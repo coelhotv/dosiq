@@ -1,14 +1,14 @@
-# Tasks: Caregiver Links & RLS
+# Tasks: Foundation & RLS (Caregiver Mode — Phase 1)
 
-**Feature Directory**: `plans/specs/010-caregiver-links-rls`  
-**Input**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/010-caregiver-links-rls/spec.md), [plan.md](file:///Users/coelhotv/git/dosiq/plans/specs/010-caregiver-links-rls/plan.md)  
-**Status**: Migrated Draft
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-1-foundation-rls`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Input**: [spec.md](./spec.md), [plan.md](./plan.md)
+**Status**: Dev Ready
 
 ---
 
 ## Phase 1: Setup & Preflight
 
-- [ ] **T001** [C1] Criar arquivo de migração SQL `supabase/migrations/20260601002000_caregiver_relations.sql` contendo a tabela de vínculos, tabela de convites com constraint de 5 tentativas e triggers de autoupdate.
+- [ ] **T001** [C1] Criar arquivo de migração SQL em `docs/migrations/<data>_caregiver_relations.sql` (path obrigatório CLAUDE.md) contendo a tabela de vínculos, tabela de convites com constraint de 5 tentativas, triggers de autoupdate, **template de GRANTs + `ENABLE ROW LEVEL SECURITY`** após cada `CREATE TABLE`. FK de `caregiver_links.patient_id` referencia o `auth.users.id` do paciente (owner). RLS filtra por `<tabela>.user_id` (não `patient_id`).
 - [ ] **T002** [C1] Confirmar a integração do Supabase CLI no ambiente de desenvolvimento local para teste de políticas RLS.
 
 ## Phase 2: Implementation

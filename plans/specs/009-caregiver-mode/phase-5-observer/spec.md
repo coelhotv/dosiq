@@ -1,11 +1,16 @@
-# Feature Specification: Medical Observer Dashboard
+# Feature Specification: Medical Observer Dashboard (Caregiver Mode — Phase 5)
 
-**Feature Directory**: `plans/specs/012-medical-observer-dashboard`  
-**Created**: 2026-06-01  
-**Status**: Migrated Draft  
-**Migration Status**: migrated  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-5-observer`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Phase**: 5 · **Depende de**: phase-1 (vínculos + RLS)
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Dev Ready
+**Gate de entrada**: G3 — demanda clínica comprovada (ver EPIC)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.4
+
+---
+
+> **Decisão de segurança deste round (D2):** o dashboard do médico **NÃO é rota pública**. Acesso por **token temporário com TTL 24–72h** gerado pelo paciente OU pelo cuidador, **ou** sessão autenticada do médico. O `auth.uid()` necessário ao RLS vem da sessão; no modo token, o token assinado mapeia para o vínculo `role='observer'` válido e não-expirado. Token expirado → 403. Isto reconcilia a contradição da versão migrada (que falava em "rota pública autenticada"). Padrão espelha `api/share` (TTL de blob), evitando função serverless nova.
 
 ---
 
@@ -44,7 +49,8 @@ Para aproximar os profissionais de saúde do dia a dia do paciente, o Dosiq prov
 
 ### Functional Requirements
 
-- **FR-001:** Rota desktop pública autenticada no PWA: `dosiq.app/doctor/dashboard` (sem necessidade de instalar aplicativo nativo).
+- **FR-001:** Rota desktop no PWA `dosiq.app/doctor/dashboard` (sem app nativo) protegida por **sessão autenticada OU token temporário TTL 24–72h** (gerado pelo paciente ou cuidador). **Nunca acesso anônimo.** Token expirado/revogado → 403.
+- **FR-006:** Geração/revogação de token de observer pelo paciente ou cuidador; expiração automática no TTL. RLS `role='observer'` condicionada a vínculo válido + (sessão `auth.uid()` OU token válido mapeado ao vínculo).
 - **FR-002:** Tela com layout clínico exibindo: Lista de pacientes vinculados, adesão nos últimos 7 dias, último medicamento tomado e chip indicador de tendência (Estável, Crescente, Queda).
 - **FR-003:** O perfil `role='observer'` herda estritamente direitos de leitura (SELECT), sendo incapaz de realizar inserções ou modificações de dados.
 - **FR-004:** A exclusão da linha de relacionamento no banco deleta instantaneamente as permissões de leitura RLS sem persistência de credenciais no cliente.
@@ -61,3 +67,4 @@ Para aproximar os profissionais de saúde do dia a dia do paciente, o Dosiq prov
 
 - **SC-001:** Bloqueio e rejeição absoluta (100% de eficácia) de qualquer INSERT/UPDATE/DELETE no banco pelo perfil de médico observador.
 - **SC-002:** Ocultação instantânea de dados do paciente no painel médico assim que o vínculo for revogado na conta do paciente.
+- **SC-003:** Acesso ao dashboard impossível sem sessão autenticada ou token válido não-expirado; token expirado retorna 403 e não vaza dado clínico.

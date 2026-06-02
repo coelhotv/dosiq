@@ -1,7 +1,7 @@
-# Implementation Plan: Medical Observer Dashboard
+# Implementation Plan: Medical Observer Dashboard (Caregiver Mode — Phase 5)
 
-**Feature Directory**: `plans/specs/012-medical-observer-dashboard`  
-**Spec**: [spec.md](file:///Users/coelhotv/git/dosiq/plans/specs/012-medical-observer-dashboard/spec.md)  
+**Feature Directory**: `plans/specs/009-caregiver-mode/phase-5-observer`
+**Epic**: [Modo Cuidador](../EPIC.md) · **Spec**: [spec.md](./spec.md)
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §1. W7.4
 
@@ -31,7 +31,7 @@ Esta feature envolve a criação de rotas e componentes desktop exclusivos na we
 | `apps/web/src/features/doctor/screens/DoctorDashboard.jsx` | Tela desktop consolidada de monitoramento clínico de pacientes vinculados. | `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` |
 | `apps/web/src/features/doctor/components/PatientRow.jsx` | Componente de linha de tabela exibindo adesão, chips de tendência e dosagem. | `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` |
 | `packages/core/src/repositories/doctorRepository.js` | Repositório de leitura dos dados de pacientes vinculados integrados no core. | `@dosiq/core` integration |
-| `supabase/migrations/20260601003000_observer_permissions.sql` | Migration ativando regras PostgreSQL RLS específicas de SELECT para `role='observer'`. | Supabase DB Schema |
+| `docs/migrations/<data>_observer_permissions.sql` | Migration RLS SELECT para `role='observer'` + tabela/colunas de **token TTL 24–72h** (gerado por paciente/cuidador). **Path `docs/migrations/`** (CLAUDE.md). Template GRANTs + RLS após `CREATE TABLE`. RLS filtra por `<tabela>.user_id`. | Supabase DB Schema |
 
 ---
 
@@ -50,7 +50,7 @@ Esta feature envolve a criação de rotas e componentes desktop exclusivos na we
     EXISTS (
       SELECT 1 FROM caregiver_links
       WHERE caregiver_links.caregiver_id = auth.uid()
-      AND caregiver_links.patient_id = medicines.patient_id
+      AND caregiver_links.patient_id = medicines.user_id  -- schema dosiq usa user_id (owner=paciente)
       AND caregiver_links.role = 'observer'
     )
   );
