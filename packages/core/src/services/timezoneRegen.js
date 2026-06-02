@@ -33,7 +33,7 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
  * @returns {Promise<boolean>}
  */
 export async function hasFuturePendingDoses(client, userId) {
-  if (!userId) return false
+  if (!client || !userId) return false
   try {
     const { count, error } = await client
       .from(TABLE)
