@@ -1,62 +1,60 @@
 # Artifact Coverage Analysis: Liquid Medications UI/UX & Telegram Bot
 
-**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`  
-**Created**: 2026-06-01  
-**Status**: PASS  
+**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: PASS (dev-ready após revisão)
 
 ---
 
 ## Legacy Source Coverage
 
-| Legacy Section | Migrated To | Notes |
-|----------------|-------------|-------|
-| 4. UX/UI | `spec.md` (User Story 1 e 2) e `plan.md` (Web & Mobile Forms) | Formulários dinâmicos de medicamentos, protocolos, estoque com hints visuais e alertas de fim de frasco. |
-| 5. Bot do Telegram | `spec.md` (User Story 3) e `plan.md` (Bot Integration) | Notificações formatadas e confirmação transacional inline. |
+| Legacy Section | Migrado Para | Notas |
+|----------------|--------------|-------|
+| 4. UX/UI | `spec.md` US1–3 + `plan.md` §1–4 | Forms dinâmicos + wizard + banner com conversão. |
+| 5. Bot Telegram | `spec.md` US4 + `plan.md` §5 | `formatDose` + débito via `consume_stock_fifo`. |
 
 ---
 
 ## Requirement Coverage
 
-| Requirement | Has Task? | Task IDs | Notes |
-|-------------|-----------|----------|-------|
-| **FR-001** (MedicineForm Units & Labels) | Sim | `T002`, `T003` | UI MedicineForm dropdown updates. |
-| **FR-002** (ProtocolForm Intake Unit) | Sim | `T004` | Dynamic intake_unit select logic. |
-| **FR-003** (StockForm Hints) | Sim | `T005` | Numeric inputs decorated with dynamic hints. |
-| **FR-004** (Telegram Bot Dispatcher) | Sim | `T007`, `T008` | formatDose integration on telegram webhook. |
+| Requisito | Tem Task? | Task IDs | Notas |
+|-----------|-----------|----------|-------|
+| FR-001 (dropdown + wizard) | Sim | T003, T004, T005 | Expõe `mg/ml`/`ui/ml`; oculta `ml`/`gotas`. |
+| FR-002 (`intake_unit` select) | Sim | T006 | web + mobile. |
+| FR-003 (StockForm hints) | Sim | T007 | mobile a confirmar (T002). |
+| FR-004 (banner conversão) | Sim | T008 | converte gotas→ml. |
+| FR-005 (Telegram) | Sim | T009, T010 | `formatDose` + RPC. |
 
 ---
 
 ## Contract / ADR Coverage
 
-- **ADR-046 / ADR-052**: O layout dinâmico dos formulários atende as regras da "parede de unidades" e mantém a interface limpa e intuitiva para o paciente.
-- **CON-025**: O Bot do Telegram e as APIs de UI comunicam as unidades operacionais de dosagem respeitando a escala centava física estabelecida no backend.
+- **ADR-046**: `formatDose` centraliza renderização (consumido aqui, definido na 023).
+- **CON-024 (doseZones)**: não alterado — banner lê `dose_instances`/`protocol`, não muda o contrato.
+- **RPC `consume_stock_fifo`**: consumida pelo bot sem mudança de assinatura (conversão interna).
 
 ---
 
-## 🛠️ Validação de Aderência ao Refactor de Estoque (PR #443)
+## Constitution Alignment
 
-Cruzamos o plano das UIs e do Bot do Telegram contra as regras do **Refactor de Estoque (PR #443)** para atestar compatibilidade absoluta de apresentação:
-
-### A. Rendimento de Frações no Redesign
-* **Invariante**: O histórico de estoque do redesign (`EntradaHistorico.jsx` e `StockCardRedesign.jsx`) deve expor a fração do frasco de forma amigável ao paciente.
-* **Solução Proposta**: Como `original_quantity` armazena o volume nominal de compra (ex: `50.00 ml`) e `quantity` o volume restante atual (ex: `35.00 ml`), a UI calcula o saldo com a conta $\frac{quantity}{original\_quantity} = 0.70$ frascos restantes de forma imediata e transparente.
-* **Aderência**: **100% Perfeita.** Paridade perfeita de UX sem tocar nos hooks compartilhados ou na view legacy.
-
-### B. Integração do Bot no `/adicionar_estoque`
-* **Invariante**: O bot deve usar o novo modelo de transações de compra de forma retrocompatível.
-* **Solução Proposta**: A entrada via Telegram `/adicionar_estoque` dispara a chamada para a RPC `create_purchase_with_stock` passando `p_quantity = volume` em mililitros e registrando o lote de forma exata.
-* **Aderência**: **100% Perfeita.** O bot escreve de forma consistente com a trilha histórica do redesign, eliminando qualquer bypass de compra fake.
+- `visual-hierarchy` / a11y (R-137/138): badges/hints discretos, copy idoso-friendly. ✅
+- `mobile-performance`: sem libs novas. ✅
+- `backwards-compatibility`: sólidos mantêm a UI atual; `ml`/`gotas` saem só da **concentração**, não quebram protocolos migrados. ✅
 
 ---
 
-## Gaps
+## Gaps (resolvidos nesta revisão)
 
-Nenhum gap ativo mapeado.
+| ID | Severidade | Resumo | Ação |
+|----|-----------|--------|------|
+| G-024-1 | HIGH (resolvido) | Banner comparava `stock.quantity` (ml) com `expected_dose` (gotas) — erro de unidade. | FR-004/§4: converte para ml antes (`nextDoseMl`). |
+| G-024-2 | HIGH (resolvido) | Dropdown listava `mg/ml` inexistente e mantinha `ml`/`gotas` como concentração. | FR-001: enum estendido (022/023) + remove `ml`/`gotas` da concentração; expõe no wizard. |
+| G-024-3 | MEDIUM (resolvido) | Paths mobile `.tsx`; sem `StockForm` mobile. | Paths reais `.jsx`; estoque mobile marcado p/ verificar em C1. |
+| G-024-4 | MEDIUM (resolvido) | `CON-025` fantasma e "100% perfeita" sem evidência. | Removido; contratos reais referenciados. |
+| G-024-5 | LOW (resolvido) | Wizard não mencionado (pedido do PO). | FR-001/T005 cobrem o passo de medicamento do onboarding. |
 
 ---
 
 ## Gate Decision
 
-**Status**: **PASS**  
-A especificação `024-liquid-medications-ui-bot` completa com excelência o ciclo de vida do épico de líquidos, detalhando todas as modificações nas interfaces responsivas Web/Mobile, hints visuais e alinhamento do Bot do Telegram, garantindo uma UX premium focada e simples para a "Dona Maria". Pronto para homologação.
-
+**Status**: **PASS — Dev Ready.** Erro de unidade do banner e premissas de dropdown corrigidos; paths reais; wizard incluído. Pronta para `/devflow coding` (após 022 e 023). Itens marcados para confirmação em C1 (estoque mobile, reuso do `MedicineForm` no wizard) são verificações, não bloqueios.

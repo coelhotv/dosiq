@@ -1,73 +1,62 @@
 # Artifact Coverage Analysis: Liquid Medications Database & Backend Foundation
 
-**Feature Directory**: `plans/specs/022-liquid-medications-db-backend`  
-**Created**: 2026-06-01  
-**Status**: PASS  
+**Feature Directory**: `plans/specs/022-liquid-medications-db-backend`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: PASS (dev-ready após revisão)
 
 ---
 
 ## Legacy Source Coverage
 
-| Legacy Section | Migrated To | Notes |
-|----------------|-------------|-------|
-| 1. O Problema e Descoberta Arquitetural | `spec.md` (Context) e `plan.md` (Technical Context) | Mapeamento físico-métrico simplificado e purificado focado em mililitros e volumes contínuos. |
-| 2. Fórmulas Matemáticas e Engine | `plan.md` (Database Migrations - Stored Procedure) | Fórmulas integradas transacionalmente na stored procedure para gotas/ml/UI. |
-| 3. Modelagem de Dados | `plan.md` (Database Migrations) | Adotada a estrutura do banco real em conformidade com o setup. |
-| 6. Retrocompatibilidade e Migração | `plan.md` (Database Migrations) e `plan.md` (Technical Context) | Resolvido com o uso inteligente de `original_quantity` e `quantity` legadas. |
+| Legacy Section | Migrado Para | Notas |
+|----------------|--------------|-------|
+| 1. Problema/Descoberta | `spec.md` (Context) | Líquido derivado da unidade de concentração (`/ml`), sem booleano. |
+| 2. Fórmulas (gotas→ml) | `plan.md` (RPC) | `ROUND(p_quantity / drops_per_ml, 2)`. |
+| 3. Modelagem de Dados | `plan.md` (Migrations) | Schema real: `quantity`/`original_quantity` numeric; sem colunas novas em `stock`. |
+| 6. Retrocompat/Migração | `spec.md` US2 + `plan.md` passo 3 | **Migração de dados explícita** `ml`/`gotas` → `mg/ml` + `intake_unit`. |
 
 ---
 
 ## Requirement Coverage
 
-| Requirement | Has Task? | Task IDs | Notes |
-|-------------|-----------|----------|-------|
-| **FR-001** (Medicines Metadados) | Sim | `T002` | `drops_per_ml` column migration. |
-| **FR-002** (Protocols Metadados) | Sim | `T002` | `intake_unit` column migration. |
-| **FR-003** (IsLiquid Rule) | Sim | `T003` | `dosage_unit LIKE '%/ml'` auto-detection in postgres. |
-| **FR-004** (Stored Procedure FIFO) | Sim | `T003`, `T004` | Atomics FIFO decimals and solids dispatch. |
-| **FR-005** (Check Constraint) | Sim | `T002` | Non-negative check constraint. |
+| Requisito | Tem Task? | Task IDs | Notas |
+|-----------|-----------|----------|-------|
+| FR-001 (enum `mg/ml`/`ui/ml`) | Sim | T003 | Recria CHECK se existir. |
+| FR-002 (`drops_per_ml`) | Sim | T004 | |
+| FR-003 (`intake_unit`) | Sim | T004 | |
+| FR-004 (CHECK saldo ≥ 0) | Sim | T004 | |
+| FR-005 (migração de dados) | Sim | T005, T007 | Idempotente; valida contagem 0. |
+| FR-006 (RPC líquida) | Sim | T006 | Mantém assinatura; hardening SECURITY DEFINER. |
 
 ---
 
 ## Contract / ADR Coverage
 
-- **ADR-052**: O banco de dados e stored procedure de líquidos entra antes de diabetes como fundação atômica compartilhada para tomada em ml, gotas e UI.
-- **CON-025**: O contrato transacional de estoque mantém o formato legando, porém suportando decimais para garantir integridade física contínua.
+- **ADR-052**: líquidos antes de diabetes; exercita a "parede de unidade" (dose+estoque+display) sem biomarcadores.
+- **ADR-048/050**: estoque integra com `dose_instances`/`medicine_logs` (âncora de log inalterada).
+- **CON (a registrar no C5)**: a RPC `consume_stock_fifo` muda a **semântica** de `p_quantity` (passa a ser a unidade de tomada `intake_unit` para líquidos, convertida internamente para ml). Catalogar como CON-NNN — **mudança aditiva/compatível** (sólidos inalterados), sem ADR de breaking change.
 
 ---
 
-## 🛠️ Validação de Aderência ao Refactor de Estoque (PR #443)
+## Constitution Alignment
 
-Cruzamos o plano de modelagem clínica de medicamentos líquidos contra o ecossistema de tabelas e procedimentos transacionais introduzidos no **Refactor de Estoque (PR #443)** para atestar compatibilidade absoluta e zero quebra:
-
-### A. Relação com a Tabela `purchases`
-* **Invariante**: Compras são eventos históricos imutáveis medidos em unidades comerciais físicas (frascos, canetas).
-* **Solução Proposta**: O desmembramento no `stockService` faz com que uma compra de `"2 frascos de 50 ml"` insira 2 registros independentes em `purchases` (ex: `quantity_bought = 50.00` em cada linha).
-* **Aderência**: **100% Perfeita.** O histórico de compras e a análise de custo médio ponderado baseada em `purchases` continuam operando de forma nativa e sem necessidade de alteração matemática.
-
-### B. Consumo e Estornos por Lote (`stock_consumptions` & `stock_adjustments`)
-* **Invariante**: Toda tomada deve debitar por FIFO e registrar as linhas de lote afetadas em `stock_consumptions`. O estorno em exclusão de log (`restore_stock_for_log`) lê a quantidade consumida original e a devolve ao lote correspondente.
-* **Solução Proposta**:
-  * Para líquidos, a stored procedure `consume_stock_fifo` calcula o volume em `ml` (ex: `0.75 ml`) e o consome da coluna `stock.quantity` (que armazena mililitros para líquidos).
-  * O lote tocado é registrado na tabela `stock_consumptions` com `quantity_consumed = 0.75`.
-  * Ao chamar `restore_stock_for_log`, a stored procedure lê `quantity_consumed = 0.75` e devolve exatamente `0.75` para a coluna `stock.quantity` daquele lote de forma atômica e exata, criando o respectiva auditoria em `stock_adjustments`.
-* **Aderência**: **100% Perfeita.** Toda a trilha de auditoria e o motor transacional de estorno funcionam perfeitamente sem alteração estrutural, pois `quantity_consumed` e `quantity_delta` utilizam decimais (`numeric`) nativamente.
-
-### C. Ajuste Manual de Saldo (`apply_manual_stock_adjustment`)
-* **Invariante**: O ajuste manual do paciente atualiza o saldo de estoque atual do lote ativo e registra o delta na tabela de auditoria `stock_adjustments`.
-* **Solução Proposta**: Quando o usuário realizar "Ajuste de Saldo" no PWA/Mobile (ex: de `10.00 ml` para `8.50 ml`), o `stockService` envia o delta `-1.50` para a RPC de ajuste (desbloqueada e permitida no refactor posterior §21.2).
-* **Aderência**: **100% Perfeita.** O banco debita o delta em ml do lote, gerando o ajuste de auditoria correspondente na unidade contínua do medicamento.
+- `smart-data-design`: `numeric` + `ROUND(.,2)`; sem coluna redundante. ✅
+- `backwards-compatibility`: migração idempotente; sólidos e queries de soma intactos. ✅
+- `single-source-of-truth`: unidade define líquido. ✅
 
 ---
 
-## Gaps
+## Gaps (resolvidos nesta revisão)
 
-Nenhum gap ativo identificado nesta etapa estrutural.
+| ID | Severidade | Resumo | Ação |
+|----|-----------|--------|------|
+| G-022-1 | CRITICAL (resolvido) | Detecção `LIKE '%/ml'` não casava — enum não tinha `/ml`. | FR-001 estende o enum + FR-005 migra `ml`/`gotas`. |
+| G-022-2 | HIGH (resolvido) | Draft pedia `is_liquid` boolean; specs removeram sem migrar dados. | Decisão PO: derivar da unidade; migração de dados explícita (US2). |
+| G-022-3 | MEDIUM (resolvido) | Texto afirmava `numeric(10,2)`; colunas são `numeric` puro. | `plan.md` corrige: precisão por `ROUND`, não pela coluna. |
+| G-022-4 | LOW (resolvido) | `CON-025` fantasma referenciado. | Trocado por "CON a registrar no C5". |
 
 ---
 
 ## Gate Decision
 
-**Status**: **PASS**  
-A especificação `022-liquid-medications-db-backend` estabelece com absoluta maestria a fundação estrutural do banco de dados, blindando o ecossistema com um modelo de dados 100% retrocompatível, elegantemente simples e focado de forma exclusiva no paciente. Pronto para revisão e homologação.
-
+**Status**: **PASS — Dev Ready.** Fundação estrutural completa, retrocompatível e com **migração de dados explícita** dos líquidos legados. Bloqueador crítico (enum `/ml`) resolvido. Pronta para `/devflow coding`.

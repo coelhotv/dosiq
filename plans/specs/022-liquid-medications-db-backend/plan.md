@@ -1,7 +1,8 @@
 # Implementation Plan: Liquid Medications Database & Backend Foundation
 
-**Feature Directory**: `plans/specs/022-liquid-medications-db-backend`  
-**Spec**: `spec.md`  
+**Feature Directory**: `plans/specs/022-liquid-medications-db-backend`
+**Spec**: `spec.md`
+**Revised**: 2026-06-02
 **Legacy Sources**:
 - `plans/dose_instances_refactor/LIQUID_MEDICATIONS_EPIC_DRAFT.md`
 - `docs/architecture/DOSE_INSTANCES.md`
@@ -10,9 +11,11 @@
 
 ## Technical Context
 
-Este plano implementa a fundação de banco de dados do Supabase/PostgreSQL. Rastrearemos o estoque fluido de medicamentos líquidos diretamente na coluna `quantity` existente da tabela `stock`, que passará a representar o **volume contínuo em mililitros (`ml`)** para líquidos. 
+Fundação de banco Supabase/PostgreSQL. Líquido é **derivado da unidade de concentração** (`dosage_unit LIKE '%/ml'`), nunca de um booleano. O estoque fluido vive na coluna existente `stock.quantity` (`numeric`), que para líquidos representa **ml restantes**; `original_quantity` guarda o volume nominal do frasco. A UI deriva a fração de frasco por `quantity / original_quantity`.
 
-A coluna `original_quantity` (que já existe na tabela `stock`) armazenará o volume original nominal do frasco no momento do cadastro. A interface utilizará a divisão matemática $\frac{quantity}{original\_quantity}$ para expor frações de frascos restantes de forma imediata e elegante, sem quebras no modelo legado.
+**Schema real verificado (prod):** `stock` tem `quantity numeric`, `original_quantity numeric`, `unit_price numeric(12,4)`, `purchase_id uuid` (FK → `purchases`), `entry_type text`. As colunas de dose (`medicine_logs.quantity_taken`, `dose_instances.expected_dose`, `protocols.dosage_per_intake`) **já são `numeric`** — frações cabem sem migração de coluna de dose. `consume_stock_fifo` **já existe** com a assinatura `(p_user_id, p_medicine_id, p_quantity, p_medicine_log_id)` (callers: `server/services/medicineLogService.js`, `server/bot/callbacks/doseActions.js`).
+
+> **Nota de precisão:** `stock.quantity`/`original_quantity` são `numeric` **sem escala fixa** (não `numeric(10,2)`). A precisão de 2 casas é garantida por `ROUND(..., 2)` na RPC e na validação Zod (spec 023), não pela coluna. Não alteramos o tipo da coluna (risco em tabela viva).
 
 ---
 
@@ -20,163 +23,142 @@ A coluna `original_quantity` (que já existe na tabela `stock`) armazenará o vo
 
 | Principle | Status | Notes |
 |-----------|--------|-------|
-| smart-data-design | ✅ | Uso de decimais exatos (`numeric`) em `stock.quantity` para evitar erros acumulados de arredondamento. |
-| backwards-compatibility | ✅ | Nenhuma coluna física nova na tabela `stock`. Uso inteligente de `quantity` e `original_quantity` existentes. |
-| single-source-of-truth | ✅ | `medicines.dosage_unit` define de forma implícita e automática se o medicamento é líquido. |
+| smart-data-design | ✅ | `numeric` + `ROUND(.,2)` evitam erro de ponto flutuante; sem coluna redundante. |
+| backwards-compatibility | ✅ | Nenhuma coluna física nova em `stock`; reuso de `quantity`/`original_quantity`. Migração de dados idempotente e reversível conceitualmente. |
+| single-source-of-truth | ✅ | `medicines.dosage_unit` (terminando em `/ml`) define líquido implicitamente. |
 
 ---
 
 ## Database Migrations (SQL)
 
-### 1. Migração Estrutural de Tabelas
+Arquivo: `docs/migrations/20260602_liquid_meds_db.sql`. Ordem: (1) enum, (2) colunas + check, (3) migração de dados, (4) RPC.
+
+### 1. Estender o enum de unidades de concentração
+O `dosage_unit` é validado por `CHECK`/`text` (não um tipo enum nativo Postgres). Confirmar via `information_schema`/`pg_constraint` antes; se existir uma `CHECK (dosage_unit IN (...))`, recriá-la incluindo os novos valores:
+
 ```sql
--- 1. Adiciona gotas por ml no cadastro de medicamentos
-ALTER TABLE public.medicines
-ADD COLUMN drops_per_ml INTEGER DEFAULT 20;
-
--- 2. Adiciona unidade da dose tomada no protocolo
-ALTER TABLE public.protocols
-ADD COLUMN intake_unit TEXT DEFAULT NULL;
-
--- 3. Adiciona check constraint para impedir underflow (estoque negativo) na tabela stock
-ALTER TABLE public.stock
-ADD CONSTRAINT chk_stock_quantity_non_negative CHECK (quantity >= 0);
+-- Se houver constraint de domínio em dosage_unit, recriar incluindo mg/ml e ui/ml.
+-- (Verificar o nome real via pg_constraint antes de aplicar.)
+ALTER TABLE public.medicines DROP CONSTRAINT IF EXISTS medicines_dosage_unit_check;
+ALTER TABLE public.medicines ADD CONSTRAINT medicines_dosage_unit_check
+  CHECK (dosage_unit IN ('mg','mcg','g','ml','ui','un','gotas','mg/ml','ui/ml'));
 ```
+> `'ml'`/`'gotas'` permanecem no CHECK por retrocompat até a migração de dados zerar o uso; o **form de cadastro** (spec 024) deixa de oferecê-los como concentração.
 
-### 2. Stored Procedure FIFO `consume_stock_fifo` (Sobrecarga de Líquidos)
-Reescrevemos a procedure transacional no Supabase. O parâmetro `p_quantity` representa a dose na unidade de tomada do protocolo (`intake_unit`). O banco de dados calcula a baixa física correspondente em `ml` e desconta da coluna `stock.quantity`:
+### 2. Colunas estruturais + check de saldo
+```sql
+ALTER TABLE public.medicines
+  ADD COLUMN IF NOT EXISTS drops_per_ml INTEGER DEFAULT 20;
 
+ALTER TABLE public.protocols
+  ADD COLUMN IF NOT EXISTS intake_unit TEXT DEFAULT NULL;
+
+ALTER TABLE public.stock
+  ADD CONSTRAINT chk_stock_quantity_non_negative CHECK (quantity >= 0);
+```
+> Colunas adicionadas a tabelas existentes **não** exigem novos GRANTs (a regra do CLAUDE.md vale para `CREATE TABLE`). RLS já vigente nas tabelas é preservada.
+
+### 3. Migração de dados — líquidos legados (`ml`/`gotas` → `mg/ml`)
+```sql
+-- 3a. Move a unidade de tomada antiga para os protocolos do medicamento líquido legado.
+UPDATE public.protocols p
+SET intake_unit = m.dosage_unit         -- 'ml' ou 'gotas'
+FROM public.medicines m
+WHERE p.medicine_id = m.id
+  AND m.dosage_unit IN ('ml','gotas')
+  AND p.intake_unit IS NULL;
+
+-- 3b. Converte a unidade do medicamento para o modelo de concentração.
+UPDATE public.medicines
+SET dosage_unit  = 'mg/ml',
+    drops_per_ml = COALESCE(drops_per_ml, 20)
+WHERE dosage_unit IN ('ml','gotas');
+```
+> Idempotente: rodar 2× é no-op (já não há `ml`/`gotas`; `intake_unit` já preenchido). `dosage_per_pill` (concentração) é **deixado como está** — desconhecido para legados, fica `NULL`; a massa ativa só passa a ser exibida quando o usuário editar e informar a concentração. Decremento/adesão independem disso.
+> `'ui'` líquido legado (raríssimo) **não** é convertido automaticamente (ambíguo vs. sólido `ui`); fica para revisão manual — documentado, não silencioso.
+
+### 4. RPC `consume_stock_fifo` (sobrecarga líquida — mantém assinatura)
 ```sql
 CREATE OR REPLACE FUNCTION public.consume_stock_fifo(
   p_user_id UUID,
   p_medicine_id UUID,
-  p_quantity NUMERIC,
+  p_quantity NUMERIC,         -- dose na unidade de tomada (intake_unit) para líquidos; unidades para sólidos
   p_medicine_log_id UUID
 )
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
-  v_user_id UUID := p_user_id;
   v_is_liquid BOOLEAN;
   v_dosage_unit TEXT;
   v_drops_per_ml INTEGER;
-  
+  v_intake_unit TEXT;
   v_remaining NUMERIC;
-  v_volume_to_consume_ml NUMERIC;
-  
   v_total_available NUMERIC;
   v_total_consumed NUMERIC := 0;
   v_rows_consumed INTEGER := 0;
   v_to_consume NUMERIC;
   v_stock_row public.stock%ROWTYPE;
 BEGIN
-  IF v_user_id IS NULL THEN
-    RAISE EXCEPTION 'user_id é obrigatório para chamadas server-side';
-  END IF;
+  IF p_user_id IS NULL THEN RAISE EXCEPTION 'user_id é obrigatório'; END IF;
+  IF p_quantity IS NULL OR p_quantity <= 0 THEN RAISE EXCEPTION 'Quantidade deve ser > 0'; END IF;
+  IF p_medicine_log_id IS NULL THEN RAISE EXCEPTION 'medicine_log_id é obrigatório'; END IF;
 
-  IF p_quantity IS NULL OR p_quantity <= 0 THEN
-    RAISE EXCEPTION 'Quantidade para consumo deve ser maior que zero';
-  END IF;
-
-  IF p_medicine_log_id IS NULL THEN
-    RAISE EXCEPTION 'medicine_log_id é obrigatório';
-  END IF;
-
-  -- 1. Carrega parâmetros físicos do medicamento
-  SELECT 
-    (dosage_unit LIKE '%/ml'), 
-    dosage_unit, 
-    COALESCE(drops_per_ml, 20)
+  -- 1. Parâmetros físicos do medicamento (líquido = unidade termina em /ml).
+  SELECT (dosage_unit LIKE '%/ml'), dosage_unit, COALESCE(drops_per_ml, 20)
   INTO v_is_liquid, v_dosage_unit, v_drops_per_ml
-  FROM public.medicines
-  WHERE id = p_medicine_id;
+  FROM public.medicines WHERE id = p_medicine_id;
 
-  -- 2. Determina a quantidade física a deduzir de stock.quantity
-  IF COALESCE(v_is_liquid, FALSE) = TRUE THEN
-    -- Obter a unidade de tomada a partir do log ou protocolo
-    DECLARE
-      v_intake_unit TEXT;
-    BEGIN
-      SELECT p.intake_unit INTO v_intake_unit
-      FROM public.protocols p
-      JOIN public.medicine_logs l ON l.protocol_id = p.id
-      WHERE l.id = p_medicine_log_id;
+  -- 2. Volume físico a deduzir.
+  IF COALESCE(v_is_liquid, FALSE) THEN
+    SELECT p.intake_unit INTO v_intake_unit
+    FROM public.protocols p
+    JOIN public.medicine_logs l ON l.protocol_id = p.id
+    WHERE l.id = p_medicine_log_id;
 
-      -- Converte tomada do paciente para volume físico (ml)
-      IF v_intake_unit = 'ml' THEN
-        v_volume_to_consume_ml := p_quantity;
-      ELSIF v_intake_unit = 'gotas' THEN
-        v_volume_to_consume_ml := ROUND(p_quantity / v_drops_per_ml, 2);
-      ELSIF v_intake_unit = 'UI' THEN
-        -- Futuro: insulina. Na v1 assume escala de ml ou UI direta.
-        v_volume_to_consume_ml := p_quantity;
-      ELSE
-        v_volume_to_consume_ml := p_quantity; -- Fallback seguro
-      END IF;
-    END;
-    
-    v_remaining := v_volume_to_consume_ml;
+    IF v_intake_unit = 'gotas' THEN
+      v_remaining := ROUND(p_quantity / v_drops_per_ml, 2);
+    ELSE
+      -- 'ml', 'UI' (v1: escala direta) e fallback seguro
+      v_remaining := ROUND(p_quantity, 2);
+    END IF;
   ELSE
-    -- Comportamento clássico para sólidos (linear cp/unidades)
-    v_remaining := p_quantity;
+    v_remaining := p_quantity;   -- sólidos: linear inteiro
   END IF;
 
-  -- 3. Verifica saldo em estoque (coluna quantity)
-  SELECT COALESCE(SUM(quantity), 0)
-  INTO v_total_available
+  -- 3. Saldo disponível.
+  SELECT COALESCE(SUM(quantity), 0) INTO v_total_available
   FROM public.stock
-  WHERE medicine_id = p_medicine_id
-    AND user_id = v_user_id
-    AND quantity > 0;
+  WHERE medicine_id = p_medicine_id AND user_id = p_user_id AND quantity > 0;
 
   IF v_total_available < v_remaining THEN
-    RAISE EXCEPTION 'Estoque insuficiente (Restam %, solicitado %)', v_total_available, v_remaining;
+    RAISE EXCEPTION 'Estoque insuficiente (restam %, solicitado %)', v_total_available, v_remaining;
   END IF;
 
-  -- 4. Loop FIFO por validade consumindo quantity
+  -- 4. Loop FIFO por validade.
   FOR v_stock_row IN
-    SELECT *
-    FROM public.stock
-    WHERE medicine_id = p_medicine_id
-      AND user_id = v_user_id
-      AND quantity > 0
+    SELECT * FROM public.stock
+    WHERE medicine_id = p_medicine_id AND user_id = p_user_id AND quantity > 0
     ORDER BY expiration_date ASC NULLS LAST, purchase_date ASC, created_at ASC, id ASC
     FOR UPDATE
   LOOP
     EXIT WHEN v_remaining <= 0;
-
     v_to_consume := LEAST(v_stock_row.quantity, v_remaining);
 
-    UPDATE public.stock
-    SET quantity = quantity - v_to_consume
-    WHERE id = v_stock_row.id;
+    UPDATE public.stock SET quantity = quantity - v_to_consume WHERE id = v_stock_row.id;
 
-    INSERT INTO public.stock_consumptions (
-      user_id,
-      medicine_log_id,
-      medicine_id,
-      stock_id,
-      quantity_consumed
-    )
-    VALUES (
-      v_user_id,
-      p_medicine_log_id,
-      p_medicine_id,
-      v_stock_row.id,
-      v_to_consume
-    );
+    INSERT INTO public.stock_consumptions
+      (user_id, medicine_log_id, medicine_id, stock_id, quantity_consumed)
+    VALUES (p_user_id, p_medicine_log_id, p_medicine_id, v_stock_row.id, v_to_consume);
 
     v_remaining := v_remaining - v_to_consume;
     v_total_consumed := v_total_consumed + v_to_consume;
     v_rows_consumed := v_rows_consumed + 1;
   END LOOP;
 
-  IF v_remaining > 0 THEN
-    RAISE EXCEPTION 'Falha de consistência: consumo FIFO incompleto';
-  END IF;
+  IF v_remaining > 0 THEN RAISE EXCEPTION 'Falha de consistência: FIFO incompleto'; END IF;
 
   RETURN jsonb_build_object(
     'medicine_log_id', p_medicine_log_id,
@@ -188,7 +170,13 @@ BEGIN
   );
 END;
 $$;
+
+-- SECURITY DEFINER hardening (CLAUDE.md): bloquear PUBLIC/anon, search_path vazio (já no header).
+REVOKE EXECUTE ON FUNCTION public.consume_stock_fifo(UUID, UUID, NUMERIC, UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.consume_stock_fifo(UUID, UUID, NUMERIC, UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.consume_stock_fifo(UUID, UUID, NUMERIC, UUID) TO authenticated, service_role;
 ```
+> `restore_stock_for_log` (estorno em exclusão de log) **não precisa de mudança**: lê `stock_consumptions.quantity_consumed` (já `numeric`/decimal) e devolve o mesmo valor ao lote. Coberto por teste de regressão (T-validação).
 
 ---
 
@@ -196,12 +184,12 @@ $$;
 
 | Path | Purpose | Source Evidence |
 |------|---------|-----------------|
-| `docs/migrations/XXXXXXXX_liquid_meds_db.sql` | [NEW] Script consolidado de migração física de colunas e triggers no Supabase. | SQL Editor |
+| `docs/migrations/20260602_liquid_meds_db.sql` | [NEW] enum + colunas + check + migração de dados + RPC + grants. | SQL/migrations |
 
 ---
 
 ## Risks
 
-- **Locks Concorrentes por FIFO no Supabase**:
-  - *Descrição*: Tomadas simultâneas podem bloquear registros de estoque gerando lentidão.
-  - *Mitigação*: Uso de índices indexados por `user_id` e `expiration_date` com locking estrito `FOR UPDATE` escopado por ID da linha no loop FIFO.
+- **Constraint de `dosage_unit` com nome desconhecido**: verificar `pg_constraint`/`information_schema` antes de `DROP CONSTRAINT`. Se `dosage_unit` for `text` livre (sem CHECK), pular o passo 1 (só atualizar o enum do core na spec 023).
+- **Locks FIFO concorrentes**: `FOR UPDATE` escopado por linha + índice por `(medicine_id, user_id)`; tomadas simultâneas serializam por lote, não global.
+- **Migração em prod**: rodar em janela; idempotente. Validar contagem antes/depois (`SELECT count(*) FROM medicines WHERE dosage_unit IN ('ml','gotas')` deve ir a 0).

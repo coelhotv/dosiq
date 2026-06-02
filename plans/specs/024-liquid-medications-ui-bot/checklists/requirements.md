@@ -1,27 +1,30 @@
 # Requirements Checklist: Liquid Medications UI/UX & Telegram Bot
 
-**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`  
-**Created**: 2026-06-01  
-**Source**: migrated legacy plan  
+**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Source**: spec revisada (dev-ready)
 
 ---
 
 ## Completeness
 
-- [ ] CHK001 Os dropdowns dinâmicos de unidade de tomada exibem opções corretas (`gotas`, `ml`, `UI`) e comportam-se de forma exemplar para líquidos? [Completeness]
-- [ ] CHK002 Os inputs do form de compra de estoque de líquidos exibem hints responsivos e fáceis de entender (frascos e ml)? [Completeness]
+- [ ] CHK001 Os dropdowns (form **e wizard**) expõem `mg/ml`/`ui/ml` e removem `ml`/`gotas` da concentração? [Completeness]
+- [ ] CHK002 O select `intake_unit` aparece só para líquidos (web e mobile)? [Completeness]
+- [ ] CHK003 O `StockForm` capta frascos/ml/preço total e o caminho mobile foi confirmado em C1? [Completeness]
 
 ## Clarity
 
-- [ ] CHK003 O banner de estoque baixo possui micro-copywriting explicativo e amigável para a Dona Maria? [Clarity]
-- [ ] CHK004 As notificações e confirmações inline do Bot do Telegram respeitam a unidade de tomada em português brasileiro? [Clarity]
+- [ ] CHK004 O banner converte `expected_dose` para ml (via `drops_per_ml`) antes de comparar com `stock.quantity`? [Clarity]
+- [ ] CHK005 A copy do banner e dos hints é clara para idoso (R-137/138)? [Clarity]
+- [ ] CHK006 As mensagens do bot usam `formatDose` (PT-BR, singular/plural)? [Clarity]
 
 ## Traceability
 
-- [ ] CHK005 Cada requisito funcional (FR-001 a FR-004) possui pelo menos uma tarefa de UI/Bot mapeada na checklist `tasks.md`? [Traceability]
-- [ ] CHK006 O plano de testes do Bot do Telegram valida cenários de tomada bem-sucedidos e de estoque zerado de forma best-effort? [Traceability]
+- [ ] CHK007 Cada FR (001–005) mapeia ≥1 task? [Traceability]
+- [ ] CHK008 Os paths de target foram verificados (web reais; mobile `.jsx`/`.js`; estoque mobile marcado p/ C1)? [Traceability]
 
 ## Constitution Alignment
 
-- [ ] CHK007 As novas telas seguem rigidamente as diretrizes de visual-hierarchy e responsividade de design premium do Dosiq? [Consistency]
-- [ ] CHK008 A arquitetura respeita a política de "Never Self-Merge" (R-060)? [Consistency]
+- [ ] CHK009 O bot trata estoque zerado best-effort (R-245/246) sem travar? [Consistency]
+- [ ] CHK010 Smoke PO antes do PR (R-234) para mudanças de UI+mobile? [Consistency]
+- [ ] CHK011 Respeita "Never Self-Merge" (R-060)? [Consistency]

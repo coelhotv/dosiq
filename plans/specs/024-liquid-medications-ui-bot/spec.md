@@ -1,9 +1,9 @@
 # Feature Specification: Liquid Medications UI/UX & Telegram Bot
 
-**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`  
-**Created**: 2026-06-01  
-**Status**: Spec Draft (Wave M2)  
-**Migration Status**: migrated  
+**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`
+**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Status**: Dev Ready
+**Migration Status**: migrated
 **Legacy Sources**:
 - `plans/specs/022-liquid-medications-db-backend/`
 - `plans/specs/023-liquid-medications-core-api/`
@@ -13,57 +13,59 @@
 
 ## Context
 
-Com o banco de dados e a camada do core devidamente estabelecidos, precisamos projetar e implementar as **interfaces responsivas (PWA Web e Mobile)** e a integração com o **Bot do Telegram** para oferecer uma experiência de ponta a ponta que encante e atenda o paciente ("Dona Maria") de forma exemplar.
+Com banco (022) e core (023) prontos, implementamos as **interfaces (PWA Web + Mobile)**, o **wizard de onboarding** e o **Bot do Telegram** para a experiência de líquidos ponta-a-ponta (paciente "Dona Maria").
 
-As principais responsabilidades desta especificação atômica de apresentação são:
-1. **Interfaces Dinâmicas e Premium**: Adaptar os formulários de Medicamento e Protocolo de Tomada para ocultar/exibir condicionalmente campos baseados na natureza líquida do medicamento, fornecendo dropdowns e inputs coerentes.
-2. **Hints Visuais e Cadastro Amigável de Estoque**: Exibir de forma inteligível que as compras numéricas de líquidos representam frascos e ml (ex: `2 frascos / 50 ml cada um`), adaptável a apresentações futuras.
-3. **Banner de Fim de Frasco (Estoque Baixo)**: Apresentar avisos amigáveis quando o frasco ativo estiver prestes a acabar.
-4. **Alinhamento do Bot do Telegram**: Adaptar o dispatcher de notificações e os botões rápidos de ação (`Tomei`) no Bot do Telegram para exibir a dose na unidade real do paciente (ex: `"Tomar 15 gotas"`) e debitar o volume físico correspondente via API FIFO transacional.
+Responsabilidades:
+1. **Expor as novas unidades de concentração** (`mg/ml`, `ui/ml`) nos dropdowns dos formulários de medicamento **e no wizard de onboarding**, removendo `ml`/`gotas` da lista de **concentração** (que agora são unidades de **tomada**, não de concentração).
+2. **Forms dinâmicos**: badge `💧 Apresentação Líquida`; select de `intake_unit` (`gotas`/`ml`/`UI`) condicional no protocolo; inputs de frascos/ml no estoque.
+3. **Banner de fim de frasco**: comparar o volume restante (`stock.quantity`, em ml) com a **dose convertida para ml** da próxima ocorrência.
+4. **Bot do Telegram**: lembrete e callback `✅ Tomei` formatando com `formatDose` e debitando o volume físico via `consume_stock_fifo`.
+
+> **Correção (revisão 2026-06-02):** (a) o dropdown de **concentração** do medicamento NÃO oferece `ml`/`gotas` (elas viram `intake_unit`); oferece `['mg','mcg','g','ui','un','mg/ml','ui/ml']`. (b) O banner converte `dose_instances.expected_dose` (que está na **unidade de tomada**, ex.: gotas) para ml via `drops_per_ml` ANTES de comparar com `stock.quantity` (ml) — comparar gotas com ml era erro de unidade. (c) Mobile é **JS** (`.jsx`/`.js`), não TS.
 
 ---
 
 ## User Scenarios & Testing
 
-### User Story 1 — UX Premium de Cadastro e Preço Total (PWA & Mobile) (Priority: P1)
-**Why this priority**: Evitar confusões visuais no paciente, explicitar quando o formulário se adapta a líquidos e solicitar preços de forma natural.  
-**Independent Test**: No formulário de protocolo, selecionar um medicamento líquido. Verificar que a UI exibe o badge "Apresentação Líquida", que o input de dose agora exibe ao lado o dropdown de unidade (`gotas`, `ml`, `UI`). No formulário de estoque, verificar que ao lado do preço a label solicita o "Preço Total da Compra" com hints contextuais claros.
+### User Story 1 — Cadastro com Novas Unidades (Web, Mobile e Wizard) (Priority: P1)
+**Why this priority**: sem expor `mg/ml`/`ui/ml` nos dropdowns (incl. onboarding), o usuário não consegue cadastrar líquido no novo modelo.
+**Independent Test**: abrir o form de medicamento (e o passo de medicamento do wizard) e confirmar que o dropdown de concentração lista `mg/ml`/`ui/ml` (sem `ml`/`gotas`); ao escolher `mg/ml`, surge o badge `💧 Apresentação Líquida` e o campo `Gotas por ml` (default 20).
 
 **Acceptance Scenarios**:
-1. Given que o usuário está criando um protocolo de Dipirona Gotas (concentração `'mg/ml'`),  
-   When a tela é renderizada,  
-   Then o formulário exibe em destaque o badge `💧 Apresentação Líquida` e expõe o dropdown de unidade de tomada contendo: `gotas`, `ml`, `UI`.
-2. Given que o usuário está cadastrando estoque de xarope,  
-   When o formulário é renderizado,  
-   Then ele exibe em destaque o badge `💧 Inventário de Líquidos` e exibe campos numéricos decorados com os hints: `[ X ] frascos` / `[ Y ] ml cada um` e o campo `Preço Total da Compra (R$)`.
+1. Given o `MedicineForm` (web/mobile) ou o passo de medicamento do wizard, When o dropdown de unidade é aberto, Then lista `['mg','mcg','g','ui','un','mg/ml','ui/ml']` (sem `ml`/`gotas`) com label **"Concentração"**.
+2. Given o usuário escolhe `'mg/ml'` ou `'ui/ml'`, When o form re-renderiza, Then exibe o badge `💧 Apresentação Líquida` e o campo `Gotas por ml` (default 20, editável).
+3. Given o usuário cria um protocolo de medicamento líquido, When a tela renderiza, Then exibe o select de `intake_unit` (`gotas`/`ml`/`UI`) + hint *"💧 Defina a dose na unidade de tomada (gotas ou ml)."*; sólido oculta o select.
 
----
-
-### User Story 2 — Alerta de Estoque Crítico (Dona Maria) (Priority: P2)
-**Why this priority**: Alertar o paciente com antecedência de que seu frasco ativo está no fim para que ele adquira um novo a tempo.  
-**Independent Test**: Configurar o estoque do medicamento com `1.5 ml` restantes. Agendar uma dose de `5 ml`. Verificar que o painel exibe um banner de aviso amigável alertando sobre o fim do frasco.
+### User Story 2 — Cadastro de Estoque de Líquido (Priority: P1)
+**Why this priority**: capturar "N frascos × V ml × preço total" de forma natural.
+**Independent Test**: no `StockForm`, com medicamento líquido, ver o cabeçalho `💧 Inventário de Líquidos`, inputs `[ N ] frascos` / `[ V ] ml cada` e o campo `Preço Total da Compra (R$)`; submeter dispara o desmembramento (spec 023).
 
 **Acceptance Scenarios**:
-1. Given que o saldo de volume do frasco ativo em estoque é menor do que a dose da próxima ocorrência de `dose_instances`,  
-   When o usuário abre a timeline do aplicativo,  
-   Then o sistema apresenta um aviso em destaque: *"⚠️ Seu frasco ativo está no fim (restam apenas 1,5 ml). Lembre-se de abrir um novo frasco!"*.
+1. Given um medicamento líquido no `StockForm`, When renderiza, Then mostra `💧 Inventário de Líquidos`, dois inputs (`frascos`, `ml cada`) e `Preço Total da Compra (R$)` (não preço unitário).
+2. Given submissão de `2 frascos / 50 ml / R$ 50,00`, When confirma, Then o payload `{numBottles:2, volumePerBottle:50, totalPrice:50}` vai ao `stockService` (desmembra via RPC — spec 023).
 
----
-
-### User Story 3 — Confirmar Tomada no Telegram (Priority: P1)
-**Why this priority**: Garantir consistência nas tomadas registradas via chat do Telegram com débito físico de volume.  
-**Independent Test**: Disparar um alerta de dose individual de Dipirona Gotas (`15 gotas`) no chat do Telegram, clicar no botão inline `✅ Tomei` e certificar-se de que a mensagem é editada com sucesso e que a API debitou `0.75 ml` (conversão baseada em 20 gotas/ml) do estoque de forma silenciosa.
+### User Story 3 — Banner de Fim de Frasco (Priority: P2)
+**Why this priority**: avisar a Dona Maria antes do frasco acabar.
+**Independent Test**: estoque `1.5 ml`; próxima dose `15 gotas` (`drops_per_ml=20` → `0.75 ml`)... não dispara. Próxima dose `40 gotas` (`2 ml`) → dispara (2 > 1.5).
 
 **Acceptance Scenarios**:
-1. Given que o paciente recebe um alarme no Telegram: *"🔔 Hora da sua Dipirona! Tomar 15 gotas agora."*,  
-   When ele clica em `✅ Tomei`,  
-   Then o bot processa a confirmação da dose materializada, persiste o log e debita exatamente `0.75 ml` do estoque, editando a mensagem com: *"✅ Dipirona confirmada!"*.
+1. Given `stock.quantity = 1.5` (ml) e próxima `dose_instances.expected_dose = 40` com `intake_unit = 'gotas'` e `drops_per_ml = 20`, When a timeline abre, Then o sistema converte `40/20 = 2 ml`, detecta `2 > 1.5` e exibe *"⚠️ Seu frasco ativo está no fim (restam apenas 1,5 ml). Lembre-se de abrir um novo frasco!"*.
+2. Given a dose convertida ≤ saldo, When a timeline abre, Then o banner NÃO aparece.
+
+### User Story 4 — Confirmar Tomada no Telegram (Priority: P1)
+**Why this priority**: tomadas via chat com débito físico consistente.
+**Independent Test**: alarme de Dipirona `15 gotas`; clicar `✅ Tomei` → log persistido + `consume_stock_fifo` debita `0.75 ml`; mensagem editada.
+
+**Acceptance Scenarios**:
+1. Given o alarme *"🔔 Hora da sua Dipirona! Tomar 15 gotas agora."* (formatado por `formatDose`), When o paciente clica `✅ Tomei`, Then o bot persiste o log, chama `consume_stock_fifo(p_quantity=15, ...)` (a RPC converte gotas→ml), e edita a mensagem para *"✅ Dipirona confirmada!"*.
 
 ---
 
 ## Edge Cases
 
-- **Inativação de Lote Pendente no Telegram**: Se o paciente confirmar a dose pelo Telegram mas o estoque estiver zerado por inativação manual simultânea no PWA, o bot não deve travar nem emitir exceções técnicas. Ele apenas deve registrar a dose tomada no histórico de forma best-effort e enviar uma mensagem amigável no chat: *"Registrei sua tomada, mas verifiquei que seu estoque está zerado no app!"*.
+- **Estoque zerado na confirmação Telegram**: se o estoque estiver zerado por ação simultânea no app, o bot registra o log best-effort e responde *"Registrei sua tomada, mas seu estoque está zerado no app!"* — sem exceção técnica.
+- **Mobile sem componente `StockForm` dedicado**: o cadastro de estoque mobile pode estar em screen/fluxo distinto — **verificar o caminho real em C1** antes de implementar (não assumir paridade de nome com a web).
+- **`intake_unit = 'UI'`**: na v1 a UI exibe `UI` mas a conversão de estoque é escala direta (insulina/canetas = épico diabetes). Sem cálculo de gotas.
 
 ---
 
@@ -71,22 +73,22 @@ As principais responsabilidades desta especificação atômica de apresentação
 
 ### Functional Requirements
 
-- **FR-001**: O formulário `MedicineForm` na Web e Mobile deve filtrar o dropdown de unidades para `['mg', 'mcg', 'g', 'mg/ml', 'ui/ml', 'ui']`, usar o label correto **"Concentração"** e exibir o badge contextual `💧 Apresentação Líquida` para unidades terminadas em `/ml`.
-- **FR-002**: O formulário `ProtocolForm` na Web e Mobile deve exibir condicionalmente o dropdown de unidade de tomada (`intake_unit`) contendo `gotas`, `ml` e `UI` acompanhado da mensagem informativa: *"💧 Você está configurando um medicamento líquido. Defina a dose na unidade de tomada recomendada (gotas ou ml)."* apenas se o medicamento selecionado for líquido.
-- **FR-003**: O formulário `StockForm` de líquidos deve exibir em destaque o cabeçalho contextual `💧 Inventário de Líquidos` e campos numéricos decorados com os hints `[ X ] frascos` e `[ Y ] ml cada um` e o campo `Preço Total da Compra (R$)`.
-- **FR-004**: O dispatcher de notificações e callbacks no Bot do Telegram (`server/bot/callbacks/doseActions.js` e `api/notify.js`) deve ser atualizado para formatar as mensagens utilizando o helper `formatDose` em português.
-
+- **FR-001**: `MedicineForm` (web `apps/web/src/features/medications/components/MedicineForm.jsx` + seção de dosagem; mobile `apps/mobile/src/features/medications/screens/MedicineFormScreen.jsx`) **e o wizard de onboarding** filtram o dropdown de concentração para `['mg','mcg','g','ui','un','mg/ml','ui/ml']`, label "Concentração", badge `💧 Apresentação Líquida` + campo `Gotas por ml` para unidades terminadas em `/ml`.
+- **FR-002**: `ProtocolForm` (web `apps/web/src/features/protocols/components/ProtocolForm.jsx` / `sections/ProtocolFormDosesSection.jsx`; mobile `apps/mobile/src/features/treatments/components/ProtocolFormBody.jsx`) exibe condicionalmente o select `intake_unit` (`gotas`/`ml`/`UI`) + hint quando o medicamento for líquido.
+- **FR-003**: `StockForm` (web `apps/web/src/features/stock/components/StockForm.jsx` / `sections/StockFormPurchaseDetails.jsx`) exibe `💧 Inventário de Líquidos`, inputs `frascos`/`ml cada` e `Preço Total da Compra (R$)`; despacha payload de desmembramento. Caminho do estoque mobile a verificar em C1.
+- **FR-004**: Banner de fim de frasco em `apps/web/src/features/dashboard/components/StockAlertInline.jsx` comparando `stock.quantity` (ml) com `expected_dose` **convertida para ml** (via `drops_per_ml` quando `intake_unit='gotas'`).
+- **FR-005**: Bot do Telegram (`api/notify.js` + `server/bot/callbacks/doseActions.js`) formata mensagens com `formatDose(expected_dose, intake_unit)`; o callback `✅ Tomei` passa a dose na unidade de tomada para `consume_stock_fifo` (que converte para ml internamente — spec 022).
 
 ### Key Entities
 
-- **UI Medicine / Protocol Forms**: Componentes Web/Mobile atualizados.
-- **UI Stock List Dashboard**: Indicador de saldo e banners de estoque baixo.
-- **Telegram Bot Webhook**: Dispatcher e callback handlers atualizados.
+- **UI Forms** (medicine/protocol/stock) web+mobile + wizard.
+- **StockAlertInline**: banner com conversão de unidade.
+- **Telegram dispatcher/callback**: `notify.js`, `doseActions.js`.
 
 ---
 
 ## Success Criteria
 
-- **SC-001**: Dropdowns dinâmicos e hints visuais operam de forma impecável e harmoniosa no formulário do PWA e Mobile.
-- **SC-002**: Notificações e tomadas no Bot do Telegram ocorrem com formatação de dosagem contínua em português brasileiro.
-- **SC-003**: 100% de conformidade com as diretrizes de a11y e responsividade móvel.
+- **SC-001**: Dropdowns (incl. wizard) expõem `mg/ml`/`ui/ml` e ocultam `ml`/`gotas` da concentração; selects de tomada e hints operam em web e mobile.
+- **SC-002**: O banner dispara apenas quando a dose **convertida para ml** supera o saldo (sem erro de unidade).
+- **SC-003**: Bot formata em PT-BR via `formatDose` e debita o volume correto; estoque zerado não trava o fluxo.

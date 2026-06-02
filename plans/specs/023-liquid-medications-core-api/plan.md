@@ -1,7 +1,8 @@
 # Implementation Plan: Liquid Medications Core API & Validations
 
-**Feature Directory**: `plans/specs/023-liquid-medications-core-api`  
-**Spec**: `spec.md`  
+**Feature Directory**: `plans/specs/023-liquid-medications-core-api`
+**Spec**: `spec.md`
+**Revised**: 2026-06-02
 **Legacy Sources**:
 - `plans/specs/022-liquid-medications-db-backend/`
 - `plans/dose_instances_refactor/LIQUID_MEDICATIONS_EPIC_DRAFT.md`
@@ -10,7 +11,14 @@
 
 ## Technical Context
 
-Este plano implementa os Schemas de validação Zod no core, a lógica transacional do middle-tier (`stockService`) para fazer o desmembramento de frascos em inserts individuais FIFO, e o helper puro de formatação de doses (`formatDose`) em português brasileiro.
+Schemas Zod no core (`packages/core/src/schemas/`), lógica de desmembramento no `stockService` (web + mobile, ambos **`.js`**) **via RPC `create_purchase_with_stock`**, e extensão do helper existente `doseUnit.js` com `formatDose`.
+
+**Verificado no código real:**
+- `DOSAGE_UNITS = ['mg','mcg','g','ml','ui','un','gotas']` (`medicineSchema.js:9`).
+- `protocols.dosage_per_intake` já é `.number().positive().max(1000)` decimal (`protocolSchema.js:102`) → **não** precisa mexer no teto aqui.
+- Cap-100 real: `logSchema.quantity_taken.max(100)` (`logSchema.js:36`) + `adherencePatternSchema:13`, `costAnalysisSchema:79`, `reminderOptimizerSchema:19`.
+- `create_purchase_with_stock(p_medicine_id, p_quantity, p_unit_price, p_purchase_date, p_expiration_date, p_pharmacy, p_laboratory, p_notes)` (caller real: `server/bot/commands/adicionar_estoque.js:128`). `stockService.add → purchaseRepo.createPurchase` (`stockService.js:24`).
+- `doseUnit.js` **já existe** com `formatDoseUnit`, `pluralizeDoseUnit`, `formatNumberPtBR`, `formatActiveIngredient{Short,Hint,Formula}`.
 
 ---
 
@@ -18,132 +26,126 @@ Este plano implementa os Schemas de validação Zod no core, a lógica transacio
 
 | Principle | Status | Notes |
 |-----------|--------|-------|
-| smart-data-design | ✅ | Zod schemas exigindo tipagem correta de decimais e bloqueio de estados inconsistentes. |
-| dry-principles | ✅ | Helpers de formatação puros centralizados em `@dosiq/core/utils/` e reusados na Web, Mobile e Telegram. |
+| smart-data-design | ✅ | Zod tipa decimais; bloqueia estados inconsistentes (líquido sem `drops_per_ml`/`intake_unit`). |
+| dry-principles | ✅ | `formatDose` **estende** `doseUnit.js`, reusa `formatNumberPtBR`/`pluralizeDoseUnit` — sem helper paralelo. |
+| backwards-compatibility | ✅ | Desmembramento via `create_purchase_with_stock` (modelo `purchases` intacto); sólidos inalterados. |
 
 ---
 
-## Architecture & Implementation Details
+## Architecture & Implementation
 
-### 1. Zod Validation (Core Schemas)
-
-#### `src/schemas/medicineSchema.js`
-Atualizamos o validador do cadastro do medicamento:
+### 1. Zod — `medicineSchema.js`
 ```javascript
+export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'un', 'gotas', 'mg/ml', 'ui/ml']
+
 const medicineSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  laboratory: z.string().optional(),
-  active_ingredient: z.string().optional(),
-  dosage_unit: z.enum(['mg', 'mcg', 'g', 'mg/ml', 'ui/ml', 'ui']),
-  dosage_per_pill: z.number().positive("Concentração deve ser maior que zero").optional(),
-  drops_per_ml: z.number().int().positive().default(20).optional(),
-}).refine(data => {
-  // Se for proporção líquida, exige o drops_per_ml e dosage_per_pill (concentração)
-  if (data.dosage_unit.endsWith('/ml')) {
-    return data.dosage_per_pill !== undefined;
-  }
-  return true;
-}, {
-  message: "Concentração ativa é obrigatória para medicamentos líquidos",
-  path: ["dosage_per_pill"]
-});
-```
-
-#### `src/schemas/protocolSchema.js`
-Atualizamos o validador do protocolo para permitir decimais na tomada de líquidos:
-```javascript
-const protocolSchema = z.object({
-  medicine_id: z.string().uuid(),
-  dosage_per_intake: z.number().positive("A dosagem deve ser maior que zero"),
-  intake_unit: z.enum(['gotas', 'ml', 'UI']).optional(),
-});
-```
-
----
-
-### 2. Desmembramento de Compras e Cálculo de Custo por mL no `stockService`
-Na API do core (`apps/web/src/features/stock/services/stockService.js` e equivalentes mobile), a inserção de estoque para medicamentos líquidos é interceptada. 
-
-Quando o usuário cadastra `N frascos` de `V ml` pelo preço total `P`:
-1. Calculamos o preço de cada frasco individual: `price_per_bottle = P / N` (arredondado para 2 casas decimais).
-2. Para evitar perdas de centavos no total da compra por dízimas na divisão de frascos, acumulamos a diferença na última linha:
-   - `compensated_price_per_bottle = P - (price_per_bottle * (N - 1))`
-3. O preço unitário por ml (que será salvo no banco em `unit_price`) é derivado para cada lote de forma que o cálculo de custo médio mensal do tratamento seja mantido com precisão exata:
-   - Para frascos padrão: `unit_price_per_ml = ROUND(price_per_bottle / V, 4)`
-   - Para o último frasco: `compensated_unit_price_per_ml = ROUND(compensated_price_per_bottle / V, 4)`
-4. Disparamos `N` inserts para a tabela `stock` no Supabase:
-   - Para os primeiros $N-1$ frascos: `original_quantity = V`, `quantity = V`, `unit_price = unit_price_per_ml`
-   - Para o último frasco: `original_quantity = V`, `quantity = V`, `unit_price = compensated_unit_price_per_ml`
-
-```javascript
-// Exemplo conceitual da lógica de desmembramento com custo por ml no stockService
-async function createPurchaseWithStock({ medicineId, numBottles, volumePerBottle, totalPrice, expirationDate, userId }) {
-  const isLiquid = await checkIfLiquid(medicineId);
-  
-  if (isLiquid) {
-    const pricePerBottle = parseFloat((totalPrice / numBottles).toFixed(2));
-    const compensatedPricePerBottle = parseFloat((totalPrice - (pricePerBottle * (numBottles - 1))).toFixed(2));
-    
-    const unitPricePerMl = parseFloat((pricePerBottle / volumePerBottle).toFixed(4));
-    const compensatedUnitPricePerMl = parseFloat((compensatedPricePerBottle / volumePerBottle).toFixed(4));
-    
-    const stockLines = [];
-    for (let i = 0; i < numBottles; i++) {
-      stockLines.push({
-        medicine_id: medicineId,
-        user_id: userId,
-        original_quantity: volumePerBottle,
-        quantity: volumePerBottle,
-        unit_price: (i === numBottles - 1) ? compensatedUnitPricePerMl : unitPricePerMl,
-        expiration_date: expirationDate,
-        entry_type: 'purchase'
-      });
+  // ...campos existentes...
+  dosage_unit: z.enum(DOSAGE_UNITS),
+  dosage_per_pill: z.number().positive('Concentração deve ser maior que zero').nullable().optional(),
+  drops_per_ml: z.number().int().positive().nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (data.dosage_unit?.endsWith('/ml')) {
+    // Líquido exige fator de gotas; concentração é recomendada mas pode faltar em legados migrados (NULL).
+    if (data.drops_per_ml == null) {
+      ctx.addIssue({ code: 'custom', path: ['drops_per_ml'],
+        message: 'Gotas por ml é obrigatório para medicamentos líquidos (padrão 20).' })
     }
-    
-    // Insere múltiplos frascos independentes com custo/ml no Supabase em lote
-    const { data, error } = await supabase.from('stock').insert(stockLines);
-    return { data, error };
-  } else {
-    // Comportamento discreto legado para comprimidos (1 linha de estoque)
   }
-}
+})
 ```
+> Concentração (`dosage_per_pill`) **não** é exigida: legados migrados (`ml`/`gotas`→`mg/ml`) têm `NULL` e precisam continuar salváveis. A massa ativa só é exibida quando preenchida.
 
----
-
-### 3. Helper de Exibição Puro `formatDose`
-Helper puro centralizado em `packages/core/src/utils/doseUnit.js` para renderização amigável de dosagens em português brasileiro:
-
+### 2. Zod — `protocolSchema.js`
 ```javascript
-export function formatDose(value, unit) {
-  if (value === undefined || value === null) return '';
-  
-  // Substitui ponto por vírgula decimal para português
-  const formattedValue = value.toString().replace('.', ',');
-  
-  if (unit === 'ml') {
-    return `${formattedValue} ml`;
+export const INTAKE_UNITS = ['gotas', 'ml', 'UI']
+
+const protocolSchema = z.object({
+  // ...campos existentes (dosage_per_intake permanece .positive().max(1000))...
+  intake_unit: z.enum(INTAKE_UNITS).nullable().optional(),
+}).superRefine((data, ctx) => {
+  // Cross-validação: medicamento líquido exige unidade de tomada.
+  // (medicineIsLiquid resolvido pelo caller/form; aqui validamos coerência se o flag vier no payload.)
+  if (data._medicineIsLiquid === true && !data.intake_unit) {
+    ctx.addIssue({ code: 'custom', path: ['intake_unit'],
+      message: 'Defina a unidade de tomada (gotas, ml ou UI) para medicamentos líquidos.' })
   }
-  if (unit === 'gotas') {
-    return value === 1 ? `${formattedValue} gota` : `${formattedValue} gotas`;
+})
+```
+> `_medicineIsLiquid` é um campo de contexto opcional injetado pelo form (derivado de `dosage_unit LIKE '%/ml'`), não persistido. Alternativa: validar no service após buscar o medicamento.
+
+### 3. Revisão do teto R-022 (cap-100 → cap-1000)
+Elevar `.max(100)` → `.max(1000)` (cobre `gotas`) com mensagem atualizada em:
+- `packages/core/src/schemas/logSchema.js:36` (`quantity_taken`)
+- `packages/core/src/schemas/adherencePatternSchema.js:13`
+- `packages/core/src/schemas/costAnalysisSchema.js:79`
+- `packages/core/src/schemas/reminderOptimizerSchema.js:19`
+
+> Comentar a revisão de R-022: o cap Zod é guarda anti-erro de digitação; a **integridade física** vem do `CHECK (quantity >= 0)` + saldo FIFO (spec 022). Manter `.positive()`.
+
+### 4. Desmembramento via `create_purchase_with_stock` (`stockService.js` web + mobile)
+```javascript
+// Conceitual — uma chamada de RPC por frasco (modelo purchases v4.0.0 preservado).
+async function createLiquidPurchase({ medicineId, numBottles, volumePerBottle, totalPrice,
+                                      purchaseDate, expirationDate, pharmacy, laboratory, notes }) {
+  const pricePerBottle = round2(totalPrice / numBottles)
+  const compensatedLast = round2(totalPrice - pricePerBottle * (numBottles - 1)) // fecha o total exato
+  const unitPriceMl = round4(pricePerBottle / volumePerBottle)
+  const compensatedUnitPriceMl = round4(compensatedLast / volumePerBottle)
+
+  const results = []
+  for (let i = 0; i < numBottles; i++) {
+    const isLast = i === numBottles - 1
+    const { data, error } = await supabase.rpc('create_purchase_with_stock', {
+      p_medicine_id: medicineId,
+      p_quantity: volumePerBottle,                 // volume nominal do frasco em ml
+      p_unit_price: isLast ? compensatedUnitPriceMl : unitPriceMl,
+      p_purchase_date: purchaseDate,
+      p_expiration_date: expirationDate ?? null,
+      p_pharmacy: pharmacy ?? null,
+      p_laboratory: laboratory ?? null,
+      p_notes: notes ?? null,
+    })
+    if (error) throw error
+    results.push(data)
   }
-  if (unit === 'UI') {
-    return `${formattedValue} UI`;
-  }
-  
-  // Fallback padrão (comprimidos, etc.)
-  return `${formattedValue} ${unit || ''}`.trim();
+  return results
 }
 ```
+> Cada chamada cria 1 `purchase` + 1 lote `stock` (com `purchase_id`, `original_quantity = quantity = volumePerBottle`). FIFO do banco opera frasco a frasco. **Sólidos** seguem o caminho atual (1 chamada). `round2`/`round4` = helpers locais (`Number(x.toFixed(n))`).
+
+### 5. `formatDose` — extensão de `doseUnit.js` (NÃO novo arquivo)
+```javascript
+// Acrescentar em packages/core/src/utils/doseUnit.js
+export function formatDose(value, unit) {
+  if (value === undefined || value === null) return ''
+  const v = formatNumberPtBR(value) // reuso: vírgula decimal + milhares corretos
+  if (unit === 'ml') return `${v} ml`
+  if (unit === 'gotas') return `${v} ${Number(value) === 1 ? 'gota' : 'gotas'}`
+  if (unit === 'UI') return `${v} UI`
+  return `${v} ${unit || ''}`.trim()
+}
+```
+> Reusa `formatNumberPtBR` (evita o `.replace('.',',')` ingênuo que quebra milhares). `pluralizeDoseUnit` devolve "unidade(s)" (sólidos) — **não** serve para gotas, por isso o singular/plural de `gotas` é inline. `apps/web/src/schemas/*` faz `export *` do core, então a mudança vive **só na definição** (`packages/core/...`), sem tocar callers (AP-199).
 
 ---
 
 ## Target Files
 
-| Path | Purpose | Source Evidence |
-|------|---------|-----------------|
-| `src/schemas/medicineSchema.js` | Modificar o validador Zod do cadastro do medicamento para líquidos. | Core Validation |
-| `src/schemas/protocolSchema.js` | Modificar o validador Zod do protocolo. | Core Validation |
-| `packages/core/src/utils/doseUnit.js` | [NEW] Helper universal de formatação de strings de dosagem. | Pure Helper |
-| `apps/web/src/features/stock/services/stockService.js` | Integrar a lógica de desmembramento de frascos e compensação financeira centava. | Core Stock Service |
-| `apps/mobile/src/features/stock/services/stockService.ts` | Sincronizar lógica de desmembramento no serviço mobile. | Core Stock Service |
+| Path | Purpose | Evidence |
+|------|---------|----------|
+| `packages/core/src/schemas/medicineSchema.js` | enum + `drops_per_ml`/`dosage_per_pill` + refine líquido. | core (verificado) |
+| `packages/core/src/schemas/protocolSchema.js` | `intake_unit` + cross-validação. | core (verificado) |
+| `packages/core/src/schemas/logSchema.js` | cap-100 → 1000 em `quantity_taken`. | `logSchema.js:36` |
+| `packages/core/src/schemas/adherencePatternSchema.js` | cap-100 → 1000. | `:13` |
+| `packages/core/src/schemas/costAnalysisSchema.js` | cap-100 → 1000. | `:79` |
+| `packages/core/src/schemas/reminderOptimizerSchema.js` | cap-100 → 1000. | `:19` |
+| `packages/core/src/utils/doseUnit.js` | adicionar `formatDose` (estende). | existe (verificado) |
+| `apps/web/src/features/stock/services/stockService.js` | desmembramento via N× `create_purchase_with_stock`. | `:24` |
+| `apps/mobile/src/features/stock/services/stockService.js` | mesmo, mobile (JS, não TS). | verificado |
+
+---
+
+## Risks
+
+- **Cross-validação líquido↔intake_unit**: se o `protocolSchema` não tiver o medicamento no payload, validar no `protocolService` após buscar `medicines.dosage_unit`. Documentar a abordagem escolhida no PR.
+- **Esquemas duplicados core↔web**: confirmar se `apps/web/src/schemas/*` reexporta do core ou duplica; aplicar a mudança na **definição** (core), não no caller (AP-199).

@@ -1,43 +1,53 @@
 # Tasks: Liquid Medications UI/UX & Telegram Bot
 
-**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`  
-**Input**: `spec.md`, `plan.md`  
-**Status**: Spec Draft (Wave M2)  
+**Feature Directory**: `plans/specs/024-liquid-medications-ui-bot`
+**Input**: `spec.md`, `plan.md`
+**Status**: Dev Ready
 
 ---
 
 ## Phase 1: Setup / Preflight
 
-- [ ] T001 [C1] Verificar o funcionamento dos validadores do core (`medicineSchema` e `protocolSchema` atualizados na Spec 023) antes de iniciar as modificações na interface.
+- [ ] T001 [C1] Confirmar specs 022 e 023 mergeadas/aplicadas (enum, `intake_unit`, `formatDose`, desmembramento).
+- [ ] T002 [C1] Verificar o caminho real do cadastro de **estoque no mobile** (não há `StockForm` mobile) e se o **wizard de onboarding** reusa `MedicineForm` (props de onboarding). Registrar antes de codar.
 
 ---
 
-## Phase 2: Implementation (PWA Web & Mobile Frontend)
+## Phase 2: Implementation (Web & Mobile Forms)
 
-- [ ] T002 [US1] Ajustar o select de unidades e o comportamento dinâmico de exibição em `MedicineForm.jsx` (Web).
-- [ ] T003 [US1] Sincronizar o comportamento dinâmico de exibição em `MedicineForm.tsx` (Mobile).
-- [ ] T004 [US1] Adaptar o formulário de criação de protocolo (`ProtocolForm.jsx`) para exibir o select de `intake_unit` (`gotas`, `ml`, `UI`) de forma condicional para líquidos.
-- [ ] T005 [US1] Adaptar o formulário de estoque (`StockForm.jsx`) para exibir inputs numéricos responsivos com hints visuais de frascos/ml para líquidos.
-- [ ] T006 [US2] Criar e integrar o banner de aviso visual de fim de frasco no componente `StockAlertInline.jsx` do dashboard.
+- [ ] T003 [US1] `MedicineForm.jsx` (+ `MedicineFormDosageInfo.jsx`): dropdown `['mg','mcg','g','ui','un','mg/ml','ui/ml']`, label "Concentração", badge `💧` + campo `Gotas por ml` para `/ml`.
+- [ ] T004 [US1] `MedicineFormScreen.jsx` (mobile): mesma lógica.
+- [ ] T005 [US1] Garantir que o passo de medicamento do **wizard** expõe as novas unidades (reuso do `MedicineForm` ou ajuste do passo, conforme T002).
+- [ ] T006 [US1] `ProtocolFormDosesSection.jsx` (web) + `ProtocolFormBody.jsx` (mobile): select `intake_unit` condicional + hint para líquidos.
+- [ ] T007 [US2] `StockForm.jsx` (+ `StockFormPurchaseDetails.jsx`): inputs `frascos`/`ml cada` + `Preço Total da Compra`; payload de desmembramento. (Mobile conforme T002.)
 
 ---
 
-## Phase 3: Implementation (Telegram Bot Webhook)
+## Phase 3: Implementation (Banner + Telegram)
 
-- [ ] T007 [US3] Atualizar a formatação das mensagens de alarme no dispatcher do bot (`api/notify.js`) utilizando o helper `formatDose`.
-- [ ] T008 [US3] Atualizar o callback de confirmação rápida `✅ Tomei` em `server/bot/callbacks/doseActions.js` para registrar decimais e descontar o estoque de forma correta no backend.
+- [ ] T008 [US3] `StockAlertInline.jsx`: helper `nextDoseMl` (converte gotas→ml via `drops_per_ml`) + banner quando `stock.quantity < doseMl`.
+- [ ] T009 [US4] `api/notify.js`: lembrete formatado com `formatDose(expected_dose, intake_unit)`.
+- [ ] T010 [US4] `server/bot/callbacks/doseActions.js`: callback `✅ Tomei` passa a dose na unidade de tomada a `consume_stock_fifo`; estoque zerado → resposta best-effort (R-245/246).
 
 ---
 
 ## Phase 4: Validation (Quality Gates)
 
-- [ ] T009 [C4] Criar testes e2e locais para os formulários de cadastro de medicamentos líquidos, tomadas e compras de estoque.
-- [ ] T010 [C4] Validar visualmente o layout responsivo em mobile e o comportamento do Bot no Telegram.
-- [ ] T011 [C4] Rodar `rtk npm run validate:agent` e atestar que a suíte completa de testes críticos, linting e produção funciona perfeitamente sem qualquer erro.
+- [ ] T011 [P] [C4] Teste/smoke: dropdown de concentração lista `mg/ml`/`ui/ml` e oculta `ml`/`gotas` (web, mobile e wizard).
+- [ ] T012 [P] [C4] Teste: banner dispara só quando a dose **convertida para ml** supera o saldo (caso 40 gotas/20 = 2ml > 1.5; caso 15 gotas = 0.75 não dispara).
+- [ ] T013 [P] [C4] Teste: bot formata `formatDose` e o callback debita o volume correto; estoque zerado não trava.
+- [ ] T014 [C4] Validar responsividade mobile + a11y (R-137/138) dos novos campos.
+- [ ] T015 [C4] Rodar `rtk npm run validate:agent` (linter zero + suíte crítica) + smoke PO antes do PR (R-234).
 
 ---
 
 ## Phase 5: DEVFLOW Record
 
-- [ ] T012 [C5] Realizar o checkpoint SQP (R-221) e atualizar os índices do DEVFLOW.
-- [ ] T013 [C5] Submeter as alterações de apresentação em PR consolidado para a aprovação final do operador humano ("Never self-merge" R-060).
+- [ ] T016 [C5] SQP (R-221): Web/PWA + Mobile; impacto Minor; CHANGELOG [Unreleased] (web+mobile) + store-note mobile ("cadastre xaropes e gotas em ml/gotas").
+- [ ] T017 [C5] Abrir PR; aguardar Gemini + smoke PO + aprovação humana (R-060).
+
+## Dependencies
+T001/T002 antes de tudo. T003–T007 (forms) independentes entre arquivos. T008–T010 dependem de `formatDose`/`intake_unit` (023).
+
+## Parallel Opportunities
+T003/T004/T006/T007 `[P]` (arquivos distintos). T011–T013 `[P]`.
