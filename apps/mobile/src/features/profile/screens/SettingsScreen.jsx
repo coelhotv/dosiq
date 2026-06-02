@@ -1,7 +1,7 @@
 // SettingsScreen.jsx — Configurações (Fase 4): densidade da interface + fuso horário + segurança
 // R-010: States → Memos → Effects → Handlers
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ import { useProfileMutation } from '@profile/hooks/useProfileMutation'
 import { useToast } from '@shared/components/feedback/Toast'
 import FormSelect from '@shared/components/form/FormSelect'
 import { TIMEZONE_OPTIONS } from '@dosiq/core'
+import TzIntentSheet from '@profile/components/TzIntentSheet'
 
 // ─── Opções de densidade ──────────────────────────────────────────────────────
 
@@ -136,8 +137,12 @@ export default function SettingsScreen() {
   // States (navigation faz parte da inicialização, não é estado reativo)
   const navigation = useNavigation()
 
+  // States
+  const [tzPrompt, setTzPrompt] = useState(null) // { fromTz, toTz } enquanto o sheet está aberto
+  const [tzApplying, setTzApplying] = useState(false)
+
   // Memos/hooks de dados
-  const { profile, settings, loading: profileLoading, refresh, updateTimezone } = useProfile()
+  const { profile, settings, loading: profileLoading, refresh, updateTimezone, checkFuturePendingDoses } = useProfile()
   const { setComplexity, loading: mutating } = useProfileMutation()
   const toast = useToast()
 
@@ -157,18 +162,52 @@ export default function SettingsScreen() {
   )
 
   // Handlers
-  const handleSelectTimezone = useCallback(
-    async (_name, value) => {
-      if (!value || value === currentTimezone) return
-      const res = await updateTimezone(value)
+  const persistTimezone = useCallback(
+    async (value, { regen }) => {
+      const res = await updateTimezone(value, { regen })
       if (res.success) {
-        toast.show('Fuso horário salvo', { variant: 'success' })
+        toast.show(regen ? 'Fuso e horários das doses atualizados' : 'Fuso horário salvo', { variant: 'success' })
       } else {
         toast.show(res.error ?? 'Erro ao salvar fuso horário', { variant: 'error' })
       }
+      return res.success
     },
-    [currentTimezone, updateTimezone, toast],
+    [updateTimezone, toast],
   )
+
+  const handleSelectTimezone = useCallback(
+    async (_name, value) => {
+      if (!value || value === currentTimezone) return
+      // Sem dose futura, viagem×mudança não muda nada → persiste direto, sem prompt.
+      const hasFuture = await checkFuturePendingDoses()
+      if (!hasFuture) {
+        await persistTimezone(value, { regen: false })
+        return
+      }
+      setTzPrompt({ fromTz: currentTimezone, toTz: value })
+    },
+    [currentTimezone, checkFuturePendingDoses, persistTimezone],
+  )
+
+  // "Estou aqui só de viagem": persiste o tz, sem regenerar.
+  const handleTzTravel = useCallback(async () => {
+    if (!tzPrompt) return
+    setTzApplying(true)
+    await persistTimezone(tzPrompt.toTz, { regen: false })
+    setTzApplying(false)
+    setTzPrompt(null)
+  }, [tzPrompt, persistTimezone])
+
+  // "Me mudei": persiste o tz e re-ancora as doses futuras.
+  const handleTzMove = useCallback(async () => {
+    if (!tzPrompt) return
+    setTzApplying(true)
+    await persistTimezone(tzPrompt.toTz, { regen: true })
+    setTzApplying(false)
+    setTzPrompt(null)
+  }, [tzPrompt, persistTimezone])
+
+  const handleTzCancel = useCallback(() => setTzPrompt(null), [])
   const handleSelectDensity = useCallback(
     async (value) => {
       // Não disparar se já selecionado ou mutando
@@ -260,6 +299,14 @@ export default function SettingsScreen() {
           onDeleteAccount={handleDeleteAccount}
         />
       </ScrollView>
+
+      <TzIntentSheet
+        prompt={tzPrompt}
+        applying={tzApplying}
+        onTravel={handleTzTravel}
+        onMove={handleTzMove}
+        onCancel={handleTzCancel}
+      />
     </SafeAreaView>
   )
 }

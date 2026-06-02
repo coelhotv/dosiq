@@ -1,5 +1,6 @@
-import { getCurrentUser, logoutUser, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone } from '../profileService'
+import { getCurrentUser, logoutUser, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone, updateTimezone, hasFuturePendingDoses } from '../profileService'
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
+import { regenActiveProtocolsForTz, hasFuturePendingDoses as hasFuturePendingDosesCore } from '@dosiq/core'
 
 // Mock supabase
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
@@ -7,7 +8,9 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
   const eqMock = jest.fn(() => ({ maybeSingle: maybeSingleMock }))
   const selectMock = jest.fn(() => ({ eq: eqMock }))
   const upsertMock = jest.fn(() => Promise.resolve({ error: null }))
-  const fromMock = jest.fn(() => ({ select: selectMock, upsert: upsertMock }))
+  const updateEqMock = jest.fn(() => Promise.resolve({ error: null }))
+  const updateMock = jest.fn(() => ({ eq: updateEqMock }))
+  const fromMock = jest.fn(() => ({ select: selectMock, upsert: upsertMock, update: updateMock }))
   const rpcMock = jest.fn()
   const getUserMock = jest.fn()
   const getSessionMock = jest.fn()
@@ -25,6 +28,13 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
     }
   }
 })
+
+// F4.3f.2: regen/checker são do core — mantém o resto real (TIMEZONES_BR, resolveSupportedTz…).
+jest.mock('@dosiq/core', () => ({
+  ...jest.requireActual('@dosiq/core'),
+  regenActiveProtocolsForTz: jest.fn(async () => ({ processed: 1, regenerated: 5, failed: 0 })),
+  hasFuturePendingDoses: jest.fn(async () => true),
+}))
 
 describe('profileService', () => {
   const VALID_USER_ID = '550e8400-e29b-41d4-a716-446655440000'
@@ -137,6 +147,40 @@ describe('profileService', () => {
       expect(res.success).toBe(true)
       const row = supabase.from().upsert.mock.calls.at(-1)[0]
       expect(row).toEqual({ user_id: VALID_USER_ID, timezone: 'America/New_York' })
+    })
+  })
+
+  // F4.3f.2 — troca de fuso com intenção (viagem × mudança).
+  describe('updateTimezone', () => {
+    it('viagem (regen=false): só persiste o fuso, sem regenerar', async () => {
+      const res = await updateTimezone('Europe/London')
+      expect(res.success).toBe(true)
+      const updateMock = supabase.from().update
+      expect(updateMock).toHaveBeenCalledWith({ timezone: 'Europe/London' })
+      expect(regenActiveProtocolsForTz).not.toHaveBeenCalled()
+    })
+
+    it('mudança (regen=true): persiste e re-ancora as doses no fuso novo', async () => {
+      const res = await updateTimezone('Europe/London', { regen: true })
+      expect(res.success).toBe(true)
+      expect(regenActiveProtocolsForTz).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: VALID_USER_ID, tz: 'Europe/London' }),
+      )
+    })
+
+    it('rejeita fuso fora da lista canônica', async () => {
+      const res = await updateTimezone('Marte/Olympus')
+      expect(res.success).toBe(false)
+      expect(regenActiveProtocolsForTz).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('hasFuturePendingDoses', () => {
+    it('delega ao core com o userId atual', async () => {
+      hasFuturePendingDosesCore.mockResolvedValueOnce(true)
+      const out = await hasFuturePendingDoses()
+      expect(out).toBe(true)
+      expect(hasFuturePendingDosesCore).toHaveBeenCalledWith(supabase, VALID_USER_ID)
     })
   })
 })

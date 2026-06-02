@@ -1,0 +1,65 @@
+/* TzIntentModal — prompt de intenção na troca de fuso (F4.3f.2). */
+
+.tz-intent__body {
+  margin: 0 0 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-on-surface);
+}
+
+.tz-intent__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tz-intent__option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon label'
+    'icon desc';
+  column-gap: 0.75rem;
+  row-gap: 0.25rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: transparent;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.tz-intent__option:hover {
+  border-color: var(--color-primary);
+}
+
+.tz-intent__option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tz-intent__option--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+.tz-intent__option-icon {
+  grid-area: icon;
+  align-self: center;
+  color: var(--color-primary);
+}
+
+.tz-intent__option-label {
+  grid-area: label;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.tz-intent__option-desc {
+  grid-area: desc;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
