@@ -41,7 +41,7 @@ Este painel quantifica e acompanha a evolução da migração de conhecimento de
     *   `plans/specs/006-public-emergency-qr-card/`
     *   `plans/specs/007-medical-pdf-report/`
     *   `plans/specs/008-complete-data-export-lgpd/`
-    *   `plans/specs/009-caregiver-mode/` (épico Tier 2 — consolida 009-012 em fases 1/2/3/5 + nova phase-4 alert-engine; ver EPIC.md. GATE 0 = 002. Reorg 02/06/2026)
+    *   `plans/specs/009-caregiver-mode/` (épico Tier 2 — consolida 009-012 + fases novas: phase-0 identity-model, phase-4 alert-engine, phase-6 patient-cared-mode; ver EPIC.md. GATE 0 = 002. Reorg + round modelo 02/06/2026)
     *   `plans/specs/013-whatsapp-bot-adapter/`
     *   `plans/specs/014-whatsapp-templates-webhook/`
     *   `plans/specs/015-ai-chatbot-mobile/`

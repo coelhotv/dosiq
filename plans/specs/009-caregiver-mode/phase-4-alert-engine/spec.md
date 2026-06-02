@@ -19,7 +19,7 @@ Esta feature especifica o **motor de detecção e disparo de alertas ao cuidador
 
 > **Push-first no paciente, alerta ao cuidador como contingência:** o paciente recebe alarme nativo persistente (spec 001) + nagging. O alerta ao cuidador só dispara **após** a janela de tolerância do paciente esgotar (ex.: 30 min sem registro) — evitando ruído e protegendo cotas de canal externo.
 
-> **Não confundir com Fase 7B (WhatsApp bot):** esta engine resolve **qual evento dispara e quando**. O *transporte* por WhatsApp Business é épico à parte (013/014). Aqui, canais nativos/baratos (push, Telegram, e-mail) são suficientes para entregar valor; WhatsApp é plugável depois via o mesmo `notification_channel`.
+> **Escopo desta engine:** resolve **qual evento dispara e quando**, e despacha pelo canal abstrato configurado (push, Telegram, e-mail). O transporte por WhatsApp Business está **fora do escopo** (entrega futura), plugável depois via o mesmo `notification_channel`.
 
 ---
 
@@ -62,7 +62,7 @@ Esta feature especifica o **motor de detecção e disparo de alertas ao cuidador
 - **FR-004:** Disparar alerta de **receita vencendo** (7 dias antes de `prescription_end`).
 - **FR-005:** Disparar **digest semanal** de adesão (domingo 20h fuso do paciente) quando adesão < limiar configurável.
 - **FR-006:** Disparar notificação de **vínculo revogado** ao cuidador (imediato).
-- **FR-007:** Resolver o **canal** por `caregiver_links.notification_channel` (`push`/`telegram`/`email`/`none` — WhatsApp plugável via 7B). Abstração de canal reusa o padrão `INotificationChannel` do bot.
+- **FR-007:** Resolver o **canal** por `caregiver_links.notification_channel` (`push`/`telegram`/`email`/`none`). Abstração de canal reusa o padrão `INotificationChannel` do bot; novos canais são plugáveis sem mudar a engine.
 - **FR-008:** **Idempotência** — cada evento dispara uma vez por instância/janela (persistir flag de envio; nunca reenviar por tick).
 
 ### Key Entities
@@ -84,5 +84,5 @@ Esta feature especifica o **motor de detecção e disparo de alertas ao cuidador
 
 ## Open Questions
 
-- **[NEEDS CLARIFICATION: enum de canal]** `notification_channel` no schema atual é `whatsapp/telegram/both/none`. Para 7A sem Meta, propor `push/telegram/email/none` (WhatsApp entra em 7B). Confirmar enum final com PO (impacta CHECK constraint + Zod).
+- **[NEEDS CLARIFICATION: enum de canal]** `notification_channel` no schema legado é `whatsapp/telegram/both/none`. Proposta para este escopo: `push/telegram/email/none`. Confirmar enum final com PO (impacta CHECK constraint + Zod).
 - **[NEEDS CLARIFICATION: limiar digest]** percentual de adesão que dispara o digest "baixo" (DRAFT sugere <50%).

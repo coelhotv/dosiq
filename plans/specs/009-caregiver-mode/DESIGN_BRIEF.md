@@ -62,7 +62,7 @@ Fluxo de onboarding e vínculo. É o "momento mágico" do épico.
 
 | Tela / Componente | Quem vê | Notas de design |
 |---|---|---|
-| **Onboarding — escolha de papel** | Ambos | 2 botões gigantes: `[ Sou Paciente ]` / `[ Sou Cuidador ]`. Primeira tela do app limpo. |
+| **Onboarding — escolha de papel** | Ambos | 2 botões gigantes: `[ Sou Paciente ]` / `[ Sou Cuidador ]`. ⚠️ **NÃO é a 1ª tela do app.** Aparece **só no contexto de convite** (device aberto via deeplink/QR). O cold-start padrão continua sendo o onboarding normal de auto-gestão (a maioria dos usuários nunca vê esta tela). |
 | **Cuidador — convite gerado** | Cuidador | **QR Code grande e legível** + código 6 díg (ex. `A7X-92B`) + botão "Compartilhar Convite" (share nativo: WhatsApp/SMS/Telegram/e-mail — só canais). |
 | **Paciente — scanner QR** | Paciente | Câmera nativa + **input manual alternativo** do código (caso sem QR). Erro de conexão → permitir digitar e salvar offline. |
 | **Consentimento LGPD (full-screen)** | Paciente | *"Sua filha Ana Paula quer te ajudar a cuidar da rotina. Você autoriza que ela veja se você tomou as doses e mude horários?"* → `Sim, autorizo` / `Não, manter privado`. |
@@ -71,7 +71,25 @@ Fluxo de onboarding e vínculo. É o "momento mágico" do épico.
 
 **Estados a cobrir:** loading do scan, erro de câmera/permissão, sem internet (input manual), código expirado/inválido, sucesso.
 
+### 🟢 phase-6 · Patient Cared Mode + Sinais — **P1 (desenhar junto da phase-2)**
+A experiência da Maria — metade do produto. UI **simplificada AAA**, a mais importante do épico.
+
+| Tela / Componente | Quem vê | Notas de design |
+|---|---|---|
+| **Home cuidado (paciente)** | Paciente | Tela limpíssima: agenda do dia + botão **"Tomei" gigante** por dose. **Esconder** edição de medicamentos/posologia. ≥7:1, toque ≥60px. |
+| **Confirmar dose / retroativo** | Paciente | Confirmar "Tomei" + ajustar hora/data simples (1-2 toques). |
+| **Sheet de sinais à filha** | Paciente | Atalhos grandes: "Está acabando" (por remédio), "Perdi alguns comprimidos", "Não consegui tomar". 1 toque, desfazer fácil, feedback "vamos avisar". |
+| **Estado offline** | Paciente | Sinal enfileirado: "Vamos avisar quando a internet voltar." |
+
+**Estados:** loading, offline (fila), confirmação de sinal, desfazer.
+
 ### 🟢 phase-1 · Foundation & RLS — **sem telas** (DB/backend). Pular no design.
+
+### 🟢 phase-0 · Identity & Context — **cold-start (P1)**
+| Item | Notas |
+|---|---|
+| **Cold-start padrão** | Onboarding normal de auto-gestão (já existe) — **garantir que o modo cuidador NÃO o substitui**. O fork de papel só no contexto de convite. |
+| **Seletor de contexto** | Ver phase-3 (dropdown "Eu / Minha mãe / …"). |
 
 ### 🟡 phase-3 · Caregiver Dashboard — **P2**
 | Tela / Componente | Quem vê | Notas |
@@ -79,7 +97,7 @@ Fluxo de onboarding e vínculo. É o "momento mágico" do épico.
 | **Dashboard mono-paciente (mobile)** | Cuidador | Agenda + adesão + estoque de 1 paciente. **Esta é a versão base (não gated).** |
 | **Card "Confirmar Dose" remota** | Cuidador | Ação de registrar dose pelo cuidador (`source='caregiver'`). Estado: confirmado/erro. |
 | **Dashboard consolidado (web desktop)** | Cuidador | Cards por paciente: últimas doses, **alertas de atraso (>30min) piscando**, adesão semanal, estoque estimado. |
-| **Dropdown multi-perfil (header mobile)** | Cuidador | ⚠️ **GATED por G1** (só após tração mono-paciente) — desenhar mas marcar como fase 2 de rollout. Toque ≥60px. |
+| **Seletor de contexto (header mobile)** | Qualquer conta | Dropdown "**Eu / Minha mãe / Meu pai**" — alterna contexto `self` (default) + `managed`. Não é só feature de cuidador profissional. Conta sem `managed` = sem dropdown. Expansão p/ N pacientes ⚠️ **GATED G1**. Toque ≥60px. |
 
 ### 🟡 phase-4 · Alert Engine — **P2** (poucas telas, muito copy)
 | Item | Notas |
@@ -104,6 +122,7 @@ Fluxo de onboarding e vínculo. É o "momento mágico" do épico.
 4. **Revogação soberana**: mãe vai em Configurações > Cuidadores → "Revogar Acesso" → confirma → app vira standalone, cuidador perde acesso.
 5. **Multi-paciente** (Roberto, gated): alterna pacientes no dropdown → dados isolados por paciente.
 6. **Médico observa** (gated): recebe link token → abre dashboard read-only → vê adesão.
+7. **Sinal upstream do paciente**: Maria percebe que o remédio está acabando (ou derrubou comprimidos) → toca o atalho → filha é notificada → filha ajusta estoque/repõe.
 
 > Para cada fluxo: mapear **happy path + estados de erro/borda** (sem internet, código expirado, permissão negada, token expirado).
 
@@ -132,5 +151,5 @@ Fluxo de onboarding e vínculo. É o "momento mágico" do épico.
 
 ## 8. O que NÃO está no escopo deste épico
 
-- **WhatsApp Business / bot** (Fase 7B, épico próprio) — aqui WhatsApp é só **um canal de share/notificação** entre vários, não integração Meta.
+- **Integração WhatsApp Business / bot** (entrega futura separada) — aqui WhatsApp é apenas **um dos canais de share/notificação** entre vários (push, SMS, Telegram, e-mail), não uma integração Meta.
 - Prontuário clínico completo / portal B2B (trigger-gated, fora do escopo).

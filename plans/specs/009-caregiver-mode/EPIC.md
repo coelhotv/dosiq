@@ -25,6 +25,14 @@ O **Médico Observador** acompanha adesão em modo read-only, sem app, via dashb
 
 Isto elimina toda a classe de bug de re-ownership transacional na revogação.
 
+## Modelo de identidade & contexto (D3/D4 — ver phase-0)
+
+> **Default = auto-gestão (M1):** o Dosiq continua, por padrão, um app de paciente auto-suficiente. O cold-start normal é o onboarding de sempre. **O modo cuidador é opt-in.** A escolha `[ Sou Paciente ]/[ Sou Cuidador ]` **não é a primeira tela** — só aparece no **contexto de convite** (deeplink/QR). Usuários normais nunca a veem.
+>
+> **Provisionamento upfront com conta anônima (M2):** o cuidador cria o paciente como **conta `auth.users` anônima (sem PII)**; as entidades nascem sob esse `user_id` desde a criação. O código/QR mapeia o device do paciente → essa conta; ao escanear+consentir, o paciente **reivindica** a conta — `uid` provisionado = `uid` final, **zero migração**. O paciente escolhe a autenticação depois (a seu critério). Contas não reivindicadas em X dias são descartadas (cron, sem PII).
+>
+> **Conta = pessoa · Contexto = self + managed (M3):** uma conta opera em contexto `self` (default) + N contextos `managed` (via `caregiver_links`). "Cuidador" é a relação + o contexto ativo, não um papel fixo da conta. Conta sem `managed` = app de auto-gestão idêntico ao atual. O seletor de contexto (phase-3) alterna "Eu / Minha mãe / …".
+
 ---
 
 ## Matriz de Recursos & Permissões (3 roles)
@@ -59,17 +67,21 @@ Cada salto de complexidade exige tração medida antes do build. **Não construi
 
 ## Fases (ordem de execução por dependência)
 
-| Fase | Dir | Origem | Plataforma | Gate de entrada |
-|---|---|---|---|---|
-| **1 — Foundation & RLS** | [phase-1-foundation-rls](phase-1-foundation-rls/) | spec 010 | DB + core | G0 |
-| **2 — Setup Flow** | [phase-2-setup-flow](phase-2-setup-flow/) | spec 009 | Mobile + core | G0 (junto da 1) |
-| **3 — Caregiver Dashboard** | [phase-3-caregiver-dashboard](phase-3-caregiver-dashboard/) | spec 011 | Mobile + Web + core | G1 (multi-perfil) |
-| **4 — Alert Engine** | [phase-4-alert-engine](phase-4-alert-engine/) | **NOVA** | Backend (cron) + canais | G2 |
-| **5 — Medical Observer** | [phase-5-observer](phase-5-observer/) | spec 012 | Web + core + DB | G3 |
+Ordem de execução por dependência (o número da fase é rótulo; esta tabela é a verdade):
 
-> **phase-1 é fundação bloqueante** — tabelas + RLS + schemas Zod são pré-requisito de todas as demais.
+| # exec | Fase | Dir | Origem | Plataforma | Gate de entrada |
+|---|---|---|---|---|---|
+| 1 | **0 — Identity & Context Model** | [phase-0-identity-model](phase-0-identity-model/) | **NOVA** | core + mobile + infra | G0 |
+| 2 | **1 — Foundation & RLS** | [phase-1-foundation-rls](phase-1-foundation-rls/) | spec 010 | DB + core | G0 |
+| 3 | **2 — Setup Flow** | [phase-2-setup-flow](phase-2-setup-flow/) | spec 009 | Mobile + core | G0 |
+| 4 | **6 — Patient Cared Mode + Sinais** | [phase-6-patient-cared-mode](phase-6-patient-cared-mode/) | **NOVA** | Mobile + core | G0 (contraparte do paciente) |
+| 5 | **3 — Caregiver Dashboard** | [phase-3-caregiver-dashboard](phase-3-caregiver-dashboard/) | spec 011 | Mobile + Web + core | G1 (multi-perfil) |
+| 6 | **4 — Alert Engine** | [phase-4-alert-engine](phase-4-alert-engine/) | **NOVA** | Backend (cron) + canais | G2 |
+| 7 | **5 — Medical Observer** | [phase-5-observer](phase-5-observer/) | spec 012 | Web + core + DB | G3 |
+
+> **phase-0 e phase-1 são fundação bloqueante** — modelo de identidade/contexto + tabelas/RLS/schemas Zod são pré-requisito de todas as demais.
 >
-> **WhatsApp/Telegram bot (Fase 7B)** = épico próprio (specs [013](../013-whatsapp-bot-adapter/)/[014](../014-whatsapp-templates-webhook/)), bloqueado por Meta Business. **Não faz parte deste épico.** O que importa aqui são apenas **canais de envio** do link de vínculo (share nativo: WhatsApp/SMS/Telegram/email) — tratados na phase-2.
+> **Escopo de canais:** os canais de notificação e de envio do link de vínculo são abstratos — push, Telegram, e-mail, share nativo do SO. Integração com **WhatsApp Business (Meta)** está **fora do escopo deste épico** (entrega futura separada).
 
 ---
 

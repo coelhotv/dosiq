@@ -11,8 +11,9 @@
 ---
 
 > **Decisões deste round:**
+> - **Seletor de contexto = `self` + `managed` (M3/phase-0):** o dropdown do header **não é** uma feature exclusiva de cuidador profissional — é o mecanismo geral "**Eu / Minha mãe / Meu pai**". Ana Paula tem os próprios tratamentos (contexto `self`, default) e pode alternar para os contextos `managed` que ela gerencia. Conta sem nenhum `managed` = app de auto-gestão normal, sem dropdown.
 > - **Registro remoto de dose:** o cuidador `manager` pode **registrar a dose do paciente remotamente** (painel web/app) — fluxo do DRAFT §Motor ("filha liga, confirma, clica Confirmar Dose"). Insere via `registerDose(...)` com `source='caregiver'`; sync tempo-real no device do paciente. **FR-006**.
-> - **Faseamento por gate (G1):** o **switch multi-perfil (N pacientes)** só entra após o gate de adoção mono-paciente. A US1 mono-paciente é entregável independente; a expansão multi-perfil é gated.
+> - **Faseamento por gate (G1):** o seletor já nasce suportando `self`; a **expansão para N contextos `managed`** (multi-paciente) só entra após o gate de adoção mono-paciente. A US1 mono-paciente é entregável independente.
 
 ---
 
@@ -56,7 +57,7 @@ Para que o cuidador consiga acompanhar múltiplos dependentes sem atrito ou comp
 - **FR-002:** Dashboard desktop consolidado na plataforma web exibindo cards individuais de cada paciente cadastrado.
 - **FR-003:** O painel web desktop exibe: últimas doses tomadas e alertas críticos de atrasos, progresso de adesão semanal e estimativa de esgotamento de estoque.
 - **FR-004:** Uso de chaves SWR isoladas por dependente UUID para evitar contaminação de cache.
-- **FR-005 [GATED por G1]:** Dropdown multi-perfil na barra superior (Header) mobile para alternância de dependentes (toque mínimo 60px) — **só implementar após o gate de tração mono-paciente** (ver EPIC). Antes do gate, header opera em modo single-patient.
+- **FR-005:** Seletor de contexto no header mobile (toque ≥60px) com o contexto `self` (default) + os contextos `managed`. **A expansão para N contextos `managed` (multi-paciente) é GATED por G1**; antes do gate, o seletor opera com `self` + no máximo 1 `managed`.
 - **FR-006:** **Registro remoto de dose** pelo cuidador `manager` (painel web/app) via `registerDose(...)` com `source='caregiver'`; o device do paciente reflete em tempo real no próximo sync.
 
 ### Key Entities

@@ -9,7 +9,7 @@
 ## Phase 0 — Reality Gates (C1)
 - [ ] **T001** [C1] **GATE R-090**: confirmar que o cron existente (`server/bot/` scheduler) pode hospedar a avaliação dos eventos — **não criar função serverless nova**.
 - [ ] **T002** [C1] **GATE**: ler `_adherenceHelpers.js` + estrutura de `notification_log` + `dose_instances.notified_at` → decidir onde persistir a flag de idempotência (não inventar tabela).
-- [ ] **T003** [C1] **Resolver Open Questions com PO**: enum final de `notification_channel` (7A sem WhatsApp) + limiar de digest.
+- [ ] **T003** [C1] **Resolver Open Questions com PO**: enum final de `notification_channel` (`push/telegram/email/none`) + limiar de digest.
 
 ## Phase 1 — Core (resolução de alvo/canal)
 - [ ] **T004** [US1] `getCaregiversToNotify(patientId, event)` em `createCaregiverRepository.js` — JOIN `caregiver_links` (`patient_id`=`user_id` paciente, `role='manager'`), filtra `notification_channel != 'none'`.

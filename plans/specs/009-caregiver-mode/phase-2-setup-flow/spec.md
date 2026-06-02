@@ -11,8 +11,10 @@
 ---
 
 > **Decisões deste round:**
-> - **Revogação = só deleta `caregiver_links` (D1/P4):** os dados clínicos já são do paciente (`user_id` do paciente desde o setup — phase-1). Revogar **não migra nem re-aponta nenhuma entidade**; apenas remove a linha de vínculo → RLS corta o cuidador instantaneamente e o app volta a standalone. Zero janela de re-ownership.
-> - **Convite = link multi-canal (P-canais):** o botão "Compartilhar Convite" usa a **Share API nativa** (RN `Share` / web `navigator.share`). O usuário escolhe o canal no share sheet do SO — **WhatsApp, SMS, Telegram, e-mail, etc. são apenas canais**, não dependências. Nenhum vínculo a Meta/WhatsApp Business (isso é Fase 7B, épico à parte).
+> - **Cold-start (M1, ver [phase-0](../phase-0-identity-model/)):** a tela `[ Sou Paciente ]/[ Sou Cuidador ]` **NÃO é a primeira tela do app**. O default é o onboarding normal de auto-gestão. Este fork só aparece **no contexto de convite** (device aberto via deeplink/QR de convite). Usuários comuns nunca o veem.
+> - **Provisionamento (M2):** o paciente é uma **conta provisória anônima** criada pelo cuidador (phase-0); os dados já nascem sob o `user_id` final dele. O escaneamento + consentimento é um **claim** do device sobre essa conta — não importação/migração.
+> - **Revogação = só deleta `caregiver_links` (D1):** os dados já são do paciente. Revogar **não migra nem re-aponta nenhuma entidade**; remove a linha de vínculo → RLS corta o cuidador e o app volta a standalone. Zero re-ownership.
+> - **Convite = link multi-canal:** o botão "Compartilhar Convite" usa a **Share API nativa** (RN `Share` / web `navigator.share`). O canal (WhatsApp, SMS, Telegram, e-mail…) é escolhido no share sheet do SO — são apenas canais, sem dependência de provedor.
 > - **Deeplink universal:** o link `dosiq.app/invite/<code>` reconcilia com a spec [019-universal-links-web-banner](../../019-universal-links-web-banner/) (Universal Links iOS + App Links Android + fallback store). Esta fase **consome** 019, não reimplementa.
 
 ---
@@ -26,12 +28,12 @@ Para anular a barreira de exclusão digital na terceira idade, a Cuidadora reali
 ## User Scenarios & Testing
 
 ### User Story 1 - Geração de Convite Desacoplado (Priority: P1)
-**Why this priority**: Permite que a filha configure o tratamento e convide o paciente idoso sem depender da infraestrutura de bot de WhatsApp ativa.
+**Why this priority**: Permite que a filha configure o tratamento e convide o paciente idoso sem depender de infraestrutura de bot externa — só share nativo do SO.
 **Independent Test**: cadastrar paciente no painel do cuidador, verificar que gera o QR Code e código de 6 dígitos e que ao clicar em "Compartilhar", a folha de compartilhamento nativo do SO (`Share` API) é aberta.
 
 **Acceptance Scenarios**:
 1. Given que Ana Paula cadastrou sua mãe no painel do cuidador, When ela finalizar o setup de medicamentos, Then o sistema deve exibir um QR Code grande e legível e um botão "Compartilhar Código".
-2. When Ana Paula tocar em "Compartilhar Código", Then o app móvel deve acionar o módulo nativo `Share` permitindo enviar a mensagem com o código `A7X-92B` e o link de convite `dosiq.app/invite?code=A7X-92B` para o WhatsApp local de sua mãe.
+2. When Ana Paula tocar em "Compartilhar Código", Then o app móvel deve acionar o módulo nativo `Share` permitindo enviar o código `A7X-92B` e o link `dosiq.app/invite?code=A7X-92B` pelo canal que ela escolher (app de mensagens, SMS, e-mail).
 
 ### User Story 2 - Importação e Consentimento LGPD (Priority: P1)
 **Why this priority**: Crucial para conformidade de dados e facilidade de setup pelo paciente idoso.
@@ -62,7 +64,7 @@ Para anular a barreira de exclusão digital na terceira idade, a Cuidadora reali
 
 ### Functional Requirements
 
-- **FR-001:** Exibir tela de onboarding com opções proeminentes `[ Sou Paciente ]` e `[ Sou Cuidador ]` (área de toque mínima de 60px).
+- **FR-001:** No **contexto de convite** (device aberto via deeplink/QR), exibir tela com opções proeminentes `[ Sou Paciente ]` e `[ Sou Cuidador ]` (toque ≥60px). **Fora do contexto de convite, o cold-start é o onboarding normal de auto-gestão** (M1/phase-0) — este fork não é a 1ª tela universal.
 - **FR-002:** Tela de leitura de QR Code integrada com câmera nativa e input manual alternativo de código de 6 dígitos.
 - **FR-003:** Geração de convite no painel do cuidador exibindo QR Code + código de 6 díg + botão "Compartilhar Convite" via **Share API nativa** (RN `Share` / web `navigator.share`). O canal (WhatsApp/SMS/Telegram/e-mail/…) é escolhido no share sheet do SO — sem dependência de provedor específico.
 - **FR-004:** Exibição obrigatória de tela cheia de consentimento de privacidade e termos LGPD antes da conclusão do setup do paciente.

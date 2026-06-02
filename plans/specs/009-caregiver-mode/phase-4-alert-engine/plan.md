@@ -42,7 +42,7 @@ Engine de detecção + disparo no backend. **Sem novo endpoint serverless** (R-0
 ## Architecture / Approach
 
 - **Idempotência:** antes de disparar, checar flag de envio (NotificationLog ou `dose_instances.notified_at`); marcar após enviar. Nunca reenviar por tick.
-- **Abstração de canal:** reusar `INotificationChannel` do bot (push/telegram/email). WhatsApp = adapter plugável da Fase 7B — não implementar aqui.
+- **Abstração de canal:** reusar `INotificationChannel` do bot (push/telegram/email). Novos canais (ex. WhatsApp Business) são adapters plugáveis fora do escopo — não implementar aqui.
 - **Push-first:** alerta ao cuidador só após esgotar tolerância do paciente (não competir com alarme nativo da spec 001).
 
 ---
