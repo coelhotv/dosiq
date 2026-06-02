@@ -51,14 +51,16 @@ Mobile: tela full-screen AAA reusando a agregação de ficha. Web: reusar `featu
 
 | Path | Purpose | Caminho |
 |------|---------|---------|
-| `apps/mobile/src/features/profile/screens/ConsultationModeScreen.jsx` | tela AAA full-screen. | A+B [NEW] |
-| `apps/mobile/src/features/profile/components/ShareConsultButton.jsx` | Share nativo do link. | A+B [NEW] |
-| `apps/web/src/features/consultation/...` | reuso da ficha existente (read-only). | A+B [MOD] |
-| `packages/core/.../consultationData*.js` | extrair agregação pura (se mobile reusar). | A+B [MOD/NEW] |
+| `apps/mobile/src/features/consultation/screens/ConsultationModeScreen.jsx` | full-screen, **4 tabs** (Meds·Aderência·Prescrições+Titulação·Estoque), footer padBottom 88 (`mock-modoconsulta-*`). | C+B+A [NEW] |
+| `apps/mobile/src/features/consultation/screens/ConsultationPresentationScreen.jsx` | **Modo Apresentação** full-bleed (PO-7, `mock-modoconsulta-telacheia.png`). | C+B+A [NEW] |
+| `apps/mobile/src/features/consultation/components/ConsultationTabs/*` | tabs (Meds/Aderência/Prescrições+Titulação c/ `ConsultationTitrationCard`/Estoque). | C+B+A [NEW] |
+| `apps/mobile/src/features/consultation/components/ShareSheet.jsx` | 3 opções (Apresentação · Gerar PDF→007 · sistema, `mock-modoconsulta-sharesheet.png`). | C+B+A [NEW] |
+| `apps/mobile/src/features/profile/...` (hub) | entry point "Modo Consulta" em Ferramentas. | [MOD] |
+| `packages/core/.../consultationData*.js` | extrair agregação pura de `consultationDataService` (se mobile reusar). | [MOD/NEW] |
 | `api/share.js` | reuso (TTL 24h). | **B** |
 | `docs/migrations/<data>_consultation_tokens.sql` + rota pública | tabela+RLS+rota. | **A** |
 
-> **Removidos** os alvos da fonte: `features/profile/WebConsultationView.jsx` (usar `features/consultation`) e `supabase/migrations/...` (usar `docs/migrations/`).
+> **Removidos** os alvos errados: `features/profile/WebConsultationView.jsx` (usar `features/consultation`), `supabase/migrations/...` (usar `docs/migrations/`), e a tab **"Histórico"** (não é Modo Consulta — tab certa é Prescrições+Titulação, PO-6). **Mobile usa `features/consultation`** (espelha a web), não `features/profile`.
 
 ## Risks
 - **Decisão A/B não resolvida** → C2 bloqueado.

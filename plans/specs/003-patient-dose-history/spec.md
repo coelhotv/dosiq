@@ -5,7 +5,12 @@
 **Status**: Dev Ready
 **Tier**: 1 (feature mobile; reusa `dose_instances` + `registerDose` + repo core)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
-**Legacy Source**: `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.1
+**Legacy Sources**:
+- `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.1 (consolidação unificada)
+- `plans/backlog-native_app/EXEC_SPEC_FASE5_ANALITICAS.md` §1 (**fonte original CRUD + decisões PO + mocks**)
+**Mocks (PO-aprovados)**: `plans/backlog-native_app/MOCKS_APP_CRUD/export/fase-5/` — `mock-historico-doses.png`, `mock-historico-semdoses.png`, `mock-historico-doses-sheet.png`, `mock-historico-doses-sheet-apagar.png`; código: `dosiq-mocks/analytics-screens.jsx`.
+
+> **Recuperado da fonte CRUD (perdido na consolidação):** mocks acima + decisões PO-3/PO-4/PO-5 (ver §UX/PO). Reconciliação: a fonte CRUD assumia modelo **pré-`dose_instances`** ("DB não tem status pendente; excluir log reverte ao pendente" — PO-5). Pós-refactor isso vira `dose_instances.status` + `undoDose` (delete do log ancorado → reverte a instância p/ `pending`/`missed`); a UX do sheet (Editar/Excluir) permanece idêntica.
 
 ---
 
@@ -49,14 +54,29 @@ Paciente idoso multi-medicamento precisa acompanhar o que tomou/esqueceu hoje e 
 
 ---
 
+## UX & Decisões PO (recuperado da fonte CRUD)
+
+- **PO-3 — Empty state:** dia **sem doses programadas** usa estado minimalíssimo **"Nada por aqui"** (ícone + 3 palavras), **NÃO** empty state global (que conflita com tratamentos não-diários). Mock `mock-historico-semdoses.png`.
+- **PO-4 — Toque:** calendário compacto = **coluna inteira clicável** (DOM + número + dot), `minHeight 60px` (safe-touch >44px).
+- **PO-5 — Sheet de dose = 2 ações:** `Editar registro` (ajustar **hora E dose tomada**; subtitle "Ajustar a hora ou a dose que você efetivamente tomou") · `Excluir registro` (sheet de confirmação `-apagar`, motivo opcional). **"Marcar não tomada" REMOVIDA.** Mocks `mock-historico-doses-sheet.png`/`-sheet-apagar.png`.
+- **Entry point:** linha **"Histórico de Doses"** no **Perfil hub › Ferramentas** (PO-1/PO-2).
+- **KPIs (3 cards):** `Adesão · 30d` · `Sequência (dias)` · `Doses · mês`.
+- **WeekCalendar:** calendário **semanal** navegável (setas + swipe "Deslize entre semanas"); dot **3 estados**: full (todas tomadas) · partial · none (sem doses programadas); dia selecionado = **pill teal**.
+- **Affordance visual, nunca textual** (PO-9): sem hints "toque aqui".
+
+---
+
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: Calendário em linha na Home, toque ≥60px/dia (a11y idoso, R-137/138).
-- **FR-002**: Lista cronológica baseada **exclusivamente** em `dose_instances` (via `createDoseInstanceRepository`), chips por status.
-- **FR-003**: Bottom sheet nativa ao tocar numa instância: registro retroativo (`registerDose`) e desfazer (delete do `medicine_log` + revert status).
-- **FR-004**: Toda mutação invalida snapshots locais (`@dosiq/dose-instances-snapshot`, `@dosiq/adherence-snapshot`).
+- **FR-001**: `WeekCalendar` semanal navegável (setas + swipe), cada dia = **coluna inteira clicável** `minHeight 60px` (a11y idoso, R-137/138); dot 3 estados (full/partial/none); dia selecionado pill teal. Mock `mock-historico-doses.png`.
+- **FR-002**: Lista cronológica do dia baseada **exclusivamente** em `dose_instances` (via `createDoseInstanceRepository`), chips por status; header `<dia>, <data> · N doses`.
+- **FR-003**: 3 KPIs no topo: `Adesão · 30d`, `Sequência (dias)`, `Doses · mês`.
+- **FR-004**: Bottom sheet nativa ao tocar numa instância — **PO-5**: `Editar registro` (hora + dose, via `registerDose` retroativo) · `Excluir registro` (confirmação, motivo opcional → `undoDose`: delete do `medicine_log` ancorado + revert status). Sem "marcar não tomada".
+- **FR-005**: Dia sem doses programadas → estado **"Nada por aqui"** (PO-3), não empty global.
+- **FR-006**: Entry point no **Perfil hub › Ferramentas** (linha "Histórico de Doses").
+- **FR-007**: Toda mutação invalida snapshots locais (`@dosiq/dose-instances-snapshot`, `@dosiq/adherence-snapshot`).
 
 ### Key Entities
 

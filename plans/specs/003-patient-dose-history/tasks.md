@@ -11,9 +11,11 @@
 - [ ] T003 [C1] **GATE**: ler `registerDose` (`doseService.js:136`) + `logSchema` → payload mínimo. Verificar se existe `undoDose`/delete de log ancorado; senão, planejar criar reusando o rollback do service.
 
 ## Phase 1 — UI
-- [ ] T004 [US1] `HistoryScreen.jsx` [NEW] (`features/history`) — agrega calendário + lista.
-- [ ] T005 [US1] `AdherenceCalendar.jsx` — calendário em linha, toque ≥60px.
-- [ ] T006 [US1] `DoseHistoryList.jsx` — virtualizada, chips por status; reusa derivações de `_useTodayDerived.js`.
+- [ ] T004 [US1] `HistoryScreen.jsx` [NEW] (`features/history`) — agrega KPIs + WeekCalendar + lista.
+- [ ] T005 [US1] `WeekCalendar.jsx` — semanal navegável (setas+swipe), coluna clicável ≥60px (PO-4), dots 3 estados, pill teal (`mock-historico-doses.png`).
+- [ ] T006 [US1] `DoseHistoryKpis.jsx` — 3 cards (Adesão 30d · Sequência · Doses mês).
+- [ ] T006b [US1] `DoseHistoryList.jsx` — virtualizada, chips por status; empty "Nada por aqui" (PO-3, `mock-historico-semdoses.png`); reusa derivações de `_useTodayDerived.js`.
+- [ ] T006c [US1] Entry point "Histórico de Doses" no Perfil hub › Ferramentas (`mock-perfil-entrypoints`).
 
 ## Phase 2 — Mutação
 - [ ] T007 [US2] `DoseActionSheet.jsx` — retroativo via `registerDose({...,taken_at},{instanceId})`.

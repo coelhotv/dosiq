@@ -33,10 +33,12 @@ Leitura/mutação de `dose_instances` via `@dosiq/core` (`createDoseInstanceRepo
 
 | Path | Purpose | Evidence |
 |------|---------|----------|
-| `apps/mobile/src/features/history/screens/HistoryScreen.jsx` | calendário + lista. | [NEW] |
-| `apps/mobile/src/features/history/components/AdherenceCalendar.jsx` | calendário em linha (toque ≥60px). | [NEW] |
-| `apps/mobile/src/features/history/components/DoseHistoryList.jsx` | lista virtualizada por status. | [NEW] |
-| `apps/mobile/src/features/history/components/DoseActionSheet.jsx` | sheet de retroativo/desfazer. | [NEW] |
+| `apps/mobile/src/features/history/screens/HistoryScreen.jsx` | calendário + KPIs + lista (mock `mock-historico-doses.png`). | [NEW] |
+| `apps/mobile/src/features/history/components/WeekCalendar.jsx` | calendário **semanal** navegável; coluna clicável ≥60px; dots 3 estados; pill teal (PO-4). | [NEW] |
+| `apps/mobile/src/features/history/components/DoseHistoryKpis.jsx` | 3 cards (Adesão 30d · Sequência · Doses mês). | [NEW] |
+| `apps/mobile/src/features/history/components/DoseHistoryList.jsx` | lista virtualizada por status; empty "Nada por aqui" (PO-3, `mock-historico-semdoses.png`). | [NEW] |
+| `apps/mobile/src/features/history/components/DoseActionSheet.jsx` | sheet Editar/Excluir (PO-5, `mock-historico-doses-sheet.png`/`-apagar`). | [NEW] |
+| `apps/mobile/src/features/profile/...` (hub) | entry point "Histórico de Doses" em Ferramentas (PO-1/2, `mock-perfil-entrypoints`). | [MOD] |
 | `apps/mobile/src/features/dose/services/doseService.js` | reuso `registerDose`; **adicionar** `undoDose(instanceId)` (delete log ancorado + revert status) se ainda não existir. | `:136` |
 | `packages/core/src/repositories/createDoseInstanceRepository.js` | leitura (listByRange/status). Estender se faltar método de range. | verificado |
 

@@ -5,7 +5,11 @@
 **Status**: Dev Ready
 **Tier**: 1 (port mobile; web já existe)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
-**Legacy Source**: `PHASE_5_6_PARITY_AND_BEYOND.md` §F6.2
+**Legacy Sources**:
+- `PHASE_5_6_PARITY_AND_BEYOND.md` §F6.2 (consolidação unificada)
+- `plans/backlog-native_app/EXEC_SPEC_FASE5_ANALITICAS.md` PO-8 (**origem CRUD**: na Fase 5 o "Gerar PDF" era **placeholder "em breve · Fase 6"**; esta spec é a realização real)
+
+> **Reconciliação:** o **share sheet do Modo Consulta (spec 005)** tem a opção "Gerar PDF" — na fonte CRUD ficava desabilitada (placeholder, PO-8). Esta spec (007) **realiza** essa opção: ao tocar "Gerar PDF" no share sheet do 005, dispara o `pdfGeneratorService` mobile (`expo-print`). Integração: 005 FR-004 → 007 FR-001.
 
 ---
 

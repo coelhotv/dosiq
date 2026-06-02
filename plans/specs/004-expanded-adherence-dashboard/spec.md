@@ -5,7 +5,12 @@
 **Status**: Dev Ready
 **Tier**: 1 (UI mobile; reusa lógica de adesão de `@dosiq/core`)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
-**Legacy Source**: `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.2
+**Legacy Sources**:
+- `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.2 (consolidação unificada)
+- `plans/backlog-native_app/EXEC_SPEC_FASE5_ANALITICAS.md` §2 (**fonte original CRUD + decisões PO + mocks**)
+**Mocks (PO-aprovados)**: `plans/backlog-native_app/MOCKS_APP_CRUD/export/fase-5/` — `mock-adesao-30d.png` (default), `mock-adesao-90d.png`, `mock-dashboard-entrypoint-adesao.png`; código: `dosiq-mocks/analytics-screens.jsx`.
+
+> **Recuperado da fonte CRUD:** entry-point por drill-down do anel do Dashboard (PO-1), anel hero/KPIs/line-chart/heatmap/insights detalhados, e o **gate de paridade web G2/G3** (decisão `createAdherenceRepository` + regressão web 0%) — todos perdidos na consolidação.
 
 ---
 
@@ -46,15 +51,31 @@ Expandir o indicador básico de adesão no **mobile** com Ring Gauge, Sparkline 
 
 ---
 
+## UX & Decisões PO (recuperado da fonte CRUD)
+
+- **PO-1 — Entry point = drill-down do anel do Dashboard "Hoje".** O anel de adesão ganha **affordance VISUAL** (sombra raised + chevron-right, **sem** texto "ver detalhes") → navega p/ esta tela. Não recria o anel — evolui o existente como entry point. Mock `mock-dashboard-entrypoint-adesao.png`.
+- **Anel hero 148px** com % + `Últimos Nd` + `meta 90%` + delta `+X pp vs período anterior` (verde).
+- **Period segmented** `7d / 30d / 90d` (default **30d**). Mocks `mock-adesao-30d.png`/`-90d.png`.
+- **KPIs:** `Doses tomadas (ex.: 404/411)` · `Pontualidade (ex.: 98%)`.
+- **Line chart** ~30 pontos (1 ponto = 1 dia; verde-escuro = adesão >100% = recuperou dose atrasada) — espelha o gráfico web.
+- **Heatmap dia×período** destacando o pior horário.
+- **Insights acionáveis** (lista; mock pode esconder via flag).
+
+---
+
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: Filtro rápido 7/30/90 dias no topo do dashboard.
-- **FR-002**: **Ring Gauge Hero** — anel de adesão agregada do período (cor dinâmica), via `adherenceLogic` core.
-- **FR-003**: **Sparkline/Line Chart** — curva semanal de adesão, leve (sem libs SVG pesadas).
-- **FR-004**: **Heatmap Temporal** — matriz período × dia da semana.
-- **FR-005**: Computação **client-side** reusando `@dosiq/core/utils/adherenceLogic.js` sobre cache local (R-111..114); invalidação após mutação de dose (integra com 003).
+- **FR-001**: Entry point — anel do Dashboard "Hoje" com affordance visual (sombra + chevron, sem texto) navega p/ esta tela (PO-1).
+- **FR-002**: Period segmented `7d/30d/90d` (default 30d).
+- **FR-003**: **Anel hero 148px** — adesão agregada do período (cor dinâmica) + `meta 90%` + delta `±X pp vs período anterior`, via `adherenceLogic` core.
+- **FR-004**: **KPIs** — Doses tomadas (N/total) · Pontualidade (%).
+- **FR-005**: **Line Chart** ~30 pts (1 dia/ponto; verde-escuro >100%), leve (sem libs SVG pesadas).
+- **FR-006**: **Heatmap Temporal** — matriz período × dia da semana (destaca pior horário).
+- **FR-007**: **Insights acionáveis**.
+- **FR-008**: Computação **client-side** reusando `@dosiq/core/utils/adherenceLogic.js` sobre cache local (R-111..114); invalidação após mutação de dose (integra 003).
+- **FR-009**: **Gate de paridade web (G2/G3):** auditar `adherenceService` web + `adherenceLogic` core; decidir agregação canônica (`createAdherenceRepository` OU manter `adherenceLogic` estendido) e, se factory, web adota com **regressão 0%** (`validate:agent` green). Documentar a escolha.
 
 ### Key Entities
 

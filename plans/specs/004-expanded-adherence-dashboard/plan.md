@@ -32,12 +32,14 @@ UI analítica client-side no **mobile**, reusando `@dosiq/core/utils/adherenceLo
 
 | Path | Purpose | Evidence |
 |------|---------|----------|
-| `apps/mobile/src/features/dashboard/components/RingGauge.jsx` | anel de adesão. | [NEW] |
-| `apps/mobile/src/features/dashboard/components/AdherenceSparkline.jsx` | curva semanal leve. | [NEW] |
-| `apps/mobile/src/features/dashboard/components/TemporalHeatmap.jsx` | matriz período×dia. | [NEW] |
-| `apps/mobile/src/features/dashboard/screens/AdherenceDashboardScreen.jsx` | filtros 7/30/90 + cache SWR. | [NEW] |
+| `apps/mobile/src/features/dashboard/components/AdherenceRingHero.jsx` | anel hero 148px + meta 90% + delta pp (`mock-adesao-30d.png`). | [NEW] |
+| `apps/mobile/src/features/dashboard/components/AdherenceLineChart.jsx` | ~30 pts (verde-escuro >100%). | [NEW] |
+| `apps/mobile/src/features/dashboard/components/AdherenceHeatmap.jsx` | matriz período×dia (pior horário). | [NEW] |
+| `apps/mobile/src/features/dashboard/components/AdherenceKpis.jsx` | Doses tomadas + Pontualidade. | [NEW] |
+| `apps/mobile/src/features/dashboard/screens/AdherenceDashboardScreen.jsx` | segmented 7/30/90 (def 30d) + insights + cache SWR. | [NEW] |
+| `apps/mobile/src/features/dashboard/...` (anel "Hoje") | entry point drill-down: affordance visual (sombra+chevron) → AdherenceDashboard (PO-1, `mock-dashboard-entrypoint-adesao.png`). | [MOD] |
 | `apps/mobile/src/features/dashboard/services/dashboardService.js` | + agregações de período consumindo `adherenceLogic`. | [MOD] |
-| `packages/core/src/utils/adherenceLogic.js` | reuso; estender só se faltar agregação por bloco/dia-da-semana. | verificado |
+| `packages/core/src/utils/adherenceLogic.js` | reuso; estender só se faltar agregação bloco/dia-da-semana. **Gate G2/G3**: decidir factory vs utils + paridade web. | verificado |
 
 > **Removido** o alvo `packages/core/src/services/adherenceCalculator.js` (duplicaria `adherenceLogic.js`).
 
