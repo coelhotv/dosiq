@@ -1,5 +1,6 @@
 import { MonitorCog, Form, Wand2, Grid3x2 } from 'lucide-react'
 import { TIMEZONE_OPTIONS } from '@dosiq/core'
+import TzIntentModal from './TzIntentModal'
 
 /**
  * PreferenceSection — Preferências de interface e experiência de uso.
@@ -10,6 +11,11 @@ export default function PreferenceSection({
   getComplexityDisplayMode,
   timezone,
   handleTimezoneChange,
+  tzPrompt,
+  tzApplying,
+  handleTzTravel,
+  handleTzMove,
+  handleTzCancel,
 }) {
   return (
     <section className="sr-section">
@@ -67,6 +73,14 @@ export default function PreferenceSection({
           ))}
         </select>
       </div>
+
+      <TzIntentModal
+        prompt={tzPrompt}
+        applying={tzApplying}
+        onTravel={handleTzTravel}
+        onMove={handleTzMove}
+        onCancel={handleTzCancel}
+      />
     </section>
   )
 }

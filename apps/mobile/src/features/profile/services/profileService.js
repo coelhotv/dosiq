@@ -1,5 +1,13 @@
 import { z } from 'zod'
-import { userSettingsNotificationSchema, createProfileRepository, TIMEZONES_BR, getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
+import {
+  userSettingsNotificationSchema,
+  createProfileRepository,
+  TIMEZONES_BR,
+  getDeviceTimezone,
+  resolveSupportedTz,
+  hasFuturePendingDoses as hasFuturePendingDosesCore,
+  regenActiveProtocolsForTz,
+} from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 /**
@@ -146,16 +154,23 @@ export async function updateNotificationSettings(userId, settings) {
 
 /**
  * Atualizar fuso horário do utilizador (ADR-049 — update isolado, não toca noutros campos).
+ *
+ * F4.3f.2: `regen=true` ("Me mudei") re-ancora todas as doses futuras no fuso novo
+ * (wipe + regeneração por tratamento ativo). `regen=false` ("viagem" ou sem dose
+ * futura) só persiste o tz — instante absoluto das doses intacto, muda só o render.
+ * A regeneração é best-effort (R-245/246): falha nela não desfaz o persist do tz.
+ *
  * @param {string} timezone — IANA tz string (ex: 'America/Sao_Paulo')
+ * @param {{regen?: boolean}} [options]
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
-export async function updateTimezone(timezone) {
+export async function updateTimezone(timezone, { regen = false } = {}) {
   try {
     const { data: user, error: userError } = await getCurrentUser()
     if (userError || !user) throw new Error(userError || 'Utilizador não encontrado')
 
     z.string().uuid().parse(user.id)
-    // Valida contra a lista canônica de fusos BR (rejeita IANA inválido/estrangeiro)
+    // Valida contra a lista canônica de fusos (rejeita IANA inválido/estrangeiro)
     z.enum(TIMEZONES_BR).parse(timezone)
 
     const { error } = await supabase
@@ -164,10 +179,30 @@ export async function updateTimezone(timezone) {
       .eq('user_id', user.id)
 
     if (error) throw error
+
+    if (regen) {
+      await regenActiveProtocolsForTz({ client: supabase, userId: user.id, tz: timezone })
+    }
     return { success: true, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao salvar fuso horário:', err)
     return { success: false, error: mapErrorToMessage(err) }
+  }
+}
+
+/**
+ * Há doses pendentes futuras? Governa se o prompt de intenção (viagem × mudança)
+ * deve aparecer na troca de fuso. Sem dose futura → persiste direto, sem perguntar.
+ * Best-effort: erro → false.
+ * @returns {Promise<boolean>}
+ */
+export async function hasFuturePendingDoses() {
+  try {
+    const { data: user, error: userError } = await getCurrentUser()
+    if (userError || !user) return false
+    return await hasFuturePendingDosesCore(supabase, user.id)
+  } catch {
+    return false
   }
 }
 

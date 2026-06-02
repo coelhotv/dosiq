@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, startTransition } from 'react'
 import { supabase } from '@shared/utils/supabase'
 import { getServerTimestamp } from '@utils/dateUtils'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
+import { hasFuturePendingDoses, regenActiveProtocolsForTz } from '@dosiq/core'
+import { invalidateCache } from '@shared/hooks/useCachedQuery'
+import { CACHE_KEYS } from '@dosiq/shared-data'
 
 export function useSettingsState() {
   const { mode: complexityMode, setOverride: setComplexityOverride, overrideMode } = useComplexityMode()
@@ -169,21 +172,85 @@ export function useSettingsState() {
     }
   }
 
+  // F4.3f.2: prompt de intenção na troca de fuso (viagem × mudança).
+  // tzPrompt = { fromTz, toTz } enquanto a modal está aberta; null fechada.
+  const [tzPrompt, setTzPrompt] = useState(null)
+  const [tzApplying, setTzApplying] = useState(false)
+
+  // Persiste o tz no perfil. `regen=true` ("Me mudei") re-ancora as doses futuras
+  // no fuso novo; `regen=false` ("viagem") só troca o setting (instante absoluto intacto).
+  const persistTimezone = async (tz, { regen }) => {
+    const { data } = await supabase.auth.getUser()
+    const user = data?.user
+    if (!user) throw new Error('Usuário não autenticado')
+    // Supabase não lança em falha de update (rede/RLS) — checar {error} senão
+    // o estado local muda e o usuário vê sucesso falso (lição Sprint 7).
+    const { error } = await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
+    if (error) throw error
+    if (regen) {
+      // Best-effort (R-245/246): falha na regeneração não desfaz o persist do tz.
+      await regenActiveProtocolsForTz({ client: supabase, userId: user.id, tz })
+    }
+    setTimezone(tz)
+    // F4.3f.0: ajuste manual do fuso dispensa o nudge do Perfil (TzNudge.DISMISS_KEY).
+    try { localStorage.setItem('dosiq_tz_nudge_dismissed', '1') } catch { /* sem localStorage */ }
+    // Render do dashboard depende do tz e das ocorrências de hoje → invalidar.
+    invalidateCache(CACHE_KEYS.USER_TIMEZONE)
+    invalidateCache(`${CACHE_KEYS.DOSE_INSTANCES_TODAY}*`)
+  }
+
   const handleTimezoneChange = async (tz) => {
+    if (!tz || tz === timezone) return
     try {
       const { data } = await supabase.auth.getUser()
       const user = data?.user
       if (!user) throw new Error('Usuário não autenticado')
-      await supabase.from('user_settings').update({ timezone: tz }).eq('user_id', user.id)
-      setTimezone(tz)
-      // F4.3f.0: ajuste manual do fuso dispensa o nudge do Perfil (chave de
-      // TzNudge.DISMISS_KEY) — não reaparece após o usuário acertar o tz.
-      try { localStorage.setItem('dosiq_tz_nudge_dismissed', '1') } catch { /* sem localStorage */ }
-      showMsg('success', 'Fuso horário atualizado.')
+      // Sem dose futura, viagem×mudança não muda nada → persiste direto, sem prompt.
+      const hasFuture = await hasFuturePendingDoses(supabase, user.id)
+      if (!hasFuture) {
+        await persistTimezone(tz, { regen: false })
+        showMsg('success', 'Fuso horário atualizado.')
+        return
+      }
+      // Há doses futuras → pergunta a intenção antes de persistir.
+      setTzPrompt({ fromTz: timezone, toTz: tz })
     } catch {
       showMsg('error', 'Erro ao salvar fuso horário.')
     }
   }
+
+  // "Estou só de viagem": persiste o tz, sem regenerar (doses no horário real de origem).
+  const handleTzTravel = async () => {
+    if (!tzPrompt) return
+    try {
+      setTzApplying(true)
+      await persistTimezone(tzPrompt.toTz, { regen: false })
+      showMsg('success', 'Fuso horário atualizado.')
+    } catch {
+      showMsg('error', 'Erro ao salvar fuso horário.')
+    } finally {
+      setTzApplying(false)
+      setTzPrompt(null)
+    }
+  }
+
+  // "Me mudei": persiste o tz e re-ancora as doses futuras no fuso novo.
+  const handleTzMove = async () => {
+    if (!tzPrompt) return
+    try {
+      setTzApplying(true)
+      await persistTimezone(tzPrompt.toTz, { regen: true })
+      showMsg('success', 'Fuso e horários das doses atualizados.')
+    } catch {
+      showMsg('error', 'Erro ao salvar fuso horário.')
+    } finally {
+      setTzApplying(false)
+      setTzPrompt(null)
+    }
+  }
+
+  // Cancelar/descartar: nada muda (o seletor reflete `timezone`, que não foi alterado).
+  const handleTzCancel = () => setTzPrompt(null)
 
   const getComplexityDisplayMode = () => {
     if (overrideMode === 'simple') return 'Ativo: Modo Padrão (simplificado)'
@@ -201,6 +268,9 @@ export function useSettingsState() {
       digestTime, setDigestTime, saveDigestTime, savingDigestTime,
     },
     integration: { isTelegramConnected, generateTelegramToken, telegramToken, handleDisconnectTelegram },
-    preference: { overrideMode, handleComplexityChange, getComplexityDisplayMode, timezone, handleTimezoneChange },
+    preference: {
+      overrideMode, handleComplexityChange, getComplexityDisplayMode, timezone, handleTimezoneChange,
+      tzPrompt, tzApplying, handleTzTravel, handleTzMove, handleTzCancel,
+    },
   }
 }
