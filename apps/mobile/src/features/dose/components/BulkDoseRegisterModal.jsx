@@ -336,6 +336,14 @@ export default function BulkDoseRegisterModal({
 
     const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : getNow().toISOString()
 
+    // `instancesByKey` mapeia as ocorrências do DIA ATUAL (timeline de hoje). Se a tomada
+    // foi backdatada para outro dia local (ex.: relógio já virou para amanhã, mas o usuário
+    // registra a dose de ontem), a âncora direta por `protocol_id|HH:MM` resolveria para a
+    // instância do dia errado (bug: marcava a ocorrência de amanhã e deixava a real `missed`).
+    // Nesse caso NÃO usamos o mapa de hoje → `instance_id=null` força o snap por tolerância
+    // em `registerDoseMany`/`findAnchorInstance`, que ancora pelo `taken_at` real (dia correto).
+    const isBackdated = !!takenAtDate && takenAtDate.toDateString() !== getNow().toDateString()
+
     const logsData = selectedIds
       .map(id => {
         const item = expandedDoseItems.find(item => item.id === id)
@@ -343,8 +351,11 @@ export default function BulkDoseRegisterModal({
         const p = item.protocol
         // F4.3d: âncora direta — item já instanciado (hero) tem instanceId; senão resolve
         // a ocorrência do slot (protocol_id|HH:MM) no mapa do dia; senão null → snap.
-        const instanceId = item.instanceId
-          ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null)
+        // Dose backdatada para outro dia → ignora o mapa de hoje (snap pelo taken_at).
+        const instanceId = isBackdated
+          ? null
+          : (item.instanceId
+            ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
         return {
           protocol_id: p.id,
           medicine_id: p.medicine?.id ?? p.medicine_id,
