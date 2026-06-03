@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { useMutation } from '@shared/hooks/useMutation'
 import { useToast } from '@shared/components/feedback/Toast'
+import { triggerAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { protocolService } from '../services/protocolService'
 
 const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
@@ -47,7 +48,10 @@ export function useProtocolMutation() {
       TODAY_CACHE_KEY,
       STOCK_CACHE_KEY,
     ],
-    onSuccess: () => show('Tratamento criado', { variant: 'success' }),
+    onSuccess: () => {
+      show('Tratamento criado', { variant: 'success' })
+      triggerAlarmResync() // FR-006: reagenda alarmes c/ a nova agenda
+    },
     onError: (err) => show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' }),
   })
 
@@ -67,7 +71,10 @@ export function useProtocolMutation() {
       TODAY_CACHE_KEY,
       STOCK_CACHE_KEY,
     ],
-    onSuccess: () => show('Tratamento atualizado', { variant: 'success' }),
+    onSuccess: () => {
+      show('Tratamento atualizado', { variant: 'success' })
+      triggerAlarmResync() // FR-006: horários/dose podem ter mudado
+    },
     onError: (err) => show(err?.message ?? 'Erro ao atualizar tratamento', { variant: 'error' }),
   })
 
@@ -111,6 +118,7 @@ export function useProtocolMutation() {
           TODAY_CACHE_KEY,
           STOCK_CACHE_KEY,
         ]).catch(() => {})
+        triggerAlarmResync() // FR-006: pausar/retomar muda os alarmes futuros
         show(nextValue ? 'Tratamento ativo' : 'Tratamento pausado', { variant: 'success' })
         return result
       } catch (err) {

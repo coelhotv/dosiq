@@ -10,6 +10,14 @@ import * as SecureStore from 'expo-secure-store'
 
 const CHUNK_SIZE = 1800 // margem segura abaixo dos 2048 bytes
 
+// Acessibilidade do Keychain (iOS). Default é WHEN_UNLOCKED → ilegível com a tela
+// bloqueada, quebrando handlers em background (ex.: ações do alarme nativo via
+// Apple Watch / lock screen → "User interaction is not allowed"). AFTER_FIRST_UNLOCK
+// libera leitura em background após o 1º unlock pós-reboot, sem sincronizar com
+// iCloud (mantém o token local ao device). Aplicado SÓ na escrita — itens antigos
+// migram no próximo refresh/login. No-op no Android (usa Keystore). Spec 001 A2.
+const KEYCHAIN_OPTS = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK }
+
 async function getChunked(key) {
   const countStr = await SecureStore.getItemAsync(`${key}_chunks`)
   if (countStr === null) {
@@ -27,7 +35,7 @@ async function getChunked(key) {
 async function setChunked(key, value) {
   if (value.length <= CHUNK_SIZE) {
     // valor pequeno — armazenar directamente, limpar chunks antigos se existirem
-    await SecureStore.setItemAsync(key, value)
+    await SecureStore.setItemAsync(key, value, KEYCHAIN_OPTS)
     await cleanChunks(key)
     return
   }
@@ -36,8 +44,8 @@ async function setChunked(key, value) {
   for (let i = 0; i < value.length; i += CHUNK_SIZE) {
     chunks.push(value.slice(i, i + CHUNK_SIZE))
   }
-  await Promise.all(chunks.map((chunk, i) => SecureStore.setItemAsync(`${key}_${i}`, chunk)))
-  await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length))
+  await Promise.all(chunks.map((chunk, i) => SecureStore.setItemAsync(`${key}_${i}`, chunk, KEYCHAIN_OPTS)))
+  await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length), KEYCHAIN_OPTS)
   // remover chave directa antiga se existir
   await SecureStore.deleteItemAsync(key).catch(() => {})
 }

@@ -24,6 +24,7 @@ import SignupScreen from '../screens/SignupScreen'
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
+import AlarmFullScreen from '../features/dose/screens/AlarmFullScreen'
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
@@ -219,6 +220,12 @@ export default function Navigation() {
         ) : session ? (
           <>
             <Stack.Screen name={ROUTES.TABS} component={RootTabs} />
+            {/* Alarme em tela cheia (Spec 001) — takeover, sem header nem gesto de voltar */}
+            <Stack.Screen
+              name={ROUTES.ALARM_FULLSCREEN}
+              component={AlarmFullScreen}
+              options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+            />
             {__DEV__ && (
               <>
                 <Stack.Screen

@@ -6,6 +6,7 @@ import analytics from '@react-native-firebase/analytics'
 import Navigation from './Navigation'
 import { ToastProvider } from '@shared/components/feedback/Toast'
 import ErrorBoundary from '@shared/components/ErrorBoundary'
+import AlarmSchedulerBridge from '@platform/alarms/AlarmSchedulerBridge'
 import { debugLog } from '@shared/utils/debugLog'
 import {
   useFonts,
@@ -84,6 +85,7 @@ export default function AppRoot() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <ToastProvider>
+          <AlarmSchedulerBridge />
           <Navigation />
         </ToastProvider>
       </SafeAreaProvider>

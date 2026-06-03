@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.8.1' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.9.0' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -64,6 +64,14 @@ module.exports = {
       },
       // UL-S1: Universal Links iOS
       associatedDomains: ['applinks:dosiq.app'],
+      // Time Sensitive Notifications (Spec 001 — alarme fura Focus/DND no iOS via
+      // interruptionLevel:'timeSensitive'). EAS sincroniza capabilities do portal
+      // a partir DESTE entitlement: sem ele declarado aqui, o `eas credentials`
+      // DESATIVA a capability no Apple Developer ("Disabled: Time Sensitive
+      // Notifications"). Declarado → EAS mantém habilitado e gera o profile com ela.
+      entitlements: {
+        'com.apple.developer.usernotifications.time-sensitive': true,
+      },
     },
     android: {
       package: current.androidPackage,
@@ -87,12 +95,25 @@ module.exports = {
     plugins: [
       '@react-native-firebase/app',
       '@react-native-firebase/crashlytics',
-      'expo-notifications',
+      // sounds: copia os .wav p/ android res/raw + iOS bundle → notifee/expo
+      // resolvem por nome ('alarm_dose'/'push_chime'). Sem isso o canal cai no
+      // som padrão do SO (Spec 001 — bug visto no dumpsys: mSound=default).
+      ['expo-notifications', {
+        sounds: ['./assets/sounds/alarm_dose.wav', './assets/sounds/push_chime.wav'],
+      }],
       'expo-font',
       ['expo-build-properties', {
         ios: {
           useFrameworks: 'static'
-        }
+        },
+        android: {
+          // Notifee (Spec 001) distribui o AAR app.notifee:core num maven repo
+          // LOCAL dentro do pacote; sem registrá-lo o gradle não resolve
+          // (app.notifee:core+ não encontrado). Caminho relativo ao módulo :app
+          // (android/app), onde o allprojects avalia a url → sobe 4 níveis até o
+          // repo-root node_modules (monorepo hoisted), portável.
+          extraMavenRepos: ['../../../../node_modules/@notifee/react-native/android/libs'],
+        },
       }],
       [
         'expo-tracking-transparency',
@@ -101,6 +122,7 @@ module.exports = {
         }
       ],
       './withFirebaseFix.js',
+      './withAlarmPermissions.js',
       '@react-native-community/datetimepicker'
     ],
     extra: {
