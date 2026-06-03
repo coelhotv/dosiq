@@ -5,10 +5,34 @@
 
 import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
 
+// Kinds de lembrete de dose — cobertos pelo alarme nativo (Notifee) no mobile.
+// Gate de duplicata (Spec 001 A2): devices com native_alarm_enabled NÃO recebem
+// push destes kinds (o alarme local já dispara). Outros kinds passam normais.
+const DOSE_REMINDER_KINDS = new Set([
+  'dose_reminder',
+  'dose_reminder_by_plan',
+  'dose_reminder_misc',
+])
+
 export async function sendExpoPushNotification({ userId, payload, context, repositories, expoClient }) {
   const correlationId = context?.correlationId || 'unknown'
 
-  const devices = await repositories.devices.listActiveByUser(userId, 'expo')
+  const allDevices = await repositories.devices.listActiveByUser(userId, 'expo')
+
+  // Filtra devices com alarme nativo ligado QUANDO a notif é lembrete de dose.
+  const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind)
+  const devices = isDoseReminder
+    ? allDevices.filter((d) => !d.native_alarm_enabled)
+    : allDevices
+  const gatedCount = allDevices.length - devices.length
+  if (gatedCount > 0) {
+    console.info('[expoPushChannel] push de dose suprimido (alarme nativo)', {
+      correlationId,
+      userId,
+      gated: gatedCount,
+      kind: payload?.metadata?.kind,
+    })
+  }
 
   if (devices.length === 0) {
     console.info('[expoPushChannel] sem devices ativos', { correlationId, userId })
@@ -25,7 +49,12 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const messages = devices.map((device) => ({
     to: device.push_token,
-    sound: 'default',
+    // Som próprio do app (sound design). iOS: arquivo do bundle pelo nome. Android:
+    // o som vem do CANAL (push_chime via PUSH_CHANNEL_ID), o `sound` aqui é ignorado;
+    // por isso enviamos também `channelId` p/ rotear pro canal certo (mobile cria em
+    // ensurePushChannel). Manter o id em sync com PUSH_CHANNEL_ID do mobile.
+    sound: 'push_chime.wav',
+    channelId: 'dosiq-default-v1',
     title: payload.title,
     body: payload.pushBody || payload.body,
     data: {

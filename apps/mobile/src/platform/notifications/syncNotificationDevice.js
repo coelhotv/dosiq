@@ -8,7 +8,7 @@ import { Platform } from 'react-native'
 import * as Device from 'expo-device'
 import * as Application from 'expo-application'
 
-export async function syncNotificationDevice({ supabase, userId, token }) {
+export async function syncNotificationDevice({ supabase, userId, token, nativeAlarmEnabled = false }) {
   if (!supabase) {
     throw new Error('[syncNotificationDevice] supabase client required')
   }
@@ -34,6 +34,9 @@ export async function syncNotificationDevice({ supabase, userId, token }) {
     p_device_name:        Device.modelName,
     p_device_fingerprint: deviceFingerprint,
     p_app_version:        Application.nativeApplicationVersion,
+    // Gate de duplicata (Spec 001 A2): device com alarme nativo ON → server pula
+    // o push de DOSE pra este token (alarme local já cobre). Default false.
+    p_native_alarm_enabled: nativeAlarmEnabled,
   })
 
   if (error) {

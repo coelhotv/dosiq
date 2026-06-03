@@ -192,6 +192,33 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     unmount()
   })
 
+  // Cenário 4b: press do alarme nativo (Notifee) tem doseInstanceId e NÃO navega
+  // (evita 'Hoje' not handled — tratado pelo AlarmSchedulerBridge).
+  it('press do alarme nativo (doseInstanceId) não navega', async () => {
+    const capturedHandler = { fn: null }
+    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
+      capturedHandler.fn = fn
+      return { remove: jest.fn() }
+    })
+
+    const { unmount } = renderHook(() =>
+      usePushNotifications({ supabase: {}, session: makeSession() })
+    )
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+
+    act(() => {
+      capturedHandler.fn({
+        notification: { request: { content: { data: { doseInstanceId: 'inst-9' } } } },
+      })
+    })
+
+    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    unmount()
+  })
+
   // Cenário 5: cold start com resposta pendente
   it('cold start com resposta pendente navega para TODAY', async () => {
     Notifications.getLastNotificationResponseAsync.mockResolvedValue(

@@ -6,5 +6,10 @@ import './polyfills'
 // inicializar expo-router — que não está instalado — causando crash (AP-H09)
 import { AppRegistry } from 'react-native'
 import App from './App'
+// Handler de background do alarme (Spec 001) — registrar no top-level antes do
+// app montar, p/ processar "Tomei"/"Pular" com o app fechado (lock screen).
+import { registerAlarmBackgroundHandler } from './src/platform/alarms/registerAlarmBackgroundHandler'
+
+registerAlarmBackgroundHandler()
 
 AppRegistry.registerComponent('main', () => App)
