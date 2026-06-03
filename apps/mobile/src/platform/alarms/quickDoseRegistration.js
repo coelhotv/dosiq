@@ -30,53 +30,95 @@ async function invalidate(keys) {
 }
 
 /**
+ * Registra a tomada pela via canônica (medicine_log → consume_stock_fifo → âncora).
+ * Reutilizado pelo handler de notificação E pela tela AlarmFullScreen.
+ * @param {object} data - { doseInstanceId, protocolId, medicineId, quantityTaken }
+ */
+export async function registerTaken(data) {
+  const { doseInstanceId, protocolId, medicineId, quantityTaken } = data || {}
+  if (!doseInstanceId) return { success: false }
+  // Silenciar PRIMEIRO: o usuário agiu — para o som/notif na hora, mesmo que o
+  // registro no DB falhe depois. Sem isso, um erro de rede deixaria o alarme tocando.
+  await alarmService.cancelAlarm(doseInstanceId)
+  if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
+  const quantity = Number(quantityTaken) || 1
+  await registerDose(
+    {
+      protocol_id: protocolId || null,
+      medicine_id: medicineId,
+      taken_at: getRawNow().toISOString(),
+      quantity_taken: quantity,
+    },
+    { instanceId: doseInstanceId }
+  )
+  await invalidate(SNAPSHOTS_TAKEN)
+  return { success: true }
+}
+
+/**
+ * Pula a dose: status='skipped_user' (sem log, sem consumo).
+ * @param {object} data - { doseInstanceId }
+ */
+export async function registerSkip(data) {
+  const { doseInstanceId } = data || {}
+  if (!doseInstanceId) return { success: false }
+  await alarmService.cancelAlarm(doseInstanceId) // silencia primeiro
+  if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
+  await supabase.from('dose_instances').update({ status: 'skipped_user' }).eq('id', doseInstanceId)
+  await invalidate(SNAPSHOTS_SKIP)
+  return { success: true }
+}
+
+/**
  * Processa o evento de ação do Notifee (foreground ou background handler).
  * @param {object} event - { type, detail: { notification, pressAction } }
  * @returns {Promise<{ handled: boolean, action?: string }>}
  */
+// Args compartilhados por snooze (manual) e nag (automático): mesma dose, mesma
+// tolerância dinâmica, mesmo payload de re-registro. Extraído pra manter
+// handleAlarmAction abaixo do teto de complexidade (R-? lint).
+function rescheduleBase(data) {
+  const { doseInstanceId, protocolId, medicineId, quantityTaken, medicineName, toleranceMinutes } = data
+  return {
+    doseInstanceId,
+    medicineName,
+    scheduledFor: data.scheduledFor,
+    toleranceMinutes: toleranceMinutes != null ? Number(toleranceMinutes) : null,
+    data: { protocolId, medicineId, quantityTaken },
+  }
+}
+
 export async function handleAlarmAction(event) {
   const notification = event?.detail?.notification
   const pressActionId = event?.detail?.pressAction?.id
   const data = notification?.data || {}
-  const { doseInstanceId, protocolId, medicineId, quantityTaken, medicineName, toleranceMinutes } = data
 
-  if (!doseInstanceId) return { handled: false }
+  if (!data.doseInstanceId) return { handled: false }
 
   switch (pressActionId) {
     case ALARM_ACTION.TAKEN: {
-      const quantity = Number(quantityTaken) || 1
-      // VIA CANÔNICA — registerDose faz insert→consume_stock_fifo→âncora→rollback.
-      await registerDose(
-        {
-          protocol_id: protocolId || null,
-          medicine_id: medicineId,
-          taken_at: getRawNow().toISOString(),
-          quantity_taken: quantity,
-        },
-        { instanceId: doseInstanceId }
-      )
-      await alarmService.cancelAlarm(doseInstanceId)
-      await invalidate(SNAPSHOTS_TAKEN)
+      await registerTaken(data)
       return { handled: true, action: ALARM_ACTION.TAKEN }
     }
 
     case ALARM_ACTION.SKIP: {
-      // Skip não cria log nem consome estoque — update direto é correto aqui.
-      await supabase.from('dose_instances').update({ status: 'skipped_user' }).eq('id', doseInstanceId)
-      await alarmService.cancelAlarm(doseInstanceId)
-      await invalidate(SNAPSHOTS_SKIP)
+      await registerSkip(data)
       return { handled: true, action: ALARM_ACTION.SKIP }
+    }
+
+    case ALARM_ACTION.SNOOZE: {
+      await alarmService.scheduleSnooze({
+        ...rescheduleBase(data),
+        currentSnoozeAttempt: parseInt(data.snoozeAttempt || '0', 10),
+      })
+      return { handled: true, action: ALARM_ACTION.SNOOZE }
     }
 
     default: {
       // Sem ação explícita (descartada/ignorada) → nag reativo dentro da tolerância.
       await alarmService.scheduleNag({
-        doseInstanceId,
-        medicineName,
-        scheduledFor: data.scheduledFor,
-        toleranceMinutes: toleranceMinutes != null ? Number(toleranceMinutes) : null,
+        ...rescheduleBase(data),
         currentNagAttempt: parseInt(data.nagAttempt || '0', 10),
-        data: { protocolId, medicineId, quantityTaken },
       })
       return { handled: true, action: 'nag' }
     }

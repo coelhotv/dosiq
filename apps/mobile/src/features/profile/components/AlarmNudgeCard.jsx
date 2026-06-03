@@ -34,9 +34,8 @@ export default function AlarmNudgeCard() {
     await markAlarmNudgeSeen()
   }, [])
 
+  // CTA só navega — o card permanece como atalho até o usuário fechar no X.
   const goToToggle = useCallback(() => {
-    markAlarmNudgeSeen()
-    setVisible(false)
     navigation.navigate(ROUTES.NOTIFICATION_PREFERENCES)
   }, [navigation])
 
@@ -50,8 +49,8 @@ export default function AlarmNudgeCard() {
       <View style={styles.body}>
         <Text style={styles.title}>Novidade: alarmes críticos</Text>
         <Text style={styles.text}>
-          Agora o Dosiq pode tocar um alarme em tela cheia no horário da dose,
-          mesmo no silencioso. Ative para as doses que não podem ser esquecidas.
+          Agora o Dosiq pode tocar um alarme na hora da dose. 
+          Ative se você tem remédios que não podem ser esquecidos.
         </Text>
         <TouchableOpacity
           onPress={goToToggle}

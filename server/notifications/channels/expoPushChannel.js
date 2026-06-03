@@ -5,10 +5,34 @@
 
 import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
 
+// Kinds de lembrete de dose — cobertos pelo alarme nativo (Notifee) no mobile.
+// Gate de duplicata (Spec 001 A2): devices com native_alarm_enabled NÃO recebem
+// push destes kinds (o alarme local já dispara). Outros kinds passam normais.
+const DOSE_REMINDER_KINDS = new Set([
+  'dose_reminder',
+  'dose_reminder_by_plan',
+  'dose_reminder_misc',
+])
+
 export async function sendExpoPushNotification({ userId, payload, context, repositories, expoClient }) {
   const correlationId = context?.correlationId || 'unknown'
 
-  const devices = await repositories.devices.listActiveByUser(userId, 'expo')
+  const allDevices = await repositories.devices.listActiveByUser(userId, 'expo')
+
+  // Filtra devices com alarme nativo ligado QUANDO a notif é lembrete de dose.
+  const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind)
+  const devices = isDoseReminder
+    ? allDevices.filter((d) => !d.native_alarm_enabled)
+    : allDevices
+  const gatedCount = allDevices.length - devices.length
+  if (gatedCount > 0) {
+    console.info('[expoPushChannel] push de dose suprimido (alarme nativo)', {
+      correlationId,
+      userId,
+      gated: gatedCount,
+      kind: payload?.metadata?.kind,
+    })
+  }
 
   if (devices.length === 0) {
     console.info('[expoPushChannel] sem devices ativos', { correlationId, userId })

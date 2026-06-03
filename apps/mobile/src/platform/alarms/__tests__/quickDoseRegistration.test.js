@@ -13,7 +13,7 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   supabase: { from: (...a) => mockFrom(...a) },
 }))
 
-import { handleAlarmAction } from '../quickDoseRegistration'
+import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
 
 function evt(pressActionId, data) {
   return { detail: { pressAction: { id: pressActionId }, notification: { data } } }
@@ -87,5 +87,41 @@ describe('handleAlarmAction — ignorado', () => {
     const res = await handleAlarmAction(evt('dose-taken', {}))
     expect(res).toEqual({ handled: false })
     expect(mockRegisterDose).not.toHaveBeenCalled()
+  })
+})
+
+describe('handleAlarmAction — Soneca', () => {
+  it('re-agenda a mesma dose (snooze) e retorna action dose-snooze', async () => {
+    const res = await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '0' }))
+    expect(notifee.createTriggerNotification).toHaveBeenCalled()
+    expect(mockRegisterDose).not.toHaveBeenCalled()
+    expect(res.action).toBe('dose-snooze')
+  })
+
+  it('estourou o teto (3) → não re-agenda', async () => {
+    await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '3' }))
+    expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
+  })
+})
+
+describe('cancela o alarme ANTES de registrar (silencia já)', () => {
+  it('Tomei: cancelNotification (notif exibida / loop) é chamado', async () => {
+    await registerTaken(BASE)
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
+    expect(mockRegisterDose).toHaveBeenCalledTimes(1)
+  })
+
+  it('__dev: cancela mas NÃO toca o DB (registerDose/from não chamados)', async () => {
+    const res = await registerTaken({ ...BASE, __dev: 'true' })
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
+    expect(mockRegisterDose).not.toHaveBeenCalled()
+    expect(res).toEqual({ success: true, dev: true })
+  })
+
+  it('Pular __dev: cancela sem update cru de dose_instances', async () => {
+    const res = await registerSkip({ doseInstanceId: 'inst-1', __dev: 'true' })
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
+    expect(mockFrom).not.toHaveBeenCalled()
+    expect(res).toEqual({ success: true, dev: true })
   })
 })
