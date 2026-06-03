@@ -93,3 +93,4 @@
 ## 📱 Mobile & Platform (`mobile_and_platform`)
 - **[K-089]** dona-maria-layout -> [`knowledge/mobile_and_platform/K-089.md`](./knowledge/mobile_and_platform/K-089.md)
 - **[K-090]** Lightweight Notification Badge Pattern -> [`knowledge/mobile_and_platform/K-090.md`](./knowledge/mobile_and_platform/K-090.md)
+- **[K-091]** Constraints do Alarme Nativo no iOS vs Android (sem full-screen takeover; timeSensitive×Critical Alerts; entitlement/EAS; SecureStore bg; categorias) -> [`knowledge/mobile_and_platform/K-091.md`](./knowledge/mobile_and_platform/K-091.md)
