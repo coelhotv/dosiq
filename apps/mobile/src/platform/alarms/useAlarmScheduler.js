@@ -63,6 +63,7 @@ export async function syncAlarms({ userId, protocols, tz }) {
         protocolId: it.protocolId,
         medicineId: it.medicineId,
         quantityTaken: String(it.dosagePerIntake ?? 1),
+        scheduledTime: it.scheduledTime || '',
       },
     })
   }

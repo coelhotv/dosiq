@@ -14,6 +14,9 @@ export const ROUTES = {
   // Shell do produto (tab navigator)
   TABS: 'Tabs',
 
+  // Alarme nativo em tela cheia (Spec 001) — aberto pelo full-screen intent
+  ALARM_FULLSCREEN: 'AlarmFullScreen',
+
   // Tabs principais
   TODAY: 'Hoje',
   TREATMENTS: 'Tratamentos',

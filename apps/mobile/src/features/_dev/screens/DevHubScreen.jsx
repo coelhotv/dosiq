@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react-native'
 import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 import { colors, spacing } from '@shared/styles/tokens'
+import { devFireAlarmNow, devScheduleAlarmIn, devClearAlarms } from '../devAlarmTriggers'
 
 export default function DevHubScreen({ navigation }) {
   return (
@@ -23,6 +24,40 @@ export default function DevHubScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 001 — Alarme Nativo</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              devFireAlarmNow()
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>⚡ Disparar notif AGORA (visual: notif + botões + som)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              devScheduleAlarmIn(10)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>⏱️ Agendar +10s (path real: lock/Doze → full-screen)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              devClearAlarms()
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>🧹 Limpar alarmes de teste</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            Tomei/Pular usam id sentinela → o registro falha de propósito. Foco: apresentação.
+          </Text>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fase 3 — Estoque S3.1</Text>
           <TouchableOpacity
@@ -109,5 +144,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: colors.text.primary,
+  },
+  note: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: spacing[2],
+    lineHeight: 16,
   },
 })

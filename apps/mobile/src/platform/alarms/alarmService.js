@@ -18,24 +18,129 @@ import notifee, {
   AndroidVisibility,
   AndroidCategory,
   TriggerType,
+  AuthorizationStatus,
 } from '@notifee/react-native'
-import { Platform } from 'react-native'
+import { Platform, Linking } from 'react-native'
+import * as Device from 'expo-device'
 import { parseISO } from '@dosiq/core'
 import { debugLog } from '@shared/utils/debugLog'
 
-export const ALARM_CHANNEL_ID = 'dose-alarm'
+// Canal Android é IMUTÁVEL após criado — bumpar o id força recriação com o som
+// correto (alarm_dose). v1 ficou no som padrão; v2 nasceu padrão em devices cujo
+// build era anterior ao plugin de sons (res/raw sem alarm_dose) e, por ser
+// imutável, não corrigia nem reinstalando. v3 = canal limpo no build COM o som.
+// REGRA: ao trocar o som do alarme, SEMPRE bumpar este id (senão fica no antigo).
+export const ALARM_CHANNEL_ID = 'dose-alarm-v3'
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
+// iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
+// Promover a 'critical' (fura mute físico/silencioso total) SÓ após a Apple aprovar
+// o entitlement com.apple.developer.usernotifications.critical-alerts (formulário
+// em avaliação). Ao promover: trocar aqui + add `critical:true` no bloco ios do
+// buildNotification + declarar o entitlement no app.config/ios entitlements.
+const IOS_INTERRUPTION_LEVEL = 'timeSensitive'
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
+const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
+const MAX_SNOOZE_ATTEMPTS = 3
 
 // Ações da notificação (R-222 — IDs estáveis, sem string solta no caller).
 export const ALARM_ACTION = Object.freeze({
   TAKEN: 'dose-taken',
   SKIP: 'dose-skip',
+  SNOOZE: 'dose-snooze',
 })
 
 let channelEnsured = false
+
+/**
+ * Pede a permissão de notificação do SO (POST_NOTIFICATIONS no Android 13+,
+ * autorização no iOS). É a MESMA permissão do push — alarme e push a compartilham.
+ * Ponto de intenção: ligar o toggle do alarme (R-239).
+ * @returns {Promise<boolean>} concedida (AUTHORIZED ou PROVISIONAL)
+ */
+export async function requestAlarmPermission() {
+  try {
+    const settings = await notifee.requestPermission()
+    return (
+      settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+      settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Android 14+ (API 34): `USE_FULL_SCREEN_INTENT` virou acesso especial — declarar
+ * no manifest não basta, o SO rebaixa pra heads-up até o usuário conceder. Não há
+ * API pra checar/conceder programaticamente; abre a tela de configuração do SO.
+ * No-op em < API 34 (concedida por declaração) e no iOS.
+ * @returns {Promise<boolean>} true se precisou abrir as configs (API ≥ 34)
+ */
+export async function openFullScreenIntentSettings() {
+  if (Platform.OS !== 'android' || Number(Platform.Version) < 34) return false
+  try {
+    // Action global de "Notificações em tela cheia" (lista de apps).
+    await Linking.sendIntent('android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT')
+  } catch {
+    try {
+      await Linking.openSettings() // fallback: detalhes do app
+    } catch {
+      // best-effort
+    }
+  }
+  return true
+}
+
+/** True se o aparelho exige o acesso especial de full-screen (Android 14+). */
+export function needsFullScreenIntentAccess() {
+  return Platform.OS === 'android' && Number(Platform.Version) >= 34
+}
+
+/**
+ * True em aparelhos Xiaomi/Redmi/POCO (HyperOS/MIUI) — restringem alarme em
+ * background de forma agressiva (autostart, bateria, lock-screen, pop-up) e
+ * precisam de um guia próprio, mais detalhado, vs. o genérico do Android 14+.
+ */
+export function isXiaomiDevice() {
+  if (Platform.OS !== 'android') return false
+  const id = `${Device.manufacturer || ''} ${Device.brand || ''}`.toLowerCase()
+  return /xiaomi|redmi|poco/.test(id)
+}
+
+let iosCategoriesEnsured = false
+
+/**
+ * iOS: registra a categoria de notificação com as ações Tomei/Soneca/Pular
+ * (T015). Sem isso a notif iOS sai SEM botões — `categoryId` no payload só
+ * referencia uma categoria que precisa existir. Idempotente. No-op no Android.
+ * `foreground:false` → ação tratada pelo background handler (igual Android),
+ * sem abrir o app; só o tap no corpo abre (AlarmFullScreen).
+ */
+export async function ensureAlarmCategories() {
+  if (Platform.OS !== 'ios' || iosCategoriesEnsured) return
+  await notifee.setNotificationCategories([
+    {
+      id: ALARM_CHANNEL_ID,
+      actions: [
+        { id: ALARM_ACTION.TAKEN, title: 'Tomei', foreground: false },
+        { id: ALARM_ACTION.SNOOZE, title: 'Soneca 5 min', foreground: false },
+        { id: ALARM_ACTION.SKIP, title: 'Pular', foreground: false, destructive: true },
+      ],
+    },
+  ])
+  iosCategoriesEnsured = true
+}
+
+/**
+ * Garante a infra do alarme pra plataforma atual: canal HIGH no Android,
+ * categoria de ações no iOS. Chamado antes de todo agendamento.
+ */
+export async function ensureAlarmSetup() {
+  await ensureAlarmChannel()
+  await ensureAlarmCategories()
+}
 
 /** Cria (idempotente) o canal Android HIGH que fura DND. No-op no iOS. */
 export async function ensureAlarmChannel() {
@@ -55,7 +160,10 @@ export async function ensureAlarmChannel() {
 // Monta o objeto de notificação compartilhado por agendamento e nag.
 function buildNotification({ doseInstanceId, medicineName, data, notificationId }) {
   const title = '💊 Hora da dose'
-  const body = medicineName ? `Está na hora de ${medicineName}.` : 'Está na hora da sua dose.'
+  const time = data?.scheduledTime
+  const body = medicineName
+    ? `Está na hora de tomar ${medicineName}${time ? ` (${time})` : ''}.`
+    : 'Está na hora da sua dose.'
   return {
     id: notificationId,
     title,
@@ -66,18 +174,27 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId 
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
       sound: SOUND_ANDROID,
+      // Loop do som + notif persistente: toca até o usuário escolher Tomei/Pular.
+      // ongoing+autoCancel:false impedem swipe/auto-dismiss; cancelAlarm para o som.
+      loopSound: true,
+      ongoing: true,
+      autoCancel: false,
       // Full-screen intent na lock screen (FR-002).
       fullScreenAction: { id: 'default' },
       pressAction: { id: 'default', launchActivity: 'default' },
       actions: [
         { title: 'Tomei', pressAction: { id: ALARM_ACTION.TAKEN } },
+        { title: 'Soneca', pressAction: { id: ALARM_ACTION.SNOOZE } },
         { title: 'Pular', pressAction: { id: ALARM_ACTION.SKIP } },
       ],
     },
     ios: {
       sound: SOUND_IOS,
-      interruptionLevel: 'timeSensitive', // fallback até critical alert entitlement (A2)
-      categoryId: ALARM_CHANNEL_ID,
+      interruptionLevel: IOS_INTERRUPTION_LEVEL, // timeSensitive até critical aprovado
+      categoryId: ALARM_CHANNEL_ID, // ações registradas em ensureAlarmCategories (T015)
+      // iOS suprime som/banner de notif quando o app está em foreground por padrão.
+      // Declarar pra o alarme tocar/aparecer mesmo com o app aberto (paridade Android).
+      foregroundPresentationOptions: { sound: true, banner: true, list: true },
     },
   }
 }
@@ -94,7 +211,7 @@ export async function scheduleAlarm({
   toleranceMinutes = null,
   data = {},
 }) {
-  await ensureAlarmChannel()
+  await ensureAlarmSetup()
   // F: instante absoluto (timestamptz) → epoch direto via parseISO (não date-string parse).
   const timestamp = parseISO(scheduledFor).getTime()
   if (Number.isNaN(timestamp)) {
@@ -108,7 +225,7 @@ export async function scheduleAlarm({
     doseInstanceId,
     medicineName,
     notificationId: doseInstanceId,
-    data: { ...data, medicineName, toleranceMinutes, nagAttempt: '0' },
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: '0', snoozeAttempt: '0' },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -119,10 +236,17 @@ export async function scheduleAlarm({
   debugLog('[alarmService] agendado', doseInstanceId, 'ts=', timestamp)
 }
 
-/** Cancela o alarme principal + nags de uma ocorrência. */
+/**
+ * Cancela o alarme de uma ocorrência: trigger pendente + notif JÁ EXIBIDA + nags.
+ * cancelNotification para o loop do som (loopSound/ongoing) da notif disparada;
+ * cancelTriggerNotification limpa o trigger que ainda não disparou. Os dois são
+ * necessários — Tomei/Pular/Soneca dependem disto pra silenciar o alarme.
+ */
 export async function cancelAlarm(doseInstanceId) {
-  await notifee.cancelTriggerNotification(doseInstanceId)
+  await notifee.cancelNotification(doseInstanceId) // displayed (para o som em loop)
+  await notifee.cancelTriggerNotification(doseInstanceId) // trigger pendente
   for (let n = 1; n <= MAX_NAG_ATTEMPTS; n++) {
+    await notifee.cancelNotification(`${doseInstanceId}:nag:${n}`)
     await notifee.cancelTriggerNotification(`${doseInstanceId}:nag:${n}`)
   }
 }
@@ -152,7 +276,7 @@ export async function scheduleNag({
     if (!Number.isNaN(cutoff) && nextTs > cutoff) return
   }
 
-  await ensureAlarmChannel()
+  await ensureAlarmSetup()
   const notification = buildNotification({
     doseInstanceId,
     medicineName,
@@ -168,6 +292,50 @@ export async function scheduleNag({
   debugLog('[alarmService] nag', next, doseInstanceId)
 }
 
+/**
+ * Soneca manual (FR-003 v2): o usuário toca "Soneca" → re-agenda a MESMA dose pra
+ * +5min, máx 3 vezes. Reusa o id da instância (substitui a notif atual e PARA o
+ * loop do som). Diferente do nag (automático ao ignorar); aqui é ação consciente.
+ * @returns {Promise<boolean>} true se re-agendou; false se estourou o teto.
+ */
+export async function scheduleSnooze({
+  doseInstanceId,
+  medicineName,
+  scheduledFor,
+  toleranceMinutes = null,
+  currentSnoozeAttempt = 0,
+  data = {},
+}) {
+  // Cancela primeiro: mata o loop do som da notif atual.
+  await cancelAlarm(doseInstanceId)
+  const next = currentSnoozeAttempt + 1
+  if (next > MAX_SNOOZE_ATTEMPTS) return false
+
+  await ensureAlarmSetup()
+  const nextTs = Date.now() + SNOOZE_INTERVAL_MS
+  const notification = buildNotification({
+    doseInstanceId,
+    medicineName,
+    notificationId: doseInstanceId,
+    data: {
+      ...data,
+      medicineName,
+      scheduledFor,
+      toleranceMinutes,
+      nagAttempt: '0',
+      snoozeAttempt: String(next),
+    },
+  })
+
+  await notifee.createTriggerNotification(notification, {
+    type: TriggerType.TIMESTAMP,
+    timestamp: nextTs,
+    alarmManager: { allowWhileIdle: true },
+  })
+  debugLog('[alarmService] snooze', next, doseInstanceId)
+  return true
+}
+
 /** Cancela TODOS os triggers do Notifee (não toca expo-notifications). */
 export async function cancelAll() {
   await notifee.cancelTriggerNotifications()
@@ -175,9 +343,15 @@ export async function cancelAll() {
 }
 
 export const alarmService = {
+  requestAlarmPermission,
+  openFullScreenIntentSettings,
+  needsFullScreenIntentAccess,
   ensureAlarmChannel,
+  ensureAlarmCategories,
+  ensureAlarmSetup,
   scheduleAlarm,
   cancelAlarm,
   scheduleNag,
+  scheduleSnooze,
   cancelAll,
 }

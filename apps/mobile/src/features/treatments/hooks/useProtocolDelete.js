@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { useToast } from '@shared/components/feedback/Toast'
 import { successHaptic, errorHaptic } from '@shared/utils/haptics'
+import { triggerAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { protocolService } from '../services/protocolService'
 
 const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
@@ -42,6 +43,7 @@ export function useProtocolDelete(protocol) {
         TODAY_CACHE_KEY,
         STOCK_CACHE_KEY,
       ]).catch(() => {})
+      triggerAlarmResync() // FR-006: tratamento excluído → cancela/reagenda alarmes
       successHaptic()
       show('Tratamento excluído', { variant: 'success' })
       navigation.goBack()

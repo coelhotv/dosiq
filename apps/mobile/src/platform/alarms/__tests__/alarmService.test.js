@@ -15,8 +15,16 @@ describe('scheduleAlarm', () => {
     expect(notification.id).toBe('inst-1')
     expect(trigger.type).toBe(TriggerType.TIMESTAMP)
     expect(trigger.alarmManager).toEqual({ allowWhileIdle: true })
-    expect(notification.android.actions).toHaveLength(2)
+    expect(notification.android.actions).toHaveLength(3) // Tomei + Soneca + Pular
+    expect(notification.android.actions.map((a) => a.pressAction.id)).toEqual([
+      'dose-taken',
+      'dose-snooze',
+      'dose-skip',
+    ])
     expect(notification.android.fullScreenAction).toBeTruthy()
+    // Loop do som + notif persistente (não some até dispensar)
+    expect(notification.android.loopSound).toBe(true)
+    expect(notification.android.ongoing).toBe(true)
   })
 
   it('NÃO agenda timestamp no passado', async () => {

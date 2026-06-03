@@ -113,3 +113,80 @@ describe('expoPushChannel', () => {
     expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
   })
 })
+
+// Gate de duplicata do alarme nativo (Spec 001 A2): devices com
+// native_alarm_enabled NÃO recebem push de lembrete de DOSE (alarme local cobre).
+// Outros kinds e devices sem o flag seguem normais.
+describe('expoPushChannel — gate alarme nativo (dose)', () => {
+  const doseReminder = (kind = 'dose_reminder') => ({
+    title: '💊 Hora da dose',
+    body: 'Está na hora de tomar Losartana (08:00)',
+    pushBody: 'Está na hora de tomar Losartana (08:00)',
+    metadata: { kind, builtAt: '2026-01-01T00:00:00Z' },
+    actions: [],
+  })
+
+  it('dose_reminder: device com alarme ON é filtrado, device OFF recebe', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[alarm]', native_alarm_enabled: true },
+      { push_token: 'ExponentPushToken[plain]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    const result = await sendExpoPushNotification({
+      userId: 'user-gate-1',
+      payload: doseReminder(),
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.attempted).toBe(1)
+    expect(result.delivered).toBe(1)
+    const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
+    expect(messages).toHaveLength(1)
+    expect(messages[0].to).toBe('ExponentPushToken[plain]')
+  })
+
+  it.each(['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'])(
+    'kind %s: todos os devices com alarme ON → noop (nada enviado)',
+    async (kind) => {
+      mockRepositories.devices.listActiveByUser.mockResolvedValue([
+        { push_token: 'ExponentPushToken[a]', native_alarm_enabled: true },
+        { push_token: 'ExponentPushToken[b]', native_alarm_enabled: true },
+      ])
+
+      const result = await sendExpoPushNotification({
+        userId: 'user-gate-2',
+        payload: doseReminder(kind),
+        context: makeContext(),
+        repositories: mockRepositories,
+        expoClient: mockExpoClient,
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.attempted).toBe(0)
+      expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+    }
+  )
+
+  it('kind não-dose (stock_alert): device com alarme ON AINDA recebe', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[alarm]', native_alarm_enabled: true },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    const result = await sendExpoPushNotification({
+      userId: 'user-gate-3',
+      payload: makePayload(), // stock_alert
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.attempted).toBe(1)
+    expect(result.delivered).toBe(1)
+    const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
+    expect(messages[0].to).toBe('ExponentPushToken[alarm]')
+  })
+})
