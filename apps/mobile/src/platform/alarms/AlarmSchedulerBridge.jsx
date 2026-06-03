@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AppState } from 'react-native'
 import notifee, { EventType } from '@notifee/react-native'
-import { getRawNow } from '@dosiq/core'
+import { getTodayLocal } from '@dosiq/core'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { navigationRef } from '@navigation/navigationRef'
@@ -91,8 +91,10 @@ export default function AlarmSchedulerBridge() {
     try {
       const settings = await getUserSettings(userId)
       const userTz = settings?.timezone || DEFAULT_TZ
-      // YYYY-MM-DD no fuso do usuário (en-CA → ISO date), sem dep extra.
-      const dateStr = getRawNow().toLocaleDateString('en-CA', { timeZone: userTz })
+      // YYYY-MM-DD no fuso do usuário via helper canônico do core (getTodayLocal).
+      // NÃO usar toLocaleDateString({timeZone}) — no Hermes/Android o suporte a tz
+      // é limitado e a opção pode ser ignorada → data errada (paridade useTodayData).
+      const dateStr = getTodayLocal(userTz)
       const protos = await getActiveProtocols(userId, dateStr)
       // Enriquecer com o medicine aninhado — buildDoseItemsFromInstances lê
       // protocol.medicine.name (senão "Desconhecido"). getActiveProtocols traz

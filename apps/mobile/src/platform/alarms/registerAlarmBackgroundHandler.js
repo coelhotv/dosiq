@@ -23,7 +23,7 @@ export function registerAlarmBackgroundHandler() {
   // Android API 30). Lazy-require dentro do callback mantém o cold start leve —
   // o handler só roda quando o SO entrega um evento, com o runtime já pronto.
   notifee.onBackgroundEvent(async (event) => {
-    const { type } = event
+    const type = event?.type
     if (type === EventType.ACTION_PRESS || type === EventType.DISMISSED) {
       try {
         const { handleAlarmAction } = require('./quickDoseRegistration')
