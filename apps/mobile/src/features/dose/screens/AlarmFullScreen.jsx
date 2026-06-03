@@ -17,10 +17,11 @@ import { scheduleSnooze } from '@platform/alarms/alarmService'
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
 
 export default function AlarmFullScreen({ navigation, route }) {
+  // Ordem R-010: States → Memos → derivados (previne TDZ).
+  const [busy, setBusy] = useState(false)
   const data = useMemo(() => route?.params || {}, [route?.params])
   const { medicineName, scheduledTime } = data
   const snoozeMaxed = parseInt(data.snoozeAttempt || '0', 10) >= 3
-  const [busy, setBusy] = useState(false)
 
   const close = useCallback(() => {
     if (navigation.canGoBack()) navigation.goBack()

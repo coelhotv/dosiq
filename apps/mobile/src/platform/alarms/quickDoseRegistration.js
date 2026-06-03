@@ -41,7 +41,8 @@ export async function registerTaken(data) {
   // registro no DB falhe depois. Sem isso, um erro de rede deixaria o alarme tocando.
   await alarmService.cancelAlarm(doseInstanceId)
   if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
-  const quantity = Number(quantityTaken) || 1
+  // Coalescência nula (não `|| 1`): quantityTaken=0 deve ser respeitado, não virar 1.
+  const quantity = quantityTaken != null ? Number(quantityTaken) : 1
   await registerDose(
     {
       protocol_id: protocolId || null,

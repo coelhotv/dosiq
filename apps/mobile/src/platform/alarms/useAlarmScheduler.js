@@ -85,6 +85,7 @@ export function useAlarmScheduler({ isAlarmEnabled, userId, protocols, tz }) {
           await alarmService.cancelAll() // OFF → limpa tudo
           return
         }
+        if (cancelled) return // efeito re-disparou durante o await → aborta
         await syncAlarms({ userId, protocols, tz })
       } catch (err) {
         if (__DEV__) console.warn('[useAlarmScheduler] sync falhou', err?.message)
@@ -94,7 +95,6 @@ export function useAlarmScheduler({ isAlarmEnabled, userId, protocols, tz }) {
     run()
     return () => {
       cancelled = true
-      void cancelled
     }
   }, [isAlarmEnabled, userId, protocols, tz])
 }
