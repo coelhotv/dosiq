@@ -49,7 +49,12 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const messages = devices.map((device) => ({
     to: device.push_token,
-    sound: 'default',
+    // Som próprio do app (sound design). iOS: arquivo do bundle pelo nome. Android:
+    // o som vem do CANAL (push_chime via PUSH_CHANNEL_ID), o `sound` aqui é ignorado;
+    // por isso enviamos também `channelId` p/ rotear pro canal certo (mobile cria em
+    // ensurePushChannel). Manter o id em sync com PUSH_CHANNEL_ID do mobile.
+    sound: 'push_chime.wav',
+    channelId: 'dosiq-default-v1',
     title: payload.title,
     body: payload.pushBody || payload.body,
     data: {

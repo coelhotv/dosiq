@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getPushPermissionStatus } from './pushPermission'
 import { registerPushToken, PUSH_TOKEN_KEY } from './registerPushToken'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
+import { ensurePushChannel } from './ensurePushChannel'
 import { navigationRef } from '../../navigation/navigationRef'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
@@ -74,6 +75,9 @@ export function usePushNotifications({ supabase, session }) {
 
     async function setupPush() {
       try {
+        // Canal Android com o som próprio do app (push_chime). No-op no iOS.
+        await ensurePushChannel()
+
         // Cold start: processar resposta pendente apenas uma vez por ciclo de vida do app
         if (!coldStartProcessed.current) {
           coldStartProcessed.current = true
