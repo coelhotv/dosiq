@@ -1,6 +1,7 @@
 # DEVFLOW Rules Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[R-267]** Checklist para novos campos em `protocols`: (1) schema Zod base em packages/core, (2) todos os `.select()` que buscam protocols (grep `from('protocols')`), (3) telas de detalhe (espelhar ordem do form), (4) migration SQL. Esquecer qualquer um causa bug silencioso (AP-214 + AP-215) -> [`rules/data_and_schema/R-267.md`](./rules/data_and_schema/R-267.md)
 - **[R-245]** Geração de `dose_instances` em write-path é best-effort (try/catch); cron diário + `ensureInstancesUpTo` (rede lazy) são a malha de segurança — nunca bloquear CRUD de protocolo por erro de geração -> [`rules/data_and_schema/R-245.md`](./rules/data_and_schema/R-245.md)
 - **[R-246]** Âncora de log↔instância (S2.6): snap escopa SEMPRE por `protocol_id` (AP-A03) e respeita `tolerance_minutes` de CADA linha (varia por slot), pegando a `pending` mais próxima por instante absoluto (cross-meia-noite natural). É best-effort após o estoque — o `medicine_log` é a fonte de verdade da tomada; a instância é derivada e reconciliável por backfill. FP-1: `markTaken` não compara `quantity_taken` com `expected_dose`. **F2.5:** anchor aceita `pending` E `missed` (re-anchor/self-heal — registro retroativo dentro da tolerância reverte missed→taken; sweep `pending→missed` é o writer #3, AP-190) -> [`rules/data_and_schema/R-246.md`](./rules/data_and_schema/R-246.md)
 - **[R-248]** Leitura de adesão CONSULTA `dose_instances` por status (taken/(taken+missed); skipped_* neutro; denom vazio→null; modo binary|dose_exactness por protocolo; seams A/C ADR-052) — não infere sobre logs ±2h. Streak por dia no tz; head-count imune a AP-186 -> [`rules/data_and_schema/R-248.md`](./rules/data_and_schema/R-248.md)
@@ -48,6 +49,7 @@
 
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[R-266]** Gate obrigatório para hooks com side effect destrutivo em componente que carrega dados async: extrair para sub-componente `C`, renderizar condicionalmente com `loaded=true` (após primeiro load bem-sucedido). `loaded` via derived state (R-265). Evita cancelAll prematuro no mount (AP-215) -> [`rules/mobile_and_platform/R-266.md`](./rules/mobile_and_platform/R-266.md)
 - **[R-238]** Ação destrutiva irreversível (excluir conta) exige dupla barreira: confirmação textual ("EXCLUIR") + re-autenticação de senha (`verifyPassword` via `signInWithPassword`) -> [`rules/mobile_and_platform/R-238.md`](./rules/mobile_and_platform/R-238.md)
 - **[R-233]** Bottom sheet mobile (Modal RN) DEVE usar pattern unificado Android-safe: `statusBarTranslucent` + spacer `StatusBar.currentHeight` + `SafeAreaView edges=['bottom']` -> [`rules/mobile_and_platform/R-233.md`](./rules/mobile_and_platform/R-233.md)
 - **[R-024]** In the clinical PDF daily table, count completed vs expected dose events per day... -> [`rules/mobile_and_platform/R-024.md`](./rules/mobile_and_platform/R-024.md)
@@ -151,6 +153,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[R-265]** Derived state pattern para reset de estado em mudança de prop/dep: comparar `prevDep !== dep` durante render e chamar setState — sem useEffect. Evita `react-hooks/set-state-in-effect` e render extra. Alternativa: `key` prop no pai para remount -> [`rules/react_and_ui/R-265.md`](./rules/react_and_ui/R-265.md)
 - **[R-235]** Hook canônico antes de inline — grep por `use*Delete`/`use*Mutation` existente e adotar; inline OK só se nenhum cobre ou single call site -> [`rules/react_and_ui/R-235.md`](./rules/react_and_ui/R-235.md)
 - **[R-010]** Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong ord... -> [`rules/react_and_ui/R-010.md`](./rules/react_and_ui/R-010.md)
 - **[R-011]** LogForm returns Array when type==='plan' and Object when type==='protocol'. Alwa... -> [`rules/react_and_ui/R-011.md`](./rules/react_and_ui/R-011.md)
