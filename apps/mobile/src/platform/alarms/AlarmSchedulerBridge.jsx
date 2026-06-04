@@ -57,22 +57,21 @@ export default function AlarmSchedulerBridge() {
   const { user } = useAuth()
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
-  const [loaded, setLoaded] = useState(false)
+  // loaded: false enquanto aguarda o primeiro load() para userId corrente.
+  // userId=null → nada para carregar, scheduler pode rodar (vai cancelar alarmes).
+  const [loaded, setLoaded] = useState(!user?.id)
+  const [prevUserId, setPrevUserId] = useState(user?.id ?? null)
   const userId = user?.id ?? null
+
+  // Padrão de derived state: reset síncrono sem useEffect (sem render extra).
+  // React executa no mesmo render e descarta o output, re-renderizando com novo estado.
+  if (prevUserId !== userId) {
+    setPrevUserId(userId)
+    setLoaded(!userId) // novo user → false (aguarda load); logout → true (scheduler cancela)
+  }
+
   // Spec 010: scheduler sempre ativo; syncAlarms filtra por critical_alarm por-protocolo.
   const hasCriticalProtocol = protocols.some((p) => p.critical_alarm === true)
-
-  // userId = null → sem dados para carregar, mas scheduler deve rodar (cancela alarmes).
-  // userId muda → reset loaded até load() completar, evitando cancelAll prematuro.
-  useEffect(() => {
-    if (!userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoaded(true)
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoaded(false)
-    }
-  }, [userId])
 
   // Foreground: ações dos botões da notificação + abre o takeover de tela cheia.
   useEffect(() => {
