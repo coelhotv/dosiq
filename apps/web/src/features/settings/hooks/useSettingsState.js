@@ -51,7 +51,7 @@ export function useSettingsState() {
         const adminChatId = import.meta.env.VITE_ADMIN_CHAT_ID
         if (adminChatId && String(settings.telegram_chat_id) === String(adminChatId)) {
           setIsAdmin(true)
-          const { count } = await supabase.from('dead_letter_queue').select('*', { count: 'exact', head: true })
+          const { count } = await supabase.from('failed_notification_queue').select('*', { count: 'exact', head: true })
           setDlqCount(count || 0)
         }
         setNotificationMode(settings.notification_mode || 'realtime')
