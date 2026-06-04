@@ -72,10 +72,10 @@ module.exports = {
       entitlements: {
         'com.apple.developer.usernotifications.time-sensitive': true,
         // Spec 010: Critical Alerts — fura mudo físico iOS para doses inegociáveis.
-        // Entitlement requer aprovação Apple (com.apple.developer.usernotifications.critical-alerts).
-        // Fallback: sem o entitlement aprovado, Notifee ignora critical:true e cai em timeSensitive.
-        // R-259: declarar aqui; EAS credentials sincroniza com Apple Developer portal.
-        'com.apple.developer.usernotifications.critical-alerts': true,
+        // AGUARDANDO APROVAÇÃO APPLE — não descomentar antes da aprovação ser concedida.
+        // Quando aprovado: descomentar a linha abaixo + restaurar no Dosiq.entitlements.
+        // R-259: declarar aqui após aprovação; EAS credentials sincroniza com Apple Developer portal.
+        // 'com.apple.developer.usernotifications.critical-alerts': true,
       },
     },
     android: {
