@@ -28,3 +28,16 @@ REVOKE ALL ON public.feedbacks FROM anon;
 REVOKE ALL ON public.feedbacks FROM authenticated;
 GRANT INSERT ON public.feedbacks TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.feedbacks TO service_role;
+
+-- View para estatísticas de feedbacks (calculado no banco de dados para evitar gargalos em memória)
+CREATE OR REPLACE VIEW public.feedback_stats AS
+SELECT
+  coalesce(count(*), 0)::integer AS total_count,
+  coalesce(count(*) FILTER (WHERE NOT is_resolved), 0)::integer AS pending_count,
+  coalesce(round(avg(rating), 1), 0.0)::numeric AS avg_rating
+FROM public.feedbacks;
+
+REVOKE ALL ON public.feedback_stats FROM anon;
+REVOKE ALL ON public.feedback_stats FROM authenticated;
+GRANT SELECT ON public.feedback_stats TO service_role;
+

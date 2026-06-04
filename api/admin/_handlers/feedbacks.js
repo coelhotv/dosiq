@@ -11,8 +11,10 @@ const logger = createLogger('FeedbacksAdmin');
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Cliente Supabase instanciado com Service Role para bypass de RLS
-const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
+// Cliente Supabase instanciado com Service Role para bypass de RLS (inicializado com segurança)
+const supabase = (supabaseUrl && supabaseServiceKey)
+  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } })
+  : null;
 
 /**
  * handleListFeedbacks: GET /api/feedbacks
@@ -50,22 +52,22 @@ export async function handleListFeedbacks(req, res) {
       return res.status(500).json({ error: 'Erro ao carregar feedbacks' });
     }
 
-    // Calcular estatísticas globais rápidas para exibir nos cards superiores
+    // Obter estatísticas agregadas do banco de dados (View feedback_stats) para evitar OOM e latência
     let stats = null;
     if (offset === 0) {
       const { data: statsData, error: statsError } = await supabase
-        .from('feedbacks')
-        .select('rating, is_resolved');
+        .from('feedback_stats')
+        .select('*')
+        .single();
 
       if (!statsError && statsData) {
-        const totalCount = statsData.length;
-        const pendingCount = statsData.filter(f => !f.is_resolved).length;
-        const sum = statsData.reduce((acc, curr) => acc + (curr.rating || 0), 0);
         stats = {
-          avgRating: totalCount > 0 ? parseFloat((sum / totalCount).toFixed(1)) : 0,
-          pendingCount,
-          totalCount
+          avgRating: parseFloat(statsData.avg_rating) || 0,
+          pendingCount: parseInt(statsData.pending_count) || 0,
+          totalCount: parseInt(statsData.total_count) || 0
         };
+      } else if (statsError) {
+        logger.error('Erro ao buscar estatísticas de feedback:', statsError);
       }
     }
 

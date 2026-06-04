@@ -15,8 +15,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 
-// Singleton client usando a service_role para operações de administração
-const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
+// Singleton client usando a service_role para operações de administração (inicializado com segurança)
+const supabase = (supabaseUrl && supabaseServiceKey)
+  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } })
+  : null;
 
 /**
  * Handler: list DLQ (GET /api/dlq)

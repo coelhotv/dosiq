@@ -34,9 +34,7 @@ const feedbackSchema = z.object({
     .max(5, 'A avaliação máxima é 5 estrelas'),
 
   platform: z
-    .enum(['ios', 'android', 'other'], {
-      errorMap: () => ({ message: 'Plataforma inválida. Deve ser ios, android ou other.' }),
-    }),
+    .enum(['ios', 'android', 'other']),
 
   device: z
     .string()
