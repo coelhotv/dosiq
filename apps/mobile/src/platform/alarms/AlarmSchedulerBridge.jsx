@@ -57,9 +57,20 @@ export default function AlarmSchedulerBridge() {
   const { user } = useAuth()
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
+  const [loaded, setLoaded] = useState(false)
   const userId = user?.id ?? null
   // Spec 010: scheduler sempre ativo; syncAlarms filtra por critical_alarm por-protocolo.
   const hasCriticalProtocol = protocols.some((p) => p.critical_alarm === true)
+
+  // userId = null → sem dados para carregar, mas scheduler deve rodar (cancela alarmes).
+  // userId muda → reset loaded até load() completar, evitando cancelAll prematuro.
+  useEffect(() => {
+    if (!userId) {
+      setLoaded(true)
+    } else {
+      setLoaded(false)
+    }
+  }, [userId])
 
   // Foreground: ações dos botões da notificação + abre o takeover de tela cheia.
   useEffect(() => {
@@ -106,6 +117,7 @@ export default function AlarmSchedulerBridge() {
       const enriched = list.map((p) => ({ ...p, medicine: medsById[p.medicine_id] || null }))
       setTz(userTz)
       setProtocols(enriched)
+      setLoaded(true)
     } catch (err) {
       if (__DEV__) console.warn('[AlarmSchedulerBridge] load falhou', err?.message)
     }
@@ -137,8 +149,14 @@ export default function AlarmSchedulerBridge() {
   // altera as dose_instances → refetch + reagenda (FR-006 / insumo E).
   useEffect(() => onAlarmResync(load), [load])
 
-  // isAlarmEnabled = há ao menos um protocolo crítico (Spec 010). Sem crítico,
-  // syncAlarms cancela tudo. useAlarmEnabled (global v1) aposentado como gate.
-  useAlarmScheduler({ isAlarmEnabled: hasCriticalProtocol, userId, protocols, tz })
+  // Gate: não executa o scheduler antes do primeiro load bem-sucedido — evita
+  // cancelAll prematuro enquanto protocols ainda é [] (race condition no mount).
+  return loaded ? (
+    <AlarmScheduler isAlarmEnabled={hasCriticalProtocol} userId={userId} protocols={protocols} tz={tz} />
+  ) : null
+}
+
+function AlarmScheduler({ isAlarmEnabled, userId, protocols, tz }) {
+  useAlarmScheduler({ isAlarmEnabled, userId, protocols, tz })
   return null
 }
