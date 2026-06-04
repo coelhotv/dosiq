@@ -96,7 +96,7 @@ export default function AppViewRouter({
     case 'admin-dlq':
       return W(<DLQAdmin />)
     case 'admin-feedbacks':
-      return W(<FeedbackAdmin onBack={() => setCurrentView('settings')} />)
+      return W(<FeedbackAdmin onBack={() => setCurrentView('account-settings')} />)
     case 'notifications':
       return W(
         <NotificationInbox

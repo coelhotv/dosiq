@@ -39,7 +39,7 @@ export default function FeedbackScreen() {
     return {
       subject: '',
       comment: '',
-      rating: 5, // inicia com avaliação máxima sugerida
+      rating: 0, // inicia vazio (0 estrelas)
       platform,
       device,
       app_version
@@ -89,7 +89,7 @@ export default function FeedbackScreen() {
 
   const renderStarSelector = () => {
     const stars = []
-    const currentRating = form.values.rating || 5
+    const currentRating = form.values.rating || 0
 
     for (let i = 1; i <= 5; i++) {
       const isFilled = i <= currentRating
@@ -114,13 +114,17 @@ export default function FeedbackScreen() {
 
     return (
       <View style={styles.starsContainer}>
-        {stars}
-        <Text style={styles.starsLabel}>
-          {currentRating === 5 ? 'Excelente!' :
-           currentRating === 4 ? 'Muito bom' :
-           currentRating === 3 ? 'Bom / Regular' :
-           currentRating === 2 ? 'Precisa melhorar' : 'Muito ruim'}
-        </Text>
+        <View style={styles.starsRow}>
+          {stars}
+        </View>
+        {currentRating > 0 && (
+          <Text style={styles.starsLabel}>
+            {currentRating === 5 ? 'Excelente!' :
+             currentRating === 4 ? 'Muito bom' :
+             currentRating === 3 ? 'Bom / Regular' :
+             currentRating === 2 ? 'Precisa melhorar' : 'Muito ruim'}
+          </Text>
+        )}
       </View>
     )
   }
@@ -149,15 +153,6 @@ export default function FeedbackScreen() {
           </Text>
         </View>
 
-        {/* Avaliação por Estrelas */}
-        <View style={styles.field}>
-          <Text style={styles.sectionLabel}>Como você avalia nosso app?</Text>
-          {renderStarSelector()}
-          {form.touched.rating && form.errors.rating && (
-            <Text style={styles.errorText}>{form.errors.rating}</Text>
-          )}
-        </View>
-
         <FormInput
           name="subject"
           label="Assunto"
@@ -179,6 +174,15 @@ export default function FeedbackScreen() {
           autoCapitalize="sentences"
           {...formProps(form, 'comment')}
         />
+
+        {/* Avaliação por Estrelas */}
+        <View style={styles.field}>
+          <Text style={styles.sectionLabel}>Como você avalia nosso app?</Text>
+          {renderStarSelector()}
+          {form.touched.rating && form.errors.rating && (
+            <Text style={styles.errorText}>{form.errors.rating}</Text>
+          )}
+        </View>
       </ScrollView>
 
       <FormActions
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   starsContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[2],
@@ -269,15 +273,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     ...shadows.sm,
   },
+  starsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+  },
   starTouch: {
     padding: spacing[1],
   },
   starsLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.text.secondary,
-    marginLeft: spacing[3],
-    minWidth: 100,
+    color: colors.primary[600] || colors.text.secondary,
+    marginTop: spacing[2],
+    textAlign: 'center',
   },
   errorText: {
     fontSize: 12,
