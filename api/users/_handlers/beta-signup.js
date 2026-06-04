@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ALLOWED_FEATURES = new Set(['android', 'ios', 'other', 'caregiver_mode'])
@@ -35,7 +36,8 @@ export async function handleBetaSignup(req, res) {
 
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { realtime: { transport: ws } }
     )
 
     const { error } = await supabase

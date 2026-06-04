@@ -13,6 +13,7 @@ import {
 } from '../server/bot/tasks.js';
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
 import { getServerTimestamp, getNow, getSaoPauloTime } from '../server/utils/dateUtils.js';
 
@@ -21,7 +22,8 @@ const logger = createLogger('CronNotify');
 // Singleton clients — instanciados no module scope para reuso em warm invocations (R-089)
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { realtime: { transport: ws } }
 );
 const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 

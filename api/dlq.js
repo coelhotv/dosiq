@@ -2,6 +2,7 @@
 // Dead Letter Queue Admin API - Router consolidado
 // Rotas: GET /api/dlq (list) | POST /api/dlq?action=retry&id=:id | POST /api/dlq?action=discard&id=:id
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { DLQStatus } from '../server/services/deadLetterQueue.js';
 import { verifyAdminAccess } from '../server/utils/auth.js';
 import { handleRetry } from './dlq/_handlers/retry.js';
@@ -12,13 +13,14 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 
+// Singleton clients — instanciados no module scope para reuso em warm invocations (R-089)
+const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
+
 /**
  * Handler: list (GET /api/dlq)
  * Lista notificações falhas com paginação
  */
 async function handleList(req, res) {
-  // Create Supabase client with service role key (bypasses RLS for admin access)
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Parse query parameters
