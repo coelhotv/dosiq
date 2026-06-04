@@ -54,21 +54,19 @@ export async function handleListFeedbacks(req, res) {
 
     // Obter estatísticas agregadas do banco de dados (View feedback_stats) para evitar OOM e latência
     let stats = null;
-    if (offset === 0) {
-      const { data: statsData, error: statsError } = await supabase
-        .from('feedback_stats')
-        .select('*')
-        .single();
+    const { data: statsData, error: statsError } = await supabase
+      .from('feedback_stats')
+      .select('*')
+      .single();
 
-      if (!statsError && statsData) {
-        stats = {
-          avgRating: parseFloat(statsData.avg_rating) || 0,
-          pendingCount: parseInt(statsData.pending_count) || 0,
-          totalCount: parseInt(statsData.total_count) || 0
-        };
-      } else if (statsError) {
-        logger.error('Erro ao buscar estatísticas de feedback:', statsError);
-      }
+    if (!statsError && statsData) {
+      stats = {
+        avgRating: parseFloat(statsData.avg_rating) || 0,
+        pendingCount: parseInt(statsData.pending_count) || 0,
+        totalCount: parseInt(statsData.total_count) || 0
+      };
+    } else if (statsError) {
+      logger.error('Erro ao buscar estatísticas de feedback:', statsError);
     }
 
     return res.status(200).json({
