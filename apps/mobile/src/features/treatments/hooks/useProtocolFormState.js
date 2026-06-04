@@ -30,6 +30,7 @@ export function buildInitialValues({ todayIso, presetPlanId }) {
     titration_schedule: [],
     current_stage_index: 0,
     treatment_plan_id: presetPlanId || null,
+    critical_alarm: false,
   }
 }
 
@@ -49,6 +50,7 @@ function buildPrefill(existing, todayIso) {
     titration_schedule: existing.titration_schedule ?? [],
     current_stage_index: existing.current_stage_index ?? 0,
     treatment_plan_id: existing.treatment_plan_id ?? null,
+    critical_alarm: existing.critical_alarm ?? false,
   }
 }
 

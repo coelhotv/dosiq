@@ -1,7 +1,8 @@
-// AlarmSchedulerBridge.jsx — cola o scheduler de alarmes ao app root (Spec 001)
+// AlarmSchedulerBridge.jsx — cola o scheduler de alarmes ao app root (Spec 001/010)
 //
-// Monta-se uma vez na árvore. Quando o alarme está ligado (FR-007), carrega
-// protocolos ativos + tz do usuário e alimenta useAlarmScheduler (reuso CON-024).
+// Spec 010: controle migrou para por-tratamento (protocols.critical_alarm).
+// O toggle global (useAlarmEnabled) foi aposentado como master-switch; o scheduler
+// roda sempre que há userId, e syncAlarms filtra apenas doses críticas.
 // Também registra o handler de FOREGROUND do Notifee (o de background fica no
 // index.js). Render nulo — é só orquestração.
 //
@@ -15,7 +16,6 @@ import { useAuth } from '@platform/auth/hooks/useAuth'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
-import { useAlarmEnabled } from './useAlarmEnabled'
 import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
@@ -55,10 +55,11 @@ function openAlarmScreen(notification) {
 
 export default function AlarmSchedulerBridge() {
   const { user } = useAuth()
-  const [enabled] = useAlarmEnabled()
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
   const userId = user?.id ?? null
+  // Spec 010: scheduler sempre ativo; syncAlarms filtra por critical_alarm por-protocolo.
+  const hasCriticalProtocol = protocols.some((p) => p.critical_alarm === true)
 
   // Foreground: ações dos botões da notificação + abre o takeover de tela cheia.
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function AlarmSchedulerBridge() {
 
   // Refetch protocolos + tz. setState → useAlarmScheduler reagenda (deps protocols).
   const load = useCallback(async () => {
-    if (!enabled || !userId) return
+    if (!userId) return
     try {
       const settings = await getUserSettings(userId)
       const userTz = settings?.timezone || DEFAULT_TZ
@@ -108,12 +109,11 @@ export default function AlarmSchedulerBridge() {
     } catch (err) {
       if (__DEV__) console.warn('[AlarmSchedulerBridge] load falhou', err?.message)
     }
-  }, [enabled, userId])
+  }, [userId])
 
-  // Carrega quando ligado (mount + retorno de background).
-  // Desligado → não carrega; useAlarmScheduler cancela via isAlarmEnabled=false.
+  // Carrega na montagem + retorno de background (Spec 010: sem gate global de enabled).
   useEffect(() => {
-    if (!enabled || !userId) return
+    if (!userId) return
     // load é async — setState ocorre pós-await (não síncrono); fetch de mount legítimo.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
@@ -131,12 +131,14 @@ export default function AlarmSchedulerBridge() {
         .catch(() => {})
     })
     return () => sub.remove()
-  }, [enabled, userId, load])
+  }, [userId, load])
 
   // Re-sync sob demanda: mutação de tratamento (criar/editar/pausar/excluir)
   // altera as dose_instances → refetch + reagenda (FR-006 / insumo E).
   useEffect(() => onAlarmResync(load), [load])
 
-  useAlarmScheduler({ isAlarmEnabled: enabled, userId, protocols, tz })
+  // isAlarmEnabled = há ao menos um protocolo crítico (Spec 010). Sem crítico,
+  // syncAlarms cancela tudo. useAlarmEnabled (global v1) aposentado como gate.
+  useAlarmScheduler({ isAlarmEnabled: hasCriticalProtocol, userId, protocols, tz })
   return null
 }

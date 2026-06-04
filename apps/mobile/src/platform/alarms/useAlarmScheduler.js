@@ -50,7 +50,18 @@ export async function syncAlarms({ userId, protocols, tz }) {
 
   const instances = await repo.getWindow(userId, now, end)
   const items = buildDoseItemsFromInstances(instances, protocols, tz)
-    .filter((it) => it.status === 'pending')
+    .filter((it) => {
+      if (it.status !== 'pending') return false
+      if (!it.critical) return false // agenda somente alarmes críticos (Spec 010)
+      // Exclui itens com soneca ativa (snoozed_until no futuro)
+      if (it.snoozedUntil != null) {
+        const snoozedTs = typeof it.snoozedUntil === 'number'
+          ? it.snoozedUntil
+          : Date.parse(it.snoozedUntil) // ISO timestamptz → epoch (sem new Date — R-020)
+        if (!Number.isNaN(snoozedTs) && snoozedTs > now) return false
+      }
+      return true
+    })
 
   await alarmService.cancelAll()
   for (const it of items) {
@@ -59,6 +70,7 @@ export async function syncAlarms({ userId, protocols, tz }) {
       medicineName: it.medicineName,
       scheduledFor: it.scheduledFor, // F: instante absoluto
       toleranceMinutes: it.toleranceMinutes, // D: cutoff dinâmico
+      isCritical: it.critical,
       data: {
         protocolId: it.protocolId,
         medicineId: it.medicineId,

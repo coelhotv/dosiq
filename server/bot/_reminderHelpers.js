@@ -92,7 +92,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
   const selectFields = `
-    id, user_id, protocol_id,
+    id, user_id, protocol_id, critical_alarm,
     protocol:protocols(
       id, name, dosage_per_intake, treatment_plan_id, medicine_id,
       medicine:medicines(name, dosage_unit),
@@ -182,7 +182,16 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
       try {
         const userInstances = byUser[userId];
 
-        const dosesNow = userInstances.map(inst => ({
+        // Gate per-dose: instâncias críticas são cobertas pelo alarme nativo mobile.
+        // Push é suprimido para elas no helper (alarme cuida); normais vão para push.
+        const criticalInstances = userInstances.filter(inst => inst.critical_alarm === true);
+        const normalInstances = userInstances.filter(inst => inst.critical_alarm !== true);
+
+        if (criticalInstances.length > 0) {
+          logger.info({ criticalCount: criticalInstances.length }, 'doses críticas suprimidas do push (alarme)');
+        }
+
+        const dosesNow = normalInstances.map(inst => ({
           instanceId: inst.id,
           protocolId: inst.protocol_id,
           protocolName: inst.protocol?.name || '',
@@ -193,6 +202,8 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           dosageUnit: inst.protocol?.medicine?.dosage_unit,
           medicineId: inst.protocol?.medicine_id,
         }));
+
+        if (dosesNow.length === 0) continue;
 
         const blocks = partitionDoses(dosesNow);
         const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';

@@ -184,6 +184,7 @@ export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paul
         scheduled_for: scheduledForIso,
         expected_dose: expectedDose,
         tolerance_minutes: tolerances[i],
+        critical_alarm: protocol.critical_alarm ?? false,
       })
     })
   }
