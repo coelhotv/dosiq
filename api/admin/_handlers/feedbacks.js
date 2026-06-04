@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { createLogger } from '../../../server/bot/logger.js';
+import { getServerTimestamp } from '../../../packages/core/src/utils/dateUtils.js';
 
 const logger = createLogger('FeedbacksAdmin');
 
@@ -112,8 +113,7 @@ export async function handleResolveFeedback(req, res) {
       .from('feedbacks')
       .update({
         is_resolved: !!is_resolved,
-        // eslint-disable-next-line no-restricted-syntax
-        updated_at: new Date().toISOString()
+        updated_at: getServerTimestamp()
       })
       .eq('id', id)
       .select()
