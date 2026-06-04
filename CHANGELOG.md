@@ -9,6 +9,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Web/PWA (4.0.0 → 4.1.0)
+- **Roteador único consolidado admin** (Patch, Spec 023): DLQ e feedbacks unificados no único slot físico `/api/admin.js` preservando o limite do plano Hobby da Vercel (R-090) e mantendo endpoints legados por reescrita de URL.
+
+### Shared/Core
+- **Validação e persistência de feedbacks** (Minor, Spec 023): criação da tabela feedbacks no banco com RLS restritiva, schema de validação Zod e repositório factory core reutilizável.
+
+
+---
+
+## [4.0.0 / 0.10.0] — 2026-06-04
+
 ### Mobile (0.9.0 → 0.10.0)
 - **Alarme Nativo v2 — Alerta crítico por-tratamento** (Minor, Spec 010, mobile 0.9.0→**0.10.0**): toggle "Alerta crítico" no formulário de cada tratamento (default OFF, opt-in consciente). Doses de tratamentos críticos disparam alarme em tela cheia; doses normais recebem push regular — sem dupla notificação. iOS: `interruptionLevel:'critical'` (fura mudo físico) com fallback `timeSensitive` quando entitlement não aprovado. Soneca agora persiste `dose_instances.snoozed_until` (durável cross-restart). Gate server per-dose: push suprimido apenas para a dose crítica coberta por alarme (granularidade por-ocorrência, não por-device). Toggle global de device (v1) aposentado — controle migra para cada tratamento. ADR-055/056, R-255/R-258/R-239/R-261, CON-024. **Nota de loja relevante: melhoria no sistema de lembretes de doses críticas.**
 
