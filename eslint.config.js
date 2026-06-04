@@ -124,6 +124,16 @@ export default [
         {
           selector: 'JSXAttribute[name.name="style"] Literal[value=/^#|^rgb|^hsl/]',
           message: 'Não use cores hardcoded em estilos inline. Use variáveis CSS do Design System (--color-*).'
+        },
+        // R-010: Hook Order — States antes de Memos, Effects, Handlers
+        {
+          selector: 'BlockStatement > :matches(VariableDeclaration:has(CallExpression[callee.name=/^(useMemo|useCallback)$/]), ExpressionStatement:has(CallExpression[callee.name=/^(useEffect|useLayoutEffect|useFocusEffect|useInsertionEffect)$/])) ~ VariableDeclaration:has(CallExpression[callee.name=/^(useState|useRef|useReducer|useContext)$/])',
+          message: 'R-010: Ordem dos hooks incorreta. Declare States/Refs/Context (useState, useRef, etc.) antes de Memos, Effects e Handlers.'
+        },
+        // R-010: Hook Order — Memos antes de Effects e Handlers
+        {
+          selector: 'BlockStatement > :matches(VariableDeclaration:has(CallExpression[callee.name="useCallback"]), ExpressionStatement:has(CallExpression[callee.name=/^(useEffect|useLayoutEffect|useFocusEffect|useInsertionEffect)$/])) ~ VariableDeclaration:has(CallExpression[callee.name="useMemo"])',
+          message: 'R-010: Ordem dos hooks incorreta. Declare Memos (useMemo) antes de Effects e Handlers.'
         }
       ],
 
@@ -289,7 +299,15 @@ export default [
       'complexity': ['warn', { max: 20 }],
     }
   },
-  // Override 2: Arquivos de teste — describe/it são "funções" para o ESLint
+  // Override 2: Repositórios e Hooks do Monorepo (legitimamente mais complexos/longos)
+  {
+    files: ['packages/core/src/repositories/**/*.js', '**/hooks/**/*.js'],
+    rules: {
+      'max-lines-per-function': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
+      'complexity': ['warn', { max: 25 }],
+    }
+  },
+  // Override 3: Arquivos de teste — describe/it são "funções" para o ESLint
   {
     files: ['**/*.test.{js,jsx}', '**/*.spec.{js,jsx}'],
     rules: {

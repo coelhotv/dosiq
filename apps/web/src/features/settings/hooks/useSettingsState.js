@@ -28,6 +28,10 @@ export function useSettingsState() {
   const [webPushSupported, setWebPushSupported] = useState(false)
   const [channelWebPushEnabled, setChannelWebPushEnabled] = useState(false)
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
+  // F4.3f.2: prompt de intenção na troca de fuso (viagem × mudança).
+  // tzPrompt = { fromTz, toTz } enquanto a modal está aberta; null fechada.
+  const [tzPrompt, setTzPrompt] = useState(null)
+  const [tzApplying, setTzApplying] = useState(false)
 
   const showMsg = (type, text) => {
     setMessage({ type, text })
@@ -171,11 +175,6 @@ export function useSettingsState() {
       showMsg('error', 'Erro ao salvar preferência.')
     }
   }
-
-  // F4.3f.2: prompt de intenção na troca de fuso (viagem × mudança).
-  // tzPrompt = { fromTz, toTz } enquanto a modal está aberta; null fechada.
-  const [tzPrompt, setTzPrompt] = useState(null)
-  const [tzApplying, setTzApplying] = useState(false)
 
   // Persiste o tz no perfil. `regen=true` ("Me mudei") re-ancora as doses futuras
   // no fuso novo; `regen=false` ("viagem") só troca o setting (instante absoluto intacto).

@@ -36,6 +36,27 @@ export default function ProtocolFormBody({
   onStartDateChange,
   onEndDateChange,
 }) {
+  const startDateAsDate = useMemo(
+    () => (form.values.start_date ? parseLocalDate(form.values.start_date) : null),
+    [form.values.start_date]
+  )
+  const endDateAsDate = useMemo(
+    () => (form.values.end_date ? parseLocalDate(form.values.end_date) : null),
+    [form.values.end_date]
+  )
+
+  const helperText = useMemo(() => {
+    if (!medicine) {
+      return 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+    }
+    const formula = formatActiveIngredientFormula(
+      form.values.dosage_per_intake,
+      medicine.dosage_per_pill,
+      medicine.dosage_unit
+    )
+    return formula ? `✨ ${formula}` : 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+  }, [form.values.dosage_per_intake, medicine])
+
   const handleCriticalAlarmToggle = useCallback(async (next) => {
     if (next) {
       // R-239: checar permissão no ponto de intenção
@@ -58,31 +79,10 @@ export default function ProtocolFormBody({
   }, [form])
   const showWeekdays = REQUIRES_WEEKDAYS.has(form.values.frequency)
 
-  const startDateAsDate = useMemo(
-    () => (form.values.start_date ? parseLocalDate(form.values.start_date) : null),
-    [form.values.start_date]
-  )
-  const endDateAsDate = useMemo(
-    () => (form.values.end_date ? parseLocalDate(form.values.end_date) : null),
-    [form.values.end_date]
-  )
-
   const doseDisplay =
     form.values.dosage_per_intake === ''
       ? ''
       : String(form.values.dosage_per_intake).replace('.', ',')
-
-  const helperText = useMemo(() => {
-    if (!medicine) {
-      return 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
-    }
-    const formula = formatActiveIngredientFormula(
-      form.values.dosage_per_intake,
-      medicine.dosage_per_pill,
-      medicine.dosage_unit
-    )
-    return formula ? `✨ ${formula}` : 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
-  }, [form.values.dosage_per_intake, medicine])
 
   return (
     <>

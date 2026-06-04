@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, BellOff, Settings, WifiOff } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
-import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays, getServerTimestamp } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
@@ -287,8 +287,37 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const { data, loading, error, stale, refresh } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data, userId)
 
+  // 1. States / Refs
   // lastSeen local: necessário para filtro "Não lidos" (R-187)
   const [lastSeen, setLastSeen] = useState(null)
+  // Filtro ativo
+  const [activeFilter, setActiveFilter] = useState('all')
+  const hasMarkedRead = useRef(false)
+  // localDay: detecta virada de dia via AppState + timer de meia-noite (R5-008)
+  const [localDay, setLocalDay] = useState(getTodayLocal)
+  // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders (R-010, R-028)
+  const [doseLogs, setDoseLogs] = useState([])
+
+  // 2. Memos
+  // Sections sem filtro (agrupamento temporal)
+  const sections = useMemo(
+    () => groupByDay(data ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, localDay]
+  )
+
+  // Sections com filtro aplicado
+  const filteredSections = useMemo(
+    () => _applyFilter(sections, activeFilter, lastSeen),
+    [sections, activeFilter, lastSeen]
+  )
+
+  const wasTakenMap = useMemo(
+    () => buildWasTakenMap(data ?? [], doseLogs),
+    [data, doseLogs]
+  )
+
+  // 3. Effects
   useEffect(() => {
     AsyncStorage.getItem(getStorageKey(userId))
       .then((val) => {
@@ -301,19 +330,28 @@ export default function NotificationInboxScreen({ navigation, route }) {
       })
   }, [userId])
 
-  // Filtro ativo
-  const [activeFilter, setActiveFilter] = useState('all')
-  const hasMarkedRead = useRef(false)
-
-  // localDay: detecta virada de dia via AppState + timer de meia-noite (R5-008)
-  const [localDay, setLocalDay] = useState(getTodayLocal)
   useEffect(() => _setupMidnightRefresh(setLocalDay), [])
 
-  // Busca medicine_logs dos últimos 7 dias para cruzar com dose_reminders (R-010, R-028)
-  const [doseLogs, setDoseLogs] = useState([])
+  // Marca tudo como lido apenas no carregamento inicial (useRef garante execução única)
+  useEffect(() => {
+    if (!loading && data && !hasMarkedRead.current) {
+      hasMarkedRead.current = true
+      markAllRead()
+      
+      AsyncStorage.getItem(getStorageKey(userId))
+        .then((val) => {
+          startTransition(() => {
+            setLastSeen(val)
+          })
+        })
+        .catch(() => {})
+    }
+  }, [loading, data, markAllRead, userId])
+
+  // 4. Handlers / Callbacks
   const loadDoseLogs = useCallback(async () => {
     if (!userId) return
-    const since = addDays(getNow(), -7).toISOString()
+    const since = addDays(parseISO(getServerTimestamp()), -7).toISOString()
     const { data: rows, error: fetchErr } = await supabase
       .from('medicine_logs')
       .select('id, protocol_id, taken_at')
@@ -336,40 +374,6 @@ export default function NotificationInboxScreen({ navigation, route }) {
   const refreshAll = useCallback(async () => {
     await Promise.all([refresh(), loadDoseLogs()])
   }, [refresh, loadDoseLogs])
-
-  // Marca tudo como lido apenas no carregamento inicial (useRef garante execução única)
-  useEffect(() => {
-    if (!loading && data && !hasMarkedRead.current) {
-      hasMarkedRead.current = true
-      markAllRead()
-      
-      AsyncStorage.getItem(getStorageKey(userId))
-        .then((val) => {
-          startTransition(() => {
-            setLastSeen(val)
-          })
-        })
-        .catch(() => {})
-    }
-  }, [loading, data, markAllRead, userId])
-
-  // Sections sem filtro (agrupamento temporal)
-  const sections = useMemo(
-    () => groupByDay(data ?? []),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data, localDay]
-  )
-
-  // Sections com filtro aplicado
-  const filteredSections = useMemo(
-    () => _applyFilter(sections, activeFilter, lastSeen),
-    [sections, activeFilter, lastSeen]
-  )
-
-  const wasTakenMap = useMemo(
-    () => buildWasTakenMap(data ?? [], doseLogs),
-    [data, doseLogs]
-  )
 
   const renderItem = useCallback(({ item }) => (
     <NotificationItem

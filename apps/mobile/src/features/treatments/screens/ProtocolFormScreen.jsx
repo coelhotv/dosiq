@@ -43,9 +43,9 @@ export default function ProtocolFormScreen() {
   const editId = route.params?.id ?? null
   const isEdit = !!editId
   const presetPlanId = isEdit ? null : (route.params?.treatment_plan_id ?? null)
-  const todayIso = useMemo(() => getTodayLocal(), [])
-  const { show } = useToast()
   const scrollRef = useRef(null)
+  const { show } = useToast()
+  const todayIso = useMemo(() => getTodayLocal(), [])
 
   const {
     form,
@@ -64,6 +64,12 @@ export default function ProtocolFormScreen() {
 
   const mutation = useProtocolMutation()
 
+  // Memos
+  const visibleErrorCount = useMemo(() => {
+    const errorKeys = Object.keys(form.errors)
+    return errorKeys.filter((k) => form.touched[k]).length
+  }, [form.errors, form.touched])
+
   const scrollToTop = useCallback(
     () => scrollRef.current?.scrollTo?.({ y: 0, animated: true }),
     []
@@ -77,12 +83,6 @@ export default function ProtocolFormScreen() {
     show,
     onValidateFail: scrollToTop,
   })
-
-  // Memos
-  const visibleErrorCount = useMemo(() => {
-    const errorKeys = Object.keys(form.errors)
-    return errorKeys.filter((k) => form.touched[k]).length
-  }, [form.errors, form.touched])
 
   // Effects — reabrir sheet ao retornar de MedicineFormScreen
   useFocusEffect(

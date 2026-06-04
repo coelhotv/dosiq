@@ -88,12 +88,12 @@ export default function ForgotPasswordScreen({ navigation }) {
           </Text>
 
           {/* Campo de Inserção de OTP */}
-          <View style={{ width: '100%', marginBottom: spacing[4], gap: 6 }}>
-            <Text style={{ fontSize: 13, fontWeight: '500', color: colors.text.secondary, textAlign: 'center' }}>
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>
               Digite o código de confirmação enviado:
             </Text>
             <TextInput
-              style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System', marginBottom: 0 }]}
+              style={[styles.input, styles.otpInput]}
               placeholder="Código"
               placeholderTextColor={colors.text.muted}
               value={otpCode}
@@ -107,7 +107,7 @@ export default function ForgotPasswordScreen({ navigation }) {
           </View>
 
           <Pressable
-            style={[styles.button, { alignSelf: 'stretch', marginBottom: spacing[3] }, verifying && styles.buttonDisabled]}
+            style={[styles.button, styles.verifyButton, verifying && styles.buttonDisabled]}
             onPress={handleVerifyOtp}
             disabled={verifying}
           >
@@ -118,8 +118,8 @@ export default function ForgotPasswordScreen({ navigation }) {
             )}
           </Pressable>
 
-          <Pressable style={[styles.button, { alignSelf: 'stretch', backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.goBack()}>
-            <Text style={[styles.buttonText, { color: colors.text.primary }]}>Voltar para Login</Text>
+          <Pressable style={[styles.button, styles.backButton]} onPress={() => navigation.goBack()}>
+            <Text style={[styles.buttonText, styles.backButtonText]}>Voltar para Login</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -284,5 +284,36 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: spacing[2],
     marginBottom: spacing[8],
+  },
+  otpContainer: {
+    width: '100%',
+    marginBottom: spacing[4],
+    gap: 6,
+  },
+  otpLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: 22,
+    letterSpacing: 6,
+    fontFamily: typography.fontFamily.bold || 'System',
+    marginBottom: 0,
+  },
+  verifyButton: {
+    alignSelf: 'stretch',
+    marginBottom: spacing[3],
+  },
+  backButton: {
+    alignSelf: 'stretch',
+    backgroundColor: colors.bg.card,
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+  },
+  backButtonText: {
+    color: colors.text.primary,
   },
 })

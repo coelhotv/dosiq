@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths, formatLocalDate } from '@utils/dateUtils.js'
 import CalendarControls from './CalendarControls'
-import CalendarGrid, { buildCalendarDays } from './CalendarGrid'
+import CalendarGrid from './CalendarGrid'
+import { buildCalendarDays } from './calendarUtils'
 import './Calendar.css'
 
 const MONTH_NAMES = [

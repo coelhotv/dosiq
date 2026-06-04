@@ -137,6 +137,36 @@ export default function PurchaseFormScreen() {
   const { createPurchase, updatePurchase, isLoading } = useStockMutation()
   const { handleChange } = form
 
+  // Derivados para FormDatePicker (converte string → Date para exibição)
+  const purchaseDateObj = useMemo(
+    () =>
+      form.values.purchase_date
+        ? parseLocalDate(form.values.purchase_date)
+        : null,
+    [form.values.purchase_date]
+  )
+
+  const expirationDateObj = useMemo(
+    () =>
+      form.values.expiration_date
+        ? parseLocalDate(form.values.expiration_date)
+        : null,
+    [form.values.expiration_date]
+  )
+
+  const quantityHelperText = useMemo(() => {
+    if (isEdit) {
+      return 'Corrija o saldo pelo "Acertar saldo"'
+    }
+    if (!medicine) return undefined
+    const shortHint = formatActiveIngredientShort(
+      form.values.quantity,
+      medicine.dosage_per_pill,
+      medicine.dosage_unit
+    )
+    return shortHint ? `✨ Equivale a ${shortHint} no total` : undefined
+  }, [isEdit, form.values.quantity, medicine])
+
   // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
   // laboratório é marca registrada (não muda por compra): preenche + trava.
   // setState ocorre dentro do .then (microtask, não sync no corpo do effect),
@@ -219,36 +249,6 @@ export default function PurchaseFormScreen() {
   }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
-
-  // Derivados para FormDatePicker (converte string → Date para exibição)
-  const purchaseDateObj = useMemo(
-    () =>
-      form.values.purchase_date
-        ? parseLocalDate(form.values.purchase_date)
-        : null,
-    [form.values.purchase_date]
-  )
-
-  const expirationDateObj = useMemo(
-    () =>
-      form.values.expiration_date
-        ? parseLocalDate(form.values.expiration_date)
-        : null,
-    [form.values.expiration_date]
-  )
-
-  const quantityHelperText = useMemo(() => {
-    if (isEdit) {
-      return 'Corrija o saldo pelo "Acertar saldo"'
-    }
-    if (!medicine) return undefined
-    const shortHint = formatActiveIngredientShort(
-      form.values.quantity,
-      medicine.dosage_per_pill,
-      medicine.dosage_unit
-    )
-    return shortHint ? `✨ Equivale a ${shortHint} no total` : undefined
-  }, [isEdit, form.values.quantity, medicine])
 
   const screenTitle = isEdit ? 'Editar compra' : 'Registrar compra'
   const ctaLabel = isEdit ? 'Salvar alterações' : 'Registrar compra'

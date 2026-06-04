@@ -44,6 +44,19 @@ export default function TreatmentsScreen() {
   const complexityOverride = profile?.complexity_override
   const [expandedGroups, setExpandedGroups] = useState({})
 
+  // Heurística de Complexidade Adaptativa (Wave 10A) — APENAS ativos.
+  // Pausados e finalizados vão flat (sem grupos), conforme spec Fase 2.5 §3.1.
+  const { isComplex, flatData } = useMemo(() => {
+    if (!groups) return DEFAULT_COMPLEXITY
+    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
+    const flat = groups.flatMap(g => g.protocols)
+    // Override manual ('simple'|'complex') vence a heurística; null = automático.
+    const complex = complexityOverride
+      ? complexityOverride === 'complex'
+      : total > 3
+    return { isComplex: complex, flatData: flat }
+  }, [groups, complexityOverride])
+
   const goToMedicines = useCallback(() => {
     lightTap()
     navigation.navigate(ROUTES.MEDICINES_LIST)
@@ -63,19 +76,6 @@ export default function TreatmentsScreen() {
     lightTap()
     navigation.navigate(ROUTES.PROTOCOL_FORM, { treatment_plan_id: groupId })
   }, [navigation])
-
-  // Heurística de Complexidade Adaptativa (Wave 10A) — APENAS ativos.
-  // Pausados e finalizados vão flat (sem grupos), conforme spec Fase 2.5 §3.1.
-  const { isComplex, flatData } = useMemo(() => {
-    if (!groups) return DEFAULT_COMPLEXITY
-    const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
-    const flat = groups.flatMap(g => g.protocols)
-    // Override manual ('simple'|'complex') vence a heurística; null = automático.
-    const complex = complexityOverride
-      ? complexityOverride === 'complex'
-      : total > 3
-    return { isComplex: complex, flatData: flat }
-  }, [groups, complexityOverride])
 
   const totalAcrossTabs = (counts?.ativos ?? 0) + (counts?.pausados ?? 0) + (counts?.finalizados ?? 0)
   const isFullyEmpty = totalAcrossTabs === 0

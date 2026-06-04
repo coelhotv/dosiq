@@ -68,11 +68,6 @@ export default function OnboardingTreatmentStep() {
     initialValues,
   })
 
-  // Effects (R-010)
-  useEffect(() => {
-    setTreatment(form.values)
-  }, [form.values, setTreatment])
-
   // Memos
   const isWeekly = form.values.frequency === FREQ_WEEKLY
   const timeCount = Array.isArray(form.values.time_schedule) ? form.values.time_schedule.length : 0
@@ -81,6 +76,11 @@ export default function OnboardingTreatmentStep() {
     () => ({ step: 2, totalSteps: 3, onBack: () => navigation.goBack(), onSkip: finish }),
     [navigation, finish],
   )
+
+  // Effects (R-010)
+  useEffect(() => {
+    setTreatment(form.values)
+  }, [form.values, setTreatment])
 
   // Handlers
   const setFrequency = useCallback((freq) => form.handleChange('frequency', freq), [form])

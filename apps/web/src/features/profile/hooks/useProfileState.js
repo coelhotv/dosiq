@@ -62,10 +62,6 @@ export function useProfileState() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState(null)
 
-  const showFeedback = useCallback((msg) => {
-    setMessage(msg); setTimeout(() => setMessage(null), 3000);
-  }, [])
-
   const displayName = useMemo(() => settings?.display_name || user?.user_metadata?.name || user?.email || 'Paciente', [settings, user])
   const initials = useMemo(() => displayName.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''), [displayName])
   const age = useMemo(() => calculateAge(settings?.birth_date), [settings?.birth_date])
@@ -73,6 +69,10 @@ export function useProfileState() {
     const parts = [settings?.city, settings?.state].filter(Boolean)
     return parts.join(', ') || null
   }, [settings?.city, settings?.state])
+
+  const showFeedback = useCallback((msg) => {
+    setMessage(msg); setTimeout(() => setMessage(null), 3000);
+  }, [])
 
   const loadProfile = useCallback(async () => {
     try {

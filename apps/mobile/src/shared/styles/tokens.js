@@ -33,6 +33,8 @@ export const colors = {
     warning: '#904d00',
     error: '#ba1a1a',
     info: '#005db6',
+    errorLight: '#fee2e2',
+    successDark: '#166534',
   },
 
   // Suplemento (paridade visual com web — laranja para diferenciar de medicamento)
@@ -81,6 +83,14 @@ export const colors = {
     activeTint: '#006A5E', 
     inactiveTint: '#8e9199', // neutral.400
     bgDefault: '#ffffff',
+  },
+
+  // Cores com opacidade para telas com visual customizado (Alarme / Splash)
+  opacity: {
+    white18: 'rgba(255, 255, 255, 0.18)',
+    white22: 'rgba(255, 255, 255, 0.22)',
+    white85: 'rgba(255, 255, 255, 0.85)',
+    white90: 'rgba(255, 255, 255, 0.9)',
   },
 }
 

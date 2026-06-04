@@ -205,6 +205,25 @@ export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_T
  * @param {{ now: Date, tz?: string }} opts
  * @returns {{ carryOver: DoseItem[], today: DoseItem[], lookAhead: DoseItem[] }}
  */
+function classifyInstanceDay(inst, dayStart, dayEnd, nowMs) {
+  if (!inst?.scheduled_for) return null
+  const t = parseISO(inst.scheduled_for).getTime()
+  if (Number.isNaN(t)) return null
+  if (t >= dayStart && t <= dayEnd) {
+    return 'today'
+  }
+  if (inst.status !== 'pending') return null
+  const tol = inst.tolerance_minutes ?? 120
+  const diffMin = (t - nowMs) / 60000
+  if (t < dayStart && diffMin >= -tol) {
+    return 'carry'
+  }
+  if (t > dayEnd && diffMin <= tol) {
+    return 'ahead'
+  }
+  return null
+}
+
 export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ } = {}) {
   const list = Array.isArray(instances) ? instances : []
   // `now` ausente/inválido → fallback p/ getRawNow (respeita offset dev) + guard NaN:
@@ -220,20 +239,13 @@ export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ } 
   const today = []
   const ahead = []
   for (const inst of list) {
-    if (!inst?.scheduled_for) continue
-    const t = parseISO(inst.scheduled_for).getTime()
-    if (Number.isNaN(t)) continue
-    if (t >= dayStart && t <= dayEnd) {
+    const category = classifyInstanceDay(inst, dayStart, dayEnd, nowMs)
+    if (category === 'today') {
       today.push(inst)
-      continue
-    }
-    if (inst.status !== 'pending') continue
-    const tol = inst.tolerance_minutes ?? 120
-    const diffMin = (t - nowMs) / 60000
-    if (t < dayStart && diffMin >= -tol) {
-      carry.push(inst) // dia anterior, atrasada dentro da tolerância
-    } else if (t > dayEnd && diffMin <= tol) {
-      ahead.push(inst) // próximo dia, chegando dentro da tolerância
+    } else if (category === 'carry') {
+      carry.push(inst)
+    } else if (category === 'ahead') {
+      ahead.push(inst)
     }
   }
   return {
