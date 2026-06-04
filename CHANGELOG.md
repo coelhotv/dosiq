@@ -9,14 +9,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Web/PWA (4.0.0 → 4.1.2)
+### Web/PWA (4.0.0 → 4.1.3)
+- **Scroll interno para comentários longos no painel de feedbacks** (Patch, web 4.1.2→**4.1.3**): adicionada uma caixa com scroll interno vertical e altura máxima no campo de comentário para garantir estabilidade visual e uma altura constante/previsível para as linhas da listagem de feedbacks na interface de administração.
 - **Identificação de usuários no painel de feedbacks** (Patch, web 4.1.1→**4.1.2**): atualizada a formatação do display_name dos usuários. Exibe `{Nome} ({email})` se houver nome e `{email}` se o nome estiver vazio (com fallback para `Usuário do Dosiq`).
 - **Hotfix Área Administrativa de Feedbacks** (Patch, web 4.1.0→**4.1.1**): corrigida falha 500 no carregamento de feedbacks causada por tentativa de junção implícita inválida no PostgREST (o banco não possuía relacionamento direto feedbacks <-> user_settings). Os display_names são agora buscados separadamente por ID em uma query dedicada.
 - **Área administrativa de feedbacks** (Minor, Spec 023, web 4.0.0→**4.1.0**): implementado painel administrativo consolidado para visualização, filtros por status/nota e estatísticas em tempo real de feedbacks recebidos dos usuários finais. Ação de marcar como resolvido ou reabrir os feedbacks.
 - **Roteador único consolidado admin** (Patch, Spec 023): DLQ e feedbacks unificados no único slot físico `/api/admin.js` preservando o limite do plano Hobby da Vercel (R-090) e mantendo endpoints legados por reescrita de URL.
 
 ### Mobile (0.10.0 → 0.11.1)
-- **Ajustes visuais no menu de perfil** (Patch, mobile 0.11.0→**0.11.1**): adicionado badge âmbar escrito "novo" no item de envio de feedback, removido o placeholder ocioso "Sobre o Dosiq" e corrigido o alinhamento vertical dos itens de menu para centralização perfeita dentro do box.
+- **Ajustes visuais no menu de perfil** (Patch, mobile 0.11.0→**0.11.1**): adicionado badge âmbar escrito "novo" no item de envio de feedback, removido o placeholder ocioso "Sobre o Dosiq", corrigido o alinhamento vertical dos itens de menu para centralização perfeita dentro do box, e ajustada a cor do hint das estrelas de avaliação (`starsLabel`) para verde institucional (`brand.primary`) para harmonização de identidade visual.
 - **Formulário interno para envio de feedbacks** (Minor, Spec 023, mobile 0.10.0→**0.11.0**): adicionada área logada sob o hub de Perfil para que usuários possam enviar notas de 1 a 5 estrelas e comentários sobre o produto. Coleta automatizada de metadados em background (device, OS e versão do app) para facilitar a depuração. **Nota de loja relevante: adicionada área interna para envio de feedback diretamente pelo app.**
 
 ### Shared/Core

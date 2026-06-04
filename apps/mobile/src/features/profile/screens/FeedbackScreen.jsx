@@ -158,6 +158,7 @@ export default function FeedbackScreen() {
           name="subject"
           label="Assunto"
           required
+          showCharacterCount
           placeholder="Ex: Erro ao cadastrar remédio, Sugestão de cor..."
           maxLength={100}
           autoCapitalize="sentences"
@@ -168,6 +169,7 @@ export default function FeedbackScreen() {
           name="comment"
           label="Comentário / Detalhes"
           required
+          showCharacterCount
           placeholder="Escreva aqui suas sugestões, críticas ou relate um erro com o máximo de detalhes possível..."
           multiline
           numberOfLines={6}
@@ -286,7 +288,7 @@ const styles = StyleSheet.create({
   starsLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary[600] || colors.text.secondary,
+    color: colors.brand.primary || colors.text.secondary,
     marginTop: spacing[2],
     textAlign: 'center',
   },
