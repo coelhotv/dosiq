@@ -335,6 +335,7 @@ function buildMetadata(kind, context, data = {}) {
     planName: data.planName,
     percentage: data.percentage,
     nudge: data.nudge,
+    critical_alarm: data.critical_alarm,
   }
 
   // Remove chaves com valor undefined

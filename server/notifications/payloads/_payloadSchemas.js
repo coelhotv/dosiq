@@ -107,6 +107,7 @@ export const metadataSchema = z.object({
   planName: z.string().optional(),
   percentage: z.number().optional(),
   nudge: z.string().optional(),
+  critical_alarm: z.boolean().optional(),
 });
 
 
