@@ -36,7 +36,7 @@ iOS Critical Alerts (com fallback) + controle de sobreposição **per-dose** com
 
 ## Constitution Check
 - **V** (ADR p/ mudança de payload/rota de notif) → ADR-056 cobre. ✓
-- **VI** (SQP) → bump mobile minor; CHANGELOG PT; store-note. ✓
+- **VI** (SQP) → bump mobile minor (target v0.9.1); CHANGELOG PT; store-note. ✓
 - **VII** (PO smoke + human merge) → smoke obrigatório (alarme×push). ✓
 - **I** (health data) → migração default false; sem mutar prod em teste (fixtures). ✓
 - **III** (server-side aggregation) → gate no server, não no client. ✓

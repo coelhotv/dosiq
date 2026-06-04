@@ -56,7 +56,7 @@
 
 ## Phase 7 — Record (C5)
 
-- [ ] T070 [C5] SQP R-221: bump mobile minor; CHANGELOG `[Unreleased]` mobile + store-note; server (gate) no-user-impact ou minor.
+- [ ] T070 [C5] SQP R-221: bump mobile minor (target v0.9.1); CHANGELOG `[Unreleased]` mobile + store-note; server (gate) no-user-impact ou minor.
 - [ ] T071 [C5] ADR-055/056 → accepted; CON-024 atualizado; novos R/AP se surgirem; events.jsonl + journal + state.json.
 
 ## Dependencies
