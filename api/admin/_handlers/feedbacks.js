@@ -52,28 +52,62 @@ export async function handleListFeedbacks(req, res) {
       return res.status(500).json({ error: 'Erro ao carregar feedbacks' });
     }
 
-    // Busca os display_names de user_settings correspondentes aos user_ids retornados
+    // Busca os display_names de user_settings e emails de auth.users correspondentes aos user_ids retornados
     if (data && data.length > 0) {
       const userIds = [...new Set(data.filter(f => f.user_id).map(f => f.user_id))];
       if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabase
-          .from('user_settings')
-          .select('user_id, display_name')
-          .in('user_id', userIds);
+        // Query em paralelo para display_name (user_settings) e email (auth.users)
+        const [settingsRes, authRes] = await Promise.all([
+          supabase
+            .from('user_settings')
+            .select('user_id, display_name')
+            .in('user_id', userIds),
+          supabase
+            .schema('auth')
+            .from('users')
+            .select('id, email')
+            .in('id', userIds)
+        ]);
 
-        if (usersError) {
-          logger.error('Erro ao buscar display_names de user_settings:', usersError);
-        } else if (usersData) {
-          const userMap = {};
-          usersData.forEach(u => {
-            userMap[u.user_id] = u.display_name;
-          });
-          data.forEach(f => {
-            f.user_settings = { display_name: userMap[f.user_id] || 'Usuário do Dosiq' };
+        if (settingsRes.error) {
+          logger.error('Erro ao buscar display_names de user_settings:', settingsRes.error);
+        }
+        if (authRes.error) {
+          logger.error('Erro ao buscar emails de auth.users:', authRes.error);
+        }
+
+        const userMap = {};
+        if (settingsRes.data) {
+          settingsRes.data.forEach(u => {
+            userMap[u.user_id] = { display_name: u.display_name };
           });
         }
+        if (authRes.data) {
+          authRes.data.forEach(au => {
+            if (!userMap[au.id]) {
+              userMap[au.id] = {};
+            }
+            userMap[au.id].email = au.email;
+          });
+        }
+
+        data.forEach(f => {
+          const uInfo = userMap[f.user_id] || {};
+          const name = uInfo.display_name?.trim();
+          const email = uInfo.email?.trim();
+
+          let display = 'Usuário do Dosiq';
+          if (name) {
+            display = email ? `${name} (${email})` : name;
+          } else if (email) {
+            display = email;
+          }
+
+          f.user_settings = { display_name: display };
+        });
       }
     }
+
 
 
     // Obter estatísticas agregadas do banco de dados (View feedback_stats) para evitar OOM e latência

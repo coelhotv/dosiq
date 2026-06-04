@@ -9,7 +9,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Web/PWA (4.0.0 → 4.1.1)
+### Web/PWA (4.0.0 → 4.1.2)
+- **Identificação de usuários no painel de feedbacks** (Patch, web 4.1.1→**4.1.2**): atualizada a formatação do display_name dos usuários. Exibe `{Nome} ({email})` se houver nome e `{email}` se o nome estiver vazio (com fallback para `Usuário do Dosiq`).
 - **Hotfix Área Administrativa de Feedbacks** (Patch, web 4.1.0→**4.1.1**): corrigida falha 500 no carregamento de feedbacks causada por tentativa de junção implícita inválida no PostgREST (o banco não possuía relacionamento direto feedbacks <-> user_settings). Os display_names são agora buscados separadamente por ID em uma query dedicada.
 - **Área administrativa de feedbacks** (Minor, Spec 023, web 4.0.0→**4.1.0**): implementado painel administrativo consolidado para visualização, filtros por status/nota e estatísticas em tempo real de feedbacks recebidos dos usuários finais. Ação de marcar como resolvido ou reabrir os feedbacks.
 - **Roteador único consolidado admin** (Patch, Spec 023): DLQ e feedbacks unificados no único slot físico `/api/admin.js` preservando o limite do plano Hobby da Vercel (R-090) e mantendo endpoints legados por reescrita de URL.
