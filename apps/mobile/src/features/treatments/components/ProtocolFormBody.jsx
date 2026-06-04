@@ -152,12 +152,30 @@ export default function ProtocolFormBody({
         </View>
       </Section>
 
-      <Section title="Período">
+      <Section title="Alertas Críticos">
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            {/* <Text style={styles.toggleLabel}>Alerta crítico</Text> */}
+            <Text style={styles.toggleHint}>
+              Ligue o alerta crítico para doses que não podem ser esquecidas. O alarme tocará mesmo no silencioso.
+            </Text>
+          </View>
+          <Switch
+            value={!!form.values.critical_alarm}
+            onValueChange={handleCriticalAlarmToggle}
+            trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
+            thumbColor={form.values.critical_alarm ? colors.bg.card : colors.text?.secondary}
+            accessibilityLabel="Alerta crítico"
+          />
+        </View>
+      </Section>
+
+      <Section title="Prescrição">
         <View style={styles.dateRow}>
           <View style={styles.flex}>
             <FormDatePicker
               name="start_date"
-              label="Início"
+              label="Data do início"
               value={startDateAsDate}
               onChange={onStartDateChange}
               error={form.touched.start_date ? form.errors.start_date : null}
@@ -166,7 +184,7 @@ export default function ProtocolFormBody({
           <View style={styles.flex}>
             <FormDatePicker
               name="end_date"
-              label="Término"
+              label="Data do término"
               value={endDateAsDate}
               onChange={onEndDateChange}
               error={form.touched.end_date ? form.errors.end_date : null}
@@ -184,24 +202,6 @@ export default function ProtocolFormBody({
           onChange={onPlanFieldChange}
           error={form.touched.treatment_plan_id ? form.errors.treatment_plan_id : null}
         />
-      </Section>
-
-      <Section title="Alertas">
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleText}>
-            <Text style={styles.toggleLabel}>Alerta crítico</Text>
-            <Text style={styles.toggleHint}>
-              Toca mesmo no silencioso. Use só para doses inegociáveis (ex: imunossupressor, insulina).
-            </Text>
-          </View>
-          <Switch
-            value={!!form.values.critical_alarm}
-            onValueChange={handleCriticalAlarmToggle}
-            trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
-            thumbColor={form.values.critical_alarm ? colors.bg.card : colors.text?.secondary}
-            accessibilityLabel="Alerta crítico"
-          />
-        </View>
       </Section>
 
       <Section title="Observações">

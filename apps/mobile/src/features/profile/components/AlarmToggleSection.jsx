@@ -15,9 +15,9 @@ export default function AlarmToggleSection() {
         <View style={styles.row}>
           <AlarmClock size={20} color={colors.brand.primary} strokeWidth={2} />
           <View style={styles.textBlock}>
-            <Text style={styles.rowLabel}>Configure por tratamento</Text>
+            <Text style={styles.rowLabel}>Configure em tratamentos</Text>
             <Text style={styles.rowHint}>
-              O alarme crítico agora é definido em cada tratamento. Abra um tratamento e
+              O alarme crítico agora é definido por tratamento. Edite um tratamento e
               ative "Alerta crítico" para as doses que não podem ser esquecidas.
             </Text>
           </View>
