@@ -13,7 +13,7 @@ consume_stock_fifo(
 ```
 
 ## Comportamento
-- **Líquido** (`dosage_unit LIKE '%/ml'`): converte `p_quantity` p/ ml via `intake_unit` + `drops_per_ml` (`gotas` → `ROUND(p_quantity/drops_per_ml, 2)`; `ml`/`UI` → escala direta) e deduz por FIFO de `stock.quantity`.
+- **Líquido** (`dosage_unit LIKE '%/ml'`): converte `p_quantity` p/ ml via `intake_unit` + `units_per_ml` (`gotas` → `ROUND(p_quantity/units_per_ml, 2)`; `ml`/`UI` → escala direta) e deduz por FIFO de `stock.quantity`.
 - **Sólido**: caminho linear inteiro (subtrai `p_quantity`).
 - FIFO por `expiration_date ASC NULLS LAST, purchase_date, created_at, id`, `FOR UPDATE`.
 - Grava `stock_consumptions.quantity_consumed` por lote.

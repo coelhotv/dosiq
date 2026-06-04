@@ -12,7 +12,8 @@
 | FR | Descrição | Task(s) | Path verificado | Verified? |
 |----|-----------|---------|------------------|-----------|
 | FR-001 | enum `mg/ml`,`ui/ml` (SQL) | T002 | `medicines.dosage_unit` CHECK (a confirmar nome — T001) | ⚠️ confirmar em C1 |
-| FR-002 | `medicines.drops_per_ml` | T003 | `public.medicines` (existe) | ✅ |
+| FR-002 | `medicines.units_per_ml` (genérica, ex-`drops_per_ml` — ADR-058) | T003 | `public.medicines` (tabela existe; coluna NEW, `NUMERIC DEFAULT 20`) | ✅ |
+| FR-002b | `medicines.presentation` (forma; CHECK PT; ADR-058) | T003/T016 | `public.medicines` (coluna NEW, `TEXT DEFAULT 'comprimido'`) | ✅ |
 | FR-003 | `protocols.intake_unit` | T003 | `public.protocols` (existe) | ✅ |
 | FR-004 | `CHECK (stock.quantity>=0)` | T003 | `stock.quantity numeric` | ✅ |
 | FR-005 | migração de dados | T004 | `medicines`/`protocols` | ✅ (lógica idempotente) |
@@ -62,8 +63,9 @@ Mudança de formato (`ml`/`gotas` → `mg/ml` + `intake_unit`) **tem** entregáv
 
 ## Decisões arquiteturais (resolvidas, não chutadas)
 
-- **Líquido derivado da unidade de concentração** (`LIKE '%/ml'`), não booleano `is_liquid` — decisão-mãe do PO, escrita 1× no Context.
-- **`UI` v1 = escala direta** (insulina/canetas → épico diabetes, ADR-052). Documentado.
+- **Líquido derivado da unidade de concentração** (`LIKE '%/ml'`), não booleano `is_liquid` — decisão-mãe do PO, escrita 1× no Context. `presentation` (forma) é eixo **complementar**, não a reverte (ADR-058).
+- **`UI` v1 = escala direta** (insulina/canetas → épico diabetes 012, ADR-052). Documentado.
+- **Coordenação 012 (ADR-058):** `units_per_ml` (genérica razão→ml) e `presentation` (forma, nome EN/valores PT R-021) nascem nesta spec p/ a 012 reusar sem rename/migração dupla. Sequenciamento duro 022→012.
 - **`dosage_per_pill` NULL tolerado** em legados migrados.
 
 ---

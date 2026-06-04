@@ -57,11 +57,25 @@ ALTER TABLE public.medicines ADD CONSTRAINT medicines_dosage_unit_check
 
 ### A.2 — Colunas estruturais + check de saldo
 ```sql
-ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS drops_per_ml INTEGER DEFAULT 20;
+-- Coluna genérica de densidade/razão→ml (generaliza o antigo drops_per_ml — ADR-058).
+-- Significado adapta-se à dosage_unit: gotas=20 (gotas/ml), ui/ml=100 (UI/ml, U-100), ml=1.
+-- Conversão uniforme no decremento: ml = p_quantity / units_per_ml.
+ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS units_per_ml NUMERIC DEFAULT 20;
+
+-- Forma farmacêutica explícita (additiva; NÃO substitui is_liquid derivado — ADR-058).
+-- Eixo de forma que a spec 012 (Diabetes) estende para injecao/pomada.
+ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS presentation TEXT DEFAULT 'comprimido';
+ALTER TABLE public.medicines DROP CONSTRAINT IF EXISTS medicines_presentation_check;
+ALTER TABLE public.medicines ADD CONSTRAINT medicines_presentation_check
+  CHECK (presentation IN ('comprimido','capsula','liquido','injecao','pomada','spray','outro'));
+
 ALTER TABLE public.protocols ADD COLUMN IF NOT EXISTS intake_unit TEXT DEFAULT NULL;
 ALTER TABLE public.stock ADD CONSTRAINT chk_stock_quantity_non_negative CHECK (quantity >= 0);
 ```
 > Colunas em tabelas existentes **não** exigem novos GRANTs (regra do CLAUDE.md vale p/ `CREATE TABLE`). RLS vigente preservada.
+> **Coordenação 012 (ADR-058):** `units_per_ml` e `presentation` nascem genéricas nesta spec para
+> a 012 reusar sem rename/migração dupla. `units_per_ml` é `NUMERIC` (não `INTEGER`) p/ suportar
+> futuras concentrações fracionárias; default `20` serve o legado de gotas.
 
 ### A.3 — Migração de dados (`ml`/`gotas` → `mg/ml`)
 ```sql
@@ -76,10 +90,18 @@ WHERE p.medicine_id = m.id
 -- 3b. Converte a unidade do medicamento p/ o modelo de concentração.
 UPDATE public.medicines
 SET dosage_unit  = 'mg/ml',
-    drops_per_ml = COALESCE(drops_per_ml, 20)
+    units_per_ml = COALESCE(units_per_ml, 20),
+    presentation = 'liquido'
 WHERE dosage_unit IN ('ml','gotas');
+
+-- 3c. Backfill de presentation p/ linhas remanescentes (não-líquidas) — heurística mínima.
+-- Sólidos ficam com o default 'comprimido' (já aplicado pelo DEFAULT da coluna nos legados
+-- via re-write opcional); refino por tipo farmacêutico real fica para cadastro/edição manual.
+UPDATE public.medicines
+SET presentation = 'comprimido'
+WHERE presentation IS NULL;
 ```
-> Idempotente: rodar 2× = no-op. `dosage_per_pill` deixado como está (NULL p/ legados; massa ativa só exibida quando preenchida). `'ui'` líquido legado (raríssimo) **não** convertido automaticamente (ambíguo vs. sólido `ui`); revisão manual — documentado, não silencioso.
+> Idempotente: rodar 2× = no-op. `dosage_per_pill` deixado como está (NULL p/ legados; massa ativa só exibida quando preenchida). `'ui'` líquido legado (raríssimo) **não** convertido automaticamente (ambíguo vs. sólido `ui`); revisão manual — documentado, não silencioso. `presentation` dos líquidos migrados fica consistente com o `is_liquid` derivado (ambos verdadeiros).
 
 ### A.4 — RPC `consume_stock_fifo` (sobrecarga líquida — mantém assinatura)
 Ver `contracts/consume_stock_fifo.md` para a assinatura/contrato. Corpo:
@@ -99,7 +121,7 @@ AS $$
 DECLARE
   v_is_liquid BOOLEAN;
   v_dosage_unit TEXT;
-  v_drops_per_ml INTEGER;
+  v_units_per_ml NUMERIC;       -- razão→ml genérica (gotas/ml=20, UI/ml=100); ex-drops_per_ml
   v_intake_unit TEXT;
   v_remaining NUMERIC;
   v_total_available NUMERIC;
@@ -112,8 +134,8 @@ BEGIN
   IF p_quantity IS NULL OR p_quantity <= 0 THEN RAISE EXCEPTION 'Quantidade deve ser > 0'; END IF;
   IF p_medicine_log_id IS NULL THEN RAISE EXCEPTION 'medicine_log_id é obrigatório'; END IF;
 
-  SELECT (dosage_unit LIKE '%/ml'), dosage_unit, COALESCE(drops_per_ml, 20)
-  INTO v_is_liquid, v_dosage_unit, v_drops_per_ml
+  SELECT (dosage_unit LIKE '%/ml'), dosage_unit, COALESCE(units_per_ml, 20)
+  INTO v_is_liquid, v_dosage_unit, v_units_per_ml
   FROM public.medicines WHERE id = p_medicine_id;
 
   IF COALESCE(v_is_liquid, FALSE) THEN
@@ -123,10 +145,12 @@ BEGIN
     WHERE l.id = p_medicine_log_id;
 
     IF v_intake_unit = 'gotas' THEN
-      v_remaining := ROUND(p_quantity / v_drops_per_ml, 2);
+      v_remaining := ROUND(p_quantity / v_units_per_ml, 2);
     ELSE
       v_remaining := ROUND(p_quantity, 2);  -- 'ml', 'UI' (v1 escala direta), fallback
     END IF;
+    -- NOTA (012): a insulina basal estende o branch 'UI' p/ converter via v_units_per_ml
+    -- (UI→ml = p_quantity / units_per_ml, U-100=100). Fora do escopo desta spec (022).
   ELSE
     v_remaining := p_quantity;   -- sólidos: linear inteiro
   END IF;
@@ -185,19 +209,26 @@ GRANT EXECUTE ON FUNCTION public.consume_stock_fifo(UUID, UUID, NUMERIC, UUID) T
 export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ui', 'un', 'mg/ml', 'ui/ml']
 // NOTA: 'ml'/'gotas' saem da lista de concentração (viram intake_unit). CHECK SQL mantém legados até a migração.
 
+// Forma farmacêutica (additiva — ADR-058; alinha MEDICINE_TYPES). Sincronizada com CHECK SQL (R-082).
+export const PRESENTATIONS = ['comprimido', 'capsula', 'liquido', 'injecao', 'pomada', 'spray', 'outro']
+
 const medicineSchema = z.object({
   // ...campos existentes...
   dosage_unit: z.enum(DOSAGE_UNITS),
   dosage_per_pill: z.number().positive('Concentração deve ser maior que zero').nullable().optional(),
-  drops_per_ml: z.number().int().positive().nullable().optional(),
+  // Coluna genérica razão→ml (ex-drops_per_ml): gotas=20, UI/ml=100. NUMERIC (aceita fração).
+  units_per_ml: z.number().positive().nullable().optional(),
+  presentation: z.enum(PRESENTATIONS).default('comprimido'),
 }).superRefine((data, ctx) => {
-  if (data.dosage_unit?.endsWith('/ml') && data.drops_per_ml == null) {
-    ctx.addIssue({ code: 'custom', path: ['drops_per_ml'],
-      message: 'Gotas por ml é obrigatório para medicamentos líquidos (padrão 20).' })
+  if (data.dosage_unit?.endsWith('/ml') && data.units_per_ml == null) {
+    ctx.addIssue({ code: 'custom', path: ['units_per_ml'],
+      message: 'Densidade (unidades por ml) é obrigatória para medicamentos líquidos (padrão 20).' })
   }
 })
 ```
 > Concentração (`dosage_per_pill`) **não** exigida: legados migrados têm `NULL` e precisam continuar salváveis.
+> `units_per_ml` substitui `drops_per_ml` (mesma semântica p/ gotas; genérica p/ UI — ADR-058).
+> A UI rotula `units_per_ml` conforme a unidade ("Gotas por ml" p/ gotas; "UI por ml" p/ insulina na 012).
 
 ### B.2 — `protocolSchema.js`
 ```javascript
@@ -275,7 +306,7 @@ export function formatDose(value, unit) {
 
 ### C.1 — MedicineForm + Wizard (web/mobile)
 - Dropdown de concentração: `['mg','mcg','g','ui','un','mg/ml','ui/ml']`. Mesma lista no **passo de medicamento do wizard**.
-- `dosage_unit.endsWith('/ml')` ⇒ badge `💧 Apresentação Líquida` + campo `Gotas por ml` (mapeia `drops_per_ml`, default 20).
+- `dosage_unit.endsWith('/ml')` ⇒ badge `💧 Apresentação Líquida` + campo `Gotas por ml` (mapeia `units_per_ml`, default 20). Setar `presentation='liquido'`.
 - Label do campo de concentração: **"Concentração"** (mapeia `dosage_per_pill`; oculta "Dose por comprimido").
 
 ### C.2 — ProtocolForm (web/mobile)
@@ -288,11 +319,11 @@ export function formatDose(value, unit) {
 ### C.4 — Banner de fim de frasco (`StockAlertInline.jsx`)
 ```javascript
 // Converte a dose da próxima ocorrência p/ ml ANTES de comparar com o saldo (ml).
-function nextDoseMl(expectedDose, intakeUnit, dropsPerMl = 20) {
-  if (intakeUnit === 'gotas') return Number((expectedDose / dropsPerMl).toFixed(2))
+function nextDoseMl(expectedDose, intakeUnit, unitsPerMl = 20) {
+  if (intakeUnit === 'gotas') return Number((expectedDose / unitsPerMl).toFixed(2))
   return expectedDose // 'ml' e 'UI' (v1) = escala direta
 }
-const doseMl = nextDoseMl(instance.expected_dose, protocol.intake_unit, medicine.drops_per_ml)
+const doseMl = nextDoseMl(instance.expected_dose, protocol.intake_unit, medicine.units_per_ml)
 if (activeStockQuantity < doseMl) { /* aviso "frasco no fim" */ }
 ```
 > Só p/ líquidos (`dosage_unit LIKE '%/ml'`). Reusa `formatNumberPtBR` p/ exibir o saldo ("1,5 ml").
@@ -308,7 +339,7 @@ if (activeStockQuantity < doseMl) { /* aviso "frasco no fim" */ }
 | Path | Fase | Purpose | Evidence |
 |------|------|---------|----------|
 | `docs/migrations/20260602_liquid_meds_db.sql` | A | [NEW] enum + colunas + check + migração + RPC + grants. | SQL/migrations |
-| `packages/core/src/schemas/medicineSchema.js` | B | enum + `drops_per_ml`/`dosage_per_pill` + refine. | verificado |
+| `packages/core/src/schemas/medicineSchema.js` | B | enum + `units_per_ml`/`dosage_per_pill` + `presentation` (PRESENTATIONS) + refine. | verificado |
 | `packages/core/src/schemas/protocolSchema.js` | B | `intake_unit` + cross-validação. | verificado |
 | `packages/core/src/schemas/logSchema.js` | B | cap-100 → 1000 em `quantity_taken`. | `:36` |
 | `packages/core/src/schemas/adherencePatternSchema.js` | B | cap-100 → 1000. | `:13` |
@@ -317,7 +348,7 @@ if (activeStockQuantity < doseMl) { /* aviso "frasco no fim" */ }
 | `packages/core/src/utils/doseUnit.js` | B | adicionar `formatDose` (estende). | verificado |
 | `apps/web/src/features/stock/services/stockService.js` | B | desmembramento via N× RPC. | `:24` |
 | `apps/mobile/src/features/stock/services/stockService.js` | B | mesmo, mobile (JS). | verificado |
-| `apps/web/src/features/medications/components/MedicineForm.jsx` (+ `sections/MedicineFormDosageInfo.jsx`) | C | dropdown + badge + `drops_per_ml`. | verificado |
+| `apps/web/src/features/medications/components/MedicineForm.jsx` (+ `sections/MedicineFormDosageInfo.jsx`) | C | dropdown + badge + `units_per_ml` + `presentation`. | verificado |
 | `apps/mobile/src/features/medications/screens/MedicineFormScreen.jsx` | C | idem mobile (JS). | verificado |
 | `apps/web/src/features/protocols/components/sections/ProtocolFormDosesSection.jsx` | C | select `intake_unit` condicional. | verificado |
 | `apps/mobile/src/features/treatments/components/ProtocolFormBody.jsx` | C | idem mobile. | verificado |

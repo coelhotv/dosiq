@@ -1,7 +1,7 @@
 # Feature Specification: Medicamentos Líquidos (Épico)
 
 **Feature Directory**: `plans/specs/022-liquid-medications`
-**Created**: 2026-06-01 · **Revised**: 2026-06-02
+**Created**: 2026-06-01 · **Revised**: 2026-06-03
 **Status**: Dev Ready
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta)
 **Artifacts**: `spec.md` · `plan.md` · `tasks.md` (faseado A→B→C) · `analysis.md` · `contracts/`
@@ -10,6 +10,22 @@
 - `docs/architecture/DOSE_INSTANCES.md`
 
 > **Histórico:** consolida as antigas specs 023 (core/API) e 024 (UI/bot), que eram **camadas** da mesma feature, não features independentes. Staging de PR vive em `tasks.md` (Fases A/B/C), não em dirs separados.
+
+> **⚠️ Amendment 2026-06-03 — Coordenação com a spec 012 (Diabetes T2).** A 012 **depende
+> desta spec** e reusa sua fundação (`intake_unit`, enum `ui/ml`, `consume_stock_fifo`
+> volume-aware, `formatDose`). Para evitar rename + migração dupla, **duas colunas desta spec
+> nascem já generalizadas**, em vez de específicas-de-líquido:
+> 1. **`units_per_ml` → coluna genérica de densidade/razão→ml** (`FR-002`): significado se adapta
+>    à `dosage_unit` — `gotas`→`20` (gotas/ml), `ui/ml`→`100` (UI/ml, U-100), etc. A 012 reusa
+>    esse mesmo campo para a conversão UI→ml da insulina, **sem nova coluna**.
+> 2. **Nova coluna `medicines.presentation`** (`FR-002b`, forma farmacêutica geral) — additiva,
+>    **não** reverte a decisão-mãe (`is_liquid` segue derivado de `dosage_unit LIKE '%/ml'` no
+>    caminho de decremento). `presentation` é o eixo de **forma** que a 012 estende para
+>    `injecao`/`pomada`; para líquidos deve ficar consistente com o flag derivado.
+>
+> **Sequenciamento (duro):** 022 mergeada **antes** do C-coding da 012. **Re-sync pendente:** os
+> downstream desta spec (`plan.md`, `tasks.md`, `analysis.md`, `contracts/`) devem refletir o nome
+> final da coluna genérica + `presentation` no próximo refresh de Planning desta 022.
 
 ---
 
@@ -32,11 +48,11 @@ Consequências obrigatórias (todas cobertas neste épico):
 
 ### User Story 1 — Modelagem + Novas Unidades de Concentração (P1) — Fase A
 **Why**: persistir metadados de líquidos e habilitar detecção por unidade sem quebrar dados existentes.
-**Independent Test**: inspecionar o enum `dosage_unit` (aceita `'mg/ml'`/`'ui/ml'`); confirmar `protocols.intake_unit` e `medicines.drops_per_ml` como nullable/com default.
+**Independent Test**: inspecionar o enum `dosage_unit` (aceita `'mg/ml'`/`'ui/ml'`); confirmar `protocols.intake_unit` e `medicines.units_per_ml` como nullable/com default.
 
 **Acceptance Scenarios**:
 1. Given o enum de concentração, When inspecionado, Then inclui `'mg/ml'`/`'ui/ml'` além dos sólidos (`mg`,`mcg`,`g`,`ui`,`un`).
-2. Given `medicines`, When `drops_per_ml` é inspecionada, Then é `integer` default `20`, aceita `NULL`.
+2. Given `medicines`, When `units_per_ml` é inspecionada, Then é `integer` default `20`, aceita `NULL`.
 3. Given `protocols`, When `intake_unit` é inspecionada, Then é `text` nullable (`'gotas'`/`'ml'`/`'UI'`; NULL p/ sólidos).
 
 ### User Story 2 — Migração de Líquidos Legados (P1) — Fase A
@@ -44,26 +60,26 @@ Consequências obrigatórias (todas cobertas neste épico):
 **Independent Test**: rodar a migração; confirmar (a) nenhum medicamento permanece com `dosage_unit IN ('ml','gotas')`; (b) protocolos desses medicamentos receberam `intake_unit` da unidade antiga.
 
 **Acceptance Scenarios**:
-1. Given medicamento legado `dosage_unit = 'gotas'` + protocolos, When a migração roda, Then medicamento → `dosage_unit = 'mg/ml'`, `drops_per_ml = 20`; cada protocolo → `intake_unit = 'gotas'`.
+1. Given medicamento legado `dosage_unit = 'gotas'` + protocolos, When a migração roda, Then medicamento → `dosage_unit = 'mg/ml'`, `units_per_ml = 20`; cada protocolo → `intake_unit = 'gotas'`.
 2. Given medicamento legado `dosage_unit = 'ml'`, When migra, Then → `dosage_unit = 'mg/ml'`; protocolos → `intake_unit = 'ml'`.
 3. Given concentração ativa (`dosage_per_pill`) desconhecida no legado, When migra, Then `dosage_per_pill` permanece `NULL` (decremento e adesão por razão não dependem da concentração; massa ativa só exibida quando o usuário preencher).
 
 ### User Story 3 — Baixa Transacional Contínua por FIFO (P1) — Fase A
 **Why**: tomadas deduzem volume contínuo em ml por FIFO, precisão decimal, dentro do modelo v4.0.0.
-**Independent Test**: invocar `consume_stock_fifo` com `2.5 ml` e com `15 gotas` (`drops_per_ml = 20`); confirmar baixa exata em `stock.quantity` por FIFO + linhas em `stock_consumptions`.
+**Independent Test**: invocar `consume_stock_fifo` com `2.5 ml` e com `15 gotas` (`units_per_ml = 20`); confirmar baixa exata em `stock.quantity` por FIFO + linhas em `stock_consumptions`.
 
 **Acceptance Scenarios**:
 1. Given `'mg/ml'` + `intake_unit = 'ml'`, When confirma `2.50` ml, Then RPC deduz exatamente `2.50` do lote ativo por FIFO; `stock_consumptions.quantity_consumed = 2.50`.
-2. Given `'mg/ml'`, `drops_per_ml = 20`, `intake_unit = 'gotas'`, When confirma `15` gotas, Then RPC calcula `ROUND(15/20, 2) = 0.75` ml e deduz `0.75` por FIFO.
+2. Given `'mg/ml'`, `units_per_ml = 20`, `intake_unit = 'gotas'`, When confirma `15` gotas, Then RPC calcula `ROUND(15/20, 2) = 0.75` ml e deduz `0.75` por FIFO.
 3. Given múltiplos lotes com validades distintas, When a dose supera o 1º frasco, Then zera o 1º e debita o saldo do próximo, atomicamente.
 4. Given sólido (`'mg'`,`'g'`,`'ui'`,`'un'`), When a RPC roda, Then desvia ao caminho linear legado (subtrai inteiro, sem divisão).
 
 ### User Story 4 — Validação Zod de Concentração + Tomada (P1) — Fase B
 **Why**: impedir cadastros líquidos incompletos e permitir doses decimais válidas no registro.
-**Independent Test**: cadastrar `'mg/ml'` sem `drops_per_ml` → Zod rejeita; registrar log de `100 ml` → Zod aceita (não barra no antigo teto 100).
+**Independent Test**: cadastrar `'mg/ml'` sem `units_per_ml` → Zod rejeita; registrar log de `100 ml` → Zod aceita (não barra no antigo teto 100).
 
 **Acceptance Scenarios**:
-1. Given `dosage_unit` terminando em `/ml`, When `medicineSchema` valida, Then exige `drops_per_ml` (int positivo, default 20); `dosage_per_pill` é opcional/nullable (legados migrados têm `NULL`).
+1. Given `dosage_unit` terminando em `/ml`, When `medicineSchema` valida, Then exige `units_per_ml` (int positivo, default 20); `dosage_per_pill` é opcional/nullable (legados migrados têm `NULL`).
 2. Given protocolo líquido, When `protocolSchema` valida, Then exige `intake_unit ∈ {gotas,ml,UI}`, aceita `dosage_per_intake` decimal (`2.5`).
 3. Given sólido, When `protocolSchema` valida, Then `intake_unit` permanece `NULL`.
 4. Given log de `100 ml`, When `logSchema` valida `quantity_taken`, Then aceita (teto revisado p/ `1000`).
@@ -95,10 +111,10 @@ Consequências obrigatórias (todas cobertas neste épico):
 
 ### User Story 8 — Banner de Fim de Frasco (P2) — Fase C
 **Why**: avisar a Dona Maria antes do frasco acabar.
-**Independent Test**: estoque `1.5 ml`; dose `15 gotas` (`drops_per_ml=20` → `0.75 ml`) não dispara; dose `40 gotas` (`2 ml`) dispara (2 > 1.5).
+**Independent Test**: estoque `1.5 ml`; dose `15 gotas` (`units_per_ml=20` → `0.75 ml`) não dispara; dose `40 gotas` (`2 ml`) dispara (2 > 1.5).
 
 **Acceptance Scenarios**:
-1. Given `stock.quantity = 1.5` (ml) e próxima `expected_dose = 40` (`intake_unit='gotas'`, `drops_per_ml=20`), When a timeline abre, Then converte `40/20 = 2 ml`, detecta `2 > 1.5`, exibe *"⚠️ Seu frasco ativo está no fim (restam apenas 1,5 ml). Lembre-se de abrir um novo frasco!"*.
+1. Given `stock.quantity = 1.5` (ml) e próxima `expected_dose = 40` (`intake_unit='gotas'`, `units_per_ml=20`), When a timeline abre, Then converte `40/20 = 2 ml`, detecta `2 > 1.5`, exibe *"⚠️ Seu frasco ativo está no fim (restam apenas 1,5 ml). Lembre-se de abrir um novo frasco!"*.
 2. Given dose convertida ≤ saldo, When abre, Then banner NÃO aparece.
 
 ### User Story 9 — Formatação de Dose + Confirmar Tomada no Telegram (P1) — Fase B/C
@@ -129,14 +145,24 @@ Consequências obrigatórias (todas cobertas neste épico):
 
 **Fase A — DB/Backend**
 - **FR-001**: Estender o enum `dosage_unit` (`DOSAGE_UNITS` core + CHECK/enum SQL) com `'mg/ml'` e `'ui/ml'`.
-- **FR-002**: Adicionar `drops_per_ml` (`integer`, default `20`, nullable) em `public.medicines`.
+- **FR-002**: Adicionar **coluna genérica de densidade/razão→ml** em `public.medicines` (numeric,
+  default `20`, nullable) cujo significado se adapta à `dosage_unit`: `gotas`→gotas/ml (`20`),
+  `ui/ml`→UI/ml (`100`, reusada pela 012 p/ insulina). **Generaliza o antigo `units_per_ml`** num
+  campo único razão→ml (nome final em Planning; manter retrocompat de leitura onde `units_per_ml`
+  já for referenciado).
+- **FR-002b**: Adicionar `presentation` (text/enum PT — `comprimido`/`capsula`/`liquido`/`injecao`/
+  `pomada`/`spray`/`outro`, alinha `MEDICINE_TYPES`) em `public.medicines`, **additiva**. Forma
+  farmacêutica explícita; **não** substitui a derivação `is_liquid := dosage_unit LIKE '%/ml'` do
+  decremento (decisão-mãe). Para líquidos, popular consistente com o flag derivado. Base do eixo de
+  forma que a 012 (Diabetes) estende para injetáveis. Migração: popular linhas existentes (default
+  + heurística por `dosage_unit`/`type`) — detalhar no Planning desta spec.
 - **FR-003**: Adicionar `intake_unit` (`text`, nullable) em `public.protocols`.
 - **FR-004**: Adicionar `CHECK (quantity >= 0)` em `public.stock`.
-- **FR-005**: **Migração de dados** — `dosage_unit IN ('ml','gotas')` → `dosage_unit = 'mg/ml'` + `drops_per_ml = COALESCE(drops_per_ml, 20)`, movendo a unidade antiga p/ `protocols.intake_unit`. Idempotente.
-- **FR-006**: `public.consume_stock_fifo` infere líquido via `dosage_unit LIKE '%/ml'`, converte a tomada (`intake_unit` + `drops_per_ml`) p/ ml e deduz por FIFO de `stock.quantity`, gravando `stock_consumptions`. Sólidos = linear. Mantém a assinatura `(p_user_id, p_medicine_id, p_quantity, p_medicine_log_id)`.
+- **FR-005**: **Migração de dados** — `dosage_unit IN ('ml','gotas')` → `dosage_unit = 'mg/ml'` + `units_per_ml = COALESCE(units_per_ml, 20)`, movendo a unidade antiga p/ `protocols.intake_unit`. Idempotente.
+- **FR-006**: `public.consume_stock_fifo` infere líquido via `dosage_unit LIKE '%/ml'`, converte a tomada (`intake_unit` + `units_per_ml`) p/ ml e deduz por FIFO de `stock.quantity`, gravando `stock_consumptions`. Sólidos = linear. Mantém a assinatura `(p_user_id, p_medicine_id, p_quantity, p_medicine_log_id)`.
 
 **Fase B — Core/Validações/Serviços**
-- **FR-007**: `DOSAGE_UNITS` (`packages/core/src/schemas/medicineSchema.js`) ganha `'mg/ml'`/`'ui/ml'`; `medicineSchema` exige `drops_per_ml` quando a unidade termina em `/ml` (concentração opcional/nullable).
+- **FR-007**: `DOSAGE_UNITS` (`packages/core/src/schemas/medicineSchema.js`) ganha `'mg/ml'`/`'ui/ml'`; `medicineSchema` exige `units_per_ml` quando a unidade termina em `/ml` (concentração opcional/nullable).
 - **FR-008**: `protocolSchema` (`packages/core/src/schemas/protocolSchema.js`) ganha `intake_unit` (`z.enum(['gotas','ml','UI']).nullable().optional()`) + superRefine: líquido ⇒ `intake_unit` obrigatório. `dosage_per_intake` permanece `.max(1000)` decimal.
 - **FR-009**: Revisar o teto R-022 (cap-100) onde realmente vive — `logSchema.quantity_taken`, `adherencePatternSchema`, `costAnalysisSchema`, `reminderOptimizerSchema` — elevando p/ `.max(1000)`. Segurança real do volume = `CHECK`/saldo (Fase A), não o cap Zod.
 - **FR-010**: `stockService.createPurchase` (web + mobile, ambos `.js`) desmembra `N frascos × V ml × preço total` em **N chamadas** `create_purchase_with_stock` (`p_quantity=V`, `p_unit_price=custo/ml`), compensando centavos no último. **Nunca** `supabase.from('stock').insert(...)`.
@@ -147,11 +173,13 @@ Consequências obrigatórias (todas cobertas neste épico):
 - **FR-013**: `MedicineForm` (web `features/medications/components/MedicineForm.jsx` + `sections/MedicineFormDosageInfo.jsx`; mobile `features/medications/screens/MedicineFormScreen.jsx`) **e o wizard de onboarding** filtram o dropdown de concentração p/ `['mg','mcg','g','ui','un','mg/ml','ui/ml']`, label "Concentração", badge `💧` + campo `Gotas por ml` p/ unidades `/ml`.
 - **FR-014**: `ProtocolForm` (web `sections/ProtocolFormDosesSection.jsx`; mobile `treatments/components/ProtocolFormBody.jsx`) exibe condicionalmente o select `intake_unit` + hint quando líquido.
 - **FR-015**: `StockForm` (web `features/stock/components/StockForm.jsx` + `sections/StockFormPurchaseDetails.jsx`) exibe `💧 Inventário de Líquidos`, inputs `frascos`/`ml cada` + `Preço Total da Compra (R$)`; despacha payload de desmembramento (FR-010). Caminho mobile a verificar em C1.
-- **FR-016**: Banner em `features/dashboard/components/StockAlertInline.jsx` compara `stock.quantity` (ml) com `expected_dose` **convertida p/ ml** (via `drops_per_ml` quando `intake_unit='gotas'`).
+- **FR-016**: Banner em `features/dashboard/components/StockAlertInline.jsx` compara `stock.quantity` (ml) com `expected_dose` **convertida p/ ml** (via `units_per_ml` quando `intake_unit='gotas'`).
 - **FR-017**: Bot (`api/notify.js` + `server/bot/callbacks/doseActions.js`) formata mensagens com `formatDose(expected_dose, intake_unit)`; callback `✅ Tomei` passa a dose na unidade de tomada p/ `consume_stock_fifo` (converte p/ ml internamente — FR-006).
 
 ### Key Entities
-- **Medicine**: `dosage_unit` (enum estendido) + `drops_per_ml`. Líquido = unidade termina em `/ml`.
+- **Medicine**: `dosage_unit` (enum estendido) + **coluna genérica de densidade/razão→ml** (ex-
+  `units_per_ml`; `20` p/ gotas, `100` p/ UI) + **`presentation`** (forma farmacêutica, additiva).
+  Líquido (decremento) = unidade termina em `/ml` (decisão-mãe inalterada).
 - **Protocol**: `intake_unit` (`gotas`/`ml`/`UI`) — unidade física da tomada.
 - **Stock**: `quantity` = ml restantes (líquidos) / unidades (sólidos); `original_quantity` = volume nominal do frasco.
 - **Core**: `medicineSchema`, `protocolSchema`, `logSchema` & cousins (teto), `stockService` (desmembramento), `doseUnit.js` (`formatDose`).
@@ -162,5 +190,5 @@ Consequências obrigatórias (todas cobertas neste épico):
 ## Success Criteria
 
 - **SC-001**: `consume_stock_fifo` faz baixas decimais (ml) e inteiras (sólidos) precisas por FIFO; nenhum medicamento permanece com `dosage_unit IN ('ml','gotas')` pós-migração; migração idempotente.
-- **SC-002**: Zod valida concentração/tomada decimal e bloqueia líquidos sem `drops_per_ml`/`intake_unit`, zero falso-positivo em sólidos legados; compras de N frascos geram N lotes via `create_purchase_with_stock` com total reconstruído sem perda de centavos.
+- **SC-002**: Zod valida concentração/tomada decimal e bloqueia líquidos sem `units_per_ml`/`intake_unit`, zero falso-positivo em sólidos legados; compras de N frascos geram N lotes via `create_purchase_with_stock` com total reconstruído sem perda de centavos.
 - **SC-003**: Dropdowns (incl. wizard) expõem `mg/ml`/`ui/ml` e ocultam `ml`/`gotas` da concentração; o banner dispara só quando a dose **convertida p/ ml** supera o saldo; o bot formata via `formatDose` e debita o volume correto; estoque zerado não trava.
