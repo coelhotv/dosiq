@@ -122,7 +122,7 @@ export default function FeedbackScreen() {
             {currentRating === 5 ? 'Excelente!' :
              currentRating === 4 ? 'Muito bom' :
              currentRating === 3 ? 'Bom / Regular' :
-             currentRating === 2 ? 'Precisa melhorar' : 'Muito ruim'}
+             currentRating === 2 ? 'Precisa melhorar' : 'Não gostei'}
           </Text>
         )}
       </View>
