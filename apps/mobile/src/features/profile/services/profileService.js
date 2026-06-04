@@ -8,7 +8,9 @@ import {
   hasFuturePendingDoses as hasFuturePendingDosesCore,
   regenActiveProtocolsForTz,
 } from '@dosiq/core'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY } from '@platform/alarms/alarmEnabledStore'
 
 /**
  * Mapeia erros técnicos da API para mensagens amigáveis em Português (R-170)
@@ -65,6 +67,8 @@ export async function logoutUser() {
       }
       throw error
     }
+    // Limpa flags device-scoped do usuário anterior (AsyncStorage não é per-user)
+    await AsyncStorage.multiRemove([ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY]).catch(() => {})
     return { success: true, error: null }
   } catch (err) {
     console.error('[profileService] erro ao fazer logout:', err)
