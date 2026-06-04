@@ -226,3 +226,6 @@
 
 - **[R-224]** Deep link auth handlers devem ser async + try/catch + suportar PKCE (`?code=` → `exchangeCodeForSession`) e implicit flow (`#access_token=` → `setSession`). -> [`rules/mobile_and_platform/R-224.md`](./rules/mobile_and_platform/R-224.md)
 - **[R-247]** Uso obrigatório do atributo `maxLength` em todos os campos de entrada de texto (Inputs/Textareas) de formulários na interface web e mobile -> [`rules/react_and_ui/R-247.md`](./rules/react_and_ui/R-247.md)
+- **[R-262]** Cold start smoke test obrigatório para módulos serverless (`api/`, `server/services/`) em Node puro (sem JSDOM/browser globals) no CI antes de deploy -> [`rules/infra_and_deploy/R-262.md`](./rules/infra_and_deploy/R-262.md)
+- **[R-263]** Fixar versão Node em `package.json` (`"engines"`) e na Vercel (`NODE_VERSION`) — sem âncora, bumps silenciosos de runtime mudam o ambiente sem sinal -> [`rules/infra_and_deploy/R-263.md`](./rules/infra_and_deploy/R-263.md)
+- **[R-264]** Ao bumpar libs com sub-deps de runtime (`@supabase/supabase-js`, etc.), verificar changelog do sub-dep embutido + rodar smoke em Node 20 local antes do PR -> [`rules/infra_and_deploy/R-264.md`](./rules/infra_and_deploy/R-264.md)
