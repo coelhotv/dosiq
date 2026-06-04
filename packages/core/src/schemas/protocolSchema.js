@@ -157,6 +157,8 @@ export const protocolSchema = z.object({
     .max(7, 'Máximo de 7 dias da semana')
     .optional()
     .default([]),
+
+  critical_alarm: z.boolean().default(false),
 })
 
 /**

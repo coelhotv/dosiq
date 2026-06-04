@@ -92,7 +92,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
   const selectFields = `
-    id, user_id, protocol_id,
+    id, user_id, protocol_id, critical_alarm,
     protocol:protocols(
       id, name, dosage_per_intake, treatment_plan_id, medicine_id,
       medicine:medicines(name, dosage_unit),
@@ -182,6 +182,10 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
       try {
         const userInstances = byUser[userId];
 
+        // critical_alarm é passado ao dispatcher junto com a dose; o expoPushChannel
+        // faz o gate granular por device (native_alarm_enabled). O helper não suprime —
+        // dispositivos sem alarme nativo (web/PWA/Telegram) devem receber push mesmo
+        // para doses críticas (ADR-056).
         const dosesNow = userInstances.map(inst => ({
           instanceId: inst.id,
           protocolId: inst.protocol_id,
@@ -192,7 +196,10 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
           dosageUnit: inst.protocol?.medicine?.dosage_unit,
           medicineId: inst.protocol?.medicine_id,
+          critical_alarm: inst.critical_alarm ?? false,
         }));
+
+        if (dosesNow.length === 0) continue;
 
         const blocks = partitionDoses(dosesNow);
         const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
@@ -210,6 +217,8 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
 
         for (const block of blocks) {
           const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
+          // Dose crítica se qualquer instância do bloco tiver critical_alarm=true
+          const isBlockCritical = block.doses.some(d => d.critical_alarm === true);
 
           let kind, data;
 
@@ -219,12 +228,14 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               planId: block.planId, planName: block.planName,
               scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
               protocolIds: block.doses.map(d => d.protocolId),
+              critical_alarm: isBlockCritical,
             };
           } else if (block.kind === 'misc') {
             kind = 'dose_reminder_misc';
             data = {
               scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
               protocolIds: block.doses.map(d => d.protocolId),
+              critical_alarm: isBlockCritical,
             };
           } else {
             const dose = block.doses[0];
@@ -236,6 +247,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               time: currentHHMM,
               dosagePerIntake: dose.dosagePerIntake,
               dosageUnit: dose.dosageUnit,
+              critical_alarm: dose.critical_alarm ?? false,
             };
           }
 

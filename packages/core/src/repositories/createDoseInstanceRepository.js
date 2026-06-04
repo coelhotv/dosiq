@@ -399,5 +399,27 @@ export function createDoseInstanceRepository({ client }) {
       if (error) throw error
       return !!(data && data.length > 0)
     },
+
+    /**
+     * Persiste o timestamp de soneca de uma ocorrência (FR-010).
+     * Limpar: passar null quando a dose for resolvida (taken/skipped) ou a soneca esgotar.
+     * @param {string} instanceId
+     * @param {Date|string|null} ts - ISO timestamp ou null para limpar
+     * @returns {Promise<void>}
+     */
+    async setSnoozedUntil(instanceId, ts) {
+      const isoValue = ts === null
+        ? null
+        : typeof ts === 'number'
+          ? parseTimestamp(ts).toISOString()
+          : toIso(ts)
+
+      const { error } = await client
+        .from(TABLE)
+        .update({ snoozed_until: isoValue })
+        .eq('id', instanceId)
+
+      if (error) throw error
+    },
   }
 }

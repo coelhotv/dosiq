@@ -328,11 +328,30 @@ export default function ProtocolDetailScreen() {
           ) : null}
         </SectionCard>
 
+        {/* Alertas Críticos */}
+        <SectionCard title="ALERTAS CRÍTICOS">
+          <View style={styles.criticalAlarmRow}>
+            <View style={styles.criticalAlarmText}>
+              <Text style={styles.detailLabel}>Alarme {protocol.critical_alarm ? 'agendado' : 'desligado'}</Text>
+              <Text style={styles.criticalAlarmHint}>
+                {protocol.critical_alarm
+                  ? 'Toca mesmo no silencioso.'
+                  : 'Use para as doses que não podem ser esquecidas.'}
+              </Text>
+            </View>
+            <View style={[styles.criticalAlarmBadge, protocol.critical_alarm && styles.criticalAlarmBadgeOn]}>
+              <Text style={[styles.criticalAlarmBadgeText, protocol.critical_alarm && styles.criticalAlarmBadgeTextOn]}>
+                {protocol.critical_alarm ? 'Ligado' : 'Desligado'}
+              </Text>
+            </View>
+          </View>
+        </SectionCard>
+
         {/* Período */}
-        <SectionCard title="PERÍODO">
-          <DetailRow label="Início" value={formatDatePtBR(protocol.start_date)} />
+        <SectionCard title="PRESCRIÇÃO">
+          <DetailRow label="Data de início" value={formatDatePtBR(protocol.start_date)} />
           <DetailRow
-            label="Término"
+            label="Data do término"
             value={formatEndDate(protocol.end_date)}
             valueMuted={!protocol.end_date}
           />
@@ -628,6 +647,38 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     paddingVertical: spacing[2],
     lineHeight: 18,
+  },
+  criticalAlarmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing[2],
+    gap: spacing[3],
+  },
+  criticalAlarmText: {
+    flex: 1,
+    gap: 2,
+  },
+  criticalAlarmHint: {
+    fontSize: 12,
+    color: colors.text.muted,
+    lineHeight: 18,
+  },
+  criticalAlarmBadge: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+    borderRadius: 999,
+    backgroundColor: colors.neutral[100],
+  },
+  criticalAlarmBadgeOn: {
+    backgroundColor: colors.status?.warningSoft ?? colors.neutral[100],
+  },
+  criticalAlarmBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text.secondary,
+  },
+  criticalAlarmBadgeTextOn: {
+    color: colors.status?.warning ?? colors.text.primary,
   },
   deleteBtn: {
     flexDirection: 'row',

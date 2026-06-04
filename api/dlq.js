@@ -21,9 +21,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { tra
  * Lista notificações falhas com paginação
  */
 async function handleList(req, res) {
-
   try {
-    // Parse query parameters
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const status = req.query.status || null;

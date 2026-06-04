@@ -148,6 +148,8 @@ function createDoseItem(instance, protocol, tz) {
     planBadge: getPlanBadge(protocol.treatment_plan),
     isRegistered,
     registeredAt: isRegistered ? instance.scheduled_for : null,
+    critical: instance.critical_alarm === true,
+    snoozedUntil: instance.snoozed_until ?? null,
   }
 }
 

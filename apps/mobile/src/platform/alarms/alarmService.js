@@ -13,6 +13,8 @@
 //  - cancelAll usa cancelTriggerNotifications() → cancela só triggers do Notifee,
 //       NÃO toca as notificações do expo-notifications (push remoto preservado).
 
+import { createDoseInstanceRepository, parseISO } from '@dosiq/core'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
   AndroidImportance,
   AndroidVisibility,
@@ -22,7 +24,6 @@ import notifee, {
 } from '@notifee/react-native'
 import { Platform, Linking } from 'react-native'
 import * as Device from 'expo-device'
-import { parseISO } from '@dosiq/core'
 import { debugLog } from '@shared/utils/debugLog'
 
 // Canal Android é IMUTÁVEL após criado — bumpar o id força recriação com o som
@@ -31,6 +32,9 @@ import { debugLog } from '@shared/utils/debugLog'
 // imutável, não corrigia nem reinstalando. v3 = canal limpo no build COM o som.
 // REGRA: ao trocar o som do alarme, SEMPRE bumpar este id (senão fica no antigo).
 export const ALARM_CHANNEL_ID = 'dose-alarm-v3'
+// Canal crítico Android (Spec 010, R-261): id separado para alarmes críticos (critical_alarm=true).
+// NUNCA mudar o id dose-alarm-v3 acima; bumpar este ao trocar som do canal crítico.
+export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v1'
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
 // iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
@@ -52,6 +56,7 @@ export const ALARM_ACTION = Object.freeze({
 })
 
 let channelEnsured = false
+let criticalChannelEnsured = false
 
 /**
  * Pede a permissão de notificação do SO (POST_NOTIFICATIONS no Android 13+,
@@ -139,6 +144,7 @@ export async function ensureAlarmCategories() {
  */
 export async function ensureAlarmSetup() {
   await ensureAlarmChannel()
+  await ensureAlarmCriticalChannel()
   await ensureAlarmCategories()
 }
 
@@ -157,8 +163,24 @@ export async function ensureAlarmChannel() {
   channelEnsured = true
 }
 
+/** Canal Android crítico (dose-alarm-critical-v1) — para alarmes com critical_alarm=true. No-op no iOS. */
+export async function ensureAlarmCriticalChannel() {
+  if (Platform.OS !== 'android' || criticalChannelEnsured) return
+  await notifee.createChannel({
+    id: ALARM_CRITICAL_CHANNEL_ID,
+    name: 'Alarmes críticos de dose',
+    importance: AndroidImportance.HIGH,
+    sound: 'default',
+    vibration: true,
+    bypassDnd: true,
+    visibility: AndroidVisibility.PUBLIC,
+  })
+  criticalChannelEnsured = true
+}
+
 // Monta o objeto de notificação compartilhado por agendamento e nag.
-function buildNotification({ doseInstanceId, medicineName, data, notificationId }) {
+// isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
+function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
   const title = '💊 Hora da dose'
   const time = data?.scheduledTime
   const body = medicineName
@@ -170,10 +192,10 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId 
     body,
     data: { ...data, doseInstanceId },
     android: {
-      channelId: ALARM_CHANNEL_ID,
+      channelId: isCritical ? ALARM_CRITICAL_CHANNEL_ID : ALARM_CHANNEL_ID,
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
-      sound: SOUND_ANDROID,
+      sound: isCritical ? 'default' : SOUND_ANDROID,
       // Loop do som + notif persistente: toca até o usuário escolher Tomei/Pular.
       // ongoing+autoCancel:false impedem swipe/auto-dismiss; cancelAlarm para o som.
       loopSound: true,
@@ -190,7 +212,8 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId 
     },
     ios: {
       sound: SOUND_IOS,
-      interruptionLevel: IOS_INTERRUPTION_LEVEL, // timeSensitive até critical aprovado
+      interruptionLevel: isCritical ? 'critical' : IOS_INTERRUPTION_LEVEL,
+      ...(isCritical ? { critical: true } : {}), // fura mute físico (entitlement critical-alerts)
       categoryId: ALARM_CHANNEL_ID, // ações registradas em ensureAlarmCategories (T015)
       // iOS suprime som/banner de notif quando o app está em foreground por padrão.
       // Declarar pra o alarme tocar/aparecer mesmo com o app aberto (paridade Android).
@@ -202,13 +225,14 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId 
 /**
  * Agenda o alarme de uma ocorrência. Idempotente por `doseInstanceId` (A).
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor: string|number|Date,
- *           toleranceMinutes?: number|null, data?: object }} params
+ *           toleranceMinutes?: number|null, isCritical?: boolean, data?: object }} params
  */
 export async function scheduleAlarm({
   doseInstanceId,
   medicineName,
   scheduledFor,
   toleranceMinutes = null,
+  isCritical = false,
   data = {},
 }) {
   await ensureAlarmSetup()
@@ -225,6 +249,7 @@ export async function scheduleAlarm({
     doseInstanceId,
     medicineName,
     notificationId: doseInstanceId,
+    isCritical,
     data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: '0', snoozeAttempt: '0' },
   })
 
@@ -332,6 +357,15 @@ export async function scheduleSnooze({
     timestamp: nextTs,
     alarmManager: { allowWhileIdle: true },
   })
+
+  // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
+  try {
+    const repo = createDoseInstanceRepository({ client: supabase })
+    await repo.setSnoozedUntil(doseInstanceId, nextTs)
+  } catch (err) {
+    if (__DEV__) console.warn('[alarmService] setSnoozedUntil falhou', doseInstanceId, err?.message)
+  }
+
   debugLog('[alarmService] snooze', next, doseInstanceId)
   return true
 }
@@ -347,6 +381,7 @@ export const alarmService = {
   openFullScreenIntentSettings,
   needsFullScreenIntentAccess,
   ensureAlarmChannel,
+  ensureAlarmCriticalChannel,
   ensureAlarmCategories,
   ensureAlarmSetup,
   scheduleAlarm,
