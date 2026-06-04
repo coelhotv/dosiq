@@ -200,8 +200,13 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
           10
         );
-        // HH:MM extraído da janela UTC — mesmo padrão do caminho via protocolos
-        const currentHHMM = windowStart.slice(11, 16);
+        // HH:MM no fuso do usuário (scheduled_for é UTC; display deve ser local)
+        const currentHHMM = new Intl.DateTimeFormat('en-GB', {
+          timeZone: userTz,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).format(parseISO(windowStart));
 
         for (const block of blocks) {
           const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
