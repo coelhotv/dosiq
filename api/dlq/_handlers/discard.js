@@ -2,6 +2,7 @@
 // Dead Letter Queue Handler - Discard a failed notification
 // NOTA: Este handler é chamado pelo router api/dlq.js, que já faz a autenticação
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { createLogger } from '../../../server/bot/logger.js';
 import { getServerTimestamp } from '../../../server/utils/dateUtils.js';
 
@@ -30,7 +31,7 @@ export async function handleDiscard(req, res) {
   }
 
   // Create Supabase client with service role key
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
 
   try {
     // Fetch the failed notification

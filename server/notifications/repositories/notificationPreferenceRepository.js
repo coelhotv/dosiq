@@ -2,13 +2,15 @@
 // Lê de user_settings.notification_preference e verifica telegram_chat_id
 
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { z } from 'zod'
 
 const notificationPreferenceSchema = z.enum(['telegram', 'mobile_push', 'both', 'none'])
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { realtime: { transport: ws } }
 )
 
 export const notificationPreferenceRepository = {
