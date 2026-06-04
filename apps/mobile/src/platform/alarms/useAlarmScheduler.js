@@ -58,7 +58,7 @@ export async function syncAlarms({ userId, protocols, tz }) {
         const snoozedTs = typeof it.snoozedUntil === 'number'
           ? it.snoozedUntil
           : Date.parse(it.snoozedUntil) // ISO timestamptz → epoch (sem new Date — R-020)
-        if (!Number.isNaN(snoozedTs) && snoozedTs > now) return false
+        if (!Number.isNaN(snoozedTs) && snoozedTs > now.getTime()) return false
       }
       return true
     })

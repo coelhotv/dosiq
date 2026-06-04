@@ -197,8 +197,8 @@ export default function ProtocolFormBody({
           <Switch
             value={!!form.values.critical_alarm}
             onValueChange={handleCriticalAlarmToggle}
-            trackColor={{ false: colors.border?.default, true: colors.primary }}
-            thumbColor={form.values.critical_alarm ? colors.white : colors.text?.secondary}
+            trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
+            thumbColor={form.values.critical_alarm ? colors.bg.card : colors.text?.secondary}
             accessibilityLabel="Alerta crítico"
           />
         </View>
