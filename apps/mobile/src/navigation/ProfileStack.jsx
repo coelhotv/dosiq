@@ -8,6 +8,7 @@ import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen
 import TelegramLinkScreen from '../features/profile/screens/TelegramLinkScreen'
 import NotificationPreferencesScreen from '../features/profile/screens/NotificationPreferencesScreen'
 import NotificationInboxScreen from '../features/notifications/screens/NotificationInboxScreen'
+import FeedbackScreen from '../features/profile/screens/FeedbackScreen'
 
 const Stack = createStackNavigator()
 
@@ -22,6 +23,7 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.TELEGRAM_LINK} component={TelegramLinkScreen} />
       <Stack.Screen name={ROUTES.NOTIFICATION_PREFERENCES} component={NotificationPreferencesScreen} />
       <Stack.Screen name={ROUTES.NOTIFICATION_INBOX} component={NotificationInboxScreen} />
+      <Stack.Screen name={ROUTES.FEEDBACK} component={FeedbackScreen} />
     </Stack.Navigator>
   )
 }

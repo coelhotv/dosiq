@@ -3,6 +3,7 @@
   "buildCommand": "cd apps/web && npx vite build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "npm install",
+  "devCommand": "cd apps/web && npx vite --port $PORT",
   "functions": {
     "api/notify.js": { "maxDuration": 60 },
     "api/telegram.js": { "maxDuration": 10 },

@@ -23,10 +23,14 @@ CREATE POLICY "Users can insert own feedbacks" ON public.feedbacks
   FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
--- Restrição estrita de SELECT/UPDATE/DELETE para anon/authenticated
+CREATE POLICY "Users can select own feedbacks" ON public.feedbacks
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Restrição estrita para anon e authenticated (liberando SELECT/INSERT controlados por RLS)
 REVOKE ALL ON public.feedbacks FROM anon;
 REVOKE ALL ON public.feedbacks FROM authenticated;
-GRANT INSERT ON public.feedbacks TO authenticated;
+GRANT SELECT, INSERT ON public.feedbacks TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.feedbacks TO service_role;
 
 -- View para estatísticas de feedbacks (calculado no banco de dados para evitar gargalos em memória)
