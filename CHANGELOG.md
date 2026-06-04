@@ -10,11 +10,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Web/PWA (4.0.0 → 4.1.0)
+- **Área administrativa de feedbacks** (Minor, Spec 023, web 4.0.0→**4.1.0**): implementado painel administrativo consolidado para visualização, filtros por status/nota e estatísticas em tempo real de feedbacks recebidos dos usuários finais. Ação de marcar como resolvido ou reabrir os feedbacks.
 - **Roteador único consolidado admin** (Patch, Spec 023): DLQ e feedbacks unificados no único slot físico `/api/admin.js` preservando o limite do plano Hobby da Vercel (R-090) e mantendo endpoints legados por reescrita de URL.
+
+### Mobile (0.10.0 → 0.11.0)
+- **Formulário interno para envio de feedbacks** (Minor, Spec 023, mobile 0.10.0→**0.11.0**): adicionada área logada sob o hub de Perfil para que usuários possam enviar notas de 1 a 5 estrelas e comentários sobre o produto. Coleta automatizada de metadados em background (device, OS e versão do app) para facilitar a depuração. **Nota de loja relevante: adicionada área interna para envio de feedback diretamente pelo app.**
 
 ### Shared/Core
 - **Validação e persistência de feedbacks** (Minor, Spec 023): criação da tabela feedbacks no banco com RLS restritiva, schema de validação Zod e repositório factory core reutilizável.
-
 
 ---
 
