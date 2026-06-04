@@ -13,6 +13,7 @@ const { mockSupabase } = vi.hoisted(() => {
     lt: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     then: vi.fn((onFulfilled) => {
       const result = mockDataQueue.shift() || { data: [], error: null };
@@ -115,9 +116,10 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
         },
       },
     ];
-    setMockData(doseInstances);
+    setMockData(doseInstances); // query 1: não-snoozed
+    setMockData([]);            // query 2: snoozed (Promise.all)
 
-    setMockData({ data: null, error: null });
+    setMockData({ data: null, error: null }); // update notified_at
 
     await checkRemindersViaDispatcher(mockDispatcher, 'corr-123');
 

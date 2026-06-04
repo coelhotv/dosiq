@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp } from '../utils/dateUtils.js';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday, getProtocolDays } from '../utils/protocolActiveHelper.js';
 // Formatting helpers removed — moved to Layer 2
@@ -91,30 +91,42 @@ async function _processUserReminderBlock(userId, currentHHMM, currentHour, block
 async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
-  const snoozeCutoff = getServerTimestamp();
+  const selectFields = `
+    id, user_id, protocol_id,
+    protocol:protocols(
+      id, name, dosage_per_intake, treatment_plan_id, medicine_id,
+      medicine:medicines(name, dosage_unit),
+      treatment_plan:treatment_plans(id, name)
+    )
+  `;
 
-  const { data, error } = await supabase
-    .from('dose_instances')
-    .select(`
-      id, user_id, protocol_id,
-      protocol:protocols(
-        id, name, dosage_per_intake, treatment_plan_id, medicine_id,
-        medicine:medicines(name, dosage_unit),
-        treatment_plan:treatment_plans(id, name)
-      )
-    `)
-    .in('user_id', userIds)
-    .eq('status', 'pending')
-    .is('notified_at', null)
-    .gte('scheduled_for', windowStart)
-    .lt('scheduled_for', windowEnd)
-    .or(`snoozed_until.is.null,snoozed_until.lte.${snoozeCutoff}`);
+  // Duas queries separadas: (1) doses no horário previsto sem snooze;
+  // (2) doses adiadas cujo snoozed_until cai na janela atual.
+  // Evita falso-positivo de doses muito atrasadas (sem lower bound em scheduled_for).
+  const [{ data: nonSnoozed, error: e1 }, { data: snoozedDue, error: e2 }] = await Promise.all([
+    supabase
+      .from('dose_instances')
+      .select(selectFields)
+      .in('user_id', userIds)
+      .eq('status', 'pending')
+      .is('notified_at', null)
+      .is('snoozed_until', null)
+      .gte('scheduled_for', windowStart)
+      .lt('scheduled_for', windowEnd),
+    supabase
+      .from('dose_instances')
+      .select(selectFields)
+      .in('user_id', userIds)
+      .eq('status', 'pending')
+      .is('notified_at', null)
+      .not('snoozed_until', 'is', null)
+      .gte('snoozed_until', windowStart)
+      .lt('snoozed_until', windowEnd),
+  ]);
 
-  if (error) {
-    logger.error('Erro ao buscar dose_instances para reminder', error);
-    return [];
-  }
-  return data || [];
+  if (e1) logger.error('Erro ao buscar dose_instances (não-snoozed)', e1);
+  if (e2) logger.error('Erro ao buscar dose_instances (snoozed)', e2);
+  return [...(nonSnoozed || []), ...(snoozedDue || [])];
 }
 
 async function _updateNotifiedAt(instanceIds) {
@@ -145,13 +157,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
 
     const nowISO = getServerTimestamp(); // ex: "2026-06-04T15:23:45.123Z"
     const windowStart = nowISO.slice(0, 16) + ':00.000Z';  // "2026-06-04T15:23:00.000Z"
-    // próximo minuto sem new Date()
-    const [_date, _timeZ] = windowStart.split('T');
-    const [_hStr, _mStr] = _timeZ.split(':');
-    let _h = parseInt(_hStr, 10);
-    let _m = parseInt(_mStr, 10) + 1;
-    if (_m >= 60) { _m = 0; _h = (_h + 1) % 24; }
-    const windowEnd = `${_date}T${String(_h).padStart(2, '0')}:${String(_m).padStart(2, '0')}:00.000Z`;
+    const windowEnd = addMinutes(1, parseISO(windowStart)).toISOString(); // "2026-06-04T15:24:00.000Z"
 
     const instances = await _fetchDueInstancesForReminder(
       userIds,
@@ -189,12 +195,16 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
         }));
 
         const blocks = partitionDoses(dosesNow);
+        const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
+        const currentHour = parseInt(
+          parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
+          10
+        );
 
         for (const block of blocks) {
           const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
 
           let kind, data;
-          const currentHour = parseInt(getServerTimestamp().slice(11, 13), 10);
 
           if (block.kind === 'by_plan') {
             kind = 'dose_reminder_by_plan';
