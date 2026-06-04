@@ -178,8 +178,8 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>OUTROS</Text>
-          <View style={styles.card}>
+          <Text style={styles.sectionTitle}>SOBRE O DOSIQ</Text>
+          <View style={[styles.card, { paddingVertical: 0 }]}>
             <TouchableOpacity
               style={styles.otherRow}
               onPress={handlePrivacyPolicy}
@@ -198,23 +198,11 @@ export default function ProfileScreen() {
             >
               <View style={styles.otherLabelContainer}>
                 <Text style={styles.otherLabel}>Enviar feedback</Text>
-              </View>
-              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
-            </TouchableOpacity>
-            <View style={styles.otherDivider} />
-            <TouchableOpacity
-              style={styles.otherRow}
-              onPress={() => {}}
-              activeOpacity={1}
-              disabled={true}
-            >
-              <View style={styles.otherLabelContainer}>
-                <Text style={styles.otherLabelDisabled}>Sobre o Dosiq</Text>
-                <View style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonText}>em breve</Text>
+                <View style={styles.newBadge}>
+                  <Text style={styles.newText}>novo</Text>
                 </View>
               </View>
-              <ChevronRight size={18} color={colors.text.muted} strokeWidth={1.5} />
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -490,12 +478,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
   },
   otherLabel: {
     fontSize: 16,
     color: colors.text.primary,
     fontWeight: '500',
+    lineHeight: 22,
   },
   otherLabelDisabled: {
     fontSize: 16,
@@ -507,19 +496,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  comingSoonBadge: {
-    backgroundColor: colors.neutral[200],
+  newBadge: {
+    backgroundColor: colors.supplement[50],
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: borderRadius.full,
     marginLeft: spacing[2],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  comingSoonText: {
+  newText: {
     fontSize: 10,
-    color: colors.text.muted,
+    color: colors.supplement[700],
     fontWeight: '700',
     textTransform: 'uppercase',
-    lineHeight: 14,
   },
   otherDivider: {
     height: 1,
