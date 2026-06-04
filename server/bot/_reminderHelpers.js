@@ -200,6 +200,8 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
           10
         );
+        // HH:MM extraído da janela UTC — mesmo padrão do caminho via protocolos
+        const currentHHMM = windowStart.slice(11, 16);
 
         for (const block of blocks) {
           const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
@@ -210,13 +212,13 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
             kind = 'dose_reminder_by_plan';
             data = {
               planId: block.planId, planName: block.planName,
-              hour: currentHour, doses: block.doses,
+              scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
               protocolIds: block.doses.map(d => d.protocolId),
             };
           } else if (block.kind === 'misc') {
             kind = 'dose_reminder_misc';
             data = {
-              hour: currentHour, doses: block.doses,
+              scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
               protocolIds: block.doses.map(d => d.protocolId),
             };
           } else {
@@ -226,6 +228,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               medicineName: dose.medicineName,
               protocolId: dose.protocolId,
               medicineId: dose.medicineId,
+              time: currentHHMM,
               dosagePerIntake: dose.dosagePerIntake,
               dosageUnit: dose.dosageUnit,
             };
