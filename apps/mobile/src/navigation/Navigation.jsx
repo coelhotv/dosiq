@@ -9,7 +9,7 @@
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
 import { useEffect, useState } from 'react'
-import { View, ActivityIndicator, Linking } from 'react-native'
+import { View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
@@ -117,7 +117,7 @@ export default function Navigation() {
   // setState síncronos aqui são intencionais (estado de verificação do gate).
   useEffect(() => {
     let active = true
-    if (session?.user) {
+    if (session?.user?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnboardingNeeded(null) // verificando → spinner
       isOnboardingNeeded().then(({ data }) => {
@@ -191,7 +191,7 @@ export default function Navigation() {
   // Também aguarda o gate de onboarding resolver quando há sessão.
   if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null)) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     )
@@ -261,3 +261,11 @@ export default function Navigation() {
     </NavigationContainer>
   )
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+})

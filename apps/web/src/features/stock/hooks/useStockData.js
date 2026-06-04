@@ -60,52 +60,6 @@ export function useStockData() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const [medicinesData, protocolsData] = await Promise.all([
-        medicineService.getAll(),
-        protocolService.getActive(),
-      ])
-
-      setMedicines(medicinesData)
-      setProtocols(protocolsData)
-
-      // Fetch estoque em paralelo para todos os medicamentos
-      const stockResults = await Promise.all(
-        medicinesData.map(async (medicine) => {
-          const entries = await stockService.getByMedicine(medicine.id)
-          const total = entries.reduce((sum, e) => sum + e.quantity, 0)
-          return { medicineId: medicine.id, entries, total }
-        })
-      )
-
-      const map = {}
-      stockResults.forEach(({ medicineId, entries, total }) => {
-        map[medicineId] = { entries, total }
-      })
-      setStockMap(map)
-
-      const purchaseHistory = await purchaseService.getHistoryByMedicineIds(
-        medicinesData.map((medicine) => medicine.id)
-      )
-      setPurchaseHistoryMap(purchaseHistory)
-    } catch (err) {
-      setError('Erro ao carregar estoque: ' + err.message)
-      console.error('[useStockData] Erro:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    startTransition(() => {
-      loadData()
-    })
-  }, [loadData])
-
   // 2. Memos — Computar items, sub-listas por urgência
   const items = useMemo(
     () =>
@@ -154,6 +108,52 @@ export function useStockData() {
     [items]
   )
   const highItems = useMemo(() => items.filter((i) => i.stockStatus === 'alto'), [items])
+
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const [medicinesData, protocolsData] = await Promise.all([
+        medicineService.getAll(),
+        protocolService.getActive(),
+      ])
+
+      setMedicines(medicinesData)
+      setProtocols(protocolsData)
+
+      // Fetch estoque em paralelo para todos os medicamentos
+      const stockResults = await Promise.all(
+        medicinesData.map(async (medicine) => {
+          const entries = await stockService.getByMedicine(medicine.id)
+          const total = entries.reduce((sum, e) => sum + e.quantity, 0)
+          return { medicineId: medicine.id, entries, total }
+        })
+      )
+
+      const map = {}
+      stockResults.forEach(({ medicineId, entries, total }) => {
+        map[medicineId] = { entries, total }
+      })
+      setStockMap(map)
+
+      const purchaseHistory = await purchaseService.getHistoryByMedicineIds(
+        medicinesData.map((medicine) => medicine.id)
+      )
+      setPurchaseHistoryMap(purchaseHistory)
+    } catch (err) {
+      setError('Erro ao carregar estoque: ' + err.message)
+      console.error('[useStockData] Erro:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    startTransition(() => {
+      loadData()
+    })
+  }, [loadData])
 
   return {
     items,

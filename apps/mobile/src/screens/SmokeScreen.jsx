@@ -6,6 +6,9 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { medicineSchema } from '@dosiq/core/schemas'
 import { ROUTES } from '../navigation/routes'
+import { colors } from '@shared/styles/tokens'
+
+
 
 export default function SmokeScreen({ navigation }) {
   // Valida um medicamento de teste usando o schema compartilhado
@@ -51,12 +54,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#f8fafc',
+    backgroundColor: colors.bg.screen,
   },
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1e293b',
+    color: colors.text.primary,
     marginBottom: 24,
   },
   badge: {
@@ -66,30 +69,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   badgeSuccess: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: colors.primary[100],
   },
   badgeError: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: colors.status.errorLight,
   },
   badgeText: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#166534',
+    color: colors.status.successDark,
   },
   details: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.text.muted,
     textAlign: 'center',
     marginBottom: 24,
   },
   button: {
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.text.inverse,
     fontWeight: '600',
     fontSize: 16,
   },

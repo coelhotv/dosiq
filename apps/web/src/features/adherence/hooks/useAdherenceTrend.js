@@ -20,6 +20,16 @@ export function useAdherenceTrend() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const emoji = useMemo(
+    () => getTrendEmoji(trendData.direction, trendData.magnitude),
+    [trendData.direction, trendData.magnitude]
+  )
+
+  const label = useMemo(
+    () => getTrendLabel(trendData.direction, trendData.percentage),
+    [trendData.direction, trendData.percentage]
+  )
+
   useEffect(() => {
     let isMounted = true
 
@@ -61,16 +71,6 @@ export function useAdherenceTrend() {
       isMounted = false
     }
   }, [])
-
-  const emoji = useMemo(
-    () => getTrendEmoji(trendData.direction, trendData.magnitude),
-    [trendData.direction, trendData.magnitude]
-  )
-
-  const label = useMemo(
-    () => getTrendLabel(trendData.direction, trendData.percentage),
-    [trendData.direction, trendData.percentage]
-  )
 
   return {
     trend: trendData.direction,

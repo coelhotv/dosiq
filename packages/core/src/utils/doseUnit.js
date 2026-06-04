@@ -66,6 +66,16 @@ export function formatDoseUnit(qty) {
  * @example formatActiveIngredientShort(1.5, 100, 'ui')  → '150 UI'
  * @example formatActiveIngredientShort(3, 1, 'gotas')  → ''
  */
+function convertMetricUnit(total, unit) {
+  if (total >= 5000) {
+    if (unit === 'mcg') return { total: total / 1000, currentUnit: 'mg' }
+    if (unit === 'mg') return { total: total / 1000, currentUnit: 'g' }
+    if (unit === 'g') return { total: total / 1000, currentUnit: 'kg' }
+    if (unit === 'ml') return { total: total / 1000, currentUnit: 'l' }
+  }
+  return { total, currentUnit: unit }
+}
+
 export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
   if (
     qty == null ||
@@ -77,25 +87,7 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
     return ''
   }
   const qtyNum = Number(String(qty).replace(',', '.'))
-  let total = qtyNum * dosagePerPill
-  let currentUnit = unit
-
-  // Conversão de unidade métrica para valores maiores ou iguais a 5.000
-  if (total >= 5000) {
-    if (unit === 'mcg') {
-      total = total / 1000
-      currentUnit = 'mg'
-    } else if (unit === 'mg') {
-      total = total / 1000
-      currentUnit = 'g'
-    } else if (unit === 'g') {
-      total = total / 1000
-      currentUnit = 'kg'
-    } else if (unit === 'ml') {
-      total = total / 1000
-      currentUnit = 'l'
-    }
-  }
+  const { total, currentUnit } = convertMetricUnit(qtyNum * dosagePerPill, unit)
 
   const displayTotal = formatNumberPtBR(total)
 

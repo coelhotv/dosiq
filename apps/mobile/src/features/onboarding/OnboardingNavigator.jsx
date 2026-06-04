@@ -9,7 +9,7 @@
 //
 // ADR-036: JS stack (não native-stack) por compatibilidade Android API 24.
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from '@navigation/routes'
 import { completeOnboarding } from '@profile/services/profileService'
@@ -28,7 +28,7 @@ export default function OnboardingNavigator({ onComplete }) {
 
   // Concluir OU pular: marca onboarding_completed e entrega o app. Mesmo se a
   // marcação falhar, não prende o usuário no wizard.
-  const finish = useCallback(async () => {
+  const finish = useMemo(() => async () => {
     await completeOnboarding()
     onComplete?.()
   }, [onComplete])

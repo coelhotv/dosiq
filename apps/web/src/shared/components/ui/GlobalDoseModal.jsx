@@ -24,6 +24,13 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
   const [treatmentPlans, setTreatmentPlans] = useState([])
   const [plansError, setPlansError] = useState(null)
 
+  // Filtros para garantir que apenas tratamentos ativos apareçam no formulário
+  const activeProtocols = useMemo(() => protocols.filter((p) => p.active), [protocols])
+  const activeTreatmentPlans = useMemo(
+    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => p.active)),
+    [treatmentPlans]
+  )
+
   // Busca planos completos com protocolos e medicamentos embarcados
   useEffect(() => {
     if (!isOpen) return
@@ -53,13 +60,6 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
       onClose()
     },
     [refresh, onClose]
-  )
-
-  // Filtros para garantir que apenas tratamentos ativos apareçam no formulário
-  const activeProtocols = useMemo(() => protocols.filter((p) => p.active), [protocols])
-  const activeTreatmentPlans = useMemo(
-    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => p.active)),
-    [treatmentPlans]
   )
 
   return (

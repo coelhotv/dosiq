@@ -38,6 +38,11 @@ export default function Medicines({ onNavigateToProtocol }) {
     return deps
   }, [contextMedicines, protocols, stockSummary])
 
+  const filteredMedicines = useMemo(
+    () => contextMedicines?.filter((m) => filterType === 'all' || m.type === filterType) || [],
+    [contextMedicines, filterType]
+  )
+
   const showSuccess = (msg) => {
     setSuccessMessage(msg)
     setTimeout(() => setSuccessMessage(''), 3000)
@@ -87,11 +92,6 @@ export default function Medicines({ onNavigateToProtocol }) {
     if (onNavigateToProtocol && newMedicineId) onNavigateToProtocol(newMedicineId)
     setNewMedicineId(null)
   }
-
-  const filteredMedicines = useMemo(
-    () => contextMedicines?.filter((m) => filterType === 'all' || m.type === filterType) || [],
-    [contextMedicines, filterType]
-  )
 
   if (isLoading) {
     return (

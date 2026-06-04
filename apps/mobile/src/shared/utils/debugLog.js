@@ -15,7 +15,6 @@ export const debugLog = (message, ...args) => {
 
 export const errorLog = (message, ...args) => {
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.error(message, ...args)
   }
 }

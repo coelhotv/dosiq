@@ -47,6 +47,82 @@ function defaultGetValue(item) {
   return item?.name ?? ''
 }
 
+function AutocompleteItem({
+  item,
+  idx,
+  getItemLabel,
+  getItemSubtitle,
+  getItemValue,
+  onSelect,
+}) {
+  const label = getItemLabel(item)
+  const subtitle = getItemSubtitle?.(item)
+  return (
+    <Pressable
+      key={`${getItemValue(item)}-${idx}`}
+      style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+      onPress={() => onSelect(item)}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Text style={styles.itemTitle} numberOfLines={1}>
+        {label}
+      </Text>
+      {subtitle ? (
+        <Text style={styles.itemSubtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      ) : null}
+    </Pressable>
+  )
+}
+
+function AutocompleteOverlay({
+  show,
+  searching,
+  results,
+  maxResults,
+  getItemLabel,
+  getItemSubtitle,
+  getItemValue,
+  onSelect,
+}) {
+  if (!show) return null
+  return (
+    <View style={styles.overlay}>
+      {searching ? (
+        <View style={styles.statusRow}>
+          <ActivityIndicator color={colors.primary[700]} />
+          <Text style={styles.statusText}>Buscando…</Text>
+        </View>
+      ) : results.length === 0 ? (
+        <View style={styles.statusRow}>
+          <Text style={styles.statusText}>Nenhum resultado</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.list}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+        >
+          {results.slice(0, maxResults).map((item, idx) => (
+            <AutocompleteItem
+              key={`${getItemValue(item)}-${idx}`}
+              item={item}
+              idx={idx}
+              getItemLabel={getItemLabel}
+              getItemSubtitle={getItemSubtitle}
+              getItemValue={getItemValue}
+              onSelect={onSelect}
+            />
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  )
+}
+
 export default function FormAutocomplete({
   name,
   label,
@@ -146,29 +222,6 @@ export default function FormAutocomplete({
     inputRef.current?.blur()
   }
 
-  function renderRow(item, idx) {
-    const label = getItemLabel(item)
-    const subtitle = getItemSubtitle?.(item)
-    return (
-      <Pressable
-        key={`${getItemValue(item)}-${idx}`}
-        style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
-        onPress={() => handleSelect(item)}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Text style={styles.itemTitle} numberOfLines={1}>
-          {label}
-        </Text>
-        {subtitle ? (
-          <Text style={styles.itemSubtitle} numberOfLines={1}>
-            {subtitle}
-          </Text>
-        ) : null}
-      </Pressable>
-    )
-  }
-
   return (
     <View style={[styles.wrapper, disabled && styles.wrapperDisabled]}>
       {label ? (
@@ -213,33 +266,16 @@ export default function FormAutocomplete({
           ) : null}
         </View>
 
-        {showOverlay && (
-        <View style={styles.overlay}>
-          {searching ? (
-            <View style={styles.statusRow}>
-              <ActivityIndicator color={colors.primary[700]} />
-              <Text style={styles.statusText}>Buscando…</Text>
-            </View>
-          ) : results.length === 0 ? (
-            <View style={styles.statusRow}>
-              <Text style={styles.statusText}>Nenhum resultado</Text>
-            </View>
-          ) : (
-            // ScrollView plano (não FlatList) — scroll interno próprio dentro do
-            // dropdown: a borda envolve o viewport (maxHeight) e dá pra ver todas
-            // as sugestões sem fechar o teclado. RN só barra VirtualizedList
-            // aninhada; ScrollView plano é permitido.
-            <ScrollView
-              style={styles.list}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-            >
-              {results.slice(0, maxResults).map(renderRow)}
-            </ScrollView>
-          )}
-        </View>
-        )}
+        <AutocompleteOverlay
+          show={showOverlay}
+          searching={searching}
+          results={results}
+          maxResults={maxResults}
+          getItemLabel={getItemLabel}
+          getItemSubtitle={getItemSubtitle}
+          getItemValue={getItemValue}
+          onSelect={handleSelect}
+        />
       </View>
 
       {error ? (

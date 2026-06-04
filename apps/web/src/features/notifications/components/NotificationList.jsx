@@ -133,6 +133,20 @@ function EmptyState() {
 export default function NotificationList({ notifications, isLoading, error, onNavigate, onOpenDoseModal, doseLogs }) {
   // localDay: re-avalia groupByDay quando o dia muda (visibilitychange + midnight timer)
   const [localDay, setLocalDay] = useState(() => getTodayLocal())
+  // Monta lista plana com grupos intercalados (para Virtuoso e para lista simples)
+  const flatItems = useMemo(() => {
+    if (!notifications?.length) return []
+    const groups = groupByDay(notifications, localDay)
+    const items = []
+    for (const group of groups) {
+      items.push({ type: 'header', title: group.title })
+      for (const notif of group.items) {
+        items.push({ type: 'card', notif })
+      }
+    }
+    return items
+  }, [notifications, localDay])
+
   useEffect(() => {
     let timer
     const schedule = () => {
@@ -148,20 +162,6 @@ export default function NotificationList({ notifications, isLoading, error, onNa
     document.addEventListener('visibilitychange', onVisibility)
     return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility) }
   }, [])
-
-  // Monta lista plana com grupos intercalados (para Virtuoso e para lista simples)
-  const flatItems = useMemo(() => {
-    if (!notifications?.length) return []
-    const groups = groupByDay(notifications, localDay)
-    const items = []
-    for (const group of groups) {
-      items.push({ type: 'header', title: group.title })
-      for (const notif of group.items) {
-        items.push({ type: 'card', notif })
-      }
-    }
-    return items
-  }, [notifications, localDay])
 
   // ---- Estados especiais ----
   if (isLoading) {

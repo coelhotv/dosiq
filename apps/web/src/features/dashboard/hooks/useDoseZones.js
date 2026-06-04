@@ -45,37 +45,6 @@ export function useDoseZones({
   // Estado de "agora" — usa Date bruto para o timer (diff absoluto em classifyDose)
   const [nowRaw, setNowRaw] = useState(() => getRawNow())
 
-  useEffect(() => {
-    let intervalId = null
-
-    const startInterval = () => {
-      if (intervalId) return
-      intervalId = setInterval(() => setNowRaw(getRawNow()), 60_000)
-    }
-
-    const stopInterval = () => {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        stopInterval()
-      } else {
-        setNowRaw(getRawNow()) // atualizar imediatamente ao retornar
-        startInterval()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    startInterval()
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      stopInterval()
-    }
-  }, [])
-
   // F4.3e: particiona as ocorrências (janela ontem+hoje+amanhã) — janela actionável
   // deslizante cross-dia, simétrica pela tolerância:
   // - todayDoses → zonas + cronograma do dia (day-bound de F3.2b);
@@ -121,6 +90,37 @@ export function useDoseZones({
     const expected = taken + pending
     return { expected, taken, pending }
   }, [zones])
+
+  useEffect(() => {
+    let intervalId = null
+
+    const startInterval = () => {
+      if (intervalId) return
+      intervalId = setInterval(() => setNowRaw(getRawNow()), 60_000)
+    }
+
+    const stopInterval = () => {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopInterval()
+      } else {
+        setNowRaw(getRawNow()) // atualizar imediatamente ao retornar
+        startInterval()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    startInterval()
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      stopInterval()
+    }
+  }, [])
 
   // `now` shiftado (wall-clock SP) p/ exibição/agrupamento por hora; `nowRaw` absoluto
   // p/ classificação por instante (classifyDose vs scheduled_for absoluto).

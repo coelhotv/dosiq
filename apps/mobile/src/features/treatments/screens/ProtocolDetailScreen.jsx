@@ -67,7 +67,7 @@ function daysInUse(startDate) {
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
 }
 
-export default function ProtocolDetailScreen() {
+function useProtocolDetailState() {
   // States
   const navigation = useNavigation()
   const route = useRoute()
@@ -167,6 +167,71 @@ export default function ProtocolDetailScreen() {
     setDeleteOpen(false)
   }, [isDeleting])
 
+  return {
+    id,
+    protocol,
+    loading,
+    error,
+    refresh,
+    isDeleting,
+    deleteOpen,
+    effectiveActive,
+    isFinished,
+    frequencyLabel,
+    dailyIntakeTotal,
+    inUseDays,
+    toggling,
+    goBack,
+    goEdit,
+    goToMedicine,
+    onDelete,
+    handleToggleActive,
+    handleConfirmDelete,
+    handleCloseDelete,
+  }
+}
+
+function ProtocolDetailAppBar({ name, goBack, goEdit }) {
+  return (
+    <View style={styles.appbar}>
+      <Pressable onPress={goBack} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Voltar" hitSlop={12}>
+        <ArrowLeft size={24} color={colors.text.primary} />
+      </Pressable>
+      <View style={styles.appbarTitleWrap}>
+        <Text style={styles.appbarTitle} numberOfLines={1}>
+          {name}
+        </Text>
+      </View>
+      <Pressable onPress={goEdit} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Editar tratamento" hitSlop={12}>
+        <Edit3 size={22} color={colors.text.primary} />
+      </Pressable>
+    </View>
+  )
+}
+
+export default function ProtocolDetailScreen() {
+  const {
+    protocol,
+    loading,
+    error,
+    refresh,
+    isDeleting,
+    deleteOpen,
+    effectiveActive,
+    isFinished,
+    frequencyLabel,
+    dailyIntakeTotal,
+    inUseDays,
+    toggling,
+    goBack,
+    goEdit,
+    goToMedicine,
+    onDelete,
+    handleToggleActive,
+    handleConfirmDelete,
+    handleCloseDelete,
+  } = useProtocolDetailState()
+
   if (loading && !protocol) {
     return (
       <ScreenContainer>
@@ -192,160 +257,26 @@ export default function ProtocolDetailScreen() {
   }
 
   const medicine = protocol.medicine
-  const isSupplement = medicine?.type === 'suplemento'
-  const MedicineIcon = isSupplement ? PillBottle : Pill
-  const heroIconBg = isSupplement ? colors.supplement[500] : colors.primary[600]
-  const heroEyebrowColor = isSupplement ? colors.supplement[700] : colors.primary[700]
-  const eyebrowLabel = isSupplement ? 'Suplemento' : 'Medicamento'
 
   return (
     <ScreenContainer>
-      {/* AppBar */}
-      <View style={styles.appbar}>
-        <Pressable onPress={goBack} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Voltar" hitSlop={12}>
-          <ArrowLeft size={24} color={colors.text.primary} />
-        </Pressable>
-        <View style={styles.appbarTitleWrap}>
-          {/* AppBar mostra o NOME do tratamento (campo "Nome do tratamento"),
-              não o nome do medicamento — esse fica no hero card abaixo. */}
-          <Text style={styles.appbarTitle} numberOfLines={1}>
-            {protocol.name}
-          </Text>
-        </View>
-        <Pressable onPress={goEdit} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Editar tratamento" hitSlop={12}>
-          <Edit3 size={22} color={colors.text.primary} />
-        </Pressable>
-      </View>
+      <ProtocolDetailAppBar name={protocol.name} goBack={goBack} goEdit={goEdit} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Hero medicamento — clicável */}
-        {medicine ? (
-          <Pressable
-            onPress={goToMedicine}
-            style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={`Abrir medicamento ${medicine.name}`}
-          >
-            <View style={[styles.heroIconWrap, { backgroundColor: heroIconBg }]}>
-              <MedicineIcon size={32} color={colors.text.inverse} />
-            </View>
-            <View style={styles.heroBody}>
-              <Text style={[styles.heroEyebrow, { color: heroEyebrowColor }]}>{eyebrowLabel}</Text>
-              <View style={styles.heroTitleRow}>
-                <Text style={styles.heroTitle} numberOfLines={1}>{medicine.name}</Text>
-                {medicine.dosage_per_pill ? (
-                  <View style={styles.dosagePill}>
-                    <Text style={styles.dosagePillText}>
-                      {medicine.dosage_per_pill}{medicine.dosage_unit}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              {medicine.active_ingredient ? (
-                <Text style={styles.heroSubtitle} numberOfLines={1}>{medicine.active_ingredient}</Text>
-              ) : null}
-              <View style={styles.heroFooter}>
-                <View style={styles.statusBadge}>
-                  <CheckCircle2 size={14} color={colors.primary[700]} />
-                  <Text style={styles.statusBadgeText}>Estável</Text>
-                </View>
-                {inUseDays !== null ? (
-                  <Text style={styles.heroFooterHint}>
-                    {inUseDays === 0 ? 'Iniciado hoje' : `Em uso há ${inUseDays} ${inUseDays === 1 ? 'dia' : 'dias'}`}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-            <ChevronRight size={22} color={colors.primary[700]} />
-          </Pressable>
-        ) : null}
+        <ProtocolHero
+          protocol={protocol}
+          goToMedicine={goToMedicine}
+          inUseDays={inUseDays}
+        />
 
-        {/* Dosagem & Frequência */}
-        <SectionCard title="DOSAGEM & FREQUÊNCIA">
-          <DetailRow
-            label="Dose por tomada"
-            value={
-              formatActiveIngredientHint(
-                protocol.dosage_per_intake,
-                medicine?.dosage_per_pill,
-                medicine?.dosage_unit
-              ) || `${protocol.dosage_per_intake} un.`
-            }
-          />
-          <DetailRow label="Frequência" value={frequencyLabel} />
-          {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
-            <View style={styles.weekdaysBlock}>
-              <Text style={styles.detailLabel}>Dias da semana</Text>
-              <View style={styles.weekdaysGrid}>
-                {VISUAL_ORDER.map(({ key, label }) => {
-                  const isSelected = getProtocolDays(protocol).includes(key)
-                  return (
-                    <View
-                      key={key}
-                      style={[
-                        styles.weekdayDot,
-                        isSelected ? styles.weekdayDotSelected : styles.weekdayDotUnselected,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.weekdayDotText,
-                          isSelected ? styles.weekdayDotTextSelected : styles.weekdayDotTextUnselected,
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </View>
-                  )
-                })}
-              </View>
-            </View>
-          )}
-          {protocol.time_schedule?.length > 0 ? (
-            <View style={styles.scheduleBlock}>
-              <Text style={styles.detailLabel}>Horários</Text>
-              <View style={styles.timesList}>
-                {protocol.time_schedule.map((t) => (
-                  <View key={t} style={styles.timeChip}>
-                    <Clock size={12} color={colors.primary[700]} />
-                    <Text style={styles.timeChipText}>{t}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null}
-          {dailyIntakeTotal !== null ? (
-            <DetailRow
-              label="Consumo diário"
-              value={
-                formatActiveIngredientHint(
-                  dailyIntakeTotal,
-                  medicine?.dosage_per_pill,
-                  medicine?.dosage_unit
-                ) || `${dailyIntakeTotal} un.`
-              }
-            />
-          ) : null}
-        </SectionCard>
+        <DosageFrequencySection
+          protocol={protocol}
+          medicine={medicine}
+          frequencyLabel={frequencyLabel}
+          dailyIntakeTotal={dailyIntakeTotal}
+        />
 
-        {/* Alertas Críticos */}
-        <SectionCard title="ALERTAS CRÍTICOS">
-          <View style={styles.criticalAlarmRow}>
-            <View style={styles.criticalAlarmText}>
-              <Text style={styles.detailLabel}>Alarme {protocol.critical_alarm ? 'agendado' : 'desligado'}</Text>
-              <Text style={styles.criticalAlarmHint}>
-                {protocol.critical_alarm
-                  ? 'Toca mesmo no silencioso.'
-                  : 'Use para as doses que não podem ser esquecidas.'}
-              </Text>
-            </View>
-            <View style={[styles.criticalAlarmBadge, protocol.critical_alarm && styles.criticalAlarmBadgeOn]}>
-              <Text style={[styles.criticalAlarmBadgeText, protocol.critical_alarm && styles.criticalAlarmBadgeTextOn]}>
-                {protocol.critical_alarm ? 'Ligado' : 'Desligado'}
-              </Text>
-            </View>
-          </View>
-        </SectionCard>
+        <CriticalAlarmSection protocol={protocol} />
 
         {/* Período */}
         <SectionCard title="PRESCRIÇÃO">
@@ -390,7 +321,7 @@ export default function ProtocolDetailScreen() {
                 <Text style={styles.statusHelper}>
                   {effectiveActive
                     ? 'Enviando lembretes e contando doses.'
-                    : 'Pausado — sem lembretes, sem contar doses.'}
+                    : 'Pausado — sem lembretes, sem contagem de doses.'}
                 </Text>
               </View>
               <Switch
@@ -434,6 +365,150 @@ export default function ProtocolDetailScreen() {
         isDeleting={isDeleting}
       />
     </ScreenContainer>
+  )
+}
+
+function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
+  const medicine = protocol.medicine
+  if (!medicine) return null
+  const isSupplement = medicine.type === 'suplemento'
+  const MedicineIcon = isSupplement ? PillBottle : Pill
+  const heroIconBg = isSupplement ? colors.supplement[500] : colors.primary[600]
+  const heroEyebrowColor = isSupplement ? colors.supplement[700] : colors.primary[700]
+  const eyebrowLabel = isSupplement ? 'Suplemento' : 'Medicamento'
+
+  return (
+    <Pressable
+      onPress={goToMedicine}
+      style={({ pressed }) => [styles.hero, pressed && styles.heroPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir medicamento ${medicine.name}`}
+    >
+      <View style={[styles.heroIconWrap, { backgroundColor: heroIconBg }]}>
+        <MedicineIcon size={32} color={colors.text.inverse} />
+      </View>
+      <View style={styles.heroBody}>
+        <Text style={[styles.heroEyebrow, { color: heroEyebrowColor }]}>{eyebrowLabel}</Text>
+        <View style={styles.heroTitleRow}>
+          <Text style={styles.heroTitle} numberOfLines={1}>{medicine.name}</Text>
+          {medicine.dosage_per_pill ? (
+            <View style={styles.dosagePill}>
+              <Text style={styles.dosagePillText}>
+                {medicine.dosage_per_pill}{medicine.dosage_unit}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {medicine.active_ingredient ? (
+          <Text style={styles.heroSubtitle} numberOfLines={1}>{medicine.active_ingredient}</Text>
+        ) : null}
+        <View style={styles.heroFooter}>
+          <View style={styles.statusBadge}>
+            <CheckCircle2 size={14} color={colors.primary[700]} />
+            <Text style={styles.statusBadgeText}>Estável</Text>
+          </View>
+          {inUseDays !== null ? (
+            <Text style={styles.heroFooterHint}>
+              {inUseDays === 0 ? 'Iniciado hoje' : `Em uso há ${inUseDays} ${inUseDays === 1 ? 'dia' : 'dias'}`}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <ChevronRight size={22} color={colors.primary[700]} />
+    </Pressable>
+  )
+}
+
+function DosageFrequencySection({ protocol, medicine, frequencyLabel, dailyIntakeTotal }) {
+  return (
+    <SectionCard title="DOSAGEM & FREQUÊNCIA">
+      <DetailRow
+        label="Dose por tomada"
+        value={
+          formatActiveIngredientHint(
+            protocol.dosage_per_intake,
+            medicine?.dosage_per_pill,
+            medicine?.dosage_unit
+          ) || `${protocol.dosage_per_intake} un.`
+        }
+      />
+      <DetailRow label="Frequência" value={frequencyLabel} />
+      {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
+        <View style={styles.weekdaysBlock}>
+          <Text style={styles.detailLabel}>Dias da semana</Text>
+          <View style={styles.weekdaysGrid}>
+            {VISUAL_ORDER.map(({ key, label }) => {
+              const isSelected = getProtocolDays(protocol).includes(key)
+              return (
+                <View
+                  key={key}
+                  style={[
+                    styles.weekdayDot,
+                    isSelected ? styles.weekdayDotSelected : styles.weekdayDotUnselected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.weekdayDotText,
+                      isSelected ? styles.weekdayDotTextSelected : styles.weekdayDotTextUnselected,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        </View>
+      )}
+      {protocol.time_schedule?.length > 0 ? (
+        <View style={styles.scheduleBlock}>
+          <Text style={styles.detailLabel}>Horários</Text>
+          <View style={styles.timesList}>
+            {protocol.time_schedule.map((t) => (
+              <View key={t} style={styles.timeChip}>
+                <Clock size={12} color={colors.primary[700]} />
+                <Text style={styles.timeChipText}>{t}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+      {dailyIntakeTotal !== null ? (
+        <DetailRow
+          label="Consumo diário"
+          value={
+            formatActiveIngredientHint(
+              dailyIntakeTotal,
+              medicine?.dosage_per_pill,
+              medicine?.dosage_unit
+            ) || `${dailyIntakeTotal} un.`
+          }
+        />
+      ) : null}
+    </SectionCard>
+  )
+}
+
+function CriticalAlarmSection({ protocol }) {
+  return (
+    <SectionCard title="ALERTAS CRÍTICOS">
+      <View style={styles.criticalAlarmRow}>
+        <View style={styles.criticalAlarmText}>
+          <Text style={styles.detailLabel}>Alarme {protocol.critical_alarm ? 'agendado' : 'desligado'}</Text>
+          <Text style={styles.criticalAlarmHint}>
+            {protocol.critical_alarm
+              ? 'Toca mesmo no silencioso.'
+              : 'Use para as doses que não podem ser esquecidas.'}
+          </Text>
+        </View>
+        <View style={[styles.criticalAlarmBadge, protocol.critical_alarm && styles.criticalAlarmBadgeOn]}>
+          <Text style={[styles.criticalAlarmBadgeText, protocol.critical_alarm && styles.criticalAlarmBadgeTextOn]}>
+            {protocol.critical_alarm ? 'Ligado' : 'Desligado'}
+          </Text>
+        </View>
+      </View>
+    </SectionCard>
   )
 }
 

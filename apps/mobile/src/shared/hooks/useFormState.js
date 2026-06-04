@@ -51,6 +51,13 @@ export function useFormState(schema, { initialValues = EMPTY } = {}) {
   const [errors, setErrors] = useState(EMPTY)
   const [touched, setTouched] = useState(EMPTY)
 
+  const isDirty = useMemo(
+    () => !deepEqual(values, initial),
+    [values, initial],
+  )
+
+  const isValid = useMemo(() => Object.keys(errors).length === 0, [errors])
+
   const handleChange = useCallback((field, value) => {
     setValuesState((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => {
@@ -129,14 +136,7 @@ export function useFormState(schema, { initialValues = EMPTY } = {}) {
     })
   }, [])
 
-  const isDirty = useMemo(
-    () => !deepEqual(values, initial),
-    [values, initial],
-  )
-
-  const isValid = useMemo(() => Object.keys(errors).length === 0, [errors])
-
-  // Placeholder v1; refs serão acopladas via FormInput em P1.2+.
+  // Placeholder v1; refs serão acopladas via FormInput in P1.2+.
   const scrollToFirstError = useCallback(() => {}, [])
 
   return {

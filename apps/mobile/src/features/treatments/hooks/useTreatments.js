@@ -25,9 +25,42 @@ export function useTreatments() {
   const [stale, setStale] = useState(false)
   const [activeTab, setActiveTab] = useState('ativos')
   const dataRef = useRef(null)
+  const loadRef = useRef(null)
+
+  // Memos (R-010: memos after states)
+  const transformed = useMemo(() => transformTreatments(data), [data])
+
+  const currentItems = useMemo(
+    () => transformed[activeTab] ?? [],
+    [transformed, activeTab]
+  )
+
+  const refresh = useMemo(() => () => {
+    if (loadRef.current) {
+      loadRef.current()
+    }
+  }, [])
+
+  const result = useMemo(() => ({
+    // shape legado — compat com callsites existentes
+    data: transformed.data,
+    loading,
+    hasLoaded,
+    error,
+    stale,
+    refresh,
+    // shape Fase 2.5
+    activeTab,
+    setActiveTab,
+    counts: transformed.counts ?? { ativos: 0, pausados: 0, finalizados: 0 },
+    ativos: transformed.ativos ?? [],
+    pausados: transformed.pausados ?? [],
+    finalizados: transformed.finalizados ?? [],
+    groups: transformed.groups ?? [],
+    currentItems,
+  }), [transformed, loading, hasLoaded, error, stale, refresh, activeTab, currentItems])
 
   const load = useCallback(async () => {
-    // ... codigo de load ...
     setLoading(true)
     setError(null)
 
@@ -88,6 +121,10 @@ export function useTreatments() {
   }, [])
 
   useEffect(() => {
+    loadRef.current = load
+  })
+
+  useEffect(() => {
     startTransition(() => {
       load()
     })
@@ -130,33 +167,6 @@ export function useTreatments() {
       clearTimeout(midnightTimer)
     }
   }, [load])
-
-  // Memos (R-010: memos after states)
-  const transformed = useMemo(() => transformTreatments(data), [data])
-
-  const currentItems = useMemo(
-    () => transformed[activeTab] ?? [],
-    [transformed, activeTab]
-  )
-
-  const result = useMemo(() => ({
-    // shape legado — compat com callsites existentes
-    data: transformed.data,
-    loading,
-    hasLoaded,
-    error,
-    stale,
-    refresh: load,
-    // shape Fase 2.5
-    activeTab,
-    setActiveTab,
-    counts: transformed.counts ?? { ativos: 0, pausados: 0, finalizados: 0 },
-    ativos: transformed.ativos ?? [],
-    pausados: transformed.pausados ?? [],
-    finalizados: transformed.finalizados ?? [],
-    groups: transformed.groups ?? [],
-    currentItems,
-  }), [transformed, loading, hasLoaded, error, stale, load, activeTab, currentItems])
 
   return result
 }

@@ -58,7 +58,42 @@ function buildPlansByProtocols(protocols, activeOnly = false) {
  * @param {Object} props
  * @param {Function} props.onNavigate - Callback de navegação
  */
-export default function HealthHistory({ onNavigate }) {
+function useHistoryDoseLog(loadData, refresh, showSuccess, setIsModalOpen, setEditingLog, setError) {
+  const handleLogMedicine = useCallback(async (logData) => {
+    try {
+      if (logData.id) {
+        await logService.update(logData.id, logData)
+        showSuccess('Registro atualizado!')
+      } else if (Array.isArray(logData)) {
+        await logService.createBulk(logData)
+        showSuccess('Plano registrado!')
+      } else {
+        await logService.create(logData)
+        showSuccess('Dose registrada!')
+      }
+      setIsModalOpen(false)
+      setEditingLog(null)
+      await loadData()
+      refresh()
+    } catch (err) {
+      console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
+      throw new Error(err.message)
+    }
+  }, [loadData, refresh, showSuccess, setIsModalOpen, setEditingLog])
+
+  const handleDeleteLog = useCallback(async (id) => {
+    try {
+      await logService.delete(id)
+      showSuccess('Registro removido!')
+      await loadData()
+      refresh()
+    } catch (err) { setError('Erro ao remover: ' + err.message) }
+  }, [loadData, refresh, showSuccess, setError])
+
+  return { handleLogMedicine, handleDeleteLog }
+}
+
+function useHealthHistoryState() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [successMessage, setSuccessMessage] = useState('')
@@ -70,7 +105,7 @@ export default function HealthHistory({ onNavigate }) {
   const [dailyAdherence, setDailyAdherence] = useState([])
   const [adherencePattern, setAdherencePattern] = useState(null)
 
-  const { protocols, stats, refresh } = useDashboard()
+  const { protocols, refresh } = useDashboard()
   const { mode: complexityMode } = useComplexityMode()
   const isComplex = complexityMode === 'complex'
   const patternLoadedRef = useRef(false)
@@ -190,39 +225,75 @@ export default function HealthHistory({ onNavigate }) {
     }
   }, [])
 
-  const handleLogMedicine = useCallback(async (logData) => {
-    try {
-      if (logData.id) {
-        await logService.update(logData.id, logData)
-        showSuccess('Registro atualizado!')
-      } else if (Array.isArray(logData)) {
-        await logService.createBulk(logData)
-        showSuccess('Plano registrado!')
-      } else {
-        await logService.create(logData)
-        showSuccess('Dose registrada!')
-      }
-      setIsModalOpen(false)
-      setEditingLog(null)
-      await loadData()
-      refresh()
-    } catch (err) {
-      console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
-      throw new Error(err.message)
-    }
-  }, [loadData, refresh, showSuccess])
-
-  const handleDeleteLog = useCallback(async (id) => {
-    try {
-      await logService.delete(id)
-      showSuccess('Registro removido!')
-      await loadData()
-      refresh()
-    } catch (err) { setError('Erro ao remover: ' + err.message) }
-  }, [loadData, refresh, showSuccess])
+  const { handleLogMedicine, handleDeleteLog } = useHistoryDoseLog(
+    loadData,
+    refresh,
+    showSuccess,
+    setIsModalOpen,
+    setEditingLog,
+    setError
+  )
 
   const handleEditClick = useCallback((log) => { setEditingLog(log); setIsModalOpen(true) }, [])
   const handleCloseModal = useCallback(() => { setIsModalOpen(false); setEditingLog(null) }, [])
+
+  return {
+    isLoading,
+    error,
+    successMessage,
+    isModalOpen,
+    editingLog,
+    selectedDate,
+    timezone,
+    dailyAdherence,
+    adherencePattern,
+    isComplex,
+    treatmentPlans,
+    treatmentPlansAll,
+    activeProtocols,
+    dayEvents,
+    markedDates,
+    markedStatusesByDay,
+    dosesThisMonth,
+    monthPickerRange,
+    setSelectedDate,
+    handleCalendarLoadMonth,
+    handleLogMedicine,
+    handleDeleteLog,
+    handleEditClick,
+    handleCloseModal,
+  }
+}
+
+export default function HealthHistory({ onNavigate }) {
+  const {
+    isLoading,
+    error,
+    successMessage,
+    isModalOpen,
+    editingLog,
+    selectedDate,
+    timezone,
+    dailyAdherence,
+    adherencePattern,
+    isComplex,
+    treatmentPlans,
+    treatmentPlansAll,
+    activeProtocols,
+    dayEvents,
+    markedDates,
+    markedStatusesByDay,
+    dosesThisMonth,
+    monthPickerRange,
+    setSelectedDate,
+    handleCalendarLoadMonth,
+    handleLogMedicine,
+    handleDeleteLog,
+    handleEditClick,
+    handleCloseModal,
+  } = useHealthHistoryState()
+
+  const { protocols, stats } = useDashboard()
 
   if (isLoading) return (
     <div className="hhr-view">
