@@ -27,10 +27,10 @@ export async function handleListFeedbacks(req, res) {
     const isResolved = req.query.is_resolved;
     const rating = req.query.rating;
 
-    // Conecta feedbacks ao display_name do usuário em user_settings
+    // Conecta feedbacks ao display_name do usuário em user_settings buscando separadamente
     let query = supabase
       .from('feedbacks')
-      .select('*, user_settings:user_id(display_name)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -51,6 +51,30 @@ export async function handleListFeedbacks(req, res) {
       logger.error('Erro ao buscar feedbacks do banco:', error);
       return res.status(500).json({ error: 'Erro ao carregar feedbacks' });
     }
+
+    // Busca os display_names de user_settings correspondentes aos user_ids retornados
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.filter(f => f.user_id).map(f => f.user_id))];
+      if (userIds.length > 0) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('user_settings')
+          .select('user_id, display_name')
+          .in('user_id', userIds);
+
+        if (usersError) {
+          logger.error('Erro ao buscar display_names de user_settings:', usersError);
+        } else if (usersData) {
+          const userMap = {};
+          usersData.forEach(u => {
+            userMap[u.user_id] = u.display_name;
+          });
+          data.forEach(f => {
+            f.user_settings = { display_name: userMap[f.user_id] || 'Usuário do Dosiq' };
+          });
+        }
+      }
+    }
+
 
     // Obter estatísticas agregadas do banco de dados (View feedback_stats) para evitar OOM e latência
     let stats = null;
