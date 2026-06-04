@@ -128,6 +128,86 @@ function _buildHeaderData(user) {
 }
 
 // Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
+function TodayHeader({ greeting, todayFormatted, onDevPress }) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerText}>
+        <Text style={styles.greeting}>{greeting}</Text>
+        <Text style={styles.date}>{todayFormatted}</Text>
+      </View>
+      {__DEV__ && (
+        <TouchableOpacity
+          style={styles.devBtn}
+          onPress={onDevPress}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Abrir Dev Hub"
+        >
+          <Text style={styles.devBtnText}>DEV</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+}
+
+function OptionalDoseSection({ title, doses, onRegister, keyPrefix }) {
+  if (doses.length === 0) return null
+  return (
+    <View style={styles.carryOverSection}>
+      <View style={styles.agendaHeader}>
+        <Text style={styles.agendaTitle}>{title}</Text>
+      </View>
+      {doses.map((dose) => (
+        <DoseTimelineCard key={`${keyPrefix}-${dose.id}`} dose={dose} onRegister={onRegister} />
+      ))}
+    </View>
+  )
+}
+
+function TodayModals({
+  modalProtocol,
+  modalScheduledTime,
+  modalInstanceId,
+  medicineName,
+  handleCloseRegister,
+  handleRegisterSuccess,
+  bulkModal,
+  bulkMode,
+  userId,
+  isComplex,
+  instancesByKey,
+  setBulkModal,
+  refresh,
+}) {
+  return (
+    <>
+      <DoseRegisterModal
+        visible={modalProtocol !== null}
+        protocol={modalProtocol}
+        scheduledTime={modalScheduledTime}
+        instanceId={modalInstanceId}
+        medicineName={medicineName}
+        onClose={handleCloseRegister}
+        onSuccess={handleRegisterSuccess}
+      />
+      <BulkDoseRegisterModal
+        visible={bulkModal !== null}
+        mode={bulkMode}
+        planId={bulkModal?.planId}
+        protocolIds={bulkModal?.protocolIds}
+        scheduledTime={bulkModal?.scheduledTime ?? ''}
+        treatmentPlanName={bulkModal?.treatmentPlanName}
+        userId={userId}
+        isComplex={isComplex}
+        instancesByKey={instancesByKey}
+        instancedItems={bulkModal?.items ?? null}
+        onClose={() => setBulkModal(null)}
+        onSuccess={() => { setBulkModal(null); refresh() }}
+      />
+    </>
+  )
+}
+
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
   timeline, carryOver, lookAhead, stockAlerts, protocols, stats, medicines,
@@ -181,41 +261,14 @@ function TodayScreenContent({
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={refresh} tintColor={colors.status.success} />}
       >
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.greeting}>{greeting}</Text>
-            <Text style={styles.date}>{todayFormatted}</Text>
-          </View>
-          {__DEV__ && (
-            <TouchableOpacity
-              style={styles.devBtn}
-              onPress={() => navigation?.navigate(ROUTES.DEV_HUB)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Abrir Dev Hub"
-            >
-              <Text style={styles.devBtnText}>DEV</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <TodayHeader greeting={greeting} todayFormatted={todayFormatted} onDevPress={() => navigation?.navigate(ROUTES.DEV_HUB)} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
         {priorityDoses.length > 0 && (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
         )}
-        {/* Pendências de ontem (carry-over cross-dia, F4.3e) — doses de ontem ainda
-            no prazo de registro. Seção própria acima da agenda (Simple: antes do listão;
-            Complex: antes dos períodos). Não é slot de hoje. */}
-        {carryOver.length > 0 && (
-          <View style={styles.carryOverSection}>
-            <View style={styles.agendaHeader}>
-              <Text style={styles.agendaTitle}>Pendências de ontem</Text>
-            </View>
-            {carryOver.map((dose) => (
-              <DoseTimelineCard key={`carry-${dose.id}`} dose={dose} onRegister={handleOpenRegister} />
-            ))}
-          </View>
-        )}
+        {/* Pendências de ontem (carry-over cross-dia, F4.3e) */}
+        <OptionalDoseSection title="Pendências de ontem" doses={carryOver} onRegister={handleOpenRegister} keyPrefix="carry" />
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
         </View>
@@ -225,18 +278,8 @@ function TodayScreenContent({
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
           hasMedicines={Object.keys(medicines || {}).length > 0} navigation={navigation}
         />
-        {/* Em breve (look-ahead cross-dia, F4.3e) — doses de amanhã já dentro da tolerância
-            (aparece no fim do dia). Espelha "Pendências de ontem"; rodapé da agenda. */}
-        {lookAhead.length > 0 && (
-          <View style={styles.carryOverSection}>
-            <View style={styles.agendaHeader}>
-              <Text style={styles.agendaTitle}>Em breve</Text>
-            </View>
-            {lookAhead.map((dose) => (
-              <DoseTimelineCard key={`ahead-${dose.id}`} dose={dose} onRegister={handleOpenRegister} />
-            ))}
-          </View>
-        )}
+        {/* Em breve (look-ahead cross-dia, F4.3e) */}
+        <OptionalDoseSection title="Em breve" doses={lookAhead} onRegister={handleOpenRegister} keyPrefix="ahead" />
       </ScrollView>
       {protocols.length > 0 && (
         <Pressable
@@ -248,28 +291,20 @@ function TodayScreenContent({
           <Plus size={24} color="#FFF" strokeWidth={3} />
         </Pressable>
       )}
-      <DoseRegisterModal
-        visible={modalProtocol !== null}
-        protocol={modalProtocol}
-        scheduledTime={modalScheduledTime}
-        instanceId={modalInstanceId}
+      <TodayModals
+        modalProtocol={modalProtocol}
+        modalScheduledTime={modalScheduledTime}
+        modalInstanceId={modalInstanceId}
         medicineName={medicineName}
-        onClose={handleCloseRegister}
-        onSuccess={handleRegisterSuccess}
-      />
-      <BulkDoseRegisterModal
-        visible={bulkModal !== null}
-        mode={bulkMode}
-        planId={bulkModal?.planId}
-        protocolIds={bulkModal?.protocolIds}
-        scheduledTime={bulkModal?.scheduledTime ?? ''}
-        treatmentPlanName={bulkModal?.treatmentPlanName}
+        handleCloseRegister={handleCloseRegister}
+        handleRegisterSuccess={handleRegisterSuccess}
+        bulkModal={bulkModal}
+        bulkMode={bulkMode}
         userId={userId}
         isComplex={isComplex}
         instancesByKey={instancesByKey}
-        instancedItems={bulkModal?.items ?? null}
-        onClose={() => setBulkModal(null)}
-        onSuccess={() => { setBulkModal(null); refresh() }}
+        setBulkModal={setBulkModal}
+        refresh={refresh}
       />
     </ScreenContainer>
   )
@@ -337,6 +372,7 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
 }
 
 export default function TodayScreen({ route, navigation }) {
+  // States
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
   const [modalInstanceId, setModalInstanceId] = useState(null)
@@ -346,14 +382,6 @@ export default function TodayScreen({ route, navigation }) {
   const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
 
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
-
-  // Refresh ao focar: re-lê complexity_override alterado em Configurações
-  // (e captura doses/tratamentos novos). Paridade com TreatmentsScreen.
-  useFocusEffect(
-    useCallback(() => {
-      refresh()
-    }, [refresh])
-  )
 
   // Pre-resolve optional chains do data para reduzir complexidade ciclomática
   const rawTimeline = data?.timeline
@@ -365,6 +393,7 @@ export default function TodayScreen({ route, navigation }) {
   const rawUser = data?.user
   const currentDay = data?.localDay
 
+  // Memos
   const timeline = useMemo(() => rawTimeline ?? [], [rawTimeline])
   const carryOver = useMemo(() => rawCarryOver ?? [], [rawCarryOver])
   const lookAhead = useMemo(() => rawLookAhead ?? [], [rawLookAhead])
@@ -392,6 +421,15 @@ export default function TodayScreen({ route, navigation }) {
     setLastHeuristicDay(currentDay)
   }
 
+  // Effects
+  // Refresh ao focar: re-lê complexity_override alterado em Configurações
+  // (e captura doses/tratamentos novos). Paridade com TreatmentsScreen.
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh])
+  )
+
   // 2. Deeplink params de push notification (N1.4 → N1.5)
   const routeParams = route?.params
   useEffect(() => {
@@ -402,7 +440,7 @@ export default function TodayScreen({ route, navigation }) {
     }, 0)
   }, [routeParams, navigation, protocols])
 
-
+  // Handlers
   const toggleShift = useCallback((shift) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setExpandedShifts(prev => ({
@@ -419,29 +457,29 @@ export default function TodayScreen({ route, navigation }) {
     })
   }, [])
 
-  if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
-  if (error && !data) return <ErrorState message={error} onRetry={refresh} />
-
   const medicineName = _resolveMedicineName(modalProtocol, medicines)
 
-  function handleOpenRegister(protocol, scheduledTime, instanceId = null) {
+  const handleOpenRegister = useCallback((protocol, scheduledTime, instanceId = null) => {
     setModalProtocol(protocol)
     setModalScheduledTime(scheduledTime)
     setModalInstanceId(instanceId)
-  }
+  }, [])
 
-  function handleCloseRegister() {
+  const handleCloseRegister = useCallback(() => {
     setModalProtocol(null)
     setModalScheduledTime(null)
     setModalInstanceId(null)
-  }
+  }, [])
 
-  function handleRegisterSuccess() {
+  const handleRegisterSuccess = useCallback(() => {
     setModalProtocol(null)
     setModalScheduledTime(null)
     setModalInstanceId(null)
     refresh()
-  }
+  }, [refresh])
+
+  if (loading && !data) return <LoadingState message="Carregando o seu dia..." />
+  if (error && !data) return <ErrorState message={error} onRetry={refresh} />
 
   return (
     <TodayScreenContent

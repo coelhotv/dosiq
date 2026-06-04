@@ -125,6 +125,116 @@ function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
   )
 }
 
+function VerifyOtpCard({
+  otpToken,
+  setOtpToken,
+  isLoading,
+  error,
+  message,
+  onClose,
+  onSubmit,
+  onBack,
+}) {
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        {onClose && (
+          <button className="auth-close-btn" onClick={onClose} aria-label="Fechar">
+            <X size={20} />
+          </button>
+        )}
+        <div className="auth-header">
+          <div className="logo-container">
+            <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
+          </div>
+          <h1>Confirmar Conta</h1>
+          <p className="auth-subtitle">Digite o código de confirmação enviado para seu e-mail</p>
+        </div>
+
+        <form onSubmit={onSubmit} className="auth-form">
+          <div className="auth-message" style={{ marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
+            Enviamos um link de ativação para o seu e-mail. Se preferir confirmar direto na tela, digite o código abaixo:
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="signup-otp">Código de Confirmação</label>
+            <input
+              id="signup-otp"
+              type="text"
+              maxLength={8}
+              value={otpToken}
+              onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
+              placeholder="Código"
+              required
+              disabled={isLoading}
+              className="auth-input"
+              style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '4px', fontFamily: 'monospace' }}
+            />
+          </div>
+
+          {error && <div className="auth-error">{error}</div>}
+          {message && <div className="auth-message">{message}</div>}
+
+          <button type="submit" className="auth-submit-btn" disabled={isLoading}>
+            {isLoading ? 'Verificando...' : 'Confirmar e entrar'}
+          </button>
+          <button type="button" className="auth-submit-btn" style={{ backgroundColor: 'var(--color-surface-container, #eceeef)', color: 'var(--color-on-surface, #191c1d)', marginTop: '8px' }} onClick={onBack}>
+            Voltar ao login
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function AuthHeader({ isLogin }) {
+  return (
+    <div className="auth-header">
+      <div className="logo-container">
+        <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
+      </div>
+      <h1>{isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}</h1>
+      <p className="auth-subtitle">
+        {isLogin ? 'Acesse sua agenda de medicamentos' : 'Comece a gerenciar sua saúde hoje'}
+      </p>
+    </div>
+  )
+}
+
+function AuthFooter({ isLogin, setIsLogin, setError, setMessage }) {
+  return (
+    <div className="auth-footer">
+      <p>
+        {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+        <button
+          type="button"
+          className="toggle-auth-btn"
+          onClick={() => {
+            setIsLogin(!isLogin)
+            setError(null)
+            setMessage(null)
+          }}
+        >
+          {isLogin ? 'Cadastre-se' : 'Entrar'}
+        </button>
+      </p>
+    </div>
+  )
+}
+
+function resolveAuthErrorMessage(err) {
+  if (err?.message?.includes('Invalid login credentials')) {
+    return 'Email ou senha incorretos.'
+  }
+  if (err?.message?.includes('User already registered')) {
+    return 'Usuário já cadastrado.'
+  }
+  if (err?.message?.includes('Password should be at least')) {
+    return 'A senha deve ter pelo menos 6 caracteres.'
+  }
+  return 'Ocorreu um erro.'
+}
+
 export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
   // Produto recém-lançado: o happy path da landing é o cadastro (defaultLogin=false).
   // Usuários antigos alternam para login pelo "Já tem uma conta? Entrar".
@@ -155,15 +265,7 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
       }
     } catch (err) {
       console.error(err)
-      let msg = 'Ocorreu um erro.'
-      if (err.message.includes('Invalid login credentials')) {
-        msg = 'Email ou senha incorretos.'
-      } else if (err.message.includes('User already registered')) {
-        msg = 'Usuário já cadastrado.'
-      } else if (err.message.includes('Password should be at least')) {
-        msg = 'A senha deve ter pelo menos 6 caracteres.'
-      }
-      setError(msg)
+      setError(resolveAuthErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -206,54 +308,21 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
 
   if (isVerifyingOtp) {
     return (
-      <div className="auth-container">
-        <div className="auth-card">
-          {onClose && (
-            <button className="auth-close-btn" onClick={onClose} aria-label="Fechar">
-              <X size={20} />
-            </button>
-          )}
-          <div className="auth-header">
-            <div className="logo-container">
-              <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
-            </div>
-            <h1>Confirmar Conta</h1>
-            <p className="auth-subtitle">Digite o código de confirmação enviado para seu e-mail</p>
-          </div>
-
-          <form onSubmit={handleVerifySignUpOtp} className="auth-form">
-            <div className="auth-message" style={{ marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
-              Enviamos um link de ativação para o seu e-mail. Se preferir confirmar direto na tela, digite o código abaixo:
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="signup-otp">Código de Confirmação</label>
-              <input
-                id="signup-otp"
-                type="text"
-                maxLength={8}
-                value={otpToken}
-                onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
-                placeholder="Código"
-                required
-                disabled={isLoading}
-                className="auth-input"
-                style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '4px', fontFamily: 'monospace' }}
-              />
-            </div>
-
-            {error && <div className="auth-error">{error}</div>}
-            {message && <div className="auth-message">{message}</div>}
-
-            <button type="submit" className="auth-submit-btn" disabled={isLoading}>
-              {isLoading ? 'Verificando...' : 'Confirmar e entrar'}
-            </button>
-            <button type="button" className="auth-submit-btn" style={{ backgroundColor: 'var(--color-surface-container, #eceeef)', color: 'var(--color-on-surface, #191c1d)', marginTop: '8px' }} onClick={() => { setIsVerifyingOtp(false); setIsLogin(true); setError(null); setMessage(null) }}>
-              Voltar ao login
-            </button>
-          </form>
-        </div>
-      </div>
+      <VerifyOtpCard
+        otpToken={otpToken}
+        setOtpToken={setOtpToken}
+        isLoading={isLoading}
+        error={error}
+        message={message}
+        onClose={onClose}
+        onSubmit={handleVerifySignUpOtp}
+        onBack={() => {
+          setIsVerifyingOtp(false)
+          setIsLogin(true)
+          setError(null)
+          setMessage(null)
+        }}
+      />
     )
   }
 
@@ -265,15 +334,7 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
             <X size={20} />
           </button>
         )}
-        <div className="auth-header">
-          <div className="logo-container">
-            <img src="/dosiq-logo-verde.svg" alt="dosiq" className="auth-logo" />
-          </div>
-          <h1>{isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}</h1>
-          <p className="auth-subtitle">
-            {isLogin ? 'Acesse sua agenda de medicamentos' : 'Comece a gerenciar sua saúde hoje'}
-          </p>
-        </div>
+        <AuthHeader isLogin={isLogin} />
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -323,21 +384,12 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
           </button>
         </form>
 
-        <div className="auth-footer">
-          <p>
-            {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-            <button
-              className="toggle-auth-btn"
-              onClick={() => {
-                setIsLogin(!isLogin)
-                setError(null)
-                setMessage(null)
-              }}
-            >
-              {isLogin ? 'Cadastre-se' : 'Entrar'}
-            </button>
-          </p>
-        </div>
+        <AuthFooter
+          isLogin={isLogin}
+          setIsLogin={setIsLogin}
+          setError={setError}
+          setMessage={setMessage}
+        />
       </div>
     </div>
   )

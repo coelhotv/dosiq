@@ -32,6 +32,27 @@ const TOLERANCE_WINDOW_MINUTES = TOLERANCE_WINDOW_HOURS * 60
  * @param {Date} endDate - Data final do período (padrão: hoje)
  * @returns {number} Total de doses esperadas
  */
+function getWeeklyRate(protocol, timesPerDay) {
+  const days = getProtocolDays(protocol)
+  const numDays = days.length
+  return timesPerDay * (numDays > 0 ? numDays : 1) / 7
+}
+
+const FREQUENCY_RATE_STRATEGIES = {
+  daily: (timesPerDay) => timesPerDay,
+  diariamente: (timesPerDay) => timesPerDay,
+  'diário': (timesPerDay) => timesPerDay,
+  weekly: (timesPerDay, protocol) => getWeeklyRate(protocol, timesPerDay),
+  semanal: (timesPerDay, protocol) => getWeeklyRate(protocol, timesPerDay),
+  semanalmente: (timesPerDay, protocol) => getWeeklyRate(protocol, timesPerDay),
+  personalizado: (timesPerDay, protocol) => getWeeklyRate(protocol, timesPerDay),
+  every_other_day: (timesPerDay) => timesPerDay / 2,
+  dia_sim_dia_nao: (timesPerDay) => timesPerDay / 2,
+  'dia sim, dia não': (timesPerDay) => timesPerDay / 2,
+  dias_alternados: (timesPerDay) => timesPerDay / 2,
+  quando_necessário: () => 0,
+}
+
 /**
  * Calcula a taxa de doses diárias de um protocolo conforme sua frequência
  * @param {Object} protocol - O objeto do protocolo
@@ -39,31 +60,13 @@ const TOLERANCE_WINDOW_MINUTES = TOLERANCE_WINDOW_HOURS * 60
  */
 export function getDailyDoseRate(protocol) {
   if (!protocol) return 0
-  const frequency = protocol.frequency || 'daily'
+  const frequency = (protocol.frequency || 'daily').toLowerCase()
   const timesPerDay = protocol.time_schedule?.length || 1
-  switch (frequency.toLowerCase()) {
-    case 'daily':
-    case 'diariamente':
-    case 'diário':
-      return timesPerDay
-    case 'weekly':
-    case 'semanal':
-    case 'semanalmente':
-    case 'personalizado': {
-      const days = getProtocolDays(protocol)
-      const numDays = days.length
-      return timesPerDay * (numDays > 0 ? numDays : 1) / 7
-    }
-    case 'every_other_day':
-    case 'dia_sim_dia_nao':
-    case 'dia sim, dia não':
-    case 'dias_alternados':
-      return timesPerDay / 2
-    case 'quando_necessário':
-      return 0
-    default:
-      return timesPerDay
+  const strategy = FREQUENCY_RATE_STRATEGIES[frequency]
+  if (strategy) {
+    return strategy(timesPerDay, protocol)
   }
+  return timesPerDay
 }
 
 /**
@@ -633,47 +636,61 @@ function _clamp01(x) {
  * @param {string} [opts.mode='binary'] - ver ADHERENCE_MODE
  * @returns {{taken:number, missed:number, pending:number, skipped:number, rate:(number|null)}}
  */
+function processInstance(inst, stats) {
+  const status = inst?.status
+  const expected = _numOrFallback(inst?.expected_dose, 0)
+
+  switch (status) {
+    case INSTANCE_STATUS.TAKEN:
+      stats.taken++
+      stats.sumApplied += _numOrFallback(inst?.quantity_taken, expected)
+      stats.sumExpected += expected
+      break
+    case INSTANCE_STATUS.MISSED:
+      stats.missed++
+      stats.sumExpected += expected
+      break
+    case INSTANCE_STATUS.PENDING:
+      stats.pending++
+      break
+    case INSTANCE_STATUS.SKIPPED_PAUSED:
+    case INSTANCE_STATUS.SKIPPED_USER:
+      stats.skipped++
+      break
+  }
+}
+
 export function computeAdherenceFromInstances(instances, { mode = ADHERENCE_MODE.BINARY } = {}) {
   const list = Array.isArray(instances) ? instances : []
 
-  let taken = 0
-  let missed = 0
-  let pending = 0
-  let skipped = 0
-  let sumApplied = 0
-  let sumExpected = 0
+  const stats = {
+    taken: 0,
+    missed: 0,
+    pending: 0,
+    skipped: 0,
+    sumApplied: 0,
+    sumExpected: 0,
+  }
 
   for (const inst of list) {
-    const status = inst?.status
-    const expected = _numOrFallback(inst?.expected_dose, 0)
-
-    if (status === INSTANCE_STATUS.TAKEN) {
-      taken++
-      // FP-1: aplicado pode divergir do esperado; ausente → dose cheia.
-      sumApplied += _numOrFallback(inst?.quantity_taken, expected)
-      sumExpected += expected
-    } else if (status === INSTANCE_STATUS.MISSED) {
-      missed++
-      sumExpected += expected
-    } else if (status === INSTANCE_STATUS.PENDING) {
-      pending++
-    } else if (
-      status === INSTANCE_STATUS.SKIPPED_PAUSED ||
-      status === INSTANCE_STATUS.SKIPPED_USER
-    ) {
-      skipped++
-    }
+    processInstance(inst, stats)
   }
 
   let rate
   if (mode === ADHERENCE_MODE.DOSE_EXACTNESS) {
-    rate = sumExpected > 0 ? _clamp01(sumApplied / sumExpected) : null
+    rate = stats.sumExpected > 0 ? _clamp01(stats.sumApplied / stats.sumExpected) : null
   } else {
-    const denom = taken + missed
-    rate = denom > 0 ? taken / denom : null
+    const denom = stats.taken + stats.missed
+    rate = denom > 0 ? stats.taken / denom : null
   }
 
-  return { taken, missed, pending, skipped, rate }
+  return {
+    taken: stats.taken,
+    missed: stats.missed,
+    pending: stats.pending,
+    skipped: stats.skipped,
+    rate,
+  }
 }
 
 /**

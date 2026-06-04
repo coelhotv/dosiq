@@ -19,16 +19,6 @@ const getStorageKey = (userId) =>
 export function useUnreadNotificationCount(notifications, userId) {
   const [lastSeen, setLastSeen] = useState(null)
 
-  useEffect(() => {
-    AsyncStorage.getItem(getStorageKey(userId))
-      .then((val) => setLastSeen(val))
-      .catch((err) => {
-        if (__DEV__) {
-          console.error('Failed to get notification last seen time:', err)
-        }
-      })
-  }, [userId])
-
   const unreadCount = useMemo(() => {
     if (!notifications?.length) return 0
     if (!lastSeen) return notifications.length
@@ -38,6 +28,16 @@ export function useUnreadNotificationCount(notifications, userId) {
       return parseISO(n.sent_at).getTime() > lastSeenTime
     }).length
   }, [notifications, lastSeen])
+
+  useEffect(() => {
+    AsyncStorage.getItem(getStorageKey(userId))
+      .then((val) => setLastSeen(val))
+      .catch((err) => {
+        if (__DEV__) {
+          console.error('Failed to get notification last seen time:', err)
+        }
+      })
+  }, [userId])
 
   const markAllRead = useCallback(() => {
     const now = getNow().toISOString()

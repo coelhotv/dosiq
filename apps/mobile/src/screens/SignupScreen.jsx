@@ -77,12 +77,12 @@ export default function SignupScreen({ navigation }) {
           </Text>
 
           {/* Campo OTP Alternativo */}
-          <View style={[styles.field, { width: '100%', marginTop: spacing[4], marginBottom: spacing[2] }]}>
-            <Text style={[styles.label, { textAlign: 'center', marginBottom: spacing[1] }]}>
+          <View style={[styles.field, styles.otpField]}>
+            <Text style={[styles.label, styles.otpLabel]}>
               Ou digite o código de confirmação recebido:
             </Text>
             <TextInput
-              style={[styles.input, { textAlign: 'center', fontSize: 22, letterSpacing: 6, fontFamily: typography.fontFamily.bold || 'System' }]}
+              style={[styles.input, styles.otpInput]}
               placeholder="Código"
               placeholderTextColor={colors.text.muted}
               value={otpCode}
@@ -92,11 +92,11 @@ export default function SignupScreen({ navigation }) {
               textContentType="oneTimeCode"
               editable={!verifying}
             />
-            {otpError ? <Text style={[styles.error, { textAlign: 'center', marginTop: 4 }]}>{otpError}</Text> : null}
+            {otpError ? <Text style={[styles.error, styles.otpError]}>{otpError}</Text> : null}
           </View>
 
           <Pressable 
-            style={[styles.successButton, { marginBottom: spacing[3] }, verifying && styles.buttonDisabled]} 
+            style={[styles.successButton, styles.successButtonMargin, verifying && styles.buttonDisabled]} 
             onPress={handleVerifyOtp}
             disabled={verifying}
           >
@@ -107,12 +107,12 @@ export default function SignupScreen({ navigation }) {
             )}
           </Pressable>
 
-          <Text style={[styles.successHint, { marginBottom: spacing[6] }]}>
+          <Text style={[styles.successHint, styles.successHintMargin]}>
             Não chegou em alguns minutos? Veja na pasta de spam. Se o link apresentar erro, a validação por código acima é o caminho mais seguro.
           </Text>
 
-          <Pressable style={[styles.successButton, { backgroundColor: colors.bg.card, borderWidth: 1.5, borderColor: colors.border.default }]} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
-            <Text style={[styles.buttonText, { color: colors.text.primary }]}>Voltar ao Login</Text>
+          <Pressable style={[styles.successButton, styles.successButtonBack]} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
+            <Text style={[styles.buttonText, styles.buttonTextPrimary]}>Voltar ao Login</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -474,5 +474,38 @@ const styles = StyleSheet.create({
     color: colors.text.brand || colors.brand.primary,
     marginLeft: spacing[1],
     fontWeight: '700',
+  },
+  otpField: {
+    width: '100%',
+    marginTop: spacing[4],
+    marginBottom: spacing[2],
+  },
+  otpLabel: {
+    textAlign: 'center',
+    marginBottom: spacing[1],
+  },
+  otpInput: {
+    textAlign: 'center',
+    fontSize: 22,
+    letterSpacing: 6,
+    fontFamily: typography.fontFamily.bold || 'System',
+  },
+  otpError: {
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  successButtonMargin: {
+    marginBottom: spacing[3],
+  },
+  successHintMargin: {
+    marginBottom: spacing[6],
+  },
+  successButtonBack: {
+    backgroundColor: colors.bg.card,
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+  },
+  buttonTextPrimary: {
+    color: colors.text.primary,
   },
 })

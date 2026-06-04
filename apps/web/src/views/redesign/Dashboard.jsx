@@ -69,7 +69,7 @@ function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate
  * DashboardRedesign — View principal do Santuário Terapêutico.
  * @param {Function} onNavigate — Callback de navegação (view, params?) => void
  */
-export default function Dashboard({ onNavigate }) {
+function useDashboardViewState(onNavigate) {
   // ── Dados compartilhados (NÃO duplicar) ──
   const {
     stats,
@@ -89,18 +89,29 @@ export default function Dashboard({ onNavigate }) {
   const [dismissedSuggestionId, setDismissedSuggestionId] = useState(null)
   const [snoozedAlerts, setSnoozedAlerts] = useState({})
 
+  // ── Custom Hooks ──
+  const smartAlerts = useSmartAlerts(stockSummary, zones, snoozedAlerts)
+  const reminderSuggestionData = useReminderSuggestion(protocols, logs, dismissedSuggestionId)
+  const {
+    handleRegisterDoseQuick,
+    handleRegisterDosesAll,
+    handleSnoozeAlert,
+    handleReminderAccept,
+  } = useDashboardHandlers({
+    refresh,
+    reminderSuggestionData,
+    protocols,
+    setSnoozedAlerts,
+    setDismissedSuggestionId,
+  })
+
   // ── Computadas ──
-  // Enriquecer doses com dados de estoque
   const stockByMedicineId = useMemo(() => {
     const map = new Map()
     stockSummary?.items?.forEach((item) => map.set(item.medicineId, item))
     return map
   }, [stockSummary])
 
-  // scheduleAllDoses: fonte separada para CronogramaPeriodo — todas as ocorrências do
-  // DIA (sem filtro classifyDose). F4.3e: usa a partição `todayDoses` (split day-bound),
-  // não `doseInstances` cru — a janela de fetch agora inclui ontem (carry-over), que NÃO
-  // deve aparecer no cronograma de hoje.
   const scheduleAllDoses = useMemo(() => {
     return todayDoses.map((dose) => ({
       ...dose,
@@ -109,7 +120,6 @@ export default function Dashboard({ onNavigate }) {
     }))
   }, [todayDoses, stockByMedicineId])
 
-  // carryOverDoses: "Pendências de ontem" — enriquecidas com estoque, mesma forma do schedule.
   const carryOverDoses = useMemo(() => {
     return (carryOver || []).map((dose) => ({
       ...dose,
@@ -118,7 +128,6 @@ export default function Dashboard({ onNavigate }) {
     }))
   }, [carryOver, stockByMedicineId])
 
-  // lookAheadDoses: "Em breve" — doses de amanhã já dentro da tolerância (fim do dia).
   const lookAheadDoses = useMemo(() => {
     return (lookAhead || []).map((dose) => ({
       ...dose,
@@ -127,11 +136,6 @@ export default function Dashboard({ onNavigate }) {
     }))
   }, [lookAhead, stockByMedicineId])
 
-  // urgentDoses: fonte do PriorityDoseCard — janela actionável DESLIZANTE cross-dia (F4.3e):
-  //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas);
-  //  - hoje       → zonas late/now;
-  //  - lookAhead  → só as IMINENTES (classifyDose === 'now'); amanhã distante fica só em "Em breve".
-  // Ordenado por instante absoluto (mais antigo/atrasado primeiro). Paridade com o hero mobile (R-166).
   const urgentDoses = useMemo(() => {
     const aheadImminent = (lookAhead || []).filter(
       (d) => classifyDose(d.scheduledFor, nowRaw, 120, 60, 240, false, d.toleranceMinutes) === 'now'
@@ -151,16 +155,12 @@ export default function Dashboard({ onNavigate }) {
     )
   }, [stockSummary])
 
-  // ── smartAlerts: alertas inteligentes (estoque + dose atrasada + prescrição) ──
-  const smartAlerts = useSmartAlerts(stockSummary, zones, snoozedAlerts)
-
-  // ── currentInsight: insight rotativo do insightService ──
   const currentInsight = useMemo(
     () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate }),
     [stats, stockSummary, logs, protocols, onNavigate]
   )
 
-  // ── Carregar nome do usuário ──
+  // ── Effects ──
   useEffect(() => {
     getCurrentUser()
       .then(async (user) => {
@@ -171,7 +171,6 @@ export default function Dashboard({ onNavigate }) {
       .finally(() => setIsLoading(false))
   }, [])
 
-  // ── Refresh automático ao virar o dia (timezone local) ──
   useEffect(() => {
     const interval = setInterval(() => {
       const currentDate = getTodayLocal()
@@ -183,22 +182,66 @@ export default function Dashboard({ onNavigate }) {
     return () => clearInterval(interval)
   }, [refresh])
 
-  // ── Sugestão de lembrete calculada (Onda 2: hook customizado) ──
-  const reminderSuggestionData = useReminderSuggestion(protocols, logs, dismissedSuggestionId)
-
-  // ── Handlers (Onda 2: hook customizado) ──
-  const {
+  return {
+    stats,
+    stockSummary,
+    protocols,
+    logs,
+    refresh,
+    contextLoading,
+    zones,
+    totals,
+    carryOver,
+    lookAhead,
+    todayDoses,
+    now,
+    nowRaw,
+    complexityMode,
+    userName,
+    isLoading,
+    currentDateRef,
+    dismissedSuggestionId,
+    snoozedAlerts,
+    scheduleAllDoses,
+    carryOverDoses,
+    lookAheadDoses,
+    urgentDoses,
+    criticalStockItems,
+    smartAlerts,
+    currentInsight,
+    reminderSuggestionData,
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
     handleSnoozeAlert,
     handleReminderAccept,
-  } = useDashboardHandlers({
-    refresh,
-    reminderSuggestionData,
-    protocols,
-    setSnoozedAlerts,
     setDismissedSuggestionId,
-  })
+  }
+}
+
+export default function Dashboard({ onNavigate }) {
+  const {
+    stats,
+    contextLoading,
+    complexityMode,
+    userName,
+    isLoading,
+    scheduleAllDoses,
+    carryOverDoses,
+    lookAheadDoses,
+    urgentDoses,
+    criticalStockItems,
+    smartAlerts,
+    currentInsight,
+    reminderSuggestionData,
+    handleRegisterDoseQuick,
+    handleRegisterDosesAll,
+    handleSnoozeAlert,
+    handleReminderAccept,
+    setDismissedSuggestionId,
+    totals,
+    now,
+    nowRaw,
+  } = useDashboardViewState(onNavigate)
 
   // ── Loading state ──
   if (isLoading || contextLoading) {

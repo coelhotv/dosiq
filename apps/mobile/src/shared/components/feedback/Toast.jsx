@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // Toast.jsx — Provider global de notificações toast + hook useToast
 // Exporta: ToastProvider (default), useToast (named)
 

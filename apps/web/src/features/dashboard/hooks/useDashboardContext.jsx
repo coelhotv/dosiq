@@ -141,25 +141,6 @@ export function DashboardProvider({ children }) {
   )
 
 
-  // Assina eventos de autenticação — invalida cache imediatamente no SIGNED_IN/SIGNED_OUT
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        invalidateCache(CACHE_KEYS.MEDICINES)
-        invalidateCache(CACHE_KEYS.PROTOCOLS)
-        invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
-        invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
-        invalidateCache(CACHE_KEYS.USER_TIMEZONE)
-        invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
-        refetchAll({ force: true })
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [refetchAll])
-
-
   const value = useMemo(
     () => ({
       medicines: medicinesResult.data || [],
@@ -192,6 +173,24 @@ export function DashboardProvider({ children }) {
       refetchAll,
     ]
   )
+
+  // Assina eventos de autenticação — invalida cache imediatamente no SIGNED_IN/SIGNED_OUT
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        invalidateCache(CACHE_KEYS.MEDICINES)
+        invalidateCache(CACHE_KEYS.PROTOCOLS)
+        invalidateCache(CACHE_KEYS.LOGS_DEEP_STREAK)
+        invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
+        invalidateCache(CACHE_KEYS.USER_TIMEZONE)
+        invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
+        refetchAll({ force: true })
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [refetchAll])
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>
 }

@@ -26,6 +26,22 @@ export function useProfile() {
     error: null,
   })
 
+  // Derivados de exibição (Hub/Edit). Fallback de nome: display_name → email.
+  const displayName = useMemo(
+    () => state.profile?.display_name || state.user?.email || 'Paciente',
+    [state.profile, state.user],
+  )
+  const initials = useMemo(() => getInitials(displayName), [displayName])
+  const age = useMemo(() => calculateAge(state.profile?.birth_date), [state.profile])
+  const location = useMemo(() => {
+    const parts = [state.profile?.city, state.profile?.state].filter(Boolean)
+    return parts.join(', ') || null
+  }, [state.profile])
+  const hasProfile = useMemo(
+    () => Boolean(state.profile?.display_name),
+    [state.profile],
+  )
+
   const loadProfile = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }))
     try {
@@ -60,22 +76,6 @@ export function useProfile() {
       }))
     }
   }, [])
-
-  // Derivados de exibição (Hub/Edit). Fallback de nome: display_name → email.
-  const displayName = useMemo(
-    () => state.profile?.display_name || state.user?.email || 'Paciente',
-    [state.profile, state.user],
-  )
-  const initials = useMemo(() => getInitials(displayName), [displayName])
-  const age = useMemo(() => calculateAge(state.profile?.birth_date), [state.profile])
-  const location = useMemo(() => {
-    const parts = [state.profile?.city, state.profile?.state].filter(Boolean)
-    return parts.join(', ') || null
-  }, [state.profile])
-  const hasProfile = useMemo(
-    () => Boolean(state.profile?.display_name),
-    [state.profile],
-  )
 
   /**
    * Atualizar fuso horário manualmente (seletor em SettingsScreen — ADR-049).
