@@ -193,6 +193,17 @@ export default function ProfileScreen() {
             <View style={styles.otherDivider} />
             <TouchableOpacity
               style={styles.otherRow}
+              onPress={() => navigation.navigate(ROUTES.FEEDBACK)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabel}>Enviar feedback</Text>
+              </View>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+            <View style={styles.otherDivider} />
+            <TouchableOpacity
+              style={styles.otherRow}
               onPress={() => {}}
               activeOpacity={1}
               disabled={true}

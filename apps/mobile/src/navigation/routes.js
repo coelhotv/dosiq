@@ -40,6 +40,7 @@ export const ROUTES = {
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
   NOTIFICATION_INBOX: 'NotificationInbox',
+  FEEDBACK: 'Feedback',
 
   // Onboarding guiado (Fase 4 — S4.2)
   ONBOARDING: 'Onboarding',
