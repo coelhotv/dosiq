@@ -408,9 +408,15 @@ export function createDoseInstanceRepository({ client }) {
      * @returns {Promise<void>}
      */
     async setSnoozedUntil(instanceId, ts) {
+      const isoValue = ts === null
+        ? null
+        : typeof ts === 'number'
+          ? parseTimestamp(ts).toISOString()
+          : toIso(ts)
+
       const { error } = await client
         .from(TABLE)
-        .update({ snoozed_until: ts === null ? null : toIso(ts) })
+        .update({ snoozed_until: isoValue })
         .eq('id', instanceId)
 
       if (error) throw error
