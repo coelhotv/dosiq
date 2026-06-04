@@ -56,15 +56,14 @@ export async function handleListFeedbacks(req, res) {
     if (data && data.length > 0) {
       const userIds = [...new Set(data.filter(f => f.user_id).map(f => f.user_id))];
       if (userIds.length > 0) {
-        // Query em paralelo para display_name (user_settings) e email (auth.users)
+        // Query em paralelo para display_name (user_settings) e email (user_emails)
         const [settingsRes, authRes] = await Promise.all([
           supabase
             .from('user_settings')
             .select('user_id, display_name')
             .in('user_id', userIds),
           supabase
-            .schema('auth')
-            .from('users')
+            .from('user_emails')
             .select('id, email')
             .in('id', userIds)
         ]);
@@ -73,7 +72,7 @@ export async function handleListFeedbacks(req, res) {
           logger.error('Erro ao buscar display_names de user_settings:', settingsRes.error);
         }
         if (authRes.error) {
-          logger.error('Erro ao buscar emails de auth.users:', authRes.error);
+          logger.error('Erro ao buscar emails de user_emails:', authRes.error);
         }
 
         const userMap = {};
