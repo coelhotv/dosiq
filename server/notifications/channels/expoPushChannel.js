@@ -19,18 +19,27 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const allDevices = await repositories.devices.listActiveByUser(userId, 'expo')
 
-  // Filtra devices com alarme nativo ligado QUANDO a notif é lembrete de dose.
+  // Gate per-dose-criticality (Spec 010 / ADR-056):
+  // - Dose crítica (critical_alarm=true): push só para devices SEM alarme nativo (fallback).
+  //   Devices com native_alarm_enabled recebem o alarme local diretamente.
+  // - Dose normal (critical_alarm=false/ausente): push para TODOS os devices
+  //   (alarme não suprime doses não-críticas — elas não têm alarme local).
+  // - Outros kinds (não dose_reminder): todos os devices recebem normalmente.
   const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind)
-  const devices = isDoseReminder
-    ? allDevices.filter((d) => !d.native_alarm_enabled)
-    : allDevices
+  const isCriticalDose = payload?.metadata?.critical_alarm === true
+
+  const devices = isDoseReminder && isCriticalDose
+    ? allDevices.filter((d) => !d.native_alarm_enabled)  // crítica: só devices sem alarme (fallback)
+    : allDevices  // normal ou não-dose: todos os devices recebem push
+
   const gatedCount = allDevices.length - devices.length
   if (gatedCount > 0) {
-    console.info('[expoPushChannel] push de dose suprimido (alarme nativo)', {
+    console.info('[expoPushChannel] push de dose crítica suprimido (alarme nativo)', {
       correlationId,
       userId,
       gated: gatedCount,
       kind: payload?.metadata?.kind,
+      critical_alarm: isCriticalDose,
     })
   }
 

@@ -9,6 +9,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+// Aposentado em 010 — controle por-tratamento em protocols.critical_alarm
 export const ALARM_ENABLED_KEY = '@dosiq/alarm-enabled'
 export const ALARM_NUDGE_SEEN_KEY = '@dosiq/alarm-nudge-seen'
 export const ALARM_PERMS_GUIDE_KEY = '@dosiq/alarm-perms-guide-shown'

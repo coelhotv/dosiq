@@ -2,8 +2,8 @@
 // Isola as 6 seções (Medicamento, Info, Frequência, Período, Organização,
 // Observações) pra manter o screen principal enxuto.
 
-import { useMemo } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { useMemo, useCallback } from 'react'
+import { View, Text, Switch, Alert, Linking, StyleSheet } from 'react-native'
 import { parseLocalDate, formatActiveIngredientFormula } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
@@ -13,6 +13,7 @@ import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import PlanSelectField from '@treatments/components/PlanSelectField'
 import { colors, spacing } from '@shared/styles/tokens'
+import { ensurePushPermission } from '@platform/notifications/pushPermission'
 
 const FREQUENCY_OPTIONS = [
   { value: 'diário', label: 'Diário' },
@@ -35,6 +36,26 @@ export default function ProtocolFormBody({
   onStartDateChange,
   onEndDateChange,
 }) {
+  const handleCriticalAlarmToggle = useCallback(async (next) => {
+    if (next) {
+      // R-239: checar permissão no ponto de intenção
+      const { granted, blocked } = await ensurePushPermission()
+      if (!granted) {
+        if (blocked) {
+          Alert.alert(
+            'Permissão necessária',
+            'Para ativar o alarme crítico, permita notificações nas Configurações do sistema.',
+            [
+              { text: 'Agora não', style: 'cancel' },
+              { text: 'Abrir Configurações', onPress: () => Linking.openSettings() },
+            ]
+          )
+        }
+        return
+      }
+    }
+    form.handleChange('critical_alarm', next)
+  }, [form])
   const showWeekdays = REQUIRES_WEEKDAYS.has(form.values.frequency)
 
   const startDateAsDate = useMemo(
@@ -131,12 +152,30 @@ export default function ProtocolFormBody({
         </View>
       </Section>
 
-      <Section title="Período">
+      <Section title="Alertas Críticos">
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleText}>
+            {/* <Text style={styles.toggleLabel}>Alerta crítico</Text> */}
+            <Text style={styles.toggleHint}>
+              O alarme tocará mesmo no silencioso. Use para doses que não podem ser esquecidas.
+            </Text>
+          </View>
+          <Switch
+            value={!!form.values.critical_alarm}
+            onValueChange={handleCriticalAlarmToggle}
+            trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
+            thumbColor={form.values.critical_alarm ? colors.bg.card : colors.text?.secondary}
+            accessibilityLabel="Alerta crítico"
+          />
+        </View>
+      </Section>
+
+      <Section title="Prescrição">
         <View style={styles.dateRow}>
           <View style={styles.flex}>
             <FormDatePicker
               name="start_date"
-              label="Início"
+              label="Data do início"
               value={startDateAsDate}
               onChange={onStartDateChange}
               error={form.touched.start_date ? form.errors.start_date : null}
@@ -145,7 +184,7 @@ export default function ProtocolFormBody({
           <View style={styles.flex}>
             <FormDatePicker
               name="end_date"
-              label="Término"
+              label="Data do término"
               value={endDateAsDate}
               onChange={onEndDateChange}
               error={form.touched.end_date ? form.errors.end_date : null}
@@ -219,5 +258,25 @@ const styles = StyleSheet.create({
   dateRow: {
     flexDirection: 'row',
     gap: spacing[3],
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing[3],
+  },
+  toggleText: {
+    flex: 1,
+    gap: spacing[1],
+  },
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text?.primary,
+  },
+  toggleHint: {
+    fontSize: 13,
+    color: colors.text?.secondary,
+    lineHeight: 18,
   },
 })

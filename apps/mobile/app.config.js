@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.9.0' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.10.0' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -71,6 +71,11 @@ module.exports = {
       // Notifications"). Declarado → EAS mantém habilitado e gera o profile com ela.
       entitlements: {
         'com.apple.developer.usernotifications.time-sensitive': true,
+        // Spec 010: Critical Alerts — fura mudo físico iOS para doses inegociáveis.
+        // Entitlement requer aprovação Apple (com.apple.developer.usernotifications.critical-alerts).
+        // Fallback: sem o entitlement aprovado, Notifee ignora critical:true e cai em timeSensitive.
+        // R-259: declarar aqui; EAS credentials sincroniza com Apple Developer portal.
+        'com.apple.developer.usernotifications.critical-alerts': true,
       },
     },
     android: {

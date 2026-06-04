@@ -21,7 +21,8 @@ import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js
 import { resolveUserTz } from '../services/resolveUserTz.js'
 
 // Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
-const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date']
+// critical_alarm incluído: mudar o flag de criticidade deve re-materializar as pending futuras
+const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm']
 const PAUSE_GRACE_MS = 24 * 60 * 60 * 1000
 
 /**
