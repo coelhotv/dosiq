@@ -1,32 +1,32 @@
-// api/dlq.js
-// Dead Letter Queue Admin API - Router consolidado
-// Rotas: GET /api/dlq (list) | POST /api/dlq?action=retry&id=:id | POST /api/dlq?action=discard&id=:id
+// api/admin.js
+// Entrypoint único consolidado para administração (DLQ + Feedbacks)
+// Evita ultrapassar o limite de 12 Serverless Functions no plano Hobby da Vercel (R-090)
+
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
-import { DLQStatus } from '../server/services/deadLetterQueue.js';
 import { verifyAdminAccess } from '../server/utils/auth.js';
-import { handleRetry } from './dlq/_handlers/retry.js';
-import { handleDiscard } from './dlq/_handlers/discard.js';
+import { handleRetry } from './admin/_handlers/retry.js';
+import { handleDiscard } from './admin/_handlers/discard.js';
+import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks.js';
+import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const adminChatId = process.env.ADMIN_CHAT_ID;
 
-// Singleton clients — instanciados no module scope para reuso em warm invocations (R-089)
+// Singleton client usando a service_role para operações de administração
 const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
 
 /**
- * Handler: list (GET /api/dlq)
- * Lista notificações falhas com paginação
+ * Handler: list DLQ (GET /api/dlq)
  */
-async function handleList(req, res) {
+async function handleListDLQ(req, res) {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const status = req.query.status || null;
 
-    // Validate status if provided
     const validStatuses = Object.values(DLQStatus);
     if (status && !validStatuses.includes(status)) {
       return res.status(400).json({
@@ -34,14 +34,12 @@ async function handleList(req, res) {
       });
     }
 
-    // Build query
     let query = supabase
       .from('failed_notification_queue')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Apply status filter if provided
     if (status) {
       query = query.eq('status', status);
     }
@@ -53,7 +51,6 @@ async function handleList(req, res) {
       return res.status(500).json({ error: 'Failed to fetch DLQ entries' });
     }
 
-    // Return paginated response
     return res.status(200).json({
       data: data || [],
       total: count || 0,
@@ -61,7 +58,6 @@ async function handleList(req, res) {
       pageSize: limit,
       totalPages: Math.ceil((count || 0) / limit)
     });
-
   } catch (err) {
     console.error('[DLQ API] Unexpected error:', err);
     return res.status(500).json({
@@ -72,53 +68,46 @@ async function handleList(req, res) {
 }
 
 /**
- * DLQ Router Handler
- * GET /api/dlq - List failed notifications with pagination
- * POST /api/dlq?action=retry&id=:id - Retry a specific notification
- * POST /api/dlq?action=discard&id=:id - Mark a notification as discarded
- *
- * Query params:
- * - limit: number of items per page (default: 20, max: 100)
- * - offset: offset for pagination (default: 0)
- * - status: filter by status (pending, retrying, resolved, discarded)
- * - action: 'retry' or 'discard' (POST only)
- * - id: UUID of the failed notification (POST only)
- *
- * Authentication:
- * - Requires Supabase Auth session token in Authorization header
- * - User must have telegram_chat_id matching ADMIN_CHAT_ID
+ * Main Router
  */
 export default async function handler(req, res) {
-  // Validate environment variables
+  // Validate configurations
   if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey || !adminChatId) {
-    console.error('[DLQ API] Missing configuration');
+    console.error('[Admin API] Missing configuration');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
-  // Verify admin access (compartilhada entre todos os endpoints)
+  // Verify admin access
   const authResult = await verifyAdminAccess(req.headers['authorization']);
   if (!authResult.authorized) {
-    console.error('[DLQ API] Unauthorized access attempt:', authResult.error);
+    console.error('[Admin API] Unauthorized access attempt:', authResult.error);
     return res.status(401).json({ error: authResult.error });
   }
 
-  const { action } = req.query;
+  // resource: 'dlq' | 'feedbacks'
+  // action: 'retry' | 'discard' | 'resolve'
+  const { resource, action } = req.query;
 
-  // Roteamento baseado em método e action (padrao router map)
-  if (req.method === 'GET' && !action) {
-    return handleList(req, res);
-  }
-
-  if (req.method === 'POST') {
-    const postRoutes = {
-      'retry': handleRetry,
-      'discard': handleDiscard,
-    };
-    const routeHandler = postRoutes[action];
-    if (routeHandler) {
-      return routeHandler(req, res);
+  // 1. DLQ Resource Routing
+  if (resource === 'dlq') {
+    if (req.method === 'GET' && !action) {
+      return handleListDLQ(req, res);
+    }
+    if (req.method === 'POST') {
+      if (action === 'retry') return handleRetry(req, res);
+      if (action === 'discard') return handleDiscard(req, res);
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  // 2. Feedbacks Resource Routing
+  if (resource === 'feedbacks') {
+    if (req.method === 'GET' && !action) {
+      return handleListFeedbacks(req, res);
+    }
+    if (req.method === 'POST') {
+      if (action === 'resolve') return handleResolveFeedback(req, res);
+    }
+  }
+
+  return res.status(405).json({ error: 'Method or action not allowed' });
 }

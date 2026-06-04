@@ -21,11 +21,23 @@
     },
     {
       "source": "/api/dlq/:id/retry",
-      "destination": "/api/dlq.js?action=retry&id=:id"
+      "destination": "/api/admin.js?resource=dlq&action=retry&id=:id"
     },
     {
       "source": "/api/dlq/:id/discard",
-      "destination": "/api/dlq.js?action=discard&id=:id"
+      "destination": "/api/admin.js?resource=dlq&action=discard&id=:id"
+    },
+    {
+      "source": "/api/dlq",
+      "destination": "/api/admin.js?resource=dlq"
+    },
+    {
+      "source": "/api/feedbacks/:id/resolve",
+      "destination": "/api/admin.js?resource=feedbacks&action=resolve&id=:id"
+    },
+    {
+      "source": "/api/feedbacks",
+      "destination": "/api/admin.js?resource=feedbacks"
     },
     {
       "source": "/api/gemini-reviews/:action",
@@ -46,10 +58,6 @@
     {
       "source": "/api/users/beta-signup",
       "destination": "/api/users.js?action=beta-signup"
-    },
-    {
-      "source": "/api/dlq",
-      "destination": "/api/dlq.js"
     },
 
     {

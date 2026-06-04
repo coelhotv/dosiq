@@ -143,5 +143,10 @@ export {
   deriveLegacyPreference,
 } from './userSettingsSchema.js'
 
+export {
+  default as feedbackSchema,
+  validateFeedbackCreate,
+} from './feedbackSchema.js'
+
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper.js'
