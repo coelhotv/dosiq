@@ -67,8 +67,21 @@ export async function logoutUser() {
       }
       throw error
     }
-    // Limpa flags device-scoped do usuário anterior (AsyncStorage não é per-user)
-    await AsyncStorage.multiRemove([ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY]).catch(() => {})
+    // AsyncStorage é app-scoped, não per-user. Limpar tudo que é específico do
+    // usuário anterior: caches de dados + flags de feature (AP-213).
+    await AsyncStorage.multiRemove([
+      // flags legado de alarme
+      ALARM_ENABLED_KEY,
+      ALARM_NUDGE_SEEN_KEY,
+      // caches de dados do usuário (vazam para o próximo login)
+      '@dosiq/medicines-snapshot',
+      '@dosiq/protocols-snapshot',
+      '@dosiq/purchases-snapshot',
+      '@dosiq/stock-snapshot',
+      '@dosiq/today-snapshot',
+      '@dosiq/treatments-snapshot',
+      '@dosiq/recovery-flow',
+    ]).catch(() => {})
     return { success: true, error: null }
   } catch (err) {
     console.error('[profileService] erro ao fazer logout:', err)
