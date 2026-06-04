@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { notificationDeviceRepository } from '../../../server/notifications/repositories/notificationDeviceRepository.js'
 
 export async function handleRegisterWebpush(req, res) {
@@ -8,7 +9,8 @@ export async function handleRegisterWebpush(req, res) {
 
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-      process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+      process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
+      { realtime: { transport: ws } }
     )
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)

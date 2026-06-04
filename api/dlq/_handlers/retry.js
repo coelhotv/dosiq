@@ -1,6 +1,7 @@
 // api/dlq/_handlers/retry.js
 // Dead Letter Queue Handler - Retry a failed notification via Dispatcher (ADR-030)
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { createLogger } from '../../../server/bot/logger.js';
 import { dispatchNotification } from '../../../server/notifications/dispatcher/dispatchNotification.js';
 import { Expo } from 'expo-server-sdk';
@@ -114,7 +115,7 @@ export async function handleRetry(req, res) {
 
   if (!id) return res.status(400).json({ error: 'Missing notification ID' });
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
   const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
   try {

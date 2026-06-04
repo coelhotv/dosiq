@@ -3,12 +3,14 @@
 // Rastreia Expo tokens, info do dispositivo e status de ativação
 
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { z } from 'zod'
 import { getNow, getServerTimestamp } from '../../utils/dateUtils.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { realtime: { transport: ws } }
 )
 
 const upsertSchema = z.object({

@@ -10,6 +10,7 @@
 
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { createHash } from 'crypto'
 import { getServerTimestamp, addHours } from '../server/utils/dateUtils.js'
 
@@ -209,7 +210,7 @@ async function verifyAuth(token) {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { realtime: { transport: ws } })
     const { data, error } = await supabase.auth.getUser(token)
 
     if (error || !data.user) {

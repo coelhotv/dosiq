@@ -1,6 +1,7 @@
 // server/utils/auth.js
 // Utilitário compartilhado de verificação de acesso administrativo
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { createLogger } from '../bot/logger.js';
 
 const logger = createLogger('AdminAuth');
@@ -24,7 +25,8 @@ export async function verifyAdminAccess(authHeader) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: { Authorization: `Bearer ${token}` }
-    }
+    },
+    realtime: { transport: ws },
   });
 
   try {
