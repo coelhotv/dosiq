@@ -66,8 +66,10 @@ export default function AlarmSchedulerBridge() {
   // userId muda → reset loaded até load() completar, evitando cancelAll prematuro.
   useEffect(() => {
     if (!userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoaded(true)
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoaded(false)
     }
   }, [userId])
