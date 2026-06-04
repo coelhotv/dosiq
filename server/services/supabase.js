@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 
 // Carrega dotenv apenas em ambiente de desenvolvimento (não em Vercel)
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
@@ -20,5 +21,8 @@ if (!supabaseUrl || (!supabaseAnonKey && !supabaseServiceKey)) {
   throw new Error('Variáveis de ambiente do Supabase não configuradas');
 }
 
-// Em ambiente de servidor, preferimos a service_role key para ignorar RLS
-export const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
+// Em ambiente de servidor, preferimos a service_role key para ignorar RLS.
+// Node.js < 22 não tem WebSocket nativo — ws passado como transport (supabase-js 2.90+).
+export const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
+  realtime: { transport: ws },
+});
