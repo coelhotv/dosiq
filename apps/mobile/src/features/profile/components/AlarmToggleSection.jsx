@@ -18,7 +18,7 @@ export default function AlarmToggleSection() {
             <Text style={styles.rowLabel}>Configure em tratamentos</Text>
             <Text style={styles.rowHint}>
               O alarme crítico agora é definido por tratamento. Edite um tratamento e
-              ative "Alerta crítico" para as doses que não podem ser esquecidas.
+              ative "Alertas críticos" para as doses que não podem ser esquecidas.
             </Text>
           </View>
         </View>

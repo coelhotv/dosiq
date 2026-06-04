@@ -157,7 +157,7 @@ export default function ProtocolFormBody({
           <View style={styles.toggleText}>
             {/* <Text style={styles.toggleLabel}>Alerta crítico</Text> */}
             <Text style={styles.toggleHint}>
-              Ligue o alerta crítico para doses que não podem ser esquecidas. O alarme tocará mesmo no silencioso.
+              O alarme tocará mesmo no silencioso. Use para doses que não podem ser esquecidas.
             </Text>
           </View>
           <Switch

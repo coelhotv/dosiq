@@ -332,11 +332,11 @@ export default function ProtocolDetailScreen() {
         <SectionCard title="ALERTAS CRÍTICOS">
           <View style={styles.criticalAlarmRow}>
             <View style={styles.criticalAlarmText}>
-              <Text style={styles.detailLabel}>Alarme crítico</Text>
+              <Text style={styles.detailLabel}>Alarme {protocol.critical_alarm ? 'agendado' : 'desligado'}</Text>
               <Text style={styles.criticalAlarmHint}>
                 {protocol.critical_alarm
-                  ? 'Ativado — toca mesmo no silencioso.'
-                  : 'Desativado — use para doses que não podem ser esquecidas.'}
+                  ? 'Toca mesmo no silencioso.'
+                  : 'Use para as doses que não podem ser esquecidas.'}
               </Text>
             </View>
             <View style={[styles.criticalAlarmBadge, protocol.critical_alarm && styles.criticalAlarmBadgeOn]}>
@@ -348,10 +348,10 @@ export default function ProtocolDetailScreen() {
         </SectionCard>
 
         {/* Período */}
-        <SectionCard title="PERÍODO">
-          <DetailRow label="Início" value={formatDatePtBR(protocol.start_date)} />
+        <SectionCard title="PRESCRIÇÃO">
+          <DetailRow label="Data de início" value={formatDatePtBR(protocol.start_date)} />
           <DetailRow
-            label="Término"
+            label="Data do término"
             value={formatEndDate(protocol.end_date)}
             valueMuted={!protocol.end_date}
           />
