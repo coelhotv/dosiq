@@ -218,7 +218,9 @@ export default function FeedbackAdmin({ onBack }) {
 
                   <div className="feedback-admin__card-body">
                     <h2 className="feedback-admin__subject">{item.subject}</h2>
-                    <p className="feedback-admin__comment">{item.comment}</p>
+                    <div className="feedback-admin__comment-container">
+                      <p className="feedback-admin__comment">{item.comment}</p>
+                    </div>
                   </div>
 
                   <div className="feedback-admin__card-footer">

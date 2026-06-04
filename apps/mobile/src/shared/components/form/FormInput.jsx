@@ -13,6 +13,7 @@ export default function FormInput({
   placeholder,
   helperText,
   required,
+  showCharacterCount,
   // Pass-through para TextInput
   keyboardType,
   autoCapitalize,
@@ -63,8 +64,15 @@ export default function FormInput({
       {/* Label acima do campo */}
       {label ? (
         <View style={styles.labelRow}>
-          <Text style={styles.label}>{label}</Text>
-          {required && <Text style={styles.asterisk}> *</Text>}
+          <View style={styles.labelLeft}>
+            <Text style={styles.label}>{label}</Text>
+            {required && <Text style={styles.asterisk}> *</Text>}
+          </View>
+          {showCharacterCount && maxLength && (
+            <Text style={styles.charCount}>
+              {(value || '').length}/{maxLength}
+            </Text>
+          )}
         </View>
       ) : null}
 
@@ -122,8 +130,17 @@ const styles = StyleSheet.create({
   },
   labelRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 6,
+  },
+  labelLeft: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  charCount: {
+    fontSize: 12,
+    color: colors.text.muted,
   },
   label: {
     fontSize: 13,
