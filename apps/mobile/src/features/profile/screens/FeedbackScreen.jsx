@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { ChevronLeft, Star } from 'lucide-react-native'
 import Constants from 'expo-constants'
+import * as Device from 'expo-device'
 import { feedbackSchema, createFeedbackRepository } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
@@ -33,13 +34,13 @@ export default function FeedbackScreen() {
   // 2. Memos
   const initialValues = useMemo(() => {
     const platform = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'other'
-    const device = Constants.deviceName || Platform.select({ ios: 'iPhone', android: 'Android', default: 'Nativo' })
+    const device = Device.deviceName || Platform.select({ ios: 'iPhone', android: 'Android', default: 'Nativo' })
     const app_version = Constants.expoConfig?.version || '3.3.0'
 
     return {
       subject: '',
       comment: '',
-      rating: 0, // inicia vazio (0 estrelas)
+      rating: null, // inicia vazio (null estrelas)
       platform,
       device,
       app_version
@@ -59,9 +60,9 @@ export default function FeedbackScreen() {
     setLoading(true)
     try {
       const getUserId = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) throw new Error('Usuário não autenticado')
-        return user.id
+        const { data, error } = await supabase.auth.getUser()
+        if (error || !data?.user) throw new Error('Usuário não autenticado')
+        return data.user.id
       }
 
       const repo = createFeedbackRepository({ client: supabase, getUserId })
@@ -179,7 +180,7 @@ export default function FeedbackScreen() {
         <View style={styles.field}>
           <Text style={styles.sectionLabel}>Como você avalia nosso app?</Text>
           {renderStarSelector()}
-          {form.touched.rating && form.errors.rating && (
+          {form.errors.rating && (
             <Text style={styles.errorText}>{form.errors.rating}</Text>
           )}
         </View>

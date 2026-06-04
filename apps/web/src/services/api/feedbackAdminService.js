@@ -10,10 +10,8 @@ export const feedbackAdminService = {
    * @returns {Promise<string|null>} Token de acesso ou null se não autenticado
    */
   async _getAuthToken() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    return session?.access_token || null
+    const { data } = await supabase.auth.getSession()
+    return data?.session?.access_token || null
   },
 
   /**

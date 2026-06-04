@@ -55,9 +55,11 @@ export function useFeedbackAdminState() {
         const data = result.data || []
         const totalCount = result.total || 0
         const pendingCount = data.filter(f => !f.is_resolved).length
-        const sum = data.reduce((acc, curr) => acc + (curr.rating || 0), 0)
+        const ratedItems = data.filter(f => typeof f.rating === 'number' && f.rating > 0)
+        const sum = ratedItems.reduce((acc, curr) => acc + curr.rating, 0)
+        const divisor = ratedItems.length
         setStats({
-          avgRating: totalCount > 0 ? parseFloat((sum / Math.min(data.length, totalCount)).toFixed(1)) : 0,
+          avgRating: divisor > 0 ? parseFloat((sum / divisor).toFixed(1)) : 0,
           pendingCount,
           totalCount
         })

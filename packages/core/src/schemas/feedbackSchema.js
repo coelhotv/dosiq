@@ -28,10 +28,12 @@ const feedbackSchema = z.object({
     .trim(),
 
   rating: z
-    .number({ required_error: 'A avaliação é obrigatória' })
+    .number()
     .int('A avaliação deve ser um número inteiro')
     .min(1, 'A avaliação mínima é 1 estrela')
-    .max(5, 'A avaliação máxima é 5 estrelas'),
+    .max(5, 'A avaliação máxima é 5 estrelas')
+    .nullable()
+    .optional(),
 
   platform: z
     .enum(['ios', 'android', 'other']),

@@ -97,6 +97,24 @@ describe('Feedback Schema Validation', () => {
     expect(nonIntRating.success).toBe(false)
   })
 
+  it('accepts null or missing rating', () => {
+    const nullRating = validateFeedbackCreate({
+      subject: 'Assunto',
+      comment: 'Comentário',
+      rating: null,
+      platform: 'ios'
+    })
+    expect(nullRating.success).toBe(true)
+    expect(nullRating.data.rating).toBe(null)
+
+    const missingRating = validateFeedbackCreate({
+      subject: 'Assunto',
+      comment: 'Comentário',
+      platform: 'ios'
+    })
+    expect(missingRating.success).toBe(true)
+  })
+
   it('rejects unsupported platform values', () => {
     const result = validateFeedbackCreate({
       subject: 'Assunto',
