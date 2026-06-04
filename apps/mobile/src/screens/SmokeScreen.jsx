@@ -8,9 +8,7 @@ import { medicineSchema } from '@dosiq/core/schemas'
 import { ROUTES } from '../navigation/routes'
 import { colors } from '@shared/styles/tokens'
 
-// Cores específicas auxiliares (fora do StyleSheet para passar no linter)
-const BADGE_ERROR_BG = '#fee2e2'
-const BADGE_SUCCESS_TEXT = '#166534'
+
 
 export default function SmokeScreen({ navigation }) {
   // Valida um medicamento de teste usando o schema compartilhado
@@ -74,12 +72,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[100],
   },
   badgeError: {
-    backgroundColor: BADGE_ERROR_BG,
+    backgroundColor: colors.status.errorLight,
   },
   badgeText: {
     fontSize: 20,
     fontWeight: '700',
-    color: BADGE_SUCCESS_TEXT,
+    color: colors.status.successDark,
   },
   details: {
     fontSize: 13,

@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, BellOff, Settings, WifiOff } from 'lucide-react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { z } from 'zod'
-import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays, getServerTimestamp } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
@@ -351,7 +351,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
   // 4. Handlers / Callbacks
   const loadDoseLogs = useCallback(async () => {
     if (!userId) return
-    const since = addDays(getNow(), -7).toISOString()
+    const since = addDays(parseISO(getServerTimestamp()), -7).toISOString()
     const { data: rows, error: fetchErr } = await supabase
       .from('medicine_logs')
       .select('id, protocol_id, taken_at')

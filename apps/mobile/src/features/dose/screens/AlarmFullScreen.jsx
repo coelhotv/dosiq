@@ -16,11 +16,6 @@ import { scheduleSnooze } from '@platform/alarms/alarmService'
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
 
-// Cores com opacidade declaradas fora do StyleSheet para satisfazer o linter
-const COLOR_WHITE_OPACITY_18 = 'rgba(255,255,255,0.18)'
-const COLOR_WHITE_OPACITY_85 = 'rgba(255,255,255,0.85)'
-const COLOR_WHITE_OPACITY_90 = 'rgba(255,255,255,0.9)'
-const COLOR_WHITE_OPACITY_22 = 'rgba(255,255,255,0.22)'
 
 export default function AlarmFullScreen({ navigation, route }) {
   // Ordem R-010: States → Memos → derivados (previne TDZ).
@@ -164,7 +159,7 @@ const styles = StyleSheet.create({
     width: 104,
     height: 104,
     borderRadius: 52,
-    backgroundColor: COLOR_WHITE_OPACITY_18,
+    backgroundColor: colors.opacity.white18,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[6],
@@ -173,7 +168,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 2,
-    color: COLOR_WHITE_OPACITY_85,
+    color: colors.opacity.white85,
     marginBottom: spacing[3],
   },
   medicine: {
@@ -185,7 +180,7 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 22,
     fontWeight: '600',
-    color: COLOR_WHITE_OPACITY_90,
+    color: colors.opacity.white90,
     marginTop: spacing[2],
   },
   actions: {
@@ -210,7 +205,7 @@ const styles = StyleSheet.create({
     color: colors.bg.card,
   },
   btnSnooze: {
-    backgroundColor: COLOR_WHITE_OPACITY_22,
+    backgroundColor: colors.opacity.white22,
   },
   btnSnoozeText: {
     fontSize: 19,
