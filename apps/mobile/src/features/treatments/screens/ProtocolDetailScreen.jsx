@@ -321,7 +321,7 @@ export default function ProtocolDetailScreen() {
                 <Text style={styles.statusHelper}>
                   {effectiveActive
                     ? 'Enviando lembretes e contando doses.'
-                    : 'Pausado — sem lembretes, sem counting de doses.'}
+                    : 'Pausado — sem lembretes, sem contagem de doses.'}
                 </Text>
               </View>
               <Switch
