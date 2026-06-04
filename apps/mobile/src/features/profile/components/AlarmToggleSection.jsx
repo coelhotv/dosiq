@@ -1,13 +1,24 @@
 // AlarmToggleSection.jsx — APOSENTADO em Spec 010 (controle por-tratamento)
 //
-// O toggle global foi substituído pelo toggle "Alerta crítico" no formulário de
-// cada tratamento. Esta seção agora exibe um banner de migração orientando o usuário.
+// Banner de migração: visível SOMENTE para usuários que tinham o toggle global
+// ligado na v0.9.x (@dosiq/alarm-enabled = 'true'). Usuários novos nunca viram
+// o toggle global — exibir o banner seria ruído sem contexto.
 
+import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { AlarmClock } from 'lucide-react-native'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
+import { isAlarmEnabled } from '@platform/alarms/alarmEnabledStore'
 
 export default function AlarmToggleSection() {
+  const [hadAlarmEnabled, setHadAlarmEnabled] = useState(false)
+
+  useEffect(() => {
+    isAlarmEnabled().then(setHadAlarmEnabled).catch(() => {})
+  }, [])
+
+  if (!hadAlarmEnabled) return null
+
   return (
     <>
       <Text style={styles.sectionLabel}>ALARMES CRÍTICOS</Text>
