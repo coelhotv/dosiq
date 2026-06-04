@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone } from '../utils/dateUtils.js';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday, getProtocolDays } from '../utils/protocolActiveHelper.js';
 // Formatting helpers removed — moved to Layer 2
@@ -88,10 +88,181 @@ async function _processUserReminderBlock(userId, currentHHMM, currentHour, block
   }
 }
 
+async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
+  if (!userIds || userIds.length === 0) return [];
+
+  const selectFields = `
+    id, user_id, protocol_id,
+    protocol:protocols(
+      id, name, dosage_per_intake, treatment_plan_id, medicine_id,
+      medicine:medicines(name, dosage_unit),
+      treatment_plan:treatment_plans(id, name)
+    )
+  `;
+
+  // Duas queries separadas: (1) doses no horário previsto sem snooze;
+  // (2) doses adiadas cujo snoozed_until cai na janela atual.
+  // Evita falso-positivo de doses muito atrasadas (sem lower bound em scheduled_for).
+  const [{ data: nonSnoozed, error: e1 }, { data: snoozedDue, error: e2 }] = await Promise.all([
+    supabase
+      .from('dose_instances')
+      .select(selectFields)
+      .in('user_id', userIds)
+      .eq('status', 'pending')
+      .is('notified_at', null)
+      .is('snoozed_until', null)
+      .gte('scheduled_for', windowStart)
+      .lt('scheduled_for', windowEnd),
+    supabase
+      .from('dose_instances')
+      .select(selectFields)
+      .in('user_id', userIds)
+      .eq('status', 'pending')
+      .is('notified_at', null)
+      .not('snoozed_until', 'is', null)
+      .gte('snoozed_until', windowStart)
+      .lt('snoozed_until', windowEnd),
+  ]);
+
+  if (e1) logger.error('Erro ao buscar dose_instances (não-snoozed)', e1);
+  if (e2) logger.error('Erro ao buscar dose_instances (snoozed)', e2);
+  return [...(nonSnoozed || []), ...(snoozedDue || [])];
+}
+
+async function _updateNotifiedAt(instanceIds) {
+  if (!instanceIds || instanceIds.length === 0) return;
+  const { error } = await supabase
+    .from('dose_instances')
+    .update({ notified_at: getServerTimestamp() })
+    .in('id', instanceIds);
+  if (error) {
+    logger.error('Erro ao atualizar notified_at em dose_instances', error, { instanceIds });
+  }
+}
+
+async function _checkRemindersFromInstances(dispatcher, correlationId) {
+  try {
+    const { data: users, error: userError } = await supabase
+      .from('user_settings')
+      .select('user_id, timezone, notification_mode');
+    if (userError) throw userError;
+
+    const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');
+    if (eligibleUsers.length === 0) {
+      logger.info('Nenhum usuário elegível para reminder (instances)', { correlationId });
+      return;
+    }
+
+    const userIds = eligibleUsers.map(u => u.user_id);
+
+    const nowISO = getServerTimestamp(); // ex: "2026-06-04T15:23:45.123Z"
+    const windowStart = nowISO.slice(0, 16) + ':00.000Z';  // "2026-06-04T15:23:00.000Z"
+    const windowEnd = addMinutes(1, parseISO(windowStart)).toISOString(); // "2026-06-04T15:24:00.000Z"
+
+    const instances = await _fetchDueInstancesForReminder(
+      userIds,
+      windowStart,
+      windowEnd
+    );
+
+    if (instances.length === 0) {
+      logger.info('Nenhuma dose_instance devida no minuto atual', { correlationId });
+      return;
+    }
+
+    const byUser = {};
+    for (const inst of instances) {
+      if (!byUser[inst.user_id]) byUser[inst.user_id] = [];
+      byUser[inst.user_id].push(inst);
+    }
+
+    logger.info(`${instances.length} instância(s) devida(s) para ${Object.keys(byUser).length} usuário(s)`, { correlationId });
+
+    for (const userId of Object.keys(byUser)) {
+      try {
+        const userInstances = byUser[userId];
+
+        const dosesNow = userInstances.map(inst => ({
+          instanceId: inst.id,
+          protocolId: inst.protocol_id,
+          protocolName: inst.protocol?.name || '',
+          medicineName: inst.protocol?.medicine?.name || inst.protocol?.name || '',
+          treatmentPlanId: inst.protocol?.treatment_plan_id ?? null,
+          treatmentPlanName: inst.protocol?.treatment_plan?.name ?? null,
+          dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
+          dosageUnit: inst.protocol?.medicine?.dosage_unit,
+          medicineId: inst.protocol?.medicine_id,
+        }));
+
+        const blocks = partitionDoses(dosesNow);
+        const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
+        const currentHour = parseInt(
+          parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
+          10
+        );
+
+        for (const block of blocks) {
+          const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
+
+          let kind, data;
+
+          if (block.kind === 'by_plan') {
+            kind = 'dose_reminder_by_plan';
+            data = {
+              planId: block.planId, planName: block.planName,
+              hour: currentHour, doses: block.doses,
+              protocolIds: block.doses.map(d => d.protocolId),
+            };
+          } else if (block.kind === 'misc') {
+            kind = 'dose_reminder_misc';
+            data = {
+              hour: currentHour, doses: block.doses,
+              protocolIds: block.doses.map(d => d.protocolId),
+            };
+          } else {
+            const dose = block.doses[0];
+            kind = 'dose_reminder';
+            data = {
+              medicineName: dose.medicineName,
+              protocolId: dose.protocolId,
+              medicineId: dose.medicineId,
+              dosagePerIntake: dose.dosagePerIntake,
+              dosageUnit: dose.dosageUnit,
+            };
+          }
+
+          const result = await dispatcher.dispatch({
+            userId, kind, data, context: { correlationId, jobType: 'dose_reminder_instances' },
+          });
+
+          if (result.success) {
+            await _updateNotifiedAt(instanceIdsInBlock);
+          } else {
+            logger.error('Falha no dispatch (instances)', null, {
+              userId, kind, errors: result.errors, correlationId,
+            });
+          }
+        }
+      } catch (err) {
+        logger.error('Erro ao processar lembretes (instances) do usuário', err, { userId, correlationId });
+      }
+    }
+
+    logger.info('_checkRemindersFromInstances concluído', { correlationId });
+  } catch (err) {
+    logger.error('Erro crítico em _checkRemindersFromInstances', err, { correlationId });
+  }
+}
+
 /**
  * Check reminders via dispatcher com agrupamento por treatment_plan (Wave N1).
  */
 export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
+  // ADR-057: feature flag para rollback sem deploy
+  if (process.env.REMINDER_SOURCE === 'instances') {
+    return _checkRemindersFromInstances(dispatcher, correlationId);
+  }
+
   try {
     const { data: users, error: userError } = await supabase
       .from('user_settings')
