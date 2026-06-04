@@ -225,3 +225,6 @@
 - **[AP-210]** `@supabase/supabase-js` ≥ 2.90 verifica WebSocket global no construtor — crash em Node < 22 mesmo sem uso de Realtime. Fix: `realtime: { transport: ws }` + dep direta `ws ^8.21` -> [`anti-patterns/infra_and_deploy/AP-210.md`](./anti-patterns/infra_and_deploy/AP-210.md)
 - **[AP-211]** Dep transitiva crítica de runtime (`ws`, fetch polyfill) sem entrada direta em package.json — pode ser removida em `npm install` futuro sem aviso. Fix: dep direta no workspace correto -> [`anti-patterns/infra_and_deploy/AP-211.md`](./anti-patterns/infra_and_deploy/AP-211.md)
 - **[AP-212]** Sem smoke test de cold start serverless — erros de import chegam a prod (CI usa JSDOM que tem globals de browser; Node 20 puro não). Fix: `scripts/smoke-server.mjs` no CI em Node 20 -> [`anti-patterns/infra_and_deploy/AP-212.md`](./anti-patterns/infra_and_deploy/AP-212.md)
+- **[AP-216]** Destruturação insegura de respostas do Supabase Auth (`getUser`/`getSession`) → crash com TypeError quando o objeto data está nulo ou indefinido. Sempre desestruturar `data` primeiro e usar encadeamento opcional `data?.user` -> [`anti-patterns/infra_and_deploy/AP-216.md`](./anti-patterns/infra_and_deploy/AP-216.md)
+
+
