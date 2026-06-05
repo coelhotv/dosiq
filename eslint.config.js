@@ -271,6 +271,7 @@ export default [
             ['@notifications', './apps/mobile/src/features/notifications'],
             ['@treatments', './apps/mobile/src/features/treatments'],
             ['@dose', './apps/mobile/src/features/dose'],
+            ['@history', './apps/mobile/src/features/history'],
           ],
           extensions: ['.ios.js', '.android.js', '.js', '.jsx', '.ts', '.tsx']
         }

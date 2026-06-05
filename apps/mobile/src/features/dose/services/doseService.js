@@ -4,7 +4,7 @@
 // R-121: validação Zod antes de qualquer mutação
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { logSchema, createDoseInstanceRepository } from '@dosiq/core'
+import { logSchema, createDoseInstanceRepository, parseISO } from '@dosiq/core'
 import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
@@ -131,6 +131,64 @@ async function _insertDoseLog(parsedData, userId) {
     return { logEntry: null, err: _isNetworkError(insertError) ? _ERR_OFFLINE : { success: false, error: insertError.message } }
   }
   return { logEntry, err: null }
+}
+
+/**
+ * Desfaz o registro de uma dose: reverte estoque (RPC restore_stock_for_log),
+ * deleta o medicine_log ancorado e reverte a dose_instance para pending/missed.
+ * Se a instância não tiver log ancorado (ex: skipped_user sem tomada), só reverte o status.
+ * @param {string} instanceId
+ * @returns {Promise<{ success: boolean, error?: string }>}
+ */
+export async function undoDose(instanceId) {
+  try {
+    const { user, sessionError } = await _getAuthUser()
+    if (sessionError) return { success: false, error: sessionError }
+
+    const instance = await doseInstanceRepo.getById(instanceId)
+    if (!instance) return { success: false, error: 'Registro não encontrado.' }
+
+    const logId = instance.medicine_log_id
+
+    if (logId) {
+      // Reverte estoque via RPC (idempotente: repeated_at guard em stock_consumptions)
+      const { error: restoreError } = await supabase.rpc('restore_stock_for_log', {
+        p_medicine_log_id: logId,
+        p_reason: 'dose_deleted_restore',
+      })
+      if (restoreError) {
+        console.warn('[doseService] undoDose: restore_stock_for_log falhou:', restoreError)
+        return { success: false, error: 'Erro ao restaurar estoque. Tente novamente.' }
+      }
+
+      const { error: deleteError } = await supabase
+        .from('medicine_logs')
+        .delete()
+        .eq('id', logId)
+        .eq('user_id', user.id)
+      if (deleteError) {
+        console.warn('[doseService] undoDose: delete medicine_log falhou:', deleteError)
+        return { success: false, error: 'Erro ao remover registro. Tente novamente.' }
+      }
+    }
+
+    // Determinar novo status: missed se janela de tolerância encerrou, pending caso contrário
+    const now = Date.now()
+    const scheduledMs = parseISO(instance.scheduled_for).getTime()
+    const tolMs = (instance.tolerance_minutes ?? 30) * 60 * 1000
+    const newStatus = now > scheduledMs + tolMs ? 'missed' : 'pending'
+
+    const reverted = await doseInstanceRepo.revertToUnregistered(instanceId, newStatus)
+    if (!reverted) {
+      return { success: false, error: 'Não foi possível reverter o status da dose. O registro pode já ter sido alterado.' }
+    }
+
+    await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: instance.medicine_id })
+    return { success: true }
+  } catch (err) {
+    if (__DEV__) console.error('[doseService] undoDose erro:', err)
+    return { success: false, error: err.message ?? 'Erro desconhecido ao desfazer dose.' }
+  }
 }
 
 export async function registerDose(logData, { instanceId = null } = {}) {
