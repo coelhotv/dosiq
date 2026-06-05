@@ -1,0 +1,60 @@
+# Plano de Implementação: 025 — Correção e Evolução de Notificações e Alarmes
+
+Este documento define a arquitetura detalhada e o mapeamento dos arquivos para implementar as correções solicitadas nas especificações de alarmes nativos e notificações.
+
+---
+
+## Mapeamento Canônico de Arquivos (Target Files)
+
+| Componente | Caminho do Arquivo | Função / Papel no Épico |
+| :--- | :--- | :--- |
+| **Banco de Dados** | `docs/migrations/20260605_notification_preference_default.sql` | [NEW] Migration para drop default de `notification_preference` e limpeza de Telegram |
+| **Telegram Bot** | `server/bot/commands/start.js` | [MODIFY] Ativar canal Telegram e configurar `notification_preference` |
+| **Notificador (Cron)** | `server/bot/_reminderHelpers.js` | [MODIFY] Trazer `dosage_per_pill` e separar blocos críticos e normais |
+| **Zod Schemas** | `server/notifications/payloads/_payloadSchemas.js` | [MODIFY] Adicionar `critical_alarm` e `dosagePerPill` aos esquemas de payload |
+| **Payload Builder** | `server/notifications/payloads/buildNotificationPayload.js` | [MODIFY] Formatar cópia clínica e incluir detalhes de dosagem |
+| **Expo Canal** | `server/notifications/channels/expoPushChannel.js` | [MODIFY] Roteamento de som customizado e interrupção dinâmicos |
+| **Push Token Sync** | `apps/mobile/src/platform/notifications/registerPushToken.js` | [MODIFY] Habilitar alarme nativo local (`native_alarm_enabled: true`) por padrão |
+| **Protocol Form** | `apps/mobile/src/features/treatments/components/ProtocolFormBody.jsx` | [MODIFY] Usar `enablePushAtIntent` no toggle de alerta crítico |
+| **Alarm Scheduler** | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | [MODIFY] Agrupar alarmes locais por minuto antes de agendar no Notifee |
+| **Alarm Actions** | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | [MODIFY] Registrar e pular tomadas agrupadas (em lote) |
+| **Alarm UI** | `apps/mobile/src/features/dose/screens/AlarmFullScreen.jsx` | [MODIFY] Renderizar lista agrupada de medicamentos na tela de alarme |
+
+---
+
+## Detalhes Técnicos da Arquitetura
+
+### 1. Migração e Limpeza de Dados
+Para novos usuários, a coluna `notification_preference` deve ter o valor padrão removido (Drop Default). Novos registros nascerão limpos e poderão ativar os canais sob intenção.
+Para usuários existentes que possuem canais inconsistentes, a migração redefinirá o canal Telegram como desativado e ajustará as preferências para `'mobile_push'` ou `'none'` se o token Telegram não estiver presente.
+
+### 2. Separação Física no Cron (`_reminderHelpers.js`)
+Atualmente, se doses críticas e normais estão no mesmo minuto, elas entram no mesmo bloco agrupado (plano ou misc). Quando enviamos o push para esse bloco, o device móvel ativo com `native_alarm_enabled = true` suprime o push para o bloco inteiro.
+A correção envolve separar `dosesNow` em `criticalDoses` e `nonCriticalDoses` antes do agrupamento via `partitionDoses`. Dessa forma, geramos notificações independentes no backend, permitindo que o push das doses normais chegue normalmente e o das doses críticas seja suprimido (já que estas tocarão o alarme local).
+
+### 3. Fiação de Áudio e Interrupção
+No `expoPushChannel.js`, as mensagens enviadas ao Expo Push Service utilizarão o nível de interrupção correto:
+- `isCriticalDose ? 'time-sensitive' : 'active'` (iOS fura o DND apenas nas doses essenciais).
+- O arquivo de áudio correto será transmitido: `isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav'`.
+
+### 4. Agrupamento Local no Notifee (`useAlarmScheduler.js`)
+Em vez de disparar múltiplos alarmes simultâneos (tendo colisões sonoras), agrupamos todos os itens de alarme com o mesmo epoch timestamp.
+- Se houver apenas um alarme na hora: agendamento normal.
+- Se houver múltiplos alarmes: agendamos 1 Notifee local com ID da notificação igual ao timestamp (epoch em string), título fixo, e enviamos no dicionário `data` o JSON stringificado das doses agrupadas (`groupedDoses`), a flag `isGrouped: 'true'` e a lista de IDs de instâncias (`doseInstanceIds` separados por vírgula).
+
+### 5. Ações em Lote (`quickDoseRegistration.js`)
+Ao processar as ações (`registerTaken` e `registerSkip`) em alarmes agrupados, desestruturamos as chaves e registramos cada dose no Supabase utilizando `Promise.all` e enviamos a atualização de status em lote (para `skipped_user`).
+
+---
+
+## Plano de Verificação
+
+### Testes Automatizados
+- `rtk npm run test:critical` (Backend/Payloads/Canais)
+- `rtk npm run test:changed` (Para validar testes após as alterações)
+- `rtk npm run validate:agent` e `rtk lint`
+
+### Testes Manuais
+- Verificar a tabela `user_settings` após rodar a migração no banco de testes.
+- Rodar o comando `/start` com o Telegram bot simulado e validar a consistência no banco.
+- Simular um alarme de múltiplos medicamentos críticos no mesmo minuto e testar se apenas 1 Notifee local dispara e se a tela cheia do alarme lista todos corretamente.
