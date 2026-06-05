@@ -195,7 +195,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           treatmentPlanName: inst.protocol?.treatment_plan?.name ?? null,
           dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
           dosageUnit: inst.protocol?.medicine?.dosage_unit,
-          dosagePerPill: inst.protocol?.medicine?.dosage_per_pill ?? null,
+          dosagePerPill: inst.protocol?.medicine?.dosage_per_pill !== null && inst.protocol?.medicine?.dosage_per_pill !== undefined ? Number(inst.protocol.medicine.dosage_per_pill) : null,
           medicineId: inst.protocol?.medicine_id,
           critical_alarm: inst.critical_alarm ?? false,
         }));
@@ -258,6 +258,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               time: currentHHMM,
               dosagePerIntake: dose.dosagePerIntake,
               dosageUnit: dose.dosageUnit,
+              dosagePerPill: dose.dosagePerPill,
               critical_alarm: dose.critical_alarm ?? false,
             };
           }
