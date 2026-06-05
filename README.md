@@ -137,7 +137,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ### Pré-requisitos
 
-- Node.js 18+ instalado
+- Node.js 22+ instalado
 - Conta no Supabase (gratuita)
 - Conta no Vercel (gratuita, opcional para deploy)
 - Conta no GitHub (gratuita, para versionamento)
