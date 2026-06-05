@@ -1,17 +1,5 @@
 import webpush from 'web-push'
 
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
-const vapidEmail = process.env.VAPID_EMAIL || 'mailto:admin@dosiq.app'
-
-if (vapidPublicKey && vapidPrivateKey) {
-  try {
-    webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey)
-  } catch (e) {
-    console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e?.message || String(e))
-  }
-}
-
 function mapDeeplinkToWebPath(deeplink) {
   if (!deeplink) return '/'
   let path = deeplink.replace('dosiq://', '/')
@@ -24,6 +12,10 @@ function mapDeeplinkToWebPath(deeplink) {
 export async function sendWebPushNotification({ userId, payload, context, repositories }) {
   const correlationId = context?.correlationId || 'unknown'
 
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+  const vapidEmail = process.env.VAPID_EMAIL || 'mailto:admin@dosiq.app'
+
   if (!vapidPublicKey || !vapidPrivateKey) {
     console.warn('[webPushChannel] Chaves VAPID ausentes no ambiente. Ignorando envio.', { correlationId, userId })
     return {
@@ -35,6 +27,12 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
       deactivatedTokens: [],
       errors: [{ message: 'VAPID keys not configured in environment' }]
     }
+  }
+
+  try {
+    webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey)
+  } catch (e) {
+    console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e?.message || String(e))
   }
 
   const devices = await repositories.devices.listActiveByUser(userId, 'webpush')
