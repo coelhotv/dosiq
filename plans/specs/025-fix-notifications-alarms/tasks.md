@@ -1,13 +1,13 @@
 # Tasks for 025 — Correção e Evolução de Notificações e Alarmes
 
-- [ ] **T001** [US1] Criar migração SQL para remover default de `notification_preference` e higienizar dados de Telegram inconsistentes
-- [ ] **T002** [US1] Atualizar comando `/start` em `server/bot/commands/start.js` para setar `channel_telegram_enabled = true` e atualizar `notification_preference`
-- [ ] **T003** [US3] Atualizar query SQL no notificador para carregar `dosage_per_pill` em `server/bot/_reminderHelpers.js`
-- [ ] **T004** [US2] Alterar cron `server/bot/_reminderHelpers.js` para realizar a separação física de instâncias críticas e normais
-- [ ] **T005** [US3] Atualizar schemas do Zod (`doseReminderDataSchema` e correlatos) em `server/notifications/payloads/_payloadSchemas.js` para incluir `critical_alarm` e `dosagePerPill`
-- [ ] **T006** [US3] Ajustar formatação e copy de lembrete em `server/notifications/payloads/buildNotificationPayload.js`
-- [ ] **T007** [US3] Configurar som e interrupção corretos no `server/notifications/channels/expoPushChannel.js`
-- [ ] **T008** [C4] Rodar testes críticos do servidor (`npm run test:critical` ou vitest específico)
+- [x] **T001** [US1] Criar migração SQL para remover default de `notification_preference` e higienizar dados de Telegram inconsistentes
+- [x] **T002** [US1] Atualizar comando `/start` em `server/bot/commands/start.js` para setar `channel_telegram_enabled = true` e atualizar `notification_preference`
+- [x] **T003** [US3] Atualizar query SQL no notificador para carregar `dosage_per_pill` em `server/bot/_reminderHelpers.js`
+- [x] **T004** [US2] Alterar cron `server/bot/_reminderHelpers.js` para realizar a separação física de instâncias críticas e normais
+- [x] **T005** [US3] Atualizar schemas do Zod (`doseReminderDataSchema` e correlatos) em `server/notifications/payloads/_payloadSchemas.js` para incluir `critical_alarm` e `dosagePerPill`
+- [x] **T006** [US3] Ajustar formatação e copy de lembrete em `server/notifications/payloads/buildNotificationPayload.js`
+- [x] **T007** [US3] Configurar som e interrupção corretos no `server/notifications/channels/expoPushChannel.js`
+- [x] **T008** [C4] Rodar testes críticos do servidor (`npm run test:critical` ou vitest específico)
 - [ ] **T009** [US4] Forçar `native_alarm_enabled: true` por padrão para iOS e Android em `registerPushToken.js`
 - [ ] **T010** [US4] Adicionar fluxo de permissão contextual `enablePushAtIntent` ao `ProtocolFormBody.jsx` ao ativar alarme crítico
 - [ ] **T011** [US4] Agrupar alarmes do mesmo minuto em um único trigger Notifee em `useAlarmScheduler.js`

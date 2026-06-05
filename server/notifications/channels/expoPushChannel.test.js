@@ -122,7 +122,7 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     title: '💊 Hora da dose',
     body: 'Está na hora de tomar Losartana (08:00)',
     pushBody: 'Está na hora de tomar Losartana (08:00)',
-    metadata: { kind, builtAt: '2026-01-01T00:00:00Z' },
+    metadata: { kind, critical_alarm: true, builtAt: '2026-01-01T00:00:00Z' },
     actions: [],
   })
 
@@ -188,5 +188,53 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     expect(result.delivered).toBe(1)
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].to).toBe('ExponentPushToken[alarm]')
+  })
+
+  it('deve usar som alarm_dose.wav e time-sensitive para dose crítica', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[plain]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    await sendExpoPushNotification({
+      userId: 'user-sound-critical',
+      payload: {
+        title: 'Hora da dose',
+        body: 'Medicamento essencial',
+        metadata: { kind: 'dose_reminder', critical_alarm: true },
+      },
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
+    expect(messages[0].sound).toEqual({ name: 'alarm_dose.wav' })
+    expect(messages[0].interruptionLevel).toBe('time-sensitive')
+    expect(messages[0].channelId).toBe('dosiq-critical-v1')
+  })
+
+  it('deve usar som push_chime.wav e active para dose normal', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[plain]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    await sendExpoPushNotification({
+      userId: 'user-sound-normal',
+      payload: {
+        title: 'Hora da dose',
+        body: 'Medicamento normal',
+        metadata: { kind: 'dose_reminder', critical_alarm: false },
+      },
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
+    expect(messages[0].sound).toEqual({ name: 'push_chime.wav' })
+    expect(messages[0].interruptionLevel).toBe('active')
+    expect(messages[0].channelId).toBe('dosiq-default-v1')
   })
 })
