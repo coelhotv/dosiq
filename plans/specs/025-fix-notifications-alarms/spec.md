@@ -141,6 +141,7 @@ Então a tela deve exibir a lista de todos os medicamentos do bundle agrupado
 | FR-10 | Agrupar alarmes essenciais do mesmo minuto no Notifee local no `useAlarmScheduler.js` | US4 |
 | FR-11 | Atualizar ações rápidas no `quickDoseRegistration.js` para registrar/descartar doses agrupadas (em lote) | US4 |
 | FR-12 | Renderizar a lista de medicamentos agrupados na tela `AlarmFullScreen.jsx` | US4 |
+| FR-13 | Ajustar o texto do alarme local em `alarmService.js` para exibir o copy clínico customizado (e formatado com dosagem clínica) das doses essenciais | US3 |
 
 ---
 

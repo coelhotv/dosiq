@@ -13,6 +13,7 @@
 - [ ] **T011** [US4] Agrupar alarmes do mesmo minuto em um único trigger Notifee em `useAlarmScheduler.js`
 - [ ] **T012** [US4] Atualizar ações rápidas para tratar registro em lote no `quickDoseRegistration.js`
 - [ ] **T013** [US4] Atualizar tela cheia do alarme `AlarmFullScreen.jsx` para exibir lista de doses agrupadas e confirmar em lote
+- [ ] **T013a** [US3/US4] Ajustar o copy de exibição do alarme local no `alarmService.js` (incluindo suporte a plano essencial e doses avulsas essenciais)
 - [ ] **T014** [C4] Executar testes do app mobile e validar funcionamento dos handlers de doses e lote
 - [ ] **T015** [C4] Rodar suite completa de validação `rtk npm run validate:agent` e `rtk lint`
 - [ ] **T016** [C5] Executar bump de versão em `apps/mobile/package.json`

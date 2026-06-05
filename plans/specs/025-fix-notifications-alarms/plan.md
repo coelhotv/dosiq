@@ -16,7 +16,8 @@ Este documento define a arquitetura detalhada e o mapeamento dos arquivos para i
 | **Expo Canal** | `server/notifications/channels/expoPushChannel.js` | [MODIFY] Roteamento de som customizado e interrupção dinâmicos |
 | **Push Token Sync** | `apps/mobile/src/platform/notifications/registerPushToken.js` | [MODIFY] Habilitar alarme nativo local (`native_alarm_enabled: true`) por padrão |
 | **Protocol Form** | `apps/mobile/src/features/treatments/components/ProtocolFormBody.jsx` | [MODIFY] Usar `enablePushAtIntent` no toggle de alerta crítico |
-| **Alarm Scheduler** | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | [MODIFY] Agrupar alarmes locais por minuto antes de agendar no Notifee |
+| **Alarm Scheduler** | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | [MODIFY] Agrupar alarmes locais por minuto antes de agendar no Notifee e injetar dosagens |
+| **Alarm Service** | `apps/mobile/src/platform/alarms/alarmService.js` | [MODIFY] Implementar copy clínico customizado para alarme local essencial e formatar com dosagem clínica |
 | **Alarm Actions** | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | [MODIFY] Registrar e pular tomadas agrupadas (em lote) |
 | **Alarm UI** | `apps/mobile/src/features/dose/screens/AlarmFullScreen.jsx` | [MODIFY] Renderizar lista agrupada de medicamentos na tela de alarme |
 
@@ -41,9 +42,16 @@ No `expoPushChannel.js`, as mensagens enviadas ao Expo Push Service utilizarão 
 Em vez de disparar múltiplos alarmes simultâneos (tendo colisões sonoras), agrupamos todos os itens de alarme com o mesmo epoch timestamp.
 - Se houver apenas um alarme na hora: agendamento normal.
 - Se houver múltiplos alarmes: agendamos 1 Notifee local com ID da notificação igual ao timestamp (epoch em string), título fixo, e enviamos no dicionário `data` o JSON stringificado das doses agrupadas (`groupedDoses`), a flag `isGrouped: 'true'` e a lista de IDs de instâncias (`doseInstanceIds` separados por vírgula).
+Para dar suporte à formatação clínica dos alarmes, o scheduler também injetará `dosagePerPill` e `dosageUnit` no objeto `data` enviado para o `scheduleAlarm`.
 
 ### 5. Ações em Lote (`quickDoseRegistration.js`)
 Ao processar as ações (`registerTaken` e `registerSkip`) em alarmes agrupados, desestruturamos as chaves e registramos cada dose no Supabase utilizando `Promise.all` e enviamos a atualização de status em lote (para `skipped_user`).
+
+### 6. Ajuste do Copy do Alarme Local (`alarmService.js`)
+O alarme local do aplicativo (usando Notifee) deve refletir a mesma clareza e acolhimento clínico definidos para o servidor. 
+- Quando disparado para uma dose única essencial, o alarme deve montar a descrição usando `{Nome} ({dosagePerPill}{dosageUnit}) - {dosagePerIntake} un.`, resultando no copy `"💊 Medicamento essencial: hora do seu {Descrição} ({Hora})."`.
+- Quando disparado de forma agrupada por plano essencial, deve exibir o copy `"📋 Uso essencial: hora dos medicamentos do plano {Plano} ({Hora})."`.
+- Quando agrupado e de origens diversas, deve exibir o copy `"💊 Doses essenciais pendentes para as {Hora}."`.
 
 ---
 
