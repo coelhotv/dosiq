@@ -59,7 +59,7 @@ Adicionado ao processo de bump de `@supabase/supabase-js` ou outras libs com sub
 
 ```json
 "engines": {
-  "node": ">=22.0.0"
+  "node": "22.x"
 }
 ```
 

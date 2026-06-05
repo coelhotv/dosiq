@@ -95,7 +95,7 @@ Então o smoke test deve rodar automaticamente
 
 | ID | Requisito | US |
 |----|-----------|:--:|
-| FR-01 | Declarar `engines.node >= 22.0.0` em `package.json` raiz | US1 |
+| FR-01 | Declarar `engines.node: 22.x` em `package.json` raiz | US1 |
 | FR-02 | Criar `.nvmrc` com valor `22` | US1 |
 | FR-03 | Setar `NODE_VERSION=22` na Vercel via CLI para prod/preview/dev | US1 |
 | FR-04 | Mudar `NODE_VERSION: '20'` → `'22'` em `test.yml` e `gemini-review.yml` | US2 |
@@ -112,7 +112,7 @@ Então o smoke test deve rodar automaticamente
 | ID | Critério | Verificação | Gate |
 |----|----------|-------------|:----:|
 | SC-01 | `.nvmrc` contém `22` | `cat .nvmrc` | G1 |
-| SC-02 | `package.json` engines ≥ 22 | `grep engines package.json` | G1 |
+| SC-02 | `package.json` engines == 22.x | `grep engines package.json` | G1 |
 | SC-03 | Vercel NODE_VERSION = 22 | `vercel env ls` | G1 |
 | SC-04 | CI: NODE_VERSION '22' em workflows | `grep NODE_VERSION .github/workflows/*.yml` | G1 |
 | SC-05 | CI: zero ocorrências de `github-script@v7` | `grep 'github-script@v7' .github/workflows/*.yml` → vazio | G1 |

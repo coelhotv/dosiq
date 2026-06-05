@@ -4,7 +4,7 @@
   "version": "4.1.0",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "22.x"
   },
   "workspaces": [
     "apps/*",
