@@ -228,3 +228,4 @@
 - **[AP-216]** Destruturação insegura de respostas do Supabase Auth (`getUser`/`getSession`) → crash com TypeError quando o objeto data está nulo ou indefinido. Sempre desestruturar `data` primeiro e usar encadeamento opcional `data?.user` -> [`anti-patterns/infra_and_deploy/AP-216.md`](./anti-patterns/infra_and_deploy/AP-216.md)
 
 
+- **[AP-217]** `dose_instances` não tem `medicine_id` — campo vem do protocol via enrich. Leitura direta retorna `undefined` → falha Zod silenciosa em registerDose. Fix: incluir no select+map do enrichInstancesWithProtocol -> [`anti-patterns/mobile/AP-217.md`](./anti-patterns/mobile/AP-217.md)
