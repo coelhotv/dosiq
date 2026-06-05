@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, formatActiveIngredientFormula } from '@dosiq/core'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula } from '@dosiq/core'
 import { X, CheckCircle2, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -50,7 +50,6 @@ function formatTimeInTz(isoStr, tz) {
   }
 }
 
-// Formata Date object como "DD/MM às HH:MM" (device locale, igual ao BulkDoseRegisterModal)
 function formatDateObj(d) {
   if (!d) return ''
   const dd = String(d.getDate()).padStart(2, '0')
@@ -66,6 +65,162 @@ function punctualityLabel(takenAt, scheduledFor) {
   if (Math.abs(diffMin) <= 5) return { text: 'No horário', color: colors.brand.primary }
   if (diffMin > 0) return { text: `+${diffMin} min · Atrasado`, color: colors.status.warning }
   return { text: `${diffMin} min · No horário`, color: colors.brand.primary }
+}
+
+function SheetMainView({ instance, isTaken, takenTime, scheduledTime, punctuality, onEditPress, onDeletePress }) {
+  return (
+    <>
+      <View style={styles.infoCard}>
+        {isTaken && instance?.taken_at && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Tomada em</Text>
+            <Text style={styles.infoValue}>{takenTime}</Text>
+          </View>
+        )}
+        <View style={[styles.infoRow, isTaken && instance?.taken_at && styles.infoRowBorder]}>
+          <Text style={styles.infoLabel}>Horário previsto</Text>
+          <Text style={styles.infoValue}>{scheduledTime}</Text>
+        </View>
+        {punctuality && (
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>Pontualidade</Text>
+            <Text style={[styles.infoValue, { color: punctuality.color }]}>{punctuality.text}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.actionsCard}>
+        <TouchableOpacity style={styles.actionRow} onPress={onEditPress} activeOpacity={0.7}>
+          <View style={[styles.actionIcon, { backgroundColor: colors.primary[100] }]}>
+            <Clock size={18} color={colors.brand.primary} strokeWidth={2} />
+          </View>
+          <View style={styles.actionBody}>
+            <Text style={styles.actionTitle}>Editar registro</Text>
+            <Text style={styles.actionDesc}>Ajustar a hora ou a dose que você efetivamente tomou</Text>
+          </View>
+          <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
+        </TouchableOpacity>
+
+        {isTaken && (
+          <TouchableOpacity
+            style={[styles.actionRow, styles.actionRowBorder]}
+            onPress={onDeletePress}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: colors.status.errorLight }]}>
+              <Trash2 size={18} color={colors.status.error} strokeWidth={2} />
+            </View>
+            <View style={styles.actionBody}>
+              <Text style={[styles.actionTitle, { color: colors.status.error }]}>Excluir registro</Text>
+              <Text style={styles.actionDesc}>A dose volta para pendente — útil se foi um engano</Text>
+            </View>
+            <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
+          </TouchableOpacity>
+        )}
+      </View>
+    </>
+  )
+}
+
+function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
+  return (
+    <View style={styles.formView}>
+      <Text style={styles.formTitle}>Editar registro</Text>
+
+      <Pressable
+        style={styles.retroRow}
+        onPress={onPickerPress}
+        accessibilityRole="button"
+        accessibilityLabel="Alterar horário de registro"
+      >
+        <View style={styles.retroTextCol}>
+          <Text style={styles.retroLabel}>Horário da dose</Text>
+          <Text style={styles.retroValue}>
+            {takenAtDate ? formatDateObj(takenAtDate) : 'Toque para definir'}
+          </Text>
+        </View>
+        <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
+      </Pressable>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Quantidade (unidades)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 1"
+          value={quantityTaken}
+          onChangeText={onChangeQty}
+          keyboardType="decimal-pad"
+          editable={!loading}
+        />
+        {instance?.dosage_per_pill && instance?.dosage_unit && (
+          <Text style={styles.inputHint}>
+            ✨ {formatActiveIngredientFormula(quantityTaken || '1', instance.dosage_per_pill, instance.dosage_unit)}
+          </Text>
+        )}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.primaryButton, loading && styles.buttonDisabled]}
+        onPress={onSave}
+        disabled={loading}
+      >
+        {loading
+          ? <ActivityIndicator size="small" color={colors.text.inverse} />
+          : <Text style={styles.primaryButtonText}>Salvar</Text>
+        }
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.ghostButton} onPress={onCancel} disabled={loading}>
+        <Text style={styles.ghostButtonText}>Cancelar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function SheetDeleteView({ loading, onConfirm, onCancel }) {
+  return (
+    <View style={styles.formView}>
+      <View style={styles.deleteWarning}>
+        <AlertTriangle size={20} color={colors.status.error} strokeWidth={2} />
+        <Text style={styles.deleteWarningText}>
+          Excluir este registro? A dose volta para pendente e o estoque será restaurado.
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.deleteButton, loading && styles.buttonDisabled]}
+        onPress={onConfirm}
+        disabled={loading}
+      >
+        {loading
+          ? <ActivityIndicator size="small" color={colors.text.inverse} />
+          : <Text style={styles.deleteButtonText}>Confirmar exclusão</Text>
+        }
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.ghostButton} onPress={onCancel} disabled={loading}>
+        <Text style={styles.ghostButtonText}>Cancelar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function openAndroidPicker(currentDate, onDatePicked) {
+  DateTimePickerAndroid.open({
+    value: currentDate,
+    mode: 'date',
+    onChange: (event, date) => {
+      if (event.type !== 'set' || !date) return
+      DateTimePickerAndroid.open({
+        value: currentDate,
+        mode: 'time',
+        onChange: (timeEvent, timeDate) => {
+          if (timeEvent.type !== 'set' || !timeDate) return
+          const combined = cloneDate(date)
+          combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
+          onDatePicked(combined)
+        },
+      })
+    },
+  })
 }
 
 export default function DoseActionSheet({
@@ -97,25 +252,7 @@ export default function DoseActionSheet({
 
   function handleOpenPicker() {
     if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: takenAtDate || getNow(),
-        mode: 'date',
-        onChange: (event, date) => {
-          if (event.type === 'set' && date) {
-            DateTimePickerAndroid.open({
-              value: takenAtDate || getNow(),
-              mode: 'time',
-              onChange: (timeEvent, timeDate) => {
-                if (timeEvent.type === 'set' && timeDate) {
-                  const combined = new Date(date)
-                  combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
-                  setTakenAtDate(combined)
-                }
-              },
-            })
-          }
-        },
-      })
+      openAndroidPicker(takenAtDate || getNow(), setTakenAtDate)
     } else {
       setTempDate(takenAtDate || getNow())
       setShowDatePicker(true)
@@ -124,10 +261,6 @@ export default function DoseActionSheet({
 
   function handleIOSConfirm() {
     if (tempDate) setTakenAtDate(tempDate)
-    setShowDatePicker(false)
-  }
-
-  function handleIOSCancel() {
     setShowDatePicker(false)
   }
 
@@ -160,15 +293,12 @@ export default function DoseActionSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
-      {/* Overlay */}
       <TouchableOpacity
         style={[styles.overlay, { paddingTop: statusBarHeight }]}
         activeOpacity={1}
         onPress={onClose}
       >
-        {/* Sheet */}
         <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.sheet}>
-          {/* Handle bar */}
           <View style={styles.handle} />
 
           <ScrollView
@@ -176,7 +306,6 @@ export default function DoseActionSheet({
             scrollEnabled={view !== 'main'}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Header */}
             <View style={styles.header}>
               <CheckCircle2
                 size={28}
@@ -208,153 +337,49 @@ export default function DoseActionSheet({
               </TouchableOpacity>
             </View>
 
-            {/* ─── MAIN VIEW ─── */}
             {view === 'main' && (
-              <>
-                {/* Info rows */}
-                <View style={styles.infoCard}>
-                  {isTaken && instance?.taken_at && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Tomada em</Text>
-                      <Text style={styles.infoValue}>{takenTime}</Text>
-                    </View>
-                  )}
-                  <View style={[styles.infoRow, isTaken && instance?.taken_at && styles.infoRowBorder]}>
-                    <Text style={styles.infoLabel}>Horário previsto</Text>
-                    <Text style={styles.infoValue}>{scheduledTime}</Text>
-                  </View>
-                  {punctuality && (
-                    <View style={[styles.infoRow, styles.infoRowBorder]}>
-                      <Text style={styles.infoLabel}>Pontualidade</Text>
-                      <Text style={[styles.infoValue, { color: punctuality.color }]}>{punctuality.text}</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Action rows */}
-                <View style={styles.actionsCard}>
-                  <TouchableOpacity style={styles.actionRow} onPress={() => setView('edit')} activeOpacity={0.7}>
-                    <View style={[styles.actionIcon, { backgroundColor: colors.primary[100] }]}>
-                      <Clock size={18} color={colors.brand.primary} strokeWidth={2} />
-                    </View>
-                    <View style={styles.actionBody}>
-                      <Text style={styles.actionTitle}>Editar registro</Text>
-                      <Text style={styles.actionDesc}>Ajustar a hora ou a dose que você efetivamente tomou</Text>
-                    </View>
-                    <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
-                  </TouchableOpacity>
-
-                  {isTaken && (
-                    <TouchableOpacity
-                      style={[styles.actionRow, styles.actionRowBorder]}
-                      onPress={() => setView('confirm_delete')}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.actionIcon, { backgroundColor: '#fee2e2' }]}>
-                        <Trash2 size={18} color={colors.status.error} strokeWidth={2} />
-                      </View>
-                      <View style={styles.actionBody}>
-                        <Text style={[styles.actionTitle, { color: colors.status.error }]}>Excluir registro</Text>
-                        <Text style={styles.actionDesc}>A dose volta para pendente — útil se foi um engano</Text>
-                      </View>
-                      <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </>
+              <SheetMainView
+                instance={instance}
+                isTaken={isTaken}
+                takenTime={takenTime}
+                scheduledTime={scheduledTime}
+                punctuality={punctuality}
+                onEditPress={() => setView('edit')}
+                onDeletePress={() => setView('confirm_delete')}
+              />
             )}
 
-            {/* ─── EDIT VIEW ─── */}
             {view === 'edit' && (
-              <View style={styles.formView}>
-                <Text style={styles.formTitle}>Editar registro</Text>
-
-                {/* Seletor de data/hora — igual ao BulkDoseRegisterModal */}
-                <Pressable
-                  style={styles.retroRow}
-                  onPress={handleOpenPicker}
-                  accessibilityRole="button"
-                  accessibilityLabel="Alterar horário de registro"
-                >
-                  <View style={styles.retroTextCol}>
-                    <Text style={styles.retroLabel}>Horário da dose</Text>
-                    <Text style={styles.retroValue}>
-                      {takenAtDate ? formatDateObj(takenAtDate) : 'Toque para definir'}
-                    </Text>
-                  </View>
-                  <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
-                </Pressable>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Quantidade (unidades)</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: 1"
-                    value={quantityTaken}
-                    onChangeText={setQuantityTaken}
-                    keyboardType="decimal-pad"
-                    editable={!loading}
-                  />
-                  {instance?.dosage_per_pill && instance?.dosage_unit && (
-                    <Text style={styles.inputHint}>
-                      ✨ {formatActiveIngredientFormula(quantityTaken || '1', instance.dosage_per_pill, instance.dosage_unit)}
-                    </Text>
-                  )}
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.primaryButton, loading && styles.buttonDisabled]}
-                  onPress={handleSaveEdit}
-                  disabled={loading}
-                >
-                  {loading
-                    ? <ActivityIndicator size="small" color="#ffffff" />
-                    : <Text style={styles.primaryButtonText}>Salvar</Text>
-                  }
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.ghostButton} onPress={() => setView('main')} disabled={loading}>
-                  <Text style={styles.ghostButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
+              <SheetEditView
+                instance={instance}
+                takenAtDate={takenAtDate}
+                quantityTaken={quantityTaken}
+                loading={loading}
+                onPickerPress={handleOpenPicker}
+                onChangeQty={setQuantityTaken}
+                onSave={handleSaveEdit}
+                onCancel={() => setView('main')}
+              />
             )}
 
-            {/* ─── CONFIRM DELETE VIEW ─── */}
             {view === 'confirm_delete' && (
-              <View style={styles.formView}>
-                <View style={styles.deleteWarning}>
-                  <AlertTriangle size={20} color={colors.status.error} strokeWidth={2} />
-                  <Text style={styles.deleteWarningText}>
-                    Excluir este registro? A dose volta para pendente e o estoque será restaurado.
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.deleteButton, loading && styles.buttonDisabled]}
-                  onPress={handleDelete}
-                  disabled={loading}
-                >
-                  {loading
-                    ? <ActivityIndicator size="small" color="#ffffff" />
-                    : <Text style={styles.deleteButtonText}>Confirmar exclusão</Text>
-                  }
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.ghostButton} onPress={() => setView('main')} disabled={loading}>
-                  <Text style={styles.ghostButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
+              <SheetDeleteView
+                loading={loading}
+                onConfirm={handleDelete}
+                onCancel={() => setView('main')}
+              />
             )}
           </ScrollView>
         </TouchableOpacity>
       </TouchableOpacity>
 
-      {/* Modal iOS DateTimePicker — igual ao BulkDoseRegisterModal */}
       {Platform.OS === 'ios' && showDatePicker && (
-        <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={handleIOSCancel}>
-          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={handleIOSCancel} />
+        <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
           <View style={styles.pickerSheet}>
             <SafeAreaView edges={['bottom']}>
               <View style={styles.pickerHeader}>
-                <TouchableOpacity onPress={handleIOSCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.pickerCancelText}>Cancelar</Text>
                 </TouchableOpacity>
                 <Text style={styles.pickerTitle}>Ajustar horário</Text>
@@ -382,7 +407,7 @@ export default function DoseActionSheet({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.bg.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -625,7 +650,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.text.inverse,
   },
   deleteButton: {
     backgroundColor: colors.status.error,
@@ -638,7 +663,7 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.text.inverse,
   },
   ghostButton: {
     borderRadius: 10,
@@ -658,7 +683,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: '#fee2e2',
+    backgroundColor: colors.status.errorLight,
     borderRadius: 10,
     padding: 14,
     marginBottom: 16,
