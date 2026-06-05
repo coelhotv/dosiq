@@ -14,7 +14,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   - Atualizado o runtime do projeto do Node 20 para o Node 22 LTS nos ambientes local, CI e Vercel.
   - Atualizado `actions/github-script` de `v7` para `v8` em todos os workflows do GitHub Actions para eliminar deprecation warnings de Node 20.
   - Substituída a action de terceiros `tj-actions/changed-files` por um script Git nativo com `git diff` no workflow de testes para mitigação de riscos de supply chain (adicionando `fetch-depth: 0` ao checkout do lint job).
-  - Implementado smoke test de cold start (`scripts/smoke-server.mjs`) que valida as importações dos de módulos críticos de backend/serverless (Supabase, Bot Factory, DLQ e canais de notificação) integrado ao pipeline de CI.
+  - Implementado smoke test de cold start (`scripts/smoke-server.mjs`) que valida as importações de módulos críticos de backend/serverless (Supabase, Bot Factory, DLQ e canais de notificação) integrado ao pipeline de CI.
 
 ### Web/PWA (4.0.0 → 4.1.3)
 - **Scroll interno para comentários longos no painel de feedbacks** (Patch, web 4.1.2→**4.1.3**): adicionada uma caixa com scroll interno vertical e altura máxima no campo de comentário para garantir estabilidade visual e uma altura constante/previsível para as linhas da listagem de feedbacks na interface de administração.
