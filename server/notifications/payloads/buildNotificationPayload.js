@@ -169,6 +169,19 @@ const formatMedicineDescription = (name, qty, dosagePerPill, unit) => {
 };
 
 /**
+ * Auxiliar legado para formatar a descrição do medicamento com quantidade em cp.
+ * Exemplo: "Dipirona — 2 cp"
+ */
+const formatMedicineDescriptionLegacy = (name, qty) => {
+  let desc = name;
+  if (qty !== undefined && qty !== null) {
+    const formattedQty = String(qty).replace('.', ',');
+    desc += ` — ${formattedQty} cp`;
+  }
+  return desc;
+};
+
+/**
  * Formata payload de lembrete de dose única.
  */
 function formatDoseReminder(data, metadata) {
@@ -186,19 +199,14 @@ function formatDoseReminder(data, metadata) {
   let body, pushBody;
   const isCritical = critical_alarm === true;
 
-  if (dosagePerIntake !== undefined) {
-    const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit);
-    const safeDesc = escapeMarkdownV2(desc);
-    if (isCritical) {
+  if (isCritical) {
+    if (dosagePerIntake !== undefined) {
+      const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit);
+      const safeDesc = escapeMarkdownV2(desc);
       body = `💊 *Medicamento essencial*: hora do seu *${safeDesc}* \\(${safeTime}\\)\\.`;
       pushBody = `💊 Medicamento essencial: hora do seu ${desc} (${time}).`;
     } else {
-      body = `Está na hora de tomar *${safeDesc}* \\(${safeTime}\\)\\.`;
-      pushBody = `Está na hora de tomar ${desc} (${time}).`;
-    }
-  } else {
-    const safeName = escapeMarkdownV2(medicineName);
-    if (isCritical) {
+      const safeName = escapeMarkdownV2(medicineName);
       if (dosage) {
         const safeDosage = escapeMarkdownV2(dosage);
         body = `💊 *Medicamento essencial*: hora do seu *${safeName}* \\(${safeTime}\\) — **${safeDosage}**\\.`;
@@ -207,15 +215,17 @@ function formatDoseReminder(data, metadata) {
         body = `💊 *Medicamento essencial*: hora do seu *${safeName}* \\(${safeTime}\\)\\.`;
         pushBody = `💊 Medicamento essencial: hora do seu ${medicineName} (${time}).`;
       }
+    }
+  } else {
+    const resolvedDosage = dosage || (dosagePerIntake !== undefined && dosagePerIntake !== null ? `${String(dosagePerIntake).replace('.', ',')} cp` : undefined);
+    const safeName = escapeMarkdownV2(medicineName);
+    if (resolvedDosage) {
+      const safeDosage = escapeMarkdownV2(resolvedDosage);
+      body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\) — **${safeDosage}**\\.`;
+      pushBody = `Está na hora de tomar ${medicineName} (${time}) — ${resolvedDosage}.`;
     } else {
-      if (dosage) {
-        const safeDosage = escapeMarkdownV2(dosage);
-        body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\) — **${safeDosage}**\\.`;
-        pushBody = `Está na hora de tomar ${medicineName} (${time}) — ${dosage}.`;
-      } else {
-        body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\)\\.`;
-        pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
-      }
+      body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\)\\.`;
+      pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
     }
   }
 
@@ -248,16 +258,30 @@ function formatDoseReminderByPlan(data, metadata) {
   const extra = count - shown.length;
   const isCritical = critical_alarm === true;
 
-  const doseLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
-    const safeDesc = escapeMarkdownV2(desc);
-    return `  💊 ${safeDesc}`;
-  }).join('\n');
+  let doseLines, plainLines;
+  if (isCritical) {
+    doseLines = shown.map(d => {
+      const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+      const safeDesc = escapeMarkdownV2(desc);
+      return `  💊 ${safeDesc}`;
+    }).join('\n');
 
-  const plainLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
-    return `• ${desc}`;
-  }).join('\n');
+    plainLines = shown.map(d => {
+      const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+      return `• ${desc}`;
+    }).join('\n');
+  } else {
+    doseLines = shown.map(d => {
+      const desc = formatMedicineDescriptionLegacy(d.medicineName, d.dosagePerIntake);
+      const safeDesc = escapeMarkdownV2(desc);
+      return `  💊 ${safeDesc}`;
+    }).join('\n');
+
+    plainLines = shown.map(d => {
+      const desc = formatMedicineDescriptionLegacy(d.medicineName, d.dosagePerIntake);
+      return `• ${desc}`;
+    }).join('\n');
+  }
 
   let body, pushBody;
   if (isCritical) {
@@ -301,16 +325,30 @@ function formatDoseReminderMisc(data, metadata) {
   const extra = count - shown.length;
   const isCritical = critical_alarm === true;
 
-  const doseLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
-    const safeDesc = escapeMarkdownV2(desc);
-    return `  • ${safeDesc}`;
-  }).join('\n');
+  let doseLines, plainLines;
+  if (isCritical) {
+    doseLines = shown.map(d => {
+      const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+      const safeDesc = escapeMarkdownV2(desc);
+      return `  • ${safeDesc}`;
+    }).join('\n');
 
-  const plainLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
-    return `• ${desc}`;
-  }).join('\n');
+    plainLines = shown.map(d => {
+      const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+      return `• ${desc}`;
+    }).join('\n');
+  } else {
+    doseLines = shown.map(d => {
+      const desc = formatMedicineDescriptionLegacy(d.medicineName, d.dosagePerIntake);
+      const safeDesc = escapeMarkdownV2(desc);
+      return `  • ${safeDesc}`;
+    }).join('\n');
+
+    plainLines = shown.map(d => {
+      const desc = formatMedicineDescriptionLegacy(d.medicineName, d.dosagePerIntake);
+      return `• ${desc}`;
+    }).join('\n');
+  }
 
   let body, pushBody;
   if (isCritical) {
