@@ -229,3 +229,6 @@
 
 
 - **[AP-217]** `dose_instances` não tem `medicine_id` — campo vem do protocol via enrich. Leitura direta retorna `undefined` → falha Zod silenciosa em registerDose. Fix: incluir no select+map do enrichInstancesWithProtocol -> [`anti-patterns/mobile/AP-217.md`](./anti-patterns/mobile/AP-217.md)
+- **[AP-218]** Hermes (Android) sem ICU completo — `toLocaleString`/`toLocaleTimeString` retorna AM/PM silencioso em vez de formato pt-BR. Fix: formatação manual com `padStart` ou `date-fns/format` -> [`anti-patterns/mobile/AP-218.md`](./anti-patterns/mobile/AP-218.md)
+- **[AP-219]** `PanResponder` com `onStartShouldSetPanResponder: true` captura todos os toques e bloqueia `TouchableOpacity` filhos silenciosamente. Fix: `onStart=false` + `onMove` com threshold `dx>10 && dy<5` -> [`anti-patterns/mobile/AP-219.md`](./anti-patterns/mobile/AP-219.md)
+- **[AP-220]** `FlatList scrollEnabled=false` dentro de `ScrollView` — virtualização desabilitada + warning React Native. Fix: `View + .map()` para listas pequenas (≤50 itens) -> [`anti-patterns/mobile/AP-220.md`](./anti-patterns/mobile/AP-220.md)
