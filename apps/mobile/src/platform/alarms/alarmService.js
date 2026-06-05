@@ -178,14 +178,73 @@ export async function ensureAlarmCriticalChannel() {
   criticalChannelEnsured = true
 }
 
+// Monta o copy clínico customizado e acolhedor dos alarmes
+function getAlarmCopy({ medicineName, data }) {
+  const time = data?.scheduledTime
+  const isGrouped = data?.isGrouped === 'true'
+
+  if (isGrouped) {
+    let doses = []
+    try {
+      doses = JSON.parse(data.groupedDoses || '[]')
+    } catch {
+      // fallback
+    }
+
+    if (doses.length === 0) {
+      return {
+        title: '💊 Hora da dose',
+        body: 'Está na hora da sua dose.',
+      }
+    }
+
+    if (doses.length === 1) {
+      const d = doses[0]
+      const dosageInfo = d.dosagePerPill && d.dosageUnit ? ` (${d.dosagePerPill}${d.dosageUnit})` : ''
+      const intakeInfo = ` - ${d.dosagePerIntake ?? 1} un.`
+      const desc = `${d.medicineName}${dosageInfo}${intakeInfo}`
+      return {
+        title: '💊 Medicamento essencial',
+        body: `💊 Medicamento essencial: hora do seu ${desc}${time ? ` (${time})` : ''}.`,
+      }
+    }
+
+    // Verifica se todos pertencem ao mesmo plano de tratamento
+    const firstPlan = doses[0].treatmentPlanName
+    const samePlan = firstPlan && doses.every((d) => d.treatmentPlanName === firstPlan)
+
+    if (samePlan) {
+      return {
+        title: '📋 Uso essencial',
+        body: `📋 Uso essencial: hora dos medicamentos do plano ${firstPlan}${time ? ` (${time})` : ''}.`,
+      }
+    } else {
+      return {
+        title: '💊 Doses essenciais',
+        body: `💊 Doses essenciais pendentes para as ${time || ''}.`,
+      }
+    }
+  } else {
+    // Dose única essencial
+    const name = medicineName || data?.medicineName || 'sua dose'
+    const dosagePerPill = data?.dosagePerPill
+    const dosageUnit = data?.dosageUnit
+    const quantity = data?.quantityTaken || '1'
+
+    const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
+    const intakeInfo = ` - ${quantity} un.`
+    const desc = `${name}${dosageInfo}${intakeInfo}`
+    return {
+      title: '💊 Medicamento essencial',
+      body: `💊 Medicamento essencial: hora do seu ${desc}${time ? ` (${time})` : ''}.`,
+    }
+  }
+}
+
 // Monta o objeto de notificação compartilhado por agendamento e nag.
 // isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
 function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
-  const title = '💊 Hora da dose'
-  const time = data?.scheduledTime
-  const body = medicineName
-    ? `Está na hora de tomar ${medicineName}${time ? ` (${time})` : ''}.`
-    : 'Está na hora da sua dose.'
+  const { title, body } = getAlarmCopy({ doseInstanceId, medicineName, data })
   return {
     id: notificationId,
     title,
@@ -250,7 +309,7 @@ export async function scheduleAlarm({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: '0', snoozeAttempt: '0' },
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: '0', snoozeAttempt: '0' },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -280,7 +339,7 @@ export async function cancelAlarm(doseInstanceId) {
  * Re-agenda um nag +5min se ignorado, máx 3 tentativas, reativamente (FR-003).
  * Respeita a tolerância da instância (D): além da janela, para de insistir.
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor?: string|number|Date,
- *           toleranceMinutes?: number|null, currentNagAttempt?: number, data?: object }} params
+ *           toleranceMinutes?: number|null, currentNagAttempt?: number, isCritical?: boolean, data?: object }} params
  */
 export async function scheduleNag({
   doseInstanceId,
@@ -288,6 +347,7 @@ export async function scheduleNag({
   scheduledFor,
   toleranceMinutes = null,
   currentNagAttempt = 0,
+  isCritical = false,
   data = {},
 }) {
   const next = currentNagAttempt + 1
@@ -306,7 +366,8 @@ export async function scheduleNag({
     doseInstanceId,
     medicineName,
     notificationId: `${doseInstanceId}:nag:${next}`,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: String(next) },
+    isCritical,
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: String(next) },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -329,6 +390,7 @@ export async function scheduleSnooze({
   scheduledFor,
   toleranceMinutes = null,
   currentSnoozeAttempt = 0,
+  isCritical = false,
   data = {},
 }) {
   // Cancela primeiro: mata o loop do som da notif atual.
@@ -342,11 +404,13 @@ export async function scheduleSnooze({
     doseInstanceId,
     medicineName,
     notificationId: doseInstanceId,
+    isCritical,
     data: {
       ...data,
       medicineName,
       scheduledFor,
       toleranceMinutes,
+      isCritical,
       nagAttempt: '0',
       snoozeAttempt: String(next),
     },
@@ -361,7 +425,12 @@ export async function scheduleSnooze({
   // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
   try {
     const repo = createDoseInstanceRepository({ client: supabase })
-    await repo.setSnoozedUntil(doseInstanceId, nextTs)
+    if (data?.isGrouped === 'true' && data?.doseInstanceIds) {
+      const ids = data.doseInstanceIds.split(',')
+      await Promise.all(ids.map((id) => repo.setSnoozedUntil(id, nextTs)))
+    } else {
+      await repo.setSnoozedUntil(doseInstanceId, nextTs)
+    }
   } catch (err) {
     if (__DEV__) console.warn('[alarmService] setSnoozedUntil falhou', doseInstanceId, err?.message)
   }

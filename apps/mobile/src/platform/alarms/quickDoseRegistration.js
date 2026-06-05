@@ -35,13 +35,42 @@ async function invalidate(keys) {
  * @param {object} data - { doseInstanceId, protocolId, medicineId, quantityTaken }
  */
 export async function registerTaken(data) {
-  const { doseInstanceId, protocolId, medicineId, quantityTaken } = data || {}
+  const { doseInstanceId, isGrouped, groupedDoses } = data || {}
   if (!doseInstanceId) return { success: false }
-  // Silenciar PRIMEIRO: o usuário agiu — para o som/notif na hora, mesmo que o
-  // registro no DB falhe depois. Sem isso, um erro de rede deixaria o alarme tocando.
+  // Silenciar PRIMEIRO: o usuário agiu — para o som/notif na hora.
   await alarmService.cancelAlarm(doseInstanceId)
   if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
-  // Coalescência nula (não `|| 1`): quantityTaken=0 deve ser respeitado, não virar 1.
+
+  if (isGrouped === 'true' && groupedDoses) {
+    let doses = []
+    try {
+      doses = JSON.parse(groupedDoses)
+    } catch {
+      // fallback
+    }
+
+    if (doses.length > 0) {
+      await Promise.all(
+        doses.map(async (d) => {
+          const quantity = d.dosagePerIntake != null ? Number(d.dosagePerIntake) : 1
+          await registerDose(
+            {
+              protocol_id: d.protocolId || null,
+              medicine_id: d.medicineId,
+              taken_at: getRawNow().toISOString(),
+              quantity_taken: quantity,
+            },
+            { instanceId: d.instanceId }
+          )
+        })
+      )
+      await invalidate(SNAPSHOTS_TAKEN)
+      return { success: true }
+    }
+  }
+
+  // Fallback para dose única
+  const { protocolId, medicineId, quantityTaken } = data || {}
   const quantity = quantityTaken != null ? Number(quantityTaken) : 1
   await registerDose(
     {
@@ -61,10 +90,28 @@ export async function registerTaken(data) {
  * @param {object} data - { doseInstanceId }
  */
 export async function registerSkip(data) {
-  const { doseInstanceId } = data || {}
+  const { doseInstanceId, isGrouped, groupedDoses } = data || {}
   if (!doseInstanceId) return { success: false }
   await alarmService.cancelAlarm(doseInstanceId) // silencia primeiro
   if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
+
+  if (isGrouped === 'true' && groupedDoses) {
+    let doses = []
+    try {
+      doses = JSON.parse(groupedDoses)
+    } catch {
+      // fallback
+    }
+
+    if (doses.length > 0) {
+      const ids = doses.map((d) => d.instanceId)
+      await supabase.from('dose_instances').update({ status: 'skipped_user' }).in('id', ids)
+      await invalidate(SNAPSHOTS_SKIP)
+      return { success: true }
+    }
+  }
+
+  // Fallback para dose única
   await supabase.from('dose_instances').update({ status: 'skipped_user' }).eq('id', doseInstanceId)
   await invalidate(SNAPSHOTS_SKIP)
   return { success: true }
@@ -79,13 +126,15 @@ export async function registerSkip(data) {
 // tolerância dinâmica, mesmo payload de re-registro. Extraído pra manter
 // handleAlarmAction abaixo do teto de complexidade (R-? lint).
 function rescheduleBase(data) {
-  const { doseInstanceId, protocolId, medicineId, quantityTaken, medicineName, toleranceMinutes } = data
+  const { doseInstanceId, toleranceMinutes, isCritical } = data
+  const isCrit = isCritical === 'true' || isCritical === true
   return {
     doseInstanceId,
-    medicineName,
+    medicineName: data.medicineName || '',
     scheduledFor: data.scheduledFor,
     toleranceMinutes: toleranceMinutes != null ? Number(toleranceMinutes) : null,
-    data: { protocolId, medicineId, quantityTaken },
+    isCritical: isCrit,
+    data: { ...data },
   }
 }
 

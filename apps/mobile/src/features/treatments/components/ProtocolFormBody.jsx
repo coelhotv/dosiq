@@ -13,7 +13,8 @@ import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import PlanSelectField from '@treatments/components/PlanSelectField'
 import { colors, spacing } from '@shared/styles/tokens'
-import { ensurePushPermission } from '@platform/notifications/pushPermission'
+import { enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 const FREQUENCY_OPTIONS = [
   { value: 'diário', label: 'Diário' },
@@ -60,7 +61,7 @@ export default function ProtocolFormBody({
   const handleCriticalAlarmToggle = useCallback(async (next) => {
     if (next) {
       // R-239: checar permissão no ponto de intenção
-      const { granted, blocked } = await ensurePushPermission()
+      const { granted, blocked } = await enablePushAtIntent({ supabase })
       if (!granted) {
         if (blocked) {
           Alert.alert(
