@@ -29,11 +29,27 @@ export async function handleStart(bot, msg) {
       return;
     }
 
-    // Try to link using token
+    // 1. Buscar preferências atuais para manter consistência
+    const { data: currentSettings } = await supabase
+      .from('user_settings')
+      .select('channel_mobile_push_enabled, notification_preference')
+      .eq('verification_token', token)
+      .single();
+
+    const isMobileEnabled = currentSettings
+      ? (currentSettings.channel_mobile_push_enabled ?? 
+         ['mobile_push', 'both'].includes(currentSettings.notification_preference))
+      : false;
+
+    const nextPreference = isMobileEnabled ? 'both' : 'telegram';
+
+    // 2. Vincular ativando o canal Telegram
     const { data: linked, error } = await supabase
       .from('user_settings')
       .update({ 
         telegram_chat_id: chatId.toString(),
+        channel_telegram_enabled: true,
+        notification_preference: nextPreference,
         verification_token: null, // Consume token
         updated_at: getServerTimestamp()
       })

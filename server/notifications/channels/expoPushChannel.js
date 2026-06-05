@@ -58,19 +58,12 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const messages = devices.map((device) => ({
     to: device.push_token,
-    // Som próprio do app (sound design). iOS: o som custom SÓ é entregue no caminho
-    // locked/background (system path) via a forma OBJETO `{ name }` do Expo — a string
-    // crua só vale como 'default', então iOS no lock screen caía no som padrão/nenhum
-    // (foreground tocava via shouldPlaySound do app, mascarando o bug). Android: o som
-    // vem do CANAL (push_chime via PUSH_CHANNEL_ID), este campo é ignorado; por isso
-    // enviamos também `channelId`. Manter o id em sync com PUSH_CHANNEL_ID do mobile.
-    sound: { name: 'push_chime.wav' },
-    // Furo de Focus/DND no iOS (antes ia como 'active', mais fraco que o alarme).
-    // NÃO fura o mudo físico — só Critical Alerts (v2). Ver bloco comentado abaixo.
-    interruptionLevel: 'time-sensitive',
+    sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
+    // Furo de Focus/DND no iOS (doses essenciais vão como 'time-sensitive', normais 'active').
+    interruptionLevel: isCriticalDose ? 'time-sensitive' : 'active',
     // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
     //     fura o mudo físico no lock screen. Trocar as 2 linhas acima por:
-    //     sound: { critical: true, name: 'push_chime.wav', volume: 1.0 },
+    //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
     channelId: 'dosiq-default-v1',
     title: payload.title,

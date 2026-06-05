@@ -153,6 +153,21 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
 }
 
 /**
+ * Auxiliar para formatar a descrição clínica do medicamento com quantidade e dosagem.
+ */
+const formatMedicineDescription = (name, qty, dosagePerPill, unit) => {
+  const parts = [name];
+  if (qty !== undefined && qty !== null) {
+    const formattedQty = String(qty).replace('.', ',');
+    parts.push(`${formattedQty} un.`);
+  }
+  if (dosagePerPill !== undefined && dosagePerPill !== null && unit) {
+    parts.push(`${dosagePerPill}${unit}`);
+  }
+  return parts.join(' ');
+};
+
+/**
  * Formata payload de lembrete de dose única.
  */
 function formatDoseReminder(data, metadata) {
@@ -161,26 +176,31 @@ function formatDoseReminder(data, metadata) {
     throw new Error(`Invalid data for dose_reminder: ${result.error.message}`);
   }
 
-  const { medicineName, time, dosage, hour, protocolId } = result.data;
+  const { medicineName, time, dosage, hour, protocolId, critical_alarm, dosagePerIntake, dosageUnit, dosagePerPill } = result.data;
   const emoji = getTimeOfDayEmoji(hour);
   const greeting = getTimeOfDayGreeting(hour);
   const title = `${emoji} ${greeting}`;
 
-  const safeName = escapeMarkdownV2(medicineName);
+  const desc = dosagePerIntake !== undefined 
+    ? formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit)
+    : (dosage ? `${medicineName} — ${dosage}` : medicineName);
+
+  const safeDesc = escapeMarkdownV2(desc);
   const safeTime = escapeMarkdownV2(time);
 
   let body, pushBody;
-  if (dosage) {
-    const safeDosage = escapeMarkdownV2(dosage);
-    body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\) — **${safeDosage}**\\.`;
-    pushBody = `Está na hora de tomar ${medicineName} (${time}) — ${dosage}.`;
+  const isCritical = critical_alarm === true;
+
+  if (isCritical) {
+    body = `💊 *Medicamento essencial*: hora do seu *${safeDesc}* \\(${safeTime}\\)\\.`;
+    pushBody = `💊 Medicamento essencial: hora do seu ${desc} (${time}).`;
   } else {
-    body = `Está na hora de tomar *${safeName}* \\(${safeTime}\\)\\.`;
-    pushBody = `Está na hora de tomar ${medicineName} (${time}).`;
+    body = `Está na hora de tomar *${safeDesc}* \\(${safeTime}\\)\\.`;
+    pushBody = `Está na hora de tomar ${desc} (${time}).`;
   }
 
   const actions = [
-    { id: 'take', label: '✅ Tomar', params: { protocolId: protocolId ?? '', dosage: dosage ?? 1 } },
+    { id: 'take', label: '✅ Tomar', params: { protocolId: protocolId ?? '', dosage: dosagePerIntake ?? 1 } },
     { id: 'skip', label: '⏭️ Pular', params: { protocolId: protocolId ?? '' } }
   ];
 
@@ -196,7 +216,7 @@ function formatDoseReminderByPlan(data, metadata) {
     throw new Error(`Invalid data for dose_reminder_by_plan: ${result.error.message}`);
   }
 
-  const { planName, planId, scheduledTime, hour, doses } = result.data;
+  const { planName, planId, scheduledTime, hour, doses, critical_alarm } = result.data;
   const emoji = getTimeOfDayEmoji(hour);
   const greeting = getTimeOfDayGreeting(hour);
   const title = `${emoji} ${greeting}`;
@@ -206,21 +226,32 @@ function formatDoseReminderByPlan(data, metadata) {
   const MAX_SHOWN = 10;
   const shown = doses.slice(0, MAX_SHOWN);
   const extra = count - shown.length;
+  const isCritical = critical_alarm === true;
+
   const doseLines = shown.map(d => {
-    const name = escapeMarkdownV2(d.medicineName || 'Medicamento');
-    const qty = escapeMarkdownV2(String(d.dosagePerIntake ?? 1));
-    return `  💊 ${name} — ${qty} cp`;
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const safeDesc = escapeMarkdownV2(desc);
+    return `  💊 ${safeDesc}`;
   }).join('\n');
 
-  let body = `*${safePlanName}*\n\n${escapeMarkdownV2(String(count))} medicamentos agora — ${safeTime}\n\n${doseLines}`;
-  if (extra > 0) {
-    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+  const plainLines = shown.map(d => {
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    return `• ${desc}`;
+  }).join('\n');
+
+  let body, pushBody;
+  if (isCritical) {
+    body = `📋 *Uso essencial*: hora dos medicamentos do plano *${safePlanName}* \\(${safeTime}\\)\\.\n\n${doseLines}`;
+    pushBody = `📋 Uso essencial: hora dos medicamentos do plano ${planName} (${scheduledTime}).\n${plainLines}`;
+  } else {
+    body = `*${safePlanName}*\n\n${escapeMarkdownV2(String(count))} medicamentos agora — ${safeTime}\n\n${doseLines}`;
+    pushBody = `Está na hora de tomar as doses do plano ${planName} (${scheduledTime}).\n${plainLines}`;
   }
 
-  const plainLines = shown.map(d =>
-    `• ${d.medicineName} — ${d.dosagePerIntake ?? 1} cp`
-  ).join('\n');
-  const pushBody = `Está na hora de tomar as doses do plano ${planName} (${scheduledTime}).\n${plainLines}${extra > 0 ? `\n… e mais ${extra}` : ''}`;
+  if (extra > 0) {
+    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+    pushBody += `\n… e mais ${extra}`;
+  }
 
   const planIdShort = String(planId ?? '').slice(0, 8);
   const actions = [
@@ -239,7 +270,7 @@ function formatDoseReminderMisc(data, metadata) {
     throw new Error(`Invalid data for dose_reminder_misc: ${result.error.message}`);
   }
 
-  const { scheduledTime, hour, doses } = result.data;
+  const { scheduledTime, hour, doses, critical_alarm } = result.data;
   const emoji = getTimeOfDayEmoji(hour);
   const greeting = getTimeOfDayGreeting(hour);
   const title = `${emoji} ${greeting}`;
@@ -248,22 +279,32 @@ function formatDoseReminderMisc(data, metadata) {
   const MAX_SHOWN = 10;
   const shown = doses.slice(0, MAX_SHOWN);
   const extra = count - shown.length;
+  const isCritical = critical_alarm === true;
 
   const doseLines = shown.map(d => {
-    const name = escapeMarkdownV2(d.medicineName || 'Medicamento');
-    const qty = escapeMarkdownV2(String(d.dosagePerIntake ?? 1));
-    return `  • ${name} — ${qty} cp`;
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const safeDesc = escapeMarkdownV2(desc);
+    return `  • ${safeDesc}`;
   }).join('\n');
 
-  let body = `*Suas doses agora* — ${safeTime}\n\n${escapeMarkdownV2(String(count))} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''}:\n\n${doseLines}`;
-  if (extra > 0) {
-    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+  const plainLines = shown.map(d => {
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    return `• ${desc}`;
+  }).join('\n');
+
+  let body, pushBody;
+  if (isCritical) {
+    body = `💊 *Doses essenciais* pendentes para as *${safeTime}*\\.\n\n${doseLines}`;
+    pushBody = `💊 Doses essenciais pendentes para as ${scheduledTime}:\n${plainLines}`;
+  } else {
+    body = `*Suas doses agora* — ${safeTime}\n\n${escapeMarkdownV2(String(count))} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''}:\n\n${doseLines}`;
+    pushBody = `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} (${scheduledTime}):\n${plainLines}`;
   }
 
-  const plainLines = shown.map(d =>
-    `• ${d.medicineName} — ${d.dosagePerIntake ?? 1} cp`
-  ).join('\n');
-  const pushBody = `${count} medicamento${count !== 1 ? 's' : ''} pendente${count !== 1 ? 's' : ''} (${scheduledTime}):\n${plainLines}${extra > 0 ? `\n… e mais ${extra}` : ''}`;
+  if (extra > 0) {
+    body += `\n  _… e mais ${escapeMarkdownV2(String(extra))}_`;
+    pushBody += `\n… e mais ${extra}`;
+  }
 
   const hhmm = scheduledTime;
   const actions = [
