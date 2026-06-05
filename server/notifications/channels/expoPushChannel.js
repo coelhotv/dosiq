@@ -65,7 +65,7 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
     //     fura o mudo físico no lock screen. Trocar as 2 linhas acima por:
     //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
-    channelId: 'dosiq-default-v1',
+    channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
     title: payload.title,
     body: payload.pushBody || payload.body,
     data: {

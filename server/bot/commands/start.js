@@ -36,10 +36,13 @@ export async function handleStart(bot, msg) {
       .eq('verification_token', token)
       .single();
 
-    const isMobileEnabled = currentSettings
-      ? (currentSettings.channel_mobile_push_enabled ?? 
-         ['mobile_push', 'both'].includes(currentSettings.notification_preference))
-      : false;
+    if (!currentSettings) {
+      await bot.sendMessage(chatId, '❌ Código inválido ou expirado. Por favor, gere um novo código no app.');
+      return;
+    }
+
+    const isMobileEnabled = currentSettings.channel_mobile_push_enabled ?? 
+       ['mobile_push', 'both'].includes(currentSettings.notification_preference);
 
     const nextPreference = isMobileEnabled ? 'both' : 'telegram';
 

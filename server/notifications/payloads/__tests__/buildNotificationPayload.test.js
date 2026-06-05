@@ -91,6 +91,22 @@ describe('buildNotificationPayload', () => {
       expect(payload.body).toContain('— **3 cp**');
       expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 1200mg (12:00) — 3 cp.');
     });
+
+    it('should generate clinical description name (dosageperpill unit) - qty un. for single dose', () => {
+      const data = {
+        medicineName: 'Dipirona',
+        time: '12:00',
+        dosagePerIntake: 2,
+        dosagePerPill: 500,
+        dosageUnit: 'mg',
+        critical_alarm: true
+      };
+
+      const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
+      // Dipirona (500mg) - 2 un.
+      expect(payload.pushBody).toBe('💊 Medicamento essencial: hora do seu Dipirona (500mg) - 2 un. (12:00).');
+      expect(payload.body).toContain('💊 *Medicamento essencial*: hora do seu *Dipirona \\(500mg\\) \\- 2 un\\.* \\(12:00\\)\\.');
+    });
   });
 
   describe('dose_reminder_by_plan', () => {

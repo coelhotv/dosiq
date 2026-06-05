@@ -211,6 +211,7 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].sound).toEqual({ name: 'alarm_dose.wav' })
     expect(messages[0].interruptionLevel).toBe('time-sensitive')
+    expect(messages[0].channelId).toBe('dosiq-critical-v1')
   })
 
   it('deve usar som push_chime.wav e active para dose normal', async () => {
@@ -234,5 +235,6 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
     expect(messages[0].sound).toEqual({ name: 'push_chime.wav' })
     expect(messages[0].interruptionLevel).toBe('active')
+    expect(messages[0].channelId).toBe('dosiq-default-v1')
   })
 })
