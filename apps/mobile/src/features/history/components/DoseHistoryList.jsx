@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO } from '@dosiq/core'
 import { ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
@@ -35,7 +35,10 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
           minute: '2-digit',
         }).format(parseISO(item.scheduled_for))
       } catch {
-        return parseISO(item.scheduled_for).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        const d = parseISO(item.scheduled_for)
+        const hh = String(d.getHours()).padStart(2, '0')
+        const min = String(d.getMinutes()).padStart(2, '0')
+        return `${hh}:${min}`
       }
     })()
 
@@ -61,7 +64,13 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
           </View>
           {item.dosage_per_intake != null && (
             <Text style={styles.subtitle} numberOfLines={1}>
-              {item.dosage_per_intake} {item.dosage_per_intake === 1 ? 'comprimido' : 'comprimidos'}
+              {(() => {
+                const qty = item.dosage_per_intake
+                const unit = item.dosage_unit?.toLowerCase()
+                if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
+                if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
+                return `${qty} ${item.dosage_unit}`
+              })()}
             </Text>
           )}
         </View>
@@ -70,22 +79,24 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
     )
   }
 
-  const renderEmpty = () => (
-    <View style={styles.empty}>
-      <Text style={styles.emptyText}>Nada por aqui</Text>
-    </View>
-  )
+  if (sorted.length === 0) {
+    return (
+      <View style={[styles.list, styles.emptyContent]}>
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Nada por aqui</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
-    <FlatList
-      data={sorted}
-      keyExtractor={(item, index) => item.id ?? index.toString()}
-      renderItem={renderItem}
-      ListEmptyComponent={renderEmpty}
-      scrollEnabled={false}
-      style={styles.list}
-      contentContainerStyle={sorted.length === 0 ? styles.emptyContent : undefined}
-    />
+    <View style={styles.list}>
+      {sorted.map((item, index) => (
+        <React.Fragment key={item.id ?? index.toString()}>
+          {renderItem({ item, index })}
+        </React.Fragment>
+      ))}
+    </View>
   )
 }
 

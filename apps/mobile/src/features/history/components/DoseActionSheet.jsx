@@ -33,7 +33,13 @@ function formatInTz(isoStr, tz) {
       minute: '2-digit',
     }).format(parseISO(isoStr))
   } catch {
-    return parseISO(isoStr).toLocaleString('pt-BR')
+    const d = parseISO(isoStr)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`
   }
 }
 
@@ -46,7 +52,10 @@ function formatTimeInTz(isoStr, tz) {
       minute: '2-digit',
     }).format(parseISO(isoStr))
   } catch {
-    return parseISO(isoStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const d = parseISO(isoStr)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${min}`
   }
 }
 
@@ -151,6 +160,7 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPicker
           onChangeText={onChangeQty}
           keyboardType="decimal-pad"
           editable={!loading}
+          maxLength={10}
         />
         {instance?.dosage_per_pill && instance?.dosage_unit && (
           <Text style={styles.inputHint}>
@@ -323,7 +333,13 @@ export default function DoseActionSheet({
                 </View>
                 {instance?.dosage_per_intake != null && (
                   <Text style={styles.headerSub}>
-                    {instance.dosage_per_intake} {instance.dosage_per_intake === 1 ? 'comprimido' : 'comprimidos'}
+                    {(() => {
+                      const qty = instance.dosage_per_intake
+                      const unit = instance.dosage_unit?.toLowerCase()
+                      if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
+                      if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
+                      return `${qty} ${instance.dosage_unit}`
+                    })()}
                   </Text>
                 )}
               </View>
