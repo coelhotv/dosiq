@@ -1,6 +1,9 @@
 // Testes para dispatchNotification
 // Cobre coexistência de canais, isolamento de falhas e casos-limite
 
+process.env.VAPID_PUBLIC_KEY = 'mock-public-key'
+process.env.VAPID_PRIVATE_KEY = 'mock-private-key'
+
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest'
 import { dispatchNotification } from './dispatchNotification.js'
 
@@ -29,11 +32,12 @@ vi.mock('../../utils/dateUtils.js', async (importOriginal) => {
   }
 })
 
-const mockPayload = {
-  title: '💊 Lembrete de nova dose',
-  body: 'Está na hora de tomar 1x de Medicamento Teste. Não deixe para depois!',
-  deeplink: 'dosiq://today?protocolId=prot-123',
-  metadata: { protocolId: 'prot-123' }
+const mockData = {
+  medicineName: 'Medicamento Teste',
+  time: '12:00',
+  dosage: '1 cp',
+  protocolId: 'prot-123',
+  hour: 12
 }
 
 const makeContext = () => ({ correlationId: 'test-corr-123' })
@@ -87,7 +91,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-1',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['telegram', 'mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -109,7 +113,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-2',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['telegram', 'mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -136,7 +140,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-3',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -158,7 +162,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-4',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: [],
       context: makeContext(),
       repositories: mockRepositories,
@@ -180,7 +184,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-5',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['mobile_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -201,7 +205,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-6',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['web_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -228,7 +232,7 @@ describe('dispatchNotification', () => {
     const result = await dispatchNotification({
       userId: 'user-7',
       kind: 'dose_reminder',
-      payload: mockPayload,
+      data: mockData,
       channels: ['web_push'],
       context: makeContext(),
       repositories: mockRepositories,
@@ -240,5 +244,29 @@ describe('dispatchNotification', () => {
     expect(result.channels[0].success).toBe(false)
     expect(result.channels[0].deactivatedTokens).toContain(mockToken)
     expect(result.totalFailed).toBe(1)
+  })
+
+  // Caso 8: dose essencial/crítica fura preferências e garante mobile_push
+  it('caso 8: dose essencial/crítica fura preferências e garante mobile_push', async () => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      channel_mobile_push_enabled: false,
+      channel_telegram_enabled: false
+    })
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[abc]' }])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    const result = await dispatchNotification({
+      userId: 'user-8',
+      kind: 'dose_reminder',
+      data: { ...mockData, critical_alarm: true },
+      channels: [],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.channels.map(c => c.channel)).toContain('mobile_push')
+    expect(result.totalDelivered).toBe(1)
   })
 })

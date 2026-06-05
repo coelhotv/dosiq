@@ -24,7 +24,7 @@ function resolveLegacy(preference, hasTelegram, activeExpoDevices) {
   return []
 }
 
-export async function resolveChannelsForUser({ userId, repositories }) {
+export async function resolveChannelsForUser({ userId, repositories, isCritical = false }) {
   const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
   if (userId === SYSTEM_USER_ID) return ['telegram']
 
@@ -36,10 +36,18 @@ export async function resolveChannelsForUser({ userId, repositories }) {
     ? await repositories.preferences.getSettingsByUserId(userId)
     : null
 
+  let channels = []
   if (settings?.channel_mobile_push_enabled !== undefined && settings?.channel_telegram_enabled !== undefined) {
-    return resolveWaveN2(settings, activeExpoDevices, activeWebDevices, hasTelegram)
+    channels = resolveWaveN2(settings, activeExpoDevices, activeWebDevices, hasTelegram)
+  } else {
+    const preference = await repositories.preferences.getByUserId(userId)
+    channels = resolveLegacy(preference, hasTelegram, activeExpoDevices)
   }
 
-  const preference = await repositories.preferences.getByUserId(userId)
-  return resolveLegacy(preference, hasTelegram, activeExpoDevices)
+  // Se for dose essencial/crítica, fura preferências e garante envio de push
+  if (isCritical && activeExpoDevices.length > 0 && !channels.includes('mobile_push')) {
+    channels.push('mobile_push')
+  }
+
+  return channels
 }

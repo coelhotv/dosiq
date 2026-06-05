@@ -39,8 +39,17 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
   
   // Resolve channels if not provided
   let validChannels = parsed.data.channels
+  const isCritical = ['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'].includes(kind) && data?.critical_alarm === true
+
   if (validChannels.length === 0) {
-    validChannels = await resolveChannelsForUser({ userId, repositories })
+    validChannels = await resolveChannelsForUser({ userId, repositories, isCritical })
+  } else if (isCritical) {
+    // Se o canal foi passado de forma explícita mas é uma dose essencial/crítica,
+    // garante que 'mobile_push' esteja presente se o usuário possuir dispositivos ativos.
+    const activeExpoDevices = await repositories.devices.listActiveByUser(userId, 'expo')
+    if (activeExpoDevices.length > 0 && !validChannels.includes('mobile_push')) {
+      validChannels = [...validChannels, 'mobile_push']
+    }
   }
 
   // dispatcher sempre chama o builder internamente. Callers passam apenas { kind, data, context }.

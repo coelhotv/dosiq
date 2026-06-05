@@ -265,4 +265,52 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
     expect(result).toEqual(['telegram'])
     expect(repos.preferences.getByUserId).toHaveBeenCalled()
   })
+
+  describe('com isCritical = true (bypass de preferências)', () => {
+    it('deve forçar mobile_push mesmo com preferência = none se houver device ativo', async () => {
+      const repos = makeRepositories()
+      repos.preferences.hasTelegramChat.mockResolvedValue(false)
+      repos.preferences.getSettingsByUserId.mockResolvedValue({
+        channel_mobile_push_enabled: false,
+        channel_web_push_enabled: false,
+        channel_telegram_enabled: false,
+      })
+      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+        type === 'expo' ? [{ id: 'dev-1' }] : []
+      )
+
+      const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
+      expect(result).toEqual(['mobile_push'])
+    })
+
+    it('não deve forçar mobile_push se isCritical = true mas não houver device ativo', async () => {
+      const repos = makeRepositories()
+      repos.preferences.hasTelegramChat.mockResolvedValue(false)
+      repos.preferences.getSettingsByUserId.mockResolvedValue({
+        channel_mobile_push_enabled: false,
+        channel_web_push_enabled: false,
+        channel_telegram_enabled: false,
+      })
+      repos.devices.listActiveByUser.mockResolvedValue([])
+
+      const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
+      expect(result).toEqual([])
+    })
+
+    it('deve preservar outros canais ativos e adicionar mobile_push se isCritical = true', async () => {
+      const repos = makeRepositories()
+      repos.preferences.hasTelegramChat.mockResolvedValue(true)
+      repos.preferences.getSettingsByUserId.mockResolvedValue({
+        channel_mobile_push_enabled: false,
+        channel_web_push_enabled: false,
+        channel_telegram_enabled: true,
+      })
+      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+        type === 'expo' ? [{ id: 'dev-1' }] : []
+      )
+
+      const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
+      expect(result).toEqual(['telegram', 'mobile_push'])
+    })
+  })
 })
