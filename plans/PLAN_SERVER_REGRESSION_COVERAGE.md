@@ -32,7 +32,7 @@ Root cause comum: **ausência de gate de smoke serverless**. O `validate:agent` 
 
 Importa os módulos críticos do servidor em Node puro. Falha rápido se qualquer import quebrar (como falta de WebSocket global).
 
-*Nota: Veja o arquivo implementado em [smoke-server.mjs](file:///Users/coelhotv/git/dosiq/scripts/smoke-server.mjs).*
+*Nota: Veja o arquivo implementado em [smoke-server.mjs](../scripts/smoke-server.mjs).*
 
 ---
 
