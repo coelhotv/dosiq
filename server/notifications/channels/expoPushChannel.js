@@ -58,11 +58,13 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const messages = devices.map((device) => ({
     to: device.push_token,
-    sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
+    sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
     // Furo de Focus/DND no iOS (doses essenciais vão como 'time-sensitive', normais 'active').
     interruptionLevel: isCriticalDose ? 'time-sensitive' : 'active',
+    // --- v1 (configuração com objeto que exige permissão especial de Critical Alerts no iOS):
+    // sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
     // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
-    //     fura o mudo físico no lock screen. Trocar as 2 linhas acima por:
+    //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
     //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
     channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
