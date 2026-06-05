@@ -6,7 +6,7 @@
 **Tier**: 1 (feature mobile; reusa `dose_instances` + `registerDose` + repo core)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:
-- `PHASE_5_6_PARITY_AND_BEYOND.md` §M1.1 (consolidação unificada)
+- `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §M1.1 (consolidação unificada)
 - `plans/backlog-native_app/EXEC_SPEC_FASE5_ANALITICAS.md` §1 (**fonte original CRUD + decisões PO + mocks**)
 **Mocks (PO-aprovados)**: `plans/backlog-native_app/MOCKS_APP_CRUD/export/fase-5/` — `mock-historico-doses.png`, `mock-historico-semdoses.png`, `mock-historico-doses-sheet.png`, `mock-historico-doses-sheet-apagar.png`; código: `dosiq-mocks/analytics-screens.jsx`.
 

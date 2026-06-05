@@ -62,6 +62,9 @@ export const ROUTES = {
   STOCK_ADJUSTMENT: 'StockAdjustment',
   // ❌ PURCHASE_DELETE removido (PO-1 — Fase 3 não tem exclusão de compra)
 
+  // Histórico de doses (Fase X)
+  DOSE_HISTORY: 'DoseHistory',
+
   // Dev-only (apenas __DEV__)
   DEV_HUB: 'DevHub',
   STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
