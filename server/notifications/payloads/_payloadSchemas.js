@@ -118,8 +118,10 @@ export const doseReminderDataSchema = z.object({
   dosage: z.string().optional(), // Pre-formatted dosage string
   dosagePerIntake: z.number().optional(),
   dosageUnit: z.string().optional(),
+  dosagePerPill: z.number().nullable().optional(),
   protocolId: z.string().optional(),
-  hour: z.number().min(0).max(23).optional()
+  hour: z.number().min(0).max(23).optional(),
+  critical_alarm: z.boolean().optional()
 });
 
 export const doseReminderByPlanDataSchema = z.object({
@@ -127,22 +129,28 @@ export const doseReminderByPlanDataSchema = z.object({
   planId: z.string().optional(),
   scheduledTime: z.string(),
   hour: z.number().min(0).max(23),
+  critical_alarm: z.boolean().optional(),
   doses: z.array(z.object({
     medicineName: z.string(),
     dosagePerIntake: z.number().max(100),
     dosageUnit: z.string().optional(),
-    protocolId: z.string().optional()
+    dosagePerPill: z.number().nullable().optional(),
+    protocolId: z.string().optional(),
+    critical_alarm: z.boolean().optional()
   }))
 });
 
 export const doseReminderMiscDataSchema = z.object({
   scheduledTime: z.string(),
   hour: z.number().min(0).max(23),
+  critical_alarm: z.boolean().optional(),
   doses: z.array(z.object({
     medicineName: z.string(),
     dosagePerIntake: z.number().max(100),
     dosageUnit: z.string().optional(),
-    protocolId: z.string().optional()
+    dosagePerPill: z.number().nullable().optional(),
+    protocolId: z.string().optional(),
+    critical_alarm: z.boolean().optional()
   })),
   protocolIds: z.array(z.string()).optional()
 });

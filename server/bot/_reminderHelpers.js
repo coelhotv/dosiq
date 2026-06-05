@@ -95,7 +95,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
     id, user_id, protocol_id, critical_alarm,
     protocol:protocols(
       id, name, dosage_per_intake, treatment_plan_id, medicine_id,
-      medicine:medicines(name, dosage_unit),
+      medicine:medicines(name, dosage_unit, dosage_per_pill),
       treatment_plan:treatment_plans(id, name)
     )
   `;
@@ -195,13 +195,24 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           treatmentPlanName: inst.protocol?.treatment_plan?.name ?? null,
           dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
           dosageUnit: inst.protocol?.medicine?.dosage_unit,
+          dosagePerPill: inst.protocol?.medicine?.dosage_per_pill ?? null,
           medicineId: inst.protocol?.medicine_id,
           critical_alarm: inst.critical_alarm ?? false,
         }));
 
         if (dosesNow.length === 0) continue;
 
-        const blocks = partitionDoses(dosesNow);
+        // Pré-separar doses críticas de normais (US2)
+        const criticalDoses = dosesNow.filter(d => d.critical_alarm === true);
+        const nonCriticalDoses = dosesNow.filter(d => !d.critical_alarm);
+
+        const blocks = [];
+        if (criticalDoses.length > 0) {
+          blocks.push(...partitionDoses(criticalDoses));
+        }
+        if (nonCriticalDoses.length > 0) {
+          blocks.push(...partitionDoses(nonCriticalDoses));
+        }
         const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
         const currentHour = parseInt(
           parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
