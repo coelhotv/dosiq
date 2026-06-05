@@ -178,7 +178,10 @@ export async function undoDose(instanceId) {
     const tolMs = (instance.tolerance_minutes ?? 30) * 60 * 1000
     const newStatus = now > scheduledMs + tolMs ? 'missed' : 'pending'
 
-    await doseInstanceRepo.revertToUnregistered(instanceId, newStatus)
+    const reverted = await doseInstanceRepo.revertToUnregistered(instanceId, newStatus)
+    if (!reverted) {
+      return { success: false, error: 'Não foi possível reverter o status da dose. O registro pode já ter sido alterado.' }
+    }
 
     await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: instance.medicine_id })
     return { success: true }

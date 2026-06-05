@@ -86,8 +86,8 @@ describe('undoDose', () => {
     expect(result.success).toBe(true)
     expect(mockRepository.revertToUnregistered).toHaveBeenCalledWith('inst-1')
     expect(supabase.rpc).toHaveBeenCalledWith('restore_stock_for_log', {
-      p_log_id: 'log-1',
-      p_user_id: 'user-123',
+      p_medicine_log_id: 'log-1',
+      p_reason: 'dose_deleted_restore',
     })
     expect(mockFrom).toHaveBeenCalledWith('medicine_logs')
     expect(mockDelete).toHaveBeenCalled()

@@ -74,8 +74,10 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [] 
   const monthLabel = useMemo(() => getMonthLabel(currentWeekStart), [currentWeekStart])
 
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_evt, gestureState) => (
+      Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 5
+    ),
     onPanResponderRelease: (_evt, gestureState) => {
       const { dx } = gestureState
       if (dx > 40) setCurrentWeekStart(prev => shiftDays(prev, -7))
