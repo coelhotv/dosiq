@@ -27,6 +27,7 @@ module.exports = function (api) {
             '@notifications': './src/features/notifications',
             '@treatments': './src/features/treatments',
             '@dose': './src/features/dose',
+            '@history': './src/features/history',
           },
         },
       ],

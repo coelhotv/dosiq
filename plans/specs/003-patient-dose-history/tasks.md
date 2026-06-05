@@ -1,35 +1,98 @@
 # Tasks: Histórico de Doses do Paciente (Mobile)
 
 **Feature Directory**: `plans/specs/003-patient-dose-history`
-**Input**: `spec.md`, `plan.md` · **Status**: Dev Ready · **Tier**: 1
+**Input**: `spec.md`, `plan.md` · **Revised**: 2026-06-04 · **Status**: Dev Ready · **Tier**: 1
 
 ---
 
-## Phase 0 — Reality Gates (C1)
-- [ ] T001 [C1] Build nativa (`rtk expo run:*`, não Expo Go).
-- [ ] T002 [C1] **GATE**: confirmar métodos de `createDoseInstanceRepository` (`@dosiq/core`); se faltar leitura por range de datas, estender o repo (não inventar `doseInstanceRepository.js`).
-- [ ] T003 [C1] **GATE**: ler `registerDose` (`doseService.js:136`) + `logSchema` → payload mínimo. Verificar se existe `undoDose`/delete de log ancorado; senão, planejar criar reusando o rollback do service.
+## Phase 0 — C1 Reality Gates (ANTES de qualquer código)
 
-## Phase 1 — UI
-- [ ] T004 [US1] `HistoryScreen.jsx` [NEW] (`features/history`) — agrega KPIs + WeekCalendar + lista.
-- [ ] T005 [US1] `WeekCalendar.jsx` — semanal navegável (setas+swipe), coluna clicável ≥60px (PO-4), dots 3 estados, pill teal (`mock-historico-doses.png`).
-- [ ] T006 [US1] `DoseHistoryKpis.jsx` — 3 cards (Adesão 30d · Sequência · Doses mês).
-- [ ] T006b [US1] `DoseHistoryList.jsx` — virtualizada, chips por status; empty "Nada por aqui" (PO-3, `mock-historico-semdoses.png`); reusa derivações de `_useTodayDerived.js`.
-- [ ] T006c [US1] Entry point "Histórico de Doses" no Perfil hub › Ferramentas (`mock-perfil-entrypoints`).
+- [ ] T001 [C1] Verificar se RPC `unconsumeStockFifo` existe no Supabase (MCP `list_tables` + `execute_sql`). Resultado determina implementação de `undoDose`.
+- [ ] T002 [C1] Grep `AsyncStorage.set\|dosiq_today_data` em `apps/mobile/src/features/dashboard/hooks/useTodayData.js` — identificar chave de cache a invalidar após mutação.
+- [ ] T003 [C1] Ler `logSchema` em `packages/core/src/schemas/logSchema.js` — confirmar payload mínimo de `registerDose` (especialmente `taken_at` formato esperado).
+- [ ] T004 [C1] Ler `Navigation.jsx` — confirmar estrutura do `ProfileStack` para registrar nova tela.
 
-## Phase 2 — Mutação
-- [ ] T007 [US2] `DoseActionSheet.jsx` — retroativo via `registerDose({...,taken_at},{instanceId})`.
-- [ ] T008 [US2] `undoDose(instanceId)` no `doseService` (delete log ancorado + revert status) — reusa rollback existente. Skip → só revert status.
-- [ ] T009 [US2] Invalidar `@dosiq/dose-instances-snapshot` + `@dosiq/adherence-snapshot` após mutação.
+## Phase 1 — Core (packages/core)
 
-## Phase 3 — Validation (C4)
-- [ ] T010 [P] [C4] Testes: retroativo cria log+consumo+ancora; desfazer remove log+reverte; sem `taken_at` em `dose_instances`.
-- [ ] T011 [C4] `rtk lint` + `rtk npm run validate:agent`.
-- [ ] T012 [C4] Smoke PO: ≥55fps; sync <200ms pós-mutação.
+- [ ] T010 Adicionar `getById(instanceId)` em `createDoseInstanceRepository.js` — retorna linha completa incluindo `medicine_log_id`, `status`, `scheduled_for`, `tolerance_minutes`.
+- [ ] T011 Adicionar `revertToUnregistered(instanceId, newStatus)` em `createDoseInstanceRepository.js` — UPDATE `status=newStatus, medicine_log_id=null`. Aceita `'pending'|'missed'`.
 
-## Phase 4 — Record (C5)
-- [ ] T013 [C5] SQP R-221 (minor mobile+core), bump + CHANGELOG + store-note.
-- [ ] T014 [C5] events/journal/state; PR; Gemini + aprovação humana (R-060).
+## Phase 2 — Service Layer (mobile)
+
+- [ ] T020 Adicionar `undoDose(instanceId)` em `doseService.js`:
+  - Buscar instância via `getById`
+  - Se `medicine_log_id`: rollback estoque + delete `medicine_logs`
+  - Determinar `newStatus` por hora local vs `scheduled_for + tolerance_minutes`
+  - Chamar `revertToUnregistered`
+  - Retornar `{ success, error }`
+- [ ] T021 Criar `useHistoryData.js` — fetch `dose_instances` janela 30d via `getDoseInstancesForPeriod` (ou novo fetch dedicado), KPIs via `computeAdherenceFromInstances` + `computeStreakFromInstances`, agrupamento por dia selecionado.
+- [ ] T022 Criar `useHistoryMutation.js` — wrapper de `registerDose` retroativo + `undoDose` + invalidação de cache (chamar `refresh` do dashboard ou limpar AsyncStorage).
+
+## Phase 3 — UI Components
+
+- [ ] T030 [US1] Criar `WeekCalendar.jsx`:
+  - 7 dias navegáveis (setas ← →)
+  - Swipe horizontal (`PanGestureHandler`, threshold 10px)
+  - Coluna inteira clicável `minHeight: 60` (PO-4, a11y idoso)
+  - Dot 3 estados: full teal / partial amarelo / none cinza
+  - Dia selecionado = pill teal
+  - Ref: `mock-historico-doses.png`
+
+- [ ] T031 [US1] Criar `DoseHistoryKpis.jsx`:
+  - 3 cards: `Adesão · 30d`, `Sequência (dias)`, `Doses · mês`
+  - Dados via `useHistoryData`
+
+- [ ] T032 [US1] Criar `DoseHistoryList.jsx`:
+  - Lista cronológica por período (Manhã/Tarde/Noite/Madrugada)
+  - Chips por status (`taken`/`missed`/`pending`/`skipped_user`)
+  - Header `<dia>, <data> · N doses`
+  - Empty state "Nada por aqui" quando dia sem doses (PO-3, `mock-historico-semdoses.png`)
+  - `FlatList` para listas longas (R-115 threshold 30+)
+
+- [ ] T033 [US2] Criar `DoseActionSheet.jsx` (PO-5, `mock-historico-doses-sheet.png`):
+  - Modal com `statusBarTranslucent` + spacer (R-233)
+  - Ação "Editar registro" → abre sub-form (hora + dose tomada)
+  - Ação "Excluir registro" → abre sub-sheet de confirmação (`mock-historico-doses-sheet-apagar.png`)
+  - Sub-sheet excluir: motivo opcional; confirmar → `undoDose(instanceId)` + invalidar cache
+  - Sub-form editar: `taken_at` + `quantity_taken` retroativo → `registerDose` + invalidar cache
+  - Sem "Marcar não tomada" (PO-5 removida)
+  - `flexShrink: 1` na lista interna (AP-180)
+
+## Phase 4 — Navegação & Entry Point
+
+- [ ] T040 [FR-006] Adicionar `ROUTES.DOSE_HISTORY = 'DoseHistory'` em `routes.js`
+- [ ] T041 Registrar `HistoryScreen` no `ProfileStack` em `Navigation.jsx` com rota `ROUTES.DOSE_HISTORY`
+- [ ] T042 [FR-006] Criar `HistoryScreen.jsx` — orquestra `DoseHistoryKpis` + `WeekCalendar` + `DoseHistoryList` + `DoseActionSheet`
+- [ ] T043 [FR-006] Adicionar seção "FERRAMENTAS" + item "Histórico de Doses" + `ChevronRight` em `ProfileScreen.jsx` (navega para `ROUTES.DOSE_HISTORY`)
+
+## Phase 5 — Validação (C4)
+
+- [ ] T050 [C4] [US2] Teste unitário `undoDose`: mock `getById` + delete log + `revertToUnregistered`; caso dose sem log (skip) → só revert status
+- [ ] T051 [C4] [US2] Teste `revertToUnregistered`: status correto (pending vs missed) baseado em hora
+- [ ] T052 [C4] Teste `useHistoryMutation`: `registerDose` retroativo cria log + ancora; `undoDose` reverte
+- [ ] T053 [C4] `rtk lint` — zero erros
+- [ ] T054 [C4] `rtk npm run validate:agent` (kill switch 600s)
+- [ ] T055 [C4] Smoke PO: ≥55fps na rolagem/troca de dias; sync <200ms pós-mutação retroativa
+
+## Phase 6 — Record (C5)
+
+- [ ] T060 [C5] SQP R-221: bump versão mobile (`app.config.js` + `package.json`), CHANGELOG [Unreleased] PT, store-note: "Nova tela Histórico de Doses"
+- [ ] T061 [C5] Atualizar `events.jsonl` + journal DEVFLOW
+- [ ] T062 [C5] Atualizar `state.json` (status=completed, journal_entries++)
+- [ ] T063 [C5] Push + PR (aguardar Gemini review + aprovação humana — R-060)
+
+---
 
 ## Traceability
-FR-001→T005 · FR-002→T002/T006 · FR-003→T007/T008 · FR-004→T009.
+
+| FR | Tasks |
+|---|---|
+| FR-001 WeekCalendar | T030 |
+| FR-002 Lista dose_instances | T021, T032 |
+| FR-003 KPIs | T031 |
+| FR-004 Bottom sheet Editar/Excluir | T033 |
+| FR-005 Empty state "Nada por aqui" | T032 |
+| FR-006 Entry point Perfil › Ferramentas | T040–T043 |
+| FR-007 Invalidação snapshots | T022 |
+| SC-001 ≥55fps | T055 |
+| SC-002 <200ms sync | T055 |

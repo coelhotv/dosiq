@@ -421,5 +421,40 @@ export function createDoseInstanceRepository({ client }) {
 
       if (error) throw error
     },
+
+    /**
+     * Retorna instância completa por ID (incluindo medicine_log_id, scheduled_for, tolerance_minutes).
+     * @param {string} instanceId
+     * @returns {Promise<object|null>}
+     */
+    async getById(instanceId) {
+      const { data, error } = await client
+        .from(TABLE)
+        .select('*')
+        .eq('id', instanceId)
+        .single()
+
+      if (error) throw error
+      return data
+    },
+
+    /**
+     * Reverte instância para status não-registrado: status = newStatus, medicine_log_id = null.
+     * Só executa se status atual for 'taken' (guarda contra double-revert).
+     * @param {string} instanceId
+     * @param {'pending'|'missed'} newStatus
+     * @returns {Promise<boolean>} true se linha foi atualizada
+     */
+    async revertToUnregistered(instanceId, newStatus) {
+      const { data, error } = await client
+        .from(TABLE)
+        .update({ status: newStatus, medicine_log_id: null })
+        .eq('id', instanceId)
+        .eq('status', 'taken')
+        .select('id')
+
+      if (error) throw error
+      return !!(data && data.length > 0)
+    },
   }
 }

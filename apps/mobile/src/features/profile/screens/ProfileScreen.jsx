@@ -153,7 +153,23 @@ export default function ProfileScreen() {
 
         <TzNudgeCard />
 
-        {/* Ordem (PO feedback #6): AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
+        {/* Ordem (PO feedback #6): FERRAMENTAS → AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>FERRAMENTAS</Text>
+          <View style={[styles.card, { paddingVertical: 0 }]}>
+            <TouchableOpacity
+              style={styles.otherRow}
+              onPress={() => navigation.navigate(ROUTES.DOSE_HISTORY)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabel}>Histórico de Doses</Text>
+              </View>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>AVISOS & LEMBRETES</Text>
           <TouchableOpacity
