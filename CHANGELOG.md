@@ -9,6 +9,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Shared/Core
+- **Fixed** (`patch`, PR #TBD): Corrigido `wipeFuturePending` e `wipeFuturePendingForProtocols` no repositório de instâncias de dose para deletar também instâncias com status `skipped_paused` no futuro. Isso garante que edições de agendamento ou propriedades (como `critical_alarm`) realizadas em tratamentos pausados limpem corretamente as instâncias futuras de 24h que estavam pausadas.
+
+### Mobile (0.13.0 → 0.13.1)
+- **Fixed** (`patch`, PR #TBD): Corrigido o bug onde a reativação de um tratamento pausado, após alteração em suas propriedades de criticidade ou horários, não agendava corretamente os alarmes críticos locais nas primeiras 24h por conta de instâncias obsoletas `skipped_paused` residuais.
+
+### Web/PWA (4.1.5 → 4.1.6)
+- **Fixed** (`patch`, PR #TBD): Atualizado para compatibilidade com a versão mais recente do Shared/Core.
+
 ### Mobile (0.12.0 → 0.13.0)
 - **Alarmes Críticos Locais, Supressão de Pushes e Melhoria de Usabilidade** (Minor, Spec 025):
   - Habilitada a flag `native_alarm_enabled` por padrão para iOS e Android para supressão automática de pushes remotos de doses críticas e prevenção de duplicidades.
