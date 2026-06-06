@@ -17,6 +17,29 @@
 - [x] **T014** [C4] Executar testes do app mobile e validar funcionamento dos handlers de doses e lote
 - [x] **T015** [C4] Rodar suite completa de validação `rtk npm run validate:agent` e `rtk lint`
 - [x] **T016** [C5] Executar bump de versão em `apps/mobile/app.config.js`
-- [ ] **T017** [C5] Atualizar `CHANGELOG.md` na seção `[Unreleased]` em português
-- [ ] **T018** [C5] Registrar logs do SQP e DEVFLOW C5 no journal de eventos e weekly journal
-- [ ] **T019** [C5] Atualizar status da sessão no `.agent/state.json` para `"completed"`
+- [x] **T017** [C5] Atualizar `CHANGELOG.md` na seção `[Unreleased]` em português
+- [x] **T018** [C5] Registrar logs do SQP e DEVFLOW C5 no journal de eventos e weekly journal
+- [x] **T019** [C5] Atualizar status da sessão no `.agent/state.json` para `"completed"`
+
+## Fase 3: Evolução dos Relatórios de Adesão no Backend
+- [x] **T020** [Server] Criar rascunho de performance para estatísticas em `adherence_stats_approaches.md`
+- [x] **T021** [Server] Configurar crons em `alerts.js` para rodar às 9:00 AM e 10:00 AM (estoque)
+- [x] **T022** [Server] Ajustar janela de disparo do semanal em `notify.js` para 9:00 AM – 12:00 PM
+- [x] **T023** [Server] Mudar `ADHERENCE_REPORT_TIME` e cortes locais em `_adherenceHelpers.js` para `'09:00'`
+- [x] **T024** [Server] Implementar filtros de usuários ativos (`protocols.active = true`) e doses vazias (`total = 0`) em `_adherenceHelpers.js`
+- [x] **T025** [Server] Ajustar cálculo do diário em `_adherenceHelpers.js` para analisar ontem vs anteontem e mudar `period` para `'ontem'`
+- [x] **T026** [Server] Atualizar testes unitários em `tasks.test.js`
+- [x] **T027** [C4] Validar todas as alterações executando `rtk lint` e os testes unitários do bot via Vitest
+
+## Correção de Bugs (Smoke Test & Erro Vercel)
+- [x] **T028** [Debug] Investigar ZodError no Vercel (confirmado que ocorreu às 08:25, anterior ao merge do PR #646 às 08:27 que adicionou 'snooze' ao actionSchema)
+- [x] **T029** [Debug] Investigar por que o agrupamento de doses do mesmo plano gerou push de doses bundle (`dose_reminder_misc`) em vez de plano (`dose_reminder_by_plan`) no device
+- [x] **T030** [Mobile] Adicionar `treatment_plan_id` e `treatment_plan:treatment_plans(...)` no select da query `getActiveProtocols` em `dashboardService.js` (mantendo as alterações locais no mobile unstaged)
+- [x] **T031** [C4] Rodar testes unitários e linter e verificar estabilidade
+
+## Correções Pós-Review (Fase 4)
+- [x] **T032** [Refactor] Substituir a paralelização `Promise.all` em `quickDoseRegistration.js` por um loop sequencial `for...of` para evitar condições de corrida (FIFO estoque)
+- [x] **T033** [Refactor] Extrair a verificação duplicada de protocolos ativos em `_adherenceHelpers.js` para o helper `_hasActiveProtocols`
+- [x] **T034** [C4] Validar alterações de refatoração nos testes e linter
+- [x] **T035** [PR] Publicar Pull Request #647 e obter aprovação do peer review
+

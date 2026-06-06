@@ -18,8 +18,13 @@ Este documento define a arquitetura detalhada e o mapeamento dos arquivos para i
 | **Protocol Form** | `apps/mobile/src/features/treatments/components/ProtocolFormBody.jsx` | [MODIFY] Usar `enablePushAtIntent` no toggle de alerta crítico |
 | **Alarm Scheduler** | `apps/mobile/src/platform/alarms/useAlarmScheduler.js` | [MODIFY] Agrupar alarmes locais por minuto antes de agendar no Notifee e injetar dosagens |
 | **Alarm Service** | `apps/mobile/src/platform/alarms/alarmService.js` | [MODIFY] Implementar copy clínico customizado para alarme local essencial e formatar com dosagem clínica |
-| **Alarm Actions** | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | [MODIFY] Registrar e pular tomadas agrupadas (em lote) |
+| **Alarm Actions** | `apps/mobile/src/platform/alarms/quickDoseRegistration.js` | [MODIFY] Registrar e pular tomadas agrupadas em lote (convertido em loop sequencial `for...of` pós-review) |
 | **Alarm UI** | `apps/mobile/src/features/dose/screens/AlarmFullScreen.jsx` | [MODIFY] Renderizar lista agrupada de medicamentos na tela de alarme |
+| **Relatórios de Adesão** | `server/bot/_adherenceHelpers.js` | [MODIFY] Implementar lógica de ontem vs anteontem, filtro de inatividade/doses vazias e helper de consulta |
+| **Agendador Geral** | `server/bot/alerts.js` | [MODIFY] Ajustar crons de execução dos relatórios para as 9h e alertas de estoque para as 10h |
+| **Funções Serverless** | `api/notify.js` | [MODIFY] Sincronizar janelas de execução das crons da Vercel para 9h e 10h |
+| **Dashboard Mobile** | `apps/mobile/src/features/dashboard/services/dashboardService.js` | [MODIFY] Adicionar `treatment_plan_id` e a relação `treatment_plan` na query `getActiveProtocols` |
+| **Documentação Estats** | `plans/adherence_stats_approaches.md` | [NEW] Rascunho com possíveis soluções de performance para persistência e rollups de métricas de adesão no Cron |
 
 ---
 
@@ -69,16 +74,28 @@ Conforme o protocolo SQP (R-221), as seguintes entradas serão adicionadas ao `C
 - **Reversão de cópias de notificações normais** (Patch, Spec 025):
   - Revertido o texto de lembrete de doses normais para o formato legado original com "cp" (comprimidos) no builder de payloads (`buildNotificationPayload.js`).
 
+### 8. Fase 3: Evolução dos Relatórios de Adesão no Backend
+- **Horário das Crons**: O horário de envio de todos os três relatórios de adesão (diário, semanal e mensal) foi movido para **09:00 AM (local)**. A cron de alertas de estoque (`checkStockAlerts`) foi movida para **10:00 AM**.
+- **Corte de Inatividade**: Usuários que não possuem nenhum protocolo de tratamento ativo (`active = true`) ou que têm 0 doses planejadas/devidas na janela de análise são filtrados antes do envio, evitando relatórios vazios.
+- **Relatório Diário Ontem vs Anteontem**: Como o relatório roda às 9h da manhã, o dia atual tem dados incompletos. Portanto, o relatório foi alterado para avaliar o período de **Ontem (D-1)** em comparação com o dia anterior, **Anteontem (D-2)**, ajustando a propriedade `period` para `'ontem'` e atualizando os textos.
+- **Rascunho de Performance (`adherence_stats_approaches.md`)**: Devido ao limite de 60s das Vercel Serverless Functions nas crons, criamos uma análise detalhada sobre abordagens para estatísticas em pushes usando rollups incrementais ou filas de background.
+
+### 9. Fase 4: Correções de Bugs Adicionais e Pós-Review
+- **Validação de Ações Zod (`snooze`)**: Correção do crash no Vercel adicionando o ID `'snooze'` como valor válido de ação do Notifee/Telegram no `actionSchema` do Zod (`_payloadSchemas.js`).
+- **Query de Tratamentos no Dashboard Mobile**: Corrigido o agrupamento por plano que falhava no device do usuário. A query `getActiveProtocols` em `dashboardService.js` no mobile foi atualizada para trazer `treatment_plan_id` e a relação `treatment_plan` do banco de dados, permitindo que a sincronização local de alarmes (`syncAlarms`) identifique corretamente o plano terapêutico ao agrupar doses no mesmo minuto.
+- **Paralelização de Ações Sequenciais**: No `quickDoseRegistration.js`, substituído o uso de `Promise.all` em favor de um loop sequencial `for...of` para as chamadas de `registerDose`, evitando condições de corrida e deadlocks de banco ao consumir estoque FIFO.
+- **Refatoração de Protocolos Ativos**: Em `_adherenceHelpers.js`, a verificação redundante de protocolos ativos foi extraída para a função auxiliar `_hasActiveProtocols(userId)`.
+
 ---
 
 ## Plano de Verificação
 
 ### Testes Automatizados
-- `rtk npm run test:critical` (Backend/Payloads/Canais)
-- `rtk npm run test:changed` (Para validar testes após as alterações)
-- `rtk npm run validate:agent` e `rtk lint`
+- `rtk env PATH=/Users/coelhotv/.nvm/versions/node/v22.22.3/bin:$PATH npm run test:critical` (Validação completa e testes do core/bot)
+- `rtk env PATH=/Users/coelhotv/.nvm/versions/node/v22.22.3/bin:$PATH npx eslint .` (Linting de JS e React Native sem erros)
 
 ### Testes Manuais
 - Verificar a tabela `user_settings` após rodar a migração no banco de testes.
 - Rodar o comando `/start` com o Telegram bot simulado e validar a consistência no banco.
 - Simular um alarme de múltiplos medicamentos críticos no mesmo minuto e testar se apenas 1 Notifee local dispara e se a tela cheia do alarme lista todos corretamente.
+- Forçar o disparo das crons de relatório às 9h com fake timers ou no banco local de testes e verificar se os dados computados de ontem vs anteontem estão corretos.
