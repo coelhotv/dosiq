@@ -29,7 +29,7 @@ function scheduleTask(name, schedule, task) {
 }
 
 export function startStockAlerts(bot, options = {}) {
-  // Run daily at 9:00 AM
+  // Run daily at 10:00 AM
   scheduleTask('checkStockAlerts', '0 10 * * *', () => checkStockAlerts(bot, options));
   console.log('✅ Alertas de estoque configurados (diariamente às 10h)');
 }

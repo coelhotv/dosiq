@@ -263,7 +263,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   );
   results.push('daily_adherence_report');
 
-  // 3. Tasks at 09:00
+  // 3. Tasks at 10:00
   if (currentHour === 10 && currentMinute === 0) {
     await withCorrelation(
       (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }),
