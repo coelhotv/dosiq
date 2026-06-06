@@ -23,7 +23,7 @@ export function getTimeOfDayGreeting(hour) {
   if (hour >= 5 && hour < 11) return 'Remédios da manhã';
   if (hour >= 11 && hour < 14) return 'Remédios do almoço';
   if (hour >= 14 && hour < 18) return 'Remédios da tarde';
-  if (hour >= 18 && hour < 23) return 'Remédios da noite';
+  if (hour >= 18 && hour < 24) return 'Remédios da noite';
   return 'Hora dos remédios';
 }
 

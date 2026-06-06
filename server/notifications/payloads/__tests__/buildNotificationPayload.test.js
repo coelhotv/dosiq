@@ -76,7 +76,7 @@ describe('buildNotificationPayload', () => {
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
       expect(payload.body).toContain('*Omega 3*');
-      expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 (12:00).');
+      expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 — 12:00');
     });
 
     it('should include dosage if provided', () => {
@@ -88,8 +88,8 @@ describe('buildNotificationPayload', () => {
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
       expect(payload.body).toContain('*Omega 3 1200mg*');
-      expect(payload.body).toContain('— **3 cp**');
-      expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 1200mg (12:00) — 3 cp.');
+      expect(payload.body).toContain('• **3 cp**');
+      expect(payload.pushBody).toBe('Está na hora de tomar Omega 3 1200mg • 3 cp — 12:00');
     });
 
     it('should derive dosage from dosagePerIntake for normal single dose', () => {
@@ -101,8 +101,8 @@ describe('buildNotificationPayload', () => {
       };
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
-      expect(payload.pushBody).toBe('Está na hora de tomar Ansitec (18:00) — 1,5 cp.');
-      expect(payload.body).toContain('Está na hora de tomar *Ansitec* \\(18:00\\) — **1,5 cp**\\.');
+      expect(payload.pushBody).toBe('Está na hora de tomar Ansitec • 1,5 un. — 18:00');
+      expect(payload.body).toContain('Está na hora de tomar *Ansitec • 1,5 un\\.* — 18:00');
     });
 
     it('should generate clinical description name (dosageperpill unit) - qty un. for single dose', () => {
@@ -116,9 +116,9 @@ describe('buildNotificationPayload', () => {
       };
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
-      // Dipirona (500mg) - 2 un.
-      expect(payload.pushBody).toBe('💊 Medicamento essencial: hora do seu Dipirona (500mg) - 2 un. (12:00).');
-      expect(payload.body).toContain('💊 *Medicamento essencial*: hora do seu *Dipirona \\(500mg\\) \\- 2 un\\.* \\(12:00\\)\\.');
+      expect(payload.title).toBe('💊 Remédio essencial');
+      expect(payload.pushBody).toBe('Hora de tomar Dipirona (500mg) • 2 un. — 12:00');
+      expect(payload.body).toContain('Hora de tomar *Dipirona \\(500mg\\) • 2 un\\.* — 12:00');
     });
   });
 
@@ -139,10 +139,10 @@ describe('buildNotificationPayload', () => {
       const payload = buildNotificationPayload({ kind: 'dose_reminder_by_plan', data });
       
       expect(payload.body).toContain('*Protocolo VIP*');
-      expect(payload.body).toContain('2 medicamentos agora');
-      expect(payload.body).toContain('Med A — 1 cp');
-      expect(payload.body).toContain('Med B — 2 cp');
-      expect(payload.pushBody).toBe('Está na hora de tomar as doses do plano Protocolo VIP (09:00).\n• Med A — 1 cp\n• Med B — 2 cp');
+      expect(payload.body).toContain('2 remédios agora');
+      expect(payload.body).toContain('Med A • 1 un\\.');
+      expect(payload.body).toContain('Med B • 2 un\\.');
+      expect(payload.pushBody).toBe('Está na hora do plano Protocolo VIP — 09:00.\n– Med A • 1 un.\n– Med B • 2 un.');
       expect(payload.actions).toHaveLength(1);
       expect(payload.actions[0].id).toBe('take_plan');
     });
@@ -162,10 +162,11 @@ describe('buildNotificationPayload', () => {
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder_by_plan', data });
       
-      expect(payload.body).toContain('📋 *Uso essencial*');
-      expect(payload.body).toContain('Med A \\(500mg\\) \\- 1 un\\.');
-      expect(payload.body).toContain('Med B \\(10ml\\) \\- 2 un\\.');
-      expect(payload.pushBody).toBe('📋 Uso essencial: hora dos medicamentos do plano Protocolo VIP (09:00).\n• Med A (500mg) - 1 un.\n• Med B (10ml) - 2 un.');
+      expect(payload.title).toBe('📂 Plano essencial');
+      expect(payload.body).toContain('Hora dos remédios de *Protocolo VIP* — 09:00\\.');
+      expect(payload.body).toContain('Med A \\(500mg\\) • 1 un\\.');
+      expect(payload.body).toContain('Med B \\(10ml\\) • 2 un\\.');
+      expect(payload.pushBody).toBe('Hora dos remédios de Protocolo VIP — 09:00.\n– Med A (500mg) • 1 un.\n– Med B (10ml) • 2 un.');
     });
   });
 
@@ -183,9 +184,9 @@ describe('buildNotificationPayload', () => {
       const payload = buildNotificationPayload({ kind: 'dose_reminder_misc', data });
       
       expect(payload.body).toContain('*Suas doses agora*');
-      expect(payload.body).toContain('1 medicamento pendente');
-      expect(payload.body).toContain('Med X — 1,5 cp');
-      expect(payload.pushBody).toBe('1 medicamento pendente (22:00):\n• Med X — 1,5 cp');
+      expect(payload.body).toContain('1 remédio pendente');
+      expect(payload.body).toContain('Med X • 1,5 un\\.');
+      expect(payload.pushBody).toBe('1 remédio pendente — 22:00:\n– Med X • 1,5 un.');
       expect(payload.actions[0].id).toBe('take_misc');
     });
 
@@ -201,9 +202,10 @@ describe('buildNotificationPayload', () => {
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder_misc', data });
       
-      expect(payload.body).toContain('💊 *Doses essenciais*');
-      expect(payload.body).toContain('Med X \\(20mg\\) \\- 1,5 un\\.');
-      expect(payload.pushBody).toBe('💊 Doses essenciais pendentes para as 22:00:\n• Med X (20mg) - 1,5 un.');
+      expect(payload.title).toBe('📋 Doses essenciais');
+      expect(payload.body).toContain('Remédios essenciais agora — *22:00*\\.');
+      expect(payload.body).toContain('Med X \\(20mg\\) • 1,5 un\\.');
+      expect(payload.pushBody).toBe('Remédios essenciais agora — 22:00:\n– Med X (20mg) • 1,5 un.');
     });
   });
 });

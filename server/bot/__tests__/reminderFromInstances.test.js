@@ -133,6 +133,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
 
     expect(mockSupabase.update).toHaveBeenCalledWith({
       notified_at: expect.any(String),
+      snoozed_until: null,
     });
   });
 
