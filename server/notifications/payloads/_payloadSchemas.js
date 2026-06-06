@@ -82,7 +82,7 @@ export const kindSchema = z.enum([
 
 // Schemas para ações interativas (Gate 4 preliminar)
 export const actionSchema = z.object({
-  id: z.enum(['take', 'skip', 'take_plan', 'take_misc']),
+  id: z.enum(['take', 'skip', 'take_plan', 'take_misc', 'snooze']),
   label: z.string(),
   params: z.record(z.string(), z.unknown()).optional()
 });
