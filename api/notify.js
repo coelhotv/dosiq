@@ -264,7 +264,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   results.push('daily_adherence_report');
 
   // 3. Tasks at 09:00
-  if (currentHour === 9 && currentMinute === 0) {
+  if (currentHour === 10 && currentMinute === 0) {
     await withCorrelation(
       (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }),
       { correlationId, jobType: 'stock_alerts' }
@@ -287,8 +287,8 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
     results.push('titration_alerts');
   }
 
-  // 5. Adherence Reports: Sunday 21:00-23:59 SP (window covers UTC-3 to UTC-5 at 23:00 local)
-  if (currentWeekDay === 0 && currentHour >= 21) {
+  // 5. Adherence Reports: Sunday 09:00-12:00 SP (window covers UTC-3 to UTC-5 at 09:00 local)
+  if (currentWeekDay === 0 && currentHour >= 9 && currentHour <= 12) {
     await withCorrelation(
       (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
       { correlationId, jobType: 'adherence_reports' }

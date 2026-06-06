@@ -6,7 +6,7 @@ import { createDoseInstanceRepository } from '@dosiq/core';
 import { sweepMissedInstances } from './doseInstanceScheduler.js';
 
 const logger = createLogger('AdherenceHelpers');
-const ADHERENCE_REPORT_TIME = '23:00';
+const ADHERENCE_REPORT_TIME = '09:00';
 
 // Adesão do bot ← dose_instances (S3.7/ADR-054): % = taken/(taken+missed), skipped_* neutro.
 // countByStatus é head-count server-side (R-249 OOM-safe, imune a truncamento PostgREST AP-186).
@@ -52,44 +52,63 @@ async function _getEligibleUsersForAdherence(users, correlationId) {
 async function _processUserAdherence(user, dispatcher, correlationId) {
   const { user_id: userId, display_name: displayName } = user;
   try {
+    // Filtro 1: Apenas usuários com tratamentos ativos no banco
+    const { data: activeProtocols, error: protocolsError } = await supabase
+      .from('protocols')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('active', true)
+      .limit(1);
+
+    if (protocolsError || !activeProtocols || activeProtocols.length === 0) {
+      logger.debug(`Usuário sem tratamentos ativos. Pulando relatório diário.`, { userId });
+      return;
+    }
+
     const dateToday = getTodayLocal();
     const startOfDay = parseLocalDate(dateToday);
+    
+    // Período de Ontem (análise principal): D-1 00:00:00 até D-1 23:59:59.999
     const dateYesterdayDate = addDays(startOfDay, -1);
-
-    // Adesão de hoje e ontem ← dose_instances por status (head-count server-side).
-    // Janela por scheduled_for; o sweep das 23h (runDaily) já fechou as pending vencidas.
-    // countByStatus usa limites inclusivos (gte/lte) → o teto de ontem deve excluir o
-    // exato startOfDay (senão uma instância às 00:00 conta nos dois dias — double-count).
-    // Nota G1 (ADR-053): startOfDay vem de parseLocalDate (meia-noite no tz do servidor),
-    // não da meia-noite real de SP — alinhamento fino de tz fica para a F4.
-    const todayCounts = await doseInstanceRepo.countByStatus({
-      userId, fromTs: startOfDay.toISOString(), toTs: addDays(startOfDay, 1).toISOString(),
-    });
-    // Teto exclusivo de ontem (ms-1): aritmética de epoch, não o parse de string YYYY-MM-DD do R-020.
     // eslint-disable-next-line no-restricted-syntax
     const yesterdayEndExclusive = new Date(startOfDay.getTime() - 1).toISOString();
     const yesterdayCounts = await doseInstanceRepo.countByStatus({
       userId, fromTs: dateYesterdayDate.toISOString(), toTs: yesterdayEndExclusive,
     });
 
-    const takenDoses = todayCounts.taken;
-    const totalToday = todayCounts.taken + todayCounts.missed;
-    const percentage = _adherencePct(todayCounts.taken, todayCounts.missed);
-    const percentageYesterday = _adherencePct(yesterdayCounts.taken, yesterdayCounts.missed);
-    const hasYesterday = (yesterdayCounts.taken + yesterdayCounts.missed) > 0;
+    const totalYesterday = yesterdayCounts.taken + yesterdayCounts.missed;
 
-    const delta = percentage - percentageYesterday;
+    // Filtro 2: Apenas usuários com pelo menos 1 dose esperada no período analisado
+    if (totalYesterday === 0) {
+      logger.debug(`Usuário sem doses esperadas ontem. Pulando relatório diário.`, { userId });
+      return;
+    }
+
+    // Período de Anteontem (para comparação): D-2 00:00:00 até D-2 23:59:59.999
+    const dateBeforeYesterdayDate = addDays(startOfDay, -2);
+    // eslint-disable-next-line no-restricted-syntax
+    const beforeYesterdayEndExclusive = new Date(dateYesterdayDate.getTime() - 1).toISOString();
+    const beforeYesterdayCounts = await doseInstanceRepo.countByStatus({
+      userId, fromTs: dateBeforeYesterdayDate.toISOString(), toTs: beforeYesterdayEndExclusive,
+    });
+
+    const takenDoses = yesterdayCounts.taken;
+    const percentage = _adherencePct(yesterdayCounts.taken, yesterdayCounts.missed);
+    const percentageBeforeYesterday = _adherencePct(beforeYesterdayCounts.taken, beforeYesterdayCounts.missed);
+    const hasBeforeYesterday = (beforeYesterdayCounts.taken + beforeYesterdayCounts.missed) > 0;
+
+    const delta = percentage - percentageBeforeYesterday;
     const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
-    const comparison = hasYesterday
-      ? { previousPercentage: percentageYesterday, deltaPercent: Math.abs(delta), trend }
+    const comparison = hasBeforeYesterday
+      ? { previousPercentage: percentageBeforeYesterday, deltaPercent: Math.abs(delta), trend }
       : undefined;
 
     const data = {
       firstName: displayName || 'Paciente',
-      period: 'hoje',
+      period: 'ontem',
       percentage,
       taken: takenDoses,
-      total: totalToday,
+      total: totalYesterday,
       comparison
     };
 
@@ -124,13 +143,12 @@ export async function runDailyAdherenceReportViaDispatcher(dispatcher, correlati
 
     logger.info(`Running daily adherence report for ${eligibleUsers.length} users`, { correlationId });
 
-    // E2/S3.7: fechar as pending vencidas ANTES de medir — o relatório das 23h lê o dia
-    // corrente antes do sweep das 3AM; sem isto doses esquecidas seguem pending e inflam a
-    // adesão. Idempotente (writer #3, AP-190). Global, mas roda 1× quando alguém bate 23h.
+    // E2/S3.7: fechar as pending vencidas ANTES de medir — o relatório das 9h lê as doses
+    // de ontem, mas o sweep prévio garante consistência. Idempotente (writer #3, AP-190).
     try {
       await sweepMissedInstances();
     } catch (sweepErr) {
-      logger.error('Falha no sweep pré-relatório 23h (segue best-effort)', sweepErr, { correlationId });
+      logger.error('Falha no sweep pré-relatório 9h (segue best-effort)', sweepErr, { correlationId });
     }
 
     for (const user of eligibleUsers) {
@@ -160,15 +178,28 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
 
       const timezone = user.timezone || 'America/Sao_Paulo';
       const { hhmm, weekday } = getCurrentDatePartsInTimezone(timezone);
-      if (weekday !== 0 || hhmm !== '23:00') continue;
+      if (weekday !== 0 || hhmm !== '09:00') continue;
+
+      // Filtro 1: Apenas usuários com tratamentos ativos no banco
+      const { data: activeProtocols, error: protocolsError } = await supabase
+        .from('protocols')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .limit(1);
+      if (protocolsError || !activeProtocols || activeProtocols.length === 0) continue;
 
       const shouldSend = await shouldSendNotification(userId, null, 'weekly_adherence');
       if (!shouldSend) continue;
 
       // Adesão dos últimos 7 dias ← dose_instances (head-count server-side, janela UTC real).
       const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(7) });
-      const takenDoses = counts.taken;
       const total = counts.taken + counts.missed;
+
+      // Filtro 2: Apenas usuários com pelo menos 1 dose esperada na janela
+      if (total === 0) continue;
+
+      const takenDoses = counts.taken;
       const percentage = _adherencePct(counts.taken, counts.missed);
 
       await dispatcher.dispatch({
@@ -207,15 +238,28 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
 
       const timezone = user.timezone || 'America/Sao_Paulo';
       const { hhmm, dayOfMonth } = getCurrentDatePartsInTimezone(timezone);
-      if (dayOfMonth !== 1 || hhmm !== '10:00') continue;
+      if (dayOfMonth !== 1 || hhmm !== '09:00') continue;
+
+      // Filtro 1: Apenas usuários com tratamentos ativos no banco
+      const { data: activeProtocols, error: protocolsError } = await supabase
+        .from('protocols')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .limit(1);
+      if (protocolsError || !activeProtocols || activeProtocols.length === 0) continue;
 
       const shouldSend = await shouldSendNotification(userId, null, 'monthly_report');
       if (!shouldSend) continue;
 
       // Adesão dos últimos 30 dias ← dose_instances (head-count server-side, R-249, janela UTC real).
       const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(30) });
-      const takenDoses = counts.taken;
       const total = counts.taken + counts.missed;
+
+      // Filtro 2: Apenas usuários com pelo menos 1 dose esperada na janela
+      if (total === 0) continue;
+
+      const takenDoses = counts.taken;
       const percentage = _adherencePct(counts.taken, counts.missed);
 
       await dispatcher.dispatch({

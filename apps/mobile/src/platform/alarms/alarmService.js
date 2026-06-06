@@ -34,7 +34,7 @@ import { debugLog } from '@shared/utils/debugLog'
 export const ALARM_CHANNEL_ID = 'dose-alarm-v3'
 // Canal crítico Android (Spec 010, R-261): id separado para alarmes críticos (critical_alarm=true).
 // NUNCA mudar o id dose-alarm-v3 acima; bumpar este ao trocar som do canal crítico.
-export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v1'
+export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v2'
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
 // iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
@@ -170,7 +170,7 @@ export async function ensureAlarmCriticalChannel() {
     id: ALARM_CRITICAL_CHANNEL_ID,
     name: 'Alarmes críticos de dose',
     importance: AndroidImportance.HIGH,
-    sound: 'default',
+    sound: SOUND_ANDROID,
     vibration: true,
     bypassDnd: true,
     visibility: AndroidVisibility.PUBLIC,
@@ -194,18 +194,18 @@ function getAlarmCopy({ medicineName, data }) {
     if (doses.length === 0) {
       return {
         title: '💊 Hora da dose',
-        body: 'Está na hora da sua dose.',
+        body: 'Está na hora do seu remédio.',
       }
     }
 
     if (doses.length === 1) {
       const d = doses[0]
       const dosageInfo = d.dosagePerPill && d.dosageUnit ? ` (${d.dosagePerPill}${d.dosageUnit})` : ''
-      const intakeInfo = ` - ${d.dosagePerIntake ?? 1} un.`
+      const intakeInfo = ` • ${d.dosagePerIntake ?? 1} un.`
       const desc = `${d.medicineName}${dosageInfo}${intakeInfo}`
       return {
-        title: '💊 Medicamento essencial',
-        body: `💊 Medicamento essencial: hora do seu ${desc}${time ? ` (${time})` : ''}.`,
+        title: '💊 Remédio essencial',
+        body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
       }
     }
 
@@ -215,13 +215,13 @@ function getAlarmCopy({ medicineName, data }) {
 
     if (samePlan) {
       return {
-        title: '📋 Uso essencial',
-        body: `📋 Uso essencial: hora dos medicamentos do plano ${firstPlan}${time ? ` (${time})` : ''}.`,
+        title: '📂 Plano essencial',
+        body: `Hora dos remédios do plano ${firstPlan}${time ? ` — ${time}` : ''}.`,
       }
     } else {
       return {
-        title: '💊 Doses essenciais',
-        body: `💊 Doses essenciais pendentes para as ${time || ''}.`,
+        title: '📋 Doses essenciais',
+        body: `Doses pendentes para as ${time || ''}.`,
       }
     }
   } else {
@@ -232,11 +232,11 @@ function getAlarmCopy({ medicineName, data }) {
     const quantity = data?.quantityTaken || '1'
 
     const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
-    const intakeInfo = ` - ${quantity} un.`
+    const intakeInfo = ` • ${quantity} un.`
     const desc = `${name}${dosageInfo}${intakeInfo}`
     return {
-      title: '💊 Medicamento essencial',
-      body: `💊 Medicamento essencial: hora do seu ${desc}${time ? ` (${time})` : ''}.`,
+      title: '💊 Remédio essencial',
+      body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
     }
   }
 }
@@ -245,16 +245,26 @@ function getAlarmCopy({ medicineName, data }) {
 // isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
 function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
   const { title, body } = getAlarmCopy({ doseInstanceId, medicineName, data })
+  const sanitizedData = {}
+  if (data) {
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== null && value !== undefined) {
+        sanitizedData[key] = typeof value === 'object' ? JSON.stringify(value) : String(value)
+      }
+    }
+  }
+  sanitizedData.doseInstanceId = String(doseInstanceId)
+
   return {
     id: notificationId,
     title,
     body,
-    data: { ...data, doseInstanceId },
+    data: sanitizedData,
     android: {
       channelId: isCritical ? ALARM_CRITICAL_CHANNEL_ID : ALARM_CHANNEL_ID,
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
-      sound: isCritical ? 'default' : SOUND_ANDROID,
+      sound: SOUND_ANDROID,
       // Loop do som + notif persistente: toca até o usuário escolher Tomei/Pular.
       // ongoing+autoCancel:false impedem swipe/auto-dismiss; cancelAlarm para o som.
       loopSound: true,
@@ -271,8 +281,12 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
     },
     ios: {
       sound: SOUND_IOS,
-      interruptionLevel: isCritical ? 'critical' : IOS_INTERRUPTION_LEVEL,
-      ...(isCritical ? { critical: true } : {}), // fura mute físico (entitlement critical-alerts)
+      // Temporariamente forçando timeSensitive para critical_alarm enquanto o entitlement
+      // com.apple.developer.usernotifications.critical-alerts está em aprovação pela Apple.
+      // Com 'critical', se o entitlement não estiver presente no profile de provisionamento,
+      // o iOS rejeita a notificação inteira silenciosamente.
+      interruptionLevel: IOS_INTERRUPTION_LEVEL,
+      // critical: true, // Desativado até obter o entitlement
       categoryId: ALARM_CHANNEL_ID, // ações registradas em ensureAlarmCategories (T015)
       // iOS suprime som/banner de notif quando o app está em foreground por padrão.
       // Declarar pra o alarme tocar/aparecer mesmo com o app aberto (paridade Android).
