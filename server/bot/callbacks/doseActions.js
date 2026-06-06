@@ -4,7 +4,7 @@ import { medicineLogService } from '../../services/medicineLogService.js';
 import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
+import { getServerTimestamp, addDays, addMinutes, parseISO } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 import { createLogger } from '../logger.js';
 
@@ -51,6 +51,8 @@ export async function handleCallbacks(bot) {
 
     if (data.startsWith('take_')) {
       await handleTakeDose(bot, callbackQuery);
+    } else if (data.startsWith('snooze_')) {
+      await handleSnoozeDose(bot, callbackQuery);
     } else if (data.startsWith('skip_')) {
       await handleSkipDose(bot, callbackQuery);
     } else if (data.startsWith('confirm_skip_')) {
@@ -313,6 +315,21 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
     
     const medicineName = state.medicineName || 'Medicamento';
     
+    // Wire skip to database dose_instances: status = 'skipped_user'
+    const nowIso = getServerTimestamp();
+    const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt: nowIso });
+    if (instance) {
+      const { error: updateError } = await supabase
+        .from('dose_instances')
+        .update({ status: 'skipped_user' })
+        .eq('id', instance.id);
+      if (updateError) {
+        logger.error('Erro ao marcar dose_instance como skipped_user no Telegram:', updateError);
+      }
+    } else {
+      logger.info('Nenhuma dose_instance pendente encontrada para pular no Telegram:', { protocolId });
+    }
+    
     // Confirm the skip
     await bot.editMessageText(
       `❌ Dose de *${escapeMarkdownV2(medicineName)}* pulada\\.`,
@@ -330,6 +347,74 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
     await bot.answerCallbackQuery(id, { 
       text: 'Erro ao pular dose.', 
       show_alert: true 
+    });
+  }
+}
+
+async function handleSnoozeDose(bot, callbackQuery) {
+  const { data, message, id } = callbackQuery;
+  const chatId = message.chat.id;
+  const [_, protocolId] = data.split(':');
+
+  try {
+    const { data: protocol, error: protocolError } = await supabase
+      .from('protocols')
+      .select('medicine:medicines(name)')
+      .eq('id', protocolId)
+      .single();
+
+    if (protocolError || !protocol) {
+      await bot.answerCallbackQuery(id, {
+        text: 'Erro: Protocolo não encontrado.',
+        show_alert: true
+      });
+      return;
+    }
+
+    const medicineName = protocol.medicine?.name || 'Medicamento';
+
+    // Busca ocorrência pendente ou perdida dentro da janela de tolerância para adiar
+    const nowIso = getServerTimestamp();
+    const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt: nowIso });
+
+    if (!instance) {
+      await bot.answerCallbackQuery(id, {
+        text: 'Nenhuma dose pendente ou em tolerância para adiar.',
+        show_alert: true
+      });
+      return;
+    }
+
+    const nextTs = addMinutes(5, parseISO(getServerTimestamp())).toISOString();
+
+    // Atualiza o snoozed_until no banco e reseta notified_at para null para o cron re-alertar
+    const { error: updateError } = await supabase
+      .from('dose_instances')
+      .update({
+        snoozed_until: nextTs,
+        notified_at: null
+      })
+      .eq('id', instance.id);
+
+    if (updateError) throw updateError;
+
+    // Edita a mensagem para confirmar a soneca e remover os botões
+    await bot.editMessageText(
+      `⏰ Soneca ativada para *${escapeMarkdownV2(medicineName)}*\\. Te lembrarei novamente em 5 minutos\\.`,
+      {
+        chat_id: chatId,
+        message_id: message.message_id,
+        parse_mode: 'MarkdownV2',
+        reply_markup: { inline_keyboard: [] }
+      }
+    );
+
+    await bot.answerCallbackQuery(id, { text: 'Soneca de 5 minutos ativada!' });
+  } catch (err) {
+    console.error('Erro ao processar snooze:', err);
+    await bot.answerCallbackQuery(id, {
+      text: 'Erro ao adiar a dose.',
+      show_alert: true
     });
   }
 }
