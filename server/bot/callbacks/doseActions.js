@@ -319,15 +319,24 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
     const nowIso = getServerTimestamp();
     const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt: nowIso });
     if (instance) {
-      const { error: updateError } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from('dose_instances')
         .update({ status: 'skipped_user' })
-        .eq('id', instance.id);
+        .eq('id', instance.id)
+        .in('status', ['pending', 'missed'])
+        .select('id');
       if (updateError) {
         logger.error('Erro ao marcar dose_instance como skipped_user no Telegram:', updateError);
+        throw updateError;
+      }
+      if (!updatedRows || updatedRows.length === 0) {
+        await bot.answerCallbackQuery(id, { text: 'Esta dose já foi registrada ou pulada.', show_alert: true });
+        return;
       }
     } else {
       logger.info('Nenhuma dose_instance pendente encontrada para pular no Telegram:', { protocolId });
+      await bot.answerCallbackQuery(id, { text: 'Nenhuma dose pendente encontrada para pular.', show_alert: true });
+      return;
     }
     
     // Confirm the skip
@@ -388,15 +397,24 @@ async function handleSnoozeDose(bot, callbackQuery) {
     const nextTs = addMinutes(5, parseISO(getServerTimestamp())).toISOString();
 
     // Atualiza o snoozed_until no banco e reseta notified_at para null para o cron re-alertar
-    const { error: updateError } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from('dose_instances')
       .update({
         snoozed_until: nextTs,
         notified_at: null
       })
-      .eq('id', instance.id);
+      .eq('id', instance.id)
+      .in('status', ['pending', 'missed'])
+      .select('id');
 
     if (updateError) throw updateError;
+    if (!updatedRows || updatedRows.length === 0) {
+      await bot.answerCallbackQuery(id, {
+        text: 'Esta dose já foi registrada ou não está mais pendente.',
+        show_alert: true
+      });
+      return;
+    }
 
     // Edita a mensagem para confirmar a soneca e remover os botões
     await bot.editMessageText(
