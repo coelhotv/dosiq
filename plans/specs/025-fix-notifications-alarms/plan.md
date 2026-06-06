@@ -53,6 +53,22 @@ O alarme local do aplicativo (usando Notifee) deve refletir a mesma clareza e ac
 - Quando disparado de forma agrupada por plano essencial, deve exibir o copy `"📋 Uso essencial: hora dos medicamentos do plano {Plano} ({Hora})."`.
 - Quando agrupado e de origens diversas, deve exibir o copy `"💊 Doses essenciais pendentes para as {Hora}."`.
 
+### 7. Planejamento do Changelog & Releases (R-221/R-243)
+Conforme o protocolo SQP (R-221), as seguintes entradas serão adicionadas ao `CHANGELOG.md` sob a seção `[Unreleased]` ao fim do ciclo:
+
+#### Mobile (0.12.0 → 0.13.0)
+- **Alarmes Críticos Locais e Supressão de Pushes** (Minor, Spec 025):
+  - Habilitada a flag `native_alarm_enabled` por padrão para iOS e Android para supressão automática de pushes remotos de doses críticas e prevenção de duplicidades.
+  - Implementado o agrupamento local de alarmes no Notifee (`useAlarmScheduler.js`), consolidando múltiplas doses críticas do mesmo minuto em um único trigger.
+  - Atualizada a tela cheia de alarme (`AlarmFullScreen.jsx`) e as ações rápidas (`quickDoseRegistration.js`) para suportar visualização e confirmação/descarte em lote.
+  - Ajustadas as cópias de exibição do alarme local em `alarmService.js` para usar o padrão clínico customizado para doses críticas (essenciais) de forma coerente.
+  - Integrada a solicitação contextual de permissões de push (`enablePushAtIntent`) ao toggle de alarme essencial do formulário de protocolos (`ProtocolFormBody.jsx`).
+  - **Nota de loja relevante:** "Novo: Lembretes mais inteligentes para medicamentos essenciais. Se você tem mais de um remédio no mesmo horário, o alarme agora toca apenas uma vez e permite confirmar todos de uma vez só."
+
+#### Server
+- **Reversão de cópias de notificações normais** (Patch, Spec 025):
+  - Revertido o texto de lembrete de doses normais para o formato legado original com "cp" (comprimidos) no builder de payloads (`buildNotificationPayload.js`).
+
 ---
 
 ## Plano de Verificação

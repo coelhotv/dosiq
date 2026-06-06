@@ -50,6 +50,10 @@ function openAlarmScreen(notification) {
     scheduledFor: data.scheduledFor,
     toleranceMinutes: data.toleranceMinutes,
     snoozeAttempt: data.snoozeAttempt,
+    isCritical: data.isCritical,
+    isGrouped: data.isGrouped,
+    groupedDoses: data.groupedDoses,
+    doseInstanceIds: data.doseInstanceIds,
   })
 }
 

@@ -8,15 +8,15 @@
 - [x] **T006** [US3] Ajustar formatação e copy de lembrete em `server/notifications/payloads/buildNotificationPayload.js`
 - [x] **T007** [US3] Configurar som e interrupção corretos no `server/notifications/channels/expoPushChannel.js`
 - [x] **T008** [C4] Rodar testes críticos do servidor (`npm run test:critical` ou vitest específico)
-- [ ] **T009** [US4] Forçar `native_alarm_enabled: true` por padrão para iOS e Android em `registerPushToken.js`
-- [ ] **T010** [US4] Adicionar fluxo de permissão contextual `enablePushAtIntent` ao `ProtocolFormBody.jsx` ao ativar alarme crítico
-- [ ] **T011** [US4] Agrupar alarmes do mesmo minuto em um único trigger Notifee em `useAlarmScheduler.js`
-- [ ] **T012** [US4] Atualizar ações rápidas para tratar registro em lote no `quickDoseRegistration.js`
-- [ ] **T013** [US4] Atualizar tela cheia do alarme `AlarmFullScreen.jsx` para exibir lista de doses agrupadas e confirmar em lote
-- [ ] **T013a** [US3/US4] Ajustar o copy de exibição do alarme local no `alarmService.js` (incluindo suporte a plano essencial e doses avulsas essenciais)
-- [ ] **T014** [C4] Executar testes do app mobile e validar funcionamento dos handlers de doses e lote
-- [ ] **T015** [C4] Rodar suite completa de validação `rtk npm run validate:agent` e `rtk lint`
-- [ ] **T016** [C5] Executar bump de versão em `apps/mobile/package.json`
+- [x] **T009** [US4] Forçar `native_alarm_enabled: true` por padrão para iOS e Android em `registerPushToken.js`
+- [x] **T010** [US4] Adicionar fluxo de permissão contextual `enablePushAtIntent` ao `ProtocolFormBody.jsx` ao ativar alarme crítico
+- [x] **T011** [US4] Agrupar alarmes do mesmo minuto em um único trigger Notifee em `useAlarmScheduler.js`
+- [x] **T012** [US4] Atualizar ações rápidas para tratar registro em lote no `quickDoseRegistration.js`
+- [x] **T013** [US4] Atualizar tela cheia do alarme `AlarmFullScreen.jsx` para exibir lista de doses agrupadas e confirmar em lote
+- [x] **T013a** [US3/US4] Ajustar o copy de exibição do alarme local no `alarmService.js` (incluindo suporte a plano essencial e doses avulsas essenciais)
+- [x] **T014** [C4] Executar testes do app mobile e validar funcionamento dos handlers de doses e lote
+- [x] **T015** [C4] Rodar suite completa de validação `rtk npm run validate:agent` e `rtk lint`
+- [x] **T016** [C5] Executar bump de versão em `apps/mobile/app.config.js`
 - [ ] **T017** [C5] Atualizar `CHANGELOG.md` na seção `[Unreleased]` em português
 - [ ] **T018** [C5] Registrar logs do SQP e DEVFLOW C5 no journal de eventos e weekly journal
 - [ ] **T019** [C5] Atualizar status da sessão no `.agent/state.json` para `"completed"`

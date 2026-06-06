@@ -5,7 +5,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getExpoPushToken } from './getExpoPushToken'
 import { syncNotificationDevice } from './syncNotificationDevice'
-import { isAlarmEnabled } from '@platform/alarms/alarmEnabledStore'
 import { debugLog } from '@shared/utils/debugLog'
 
 export const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
@@ -27,7 +26,7 @@ export async function registerPushToken({ supabase, userId, nativeAlarmEnabled }
     return null
   }
 
-  const alarmFlag = nativeAlarmEnabled ?? (await isAlarmEnabled())
+  const alarmFlag = nativeAlarmEnabled ?? true
   await syncNotificationDevice({ supabase, userId: uid, token, nativeAlarmEnabled: alarmFlag })
   await AsyncStorage.setItem(PUSH_TOKEN_KEY, token)
   debugLog('registerPushToken', 'token registrado', token.substring(0, 20) + '...')

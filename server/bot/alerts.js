@@ -29,15 +29,15 @@ function scheduleTask(name, schedule, task) {
 }
 
 export function startStockAlerts(bot, options = {}) {
-  // Run daily at 9:00 AM
-  scheduleTask('checkStockAlerts', '0 9 * * *', () => checkStockAlerts(bot, options));
-  console.log('✅ Alertas de estoque configurados (diariamente às 9h)');
+  // Run daily at 10:00 AM
+  scheduleTask('checkStockAlerts', '0 10 * * *', () => checkStockAlerts(bot, options));
+  console.log('✅ Alertas de estoque configurados (diariamente às 10h)');
 }
 
 export function startAdherenceReports(bot, options = {}) {
-  // Run every Sunday at 10:00 PM
-  scheduleTask('checkAdherenceReports', '0 22 * * 0', () => checkAdherenceReports(bot, options));
-  console.log('✅ Relatórios de adesão configurados (domingos às 22h)');
+  // Run every Sunday at 9:00 AM
+  scheduleTask('checkAdherenceReports', '0 9 * * 0', () => checkAdherenceReports(bot, options));
+  console.log('✅ Relatórios de adesão configurados (domingos às 9h)');
 }
 
 export function startTitrationAlerts(bot, options = {}) {
@@ -47,8 +47,8 @@ export function startTitrationAlerts(bot, options = {}) {
 }
 
 export function startMonthlyReport(bot, options = {}) {
-  scheduleTask('checkMonthlyReport', '0 10 1 * *', () => checkMonthlyReport(bot, options));
-  console.log('✅ Relatórios mensais configurados (dia 1 às 10h)');
+  scheduleTask('checkMonthlyReport', '0 9 1 * *', () => checkMonthlyReport(bot, options));
+  console.log('✅ Relatórios mensais configurados (dia 1 às 9h)');
 }
 
 // Re-export for compatibility

@@ -35,7 +35,7 @@ const DEEP_LINK_TARGETS = {
   dashboard:        ROUTES.TODAY,
   stock:            ROUTES.STOCK,
   treatment:        ROUTES.TREATMENTS,
-  history:          ROUTES.TODAY,
+  history:          ROUTES.DOSE_HISTORY,
   'bulk-plan':      ROUTES.TODAY,
   'bulk-misc':      ROUTES.TODAY,
   'dose-individual': ROUTES.TODAY,

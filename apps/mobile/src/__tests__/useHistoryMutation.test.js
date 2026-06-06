@@ -53,7 +53,7 @@ describe('useHistoryMutation', () => {
         taken_at: '2026-01-01T08:00:00',
         quantity_taken: 1,
       }),
-      'inst-1'
+      { instanceId: 'inst-1' }
     )
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
       '@dosiq/today-snapshot'

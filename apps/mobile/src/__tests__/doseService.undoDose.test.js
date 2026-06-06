@@ -3,8 +3,6 @@
  * Jest + jest-expo
  */
 
-import { undoDose } from '../features/dose/services/doseService'
-
 // Mock do supabase
 jest.mock('../platform/supabase/nativeSupabaseClient', () => ({
   supabase: {
@@ -27,6 +25,7 @@ jest.mock('@dosiq/core', () => ({
   logSchema: {
     safeParse: jest.fn(),
   },
+  parseISO: (str) => new Date(str),
 }))
 
 // Mock dos analytics
@@ -40,8 +39,11 @@ jest.mock('../shared/utils/debugLog', () => ({
   debugLog: jest.fn(),
 }))
 
+import { undoDose } from '../features/dose/services/doseService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import { createDoseInstanceRepository } from '@dosiq/core'
+
+const mockRepository = createDoseInstanceRepository.mock.results[0].value
 
 describe('undoDose', () => {
   afterEach(() => {
@@ -54,20 +56,14 @@ describe('undoDose', () => {
       data: { user: { id: 'user-123' } },
     })
 
-    const mockRepository = {
-      getById: jest.fn().mockResolvedValue({
-        id: 'inst-1',
-        medicine_log_id: 'log-1',
-        scheduled_for: '2020-01-01T08:00:00Z',
-        tolerance_minutes: 30,
-        medicine_id: 'med-1',
-      }),
-      revertToUnregistered: jest.fn().mockResolvedValue(true),
-      markTaken: jest.fn(),
-      findAnchorInstance: jest.fn(),
-    }
-
-    createDoseInstanceRepository.mockReturnValue(mockRepository)
+    mockRepository.getById.mockResolvedValue({
+      id: 'inst-1',
+      medicine_log_id: 'log-1',
+      scheduled_for: '2020-01-01T08:00:00Z',
+      tolerance_minutes: 30,
+      medicine_id: 'med-1',
+    })
+    mockRepository.revertToUnregistered.mockResolvedValue(true)
 
     // Mock do encadeamento de supabase: .from().delete().eq().eq()
     const mockEq2 = jest.fn(() => ({ error: null }))
@@ -84,7 +80,7 @@ describe('undoDose', () => {
 
     // Assertions
     expect(result.success).toBe(true)
-    expect(mockRepository.revertToUnregistered).toHaveBeenCalledWith('inst-1')
+    expect(mockRepository.revertToUnregistered).toHaveBeenCalledWith('inst-1', 'missed')
     expect(supabase.rpc).toHaveBeenCalledWith('restore_stock_for_log', {
       p_medicine_log_id: 'log-1',
       p_reason: 'dose_deleted_restore',
@@ -99,27 +95,21 @@ describe('undoDose', () => {
       data: { user: { id: 'user-123' } },
     })
 
-    const mockRepository = {
-      getById: jest.fn().mockResolvedValue({
-        id: 'inst-2',
-        medicine_log_id: null,
-        scheduled_for: '2020-01-01T08:00:00Z',
-        tolerance_minutes: 30,
-        medicine_id: 'med-1',
-      }),
-      revertToUnregistered: jest.fn().mockResolvedValue(true),
-      markTaken: jest.fn(),
-      findAnchorInstance: jest.fn(),
-    }
-
-    createDoseInstanceRepository.mockReturnValue(mockRepository)
+    mockRepository.getById.mockResolvedValue({
+      id: 'inst-2',
+      medicine_log_id: null,
+      scheduled_for: '2020-01-01T08:00:00Z',
+      tolerance_minutes: 30,
+      medicine_id: 'med-1',
+    })
+    mockRepository.revertToUnregistered.mockResolvedValue(true)
 
     // Execute
     const result = await undoDose('inst-2')
 
     // Assertions
     expect(result.success).toBe(true)
-    expect(mockRepository.revertToUnregistered).toHaveBeenCalledWith('inst-2')
+    expect(mockRepository.revertToUnregistered).toHaveBeenCalledWith('inst-2', 'missed')
     expect(supabase.rpc).not.toHaveBeenCalled()
   })
 
@@ -129,14 +119,7 @@ describe('undoDose', () => {
       data: { user: { id: 'user-123' } },
     })
 
-    const mockRepository = {
-      getById: jest.fn().mockResolvedValue(null),
-      revertToUnregistered: jest.fn(),
-      markTaken: jest.fn(),
-      findAnchorInstance: jest.fn(),
-    }
-
-    createDoseInstanceRepository.mockReturnValue(mockRepository)
+    mockRepository.getById.mockResolvedValue(null)
 
     // Execute
     const result = await undoDose('inst-not-found')
@@ -152,20 +135,14 @@ describe('undoDose', () => {
       data: { user: { id: 'user-123' } },
     })
 
-    const mockRepository = {
-      getById: jest.fn().mockResolvedValue({
-        id: 'inst-1',
-        medicine_log_id: 'log-1',
-        scheduled_for: '2020-01-01T08:00:00Z',
-        tolerance_minutes: 30,
-        medicine_id: 'med-1',
-      }),
-      revertToUnregistered: jest.fn().mockResolvedValue(true),
-      markTaken: jest.fn(),
-      findAnchorInstance: jest.fn(),
-    }
-
-    createDoseInstanceRepository.mockReturnValue(mockRepository)
+    mockRepository.getById.mockResolvedValue({
+      id: 'inst-1',
+      medicine_log_id: 'log-1',
+      scheduled_for: '2020-01-01T08:00:00Z',
+      tolerance_minutes: 30,
+      medicine_id: 'med-1',
+    })
+    mockRepository.revertToUnregistered.mockResolvedValue(true)
 
     // Mock do rpc com erro
     supabase.rpc.mockResolvedValue({ error: new Error('rpc error') })

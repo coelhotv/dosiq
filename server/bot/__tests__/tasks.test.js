@@ -1,10 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
   runDailyDigest, 
   runDailyAdherenceReport, 
   checkStockAlerts 
 } from '../tasks.js';
-// import { supabase } from '../../services/supabase.js';
+
+// Setup de variáveis de controle de tempo mockado global para simplificar dateUtils
+globalThis.__mockTime = '09:00';
+globalThis.__mockWeekday = 0;
+globalThis.__mockDayOfMonth = 1;
+
+vi.mock('../../utils/dateUtils.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getCurrentTimeInTimezone: vi.fn(() => {
+      return globalThis.__mockTime;
+    }),
+    getCurrentDatePartsInTimezone: vi.fn(() => {
+      return {
+        hhmm: globalThis.__mockTime,
+        weekday: globalThis.__mockWeekday,
+        dayOfMonth: globalThis.__mockDayOfMonth
+      };
+    })
+  };
+});
 
 const mockDataQueue = [];
 
@@ -16,11 +37,13 @@ const { mockSupabase } = vi.hoisted(() => {
     neq: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
     lt: vi.fn().mockReturnThis(),
     single: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     contains: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
     // Supabase queries are thenables
     then: vi.fn((onFulfilled) => {
       const result = mockDataQueue.shift() || { data: [], error: null };
@@ -34,19 +57,28 @@ vi.mock('../../services/supabase.js', () => ({
   supabase: mockSupabase
 }));
 
+vi.mock('../doseInstanceScheduler.js', () => ({
+  sweepMissedInstances: vi.fn(() => Promise.resolve(0)),
+  generateDoseInstances: vi.fn(() => Promise.resolve({ processed: 0, generated: 0 })),
+  cleanupPausedProtocols: vi.fn(() => Promise.resolve({ cleaned: 0 }))
+}));
+
 // Helper to set mock results in order
 const setMockData = (data, error = null) => {
   mockDataQueue.push({ data, error });
 };
 
-
+// Helper to set count results in order (for doseInstanceRepo.countByStatus)
+const setMockCount = (count) => {
+  mockDataQueue.push({ count, error: null });
+};
 
 vi.mock('../../bot/logger.js', () => ({
   createLogger: () => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
+    info: vi.fn(console.log),
+    error: vi.fn((msg, err, ctx) => console.error(msg, err, ctx)),
+    warn: vi.fn(console.warn),
+    debug: vi.fn(console.log),
   }),
 }));
 
@@ -55,7 +87,7 @@ vi.mock('../../services/notificationDeduplicator.js', () => ({
   shouldSendGroupedNotification: vi.fn(() => Promise.resolve(true)),
 }));
 
-describe('Tasks Service - Wave 11 Refactor', () => {
+describe('Tasks Service - Wave 11 Refactor & Phase 3', () => {
   let mockDispatcher;
 
   beforeEach(() => {
@@ -66,88 +98,113 @@ describe('Tasks Service - Wave 11 Refactor', () => {
     };
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   describe('runDailyDigest', () => {
     it('should correctly build the Morning Planner message', async () => {
-      // Mock user settings
-      setMockData([{ user_id: 'user1', display_name: 'Test User', digest_time: '08:00', timezone: 'America/Sao_Paulo' }]);
+      globalThis.__mockTime = '08:00';
+      globalThis.__mockWeekday = 1; // Segunda-feira
 
-      // Mock protocols
+      // 1. Mock user settings (notification_mode = digest_morning)
+      setMockData([{ user_id: 'user1', display_name: 'Test User', digest_time: '08:00', timezone: 'America/Sao_Paulo', notification_mode: 'digest_morning' }]);
+
+      // 2. Mock active protocols for the user
       setMockData([
         { 
           user_id: 'user1', 
           name: 'Med 1', 
           time_schedule: ['08:00', '20:00'], 
           medicine: { name: 'Aspirina', dosage_unit: 'pill' },
-          dosage_per_intake: 1
+          dosage_per_intake: 1,
+          frequency: 'diário',
+          active: true
         }
       ]);
 
-      // Mock logs (yesterday)
-      setMockData([{ id: 'log1' }]); // 1 dose taken yesterday
-
       await runDailyDigest({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
 
-      expect(mockDispatcher.dispatch).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockDispatcher.dispatch).toHaveBeenCalledWith({
+        userId: 'user1',
         kind: 'daily_digest',
-        payload: expect.objectContaining({
-          metadata: expect.objectContaining({
-            greeting: 'Bom dia',
-            yesterdayPercentage: 50, // 1 taken / 2 scheduled
-            scheduleCount: 2,
-          }),
+        data: expect.objectContaining({
+          firstName: 'Test User',
+          hour: 8,
+          pendingCount: 2,
+          medicines: expect.arrayContaining([
+            expect.objectContaining({ name: 'Aspirina', time: '08:00' }),
+            expect.objectContaining({ name: 'Aspirina', time: '20:00' })
+          ])
         }),
-      }));
+        context: expect.objectContaining({
+          correlationId: 'test-corr'
+        })
+      });
     });
   });
 
   describe('runDailyAdherenceReport', () => {
-    it('should generate storytelling based on performance improvement', async () => {
-      // Mock user settings (23:00)
-      setMockData([{ user_id: 'user1', display_name: 'Test User', digest_time: '23:00', timezone: 'America/Sao_Paulo' }]);
+    it('should generate storytelling based on yesterday vs anteontem performance', async () => {
+      globalThis.__mockTime = '09:00';
+      globalThis.__mockWeekday = 0; // Domingo
 
-      // Mock protocols
-      setMockData([
-        { 
-          user_id: 'user1', 
-          name: 'Med 1', 
-          time_schedule: ['08:00', '20:00'], 
-          medicine: { name: 'Aspirina' }
-        }
-      ]);
+      // 1. Mock user settings (retrieved in runDailyAdherenceReportViaDispatcher)
+      setMockData([{ user_id: 'user1', display_name: 'Test User', timezone: 'America/Sao_Paulo', notification_mode: 'active' }]);
 
-      // Mock logs (today and yesterday)
-      setMockData([
-        { taken_at: '2026-04-29T08:05:00Z', protocol_id: 'p1' }, // today
-        { taken_at: '2026-04-29T20:10:00Z', protocol_id: 'p1' }, // today (100%)
-        { taken_at: '2026-04-28T08:10:00Z', protocol_id: 'p1' }, // yesterday (50%)
-      ]);
+      // 2. Mock protocols active query (Filtro 1)
+      setMockData([{ id: 'p1' }]);
+
+      // 3. Mock yesterdayCounts (taken=2, missed=0, pending=0, skipped_paused=0, skipped_user=0)
+      setMockCount(2); // taken
+      setMockCount(0); // missed
+      setMockCount(0); // pending
+      setMockCount(0); // skipped_paused
+      setMockCount(0); // skipped_user
+
+      // 4. Mock beforeYesterdayCounts (taken=1, missed=1, pending=0, skipped_paused=0, skipped_user=0)
+      setMockCount(1); // taken
+      setMockCount(1); // missed
+      setMockCount(0); // pending
+      setMockCount(0); // skipped_paused
+      setMockCount(0); // skipped_user
 
       await runDailyAdherenceReport({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
 
-      expect(mockDispatcher.dispatch).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockDispatcher.dispatch).toHaveBeenCalledWith({
+        userId: 'user1',
         kind: 'adherence_report',
-        payload: expect.objectContaining({
-          metadata: expect.objectContaining({
-            percentage: 100,
-            storytelling: expect.stringContaining('📈 Melhora'),
-          }),
+        data: expect.objectContaining({
+          firstName: 'Test User',
+          period: 'ontem',
+          percentage: 100,
+          taken: 2,
+          total: 2,
+          comparison: expect.objectContaining({
+            previousPercentage: 50,
+            deltaPercent: 50,
+            trend: 'up'
+          })
         }),
-      }));
+        context: expect.objectContaining({
+          correlationId: 'test-corr',
+          jobType: 'adherence_report'
+        })
+      });
     });
   });
 
   describe('checkStockAlerts', () => {
     it('should provide predictive stock alerts (days remaining)', async () => {
-      // Mock users
+      // 1. Mock user settings
       setMockData([{ user_id: 'user1', timezone: 'America/Sao_Paulo' }]);
 
-      // Mock protocols (consumption calculation)
+      // 2. Mock active protocols
       setMockData([
-        { user_id: 'user1', medicine_id: 'med1', time_schedule: ['08:00', '20:00'], dosage_per_intake: 1 }
+        { user_id: 'user1', medicine_id: 'med1', time_schedule: ['08:00', '20:00'], dosage_per_intake: 1, frequency: 'diário', active: true }
       ]);
 
-      // Mock stock
+      // 3. Mock stock
       setMockData([
         { user_id: 'user1', medicine_id: 'med1', quantity: 10, medicine: { name: 'Aspirina' } }
       ]);
@@ -155,16 +212,19 @@ describe('Tasks Service - Wave 11 Refactor', () => {
       await checkStockAlerts({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
 
       // Daily consumption = 2. Stock = 10. Days remaining = 5.
-      expect(mockDispatcher.dispatch).toHaveBeenCalledWith(expect.objectContaining({
+      expect(mockDispatcher.dispatch).toHaveBeenCalledWith({
+        userId: 'user1',
         kind: 'stock_alert',
-        payload: expect.objectContaining({
-          metadata: expect.objectContaining({
-            daysRemaining: 5,
-            stockQuantity: 10,
-          }),
+        data: expect.objectContaining({
+          medicineName: 'Aspirina',
+          remaining: 10,
+          daysRemaining: 5
         }),
-      }));
+        context: expect.objectContaining({
+          correlationId: 'test-corr',
+          jobType: 'stock_alert_dispatcher'
+        })
+      });
     });
   });
-
 });

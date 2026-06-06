@@ -9,6 +9,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mobile (0.12.0 → 0.13.0)
+- **Alarmes Críticos Locais, Supressão de Pushes e Melhoria de Usabilidade** (Minor, Spec 025):
+  - Habilitada a flag `native_alarm_enabled` por padrão para iOS e Android para supressão automática de pushes remotos de doses críticas e prevenção de duplicidades.
+  - Implementado o agrupamento local de alarmes no Notifee (`useAlarmScheduler.js`), consolidando múltiplas doses críticas do mesmo minuto em um único trigger.
+  - Atualizada a tela cheia de alarme (`AlarmFullScreen.jsx`) e as ações rápidas (`quickDoseRegistration.js`) para suportar visualização e confirmação/descarte em lote.
+  - Ajustadas as cópias de exibição do alarme local em `alarmService.js` para usar o padrão clínico customizado para doses críticas (essenciais) de forma coerente.
+  - Integrada a solicitação contextual de permissões de push (`enablePushAtIntent`) ao toggle de alarme essencial do formulário de protocolos (`ProtocolFormBody.jsx`), incluindo modais de aviso customizadas para Xiaomi (HyperOS/MIUI) e Android 14+.
+  - Mapeado o deep link `'history'` para a tela correta de Histórico de Doses (`ROUTES.DOSE_HISTORY`) nas telas de inbox e no hook de recebimento de notificações.
+  - Corrigido o canal de áudio crítico do Android bumpado para `dose-alarm-critical-v2` e direcionado ao som `alarm_dose` para evitar o som padrão do sistema (como gotas no Xiaomi).
+  - Substituído o erro console.error obstrutivo no setup do token de push por console.warn no hook `usePushNotifications.js` para evitar a tela de erro no ambiente de desenvolvimento que cobria a tela de alarme.
+  - **Nota de loja relevante:** "Novo: Lembretes mais inteligentes para medicamentos essenciais. Se você tem mais de um remédio no mesmo horário, o alarme agora toca apenas uma vez e permite confirmar todos de uma vez só."
+
+### Server
+- **Divisão de blocos de notificação no Cron, Preferências do Bot e Novo Copy Clínico** (Minor, Spec 025):
+  - Modificado o cron do backend (`_reminderHelpers.js`) para pré-separar instâncias críticas e normais antes de agrupar, evitando o silenciamento de medicamentos normais em blocos mistos.
+  - Atualizado o comando `/start` do bot do Telegram para configurar `channel_telegram_enabled = true` e atualizar `notification_preference` de forma consistente no banco de dados.
+  - Refatorado o copy das notificações (`buildNotificationPayload.js`) para formato clínico acolhedor e estruturado com concentração e unidade em lembretes unitários no Telegram e Push.
+  - Integrado o suporte completo de Soneca (+5 min) e Skip (Pular) para o bot do Telegram via callback query, manipulando as instâncias de dose no banco.
+
 ### Infra
 - **Ancoragem rígida no Node 22 e CI Hardening** (Patch, apps/web 4.1.3→**4.1.5**):
   - Atualizado o runtime do projeto do Node 20 para o Node 22 LTS nos ambientes local, CI e Vercel, fixando a restrição em `"22.x"` no `package.json` raiz para evitar upgrades silenciosos indesejados da Vercel para a versão 24.
