@@ -118,7 +118,6 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
       .select(selectFields)
       .in('user_id', userIds)
       .eq('status', 'pending')
-      .is('notified_at', null)
       .not('snoozed_until', 'is', null)
       .gte('snoozed_until', windowStart)
       .lt('snoozed_until', windowEnd),
@@ -133,7 +132,10 @@ async function _updateNotifiedAt(instanceIds) {
   if (!instanceIds || instanceIds.length === 0) return;
   const { error } = await supabase
     .from('dose_instances')
-    .update({ notified_at: getServerTimestamp() })
+    .update({
+      notified_at: getServerTimestamp(),
+      snoozed_until: null
+    })
     .in('id', instanceIds);
   if (error) {
     logger.error('Erro ao atualizar notified_at em dose_instances', error, { instanceIds });
