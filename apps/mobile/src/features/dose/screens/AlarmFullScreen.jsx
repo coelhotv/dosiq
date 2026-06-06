@@ -23,6 +23,16 @@ export default function AlarmFullScreen({ navigation, route }) {
   const data = useMemo(() => route?.params || {}, [route?.params])
   const { medicineName, scheduledTime } = data
   const snoozeMaxed = parseInt(data.snoozeAttempt || '0', 10) >= 3
+  const isGrouped = data.isGrouped === 'true'
+
+  const groupedDosesList = useMemo(() => {
+    if (!isGrouped || !data.groupedDoses) return []
+    try {
+      return JSON.parse(data.groupedDoses)
+    } catch {
+      return []
+    }
+  }, [isGrouped, data.groupedDoses])
 
   const close = useCallback(() => {
     if (navigation.canGoBack()) navigation.goBack()
@@ -49,10 +59,9 @@ export default function AlarmFullScreen({ navigation, route }) {
         scheduledFor: data.scheduledFor,
         toleranceMinutes: data.toleranceMinutes != null ? Number(data.toleranceMinutes) : null,
         currentSnoozeAttempt: parseInt(data.snoozeAttempt || '0', 10),
+        isCritical: data.isCritical === 'true' || data.isCritical === true,
         data: {
-          protocolId: data.protocolId,
-          medicineId: data.medicineId,
-          quantityTaken: data.quantityTaken,
+          ...data,
         },
       })
     } finally {
@@ -83,10 +92,28 @@ export default function AlarmFullScreen({ navigation, route }) {
           <View style={styles.iconWrap}>
             <Pill size={56} color={colors.bg.card} strokeWidth={1.75} />
           </View>
-          <Text style={styles.kicker}>HORA DA DOSE</Text>
-          <Text style={styles.medicine} accessibilityRole="header">
-            {medicineName || 'Sua dose'}
+          <Text style={styles.kicker}>
+            {isGrouped ? 'DOSES ESSENCIAIS' : 'HORA DA DOSE'}
           </Text>
+
+          {isGrouped ? (
+            <View style={styles.groupedList}>
+              {groupedDosesList.map((d, index) => {
+                const dosageInfo = d.dosagePerPill && d.dosageUnit ? ` (${d.dosagePerPill}${d.dosageUnit})` : ''
+                const qtyInfo = ` - ${d.dosagePerIntake ?? 1} un.`
+                return (
+                  <Text key={d.instanceId || index} style={styles.groupedItem} accessibilityRole="text">
+                    💊 {d.medicineName}{dosageInfo}{qtyInfo}
+                  </Text>
+                )
+              })}
+            </View>
+          ) : (
+            <Text style={styles.medicine} accessibilityRole="header">
+              {medicineName || 'Sua dose'}
+            </Text>
+          )}
+
           {!!scheduledTime && <Text style={styles.time}>{scheduledTime}</Text>}
         </View>
 
@@ -96,10 +123,10 @@ export default function AlarmFullScreen({ navigation, route }) {
             onPress={onTaken}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel="Tomei a dose"
+            accessibilityLabel={isGrouped ? 'Tomar todas as doses' : 'Tomei a dose'}
           >
             <Check size={28} color={colors.bg.card} strokeWidth={3} />
-            <Text style={styles.btnTakenText}>Tomei</Text>
+            <Text style={styles.btnTakenText}>{isGrouped ? 'Tomar todas' : 'Tomei'}</Text>
           </TouchableOpacity>
 
           {!snoozeMaxed && (
@@ -120,10 +147,10 @@ export default function AlarmFullScreen({ navigation, route }) {
             onPress={onSkip}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel="Pular esta dose"
+            accessibilityLabel={isGrouped ? 'Pular todas as doses' : 'Pular esta dose'}
           >
             <X size={26} color={colors.text.primary} strokeWidth={2.5} />
-            <Text style={styles.btnSkipText}>Pular</Text>
+            <Text style={styles.btnSkipText}>{isGrouped ? 'Pular todas' : 'Pular'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -174,6 +201,18 @@ const styles = StyleSheet.create({
   medicine: {
     fontSize: 34,
     fontWeight: '800',
+    color: colors.bg.card,
+    textAlign: 'center',
+  },
+  groupedList: {
+    width: '100%',
+    marginVertical: spacing[4],
+    gap: spacing[2],
+    alignItems: 'center',
+  },
+  groupedItem: {
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.bg.card,
     textAlign: 'center',
   },

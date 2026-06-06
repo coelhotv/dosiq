@@ -14,9 +14,9 @@ import { getSaoPauloTime } from '../../utils/dateUtils.js';
 
 const formatDose = (qty, unit) => {
   if (!qty) return undefined;
-  const u = unit?.toLowerCase() || 'cp';
+  const u = unit?.toLowerCase() || 'un.';
   if (['mg', 'mcg', 'g', 'ml'].includes(u)) {
-    return '1 cp';
+    return '1 un.';
   }
   return `${qty} ${u}`;
 };
@@ -39,7 +39,7 @@ export function buildDailyDigestPayload(data) {
       const displayDosage = formatDose(m.dosagePerIntake, m.dosageUnit);
       richMsg += `💊 *${escapeMarkdownV2(m.name)}*\n`;
       richMsg += `⏰ ${escapeMarkdownV2(m.time)}${displayDosage ? ` \\(${escapeMarkdownV2(displayDosage)}\\)` : ''}\n\n`;
-      plainMsg += `⏰ ${m.name} - ${m.time}${displayDosage ? ` (${displayDosage})` : ''}\n`;
+      plainMsg += `⏰ ${m.name} — ${m.time}${displayDosage ? ` (${displayDosage})` : ''}\n`;
     });
     richMsg += `Não se esqueça de registrar no app\\!`;
     plainMsg += `Não se esqueça de registrar no app!`;

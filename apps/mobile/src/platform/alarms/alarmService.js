@@ -34,7 +34,7 @@ import { debugLog } from '@shared/utils/debugLog'
 export const ALARM_CHANNEL_ID = 'dose-alarm-v3'
 // Canal crítico Android (Spec 010, R-261): id separado para alarmes críticos (critical_alarm=true).
 // NUNCA mudar o id dose-alarm-v3 acima; bumpar este ao trocar som do canal crítico.
-export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v1'
+export const ALARM_CRITICAL_CHANNEL_ID = 'dose-alarm-critical-v2'
 const SOUND_ANDROID = 'alarm_dose' // res/raw/alarm_dose (sem extensão)
 const SOUND_IOS = 'alarm_dose.wav'
 // iOS interruption level (T013). 'timeSensitive' fura Focus/DND e é auto-concedido.
@@ -170,7 +170,7 @@ export async function ensureAlarmCriticalChannel() {
     id: ALARM_CRITICAL_CHANNEL_ID,
     name: 'Alarmes críticos de dose',
     importance: AndroidImportance.HIGH,
-    sound: 'default',
+    sound: SOUND_ANDROID,
     vibration: true,
     bypassDnd: true,
     visibility: AndroidVisibility.PUBLIC,
@@ -178,24 +178,93 @@ export async function ensureAlarmCriticalChannel() {
   criticalChannelEnsured = true
 }
 
+// Monta o copy clínico customizado e acolhedor dos alarmes
+function getAlarmCopy({ medicineName, data }) {
+  const time = data?.scheduledTime
+  const isGrouped = data?.isGrouped === 'true'
+
+  if (isGrouped) {
+    let doses = []
+    try {
+      doses = JSON.parse(data.groupedDoses || '[]')
+    } catch {
+      // fallback
+    }
+
+    if (doses.length === 0) {
+      return {
+        title: '💊 Hora da dose',
+        body: 'Está na hora do seu remédio.',
+      }
+    }
+
+    if (doses.length === 1) {
+      const d = doses[0]
+      const dosageInfo = d.dosagePerPill && d.dosageUnit ? ` (${d.dosagePerPill}${d.dosageUnit})` : ''
+      const intakeInfo = ` • ${d.dosagePerIntake ?? 1} un.`
+      const desc = `${d.medicineName}${dosageInfo}${intakeInfo}`
+      return {
+        title: '💊 Remédio essencial',
+        body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
+      }
+    }
+
+    // Verifica se todos pertencem ao mesmo plano de tratamento
+    const firstPlan = doses[0].treatmentPlanName
+    const samePlan = firstPlan && doses.every((d) => d.treatmentPlanName === firstPlan)
+
+    if (samePlan) {
+      return {
+        title: '📂 Plano essencial',
+        body: `Hora dos remédios do plano ${firstPlan}${time ? ` — ${time}` : ''}.`,
+      }
+    } else {
+      return {
+        title: '📋 Doses essenciais',
+        body: `Doses pendentes para as ${time || ''}.`,
+      }
+    }
+  } else {
+    // Dose única essencial
+    const name = medicineName || data?.medicineName || 'sua dose'
+    const dosagePerPill = data?.dosagePerPill
+    const dosageUnit = data?.dosageUnit
+    const quantity = data?.quantityTaken || '1'
+
+    const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
+    const intakeInfo = ` • ${quantity} un.`
+    const desc = `${name}${dosageInfo}${intakeInfo}`
+    return {
+      title: '💊 Remédio essencial',
+      body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
+    }
+  }
+}
+
 // Monta o objeto de notificação compartilhado por agendamento e nag.
 // isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
 function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
-  const title = '💊 Hora da dose'
-  const time = data?.scheduledTime
-  const body = medicineName
-    ? `Está na hora de tomar ${medicineName}${time ? ` (${time})` : ''}.`
-    : 'Está na hora da sua dose.'
+  const { title, body } = getAlarmCopy({ doseInstanceId, medicineName, data })
+  const sanitizedData = {}
+  if (data) {
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== null && value !== undefined) {
+        sanitizedData[key] = typeof value === 'object' ? JSON.stringify(value) : String(value)
+      }
+    }
+  }
+  sanitizedData.doseInstanceId = String(doseInstanceId)
+
   return {
     id: notificationId,
     title,
     body,
-    data: { ...data, doseInstanceId },
+    data: sanitizedData,
     android: {
       channelId: isCritical ? ALARM_CRITICAL_CHANNEL_ID : ALARM_CHANNEL_ID,
       category: AndroidCategory.ALARM,
       importance: AndroidImportance.HIGH,
-      sound: isCritical ? 'default' : SOUND_ANDROID,
+      sound: SOUND_ANDROID,
       // Loop do som + notif persistente: toca até o usuário escolher Tomei/Pular.
       // ongoing+autoCancel:false impedem swipe/auto-dismiss; cancelAlarm para o som.
       loopSound: true,
@@ -212,8 +281,12 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
     },
     ios: {
       sound: SOUND_IOS,
-      interruptionLevel: isCritical ? 'critical' : IOS_INTERRUPTION_LEVEL,
-      ...(isCritical ? { critical: true } : {}), // fura mute físico (entitlement critical-alerts)
+      // Temporariamente forçando timeSensitive para critical_alarm enquanto o entitlement
+      // com.apple.developer.usernotifications.critical-alerts está em aprovação pela Apple.
+      // Com 'critical', se o entitlement não estiver presente no profile de provisionamento,
+      // o iOS rejeita a notificação inteira silenciosamente.
+      interruptionLevel: IOS_INTERRUPTION_LEVEL,
+      // critical: true, // Desativado até obter o entitlement
       categoryId: ALARM_CHANNEL_ID, // ações registradas em ensureAlarmCategories (T015)
       // iOS suprime som/banner de notif quando o app está em foreground por padrão.
       // Declarar pra o alarme tocar/aparecer mesmo com o app aberto (paridade Android).
@@ -250,7 +323,7 @@ export async function scheduleAlarm({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: '0', snoozeAttempt: '0' },
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: '0', snoozeAttempt: '0' },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -280,7 +353,7 @@ export async function cancelAlarm(doseInstanceId) {
  * Re-agenda um nag +5min se ignorado, máx 3 tentativas, reativamente (FR-003).
  * Respeita a tolerância da instância (D): além da janela, para de insistir.
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor?: string|number|Date,
- *           toleranceMinutes?: number|null, currentNagAttempt?: number, data?: object }} params
+ *           toleranceMinutes?: number|null, currentNagAttempt?: number, isCritical?: boolean, data?: object }} params
  */
 export async function scheduleNag({
   doseInstanceId,
@@ -288,6 +361,7 @@ export async function scheduleNag({
   scheduledFor,
   toleranceMinutes = null,
   currentNagAttempt = 0,
+  isCritical = false,
   data = {},
 }) {
   const next = currentNagAttempt + 1
@@ -306,7 +380,8 @@ export async function scheduleNag({
     doseInstanceId,
     medicineName,
     notificationId: `${doseInstanceId}:nag:${next}`,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, nagAttempt: String(next) },
+    isCritical,
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: String(next) },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -329,6 +404,7 @@ export async function scheduleSnooze({
   scheduledFor,
   toleranceMinutes = null,
   currentSnoozeAttempt = 0,
+  isCritical = false,
   data = {},
 }) {
   // Cancela primeiro: mata o loop do som da notif atual.
@@ -342,11 +418,13 @@ export async function scheduleSnooze({
     doseInstanceId,
     medicineName,
     notificationId: doseInstanceId,
+    isCritical,
     data: {
       ...data,
       medicineName,
       scheduledFor,
       toleranceMinutes,
+      isCritical,
       nagAttempt: '0',
       snoozeAttempt: String(next),
     },
@@ -361,7 +439,12 @@ export async function scheduleSnooze({
   // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
   try {
     const repo = createDoseInstanceRepository({ client: supabase })
-    await repo.setSnoozedUntil(doseInstanceId, nextTs)
+    if (data?.isGrouped === 'true' && data?.doseInstanceIds) {
+      const ids = data.doseInstanceIds.split(',')
+      await Promise.all(ids.map((id) => repo.setSnoozedUntil(id, nextTs)))
+    } else {
+      await repo.setSnoozedUntil(doseInstanceId, nextTs)
+    }
   } catch (err) {
     if (__DEV__) console.warn('[alarmService] setSnoozedUntil falhou', doseInstanceId, err?.message)
   }

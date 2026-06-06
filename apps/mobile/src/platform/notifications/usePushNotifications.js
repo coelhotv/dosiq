@@ -20,6 +20,7 @@ const SCREEN_TO_ROUTE = {
   'bulk-plan': ROUTES.TODAY,
   'bulk-misc': ROUTES.TODAY,
   'dose-individual': ROUTES.TODAY,
+  'history': ROUTES.DOSE_HISTORY,
 }
 
 // Navega para a tela correta a partir de um tap em push notification.
@@ -114,7 +115,7 @@ export function usePushNotifications({ supabase, session }) {
         await registerPushToken({ supabase, userId: session.user.id })
       } catch (error) {
         if (isMounted && __DEV__) {
-          console.error('[usePushNotifications] Erro durante setup:', error.message)
+          console.warn('[usePushNotifications] Erro durante setup (não-fatal):', error.message)
         }
       }
     }

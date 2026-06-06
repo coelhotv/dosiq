@@ -21,6 +21,7 @@ import {
   ensureInstancesUpTo,
   getRawNow,
   addDays,
+  parseISO,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
@@ -63,21 +64,67 @@ export async function syncAlarms({ userId, protocols, tz }) {
       return true
     })
 
-  await alarmService.cancelAll()
+  // Agrupa alarmes do mesmo minuto pelo epoch timestamp absoluto
+  const groups = new Map()
   for (const it of items) {
-    await alarmService.scheduleAlarm({
-      doseInstanceId: it.instanceId,
-      medicineName: it.medicineName,
-      scheduledFor: it.scheduledFor, // F: instante absoluto
-      toleranceMinutes: it.toleranceMinutes, // D: cutoff dinâmico
-      isCritical: it.critical,
-      data: {
+    const ts = parseISO(it.scheduledFor).getTime()
+    if (!groups.has(ts)) {
+      groups.set(ts, [])
+    }
+    groups.get(ts).push(it)
+  }
+
+  await alarmService.cancelAll()
+  for (const [ts, groupItems] of groups.entries()) {
+    if (groupItems.length === 1) {
+      const it = groupItems[0]
+      await alarmService.scheduleAlarm({
+        doseInstanceId: it.instanceId,
+        medicineName: it.medicineName,
+        scheduledFor: it.scheduledFor, // F: instante absoluto
+        toleranceMinutes: it.toleranceMinutes, // D: cutoff dinâmico
+        isCritical: it.critical,
+        data: {
+          protocolId: it.protocolId,
+          medicineId: it.medicineId,
+          quantityTaken: String(it.dosagePerIntake ?? 1),
+          scheduledTime: it.scheduledTime || '',
+          dosagePerPill: it.dosagePerPill != null ? String(it.dosagePerPill) : '',
+          dosageUnit: it.dosageUnit || '',
+        },
+      })
+    } else {
+      // Múltiplos alarmes no mesmo minuto
+      const first = groupItems[0]
+      const doseInstanceIds = groupItems.map((it) => it.instanceId).join(',')
+      const groupedDoses = groupItems.map((it) => ({
+        instanceId: it.instanceId,
+        medicineName: it.medicineName,
         protocolId: it.protocolId,
         medicineId: it.medicineId,
-        quantityTaken: String(it.dosagePerIntake ?? 1),
-        scheduledTime: it.scheduledTime || '',
-      },
-    })
+        dosagePerIntake: it.dosagePerIntake,
+        dosagePerPill: it.dosagePerPill,
+        dosageUnit: it.dosageUnit,
+        treatmentPlanName: it.treatmentPlanName,
+        scheduledTime: it.scheduledTime,
+        toleranceMinutes: it.toleranceMinutes,
+      }))
+      const maxTolerance = Math.max(...groupItems.map((it) => it.toleranceMinutes ?? 120))
+
+      await alarmService.scheduleAlarm({
+        doseInstanceId: String(ts),
+        medicineName: '', // Nome vazio sinaliza agrupamento no alarme local
+        scheduledFor: first.scheduledFor,
+        toleranceMinutes: maxTolerance,
+        isCritical: groupItems.some((it) => it.critical),
+        data: {
+          isGrouped: 'true',
+          doseInstanceIds,
+          groupedDoses: JSON.stringify(groupedDoses),
+          scheduledTime: first.scheduledTime || '',
+        },
+      })
+    }
   }
 }
 

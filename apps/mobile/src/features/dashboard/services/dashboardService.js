@@ -21,7 +21,7 @@ export async function getActiveProtocols(userId, dateStr) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('protocols')
-    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, start_date, end_date, titration_status, weekdays, critical_alarm')
+    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)
