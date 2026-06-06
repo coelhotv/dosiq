@@ -49,18 +49,22 @@ async function _getEligibleUsersForAdherence(users, correlationId) {
 
 // _getAdherenceStorytelling removed — moved to Layer 2 (buildNotificationPayload.js)
 
+async function _hasActiveProtocols(userId) {
+  const { data, error } = await supabase
+    .from('protocols')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .limit(1);
+  return !error && data && data.length > 0;
+}
+
 async function _processUserAdherence(user, dispatcher, correlationId) {
   const { user_id: userId, display_name: displayName } = user;
   try {
     // Filtro 1: Apenas usuários com tratamentos ativos no banco
-    const { data: activeProtocols, error: protocolsError } = await supabase
-      .from('protocols')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('active', true)
-      .limit(1);
-
-    if (protocolsError || !activeProtocols || activeProtocols.length === 0) {
+    const hasActive = await _hasActiveProtocols(userId);
+    if (!hasActive) {
       logger.debug(`Usuário sem tratamentos ativos. Pulando relatório diário.`, { userId });
       return;
     }
@@ -181,13 +185,8 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       if (weekday !== 0 || hhmm !== '09:00') continue;
 
       // Filtro 1: Apenas usuários com tratamentos ativos no banco
-      const { data: activeProtocols, error: protocolsError } = await supabase
-        .from('protocols')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('active', true)
-        .limit(1);
-      if (protocolsError || !activeProtocols || activeProtocols.length === 0) continue;
+      const hasActive = await _hasActiveProtocols(userId);
+      if (!hasActive) continue;
 
       const shouldSend = await shouldSendNotification(userId, null, 'weekly_adherence');
       if (!shouldSend) continue;
@@ -241,13 +240,8 @@ export async function checkMonthlyReportViaDispatcher(dispatcher, correlationId)
       if (dayOfMonth !== 1 || hhmm !== '09:00') continue;
 
       // Filtro 1: Apenas usuários com tratamentos ativos no banco
-      const { data: activeProtocols, error: protocolsError } = await supabase
-        .from('protocols')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('active', true)
-        .limit(1);
-      if (protocolsError || !activeProtocols || activeProtocols.length === 0) continue;
+      const hasActive = await _hasActiveProtocols(userId);
+      if (!hasActive) continue;
 
       const shouldSend = await shouldSendNotification(userId, null, 'monthly_report');
       if (!shouldSend) continue;

@@ -50,20 +50,18 @@ export async function registerTaken(data) {
     }
 
     if (doses.length > 0) {
-      await Promise.all(
-        doses.map(async (d) => {
-          const quantity = d.dosagePerIntake != null ? Number(d.dosagePerIntake) : 1
-          await registerDose(
-            {
-              protocol_id: d.protocolId || null,
-              medicine_id: d.medicineId,
-              taken_at: getRawNow().toISOString(),
-              quantity_taken: quantity,
-            },
-            { instanceId: d.instanceId }
-          )
-        })
-      )
+      for (const d of doses) {
+        const quantity = d.dosagePerIntake != null ? Number(d.dosagePerIntake) : 1
+        await registerDose(
+          {
+            protocol_id: d.protocolId || null,
+            medicine_id: d.medicineId,
+            taken_at: getRawNow().toISOString(),
+            quantity_taken: quantity,
+          },
+          { instanceId: d.instanceId }
+        )
+      }
       await invalidate(SNAPSHOTS_TAKEN)
       return { success: true }
     }
