@@ -92,9 +92,9 @@ describe('createDoseInstanceRepository', () => {
       const b = client._builder
       expect(client._from).toBe('dose_instances')
       expect(callNames(b)).toContain('delete')
-      // escopo por protocolo + status pending
+      // escopo por protocolo + status pending/skipped_paused
       expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
-      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'skipped_paused'])
       // corte temporal estritamente futuro (gt, não gte)
       const gtCall = b._calls.find(([n]) => n === 'gt')
       expect(gtCall[1][0]).toBe('scheduled_for')
@@ -129,7 +129,7 @@ describe('createDoseInstanceRepository', () => {
       expect(client._from).toBe('dose_instances')
       expect(callNames(b)).toContain('delete')
       expect(b.in).toHaveBeenCalledWith('protocol_id', ['p1', 'p2'])
-      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
+      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'skipped_paused'])
       const gtCall = b._calls.find(([n]) => n === 'gt')
       expect(gtCall[1][0]).toBe('scheduled_for')
       expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)

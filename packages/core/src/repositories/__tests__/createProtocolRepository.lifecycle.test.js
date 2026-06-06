@@ -38,12 +38,20 @@ function makeClient() {
     b.update = chain('update')
     b.delete = chain('delete')
     b.eq = chain('eq')
+    b.in = chain('in')
     b.gt = chain('gt')
     b.gte = chain('gte')
     b.lte = chain('lte')
     b.not = chain('not')
     b.order = chain('order')
     b.single = vi.fn(function () { b.calls.push(['single', []]); return Promise.resolve(b._result) })
+    b.maybeSingle = vi.fn(function () {
+      b.calls.push(['maybeSingle', []])
+      const res = b._result && Array.isArray(b._result.data) && b._result.data.length === 0
+        ? { ...b._result, data: null }
+        : b._result
+      return Promise.resolve(res)
+    })
     b.then = (resolve) => resolve(b._result)
     ops.push(b)
     return b

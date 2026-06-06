@@ -71,7 +71,7 @@ export function createDoseInstanceRepository({ client }) {
         .from(TABLE)
         .delete()
         .eq('protocol_id', protocolId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'skipped_paused'])
         .gt('scheduled_for', getServerTimestamp())
 
       if (error) throw error
@@ -89,7 +89,7 @@ export function createDoseInstanceRepository({ client }) {
         .from(TABLE)
         .delete()
         .in('protocol_id', protocolIds)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'skipped_paused'])
         .gt('scheduled_for', getServerTimestamp())
 
       if (error) throw error
