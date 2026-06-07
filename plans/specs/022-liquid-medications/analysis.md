@@ -135,3 +135,52 @@ Gaps resolvidos → reality check **PASS**. Escopo Fase A revisado: A.1 ADD CHEC
 | sólido | — | caminho linear inteiro | ✅ teste |
 
 Teste: harness `BEGIN … ROLLBACK` no DB ao vivo (prod intocado), incluindo os casos que **devem** levantar exceção (dose minúscula confirmado RAISE).
+
+---
+
+## C1 Reality Check — Fase B (Core) — 2026-06-07
+
+**Evidence table (verificado on-disk):**
+| Claim do plan | Real repo | Verified? | Nota |
+|---------------|-----------|-----------|------|
+| `DOSAGE_UNITS` em medicineSchema:9 | `['mg','mcg','g','ml','ui','un','gotas']` | ✅ | vira `['mg','mcg','g','ui','un','mg/ml','ui/ml']` |
+| `dosage_per_intake .max(1000)` já existe | protocolSchema:105 `.max(1000)` | ✅ | NÃO mexer cap; só ADD `intake_unit` |
+| cap-100 `logSchema:36` | `.max(100,'…100')` | ✅ | →1000 |
+| cap-100 `costAnalysisSchema:79` | `.max(100,'…')` | ✅ | →1000 |
+| cap-100 `adherencePatternSchema:13` | `.max(100)` | ✅ | →1000 |
+| cap-100 `reminderOptimizerSchema:19` | `.max(100)` | ✅ | →1000 |
+| `doseUnit.js` tem `formatNumberPtBR`+`pluralizeDoseUnit` | ✅ | ✅ | `formatDose` estende |
+| **FR-010 alvo**: `stockService.js` (web+mobile) | wrappers thin; `createPurchase` definido em **`packages/core/src/repositories/createPurchaseRepository.js:122`** | ❌→corrigido | ver gap B1 |
+
+**Gaps Fase B:**
+| # | Sev | Gap | Correção |
+|---|-----|-----|----------|
+| B1 | HIGH | Desmembramento miraria os 2 `stockService` (apps), mas a lógica vive no **core** `createPurchaseRepository`; duplicar nos apps viola fonte-única. Web mapeia métodos explícito; mobile usa spread `{...purchaseRepo}`. | Novo método `createLiquidPurchase` **no core repo**; web wrapper +1 linha passthrough; mobile herda via spread. |
+| B2 | MEDIUM | `validation.test.js:181` ('rejeitar quantidade muito alta') usa `quantity_taken:150` + msg '100' → quebra com cap→1000 | Atualizar teste: `quantity_taken: 1500` + msg '1000' (preserva intenção do cap) |
+| B3 | MEDIUM | `stockSchema` (validateStockCreate) pode capar `quantity`/exigir campos — desmembramento passa `quantity=volumePerBottle` (ex: 100/1000 ml) | Confirmar stockSchema aceita volume ml ao codar; ajustar se houver cap restritivo |
+| B4 | LOW | cross-validação `_medicineIsLiquid` no protocolSchema (form injeta) vs service | injetar `_medicineIsLiquid` no form (Fase C); documentar |
+
+## Failure Modes & Degenerate Inputs — funções novas Fase B (R-270)
+
+**`formatDose(value, unit)`** (doseUnit.js):
+| Input | Degenerado | Esperado |
+|-------|-----------|----------|
+| value | `null`/`undefined` | `''` (não 'NaN') |
+| value | `1` + unit `gotas` | `'1 gota'` (singular) |
+| value | decimal `2.5` | `'2,5 ml'` (vírgula via formatNumberPtBR) |
+| value | `3000` | `'3.000 …'` (milhar, não `.replace` ingênuo) |
+| unit | desconhecido/`null` | `'<n> <unit||''>'.trim()` sem crash |
+
+**`createLiquidPurchase`** (core repo):
+| Input | Degenerado | Esperado |
+|-------|-----------|----------|
+| numBottles | `0`/negativo | rejeitar (loop não roda; sem div/0 em `total/numBottles`) |
+| numBottles | `1` | 1 chamada, sem compensação |
+| totalPrice | divisão inexata (R$10/3) | 2× `round`, último compensa centavo → Σ = total exato |
+| volumePerBottle | `0` | rejeitar (evita unit_price = price/0) |
+| validateStockCreate | falha Zod | throw com msg (não silencioso) |
+
+**medicineSchema.superRefine** (`/ml` ⇒ units_per_ml obrigatório): unit `mg/ml` sem units_per_ml → issue; `dosage_per_pill` NULL tolerado (legado).
+**protocolSchema.superRefine** (líquido ⇒ intake_unit): `_medicineIsLiquid=true` sem intake_unit → issue; sólido → intake_unit NULL ok.
+
+Cada modo → teste unitário (vitest core, T014). Reality check **PASS** com B1 corrigido (target = core repo).
