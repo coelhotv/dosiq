@@ -76,7 +76,7 @@ export const CalculateRealCostsInputSchema = z.object({
         quantity_taken: z
           .number()
           .nonnegative('quantity_taken deve ser >= 0')
-          .max(100, 'quantity_taken não pode ser maior que 100')
+          .max(1000, 'quantity_taken não pode ser maior que 1000') // cap 100→1000 (022 Fase B, R-022)
           .nullable()
           .optional(),
       })

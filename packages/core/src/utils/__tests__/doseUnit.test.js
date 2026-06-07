@@ -2,10 +2,40 @@ import { describe, it, expect } from 'vitest'
 import {
   pluralizeDoseUnit,
   formatDoseUnit,
+  formatDose,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
 } from '../doseUnit.js'
+
+describe('formatDose (unidade de tomada — líquidos 022)', () => {
+  it('gotas: plural e singular', () => {
+    expect(formatDose(15, 'gotas')).toBe('15 gotas')
+    expect(formatDose(1, 'gotas')).toBe('1 gota')
+  })
+  it('ml: vírgula decimal PT-BR', () => {
+    expect(formatDose(2.5, 'ml')).toBe('2,5 ml')
+    expect(formatDose(10, 'ml')).toBe('10 ml')
+  })
+  it('UI: escala direta', () => {
+    expect(formatDose(10, 'UI')).toBe('10 UI')
+  })
+  it('milhar com ponto PT-BR', () => {
+    expect(formatDose(3000, 'gotas')).toBe('3.000 gotas')
+  })
+  it('null/undefined → string vazia', () => {
+    expect(formatDose(null, 'ml')).toBe('')
+    expect(formatDose(undefined, 'gotas')).toBe('')
+  })
+  it('unidade desconhecida → valor + unidade sem crash', () => {
+    expect(formatDose(5, 'xyz')).toBe('5 xyz')
+    expect(formatDose(5, null)).toBe('5')
+  })
+  it('string com vírgula PT-BR no singular de gota (review #651)', () => {
+    expect(formatDose('1,0', 'gotas')).toBe('1 gota')
+    expect(formatDose('2,0', 'gotas')).toBe('2 gotas')
+  })
+})
 
 describe('pluralizeDoseUnit (padronizado para unidade(s))', () => {
   it('singular quando qty === 1', () => {

@@ -140,6 +140,80 @@ export function createPurchaseRepository({ client, getUserId }) {
     },
 
     /**
+     * Desmembra a compra de um líquido em N frascos: N chamadas a `createPurchase`
+     * (1 purchase + 1 lote `stock` cada, `original_quantity = quantity = volumePerBottle`),
+     * com `unit_price` = custo POR ML. FIFO opera frasco a frasco. Compensa centavos no
+     * último frasco p/ o total reconstruído (Σ unit_price·volume) fechar exato (022 Fase B).
+     *
+     * @param {Object} input
+     * @param {string} input.medicineId
+     * @param {number} input.numBottles       Nº de frascos (inteiro > 0).
+     * @param {number} input.volumePerBottle  Volume nominal de cada frasco em ml (> 0).
+     * @param {number} input.totalPrice       Preço total da compra (R$, >= 0).
+     * @param {string} input.purchaseDate     YYYY-MM-DD.
+     * @param {string} [input.expirationDate]
+     * @param {string} [input.pharmacy]
+     * @param {string} [input.laboratory]
+     * @param {string} [input.notes]
+     * @returns {Promise<Array>} resultados das N RPCs (1 por lote).
+     * @throws {Error} se numBottles/volumePerBottle inválidos ou validação Zod falhar.
+     */
+    async createLiquidPurchase(input) {
+      const {
+        medicineId,
+        numBottles,
+        volumePerBottle,
+        totalPrice = 0,
+        purchaseDate,
+        expirationDate = null,
+        pharmacy = null,
+        laboratory = null,
+        notes = null,
+      } = input || {}
+
+      // Guards de input degenerado (R-270): evitam loop vazio e divisão por zero.
+      if (!Number.isInteger(numBottles) || numBottles <= 0) {
+        throw new Error('Número de frascos deve ser um inteiro maior que zero')
+      }
+      if (typeof volumePerBottle !== 'number' || volumePerBottle <= 0) {
+        throw new Error('Volume por frasco deve ser maior que zero')
+      }
+      if (typeof totalPrice !== 'number' || totalPrice < 0) {
+        throw new Error('Preço total não pode ser negativo')
+      }
+
+      const round2 = (x) => Number(x.toFixed(2))
+      const round4 = (x) => Number(x.toFixed(4))
+
+      // Math.floor (não round2) p/ truncar: garante que pricePerBottle nunca exceda a fração
+      // do total. Senão, em centavos baixos (ex: R$0,04 / 6 frascos) o arredondamento p/ cima
+      // tornaria compensatedLast negativo → unit_price negativo (review #651).
+      const pricePerBottle = Math.floor((totalPrice / numBottles) * 100) / 100
+      // Último frasco absorve o resíduo (sempre >= 0) p/ fechar o total exato.
+      const compensatedLast = round2(totalPrice - pricePerBottle * (numBottles - 1))
+      const unitPriceMl = round4(pricePerBottle / volumePerBottle)
+      const compensatedUnitPriceMl = round4(compensatedLast / volumePerBottle)
+
+      const results = []
+      for (let i = 0; i < numBottles; i++) {
+        const isLast = i === numBottles - 1
+        // Reusa createPurchase (validação Zod + RPC create_purchase_with_stock por lote).
+        const data = await repo.createPurchase({
+          medicine_id: medicineId,
+          quantity: volumePerBottle,
+          unit_price: isLast ? compensatedUnitPriceMl : unitPriceMl,
+          purchase_date: purchaseDate,
+          expiration_date: expirationDate,
+          pharmacy,
+          laboratory,
+          notes,
+        })
+        results.push(data)
+      }
+      return results
+    },
+
+    /**
      * Edita uma purchase existente — APENAS metadados (preço, datas, farmácia,
      * lab, notas). NÃO altera `quantity_bought`: a quantidade está amarrada ao
      * lote em `stock` (saldo + FIFO) e qualquer correção de saldo passa pelo
