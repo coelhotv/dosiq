@@ -37,6 +37,7 @@
 - **[AP-189]** Fallback de arrays vazios `[]` do banco de dados usando o operador lógico `||` em JavaScript -> [`anti-patterns/data_and_schema/AP-189.md`](./anti-patterns/data_and_schema/AP-189.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[AP-217]** Reescrever função SQL existente a partir do spec (não do `pg_get_functiondef` ao vivo) descarta invariantes: overloads, filtros (`entry_type`), guards de posse, ordenação FIFO — regressões silenciosas que lint/testes web não pegam. Diff real vs proposto + grep callers por overload + teste BEGIN…ROLLBACK antes de aplicar -> [`anti-patterns/infra_and_deploy/AP-217.md`](./anti-patterns/infra_and_deploy/AP-217.md)
 - **[AP-H27]** Import relativo cross-boundary quebra após git mv em monorepo — tests em src/ com `../../../../server/` falham -> [`anti-patterns/infra_and_deploy/AP-H27.md`](./anti-patterns/infra_and_deploy/AP-H27.md)
 - **[AP-096]** CSS Deletion Without Verifying className Usage in JSX -> [`anti-patterns/infra_and_deploy/AP-096.md`](./anti-patterns/infra_and_deploy/AP-096.md)
 - **[AP-H04]** npm ERESOLVE conflict when adding new workspace package with incompatible peer d... -> [`anti-patterns/infra_and_deploy/AP-H04.md`](./anti-patterns/infra_and_deploy/AP-H04.md)
