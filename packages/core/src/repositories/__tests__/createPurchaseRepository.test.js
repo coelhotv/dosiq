@@ -191,4 +191,69 @@ describe('createPurchaseRepository — parity', () => {
       await expect(repo.updatePurchase('p-1', { quantity: -5 })).rejects.toThrow(/Erro de validação/)
     })
   })
+
+  // ── createLiquidPurchase (desmembramento — 022 Fase B) ──
+  describe('createLiquidPurchase', () => {
+    const LIQ = {
+      medicineId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+      volumePerBottle: 100,
+      purchaseDate: '2026-01-10',
+    }
+
+    it('3 frascos / R$30 → 3 RPCs, p_quantity=100, unit_price=0.03 (0.30/frasco ÷ 100ml)', async () => {
+      client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      const res = await repo.createLiquidPurchase({ ...LIQ, numBottles: 3, totalPrice: 30 })
+      expect(res).toHaveLength(3)
+      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      expect(rpcs).toHaveLength(3)
+      rpcs.forEach(([, args]) => {
+        expect(args.p_quantity).toBe(100)
+        expect(args.p_unit_price).toBeCloseTo(0.1, 4) // R$10/frasco ÷ 100ml = 0.10/ml
+      })
+    })
+
+    it('compensa centavos no último frasco (R$10 / 3 frascos)', async () => {
+      client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createLiquidPurchase({ ...LIQ, numBottles: 3, totalPrice: 10 })
+      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      // pricePerBottle=3.33 → unit_price 0.0333; último: 10-3.33*2=3.34 → 0.0334.
+      const prices = rpcs.map(([, a]) => a.p_unit_price)
+      expect(prices[0]).toBeCloseTo(0.0333, 4)
+      expect(prices[2]).toBeCloseTo(0.0334, 4)
+      // total reconstruído ≈ R$10 (sem perda de centavos)
+      const total = prices.reduce((s, p) => s + p * 100, 0)
+      expect(total).toBeCloseTo(10, 2)
+    })
+
+    it('1 frasco → 1 RPC sem compensação', async () => {
+      client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createLiquidPurchase({ ...LIQ, numBottles: 1, totalPrice: 50 })
+      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      expect(rpcs).toHaveLength(1)
+      expect(rpcs[0][1].p_unit_price).toBeCloseTo(0.5, 4)
+    })
+
+    it('numBottles ≤ 0 ou não-inteiro → rejeita (sem loop/div0)', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await expect(repo.createLiquidPurchase({ ...LIQ, numBottles: 0, totalPrice: 10 })).rejects.toThrow(/frascos/)
+      await expect(repo.createLiquidPurchase({ ...LIQ, numBottles: 2.5, totalPrice: 10 })).rejects.toThrow(/frascos/)
+    })
+
+    it('volumePerBottle ≤ 0 → rejeita (evita div por zero no custo/ml)', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await expect(
+        repo.createLiquidPurchase({ ...LIQ, volumePerBottle: 0, numBottles: 2, totalPrice: 10 })
+      ).rejects.toThrow(/Volume/)
+    })
+
+    it('totalPrice negativo → rejeita', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await expect(
+        repo.createLiquidPurchase({ ...LIQ, numBottles: 2, totalPrice: -5 })
+      ).rejects.toThrow(/negativo/)
+    })
+  })
 })

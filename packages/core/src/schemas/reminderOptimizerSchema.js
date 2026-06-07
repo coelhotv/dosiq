@@ -16,7 +16,7 @@ export const AnalyzeReminderTimingInputSchema = z.object({
       id: z.string(),
       protocol_id: z.string().nullable().optional(),
       medicine_id: z.string(),
-      quantity_taken: z.number().positive().max(100).nullable().optional(),
+      quantity_taken: z.number().positive().max(1000).nullable().optional(), // cap 100→1000 (022 Fase B, R-022)
       taken_at: z.string().datetime({ offset: true }), // ISO timestamp
     })
   ),

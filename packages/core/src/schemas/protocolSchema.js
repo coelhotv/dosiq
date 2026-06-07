@@ -69,6 +69,16 @@ export const titrationStageSchema = z.object({
 /**
  * Schema base para protocolo
  */
+// Unidades de TOMADA (físicas) p/ líquidos — 022. Sincronizado com CHECK
+// protocols_intake_unit_check ('gotas','ml','UI') (R-082/R-271). 'UI' maiúsculo.
+export const INTAKE_UNITS = ['gotas', 'ml', 'UI']
+
+export const INTAKE_UNIT_LABELS = {
+  gotas: 'gotas',
+  ml: 'ml',
+  UI: 'UI',
+}
+
 export const protocolSchema = z.object({
   medicine_id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
 
@@ -159,12 +169,32 @@ export const protocolSchema = z.object({
     .default([]),
 
   critical_alarm: z.boolean().default(false),
+
+  // Unidade física da tomada (gotas/ml/UI) — só p/ líquidos; NULL p/ sólidos (022).
+  intake_unit: z.enum(INTAKE_UNITS).nullable().optional(),
+
+  // Flag de contexto transiente injetado pelo form (derivado de dosage_unit LIKE '%/ml').
+  // NÃO persistido — services selecionam campos explícitos. Existe só p/ o refine de líquido ver.
+  _medicineIsLiquid: z.boolean().optional(),
 })
 
 /**
  * Schema para criação de protocolo
  */
 export const protocolCreateSchema = protocolSchema
+  .refine(
+    (data) => {
+      // Líquido (form injeta _medicineIsLiquid) exige intake_unit (gotas/ml/UI).
+      if (data._medicineIsLiquid === true) {
+        return !!data.intake_unit
+      }
+      return true
+    },
+    {
+      message: 'Defina a unidade de tomada (gotas, ml ou UI) para medicamentos líquidos.',
+      path: ['intake_unit'],
+    }
+  )
   .refine(
     (data) => {
       // Se tem titration_schedule, deve ter stage_started_at

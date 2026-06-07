@@ -59,6 +59,27 @@ export function formatDoseUnit(qty) {
 }
 
 /**
+ * Formata dose na UNIDADE DE TOMADA real (líquidos — 022). Vírgula decimal PT-BR
+ * (reusa formatNumberPtBR). `gotas` tem singular/plural próprio; `pluralizeDoseUnit`
+ * só serve p/ "unidade(s)", por isso o plural de gotas é inline.
+ *
+ * @example formatDose(15, 'gotas') → '15 gotas'
+ * @example formatDose(1, 'gotas')  → '1 gota'
+ * @example formatDose(2.5, 'ml')   → '2,5 ml'
+ * @example formatDose(10, 'UI')    → '10 UI'
+ * @example formatDose(null, 'ml')  → ''
+ */
+export function formatDose(value, unit) {
+  if (value === undefined || value === null) return ''
+  const v = formatNumberPtBR(value)
+  if (v === '') return ''
+  if (unit === 'ml') return `${v} ml`
+  if (unit === 'gotas') return `${v} ${Number(value) === 1 ? 'gota' : 'gotas'}`
+  if (unit === 'UI') return `${v} UI`
+  return `${v} ${unit || ''}`.trim()
+}
+
+/**
  * Retorna apenas o valor de concentração do princípio ativo correspondente.
  * Usado para hints em linhas separadas (como nos indicadores do Estoque).
  *
