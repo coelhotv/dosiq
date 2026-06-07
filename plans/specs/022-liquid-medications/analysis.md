@@ -115,3 +115,23 @@ G2/G3 = correções obrigatórias (preservar comportamento), sem decisão. ADD C
 - **G2/G3 preservados** no novo corpo 4-arg (filtro `legacy_unrecoverable` + guard `medicine_logs`). **G5:** adotar `SET search_path = ''` + refs `public.` qualificadas (hardening).
 
 Gaps resolvidos → reality check **PASS**. Escopo Fase A revisado: A.1 ADD CHECK · A.2 colunas · A.3 migração (só 3 `ml`) · A.4 RPC 4-arg líquida + DROP 3-arg + edit `conversational.js`.
+
+---
+
+## Failure Modes & Degenerate Inputs — `consume_stock_fifo` (R-270)
+
+> Tabela obrigatória pós-PR #650 (revisor pegou 7 defeitos comportamentais que o reality-check estrutural não viu). Toda função/RPC nova das Fases B/C herda este formato ANTES de codar.
+
+| Input / condição | Degenerado | Esperado | Coberto (commit) |
+|------------------|-----------|----------|------------------|
+| `p_user_id` | NULL | raise 'user_id obrigatório' | ✅ |
+| `p_quantity` | NULL / ≤0 | raise 'quantidade > 0' | ✅ |
+| `p_medicine_log_id` | NULL / log inexistente | raise (guard de posse) | ✅ G3 |
+| `units_per_ml` | `0` / NULL | `COALESCE(NULLIF(.,0),20)` — sem div/0 | ✅ 53d3c09f |
+| dose líquida | arredonda p/ `0.00` ml | raise 'dose muito pequena' (não no-op) | ✅ 53d3c09f |
+| `protocol_id` no log | NULL (avulso) | `COALESCE(intake_unit,'ml')` — nunca tratar gotas como ml | ✅ 53d3c09f (persistir unit em logs = follow-up B) |
+| `entry_type` | NULL | NULL-safe `(IS NULL OR != 'legacy_unrecoverable')` — não excluir | ✅ 53d3c09f |
+| múltiplos lotes | dose cruza frascos | zera 1º, debita saldo do próximo, atômico | ✅ teste |
+| sólido | — | caminho linear inteiro | ✅ teste |
+
+Teste: harness `BEGIN … ROLLBACK` no DB ao vivo (prod intocado), incluindo os casos que **devem** levantar exceção (dose minúscula confirmado RAISE).
