@@ -11,7 +11,7 @@
 
 > **Histórico:** consolida as antigas specs 023 (core/API) e 024 (UI/bot), que eram **camadas** da mesma feature, não features independentes. Staging de PR vive em `tasks.md` (Fases A/B/C), não em dirs separados.
 
-> **⚠️ Amendment 2026-06-03 — Coordenação com a spec 012 (Diabetes T2).** A 012 **depende
+> **⚠️ Amendment 2026-06-03 — Coordenação com a spec 012 (Diabetes T2). [RESOLVIDA via ADR-058 — re-sync concluído 2026-06-07]** A 012 **depende
 > desta spec** e reusa sua fundação (`intake_unit`, enum `ui/ml`, `consume_stock_fifo`
 > volume-aware, `formatDose`). Para evitar rename + migração dupla, **duas colunas desta spec
 > nascem já generalizadas**, em vez de específicas-de-líquido:
@@ -23,9 +23,10 @@
 >    caminho de decremento). `presentation` é o eixo de **forma** que a 012 estende para
 >    `injecao`/`pomada`; para líquidos deve ficar consistente com o flag derivado.
 >
-> **Sequenciamento (duro):** 022 mergeada **antes** do C-coding da 012. **Re-sync pendente:** os
-> downstream desta spec (`plan.md`, `tasks.md`, `analysis.md`, `contracts/`) devem refletir o nome
-> final da coluna genérica + `presentation` no próximo refresh de Planning desta 022.
+> **Sequenciamento (duro):** 022 mergeada **antes** do C-coding da 012. **Nome final (ADR-058):**
+> a coluna genérica permanece **`units_per_ml`** (`NUMERIC`, descarta o `drops_per_ml` específico)
+> + `presentation` (nome EN, valores PT R-021). Downstream (`plan.md`, `tasks.md`, `analysis.md`,
+> `contracts/`) **já refletem** esse nome final — re-sync concluído em 2026-06-07.
 
 ---
 
@@ -148,8 +149,8 @@ Consequências obrigatórias (todas cobertas neste épico):
 - **FR-002**: Adicionar **coluna genérica de densidade/razão→ml** em `public.medicines` (numeric,
   default `20`, nullable) cujo significado se adapta à `dosage_unit`: `gotas`→gotas/ml (`20`),
   `ui/ml`→UI/ml (`100`, reusada pela 012 p/ insulina). **Generaliza o antigo `units_per_ml`** num
-  campo único razão→ml (nome final em Planning; manter retrocompat de leitura onde `units_per_ml`
-  já for referenciado).
+  campo único razão→ml (nome final **`units_per_ml`** por ADR-058; manter retrocompat de leitura
+  onde `units_per_ml` já for referenciado).
 - **FR-002b**: Adicionar `presentation` (text/enum PT — `comprimido`/`capsula`/`liquido`/`injecao`/
   `pomada`/`spray`/`outro`, alinha `MEDICINE_TYPES`) em `public.medicines`, **additiva**. Forma
   farmacêutica explícita; **não** substitui a derivação `is_liquid := dosage_unit LIKE '%/ml'` do

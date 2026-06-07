@@ -360,6 +360,32 @@ if (activeStockQuantity < doseMl) { /* aviso "frasco no fim" */ }
 
 ---
 
+## Orquestração & Distribuição de Modelos (ADR-044)
+
+Execução faseada com **sub-agentes coders spawnados** p/ velocidade + economia de tokens (plano Claude Pro semanal). Modelo escolhido por **complexidade × risco** da task, não por linha de código. DEVFLOW (Opus) orquestra: bootstrap → C1/C2 gate → spawn → C4/C5 inline.
+
+### Regra de seleção
+| Modelo | Quando | Tasks 022 |
+|--------|--------|-----------|
+| **Opus** (arquiteto, inline — NÃO spawn) | alto risco, decisão arquitetural, atomicidade transacional, multi-arquivo acoplado | toda a Fase A (SQL/RPC); orquestração; C2 gate; C4 file-by-file DoD; C5 |
+| **Sonnet ⭐⭐** (spawn) | lógica não-trivial, schemas com refine, conversão/centavos, UI com estado/a11y | B: `protocolSchema` refine, `stockService` desmembramento; C: banner, bot, forms condicionais |
+| **Haiku ⭐** (spawn, gate de confiança ADR-044) | mecânico puro, edição localizada, sem ambiguidade | B: `formatDose`, cap-100→1000 (4 arquivos idênticos); C: dropdown estático |
+
+### Faseamento de spawn
+- **Fase A — SEM spawn.** Single-file SQL (`20260602_liquid_meds_db.sql`), T002-T005 ordem-dependente, prod migration + FIFO + `SECURITY DEFINER`. Opus inline. Spawn não dá ganho e adiciona risco.
+- **Fase B — spawn parcial.** T011 (cap, mecânico) → Haiku. T013 (`formatDose`) → Haiku c/ gate. T009/T010 (schemas+refine) + T012 (desmembramento) → Sonnet. Testes `[P]` T014 → Sonnet em paralelo.
+- **Fase C — spawn paralelo (maior ganho).** Arquivos web/mobile/bot independentes pós-gate. Forms → Sonnet/Haiku; banner+bot → Sonnet. Web e mobile podem rodar em sub-agentes paralelos.
+
+### Guardrails de orquestração (memória — obrigatórios)
+1. **Sub-agente NUNCA commita na main** → sempre branch + PR + aprovação humana (R-060; `feedback_subagents_never_commit_main`).
+2. **BRANCH SYNC RITUAL antes de cada spawn** que toca `packages/*` ou `apps/*/src/features/*`: `git fetch origin` → confirmar branch sincronizada → só então spawnar. Senão sub-agente "porta" arquivos que já existem em origin → duplicata + clash no push (AP-169, custo ~15min reset hard).
+3. **Gate de confiança Haiku (ADR-044):** Haiku só em mecânico puro; ambiguidade → escalar p/ Sonnet. DEVFLOW revisa output Haiku em C4 (file-by-file, cita linha).
+4. **Gates C1 antes de spawnar a fase:** T001 (nome real da constraint `dosage_unit`) trava Fase A; T015 (caminho real do estoque mobile + reuso do wizard) trava Fase C. Não spawnar com path não-verificado (sub-agente assume caminho errado).
+5. **DoD inline (Opus):** C4 file-by-file e C5 (memória/journal/state) **nunca** delegados — arquiteto verifica o output do sub-agente lendo o arquivo e citando linha.
+6. **Worktree por sub-agente** quando paralelizar web+mobile na Fase C (isolamento, evita clash de working tree).
+
+---
+
 ## Risks
 
 - **Constraint `dosage_unit` com nome desconhecido**: verificar `pg_constraint` antes de `DROP CONSTRAINT`. Se `dosage_unit` for `text` livre, pular A.1 (só atualizar o enum do core na Fase B).
