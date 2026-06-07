@@ -22,6 +22,9 @@ export const stockService = {
   getLowStockMedicines: (threshold) => stockRepo.getLowStockMedicines(threshold),
   // `add` = criar compra (cria entrada real em stock via RPC create_purchase_with_stock)
   add: (stock) => purchaseRepo.createPurchase(stock),
+  // Desmembramento de líquido: N frascos × volume × preço total → N lotes (022 Fase B).
+  // Mobile herda via spread {...purchaseRepo}; web mapeia explícito.
+  createLiquidPurchase: (input) => purchaseRepo.createLiquidPurchase(input),
   decrease: (medicineId, quantity, medicineLogId) =>
     stockRepo.decreaseStock(medicineId, quantity, medicineLogId),
   increase: (medicineId, quantity, options) =>

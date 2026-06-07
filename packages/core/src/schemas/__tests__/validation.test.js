@@ -179,14 +179,24 @@ describe('Schemas de Validação Zod', () => {
     })
 
     it('deve rejeitar quantidade muito alta', () => {
+      // Cap revisado 100→1000 (022 Fase B): 150 agora é válido (gotas); rejeita só >1000.
+      const log = {
+        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        quantity_taken: 1500,
+        taken_at: '2024-01-15T10:00:00Z',
+      }
+      const result = validateLogCreate(log)
+      expect(result.success).toBe(false)
+      expect(result.errors[0].message).toContain('1000')
+    })
+
+    it('deve aceitar dose líquida em gotas acima do antigo cap-100', () => {
       const log = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         quantity_taken: 150,
         taken_at: '2024-01-15T10:00:00Z',
       }
-      const result = validateLogCreate(log)
-      expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('100')
+      expect(validateLogCreate(log).success).toBe(true)
     })
   })
 
@@ -303,6 +313,48 @@ describe('Schemas de Validação Zod', () => {
       const result = validateEntity('medicine', {}, 'invalid_op')
       expect(result.success).toBe(false)
       expect(result.error.message).toContain('não suportada')
+    })
+  })
+
+  describe('Líquidos (022 Fase B)', () => {
+    it('medicamento mg/ml SEM units_per_ml → rejeita', () => {
+      const r = validateMedicineCreate({ name: 'Dipirona Gotas', dosage_unit: 'mg/ml' })
+      expect(r.success).toBe(false)
+      expect(r.errors.some((e) => e.field === 'units_per_ml')).toBe(true)
+    })
+    it('medicamento mg/ml COM units_per_ml → aceita (dosage_per_pill opcional)', () => {
+      const r = validateMedicineCreate({ name: 'Dipirona Gotas', dosage_unit: 'mg/ml', units_per_ml: 20 })
+      expect(r.success).toBe(true)
+    })
+    it('sólido mg sem units_per_ml → aceita (não exige densidade)', () => {
+      const r = validateMedicineCreate({ name: 'Paracetamol', dosage_unit: 'mg', dosage_per_pill: 500 })
+      expect(r.success).toBe(true)
+    })
+    it('protocolo líquido (_medicineIsLiquid) sem intake_unit → rejeita', () => {
+      const r = validateProtocolCreate({
+        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Xarope',
+        frequency: 'diário',
+        time_schedule: ['08:00'],
+        dosage_per_intake: 2.5,
+        start_date: '2026-01-01',
+        _medicineIsLiquid: true,
+      })
+      expect(r.success).toBe(false)
+      expect(r.errors.some((e) => e.field === 'intake_unit')).toBe(true)
+    })
+    it('protocolo líquido COM intake_unit gotas + dose decimal → aceita', () => {
+      const r = validateProtocolCreate({
+        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Xarope',
+        frequency: 'diário',
+        time_schedule: ['08:00'],
+        dosage_per_intake: 2.5,
+        start_date: '2026-01-01',
+        _medicineIsLiquid: true,
+        intake_unit: 'gotas',
+      })
+      expect(r.success).toBe(true)
     })
   })
 })

@@ -10,6 +10,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Shared/Core
+- **Added** (`minor`, PR #TBD): Medicamentos líquidos 022 Fase B (core/validações/serviços). `medicineSchema`: `DOSAGE_UNITS` ganha `mg/ml`/`ui/ml` e perde `ml`/`gotas` (viram unidade de tomada); novos campos `units_per_ml` (razão→ml, ADR-058) e `presentation` (+`PRESENTATIONS`); `dosage_per_pill` agora nullable (líquidos legados); superRefine exige `units_per_ml` para unidades `/ml`. `protocolSchema`: campo `intake_unit` (`gotas`/`ml`/`UI`) + refine que o exige para líquidos. Cap `quantity_taken` revisado 100→1000 (`logSchema`, `costAnalysisSchema`, `adherencePatternSchema`, `reminderOptimizerSchema`) — cobre doses em gotas (R-022). Novo `formatDose(value, unit)` em `doseUnit.js` (vírgula PT-BR, singular/plural de gota). Novo `createPurchaseRepository.createLiquidPurchase` — desmembra N frascos × volume × preço total em N lotes via `create_purchase_with_stock`, compensando centavos no último (exposto no `stockService` web; mobile herda via spread).
 - **Fixed** (`patch`, PR #TBD): Corrigido `wipeFuturePending` e `wipeFuturePendingForProtocols` no repositório de instâncias de dose para deletar também instâncias com status `skipped_paused` no futuro. Isso garante que edições de agendamento ou propriedades (como `critical_alarm`) realizadas em tratamentos pausados limpem corretamente as instâncias futuras de 24h que estavam pausadas.
 
 ### Mobile (0.13.0 → 0.13.1)

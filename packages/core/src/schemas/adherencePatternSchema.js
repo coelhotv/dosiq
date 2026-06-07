@@ -10,7 +10,7 @@ const logSchema = z.object({
   id: z.string().uuid(),
   medicine_id: z.string().uuid(),
   protocol_id: z.string().uuid().nullable().optional(),
-  quantity_taken: z.number().positive().max(100),
+  quantity_taken: z.number().positive().max(1000), // cap 100→1000 (022 Fase B, R-022)
   taken_at: z.string().datetime({ offset: true }),
 })
 

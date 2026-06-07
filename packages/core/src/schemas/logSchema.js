@@ -33,7 +33,9 @@ export const logSchema = z.object({
   quantity_taken: z
     .number()
     .positive('Quantidade tomada deve ser maior que zero')
-    .max(100, 'Quantidade máxima por registro é 100'),
+    // Cap revisado 100→1000 (022 Fase B): cobre doses líquidas em gotas. Cap Zod = guarda
+    // anti-erro de digitação; integridade física do saldo = CHECK(quantity>=0)+FIFO (Fase A). Ver R-022.
+    .max(1000, 'Quantidade máxima por registro é 1000'),
 
   notes: z
     .string()

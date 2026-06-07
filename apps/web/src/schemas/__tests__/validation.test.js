@@ -179,14 +179,15 @@ describe('Schemas de Validação Zod', () => {
     })
 
     it('deve rejeitar quantidade muito alta', () => {
+      // Cap revisado 100→1000 (022 Fase B): rejeita só >1000.
       const log = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-        quantity_taken: 150,
+        quantity_taken: 1500,
         taken_at: '2024-01-15T10:00:00Z',
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('100')
+      expect(result.errors[0].message).toContain('1000')
     })
   })
 
