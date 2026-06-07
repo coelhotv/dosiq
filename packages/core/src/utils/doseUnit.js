@@ -74,7 +74,12 @@ export function formatDose(value, unit) {
   const v = formatNumberPtBR(value)
   if (v === '') return ''
   if (unit === 'ml') return `${v} ml`
-  if (unit === 'gotas') return `${v} ${Number(value) === 1 ? 'gota' : 'gotas'}`
+  if (unit === 'gotas') {
+    // Normaliza vírgula PT-BR ('1,0') antes do check de singular — senão Number('1,0')=NaN
+    // exibiria '1 gotas' (review #651).
+    const numVal = Number(typeof value === 'string' ? value.replace(',', '.') : value)
+    return `${v} ${numVal === 1 ? 'gota' : 'gotas'}`
+  }
   if (unit === 'UI') return `${v} UI`
   return `${v} ${unit || ''}`.trim()
 }

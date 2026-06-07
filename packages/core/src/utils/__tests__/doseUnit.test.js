@@ -31,6 +31,10 @@ describe('formatDose (unidade de tomada — líquidos 022)', () => {
     expect(formatDose(5, 'xyz')).toBe('5 xyz')
     expect(formatDose(5, null)).toBe('5')
   })
+  it('string com vírgula PT-BR no singular de gota (review #651)', () => {
+    expect(formatDose('1,0', 'gotas')).toBe('1 gota')
+    expect(formatDose('2,0', 'gotas')).toBe('2 gotas')
+  })
 })
 
 describe('pluralizeDoseUnit (padronizado para unidade(s))', () => {

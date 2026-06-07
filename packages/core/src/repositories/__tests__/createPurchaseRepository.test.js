@@ -255,5 +255,14 @@ describe('createPurchaseRepository — parity', () => {
         repo.createLiquidPurchase({ ...LIQ, numBottles: 2, totalPrice: -5 })
       ).rejects.toThrow(/negativo/)
     })
+
+    it('centavos baixos (R$0,04 / 6 frascos) → nenhum unit_price negativo (review #651)', async () => {
+      client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createLiquidPurchase({ ...LIQ, numBottles: 6, totalPrice: 0.04 })
+      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      expect(rpcs).toHaveLength(6)
+      rpcs.forEach(([, a]) => expect(a.p_unit_price).toBeGreaterThanOrEqual(0))
+    })
   })
 })

@@ -109,22 +109,30 @@ const medicineObject = z.object({
   // Concentração (mg/cp p/ sólidos; mg ou UI por ml p/ líquidos). NULLABLE: líquidos
   // legados migrados (022 Fase A) têm dosage_per_pill NULL — massa ativa só exibida
   // quando o usuário preenche; decremento/adesão não dependem dela.
-  dosage_per_pill: z.coerce
-    .number()
-    .positive('A dose deve ser maior que zero')
-    .max(10000, 'A dose parece muito alta. Verifique o valor')
-    .nullable()
-    .optional(),
+  // z.preprocess('' → null): forms web enviam '' ao limpar o campo; sem isso z.coerce
+  // converteria '' → 0 e .positive() bloquearia a limpeza (review #651).
+  dosage_per_pill: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.coerce
+      .number()
+      .positive('A dose deve ser maior que zero')
+      .max(10000, 'A dose parece muito alta. Verifique o valor')
+      .nullable()
+      .optional()
+  ),
 
   dosage_unit: z.enum(DOSAGE_UNITS),
 
   // Razão→ml genérica (ADR-058): gotas/ml=20, UI/ml=100. Obrigatória p/ líquidos
-  // (validada no superRefine). NUMERIC (aceita fração).
-  units_per_ml: z.coerce
-    .number()
-    .positive('Densidade (unidades por ml) deve ser maior que zero')
-    .nullable()
-    .optional(),
+  // (validada no superRefine). NUMERIC (aceita fração). preprocess '' → null (idem dosage_per_pill).
+  units_per_ml: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.coerce
+      .number()
+      .positive('Densidade (unidades por ml) deve ser maior que zero')
+      .nullable()
+      .optional()
+  ),
 
   // Forma farmacêutica (additiva — ADR-058). Default 'comprimido' espelha o DEFAULT do DB.
   presentation: z.enum(PRESENTATIONS).default('comprimido'),

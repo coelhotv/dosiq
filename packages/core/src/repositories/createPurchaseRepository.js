@@ -185,8 +185,11 @@ export function createPurchaseRepository({ client, getUserId }) {
       const round2 = (x) => Number(x.toFixed(2))
       const round4 = (x) => Number(x.toFixed(4))
 
-      const pricePerBottle = round2(totalPrice / numBottles)
-      // Último frasco absorve o resto p/ fechar o total exato (evita perda de centavos).
+      // Math.floor (não round2) p/ truncar: garante que pricePerBottle nunca exceda a fração
+      // do total. Senão, em centavos baixos (ex: R$0,04 / 6 frascos) o arredondamento p/ cima
+      // tornaria compensatedLast negativo → unit_price negativo (review #651).
+      const pricePerBottle = Math.floor((totalPrice / numBottles) * 100) / 100
+      // Último frasco absorve o resíduo (sempre >= 0) p/ fechar o total exato.
       const compensatedLast = round2(totalPrice - pricePerBottle * (numBottles - 1))
       const unitPriceMl = round4(pricePerBottle / volumePerBottle)
       const compensatedUnitPriceMl = round4(compensatedLast / volumePerBottle)
