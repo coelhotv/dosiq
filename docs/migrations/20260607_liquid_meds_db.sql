@@ -47,7 +47,11 @@ ALTER TABLE public.medicines ADD CONSTRAINT medicines_presentation_check
   CHECK (presentation IN ('comprimido','capsula','liquido','injecao','pomada','spray','outro'));
 
 -- Unidade física da tomada (gotas/ml/UI; NULL p/ sólidos).
+-- CHECK sincronizado com INTAKE_UNITS do core (R-082); 'UI' maiúsculo casa o enum Zod.
 ALTER TABLE public.protocols ADD COLUMN IF NOT EXISTS intake_unit TEXT DEFAULT NULL;
+ALTER TABLE public.protocols DROP CONSTRAINT IF EXISTS protocols_intake_unit_check;
+ALTER TABLE public.protocols ADD CONSTRAINT protocols_intake_unit_check
+  CHECK (intake_unit IN ('gotas','ml','UI'));  -- NULL passa (sólidos)
 
 -- Saldo não-negativo (sem negativos hoje — verificado).
 ALTER TABLE public.stock DROP CONSTRAINT IF EXISTS chk_stock_quantity_non_negative;
@@ -136,7 +140,8 @@ BEGIN
   END IF;
 
   -- Detecção de líquido pela unidade de concentração (decisão-mãe).
-  SELECT (dosage_unit LIKE '%/ml'), COALESCE(units_per_ml, 20)
+  -- NULLIF guarda contra units_per_ml = 0 no DB (evita divisão por zero); cai no default 20.
+  SELECT (dosage_unit LIKE '%/ml'), COALESCE(NULLIF(units_per_ml, 0), 20)
   INTO v_is_liquid, v_units_per_ml
   FROM public.medicines
   WHERE id = p_medicine_id;
@@ -148,12 +153,22 @@ BEGIN
     JOIN public.medicine_logs l ON l.protocol_id = p.id
     WHERE l.id = p_medicine_log_id;
 
+    -- Avulso (protocol_id NULL → sem intake_unit): default 'ml' (escala direta), nunca 'gotas'
+    -- (evita débito 20× ao tratar gotas como ml). Persistir intake_unit em medicine_logs p/
+    -- logs avulsos de gotas é follow-up da Fase B (logSchema).
+    v_intake_unit := COALESCE(v_intake_unit, 'ml');
+
     IF v_intake_unit = 'gotas' THEN
       v_remaining := ROUND(p_quantity / v_units_per_ml, 2);   -- gotas → ml
     ELSE
       v_remaining := ROUND(p_quantity, 2);                    -- 'ml', 'UI' (v1 escala direta), fallback
     END IF;
     -- NOTA (012): insulina basal estende o branch 'UI' p/ converter via v_units_per_ml. Fora do escopo 022.
+
+    -- Guard de no-op: dose > 0 que arredonda p/ 0.00 (ex: 0.004) não pode "consumir" silenciosamente.
+    IF v_remaining <= 0 THEN
+      RAISE EXCEPTION 'Dose muito pequena para débito de estoque (arredondou para 0 ml)';
+    END IF;
   ELSE
     v_remaining := p_quantity;                                -- sólidos: linear inteiro
   END IF;
@@ -165,7 +180,7 @@ BEGIN
   WHERE medicine_id = p_medicine_id
     AND user_id = v_user_id
     AND quantity > 0
-    AND entry_type != 'legacy_unrecoverable';
+    AND (entry_type IS NULL OR entry_type != 'legacy_unrecoverable');
 
   IF v_total_available < v_remaining THEN
     RAISE EXCEPTION 'Estoque insuficiente';
@@ -178,7 +193,7 @@ BEGIN
     WHERE medicine_id = p_medicine_id
       AND user_id = v_user_id
       AND quantity > 0
-      AND entry_type != 'legacy_unrecoverable'
+      AND (entry_type IS NULL OR entry_type != 'legacy_unrecoverable')
     ORDER BY purchase_date ASC, created_at ASC, id ASC
     FOR UPDATE
   LOOP
