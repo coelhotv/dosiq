@@ -46,6 +46,16 @@ export function getNow() {
 }
 
 /**
+ * Retorna a data/hora atual "bruta" (sem ajuste de fuso horário).
+ * Útil para timers e momentos que serão processados por outras funções de fuso.
+ * @returns {Date}
+ */
+export function getRawNow() {
+  return new Date();
+}
+
+
+/**
  * Converte string de data (YYYY-MM-DD) para Date em timezone local (SP)
  * @param {string} dateStr - Data no formato YYYY-MM-DD
  * @returns {Date} Date object em timezone local (meia-noite local de SP)

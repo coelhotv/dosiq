@@ -18,6 +18,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Web/PWA (4.1.5 → 4.1.6)
 - **Fixed** (`patch`, PR #TBD): Atualizado para compatibilidade com a versão mais recente do Shared/Core.
 
+### Server
+- **Fixed** (`patch`, PR #TBD): Corrigido bug em `_reminderHelpers.js` onde lembretes individuais (`dose_reminder`) mostravam o emoji `🌙` e saudações noturnas a qualquer hora do dia por ausência de envio do parâmetro `hour` no payload de notificação.
+- **Fixed** (`patch`, PR #TBD): Corrigido duplo deslocamento de fuso horário de Brasília no endpoint `/api/notify.js` que causava atraso em execuções de cron e predições de estoque no Vercel (12:00 PM/1:00 PM em vez de 10:00 AM).
+- **Refactored** (`patch`, PR #TBD): Adicionada função utilitária `getRawNow()` em `server/utils/dateUtils.js` e substituído `new Date()` em `api/notify.js` para conformidade com regras do linter ESLint sem uso de diretivas bypass `eslint-disable`.
+
+
 ### Mobile (0.12.0 → 0.13.0)
 - **Alarmes Críticos Locais, Supressão de Pushes e Melhoria de Usabilidade** (Minor, Spec 025):
   - Habilitada a flag `native_alarm_enabled` por padrão para iOS e Android para supressão automática de pushes remotos de doses críticas e prevenção de duplicidades.
