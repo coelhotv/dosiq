@@ -8,17 +8,18 @@ import { z } from 'zod'
 // Unidades de CONCENTRAÇÃO válidas (alinhadas com MedicineForm.jsx dropdown).
 // 'ml'/'gotas' saíram da lista (viram unidade de TOMADA em protocols.intake_unit — 022 Fase A).
 // 'mg/ml'/'ui/ml' são razões massa/volume: líquido := dosage_unit LIKE '%/ml' (decisão-mãe).
-export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ui', 'un', 'mg/ml', 'ui/ml']
+// Ordem do dropdown: sólidos base → concentrações-ratio (/ml) → ui/un.
+export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'mg/ml', 'ui/ml', 'ui', 'un']
 
-// Labels de unidade para exibição
+// Labels de unidade para exibição (ordem espelha DOSAGE_UNITS)
 export const DOSAGE_UNIT_LABELS = {
   mg: 'mg',
   mcg: 'mcg',
   g: 'g',
-  ui: 'UI',
-  un: 'un.',
   'mg/ml': 'mg/ml',
   'ui/ml': 'UI/ml',
+  ui: 'UI',
+  un: 'un.',
 }
 
 // Tipos de medicamento
