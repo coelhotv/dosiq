@@ -18,7 +18,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Web/PWA (4.1.5 → 4.1.6)
 - **Fixed** (`patch`, PR #TBD): Atualizado para compatibilidade com a versão mais recente do Shared/Core.
 
+### Backend/Infra (DB) — Medicamentos Líquidos 022 Fase A
+- **Added** (`minor`, PR #TBD): Migração `docs/migrations/20260607_liquid_meds_db.sql` — fundação de medicamentos líquidos (épico 022 Fase A): CHECK de `dosage_unit` com `mg/ml`/`ui/ml`; colunas `medicines.units_per_ml` (razão→ml genérica, ADR-058) e `medicines.presentation`; `protocols.intake_unit`; `CHECK (stock.quantity >= 0)`; migração idempotente de líquidos legados (`ml`/`gotas` → `mg/ml` + `intake_unit`). RPC `consume_stock_fifo` (4-arg) ganha ramo líquido (converte tomada→ml via `units_per_ml`, baixa decimal por FIFO); overload legacy 3-arg removido. Líquido derivado de `dosage_unit LIKE '%/ml'` (decisão-mãe).
+
 ### Server
+- **Changed** (`patch`, PR #TBD): `server/bot/callbacks/conversational.js` migrado para a assinatura 4-arg de `consume_stock_fifo` (passa `p_user_id`) após remoção do overload 3-arg (022 Fase A).
 - **Fixed** (`patch`, PR #TBD): Corrigido bug em `_reminderHelpers.js` onde lembretes individuais (`dose_reminder`) mostravam o emoji `🌙` e saudações noturnas a qualquer hora do dia por ausência de envio do parâmetro `hour` no payload de notificação.
 - **Fixed** (`patch`, PR #TBD): Corrigido duplo deslocamento de fuso horário de Brasília no endpoint `/api/notify.js` que causava atraso em execuções de cron e predições de estoque no Vercel (12:00 PM/1:00 PM em vez de 10:00 AM).
 - **Refactored** (`patch`, PR #TBD): Adicionada função utilitária `getRawNow()` em `server/utils/dateUtils.js` e substituído `new Date()` em `api/notify.js` para conformidade com regras do linter ESLint sem uso de diretivas bypass `eslint-disable`.

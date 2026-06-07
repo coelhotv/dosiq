@@ -317,6 +317,7 @@ async function _createLogAndDecrementStock(userId, protocolId, medicineId, pills
 
   if (!fetchError && stockEntries.length > 0) {
     const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+      p_user_id: userId,
       p_medicine_id: medicineId,
       p_quantity: pillsToDecrease,
       p_medicine_log_id: createdLog.id

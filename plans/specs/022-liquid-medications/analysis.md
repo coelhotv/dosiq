@@ -79,3 +79,59 @@ Mudança de formato (`ml`/`gotas` → `mg/ml` + `intake_unit`) **tem** entregáv
 | LOW | Cross-validação `_medicineIsLiquid` (form) vs. service | decidir no PR da Fase B, documentar |
 
 Sem CRITICAL/HIGH. Os 2 MEDIUM são confirmações de C1 já agendadas como tasks-gate (T001/T015) — não bloqueiam o planejamento, bloqueiam o código da fase respectiva até resolver.
+
+---
+
+## C1 Reality Check — Fase A (executado 2026-06-07, projeto kwqjtdsqkkbebfiaxubb)
+
+**T001 resolvido (evidência DB ao vivo):**
+| Claim do plan | Repo/DB real | Verified? | Nota |
+|---------------|--------------|-----------|------|
+| `medicines_dosage_unit_check` p/ DROP/recreate (A.1) | **Nenhum CHECK existe** — `dosage_unit text` livre, default `'mg'` | ✅ | A.1 vira **ADD** CHECK (não drop/recreate) |
+| Valores legados `ml`/`gotas` | `ml`=3, `gotas`=**0**; resto mg/ui/un/g/mcg ∈ enum-alvo | ✅ | migração toca só 3 linhas `ml`; ADD CHECK seguro |
+| `units_per_ml`/`presentation`/`protocols.intake_unit` ausentes | confirmado ausentes | ✅ | NEW |
+| `stock.quantity` sem negativos | `negative_stock=0` | ✅ | CHECK(quantity>=0) seguro |
+| `consume_stock_fifo` = 1 função (4-arg) | **2 overloads**: 3-arg (`auth.uid()`) + 4-arg (`p_user_id`) | ❌→ | plan assumiu 1 |
+
+**Gaps HIGH no plan A.4 (corpo da RPC) — corpo proposto diverge do real, causaria regressão:**
+
+| # | Sev | Gap | Real (DB) | Plan propôs | Ação |
+|---|-----|-----|-----------|-------------|------|
+| G1 | HIGH | Caller faltando | `conversational.js:319` chama a **3-arg** (chatbot dose) | plan só lista doseActions+medicineLogService (4-arg) | líquido não debitaria por volume no chatbot |
+| G2 | HIGH | Filtro `entry_type != 'legacy_unrecoverable'` | presente nos 2 (SUM + loop) | **omitido** | consumiria estoque legacy_unrecoverable = regressão |
+| G3 | HIGH | Guard `medicine_logs` existência (log↔user↔medicine) | presente nos 2 | **omitido** | perderia validação de posse |
+| G4 | MEDIUM | FIFO ordering | `purchase_date ASC, created_at, id` (FIFO puro) | `expiration_date ASC NULLS LAST, ...` (FEFO) | muda ordem p/ sólidos também — **decisão** |
+| G5 | LOW | `SET search_path` | `TO 'public'` | `= ''` + `public.` qualificado (hardening CLAUDE.md) | OK adotar `''`, mas exige todas refs qualificadas |
+
+**Decisões abertas (operador) antes de A.4:**
+- **D1 (G1):** cobrir a 3-arg? Opção (a) extrair helper privado `_consume_stock_fifo_impl(user,med,qty,log)` c/ lógica líquida e ambos overloads delegam (DRY, cobre chatbot); (b) migrar `conversational.js` p/ 4-arg + DROP 3-arg.
+- **D2 (G4):** FIFO atual (`purchase_date`) ou mudar p/ FEFO (`expiration_date` primeiro)? FEFO melhor p/ líquidos com validade, mas altera comportamento dos sólidos.
+
+G2/G3 = correções obrigatórias (preservar comportamento), sem decisão. ADD CHECK em `dosage_unit` com set legacy-safe `{mg,mcg,g,ml,ui,un,gotas,mg/ml,ui/ml}`.
+
+**Decisões resolvidas (operador, 2026-06-07):**
+- **D1 → migrar caller + DROP 3-arg.** `conversational.js:319` passa a 4-arg (`p_user_id: userId` — `userId` já em escopo em `_createLogAndDecrementStock`). `DROP FUNCTION public.consume_stock_fifo(uuid,numeric,uuid)`. Único caller 3-arg (grep server/apps/api/packages confirmou). A.4 mexe em código bot (cross-fase, aceito).
+- **D2 → manter FIFO `purchase_date`** (sem FEFO; menor blast radius, sólidos inalterados).
+- **G2/G3 preservados** no novo corpo 4-arg (filtro `legacy_unrecoverable` + guard `medicine_logs`). **G5:** adotar `SET search_path = ''` + refs `public.` qualificadas (hardening).
+
+Gaps resolvidos → reality check **PASS**. Escopo Fase A revisado: A.1 ADD CHECK · A.2 colunas · A.3 migração (só 3 `ml`) · A.4 RPC 4-arg líquida + DROP 3-arg + edit `conversational.js`.
+
+---
+
+## Failure Modes & Degenerate Inputs — `consume_stock_fifo` (R-270)
+
+> Tabela obrigatória pós-PR #650 (revisor pegou 7 defeitos comportamentais que o reality-check estrutural não viu). Toda função/RPC nova das Fases B/C herda este formato ANTES de codar.
+
+| Input / condição | Degenerado | Esperado | Coberto (commit) |
+|------------------|-----------|----------|------------------|
+| `p_user_id` | NULL | raise 'user_id obrigatório' | ✅ |
+| `p_quantity` | NULL / ≤0 | raise 'quantidade > 0' | ✅ |
+| `p_medicine_log_id` | NULL / log inexistente | raise (guard de posse) | ✅ G3 |
+| `units_per_ml` | `0` / NULL | `COALESCE(NULLIF(.,0),20)` — sem div/0 | ✅ 53d3c09f |
+| dose líquida | arredonda p/ `0.00` ml | raise 'dose muito pequena' (não no-op) | ✅ 53d3c09f |
+| `protocol_id` no log | NULL (avulso) | `COALESCE(intake_unit,'ml')` — nunca tratar gotas como ml | ✅ 53d3c09f (persistir unit em logs = follow-up B) |
+| `entry_type` | NULL | NULL-safe `(IS NULL OR != 'legacy_unrecoverable')` — não excluir | ✅ 53d3c09f |
+| múltiplos lotes | dose cruza frascos | zera 1º, debita saldo do próximo, atômico | ✅ teste |
+| sólido | — | caminho linear inteiro | ✅ teste |
+
+Teste: harness `BEGIN … ROLLBACK` no DB ao vivo (prod intocado), incluindo os casos que **devem** levantar exceção (dose minúscula confirmado RAISE).
