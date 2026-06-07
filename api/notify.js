@@ -15,7 +15,7 @@ import { dispatchNotification } from '../server/notifications/dispatcher/dispatc
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
-import { getServerTimestamp, getNow, getSaoPauloTime } from '../server/utils/dateUtils.js';
+import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
 
 const logger = createLogger('CronNotify');
 
@@ -351,7 +351,7 @@ export default async function handler(req, res) {
   const bot = createNotifyBotAdapter(token);
   const notificationDispatcher = _createNotificationDispatcher(bot);
 
-  const now = getNow();
+  const now = getRawNow();
   const spDate = getSaoPauloTime(now);
 
   const currentHHMM = spDate.toLocaleTimeString('pt-BR', {

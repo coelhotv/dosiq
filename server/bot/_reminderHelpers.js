@@ -73,7 +73,8 @@ async function _processUserReminderBlock(userId, currentHHMM, currentHour, block
       medicineId: dose.medicineId, 
       time: currentHHMM, 
       dosagePerIntake: dose.dosagePerIntake,
-      dosageUnit: dose.dosageUnit
+      dosageUnit: dose.dosageUnit,
+      hour: currentHour
     };
   }
 
@@ -261,6 +262,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               dosagePerIntake: dose.dosagePerIntake,
               dosageUnit: dose.dosageUnit,
               dosagePerPill: dose.dosagePerPill,
+              hour: currentHour,
               critical_alarm: dose.critical_alarm ?? false,
             };
           }
