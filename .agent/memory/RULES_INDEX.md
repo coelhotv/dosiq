@@ -155,6 +155,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[R-272]** Dose líquida sempre via formatter core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`) com a unidade de tomada (`intake_unit`: gotas|ml|UI), NUNCA `dosage_unit` cru (mg/ml, ui/ml) nem `formatActiveIngredientFormula` (solid-only). Query traz `intake_unit`+`units_per_ml` (R-267). Evidência smoke 022 Fase C -> [`rules/react_and_ui/R-272.md`](./rules/react_and_ui/R-272.md)
 - **[R-265]** Derived state pattern para reset de estado em mudança de prop/dep: comparar `prevDep !== dep` durante render e chamar setState — sem useEffect. Evita `react-hooks/set-state-in-effect` e render extra. Alternativa: `key` prop no pai para remount -> [`rules/react_and_ui/R-265.md`](./rules/react_and_ui/R-265.md)
 - **[R-235]** Hook canônico antes de inline — grep por `use*Delete`/`use*Mutation` existente e adotar; inline OK só se nenhum cobre ou single call site -> [`rules/react_and_ui/R-235.md`](./rules/react_and_ui/R-235.md)
 - **[R-010]** Declare React hooks in order: States → useMemo → useEffect → Handlers. Wrong ord... -> [`rules/react_and_ui/R-010.md`](./rules/react_and_ui/R-010.md)
