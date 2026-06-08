@@ -17,6 +17,7 @@
 - **[ADR-062]** Fronteira SaMD (ANVISA RDC 657/751): Dosiq = registro passivo + relatório; NUNCA calcular/sugerir dose de insulina/bolus; sem meta glicêmica como parâmetro; carbo = dado bruto. Mantém Classe I; governa todo o épico diabetes [accepted] -> [`decisions/data_and_schema/ADR-062.md`](./decisions/data_and_schema/ADR-062.md)
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[ADR-063]** Sincronização de contatos via **Brevo API (REST)** em **cron diário** (lote, não por evento) p/ régua de ativação — reduz tráfego/timeout Vercel Hobby. Origem Épico 026 [proposed] -> [`decisions/infra_and_deploy/ADR-063.md`](./decisions/infra_and_deploy/ADR-063.md)
 - **[ADR-051]** Motor de geração `dose_instances` em endpoint serverless dedicado (`api/generate-doses.js`) + cron-job.org próprio — isola raio de impacto dos reminders (notificação é prioritária); geração due-only no DB [accepted] -> [`decisions/infra_and_deploy/ADR-051.md`](./decisions/infra_and_deploy/ADR-051.md)
 - **[ADR-001]** Gradual Redesign Rollout via Feature Flags -> [`decisions/infra_and_deploy/ADR-001.md`](./decisions/infra_and_deploy/ADR-001.md)
 - **[ADR-002]** Environment-Aware Logger to Reduce Console Noise -> [`decisions/infra_and_deploy/ADR-002.md`](./decisions/infra_and_deploy/ADR-002.md)
@@ -48,6 +49,7 @@
 
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[ADR-064]** Descarte de nudge persistido **localmente** (`AsyncStorage`/`localStorage`) com chave composta **`nudge_id:version`** — offline-first; incrementar `version` reseta o descarte (nudge reaparece) sem migração. Origem Épico 026 [proposed] -> [`decisions/mobile_and_platform/ADR-064.md`](./decisions/mobile_and_platform/ADR-064.md)
 - **[ADR-042]** Auth permanece em authService.js mobile (Zod + PT-BR) — consolidação no @dosiq/core deferida -> [`decisions/mobile_and_platform/ADR-042.md`](./decisions/mobile_and_platform/ADR-042.md)
 - **[ADR-043]** Hardening G1→G2→G3 em Fase 1 CRUD: parity test factory vs web obrigatório em G2, decisão pré-G3 sobre `costAnalysisService`, PR G3 atômica, smoke checklist E2E PO; feature flag e playbook descartados para closed alpha -> [`decisions/mobile_and_platform/ADR-043.md`](./decisions/mobile_and_platform/ADR-043.md)
 - **[ADR-044]** Distribuição cavecrew (Opus arquiteto / Sonnet ⭐⭐ / Haiku ⭐ mecânico) + gate de confiança Haiku em M1.10 da Fase 1 -> [`decisions/mobile_and_platform/ADR-044.md`](./decisions/mobile_and_platform/ADR-044.md)
