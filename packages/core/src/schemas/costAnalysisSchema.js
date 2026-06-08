@@ -19,6 +19,9 @@ export const StockEntrySchema = z.object({
 export const MedicineWithStockSchema = z.object({
   id: z.string().min(1, 'id é obrigatório'),
   name: z.string().min(1, 'name é obrigatório'),
+  // Líquidos (022): unidade + densidade p/ converter consumo (UI/gotas → ml) no custo.
+  dosage_unit: z.string().nullable().optional(),
+  units_per_ml: z.number().positive().nullable().optional(),
   stock: z.array(StockEntrySchema).optional().default([]).describe('Array de entradas de estoque'),
   purchases: z.array(StockEntrySchema).optional().default([]),
 })
@@ -32,6 +35,8 @@ export const ProtocolSchema = z.object({
     .nonnegative('dosage_per_intake deve ser >= 0')
     .optional()
     .default(0),
+  // Líquidos (022): unidade de tomada (gotas/ml/UI) p/ conversão de consumo.
+  intake_unit: z.string().nullable().optional(),
   time_schedule: z
     .array(z.string())
     .optional()

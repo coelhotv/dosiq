@@ -59,8 +59,9 @@ export default function PlanModeZone({
           {group.doses.map((dose) => (
             <SwipeRegisterItem
               key={`${dose.protocolId}:${dose.scheduledTime}`}
-              medicine={{ id: dose.medicineId, name: dose.medicineName }}
+              medicine={{ id: dose.medicineId, name: dose.medicineName, dosage_per_pill: dose.dosagePerPill, dosage_unit: dose.dosageUnit, units_per_ml: dose.unitsPerMl }}
               dosagePerIntake={dose.dosagePerIntake}
+              intakeUnit={dose.intakeUnit}
               time={dose.scheduledTime}
               isSelected={selectedDoses.has(`${dose.protocolId}:${dose.scheduledTime}`)}
               onToggleSelection={() => onToggleSelection(dose.protocolId, dose.scheduledTime)}

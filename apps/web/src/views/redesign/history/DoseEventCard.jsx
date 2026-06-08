@@ -5,6 +5,7 @@
 
 import { PencilLine, Trash2, Check, X, Clock } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
+import { isLiquidMedicine, formatDose, formatConcentration } from '@dosiq/core'
 
 /** Metadados visuais por status (ícone + label + classe). Idoso-friendly: ícone + texto (R-137/R-138). */
 const STATUS_META = {
@@ -55,8 +56,17 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
 
   const medicineName = p.medicineName ?? 'Medicamento'
 
-  // Pílula de dosagem a partir do expected_dose + unidade (quando disponíveis).
+  const medicineLike = {
+    dosage_unit: p.dosageUnit,
+    dosage_per_pill: p.dosagePerPill,
+    units_per_ml: p.unitsPerMl,
+  }
+  const isLiquid = isLiquidMedicine(medicineLike)
+
+  // Pílula de concentração (ex: "100 UI/ml"). Líquido usa formatConcentration p/
+  // casing correto; sólido mantém expected_dose + unidade.
   const dosageLabel = (() => {
+    if (isLiquid) return formatConcentration(p.dosagePerPill, p.dosageUnit) || null
     const dose = p.expectedDose
     const unit = p.dosageUnit ?? ''
     if (dose == null) return null
@@ -68,6 +78,8 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
   const quantityLabel = (() => {
     const qty = p.quantityTaken
     if (qty === undefined || qty === null) return null
+    // Líquido (022): unidade de tomada do tratamento (gotas/ml/UI) → "10 UI".
+    if (isLiquid) return formatDose(qty, p.intakeUnit || 'ml')
     const unit = p.dosageUnit ?? ''
     const u = unit.toLowerCase()
     if (!u || ['mg', 'mcg', 'g'].includes(u)) {

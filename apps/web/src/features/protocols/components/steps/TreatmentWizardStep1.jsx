@@ -1,7 +1,7 @@
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import Button from '@shared/components/ui/Button'
-import { DOSAGE_UNITS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS } from '@schemas/medicineSchema'
+import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS } from '@schemas/medicineSchema'
 
 /** Renderiza o formulário de cadastro de novo medicamento. */
 function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }) {
@@ -89,7 +89,7 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
             onChange={(e) => updateMedicine('dosage_unit', e.target.value)}
           >
             {DOSAGE_UNITS.map((u) => (
-              <option key={u} value={u}>{u}</option>
+              <option key={u} value={u}>{DOSAGE_UNIT_LABELS[u] || u}</option>
             ))}
           </select>
         </label>

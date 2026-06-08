@@ -25,7 +25,8 @@ import {
   resolveTreatmentStatus,
   TREATMENT_STATUS,
   getProtocolDays,
-  formatActiveIngredientHint,
+  formatIntakeDose,
+  formatConcentration,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -394,7 +395,7 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
           {medicine.dosage_per_pill ? (
             <View style={styles.dosagePill}>
               <Text style={styles.dosagePillText}>
-                {medicine.dosage_per_pill}{medicine.dosage_unit}
+                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
               </Text>
             </View>
           ) : null}
@@ -424,13 +425,7 @@ function DosageFrequencySection({ protocol, medicine, frequencyLabel, dailyIntak
     <SectionCard title="DOSAGEM & FREQUÊNCIA">
       <DetailRow
         label="Dose por tomada"
-        value={
-          formatActiveIngredientHint(
-            protocol.dosage_per_intake,
-            medicine?.dosage_per_pill,
-            medicine?.dosage_unit
-          ) || `${protocol.dosage_per_intake} un.`
-        }
+        value={formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, medicine)}
       />
       <DetailRow label="Frequência" value={frequencyLabel} />
       {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
@@ -477,13 +472,7 @@ function DosageFrequencySection({ protocol, medicine, frequencyLabel, dailyIntak
       {dailyIntakeTotal !== null ? (
         <DetailRow
           label="Consumo diário"
-          value={
-            formatActiveIngredientHint(
-              dailyIntakeTotal,
-              medicine?.dosage_per_pill,
-              medicine?.dosage_unit
-            ) || `${dailyIntakeTotal} un.`
-          }
+          value={formatIntakeDose(dailyIntakeTotal, protocol.intake_unit, medicine)}
         />
       ) : null}
     </SectionCard>

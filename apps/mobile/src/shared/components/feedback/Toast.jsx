@@ -5,8 +5,8 @@
 import { createContext, memo, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { AlertCircle, CheckCircle, Info } from 'lucide-react-native'
-import { errorHaptic, successHaptic } from '@shared/utils/haptics'
+import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react-native'
+import { errorHaptic, successHaptic, warningHaptic } from '@shared/utils/haptics'
 import { borderRadius, colors, spacing } from '@shared/styles/tokens'
 
 // ─── Contexto ────────────────────────────────────────────────────────────────
@@ -25,6 +25,11 @@ const VARIANT_CONFIG = {
     bg: colors.status.error,
     Icon: AlertCircle,
     haptic: errorHaptic,
+  },
+  warning: {
+    bg: colors.status.warning,
+    Icon: AlertTriangle,
+    haptic: warningHaptic,
   },
   info: {
     bg: colors.text.primary,

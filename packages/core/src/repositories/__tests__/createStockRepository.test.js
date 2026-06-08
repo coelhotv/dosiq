@@ -186,7 +186,7 @@ describe('createStockRepository — parity', () => {
       await repo.decreaseStock('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 2, 'log-1')
       expect(client._rpcCalls).toContainEqual([
         'consume_stock_fifo',
-        { p_medicine_id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', p_quantity: 2, p_medicine_log_id: 'log-1' },
+        { p_user_id: FAKE_USER, p_medicine_id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', p_quantity: 2, p_medicine_log_id: 'log-1' },
       ])
     })
   })

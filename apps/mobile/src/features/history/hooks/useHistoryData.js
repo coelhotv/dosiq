@@ -32,7 +32,7 @@ async function enrichInstancesWithProtocol(instances) {
 
   const { data, error } = await supabase
     .from('protocols')
-    .select('id, name, medicine_id, dosage_per_intake, medicine:medicines(name, dosage_per_pill, dosage_unit), treatment_plan:treatment_plans(name)')
+    .select('id, name, medicine_id, dosage_per_intake, intake_unit, medicine:medicines(name, dosage_per_pill, dosage_unit, units_per_ml), treatment_plan:treatment_plans(name)')
     .in('id', protocolIds)
 
   if (error || !data) return instances
@@ -48,8 +48,10 @@ async function enrichInstancesWithProtocol(instances) {
       medicine_id: p.medicine_id,
       medicine_name: p.medicine?.name ?? p.name,
       dosage_per_intake: p.dosage_per_intake,
+      intake_unit: p.intake_unit,
       dosage_per_pill: p.medicine?.dosage_per_pill,
       dosage_unit: p.medicine?.dosage_unit,
+      units_per_ml: p.medicine?.units_per_ml,
       treatment_name: p.treatment_plan?.name,
       protocol_name: p.name,
     }

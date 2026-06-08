@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { parseISO } from '@utils/dateUtils'
+import { formatDoseItem } from '@dosiq/core'
 import PlanBadge from '@dashboard/components/PlanBadge'
 
 export default function DoseCard({ dose, onRegisterDose, selectedDoses, onToggleSelection, done = false }) {
@@ -39,7 +40,7 @@ export default function DoseCard({ dose, onRegisterDose, selectedDoses, onToggle
               planName={dose.treatmentPlanName}
             />
           )}
-          <span className="dose-card__dosage">{dose.dosagePerIntake} cp</span>
+          <span className="dose-card__dosage">{formatDoseItem(dose)}</span>
         </div>
       </button>
       {done ? (

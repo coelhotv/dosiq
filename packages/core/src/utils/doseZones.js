@@ -46,6 +46,8 @@ const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
  * @property {string} scheduledFor - ISO absoluto (timestamptz da ocorrência)
  * @property {string} status - 'pending' | 'taken' | 'missed'
  * @property {number} dosagePerIntake
+ * @property {string|null} intakeUnit - unidade de tomada (gotas|ml|UI; null sólido)
+ * @property {number|null} unitsPerMl - densidade do medicamento (líquidos)
  * @property {string|null} treatmentPlanId
  * @property {string|null} treatmentPlanName
  * @property {{ emoji: string, color: string }|null} planBadge
@@ -138,6 +140,10 @@ function createDoseItem(instance, protocol, tz) {
     medicineType: medicine.type || 'medicamento',
     dosagePerPill: medicine.dosage_per_pill ?? null,
     dosageUnit: medicine.dosage_unit ?? null,
+    // Líquidos (022): unidade de tomada do tratamento + densidade do medicamento
+    // p/ exibir dose na unidade certa (gotas/ml/UI) e converter p/ ml.
+    intakeUnit: protocol.intake_unit ?? null,
+    unitsPerMl: medicine.units_per_ml ?? null,
     scheduledTime: toLocalHHMM(instance.scheduled_for, tz),
     scheduledFor: instance.scheduled_for,
     toleranceMinutes: instance.tolerance_minutes ?? null,

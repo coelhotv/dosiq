@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, cloneDate, formatActiveIngredientFormula } from '@dosiq/core'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatConcentration } from '@dosiq/core'
 import { X, CheckCircle2, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -327,7 +327,7 @@ export default function DoseActionSheet({
                   <Text style={styles.headerTitle} numberOfLines={1}>{medicineName}</Text>
                   {hasPill && (
                     <View style={styles.pill}>
-                      <Text style={styles.pillText}>{instance.dosage_per_pill}{instance.dosage_unit}</Text>
+                      <Text style={styles.pillText}>{formatConcentration(instance.dosage_per_pill, instance.dosage_unit)}</Text>
                     </View>
                   )}
                 </View>

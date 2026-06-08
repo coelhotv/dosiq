@@ -22,6 +22,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
@@ -36,8 +37,21 @@ import { useStockMutation } from '@stock/hooks/useStockMutation'
 import { medicineService } from '@medications/services/medicineService'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
 
-// Categorias regulatórias com marca registrada → laboratório fixo (não muda por compra).
-const FIXED_LAB_CATEGORIES = ['Novo', 'Similar']
+// Regra de laboratório por categoria regulatória ANVISA:
+//   - Genérico        → NÃO pré-preenche (fabricante varia por lote/compra)
+//   - null/desconhecida → pré-preenche se houver lab, mas NÃO trava (editável)
+//   - demais categorias → pré-preenche E trava (marca registrada, lab fixo)
+const VARIABLE_LAB_CATEGORIES = ['Genérico']
+
+// Genérico nunca pré-preenche; resto sim (inclusive null).
+function shouldPrefillLab(category) {
+  return !VARIABLE_LAB_CATEGORIES.includes(category)
+}
+
+// Só trava quando a categoria é conhecida e não é Genérico.
+function shouldLockLab(category) {
+  return Boolean(category) && !VARIABLE_LAB_CATEGORIES.includes(category)
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers de decimal PT-BR (AP-167)
@@ -87,6 +101,10 @@ export default function PurchaseFormScreen() {
   const route = useRoute()
   const [labLocked, setLabLocked] = useState(false)
   const [medicine, setMedicine] = useState(null)
+  // Líquidos (022): estoque em ml. Estados locais (fora do schema) p/ frascos/volume/preço total.
+  const [numBottles, setNumBottles] = useState('')
+  const [volumePerBottle, setVolumePerBottle] = useState('')
+  const [totalPrice, setTotalPrice] = useState('')
 
   const {
     mode = 'create',
@@ -97,6 +115,10 @@ export default function PurchaseFormScreen() {
   } = route.params ?? {}
 
   const isEdit = mode === 'edit'
+  // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  // Frascos/ml só no create (edit ajusta saldo em ml direto).
+  const useLiquidInputs = isLiquid && !isEdit
 
   // Memos — valores iniciais do form
   // FormDatePicker recebe Date; schema armazena string YYYY-MM-DD.
@@ -179,9 +201,9 @@ export default function PurchaseFormScreen() {
       .then((med) => {
         if (cancelled || !med) return
         setMedicine(med)
-        if (FIXED_LAB_CATEGORIES.includes(med.regulatory_category) && med.laboratory) {
+        if (med.laboratory && shouldPrefillLab(med.regulatory_category)) {
           handleChange('laboratory', med.laboratory)
-          setLabLocked(true)
+          setLabLocked(shouldLockLab(med.regulatory_category))
         }
       })
       .catch(() => {})
@@ -219,8 +241,27 @@ export default function PurchaseFormScreen() {
 
   const handleSubmit = useCallback(async () => {
     // AP-166: overrides para coerce de decimais antes do safeParse (evita race)
-    const quantityCoerced = coerceDecimal(form.values.quantity)
-    const priceCoerced = coerceDecimal(form.values.unit_price)
+    let quantityCoerced
+    let priceCoerced
+
+    if (useLiquidInputs) {
+      // Líquido: quantity (ml) = frascos × volume; preço por ml = total / ml (trunc 4 casas).
+      const bottles = coerceDecimal(numBottles)
+      const volume = coerceDecimal(volumePerBottle)
+      if (!bottles || bottles <= 0 || !volume || volume <= 0) {
+        Alert.alert('Verifique o formulário', 'Informe o número de frascos e o volume por frasco (ml).')
+        return
+      }
+      quantityCoerced = bottles * volume
+      const total = coerceDecimal(totalPrice)
+      priceCoerced =
+        total && total > 0 && quantityCoerced > 0
+          ? Math.floor((total / quantityCoerced) * 10000) / 10000
+          : undefined
+    } else {
+      quantityCoerced = coerceDecimal(form.values.quantity)
+      priceCoerced = coerceDecimal(form.values.unit_price)
+    }
 
     const overrides = {
       medicine_id: medicineId,
@@ -228,7 +269,13 @@ export default function PurchaseFormScreen() {
       unit_price: priceCoerced !== undefined ? priceCoerced : undefined,
     }
 
-    if (!form.validate(overrides)) return
+    if (!form.validate(overrides)) {
+      // Anti-silent-no-op (smoke iOS 022): feedback sempre.
+      const parsed = stockCreateSchema.safeParse({ ...form.values, ...overrides })
+      const firstError = parsed.success ? null : parsed.error.issues[0]?.message
+      Alert.alert('Verifique o formulário', firstError || 'Há campos obrigatórios não preenchidos.')
+      return
+    }
 
     const payload = {
       medicine_id: medicineId,
@@ -246,7 +293,7 @@ export default function PurchaseFormScreen() {
     } else {
       await createPurchase(payload, { goBack: true })
     }
-  }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase])
+  }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
 
@@ -295,44 +342,89 @@ export default function PurchaseFormScreen() {
           </FormSection>
 
           {/* Quantidade e preço (ADR-046: unidade no label) */}
-          <FormSection title="Quantidade e preço">
-            <View style={styles.row}>
-              <View style={styles.rowHalf}>
-                <FormInput
-                  name="quantity"
-                  label="Quantidade (un.)"
-                  required
-                  placeholder="0"
-                  keyboardType="decimal-pad"
-                  maxLength={10}
-                  disabled={isEdit}
-                  helperText={quantityHelperText}
-                  value={
-                    form.values.quantity != null ? String(form.values.quantity) : ''
-                  }
-                  error={form.touched.quantity ? form.errors.quantity : undefined}
-                  onChange={handleQuantityChange}
-                  onBlur={() => form.handleBlur('quantity', coerceDecimal(form.values.quantity))}
-                />
+          {useLiquidInputs ? (
+            <FormSection title="Quantidade e preço">
+              <View style={styles.row}>
+                <View style={styles.rowHalf}>
+                  <FormInput
+                    name="num_bottles"
+                    label="Nº de frascos"
+                    required
+                    placeholder="1"
+                    keyboardType="decimal-pad"
+                    maxLength={6}
+                    value={numBottles}
+                    onChange={(_n, raw) => setNumBottles(parseDecimalPtBR(raw))}
+                  />
+                </View>
+                <View style={styles.rowHalf}>
+                  <FormInput
+                    name="volume_per_bottle"
+                    label="Volume/frasco (ml)"
+                    required
+                    placeholder="100"
+                    keyboardType="decimal-pad"
+                    maxLength={10}
+                    value={volumePerBottle}
+                    onChange={(_n, raw) => setVolumePerBottle(parseDecimalPtBR(raw))}
+                  />
+                </View>
               </View>
-              <View style={styles.rowHalf}>
-                <FormInput
-                  name="unit_price"
-                  label="Preço unitário"
-                  placeholder="0,00"
-                  keyboardType="decimal-pad"
-                  maxLength={12}
-                  helperText="R$ — opcional"
-                  value={
-                    form.values.unit_price != null ? String(form.values.unit_price) : ''
-                  }
-                  error={form.touched.unit_price ? form.errors.unit_price : undefined}
-                  onChange={handlePriceChange}
-                  onBlur={() => form.handleBlur('unit_price', coerceDecimal(form.values.unit_price))}
-                />
+              <FormInput
+                name="total_price"
+                label="Preço total"
+                placeholder="0,00"
+                keyboardType="decimal-pad"
+                maxLength={12}
+                helperText={
+                  coerceDecimal(numBottles) > 0 && coerceDecimal(volumePerBottle) > 0
+                    ? `💧 Total: ${coerceDecimal(numBottles) * coerceDecimal(volumePerBottle)} ml`
+                    : 'R$ — opcional'
+                }
+                value={totalPrice}
+                onChange={(_n, raw) => setTotalPrice(parseDecimalPtBR(raw))}
+              />
+            </FormSection>
+          ) : (
+            <FormSection title="Quantidade e preço">
+              <View style={styles.row}>
+                <View style={styles.rowHalf}>
+                  <FormInput
+                    name="quantity"
+                    label={isLiquid ? 'Quantidade (ml)' : 'Quantidade (un.)'}
+                    required
+                    placeholder="0"
+                    keyboardType="decimal-pad"
+                    maxLength={10}
+                    disabled={isEdit}
+                    helperText={quantityHelperText}
+                    value={
+                      form.values.quantity != null ? String(form.values.quantity) : ''
+                    }
+                    error={form.touched.quantity ? form.errors.quantity : undefined}
+                    onChange={handleQuantityChange}
+                    onBlur={() => form.handleBlur('quantity', coerceDecimal(form.values.quantity))}
+                  />
+                </View>
+                <View style={styles.rowHalf}>
+                  <FormInput
+                    name="unit_price"
+                    label={isLiquid ? 'Preço por ml' : 'Preço unitário'}
+                    placeholder="0,00"
+                    keyboardType="decimal-pad"
+                    maxLength={12}
+                    helperText="R$ — opcional"
+                    value={
+                      form.values.unit_price != null ? String(form.values.unit_price) : ''
+                    }
+                    error={form.touched.unit_price ? form.errors.unit_price : undefined}
+                    onChange={handlePriceChange}
+                    onBlur={() => form.handleBlur('unit_price', coerceDecimal(form.values.unit_price))}
+                  />
+                </View>
               </View>
-            </View>
-          </FormSection>
+            </FormSection>
+          )}
 
           {/* Datas */}
           <FormSection title="Datas">
@@ -386,7 +478,7 @@ export default function PurchaseFormScreen() {
             <FormInput
               name="laboratory"
               label="Laboratório"
-              placeholder="Fabricante"
+              placeholder="Laboratório"
               helperText={labLocked ? 'Marca registrada — definida pelo medicamento' : 'Opcional'}
               autoCapitalize="words"
               maxLength={200}

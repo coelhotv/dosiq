@@ -28,6 +28,7 @@ export async function getAllTreatments(userId) {
         frequency,
         time_schedule,
         dosage_per_intake,
+        intake_unit,
         titration_status,
         active,
         start_date,
@@ -45,6 +46,7 @@ export async function getAllTreatments(userId) {
           type,
           dosage_per_pill,
           dosage_unit,
+          units_per_ml,
           therapeutic_class
         )
       `)

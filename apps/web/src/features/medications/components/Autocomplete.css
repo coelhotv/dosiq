@@ -3,6 +3,13 @@
   width: 100%;
 }
 
+/* Autocompletes empilhados (ex: Nome + Laboratório no wizard): ao focar/abrir,
+   eleva o wrapper inteiro acima do campo seguinte — senão o dropdown absoluto
+   fica atrás do input irmão posterior no DOM. */
+.autocomplete-wrapper:focus-within {
+  z-index: 100;
+}
+
 .autocomplete-input-container {
   position: relative;
   display: flex;
@@ -64,7 +71,7 @@
   box-shadow: var(--shadow-lg);
   max-height: 280px;
   overflow-y: auto;
-  z-index: var(--z-dropdown);
+  z-index: 100;
 }
 
 .autocomplete-item {

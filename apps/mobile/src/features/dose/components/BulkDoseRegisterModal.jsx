@@ -19,7 +19,7 @@ import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp }
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
-import { getNow, cloneDate, formatActiveIngredientHint } from '@dosiq/core'
+import { getNow, cloneDate, formatIntakeDose, formatConcentration } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -31,6 +31,59 @@ function formatDateTime(d) {
   const hh = String(d.getHours()).padStart(2, '0')
   const min = String(d.getMinutes()).padStart(2, '0')
   return `${dd}/${mm} às ${hh}:${min}`
+}
+
+// Motivos distintos de falha (por log) p/ orientar o paciente.
+function distinctReasons(results, onlyFailed = false) {
+  const rows = onlyFailed ? results.filter(r => !r.success) : results
+  return [...new Set(rows.map(r => r.error).filter(Boolean))]
+}
+
+/**
+ * Monta a mensagem de resultado do registro em batch (Constituição IX —
+ * Transparência Radical: NUNCA silenciar falhas/falhas parciais; sempre informar
+ * quantas entraram, quantas falharam e por quê). Helper puro = testável.
+ *
+ * @param {{success: boolean, error?: string, results: Array<{success: boolean, error?: string}>}} result
+ * @returns {{variant: 'success'|'warning'|'error', msg: string, duration?: number, successCount: number}}
+ */
+export function buildBulkOutcome(result) {
+  const results = result.results ?? []
+  // Falha total sem nenhum log processado (rede/insert/validação).
+  if (!result.success && results.length === 0) {
+    return { variant: 'error', msg: result.error ?? 'Erro ao registrar doses.', duration: 7000, successCount: 0 }
+  }
+
+  const successCount = results.filter(r => r.success).length
+  const failCount = results.length - successCount
+
+  // Sucesso pleno.
+  if (failCount === 0 && successCount > 0) {
+    const msg = successCount === 1
+      ? 'Dose registrada com sucesso.'
+      : `${successCount} doses registradas com sucesso.`
+    return { variant: 'success', msg, successCount }
+  }
+
+  // Sucesso parcial — informa quais falharam e por quê.
+  if (successCount > 0) {
+    const reasons = distinctReasons(results, true)
+    const detalhe = reasons.length ? ` Motivo${reasons.length > 1 ? 's' : ''}: ${reasons.join(' · ')}` : ''
+    const verbo = failCount > 1 ? 'falharam' : 'falhou'
+    const msg = `${successCount} de ${results.length} doses registradas. ${failCount} ${verbo}.${detalhe}`
+    return { variant: 'warning', msg, duration: 7000, successCount }
+  }
+
+  // Todas falharam — agrega os motivos reais por log.
+  const reasons = distinctReasons(results)
+  const msg =
+    result.error ??
+    (reasons.length === 1
+      ? `Nenhuma dose registrada: ${reasons[0]}`
+      : reasons.length > 1
+        ? `Nenhuma dose registrada. Motivos: ${reasons.join(' · ')}`
+        : 'Nenhuma dose foi registrada.')
+  return { variant: 'error', msg, duration: 7000, successCount: 0 }
 }
 
 /**
@@ -69,7 +122,8 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
     const medicineName = item.protocol.medicine?.name ?? item.protocol.name ?? 'Medicamento'
-    const dose = formatActiveIngredientHint(item.protocol.dosage_per_intake ?? 1, item.protocol.medicine?.dosage_per_pill, item.protocol.medicine?.dosage_unit) || `${item.protocol.dosage_per_intake ?? 1} un.`
+    // Líquido → "40 gotas (≈ 2 ml)"; sólido → "10 un. (1.000 mg)" (formatIntakeDose).
+    const dose = formatIntakeDose(item.protocol.dosage_per_intake ?? 1, item.protocol.intake_unit, item.protocol.medicine)
 
     return (
       <Pressable
@@ -90,7 +144,7 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
             {item.protocol.medicine?.dosage_per_pill && (
               <View style={styles.dosageBadge}>
                 <Text style={styles.dosageBadgeText}>
-                  {item.protocol.medicine.dosage_per_pill}{item.protocol.medicine.dosage_unit}
+                  {formatConcentration(item.protocol.medicine.dosage_per_pill, item.protocol.medicine.dosage_unit)}
                 </Text>
               </View>
             )}
@@ -372,25 +426,10 @@ export default function BulkDoseRegisterModal({
     const result = await registerDoseMany(logsData)
     setLoading(false)
 
-    if (!result.success && result.results.length === 0) {
-      const errMsg = result.error ?? 'Erro ao registrar doses.'
-      setError(errMsg)
-      show(errMsg, { variant: 'error' })
-      return
-    }
-
-    const successCount = result.results.filter(r => r.success).length
-    if (successCount > 0) {
-      const msg = successCount === 1
-        ? 'Dose registrada com sucesso.'
-        : `${successCount} doses registradas com sucesso.`
-      show(msg, { variant: 'success' })
-      onSuccess({ successCount })
-    } else {
-      const errMsg = result.error ?? 'Nenhuma dose foi registrada.'
-      setError(errMsg)
-      show(errMsg, { variant: 'error' })
-    }
+    const outcome = buildBulkOutcome(result)
+    if (outcome.variant !== 'success') setError(outcome.msg)
+    show(outcome.msg, { variant: outcome.variant, duration: outcome.duration })
+    if (outcome.successCount > 0) onSuccess({ successCount: outcome.successCount })
   }
 
   function handleClose() {

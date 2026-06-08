@@ -44,7 +44,8 @@ function _deriveStockSummary(medicines, protocols) {
     .map((medicine) => {
       const activeStockEntries = (medicine.stock || []).filter((s) => s.quantity > 0)
       const totalQuantity = activeStockEntries.reduce((sum, s) => sum + s.quantity, 0)
-      const dailyIntake = calculateDailyIntake(medicine.id, protocols)
+      // Líquidos (022): consumo convertido p/ ml (alinha ao saldo em ml).
+      const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyIntake)
       const threshold = medicine.min_stock_threshold || 0
       const isZero = totalQuantity === 0

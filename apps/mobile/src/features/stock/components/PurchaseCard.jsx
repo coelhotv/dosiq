@@ -3,7 +3,7 @@
 
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
-import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatDoseUnit } from '@dosiq/core'
+import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR } from '@dosiq/core'
 
 /**
  * @param {{
@@ -23,11 +23,17 @@ import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatDoseUnit } fro
  *   onPress?: () => void            // tap leva pra editar compra
  * }} props
  */
-export default function PurchaseCard({ purchase, remaining = 0, isLatest = false, onPress }) {
+export default function PurchaseCard({ purchase, remaining = 0, isLatest = false, onPress, medicine = null }) {
   // States (R-010 — ordem critica antes de derivações)
   // Nenhum hook complexo — apenas useMemo se houver heavy computation
 
   // Derivações
+  // Líquidos (022): quantidades em ml, custo por ml.
+  const isLiquid = isLiquidMedicine(medicine)
+  const unitLabel = stockUnitLabel(medicine)
+  const remainingText = isLiquid
+    ? `${formatNumberPtBR(remaining)} ml`
+    : `${remaining}`
   const isInUse = remaining > 0
   const expiryDays = purchase.expiration_date ? computeExpiryDays(purchase.expiration_date) : null
   const purchaseDateFormatted = formatDateShortPtBR(purchase.purchase_date)
@@ -74,11 +80,11 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
       {/* Quantidades: "30 un. compradas · 16 restantes" */}
       <View style={styles.quantityRow}>
         <Text style={styles.quantityText}>
-          {formatDoseUnit(purchase.quantity_bought)} compradas
+          {formatStockCount(purchase.quantity_bought, medicine)} compradas
         </Text>
         <Text style={styles.quantityDot}> · </Text>
         <Text style={[styles.quantityText, { color: isInUse ? colors.status.success : colors.text.muted }]}>
-          {remaining} restantes
+          {remainingText} restantes
         </Text>
       </View>
 
@@ -90,7 +96,7 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
         ) : (
           <>
             <Text style={styles.costValue}>
-              {formatBRL(purchase.unit_price)} por un.
+              {formatBRL(purchase.unit_price)} por {unitLabel}
             </Text>
             <Text style={styles.costDot}> · </Text>
             <Text style={styles.costValue}>Total {formatBRL(totalCost)}</Text>

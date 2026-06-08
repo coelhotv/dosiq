@@ -251,15 +251,46 @@ export function isInToleranceWindow(nextDoseTime) {
  * @param {Array} protocols
  * @returns {number}
  */
-export function calculateDailyIntake(medicineId, protocols) {
+/**
+ * Converte a dose de tomada para ml, quando o medicamento é líquido (022).
+ * Estoque de líquidos é em ml; doses em gotas/UI precisam virar ml via units_per_ml
+ * (gotas/UI por ml). Sólidos e doses já em ml retornam o valor original.
+ *
+ * @param {number} dosage - dosagem por tomada na unidade de tomada
+ * @param {string|null} intakeUnit - 'gotas' | 'ml' | 'UI' | null
+ * @param {number|null} unitsPerMl - densidade (gotas ou UI por ml)
+ * @returns {number} dose equivalente em ml (ou a dose original se não-líquido)
+ */
+export function doseToMl(dosage, intakeUnit, unitsPerMl) {
+  if (intakeUnit === 'ml' || !intakeUnit) return dosage
+  // gotas/UI → ml: divide pela densidade. Fallback 20 (padrão gotas/ml) se ausente/zero.
+  const density = unitsPerMl && unitsPerMl > 0 ? unitsPerMl : 20
+  return dosage / density
+}
+
+/**
+ * Calcula consumo diário do medicamento somando todos os protocolos ativos.
+ * Para líquidos (medicine.dosage_unit termina em '/ml'), converte a dose de cada
+ * protocolo para ml — alinhando a unidade ao saldo de estoque (que é em ml).
+ *
+ * @param {string} medicineId
+ * @param {Array} protocols
+ * @param {Object|null} [medicine] - quando informado e líquido, converte doses p/ ml
+ * @returns {number} consumo diário (em unidades de tomada, ou em ml se líquido)
+ */
+export function calculateDailyIntake(medicineId, protocols, medicine = null) {
   if (!protocols) return 0
+
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  const unitsPerMl = medicine?.units_per_ml
 
   return protocols
     .filter((p) => p.medicine_id === medicineId && p.active)
     .reduce((total, p) => {
       const dosesPerDay = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1
-      return total + dosesPerDay * dosage
+      const perDose = isLiquid ? doseToMl(dosage, p.intake_unit, unitsPerMl) : dosage
+      return total + dosesPerDay * perDose
     }, 0)
 }
 

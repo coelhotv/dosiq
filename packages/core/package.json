@@ -1,7 +1,7 @@
 {
   "name": "@dosiq/core",
   "private": true,
-  "version": "0.1.1-phase2",
+  "version": "0.2.0-phase3",
   "type": "module",
   "exports": {
     ".": "./src/index.js",

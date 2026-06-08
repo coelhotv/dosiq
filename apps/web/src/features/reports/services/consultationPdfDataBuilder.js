@@ -227,7 +227,7 @@ function _resolveStockMessage(stockItem) {
 function _mapStockItem(stockItem, protocols, medicines) {
   const medicine = _resolveStockMedicine(stockItem, medicines)
   const protocol = _resolveStockProtocol(medicine, protocols)
-  const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols)
+  const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols, medicine)
   const totalQuantity = stockItem?.total ?? 0
   const daysRemaining = _resolveStockDays(stockItem, dailyIntake, totalQuantity)
   const severity = getStockSeverity({ ...stockItem, daysRemaining })

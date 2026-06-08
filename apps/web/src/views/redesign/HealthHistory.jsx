@@ -32,6 +32,10 @@ function enrichEvent(ev, protocolsById) {
       ...ev.payload,
       medicineName: ev.payload.medicineName ?? p.medicine?.name ?? p.medicine_name ?? null,
       dosageUnit: ev.payload.dosageUnit ?? p.dosage_unit ?? p.medicine?.dosage_unit ?? null,
+      // 022: unidade de tomada + densidade + concentração p/ exibir dose líquida correta.
+      intakeUnit: ev.payload.intakeUnit ?? p.intake_unit ?? null,
+      unitsPerMl: ev.payload.unitsPerMl ?? p.medicine?.units_per_ml ?? null,
+      dosagePerPill: ev.payload.dosagePerPill ?? p.medicine?.dosage_per_pill ?? null,
     },
   }
 }

@@ -153,18 +153,11 @@ const medicineObject = z.object({
     .transform((val) => val || null),
 })
 
-// Refine de líquido: unidade terminando em '/ml' exige units_per_ml (padrão 20 na UI).
-const requireUnitsPerMlForLiquid = (data, ctx) => {
-  if (data.dosage_unit?.endsWith('/ml') && data.units_per_ml == null) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['units_per_ml'],
-      message: 'Densidade (unidades por ml) é obrigatória para medicamentos líquidos (padrão 20).',
-    })
-  }
-}
-
-export const medicineSchema = medicineObject.superRefine(requireUnitsPerMlForLiquid)
+// Densidade (units_per_ml) é OPCIONAL no medicamento (022 Fase C — revisão UX):
+// não pertence ao cadastro do medicamento (impenetrável p/ leigo + prematuro). É
+// capturada no tratamento quando intake_unit=gotas/UI e persistida aqui (física do
+// produto). RPC consume_stock_fifo e doseToMl já fazem fallback p/ 20 quando null.
+export const medicineSchema = medicineObject
 
 /**
  * Schema para criação de medicamento (sem id)
@@ -180,14 +173,12 @@ export const medicineUpdateSchema = medicineObject.partial()
 /**
  * Schema completo com ID (para validação de dados do backend)
  */
-export const medicineFullSchema = medicineObject
-  .extend({
-    id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
-    user_id: z.string().uuid('ID do usuário deve ser um UUID válido'),
-    created_at: z.string().datetime({ offset: true }).optional(),
-    updated_at: z.string().datetime({ offset: true }).optional(),
-  })
-  .superRefine(requireUnitsPerMlForLiquid)
+export const medicineFullSchema = medicineObject.extend({
+  id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
+  user_id: z.string().uuid('ID do usuário deve ser um UUID válido'),
+  created_at: z.string().datetime({ offset: true }).optional(),
+  updated_at: z.string().datetime({ offset: true }).optional(),
+})
 
 /**
  * Valida um objeto de medicamento

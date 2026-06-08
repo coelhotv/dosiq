@@ -108,8 +108,9 @@ async function _rollbackLog(logId, stockError) {
 }
 
 // Consome stock via RPC transacional; em caso de falha faz rollback
-async function _consumeStock(logEntry) {
+async function _consumeStock(logEntry, userId) {
   const { error: stockError } = await supabase.rpc('consume_stock_fifo', {
+    p_user_id: userId,
     p_medicine_id: logEntry.medicine_id,
     p_quantity: logEntry.quantity_taken,
     p_medicine_log_id: logEntry.id,
@@ -210,7 +211,7 @@ export async function registerDose(logData, { instanceId = null } = {}) {
     if (err) return err
 
     debugLog('[doseService] insert OK — id:', logEntry?.id, 'A consumir stock...')
-    const stockError = await _consumeStock(logEntry)
+    const stockError = await _consumeStock(logEntry, user.id)
     if (stockError) return _rollbackLog(logEntry.id, stockError)
 
     debugLog('[doseService] stock consumido com sucesso')
@@ -254,8 +255,9 @@ function _validateManyLogs(logsData) {
 }
 
 // Consome stock e trata rollback individual por log em batch
-async function _consumeStockBatch(logEntry) {
+async function _consumeStockBatch(logEntry, userId) {
   const { error: stockError } = await supabase.rpc('consume_stock_fifo', {
+    p_user_id: userId,
     p_medicine_id: logEntry.medicine_id,
     p_quantity: logEntry.quantity_taken,
     p_medicine_log_id: logEntry.id,
@@ -309,7 +311,7 @@ export async function registerDoseMany(logsData) {
     const results = []
     for (let i = 0; i < insertedLogs.length; i++) {
       const logEntry = insertedLogs[i]
-      const result = await _consumeStockBatch(logEntry)
+      const result = await _consumeStockBatch(logEntry, user.id)
       // Âncora best-effort só se o estoque pegou (log não foi rollbacked) — S3.6.2/AP-193.
       // F4.3d: direta por instance_id quando resolvido; senão snap por tolerância.
       if (result.success) {

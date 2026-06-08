@@ -26,7 +26,9 @@ export function calculateDaysRemaining(totalQuantity, dailyUsage) {
  * @returns {string} Mensagem formatada com escape MarkdownV2
  */
 export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
-  const unit = escapeMarkdownV2(medicine.dosage_unit || 'unidades');
+  // Líquidos (022): saldo é em ml, não na unidade de concentração (mg/ml).
+  const isLiquid = Boolean(medicine.dosage_unit?.endsWith('/ml'));
+  const unit = escapeMarkdownV2(isLiquid ? 'ml' : (medicine.dosage_unit || 'unidades'));
   const name = escapeMarkdownV2(medicine.name || 'Medicamento');
   let status = `💊 *${name}*\n`;
   status += `📦 Estoque: ${totalQuantity} ${unit}\n`;
@@ -53,10 +55,14 @@ export function formatProtocol(protocol) {
   const name = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
   const times = escapeMarkdownV2(protocol.time_schedule?.join(', ') || '');
   const dosage = escapeMarkdownV2(String(protocol.dosage_per_intake ?? 1));
-  
+  // Líquidos (022): mostra a unidade de tomada (gotas/ml/UI) em vez de "Nx".
+  const intakeLabel = protocol.intake_unit
+    ? ` ${escapeMarkdownV2(protocol.intake_unit)}`
+    : 'x';
+
   let msg = `💊 *${name}*\n`;
   msg += `⏰ Horários: ${times}\n`;
-  msg += `📏 Dose: ${dosage}x\n`;
+  msg += `📏 Dose: ${dosage}${intakeLabel}\n`;
   
   if (protocol.titration_schedule && protocol.titration_schedule.length > 0) {
     const currentStage = protocol.current_stage_index || 0;

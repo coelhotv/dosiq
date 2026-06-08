@@ -21,7 +21,7 @@ export async function getActiveProtocols(userId, dateStr) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('protocols')
-    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color)')
+    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)
@@ -81,7 +81,7 @@ export async function getMedicinesData(medicineIds) {
 
   const { data, error } = await supabase
     .from('medicines')
-    .select('id, name, dosage_per_pill, dosage_unit')
+    .select('id, name, dosage_per_pill, dosage_unit, units_per_ml')
     .in('id', medicineIds)
 
   if (error) throw error
@@ -90,7 +90,8 @@ export async function getMedicinesData(medicineIds) {
     acc[m.id] = {
       name: m.name,
       dosage_per_pill: m.dosage_per_pill,
-      dosage_unit: m.dosage_unit
+      dosage_unit: m.dosage_unit,
+      units_per_ml: m.units_per_ml
     }
     return acc
   }, {})

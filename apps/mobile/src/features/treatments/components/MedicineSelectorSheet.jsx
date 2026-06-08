@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Search, X, Pill, PillBottle, Plus } from 'lucide-react-native'
 import { useMedicines } from '../../medications/hooks/useMedicines'
 import { selectionTap, lightTap } from '@shared/utils/haptics'
+import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 // NFD normalize para busca case-/diacritics-insensitive (AP-157 — pré-computado).
@@ -127,7 +128,7 @@ export default function MedicineSelectorSheet({
             {item.dosage_per_pill ? (
               <View style={styles.dosagePill}>
                 <Text style={styles.dosagePillText}>
-                  {item.dosage_per_pill}{item.dosage_unit || ''}
+                  {formatConcentration(item.dosage_per_pill, item.dosage_unit)}
                 </Text>
               </View>
             ) : null}

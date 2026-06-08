@@ -28,6 +28,7 @@ import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
 import { MedicineDeleteBlockedSheet } from '@medications/components/MedicineDeleteBlockedSheet'
+import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 const TYPE_LABELS = {
@@ -275,7 +276,7 @@ export default function MedicineDetailScreen() {
               label="Concentração"
               value={
                 data.dosage_per_pill
-                  ? `${data.dosage_per_pill} ${data.dosage_unit ?? ''}`.trim()
+                  ? formatConcentration(data.dosage_per_pill, data.dosage_unit)
                   : null
               }
               isLast

@@ -45,6 +45,7 @@ export {
   isInToleranceWindow,
   calculateDailyIntake,
   calculateDaysRemaining,
+  doseToMl,
   calculateDosesByDate,
   evaluateDoseTimelineState,
   isProtocolActiveOnDate,
@@ -89,9 +90,19 @@ export {
 export {
   pluralizeDoseUnit,
   formatDoseUnit,
+  formatDose,
+  formatNumberPtBR,
+  formatIntakeDose,
+  formatDoseItem,
+  formatDoseHint,
+  formatConcentration,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
+  isLiquidMedicine,
+  stockUnitLabel,
+  formatStockCount,
+  formatStockQuantity,
 } from './doseUnit.js'
 
 // Date presentation PT-BR (Fase 2)

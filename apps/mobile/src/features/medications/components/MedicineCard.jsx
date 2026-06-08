@@ -2,6 +2,7 @@
 
 import { Pressable, View, Text, StyleSheet } from 'react-native'
 import { Pill, PillBottle } from 'lucide-react-native'
+import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
@@ -50,7 +51,7 @@ export default function MedicineCard({ medicine, onPress }) {
         {hasDose && (
           <View style={styles.dosagePill}>
             <Text style={styles.dosagePillText}>
-              {dosage_per_pill}{dosage_unit}
+              {formatConcentration(dosage_per_pill, dosage_unit)}
             </Text>
           </View>
         )}

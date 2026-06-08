@@ -4,11 +4,15 @@ import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 
 async function resolveMedicine(existing, data) {
   if (existing) return existing
+  const isLiquid = data.dosage_unit?.endsWith('/ml')
   return medicineService.create({
     name: data.name,
     type: data.type,
     dosage_per_pill: Number(data.dosage_per_pill),
     dosage_unit: data.dosage_unit,
+    // Líquido (/ml): grava densidade + presentation='liquido'; sólido zera densidade.
+    units_per_ml: isLiquid && data.units_per_ml ? Number(data.units_per_ml) : null,
+    presentation: isLiquid ? 'liquido' : data.presentation || 'comprimido',
     laboratory: data.laboratory || null,
     active_ingredient: data.active_ingredient || null,
     therapeutic_class: data.therapeutic_class || null,

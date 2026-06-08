@@ -66,12 +66,14 @@ export function createStockRepository({ client, getUserId }) {
         laboratory,
         dosage_unit,
         dosage_per_pill,
+        units_per_ml,
         medicine_stock_summary!left (
           total_quantity
         ),
         protocols (
           id,
           dosage_per_intake,
+          intake_unit,
           time_schedule,
           frequency,
           active,
@@ -214,7 +216,9 @@ export function createStockRepository({ client, getUserId }) {
       if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
       if (!medicineLogId) throw new Error('medicineLogId é obrigatório para consumo FIFO rastreável')
 
+      const userId = await getUserId()
       const { data, error } = await client.rpc('consume_stock_fifo', {
+        p_user_id: userId,
         p_medicine_id: medicineId,
         p_quantity: quantity,
         p_medicine_log_id: medicineLogId,
