@@ -79,7 +79,7 @@ export default function ProtocolFormBody({
       const dose = Number(String(form.values.dosage_per_intake ?? '').replace(',', '.'))
       if (!dose) return fallback
       const fmt = (n) => String(Math.round(n * 1000) / 1000).replace('.', ',')
-      const density = Number(form.values.units_per_ml) || medicine.units_per_ml
+      const density = Number(String(form.values.units_per_ml || '').replace(',', '.')) || medicine.units_per_ml
       const ml = doseToMl(dose, form.values.intake_unit, density)
       const baseUnit = medicine.dosage_unit === 'ui/ml' ? 'UI' : 'mg'
       const parts = []
@@ -237,6 +237,7 @@ export default function ProtocolFormBody({
             onBlur={form.handleBlur}
             placeholder={String(defaultDensity)}
             keyboardType="decimal-pad"
+            maxLength={6}
             helperText={densityHint}
           />
         )}
