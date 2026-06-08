@@ -49,6 +49,7 @@ export function useNudgesAdminState() {
     }
   }, [page, pageSize, isActiveFilter, targetViewFilter])
 
+  // Exceção R-010: loadNudges (useCallback) declarado antes para evitar TDZ no useEffect
   useEffect(() => {
     startTransition(() => {
       loadNudges()

@@ -307,6 +307,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
                     value={formData.action_payload?.url || ''}
                     onChange={(e) => handleActionPayloadChange('url', e.target.value)}
                     placeholder="https://example.com"
+                    maxLength={2000}
                     className={errors.action_payload ? 'input-error' : ''}
                   />
                   {errors.action_payload && <small>{errors.action_payload}</small>}
@@ -321,6 +322,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
                       value={formData.action_payload?.label || ''}
                       onChange={(e) => handleActionPayloadChange('label', e.target.value)}
                       placeholder="Ex: Saiba Mais"
+                      maxLength={50}
                     />
                   </div>
 
@@ -404,6 +406,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
                   onChange={(e) => handleChange('min_app_version', e.target.value || null)}
                   placeholder="1.0.0"
                   pattern="\d+\.\d+\.\d+"
+                  maxLength={20}
                 />
               </div>
 
@@ -416,6 +419,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
                   onChange={(e) => handleChange('max_app_version', e.target.value || null)}
                   placeholder="2.0.0"
                   pattern="\d+\.\d+\.\d+"
+                  maxLength={20}
                 />
               </div>
             </div>

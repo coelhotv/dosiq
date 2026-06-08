@@ -1,8 +1,6 @@
 // apps/web/src/views/admin/nudgeFormUtils.js
 // Utilitários para construção inteligente de payloads de nudge
 
-import { ROUTES } from '../../../../mobile/src/navigation/routes'
-
 // Mapeamento de rotas para suas abas e níveis
 const TAB_ROUTES = {
   Hoje: ['Hoje'],

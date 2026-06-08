@@ -262,13 +262,12 @@ export default function NudgesAdmin({ onBack }) {
 
                   <Button
                     onClick={() => {
-                      if (confirm('Tem certeza que deseja deletar este nudge?')) {
-                        // TODO: implement delete after handleDelete is added to hook
-                      }
+                      // TODO: implement delete after handleDelete is added to hook and API
                     }}
                     variant="secondary"
-                    disabled={actionLoading === nudge.id}
+                    disabled={true}
                     size="sm"
+                    title="Funcionalidade de exclusão em desenvolvimento"
                   >
                     <Trash2 size={14} /> Deletar
                   </Button>

@@ -107,7 +107,7 @@ const nudgeSchema = z.object({
     } else {
       try {
         new URL(payload.url)
-      } catch (_) {
+      } catch {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'URL inválida',
