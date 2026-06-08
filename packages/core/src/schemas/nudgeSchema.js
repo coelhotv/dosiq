@@ -34,25 +34,25 @@ const nudgeSchema = z.object({
     .trim(),
 
   body: z
-    .string({ required_error: 'Corpo é obrigatório' })
-    .min(5, 'Corpo deve ter ao menos 5 caracteres')
-    .max(200, 'Corpo não pode ter mais de 200 caracteres')
+    .string({ required_error: 'Descrição é obrigatório' })
+    .min(5, 'Descrição deve ter ao menos 5 caracteres')
+    .max(200, 'Descrição não pode ter mais de 200 caracteres')
     .trim(),
 
   target_view: z
-    .enum(TARGET_VIEW_OPTIONS, { errorMap: () => ({ message: 'target_view inválido' }) }),
+    .enum(TARGET_VIEW_OPTIONS, { errorMap: () => ({ message: 'Superfície inválida' }) }),
 
   action_type: z
-    .enum(ACTION_TYPE_OPTIONS, { errorMap: () => ({ message: 'action_type inválido' }) }),
+    .enum(ACTION_TYPE_OPTIONS, { errorMap: () => ({ message: 'Tipo de ação inválida' }) }),
 
   platform: z
-    .enum(PLATFORM_OPTIONS, { errorMap: () => ({ message: 'platform inválida' }) }),
+    .enum(PLATFORM_OPTIONS, { errorMap: () => ({ message: 'Plataforma inválida' }) }),
 
   priority: z
     .number()
-    .int('Priority deve ser inteiro')
-    .min(0, 'Priority mínimo é 0')
-    .max(100, 'Priority máximo é 100')
+    .int('Prioridade deve ser número inteiro')
+    .min(0, 'Prioridade mínima é 0')
+    .max(100, 'Prioridade máxima é 100')
     .default(0)
     .nullable()
     .optional(),
