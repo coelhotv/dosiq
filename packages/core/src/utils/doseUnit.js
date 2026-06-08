@@ -12,6 +12,81 @@
 // Hermes (mobile) sem ICU completo: toLocaleString('pt-BR') cai em fallback
 // US. Por isso usamos replace('.', ',') manual (confiável em V8 e Hermes).
 
+import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
+
+/**
+ * Formata a concentração/apresentação do medicamento (pill) com a unidade
+ * normalizada via DOSAGE_UNIT_LABELS — UI em allcaps, ml em minúsculo, UI/ml etc.
+ * Centraliza o que antes era `${dosage_per_pill}${dosage_unit}` cru (mostrava
+ * "ui/ml" minúsculo) espalhado por listagem, estoque, histórico e notificações.
+ *
+ * @param {number|string|null} value - dosage_per_pill (carga por unidade/ml)
+ * @param {string|null} unit - dosage_unit ('mg', 'ui/ml', 'mg/ml', 'un', …)
+ * @returns {string} ex: '100 UI/ml' · '500 mg' · '' se value vazio
+ */
+export function formatConcentration(value, unit) {
+  if (value === undefined || value === null || value === '') return ''
+  const v = formatNumberPtBR(value)
+  if (v === '') return ''
+  const label = DOSAGE_UNIT_LABELS[unit] || unit || ''
+  return label ? `${v} ${label}` : v
+}
+
+/**
+ * Decisão-mãe líquido (022): medicamento é líquido quando dosage_unit termina
+ * em '/ml' (mg/ml, ui/ml). Centraliza o predicado antes duplicado inline em
+ * telas de estoque/tratamento (evita drift — ex: esquecer endsWith em uma tela).
+ *
+ * @param {{dosage_unit?: string}|null} medicine
+ * @returns {boolean}
+ */
+export function isLiquidMedicine(medicine) {
+  return Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+}
+
+/**
+ * Sufixo curto p/ contagens de estoque (saldo, consumo/dia, comprado, custo).
+ * Líquido → 'ml'; sólido → 'un.'. Usado em KPIs e custos ("R$ X / ml").
+ *
+ * @param {{dosage_unit?: string}|null} medicine
+ * @returns {'ml'|'un.'}
+ */
+export function stockUnitLabel(medicine) {
+  return isLiquidMedicine(medicine) ? 'ml' : 'un.'
+}
+
+/**
+ * Contagem simples de estoque p/ "compradas/restantes": líquido "X ml",
+ * sólido "X unidade(s)". Diferente de formatStockQuantity (que adiciona hint de
+ * princípio ativo no sólido) — aqui é só a contagem crua na unidade certa.
+ *
+ * @param {number|string} qty
+ * @param {{dosage_unit?: string}|null} medicine
+ * @returns {string}
+ * @example formatStockCount(30, {dosage_unit:'mg/ml'}) → '30 ml'
+ * @example formatStockCount(30, {dosage_unit:'mg'})    → '30 unidades'
+ */
+export function formatStockCount(qty, medicine) {
+  if (isLiquidMedicine(medicine)) return formatDose(qty, 'ml')
+  return formatDoseUnit(qty)
+}
+
+/**
+ * Saldo de estoque formatado p/ display destacado. Líquido → "X ml"; sólido →
+ * hint de princípio ativo ("30 un. (15.000 mg)") com fallback "X un.".
+ *
+ * @param {number|string} qty
+ * @param {{dosage_unit?: string, dosage_per_pill?: number}|null} medicine
+ * @returns {string}
+ */
+export function formatStockQuantity(qty, medicine) {
+  if (isLiquidMedicine(medicine)) return formatDose(qty, 'ml')
+  return (
+    formatActiveIngredientHint(qty, medicine?.dosage_per_pill, medicine?.dosage_unit) ||
+    `${formatNumberPtBR(qty)} un.`
+  )
+}
+
 /**
  * Retorna "unidade" (singular) ou "unidades" (plural) baseado na quantidade.
  * Coerce explícito via Number — valores podem chegar como string de TextInput.
@@ -82,6 +157,38 @@ export function formatDose(value, unit) {
   }
   if (unit === 'UI') return `${v} UI`
   return `${v} ${unit || ''}`.trim()
+}
+
+/**
+ * Formata a dose de UMA tomada para exibição em cards/detalhe (022).
+ * Líquido (medicine.dosage_unit termina em '/ml'): mostra a unidade de tomada
+ * (gotas/ml/UI) + equivalência em ml quando não-ml. Sólido: cai no hint de
+ * princípio ativo. Centraliza a lógica antes duplicada em telas (evita drift).
+ *
+ * @param {number|string} qty - dose por tomada (na unidade de tomada)
+ * @param {string|null} intakeUnit - 'gotas' | 'ml' | 'UI' | null
+ * @param {Object|null} medicine - { dosage_unit, dosage_per_pill, units_per_ml }
+ * @returns {string}
+ * @example formatIntakeDose(40,'gotas',{dosage_unit:'mg/ml',units_per_ml:20}) → '40 gotas (≈ 2 ml)'
+ * @example formatIntakeDose(100,'UI',{dosage_unit:'ui/ml',units_per_ml:100})  → '100 UI (≈ 1 ml)'
+ * @example formatIntakeDose(5,'ml',{dosage_unit:'mg/ml'})                      → '5 ml'
+ */
+export function formatIntakeDose(qty, intakeUnit, medicine) {
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  if (!isLiquid) {
+    return (
+      formatActiveIngredientHint(qty, medicine?.dosage_per_pill, medicine?.dosage_unit) ||
+      `${qty} un.`
+    )
+  }
+  const intake = intakeUnit || 'ml'
+  const base = formatDose(qty, intake)
+  if (intake === 'ml') return base
+  // gotas/UI → ml: divide pela densidade (fallback 20). Inline p/ evitar dep circular.
+  const density = medicine?.units_per_ml && medicine.units_per_ml > 0 ? medicine.units_per_ml : 20
+  const numQty = Number(typeof qty === 'string' ? qty.replace(',', '.') : qty)
+  const ml = numQty / density
+  return `${base} (≈ ${formatDose(ml, 'ml')})`
 }
 
 /**

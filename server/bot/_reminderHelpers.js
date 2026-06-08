@@ -17,7 +17,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
       const { data, error } = await supabase
         .from('protocols')
         .select(`
-          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, treatment_plan_id, frequency, weekdays, start_date,
+          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, weekdays, start_date,
           medicine:medicines(name, dosage_unit, dosage_per_pill),
           treatment_plan:treatment_plans(id, name)
         `)
@@ -71,9 +71,10 @@ async function _processUserReminderBlock(userId, currentHHMM, currentHour, block
       medicineName: dose.medicineName, 
       protocolId: dose.protocolId, 
       medicineId: dose.medicineId, 
-      time: currentHHMM, 
+      time: currentHHMM,
       dosagePerIntake: dose.dosagePerIntake,
       dosageUnit: dose.dosageUnit,
+      intakeUnit: dose.intakeUnit ?? null,
       hour: currentHour
     };
   }
@@ -95,7 +96,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   const selectFields = `
     id, user_id, protocol_id, critical_alarm,
     protocol:protocols(
-      id, name, dosage_per_intake, treatment_plan_id, medicine_id,
+      id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
       medicine:medicines(name, dosage_unit, dosage_per_pill),
       treatment_plan:treatment_plans(id, name)
     )
@@ -199,6 +200,8 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
           dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
           dosageUnit: inst.protocol?.medicine?.dosage_unit,
           dosagePerPill: inst.protocol?.medicine?.dosage_per_pill !== null && inst.protocol?.medicine?.dosage_per_pill !== undefined ? Number(inst.protocol.medicine.dosage_per_pill) : null,
+          // Líquidos (022): unidade de tomada p/ exibir "2 gotas" no lembrete.
+          intakeUnit: inst.protocol?.intake_unit ?? null,
           medicineId: inst.protocol?.medicine_id,
           critical_alarm: inst.critical_alarm ?? false,
         }));
@@ -262,6 +265,7 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
               dosagePerIntake: dose.dosagePerIntake,
               dosageUnit: dose.dosageUnit,
               dosagePerPill: dose.dosagePerPill,
+              intakeUnit: dose.intakeUnit ?? null,
               hour: currentHour,
               critical_alarm: dose.critical_alarm ?? false,
             };
@@ -359,6 +363,7 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
             treatmentPlanName: p.treatment_plan?.name ?? null,
             dosagePerIntake: p.dosage_per_intake ?? 1,
             dosageUnit: p.medicine?.dosage_unit,
+            intakeUnit: p.intake_unit ?? null,
             medicineId: p.medicine_id,
           }));
 

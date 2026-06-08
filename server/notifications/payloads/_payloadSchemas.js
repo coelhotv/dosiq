@@ -119,6 +119,7 @@ export const doseReminderDataSchema = z.object({
   dosagePerIntake: z.number().optional(),
   dosageUnit: z.string().optional(),
   dosagePerPill: z.number().nullable().optional(),
+  intakeUnit: z.string().nullable().optional(), // Líquidos (022): gotas/ml/UI
   protocolId: z.string().optional(),
   hour: z.number().min(0).max(23).optional(),
   critical_alarm: z.boolean().optional()
@@ -132,9 +133,10 @@ export const doseReminderByPlanDataSchema = z.object({
   critical_alarm: z.boolean().optional(),
   doses: z.array(z.object({
     medicineName: z.string(),
-    dosagePerIntake: z.number().max(100),
+    dosagePerIntake: z.number().max(1000),
     dosageUnit: z.string().optional(),
     dosagePerPill: z.number().nullable().optional(),
+    intakeUnit: z.string().nullable().optional(), // Líquidos (022): gotas/ml/UI
     protocolId: z.string().optional(),
     critical_alarm: z.boolean().optional()
   }))
@@ -146,9 +148,10 @@ export const doseReminderMiscDataSchema = z.object({
   critical_alarm: z.boolean().optional(),
   doses: z.array(z.object({
     medicineName: z.string(),
-    dosagePerIntake: z.number().max(100),
+    dosagePerIntake: z.number().max(1000),
     dosageUnit: z.string().optional(),
     dosagePerPill: z.number().nullable().optional(),
+    intakeUnit: z.string().nullable().optional(), // Líquidos (022): gotas/ml/UI
     protocolId: z.string().optional(),
     critical_alarm: z.boolean().optional()
   })),

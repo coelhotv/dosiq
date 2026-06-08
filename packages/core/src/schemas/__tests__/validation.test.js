@@ -317,12 +317,11 @@ describe('Schemas de Validação Zod', () => {
   })
 
   describe('Líquidos (022 Fase B)', () => {
-    it('medicamento mg/ml SEM units_per_ml → rejeita', () => {
+    it('medicamento mg/ml SEM units_per_ml → aceita (densidade é do tratamento — 022 Fase C)', () => {
       const r = validateMedicineCreate({ name: 'Dipirona Gotas', dosage_unit: 'mg/ml' })
-      expect(r.success).toBe(false)
-      expect(r.errors.some((e) => e.field === 'units_per_ml')).toBe(true)
+      expect(r.success).toBe(true)
     })
-    it('medicamento mg/ml COM units_per_ml → aceita (dosage_per_pill opcional)', () => {
+    it('medicamento mg/ml COM units_per_ml → aceita (densidade opcional)', () => {
       const r = validateMedicineCreate({ name: 'Dipirona Gotas', dosage_unit: 'mg/ml', units_per_ml: 20 })
       expect(r.success).toBe(true)
     })

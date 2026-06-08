@@ -195,7 +195,9 @@ export function createProtocolRepository({
       if (!validation.success) throw formatValidationError(validation.errors)
 
       const userId = await getUserId()
-      const validated = validation.data
+      // _medicineIsLiquid é flag transiente de validação (refine intake_unit), não
+      // é coluna de protocols — remover antes do insert (022 Fase C).
+      const { _medicineIsLiquid: _omit, ...validated } = validation.data
 
       const payload = {
         ...validated,
@@ -224,9 +226,11 @@ export function createProtocolRepository({
       if (!validation.success) throw formatValidationError(validation.errors)
 
       const userId = await getUserId()
+      // Strip flag transiente (não é coluna) — idem create (022 Fase C).
+      const { _medicineIsLiquid: _omit, ...cleanUpdates } = validation.data
       const { data, error } = await client
         .from('protocols')
-        .update(validation.data)
+        .update(cleanUpdates)
         .eq('id', id)
         .eq('user_id', userId)
         .select(writeSelect)
