@@ -1,64 +1,18 @@
-import { supabase } from '../../services/supabase.js';
-import { getUserIdByChatId } from '../../services/userService.js';
-import { setSession } from '../state.js';
+// DESATIVADO (022 Fase C): o registro de dose por chat usava matemática de dose
+// pré-022 (mg = comprimidos × concentração) incompatível com líquidos (gotas/ml/UI)
+// e com a conversão da RPC consume_stock_fifo — gerava double-conversion e textos
+// "comprimidos" errados. Como o registro confiável vive no app (web/mobile) e nos
+// botões dos lembretes, /registrar foi desativado p/ reduzir superfície de risco.
+// Reativar exige reescrever a dose-math p/ dosage_per_intake na unidade de tomada.
 
 export async function handleRegistrar(bot, msg) {
   const chatId = msg.chat && msg.chat.id;
-
   if (!chatId) return;
 
-  try {
-    // Get actual user ID from chat ID
-    const userId = await getUserIdByChatId(chatId);
-    
-    // Fetch protocols for the linked user
-    const { data: protocols, error } = await supabase
-      .from('protocols')
-      .select('id, medicine:medicines(id, name, dosage_unit)')
-      .eq('user_id', userId)
-      .eq('active', true);
-
-    if (error) throw error;
-
-    if (!protocols || protocols.length === 0) {
-      return bot.sendMessage(chatId, 'Você não possui protocolos ativos no momento. Use o app web para cadastrar.');
-    }
-
-    // Create keyboard with medicine names using indices to avoid 64-byte limit
-    const protocolMap = protocols.map((p, index) => ({
-      index,
-      medicineId: p.medicine.id,
-      protocolId: p.id,
-      medicineName: p.medicine.name
-    }));
-    
-    const keyboard = protocols.map((p, index) => ([
-      {
-        text: p.medicine.name,
-        callback_data: `reg_med:${index}`
-      }
-    ]));
-
-    console.log(`[Registrar] Setting session for chat ${chatId} with protocolMap:`, protocolMap);
-    setSession(chatId, { 
-      action: 'registrar_dose',
-      protocolMap
-    });
-
-    await bot.sendMessage(chatId, '💊 Registrar dose manual\nQual medicamento você tomou?', {
-      reply_markup: {
-        inline_keyboard: keyboard
-      }
-    });
-
-  } catch (err) {
-    console.error('Erro ao iniciar registro:', err);
-    
-    // Handle unlinked user case
-    if (err.message === 'User not linked') {
-      return bot.sendMessage(chatId, '❌ Conta não vinculada. Use /start para vincular.');
-    }
-    
-    bot.sendMessage(chatId, '❌ Ocorreu um erro ao buscar seus medicamentos.');
-  }
+  await bot.sendMessage(
+    chatId,
+    '💊 O registro de dose pelo chat foi desativado.\n\n' +
+      'Registre suas doses pelo app (Dosiq web/mobile) ou pelo botão "Tomei" nos lembretes — ' +
+      'lá o cálculo de dose e estoque é preciso para todos os formatos (comprimidos, líquidos, insulina).'
+  );
 }

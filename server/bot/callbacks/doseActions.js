@@ -177,8 +177,8 @@ async function handleTakeDose(bot, callbackQuery) {
         [
           { text: '📊 Ver Hoje', callback_data: 'cmd:hoje' },
           { text: '📦 Ver Estoque', callback_data: 'quick_stock' }
-        ],
-        [{ text: '📝 Registrar Outra', callback_data: 'quick_register' }]
+        ]
+        // "Registrar Outra" (quick_register) removido — fluxo /registrar desativado (022 Fase C)
       ]
     };
 

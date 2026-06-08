@@ -61,7 +61,7 @@ const initialHealth = await healthCheck.runAll();
 logger.info('Initial health check', { results: initialHealth });
 
 logger.info('Bot de Remédios iniciado com sucesso!');
-logger.info('Comandos disponíveis: /start, /status, /estoque, /hoje, /proxima, /historico, /ajuda, /registrar, /adicionar_estoque, /repor, /pausar, /retomar');
+logger.info('Comandos disponíveis: /start, /status, /estoque, /hoje, /proxima, /historico, /ajuda, /adicionar_estoque, /repor, /pausar, /retomar');
 
 // Register command handlers
 bot.onText(/\/start/, (msg) => handleStart(bot, msg));
