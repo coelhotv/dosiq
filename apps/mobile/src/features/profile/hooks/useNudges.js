@@ -9,6 +9,25 @@ import { ROUTES } from '@navigation/routes'
 const APP_VERSION = '0.15.0'
 const CURRENT_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios'
 
+const cacheKey = (view) => `nudges_cache:${view}`
+
+async function loadCachedNudges(view) {
+  try {
+    const raw = await AsyncStorage.getItem(cacheKey(view))
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+async function saveCachedNudges(view, nudges) {
+  try {
+    await AsyncStorage.setItem(cacheKey(view), JSON.stringify(nudges))
+  } catch {
+    // Falha silenciosa — cache best-effort
+  }
+}
+
 /**
  * Carrega as chaves de dismiss salvas no AsyncStorage.
  */
@@ -50,7 +69,7 @@ export function useNudges(targetView) {
       // 1. Carregar chaves de dismiss salvas
       const savedDismissed = await loadDismissedKeys()
 
-      // 2. Buscar nudges remotos do Supabase (apenas ativos, view compatível)
+      // 2. Buscar nudges remotos do Supabase; fallback para cache offline
       let remoteNudges = []
       try {
         const { data } = await supabase
@@ -61,8 +80,9 @@ export function useNudges(targetView) {
           .order('priority', { ascending: false })
 
         remoteNudges = data ?? []
+        await saveCachedNudges(targetView, remoteNudges)
       } catch {
-        // Falha de rede — sem nudges
+        remoteNudges = await loadCachedNudges(targetView)
       }
 
       if (!active) return
