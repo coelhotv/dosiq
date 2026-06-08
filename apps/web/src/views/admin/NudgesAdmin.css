@@ -1,0 +1,613 @@
+/* apps/web/src/views/admin/NudgesAdmin.css */
+
+.nudges-admin {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  color: var(--color-text-primary, #111827);
+}
+
+.nudges-admin__header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nudges-admin__title-area h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary, #059669);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.nudges-admin__subtitle {
+  color: var(--color-text-secondary, #4b5563);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.nudges-admin__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-card, #ffffff);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nudges-admin__back-btn:hover {
+  background: var(--color-bg-hover, #f3f4f6);
+  border-color: var(--color-text-secondary);
+}
+
+/* Toolbar */
+.nudges-admin__toolbar {
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Filters Section */
+.nudges-admin__filters {
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nudges-admin__filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.nudges-admin__filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #4b5563);
+}
+
+.nudges-admin__select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background-color: var(--color-bg-input, #ffffff);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  outline: none;
+  min-width: 140px;
+}
+
+.nudges-admin__select:focus {
+  border-color: var(--color-primary, #059669);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
+}
+
+/* List Container */
+.nudges-admin__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Card Styles */
+.nudges-admin__card {
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nudges-admin__card:hover {
+  border-color: var(--color-primary-light, rgba(5, 150, 105, 0.4));
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  transform: translateY(-2px);
+}
+
+.nudges-admin__card--active {
+  border-left: 4px solid var(--color-success, #10b981);
+}
+
+.nudges-admin__card--inactive {
+  opacity: 0.8;
+  background: var(--color-bg-muted, #f9fafb);
+  border-left: 4px solid var(--color-text-secondary, #9ca3af);
+}
+
+/* Card Header */
+.nudges-admin__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nudges-admin__card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.nudges-admin__card-title h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary, #111827);
+}
+
+.nudges-admin__card-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+/* Badge */
+.nudges-admin__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.nudges-admin__badge--ios {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.nudges-admin__badge--android {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.nudges-admin__badge--web {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.nudges-admin__badge--all {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
+.nudges-admin__priority {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Card Body */
+.nudges-admin__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nudges-admin__body-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-muted, #374151);
+  margin: 0;
+}
+
+.nudges-admin__card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.nudges-admin__detail {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Payload Preview */
+.nudges-admin__payload-preview {
+  margin-top: 0.5rem;
+}
+
+.nudges-admin__payload-preview details {
+  cursor: pointer;
+}
+
+.nudges-admin__payload-preview summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background 0.2s ease;
+}
+
+.nudges-admin__payload-preview summary:hover {
+  background: var(--color-bg-hover, #f3f4f6);
+}
+
+.nudges-admin__payload-preview pre {
+  font-size: 0.75rem;
+  background: var(--color-bg-muted, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin: 0.5rem 0 0 0;
+  font-family: var(--font-mono, 'Geist Mono', 'Fira Code', monospace);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* Card Footer - Actions */
+.nudges-admin__card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-border, #f3f4f6);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.nudges-admin__toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+  border-radius: 0.375rem;
+}
+
+.nudges-admin__toggle-btn:hover {
+  background: var(--color-bg-hover, #f3f4f6);
+}
+
+.nudges-admin__toggle-btn .toggle-on {
+  color: var(--color-success, #10b981);
+}
+
+.nudges-admin__toggle-btn .toggle-off {
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+/* Pagination */
+.nudges-admin__pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.nudges-admin__pagination-info {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #4b5563);
+}
+
+/* Loading/Error/Empty States */
+.nudges-admin__loading,
+.nudges-admin__error,
+.nudges-admin__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.nudges-admin__empty-icon {
+  color: var(--color-text-muted, #9ca3af);
+  margin-bottom: 1rem;
+}
+
+.nudges-admin__empty h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--color-text-primary, #111827);
+}
+
+.nudges-admin__empty p {
+  color: var(--color-text-secondary, #4b5563);
+  font-size: 0.875rem;
+  max-width: 320px;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.4;
+}
+
+.nudges-admin__error p {
+  color: var(--color-error, #dc2626);
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
+/* Message banner */
+.nudges-admin__message {
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.nudges-admin__message--success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.nudges-admin__message--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Modal */
+.nudges-admin__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.nudges-admin__modal {
+  background: var(--color-bg-card, #ffffff);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+  animation: slideUp 0.3s ease;
+}
+
+.nudges-admin__modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-subtle, #f9fafb);
+}
+
+.nudges-admin__modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.nudges-admin__modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.nudges-admin__modal-close:hover {
+  color: var(--color-text-primary);
+}
+
+/* Form Styles */
+.nudges-admin__form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.nudges-admin__error-banner {
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 0.375rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.nudges-admin__form-section {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.nudges-admin__form-section legend {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+  background: var(--color-bg-input, #ffffff);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary, #059669);
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.1);
+}
+
+.form-group input.input-error,
+.form-group textarea.input-error {
+  border-color: var(--color-error, #dc2626);
+}
+
+.form-group small {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.required {
+  color: var(--color-error, #dc2626);
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.nudges-admin__json-preview {
+  padding: 1rem;
+  background: var(--color-bg-muted, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.375rem;
+}
+
+.nudges-admin__json-preview label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.nudges-admin__json-preview pre {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: var(--font-mono, 'Geist Mono', 'Fira Code', monospace);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  overflow-x: auto;
+}
+
+.nudges-admin__error-text {
+  color: var(--color-error, #dc2626);
+  font-size: 0.875rem;
+}
+
+.nudges-admin__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .nudges-admin {
+    padding: 1rem;
+  }
+
+  .nudges-admin__card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nudges-admin__card-footer button {
+    width: 100%;
+  }
+
+  .nudges-admin__modal {
+    max-height: 100vh;
+    border-radius: 0.5rem;
+  }
+
+  .form-group-row {
+    grid-template-columns: 1fr;
+  }
+
+  .nudges-admin__card-header {
+    flex-direction: column;
+  }
+
+  .nudges-admin__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nudges-admin__filters-group {
+    flex-direction: column;
+  }
+}
