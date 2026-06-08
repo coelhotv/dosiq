@@ -1,4 +1,4 @@
-import { Terminal, Database, MessageSquare } from 'lucide-react'
+import { Terminal, Database, MessageSquare, Volume2 } from 'lucide-react'
 
 /**
  * AdminSection — Ferramentas administrativas e DLQ.
@@ -37,6 +37,17 @@ export default function AdminSection({ isAdmin, dlqCount, onNavigate }) {
           <div className="sr-admin__label">
             <MessageSquare size={18} />
             <span>Feedbacks de Usuários</span>
+          </div>
+        </button>
+
+        <button
+          className="sr-admin__row"
+          onClick={() => onNavigate('admin-nudges')}
+          type="button"
+        >
+          <div className="sr-admin__label">
+            <Volume2 size={18} />
+            <span>Nudges (In-App)</span>
           </div>
         </button>
       </div>
