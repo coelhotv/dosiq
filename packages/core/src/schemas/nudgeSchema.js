@@ -25,8 +25,8 @@ export const PLATFORM_LABELS = {
   all: 'Todos',
 }
 
-// Zod schema
-const nudgeSchema = z.object({
+// Zod schema — base sem refinements p/ permitir .partial() no update
+const nudgeBaseSchema = z.object({
   title: z
     .string({ required_error: 'Título é obrigatório' })
     .min(2, 'Título deve ter ao menos 2 caracteres')
@@ -86,7 +86,8 @@ const nudgeSchema = z.object({
     .nullable()
     .optional(),
 })
-.superRefine((data, ctx) => {
+
+const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
   if (data.action_type === 'navigate') {
     const payload = data.action_payload
     if (!payload || (!payload.screen && !payload.route)) {
@@ -138,7 +139,7 @@ export function validateNudgeCreate(data) {
 }
 
 export function validateNudgeUpdate(data) {
-  const partialSchema = nudgeSchema.partial()
+  const partialSchema = nudgeBaseSchema.partial()
   const result = partialSchema.safeParse(data)
 
   if (!result.success) {
