@@ -105,6 +105,8 @@ function AppInner() {
       setCurrentView('notifications')
     } else if (path === '/admin-dlq') {
       setCurrentView('admin-dlq')
+    } else if (path === '/admin-nudges') {
+      setCurrentView('admin-nudges')
     } else if (path === '/today' || path === '/') {
       setCurrentView('dashboard')
 

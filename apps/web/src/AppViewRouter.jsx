@@ -17,6 +17,7 @@ const Profile = lazy(() => import('./views/redesign/Profile'))
 const Consultation = lazy(() => import('./views/redesign/Consultation'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const FeedbackAdmin = lazy(() => import('./views/admin/FeedbackAdmin'))
+const NudgesAdmin = lazy(() => import('./views/admin/NudgesAdmin'))
 const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
 const NotificationInbox = lazy(() => import('./views/redesign/NotificationInbox'))
 const ResetPassword = lazy(() => import('./views/ResetPasswordView'))
@@ -97,6 +98,8 @@ export default function AppViewRouter({
       return W(<DLQAdmin />)
     case 'admin-feedbacks':
       return W(<FeedbackAdmin onBack={() => setCurrentView('account-settings')} />)
+    case 'admin-nudges':
+      return W(<NudgesAdmin onBack={() => setCurrentView('account-settings')} />)
     case 'notifications':
       return W(
         <NotificationInbox

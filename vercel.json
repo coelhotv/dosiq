@@ -41,6 +41,14 @@
       "destination": "/api/admin.js?resource=feedbacks"
     },
     {
+      "source": "/api/admin/nudges/:id",
+      "destination": "/api/admin.js?resource=nudges&id=:id"
+    },
+    {
+      "source": "/api/admin/nudges",
+      "destination": "/api/admin.js?resource=nudges"
+    },
+    {
       "source": "/api/gemini-reviews/:action",
       "destination": "/api/gemini-reviews.js"
     },
