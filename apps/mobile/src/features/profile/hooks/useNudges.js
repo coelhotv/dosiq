@@ -112,8 +112,14 @@ export function useNudges(targetView) {
   }, [])
 
   const handleAction = useCallback((n) => {
-    if (n.action_type === 'navigate' && n.action_payload?.route) {
-      navigation.navigate(n.action_payload.route)
+    if (n.action_type === 'navigate') {
+      const { tab, screen, route } = n.action_payload ?? {}
+      if (tab && screen) {
+        // Rota aninhada: tab navigator → screen dentro do stack do tab
+        navigation.navigate(tab, { screen })
+      } else if (route) {
+        navigation.navigate(route)
+      }
     } else if (n.action_type === 'open_url' && n.action_payload?.url) {
       Linking.openURL(n.action_payload.url)
     }
