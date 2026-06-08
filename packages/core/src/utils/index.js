@@ -149,3 +149,12 @@ export {
   buildDoseItemsFromInstances,
   splitDayTimeline,
 } from './doseZones.js'
+
+// SemVer utilities (026 — Nudges In-App)
+export { compareSemver, satisfiesSemver } from './semver.js'
+
+// Nudge scheduler — lógica pura de seleção/filtragem (026)
+export {
+  dismissKey,
+  buildNudgeList,
+} from './nudgeScheduler.js'

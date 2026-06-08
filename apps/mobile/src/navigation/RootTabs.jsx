@@ -102,6 +102,17 @@ export default function RootTabs() {
         name={ROUTES.PROFILE}
         component={ProfileStack}
         options={{ title: 'Perfil' }}
+        listeners={({ navigation, route }) => ({
+          tabPress: (e) => {
+            const isFocused = navigation.isFocused()
+            const tabState = route.state
+            const isOnSubScreen = tabState && tabState.index > 0
+            if (isFocused && isOnSubScreen) {
+              e.preventDefault()
+              navigation.navigate(ROUTES.PROFILE, { screen: ROUTES.PROFILE_MAIN })
+            }
+          },
+        })}
       />
     </Tab.Navigator>
   )
