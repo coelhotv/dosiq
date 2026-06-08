@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const { unreadCount, refreshBadge } = useUnreadBadgeCount(user?.id)
   const [logoutSheetOpen, setLogoutSheetOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const { nudge: profileNudge, dismiss: dismissNudge, handleAction: handleNudgeAction } = useNudges('profile')
+  const { nudge: profileNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('profile')
 
   const goToEdit = () => navigation.navigate(ROUTES.PROFILE_EDIT)
   const goToSettings = () => navigation.navigate(ROUTES.SETTINGS)
@@ -80,7 +80,8 @@ export default function ProfileScreen() {
             onRefresh={() => {
               refresh()
               refreshBadge()
-            }} 
+              refreshNudge()
+            }}
             colors={[colors.brand.primary]} 
             tintColor={colors.brand.primary}
           />

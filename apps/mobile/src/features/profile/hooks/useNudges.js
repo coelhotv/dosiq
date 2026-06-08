@@ -39,6 +39,9 @@ async function loadDismissedKeys() {
 export function useNudges(targetView) {
   const navigation = useNavigation()
   const [nudge, setNudge] = useState(null)
+  const [fetchKey, setFetchKey] = useState(0)
+
+  const refresh = useCallback(() => setFetchKey((k) => k + 1), [])
 
   useEffect(() => {
     let active = true
@@ -76,7 +79,7 @@ export function useNudges(targetView) {
 
     load()
     return () => { active = false }
-  }, [targetView])
+  }, [targetView, fetchKey])
 
   const dismiss = useCallback(async (n) => {
     setNudge(null)
@@ -96,5 +99,5 @@ export function useNudges(targetView) {
     }
   }, [navigation])
 
-  return { nudge, dismiss, handleAction }
+  return { nudge, dismiss, handleAction, refresh }
 }
