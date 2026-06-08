@@ -2,10 +2,10 @@
 
 **Feature Directory**: `plans/specs/012-diabetes-t2-support`
 **Created**: 2026-06-03
-**Status**: Draft (Specifying — aguarda Planning)
+**Status**: Draft (Specifying — aguarda Planning). **Re-sincronizada com 022 As-Built em 2026-06-08** (pós-merge #652).
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta, multi-fase, novos ADRs)
 **Input**: "/devflow specifying 012 - diabetes t2"
-**Pré-requisito**: **spec 022 (medicamentos líquidos) mergeada** — fornece `protocols.intake_unit`, enum `dosage_unit` com `ui/ml`, `formatDose`, e o decremento volume-aware por FIFO (`consume_stock_fifo`). O épico de diabetes **reusa** essa fundação; não a recria.
+**Pré-requisito**: ✅ **spec 022 (medicamentos líquidos) MERGEADA** (#650 Fase A, #651 Fase B, #652 Fase C — 2026-06-08). Fornece, **já em produção**: `protocols.intake_unit` (`'gotas'|'ml'|'UI'`, CHECK exato R-271), enum `dosage_unit` com `ui/ml`, coluna `medicines.units_per_ml` (razão→ml genérica), `medicines.presentation`, formatters core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine`/`doseToMl`/`calculateDailyIntake`), e — **crítico** — `consume_stock_fifo` que **já converte `UI`→ml** (migração `20260608_fix_consume_fifo_ui_conversion.sql`). O épico de diabetes **reusa** essa fundação; não a recria. **Impacto:** o núcleo do decremento UI da Fase D já está entregue (ver FR-013).
 **Legacy Sources**:
 - `plans/dose_instances_refactor/draft_plan_diabetic_support.md`
 - `plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md` (§11 Future-proofing, FP-1..FP-4 / ADR-050)
@@ -132,20 +132,28 @@ ver o evento ordenado por instante na timeline ao lado das doses.
 **Why**: insulina basal é diária, dosada em UI (U-100 = 100 UI/ml), debitada do volume físico
 do refil. A "parede de unidades" (FP-4) precisa do decremento UI→ml correto.
 **Independent Test**: cadastrar insulina U-100; criar protocolo basal com dose em UI; registrar
-tomada de `10 UI` e confirmar decremento de `0,10 ml` do lote por FIFO (reusa `consume_stock_fifo`).
+tomada de `10 UI` e confirmar decremento de `0,10 ml` do lote por FIFO. ⚠️ **A conversão UI→ml já
+está em produção** (`consume_stock_fifo`, migração `20260608`): o teste é de **verificação/smoke**,
+não de implementação do núcleo.
 **Acceptance Scenarios**:
 1. Given uma insulina com concentração U-100 (100 UI/ml), When uma tomada de `10 UI` é
-   registrada, Then o decremento converte `10/100 = 0,10 ml` e debita por FIFO do lote ativo
-   (reusa a RPC volume-aware de 022). A concentração vem de uma **coluna genérica de densidade/
-   razão** em `medicines` cujo significado **se adapta à `dosage_unit`** escolhida: gotas→`20`
-   (gotas/ml, o `drops_per_ml` de 022), insulina U-100→`100` (UI/ml), etc. **Generaliza o
-   `drops_per_ml` da 022 num único campo razão→ml.**
+   registrada, Then o decremento converte `10/100 = 0,10 ml` e debita por FIFO do lote ativo —
+   **comportamento JÁ ENTREGUE pela 022** (`consume_stock_fifo` converte `lower(intake_unit) IN
+   ('gotas','ui')` via `units_per_ml`; só `ml` é direto). A concentração vem da coluna
+   **`medicines.units_per_ml`** (a "coluna genérica razão→ml" de 022, NÃO um `drops_per_ml`
+   dedicado): gotas→`20`, insulina U-100→`100`, default `20` (`COALESCE(NULLIF(units_per_ml,0),20)`).
+   **A densidade é capturada no TRATAMENTO** (form de protocolo quando `intake_unit ∈ {gotas,UI}`)
+   e persistida no medicamento — não no form de medicamento (decisão UX 022 Fase C). Fase D
+   **não cria nem altera** a RPC; só adiciona UX/validade biológica.
 2. Given um lote de insulina aberto, When o TTL biológico (Fase A) é atingido antes do volume
    zerar, Then o alerta de validade dispara mesmo com volume restante.
 3. Given a adesão de um protocolo basal (dose fixa), When calculada, Then usa o modo **binário**
    (tomou/não tomou) já existente (R-248) — bolus variável/`dose_exactness` é T1 futuro, fora.
-4. Given a unidade de administração, When dose/estoque são exibidos, Then respeitam a unidade
-   do medicamento (FP-4) — nunca cravam "comprimido" (revisar `formatDoseUnit`/ADR-046).
+4. Given a unidade de administração, When dose/estoque são exibidos, Then respeitam a **unidade de
+   tomada** (`intake_unit`: UI) via os **formatters core de 022** (`formatIntakeDose`/`formatDoseItem`/
+   `formatDoseHint`) — **nunca** renderizar `dosage_unit` cru nem cravar "comprimido" (**R-272**;
+   regra estabelecida no smoke 022 Fase C). Toda query que alimenta render de dose de insulina
+   traz `intake_unit`+`units_per_ml` (**R-267** read-path completeness).
 
 ### User Story 5 — Exportação clínica (dose × biomarcadores) (P2) — Fase E
 **Why**: comunicação ruim com o médico é fator de não-adesão; um relatório que cruza dose e
@@ -173,6 +181,18 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 - **Decimais de dose**: `0,5`/`1,5` já aceitos (`numeric` + Zod sem `.int()`). Insulina basal e
   GLP-1 (0,25 mg) cabem. Revisar caps Zod onde a semântica "100 comprimidos" não se aplica (UI/mg)
   — alinhado ao teto revisado de 022 (R-022).
+- **Vírgula decimal PT-BR (lição 022 Fase C)**: todo input numérico de dose/densidade (UI, mg,
+  `units_per_ml`) DEVE normalizar `','`→`'.'` antes de `Number()`/`parseFloat` — teclado PT-BR
+  (`decimal-pad`) emite vírgula → `Number('0,25')` = `NaN` → grava inválido ou cai em fallback
+  silencioso. Cobrir por failure-mode no preflight (**R-270**) e `maxLength` nos campos.
+- **Render de dose nunca usa enum cru (R-272)**: insulina exibida via `formatIntakeDose` em
+  UI — `dosage_unit` (`ui/ml`) jamais aparece na UI (evita "10 ui/ml" onde deveria "10 UI").
+- **Transparência de falha (Princípio IX — constituição v0.2.0)**: falha parcial em fast-logging
+  de biomarcador OU registro de dose NUNCA é silenciada — mensagem específica ao paciente do que
+  falhou e por quê (estabelecido na 022 Fase C, bulk dose). Vale ao SaMD: omitir ≠ proteger.
+- **Drift de assinatura de RPC (AP-221)**: Fase D **reusa `consume_stock_fifo` como está** (UI já
+  convertido). Se algum dia a assinatura mudar, atualizar TODOS os callers (web+mobile+bot) na
+  mesma fase + smoke write-path — `PGRST202` só aparece em runtime.
 - **Migração de dados injetáveis legados**: medicamentos hoje com `dosage_unit='ui'` (se houver)
   podem precisar marcação de forma injetável retroativa — definir no Planning.
 - **Estoque zerado na confirmação (bot/app)**: best-effort (R-245/R-246) — log é a fonte de
@@ -230,25 +250,31 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   `safeParse`, `.nullable().optional()` onde aplicável; sincronizado com CHECK SQL — R-082).
 
 **Fase D — Insulina basal (UI/volume)**
-- **FR-013**: Concentração modelada por **coluna genérica de densidade/razão** em `medicines`
-  (numeric, nullable) cujo significado se adapta à `dosage_unit`: `gotas`→gotas/ml (=`drops_per_ml`
-  da 022), `ui/ml`→UI/ml (U-100=100). **Generaliza `drops_per_ml` num campo único razão→ml.**
-  `consume_stock_fifo` usa essa razão p/ converter a tomada→ml e debitar por FIFO (reusa a RPC de
-  022; sólidos/linear intactos). **Coordenação cross-spec resolvida:** a 022 foi **amendada
-  (2026-06-03, FR-002)** para já nascer com a coluna genérica razão→ml (em vez de `drops_per_ml`
-  específico); a 012 **reusa** o mesmo campo (`100` p/ U-100), sem nova coluna nem migração dupla.
+- **FR-013** ✅ **NÚCLEO JÁ ENTREGUE POR 022 (Fase C, #652)**: a concentração é a coluna
+  **`medicines.units_per_ml`** (numeric, nullable) cujo significado se adapta à `dosage_unit`:
+  `gotas`→gotas/ml, `ui/ml`→UI/ml (U-100=`100`), default `20` (`COALESCE(NULLIF(units_per_ml,0),20)`).
+  `consume_stock_fifo` **já converte** `lower(intake_unit) IN ('gotas','ui')` → ml (`p_quantity /
+  units_per_ml`, `ROUND(...,2)`); só `ml` é direto; sólidos/linear intactos (migração
+  `20260608_fix_consume_fifo_ui_conversion.sql`, em prod). **Densidade capturada no tratamento**
+  (form de protocolo, `intake_unit ∈ {gotas,UI}`) e persistida no medicamento (UX 022 Fase C).
+  → **Escopo restante da Fase D para FR-013 = ZERO no núcleo**: apenas verificação/smoke da insulina
+  U-100 e (se necessário) U-200 (`units_per_ml=200`). **Não criar coluna, não alterar RPC.**
 - **FR-014**: Adesão de basal usa modo **binário** existente (R-248). `dose_exactness`/bolus = fora.
-- **FR-015**: `formatDoseUnit`/exibição respeitam a unidade de administração (FP-4) — revisar
-  ADR-046 (que hoje retorna sempre "unidade(s)") para UI/ml/mg.
+- **FR-015** ✅ **RESOLVIDO POR 022 + R-272**: exibição de dose de insulina usa os formatters
+  core de 022 (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`, decisão via `isLiquidMedicine`)
+  com a unidade de tomada (UI) — **nunca** `dosage_unit` cru nem "comprimido" hardcoded (R-272).
+  Fase D apenas **garante** que as superfícies de insulina (dashboard, histórico, timeline,
+  estoque, emergência, consulta, export) carregam `intake_unit`+`units_per_ml` na query (R-267) e
+  passam pelos formatters. ADR-046/`formatDoseUnit` legado: substituído pelos formatters core.
 
 **Fase E — Export clínico**
 - **FR-016**: Relatório PDF cruza doses × biomarcadores por período/dia, agregação server-side
   (R-249, Constitution III), descritivo (sem recomendação de dose — SaMD).
 
 ### Key Entities
-- **Medicine**: + `presentation` (forma farmacêutica geral, enum PT — FR-001), + `shelf_life_days`,
-  + coluna genérica de densidade/razão (generaliza `drops_per_ml` da 022 — FR-013). Injetável =
-  `presentation='injecao'`.
+- **Medicine**: `presentation` (enum PT — FR-001; **já existe em prod via 022**) + `units_per_ml`
+  (razão→ml genérica — FR-013; **já existe em prod via 022**, capturada no tratamento) + **novo
+  net-new desta spec:** `shelf_life_days` (FR-002). Injetável = `presentation='injecao'`.
 - **Stock**: + `opened_at` (inferido na 1ª tomada). Lote = unidade física de doses (caneta/cartucho
   transparente). `quantity` = UI/ml restantes.
 - **Protocol**: reusa `titration_schedule`/`current_stage_index`/`stage_started_at`/
@@ -256,8 +282,9 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 - **dose_instances**: `expected_dose` congela etapa de titulação (FP-1); `tolerance_minutes`
   sem cap (FR-007); `critical_alarm` (spec 010).
 - **biomarkers_log** (net-new): genérico, RLS, ordenação temporal na timeline (FP-3).
-- **Core/Schemas**: `biomarkerLogSchema` (novo), `titrationUtils` (auditar), `formatDoseUnit`
-  (revisar), caps Zod (revisar p/ UI/mg).
+- **Core/Schemas**: `biomarkerLogSchema` (novo), `titrationUtils` (auditar), formatters de dose
+  (REUSAR de 022 — `formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine`/
+  `doseToMl`/`calculateDailyIntake`; não recriar), caps Zod (revisar p/ UI/mg).
 
 ---
 
@@ -272,20 +299,24 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 - **SC-003**: `biomarkers_log` genérico registra glicemia (e suporta peso/PA/batimentos sem
   migration); fast-logging com contexto manual; biomarcador na timeline por instante via adapter
   (zero alteração do builder/UI de dose); sem meta.
-- **SC-004**: Insulina basal debita UI→ml correto por FIFO; adesão binária; unidade de
-  administração respeitada (sem suposição pill-cêntrica).
+- **SC-004**: Insulina basal debita UI→ml correto por FIFO (**já em prod via 022 —
+  `consume_stock_fifo`; Fase D valida por smoke, não reimplementa**); adesão binária; unidade de
+  administração respeitada via formatters core (R-272, sem suposição pill-cêntrica); inputs
+  numéricos normalizam vírgula PT-BR (R-270).
 - **SC-005**: Export clínico cruza dose × biomarcador server-side, descritivo (zero recomendação
   de dose — linha SaMD preservada em todo o épico).
 - **SC-006**: Constitution: Health Data Safety (I), Mobile-First (II), Server-Agg (III), Timezone
-  (IV) e Contract/ADR (V) respeitados; novos schemas Zod↔SQL sincronizados (R-082); lint 0,
-  `validate:agent` verde, smoke PO por fase com entrega mobile.
+  (IV), Contract/ADR (V) e **Transparência Radical (IX — v0.2.0: falha nunca silenciada)**
+  respeitados; novos schemas Zod↔SQL sincronizados (R-082/R-271); render de dose via formatter
+  core (R-272); read-path completo (R-267); preflight de migração/numérico (R-270, incl. vírgula
+  PT-BR); lint 0, `validate:agent` verde, smoke PO por fase com entrega mobile.
 
 ---
 
 ## Assumptions / Open Questions
 
 **Assumptions:**
-- spec 022 (líquidos) mergeada antes do início (dependência dura).
+- ✅ spec 022 (líquidos) mergeada (#650/#651/#652, 2026-06-08) — dependência dura satisfeita.
 - Refactor `dose_instances` em prod (FP-1..FP-4 / ADR-050) — fundação pronta.
 - Spec 010 (`critical_alarm`) cobre o alarme crítico — este épico só liga a flag.
 - Decimais já aceitos (`numeric` + Zod) — sem mudança de tipo de coluna.
@@ -296,15 +327,20 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
    diárias mantêm 120 min (preserva adesão do público 1×/dia).
 2. ✅ **Forma (FR-001):** nova coluna **`medicines.presentation`** (enum geral — injecao/pomada/
    liquido/…), não booleano `is_injectable`; cobre múltiplas formas num eixo único.
-3. ✅ **Concentração (FR-013):** **coluna genérica de densidade/razão** que se adapta à
-   `dosage_unit` (generaliza `drops_per_ml` da 022), não `units_per_ml` dedicada.
+3. ✅ **Concentração (FR-013):** coluna genérica razão→ml que se adapta à `dosage_unit`.
+   **Nome final em prod (022): `medicines.units_per_ml`** (gotas→20, ui/ml→100). 012 reusa.
 
-**Coordenação cross-spec com 022 (RESOLVIDA — 022 amendada 2026-06-03):**
-- `presentation`: 022 FR-002b cria a coluna na origem; 012 consome (`='injecao'`). `is_liquid`
-  segue derivado de `dosage_unit` (decisão-mãe da 022, inalterada) — eixos complementares.
-- Coluna genérica razão→ml: 022 FR-002 já nasce genérica (em vez de `drops_per_ml`); 012 reusa.
-- **Sequenciamento duro reforçado:** 022 mergeada antes do C-coding da 012. Re-sync pendente dos
-  downstream da 022 (`plan.md`/`tasks.md`/`analysis.md`/`contracts/`) no próximo Planning da 022.
+**Coordenação cross-spec com 022 (✅ CONCLUÍDA — 022 mergeada 2026-06-08, #650/#651/#652):**
+- `presentation`: ✅ coluna **em prod** (`medicines.presentation`, enum PT, CHECK
+  `medicines_presentation_check`, default `comprimido`). 012 consome (`='injecao'`). `is_liquid`
+  derivado de `dosage_unit LIKE '%/ml'` (decisão-mãe da 022, inalterada) — eixos complementares.
+- Coluna razão→ml: ✅ **em prod** como `medicines.units_per_ml` (gotas→20, ui/ml→100, default 20).
+  012 reusa direto (U-100=100) — **sem nova coluna, sem migração**.
+- Conversão UI→ml: ✅ **em prod** (`consume_stock_fifo`, `lower(intake_unit) IN ('gotas','ui')`).
+  Núcleo do decremento de insulina da Fase D **já entregue**.
+- **Sequenciamento:** ✅ 022 mergeada; bloqueio liberado. O Planning da 012 deve **verificar o
+  estado real em prod** (colunas/RPC/CHECK/schemas Zod) via grep/MCP antes de planejar — não
+  reespecificar o que já existe (R-267/R-270 preflight).
 
 **Outras (não-bloqueantes, Planning):**
 - Migração retroativa: popular `presentation` de medicamentos existentes; injetáveis legados

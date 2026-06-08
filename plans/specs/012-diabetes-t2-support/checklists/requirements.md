@@ -5,8 +5,8 @@
 
 ## Completude
 - [x] Toda fase (A–E) tem FR + task + SC associados.
-- [x] Net-new identificado (shelf_life_days, opened_at, biomarkers_log, tolerância não-diária, formatDoseUnit).
-- [x] Dependência dura (022) declarada na spec e no plan.
+- [x] Net-new identificado (shelf_life_days, opened_at, biomarkers_log, tolerância não-diária). Nota 2026-06-08: `units_per_ml`/`presentation`/conversão UI→ml + formatters de dose **NÃO são net-new** — vêm da 022 (em prod); Fase D reusa (R-272/R-267), não revisa `formatDoseUnit`.
+- [x] Dependência dura (022) declarada e **satisfeita** (mergeada #652, 2026-06-08).
 - [x] Migrações de dados com cenário explícito por fase.
 
 ## Clareza

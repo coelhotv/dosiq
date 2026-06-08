@@ -1,7 +1,10 @@
 # Tasks: Suporte a Diabéticos Tipo 2 (Épico)
 
 **Spec**: `spec.md` · **Plan**: `plan.md` · **Tier**: 2
-**Sequência:** 022 mergeada → A → (B ∥ C) → D → E. 1 PR por fase.
+**Sequência:** ✅ 022 mergeada (#652, 2026-06-08) → A → (B ∥ C) → D → E. 1 PR por fase.
+> **Nota 2026-06-08:** Fase D teve o núcleo (conversão UI→ml em `consume_stock_fifo`) **entregue
+> antecipadamente pela 022 Fase C**. T020/T021/T024 viraram verificação/smoke; nenhuma migração de
+> RPC na Fase D. Formatters de dose (R-272) e read-path (R-267) reusam 022.
 
 ---
 
@@ -35,11 +38,11 @@
 
 ## Phase D — Insulina basal (UI/volume) (PR 4)
 
-- [ ] T020 [C1] Confirmar branch líquido de `consume_stock_fifo` (pós-022) e ponto de extensão UI.
-- [ ] T021 [US4] Estender RPC: `intake_unit='UI'` (insulina) → `ml = ROUND(p_quantity/units_per_ml,2)` (U-100=100). Gotas/ml/sólido intactos.
-- [ ] T022 [US4] `formatDoseUnit` (`doseUnit.js:8`) por unidade de administração (UI/ml/mg) — revisa ADR-046. Atualizar callers.
+- [ ] T020 [C1] Verificar em prod (MCP): `consume_stock_fifo` já converte `UI`→ml (`lower(intake_unit) IN ('gotas','ui')`, migr. `20260608`). ✅ **núcleo entregue por 022** — Fase D **não cria migração nem altera a RPC** (AP-221).
+- [ ] T021 [US4] Smoke insulina U-100: tomada `10 UI` → debita `0,10 ml` por FIFO. Cobrir U-200 (`units_per_ml=200`) se aplicável. Confirmar densidade capturada no tratamento (form de protocolo, `intake_unit='UI'`).
+- [ ] T022 [US4] Auditar superfícies de dose de insulina (dashboard/histórico/timeline/estoque/emergência/consulta): query traz `intake_unit`+`units_per_ml` (R-267) e render via `formatIntakeDose`/`formatDoseItem`/`formatDoseHint` (R-272, **reusa 022**) — nunca `dosage_unit` cru. Inputs numéricos normalizam vírgula PT-BR (R-270).
 - [ ] T023 [US4] Adesão basal = modo binário (R-248) — confirmar dose fixa; `dose_exactness` fora.
-- [ ] T024 [P] [C4] Testes: 10 UI → 0,10 ml (U-100) por FIFO; TTL antes do volume; `formatDoseUnit` por unidade; regressão sólido/gotas.
+- [ ] T024 [P] [C4] Testes/smoke: 10 UI → 0,10 ml (U-100) por FIFO (verificação, não nova impl.); TTL antes do volume; render via formatter (R-272); regressão sólido/gotas/ml intacta.
 
 ## Phase E — Export clínico (PR 5)
 

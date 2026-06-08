@@ -24,12 +24,12 @@
 | Titulação | `protocols.titration_schedule` (jsonb), `current_stage_index`, `stage_started_at`, `titration_status` ('estável') — todos em prod (MCP). `titrationService.js`, `TitrationWizard/Timeline/Badge.jsx`, `@dosiq/core titrationUtils.js` | infra **existe** — FR-005 audita/corrige, não reconstrói |
 | Dose congelada | `expected_dose numeric` (prod); gerador congela na geração (FP-1) | titulação GLP-1 cabe sem novo mecanismo (FR-006) |
 | Decimais | colunas dose `numeric`; Zod `z.number()` sem `.int()` | `0,5` já aceito — sem mudança de coluna |
-| `medicines` | `type` CHECK `('medicamento','suplemento')` (categoria); **sem** `presentation`/`units_per_ml`/`shelf_life_days` em prod | `presentation`/`units_per_ml` vêm da 022 (ADR-058); `shelf_life_days` é net-new (Fase A) |
+| `medicines` | `type` CHECK `('medicamento','suplemento')` (categoria); ✅ `presentation` + `units_per_ml` **em prod (022)**; **sem** `shelf_life_days` | `presentation`/`units_per_ml` consumidos (022, ADR-058); `shelf_life_days` é o único net-new de `medicines` (Fase A) |
 | `stock` | `quantity`/`original_quantity` `numeric`; **sem** `opened_at` (MCP) | `opened_at` net-new (Fase A) |
 | Timeline (R-252) | `timelineService.doseInstancesToEvents` (`timelineService.js:118`) adapter; `timeline.js` builder PURO; `eventCardRegistry.js` (web). Comentários: "biomarkers_log → adapter biomarker entra ao lado" | FR-011: Fase C adiciona adapter + card, **sem tocar builder/UI de dose** |
-| formatDoseUnit | `doseUnit.js:8` "sempre 'unidade(s)'" (ADR-046) | FR-015 revisa p/ respeitar unidade (UI/ml/mg) |
+| formatters de dose | ✅ `doseUnit.js` tem `formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine` (022) | FR-015 = **consumir** (R-272), não revisar; ADR-046 legado já superado |
 | `biomarkers_log` | **não existe** (MCP) | net-new (Fase C) |
-| `consume_stock_fifo` | assinatura `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)`; branch líquido via `units_per_ml` (022) | FR-013 estende branch UI: `ml = p_quantity/units_per_ml` (U-100=100) |
+| `consume_stock_fifo` | assinatura `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)`; ✅ converte `gotas` **E** `UI`→ml via `units_per_ml` (022 Fase C, migr. `20260608`) | FR-013 = **smoke** U-100/U-200; **não toca a RPC** |
 | Fast-logging mobile | **não localizado** por grep (FAB/BottomSheet) | ⚠️ UNVERIFIED — C1 da Fase C confirma o caminho real |
 
 ---
@@ -78,11 +78,14 @@
 - **Sem FK rígido** com `dose_instances`; correlação só temporal. **Sem meta/alvo** (SaMD).
 
 ### Fase D — Insulina basal (UI/volume)
-- Estender branch UI de `consume_stock_fifo`: `ml = p_quantity / units_per_ml` (U-100=100), via a
-  coluna genérica da 022 (ADR-058) — **sem nova coluna**.
+- ✅ **Conversão UI→ml já em prod** (022 Fase C, `consume_stock_fifo`, migração `20260608`):
+  `ml = ROUND(p_quantity/units_per_ml,2)` para `lower(intake_unit) IN ('gotas','ui')`. **NÃO criar
+  migração nem alterar a RPC** — só smoke U-100 (e U-200=`units_per_ml=200` se aplicável).
 - Adesão basal = modo **binário** existente (R-248); `dose_exactness`/bolus = fora (T1).
-- `formatDoseUnit` (FR-015/ADR-046 revisado): respeitar a unidade de administração (UI/ml/mg),
-  parar de cravar "unidade(s)".
+- Exibição de dose: **reusar formatters core de 022** (`formatIntakeDose`/`formatDoseItem`/
+  `formatDoseHint`, R-272) com a unidade de tomada (UI); query traz `intake_unit`+`units_per_ml`
+  (R-267). `formatDoseUnit`/ADR-046 legado já substituído — **sem revisão nova**.
+- Inputs numéricos (dose/densidade): normalizar vírgula PT-BR `','`→`'.'` (R-270).
 
 ### Fase E — Export clínico
 - Relatório PDF cruza doses × `biomarkers_log` por período/dia, agregação **server-side** (R-249),
@@ -97,7 +100,7 @@
 | `medicines.shelf_life_days` (NULL) | A | nascem NULL (TTL inativo) | query `shelf_life_days IS NULL` = 100% |
 | `stock.opened_at` (NULL) | A | nascem NULL (lote "fechado"); inferido na 1ª tomada | nenhum lote vira "aberto" retroativo |
 | `biomarkers_log` (CREATE) | C | tabela nova, vazia | grants + RLS confirmados |
-| `consume_stock_fifo` branch UI | D | RPC `CREATE OR REPLACE`; sólidos/gotas intactos | testes regressão gotas/ml/sólido |
+| ~~`consume_stock_fifo` branch UI~~ | ~~D~~ | ✅ **JÁ EM PROD** (022 Fase C, migr. `20260608`) — Fase D não migra | smoke U-100/U-200 |
 | Injetáveis legados | A | se `dosage_unit='ui'` em prod → revisar `presentation` manual | documentado, não silencioso |
 
 ---
@@ -116,8 +119,8 @@
 | `apps/web/src/views/redesign/history/eventCardRegistry.js` | C | registrar `biomarker` | verificado |
 | `apps/web/src/views/redesign/history/BiomarkerEventCard.jsx` | C | [NEW] card | NEW |
 | Fast-logging mobile (sheet/FAB) | C | **UNVERIFIED** — C1 confirma | ⚠️ |
-| `packages/core/src/utils/doseUnit.js` | D | `formatDoseUnit` por unidade (revisa ADR-046) | `:8` verificado |
-| `docs/migrations/2026XXXX_diabetes_d_consume_ui.sql` (RPC) | D | branch UI `ml=p_quantity/units_per_ml` | RPC 022 |
+| `packages/core/src/utils/doseUnit.js` | D | ✅ formatters líquidos já existem (022) — só **consumir** (R-272), não revisar | verificado |
+| ~~`docs/migrations/...diabetes_d_consume_ui.sql`~~ | ~~D~~ | ✅ **REMOVIDO** — conversão UI→ml já em prod (022 `20260608`) | n/a |
 | Export PDF (Fase E) | E | cruzar dose×biomarker server-side | a mapear em C1/E |
 
 ---
@@ -130,7 +133,9 @@
 - **ADR-061** (proposed) — tolerância não-diária derivada do período da frequência, sem cap; diário mantém 120.
 - **ADR-062** (proposed) — fronteira SaMD: registro passivo, zero cálculo/sugestão de dose (ANVISA RDC 657/751).
 - **CON (novo)** — `biomarkers_log` shape + `biomarkerLogSchema` (catalogar em C5).
-- **CON** — `consume_stock_fifo` mantém assinatura (mudança aditiva no branch UI — não-breaking).
+- **CON** — `consume_stock_fifo` assinatura `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)`
+  e conversão UI→ml **já em prod (022 Fase C)** — Fase D **não toca** a RPC. Se algum dia mudar a
+  assinatura: atualizar TODOS os callers (web/mobile/bot) na mesma fase + smoke (AP-221).
 
 ---
 

@@ -5,6 +5,11 @@
 
 > Reality Check rodado contra o **repo real** (find/grep/Read) + **prod** (MCP Supabase
 > `kwqjtdsqkkbebfiaxubb`), não contra a narrativa da spec.
+>
+> ⚠️ **Re-sync 2026-06-08 (pós-merge 022 #652):** a tabela abaixo foi escrita PRÉ-merge da 022
+> ("não em prod ainda"). Agora `presentation`, `units_per_ml` e a conversão `UI`→ml de
+> `consume_stock_fifo` **estão em prod**. Linhas afetadas atualizadas; **o Planning da Fase D deve
+> re-verificar o estado real via MCP** antes de codar (não confiar nesta tabela como snapshot vivo).
 
 ---
 
@@ -12,7 +17,7 @@
 
 | Spec claim | Real repo / DB (file:line) | Verified? | Note |
 |------------|----------------------------|-----------|------|
-| `presentation`/`units_per_ml` em `medicines` | vêm da 022 (ADR-058 accepted); **não em prod ainda** | ✅ (via 022) | dependência dura: 022 mergeada antes |
+| `presentation`/`units_per_ml` em `medicines` | ✅ **em prod (022, #652 2026-06-08)** | ✅ | dependência dura satisfeita — consumir, não criar |
 | `medicines.type` é categoria, não forma | CHECK `('medicamento','suplemento')` (MCP) | ✅ | confirma `presentation` net-new (na 022) |
 | `medicines.shelf_life_days` ausente | não existe (MCP) | ✅ | net-new Fase A |
 | `stock.opened_at` ausente | não existe (MCP) | ✅ | net-new Fase A |
@@ -23,9 +28,9 @@
 | decimais 0,5 aceitos | colunas `numeric`; Zod sem `.int()` | ✅ | sem mudança |
 | Timeline adapter (R-252) | `timelineService.doseInstancesToEvents:118`; `timeline.js` builder puro; comentário "biomarkers_log → adapter biomarker entra ao lado" | ✅ | FR-011: adapter+card, sem tocar builder |
 | `eventCardRegistry` (web) | `apps/web/src/views/redesign/history/eventCardRegistry.js` | ✅ | registrar `biomarker` |
-| `formatDoseUnit` crava "unidade(s)" | `doseUnit.js:8` (ADR-046) | ✅ | FR-015 revisa por unidade |
+| formatters de dose líquida | ✅ `formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine` em `doseUnit.js` (022) | ✅ | FR-015 = consumir (R-272); ADR-046 superado |
 | `biomarkers_log` ausente | não existe (MCP) | ✅ | net-new Fase C |
-| `consume_stock_fifo` assinatura | `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)` + branch líquido via `units_per_ml` (022) | ✅ | FR-013 estende branch UI, aditivo |
+| `consume_stock_fifo` UI→ml | ✅ converte `gotas` **E** `UI` via `units_per_ml` em prod (022 Fase C, migr. `20260608`) | ✅ | FR-013 = **smoke**, não toca RPC (AP-221) |
 | Adesão modo binário | `R-248` (binary\|dose_exactness por protocolo) | ✅ | basal=binário; dose_exactness fora |
 | Fast-logging mobile | **não localizado** por grep (FAB/BottomSheet) | ❌ UNVERIFIED | T013 (C1 Fase C) resolve ANTES de codar |
 
@@ -54,7 +59,7 @@
 
 - `shelf_life_days`/`opened_at` nullable (nascem inativos) — sem órfãos. ✅
 - `biomarkers_log` CREATE com grants+RLS (template CLAUDE.md). ✅
-- `consume_stock_fifo` branch UI aditivo, regressão gotas/ml/sólido testada (T024). ✅
+- `consume_stock_fifo` UI→ml ✅ **já em prod (022)** — Fase D não migra; T024 vira smoke U-100/U-200. ✅
 - Injetáveis legados (`dosage_unit='ui'`): revisão manual de `presentation`, documentada. ✅
 
 ---
@@ -67,7 +72,7 @@
 | MEDIUM | ADR-059..062 ainda `proposed` | virar `accepted` antes do código da fase respectiva (constitution V) — T030 |
 | MEDIUM | Caminho do export PDF clínico (Fase E) não mapeado | T025 (C1 Fase E) resolve |
 | MEDIUM | `opened_at` setado em caminho de consumo correto (web/mobile/bot) | T001/T003 confirmam callers de `consume_stock_fifo` |
-| LOW | `formatDoseUnit` callers (raio de impacto) | mapear no PR da Fase D |
+| LOW | superfícies de insulina carregam `intake_unit`+`units_per_ml` na query (R-267) + render via formatter (R-272) | checklist no PR da Fase D |
 
 **Sem CRITICAL.** O HIGH (fast-logging) é confirmação-de-C1 escopada à Fase C — não bloqueia o
 planejamento nem o início (A/B). Gate respeitado: nenhuma fase entra em código com path UNVERIFIED.
