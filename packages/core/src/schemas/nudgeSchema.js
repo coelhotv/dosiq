@@ -7,7 +7,7 @@ import { z } from 'zod'
 export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any']
 export const TARGET_VIEW_LABELS = {
   dashboard: 'Dashboard',
-  profile: 'Profile',
+  profile: 'Perfil',
   any: 'Todas',
 }
 
@@ -85,6 +85,37 @@ const nudgeSchema = z.object({
     .record(z.any())
     .nullable()
     .optional(),
+})
+.superRefine((data, ctx) => {
+  if (data.action_type === 'navigate') {
+    const payload = data.action_payload
+    if (!payload || (!payload.screen && !payload.route)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Tela ou rota obrigatória para navegação',
+        path: ['action_payload'],
+      })
+    }
+  } else if (data.action_type === 'open_url') {
+    const payload = data.action_payload
+    if (!payload || !payload.url) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'URL obrigatória para ação de abrir URL',
+        path: ['action_payload'],
+      })
+    } else {
+      try {
+        new URL(payload.url)
+      } catch (_) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'URL inválida',
+          path: ['action_payload'],
+        })
+      }
+    }
+  }
 })
 
 export function validateNudgeCreate(data) {
