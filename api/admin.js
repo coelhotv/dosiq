@@ -8,6 +8,7 @@ import { verifyAdminAccess } from '../server/utils/auth.js';
 import { handleRetry } from './admin/_handlers/retry.js';
 import { handleDiscard } from './admin/_handlers/discard.js';
 import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks.js';
+import { handleListNudges, handleCreateNudge, handleUpdateNudge, handleToggleNudge } from './admin/_handlers/nudges.js';
 import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -108,6 +109,22 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       if (action === 'resolve') return handleResolveFeedback(req, res);
+    }
+  }
+
+  // 3. Nudges Resource Routing
+  if (resource === 'nudges') {
+    if (req.method === 'GET' && !action) {
+      return handleListNudges(req, res, supabase);
+    }
+    if (req.method === 'POST') {
+      return handleCreateNudge(req, res, supabase);
+    }
+    if (req.method === 'PATCH') {
+      return handleUpdateNudge(req, res, supabase);
+    }
+    if (req.method === 'PUT') {
+      return handleToggleNudge(req, res, supabase);
     }
   }
 
