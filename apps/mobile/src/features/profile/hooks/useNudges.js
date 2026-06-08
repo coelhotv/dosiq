@@ -131,7 +131,11 @@ export function useNudges(targetView) {
         navigation.navigate(route)
       }
     } else if (n.action_type === 'open_url' && n.action_payload?.url) {
-      Linking.openURL(n.action_payload.url).catch((err) => {
+      const { url } = n.action_payload
+      Linking.canOpenURL(url).then((supported) => {
+        if (supported) return Linking.openURL(url)
+        if (__DEV__) console.warn('[useNudges] URL não suportada:', url)
+      }).catch((err) => {
         if (__DEV__) console.error('[useNudges] Erro ao abrir URL:', err)
       })
     }
