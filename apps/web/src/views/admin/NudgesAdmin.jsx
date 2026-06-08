@@ -305,6 +305,7 @@ export default function NudgesAdmin({ onBack }) {
 
       {/* Form Modal */}
       <NudgeFormModal
+        key={selectedNudge?.id || 'create'}
         nudge={selectedNudge}
         isOpen={isModalOpen}
         onClose={handleModalClose}
