@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Platform, Linking } from 'react-native'
+import { Platform, Linking, InteractionManager } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { buildNudgeList, dismissKey } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
+import { navigationRef } from '@navigation/navigationRef'
 
 const APP_VERSION = '0.15.0'
 const CURRENT_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios'
@@ -115,10 +116,15 @@ export function useNudges(targetView) {
     if (n.action_type === 'navigate') {
       const { tab, screen, route } = n.action_payload ?? {}
       if (tab && screen) {
-        // initial: true garante que ProfileMain fica no stack antes de Settings
-        // (sem isso, React Nav v7 pode navegar com initial:false → stack=[Settings],
-        // e goBack() sobe para o Tab navigator em vez de voltar para ProfileMain)
-        navigation.navigate(tab, { screen, initial: true })
+        // Dois passos via navigationRef (mesmo padrão do usePushNotifications):
+        // 1. Muda para o tab (mostra a tela raiz do stack)
+        // 2. Após animações, navega para a screen dentro do stack agora ativo
+        // Necessário porque navigate(tab, { screen }) reutiliza estado existente
+        // do stack e pode manter só [Settings] sem a raiz embaixo.
+        navigationRef.navigate(tab)
+        InteractionManager.runAfterInteractions(() => {
+          navigationRef.navigate(screen)
+        })
       } else if (route) {
         navigation.navigate(route)
       }
