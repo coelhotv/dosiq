@@ -3,34 +3,11 @@ import { Platform, Linking } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
-import {
-  buildNudgeList,
-  TZ_RECONCILE_NUDGE,
-  TZ_NUDGE_LEGACY_KEY,
-  dismissKey,
-} from '@dosiq/core'
+import { buildNudgeList, dismissKey } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 
 const APP_VERSION = '0.15.0'
 const CURRENT_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios'
-
-/**
- * Migra chave de dismiss legada do TzNudgeCard para o novo formato.
- * Executa uma única vez por instalação.
- */
-async function migrateLegacyDismiss() {
-  try {
-    const legacy = await AsyncStorage.getItem(TZ_NUDGE_LEGACY_KEY)
-    if (legacy === '1') {
-      const newKey = dismissKey(TZ_RECONCILE_NUDGE)
-      await AsyncStorage.setItem(newKey, '1')
-      // Remove chave legada para não repetir a migração
-      await AsyncStorage.removeItem(TZ_NUDGE_LEGACY_KEY)
-    }
-  } catch {
-    // Falha silenciosa — na pior hipótese o nudge reaparece uma vez
-  }
-}
 
 /**
  * Carrega as chaves de dismiss salvas no AsyncStorage.
@@ -67,13 +44,10 @@ export function useNudges(targetView) {
     let active = true
 
     async function load() {
-      // 1. Migrar chave legada TzNudgeCard → novo formato
-      await migrateLegacyDismiss()
-
-      // 2. Carregar chaves de dismiss salvas
+      // 1. Carregar chaves de dismiss salvas
       const savedDismissed = await loadDismissedKeys()
 
-      // 3. Buscar nudges remotos do Supabase (apenas ativos, view compatível)
+      // 2. Buscar nudges remotos do Supabase (apenas ativos, view compatível)
       let remoteNudges = []
       try {
         const { data } = await supabase
@@ -85,15 +59,13 @@ export function useNudges(targetView) {
 
         remoteNudges = data ?? []
       } catch {
-        // Falha de rede — continua com nudges locais
+        // Falha de rede — sem nudges
       }
 
       if (!active) return
 
-      // 4. Calcular lista via buildNudgeList
-      const localNudges = targetView === 'profile' ? [TZ_RECONCILE_NUDGE] : []
-
-      const list = buildNudgeList(remoteNudges, localNudges, {
+      // 3. Calcular lista via buildNudgeList
+      const list = buildNudgeList(remoteNudges, [], {
         platform: CURRENT_PLATFORM,
         appVersion: APP_VERSION,
         dismissed: savedDismissed,

@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  buildNudgeList,
-  dismissKey,
-  TZ_RECONCILE_NUDGE,
-  TZ_NUDGE_LEGACY_KEY,
-} from '../nudgeScheduler.js'
+import { buildNudgeList, dismissKey } from '../nudgeScheduler.js'
 
 const makeNudge = (overrides = {}) => ({
   id: 'test-nudge',
@@ -28,18 +23,6 @@ describe('dismissKey', () => {
   it('gera chave no formato id:version', () => {
     expect(dismissKey({ id: 'tz-reconcile', version: 1 })).toBe('tz-reconcile:1')
     expect(dismissKey({ id: 'foo', version: 3 })).toBe('foo:3')
-  })
-})
-
-describe('TZ_RECONCILE_NUDGE', () => {
-  it('tem id e version corretos', () => {
-    expect(TZ_RECONCILE_NUDGE.id).toBe('tz-reconcile')
-    expect(TZ_RECONCILE_NUDGE.version).toBe(1)
-    expect(dismissKey(TZ_RECONCILE_NUDGE)).toBe('tz-reconcile:1')
-  })
-
-  it('TZ_NUDGE_LEGACY_KEY é a chave antiga', () => {
-    expect(TZ_NUDGE_LEGACY_KEY).toBe('dosiq_tz_nudge_dismissed')
   })
 })
 

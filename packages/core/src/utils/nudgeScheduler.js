@@ -8,32 +8,6 @@
 import { satisfiesSemver } from './semver.js'
 import { getNow, parseISO } from './dateUtils.js'
 
-// Chave legada usada por TzNudge (web) e TzNudgeCard (mobile).
-// useNudges.js de cada plataforma deve migrar esta chave para o novo formato.
-export const TZ_NUDGE_LEGACY_KEY = 'dosiq_tz_nudge_dismissed'
-
-/**
- * Nudge local de reconciliação de fuso horário.
- * Substitui TzNudge.jsx (web) e TzNudgeCard.jsx (mobile).
- * Dismiss key: "tz-reconcile:1"
- */
-export const TZ_RECONCILE_NUDGE = {
-  id: 'tz-reconcile',
-  version: 1,
-  title: 'Novidade: fuso horário',
-  body: "Agora o Dosiq respeita o seu fuso horário. Veja nas 'Configurações' e ajuste se for necessário.",
-  target_view: 'profile',
-  action_type: 'navigate',
-  action_payload: { route: 'Settings' },
-  platform: 'all',
-  priority: 10,
-  is_active: true,
-  start_at: null,
-  end_at: null,
-  min_app_version: null,
-  max_app_version: null,
-}
-
 /**
  * Chave de dismiss para um nudge (remote ou local).
  * Formato: "<id>:<version>"
