@@ -220,7 +220,7 @@ function TodayScreenContent({
   handleOpenBulkDose,
   navigation,
 }) {
-  const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction } = useNudges('dashboard')
+  const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
   // F4.3e: hero = janela actionável DESLIZANTE cross-dia (não só hoje):
   //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas entram);
   //  - hoje       → late/now (ATRASADA/PROXIMA);
@@ -262,7 +262,7 @@ function TodayScreenContent({
       {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={refresh} tintColor={colors.status.success} />}
+        refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge() }} tintColor={colors.status.success} />}
       >
         <TodayHeader greeting={greeting} todayFormatted={todayFormatted} onDevPress={() => navigation?.navigate(ROUTES.DEV_HUB)} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
