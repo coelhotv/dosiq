@@ -6,23 +6,22 @@ import { z } from 'zod'
 // Enums (Portuguese labels)
 export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any']
 export const TARGET_VIEW_LABELS = {
-  dashboard: 'Painel',
-  profile: 'Perfil',
-  any: 'Qualquer',
+  dashboard: 'Dashboard',
+  profile: 'Profile',
+  any: 'Todas',
 }
 
 export const ACTION_TYPE_OPTIONS = ['navigate', 'open_url', 'dismiss_only']
 export const ACTION_TYPE_LABELS = {
   navigate: 'Navegar',
   open_url: 'Abrir URL',
-  dismiss_only: 'Descartar',
+  dismiss_only: 'Somente info',
 }
 
-export const PLATFORM_OPTIONS = ['ios', 'android', 'web', 'all']
+export const PLATFORM_OPTIONS = ['ios', 'android', 'all']
 export const PLATFORM_LABELS = {
   ios: 'iOS',
   android: 'Android',
-  web: 'Web',
   all: 'Todos',
 }
 
@@ -60,25 +59,25 @@ const nudgeSchema = z.object({
 
   start_at: z
     .string()
-    .datetime({ message: 'start_at deve ser ISO 8601 com timezone' })
+    .datetime({ message: 'Data/hora inicial deve ser ISO 8601 com timezone' })
     .nullable()
     .optional(),
 
   end_at: z
     .string()
-    .datetime({ message: 'end_at deve ser ISO 8601 com timezone' })
+    .datetime({ message: 'Data/hora final deve ser ISO 8601 com timezone' })
     .nullable()
     .optional(),
 
   min_app_version: z
     .string()
-    .regex(/^\d+\.\d+\.\d+$/, 'min_app_version deve ser X.Y.Z')
+    .regex(/^\d+\.\d+\.\d+$/, 'Versão mínima do app deve ser X.Y.Z')
     .nullable()
     .optional(),
 
   max_app_version: z
     .string()
-    .regex(/^\d+\.\d+\.\d+$/, 'max_app_version deve ser X.Y.Z')
+    .regex(/^\d+\.\d+\.\d+$/, 'Versão máxima do app deve ser X.Y.Z')
     .nullable()
     .optional(),
 

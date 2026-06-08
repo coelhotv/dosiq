@@ -2,18 +2,18 @@
 // Constantes para nudges admin
 
 export const MOBILE_ROUTES = {
-  Hoje: 'Hoje (Dashboard)',
-  Tratamentos: 'Tratamentos',
+  Hoje: 'Aba Hoje',
+  Tratamentos: 'Aba Tratamentos',
   TreatmentsList: 'Lista de Tratamentos',
   TreatmentDetail: 'Detalhe de Tratamento',
   ProtocolForm: 'Formulário de Protocolo',
   ProtocolDetail: 'Detalhe de Protocolo',
-  Estoque: 'Estoque',
-  Perfil: 'Perfil',
-  ProfileMain: 'Perfil Principal',
+  Estoque: 'Aba Estoque',
+  Perfil: 'Aba Perfil',
+  ProfileMain: 'Perfil',
   ProfileEdit: 'Editar Perfil',
   Settings: 'Configurações',
-  NOTIFICATION_PREFERENCES: 'Preferências de Notificação',
-  NOTIFICATION_INBOX: 'Caixa de Notificações',
+  NOTIFICATION_PREFERENCES: 'Configs de Notificação',
+  NOTIFICATION_INBOX: 'Inbox',
   Feedback: 'Feedback',
 }
