@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StatusBadge from '../../../shared/components/ui/StatusBadge'
 import { colors, spacing } from '../../../shared/styles/tokens'
-import { formatDatePtBR, getProtocolDays, formatActiveIngredientHint } from '@dosiq/core'
+import { formatDatePtBR, getProtocolDays, formatIntakeDose, formatConcentration } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -25,7 +25,10 @@ const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
  * }} props
  */
 export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo', endDate = null }) {
-  const { name, frequency, time_schedule, dosage_per_intake, titration_status, medicine } = treatment
+  const { name, frequency, time_schedule, dosage_per_intake, intake_unit, titration_status, medicine } = treatment
+
+  // Dose exibida (022): helper único líquido/sólido (evita drift entre telas).
+  const doseDisplay = formatIntakeDose(dosage_per_intake, intake_unit, medicine)
 
   // Normalizar tabStatus; fallback defensivo para valores inválidos
   const resolvedStatus = VALID_TAB_STATUSES.includes(tabStatus) ? tabStatus : 'ativo'
@@ -110,7 +113,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
           {medicine?.dosage_per_pill && (
             <View style={[styles.dosagePill, (isPaused || isFinished) && styles.textMutedOpacity]}>
               <Text style={styles.dosagePillText}>
-                {medicine.dosage_per_pill}{medicine.dosage_unit}
+                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
               </Text>
             </View>
           )}
@@ -127,10 +130,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
 
         <View style={styles.row}>
           <Text style={styles.label}>Dose por tomada:</Text>
-          <Text style={styles.value}>
-            {formatActiveIngredientHint(dosage_per_intake, medicine?.dosage_per_pill, medicine?.dosage_unit) || 
-             `${dosage_per_intake} un.`}
-          </Text>
+          <Text style={styles.value}>{doseDisplay}</Text>
         </View>
 
         {time_schedule && time_schedule.length > 0 && (
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.primary,
     fontWeight: '600',
-    textTransform: 'capitalize',
   },
   scheduleContainer: {
     marginTop: spacing[2],

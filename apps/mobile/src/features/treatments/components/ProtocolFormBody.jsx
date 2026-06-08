@@ -1,6 +1,11 @@
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity } from 'react-native'
-import { parseLocalDate, formatActiveIngredientFormula } from '@dosiq/core'
+import {
+  parseLocalDate,
+  formatActiveIngredientFormula,
+  doseToMl,
+  INTAKE_UNIT_LABELS,
+} from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
 import FormDatePicker from '@shared/components/form/FormDatePicker'
@@ -61,17 +66,65 @@ export default function ProtocolFormBody({
     [form.values.end_date]
   )
 
+  // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+
   const helperText = useMemo(() => {
-    if (!medicine) {
-      return 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+    const fallback = 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
+    if (!medicine) return fallback
+
+    // Líquidos (022): equivalência em ml (gotas/UI convertem via densidade) + massa ativa.
+    // formatActiveIngredientFormula só serve a sólidos (multiplica dose × concentração).
+    if (isLiquid) {
+      const dose = Number(String(form.values.dosage_per_intake ?? '').replace(',', '.'))
+      if (!dose) return fallback
+      const fmt = (n) => String(Math.round(n * 1000) / 1000).replace('.', ',')
+      const density = Number(form.values.units_per_ml) || medicine.units_per_ml
+      const ml = doseToMl(dose, form.values.intake_unit, density)
+      const baseUnit = medicine.dosage_unit === 'ui/ml' ? 'UI' : 'mg'
+      const parts = []
+      if (form.values.intake_unit !== 'ml') parts.push(`${fmt(ml)} ml`)
+      if (medicine.dosage_per_pill) parts.push(`${fmt(ml * medicine.dosage_per_pill)} ${baseUnit}`)
+      return parts.length ? `✨ Equivale a ${parts.join(' · ')}` : fallback
     }
+
     const formula = formatActiveIngredientFormula(
       form.values.dosage_per_intake,
       medicine.dosage_per_pill,
       medicine.dosage_unit
     )
-    return formula ? `✨ ${formula}` : 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
-  }, [form.values.dosage_per_intake, medicine])
+    return formula ? `✨ ${formula}` : fallback
+  }, [form.values.dosage_per_intake, form.values.intake_unit, form.values.units_per_ml, medicine, isLiquid])
+
+  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
+  // Dropdown dinâmico por forma do medicamento (022): ui/ml → {UI, gotas}; mg/ml → {gotas, ml}.
+  const intakeOptions = useMemo(() => {
+    const allowed = medicine?.dosage_unit === 'ui/ml' ? ['UI', 'gotas'] : ['gotas', 'ml']
+    return allowed.map((u) => ({ value: u, label: INTAKE_UNIT_LABELS[u] ?? u }))
+  }, [medicine?.dosage_unit])
+  // Densidade só quando a dose NÃO é em ml (gotas/UI precisam converter p/ ml).
+  const needsDensity = isLiquid && form.values.intake_unit && form.values.intake_unit !== 'ml'
+  const densityLabel = form.values.intake_unit === 'UI' ? '💧 Densidade: UI por ml' : '💧 Densidade: Gotas por ml'
+  const densityHint =
+    form.values.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+  const defaultDensity = form.values.intake_unit === 'UI' ? 100 : 20
+
+  // Sincroniza flag transiente p/ o refine do protocolCreateSchema + default de intake_unit.
+  useEffect(() => {
+    if (form.values._medicineIsLiquid !== isLiquid) {
+      form.handleChange('_medicineIsLiquid', isLiquid)
+    }
+    if (isLiquid && !form.values.intake_unit) {
+      form.handleChange('intake_unit', defaultIntake)
+    }
+  }, [isLiquid, defaultIntake, form])
+
+  // Prefill densidade padrão quando passa a precisar (gotas/UI) e está vazia.
+  useEffect(() => {
+    if (needsDensity && !form.values.units_per_ml) {
+      form.handleChange('units_per_ml', String(defaultDensity))
+    }
+  }, [needsDensity, defaultDensity, form])
 
   const handleCriticalAlarmToggle = useCallback(async (next) => {
     if (next) {
@@ -116,7 +169,7 @@ export default function ProtocolFormBody({
         />
       </Section>
 
-      <Section title="Informações básicas">
+      <Section title="Informações do tratamento">
         <FormInput
           name="name"
           label="Nome do tratamento"
@@ -128,19 +181,65 @@ export default function ProtocolFormBody({
           maxLength={200}
           required
         />
-        <FormInput
-          name="dosage_per_intake"
-          label="Dose por tomada"
-          value={doseDisplay}
-          error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
-          onChange={onDoseChange}
-          onBlur={form.handleBlur}
-          placeholder="0"
-          keyboardType="decimal-pad"
-          maxLength={10}
-          helperText={helperText}
-          required
-        />
+        {isLiquid ? (
+          <>
+            <View style={styles.doseRow}>
+              <View style={styles.doseField}>
+                <FormInput
+                  name="dosage_per_intake"
+                  label="Dose por tomada"
+                  value={doseDisplay}
+                  error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
+                  onChange={onDoseChange}
+                  onBlur={form.handleBlur}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  maxLength={10}
+                  required
+                />
+              </View>
+              <View style={styles.unitField}>
+                <FormSelect
+                  name="intake_unit"
+                  label="💧 Unidade"
+                  value={form.values.intake_unit || defaultIntake}
+                  options={intakeOptions}
+                  onChange={form.handleChange}
+                  onBlur={form.handleBlur}
+                  error={form.touched.intake_unit ? form.errors.intake_unit : null}
+                  required
+                />
+              </View>
+            </View>
+            {!!helperText && <Text style={styles.doseHint}>{helperText}</Text>}
+          </>
+        ) : (
+          <FormInput
+            name="dosage_per_intake"
+            label="Dose por tomada"
+            value={doseDisplay}
+            error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
+            onChange={onDoseChange}
+            onBlur={form.handleBlur}
+            placeholder="0"
+            keyboardType="decimal-pad"
+            maxLength={10}
+            helperText={helperText}
+            required
+          />
+        )}
+        {needsDensity && (
+          <FormInput
+            name="units_per_ml"
+            label={densityLabel}
+            value={form.values.units_per_ml != null ? String(form.values.units_per_ml) : ''}
+            onChange={form.handleChange}
+            onBlur={form.handleBlur}
+            placeholder={String(defaultDensity)}
+            keyboardType="decimal-pad"
+            helperText={densityHint}
+          />
+        )}
       </Section>
 
       <Section title="Frequência">
@@ -299,6 +398,22 @@ const styles = StyleSheet.create({
   },
   sectionBody: {
     gap: spacing[3],
+  },
+  doseRow: {
+    flexDirection: 'row',
+    gap: spacing[3],
+    alignItems: 'flex-start',
+  },
+  doseField: {
+    flex: 2,
+  },
+  unitField: {
+    flex: 1,
+  },
+  doseHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: -spacing[1],
   },
   fieldBlock: {
     gap: spacing[2],

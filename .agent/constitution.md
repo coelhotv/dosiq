@@ -34,6 +34,15 @@ Agents MUST NOT merge their own PRs. Meaningful mobile or visual changes require
 
 Chat is not the source of truth. Official state lives in `.agent/state.json`, `.agent/memory/`, `.agent/sessions/events.jsonl`, journal entries, ADRs, contracts, and versioned plans. Any durable process decision or learning needed by future agents MUST be written to the filesystem.
 
+### IX. Radical Transparency With the Patient
+
+Dosiq's reason for being is to stand beside the patient and support them at every hour. Silently hiding an outcome — especially a failure — is wrong **by design**: a patient who believes a dose was recorded when it was not risks a missed dose or a double dose. Therefore:
+
+- Any operation that can partially or fully fail (dose registration, stock debit, sync, batch actions) MUST report to the patient **what failed and why**, in plain Portuguese, with the actionable reason (connection, insufficient stock, validation, etc.) — never a generic "nothing happened".
+- Partial success MUST surface the failed portion; it is forbidden to show only the success path when some items failed.
+- Error/partial messages on clinically meaningful flows MUST stay visible long enough to be read, and MUST distinguish "recorded" from "not recorded" unambiguously.
+- When an exact cause is unavailable, say so honestly rather than implying success. Omission is not neutral — in a health context it is a safety defect.
+
 ## Delivery Constraints
 
 - Do not alter production data or real-user records in tests.
@@ -42,6 +51,7 @@ Chat is not the source of truth. Official state lives in `.agent/state.json`, `.
 - Preserve web/mobile parity where specs or rules require it.
 - Keep user-visible Portuguese copy consistent across platforms unless a plan explicitly narrows scope.
 - Verify canonical paths before implementation; caller verification is not definition verification.
+- Never silence failures or partial failures on patient-facing flows; surface the actionable reason (Principle IX).
 
 ## Quality Gates
 
@@ -63,4 +73,6 @@ Amendments require `/devflow planning` or an ADR with:
 - migration or compatibility impact
 - operator approval
 
-**Version**: 0.1.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-05-31
+**Version**: 0.2.0 | **Ratified**: 2026-05-31 | **Last Amended**: 2026-06-08
+
+> v0.2.0 — adicionado Princípio IX (Transparência Radical com o Paciente): proíbe silenciar falhas/falhas parciais em fluxos clínicos; nasceu do smoke da 022 Fase C (bulk dose omitia o motivo da falha).

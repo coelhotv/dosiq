@@ -32,7 +32,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -66,9 +66,14 @@ export default function StockDetailScreen({ navigation }) {
     const activeProtocols = medicine.protocols.filter(
       (p) => p.active && isProtocolInPeriod(p, today)
     )
+    // Líquidos (022): consumo em ml (gotas/UI → ml via units_per_ml).
+    const liquid = isLiquidMedicine(medicine)
     return activeProtocols.reduce((acc, p) => {
       const intakesPerDay = p.time_schedule?.length ?? 0
-      return acc + Number(p.dosage_per_intake ?? 0) * intakesPerDay
+      const perDose = liquid
+        ? doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml)
+        : Number(p.dosage_per_intake ?? 0)
+      return acc + perDose * intakesPerDay
     }, 0)
   }, [medicine, route.params?.dailyConsumption, today])
 
@@ -77,8 +82,28 @@ export default function StockDetailScreen({ navigation }) {
     [purchases],
   )
 
+  // Tomadas/dia somadas dos tratamentos ativos (p/ custo por dose).
+  const intakesPerDay = useMemo(() => {
+    if (!medicine?.protocols) return 0
+    return medicine.protocols
+      .filter((p) => p.active && isProtocolInPeriod(p, today))
+      .reduce((acc, p) => acc + (p.time_schedule?.length ?? 0), 0)
+  }, [medicine, today])
+
+  // Custo por dose = custo/un|ml × consumo_dia ÷ tomadas_dia (média ponderada por
+  // evento de tomada; cobre múltiplos protocolos). null quando não há tratamento
+  // ativo → o card cai no fallback custo/un|ml.
+  const costPerDose = useMemo(() => {
+    if (dailyConsumption > 0 && intakesPerDay > 0 && avgUnitPrice > 0) {
+      return (avgUnitPrice * dailyConsumption) / intakesPerDay
+    }
+    return null
+  }, [avgUnitPrice, dailyConsumption, intakesPerDay])
+
+  // Math.floor p/ alinhar com o badge do header (StockLevelBadge também usa floor);
+  // ceil mostrava 30 onde o badge mostra 29 (mesma fonte saldo/consumo).
   const daysRemaining = useMemo(
-    () => (dailyConsumption > 0 ? Math.ceil(saldo / dailyConsumption) : null),
+    () => (dailyConsumption > 0 ? Math.floor(saldo / dailyConsumption) : null),
     [saldo, dailyConsumption],
   )
 
@@ -158,10 +183,11 @@ export default function StockDetailScreen({ navigation }) {
   }, [navigation, medicineId, medicineName])
 
   const handleEditPurchase = useCallback(
-    (purchaseId) => {
+    (purchase) => {
       navigation.navigate(ROUTES.PURCHASE_FORM, {
         mode: 'edit',
-        purchaseId,
+        purchaseId: purchase.id,
+        purchase, // sem isto o form abre vazio (initialValues cai no branch sem purchase)
         medicineId,
         medicineName,
       })
@@ -180,7 +206,7 @@ export default function StockDetailScreen({ navigation }) {
   const name = medicine?.name ?? medicineName ?? 'Medicamento'
   const dosePill =
     medicine?.dosage_per_pill != null
-      ? `${medicine.dosage_per_pill}${medicine.dosage_unit ?? ''}`
+      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
       : null
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]
@@ -260,6 +286,7 @@ export default function StockDetailScreen({ navigation }) {
                 dailyConsumption={dailyConsumption}
                 daysRemaining={daysRemaining}
                 avgUnitPrice={avgUnitPrice}
+                costPerDose={costPerDose}
                 medicine={medicine}
               />
             </View>
@@ -285,7 +312,8 @@ export default function StockDetailScreen({ navigation }) {
                   purchase={latestPurchase}
                   remaining={latestPurchase.remaining ?? 0}
                   isLatest
-                  onPress={() => handleEditPurchase(latestPurchase.id)}
+                  medicine={medicine}
+                  onPress={() => handleEditPurchase(latestPurchase)}
                 />
               ) : (
                 <Text style={styles.emptyText}>

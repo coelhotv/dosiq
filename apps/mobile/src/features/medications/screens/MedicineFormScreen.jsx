@@ -4,7 +4,7 @@
 // ANVISA bottom sheet preenche campos automaticamente via setValues.
 
 import { useState, useCallback, useMemo } from 'react'
-import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, Pressable, StyleSheet, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronLeft } from 'lucide-react-native'
@@ -13,6 +13,7 @@ import {
   MEDICINE_TYPES,
   MEDICINE_TYPE_LABELS,
   DOSAGE_UNITS,
+  DOSAGE_UNIT_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
 } from '@dosiq/core'
@@ -31,7 +32,13 @@ const TYPE_OPTIONS = MEDICINE_TYPES.map((value) => ({
   label: MEDICINE_TYPE_LABELS[value] ?? value,
 }))
 
-const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({ value, label: value }))
+const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
+  value,
+  label: DOSAGE_UNIT_LABELS[value] ?? value,
+}))
+
+// Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
+const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
 
 const REGULATORY_OPTIONS = REGULATORY_CATEGORIES.map((value) => ({
   value,
@@ -115,8 +122,28 @@ export default function MedicineFormScreen() {
     [form]
   )
 
+  // Ao escolher unidade líquida (/ml): marca presentation='liquido'. Densidade NÃO
+  // é pedida aqui (022 Fase C — pertence ao tratamento). Sólido → 'comprimido'.
+  const handleUnitChange = useCallback(
+    (_name, value) => {
+      form.handleChange('dosage_unit', value)
+      form.handleChange('presentation', isLiquidUnit(value) ? 'liquido' : 'comprimido')
+    },
+    [form]
+  )
+
   const handleSubmit = useCallback(async () => {
-    if (!form.validate()) return
+    if (!form.validate()) {
+      // Anti-silent-no-op (smoke iOS 022): nunca falhar sem feedback. Mostra 1º erro.
+      // form.errors fica stale neste tick (setErrors async); reparse p/ msg precisa.
+      const parsed = medicineCreateSchema.safeParse(form.values)
+      const firstError = parsed.success ? null : parsed.error.issues[0]?.message
+      Alert.alert(
+        'Verifique o formulário',
+        firstError || 'Há campos obrigatórios não preenchidos.'
+      )
+      return
+    }
     if (isEditing) {
       await update(medicine.id, form.values, { goBack: true })
     } else {
@@ -181,6 +208,7 @@ export default function MedicineFormScreen() {
                 required
                 options={UNIT_OPTIONS}
                 {...formProps(form, 'dosage_unit')}
+                onChange={handleUnitChange}
               />
             </View>
           </View>

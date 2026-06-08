@@ -8,8 +8,21 @@
 
 import { useCallback, useState } from 'react'
 import { treatmentPlanService } from '../services/treatmentPlanService'
+import { medicineService } from '@medications/services/medicineService'
 import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+
+// Densidade (units_per_ml) é física do medicamento, capturada no tratamento quando
+// a dose é em gotas/UI (022 Fase C). Persiste no medicamento (RPC lê de lá; fallback 20).
+async function persistDensity(form) {
+  const { medicine_id, intake_unit, units_per_ml } = form.values
+  if (!medicine_id || !intake_unit || intake_unit === 'ml' || !units_per_ml) return
+  try {
+    await medicineService.update(medicine_id, { units_per_ml: Number(units_per_ml) })
+  } catch {
+    // Não bloqueia o tratamento; RPC usa fallback 20 se densidade não gravar.
+  }
+}
 
 function coerceDose(form) {
   const raw = form.values.dosage_per_intake
@@ -71,6 +84,8 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
         dosage_per_intake: currentDose,
         treatment_plan_id: planId,
       }
+
+      await persistDensity(form)
 
       const result = editId
         ? await mutation.update(editId, payload, { goBack: true })

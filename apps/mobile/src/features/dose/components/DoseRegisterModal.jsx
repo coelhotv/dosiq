@@ -15,7 +15,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { getNow, formatActiveIngredientFormula } from '@dosiq/core'
+import { getNow, formatActiveIngredientFormula, isLiquidMedicine, formatIntakeDose } from '@dosiq/core'
 import { registerDose } from '../services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
@@ -49,6 +49,17 @@ export default function DoseRegisterModal({
   if (!protocol) return null
 
   const defaultQty = String(protocol.dosage_per_intake ?? 1)
+
+  // Líquidos (022): dose na unidade de tomada (gotas/ml/UI via protocol.intake_unit);
+  // hint converte p/ ml. Sólido mantém unidades + equivalência de princípio ativo.
+  const medicine = protocol.medicine
+  const isLiquid = isLiquidMedicine(medicine)
+  const intakeUnit = protocol.intake_unit || (isLiquid ? 'ml' : null)
+  const qtyLabel = isLiquid
+    ? `Quantidade (${intakeUnit})`
+    : medicine?.dosage_unit === 'gotas'
+      ? 'Quantidade (gotas)'
+      : 'Quantidade (unidades)'
 
   async function handleConfirm() {
     if (!isOnline) {
@@ -126,11 +137,7 @@ export default function DoseRegisterModal({
             )}
           </View>
 
-          <Text style={styles.label}>
-            {protocol.medicine?.dosage_unit === 'gotas'
-              ? 'Quantidade (gotas)'
-              : 'Quantidade (unidades)'}
-          </Text>
+          <Text style={styles.label}>{qtyLabel}</Text>
           <TextInput
             style={styles.input}
             value={quantity}
@@ -141,11 +148,15 @@ export default function DoseRegisterModal({
             editable={!loading}
             selectTextOnFocus
           />
-          {protocol.medicine?.dosage_per_pill && (
+          {isLiquid ? (
             <Text style={styles.formulaHint}>
-              ✨ {formatActiveIngredientFormula(quantity || defaultQty, protocol.medicine.dosage_per_pill, protocol.medicine.dosage_unit)}
+              ✨ {formatIntakeDose(quantity || defaultQty, intakeUnit, medicine)}
             </Text>
-          )}
+          ) : medicine?.dosage_per_pill ? (
+            <Text style={styles.formulaHint}>
+              ✨ {formatActiveIngredientFormula(quantity || defaultQty, medicine.dosage_per_pill, medicine.dosage_unit)}
+            </Text>
+          ) : null}
 
           {error && <Text style={styles.error}>{error}</Text>}
 

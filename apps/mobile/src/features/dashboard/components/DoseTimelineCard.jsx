@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, XCircle } from 'lucide-react-native'
 import { colors, typography, shadows } from '@shared/styles/tokens'
-import { formatActiveIngredientHint } from '@dosiq/core'
+import { formatIntakeDose } from '@dosiq/core'
 
 /**
  * DoseTimelineCard - Item de dose para a Timeline (Epic 2)
@@ -40,11 +40,7 @@ export default function DoseTimelineCard({ dose, onRegister }) {
           {medicine?.name || protocol?.name || 'Medicamento'}
         </Text>
         <Text style={[styles.dosage, isMuted && styles.mutedText]}>
-          {formatActiveIngredientHint(
-            protocol?.dosage_per_intake ?? 1,
-            medicine?.dosage_per_pill,
-            medicine?.dosage_unit
-          ) || `${protocol?.dosage_per_intake ?? 1} un.`}
+          {formatIntakeDose(protocol?.dosage_per_intake ?? 1, protocol?.intake_unit, medicine)}
         </Text>
       </View>
 

@@ -25,6 +25,7 @@ import { useMedicines } from '../../medications/hooks/useMedicines'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { stockService } from '@stock/services/stockService'
 import { selectionTap } from '@shared/utils/haptics'
+import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 // Cor literal extraída para evitar react-native/no-color-literals em StyleSheet
@@ -42,7 +43,7 @@ function normalize(s) {
 // dentro do limite max-lines-per-function.
 function MedicineRow({ item, onPress }) {
   const dosageLabel = item.dosage_per_pill
-    ? `${item.dosage_per_pill}${item.dosage_unit || ''}`
+    ? formatConcentration(item.dosage_per_pill, item.dosage_unit)
     : null
 
   return (
