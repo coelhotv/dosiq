@@ -7,7 +7,7 @@ import { View, Text, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Ima
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { Info } from 'lucide-react-native'
-import { medicineCreateSchema, DOSAGE_UNITS } from '@dosiq/core'
+import { medicineCreateSchema, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import FormInput from '@shared/components/form/FormInput'
@@ -20,8 +20,14 @@ import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
-const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({ value, label: value }))
+const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
+  value,
+  label: DOSAGE_UNIT_LABELS[value] ?? value,
+}))
 const DEFAULT_INITIAL = { type: 'medicamento', dosage_unit: 'mg' }
+
+// Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
+const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
 
 function formProps(form, name) {
   return {
@@ -72,6 +78,15 @@ export default function OnboardingMedicineStep() {
         .replace(/[^\d.]/g, '')
         .replace(/^(\d*\.\d*).*$/, '$1')
       form.handleChange('dosage_per_pill', cleaned)
+    },
+    [form],
+  )
+
+  // /ml → presentation='liquido' (densidade pertence ao tratamento — 022 Fase C).
+  const handleUnitChange = useCallback(
+    (_name, value) => {
+      form.handleChange('dosage_unit', value)
+      form.handleChange('presentation', isLiquidUnit(value) ? 'liquido' : 'comprimido')
     },
     [form],
   )
@@ -148,6 +163,7 @@ export default function OnboardingMedicineStep() {
                 required
                 options={UNIT_OPTIONS}
                 {...formProps(form, 'dosage_unit')}
+                onChange={handleUnitChange}
               />
             </View>
           </View>

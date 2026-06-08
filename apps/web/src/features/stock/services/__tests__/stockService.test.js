@@ -97,6 +97,7 @@ describe('stockService', () => {
       )
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('consume_stock_fifo', {
+        p_user_id: 'test-user-id',
         p_medicine_id: '123e4567-e89b-12d3-a456-426614174000',
         p_quantity: 2,
         p_medicine_log_id: '123e4567-e89b-12d3-a456-426614174111',

@@ -20,7 +20,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, formatBRL } from '@dosiq/core'
+import { computeAverageUnitPrice, formatBRL, formatConcentration, isLiquidMedicine, stockUnitLabel, formatNumberPtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -52,6 +52,10 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
     () => computeAverageUnitPrice(purchases),
     [purchases],
   )
+
+  // Líquidos (022): resumos em ml / custo por ml.
+  const isLiquid = useMemo(() => isLiquidMedicine(medicine), [medicine])
+  const unitLabel = useMemo(() => stockUnitLabel(medicine), [medicine])
 
   // — Effects (R-010) —
   // useFocusEffect obrigatório (R-235): atualiza após retorno do PurchaseForm (edit)
@@ -101,11 +105,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
           purchase={item}
           remaining={item.remaining ?? 0}
           isLatest={index === 0}
+          medicine={medicine}
           onPress={() => handlePressCard(item)}
         />
       </View>
     ),
-    [handlePressCard],
+    [handlePressCard, medicine],
   )
 
   const keyExtractor = useCallback((item) => item.id, [])
@@ -168,7 +173,7 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
                   {medicine?.dosage_per_pill ? (
                     <View style={styles.dosePill}>
                       <Text style={styles.dosePillText}>
-                        {medicine.dosage_per_pill}{medicine.dosage_unit || ''}
+                        {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
                       </Text>
                     </View>
                   ) : null}
@@ -191,16 +196,20 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
                 </View>
 
                 <View style={styles.summaryCard}>
-                  {/* ADR-046 — unidade(s) */}
-                  <Text style={styles.summaryValue}>{totalBought}</Text>
+                  {/* ADR-046 — unidade(s) · líquido em ml (022) */}
+                  <Text style={styles.summaryValue}>
+                    {isLiquid ? formatNumberPtBR(totalBought) : totalBought}
+                  </Text>
                   <Text style={styles.summaryLabel}>
-                    Unidade{totalBought !== 1 ? 's' : ''} comprada{totalBought !== 1 ? 's' : ''}
+                    {isLiquid
+                      ? 'ml comprados'
+                      : `Unidade${totalBought !== 1 ? 's' : ''} comprada${totalBought !== 1 ? 's' : ''}`}
                   </Text>
                 </View>
 
                 <View style={styles.summaryCard}>
                   <Text style={styles.summaryValue}>{formatBRL(avgUnitPrice)}</Text>
-                  <Text style={styles.summaryLabel}>Custo médio/un.</Text>
+                  <Text style={styles.summaryLabel}>Custo médio/{unitLabel}</Text>
                 </View>
               </View>
             )}

@@ -16,6 +16,7 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
 
   const selectedMedicine =
     medicines?.find((medicine) => medicine.id === formData.medicine_id) || null
+  const isLiquid = Boolean(selectedMedicine?.dosage_unit?.endsWith('/ml'))
   const regulatoryCategory = selectedMedicine?.regulatory_category || null
   const shouldAskPurchaseLaboratory = regulatoryCategory === 'Genérico'
   const fixedLaboratory = regulatoryCategory && regulatoryCategory !== 'Genérico'
@@ -24,7 +25,7 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
     : selectedMedicine?.laboratory || null
 
   const validate = () => {
-    const newErrors = validateStockForm(formData)
+    const newErrors = validateStockForm(formData, isLiquid)
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -35,7 +36,7 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
 
     setIsSubmitting(true)
     try {
-      await onSave(buildStockPayload(formData, effectiveLaboratory))
+      await onSave(buildStockPayload(formData, effectiveLaboratory, isLiquid))
     } catch (error) {
       console.error('Erro ao salvar:', error)
       setErrors({ submit: error.message })
@@ -54,5 +55,6 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
     fixedLaboratory,
     effectiveLaboratory,
     regulatoryCategory,
+    isLiquid,
   }
 }

@@ -156,14 +156,15 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
  * Auxiliar para formatar a descrição clínica do medicamento com quantidade e dosagem.
  * Exemplo: "Xarope (10ml) • 1 un." ou "Dipirona (500mg) • 2 un."
  */
-const formatMedicineDescription = (name, qty, dosagePerPill, unit) => {
+const formatMedicineDescription = (name, qty, dosagePerPill, unit, intakeUnit) => {
   let desc = name;
   if (dosagePerPill !== undefined && dosagePerPill !== null && unit) {
     desc += ` (${dosagePerPill}${unit})`;
   }
   if (qty !== undefined && qty !== null) {
     const formattedQty = String(qty).replace('.', ',');
-    desc += ` • ${formattedQty} un.`;
+    // Líquidos (022): unidade de tomada real (gotas/ml/UI) em vez do genérico "un.".
+    desc += intakeUnit ? ` • ${formattedQty} ${intakeUnit}` : ` • ${formattedQty} un.`;
   }
   return desc;
 };
@@ -177,7 +178,7 @@ function formatDoseReminder(data, metadata) {
     throw new Error(`Invalid data for dose_reminder: ${result.error.message}`);
   }
 
-  const { medicineName, time, dosage, hour, protocolId, critical_alarm, dosagePerIntake, dosageUnit, dosagePerPill } = result.data;
+  const { medicineName, time, dosage, hour, protocolId, critical_alarm, dosagePerIntake, dosageUnit, dosagePerPill, intakeUnit } = result.data;
   const isCritical = critical_alarm === true;
   const emoji = getTimeOfDayEmoji(hour);
   const greeting = getTimeOfDayGreeting(hour);
@@ -188,7 +189,7 @@ function formatDoseReminder(data, metadata) {
 
   if (isCritical) {
     if (dosagePerIntake !== undefined) {
-      const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit);
+      const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit, intakeUnit);
       const safeDesc = escapeMarkdownV2(desc);
       body = `Hora de tomar *${safeDesc}* — ${safeTime}`;
       pushBody = `Hora de tomar ${desc} — ${time}`;
@@ -205,7 +206,7 @@ function formatDoseReminder(data, metadata) {
     }
   } else {
     if (dosagePerIntake !== undefined) {
-      const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit);
+      const desc = formatMedicineDescription(medicineName, dosagePerIntake, dosagePerPill, dosageUnit, intakeUnit);
       const safeDesc = escapeMarkdownV2(desc);
       body = `Está na hora de tomar *${safeDesc}* — ${safeTime}`;
       pushBody = `Está na hora de tomar ${desc} — ${time}`;
@@ -255,13 +256,13 @@ function formatDoseReminderByPlan(data, metadata) {
 
   let doseLines, plainLines;
   doseLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit, d.intakeUnit);
     const safeDesc = escapeMarkdownV2(desc);
     return `  – ${safeDesc}`;
   }).join('\n');
 
   plainLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit, d.intakeUnit);
     return `– ${desc}`;
   }).join('\n');
 
@@ -309,13 +310,13 @@ function formatDoseReminderMisc(data, metadata) {
 
   let doseLines, plainLines;
   doseLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit, d.intakeUnit);
     const safeDesc = escapeMarkdownV2(desc);
     return `  – ${safeDesc}`;
   }).join('\n');
 
   plainLines = shown.map(d => {
-    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit);
+    const desc = formatMedicineDescription(d.medicineName, d.dosagePerIntake, d.dosagePerPill, d.dosageUnit, d.intakeUnit);
     return `– ${desc}`;
   }).join('\n');
 

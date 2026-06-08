@@ -1,8 +1,8 @@
 # Feature Specification: Medicamentos Líquidos (Épico)
 
 **Feature Directory**: `plans/specs/022-liquid-medications`
-**Created**: 2026-06-01 · **Revised**: 2026-06-03
-**Status**: Dev Ready
+**Created**: 2026-06-01 · **Revised**: 2026-06-03 · **As-Built**: 2026-06-08
+**Status**: Shipped (Fases A/B/C) — aguardando merge do PR. Ver **As-Built (Fase C)** ao final para os deltas spec→produção apurados no smoke.
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta)
 **Artifacts**: `spec.md` · `plan.md` · `tasks.md` (faseado A→B→C) · `analysis.md` · `contracts/`
 **Legacy Sources**:
@@ -133,7 +133,7 @@ Consequências obrigatórias (todas cobertas neste épico):
 - **Underflow / dízimas**: conversões de gotas usam `ROUND(..., 2)`; `stock.quantity` é `numeric` (precisão por `ROUND` aplicativo + Zod, não escala de coluna). `CHECK (quantity >= 0)` impede saldo negativo.
 - **Retrocompat sólidos**: caminho linear inteiro, sem conversão.
 - **Líquido legado sem concentração**: `dosage_per_pill = NULL` tolerado; só a exibição de massa ativa (mg) fica oculta; decremento/adesão funcionam.
-- **`intake_unit = 'UI'` (v1)**: escala direta (`volume = p_quantity`), sem conversão de gotas — insulina/canetas é o épico de diabetes (ADR-052). Documentado, não silencioso.
+- **`intake_unit = 'UI'`**: ~~(v1) escala direta~~ **[As-Built — revisado]** UI agora **converte p/ ml via `units_per_ml`** (`ROUND(p_quantity/units_per_ml, 2)`), igual a `gotas` — `lower(intake_unit) IN ('gotas','ui')`. O smoke da Fase C expôs dose de insulina em UI (refil de caneta U-100): sem conversão, `100 UI` debitava `100 ml` → "Estoque insuficiente". Migração `20260608_fix_consume_fifo_ui_conversion.sql`. Só `intake_unit='ml'` é escala direta.
 - **Centavos no custo/ml**: 3 frascos por R$ 10,00 → `price_per_bottle = 3.33`, último compensado `3.34`. Total reconstruído (`Σ unit_price*V`) ≈ R$ 10,00 sem perda.
 - **Estoque zerado na confirmação Telegram**: por ação simultânea no app, o bot registra log best-effort e responde *"Registrei sua tomada, mas seu estoque está zerado no app!"* — sem exceção técnica (R-245/246).
 - **Mobile sem `StockForm` dedicado**: o cadastro de estoque mobile pode estar em screen/fluxo distinto — **verificar o caminho real em C1**, não assumir paridade de nome com a web.
@@ -171,7 +171,7 @@ Consequências obrigatórias (todas cobertas neste épico):
 - **FR-012**: Leituras de saldo expõem a fração de frasco por `quantity / original_quantity` por lote (helper puro), sem tocar hooks de cache compartilhados.
 
 **Fase C — UI/UX + Telegram**
-- **FR-013**: `MedicineForm` (web `features/medications/components/MedicineForm.jsx` + `sections/MedicineFormDosageInfo.jsx`; mobile `features/medications/screens/MedicineFormScreen.jsx`) **e o wizard de onboarding** filtram o dropdown de concentração p/ `['mg','mcg','g','ui','un','mg/ml','ui/ml']`, label "Concentração", badge `💧` + campo `Gotas por ml` p/ unidades `/ml`.
+- **FR-013** **[As-Built — revisado]**: `MedicineForm` (web + mobile) e o wizard filtram o dropdown de concentração p/ `['mg','mcg','g','ui','un','mg/ml','ui/ml']`, label "Concentração", badge `💧` p/ unidades `/ml`. **A densidade (`units_per_ml`) NÃO é mais pedida no cadastro do medicamento** (era contra-intuitivo — PO no smoke): `units_per_ml` virou **opcional** no `medicineSchema`; a densidade é capturada **contextualmente no form de tratamento** (FR-014), só quando a `intake_unit` é `gotas`/`UI` (não-`ml`), e persistida no medicamento via `medicineService.update`.
 - **FR-014**: `ProtocolForm` (web `sections/ProtocolFormDosesSection.jsx`; mobile `treatments/components/ProtocolFormBody.jsx`) exibe condicionalmente o select `intake_unit` + hint quando líquido.
 - **FR-015**: `StockForm` (web `features/stock/components/StockForm.jsx` + `sections/StockFormPurchaseDetails.jsx`) exibe `💧 Inventário de Líquidos`, inputs `frascos`/`ml cada` + `Preço Total da Compra (R$)`; despacha payload de desmembramento (FR-010). Caminho mobile a verificar em C1.
 - **FR-016**: Banner em `features/dashboard/components/StockAlertInline.jsx` compara `stock.quantity` (ml) com `expected_dose` **convertida p/ ml** (via `units_per_ml` quando `intake_unit='gotas'`).
@@ -193,3 +193,34 @@ Consequências obrigatórias (todas cobertas neste épico):
 - **SC-001**: `consume_stock_fifo` faz baixas decimais (ml) e inteiras (sólidos) precisas por FIFO; nenhum medicamento permanece com `dosage_unit IN ('ml','gotas')` pós-migração; migração idempotente.
 - **SC-002**: Zod valida concentração/tomada decimal e bloqueia líquidos sem `units_per_ml`/`intake_unit`, zero falso-positivo em sólidos legados; compras de N frascos geram N lotes via `create_purchase_with_stock` com total reconstruído sem perda de centavos.
 - **SC-003**: Dropdowns (incl. wizard) expõem `mg/ml`/`ui/ml` e ocultam `ml`/`gotas` da concentração; o banner dispara só quando a dose **convertida p/ ml** supera o saldo; o bot formata via `formatDose` e debita o volume correto; estoque zerado não trava.
+
+---
+
+## As-Built — Fase C (smoke 2026-06-07/08)
+
+Deltas spec→produção apurados no smoke PO (web complex + mobile + Telegram). Esta seção é **canônica** para o que foi ao ar.
+
+### Decisões de UX revisadas no smoke
+- **Densidade fora do cadastro de medicamento** (ver FR-013 revisado): `units_per_ml` virou opcional no `medicineSchema`; capturada no form de **tratamento** só quando `intake_unit ∈ {gotas, UI}`; persistida via `medicineService.update`. Removida dos 5 forms de medicamento (web form+wizard+onboarding, mobile form+onboarding).
+- **Conversão de `UI`** (ver edge-case revisado): `consume_stock_fifo` converte `gotas` **e** `UI` via `units_per_ml`; só `ml` é escala direta. Migração `20260608_fix_consume_fifo_ui_conversion.sql`.
+- **Custo por dose** (novo, além da spec): o KPI de estoque passou de "custo/ml|un" para **"Custo por dose"** (`avgUnitPrice × consumo_dia ÷ tomadas_dia`), com fallback custo/un|ml quando não há tratamento ativo. Decisão PO: número que o paciente entende.
+- **Aba "Tratamentos"** (web): renomeada de "Tratamento" (paridade com mobile).
+
+### Princípio constitucional novo
+- **Constituição IX — Transparência Radical com o Paciente** (v0.2.0): proíbe silenciar falhas/falhas parciais em fluxos clínicos. Aplicado no registro em lote (`buildBulkOutcome` no mobile): informa quantas doses entraram, quantas falharam e por quê. Toast ganhou variante `warning`.
+
+### Bugs de read-path corrigidos (recorrente no smoke)
+Toda query/cálculo que renderiza ou consome dose líquida precisa de `intake_unit` (protocolo) + `units_per_ml` (medicamento). Faltavam em: estoque (lista + detalhe), dashboard (hoje), histórico de doses, lista de tratamentos, cartão de emergência, consulta médica, e os serviços de cálculo `calculateDailyIntake`/`predictRefill`/`costAnalysisService`. **Custo mensal** inflava (ex: insulina R$17k) por multiplicar dose em UI × preço/ml sem converter.
+
+### Drift de contrato corrigido
+- `consume_stock_fifo` passou a exigir `p_user_id` (Fase A) mas os callers não foram atualizados → registro de dose quebrava p/ **qualquer** medicamento. Corrigido em `doseService` (mobile, single+batch) e `createStockRepository.decreaseStock` (web/core).
+
+### Centralização no core (`@dosiq/core`, web↔mobile)
+Helpers acrescentados a `doseUnit.js` além do `formatDose` (FR-011): `isLiquidMedicine`, `stockUnitLabel`, `formatStockCount`, `formatStockQuantity`, `formatConcentration`, `formatIntakeDose`, `formatDoseItem`, `formatDoseHint`; `doseToMl` + `calculateDailyIntake` liquid-aware em `adherenceLogic.js`; `doseZones.DoseItem` ganhou `intakeUnit`/`unitsPerMl`. Regra emergente: **unidade nunca renderizada crua** — sempre via `formatConcentration`/labels.
+
+### Telegram
+- **`/registrar` desativado** (e o atalho `quick_register`): o registro de dose por chat usava dose-math pré-022 (mg = comprimidos × concentração) incompatível com líquidos + double-conversion com a RPC. `handleRegistrar` agora redireciona ao app/botão "Tomei". Lembrete de dose, botão "Tomei", `/status`, `/estoque`, `/hoje` seguem liquid-aware.
+- Gap conhecido (fix-pack): inline query (`@bot` busca) ainda exibe estoque líquido como "X mg/ml".
+
+### Correção fora-de-escopo (smoke)
+- z-index de autocompletes empilhados no wizard (campo seguinte cobria o dropdown) — `:focus-within` no `.autocomplete-wrapper`.

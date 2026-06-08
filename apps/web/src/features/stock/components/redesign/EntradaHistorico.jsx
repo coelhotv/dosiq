@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import { Pill, Leaf, ChevronDown, ChevronUp } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
+import { stockUnitLabel, formatNumberPtBR } from '@dosiq/core'
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -22,17 +23,20 @@ function formatDate(dateStr) {
 }
 
 function formatQuantity(entry) {
-  return `+${entry.quantity_bought} un.`
+  // Líquidos (022): quantidade em ml.
+  const label = stockUnitLabel(entry)
+  return `+${formatNumberPtBR(entry.quantity_bought)} ${label}`
 }
 
 /**
- * Formata o preço unitário: "R$ X,XX/un." ou null se não registrado.
+ * Formata o preço unitário: "R$ X,XX/un." (ou /ml líquido) ou null se não registrado.
  * Custo total seria irreal pois FIFO decrementa quantity após cada dose.
  */
 function formatCost(entry) {
   if (entry.unit_price == null) return null
   if (entry.unit_price < 0.01) return 'Grátis'
-  return `${entry.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un.`
+  const label = stockUnitLabel(entry)
+  return `${entry.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/${label}`
 }
 
 export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {

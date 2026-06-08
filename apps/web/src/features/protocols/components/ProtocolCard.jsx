@@ -9,6 +9,7 @@ import TitrationTimeline from './TitrationTimeline'
 
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
+import { formatIntakeDose, formatConcentration } from '@dosiq/core'
 
 import './ProtocolCard.css'
 
@@ -117,7 +118,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           <span className="protocol-medicine">
             {protocol.medicine?.name}
             {protocol.medicine?.dosage_per_pill
-              ? ` (${protocol.medicine.dosage_per_pill}${protocol.medicine.dosage_unit || 'mg'})`
+              ? ` (${formatConcentration(protocol.medicine.dosage_per_pill, protocol.medicine.dosage_unit)})`
               : ''}
           </span>
         </div>
@@ -141,12 +142,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
         <div className="detail-item">
           <span className="detail-label">💊 Dosagem:</span>
           <span className="detail-value">
-            {protocol.dosage_per_intake}{' '}
-            {protocol.medicine?.dosage_unit === 'ml'
-              ? 'ml'
-              : protocol.dosage_per_intake === 1
-                ? 'unidade'
-                : 'unidades'}
+            {formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, protocol.medicine)}
             {protocol.target_dosage && (
               <span className="titration-progress">
                 {' '}

@@ -2,6 +2,7 @@
 // (componente puro controlado)
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Plus, ChevronRight, Pill, PillBottle } from 'lucide-react-native'
+import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export default function MedicineSelectorRow({ medicine, onPress, error }) {
@@ -27,7 +28,7 @@ export default function MedicineSelectorRow({ medicine, onPress, error }) {
 
   const dosageLabel =
     !isEmpty && medicine.dosage_per_pill
-      ? `${medicine.dosage_per_pill}${medicine.dosage_unit || ''}`
+      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
       : null
 
   const accessibilityLabel = isEmpty

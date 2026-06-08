@@ -31,15 +31,16 @@ function MedicationsSection({ activeMedications }) {
       {activeMedications.length > 0 ? (
         <ul className="medications-list">
           {activeMedications.map((med, index) => {
-            const pillLabel = med.dosagePerIntake === 1 ? 'comp.' : 'comp.'
+            const medicineLike = {
+              dosage_unit: med.dosageUnit,
+              dosage_per_pill: med.dosagePerPill,
+              units_per_ml: med.unitsPerMl,
+            }
             const doseStr =
               med.dosagePerIntake != null
-                ? `${med.dosagePerIntake} ${pillLabel}`
+                ? formatIntakeDose(med.dosagePerIntake, med.intakeUnit, medicineLike)
                 : null
-            const pillDosageStr =
-              med.dosagePerPill
-                ? `${med.dosagePerPill}${med.unit ? ` ${med.unit}` : ''}/comp.`
-                : null
+            const pillDosageStr = formatConcentration(med.dosagePerPill, med.dosageUnit) || null
             const frequencyStr =
               med.dosesPerDay != null && med.frequency === 'diário'
                 ? `${med.dosesPerDay}x ao dia`
@@ -51,7 +52,7 @@ function MedicationsSection({ activeMedications }) {
               <li key={index} className="medication-item">
                 <span className="med-name">
                   {med.name}
-                  {pillDosageStr && <span className="med-dosage"> — {med.dosagePerPill}{med.unit ? ` ${med.unit}` : ''}</span>}
+                  {pillDosageStr && <span className="med-dosage"> — {pillDosageStr}</span>}
                 </span>
                 <div className="med-detail">
                   {doseStr && <span className="med-dose">{doseStr}</span>}
@@ -98,6 +99,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatIntakeDose, formatConcentration } from '@dosiq/core'
 import { parseISO } from '@utils/dateUtils'
 import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
@@ -149,6 +151,9 @@ export default function EmergencyCardView({ data, onEdit }) {
           name: med.name,
           dosagePerPill: med.dosage_per_pill,
           unit: med.dosage_unit || '',
+          dosageUnit: med.dosage_unit || null,
+          unitsPerMl: med.units_per_ml ?? null,
+          intakeUnit: protocol?.intake_unit ?? null,
           dosagePerIntake: protocol?.dosage_per_intake ?? null,
           dosesPerDay: protocol?.time_schedule?.length ?? null,
           frequency: protocol?.frequency ?? null,

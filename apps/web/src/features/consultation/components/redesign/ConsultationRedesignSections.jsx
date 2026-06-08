@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Bell,
 } from 'lucide-react'
+import { formatConcentration, formatDose } from '@dosiq/core'
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -46,7 +47,16 @@ export function RedesignMedicinesSection({ activeMedicines }) {
                 <tr key={med.id}>
                   <td className="sr-consultation__med-name">{med.name}</td>
                   <td>
-                    {med.dosagePerIntake && med.timesPerDay ? (
+                    {med.isLiquid && med.timesPerDay ? (
+                      <span>
+                        {formatConcentration(med.dosagePerPill, med.dosageUnit)}
+                        <span className="sr-consultation__dosage-detail">
+                          {' '}
+                          ({med.timesPerDay}x ao dia
+                          {med.dailyDosage ? `, ${formatDose(med.dailyDosage, med.intakeUnit || 'ml')}/dia` : ''})
+                        </span>
+                      </span>
+                    ) : med.dosagePerIntake && med.timesPerDay ? (
                       <span>
                         {med.dosagePerIntake}
                         {med.dosageUnit}
@@ -58,8 +68,7 @@ export function RedesignMedicinesSection({ activeMedicines }) {
                       </span>
                     ) : med.dosagePerPill ? (
                       <span>
-                        {med.dosagePerPill}
-                        {med.dosageUnit}
+                        {formatConcentration(med.dosagePerPill, med.dosageUnit)}
                       </span>
                     ) : (
                       <span className="sr-consultation__dosage-unknown">Não informado</span>

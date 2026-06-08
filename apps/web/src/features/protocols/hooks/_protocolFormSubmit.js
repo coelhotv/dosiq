@@ -1,4 +1,5 @@
 import { prepareDataToSave } from './protocolFormUtils'
+import { medicineService } from '@shared/services'
 
 export async function submitProtocolForm({
   formData,
@@ -13,6 +14,24 @@ export async function submitProtocolForm({
 }) {
   setIsSubmitting(true)
   try {
+    // Densidade (units_per_ml) é física do medicamento, capturada no tratamento
+    // quando a dose é em gotas/UI (022 Fase C). Persiste no medicamento (RPC lê de lá).
+    if (
+      formData.medicine_id &&
+      formData.intake_unit &&
+      formData.intake_unit !== 'ml' &&
+      formData.units_per_ml
+    ) {
+      try {
+        await medicineService.update(formData.medicine_id, {
+          units_per_ml: Number(formData.units_per_ml),
+        })
+      } catch (densityErr) {
+        // Não bloqueia o tratamento; RPC usa fallback 20 se densidade não gravar.
+        console.error('Falha ao gravar densidade no medicamento:', densityErr)
+      }
+    }
+
     const dataToSave = prepareDataToSave(formData, enableTitration)
     const savedProtocol = await onSave(dataToSave)
 

@@ -65,7 +65,10 @@ export function useTreatmentWizardState({
     ]
   )
 
-  const isMedicineValid = med.medicineMode === 'existing' ? !!med.selectedExistingMedicine : med.medicineData.name.length >= 2 && med.medicineData.dosage_per_pill > 0
+  const isMedicineValid =
+    med.medicineMode === 'existing'
+      ? !!med.selectedExistingMedicine
+      : med.medicineData.name.length >= 2 && med.medicineData.dosage_per_pill > 0
   const isProtocolValid =
     prot.protocolData.time_schedule.length > 0 &&
     prot.protocolData.dosage_per_intake > 0 &&
@@ -81,6 +84,8 @@ export function useTreatmentWizardState({
       type: 'medicamento',
       dosage_per_pill: '',
       dosage_unit: 'mg',
+      units_per_ml: '',
+      presentation: 'comprimido',
       laboratory: '',
       active_ingredient: '',
       therapeutic_class: null,
@@ -90,6 +95,8 @@ export function useTreatmentWizardState({
       frequency: 'diário',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
+      intake_unit: '',
+      units_per_ml: '',
       start_date: formatLocalDate(getNow()),
       weekdays: [],
     })

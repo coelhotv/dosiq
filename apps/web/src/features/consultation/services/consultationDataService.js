@@ -108,8 +108,8 @@ function _extractActiveMedicines(medicines, protocols) {
       const dosagePerPill = medicine.dosage_per_pill || null
       const dosageUnit = medicine.dosage_unit || 'mg'
 
-      // Calcula dosagens baseadas nos protocolos
-      const dosageInfo = _calculateDosageInfo(medicineProtocols, dosagePerPill)
+      // Calcula dosagens baseadas nos protocolos (liquid-aware — 022)
+      const dosageInfo = _calculateDosageInfo(medicineProtocols, dosagePerPill, medicine)
 
       return {
         id: medicine.id,
@@ -127,49 +127,63 @@ function _extractActiveMedicines(medicines, protocols) {
  * Calcula informações de dosagem baseado nos protocolos
  * @private
  */
-function _calculateDosageInfo(protocols, dosagePerPill) {
+function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
   if (!protocols || protocols.length === 0) {
-    return {
-      dosagePerIntake: null,
-      timesPerDay: null,
-      dailyDosage: null,
-    }
+    return { dosagePerIntake: null, timesPerDay: null, dailyDosage: null, isLiquid: false, intakeUnit: null }
   }
 
-  // Calcula totais agregando todos os protocolos do medicamento
-  let totalDosagePerIntake = 0
+  // Líquidos (022): a dose já está na unidade de tomada (gotas/ml/UI). NÃO multiplicar
+  // por dosagePerPill (concentração) — isso gerava "10000 mg/ml" absurdos. O total
+  // diário fica na própria unidade de tomada; a concentração é exibida à parte.
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+
   let totalTimesPerDay = 0
+  let liquidDailyDose = 0 // soma dose×vezes na unidade de tomada (líquidos)
+  let totalDosagePerIntake = 0 // soma em mg (sólidos)
+  let intakeUnit = null
 
   protocols.forEach((protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
-    const pillsPerIntake = protocol.dosage_per_intake || 1
-
-    // Se temos dosagePerPill (mg por comprimido), calcula dosagem em mg
-    // Senão, retorna null para dosagens
-    const dosagePerIntake = dosagePerPill ? pillsPerIntake * dosagePerPill : null
-
-    if (dosagePerIntake !== null) {
-      totalDosagePerIntake += dosagePerIntake
-    }
+    const dosePerIntake = protocol.dosage_per_intake || 1
     totalTimesPerDay += timesPerDay
+
+    if (isLiquid) {
+      intakeUnit = intakeUnit || protocol.intake_unit || 'ml'
+      liquidDailyDose += dosePerIntake * timesPerDay
+    } else if (dosagePerPill) {
+      totalDosagePerIntake += dosePerIntake * dosagePerPill
+    }
   })
 
-  // Se não conseguimos calcular nenhuma dosagem, retorna nulls
+  if (isLiquid) {
+    return {
+      dosagePerIntake: null,
+      timesPerDay: totalTimesPerDay,
+      dailyDosage: liquidDailyDose,
+      isLiquid: true,
+      intakeUnit,
+    }
+  }
+
   if (totalDosagePerIntake === 0) {
     return {
       dosagePerIntake: null,
       timesPerDay: totalTimesPerDay > 0 ? totalTimesPerDay : null,
       dailyDosage: null,
+      isLiquid: false,
+      intakeUnit: null,
     }
   }
 
-  // Dosagem diária total = dosagem por tomada × vezes ao dia
+  // Dosagem diária total = dosagem por tomada × vezes ao dia (sólidos)
   const dailyDosage = totalDosagePerIntake * totalTimesPerDay
 
   return {
     dosagePerIntake: totalDosagePerIntake,
     timesPerDay: totalTimesPerDay,
     dailyDosage,
+    isLiquid: false,
+    intakeUnit: null,
   }
 }
 

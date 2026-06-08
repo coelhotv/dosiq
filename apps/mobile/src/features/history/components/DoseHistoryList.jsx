@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { parseISO } from '@dosiq/core'
+import { parseISO, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
 import { ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 
@@ -58,7 +58,7 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
             <Text style={styles.medicineName} numberOfLines={1}>{medicineName}</Text>
             {item.dosage_per_pill != null && item.dosage_unit ? (
               <View style={styles.pill}>
-                <Text style={styles.pillText}>{item.dosage_per_pill}{item.dosage_unit}</Text>
+                <Text style={styles.pillText}>{formatConcentration(item.dosage_per_pill, item.dosage_unit)}</Text>
               </View>
             ) : null}
           </View>
@@ -66,6 +66,9 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
             <Text style={styles.subtitle} numberOfLines={1}>
               {(() => {
                 const qty = item.dosage_per_intake
+                // Líquido (022): unidade de TOMADA do tratamento (gotas/ml/UI), não a
+                // unidade do medicamento — ex: "10 UI", nunca "10 ui/ml".
+                if (isLiquidMedicine(item)) return formatDose(qty, item.intake_unit || 'ml')
                 const unit = item.dosage_unit?.toLowerCase()
                 if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
                 if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`

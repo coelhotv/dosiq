@@ -1,8 +1,14 @@
+import { useEffect } from 'react'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import Button from '@shared/components/ui/Button'
-import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import {
+  FREQUENCIES,
+  FREQUENCY_LABELS,
+  INTAKE_UNITS,
+  INTAKE_UNIT_LABELS,
+} from '@schemas/protocolSchema'
 import { getFieldDescribedBy } from '@utils/formUtils'
-import { formatActiveIngredientFormula } from '@dosiq/core'
+import { formatDoseHint } from '@dosiq/core'
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
@@ -27,6 +33,31 @@ export default function ProtocolFormDosesSection({
   removeTime,
   medicine,
 }) {
+  // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  // ui/ml (insulina) → UI; demais líquidos (mg/ml xarope) → ml por padrão.
+  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
+  // Densidade só é relevante quando a dose NÃO é em ml (gotas/UI precisam converter p/ ml).
+  const needsDensity = isLiquid && formData.intake_unit && formData.intake_unit !== 'ml'
+  const densityLabel = formData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
+  const densityHint =
+    formData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+  const defaultDensity = formData.intake_unit === 'UI' ? 100 : 20
+
+  // Garante intake_unit preenchido p/ líquidos (evita null silencioso no debito).
+  useEffect(() => {
+    if (isLiquid && !formData.intake_unit) {
+      handleChange({ target: { name: 'intake_unit', value: defaultIntake } })
+    }
+  }, [isLiquid, formData.intake_unit, defaultIntake, handleChange])
+
+  // Prefill densidade padrão quando passa a precisar (gotas/UI) e está vazia.
+  useEffect(() => {
+    if (needsDensity && !formData.units_per_ml) {
+      handleChange({ target: { name: 'units_per_ml', value: String(defaultDensity) } })
+    }
+  }, [needsDensity, formData.units_per_ml, defaultDensity, handleChange])
+
   const handleWeekdayToggle = (day) => {
     const currentWeekdays = formData.weekdays || []
     const isSelected = currentWeekdays.includes(day)
@@ -93,14 +124,50 @@ export default function ProtocolFormDosesSection({
               aria-invalid={Boolean(errors.dosage_per_intake)}
             />
           </ShakeEffect>
+          {medicine && (
+            <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+              ✨ {formatDoseHint(formData.dosage_per_intake, formData.intake_unit, medicine)}
+            </span>
+          )}
+          {isLiquid && (
+            <select
+              name="intake_unit"
+              value={formData.intake_unit || defaultIntake}
+              onChange={handleChange}
+              className="intake-unit-select"
+              aria-label="Unidade de tomada"
+              style={{ marginTop: '6px' }}
+            >
+              {INTAKE_UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {INTAKE_UNIT_LABELS[unit] || unit}
+                </option>
+              ))}
+            </select>
+          )}
+          {needsDensity && (
+            <div style={{ marginTop: '8px' }}>
+              <label htmlFor="units_per_ml" style={{ fontSize: '13px' }}>
+                {densityLabel}
+              </label>
+              <input
+                type="number"
+                id="units_per_ml"
+                name="units_per_ml"
+                value={formData.units_per_ml}
+                onChange={handleChange}
+                placeholder={String(defaultDensity)}
+                min="0"
+                step="any"
+              />
+              <small className="field-hint" style={{ display: 'block' }}>
+                {densityHint}.
+              </small>
+            </div>
+          )}
           {errors.dosage_per_intake && (
             <span id="dosage_per_intake-error" className="error-message">
               {errors.dosage_per_intake}
-            </span>
-          )}
-          {medicine && (
-            <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-              ✨ {formatActiveIngredientFormula(formData.dosage_per_intake, medicine.dosage_per_pill, medicine.dosage_unit)}
             </span>
           )}
         </div>

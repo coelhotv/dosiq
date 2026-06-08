@@ -10,7 +10,7 @@
 
 import { motion } from 'framer-motion'
 import { parseISO } from '@utils/dateUtils'
-import { formatActiveIngredientHint } from '@dosiq/core'
+import { formatIntakeDose } from '@dosiq/core'
 import './DoseListItem.css'
 
 /**
@@ -70,11 +70,12 @@ export function DoseListItem({ log, isTaken, status, scheduledTime, onClick, ind
     effectiveStatus === 'taken'
       ? log.quantity_taken || 1
       : log.expectedQuantity || log.quantity_taken || 1
-  const quantityLabel = formatActiveIngredientHint(
+  // Líquido (022): unidade de tomada do tratamento (log.intake_unit / protocol).
+  const quantityLabel = formatIntakeDose(
     quantity,
-    log.medicine?.dosage_per_pill,
-    log.medicine?.dosage_unit
-  ) || `${quantity} un.`
+    log.intake_unit ?? log.protocol?.intake_unit ?? null,
+    log.medicine
+  )
 
   // Horário real se tomada, ou previsto se perdida/agendada
   const displayTime =

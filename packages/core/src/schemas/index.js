@@ -17,8 +17,11 @@ export {
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
   DOSAGE_UNITS,
+  DOSAGE_UNIT_LABELS,
   MEDICINE_TYPES,
   MEDICINE_TYPE_LABELS,
+  PRESENTATIONS,
+  PRESENTATION_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
 } from './medicineSchema.js'
@@ -37,6 +40,8 @@ export {
   getProtocolErrorMessage,
   FREQUENCIES,
   FREQUENCY_LABELS,
+  INTAKE_UNITS,
+  INTAKE_UNIT_LABELS,
   WEEKDAYS,
   WEEKDAY_LABELS,
 } from './protocolSchema.js'

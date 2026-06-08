@@ -8,7 +8,7 @@
 
 import { View, Text, StyleSheet } from 'react-native'
 import { Package, TrendingDown, Clock, Tag } from 'lucide-react-native'
-import { formatBRL, formatActiveIngredientShort } from '@dosiq/core'
+import { formatBRL, formatActiveIngredientShort, isLiquidMedicine, formatNumberPtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 /**
@@ -27,6 +27,7 @@ export default function StockIndicators({
   dailyConsumption = 0,
   daysRemaining = null,
   avgUnitPrice = 0,
+  costPerDose = null,
   medicine = null,
 }) {
   // Cor de alerta para "Dias restantes": <7 vermelho · <14 amarelo · senão neutro.
@@ -39,21 +40,26 @@ export default function StockIndicators({
           ? colors.status.warning
           : colors.text.primary
 
+  // Líquidos (022): saldo/consumo em ml (sem hint de princípio ativo, custo /ml).
+  const isLiquid = isLiquidMedicine(medicine)
+  const countSuffix = isLiquid ? 'ml' : 'un.'
+  const fmtCount = (n) => (isLiquid ? formatNumberPtBR(n) : String(n))
+
   return (
     <View style={styles.grid}>
       <Kpi
         icon={<Package size={18} color={colors.primary[700]} />}
         label="Saldo"
-        value={String(saldo)}
-        suffix="un."
-        hint={formatActiveIngredientShort(saldo, medicine?.dosage_per_pill, medicine?.dosage_unit)}
+        value={fmtCount(saldo)}
+        suffix={countSuffix}
+        hint={isLiquid ? null : formatActiveIngredientShort(saldo, medicine?.dosage_per_pill, medicine?.dosage_unit)}
       />
       <Kpi
         icon={<TrendingDown size={18} color={colors.primary[700]} />}
         label="Consumo / dia"
-        value={String(dailyConsumption)}
-        suffix="un."
-        hint={formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)}
+        value={fmtCount(dailyConsumption)}
+        suffix={countSuffix}
+        hint={isLiquid ? null : formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)}
       />
       <Kpi
         icon={<Clock size={18} color={colors.primary[700]} />}
@@ -62,12 +68,20 @@ export default function StockIndicators({
         suffix={daysRemaining == null ? null : 'dias'}
         valueColor={daysColor}
       />
-      <Kpi
-        icon={<Tag size={18} color={colors.primary[700]} />}
-        label="Custo médio"
-        value={formatBRL(avgUnitPrice)}
-        suffix="/ un."
-      />
+      {costPerDose != null ? (
+        <Kpi
+          icon={<Tag size={18} color={colors.primary[700]} />}
+          label="Custo por dose"
+          value={formatBRL(costPerDose)}
+        />
+      ) : (
+        <Kpi
+          icon={<Tag size={18} color={colors.primary[700]} />}
+          label="Custo médio"
+          value={formatBRL(avgUnitPrice)}
+          suffix={`/ ${countSuffix}`}
+        />
+      )}
     </View>
   )
 }

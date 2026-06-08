@@ -5,6 +5,7 @@ import {
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
+import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine } from '@dosiq/core'
 
 function getPriceEntries(medicine = {}) {
   if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
@@ -135,21 +136,11 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
 
   const { medicines: validatedMedicines, protocols: validatedProtocols } = validation.data
 
-  // OTIMIZAÇÃO: Pré-calcula consumo diário para todos os medicamentos de uma só vez.
-  // Reduz complexidade de O(M*P) para O(M+P) (medicamentos * protocolos → medicamentos + protocolos)
-  const dailyIntakeMap = validatedProtocols
-    .filter((p) => p.active && p.medicine_id)
-    .reduce((map, protocol) => {
-      const intakesPerDay = protocol.time_schedule?.length || 0
-      const dosagePerIntake = protocol.dosage_per_intake || 0
-      const protocolDailyIntake = dosagePerIntake * intakesPerDay
-      map[protocol.medicine_id] = (map[protocol.medicine_id] || 0) + protocolDailyIntake
-      return map
-    }, {})
-
   const items = validatedMedicines
     .map((medicine) => {
-      const dailyIntake = dailyIntakeMap[medicine.id] || 0
+      // Líquidos (022): consumo em ml (UI/gotas ÷ densidade) p/ bater com avgUnitPrice
+      // (R$/ml). Sem conversão, custo inflava (ex: insulina 100 UI × R$/ml × 30).
+      const dailyIntake = coreDailyIntake(medicine.id, validatedProtocols, medicine)
       if (dailyIntake === 0) return null
 
       const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(medicine))
@@ -246,24 +237,17 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
     }
   })
 
-  // Mapa pré-calculado de consumo teórico diário por medicamento
-  // Evita O(M*P) dentro do loop: calcular consumo diário para cada med em O(P) uma única vez
-  const theoreticalDailyIntakeMap = {}
-  validatedProtocols.forEach((p) => {
-    if (p.active && p.medicine_id) {
-      const intakesPerDay = p.time_schedule?.length || 0
-      const dosagePerIntake = p.dosage_per_intake || 0
-      const protocolDailyIntake = dosagePerIntake * intakesPerDay
-      theoreticalDailyIntakeMap[p.medicine_id] =
-        (theoreticalDailyIntakeMap[p.medicine_id] || 0) + protocolDailyIntake
-    }
-  })
-
   const items = validatedMedicines
     .filter((med) => activeMedicineIds.has(med.id))
     .map((med) => {
       const medLogs = logsByMedicine[med.id] || []
       const avgUnitPrice = calculateAvgUnitPrice(getPriceEntries(med))
+
+      // Líquidos (022): logs guardam quantity_taken na unidade de tomada (UI/gotas);
+      // o estoque/preço é em ml → converter cada tomada p/ ml. intake_unit vem do
+      // protocolo ativo do medicamento.
+      const liquid = isLiquidMedicine(med)
+      const intakeUnit = protocolsByMedicine[med.id]?.[0]?.intake_unit ?? null
 
       // Consumo real vs teórico
       const daysWithData = new Set(medLogs.map((l) => formatLocalDate(parseISO(l.taken_at)))).size
@@ -272,13 +256,16 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
       let isRealData
 
       if (daysWithData >= 14) {
-        // Consumo real: total de comprimidos consumidos / dias com dados
-        const totalConsumed = medLogs.reduce((sum, l) => sum + (l.quantity_taken ?? 0), 0)
+        // Consumo real: total consumido (convertido p/ ml se líquido) / dias com dados
+        const totalConsumed = medLogs.reduce((sum, l) => {
+          const qty = l.quantity_taken ?? 0
+          return sum + (liquid ? doseToMl(qty, intakeUnit, med.units_per_ml) : qty)
+        }, 0)
         dailyConsumption = daysWithData > 0 ? totalConsumed / daysWithData : 0
         isRealData = true
       } else {
-        // Fallback: consumo teórico baseado no mapa pré-calculado
-        dailyConsumption = theoreticalDailyIntakeMap[med.id] || 0
+        // Fallback: consumo teórico liquid-aware (core)
+        dailyConsumption = coreDailyIntake(med.id, validatedProtocols, med)
         isRealData = false
       }
 

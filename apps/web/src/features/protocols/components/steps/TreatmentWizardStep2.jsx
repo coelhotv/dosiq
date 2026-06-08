@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import Button from '@shared/components/ui/Button'
-import { FREQUENCIES, FREQUENCY_LABELS } from '@schemas/protocolSchema'
-import { formatActiveIngredientFormula } from '@dosiq/core'
+import { FREQUENCIES, FREQUENCY_LABELS, INTAKE_UNITS, INTAKE_UNIT_LABELS } from '@schemas/protocolSchema'
+import { formatDoseHint } from '@dosiq/core'
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
@@ -86,6 +87,30 @@ export default function TreatmentWizardStep2({
   isProtocolValid,
   medicine,
 }) {
+  // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
+  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
+  // Densidade só importa quando a dose não é em ml (gotas/UI → ml).
+  const needsDensity = isLiquid && protocolData.intake_unit && protocolData.intake_unit !== 'ml'
+  const densityLabel = protocolData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
+  const densityHint =
+    protocolData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+  const defaultDensity = protocolData.intake_unit === 'UI' ? 100 : 20
+
+  // Preenche intake_unit p/ líquidos (evita null silencioso no débito de estoque).
+  useEffect(() => {
+    if (isLiquid && !protocolData.intake_unit) {
+      updateProtocol('intake_unit', defaultIntake)
+    }
+  }, [isLiquid, protocolData.intake_unit, defaultIntake, updateProtocol])
+
+  // Prefill densidade padrão quando passa a precisar (gotas/UI) e está vazia.
+  useEffect(() => {
+    if (needsDensity && !protocolData.units_per_ml) {
+      updateProtocol('units_per_ml', String(defaultDensity))
+    }
+  }, [needsDensity, protocolData.units_per_ml, defaultDensity, updateProtocol])
+
   const handleWeekdayToggle = (day) => {
     const currentWeekdays = protocolData.weekdays || []
     const isSelected = currentWeekdays.includes(day)
@@ -161,9 +186,7 @@ export default function TreatmentWizardStep2({
       </div>
 
       <label className="wizard__label">
-        {medicine?.dosage_unit === 'gotas'
-          ? 'Gotas por dose'
-          : 'Dose por tomada (un.)'}
+        {isLiquid ? 'Dose por tomada' : 'Dose por tomada (un.)'}
         <input
           type="number"
           className="wizard__input"
@@ -171,11 +194,41 @@ export default function TreatmentWizardStep2({
           onChange={(e) => updateProtocol('dosage_per_intake', e.target.value)}
           min="0.1"
           step="0.1"
-          max="100"
+          max="1000"
         />
+        {isLiquid && (
+          <select
+            className="wizard__select"
+            style={{ marginTop: 6 }}
+            value={protocolData.intake_unit || defaultIntake}
+            onChange={(e) => updateProtocol('intake_unit', e.target.value)}
+            aria-label="Unidade de tomada"
+          >
+            {INTAKE_UNITS.map((unit) => (
+              <option key={unit} value={unit}>{INTAKE_UNIT_LABELS[unit] || unit}</option>
+            ))}
+          </select>
+        )}
+        {needsDensity && (
+          <div style={{ marginTop: 8 }}>
+            <label style={{ fontSize: 13 }}>
+              {densityLabel}
+              <input
+                type="number"
+                className="wizard__input"
+                value={protocolData.units_per_ml}
+                onChange={(e) => updateProtocol('units_per_ml', e.target.value)}
+                placeholder={String(defaultDensity)}
+                min="0"
+                step="any"
+              />
+            </label>
+            <small className="wizard__label-note">{densityHint}.</small>
+          </div>
+        )}
         {medicine && (
           <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-            ✨ {formatActiveIngredientFormula(protocolData.dosage_per_intake, medicine.dosage_per_pill, medicine.dosage_unit)}
+            ✨ {formatDoseHint(protocolData.dosage_per_intake, protocolData.intake_unit, medicine)}
           </span>
         )}
       </label>

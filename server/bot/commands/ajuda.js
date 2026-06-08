@@ -20,7 +20,6 @@ export async function handleAjuda(bot, msg) {
 /historico - Ver últimas doses registradas
 
 *Ações*
-/registrar - Registrar uma dose manualmente
 /adicionar_estoque - Adicionar medicamentos ao estoque
 /repor <nome> <qtd> - Atalho rápido para repor estoque
 /pausar <nome> - Pausar um protocolo
