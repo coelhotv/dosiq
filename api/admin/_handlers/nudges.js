@@ -93,6 +93,9 @@ export async function handleUpdateNudge(req, res, supabase) {
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Nudge não encontrado' })
+      }
       console.error('[Nudges API] Update error:', error)
       return res.status(500).json({ error: 'Failed to update nudge' })
     }
@@ -129,6 +132,9 @@ export async function handleToggleNudge(req, res, supabase) {
       .single()
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Nudge não encontrado' })
+      }
       console.error('[Nudges API] Toggle error:', error)
       return res.status(500).json({ error: 'Failed to toggle nudge' })
     }
