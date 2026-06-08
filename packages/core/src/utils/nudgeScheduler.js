@@ -2,7 +2,6 @@
  * nudgeScheduler — lógica pura de seleção e filtragem de nudges.
  *
  * Sem dependências de platform (browser/RN). Storage injetado via opts.
- * Exporta também TZ_RECONCILE_NUDGE: nudge local que substitui TzNudge/TzNudgeCard.
  */
 
 import { satisfiesSemver } from './semver.js'

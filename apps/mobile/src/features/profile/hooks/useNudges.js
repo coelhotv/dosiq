@@ -6,8 +6,9 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { buildNudgeList, dismissKey } from '@dosiq/core'
 import { ROUTES } from '@navigation/routes'
 import { navigationRef } from '@navigation/navigationRef'
+import Constants from 'expo-constants'
 
-const APP_VERSION = '0.15.0'
+const APP_VERSION = Constants.expoConfig?.version || '0.15.0'
 const CURRENT_PLATFORM = Platform.OS === 'android' ? 'android' : 'ios'
 
 const cacheKey = (view) => `nudges_cache:${view}`
@@ -30,13 +31,13 @@ async function saveCachedNudges(view, nudges) {
 }
 
 /**
- * Carrega as chaves de dismiss salvas no AsyncStorage.
+ * Carrega as chaves de dismiss salvas no AsyncStorage apenas para os nudges recebidos.
+ * Evita getAllKeys() que varre todo o storage independente do tamanho.
  */
-async function loadDismissedKeys() {
+async function loadDismissedKeys(keysToCheck) {
+  if (!keysToCheck || keysToCheck.length === 0) return new Set()
   try {
-    const keys = await AsyncStorage.getAllKeys()
-    const nudgeKeys = keys.filter((k) => /^[\w-]+:\d+$/.test(k))
-    const pairs = await AsyncStorage.multiGet(nudgeKeys)
+    const pairs = await AsyncStorage.multiGet(keysToCheck)
     const dismissed = new Set()
     for (const [key, value] of pairs) {
       if (value === '1') dismissed.add(key)
@@ -67,10 +68,7 @@ export function useNudges(targetView) {
     let active = true
 
     async function load() {
-      // 1. Carregar chaves de dismiss salvas
-      const savedDismissed = await loadDismissedKeys()
-
-      // 2. Buscar nudges remotos do Supabase; fallback para cache offline
+      // 1. Buscar nudges remotos do Supabase; fallback para cache offline
       let remoteNudges = []
       try {
         const { data } = await supabase
@@ -87,6 +85,10 @@ export function useNudges(targetView) {
       }
 
       if (!active) return
+
+      // 2. Carregar dismiss apenas para os nudges encontrados (evita getAllKeys)
+      const keysToCheck = remoteNudges.map((n) => `${n.id}:${n.version}`)
+      const savedDismissed = await loadDismissedKeys(keysToCheck)
 
       // 3. Calcular lista via buildNudgeList
       const list = buildNudgeList(remoteNudges, [], {
@@ -129,7 +131,9 @@ export function useNudges(targetView) {
         navigation.navigate(route)
       }
     } else if (n.action_type === 'open_url' && n.action_payload?.url) {
-      Linking.openURL(n.action_payload.url)
+      Linking.openURL(n.action_payload.url).catch((err) => {
+        if (__DEV__) console.error('[useNudges] Erro ao abrir URL:', err)
+      })
     }
   }, [navigation])
 

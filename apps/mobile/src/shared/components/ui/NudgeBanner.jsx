@@ -32,7 +32,7 @@ export default function NudgeBanner({ nudge, onAction, onDismiss }) {
         )}
       </View>
       <TouchableOpacity
-        onPress={() => onDismiss(nudge)}
+        onPress={() => onDismiss?.(nudge)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel="Dispensar aviso"
