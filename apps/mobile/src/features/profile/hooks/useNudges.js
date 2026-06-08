@@ -115,8 +115,10 @@ export function useNudges(targetView) {
     if (n.action_type === 'navigate') {
       const { tab, screen, route } = n.action_payload ?? {}
       if (tab && screen) {
-        // Rota aninhada: tab navigator → screen dentro do stack do tab
-        navigation.navigate(tab, { screen })
+        // initial: true garante que ProfileMain fica no stack antes de Settings
+        // (sem isso, React Nav v7 pode navegar com initial:false → stack=[Settings],
+        // e goBack() sobe para o Tab navigator em vez de voltar para ProfileMain)
+        navigation.navigate(tab, { screen, initial: true })
       } else if (route) {
         navigation.navigate(route)
       }
