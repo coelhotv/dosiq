@@ -9,7 +9,8 @@ import { logoutUser } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import LogoutSheet from '@profile/components/LogoutSheet'
-import TzNudgeCard from '@profile/components/TzNudgeCard'
+import NudgeBanner from '@shared/components/ui/NudgeBanner'
+import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
@@ -29,6 +30,7 @@ export default function ProfileScreen() {
   const { unreadCount, refreshBadge } = useUnreadBadgeCount(user?.id)
   const [logoutSheetOpen, setLogoutSheetOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const { nudge: profileNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('profile')
 
   const goToEdit = () => navigation.navigate(ROUTES.PROFILE_EDIT)
   const goToSettings = () => navigation.navigate(ROUTES.SETTINGS)
@@ -78,7 +80,8 @@ export default function ProfileScreen() {
             onRefresh={() => {
               refresh()
               refreshBadge()
-            }} 
+              refreshNudge()
+            }}
             colors={[colors.brand.primary]} 
             tintColor={colors.brand.primary}
           />
@@ -151,7 +154,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <TzNudgeCard />
+        <NudgeBanner nudge={profileNudge} onAction={handleNudgeAction} onDismiss={dismissNudge} />
 
         {/* Ordem (PO feedback #6): FERRAMENTAS → AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
         <View style={styles.section}>

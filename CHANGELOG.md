@@ -9,6 +9,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mobile (0.14.0 → 0.15.0)
+- **Added** (`minor`, PR #TBD): Épico 026 Fase 1 — sistema de nudges in-app. Substitui `TzNudgeCard` por `NudgeBanner` genérico; `useNudges('profile'|'dashboard')` busca nudges remotos do Supabase, injeta nudge local `TZ_RECONCILE_NUDGE`, migra dismiss legado (`dosiq_tz_nudge_dismissed → tz-reconcile:1`) e filtra dispensados via `AsyncStorage`. Dashboard exibe nudge quando sem doses urgentes. Preparado para nudges de versão de app e ativação de push via painel admin.
+
+### Shared/Core (nudges — 026)
+- **Added** (`minor`, PR #TBD): `semver.js` — `compareSemver(a,b)` e `satisfiesSemver(version,min,max)` puros, sem deps. `nudgeScheduler.js` — `buildNudgeList(remote,local,opts)` com filtragem por plataforma/datas/versão/dismiss e priorização. `TZ_RECONCILE_NUDGE` + `TZ_NUDGE_LEGACY_KEY` exportados. Storage injetado via `opts.dismissed` (Set).
+
+### Backend/Infra (DB — 026)
+- **Added** (`minor`, PR #TBD): Migration `plans/specs/026-activation-strategy/migrations/001_create_in_app_nudges.sql` — tabela admin-managed de nudges remotos com RLS (leitura authenticated), CHECKs de `target_view`/`action_type`/`platform`, e índices parciais por `target_view` e `platform`.
+
 ### Shared/Core (0.1.1-phase2 → 0.2.0-phase3)
 - **Added** (`minor`, PR #TBD): Medicamentos líquidos 022 **Fase C** (helpers de apresentação cross-platform web↔mobile). Novos em `doseUnit.js`: `isLiquidMedicine`, `stockUnitLabel`, `formatStockCount`, `formatStockQuantity`, `formatConcentration`, `formatIntakeDose`, `formatDoseItem`, `formatDoseHint` (regra: unidade nunca renderizada crua — UI maiúsculo / ml minúsculo). `adherenceLogic.js`: `doseToMl` + `calculateDailyIntake` liquid-aware (gotas/UI→ml). `doseZones.DoseItem` ganha `intakeUnit`/`unitsPerMl`. `costAnalysisSchema` preserva `intake_unit`/`units_per_ml`/`dosage_unit`. `medicineSchema`: `units_per_ml` agora **opcional** (densidade saiu do cadastro do medicamento → capturada no tratamento, contextual).
 - **Fixed** (`patch`, PR #TBD): `createStockRepository.decreaseStock` passa `p_user_id` — drift da assinatura 4-arg de `consume_stock_fifo` (Fase A) que quebrava o registro de dose de qualquer medicamento.
