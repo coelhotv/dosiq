@@ -11,8 +11,13 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 export default function NudgeBanner({ nudge, onAction, onDismiss }) {
   if (!nudge) return null
 
+  const payload = nudge.action_payload ?? {}
+  const emoji = payload.emoji ?? null
+  const ctaLabel = payload.label ?? 'Ver mais'
+
   return (
     <View style={styles.banner} accessibilityRole="alert">
+      {emoji && <Text style={styles.emoji}>{emoji}</Text>}
       <View style={styles.content}>
         <Text style={styles.title}>{nudge.title}</Text>
         <Text style={styles.body}>{nudge.body}</Text>
@@ -20,9 +25,9 @@ export default function NudgeBanner({ nudge, onAction, onDismiss }) {
           <TouchableOpacity
             onPress={() => onAction(nudge)}
             accessibilityRole="button"
-            accessibilityLabel={nudge.action_label ?? 'Ver mais'}
+            accessibilityLabel={ctaLabel}
           >
-            <Text style={styles.cta}>{nudge.action_label ?? 'Ver mais'}</Text>
+            <Text style={styles.cta}>{ctaLabel}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -50,6 +55,11 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     marginHorizontal: 16,
     marginBottom: spacing[4],
+  },
+  emoji: {
+    fontSize: 24,
+    marginRight: 2,
+    lineHeight: 28,
   },
   content: {
     flex: 1,
