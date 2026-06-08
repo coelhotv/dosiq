@@ -13,7 +13,7 @@ import {
   PLATFORM_LABELS,
 } from '@dosiq/core/schemas/nudgeSchema'
 import { parseLocalDatetime } from '@utils/dateUtils'
-import { MOBILE_ROUTES } from './nudgeConstants'
+import { getRouteOptions, buildNavigatePayload } from './nudgeFormUtils'
 
 export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoading }) {
   const [formData, setFormData] = useState(
@@ -64,13 +64,13 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
       newErrors.body = 'Máximo 200 caracteres'
 
     if (formData.start_at && formData.end_at) {
-      if (new Date(formData.start_at) > new Date(formData.end_at)) {
+      if (parseLocalDatetime(formData.start_at) > parseLocalDatetime(formData.end_at)) {
         newErrors.dates = 'Data fim deve ser após data início'
       }
     }
 
     if (formData.action_type === 'navigate') {
-      if (!formData.action_payload?.screen)
+      if (!formData.action_payload?.screen && !formData.action_payload?.route)
         newErrors.action_payload = 'Tela obrigatória para navegação'
     } else if (formData.action_type === 'open_url') {
       if (!formData.action_payload?.url) newErrors.action_payload = 'URL obrigatória'
@@ -101,7 +101,9 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
   if (!isOpen) return null
 
   return (
+    // eslint-disable-next-line no-restricted-syntax
     <div className="nudges-admin__modal-overlay" onClick={onClose}>
+      {/* eslint-disable-next-line no-restricted-syntax */}
       <div className="nudges-admin__modal" onClick={(e) => e.stopPropagation()}>
         <div className="nudges-admin__modal-header">
           <h2>{isEditMode ? 'Editar Nudge' : 'Criar Novo Nudge'}</h2>
@@ -144,7 +146,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
 
             <div className="form-group">
               <label htmlFor="body">
-                Corpo <span className="required">*</span>
+                Descrição <span className="required">*</span>
               </label>
               <textarea
                 id="body"
@@ -167,7 +169,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
 
             <div className="form-group-row">
               <div className="form-group">
-                <label htmlFor="target_view">Tela Alvo</label>
+                <label htmlFor="target_view">Superfície de exibição</label>
                 <select
                   id="target_view"
                   value={formData.target_view}
@@ -229,26 +231,68 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
             <legend>Ação Específica</legend>
 
             {formData.action_type === 'navigate' && (
-              <div className="form-group">
-                <label htmlFor="screen">
-                  Tela para Navegar <span className="required">*</span>
-                </label>
-                <select
-                  id="screen"
-                  value={formData.action_payload?.screen || ''}
-                  onChange={(e) => handleActionPayloadChange('screen', e.target.value)}
-                  className={errors.action_payload ? 'input-error' : ''}
-                >
-                  <option value="">Selecione uma tela...</option>
-                  {/* eslint-disable-next-line no-restricted-syntax */}
-                  {Object.entries(MOBILE_ROUTES).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                {errors.action_payload && <small>{errors.action_payload}</small>}
-              </div>
+              <>
+                <div className="form-group">
+                  <label htmlFor="navigate_route">
+                    Tela para Navegar <span className="required">*</span>
+                  </label>
+                  <select
+                    id="navigate_route"
+                    value={formData.action_payload?.route || formData.action_payload?.screen || ''}
+                    onChange={(e) => {
+                      const selectedRoute = e.target.value
+                      const payload = buildNavigatePayload({
+                        selectedRoute,
+                        label: formData.action_payload?.label,
+                        emoji: formData.action_payload?.emoji,
+                      })
+                      setFormData((prev) => ({
+                        ...prev,
+                        action_payload: payload,
+                      }))
+                    }}
+                    className={errors.action_payload ? 'input-error' : ''}
+                  >
+                    <option value="">Selecione uma tela...</option>
+                    {getRouteOptions().map((route) => (
+                      <option key={route.value} value={route.value}>
+                        {route.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.action_payload && <small>{errors.action_payload}</small>}
+                </div>
+
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label htmlFor="navigate_label">Rótulo do Botão (opcional)</label>
+                    <input
+                      type="text"
+                      id="navigate_label"
+                      value={formData.action_payload?.label || ''}
+                      onChange={(e) => {
+                        const newLabel = e.target.value
+                        handleActionPayloadChange('label', newLabel)
+                      }}
+                      placeholder="Ex: Ver agora"
+                      maxLength={50}
+                    />
+                    <small>{(formData.action_payload?.label || '').length}/50</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="navigate_emoji">Emoji (opcional)</label>
+                    <input
+                      type="text"
+                      id="navigate_emoji"
+                      maxLength={2}
+                      value={formData.action_payload?.emoji || ''}
+                      onChange={(e) => handleActionPayloadChange('emoji', e.target.value)}
+                      placeholder="🎯"
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {formData.action_type === 'open_url' && (
@@ -395,6 +439,7 @@ function isValidUrl(string) {
   try {
     new URL(string)
     return true
+    // eslint-disable-next-line no-unused-vars
   } catch (_) {
     return false
   }

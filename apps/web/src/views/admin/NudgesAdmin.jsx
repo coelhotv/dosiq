@@ -12,6 +12,7 @@ import {
   ToggleRight,
   ToggleLeft,
 } from 'lucide-react'
+import { parseISO } from '@utils/dateUtils'
 import Loading from '@shared/components/ui/Loading'
 import Button from '@shared/components/ui/Button'
 import { useNudgesAdminState } from './useNudgesAdminState'
@@ -213,12 +214,12 @@ export default function NudgesAdmin({ onBack }) {
                     </span>
                     {nudge.start_at && (
                       <span className="nudges-admin__detail">
-                        Início: {new Date(nudge.start_at).toLocaleDateString('pt-BR')}
+                        Início: {parseISO(nudge.start_at).toLocaleDateString('pt-BR')}
                       </span>
                     )}
                     {nudge.end_at && (
                       <span className="nudges-admin__detail">
-                        Fim: {new Date(nudge.end_at).toLocaleDateString('pt-BR')}
+                        Fim: {parseISO(nudge.end_at).toLocaleDateString('pt-BR')}
                       </span>
                     )}
                   </div>
