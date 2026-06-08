@@ -192,6 +192,38 @@ export function formatIntakeDose(qty, intakeUnit, medicine) {
 }
 
 /**
+ * Hint de dose para formulários (✨ Equivale a…). Líquido → unidade de tomada +
+ * ≈ml (formatIntakeDose); sólido → equivalência de princípio ativo. Centraliza o
+ * que era formatActiveIngredientFormula cru (só-sólido) nos forms de tratamento.
+ *
+ * @param {number|string} qty - dose por tomada
+ * @param {string|null} intakeUnit - gotas|ml|UI (líquidos)
+ * @param {{dosage_unit?: string, dosage_per_pill?: number, units_per_ml?: number}|null} medicine
+ * @returns {string}
+ */
+export function formatDoseHint(qty, intakeUnit, medicine) {
+  if (isLiquidMedicine(medicine)) return formatIntakeDose(qty, intakeUnit, medicine)
+  return formatActiveIngredientFormula(qty, medicine?.dosage_per_pill, medicine?.dosage_unit)
+}
+
+/**
+ * Atalho p/ a shape camelCase do DoseItem (doseZones) e cards do dashboard/web.
+ * Converte para o contrato de formatIntakeDose. Centraliza a exibição de dose
+ * (líquido na unidade de tomada + ≈ml; sólido com hint) entre web e mobile.
+ *
+ * @param {{dosagePerIntake?: number, intakeUnit?: string|null, dosageUnit?: string|null, dosagePerPill?: number|null, unitsPerMl?: number|null}} item
+ * @returns {string}
+ */
+export function formatDoseItem(item) {
+  if (!item) return ''
+  return formatIntakeDose(item.dosagePerIntake ?? 1, item.intakeUnit, {
+    dosage_unit: item.dosageUnit,
+    dosage_per_pill: item.dosagePerPill,
+    units_per_ml: item.unitsPerMl,
+  })
+}
+
+/**
  * Retorna apenas o valor de concentração do princípio ativo correspondente.
  * Usado para hints em linhas separadas (como nos indicadores do Estoque).
  *

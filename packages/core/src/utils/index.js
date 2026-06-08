@@ -93,6 +93,8 @@ export {
   formatDose,
   formatNumberPtBR,
   formatIntakeDose,
+  formatDoseItem,
+  formatDoseHint,
   formatConcentration,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,

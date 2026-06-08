@@ -67,6 +67,9 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
     frequency: _getFrequency(protocol, initialValues),
     time_schedule: _getTimeSchedule(protocol, initialValues),
     dosage_per_intake: _getDosagePerIntake(protocol, initialValues),
+    intake_unit: protocol?.intake_unit ?? initialValues?.intake_unit ?? null,
+    // Densidade do medicamento (gotas/UI por ml) — editável aqui (022 Fase C), grava no medicine.
+    units_per_ml: protocol?.medicine?.units_per_ml ?? preselectedMedicine?.units_per_ml ?? '',
     target_dosage: _getTargetDosage(protocol, initialValues),
     titration_status: _getTitrationStatus(protocol, initialValues),
     titration_schedule: _getTitrationSchedule(protocol, initialValues),
@@ -106,8 +109,9 @@ function _validateTimeSchedule(timeSchedule, errors) {
 }
 
 function _validateDosagePerIntake(dosage, errors) {
-  if (dosage === '' || dosage === null || dosage < 0 || dosage > 100) {
-    errors.dosage_per_intake = 'Dosagem deve estar entre 0 e 100'
+  // Cap 1000 (Fase B): líquidos podem ter doses maiores em gotas/ml/UI.
+  if (dosage === '' || dosage === null || dosage < 0 || dosage > 1000) {
+    errors.dosage_per_intake = 'Dosagem deve estar entre 0 e 1000'
   }
 }
 
@@ -156,6 +160,7 @@ export const prepareDataToSave = (formData, enableTitration) => {
     frequency: formData.frequency.trim(),
     time_schedule: formData.time_schedule,
     dosage_per_intake: parseFloat(formData.dosage_per_intake),
+    intake_unit: formData.intake_unit || null,
     target_dosage: (formData.target_dosage ?? '') !== '' ? parseFloat(formData.target_dosage) : null,
     titration_status: isTitrating ? 'titulando' : formData.titration_status,
     titration_schedule: isTitrating ? formData.titration_schedule : [],

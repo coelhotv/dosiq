@@ -5,6 +5,7 @@ import {
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
 } from '@schemas/medicineSchema.js'
+import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
 import { getFieldDescribedBy } from '@utils/formUtils.js'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
 import LaboratoryAutocomplete from '@features/medications/components/LaboratoryAutocomplete.jsx'
@@ -21,6 +22,8 @@ export default function MedicineFormDosageInfo({
   handleLaboratorySelect,
   medicine,
 }) {
+  const liquid = isLiquidUnit(formData.dosage_unit)
+
   return (
     <>
       <div className="form-group">
@@ -74,6 +77,14 @@ export default function MedicineFormDosageInfo({
       <div className="form-group">
         <label htmlFor="dosage_per_pill">
           Concentração <strong>(Específica da sua prescrição)</strong>
+          {liquid && (
+            <span
+              className="autocomplete-badge"
+              title="Medicamento líquido (concentração por ml)"
+            >
+              💧 Líquido
+            </span>
+          )}
         </label>
         <div
           className="dosage-input-group"

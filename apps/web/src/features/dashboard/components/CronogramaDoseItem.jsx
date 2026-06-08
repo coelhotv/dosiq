@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { classifyDose } from '@dashboard/hooks/useDoseZones'
 
-import { formatActiveIngredientHint } from '@dosiq/core'
+import { formatDoseItem, formatConcentration } from '@dosiq/core'
 
 /**
  * Status do card a partir do instante ABSOLUTO da ocorrência + sua tolerância
@@ -62,17 +62,13 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
             <span className="cronograma-dose-card__title">{dose.medicineName}</span>
             {dose.dosagePerPill && dose.dosageUnit && (
               <span className="cronograma-dose-card__strength">
-                {dose.dosagePerPill}{dose.dosageUnit}
+                {formatConcentration(dose.dosagePerPill, dose.dosageUnit)}
               </span>
             )}
           </div>
           <div className="cronograma-dose-card__intake-row">
             <span className="cronograma-dose-card__intake">
-              {formatActiveIngredientHint(
-                dose.dosagePerIntake,
-                dose.dosagePerPill,
-                dose.dosageUnit
-              ) || `${dose.dosagePerIntake} un.`}
+              {formatDoseItem(dose)}
             </span>
             {showStockBadge && (
               <span className={`cronograma-dose-card__stock-badge cronograma-dose-card__stock-badge--${stockStatus}`}>

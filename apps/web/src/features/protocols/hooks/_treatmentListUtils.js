@@ -1,7 +1,7 @@
 import { getNow } from '@utils/dateUtils'
-import { resolveTreatmentStatus, getProtocolDays, formatActiveIngredientHint } from '@dosiq/core'
+import { resolveTreatmentStatus, getProtocolDays, formatIntakeDose, formatConcentration } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
-import { getTitrationSummary, isTitrationActive, formatDose } from '@protocols/services/titrationService'
+import { getTitrationSummary, isTitrationActive } from '@protocols/services/titrationService'
 
 export const FREQUENCY_LABELS = {
   diario: 'Diário',
@@ -80,13 +80,11 @@ export function resolveGroup(protocol) {
   }
 }
 
-function _computeIntakeLabel(dosage, medicine) {
+function _computeIntakeLabel(protocol) {
+  const dosage = protocol?.dosage_per_intake
   if (dosage == null) return '—'
-  return formatActiveIngredientHint(
-    dosage,
-    medicine?.dosage_per_pill,
-    medicine?.dosage_unit
-  ) || `${dosage} un.`
+  // Líquido → unidade de tomada (gotas/ml/UI) + ≈ml; sólido → hint princípio ativo.
+  return formatIntakeDose(dosage, protocol.intake_unit, protocol.medicine)
 }
 
 function _computeNextDoseTime(timeSchedule) {
@@ -100,7 +98,7 @@ function _computeNextDoseTime(timeSchedule) {
 
 function _computeConcentrationLabel(medicine) {
   if (!medicine?.dosage_per_pill || !medicine?.dosage_unit) return null
-  return `${medicine.dosage_per_pill}${medicine.dosage_unit}`
+  return formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
 }
 
 function _computeTreatmentPlanInfo(treatmentPlan) {
@@ -112,15 +110,12 @@ function _computeTreatmentPlanInfo(treatmentPlan) {
   }
 }
 
-function _computeMedicineInfo(medicine, dosagePerIntake) {
+function _computeMedicineInfo(protocol) {
+  const medicine = protocol?.medicine
   return {
     medicineName: medicine?.name || '—',
     medicineType: medicine?.type || 'medicamento',
-    dosageLabel: formatDose(
-      dosagePerIntake,
-      medicine?.dosage_unit || 'mg',
-      medicine?.dosage_per_pill
-    ),
+    dosageLabel: formatIntakeDose(protocol?.dosage_per_intake, protocol?.intake_unit, medicine),
     concentrationLabel: _computeConcentrationLabel(medicine),
     therapeuticClass: medicine?.therapeutic_class || null,
   }
@@ -143,10 +138,10 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     protocols: [protocol],
   })
 
-  const intakeLabel = _computeIntakeLabel(protocol.dosage_per_intake, protocol.medicine)
+  const intakeLabel = _computeIntakeLabel(protocol)
   const nextDoseTime = _computeNextDoseTime(protocol.time_schedule)
   const treatmentPlanInfo = _computeTreatmentPlanInfo(protocol.treatment_plan)
-  const medicineInfo = _computeMedicineInfo(protocol.medicine, protocol.dosage_per_intake)
+  const medicineInfo = _computeMedicineInfo(protocol)
   const times = Array.isArray(protocol.time_schedule) ? protocol.time_schedule : []
 
   let frequencyLabel = FREQUENCY_LABELS[protocol.frequency] || protocol.frequency

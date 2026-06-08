@@ -22,6 +22,7 @@ export function useWizardNavigation(initialStep) {
 
 const _MEDICINE_DEFAULTS = {
   name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg',
+  units_per_ml: '', presentation: 'comprimido',
   laboratory: '', active_ingredient: '', therapeutic_class: null, regulatory_category: null,
 }
 
@@ -32,6 +33,8 @@ function _buildInitialMedicineData(m) {
     type: m.type || 'medicamento',
     dosage_per_pill: m.dosage_per_pill || '',
     dosage_unit: m.dosage_unit || 'mg',
+    units_per_ml: m.units_per_ml ?? '',
+    presentation: m.presentation || 'comprimido',
     laboratory: m.laboratory || '',
     active_ingredient: m.active_ingredient || '',
     therapeutic_class: m.therapeutic_class ?? null,
@@ -80,6 +83,8 @@ export function useWizardProtocol() {
     frequency: 'diário',
     time_schedule: ['08:00'],
     dosage_per_intake: 1,
+    intake_unit: '', // 022: unidade de tomada (líquidos); preenchida no passo 2
+    units_per_ml: '', // 022: densidade (gotas/UI → ml)
     start_date: formatLocalDate(getNow()),
     weekdays: [],
   })

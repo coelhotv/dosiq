@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
-import { formatActiveIngredientHint } from '@dosiq/core'
+import { formatStockQuantity, formatConcentration, stockUnitLabel } from '@dosiq/core'
 import './StockCardRedesign.css'
 
 const CTA_CONFIG = {
@@ -47,7 +47,7 @@ const _ICON_MAP = {
  * Exibe o preço UNITÁRIO — custo total seria irreal pois FIFO decrementa quantity.
  * Sem unit_price: "última compra: DD/MM".
  */
-function formatLastPurchase(lastPurchase) {
+function formatLastPurchase(lastPurchase, unitLabel = 'un.') {
   if (!lastPurchase) return null
   const date = parseLocalDate(lastPurchase.date).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -60,7 +60,7 @@ function formatLastPurchase(lastPurchase) {
     const priceLabel =
       lastPurchase.unitPrice < 0.01
         ? 'Grátis'
-        : `${lastPurchase.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un.`
+        : `${lastPurchase.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/${unitLabel}`
     text += ` · ${priceLabel}`
   }
 
@@ -113,7 +113,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
   const ctaConfig = CTA_CONFIG[stockStatus] || { label: 'Comprar Agora', Icon: ScanBarcode }
   const showCta = _shouldShowCta(isComplex, stockStatus)
-  const lastPurchaseText = formatLastPurchase(lastPurchase)
+  const lastPurchaseText = formatLastPurchase(lastPurchase, stockUnitLabel(medicine))
   const isSupplement = medicine.type === 'suplemento'
   const iconName = _getMedicineIconName(medicine.type)
   const MedicineIcon = _ICON_MAP[iconName]
@@ -136,8 +136,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
             <h3 className="stock-card-r__name">{medicine.name}</h3>
             {medicine.dosage_per_pill && (
               <span className="stock-card-r__dosage">
-                {medicine.dosage_per_pill}
-                {medicine.dosage_unit}
+                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
               </span>
             )}
           </div>
@@ -150,11 +149,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
       {isComplex && (
         <p className="stock-card-r__quantity">
-          {formatActiveIngredientHint(
-            totalQuantity,
-            medicine?.dosage_per_pill,
-            medicine?.dosage_unit
-          ) || `${totalQuantity} un.`}
+          {formatStockQuantity(totalQuantity, medicine)}
         </p>
       )}
 

@@ -1,4 +1,5 @@
 import { parseLocalDate } from '@utils/dateUtils'
+import { calculateDailyIntake } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -25,22 +26,15 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
       }
     })
 
-  // Calcular consumo diário por medicamento
-  const dailyIntakeMap = {}
-  protocols
-    .filter((p) => p.active !== false)
-    .forEach((p) => {
-      const daily = (p.dosage_per_intake || 0) * (p.time_schedule?.length || 0)
-      dailyIntakeMap[p.medicine_id] = (dailyIntakeMap[p.medicine_id] || 0) + daily
-    })
-
   return medicines.map((medicine) => {
     const stock = stockMap[medicine.id] || {
       entries: [],
       total: 0,
     }
     const purchases = purchaseHistoryMap[medicine.id] || []
-    const dailyIntake = dailyIntakeMap[medicine.id] || 0
+    // Líquidos (022): consumo convertido p/ ml (gotas/UI ÷ units_per_ml) para
+    // bater com o estoque (em ml). calculateDailyIntake é liquid-aware no core.
+    const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
     const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
     const stockStatus = getStockStatus(stock.total, daysRemaining)
     const barPercentage = getBarPercentage(stock.total, daysRemaining)
@@ -65,6 +59,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         name: medicine.name,
         dosage_per_pill: medicine.dosage_per_pill,
         dosage_unit: medicine.dosage_unit || 'mg',
+        units_per_ml: medicine.units_per_ml ?? null,
         type: medicine.type || 'medicamento',
       },
       entries: stock.entries,

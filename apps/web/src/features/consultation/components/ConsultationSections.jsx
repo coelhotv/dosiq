@@ -2,6 +2,7 @@
  * ConsultationSections — Seções reutilizáveis da ConsultationView.
  */
 import { motion } from 'framer-motion'
+import { formatConcentration, formatDose } from '@dosiq/core'
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -30,7 +31,19 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                 <tr key={medicine.id}>
                   <td className="medicine-name">{medicine.name}</td>
                   <td>
-                    {medicine.dosagePerIntake && medicine.timesPerDay ? (
+                    {medicine.isLiquid && medicine.timesPerDay ? (
+                      <span>
+                        {formatConcentration(medicine.dosagePerPill, medicine.dosageUnit)}
+                        <span className="dosage-detail">
+                          {' '}
+                          ({medicine.timesPerDay}x ao dia
+                          {medicine.dailyDosage
+                            ? `, ${formatDose(medicine.dailyDosage, medicine.intakeUnit || 'ml')}/dia`
+                            : ''}
+                          )
+                        </span>
+                      </span>
+                    ) : medicine.dosagePerIntake && medicine.timesPerDay ? (
                       <span>
                         {medicine.dosagePerIntake}
                         {medicine.dosageUnit}
@@ -45,8 +58,7 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                       </span>
                     ) : medicine.dosagePerPill ? (
                       <span>
-                        {medicine.dosagePerPill}
-                        {medicine.dosageUnit}
+                        {formatConcentration(medicine.dosagePerPill, medicine.dosageUnit)}
                       </span>
                     ) : (
                       <span className="dosage-unknown">Não informado</span>

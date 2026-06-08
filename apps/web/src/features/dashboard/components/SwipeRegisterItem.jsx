@@ -8,7 +8,7 @@ import {
 } from 'framer-motion'
 import PulseEffect from '@shared/components/ui/animations/PulseEffect'
 import { analyticsService } from '@dashboard/services/analyticsService'
-import { formatActiveIngredientHint } from '@dosiq/core'
+import { formatIntakeDose } from '@dosiq/core'
 import './SwipeRegisterItem.css'
 
 /**
@@ -25,6 +25,7 @@ import './SwipeRegisterItem.css'
 export default function SwipeRegisterItem({
   medicine,
   dosagePerIntake,
+  intakeUnit = null,
   time,
   isSelected = false,
   onToggleSelection,
@@ -93,11 +94,7 @@ export default function SwipeRegisterItem({
         <div className="swipe-item-card__info">
           <h4 className="swipe-item-card__name">{medicine.name}</h4>
           <span className="swipe-item-card__dosage">
-            {formatActiveIngredientHint(
-              dosagePerIntake,
-              medicine?.dosage_per_pill,
-              medicine?.dosage_unit
-            ) || `${dosagePerIntake} un.`}
+            {formatIntakeDose(dosagePerIntake, intakeUnit, medicine)}
           </span>
         </div>
         <div className="swipe-item-card__gesture-hint">

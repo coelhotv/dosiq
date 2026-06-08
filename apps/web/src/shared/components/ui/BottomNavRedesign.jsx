@@ -3,7 +3,7 @@ import './BottomNavRedesign.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Hoje', Icon: Calendar },
-  { id: 'treatment', label: 'Tratamento', Icon: Pill },
+  { id: 'treatment', label: 'Tratamentos', Icon: Pill },
   { id: 'stock', label: 'Estoque', Icon: Package },
   { id: 'notifications', label: 'Avisos', Icon: Bell },
   { id: 'profile', label: 'Perfil', Icon: User },

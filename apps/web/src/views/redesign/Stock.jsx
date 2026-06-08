@@ -44,6 +44,7 @@ export default function Stock({ initialParams, onClearParams }) {
         ...purchase,
         medicineName: item.medicine.name,
         medicineType: item.medicine.medicine_type,
+        dosage_unit: item.medicine.dosage_unit, // 022: p/ histórico exibir ml vs un.
       }))
     ), [items]
   )

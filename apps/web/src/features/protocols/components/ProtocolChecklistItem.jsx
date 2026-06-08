@@ -1,4 +1,5 @@
 import { getNow } from '@utils/dateUtils'
+import { formatIntakeDose } from '@dosiq/core'
 import './ProtocolChecklistItem.css'
 
 export default function ProtocolChecklistItem({ protocol, isSelected, onToggle }) {
@@ -38,7 +39,7 @@ export default function ProtocolChecklistItem({ protocol, isSelected, onToggle }
               </span>
             )}
             <span className="dosage-badge">
-              {protocol.dosage_per_intake} {protocol.dosage_per_intake === 1 ? 'comp.' : 'comps.'}
+              {formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, protocol.medicine)}
             </span>
           </div>
           {protocol.titration_scheduler_data && (
