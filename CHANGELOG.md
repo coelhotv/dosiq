@@ -10,7 +10,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Mobile (0.14.0 → 0.15.0)
-- **Added** (`minor`, PR #TBD): Épico 026 Fase 1 — sistema de nudges in-app. Substitui `TzNudgeCard` por `NudgeBanner` genérico; `useNudges('profile'|'dashboard')` busca nudges remotos do Supabase, injeta nudge local `TZ_RECONCILE_NUDGE`, migra dismiss legado (`dosiq_tz_nudge_dismissed → tz-reconcile:1`) e filtra dispensados via `AsyncStorage`. Dashboard exibe nudge quando sem doses urgentes. Preparado para nudges de versão de app e ativação de push via painel admin.
+- **Added** (`minor`, PR #653): Épico 026 Fase 1 — sistema de nudges in-app. Substitui `TzNudgeCard` por `NudgeBanner` genérico; `useNudges('profile'|'dashboard')` busca nudges remotos do Supabase e filtra dispensados via `AsyncStorage`. Dashboard exibe nudge quando sem doses urgentes. Preparado para nudges de versão de app e ativação de push via painel admin.
+- **Nota de loja relevante:** "Novo: dicas e avisos contextuais aparecem na tela inicial quando você não tem doses urgentes — fique por dentro de novidades e configurações importantes sem sair do app."
 
 ### Shared/Core (nudges — 026)
 - **Added** (`minor`, PR #TBD): `semver.js` — `compareSemver(a,b)` e `satisfiesSemver(version,min,max)` puros, sem deps. `nudgeScheduler.js` — `buildNudgeList(remote,local,opts)` com filtragem por plataforma/datas/versão/dismiss e priorização. `TZ_RECONCILE_NUDGE` + `TZ_NUDGE_LEGACY_KEY` exportados. Storage injetado via `opts.dismissed` (Set).
