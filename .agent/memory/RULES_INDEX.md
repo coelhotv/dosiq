@@ -1,6 +1,7 @@
 # DEVFLOW Rules Index
 
 ## 📦 Data & Schema (`data_and_schema`)
+- **[R-274]** Zod v4: schema com `.superRefine()` + `validateXxxUpdate` que chama `.partial()` → DEVE separar `BaseSchema = z.object({...})` (sem refinements) e `Schema = BaseSchema.superRefine(...)`. Update usa `BaseSchema.partial()`. Erro é runtime-only, invisível em build/lint (AP-223) -> [`rules/data_and_schema/R-274.md`](./rules/data_and_schema/R-274.md)
 - **[R-270]** Change Preflight (migração/RPC/SQL **+ schema Zod/serviço numérico**): tabela obrigatória de Failure Modes & Degenerate Inputs (NULL, divisor 0, dose→0, JOIN/FK ausente, **centavo-limite em split monetário→truncar**, **`z.coerce('')`→0→`z.preprocess`**, **vírgula→NaN**) + semântica SQL NULL-safe + integridade estrutural (CHECK, diff `pg_get_functiondef`, SECURITY DEFINER, idempotência) + teste por failure mode (BEGIN..ROLLBACK). Gate de processo (sem revisor externo). Evidência #650+#651 -> [`rules/data_and_schema/R-270.md`](./rules/data_and_schema/R-270.md)
 - **[R-271]** Toda coluna TEXT de domínio finito (esp. consumida por match exato em RPC/trigger) ganha CHECK sincronizado com o enum do core, caixa exata; generaliza R-082 -> [`rules/data_and_schema/R-271.md`](./rules/data_and_schema/R-271.md)
 - **[R-267]** Checklist para novos campos em `protocols`: (1) schema Zod base em packages/core, (2) todos os `.select()` que buscam protocols (grep `from('protocols')`), (3) telas de detalhe (espelhar ordem do form), (4) migration SQL. Esquecer qualquer um causa bug silencioso (AP-214 + AP-215) -> [`rules/data_and_schema/R-267.md`](./rules/data_and_schema/R-267.md)
@@ -155,6 +156,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[R-273]** Modal/form que recebe entidade como prop DEVE ter `key={entity?.id || 'create'}` no caller — `useState(prop)` só inicializa no mount; sem `key`, form fica stale ao trocar registro (AP-222). NÃO usar `useEffect+setState` (`set-state-in-effect` é **error** no projeto) -> [`rules/react_and_ui/R-273.md`](./rules/react_and_ui/R-273.md)
 - **[R-272]** Dose líquida sempre via formatter core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`) com a unidade de tomada (`intake_unit`: gotas|ml|UI), NUNCA `dosage_unit` cru (mg/ml, ui/ml) nem `formatActiveIngredientFormula` (solid-only). Query traz `intake_unit`+`units_per_ml` (R-267). Evidência smoke 022 Fase C -> [`rules/react_and_ui/R-272.md`](./rules/react_and_ui/R-272.md)
 - **[R-265]** Derived state pattern para reset de estado em mudança de prop/dep: comparar `prevDep !== dep` durante render e chamar setState — sem useEffect. Evita `react-hooks/set-state-in-effect` e render extra. Alternativa: `key` prop no pai para remount -> [`rules/react_and_ui/R-265.md`](./rules/react_and_ui/R-265.md)
 - **[R-235]** Hook canônico antes de inline — grep por `use*Delete`/`use*Mutation` existente e adotar; inline OK só se nenhum cobre ou single call site -> [`rules/react_and_ui/R-235.md`](./rules/react_and_ui/R-235.md)
