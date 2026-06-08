@@ -1,6 +1,7 @@
 // src/features/stock/services/refillPredictionService.js
 
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
+import { isLiquidMedicine, doseToMl } from '@dosiq/core'
 
 /**
  * Calcula previsao de reposicao baseada em consumo REAL (logs de doses).
@@ -19,7 +20,7 @@ import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
  *   confidence: 'high'|'medium'|'low'
  * }}
  */
-export function predictRefill({ medicineId, currentStock, logs, protocols }) {
+export function predictRefill({ medicineId, currentStock, logs, protocols, medicine = null }) {
   // 1. Calcular consumo real (ultimos 30 dias)
   const thirtyDaysAgo = addDays(getNow(), -30)
   thirtyDaysAgo.setHours(0, 0, 0, 0) // Zerar horas para comparacao consistente
@@ -30,23 +31,30 @@ export function predictRefill({ medicineId, currentStock, logs, protocols }) {
 
   const daysWithData = getDaysWithData(recentLogs)
 
+  // Líquidos (022): estoque em ml; consumo (logs/protocolos) na unidade de tomada
+  // (UI/gotas) → converter p/ ml. intake_unit vem do protocolo ativo.
+  const liquid = isLiquidMedicine(medicine)
+  const activeProtocols = protocols.filter((p) => p.active === true)
+  const intakeUnit = activeProtocols[0]?.intake_unit ?? null
+  const unitsPerMl = medicine?.units_per_ml ?? null
+  const toMl = (qty, unit) => (liquid ? doseToMl(qty, unit ?? intakeUnit, unitsPerMl) : qty)
+
   let dailyConsumption
   let isRealData
   let confidence
 
   if (daysWithData >= 14) {
-    // Consumo real: total de comprimidos consumidos / dias com dados
-    const totalConsumed = recentLogs.reduce((sum, log) => sum + (log.quantity_taken ?? 0), 0)
+    // Consumo real: total consumido (convertido p/ ml se líquido) / dias com dados
+    const totalConsumed = recentLogs.reduce((sum, log) => sum + toMl(log.quantity_taken ?? 0), 0)
     dailyConsumption = totalConsumed / daysWithData
     isRealData = true
     confidence = daysWithData >= 21 ? 'high' : 'medium'
   } else {
-    // Fallback: consumo teórico baseado no dia de tomada ativo (pills/dia ativo)
-    const activeProtocols = protocols.filter((p) => p.active === true)
+    // Fallback: consumo teórico (dose×vezes), liquid-aware via intake_unit do protocolo
     const activeIntakePerDay = activeProtocols.reduce((sum, p) => {
       const times = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1
-      return sum + times * dosage
+      return sum + times * toMl(dosage, p.intake_unit)
     }, 0)
     dailyConsumption = activeIntakePerDay
     isRealData = false
@@ -115,6 +123,7 @@ export function predictAllRefills({ medicines, stocks, logs, protocols }) {
         currentStock,
         logs,
         protocols: protocolsByMedId[med.id] || [],
+        medicine: med, // 022: liquid-aware
       })
 
       return {

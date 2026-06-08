@@ -136,6 +136,7 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     currentStock: totalStock,
     logs: [],
     protocols: [protocol],
+    medicine: protocol.medicine, // 022: liquid-aware (converte consumo p/ ml)
   })
 
   const intakeLabel = _computeIntakeLabel(protocol)
