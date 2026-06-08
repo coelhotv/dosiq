@@ -29,6 +29,8 @@ import DoseRegisterModal from '@dose/components/DoseRegisterModal'
 import { lightTap } from '@shared/utils/haptics'
 import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
+import NudgeBanner from '@shared/components/ui/NudgeBanner'
+import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
 // Habilitar animações no Android
@@ -218,6 +220,7 @@ function TodayScreenContent({
   handleOpenBulkDose,
   navigation,
 }) {
+  const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction } = useNudges('dashboard')
   // F4.3e: hero = janela actionável DESLIZANTE cross-dia (não só hoje):
   //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas entram);
   //  - hoje       → late/now (ATRASADA/PROXIMA);
@@ -264,8 +267,10 @@ function TodayScreenContent({
         <TodayHeader greeting={greeting} todayFormatted={todayFormatted} onDevPress={() => navigation?.navigate(ROUTES.DEV_HUB)} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
-        {priorityDoses.length > 0 && (
+        {priorityDoses.length > 0 ? (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
+        ) : (
+          <NudgeBanner nudge={dashboardNudge} onAction={handleNudgeAction} onDismiss={dismissNudge} />
         )}
         {/* Pendências de ontem (carry-over cross-dia, F4.3e) */}
         <OptionalDoseSection title="Pendências de ontem" doses={carryOver} onRegister={handleOpenRegister} keyPrefix="carry" />
