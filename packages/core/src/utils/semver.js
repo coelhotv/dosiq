@@ -6,7 +6,8 @@
 
 function parseSemver(version) {
   if (!version || typeof version !== 'string') return null
-  const parts = version.trim().split('.')
+  const clean = version.trim().split('-')[0].split('+')[0]
+  const parts = clean.split('.')
   if (parts.length < 2) return null
   const [major, minor, patch = '0'] = parts
   const nums = [Number(major), Number(minor), Number(patch)]

@@ -29,6 +29,12 @@ describe('compareSemver', () => {
     expect(compareSemver(undefined, '1.0.0')).toBeNull()
     expect(compareSemver('1.a.0', '1.0.0')).toBeNull()
   })
+
+  it('ignora pre-release e build metadata', () => {
+    expect(compareSemver('1.2.3-beta.1', '1.2.3')).toBe(0)
+    expect(compareSemver('1.2.3+build.123', '1.2.3')).toBe(0)
+    expect(compareSemver('1.2.3-rc.2', '1.2.4')).toBe(-1)
+  })
 })
 
 describe('satisfiesSemver', () => {
