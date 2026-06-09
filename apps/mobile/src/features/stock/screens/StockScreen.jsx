@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { SectionList, RefreshControl, StyleSheet, Text, View, Pressable } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Plus } from 'lucide-react-native'
+import { Plus, PackageOpen } from 'lucide-react-native'
 import { useStock } from '@stock/hooks/useStock'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -116,17 +116,28 @@ export default function StockScreen() {
   )
 
   const renderItem = useCallback(
-    ({ item }) => (
-      <Pressable
-        onPress={() => handleOpenItem(item)}
-        style={({ pressed }) => pressed && styles.itemPressed}
-        accessibilityRole="button"
-        accessibilityLabel={`Detalhes do estoque de ${item.name}`}
-      >
-        <StockItem medicine={item} />
-      </Pressable>
-    ),
-    [handleOpenItem],
+    ({ item }) => {
+      const isInitialStock = !item.hasPurchases && item.totalQuantity === 0
+      return (
+        <Pressable
+          onPress={() =>
+            isInitialStock
+              ? handleSelectMedicine(item.id, item.name)
+              : handleOpenItem(item)
+          }
+          style={({ pressed }) => pressed && styles.itemPressed}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isInitialStock
+              ? `Registrar estoque inicial de ${item.name}`
+              : `Detalhes do estoque de ${item.name}`
+          }
+        >
+          <StockItem medicine={item} />
+        </Pressable>
+      )
+    },
+    [handleOpenItem, handleSelectMedicine],
   )
 
   if (!data && (loading || refreshing)) {
@@ -182,12 +193,18 @@ export default function StockScreen() {
         ListEmptyComponent={
           filter === 'todos' ? (
             <EmptyState
-              icon="💊"
-              message="Nenhum medicamento cadastrado ou estoque registrado."
+              icon={<PackageOpen size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+              title="Ainda sem estoque"
+              message="Cadastre primeiro um tratamento para iniciar o controle de estoque."
+              action={{
+                label: '+ Criar primeiro tratamento',
+                onPress: () => navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
+              }}
             />
           ) : (
             <EmptyState
               icon="🔍"
+              title="Nenhum resultado"
               message={`Nenhum medicamento ${FILTER_EMPTY_LABEL[filter]}.`}
             />
           )

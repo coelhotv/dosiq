@@ -1,12 +1,12 @@
 import { useState, useCallback, useMemo } from 'react'
-import { ScrollView, View, Text, Pressable, StyleSheet, RefreshControl, LayoutAnimation, Platform, UIManager } from 'react-native'
+import { ScrollView, View, Text, Pressable, StyleSheet, RefreshControl, LayoutAnimation } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Pill, ChevronRight, Plus } from 'lucide-react-native'
+import { Pill, ChevronRight, Plus, CalendarClock } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
+import EmptyState from '@shared/components/states/EmptyState'
 import TreatmentCard from '@treatments/components/TreatmentCard'
-import TreatmentEmptyState from '@treatments/components/TreatmentEmptyState'
 import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
 import TreatmentTabBar from '@treatments/components/TreatmentTabBar'
 import { useTreatments } from '@treatments/hooks/useTreatments'
@@ -16,10 +16,6 @@ import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '@navigation/routes'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 
-// Habilitar animações no Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true)
-}
 
 const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
 
@@ -117,9 +113,6 @@ export default function TreatmentsScreen() {
     )
   }
 
-  // Empty global (Fase 2.5): só mostra TreatmentEmptyState quando NÃO há
-  // tratamentos em NENHUMA tab. Se há em outra tab, mantém TabBar e mostra
-  // mensagem específica per-tab.
   const isEmpty = isFullyEmpty
 
   return (
@@ -157,7 +150,12 @@ export default function TreatmentsScreen() {
         )}
 
         {isEmpty ? (
-          <TreatmentEmptyState onCreatePress={goToCreate} />
+          <EmptyState
+            icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+            title="Nenhum tratamento cadastrado"
+            message="Configure doses e horários para receber lembretes e acompanhar a adesão."
+            action={{ label: '+ Criar primeiro tratamento', onPress: goToCreate }}
+          />
         ) : (
           <>
             <TreatmentTabBar

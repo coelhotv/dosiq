@@ -1,21 +1,35 @@
-// EmptyState.jsx — estado vazio genérico para telas mobile
-// Exibido quando a query retorna dados mas a lista está vazia
+// EmptyState.jsx — estado vazio unificado para todas as telas principais
+// Suporta ícone Lucide (renderizado em círculo) ou emoji string (legado).
+// action: { label, onPress } — CTA primário opcional
+// hint: string — dica secundária abaixo do CTA
 
 import { View, Text, StyleSheet, Pressable } from 'react-native'
-import { colors } from '../../styles/tokens'
+import { colors, spacing, borderRadius } from '../../styles/tokens'
 
-// `action` opcional: { label, onPress } → renderiza um botão primário (CTA).
-export default function EmptyState({ title, message = 'Nenhum dado encontrado', icon = '💊', action = null }) {
+export default function EmptyState({
+  title,
+  message = 'Nenhum dado encontrado',
+  icon = '💊',
+  action = null,
+  hint = null,
+}) {
+  const isReactElement = icon !== null && typeof icon === 'object'
+
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
+      {isReactElement ? (
+        <View style={styles.iconCircle}>{icon}</View>
+      ) : (
+        <Text style={styles.iconEmoji}>{icon}</Text>
+      )}
       {title && <Text style={styles.title}>{title}</Text>}
-      <Text style={styles.text}>{message}</Text>
+      <Text style={styles.message}>{message}</Text>
       {action ? (
         <Pressable style={styles.actionBtn} onPress={action.onPress} accessibilityRole="button">
           <Text style={styles.actionText}>{action.label}</Text>
         </Pressable>
       ) : null}
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   )
 }
@@ -25,36 +39,57 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
-    gap: 8,
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[6],
   },
-  icon: {
-    fontSize: 40,
-    marginBottom: 4,
+  iconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[4],
   },
-  text: {
+  iconEmoji: {
+    fontSize: 48,
+    marginBottom: spacing[4],
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing[2],
+  },
+  message: {
     fontSize: 15,
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    textAlign: 'center',
+    maxWidth: 320,
   },
   actionBtn: {
-    marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
+    marginTop: spacing[6],
+    paddingHorizontal: spacing[6],
+    paddingVertical: 14,
+    borderRadius: borderRadius.full,
     backgroundColor: colors.brand.primary,
+    width: '100%',
+    alignItems: 'center',
   },
   actionText: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.inverse,
     textAlign: 'center',
+  },
+  hint: {
+    fontSize: 13,
+    color: colors.text.muted,
+    textAlign: 'center',
+    marginTop: spacing[4],
+    maxWidth: 280,
+    lineHeight: 19,
   },
 })

@@ -16,6 +16,7 @@ import {
   Trash2,
   Pill,
   PillBottle,
+  Droplets,
   Layers,
   Package,
 } from 'lucide-react-native'
@@ -135,10 +136,21 @@ export default function MedicineDetailScreen() {
     setDeleteOpen(false)
   }, [confirmDelete])
 
-  const handleOpenTreatments = useCallback(() => {
+  const handleOpenProtocol = useCallback((protocolId) => {
     setBlockedOpen(false)
-    navigation.navigate(ROUTES.TREATMENTS_LIST)
+    navigation.navigate(ROUTES.TREATMENTS, {
+      screen: ROUTES.PROTOCOL_DETAIL,
+      params: { id: protocolId },
+    })
   }, [navigation])
+
+  const handleOpenStock = useCallback(() => {
+    setBlockedOpen(false)
+    navigation.navigate(ROUTES.STOCK, {
+      screen: ROUTES.STOCK_DETAIL,
+      params: { medicineId: data?.id, medicineName: data?.name },
+    })
+  }, [navigation, data])
 
   // Header (reaproveitado em todos os estados)
   const Header = (
@@ -217,6 +229,8 @@ export default function MedicineDetailScreen() {
           >
             {data.type === 'suplemento' ? (
               <PillBottle size={48} color={colors.supplement[500]} />
+            ) : data.dosage_unit?.endsWith('/ml') ? (
+              <Droplets size={48} color={colors.primary[500]} />
             ) : (
               <Pill size={48} color={colors.primary[500]} />
             )}
@@ -352,7 +366,8 @@ export default function MedicineDetailScreen() {
         stockUnits={preCheck.stockUnits}
         stockLots={preCheck.stockLots}
         onCancel={() => setBlockedOpen(false)}
-        onOpenTreatments={handleOpenTreatments}
+        onOpenProtocol={handleOpenProtocol}
+        onOpenStock={handleOpenStock}
       />
     </ScreenContainer>
   )

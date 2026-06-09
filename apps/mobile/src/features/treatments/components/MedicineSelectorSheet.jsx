@@ -19,7 +19,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Search, X, Pill, PillBottle, Plus } from 'lucide-react-native'
+import { Search, X, Pill, PillBottle, Droplets, Plus } from 'lucide-react-native'
 import { useMedicines } from '../../medications/hooks/useMedicines'
 import { selectionTap, lightTap } from '@shared/utils/haptics'
 import { formatConcentration } from '@dosiq/core'
@@ -101,7 +101,8 @@ export default function MedicineSelectorSheet({
   function renderItem({ item }) {
     const isSelected = item.id === selectedId
     const isSupplement = item.type === 'suplemento'
-    const Icon = isSupplement ? PillBottle : Pill
+    const isLiquid = !isSupplement && Boolean(item.dosage_unit?.endsWith('/ml'))
+    const Icon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
     const iconColor = isSupplement ? colors.supplement[500] : colors.primary[500]
     const iconBg = isSupplement ? colors.supplement[50] : colors.primary[50]
 
@@ -144,6 +145,8 @@ export default function MedicineSelectorSheet({
     )
   }
 
+  const isEmpty = !loading && !error && list.length === 0
+
   return (
     <Modal
       visible={!!open}
@@ -167,61 +170,83 @@ export default function MedicineSelectorSheet({
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Escolher medicamento</Text>
 
-          <View style={styles.searchBox}>
-            <Search size={18} color={colors.text.muted} strokeWidth={2} />
-            <TextInput
-              style={styles.searchInput}
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Buscar em medicamentos…"
-              placeholderTextColor={colors.text.muted}
-              autoCorrect={false}
-              autoCapitalize="none"
-              returnKeyType="search"
-              accessibilityLabel="Buscar medicamento na biblioteca"
-              maxLength={100}
-            />
-            {query ? (
+          {isEmpty ? (
+            <View style={styles.emptySheet}>
+              <View style={styles.emptyIconCircle}>
+                <Pill size={40} color={colors.primary[500]} strokeWidth={1.5} />
+              </View>
+              <Text style={styles.emptyTitle}>Você ainda não possui medicamentos</Text>
+              <Text style={styles.emptyMessage}>
+                Cadastre um novo medicamento para configurar o tratamento.
+              </Text>
               <Pressable
-                onPress={() => setQuery('')}
-                hitSlop={8}
+                onPress={handleCreateNew}
+                style={({ pressed }) => [styles.emptyBtn, pressed && styles.footerBtnPressed]}
                 accessibilityRole="button"
-                accessibilityLabel="Limpar busca"
+                accessibilityLabel="Cadastrar novo medicamento"
               >
-                <X size={18} color={colors.text.muted} strokeWidth={2} />
+                <Plus size={18} color={colors.text.inverse} />
+                <Text style={styles.emptyBtnText}>Cadastrar medicamento</Text>
               </Pressable>
-            ) : null}
-          </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.title}>Escolher medicamento</Text>
 
-          <Text style={styles.subtitle}>{subtitle}</Text>
+              <View style={styles.searchBox}>
+                <Search size={18} color={colors.text.muted} strokeWidth={2} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Buscar em medicamentos…"
+                  placeholderTextColor={colors.text.muted}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  returnKeyType="search"
+                  accessibilityLabel="Buscar medicamento na biblioteca"
+                  maxLength={100}
+                />
+                {query ? (
+                  <Pressable
+                    onPress={() => setQuery('')}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Limpar busca"
+                  >
+                    <X size={18} color={colors.text.muted} strokeWidth={2} />
+                  </Pressable>
+                ) : null}
+              </View>
 
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={
-              !loading && !error ? (
-                <Text style={styles.empty}>
-                  {trimmed ? 'Nenhum medicamento encontrado.' : 'Nenhum medicamento cadastrado ainda.'}
-                </Text>
-              ) : null
-            }
-          />
+              <Text style={styles.subtitle}>{subtitle}</Text>
 
-          <Pressable
-            onPress={handleCreateNew}
-            style={({ pressed }) => [styles.footerBtn, pressed && styles.footerBtnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Cadastrar novo medicamento"
-          >
-            <Plus size={18} color={colors.primary[700]} />
-            <Text style={styles.footerBtnText}>Cadastrar novo medicamento</Text>
-          </Pressable>
+              <FlatList
+                data={filtered}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={styles.listContent}
+                ListEmptyComponent={
+                  !loading && !error ? (
+                    <Text style={styles.empty}>Nenhum medicamento encontrado.</Text>
+                  ) : null
+                }
+              />
+
+              <Pressable
+                onPress={handleCreateNew}
+                style={({ pressed }) => [styles.footerBtn, pressed && styles.footerBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Cadastrar novo medicamento"
+              >
+                <Plus size={18} color={colors.primary[700]} />
+                <Text style={styles.footerBtnText}>Cadastrar novo medicamento</Text>
+              </Pressable>
+            </>
+          )}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
@@ -371,5 +396,51 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary[700],
     fontFamily: typography.fontFamily.bold,
+  },
+  emptySheet: {
+    alignItems: 'center',
+    paddingVertical: spacing[8],
+    gap: 0,
+  },
+  emptyIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[4],
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing[2],
+    fontFamily: typography.fontFamily.bold,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 260,
+    marginBottom: spacing[6],
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    paddingVertical: 14,
+    paddingHorizontal: spacing[6],
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.brand.primary,
+    width: '100%',
+  },
+  emptyBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.inverse,
   },
 })
