@@ -35,8 +35,11 @@ function formatDate(date) {
   return `${year}-${month}-${day}`
 }
 
+// skipped_paused filtrado no hook; aqui só chegam taken/missed/pending/skipped_user
 function getDotStatus(dayStr, instances) {
-  const dayInstances = instances.filter(i => i.scheduled_for.startsWith(dayStr))
+  const dayInstances = instances.filter(i =>
+    i.scheduled_for.startsWith(dayStr) && i.status !== 'skipped_paused'
+  )
   if (dayInstances.length === 0) return COLORS.gray
 
   const allTaken = dayInstances.every(i => i.status === 'taken')
@@ -54,8 +57,15 @@ function getMonthLabel(weekStartStr) {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
-export default function WeekCalendar({ selectedDay, onDaySelect, instances = [] }) {
+export default function WeekCalendar({ selectedDay, onDaySelect, instances = [], minDay, maxDay }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMondayOf(selectedDay))
+
+  // Semana-limite para navegação: segunda da semana que contém minDay/maxDay
+  const minWeekStart = useMemo(() => minDay ? getMondayOf(minDay) : null, [minDay])
+  const maxWeekStart = useMemo(() => maxDay ? getMondayOf(maxDay) : null, [maxDay])
+
+  const canGoPrev = !minWeekStart || currentWeekStart > minWeekStart
+  const canGoNext = !maxWeekStart || currentWeekStart < maxWeekStart
 
   const weekDays = useMemo(() => {
     const days = []
@@ -80,23 +90,27 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [] 
     ),
     onPanResponderRelease: (_evt, gestureState) => {
       const { dx } = gestureState
-      if (dx > 40) setCurrentWeekStart(prev => shiftDays(prev, -7))
-      else if (dx < -40) setCurrentWeekStart(prev => shiftDays(prev, 7))
+      if (dx > 40 && canGoPrev) setCurrentWeekStart(prev => shiftDays(prev, -7))
+      else if (dx < -40 && canGoNext) setCurrentWeekStart(prev => shiftDays(prev, 7))
     },
-  }), [])
+  }), [canGoPrev, canGoNext])
 
-  const handlePrevWeek = useCallback(() => setCurrentWeekStart(prev => shiftDays(prev, -7)), [])
-  const handleNextWeek = useCallback(() => setCurrentWeekStart(prev => shiftDays(prev, 7)), [])
+  const handlePrevWeek = useCallback(() => {
+    if (canGoPrev) setCurrentWeekStart(prev => shiftDays(prev, -7))
+  }, [canGoPrev])
+  const handleNextWeek = useCallback(() => {
+    if (canGoNext) setCurrentWeekStart(prev => shiftDays(prev, 7))
+  }, [canGoNext])
 
   return (
     <View style={styles.container}>
       {/* Month header with nav */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handlePrevWeek} accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={handlePrevWeek} accessibilityRole="button" disabled={!canGoPrev} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ opacity: canGoPrev ? 1 : 0.3 }}>
           <ChevronLeft size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{monthLabel}</Text>
-        <TouchableOpacity onPress={handleNextWeek} accessibilityRole="button" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={handleNextWeek} accessibilityRole="button" disabled={!canGoNext} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ opacity: canGoNext ? 1 : 0.3 }}>
           <ChevronRight size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>

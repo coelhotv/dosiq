@@ -5,6 +5,12 @@ import {
   computeStreakFromInstances,
   parseISO,
 } from '@dosiq/core'
+
+function shiftDateStr(dateStr, days) {
+  const d = parseISO(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getDoseInstancesForPeriod } from '../../dashboard/services/dashboardService'
 
@@ -58,6 +64,10 @@ async function enrichInstancesWithProtocol(instances) {
   })
 }
 
+// Dias carregados para trás e para frente
+const HISTORY_PAST_DAYS = 30
+const HISTORY_FUTURE_DAYS = 7
+
 export function useHistoryData() {
   const [instances, setInstances] = useState([])
   const [loading, setLoading] = useState(true)
@@ -82,10 +92,15 @@ export function useHistoryData() {
     return { adherence30d, streak, dosesThisMonth }
   }, [instances, timezone])
 
+  // Limites de navegação derivados da janela carregada
+  const today = getTodayLocal()
+  const minDay = shiftDateStr(today, -(HISTORY_PAST_DAYS - 1))
+  const maxDay = shiftDateStr(today, HISTORY_FUTURE_DAYS)
+
   const instancesForDay = useMemo(() => {
-    return instances.filter(inst =>
-      utcToLocalDateStr(inst.scheduled_for, timezone) === selectedDay
-    )
+    return instances
+      .filter(inst => inst.status !== 'skipped_paused')
+      .filter(inst => utcToLocalDateStr(inst.scheduled_for, timezone) === selectedDay)
   }, [instances, selectedDay, timezone])
 
   const load = useCallback(async () => {
@@ -102,7 +117,7 @@ export function useHistoryData() {
       const userId = session.data.session.user.id
 
       const [raw, settings] = await Promise.all([
-        getDoseInstancesForPeriod(userId, 30),
+        getDoseInstancesForPeriod(userId, HISTORY_PAST_DAYS, HISTORY_FUTURE_DAYS),
         supabase.from('user_settings').select('timezone').eq('user_id', userId).single(),
       ])
 
@@ -135,6 +150,8 @@ export function useHistoryData() {
     kpis,
     instancesForDay,
     timezone,
+    minDay,
+    maxDay,
     refresh: load,
   }
 }

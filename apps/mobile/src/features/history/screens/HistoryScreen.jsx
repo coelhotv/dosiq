@@ -22,7 +22,7 @@ function formatDayHeader(dateStr) {
 
 export default function HistoryScreen() {
   const navigation = useNavigation()
-  const { instances, selectedDay, setSelectedDay, kpis, instancesForDay, timezone, refresh } = useHistoryData()
+  const { instances, selectedDay, setSelectedDay, kpis, instancesForDay, timezone, minDay, maxDay, refresh } = useHistoryData()
   const [sheetInstance, setSheetInstance] = useState(null)
 
   const mutation = useHistoryMutation({ onSuccess: refresh })
@@ -65,6 +65,8 @@ export default function HistoryScreen() {
           selectedDay={selectedDay}
           onDaySelect={setSelectedDay}
           instances={instances}
+          minDay={minDay}
+          maxDay={maxDay}
         />
 
         {/* Day header */}
