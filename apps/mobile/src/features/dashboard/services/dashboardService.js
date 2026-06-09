@@ -153,15 +153,15 @@ export async function getLogsForPeriod(userId, days = 7) {
  *
  * @param {string} userId
  * @param {number} days - dias para trás (default 14: 7d atual + 7d anterior p/ o trend)
+ * @param {number} lookAheadDays - dias para frente além de amanhã (default 2 = fim de amanhã)
  * @returns {Promise<Array>} linhas de dose_instances (status, scheduled_for, ...)
  */
-export async function getDoseInstancesForPeriod(userId, days = 14) {
+export async function getDoseInstancesForPeriod(userId, days = 14, lookAheadDays = 2) {
   z.string().uuid().parse(userId)
 
   const todayStr = getTodayLocal()
   const startUTC = addDays(todayStr, -(days - 1)).toISOString()
-  // +2 = início do dia depois de amanhã → cobre TODO o dia de amanhã (lookAhead F4.3e).
-  const endUTC = addDays(todayStr, 2).toISOString()
+  const endUTC = addDays(todayStr, lookAheadDays).toISOString()
 
   return doseInstanceRepo.getWindow(userId, startUTC, endUTC)
 }
