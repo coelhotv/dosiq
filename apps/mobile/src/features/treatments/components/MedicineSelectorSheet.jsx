@@ -145,7 +145,7 @@ export default function MedicineSelectorSheet({
     )
   }
 
-  const isEmpty = !loading && !error && list.length === 0
+  const isEmpty = !loading && !error && (!list || list.length === 0)
 
   return (
     <Modal

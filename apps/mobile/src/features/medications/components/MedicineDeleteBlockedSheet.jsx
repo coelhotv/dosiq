@@ -127,8 +127,8 @@ export function MedicineDeleteBlockedSheet({
             accessibilityRole="button"
             accessibilityLabel="Apagar medicamento (bloqueado)"
           >
-            <Trash2 size={16} color={colors.text.inverse} style={{ opacity: 0.5 }} />
-            <Text style={[styles.btnPrimaryText, { opacity: 0.5 }]}>Apagar</Text>
+            <Trash2 size={16} color={colors.text.inverse} />
+            <Text style={styles.btnPrimaryText}>Apagar</Text>
           </Pressable>
         </View>
       </SafeAreaView>
