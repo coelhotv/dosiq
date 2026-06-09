@@ -9,7 +9,7 @@
 import { useMemo } from 'react'
 import { View, Text, Modal, Pressable, ScrollView, StyleSheet, Platform, StatusBar } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AlertCircle, Layers, Package, ChevronRight } from 'lucide-react-native'
+import { AlertCircle, Layers, Package, ChevronRight, Trash2 } from 'lucide-react-native'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export function MedicineDeleteBlockedSheet({
@@ -19,7 +19,8 @@ export function MedicineDeleteBlockedSheet({
   stockUnits = 0,
   stockLots = 0,
   onCancel,
-  onOpenTreatments,
+  onOpenProtocol,
+  onOpenStock,
 }) {
   const protocolItems = useMemo(
     () =>
@@ -64,7 +65,13 @@ export function MedicineDeleteBlockedSheet({
 
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {protocolItems.map((item) => (
-            <View key={item.key} style={styles.depCard}>
+            <Pressable
+              key={item.key}
+              style={({ pressed }) => [styles.depCard, pressed && styles.depCardPressed]}
+              onPress={() => onOpenProtocol?.(item.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Abrir ${item.name}`}
+            >
               <View style={[styles.depIconWrap, styles.depIconWrapPrimary]}>
                 <Layers size={18} color={colors.primary[700]} />
               </View>
@@ -80,11 +87,16 @@ export function MedicineDeleteBlockedSheet({
                 ) : null}
               </View>
               <ChevronRight size={18} color={colors.text.muted} />
-            </View>
+            </Pressable>
           ))}
 
           {stockUnits > 0 ? (
-            <View style={styles.depCard}>
+            <Pressable
+              style={({ pressed }) => [styles.depCard, pressed && styles.depCardPressed]}
+              onPress={onOpenStock}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir estoque"
+            >
               <View style={[styles.depIconWrap, styles.depIconWrapSupplement]}>
                 <Package size={18} color={colors.supplement[700]} />
               </View>
@@ -96,7 +108,7 @@ export function MedicineDeleteBlockedSheet({
                 </Text>
               </View>
               <ChevronRight size={18} color={colors.text.muted} />
-            </View>
+            </Pressable>
           ) : null}
         </ScrollView>
 
@@ -110,13 +122,13 @@ export function MedicineDeleteBlockedSheet({
             <Text style={styles.btnSecondaryText}>Voltar</Text>
           </Pressable>
           <Pressable
-            onPress={onOpenTreatments}
-            style={({ pressed }) => [styles.btnPrimary, pressed && styles.pressed]}
+            disabled
+            style={[styles.btnPrimary, styles.btnPrimaryDisabled]}
             accessibilityRole="button"
-            accessibilityLabel="Abrir tratamentos"
-            disabled={!onOpenTreatments}
+            accessibilityLabel="Apagar medicamento (bloqueado)"
           >
-            <Text style={styles.btnPrimaryText}>Abrir tratamentos</Text>
+            <Trash2 size={16} color={colors.text.inverse} />
+            <Text style={styles.btnPrimaryText}>Apagar</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -221,6 +233,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
   },
+  depCardPressed: {
+    opacity: 0.7,
+  },
   depIconWrap: {
     width: 36,
     height: 36,
@@ -275,9 +290,14 @@ const styles = StyleSheet.create({
     flex: 2,
     height: 48,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.primary[700],
+    backgroundColor: colors.status.error,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing[2],
+  },
+  btnPrimaryDisabled: {
+    opacity: 0.4,
   },
   btnPrimaryText: {
     fontSize: 15,

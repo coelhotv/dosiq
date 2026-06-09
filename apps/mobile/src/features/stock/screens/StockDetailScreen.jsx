@@ -23,6 +23,7 @@ import {
   Plus,
   Pill,
   PillBottle,
+  Droplets,
   SlidersHorizontal,
 } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -208,9 +209,10 @@ export default function StockDetailScreen({ navigation }) {
     medicine?.dosage_per_pill != null
       ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
       : null
+  const isLiquid = !isSupplement && Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]
-  const HeroIcon = isSupplement ? PillBottle : Pill
+  const HeroIcon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
 
   return (
     <ScreenContainer>

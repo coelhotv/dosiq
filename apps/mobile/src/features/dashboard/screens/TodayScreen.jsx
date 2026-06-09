@@ -7,13 +7,11 @@ import {
   RefreshControl,
   StyleSheet,
   LayoutAnimation,
-  Platform,
-  UIManager,
   TouchableOpacity,
   Pressable
 } from 'react-native'
 import { ROUTES } from '../../../navigation/routes'
-import { Pill, Plus } from 'lucide-react-native'
+import { Plus, CalendarClock } from 'lucide-react-native'
 import { useTodayData } from '@dashboard/hooks/useTodayData'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -33,10 +31,6 @@ import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
-// Habilitar animações no Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true)
-}
 
 // Agrupa doses da timeline por turno e computa contadores
 function _groupTimeline(timeline, isComplex) {
@@ -212,7 +206,7 @@ function TodayModals({
 
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
-  timeline, carryOver, lookAhead, stockAlerts, protocols, stats, medicines,
+  timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
@@ -253,7 +247,7 @@ function TodayScreenContent({
   const { greeting, todayFormatted } = _buildHeaderData(data?.user)
   const adherenceTrend = stats.hasPreviousData
     ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
-    : 'Mantendo a média'
+    : ''
   const bulkMode = bulkModal?.mode ?? 'plan'
   const userId = data?.user?.id ?? ''
 
@@ -281,7 +275,7 @@ function TodayScreenContent({
           protocols={protocols} isComplex={isComplex} timeline={timeline}
           shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
-          hasMedicines={Object.keys(medicines || {}).length > 0} navigation={navigation}
+          navigation={navigation}
         />
         {/* Em breve (look-ahead cross-dia, F4.3e) */}
         <OptionalDoseSection title="Em breve" doses={lookAhead} onRegister={handleOpenRegister} keyPrefix="ahead" />
@@ -316,31 +310,17 @@ function TodayScreenContent({
 }
 
 // Renderiza a agenda de doses (Simple ou Complex mode)
-function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister, hasMedicines, navigation }) {
+function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister, navigation }) {
   if (protocols.length === 0) {
-    // Empty state inteligente (tudo in-app — os CRUDs já vivem no nativo):
-    // - sem medicamento E sem tratamento → começa cadastrando o 1º medicamento;
-    // - já tem medicamento, falta tratamento → vai direto pro form de tratamento.
-    const empty = hasMedicines
-      ? {
-          message: 'Você ainda não tem tratamentos ativos.\nQue tal criar o primeiro?',
-          action: {
-            label: 'Adicionar tratamento',
-            onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
-          },
-        }
-      : {
-          message: 'Vamos começar?\nCadastre seu primeiro medicamento para o Dosiq te lembrar na hora certa.',
-          action: {
-            label: 'Cadastrar primeiro medicamento',
-            onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.MEDICINE_CREATE }),
-          },
-        }
     return (
       <EmptyState
-        icon={<Pill size={48} color={colors.status.success} />}
-        message={empty.message}
-        action={empty.action}
+        icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+        title="Comece seu primeiro tratamento"
+        message="Configure doses e horários para receber lembretes e acompanhar a adesão."
+        action={{
+          label: '+ Criar primeiro tratamento',
+          onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
+        }}
       />
     )
   }

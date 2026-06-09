@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Pill,
   PillBottle,
+  Droplets,
   ChevronRight,
   Clock,
   Edit3,
@@ -373,7 +374,8 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
   const medicine = protocol.medicine
   if (!medicine) return null
   const isSupplement = medicine.type === 'suplemento'
-  const MedicineIcon = isSupplement ? PillBottle : Pill
+  const isLiquid = !isSupplement && Boolean(medicine.dosage_unit?.endsWith('/ml'))
+  const MedicineIcon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
   const heroIconBg = isSupplement ? colors.supplement[500] : colors.primary[600]
   const heroEyebrowColor = isSupplement ? colors.supplement[700] : colors.primary[700]
   const eyebrowLabel = isSupplement ? 'Suplemento' : 'Medicamento'

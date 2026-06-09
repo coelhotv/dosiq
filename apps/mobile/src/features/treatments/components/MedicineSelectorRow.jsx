@@ -1,14 +1,15 @@
 // MedicineSelectorRow — row de seleção de medicamento (Fase 2 T2.3)
 // (componente puro controlado)
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Plus, ChevronRight, Pill, PillBottle } from 'lucide-react-native'
+import { Plus, ChevronRight, Pill, PillBottle, Droplets } from 'lucide-react-native'
 import { formatConcentration } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export default function MedicineSelectorRow({ medicine, onPress, error }) {
   const isEmpty = medicine == null
   const isSupplement = !isEmpty && medicine.type === 'suplemento'
-  const LeadingIcon = isEmpty ? Plus : isSupplement ? PillBottle : Pill
+  const isLiquid = !isEmpty && !isSupplement && Boolean(medicine.dosage_unit?.endsWith('/ml'))
+  const LeadingIcon = isEmpty ? Plus : isSupplement ? PillBottle : isLiquid ? Droplets : Pill
 
   const leadingBg = isEmpty
     ? colors.neutral[100]

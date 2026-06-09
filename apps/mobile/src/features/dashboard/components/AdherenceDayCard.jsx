@@ -23,7 +23,7 @@ export default function AdherenceDayCard({ score = 0, trend = '' }) {
     <View style={styles.card}>
       <View style={styles.content}>
         <View style={styles.left}>
-          <Text style={styles.title}>Adesão (Últimos 7 dias)</Text>
+          <Text style={styles.title}>Adesão (últimos 7 dias)</Text>
           <Text style={styles.description}>{getMotivationalText(score)}</Text>
           
           {trend ? (

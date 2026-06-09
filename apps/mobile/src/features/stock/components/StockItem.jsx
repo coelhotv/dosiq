@@ -1,24 +1,28 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { Plus } from 'lucide-react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
 import { formatStockQuantity, formatConcentration } from '@dosiq/core'
-import { colors, spacing } from '../../../shared/styles/tokens'
+import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
  * Item de lista para exibição de estoque.
  */
 export default function StockItem({ medicine }) {
-  const { 
-    name, 
-    laboratory, 
-    totalQuantity, 
-    dosage_unit, 
+  const {
+    name,
+    laboratory,
+    totalQuantity,
+    hasPurchases,
+    dosage_unit,
     dosage_per_pill,
-    status, 
+    status,
     daysRemaining,
     hasActiveProtocol
   } = medicine
+
+  const showInitialStockHint = !hasPurchases && totalQuantity === 0
 
   // Líquido → "X ml"; sólido → hint princípio ativo / "X un." (formatStockQuantity)
   const saldoText = formatStockQuantity(totalQuantity, { dosage_unit, dosage_per_pill })
@@ -49,12 +53,14 @@ export default function StockItem({ medicine }) {
             </Text>
           </View>
           
-          {hasActiveProtocol && (
-            <StockLevelBadge
-              status={status}
-              daysRemaining={daysRemaining}
-            />
-          )}
+          {showInitialStockHint ? (
+            <View style={styles.ctaBadge}>
+              <Plus size={12} color={colors.status.error} strokeWidth={2.5} />
+              <Text style={styles.ctaBadgeText}>Nova compra</Text>
+            </View>
+          ) : hasActiveProtocol ? (
+            <StockLevelBadge status={status} daysRemaining={daysRemaining} />
+          ) : null}
         </View>
       </View>
     </SectionCard>
@@ -109,5 +115,19 @@ const styles = StyleSheet.create({
   bold: {
     fontWeight: '700',
     color: colors.text.primary
+  },
+  ctaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.status.errorLight,
+  },
+  ctaBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.status.error,
   }
 })

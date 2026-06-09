@@ -11,13 +11,13 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Search, X, Plus, ChevronLeft } from 'lucide-react-native'
+import { Search, X, Plus, ChevronLeft, Pill } from 'lucide-react-native'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
+import EmptyState from '@shared/components/states/EmptyState'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 import MedicineCard from '@medications/components/MedicineCard'
-import { MedicineEmptyState } from '@medications/components/MedicineEmptyState'
 import { useMedicines } from '@medications/hooks/useMedicines'
 import { ROUTES } from '@navigation/routes'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
@@ -151,7 +151,15 @@ export default function MedicinesListScreen() {
       </View>
 
       {isEmpty ? (
-        <MedicineEmptyState />
+        <EmptyState
+          icon={<Pill size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+          title="Nenhum medicamento cadastrado"
+          message="Cadastre medicamentos para começar a criar tratamentos e acompanhar o estoque."
+          action={{
+            label: '+ Cadastrar primeiro medicamento',
+            onPress: () => { lightTap(); navigation.navigate(ROUTES.MEDICINE_CREATE) },
+          }}
+        />
       ) : (
         <>
           <View style={styles.counterRow}>
