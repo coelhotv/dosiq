@@ -18,18 +18,18 @@ import {
 } from '@platform/alarms/alarmService'
 
 const DEV_INSTANCE_ID = 'dev-test-alarm'
-const DEV_MEDICINE = 'Afrezza (teste)'
+const DEV_MEDICINE = 'Lantus'
 
 // Espelha o bloco produzido por buildNotification (alarmService), simplificado.
 function buildDevNotification(notificationId) {
   return {
     id: notificationId,
     title: '💊 Hora da dose',
-    body: `Está na hora de tomar ${DEV_MEDICINE} (13:13).`,
+    body: `Está na hora de tomar ${DEV_MEDICINE} (12:00).`,
     data: {
       doseInstanceId: DEV_INSTANCE_ID,
       medicineName: DEV_MEDICINE,
-      scheduledTime: '13:13',
+      scheduledTime: '12:00',
       snoozeAttempt: '0',
       __dev: 'true',
     },
