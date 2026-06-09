@@ -154,3 +154,57 @@
 
 > **Sequenciamento duro:** 022 mergeada antes do C-coding desta spec. Fases internas A→B→C→D→E
 > (B e C podem paralelizar após A; D depende de C; E depende de C+D).
+
+---
+
+## Orquestração & Model Tiering
+
+Estratégia para acelerar a entrega e economizar quota do plano Claude Pro: delegar **tarefas-folha
+bounded** a sub-agentes em modelos mais baratos (sonnet/haiku), mantendo julgamento clínico e
+integração no main thread (opus). Economia real vem de (a) modelo mais barato por tarefa e
+(b) output cavecrew comprimido (~60% menos tokens reinjetados no main) — **não** do spawn em si.
+
+### Invariantes (não-negociáveis)
+
+- **AP-169 — Branch Sync Ritual:** antes de spawnar agente que toca `packages/*` ou
+  `apps/*/src/features/*`: `git fetch origin` → confirmar branch sync com origin → só então spawnar.
+  Agente em branch desatualizada duplica arquivos (custo: 15+ min reset hard).
+- **Sub-agentes NUNCA commitam na main.** Sempre branch + PR + aprovação humana (R-060).
+- **cavecrew-reviewer NÃO é gate de review.** Revisor oficial = Gemini no PR. cavecrew só para
+  localizar/editar/investigar, nunca como porta de aprovação.
+- **cavecrew-builder recusa 3+ arquivos** — só edição cirúrgica 1-2 files.
+- **SaMD/Health (Constitution I + ADR-062):** lógica de dose/estoque/tolerância/UI→ml é clínica.
+  O main thread RETÉM C1.5 reality-check, C4 DoD file-by-file, integração cross-superfície
+  (ancoragem write-path AP-193) e a fronteira SaMD. Não delegar julgamento.
+- **Haiku:** só tarefa-folha trivial (boilerplate, copy PT, scaffolding). **NUNCA** em math de
+  dose, conversão UI→ml, tolerância ou RLS/grants — risco clínico > economia.
+
+### Núcleo não-delegável (main / opus)
+
+C1.5 reality-check por fase · C4 DoD file-by-file (citar linha) · integração cross-superfície
+(web/mobile/bot) · decisão SaMD · merge de outputs de sub-agentes em PR coerente.
+
+### Paralelismo
+
+- **Inter-fase:** B ∥ C após A (já no faseamento). 1 branch/PR por fase.
+- **Intra-fase:** apenas tarefas marcadas `[P]` (independentes) podem rodar em sub-agentes
+  concorrentes. Tarefas com dependência de ordem ficam sequenciais no main.
+
+### Mapa de tier por tarefa
+
+| Task | Tipo | Agente / modelo |
+|------|------|-----------------|
+| T001/T013/T020/T025 [C1] | investigação/verificação read-only | cavecrew-investigator (haiku/sonnet) |
+| T008 auditar titulação | investigação read-only | cavecrew-investigator (sonnet) |
+| T002/T014 migração SQL (RLS/grants) | mecânico, security-crítico | sonnet (nunca haiku) |
+| T010 `computeTolerances` freq-aware | lógica clínica (tolerância) | **main / opus** (ou sonnet-high) |
+| T003 inferir `opened_at` cross-superfície | integração write-path (AP-193) | **main / opus** |
+| T004 helper `isBiologicallyExpired` | puro, bounded 1-2 files | cavecrew-builder (sonnet) |
+| T015 `biomarkerLogSchema` | schema Zod bounded | sonnet |
+| T016 adapter `biomarkersToEvents` | bounded, R-252 (não toca builder) | sonnet |
+| T005/T017/T018 UI cards/sheet | UI (+ui-design-brain) | sonnet |
+| T006/T022/T023 forms/render dose | UI + read-path (R-267/R-272) | sonnet (render); **main** valida SaMD |
+| T026 export PDF clínico | agregação server-side + SaMD | sonnet; **main** valida fronteira |
+| T007/T012/T019/T024 [P] testes | cobertura | sonnet (paraleliza) |
+| T021/T024 smoke insulina | manual/PO | humano (n/a) |
+| T028/T029/T030 [C4/C5] gates/SQP/record | quality gate + memória | **main / opus** |

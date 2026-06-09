@@ -61,3 +61,17 @@
 
 ## Traceability
 FR-001..004 → A (T002–T007) · FR-005..008 → B (T008–T012) · FR-009..012 → C (T014–T019) · FR-013..015 → D (T021–T024) · FR-016 → E (T026).
+
+## Orquestração (model tiering — ver plan.md §Orquestração & Model Tiering)
+Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em qualquer task que toque `packages/*` ou `apps/*/src/features/*`. Sub-agentes nunca commitam main (R-060). cavecrew-reviewer ≠ gate (revisor = Gemini). Haiku só folha trivial — nunca math de dose/UI→ml/tolerância/RLS.
+
+| Task | Agente / modelo |
+|------|-----------------|
+| T001 / T008 / T013 / T020 / T025 [C1] | cavecrew-investigator (haiku/sonnet) |
+| T002 / T014 (migração SQL, RLS/grants) | sonnet |
+| T004 / T015 / T016 (helper/schema/adapter bounded) | cavecrew-builder ou sonnet |
+| T005 / T006 / T017 / T018 / T022 / T023 / T026 (UI/render/export) | sonnet (+ui-design-brain); main valida SaMD/R-267/R-272 |
+| T007 / T012 / T019 / T024 [P] (testes) | sonnet (paraleliza) |
+| **T003 / T010** (write-path AP-193 / tolerância clínica) | **main / opus** — não delegar |
+| T021 / T024 (smoke insulina) | humano (PO) |
+| T028 / T029 / T030 [C4/C5] (gates/SQP/record) | **main / opus** |
