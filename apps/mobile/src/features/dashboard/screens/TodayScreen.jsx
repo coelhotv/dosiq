@@ -206,7 +206,7 @@ function TodayModals({
 
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
-  timeline, carryOver, lookAhead, stockAlerts, protocols, stats, medicines,
+  timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
