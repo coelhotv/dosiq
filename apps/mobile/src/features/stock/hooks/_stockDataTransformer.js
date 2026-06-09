@@ -10,6 +10,7 @@ export function transformStockData(rawData) {
 
   return rawData.map((item) => {
     const totalQuantity = item.medicine_stock_summary?.[0]?.total_quantity || 0
+    const hasPurchases = (item.medicine_stock_summary?.[0]?.stock_entries_count ?? 0) > 0
     const activeProtocols = (item.protocols || []).filter(p =>
       p.active && isProtocolInPeriod(p, today)
     )
@@ -53,6 +54,7 @@ export function transformStockData(rawData) {
     return {
       ...item,
       totalQuantity,
+      hasPurchases,
       dailyConsumption,
       daysRemaining,
       status,

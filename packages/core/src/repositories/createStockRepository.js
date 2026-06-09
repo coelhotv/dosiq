@@ -68,7 +68,8 @@ export function createStockRepository({ client, getUserId }) {
         dosage_per_pill,
         units_per_ml,
         medicine_stock_summary!left (
-          total_quantity
+          total_quantity,
+          stock_entries_count
         ),
         protocols (
           id,

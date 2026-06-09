@@ -121,7 +121,7 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
           <View style={styles.securityInfo}>
             <Text style={styles.securityRowTitle}>Excluir minha conta</Text>
             <Text style={styles.securityRowSub}>
-              Remove acesso e dados. Bloqueante se houver tratamentos ativos.
+              Remove acesso e apaga todos os dados. Bloqueado se houver tratamentos ativos.
             </Text>
           </View>
           <ChevronRight size={16} color={colors.text.muted} />
@@ -256,7 +256,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Densidade da interface</Text>
+          <Text style={styles.cardTitle}>Densidade de informação</Text>
 
           {profileLoading ? (
             <ActivityIndicator size="small" color={colors.primary[500]} style={styles.loader} />

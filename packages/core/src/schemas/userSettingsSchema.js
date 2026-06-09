@@ -73,6 +73,7 @@ const timeSchema = z.string()
 export const userSettingsNotificationSchema = z.object({
   notification_preference: z
     .enum(['telegram', 'mobile_push', 'both', 'none'])
+    .nullable()
     .optional(),
 
   notification_mode: z
