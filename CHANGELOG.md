@@ -9,7 +9,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Mobile (0.14.0 → 0.15.0)
+### Mobile (0.15.1 → 0.15.2)
 - **Fixed** (`patch`, commit 065c72aa): Corrigido bug onde pausar um tratamento deixava instâncias `pending` futuras (além das primeiras 24h) expostas ao sweep de missed — resultado: doses viravam `missed` indevidamente durante o período de pausa. Causa raiz: `markSkippedPaused` só cobria 24h, e o `sweepMissedInstances` corria antes do cron noturno que limparia o restante. Fix: pausa agora chama `markAllFutureSkippedPaused` — todas as instâncias futuras viram `skipped_paused` imediatamente, sem depender do cron. Resume inalterado: `reactivateFuturePaused` + regen. **Nota de loja:** "Correção: tratamentos pausados (ex: pausa de 7 dias entre cartelas de anticoncepcional) não geram mais doses perdidas no histórico durante o período de pausa."
 - **Added** (`minor`, PR #653): Épico 026 Fase 1 — sistema de nudges in-app. Substitui `TzNudgeCard` por `NudgeBanner` genérico; `useNudges('profile'|'dashboard')` busca nudges remotos do Supabase e filtra dispensados via `AsyncStorage`. Dashboard exibe nudge quando sem doses urgentes. Preparado para nudges de versão de app e ativação de push via painel admin.
 - **Nota de loja relevante:** "Novo: dicas e avisos contextuais aparecem na tela inicial quando você não tem doses urgentes — fique por dentro de novidades e configurações importantes sem sair do app."
