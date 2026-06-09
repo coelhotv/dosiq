@@ -195,6 +195,23 @@ export function createDoseInstanceRepository({ client }) {
     },
 
     /**
+     * Marca TODAS as instâncias pendentes futuras do protocolo como skipped_paused.
+     * Usado na pausa imediata — elimina dependência do cron para limpar o restante.
+     * @param {string} protocolId
+     * @returns {Promise<void>}
+     */
+    async markAllFutureSkippedPaused(protocolId) {
+      const { error } = await client
+        .from(TABLE)
+        .update({ status: 'skipped_paused' })
+        .eq('protocol_id', protocolId)
+        .eq('status', 'pending')
+        .gt('scheduled_for', getServerTimestamp())
+
+      if (error) throw error
+    },
+
+    /**
      * Marca instâncias pendentes futuras até `untilTs` como skipped_paused (pausa não penaliza).
      * @param {string} protocolId
      * @param {Date|string} untilTs
