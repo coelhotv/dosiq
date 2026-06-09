@@ -15,7 +15,7 @@ import {
   validateProtocolCreate,
   validateProtocolUpdate,
 } from '../schemas/protocolSchema.js'
-import { getTodayLocal, getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
+import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils.js'
 import { createDoseInstanceRepository } from './createDoseInstanceRepository.js'
 import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js'
 import { resolveUserTz } from '../services/resolveUserTz.js'
@@ -23,7 +23,6 @@ import { resolveUserTz } from '../services/resolveUserTz.js'
 // Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
 // critical_alarm incluído: mudar o flag de criticidade deve re-materializar as pending futuras
 const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm']
-const PAUSE_GRACE_MS = 24 * 60 * 60 * 1000
 
 /**
  * Sincroniza dose_instances após escrita de protocolo (ADR-048, S2.5).
@@ -41,14 +40,13 @@ async function syncInstancesOnWrite({ client, protocol, updates }) {
     if (!protocol?.id) return
     const repo = createDoseInstanceRepository({ client })
 
-    // Pausa: marca paused_at + próximas 24h como skipped_paused (trabalho leve);
-    // o cron limpa o resto após 1 dia. Não regenera.
+    // Pausa: marca paused_at + TODAS as futuras pending como skipped_paused imediatamente.
+    // Elimina dependência do cron para limpar o restante — crítico para ciclos curtos
+    // (ex: anticoncepcional 7d de pausa entre cartelas) onde o sweep de missed corre
+    // antes do cron e converte pending→missed indevidamente (AP-221).
     if (updates && updates.active === false) {
-      // Captura UM timestamp e deriva o cutoff dele (evita duas leituras de relógio).
-      const nowIso = getServerTimestamp()
-      await repo.setPausedAt(protocol.id, nowIso)
-      const cutoffIso = parseTimestamp(parseISO(nowIso).getTime() + PAUSE_GRACE_MS).toISOString()
-      await repo.markSkippedPaused(protocol.id, cutoffIso)
+      await repo.setPausedAt(protocol.id, getServerTimestamp())
+      await repo.markAllFutureSkippedPaused(protocol.id)
       return
     }
 
