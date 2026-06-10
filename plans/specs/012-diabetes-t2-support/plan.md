@@ -69,13 +69,54 @@
 - Marcar crítico = flag `critical_alarm` (spec 010) — sem reimplementar.
 
 ### Fase C — `biomarkers_log` + fast-logging + timeline híbrida — ADR-060
+
+> **Design prescritivo (decisões fixadas pelo PO).** Fonte canônica:
+> [HANDOFF_DESIGN.md](../../backlog-native_app/MOCKS_APP_CRUD/HANDOFF_DESIGN.md) §2.6 (decisões) +
+> §4 (sistema visual: tokens/ícones/primitivas) · [DESIGN_BRIEFING.md](./DESIGN_BRIEFING.md) ·
+> PNGs em [design-mocks/](./design-mocks/) · componentes-mock (React puro, **sem** Zod/Supabase/
+> hooks — recriar, não copiar estrutura) em
+> `plans/backlog-native_app/MOCKS_APP_CRUD/project/dosiq-mocks/biomarker-screens{,-2}.jsx` (exportam
+> em `window`: `MeasureCardC`/`WeekNav`/`BioChip`/`Keypad`/`BioToast`/`ScatterPlot`/`TypeChips`).
+> Plataforma do mock = **Android**; web é espelho (coder adapta). **Coder em dúvida de pixel/
+> comportamento → consultar esses arquivos antes de inventar.**
+
+**Dados/core:**
 - Migração: tabela `biomarkers_log` (`id`,`user_id`,`type`,`value`,`unit`,`measured_at`,`context`,
   `source`,`notes`,`created_at`) + grants + RLS (`user_id=auth.uid()`), enums PT (R-021).
+  `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro`.
 - `biomarkerLogSchema` (core) sincronizado com CHECK (R-082).
 - Adapter `biomarkersToEvents` (core) → `TimelineEvent[]` `type='biomarker'` (R-252, **sem tocar**
-  `timeline.js` builder). Registrar `BiomarkerEventCard` em `eventCardRegistry.js` (web) + mobile.
-- Fast-logging: bottom-sheet web+mobile (caminho mobile **UNVERIFIED** → C1).
-- **Sem FK rígido** com `dose_instances`; correlação só temporal. **Sem meta/alvo** (SaMD).
+  `timeline.js` builder). **Sem FK rígido** com `dose_instances`; correlação só temporal.
+
+**UI — fast-logging (UX-A) [mock: `C registro tintado`, `Sheet A preterida`, `Erro valor inválido`]:**
+- Bottom sheet **layout B "idoso primeiro"**: valor gigante centrado, contexto grid 2×2 (alvos
+  ≥44px), tipo recolhido a 1 linha (glicemia=default 90%), unidade fixa por tipo, horário default
+  "Agora" ajustável, vírgula PT-BR (R-270). Componentes: `Keypad` (chrome do sistema, **fora** do
+  sheet — `DosiqBottomSheet maxHeight 85%`; estados de erro **altura-neutros**: valor 64→48px +
+  caption 12px), `BioChip` (contexto), `BioToast` (sucesso/erro). Erro = transparência radical.
+- **FAB do Hoje = speed-dial** (Registrar dose · Registrar medida) [mock `FAB speed-dial`].
+
+**UI — timeline híbrida (UX-B) [mock: `C registro tintado ESCOLHIDA`]:**
+- Renderer `BiomarkerEventCard` registrado em `eventCardRegistry.js` (web) + equivalente mobile,
+  implementando o padrão **`MeasureCardC`**: fundo `infoSoft`, **plano**, sem sombra, sem botão,
+  `IconRuler` inline. Dose permanece card branco **elevado** (elevação=ação, tinta=registro;
+  **medida nunca com mais peso visual que dose**). Agrupar nos períodos da "Agenda de Hoje";
+  card "Última medida" no **FIM** (dose primeiro).
+
+**UI — área de Medidas (UX-C) [mock: `B Perfil Ferramentas Medidas`, `Hub Glicemia V1`, `Hub Peso`,
+`Detalhe da medida`, `Estado zero`]:**
+- Entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Medidas**, entre
+  Histórico de Doses e Modo Consulta) — coexistem.
+- Hub v1: histórico cronológico (filtro por tipo via `TypeChips`, **sem ícone**) + tendência
+  **`ScatterPlot`** (pontos/dia, 1 cor `infoRing`, **7d FIXO + `WeekNav`**, seta-presente
+  desabilitada, **sem 7d/30d**, **sem zona/meta/linha** — SaMD; média = número descritivo).
+- Sheet de detalhe espelha o de dose: *Editar registro* · **Ver o dia completo** (ponte timeline) ·
+  *Excluir registro*. Multi-biomarcador (glicemia/peso/PA) sem redesenho.
+- **Estado-zero obrigatório** (área vazia + dia vazio) — convite inline teal soft + dashed + CTA.
+- Caminho real do fast-logging/navegação **mobile UNVERIFIED** → resolver em C1 (T013) antes de codar.
+
+> **Trava SaMD (permanente):** cor diferencia *tipo* de evento (teal=dose · azul-info=medida),
+> **nunca qualidade** do valor. Sem meta/zona/alvo/semáforo/linha-de-média. Médias descritivas.
 
 ### Fase D — Insulina basal (UI/volume)
 - ✅ **Conversão UI→ml já em prod** (022 Fase C, `consume_stock_fifo`, migração `20260608`):
@@ -117,8 +158,11 @@
 | `packages/core/src/schemas/biomarkerLogSchema.js` | C | [NEW] schema Zod (enums PT) | NEW |
 | `packages/core/src/services/timelineService.js` | C | adicionar `biomarkersToEvents` (adapter) | `:118` verificado |
 | `apps/web/src/views/redesign/history/eventCardRegistry.js` | C | registrar `biomarker` | verificado |
-| `apps/web/src/views/redesign/history/BiomarkerEventCard.jsx` | C | [NEW] card | NEW |
-| Fast-logging mobile (sheet/FAB) | C | **UNVERIFIED** — C1 confirma | ⚠️ |
+| `apps/web/src/views/redesign/history/BiomarkerEventCard.jsx` | C | [NEW] card padrão `MeasureCardC` (infoSoft/plano/IconRuler) | NEW · mock `C registro tintado` |
+| Fast-logging sheet + FAB speed-dial (web) | C | [NEW] sheet layout B + FAB dose/medida | mock `FAB speed-dial`/`C registro tintado` |
+| Área de Medidas — hub web (histórico + `ScatterPlot`/`WeekNav`/`TypeChips`) | C | [NEW] Perfil›Ferramentas›Medidas + entrada "Última medida" no Hoje | mock `Hub Glicemia V1`/`B Perfil Ferramentas` |
+| Fast-logging + FAB + área Medidas **mobile** | C | **UNVERIFIED** — C1 (T013) confirma caminho real | ⚠️ mock Android é a fonte |
+| `IconRuler` em `dosiq-icons` (web/mobile shared) | C | marca única de biomarcador (reserva semântica) | mock §4.2 handoff |
 | `packages/core/src/utils/doseUnit.js` | D | ✅ formatters líquidos já existem (022) — só **consumir** (R-272), não revisar | verificado |
 | ~~`docs/migrations/...diabetes_d_consume_ui.sql`~~ | ~~D~~ | ✅ **REMOVIDO** — conversão UI→ml já em prod (022 `20260608`) | n/a |
 | Export PDF (Fase E) | E | cruzar dose×biomarker server-side | a mapear em C1/E |

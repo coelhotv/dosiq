@@ -28,13 +28,22 @@
 
 ## Phase C — biomarkers_log + fast-logging + timeline híbrida (PR 3) — ADR-060
 
-- [ ] T013 [C1] Confirmar caminho real do **fast-logging mobile** (FAB/bottom-sheet) — UNVERIFIED no plan. Registrar antes de codar.
+> **Design prescritivo (decisões PO fixadas).** Consultar SEMPRE em dúvida de pixel/comportamento:
+> `HANDOFF_DESIGN.md` §2.6/§4 · `DESIGN_BRIEFING.md` · `design-mocks/*.png` · componentes-mock
+> `plans/backlog-native_app/MOCKS_APP_CRUD/project/dosiq-mocks/biomarker-screens{,-2}.jsx`
+> (`MeasureCardC`/`WeekNav`/`BioChip`/`Keypad`/`BioToast`/`ScatterPlot`/`TypeChips`). Mobile Android
+> = fonte; web = espelho. **SaMD: cor=tipo, nunca qualidade; sem meta/zona/linha-de-média.**
+
+- [ ] T013 [C1] Confirmar caminho real **mobile** do fast-logging + FAB + navegação da área de Medidas (UNVERIFIED no plan). Comparar com mocks Android. Registrar antes de codar.
 - [ ] T014 [US3] Migração `docs/migrations/2026XXXX_diabetes_c_biomarkers.sql`: `biomarkers_log` (`id,user_id,type,value,unit,measured_at,context,source,notes,created_at`) + GRANTs + RLS (`user_id=auth.uid()`) + REVOKE anon. Enums PT (R-021).
-- [ ] T015 [US3] `biomarkerLogSchema.js` (core) — sincronizado com CHECK (R-082); `safeParse`; `.nullable().optional()`.
-- [ ] T016 [US3] Adapter `biomarkersToEvents` em `timelineService.js` → `TimelineEvent[]` `type='biomarker'` (R-252; **não tocar** `timeline.js`).
-- [ ] T017 [US3] `BiomarkerEventCard.jsx` + registrar `biomarker` em `eventCardRegistry.js` (web) + equivalente mobile.
-- [ ] T018 [US3] Fast-logging UI (web + mobile, conforme T013): glicemia mg/dL + contexto manual; reusa bottom-sheet/`FormSelect` (AP-180).
-- [ ] T019 [P] [C4] Testes: biomarcador cria linha; aparece na timeline por instante (sem tocar builder); sem FK dose; sem meta; RLS isola por user.
+- [ ] T015 [US3] `biomarkerLogSchema.js` (core) — sincronizado com CHECK (R-082); `safeParse`; `.nullable().optional()`. `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro` (nullable, opcional). `type` default `glicemia`; `source` default `manual`.
+- [ ] T016 [US3] Adapter `biomarkersToEvents` em `timelineService.js` → `TimelineEvent[]` `type='biomarker'` (R-252; **não tocar** `timeline.js`). Agrupar nos períodos da "Agenda de Hoje"; card "Última medida" no FIM (dose primeiro).
+- [ ] T017 [US3] `BiomarkerEventCard.jsx` (padrão **`MeasureCardC`**: `infoSoft`/plano/sem sombra/sem botão/`IconRuler` inline) + registrar `biomarker` em `eventCardRegistry.js` (web) + equivalente mobile. **Medida nunca com mais peso visual que dose** (elevação=ação, tinta=registro). Mock `C registro tintado ESCOLHIDA`.
+- [ ] T017b [US3] Reservar `IconRuler` em `dosiq-icons` (web/mobile shared) como marca única de biomarcador (chips de tipo ficam **sem ícone**). Handoff §4.2.
+- [ ] T018 [US3] Fast-logging UI (web + mobile): bottom sheet **layout B "idoso primeiro"** (valor gigante, contexto grid 2×2 ≥44px, tipo recolhido, unidade fixa, "Agora" ajustável, vírgula PT-BR R-270). `Keypad` chrome do sistema FORA do sheet (`maxHeight 85%`; erro **altura-neutro** 64→48px+caption 12px). `BioChip`/`BioToast`. Erro = transparência radical (o que falhou/nada salvo/dados mantidos/retry). Mocks `C registro tintado`/`Erro valor inválido`. Reusa AP-180.
+- [ ] T018b [US3] **FAB do Hoje = speed-dial** (Registrar dose · Registrar medida) — web + mobile. Mock `FAB speed-dial expandido`.
+- [ ] T018c [US3b] **Área de Medidas** (web + mobile): entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Medidas**, entre Histórico de Doses e Modo Consulta). Hub v1 = histórico cronológico (filtro `TypeChips` sem ícone) + tendência `ScatterPlot` (pontos/dia, 1 cor `infoRing`, **7d FIXO + `WeekNav`**, seta-presente desabilitada, **sem 7d/30d, sem zona/meta/linha** — SaMD; média=número). Sheet detalhe espelha dose (*Editar*·**Ver o dia completo**·*Excluir*). Multi-biomarcador sem redesenho. **Estado-zero obrigatório** (área+dia vazios, convite inline). Mocks `B Perfil Ferramentas`/`Hub Glicemia V1`/`Hub Peso`/`Detalhe da medida`/`Estado zero`/`Dia vazio`.
+- [ ] T019 [P] [C4] Testes: biomarcador cria linha; aparece na timeline por instante (sem tocar builder); sem FK dose; sem meta; RLS isola por user; `WeekNav` clampa no presente; estado-zero e erro renderizam; **checklist SaMD** (sem cor/copy de qualidade, sem linha de média).
 
 ## Phase D — Insulina basal (UI/volume) (PR 4)
 
@@ -60,7 +69,7 @@
 022 mergeada → A. B e C paralelizáveis após A. D depende de C. E depende de C+D.
 
 ## Traceability
-FR-001..004 → A (T002–T007) · FR-005..008 → B (T008–T012) · FR-009..012 → C (T014–T019) · FR-013..015 → D (T021–T024) · FR-016 → E (T026).
+FR-001..004 → A (T002–T007) · FR-005..008 → B (T008–T012) · FR-009/010/011/012 + 010b/011b/012b → C (T014–T019, T017b, T018b, T018c) · FR-013..015 → D (T021–T024) · FR-016 → E (T026). US3b → T018c.
 
 ## Orquestração (model tiering — ver plan.md §Orquestração & Model Tiering)
 Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em qualquer task que toque `packages/*` ou `apps/*/src/features/*`. Sub-agentes nunca commitam main (R-060). cavecrew-reviewer ≠ gate (revisor = Gemini). Haiku só folha trivial — nunca math de dose/UI→ml/tolerância/RLS.
@@ -70,7 +79,7 @@ Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em q
 | T001 / T008 / T013 / T020 / T025 [C1] | cavecrew-investigator (haiku/sonnet) |
 | T002 / T014 (migração SQL, RLS/grants) | sonnet |
 | T004 / T015 / T016 (helper/schema/adapter bounded) | cavecrew-builder ou sonnet |
-| T005 / T006 / T017 / T018 / T022 / T023 / T026 (UI/render/export) | sonnet (+ui-design-brain); main valida SaMD/R-267/R-272 |
+| T005 / T006 / T017 / T017b / T018 / T018b / T018c / T022 / T023 / T026 (UI/render/export) | sonnet (+ui-design-brain, **consultar mocks design-mocks/ + biomarker-screens.jsx**); main valida SaMD/R-267/R-272 |
 | T007 / T012 / T019 / T024 [P] (testes) | sonnet (paraleliza) |
 | **T003 / T010** (write-path AP-193 / tolerância clínica) | **main / opus** — não delegar |
 | T021 / T024 (smoke insulina) | humano (PO) |

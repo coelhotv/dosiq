@@ -38,8 +38,9 @@
 
 ## Coverage (FR → task / SC → C4 / US → teste)
 
-- FR-001..004 → T002–T007 (A) · FR-005..008 → T008–T012 (B) · FR-009..012 → T014–T019 (C) ·
-  FR-013..015 → T021–T024 (D) · FR-016 → T026 (E). ✅ todos cobertos.
+- FR-001..004 → T002–T007 (A) · FR-005..008 → T008–T012 (B) · FR-009/010/011/012 +
+  **010b/011b/012b (design, 2026-06-09)** → T014–T019 + T017b/T018b/T018c (C) · FR-013..015 →
+  T021–T024 (D) · FR-016 → T026 (E). ✅ todos cobertos. US3b (área de Medidas) → T018c.
 - SC-001→T007 · SC-002→T012 · SC-003→T019 · SC-004→T024 · SC-005→T027 · SC-006→T028. ✅
 - US1..5 têm Independent Test declarado na spec. ✅
 

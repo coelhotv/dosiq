@@ -127,6 +127,52 @@ ver o evento ordenado por instante na timeline ao lado das doses.
    builder puro nem a UI existente. **Sem meta/alvo, só log.**
 4. Given a linha SaMD, When um biomarcador é registrado, Then o app **só exibe/armazena** —
    nenhuma sugestão de dose é derivada dele.
+5. Given o Dashboard do Hoje, When o usuário toca o FAB, Then ele **expande em speed-dial** com 2
+   ações: *Registrar dose* · *Registrar medida* (mock `FAB speed-dial expandido`).
+6. Given *Registrar medida*, When o sheet abre, Then usa o **layout B "idoso primeiro"** (valor
+   gigante centrado, contexto em grid 2×2 com alvos ≥44px, tipo recolhido a 1 linha, unidade fixa
+   por tipo, horário default "Agora" ajustável, vírgula PT-BR aceita) — mock `C registro tintado`/
+   `Sheet A preterida` (layout A descartado).
+7. Given a timeline híbrida do Hoje, When um biomarcador aparece, Then é renderizado como
+   **`MeasureCardC` "registro tintado"** (fundo `infoSoft`, **plano/sem sombra/sem botão**, ícone
+   `IconRuler` inline) — distinto da dose (card branco **elevado** com botão Tomar). **Elevação =
+   ação, tinta = registro**; dose nunca perde prioridade visual (mock `C registro tintado ESCOLHIDA`).
+8. Given valor inválido ou falha de rede, When o registro é tentado, Then erro inline **específico**
+   (campo encolhe 64→48px p/ caber caption 1 linha) ou banner dizendo **o que falhou, que nada foi
+   salvo e que os dados digitados foram mantidos** + "Tentar novamente" — nunca sucesso falso (mock
+   `Erro valor inválido`).
+
+> **Referência de design (Fase C):** decisões fixadas pelo PO em
+> [HANDOFF_DESIGN.md](../../backlog-native_app/MOCKS_APP_CRUD/HANDOFF_DESIGN.md) §2.6/§4 ·
+> briefing [DESIGN_BRIEFING.md](./DESIGN_BRIEFING.md) · mocks em [design-mocks/](./design-mocks/) ·
+> componentes-mock (React puro, sem lógica) em
+> `plans/backlog-native_app/MOCKS_APP_CRUD/project/dosiq-mocks/biomarker-screens{,-2}.jsx`.
+> Em dúvida de pixel/comportamento durante o dev → consultar esses arquivos. Mobile Android é a
+> fonte; web é espelho (coder adapta). **Trava SaMD permanente:** cor diferencia *tipo* de evento,
+> nunca *qualidade* do valor; sem meta/zona/alvo/semáforo; médias são descritivas.
+
+### User Story 3b — Área de Medidas: histórico + tendência (P1) — Fase C
+**Why**: o paciente/médico precisa de uma área para ver o histórico de medidas ao longo do tempo,
+além do registro pontual. Entra como **ferramenta**, multi-biomarcador desde a arquitetura.
+**Independent Test**: abrir Perfil › Ferramentas › Medidas; ver histórico cronológico + hub de
+tendência (scatter 7d com `WeekNav`); confirmar ausência de zona/meta/linha-alvo.
+
+**Acceptance Scenarios**:
+1. Given a navegação, When procuro a área de Medidas, Then há **dois acessos coexistentes**: (A)
+   card "Última medida" no **FIM** da timeline do Hoje (rotina — nunca antes da agenda: dose
+   primeiro); (B) **Perfil › Ferramentas › Medidas** (canônica), entre Histórico de Doses e Modo
+   Consulta (mock `B Perfil Ferramentas Medidas`).
+2. Given o Hub de Medidas v1, When abro a tendência, Then é **scatter (pontos por dia), uma cor,
+   7d FIXO + `WeekNav`** (seta → desabilitada na semana atual; **sem seletor 7d/30d**); média da
+   semana como **NÚMERO** (sem linha desenhada — seria lida como meta). Por contexto (jejum/pós) =
+   evolução v2 (mock `Hub Glicemia V1`).
+3. Given multi-biomarcador, When troco de tipo, Then o mesmo hub serve peso (kg)/PA/batimentos sem
+   redesenho — chips de tipo **sem ícone** (só texto); `IconRuler` é a marca única de medida (mock
+   `Hub Peso genericidade`).
+4. Given o sheet de detalhe de uma medida, When abro, Then espelha o de dose: *Editar registro* ·
+   **Ver o dia completo** (ponte p/ a timeline) · *Excluir registro* (mock `Detalhe da medida`).
+5. Given nenhuma medida registrada, When abro a área, Then **estado-zero** dedicado (mocks
+   `Estado zero` / `Dia vazio` — convite inline teal soft + dashed + CTA).
 
 ### User Story 4 — Tratamento com insulina basal (UI / volume) (P1) — Fase D
 **Why**: insulina basal é diária, dosada em UI (U-100 = 100 UI/ml), debitada do volume físico
@@ -241,13 +287,35 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   (timestamptz), `context` (text, **manual**), `source` (text, default `'manual'`; extensível
   healthkit/google_fit/health_connect/cgm_*), `notes`, `created_at`. Grants + RLS
   (`user_id=auth.uid()`) conforme template CLAUDE.md. Enums em PT (R-021).
-- **FR-010**: Fast-logging (web + mobile) registra biomarcador com fricção mínima (teclado
-  numérico, contexto manual). Reusa bottom-sheet/`FormSelect` nativo já hardenizado.
+- **FR-010**: Fast-logging (web + mobile) registra biomarcador com fricção mínima. **Design fixado:**
+  bottom sheet **layout B "idoso primeiro"** (valor gigante centrado, contexto em grid 2×2 alvos
+  ≥44px, tipo recolhido a 1 linha, unidade fixa por tipo, horário default "Agora" ajustável). Vírgula
+  PT-BR aceita (R-270). Contextos de glicemia: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar` +
+  "Outro" livre — **opcionais** (1 toque). Teclado decimal nativo é **chrome do sistema** (fora do
+  sheet; sheet termina acima; `DosiqBottomSheet maxHeight 85%` → estados de erro **altura-neutros**).
+  Componentes-mock: `Keypad`/`BioChip`/`BioToast`. Reusa bottom-sheet/`FormSelect` hardenizado (AP-180).
+- **FR-010b**: **FAB do Hoje = speed-dial** com 2 ações ao expandir: *Registrar dose* · *Registrar
+  medida* (mock `FAB speed-dial expandido`). Fast-logging a 1 toque de qualquer lugar relevante.
 - **FR-011**: Biomarcador entra na timeline como **evento tipado** via adapter + renderizador
   (R-252 / FP-3), ordenado por instante absoluto — **sem tocar o builder puro nem a UI de dose**.
-  Sem meta/alvo. Sem elo FK rígido com dose (correlação temporal).
+  Sem meta/alvo. Sem elo FK rígido com dose (correlação temporal). **Design fixado:** card de medida
+  = **`MeasureCardC` "registro tintado"** (fundo `infoSoft`, plano, sem sombra, sem botão, `IconRuler`
+  inline) — dose permanece card branco **elevado** com botão Tomar (elevação=ação, tinta=registro;
+  AP-018 do handoff: medida nunca com mais peso visual que dose). Agenda híbrida = **evolução da
+  "Agenda de Hoje"**, agrupada nos períodos existentes (madrugada/manhã/tarde/noite); card "Última
+  medida" no **FIM** da timeline (nunca antes da agenda).
+- **FR-011b**: **Área de Medidas** (Fase C): (a) acesso A = card "Última medida" no fim do Hoje +
+  (b) acesso B = **Perfil › Ferramentas › Medidas** (canônica). Hub v1 = histórico cronológico
+  (filtrável por tipo) + **tendência scatter** (pontos/dia, uma cor, **7d FIXO + `WeekNav`**, sem
+  seletor 7d/30d, **sem zona/meta/linha-alvo** — SaMD; média da semana como número). Chips de tipo
+  **sem ícone**. Multi-biomarcador sem redesenho. Componentes-mock: `ScatterPlot`/`WeekNav`/`TypeChips`.
+  Sheet de detalhe espelha o de dose (*Editar* · *Ver o dia completo* · *Excluir*).
 - **FR-012**: Schema Zod `biomarkerLogSchema` em `packages/core/src/schemas/` (enums PT,
   `safeParse`, `.nullable().optional()` onde aplicável; sincronizado com CHECK SQL — R-082).
+  `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro` (nullable).
+- **FR-012b**: **Estado-zero obrigatório** (regra do PO) em toda superfície nova de medida (área
+  vazia, dia vazio) + **transparência radical** de erro (o que falhou, nada salvo, dados mantidos,
+  retry) — nunca sucesso falso. Mocks `Estado zero`/`Dia vazio`/`Erro valor inválido`.
 
 **Fase D — Insulina basal (UI/volume)**
 - **FR-013** ✅ **NÚCLEO JÁ ENTREGUE POR 022 (Fase C, #652)**: a concentração é a coluna
