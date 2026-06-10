@@ -361,7 +361,7 @@ describe('Schemas de Validação Zod', () => {
 
 // 012 Fase A (ADR-059): shelf_life_days — failure modes (R-270: ''→null, nunca 0)
 describe('medicineSchema shelf_life_days', () => {
-  const base = { name: 'Insulina NPH', dosage_unit: 'ui/ml', units_per_ml: 100, presentation: 'injecao' }
+  const base = { name: 'Insulina NPH', dosage_unit: 'ui/ml', units_per_ml: 100, presentation: 'injetavel' }
 
   it('aceita inteiro positivo (28)', () => {
     const r = medicineSchema.safeParse({ ...base, shelf_life_days: 28 })

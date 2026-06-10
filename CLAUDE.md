@@ -221,7 +221,7 @@ Tipos: `feat fix docs test refactor style chore`.
 ## Schemas — enums
 
 - `DOSAGE_UNITS`: `mg mcg g ml ui cp gotas`
-- `MEDICINE_TYPES`: `comprimido capsula liquido injecao pomada spray outro`
+- `MEDICINE_TYPES`: `comprimido capsula liquido injetavel pomada spray outro`
 - `FREQUENCIES`: `diario dias_alternados semanal personalizado quando_necessario`
 - Stock: CRITICAL <7d · LOW <14d · NORMAL <30d · HIGH ≥30d
 

@@ -58,8 +58,8 @@
   eixo paralelo ao status 4-tiers de volume (ADR-018), render dedicado (relógio).
 - **TTL também notifica** via stack existente (push/Telegram — FR-004b): kind novo no dispatcher
   (R-200/CON-019, enum Zod R-193); cadência D-3 + vencimento. Idoso que não abre o app fica sabendo.
-- `presentation` ganha uso real: forms permitem `injecao`/`pomada` (UI dedicada — escopo 012).
-  `shelf_life_days` com **prefill 28 quando `presentation='injecao'`** (editável — anti-feature-morta).
+- `presentation` ganha uso real: forms permitem `injetavel`/`pomada` (UI dedicada — escopo 012).
+  `shelf_life_days` com **prefill 28 quando `presentation='injetavel'`** (editável — anti-feature-morta).
 
 ### Fase B — GLP-1 (mg, semanal, titulação) — ADR-061
 - **Auditar titulação** (FR-005): rodar `titrationUtils` + wizard num protocolo novo, mapear

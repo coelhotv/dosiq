@@ -67,7 +67,7 @@ export const buildMedicinePayload = (formData) => {
     presentation: isLiquid ? 'liquido' : formData.presentation || 'comprimido',
     therapeutic_class: formData.therapeutic_class || null,
     regulatory_category: formData.regulatory_category || null,
-    // 012 Fase A: TTL pós-abertura (apenas injecao; '' → null via Zod preprocess)
+    // 012 Fase A: TTL pós-abertura (apenas injetavel; '' → null via Zod preprocess)
     shelf_life_days: formData.shelf_life_days !== '' ? formData.shelf_life_days : null,
   }
 }

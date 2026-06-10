@@ -135,24 +135,24 @@ export default function MedicineFormScreen() {
 
   // Ao escolher unidade líquida (/ml): marca presentation='liquido'. Densidade NÃO
   // é pedida aqui (022 Fase C — pertence ao tratamento). Sólido → 'comprimido'.
-  // NÃO sobrescreve 'injecao' (012): injeção pode ser /ml mas tem TTL próprio.
+  // NÃO sobrescreve 'injetavel' (012): injeção pode ser /ml mas tem TTL próprio.
   const handleUnitChange = useCallback(
     (_name, value) => {
       form.handleChange('dosage_unit', value)
       const currentPresentation = form.values.presentation
-      if (currentPresentation !== 'injecao') {
+      if (currentPresentation !== 'injetavel') {
         form.handleChange('presentation', isLiquidUnit(value) ? 'liquido' : 'comprimido')
       }
     },
     [form]
   )
 
-  // Ao selecionar 'injecao': prefill 28 dias (editável) apenas se shelf_life_days vazio.
+  // Ao selecionar 'injetavel': prefill 28 dias (editável) apenas se shelf_life_days vazio.
   // Outras presentations: limpa apenas o prefill 28 — preserva valor digitado manualmente.
   const handlePresentationChange = useCallback(
     (_name, value) => {
       form.handleChange('presentation', value)
-      if (value === 'injecao') {
+      if (value === 'injetavel') {
         const current = form.values.shelf_life_days
         if (current === '' || current === null || current === undefined) {
           form.handleChange('shelf_life_days', '28')
@@ -274,7 +274,7 @@ export default function MedicineFormScreen() {
             {...formProps(form, 'presentation')}
             onChange={handlePresentationChange}
           />
-          {form.values.presentation === 'injecao' && (
+          {form.values.presentation === 'injetavel' && (
             <FormInput
               name="shelf_life_days"
               label="Validade após aberto (dias)"

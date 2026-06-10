@@ -175,7 +175,7 @@ medicamentos (medicines)
 ├── name (text)
 ├── dosage_per_pill (numeric — mg por comprimido)
 ├── dosage_unit (enum: mg|mcg|g|ml|ui|cp|gotas)
-├── type (enum: comprimido|capsula|liquido|injecao|pomada|spray|outro)
+├── type (enum: comprimido|capsula|liquido|injetavel|pomada|spray|outro)
 ├── active_ingredient (text, opcional — habilitado pela base ANVISA)
 ├── laboratory (text, opcional)
 ├── created_at, updated_at

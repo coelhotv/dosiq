@@ -74,7 +74,7 @@ o dosiq precisa distinguir forma injetável e avisar por **tempo de uso**, não 
 relógio além do TTL e confirmar alerta de validade biológica distinto do alerta de volume.
 
 **Acceptance Scenarios**:
-1. Given um medicamento com `presentation='injecao'`, When inspecionado, Then carrega a forma
+1. Given um medicamento com `presentation='injetavel'`, When inspecionado, Then carrega a forma
    farmacêutica e `medicines.shelf_life_days` (nullable; insulina ≈ 30).
 2. Given um lote (`stock`) de injetável sem `opened_at`, When a **primeira tomada** debita esse
    lote, Then `stock.opened_at` é inferido = instante da tomada (não há cenário de "abrir sem usar").
@@ -252,17 +252,17 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 
 **Fase A — Forma injetável + validade biológica**
 - **FR-001**: `public.medicines` ganha coluna **`presentation`** (forma farmacêutica geral, enum
-  PT — `comprimido`/`capsula`/`liquido`/`injecao`/`pomada`/`spray`/`outro`, alinha `MEDICINE_TYPES`
+  PT — `comprimido`/`capsula`/`liquido`/`injetavel`/`pomada`/`spray`/`outro`, alinha `MEDICINE_TYPES`
   Zod existente). Cobre injetável (este épico), pomada e líquido num eixo único — distinto de
-  `medicines.type` (categoria `medicamento`/`suplemento`). Injetável = `presentation='injecao'`.
+  `medicines.type` (categoria `medicamento`/`suplemento`). Injetável = `presentation='injetavel'`.
   Default + migração de linhas existentes definidos no Planning (ADR). **Coordenação cross-spec
   resolvida:** a spec 022 foi **amendada (2026-06-03, FR-002b)** para já criar `presentation` na
-  origem; a 012 **consome** essa coluna (`='injecao'`). A natureza líquida do decremento segue
+  origem; a 012 **consome** essa coluna (`='injetavel'`). A natureza líquida do decremento segue
   derivada de `dosage_unit LIKE '%/ml'` (decisão-mãe da 022); `presentation` é o eixo de forma
   complementar.
 - **FR-002**: `public.medicines` ganha `shelf_life_days` (`integer`, nullable) — TTL pós-abertura
   (propriedade do produto; distinto de `expiration_date` da caixa). **Captura (anti-feature-morta):**
-  idoso não sabe/não preenche → form **sugere default 28** quando `presentation='injecao'` (prefill
+  idoso não sabe/não preenche → form **sugere default 28** quando `presentation='injetavel'` (prefill
   editável, copy guiada "validade após aberto — confira a bula"); sem constraint DB (nullable segue).
 - **FR-004b**: Alerta de validade biológica também via **stack de notificação existente**
   (push/Telegram) — idoso que não abre o app precisa saber da caneta vencendo. Reusar dispatcher
@@ -373,7 +373,7 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 ### Key Entities
 - **Medicine**: `presentation` (enum PT — FR-001; **já existe em prod via 022**) + `units_per_ml`
   (razão→ml genérica — FR-013; **já existe em prod via 022**, capturada no tratamento) + **novo
-  net-new desta spec:** `shelf_life_days` (FR-002). Injetável = `presentation='injecao'`.
+  net-new desta spec:** `shelf_life_days` (FR-002). Injetável = `presentation='injetavel'`.
 - **Stock**: + `opened_at` (inferido na 1ª tomada). Lote = unidade física de doses (caneta/cartucho
   transparente). `quantity` = UI/ml restantes.
 - **Protocol**: reusa `titration_schedule`/`current_stage_index`/`stage_started_at`/
@@ -424,14 +424,14 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 **Resolvidas pelo operador (2026-06-03):**
 1. ✅ **Tolerância cap (US2.3 / FR-007):** remoção do cap **só para frequências não-diárias**;
    diárias mantêm 120 min (preserva adesão do público 1×/dia).
-2. ✅ **Forma (FR-001):** nova coluna **`medicines.presentation`** (enum geral — injecao/pomada/
+2. ✅ **Forma (FR-001):** nova coluna **`medicines.presentation`** (enum geral — injetavel/pomada/
    liquido/…), não booleano `is_injectable`; cobre múltiplas formas num eixo único.
 3. ✅ **Concentração (FR-013):** coluna genérica razão→ml que se adapta à `dosage_unit`.
    **Nome final em prod (022): `medicines.units_per_ml`** (gotas→20, ui/ml→100). 012 reusa.
 
 **Coordenação cross-spec com 022 (✅ CONCLUÍDA — 022 mergeada 2026-06-08, #650/#651/#652):**
 - `presentation`: ✅ coluna **em prod** (`medicines.presentation`, enum PT, CHECK
-  `medicines_presentation_check`, default `comprimido`). 012 consome (`='injecao'`). `is_liquid`
+  `medicines_presentation_check`, default `comprimido`). 012 consome (`='injetavel'`). `is_liquid`
   derivado de `dosage_unit LIKE '%/ml'` (decisão-mãe da 022, inalterada) — eixos complementares.
 - Coluna razão→ml: ✅ **em prod** como `medicines.units_per_ml` (gotas→20, ui/ml→100, default 20).
   012 reusa direto (U-100=100) — **sem nova coluna, sem migração**.

@@ -40,7 +40,7 @@
 > **Fase C = spawn paralelo (maior ganho de token/velocidade).** Web e mobile em sub-agentes paralelos (worktree por agente). Branch sync ritual antes de cada spawn (AP-169). **T015 trava todos os spawns C.**
 
 - [ ] T015 [C1] {Opus} Verificar caminho real do estoque **mobile** (não há `StockForm` mobile) e se o **wizard** reusa `MedicineForm`. Registrar antes de codar. **GATE: trava spawns da Fase C.**
-- [ ] T016 [US6] {Sonnet} `MedicineForm.jsx` (+ `MedicineFormDosageInfo.jsx`) + `MedicineFormScreen.jsx` (mobile): dropdown novo, badge `💧`, campo `Gotas por ml` (→ `units_per_ml`), setar `presentation='liquido'` ao escolher `/ml` (UI dedicada de forma p/ injecao/pomada é escopo da 012).
+- [ ] T016 [US6] {Sonnet} `MedicineForm.jsx` (+ `MedicineFormDosageInfo.jsx`) + `MedicineFormScreen.jsx` (mobile): dropdown novo, badge `💧`, campo `Gotas por ml` (→ `units_per_ml`), setar `presentation='liquido'` ao escolher `/ml` (UI dedicada de forma p/ injetavel/pomada é escopo da 012).
 - [ ] T017 [US6] {Haiku} Garantir que o passo de medicamento do **wizard** expõe as novas unidades (reuso ou ajuste, conforme T015). Gate de confiança ADR-044.
 - [ ] T018 [US6] {Sonnet} `ProtocolFormDosesSection.jsx` (web) + `ProtocolFormBody.jsx` (mobile): select `intake_unit` condicional + hint.
 - [ ] T019 [US7] {Sonnet} `StockForm.jsx` (+ `StockFormPurchaseDetails.jsx`): inputs frascos/ml + `Preço Total`; payload de desmembramento. Mobile conforme T015.

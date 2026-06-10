@@ -63,11 +63,11 @@ ALTER TABLE public.medicines ADD CONSTRAINT medicines_dosage_unit_check
 ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS units_per_ml NUMERIC DEFAULT 20;
 
 -- Forma farmacêutica explícita (additiva; NÃO substitui is_liquid derivado — ADR-058).
--- Eixo de forma que a spec 012 (Diabetes) estende para injecao/pomada.
+-- Eixo de forma que a spec 012 (Diabetes) estende para injetavel/pomada.
 ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS presentation TEXT DEFAULT 'comprimido';
 ALTER TABLE public.medicines DROP CONSTRAINT IF EXISTS medicines_presentation_check;
 ALTER TABLE public.medicines ADD CONSTRAINT medicines_presentation_check
-  CHECK (presentation IN ('comprimido','capsula','liquido','injecao','pomada','spray','outro'));
+  CHECK (presentation IN ('comprimido','capsula','liquido','injetavel','pomada','spray','outro'));
 
 ALTER TABLE public.protocols ADD COLUMN IF NOT EXISTS intake_unit TEXT DEFAULT NULL;
 ALTER TABLE public.stock ADD CONSTRAINT chk_stock_quantity_non_negative CHECK (quantity >= 0);
@@ -210,7 +210,7 @@ export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ui', 'un', 'mg/ml', 'ui/ml']
 // NOTA: 'ml'/'gotas' saem da lista de concentração (viram intake_unit). CHECK SQL mantém legados até a migração.
 
 // Forma farmacêutica (additiva — ADR-058; alinha MEDICINE_TYPES). Sincronizada com CHECK SQL (R-082).
-export const PRESENTATIONS = ['comprimido', 'capsula', 'liquido', 'injecao', 'pomada', 'spray', 'outro']
+export const PRESENTATIONS = ['comprimido', 'capsula', 'liquido', 'injetavel', 'pomada', 'spray', 'outro']
 
 const medicineSchema = z.object({
   // ...campos existentes...

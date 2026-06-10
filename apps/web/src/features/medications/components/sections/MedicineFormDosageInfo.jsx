@@ -28,9 +28,9 @@ export default function MedicineFormDosageInfo({
   // Apresentação efetiva: líquido força 'liquido'; caso contrário usa formData.presentation
   const effectivePresentation = liquid ? 'liquido' : (formData.presentation || 'comprimido')
 
-  // Prefill 28 dias ao selecionar injecao — apenas se campo estiver vazio (nunca sobrescreve)
+  // Prefill 28 dias ao selecionar injetavel — apenas se campo estiver vazio (nunca sobrescreve)
   useEffect(() => {
-    if (effectivePresentation === 'injecao' && (formData.shelf_life_days === '' || formData.shelf_life_days === null || formData.shelf_life_days === undefined)) {
+    if (effectivePresentation === 'injetavel' && (formData.shelf_life_days === '' || formData.shelf_life_days === null || formData.shelf_life_days === undefined)) {
       setFormData((prev) => ({ ...prev, shelf_life_days: 28 }))
     }
   }, [effectivePresentation]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,8 +109,8 @@ export default function MedicineFormDosageInfo({
         </small>
       </div>
 
-      {/* ── Validade após aberto — apenas para injecao (012 Fase A) ── */}
-      {effectivePresentation === 'injecao' && (
+      {/* ── Validade após aberto — apenas para injetavel (012 Fase A) ── */}
+      {effectivePresentation === 'injetavel' && (
         <div className="form-group">
           <label htmlFor="shelf_life_days">Validade após aberto (dias)</label>
           <input

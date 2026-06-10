@@ -44,7 +44,7 @@ ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS units_per_ml NUMERIC DEFAU
 ALTER TABLE public.medicines ADD COLUMN IF NOT EXISTS presentation TEXT DEFAULT 'comprimido';
 ALTER TABLE public.medicines DROP CONSTRAINT IF EXISTS medicines_presentation_check;
 ALTER TABLE public.medicines ADD CONSTRAINT medicines_presentation_check
-  CHECK (presentation IN ('comprimido','capsula','liquido','injecao','pomada','spray','outro'));
+  CHECK (presentation IN ('comprimido','capsula','liquido','injetavel','pomada','spray','outro'));
 
 -- Unidade física da tomada (gotas/ml/UI; NULL p/ sólidos).
 -- CHECK sincronizado com INTAKE_UNITS do core (R-082); 'UI' maiúsculo casa o enum Zod.

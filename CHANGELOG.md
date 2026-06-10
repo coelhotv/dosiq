@@ -20,7 +20,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### Mobile (0.15.4 → 0.16.0)
 - **Added** (`minor`, Spec 012 Fase A): Mesmo conjunto da web — seletor de Apresentação + validade após aberto no form de medicamento (prefill 28 p/ injeção); badge de TTL biológico (relógio) na listagem de estoque, detalhe e cartões de compra, em paralelo ao status de volume.
-- **Nota de loja relevante:** "Novo: para insulinas e outros injetáveis, o dosiq agora avisa quando o frasco ou caneta aberto está perto de vencer pela validade após abertura — mesmo que ainda tenha conteúdo."
+- **Nota de loja relevante:** "Novo: para insulinas e outros injetáveis, o dosiq agora avisa quando o frasco ou caneta aberta está perto de perde a eficácia após abertura — mesmo que ainda reste algum conteúdo."
 
 ### Mobile (0.15.3 → 0.15.4)
 - **Fixed** (`patch`): Corrigido bug onde registrar retroativamente uma dose pulada (`skipped_user`) pelo histórico criava entradas duplicadas no dia — `markTaken` não incluía `skipped_user` na whitelist de status elegíveis, causando inserção do log sem atualizar a instância original. Ícone de dose pulada alterado de `FastForward` para `RedoDot` (mais intuitivo).

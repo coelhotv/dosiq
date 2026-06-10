@@ -402,7 +402,7 @@ From the Iconografia guide (mandatory reference):
 | Navigation | Hoje, Tratamentos, Estoque, Saúde, Perfil | Outlined stroke, consistent weight |
 | Status | Concluído (green), Pendente (amber), Estoque Baixo (red) | Color-coded + label always |
 | Actions | Adicionar, Registrar, Comprar, Compartilhar | Outlined, 24px base size |
-| Med types | Cápsula, Injeção, Tópico, Líquido, Comprimido | Outlined, category-grouped |
+| Med types | Cápsula, Injetável, Tópico, Líquido, Comprimido | Outlined, category-grouped |
 
 **Icon rules:**
 - Always pair icon + `label-md` text. No icon-only affordances.

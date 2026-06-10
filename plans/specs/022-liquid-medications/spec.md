@@ -21,7 +21,7 @@
 > 2. **Nova coluna `medicines.presentation`** (`FR-002b`, forma farmacêutica geral) — additiva,
 >    **não** reverte a decisão-mãe (`is_liquid` segue derivado de `dosage_unit LIKE '%/ml'` no
 >    caminho de decremento). `presentation` é o eixo de **forma** que a 012 estende para
->    `injecao`/`pomada`; para líquidos deve ficar consistente com o flag derivado.
+>    `injetavel`/`pomada`; para líquidos deve ficar consistente com o flag derivado.
 >
 > **Sequenciamento (duro):** 022 mergeada **antes** do C-coding da 012. **Nome final (ADR-058):**
 > a coluna genérica permanece **`units_per_ml`** (`NUMERIC`, descarta o `drops_per_ml` específico)
@@ -151,7 +151,7 @@ Consequências obrigatórias (todas cobertas neste épico):
   `ui/ml`→UI/ml (`100`, reusada pela 012 p/ insulina). **Generaliza o antigo `units_per_ml`** num
   campo único razão→ml (nome final **`units_per_ml`** por ADR-058; manter retrocompat de leitura
   onde `units_per_ml` já for referenciado).
-- **FR-002b**: Adicionar `presentation` (text/enum PT — `comprimido`/`capsula`/`liquido`/`injecao`/
+- **FR-002b**: Adicionar `presentation` (text/enum PT — `comprimido`/`capsula`/`liquido`/`injetavel`/
   `pomada`/`spray`/`outro`, alinha `MEDICINE_TYPES`) em `public.medicines`, **additiva**. Forma
   farmacêutica explícita; **não** substitui a derivação `is_liquid := dosage_unit LIKE '%/ml'` do
   decremento (decisão-mãe). Para líquidos, popular consistente com o flag derivado. Base do eixo de
