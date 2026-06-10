@@ -162,7 +162,7 @@
 | Fast-logging sheet + FAB speed-dial (web) | C | [NEW] sheet layout B + FAB dose/medida | mock `FAB speed-dial`/`C registro tintado` |
 | Área de Medidas — hub web (histórico + `ScatterPlot`/`WeekNav`/`TypeChips`) | C | [NEW] Perfil›Ferramentas›Medidas + entrada "Última medida" no Hoje | mock `Hub Glicemia V1`/`B Perfil Ferramentas` |
 | Fast-logging + FAB + área Medidas **mobile** | C | **UNVERIFIED** — C1 (T013) confirma caminho real | ⚠️ mock Android é a fonte |
-| `IconRuler` em `dosiq-icons` (web/mobile shared) | C | marca única de biomarcador (reserva semântica) | mock §4.2 handoff |
+| `IconRuler` (= lucide `ruler`) em `dosiq-icons` (web/mobile shared) | C | marca única de biomarcador (reserva semântica) | mock §4.2 handoff |
 | `packages/core/src/utils/doseUnit.js` | D | ✅ formatters líquidos já existem (022) — só **consumir** (R-272), não revisar | verificado |
 | ~~`docs/migrations/...diabetes_d_consume_ui.sql`~~ | ~~D~~ | ✅ **REMOVIDO** — conversão UI→ml já em prod (022 `20260608`) | n/a |
 | Export PDF (Fase E) | E | cruzar dose×biomarker server-side | a mapear em C1/E |
