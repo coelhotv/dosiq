@@ -67,6 +67,7 @@ export default function HistoryScreen() {
           instances={instances}
           minDay={minDay}
           maxDay={maxDay}
+          timezone={timezone}
         />
 
         {/* Day header */}

@@ -35,10 +35,25 @@ function formatDate(date) {
   return `${year}-${month}-${day}`
 }
 
+// Converte UTC ISO para "YYYY-MM-DD" no tz do usuário — espelha utcToLocalDateStr do hook.
+// Necessário para doses às 22h+ local (= dia seguinte em UTC) aparecerem no dia correto.
+function toLocalDateStr(utcIso, tz) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(parseISO(utcIso))
+  } catch {
+    return utcIso.slice(0, 10)
+  }
+}
+
 // skipped_paused filtrado no hook; aqui só chegam taken/missed/pending/skipped_user
-function getDotStatus(dayStr, instances) {
+function getDotStatus(dayStr, instances, tz) {
   const dayInstances = instances.filter(i =>
-    i.scheduled_for.startsWith(dayStr) && i.status !== 'skipped_paused'
+    toLocalDateStr(i.scheduled_for, tz) === dayStr && i.status !== 'skipped_paused'
   )
   if (dayInstances.length === 0) return COLORS.gray
 
@@ -57,7 +72,7 @@ function getMonthLabel(weekStartStr) {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
-export default function WeekCalendar({ selectedDay, onDaySelect, instances = [], minDay, maxDay }) {
+export default function WeekCalendar({ selectedDay, onDaySelect, instances = [], minDay, maxDay, timezone = 'America/Sao_Paulo' }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMondayOf(selectedDay))
 
   // Semana-limite para navegação: segunda da semana que contém minDay/maxDay
@@ -106,11 +121,11 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [],
     <View style={styles.container}>
       {/* Month header with nav */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handlePrevWeek} accessibilityRole="button" disabled={!canGoPrev} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ opacity: canGoPrev ? 1 : 0.3 }}>
+        <TouchableOpacity onPress={handlePrevWeek} accessibilityRole="button" disabled={!canGoPrev} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={canGoPrev ? styles.navBtn : styles.navBtnDisabled}>
           <ChevronLeft size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{monthLabel}</Text>
-        <TouchableOpacity onPress={handleNextWeek} accessibilityRole="button" disabled={!canGoNext} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ opacity: canGoNext ? 1 : 0.3 }}>
+        <TouchableOpacity onPress={handleNextWeek} accessibilityRole="button" disabled={!canGoNext} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={canGoNext ? styles.navBtn : styles.navBtnDisabled}>
           <ChevronRight size={20} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -119,7 +134,7 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [],
       <View style={styles.weekGrid} {...panResponder.panHandlers}>
         {weekDays.map(day => {
           const isSelected = day.dateStr === selectedDay
-          const dotColor = getDotStatus(day.dateStr, instances)
+          const dotColor = getDotStatus(day.dateStr, instances, timezone)
 
           return (
             <TouchableOpacity
@@ -222,5 +237,11 @@ const styles = StyleSheet.create({
   hintText: {
     fontSize: 11,
     color: COLORS.textSecondary,
+  },
+  navBtn: {
+    opacity: 1,
+  },
+  navBtnDisabled: {
+    opacity: 0.3,
   },
 })
