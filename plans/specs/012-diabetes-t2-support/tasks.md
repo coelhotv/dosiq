@@ -74,12 +74,22 @@ FR-001..004 → A (T002–T007) · FR-005..008 → B (T008–T012) · FR-009/010
 ## Orquestração (model tiering — ver plan.md §Orquestração & Model Tiering)
 Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em qualquer task que toque `packages/*` ou `apps/*/src/features/*`. Sub-agentes nunca commitam main (R-060). cavecrew-reviewer ≠ gate (revisor = Gemini). Haiku só folha trivial — nunca math de dose/UI→ml/tolerância/RLS.
 
+> **Trap SaMD de render (delegação de UI clínica):** sub-agente barato tende a "ajudar" pondo
+> faixa-alvo/cor alto-baixo/linha de média no scatter ou cards — **viola ADR-062**. Prompt DEVE:
+> espelhar o mock exatamente (nunca melhorar); cor=tipo nunca qualidade; média=número nunca linha.
+> **Main revisa todo render clínico** contra checklist SaMD antes do PR (plan.md §Orquestração).
+
 | Task | Agente / modelo |
 |------|-----------------|
-| T001 / T008 / T013 / T020 / T025 [C1] | cavecrew-investigator (haiku/sonnet) |
+| T001 / T008 / T013 / T020 / T025 [C1] | cavecrew-investigator (haiku/sonnet). T013 compara mock Android; C1 do hub investiga reuso de `WeekNav` |
 | T002 / T014 (migração SQL, RLS/grants) | sonnet |
 | T004 / T015 / T016 (helper/schema/adapter bounded) | cavecrew-builder ou sonnet |
-| T005 / T006 / T017 / T017b / T018 / T018b / T018c / T022 / T023 / T026 (UI/render/export) | sonnet (+ui-design-brain, **consultar mocks design-mocks/ + biomarker-screens.jsx**); main valida SaMD/R-267/R-272 |
+| T005 / T006 / T017 (cards/forms render) | sonnet (espelha mock); **main** valida SaMD/R-267/R-272 |
+| T017b reservar `IconRuler` (1 ícone shared) | folha trivial — cavecrew-builder/haiku |
+| **T018 fast-log sheet** (tela mais importante) | sonnet (+ui-design-brain); **main valida a11y ≥44px + overflow sheet/teclado + SaMD** |
+| **T018b FAB speed-dial** (muda Dashboard vivo) | sonnet render; **main integra** |
+| **T018c área de Medidas — DECOMPOR** | sub-unidades (WeekNav/ScatterPlot/TypeChips/lista/sheet/estado-zero `[P]`) sonnet/cavecrew; **main retém nav + valida SaMD do scatter** (plan.md §Decomposição T018c) |
+| T022 / T023 / T026 (render dose / export) | sonnet; **main** valida SaMD/R-267/R-272 |
 | T007 / T012 / T019 / T024 [P] (testes) | sonnet (paraleliza) |
 | **T003 / T010** (write-path AP-193 / tolerância clínica) | **main / opus** — não delegar |
 | T021 / T024 (smoke insulina) | humano (PO) |

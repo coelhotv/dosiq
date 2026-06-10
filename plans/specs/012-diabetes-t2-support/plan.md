@@ -222,6 +222,19 @@ integração no main thread (opus). Economia real vem de (a) modelo mais barato 
   (ancoragem write-path AP-193) e a fronteira SaMD. Não delegar julgamento.
 - **Haiku:** só tarefa-folha trivial (boilerplate, copy PT, scaffolding). **NUNCA** em math de
   dose, conversão UI→ml, tolerância ou RLS/grants — risco clínico > economia.
+- **Trap SaMD de render (UI clínica delegada):** modelo barato tende a "ajudar" adicionando
+  faixa-alvo, cor alto/baixo, "faixa normal" ou **linha de média** no scatter/cards de medida —
+  isso **viola SaMD (ADR-062)**. Os mocks **não** têm nenhum desses. Prompt de qualquer sub-agente
+  de UI clínica DEVE: (a) **espelhar o mock exatamente, nunca "melhorar"**; (b) cor = só tipo de
+  evento (teal=dose · azul-info=medida), nunca qualidade; (c) média da semana = **número**, jamais
+  linha. **Main revisa todo output de render clínico contra o checklist SaMD** antes do PR — não
+  confiar no sub-agente.
+- **Espelhar mock, não inventar:** tarefa de UI com mock fixo → sub-agente consulta
+  `design-mocks/*.png` + `biomarker-screens{,-2}.jsx` e reproduz; **recria** nos componentes reais
+  (mock é React puro sem Zod/Supabase), não copia estrutura nem adiciona afunção fora do mock.
+- **Antes de criar `WeekNav`/`ScatterPlot`: investigar reuso.** Handoff diz que `WeekNav` é "mesmo
+  padrão do Histórico de Doses" → C1 verifica se já existe equivalente no código real (evitar
+  duplicata — R-231/AP-169).
 
 ### Núcleo não-delegável (main / opus)
 
@@ -246,9 +259,28 @@ C1.5 reality-check por fase · C4 DoD file-by-file (citar linha) · integração
 | T004 helper `isBiologicallyExpired` | puro, bounded 1-2 files | cavecrew-builder (sonnet) |
 | T015 `biomarkerLogSchema` | schema Zod bounded | sonnet |
 | T016 adapter `biomarkersToEvents` | bounded, R-252 (não toca builder) | sonnet |
-| T005/T017/T018 UI cards/sheet | UI (+ui-design-brain) | sonnet |
+| T005/T017 cards (MeasureCardC) | UI bounded c/ mock fixo | sonnet (+ui-design-brain, espelha mock); **main** valida SaMD |
+| T017b reservar `IconRuler` | folha trivial (1 ícone shared web+mobile) | cavecrew-builder (sonnet) ou haiku |
+| T018 fast-log sheet (layout B) | **tela mais importante** (a11y idoso ≥44px + sheet/teclado maxH 85% + SaMD) | sonnet (+ui-design-brain); **main** valida a11y + overflow do sheet + SaMD |
+| T018b FAB speed-dial | muda nav do Dashboard existente (web+mobile) | sonnet (render); **main** integra (toca tela viva, não greenfield) |
+| **T018c área de Medidas (DECOMPOR)** | telas novas + nav + scatter SaMD | ver decomposição abaixo — **não** 1 spawn único |
 | T006/T022/T023 forms/render dose | UI + read-path (R-267/R-272) | sonnet (render); **main** valida SaMD |
 | T026 export PDF clínico | agregação server-side + SaMD | sonnet; **main** valida fronteira |
 | T007/T012/T019/T024 [P] testes | cobertura | sonnet (paraleliza) |
 | T021/T024 smoke insulina | manual/PO | humano (n/a) |
 | T028/T029/T030 [C4/C5] gates/SQP/record | quality gate + memória | **main / opus** |
+
+### Decomposição de T018c (área de Medidas — grande demais p/ 1 sub-agente)
+
+Quebrar em sub-unidades; **main retém wiring de navegação + validação SaMD do scatter**:
+
+| Sub-unidade | Tipo | Agente |
+|-------------|------|--------|
+| `WeekNav` (reusar se já existir — investigar em C1) | componente bounded reusável | cavecrew-builder/sonnet |
+| `ScatterPlot` (pontos/dia, 1 cor, **sem zona/meta/linha** — SaMD) | render clínico bounded | sonnet (espelha mock); **main valida SaMD** |
+| `TypeChips` (filtro por tipo, sem ícone) | folha trivial | cavecrew-builder/sonnet |
+| Lista histórico cronológico + sheet detalhe (Editar/Ver dia/Excluir) | UI bounded | sonnet |
+| Estados-zero (área + dia vazios) | folha (copy + convite inline) | sonnet/haiku |
+| **Wiring de navegação** (Perfil›Ferramentas›Medidas + card "Última medida" no fim do Hoje) | **integração cross-tela** | **main / opus** |
+
+Sub-unidades de render rodam `[P]` após a nav existir; o card `MeasureCardC` (T017) é pré-req visual.
