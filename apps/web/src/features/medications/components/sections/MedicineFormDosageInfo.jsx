@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   DOSAGE_UNITS,
   DOSAGE_UNIT_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
-} from '@schemas/medicineSchema.js'
+  PRESENTATIONS,
+  PRESENTATION_LABELS,
+} from '@dosiq/core'
 import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
 import { getFieldDescribedBy } from '@utils/formUtils.js'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
@@ -23,6 +25,15 @@ export default function MedicineFormDosageInfo({
   medicine,
 }) {
   const liquid = isLiquidUnit(formData.dosage_unit)
+  // Apresentação efetiva: líquido força 'liquido'; caso contrário usa formData.presentation
+  const effectivePresentation = liquid ? 'liquido' : (formData.presentation || 'comprimido')
+
+  // Prefill 28 dias ao selecionar injecao — apenas se campo estiver vazio (nunca sobrescreve)
+  useEffect(() => {
+    if (effectivePresentation === 'injecao' && (formData.shelf_life_days === '' || formData.shelf_life_days === null || formData.shelf_life_days === undefined)) {
+      setFormData((prev) => ({ ...prev, shelf_life_days: 28 }))
+    }
+  }, [effectivePresentation]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -73,6 +84,59 @@ export default function MedicineFormDosageInfo({
           Preenchido via ANVISA e usado no fluxo de compras do estoque redesign.
         </small>
       </div>
+
+      {/* ── Apresentação farmacêutica (012 Fase A) ── */}
+      <div className="form-group">
+        <label htmlFor="presentation">Apresentação</label>
+        <select
+          id="presentation"
+          name="presentation"
+          value={effectivePresentation}
+          onChange={handleChange}
+          disabled={isSubmitting || liquid}
+          aria-describedby="presentation-hint"
+        >
+          {PRESENTATIONS.map((p) => (
+            <option key={p} value={p}>
+              {PRESENTATION_LABELS[p] || p}
+            </option>
+          ))}
+        </select>
+        <small id="presentation-hint" className="field-hint">
+          {liquid
+            ? 'Definido automaticamente como Líquido para unidades /ml.'
+            : 'Forma farmacêutica do medicamento (comprimido, injeção, pomada etc.).'}
+        </small>
+      </div>
+
+      {/* ── Validade após aberto — apenas para injecao (012 Fase A) ── */}
+      {effectivePresentation === 'injecao' && (
+        <div className="form-group">
+          <label htmlFor="shelf_life_days">Validade após aberto (dias)</label>
+          <input
+            type="number"
+            id="shelf_life_days"
+            name="shelf_life_days"
+            value={formData.shelf_life_days ?? ''}
+            onChange={handleChange}
+            className={errors.shelf_life_days ? 'error' : ''}
+            placeholder="28"
+            min="1"
+            step="1"
+            disabled={isSubmitting}
+            aria-describedby="shelf_life_days-hint"
+            aria-invalid={Boolean(errors.shelf_life_days)}
+          />
+          <small id="shelf_life_days-hint" className="field-hint">
+            Dias de uso após abrir o frasco/caneta — confira a bula.
+          </small>
+          {errors.shelf_life_days && (
+            <span id="shelf_life_days-error" className="error-message">
+              {errors.shelf_life_days}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="form-group">
         <label htmlFor="dosage_per_pill">

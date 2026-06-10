@@ -1,5 +1,5 @@
 import { parseLocalDate } from '@utils/dateUtils'
-import { calculateDailyIntake } from '@dosiq/core'
+import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -53,6 +53,43 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         }
       : null
 
+    // ── 012 Fase A: alerta de validade biológica (TTL pós-abertura) ──────────
+    // Eixo PARALELO — não interfere no stockStatus de volume.
+    // Busca o lote aberto (opened_at não-nulo) com quantity > 0 mais antigo.
+    // Apenas medicamentos com shelf_life_days produzem alerta (helpers retornam false/null caso contrário).
+    let ttlAlert = null
+    if (medicine.shelf_life_days) {
+      // Lote com quantidade > 0 e opened_at mais ANTIGO — é o primeiro a expirar
+      // (entries chegam em created_at desc; .find() pegaria o mais recente e
+      // subnotificaria o vencimento do frasco aberto antes).
+      const openedLot = (stock.entries || [])
+        .filter((e) => e.quantity > 0 && e.opened_at)
+        .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
+      if (openedLot) {
+        const expired = isBiologicallyExpired(openedLot, medicine)
+        const daysLeft = biologicalExpiryDaysLeft(openedLot, medicine)
+        if (expired) {
+          // daysLeft negativo → calcular dias desde vencimento
+          const daysSince = daysLeft != null ? Math.abs(Math.ceil(daysLeft)) : null
+          ttlAlert = {
+            type: 'expired',
+            // Dias desde abertura para o texto de UX
+            message: daysSince != null
+              ? `Aberto há mais de ${medicine.shelf_life_days + daysSince} dias — vencido (validade após aberto)`
+              : 'Validade pós-abertura vencida',
+          }
+        } else if (daysLeft != null && daysLeft <= 3) {
+          const dias = Math.ceil(daysLeft)
+          ttlAlert = {
+            type: 'expiring',
+            message: dias <= 0
+              ? 'Vence hoje (validade após aberto)'
+              : `Vence em ${dias} dia${dias !== 1 ? 's' : ''} (validade após aberto)`,
+          }
+        }
+      }
+    }
+
     return {
       medicine: {
         id: medicine.id,
@@ -61,6 +98,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         dosage_unit: medicine.dosage_unit || 'mg',
         units_per_ml: medicine.units_per_ml ?? null,
         type: medicine.type || 'medicamento',
+        shelf_life_days: medicine.shelf_life_days ?? null,
       },
       entries: stock.entries,
       purchases: purchaseEntries,
@@ -72,6 +110,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
       primaryProtocol: primaryProtocolMap[medicine.id] || null,
       barPercentage,
       lastPurchase,
+      ttlAlert,
     }
   })
 }

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { medicineSchema } from '../medicineSchema.js'
 import {
   validateMedicineCreate,
   validateProtocolCreate,
@@ -355,5 +356,39 @@ describe('Schemas de Validação Zod', () => {
       })
       expect(r.success).toBe(true)
     })
+  })
+})
+
+// 012 Fase A (ADR-059): shelf_life_days — failure modes (R-270: ''→null, nunca 0)
+describe('medicineSchema shelf_life_days', () => {
+  const base = { name: 'Insulina NPH', dosage_unit: 'ui/ml', units_per_ml: 100, presentation: 'injecao' }
+
+  it('aceita inteiro positivo (28)', () => {
+    const r = medicineSchema.safeParse({ ...base, shelf_life_days: 28 })
+    expect(r.success).toBe(true)
+    expect(r.data.shelf_life_days).toBe(28)
+  })
+
+  it("campo limpo ('') vira null — não 0 (R-270)", () => {
+    const r = medicineSchema.safeParse({ ...base, shelf_life_days: '' })
+    expect(r.success).toBe(true)
+    expect(r.data.shelf_life_days).toBe(null)
+  })
+
+  it('ausente/null aceito (eixo inativo)', () => {
+    expect(medicineSchema.safeParse(base).success).toBe(true)
+    expect(medicineSchema.safeParse({ ...base, shelf_life_days: null }).success).toBe(true)
+  })
+
+  it('rejeita 0, negativo e decimal (CHECK > 0 espelhado — R-082)', () => {
+    expect(medicineSchema.safeParse({ ...base, shelf_life_days: 0 }).success).toBe(false)
+    expect(medicineSchema.safeParse({ ...base, shelf_life_days: -3 }).success).toBe(false)
+    expect(medicineSchema.safeParse({ ...base, shelf_life_days: 28.5 }).success).toBe(false)
+  })
+
+  it('coerção de string numérica do form ("28" → 28)', () => {
+    const r = medicineSchema.safeParse({ ...base, shelf_life_days: '28' })
+    expect(r.success).toBe(true)
+    expect(r.data.shelf_life_days).toBe(28)
   })
 })

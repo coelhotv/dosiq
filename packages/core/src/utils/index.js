@@ -127,6 +127,8 @@ export {
   resolveStockStatus,
   computeAverageUnitPrice,
   computeExpiryDays,
+  isBiologicallyExpired,
+  biologicalExpiryDaysLeft,
   formatBRL,
 } from './stock.js'
 

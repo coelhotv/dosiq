@@ -15,6 +15,8 @@ import {
   PillBottle,
   ShieldCheck,
   ShieldAlert,
+  Clock,
+  AlarmClock,
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
@@ -108,6 +110,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
     primaryProtocol,
     hasActiveProtocol,
     lastPurchase,
+    ttlAlert,
   } = item
   const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
@@ -185,6 +188,20 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
 
       {/* ── Última compra — subtexto de referência de preço ── */}
       {lastPurchaseText && <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>}
+
+      {/* ── Alerta de validade biológica pós-abertura (012 Fase A) — eixo paralelo ── */}
+      {ttlAlert && (
+        <div
+          className={`stock-card-r__ttl-alert stock-card-r__ttl-alert--${ttlAlert.type}`}
+          role="alert"
+          aria-live="polite"
+        >
+          {ttlAlert.type === 'expired'
+            ? <Clock size={13} aria-hidden="true" />
+            : <AlarmClock size={13} aria-hidden="true" />}
+          <span>{ttlAlert.message}</span>
+        </div>
+      )}
 
       {/* ── Previsão de reabastecimento (Sprint 15.7) ── */}
       {prediction?.predictedStockoutDate &&

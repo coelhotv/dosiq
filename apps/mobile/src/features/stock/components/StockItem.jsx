@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { Plus } from 'lucide-react-native'
+import { Plus, Clock } from 'lucide-react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
 import { formatStockQuantity, formatConcentration } from '@dosiq/core'
@@ -19,7 +19,10 @@ export default function StockItem({ medicine }) {
     dosage_per_pill,
     status,
     daysRemaining,
-    hasActiveProtocol
+    hasActiveProtocol,
+    ttlExpired,
+    ttlDaysLeft,
+    ttlAlertActive,
   } = medicine
 
   const showInitialStockHint = !hasPurchases && totalQuantity === 0
@@ -52,7 +55,7 @@ export default function StockItem({ medicine }) {
               Saldo: <Text style={styles.bold}>{saldoText}</Text>
             </Text>
           </View>
-          
+
           {showInitialStockHint ? (
             <View style={styles.ctaBadge}>
               <Plus size={12} color={colors.status.error} strokeWidth={2.5} />
@@ -62,6 +65,26 @@ export default function StockItem({ medicine }) {
             <StockLevelBadge status={status} daysRemaining={daysRemaining} />
           ) : null}
         </View>
+
+        {/* Alerta TTL pós-abertura (012 Fase A) — eixo paralelo, não substitui badge volume */}
+        {ttlAlertActive && (
+          <View style={[styles.ttlRow, ttlExpired ? styles.ttlRowExpired : styles.ttlRowWarning]}>
+            <Clock
+              size={11}
+              color={ttlExpired ? colors.status.error : colors.status.warning}
+              strokeWidth={2.5}
+            />
+            <Text style={[styles.ttlText, { color: ttlExpired ? colors.status.error : colors.status.warning }]}>
+              {ttlExpired
+                ? 'Vencido (validade após aberto)'
+                : ttlDaysLeft === 0
+                ? 'Vence hoje (validade após aberto)'
+                : ttlDaysLeft === 1
+                ? 'Vence amanhã (validade após aberto)'
+                : `Vence em ${ttlDaysLeft} dias (validade após aberto)`}
+            </Text>
+          </View>
+        )}
       </View>
     </SectionCard>
   )
@@ -129,5 +152,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.status.error,
-  }
+  },
+  // Linha de alerta TTL pós-abertura (012 Fase A)
+  ttlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    minHeight: 26,
+  },
+  ttlRowExpired: {
+    backgroundColor: colors.status.errorLight,
+    borderColor: colors.status.error,
+  },
+  ttlRowWarning: {
+    backgroundColor: '#fffbeb',
+    borderColor: '#fef3c7',
+  },
+  ttlText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
 })

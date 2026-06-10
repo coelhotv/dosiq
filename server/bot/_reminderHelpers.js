@@ -564,6 +564,50 @@ function _buildProtocolsAndStockMaps(allProtocols, allStock) {
   return { protocolsByMedicine, stockByMedicine };
 }
 
+// 012 Fase A (ADR-059): dias restantes até a expiração biológica do lote.
+// Espelha biologicalExpiryDaysLeft do @dosiq/core (server não importa o core).
+// null = eixo inativo (lote fechado, sem TTL, data inválida ou clock skew).
+function _biologicalExpiryDaysLeft(stockRow) {
+  const openedAt = stockRow?.opened_at;
+  const shelfDays = Number(stockRow?.medicine?.shelf_life_days);
+  if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return null;
+  const opened = parseISO(openedAt);
+  if (Number.isNaN(opened.getTime())) return null;
+  const nowMs = Date.now();
+  if (opened.getTime() > nowMs) return null;
+  const expiresAtMs = opened.getTime() + shelfDays * 24 * 60 * 60 * 1000;
+  return Math.floor((expiresAtMs - nowMs) / (24 * 60 * 60 * 1000));
+}
+
+async function _processBiologicalExpiryAlerts(allStock, dispatcher, correlationId) {
+  for (const lot of allStock || []) {
+    try {
+      if (Number(lot.quantity || 0) <= 0) continue;
+      const daysLeft = _biologicalExpiryDaysLeft(lot);
+      if (daysLeft === null) continue;
+      // Cadência D-3 + vencimento (FR-004b): cada condição ocorre 1 dia só.
+      if (daysLeft !== 3 && daysLeft !== 0) continue;
+
+      const medicineName = lot.medicine?.name || 'Medicamento';
+      logger.info(`Disparando alerta de validade biológica: ${medicineName} (daysLeft=${daysLeft})`, {
+        userId: lot.user_id, medicineId: lot.medicine_id, correlationId
+      });
+
+      await dispatcher.dispatch({
+        userId: lot.user_id,
+        kind: 'stock_expiry_alert',
+        data: { medicineName, daysLeft },
+        context: { correlationId, jobType: 'stock_expiry_alert_dispatcher' }
+      });
+    } catch (err) {
+      // Best-effort por lote (R-245): um lote com erro não derruba a varredura.
+      logger.error('Erro ao processar alerta de validade biológica', err, {
+        userId: lot?.user_id, medicineId: lot?.medicine_id, correlationId
+      });
+    }
+  }
+}
+
 export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
   try {
     const { data: users, error: usersErr } = await supabase
@@ -586,7 +630,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
 
     const { data: allStock } = await supabase
       .from('stock')
-      .select('user_id, medicine_id, quantity, medicine:medicines(name)')
+      .select('user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days)')
       .in('user_id', userIds);
 
     const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);
@@ -596,10 +640,17 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
       const stock = stockByMedicine[key];
       const protocols = protocolsByMedicine[key] || [];
 
-      if (protocols.length === 0) continue; 
+      if (protocols.length === 0) continue;
 
       await _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId);
     }
+
+    // 012 Fase A (ADR-059): validade biológica (TTL pós-abertura) — eixo POR LOTE,
+    // paralelo ao alerta de volume acima. Cadência sem estado extra: o cron é
+    // diário, então daysLeft === 3 (D-3) e daysLeft === 0 (vence hoje) ocorrem em
+    // exatamente 1 execução cada. Lote já vencido há dias (daysLeft < 0) não
+    // re-alerta (sem spam retroativo). Lote vazio (quantity <= 0) não interessa.
+    await _processBiologicalExpiryAlerts(allStock, dispatcher, correlationId);
 
     logger.info('Verificação de alertas de estoque concluída', { correlationId });
   } catch (err) {

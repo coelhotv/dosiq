@@ -193,6 +193,31 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* ── Alerta TTL pós-abertura (012 Fase A) — eixo paralelo ao volume ── */
+.stock-card-r__ttl-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-weight-medium);
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.stock-card-r__ttl-alert--expired {
+  background-color: var(--color-error-bg, #fef2f2);
+  color: var(--color-error, #dc2626);
+  border: 1px solid var(--color-error-light, #fca5a5);
+}
+
+.stock-card-r__ttl-alert--expiring {
+  background-color: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #d97706);
+  border: 1px solid var(--color-warning-light, #fcd34d);
+}
+
 /* ── CTA button — peso visual reduzido ── */
 .stock-card-r__cta {
   display: flex;

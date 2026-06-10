@@ -29,6 +29,7 @@ import {
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
@@ -58,6 +59,8 @@ export default function StockDetailScreen({ navigation }) {
   const [purchases, setPurchases] = useState([])
   const [medicine, setMedicine] = useState(null)
   const [loading, setLoading] = useState(true)
+  // Mapa purchase_id → stock entry (com opened_at) para eixo TTL (012 Fase A)
+  const [stockEntryMap, setStockEntryMap] = useState({})
 
   // — Memos (R-010) —
   const today = useMemo(() => getTodayLocal(), [])
@@ -143,18 +146,35 @@ export default function StockDetailScreen({ navigation }) {
     if (!medicineId || !userId) return
     setLoading(true)
     try {
-      const [qty, purchaseList, med] = await Promise.all([
+      const [qty, purchaseList, med, stockRows] = await Promise.all([
         stockService.getTotalQuantity(medicineId),
         stockService.getPurchasesByMedicine(medicineId),
         medicineService.getById(medicineId),
+        // Busca opened_at por lote para eixo TTL (012 Fase A). Direto via supabase
+        // pois o repositório compartilhado não expõe opened_at no select atual.
+        supabase
+          .from('stock')
+          .select('id, purchase_id, quantity, opened_at')
+          .eq('medicine_id', medicineId)
+          .gt('quantity', 0)
+          .then(({ data }) => data ?? []),
       ])
       setSaldo(qty ?? 0)
       setPurchases(Array.isArray(purchaseList) ? purchaseList : [])
       setMedicine(med ?? null)
+      // Monta mapa purchase_id → stock entry (primeiro lote de cada compra com saldo)
+      const entryMap = {}
+      for (const row of stockRows) {
+        if (row.purchase_id && !entryMap[row.purchase_id]) {
+          entryMap[row.purchase_id] = row
+        }
+      }
+      setStockEntryMap(entryMap)
     } catch {
       setSaldo(0)
       setPurchases([])
       setMedicine(null)
+      setStockEntryMap({})
     } finally {
       setLoading(false)
     }
@@ -315,6 +335,7 @@ export default function StockDetailScreen({ navigation }) {
                   remaining={latestPurchase.remaining ?? 0}
                   isLatest
                   medicine={medicine}
+                  stockEntry={stockEntryMap[latestPurchase.id] ?? null}
                   onPress={() => handleEditPurchase(latestPurchase)}
                 />
               ) : (

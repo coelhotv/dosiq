@@ -67,6 +67,7 @@ export function createStockRepository({ client, getUserId }) {
         dosage_unit,
         dosage_per_pill,
         units_per_ml,
+        shelf_life_days,
         medicine_stock_summary!left (
           total_quantity,
           stock_entries_count
