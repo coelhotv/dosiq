@@ -9,6 +9,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mobile (0.15.3 → 0.15.4)
+- **Fixed** (`patch`): Corrigido bug onde registrar retroativamente uma dose pulada (`skipped_user`) pelo histórico criava entradas duplicadas no dia — `markTaken` não incluía `skipped_user` na whitelist de status elegíveis, causando inserção do log sem atualizar a instância original. Ícone de dose pulada alterado de `FastForward` para `RedoDot` (mais intuitivo).
+
 ### Mobile (0.15.2 → 0.15.3)
 - **Fixed** (`patch`): Corrigido bug de timezone no calendário do histórico de doses — dot colorido do dia agora converte UTC→local antes de comparar datas, evitando que doses às 22h–23h local (= dia seguinte em UTC) apareçam no dia errado.
 - **Fixed** (`patch`): Corrigido alias `@dosiq/core` ausente na config ESLint do mobile — eliminava 368 falsos erros de `import-x/no-unresolved` ao rodar lint no workspace mobile.
