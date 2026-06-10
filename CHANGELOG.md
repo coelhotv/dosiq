@@ -9,6 +9,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mobile (0.15.2 → 0.15.3)
+- **Fixed** (`patch`): Corrigido bug de timezone no calendário do histórico de doses — dot colorido do dia agora converte UTC→local antes de comparar datas, evitando que doses às 22h–23h local (= dia seguinte em UTC) apareçam no dia errado.
+- **Fixed** (`patch`): Corrigido alias `@dosiq/core` ausente na config ESLint do mobile — eliminava 368 falsos erros de `import-x/no-unresolved` ao rodar lint no workspace mobile.
+- **Added** (`minor`): Histórico de doses com UX melhorada: filtro de doses `skipped_paused` (tratamento pausado não gera entradas visíveis); janela futura ampliada para d+7 (era d+2); navegação semanal limitada entre d-29 e d+7 com setas desabilitadas visualmente nos limites; ícone `FastForward` (lucide) para doses puladas pelo usuário (`skipped_user`).
+- **Nota de loja relevante:** "Melhoria: histórico de doses mais limpo — doses de tratamentos pausados não aparecem mais como entradas no histórico, e a navegação por semanas agora mostra corretamente até 7 dias à frente."
+
 ### Mobile (0.15.1 → 0.15.2)
 - **Fixed** (`patch`, commit 065c72aa): Corrigido bug onde pausar um tratamento deixava instâncias `pending` futuras (além das primeiras 24h) expostas ao sweep de missed — resultado: doses viravam `missed` indevidamente durante o período de pausa. Causa raiz: `markSkippedPaused` só cobria 24h, e o `sweepMissedInstances` corria antes do cron noturno que limparia o restante. Fix: pausa agora chama `markAllFutureSkippedPaused` — todas as instâncias futuras viram `skipped_paused` imediatamente, sem depender do cron. Resume inalterado: `reactivateFuturePaused` + regen. **Nota de loja:** "Correção: tratamentos pausados (ex: pausa de 7 dias entre cartelas de anticoncepcional) não geram mais doses perdidas no histórico durante o período de pausa."
 - **Added** (`minor`, PR #653): Épico 026 Fase 1 — sistema de nudges in-app. Substitui `TzNudgeCard` por `NudgeBanner` genérico; `useNudges('profile'|'dashboard')` busca nudges remotos do Supabase e filtra dispensados via `AsyncStorage`. Dashboard exibe nudge quando sem doses urgentes. Preparado para nudges de versão de app e ativação de push via painel admin.
