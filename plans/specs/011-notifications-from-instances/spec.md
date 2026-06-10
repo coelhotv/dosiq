@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/011-notifications-from-instances`
 **Created**: 2026-06-03
-**Status**: Planned (ADR-057 accepted 2026-06-03)
+**Status**: delivered — PR #633 (reminder ← dose_instances; ADR-057)
 **Tier**: 2 (Epic / High-Risk — toca o cron crítico de lembretes)
 **Input**: "/devflow specifying 011 - Refactor Notifications + dose_instances"
 **Pré-requisito de**: spec 010 (Alarme Nativo v2)

@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/021-telegram-snooze-dose`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: specified — não iniciado
 **Tier**: 1 (feature coesa Telegram-only; **sem migração** — reusa colunas existentes; sem contrato/ADR novo)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Source**: `plans/backlog-notifications/EXEC_SPEC_SNOOZE_DOSE.md`

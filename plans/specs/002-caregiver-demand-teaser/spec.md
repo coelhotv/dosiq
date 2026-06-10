@@ -3,7 +3,7 @@
 **Feature Directory**: `plans/specs/002-caregiver-demand-teaser`
 **Papel**: **GATE 0** do épico [Modo Cuidador](../009-caregiver-mode/EPIC.md) — painted-door standalone que valida demanda **antes** de qualquer build de 7A.
 **Created**: 2026-06-01
-**Status**: Migrated Draft
+**Status**: draft
 **Migration Status**: migrated
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/EXEC_SPEC_P0_2_TERMOMETRO_CUIDADOR.md`

@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/007-medical-pdf-report`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: planned — backlog; coordenação c/ 012 Fase E
 **Tier**: 1 (port mobile; web já existe)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:

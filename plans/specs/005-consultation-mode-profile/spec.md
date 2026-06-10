@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/005-consultation-mode-profile`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Needs Clarification (1 decisão de escopo: link web — ver Open Questions) → depois Dev Ready
+**Status**: draft — não entregue como spec'ado (PO 2026-06-10); pendia 1 decisão de escopo
 **Tier**: 1 (2 só se escolhida a opção A com migração/rota nova)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:

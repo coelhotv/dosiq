@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/014-whatsapp-templates-webhook`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §3. W7.6, W7.7

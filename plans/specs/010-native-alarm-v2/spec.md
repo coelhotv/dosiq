@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/010-native-alarm-v2`
 **Created**: 2026-06-03
-**Status**: Planned (ADR-055/056 accepted 2026-06-03 · pré-req spec 011)
+**Status**: delivered — PR #634 (mobile 0.10.0; ADR-055/056)
 **Tier**: 2 (Epic)
 **Input**: "/devflow specifying Alarm v2 — upgrade Critical Alerts iOS + expansão do modelo de protocolos pra flag opt-in de alerta crítico por-protocolo + controle de sobreposição com pushes normais + wire com dose_instances"
 **Pré-requisito**: **spec 011** (Notif ← dose_instances / ADR-057). O reminder precisa já ler

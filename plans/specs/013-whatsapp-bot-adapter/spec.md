@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/013-whatsapp-bot-adapter`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` §3. Motor de Alertas Híbrido, §3. W7.5

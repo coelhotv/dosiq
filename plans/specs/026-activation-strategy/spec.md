@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/026-activation-strategy`
 **Created**: 2026-06-06 · **Revised**: 2026-06-06
-**Status**: Draft (Aguardando Clarificação)
+**Status**: in-progress — Fase 1 entregue (PR #653); demais fases pendentes
 **Tier**: 2 (épico — DB + API + UI + E-mail cross-platform)
 **Artifacts**: `spec.md` · `tasks.md`
 

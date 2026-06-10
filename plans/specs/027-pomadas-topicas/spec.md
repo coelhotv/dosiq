@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/027-pomadas-topicas`
 **Created**: 2026-06-07
-**Status**: **DRAFT** (rascunho — não iniciar sem priorização do PO)
+**Status**: draft — não iniciar sem priorização do PO
 **Tier**: 2 (provável — DB CHECK + core + UI; possivelmente decremento por grama)
 **Input**: Solicitação do PO ao revisar o dropdown de unidades da 022 (líquidos). Pomadas adiadas
 para épico próprio para não inchar a 022.

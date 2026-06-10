@@ -2,7 +2,7 @@
 
 **Epic Directory**: `plans/specs/009-caregiver-mode`
 **Created**: 2026-06-02 · **Tier**: 2 (épico multi-fase)
-**Status**: Dev Ready (por fase — ver cadeia de gates)
+**Status**: specified — próximo grande épico do roadmap; NÃO implementado
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` (Fase 7A)
 - `plans/backlog-unified_app_2026/DRAFT_CAREGIVER_MODE.md` (plano v1.2 — referência)

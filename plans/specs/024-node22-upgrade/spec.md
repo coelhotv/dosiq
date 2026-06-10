@@ -2,7 +2,7 @@
 
 **Feature Directory:** `plans/specs/024-node22-upgrade/`
 **Created:** 2026-06-05
-**Status:** IMPLEMENTED
+**Status**: delivered — PRs #642/#643
 **Tier:** 1 (Standard)
 **Input:** Incidente prod AP-210/211/212 (2026-06-04), GitHub Actions Node 20 deprecation warnings
 

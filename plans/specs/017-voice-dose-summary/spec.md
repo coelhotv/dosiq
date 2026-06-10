@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/017-voice-dose-summary`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_8_SMART_WOW_FACTOR.md` §2. Registro e Resumo de Doses por Voz, §2. V02

@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/023-user-feedback`
 **Created**: 2026-06-04 · **Revised**: 2026-06-04
-**Status**: Dev Ready
+**Status**: delivered — PRs #639/#640 (web 4.1.0 · mobile 0.11.0)
 **Tier**: 2 (novas tabelas, API consolidada e fluxo cross-platform mobile ↔ web)
 **Input**: Solicitações por e-mail de usuários após lançamento das apps nativas iOS e Android há 1 semana.
 **Rules & Standards**: R-221 (SQP), R-247 (maxLength), R-021 (Portuguese Zod/UI), R-202 (Admin settings check bypass via telegram_chat_id / AP-135).

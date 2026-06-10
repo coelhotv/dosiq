@@ -2,7 +2,7 @@
 
 **Feature Directory:** `plans/specs/025-fix-notifications-alarms/`
 **Created:** 2026-06-05
-**Status:** APPROVED
+**Status**: delivered — PRs #644/#645/#646/#647
 **Tier:** 2 (Epic / High-Risk)
 **Input:** Relatos de usuários sobre alertas de Telegram inativos após vínculo, notificações duplicadas no iOS, silenciamento de doses não-críticas em blocos mistos e ausência de detalhes clínicos nos lembretes de doses.
 

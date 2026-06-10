@@ -2,7 +2,7 @@
 
 **Directory:** `plans/specs/028-nudges-admin`  
 **Created:** 2026-06-08T17:25:00Z  
-**Status:** specified  
+**Status**: in-progress — PR #654 mergeado; restante pendente
 **Tier:** 1 (Standard)  
 **Input:** User request + Epic 026 (nudges) as-built  
 

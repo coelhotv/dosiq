@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/004-expanded-adherence-dashboard`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: draft — não entregue como spec'ado (PO 2026-06-10)
 **Tier**: 1 (UI mobile; reusa lógica de adesão de `@dosiq/core`)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:

@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/018-anvisa-interactions-local`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_8_SMART_WOW_FACTOR.md` §3. Base de Interações Medicamentas, §3. Implementação

@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/003-patient-dose-history`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: delivered — PR #641 (mobile; evoluções em 0.15.x)
 **Tier**: 1 (feature mobile; reusa `dose_instances` + `registerDose` + repo core)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:

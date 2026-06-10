@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/020-notification-copy-metrics`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: specified — não iniciado
 **Tier**: 1 (feature coesa; 1 migração **aditiva**, sem contrato breaking/ADR novo)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:

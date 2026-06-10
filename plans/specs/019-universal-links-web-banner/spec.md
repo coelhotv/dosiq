@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/019-universal-links-web-banner`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: delivered — PR #607 (PWA deep linking; confirmado PO 2026-06-10)
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/EXEC_SPEC_DEEPLINK_UNIVERSAL_LINKS_WEB_BANNER.md`

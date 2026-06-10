@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/006-public-emergency-qr-card`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §F6.1

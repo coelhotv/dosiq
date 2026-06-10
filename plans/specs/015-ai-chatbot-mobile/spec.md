@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/015-ai-chatbot-mobile`  
 **Created**: 2026-06-01  
-**Status**: Migrated Draft  
+**Status**: draft
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_8_SMART_WOW_FACTOR.md` §1. Chatbot IA Contextual, §1. F8.1
