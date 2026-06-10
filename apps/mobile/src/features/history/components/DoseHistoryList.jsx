@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
-import { ChevronRight, CheckCircle2, XCircle, Clock, FastForward } from 'lucide-react-native'
+import { ChevronRight, CheckCircle2, XCircle, Clock, RedoDot } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 
 const COLORS = {
@@ -18,7 +18,7 @@ const COLORS = {
 function StatusIcon({ status }) {
   if (status === 'taken') return <CheckCircle2 size={22} color={COLORS.teal} strokeWidth={2} />
   if (status === 'missed') return <XCircle size={22} color={COLORS.red} strokeWidth={2} />
-  if (status === 'skipped_user') return <FastForward size={22} color={COLORS.gray} strokeWidth={2} />
+  if (status === 'skipped_user') return <RedoDot size={22} color={COLORS.gray} strokeWidth={2} />
   return <Clock size={22} color={COLORS.gray} strokeWidth={2} />
 }
 
