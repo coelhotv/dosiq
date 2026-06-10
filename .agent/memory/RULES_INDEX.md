@@ -116,6 +116,7 @@
 
 
 ## 🛡️ Process & Testing (`process_and_testing`)
+- **[R-275]** `plans/specs/README.md` = fonte de verdade do status das specs (vocabulário fechado draft→specified→planned→in-progress→delivered→superseded); header da spec espelha; C5 pós-merge atualiza README+header no mesmo commit; agente NUNCA infere status pelo header isolado (drift sistêmico detectado 2026-06-10) -> [`rules/process_and_testing/R-275.md`](./rules/process_and_testing/R-275.md)
 - **[R-234]** Smoke PO ANTES de abrir PR — push OK mas HOLD `gh pr create` até PO validar smoke (direto de ~/git/dosiq/apps/mobile desde 2026-05-24) -> [`rules/process_and_testing/R-234.md`](./rules/process_and_testing/R-234.md)
 - **[R-237]** Wave orchestration com dependency graph antes de spawn cavecrew — agrupa tasks paralelas em waves; reserva Opus pra integração -> [`rules/process_and_testing/R-237.md`](./rules/process_and_testing/R-237.md)
 - **[R-001]** Before modifying ANY file, search for duplicates with the same name; modify only... -> [`rules/process_and_testing/R-001.md`](./rules/process_and_testing/R-001.md)
