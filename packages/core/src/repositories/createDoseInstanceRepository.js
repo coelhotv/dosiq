@@ -410,7 +410,7 @@ export function createDoseInstanceRepository({ client }) {
         .from(TABLE)
         .update({ status: 'taken', medicine_log_id: medicineLogId })
         .eq('id', instanceId)
-        .in('status', ['pending', 'missed'])
+        .in('status', ['pending', 'missed', 'skipped_user'])
         .select('id')
 
       if (error) throw error
