@@ -7,7 +7,12 @@
 - `plans/backlog-unified_app_2026/PHASE_7_COMMUNICATION_CUIDADOR.md` (Fase 7A)
 - `plans/backlog-unified_app_2026/DRAFT_CAREGIVER_MODE.md` (plano v1.2 — referência)
 
----
+> **⚠️ Coordenação 012 (Diabetes T2 — 2026-06-10):** o épico 012 (Fase C) cria **`biomarkers_log`**
+> (glicemia/peso/PA do paciente — dado sensível) com RLS `user_id=auth.uid()`. Quando este épico
+> rodar, o modelo de permissões do Cuidador DEVE decidir explicitamente: cuidador **vê** medidas?
+> **registra** medida pelo paciente (fast-logging por procuração — caso real: filha mede a glicemia
+> da mãe)? RLS/policies de `biomarkers_log` precisam entrar na Fase 1 (Foundation RLS) junto com as
+> demais tabelas. Persona T2 idoso é onde o cuidador mais aparece — não tratar como afterthought.
 
 ## Visão
 

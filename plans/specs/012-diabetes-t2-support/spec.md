@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/012-diabetes-t2-support`
 **Created**: 2026-06-03
-**Status**: Planned (aguarda Coding — Fase A). **Re-sincronizada com 022 As-Built em 2026-06-08** (pós-merge #652); Planning finalizado 2026-06-08 — plan.md/analysis.md/tasks.md verificados contra repo+prod, ADR-058..062 accepted.
+**Status**: planned — aguarda Coding (Fase A). **Re-sincronizada com 022 As-Built em 2026-06-08** (pós-merge #652); Planning finalizado 2026-06-08 — plan.md/analysis.md/tasks.md verificados contra repo+prod, ADR-058..062 accepted.
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta, multi-fase, novos ADRs)
 **Input**: "/devflow specifying 012 - diabetes t2"
 **Pré-requisito**: ✅ **spec 022 (medicamentos líquidos) MERGEADA** (#650 Fase A, #651 Fase B, #652 Fase C — 2026-06-08). Fornece, **já em produção**: `protocols.intake_unit` (`'gotas'|'ml'|'UI'`, CHECK exato R-271), enum `dosage_unit` com `ui/ml`, coluna `medicines.units_per_ml` (razão→ml genérica), `medicines.presentation`, formatters core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine`/`doseToMl`/`calculateDailyIntake`), e — **crítico** — `consume_stock_fifo` que **já converte `UI`→ml** (migração `20260608_fix_consume_fifo_ui_conversion.sql`). O épico de diabetes **reusa** essa fundação; não a recria. **Impacto:** o núcleo do decremento UI da Fase D já está entregue (ver FR-013).
@@ -261,7 +261,13 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   derivada de `dosage_unit LIKE '%/ml'` (decisão-mãe da 022); `presentation` é o eixo de forma
   complementar.
 - **FR-002**: `public.medicines` ganha `shelf_life_days` (`integer`, nullable) — TTL pós-abertura
-  (propriedade do produto; distinto de `expiration_date` da caixa).
+  (propriedade do produto; distinto de `expiration_date` da caixa). **Captura (anti-feature-morta):**
+  idoso não sabe/não preenche → form **sugere default 28** quando `presentation='injecao'` (prefill
+  editável, copy guiada "validade após aberto — confira a bula"); sem constraint DB (nullable segue).
+- **FR-004b**: Alerta de validade biológica também via **stack de notificação existente**
+  (push/Telegram) — idoso que não abre o app precisa saber da caneta vencendo. Reusar dispatcher
+  (R-200/CON-019); kind novo de notificação exige enum Zod atualizado (R-193) e ADR se mudar payload
+  (constitution V). Cadência anti-spam: 1 aviso em D-3 + 1 no vencimento (não diário).
 - **FR-003**: `public.stock` ganha `opened_at` (`timestamptz`, nullable) — **inferido na 1ª
   tomada** que debita o lote (não há "abrir sem usar"). Decisão: estender `stock`, **sem tabela
   nova** (TTL é propriedade 1:1 do lote → join inútil).
@@ -273,6 +279,13 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   jsonb, `current_stage_index`, `stage_started_at`, `titration_status`; `titrationService`,
   `TitrationWizard`/`TitrationTimeline`/`TitrationBadge`; `@dosiq/core` `titrationUtils`) —
   garantir funcionamento ponta-a-ponta pós-refactors.
+- **FR-005b — modelo de avanço de etapa (decisão de produto)**: **auto-avanço por cronograma**
+  (`stage_started_at + duration_days` esgotado → próxima etapa). Seguir o cronograma **prescrito
+  pelo médico** é registro passivo da prescrição, não sugestão de dose — **dentro da linha SaMD**
+  (ADR-062): o app nunca decide a escada, só executa a que foi cadastrada. Transparência: evento
+  informativo na timeline/nudge *"Etapa N iniciada conforme o cronograma do tratamento"* (sem CTA
+  de dose). Avanço manual (confirmação do idoso a cada 4 semanas) rejeitado: esquecimento congelaria
+  `expected_dose` errada nas instâncias. Auditoria T008 verifica se o auto-avanço existente funciona.
 - **FR-006**: Geração de `dose_instances` congela `expected_dose` = dose da etapa de titulação
   vigente na data da ocorrência (ADR-050 FP-1; reusa `doseInstanceGenerator`).
 - **FR-007**: `tolerance_minutes` passa a usar "metade do intervalo entre doses" **removendo o
@@ -280,13 +293,22 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   NEEDS CLARIFICATION em US2.3.
 - **FR-008**: Marcar tratamento GLP-1/insulina como crítico reusa a flag `critical_alarm` da
   spec 010 — sem reimplementar alarme.
+- **FR-008b — dose semanal pendente multi-dia (UX)**: as superfícies do Hoje foram desenhadas p/
+  janela de horas; dose semanal fica `pending` por até 3,5 dias. Comportamento definido: aparece na
+  seção de carry-over com **rótulo relativo** ("há 2 dias", não "ontem"); PriorityCard a inclui
+  enquanto dentro da tolerância; **sem re-notificação** além do disparo original (`notified_at`
+  idempotente — evita spam de 3 dias); após a tolerância vira `missed` pelo sweep normal (R-246).
 
 **Fase C — `biomarkers_log` + fast-logging + timeline híbrida**
 - **FR-009**: Nova tabela `public.biomarkers_log` genérica: `id`, `user_id`, `type` (text, default
-  `'glicemia'`; extensível peso/PA/batimentos), `value` (numeric), `unit` (text), `measured_at`
+  `'glicemia'`; extensível peso/PA/batimentos), `value` (numeric), **`value_secondary` (numeric,
+  nullable — 2º componente de medidas compostas: PA = sistólica em `value` + diastólica em
+  `value_secondary`; NULL p/ glicemia/peso/batimentos)**, `unit` (text), `measured_at`
   (timestamptz), `context` (text, **manual**), `source` (text, default `'manual'`; extensível
   healthkit/google_fit/health_connect/cgm_*), `notes`, `created_at`. Grants + RLS
-  (`user_id=auth.uid()`) conforme template CLAUDE.md. Enums em PT (R-021).
+  (`user_id=auth.uid()`) conforme template CLAUDE.md. Enums em PT (R-021). **Sem `value_secondary`
+  a promessa de genericidade quebraria no 3º tipo (PA = "12 por 8", dois valores) — decisão PO
+  2026-06-10: duas colunas, não duas linhas.** Fast-logging de PA = 2 campos no mesmo sheet.
 - **FR-010**: Fast-logging (web + mobile) registra biomarcador com fricção mínima. **Design fixado:**
   bottom sheet **layout B "idoso primeiro"** (valor gigante centrado, contexto em grid 2×2 alvos
   ≥44px, tipo recolhido a 1 linha, unidade fixa por tipo, horário default "Agora" ajustável). Vírgula
@@ -326,7 +348,16 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   `20260608_fix_consume_fifo_ui_conversion.sql`, em prod). **Densidade capturada no tratamento**
   (form de protocolo, `intake_unit ∈ {gotas,UI}`) e persistida no medicamento (UX 022 Fase C).
   → **Escopo restante da Fase D para FR-013 = ZERO no núcleo**: apenas verificação/smoke da insulina
-  U-100 e (se necessário) U-200 (`units_per_ml=200`). **Não criar coluna, não alterar RPC.**
+  U-100 e (se necessário) U-200 (`units_per_ml=200`). **Não criar coluna.**
+- **FR-013b** 🔴 **(catch CPTO 2026-06-10 — risco clínico)**: o default `units_per_ml=20` da RPC é
+  herdado de **gotas**. Insulina com densidade não preenchida (idoso não sabe "U-100") debitaria
+  `10/20 = 0,5 ml` em vez de `0,10 ml` — **estoque esgota 5× rápido, alertas errados**. Correção em
+  2 camadas: (a) **form de tratamento**: quando `intake_unit='UI'`, prefill `units_per_ml=100`
+  (U-100 = padrão global; U-200 editável) — nunca deixar vazio cair no default de gotas; (b)
+  **defesa em profundidade na RPC**: default por unidade — `COALESCE(NULLIF(units_per_ml,0),
+  CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END)`. Mudança **aditiva** (assinatura intacta,
+  gotas/ml/sólidos inalterados — AP-221 respeitado); migração própria + regressão completa.
+  **Fase D deixa de ser smoke-only por causa deste item.**
 - **FR-014**: Adesão de basal usa modo **binário** existente (R-248). `dose_exactness`/bolus = fora.
 - **FR-015** ✅ **RESOLVIDO POR 022 + R-272**: exibição de dose de insulina usa os formatters
   core de 022 (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`, decisão via `isLiquidMedicine`)
@@ -410,8 +441,19 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   estado real em prod** (colunas/RPC/CHECK/schemas Zod) via grep/MCP antes de planejar — não
   reespecificar o que já existe (R-267/R-270 preflight).
 
+**Coordenação com specs do backlog (revisão CPTO 2026-06-10):**
+- **008 (export LGPD — backlog, não entregue):** `biomarkers_log` é dado sensível de saúde →
+  **DEVE** entrar no export. Decisão: requisito adicionado **na 008** (origem, mais barato — nota
+  de coordenação lá); a 012 não carrega a entrega.
+- **007 (PDF médico — backlog, não entregue):** cruzamento dose×biomarcador fica na **Fase E da
+  012** (já especificado, FR-016); a 007 ganhou nota p/ não duplicar e reusar a agregação da Fase E.
+- **009 (modo cuidador — spec'ed, NÃO implementado; próximo grande épico):** permissões de
+  visualização/registro de **medidas** pelo cuidador adicionadas como requisito na 009 (nota de
+  coordenação) — RLS de `biomarkers_log` nasce `user_id=auth.uid()` na 012; o modelo de acesso do
+  cuidador é problema da 009.
+
 **Outras (não-bloqueantes, Planning):**
 - Migração retroativa: popular `presentation` de medicamentos existentes; injetáveis legados
   (se houver `dosage_unit='ui'` em prod).
 - Caminho real do fast-logging mobile (verificar em P/C1, não assumir paridade de nome com web).
-- Shape exato de `context` de `biomarkers_log` (enum PT vs texto livre).
+- ✅ Shape de `context`: enum PT fechado (`jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro`).

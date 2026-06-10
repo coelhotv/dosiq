@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/001-native-alarm-persistent`
 **Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: Dev Ready
+**Status**: delivered — mergeado 2026-06-03 (alarme v1; v2 = spec 010)
 **Tier**: 1 (feature mobile coesa — sem migration/contract novos; reusa `dose_instances` + `registerDose`)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md` (Tier 1 — sem `analysis.md`/`checklists/` separados)
 **Legacy Source**: `plans/backlog-unified_app_2026/EXEC_SPEC_P0_1_ALARME_NATIVO.md`

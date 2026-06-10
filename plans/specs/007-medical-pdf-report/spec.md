@@ -11,6 +11,12 @@
 
 > **Reconciliação:** o **share sheet do Modo Consulta (spec 005)** tem a opção "Gerar PDF" — na fonte CRUD ficava desabilitada (placeholder, PO-8). Esta spec (007) **realiza** essa opção: ao tocar "Gerar PDF" no share sheet do 005, dispara o `pdfGeneratorService` mobile (`expo-print`). Integração: 005 FR-004 → 007 FR-001.
 
+> **⚠️ Coordenação 012 (Diabetes T2 — 2026-06-10):** o cruzamento **dose × biomarcador** (glicemia
+> etc., tabela `biomarkers_log`) no relatório clínico é **escopo da Fase E da 012** (FR-016 lá:
+> agregação server-side R-249, descritivo, linha SaMD). Esta spec (007) NÃO deve duplicar — se a
+> 012 Fase E já estiver entregue quando a 007 rodar, reusar a agregação; senão, o PDF da 007 sai
+> sem biomarcadores e a 012 Fase E o estende depois.
+
 ---
 
 ## Context

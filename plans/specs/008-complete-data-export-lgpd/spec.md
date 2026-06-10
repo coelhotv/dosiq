@@ -7,6 +7,12 @@
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §F6.3
 
+> **⚠️ Coordenação 012 (Diabetes T2 — 2026-06-10):** o épico 012 (Fase C) cria a tabela
+> **`biomarkers_log`** (glicemia, peso, pressão arterial — **dado sensível de saúde**). Quando esta
+> spec for implementada, o export **DEVE incluir `biomarkers_log`** (todas as colunas, incl.
+> `value_secondary` p/ PA) no bundle JSON/CSV — compliance LGPD, não opcional. Se a 012 já estiver
+> em prod no momento do Planning desta spec, incluir no inventário de tabelas desde o C1.
+
 ---
 
 ## Context

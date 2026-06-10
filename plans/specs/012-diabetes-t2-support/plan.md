@@ -29,7 +29,7 @@
 | Timeline (R-252) | `timelineService.doseInstancesToEvents` (`timelineService.js:118`) adapter; `timeline.js` builder PURO; `eventCardRegistry.js` (web). Comentários: "biomarkers_log → adapter biomarker entra ao lado" | FR-011: Fase C adiciona adapter + card, **sem tocar builder/UI de dose** |
 | formatters de dose | ✅ `doseUnit.js` tem `formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine` (022) | FR-015 = **consumir** (R-272), não revisar; ADR-046 legado já superado |
 | `biomarkers_log` | **não existe** (MCP) | net-new (Fase C) |
-| `consume_stock_fifo` | assinatura `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)`; ✅ converte `gotas` **E** `UI`→ml via `units_per_ml` (022 Fase C, migr. `20260608`) | FR-013 = **smoke** U-100/U-200; **não toca a RPC** |
+| `consume_stock_fifo` | assinatura `(p_user_id,p_medicine_id,p_quantity,p_medicine_log_id)`; ✅ converte `gotas` **E** `UI`→ml via `units_per_ml` (022 Fase C, migr. `20260608`); ⚠️ default `COALESCE(...,20)` é de **gotas** | FR-013 = smoke U-100/U-200; **FR-013b = única alteração na RPC**: default por unidade (UI→100) — risco clínico 5× (T021b) |
 | Fast-logging mobile | **não localizado** por grep (FAB/BottomSheet) | ⚠️ UNVERIFIED — C1 da Fase C confirma o caminho real |
 
 ---
@@ -56,7 +56,10 @@
   (ou no caminho de registro) quando `opened_at IS NULL` no lote consumido — best-effort (R-245).
 - Alerta TTL = **computado** (`opened_at + shelf_life_days*interval ≤ now`), helper puro no core;
   eixo paralelo ao status 4-tiers de volume (ADR-018), render dedicado (relógio).
+- **TTL também notifica** via stack existente (push/Telegram — FR-004b): kind novo no dispatcher
+  (R-200/CON-019, enum Zod R-193); cadência D-3 + vencimento. Idoso que não abre o app fica sabendo.
 - `presentation` ganha uso real: forms permitem `injecao`/`pomada` (UI dedicada — escopo 012).
+  `shelf_life_days` com **prefill 28 quando `presentation='injecao'`** (editável — anti-feature-morta).
 
 ### Fase B — GLP-1 (mg, semanal, titulação) — ADR-061
 - **Auditar titulação** (FR-005): rodar `titrationUtils` + wizard num protocolo novo, mapear
@@ -81,9 +84,12 @@
 > comportamento → consultar esses arquivos antes de inventar.**
 
 **Dados/core:**
-- Migração: tabela `biomarkers_log` (`id`,`user_id`,`type`,`value`,`unit`,`measured_at`,`context`,
-  `source`,`notes`,`created_at`) + grants + RLS (`user_id=auth.uid()`), enums PT (R-021).
-  `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro`.
+- Migração: tabela `biomarkers_log` (`id`,`user_id`,`type`,`value`,**`value_secondary`**,`unit`,
+  `measured_at`,`context`,`source`,`notes`,`created_at`) + grants + RLS (`user_id=auth.uid()`),
+  enums PT (R-021). `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro`.
+  **`value_secondary` (numeric NULL)** = 2º componente de medida composta — PA: sistólica=`value`,
+  diastólica=`value_secondary`; NULL p/ glicemia/peso/batimentos (decisão PO 2026-06-10: duas
+  colunas; sem isso a genericidade quebrava no 3º tipo prometido).
 - `biomarkerLogSchema` (core) sincronizado com CHECK (R-082).
 - Adapter `biomarkersToEvents` (core) → `TimelineEvent[]` `type='biomarker'` (R-252, **sem tocar**
   `timeline.js` builder). **Sem FK rígido** com `dose_instances`; correlação só temporal.
@@ -120,8 +126,13 @@
 
 ### Fase D — Insulina basal (UI/volume)
 - ✅ **Conversão UI→ml já em prod** (022 Fase C, `consume_stock_fifo`, migração `20260608`):
-  `ml = ROUND(p_quantity/units_per_ml,2)` para `lower(intake_unit) IN ('gotas','ui')`. **NÃO criar
-  migração nem alterar a RPC** — só smoke U-100 (e U-200=`units_per_ml=200` se aplicável).
+  `ml = ROUND(p_quantity/units_per_ml,2)` para `lower(intake_unit) IN ('gotas','ui')`.
+- 🔴 **FR-013b (catch CPTO 2026-06-10)** — **única exceção** ao "não alterar RPC": o default
+  `units_per_ml=20` (gotas) aplicado a insulina sem densidade preenchida = decremento **5× errado**
+  (10 UI → 0,5 ml em vez de 0,10 ml). Fix em 2 camadas (T021b): (a) form de tratamento prefill
+  `units_per_ml=100` quando `intake_unit='UI'`; (b) RPC default por unidade
+  (`CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END`) — aditivo, assinatura intacta (AP-221 ok),
+  migração própria + regressão gotas/ml/sólido. **Math de dose → main/opus, não delegar.**
 - Adesão basal = modo **binário** existente (R-248); `dose_exactness`/bolus = fora (T1).
 - Exibição de dose: **reusar formatters core de 022** (`formatIntakeDose`/`formatDoseItem`/
   `formatDoseHint`, R-272) com a unidade de tomada (UI); query traz `intake_unit`+`units_per_ml`

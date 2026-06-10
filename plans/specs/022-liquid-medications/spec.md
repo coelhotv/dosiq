@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/022-liquid-medications`
 **Created**: 2026-06-01 · **Revised**: 2026-06-03 · **As-Built**: 2026-06-08
-**Status**: Shipped (Fases A/B/C) — aguardando merge do PR. Ver **As-Built (Fase C)** ao final para os deltas spec→produção apurados no smoke.
+**Status**: delivered — PRs #650 (A) · #651 (B) · #652 (C), 2026-06-08. Ver **As-Built (Fase C)** ao final para os deltas spec→produção apurados no smoke.
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta)
 **Artifacts**: `spec.md` · `plan.md` · `tasks.md` (faseado A→B→C) · `analysis.md` · `contracts/`
 **Legacy Sources**:
