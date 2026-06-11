@@ -29,7 +29,7 @@ import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
 import { MedicineDeleteBlockedSheet } from '@medications/components/MedicineDeleteBlockedSheet'
-import { formatConcentration } from '@dosiq/core'
+import { formatConcentration, PRESENTATION_LABELS } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 const TYPE_LABELS = {
@@ -271,6 +271,17 @@ export default function MedicineDetailScreen() {
           <Text style={styles.sectionTitle}>IDENTIFICAÇÃO</Text>
           <View style={styles.sectionCard}>
             <KVRow label="Tipo" value={typeLabel} />
+            {/* 012 Fase A: forma farmacêutica visível no dia-a-dia (não só no form) */}
+            <KVRow
+              label="Apresentação"
+              value={PRESENTATION_LABELS[data.presentation] ?? data.presentation}
+            />
+            {data.presentation === 'injetavel' && data.shelf_life_days ? (
+              <KVRow
+                label="Validade após aberto"
+                value={`${data.shelf_life_days} dias`}
+              />
+            ) : null}
             <KVRow label="Princípio Ativo" value={data.active_ingredient} />
             <KVRow label="Laboratório" value={data.laboratory} />
             <KVRow label="Classe Terapêutica" value={data.therapeutic_class} />
