@@ -2,7 +2,7 @@
 // Parte do fluxo S1.4 Wave 2 — visão detalhada de cada compra com barra de consumo
 
 import { View, Text, StyleSheet, Pressable } from 'react-native'
-import { Clock } from 'lucide-react-native'
+import { Syringe } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
 
@@ -148,12 +148,12 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
       {/* Validade biológica TTL pós-abertura (012 Fase A) — eixo paralelo ao volume */}
       {showTtlBadge && ttlLabel && (
         <View style={[styles.ttlChip, ttlExpired ? styles.ttlChipExpired : styles.ttlChipWarning]}>
-          <Clock
+          <Syringe
             size={12}
-            color={ttlExpired ? colors.status.error : colors.status.warning}
+            color={colors.status.error}
             strokeWidth={2.5}
           />
-          <Text style={[styles.ttlText, { color: ttlExpired ? colors.status.error : colors.status.warning }]}>
+          <Text style={[styles.ttlText, { color: colors.status.error }]}>
             {ttlLabel}
           </Text>
         </View>
@@ -327,8 +327,8 @@ const styles = StyleSheet.create({
   },
 
   ttlChipWarning: {
-    backgroundColor: '#fffbeb',
-    borderColor: '#fef3c7',
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
   },
 
   ttlText: {

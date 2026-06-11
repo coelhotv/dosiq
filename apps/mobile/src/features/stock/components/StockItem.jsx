@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { Plus, Clock } from 'lucide-react-native'
+import { Plus, Syringe } from 'lucide-react-native'
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
 import { formatStockQuantity, formatConcentration } from '@dosiq/core'
@@ -69,12 +69,12 @@ export default function StockItem({ medicine }) {
         {/* Alerta TTL pós-abertura (012 Fase A) — eixo paralelo, não substitui badge volume */}
         {ttlAlertActive && (
           <View style={[styles.ttlRow, ttlExpired ? styles.ttlRowExpired : styles.ttlRowWarning]}>
-            <Clock
+            <Syringe
               size={11}
-              color={ttlExpired ? colors.status.error : colors.status.warning}
+              color={colors.status.error}
               strokeWidth={2.5}
             />
-            <Text style={[styles.ttlText, { color: ttlExpired ? colors.status.error : colors.status.warning }]}>
+            <Text style={[styles.ttlText, { color: colors.status.error }]}>
               {ttlExpired
                 ? 'Vencido (validade após aberto)'
                 : ttlDaysLeft === 0
@@ -171,8 +171,8 @@ const styles = StyleSheet.create({
     borderColor: colors.status.error,
   },
   ttlRowWarning: {
-    backgroundColor: '#fffbeb',
-    borderColor: '#fef3c7',
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
   },
   ttlText: {
     fontSize: 11,

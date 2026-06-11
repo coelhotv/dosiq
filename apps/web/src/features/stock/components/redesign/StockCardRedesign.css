@@ -207,15 +207,18 @@
 }
 
 .stock-card-r__ttl-alert--expired {
-  background-color: var(--color-error-bg, #fef2f2);
-  color: var(--color-error, #dc2626);
-  border: 1px solid var(--color-error-light, #fca5a5);
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #f87171;
+  font-weight: var(--font-weight-semibold, 600);
 }
 
+/* Vencendo: vermelho claro — 1 grau abaixo do vencido (decisão PO smoke 2026-06-10:
+   âmbar não comunicava a gravidade clínica de insulina perdendo eficácia) */
 .stock-card-r__ttl-alert--expiring {
-  background-color: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning, #d97706);
-  border: 1px solid var(--color-warning-light, #fcd34d);
+  background-color: var(--color-error-bg, #fef2f2);
+  color: var(--color-error, #dc2626);
+  border: 1px solid #fecaca;
 }
 
 /* ── CTA button — peso visual reduzido ── */

@@ -15,8 +15,7 @@ import {
   PillBottle,
   ShieldCheck,
   ShieldAlert,
-  Clock,
-  AlarmClock,
+  Syringe,
 } from 'lucide-react'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
@@ -196,9 +195,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
           role="alert"
           aria-live="polite"
         >
-          {ttlAlert.type === 'expired'
-            ? <Clock size={13} aria-hidden="true" />
-            : <AlarmClock size={13} aria-hidden="true" />}
+          <Syringe size={13} aria-hidden="true" />
           <span>{ttlAlert.message}</span>
         </div>
       )}
