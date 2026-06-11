@@ -13,7 +13,8 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
-import { ChevronLeft, Pill, PillBottle } from 'lucide-react-native'
+import { ChevronLeft } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import EmptyState from '@shared/components/states/EmptyState'
 import PurchaseCard from '@stock/components/PurchaseCard'
@@ -178,11 +179,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
             {/* Card de contexto do medicamento */}
             <View style={styles.medicineCard}>
               <View style={styles.medicineIcon}>
-                {medicine?.type === 'suplemento' ? (
-                  <PillBottle size={22} color={colors.supplement[500]} strokeWidth={2} />
-                ) : (
-                  <Pill size={22} color={colors.primary[500]} strokeWidth={2} />
-                )}
+                <MedicineIcon
+                  medicine={medicine}
+                  size={22}
+                  color={medicine?.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+                  strokeWidth={2}
+                />
               </View>
               <View style={styles.medicineInfo}>
                 <View style={styles.medicineNameRow}>

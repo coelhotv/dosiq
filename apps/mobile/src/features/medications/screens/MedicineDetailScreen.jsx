@@ -14,12 +14,10 @@ import {
   ChevronLeft,
   Pencil,
   Trash2,
-  Pill,
-  PillBottle,
-  Droplets,
   Layers,
   Package,
 } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -227,13 +225,11 @@ export default function MedicineDetailScreen() {
               },
             ]}
           >
-            {data.type === 'suplemento' ? (
-              <PillBottle size={48} color={colors.supplement[500]} />
-            ) : data.dosage_unit?.endsWith('/ml') ? (
-              <Droplets size={48} color={colors.primary[500]} />
-            ) : (
-              <Pill size={48} color={colors.primary[500]} />
-            )}
+            <MedicineIcon
+              medicine={data}
+              size={48}
+              color={data.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+            />
           </View>
           <View style={styles.heroBody}>
             <View style={styles.heroNameRow}>

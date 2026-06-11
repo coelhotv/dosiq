@@ -21,11 +21,9 @@ import { useRoute, useFocusEffect } from '@react-navigation/native'
 import {
   ChevronLeft,
   Plus,
-  Pill,
-  PillBottle,
-  Droplets,
   SlidersHorizontal,
 } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
@@ -229,10 +227,8 @@ export default function StockDetailScreen({ navigation }) {
     medicine?.dosage_per_pill != null
       ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
       : null
-  const isLiquid = !isSupplement && Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]
-  const HeroIcon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
 
   return (
     <ScreenContainer>
@@ -274,7 +270,7 @@ export default function StockDetailScreen({ navigation }) {
             {/* Card hero */}
             <View style={styles.heroCard}>
               <View style={[styles.heroIcon, { backgroundColor: heroBg }]}>
-                <HeroIcon size={24} color={heroColor} />
+                <MedicineIcon medicine={medicine} size={24} color={heroColor} />
               </View>
               <View style={styles.heroInfo}>
                 <View style={styles.heroNameRow}>

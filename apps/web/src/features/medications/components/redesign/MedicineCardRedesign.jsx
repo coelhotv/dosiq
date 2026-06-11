@@ -1,6 +1,4 @@
 import {
-  Pill,
-  PillBottle,
   Building2,
   Beaker,
   Tag,
@@ -10,11 +8,11 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { PRESENTATION_LABELS } from '@dosiq/core'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import './MedicineCardRedesign.css'
 
 export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDependencies }) {
   const isSupplement = medicine.type === 'suplemento'
-  const MedicineIcon = isSupplement ? PillBottle : Pill
 
   return (
     <div
@@ -24,7 +22,8 @@ export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDe
         <div
           className={`sr-medicine-card__icon sr-medicine-card__icon--${isSupplement ? 'supplement' : 'medicine'}`}
         >
-          <MedicineIcon size={20} />
+          {/* Ícone canônico de identificação do medicamento */}
+          <MedicineIcon medicine={medicine} size={20} />
         </div>
         <div>
           <h4 className="sr-medicine-card__name">{medicine.name}</h4>

@@ -19,7 +19,8 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Search, X, Pill, PillBottle, Droplets, Plus } from 'lucide-react-native'
+import { Search, X, Plus } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMedicines } from '../../medications/hooks/useMedicines'
 import { selectionTap, lightTap } from '@shared/utils/haptics'
 import { formatConcentration } from '@dosiq/core'
@@ -101,8 +102,6 @@ export default function MedicineSelectorSheet({
   function renderItem({ item }) {
     const isSelected = item.id === selectedId
     const isSupplement = item.type === 'suplemento'
-    const isLiquid = !isSupplement && Boolean(item.dosage_unit?.endsWith('/ml'))
-    const Icon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
     const iconColor = isSupplement ? colors.supplement[500] : colors.primary[500]
     const iconBg = isSupplement ? colors.supplement[50] : colors.primary[50]
 
@@ -119,7 +118,7 @@ export default function MedicineSelectorSheet({
         accessibilityState={{ selected: isSelected }}
       >
         <View style={[styles.itemIcon, { backgroundColor: iconBg }]}>
-          <Icon size={20} color={iconColor} strokeWidth={2} />
+          <MedicineIcon medicine={item} size={20} color={iconColor} strokeWidth={2} />
         </View>
         <View style={styles.itemText}>
           <View style={styles.itemHeader}>

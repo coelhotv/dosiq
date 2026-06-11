@@ -12,7 +12,8 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Search, X, Pill, PillBottle } from 'lucide-react-native'
+import { Search, X } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import { selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
@@ -52,7 +53,6 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
 
   function renderItem({ item }) {
     const isSupplement = item.type === 'suplemento'
-    const Icon = isSupplement ? PillBottle : Pill
     const iconColor = isSupplement
       ? colors.supplement[500]
       : colors.primary[500]
@@ -68,7 +68,7 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
         accessibilityLabel={item.name}
       >
         <View style={[styles.itemIcon, { backgroundColor: iconBg }]}>
-          <Icon size={18} color={iconColor} strokeWidth={2} />
+          <MedicineIcon medicine={item} size={18} color={iconColor} strokeWidth={2} />
         </View>
         <View style={styles.itemText}>
           <Text style={styles.itemName} numberOfLines={1}>

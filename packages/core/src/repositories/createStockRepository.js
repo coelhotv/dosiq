@@ -64,6 +64,8 @@ export function createStockRepository({ client, getUserId }) {
         id,
         name,
         laboratory,
+        type,
+        presentation,
         dosage_unit,
         dosage_per_pill,
         units_per_ml,

@@ -9,7 +9,8 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Pill, Leaf, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import { stockUnitLabel, formatNumberPtBR } from '@dosiq/core'
@@ -62,9 +63,6 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
         animate="visible"
       >
         {visible.map((entry) => {
-          // Ícone de tipo de medicamento
-          const isSupplement = entry.medicineType === 'suplemento'
-          const TypeIcon = isSupplement ? Leaf : Pill
           const cost = formatCost(entry)
 
           return (
@@ -73,9 +71,9 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
               className="entrada-historico__item"
               variants={motionConfig.cascade.item}
             >
-              {/* Ícone tipo de medicamento */}
+              {/* Ícone canônico de identificação do medicamento */}
               <div className="entrada-historico__type-icon">
-                <TypeIcon size={16} aria-hidden="true" />
+                <MedicineIcon medicine={{ type: entry.medicineType }} size={16} aria-hidden="true" />
               </div>
 
               {/* Data + Nome */}
