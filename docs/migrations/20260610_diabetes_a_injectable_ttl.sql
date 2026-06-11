@@ -79,3 +79,20 @@ END; $function$;
 -- Verificação pós-migração:
 --   SELECT count(*) FROM public.medicines WHERE shelf_life_days IS NOT NULL;  -- esperado: 0
 --   SELECT count(*) FROM public.stock WHERE opened_at IS NOT NULL;            -- esperado: 0
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Backfill (aplicado em prod 2026-06-10, decisão PO — risco clínico de TTL
+-- atrasado): lotes legados já em uso ganham opened_at REAL = 1ª consumption
+-- (stock_consumptions.min(created_at)). Sem isso, frasco em uso só ganharia
+-- opened_at na próxima tomada com relógio zerado → insulina vencida exibida
+-- como válida por até 1 ciclo. Idempotente. Resultado prod: 61 lotes
+-- backfillados, 118 fechados intactos.
+UPDATE public.stock s
+SET opened_at = sub.first_consumption
+FROM (
+  SELECT stock_id, min(created_at) AS first_consumption
+  FROM public.stock_consumptions
+  GROUP BY stock_id
+) sub
+WHERE s.id = sub.stock_id
+  AND s.opened_at IS NULL;
