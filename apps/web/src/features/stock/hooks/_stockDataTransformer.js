@@ -98,6 +98,8 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         dosage_unit: medicine.dosage_unit || 'mg',
         units_per_ml: medicine.units_per_ml ?? null,
         type: medicine.type || 'medicamento',
+        // Forma farmacêutica p/ ícone canônico (getMedicineIconName) no card
+        presentation: medicine.presentation ?? null,
         shelf_life_days: medicine.shelf_life_days ?? null,
       },
       entries: stock.entries,
