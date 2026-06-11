@@ -185,10 +185,8 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
         </>
       )}
 
-      {/* ── Última compra — subtexto de referência de preço ── */}
-      {lastPurchaseText && <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>}
-
-      {/* ── Alerta de validade biológica pós-abertura (012 Fase A) — eixo paralelo ── */}
+      {/* ── Alerta de validade biológica pós-abertura (012 Fase A) — eixo paralelo.
+          Antes da última compra: alerta clínico > referência de preço (PO smoke). */}
       {ttlAlert && (
         <div
           className={`stock-card-r__ttl-alert stock-card-r__ttl-alert--${ttlAlert.type}`}
@@ -199,6 +197,9 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
           <span>{ttlAlert.message}</span>
         </div>
       )}
+
+      {/* ── Última compra — subtexto de referência de preço ── */}
+      {lastPurchaseText && <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>}
 
       {/* ── Previsão de reabastecimento (Sprint 15.7) ── */}
       {prediction?.predictedStockoutDate &&
