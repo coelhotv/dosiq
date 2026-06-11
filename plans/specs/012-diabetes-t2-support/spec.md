@@ -378,6 +378,17 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   Fase D apenas **garante** que as superfícies de insulina (dashboard, histórico, timeline,
   estoque, emergência, consulta, export) carregam `intake_unit`+`units_per_ml` na query (R-267) e
   passam pelos formatters. ADR-046/`formatDoseUnit` legado: substituído pelos formatters core.
+- **FR-015b** 🔴 **(smoke PO 2026-06-11 — push/alarme crítico com frase errada p/ líquidos)**: o
+  builder de payload de push (`formatDose` local em
+  `server/notifications/payloads/_payloadBuilders.js:16`) ignora a unidade de tomada e força
+  lowercase: dose líquida sai "Lantus (100ui/ml) · 10 un. — 12:00" em vez de "10 UI"; acrônimos
+  (`UI`, `ui/ml`→`UI/ml`) devem ser **uppercase** na exibição. Mesmo padrão de FR-015/FR-013c:
+  superfície serverless fora dos formatters core de 022. Correção na Fase D: (a) payload de
+  dose carrega `intake_unit`+`units_per_ml` (R-267) — schema Zod do kind atualizado (R-193);
+  (b) frase via formatters core (`formatIntakeDose`/`formatDoseItem`, R-272) — eliminar o
+  `formatDose` local (fallback "1 un." p/ mg/ml também é lossy); (c) display de unidade com
+  case canônico (`UI` uppercase; `mg`/`ml` lowercase). Cobre push, Telegram e alarme crítico
+  (mesmos builders). Testes jest em `server/` (sólido/gotas/ml/UI + case).
 
 **Fase E — Export clínico**
 - **FR-016**: Relatório PDF cruza doses × biomarcadores por período/dia, agregação server-side

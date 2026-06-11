@@ -140,6 +140,12 @@
   (mesma regra da RPC, default por unidade de FR-013b); payload via formatter (R-272). Serverless
   não testável em dev → testes jest obrigatórios (gotas/UI/ml/sólido) em `server/bot/__tests__/`.
   **Math de unidade → main/opus, não delegar.**
+- 🔴 **FR-015b (smoke PO 2026-06-11)** — push/alarme crítico de **dose** com frase errada p/
+  líquidos: `formatDose` local (`_payloadBuilders.js:16`) ignora `intake_unit` e força lowercase
+  ("10 un." em vez de "10 UI"; "100ui/ml"). Fix (T022c): payload de dose carrega
+  `intake_unit`+`units_per_ml` (R-267, schema do kind R-193); frase via formatters core (R-272,
+  eliminar `formatDose` local); case canônico (`UI` uppercase). Cobre push + Telegram + alarme
+  crítico (mesmos builders). Testes jest sólido/gotas/ml/UI + case.
 - Adesão basal = modo **binário** existente (R-248); `dose_exactness`/bolus = fora (T1).
 - Exibição de dose: **reusar formatters core de 022** (`formatIntakeDose`/`formatDoseItem`/
   `formatDoseHint`, R-272) com a unidade de tomada (UI); query traz `intake_unit`+`units_per_ml`
