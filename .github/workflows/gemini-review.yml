@@ -180,7 +180,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.detect.outputs.branch }}
       
@@ -190,7 +190,7 @@ jobs:
       # ==========================================
       - name: Restore Review Cache
         id: cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .gemini-cache
           key: gemini-review-cache-${{ github.run_id }}
@@ -426,13 +426,13 @@ jobs:
       # Salva cache para uso em execuções futuras
       # ==========================================
       - name: Save Review Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .gemini-cache
           key: gemini-review-cache-${{ github.run_id }}
       
       - name: Upload Structured Output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: gemini-review-output
           path: .gemini-output/*.json
@@ -463,10 +463,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -521,7 +521,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Download Review Output
         uses: actions/download-artifact@v4
@@ -531,7 +531,7 @@ jobs:
         continue-on-error: true
       
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
       
@@ -626,14 +626,14 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ needs.detect.outputs.branch }}
           fetch-depth: 0
       
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -672,12 +672,12 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.detect.outputs.branch }}
       
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -702,7 +702,7 @@ jobs:
     if: always() && needs.detect.outputs.should_run == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Download Output
         uses: actions/download-artifact@v4
@@ -759,7 +759,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Download Output
         uses: actions/download-artifact@v4
@@ -809,7 +809,7 @@ jobs:
   #   if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v5
       
   #     - name: Check and Trigger Re-review
   #       uses: actions/github-script@v8
@@ -856,13 +856,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.detect.outputs.branch }}
           fetch-depth: 0  # Necessário para comparação de commits
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
