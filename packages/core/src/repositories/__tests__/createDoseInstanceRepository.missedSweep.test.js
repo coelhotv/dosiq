@@ -84,7 +84,7 @@ describe('markTaken — re-anchor de missed (self-heal F2.5)', () => {
     const ok = await repo.markTaken('di-1', 'log-9')
     expect(ok).toBe(true)
     const statusIn = client._calls.find(([n, a]) => n === 'in' && a[0] === 'status')
-    expect(statusIn[1][1]).toEqual(['pending', 'missed'])
+    expect(statusIn[1][1]).toEqual(['pending', 'missed', 'skipped_user'])
   })
 
   it('no-op (já taken) → false', async () => {
