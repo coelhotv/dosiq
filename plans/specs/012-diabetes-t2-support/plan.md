@@ -133,6 +133,13 @@
   `units_per_ml=100` quando `intake_unit='UI'`; (b) RPC default por unidade
   (`CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END`) — aditivo, assinatura intacta (AP-221 ok),
   migração própria + regressão gotas/ml/sólido. **Math de dose → main/opus, não delegar.**
+- 🔴 **FR-013c (regressão 022, PO 2026-06-11)** — push `stock_alert` do cron serverless sem
+  conversão ml: `_processUserStockAlert` (`server/bot/_reminderHelpers.js`) divide estoque em ml
+  por consumo em gotas/UI → `daysRemaining` errado (falso crítico) e `remaining` exibido cru.
+  Fix (T022b): select do cron += `units_per_ml`/`dosage_unit`; converter `dailyConsumption` p/ ml
+  (mesma regra da RPC, default por unidade de FR-013b); payload via formatter (R-272). Serverless
+  não testável em dev → testes jest obrigatórios (gotas/UI/ml/sólido) em `server/bot/__tests__/`.
+  **Math de unidade → main/opus, não delegar.**
 - Adesão basal = modo **binário** existente (R-248); `dose_exactness`/bolus = fora (T1).
 - Exibição de dose: **reusar formatters core de 022** (`formatIntakeDose`/`formatDoseItem`/
   `formatDoseHint`, R-272) com a unidade de tomada (UI); query traz `intake_unit`+`units_per_ml`

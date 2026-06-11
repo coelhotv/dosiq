@@ -55,6 +55,7 @@
 - [ ] T021 [US4] Smoke insulina U-100: tomada `10 UI` → debita `0,10 ml` por FIFO. Cobrir U-200 (`units_per_ml=200`) se aplicável. Confirmar densidade capturada no tratamento (form de protocolo, `intake_unit='UI'`).
 - [ ] T021b [US4] 🔴 **Fix default densidade p/ UI (FR-013b — risco clínico 5×)**: (a) form de tratamento prefill `units_per_ml=100` quando `intake_unit='UI'` (editável; nunca vazio→20); (b) RPC `consume_stock_fifo` default por unidade — `CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END` (aditivo, assinatura intacta; migração própria); (c) regressão completa gotas/ml/sólido. **Anula a nota "não alterar RPC" SÓ neste ponto.**
 - [ ] T022 [US4] Auditar superfícies de dose de insulina (dashboard/histórico/timeline/estoque/emergência/consulta): query traz `intake_unit`+`units_per_ml` (R-267) e render via `formatIntakeDose`/`formatDoseItem`/`formatDoseHint` (R-272, **reusa 022**) — nunca `dosage_unit` cru. Inputs numéricos normalizam vírgula PT-BR (R-270).
+- [ ] T022b [US4] 🔴 **Fix push `stock_alert` líquidos (FR-013c — regressão 022)**: `_processUserStockAlert` (`server/bot/_reminderHelpers.js`) calcula `daysRemaining` sem converter consumo gotas/UI→ml (estoque líquido em ml desde 022) → falso alerta crítico; payload exibe `remaining` cru. Fix: (a) select do cron += `units_per_ml`+`dosage_unit` (R-267); (b) `dailyConsumption` ÷ `units_per_ml` quando `lower(intake_unit) IN ('gotas','ui')` — mesma regra da RPC, incl. default por unidade do T021b; (c) `remaining` formatado na unidade certa no builder (R-272). Serverless sem dev → testes jest `server/bot/__tests__/` cobrindo gotas/UI/ml/sólido; avaliar dry-run via env var. **Math de unidade: main/opus.**
 - [ ] T023 [US4] Adesão basal = modo binário (R-248) — confirmar dose fixa; `dose_exactness` fora.
 - [ ] T024 [P] [C4] Testes/smoke: 10 UI → 0,10 ml (U-100) por FIFO (verificação, não nova impl.); TTL antes do volume; render via formatter (R-272); regressão sólido/gotas/ml intacta.
 
@@ -74,7 +75,7 @@
 022 mergeada → A. B e C paralelizáveis após A. D depende de C. E depende de C+D.
 
 ## Traceability
-FR-001..004 + 002(prefill)/004b → A (T002–T007, T005b) · FR-005..008 + 005b/008b → B (T008–T012, T011b) · FR-009/010/011/012 + 010b/011b/012b → C (T014–T019, T017b, T018b, T018c) · FR-013/013b/014/015 → D (T021–T024, **T021b**) · FR-016 → E (T026). US3b → T018c.
+FR-001..004 + 002(prefill)/004b → A (T002–T007, T005b) · FR-005..008 + 005b/008b → B (T008–T012, T011b) · FR-009/010/011/012 + 010b/011b/012b → C (T014–T019, T017b, T018b, T018c) · FR-013/013b/013c/014/015 → D (T021–T024, **T021b**, **T022b**) · FR-016 → E (T026). US3b → T018c.
 
 ## Orquestração (model tiering — ver plan.md §Orquestração & Model Tiering)
 Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em qualquer task que toque `packages/*` ou `apps/*/src/features/*`. Sub-agentes nunca commitam main (R-060). cavecrew-reviewer ≠ gate (revisor = Gemini). Haiku só folha trivial — nunca math de dose/UI→ml/tolerância/RLS.
@@ -96,7 +97,7 @@ Pré-spawn obrigatório: **AP-169 Branch Sync Ritual** (`git fetch` + sync) em q
 | **T018c área de Medidas — DECOMPOR** | sub-unidades (WeekNav/ScatterPlot/TypeChips/lista/sheet/estado-zero `[P]`) sonnet/cavecrew; **main retém nav + valida SaMD do scatter** (plan.md §Decomposição T018c) |
 | T022 / T023 / T026 (render dose / export) | sonnet; **main** valida SaMD/R-267/R-272 |
 | T007 / T012 / T019 / T024 [P] (testes) | sonnet (paraleliza) |
-| **T003 / T010 / T021b** (write-path AP-193 / tolerância clínica / **default densidade UI na RPC — math de dose**) | **main / opus** — não delegar |
+| **T003 / T010 / T021b / T022b** (write-path AP-193 / tolerância clínica / **default densidade UI na RPC — math de dose**) | **main / opus** — não delegar |
 | T005b (kind notificação TTL) / T011b (carry-over multi-dia) | sonnet; **main** valida payload (R-193/CON-019) e UX do Hoje |
 | T021 / T024 (smoke insulina) | humano (PO) |
 | T028 / T029 / T030 [C4/C5] (gates/SQP/record) | **main / opus** |

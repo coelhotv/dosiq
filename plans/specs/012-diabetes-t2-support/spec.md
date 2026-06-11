@@ -358,6 +358,19 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END)`. Mudança **aditiva** (assinatura intacta,
   gotas/ml/sólidos inalterados — AP-221 respeitado); migração própria + regressão completa.
   **Fase D deixa de ser smoke-only por causa deste item.**
+- **FR-013c** 🔴 **(regressão 022 reportada pelo PO 2026-06-11 — push de estoque errado)**: o cron
+  serverless de alerta de estoque (`_processUserStockAlert`) calcula
+  `daysRemaining = stock.qty / dailyConsumption` **sem conversão de unidades**: para líquidos o
+  estoque está em **ml** (022), mas `dailyConsumption` soma `dosage_per_intake` na unidade de
+  tomada (gotas/UI) — ex.: frasco 10 ml com 40 gotas/dia → `10/40 = 0 dias` → alerta crítico
+  falso. O payload ainda exibe `remaining` cru (ml rotulado como "doses"). Mesmo padrão
+  AP-221/R-267: o web converteu via `units_per_ml`, o read-path do cron ficou para trás.
+  Correção na Fase D (mesmo domínio de unidades/insulina): (a) select do cron traz
+  `units_per_ml` + `dosage_unit` do medicine; (b) `dailyConsumption` convertido para ml quando
+  `lower(intake_unit) IN ('gotas','ui')` (mesma regra da RPC, incl. default por unidade de
+  FR-013b); (c) payload formata `remaining` na unidade correta (R-272). Serverless não roda em
+  dev → cobertura obrigatória por testes jest em `server/bot/__tests__/` (casos gotas/UI/ml/
+  sólido) + considerar dry-run via env var para validação em prod.
 - **FR-014**: Adesão de basal usa modo **binário** existente (R-248). `dose_exactness`/bolus = fora.
 - **FR-015** ✅ **RESOLVIDO POR 022 + R-272**: exibição de dose de insulina usa os formatters
   core de 022 (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`, decisão via `isLiquidMedicine`)
