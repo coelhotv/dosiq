@@ -34,7 +34,7 @@
 | 009 | caregiver-mode | **specified** | próximo grande épico do roadmap; NÃO implementado; nota biomarkers (2026-06-10) |
 | 010 | native-alarm-v2 | **delivered** | PR #634 (mobile 0.10.0, 🔴 corrigido na auditoria — estava "planned"); ADR-055/056 |
 | 011 | notifications-from-instances | **delivered** | PR #633 (reminder ← dose_instances); ADR-057 |
-| 012 | diabetes-t2-support | **planned** | aguarda coding Fase A; ADR-058..062 accepted; design Fase C foldado |
+| 012 | diabetes-t2-support | **in-progress** | Fase A delivered (PR #658, 2026-06-11: injetável+TTL); B-E pendentes; ADR-058..062 accepted; FR-013c/015b adicionados à Fase D pós-smoke |
 | 013 | whatsapp-bot-adapter | draft | migrated draft |
 | 014 | whatsapp-templates-webhook | draft | migrated draft |
 | 015 | ai-chatbot-mobile | draft | migrated draft |
