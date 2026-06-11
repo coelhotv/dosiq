@@ -1,5 +1,5 @@
 import { parseLocalDate } from '@utils/dateUtils'
-import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
+import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, parseISO } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -69,13 +69,16 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         const expired = isBiologicallyExpired(openedLot, medicine)
         const daysLeft = biologicalExpiryDaysLeft(openedLot, medicine)
         if (expired) {
-          // daysLeft negativo → calcular dias desde vencimento
-          const daysSince = daysLeft != null ? Math.abs(Math.ceil(daysLeft)) : null
+          // Dias abertos calculados direto de opened_at (review Gemini #658:
+          // derivar de daysLeft já arredondado dobrava o arredondamento e inflava o texto)
+          const opened = parseISO(openedLot.opened_at)
+          const daysOpen = Number.isNaN(opened.getTime())
+            ? null
+            : Math.floor((Date.now() - opened.getTime()) / 86400000)
           ttlAlert = {
             type: 'expired',
-            // Dias desde abertura para o texto de UX
-            message: daysSince != null
-              ? `Aberto há mais de ${medicine.shelf_life_days + daysSince} dias — vencido (validade após aberto)`
+            message: daysOpen != null
+              ? `Aberto há ${daysOpen} dia${daysOpen !== 1 ? 's' : ''} — vencido (validade após aberto)`
               : 'Validade pós-abertura vencida',
           }
         } else if (daysLeft != null && daysLeft <= 3) {

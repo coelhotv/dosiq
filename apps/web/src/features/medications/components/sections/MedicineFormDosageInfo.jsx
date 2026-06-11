@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import {
   DOSAGE_UNITS,
   DOSAGE_UNIT_LABELS,
@@ -28,12 +28,21 @@ export default function MedicineFormDosageInfo({
   // Apresentação efetiva: líquido força 'liquido'; caso contrário usa formData.presentation
   const effectivePresentation = liquid ? 'liquido' : (formData.presentation || 'comprimido')
 
-  // Prefill 28 dias ao selecionar injetavel — apenas se campo estiver vazio (nunca sobrescreve)
-  useEffect(() => {
-    if (effectivePresentation === 'injetavel' && (formData.shelf_life_days === '' || formData.shelf_life_days === null || formData.shelf_life_days === undefined)) {
-      setFormData((prev) => ({ ...prev, shelf_life_days: 28 }))
-    }
-  }, [effectivePresentation]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Prefill/limpeza no próprio onChange (espelha handlePresentationChange do mobile;
+  // review Gemini #658): injetavel → prefill 28 se vazio; outra apresentação → limpa
+  // shelf_life_days (campo oculto não pode persistir valor obsoleto no banco).
+  const handlePresentationChange = (e) => {
+    const presentation = e.target.value
+    setFormData((prev) => ({
+      ...prev,
+      presentation,
+      shelf_life_days:
+        presentation === 'injetavel'
+          ? (prev.shelf_life_days === '' || prev.shelf_life_days == null ? 28 : prev.shelf_life_days)
+          : '',
+    }))
+    if (saveSuccess) setSaveSuccess(false)
+  }
 
   return (
     <>
@@ -92,7 +101,7 @@ export default function MedicineFormDosageInfo({
           id="presentation"
           name="presentation"
           value={effectivePresentation}
-          onChange={handleChange}
+          onChange={handlePresentationChange}
           disabled={isSubmitting || liquid}
           aria-describedby="presentation-hint"
         >

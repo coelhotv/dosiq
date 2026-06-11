@@ -157,6 +157,10 @@ export default function MedicineFormScreen() {
         if (current === '' || current === null || current === undefined) {
           form.handleChange('shelf_life_days', '28')
         }
+      } else {
+        // Campo fica oculto fora de injetavel — limpar evita persistir valor
+        // obsoleto ao salvar (review Gemini #658, mesmo fix do web).
+        form.handleChange('shelf_life_days', '')
       }
     },
     [form]

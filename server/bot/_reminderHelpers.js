@@ -575,8 +575,17 @@ function _biologicalExpiryDaysLeft(stockRow) {
   if (Number.isNaN(opened.getTime())) return null;
   const nowMs = Date.now();
   if (opened.getTime() > nowMs) return null;
-  const expiresAtMs = opened.getTime() + shelfDays * 24 * 60 * 60 * 1000;
-  return Math.floor((expiresAtMs - nowMs) / (24 * 60 * 60 * 1000));
+  const MS_DAY = 24 * 60 * 60 * 1000;
+  const expiresAtMs = opened.getTime() + shelfDays * MS_DAY;
+  // Diferença por DATA-CALENDÁRIO em America/Sao_Paulo, não por janelas de 24h
+  // sobre o instante do cron (review Gemini #658: atraso do cron fazia floor()
+  // pular de 3 pra 2 e silenciar o D-3 — cadência === 3 || === 0 exige dia exato).
+  const dayKey = (ms) => {
+    const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
+      .format(ms).split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((dayKey(expiresAtMs) - dayKey(nowMs)) / MS_DAY);
 }
 
 async function _processBiologicalExpiryAlerts(allStock, dispatcher, correlationId) {
