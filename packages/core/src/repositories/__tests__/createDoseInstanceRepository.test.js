@@ -262,7 +262,7 @@ describe('createDoseInstanceRepository', () => {
       expect(client._from).toBe('dose_instances')
       expect(b.update).toHaveBeenCalledWith({ status: 'taken', medicine_log_id: 'log-9' })
       expect(b.eq).toHaveBeenCalledWith('id', 'di-1')
-      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'missed'])
+      expect(b.in).toHaveBeenCalledWith('status', ['pending', 'missed', 'skipped_user'])
       expect(b.select).toHaveBeenCalledWith('id')
       expect(out).toBe(true)
     })
