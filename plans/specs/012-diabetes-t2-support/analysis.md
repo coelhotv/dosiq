@@ -65,6 +65,36 @@
 
 ---
 
+## Behavioral Failure Modes — Fase A (C1.5 item 5, pré-coding 2026-06-10)
+
+**`isBiologicallyExpired(stock, medicine)` (helper core novo):**
+| Input | Degenerado | Comportamento esperado | Covered (teste)? |
+|-------|-----------|------------------------|------------------|
+| `stock.opened_at` | NULL | `false` (lote fechado — eixo inativo) | T007 |
+| `medicine.shelf_life_days` | NULL | `false` (eixo inativo) | T007 |
+| `shelf_life_days` | `0` ou negativo | `false` (eixo inativo; Zod `.int().positive()` impede persistir, helper defensivo) | T007 |
+| `opened_at` | futuro (clock skew) | `false` (diff negativo ≠ expirado) | T007 |
+| `opened_at` | string ISO vs Date | parse robusto via core dateUtils (nunca `new Date('YYYY-MM-DD')` — R-020) | T007 |
+| limite exato | `opened_at + shelf = hoje` | expirado (`≤ now` — inclusive, conforme FR-004) | T007 |
+
+**Inferência `opened_at` na RPC `consume_stock_fifo` (write-path):**
+| Condição | Degenerada | Comportamento esperado | Covered? |
+|----------|-----------|------------------------|----------|
+| lote com `opened_at` preenchido | re-consumo | **não re-seta** (1× only: `WHERE opened_at IS NULL`) | T007 |
+| dose cruza 2 lotes (FIFO) | 2º lote NULL | ambos tocados ganham `opened_at` (frasco fisicamente aberto) | T007 |
+| estorno (`restore_stock_for_log`) | log revertido | `opened_at` **permanece** (abertura física é irreversível) — documentar | T007 |
+| ajuste manual (`entry_type='adjustment'`) | não passa pela RPC | **não** infere `opened_at` (só consumo real) | T007 |
+| sólido (sem TTL) | `shelf_life_days` NULL | `opened_at` é setado mesmo assim (inócuo) OU restringir a injetáveis? → **setar sempre** (coluna barata, evita branch; eixo só ativa com shelf_life) | T007 |
+
+**Kind `stock_expiry_alert` (novo, T005b):**
+| Condição | Degenerada | Comportamento esperado | Covered? |
+|----------|-----------|------------------------|----------|
+| cadência | cron diário re-dispara | idempotência via `notification_log` (1 aviso D-3, 1 no vencimento — não diário) | T005b teste |
+| lote expirado + volume zerado | dois alertas | validade biológica só p/ lote com `quantity > 0` (frasco vazio não interessa) | T005b teste |
+| enum Zod | kind fora do `kindSchema` | adicionar `stock_expiry_alert` ao enum ANTES do dispatch (R-193/AP-115 — aditivo) | T005b |
+
+---
+
 ## Findings
 
 | Sev | Item | Ação |

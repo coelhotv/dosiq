@@ -3,6 +3,7 @@ import {
   adherenceReportDataSchema,
   weeklyAdherenceDataSchema,
   stockAlertDataSchema,
+  stockExpiryAlertDataSchema,
   titrationAlertDataSchema,
   prescriptionAlertDataSchema,
   dlqDigestDataSchema,
@@ -160,6 +161,27 @@ export function buildStockAlertPayload(data) {
   richMsg += footer;
   plainMsg += plainFooter;
   
+  return { title, body: richMsg, pushBody: plainMsg };
+}
+
+// 012 Fase A (ADR-059): validade biologica (TTL pos-abertura) — eixo distinto do
+// alerta de volume (stock_alert). Cadencia D-3 + vencimento e controlada no cron.
+export function buildStockExpiryAlertPayload(data) {
+  const { medicineName, daysLeft } = stockExpiryAlertDataSchema.parse(data);
+  const title = `⏰ Validade após aberto: ${medicineName}`;
+  const safeName = escapeMarkdownV2(medicineName);
+
+  let richMsg;
+  let plainMsg;
+  if (daysLeft <= 0) {
+    richMsg = `O frasco/caneta aberto de *${safeName}* atingiu hoje o limite de uso após a abertura\\.\n\nRecomendamos iniciar um novo frasco/refil\\. Confira a bula\\.`;
+    plainMsg = `O frasco/caneta aberto de ${medicineName} atingiu hoje o limite de uso após a abertura.\n\nRecomendamos iniciar um novo frasco/refil. Confira a bula.`;
+  } else {
+    const diaLabel = daysLeft === 1 ? 'dia' : 'dias';
+    richMsg = `O frasco/caneta aberto de *${safeName}* vence em *${daysLeft} ${diaLabel}* \\(validade após aberto\\)\\.\n\nPrograme\\-se para abrir um novo\\.`;
+    plainMsg = `O frasco/caneta aberto de ${medicineName} vence em ${daysLeft} ${diaLabel} (validade após aberto).\n\nPrograme-se para abrir um novo.`;
+  }
+
   return { title, body: richMsg, pushBody: plainMsg };
 }
 

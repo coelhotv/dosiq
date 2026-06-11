@@ -20,7 +20,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Pill, Search, X } from 'lucide-react-native'
+import { Search, X } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMedicines } from '../../medications/hooks/useMedicines'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { stockService } from '@stock/services/stockService'
@@ -54,7 +55,7 @@ function MedicineRow({ item, onPress }) {
       accessibilityLabel={`Selecionar ${item.name} para registrar compra`}
     >
       <View style={styles.itemIcon}>
-        <Pill size={20} color={colors.primary[500]} strokeWidth={2} />
+        <MedicineIcon medicine={item} size={20} color={colors.primary[500]} strokeWidth={2} />
       </View>
       <View style={styles.itemText}>
         <View style={styles.itemHeader}>

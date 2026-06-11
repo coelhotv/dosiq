@@ -76,7 +76,7 @@ Diabetes move o Dosiq de "gerenciador de doses estáticas" para "registro de eve
 ## 2. Modelagem de Dados (Supabase) 
 
 ### A. `medicines` (definição do medicamento)
-* **Forma de administração:** hoje `medicines.type` no DB = CHECK `('medicamento','suplemento')` (categoria), **não** forma farmacêutica. Não há flag clara de "injetável". **Decidir:** adicionar `form`/`is_injectable`, ou derivar de `dosage_unit='ui'`. (A camada Zod tem `MEDICINE_TYPES` com `injecao`, mas pode não estar persistida como coluna — **verificar no planning**.)
+* **Forma de administração:** hoje `medicines.type` no DB = CHECK `('medicamento','suplemento')` (categoria), **não** forma farmacêutica. Não há flag clara de "injetável". **Decidir:** adicionar `form`/`is_injectable`, ou derivar de `dosage_unit='ui'`. (A camada Zod tem `MEDICINE_TYPES` com `injetavel`, mas pode não estar persistida como coluna — **verificar no planning**.)
 * **`shelf_life_days` (int, nullable):** TTL após aberto (insulina ≈ 30). Fica na **definição** porque é propriedade do produto. **NÃO** reaproveitar `expiration_date` (validade da caixa, data fixa) — são conceitos distintos.
 
 ### B. `stock` (lote físico)

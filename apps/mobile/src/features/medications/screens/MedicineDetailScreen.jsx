@@ -14,12 +14,10 @@ import {
   ChevronLeft,
   Pencil,
   Trash2,
-  Pill,
-  PillBottle,
-  Droplets,
   Layers,
   Package,
 } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -29,7 +27,7 @@ import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
 import { MedicineDeleteBlockedSheet } from '@medications/components/MedicineDeleteBlockedSheet'
-import { formatConcentration } from '@dosiq/core'
+import { formatConcentration, PRESENTATION_LABELS } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 const TYPE_LABELS = {
@@ -227,13 +225,11 @@ export default function MedicineDetailScreen() {
               },
             ]}
           >
-            {data.type === 'suplemento' ? (
-              <PillBottle size={48} color={colors.supplement[500]} />
-            ) : data.dosage_unit?.endsWith('/ml') ? (
-              <Droplets size={48} color={colors.primary[500]} />
-            ) : (
-              <Pill size={48} color={colors.primary[500]} />
-            )}
+            <MedicineIcon
+              medicine={data}
+              size={48}
+              color={data.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+            />
           </View>
           <View style={styles.heroBody}>
             <View style={styles.heroNameRow}>
@@ -271,6 +267,17 @@ export default function MedicineDetailScreen() {
           <Text style={styles.sectionTitle}>IDENTIFICAÇÃO</Text>
           <View style={styles.sectionCard}>
             <KVRow label="Tipo" value={typeLabel} />
+            {/* 012 Fase A: forma farmacêutica visível no dia-a-dia (não só no form) */}
+            <KVRow
+              label="Apresentação"
+              value={PRESENTATION_LABELS[data.presentation] ?? data.presentation}
+            />
+            {data.presentation === 'injetavel' && data.shelf_life_days ? (
+              <KVRow
+                label="Validade após aberto"
+                value={`${data.shelf_life_days} dias`}
+              />
+            ) : null}
             <KVRow label="Princípio Ativo" value={data.active_ingredient} />
             <KVRow label="Laboratório" value={data.laboratory} />
             <KVRow label="Classe Terapêutica" value={data.therapeutic_class} />

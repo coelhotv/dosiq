@@ -3,7 +3,7 @@
 // o tratamento "dispare HOJE", jogando semanal/dias_alternados/quando_necessario
 // pra "sem tratamento ativo" mesmo com a flag active ligada. Pro estoque, ter
 // tratamento ativo = estar no período + active, independente de disparar hoje.
-import { getTodayLocal, isProtocolInPeriod, doseToMl } from '@dosiq/core'
+import { getTodayLocal, isProtocolInPeriod, doseToMl, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
 
 export function transformStockData(rawData) {
   const today = getTodayLocal()
@@ -51,6 +51,14 @@ export function transformStockData(rawData) {
       color = '#3b82f6'
     }
 
+    // Eixo TTL pós-abertura (012 Fase A) — paralelo ao status por volume.
+    // _latestOpenedAt injetado por useStock._fetchAndPersistStock.
+    const stockRow = item._latestOpenedAt ? { opened_at: item._latestOpenedAt } : null
+    const ttlExpired = stockRow ? isBiologicallyExpired(stockRow, item) : false
+    const ttlDaysLeft = stockRow ? biologicalExpiryDaysLeft(stockRow, item) : null
+    // Alerta ativo: vencido OU faltam ≤3 dias (e lote tem saldo)
+    const ttlAlertActive = totalQuantity > 0 && (ttlExpired || (ttlDaysLeft !== null && ttlDaysLeft >= 0 && ttlDaysLeft <= 3))
+
     return {
       ...item,
       totalQuantity,
@@ -61,7 +69,10 @@ export function transformStockData(rawData) {
       statusLabel,
       color,
       hasActiveProtocol: activeProtocols.length > 0,
-      activeProtocols
+      activeProtocols,
+      ttlExpired,
+      ttlDaysLeft,
+      ttlAlertActive,
     }
   })
 }

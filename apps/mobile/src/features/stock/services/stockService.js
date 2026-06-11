@@ -55,6 +55,7 @@ export async function getStockData(userId) {
         laboratory,
         dosage_unit,
         dosage_per_pill,
+        shelf_life_days,
         medicine_stock_summary!left (
           total_quantity
         ),

@@ -9,6 +9,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Backend/Infra (DB + cron — 012 Fase A)
+- **Added** (`minor`, Spec 012 Fase A, ADR-059): Migração `20260610_diabetes_a_injectable_ttl.sql` — `medicines.shelf_life_days` (TTL pós-abertura, nullable, CHECK > 0) e `stock.opened_at` (timestamptz). `consume_stock_fifo` agora infere `opened_at` na primeira tomada que debita o lote (`COALESCE(opened_at, now())` — nunca re-seta; assinatura intacta). Novo kind de notificação `stock_expiry_alert` (push/Telegram) com cadência D-3 + vencimento, no cron diário de estoque — avisa quando o frasco/caneta aberto atinge a validade pós-abertura.
+
+### Core (@dosiq/core — 012 Fase A)
+- **Added** (`minor`, Spec 012 Fase A): Helpers puros `isBiologicallyExpired(stock, medicine)` e `biologicalExpiryDaysLeft(stock, medicine)` em `utils/stock.js` — eixo de validade biológica PARALELO ao status de volume 4-tiers (ADR-018). `medicineSchema` ganha `shelf_life_days` (int positivo nullable, `''`→null R-270). `createStockRepository` carrega `shelf_life_days` (R-267).
+
+### Web (4.2.0 → 4.3.0)
+- **Added** (`minor`, Spec 012 Fase A): Cadastro de medicamento expõe select de Apresentação (injeção/pomada etc.) com campo "Validade após aberto (dias)" para injetáveis (prefill 28, editável). Card de estoque exibe alerta de validade biológica (ícone relógio) — "vence em N dias" / "vencido (validade após aberto)" — distinto do alerta de volume.
+
+### Mobile (0.15.4 → 0.16.0)
+- **Added** (`minor`, Spec 012 Fase A): Mesmo conjunto da web — seletor de Apresentação + validade após aberto no form de medicamento (prefill 28 p/ injeção); badge de TTL biológico (relógio) na listagem de estoque, detalhe e cartões de compra, em paralelo ao status de volume.
+- **Nota de loja relevante:** "Novo: para insulinas e outros injetáveis, o dosiq agora avisa quando o frasco ou caneta aberta está perto de perde a eficácia após abertura — mesmo que ainda reste algum conteúdo."
+
 ### Mobile (0.15.3 → 0.15.4)
 - **Fixed** (`patch`): Corrigido bug onde registrar retroativamente uma dose pulada (`skipped_user`) pelo histórico criava entradas duplicadas no dia — `markTaken` não incluía `skipped_user` na whitelist de status elegíveis, causando inserção do log sem atualizar a instância original. Ícone de dose pulada alterado de `FastForward` para `RedoDot` (mais intuitivo).
 

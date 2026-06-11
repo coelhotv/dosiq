@@ -5,6 +5,8 @@ import {
   resolveStockStatus,
   computeAverageUnitPrice,
   computeExpiryDays,
+  isBiologicallyExpired,
+  biologicalExpiryDaysLeft,
   formatBRL,
 } from '../stock.js'
 
@@ -126,5 +128,79 @@ describe('STOCK_THRESHOLDS', () => {
     expect(STOCK_THRESHOLDS.LOW_DAYS).toBe(14)
     expect(STOCK_THRESHOLDS.NORMAL_DAYS).toBe(30)
     expect(STOCK_THRESHOLDS.EXPIRY_WARNING_DAYS).toBe(90)
+  })
+})
+
+// 012 Fase A (ADR-059) — validade biológica (TTL pós-abertura).
+// Tabela de failure-modes do analysis.md: NULL/0/negativo/clock-skew/limite exato.
+describe('isBiologicallyExpired', () => {
+  const NOW = new Date('2026-06-10T12:00:00Z')
+  const med28 = { shelf_life_days: 28 }
+
+  it('eixo inativo: opened_at NULL → false', () => {
+    expect(isBiologicallyExpired({ opened_at: null }, med28, NOW)).toBe(false)
+    expect(isBiologicallyExpired({}, med28, NOW)).toBe(false)
+  })
+
+  it('eixo inativo: shelf_life_days NULL/0/negativo → false', () => {
+    const lote = { opened_at: '2026-01-01T00:00:00Z' }
+    expect(isBiologicallyExpired(lote, { shelf_life_days: null }, NOW)).toBe(false)
+    expect(isBiologicallyExpired(lote, {}, NOW)).toBe(false)
+    expect(isBiologicallyExpired(lote, { shelf_life_days: 0 }, NOW)).toBe(false)
+    expect(isBiologicallyExpired(lote, { shelf_life_days: -5 }, NOW)).toBe(false)
+  })
+
+  it('eixo inativo: opened_at inválido → false', () => {
+    expect(isBiologicallyExpired({ opened_at: 'data-quebrada' }, med28, NOW)).toBe(false)
+  })
+
+  it('clock skew: opened_at no futuro → false', () => {
+    expect(isBiologicallyExpired({ opened_at: '2026-07-01T00:00:00Z' }, med28, NOW)).toBe(false)
+  })
+
+  it('não expirado: aberto há 10 dias com TTL 28 → false', () => {
+    expect(isBiologicallyExpired({ opened_at: '2026-05-31T12:00:00Z' }, med28, NOW)).toBe(false)
+  })
+
+  it('limite exato: opened_at + shelf === now → true (inclusive, FR-004)', () => {
+    // 28 dias antes de NOW, ao segundo
+    expect(isBiologicallyExpired({ opened_at: '2026-05-13T12:00:00Z' }, med28, NOW)).toBe(true)
+  })
+
+  it('expirado: aberto há 30 dias com TTL 28 → true', () => {
+    expect(isBiologicallyExpired({ opened_at: '2026-05-11T12:00:00Z' }, med28, NOW)).toBe(true)
+  })
+
+  it('aceita Date object em opened_at', () => {
+    expect(isBiologicallyExpired({ opened_at: new Date('2026-05-01T00:00:00Z') }, med28, NOW)).toBe(true)
+  })
+})
+
+describe('biologicalExpiryDaysLeft', () => {
+  const NOW = new Date('2026-06-10T12:00:00Z')
+  const med28 = { shelf_life_days: 28 }
+
+  it('eixo inativo → null', () => {
+    expect(biologicalExpiryDaysLeft({ opened_at: null }, med28, NOW)).toBe(null)
+    expect(biologicalExpiryDaysLeft({ opened_at: '2026-06-01T00:00:00Z' }, {}, NOW)).toBe(null)
+    expect(biologicalExpiryDaysLeft({ opened_at: 'xx' }, med28, NOW)).toBe(null)
+    expect(biologicalExpiryDaysLeft({ opened_at: '2027-01-01T00:00:00Z' }, med28, NOW)).toBe(null)
+  })
+
+  it('D-3: aberto há 25 dias com TTL 28 → 3 (gatilho do aviso)', () => {
+    expect(biologicalExpiryDaysLeft({ opened_at: '2026-05-16T12:00:00Z' }, med28, NOW)).toBe(3)
+  })
+
+  it('vence hoje: aberto há exatos 28 dias → 0', () => {
+    expect(biologicalExpiryDaysLeft({ opened_at: '2026-05-13T12:00:00Z' }, med28, NOW)).toBe(0)
+  })
+
+  it('vencido há 2 dias → -2 (sem re-alerta retroativo no cron)', () => {
+    expect(biologicalExpiryDaysLeft({ opened_at: '2026-05-11T12:00:00Z' }, med28, NOW)).toBe(-2)
+  })
+
+  it('floor parcial: 2,5 dias restantes → 2', () => {
+    // aberto há 25,5 dias → restam 2,5 → floor 2
+    expect(biologicalExpiryDaysLeft({ opened_at: '2026-05-16T00:00:00Z' }, med28, NOW)).toBe(2)
   })
 })

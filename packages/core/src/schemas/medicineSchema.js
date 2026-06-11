@@ -37,7 +37,7 @@ export const PRESENTATIONS = [
   'comprimido',
   'capsula',
   'liquido',
-  'injecao',
+  'injetavel',
   'pomada',
   'spray',
   'outro',
@@ -47,7 +47,7 @@ export const PRESENTATION_LABELS = {
   comprimido: 'Comprimido',
   capsula: 'Cápsula',
   liquido: 'Líquido',
-  injecao: 'Injeção',
+  injetavel: 'Injetável',
   pomada: 'Pomada',
   spray: 'Spray',
   outro: 'Outro',
@@ -136,6 +136,21 @@ const medicineObject = z.object({
 
   // Forma farmacêutica (additiva — ADR-058). Default 'comprimido' espelha o DEFAULT do DB.
   presentation: z.enum(PRESENTATIONS).default('comprimido'),
+
+  // 012 Fase A (ADR-059): TTL pós-abertura em dias (propriedade do produto;
+  // distinto de expiration_date da caixa). NULL = eixo de validade biológica
+  // inativo. Form prefill 28 quando presentation='injetavel' (vive na UI, não aqui).
+  // Sincronizado com CHECK medicines_shelf_life_days_check (> 0) — R-082.
+  // preprocess '' => null: campo numérico opcional limpo não pode virar 0 (R-270).
+  shelf_life_days: z.preprocess(
+    (val) => (val === '' || val === undefined ? null : val),
+    z.coerce
+      .number()
+      .int('Validade após aberto deve ser um número inteiro de dias')
+      .positive('Validade após aberto deve ser maior que zero')
+      .nullable()
+      .optional()
+  ),
 
   type: z.enum(MEDICINE_TYPES).default('medicamento'),
 

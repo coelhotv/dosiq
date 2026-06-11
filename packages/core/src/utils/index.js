@@ -127,8 +127,17 @@ export {
   resolveStockStatus,
   computeAverageUnitPrice,
   computeExpiryDays,
+  isBiologicallyExpired,
+  biologicalExpiryDaysLeft,
   formatBRL,
 } from './stock.js'
+
+// Ícone de identificação do medicamento (012 Fase A — fonte única, binding por plataforma)
+export {
+  getMedicineIconName,
+  MEDICINE_ICON_BY_PRESENTATION,
+  SUPPLEMENT_ICON,
+} from './medicineIcon.js'
 
 export { calculateAge, getInitials } from './profile.js'
 

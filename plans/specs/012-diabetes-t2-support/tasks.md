@@ -12,14 +12,14 @@
 
 ## Phase A — Forma injetável + TTL biológico (PR 1) — ADR-059
 
-- [ ] T001 [C1] Confirmar 022 mergeada (colunas `presentation`/`units_per_ml` em prod). Verificar caminho de registro de tomada que debita lote (`consume_stock_fifo` callers).
-- [ ] T002 [US1] Migração `docs/migrations/2026XXXX_diabetes_a_injectable_ttl.sql`: `medicines.shelf_life_days INTEGER NULL`; `stock.opened_at TIMESTAMPTZ NULL`.
-- [ ] T003 [US1] Inferir `stock.opened_at` na 1ª tomada que debita o lote (`opened_at IS NULL` → setar `now()`), best-effort (R-245). Cross-superfície (web/mobile/bot).
-- [ ] T004 [US1] Helper puro core: `isBiologicallyExpired(stock, medicine)` = `opened_at + shelf_life_days ≤ now`. Eixo paralelo ao status volume (ADR-018).
-- [ ] T005 [US1] UI alerta validade biológica (relógio) — web + mobile; distinto do alerta de volume.
-- [ ] T005b [US1] Alerta TTL via stack de notificação (push/Telegram, FR-004b): kind novo no dispatcher (R-200/CON-019, enum Zod R-193; ADR se payload mudar). Cadência D-3 + vencimento (não diário).
-- [ ] T006 [US1] `medicineSchema`: `shelf_life_days` (int positivo nullable); form expõe `presentation` (`injecao`/`pomada`) + `shelf_life_days` p/ injetáveis — **prefill 28 quando `presentation='injecao'`** (editável, copy "confira a bula"; FR-002).
-- [ ] T007 [P] [C4] Testes: `opened_at` inferido 1× (não re-seta); TTL expira por tempo independente do volume; injetável sem `shelf_life_days` → eixo inativo.
+- [x] T001 [C1] Confirmar 022 mergeada (colunas `presentation`/`units_per_ml` em prod). Verificar caminho de registro de tomada que debita lote (`consume_stock_fifo` callers).
+- [x] T002 [US1] Migração `docs/migrations/2026XXXX_diabetes_a_injectable_ttl.sql`: `medicines.shelf_life_days INTEGER NULL`; `stock.opened_at TIMESTAMPTZ NULL`.
+- [x] T003 [US1] Inferir `stock.opened_at` na 1ª tomada que debita o lote (`opened_at IS NULL` → setar `now()`), best-effort (R-245). Cross-superfície (web/mobile/bot).
+- [x] T004 [US1] Helper puro core: `isBiologicallyExpired(stock, medicine)` = `opened_at + shelf_life_days ≤ now`. Eixo paralelo ao status volume (ADR-018).
+- [x] T005 [US1] UI alerta validade biológica (relógio) — web + mobile; distinto do alerta de volume.
+- [x] T005b [US1] Alerta TTL via stack de notificação (push/Telegram, FR-004b): kind novo no dispatcher (R-200/CON-019, enum Zod R-193; ADR se payload mudar). Cadência D-3 + vencimento (não diário).
+- [x] T006 [US1] `medicineSchema`: `shelf_life_days` (int positivo nullable); form expõe `presentation` (`injetavel`/`pomada`) + `shelf_life_days` p/ injetáveis — **prefill 28 quando `presentation='injetavel'`** (editável, copy "confira a bula"; FR-002).
+- [x] T007 [P] [C4] Testes: `opened_at` inferido 1× (não re-seta); TTL expira por tempo independente do volume; injetável sem `shelf_life_days` → eixo inativo.
 
 ## Phase B — GLP-1 (mg, semanal, titulação) (PR 2) — ADR-061
 

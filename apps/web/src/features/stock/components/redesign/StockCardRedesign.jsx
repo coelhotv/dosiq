@@ -11,11 +11,11 @@ import {
   ScanBarcode,
   ShoppingBasket,
   CalendarClock,
-  Pill,
-  PillBottle,
   ShieldCheck,
   ShieldAlert,
+  Syringe,
 } from 'lucide-react'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import { formatStockQuantity, formatConcentration, stockUnitLabel } from '@dosiq/core'
@@ -31,15 +31,6 @@ const CTA_CONFIG = {
 function _shouldShowCta(isComplex, stockStatus) {
   if (isComplex) return true
   return stockStatus === 'urgente' || stockStatus === 'atencao'
-}
-
-function _getMedicineIconName(medicineType) {
-  return medicineType === 'suplemento' ? 'PillBottle' : 'Pill'
-}
-
-const _ICON_MAP = {
-  Pill,
-  PillBottle,
 }
 
 /**
@@ -108,6 +99,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
     primaryProtocol,
     hasActiveProtocol,
     lastPurchase,
+    ttlAlert,
   } = item
   const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
@@ -115,8 +107,6 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
   const showCta = _shouldShowCta(isComplex, stockStatus)
   const lastPurchaseText = formatLastPurchase(lastPurchase, stockUnitLabel(medicine))
   const isSupplement = medicine.type === 'suplemento'
-  const iconName = _getMedicineIconName(medicine.type)
-  const MedicineIcon = _ICON_MAP[iconName]
 
   return (
     <motion.div
@@ -130,7 +120,8 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       <div className="stock-card-r__name-row">
         <div className="stock-card-r__medicine">
           <div className="stock-card-r__icon-wrap">
-            <MedicineIcon size={18} aria-label={isSupplement ? 'Suplemento' : 'Medicamento'} />
+            {/* Ícone canônico de identificação do medicamento */}
+            <MedicineIcon medicine={medicine} size={18} aria-label={isSupplement ? 'Suplemento' : 'Medicamento'} />
           </div>
           <div className="stock-card-r__name-dosage">
             <h3 className="stock-card-r__name">{medicine.name}</h3>
@@ -181,6 +172,19 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
             </span>
           )}
         </>
+      )}
+
+      {/* ── Alerta de validade biológica pós-abertura (012 Fase A) — eixo paralelo.
+          Antes da última compra: alerta clínico > referência de preço (PO smoke). */}
+      {ttlAlert && (
+        <div
+          className={`stock-card-r__ttl-alert stock-card-r__ttl-alert--${ttlAlert.type}`}
+          role="alert"
+          aria-live="polite"
+        >
+          <Syringe size={13} aria-hidden="true" />
+          <span>{ttlAlert.message}</span>
+        </div>
       )}
 
       {/* ── Última compra — subtexto de referência de preço ── */}

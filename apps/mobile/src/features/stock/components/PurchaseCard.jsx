@@ -2,8 +2,9 @@
 // Parte do fluxo S1.4 Wave 2 — visão detalhada de cada compra com barra de consumo
 
 import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { Syringe } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
-import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR } from '@dosiq/core'
+import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
 
 /**
  * @param {{
@@ -23,7 +24,7 @@ import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, st
  *   onPress?: () => void            // tap leva pra editar compra
  * }} props
  */
-export default function PurchaseCard({ purchase, remaining = 0, isLatest = false, onPress, medicine = null }) {
+export default function PurchaseCard({ purchase, remaining = 0, isLatest = false, onPress, medicine = null, stockEntry = null }) {
   // States (R-010 — ordem critica antes de derivações)
   // Nenhum hook complexo — apenas useMemo se houver heavy computation
 
@@ -57,6 +58,22 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
     : expiryDays <= 60
     ? `Vence em ${expiryDays} ${expiryDays === 1 ? 'dia' : 'dias'}`
     : `Vence em ${formatDateShortPtBR(purchase.expiration_date)}`
+
+  // Eixo de validade biológica TTL pós-abertura (012 Fase A) — paralelo ao volume.
+  // Ativo somente com stockEntry.opened_at + medicine.shelf_life_days presentes.
+  const showTtlAlert = remaining > 0 && stockEntry !== null
+  const ttlExpired = showTtlAlert ? isBiologicallyExpired(stockEntry, medicine) : false
+  const ttlDaysLeft = showTtlAlert ? biologicalExpiryDaysLeft(stockEntry, medicine) : null
+  const showTtlBadge = ttlExpired || (ttlDaysLeft !== null && ttlDaysLeft >= 0 && ttlDaysLeft <= 3)
+  const ttlLabel = ttlExpired
+    ? 'Vencido (validade após aberto)'
+    : ttlDaysLeft === 0
+    ? 'Vence hoje (validade após aberto)'
+    : ttlDaysLeft === 1
+    ? 'Vence amanhã (validade após aberto)'
+    : ttlDaysLeft !== null
+    ? `Vence em ${ttlDaysLeft} dias (validade após aberto)`
+    : null
 
   const card = (
     <View
@@ -124,6 +141,20 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
         <View style={styles.expiryChip}>
           <Text style={[styles.expiryText, { color: expiryStatusColor }]}>
             {expiryLabel}
+          </Text>
+        </View>
+      )}
+
+      {/* Validade biológica TTL pós-abertura (012 Fase A) — eixo paralelo ao volume */}
+      {showTtlBadge && ttlLabel && (
+        <View style={[styles.ttlChip, ttlExpired ? styles.ttlChipExpired : styles.ttlChipWarning]}>
+          <Syringe
+            size={12}
+            color={colors.status.error}
+            strokeWidth={2.5}
+          />
+          <Text style={[styles.ttlText, { color: colors.status.error }]}>
+            {ttlLabel}
           </Text>
         </View>
       )}
@@ -271,6 +302,36 @@ const styles = StyleSheet.create({
   },
 
   expiryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+
+  // Chip de validade biológica TTL (012 Fase A)
+  ttlChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],
+    marginTop: spacing[1],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    minHeight: 28,
+  },
+
+  ttlChipExpired: {
+    backgroundColor: colors.status.errorLight,
+    borderColor: colors.status.error,
+  },
+
+  ttlChipWarning: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+  },
+
+  ttlText: {
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.3,

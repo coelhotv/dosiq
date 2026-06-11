@@ -18,6 +18,7 @@ export const getInitialFormData = (medicine = {}) => {
     presentation = 'comprimido',
     therapeutic_class = null,
     regulatory_category = null,
+    shelf_life_days = null,
   } = medicine
 
   return {
@@ -31,6 +32,7 @@ export const getInitialFormData = (medicine = {}) => {
     presentation,
     therapeutic_class,
     regulatory_category,
+    shelf_life_days: shelf_life_days ?? '',
   }
 }
 
@@ -53,6 +55,7 @@ export const validateMedicineForm = (formData) => {
 
 export const buildMedicinePayload = (formData) => {
   const isLiquid = isLiquidUnit(formData.dosage_unit)
+  const presentation = isLiquid ? 'liquido' : formData.presentation || 'comprimido'
   return {
     name: formData.name.trim(),
     laboratory: formData.laboratory.trim() || null,
@@ -62,9 +65,14 @@ export const buildMedicinePayload = (formData) => {
     dosage_unit: formData.dosage_unit,
     // Líquido grava units_per_ml + presentation='liquido'; sólido zera units_per_ml.
     units_per_ml: isLiquid && formData.units_per_ml ? parseFloat(formData.units_per_ml) : null,
-    presentation: isLiquid ? 'liquido' : formData.presentation || 'comprimido',
+    presentation,
     therapeutic_class: formData.therapeutic_class || null,
     regulatory_category: formData.regulatory_category || null,
+    // 012 Fase A: TTL só faz sentido para injetavel — guard no payload (defesa em
+    // profundidade além da limpeza no onChange; review Gemini #658: valor obsoleto
+    // de shelf_life_days não pode vazar quando a apresentação muda).
+    shelf_life_days:
+      presentation === 'injetavel' && formData.shelf_life_days !== '' ? formData.shelf_life_days : null,
   }
 }
 
