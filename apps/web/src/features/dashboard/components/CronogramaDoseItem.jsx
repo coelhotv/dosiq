@@ -1,9 +1,8 @@
-import { 
-  Pill, 
-  PillBottle, 
-  CircleCheckBig, 
-  CircleAlert 
+import {
+  CircleCheckBig,
+  CircleAlert
 } from 'lucide-react'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { classifyDose } from '@dashboard/hooks/useDoseZones'
 
 import { formatDoseItem, formatConcentration } from '@dosiq/core'
@@ -31,7 +30,6 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
   const canTake = !done && !missed && (zone === 'late' || zone === 'now' || zone === 'upcoming')
   const showStockBadge = !missed && (stockStatus === 'critical' || stockStatus === 'low')
   const isSupplement = dose.medicineType === 'suplemento'
-  const MedicineIcon = isSupplement ? PillBottle : Pill
 
   return (
     <div className={`cronograma-dose-card cronograma-dose-card--${status}`}>
@@ -53,7 +51,12 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
       )}
 
       <div className={`cronograma-dose-card__icon-wrap cronograma-dose-card__icon-wrap--${isSupplement ? 'supplement' : 'medicine'}`}>
-        <MedicineIcon size={20} color="var(--color-white)" aria-hidden="true" />
+        <MedicineIcon
+          medicine={{ type: dose.medicineType, presentation: dose.presentation, dosage_unit: dose.dosageUnit }}
+          size={20}
+          color="var(--color-white)"
+          aria-hidden="true"
+        />
       </div>
 
       <div className="cronograma-dose-card__main">

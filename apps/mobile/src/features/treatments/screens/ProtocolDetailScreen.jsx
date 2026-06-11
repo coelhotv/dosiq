@@ -9,15 +9,13 @@ import { ScrollView, View, Text, Pressable, Switch, StyleSheet } from 'react-nat
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 import {
   ArrowLeft,
-  Pill,
-  PillBottle,
-  Droplets,
   ChevronRight,
   Clock,
   Edit3,
   Trash2,
   CheckCircle2,
 } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import {
   formatDatePtBR,
   formatEndDate,
@@ -374,8 +372,6 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
   const medicine = protocol.medicine
   if (!medicine) return null
   const isSupplement = medicine.type === 'suplemento'
-  const isLiquid = !isSupplement && Boolean(medicine.dosage_unit?.endsWith('/ml'))
-  const MedicineIcon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
   const heroIconBg = isSupplement ? colors.supplement[500] : colors.primary[600]
   const heroEyebrowColor = isSupplement ? colors.supplement[700] : colors.primary[700]
   const eyebrowLabel = isSupplement ? 'Suplemento' : 'Medicamento'
@@ -388,7 +384,7 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
       accessibilityLabel={`Abrir medicamento ${medicine.name}`}
     >
       <View style={[styles.heroIconWrap, { backgroundColor: heroIconBg }]}>
-        <MedicineIcon size={32} color={colors.text.inverse} />
+        <MedicineIcon medicine={medicine} size={32} color={colors.text.inverse} />
       </View>
       <View style={styles.heroBody}>
         <Text style={[styles.heroEyebrow, { color: heroEyebrowColor }]}>{eyebrowLabel}</Text>

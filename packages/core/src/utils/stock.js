@@ -10,7 +10,7 @@
  * adherenceLogic.js — REUSAR (nao duplicar). Ver index.js barrel.
  */
 
-import { getNow, formatLocalDate, parseLocalDate, daysDifference, getLastDayOfMonth } from './dateUtils.js'
+import { getNow, formatLocalDate, parseLocalDate, parseISO, daysDifference, getLastDayOfMonth } from './dateUtils.js'
 
 export const STOCK_STATUS = Object.freeze({
   CRITICO: 'critico',
@@ -125,6 +125,62 @@ export function computeExpiryDays(expiry, today = null) {
   const expDate = parseLocalDate(expiryDate)
   if (!refDate || !expDate) return null
   return daysDifference(refDate, expDate)
+}
+
+/**
+ * isBiologicallyExpired — eixo de VALIDADE BIOLÓGICA (TTL pós-abertura) do lote.
+ * 012 Fase A / ADR-059. PARALELO ao status por volume (resolveStockStatus,
+ * ADR-018) — coexistem, não se substituem.
+ *
+ * Expirado quando: opened_at + shelf_life_days <= agora.
+ * Eixo INATIVO (retorna false) quando: lote fechado (opened_at NULL), produto
+ * sem TTL (shelf_life_days NULL/<=0), datas inválidas ou clock skew
+ * (opened_at no futuro).
+ *
+ * @param {{opened_at?: string|Date|null}} stockRow - lote (linha de stock)
+ * @param {{shelf_life_days?: number|null}} medicine - produto
+ * @param {Date} [now] - instante de referência (injetável p/ teste)
+ * @returns {boolean}
+ */
+export function isBiologicallyExpired(stockRow, medicine, now = null) {
+  const openedAt = stockRow?.opened_at
+  const shelfDays = Number(medicine?.shelf_life_days)
+  if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return false
+
+  // opened_at é timestamptz (instante absoluto ISO) — Date() direto é correto
+  // aqui; a proibição R-020 vale para datas-calendário YYYY-MM-DD, não p/ ISO
+  // completo com timezone.
+  const opened = openedAt instanceof Date ? openedAt : parseISO(String(openedAt))
+  if (Number.isNaN(opened.getTime())) return false
+
+  const ref = now instanceof Date ? now : getNow()
+  const expiresAtMs = opened.getTime() + shelfDays * 24 * 60 * 60 * 1000
+  // Clock skew: abertura "no futuro" nunca conta como expirada.
+  if (opened.getTime() > ref.getTime()) return false
+  return expiresAtMs <= ref.getTime()
+}
+
+/**
+ * biologicalExpiryDaysLeft — dias inteiros restantes até a expiração biológica
+ * do lote (para copy "vence em N dias" e cadência D-3 da notificação).
+ *
+ * @param {{opened_at?: string|Date|null}} stockRow
+ * @param {{shelf_life_days?: number|null}} medicine
+ * @param {Date} [now]
+ * @returns {number|null} dias restantes (negativo se expirado) ou null se eixo inativo
+ */
+export function biologicalExpiryDaysLeft(stockRow, medicine, now = null) {
+  const openedAt = stockRow?.opened_at
+  const shelfDays = Number(medicine?.shelf_life_days)
+  if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return null
+
+  const opened = openedAt instanceof Date ? openedAt : parseISO(String(openedAt))
+  if (Number.isNaN(opened.getTime())) return null
+
+  const ref = now instanceof Date ? now : getNow()
+  if (opened.getTime() > ref.getTime()) return null
+  const expiresAtMs = opened.getTime() + shelfDays * 24 * 60 * 60 * 1000
+  return Math.floor((expiresAtMs - ref.getTime()) / (24 * 60 * 60 * 1000))
 }
 
 /**

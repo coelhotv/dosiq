@@ -13,13 +13,15 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
-import { ChevronLeft, Pill, PillBottle } from 'lucide-react-native'
+import { ChevronLeft } from 'lucide-react-native'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import EmptyState from '@shared/components/states/EmptyState'
 import PurchaseCard from '@stock/components/PurchaseCard'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { computeAverageUnitPrice, formatBRL, formatConcentration, isLiquidMedicine, stockUnitLabel, formatNumberPtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
@@ -39,6 +41,8 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
   const [purchases, setPurchases] = useState([])
   const [medicine, setMedicine] = useState(null)
   const [loading, setLoading] = useState(true)
+  // Mapa purchase_id → stock entry (com opened_at) para eixo TTL (012 Fase A)
+  const [stockEntryMap, setStockEntryMap] = useState({})
 
   // — Memos (R-010) —
   const totalCount = useMemo(() => purchases.length, [purchases])
@@ -64,14 +68,29 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
     if (!medicineId || !userId) return
     setLoading(true)
     try {
-      const [data, med] = await Promise.all([
+      const [data, med, stockRows] = await Promise.all([
         stockService.getPurchasesByMedicine(medicineId),
         medicineService.getById(medicineId).catch(() => null),
+        // Busca opened_at por lote para eixo TTL (012 Fase A)
+        supabase
+          .from('stock')
+          .select('id, purchase_id, quantity, opened_at')
+          .eq('medicine_id', medicineId)
+          .gt('quantity', 0)
+          .then(({ data: rows }) => rows ?? []),
       ])
       setPurchases(data ?? [])
       setMedicine(med ?? null)
+      const entryMap = {}
+      for (const row of stockRows) {
+        if (row.purchase_id && !entryMap[row.purchase_id]) {
+          entryMap[row.purchase_id] = row
+        }
+      }
+      setStockEntryMap(entryMap)
     } catch {
       setPurchases([])
+      setStockEntryMap({})
     } finally {
       setLoading(false)
     }
@@ -106,11 +125,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
           remaining={item.remaining ?? 0}
           isLatest={index === 0}
           medicine={medicine}
+          stockEntry={stockEntryMap[item.id] ?? null}
           onPress={() => handlePressCard(item)}
         />
       </View>
     ),
-    [handlePressCard, medicine],
+    [handlePressCard, medicine, stockEntryMap],
   )
 
   const keyExtractor = useCallback((item) => item.id, [])
@@ -159,11 +179,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
             {/* Card de contexto do medicamento */}
             <View style={styles.medicineCard}>
               <View style={styles.medicineIcon}>
-                {medicine?.type === 'suplemento' ? (
-                  <PillBottle size={22} color={colors.supplement[500]} strokeWidth={2} />
-                ) : (
-                  <Pill size={22} color={colors.primary[500]} strokeWidth={2} />
-                )}
+                <MedicineIcon
+                  medicine={medicine}
+                  size={22}
+                  color={medicine?.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+                  strokeWidth={2}
+                />
               </View>
               <View style={styles.medicineInfo}>
                 <View style={styles.medicineNameRow}>

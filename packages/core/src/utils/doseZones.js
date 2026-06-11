@@ -138,6 +138,8 @@ function createDoseItem(instance, protocol, tz) {
     medicineId: protocol.medicine_id,
     medicineName: medicine.name || 'Desconhecido',
     medicineType: medicine.type || 'medicamento',
+    // 012 Fase A: forma farmacêutica p/ ícone canônico de identificação (getMedicineIconName)
+    presentation: medicine.presentation ?? null,
     dosagePerPill: medicine.dosage_per_pill ?? null,
     dosageUnit: medicine.dosage_unit ?? null,
     // Líquidos (022): unidade de tomada do tratamento + densidade do medicamento

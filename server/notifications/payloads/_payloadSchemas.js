@@ -38,6 +38,13 @@ export const stockAlertDataSchema = z.object({
   daysRemaining: z.number().optional()
 });
 
+// 012 Fase A (ADR-059): alerta de VALIDADE BIOLOGICA (TTL pos-abertura) — eixo
+// paralelo ao stock_alert de volume. daysLeft 3 = vencendo (D-3); 0 = vence hoje.
+export const stockExpiryAlertDataSchema = z.object({
+  medicineName: z.string(),
+  daysLeft: z.number()
+});
+
 export const titrationAlertDataSchema = z.object({
   medicineName: z.string(),
   currentStage: z.number(),
@@ -71,6 +78,7 @@ export const kindSchema = z.enum([
   'dose_reminder_by_plan',
   'dose_reminder_misc',
   'stock_alert',
+  'stock_expiry_alert',
   'daily_digest',
   'adherence_report',
   'weekly_adherence',

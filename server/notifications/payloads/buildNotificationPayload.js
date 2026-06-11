@@ -29,6 +29,7 @@ import {
   buildAdherenceReportPayload,
   buildWeeklyAdherencePayload,
   buildStockAlertPayload,
+  buildStockExpiryAlertPayload,
   buildTitrationAlertPayload,
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
@@ -100,6 +101,13 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
     }
     case 'stock_alert': {
       const content = buildStockAlertPayload(data);
+      title = content.title;
+      body = content.body;
+      pushBody = content.pushBody;
+      break;
+    }
+    case 'stock_expiry_alert': {
+      const content = buildStockExpiryAlertPayload(data);
       title = content.title;
       body = content.body;
       pushBody = content.pushBody;
@@ -366,6 +374,7 @@ function getNavigationMetadata(kind, data, protocolIds) {
     dose_reminder_by_plan: { screen: 'bulk-plan', params: { planId: data.planId, treatmentPlanName: data.planName, at } },
     dose_reminder_misc: { screen: 'bulk-misc', params: { protocolIds, at } },
     stock_alert: { screen: 'stock', params: {} },
+    stock_expiry_alert: { screen: 'stock', params: {} },
     prescription_alert: { screen: 'stock', params: {} },
     adherence_report: { screen: 'history', params: {} },
     weekly_adherence: { screen: 'history', params: {} },
@@ -424,6 +433,7 @@ function resolveDeeplink(kind, data) {
     weekly_adherence: 'history',
     monthly_report: 'history',
     stock_alert: 'stock',
+    stock_expiry_alert: 'stock',
     prescription_alert: 'stock',
     dlq_digest: 'admin/dlq'
   };

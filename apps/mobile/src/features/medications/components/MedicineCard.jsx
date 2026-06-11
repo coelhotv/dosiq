@@ -1,8 +1,8 @@
 // MedicineCard.jsx — card de medicamento (Sprint M1.1 Fase 1)
 
 import { Pressable, View, Text, StyleSheet } from 'react-native'
-import { Pill, PillBottle, Droplets } from 'lucide-react-native'
 import { formatConcentration } from '@dosiq/core'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
@@ -19,8 +19,6 @@ export default function MedicineCard({ medicine, onPress }) {
   } = medicine ?? {}
 
   const isSupplement = type === 'suplemento'
-  const isLiquid = !isSupplement && Boolean(dosage_unit?.endsWith('/ml'))
-  const Icon = isSupplement ? PillBottle : isLiquid ? Droplets : Pill
   const iconColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const iconBg = isSupplement ? colors.supplement[50] : colors.primary[50]
 
@@ -44,7 +42,7 @@ export default function MedicineCard({ medicine, onPress }) {
     >
       <View style={styles.row}>
         <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-          <Icon size={20} color={iconColor} />
+          <MedicineIcon medicine={medicine} size={20} color={iconColor} />
         </View>
         <Text style={styles.name} numberOfLines={1}>
           {name}

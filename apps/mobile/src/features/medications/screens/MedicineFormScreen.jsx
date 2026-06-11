@@ -14,6 +14,8 @@ import {
   MEDICINE_TYPE_LABELS,
   DOSAGE_UNITS,
   DOSAGE_UNIT_LABELS,
+  PRESENTATIONS,
+  PRESENTATION_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
 } from '@dosiq/core'
@@ -39,6 +41,11 @@ const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
 const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
+
+const PRESENTATION_OPTIONS = PRESENTATIONS.map((value) => ({
+  value,
+  label: PRESENTATION_LABELS[value] ?? value,
+}))
 
 const REGULATORY_OPTIONS = REGULATORY_CATEGORIES.map((value) => ({
   value,
@@ -75,6 +82,10 @@ export default function MedicineFormScreen() {
       dosage_per_pill:
         medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
           ? String(medicine.dosage_per_pill)
+          : '',
+      shelf_life_days:
+        medicine.shelf_life_days !== null && medicine.shelf_life_days !== undefined
+          ? String(medicine.shelf_life_days)
           : '',
     }
   }, [medicine])
@@ -124,10 +135,42 @@ export default function MedicineFormScreen() {
 
   // Ao escolher unidade líquida (/ml): marca presentation='liquido'. Densidade NÃO
   // é pedida aqui (022 Fase C — pertence ao tratamento). Sólido → 'comprimido'.
+  // NÃO sobrescreve 'injetavel' (012): injeção pode ser /ml mas tem TTL próprio.
   const handleUnitChange = useCallback(
     (_name, value) => {
       form.handleChange('dosage_unit', value)
-      form.handleChange('presentation', isLiquidUnit(value) ? 'liquido' : 'comprimido')
+      const currentPresentation = form.values.presentation
+      if (currentPresentation !== 'injetavel') {
+        form.handleChange('presentation', isLiquidUnit(value) ? 'liquido' : 'comprimido')
+      }
+    },
+    [form]
+  )
+
+  // Ao selecionar 'injetavel': prefill 28 dias (editável) apenas se shelf_life_days vazio.
+  // Outras presentations: limpa apenas o prefill 28 — preserva valor digitado manualmente.
+  const handlePresentationChange = useCallback(
+    (_name, value) => {
+      form.handleChange('presentation', value)
+      if (value === 'injetavel') {
+        const current = form.values.shelf_life_days
+        if (current === '' || current === null || current === undefined) {
+          form.handleChange('shelf_life_days', '28')
+        }
+      } else {
+        // Campo fica oculto fora de injetavel — limpar evita persistir valor
+        // obsoleto ao salvar (review Gemini #658, mesmo fix do web).
+        form.handleChange('shelf_life_days', '')
+      }
+    },
+    [form]
+  )
+
+  // Aceita dígitos inteiros positivos; apagar → '' (null no Zod).
+  const handleShelfLifeChange = useCallback(
+    (_name, value) => {
+      const cleaned = String(value ?? '').replace(/[^\d]/g, '')
+      form.handleChange('shelf_life_days', cleaned)
     },
     [form]
   )
@@ -228,6 +271,23 @@ export default function MedicineFormScreen() {
             options={TYPE_OPTIONS}
             {...formProps(form, 'type')}
           />
+          <FormSelect
+            name="presentation"
+            label="Apresentação"
+            options={PRESENTATION_OPTIONS}
+            {...formProps(form, 'presentation')}
+            onChange={handlePresentationChange}
+          />
+          {form.values.presentation === 'injetavel' && (
+            <FormInput
+              name="shelf_life_days"
+              label="Validade após aberto (dias)"
+              keyboardType="number-pad"
+              helperText="Dias de uso após abrir o frasco/caneta — confira a bula."
+              {...formProps(form, 'shelf_life_days')}
+              onChange={handleShelfLifeChange}
+            />
+          )}
           <FormInput
             name="therapeutic_class"
             label="Classe Terapêutica"

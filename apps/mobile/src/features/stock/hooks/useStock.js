@@ -20,13 +20,46 @@ async function _resolveUser() {
   return user
 }
 
+async function _fetchOpenedAtMap() {
+  // Busca o opened_at mais recente de stock entries com saldo, agrupado por medicine_id.
+  // Usado para eixo TTL (012 Fase A) na listagem de estoque. Silencia erros (não-crítico).
+  try {
+    const { data } = await supabase
+      .from('stock')
+      .select('medicine_id, opened_at')
+      .gt('quantity', 0)
+      .not('opened_at', 'is', null)
+    if (!data) return {}
+    // Para cada medicine_id, pega o opened_at mais ANTIGO entre lotes com saldo —
+    // é o primeiro a expirar (mostrar o recente subnotificaria o vencimento).
+    const map = {}
+    for (const row of data) {
+      if (!row.opened_at) continue
+      if (!map[row.medicine_id] || row.opened_at < map[row.medicine_id]) {
+        map[row.medicine_id] = row.opened_at
+      }
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
 async function _fetchAndPersistStock(setState, dataRef) {
   // PO-9 §0.7: lista meds com protocolo ativo OU saldo positivo (corrige bug de
   // estoque órfão invisível). Split em active (com previsão) + inactive (só-estoque).
   // userId é resolvido internamente pela factory (G2) — não passamos mais aqui.
-  const rawData = await stockService.getMedicinesWithStockOrActiveProtocol()
+  const [rawData, openedAtMap] = await Promise.all([
+    stockService.getMedicinesWithStockOrActiveProtocol(),
+    _fetchOpenedAtMap(),
+  ])
+  // Injeta opened_at no rawData para que o transformer possa calcular o eixo TTL.
+  const rawWithTtl = rawData.map((item) => ({
+    ...item,
+    _latestOpenedAt: openedAtMap[item.id] ?? null,
+  }))
   const today = getTodayLocal()
-  const { active, inactive } = splitStockItems(transformStockData(rawData))
+  const { active, inactive } = splitStockItems(transformStockData(rawWithTtl))
   const newData = { active, inactive, localDay: today }
   const snapshot = { data: newData, capturedAt: getNow().toISOString(), rawData }
   await AsyncStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot))

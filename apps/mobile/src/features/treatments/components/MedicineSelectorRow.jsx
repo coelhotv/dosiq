@@ -1,15 +1,14 @@
 // MedicineSelectorRow — row de seleção de medicamento (Fase 2 T2.3)
 // (componente puro controlado)
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Plus, ChevronRight, Pill, PillBottle, Droplets } from 'lucide-react-native'
+import { Plus, ChevronRight } from 'lucide-react-native'
 import { formatConcentration } from '@dosiq/core'
+import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export default function MedicineSelectorRow({ medicine, onPress, error }) {
   const isEmpty = medicine == null
   const isSupplement = !isEmpty && medicine.type === 'suplemento'
-  const isLiquid = !isEmpty && !isSupplement && Boolean(medicine.dosage_unit?.endsWith('/ml'))
-  const LeadingIcon = isEmpty ? Plus : isSupplement ? PillBottle : isLiquid ? Droplets : Pill
 
   const leadingBg = isEmpty
     ? colors.neutral[100]
@@ -45,7 +44,11 @@ export default function MedicineSelectorRow({ medicine, onPress, error }) {
         style={[styles.card, isEmpty ? styles.cardEmpty : styles.cardSelected]}
       >
         <View style={[styles.leading, { backgroundColor: leadingBg }]}>
-          <LeadingIcon size={isEmpty ? 20 : 22} color={leadingColor} />
+          {isEmpty ? (
+            <Plus size={20} color={leadingColor} />
+          ) : (
+            <MedicineIcon medicine={medicine} size={22} color={leadingColor} />
+          )}
         </View>
 
         <View style={styles.middle}>
