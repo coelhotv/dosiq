@@ -1,4 +1,5 @@
-import { prepareDataToSave, coerceDecimal } from './protocolFormUtils'
+import { prepareDataToSave } from './protocolFormUtils'
+import { coerceDecimal } from '@dosiq/core'
 import { medicineService } from '@shared/services'
 
 export async function submitProtocolForm({
