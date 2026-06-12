@@ -26,6 +26,7 @@ import {
   parseTimestamp,
 } from './dateUtils.js'
 import { isProtocolActiveOnDate } from './adherenceLogic.js'
+import { resolveTitrationStageAt } from './titrationUtils.js'
 
 /**
  * Converte Date | ISO string | timestamp(ms) num Date absoluto.
@@ -48,6 +49,21 @@ const DAILY_FREQUENCIES = new Set(['diário', 'diariamente', 'daily'])
 const MAX_TOLERANCE_MINUTES = 120
 
 /**
+ * Período (minutos) entre ocorrências por frequência — base da tolerância
+ * não-diária (ADR-061/FR-007): a janela de perdão clínica de uma dose semanal
+ * é dias, não horas. Frequências fora do mapa (personalizado etc.) mantêm 120.
+ */
+const FREQUENCY_PERIOD_MINUTES = {
+  semanal: 10080,
+  semanalmente: 10080,
+  weekly: 10080,
+  dias_alternados: 2880,
+  dia_sim_dia_nao: 2880,
+  every_other_day: 2880,
+  alternating: 2880,
+}
+
+/**
  * Converte "HH:MM" em minutos desde a meia-noite. Retorna null se inválido.
  * @param {string} time
  * @returns {number|null}
@@ -67,29 +83,40 @@ function timeToMinutes(time) {
  *   ⚠️ Considera o wrap-around da meia-noite: como o protocolo diário repete os mesmos
  *   slots todo dia, a última dose do dia N e a primeira do dia N+1 são adjacentes no
  *   tempo real. Sem isso, doses tipo 23:30/00:30 teriam janelas de 120min sobrepostas.
- * - Não-diário ou dose única: 120 fixo (§6 MASTER_PLAN).
+ * - Não-diário com período conhecido (semanal/dias_alternados — ADR-061/FR-007):
+ *   mesma regra "metade do menor intervalo adjacente", mas o wrap-around usa o
+ *   PERÍODO da frequência (semanal=10080, alternados=2880) e **sem teto de 120**
+ *   — o perdão clínico de GLP-1 semanal é de dias (slot único → floor(10080/2)=5040,
+ *   3,5 dias). Diário mantém cap 120 (semântica de adesão do público 1×/dia).
+ * - Frequência sem período mapeado (personalizado etc.): 120 fixo (§6 MASTER_PLAN).
  *
  * @param {number[]} sortedMinutes - minutos dos slots, ordenados ascendente
- * @param {boolean} isDaily
+ * @param {string} frequency - frequência normalizada (lowercase) do protocolo
  * @returns {number[]} tolerância por slot (mesma ordem de sortedMinutes)
  */
-function computeTolerances(sortedMinutes, isDaily) {
-  if (!isDaily || sortedMinutes.length < 2) {
+function computeTolerances(sortedMinutes, frequency) {
+  const isDaily = DAILY_FREQUENCIES.has(frequency)
+  const periodMinutes = isDaily ? 1440 : FREQUENCY_PERIOD_MINUTES[frequency]
+  // Sem período conhecido (personalizado etc.): comportamento legado, 120 fixo.
+  if (!periodMinutes) return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
+  // Diário de dose única: legado (120) — só multi-dose tem gap intra-dia.
+  if (isDaily && sortedMinutes.length < 2) {
     return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
   }
   const len = sortedMinutes.length
-  const MINUTES_PER_DAY = 1440
   return sortedMinutes.map((minute, i) => {
-    // Para o 1º/último slot, o intervalo adjacente cruza a meia-noite (wrap-around).
+    // Para o 1º/último slot, o intervalo adjacente cruza o período (wrap-around):
+    // diário = meia-noite; semanal/alternados = próxima ocorrência do ciclo.
     const prevGap = i > 0
       ? minute - sortedMinutes[i - 1]
-      : (MINUTES_PER_DAY - sortedMinutes[len - 1]) + minute
+      : (periodMinutes - sortedMinutes[len - 1]) + minute
     const nextGap = i < len - 1
       ? sortedMinutes[i + 1] - minute
-      : (MINUTES_PER_DAY - minute) + sortedMinutes[0]
+      : (periodMinutes - minute) + sortedMinutes[0]
     const smallestAdjacent = Math.min(prevGap, nextGap)
-    // metade do menor intervalo adjacente (arredonda p/ baixo), teto 120
-    return Math.min(Math.floor(smallestAdjacent / 2), MAX_TOLERANCE_MINUTES)
+    const half = Math.floor(smallestAdjacent / 2)
+    // Teto de 120 SÓ no diário (ADR-061: não-diário sem cap).
+    return isDaily ? Math.min(half, MAX_TOLERANCE_MINUTES) : half
   })
 }
 
@@ -159,7 +186,6 @@ export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paul
 
   const fromMs = fromDate.getTime()
   const toMs = toDate.getTime()
-  const isDaily = DAILY_FREQUENCIES.has(frequency)
   const expectedDose = protocol.dosage_per_intake ?? 1
 
   // Slots do dia, ordenados, com tolerância pré-computada (estável dia a dia).
@@ -169,7 +195,7 @@ export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paul
     .sort((a, b) => a.minutes - b.minutes)
   if (slots.length === 0) return []
 
-  const tolerances = computeTolerances(slots.map((s) => s.minutes), isDaily)
+  const tolerances = computeTolerances(slots.map((s) => s.minutes), frequency)
 
   const instances = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {
@@ -178,11 +204,14 @@ export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paul
       const scheduledForIso = buildScheduledFor(dateStr, slot.minutes, tz)
       const scheduledMs = parseISO(scheduledForIso).getTime()
       if (scheduledMs < fromMs || scheduledMs > toMs) return
+      // 012 Fase B (FR-006/FP-1): titulação ativa congela a dose da ETAPA vigente
+      // na data da ocorrência — instância futura nasce com a dose da etapa futura.
+      const titrationStage = resolveTitrationStageAt(protocol, scheduledMs)
       instances.push({
         user_id: protocol.user_id,
         protocol_id: protocol.id,
         scheduled_for: scheduledForIso,
-        expected_dose: expectedDose,
+        expected_dose: titrationStage ? titrationStage.dosage : expectedDose,
         tolerance_minutes: tolerances[i],
         critical_alarm: protocol.critical_alarm ?? false,
       })

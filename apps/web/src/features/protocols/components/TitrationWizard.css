@@ -244,3 +244,64 @@
   min-height: 44px;
   font-size: 0.875rem;
 }
+
+/* ============================================
+   012 Fase B — usabilidade (smoke PO 2026-06-11)
+   Container do form é estreito: campos empilham em vez de espremer;
+   alvos ≥44px; sufixo de unidade sempre visível; hint de equivalência.
+   ============================================ */
+
+/* Linha do add-form: lado a lado só quando cabe (≥150px por campo) */
+.stage-input-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* Grid das etapas existentes: mesmo comportamento responsivo */
+.stage-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.stage-grid .full-width,
+.form-group-mini.full-width {
+  grid-column: 1 / -1;
+}
+
+.input-group label {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--color-on-surface-variant, var(--text-secondary));
+  margin-bottom: 6px;
+}
+
+.input-with-suffix {
+  min-height: 44px;
+}
+
+.input-with-suffix input {
+  min-height: 42px;
+  font-size: 1rem;
+  padding: 8px 10px;
+  min-width: 0; /* deixa o input encolher sem expulsar o sufixo */
+}
+
+.input-with-suffix span {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.input-note {
+  min-height: 44px;
+  font-size: 0.9rem;
+}
+
+/* Hint de equivalência em princípio ativo ("✨ Equivale a 0,25 mg") */
+.dose-equivalence {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium, 500);
+}

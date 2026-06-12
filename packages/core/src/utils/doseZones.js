@@ -232,6 +232,27 @@ function classifyInstanceDay(inst, dayStart, dayEnd, nowMs) {
   return null
 }
 
+/**
+ * Rótulo relativo de atraso por DATA-CALENDÁRIO no tz (012 Fase B, FR-008b).
+ * Dose semanal pendente multi-dia precisa dizer "há 2 dias", não só o horário.
+ * @param {string|Date} scheduledFor - instante da ocorrência
+ * @param {Date} now
+ * @param {string} [tz]
+ * @returns {string|null} null = mesmo dia; 'ontem'; 'há N dias'
+ */
+export function daysAgoLabel(scheduledFor, now, tz = DEFAULT_TZ) {
+  if (!scheduledFor || !(now instanceof Date)) return null
+  const sched = scheduledFor instanceof Date ? scheduledFor : parseISO(scheduledFor)
+  if (Number.isNaN(sched.getTime()) || Number.isNaN(now.getTime())) return null
+  // Diferença por data-calendário local (não janelas de 24h): dose de ontem 23:00
+  // vista hoje 01:00 é "ontem", mesmo com 2h de distância.
+  const schedDay = parseISO(formatLocalDate(getUserTime(sched, tz)) + 'T00:00:00Z').getTime()
+  const nowDay = parseISO(formatLocalDate(getUserTime(now, tz)) + 'T00:00:00Z').getTime()
+  const days = Math.round((nowDay - schedDay) / 86400000)
+  if (days <= 0) return null
+  return days === 1 ? 'ontem' : `há ${days} dias`
+}
+
 export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ } = {}) {
   const list = Array.isArray(instances) ? instances : []
   // `now` ausente/inválido → fallback p/ getRawNow (respeita offset dev) + guard NaN:

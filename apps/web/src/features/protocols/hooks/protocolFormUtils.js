@@ -163,7 +163,17 @@ export const prepareDataToSave = (formData, enableTitration) => {
     intake_unit: formData.intake_unit || null,
     target_dosage: (formData.target_dosage ?? '') !== '' ? parseFloat(formData.target_dosage) : null,
     titration_status: isTitrating ? 'titulando' : formData.titration_status,
-    titration_schedule: isTitrating ? formData.titration_schedule : [],
+    // R-270 (012 Fase B): wizard mantém o texto cru durante a digitação ("0,5");
+    // normaliza vírgula→ponto e força number aqui — o banco nunca vê string.
+    titration_schedule: isTitrating
+      ? formData.titration_schedule.map((stage) => ({
+          // Shape canônico do Zod (titrationStageSchema): duration_days/description.
+          // Migra registros legados days/note na gravação.
+          duration_days: parseInt(stage.duration_days ?? stage.days, 10) || 1,
+          dosage: parseFloat(String(stage.dosage ?? '').replace(',', '.')) || 0,
+          ...((stage.description ?? stage.note) ? { description: stage.description ?? stage.note } : {}),
+        }))
+      : [],
     notes: formData.notes.trim() || null,
     active: formData.active,
     start_date: formData.start_date || null,
