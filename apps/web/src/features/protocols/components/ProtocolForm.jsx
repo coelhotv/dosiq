@@ -167,6 +167,7 @@ export default function ProtocolForm({
 
       <ProtocolFormAdvancedSection
         formData={formData}
+        medicine={medicines?.find((m) => m.id === formData.medicine_id) || null}
         handleChange={handleChange}
         enableTitration={enableTitration}
         handleTitrationEnable={handleTitrationEnable}

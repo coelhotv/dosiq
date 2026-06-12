@@ -8,7 +8,6 @@ import {
   formatLocalDate,
   getNow,
   getTodayLocal,
-  getYesterdayLocal,
   addDays,
   getStartOfDayISO,
   getEndOfDayISO,
@@ -73,9 +72,14 @@ export function DashboardProvider({ children }) {
           const userId = await getUserId()
           if (!userId) return []
           const tomorrow = formatLocalDate(addDays(getTodayLocal(), 1))
+          // 012 Fase B (FR-008b): janela traseira de 4 dias — a tolerância semanal
+          // (ADR-061: floor(10080/2) = 5040min = 3,5d) excede o "ontem" legado; sem
+          // isso a dose GLP-1 pendente de 2-3 dias atrás sumia do carry-over.
+          // splitDayTimeline continua filtrando por tolerância (sem ruído extra).
+          const carryStart = formatLocalDate(addDays(getTodayLocal(), -4))
           return doseInstanceRepo.getWindow(
             userId,
-            getStartOfDayISO(getYesterdayLocal()),
+            getStartOfDayISO(carryStart),
             getEndOfDayISO(tomorrow)
           )
         },

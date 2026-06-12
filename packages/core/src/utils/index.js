@@ -78,6 +78,7 @@ export {
 // Titration utilities
 export {
   calculateTitrationData,
+  resolveTitrationStageAt,
 } from './titrationUtils.js'
 
 // Notification utilities
@@ -157,6 +158,7 @@ export {
   classifyDose,
   buildDoseItemsFromInstances,
   splitDayTimeline,
+  daysAgoLabel,
 } from './doseZones.js'
 
 // SemVer utilities (026 — Nudges In-App)

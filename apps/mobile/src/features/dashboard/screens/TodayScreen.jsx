@@ -146,15 +146,23 @@ function TodayHeader({ greeting, todayFormatted, onDevPress }) {
   )
 }
 
-function OptionalDoseSection({ title, doses, onRegister, keyPrefix }) {
+/**
+ * Seção opcional de doses (carry-over ou look-ahead).
+ *
+ * 012 Fase B (FR-008b): `isCarryOver` ativa o rótulo relativo ("ontem · 10:00") nos
+ * cards — necessário para doses semanais (GLP-1) cujo prazo de tolerância (5040min)
+ * excede "ontem" e pode recuar até 3,5 dias.
+ */
+function OptionalDoseSection({ title, subtitle, doses, onRegister, keyPrefix, isCarryOver = false }) {
   if (doses.length === 0) return null
   return (
     <View style={styles.carryOverSection}>
       <View style={styles.agendaHeader}>
         <Text style={styles.agendaTitle}>{title}</Text>
+        {subtitle ? <Text style={styles.agendaSubtitle}>{subtitle}</Text> : null}
       </View>
       {doses.map((dose) => (
-        <DoseTimelineCard key={`${keyPrefix}-${dose.id}`} dose={dose} onRegister={onRegister} />
+        <DoseTimelineCard key={`${keyPrefix}-${dose.id}`} dose={dose} onRegister={onRegister} isCarryOver={isCarryOver} />
       ))}
     </View>
   )
@@ -266,8 +274,17 @@ function TodayScreenContent({
         ) : (
           <NudgeBanner nudge={dashboardNudge} onAction={handleNudgeAction} onDismiss={dismissNudge} />
         )}
-        {/* Pendências de ontem (carry-over cross-dia, F4.3e) */}
-        <OptionalDoseSection title="Pendências de ontem" doses={carryOver} onRegister={handleOpenRegister} keyPrefix="carry" />
+        {/* Doses pendentes (carry-over cross-dia, F4.3e / 012 Fase B FR-008b):
+            título renomeado "Doses pendentes" + subtítulo p/ contexto; rótulo
+            relativo habilitado nos cards (isCarryOver) p/ GLP-1 de 2-3 dias atrás. */}
+        <OptionalDoseSection
+          title="Doses pendentes"
+          subtitle="Doses anteriores ainda no prazo de registro"
+          doses={carryOver}
+          onRegister={handleOpenRegister}
+          keyPrefix="carry"
+          isCarryOver
+        />
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
         </View>
@@ -538,6 +555,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
     fontFamily: typography.fontFamily.bold || 'System',
+  },
+  // 012 Fase B (FR-008b): subtítulo descritivo abaixo do título da seção carry-over
+  agendaSubtitle: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
+    fontFamily: typography.fontFamily.regular || 'System',
   },
   shiftContainer: {
     marginBottom: spacing[4],

@@ -5,7 +5,7 @@ import {
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { classifyDose } from '@dashboard/hooks/useDoseZones'
 
-import { formatDoseItem, formatConcentration } from '@dosiq/core'
+import { formatDoseItem, formatConcentration, daysAgoLabel } from '@dosiq/core'
 
 /**
  * Status do card a partir do instante ABSOLUTO da ocorrência + sua tolerância
@@ -83,7 +83,12 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
         </div>
 
         <time className="cronograma-dose-card__time" dateTime={dose.scheduledTime}>
-          {dose.scheduledTime}
+          {/* 012 Fase B (FR-008b): dose semanal pendente multi-dia ganha rótulo
+              relativo — "10:00" sozinho mentiria o dia da dose carregada. */}
+          {(() => {
+            const ago = !done && now ? daysAgoLabel(dose.scheduledFor, now) : null
+            return ago ? `${ago} · ${dose.scheduledTime}` : dose.scheduledTime
+          })()}
         </time>
       </div>
 

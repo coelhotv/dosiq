@@ -165,19 +165,60 @@ describe('generateInstances — tolerância dinâmica (§6)', () => {
     expect(out[0].tolerance_minutes).toBe(120)
   })
 
-  it('semanal multi-dose: 120 fixo (não-diário não usa janela dinâmica)', () => {
+  // ── ADR-061 / FR-007 (012 Fase B): não-diário frequency-aware, SEM cap de 120 ──
+
+  it('semanal dose única: tolerância = metade do período (5040min = 3,5 dias), sem cap', () => {
+    // Perdão clínico do GLP-1 semanal: 5040min = 84h — cobre o perdão de 72h da bula.
     const out = generateInstances(
       {
         ...baseProtocol,
         frequency: 'semanal',
-        weekdays: ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'],
-        time_schedule: ['08:00', '09:00'],
+        weekdays: ['domingo'],
+        time_schedule: ['08:00'],
       },
       '2026-05-10T00:00:00-03:00',
       '2026-05-10T23:59:59-03:00',
       'America/Sao_Paulo'
     )
-    expect(out.every((i) => i.tolerance_minutes === 120)).toBe(true)
+    expect(out[0].tolerance_minutes).toBe(5040)
+  })
+
+  it('dias_alternados dose única: metade de 48h (1440min), sem cap', () => {
+    const out = generateInstances(
+      { ...baseProtocol, frequency: 'dias_alternados', time_schedule: ['08:00'] },
+      '2026-05-10T00:00:00-03:00',
+      '2026-05-10T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out[0].tolerance_minutes).toBe(1440)
+  })
+
+  it('semanal multi-dose: metade do menor gap adjacente, acima de 120 sem cap', () => {
+    // 08:00/20:00 no mesmo dia: gap intra-dia 720min → 360. Cap de 120 NÃO se aplica.
+    const out = generateInstances(
+      {
+        ...baseProtocol,
+        frequency: 'semanal',
+        weekdays: ['domingo'],
+        time_schedule: ['08:00', '20:00'],
+      },
+      '2026-05-10T00:00:00-03:00',
+      '2026-05-10T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out.map((i) => i.tolerance_minutes)).toEqual([360, 360])
+  })
+
+  it('frequência sem período mapeado: mantém 120 fixo (legado)', () => {
+    // 'mensal' não existe no FREQUENCY_PERIOD_MINUTES → fallback legado 120.
+    // (personalizado/PRN nunca materializam instâncias — matcher false.)
+    const out = generateInstances(
+      { ...baseProtocol, frequency: 'mensal', time_schedule: ['08:00'] },
+      '2026-05-10T00:00:00-03:00',
+      '2026-05-10T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out[0].tolerance_minutes).toBe(120)
   })
 })
 
@@ -225,5 +266,51 @@ describe('generateInstances — casos de borda', () => {
     )
     expect(out).toHaveLength(1)
     expect(wallClock(out[0].scheduled_for, 'America/Sao_Paulo')).toBe('08:00')
+  })
+})
+
+// ── 012 Fase B (FR-006/FP-1): expected_dose congela a etapa de titulação vigente ──
+describe('generateInstances — titulação congela expected_dose por etapa', () => {
+  const glp1Protocol = {
+    id: 'p-glp1',
+    user_id: 'u1',
+    frequency: 'semanal',
+    weekdays: ['domingo'],
+    time_schedule: ['08:00'],
+    dosage_per_intake: 1,
+    start_date: '2026-06-01',
+    active: true,
+    titration_schedule: [
+      { days: 28, dosage: 0.25 },
+      { days: 28, dosage: 0.5 },
+    ],
+    current_stage_index: 0,
+    stage_started_at: '2026-06-01T08:00:00.000Z',
+    titration_status: 'titulando',
+  }
+
+  it('instâncias futuras nascem com a dose da etapa vigente NA DATA (não a atual)', () => {
+    // Janela cruza a fronteira da etapa 1 (28d → 2026-06-29): domingos 07/06..05/07
+    const out = generateInstances(
+      glp1Protocol,
+      '2026-06-01T00:00:00-03:00',
+      '2026-07-05T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out.length).toBeGreaterThanOrEqual(4)
+    const byDate = Object.fromEntries(out.map((i) => [i.scheduled_for.slice(0, 10), i.expected_dose]))
+    expect(byDate['2026-06-07']).toBe(0.25) // etapa 1
+    expect(byDate['2026-06-28']).toBe(0.25) // último domingo da etapa 1
+    expect(byDate['2026-07-05']).toBe(0.5)  // etapa 2 (após 29/06)
+  })
+
+  it('sem titulação ativa (estável) → dosage_per_intake chapado', () => {
+    const out = generateInstances(
+      { ...glp1Protocol, titration_status: 'estável' },
+      '2026-06-01T00:00:00-03:00',
+      '2026-07-05T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+    expect(out.every((i) => i.expected_dose === 1)).toBe(true)
   })
 })

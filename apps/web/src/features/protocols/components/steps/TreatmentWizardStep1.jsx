@@ -1,7 +1,7 @@
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import Button from '@shared/components/ui/Button'
-import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS } from '@schemas/medicineSchema'
+import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS, PRESENTATIONS, PRESENTATION_LABELS } from '@schemas/medicineSchema'
 
 /** Renderiza o formulário de cadastro de novo medicamento. */
 function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }) {
@@ -94,6 +94,48 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
           </select>
         </label>
       </div>
+
+      {/* 012 Fase B (smoke PO): apresentação faltava no passo 1 — sem ela injetável/
+          pomada nasciam "comprimido" e o eixo TTL nunca ativava. Unidade /ml força
+          'liquido' (mesma regra do MedicineForm). */}
+      <label className="wizard__label">
+        Apresentação
+        <select
+          className="wizard__select"
+          value={medicineData.dosage_unit?.endsWith('/ml') ? 'liquido' : medicineData.presentation || 'comprimido'}
+          disabled={medicineData.dosage_unit?.endsWith('/ml')}
+          onChange={(e) => {
+            const presentation = e.target.value
+            updateMedicine('presentation', presentation)
+            // Prefill 28 ao virar injetável (editável); limpa ao sair (valor obsoleto
+            // não pode persistir — mesma regra do MedicineForm/review #658).
+            if (presentation === 'injetavel') {
+              if (!medicineData.shelf_life_days) updateMedicine('shelf_life_days', 28)
+            } else {
+              updateMedicine('shelf_life_days', '')
+            }
+          }}
+        >
+          {PRESENTATIONS.map((pres) => (
+            <option key={pres} value={pres}>{PRESENTATION_LABELS[pres] || pres}</option>
+          ))}
+        </select>
+      </label>
+      {(!medicineData.dosage_unit?.endsWith('/ml') && medicineData.presentation === 'injetavel') && (
+        <label className="wizard__label">
+          Validade após aberto (dias)
+          <input
+            type="number"
+            className="wizard__input"
+            value={medicineData.shelf_life_days ?? ''}
+            onChange={(e) => updateMedicine('shelf_life_days', e.target.value)}
+            placeholder="28"
+            min="1"
+            step="1"
+          />
+          <small className="wizard__label-note">Dias de uso após abrir o frasco/caneta — confira a bula.</small>
+        </label>
+      )}
     </>
   )
 }

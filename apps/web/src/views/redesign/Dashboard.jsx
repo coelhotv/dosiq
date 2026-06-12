@@ -97,6 +97,8 @@ function useDashboardViewState(onNavigate) {
     handleRegisterDosesAll,
     handleSnoozeAlert,
     handleReminderAccept,
+    actionError,
+    clearActionError,
   } = useDashboardHandlers({
     refresh,
     reminderSuggestionData,
@@ -214,6 +216,8 @@ function useDashboardViewState(onNavigate) {
     handleRegisterDosesAll,
     handleSnoozeAlert,
     handleReminderAccept,
+    actionError,
+    clearActionError,
     setDismissedSuggestionId,
   }
 }
@@ -237,6 +241,8 @@ export default function Dashboard({ onNavigate }) {
     handleRegisterDosesAll,
     handleSnoozeAlert,
     handleReminderAccept,
+    actionError,
+    clearActionError,
     setDismissedSuggestionId,
     totals,
     now,
@@ -265,6 +271,22 @@ export default function Dashboard({ onNavigate }) {
       className="page-container dashboard-container"
       aria-label="Dashboard — Dosiq"
     >
+      {/* Erro de ação 1-click (Tomar/Confirmar agora) — ex.: estoque insuficiente.
+          Antes o throw morria sem consumidor e o clique parecia ignorado (smoke PO). */}
+      {actionError && (
+        <div className="dashboard-action-error" role="alert">
+          <span>⚠️ {actionError}</span>
+          <button
+            type="button"
+            className="dashboard-action-error__close"
+            onClick={clearActionError}
+            aria-label="Fechar aviso"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
       {smartAlerts.length > 0 && (
         <section className="dashboard-alerts-section" aria-label="Alertas inteligentes">

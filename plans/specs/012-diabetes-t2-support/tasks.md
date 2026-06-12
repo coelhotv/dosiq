@@ -23,12 +23,12 @@
 
 ## Phase B — GLP-1 (mg, semanal, titulação) (PR 2) — ADR-061
 
-- [ ] T008 [C1] **Auditar titulação existente**: criar protocolo GLP-1 `semanal` com `titration_schedule`; exercitar wizard/timeline/badge; mapear regressões pós-refactor. Registrar achados.
-- [ ] T009 [US2] Corrigir regressões de titulação encontradas em T008 (`titrationUtils`/`titrationService`/UI).
-- [ ] T010 [US2] `computeTolerances` (`doseInstanceGenerator.js:76`) frequency-aware: não-diário (`semanal`/`dias_alternados`) → `floor(período/2)` **sem `MAX_TOLERANCE`**; diário inalterado (cap 120). Passar `frequency` ao gerador.
-- [ ] T011 [US2] Gerador congela `expected_dose` da etapa de titulação vigente na data (reusa FP-1) — confirmar p/ `semanal`. **Modelo de avanço = AUTO por cronograma** (FR-005b): `stage_started_at + duration_days` esgotado → próxima etapa; evento informativo "Etapa N iniciada conforme o cronograma" (sem CTA de dose — SaMD). T008 audita se o auto-avanço existente funciona.
-- [ ] T011b [US2] UX dose semanal pendente multi-dia (FR-008b): carry-over com rótulo relativo ("há 2 dias"); PriorityCard inclui dentro da tolerância; **sem re-notificação** (`notified_at` idempotente); `missed` só após tolerância (sweep R-246). Web + mobile.
-- [ ] T012 [P] [C4] Testes: tolerância semanal > 120 (perdão 72h coberto); diário 1×/dia mantém 120; `expected_dose` correto por etapa; **auto-avanço de etapa por tempo**; sweep `pending→missed` só após janela; **rótulo relativo multi-dia**.
+- [x] T008 [C1] **Auditar titulação existente**: criar protocolo GLP-1 `semanal` com `titration_schedule`; exercitar wizard/timeline/badge; mapear regressões pós-refactor. Registrar achados.
+- [x] T009 [US2] Corrigir regressões de titulação encontradas em T008 (`titrationUtils`/`titrationService`/UI).
+- [x] T010 [US2] `computeTolerances` (`doseInstanceGenerator.js:76`) frequency-aware: não-diário (`semanal`/`dias_alternados`) → `floor(período/2)` **sem `MAX_TOLERANCE`**; diário inalterado (cap 120). Passar `frequency` ao gerador.
+- [x] T011 [US2] Gerador congela `expected_dose` da etapa de titulação vigente na data (reusa FP-1) — confirmar p/ `semanal`. **Modelo de avanço = AUTO por cronograma** (FR-005b): `stage_started_at + duration_days` esgotado → próxima etapa; evento informativo "Etapa N iniciada conforme o cronograma" (sem CTA de dose — SaMD). T008 audita se o auto-avanço existente funciona.
+- [x] T011b [US2] UX dose semanal pendente multi-dia (FR-008b): carry-over com rótulo relativo ("há 2 dias"); PriorityCard inclui dentro da tolerância; **sem re-notificação** (`notified_at` idempotente); `missed` só após tolerância (sweep R-246). Web + mobile.
+- [x] T012 [P] [C4] Testes: tolerância semanal > 120 (perdão 72h coberto); diário 1×/dia mantém 120; `expected_dose` correto por etapa; **auto-avanço de etapa por tempo**; sweep `pending→missed` só após janela; **rótulo relativo multi-dia**.
 
 ## Phase C — biomarkers_log + fast-logging + timeline híbrida (PR 3) — ADR-060
 
