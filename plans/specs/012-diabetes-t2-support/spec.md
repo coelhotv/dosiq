@@ -300,7 +300,7 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   idempotente — evita spam de 3 dias); após a tolerância vira `missed` pelo sweep normal (R-246).
 
 **Fase B2 — Canetas/ampolas GLP-1 (`intake_unit='mg'` + container + rendimento + titulação N1)**
-> Fecha a Fase B. Modelo decidido na sessão de design 2026-06-12 (estresse de cenários
+> Modelo decidido na sessão de design 2026-06-12 (estresse de cenários
 > Ozempic/Wegovy `mg/ml` e Mounjaro `mg/0,5ml`). Princípio: caneta/ampola = **lote líquido em
 > ml** (reusa toda a fundação de líquidos da 022); a peça que falta é registrar a **dose em mg** e
 > apresentar o estoque em **aplicações**, não em ml cru.
@@ -360,6 +360,99 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   - **Compra/estoque**: capturar `injection_container` (FR-019) na 1ª compra; informar volume do
     lote (ml — ex.: caneta 1,5 ml) → exibir rendimento em aplicações (FR-020). Volume vive **na
     compra**, sem coluna nova em medicines.
+  - **Nota (B2 As-Built):** decidiu-se que `mg` usa a **concentração = `dosage_per_pill`** (já
+    cadastrada), NÃO `units_per_ml` — o form de mg não pede densidade. A "obrigatoriedade de
+    `units_per_ml` p/ mg" do rascunho foi superada; B3 trata o default de `units_per_ml`.
+
+**Fase B3 — `units_per_ml` default `NULL` + fallback unit-aware (hardening, fecha o débito do FR-013b)**
+> Débito técnico exposto no smoke da B2 (2026-06-12). `units_per_ml` tem **default `20`** (gotas/ml)
+> na coluna — "carimba" 20 em TODO líquido, inclusive insulina (UI ≈ 100/ml) → conversão UI→ml 5×
+> errada se a densidade faltar (origem do FR-013b/CPTO). O problema não é "20 vs null", é o default
+> ser **único (blanket)**. mg já saiu dessa conta na B2 (usa `dosage_per_pill`).
+
+- **FR-023 — coluna `medicines.units_per_ml` default `NULL` + backfill derivado do tratamento**:
+  migração `ALTER COLUMN ... DROP DEFAULT` (novas linhas não nascem com 20). **Backfill** (decisão PO
+  2026-06-12 — mesma lógica do fallback unit-aware, FR-024): pra cada medicine, inspecionar a unidade
+  de tomada dos `protocols` associados (`protocols.intake_unit`) e derivar `units_per_ml`:
+  `UI → 100`, `gotas → 20`, `mg → NULL` (mg usa `dosage_per_pill`). Medicine **sem tratamento
+  associado** ou de **apresentação não-líquida** → `NULL`. Assim backfill e runtime concordam: o
+  valor carimbado reflete a densidade real da unidade de tomada, não um 20 cego. (Medicine com
+  múltiplos tratamentos de unidades divergentes: priorizar a unidade que exige densidade — UI > gotas;
+  caso raro, registrar no log da migração.)
+- **FR-024 — fallback unit-aware na conversão (não blanket)**: `doseToMl`, RPC `consume_stock_fifo`
+  e `formatIntakeDose` aplicam o padrão **pela unidade de tomada**, não um 20 global:
+  `gotas → 20` (dropper universal, baixo risco), `UI → 100`, `mg → dosage_per_pill` (já na B2).
+  Sem valor E sem padrão seguro p/ a unidade → **erro explícito** (Const. IX: não chuta dose).
+  Remove o `COALESCE(...,20)` blanket do ramo gotas/UI da RPC.
+- **FR-025 — forms reforçam densidade obrigatória p/ gotas/UI**: o form de tratamento já exige
+  `units_per_ml` e mostra hint do padrão (gotas 20 / UI 100) — garantir que nenhum caminho salve
+  líquido gotas/UI sem densidade (o default da coluna não pode mais mascarar a ausência). mg
+  inalterado (não pede densidade — usa `dosage_per_pill`).
+- **FR-031 — entrada de concentração com denominador (anti-armadilha Mounjaro)** (decisão de design
+  2026-06-12): rótulos de GLP-1/insulina exibem a concentração **por injeção**, não por ml — Mounjaro
+  "2,5 mg/0,5 mL", Ozempic "2 mg/0,8 mL", insulina U-100/U-200/U-300. Usuário digita o número da caixa
+  (`2,5`) no campo `mg/ml` e grava concentração errada (real = 5 mg/ml), silenciosamente. **Solução
+  (Opção 1):** o campo de concentração no form de **medicamento** ganha um **seletor de denominador**
+  — `[2,5] mg / [0,5 ▾] mL` (opções `1 mL` / `0,5 mL` / `0,8 mL` / …). Ao salvar, **normaliza p/
+  mg/ml** = `valor ÷ denominador` (2,5 ÷ 0,5 = 5). **Armazenamento segue mg/ml** (invariante "número =
+  por 1 mL" intacto → zero drift em RPC/`doseToMl`/formatters/custo). Guardar o denominador digitado
+  como **preferência de exibição** (renderizar de volta "2,5 mg/0,5 mL", familiar à caixa). Mesmo
+  mecanismo cobre `mg/0,8ml` e U-100/200/300 (Fase D) **sem unidades novas**.
+  - **Decisão registrada:** *rejeitada* a criação de unidade literal `mg/0,5ml` em `dosage_unit` —
+    quebraria a detecção de líquido (`LIKE '%/ml'`), o invariante por-1-mL e geraria explosão
+    combinatória de denominadores. A razão é normalizada na **entrada**, não no armazenamento.
+  - **Backlog (Opção 3, futura):** armazenar a concentração como **par `(amount, volume)`** em vez da
+    razão (casa 1:1 com o rótulo; razão derivada). Schema maior; avaliar em spec própria se a
+    preferência-de-exibição da Opção 1 não bastar.
+
+**Fase B4 — Modelo de estoque dose-primário (frequência ≠ diário)**
+> Falha conceitual exposta no smoke da B2 (2026-06-12). O modelo atual conta **dias corridos**
+> (`estoque / consumo_médio_dia`), fundindo dois conceitos distintos num número só. Pra freq ≠
+> diário isso (a) mostra "28 dias" pra 4 canetas semanais — engana; (b) **quebra o custo**:
+> detalhe de estoque exibe "consumo/dia 0,071…" ilegível e calcula custo/dose R$60,71 quando o
+> real é R$425 (R$1700 ÷ 4 doses). Decisão de design 2026-06-12: **a dose é a unidade
+> fundamental; o dia é projeção derivada**. Não entregar suporte DMT2 no 012 com UI/UX que
+> confunde por falha conceitual. Depende da **B3** (densidade certa → `dosesRemaining` de líquido
+> correto).
+
+- **FR-026 — modelo de 3 quantidades (dose-primário)**: `packages/core/src/utils/stock.js` calcula,
+  considerando **tomadas por dia de tomada**:
+  - `tomadasPorDia = time_schedule.length` (quantas tomadas num dia ativo — pode ser >1 mesmo em
+    frequências espaçadas);
+  - `diasDeTomadaRestantes = estoque / (dosePorTomada × tomadasPorDia)` — **o número exibido**
+    (líquido: doseMl via doseToMl da B2/B3; sólido: unidades). Frequency-agnostic;
+  - `runwayDias = diasDeTomadaRestantes / frequencyDailyFactor(p)` — dias corridos, **derivado**.
+
+  Diário: `diasDeTomadaRestantes == runwayDias` (sem regressão visual). Casos-verdade:
+  **Mounjaro** semanal 1x 0,5ml, estoque 2ml → 2÷(0,5×1)=**4** dias de tomada / runway 4÷(1/7)=28d;
+  **dias_alternados 2x/dia** dose 1u, estoque 20 → 20÷(1×2)=**10** dias de tomada / runway 10÷0,5=20d
+  corridos. (Injetável 1×/dia: dia de tomada = 1 aplicação; o rótulo "aplicações" reusa o singular do
+  container — FR-028.)
+- **FR-027 — custo por dose (não por dia)**: `costAnalysisService` expõe `custoPorDose =
+  precoUnidade / dosesPorUnidade` como número primário (R$425, não R$60,71). `custoPorDia` vira
+  derivado opcional (`custoPorDose × dosesPorDia`) e **formatado** (limite de decimais — fim do
+  `0,071428…`). Schema `costAnalysisSchema` ganha `custoPorDose`; testes atualizados.
+- **FR-028 — display em doses, cor em runway (freq ≠ diário)**: chip/badge de estoque (web
+  `StockCardRedesign`/`StockPill` + mobile `StockLevelBadge`/`StockItem`) exibem **"N doses"**
+  (injetável: "N aplicações" via `INJECTION_CONTAINER_SINGULAR`); a **cor/status**
+  (CRITICAL<7/LOW<14/NORMAL<30) continua medindo **runwayDias** — recompra é cronológica
+  (lead time independe da frequência). Freq diário inalterado ("N dias"). Detalhe de estoque
+  (web + mobile) mostra doses restantes + custo/dose como primários, runway como linha secundária.
+- **FR-030 — `injection_container` por LOTE, não por medicamento** (smoke PO 2026-06-12): a B2
+  cravou o container em `medicines` (valor único, capturado na 1ª compra). **Errado** — a
+  apresentação é atributo do **lote comprado**, igual ao volume: o paciente pode comprar canetas
+  pré-preenchidas e depois migrar p/ refis (mais econômico) no mesmo tratamento. Mover a coluna p/
+  `stock`/`purchases` (`injection_container` por lote); rendimento (FR-020) calculado **por lote**
+  ("≈3 canetas" no lote A + "≈2 refis" no lote B). Form de compra exibe o campo em **toda** compra
+  (não só a 1ª, não omitido nas subsequentes). `medicines.injection_container` vira **default
+  opcional** (sugestão do último lote) ou é aposentada — decidir na migração. Migração move/copia
+  os valores existentes p/ os lotes correspondentes. Corrige FR-019/FR-020 (que assumiram
+  medicine-level).
+- **FR-029 — propagar dose-primário aos consumidores de display**: `refillPredictionService`
+  (data de recompra = hoje + runwayDias derivado), PDF/consultation (`_pdfSectionBuilders`,
+  `consultationPdfDataBuilder`) e Telegram `/estoque` (`server/bot/commands/estoque.js`) exibem
+  doses como número-base, runway como contexto. Sem mudança de schema de dados — só camada de
+  apresentação + cálculo derivado. Serverless: `dosesPorDia` reusa `frequencyDailyFactor` do core.
 
 **Fase C — `biomarkers_log` + fast-logging + timeline híbrida**
 - **FR-009**: Nova tabela `public.biomarkers_log` genérica: `id`, `user_id`, `type` (text, default
@@ -484,12 +577,24 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   `expected_dose` congela a etapa correta; tolerância semanal cobre a janela de perdão (>120 min);
   titulação existente auditada/corrigida.
 - **SC-002b** (Fase B2): GLP-1 em mg funciona ponta-a-ponta — `intake_unit='mg'` aceito (CHECK+Zod
-  sincronizados); `consume_stock_fifo` debita `mg ÷ units_per_ml = ml` correto via FIFO; `units_per_ml`
-  obrigatória p/ mg (nunca cai no default 20) com helper "[X] mg em [Y] mL"; `injection_container`
-  capturado na 1ª compra (fallback "unidade"); estoque exibido em **aplicações** com floor (Ozempic
-  0,68 mg/ml, caneta 1,5 ml, dose 0,25 mg → "≈ 6 aplicações", nunca ml cru); etapa de titulação
-  `requires_new_medicine` emite notificação-CTA de troca sem alterar `expected_dose` (SaMD). Cobertura
-  por testes (RPC mg via pgTAP/jest server, formatters core mg, floor de rendimento).
+  sincronizados); `consume_stock_fifo` debita `mg ÷ dosage_per_pill = ml` correto via FIFO
+  (**a concentração mg/ml É o `dosage_per_pill`, não `units_per_ml`** — `units_per_ml` é null p/ mg;
+  decisão de design 2026-06-12); concentração (`dosage_per_pill`) obrigatória p/ mg, sem ela →
+  `RAISE EXCEPTION` (nunca chuta dose); helper "[X] mg em [Y] mL"; `injection_container` capturado
+  na 1ª compra **web + mobile** (fallback "unidade"); estoque exibido em **aplicações** com floor;
+  etapa de titulação `requires_new_medicine` emite notificação-CTA de troca sem alterar
+  `expected_dose` (SaMD). **Decisões as-built do smoke:** default de unidade p/ `mg/ml` = **gotas**
+  (mg é exceção opt-in); edição de tratamento carrega `intake_unit`+`units_per_ml` exatos do DB;
+  consumo diário de estoque aplica `frequencyDailyFactor` (semanal/alternados não consomem todo dia).
+  Cobertura por testes (RPC mg, formatters core mg, dailyIntake por frequência, floor de rendimento).
+- **SC-002c** (Fase B4): estoque modelado em **doses** como métrica primária — `dosesRemaining =
+  estoque / dosePorTomada` (frequency-agnostic); `runwayDias` derivado de `dosesRemaining /
+  dosesPorDia`. Freq ≠ diário: chip/detalhe exibem **doses/aplicações** (cor por runway); custo
+  exposto como **custo/dose** (R$425, não R$60,71/dia) com decimais formatados. Freq diário sem
+  regressão (`doses == dias`). Propagado a refill/PDF/Telegram. Cobertura: core stock.js (doses ×
+  runway por frequência), costAnalysis (custo/dose), badges web+mobile. **`injection_container`
+  movido p/ o lote** (FR-030): rendimento por lote, campo em toda compra, migração move valores de
+  `medicines` p/ `stock`/`purchases`.
 - **SC-003**: `biomarkers_log` genérico registra glicemia (e suporta peso/PA/batimentos sem
   migration); fast-logging com contexto manual; biomarcador na timeline por instante via adapter
   (zero alteração do builder/UI de dose); sem meta.

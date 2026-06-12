@@ -1,4 +1,5 @@
 import { prepareDataToSave } from './protocolFormUtils'
+import { coerceDecimal } from '@dosiq/core'
 import { medicineService } from '@shared/services'
 
 export async function submitProtocolForm({
@@ -24,7 +25,7 @@ export async function submitProtocolForm({
     ) {
       try {
         await medicineService.update(formData.medicine_id, {
-          units_per_ml: Number(formData.units_per_ml),
+          units_per_ml: coerceDecimal(formData.units_per_ml),
         })
       } catch (densityErr) {
         // Não bloqueia o tratamento; RPC usa fallback 20 se densidade não gravar.

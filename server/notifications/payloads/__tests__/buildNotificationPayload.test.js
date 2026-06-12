@@ -208,4 +208,33 @@ describe('buildNotificationPayload', () => {
       expect(payload.pushBody).toBe('Remédios essenciais agora — 22:00:\n– Med X (20mg) • 1,5 un.');
     });
   });
+
+  // 012 Fase B2 (FR-021): titulação N1 — etapa cross-força vira CTA de troca.
+  describe('titration_alert', () => {
+    const base = {
+      medicineName: 'Ozempic',
+      currentStage: 2,
+      totalStages: 3,
+      status: 'titulando',
+    };
+
+    it('avanço normal (sem troca) → copy informativa "conforme o cronograma"', () => {
+      const payload = buildNotificationPayload({ kind: 'titration_alert', data: base });
+      expect(payload.title).toBe('🎯 Atualização de Titulação');
+      expect(payload.pushBody).toContain('iniciada conforme o cronograma');
+      expect(payload.pushBody).not.toContain('trocar');
+    });
+
+    it('etapa requiresNewMedicine → CTA "hora de trocar de apresentação"', () => {
+      const payload = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, requiresNewMedicine: true },
+      });
+      expect(payload.title).toBe('🔄 Hora de trocar de apresentação');
+      expect(payload.pushBody).toContain('nova apresentação');
+      expect(payload.pushBody).toContain('estoque');
+      // Sem recomendação de dose nova (SaMD) — só aviso de troca.
+      expect(payload.pushBody).not.toContain('conforme o cronograma');
+    });
+  });
 });

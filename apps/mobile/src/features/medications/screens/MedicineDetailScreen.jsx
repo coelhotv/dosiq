@@ -27,7 +27,7 @@ import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
 import { MedicineDeleteBlockedSheet } from '@medications/components/MedicineDeleteBlockedSheet'
-import { formatConcentration, PRESENTATION_LABELS } from '@dosiq/core'
+import { formatConcentration, PRESENTATION_LABELS, isLiquidMedicine } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
 const TYPE_LABELS = {
@@ -87,6 +87,11 @@ export default function MedicineDetailScreen() {
     return data.protocols
   }, [data])
 
+  const isTitrating = useMemo(
+    () => protocols.some((p) => p?.titration_status === 'titulando'),
+    [protocols],
+  )
+
   const protocolsSummary = useMemo(() => {
     if (protocols.length === 0) return null
     const labels = protocols
@@ -102,7 +107,9 @@ export default function MedicineDetailScreen() {
     if (stock.length === 0) return null
     const totalUnits = stock.reduce((acc, s) => acc + (Number(s?.quantity) || 0), 0)
     if (totalUnits <= 0) return null
-    return `${totalUnits} un.`
+    // Líquido: saldo é em ml (022). B4 ajustará protocolos não-diários p/ doses.
+    const unitLabel = isLiquidMedicine(data) ? 'ml' : 'un.'
+    return `${totalUnits} ${unitLabel}`
   }, [data])
 
   // Effects
@@ -250,7 +257,7 @@ export default function MedicineDetailScreen() {
             <View style={styles.heroBadges}>
               <View style={[styles.badge, styles.badgeSuccess]}>
                 <Text style={[styles.badgeText, styles.badgeTextSuccess]}>
-                  ESTÁVEL
+                  {isTitrating ? 'TITULANDO' : 'ESTÁVEL'}
                 </Text>
               </View>
               <View style={[styles.badge, styles.badgeNeutral]}>

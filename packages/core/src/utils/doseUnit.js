@@ -88,6 +88,61 @@ export function formatStockQuantity(qty, medicine) {
 }
 
 /**
+ * Rótulo de concentração p/ o form de tratamento GLP-1 (012 Fase B2, FR-018):
+ * "[X] mg em [Y] mL". Ajuda o usuário a confirmar a densidade lida na bula/caneta
+ * antes de salvar (units_per_ml = mg por ml). 1 mL fixo no denominador (a leitura
+ * da bula é sempre "X mg/mL"). Vírgula PT-BR. Retorna '' se densidade inválida.
+ *
+ * @param {number|string|null} mgPerMl - densidade (units_per_ml) em mg/ml
+ * @returns {string}
+ * @example formatConcentrationLabel(0.68) → '0,68 mg em 1 mL'
+ * @example formatConcentrationLabel(null) → ''
+ */
+export function formatConcentrationLabel(mgPerMl) {
+  const n = Number(typeof mgPerMl === 'string' ? mgPerMl.replace(',', '.') : mgPerMl)
+  if (!Number.isFinite(n) || n <= 0) return ''
+  return `${formatNumberPtBR(n)} mg em 1 mL`
+}
+
+/**
+ * Rendimento de estoque em APLICAÇÕES (012 Fase B2, FR-020): o lote é guardado em
+ * ml, mas o usuário pensa em "quantas aplicações/canetas restam". Floor (nunca
+ * arredonda p/ cima — overfill da caneta não é dose disponível). Container rotula
+ * a unidade (caneta/ampola/...); fallback "aplicação". Sem dose-por-aplicação
+ * válida (0/NULL), retorna o saldo cru em ml (não inventa contagem).
+ *
+ * @param {number|string} mlRemaining - saldo do estoque em ml
+ * @param {number|string} mlPerApplication - ml por aplicação (dose_mg / units_per_ml)
+ * @param {string|null} containerSingular - rótulo singular (de INJECTION_CONTAINER_SINGULAR) ou null
+ * @returns {string}
+ * @example formatStockApplications(10, 0.37, 'caneta') → '≈ 27 canetas'
+ * @example formatStockApplications(1.5, 0.37, null)    → '≈ 4 aplicações'
+ * @example formatStockApplications(10, 0, 'caneta')    → '10 ml'
+ */
+export function formatStockApplications(mlRemaining, mlPerApplication, containerSingular) {
+  const ml = Number(typeof mlRemaining === 'string' ? mlRemaining.replace(',', '.') : mlRemaining)
+  const perApp = Number(
+    typeof mlPerApplication === 'string' ? mlPerApplication.replace(',', '.') : mlPerApplication
+  )
+  if (!Number.isFinite(ml) || ml < 0) return ''
+  // Sem ml-por-aplicação válido: não dá p/ contar aplicações — mostra saldo cru.
+  if (!Number.isFinite(perApp) || perApp <= 0) return formatDose(ml, 'ml')
+  const count = Math.floor(ml / perApp)
+  const label = containerSingular || 'aplicação'
+  const plural = count === 1 ? label : pluralizeContainer(label)
+  return `≈ ${count} ${plural}`
+}
+
+/**
+ * Plural simples de rótulos de container PT-BR (caneta→canetas, frasco→frascos,
+ * aplicação→aplicações). Regra mínima: termina em vogal → +s; em 'ão' → 'ões'.
+ */
+function pluralizeContainer(singular) {
+  if (singular.endsWith('ão')) return `${singular.slice(0, -2)}ões`
+  return `${singular}s`
+}
+
+/**
  * Retorna "unidade" (singular) ou "unidades" (plural) baseado na quantidade.
  * Coerce explícito via Number — valores podem chegar como string de TextInput.
  *
@@ -184,10 +239,21 @@ export function formatIntakeDose(qty, intakeUnit, medicine) {
   const intake = intakeUnit || 'ml'
   const base = formatDose(qty, intake)
   if (intake === 'ml') return base
-  // gotas/UI → ml: divide pela densidade (fallback 20). Inline p/ evitar dep circular.
-  const density = medicine?.units_per_ml && medicine.units_per_ml > 0 ? medicine.units_per_ml : 20
   const numQty = Number(typeof qty === 'string' ? qty.replace(',', '.') : qty)
-  const ml = numQty / density
+  // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg por ml; já no cadastro).
+  // gotas/UI → ml: divide pela razão física units_per_ml (fallback 20).
+  // São campos distintos (012 Fase B2): mg não usa units_per_ml.
+  const divisor =
+    intake === 'mg'
+      ? Number(medicine?.dosage_per_pill) > 0
+        ? Number(medicine.dosage_per_pill)
+        : null
+      : medicine?.units_per_ml && medicine.units_per_ml > 0
+        ? medicine.units_per_ml
+        : 20
+  if (!divisor) return base // sem concentração não há como exibir ≈ml
+  // Arredonda a 2 casas — sem isso, mg ÷ concentração gera dízima ("0,3676 ml").
+  const ml = Math.round((numQty / divisor) * 100) / 100
   return `${base} (≈ ${formatDose(ml, 'ml')})`
 }
 

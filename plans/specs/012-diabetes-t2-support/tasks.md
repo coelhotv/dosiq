@@ -48,6 +48,37 @@
 - [ ] T029 [US2b] **Titulação N1** (FR-021): etapa do `titration_schedule` com `requires_new_medicine: true` → no auto-avanço (FR-005b, `_processProtocolTitration`) **não altera `expected_dose`**; emite notificação-CTA "Hora de trocar de caneta" (kind/copy novos, SaMD/ADR-062). Wizard permite marcar a flag na etapa. Reusa a trava otimista (AP-221) já no cron.
 - [ ] T030 [P] [C4] Testes: RPC mg debita `mg÷units_per_ml=ml` (pgTAP ou jest server c/ mock); `mg` rejeitado sem `units_per_ml`; formatter mg + floor de rendimento (Ozempic 0,68/caneta 1,5ml/0,25mg → 6 aplicações); container fallback "unidade"; `requires_new_medicine` emite CTA sem mudar dose; Zod↔CHECK sincronizados.
 
+## Phase B3 — units_per_ml default NULL + fallback unit-aware (hardening — PR 2c)
+
+> Débito do FR-013b exposto no smoke da B2. mg já saiu da conta (usa dosage_per_pill).
+> Mutação em prod (coluna + RPC) só com autorização explícita do PO.
+
+- [ ] T031 [C1] Verificar prod (MCP, read-only): default atual de `medicines.units_per_ml` (= 20?); contar líquidos `ui/ml` com `units_per_ml=20` (candidatos a backfill errado); confirmar que `dosage_per_pill` está presente nos `mg/ml`. Registrar baseline.
+- [ ] T032 [US3b] **Backfill derivado do tratamento (FR-023, decidido 2026-06-12)**: query que, por medicine, deriva `units_per_ml` da unidade de tomada dos `protocols` associados — `UI→100`, `gotas→20`, `mg→NULL`; sem tratamento ou não-líquido → `NULL`. Validar contra baseline da T031 (quantos linhas mudam); medicine com unidades divergentes → priorizar UI>gotas e logar.
+- [ ] T033 [US3b] **Migração** `docs/migrations/2026XXXX_units_per_ml_null_default.sql`: `ALTER TABLE medicines ALTER COLUMN units_per_ml DROP DEFAULT` + UPDATE de backfill (T032). Aplicar em prod só com autorização PO.
+- [ ] T034 [US3b] **RPC `consume_stock_fifo`** (FR-024): remover `COALESCE(...,20)` blanket; fallback unit-aware — `gotas→20`, `ui→100`, `mg→dosage_per_pill` (já), sem padrão seguro → `RAISE EXCEPTION`. Assinatura intacta (AP-221); corpo do `pg_get_functiondef` ao vivo (AP-217).
+- [ ] T035 [US3b] **Core** (FR-024): `doseToMl`/`formatIntakeDose` aplicam fallback unit-aware (gotas 20 / UI 100 / mg dosage_per_pill); sem padrão → retorno honesto (sem conversão fantasma).
+- [ ] T036 [US3b] **Forms** (FR-025): garantir que web+mobile não salvem líquido gotas/UI sem `units_per_ml` (default da coluna não mascara mais). Hints de padrão mantidos (20/100).
+- [ ] T037 [P] [C4] Testes: RPC UI sem densidade → erro (não 20); doseToMl unit-aware; gotas mantém 20; form bloqueia gotas/UI sem densidade; mg inalterado.
+- [ ] T037b [US3b] **Concentração com denominador (FR-031, Opção 1)**: form de medicamento (web+mobile) — campo concentração ganha seletor de denominador (`1/0,5/0,8 mL`); ao salvar normaliza `dosage_per_pill = valor ÷ denominador` (storage segue mg/ml). Persistir denominador como preferência de exibição (coluna nova nullable `concentration_display_denominator` OU só UI-state — decidir; se coluna → migração + autorização PO). Render de volta "X mg/Y mL". NÃO criar unidade literal em `dosage_unit`.
+- [ ] T037c [P] [C4] Testes: normalização 2,5 mg/0,5 mL → 5 mg/ml; 2 mg/0,8 mL → 2,5 mg/ml; denominador 1 mL = passthrough; exibição reconstrói rótulo da caixa.
+
+## Phase B4 — Modelo de estoque dose-primário (freq ≠ diário) (PR 2d)
+
+> Falha conceitual exposta no smoke da B2: dias corridos enganam (4 canetas=28d) e quebram custo
+> (custo/dose R$425 mostrado como R$60,71/dia). Decisão design 2026-06-12: dose = unidade
+> fundamental, dia = projeção derivada. Display=doses, cor=runway (freq ≠ diário). **Depende da B3**
+> (densidade certa). Sem mutação de dados — só camada de cálculo/apresentação.
+
+- [ ] T038 [C1] Mapear consumidores de `daysRemaining`/`dailyConsumption` (já levantado: stock.js core, costAnalysis, refillPrediction, badges web+mobile, PDF, Telegram `/estoque`). Confirmar contrato esperado por cada antes de mexer (R-267 read-path).
+- [ ] T039 [US2b] **Core `stock.js`** (FR-026): `tomadasPorDia = time_schedule.length`; `diasDeTomadaRestantes = estoque / (dosePorTomada × tomadasPorDia)` (líquido via doseToMl B2/B3; sólido via unidades); `runwayDias = diasDeTomadaRestantes / frequencyDailyFactor`. Diário: `diasDeTomada == runway` (sem regressão). Exportar ambos.
+- [ ] T040 [US2b] **costAnalysis** (FR-027): `custoPorDose = precoUnidade / dosesPorUnidade` como primário; `custoPorDia` derivado e formatado (limite decimais — fim do `0,071…`). `costAnalysisSchema` += `custoPorDose`.
+- [ ] T041 [US2b] **Badges/chips** (FR-028): web `StockCardRedesign`/`StockPill` + mobile `StockLevelBadge`/`StockItem` exibem "N doses" ("N aplicações" injetável via `INJECTION_CONTAINER_SINGULAR`) p/ freq ≠ diário; **cor/status continua por `runwayDias`** (7/14/30). Diário inalterado ("N dias").
+- [ ] T042 [US2b] **Detalhe estoque** (FR-028): web + mobile mostram doses restantes + custo/dose primários, runway como linha secundária.
+- [ ] T043 [US2b] **Consumidores de display** (FR-029): `refillPredictionService` (data = hoje + runwayDias derivado), PDF (`_pdfSectionBuilders`/`consultationPdfDataBuilder`), Telegram `estoque.js` exibem doses + runway-contexto.
+- [ ] T044b [US2b] **`injection_container` por lote** (FR-030): migração move coluna `medicines.injection_container` → `stock`/`purchases` (copiar valores existentes p/ lotes; manter em medicines como default opcional ou dropar — decidir na migração); rendimento (FR-020) recalculado por lote; form de compra (web+mobile) exibe o campo em TODA compra (remover o `!isEdit`/`!medicine?.injection_container` que omitia subsequentes). Mutação prod só com autorização PO.
+- [ ] T044 [P] [C4] Testes: `stock.js` diasDeTomada × runway por frequência (diário; semanal 1x → 4/28; **dias_alternados 2x/dia → 10 dias de tomada / 20 corridos**); costAnalysis custo/dose (R$425); diário sem regressão; badge label doses vs dias.
+
 ## Phase C — biomarkers_log + fast-logging + timeline híbrida (PR 3) — ADR-060
 
 > **Design prescritivo (decisões PO fixadas).** Consultar SEMPRE em dúvida de pixel/comportamento:

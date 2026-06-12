@@ -27,9 +27,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronLeft, Package } from 'lucide-react-native'
-import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort } from '@dosiq/core'
+import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
+import FormSelect from '@shared/components/form/FormSelect'
 import FormDatePicker from '@shared/components/form/FormDatePicker'
 import FormSection from '@shared/components/form/FormSection'
 import FormActions from '@shared/components/form/FormActions'
@@ -105,6 +106,8 @@ export default function PurchaseFormScreen() {
   const [numBottles, setNumBottles] = useState('')
   const [volumePerBottle, setVolumePerBottle] = useState('')
   const [totalPrice, setTotalPrice] = useState('')
+  // 012 Fase B2 (FR-019): apresentação física do injetável, captada na 1ª compra.
+  const [injectionContainer, setInjectionContainer] = useState('')
 
   const {
     mode = 'create',
@@ -119,6 +122,11 @@ export default function PurchaseFormScreen() {
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   // Frascos/ml só no create (edit ajusta saldo em ml direto).
   const useLiquidInputs = isLiquid && !isEdit
+  // 012 Fase B2 (FR-019): apresentação do injetável. Create → captura na 1ª compra
+  // (quando ainda não definida); Edit → sempre recupera e permite corrigir cadastro
+  // errado (form de edição = cópia do de criação).
+  const isInjectable = medicine?.presentation === 'injetavel'
+  const needsContainer = isInjectable && (isEdit || !medicine?.injection_container)
 
   // Memos — valores iniciais do form
   // FormDatePicker recebe Date; schema armazena string YYYY-MM-DD.
@@ -201,6 +209,8 @@ export default function PurchaseFormScreen() {
       .then((med) => {
         if (cancelled || !med) return
         setMedicine(med)
+        // Edição: recupera o container já cadastrado p/ exibir e permitir correção.
+        if (med.injection_container) setInjectionContainer(med.injection_container)
         if (med.laboratory && shouldPrefillLab(med.regulatory_category)) {
           handleChange('laboratory', med.laboratory)
           setLabLocked(shouldLockLab(med.regulatory_category))
@@ -288,12 +298,23 @@ export default function PurchaseFormScreen() {
       notes: form.values.notes || null,
     }
 
+    // FR-019: persiste o container no medicine (best-effort — não bloqueia a compra;
+    // é só rótulo de UI). Create: 1ª captura. Edit: corrige cadastro errado. Só
+    // grava quando há valor e ele difere do já salvo.
+    if (isInjectable && injectionContainer && injectionContainer !== medicine?.injection_container) {
+      try {
+        await medicineService.update(medicineId, { injection_container: injectionContainer })
+      } catch {
+        // best-effort: container é só rótulo de UI; falha não bloqueia a compra.
+      }
+    }
+
     if (isEdit) {
       await updatePurchase(purchaseId, payload, { goBack: true })
     } else {
       await createPurchase(payload, { goBack: true })
     }
-  }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice])
+  }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice, isInjectable, medicine, injectionContainer])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
 
@@ -423,6 +444,23 @@ export default function PurchaseFormScreen() {
                   />
                 </View>
               </View>
+            </FormSection>
+          )}
+
+          {/* 012 Fase B2 (FR-019): apresentação física do injetável (captura/correção). */}
+          {needsContainer && (
+            <FormSection title="Apresentação">
+              <FormSelect
+                name="injection_container"
+                label="Como vem embalado"
+                value={injectionContainer}
+                options={[
+                  { value: '', label: 'Selecione (opcional)' },
+                  ...INJECTION_CONTAINERS.map((c) => ({ value: c, label: INJECTION_CONTAINER_LABELS[c] })),
+                ]}
+                onChange={(_n, v) => setInjectionContainer(v)}
+                helperText="Ex.: caneta, ampola — usado para mostrar quantas aplicações restam."
+              />
             </FormSection>
           )}
 

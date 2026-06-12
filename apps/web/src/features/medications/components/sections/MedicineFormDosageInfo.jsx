@@ -6,6 +6,7 @@ import {
   REGULATORY_CATEGORY_LABELS,
   PRESENTATIONS,
   PRESENTATION_LABELS,
+  LIQUID_PRESENTATIONS,
 } from '@dosiq/core'
 import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
 import { getFieldDescribedBy } from '@utils/formUtils.js'
@@ -25,8 +26,17 @@ export default function MedicineFormDosageInfo({
   medicine,
 }) {
   const liquid = isLiquidUnit(formData.dosage_unit)
-  // Apresentação efetiva: líquido força 'liquido'; caso contrário usa formData.presentation
-  const effectivePresentation = liquid ? 'liquido' : (formData.presentation || 'comprimido')
+  // Apresentação efetiva: unidade /ml exige apresentação líquida, mas NÃO pode engolir
+  // 'injetavel' (GLP-1/insulina são líquidos injetáveis → TTL/container). Se o usuário
+  // já escolheu uma apresentação líquido-compatível, preserva; senão default 'liquido'.
+  const effectivePresentation = liquid
+    ? (LIQUID_PRESENTATIONS.includes(formData.presentation) ? formData.presentation : 'liquido')
+    : (formData.presentation || 'comprimido')
+  // Opções do select: /ml restringe a líquido-compatíveis (sólido não faz sentido);
+  // caso contrário, todas. Restringir (não travar) deixa escolher líquido ↔ injetável.
+  const presentationOptions = liquid
+    ? PRESENTATIONS.filter((p) => LIQUID_PRESENTATIONS.includes(p))
+    : PRESENTATIONS
 
   // Prefill/limpeza no próprio onChange (espelha handlePresentationChange do mobile;
   // review Gemini #658): injetavel → prefill 28 se vazio; outra apresentação → limpa
@@ -102,10 +112,10 @@ export default function MedicineFormDosageInfo({
           name="presentation"
           value={effectivePresentation}
           onChange={handlePresentationChange}
-          disabled={isSubmitting || liquid}
+          disabled={isSubmitting}
           aria-describedby="presentation-hint"
         >
-          {PRESENTATIONS.map((p) => (
+          {presentationOptions.map((p) => (
             <option key={p} value={p}>
               {PRESENTATION_LABELS[p] || p}
             </option>
@@ -113,7 +123,7 @@ export default function MedicineFormDosageInfo({
         </select>
         <small id="presentation-hint" className="field-hint">
           {liquid
-            ? 'Definido automaticamente como Líquido para unidades /ml.'
+            ? 'Unidade /ml: escolha Líquido ou Injetável (injetável habilita validade após aberto).'
             : 'Forma farmacêutica do medicamento (comprimido, injeção, pomada etc.).'}
         </small>
       </div>
@@ -165,14 +175,14 @@ export default function MedicineFormDosageInfo({
         >
           <ShakeEffect trigger={shakeFields.dosage_per_pill}>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="dosage_per_pill"
               name="dosage_per_pill"
               value={formData.dosage_per_pill}
               onChange={handleChange}
               className={errors.dosage_per_pill ? 'error' : ''}
               placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
-              step="0.01"
               disabled={isSubmitting}
               aria-describedby={getFieldDescribedBy('dosage_per_pill', 'dosage_per_pill-hint')}
               aria-invalid={Boolean(errors.dosage_per_pill)}

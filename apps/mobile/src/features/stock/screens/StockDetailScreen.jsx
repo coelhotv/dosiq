@@ -32,7 +32,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl, frequencyDailyFactor } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -72,10 +72,11 @@ export default function StockDetailScreen({ navigation }) {
     const liquid = isLiquidMedicine(medicine)
     return activeProtocols.reduce((acc, p) => {
       const intakesPerDay = p.time_schedule?.length ?? 0
+      // mg → ml via dosage_per_pill; gotas/UI via units_per_ml; frequência aplicada (B2).
       const perDose = liquid
-        ? doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml)
+        ? doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill)
         : Number(p.dosage_per_intake ?? 0)
-      return acc + perDose * intakesPerDay
+      return acc + perDose * intakesPerDay * frequencyDailyFactor(p)
     }, 0)
   }, [medicine, route.params?.dailyConsumption, today])
 

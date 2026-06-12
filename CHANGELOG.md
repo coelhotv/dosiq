@@ -9,6 +9,36 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase B2 — correções do smoke (2026-06-12)
+
+#### Core (@dosiq/core)
+- **Fixed** (`patch`, segurança clínica): `medicineUpdateSchema` não reintroduz mais os `.default()` de `presentation`/`type` em update parcial — no Zod v4 `.partial()` mantém o default, e qualquer update parcial (ex.: gravar `injection_container`) FLIPAVA `injetavel→comprimido` (líquido→sólido) no banco. `presentation`/`type` viram optional sem default no path de update; defaults seguem só no create. Testes anti-flip.
+- **Added** (`minor`, FR-019): `'refil'` no enum `INJECTION_CONTAINERS` (cartucho de caneta recarregável — insulina), distinto da caneta pré-preenchida descartável. Migração `20260612_b2_injection_container_refil.sql` aplicada em prod (autorização PO).
+- **Added** (`minor`): `LIQUID_PRESENTATIONS` (`['liquido','injetavel']`) — fonte única p/ web+mobile não engolirem `injetavel` em unidades `/ml`.
+- **Added** (`patch`, R-270/AP-167): helper canônico `coerceDecimal` (vírgula PT-BR → número) em `formUtils`.
+
+#### Web (4.5.0)
+- **Fixed** (`patch`): unidade `/ml` deixava de TRAVAR a apresentação em "Líquido" — agora restringe a Líquido/Injetável (injetável habilita validade após aberto/TTL) no form de medicamento e no wizard passo 1.
+- **Fixed** (`patch`): edição de tratamento não pede mais densidade (`units_per_ml`) para dose em `mg` (usa `dosage_per_pill`).
+- **Fixed** (`patch`, R-270): todos os inputs numéricos dos forms (medicamento, compra, tratamento, wizard) aceitam vírgula decimal PT-BR (`type=text inputMode=decimal` + `coerceDecimal` no persist/validação) — `type=number` bloqueava `,` e `Number('2,5')=NaN` quebrava o salvamento.
+
+#### Mobile (0.4.0)
+- **Fixed** (`patch`): chip de titulação reflete `titration_status` (Titulando/Estável) no detalhe de medicamento e de tratamento (antes "Estável" hardcoded); saldo de estoque de líquido exibe "ml" (não "un."); edição de compra recupera/corrige `injection_container`; bottom sheet de dose líquida usa a unidade de tomada do tratamento (gotas), não a do medicamento (mg/ml).
+
+### Backend/Infra (DB + cron — 012 Fase B2)
+- **Added** (`minor`, Spec 012 Fase B2, FR-017): Migração `20260612_diabetes_b2_glp1_mg.sql` — `protocols.intake_unit` CHECK ganha `'mg'` (canetas/ampolas GLP-1 dosadas em mg sobre líquido `mg/ml`); `consume_stock_fifo` converte `mg ÷ units_per_ml = ml` no ramo sub-ml (única alteração; assinatura intacta). Nova coluna `medicines.injection_container` (caneta/ampola/frasco_ampola/seringa_preenchida, nullable + CHECK).
+- **Added** (`minor`, Spec 012 Fase B2, FR-021): Titulação N1 — etapa do cronograma marcada `requires_new_medicine` faz o cron emitir notificação-CTA "Hora de trocar de apresentação" (em vez do aviso de avanço normal), sem alterar a dose (registro passivo do cronograma prescrito — SaMD/ADR-062).
+
+### Core (@dosiq/core — 012 Fase B2)
+- **Added** (`minor`, Spec 012 Fase B2, FR-017/FR-018/FR-020): `intake_unit` enum + `'mg'`; novo enum `INJECTION_CONTAINERS`; `titrationStageSchema` ganha `requires_new_medicine`. Helpers `formatConcentrationLabel` ("[X] mg em 1 mL" — confirma a densidade da bula) e `formatStockApplications` (rendimento de estoque em APLICAÇÕES com floor — "≈ 27 canetas", nunca ml cru; overfill não conta). `formatIntakeDose` arredonda a equivalência em ml a 2 casas (evita dízima em mg).
+
+### Web (4.4.0 → 4.5.0)
+- **Added** (`minor`, Spec 012 Fase B2, FR-018/FR-022): Form de tratamento aceita dose em `mg` para injetáveis GLP-1, com concentração (`mg/ml`) **obrigatória** (bloqueia salvar — nunca herda default) e rótulo de confirmação "[X] mg em 1 mL". Wizard de titulação ganha marcação "esta etapa troca de medicamento/apresentação" (nova caneta). Card de estoque exibe rendimento em aplicações para injetáveis em mg.
+- **Added** (`minor`, Spec 012 Fase B2, FR-019): Tela de compra captura a apresentação do injetável (caneta/ampola/...) na primeira compra (persiste no medicamento; fallback "unidade").
+
+### Mobile (0.16.1 → 0.16.2)
+- **Changed** (`patch`, Spec 012 Fase B2): Exibição de dose em `mg` (canetas GLP-1) e arredondamento da equivalência em ml herdados via `@dosiq/core` — sem alteração de UI própria nesta fase (formulário de titulação e captura de apresentação são web). Sem nota de loja.
+
 ### Backend/Infra (cron — 012 Fase B)
 - **Added** (`minor`, Spec 012 Fase B, FR-005b): Avanço AUTOMÁTICO de etapa de titulação por cronograma no cron diário — `stage_started_at + duration_days` esgotado avança `current_stage_index` (múltiplas etapas de uma vez se vencidas; `stage_started_at` novo = fim acumulado da etapa anterior, fiel ao cronograma mesmo com cron atrasado); última etapa esgotada marca `titration_status='alvo_atingido'`. Notificação `titration_alert` agora dispara **só no evento** de avanço ("Etapa N/M iniciada conforme o cronograma", sem CTA de dose — SaMD/ADR-062).
 - **Fixed** (`patch`, Spec 012 Fase B, T009): Cron de titulação disparava `titration_alert` TODO dia para TODO protocolo em titulação (spam sem informação nova) e não carregava `stage_started_at` no select (R-267) — não tinha como saber se a transição venceu.

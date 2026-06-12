@@ -1,4 +1,5 @@
 import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { coerceDecimal } from '@dosiq/core'
 
 export const getInitialFormData = (initialValues) => {
   const values = initialValues || {}
@@ -15,12 +16,15 @@ export const getInitialFormData = (initialValues) => {
     pharmacy: values.pharmacy || '',
     laboratory: values.laboratory || '',
     notes: values.notes || '',
+    // 012 Fase B2 (FR-019): apresentação física do injetável, capturada na 1ª
+    // compra (persiste no medicine, não no stock). '' = não informado.
+    injection_container: values.injection_container || '',
   }
 }
 
 // quantity (ml) derivada de frascos × volume p/ líquidos.
 const liquidTotalMl = (formData) =>
-  parseFloat(formData.num_bottles) * parseFloat(formData.volume_per_bottle)
+  coerceDecimal(formData.num_bottles) * coerceDecimal(formData.volume_per_bottle)
 
 export const validateStockForm = (formData, isLiquid = false) => {
   const newErrors = {}
@@ -33,17 +37,19 @@ export const validateStockForm = (formData, isLiquid = false) => {
     if (!formData.num_bottles || formData.num_bottles <= 0) {
       newErrors.num_bottles = 'Informe o número de frascos (maior que zero)'
     }
-    if (!formData.volume_per_bottle || formData.volume_per_bottle <= 0) {
+    const volume = coerceDecimal(formData.volume_per_bottle)
+    if (Number.isNaN(volume) || volume <= 0) {
       newErrors.volume_per_bottle = 'Informe o volume por frasco em ml (maior que zero)'
     }
-    if (formData.total_price && isNaN(formData.total_price)) {
+    if (formData.total_price && isNaN(coerceDecimal(formData.total_price))) {
       newErrors.total_price = 'Deve ser um número'
     }
   } else {
-    if (!formData.quantity || formData.quantity <= 0) {
+    const qty = coerceDecimal(formData.quantity)
+    if (Number.isNaN(qty) || qty <= 0) {
       newErrors.quantity = 'Quantidade deve ser maior que zero'
     }
-    if (formData.unit_price && isNaN(formData.unit_price)) {
+    if (formData.unit_price && isNaN(coerceDecimal(formData.unit_price))) {
       newErrors.unit_price = 'Deve ser um número'
     }
   }
@@ -67,7 +73,7 @@ export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = fals
 
   if (isLiquid) {
     const totalMl = liquidTotalMl(formData)
-    const totalPrice = formData.total_price ? parseFloat(formData.total_price) : 0
+    const totalPrice = formData.total_price ? coerceDecimal(formData.total_price) : 0
     // Preço por ml (4 casas — review #651 trunca p/ não inflar centavos no FIFO).
     const unitPrice = totalPrice > 0 && totalMl > 0 ? Math.floor((totalPrice / totalMl) * 10000) / 10000 : 0
     return { ...base, quantity: totalMl, unit_price: unitPrice }
@@ -75,7 +81,7 @@ export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = fals
 
   return {
     ...base,
-    quantity: parseFloat(formData.quantity),
-    unit_price: formData.unit_price ? parseFloat(formData.unit_price) : 0,
+    quantity: coerceDecimal(formData.quantity),
+    unit_price: formData.unit_price ? coerceDecimal(formData.unit_price) : 0,
   }
 }

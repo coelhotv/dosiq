@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatConcentration } from '@dosiq/core'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
 import { X, CheckCircle2, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -335,6 +335,9 @@ export default function DoseActionSheet({
                   <Text style={styles.headerSub}>
                     {(() => {
                       const qty = instance.dosage_per_intake
+                      // Líquido (022): unidade de TOMADA do tratamento (gotas/ml/UI), não a
+                      // unidade do medicamento — ex: "20 gotas", nunca "20 mg/ml".
+                      if (isLiquidMedicine(instance)) return formatDose(qty, instance.intake_unit || 'ml')
                       const unit = instance.dosage_unit?.toLowerCase()
                       if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
                       if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`

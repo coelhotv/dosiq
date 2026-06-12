@@ -30,6 +30,7 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
     duration_days: 7,
     dosage: 1,
     description: '',
+    requires_new_medicine: false,
   })
 
   useEffect(() => {
@@ -45,8 +46,8 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
     const newStages = [...stages, { ...currentStage, dosage }]
     setStages(newStages)
     onChange(newStages)
-    // Reset form with previous values as convenience, but clear note
-    setCurrentStage((prev) => ({ ...prev, description: '' }))
+    // Reset form with previous values as convenience, but clear note + flag de troca
+    setCurrentStage((prev) => ({ ...prev, description: '', requires_new_medicine: false }))
   }
 
   const handleRemoveStage = (index) => {
@@ -130,6 +131,19 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
                     onChange={(e) => handleUpdateStage(index, 'description', e.target.value)}
                   />
                 </div>
+
+                <div className="form-group-mini full-width">
+                  <label className="checkbox-inline">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(stage.requires_new_medicine)}
+                      onChange={(e) =>
+                        handleUpdateStage(index, 'requires_new_medicine', e.target.checked)
+                      }
+                    />
+                    Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
+                  </label>
+                </div>
               </div>
 
               <button
@@ -191,6 +205,19 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
             onChange={(e) => setCurrentStage((prev) => ({ ...prev, description: e.target.value }))}
             className="input-note"
           />
+        </div>
+
+        <div className="input-group">
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={Boolean(currentStage.requires_new_medicine)}
+              onChange={(e) =>
+                setCurrentStage((prev) => ({ ...prev, requires_new_medicine: e.target.checked }))
+              }
+            />
+            Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
+          </label>
         </div>
 
         {/* "Gravar" (não "Adicionar"): preencher os campos NÃO cria a etapa — o clique
