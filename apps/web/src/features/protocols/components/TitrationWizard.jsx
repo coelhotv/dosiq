@@ -65,9 +65,11 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
   // R-270 (012 Fase B): dose decimal aceita vírgula PT-BR ("0,25" → 0.25).
   // Input text+inputMode decimal — o type=number nativo rejeita vírgula. Digitação
   // mantém o texto cru (senão "0," vira 0 no meio da digitação); normaliza no blur.
+  // Desmame/titulação: 0 é dose de negócio válida (etapa de pausa) → parsed >= 0.
   const handleDosageBlur = (index, raw) => {
     const parsed = parseFloat(String(raw ?? '').replace(',', '.'))
-    if (!Number.isNaN(parsed) && parsed > 0) handleUpdateStage(index, 'dosage', parsed)
+    if (!Number.isNaN(parsed) && parsed >= 0) handleUpdateStage(index, 'dosage', parsed)
+    else handleUpdateStage(index, 'dosage', '')
   }
 
   const suffix = intakeSuffix(intakeUnit, medicine)

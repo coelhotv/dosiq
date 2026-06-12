@@ -26,6 +26,9 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
   // consumidor — usuário clicava e nada acontecia (smoke PO 2026-06-11).
   const [actionError, setActionError] = useState(null)
   const errorTimerRef = useRef(null)
+  // Ordem canônica de hooks (States → Memos → Effects → Handlers): cleanup do
+  // timer antes dos handlers, sem dependência deles.
+  useEffect(() => () => clearTimeout(errorTimerRef.current), [])
   const showActionError = useCallback((err) => {
     setActionError(friendlyRegisterError(err))
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
@@ -35,7 +38,6 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
     setActionError(null)
   }, [])
-  useEffect(() => () => clearTimeout(errorTimerRef.current), [])
 
   // Registra dose DIRETAMENTE sem modal (1-click experience)
   const handleRegisterDoseQuick = useCallback(

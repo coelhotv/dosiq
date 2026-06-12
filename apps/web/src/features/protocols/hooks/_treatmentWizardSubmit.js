@@ -15,7 +15,7 @@ async function resolveMedicine(existing, data) {
     presentation: isLiquid ? 'liquido' : data.presentation || 'comprimido',
     // TTL pós-abertura: só injetável persiste (guard idêntico ao MedicineForm)
     shelf_life_days:
-      !isLiquid && data.presentation === 'injetavel' && data.shelf_life_days !== ''
+      !isLiquid && data.presentation === 'injetavel' && data.shelf_life_days
         ? Number(data.shelf_life_days)
         : null,
     laboratory: data.laboratory || null,

@@ -718,11 +718,18 @@ async function _processProtocolTitration(userId, protocol, dispatcher, correlati
   };
   if (due.reachedTarget) updatePayload.titration_status = 'alvo_atingido';
 
-  const { error: updateErr } = await supabase
+  // Trava otimista (AP-221): confirma que a linha ainda está na etapa esperada
+  // antes de avançar. Se o usuário mexeu na titulação manualmente entre o SELECT
+  // do cron e este UPDATE, PostgREST faz no-op (0 linhas, sem erro) → não dispara
+  // notificação de avanço sobre estado obsoleto.
+  const { data: updatedRows, error: updateErr } = await supabase
     .from('protocols')
     .update(updatePayload)
-    .eq('id', protocol.id);
+    .eq('id', protocol.id)
+    .eq('current_stage_index', protocol.current_stage_index ?? 0)
+    .select('id');
   if (updateErr) throw updateErr; // best-effort por protocolo no caller (R-245)
+  if (!updatedRows || updatedRows.length === 0) return; // etapa mudou sob o cron → aborta
 
   const medicine = protocol.medicine || {};
   const schedule = protocol.titration_schedule;

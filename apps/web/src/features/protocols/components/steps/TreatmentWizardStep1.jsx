@@ -121,7 +121,7 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
           ))}
         </select>
       </label>
-      {(medicineData.presentation === 'injetavel') && (
+      {(!medicineData.dosage_unit?.endsWith('/ml') && medicineData.presentation === 'injetavel') && (
         <label className="wizard__label">
           Validade após aberto (dias)
           <input
