@@ -108,9 +108,11 @@
 > - **Consumo diário de estoque** aplica `frequencyDailyFactor` (semanal/alternados não consomem
 >   todo dia) — base da Fase B4.
 
-### Fase B3 — `units_per_ml` default NULL + fallback unit-aware (PR 2c)
+### Fase B3 — `units_per_ml` default NULL + fallback unit-aware + concentração c/ denominador (PR 2c)
 > Débito do FR-013b exposto no smoke da B2. O default `20` (blanket) da coluna carimba 20 em todo
 > líquido — errado p/ UI (≈100/ml). mg já saiu dessa conta (usa `dosage_per_pill`).
+> **Escopo (decisão PO 2026-06-12):** hardening units_per_ml (FR-023/024/025, **ADR-065**) + FR-031
+> concentração com denominador (**ADR-066**). ADRs **proposed** — aprovar antes do código (Const. V).
 - **Coluna default NULL** (FR-023): `ALTER TABLE medicines ALTER COLUMN units_per_ml DROP DEFAULT`.
 - **Backfill derivado do tratamento** (FR-023, decisão PO 2026-06-12): pra cada medicine, inspecionar
   `protocols.intake_unit` associado → `UI→100`, `gotas→20`, `mg→null` (usa `dosage_per_pill`). Sem
@@ -120,12 +122,16 @@
   de tomada** (gotas 20 / UI 100 / mg `dosage_per_pill`); sem valor e sem padrão seguro → erro
   explícito. Remove `COALESCE(...,20)` blanket.
 - **Forms** (FR-025): garantem densidade obrigatória p/ gotas/UI (default não mascara mais ausência).
-- **Concentração com denominador** (FR-031, decisão 2026-06-12 — mesma família "entrada de
-  concentração"): campo de concentração do medicamento ganha seletor de denominador (`1/0,5/0,8 mL`);
-  normaliza p/ mg/ml ao salvar (`valor ÷ denominador`). Storage segue mg/ml (invariante por-1-mL
-  intacto). Denominador digitado vira preferência de exibição (reconstrói "2,5 mg/0,5 mL"). **Rejeitada**
-  a unidade literal `mg/0,5ml` (quebraria `LIKE '%/ml'` + explosão de denominadores). Backlog Opção 3:
-  par `(amount, volume)` em spec futura.
+- **Concentração com denominador** (FR-031, ADR-066): campo `[amount] mg / [denominador ▾] mL`;
+  normaliza `dosage_per_pill = amount ÷ denominador` ao salvar (storage mg/ml, invariante por-1-mL
+  intacto). Denominador persiste em **coluna nova `medicines.concentration_volume_ml`** (NUMERIC,
+  nullable; NULL = "por 1 mL") — é o `volume` do par (amount,volume), seed da Opção 3 (sem rename
+  futuro). Reexibe `amount = dosage_per_pill × concentration_volume_ml`. Inputs decimais R-276.
+  **Rejeitada** a unidade literal `mg/0,5ml` (quebraria `LIKE '%/ml'` + explosão de denominadores).
+- **Migração** (B3): `units_per_ml DROP DEFAULT` + UPDATE backfill + `ADD COLUMN concentration_volume_ml`
+  numa migração; RPC `consume_stock_fifo` reescrita do `pg_get_functiondef` ao vivo (AP-217), assinatura
+  intacta (AP-221). Read-path R-267: Zod `medicineSchema` (+`concentration_volume_ml` nullable, R-082),
+  selects dos forms/detalhe. C1.5 analysis.md obrigatório (Tier 2: migração + RPC + cross-platform).
 
 ### Fase B4 — Modelo de estoque dose-primário (freq ≠ diário) (PR 2d)
 > Falha conceitual do smoke B2: dias corridos enganam (4 canetas semanais = "28 dias") e quebram o

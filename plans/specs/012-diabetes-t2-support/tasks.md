@@ -48,10 +48,13 @@
 - [ ] T029 [US2b] **Titulação N1** (FR-021): etapa do `titration_schedule` com `requires_new_medicine: true` → no auto-avanço (FR-005b, `_processProtocolTitration`) **não altera `expected_dose`**; emite notificação-CTA "Hora de trocar de caneta" (kind/copy novos, SaMD/ADR-062). Wizard permite marcar a flag na etapa. Reusa a trava otimista (AP-221) já no cron.
 - [ ] T030 [P] [C4] Testes: RPC mg debita `mg÷units_per_ml=ml` (pgTAP ou jest server c/ mock); `mg` rejeitado sem `units_per_ml`; formatter mg + floor de rendimento (Ozempic 0,68/caneta 1,5ml/0,25mg → 6 aplicações); container fallback "unidade"; `requires_new_medicine` emite CTA sem mudar dose; Zod↔CHECK sincronizados.
 
-## Phase B3 — units_per_ml default NULL + fallback unit-aware (hardening — PR 2c)
+## Phase B3 — units_per_ml default NULL + fallback unit-aware + concentração com denominador (PR 2c)
 
 > Débito do FR-013b exposto no smoke da B2. mg já saiu da conta (usa dosage_per_pill).
-> Mutação em prod (coluna + RPC) só com autorização explícita do PO.
+> Escopo (decisão PO 2026-06-12): hardening units_per_ml (FR-023/024/025, ADR-065) **+** FR-031
+> concentração com denominador (ADR-066, coluna `concentration_volume_ml`).
+> Mutação em prod (DROP DEFAULT + backfill + coluna nova + RPC) só com autorização explícita do PO.
+> ADR-065/066 estão **proposed** — aprovar antes do código (P2/Const. V).
 
 - [ ] T031 [C1] Verificar prod (MCP, read-only): default atual de `medicines.units_per_ml` (= 20?); contar líquidos `ui/ml` com `units_per_ml=20` (candidatos a backfill errado); confirmar que `dosage_per_pill` está presente nos `mg/ml`. Registrar baseline.
 - [ ] T032 [US3b] **Backfill derivado do tratamento (FR-023, decidido 2026-06-12)**: query que, por medicine, deriva `units_per_ml` da unidade de tomada dos `protocols` associados — `UI→100`, `gotas→20`, `mg→NULL`; sem tratamento ou não-líquido → `NULL`. Validar contra baseline da T031 (quantos linhas mudam); medicine com unidades divergentes → priorizar UI>gotas e logar.
@@ -60,8 +63,9 @@
 - [ ] T035 [US3b] **Core** (FR-024): `doseToMl`/`formatIntakeDose` aplicam fallback unit-aware (gotas 20 / UI 100 / mg dosage_per_pill); sem padrão → retorno honesto (sem conversão fantasma).
 - [ ] T036 [US3b] **Forms** (FR-025): garantir que web+mobile não salvem líquido gotas/UI sem `units_per_ml` (default da coluna não mascara mais). Hints de padrão mantidos (20/100).
 - [ ] T037 [P] [C4] Testes: RPC UI sem densidade → erro (não 20); doseToMl unit-aware; gotas mantém 20; form bloqueia gotas/UI sem densidade; mg inalterado.
-- [ ] T037b [US3b] **Concentração com denominador (FR-031, Opção 1)**: form de medicamento (web+mobile) — campo concentração ganha seletor de denominador (`1/0,5/0,8 mL`); ao salvar normaliza `dosage_per_pill = valor ÷ denominador` (storage segue mg/ml). Persistir denominador como preferência de exibição (coluna nova nullable `concentration_display_denominator` OU só UI-state — decidir; se coluna → migração + autorização PO). Render de volta "X mg/Y mL". NÃO criar unidade literal em `dosage_unit`.
-- [ ] T037c [P] [C4] Testes: normalização 2,5 mg/0,5 mL → 5 mg/ml; 2 mg/0,8 mL → 2,5 mg/ml; denominador 1 mL = passthrough; exibição reconstrói rótulo da caixa.
+- [ ] T037b [US3b] **Migração coluna denominador (FR-031, ADR-066)**: `ALTER TABLE medicines ADD COLUMN IF NOT EXISTS concentration_volume_ml NUMERIC DEFAULT NULL` (NULL = "por 1 mL"). Grants já existem na tabela; sem CHECK (numérico livre > 0 validado no Zod). Aplicar em prod só com autorização PO. Schema Zod `medicineSchema` + `concentration_volume_ml` (nullable, R-082); R-267 read-path (select dos forms/detalhe).
+- [ ] T037c [US3b] **Form concentração com denominador (web+mobile)**: campo `[amount] mg / [denominador ▾] mL` (opções `1/0,5/0,8 mL`); ao salvar normaliza `dosage_per_pill = amount ÷ denominador` (storage mg/ml); persiste `concentration_volume_ml = denominador`. Reexibe `amount = dosage_per_pill × concentration_volume_ml` → "2,5 mg/0,5 mL". Inputs decimais = `text inputMode=decimal` + `coerceDecimal` (R-276). NÃO criar unidade literal em `dosage_unit`.
+- [ ] T037d [P] [C4] Testes denominador: normalização 2,5 mg/0,5 mL → dosage_per_pill 5 + volume 0,5; 2 mg/0,8 mL → 2,5 + 0,8; denominador 1 (ou NULL) = passthrough; reexibição reconstrói o rótulo da caixa; vírgula PT-BR aceita.
 
 ## Phase B4 — Modelo de estoque dose-primário (freq ≠ diário) (PR 2d)
 

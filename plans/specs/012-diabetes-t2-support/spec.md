@@ -395,15 +395,19 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   (Opção 1):** o campo de concentração no form de **medicamento** ganha um **seletor de denominador**
   — `[2,5] mg / [0,5 ▾] mL` (opções `1 mL` / `0,5 mL` / `0,8 mL` / …). Ao salvar, **normaliza p/
   mg/ml** = `valor ÷ denominador` (2,5 ÷ 0,5 = 5). **Armazenamento segue mg/ml** (invariante "número =
-  por 1 mL" intacto → zero drift em RPC/`doseToMl`/formatters/custo). Guardar o denominador digitado
-  como **preferência de exibição** (renderizar de volta "2,5 mg/0,5 mL", familiar à caixa). Mesmo
-  mecanismo cobre `mg/0,8ml` e U-100/200/300 (Fase D) **sem unidades novas**.
-  - **Decisão registrada:** *rejeitada* a criação de unidade literal `mg/0,5ml` em `dosage_unit` —
-    quebraria a detecção de líquido (`LIKE '%/ml'`), o invariante por-1-mL e geraria explosão
-    combinatória de denominadores. A razão é normalizada na **entrada**, não no armazenamento.
-  - **Backlog (Opção 3, futura):** armazenar a concentração como **par `(amount, volume)`** em vez da
-    razão (casa 1:1 com o rótulo; razão derivada). Schema maior; avaliar em spec própria se a
-    preferência-de-exibição da Opção 1 não bastar.
+  por 1 mL" intacto → zero drift em RPC/`doseToMl`/formatters/custo). Mesmo mecanismo cobre
+  `mg/0,8ml` e U-100/200/300 (Fase D) **sem unidades novas**.
+  - **Persistência do denominador (decisão PO 2026-06-12 — ADR-066):** coluna nova
+    `medicines.concentration_volume_ml` (NUMERIC, nullable; `NULL` = "por 1 mL"). Guarda o volume
+    que o rótulo referencia (Mounjaro = `0,5`). Reexibe fiel: `amount = dosage_per_pill ×
+    concentration_volume_ml` → "2,5 mg/0,5 mL". **Nome sem "display"** de propósito: a coluna É o
+    `volume` do par `(amount, volume)` — **1º passo do modelo de concentração** da spec futura
+    (Opção 3); quando ela chegar, `amount` deixa de ser derivado e a coluna já existe (sem rename).
+  - **Decisão registrada:** *rejeitada* a unidade literal `mg/0,5ml` em `dosage_unit` — quebraria a
+    detecção de líquido (`LIKE '%/ml'`), o invariante por-1-mL e geraria explosão combinatória de
+    denominadores. A razão é normalizada na **entrada**, não no armazenamento.
+  - **Backlog (Opção 3, futura):** armazenar a concentração como par `(amount, volume)` direto
+    (razão derivada); `concentration_volume_ml` é a semente. Spec própria.
 
 **Fase B4 — Modelo de estoque dose-primário (frequência ≠ diário)**
 > Falha conceitual exposta no smoke da B2 (2026-06-12). O modelo atual conta **dias corridos**
