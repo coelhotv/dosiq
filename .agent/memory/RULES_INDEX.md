@@ -157,6 +157,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[R-276]** Inputs decimais web = `type="text" inputMode="decimal"` + `coerceDecimal` (@dosiq/core) no persist/validação; NUNCA `type="number"` (bloqueia vírgula PT-BR; `Number('2,5')=NaN` quebra silencioso). Inteiros podem manter `number`. Corolário: ao virar `text`, validar `Number.isNaN(coerceDecimal(v))` antes de comparar magnitude (`'abc' <= 0` é false). Mobile já seguia via AP-167. -> [`rules/react_and_ui/R-276.md`](./rules/react_and_ui/R-276.md)
 - **[R-273]** Modal/form que recebe entidade como prop DEVE ter `key={entity?.id || 'create'}` no caller — `useState(prop)` só inicializa no mount; sem `key`, form fica stale ao trocar registro (AP-222). NÃO usar `useEffect+setState` (`set-state-in-effect` é **error** no projeto) -> [`rules/react_and_ui/R-273.md`](./rules/react_and_ui/R-273.md)
 - **[R-272]** Dose líquida sempre via formatter core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`) com a unidade de tomada (`intake_unit`: gotas|ml|UI), NUNCA `dosage_unit` cru (mg/ml, ui/ml) nem `formatActiveIngredientFormula` (solid-only). Query traz `intake_unit`+`units_per_ml` (R-267). Evidência smoke 022 Fase C -> [`rules/react_and_ui/R-272.md`](./rules/react_and_ui/R-272.md)
 - **[R-265]** Derived state pattern para reset de estado em mudança de prop/dep: comparar `prevDep !== dep` durante render e chamar setState — sem useEffect. Evita `react-hooks/set-state-in-effect` e render extra. Alternativa: `key` prop no pai para remount -> [`rules/react_and_ui/R-265.md`](./rules/react_and_ui/R-265.md)
