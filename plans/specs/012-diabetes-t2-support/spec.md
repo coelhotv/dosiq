@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/012-diabetes-t2-support`
 **Created**: 2026-06-03
-**Status**: in-progress — **Fase A delivered** (PR #658 mergeado 2026-06-11: injetável + TTL biológico; migração + backfill em prod). Fases B-E pendentes. **Re-sincronizada com 022 As-Built em 2026-06-08** (pós-merge #652); Planning finalizado 2026-06-08 — plan.md/analysis.md/tasks.md verificados contra repo+prod, ADR-058..062 accepted.
+**Status**: in-progress — **Fases A+B delivered** (PR #658 2026-06-11: injetável + TTL biológico, migração+backfill prod; PR #659 2026-06-12: GLP-1 base — tolerância frequency-aware ADR-061, titulação ressuscitada shape canônico + auto-avanço por cronograma, carry-over multi-dia). Fases C-E pendentes. **Re-sincronizada com 022 As-Built em 2026-06-08** (pós-merge #652); Planning finalizado 2026-06-08 — plan.md/analysis.md/tasks.md verificados contra repo+prod, ADR-058..062 accepted.
 **Tier**: 2 (épico — DB + core + UI/bot ponta-a-ponta, multi-fase, novos ADRs)
 **Input**: "/devflow specifying 012 - diabetes t2"
 **Pré-requisito**: ✅ **spec 022 (medicamentos líquidos) MERGEADA** (#650 Fase A, #651 Fase B, #652 Fase C — 2026-06-08). Fornece, **já em produção**: `protocols.intake_unit` (`'gotas'|'ml'|'UI'`, CHECK exato R-271), enum `dosage_unit` com `ui/ml`, coluna `medicines.units_per_ml` (razão→ml genérica), `medicines.presentation`, formatters core (`formatIntakeDose`/`formatDoseItem`/`formatDoseHint`/`isLiquidMedicine`/`doseToMl`/`calculateDailyIntake`), e — **crítico** — `consume_stock_fifo` que **já converte `UI`→ml** (migração `20260608_fix_consume_fifo_ui_conversion.sql`). O épico de diabetes **reusa** essa fundação; não a recria. **Impacto:** o núcleo do decremento UI da Fase D já está entregue (ver FR-013).

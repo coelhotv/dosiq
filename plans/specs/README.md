@@ -34,7 +34,7 @@
 | 009 | caregiver-mode | **specified** | próximo grande épico do roadmap; NÃO implementado; nota biomarkers (2026-06-10) |
 | 010 | native-alarm-v2 | **delivered** | PR #634 (mobile 0.10.0, 🔴 corrigido na auditoria — estava "planned"); ADR-055/056 |
 | 011 | notifications-from-instances | **delivered** | PR #633 (reminder ← dose_instances); ADR-057 |
-| 012 | diabetes-t2-support | **in-progress** | Fase A delivered (PR #658, 2026-06-11: injetável+TTL); B-E pendentes; ADR-058..062 accepted; FR-013c/015b adicionados à Fase D pós-smoke |
+| 012 | diabetes-t2-support | **in-progress** | Fases A+B delivered (PR #658 injetável+TTL; PR #659 2026-06-12 GLP-1 base: tolerância frequency-aware, titulação canônica+auto-avanço, carry-over); C-E pendentes; ADR-058..062 accepted; FR-013c/015b → Fase D; B2 (canetas GLP-1) + N2 (titulação plano-nível) a especificar |
 | 013 | whatsapp-bot-adapter | draft | migrated draft |
 | 014 | whatsapp-templates-webhook | draft | migrated draft |
 | 015 | ai-chatbot-mobile | draft | migrated draft |
