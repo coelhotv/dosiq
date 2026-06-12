@@ -71,6 +71,26 @@
 - `dose_instances.expected_dose` congela a etapa de titulação vigente (reusa gerador, FP-1).
 - Marcar crítico = flag `critical_alarm` (spec 010) — sem reimplementar.
 
+### Fase B2 — Canetas/ampolas GLP-1: `intake_unit='mg'` + container + rendimento + titulação N1
+> Fecha a Fase B. Princípio de design (sessão 2026-06-12): **caneta/ampola = lote líquido em ml**;
+> reusa toda a fundação de líquidos da 022. A peça que falta é a **dose em mg** e a exibição do
+> estoque em **aplicações**. Maior risco do épico (migração em CHECK de prod + RPC).
+- **`intake_unit='mg'`** (FR-017): GLP-1 tem `dosage_unit='mg/ml'` → já é líquido (`LIKE '%/ml'`).
+  Migração: `protocols_intake_unit_check` += `'mg'`; `consume_stock_fifo` adiciona `'mg'` ao ramo
+  sub-ml (`IN ('gotas','ui','mg')` → `mg/units_per_ml = ml`) — **única** alteração na RPC, assinatura
+  inalterada (AP-221). `units_per_ml` = mg por ml (concentração da bula).
+- **Concentração obrigatória p/ mg** (FR-018): com mg, `units_per_ml` não pode cair no default 20
+  (erro 80× — Ozempic 0,68 mg/ml). Form de tratamento bloqueia salvar sem densidade; helper de
+  rótulo "[X] mg em [Y] mL" confirma a leitura da caneta. Mesma natureza de FR-013b.
+- **`medicines.injection_container`** (FR-019): enum net-new (caneta/ampola/frasco_ampola/
+  seringa_preenchida), nullable, capturado na 1ª compra; fallback rótulo "unidade". Só rótulos.
+- **Estoque em aplicações** (FR-020): `floor(ml ÷ (dose_mg/units_per_ml))` + container. Floor (sem
+  overfill). Card de estoque + compra (web+mobile). Ampola → TTL não se aplica.
+- **Titulação N1** (FR-021): etapa `requires_new_medicine: true` → auto-avanço (FR-005b) não muda
+  `expected_dose`, emite CTA "hora de trocar de caneta" (SaMD/ADR-062). N2 plano-nível = spec futura.
+- **Reuso máximo**: nenhum formatter novo (cobre ramo mg nos de 022); trava otimista do cron
+  (AP-221) reusada na N1; sufixo do wizard (`intakeSuffix`) reusado.
+
 ### Fase C — `biomarkers_log` + fast-logging + timeline híbrida — ADR-060
 
 > **Design prescritivo (decisões fixadas pelo PO).** Fonte canônica:

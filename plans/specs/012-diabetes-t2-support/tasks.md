@@ -30,6 +30,24 @@
 - [x] T011b [US2] UX dose semanal pendente multi-dia (FR-008b): carry-over com rótulo relativo ("há 2 dias"); PriorityCard inclui dentro da tolerância; **sem re-notificação** (`notified_at` idempotente); `missed` só após tolerância (sweep R-246). Web + mobile.
 - [x] T012 [P] [C4] Testes: tolerância semanal > 120 (perdão 72h coberto); diário 1×/dia mantém 120; `expected_dose` correto por etapa; **auto-avanço de etapa por tempo**; sweep `pending→missed` só após janela; **rótulo relativo multi-dia**.
 
+## Phase B2 — Canetas/ampolas GLP-1: intake_unit='mg' + container + rendimento + titulação N1 (PR 2b) — fecha Fase B
+
+> Modelo decidido na sessão de design 2026-06-12. Caneta/ampola = lote líquido em ml (reusa 022);
+> a peça que falta é a dose em **mg** e o estoque em **aplicações**. Maior risco do épico: migração
+> em CHECK de prod + RPC. **Mutação em prod só com autorização explícita do PO** (hard rule).
+> Ordem de implementação: migração+RPC → Zod → formatters core → form tratamento → compra/estoque →
+> titulação N1 → testes.
+
+- [ ] T023 [C1] **Verificar prod (MCP, read-only)** antes de codar: confirmar `protocols_intake_unit_check` = `IN ('gotas','ml','UI')` (alvo: +`'mg'`); `consume_stock_fifo(uuid,uuid,numeric,uuid)` ramo líquido `dosage_unit LIKE '%/ml'` + sub-ml `IN ('gotas','ui')` (alvo: +`'mg'`); ausência de coluna `medicines.injection_container`. Registrar baseline. **Confirmado 2026-06-12 na escrita da spec — re-verificar no momento da migração (drift).**
+- [ ] T024 [US2b] **Migração** `docs/migrations/2026XXXX_diabetes_b2_glp1_mg.sql` (FR-017/FR-019): (a) `ALTER ... DROP/ADD CONSTRAINT protocols_intake_unit_check` → `IN ('gotas','ml','UI','mg')` (R-271 exato); (b) `ALTER TABLE medicines ADD COLUMN injection_container text NULL` + CHECK `IN ('caneta','ampola','frasco_ampola','seringa_preenchida')`; (c) GRANTs já existem na tabela (coluna nova não precisa re-grant — confirmar). **Aplicar em prod só com autorização PO.**
+- [ ] T024b [US2b] **RPC `consume_stock_fifo`** (FR-017): adicionar `'mg'` ao ramo sub-ml — `lower(intake_unit) IN ('gotas','ui','mg')` → `ROUND(p_quantity/units_per_ml,2)`. **Única alteração**; assinatura inalterada (AP-221). `SET search_path=''`/`public.` qualificado preservados. Migração separada ou na mesma de T024.
+- [ ] T025 [US2b] **Zod** (FR-017/FR-019): enum `intake_unit` de 022 ganha `'mg'` (sincronizado com CHECK, R-082/R-271); novo enum `INJECTION_CONTAINERS` PT; cap de dose mg revisado (frações 0,25–15). `safeParse`; `.nullable().optional()`.
+- [ ] T026 [US2b] **Formatters core** (FR-017/FR-020): cobrir ramo `mg` em `formatIntakeDose`/`formatDoseItem` (mg lowercase, R-272 — **nenhum formatter novo**); helper de **rendimento em aplicações** `floor(ml_restante ÷ (dose_mg/units_per_ml))` + rótulo do container (FR-020); helper de **rótulo de concentração** "[X] mg em [Y] mL" (FR-018). Em `@dosiq/core`.
+- [ ] T027 [US2b] **Form de tratamento** (FR-018/FR-022): `intake_unit='mg'` selecionável p/ injetável; `units_per_ml` **obrigatória** quando mg (bloqueia salvar; nunca default 20) com helper "[X] mg em [Y] mL"; sufixo do wizard de titulação = "mg" (reusa `intakeSuffix`); etapa pode marcar `requires_new_medicine` (FR-021). Web (+ mobile se aplicável — confirmar em T023).
+- [ ] T028 [US2b] **Compra/estoque** (FR-019/FR-020/FR-022): capturar `injection_container` na 1ª compra (fallback "unidade"); informar volume do lote (ml) → exibir rendimento em aplicações (floor) no card de estoque + tela de compra. Web + mobile. Ampola → TTL biológico (FR-002) não se aplica.
+- [ ] T029 [US2b] **Titulação N1** (FR-021): etapa do `titration_schedule` com `requires_new_medicine: true` → no auto-avanço (FR-005b, `_processProtocolTitration`) **não altera `expected_dose`**; emite notificação-CTA "Hora de trocar de caneta" (kind/copy novos, SaMD/ADR-062). Wizard permite marcar a flag na etapa. Reusa a trava otimista (AP-221) já no cron.
+- [ ] T030 [P] [C4] Testes: RPC mg debita `mg÷units_per_ml=ml` (pgTAP ou jest server c/ mock); `mg` rejeitado sem `units_per_ml`; formatter mg + floor de rendimento (Ozempic 0,68/caneta 1,5ml/0,25mg → 6 aplicações); container fallback "unidade"; `requires_new_medicine` emite CTA sem mudar dose; Zod↔CHECK sincronizados.
+
 ## Phase C — biomarkers_log + fast-logging + timeline híbrida (PR 3) — ADR-060
 
 > **Design prescritivo (decisões PO fixadas).** Consultar SEMPRE em dúvida de pixel/comportamento:

@@ -299,6 +299,68 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   enquanto dentro da tolerância; **sem re-notificação** além do disparo original (`notified_at`
   idempotente — evita spam de 3 dias); após a tolerância vira `missed` pelo sweep normal (R-246).
 
+**Fase B2 — Canetas/ampolas GLP-1 (`intake_unit='mg'` + container + rendimento + titulação N1)**
+> Fecha a Fase B. Modelo decidido na sessão de design 2026-06-12 (estresse de cenários
+> Ozempic/Wegovy `mg/ml` e Mounjaro `mg/0,5ml`). Princípio: caneta/ampola = **lote líquido em
+> ml** (reusa toda a fundação de líquidos da 022); a peça que falta é registrar a **dose em mg** e
+> apresentar o estoque em **aplicações**, não em ml cru.
+
+- **FR-017 — `intake_unit='mg'` (núcleo)**: GLP-1 é dosado em mg sobre um líquido de concentração
+  `mg/ml` (`dosage_unit='mg/ml'`, `units_per_ml`=mg por ml, já capturada no form de tratamento via
+  022). Habilitar `'mg'` como unidade de tomada:
+  - **Migração CHECK** `protocols_intake_unit_check`: `IN ('gotas','ml','UI')` → **+`'mg'`**
+    (R-271 — CHECK e enum Zod sincronizados, exato).
+  - **RPC `consume_stock_fifo(uuid,uuid,numeric,uuid)`**: GLP-1 já cai no ramo líquido
+    (`dosage_unit LIKE '%/ml'` TRUE). Adicionar `'mg'` ao ramo sub-ml de conversão por densidade:
+    `lower(intake_unit) IN ('gotas','ui','mg')` → `v_remaining := ROUND(p_quantity/units_per_ml,2)`
+    (`mg ÷ mg/ml = ml`). **Única alteração na RPC**; assinatura inalterada (AP-221: nenhum caller
+    muda). `units_per_ml=0/NULL` cai no default `20` herdado — **inadequado p/ mg** → ver FR-018.
+  - **Zod**: enum de `intake_unit` ganha `'mg'`; caps revisados (mg de GLP-1 são frações: 0,25–15).
+  - **Formatters core (022)**: exibir dose em `mg` (lowercase, R-272); reusar `formatIntakeDose`/
+    `formatDoseItem` — **nenhum formatter novo**, só cobrir o ramo `mg`.
+
+- **FR-018 — concentração obrigatória p/ mg (segurança clínica)**: com `intake_unit='mg'` a
+  densidade `units_per_ml` é **obrigatória e não pode cair no default 20** (erro 80× — Ozempic é
+  0,68 mg/ml). Validação no form de tratamento: GLP-1 (injetável + dose em mg) exige `units_per_ml`
+  preenchida antes de salvar. Helper de rótulo no input: **"[X] mg em [Y] mL"** (ex.: "0,68 mg em
+  1 mL") computa/confirma a densidade que o usuário lê na bula/caneta — reduz erro de digitação.
+  Mesma natureza do FR-013b (risco de default silencioso), mas para mg.
+
+- **FR-019 — `medicines.injection_container` (enum, net-new)**: nem todo injetável é caneta
+  (tirzepatida tem ampola/frasco). Coluna nova `injection_container text NULL` com CHECK
+  `IN ('caneta','ampola','frasco_ampola','seringa_preenchida')`. **Capturada na 1ª compra** do lote
+  (não no cadastro do medicamento — é atributo da apresentação comprada); fallback de rótulo
+  **"unidade"** quando NULL. Grants + RLS conforme template (CLAUDE.md). Não afeta o cálculo de
+  estoque — só rótulos da UI.
+
+- **FR-020 — estoque exibido em APLICAÇÕES, nunca ml cru**: o lote é guardado em ml
+  (`stock.quantity`), mas o usuário pensa em "quantas aplicações restam". Exibir
+  **`floor(ml_restante ÷ ml_por_aplicação)`** com o rótulo do container (FR-019): "≈ 3 aplicações"
+  / "≈ 3 canetas". `ml_por_aplicação = dose_mg ÷ units_per_ml`. **Floor** (nunca arredonda p/ cima
+  — overfill da caneta não é dose disponível). Superfícies: card de estoque (web+mobile), tela de
+  compra (rendimento estimado ao informar volume/quantidade). Ampola → **TTL biológico (FR-002) não
+  se aplica** (dose única); caneta multi-dose mantém o TTL.
+
+- **FR-021 — titulação N1 cross-força (etapa que troca de medicamento)**: a titulação de hoje
+  (FR-005) muda só a **dose** dentro do mesmo medicamento — serve metoprolol (mais comprimidos,
+  mesma concentração), mas **quebra para GLP-1** quando a escada exige concentração maior = **novo
+  cadastro** (ex.: caneta de introdução 0,25 → caneta 0,5). Marcar a etapa do `titration_schedule`
+  com **`requires_new_medicine: true`**: ao vencer, o auto-avanço (FR-005b) **não muda
+  `expected_dose`** — emite uma **notificação-CTA** *"Hora de trocar de caneta: a próxima etapa usa
+  uma apresentação diferente"* (registro passivo do cronograma prescrito → dentro de SaMD/ADR-062;
+  o app não escolhe a caneta, só avisa que a etapa cadastrada pede troca). Titulação plano-nível
+  completa (etapas referenciando medicamento+dose, pausa/ativa protocolos) = **spec N2 futura**,
+  fora do 012.
+
+- **FR-022 — UX de cadastro→tratamento→compra (3 etapas, deltas vs hoje)**:
+  - **Medicamento**: sem mudança (forma já tem `presentation` da Fase A).
+  - **Tratamento**: ao escolher `intake_unit='mg'` (injetável), exibir o helper de rótulo "[X] mg em
+    [Y] mL" (FR-018) e tornar `units_per_ml` obrigatória; sufixo do wizard de titulação passa a
+    "mg" (reusa `intakeSuffix` da Fase B); etapa pode marcar `requires_new_medicine` (FR-021).
+  - **Compra/estoque**: capturar `injection_container` (FR-019) na 1ª compra; informar volume do
+    lote (ml — ex.: caneta 1,5 ml) → exibir rendimento em aplicações (FR-020). Volume vive **na
+    compra**, sem coluna nova em medicines.
+
 **Fase C — `biomarkers_log` + fast-logging + timeline híbrida**
 - **FR-009**: Nova tabela `public.biomarkers_log` genérica: `id`, `user_id`, `type` (text, default
   `'glicemia'`; extensível peso/PA/batimentos), `value` (numeric), **`value_secondary` (numeric,
@@ -396,12 +458,14 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 
 ### Key Entities
 - **Medicine**: `presentation` (enum PT — FR-001; **já existe em prod via 022**) + `units_per_ml`
-  (razão→ml genérica — FR-013; **já existe em prod via 022**, capturada no tratamento) + **novo
-  net-new desta spec:** `shelf_life_days` (FR-002). Injetável = `presentation='injetavel'`.
+  (razão→ml genérica — FR-013; **já existe em prod via 022**, capturada no tratamento) + **net-new
+  desta spec:** `shelf_life_days` (FR-002) + `injection_container` (enum caneta/ampola/frasco_ampola/
+  seringa_preenchida, nullable — FR-019, capturado na 1ª compra). Injetável = `presentation='injetavel'`.
 - **Stock**: + `opened_at` (inferido na 1ª tomada). Lote = unidade física de doses (caneta/cartucho
-  transparente). `quantity` = UI/ml restantes.
+  transparente). `quantity` = UI/ml restantes; exibição em **aplicações** (floor — FR-020), nunca ml cru.
 - **Protocol**: reusa `titration_schedule`/`current_stage_index`/`stage_started_at`/
-  `titration_status` (existentes) + `intake_unit` (de 022). Cadência `semanal` (existente).
+  `titration_status` (existentes) + `intake_unit` (de 022, **+`'mg'` net-new FR-017**). Etapa do
+  schedule pode marcar `requires_new_medicine` (FR-021). Cadência `semanal` (existente).
 - **dose_instances**: `expected_dose` congela etapa de titulação (FP-1); `tolerance_minutes`
   sem cap (FR-007); `critical_alarm` (spec 010).
 - **biomarkers_log** (net-new): genérico, RLS, ordenação temporal na timeline (FP-3).
@@ -419,6 +483,13 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
 - **SC-002**: GLP-1 semanal com titulação funciona ponta-a-ponta (criação→geração→timeline);
   `expected_dose` congela a etapa correta; tolerância semanal cobre a janela de perdão (>120 min);
   titulação existente auditada/corrigida.
+- **SC-002b** (Fase B2): GLP-1 em mg funciona ponta-a-ponta — `intake_unit='mg'` aceito (CHECK+Zod
+  sincronizados); `consume_stock_fifo` debita `mg ÷ units_per_ml = ml` correto via FIFO; `units_per_ml`
+  obrigatória p/ mg (nunca cai no default 20) com helper "[X] mg em [Y] mL"; `injection_container`
+  capturado na 1ª compra (fallback "unidade"); estoque exibido em **aplicações** com floor (Ozempic
+  0,68 mg/ml, caneta 1,5 ml, dose 0,25 mg → "≈ 6 aplicações", nunca ml cru); etapa de titulação
+  `requires_new_medicine` emite notificação-CTA de troca sem alterar `expected_dose` (SaMD). Cobertura
+  por testes (RPC mg via pgTAP/jest server, formatters core mg, floor de rendimento).
 - **SC-003**: `biomarkers_log` genérico registra glicemia (e suporta peso/PA/batimentos sem
   migration); fast-logging com contexto manual; biomarcador na timeline por instante via adapter
   (zero alteração do builder/UI de dose); sem meta.
