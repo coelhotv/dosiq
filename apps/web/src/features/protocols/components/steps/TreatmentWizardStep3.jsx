@@ -19,13 +19,12 @@ export default function TreatmentWizardStep3({
           ? 'Quantidade (gotas)'
           : 'Quantidade (un.)'}
         <input
-          type="number"
+          type="text"
+          inputMode="decimal"
           className="wizard__input"
           value={stockData.quantity}
           onChange={(e) => updateStock('quantity', e.target.value)}
           placeholder="60"
-          min="0"
-          step="any"
         />
         {medicine && (
           <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
@@ -47,13 +46,12 @@ export default function TreatmentWizardStep3({
       <label className="wizard__label">
         Preço unitário (R$)
         <input
-          type="number"
+          type="text"
+          inputMode="decimal"
           className="wizard__input"
           value={stockData.unit_price}
           onChange={(e) => updateStock('unit_price', e.target.value)}
-          placeholder="0.75"
-          min="0"
-          step="0.01"
+          placeholder="0,75"
         />
       </label>
 

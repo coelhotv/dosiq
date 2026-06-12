@@ -112,6 +112,15 @@
   margin: 0;
 }
 
+/* 012 Fase B2 (FR-020): rendimento em aplicações (injetável GLP-1 em mg). */
+.stock-card-r__applications {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--color-on-surface-variant);
+  margin: 2px 0 0;
+  opacity: 0.85;
+}
+
 /* ── Dias restantes — número editorial ── */
 .stock-card-r__days {
   display: flex;

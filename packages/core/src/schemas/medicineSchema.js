@@ -53,6 +53,36 @@ export const PRESENTATION_LABELS = {
   outro: 'Outro',
 }
 
+// Apresentações compatíveis com unidade líquida (/ml). Injetável É líquido (GLP-1/
+// insulina) e dirige TTL biológico + container — NÃO pode ser engolido por 'liquido'
+// só porque a unidade é /ml. Usado pelos forms (web+mobile+wizard) p/ NÃO travar a
+// seleção em 'liquido' quando o usuário escolheu 'injetavel'. (smoke PO 2026-06-12)
+export const LIQUID_PRESENTATIONS = ['liquido', 'injetavel']
+
+// 012 Fase B2 (FR-019): apresentação física do injetável comprado. Capturado na
+// 1ª compra. Sincronizado com CHECK medicines_injection_container_check (R-271).
+// NULL = não informado → rótulo "unidade". Só rótulo de UI; não afeta estoque.
+// 'refil' = cartucho de caneta recarregável (comum em insulina), distinto da
+// caneta pré-preenchida descartável ('caneta', comum em GLP-1).
+export const INJECTION_CONTAINERS = ['caneta', 'refil', 'ampola', 'frasco_ampola', 'seringa_preenchida']
+
+export const INJECTION_CONTAINER_LABELS = {
+  caneta: 'Caneta (pré-preenchida)',
+  refil: 'Refil (cartucho)',
+  ampola: 'Ampola',
+  frasco_ampola: 'Frasco-ampola',
+  seringa_preenchida: 'Seringa preenchida',
+}
+
+// Rótulo singular p/ contagem de aplicações no estoque (FR-020). Fallback "unidade".
+export const INJECTION_CONTAINER_SINGULAR = {
+  caneta: 'caneta',
+  refil: 'refil',
+  ampola: 'ampola',
+  frasco_ampola: 'frasco',
+  seringa_preenchida: 'seringa',
+}
+
 export const REGULATORY_CATEGORIES = [
   'Genérico',
   'Similar',
@@ -152,6 +182,11 @@ const medicineObject = z.object({
       .optional()
   ),
 
+  // 012 Fase B2 (FR-019): apresentação física do injetável comprado (caneta/
+  // ampola/...). NULL = não informado (rótulo "unidade"). Capturado na 1ª compra.
+  // Sincronizado com CHECK medicines_injection_container_check (R-271).
+  injection_container: z.enum(INJECTION_CONTAINERS).nullable().optional(),
+
   type: z.enum(MEDICINE_TYPES).default('medicamento'),
 
   therapeutic_class: z
@@ -182,8 +217,18 @@ export const medicineCreateSchema = medicineSchema
 /**
  * Schema para atualização de medicamento (campos opcionais).
  * Base no objeto (não no refined) — updates parciais não reavaliam o refine de líquido.
+ *
+ * ⚠️ CRÍTICO: `.partial()` NÃO remove os `.default()` no Zod v4 — um campo omitido com
+ * default materializa o valor padrão no parse, e o `update()` o grava no DB. Sem o override
+ * abaixo, `update({ injection_container })` reescreveria `presentation='comprimido'` e
+ * `type='medicamento'`, FLIPANDO injetável→comprimido (líquido→sólido) — corrupção clínica.
+ * Por isso `presentation`/`type` (os únicos campos com `.default()`) viram optional sem default
+ * no path de atualização. Defaults seguem só no create (medicineCreateSchema).
  */
-export const medicineUpdateSchema = medicineObject.partial()
+export const medicineUpdateSchema = medicineObject.partial().extend({
+  presentation: z.enum(PRESENTATIONS).optional(),
+  type: z.enum(MEDICINE_TYPES).optional(),
+})
 
 /**
  * Schema completo com ID (para validação de dados do backend)

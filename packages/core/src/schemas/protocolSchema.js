@@ -64,19 +64,28 @@ export const titrationStageSchema = z.object({
     .max(500, 'Descrição não pode ter mais de 500 caracteres')
     .optional()
     .nullable(),
+
+  // 012 Fase B2 (FR-021): etapa cuja escada prescrita exige TROCAR de medicamento
+  // (GLP-1 cross-força: caneta 0,25 → caneta 0,5 = novo cadastro). Quando true, o
+  // auto-avanço (FR-005b) NÃO altera expected_dose — emite notificação-CTA "hora
+  // de trocar". Registro passivo do cronograma prescrito (SaMD/ADR-062). Default
+  // false (titulação intra-medicamento clássica, ex.: metoprolol).
+  requires_new_medicine: z.boolean().optional().nullable(),
 })
 
 /**
  * Schema base para protocolo
  */
-// Unidades de TOMADA (físicas) p/ líquidos — 022. Sincronizado com CHECK
-// protocols_intake_unit_check ('gotas','ml','UI') (R-082/R-271). 'UI' maiúsculo.
-export const INTAKE_UNITS = ['gotas', 'ml', 'UI']
+// Unidades de TOMADA (físicas) p/ líquidos — 022 + 'mg' (012 Fase B2, GLP-1).
+// Sincronizado com CHECK protocols_intake_unit_check ('gotas','ml','UI','mg')
+// (R-082/R-271). 'UI' maiúsculo. 'mg' = dose injetável GLP-1 sobre líquido mg/ml.
+export const INTAKE_UNITS = ['gotas', 'ml', 'UI', 'mg']
 
 export const INTAKE_UNIT_LABELS = {
   gotas: 'gotas',
   ml: 'ml',
   UI: 'UI',
+  mg: 'mg',
 }
 
 export const protocolSchema = z.object({
@@ -191,7 +200,7 @@ export const protocolCreateSchema = protocolSchema
       return true
     },
     {
-      message: 'Defina a unidade de tomada (gotas, ml ou UI) para medicamentos líquidos.',
+      message: 'Defina a unidade de tomada (gotas, ml, UI ou mg) para medicamentos líquidos.',
       path: ['intake_unit'],
     }
   )

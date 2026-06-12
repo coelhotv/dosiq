@@ -1,22 +1,28 @@
 import { medicineService, protocolService, stockService } from '@shared/services'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { coerceDecimal, LIQUID_PRESENTATIONS } from '@dosiq/core'
 
 async function resolveMedicine(existing, data) {
   if (existing) return existing
   const isLiquid = data.dosage_unit?.endsWith('/ml')
+  // /ml exige apresentação líquida, mas preserva 'injetavel' (líquido + TTL/container);
+  // não engole o injetável só por ser /ml (mesma regra do MedicineForm).
+  const presentation = isLiquid
+    ? (LIQUID_PRESENTATIONS.includes(data.presentation) ? data.presentation : 'liquido')
+    : data.presentation || 'comprimido'
   return medicineService.create({
     name: data.name,
     type: data.type,
-    dosage_per_pill: Number(data.dosage_per_pill),
+    dosage_per_pill: coerceDecimal(data.dosage_per_pill),
     dosage_unit: data.dosage_unit,
-    // Líquido (/ml): grava densidade + presentation='liquido'; sólido zera densidade.
-    units_per_ml: isLiquid && data.units_per_ml ? Number(data.units_per_ml) : null,
-    presentation: isLiquid ? 'liquido' : data.presentation || 'comprimido',
-    // TTL pós-abertura: só injetável persiste (guard idêntico ao MedicineForm)
+    // Líquido (/ml): grava densidade; sólido zera densidade.
+    units_per_ml: isLiquid && data.units_per_ml ? coerceDecimal(data.units_per_ml) : null,
+    presentation,
+    // TTL pós-abertura: só injetável persiste (vale também p/ injetável /ml — GLP-1).
     shelf_life_days:
-      !isLiquid && data.presentation === 'injetavel' && data.shelf_life_days
-        ? Number(data.shelf_life_days)
+      presentation === 'injetavel' && data.shelf_life_days
+        ? parseInt(data.shelf_life_days, 10)
         : null,
     laboratory: data.laboratory || null,
     active_ingredient: data.active_ingredient || null,
@@ -44,7 +50,7 @@ async function resolveProtocol(step, skipStock, medicine, data, planId) {
       name: `${medicine.name} - ${FREQUENCY_LABELS[data.frequency]}`,
       frequency: data.frequency,
       time_schedule: data.time_schedule,
-      dosage_per_intake: Number(data.dosage_per_intake),
+      dosage_per_intake: coerceDecimal(data.dosage_per_intake),
       start_date: data.start_date,
       treatment_plan_id: planId,
       weekdays: data.weekdays || [],
@@ -57,9 +63,9 @@ async function resolveStock(skipStock, data, medicineId) {
   if (!skipStock && data.quantity) {
     await stockService.add({
       medicine_id: medicineId,
-      quantity: Number(data.quantity),
+      quantity: coerceDecimal(data.quantity),
       purchase_date: data.purchase_date,
-      unit_price: Number(data.unit_price) || 0,
+      unit_price: coerceDecimal(data.unit_price) || 0,
       expiration_date: data.expiration_date || null,
     })
   }

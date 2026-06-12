@@ -1,5 +1,6 @@
 import { getTodayDateString } from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
+import { coerceDecimal } from '@dosiq/core'
 
 function _getMedicineId(protocol, initialValues, preselectedMedicine) {
   return protocol?.medicine_id || initialValues?.medicine_id || preselectedMedicine?.id || ''
@@ -110,7 +111,9 @@ function _validateTimeSchedule(timeSchedule, errors) {
 
 function _validateDosagePerIntake(dosage, errors) {
   // Cap 1000 (Fase B): líquidos podem ter doses maiores em gotas/ml/UI.
-  if (dosage === '' || dosage === null || dosage < 0 || dosage > 1000) {
+  // Normaliza vírgula→ponto antes de comparar (R-270): "2,5" não pode falhar.
+  const n = coerceDecimal(dosage)
+  if (dosage === '' || dosage === null || Number.isNaN(n) || n < 0 || n > 1000) {
     errors.dosage_per_intake = 'Dosagem deve estar entre 0 e 1000'
   }
 }
@@ -159,9 +162,9 @@ export const prepareDataToSave = (formData, enableTitration) => {
     name: formData.name.trim(),
     frequency: formData.frequency.trim(),
     time_schedule: formData.time_schedule,
-    dosage_per_intake: parseFloat(formData.dosage_per_intake),
+    dosage_per_intake: coerceDecimal(formData.dosage_per_intake),
     intake_unit: formData.intake_unit || null,
-    target_dosage: (formData.target_dosage ?? '') !== '' ? parseFloat(formData.target_dosage) : null,
+    target_dosage: (formData.target_dosage ?? '') !== '' ? coerceDecimal(formData.target_dosage) : null,
     titration_status: isTitrating ? 'titulando' : formData.titration_status,
     // R-270 (012 Fase B): wizard mantém o texto cru durante a digitação ("0,5");
     // normaliza vírgula→ponto e força number aqui — o banco nunca vê string.
@@ -170,8 +173,10 @@ export const prepareDataToSave = (formData, enableTitration) => {
           // Shape canônico do Zod (titrationStageSchema): duration_days/description.
           // Migra registros legados days/note na gravação.
           duration_days: parseInt(stage.duration_days ?? stage.days, 10) || 1,
-          dosage: parseFloat(String(stage.dosage ?? '').replace(',', '.')) || 0,
+          dosage: coerceDecimal(stage.dosage) || 0,
           ...((stage.description ?? stage.note) ? { description: stage.description ?? stage.note } : {}),
+          // FR-021 (012 Fase B2): só persiste a flag quando marcada (etapa cross-medicamento).
+          ...(stage.requires_new_medicine ? { requires_new_medicine: true } : {}),
         }))
       : [],
     notes: formData.notes.trim() || null,

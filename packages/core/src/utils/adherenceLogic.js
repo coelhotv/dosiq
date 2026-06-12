@@ -261,11 +261,39 @@ export function isInToleranceWindow(nextDoseTime) {
  * @param {number|null} unitsPerMl - densidade (gotas ou UI por ml)
  * @returns {number} dose equivalente em ml (ou a dose original se não-líquido)
  */
-export function doseToMl(dosage, intakeUnit, unitsPerMl) {
+export function doseToMl(dosage, intakeUnit, unitsPerMl, mgConcentration) {
   if (intakeUnit === 'ml' || !intakeUnit) return dosage
-  // gotas/UI → ml: divide pela densidade. Fallback 20 (padrão gotas/ml) se ausente/zero.
+  // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg/ml do cadastro). 012 Fase B2.
+  // Sem concentração não inventa (retorna a dose crua — evita conversão fantasma).
+  if (intakeUnit === 'mg') {
+    const c = Number(mgConcentration)
+    return c > 0 ? dosage / c : dosage
+  }
+  // gotas/UI → ml: divide pela razão física units_per_ml. Fallback 20 (gotas/ml) se ausente.
   const density = unitsPerMl && unitsPerMl > 0 ? unitsPerMl : 20
   return dosage / density
+}
+
+/**
+ * Fator médio de doses por DIA de uma frequência (012 Fase B2 — corrige o consumo
+ * de líquidos não-diários, ex.: GLP-1 semanal). Sem isso, semanal/dias_alternados
+ * eram tratados como diários (estoque "dias restantes" 7×/2× menor).
+ *
+ * @param {{frequency?: string, weekdays?: string[]}} p
+ * @returns {number} fração de dose por dia (diário=1, semanal=1/7, alternados=1/2...)
+ */
+export function frequencyDailyFactor(p) {
+  switch (p?.frequency) {
+    case 'semanal':
+      return 1 / 7
+    case 'dias_alternados':
+      return 1 / 2
+    case 'personalizado':
+      return (Array.isArray(p?.weekdays) && p.weekdays.length > 0 ? p.weekdays.length : 7) / 7
+    default:
+      // diário e quando_necessário mantêm 1 (PRN sem cadência previsível).
+      return 1
+  }
 }
 
 /**
@@ -283,14 +311,17 @@ export function calculateDailyIntake(medicineId, protocols, medicine = null) {
 
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   const unitsPerMl = medicine?.units_per_ml
+  const mgConcentration = medicine?.dosage_per_pill
 
   return protocols
     .filter((p) => p.medicine_id === medicineId && p.active)
     .reduce((total, p) => {
-      const dosesPerDay = p.time_schedule?.length || 1
+      const dosesPerSlotDay = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1
-      const perDose = isLiquid ? doseToMl(dosage, p.intake_unit, unitsPerMl) : dosage
-      return total + dosesPerDay * perDose
+      const perDose = isLiquid ? doseToMl(dosage, p.intake_unit, unitsPerMl, mgConcentration) : dosage
+      // Aplica a cadência da frequência: semanal/alternados/personalizado não
+      // consomem todo dia (012 Fase B2 — antes inflavam o consumo diário).
+      return total + dosesPerSlotDay * perDose * frequencyDailyFactor(p)
     }, 0)
 }
 

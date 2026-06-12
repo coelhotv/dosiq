@@ -40,14 +40,13 @@ export default function ProtocolFormAdvancedSection({
               <div className="form-group">
                 <label htmlFor="target_dosage">Dose Alvo (mg)</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   id="target_dosage"
                   name="target_dosage"
                   value={formData.target_dosage}
                   onChange={handleChange}
                   placeholder="Ex: 50"
-                  step="0.1"
-                  min="0"
                 />
               </div>
               <div className="form-group">

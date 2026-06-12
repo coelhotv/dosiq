@@ -39,6 +39,10 @@ function buildPrefill(existing, todayIso) {
     medicine_id: existing.medicine_id ?? '',
     name: existing.name ?? '',
     dosage_per_intake: existing.dosage_per_intake ?? '',
+    // Unidade de tomada (protocol) + densidade (medicine) DEVEM vir do DB (022/B2)
+    // — sem isso a edição recai no default (mg p/ mg/ml) e troca a unidade salva.
+    intake_unit: existing.intake_unit ?? '',
+    units_per_ml: existing.medicine?.units_per_ml ?? '',
     frequency: existing.frequency ?? 'diário',
     weekdays: Array.isArray(existing.weekdays) ? existing.weekdays : [],
     time_schedule: Array.isArray(existing.time_schedule) ? existing.time_schedule : [],

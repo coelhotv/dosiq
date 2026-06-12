@@ -38,6 +38,15 @@ describe('buildMedicinePayload — líquido', () => {
     expect(payload.units_per_ml).toBeNull()
     expect(payload.presentation).toBe('liquido')
   })
+  it('injetável /ml NÃO vira liquido — preserva injetavel (GLP-1/insulina; TTL/container)', () => {
+    const payload = buildMedicinePayload({
+      name: 'Mounjaro', laboratory: '', active_ingredient: '',
+      dosage_per_pill: '5', dosage_unit: 'mg/ml', units_per_ml: '',
+      presentation: 'injetavel', type: 'medicamento', shelf_life_days: 28,
+    })
+    expect(payload.presentation).toBe('injetavel')
+    expect(payload.shelf_life_days).toBe(28)
+  })
   it('líquido com densidade preexistente (edição) → preserva', () => {
     const payload = buildMedicinePayload({
       name: 'Xarope', laboratory: '', active_ingredient: '',

@@ -186,18 +186,27 @@ export function buildStockExpiryAlertPayload(data) {
 }
 
 export function buildTitrationAlertPayload(data) {
-  const { medicineName, currentStage, totalStages, status, nextStage } = titrationAlertDataSchema.parse(data);
-  const title = '🎯 Atualização de Titulação';
+  const { medicineName, currentStage, totalStages, status, nextStage, requiresNewMedicine } = titrationAlertDataSchema.parse(data);
+  // 012 Fase B2 (FR-021): etapa cross-força → CTA de troca de apresentação.
+  const title = requiresNewMedicine ? '🔄 Hora de trocar de apresentação' : '🎯 Atualização de Titulação';
 
-  let richMsg = `🎯 *Atualização de Titulação*\n\n`;
+  let richMsg = requiresNewMedicine ? `🔄 *Hora de trocar de apresentação*\n\n` : `🎯 *Atualização de Titulação*\n\n`;
   richMsg += `Medicamento: **${escapeMarkdownV2(medicineName)}**\n`;
   // 012 Fase B (FR-005b): disparado SÓ no evento de avanço — copy informativa,
-  // sem CTA de dose (SaMD/ADR-062).
-  richMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma\\.\n\n`;
+  // sem CTA de dose (SaMD/ADR-062). B2: etapa cross-força avisa a troca de caneta.
+  if (requiresNewMedicine) {
+    richMsg += `A etapa ${currentStage}/${totalStages} do cronograma usa uma nova apresentação \\(ex\\.: outra caneta\\)\\. Confira se você tem o medicamento certo em estoque\\.\n\n`;
+  } else {
+    richMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma\\.\n\n`;
+  }
 
-  let plainMsg = `🎯 Atualização de Titulação\n`;
+  let plainMsg = requiresNewMedicine ? `🔄 Hora de trocar de apresentação\n` : `🎯 Atualização de Titulação\n`;
   plainMsg += `Medicamento: ${medicineName}\n`;
-  plainMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma.\n\n`;
+  if (requiresNewMedicine) {
+    plainMsg += `A etapa ${currentStage}/${totalStages} do cronograma usa uma nova apresentação (ex.: outra caneta). Confira se você tem o medicamento certo em estoque.\n\n`;
+  } else {
+    plainMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma.\n\n`;
+  }
 
   if (status === 'alvo_atingido') {
     const success = `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\nContinue com o acompanhamento médico\\.`;

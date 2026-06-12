@@ -37,8 +37,11 @@ export default function ProtocolFormDosesSection({
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   // ui/ml (insulina) → UI; demais líquidos (mg/ml xarope) → ml por padrão.
   const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
-  // Densidade só é relevante quando a dose NÃO é em ml (gotas/UI precisam converter p/ ml).
-  const needsDensity = isLiquid && formData.intake_unit && formData.intake_unit !== 'ml'
+  // Densidade só é relevante p/ gotas/UI (razão física sub-ml). mg usa a concentração
+  // do medicamento (dosage_per_pill), NÃO units_per_ml → não pede densidade (smoke PO
+  // 2026-06-12); ml é dose direta.
+  const needsDensity =
+    isLiquid && formData.intake_unit && formData.intake_unit !== 'ml' && formData.intake_unit !== 'mg'
   const densityLabel = formData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
   const densityHint =
     formData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
@@ -110,16 +113,18 @@ export default function ProtocolFormDosesSection({
             Dose por Horário (qtd) <span className="required">*</span>
           </label>
           <ShakeEffect trigger={shakeFields.dosage_per_intake}>
+            {/* type=text + inputMode=decimal: aceita vírgula PT-BR ("2,5"); number
+                bloquearia a vírgula no browser. Normalização vírgula→ponto no submit
+                (parseDecimalPtBr — R-270/AP-167). */}
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="dosage_per_intake"
               name="dosage_per_intake"
               value={formData.dosage_per_intake}
               onChange={handleChange}
               className={errors.dosage_per_intake ? 'error' : ''}
               placeholder="1"
-              min="0.1"
-              step="0.1"
               aria-describedby={getFieldDescribedBy('dosage_per_intake')}
               aria-invalid={Boolean(errors.dosage_per_intake)}
             />
@@ -151,14 +156,13 @@ export default function ProtocolFormDosesSection({
                 {densityLabel}
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="units_per_ml"
                 name="units_per_ml"
                 value={formData.units_per_ml}
                 onChange={handleChange}
                 placeholder={String(defaultDensity)}
-                min="0"
-                step="any"
               />
               <small className="field-hint" style={{ display: 'block' }}>
                 {densityHint}.
