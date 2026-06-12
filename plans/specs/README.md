@@ -51,4 +51,5 @@
 | 026 | activation-strategy | **in-progress** | Fase 1 (nudges in-app) entregue PR #653; demais fases pendentes |
 | 027 | pomadas-topicas | draft | não iniciar sem priorização do PO |
 | 028 | nudges-admin | **in-progress** | PR #654 (payload builder) mergeado; restante pendente |
+| 029 | treatment-level-titration | draft | N2 — titulação plano-nível cross-medicamento; nasce da limitação exposta no 012 (FR-021/N1); não iniciar sem priorização do PO; depende de 012 B2 |
 
