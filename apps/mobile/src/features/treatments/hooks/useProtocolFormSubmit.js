@@ -68,6 +68,10 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
       return
     }
 
+    // FR-018 (012 Fase B2): mg usa a concentração do medicamento (dosage_per_pill);
+    // ela vem do cadastro do medicamento. A RPC consume_stock_fifo levanta erro
+    // claro se a concentração estiver ausente — não duplicamos a checagem aqui.
+
     setSubmitting(true)
     try {
       const resolved = await resolveInlinePlan(planField, show)

@@ -18,8 +18,23 @@ import {
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
-import { formatStockQuantity, formatConcentration, stockUnitLabel } from '@dosiq/core'
+import { formatStockQuantity, formatConcentration, stockUnitLabel, formatStockApplications, INJECTION_CONTAINER_SINGULAR } from '@dosiq/core'
 import './StockCardRedesign.css'
+
+/**
+ * Rendimento de estoque em APLICAÇÕES p/ injetáveis dosados em mg (012 Fase B2,
+ * FR-020): floor(ml ÷ ml-por-aplicação), ml-por-aplicação = dose_mg / units_per_ml.
+ * Retorna '' quando não se aplica (não-mg, sem protocolo, sem densidade).
+ */
+function applicationsLine(medicine, primaryProtocol, totalMl) {
+  // mg → ml por aplicação = dose_mg ÷ concentração (dosage_per_pill = mg/ml do cadastro).
+  if (primaryProtocol?.intake_unit !== 'mg' || !(Number(medicine?.dosage_per_pill) > 0)) return ''
+  const doseMg = Number(primaryProtocol.dosage_per_intake)
+  if (!(doseMg > 0)) return ''
+  const mlPerApplication = doseMg / Number(medicine.dosage_per_pill)
+  const container = INJECTION_CONTAINER_SINGULAR[medicine.injection_container] || null
+  return formatStockApplications(totalMl, mlPerApplication, container)
+}
 
 const CTA_CONFIG = {
   urgente: { label: 'Comprar Agora', Icon: ScanBarcode },
@@ -141,6 +156,13 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       {isComplex && (
         <p className="stock-card-r__quantity">
           {formatStockQuantity(totalQuantity, medicine)}
+        </p>
+      )}
+
+      {/* ── Rendimento em aplicações (injetável GLP-1 em mg — 012 Fase B2 FR-020) ── */}
+      {isComplex && applicationsLine(medicine, primaryProtocol, totalQuantity) && (
+        <p className="stock-card-r__applications">
+          {applicationsLine(medicine, primaryProtocol, totalQuantity)}
         </p>
       )}
 

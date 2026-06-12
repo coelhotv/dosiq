@@ -46,6 +46,7 @@ export {
   calculateDailyIntake,
   calculateDaysRemaining,
   doseToMl,
+  frequencyDailyFactor,
   calculateDosesByDate,
   evaluateDoseTimelineState,
   isProtocolActiveOnDate,
@@ -67,6 +68,7 @@ export {
 // Form utilities
 export {
   getFieldDescribedBy,
+  coerceDecimal,
 } from './formUtils.js'
 
 // String utilities
@@ -104,6 +106,8 @@ export {
   stockUnitLabel,
   formatStockCount,
   formatStockQuantity,
+  formatConcentrationLabel,
+  formatStockApplications,
 } from './doseUnit.js'
 
 // Date presentation PT-BR (Fase 2)

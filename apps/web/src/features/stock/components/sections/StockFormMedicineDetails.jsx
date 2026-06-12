@@ -1,5 +1,5 @@
 import { getFieldDescribedBy } from '@utils/formUtils'
-import { formatActiveIngredientFormula } from '@dosiq/core'
+import { formatActiveIngredientFormula, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 
 export default function StockFormMedicineDetails({
   formData,
@@ -7,6 +7,7 @@ export default function StockFormMedicineDetails({
   handleChange,
   medicines,
   isLiquid = false,
+  needsContainer = false,
 }) {
   const selectedMedicine = medicines?.find((m) => m.id === formData.medicine_id) || null
   const totalMl =
@@ -46,6 +47,27 @@ export default function StockFormMedicineDetails({
         )}
       </div>
 
+      {/* 012 Fase B2 (FR-019): apresentação física do injetável, captada na 1ª compra. */}
+      {needsContainer && (
+        <div className="form-group">
+          <label htmlFor="injection_container">Apresentação (como vem embalado)</label>
+          <select
+            id="injection_container"
+            name="injection_container"
+            value={formData.injection_container}
+            onChange={handleChange}
+          >
+            <option value="">Selecione (opcional)</option>
+            {INJECTION_CONTAINERS.map((c) => (
+              <option key={c} value={c}>{INJECTION_CONTAINER_LABELS[c]}</option>
+            ))}
+          </select>
+          <span className="helper-text" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+            Ex.: caneta, ampola — usado para mostrar quantas aplicações restam.
+          </span>
+        </div>
+      )}
+
       {isLiquid ? (
         <>
           <div className="form-row">
@@ -75,15 +97,14 @@ export default function StockFormMedicineDetails({
                 Volume por frasco (ml) <span className="required">*</span>
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id="volume_per_bottle"
                 name="volume_per_bottle"
                 value={formData.volume_per_bottle}
                 onChange={handleChange}
                 className={errors.volume_per_bottle ? 'error' : ''}
                 placeholder="100"
-                min="0.1"
-                step="0.1"
                 aria-invalid={Boolean(errors.volume_per_bottle)}
               />
               {errors.volume_per_bottle && (
@@ -95,15 +116,14 @@ export default function StockFormMedicineDetails({
           <div className="form-group">
             <label htmlFor="total_price">Preço total (R$)</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="total_price"
               name="total_price"
               value={formData.total_price}
               onChange={handleChange}
               className={errors.total_price ? 'error' : ''}
-              placeholder="0.00"
-              step="0.01"
-              min="0"
+              placeholder="0,00"
               aria-invalid={Boolean(errors.total_price)}
             />
             {errors.total_price && (
@@ -126,15 +146,14 @@ export default function StockFormMedicineDetails({
               Quantidade <span className="required">*</span>
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="quantity"
               name="quantity"
               value={formData.quantity}
               onChange={handleChange}
               className={errors.quantity ? 'error' : ''}
               placeholder="30"
-              min="0.1"
-              step="0.1"
               aria-describedby={getFieldDescribedBy('quantity')}
               aria-invalid={Boolean(errors.quantity)}
             />
@@ -153,15 +172,14 @@ export default function StockFormMedicineDetails({
           <div className="form-group">
             <label htmlFor="unit_price">Preço Unitário (R$)</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               id="unit_price"
               name="unit_price"
               value={formData.unit_price}
               onChange={handleChange}
               className={errors.unit_price ? 'error' : ''}
-              placeholder="0.50"
-              step="0.001"
-              min="0"
+              placeholder="0,50"
               aria-describedby={getFieldDescribedBy('unit_price')}
               aria-invalid={Boolean(errors.unit_price)}
             />

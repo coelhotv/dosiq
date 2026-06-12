@@ -14,6 +14,7 @@ import {
   Edit3,
   Trash2,
   CheckCircle2,
+  TrendingUp,
 } from 'lucide-react-native'
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import {
@@ -402,10 +403,17 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
           <Text style={styles.heroSubtitle} numberOfLines={1}>{medicine.active_ingredient}</Text>
         ) : null}
         <View style={styles.heroFooter}>
-          <View style={styles.statusBadge}>
-            <CheckCircle2 size={14} color={colors.primary[700]} />
-            <Text style={styles.statusBadgeText}>Estável</Text>
-          </View>
+          {protocol.titration_status === 'titulando' ? (
+            <View style={styles.statusBadge}>
+              <TrendingUp size={14} color={colors.primary[700]} />
+              <Text style={styles.statusBadgeText}>Titulando</Text>
+            </View>
+          ) : (
+            <View style={styles.statusBadge}>
+              <CheckCircle2 size={14} color={colors.primary[700]} />
+              <Text style={styles.statusBadgeText}>Estável</Text>
+            </View>
+          )}
           {inUseDays !== null ? (
             <Text style={styles.heroFooterHint}>
               {inUseDays === 0 ? 'Iniciado hoje' : `Em uso há ${inUseDays} ${inUseDays === 1 ? 'dia' : 'dias'}`}

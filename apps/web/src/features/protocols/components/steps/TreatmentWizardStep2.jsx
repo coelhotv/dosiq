@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import Button from '@shared/components/ui/Button'
-import { FREQUENCIES, FREQUENCY_LABELS, INTAKE_UNITS, INTAKE_UNIT_LABELS } from '@schemas/protocolSchema'
+import { FREQUENCIES, FREQUENCY_LABELS, INTAKE_UNIT_LABELS } from '@schemas/protocolSchema'
 import { formatDoseHint } from '@dosiq/core'
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
@@ -89,13 +89,28 @@ export default function TreatmentWizardStep2({
 }) {
   // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
-  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
-  // Densidade só importa quando a dose não é em ml (gotas/UI → ml).
-  const needsDensity = isLiquid && protocolData.intake_unit && protocolData.intake_unit !== 'ml'
+  // Default da unidade de tomada: gotas é a apresentação líquida mais comum (mg é
+  // exceção do GLP-1 — o usuário troca p/ mg manualmente). ui/ml → 'UI'. resto → 'ml'.
+  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'gotas'
+  const isMg = protocolData.intake_unit === 'mg'
+  // Densidade (units_per_ml) só p/ gotas/UI (razão física sub-ml). mg usa a
+  // CONCENTRAÇÃO já cadastrada no medicamento (dosage_per_pill = mg/ml) — não pede nada.
+  const needsDensity =
+    isLiquid && protocolData.intake_unit && protocolData.intake_unit !== 'ml' && !isMg
   const densityLabel = protocolData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
   const densityHint =
     protocolData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
   const defaultDensity = protocolData.intake_unit === 'UI' ? 100 : 20
+  // Densidade (units_per_ml) já vive no medicamento (decisão 022) — gotas/UI herdam.
+  const inheritedDensity = Number(medicine?.units_per_ml) > 0 ? medicine.units_per_ml : null
+  const askDensity = needsDensity && !inheritedDensity
+  // Unidades de tomada por forma (022 + B2): ui/ml → {UI, gotas}; mg/ml → {mg, ml, gotas}; resto → {gotas, ml}.
+  const intakeOptions =
+    medicine?.dosage_unit === 'ui/ml'
+      ? ['UI', 'gotas']
+      : medicine?.dosage_unit === 'mg/ml'
+        ? ['gotas', 'ml', 'mg']
+        : ['gotas', 'ml']
 
   // Preenche intake_unit p/ líquidos (evita null silencioso no débito de estoque).
   useEffect(() => {
@@ -104,12 +119,14 @@ export default function TreatmentWizardStep2({
     }
   }, [isLiquid, protocolData.intake_unit, defaultIntake, updateProtocol])
 
-  // Prefill densidade padrão quando passa a precisar (gotas/UI) e está vazia.
+  // Densidade do formulário: herda do medicamento se já cadastrada (não repergunta);
+  // senão prefilla o default conveniente de gotas/UI. mg sem herança fica vazio
+  // (FR-018: concentração obrigatória, sem default que mascare erro clínico).
   useEffect(() => {
-    if (needsDensity && !protocolData.units_per_ml) {
-      updateProtocol('units_per_ml', String(defaultDensity))
-    }
-  }, [needsDensity, protocolData.units_per_ml, defaultDensity, updateProtocol])
+    if (!needsDensity || protocolData.units_per_ml) return
+    if (inheritedDensity) updateProtocol('units_per_ml', String(inheritedDensity))
+    else if (defaultDensity) updateProtocol('units_per_ml', String(defaultDensity))
+  }, [needsDensity, protocolData.units_per_ml, inheritedDensity, defaultDensity, updateProtocol])
 
   const handleWeekdayToggle = (day) => {
     const currentWeekdays = protocolData.weekdays || []
@@ -188,13 +205,11 @@ export default function TreatmentWizardStep2({
       <label className="wizard__label">
         {isLiquid ? 'Dose por tomada' : 'Dose por tomada (un.)'}
         <input
-          type="number"
+          type="text"
+          inputMode="decimal"
           className="wizard__input"
           value={protocolData.dosage_per_intake}
           onChange={(e) => updateProtocol('dosage_per_intake', e.target.value)}
-          min="0.1"
-          step="0.1"
-          max="1000"
         />
         {isLiquid && (
           <select
@@ -204,23 +219,22 @@ export default function TreatmentWizardStep2({
             onChange={(e) => updateProtocol('intake_unit', e.target.value)}
             aria-label="Unidade de tomada"
           >
-            {INTAKE_UNITS.map((unit) => (
+            {intakeOptions.map((unit) => (
               <option key={unit} value={unit}>{INTAKE_UNIT_LABELS[unit] || unit}</option>
             ))}
           </select>
         )}
-        {needsDensity && (
+        {askDensity && (
           <div style={{ marginTop: 8 }}>
             <label style={{ fontSize: 13 }}>
               {densityLabel}
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 className="wizard__input"
                 value={protocolData.units_per_ml}
                 onChange={(e) => updateProtocol('units_per_ml', e.target.value)}
                 placeholder={String(defaultDensity)}
-                min="0"
-                step="any"
               />
             </label>
             <small className="wizard__label-note">{densityHint}.</small>

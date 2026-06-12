@@ -734,8 +734,15 @@ async function _processProtocolTitration(userId, protocol, dispatcher, correlati
   const medicine = protocol.medicine || {};
   const schedule = protocol.titration_schedule;
   const nextStageData = schedule?.[due.newIndex + 1];
+  // 012 Fase B2 (FR-021): a etapa que iniciou exige nova apresentação (GLP-1
+  // cross-força — caneta 0,25 → 0,5). A dose em mg permanece correta (registro
+  // passivo do cronograma prescrito, SaMD); a notificação vira CTA "hora de
+  // trocar de caneta". Reusa o kind titration_alert — o payload diferencia pela
+  // flag (sem novo kind, evita drift de enum R-193/AP-115).
+  const enteredStage = schedule?.[due.newIndex];
+  const requiresNewMedicine = Boolean(enteredStage?.requires_new_medicine) && !due.reachedTarget;
 
-  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}`, {
+  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}${requiresNewMedicine ? ' (requer nova apresentação)' : ''}`, {
     userId, protocolId: protocol.id, correlationId
   });
 
@@ -744,6 +751,7 @@ async function _processProtocolTitration(userId, protocol, dispatcher, correlati
     currentStage: due.newIndex + 1,
     totalStages: schedule.length,
     status: due.reachedTarget ? 'alvo_atingido' : 'titulando',
+    requiresNewMedicine,
     nextStage: !due.reachedTarget && nextStageData ? {
       dosage: String(nextStageData.dosage),
       unit: medicine.dosage_unit || 'mg',

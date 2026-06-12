@@ -1,4 +1,5 @@
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils.js'
+import { LIQUID_PRESENTATIONS, coerceDecimal } from '@dosiq/core'
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022). Único ponto de verdade na UI web.
 export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
@@ -43,7 +44,7 @@ export const validateMedicineForm = (formData) => {
     newErrors.name = 'Nome é obrigatório'
   }
 
-  if (formData.dosage_per_pill && isNaN(formData.dosage_per_pill)) {
+  if (formData.dosage_per_pill && isNaN(coerceDecimal(formData.dosage_per_pill))) {
     newErrors.dosage_per_pill = 'Deve ser um número'
   }
 
@@ -55,16 +56,20 @@ export const validateMedicineForm = (formData) => {
 
 export const buildMedicinePayload = (formData) => {
   const isLiquid = isLiquidUnit(formData.dosage_unit)
-  const presentation = isLiquid ? 'liquido' : formData.presentation || 'comprimido'
+  // /ml exige apresentação líquida, mas preserva 'injetavel' (líquido-compatível) se
+  // escolhido — não engole o injetável (TTL/container). Senão default 'liquido'.
+  const presentation = isLiquid
+    ? (LIQUID_PRESENTATIONS.includes(formData.presentation) ? formData.presentation : 'liquido')
+    : formData.presentation || 'comprimido'
   return {
     name: formData.name.trim(),
     laboratory: formData.laboratory.trim() || null,
     active_ingredient: formData.active_ingredient.trim() || null,
-    dosage_per_pill: formData.dosage_per_pill ? parseFloat(formData.dosage_per_pill) : null,
+    dosage_per_pill: formData.dosage_per_pill ? coerceDecimal(formData.dosage_per_pill) : null,
     type: formData.type,
     dosage_unit: formData.dosage_unit,
     // Líquido grava units_per_ml + presentation='liquido'; sólido zera units_per_ml.
-    units_per_ml: isLiquid && formData.units_per_ml ? parseFloat(formData.units_per_ml) : null,
+    units_per_ml: isLiquid && formData.units_per_ml ? coerceDecimal(formData.units_per_ml) : null,
     presentation,
     therapeutic_class: formData.therapeutic_class || null,
     regulatory_category: formData.regulatory_category || null,

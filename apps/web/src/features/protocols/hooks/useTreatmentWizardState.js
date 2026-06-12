@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { coerceDecimal } from '@dosiq/core'
 import { submitTreatmentWizard } from './_treatmentWizardSubmit'
 import {
   useWizardNavigation,
@@ -68,11 +69,20 @@ export function useTreatmentWizardState({
   const isMedicineValid =
     med.medicineMode === 'existing'
       ? !!med.selectedExistingMedicine
-      : med.medicineData.name.length >= 2 && med.medicineData.dosage_per_pill > 0
+      : med.medicineData.name.length >= 2 && coerceDecimal(med.medicineData.dosage_per_pill) > 0
+  // FR-018 (012 Fase B2): dose em mg (GLP-1) exige a concentração mg/ml do
+  // medicamento (dosage_per_pill) — sem ela não há como converter mg→ml no estoque.
+  // A concentração vem do cadastro do medicamento, não do tratamento.
+  const selectedMed =
+    med.medicineMode === 'existing' ? med.selectedExistingMedicine : med.medicineData
+  const mgNeedsConcentration =
+    prot.protocolData.intake_unit === 'mg' && !(coerceDecimal(selectedMed?.dosage_per_pill) > 0)
+  const dosePerIntake = coerceDecimal(prot.protocolData.dosage_per_intake)
   const isProtocolValid =
     prot.protocolData.time_schedule.length > 0 &&
-    prot.protocolData.dosage_per_intake > 0 &&
-    prot.protocolData.dosage_per_intake <= 100 &&
+    dosePerIntake > 0 &&
+    dosePerIntake <= 100 &&
+    !mgNeedsConcentration &&
     (!['semanal', 'personalizado'].includes(prot.protocolData.frequency) ||
       (Array.isArray(prot.protocolData.weekdays) && prot.protocolData.weekdays.length > 0))
 

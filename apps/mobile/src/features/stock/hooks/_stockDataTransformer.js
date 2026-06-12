@@ -3,7 +3,7 @@
 // o tratamento "dispare HOJE", jogando semanal/dias_alternados/quando_necessario
 // pra "sem tratamento ativo" mesmo com a flag active ligada. Pro estoque, ter
 // tratamento ativo = estar no período + active, independente de disparar hoje.
-import { getTodayLocal, isProtocolInPeriod, doseToMl, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
+import { getTodayLocal, isProtocolInPeriod, doseToMl, frequencyDailyFactor, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
 
 export function transformStockData(rawData) {
   const today = getTodayLocal()
@@ -19,10 +19,12 @@ export function transformStockData(rawData) {
     const isLiquid = Boolean(item.dosage_unit?.endsWith('/ml'))
     const dailyConsumption = activeProtocols.reduce((acc, p) => {
       const intakesPerDay = p.time_schedule?.length ?? 0
+      // mg → ml via dosage_per_pill (concentração); gotas/UI via units_per_ml (012 Fase B2).
       const perDose = isLiquid
-        ? doseToMl(Number(p.dosage_per_intake), p.intake_unit, item.units_per_ml)
+        ? doseToMl(Number(p.dosage_per_intake), p.intake_unit, item.units_per_ml, item.dosage_per_pill)
         : Number(p.dosage_per_intake)
-      return acc + (perDose * intakesPerDay)
+      // Frequência: semanal/alternados/personalizado não consomem todo dia.
+      return acc + (perDose * intakesPerDay * frequencyDailyFactor(p))
     }, 0)
 
     const daysRemaining = dailyConsumption > 0

@@ -50,6 +50,9 @@ export const titrationAlertDataSchema = z.object({
   currentStage: z.number(),
   totalStages: z.number(),
   status: z.enum(['alvo_atingido', 'titulando']),
+  // 012 Fase B2 (FR-021): etapa que iniciou exige nova apresentação (GLP-1
+  // cross-força). Quando true, a copy vira CTA "hora de trocar de caneta".
+  requiresNewMedicine: z.boolean().optional(),
   nextStage: z.object({
     dosage: z.string(),
     unit: z.string(),

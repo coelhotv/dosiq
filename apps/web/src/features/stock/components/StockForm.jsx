@@ -17,6 +17,7 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
     effectiveLaboratory,
     regulatoryCategory,
     isLiquid,
+    needsContainer,
   } = useStockFormState({ medicines, initialValues, onSave })
 
   return (
@@ -29,6 +30,7 @@ export default function StockForm({ medicines, initialValues, onSave, onCancel }
         handleChange={handleChange}
         medicines={medicines}
         isLiquid={isLiquid}
+        needsContainer={needsContainer}
       />
 
       <StockFormPurchaseDetails

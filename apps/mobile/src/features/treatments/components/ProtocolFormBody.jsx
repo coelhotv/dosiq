@@ -2,8 +2,7 @@ import { useMemo, useCallback, useState, useEffect } from 'react'
 import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity } from 'react-native'
 import {
   parseLocalDate,
-  formatActiveIngredientFormula,
-  doseToMl,
+  formatDoseHint,
   INTAKE_UNIT_LABELS,
 } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
@@ -72,42 +71,47 @@ export default function ProtocolFormBody({
   const helperText = useMemo(() => {
     const fallback = 'Quantas unidades do medicamento por tomada (aceita decimais, ex: 0,5)'
     if (!medicine) return fallback
-
-    // Líquidos (022): equivalência em ml (gotas/UI convertem via densidade) + massa ativa.
-    // formatActiveIngredientFormula só serve a sólidos (multiplica dose × concentração).
-    if (isLiquid) {
-      const dose = Number(String(form.values.dosage_per_intake ?? '').replace(',', '.'))
-      if (!dose) return fallback
-      const fmt = (n) => String(Math.round(n * 1000) / 1000).replace('.', ',')
-      const density = Number(String(form.values.units_per_ml || '').replace(',', '.')) || medicine.units_per_ml
-      const ml = doseToMl(dose, form.values.intake_unit, density)
-      const baseUnit = medicine.dosage_unit === 'ui/ml' ? 'UI' : 'mg'
-      const parts = []
-      if (form.values.intake_unit !== 'ml') parts.push(`${fmt(ml)} ml`)
-      if (medicine.dosage_per_pill) parts.push(`${fmt(ml * medicine.dosage_per_pill)} ${baseUnit}`)
-      return parts.length ? `✨ Equivale a ${parts.join(' · ')}` : fallback
-    }
-
-    const formula = formatActiveIngredientFormula(
-      form.values.dosage_per_intake,
-      medicine.dosage_per_pill,
-      medicine.dosage_unit
-    )
-    return formula ? `✨ ${formula}` : fallback
+    // Reusa o formatter core (R-272) — mesma equivalência do web. Líquido:
+    // mg → ml via dosage_per_pill (concentração); gotas/UI → ml via units_per_ml
+    // (usa o valor que o usuário está digitando no form, se houver). Sólido: massa ativa.
+    const medForHint = isLiquid
+      ? {
+          ...medicine,
+          units_per_ml:
+            Number(String(form.values.units_per_ml ?? '').replace(',', '.')) ||
+            medicine.units_per_ml,
+        }
+      : medicine
+    const hint = formatDoseHint(form.values.dosage_per_intake, form.values.intake_unit, medForHint)
+    return hint ? `✨ ${hint}` : fallback
   }, [form.values.dosage_per_intake, form.values.intake_unit, form.values.units_per_ml, medicine, isLiquid])
 
-  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'ml'
-  // Dropdown dinâmico por forma do medicamento (022): ui/ml → {UI, gotas}; mg/ml → {gotas, ml}.
+  // Default da unidade de tomada: gotas é a apresentação líquida mais comum (mg é
+  // exceção do GLP-1 — usuário troca p/ mg manualmente). ui/ml → 'UI'.
+  const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'gotas'
+  const isMg = form.values.intake_unit === 'mg'
+  // mg usa a CONCENTRAÇÃO já cadastrada (dosage_per_pill = mg/ml) — não pede densidade.
+  // Dropdown dinâmico por forma (022 + B2): ui/ml → {UI, gotas}; mg/ml → {mg, ml, gotas}; resto → {gotas, ml}.
   const intakeOptions = useMemo(() => {
-    const allowed = medicine?.dosage_unit === 'ui/ml' ? ['UI', 'gotas'] : ['gotas', 'ml']
+    const allowed =
+      medicine?.dosage_unit === 'ui/ml'
+        ? ['UI', 'gotas']
+        : medicine?.dosage_unit === 'mg/ml'
+          ? ['gotas', 'ml', 'mg']
+          : ['gotas', 'ml']
     return allowed.map((u) => ({ value: u, label: INTAKE_UNIT_LABELS[u] ?? u }))
   }, [medicine?.dosage_unit])
-  // Densidade só quando a dose NÃO é em ml (gotas/UI precisam converter p/ ml).
-  const needsDensity = isLiquid && form.values.intake_unit && form.values.intake_unit !== 'ml'
+  // Densidade (units_per_ml) só p/ gotas/UI (razão física sub-ml). mg usa a
+  // concentração do medicamento (dosage_per_pill = mg/ml) — não pede densidade.
+  const needsDensity =
+    isLiquid && form.values.intake_unit && form.values.intake_unit !== 'ml' && !isMg
   const densityLabel = form.values.intake_unit === 'UI' ? '💧 Densidade: UI por ml' : '💧 Densidade: Gotas por ml'
   const densityHint =
     form.values.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
   const defaultDensity = form.values.intake_unit === 'UI' ? 100 : 20
+  // gotas/UI herdam units_per_ml do medicamento (decisão 022).
+  const inheritedDensity = Number(medicine?.units_per_ml) > 0 ? medicine.units_per_ml : null
+  const askDensity = needsDensity && !inheritedDensity
 
   // Sincroniza flag transiente p/ o refine do protocolCreateSchema + default de intake_unit.
   useEffect(() => {
@@ -119,12 +123,13 @@ export default function ProtocolFormBody({
     }
   }, [isLiquid, defaultIntake, form])
 
-  // Prefill densidade padrão quando passa a precisar (gotas/UI) e está vazia.
+  // Densidade do form: herda do medicamento se já cadastrada (não repergunta);
+  // senão prefilla o default de gotas/UI. mg sem herança fica vazio (FR-018).
   useEffect(() => {
-    if (needsDensity && !form.values.units_per_ml) {
-      form.handleChange('units_per_ml', String(defaultDensity))
-    }
-  }, [needsDensity, defaultDensity, form])
+    if (!needsDensity || form.values.units_per_ml) return
+    if (inheritedDensity) form.handleChange('units_per_ml', String(inheritedDensity))
+    else if (defaultDensity) form.handleChange('units_per_ml', String(defaultDensity))
+  }, [needsDensity, inheritedDensity, defaultDensity, form])
 
   const handleCriticalAlarmToggle = useCallback(async (next) => {
     if (next) {
@@ -228,7 +233,7 @@ export default function ProtocolFormBody({
             required
           />
         )}
-        {needsDensity && (
+        {askDensity && (
           <FormInput
             name="units_per_ml"
             label={densityLabel}
