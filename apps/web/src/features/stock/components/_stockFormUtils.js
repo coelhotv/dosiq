@@ -37,14 +37,16 @@ export const validateStockForm = (formData, isLiquid = false) => {
     if (!formData.num_bottles || formData.num_bottles <= 0) {
       newErrors.num_bottles = 'Informe o número de frascos (maior que zero)'
     }
-    if (!formData.volume_per_bottle || formData.volume_per_bottle <= 0) {
+    const volume = coerceDecimal(formData.volume_per_bottle)
+    if (Number.isNaN(volume) || volume <= 0) {
       newErrors.volume_per_bottle = 'Informe o volume por frasco em ml (maior que zero)'
     }
     if (formData.total_price && isNaN(coerceDecimal(formData.total_price))) {
       newErrors.total_price = 'Deve ser um número'
     }
   } else {
-    if (!formData.quantity || coerceDecimal(formData.quantity) <= 0) {
+    const qty = coerceDecimal(formData.quantity)
+    if (Number.isNaN(qty) || qty <= 0) {
       newErrors.quantity = 'Quantidade deve ser maior que zero'
     }
     if (formData.unit_price && isNaN(coerceDecimal(formData.unit_price))) {
