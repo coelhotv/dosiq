@@ -9,6 +9,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Backend/Infra (cron — 012 Fase B)
+- **Added** (`minor`, Spec 012 Fase B, FR-005b): Avanço AUTOMÁTICO de etapa de titulação por cronograma no cron diário — `stage_started_at + duration_days` esgotado avança `current_stage_index` (múltiplas etapas de uma vez se vencidas; `stage_started_at` novo = fim acumulado da etapa anterior, fiel ao cronograma mesmo com cron atrasado); última etapa esgotada marca `titration_status='alvo_atingido'`. Notificação `titration_alert` agora dispara **só no evento** de avanço ("Etapa N/M iniciada conforme o cronograma", sem CTA de dose — SaMD/ADR-062).
+- **Fixed** (`patch`, Spec 012 Fase B, T009): Cron de titulação disparava `titration_alert` TODO dia para TODO protocolo em titulação (spam sem informação nova) e não carregava `stage_started_at` no select (R-267) — não tinha como saber se a transição venceu.
+
+### Core (@dosiq/core — 012 Fase B)
+- **Added** (`minor`, Spec 012 Fase B, ADR-061/FR-007): `computeTolerances` frequency-aware — frequências não-diárias usam o PERÍODO da frequência como wrap-around (semanal=10080min, dias_alternados=2880min) **sem o cap de 120min**: dose semanal única ganha tolerância 5040min (3,5 dias — cobre o perdão clínico de 72h do GLP-1). Diário inalterado (cap 120 preservado).
+- **Added** (`minor`, Spec 012 Fase B, FR-006/FP-1): `resolveTitrationStageAt(protocol, at)` — resolve a etapa de titulação vigente num instante arbitrário; o gerador de `dose_instances` congela `expected_dose` da etapa vigente NA DATA da ocorrência (instância futura nasce com a dose da etapa futura, antes do avanço formal no banco).
+- **Added** (`minor`, Spec 012 Fase B, FR-008b): `daysAgoLabel(scheduledFor, now, tz)` — rótulo relativo por data-calendário ("ontem"/"há N dias") para doses pendentes multi-dia.
+
+### Web (4.3.0 → 4.4.0)
+- **Added** (`minor`, Spec 012 Fase B, FR-008b): Carry-over multi-dia — janela de busca de ocorrências ampliada para 4 dias atrás (dose GLP-1 semanal pendente de 2-3 dias continua registrável); seção "Pendências de ontem" vira "Doses pendentes" com rótulo relativo por card ("ontem · 10:00", "há 2 dias · 10:00"). Sem re-notificação (gate `notified_at` único).
+- **Fixed** (`patch`, Spec 012 Fase B, R-270): Dose do regime de titulação (wizard) aceita vírgula PT-BR ("0,25") — input decimal com normalização no blur + no payload do protocolo (banco nunca vê string).
+
+### Mobile (0.16.0 → 0.16.1)
+- **Added** (`minor`, Spec 012 Fase B, FR-008b): Mesmo carry-over multi-dia da web — seção "Doses pendentes" com subtítulo e rótulo relativo nos cards de dose carregada.
+- **Nota de loja relevante:** "Novo: doses semanais (como canetas GLP-1) atrasadas há mais de um dia continuam visíveis e registráveis na tela inicial, com indicação de há quantos dias estão pendentes — e a tolerância de registro agora respeita o intervalo real da dose semanal."
+
 ### Backend/Infra (DB + cron — 012 Fase A)
 - **Added** (`minor`, Spec 012 Fase A, ADR-059): Migração `20260610_diabetes_a_injectable_ttl.sql` — `medicines.shelf_life_days` (TTL pós-abertura, nullable, CHECK > 0) e `stock.opened_at` (timestamptz). `consume_stock_fifo` agora infere `opened_at` na primeira tomada que debita o lote (`COALESCE(opened_at, now())` — nunca re-seta; assinatura intacta). Novo kind de notificação `stock_expiry_alert` (push/Telegram) com cadência D-3 + vencimento, no cron diário de estoque — avisa quando o frasco/caneta aberto atinge a validade pós-abertura.
 

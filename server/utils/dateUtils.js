@@ -86,6 +86,17 @@ export function getServerTimestamp() {
 }
 
 /**
+ * Converte epoch ms em Date (espelho do parseTimestamp do core).
+ * Único lugar autorizado a construir Date a partir de número — consumidores
+ * ficam livres da regra R-020 (que barra new Date fora daqui).
+ * @param {number} ms
+ * @returns {Date}
+ */
+export function parseTimestamp(ms) {
+  return new Date(ms);
+}
+
+/**
  * Adiciona dias a uma data.
  * @param {Date|string} date 
  * @param {number} days 

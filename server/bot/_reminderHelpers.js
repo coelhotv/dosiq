@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, addMinutes } from '../utils/dateUtils.js';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, parseTimestamp, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday, getProtocolDays } from '../utils/protocolActiveHelper.js';
 // Formatting helpers removed — moved to Layer 2
@@ -667,19 +667,78 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
   }
 }
 
+// 012 Fase B (FR-005b): detecta etapas de titulação vencidas por cronograma.
+// Caminha o schedule a partir de stage_started_at somando duration (days);
+// retorna null se nada venceu. stage_started_at novo = fim ACUMULADO da etapa
+// anterior (fiel ao cronograma), não now() — atraso do cron não desloca etapas.
+export function _titrationDueAdvance(protocol, nowMs) {
+  const schedule = protocol?.titration_schedule;
+  if (!Array.isArray(schedule) || schedule.length === 0) return null;
+  if (protocol.titration_status !== 'titulando') return null;
+  if (!protocol.stage_started_at) return null;
+
+  let index = protocol.current_stage_index || 0;
+  if (index >= schedule.length) return null;
+  let startMs = parseISO(protocol.stage_started_at).getTime();
+  if (Number.isNaN(startMs)) return null;
+
+  const MS_DAY = 24 * 60 * 60 * 1000;
+  let advanced = false;
+  let reachedTarget = false;
+  while (index < schedule.length) {
+    // duration_days = canônico (titrationStageSchema); days = fallback legado
+    const days = Number(schedule[index]?.duration_days ?? schedule[index]?.days);
+    if (!Number.isFinite(days) || days <= 0) break;
+    const endMs = startMs + days * MS_DAY;
+    if (nowMs < endMs) break;
+    if (index === schedule.length - 1) {
+      // Última etapa esgotada → dose alvo atingida (índice congela na última).
+      reachedTarget = true;
+      break;
+    }
+    startMs = endMs;
+    index += 1;
+    advanced = true;
+  }
+  if (!advanced && !reachedTarget) return null;
+  return { newIndex: index, newStageStartedAt: parseTimestamp(startMs).toISOString(), reachedTarget };
+}
+
+// 012 Fase B (FR-005b): avanço AUTOMÁTICO por cronograma + notificação SÓ no
+// evento (antes o cron disparava titration_alert todo dia para todo protocolo
+// em titulação — spam sem informação nova; regressão corrigida em T009).
+// Evento informativo, sem CTA de dose (SaMD/ADR-062).
 async function _processProtocolTitration(userId, protocol, dispatcher, correlationId) {
+  const due = _titrationDueAdvance(protocol, Date.now());
+  if (!due) return;
+
+  const updatePayload = {
+    current_stage_index: due.newIndex,
+    stage_started_at: due.newStageStartedAt,
+  };
+  if (due.reachedTarget) updatePayload.titration_status = 'alvo_atingido';
+
+  const { error: updateErr } = await supabase
+    .from('protocols')
+    .update(updatePayload)
+    .eq('id', protocol.id);
+  if (updateErr) throw updateErr; // best-effort por protocolo no caller (R-245)
+
   const medicine = protocol.medicine || {};
-  const currentStage = (protocol.current_stage_index || 0) + 1;
-  const totalStages = protocol.titration_schedule?.length || 0;
-  const nextStageData = protocol.titration_schedule?.[protocol.current_stage_index + 1];
+  const schedule = protocol.titration_schedule;
+  const nextStageData = schedule?.[due.newIndex + 1];
+
+  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}`, {
+    userId, protocolId: protocol.id, correlationId
+  });
 
   const data = {
     medicineName: medicine.name || 'Medicamento',
-    currentStage,
-    totalStages,
-    status: protocol.titration_status === 'alvo_atingido' ? 'alvo_atingido' : 'titulando',
-    nextStage: nextStageData ? {
-      dosage: nextStageData.dosage,
+    currentStage: due.newIndex + 1,
+    totalStages: schedule.length,
+    status: due.reachedTarget ? 'alvo_atingido' : 'titulando',
+    nextStage: !due.reachedTarget && nextStageData ? {
+      dosage: String(nextStageData.dosage),
       unit: medicine.dosage_unit || 'mg',
       date: nextStageData.date
     } : undefined
@@ -704,20 +763,30 @@ export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationI
     for (const user of users) {
       const userId = user.user_id;
       
+      // 012 Fase B: stage_started_at no select (R-267 — sem ele o cron não sabia
+      // se a transição venceu e notificava diariamente); só 'titulando' interessa.
       const { data: protocols } = await supabase
         .from('protocols')
         .select(`
-          id, current_stage_index, titration_schedule, titration_status,
+          id, current_stage_index, titration_schedule, titration_status, stage_started_at,
           medicine:medicine_id (name, dosage_unit)
         `)
         .eq('user_id', userId)
         .eq('status', 'ativo')
+        .eq('titration_status', 'titulando')
         .not('titration_schedule', 'is', null);
 
       if (!protocols || protocols.length === 0) continue;
 
       for (const protocol of protocols) {
-        await _processProtocolTitration(userId, protocol, dispatcher, correlationId);
+        try {
+          await _processProtocolTitration(userId, protocol, dispatcher, correlationId);
+        } catch (err) {
+          // Best-effort por protocolo (R-245): erro num avanço não derruba a varredura.
+          logger.error('Erro ao processar avanço de titulação', err, {
+            userId, protocolId: protocol?.id, correlationId
+          });
+        }
       }
     }
   } catch (err) {

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import { cachedLogService as logService } from '@shared/services'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { protocolService } from '@features/protocols/services/protocolService'
@@ -9,7 +9,34 @@ import { getNow, getServerTimestamp } from '@utils/dateUtils'
 /**
  * useDashboardHandlers - Hook para gerenciar handlers do dashboard
  */
+/** Mensagem amigável para falha de registro 1-click (012 Fase B — smoke PO). */
+function friendlyRegisterError(err) {
+  const msg = String(err?.message || '')
+  if (msg.includes('Estoque insuficiente')) {
+    return 'Estoque insuficiente para registrar esta dose. Reponha o estoque ou registre pela tela de doses para ajustar a quantidade.'
+  }
+  if (msg.includes('Dose muito pequena')) {
+    return 'Dose muito pequena para débito de estoque — confira a densidade (gotas/UI por ml) do medicamento.'
+  }
+  return 'Não foi possível registrar a dose. Tente novamente.'
+}
+
 export function useDashboardHandlers({ refresh, reminderSuggestionData, protocols, setSnoozedAlerts, setDismissedSuggestionId }) {
+  // Erro de ação 1-click (Tomar/Confirmar agora): antes morria num throw sem
+  // consumidor — usuário clicava e nada acontecia (smoke PO 2026-06-11).
+  const [actionError, setActionError] = useState(null)
+  const errorTimerRef = useRef(null)
+  const showActionError = useCallback((err) => {
+    setActionError(friendlyRegisterError(err))
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
+    errorTimerRef.current = setTimeout(() => setActionError(null), 8000)
+  }, [])
+  const clearActionError = useCallback(() => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current)
+    setActionError(null)
+  }, [])
+  useEffect(() => () => clearTimeout(errorTimerRef.current), [])
+
   // Registra dose DIRETAMENTE sem modal (1-click experience)
   const handleRegisterDoseQuick = useCallback(
     async (medicineId, protocolId, dosagePerIntake, instanceId = null) => {
@@ -30,10 +57,10 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         refresh()
       } catch (err) {
         errorLog('useDashboardHandlers', 'Erro ao registrar dose:', err)
-        throw err
+        showActionError(err)
       }
     },
-    [refresh]
+    [refresh, showActionError]
   )
 
   // Registra múltiplas doses em batch (PriorityDoseCard com 2+ doses)
@@ -60,10 +87,12 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         refresh()
       } catch (err) {
         errorLog('useDashboardHandlers', 'Erro ao registrar doses:', err)
-        throw err
+        // refresh mesmo no erro parcial: doses já registradas do batch devem refletir
+        refresh()
+        showActionError(err)
       }
     },
-    [refresh]
+    [refresh, showActionError]
   )
 
   const handleSnoozeAlert = useCallback((alertId) => {
@@ -104,6 +133,8 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
     handleSnoozeAlert,
-    handleReminderAccept
-  }), [handleRegisterDoseQuick, handleRegisterDosesAll, handleSnoozeAlert, handleReminderAccept])
+    handleReminderAccept,
+    actionError,
+    clearActionError
+  }), [handleRegisterDoseQuick, handleRegisterDosesAll, handleSnoozeAlert, handleReminderAccept, actionError, clearActionError])
 }

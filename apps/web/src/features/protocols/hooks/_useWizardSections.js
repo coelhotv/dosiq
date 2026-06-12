@@ -22,7 +22,7 @@ export function useWizardNavigation(initialStep) {
 
 const _MEDICINE_DEFAULTS = {
   name: '', type: 'medicamento', dosage_per_pill: '', dosage_unit: 'mg',
-  units_per_ml: '', presentation: 'comprimido',
+  units_per_ml: '', presentation: 'comprimido', shelf_life_days: '',
   laboratory: '', active_ingredient: '', therapeutic_class: null, regulatory_category: null,
 }
 

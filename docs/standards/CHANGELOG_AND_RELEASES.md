@@ -10,6 +10,20 @@ This document defines the Dosiq release logging process. Rules are written in En
 | Mobile | `apps/mobile/app.config.js` `APP_VERSION` | Android `versionCode` and iOS `buildNumber` are derived from `APP_VERSION` by R-182. |
 | Root monorepo | `package.json` `version` | Metadata only. Do not treat as product release version unless a future ADR changes this. |
 
+## Mobile 0.x Versioning Convention (PO decision 2026-06-12)
+
+While the mobile app is pre-1.0, the SemVer minor acts as the de-facto major:
+
+- **Minor (0.X.0)** = epic / store-worthy release: a delivery with a store note that end
+  users perceive as a new version. One epic = one minor line (e.g. spec 012 = `0.16.x`).
+- **Patch (0.16.X)** = intermediate epic phases, sub-features and fixes
+  (012 Fase A = 0.16.0, Fase B = 0.16.1, Fase C = 0.16.2, ...).
+- Rationale: burning a minor per sub-phase inflates the version line without matching
+  user-perceived progress. `buildNumber` derivation (R-182: major*10000+minor*100+patch)
+  supports up to 99 patches per minor.
+- Web is post-1.0 and keeps canonical SemVer (minor per feature). When mobile reaches
+  1.0.0 this convention expires and the web rule applies.
+
 ## SQP Release Checklist
 
 Every code-changing PR must follow R-221 SQP:

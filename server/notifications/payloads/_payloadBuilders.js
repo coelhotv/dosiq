@@ -191,11 +191,13 @@ export function buildTitrationAlertPayload(data) {
 
   let richMsg = `🎯 *Atualização de Titulação*\n\n`;
   richMsg += `Medicamento: **${escapeMarkdownV2(medicineName)}**\n`;
-  richMsg += `Etapa atual: ${currentStage}/${totalStages}\n\n`;
+  // 012 Fase B (FR-005b): disparado SÓ no evento de avanço — copy informativa,
+  // sem CTA de dose (SaMD/ADR-062).
+  richMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma\\.\n\n`;
 
   let plainMsg = `🎯 Atualização de Titulação\n`;
   plainMsg += `Medicamento: ${medicineName}\n`;
-  plainMsg += `Etapa atual: ${currentStage}/${totalStages}\n\n`;
+  plainMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma.\n\n`;
 
   if (status === 'alvo_atingido') {
     const success = `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\nContinue com o acompanhamento médico\\.`;

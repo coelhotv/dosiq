@@ -86,6 +86,7 @@ export function useTreatmentWizardState({
       dosage_unit: 'mg',
       units_per_ml: '',
       presentation: 'comprimido',
+      shelf_life_days: '',
       laboratory: '',
       active_ingredient: '',
       therapeutic_class: null,

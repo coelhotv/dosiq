@@ -1,14 +1,35 @@
 import { useState, useEffect, startTransition } from 'react'
 import Button from '@shared/components/ui/Button'
+import { formatDoseHint, isLiquidMedicine } from '@dosiq/core'
 import './TitrationWizard.css'
 
-export default function TitrationWizard({ schedule = [], onChange }) {
+/**
+ * Hint de equivalência da dose da etapa ("✨ Equivale a 0,25 mg") via formatter
+ * core (R-272). Sem medicine ou dose inválida → null (não renderiza ruído).
+ */
+function doseEquivalence(rawDosage, intakeUnit, medicine) {
+  if (!medicine) return null
+  const parsed = parseFloat(String(rawDosage ?? '').replace(',', '.'))
+  if (Number.isNaN(parsed) || parsed <= 0) return null
+  const hint = formatDoseHint(parsed, intakeUnit, medicine)
+  return hint || null
+}
+
+/** Unidade de tomada exibida nos sufixos: líquido usa intake_unit; sólido "comp.". */
+function intakeSuffix(intakeUnit, medicine) {
+  if (medicine && isLiquidMedicine(medicine)) return intakeUnit || 'ml'
+  return 'comp.'
+}
+
+export default function TitrationWizard({ schedule = [], onChange, medicine = null, intakeUnit = null }) {
   const [stages, setStages] = useState(schedule)
   // Form state for a stage
+  // Shape canônico do titrationStageSchema (Zod): duration_days/dosage/description.
+  // O wizard legado gravava days/note — nunca passava na validação (regressão T008).
   const [currentStage, setCurrentStage] = useState({
-    days: 7,
+    duration_days: 7,
     dosage: 1,
-    note: '',
+    description: '',
   })
 
   useEffect(() => {
@@ -18,11 +39,14 @@ export default function TitrationWizard({ schedule = [], onChange }) {
   }, [schedule])
 
   const handleAddStage = () => {
-    const newStages = [...stages, { ...currentStage }]
+    // R-270: normaliza a dose digitada com vírgula antes de persistir no estado
+    const dosage = parseFloat(String(currentStage.dosage ?? '').replace(',', '.'))
+    if (Number.isNaN(dosage) || dosage <= 0) return
+    const newStages = [...stages, { ...currentStage, dosage }]
     setStages(newStages)
     onChange(newStages)
     // Reset form with previous values as convenience, but clear note
-    setCurrentStage((prev) => ({ ...prev, note: '' }))
+    setCurrentStage((prev) => ({ ...prev, description: '' }))
   }
 
   const handleRemoveStage = (index) => {
@@ -38,67 +62,89 @@ export default function TitrationWizard({ schedule = [], onChange }) {
     onChange(newStages)
   }
 
-  const totalDays = stages.reduce((acc, stage) => acc + parseInt(stage.days || 0), 0)
+  // R-270 (012 Fase B): dose decimal aceita vírgula PT-BR ("0,25" → 0.25).
+  // Input text+inputMode decimal — o type=number nativo rejeita vírgula. Digitação
+  // mantém o texto cru (senão "0," vira 0 no meio da digitação); normaliza no blur.
+  const handleDosageBlur = (index, raw) => {
+    const parsed = parseFloat(String(raw ?? '').replace(',', '.'))
+    if (!Number.isNaN(parsed) && parsed > 0) handleUpdateStage(index, 'dosage', parsed)
+  }
+
+  const suffix = intakeSuffix(intakeUnit, medicine)
+  const currentHint = doseEquivalence(currentStage.dosage, intakeUnit, medicine)
+  const totalDays = stages.reduce((acc, stage) => acc + parseInt(stage.duration_days ?? stage.days ?? 0), 0)
 
   return (
     <div className="titration-wizard">
       <div className="wizard-header">
         <h4>📈 Regime de Titulação</h4>
-        <p className="wizard-subtitle">Defina a evolução da dose ao longo do tempo.</p>
+        <p className="wizard-subtitle">
+          Defina a evolução da dose ao longo do tempo, conforme a prescrição médica.
+        </p>
       </div>
 
       <div className="stages-list">
-        {stages.map((stage, index) => (
-          <div key={index} className="titration-stage-card">
-            <div className="stage-number">Etapa {index + 1}</div>
+        {stages.map((stage, index) => {
+          const stageHint = doseEquivalence(stage.dosage, intakeUnit, medicine)
+          return (
+            <div key={index} className="titration-stage-card">
+              <div className="stage-number">Etapa {index + 1}</div>
 
-            <div className="stage-grid">
-              <div className="form-group-mini">
-                <label>Duração (dias)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={stage.days}
-                  onChange={(e) => handleUpdateStage(index, 'days', parseInt(e.target.value))}
-                />
+              <div className="stage-grid">
+                <div className="form-group-mini">
+                  <label>Duração</label>
+                  <div className="input-with-suffix">
+                    <input
+                      type="number"
+                      min="1"
+                      value={stage.duration_days ?? stage.days ?? ''}
+                      onChange={(e) => handleUpdateStage(index, 'duration_days', parseInt(e.target.value))}
+                    />
+                    <span>dias</span>
+                  </div>
+                </div>
+
+                <div className="form-group-mini">
+                  <label>Dose por tomada</label>
+                  <div className="input-with-suffix">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={stage.dosage}
+                      onChange={(e) => handleUpdateStage(index, 'dosage', e.target.value)}
+                      onBlur={(e) => handleDosageBlur(index, e.target.value)}
+                    />
+                    <span>{suffix}</span>
+                  </div>
+                  {stageHint && <small className="dose-equivalence">✨ {stageHint}</small>}
+                </div>
+
+                <div className="form-group-mini full-width">
+                  <label>Nota / Objetivo</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Introdução, Aumento de dose..."
+                    value={stage.description ?? stage.note ?? ''}
+                    onChange={(e) => handleUpdateStage(index, 'description', e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="form-group-mini">
-                <label>Dose (comps)</label>
-                <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={stage.dosage}
-                  onChange={(e) => handleUpdateStage(index, 'dosage', parseFloat(e.target.value))}
-                />
-              </div>
-
-              <div className="form-group-mini full-width">
-                <label>Nota / Objetivo</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Introdução, Aumento de dose..."
-                  value={stage.note}
-                  onChange={(e) => handleUpdateStage(index, 'note', e.target.value)}
-                />
-              </div>
+              <button
+                type="button"
+                className="btn-remove-stage"
+                onClick={() => handleRemoveStage(index)}
+                title="Remover etapa"
+              >
+                🗑️
+              </button>
             </div>
-
-            <button
-              type="button"
-              className="btn-remove-stage"
-              onClick={() => handleRemoveStage(index)}
-              title="Remover etapa"
-            >
-              🗑️
-            </button>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="add-stage-form">
-        <h5>Adicionar Nova Etapa</h5>
+        <h5>Nova Etapa</h5>
         <div className="stage-input-row">
           <div className="input-group">
             <label>Duração</label>
@@ -106,9 +152,9 @@ export default function TitrationWizard({ schedule = [], onChange }) {
               <input
                 type="number"
                 min="1"
-                value={currentStage.days}
+                value={currentStage.duration_days}
                 onChange={(e) =>
-                  setCurrentStage((prev) => ({ ...prev, days: parseInt(e.target.value) }))
+                  setCurrentStage((prev) => ({ ...prev, duration_days: parseInt(e.target.value) }))
                 }
               />
               <span>dias</span>
@@ -116,34 +162,39 @@ export default function TitrationWizard({ schedule = [], onChange }) {
           </div>
 
           <div className="input-group">
-            <label>Dose</label>
+            <label>Dose por tomada</label>
             <div className="input-with-suffix">
               <input
-                type="number"
-                min="0.1"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
+                placeholder="Ex: 0,25"
                 value={currentStage.dosage}
                 onChange={(e) =>
-                  setCurrentStage((prev) => ({ ...prev, dosage: parseFloat(e.target.value) }))
+                  setCurrentStage((prev) => ({ ...prev, dosage: e.target.value }))
                 }
               />
-              <span>comp.</span>
+              <span>{suffix}</span>
             </div>
+            {/* Equivalência em princípio ativo — sem isso o cuidador chuta a dose em
+                unidades e erra a titulação (feedback smoke PO 2026-06-11). */}
+            {currentHint && <small className="dose-equivalence">✨ {currentHint}</small>}
           </div>
         </div>
 
         <div className="input-group">
           <input
             type="text"
-            placeholder="Nota (opcional)"
-            value={currentStage.note}
-            onChange={(e) => setCurrentStage((prev) => ({ ...prev, note: e.target.value }))}
+            placeholder="Nota (opcional) — Ex: Introdução, Aumento de dose..."
+            value={currentStage.description}
+            onChange={(e) => setCurrentStage((prev) => ({ ...prev, description: e.target.value }))}
             className="input-note"
           />
         </div>
 
+        {/* "Gravar" (não "Adicionar"): preencher os campos NÃO cria a etapa — o clique
+            grava o card acima; o form limpo é consequência (feedback smoke PO). */}
         <Button type="button" variant="outline" onClick={handleAddStage} className="btn-add-stage">
-          ➕ Adicionar Etapa
+          ✓ Gravar Etapa
         </Button>
       </div>
 

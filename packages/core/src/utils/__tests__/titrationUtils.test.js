@@ -370,3 +370,84 @@ describe('calculateTitrationData', () => {
     })
   })
 })
+
+// ── 012 Fase B (FR-006/FP-1): resolução da etapa vigente num instante ──────────
+import { resolveTitrationStageAt } from '../titrationUtils'
+
+describe('resolveTitrationStageAt', () => {
+  // GLP-1 clássico: 0,25mg/28d → 0,5mg/28d → 1,0mg/28d
+  const glp1 = {
+    titration_schedule: [
+      { days: 28, dosage: 0.25 },
+      { days: 28, dosage: 0.5 },
+      { days: 28, dosage: 1.0 },
+    ],
+    current_stage_index: 0,
+    stage_started_at: '2026-06-01T08:00:00.000Z',
+    titration_status: 'titulando',
+  }
+
+  it('instante dentro da etapa atual → dose da etapa atual', () => {
+    const out = resolveTitrationStageAt(glp1, '2026-06-15T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 0, dosage: 0.25 })
+  })
+
+  it('instante na 2ª etapa (29º dia) → dose da etapa futura (congela ANTES do avanço no banco)', () => {
+    const out = resolveTitrationStageAt(glp1, '2026-06-30T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
+  })
+
+  it('instante na 3ª etapa (57º dia) → caminha múltiplas etapas', () => {
+    const out = resolveTitrationStageAt(glp1, '2026-07-28T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 2, dosage: 1.0 })
+  })
+
+  it('além do fim da última etapa → mantém dose alvo (última etapa)', () => {
+    const out = resolveTitrationStageAt(glp1, '2026-12-01T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 2, dosage: 1.0 })
+  })
+
+  it('respeita current_stage_index como ponto de partida (avanço manual prévio)', () => {
+    const p = { ...glp1, current_stage_index: 1, stage_started_at: '2026-06-29T08:00:00.000Z' }
+    const out = resolveTitrationStageAt(p, '2026-07-01T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
+  })
+
+  it('instante ANTERIOR ao início da etapa atual → null (histórico já congelado)', () => {
+    expect(resolveTitrationStageAt(glp1, '2026-05-20T08:00:00.000Z')).toBeNull()
+  })
+
+  it('status estável/alvo_atingido → null (dosage_per_intake rege)', () => {
+    expect(resolveTitrationStageAt({ ...glp1, titration_status: 'estável' }, '2026-06-15T08:00:00.000Z')).toBeNull()
+    expect(resolveTitrationStageAt({ ...glp1, titration_status: 'alvo_atingido' }, '2026-06-15T08:00:00.000Z')).toBeNull()
+  })
+
+  it('degenerados → null: sem schedule, sem stage_started_at, índice fora, dose inválida, days inválido na etapa atual', () => {
+    expect(resolveTitrationStageAt(null, '2026-06-15T08:00:00.000Z')).toBeNull()
+    expect(resolveTitrationStageAt({ ...glp1, titration_schedule: [] }, '2026-06-15T08:00:00.000Z')).toBeNull()
+    expect(resolveTitrationStageAt({ ...glp1, stage_started_at: null }, '2026-06-15T08:00:00.000Z')).toBeNull()
+    expect(resolveTitrationStageAt({ ...glp1, current_stage_index: 9 }, '2026-06-15T08:00:00.000Z')).toBeNull()
+    expect(resolveTitrationStageAt({ ...glp1, titration_schedule: [{ days: 28, dosage: 0 }] }, '2026-06-15T08:00:00.000Z')).toBeNull()
+  })
+
+  it('days inválido impede SAIR da etapa, não entrar nela (caminha até ela e para)', () => {
+    const p = { ...glp1, titration_schedule: [{ days: 28, dosage: 0.25 }, { days: 0, dosage: 0.5 }] }
+    const out = resolveTitrationStageAt(p, '2026-08-01T08:00:00.000Z')
+    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
+  })
+})
+
+describe('resolveTitrationStageAt — shape canônico duration_days', () => {
+  it('aceita duration_days (titrationStageSchema) além do legado days', () => {
+    const p = {
+      titration_schedule: [
+        { duration_days: 28, dosage: 0.25 },
+        { duration_days: 28, dosage: 0.5 },
+      ],
+      current_stage_index: 0,
+      stage_started_at: '2026-06-01T08:00:00.000Z',
+      titration_status: 'titulando',
+    }
+    expect(resolveTitrationStageAt(p, '2026-06-30T08:00:00.000Z')).toEqual({ stageIndex: 1, dosage: 0.5 })
+  })
+})

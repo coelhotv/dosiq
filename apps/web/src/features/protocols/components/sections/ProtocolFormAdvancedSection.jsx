@@ -2,6 +2,7 @@ import TitrationWizard from '@protocols/components/TitrationWizard'
 
 export default function ProtocolFormAdvancedSection({
   formData,
+  medicine,
   handleChange,
   enableTitration,
   handleTitrationEnable,
@@ -11,19 +12,11 @@ export default function ProtocolFormAdvancedSection({
 }) {
   return (
     <>
+      {/* Classe própria (não .form-row): o .form-row global do MedicineForm.css é
+          display:grid 2-col no desktop — espremia o wizard na coluna direita
+          (smoke PO 2026-06-11; mobile escapava pelo breakpoint 1fr). */}
       {!isSimpleMode && showTitration && (
-        <div
-          className="form-row"
-          style={{
-            flexDirection: 'column',
-            gap: 'var(--space-2)',
-            border: '1px solid var(--border-color)',
-            padding: 'var(--space-3)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--bg-tertiary)',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
+        <div className="titration-section">
           <div className="form-group checkbox-group" style={{ marginBottom: 0 }}>
             <label className="checkbox-label">
               <input
@@ -39,6 +32,8 @@ export default function ProtocolFormAdvancedSection({
             <TitrationWizard
               schedule={formData.titration_schedule}
               onChange={setTitrationSchedule}
+              medicine={medicine}
+              intakeUnit={formData.intake_unit || null}
             />
           ) : (
             <div className="form-row" style={{ marginTop: 'var(--space-2)' }}>

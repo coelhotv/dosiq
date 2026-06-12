@@ -24,10 +24,12 @@ export default function DashboardColumnRight({
           pendentes dentro da tolerância. Seção própria no topo, antes do cronograma
           de hoje; não é slot de hoje (preserva o fix do slot-fantasma). */}
       {carryOverDoses.length > 0 && (
-        <section className="dashboard-carryover-section" aria-label="Pendências de ontem">
+        <section className="dashboard-carryover-section" aria-label="Doses pendentes">
           <div className="dashboard-section-header">
-            <h2 className="dashboard-section-title">Pendências de ontem</h2>
-            <p className="dashboard-section-subtitle">Doses de ontem ainda no prazo de registro</p>
+            {/* 012 Fase B (FR-008b): carry-over agora cobre multi-dia (semanal
+                tolera 3,5d) — "de ontem" mentiria pra dose de 2-3 dias atrás. */}
+            <h2 className="dashboard-section-title">Doses pendentes</h2>
+            <p className="dashboard-section-subtitle">Doses anteriores ainda no prazo de registro</p>
           </div>
           <div className="cronograma-doses cronograma-doses--simple">
             {carryOverDoses.map((dose) => (
