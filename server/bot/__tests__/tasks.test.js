@@ -226,5 +226,48 @@ describe('Tasks Service - Wave 11 Refactor & Phase 3', () => {
         })
       });
     });
+
+    // 012 B4 / FR-013c (ADR-067): líquido em UI não pode contar ml÷UI cru.
+    it('não dispara alerta para insulina líquida com runway real alto (FR-013c)', async () => {
+      setMockData([{ user_id: 'user1', timezone: 'America/Sao_Paulo' }]);
+      // Lantus U-100: 10 UI/dia, 1x/dia, diário.
+      setMockData([
+        { user_id: 'user1', medicine_id: 'med1', time_schedule: ['22:00'], dosage_per_intake: 10, intake_unit: 'UI', frequency: 'diário', active: true }
+      ]);
+      // Saldo 5,3 ml; densidade U-100 (units_per_ml=100) → 10 UI = 0,10 ml/dia → 53 dias.
+      setMockData([
+        { user_id: 'user1', medicine_id: 'med1', quantity: 5.3, medicine: { name: 'Lantus', dosage_unit: 'ui/ml', units_per_ml: 100, dosage_per_pill: null } }
+      ]);
+
+      await checkStockAlerts({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
+
+      // Antes: floor(5,3 ÷ 10 UI) = 0 dias → alerta crítico falso. Agora: 53 dias → silêncio.
+      expect(mockDispatcher.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('dispara para líquido realmente baixo exibindo DOSES (não ml cru)', async () => {
+      setMockData([{ user_id: 'user1', timezone: 'America/Sao_Paulo' }]);
+      // 25 UI/dia, density U-100 → 0,25 ml/dia (exato em binário; sem armadilha de float).
+      setMockData([
+        { user_id: 'user1', medicine_id: 'med1', time_schedule: ['22:00'], dosage_per_intake: 25, intake_unit: 'UI', frequency: 'diário', active: true }
+      ]);
+      // Saldo 1,25 ml → 0,25 ml/dia → 5 dias; doses restantes = floor(1,25 ÷ 0,25) = 5.
+      setMockData([
+        { user_id: 'user1', medicine_id: 'med1', quantity: 1.25, medicine: { name: 'Lantus', dosage_unit: 'ui/ml', units_per_ml: 100, dosage_per_pill: null } }
+      ]);
+
+      await checkStockAlerts({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledWith({
+        userId: 'user1',
+        kind: 'stock_alert',
+        data: expect.objectContaining({
+          medicineName: 'Lantus',
+          remaining: 5,          // 5 doses, NÃO 1,25 ml rotulado "doses"
+          daysRemaining: 5
+        }),
+        context: expect.objectContaining({ jobType: 'stock_alert_dispatcher' })
+      });
+    });
   });
 });
