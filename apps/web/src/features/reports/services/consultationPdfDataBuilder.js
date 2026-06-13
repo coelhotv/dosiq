@@ -7,6 +7,7 @@
 import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils.js'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
+import { stockDoseMetrics } from '@dosiq/core'
 import {
   buildSummaryCards,
   buildAttentionItems,
@@ -233,6 +234,11 @@ function _mapStockItem(stockItem, protocols, medicines) {
   const severity = getStockSeverity({ ...stockItem, daysRemaining })
   const id = medicine.id || stockItem?.medicine?.id || stockItem?.medicine_id || crypto.randomUUID()
 
+  // 012 B4 / ADR-067: doses físicas restantes (número-base p/ freq ≠ diário); a
+  // severidade/runway seguem daysRemaining (cronológico).
+  const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
+  const { dosesRemaining, isDaily } = stockDoseMetrics(totalQuantity, medProtocols, medicine)
+
   return {
     id,
     label: formatTreatmentLabel(protocol, medicine),
@@ -240,6 +246,8 @@ function _mapStockItem(stockItem, protocols, medicines) {
     totalQuantity,
     dailyIntake,
     daysRemaining,
+    dosesRemaining,
+    isDailyStock: isDaily,
     severity,
     message: _resolveStockMessage(stockItem),
   }

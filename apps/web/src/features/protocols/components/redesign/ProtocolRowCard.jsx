@@ -48,7 +48,12 @@ export default function ProtocolRowCard({
               <span className="protocol-row__dosage">{item.concentrationLabel}</span>
             )}
           </div>
-          <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
+          <StockPill
+            status={item.stockStatus}
+            daysRemaining={item.daysRemaining}
+            dosesRemaining={item.dosesRemaining}
+            isDailyStock={item.isDailyStock}
+          />
         </div>
 
         <div className="protocol-row__intake">{item.intakeLabel}</div>

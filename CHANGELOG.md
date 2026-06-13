@@ -9,6 +9,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase B4 — estoque dose-primário (slice 2: core + web + mobile)
+
+#### Core (@dosiq/core)
+- **Added** (`minor`, FR-026/ADR-067): `stockDoseMetrics(qty, protocols, medicine)` — modelo dose-primário: `dosesRemaining` (doses físicas, número exibido), `runwayDias` (dias corridos derivados via `frequencyDailyFactor`), `dosesPorDia`, `isDaily`. `cleanFloat` antes do floor (R-277).
+- **Fixed** (`patch`, R-277/AP-226): `formatActiveIngredientShort` envolve `qty × dosagePerPill` em `cleanFloat` — artefato de float (`1,5×0,1=0,150000…2`) vazava pro chip de estoque.
+
+#### Web (4.5.0 → 4.6.0) / App mobile (0.16.3 → 0.16.4 — patch: fase do épico 012, convenção 0.16.x)
+- **Changed** (`minor`, FR-028/ADR-067): chips/cards de estoque e card de tratamento exibem **"N doses"** (não "N dias") para frequência ≠ diária; a **cor/status** continua medindo `runwayDias` (recompra cronológica). Diário inalterado ("N dias"). Web: `StockPill`/`StockCardRedesign`; Mobile: `StockLevelBadge`/`StockItem`/`StockDetailScreen`.
+- **Fixed** (`patch`, ADR-067): card de tratamento web colorava por `daysRemaining` do `predictRefill` (sem fator de frequência → "0 dias" no Mounjaro); agora `predictRefill` aplica `frequencyDailyFactor` e a cor usa `runwayDias` do modelo dose-primário — converge com o card de estoque.
+- **Added** (`minor`, FR-027): `costAnalysisService` expõe `custoPorDose`/`custoPorDia`/`dosesPorDia` (custo/dose primário — R$425, fim do "R$0,07/dia" ilegível). Schema de custo ganha `frequency`/`weekdays`/`dosage_per_pill` — sem eles o `safeParse` stripava e a cadência/conversão mg caíam errado (AP-214).
+
+#### Backend/Infra (bot — Telegram /estoque)
+- **Fixed** (`no-user-impact`, FR-013c/ADR-067): comando `/estoque` somava a dose crua (UI/gotas) contra o saldo em ml (mesma raiz do cron, slice 1); agora usa `calculateDailyIntake` + `stockDoseMetrics` e exibe doses + runway-contexto.
+
+#### Reports (PDF de consulta)
+- **Changed** (`patch`, FR-029): seção de atenção de estoque exibe doses físicas + runway entre parênteses para freq ≠ diária (`_pdfSectionBuilders`/`consultationPdfDataBuilder`).
+
+> **Nota:** FR-030 (`injection_container` por lote + DROP em `medicines`) sai num PR dedicado (migração prod).
+
 ### 012 Fase B4 — estoque dose-primário (slice 1: serverless)
 
 #### Backend/Infra (bot cron — serverless)

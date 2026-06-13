@@ -1,5 +1,5 @@
 import { getNow } from '@utils/dateUtils'
-import { resolveTreatmentStatus, getProtocolDays, formatIntakeDose, formatConcentration } from '@dosiq/core'
+import { resolveTreatmentStatus, getProtocolDays, formatIntakeDose, formatConcentration, stockDoseMetrics } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
 import { getTitrationSummary, isTitrationActive } from '@protocols/services/titrationService'
 
@@ -139,6 +139,12 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     medicine: protocol.medicine, // 022: liquid-aware (converte consumo p/ ml)
   })
 
+  // 012 B4 / ADR-067: número exibido = doses físicas restantes (não dias). A COR
+  // (stockStatus) mede runwayDias — dias corridos, recompra é cronológica. Antes a
+  // cor vinha de getStockStatus(daysRemaining do predictRefill); agora usa runwayDias
+  // do modelo dose-primário (fonte única, alinhado ao mobile). Rótulo sempre "dose(s)".
+  const { dosesRemaining, isDaily, runwayDias } = stockDoseMetrics(totalStock, [protocol], protocol.medicine)
+
   const intakeLabel = _computeIntakeLabel(protocol)
   const nextDoseTime = _computeNextDoseTime(protocol.time_schedule)
   const treatmentPlanInfo = _computeTreatmentPlanInfo(protocol.treatment_plan)
@@ -162,8 +168,10 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     timeSchedule: times,
     nextDoseTime,
     isRegisteredToday: false,
-    stockStatus: getStockStatus(daysRemaining),
+    stockStatus: getStockStatus(Number.isFinite(runwayDias) ? runwayDias : daysRemaining),
     daysRemaining,
+    dosesRemaining,
+    isDailyStock: isDaily,
     adherenceScore7d: adherenceMap[protocol.id] ?? 0,
     hasTitration,
     titrationSummary: titSummary,

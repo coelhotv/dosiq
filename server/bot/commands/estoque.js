@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { calculateDaysRemaining, formatStockStatus } from '../../utils/formatters.js';
+import { calculateDailyIntake, stockDoseMetrics } from '@dosiq/core';
 
 export async function handleEstoque(bot, msg) {
   const chatId = msg.chat.id;
@@ -43,16 +44,14 @@ export async function handleEstoque(bot, msg) {
       const totalQuantity = (medicine.stock || []).reduce((sum, s) => sum + s.quantity, 0);
 
 
-      // Calculate daily usage from active protocols
-      const dailyUsage = activeProtocols.reduce((sum, p) => {
-        const timesPerDay = p.time_schedule?.length || 0;
-        const dosagePerIntake = p.dosage_per_intake || 0;
-        return sum + (timesPerDay * dosagePerIntake);
-      }, 0);
-
+      // 012 B4 / ADR-067 + FR-013c: consumo diário via core (converte líquido p/ ml +
+      // aplica frequencyDailyFactor). Antes somava a dose crua (UI/gotas) contra o saldo
+      // em ml → "0 dias" falso p/ insulina/GLP-1, igual ao cron (slice 1).
+      const dailyUsage = calculateDailyIntake(medicine.id, activeProtocols, medicine);
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
+      const doseMetrics = stockDoseMetrics(totalQuantity, activeProtocols, medicine);
 
-      message += formatStockStatus(medicine, totalQuantity, daysRemaining) + '\n';
+      message += formatStockStatus(medicine, totalQuantity, daysRemaining, doseMetrics) + '\n';
 
       if (daysRemaining !== null && daysRemaining <= 7) {
         hasLowStock = true;

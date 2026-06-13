@@ -1,7 +1,7 @@
 // src/features/stock/services/refillPredictionService.js
 
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
-import { isLiquidMedicine, doseToMl } from '@dosiq/core'
+import { isLiquidMedicine, doseToMl, frequencyDailyFactor } from '@dosiq/core'
 
 /**
  * Calcula previsao de reposicao baseada em consumo REAL (logs de doses).
@@ -50,11 +50,14 @@ export function predictRefill({ medicineId, currentStock, logs, protocols, medic
     isRealData = true
     confidence = daysWithData >= 21 ? 'high' : 'medium'
   } else {
-    // Fallback: consumo teórico (dose×vezes), liquid-aware via intake_unit do protocolo
+    // Fallback: consumo teórico (dose×vezes), liquid-aware via intake_unit do protocolo.
+    // 012 B4 / ADR-067: aplica frequencyDailyFactor — sem ele, dose semanal/alternada
+    // era contada como diária (Mounjaro mostrava "0 dias" no card de tratamento vs
+    // "28 dias" no card de estoque). Agora ambas as superfícies convergem no runway.
     const activeIntakePerDay = activeProtocols.reduce((sum, p) => {
       const times = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1
-      return sum + times * toMl(dosage, p.intake_unit)
+      return sum + times * toMl(dosage, p.intake_unit) * frequencyDailyFactor(p)
     }, 0)
     dailyConsumption = activeIntakePerDay
     isRealData = false

@@ -5,7 +5,18 @@ import {
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
-import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine } from '@dosiq/core'
+import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine, frequencyDailyFactor, cleanFloat } from '@dosiq/core'
+
+/**
+ * doses por dia de um medicamento = Σ (tomadas/dia × cadência da frequência).
+ * 012 B4 / ADR-067 — base do custo/dose (custoPorDose = custoPorDia ÷ dosesPorDia).
+ */
+function dosesPerDayFor(protocols) {
+  return (protocols || []).reduce(
+    (sum, p) => sum + (p.time_schedule?.length || 1) * frequencyDailyFactor(p),
+    0
+  )
+}
 
 function getPriceEntries(medicine = {}) {
   if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
@@ -147,12 +158,24 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
       const monthlyCost = dailyIntake * avgUnitPrice * 30
       const hasPriceData = avgUnitPrice > 0
 
+      // 012 B4 / ADR-067: custo por DOSE (métrica primária) — preço de uma tomada,
+      // não o custo/dia ilegível (R$0,071…). dailyIntake ÷ dosesPorDia = consumo de
+      // uma tomada (ml ou unidades); × preço = custo/dose.
+      const dosesPorDia = dosesPerDayFor(
+        validatedProtocols.filter((p) => p.medicine_id === medicine.id && p.active)
+      )
+      const custoPorDose = dosesPorDia > 0 ? cleanFloat((dailyIntake / dosesPorDia) * avgUnitPrice) : 0
+      const custoPorDia = cleanFloat(dailyIntake * avgUnitPrice)
+
       return {
         medicineId: medicine.id,
         name: medicine.name,
         dailyIntake,
         avgUnitPrice,
         monthlyCost,
+        custoPorDose,
+        custoPorDia,
+        dosesPorDia,
         hasPriceData,
       }
     })
@@ -271,12 +294,20 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
 
       const monthlyCost = dailyConsumption * avgUnitPrice * 30
 
+      // 012 B4 / ADR-067: custo por DOSE primário (ver calculateMonthlyCosts).
+      const dosesPorDia = dosesPerDayFor(protocolsByMedicine[med.id])
+      const custoPorDose = dosesPorDia > 0 ? cleanFloat((dailyConsumption / dosesPorDia) * avgUnitPrice) : 0
+      const custoPorDia = cleanFloat(dailyConsumption * avgUnitPrice)
+
       return {
         medicineId: med.id,
         name: med.name,
         dailyConsumption: Math.round(dailyConsumption * 100) / 100,
         avgUnitPrice,
         monthlyCost: Math.round(monthlyCost * 100) / 100,
+        custoPorDose,
+        custoPorDia,
+        dosesPorDia,
         isRealData,
         hasPriceData: avgUnitPrice > 0,
       }

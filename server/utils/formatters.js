@@ -25,14 +25,26 @@ export function calculateDaysRemaining(totalQuantity, dailyUsage) {
  * @param {number|null} daysRemaining - Dias restantes de estoque
  * @returns {string} Mensagem formatada com escape MarkdownV2
  */
-export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
+export function formatStockStatus(medicine, totalQuantity, daysRemaining, doseMetrics = null) {
   // Líquidos (022): saldo é em ml, não na unidade de concentração (mg/ml).
   const isLiquid = Boolean(medicine.dosage_unit?.endsWith('/ml'));
   const unit = escapeMarkdownV2(isLiquid ? 'ml' : (medicine.dosage_unit || 'unidades'));
   const name = escapeMarkdownV2(medicine.name || 'Medicamento');
   let status = `💊 *${name}*\n`;
   status += `📦 Estoque: ${totalQuantity} ${unit}\n`;
-  
+
+  // 012 B4 / ADR-067: freq ≠ diário → doses como número-base, runway como contexto.
+  if (doseMetrics && !doseMetrics.isDaily && Number.isFinite(doseMetrics.dosesRemaining)) {
+    const d = doseMetrics.dosesRemaining;
+    status += `💉 Restam ${d} ${d === 1 ? 'dose' : 'doses'}\n`;
+    if (daysRemaining !== null) {
+      status += daysRemaining <= 0
+        ? `⚠️ *SEM ESTOQUE*\n`
+        : `${daysRemaining <= 7 ? '⚠️' : '✅'} Acaba em ~${daysRemaining} dias\n`;
+    }
+    return status;
+  }
+
   if (daysRemaining !== null) {
     if (daysRemaining <= 0) {
       status += `⚠️ *SEM ESTOQUE*\n`;
@@ -42,7 +54,7 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining) {
       status += `✅ Acaba em ${daysRemaining} dias\n`;
     }
   }
-  
+
   return status;
 }
 
