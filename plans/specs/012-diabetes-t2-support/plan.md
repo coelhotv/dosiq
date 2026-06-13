@@ -133,25 +133,44 @@
   intacta (AP-221). Read-path R-267: Zod `medicineSchema` (+`concentration_volume_ml` nullable, R-082),
   selects dos forms/detalhe. C1.5 analysis.md obrigatório (Tier 2: migração + RPC + cross-platform).
 
-### Fase B4 — Modelo de estoque dose-primário (freq ≠ diário) (PR 2d)
+### Fase B4 — Modelo de estoque dose-primário (freq ≠ diário) (PR 2d) — ADR-067 + ADR-068
 > Falha conceitual do smoke B2: dias corridos enganam (4 canetas semanais = "28 dias") e quebram o
 > custo (custo/dose R$425 exibido como R$60,71/dia). Decisão 2026-06-12: **dose = unidade
 > fundamental; dia = projeção derivada**. Depende da B3 (densidade certa).
-- **Três quantidades** (FR-026): `tomadasPorDia = time_schedule.length`;
+- **Três quantidades** (FR-026, **ADR-067**): `tomadasPorDia = time_schedule.length`;
   `diasDeTomadaRestantes = estoque ÷ (dosePorTomada × tomadasPorDia)` (o número exibido);
   `runwayDias = diasDeTomadaRestantes ÷ frequencyDailyFactor` (corridos, derivado). Diário:
   `diasDeTomada == runway` (sem regressão). Líquido usa `doseToMl` (B2/B3); sólido usa unidades.
-- **Custo/dose** (FR-027): `custoPorDose = precoUnidade ÷ dosesPorUnidade` (R$425); `custoPorDia`
-  vira derivado formatado (fim do `0,071…`).
-- **Display em doses, cor em runway** (FR-028): chip exibe "N doses/aplicações"; status (7/14/30)
-  mede `runwayDias` (recompra é cronológica). Diário inalterado.
+  Novas fns em `packages/core/src/utils/stock.js` (`stockDoseMetrics(...)`); `resolveStockStatus`
+  passa a medir **runwayDias** (cor cronológica) — assinatura preservada, semântica do arg muda de
+  "consumo/dia" p/ aceitar o par doses+runway via wrapper (sem quebrar callers diários).
+- **Custo/dose** (FR-027, **ADR-067**): `custoPorDose = precoUnidade ÷ dosesPorUnidade` (R$425);
+  `custoPorDia` vira derivado formatado (fim do `0,071…`). `costAnalysisSchema` += `custoPorDose`.
+- **Display em doses, cor em runway** (FR-028, **ADR-067**): chip exibe "N doses/aplicações"; status
+  (7/14/30) mede `runwayDias` (recompra é cronológica). Diário inalterado ("N dias").
 - **Propagação** (FR-029): refill (data = hoje + runway), PDF, Telegram `/estoque`. Sem mudança de
-  schema de dados — camada de cálculo/apresentação.
-- **Container por lote** (FR-030, smoke PO 2026-06-12): `injection_container` é atributo do **lote**,
-  não do medicamento (paciente migra caneta pré-preenchida → refil mid-tratamento). Mover coluna
-  `medicines.injection_container` → `stock`/`purchases`; rendimento (FR-020) por lote; form de compra
-  mostra o campo em TODA compra (hoje omite as subsequentes). Migração move valores existentes.
-  Corrige a premissa medicine-level da B2 (FR-019/020). **Mutação prod** — autorização PO.
+  schema de dados — camada de cálculo/apresentação. `dosesPorDia` reusa `frequencyDailyFactor` core.
+- **Regressões absorvidas** (ADR-067, decisão PO 2026-06-13 — raiz comum):
+  - **Cron de alerta de estoque** (FR-013c, ⏪ puxado da Fase D): `_processUserStockAlert`
+    ([_reminderHelpers.js:511](../../../server/bot/_reminderHelpers.js#L511)) conta `ml ÷ UI` cru →
+    Lantus 5,3 ml = "0 dias" falso + "5,3 doses" (ml rotulado errado). Converter intake→ml + aplicar
+    `frequencyDailyFactor`; só dispara com `runwayDias` real < limiar; payload com doses+unidade (R-272).
+  - **Card de tratamento ≠ card de estoque** (web): `predictRefill`
+    ([refillPredictionService.js:54](../../../apps/web/src/features/stock/services/refillPredictionService.js#L54))
+    converte ml mas **não** aplica `frequencyDailyFactor` → Mounjaro "0 dias" (tratamento) vs "28 dias"
+    (estoque). Aplicar o fator → convergem.
+- **Container por lote** (FR-030, **ADR-068**, smoke PO 2026-06-12): `injection_container` é atributo
+  do **lote**, não do medicamento (paciente migra caneta pré-preenchida → refil mid-tratamento). Mover
+  coluna `medicines.injection_container` → `stock`/`purchases`; rendimento (FR-020) por lote; form de
+  compra mostra o campo em TODA compra (hoje omite as subsequentes). **Decisão PO 2026-06-13: APOSENTAR
+  `medicines.injection_container`** (migração copia valores p/ lotes e DROPA a coluna — fonte única =
+  lote; sem prefill auto na 1ª compra). Corrige a premissa medicine-level da B2 (FR-019/020). **Mutação
+  prod** — autorização PO.
+- **Legacy edge folded-in** (não-FR, decisão PO 2026-06-13): `formatActiveIngredientShort`
+  ([doseUnit.js:386](../../../packages/core/src/utils/doseUnit.js#L386)) faz `qty × dosagePerPill` e
+  passa a `formatNumberPtBR` **sem `cleanFloat`** → artefato de float (`1,5×0,1=0,15000000000000002`)
+  vazaria pro chip de estoque. Envolver em `cleanFloat` (R-277). Mesmo domínio (display de estoque);
+  fix de 1 linha aproveitando a fase.
 
 ### Fase C — `biomarkers_log` + fast-logging + timeline híbrida — ADR-060
 

@@ -518,7 +518,9 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   CASE WHEN lower(intake)='ui' THEN 100 ELSE 20 END)`. Mudança **aditiva** (assinatura intacta,
   gotas/ml/sólidos inalterados — AP-221 respeitado); migração própria + regressão completa.
   **Fase D deixa de ser smoke-only por causa deste item.**
-- **FR-013c** 🔴 **(regressão 022 reportada pelo PO 2026-06-11 — push de estoque errado)**: o cron
+- **FR-013c** 🔴 **(regressão 022 — push de estoque errado)** ⏪ **PUXADO PARA A FASE B4** (decisão PO
+  2026-06-13, ADR-067 — raiz comum com o modelo dose-primário; ver T045). Mantido aqui só como
+  referência; a entrega ocorre na B4. — o cron
   serverless de alerta de estoque (`_processUserStockAlert`) calcula
   `daysRemaining = stock.qty / dailyConsumption` **sem conversão de unidades**: para líquidos o
   estoque está em **ml** (022), mas `dailyConsumption` soma `dosage_per_intake` na unidade de
