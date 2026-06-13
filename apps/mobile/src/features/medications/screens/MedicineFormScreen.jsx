@@ -18,6 +18,7 @@ import {
   PRESENTATION_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
+  cleanFloat,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -83,7 +84,7 @@ export default function MedicineFormScreen() {
     const ratio = Number(medicine.dosage_per_pill)
     const amountStr =
       medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
-        ? String(denom > 0 ? ratio * denom : medicine.dosage_per_pill)
+        ? String(denom > 0 ? cleanFloat(ratio * denom) : medicine.dosage_per_pill)
         : ''
     return {
       ...medicine,
@@ -202,10 +203,14 @@ export default function MedicineFormScreen() {
     const isLiquid = isLiquidUnit(form.values.dosage_unit)
     const rawDenom = isLiquid ? Number(String(form.values.concentration_volume_ml ?? '').replace(',', '.')) : NaN
     const denom = rawDenom > 0 ? rawDenom : 1
-    const amount = Number(String(form.values.dosage_per_pill ?? '').replace(',', '.'))
+    // Gemini #661: dosage_per_pill vazio (permitido p/ suplemento) → Number('')=0 salvaria 0
+    // em vez de null, corrompendo o dado. Só converte quando há valor preenchido.
+    const rawAmount = form.values.dosage_per_pill
+    const hasAmount = rawAmount !== '' && rawAmount !== null && rawAmount !== undefined
+    const amount = hasAmount ? Number(String(rawAmount).replace(',', '.')) : NaN
     const payload = {
       ...form.values,
-      dosage_per_pill: Number.isFinite(amount) ? amount / denom : form.values.dosage_per_pill,
+      dosage_per_pill: hasAmount && Number.isFinite(amount) ? cleanFloat(amount / denom) : null,
       concentration_volume_ml: denom !== 1 ? denom : null,
     }
     if (isEditing) {

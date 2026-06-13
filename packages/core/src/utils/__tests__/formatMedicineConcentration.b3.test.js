@@ -55,4 +55,7 @@ describe('formatConcentration — 3º arg volumeMl (motor)', () => {
   it('volume em sólido ignorado', () => {
     expect(formatConcentration(500, 'mg', 0.5)).toBe('500 mg')
   })
+  it('limpa artefato de float (Gemini #661): 1,2 × 0,3 → 0,36 (não 0,36000000000000004)', () => {
+    expect(formatConcentration(1.2, 'mg/ml', 0.3)).toBe('0,36 mg / 0,3ml')
+  })
 })

@@ -9,6 +9,7 @@ import {
   PRESENTATION_LABELS,
   LIQUID_PRESENTATIONS,
   coerceDecimal,
+  cleanFloat,
   formatNumberPtBR,
 } from '@dosiq/core'
 import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
@@ -143,7 +144,9 @@ export default function MedicineFormDosageInfo({
                 const a = coerceDecimal(formData.dosage_per_pill)
                 const d = coerceDecimal(formData.concentration_volume_ml)
                 if (!(a > 0) || !(d > 0) || d === 1) return null
-                return ` → razão armazenada ${formatNumberPtBR(a / d)} mg/mL`
+                const baseUnit = (formData.dosage_unit || 'mg/ml').split('/')[0]
+                const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
+                return ` → razão armazenada ${formatNumberPtBR(cleanFloat(a / d))} ${baseLabel}/mL`
               })()}
             </small>
             {errors.concentration_volume_ml && (

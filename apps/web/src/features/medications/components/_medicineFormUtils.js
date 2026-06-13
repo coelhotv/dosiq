@@ -1,5 +1,5 @@
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils.js'
-import { LIQUID_PRESENTATIONS, coerceDecimal } from '@dosiq/core'
+import { LIQUID_PRESENTATIONS, coerceDecimal, cleanFloat } from '@dosiq/core'
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022). Único ponto de verdade na UI web.
 export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
@@ -29,7 +29,7 @@ export const getInitialFormData = (medicine = {}) => {
   const denom = Number(concentration_volume_ml)
   const amountDisplay =
     dosage_per_pill !== '' && dosage_per_pill != null && denom > 0
-      ? String(Number(dosage_per_pill) * denom)
+      ? String(cleanFloat(Number(dosage_per_pill) * denom))
       : dosage_per_pill
 
   return {
@@ -91,7 +91,7 @@ export const buildMedicinePayload = (formData) => {
     name: formData.name.trim(),
     laboratory: formData.laboratory.trim() || null,
     active_ingredient: formData.active_ingredient.trim() || null,
-    dosage_per_pill: amount != null ? amount / denom : null,
+    dosage_per_pill: amount != null ? cleanFloat(amount / denom) : null,
     concentration_volume_ml: denom !== 1 ? denom : null,
     type: formData.type,
     dosage_unit: formData.dosage_unit,

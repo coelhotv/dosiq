@@ -13,6 +13,7 @@
 // US. Por isso usamos replace('.', ',') manual (confiável em V8 e Hermes).
 
 import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
+import { cleanFloat } from './formUtils.js'
 
 /**
  * Formata a concentração/apresentação do medicamento (pill) com a unidade
@@ -42,7 +43,7 @@ export function formatConcentration(value, unit, volumeMl = null) {
   ) {
     const baseUnit = (unit || 'mg/ml').split('/')[0]
     const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
-    return `${formatNumberPtBR(ratio * vol)} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
+    return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
   }
   const v = formatNumberPtBR(value)
   if (v === '') return ''
@@ -141,7 +142,7 @@ export function formatConcentrationLabel(mgPerMl, volumeMl = 1) {
   if (!Number.isFinite(ratio) || ratio <= 0) return ''
   const volNum = Number(typeof volumeMl === 'string' ? volumeMl.replace(',', '.') : volumeMl)
   const vol = Number.isFinite(volNum) && volNum > 0 ? volNum : 1
-  const amount = ratio * vol
+  const amount = cleanFloat(ratio * vol)
   return `${formatNumberPtBR(amount)} mg em ${formatNumberPtBR(vol)} mL`
 }
 

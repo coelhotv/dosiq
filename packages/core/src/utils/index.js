@@ -69,6 +69,7 @@ export {
 export {
   getFieldDescribedBy,
   coerceDecimal,
+  cleanFloat,
 } from './formUtils.js'
 
 // String utilities
