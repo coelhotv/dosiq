@@ -381,7 +381,9 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
     return ''
   }
   const qtyNum = Number(String(qty).replace(',', '.'))
-  const { total, currentUnit } = convertMetricUnit(qtyNum * dosagePerPill, unit)
+  // cleanFloat no produto (R-277): formatNumberPtBR não arredonda, então o artefato
+  // de float (1,5×0,1=0,15000000000000002) vazaria pro chip de estoque (AP-226).
+  const { total, currentUnit } = convertMetricUnit(cleanFloat(qtyNum * dosagePerPill), unit)
 
   const displayTotal = formatNumberPtBR(total)
 

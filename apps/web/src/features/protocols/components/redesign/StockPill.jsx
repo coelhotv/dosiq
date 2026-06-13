@@ -11,10 +11,22 @@ const STATUS_CONFIG = {
   high: { color: '#3b82f6', bg: '#eff6ff', Icon: CalendarArrowUp },
 }
 
-export default function StockPill({ status, daysRemaining }) {
+/**
+ * 012 B4 / ADR-067: número exibido = doses físicas (dose-primário) p/ freq ≠ diário;
+ * diário mantém "N dias" (sem regressão). A COR sempre mede runway (status).
+ * Rótulo sempre "dose(s)" — cobre injetável também (plural simples).
+ */
+function buildLabel({ daysRemaining, dosesRemaining, isDailyStock }) {
+  if (!isDailyStock && Number.isFinite(dosesRemaining)) {
+    return `${dosesRemaining} ${dosesRemaining === 1 ? 'dose' : 'doses'}`
+  }
+  return isFinite(daysRemaining) ? `${daysRemaining} dias` : '∞'
+}
+
+export default function StockPill({ status, daysRemaining, dosesRemaining, isDailyStock = true }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.normal
   const { Icon } = cfg
-  const label = isFinite(daysRemaining) ? `${daysRemaining} dias` : '∞'
+  const label = buildLabel({ daysRemaining, dosesRemaining, isDailyStock })
 
   return (
     <span

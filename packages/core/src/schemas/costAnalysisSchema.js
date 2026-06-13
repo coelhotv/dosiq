@@ -22,6 +22,9 @@ export const MedicineWithStockSchema = z.object({
   // Líquidos (022): unidade + densidade p/ converter consumo (UI/gotas → ml) no custo.
   dosage_unit: z.string().nullable().optional(),
   units_per_ml: z.number().positive().nullable().optional(),
+  // mg (GLP-1, B2): concentração mg/ml p/ doseToMl no custo/dose (B4). AP-214: sem
+  // este campo o safeParse stripa e a conversão de mg cai na dose crua.
+  dosage_per_pill: z.number().positive().nullable().optional(),
   stock: z.array(StockEntrySchema).optional().default([]).describe('Array de entradas de estoque'),
   purchases: z.array(StockEntrySchema).optional().default([]),
 })
@@ -37,6 +40,10 @@ export const ProtocolSchema = z.object({
     .default(0),
   // Líquidos (022): unidade de tomada (gotas/ml/UI) p/ conversão de consumo.
   intake_unit: z.string().nullable().optional(),
+  // 012 B4 / ADR-067: cadência p/ frequencyDailyFactor no custo/dose (AP-214 — sem
+  // estes campos o safeParse stripa e dose semanal/alternada vira diária no custo).
+  frequency: z.string().nullable().optional(),
+  weekdays: z.array(z.string()).nullable().optional(),
   time_schedule: z
     .array(z.string())
     .optional()

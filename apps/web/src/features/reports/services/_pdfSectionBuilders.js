@@ -94,6 +94,19 @@ export function buildSummaryCards(
  * @param {Array} titrationRows - Rows de titulação
  * @returns {Array} attentionItems
  */
+/**
+ * Detalhe de escassez de estoque (012 B4 / ADR-067): freq ≠ diário mostra doses
+ * físicas (número-base) com runway entre parênteses; diário mantém "N dias".
+ */
+function _stockShortageDetail(item) {
+  if (item.isDailyStock === false && Number.isFinite(item.dosesRemaining)) {
+    const d = item.dosesRemaining
+    const dias = item.daysRemaining ?? '-'
+    return `Estoque baixo: ${d} ${d === 1 ? 'dose' : 'doses'} (~${dias} dias)`
+  }
+  return `Estoque baixo: ${item.daysRemaining ?? '-'} dias`
+}
+
 export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) {
   return [
     ...stockRows
@@ -104,7 +117,7 @@ export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) 
         detail:
           item.severity === 'critical'
             ? 'Estoque esgotado'
-            : `Estoque baixo: ${item.daysRemaining ?? '-'} dias`,
+            : _stockShortageDetail(item),
         tone: item.severity,
       })),
     ...prescriptionRows
