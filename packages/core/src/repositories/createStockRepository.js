@@ -68,6 +68,7 @@ export function createStockRepository({ client, getUserId }) {
         presentation,
         dosage_unit,
         dosage_per_pill,
+        concentration_volume_ml,
         units_per_ml,
         shelf_life_days,
         medicine_stock_summary!left (

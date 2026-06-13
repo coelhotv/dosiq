@@ -78,8 +78,7 @@ export default function MedicineDetailScreen() {
 
   const doseLabel = useMemo(() => {
     if (!data?.dosage_per_pill) return null
-    const unit = data.dosage_unit ?? ''
-    return `${data.dosage_per_pill}${unit ? ` ${unit}` : ''}`
+    return formatConcentration(data.dosage_per_pill, data.dosage_unit, data.concentration_volume_ml)
   }, [data])
 
   const protocols = useMemo(() => {
@@ -304,7 +303,7 @@ export default function MedicineDetailScreen() {
               label="Concentração"
               value={
                 data.dosage_per_pill
-                  ? formatConcentration(data.dosage_per_pill, data.dosage_unit)
+                  ? formatConcentration(data.dosage_per_pill, data.dosage_unit, data.concentration_volume_ml)
                   : null
               }
               isLast

@@ -1,9 +1,11 @@
 import React from 'react'
-import { MEDICINE_TYPES } from '@schemas/medicineSchema.js'
 import { getFieldDescribedBy } from '@utils/formUtils.js'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
 import MedicineAutocomplete from '@features/medications/components/MedicineAutocomplete.jsx'
 
+// Ordem dos campos espelha o form mobile (012 Fase B3): Identificação no topo
+// (nome + princípio ativo), prioritários primeiro. Tipo/Classe migraram p/ a
+// seção "Classificação" (MedicineFormDosageInfo).
 export default function MedicineFormBasicInfo({
   formData,
   errors,
@@ -19,22 +21,7 @@ export default function MedicineFormBasicInfo({
 }) {
   return (
     <>
-      <div className="form-group">
-        <label htmlFor="type">Tipo</label>
-        <select
-          id="type"
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          disabled={isSubmitting}
-        >
-          {MEDICINE_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type === 'medicamento' ? 'Medicamento' : 'Suplemento'}
-            </option>
-          ))}
-        </select>
-      </div>
+      <h4 className="medicine-form__section-title">Identificação</h4>
 
       <div className="form-group">
         <label htmlFor="name">
@@ -92,27 +79,6 @@ export default function MedicineFormBasicInfo({
         <small id="active_ingredient-hint" className="field-hint">
           Preenchido automaticamente ao selecionar medicamento
         </small>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="therapeutic_class">
-          Classe Terapêutica
-          {formData.therapeutic_class && !medicine?.therapeutic_class && (
-            <span className="autocomplete-badge" title="Preenchido via Base ANVISA">
-              Fonte: ANVISA
-            </span>
-          )}
-        </label>
-        <input
-          type="text"
-          id="therapeutic_class"
-          name="therapeutic_class"
-          value={formData.therapeutic_class || ''}
-          onChange={handleChange}
-          placeholder="Ex: Analgésicos não narcóticos"
-          disabled={isSubmitting}
-          maxLength={100}
-        />
       </div>
     </>
   )

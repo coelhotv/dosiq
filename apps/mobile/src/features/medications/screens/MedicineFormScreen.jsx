@@ -18,6 +18,7 @@ import {
   PRESENTATION_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
+  cleanFloat,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -77,11 +78,20 @@ export default function MedicineFormScreen() {
   // ao carregar para edição. Outros campos number-like seguem mesma regra.
   const initialValues = useMemo(() => {
     if (!medicine) return DEFAULT_INITIAL
+    // FR-031 (ADR-066): o campo exibe o `amount` do rótulo = razão × volume; transforma só
+    // quando há denominador salvo (≠ null). Senão exibe a razão crua (volume 1).
+    const denom = Number(medicine.concentration_volume_ml)
+    const ratio = Number(medicine.dosage_per_pill)
+    const amountStr =
+      medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
+        ? String(denom > 0 ? cleanFloat(ratio * denom) : medicine.dosage_per_pill)
+        : ''
     return {
       ...medicine,
-      dosage_per_pill:
-        medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
-          ? String(medicine.dosage_per_pill)
+      dosage_per_pill: amountStr,
+      concentration_volume_ml:
+        medicine.concentration_volume_ml !== null && medicine.concentration_volume_ml !== undefined
+          ? String(medicine.concentration_volume_ml)
           : '',
       shelf_life_days:
         medicine.shelf_life_days !== null && medicine.shelf_life_days !== undefined
@@ -122,13 +132,14 @@ export default function MedicineFormScreen() {
   // Normaliza vírgula→ponto em tempo real (PT-BR digita 1,5; JS/Postgres esperam 1.5).
   // Aceita apenas dígitos + um separador decimal único.
   const handleDoseChange = useCallback(
-    (_name, value) => {
+    (name, value) => {
       const cleaned = String(value ?? '')
         .replace(',', '.')
         .replace(/[^\d.]/g, '')
         // colapsa múltiplos pontos no primeiro
         .replace(/^(\d*\.\d*).*$/, '$1')
-      form.handleChange('dosage_per_pill', cleaned)
+      // FormInput passa o name; fallback dosage_per_pill p/ chamadas legadas.
+      form.handleChange(name || 'dosage_per_pill', cleaned)
     },
     [form]
   )
@@ -187,10 +198,25 @@ export default function MedicineFormScreen() {
       )
       return
     }
+    // FR-031 (ADR-066): normaliza amount→razão. Líquido c/ denominador ≠ 1 → dosage_per_pill =
+    // amount ÷ denominador + grava concentration_volume_ml; senão passthrough (coluna null).
+    const isLiquid = isLiquidUnit(form.values.dosage_unit)
+    const rawDenom = isLiquid ? Number(String(form.values.concentration_volume_ml ?? '').replace(',', '.')) : NaN
+    const denom = rawDenom > 0 ? rawDenom : 1
+    // Gemini #661: dosage_per_pill vazio (permitido p/ suplemento) → Number('')=0 salvaria 0
+    // em vez de null, corrompendo o dado. Só converte quando há valor preenchido.
+    const rawAmount = form.values.dosage_per_pill
+    const hasAmount = rawAmount !== '' && rawAmount !== null && rawAmount !== undefined
+    const amount = hasAmount ? Number(String(rawAmount).replace(',', '.')) : NaN
+    const payload = {
+      ...form.values,
+      dosage_per_pill: hasAmount && Number.isFinite(amount) ? cleanFloat(amount / denom) : null,
+      concentration_volume_ml: denom !== 1 ? denom : null,
+    }
     if (isEditing) {
-      await update(medicine.id, form.values, { goBack: true })
+      await update(medicine.id, payload, { goBack: true })
     } else {
-      await create(form.values, { goBack: true })
+      await create(payload, { goBack: true })
     }
   }, [form, isEditing, medicine, create, update])
 
@@ -255,6 +281,18 @@ export default function MedicineFormScreen() {
               />
             </View>
           </View>
+          {/* FR-031 (ADR-066): denominador do rótulo. Default 1 mL; muda só p/ Mounjaro etc. */}
+          {isLiquidUnit(form.values.dosage_unit) && (
+            <FormInput
+              name="concentration_volume_ml"
+              label="Volume da concentração (mL no rótulo)"
+              keyboardType="decimal-pad"
+              placeholder="1"
+              helperText='Padrão é 1 mL (ou só mL). Mude se o rótulo trouxer outro volume, ex.: "Mounjaro 2,5 mg / 0,5 mL" — preencha 0,5.'
+              {...formProps(form, 'concentration_volume_ml')}
+              onChange={handleDoseChange}
+            />
+          )}
           {form.values.dosage_unit === 'un' && Number(form.values.dosage_per_pill) > 1 && (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>

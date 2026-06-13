@@ -142,6 +142,8 @@ function createDoseItem(instance, protocol, tz) {
     presentation: medicine.presentation ?? null,
     dosagePerPill: medicine.dosage_per_pill ?? null,
     dosageUnit: medicine.dosage_unit ?? null,
+    // 012 Fase B3 (FR-031): denominador do rótulo p/ reexibir concentração (ex: Mounjaro 0,5 mL)
+    concentrationVolumeMl: medicine.concentration_volume_ml ?? null,
     // Líquidos (022): unidade de tomada do tratamento + densidade do medicamento
     // p/ exibir dose na unidade certa (gotas/ml/UI) e converter p/ ml.
     intakeUnit: protocol.intake_unit ?? null,

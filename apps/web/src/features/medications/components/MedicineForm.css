@@ -4,6 +4,17 @@
   gap: var(--space-5);
 }
 
+/* Subtítulo de seção (012 Fase B3): dá ritmo/agrupamento ao form, espelhando
+   as FormSection do mobile (Identificação · Dosagem · Classificação). */
+.medicine-form__section-title {
+  margin: var(--space-3) 0 0 0;
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary, #64748b);
+}
+
 .medicine-form h3 {
   margin: 0 0 var(--space-4) 0;
   color: var(--text-primary);

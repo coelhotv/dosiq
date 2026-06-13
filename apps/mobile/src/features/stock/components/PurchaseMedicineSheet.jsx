@@ -44,7 +44,7 @@ function normalize(s) {
 // dentro do limite max-lines-per-function.
 function MedicineRow({ item, onPress }) {
   const dosageLabel = item.dosage_per_pill
-    ? formatConcentration(item.dosage_per_pill, item.dosage_unit)
+    ? formatConcentration(item.dosage_per_pill, item.dosage_unit, item.concentration_volume_ml)
     : null
 
   return (
