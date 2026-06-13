@@ -19,7 +19,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Added** (`minor`, FR-024): helper `densityFor(intakeUnit, unitsPerMl)` — densidade unit-aware (explícita > gotas 20 > UI 100 > null). `doseToMl` e `formatIntakeDose` passam a usá-lo (fim do fallback 20 cego).
 - **Changed** (`minor`, FR-031): `formatConcentrationLabel(mgPerMl, volumeMl=1)` reconstrói "amount mg em volume mL" (Mounjaro razão 5 + volume 0,5 → "2,5 mg em 0,5 mL"); compatível com a Fase B2 (volume 1). Schema `medicineSchema` + `concentration_volume_ml` (nullable, R-082).
 
-#### Web (4.5.0) / Mobile (0.4.0)
+#### Web (4.5.0) / Mobile (0.4.0) / App (0.16.3)
 - **Added** (`patch`, FR-031): form de medicamento ganha campo "Volume da concentração (mL no rótulo)" para líquidos (default 1 mL; muda só p/ Mounjaro etc.). Normaliza `dosage_per_pill = amount ÷ denominador` ao salvar e reexibe o `amount` do rótulo na edição. Validação impede denominador ≤ 0. Inputs decimais PT-BR (R-276).
 
 ### 012 Fase B2 — correções do smoke (2026-06-12)
