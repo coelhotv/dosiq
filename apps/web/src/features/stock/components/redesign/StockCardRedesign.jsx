@@ -106,7 +106,7 @@ function formatHeroMetric({ daysRemaining, dosesRemaining, isDailyStock, hasActi
   if (!isDailyStock && Number.isFinite(dosesRemaining)) {
     return { number: String(dosesRemaining), label: dosesRemaining === 1 ? 'DOSE' : 'DOSES' }
   }
-  if (!isFinite(daysRemaining) || daysRemaining >= 30) return { number: '30+', label: 'DIAS' }
+  if (!Number.isFinite(daysRemaining) || daysRemaining >= 30) return { number: '30+', label: 'DIAS' }
   const days = Math.floor(daysRemaining)
   return { number: String(days), label: days === 1 ? 'DIA' : 'DIAS' }
 }

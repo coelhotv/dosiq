@@ -236,7 +236,7 @@ function _mapStockItem(stockItem, protocols, medicines) {
 
   // 012 B4 / ADR-067: doses físicas restantes (número-base p/ freq ≠ diário); a
   // severidade/runway seguem daysRemaining (cronológico).
-  const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
+  const medProtocols = protocols.filter((p) => p.medicine_id === medicine?.id && p.active !== false)
   const { dosesRemaining, isDaily } = stockDoseMetrics(totalQuantity, medProtocols, medicine)
 
   return {

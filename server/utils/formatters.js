@@ -38,9 +38,10 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining, doseMe
     const d = doseMetrics.dosesRemaining;
     status += `💉 Restam ${d} ${d === 1 ? 'dose' : 'doses'}\n`;
     if (daysRemaining !== null) {
+      // `~` é reservado em MarkdownV2 → escapar `\~` senão o Telegram falha o parse.
       status += daysRemaining <= 0
         ? `⚠️ *SEM ESTOQUE*\n`
-        : `${daysRemaining <= 7 ? '⚠️' : '✅'} Acaba em ~${daysRemaining} dias\n`;
+        : `${daysRemaining <= 7 ? '⚠️' : '✅'} Acaba em \\~${daysRemaining} dias\n`;
     }
     return status;
   }

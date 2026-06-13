@@ -109,7 +109,9 @@ export function stockDoseMetrics(qty, protocols = [], medicine = null) {
   )
 
   const isDaily = active.every(
-    (p) => !p.frequency || p.frequency === 'diario' || p.frequency === 'diário'
+    (p) =>
+      !p.frequency ||
+      ['diario', 'diário', 'daily', 'diariamente'].includes(p.frequency.toLowerCase())
   )
 
   return { dosesRemaining, runwayDias, dosesPorDia, isDaily }

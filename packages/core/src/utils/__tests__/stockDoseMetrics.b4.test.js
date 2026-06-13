@@ -47,6 +47,14 @@ describe('stockDoseMetrics (B4 — dose-primário)', () => {
     expect(r.runwayDias).toBeCloseTo(5, 5)
   })
 
+  it('isDaily reconhece variações de frequência diária (daily/diariamente)', () => {
+    const medicine = { dosage_unit: 'mg' }
+    for (const frequency of ['diario', 'diário', 'daily', 'Diariamente']) {
+      const r = stockDoseMetrics(10, [{ medicine_id: 'm1', active: true, time_schedule: ['08:00'], dosage_per_intake: 1, frequency }], medicine)
+      expect(r.isDaily, `frequency=${frequency}`).toBe(true)
+    }
+  })
+
   // Failure modes (R-270).
   it('estoque 0 → tudo zero, sem NaN/Infinity', () => {
     const r = stockDoseMetrics(0, [{ medicine_id: 'm1', active: true, dosage_per_intake: 1, frequency: 'diario' }], { dosage_unit: 'mg' })

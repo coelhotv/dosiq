@@ -299,7 +299,7 @@ export default function StockDetailScreen({ navigation }) {
                   <View style={styles.heroBadge}>
                     <StockLevelBadge
                       status={badgeStatus}
-                      daysRemaining={badgeDays}
+                      daysRemaining={doseMetrics.runwayDias}
                       dosesRemaining={doseMetrics.dosesRemaining}
                       isDailyStock={doseMetrics.isDaily}
                     />
