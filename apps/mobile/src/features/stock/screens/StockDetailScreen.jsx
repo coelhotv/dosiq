@@ -226,7 +226,7 @@ export default function StockDetailScreen({ navigation }) {
   const name = medicine?.name ?? medicineName ?? 'Medicamento'
   const dosePill =
     medicine?.dosage_per_pill != null
-      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
+      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)
       : null
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]

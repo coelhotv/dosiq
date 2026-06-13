@@ -17,6 +17,7 @@ import {
   cloneDate,
   parseTimestamp
 } from './dateUtils.js'
+import { densityFor } from './doseUnit.js'
 
 // Invariantes de Negócio (R-022, R-129)
 const TOLERANCE_WINDOW_HOURS = 2
@@ -269,9 +270,10 @@ export function doseToMl(dosage, intakeUnit, unitsPerMl, mgConcentration) {
     const c = Number(mgConcentration)
     return c > 0 ? dosage / c : dosage
   }
-  // gotas/UI → ml: divide pela razão física units_per_ml. Fallback 20 (gotas/ml) se ausente.
-  const density = unitsPerMl && unitsPerMl > 0 ? unitsPerMl : 20
-  return dosage / density
+  // gotas/UI → ml: densidade unit-aware (ADR-065 — gotas≈20, UI≈100; explícita tem prioridade).
+  // Sem densidade definível não inventa (retorna dose crua — evita conversão fantasma).
+  const density = densityFor(intakeUnit, unitsPerMl)
+  return density ? dosage / density : dosage
 }
 
 /**

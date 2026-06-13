@@ -98,7 +98,7 @@ function _computeNextDoseTime(timeSchedule) {
 
 function _computeConcentrationLabel(medicine) {
   if (!medicine?.dosage_per_pill || !medicine?.dosage_unit) return null
-  return formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
+  return formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)
 }
 
 function _computeTreatmentPlanInfo(treatmentPlan) {

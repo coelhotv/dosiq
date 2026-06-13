@@ -142,7 +142,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
             <h3 className="stock-card-r__name">{medicine.name}</h3>
             {medicine.dosage_per_pill && (
               <span className="stock-card-r__dosage">
-                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
+                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
               </span>
             )}
           </div>

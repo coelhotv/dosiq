@@ -144,7 +144,7 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
             {item.protocol.medicine?.dosage_per_pill && (
               <View style={styles.dosageBadge}>
                 <Text style={styles.dosageBadgeText}>
-                  {formatConcentration(item.protocol.medicine.dosage_per_pill, item.protocol.medicine.dosage_unit)}
+                  {formatConcentration(item.protocol.medicine.dosage_per_pill, item.protocol.medicine.dosage_unit, item.protocol.medicine.concentration_volume_ml)}
                 </Text>
               </View>
             )}

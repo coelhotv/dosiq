@@ -118,7 +118,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           <span className="protocol-medicine">
             {protocol.medicine?.name}
             {protocol.medicine?.dosage_per_pill
-              ? ` (${formatConcentration(protocol.medicine.dosage_per_pill, protocol.medicine.dosage_unit)})`
+              ? ` (${formatConcentration(protocol.medicine.dosage_per_pill, protocol.medicine.dosage_unit, protocol.medicine.concentration_volume_ml)})`
               : ''}
           </span>
         </div>

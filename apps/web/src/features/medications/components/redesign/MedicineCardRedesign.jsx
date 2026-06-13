@@ -7,7 +7,7 @@ import {
   Trash2,
   AlertTriangle,
 } from 'lucide-react'
-import { PRESENTATION_LABELS } from '@dosiq/core'
+import { PRESENTATION_LABELS, formatMedicineConcentration } from '@dosiq/core'
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import './MedicineCardRedesign.css'
 
@@ -62,7 +62,7 @@ export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDe
               <Beaker size={14} /> Dosagem
             </span>
             <span className="sr-medicine-card__detail-value">
-              {medicine.dosage_per_pill} {medicine.dosage_unit || 'mg'}
+              {formatMedicineConcentration(medicine)}
             </span>
           </div>
         )}

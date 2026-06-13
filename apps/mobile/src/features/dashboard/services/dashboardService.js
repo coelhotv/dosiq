@@ -81,7 +81,7 @@ export async function getMedicinesData(medicineIds) {
 
   const { data, error } = await supabase
     .from('medicines')
-    .select('id, name, dosage_per_pill, dosage_unit, units_per_ml')
+    .select('id, name, dosage_per_pill, dosage_unit, concentration_volume_ml, units_per_ml')
     .in('id', medicineIds)
 
   if (error) throw error

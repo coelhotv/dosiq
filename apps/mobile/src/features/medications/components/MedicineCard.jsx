@@ -14,6 +14,7 @@ export default function MedicineCard({ medicine, onPress }) {
     type,
     dosage_per_pill,
     dosage_unit,
+    concentration_volume_ml,
     active_ingredient,
     protocols_count = 0,
   } = medicine ?? {}
@@ -50,7 +51,7 @@ export default function MedicineCard({ medicine, onPress }) {
         {hasDose && (
           <View style={styles.dosagePill}>
             <Text style={styles.dosagePillText}>
-              {formatConcentration(dosage_per_pill, dosage_unit)}
+              {formatConcentration(dosage_per_pill, dosage_unit, concentration_volume_ml)}
             </Text>
           </View>
         )}

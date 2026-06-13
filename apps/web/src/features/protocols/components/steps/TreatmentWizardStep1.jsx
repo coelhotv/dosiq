@@ -2,6 +2,7 @@ import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import Button from '@shared/components/ui/Button'
 import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS, PRESENTATIONS, PRESENTATION_LABELS, LIQUID_PRESENTATIONS } from '@schemas/medicineSchema'
+import { formatConcentration } from '@dosiq/core'
 
 /** Renderiza o formulário de cadastro de novo medicamento. */
 function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }) {
@@ -208,7 +209,7 @@ export default function TreatmentWizardStep1({
             {medicines.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
-                {m.dosage_per_pill ? ` ${m.dosage_per_pill}${m.dosage_unit}` : ''}
+                {m.dosage_per_pill ? ` ${formatConcentration(m.dosage_per_pill, m.dosage_unit, m.concentration_volume_ml)}` : ''}
               </option>
             ))}
           </select>
