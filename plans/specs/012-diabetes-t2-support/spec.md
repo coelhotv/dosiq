@@ -389,11 +389,12 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   líquido gotas/UI sem densidade (o default da coluna não pode mais mascarar a ausência). mg
   inalterado (não pede densidade — usa `dosage_per_pill`).
 - **FR-031 — entrada de concentração com denominador (anti-armadilha Mounjaro)** (decisão de design
-  2026-06-12): rótulos de GLP-1/insulina exibem a concentração **por injeção**, não por ml — Mounjaro
-  "2,5 mg/0,5 mL", Ozempic "2 mg/0,8 mL", insulina U-100/U-200/U-300. Usuário digita o número da caixa
+  2026-06-12): alguns rótulos exibem a concentração **por denominador ≠ 1 mL**. Caso real hoje =
+  **Mounjaro** "2,5 mg/0,5 mL" (exceção única no BR; Ozempic e demais rotulam sempre por `/1 mL`).
+  Insulina U-100/U-200/U-300 (Fase D) reusa o mesmo seletor. Usuário digita o número da caixa
   (`2,5`) no campo `mg/ml` e grava concentração errada (real = 5 mg/ml), silenciosamente. **Solução
   (Opção 1):** o campo de concentração no form de **medicamento** ganha um **seletor de denominador**
-  — `[2,5] mg / [0,5 ▾] mL` (opções `1 mL` / `0,5 mL` / `0,8 mL` / …). Ao salvar, **normaliza p/
+  — `[2,5] mg / [0,5] mL` (denominador default `1`, editável com o valor do rótulo). Ao salvar, **normaliza p/
   mg/ml** = `valor ÷ denominador` (2,5 ÷ 0,5 = 5). **Armazenamento segue mg/ml** (invariante "número =
   por 1 mL" intacto → zero drift em RPC/`doseToMl`/formatters/custo). Mesmo mecanismo cobre
   `mg/0,8ml` e U-100/200/300 (Fase D) **sem unidades novas**.
