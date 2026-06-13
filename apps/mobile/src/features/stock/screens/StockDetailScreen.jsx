@@ -110,14 +110,8 @@ export default function StockDetailScreen({ navigation }) {
     [saldo, dailyConsumption],
   )
 
-  // Badge "saldo em dias" (mesmo da listagem — StockLevelBadge usa enum UPPERCASE
-  // + daysRemaining numérico; Infinity = sem consumo → "-- dias").
-  const badgeDays = useMemo(
-    () => (dailyConsumption > 0 ? saldo / dailyConsumption : Infinity),
-    [saldo, dailyConsumption],
-  )
   // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário);
-  // cor/badge seguem runway (badgeDays). Diário mantém "N dias".
+  // cor/badge seguem runway (doseMetrics.runwayDias). Diário mantém "N dias".
   const doseMetrics = useMemo(() => {
     const active = (medicine?.protocols || []).filter((p) => p.active && isProtocolInPeriod(p, today))
     return stockDoseMetrics(saldo, active, medicine)
