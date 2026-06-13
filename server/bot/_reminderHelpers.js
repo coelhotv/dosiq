@@ -3,7 +3,8 @@ import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
 import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, parseTimestamp, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
-import { isProtocolActiveOnWeekday, getProtocolDays } from '../utils/protocolActiveHelper.js';
+import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
+import { calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat } from '@dosiq/core';
 // Formatting helpers removed — moved to Layer 2
 
 const logger = createLogger('ReminderHelpers');
@@ -508,42 +509,50 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 }
 
 async function _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId) {
-  const dailyConsumption = protocols.reduce((sum, p) => {
-    const intakesPerDay = (p.time_schedule || []).length;
-    const dosage = p.dosage_per_intake || 1;
-    const frequency = (p.frequency || 'diário').toLowerCase();
+  // 012 B4 / ADR-067: consumo diário via core (líquido → ml + cadência da frequência).
+  // Antes somava a dose na unidade de tomada CRUA (UI/gotas) contra o saldo em ml →
+  // `floor(ml ÷ UI)` = "0 dias" falso p/ insulina/GLP-1 (FR-013c). `calculateDailyIntake`
+  // converte intake→ml via doseToMl (ADR-065 unit-aware) e aplica frequencyDailyFactor.
+  const medicine = {
+    dosage_unit: stock.dosageUnit,
+    units_per_ml: stock.unitsPerMl,
+    dosage_per_pill: stock.dosagePerPill,
+  };
 
-    if (['diário', 'diariamente', 'daily'].includes(frequency)) {
-      return sum + (intakesPerDay * dosage);
-    } else if (['semanal', 'semanalmente', 'weekly'].includes(frequency)) {
-      const daysSource = getProtocolDays(p);
-      const daysCount = daysSource.length > 0 ? daysSource.length : 1;
-      return sum + ((intakesPerDay * dosage * daysCount) / 7);
-    } else if (['dias_alternados', 'dia_sim_dia_nao', 'every_other_day', 'alternating'].includes(frequency)) {
-      return sum + ((intakesPerDay * dosage) / 2);
-    }
-    return sum; // personalizado, quando necessário, etc.
-  }, 0);
+  const dailyIntake = calculateDailyIntake(medicineId, protocols, medicine);
+  if (dailyIntake <= 0) return;
 
-  if (dailyConsumption <= 0) return;
+  const daysRemaining = calculateDaysRemaining(stock.qty, dailyIntake);
+  if (!Number.isFinite(daysRemaining) || daysRemaining >= 7) return;
 
-  const daysRemaining = Math.floor(stock.qty / dailyConsumption);
+  // Dose-primário (ADR-067): exibir DOSES restantes (saldo ÷ tamanho de uma tomada),
+  // não o saldo cru em ml rotulado "doses". Líquido converte a dose p/ ml (mesma
+  // unidade do saldo); sólido usa unidades. Densidade ausente → doseToMl devolve a
+  // dose crua (sem chute); fallback p/ saldo cru se não houver tamanho de dose.
+  const rep = protocols[0] || {};
+  const dosePorTomada = rep.dosage_per_intake || 1;
+  const doseSize = isLiquidMedicine(medicine)
+    ? doseToMl(dosePorTomada, rep.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill)
+    : dosePorTomada;
+  // cleanFloat antes do floor (R-277): sem isso a dízima de float (0,3÷0,1=2,9999…)
+  // gera off-by-one no nº de doses exibido.
+  const dosesRemaining = doseSize > 0
+    ? Math.floor(cleanFloat(stock.qty / doseSize))
+    : Math.floor(stock.qty);
 
-  if (daysRemaining < 7) {
-    logger.info(`Disparando alerta de estoque baixo: ${stock.name} (${daysRemaining} dias restantes)`, {
-      userId, medicineId, correlationId
-    });
+  logger.info(`Disparando alerta de estoque baixo: ${stock.name} (${daysRemaining} dias / ${dosesRemaining} doses)`, {
+    userId, medicineId, correlationId
+  });
 
-    const data = {
-      medicineName: stock.name,
-      remaining: stock.qty,
-      daysRemaining
-    };
+  const data = {
+    medicineName: stock.name,
+    remaining: dosesRemaining,
+    daysRemaining
+  };
 
-    await dispatcher.dispatch({
-      userId, kind: 'stock_alert', data, context: { correlationId, jobType: 'stock_alert_dispatcher' }
-    });
-  }
+  await dispatcher.dispatch({
+    userId, kind: 'stock_alert', data, context: { correlationId, jobType: 'stock_alert_dispatcher' }
+  });
 }
 
 function _buildProtocolsAndStockMaps(allProtocols, allStock) {
@@ -557,7 +566,18 @@ function _buildProtocolsAndStockMaps(allProtocols, allStock) {
   const stockByMedicine = {};
   for (const s of allStock || []) {
     const key = `${s.user_id}_${s.medicine_id}`;
-    if (!stockByMedicine[key]) stockByMedicine[key] = { qty: 0, name: s.medicine?.name || 'Medicamento' };
+    if (!stockByMedicine[key]) {
+      // Campos do medicine p/ conversão líquida (012 B4 / R-267): unitsPerMl/dosageUnit/
+      // dosagePerPill alimentam calculateDailyIntake + doseToMl no alerta de estoque.
+      const med = s.medicine || {};
+      stockByMedicine[key] = {
+        qty: 0,
+        name: med.name || 'Medicamento',
+        unitsPerMl: med.units_per_ml,
+        dosageUnit: med.dosage_unit,
+        dosagePerPill: med.dosage_per_pill,
+      };
+    }
     stockByMedicine[key].qty += Number(s.quantity || 0);
   }
 
@@ -631,15 +651,18 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
     const userIds = users.map(u => u.user_id);
     logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, { correlationId });
 
+    // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
+    // converte por intake_unit); units_per_ml/dosage_unit/dosage_per_pill p/ a conversão
+    // líquida (ADR-065/ADR-067 — antes o cron contava UI cru contra ml).
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('user_id, medicine_id, time_schedule, dosage_per_intake, frequency, weekdays')
+      .select('user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active')
       .eq('active', true)
       .in('user_id', userIds);
 
     const { data: allStock } = await supabase
       .from('stock')
-      .select('user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days)')
+      .select('user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)')
       .in('user_id', userIds);
 
     const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);

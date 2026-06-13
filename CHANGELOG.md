@@ -9,6 +9,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase B4 — estoque dose-primário (slice 1: serverless)
+
+#### Backend/Infra (bot cron — serverless)
+- **Fixed** (`no-user-impact` de versão app; risco clínico, FR-013c/ADR-067): o cron de alerta de estoque (`_processUserStockAlert` em `server/bot/_reminderHelpers.js`) somava a dose na **unidade de tomada crua** (UI/gotas) contra o saldo em **ml** → `floor(ml ÷ UI)` = "0 dias" falso para insulina/GLP-1 (ex.: Lantus 5,3 ml com 10 UI/dia disparava alerta crítico quando ainda restam ~53 dias). Agora reusa `calculateDailyIntake` (converte intake→ml via `doseToMl` unit-aware + aplica `frequencyDailyFactor`) e `calculateDaysRemaining` do `@dosiq/core`. Read-path completo (R-267): selects do cron passam a trazer `protocols.intake_unit`/`active` e `medicines.units_per_ml`/`dosage_unit`/`dosage_per_pill`.
+- **Fixed** (`no-user-impact`): payload `stock_alert` exibia o saldo cru em ml rotulado como "doses" ("Restam 5,3 doses"); agora exibe a contagem real de **doses** (`floor(saldo ÷ tamanho da tomada)`, com `cleanFloat` antes do floor — R-277).
+
 ### 012 Fase B3 — units_per_ml NULL + fallback unit-aware + concentração com denominador
 
 #### Backend/Infra (DB + RPC)
