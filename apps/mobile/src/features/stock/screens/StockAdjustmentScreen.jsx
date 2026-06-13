@@ -166,7 +166,7 @@ export default function StockAdjustmentScreen() {
   // Dose pill da ficha (sempre que houver medicine com dosagem).
   const dosePill =
     medicine?.dosage_per_pill != null
-      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
+      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)
       : null
 
   // Preview "APÓS AJUSTE" — cor do delta: verde se positivo, vermelho se negativo.

@@ -46,6 +46,7 @@ export async function getAllTreatments(userId) {
           type,
           dosage_per_pill,
           dosage_unit,
+          concentration_volume_ml,
           units_per_ml,
           therapeutic_class
         )

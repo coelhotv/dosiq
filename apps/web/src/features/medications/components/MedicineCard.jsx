@@ -1,5 +1,6 @@
 // MedicineCard.jsx
 import React from 'react'
+import { formatMedicineConcentration } from '@dosiq/core'
 import Card from '@shared/components/ui/Card'
 import Button from '@shared/components/ui/Button'
 import './MedicineCard.css' // Make sure this path is correct
@@ -34,7 +35,7 @@ function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
           <div className="detail-item">
             <span className="detail-label">💊 Dosagem:</span>
             <span className="detail-value">
-              {medicine.dosage_per_pill} {medicine.dosage_unit || 'mg'}
+              {formatMedicineConcentration(medicine)}
             </span>
           </div>
         )}

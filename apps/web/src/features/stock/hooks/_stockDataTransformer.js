@@ -99,6 +99,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         name: medicine.name,
         dosage_per_pill: medicine.dosage_per_pill,
         dosage_unit: medicine.dosage_unit || 'mg',
+        concentration_volume_ml: medicine.concentration_volume_ml ?? null,
         units_per_ml: medicine.units_per_ml ?? null,
         type: medicine.type || 'medicamento',
         // Forma farmacêutica p/ ícone canônico (getMedicineIconName) no card

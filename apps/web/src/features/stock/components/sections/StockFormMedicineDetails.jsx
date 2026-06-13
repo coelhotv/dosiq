@@ -1,5 +1,5 @@
 import { getFieldDescribedBy } from '@utils/formUtils'
-import { formatActiveIngredientFormula, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
+import { formatActiveIngredientFormula, formatConcentration, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 
 export default function StockFormMedicineDetails({
   formData,
@@ -35,7 +35,7 @@ export default function StockFormMedicineDetails({
             <option key={medicine.id} value={medicine.id}>
               {medicine.name}{' '}
               {medicine.dosage_per_pill
-                ? `(${medicine.dosage_per_pill}${medicine.dosage_unit || 'mg'})`
+                ? `(${formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)})`
                 : ''}
             </option>
           ))}

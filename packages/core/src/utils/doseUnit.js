@@ -13,6 +13,7 @@
 // US. Por isso usamos replace('.', ',') manual (confiável em V8 e Hermes).
 
 import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
+import { cleanFloat } from './formUtils.js'
 
 /**
  * Formata a concentração/apresentação do medicamento (pill) com a unidade
@@ -20,16 +21,50 @@ import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
  * Centraliza o que antes era `${dosage_per_pill}${dosage_unit}` cru (mostrava
  * "ui/ml" minúsculo) espalhado por listagem, estoque, histórico e notificações.
  *
- * @param {number|string|null} value - dosage_per_pill (carga por unidade/ml)
+ * 012 Fase B3 (FR-031): quando o líquido tem denominador de rótulo ≠ 1 mL (ex:
+ * Mounjaro), reconstrói a leitura original do rótulo — `amount unidadeBase / volume mL`
+ * ('2,5 mg / 0,5 mL') em vez da razão normalizada crua ('5 mg/ml'), que confunde.
+ * Volume NULL/1 ou sólido → comportamento clássico inalterado.
+ *
+ * @param {number|string|null} value - dosage_per_pill (razão por unidade/ml)
  * @param {string|null} unit - dosage_unit ('mg', 'ui/ml', 'mg/ml', 'un', …)
- * @returns {string} ex: '100 UI/ml' · '500 mg' · '' se value vazio
+ * @param {number|string|null} [volumeMl=null] - concentration_volume_ml (denominador do rótulo)
+ * @returns {string} ex: '100 UI/ml' · '500 mg' · '2,5 mg / 0,5 mL' · '' se value vazio
  */
-export function formatConcentration(value, unit) {
+export function formatConcentration(value, unit, volumeMl = null) {
   if (value === undefined || value === null || value === '') return ''
+  const ratio = Number(typeof value === 'string' ? value.replace(',', '.') : value)
+  const vol = Number(typeof volumeMl === 'string' ? volumeMl.replace(',', '.') : volumeMl)
+  const isLiquid = Boolean(unit?.endsWith('/ml'))
+  if (
+    isLiquid &&
+    Number.isFinite(ratio) && ratio > 0 &&
+    Number.isFinite(vol) && vol > 0 && vol !== 1
+  ) {
+    const baseUnit = (unit || 'mg/ml').split('/')[0]
+    const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
+    return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
+  }
   const v = formatNumberPtBR(value)
   if (v === '') return ''
   const label = DOSAGE_UNIT_LABELS[unit] || unit || ''
   return label ? `${v} ${label}` : v
+}
+
+/**
+ * Açúcar p/ chamar formatConcentration a partir de um objeto medicine (snake_case).
+ * Mantém call sites de card limpos (passa o objeto inteiro).
+ *
+ * @param {{dosage_per_pill?: number|string|null, dosage_unit?: string|null, concentration_volume_ml?: number|string|null}|null} medicine
+ * @returns {string}
+ */
+export function formatMedicineConcentration(medicine) {
+  if (!medicine) return ''
+  return formatConcentration(
+    medicine.dosage_per_pill,
+    medicine.dosage_unit,
+    medicine.concentration_volume_ml
+  )
 }
 
 /**
@@ -88,20 +123,27 @@ export function formatStockQuantity(qty, medicine) {
 }
 
 /**
- * Rótulo de concentração p/ o form de tratamento GLP-1 (012 Fase B2, FR-018):
- * "[X] mg em [Y] mL". Ajuda o usuário a confirmar a densidade lida na bula/caneta
- * antes de salvar (units_per_ml = mg por ml). 1 mL fixo no denominador (a leitura
- * da bula é sempre "X mg/mL"). Vírgula PT-BR. Retorna '' se densidade inválida.
+ * Rótulo de concentração: "[amount] mg em [volume] mL". Reconstrói a leitura da caixa
+ * (012 Fase B3, FR-031/ADR-066): `mgPerMl` é a razão normalizada (dosage_per_pill) e
+ * `volumeMl` é o denominador do rótulo (`concentration_volume_ml`; NULL/omitido = 1 mL).
+ * amount = mgPerMl × volume. Mounjaro (razão 5, volume 0,5) → "2,5 mg em 0,5 mL";
+ * caso comum (volume 1) → "X mg em 1 mL" (compatível com a Fase B2). Vírgula PT-BR.
+ * Retorna '' se a razão for inválida.
  *
- * @param {number|string|null} mgPerMl - densidade (units_per_ml) em mg/ml
+ * @param {number|string|null} mgPerMl - razão mg/mL (dosage_per_pill)
+ * @param {number|string|null} [volumeMl=1] - volume do rótulo (concentration_volume_ml)
  * @returns {string}
- * @example formatConcentrationLabel(0.68) → '0,68 mg em 1 mL'
- * @example formatConcentrationLabel(null) → ''
+ * @example formatConcentrationLabel(0.68)      → '0,68 mg em 1 mL'
+ * @example formatConcentrationLabel(5, 0.5)    → '2,5 mg em 0,5 mL'
+ * @example formatConcentrationLabel(null)      → ''
  */
-export function formatConcentrationLabel(mgPerMl) {
-  const n = Number(typeof mgPerMl === 'string' ? mgPerMl.replace(',', '.') : mgPerMl)
-  if (!Number.isFinite(n) || n <= 0) return ''
-  return `${formatNumberPtBR(n)} mg em 1 mL`
+export function formatConcentrationLabel(mgPerMl, volumeMl = 1) {
+  const ratio = Number(typeof mgPerMl === 'string' ? mgPerMl.replace(',', '.') : mgPerMl)
+  if (!Number.isFinite(ratio) || ratio <= 0) return ''
+  const volNum = Number(typeof volumeMl === 'string' ? volumeMl.replace(',', '.') : volumeMl)
+  const vol = Number.isFinite(volNum) && volNum > 0 ? volNum : 1
+  const amount = cleanFloat(ratio * vol)
+  return `${formatNumberPtBR(amount)} mg em ${formatNumberPtBR(vol)} mL`
 }
 
 /**
@@ -228,6 +270,28 @@ export function formatDose(value, unit) {
  * @example formatIntakeDose(100,'UI',{dosage_unit:'ui/ml',units_per_ml:100})  → '100 UI (≈ 1 ml)'
  * @example formatIntakeDose(5,'ml',{dosage_unit:'mg/ml'})                      → '5 ml'
  */
+/**
+ * Densidade (unidades por mL) para converter gotas/UI → mL, **unit-aware** (012 Fase B3,
+ * ADR-065). Substitui o fallback blanket 20: a densidade explícita (`units_per_ml`) tem
+ * prioridade; faltando, o padrão depende da UNIDADE DE TOMADA — gotas≈20/mL (conta-gotas
+ * universal), UI≈100/mL (U-100). Sem valor e sem padrão seguro → `null` (o caller decide:
+ * erro explícito ou sem conversão — Const. IX, não chuta dose). mg NÃO usa isto (usa
+ * `dosage_per_pill`); ml é dose direta.
+ *
+ * @param {string|null} intakeUnit - 'gotas' | 'UI' | 'ml' | 'mg'
+ * @param {number|string|null} unitsPerMl - densidade explícita do cadastro
+ * @returns {number|null} densidade a aplicar, ou null se indefinível
+ */
+export function densityFor(intakeUnit, unitsPerMl) {
+  const explicit = Number(typeof unitsPerMl === 'string' ? unitsPerMl.replace(',', '.') : unitsPerMl)
+  if (explicit > 0) return explicit
+  switch ((intakeUnit || '').toLowerCase()) {
+    case 'gotas': return 20
+    case 'ui': return 100
+    default: return null
+  }
+}
+
 export function formatIntakeDose(qty, intakeUnit, medicine) {
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   if (!isLiquid) {
@@ -243,15 +307,14 @@ export function formatIntakeDose(qty, intakeUnit, medicine) {
   // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg por ml; já no cadastro).
   // gotas/UI → ml: divide pela razão física units_per_ml (fallback 20).
   // São campos distintos (012 Fase B2): mg não usa units_per_ml.
+  // mg → concentração (dosage_per_pill); gotas/UI → densidade unit-aware (ADR-065).
   const divisor =
     intake === 'mg'
       ? Number(medicine?.dosage_per_pill) > 0
         ? Number(medicine.dosage_per_pill)
         : null
-      : medicine?.units_per_ml && medicine.units_per_ml > 0
-        ? medicine.units_per_ml
-        : 20
-  if (!divisor) return base // sem concentração não há como exibir ≈ml
+      : densityFor(intake, medicine?.units_per_ml)
+  if (!divisor) return base // sem concentração/densidade não há como exibir ≈ml
   // Arredonda a 2 casas — sem isso, mg ÷ concentração gera dízima ("0,3676 ml").
   const ml = Math.round((numQty / divisor) * 100) / 100
   return `${base} (≈ ${formatDose(ml, 'ml')})`

@@ -65,7 +65,7 @@ export default function CronogramaDoseItem({ dose, onRegister, stockDays, stockS
             <span className="cronograma-dose-card__title">{dose.medicineName}</span>
             {dose.dosagePerPill && dose.dosageUnit && (
               <span className="cronograma-dose-card__strength">
-                {formatConcentration(dose.dosagePerPill, dose.dosageUnit)}
+                {formatConcentration(dose.dosagePerPill, dose.dosageUnit, dose.concentrationVolumeMl)}
               </span>
             )}
           </div>

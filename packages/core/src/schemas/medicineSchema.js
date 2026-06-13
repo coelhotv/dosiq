@@ -164,6 +164,20 @@ const medicineObject = z.object({
       .optional()
   ),
 
+  // 012 Fase B3 (FR-031, ADR-066): volume (mL) que o rótulo da concentração referencia.
+  // NULL = "por 1 mL" (caso comum). Mounjaro = 0,5 (rótulo "2,5 mg/0,5 mL"). É o `volume`
+  // do par (amount, volume) — seed do modelo de concentração futuro. dosage_per_pill segue
+  // a razão normalizada mg/mL; o rótulo reexibe amount = dosage_per_pill × COALESCE(vol,1).
+  // preprocess '' → null (idem units_per_ml/dosage_per_pill).
+  concentration_volume_ml: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.coerce
+      .number()
+      .positive('Volume da concentração (mL) deve ser maior que zero')
+      .nullable()
+      .optional()
+  ),
+
   // Forma farmacêutica (additiva — ADR-058). Default 'comprimido' espelha o DEFAULT do DB.
   presentation: z.enum(PRESENTATIONS).default('comprimido'),
 

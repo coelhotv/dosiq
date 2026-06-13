@@ -69,6 +69,7 @@ export {
 export {
   getFieldDescribedBy,
   coerceDecimal,
+  cleanFloat,
 } from './formUtils.js'
 
 // String utilities
@@ -99,6 +100,7 @@ export {
   formatDoseItem,
   formatDoseHint,
   formatConcentration,
+  formatMedicineConcentration,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
@@ -108,6 +110,7 @@ export {
   formatStockQuantity,
   formatConcentrationLabel,
   formatStockApplications,
+  densityFor,
 } from './doseUnit.js'
 
 // Date presentation PT-BR (Fase 2)

@@ -128,7 +128,7 @@ export default function MedicineSelectorSheet({
             {item.dosage_per_pill ? (
               <View style={styles.dosagePill}>
                 <Text style={styles.dosagePillText}>
-                  {formatConcentration(item.dosage_per_pill, item.dosage_unit)}
+                  {formatConcentration(item.dosage_per_pill, item.dosage_unit, item.concentration_volume_ml)}
                 </Text>
               </View>
             ) : null}

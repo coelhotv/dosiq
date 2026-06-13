@@ -113,7 +113,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
           {medicine?.dosage_per_pill && (
             <View style={[styles.dosagePill, (isPaused || isFinished) && styles.textMutedOpacity]}>
               <Text style={styles.dosagePillText}>
-                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)}
+                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
               </Text>
             </View>
           )}

@@ -28,7 +28,7 @@ export default function MedicineSelectorRow({ medicine, onPress, error }) {
 
   const dosageLabel =
     !isEmpty && medicine.dosage_per_pill
-      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit)
+      ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)
       : null
 
   const accessibilityLabel = isEmpty

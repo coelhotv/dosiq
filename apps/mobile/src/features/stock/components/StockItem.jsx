@@ -17,6 +17,7 @@ export default function StockItem({ medicine }) {
     hasPurchases,
     dosage_unit,
     dosage_per_pill,
+    concentration_volume_ml,
     status,
     daysRemaining,
     hasActiveProtocol,
@@ -38,7 +39,7 @@ export default function StockItem({ medicine }) {
           {dosage_per_pill && (
             <View style={styles.dosagePill}>
               <Text style={styles.dosagePillText}>
-                {formatConcentration(dosage_per_pill, dosage_unit)}
+                {formatConcentration(dosage_per_pill, dosage_unit, concentration_volume_ml)}
               </Text>
             </View>
           )}
