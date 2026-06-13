@@ -11,6 +11,9 @@
  */
 
 import { getNow, formatLocalDate, parseLocalDate, parseISO, daysDifference, getLastDayOfMonth } from './dateUtils.js'
+import { doseToMl, frequencyDailyFactor, calculateDailyIntake } from './adherenceLogic.js'
+import { isLiquidMedicine } from './doseUnit.js'
+import { cleanFloat } from './formUtils.js'
 
 export const STOCK_STATUS = Object.freeze({
   CRITICO: 'critico',
@@ -58,6 +61,60 @@ export function resolveStockStatus(qty, dailyConsumption, nearestExpiryYYYYMM = 
   if (daysRemaining < STOCK_THRESHOLDS.LOW_DAYS) return STOCK_STATUS.BAIXO
   if (daysRemaining < STOCK_THRESHOLDS.NORMAL_DAYS) return STOCK_STATUS.NORMAL
   return STOCK_STATUS.ALTO
+}
+
+/**
+ * stockDoseMetrics — modelo de estoque DOSE-PRIMARIO (012 B4 / ADR-067).
+ *
+ * A dose e a metrica fundamental; o dia corrido (runway) e projecao derivada.
+ * O numero EXIBIDO e o total de doses fisicas restantes (decisao PO 2026-06-13):
+ *   dosesRemaining = floor(saldo / tamanho-de-uma-tomada)
+ * A COR/status (resolveStockStatus) continua medindo runwayDias (recompra e
+ * cronologica). Diario: dosesRemaining ~ runwayDias (sem regressao de leitura).
+ *
+ * Liquido (dosage_unit termina em '/ml'): tamanho da tomada convertido p/ ml via
+ * doseToMl (unit-aware ADR-065). Solido: tamanho = dose em unidades.
+ *
+ * @param {number} qty - saldo (ml p/ liquido, unidades p/ solido)
+ * @param {Array} protocols - protocolos ativos do medicamento (com time_schedule,
+ *   dosage_per_intake, intake_unit, frequency, medicine_id, active)
+ * @param {{dosage_unit?: string, units_per_ml?: number, dosage_per_pill?: number}|null} [medicine]
+ * @returns {{dosesRemaining: number, runwayDias: number, dosesPorDia: number, isDaily: boolean}}
+ */
+export function stockDoseMetrics(qty, protocols = [], medicine = null) {
+  const active = (protocols || []).filter((p) => p && p.active !== false)
+  if (active.length === 0 || !(qty > 0)) {
+    return { dosesRemaining: 0, runwayDias: 0, dosesPorDia: 0, isDaily: true }
+  }
+
+  // Tamanho de UMA tomada (representativo: 1o protocolo ativo). Liquido -> ml.
+  const rep = active[0]
+  const dosePorTomada = Number(rep.dosage_per_intake) || 1
+  const liquid = isLiquidMedicine(medicine)
+  const doseSize = liquid
+    ? doseToMl(dosePorTomada, rep.intake_unit, medicine?.units_per_ml, medicine?.dosage_per_pill)
+    : dosePorTomada
+  // cleanFloat antes do floor (R-277): 0,3/0,1=2,9999 nao pode virar 2 doses.
+  const dosesRemaining = doseSize > 0 ? Math.floor(cleanFloat(qty / doseSize)) : 0
+
+  // runway = dias corridos = saldo / consumo-diario (mesma unidade do saldo).
+  // Reusa calculateDailyIntake (converte liquido + aplica frequencyDailyFactor).
+  const dailyIntake = calculateDailyIntake(rep.medicine_id, active, medicine)
+  const runwayDias = dailyIntake > 0 ? cleanFloat(qty / dailyIntake) : Infinity
+
+  // doses/dia = tomadas/dia x cadencia (p/ custo/dia derivado dos consumidores).
+  const dosesPorDia = active.reduce(
+    (sum, p) => sum + (p.time_schedule?.length || 1) * frequencyDailyFactor(p),
+    0
+  )
+
+  const isDaily = active.every(
+    (p) =>
+      !p.frequency ||
+      ['diario', 'diário', 'daily', 'diariamente'].includes(p.frequency.toLowerCase())
+  )
+
+  return { dosesRemaining, runwayDias, dosesPorDia, isDaily }
 }
 
 /**

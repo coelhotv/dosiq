@@ -133,6 +133,7 @@ export {
   STOCK_STATUS,
   STOCK_THRESHOLDS,
   resolveStockStatus,
+  stockDoseMetrics,
   computeAverageUnitPrice,
   computeExpiryDays,
   isBiologicallyExpired,

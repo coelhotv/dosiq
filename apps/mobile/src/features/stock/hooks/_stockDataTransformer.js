@@ -3,7 +3,7 @@
 // o tratamento "dispare HOJE", jogando semanal/dias_alternados/quando_necessario
 // pra "sem tratamento ativo" mesmo com a flag active ligada. Pro estoque, ter
 // tratamento ativo = estar no período + active, independente de disparar hoje.
-import { getTodayLocal, isProtocolInPeriod, doseToMl, frequencyDailyFactor, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
+import { getTodayLocal, isProtocolInPeriod, doseToMl, frequencyDailyFactor, isBiologicallyExpired, biologicalExpiryDaysLeft, stockDoseMetrics } from '@dosiq/core'
 
 export function transformStockData(rawData) {
   const today = getTodayLocal()
@@ -30,6 +30,10 @@ export function transformStockData(rawData) {
     const daysRemaining = dailyConsumption > 0
       ? totalQuantity / dailyConsumption
       : Infinity
+
+    // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário);
+    // cor/status seguem runway (daysRemaining). Diário mantém "N dias".
+    const { dosesRemaining, isDaily } = stockDoseMetrics(totalQuantity, activeProtocols, item)
 
     let status = 'HIGH'
     let statusLabel = 'Bom'
@@ -67,6 +71,8 @@ export function transformStockData(rawData) {
       hasPurchases,
       dailyConsumption,
       daysRemaining,
+      dosesRemaining,
+      isDailyStock: isDaily,
       status,
       statusLabel,
       color,

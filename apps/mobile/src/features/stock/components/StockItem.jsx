@@ -20,6 +20,8 @@ export default function StockItem({ medicine }) {
     concentration_volume_ml,
     status,
     daysRemaining,
+    dosesRemaining,
+    isDailyStock,
     hasActiveProtocol,
     ttlExpired,
     ttlDaysLeft,
@@ -63,7 +65,12 @@ export default function StockItem({ medicine }) {
               <Text style={styles.ctaBadgeText}>Nova compra</Text>
             </View>
           ) : hasActiveProtocol ? (
-            <StockLevelBadge status={status} daysRemaining={daysRemaining} />
+            <StockLevelBadge
+              status={status}
+              daysRemaining={daysRemaining}
+              dosesRemaining={dosesRemaining}
+              isDailyStock={isDailyStock}
+            />
           ) : null}
         </View>
 

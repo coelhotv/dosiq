@@ -69,7 +69,12 @@ export default function ProtocolRowTabular({
       </div>
 
       <div className={`protocol-row-tabular__cell protocol-row-tabular__stock-cell ${hoverClass}`}>
-        <StockPill status={item.stockStatus} daysRemaining={item.daysRemaining} />
+        <StockPill
+          status={item.stockStatus}
+          daysRemaining={item.daysRemaining}
+          dosesRemaining={item.dosesRemaining}
+          isDailyStock={item.isDailyStock}
+        />
       </div>
     </>
   )

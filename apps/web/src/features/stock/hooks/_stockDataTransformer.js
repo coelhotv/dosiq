@@ -1,5 +1,5 @@
 import { parseLocalDate } from '@utils/dateUtils'
-import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, parseISO } from '@dosiq/core'
+import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, parseISO, stockDoseMetrics } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -38,6 +38,11 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
     const stockStatus = getStockStatus(stock.total, daysRemaining)
     const barPercentage = getBarPercentage(stock.total, daysRemaining)
+
+    // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário).
+    // Cor/barra seguem runway (daysRemaining); diário mantém "N dias" (sem regressão).
+    const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
+    const { dosesRemaining, isDaily } = stockDoseMetrics(stock.total, medProtocols, medicine)
 
     const purchaseEntries = [...purchases].sort(
       (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
@@ -111,6 +116,8 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
       totalQuantity: stock.total,
       dailyIntake,
       daysRemaining,
+      dosesRemaining,
+      isDailyStock: isDaily,
       stockStatus,
       hasActiveProtocol: activeMedicineIds.has(medicine.id),
       primaryProtocol: primaryProtocolMap[medicine.id] || null,

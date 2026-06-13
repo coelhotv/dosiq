@@ -6,9 +6,11 @@ import { AlertCircle, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-reac
  * Badge visual para nível de estoque conforme ADR-018.
  * 
  * @param {string} status - Tier de estoque (CRITICAL, LOW, NORMAL, HIGH)
- * @param {number} daysRemaining - Dias calculados restantes
+ * @param {number} daysRemaining - Dias calculados restantes (runway)
+ * @param {number} [dosesRemaining] - Doses físicas restantes (012 B4 / ADR-067)
+ * @param {boolean} [isDailyStock=true] - true → "N dias"; false → "N dose(s)"
  */
-export default function StockLevelBadge({ status, daysRemaining }) {
+export default function StockLevelBadge({ status, daysRemaining, dosesRemaining, isDailyStock = true }) {
   const getLevelConfig = () => {
     switch (status) {
       case 'CRITICAL':
@@ -44,9 +46,13 @@ export default function StockLevelBadge({ status, daysRemaining }) {
   }
 
   const { color, bg, icon: Icon, label } = getLevelConfig()
-  const daysText = daysRemaining === Infinity 
-    ? '-- dias' 
-    : `${Math.floor(daysRemaining)} dias`
+  // 012 B4 / ADR-067: freq ≠ diário exibe doses físicas; diário mantém "N dias".
+  let daysText
+  if (!isDailyStock && Number.isFinite(dosesRemaining)) {
+    daysText = `${dosesRemaining} ${dosesRemaining === 1 ? 'dose' : 'doses'}`
+  } else {
+    daysText = daysRemaining === Infinity ? '-- dias' : `${Math.floor(daysRemaining)} dias`
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>

@@ -95,11 +95,18 @@ function formatUsageLine(primaryProtocol) {
 }
 
 /**
- * Formata "N dias" ou "30+ dias" ou "S.O.S" (sem protocolo ativo)
+ * Métrica-herói do card (012 B4 / ADR-067):
+ *  - diário: "N DIAS" (sem regressão — público atual 1×/dia)
+ *  - freq ≠ diário: "N DOSES"/"N APLICAÇÕES" (dose-primário; dia engana)
+ *  - sem protocolo: "S.O.S"
+ * A COR/barra continuam medindo runway (stockStatus), independente do rótulo.
  */
-function formatDays(daysRemaining, hasActiveProtocol) {
+function formatHeroMetric({ daysRemaining, dosesRemaining, isDailyStock, hasActiveProtocol }) {
   if (!hasActiveProtocol) return { number: '—', label: 'S.O.S' }
-  if (!isFinite(daysRemaining) || daysRemaining >= 30) return { number: '30+', label: 'DIAS' }
+  if (!isDailyStock && Number.isFinite(dosesRemaining)) {
+    return { number: String(dosesRemaining), label: dosesRemaining === 1 ? 'DOSE' : 'DOSES' }
+  }
+  if (!Number.isFinite(daysRemaining) || daysRemaining >= 30) return { number: '30+', label: 'DIAS' }
   const days = Math.floor(daysRemaining)
   return { number: String(days), label: days === 1 ? 'DIA' : 'DIAS' }
 }
@@ -116,7 +123,12 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
     lastPurchase,
     ttlAlert,
   } = item
-  const { number: daysNumber, label: daysLabel } = formatDays(item.daysRemaining, hasActiveProtocol)
+  const { number: daysNumber, label: daysLabel } = formatHeroMetric({
+    daysRemaining: item.daysRemaining,
+    dosesRemaining: item.dosesRemaining,
+    isDailyStock: item.isDailyStock,
+    hasActiveProtocol,
+  })
   const usageLine = isComplex ? formatUsageLine(primaryProtocol) : null
   const ctaConfig = CTA_CONFIG[stockStatus] || { label: 'Comprar Agora', Icon: ScanBarcode }
   const showCta = _shouldShowCta(isComplex, stockStatus)

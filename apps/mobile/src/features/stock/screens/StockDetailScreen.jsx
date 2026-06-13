@@ -32,7 +32,7 @@ import PurchaseCard from '@stock/components/PurchaseCard'
 import StockIndicators from '@stock/components/StockIndicators'
 import StockLevelBadge from '@stock/components/StockLevelBadge'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl, frequencyDailyFactor } from '@dosiq/core'
+import { computeAverageUnitPrice, resolveStockStatus, getTodayLocal, isProtocolInPeriod, formatConcentration, isLiquidMedicine, doseToMl, frequencyDailyFactor, stockDoseMetrics } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -110,12 +110,12 @@ export default function StockDetailScreen({ navigation }) {
     [saldo, dailyConsumption],
   )
 
-  // Badge "saldo em dias" (mesmo da listagem — StockLevelBadge usa enum UPPERCASE
-  // + daysRemaining numérico; Infinity = sem consumo → "-- dias").
-  const badgeDays = useMemo(
-    () => (dailyConsumption > 0 ? saldo / dailyConsumption : Infinity),
-    [saldo, dailyConsumption],
-  )
+  // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário);
+  // cor/badge seguem runway (doseMetrics.runwayDias). Diário mantém "N dias".
+  const doseMetrics = useMemo(() => {
+    const active = (medicine?.protocols || []).filter((p) => p.active && isProtocolInPeriod(p, today))
+    return stockDoseMetrics(saldo, active, medicine)
+  }, [medicine, saldo, today])
   // Status canônico via @dosiq/core (mesma lógica da listagem) — trata edge
   // cases como saldo 0 sem consumo (critico) que o cálculo manual por dias errava.
   const badgeStatus = useMemo(() => {
@@ -291,7 +291,12 @@ export default function StockDetailScreen({ navigation }) {
                 ) : null}
                 {dailyConsumption > 0 ? (
                   <View style={styles.heroBadge}>
-                    <StockLevelBadge status={badgeStatus} daysRemaining={badgeDays} />
+                    <StockLevelBadge
+                      status={badgeStatus}
+                      daysRemaining={doseMetrics.runwayDias}
+                      dosesRemaining={doseMetrics.dosesRemaining}
+                      isDailyStock={doseMetrics.isDaily}
+                    />
                   </View>
                 ) : null}
               </View>
