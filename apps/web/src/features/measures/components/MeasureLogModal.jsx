@@ -104,10 +104,15 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
             type="text"
             inputMode="decimal"
             value={value}
-            onChange={(e) => { setValue(e.target.value); if (errorMsg) setErrorMsg(null) }}
+            onChange={(e) => {
+              // Só dígitos, vírgula e ponto (coerceDecimal normaliza no salvar — R-276).
+              setValue(e.target.value.replace(/[^0-9.,]/g, ''))
+              if (errorMsg) setErrorMsg(null)
+            }}
             placeholder="0"
             maxLength={6}
             autoFocus
+            disabled={saving}
             aria-label={`Valor da medida em ${unit}`}
           />
           <span className="mlm__unit">{unit}</span>

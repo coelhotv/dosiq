@@ -6,8 +6,7 @@
 // SaMD (ADR-062): cor diferencia TIPO, nunca qualidade do valor. Sem meta/alvo.
 
 import { Ruler, PencilLine, Trash2 } from 'lucide-react'
-import { parseISO } from '@utils/dateUtils'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS } from '@dosiq/core'
+import { parseISO, BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS } from '@dosiq/core'
 
 // Reconstrói a linha de biomarkers_log a partir do payload do evento (p/ edição/exclusão).
 function eventToMeasure(event) {

@@ -34,6 +34,13 @@ export function useMeasures({ type, days = 90 } = {}) {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load() }, [load])
 
+  // Recarrega quando uma medida é salva/editada/excluída em qualquer superfície
+  // (ex.: card do dia no histórico) — mantém a tendência (ScatterTrend) sincronizada.
+  useEffect(() => {
+    window.addEventListener('mr:measure-saved', load)
+    return () => window.removeEventListener('mr:measure-saved', load)
+  }, [load])
+
   const create = useCallback(async (biomarker) => {
     const created = await measuresRepo.create(biomarker)
     await load()
