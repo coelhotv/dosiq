@@ -2,6 +2,7 @@ import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
 import CronogramaDoseItem from '@dashboard/components/CronogramaDoseItem'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
 import DashboardEmptyState from './DashboardEmptyState'
+import LastMeasureCard from '@features/measures/components/LastMeasureCard'
 
 export default function DashboardColumnRight({
   scheduleAllDoses,
@@ -14,8 +15,13 @@ export default function DashboardColumnRight({
   nowRaw,
   contextLoading,
   onNavigate,
-  criticalStockItems
+  criticalStockItems,
+  measureItems = [],
+  lastMeasure = null,
+  onOpenMeasureHistory,
+  onRegisterMeasure,
 }) {
+  const hasTimeline = scheduleAllDoses.length > 0 || measureItems.length > 0
   const onRegister = (dose) =>
     handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake, dose.instanceId)
   return (
@@ -46,8 +52,8 @@ export default function DashboardColumnRight({
         </section>
       )}
 
-      {/* Cronograma do Dia */}
-      {scheduleAllDoses.length > 0 && (
+      {/* Cronograma do Dia (doses + medidas interleaved — FR-011) */}
+      {hasTimeline && (
         <section aria-label="Cronograma de hoje">
           <div className="dashboard-section-header">
             <h2 className="dashboard-section-title">
@@ -59,6 +65,7 @@ export default function DashboardColumnRight({
           </div>
           <CronogramaPeriodo
             allDoses={scheduleAllDoses}
+            measures={measureItems}
             onRegister={(dose) =>
               handleRegisterDoseQuick(
                 dose.medicineId,
@@ -75,7 +82,7 @@ export default function DashboardColumnRight({
       )}
 
       {/* Empty State */}
-      {scheduleAllDoses.length === 0 && !contextLoading && (
+      {!hasTimeline && !contextLoading && (
         <DashboardEmptyState onNavigate={onNavigate} />
       )}
 
@@ -111,6 +118,19 @@ export default function DashboardColumnRight({
           />
         </section>
       )}
+
+      {/* 012 Fase C / FR-011: card "Última medida" no FIM da agenda (nunca antes das doses). */}
+      <section className="dashboard-footer-section dashboard-measure-section" aria-label="Medidas">
+        <div className="dashboard-section-header">
+          <h2 className="dashboard-section-title">Medidas de hoje</h2>
+          <p className="dashboard-section-subtitle">Glicemia, peso e outros registros</p>
+        </div>
+        <LastMeasureCard
+          measure={lastMeasure}
+          onOpenHistory={onOpenMeasureHistory}
+          onRegister={onRegisterMeasure}
+        />
+      </section>
     </div>
   )
 }

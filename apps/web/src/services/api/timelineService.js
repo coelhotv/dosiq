@@ -13,8 +13,9 @@
  */
 
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { createTimelineService, TIMELINE_ORDER } from '@dosiq/core'
+import { createTimelineService, TIMELINE_ORDER, biomarkersToEvents, buildTimeline } from '@dosiq/core'
 import { getStartOfDayISO, getEndOfDayISO } from '@utils/dateUtils'
+import { measuresRepo } from '@features/measures/services/measuresRepo'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -67,7 +68,7 @@ export async function getMonthTimeline(year, month, { protocolsById = {}, tz = n
   const fromTs = getStartOfDayISO(firstStr, resolvedTz)
   const toTs = getEndOfDayISO(lastStr, resolvedTz)
 
-  const events = await coreTimeline.getTimeline({
+  const doseEvents = await coreTimeline.getTimeline({
     userId,
     fromTs,
     toTs,
@@ -75,6 +76,22 @@ export async function getMonthTimeline(year, month, { protocolsById = {}, tz = n
     order,
     protocolsById,
   })
+
+  // 012 Fase C / FR-011: mescla biomarcadores como eventos tipados (R-252 / CON-025 —
+  // adapter consumido SÓ no web). buildTimeline é idempotente: re-deriva localDay e reordena
+  // a stream combinada por instante absoluto, sem tocar o builder de dose nem a UI de dose.
+  let events = doseEvents
+  try {
+    const bioRows = await measuresRepo.list({ fromTs, toTs })
+    if (bioRows.length > 0) {
+      const bioEvents = biomarkersToEvents(bioRows)
+      events = buildTimeline([...doseEvents, ...bioEvents], { tz: resolvedTz, order })
+    }
+  } catch (err) {
+    // Biomarcador é aditivo à timeline de dose: falha não pode derrubar o histórico de doses.
+    console.error('[timelineService] merge biomarcadores falhou:', err?.message)
+  }
+
   return { events, tz: resolvedTz }
 }
 

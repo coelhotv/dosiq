@@ -27,7 +27,7 @@ describe('HistoryDayPanel', () => {
         onDeleteLog={vi.fn()}
       />
     )
-    expect(screen.getByText('Doses do Dia')).toBeInTheDocument()
+    expect(screen.getByText('Registros do dia')).toBeInTheDocument()
     // 2 eventos, 1 taken (doseEvent('a')) → "1/2 doses"
     expect(screen.getByText('1/2 doses')).toBeInTheDocument()
     expect(screen.getByTitle(/1 dose tomada de 2 agendadas/i)).toBeInTheDocument()

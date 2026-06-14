@@ -13,6 +13,8 @@ import { useSmartAlerts } from '@dashboard/hooks/useSmartAlerts'
 import { useReminderSuggestion } from '@dashboard/hooks/useReminderSuggestion'
 import { useDashboardHandlers } from '@dashboard/hooks/useDashboardHandlers'
 import insightService from '@dashboard/services/insightService'
+import { useTodayMeasures } from '@features/measures/hooks/useTodayMeasures'
+import { formatTimePtBR } from '@dosiq/core'
 
 /**
  * getMotivationalMessage — Mensagem contextual baseada em adesão e doses restantes
@@ -249,6 +251,20 @@ export default function Dashboard({ onNavigate }) {
     nowRaw,
   } = useDashboardViewState(onNavigate)
 
+  // ── Medidas (012 Fase C / FR-011): interleave na agenda + card "Última medida" do dia ──
+  const { items: todayMeasures, latest: lastMeasure } = useTodayMeasures()
+  // Itens de medida no shape da timeline (kind='measure'): horário local p/ ordenação/agrupamento.
+  const measureItems = useMemo(
+    () => (todayMeasures || []).map((m) => ({
+      kind: 'measure', id: m.id, scheduledTime: formatTimePtBR(m.measured_at), scheduledFor: m.measured_at, measure: m,
+    })),
+    [todayMeasures]
+  )
+
+  const handleOpenMeasureHistory = (type) => onNavigate?.('history', { measureType: type })
+  // Registro de medida = speed-dial global (App). Nudge do card vazio pede a abertura via evento.
+  const handleRegisterMeasure = () => window.dispatchEvent(new CustomEvent('mr:open-measure-log'))
+
   // ── Loading state ──
   if (isLoading || contextLoading) {
     return (
@@ -334,6 +350,10 @@ export default function Dashboard({ onNavigate }) {
           contextLoading={contextLoading}
           onNavigate={onNavigate}
           criticalStockItems={criticalStockItems}
+          measureItems={measureItems}
+          lastMeasure={lastMeasure}
+          onOpenMeasureHistory={handleOpenMeasureHistory}
+          onRegisterMeasure={handleRegisterMeasure}
         />
       </div>
     </div>

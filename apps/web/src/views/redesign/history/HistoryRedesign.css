@@ -274,6 +274,24 @@
   min-width: 0;
 }
 
+/* ── Biomarcador (012 Fase C / FR-011) ───────────────────────── */
+/* "Registro tintado": fundo info suave, plano, sem sombra/botão. Tinta=registro vs
+   elevação=ação da dose (AP-018). SaMD (ADR-062): cor diferencia TIPO, nunca qualidade. */
+.hlc-card--biomarker {
+  background: color-mix(in srgb, var(--color-info, #0288d1) 10%, transparent);
+  border-left: 3px solid var(--color-info, #0288d1);
+}
+
+.hlc-card__bio-icon {
+  color: var(--color-info, #0288d1);
+  flex-shrink: 0;
+}
+
+/* Seção Área de Medidas (FR-011b) embutida no Histórico. */
+.hhr-measures-section {
+  margin-top: 1.5rem;
+}
+
 .hlc-card__title-row {
   display: flex;
   align-items: center;

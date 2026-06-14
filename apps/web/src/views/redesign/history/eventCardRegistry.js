@@ -4,10 +4,12 @@
 // nem o painel. O builder/adapter no core já é agnóstico (R-252).
 
 import DoseEventCard from './DoseEventCard'
+import BiomarkerEventCard from './BiomarkerEventCard'
 
 /** Mapa `event.type` → componente renderizador. */
 export const EVENT_CARD_REGISTRY = Object.freeze({
   dose: DoseEventCard,
+  biomarker: BiomarkerEventCard,
 })
 
 /**

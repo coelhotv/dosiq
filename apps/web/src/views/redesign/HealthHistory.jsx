@@ -10,6 +10,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { cachedLogService as logService, cachedAdherenceService as adherenceService } from '@shared/services'
 import { timelineService } from '@services/api/timelineService'
+import { measuresRepo } from '@features/measures/services/measuresRepo'
 import { formatLocalDate, getTodayLocal, getNow } from '@utils/dateUtils'
 import HealthHistoryView from './history/HealthHistoryView'
 import './history/HistoryRedesign.css'
@@ -86,6 +87,8 @@ function useHistoryDoseLog(loadData, refresh, showSuccess, setIsModalOpen, setEd
   }, [loadData, refresh, showSuccess, setIsModalOpen, setEditingLog])
 
   const handleDeleteLog = useCallback(async (id) => {
+    // Confirmação de ação irreversível (faltava — bug do smoke).
+    if (!window.confirm('Excluir este registro de dose? Esta ação não pode ser desfeita.')) return
     try {
       await logService.delete(id)
       showSuccess('Registro removido!')
@@ -103,6 +106,8 @@ function useHealthHistoryState() {
   const [successMessage, setSuccessMessage] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingLog, setEditingLog] = useState(null)
+  const [editingMeasure, setEditingMeasure] = useState(null)
+  const [measureModalOpen, setMeasureModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState(getTodayLocal())
   const [monthEvents, setMonthEvents] = useState([])
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
@@ -241,6 +246,36 @@ function useHealthHistoryState() {
   const handleEditClick = useCallback((log) => { setEditingLog(log); setIsModalOpen(true) }, [])
   const handleCloseModal = useCallback(() => { setIsModalOpen(false); setEditingLog(null) }, [])
 
+  // 012 Fase C: edição/exclusão de biomarcador a partir do card do dia.
+  const handleEditMeasure = useCallback((m) => { setEditingMeasure(m); setMeasureModalOpen(true) }, [])
+  const handleCloseMeasureModal = useCallback(() => { setMeasureModalOpen(false); setEditingMeasure(null) }, [])
+
+  const handleDeleteMeasure = useCallback(async (m) => {
+    if (!window.confirm('Excluir esta medida? Esta ação não pode ser desfeita.')) return
+    try {
+      await measuresRepo.remove(m.id)
+      showSuccess('Medida removida!')
+      window.dispatchEvent(new CustomEvent('mr:measure-saved'))
+      await loadData()
+    } catch (err) { setError('Erro ao remover: ' + err.message) }
+  }, [loadData, showSuccess, setError])
+
+  const handleSaveMeasure = useCallback(async (payload) => {
+    let saved
+    if (payload.id) {
+      const patch = { ...payload }
+      delete patch.id
+      saved = await measuresRepo.update(payload.id, patch)
+    } else {
+      saved = await measuresRepo.create(payload)
+    }
+    window.dispatchEvent(new CustomEvent('mr:measure-saved'))
+    await loadData()
+    setMeasureModalOpen(false)
+    setEditingMeasure(null)
+    return saved
+  }, [loadData])
+
   return {
     isLoading,
     error,
@@ -260,12 +295,18 @@ function useHealthHistoryState() {
     markedStatusesByDay,
     dosesThisMonth,
     monthPickerRange,
+    editingMeasure,
+    measureModalOpen,
     setSelectedDate,
     handleCalendarLoadMonth,
     handleLogMedicine,
     handleDeleteLog,
     handleEditClick,
     handleCloseModal,
+    handleEditMeasure,
+    handleDeleteMeasure,
+    handleSaveMeasure,
+    handleCloseMeasureModal,
   }
 }
 
@@ -289,12 +330,18 @@ export default function HealthHistory({ onNavigate }) {
     markedStatusesByDay,
     dosesThisMonth,
     monthPickerRange,
+    editingMeasure,
+    measureModalOpen,
     setSelectedDate,
     handleCalendarLoadMonth,
     handleLogMedicine,
     handleDeleteLog,
     handleEditClick,
     handleCloseModal,
+    handleEditMeasure,
+    handleDeleteMeasure,
+    handleSaveMeasure,
+    handleCloseMeasureModal,
   } = useHealthHistoryState()
 
   const { protocols, stats } = useDashboard()
@@ -336,6 +383,12 @@ export default function HealthHistory({ onNavigate }) {
       onDeleteLog={handleDeleteLog}
       onSaveLog={handleLogMedicine}
       onCloseModal={handleCloseModal}
+      editingMeasure={editingMeasure}
+      measureModalOpen={measureModalOpen}
+      onEditMeasure={handleEditMeasure}
+      onDeleteMeasure={handleDeleteMeasure}
+      onSaveMeasure={handleSaveMeasure}
+      onCloseMeasureModal={handleCloseMeasureModal}
     />
   )
 }

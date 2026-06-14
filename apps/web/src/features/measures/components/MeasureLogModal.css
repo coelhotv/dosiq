@@ -1,0 +1,153 @@
+/* MeasureLogModal.css — fast-log layout B (012 Fase C / FR-010). Idoso-primeiro:
+   valor grande centrado, alvos ≥44px. SaMD: sem cor de qualidade do valor. */
+
+.mlm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.mlm__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 12%, transparent);
+  color: var(--color-info, #0288d1);
+}
+
+.mlm__types {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mlm__type-chip {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--color-surface-container, #eceff1);
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+.mlm__type-chip--active {
+  background: var(--color-info, #0288d1);
+  color: #fff;
+}
+
+.mlm__locked-type {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-on-surface, #263238);
+  margin: 0;
+}
+
+.mlm__value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.mlm__value {
+  width: 9rem;
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 800;
+  border: none;
+  border-bottom: 2px solid var(--color-outline-variant, #cfd8dc);
+  background: transparent;
+  color: var(--color-on-surface, #263238);
+  padding: 0.25rem 0;
+}
+
+.mlm__value:focus {
+  outline: none;
+  border-bottom-color: var(--color-info, #0288d1);
+}
+
+.mlm__value--error {
+  border-bottom-color: var(--color-error, #c62828);
+}
+
+.mlm__unit {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+/* Altura-neutra: a linha existe sempre (espaço reservado), erro não empurra o layout. */
+.mlm__error {
+  min-height: 1.2rem;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-error, #c62828);
+  text-align: center;
+}
+
+.mlm__contexts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.mlm__ctx-chip {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--color-outline-variant, #cfd8dc);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+.mlm__ctx-chip--active {
+  background: color-mix(in srgb, var(--color-info, #0288d1) 14%, transparent);
+  border-color: var(--color-info, #0288d1);
+  color: var(--color-info, #0288d1);
+}
+
+.mlm__actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.mlm__btn {
+  min-height: 48px;
+  border-radius: 0.75rem;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mlm__btn--cancel {
+  flex: 0 0 auto;
+  padding: 0 1.25rem;
+  background: var(--color-surface-container, #eceff1);
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+.mlm__btn--save {
+  flex: 1;
+  background: var(--color-info, #0288d1);
+  color: #fff;
+}
+
+.mlm__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

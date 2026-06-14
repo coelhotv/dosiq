@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-const { getTimelineMock, maybeSingleMock } = vi.hoisted(() => ({
+const { getTimelineMock, maybeSingleMock, bioListMock } = vi.hoisted(() => ({
   getTimelineMock: vi.fn(() => Promise.resolve([])),
   maybeSingleMock: vi.fn(() => Promise.resolve({ data: { timezone: 'America/New_York' }, error: null })),
+  bioListMock: vi.fn(() => Promise.resolve([])),
+}))
+
+// 012 Fase C / FR-011: timeline mescla biomarcadores (CON-025, adapter web-only).
+vi.mock('@features/measures/services/measuresRepo', () => ({
+  measuresRepo: { list: bioListMock },
 }))
 
 vi.mock('@dosiq/core', async (importOriginal) => {
@@ -32,6 +38,7 @@ describe('timelineService (web)', () => {
     vi.clearAllMocks()
     getTimelineMock.mockResolvedValue([])
     maybeSingleMock.mockResolvedValue({ data: { timezone: 'America/New_York' }, error: null })
+    bioListMock.mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -61,5 +68,31 @@ describe('timelineService (web)', () => {
     await getMonthTimeline(2026, 0, { tz: 'Europe/Lisbon' })
     expect(maybeSingleMock).not.toHaveBeenCalled()
     expect(getTimelineMock.mock.calls[0][0].tz).toBe('Europe/Lisbon')
+  })
+
+  it('mescla biomarcadores como eventos tipados, ordenados por instante (FR-011)', async () => {
+    getTimelineMock.mockResolvedValueOnce([
+      { id: 'd1', type: 'dose', occurred_at: '2026-05-10T12:00:00.000Z', payload: {} },
+    ])
+    bioListMock.mockResolvedValueOnce([
+      { id: 'b1', type: 'glicemia', value: 112, value_secondary: null, unit: 'mg/dL', measured_at: '2026-05-10T08:00:00.000Z', context: 'jejum' },
+    ])
+    const { events } = await getMonthTimeline(2026, 4, { tz: 'America/Sao_Paulo' })
+    expect(events).toHaveLength(2)
+    // ASC por instante: biomarcador 08:00 antes da dose 12:00.
+    expect(events[0].type).toBe('biomarker')
+    expect(events[0].id).toBe('bio:b1')
+    expect(events[1].type).toBe('dose')
+    expect(events[0].localDay).toBe('2026-05-10')
+  })
+
+  it('falha de biomarcador não derruba a timeline de dose (aditivo)', async () => {
+    getTimelineMock.mockResolvedValueOnce([
+      { id: 'd1', type: 'dose', occurred_at: '2026-05-10T12:00:00.000Z', payload: {} },
+    ])
+    bioListMock.mockRejectedValueOnce(new Error('rls down'))
+    const { events } = await getMonthTimeline(2026, 4, { tz: 'America/Sao_Paulo' })
+    expect(events).toHaveLength(1)
+    expect(events[0].type).toBe('dose')
   })
 })

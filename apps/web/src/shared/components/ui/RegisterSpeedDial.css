@@ -1,0 +1,91 @@
+/* RegisterSpeedDial.css — speed-dial dose+medida (012 Fase C / FR-010b). */
+
+.rsd {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.rsd__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rsd__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--color-outline-variant, #cfd8dc);
+  border-radius: 0.75rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-on-surface, #263238);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.rsd__action:hover {
+  background: var(--color-surface-container, #eceff1);
+}
+
+.rsd__action-icon {
+  display: flex;
+  color: var(--color-primary, #008577);
+}
+
+.rsd__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-primary, #008577);
+}
+
+.rsd__trigger--open {
+  background: var(--color-on-surface-variant, #546e7a);
+}
+
+/* ── Variante sidebar (desktop): bloco no footer, largura total ── */
+.rsd--sidebar {
+  width: 100%;
+}
+
+.rsd--sidebar .rsd__trigger {
+  width: 100%;
+}
+
+/* ── Variante flutuante (mobile): assume a posição do antigo FAB "+ Dose"
+   (centralizado, acima da bottom nav). Some no desktop (lá usa o sidebar). ── */
+.rsd--floating {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-chatbot, 1100);
+  align-items: center;
+  display: none; /* padrão oculto; mostra só em mobile */
+}
+
+@media (max-width: 767px) {
+  .rsd--floating {
+    display: flex;
+  }
+}
+
+.rsd--floating .rsd__trigger {
+  height: 44px;
+  box-shadow: var(--shadow-ambient, 0 4px 12px rgba(0, 0, 0, 0.2));
+}

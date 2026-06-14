@@ -1,0 +1,168 @@
+/* MeasuresHub.css — Área de Medidas no web (012 Fase C / FR-011b). */
+
+.mhub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mhub__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mhub__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-info, #0288d1);
+}
+
+.mhub__chips {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mhub__chip {
+  min-height: 40px;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--color-surface-container, #eceff1);
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+.mhub__chip--active {
+  background: var(--color-info, #0288d1);
+  color: #fff;
+}
+
+.mhub__list-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0;
+  color: var(--color-on-surface, #263238);
+}
+
+.mhub__muted {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.mhub__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mhub__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 8%, transparent);
+}
+
+.mhub__row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 16%, transparent);
+  color: var(--color-info, #0288d1);
+}
+
+.mhub__row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.mhub__row-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-on-surface, #263238);
+}
+
+.mhub__row-meta {
+  font-size: 0.78rem;
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.mhub__row-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.mhub__row-actions button {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-on-surface-variant, #546e7a);
+  border-radius: 6px;
+}
+
+.mhub__row-actions button:hover {
+  background: var(--color-surface-container, #eceff1);
+}
+
+.mhub__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.mhub__empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 12%, transparent);
+  color: var(--color-info, #0288d1);
+  margin-bottom: 0.25rem;
+}
+
+.mhub__empty-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-on-surface, #263238);
+}
+
+.mhub__empty-msg {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var(--color-on-surface-variant, #546e7a);
+}
