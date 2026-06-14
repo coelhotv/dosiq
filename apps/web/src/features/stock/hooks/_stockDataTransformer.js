@@ -44,6 +44,18 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
     const { dosesRemaining, isDaily } = stockDoseMetrics(stock.total, medProtocols, medicine)
 
+    // 012 B4 (ADR-068): apresentação agora vive no LOTE. Para o rendimento agregado
+    // do card, deriva do lote aberto mais antigo (o que está em uso); fallback p/ o
+    // lote mais recente com container. NULL → rótulo genérico "unidade".
+    const lotEntries = stock.entries || []
+    const lotContainer =
+      lotEntries
+        .filter((e) => e.quantity > 0 && e.opened_at && e.injection_container)
+        .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
+        ?.injection_container ||
+      lotEntries.find((e) => e.injection_container)?.injection_container ||
+      null
+
     const purchaseEntries = [...purchases].sort(
       (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
     )
@@ -110,6 +122,8 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
         // Forma farmacêutica p/ ícone canônico (getMedicineIconName) no card
         presentation: medicine.presentation ?? null,
         shelf_life_days: medicine.shelf_life_days ?? null,
+        // 012 B4 (ADR-068): apresentação derivada do lote ativo (não mais do medicine).
+        injection_container: lotContainer,
       },
       entries: stock.entries,
       purchases: purchaseEntries,

@@ -73,6 +73,8 @@ describe('stockService', () => {
         p_pharmacy: payload.pharmacy,
         p_laboratory: payload.laboratory,
         p_notes: payload.notes,
+        // 012 B4 (ADR-068): container por lote — null quando não informado.
+        p_injection_container: null,
       })
       expect(result).toEqual(rpcResult)
     })

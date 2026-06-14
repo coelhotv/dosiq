@@ -4,7 +4,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Syringe } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
-import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR, isBiologicallyExpired, biologicalExpiryDaysLeft } from '@dosiq/core'
+import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR, isBiologicallyExpired, biologicalExpiryDaysLeft, INJECTION_CONTAINER_SINGULAR } from '@dosiq/core'
 
 /**
  * @param {{
@@ -35,6 +35,12 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
   const remainingText = isLiquid
     ? `${formatNumberPtBR(remaining)} ml`
     : `${remaining}`
+  // 012 B4 (ADR-068): contextualiza o lote injetável com a apresentação (caneta/refil/…)
+  // — "0,5 ml (caneta) comprados". 'ml' é masculino → "comprados"; unidades → "compradas".
+  const containerLabel = isLiquid ? INJECTION_CONTAINER_SINGULAR[purchase.injection_container] : null
+  const boughtText = containerLabel
+    ? `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) comprados`
+    : `${formatStockCount(purchase.quantity_bought, medicine)} ${isLiquid ? 'comprados' : 'compradas'}`
   const isInUse = remaining > 0
   const expiryDays = purchase.expiration_date ? computeExpiryDays(purchase.expiration_date) : null
   const purchaseDateFormatted = formatDateShortPtBR(purchase.purchase_date)
@@ -97,7 +103,7 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
       {/* Quantidades: "30 un. compradas · 16 restantes" */}
       <View style={styles.quantityRow}>
         <Text style={styles.quantityText}>
-          {formatStockCount(purchase.quantity_bought, medicine)} compradas
+          {boughtText}
         </Text>
         <Text style={styles.quantityDot}> · </Text>
         <Text style={[styles.quantityText, { color: isInUse ? colors.status.success : colors.text.muted }]}>
