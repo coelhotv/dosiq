@@ -305,10 +305,16 @@ export default function PurchaseFormScreen() {
     } else if (useLiquidInputs) {
       // 012 B4 (ADR-068/022): líquido com X frascos → X lotes (split + custo dividido).
       // FIFO consome lote a lote; opened_at só na 1ª dose de cada lote.
+      // Gemini #664: frascos é inteiro ≥1 — decimal <1 truncaria p/ 0 e a RPC falharia.
+      const bottlesCount = Math.trunc(coerceDecimal(numBottles) || 0)
+      if (bottlesCount <= 0) {
+        Alert.alert('Verifique o formulário', 'O número de frascos deve ser pelo menos 1.')
+        return
+      }
       await createLiquidPurchase(
         {
           medicineId,
-          numBottles: Math.trunc(coerceDecimal(numBottles)),
+          numBottles: bottlesCount,
           volumePerBottle: coerceDecimal(volumePerBottle),
           totalPrice: coerceDecimal(totalPrice) || 0,
           purchaseDate: form.values.purchase_date,

@@ -1,5 +1,5 @@
 import { formatLocalDate, getNow } from '@utils/dateUtils'
-import { coerceDecimal } from '@dosiq/core'
+import { coerceDecimal, cleanFloat } from '@dosiq/core'
 
 export const getInitialFormData = (initialValues) => {
   const values = initialValues || {}
@@ -21,10 +21,6 @@ export const getInitialFormData = (initialValues) => {
     injection_container: values.injection_container || '',
   }
 }
-
-// quantity (ml) derivada de frascos × volume p/ líquidos.
-const liquidTotalMl = (formData) =>
-  coerceDecimal(formData.num_bottles) * coerceDecimal(formData.volume_per_bottle)
 
 export const validateStockForm = (formData, isLiquid = false) => {
   const newErrors = {}
@@ -78,16 +74,22 @@ export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = fals
     // — carrega os campos crus p/ o caller rotear ao createLiquidPurchase (split + custo
     // dividido + compensação de centavos no último lote). Mantém quantity/unit_price
     // agregados como fallback de exibição/compat.
-    const totalMl = liquidTotalMl(formData)
+    // Gemini #664: frascos é inteiro (lotes discretos). totalMl DEVE usar o nº já
+    // truncado — senão 1,5 frascos calcularia 150 ml mas só 1 lote de 100 ml seria
+    // criado (perda silenciosa de 50 ml). cleanFloat no produto (R-277).
+    const numBottles = Math.trunc(coerceDecimal(formData.num_bottles) || 0)
+    const volumePerBottle = coerceDecimal(formData.volume_per_bottle) || 0
+    const totalMl = cleanFloat(numBottles * volumePerBottle)
     const totalPrice = formData.total_price ? coerceDecimal(formData.total_price) : 0
+    // Math.floor 4 casas (não cleanFloat): trunca p/ não inflar centavos no FIFO (#651).
     const unitPrice = totalPrice > 0 && totalMl > 0 ? Math.floor((totalPrice / totalMl) * 10000) / 10000 : 0
     return {
       ...base,
       quantity: totalMl,
       unit_price: unitPrice,
       isLiquid: true,
-      numBottles: Math.trunc(coerceDecimal(formData.num_bottles)),
-      volumePerBottle: coerceDecimal(formData.volume_per_bottle),
+      numBottles,
+      volumePerBottle,
       totalPrice,
     }
   }

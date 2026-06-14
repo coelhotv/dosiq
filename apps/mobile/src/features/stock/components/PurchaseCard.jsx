@@ -36,11 +36,11 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
     ? `${formatNumberPtBR(remaining)} ml`
     : `${remaining}`
   // 012 B4 (ADR-068): contextualiza o lote injetável com a apresentação (caneta/refil/…)
-  // — "0,5 ml (caneta) compradas". Concorda com "ml" (sem problema de gênero do container).
+  // — "0,5 ml (caneta) comprados". 'ml' é masculino → "comprados"; unidades → "compradas".
   const containerLabel = isLiquid ? INJECTION_CONTAINER_SINGULAR[purchase.injection_container] : null
   const boughtText = containerLabel
-    ? `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) compradas`
-    : `${formatStockCount(purchase.quantity_bought, medicine)} compradas`
+    ? `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) comprados`
+    : `${formatStockCount(purchase.quantity_bought, medicine)} ${isLiquid ? 'comprados' : 'compradas'}`
   const isInUse = remaining > 0
   const expiryDays = purchase.expiration_date ? computeExpiryDays(purchase.expiration_date) : null
   const purchaseDateFormatted = formatDateShortPtBR(purchase.purchase_date)
