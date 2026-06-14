@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[3],
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderStyle: 'dashed',
+    borderStyle: 'solid', // AP-163: RN só suporta 'solid'; 'dashed' dispara WARN (multiplica por frame)
     borderColor: colors.border.light,
     backgroundColor: colors.bg.card,
   },
