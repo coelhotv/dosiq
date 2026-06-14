@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ruler, Pencil, Trash2 } from 'lucide-react-native'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS, parseISO } from '@dosiq/core'
+import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS, formatDateTimePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
@@ -22,10 +22,7 @@ export default function MeasureDetailSheet({ open, item, onClose, onEdit, onDele
   if (!item) return null
   const label = BIOMARKER_TYPE_LABELS[item.type] || item.type
   const ctx = item.context ? BIOMARKER_CONTEXT_LABELS[item.context] : null
-  const when = (() => {
-    try { return parseISO(item.measured_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }
-    catch { return '' }
-  })()
+  const when = formatDateTimePtBR(item.measured_at)
 
   function close() {
     if (deleting) return

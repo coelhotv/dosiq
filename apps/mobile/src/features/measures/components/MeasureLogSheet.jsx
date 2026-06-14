@@ -15,6 +15,7 @@ import {
   parseISO,
   getNow,
   cloneDate,
+  formatDateTimePtBR,
   BIOMARKER_TYPE_UNITS,
   BIOMARKER_TYPE_LABELS,
   BIOMARKER_CONTEXTS,
@@ -46,14 +47,6 @@ function openAndroidDateTime(currentDate, onPicked) {
       })
     },
   })
-}
-
-function formatDateTime(d) {
-  try {
-    return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return ''
-  }
 }
 
 // editItem (opcional): edição de medida existente (US3b). Caller DEVE passar
@@ -228,7 +221,7 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
             >
               <View style={styles.dateTextCol}>
                 <Text style={styles.dateLabel}>Data e hora</Text>
-                <Text style={styles.dateValue}>{measuredAt ? formatDateTime(measuredAt) : 'Toque para definir'}</Text>
+                <Text style={styles.dateValue}>{measuredAt ? formatDateTimePtBR(measuredAt) : 'Toque para definir'}</Text>
               </View>
               <Calendar size={18} color={colors.status.info} strokeWidth={2} />
             </Pressable>

@@ -7,7 +7,7 @@
 
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Ruler, ChevronRight } from 'lucide-react-native'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS, parseISO } from '@dosiq/core'
+import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS, formatTimePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
 // Formata "value[/value_secondary] unit" (PA = "12/8"; demais = valor único). PT-BR.
@@ -19,14 +19,6 @@ function formatMeasure(item) {
   return `${v} ${item.unit}`
 }
 
-function formatTime(iso) {
-  try {
-    return parseISO(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return ''
-  }
-}
-
 // Variante timeline — mesma estrutura visual do DoseTimelineCard (FR-011).
 // Sem chevron/tap: é só listagem (como dose já tomada). Contexto no subtexto (sem origem).
 function TimelineLayout({ item, label }) {
@@ -34,7 +26,7 @@ function TimelineLayout({ item, label }) {
   return (
     <View style={styles.tlCard}>
       <View style={styles.tlTime}>
-        <Text style={styles.tlTimeText}>{formatTime(item.measured_at)}</Text>
+        <Text style={styles.tlTimeText}>{formatTimePtBR(item.measured_at)}</Text>
       </View>
       <View style={styles.tlInfo}>
         <View style={styles.tlTitleRow}>
@@ -63,7 +55,7 @@ function HubLayout({ item, label, showLabel, showChevron }) {
         </Text>
         <Text style={styles.meta}>
           {showLabel && !showChevron ? label : ''}{showLabel && !showChevron && ctx ? ' · ' : ''}{ctx || ''}
-          {((showLabel && !showChevron) || ctx) ? ' · ' : ''}{formatTime(item.measured_at)}
+          {((showLabel && !showChevron) || ctx) ? ' · ' : ''}{formatTimePtBR(item.measured_at)}
         </Text>
       </View>
       {showChevron ? <ChevronRight size={18} color={colors.text.muted} strokeWidth={2} /> : null}

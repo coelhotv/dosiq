@@ -118,6 +118,8 @@ export {
   formatDatePtBR,
   formatDateShortPtBR,
   formatEndDate,
+  formatTimePtBR,
+  formatDateTimePtBR,
 } from './dateFormat.js'
 
 // Treatment status resolver (Fase 2.5 — paridade web↔mobile)
