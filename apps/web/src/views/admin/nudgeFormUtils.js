@@ -16,7 +16,8 @@ const TAB_ROUTES = {
     'NotificationPreferences',
     'NotificationInbox',
     'Feedback',
-    'DoseHistory'
+    'DoseHistory',
+    'Measures'
   ],
 }
 

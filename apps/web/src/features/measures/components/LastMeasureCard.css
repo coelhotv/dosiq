@@ -1,0 +1,65 @@
+/* LastMeasureCard.css — card "Última medida" + nudge de dia vazio (012 Fase C / FR-011). */
+
+.lmc-card,
+.lmc-nudge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+/* Card com medida: registro tintado (tinta=registro, sem elevação — AP-018). */
+.lmc-card {
+  background: color-mix(in srgb, var(--color-info, #0288d1) 10%, transparent);
+  border: none;
+}
+
+.lmc-card__icon,
+.lmc-nudge__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 16%, transparent);
+  color: var(--color-info, #0288d1);
+}
+
+.lmc-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.lmc-card__value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-on-surface, #263238);
+}
+
+.lmc-card__time {
+  font-size: 0.78rem;
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+/* Nudge de dia vazio: borda sólida (RN proíbe dashed, AP-163; no web tracejado é OK
+   mas mantemos sólido p/ consistência visual com o mobile). */
+.lmc-nudge {
+  background: var(--color-surface-container-low, #f5f5f5);
+  border: 1px solid var(--color-outline-variant, #cfd8dc);
+}
+
+.lmc-nudge__text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--color-on-surface-variant, #546e7a);
+}

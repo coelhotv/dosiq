@@ -1,0 +1,129 @@
+/* ScatterTrend.css — tendência scatter 7d (012 Fase C / FR-011b). SaMD: sem zona/meta/linha. */
+
+.scatter {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-outline-variant, #cfd8dc);
+  border-radius: 0.9rem;
+  padding: 1rem;
+}
+
+.scatter__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.scatter__eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.scatter__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.scatter__nav-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-on-surface-variant, #546e7a);
+  border-radius: 6px;
+}
+
+.scatter__nav-btn:disabled {
+  color: var(--color-outline-variant, #cfd8dc);
+  cursor: default;
+}
+
+.scatter__range {
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 5rem;
+  text-align: center;
+  color: var(--color-on-surface, #263238);
+}
+
+/* Plot: gutter de labels Y à esquerda + svg ocupando o resto. */
+.scatter__plot {
+  position: relative;
+  height: 132px;
+  padding-left: 2.25rem;
+}
+
+.scatter__svg {
+  width: 100%;
+  height: 132px;
+  display: block;
+  overflow: visible;
+}
+
+.scatter__grid {
+  stroke: var(--color-outline-variant, #eceff1);
+  stroke-width: 1;
+}
+
+.scatter__point {
+  fill: var(--color-info, #0288d1);
+}
+
+.scatter__ylabels {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 0.65rem;
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.scatter__xaxis {
+  display: flex;
+  margin-top: 0.4rem;
+  padding-left: 2.25rem;
+}
+
+.scatter__xaxis span {
+  flex: 1;
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.scatter__footer {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--color-outline-variant, #eceff1);
+  padding-top: 0.75rem;
+  text-align: center;
+}
+
+.scatter__avg {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant, #546e7a);
+}
+
+.scatter__avg strong {
+  color: var(--color-on-surface, #263238);
+}
+
+.scatter__count {
+  color: var(--color-on-surface-variant, #78909c);
+}
+
+.scatter__empty {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant, #78909c);
+}
