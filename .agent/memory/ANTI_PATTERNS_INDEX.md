@@ -150,6 +150,7 @@
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
+- **[AP-229]** Invalidação por evento (`mr:*-saved`) wired em só UM de N hooks que leem a mesma fonte → consumidor esquecido fica stale (ex.: `ScatterTrend` não atualizava após editar medida; listener só no `useTodayMeasures`, faltou no `useMeasures`). Fix: inventariar TODOS os hooks que leem a tabela e wirar o mesmo listener em cada. Smoke: escrita em 1 superfície + verificar atualização nas demais. Detectado review #666 -> [`anti-patterns/react_and_ui/AP-229.md`](./anti-patterns/react_and_ui/AP-229.md)
 - **[AP-222]** `useState(prop)` não rastreia prop mutável — modal/form reutilizado no DOM fica com dados do 1º mount (form vazio ou com registro anterior), sem erro no console. Fix: `key={entity?.id || 'create'}` no caller força remount. NÃO usar `useEffect+setState` (lint error `set-state-in-effect`). -> [`anti-patterns/react_and_ui/AP-222.md`](./anti-patterns/react_and_ui/AP-222.md)
 - **[AP-172]** Recalcular status de estoque manualmente (thresholds por dias) em vez de `resolveStockStatus` — saldo 0 sem consumo virava HIGH (deveria CRITICAL); diverge da listagem -> [`anti-patterns/react_and_ui/AP-172.md`](./anti-patterns/react_and_ui/AP-172.md)
 - **[AP-004]** `ReferenceError` — TDZ crash -> [`anti-patterns/react_and_ui/AP-004.md`](./anti-patterns/react_and_ui/AP-004.md)
