@@ -86,9 +86,18 @@
 - [ ] T046 [US2b] **Convergência card de tratamento (web, ADR-067)**: `predictRefill` ([refillPredictionService.js:54](../../../apps/web/src/features/stock/services/refillPredictionService.js#L54)) aplica `frequencyDailyFactor` no consumo teórico (hoje trata dose semanal como diária → Mounjaro "0 dias" no card de tratamento vs "28 dias" no card de estoque). Resultado: card de tratamento e card de estoque convergem no mesmo `runwayDias`. Teste: Mounjaro semanal → mesmo valor em ambas as superfícies.
 - [ ] T044 [P] [C4] Testes: `stock.js` diasDeTomada × runway por frequência (diário; **Mounjaro semanal 1x 0,5ml estoque 2ml → 4 dias-tomada / 28 corridos**; **dias_alternados 2x/dia dose 1u estoque 20 → 10 dias-tomada / 20 corridos**); failure modes (estoque 0, dosePorTomada 0/NULL, time_schedule vazio); costAnalysis custo/dose (R$425); diário sem regressão; badge label doses vs dias; cleanFloat em formatActiveIngredientShort. **Regressões absorvidas:** cron Lantus 5,3ml/10UI/dia → 53 dias (não 0), não dispara alerta; predictRefill Mounjaro converge com stock card.
 
-## Phase C — biomarkers_log + fast-logging + timeline híbrida (PR 3) — ADR-060
+## Phase C — biomarkers_log + fast-logging + timeline híbrida — ADR-060
 
-> **Design prescritivo (decisões PO fixadas).** Consultar SEMPRE em dúvida de pixel/comportamento:
+> **Escopo UI v1 (Planning 2026-06-14):** entrada de **glicemia + peso** (fast-logging + hub). **PA =
+> schema-ready** (`value_secondary` na tabela/Zod; **sem UI 2-campos** nesta fase). Peso = 1 campo,
+> unidade fixa `kg`, sem contexto de refeição.
+> **Entrega SPLIT — mobile primeiro (PR 3a), web espelha (PR 3b):** PR 3a = migração + core
+> (schema/adapter) + UI mobile; PR 3b = UI web (reusa core/migração mergeados). Smoke PO mobile no 3a;
+> smoke web no 3b (R-234).
+> **Mocks = visão direcional (não spec de pixel):** latitude de impl React puro; **travas SaMD
+> permanecem** (cor=tipo, sem meta/zona/linha-de-média). Ver plan.md §Clarifications.
+>
+> **Design (referência, não contrato de pixel).** Consultar em dúvida de comportamento/intenção:
 > `HANDOFF_DESIGN.md` §2.6/§4 · `DESIGN_BRIEFING.md` · `design-mocks/*.png` · componentes-mock
 > `plans/backlog-native_app/MOCKS_APP_CRUD/project/dosiq-mocks/biomarker-screens{,-2}.jsx`
 > (`MeasureCardC`/`WeekNav`/`BioChip`/`Keypad`/`BioToast`/`ScatterPlot`/`TypeChips`). Mobile Android
@@ -96,14 +105,22 @@
 
 - [ ] T013 [C1] Confirmar caminho real **mobile** do fast-logging + FAB + navegação da área de Medidas (UNVERIFIED no plan). Comparar com mocks Android. Registrar antes de codar.
 - [ ] T014 [US3] Migração `docs/migrations/2026XXXX_diabetes_c_biomarkers.sql`: `biomarkers_log` (`id,user_id,type,value,`**`value_secondary`**`,unit,measured_at,context,source,notes,created_at`) + GRANTs + RLS (`user_id=auth.uid()`) + REVOKE anon. Enums PT (R-021). **`value_secondary` numeric NULL = 2º componente de medida composta (PA: sistólica=value, diastólica=value_secondary; NULL p/ demais) — decisão PO 2026-06-10 (duas colunas).**
-- [ ] T015 [US3] `biomarkerLogSchema.js` (core) — sincronizado com CHECK (R-082); `safeParse`; `.nullable().optional()`. `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro` (nullable, opcional). `type` default `glicemia`; `source` default `manual`. **`value_secondary` nullable; superRefine: `type='pressao_arterial'` ⇒ `value_secondary` obrigatório; demais tipos ⇒ NULL.**
+- [ ] T015 [US3] [PR3a] `biomarkerLogSchema.js` (core) — sincronizado com CHECK (R-082); `safeParse`; `.nullable().optional()`. `context` enum PT: `jejum`/`pre_refeicao`/`pos_refeicao`/`ao_deitar`/`outro` (nullable, opcional). `type` default `glicemia`; `source` default `manual`. **`value_secondary` nullable; superRefine: `type='pressao_arterial'` ⇒ `value_secondary` obrigatório; demais tipos ⇒ NULL.** **PA é schema-ready (Planning 2026-06-14): regra fica no schema, mas v1 NÃO expõe UI de PA — superRefine separa BaseSchema (sem refine) + Schema (com), `BaseSchema.partial()` no update (R-274).** `peso` (kg) e `glicemia` (mg/dL) são os tipos com UI no v1; unidade fixa por tipo.
 - [ ] T016 [US3] Adapter `biomarkersToEvents` em `timelineService.js` → `TimelineEvent[]` `type='biomarker'` (R-252; **não tocar** `timeline.js`). Agrupar nos períodos da "Agenda de Hoje"; card "Última medida" no FIM (dose primeiro).
 - [ ] T017 [US3] `BiomarkerEventCard.jsx` (padrão **`MeasureCardC`**: `infoSoft`/plano/sem sombra/sem botão/`IconRuler` inline) + registrar `biomarker` em `eventCardRegistry.js` (web) + equivalente mobile. **Medida nunca com mais peso visual que dose** (elevação=ação, tinta=registro). Mock `C registro tintado ESCOLHIDA`.
 - [ ] T017b [US3] Reservar `IconRuler` = **ícone `ruler` do lucide** em `dosiq-icons` (web/mobile shared) como marca única de biomarcador/medida (chips de tipo ficam **sem ícone**). Web: `lucide-react`; mobile: `lucide-react-native` (ou path SVG do glifo `ruler` se ícone shared for custom). Handoff §4.2.
-- [ ] T018 [US3] Fast-logging UI (web + mobile): bottom sheet **layout B "idoso primeiro"** (valor gigante, contexto grid 2×2 ≥44px, tipo recolhido, unidade fixa, "Agora" ajustável, vírgula PT-BR R-270). `Keypad` chrome do sistema FORA do sheet (`maxHeight 85%`; erro **altura-neutro** 64→48px+caption 12px). `BioChip`/`BioToast`. Erro = transparência radical (o que falhou/nada salvo/dados mantidos/retry). Mocks `C registro tintado`/`Erro valor inválido`. Reusa AP-180.
-- [ ] T018b [US3] **FAB do Hoje = speed-dial** (Registrar dose · Registrar medida) — web + mobile. Mock `FAB speed-dial expandido`.
-- [ ] T018c [US3b] **Área de Medidas** (web + mobile): entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Medidas**, entre Histórico de Doses e Modo Consulta). Hub v1 = histórico cronológico (filtro `TypeChips` sem ícone) + tendência `ScatterPlot` (pontos/dia, 1 cor `infoRing`, **7d FIXO + `WeekNav`**, seta-presente desabilitada, **sem 7d/30d, sem zona/meta/linha** — SaMD; média=número). Sheet detalhe espelha dose (*Editar*·**Ver o dia completo**·*Excluir*) — **inclui service CRUD completo de biomarcador (update/delete), não só create**. PA = 2 campos no fast-logging (`value`+`value_secondary`). Multi-biomarcador sem redesenho. **Estado-zero obrigatório** (área+dia vazios, convite inline). Mocks `B Perfil Ferramentas`/`Hub Glicemia V1`/`Hub Peso`/`Detalhe da medida`/`Estado zero`/`Dia vazio`.
-- [ ] T019 [P] [C4] Testes: biomarcador cria linha; aparece na timeline por instante (sem tocar builder); sem FK dose; sem meta; RLS isola por user; `WeekNav` clampa no presente; estado-zero e erro renderizam; **checklist SaMD** (sem cor/copy de qualidade, sem linha de média).
+- [ ] T018 [US3] Fast-logging UI — **mobile (PR3a) → web espelha (PR3b)**: bottom sheet **layout B "idoso primeiro"** (valor gigante, contexto grid 2×2 ≥44px, tipo recolhido, unidade fixa, "Agora" ajustável, vírgula PT-BR R-270). **v1: glicemia (contexto refeição) + peso (kg, 1 campo, SEM contexto); PA fora da UI (schema-ready).** `Keypad` chrome do sistema FORA do sheet (`maxHeight 85%`; erro **altura-neutro** 64→48px+caption 12px). `BioChip`/`BioToast`. Erro = transparência radical (o que falhou/nada salvo/dados mantidos/retry). Mock = visão direcional (`C registro tintado`/`Erro valor inválido`); latitude React puro; trava SaMD. Reusa AP-180.
+- [ ] T018b [US3] **FAB do Hoje = speed-dial** (Registrar dose · Registrar medida) — **mobile (PR3a) → web (PR3b)**. Toca Dashboard vivo; main integra. Mock `FAB speed-dial expandido` (visão).
+- [ ] T018c [US3b] **Área de Medidas — mobile (PR3a) → web espelha (PR3b)**: entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Medidas**, entre Histórico de Doses e Modo Consulta). Hub v1 = histórico cronológico (filtro `TypeChips` sem ícone) + tendência `ScatterPlot` (pontos/dia, 1 cor `infoRing`, **7d FIXO + `WeekNav`**, seta-presente desabilitada, **sem 7d/30d, sem zona/meta/linha** — SaMD; média=número). Sheet detalhe espelha dose (*Editar*·**Ver o dia completo**·*Excluir*) — **inclui service CRUD completo de biomarcador (update/delete), não só create**. **v1 multi-tipo = glicemia + peso** (TypeChips com 2 tipos reais); **PA não entra na UI** (schema-ready). Hub genérico sem redesenho ao ligar PA depois. **Estado-zero obrigatório** (área+dia vazios, convite inline). Mock = visão direcional (`B Perfil Ferramentas`/`Hub Glicemia V1`/`Hub Peso`/`Detalhe da medida`/`Estado zero`/`Dia vazio`).
+- [ ] T019 [P] [C4] Testes: biomarcador cria linha; aparece na timeline por instante (sem tocar builder); sem FK dose; sem meta; RLS isola por user; `WeekNav` clampa no presente; estado-zero e erro renderizam; **glicemia + peso ponta-a-ponta**; superRefine PA (value_secondary obrigatório p/ PA, NULL demais) **mesmo sem UI**; **checklist SaMD** (sem cor/copy de qualidade, sem linha de média).
+
+> **Split de PR (Planning 2026-06-14):**
+> - **PR 3a (mobile + core):** T013 (C1 mobile path), T014 (migração `biomarkers_log`), T015 (schema core),
+>   T016 (adapter core), T017+T017b (card+ícone), T018/T018b/T018c **mobile**, T019 (testes core+mobile).
+>   Migração e core entram aqui (web reusa). Smoke PO mobile → PR.
+> - **PR 3b (web espelha):** T017 card web (`eventCardRegistry`), T018/T018b/T018c **web** reusando
+>   core/migração do 3a; testes web. Smoke web → PR.
+> Core/schema/adapter/migração **não** se duplicam (R-231); web importa de `@dosiq/core`.
 
 ## Phase D — Insulina basal (UI/volume) (PR 4)
 

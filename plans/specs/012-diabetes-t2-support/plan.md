@@ -15,6 +15,26 @@
 
 ---
 
+## Clarifications (Fase C — Planning 2026-06-14)
+
+- Q: Mocks hi-fi (`design-mocks/*.png`, `biomarker-screens{,-2}.jsx`) são spec visual vinculante ou visão?
+  → A: **Visão direcional**, não spec visual. Coder tem latitude de pixel/layout/impl em **React puro**
+  (recriar, não copiar 1:1). Os mocks comunicam intenção de UX/hierarquia, não contrato de px.
+  **Exceção não-negociável:** as travas **SaMD** (cor=tipo nunca qualidade; sem meta/zona/alvo/
+  semáforo/linha-de-média; média=número) **não são estética** — são fronteira legal (ADR-062) e
+  permanecem obrigatórias independentemente da latitude visual. → revoga o "espelhar o mock exatamente,
+  nunca melhorar" da §Orquestração **apenas** quanto a pixel/layout; mantém a trava SaMD de render.
+- Q: Quais biomarcadores têm entrada na UI (fast-logging + hub) no v1?
+  → A: **glicemia + peso**. Tabela/schema/adapter nascem genéricos (ADR-060); **PA fica schema-ready**
+  (`value_secondary` na tabela/Zod, **sem UI de 2 campos** nesta fase). Peso = 1 campo, unidade fixa
+  `kg`, reusa o mesmo sheet (sem contexto de refeição). Hub `TypeChips` exercitado com 2 tipos reais.
+- Q: Fase C = 1 PR ou split web/mobile?
+  → A: **Split — mobile primeiro, web espelha** (2 PRs). Mobile é a fonte do design (mock Android);
+  validar no destino canônico antes do espelho web. PR 3a = mobile (migração+core+UI mobile);
+  PR 3b = web (espelha UI, reusa core/migração já mergeados).
+
+---
+
 ## Technical Context (evidência real verificada)
 
 | Área | Evidência (file:line / DB) | Implicação |
@@ -173,6 +193,13 @@
   fix de 1 linha aproveitando a fase.
 
 ### Fase C — `biomarkers_log` + fast-logging + timeline híbrida — ADR-060
+
+> **Escopo UI v1 (Planning 2026-06-14):** entrada de **glicemia + peso** no fast-logging e no hub.
+> **PA = schema-ready** (`value_secondary` na tabela/Zod; **sem UI de 2 campos** nesta fase).
+> **Entrega split — mobile primeiro (PR 3a), web espelha (PR 3b)**: mobile é a fonte (mock Android),
+> validar no destino canônico antes do espelho. Core (schema/adapter) + migração entram no PR 3a e o
+> PR 3b reusa. **Mocks = visão direcional (não spec de pixel); latitude de impl React puro; travas
+> SaMD permanecem** (ver §Clarifications).
 
 > **Design prescritivo (decisões fixadas pelo PO).** Fonte canônica:
 > [HANDOFF_DESIGN.md](../../backlog-native_app/MOCKS_APP_CRUD/HANDOFF_DESIGN.md) §2.6 (decisões) +
@@ -350,10 +377,13 @@ integração no main thread (opus). Economia real vem de (a) modelo mais barato 
 - **Trap SaMD de render (UI clínica delegada):** modelo barato tende a "ajudar" adicionando
   faixa-alvo, cor alto/baixo, "faixa normal" ou **linha de média** no scatter/cards de medida —
   isso **viola SaMD (ADR-062)**. Os mocks **não** têm nenhum desses. Prompt de qualquer sub-agente
-  de UI clínica DEVE: (a) **espelhar o mock exatamente, nunca "melhorar"**; (b) cor = só tipo de
-  evento (teal=dose · azul-info=medida), nunca qualidade; (c) média da semana = **número**, jamais
-  linha. **Main revisa todo output de render clínico contra o checklist SaMD** antes do PR — não
-  confiar no sub-agente.
+  de UI clínica DEVE: (a) **tratar o mock como visão direcional** — latitude de pixel/layout/impl em
+  React puro, mas **proibido ADICIONAR elemento clínico ausente do mock** (faixa-alvo/cor de qualidade/
+  linha de média); "melhorar" o visual é OK, "melhorar" inventando semântica clínica é violação; (b)
+  cor = só tipo de evento (teal=dose · azul-info=medida), nunca qualidade; (c) média da semana =
+  **número**, jamais linha. **Main revisa todo output de render clínico contra o checklist SaMD** antes
+  do PR — não confiar no sub-agente. (Clarificação 2026-06-14: latitude visual liberada; trava SaMD
+  mantida — ver §Clarifications.)
 - **Espelhar mock, não inventar:** tarefa de UI com mock fixo → sub-agente consulta
   `design-mocks/*.png` + `biomarker-screens{,-2}.jsx` e reproduz; **recria** nos componentes reais
   (mock é React puro sem Zod/Supabase), não copia estrutura nem adiciona afunção fora do mock.
