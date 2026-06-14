@@ -26,6 +26,11 @@ Dois casos reais ficam ocultos:
 Descoberto durante o smoke da Fase B4 (012). Sem impacto no estoque (consumo correto);
 é gap de **visibilidade/registro** no histórico.
 
+Agregado ao spec um segundo gap de **UX no detalhe da dose (mobile)**, do mesmo smoke: o
+bottom sheet de detalhe só renderiza o ícone correto para doses tomadas (check), exibindo
+check-mark cinza para `pending`/`missed`/`skipped`, e não traz rótulo textual do status
+(US4/US5). Mesma família (read-path de histórico/detalhe de dose), Tier 1.
+
 ---
 
 ## User Stories
@@ -53,6 +58,27 @@ já que PRN não tem agenda.
   Quando o histórico une instâncias + logs órfãos,
   Então o evento aparece **uma única vez** (a instância; o log ancorado não duplica).
 
+### US4 — Ícone correto no detalhe (mobile) (P1)
+Como paciente, quero que o bottom sheet de detalhe da dose mostre o **mesmo ícone**
+da listagem (por status), não um check-mark cinza genérico para tudo que não foi tomado.
+
+**Acceptance**
+- Dado uma dose com status `pending`/`missed`/`skipped` na listagem (ícone próprio),
+  Quando abro o bottom sheet de detalhe dela,
+  Então o ícone exibido é o **mesmo** da listagem (paridade), não um check-mark cinza.
+- Dado uma dose `taken`,
+  Quando abro o detalhe,
+  Então o ícone de tomada (check) é mantido.
+
+### US5 — Chip textual de status (mobile) (P1)
+Como paciente, quero um rótulo textual do status no bottom sheet de detalhe,
+porque o ícone sozinho é ambíguo.
+
+**Acceptance**
+- Dado uma dose em qualquer status,
+  Quando abro o bottom sheet de detalhe,
+  Então vejo um chip/legenda textual: "Tomada", "Perdida", "Pendente" ou "Pulada".
+
 ---
 
 ## Functional Requirements
@@ -68,12 +94,20 @@ já que PRN não tem agenda.
   DEVE listar seus `medicine_logs` diretamente (caso particular de FR-001).
 - **FR-005**: A navegação por dia/mês e o piso de calendário existentes DEVEM continuar
   funcionando; logs órfãos respeitam o mesmo filtro de período/timezone.
+- **FR-006**: O bottom sheet de detalhe da dose (mobile) DEVE derivar o ícone do `status`
+  da dose, reusando o **mesmo mapa status→ícone** da listagem (paridade visual). Proibido
+  hardcodar check-mark para status não-`taken`.
+- **FR-007**: O bottom sheet de detalhe (mobile) DEVE exibir um chip/legenda textual do
+  status: `taken`→"Tomada", `missed`→"Perdida", `pending`→"Pendente", `skipped`→"Pulada".
 
 ## Success Criteria
 
 - **SC-001**: O log avulso do Lantus (09/jun) aparece no histórico web e mobile.
 - **SC-002**: Um tratamento PRN com ≥1 tomada mostra histórico não-vazio em ambas plataformas.
 - **SC-003**: Nenhuma dose agendada-e-tomada aparece duplicada.
+- **SC-004**: Abrir o detalhe de uma dose `pending`/`missed`/`skipped` mostra o ícone próprio
+  do status (igual à listagem), não check-mark cinza.
+- **SC-005**: O detalhe de qualquer dose exibe chip textual do status correspondente.
 
 ## Assumptions / Open Questions
 
