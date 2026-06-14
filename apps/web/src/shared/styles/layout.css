@@ -325,6 +325,34 @@
   background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
 }
 
+/* 012 Fase C / FR-011: card de medida na agenda — "registro tintado" (info suave),
+   plano (sem sombra/elevação) p/ não competir com a dose (tinta=registro, AP-018).
+   Mantém o MESMO esqueleto da dose (coluna: ícone em cima, __main com hora à direita). */
+.cronograma-dose-card--measure {
+  background: color-mix(in srgb, var(--color-info, #0288d1) 9%, transparent);
+  box-shadow: none;
+}
+
+.cronograma-dose-card__icon-wrap--measure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-info, #0288d1) 16%, transparent);
+}
+
+/* Hora alinhada à direita e DENTRO do card: o título da medida quebra linha em vez
+   de empurrar a hora pra fora (mobile, valor longo "Glicemia 112 mg/dL"). */
+.cronograma-dose-card--measure .cronograma-dose-card__time {
+  color: var(--color-info, #0288d1);
+  align-self: flex-start;
+}
+
+.cronograma-dose-card--measure .cronograma-dose-card__title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 /* Bloco principal: info à esquerda + horário grande à direita */
 .cronograma-dose-card__main {
   display: flex;

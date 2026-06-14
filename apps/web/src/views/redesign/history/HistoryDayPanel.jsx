@@ -18,7 +18,7 @@ import { parseLocalDate } from '@utils/dateUtils'
  * @param {Function} props.onDeleteLog - callback(logId) p/ excluir (só eventos com log).
  * @param {string} [props.timezone] - fuso do usuário, repassado aos cards (exibição da hora).
  */
-export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLog, onDeleteLog, timezone }) {
+export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLog, onDeleteLog, onEditMeasure, onDeleteMeasure, timezone }) {
   // Formatar data para exibição
   const dateLabel = selectedDate
     ? (typeof selectedDate === 'string' ? parseLocalDate(selectedDate) : selectedDate)
@@ -44,7 +44,7 @@ export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLo
     <div className="hhr-day-panel">
       <div className="hhr-day-panel__header">
         <div className="hhr-day-panel__heading">
-          <h3 className="hhr-day-panel__title">Doses do Dia</h3>
+          <h3 className="hhr-day-panel__title">Registros do dia</h3>
           <span className="hhr-day-panel__date">{formattedDate}</span>
         </div>
         <span className="hhr-day-panel__count" title={countTooltip}>{countLabel}</span>
@@ -59,7 +59,17 @@ export default function HistoryDayPanel({ selectedDate, dayEvents = [], onEditLo
           {dayEvents.map((event) => {
             const Card = resolveEventCard(event.type)
             if (!Card) return null // tipo não registrado: ignora sem quebrar a stream
-            return <Card key={event.id} event={event} onEdit={onEditLog} onDelete={onDeleteLog} timezone={timezone} />
+            return (
+              <Card
+                key={event.id}
+                event={event}
+                onEdit={onEditLog}
+                onDelete={onDeleteLog}
+                onEditMeasure={onEditMeasure}
+                onDeleteMeasure={onDeleteMeasure}
+                timezone={timezone}
+              />
+            )
           })}
         </div>
       )}

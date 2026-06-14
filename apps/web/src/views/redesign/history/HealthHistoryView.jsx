@@ -7,6 +7,8 @@ import Modal from '@shared/components/ui/Modal'
 import LogForm from '@shared/components/log/LogForm'
 import HistoryKPICards from './HistoryKPICards'
 import HistoryDayPanel from './HistoryDayPanel'
+import MeasuresHub from '@features/measures/components/MeasuresHub'
+import MeasureLogModal from '@features/measures/components/MeasureLogModal'
 
 const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao'))
 const AdherenceHeatmap = lazy(() => import('@adherence/components/AdherenceHeatmap'))
@@ -38,6 +40,12 @@ export default function HealthHistoryView({
   onDeleteLog,
   onSaveLog,
   onCloseModal,
+  editingMeasure,
+  measureModalOpen,
+  onEditMeasure,
+  onDeleteMeasure,
+  onSaveMeasure,
+  onCloseMeasureModal,
 }) {
   return (
     <div className="hhr-view">
@@ -87,6 +95,8 @@ export default function HealthHistoryView({
           timezone={timezone}
           onEditLog={onEditLog}
           onDeleteLog={onDeleteLog}
+          onEditMeasure={onEditMeasure}
+          onDeleteMeasure={onDeleteMeasure}
         />
       </div>
 
@@ -106,6 +116,25 @@ export default function HealthHistoryView({
             <AdherenceHeatmap pattern={adherencePattern} />
           </Suspense>
         </div>
+      )}
+
+      {/* 012 Fase C / FR-011b — Tendência de Medidas (chips + scatter). Função analítica:
+          só no modo `complex` (como sparkline/heatmap de adesão) — não para "dona maria". */}
+      {isComplex && (
+        <div className="hhr-measures-section">
+          <MeasuresHub />
+        </div>
+      )}
+
+      {/* Edição de biomarcador a partir do card do dia (FR-011b — detalhe Editar). */}
+      {measureModalOpen && (
+        <MeasureLogModal
+          key={editingMeasure?.id || 'edit-measure'}
+          isOpen={measureModalOpen}
+          editItem={editingMeasure}
+          onClose={onCloseMeasureModal}
+          onSaved={onSaveMeasure}
+        />
       )}
 
       <Modal isOpen={isModalOpen} onClose={onCloseModal}>

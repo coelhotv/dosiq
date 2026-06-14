@@ -1,4 +1,5 @@
-import { Calendar, Pill, Package, User, Bell, Plus } from 'lucide-react'
+import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
+import RegisterSpeedDial from './RegisterSpeedDial'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -9,7 +10,7 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Perfil', Icon: User },
 ]
 
-export default function Sidebar({ currentView, setCurrentView, onNewDose, unreadCount = 0 }) {
+export default function Sidebar({ currentView, setCurrentView, onRegisterDose, onRegisterMeasure, unreadCount = 0 }) {
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
@@ -44,10 +45,11 @@ export default function Sidebar({ currentView, setCurrentView, onNewDose, unread
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-add-btn" onClick={onNewDose} aria-label="Registrar dose">
-          <Plus size={18} aria-hidden="true" />
-          <span>Registrar Dose</span>
-        </button>
+        <RegisterSpeedDial
+          variant="sidebar"
+          onRegisterDose={onRegisterDose}
+          onRegisterMeasure={onRegisterMeasure}
+        />
       </div>
     </aside>
   )

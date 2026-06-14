@@ -14,6 +14,8 @@ import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 import MobileAppBanner from '@shared/components/MobileAppBanner'
 import { SpeedInsights } from '@vercel/speed-insights/react'
+import MeasureLogModal from '@features/measures/components/MeasureLogModal'
+import { measuresRepo } from '@features/measures/services/measuresRepo'
 
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
@@ -26,11 +28,27 @@ function AppInner() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
   const [doseModalInitialValues, setDoseModalInitialValues] = useState(null)
+  const [isMeasureModalOpen, setIsMeasureModalOpen] = useState(false)
   const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
+
+  // 012 Fase C / FR-010: registro de medida pelo speed-dial global. Salva e avisa as
+  // superfícies (dashboard/histórico) via evento — mesmo padrão de 'mr:dose-saved'.
+  const handleSaveMeasure = async (payload) => {
+    const saved = await measuresRepo.create(payload)
+    window.dispatchEvent(new CustomEvent('mr:measure-saved'))
+    return saved
+  }
+
+  // Nudge "Registre a primeira" (card vazio do dashboard) abre o modal global de medida.
+  useEffect(() => {
+    const open = () => setIsMeasureModalOpen(true)
+    window.addEventListener('mr:open-measure-log', open)
+    return () => window.removeEventListener('mr:open-measure-log', open)
+  }, [])
 
   const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
@@ -160,7 +178,7 @@ function AppInner() {
 
           {isAuthenticated && (
             <Suspense fallback={null}>
-              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onNewDose={() => setIsDoseModalOpen(true)} unreadCount={unreadCount} />
+              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} />
             </Suspense>
           )}
 
@@ -205,6 +223,14 @@ function AppInner() {
             </Suspense>
           )}
 
+          {isMeasureModalOpen && (
+            <MeasureLogModal
+              isOpen={isMeasureModalOpen}
+              onClose={() => setIsMeasureModalOpen(false)}
+              onSaved={handleSaveMeasure}
+            />
+          )}
+
           {isAuthenticated && !isPasswordRecovery && (
             <AppAuthOverlays
               isChatOpen={isChatOpen}
@@ -213,6 +239,7 @@ function AppInner() {
               setIsDoseModalOpen={setIsDoseModalOpen}
               doseModalInitialValues={doseModalInitialValues}
               setDoseModalInitialValues={setDoseModalInitialValues}
+              onRegisterMeasure={() => setIsMeasureModalOpen(true)}
             />
           )}
 

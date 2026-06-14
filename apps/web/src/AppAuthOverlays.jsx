@@ -4,6 +4,7 @@
 import { Suspense, lazy } from 'react'
 import { BotMessageSquare } from 'lucide-react'
 import { OnboardingWizard } from '@shared/components/onboarding'
+import RegisterSpeedDial from '@shared/components/ui/RegisterSpeedDial'
 import appStyles from './App.module.css'
 
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
@@ -16,6 +17,7 @@ export default function AppAuthOverlays({
   setIsDoseModalOpen,
   doseModalInitialValues,
   setDoseModalInitialValues,
+  onRegisterMeasure,
 }) {
   return (
     <>
@@ -33,14 +35,12 @@ export default function AppAuthOverlays({
         </Suspense>
       )}
 
-      {/* FAB móvel "Registrar Dose" */}
-      <button
-        onClick={() => setIsDoseModalOpen(true)}
-        aria-label="Registrar dose"
-        className={appStyles.doseFab}
-      >
-        + Dose
-      </button>
+      {/* FAB móvel — speed-dial (dose + medida), 012 Fase C / FR-010b. Posição do antigo "+ Dose". */}
+      <RegisterSpeedDial
+        variant="floating"
+        onRegisterDose={() => setIsDoseModalOpen(true)}
+        onRegisterMeasure={onRegisterMeasure}
+      />
 
       {/* Modal global de registro de dose */}
       {isDoseModalOpen && (
