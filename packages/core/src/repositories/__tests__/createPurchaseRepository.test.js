@@ -166,6 +166,19 @@ describe('createPurchaseRepository — parity', () => {
         p_purchase_date: '2026-01-10',
       })
     })
+    // 012 B4 (ADR-068): container por lote vai como p_injection_container na RPC.
+    it('passa p_injection_container quando informado', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createPurchase({ ...VALID_INPUT, injection_container: 'caneta' })
+      const call = client._rpcCalls.find(([n]) => n === 'create_purchase_with_stock')
+      expect(call[1].p_injection_container).toBe('caneta')
+    })
+    it('p_injection_container = null quando ausente', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.createPurchase(VALID_INPUT)
+      const call = client._rpcCalls.find(([n]) => n === 'create_purchase_with_stock')
+      expect(call[1].p_injection_container).toBeNull()
+    })
   })
 
   // ── updatePurchase ──
@@ -189,6 +202,16 @@ describe('createPurchaseRepository — parity', () => {
     it('validation fail → Erro de validação', async () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await expect(repo.updatePurchase('p-1', { quantity: -5 })).rejects.toThrow(/Erro de validação/)
+    })
+    // 012 B4 (ADR-068): edit propaga container ao purchases E ao lote stock vinculado.
+    it('grava injection_container em purchases e propaga ao stock', async () => {
+      const repo = createPurchaseRepository({ client, getUserId })
+      await repo.updatePurchase('p-1', { ...VALID_INPUT, injection_container: 'refil' })
+      const updateCalls = client._builder._calls.filter(([m]) => m === 'update')
+      // 1ª update = purchases (com container), 2ª = stock (só container).
+      expect(updateCalls[0][1][0]).toHaveProperty('injection_container', 'refil')
+      expect(client.from).toHaveBeenCalledWith('stock')
+      expect(updateCalls[1][1][0]).toEqual({ injection_container: 'refil' })
     })
   })
 

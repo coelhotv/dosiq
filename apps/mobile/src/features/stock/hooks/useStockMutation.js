@@ -85,6 +85,20 @@ export function useStockMutation() {
     [mutationCreate, navigation, user],
   )
 
+  // 012 B4 (ADR-068/022): compra de líquido com X frascos → X lotes (split via core).
+  // Reusa o wrapper de create (mesmos toasts/cache invalidation).
+  const createLiquidPurchase = useCallback(
+    async (input, { goBack = false } = {}) => {
+      if (!user?.id) throw new Error('Usuário não autenticado')
+      const result = await mutationCreate.mutate(() =>
+        stockService.createLiquidPurchase(input),
+      )
+      if (result && goBack) navigation.goBack()
+      return result
+    },
+    [mutationCreate, navigation, user],
+  )
+
   const updatePurchase = useCallback(
     async (id, input, { goBack = false } = {}) => {
       if (!user?.id) throw new Error('Usuário não autenticado')
@@ -141,6 +155,7 @@ export function useStockMutation() {
 
   return {
     createPurchase,
+    createLiquidPurchase,
     updatePurchase,
     adjustBalance,
     isLoading: mutationCreate.isLoading || mutationUpdate.isLoading,

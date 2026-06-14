@@ -95,7 +95,24 @@ export default function Stock({ initialParams, onClearParams }) {
 
   const handleSaveStock = async (stockData) => {
     try {
-      await stockService.add(stockData)
+      // 012 B4 (ADR-068/022): líquido com X frascos → X lotes (split via createLiquidPurchase);
+      // FIFO consome lote a lote e abre o próximo só quando o anterior esgota.
+      if (stockData?.isLiquid && stockData.numBottles > 0 && stockData.volumePerBottle > 0) {
+        await stockService.createLiquidPurchase({
+          medicineId: stockData.medicine_id,
+          numBottles: stockData.numBottles,
+          volumePerBottle: stockData.volumePerBottle,
+          totalPrice: stockData.totalPrice,
+          purchaseDate: stockData.purchase_date,
+          expirationDate: stockData.expiration_date,
+          pharmacy: stockData.pharmacy,
+          laboratory: stockData.laboratory,
+          notes: stockData.notes,
+          injectionContainer: stockData.injection_container ?? null,
+        })
+      } else {
+        await stockService.add(stockData)
+      }
       setIsModalOpen(false)
       setSelectedMedicineId(null)
       if (onClearParams) onClearParams()

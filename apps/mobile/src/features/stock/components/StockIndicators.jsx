@@ -14,23 +14,34 @@ import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 /**
  * Grid de indicadores (KPIs) do estoque de um medicamento.
  *
+ * 012 B4 (ADR-067) — modelo dose-primário p/ tratamento ≠ diário:
+ *  - "Consumo / dia" mostra o consumo do DIA-DOSE (dia agendado), não corrido
+ *    (Mounjaro 1×/sem = 0,5 ml; 2× no dia = 1 ml). Diário fica igual.
+ *  - "Dias restantes" vira "Doses restantes" (N doses); cor SEMPRE por runway.
+ *
  * @param {{
- *   saldo: number,                 // saldo total em unidades
- *   dailyConsumption: number,      // consumo diário (un./dia)
- *   daysRemaining: number|null,    // dias restantes (null = sem consumo)
- *   avgUnitPrice: number,          // custo médio ponderado por unidade
- *   medicine: object|null,         // objeto completo do medicamento
+ *   saldo: number,
+ *   dailyConsumption: number,        // consumo do dia-dose (já sem frequencyDailyFactor)
+ *   daysRemaining: number|null,      // runway em dias corridos (cor + label diário)
+ *   dosesRemaining: number|null,     // doses físicas restantes (label ≠ diário)
+ *   isDailyStock: boolean,           // true = diário ("N dias"); false = "N doses"
+ *   avgUnitPrice: number,
+ *   costPerDose: number|null,
+ *   medicine: object|null,
  * }} props
  */
 export default function StockIndicators({
   saldo = 0,
   dailyConsumption = 0,
   daysRemaining = null,
+  dosesRemaining = null,
+  isDailyStock = true,
   avgUnitPrice = 0,
   costPerDose = null,
   medicine = null,
 }) {
-  // Cor de alerta para "Dias restantes": <7 vermelho · <14 amarelo · senão neutro.
+  // Cor de alerta SEMPRE por runway (dias corridos): <7 vermelho · <14 amarelo.
+  // Vale para diário e ≠ diário — o rótulo muda (doses), a cor mede recompra.
   const daysColor =
     daysRemaining == null
       ? colors.text.primary
@@ -61,13 +72,23 @@ export default function StockIndicators({
         suffix={countSuffix}
         hint={isLiquid ? null : formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)}
       />
-      <Kpi
-        icon={<Clock size={18} color={colors.primary[700]} />}
-        label="Dias restantes"
-        value={daysRemaining == null ? '—' : String(daysRemaining)}
-        suffix={daysRemaining == null ? null : 'dias'}
-        valueColor={daysColor}
-      />
+      {isDailyStock ? (
+        <Kpi
+          icon={<Clock size={18} color={colors.primary[700]} />}
+          label="Dias restantes"
+          value={daysRemaining == null ? '—' : String(daysRemaining)}
+          suffix={daysRemaining == null ? null : 'dias'}
+          valueColor={daysColor}
+        />
+      ) : (
+        <Kpi
+          icon={<Clock size={18} color={colors.primary[700]} />}
+          label="Doses restantes"
+          value={dosesRemaining == null ? '—' : String(dosesRemaining)}
+          suffix={dosesRemaining == null ? null : dosesRemaining === 1 ? 'dose' : 'doses'}
+          valueColor={daysColor}
+        />
+      )}
       {costPerDose != null ? (
         <Kpi
           icon={<Tag size={18} color={colors.primary[700]} />}

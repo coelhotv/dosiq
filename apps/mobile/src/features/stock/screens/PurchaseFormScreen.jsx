@@ -106,8 +106,11 @@ export default function PurchaseFormScreen() {
   const [numBottles, setNumBottles] = useState('')
   const [volumePerBottle, setVolumePerBottle] = useState('')
   const [totalPrice, setTotalPrice] = useState('')
-  // 012 Fase B2 (FR-019): apresentação física do injetável, captada na 1ª compra.
-  const [injectionContainer, setInjectionContainer] = useState('')
+  // 012 Fase B4 (ADR-068): apresentação do LOTE. No edit, prefill do lote editado
+  // (route.params.purchase) — lazy init evita set-state-in-effect (AP-222).
+  const [injectionContainer, setInjectionContainer] = useState(
+    () => route.params?.purchase?.injection_container || ''
+  )
 
   const {
     mode = 'create',
@@ -122,11 +125,10 @@ export default function PurchaseFormScreen() {
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   // Frascos/ml só no create (edit ajusta saldo em ml direto).
   const useLiquidInputs = isLiquid && !isEdit
-  // 012 Fase B2 (FR-019): apresentação do injetável. Create → captura na 1ª compra
-  // (quando ainda não definida); Edit → sempre recupera e permite corrigir cadastro
-  // errado (form de edição = cópia do de criação).
+  // 012 Fase B4 (ADR-068): apresentação é atributo do LOTE → pergunta em TODA compra
+  // de injetável (create e edit). Grava em stock+purchases via RPC, não no medicine.
   const isInjectable = medicine?.presentation === 'injetavel'
-  const needsContainer = isInjectable && (isEdit || !medicine?.injection_container)
+  const needsContainer = isInjectable
 
   // Memos — valores iniciais do form
   // FormDatePicker recebe Date; schema armazena string YYYY-MM-DD.
@@ -164,7 +166,7 @@ export default function PurchaseFormScreen() {
   }, [isEdit, purchase, todayIso])
 
   const form = useFormState(stockCreateSchema, { initialValues })
-  const { createPurchase, updatePurchase, isLoading } = useStockMutation()
+  const { createPurchase, createLiquidPurchase, updatePurchase, isLoading } = useStockMutation()
   const { handleChange } = form
 
   // Derivados para FormDatePicker (converte string → Date para exibição)
@@ -209,8 +211,6 @@ export default function PurchaseFormScreen() {
       .then((med) => {
         if (cancelled || !med) return
         setMedicine(med)
-        // Edição: recupera o container já cadastrado p/ exibir e permitir correção.
-        if (med.injection_container) setInjectionContainer(med.injection_container)
         if (med.laboratory && shouldPrefillLab(med.regulatory_category)) {
           handleChange('laboratory', med.laboratory)
           setLabLocked(shouldLockLab(med.regulatory_category))
@@ -296,25 +296,34 @@ export default function PurchaseFormScreen() {
       pharmacy: form.values.pharmacy || null,
       laboratory: form.values.laboratory || null,
       notes: form.values.notes || null,
-    }
-
-    // FR-019: persiste o container no medicine (best-effort — não bloqueia a compra;
-    // é só rótulo de UI). Create: 1ª captura. Edit: corrige cadastro errado. Só
-    // grava quando há valor e ele difere do já salvo.
-    if (isInjectable && injectionContainer && injectionContainer !== medicine?.injection_container) {
-      try {
-        await medicineService.update(medicineId, { injection_container: injectionContainer })
-      } catch {
-        // best-effort: container é só rótulo de UI; falha não bloqueia a compra.
-      }
+      // ADR-068: apresentação vai no LOTE (stock+purchases via RPC). Só p/ injetável.
+      injection_container: isInjectable ? injectionContainer || null : null,
     }
 
     if (isEdit) {
       await updatePurchase(purchaseId, payload, { goBack: true })
+    } else if (useLiquidInputs) {
+      // 012 B4 (ADR-068/022): líquido com X frascos → X lotes (split + custo dividido).
+      // FIFO consome lote a lote; opened_at só na 1ª dose de cada lote.
+      await createLiquidPurchase(
+        {
+          medicineId,
+          numBottles: Math.trunc(coerceDecimal(numBottles)),
+          volumePerBottle: coerceDecimal(volumePerBottle),
+          totalPrice: coerceDecimal(totalPrice) || 0,
+          purchaseDate: form.values.purchase_date,
+          expirationDate: form.values.expiration_date || null,
+          pharmacy: form.values.pharmacy || null,
+          laboratory: form.values.laboratory || null,
+          notes: form.values.notes || null,
+          injectionContainer: isInjectable ? injectionContainer || null : null,
+        },
+        { goBack: true },
+      )
     } else {
       await createPurchase(payload, { goBack: true })
     }
-  }, [form, isEdit, medicineId, purchaseId, createPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice, isInjectable, medicine, injectionContainer])
+  }, [form, isEdit, medicineId, purchaseId, createPurchase, createLiquidPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice, isInjectable, injectionContainer])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
 

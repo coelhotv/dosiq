@@ -9,6 +9,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase B4 — `injection_container` por lote (slice 3: T044b / FR-030 / ADR-068)
+
+#### DB (migração prod — `20260613_b4_injection_container_por_lote.sql`)
+- **Changed** (`minor`, FR-030/ADR-068): `injection_container` (apresentação física do injetável) migra de **medicine-level** → **LOTE**. Novas colunas `stock.injection_container` e `purchases.injection_container` (+ CHECK do enum); valores dos 3 medicines existentes copiados para seus lotes; RPC `create_purchase_with_stock` ganha `p_injection_container` (append no fim — AP-221) gravando nas duas tabelas no INSERT atômico; **DROP `medicines.injection_container`** + CHECK. Motivo: a apresentação é atributo da compra (paciente troca caneta↔refil entre lotes), não do medicamento — fonte única no lote evita drift.
+
+#### Core (@dosiq/core)
+- **Changed** (`minor`, ADR-068): `medicineSchema` perde `injection_container`; `stockCreateSchema` ganha (`enum` nullable, sync com CHECK — R-271). Repo `createPurchase`/`createLiquidPurchase` passam `p_injection_container`; `updatePurchase` grava em `purchases` **e** propaga ao lote `stock` vinculado.
+
+#### Web (4.6.0 → 4.7.0) / App mobile (0.16.4 → 0.16.5 — patch: fase do épico 012)
+- **Changed** (`minor`, ADR-068): forms de compra (web `StockForm`/`_useStockFormState`/`_stockFormUtils`; mobile `PurchaseFormScreen`) perguntam a apresentação em **toda compra** de injetável (não só na 1ª) e gravam no lote via RPC — sem mais `medicineService.update` best-effort. Rendimento do card (`_stockDataTransformer`) deriva a apresentação do **lote ativo** (aberto mais antigo, fallback 1º lote com valor).
+
 ### 012 Fase B4 — estoque dose-primário (slice 2: core + web + mobile)
 
 #### Core (@dosiq/core)
@@ -26,7 +37,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 #### Reports (PDF de consulta)
 - **Changed** (`patch`, FR-029): seção de atenção de estoque exibe doses físicas + runway entre parênteses para freq ≠ diária (`_pdfSectionBuilders`/`consultationPdfDataBuilder`).
 
-> **Nota:** FR-030 (`injection_container` por lote + DROP em `medicines`) sai num PR dedicado (migração prod).
+> **Nota:** FR-030 (`injection_container` por lote + DROP em `medicines`) entregue na slice 3 acima (PR dedicado, migração prod).
 
 ### 012 Fase B4 — estoque dose-primário (slice 1: serverless)
 

@@ -37,7 +37,7 @@ import { useStockMutation } from '@stock/hooks/useStockMutation'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { formatConcentration, isLiquidMedicine, formatNumberPtBR } from '@dosiq/core'
+import { formatConcentration, isLiquidMedicine, formatNumberPtBR, cleanFloat } from '@dosiq/core'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
 
 // Motivos de ajuste — value enviado ao service, label exibido no dropdown.
@@ -93,7 +93,8 @@ export default function StockAdjustmentScreen() {
 
   const delta = useMemo(() => {
     if (parsedNew == null || currentBalance == null) return null
-    return parsedNew - currentBalance
+    // cleanFloat: subtração de decimais vaza dízima (1,5−1,9 = -0,39999…99) — R-277.
+    return cleanFloat(parsedNew - currentBalance)
   }, [parsedNew, currentBalance])
 
   const canConfirm = useMemo(

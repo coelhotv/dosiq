@@ -16,8 +16,8 @@ export const getInitialFormData = (initialValues) => {
     pharmacy: values.pharmacy || '',
     laboratory: values.laboratory || '',
     notes: values.notes || '',
-    // 012 Fase B2 (FR-019): apresentação física do injetável, capturada na 1ª
-    // compra (persiste no medicine, não no stock). '' = não informado.
+    // 012 Fase B4 (ADR-068): apresentação física do injetável, capturada por LOTE
+    // nesta compra (persiste em stock+purchases via RPC). '' = não informado.
     injection_container: values.injection_container || '',
   }
 }
@@ -61,7 +61,7 @@ export const validateStockForm = (formData, isLiquid = false) => {
   return newErrors
 }
 
-export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = false) => {
+export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = false, isInjectable = false) => {
   const base = {
     medicine_id: formData.medicine_id,
     purchase_date: formData.purchase_date || null,
@@ -69,14 +69,27 @@ export const buildStockPayload = (formData, effectiveLaboratory, isLiquid = fals
     pharmacy: formData.pharmacy?.trim() || null,
     laboratory: effectiveLaboratory,
     notes: formData.notes?.trim() || null,
+    // ADR-068: apresentação do lote — só p/ injetável; outras formas mandam null.
+    injection_container: isInjectable ? formData.injection_container || null : null,
   }
 
   if (isLiquid) {
+    // 012 B4 (ADR-068/022): líquido (qualquer apresentação) com X frascos vira X LOTES
+    // — carrega os campos crus p/ o caller rotear ao createLiquidPurchase (split + custo
+    // dividido + compensação de centavos no último lote). Mantém quantity/unit_price
+    // agregados como fallback de exibição/compat.
     const totalMl = liquidTotalMl(formData)
     const totalPrice = formData.total_price ? coerceDecimal(formData.total_price) : 0
-    // Preço por ml (4 casas — review #651 trunca p/ não inflar centavos no FIFO).
     const unitPrice = totalPrice > 0 && totalMl > 0 ? Math.floor((totalPrice / totalMl) * 10000) / 10000 : 0
-    return { ...base, quantity: totalMl, unit_price: unitPrice }
+    return {
+      ...base,
+      quantity: totalMl,
+      unit_price: unitPrice,
+      isLiquid: true,
+      numBottles: Math.trunc(coerceDecimal(formData.num_bottles)),
+      volumePerBottle: coerceDecimal(formData.volume_per_bottle),
+      totalPrice,
+    }
   }
 
   return {
