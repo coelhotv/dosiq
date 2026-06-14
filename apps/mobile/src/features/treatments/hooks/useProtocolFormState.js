@@ -41,7 +41,9 @@ function buildPrefill(existing, todayIso) {
     dosage_per_intake: existing.dosage_per_intake ?? '',
     // Unidade de tomada (protocol) + densidade (medicine) DEVEM vir do DB (022/B2)
     // — sem isso a edição recai no default (mg p/ mg/ml) e troca a unidade salva.
-    intake_unit: existing.intake_unit ?? '',
+    // Não-líquido salva intake_unit NULL; '' falharia o z.enum (gotas/ml/UI/mg)
+    // gerando erro invisível (campo só renderiza p/ líquidos). Manter null.
+    intake_unit: existing.intake_unit ?? null,
     units_per_ml: existing.medicine?.units_per_ml ?? '',
     frequency: existing.frequency ?? 'diário',
     weekdays: Array.isArray(existing.weekdays) ? existing.weekdays : [],

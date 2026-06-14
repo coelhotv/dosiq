@@ -170,7 +170,7 @@ tendência (scatter 7d com `WeekNav`); confirmar ausência de zona/meta/linha-al
    redesenho — chips de tipo **sem ícone** (só texto); `IconRuler` é a marca única de medida (mock
    `Hub Peso genericidade`).
 4. Given o sheet de detalhe de uma medida, When abro, Then espelha o de dose: *Editar registro* ·
-   **Ver o dia completo** (ponte p/ a timeline) · *Excluir registro* (mock `Detalhe da medida`).
+    *Excluir registro* (mock `Detalhe da medida`).
 5. Given nenhuma medida registrada, When abro a área, Then **estado-zero** dedicado (mocks
    `Estado zero` / `Dia vazio` — convite inline teal soft + dashed + CTA).
 

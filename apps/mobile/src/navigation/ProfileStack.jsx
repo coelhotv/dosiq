@@ -10,6 +10,7 @@ import NotificationPreferencesScreen from '../features/profile/screens/Notificat
 import NotificationInboxScreen from '../features/notifications/screens/NotificationInboxScreen'
 import FeedbackScreen from '../features/profile/screens/FeedbackScreen'
 import HistoryScreen from '../features/history/screens/HistoryScreen'
+import MeasuresScreen from '../features/measures/screens/MeasuresScreen'
 
 const Stack = createStackNavigator()
 
@@ -26,6 +27,7 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.NOTIFICATION_INBOX} component={NotificationInboxScreen} />
       <Stack.Screen name={ROUTES.FEEDBACK} component={FeedbackScreen} />
       <Stack.Screen name={ROUTES.DOSE_HISTORY} component={HistoryScreen} />
+      <Stack.Screen name={ROUTES.MEASURES} component={MeasuresScreen} />
     </Stack.Navigator>
   )
 }

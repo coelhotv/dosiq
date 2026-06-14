@@ -222,7 +222,7 @@
 - Adapter `biomarkersToEvents` (core) → `TimelineEvent[]` `type='biomarker'` (R-252, **sem tocar**
   `timeline.js` builder). **Sem FK rígido** com `dose_instances`; correlação só temporal.
 
-**UI — fast-logging (UX-A) [mock: `C registro tintado`, `Sheet A preterida`, `Erro valor inválido`]:**
+**UI — fast-logging (UX-A) [mock: `dashboard_timeline_medidas.png`, `Sheet A preterida`, `Erro valor inválido`]:**
 - Bottom sheet **layout B "idoso primeiro"**: valor gigante centrado, contexto grid 2×2 (alvos
   ≥44px), tipo recolhido a 1 linha (glicemia=default 90%), unidade fixa por tipo, horário default
   "Agora" ajustável, vírgula PT-BR (R-270). Componentes: `Keypad` (chrome do sistema, **fora** do
@@ -230,16 +230,16 @@
   caption 12px), `BioChip` (contexto), `BioToast` (sucesso/erro). Erro = transparência radical.
 - **FAB do Hoje = speed-dial** (Registrar dose · Registrar medida) [mock `FAB speed-dial`].
 
-**UI — timeline híbrida (UX-B) [mock: `C registro tintado ESCOLHIDA`]:**
+**UI — timeline híbrida (UX-B) [mock: `dashboard_timeline_medidas.png`]:**
 - Renderer `BiomarkerEventCard` registrado em `eventCardRegistry.js` (web) + equivalente mobile,
   implementando o padrão **`MeasureCardC`**: fundo `infoSoft`, **plano**, sem sombra, sem botão,
   `IconRuler` inline. Dose permanece card branco **elevado** (elevação=ação, tinta=registro;
   **medida nunca com mais peso visual que dose**). Agrupar nos períodos da "Agenda de Hoje";
   card "Última medida" no **FIM** (dose primeiro).
 
-**UI — área de Medidas (UX-C) [mock: `B Perfil Ferramentas Medidas`, `Hub Glicemia V1`, `Hub Peso`,
-`Detalhe da medida`, `Estado zero`]:**
-- Entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Medidas**, entre
+**UI — área de Medidas (UX-C) [mock: `perfil_menu-historico-medidas.png`, `historico_medidas-glicemia.png`, `historico_medidas-peso.png`,
+`sheet_detalhes_medida.png`, `historico_medidas_estado-zero.png`]:**
+- Entrada A (card "Última medida" no fim do Hoje) + B (**Perfil › Ferramentas › Históricos de Medidas**, entre
   Histórico de Doses e Modo Consulta) — coexistem.
 - Hub v1: histórico cronológico (filtro por tipo via `TypeChips`, **sem ícone**) + tendência
   **`ScatterPlot`** (pontos/dia, 1 cor `infoRing`, **7d FIXO + `WeekNav`**, seta-presente

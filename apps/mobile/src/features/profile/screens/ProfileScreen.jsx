@@ -170,6 +170,19 @@ export default function ProfileScreen() {
               </View>
               <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.otherRow, { borderTopWidth: 1, borderTopColor: colors.border.light }]}
+              onPress={() => navigation.navigate(ROUTES.MEASURES)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.otherLabelContainer}>
+                <Text style={styles.otherLabel}>Histórico de Medidas</Text>
+                <View style={styles.newBadge}>
+                  <Text style={styles.newText}>novo</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -217,9 +230,6 @@ export default function ProfileScreen() {
             >
               <View style={styles.otherLabelContainer}>
                 <Text style={styles.otherLabel}>Enviar feedback</Text>
-                <View style={styles.newBadge}>
-                  <Text style={styles.newText}>novo</Text>
-                </View>
               </View>
               <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </TouchableOpacity>

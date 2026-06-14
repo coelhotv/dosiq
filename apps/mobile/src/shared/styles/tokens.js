@@ -34,6 +34,7 @@ export const colors = {
     error: '#ba1a1a',
     info: '#005db6',
     errorLight: '#fee2e2',
+    infoLight: '#e3f0fb', // fundo soft p/ registro de medida (biomarcador — 012 Fase C)
     successDark: '#166534',
   },
 

@@ -272,6 +272,7 @@ export default [
             ['@treatments', './apps/mobile/src/features/treatments'],
             ['@dose', './apps/mobile/src/features/dose'],
             ['@history', './apps/mobile/src/features/history'],
+            ['@measures', './apps/mobile/src/features/measures'],
             ['@dosiq/core', './packages/core/src'],
           ],
           extensions: ['.ios.js', '.android.js', '.js', '.jsx', '.ts', '.tsx']

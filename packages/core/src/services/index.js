@@ -17,5 +17,6 @@ export { hasFuturePendingDoses, regenActiveProtocolsForTz } from './timezoneRege
 // Timeline read + adapter dose_instances→eventos (Fase 4 — FP-3 / ADR-050)
 export {
   doseInstancesToEvents,
+  biomarkersToEvents,
   createTimelineService,
 } from './timelineService.js'
