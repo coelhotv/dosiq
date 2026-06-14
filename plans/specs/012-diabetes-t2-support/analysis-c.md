@@ -22,14 +22,21 @@
 | Registry de cards web | `apps/web/src/views/redesign/history/eventCardRegistry.js` | ✅ | registrar `biomarker` (T017) |
 | Formatters de dose (não usados aqui, mas confirmam core) | `packages/core/src/utils/doseUnit.js` | ✅ | irrelevante p/ biomarcador (sem dose) |
 | `CON-024 doseZones` = zonas de HORÁRIO (não corporais) | CONTRACTS_INDEX CON-024 | ✅ | períodos madrugada/manhã/tarde/noite p/ agrupar timeline híbrida |
-| Fast-logging **mobile** path | grep não localizou FAB/BottomSheet | ❌ UNVERIFIED | **T013 (C1 do PR3a)** confirma antes de codar |
-| FAB do Hoje **mobile** (vira speed-dial) | UNVERIFIED | ❌ | T013 — toca Dashboard mobile vivo |
-| Nav "Perfil › Ferramentas › Medidas" **mobile** | UNVERIFIED | ❌ | T013 — confirmar stack/rota real |
-| `WeekNav` reusável (handoff diz "mesmo padrão do Histórico") | UNVERIFIED | ❌ | T013 investiga reuso (evitar duplicata R-231) |
-| Fast-logging/FAB/nav **web** | a verificar no C1 do PR3b | ❌ | PR3b; web espelha após 3a |
+| FAB do Hoje **mobile** | `TodayScreen.jsx:300-309` Pressable única → `handleOpenBulkDose`; modais em `TodayModals` (`:310`) | ✅ T013 | converter p/ speed-dial (2 ações); add modal fast-log medida |
+| Timeline "Hoje" **mobile** | `_useTodayDerived.js:8` core `splitDayTimeline`/`buildDoseItemsFromInstances` (**CON-024 doseZones, dose-only**) | ✅ T013 | **NÃO** é o path do adapter R-252; biomarcador "Última medida" via wiring no hook (card no FIM) |
+| History **mobile** | `HistoryScreen.jsx` → `useHistoryData` (instâncias) | ✅ T013 | instance-based, **não** consome `getTimeline` |
+| **Adapter R-252 `getTimeline`/`eventCardRegistry`** | consumido **só em `apps/web`** (`apps/web/src/services/api/timelineService.js:118`, `views/redesign/history/eventCardRegistry.js`, `HistoryDayPanel.jsx`) — **zero consumer mobile** | ✅ T013 | 🔴 **T016/T017 = path WEB (PR3b)**; mobile não tem registry de eventos |
+| Sheet detalhe (espelhar) | `history/components/DoseActionSheet.jsx` (21KB, Modal R-233) | ✅ T013 | padrão p/ sheet detalhe de medida |
+| `WeekNav` reusável | `history/components/WeekCalendar.jsx:75` `{selectedDay,onDaySelect,instances,minDay,maxDay,timezone}`; clamp `canGoPrev/canGoNext` (`:82-83`) | ✅ T013 | **reusar padrão** p/ hub 7d (clamp presente=`canGoNext`); R-231 não duplicar |
+| Nav Perfil › Ferramentas | `ProfileScreen.jsx:159-170` seção FERRAMENTAS; "Histórico de Doses"→`ROUTES.DOSE_HISTORY` | ✅ T013 | add row "Medidas" após Histórico; **`ROUTES.MEASURES` net-new** (sem rota CONSULTA mobile) |
+| Bottom sheet genérico mobile | **não existe** `DosiqBottomSheet`; sheets per-feature via `Modal` (R-233) | ✅ T013 | fast-log sheet = novo Modal R-233; reusar `EmptyState`/`Toast` de `shared/components` |
+| Fast-logging/FAB/nav **web** | adapter+registry web existem | ⏭️ PR3b | C1 do PR3b detalha |
 
-**Gate:** UNVERIFIED de mobile **bloqueiam C2 do PR3a** até T013 resolver (preencher esta tabela com
-file:line reais). Idem web no PR3b. Não codar UI sobre caminho presumido.
+**Gate resolvido (T013):** caminhos mobile do PR3a confirmados com file:line — C2 liberado.
+**Refinamento material:** adapter R-252 (T016/T017) é **web-only**; mobile não tem registry de timeline.
+No PR3a o biomarcador na Agenda de Hoje entra como **card "Última medida" no FIM** via wiring em
+`_useTodayDerived` (não interleave no doseZones). Adapter core `biomarkersToEvents` pode entrar no PR3a
+(core), mas o consumer é web (PR3b).
 
 ---
 

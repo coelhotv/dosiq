@@ -153,6 +153,38 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
   return events
 }
 
+/**
+ * Adapter PURO: `biomarkers_log` → `TimelineEvent[]` (`type='biomarker'`). Entra ao lado do
+ * adapter de dose (FP-3/ADR-060) sem tocar o builder nem a UI de dose. Sem FK rígido com dose —
+ * correlação só temporal (occurred_at = measured_at). SaMD: nenhum valor de meta/qualidade aqui.
+ *
+ * @param {Array<Object>} biomarkers - linhas de biomarkers_log (repo.list).
+ * @returns {import('../utils/timeline.js').TimelineEvent[]}
+ */
+export function biomarkersToEvents(biomarkers) {
+  const safe = Array.isArray(biomarkers) ? biomarkers : []
+  const events = []
+  for (const b of safe) {
+    if (!b?.measured_at) continue // sem instante não ordena (descarta defensivo)
+    events.push({
+      id: `bio:${b.id}`,
+      type: TIMELINE_EVENT_TYPES.BIOMARKER,
+      occurred_at: b.measured_at,
+      payload: {
+        source: 'biomarker',
+        biomarkerId: b.id,
+        biomarkerType: b.type,
+        value: b.value,
+        valueSecondary: b.value_secondary ?? null,
+        unit: b.unit,
+        context: b.context ?? null,
+        notes: b.notes ?? null,
+      },
+    })
+  }
+  return events
+}
+
 const LOGS_TABLE = 'medicine_logs'
 const LOG_PAGE_SIZE = 1000
 

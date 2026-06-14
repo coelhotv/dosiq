@@ -9,6 +9,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase C — Biomarcadores: registro, timeline mista e Área de Medidas (PR 3a — mobile-first)
+
+#### DB (migração prod — `20260614_diabetes_c_biomarkers.sql`)
+- **Added** (`minor`, ADR-060/CON-025): tabela `biomarkers_log` (genérica: `type`/`value`/`value_secondary`/`unit`/`measured_at`/`context`/`source`/`notes`) + índice `(user_id, measured_at DESC)`, RLS (4 policies `auth.uid()`), REVOKE anon e grants `authenticated`/`service_role`. `type`/`source` sem CHECK (extensível ADR-060); `context` com CHECK (jejum/pre_refeicao/pos_refeicao/ao_deitar/outro). v1 UI = glicemia + peso (PA schema-ready, sem UI).
+
+#### Core (@dosiq/core)
+- **Added** (`minor`, ADR-060): `biomarkerLogSchema` (enums TYPES/CONTEXTS/SOURCES/UNITS/LABELS; `Create`/`Update` partial sem refine — R-274; preprocess `'' → null`; `applyPaRefine` p/ PA); `createBiomarkerRepository` (DI cross-platform R-231: `list`/`getLatest`/`create`/`update`/`remove`, `measured_at` ausente → DB DEFAULT now() p/ R-020); `biomarkersToEvents` (adapter puro p/ timeline) + `TIMELINE_EVENT_TYPES.BIOMARKER`.
+
+#### App mobile (0.16.5 → 0.16.6 — patch: fase do épico 012)
+- **Added** (`minor`, FR-010/FR-011): feature **Medidas** — hub "Histórico de Medidas" (chips glicemia/peso, tendência ScatterTrend com escala Y e dias do mês, lista de cards, detalhe Editar/Excluir com data/hora editável); fast-log `MeasureLogSheet` (layout idoso-primeiro, vírgula PT-BR, contexto p/ glicemia); speed-dial do FAB (dose · medida); **interleave** das medidas do dia na Agenda de Hoje (simple+complex, auto-update ao salvar); card "Última medida" do dia com nudge "Registre a primeira" quando vazio.
+- **Fixed** (`patch`): edição de tratamento **não-líquido** bloqueada por `intake_unit=''` (falhava `z.enum`) → usa `null`; cross-tab nav do card "Última medida" prendia a aba Perfil (2 passos via `navigationRef`, mesmo padrão do 028); teclado iOS cobria os botões do sheet (`KeyboardAvoidingView`); seletor "+" de horário (form de tratamentos) abre na **hora atual** do device (era 08:00 fixo).
+
 ### 012 Fase B4 — `injection_container` por lote (slice 3: T044b / FR-030 / ADR-068)
 
 #### DB (migração prod — `20260613_b4_injection_container_por_lote.sql`)

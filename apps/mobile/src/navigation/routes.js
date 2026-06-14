@@ -65,6 +65,9 @@ export const ROUTES = {
   // Histórico de doses (Fase X)
   DOSE_HISTORY: 'DoseHistory',
 
+  // Área de Medidas / biomarcadores (012 Fase C)
+  MEASURES: 'Measures',
+
   // Dev-only (apenas __DEV__)
   DEV_HUB: 'DevHub',
   STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',
