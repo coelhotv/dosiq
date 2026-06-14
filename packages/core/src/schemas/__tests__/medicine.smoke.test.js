@@ -23,12 +23,13 @@ describe('Smoke: Medicine Schema', () => {
   // `.partial()` no Zod v4 mantém `.default()` → omitir presentation/type flipava
   // injetável→comprimido (líquido→sólido) — corrupção clínica.
   describe('update parcial não injeta defaults (anti-flip clínico)', () => {
-    it('update só com injection_container não traz presentation/type', () => {
-      const result = validateMedicineUpdate({ injection_container: 'caneta' })
+    // 012 B4 (ADR-068): injection_container saiu de medicines → usa outro campo parcial.
+    it('update parcial (só therapeutic_class) não traz presentation/type', () => {
+      const result = validateMedicineUpdate({ therapeutic_class: 'Análogo de GLP-1' })
       expect(result.success).toBe(true)
       expect('presentation' in result.data).toBe(false)
       expect('type' in result.data).toBe(false)
-      expect(result.data.injection_container).toBe('caneta')
+      expect(result.data.therapeutic_class).toBe('Análogo de GLP-1')
     })
 
     it('create ainda aplica os defaults (comprimido/medicamento)', () => {

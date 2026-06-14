@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { parseLocalDate, getNow, cloneDate } from '../utils/dateUtils.js'
+import { INJECTION_CONTAINERS } from './medicineSchema.js'
 
 /**
  * Schema de validação para Estoque
@@ -67,6 +68,15 @@ export const stockSchema = z.object({
   laboratory: z
     .string()
     .max(200, 'Laboratório não pode ter mais de 200 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  // 012 Fase B4 (FR-030/ADR-068): apresentação física do injetável, por LOTE
+  // (não mais em `medicines`). NULL = não informado → rótulo "unidade". Sincronizado
+  // com CHECK stock_injection_container_check / purchases_injection_container_check (R-271).
+  injection_container: z
+    .enum(INJECTION_CONTAINERS)
     .optional()
     .nullable()
     .transform((val) => val || null),

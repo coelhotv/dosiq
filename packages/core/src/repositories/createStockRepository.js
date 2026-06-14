@@ -23,6 +23,7 @@ import {
 } from '../schemas/stockSchema.js'
 import { z } from 'zod'
 import { getTodayLocal, isProtocolActiveOnDate } from '../utils/dateUtils.js'
+import { cleanFloat } from '../utils/formUtils.js'
 
 function fmtZodErr(errors) {
   return errors.map((e) => `${e.field}: ${e.message}`).join('; ')
@@ -292,7 +293,9 @@ export function createStockRepository({ client, getUserId }) {
       // Usar repo.* (não this.*) — métodos podem ser destructurados em hooks
       // (ex: const { adjustToBalance } = useStockMutation()), perdendo `this`.
       const current = await repo.getTotalQuantity(medicineId)
-      const delta = newBalance - current
+      // cleanFloat: subtração de decimais vaza dízima (1,5−1,9 = -0,39999…) e o delta
+      // sujo vira residue persistido na quantity do lote (R-277). Limpa antes do RPC.
+      const delta = cleanFloat(newBalance - current)
 
       if (delta === 0) {
         return { delta: 0, before: current, after: newBalance }

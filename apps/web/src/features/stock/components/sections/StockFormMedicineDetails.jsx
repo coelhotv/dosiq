@@ -47,7 +47,7 @@ export default function StockFormMedicineDetails({
         )}
       </div>
 
-      {/* 012 Fase B2 (FR-019): apresentação física do injetável, captada na 1ª compra. */}
+      {/* 012 Fase B4 (ADR-068): apresentação física do injetável, captada por LOTE em toda compra. */}
       {needsContainer && (
         <div className="form-group">
           <label htmlFor="injection_container">Apresentação (como vem embalado)</label>

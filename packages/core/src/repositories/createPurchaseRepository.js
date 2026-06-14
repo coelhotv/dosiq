@@ -133,6 +133,7 @@ export function createPurchaseRepository({ client, getUserId }) {
         p_pharmacy: p.pharmacy,
         p_laboratory: p.laboratory,
         p_notes: p.notes,
+        p_injection_container: p.injection_container ?? null,
       })
 
       if (error) throw error
@@ -169,6 +170,7 @@ export function createPurchaseRepository({ client, getUserId }) {
         pharmacy = null,
         laboratory = null,
         notes = null,
+        injectionContainer = null,
       } = input || {}
 
       // Guards de input degenerado (R-270): evitam loop vazio e divisão por zero.
@@ -207,6 +209,7 @@ export function createPurchaseRepository({ client, getUserId }) {
           pharmacy,
           laboratory,
           notes,
+          injection_container: injectionContainer,
         })
         results.push(data)
       }
@@ -235,6 +238,8 @@ export function createPurchaseRepository({ client, getUserId }) {
           pharmacy: p.pharmacy,
           laboratory: p.laboratory,
           notes: p.notes,
+          // 012 B4 (ADR-068): apresentação do lote editável na própria compra.
+          injection_container: p.injection_container ?? null,
         })
         .eq('id', id)
         .eq('user_id', userId)
@@ -242,6 +247,15 @@ export function createPurchaseRepository({ client, getUserId }) {
         .single()
 
       if (error) throw error
+
+      // Propaga o container ao lote `stock` vinculado (fonte do rendimento por-lote).
+      const { error: stockErr } = await client
+        .from('stock')
+        .update({ injection_container: p.injection_container ?? null })
+        .eq('purchase_id', id)
+        .eq('user_id', userId)
+      if (stockErr) throw stockErr
+
       return data
     },
   }

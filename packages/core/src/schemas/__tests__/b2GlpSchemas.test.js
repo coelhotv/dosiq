@@ -31,7 +31,7 @@ describe('intake_unit mg (FR-017)', () => {
   })
 })
 
-describe('injection_container (FR-019)', () => {
+describe('injection_container — enum (FR-019)', () => {
   it('INJECTION_CONTAINERS = enum esperado', () => {
     expect(INJECTION_CONTAINERS).toEqual([
       'caneta',
@@ -42,26 +42,18 @@ describe('injection_container (FR-019)', () => {
     ])
   })
 
-  it('medicine aceita injection_container válido e null', () => {
-    const base = {
+  // 012 B4 (ADR-068): injection_container saiu de `medicines` → vive no LOTE. A
+  // validação por lote (stockCreateSchema) está em stockInjectionContainer.b4.test.js.
+  it('medicineSchema descarta injection_container (campo legado)', () => {
+    const res = validateMedicine({
       name: 'Ozempic',
       dosage_per_pill: 1,
       dosage_unit: 'mg/ml',
-      units_per_ml: 0.68,
       presentation: 'injetavel',
-    }
-    expect(validateMedicine({ ...base, injection_container: 'caneta' }).success).toBe(true)
-    expect(validateMedicine({ ...base, injection_container: null }).success).toBe(true)
-  })
-
-  it('rejeita container fora do enum', () => {
-    const res = validateMedicine({
-      name: 'X',
-      dosage_per_pill: 1,
-      dosage_unit: 'mg/ml',
-      injection_container: 'tubo',
+      injection_container: 'caneta',
     })
-    expect(res.success).toBe(false)
+    expect(res.success).toBe(true)
+    expect('injection_container' in res.data).toBe(false)
   })
 })
 

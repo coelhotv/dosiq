@@ -80,6 +80,26 @@ export default function StockDetailScreen({ navigation }) {
     }, 0)
   }, [medicine, route.params?.dailyConsumption, today])
 
+  // 012 B4 (ADR-067): consumo do DIA-DOSE (dia agendado), sem frequencyDailyFactor —
+  // é o que sai num dia em que se toma (Mounjaro 1×/sem = 0,5 ml; 2× no dia = 1 ml).
+  // Para diário coincide com o consumo corrido. Alimenta o card "Consumo / dia".
+  const consumoPorDiaDose = useMemo(() => {
+    if (!medicine?.protocols) return route.params?.dailyConsumption ?? 0
+    const liquid = isLiquidMedicine(medicine)
+    return medicine.protocols
+      .filter((p) => p.active && isProtocolInPeriod(p, today))
+      .reduce((acc, p) => {
+        const intakesPerDay = p.time_schedule?.length ?? 0
+        // Líquido: arredonda cada dose a 2 casas (ml) p/ espelhar o débito real do
+        // consume_stock_fifo (ROUND(dose/conc, 2)) — senão a divisão (1÷1,34) vaza
+        // float pro card (Ozempic 0,7462… em vez de 0,75 ml). R-277/AP-226.
+        const perDose = liquid
+          ? Number(doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill).toFixed(2))
+          : Number(p.dosage_per_intake ?? 0)
+        return acc + perDose * intakesPerDay
+      }, 0)
+  }, [medicine, route.params?.dailyConsumption, today])
+
   const avgUnitPrice = useMemo(
     () => computeAverageUnitPrice(purchases),
     [purchases],
@@ -93,15 +113,16 @@ export default function StockDetailScreen({ navigation }) {
       .reduce((acc, p) => acc + (p.time_schedule?.length ?? 0), 0)
   }, [medicine, today])
 
-  // Custo por dose = custo/un|ml × consumo_dia ÷ tomadas_dia (média ponderada por
-  // evento de tomada; cobre múltiplos protocolos). null quando não há tratamento
-  // ativo → o card cai no fallback custo/un|ml.
+  // Custo por dose = custo/un|ml × consumo_do_dia-dose ÷ tomadas_dia (média ponderada
+  // por evento de tomada; cobre múltiplos protocolos). 012 B4: usa o consumo do
+  // dia-dose (sem frequencyDailyFactor) — senão o custo/dose ficava diluído pela
+  // frequência (Mounjaro semanal mostrava 1/7 do custo real da aplicação).
   const costPerDose = useMemo(() => {
-    if (dailyConsumption > 0 && intakesPerDay > 0 && avgUnitPrice > 0) {
-      return (avgUnitPrice * dailyConsumption) / intakesPerDay
+    if (consumoPorDiaDose > 0 && intakesPerDay > 0 && avgUnitPrice > 0) {
+      return (avgUnitPrice * consumoPorDiaDose) / intakesPerDay
     }
     return null
-  }, [avgUnitPrice, dailyConsumption, intakesPerDay])
+  }, [avgUnitPrice, consumoPorDiaDose, intakesPerDay])
 
   // Math.floor p/ alinhar com o badge do header (StockLevelBadge também usa floor);
   // ceil mostrava 30 onde o badge mostra 29 (mesma fonte saldo/consumo).
@@ -307,8 +328,10 @@ export default function StockDetailScreen({ navigation }) {
               <Text style={styles.sectionTitle}>Indicadores</Text>
               <StockIndicators
                 saldo={saldo}
-                dailyConsumption={dailyConsumption}
+                dailyConsumption={consumoPorDiaDose}
                 daysRemaining={daysRemaining}
+                dosesRemaining={doseMetrics.dosesRemaining}
+                isDailyStock={doseMetrics.isDaily}
                 avgUnitPrice={avgUnitPrice}
                 costPerDose={costPerDose}
                 medicine={medicine}

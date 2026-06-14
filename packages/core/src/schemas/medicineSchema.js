@@ -196,10 +196,9 @@ const medicineObject = z.object({
       .optional()
   ),
 
-  // 012 Fase B2 (FR-019): apresentação física do injetável comprado (caneta/
-  // ampola/...). NULL = não informado (rótulo "unidade"). Capturado na 1ª compra.
-  // Sincronizado com CHECK medicines_injection_container_check (R-271).
-  injection_container: z.enum(INJECTION_CONTAINERS).nullable().optional(),
+  // 012 Fase B4 (FR-030/ADR-068): injection_container saiu de `medicines` → mora no
+  // LOTE (stock/purchases). A apresentação é atributo da compra, não do medicamento
+  // (paciente pode trocar caneta↔refil entre lotes). Ver stockCreateSchema.
 
   type: z.enum(MEDICINE_TYPES).default('medicamento'),
 
@@ -234,10 +233,10 @@ export const medicineCreateSchema = medicineSchema
  *
  * ⚠️ CRÍTICO: `.partial()` NÃO remove os `.default()` no Zod v4 — um campo omitido com
  * default materializa o valor padrão no parse, e o `update()` o grava no DB. Sem o override
- * abaixo, `update({ injection_container })` reescreveria `presentation='comprimido'` e
- * `type='medicamento'`, FLIPANDO injetável→comprimido (líquido→sólido) — corrupção clínica.
- * Por isso `presentation`/`type` (os únicos campos com `.default()`) viram optional sem default
- * no path de atualização. Defaults seguem só no create (medicineCreateSchema).
+ * abaixo, um `update()` parcial qualquer (ex.: só `therapeutic_class`) reescreveria
+ * `presentation='comprimido'` e `type='medicamento'`, FLIPANDO injetável→comprimido
+ * (líquido→sólido) — corrupção clínica. Por isso `presentation`/`type` (os únicos campos com
+ * `.default()`) viram optional sem default no path de atualização. Defaults só no create.
  */
 export const medicineUpdateSchema = medicineObject.partial().extend({
   presentation: z.enum(PRESENTATIONS).optional(),
