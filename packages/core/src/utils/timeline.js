@@ -31,6 +31,7 @@ import { getUserTime, formatLocalDate, parseISO } from './dateUtils.js'
  */
 export const TIMELINE_EVENT_TYPES = Object.freeze({
   DOSE: 'dose',
+  BIOMARKER: 'biomarker',
 })
 
 /** Ordem de saída da stream. */

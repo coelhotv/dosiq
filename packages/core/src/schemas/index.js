@@ -83,6 +83,21 @@ export {
   getBulkLogErrorMessage,
 } from './logSchema.js'
 export {
+  biomarkerLogSchema,
+  biomarkerLogCreateSchema,
+  biomarkerLogUpdateSchema,
+  biomarkerLogFullSchema,
+  validateBiomarkerLog,
+  validateBiomarkerLogUpdate,
+  BIOMARKER_TYPES,
+  BIOMARKER_TYPE_LABELS,
+  BIOMARKER_TYPE_UNITS,
+  BIOMARKER_CONTEXTS,
+  BIOMARKER_CONTEXT_LABELS,
+  BIOMARKER_SOURCES,
+} from './biomarkerLogSchema.js'
+
+export {
   geminiReviewSchema,
   validateGeminiReview,
 } from './geminiReviewSchema.js'

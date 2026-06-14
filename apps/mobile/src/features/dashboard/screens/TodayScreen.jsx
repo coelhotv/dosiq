@@ -8,16 +8,22 @@ import {
   StyleSheet,
   LayoutAnimation,
   TouchableOpacity,
-  Pressable
+  Pressable,
+  InteractionManager
 } from 'react-native'
 import { ROUTES } from '../../../navigation/routes'
-import { Plus, CalendarClock } from 'lucide-react-native'
+import { navigationRef } from '@navigation/navigationRef'
+import { Plus, CalendarClock, Pill, Ruler, ChevronRight } from 'lucide-react-native'
+import { measuresRepo } from '@measures/services/measuresRepo'
+import MeasureLogSheet from '@measures/components/MeasureLogSheet'
+import MeasureCard from '@measures/components/MeasureCard'
 import { useTodayData } from '@dashboard/hooks/useTodayData'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import EmptyState from '@shared/components/states/EmptyState'
 import ErrorState from '@shared/components/states/ErrorState'
-import { getPeriodFromTime, getNow } from '@dosiq/core'
+import { getPeriodFromTime, getNow, getUserTime, parseISO } from '@dosiq/core'
+import { useTodayMeasures } from '@measures/hooks/useTodayMeasures'
 import AdherenceDayCard from '@dashboard/components/AdherenceDayCard'
 import TimeBlockSeparator from '@dashboard/components/TimeBlockSeparator'
 import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
@@ -32,18 +38,40 @@ import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
 
+// HH:MM local de uma medida (p/ posicionar no período da agenda).
+function _measureTime(iso, tz) {
+  const d = getUserTime(parseISO(iso), tz)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+// Mescla itens-dose com medidas do dia, ordenado por horário (interleave da agenda — FR-011).
+function _mergeTimelineWithMeasures(timeline, measures, tz) {
+  if (!measures || measures.length === 0) return timeline
+  const measureItems = measures.map((m) => ({
+    id: `bio:${m.id}`,
+    kind: 'measure',
+    scheduledTime: _measureTime(m.measured_at, tz),
+    measure: m,
+  }))
+  return [...timeline, ...measureItems].sort((a, b) =>
+    (a.scheduledTime || '').localeCompare(b.scheduledTime || '')
+  )
+}
+
 // Agrupa doses da timeline por turno e computa contadores
 function _groupTimeline(timeline, isComplex) {
   const counts = {}
-  const grouped = timeline.reduce((acc, dose) => {
-    const shift = getPeriodFromTime(dose.scheduledTime)
+  const grouped = timeline.reduce((acc, item) => {
+    const shift = getPeriodFromTime(item.scheduledTime)
     if (!acc[shift]) {
       acc[shift] = []
       counts[shift] = { total: 0, taken: 0 }
     }
-    acc[shift].push(dose)
+    acc[shift].push(item)
+    // Medida (biomarcador) entra no grupo p/ interleave, mas NÃO conta na adesão (não é dose).
+    if (item.kind === 'measure') return acc
     counts[shift].total += 1
-    if (dose.isRegistered) counts[shift].taken += 1
+    if (item.isRegistered) counts[shift].taken += 1
     return acc
   }, {})
 
@@ -71,18 +99,20 @@ function _computeInitialExpanded(shifts, groupedTimeline) {
   return initial
 }
 
-// Renderiza conteúdo de um turno expandido (Complex mode)
-function _renderShiftDoses(doses, handleOpenRegister) {
-  if (doses.length === 0) {
+// Renderiza conteúdo de um turno expandido (Complex mode). Itens podem ser dose ou medida.
+function _renderShiftDoses(items, handleOpenRegister) {
+  if (items.length === 0) {
     return (
       <View style={styles.emptyShiftContainer}>
         <Text style={styles.emptyShiftText}>Nenhum medicamento para este turno</Text>
       </View>
     )
   }
-  return doses.map((dose) => (
-    <DoseTimelineCard key={dose.id} dose={dose} onRegister={handleOpenRegister} />
-  ))
+  return items.map((item) =>
+    item.kind === 'measure'
+      ? <MeasureCard key={item.id} item={item.measure} variant="timeline" />
+      : <DoseTimelineCard key={item.id} dose={item} onRegister={handleOpenRegister} />
+  )
 }
 
 // Resolve o modal a abrir a partir dos params de deeplink
@@ -220,9 +250,14 @@ function TodayScreenContent({
   modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
   bulkModal, setBulkModal,
   handleOpenBulkDose,
+  refreshTodayMeasures,
+  todayMeasures,
   navigation,
 }) {
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
+  // 012 Fase C — states do speed-dial (R-010: States antes de Memos/Effects).
+  const [speedDialOpen, setSpeedDialOpen] = useState(false)
+  const [measureLogOpen, setMeasureLogOpen] = useState(false)
   // F4.3e: hero = janela actionável DESLIZANTE cross-dia (não só hoje):
   //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas entram);
   //  - hoje       → late/now (ATRASADA/PROXIMA);
@@ -258,6 +293,31 @@ function TodayScreenContent({
     : ''
   const bulkMode = bulkModal?.mode ?? 'plan'
   const userId = data?.user?.id ?? ''
+
+  // 012 Fase C: card "Última medida" reflete o DIA (timeline do dia). todayMeasures
+  // já vem ordenado desc (repo) → [0] é a última de hoje; vazio → nudge de registro.
+  const lastTodayMeasure = todayMeasures?.[0] ?? null
+
+  const handleSaveMeasure = useCallback(async (payload) => {
+    const created = await measuresRepo.create(payload)
+    refreshTodayMeasures?.() // auto-update do interleave + card "Última medida" ao registrar
+    return created
+  }, [refreshTodayMeasures])
+
+  const handleFabPress = useCallback(() => {
+    lightTap()
+    setSpeedDialOpen((o) => !o)
+  }, [])
+
+  // Cross-tab nav p/ o hub de Medidas (Profile stack). Dois passos via navigationRef
+  // (AP-028): navigate(tab, { screen }) reusa o estado do stack → back cai no dashboard
+  // e a aba fica "presa" na tela aninhada. Trocar de tab e SÓ DEPOIS navegar a screen.
+  const openMeasuresHub = useCallback((measureType) => {
+    navigationRef.navigate(ROUTES.PROFILE)
+    InteractionManager.runAfterInteractions(() => {
+      navigationRef.navigate(ROUTES.MEASURES, { type: measureType })
+    })
+  }, [])
 
   return (
     <ScreenContainer>
@@ -296,17 +356,76 @@ function TodayScreenContent({
         />
         {/* Em breve (look-ahead cross-dia, F4.3e) */}
         <OptionalDoseSection title="Em breve" doses={lookAhead} onRegister={handleOpenRegister} keyPrefix="ahead" />
+
+        {/* 012 Fase C — "Última medida" reflete o DIA: card se houve medida hoje,
+            senão nudge p/ registrar a primeira (tap → sheet de medida). */}
+        <View style={styles.lastMeasureSection}>
+          <Text style={styles.lastMeasureTitle}>Última medida</Text>
+          {lastTodayMeasure ? (
+            <MeasureCard
+              item={lastTodayMeasure}
+              showChevron
+              onPress={() => openMeasuresHub(lastTodayMeasure.type)}
+            />
+          ) : (
+            <Pressable
+              onPress={() => { lightTap(); setMeasureLogOpen(true) }}
+              style={({ pressed }) => [styles.measureNudge, pressed && styles.measureNudgePressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Nenhuma medida hoje. Registrar a primeira"
+            >
+              <View style={styles.measureNudgeIcon}>
+                <Ruler size={18} color={colors.status.info} strokeWidth={2} />
+              </View>
+              <Text style={styles.measureNudgeText}>Nenhuma medida hoje. Toque aqui e registre a primeira!</Text>
+              <ChevronRight size={18} color={colors.text.muted} strokeWidth={2} />
+            </Pressable>
+          )}
+        </View>
       </ScrollView>
+
+      {/* Speed-dial (012 Fase C FR-010b): expande Registrar dose · Registrar medida */}
+      {protocols.length > 0 && speedDialOpen ? (
+        <>
+          <Pressable style={styles.speedDialBackdrop} onPress={() => setSpeedDialOpen(false)} accessibilityLabel="Fechar menu" />
+          <View style={styles.speedDialActions}>
+            <Pressable
+              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
+              onPress={() => { setSpeedDialOpen(false); setMeasureLogOpen(true) }}
+              accessibilityRole="button"
+              accessibilityLabel="Registrar medida"
+            >
+              <Text style={styles.speedActionText}>Registrar medida</Text>
+              <View style={[styles.speedActionIcon, { backgroundColor: colors.status.info }]}><Ruler size={20} color={colors.text.inverse} strokeWidth={2.5} /></View>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
+              onPress={() => { setSpeedDialOpen(false); handleOpenBulkDose() }}
+              accessibilityRole="button"
+              accessibilityLabel="Registrar dose"
+            >
+              <Text style={styles.speedActionText}>Registrar dose</Text>
+              <View style={styles.speedActionIcon}><Pill size={20} color={colors.text.inverse} strokeWidth={2.5} /></View>
+            </Pressable>
+          </View>
+        </>
+      ) : null}
       {protocols.length > 0 && (
         <Pressable
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-          onPress={handleOpenBulkDose}
+          onPress={handleFabPress}
           accessibilityRole="button"
-          accessibilityLabel="Registrar doses em lote"
+          accessibilityLabel={speedDialOpen ? 'Fechar menu de registro' : 'Registrar dose ou medida'}
+          accessibilityState={{ expanded: speedDialOpen }}
         >
-          <Plus size={24} color="#FFF" strokeWidth={3} />
+          <Plus size={24} color="#FFF" strokeWidth={3} style={speedDialOpen ? styles.fabIconOpen : null} />
         </Pressable>
       )}
+      <MeasureLogSheet
+        open={measureLogOpen}
+        onClose={() => setMeasureLogOpen(false)}
+        onSaved={handleSaveMeasure}
+      />
       <TodayModals
         modalProtocol={modalProtocol}
         modalScheduledTime={modalScheduledTime}
@@ -344,9 +463,11 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
   if (!isComplex) {
     return (
       <View style={styles.simpleList}>
-        {timeline.map((dose) => (
-          <DoseTimelineCard key={dose.id} dose={dose} onRegister={handleOpenRegister} />
-        ))}
+        {timeline.map((item) =>
+          item.kind === 'measure'
+            ? <MeasureCard key={item.id} item={item.measure} variant="timeline" />
+            : <DoseTimelineCard key={item.id} dose={item} onRegister={handleOpenRegister} />
+        )}
       </View>
     )
   }
@@ -411,10 +532,18 @@ export default function TodayScreen({ route, navigation }) {
     return Object.keys(medicines).length > 3
   }, [medicines, complexityOverride])
 
+  // 012 Fase C — medidas do dia mescladas na agenda (interleave, FR-011).
+  const tz = data?.timezone || 'America/Sao_Paulo'
+  const { items: todayMeasures, refresh: refreshTodayMeasures } = useTodayMeasures(tz)
+  const timelineWithMeasures = useMemo(
+    () => _mergeTimelineWithMeasures(timeline, todayMeasures, tz),
+    [timeline, todayMeasures, tz]
+  )
+
   // Carlos (isComplex) vê todos os turnos. Dona Maria vê apenas onde há doses.
   const { groupedTimeline, shifts, countsByShift } = useMemo(
-    () => _groupTimeline(timeline, isComplex),
-    [timeline, isComplex]
+    () => _groupTimeline(timelineWithMeasures, isComplex),
+    [timelineWithMeasures, isComplex]
   )
 
   // Heurística de Expansão Inicial - Ajuste de Estado no Render (React 19 Pattern)
@@ -429,7 +558,8 @@ export default function TodayScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       refresh()
-    }, [refresh])
+      refreshTodayMeasures()
+    }, [refresh, refreshTodayMeasures])
   )
 
   // 2. Deeplink params de push notification (N1.4 → N1.5)
@@ -486,7 +616,8 @@ export default function TodayScreen({ route, navigation }) {
   return (
     <TodayScreenContent
       data={data} stale={stale} isDaySegregated={isDaySegregated} loading={loading} refresh={refresh}
-      timeline={timeline} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
+      timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
+      refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
       modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime} modalInstanceId={modalInstanceId}
@@ -596,5 +727,79 @@ const styles = StyleSheet.create({
   },
   fabPressed: {
     opacity: 0.9,
+  },
+  fabIconOpen: {
+    transform: [{ rotate: '45deg' }],
+  },
+  lastMeasureSection: {
+    marginTop: spacing[4],
+    paddingHorizontal: spacing[4],
+    gap: spacing[2],
+  },
+  lastMeasureTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  // Nudge "Nenhuma medida hoje" — tracejado p/ diferenciar de registro real (não é dado).
+  measureNudge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderStyle: 'solid', // AP-163: RN só suporta 'solid'; 'dashed' dispara WARN (multiplica por frame)
+    borderColor: colors.border.light,
+    backgroundColor: colors.bg.card,
+  },
+  measureNudgePressed: { opacity: 0.7 },
+  measureNudgeIcon: {
+    width: 36, height: 36, borderRadius: borderRadius.full,
+    backgroundColor: colors.status.infoLight, alignItems: 'center', justifyContent: 'center',
+  },
+  measureNudgeText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  speedDialBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bg.overlay,
+  },
+  speedDialActions: {
+    position: 'absolute',
+    right: spacing[5],
+    bottom: spacing[6] + 56 + spacing[3],
+    gap: spacing[3],
+    alignItems: 'flex-end',
+  },
+  speedAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+  },
+  speedActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text.primary,
+    backgroundColor: colors.bg.card,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  speedActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary[500],
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.md,
   },
 })

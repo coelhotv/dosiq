@@ -3,12 +3,42 @@
 // Helpers de display puros. Hermes (mobile) sem ICU completo: NÃO usar
 // toLocaleString('pt-BR'). Formatação manual via tabela de meses.
 
-import { parseLocalDate } from './dateUtils.js'
+import { parseLocalDate, parseISO } from './dateUtils.js'
 
 const MONTHS_PT_BR = [
   'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
   'jul', 'ago', 'set', 'out', 'nov', 'dez',
 ]
+
+// Aceita Date | timestamp ISO completo (com hora). Hermes sem ICU → NÃO usar
+// toLocale*; parse manual via parseISO (timestamp) e tabela de meses.
+function toLocalDate(input) {
+  if (input instanceof Date) return input
+  if (typeof input === 'string') return parseISO(input)
+  return null
+}
+
+/**
+ * Formata um timestamp (Date|ISO com hora) para "HH:MM" 24h.
+ * @example formatTimePtBR('2026-03-12T08:05:00Z') → '08:05'
+ */
+export function formatTimePtBR(input) {
+  const d = toLocalDate(input)
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+/**
+ * Formata um timestamp (Date|ISO com hora) para "DD mmm · HH:MM" PT-BR lowercase.
+ * @example formatDateTimePtBR('2026-03-12T08:05:00Z') → '12 mar · 08:05'
+ */
+export function formatDateTimePtBR(input) {
+  const d = toLocalDate(input)
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = MONTHS_PT_BR[d.getMonth()]
+  return `${day} ${month} · ${formatTimePtBR(d)}`
+}
 
 /**
  * Formata uma data ISO/string YYYY-MM-DD para "DD MMM YYYY" PT-BR lowercase.

@@ -28,6 +28,7 @@ module.exports = function (api) {
             '@treatments': './src/features/treatments',
             '@dose': './src/features/dose',
             '@history': './src/features/history',
+            '@measures': './src/features/measures',
           },
         },
       ],

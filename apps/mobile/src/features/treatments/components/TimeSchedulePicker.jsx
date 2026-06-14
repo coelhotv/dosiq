@@ -79,7 +79,9 @@ export default function TimeSchedulePicker({
     (idx) => {
       if (idx === -1 && !canAddMore) return
       lightTap()
-      const seed = idx >= 0 ? stringToDate(value[idx]) : stringToDate('08:00')
+      // Editar slot existente → semeia o horário dele; novo (+) → hora atual do device
+      // (igual à web), em vez de um default fixo 08:00.
+      const seed = idx >= 0 ? stringToDate(value[idx]) : getNow()
 
       if (Platform.OS === 'android') {
         // Android: picker imperativo nativo — commit inline via idx do closure
