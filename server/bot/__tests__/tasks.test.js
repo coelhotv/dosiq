@@ -147,7 +147,8 @@ describe('Tasks Service - Wave 11 Refactor & Phase 3', () => {
   describe('runDailyAdherenceReport', () => {
     it('should generate storytelling based on yesterday vs anteontem performance', async () => {
       globalThis.__mockTime = '09:00';
-      globalThis.__mockWeekday = 0; // Domingo
+      globalThis.__mockWeekday = 3; // Quarta — dia comum (sem overlap semanal/mensal)
+      globalThis.__mockDayOfMonth = 15;
 
       // 1. Mock user settings (retrieved in runDailyAdherenceReportViaDispatcher)
       setMockData([{ user_id: 'user1', display_name: 'Test User', timezone: 'America/Sao_Paulo', notification_mode: 'active' }]);
@@ -191,6 +192,31 @@ describe('Tasks Service - Wave 11 Refactor & Phase 3', () => {
           jobType: 'adherence_report'
         })
       });
+    });
+
+    // Supressão hierárquica de overlap (decisão PO 2026-06-15): mensal > semanal > diário.
+    it('suprime o relatório diário no domingo (cede ao semanal)', async () => {
+      globalThis.__mockTime = '09:00';
+      globalThis.__mockWeekday = 0; // Domingo
+      globalThis.__mockDayOfMonth = 15;
+
+      setMockData([{ user_id: 'user1', display_name: 'Test User', timezone: 'America/Sao_Paulo', notification_mode: 'active' }]);
+
+      await runDailyAdherenceReport({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
+
+      expect(mockDispatcher.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('suprime o relatório diário no dia 1 (cede ao mensal)', async () => {
+      globalThis.__mockTime = '09:00';
+      globalThis.__mockWeekday = 3; // Quarta
+      globalThis.__mockDayOfMonth = 1;
+
+      setMockData([{ user_id: 'user1', display_name: 'Test User', timezone: 'America/Sao_Paulo', notification_mode: 'active' }]);
+
+      await runDailyAdherenceReport({}, { correlationId: 'test-corr', notificationDispatcher: mockDispatcher });
+
+      expect(mockDispatcher.dispatch).not.toHaveBeenCalled();
     });
   });
 

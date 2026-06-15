@@ -8,7 +8,12 @@ export const dailyDigestDataSchema = z.object({
     name: z.string(),
     time: z.string(),
     dosagePerIntake: z.number().optional(),
-    dosageUnit: z.string().optional()
+    dosageUnit: z.string().optional(),
+    // 012 Fase D (FR-015b): frase de dose líquida via formatters core (R-272).
+    // Aditivo (R-193) — payloads antigos sem estes campos seguem válidos.
+    dosagePerPill: z.number().nullable().optional(),
+    unitsPerMl: z.number().nullable().optional(),
+    intakeUnit: z.string().nullable().optional() // gotas|ml|UI|mg (022/B2)
   }))
 });
 

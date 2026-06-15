@@ -29,6 +29,48 @@ describe('buildNotificationPayload', () => {
       expect(payload.pushBody).toContain('\n'); // Verificamos que contém ao menos uma quebra de linha
     });
 
+    // 012 Fase D (FR-015b): dose líquida no digest via formatters core (R-272) —
+    // unidade de tomada real + case canônico, nunca "1 un." lossy.
+    it('should render liquid dose with canonical intake unit (UI), not "1 un."', () => {
+      const data = {
+        firstName: 'Maria',
+        hour: 8,
+        pendingCount: 1,
+        medicines: [{
+          name: 'Lantus', time: '12:00',
+          dosagePerIntake: 10, intakeUnit: 'UI',
+          dosageUnit: 'ui/ml', dosagePerPill: 100, unitsPerMl: 100
+        }]
+      };
+      const payload = buildNotificationPayload({ kind: 'daily_digest', data });
+      expect(payload.pushBody).toContain('10 UI');
+      expect(payload.pushBody).not.toContain('1 un.');
+      expect(payload.pushBody).not.toContain('10 ui'); // case canônico
+    });
+
+    it('should render solid dose via active-ingredient hint, not crashing', () => {
+      const data = {
+        firstName: 'Ana', hour: 8, pendingCount: 1,
+        medicines: [{
+          name: 'Dipirona', time: '09:00',
+          dosagePerIntake: 2, dosageUnit: 'mg', dosagePerPill: 500
+        }]
+      };
+      const payload = buildNotificationPayload({ kind: 'daily_digest', data });
+      expect(payload.pushBody).toContain('Dipirona');
+      expect(payload.pushBody).toContain('09:00');
+    });
+
+    it('should omit dosage when dosagePerIntake is absent (guard)', () => {
+      const data = {
+        firstName: 'Caio', hour: 8, pendingCount: 1,
+        medicines: [{ name: 'Omega 3', time: '07:00' }]
+      };
+      const payload = buildNotificationPayload({ kind: 'daily_digest', data });
+      expect(payload.pushBody).toContain('Omega 3');
+      expect(payload.pushBody).not.toContain('()');
+    });
+
     it('should handle zero pending doses correctly', () => {
       const data = {
         firstName: 'Caio',
