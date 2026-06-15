@@ -151,9 +151,12 @@ export function useHistoryData() {
 
       const userId = session.data.session.user.id
 
-      // Janela para busca de logs avulsos (mesma lógica dos dose_instances)
-      const fromIso = shiftDateStr(getTodayLocal(), -HISTORY_PAST_DAYS) + 'T00:00:00Z'
-      const toIso = shiftDateStr(getTodayLocal(), HISTORY_FUTURE_DAYS) + 'T23:59:59Z'
+      // Janela para busca de logs avulsos (mesma lógica dos dose_instances).
+      // Expande ±1 dia em UTC: o limite local (T00/T23:59Z) desloca por fuso e perderia
+      // doses na borda (ex: GMT-3, dose pós-21h cai no dia seguinte em UTC). O agrupamento
+      // preciso por dia local fica a cargo do filtro em memória (utcToLocalDateStr).
+      const fromIso = shiftDateStr(getTodayLocal(), -HISTORY_PAST_DAYS - 1) + 'T00:00:00Z'
+      const toIso = shiftDateStr(getTodayLocal(), HISTORY_FUTURE_DAYS + 1) + 'T23:59:59Z'
 
       const [raw, rawOrphanLogs, settings] = await Promise.all([
         getDoseInstancesForPeriod(userId, HISTORY_PAST_DAYS, HISTORY_FUTURE_DAYS),
