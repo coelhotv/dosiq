@@ -7,6 +7,8 @@ import {
 
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 
+import { DOSAGE_UNIT_LABELS } from '@dosiq/core';
+
 import { 
   getTimeOfDayGreeting, 
   getTimeOfDayEmoji 
@@ -167,7 +169,10 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
 const formatMedicineDescription = (name, qty, dosagePerPill, unit, intakeUnit) => {
   let desc = name;
   if (dosagePerPill !== undefined && dosagePerPill !== null && unit) {
-    desc += ` (${dosagePerPill}${unit})`;
+    // 012 Fase D (FR-015b c): case canônico do acrônimo — 'ui/ml' → 'UI/ml',
+    // 'ui' → 'UI' (DOSAGE_UNIT_LABELS); 'mg'/'ml' inalterados. Sem label → unit cru.
+    const unitLabel = DOSAGE_UNIT_LABELS[unit] || unit;
+    desc += ` (${dosagePerPill}${unitLabel})`;
   }
   if (qty !== undefined && qty !== null) {
     const formattedQty = String(qty).replace('.', ',');

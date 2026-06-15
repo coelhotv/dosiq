@@ -448,7 +448,7 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
     const today = getTodayLocal();
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill)')
+      .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml)')
       .in('user_id', eligibleIds)
       .eq('active', true)
       .lte('start_date', today)
@@ -475,7 +475,11 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
               time,
               medicineName: p.medicine?.name || p.name,
               dosagePerIntake: p.dosage_per_intake || 1,
-              dosageUnit: p.medicine?.dosage_unit
+              dosageUnit: p.medicine?.dosage_unit,
+              // 012 Fase D (FR-015b / R-267): frase de dose líquida no digest.
+              dosagePerPill: p.medicine?.dosage_per_pill ?? null,
+              unitsPerMl: p.medicine?.units_per_ml ?? null,
+              intakeUnit: p.intake_unit ?? null
             });
           });
         });
@@ -488,10 +492,13 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
           hour: currentHour,
           pendingCount: todaySchedule.length,
           medicines: todaySchedule.map(s => ({
-            name: s.medicineName, 
-            time: s.time, 
+            name: s.medicineName,
+            time: s.time,
             dosagePerIntake: s.dosagePerIntake,
-            dosageUnit: s.dosageUnit
+            dosageUnit: s.dosageUnit,
+            dosagePerPill: s.dosagePerPill,
+            unitsPerMl: s.unitsPerMl,
+            intakeUnit: s.intakeUnit
           }))
         };
 
