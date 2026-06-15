@@ -49,7 +49,7 @@
 | 024 | node22-upgrade | **delivered** | PRs #642/#643 |
 | 025 | fix-notifications-alarms | **delivered** | PRs #644/#645/#646/#647 |
 | 026 | activation-strategy | **in-progress** | Fase 1 (nudges in-app) entregue PR #653; demais fases pendentes |
-| 027 | pomadas-topicas | draft | não iniciar sem priorização do PO |
+| 027 | topical-ointments | draft | não iniciar sem priorização do PO |
 | 028 | nudges-admin | **in-progress** | PR #654 (payload builder) mergeado; restante pendente |
 | 029 | treatment-level-titration | draft | N2 — titulação plano-nível cross-medicamento; nasce da limitação exposta no 012 (FR-021/N1); não iniciar sem priorização do PO; depende de 012 B2 |
 | 030 | fix-dose-history | draft | histórico expõe doses avulsas/PRN; descoberto no smoke da B4 do 012 (2026-06-14); Tier 1 web+mobile |

@@ -1,6 +1,6 @@
 # Feature Specification: Pomadas / Tópicos (mg/g)
 
-**Feature Directory**: `plans/specs/027-pomadas-topicas`
+**Feature Directory**: `plans/specs/027-topical-ointments`
 **Created**: 2026-06-07
 **Status**: draft — não iniciar sem priorização do PO
 **Tier**: 2 (provável — DB CHECK + core + UI; possivelmente decremento por grama)
