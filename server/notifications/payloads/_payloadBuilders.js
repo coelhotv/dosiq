@@ -6,20 +6,26 @@ import {
   stockExpiryAlertDataSchema,
   titrationAlertDataSchema,
   prescriptionAlertDataSchema,
-  dlqDigestDataSchema,
-  doseReminderDataSchema
+  dlqDigestDataSchema
 } from './_payloadSchemas.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { getSaoPauloTime } from '../../utils/dateUtils.js';
+import { formatDoseItem } from '@dosiq/core';
 
-const formatDose = (qty, unit) => {
-  if (!qty) return undefined;
-  const u = unit?.toLowerCase() || 'un.';
-  if (['mg', 'mcg', 'g', 'ml'].includes(u)) {
-    return '1 un.';
-  }
-  return `${qty} ${u}`;
+// 012 Fase D (FR-015b): frase de dose via formatters core (R-272). Líquido →
+// unidade de tomada real (gotas/ml/UI + ≈ml), case canônico (UI upper). Sólido →
+// hint de princípio ativo. Substitui o antigo formatDose local lossy ("1 un." p/
+// mg/ml; lowercase). Sem dose válida → undefined (mantém guarda do call site).
+const formatDigestDose = (m) => {
+  if (m.dosagePerIntake === undefined || m.dosagePerIntake === null) return undefined;
+  return formatDoseItem({
+    dosagePerIntake: m.dosagePerIntake,
+    intakeUnit: m.intakeUnit,
+    dosageUnit: m.dosageUnit,
+    dosagePerPill: m.dosagePerPill,
+    unitsPerMl: m.unitsPerMl
+  });
 };
 
 export function buildDailyDigestPayload(data) {
@@ -37,7 +43,7 @@ export function buildDailyDigestPayload(data) {
     plainMsg += `Você tem ${pendingCount} ${text} para hoje:\n`;
     
     medicines.forEach(m => {
-      const displayDosage = formatDose(m.dosagePerIntake, m.dosageUnit);
+      const displayDosage = formatDigestDose(m);
       richMsg += `💊 *${escapeMarkdownV2(m.name)}*\n`;
       richMsg += `⏰ ${escapeMarkdownV2(m.time)}${displayDosage ? ` \\(${escapeMarkdownV2(displayDosage)}\\)` : ''}\n\n`;
       plainMsg += `⏰ ${m.name} — ${m.time}${displayDosage ? ` (${displayDosage})` : ''}\n`;
@@ -73,11 +79,13 @@ export function buildAdherenceReportPayload(data) {
   if (comparison) {
     const { deltaPercent, trend } = comparison;
     const trendEmoji = trend === 'up' ? '📈' : trend === 'down' ? '📉' : '➡️';
+    // Relatório matinal: os dados são de ONTEM → a comparação é com ANTEONTEM
+    // (não "vs ontem"). O builder já usa beforeYesterdayCounts como base.
     const trendText = trend === 'up'
-      ? `Melhora de ${deltaPercent}% vs ontem`
+      ? `Melhora de ${deltaPercent}% vs anteontem`
       : trend === 'down'
-      ? `Queda de ${deltaPercent}% vs ontem`
-      : `Estável vs ontem`;
+      ? `Queda de ${deltaPercent}% vs anteontem`
+      : `Estável vs anteontem`;
 
     richMsg += `*Comparação:* ${trendEmoji} ${escapeMarkdownV2(trendText)}\n\n`;
     plainMsg += `Comparação: ${trendEmoji} ${trendText}\n`;
@@ -107,16 +115,6 @@ export function buildWeeklyAdherencePayload(data) {
   plainMsg += nudge;
 
   return { title, body: richMsg, pushBody: plainMsg };
-}
-
-export function buildDoseReminderPayload(data) {
-  const { medicineName, time, dosagePerIntake, dosageUnit } = doseReminderDataSchema.parse(data);
-  const title = '💊 Hora do Medicamento';
-  const displayDosage = formatDose(dosagePerIntake, dosageUnit);
-  
-  const body = `Está na hora de tomar *${escapeMarkdownV2(medicineName)}* \\(${escapeMarkdownV2(time)}\\)${displayDosage ? ` — **${escapeMarkdownV2(displayDosage)}**` : ''}\\.`;
-  const pushBody = `Está na hora de tomar ${medicineName} (${time})${displayDosage ? ` — ${displayDosage}` : ''}.`;
-  return { title, body, pushBody };
 }
 
 export function buildDoseReminderByPlanPayload(data) {

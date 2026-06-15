@@ -9,6 +9,15 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### 012 Fase D — Frase de dose líquida nos pushes (FR-015b)
+
+#### Backend/serverless (notificações — `no-user-impact` de versão; correção de texto)
+- **Fixed** (`patch`, FR-015b/R-272): **resumo diário** (`daily_digest`) exibia dose líquida como `1 un.` (lossy) e em minúsculas. O `formatDose` local de `_payloadBuilders.js` foi substituído pelo formatter core `formatDoseItem` (`@dosiq/core`) → unidade de tomada real (`gotas`/`ml`/`UI`/`mg`) + `≈ ml`, case canônico (`UI` maiúsculo). Read-path do digest (`_reminderHelpers.js`) passou a trazer `intake_unit`+`units_per_ml`+`dosage_per_pill` no SELECT/shape (R-267); `dailyDigestDataSchema.medicines[]` ganhou os campos (aditivo — R-193).
+- **Fixed** (`patch`, FR-015b/R-272): lembrete de dose (`dose_reminder`/`_by_plan`/`_misc`) — concentração na frase com case canônico (`ui/ml` → `UI/ml`) via `DOSAGE_UNIT_LABELS` em `formatMedicineDescription`.
+- **Removed** (`no-user-impact`): código morto `buildDoseReminderPayload` + helper `formatDose` local (sem caller; substituídos pelo caminho `formatMedicineDescription`/formatters core).
+- **Fixed** (`patch`): relatório matinal de adesão (`adherence_report`) dizia "vs ontem" na comparação, mas os dados são de ontem → a base é **anteontem**. Texto corrigido para "vs anteontem" (o builder já comparava `yesterday` × `beforeYesterday`).
+- **Changed** (`patch`): supressão hierárquica de overlap dos relatórios (decisão PO 2026-06-15). Os 3 relatórios disparam 09:00 (tz do user) → domingo colidia diário+semanal; dia 1 (se domingo), os 3. Agora **maior granularidade vence**: dia 1 → só mensal (suprime semanal+diário); domingo → só semanal (suprime diário); demais dias → diário. Janela maior cobre a menor (semanal 7d ⊇ ontem; mensal 30d ⊇ semana). Supressão tz-aware em `_getEligibleUsersForAdherence` (diário) e `checkAdherenceReportsViaDispatcher` (semanal cede ao mensal no dia 1). Corrige tb. comentário stale `ADHERENCE_REPORT_TIME` (era "23:00"; valor real `'09:00'`).
+
 ### 012 Fase C — Biomarcadores: registro, timeline mista e Área de Medidas (PR 3a — mobile-first)
 
 #### DB (migração prod — `20260614_diabetes_c_biomarkers.sql`)

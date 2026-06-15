@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTimeInTimezone, getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getServerTimestamp } from '../utils/dateUtils.js';
+import { getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getServerTimestamp } from '../utils/dateUtils.js';
 import { createDoseInstanceRepository } from '@dosiq/core';
 import { sweepMissedInstances } from './doseInstanceScheduler.js';
 
@@ -31,10 +31,16 @@ async function _getEligibleUsersForAdherence(users, correlationId) {
   for (const user of users) {
     try {
       const timezone = user.timezone || 'America/Sao_Paulo';
-      const currentHHMM = getCurrentTimeInTimezone(timezone).substring(0, 5);
-      
-      // Relatório de adesão é fixo às 23:00 (ADHERENCE_REPORT_TIME)
+      const { hhmm: currentHHMM, weekday, dayOfMonth } = getCurrentDatePartsInTimezone(timezone);
+
+      // Relatório de adesão é fixo às 09:00 (ADHERENCE_REPORT_TIME)
       if (currentHHMM !== ADHERENCE_REPORT_TIME) continue;
+
+      // Supressão hierárquica de overlap (mensal > semanal > diário): os 3 relatórios
+      // disparam 09:00 tz do user. Quando um de granularidade maior cobre o mesmo dia,
+      // o diário é suprimido (semanal 7d ⊇ ontem; mensal 30d ⊇ semana). Decisão PO
+      // 2026-06-15. dia 1 → cede ao mensal; domingo → cede ao semanal.
+      if (dayOfMonth === 1 || weekday === 0) continue;
 
       const shouldSend = await shouldSendNotification(user.user_id, null, 'adherence_report');
       if (!shouldSend) continue;
@@ -181,8 +187,10 @@ export async function checkAdherenceReportsViaDispatcher(dispatcher, correlation
       const userId = user.user_id;
 
       const timezone = user.timezone || 'America/Sao_Paulo';
-      const { hhmm, weekday } = getCurrentDatePartsInTimezone(timezone);
+      const { hhmm, weekday, dayOfMonth } = getCurrentDatePartsInTimezone(timezone);
       if (weekday !== 0 || hhmm !== '09:00') continue;
+      // Supressão hierárquica: no dia 1 o semanal cede ao mensal (30d ⊇ 7d). Decisão PO 2026-06-15.
+      if (dayOfMonth === 1) continue;
 
       // Filtro 1: Apenas usuários com tratamentos ativos no banco
       const hasActive = await _hasActiveProtocols(userId);
