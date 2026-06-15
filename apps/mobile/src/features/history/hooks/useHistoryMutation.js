@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { registerDose, undoDose } from '../../dose/services/doseService'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { registerDose, undoDose, updateOrphanLog, deleteOrphanLog } from '../../dose/services/doseService'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -86,11 +85,14 @@ export function useHistoryMutation({ onSuccess } = {}) {
       try {
         setLoading(true)
         setError(null)
-        const { error: dbError } = await supabase
-          .from('medicine_logs')
-          .update(logData)
-          .eq('id', logId)
-        if (dbError) throw dbError
+        // Mutação stock-aware no service (restaura/reconsome estoque FIFO) — não tocar
+        // medicine_logs direto, senão o estoque dessincroniza (furos silenciosos).
+        const result = await updateOrphanLog(logId, logData)
+        if (!result.success) {
+          setError(result.error || 'Erro ao atualizar registro')
+          console.error('[useHistoryMutation] updateLog failed:', result.error)
+          return
+        }
         await AsyncStorage.removeItem(TODAY_CACHE_KEY)
         if (onSuccess) await onSuccess()
       } catch (err) {
@@ -109,11 +111,13 @@ export function useHistoryMutation({ onSuccess } = {}) {
       try {
         setLoading(true)
         setError(null)
-        const { error: dbError } = await supabase
-          .from('medicine_logs')
-          .delete()
-          .eq('id', logId)
-        if (dbError) throw dbError
+        // Mutação stock-aware no service (devolve estoque ao inventário antes de deletar).
+        const result = await deleteOrphanLog(logId)
+        if (!result.success) {
+          setError(result.error || 'Erro ao excluir registro')
+          console.error('[useHistoryMutation] deleteLog failed:', result.error)
+          return
+        }
         await AsyncStorage.removeItem(TODAY_CACHE_KEY)
         if (onSuccess) await onSuccess()
       } catch (err) {

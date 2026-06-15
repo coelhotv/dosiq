@@ -192,6 +192,132 @@ export async function undoDose(instanceId) {
   }
 }
 
+/**
+ * Atualiza um log avulso/PRN (sem dose_instance ancorada) ajustando o estoque FIFO.
+ * Espelha o web (`logService.update`): se `quantity_taken` ou `medicine_id` mudam,
+ * restaura o estoque do log antigo (RPC restore_stock_for_log) e reconsome o novo
+ * (RPC consume_stock_fifo). Sem isto o estoque dessincroniza (furos silenciosos).
+ * @param {string} logId
+ * @param {{ taken_at?: string, quantity_taken?: number, medicine_id?: string }} updates
+ * @returns {Promise<{ success: boolean, error?: string }>}
+ */
+export async function updateOrphanLog(logId, updates) {
+  try {
+    const { user, sessionError } = await _getAuthUser()
+    if (sessionError) return { success: false, error: sessionError }
+
+    const { data: oldLog, error: fetchError } = await supabase
+      .from('medicine_logs')
+      .select('id, medicine_id, quantity_taken')
+      .eq('id', logId)
+      .eq('user_id', user.id)
+      .single()
+    if (fetchError || !oldLog) return { success: false, error: 'Registro não encontrado.' }
+
+    const nextMedicineId = updates.medicine_id ?? oldLog.medicine_id
+    const nextQty = updates.quantity_taken ?? oldLog.quantity_taken
+    const stockAffectingChange =
+      nextQty !== oldLog.quantity_taken || nextMedicineId !== oldLog.medicine_id
+
+    // Sem mudança que afete estoque: update simples.
+    if (!stockAffectingChange) {
+      const { error: updError } = await supabase
+        .from('medicine_logs')
+        .update(updates)
+        .eq('id', logId)
+        .eq('user_id', user.id)
+      if (updError) return { success: false, error: 'Erro ao atualizar registro. Tente novamente.' }
+      return { success: true }
+    }
+
+    // 1. Restaura o estoque do consumo antigo (idempotente via stock_consumptions guard).
+    const { error: restoreError } = await supabase.rpc('restore_stock_for_log', {
+      p_medicine_log_id: logId,
+      p_reason: 'dose_update_restore',
+    })
+    if (restoreError) {
+      console.warn('[doseService] updateOrphanLog: restore falhou:', restoreError)
+      return { success: false, error: 'Erro ao restaurar estoque antes da edição. Tente novamente.' }
+    }
+
+    // 2. Aplica o update no log.
+    const { error: updError } = await supabase
+      .from('medicine_logs')
+      .update(updates)
+      .eq('id', logId)
+      .eq('user_id', user.id)
+    if (updError) {
+      // Reconsome com os valores antigos para não deixar estoque inflado.
+      await supabase.rpc('consume_stock_fifo', {
+        p_user_id: user.id,
+        p_medicine_id: oldLog.medicine_id,
+        p_quantity: oldLog.quantity_taken,
+        p_medicine_log_id: logId,
+      })
+      return { success: false, error: 'Erro ao atualizar registro. Tente novamente.' }
+    }
+
+    // 3. Reconsome o estoque com os novos valores.
+    const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+      p_user_id: user.id,
+      p_medicine_id: nextMedicineId,
+      p_quantity: nextQty,
+      p_medicine_log_id: logId,
+    })
+    if (consumeError) {
+      console.warn('[doseService] updateOrphanLog: reconsumo falhou:', consumeError)
+      return { success: false, error: 'Registro atualizado, mas houve erro ao reaplicar o consumo de estoque.' }
+    }
+
+    await logEvent(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: nextMedicineId })
+    return { success: true }
+  } catch (err) {
+    if (__DEV__) console.error('[doseService] updateOrphanLog erro:', err)
+    return { success: false, error: err.message ?? 'Erro desconhecido ao atualizar registro.' }
+  }
+}
+
+/**
+ * Exclui um log avulso/PRN (sem dose_instance ancorada) devolvendo o estoque ao inventário.
+ * Espelha o web (`logService.delete`) e o `undoDose`: restaura o estoque (RPC
+ * restore_stock_for_log) ANTES de deletar o log. Sem instância para reverter (avulso).
+ * @param {string} logId
+ * @returns {Promise<{ success: boolean, error?: string }>}
+ */
+export async function deleteOrphanLog(logId) {
+  try {
+    const { user, sessionError } = await _getAuthUser()
+    if (sessionError) return { success: false, error: sessionError }
+
+    // 1. Restaura o estoque antes de deletar (idempotente via stock_consumptions guard).
+    const { error: restoreError } = await supabase.rpc('restore_stock_for_log', {
+      p_medicine_log_id: logId,
+      p_reason: 'dose_deleted_restore',
+    })
+    if (restoreError) {
+      console.warn('[doseService] deleteOrphanLog: restore falhou:', restoreError)
+      return { success: false, error: 'Erro ao devolver o remédio ao estoque. Tente novamente.' }
+    }
+
+    // 2. Deleta o log.
+    const { error: deleteError } = await supabase
+      .from('medicine_logs')
+      .delete()
+      .eq('id', logId)
+      .eq('user_id', user.id)
+    if (deleteError) {
+      console.warn('[doseService] deleteOrphanLog: delete falhou:', deleteError)
+      return { success: false, error: 'Erro ao remover registro. Tente novamente.' }
+    }
+
+    await logEvent(EVENTS.DOSE_LOGGED, { action: 'delete_orphan' })
+    return { success: true }
+  } catch (err) {
+    if (__DEV__) console.error('[doseService] deleteOrphanLog erro:', err)
+    return { success: false, error: err.message ?? 'Erro desconhecido ao excluir registro.' }
+  }
+}
+
 export async function registerDose(logData, { instanceId = null } = {}) {
   // R-121: validar com Zod antes de enviar ao Supabase
   debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
