@@ -19,7 +19,7 @@
 | `delivered` | 100% mergeado em prod (anotar PRs) |
 | `superseded` | substituída/absorvida por outra spec (apontar qual) |
 
-## Tabela de status (atualizada 2026-06-10)
+## Tabela de status (atualizada 2026-06-15)
 
 | # | Spec | Status | Evidência / Nota |
 |---|------|--------|------------------|
@@ -27,14 +27,14 @@
 | 002 | caregiver-demand-teaser | draft | migrated draft |
 | 003 | patient-dose-history | **delivered** | PR #641 + evoluções em 0.15.x (CHANGELOG) |
 | 004 | expanded-adherence-dashboard | draft | PO 2026-06-10: não entregue como spec'ado (mocks Fase 5 ≠ código) |
-| 005 | consultation-mode-profile | draft | PO 2026-06-10: não entregue como spec'ado (handoff de design ≠ código) |
-| 006 | public-emergency-qr-card | draft | migrated draft |
-| 007 | medical-pdf-report | planned | backlog; nota de coordenação c/ 012 Fase E (2026-06-10) |
-| 008 | complete-data-export-lgpd | draft | backlog; DEVE incluir `biomarkers_log` (nota 2026-06-10) |
+| 005 | consultation-mode-profile | draft | PO 2026-06-10: não entregue como spec'ado; **2026-06-15 absorve 012 (descope Fase E): líquidos/injetáveis + tendência de biomarkers** |
+| 006 | public-emergency-qr-card | draft | migrated draft; **2026-06-15 absorve 012: líquidos/injetáveis em meds críticos (sem biomarkers)** |
+| 007 | medical-pdf-report | planned | backlog; **2026-06-15 absorve a Fase E do 012 (FR-016 dose×biomarcador server-side) + líquidos/injetáveis → Tier 2** |
+| 008 | complete-data-export-lgpd | draft | backlog; **2026-06-15 `biomarkers_log` promovido a FR-006 + colunas líquidos/injetáveis do 012 no inventário** |
 | 009 | caregiver-mode | **specified** | próximo grande épico do roadmap; NÃO implementado; nota biomarkers (2026-06-10) |
 | 010 | native-alarm-v2 | **delivered** | PR #634 (mobile 0.10.0, 🔴 corrigido na auditoria — estava "planned"); ADR-055/056 |
 | 011 | notifications-from-instances | **delivered** | PR #633 (reminder ← dose_instances); ADR-057 |
-| 012 | diabetes-t2-support | **in-progress** | Fases A+B delivered (PR #658 injetável+TTL; PR #659 2026-06-12 GLP-1 base: tolerância frequency-aware, titulação canônica+auto-avanço, carry-over); C-E pendentes; ADR-058..062 accepted; FR-013c/015b → Fase D; B2 (canetas GLP-1) + N2 (titulação plano-nível) a especificar |
+| 012 | diabetes-t2-support | **delivered** | **Épico fechado A→D (2026-06-15)**. A injetável+TTL (#658) · B GLP-1/titulação (#659) · B2 canetas mg (#660) · B3 units_per_ml NULL (#661) · B4 dose-primário+container (#663/#664) · C biomarkers (#665/#666) · D FR-015b+relatórios (#667). ADR-058..068. **Fase E DESCOPED → redistribuída p/ 005/006/007/008**; FR-016 → 007 |
 | 013 | whatsapp-bot-adapter | draft | migrated draft |
 | 014 | whatsapp-templates-webhook | draft | migrated draft |
 | 015 | ai-chatbot-mobile | draft | migrated draft |
@@ -52,4 +52,7 @@
 | 027 | pomadas-topicas | draft | não iniciar sem priorização do PO |
 | 028 | nudges-admin | **in-progress** | PR #654 (payload builder) mergeado; restante pendente |
 | 029 | treatment-level-titration | draft | N2 — titulação plano-nível cross-medicamento; nasce da limitação exposta no 012 (FR-021/N1); não iniciar sem priorização do PO; depende de 012 B2 |
+| 030 | fix-dose-history | draft | histórico expõe doses avulsas/PRN; descoberto no smoke da B4 do 012 (2026-06-14); Tier 1 web+mobile |
+| 031 | injection-site-rotation | draft | rotação de sítio de aplicação (injetáveis); Specifying; Tier 2 (migração `medicine_logs` + ADR rotação-global) |
+| 032 | biomarker-pa | draft | **NEW 2026-06-15** — UI de pressão arterial sobre `biomarkers_log` (já schema-ready via `value_secondary`/`applyPaRefine` da Fase C do 012); Tier 1, sem migração |
 

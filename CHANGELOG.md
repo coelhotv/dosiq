@@ -7,6 +7,53 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.17.0 (mobile) — 2026-06-15 — Suporte a Diabetes Tipo 2 (épico 012 A→D)
+
+> **Bump:** mobile `0.16.6 → 0.17.0` (minor — fechamento do épico 012). `versionCode`/`buildNumber` = `1700`.
+> Consolida as Fases A–D do épico 012 (injetáveis + validade biológica, GLP-1/titulação, biomarcadores,
+> insulina basal) entregues ao longo das 0.16.x, agora publicadas como release minor única.
+
+### 📱 Release notes — Apple App Store (pt-BR)
+
+```
+Novidades da versão 0.17.0
+
+Agora o Dosiq cuida de quem tem diabetes tipo 2 — de ponta a ponta:
+
+• Canetas e injetáveis: cadastre insulina e GLP-1 (Ozempic, Mounjaro, Wegovy) com a dose na
+  unidade certa (UI, mg) e acompanhe a validade após aberto da caneta/frasco.
+• Glicemia e medidas: registre glicemia, peso e outras medidas em segundos e veja a evolução
+  na sua linha do tempo, junto das doses.
+• Estoque inteligente: o app mostra quantas aplicações restam (não mililitros soltos) e avisa
+  com antecedência quando está acabando.
+• Titulação guiada: tratamentos com aumento gradual de dose avançam sozinhos conforme o
+  cronograma do seu médico.
+• Lembretes mais claros: notificações de dose de líquidos agora mostram a dose exata (ex.: 10 UI).
+
+Continuamos cuidando da sua rotina com carinho e zero complicação. 💙
+```
+
+### 🤖 Release notes — Google Play (pt-BR)
+
+```
+Suporte completo a diabetes tipo 2 no Dosiq:
+
+• Insulina e GLP-1 (Ozempic, Mounjaro, Wegovy) com dose em UI/mg e controle de validade da
+  caneta após aberta.
+• Registro rápido de glicemia, peso e outras medidas, com tendência ao lado das doses.
+• Estoque em "aplicações restantes" e aviso antecipado de recompra.
+• Titulação que avança sozinha conforme o cronograma do médico.
+• Lembretes de dose de líquidos mais precisos (ex.: 10 UI).
+
+Simples para quem mais precisa. 💙
+```
+
+> **Notas de loja (internas):** release sem mudança de permissões. Sem novos dados sensíveis além de
+> `biomarkers_log` (já declarado no fluxo de privacidade). Screenshots sugeridas: tela de medidas,
+> card de caneta com validade, lembrete de insulina "10 UI".
+
+---
+
 ## [Unreleased]
 
 ### 012 Fase D — Frase de dose líquida nos pushes (FR-015b)
