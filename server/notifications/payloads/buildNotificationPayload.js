@@ -171,7 +171,7 @@ const formatMedicineDescription = (name, qty, dosagePerPill, unit, intakeUnit) =
   if (dosagePerPill !== undefined && dosagePerPill !== null && unit) {
     // 012 Fase D (FR-015b c): case canônico do acrônimo — 'ui/ml' → 'UI/ml',
     // 'ui' → 'UI' (DOSAGE_UNIT_LABELS); 'mg'/'ml' inalterados. Sem label → unit cru.
-    const unitLabel = DOSAGE_UNIT_LABELS[unit] || unit;
+    const unitLabel = DOSAGE_UNIT_LABELS?.[unit] || unit;
     desc += ` (${dosagePerPill}${unitLabel})`;
   }
   if (qty !== undefined && qty !== null) {
