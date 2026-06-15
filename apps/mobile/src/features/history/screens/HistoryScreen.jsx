@@ -94,6 +94,8 @@ export default function HistoryScreen() {
         onClose={handleSheetClose}
         onRegisterRetro={mutation.registerRetro}
         onUndo={mutation.undo}
+        onUpdateLog={mutation.updateLog}
+        onDeleteLog={mutation.deleteLog}
         loading={mutation.loading}
       />
     </SafeAreaView>

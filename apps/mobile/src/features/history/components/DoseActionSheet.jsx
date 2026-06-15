@@ -14,11 +14,25 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
-import { X, CheckCircle2, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
+import { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
+
+const STATUS_META = {
+  taken:        { label: 'Tomada',   color: colors.brand.primary,  bg: colors.primary[100] },
+  missed:       { label: 'Perdida',  color: colors.status.error,   bg: colors.status.errorLight },
+  pending:      { label: 'Pendente', color: colors.neutral[600],   bg: colors.neutral[100] },
+  skipped_user: { label: 'Pulada',   color: colors.neutral[500],   bg: colors.neutral[100] },
+}
+
+function StatusHeaderIcon({ status, size = 28 }) {
+  if (status === 'taken')        return <CircleCheckBig size={size} color={colors.brand.primary} strokeWidth={2} />
+  if (status === 'missed')       return <XCircle size={size} color={colors.status.error} strokeWidth={2} />
+  if (status === 'skipped_user') return <RedoDot size={size} color={colors.neutral[400]} strokeWidth={2} />
+  return <Clock size={size} color={colors.neutral[400]} strokeWidth={2} />
+}
 
 function formatInTz(isoStr, tz) {
   if (!isoStr) return '--:--'
@@ -76,25 +90,34 @@ function punctualityLabel(takenAt, scheduledFor) {
   return { text: `${diffMin} min · No horário`, color: colors.brand.primary }
 }
 
-function SheetMainView({ instance, isTaken, takenTime, scheduledTime, punctuality, onEditPress, onDeletePress }) {
+function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, punctuality, onEditPress, onDeletePress }) {
   return (
     <>
       <View style={styles.infoCard}>
-        {isTaken && instance?.taken_at && (
+        {isOrphan ? (
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tomada em</Text>
+            <Text style={styles.infoLabel}>Horário registrado</Text>
             <Text style={styles.infoValue}>{takenTime}</Text>
           </View>
-        )}
-        <View style={[styles.infoRow, isTaken && instance?.taken_at && styles.infoRowBorder]}>
-          <Text style={styles.infoLabel}>Horário previsto</Text>
-          <Text style={styles.infoValue}>{scheduledTime}</Text>
-        </View>
-        {punctuality && (
-          <View style={[styles.infoRow, styles.infoRowBorder]}>
-            <Text style={styles.infoLabel}>Pontualidade</Text>
-            <Text style={[styles.infoValue, { color: punctuality.color }]}>{punctuality.text}</Text>
-          </View>
+        ) : (
+          <>
+            {isTaken && instance?.taken_at && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tomada em</Text>
+                <Text style={styles.infoValue}>{takenTime}</Text>
+              </View>
+            )}
+            <View style={[styles.infoRow, isTaken && instance?.taken_at && styles.infoRowBorder]}>
+              <Text style={styles.infoLabel}>Horário previsto</Text>
+              <Text style={styles.infoValue}>{scheduledTime}</Text>
+            </View>
+            {punctuality && (
+              <View style={[styles.infoRow, styles.infoRowBorder]}>
+                <Text style={styles.infoLabel}>Pontualidade</Text>
+                <Text style={[styles.infoValue, { color: punctuality.color }]}>{punctuality.text}</Text>
+              </View>
+            )}
+          </>
         )}
       </View>
 
@@ -164,7 +187,9 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPicker
         />
         {instance?.dosage_per_pill && instance?.dosage_unit && (
           <Text style={styles.inputHint}>
-            ✨ {formatActiveIngredientFormula(quantityTaken || '1', instance.dosage_per_pill, instance.dosage_unit)}
+            ✨ {isLiquidMedicine(instance)
+              ? formatIntakeDose(quantityTaken || '1', instance.intake_unit, instance)
+              : formatActiveIngredientFormula(quantityTaken || '1', instance.dosage_per_pill, instance.dosage_unit)}
           </Text>
         )}
       </View>
@@ -186,13 +211,15 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPicker
   )
 }
 
-function SheetDeleteView({ loading, onConfirm, onCancel }) {
+function SheetDeleteView({ isOrphan, loading, onConfirm, onCancel }) {
   return (
     <View style={styles.formView}>
       <View style={styles.deleteWarning}>
         <AlertTriangle size={20} color={colors.status.error} strokeWidth={2} />
         <Text style={styles.deleteWarningText}>
-          Excluir este registro? A dose volta para pendente e o estoque será restaurado.
+          {isOrphan
+            ? 'Excluir este registro? O registro será removido e o estoque restaurado.'
+            : 'Excluir este registro? A dose volta para pendente e o estoque será restaurado.'}
         </Text>
       </View>
 
@@ -240,6 +267,8 @@ export default function DoseActionSheet({
   onClose,
   onRegisterRetro,
   onUndo,
+  onUpdateLog,
+  onDeleteLog,
   loading = false,
 }) {
   const [view, setView] = useState('main')
@@ -274,22 +303,39 @@ export default function DoseActionSheet({
     setShowDatePicker(false)
   }
 
+  const isOrphan = instance?.source === 'log' || !!instance?.is_orphan
+
   const handleSaveEdit = () => {
     if (!takenAtDate || !quantityTaken) return
-    onRegisterRetro?.(
-      {
+    // PT-BR: teclado numérico usa vírgula decimal — trocar por ponto antes do parseFloat,
+    // senão "1,5" trunca para "1" (perda de precisão na quantidade).
+    const parsedQty = parseFloat(String(quantityTaken).replace(',', '.'))
+    if (isNaN(parsedQty)) return
+    if (isOrphan) {
+      onUpdateLog?.(instance.logId, {
         taken_at: takenAtDate.toISOString(),
-        quantity_taken: parseFloat(quantityTaken),
-        medicine_id: instance?.medicine_id,
-        protocol_id: instance?.protocol_id,
-      },
-      instance?.id
-    )
+        quantity_taken: parsedQty,
+      })
+    } else {
+      onRegisterRetro?.(
+        {
+          taken_at: takenAtDate.toISOString(),
+          quantity_taken: parsedQty,
+          medicine_id: instance?.medicine_id,
+          protocol_id: instance?.protocol_id,
+        },
+        instance?.id
+      )
+    }
     onClose?.()
   }
 
   const handleDelete = () => {
-    onUndo?.(instance?.id)
+    if (isOrphan) {
+      onDeleteLog?.(instance.logId)
+    } else {
+      onUndo?.(instance?.id)
+    }
     onClose?.()
   }
 
@@ -297,9 +343,10 @@ export default function DoseActionSheet({
   const hasPill = instance?.dosage_per_pill != null && instance?.dosage_unit
   const scheduledTime = formatTimeInTz(instance?.scheduled_for, timezone)
   const takenTime = formatInTz(instance?.taken_at, timezone)
-  const punctuality = instance?.taken_at ? punctualityLabel(instance.taken_at, instance.scheduled_for) : null
+  const punctuality = instance?.taken_at && !isOrphan ? punctualityLabel(instance.taken_at, instance.scheduled_for) : null
   const statusBarHeight = StatusBar.currentHeight || 24
   const isTaken = instance?.status === 'taken'
+  const statusMeta = STATUS_META[instance?.status] ?? STATUS_META.pending
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
@@ -317,14 +364,13 @@ export default function DoseActionSheet({
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.header}>
-              <CheckCircle2
-                size={28}
-                color={isTaken ? colors.brand.primary : colors.neutral[400]}
-                strokeWidth={2}
-              />
+              <StatusHeaderIcon status={instance?.status} size={28} />
               <View style={styles.headerBody}>
                 <View style={styles.headerNameRow}>
                   <Text style={styles.headerTitle} numberOfLines={1}>{medicineName}</Text>
+                  <View style={[styles.statusChip, { backgroundColor: statusMeta.bg }]}>
+                    <Text style={[styles.statusChipText, { color: statusMeta.color }]}>{statusMeta.label}</Text>
+                  </View>
                   {hasPill && (
                     <View style={styles.pill}>
                       <Text style={styles.pillText}>{formatConcentration(instance.dosage_per_pill, instance.dosage_unit)}</Text>
@@ -360,6 +406,7 @@ export default function DoseActionSheet({
               <SheetMainView
                 instance={instance}
                 isTaken={isTaken}
+                isOrphan={isOrphan}
                 takenTime={takenTime}
                 scheduledTime={scheduledTime}
                 punctuality={punctuality}
@@ -383,6 +430,7 @@ export default function DoseActionSheet({
 
             {view === 'confirm_delete' && (
               <SheetDeleteView
+                isOrphan={isOrphan}
                 loading={loading}
                 onConfirm={handleDelete}
                 onCancel={() => setView('main')}
@@ -472,6 +520,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
     flexShrink: 1,
+  },
+  statusChip: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusChipText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   pill: {
     backgroundColor: colors.neutral[100],

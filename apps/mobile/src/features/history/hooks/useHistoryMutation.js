@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { registerDose, undoDose } from '../../dose/services/doseService'
+import { registerDose, undoDose, updateOrphanLog, deleteOrphanLog } from '../../dose/services/doseService'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -80,9 +80,62 @@ export function useHistoryMutation({ onSuccess } = {}) {
     [onSuccess]
   )
 
+  const updateLog = useCallback(
+    async (logId, logData) => {
+      try {
+        setLoading(true)
+        setError(null)
+        // Mutação stock-aware no service (restaura/reconsome estoque FIFO) — não tocar
+        // medicine_logs direto, senão o estoque dessincroniza (furos silenciosos).
+        const result = await updateOrphanLog(logId, logData)
+        if (!result.success) {
+          setError(result.error || 'Erro ao atualizar registro')
+          console.error('[useHistoryMutation] updateLog failed:', result.error)
+          return
+        }
+        await AsyncStorage.removeItem(TODAY_CACHE_KEY)
+        if (onSuccess) await onSuccess()
+      } catch (err) {
+        const errorMsg = err?.message || 'Erro ao atualizar registro'
+        setError(errorMsg)
+        console.error('[useHistoryMutation] updateLog exception:', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [onSuccess]
+  )
+
+  const deleteLog = useCallback(
+    async (logId) => {
+      try {
+        setLoading(true)
+        setError(null)
+        // Mutação stock-aware no service (devolve estoque ao inventário antes de deletar).
+        const result = await deleteOrphanLog(logId)
+        if (!result.success) {
+          setError(result.error || 'Erro ao excluir registro')
+          console.error('[useHistoryMutation] deleteLog failed:', result.error)
+          return
+        }
+        await AsyncStorage.removeItem(TODAY_CACHE_KEY)
+        if (onSuccess) await onSuccess()
+      } catch (err) {
+        const errorMsg = err?.message || 'Erro ao excluir registro'
+        setError(errorMsg)
+        console.error('[useHistoryMutation] deleteLog exception:', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [onSuccess]
+  )
+
   return {
     registerRetro,
     undo,
+    updateLog,
+    deleteLog,
     loading,
     error,
   }

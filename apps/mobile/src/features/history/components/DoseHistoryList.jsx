@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
-import { ChevronRight, CheckCircle2, XCircle, Clock, RedoDot } from 'lucide-react-native'
+import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 
 const COLORS = {
@@ -16,7 +16,7 @@ const COLORS = {
 }
 
 function StatusIcon({ status }) {
-  if (status === 'taken') return <CheckCircle2 size={22} color={COLORS.teal} strokeWidth={2} />
+  if (status === 'taken') return <CircleCheckBig size={22} color={COLORS.teal} strokeWidth={2} />
   if (status === 'missed') return <XCircle size={22} color={COLORS.red} strokeWidth={2} />
   if (status === 'skipped_user') return <RedoDot size={22} color={COLORS.gray} strokeWidth={2} />
   return <Clock size={22} color={COLORS.gray} strokeWidth={2} />
@@ -57,6 +57,11 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
         <View style={styles.itemBody}>
           <View style={styles.nameRow}>
             <Text style={styles.medicineName} numberOfLines={1}>{medicineName}</Text>
+            {item.is_orphan && (
+              <View style={styles.pillOrphan}>
+                <Text style={styles.pillOrphanText}>avulsa</Text>
+              </View>
+            )}
             {item.dosage_per_pill != null && item.dosage_unit ? (
               <View style={styles.pill}>
                 <Text style={styles.pillText}>{formatConcentration(item.dosage_per_pill, item.dosage_unit)}</Text>
@@ -155,6 +160,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.neutral[700],
+  },
+  pillOrphan: {
+    backgroundColor: colors.primary[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.brand.primary,
+  },
+  pillOrphanText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.brand.primary,
   },
   subtitle: {
     fontSize: 12,

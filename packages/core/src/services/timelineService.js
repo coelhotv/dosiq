@@ -130,6 +130,11 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
   for (const inst of safeInstances) {
     if (!VISIBLE_INSTANCE_STATUSES.has(inst.status)) continue
     events.push(instanceToEvent(inst, logById, enrich))
+    // Slots de tolerância temporal só para pending/missed: protegem contra race-condition
+    // (log sem dose_instance_id que deveria ter). Instâncias 'taken' já têm medicine_log_id
+    // → collectConsumedLogIds cuida da dedupe. Construir slot para 'taken' causaria supressão
+    // de segunda dose legítima no mesmo protocolo dentro da janela de tolerância (AP-193).
+    if (inst.status === 'taken') continue
     if (!slotsByProtocol.has(inst.protocol_id)) slotsByProtocol.set(inst.protocol_id, [])
     slotsByProtocol.get(inst.protocol_id).push({
       ms: parseISO(inst.scheduled_for).getTime(),
