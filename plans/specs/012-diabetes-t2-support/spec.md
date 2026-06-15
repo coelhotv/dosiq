@@ -509,7 +509,7 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   (form de protocolo, `intake_unit ∈ {gotas,UI}`) e persistida no medicamento (UX 022 Fase C).
   → **Escopo restante da Fase D para FR-013 = ZERO no núcleo**: apenas verificação/smoke da insulina
   U-100 e (se necessário) U-200 (`units_per_ml=200`). **Não criar coluna.**
-- **FR-013b** 🔴 **(catch CPTO 2026-06-10 — risco clínico)**: o default `units_per_ml=20` da RPC é
+- **FR-013b** ✅ **ENTREGUE NA B3** (migração `20260613_b3_units_per_ml_null_denominador.sql` em prod, ADR-065): `units_per_ml` default NULL + fallback unit-aware na RPC (`gotas→20, UI→100`) + backfill (Lantus=100). Texto histórico abaixo. — **(catch CPTO 2026-06-10 — risco clínico)**: o default `units_per_ml=20` da RPC é
   herdado de **gotas**. Insulina com densidade não preenchida (idoso não sabe "U-100") debitaria
   `10/20 = 0,5 ml` em vez de `0,10 ml` — **estoque esgota 5× rápido, alertas errados**. Correção em
   2 camadas: (a) **form de tratamento**: quando `intake_unit='UI'`, prefill `units_per_ml=100`
