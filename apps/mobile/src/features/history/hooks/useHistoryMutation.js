@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { registerDose, undoDose } from '../../dose/services/doseService'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -80,9 +81,57 @@ export function useHistoryMutation({ onSuccess } = {}) {
     [onSuccess]
   )
 
+  const updateLog = useCallback(
+    async (logId, logData) => {
+      try {
+        setLoading(true)
+        setError(null)
+        const { error: dbError } = await supabase
+          .from('medicine_logs')
+          .update(logData)
+          .eq('id', logId)
+        if (dbError) throw dbError
+        await AsyncStorage.removeItem(TODAY_CACHE_KEY)
+        if (onSuccess) await onSuccess()
+      } catch (err) {
+        const errorMsg = err?.message || 'Erro ao atualizar registro'
+        setError(errorMsg)
+        console.error('[useHistoryMutation] updateLog exception:', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [onSuccess]
+  )
+
+  const deleteLog = useCallback(
+    async (logId) => {
+      try {
+        setLoading(true)
+        setError(null)
+        const { error: dbError } = await supabase
+          .from('medicine_logs')
+          .delete()
+          .eq('id', logId)
+        if (dbError) throw dbError
+        await AsyncStorage.removeItem(TODAY_CACHE_KEY)
+        if (onSuccess) await onSuccess()
+      } catch (err) {
+        const errorMsg = err?.message || 'Erro ao excluir registro'
+        setError(errorMsg)
+        console.error('[useHistoryMutation] deleteLog exception:', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [onSuccess]
+  )
+
   return {
     registerRetro,
     undo,
+    updateLog,
+    deleteLog,
     loading,
     error,
   }

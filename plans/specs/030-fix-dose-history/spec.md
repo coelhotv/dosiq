@@ -79,6 +79,18 @@ porque o ícone sozinho é ambíguo.
   Quando abro o bottom sheet de detalhe,
   Então vejo um chip/legenda textual: "Tomada", "Perdida", "Pendente" ou "Pulada".
 
+### US6 — Editar/excluir dose avulsa no mobile (P2)
+Como paciente, quero poder editar ou excluir um registro de dose avulsa/PRN na tela de
+histórico do mobile, com o mesmo fluxo das doses agendadas.
+
+**Acceptance**
+- Dado uma dose avulsa ou PRN visível no histórico mobile,
+  Quando abro o detalhe e pressiono "Editar registro",
+  Então consigo ajustar horário e quantidade no `medicine_log` (não numa `dose_instance`).
+- Dado uma dose avulsa ou PRN,
+  Quando pressiono "Excluir registro" e confirmo,
+  Então o `medicine_log` é removido e a dose desaparece do histórico.
+
 ---
 
 ## Functional Requirements
@@ -99,6 +111,9 @@ porque o ícone sozinho é ambíguo.
   hardcodar check-mark para status não-`taken`.
 - **FR-007**: O bottom sheet de detalhe (mobile) DEVE exibir um chip/legenda textual do
   status: `taken`→"Tomada", `missed`→"Perdida", `pending`→"Pendente", `skipped`→"Pulada".
+- **FR-008**: `DoseActionSheet` (mobile) DEVE distinguir doses avulsas (`source='log'`) de
+  instâncias agendadas; para avulsas, editar/excluir DEVEM operar no `medicine_log_id` (não
+  `dose_instance_id`). O web já faz isso via `logId` no payload do evento — paridade mobile.
 
 ## Success Criteria
 
@@ -108,6 +123,8 @@ porque o ícone sozinho é ambíguo.
 - **SC-004**: Abrir o detalhe de uma dose `pending`/`missed`/`skipped` mostra o ícone próprio
   do status (igual à listagem), não check-mark cinza.
 - **SC-005**: O detalhe de qualquer dose exibe chip textual do status correspondente.
+- **SC-006**: Editar ou excluir uma dose avulsa/PRN no mobile persiste corretamente (opera
+  no `medicine_log`, não numa `dose_instance` inexistente).
 
 ## Assumptions / Open Questions
 

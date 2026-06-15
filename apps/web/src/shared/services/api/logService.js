@@ -3,7 +3,7 @@ import { supabase, getUserId } from '@shared/utils/supabase'
 import { stockService } from '@stock/services/stockService'
 import { validateLogCreate, validateLogUpdate, validateLogBulkArray } from '@schemas/logSchema'
 import { getStartOfDayISO, getEndOfDayISO, getLastDayOfMonth } from '@utils/dateUtils'
-import { createDoseInstanceRepository } from '@dosiq/core'
+import { createDoseInstanceRepository, parseISO } from '@dosiq/core'
 
 // Repo de instâncias para a âncora de log (S2.6/ADR-048). Usa o mesmo client da sessão
 // (RLS escopa por user_id) — o snap e o markTaken já filtram por protocol_id (AP-A03).
@@ -397,6 +397,27 @@ export const logService = {
       .eq('user_id', await getUserId())
 
     if (error) throw error
+
+    // 4. Reverter instância ancorada: log deletado → instância não pode ficar
+    //    como "ghost taken" (medicine_log_id nulo + status=taken). FK ON DELETE SET NULL
+    //    já limpa medicine_log_id; aqui revertemos o status para missed/pending (AP-XXX).
+    if (log.dose_instance_id) {
+      try {
+        const { data: inst } = await supabase
+          .from('dose_instances')
+          .select('scheduled_for, tolerance_minutes')
+          .eq('id', log.dose_instance_id)
+          .single()
+        if (inst) {
+          const tolMs = (inst.tolerance_minutes ?? 120) * 60 * 1000
+          const newStatus = Date.now() > parseISO(inst.scheduled_for).getTime() + tolMs ? 'missed' : 'pending'
+          await doseInstanceRepo.revertToUnregistered(log.dose_instance_id, newStatus)
+        }
+      } catch (revertError) {
+        // Best-effort: log já foi deletado — não reverter o delete por falha no revert.
+        console.warn('[logService.delete] falha ao reverter instância:', revertError)
+      }
+    }
   },
 
   /**

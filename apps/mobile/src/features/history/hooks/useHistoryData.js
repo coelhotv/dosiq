@@ -64,33 +64,68 @@ async function enrichInstancesWithProtocol(instances) {
   })
 }
 
+async function fetchOrphanLogs(userId, fromIso, toIso) {
+  const { data, error } = await supabase
+    .from('medicine_logs')
+    .select('id, protocol_id, medicine_id, taken_at, quantity_taken, notes')
+    .eq('user_id', userId)
+    .is('dose_instance_id', null)
+    .gte('taken_at', fromIso)
+    .lte('taken_at', toIso)
+    .order('taken_at', { ascending: false })
+  if (error || !data) return []
+  return data
+}
+
+// Normaliza log avulso para o mesmo shape de dose_instance consumido por DoseHistoryList.
+// scheduled_for = taken_at: permite que o filtro de dia e o sort funcionem sem mudança.
+// dosage_per_intake = quantity_taken: exibe a quantidade real tomada (não a do protocolo).
+function normalizeOrphanLog(log) {
+  return {
+    ...log,
+    id: `log:${log.id}`,
+    logId: log.id,
+    source: 'log',
+    scheduled_for: log.taken_at,
+    status: 'taken',
+    is_orphan: true,
+    dosage_per_intake: log.quantity_taken,
+  }
+}
+
 // Dias carregados para trás e para frente
 const HISTORY_PAST_DAYS = 30
 const HISTORY_FUTURE_DAYS = 7
 
 export function useHistoryData() {
-  const [instances, setInstances] = useState([])
+  // Separados para KPIs: aderência/streak usam só dose_instances (ADR-054)
+  const [doseInstances, setDoseInstances] = useState([])
+  const [orphanItems, setOrphanItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedDay, setSelectedDay] = useState(getTodayLocal())
   // Timezone precisa estar antes dos memos que dependem dela
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
 
+  // Lista combinada para renderização (instances + logs avulsos)
+  const instances = useMemo(() => [...doseInstances, ...orphanItems], [doseInstances, orphanItems])
+
   const kpis = useMemo(() => {
-    const adherenceData = computeAdherenceFromInstances(instances)
+    // Aderência e streak: dose_instances apenas (ADR-054 / AP-193)
+    const adherenceData = computeAdherenceFromInstances(doseInstances)
     const adherence30d = Math.round(adherenceData.rate * 100)
-    const streak = computeStreakFromInstances(instances)
+    const streak = computeStreakFromInstances(doseInstances)
 
     const now = getTodayLocal()
     const monthPrefix = now.slice(0, 7) // "YYYY-MM"
-    const dosesThisMonth = instances.filter(inst => {
-      if (inst.status !== 'taken') return false
-      // Comparar data local do scheduled_for com o mês corrente
-      return utcToLocalDateStr(inst.scheduled_for, timezone).startsWith(monthPrefix)
+    // Conta taken de instâncias + avulsas no mês
+    const dosesThisMonth = instances.filter(item => {
+      if (item.status !== 'taken') return false
+      return utcToLocalDateStr(item.scheduled_for, timezone).startsWith(monthPrefix)
     }).length
 
     return { adherence30d, streak, dosesThisMonth }
-  }, [instances, timezone])
+  }, [doseInstances, instances, timezone])
 
   // Limites de navegação derivados da janela carregada
   const today = getTodayLocal()
@@ -99,8 +134,8 @@ export function useHistoryData() {
 
   const instancesForDay = useMemo(() => {
     return instances
-      .filter(inst => inst.status !== 'skipped_paused')
-      .filter(inst => utcToLocalDateStr(inst.scheduled_for, timezone) === selectedDay)
+      .filter(item => item.status !== 'skipped_paused')
+      .filter(item => utcToLocalDateStr(item.scheduled_for, timezone) === selectedDay)
   }, [instances, selectedDay, timezone])
 
   const load = useCallback(async () => {
@@ -116,8 +151,13 @@ export function useHistoryData() {
 
       const userId = session.data.session.user.id
 
-      const [raw, settings] = await Promise.all([
+      // Janela para busca de logs avulsos (mesma lógica dos dose_instances)
+      const fromIso = shiftDateStr(getTodayLocal(), -HISTORY_PAST_DAYS) + 'T00:00:00Z'
+      const toIso = shiftDateStr(getTodayLocal(), HISTORY_FUTURE_DAYS) + 'T23:59:59Z'
+
+      const [raw, rawOrphanLogs, settings] = await Promise.all([
         getDoseInstancesForPeriod(userId, HISTORY_PAST_DAYS, HISTORY_FUTURE_DAYS),
+        fetchOrphanLogs(userId, fromIso, toIso),
         supabase.from('user_settings').select('timezone').eq('user_id', userId).single(),
       ])
 
@@ -125,8 +165,13 @@ export function useHistoryData() {
         startTransition(() => setTimezone(settings.data.timezone))
       }
 
-      const data = await enrichInstancesWithProtocol(raw || [])
-      setInstances(data)
+      const [enrichedInstances, enrichedOrphan] = await Promise.all([
+        enrichInstancesWithProtocol(raw || []),
+        enrichInstancesWithProtocol(rawOrphanLogs),
+      ])
+
+      setDoseInstances(enrichedInstances)
+      setOrphanItems(enrichedOrphan.map(normalizeOrphanLog))
     } catch (err) {
       setError(err?.message || 'Erro ao carregar histórico')
       console.error('[useHistoryData] load:', err)
