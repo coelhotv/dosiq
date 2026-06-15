@@ -20,7 +20,7 @@ import iconv from 'iconv-lite'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const CSV_INPUT = path.join(__dirname, '../public/medicamentos-ativos-anvisa.csv')
+const CSV_INPUT = path.join(__dirname, './medicamentos-ativos-anvisa.csv')
 const DATA_DIR = path.join(__dirname, '../src/features/medications/data')
 const MEDICINE_JSON_OUTPUT = path.join(DATA_DIR, 'medicineDatabase.json')
 const LABORATORY_JSON_OUTPUT = path.join(DATA_DIR, 'laboratoryDatabase.json')

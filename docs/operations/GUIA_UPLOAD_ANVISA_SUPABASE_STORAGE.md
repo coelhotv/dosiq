@@ -7,6 +7,14 @@
 
 ---
 
+## 0. Fonte de dados
+
+- A URL da Anvisa que possui todos os dados abertos é o `https://dados.anvisa.gov.br/dados/`, nela você pode encontrar diversas bases de dados para download
+- A base não processada dos medicamentos está disponível especificamente em `https://dados.anvisa.gov.br/dados/DADOS_ABERTOS_MEDICAMENTOS.csv`
+- É necessário processar o arquivo para que ele fique no formato correto para ser utilizado no app mobile, incluindo a limpeza de registros de testes, a remoção de colunas desnecessárias e de categorias não utilizadas no autocompletar, como 'Baixo Risco', 'Dinamizado', entre outros.
+- A última atualização da base processada foi em **14/06/2024** e o caminho do arquivo fisico está em `scripts/medicamentos-ativos-anvisa-jun26.xlsx`
+- Existe um script em Node.js que realiza o processamento do arquivo e transformação dele em JSON. Ele está disponível em `scripts/process-anvisa.js`, porém é recomendado rever o script antes de executá-lo, pois ele pode ter sido atualizado.
+
 ## 1. Pré-requisitos
 
 - Acesso ao projeto Supabase **`kwqjtdsqkkbebfiaxubb`** (dashboard web)
