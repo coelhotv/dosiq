@@ -29,7 +29,7 @@ Descoberto durante o smoke da Fase B4 (012). Sem impacto no estoque (consumo cor
 Agregado ao spec um segundo gap de **UX no detalhe da dose (mobile)**, do mesmo smoke: o
 bottom sheet de detalhe só renderiza o ícone correto para doses tomadas (check), exibindo
 check-mark cinza para `pending`/`missed`/`skipped`, e não traz rótulo textual do status
-(US4/US5). Mesma família (read-path de histórico/detalhe de dose), Tier 1.
+(US4/US5). Vamos também alterar o ícone padrão de dose tomada para o lucide `circle-check-big` que se aproxima mais do próprio logo do Dosiq. Mesma família (read-path de histórico/detalhe de dose), Tier 1.
 
 ---
 
@@ -68,7 +68,7 @@ da listagem (por status), não um check-mark cinza genérico para tudo que não 
   Então o ícone exibido é o **mesmo** da listagem (paridade), não um check-mark cinza.
 - Dado uma dose `taken`,
   Quando abro o detalhe,
-  Então o ícone de tomada (check) é mantido.
+  Então o ícone de tomada (circle-check-big) é mostrado.
 
 ### US5 — Chip textual de status (mobile) (P1)
 Como paciente, quero um rótulo textual do status no bottom sheet de detalhe,
