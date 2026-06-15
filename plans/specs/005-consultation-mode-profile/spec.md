@@ -1,8 +1,8 @@
 # Feature Specification: Modo Consulta + Apresentação (Mobile + Web)
 
 **Feature Directory**: `plans/specs/005-consultation-mode-profile`
-**Created**: 2026-06-01 · **Revised**: 2026-06-02
-**Status**: draft — não entregue como spec'ado (PO 2026-06-10); pendia 1 decisão de escopo
+**Created**: 2026-06-01 · **Revised**: 2026-06-15
+**Status**: draft — não entregue como spec'ado (PO 2026-06-10); pendia 1 decisão de escopo. **Absorve conceitos do épico 012 (descope da Fase E, 2026-06-15): líquidos, injetáveis e biomarkers.**
 **Tier**: 1 (2 só se escolhida a opção A com migração/rota nova)
 **Artifacts**: `spec.md` + `plan.md` + `tasks.md`
 **Legacy Sources**:
@@ -51,6 +51,21 @@
 **Acceptance Scenarios**:
 1. Given Modo Consulta, When toca compartilhar, Then share sheet (`mock-modoconsulta-sharesheet.png`): **Apresentação** (→ US2) · **Gerar PDF** (spec 007) · **Compartilhar (sistema)** (share nativo do payload textual). **(B/A)** acrescenta o link desktop 24h.
 
+### User Story 4 — Biomarcadores no Modo Consulta (P1) — **absorve 012**
+**Why**: o médico avalia glicemia/peso junto da posologia; o paciente diabético precisa mostrar a
+tendência das medidas, não só as doses.
+**Independent Test**: abrir Modo Consulta de um paciente com medidas; ver a tendência de
+biomarcadores (glicemia/peso) read-only, descritiva (sem meta/zona).
+
+**Acceptance Scenarios**:
+1. Given um paciente com `biomarkers_log`, When abre o Modo Consulta, Then vê a **tendência de
+   medidas** (scatter/resumo da Fase C do 012), read-only, **descritiva** — sem zona/meta/linha-alvo
+   (SaMD); média como número.
+2. Given um paciente **sem** medidas, When abre o Modo Consulta, Then a seção de biomarcadores é
+   omitida graciosamente (sem seção vazia).
+3. Given a tab Meds, When há insulina/GLP-1, Then a dose aparece na unidade de tomada via formatters
+   core ("10 UI"/"1 mg"), não "comprimido" (R-272).
+
 ---
 
 ## Edge Cases
@@ -67,10 +82,25 @@
 
 - **FR-001**: UI alto contraste (AAA, fontes grandes, toques amplos — R-137/138).
 - **FR-002**: `ConsultationModeScreen` mobile full-screen retrato com **4 tabs** (PO-6): `Meds · Aderência · Prescrições+Titulação · Estoque`, footer fixo `padBottom 88`. Dados via `consultationDataService` (web existente) — extrair cálculo p/ `@dosiq/core` se o mobile precisar reusar (não duplicar).
+  - **Absorve 012 (líquidos/injetáveis):** a tab **Meds** e a tab **Estoque** exibem dose/saldo na
+    **unidade de tomada** via formatters core (`formatIntakeDose`/`formatDoseItem`/`isLiquidMedicine`,
+    `@dosiq/core`) — insulina "10 UI", GLP-1 "1 mg", gotas/ml; **nunca** `dosage_unit` cru nem
+    "comprimido" (R-272). Forma injetável + validade biológica (TTL, 012 Fase A) visíveis quando
+    aplicável. Query traz `intake_unit`+`units_per_ml`+`dosage_per_pill` (R-267).
 - **FR-003**: `ConsultationPresentationScreen` (PO-7) — full-bleed alto contraste: faixa teal + anel "Excelente" 36px + 3 KPIs + alerta de prescrições vencidas + footer de gesto.
 - **FR-004**: Share sheet (PO-8): **Apresentação** · **Gerar PDF** (delega à spec 007) · **Compartilhar sistema** (share nativo RN).
 - **FR-005**: Entry point no **Perfil hub › Ferramentas** (linha "Modo Consulta", PO-1/2).
 - **FR-006** *(condicional à decisão B/A)*: link temporário 24h p/ desktop — **(B)** snapshot via `api/share.js` (`expiresInHours:24`); **(A)** rota pública `?key=` + tabela/RLS. **(C)** não-aplicável.
+
+**Absorvidos do 012 (Fase E descoped → biomarkers no Modo Consulta):**
+- **FR-007 (biomarkers no Modo Consulta)**: o Modo Consulta inclui a **tendência de medidas**
+  (`biomarkers_log`: glicemia/peso) read-only — o médico vê a evolução junto da posologia. Reusa a
+  fundação da Fase C do 012 (`biomarkersToEvents` + scatter/tendência da Área de Medidas),
+  **descritivo/SaMD** (sem zona/meta/linha-alvo; média como número). Apresentação: seção dedicada na
+  tab adequada **ou** 5ª tab "Medidas" (decidir no Planning conforme densidade de UI — não inflar as
+  4 tabs canônicas do PO-6). Mobile + espelho web.
+- **FR-008**: paridade — o cruzamento/tendência de medidas reusa o mesmo dado do `consultationDataService`
+  estendido (web) e do core; mobile e web consomem o mesmo agregador (sem duplicar).
 
 ### Key Entities
 
@@ -85,3 +115,6 @@
 - **SC-001**: Contraste texto principal ≥ 7:1.
 - **SC-002**: 4 tabs corretas (sem "Histórico") + Modo Apresentação funcional.
 - **SC-003**: Share sheet com 3 opções; "Gerar PDF" integra a spec 007. Sem superfície nova desnecessária (C/B: sem migração/função — R-090).
+- **SC-004 (ex-012)**: dose/saldo de líquidos/injetáveis no Modo Consulta sempre na unidade de tomada
+  via formatters core (insulina "10 UI"); tendência de biomarcadores (glicemia/peso) visível,
+  descritiva (sem meta/zona — SaMD). Mobile + web.

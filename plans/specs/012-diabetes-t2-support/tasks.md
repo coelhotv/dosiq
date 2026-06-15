@@ -134,11 +134,16 @@
 - [x] T023 [US4] Adesão basal = modo binário (R-248) — confirmar dose fixa; `dose_exactness` fora.
 - [x] T024 [P] [C4] Testes/smoke: 10 UI → 0,10 ml (U-100) por FIFO (verificação, não nova impl.); TTL antes do volume; render via formatter (R-272); regressão sólido/gotas/ml intacta.
 
-## Phase E — Export clínico (PR 5)
+## Phase E — Export clínico (PR 5) — 🚫 DESCOPED 2026-06-15 → realocada p/ spec 007
 
-- [ ] T025 [C1] Mapear o caminho real do relatório PDF clínico (Spec 007 base).
-- [ ] T026 [US5] Relatório cruza dose × `biomarkers_log` por período/dia, server-side (R-249), descritivo (sem recomendação — SaMD).
-- [ ] T027 [P] [C4] Testes: agregação server-side; PDF sem cálculo de dose.
+> Decisão PO 2026-06-15: a Fase E **não** será executada no escopo do 012. O FR-016
+> (cruzamento dose × biomarcador no PDF) foi movido p/ a **spec 007**; os conceitos do 012
+> (líquidos/injetáveis/biomarkers) foram absorvidos por 005/006/007/008. Tasks abaixo
+> mantidas como referência histórica (não executar aqui).
+
+- [~] ~~T025 [C1] Mapear o caminho real do relatório PDF clínico (Spec 007 base).~~ → spec 007
+- [~] ~~T026 [US5] Relatório cruza dose × `biomarkers_log` por período/dia, server-side (R-249), descritivo (SaMD).~~ → spec 007 (FR-016)
+- [~] ~~T027 [P] [C4] Testes: agregação server-side; PDF sem cálculo de dose.~~ → spec 007
 
 ## Quality Gates & Record (cada PR)
 
@@ -147,7 +152,7 @@
 - [ ] T030 [C5] ADR-059..062 → accepted antes do código da fase respectiva; catalogar CON `biomarkers_log`. PR por fase; Gemini + smoke PO + aprovação humana (R-060). Nunca auto-merge.
 
 ## Dependencies
-022 mergeada → A. B e C paralelizáveis após A. D depende de C. E depende de C+D.
+022 mergeada → A. B e C paralelizáveis após A. D depende de C. ~~E depende de C+D.~~ (E descoped → 007)
 
 ## Traceability
 FR-001..004 + 002(prefill)/004b → A (T002–T007, T005b) · FR-005..008 + 005b/008b → B (T008–T012, T011b) · FR-009/010/011/012 + 010b/011b/012b → C (T014–T019, T017b, T018b, T018c) · FR-013/013b/013c/014/015/015b → D (T021–T024, **T021b**, **T022b**, **T022c**) · FR-016 → E (T026). US3b → T018c.

@@ -1,11 +1,16 @@
 # Feature Specification: Public Emergency QR Card
 
 **Feature Directory**: `plans/specs/006-public-emergency-qr-card`  
-**Created**: 2026-06-01  
-**Status**: draft
+**Created**: 2026-06-01 · **Revised**: 2026-06-15
+**Status**: draft — **absorve conceitos do épico 012 (descope da Fase E, 2026-06-15): líquidos e injetáveis** (sem biomarkers — medida pontual não é dado de socorro)
 **Migration Status**: migrated  
 **Legacy Sources**:
 - `plans/backlog-unified_app_2026/PHASE_5_6_PARITY_AND_BEYOND.md` §F6.1
+
+> **✅ Absorve 012 (líquidos/injetáveis, 2026-06-15):** "Medicamentos Críticos/Contraindicações"
+> (FR-003) deve exibir a dose na **unidade de tomada** via formatters core (insulina "10 UI", GLP-1
+> "1 mg") e indicar **forma injetável** — informação relevante p/ o socorrista. **Biomarkers NÃO
+> entram** no cartão (glicemia pontual não é dado de emergência soberano; fica em 005/007/008).
 
 ---
 
@@ -47,9 +52,10 @@ Em uma situação crítica de acidente ou desmaio presencial, a velocidade de ac
 
 - **FR-001:** Geração de QR Code dinâmico na ProfileScreen do paciente contendo a URL: `dosiq.app/emergency/:patient_id?auth_token=:token`.
 - **FR-002:** Rota web pública e ultraleve (`bundle size < 50kB`) com renderização otimizada para navegadores móveis sem requisição de login.
-- **FR-003:** A tela de socorrista exibe apenas: Alergias, Tipo Sanguíneo, Condições Clínicas, Medicamentos Críticos/Contraindicações e Contatos de Emergência.
+- **FR-003:** A tela de socorrista exibe apenas: Alergias, Tipo Sanguíneo, Condições Clínicas, Medicamentos Críticos/Contraindicações e Contatos de Emergência. **(012)** Em "Medicamentos Críticos", a dose de líquidos/injetáveis usa os formatters core (`formatIntakeDose`/`isLiquidMedicine`, `@dosiq/core`) na unidade de tomada — insulina "10 UI", GLP-1 "1 mg" — e marca **forma injetável**; **nunca** `dosage_unit` cru nem "comprimido" (R-272). Read-path traz `intake_unit`+`units_per_ml`+`dosage_per_pill` (R-267).
 - **FR-004:** Botão "Revogar Acesso/Gerar Novo Token" no aplicativo nativo que altera de forma imediata o token correspondente no banco.
 - **FR-005:** Toda a modelagem e validação dos dados de emergência deve obedecer rigorosamente ao schema Zod canônico `@dosiq/core/schemas/emergencyProfileSchema.js` (R-021).
+- **FR-006 (012):** Quando um medicamento crítico for injetável/líquido, o payload de emergência carrega os campos necessários (`intake_unit`, `units_per_ml`, `dosage_per_pill`, `presentation`) p/ os formatters core renderizarem a dose correta na página pública — paridade mobile (geração do QR/payload) ↔ web (página pública ultraleve, mantendo bundle < 50kB; formatters core são puros e leves).
 
 ### Key Entities
 
@@ -62,3 +68,4 @@ Em uma situação crítica de acidente ou desmaio presencial, a velocidade de ac
 
 - **SC-001:** Tempo de carregamento visual da página pública inferior a 1 segundo no Lighthouse Mobile sob conexões instáveis.
 - **SC-002:** Segurança RLS rígida: acesso via SELECT é bloqueado para qualquer requisição que não forneça o `emergency_token` ativo e correspondente.
+- **SC-003 (012):** medicamentos críticos injetáveis/líquidos aparecem na unidade de tomada correta (insulina "10 UI", não "10 un.") via formatters core, com indicação de forma injetável; página pública mantém bundle < 50kB.

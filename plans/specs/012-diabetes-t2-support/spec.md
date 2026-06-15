@@ -57,7 +57,17 @@ alarme.
 | **B** | GLP-1 (mg, semanal, titulação) | T2 + GLP-1 | Fase A |
 | **C** | `biomarkers_log` genérico + fast-logging + timeline híbrida | todos (glicemia) | FP-3 (R-252) |
 | **D** | Insulina basal (parede UI/volume) | T2 + insulina | Fases A, C, spec 022 |
-| **E** | Export clínico (dose × biomarcadores por período) | todos | Fases C, D |
+| ~~**E**~~ | ~~Export clínico (dose × biomarcadores por período)~~ — **DESCOPED 2026-06-15** | — | — |
+
+> **⚠️ Fase E DESCOPED do 012 (decisão PO 2026-06-15) → escopo redistribuído.** O export clínico
+> (cruzamento dose × biomarcador por período) **não** será entregue dentro do 012. O FR-016 foi
+> **realocado para a spec 007** (Relatório Médico em PDF), que é o destino natural do export. Em
+> paralelo, os conceitos do épico 012 (líquidos, injetáveis, biomarkers) foram absorvidos pelas
+> specs de apresentação/export do app: **005** (Modo Consulta — líquidos/injetáveis/biomarkers),
+> **006** (Cartão de Emergência — líquidos/injetáveis), **007** (PDF — líquidos/injetáveis/
+> biomarkers + **FR-016**), **008** (Export LGPD — líquidos/injetáveis/biomarkers). Ver
+> `## Requirements` Fase E abaixo (mantido como referência histórica) e a nota em cada spec destino.
+> **Com isso o épico 012 fecha em A→D** (Fase D entregue em #667).
 
 Ordem-chave: **GLP-1 antes de insulina** (mg evita a parede UI → valor antes); biomarkers entre
 elas (insulina integra; GLP-1 opcional). Staging de PR detalhado em `tasks.md`.
@@ -201,7 +211,8 @@ não de implementação do núcleo.
    regra estabelecida no smoke 022 Fase C). Toda query que alimenta render de dose de insulina
    traz `intake_unit`+`units_per_ml` (**R-267** read-path completeness).
 
-### User Story 5 — Exportação clínica (dose × biomarcadores) (P2) — Fase E
+### User Story 5 — Exportação clínica (dose × biomarcadores) (P2) — ~~Fase E~~ 🚫 DESCOPED → spec 007
+> **Realocada p/ 007** (2026-06-15). Texto mantido como referência histórica.
 **Why**: comunicação ruim com o médico é fator de não-adesão; um relatório que cruza dose e
 glicemia por período do dia ajuda a decisão clínica.
 **Independent Test**: gerar relatório de um período; confirmar que cruza doses e biomarcadores
@@ -552,9 +563,11 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   case canônico (`UI` uppercase; `mg`/`ml` lowercase). Cobre push, Telegram e alarme crítico
   (mesmos builders). Testes jest em `server/` (sólido/gotas/ml/UI + case).
 
-**Fase E — Export clínico**
-- **FR-016**: Relatório PDF cruza doses × biomarcadores por período/dia, agregação server-side
-  (R-249, Constitution III), descritivo (sem recomendação de dose — SaMD).
+**Fase E — Export clínico** — 🚫 **DESCOPED 2026-06-15 → realocado p/ spec 007**
+- ~~**FR-016**~~ **(MOVIDO PARA 007)**: Relatório PDF cruza doses × biomarcadores por período/dia,
+  agregação server-side (R-249, Constitution III), descritivo (sem recomendação de dose — SaMD).
+  **Entrega agora vive na spec 007** (Relatório Médico em PDF) como FR central; a 007 reusa toda a
+  fundação da Fase C (`biomarkers_log`, `biomarkersToEvents`) + formatters core de líquidos.
 
 ### Key Entities
 - **Medicine**: `presentation` (enum PT — FR-001; **já existe em prod via 022**) + `units_per_ml`
@@ -609,8 +622,8 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   `consume_stock_fifo`; Fase D valida por smoke, não reimplementa**); adesão binária; unidade de
   administração respeitada via formatters core (R-272, sem suposição pill-cêntrica); inputs
   numéricos normalizam vírgula PT-BR (R-270).
-- **SC-005**: Export clínico cruza dose × biomarcador server-side, descritivo (zero recomendação
-  de dose — linha SaMD preservada em todo o épico).
+- ~~**SC-005**~~ 🚫 **DESCOPED → spec 007**: Export clínico cruza dose × biomarcador server-side,
+  descritivo (zero recomendação de dose — linha SaMD preservada). Critério migra p/ a 007.
 - **SC-006**: Constitution: Health Data Safety (I), Mobile-First (II), Server-Agg (III), Timezone
   (IV), Contract/ADR (V) e **Transparência Radical (IX — v0.2.0: falha nunca silenciada)**
   respeitados; novos schemas Zod↔SQL sincronizados (R-082/R-271); render de dose via formatter
@@ -648,12 +661,16 @@ agrupados por período/dia, em PDF, com agregação server-side (Constitution II
   estado real em prod** (colunas/RPC/CHECK/schemas Zod) via grep/MCP antes de planejar — não
   reespecificar o que já existe (R-267/R-270 preflight).
 
-**Coordenação com specs do backlog (revisão CPTO 2026-06-10):**
+**Coordenação com specs do backlog (revisão CPTO 2026-06-10; atualizada 2026-06-15 — Fase E descoped):**
 - **008 (export LGPD — backlog, não entregue):** `biomarkers_log` é dado sensível de saúde →
-  **DEVE** entrar no export. Decisão: requisito adicionado **na 008** (origem, mais barato — nota
-  de coordenação lá); a 012 não carrega a entrega.
-- **007 (PDF médico — backlog, não entregue):** cruzamento dose×biomarcador fica na **Fase E da
-  012** (já especificado, FR-016); a 007 ganhou nota p/ não duplicar e reusar a agregação da Fase E.
+  **DEVE** entrar no export. Requisito **promovido a FR-006 na 008** (2026-06-15) + colunas de
+  líquidos/injetáveis do 012; a 012 não carrega a entrega.
+- **007 (PDF médico — backlog, não entregue):** ⚠️ **ATUALIZADO 2026-06-15** — com a **Fase E
+  descoped**, o cruzamento dose×biomarcador (ex-FR-016) **migrou integralmente p/ a 007** (lá vira
+  FR-005/US3), que reusa a fundação da Fase C (`biomarkers_log`/`biomarkersToEvents`) + formatters
+  de líquidos. A 012 **não** entrega export clínico.
+- **005 (Modo Consulta) / 006 (Cartão emergência):** também absorveram conceitos do 012 (2026-06-15)
+  — 005: líquidos/injetáveis + tendência de biomarcadores; 006: líquidos/injetáveis (sem biomarkers).
 - **009 (modo cuidador — spec'ed, NÃO implementado; próximo grande épico):** permissões de
   visualização/registro de **medidas** pelo cuidador adicionadas como requisito na 009 (nota de
   coordenação) — RLS de `biomarkers_log` nasce `user_id=auth.uid()` na 012; o modelo de acesso do
