@@ -307,16 +307,20 @@ export default function DoseActionSheet({
 
   const handleSaveEdit = () => {
     if (!takenAtDate || !quantityTaken) return
+    // PT-BR: teclado numérico usa vírgula decimal — trocar por ponto antes do parseFloat,
+    // senão "1,5" trunca para "1" (perda de precisão na quantidade).
+    const parsedQty = parseFloat(String(quantityTaken).replace(',', '.'))
+    if (isNaN(parsedQty)) return
     if (isOrphan) {
       onUpdateLog?.(instance.logId, {
         taken_at: takenAtDate.toISOString(),
-        quantity_taken: parseFloat(quantityTaken),
+        quantity_taken: parsedQty,
       })
     } else {
       onRegisterRetro?.(
         {
           taken_at: takenAtDate.toISOString(),
-          quantity_taken: parseFloat(quantityTaken),
+          quantity_taken: parsedQty,
           medicine_id: instance?.medicine_id,
           protocol_id: instance?.protocol_id,
         },
