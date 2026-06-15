@@ -56,6 +56,20 @@ Simples para quem mais precisa. 💙
 
 ## [Unreleased]
 
+### 030 — Histórico expõe doses avulsas/PRN + fixes de mutação de log (PR #668)
+
+#### Core (@dosiq/core)
+- **Fixed** (`patch`): `isCoveredBySlot` (`timelineService`) construía slots de tolerância temporal para instâncias `taken`, suprimindo uma segunda dose real do dia como "duplicata" (caso Lantus 09/jun, 63min após `scheduled_for`, tol 120min). Slots agora só para `pending`/`missed`; `taken` já deduplica via `collectConsumedLogIds` (AP-193 bidirecional).
+
+#### App web (@dosiq/web 4.8.0 → 4.8.1 — patch: correção de bug)
+- **Fixed** (`patch`, AP-231): **ghost taken** — `logService.delete` deletava o `medicine_log` sem reverter a `dose_instance` ancorada. A FK `ON DELETE SET NULL` limpava `medicine_log_id` mas deixava `status='taken'` → dose fantasma no histórico (sem edit/delete) contando como tomada. Agora reverte para `missed`/`pending` (por janela de tolerância) pós-delete.
+
+#### App mobile (0.17.0 → 0.17.1 — patch: correção de bug)
+- **Added** (`patch`, US1/US2/US6): histórico expõe **doses avulsas** (logs sem `dose_instance`) e **PRN**; ícone `CircleCheckBig` + chip textual de status no detalhe; editar/excluir de avulsa opera no `medicine_log_id` (não `dose_instance_id`).
+- **Fixed** (`patch`, AP-231): **furo de estoque** — `useHistoryMutation` mutava `medicine_logs` direto via cliente, bypassando o FIFO. Lógica movida para `doseService.updateOrphanLog`/`deleteOrphanLog` (service-first): restaura+reconsome estoque (`restore_stock_for_log`/`consume_stock_fifo`), espelhando `logService` web + `undoDose`.
+- **Fixed** (`patch`): hint de equivalência de dose **líquida injetável** no `DoseActionSheet` usava `formatActiveIngredientFormula` (multiplicava `qty × dosage_per_pill`, ex.: 10 UI → "1.000 ui/ml"); agora `formatIntakeDose` p/ líquidos (ex.: "10 UI ≈ 0,1 ml").
+- **Fixed** (`patch`, review #668): `parseFloat` da quantidade não sanitizava **vírgula decimal PT-BR** (`1,5` → `1`); janela UTC de busca de avulsos (`T00/T23:59Z` sobre data local) perdia doses na borda por fuso (GMT-3 pós-21h cai no dia seguinte em UTC) → busca expandida ±1 dia, agrupamento por dia local no filtro em memória.
+
 ### 012 Fase D — Frase de dose líquida nos pushes (FR-015b)
 
 #### Backend/serverless (notificações — `no-user-impact` de versão; correção de texto)
