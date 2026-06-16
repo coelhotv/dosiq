@@ -1,11 +1,11 @@
 {
-  "version": "1.1.1",
-  "generatedAt": "2026-06-16T22:26:34Z",
+  "version": "1.1.2",
+  "generatedAt": "2026-06-16T23:18:43Z",
   "files": {
     "medicineDatabase": {
       "path": "anvisa/v1/medicineDatabase.json",
-      "size": 1354115,
-      "count": 6991
+      "size": 1351097,
+      "count": 6976
     },
     "laboratoryDatabase": {
       "path": "anvisa/v1/laboratoryDatabase.json",
