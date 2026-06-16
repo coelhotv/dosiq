@@ -71,6 +71,7 @@ tendência (2 séries: sistólica/diastólica) e o card na timeline mostrando "1
   B), só estendendo p/ o 2º campo quando o tipo é PA.
 - **FR-002**: Validação via `biomarkerLogSchema` + `applyPaRefine` (core, já existentes) — ambos os
   componentes obrigatórios; vírgula PT-BR normalizada (R-270/R-276). Nada de PA parcial.
+- **FR-002b**: Contexto de PA opcional com chips: `ao_acordar` · `em_repouso` · `apos_exercicio` · `ao_dormir` · `pos_medicacao`. Enum `BIOMARKER_PA_CONTEXTS` separado de glicemia; exibido quando presente nos cards.
 - **FR-003**: Exibição composta "**S por D mmHg**" em todos os renderizadores de medida (card da
   timeline, último registro, lista do histórico, detalhe) — helper de formatação no core (`@dosiq/core`),
   reusado web↔mobile (não duplicar).
@@ -92,7 +93,5 @@ tendência (2 séries: sistólica/diastólica) e o card na timeline mostrando "1
 ## Assumptions / Open Questions
 
 - ✅ `biomarkers_log.value_secondary` + `applyPaRefine` já em prod (Fase C do 012) — só falta UI.
-- `context` de PA (jejum/etc.) provavelmente **não se aplica** — confirmar no Planning se PA tem
-  contexto próprio (ex.: "em repouso") ou nenhum.
-- [NEEDS CLARIFICATION: representação visual das 2 séries na tendência — 2 cores neutras vs 1 par
-  conectado] — decidir no Planning sem violar SaMD (cor = tipo, nunca qualidade).
+- ✅ Contextos PA definidos no Planning: `ao_acordar`, `em_repouso`, `apos_exercicio`, `ao_dormir`, `pos_medicacao`. Enum separado de glicemia (`BIOMARKER_PA_CONTEXTS`).
+- ✅ Representação visual das 2 séries na tendência: 2 círculos/pontos por leitura em 2 cores neutras (sistólica = `info`, diastólica = `neutral[400]`). Cor = identidade de série, nunca qualidade (SaMD ok).
