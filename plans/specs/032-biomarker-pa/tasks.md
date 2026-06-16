@@ -2,7 +2,7 @@
 
 **Spec**: plans/specs/032-biomarker-pa/spec.md
 **Plan**: plans/specs/032-biomarker-pa/plan.md
-**Tier**: 2 (eng-review + ADR-070) | **Branch**: feature/sprint-W25/032-biomarker-pa
+**Tier**: 2 (eng-review + ADR-070) | **Status**: ✅ ENTREGUE (PR #669 + #670 mergeados 2026-06-16)
 
 ---
 
