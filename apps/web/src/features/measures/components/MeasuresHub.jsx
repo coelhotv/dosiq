@@ -5,12 +5,12 @@
 // zona/meta/linha; cor diferencia tipo, nunca qualidade.
 
 import { useState } from 'react'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS } from '@dosiq/core'
+import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS, biomarkerCardLabel } from '@dosiq/core'
 import { useMeasures } from '@features/measures/hooks/useMeasures'
 import ScatterTrend from './ScatterTrend'
 import './MeasuresHub.css'
 
-const HUB_TYPES = ['glicemia', 'peso']
+const HUB_TYPES = ['glicemia', 'peso', 'pressao_arterial']
 
 export default function MeasuresHub({ initialType = 'glicemia' }) {
   const [type, setType] = useState(initialType)
@@ -39,7 +39,7 @@ export default function MeasuresHub({ initialType = 'glicemia' }) {
 
       {error && <div className="hhr-banner hhr-banner--error">{error}</div>}
 
-      <ScatterTrend items={items} unit={BIOMARKER_TYPE_UNITS[type]} typeLabel={BIOMARKER_TYPE_LABELS[type]} />
+      <ScatterTrend items={items} unit={BIOMARKER_TYPE_UNITS[type]} typeLabel={biomarkerCardLabel(type)} isPa={type === 'pressao_arterial'} />
     </div>
   )
 }

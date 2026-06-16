@@ -4,13 +4,10 @@
 // SaMD (ADR-062): cor diferencia TIPO, nunca qualidade. Read-only (registro já ocorrido).
 
 import { Ruler } from 'lucide-react'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS } from '@dosiq/core'
+import { biomarkerCardLabel, formatBiomarkerContext, formatBiomarkerDisplay } from '@dosiq/core'
 
-function formatMeasure(m) {
-  const v = String(m.value).replace('.', ',')
-  if (m.value_secondary != null) return `${v}/${String(m.value_secondary).replace('.', ',')} ${m.unit}`
-  return `${v} ${m.unit}`
-}
+// Display "S por D unit" (PA) / "V unit" — helper core (fonte única, 032).
+const formatMeasure = formatBiomarkerDisplay
 
 /**
  * @param {Object} props
@@ -18,8 +15,8 @@ function formatMeasure(m) {
  * @param {string} props.scheduledTime - HH:MM local (já derivado pelo container, p/ exibição).
  */
 export default function MeasureTimelineCard({ measure, scheduledTime }) {
-  const label = BIOMARKER_TYPE_LABELS[measure.type] || measure.type
-  const ctx = measure.context ? BIOMARKER_CONTEXT_LABELS[measure.context] : null
+  const label = biomarkerCardLabel(measure.type)
+  const ctx = formatBiomarkerContext(measure.context)
 
   return (
     <div className="cronograma-dose-card cronograma-dose-card--measure">
@@ -30,7 +27,7 @@ export default function MeasureTimelineCard({ measure, scheduledTime }) {
       <div className="cronograma-dose-card__main">
         <div className="cronograma-dose-card__details">
           <div className="cronograma-dose-card__name-row">
-            <span className="cronograma-dose-card__title">{label} {formatMeasure(measure)}</span>
+            <span className="cronograma-dose-card__title">{label}: {formatMeasure(measure)}</span>
           </div>
           {ctx && (
             <div className="cronograma-dose-card__intake-row">

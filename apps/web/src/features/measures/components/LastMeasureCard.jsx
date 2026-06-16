@@ -4,14 +4,11 @@
 // SaMD (ADR-062): sem cor/copy de qualidade. Tap leva ao histórico do tipo correto (deeplink).
 
 import { Ruler, ChevronRight, Plus } from 'lucide-react'
-import { BIOMARKER_TYPE_LABELS, formatTimePtBR } from '@dosiq/core'
+import { biomarkerCardLabel, formatBiomarkerDisplay, formatTimePtBR } from '@dosiq/core'
 import './LastMeasureCard.css'
 
-function formatMeasure(m) {
-  const v = String(m.value).replace('.', ',')
-  if (m.value_secondary != null) return `${v}/${String(m.value_secondary).replace('.', ',')} ${m.unit}`
-  return `${v} ${m.unit}`
-}
+// Display "S por D unit" (PA) / "V unit" — helper core (fonte única, 032).
+const formatMeasure = formatBiomarkerDisplay
 
 /**
  * @param {Object} props
@@ -30,7 +27,7 @@ export default function LastMeasureCard({ measure, onOpenHistory, onRegister }) 
     )
   }
 
-  const label = BIOMARKER_TYPE_LABELS[measure.type] || measure.type
+  const label = biomarkerCardLabel(measure.type)
   return (
     <button type="button" className="lmc-card" onClick={() => onOpenHistory?.(measure.type)}>
       <span className="lmc-card__icon"><Ruler size={18} aria-hidden="true" /></span>
