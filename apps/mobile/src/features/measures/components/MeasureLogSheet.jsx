@@ -198,56 +198,45 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
             <Text style={styles.lockedType}>{BIOMARKER_TYPE_LABELS[type]}</Text>
           )}
 
-          {/* Valor gigante + unidade fixa. PA = 2 campos (sistólica "por" diastólica). */}
-          {isPa ? (
-            <View style={styles.paRow}>
-              <View style={styles.paField}>
-                <TextInput
-                  style={[styles.paInput, errorMsg && styles.valueInputError]}
-                  value={value}
-                  onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
-                  keyboardType="decimal-pad"
-                  placeholder="120"
-                  placeholderTextColor={colors.neutral[300]}
-                  maxLength={3}
-                  autoFocus
-                  returnKeyType="next"
-                  accessibilityLabel="Sistólica em mmHg"
-                />
-                <Text style={styles.paFieldLabel}>Sistólica</Text>
-              </View>
-              <Text style={styles.paSep}>por</Text>
-              <View style={styles.paField}>
-                <TextInput
-                  style={[styles.paInput, errorMsg && styles.valueInputError]}
-                  value={valueSec}
-                  onChangeText={(v) => { setValueSec(v); if (errorMsg) setErrorMsg(null) }}
-                  keyboardType="decimal-pad"
-                  placeholder="80"
-                  placeholderTextColor={colors.neutral[300]}
-                  maxLength={3}
-                  accessibilityLabel="Diastólica em mmHg"
-                />
-                <Text style={styles.paFieldLabel}>Diastólica</Text>
-              </View>
-              <Text style={styles.unit}>{unit}</Text>
-            </View>
-          ) : (
-            <View style={styles.valueRow}>
+          {/* Valor gigante + unidade fixa. O campo principal é SEMPRE o mesmo TextInput
+              (mesma posição na árvore) — trocar de tipo não o desmonta, então teclado e
+              caret persistem (sem re-foco programático, que quebra o caret no iOS). PA
+              apenas ADICIONA o 2º campo (diastólica) como irmão. */}
+          <View style={styles.valueRow}>
+            <View style={styles.paField}>
               <TextInput
-                style={[styles.valueInput, errorMsg && styles.valueInputError]}
+                style={[isPa ? styles.paInput : styles.valueInput, errorMsg && styles.valueInputError]}
                 value={value}
                 onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
                 keyboardType="decimal-pad"
                 placeholder="0"
                 placeholderTextColor={colors.neutral[300]}
-                maxLength={6}
+                maxLength={isPa ? 3 : 6}
                 autoFocus
-                accessibilityLabel={`Valor da medida em ${unit}`}
+                accessibilityLabel={isPa ? 'Sistólica em mmHg' : `Valor da medida em ${unit}`}
               />
-              <Text style={styles.unit}>{unit}</Text>
+              {isPa && <Text style={styles.paFieldLabel}>Sistólica</Text>}
             </View>
-          )}
+            {isPa && (
+              <>
+                <Text style={styles.paSep}>por</Text>
+                <View style={styles.paField}>
+                  <TextInput
+                    style={[styles.paInput, errorMsg && styles.valueInputError]}
+                    value={valueSec}
+                    onChangeText={(v) => { setValueSec(v); if (errorMsg) setErrorMsg(null) }}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    placeholderTextColor={colors.neutral[300]}
+                    maxLength={3}
+                    accessibilityLabel="Diastólica em mmHg"
+                  />
+                  <Text style={styles.paFieldLabel}>Diastólica</Text>
+                </View>
+              </>
+            )}
+            <Text style={styles.unit}>{unit}</Text>
+          </View>
 
           {/* Caption de erro — altura-neutra (não empurra layout) */}
           <Text style={[styles.caption, !errorMsg && styles.captionHidden]}>{errorMsg || ' '}</Text>
@@ -385,8 +374,7 @@ const styles = StyleSheet.create({
   },
   valueInputError: { color: colors.status.error },
   unit: { fontSize: 22, fontWeight: '600', color: colors.text.muted },
-  // PA — 2 campos (sistólica "por" diastólica), unidade à direita.
-  paRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: spacing[2] },
+  // PA — 2 campos (sistólica "por" diastólica), unidade à direita. Reusa valueRow no container.
   paField: { alignItems: 'center' },
   paInput: {
     fontSize: 48, fontWeight: '700', color: colors.text.primary, textAlign: 'center', minWidth: 72,

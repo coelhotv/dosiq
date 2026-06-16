@@ -23,6 +23,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Formatação de medidas unificada no core (`formatBiomarkerDisplay`/`formatBiomarkerContext`) —
   consolida 4 cópias locais; padrão de PA passou de "120/80" para "120 por 80".
 
+### Corrigido
+- **Cursor do campo de PA no iOS** (mobile `0.18.1`): ao abrir o sheet de medida em PA ou trocar de
+  tipo, o cursor não aparecia na sistólica e o teclado fechava. Causa: a árvore do input era trocada
+  por tipo (desmontava o campo focado) e o placeholder divergente (`120`/`80`) re-media o input,
+  sumindo o caret. Agora o campo do valor é o mesmo elemento em todos os tipos (foco/teclado
+  persistem) e o placeholder é `0` em todos.
+
 > **Migração:** `20260616_drop_biomarker_context_check.sql` (`DROP CONSTRAINT` — só afrouxa; valores
 > legados permanecem válidos; sem migração de dados).
 
