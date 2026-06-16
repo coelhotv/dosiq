@@ -76,6 +76,11 @@
   fill: var(--color-info, #0288d1);
 }
 
+/* PA — diastólica em cinza claro neutro; cor = série, nunca qualidade (SaMD) */
+.scatter__point--dia {
+  fill: var(--color-outline-variant, #cfd8dc);
+}
+
 .scatter__ylabels {
   position: absolute;
   left: 0;

@@ -12,12 +12,20 @@ import {
   BIOMARKER_TYPE_LABELS,
   BIOMARKER_CONTEXTS,
   BIOMARKER_CONTEXT_LABELS,
+  BIOMARKER_PA_CONTEXTS,
+  BIOMARKER_PA_CONTEXT_LABELS,
 } from '@dosiq/core'
 import Modal from '@shared/components/ui/Modal'
 import './MeasureLogModal.css'
 
-// Tipos com UI no v1. PA/batimentos não entram aqui (schema-ready no core).
-const UI_TYPES = ['glicemia', 'peso']
+// Tipos com UI. PA entra na spec 032 (2 campos). batimentos = schema-ready.
+const UI_TYPES = ['glicemia', 'peso', 'pressao_arterial']
+
+// Contexto por família (ADR-070). Tipos ausentes = sem contexto.
+const CONTEXTS_BY_TYPE = {
+  glicemia: { values: BIOMARKER_CONTEXTS, labels: BIOMARKER_CONTEXT_LABELS },
+  pressao_arterial: { values: BIOMARKER_PA_CONTEXTS, labels: BIOMARKER_PA_CONTEXT_LABELS },
+}
 
 /**
  * @param {Object} props
@@ -35,16 +43,23 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
 
   const [type, setType] = useState(fixedType || defaultType)
   const [value, setValue] = useState(editItem ? String(editItem.value).replace('.', ',') : '')
+  const [valueSec, setValueSec] = useState(
+    editItem?.value_secondary != null ? String(editItem.value_secondary).replace('.', ',') : ''
+  )
   const [context, setContext] = useState(editItem?.context ?? null)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
 
   const unit = BIOMARKER_TYPE_UNITS[type]
-  const showContext = type === 'glicemia'
+  const isPa = type === 'pressao_arterial'
+  const ctxConfig = CONTEXTS_BY_TYPE[type] ?? null
+  const showContext = !!ctxConfig
 
   function handleSelectType(t) {
     setType(t)
-    if (t !== 'glicemia') setContext(null)
+    // Contexto é por família — trocar de tipo zera o contexto (evita inválido p/ o novo tipo).
+    setContext(null)
+    if (t !== 'pressao_arterial') setValueSec('')
     setErrorMsg(null)
   }
 
@@ -56,13 +71,22 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
   async function handleSave() {
     const num = coerceDecimal(value)
     if (Number.isNaN(num) || num <= 0) {
-      setErrorMsg('Digite um valor válido maior que zero.')
+      setErrorMsg(isPa ? 'Digite a sistólica (maior que zero).' : 'Digite um valor válido maior que zero.')
       return
+    }
+    // PA: diastólica obrigatória e válida (refine do core exige ambas).
+    let secNum = null
+    if (isPa) {
+      secNum = coerceDecimal(valueSec)
+      if (Number.isNaN(secNum) || secNum <= 0) {
+        setErrorMsg('Digite a diastólica (maior que zero).')
+        return
+      }
     }
     try {
       setSaving(true)
       setErrorMsg(null)
-      const payload = { type, value: num, unit, context: showContext ? context : null }
+      const payload = { type, value: num, value_secondary: secNum, unit, context: showContext ? context : null }
       // Criação: measured_at omitido → DB usa DEFAULT now() (sem new Date no app, R-020).
       const saved = await onSaved?.(isEdit ? { id: editItem.id, ...payload } : payload)
       onClose?.(saved)
@@ -97,34 +121,70 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
           <p className="mlm__locked-type">{BIOMARKER_TYPE_LABELS[type]}</p>
         )}
 
-        {/* Valor grande + unidade fixa (layout B) */}
-        <div className="mlm__value-row">
-          <input
-            className={`mlm__value${errorMsg ? ' mlm__value--error' : ''}`}
-            type="text"
-            inputMode="decimal"
-            value={value}
-            onChange={(e) => {
-              // Só dígitos, vírgula e ponto (coerceDecimal normaliza no salvar — R-276).
-              setValue(e.target.value.replace(/[^0-9.,]/g, ''))
-              if (errorMsg) setErrorMsg(null)
-            }}
-            placeholder="0"
-            maxLength={6}
-            autoFocus
-            disabled={saving}
-            aria-label={`Valor da medida em ${unit}`}
-          />
-          <span className="mlm__unit">{unit}</span>
-        </div>
+        {/* Valor grande + unidade fixa (layout B). PA = 2 campos (sistólica "por" diastólica). */}
+        {isPa ? (
+          <div className="mlm__value-row mlm__value-row--pa">
+            <span className="mlm__pa-field">
+              <input
+                className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
+                type="text"
+                inputMode="decimal"
+                value={value}
+                onChange={(e) => { setValue(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
+                placeholder="120"
+                maxLength={3}
+                autoFocus
+                disabled={saving}
+                aria-label="Sistólica em mmHg"
+              />
+              <span className="mlm__pa-label">Sistólica</span>
+            </span>
+            <span className="mlm__pa-sep">por</span>
+            <span className="mlm__pa-field">
+              <input
+                className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
+                type="text"
+                inputMode="decimal"
+                value={valueSec}
+                onChange={(e) => { setValueSec(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
+                placeholder="80"
+                maxLength={3}
+                disabled={saving}
+                aria-label="Diastólica em mmHg"
+              />
+              <span className="mlm__pa-label">Diastólica</span>
+            </span>
+            <span className="mlm__unit">{unit}</span>
+          </div>
+        ) : (
+          <div className="mlm__value-row">
+            <input
+              className={`mlm__value${errorMsg ? ' mlm__value--error' : ''}`}
+              type="text"
+              inputMode="decimal"
+              value={value}
+              onChange={(e) => {
+                // Só dígitos, vírgula e ponto (coerceDecimal normaliza no salvar — R-276).
+                setValue(e.target.value.replace(/[^0-9.,]/g, ''))
+                if (errorMsg) setErrorMsg(null)
+              }}
+              placeholder="0"
+              maxLength={6}
+              autoFocus
+              disabled={saving}
+              aria-label={`Valor da medida em ${unit}`}
+            />
+            <span className="mlm__unit">{unit}</span>
+          </div>
+        )}
 
         {/* Caption de erro — altura-neutra não empurra o layout */}
         <p className="mlm__error" role={errorMsg ? 'alert' : undefined}>{errorMsg || ' '}</p>
 
-        {/* Contexto (chips, opcional, só glicemia) */}
+        {/* Contexto (chips, opcional) — por família (glicemia/PA) */}
         {showContext && (
           <div className="mlm__contexts">
-            {BIOMARKER_CONTEXTS.map((c) => (
+            {ctxConfig.values.map((c) => (
               <button
                 key={c}
                 type="button"
@@ -132,7 +192,7 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
                 className={`mlm__ctx-chip${context === c ? ' mlm__ctx-chip--active' : ''}`}
                 aria-pressed={context === c}
               >
-                {BIOMARKER_CONTEXT_LABELS[c]}
+                {ctxConfig.labels[c]}
               </button>
             ))}
           </div>

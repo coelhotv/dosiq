@@ -342,15 +342,19 @@
 
 /* Hora alinhada à direita e DENTRO do card: o título da medida quebra linha em vez
    de empurrar a hora pra fora (mobile, valor longo "Glicemia 112 mg/dL"). */
+/* Registro (medida) pesa menos que ação (dose) na timeline — tinta, não elevação (AP-018).
+   Rebaixa o peso de valor e hora: sem bold. */
 .cronograma-dose-card--measure .cronograma-dose-card__time {
   color: var(--color-info, #0288d1);
   align-self: flex-start;
+  font-weight: 400;
 }
 
 .cronograma-dose-card--measure .cronograma-dose-card__title {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
+  font-weight: 400;
 }
 
 /* Bloco principal: info à esquerda + horário grande à direita */

@@ -43,7 +43,10 @@ function fmtTick(v) {
   return Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ',')
 }
 
-export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
+// PA = 2 séries (sistólica + diastólica). Cor diferencia SÉRIE, nunca qualidade (SaMD, ADR-062).
+const mean = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null)
+
+export default function ScatterTrend({ items, unit, typeLabel = 'Medida', isPa = false }) {
   const [weekOffset, setWeekOffset] = useState(0)
 
   const weekStart = useMemo(() => addDays(mondayOf(getRawNow()), weekOffset * 7), [weekOffset])
@@ -54,17 +57,24 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
     for (let i = 0; i < 7; i++) {
       const day = addDays(weekStart, i)
       const dayEnd = day.getTime() + DAY_MS
-      const values = (items || [])
+      const dayItems = (items || [])
         .filter((it) => { const t = parseISO(it.measured_at).getTime(); return t >= day.getTime() && t < dayEnd })
-        .map((it) => it.value)
-      arr.push({ day, values })
+      arr.push({
+        day,
+        values: dayItems.map((it) => it.value),
+        // PA: série diastólica ignora pontos sem value_secondary (dados legados/defensivo).
+        valuesSec: isPa ? dayItems.map((it) => it.value_secondary).filter((v) => v != null) : [],
+      })
     }
     return arr
-  }, [items, weekStart])
+  }, [items, weekStart, isPa])
 
-  const allValues = days.flatMap((d) => d.values)
+  const sysValues = days.flatMap((d) => d.values)
+  const diaValues = days.flatMap((d) => d.valuesSec)
+  const allValues = [...sysValues, ...diaValues] // escala unifica as 2 séries (PA)
   const hasData = allValues.length > 0
-  const avg = hasData ? allValues.reduce((a, b) => a + b, 0) / allValues.length : null
+  const avg = mean(sysValues)
+  const avgDia = mean(diaValues)
   const scale = useMemo(
     () => buildScale(hasData ? Math.min(...allValues) : NaN, hasData ? Math.max(...allValues) : NaN),
     [allValues, hasData]
@@ -98,7 +108,10 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
             <line key={i} x1="0" x2={VB_W} y1={yFor(t)} y2={yFor(t)} className="scatter__grid" />
           ))}
           {days.flatMap((d, i) => d.values.map((v, j) => (
-            <circle key={`${i}-${j}`} cx={xFor(i)} cy={yFor(v)} r="4" className="scatter__point" />
+            <circle key={`s${i}-${j}`} cx={xFor(i)} cy={yFor(v)} r="4" className="scatter__point" />
+          )))}
+          {days.flatMap((d, i) => d.valuesSec.map((v, j) => (
+            <circle key={`d${i}-${j}`} cx={xFor(i)} cy={yFor(v)} r="4" className="scatter__point scatter__point--dia" />
           )))}
         </svg>
         <div className="scatter__ylabels">
@@ -114,10 +127,19 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
 
       <div className="scatter__footer">
         {hasData ? (
-          <span className="scatter__avg">
-            Média da semana: <strong>{fmtTick(Math.round(avg * 10) / 10)} {unit}</strong>
-            <span className="scatter__count">  ·  {allValues.length} {allValues.length === 1 ? 'medida' : 'medidas'}</span>
-          </span>
+          isPa ? (
+            <span className="scatter__avg">
+              Média: <strong>SIS {fmtTick(Math.round(avg * 10) / 10)}</strong>
+              {avgDia != null ? <strong> · DIA {fmtTick(Math.round(avgDia * 10) / 10)}</strong> : null}
+              <strong> {unit}</strong>
+              <span className="scatter__count">  ·  {sysValues.length} {sysValues.length === 1 ? 'medida' : 'medidas'}</span>
+            </span>
+          ) : (
+            <span className="scatter__avg">
+              Média da semana: <strong>{fmtTick(Math.round(avg * 10) / 10)} {unit}</strong>
+              <span className="scatter__count">  ·  {allValues.length} {allValues.length === 1 ? 'medida' : 'medidas'}</span>
+            </span>
+          )
         ) : (
           <span className="scatter__empty">Sem medidas nesta semana.</span>
         )}

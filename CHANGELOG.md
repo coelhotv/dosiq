@@ -10,10 +10,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Adicionado
-- **Pressão arterial como medida** (spec 032, mobile `0.18.0`): registro com 2 campos
-  (sistólica "por" diastólica, mmHg), contexto opcional (ao acordar / em repouso / após exercício /
-  ao dormir / após medicação), tendência com 2 séries (sistólica + diastólica, cores neutras — sem
-  classificação de risco, SaMD) e exibição composta "120 por 80 mmHg" em toda a UI de medidas.
+- **Pressão arterial como medida** (spec 032, mobile `0.18.0` + web `4.9.0`): registro com 2 campos
+  (sistólica "por" diastólica, mmHg), contexto opcional (ao acordar / em repouso / indo dormir /
+  após exercício / após medicação), tendência com 2 séries (sistólica + diastólica, cores neutras —
+  sem classificação de risco, SaMD) e exibição composta "120 por 80 mmHg" em toda a UI de medidas
+  (mobile + web; cards mostram rótulo curto "Pressão" + data/hora no histórico).
 
 ### Alterado
 - **`biomarkers_log.context` agora é domínio extensível** (ADR-070): removido o `CHECK` do banco;

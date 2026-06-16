@@ -6,9 +6,9 @@
 // SaMD (ADR-062): cor diferencia TIPO, nunca qualidade do valor. Sem meta/alvo.
 
 import { Ruler, PencilLine, Trash2 } from 'lucide-react'
-import { parseISO, BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS } from '@dosiq/core'
+import { parseISO, biomarkerCardLabel, formatBiomarkerContext, formatBiomarkerDisplay } from '@dosiq/core'
 
-// Reconstrói a linha de biomarkers_log a partir do payload do evento (p/ edição/exclusão).
+// Reconstrói a linha de biomarkers_log a partir do payload do evento (p/ edição/exclusão + display).
 function eventToMeasure(event) {
   const p = event.payload || {}
   return {
@@ -22,15 +22,6 @@ function eventToMeasure(event) {
   }
 }
 
-/** Formata "value[/value_secondary] unit" PT-BR (PA = "12/8"; demais = valor único). */
-function formatMeasure(p) {
-  const v = String(p.value).replace('.', ',')
-  if (p.valueSecondary != null) {
-    return `${v}/${String(p.valueSecondary).replace('.', ',')} ${p.unit}`
-  }
-  return `${v} ${p.unit}`
-}
-
 /**
  * Card de um evento `biomarker` no painel do dia.
  *
@@ -40,8 +31,8 @@ function formatMeasure(p) {
  */
 export default function BiomarkerEventCard({ event, timezone = 'America/Sao_Paulo', onEditMeasure, onDeleteMeasure }) {
   const p = event.payload || {}
-  const label = BIOMARKER_TYPE_LABELS[p.biomarkerType] || p.biomarkerType
-  const ctx = p.context ? BIOMARKER_CONTEXT_LABELS[p.context] : null
+  const label = biomarkerCardLabel(p.biomarkerType)
+  const ctx = formatBiomarkerContext(p.context)
 
   const timeLabel = event.occurred_at
     ? parseISO(event.occurred_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
@@ -54,7 +45,7 @@ export default function BiomarkerEventCard({ event, timezone = 'America/Sao_Paul
       <div className="hlc-card__info">
         <div className="hlc-card__title-row">
           <Ruler size={14} className="hlc-card__bio-icon" aria-hidden="true" />
-          <span className="hlc-card__name">{label} {formatMeasure(p)}</span>
+          <span className="hlc-card__name">{label}: {formatBiomarkerDisplay(measure)}</span>
         </div>
         {ctx && <span className="hlc-card__quantity">{ctx}</span>}
       </div>
