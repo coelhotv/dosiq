@@ -2,9 +2,9 @@
 
 **Feature Directory**: `plans/specs/032-biomarker-pa`
 **Created**: 2026-06-15
-**Status**: draft
-**Tier**: 1 (UI sobre modelo já schema-ready; sem migração)
-**Artifacts**: `spec.md` (lite) — `plan.md`/`tasks.md` no Planning
+**Status**: planned
+**Tier**: 2 (upgrade no eng-review 2026-06-15: contexto PA exige migração `DROP CONSTRAINT` — ADR-070)
+**Artifacts**: `spec.md` + `plan.md` + `tasks.md` + ADR-070
 **Input**: "/devflow specifying 032 - biomarker pressão arterial"
 **Legacy Sources**:
 - Épico 012 Fase C (`biomarkers_log` genérico — PR #665/#666, ADR-060/CON-025)
@@ -14,7 +14,8 @@
 > de medidas compostas (PA = sistólica em `value` + diastólica em `value_secondary`; decisão PO
 > 2026-06-10 — duas colunas, não duas linhas). O `biomarkerLogSchema` (core) já tem `applyPaRefine`.
 > **v1 da Fase C entregou só glicemia + peso na UI** — PA ficou schema-ready, sem UI. Esta spec
-> **032 implementa a camada de UI/UX de PA**, sem tocar DB nem schema canônico.
+> **032 implementa a camada de UI/UX de PA** + 1 migração mínima de contexto (ADR-070, eng-review):
+> `value`/`value_secondary` já cobrem PA; só o CHECK de `context` precisa sair p/ comportar contextos PA.
 
 ---
 
@@ -87,11 +88,27 @@ tendência (2 séries: sistólica/diastólica) e o card na timeline mostrando "1
   `value_secondary` corretos.
 - **SC-002**: PA na tendência (2 séries) e na timeline com formato "S por D mmHg"; **sem** classificação
   de risco/zona/meta (SaMD preservado).
-- **SC-003**: zero migração de DB / zero mudança no schema canônico (só UI + helper de formatação);
-  `biomarkerLogSchema` existente cobre PA.
+- **SC-003**: 1 migração mínima (`DROP CONSTRAINT` do CHECK de `context` — ADR-070); nenhuma outra
+  mudança de schema (colunas inalteradas); `value`/`value_secondary` já cobrem PA.
 
 ## Assumptions / Open Questions
 
 - ✅ `biomarkers_log.value_secondary` + `applyPaRefine` já em prod (Fase C do 012) — só falta UI.
-- ✅ Contextos PA definidos no Planning: `ao_acordar`, `em_repouso`, `apos_exercicio`, `ao_dormir`, `pos_medicacao`. Enum separado de glicemia (`BIOMARKER_PA_CONTEXTS`).
+- ✅ Contextos PA definidos no Planning: `ao_acordar`, `em_repouso`, `apos_exercicio`, `ao_dormir`, `pos_medicacao`. Enum `BIOMARKER_PA_CONTEXTS` separado de glicemia (UI filtra por tipo; Zod valida a união).
+- ✅ **ADR-070** (eng-review): `context` é domínio extensível → CHECK SQL **removido**; Zod vira autoridade única (igual `type`/`source`). 1 migração `DROP CONSTRAINT` — encerra a esteira de migrações de contexto. Sobe a spec p/ Tier 2.
 - ✅ Representação visual das 2 séries na tendência: 2 círculos/pontos por leitura em 2 cores neutras (sistólica = `info`, diastólica = `neutral[400]`). Cor = identidade de série, nunca qualidade (SaMD ok).
+
+---
+
+## Ceremony: eng-review (RC3) — 2026-06-15
+
+6 findings, 1 BLOCKER resolvido. Decisão de escopo: **HOLD SCOPE + ADR-070**.
+
+| # | Sev | Achado | Resolução |
+|---|-----|--------|-----------|
+| 1 | CRITICAL | `context` é CHECK SQL fechado; contextos PA não cabem → INSERT rejeitado. Tier 1 "zero migração" inválido. | **ADR-070**: remover CHECK; `context` vira extensível; Zod autoridade única. Spec → Tier 2 (1 migração). |
+| 2 | HIGH | Schema valida 1 enum; enum PA separado seria rejeitado. | Zod valida **união** dos enums; UI filtra por tipo. |
+| 3 | MEDIUM | `applyPaRefine` não cruza `type ↔ contexto` (glicemia poderia receber contexto PA). | Adicionar guard no `superRefine`. |
+| 4 | MEDIUM | `formatBiomarkerDisplay` muda `/`→`por`; risco regressão glicemia/peso. | Sem regressão (só PA tem `value_secondary`); confirmar C4. |
+| 5 | LOW | Média dual PA (2 números) no layout idoso. | Detalhe C3 (verificar `.scatter__avg`). |
+| 6 | LOW | UX 2 campos: navegação sistólica→diastólica. | `returnKeyType="next"` no 1º campo. |

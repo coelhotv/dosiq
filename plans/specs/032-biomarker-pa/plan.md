@@ -2,16 +2,20 @@
 
 **Feature Directory**: `plans/specs/032-biomarker-pa`
 **Spec**: spec.md
-**Tier**: 1 (UI sobre schema-ready; zero migração DB)
+**Tier**: 2 (eng-review: contexto PA exige migração `DROP CONSTRAINT` — ADR-070)
 **Created**: 2026-06-15
 **Status**: planned
+**Ceremonies**: eng-review (RC3) ✅ 2026-06-15 — 6 findings, 1 BLOCKER resolvido via ADR-070
+**ADR**: ADR-070 (context extensível, sem CHECK)
 **Branch**: feature/sprint-W25/032-biomarker-pa
 
 ---
 
 ## Clarifications
 
-- **Contexto PA**: chips opcionais — `ao_acordar`, `em_repouso`, `apos_exercicio`, `ao_dormir`, `pos_medicacao`. Enum `BIOMARKER_PA_CONTEXTS` + `BIOMARKER_PA_CONTEXT_LABELS` em core (separado do `BIOMARKER_CONTEXTS` de glicemia). Exibido nos cards quando presente.
+- **Contexto PA**: chips opcionais — `ao_acordar`, `em_repouso`, `apos_exercicio`, `ao_dormir`, `pos_medicacao`. Enum `BIOMARKER_PA_CONTEXTS` + `BIOMARKER_PA_CONTEXT_LABELS` em core (separado do `BIOMARKER_CONTEXTS` de glicemia). UI filtra por tipo; Zod valida a **união** dos enums. Exibido nos cards quando presente.
+- **CHECK de `context` (ADR-070)**: removido do DB. `context` vira domínio extensível como `type`/`source`; Zod é autoridade única. Migração `DROP CONSTRAINT`. `applyPaRefine` ganha guard `type ↔ família de contexto` (achado #3 eng-review).
+- **Helper label robusto**: `formatBiomarkerContext(context)` degrada em valor desconhecido (DB livre pós-ADR-070) — fallback p/ ocultar, nunca crash.
 - **2 séries na tendência**: 2 séries independentes no scatter (sistólica e diastólica); cores neutras — `colors.status.info` (sistólica) e `colors.neutral[400]` (diastólica). Cor = identidade de série, nunca qualidade (SaMD preservado).
 - **Formato composto**: `"120 por 80 mmHg"` — helper `formatBiomarkerDisplay(item)` no core (substitui as 4 cópias locais de `formatMeasure` que hoje usam `/`). Nome PT-BR adotado por decisão de PO (spec FR-003).
 
@@ -39,7 +43,21 @@
 
 ## Architecture / Approach
 
-### Camada 0 — Core enums + helper (shared web↔mobile)
+### Camada -1 — Migração DB (ADR-070)
+
+Criar `docs/migrations/20260616_drop_biomarker_context_check.sql`:
+
+```sql
+-- ADR-070: context é domínio extensível (como type/source). Remover CHECK.
+-- Zod (core) vira autoridade única. Encerra esteira de migração por família de contexto.
+ALTER TABLE public.biomarkers_log DROP CONSTRAINT IF EXISTS biomarkers_log_context_check;
+-- (constraint nomeada implicitamente pelo Postgres no CREATE TABLE; confirmar nome real
+--  via \d biomarkers_log ou information_schema antes de aplicar)
+```
+
+⚠️ Confirmar o nome real da constraint no Coding (`SELECT conname FROM pg_constraint WHERE conrelid='public.biomarkers_log'::regclass`). Grants/RLS inalterados.
+
+### Camada 0 — Core enums + refine (shared web↔mobile)
 
 Adicionar em `packages/core/src/schemas/biomarkerLogSchema.js`:
 
@@ -54,7 +72,9 @@ export const BIOMARKER_PA_CONTEXT_LABELS = {
 }
 ```
 
-Exportar via `packages/core/src/schemas/index.js` (já re-exportado em `core/index.js`).
+- `context` no `biomarkerObject` valida a **união**: `z.enum([...BIOMARKER_CONTEXTS, ...BIOMARKER_PA_CONTEXTS])`.
+- `applyPaRefine` ganha guard: tipo PA só aceita contexto de `BIOMARKER_PA_CONTEXTS`; glicemia só `BIOMARKER_CONTEXTS`; peso/batimentos sem contexto (achado #3).
+- Exportar via `packages/core/src/schemas/index.js`.
 
 ### Camada 0b — Core helper (shared web↔mobile)
 
@@ -120,7 +140,8 @@ Todos os cards substituem `formatMeasure` local por `formatBiomarkerDisplay` do 
 
 | Arquivo | Ação | Verificado |
 |---------|------|-----------|
-| `packages/core/src/schemas/biomarkerLogSchema.js` | EDITAR — add `BIOMARKER_PA_CONTEXTS` + labels | ✅ |
+| `docs/migrations/20260616_drop_biomarker_context_check.sql` | CRIAR — ADR-070 DROP CONSTRAINT | — (novo) |
+| `packages/core/src/schemas/biomarkerLogSchema.js` | EDITAR — `BIOMARKER_PA_CONTEXTS` + labels + context união + refine type↔contexto | ✅ |
 | `packages/core/src/utils/biomarkerDisplay.js` | CRIAR | — (novo) |
 | `packages/core/src/utils/index.js` | EDITAR — add export | ✅ |
 | `apps/mobile/src/features/measures/components/MeasureLogSheet.jsx` | EDITAR — UI_TYPES + valueSec | ✅ |
@@ -139,8 +160,9 @@ Todos os cards substituem `formatMeasure` local por `formatBiomarkerDisplay` do 
 ## Contracts / ADRs
 
 - **CON-025** (biomarkers_log CRUD) — sem mudança breaking; `value_secondary` já no select e no schema.
-- **ADR-060** (genérico-first biomarkers_log) — respeitado; PA é tipo existente no enum.
+- **ADR-060** (genérico-first biomarkers_log) — respeitado e reforçado por ADR-070.
 - **ADR-062** (SaMD) — respeitado; sem zona/meta/cor-qualidade.
+- **ADR-070** (NOVO, accepted) — `context` extensível, sem CHECK; Zod autoridade única. Emenda R-082/R-271 nesta coluna.
 
 ---
 
@@ -148,8 +170,8 @@ Todos os cards substituem `formatMeasure` local por `formatBiomarkerDisplay` do 
 
 | Campo | Valor |
 |-------|-------|
-| Plataformas | Mobile + Web + Shared/Core |
-| Impacto SemVer | minor (feature nova para usuário) |
+| Plataformas | Mobile + Web + Shared/Core + Backend/Infra (migração) |
+| Impacto SemVer | minor (feature nova para usuário) + migração DB (ADR-070) |
 | Versão web | 4.8.0 → **4.9.0** |
 | Versão mobile | manter 0.17.0 (Fase C do 012 já foi minor); **0.17.1** (patch dentro do mesmo épico) |
 | CHANGELOG seção | `[Unreleased] > Adicionado` |
