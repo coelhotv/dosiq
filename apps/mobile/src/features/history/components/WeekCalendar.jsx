@@ -54,6 +54,7 @@ function toLocalDateStr(utcIso, tz) {
 // Biomarkers não têm scheduled_for — guarda obrigatória (spec 033, type==='biomarker').
 function getDotStatus(dayStr, instances, tz) {
   const dayInstances = instances.filter(i =>
+    i.type === 'dose' &&
     i.scheduled_for &&
     toLocalDateStr(i.scheduled_for, tz) === dayStr && i.status !== 'skipped_paused'
   )
