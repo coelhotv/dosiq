@@ -8,7 +8,7 @@ import { View, Text, ScrollView, TouchableOpacity, Pressable, StyleSheet } from 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { ArrowLeft, Plus, Ruler } from 'lucide-react-native'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS } from '@dosiq/core'
+import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS, biomarkerCardLabel } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 import { useMeasures } from '@measures/hooks/useMeasures'
@@ -17,8 +17,8 @@ import MeasureLogSheet from '@measures/components/MeasureLogSheet'
 import MeasureDetailSheet from '@measures/components/MeasureDetailSheet'
 import ScatterTrend from '@measures/components/ScatterTrend'
 
-// Chips de tipo — SEM ícone (IconRuler é a marca única de medida; chips só texto). v1 = 2 tipos.
-const HUB_TYPES = ['glicemia', 'peso']
+// Chips de tipo — SEM ícone (IconRuler é a marca única de medida; chips só texto). +PA (032).
+const HUB_TYPES = ['glicemia', 'peso', 'pressao_arterial']
 
 export default function MeasuresScreen() {
   const navigation = useNavigation()
@@ -79,7 +79,7 @@ export default function MeasuresScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <ScatterTrend items={items} unit={BIOMARKER_TYPE_UNITS[type]} typeLabel={BIOMARKER_TYPE_LABELS[type]} />
+        <ScatterTrend items={items} unit={BIOMARKER_TYPE_UNITS[type]} typeLabel={biomarkerCardLabel(type)} isPa={type === 'pressao_arterial'} />
 
         <Text style={styles.sectionTitle}>Histórico</Text>
         {loading ? (

@@ -120,6 +120,7 @@ export {
   formatEndDate,
   formatTimePtBR,
   formatDateTimePtBR,
+  formatDateTimeShortPtBR,
 } from './dateFormat.js'
 
 // Treatment status resolver (Fase 2.5 — paridade web↔mobile)
@@ -179,3 +180,10 @@ export {
   dismissKey,
   buildNudgeList,
 } from './nudgeScheduler.js'
+
+// Formatação de biomarcador — valor composto (PA "S por D") + label de contexto (032)
+export {
+  formatBiomarkerDisplay,
+  formatBiomarkerContext,
+  biomarkerCardLabel,
+} from './biomarkerDisplay.js'

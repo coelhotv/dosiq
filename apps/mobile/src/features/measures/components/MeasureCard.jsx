@@ -7,22 +7,16 @@
 
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Ruler, ChevronRight } from 'lucide-react-native'
-import { BIOMARKER_TYPE_LABELS, BIOMARKER_CONTEXT_LABELS, formatTimePtBR } from '@dosiq/core'
+import { biomarkerCardLabel, formatBiomarkerContext, formatBiomarkerDisplay, formatDateTimeShortPtBR, formatTimePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
-// Formata "value[/value_secondary] unit" (PA = "12/8"; demais = valor único). PT-BR.
-function formatMeasure(item) {
-  const v = String(item.value).replace('.', ',')
-  if (item.value_secondary != null) {
-    return `${v}/${String(item.value_secondary).replace('.', ',')} ${item.unit}`
-  }
-  return `${v} ${item.unit}`
-}
+// Display "S por D unit" (PA) / "V unit" (demais) — helper core (fonte única, 032).
+const formatMeasure = formatBiomarkerDisplay
 
 // Variante timeline — mesma estrutura visual do DoseTimelineCard (FR-011).
 // Sem chevron/tap: é só listagem (como dose já tomada). Contexto no subtexto (sem origem).
 function TimelineLayout({ item, label }) {
-  const ctx = item.context ? BIOMARKER_CONTEXT_LABELS[item.context] : null
+  const ctx = formatBiomarkerContext(item.context)
   return (
     <View style={styles.tlCard}>
       <View style={styles.tlTime}>
@@ -32,7 +26,7 @@ function TimelineLayout({ item, label }) {
         <View style={styles.tlTitleRow}>
           <Ruler size={14} color={colors.status.info} strokeWidth={2} />
           <Text style={styles.tlTitle} numberOfLines={1}>
-            {label} {formatMeasure(item)}
+            {label}: {formatMeasure(item)}
           </Text>
         </View>
         {ctx ? <Text style={styles.tlMeta}>{ctx}</Text> : null}
@@ -43,7 +37,7 @@ function TimelineLayout({ item, label }) {
 
 // Variante hub — card tintado plano (avatar Ruler).
 function HubLayout({ item, label, showLabel, showChevron }) {
-  const ctx = item.context ? BIOMARKER_CONTEXT_LABELS[item.context] : null
+  const ctx = formatBiomarkerContext(item.context)
   return (
     <View style={styles.card}>
       <View style={styles.iconWrap}>
@@ -55,7 +49,7 @@ function HubLayout({ item, label, showLabel, showChevron }) {
         </Text>
         <Text style={styles.meta}>
           {showLabel && !showChevron ? label : ''}{showLabel && !showChevron && ctx ? ' · ' : ''}{ctx || ''}
-          {((showLabel && !showChevron) || ctx) ? ' · ' : ''}{formatTimePtBR(item.measured_at)}
+          {((showLabel && !showChevron) || ctx) ? ' · ' : ''}{formatDateTimeShortPtBR(item.measured_at)}
         </Text>
       </View>
       {showChevron ? <ChevronRight size={18} color={colors.text.muted} strokeWidth={2} /> : null}
@@ -70,7 +64,7 @@ export default function MeasureCard({
   showChevron = false,
   variant = 'hub',
 }) {
-  const label = BIOMARKER_TYPE_LABELS[item.type] || item.type
+  const label = biomarkerCardLabel(item.type)
 
   const content = variant === 'timeline'
     ? <TimelineLayout item={item} label={label} />

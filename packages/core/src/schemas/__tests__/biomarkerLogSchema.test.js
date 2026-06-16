@@ -4,6 +4,7 @@ import {
   validateBiomarkerLogUpdate,
   BIOMARKER_TYPES,
   BIOMARKER_CONTEXTS,
+  BIOMARKER_PA_CONTEXTS,
   BIOMARKER_TYPE_UNITS,
 } from '../index.js'
 
@@ -13,8 +14,33 @@ describe('biomarkerLogSchema — enums', () => {
   it('tipos incluem glicemia/peso/pressao_arterial/batimentos', () => {
     expect(BIOMARKER_TYPES).toEqual(['glicemia', 'peso', 'pressao_arterial', 'batimentos'])
   })
-  it('contextos PT fechados (sincronizados com CHECK SQL)', () => {
+  it('contextos de glicemia', () => {
     expect(BIOMARKER_CONTEXTS).toEqual(['jejum', 'pre_refeicao', 'pos_refeicao', 'ao_deitar', 'outro'])
+  })
+  it('contextos de PA (032)', () => {
+    expect(BIOMARKER_PA_CONTEXTS).toEqual(['ao_acordar', 'em_repouso', 'ao_dormir', 'apos_exercicio', 'pos_medicacao'])
+  })
+})
+
+// ADR-070 — context é domínio extensível; Zod valida união + refine cruza type↔família.
+describe('biomarkerLogSchema — context por família (ADR-070)', () => {
+  it('PA + contexto PA → aceito', () => {
+    const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg', context: 'em_repouso' })
+    expect(r.success).toBe(true)
+  })
+  it('PA + contexto de glicemia → rejeitado', () => {
+    const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg', context: 'jejum' })
+    expect(r.success).toBe(false)
+    expect(r.errors.some((e) => e.field === 'context')).toBe(true)
+  })
+  it('glicemia + contexto PA → rejeitado', () => {
+    const r = validateBiomarkerLog({ type: 'glicemia', value: 110, unit: 'mg/dL', context: 'em_repouso' })
+    expect(r.success).toBe(false)
+    expect(r.errors.some((e) => e.field === 'context')).toBe(true)
+  })
+  it('PA + contexto null → aceito (opcional)', () => {
+    const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg' })
+    expect(r.success).toBe(true)
   })
 })
 
