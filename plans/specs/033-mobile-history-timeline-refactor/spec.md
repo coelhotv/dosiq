@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/033-mobile-history-timeline-refactor/`
 **Created**: 2026-06-15
-**Status**: in-progress (coding 2026-06-16 — branch `refactor/w25/033-mobile-history-timeline`; aguarda smoke + PR)
+**Status**: delivered (PR #671 mergeado 2026-06-16 — mobile 0.19.0)
 **Tier**: 1
 **Input**: Auditoria de divergência arquitetural — mobile usa pipeline custom em `useHistoryData.js`; core já provê `createTimelineService` + `biomarkersToEvents` + `buildTimeline` (usados pela web). Princípio "service-first, screen-second" (MASTER_PLAN D2) não foi respeitado nas specs 003/030.
 
