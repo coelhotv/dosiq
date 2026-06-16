@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/033-mobile-history-timeline-refactor/`
 **Created**: 2026-06-15
-**Status**: draft
+**Status**: planned (planning 2026-06-15 — ver [plan.md](./plan.md) + [analysis.md](./analysis.md))
 **Tier**: 1
 **Input**: Auditoria de divergência arquitetural — mobile usa pipeline custom em `useHistoryData.js`; core já provê `createTimelineService` + `biomarkersToEvents` + `buildTimeline` (usados pela web). Princípio "service-first, screen-second" (MASTER_PLAN D2) não foi respeitado nas specs 003/030.
 
@@ -128,11 +128,23 @@ Então deve contar só doses taken (5), não biomarkers (3)
 
 ### Camada de Service (service-first)
 
+> **⚠️ Correções de planning (2026-06-15, reality-check vs repo — ver [analysis.md](./analysis.md)):**
+> - **GAP-1:** o core `getTimeline` (CON-023) **não** mescla biomarkers — só `dose_instances`+`logs`.
+>   O merge é replicado NO service mobile (best-effort), espelhando o wrapper web `getMonthTimeline`.
+> - **GAP-2:** o `TimelineEvent` tem payload **camelCase aninhado** (`event.payload.scheduledFor`...),
+>   mas a UI mobile lê **flat snake_case** (`instance.scheduled_for`...). O service expõe uma
+>   **anti-corruption layer** (`mapToMobileShape`) que achata p/ o shape que a UI de 030 já consome —
+>   logo `getHistoryTimeline` retorna itens flat, NÃO `TimelineEvent[]` cru (revisa FR-009).
+> - **GAP-3:** o enricher core só dá `medicineName`+`dosageUnit`; `protocolsById` mobile é estendido
+>   com `dosage_per_pill`/`dosage_per_intake`/`intake_unit`/`protocol_name` (hint líquido + dosagem).
+
 **FR-001** — Criar `apps/mobile/src/features/history/services/historyTimelineService.js`:
-  - Instancia `createTimelineService({ client: supabase })` do core
-  - Adiciona enrichment de protocolo (nome/unidade) no payload de cada evento `dose`
-  - Mescla biomarkers via `measuresRepo.list` + `biomarkersToEvents` + `buildTimeline`
-  - Expõe função `getHistoryTimeline(userId, fromTs, toTs, tz)` → `TimelineEvent[]`
+  - Instancia `createTimelineService({ client: supabase })` do core (doses+logs+dedupe, CON-023)
+  - Constrói `protocolsById` estendido (GAP-3) e enriquece cada evento `dose`
+  - Mescla biomarkers NO service (GAP-1): `measuresRepo.list` + `biomarkersToEvents` + `buildTimeline`
+    (best-effort try/catch — falha de bio não derruba doses)
+  - Aplica `mapToMobileShape` (GAP-2) → itens flat snake_case + `localDay`
+  - Expõe `getHistoryTimeline(userId, { pastDays, futureDays, tz })` → itens flat (dose | biomarker)
 
 **FR-002** — `useHistoryData.js` refatorado para hook fino:
   - Remove `fetchOrphanLogs`, `normalizeOrphanLog`, `enrichInstancesWithProtocol` (movem para service)

@@ -52,9 +52,9 @@
 | 027 | topical-ointments | draft | não iniciar sem priorização do PO |
 | 028 | nudges-admin | **in-progress** | PR #654 (payload builder) mergeado; restante pendente |
 | 029 | treatment-level-titration | draft | N2 — titulação plano-nível cross-medicamento; nasce da limitação exposta no 012 (FR-021/N1); não iniciar sem priorização do PO; depende de 012 B2 |
-| 030 | fix-dose-history | draft | histórico expõe doses avulsas/PRN; descoberto no smoke da B4 do 012 (2026-06-14); Tier 1 web+mobile |
+| 030 | fix-dose-history | **delivered** | PR #668 (web 4.8.1 · mobile 0.17.1) mergeado 2026-06-15. Doses avulsas/PRN no histórico + ícone/chip status mobile; fix ghost taken (web) + furo estoque (mobile, AP-231) + hint líquido. Descoberto no smoke da B4 do 012 |
 | 031 | injection-site-rotation | draft | rotação de sítio de aplicação (injetáveis); Specifying; Tier 2 (migração `medicine_logs` + ADR rotação-global) |
 | 032 | biomarker-pa | **delivered** | PR #669 (core+mobile 0.18.0) + PR #670 (web 4.9.0) mergeados 2026-06-16. ADR-070 (context extensível, DROP CHECK). Hotfix caret iOS → 0.18.1 (main direto) |
-| 033 | mobile-history-timeline-refactor | draft | Tier 1 — refactor `useHistoryData.js` mobile p/ usar `createTimelineService` do core (paridade web; "service-first" MASTER_PLAN D2); sem migração; não iniciado |
+| 033 | mobile-history-timeline-refactor | **planned** | Tier 1 — planning 2026-06-15 (plan+analysis+tasks, 17 tasks). Refactor `useHistoryData.js` mobile → `createTimelineService` (core, CON-023) + biomarkers na lista do dia + KPI isolado (ADR-054). Reality-check achou 3 gaps (core não mescla bio; payload camelCase≠UI snake_case→anti-corruption layer; enricher insuficiente). Aguarda coding |
 | 034 | gemini-sunset | planned | Tier 2 — substituição do `gemini-code-assist` (sunset ~07/2026) por revisor IA independente OAuth; plan+tasks+checklist prontos; ADR-069 (proposed); aguarda coding |
 
