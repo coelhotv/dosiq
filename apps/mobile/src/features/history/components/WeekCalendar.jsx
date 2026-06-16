@@ -50,9 +50,12 @@ function toLocalDateStr(utcIso, tz) {
   }
 }
 
-// skipped_paused filtrado no hook; aqui só chegam taken/missed/pending/skipped_user
+// skipped_paused filtrado no hook; aqui só chegam taken/missed/pending/skipped_user.
+// Biomarkers não têm scheduled_for — guarda obrigatória (spec 033, type==='biomarker').
 function getDotStatus(dayStr, instances, tz) {
   const dayInstances = instances.filter(i =>
+    i.type === 'dose' &&
+    i.scheduled_for &&
     toLocalDateStr(i.scheduled_for, tz) === dayStr && i.status !== 'skipped_paused'
   )
   if (dayInstances.length === 0) return COLORS.gray

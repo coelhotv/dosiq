@@ -2,20 +2,22 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "idle",
-    "status": "completed",
-    "goal": "Biomarcador Pressão Arterial — UI dual-field (PA schema-ready desde 012 Fase C)",
-    "goal_type": "feature",
-    "tier": 2,
-    "spec_dir": "plans/specs/032-biomarker-pa",
-    "spec": "plans/specs/032-biomarker-pa/spec.md",
-    "linked_adrs": ["ADR-070"],
-    "linked_contracts": ["CON-025"],
-    "last_pr": 670
+    "mode": "coding",
+    "status": "awaiting_smoke",
+    "goal": "Spec 033 — Refactor Histórico Mobile (Service-First): historyTimelineService + mapToMobileShape + biomarkers na lista do dia",
+    "goal_type": "refactor",
+    "tier": 1,
+    "spec_dir": "plans/specs/033-mobile-history-timeline-refactor",
+    "spec": "plans/specs/033-mobile-history-timeline-refactor/spec.md",
+    "linked_adrs": ["ADR-050", "ADR-054", "ADR-060"],
+    "linked_contracts": ["CON-023", "CON-025"],
+    "last_pr": 670,
+    "branch": "refactor/w25/033-mobile-history-timeline",
+    "mobile_version": "0.19.0"
   },
   "memory": {
     "last_distillation": "2026-06-15T00:00:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 227,
     "anti_patterns_count": 230,
     "decisions_count": 69,
@@ -27,6 +29,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-06-15T00:00:00Z"
+    "index_loaded_at": "2026-06-16T14:00:00Z"
   }
 }
