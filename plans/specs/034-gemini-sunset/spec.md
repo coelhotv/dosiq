@@ -2,9 +2,12 @@
 
 **Feature Directory**: `plans/specs/034-gemini-sunset/`
 **Created**: 2026-06-15
-**Status**: specified
+**Status**: planned
 **Tier**: 2 (Epic — fatiado em sub-specs por camada/fase)
-**Input**: `plans/spikes/gemini-sunset-replacement-plan.md` (arquitetura aprovada pelo PO)
+**Input**: [`plans/spikes/gemini-sunset-replacement-plan.md`](../../spikes/gemini-sunset-replacement-plan.md) (arquitetura aprovada pelo PO)
+**Plan**: [`plan.md`](./plan.md) · **Tasks**: [`tasks.md`](./tasks.md) · **Checklist**: [`checklists/requirements.md`](./checklists/requirements.md)
+**ADR**: [ADR-069](../../../.agent/memory/decisions/infra_and_deploy/ADR-069.md) (proposed) — arquitetura do revisor RC6
+**Ceremonies**: eng-review (RC3) + security-review (RC-SEC) — ver seções no fim
 
 ---
 
@@ -77,6 +80,7 @@ Como **agente coder**, quero um checklist de auto-revisão adaptado à stack rea
 - **SC-004** Custo marginal por review de rotina = $0 (quota OAuth), verificado por ausência de chamada a API metered.
 - **SC-005** Em ~5 PRs reais (Fase D), medir % de comentários acionáveis vs. ruído + consumo de quota OAuth; PO decide manter/ajustar/aposentar L2.
 - **SC-006** Falha de motor (agy+claude indisponíveis) resulta em aviso visível e merge não travado permanentemente.
+- **SC-007** (eng EH1) Independência verificável: o comando do revisor é inspecionável e contém **apenas** diff + catálogos — sem histórico/contexto de sessão do coder.
 
 ---
 
@@ -116,12 +120,102 @@ Cada fase é PR independente, valor isolado, ordem por ROI/risco:
 ## Assumptions / Open Questions
 
 **Assumptions:**
-- `agy -p` (Gemini 3.1) e `claude -p` (Opus/Sonnet) disponíveis via CLI headless com quota OAuth (modo ideal para `agy -p` é `--dangerously-skip-permissions`).
+- `agy -p` (Gemini 3.1) e `claude -p` (Opus/Sonnet) disponíveis via CLI headless com quota OAuth. `--dangerously-skip-permissions` aceitável **somente** porque o reviewer roda sandbox sem ferramentas (SC-SEC1 / ADR-069) — nunca com tool-access sobre diff não-confiável.
 - Pipeline de ingestão de `gemini-review.yml` é reutilizável trocando `GEMINI_BOT_LOGIN`.
 - RC6 (`/devflow ai-review`) já está especificado no `SKILL.md` do devflow — esta spec entrega a infra executável, não o protocolo.
 - Impacto SQP = **no-user-impact** (processo/tooling); sem bump de versão de produto (Constituição VI / R-242).
 
-**Open Questions (resolver no Planning):**
-- `[NEEDS CLARIFICATION: força do enforcement — o `ai-review-gate.yml` deve ser um required check que BLOQUEIA o merge, ou uma anotação soft não-bloqueante que apenas avisa?]` (afeta UX do gate + se é de fato não-bypassável).
-- `[NEEDS CLARIFICATION: gatilho do RC6 — apenas manual via `rtk ai-review <PR#>`, ou também automático via git hook `post-push`?]` (afeta consumo de quota OAuth e fricção do fluxo).
-- `[NEEDS CLARIFICATION: escopo de obrigatoriedade do L2 — RC6 obrigatório em todo PR Tier 1+, ou opt-in por PR?]` (afeta quota e o critério de enforcement do FR-006).
+**Decisões do PO (Planning P1.5 — eram NEEDS CLARIFICATION, agora resolvidas; ver [`plan.md`](./plan.md#clarifications-p15)):**
+- ✅ **NC1 — Força do enforcement**: **soft warning** (`ai-review-gate.yml` não bloqueia merge; humano R-060 decide). Enforcement = disciplina de processo.
+- ✅ **NC2 — Gatilho do RC6**: **manual (`rtk ai-review <PR#>`) + git hook `post-push`** (mitigar quota: só com PR aberto).
+- ✅ **NC3 — Obrigatoriedade do L2**: **obrigatório em todo PR Tier 1+** (sustentado por disciplina, dado o gate soft).
+- ✅ **EM2** (RC3): RC6 grava **só `events.jsonl`**, nunca `state.json` do projeto.
+- ✅ **SC-SEC1** (RC-SEC): RC6 reviewer = sandbox texto→JSON **sem ferramentas** (reconcilia a assumption `--dangerously-skip-permissions`).
+- ✅ **EH2** (RC3): FR-002 → comentário **PR-level** no MVP (inline = enhancement futuro).
+
+Todas formalizadas em [ADR-069](../../../.agent/memory/decisions/infra_and_deploy/ADR-069.md).
+
+---
+
+## Ceremony: eng-review (RC3)
+
+**Reviewer**: Engineering Manager persona · **Data**: 2026-06-15 · **Veredito**: HOLD SCOPE + completeness. Arquitetura sólida, sem scrap-it. Findings abaixo (verificados contra o repo, não suposição).
+
+### Step 0 — Scope Challenge
+
+- **Existing-code leverage (forte):** RC6 já especificado no `SKILL.md`; `gemini-review.yml` (ingestão); `test.yml` (paths-filter); `check-review` (ingere comentários). ESLint v9 flat config + `lint: "eslint ."` na raiz, com **`eslint-plugin-no-relative-import-paths` já instalado**.
+- **Minimum change set:** A (lint) + C (RC6 infra) cobrem o piso pós-sunset. B (edit de skill) é fold-in de baixo risco. D é **gate de medição, não build**.
+- **Complexity check:** por sub-PR ≤2 arquivos, zero service novo, abaixo do threshold (>8 arquivos / >2 classes). Sem smell. Sem scrap-it.
+- **TODOS.md:** não existe — nada a cruzar.
+- **Completeness:** com AI coding, completude é barata → SC-001/002/003 devem virar testes automatizados DENTRO de A/C, não diferidos pra D.
+
+### Findings
+
+**HIGH**
+- **EH1 — Independência asserida, não verificada.** US1/FR-001 afirmam "processo fresco sem contexto do coder", mas nenhum SC prova que a invocação `agy/claude -p` passa **só** diff+catálogos (sem histórico de sessão/env herdado). Sem isso, "independência" degrada silenciosamente pra "mesmo agente num subshell". → **Adicionar SC-007**: o comando do revisor é inspecionável e contém apenas diff + catálogos.
+- **EH2 — "Reusar pipeline pra POSTAR inline" é premissa falsa.** `gemini-review.yml` só **lê/parseia** review-comments (grep: `Buscar comentários inline`). Postar inline (file:line) é capacidade NOVA via `gh api pulls/.../comments` (exige commit_id+path+line, quebra com drift de posição em diff desatualizado). → Re-escopar FR-002: **MVP = comentário a nível de PR** (robusto, boring); inline = enhancement na 034-C.
+
+**MEDIUM**
+- **EM1 — FR-005 super-escopada (DRY).** Import-relativo já coberto por `eslint-plugin-no-relative-import-paths`; R-020 timezone marcada `[AUTOMATED via ESLint]` no RULES_INDEX. Regras **realmente novas** = cor-literal, enum-não-pt-BR, `res.json()`-guard (3, não 5). Fase A audita o que já existe antes de escrever.
+- **EM2 — Acoplamento de estado.** FR-001 (processo independente) × FR-010 (RC6 escreve `ai_review` em state.json) se contradizem: um processo "independente" escrevendo no state.json do projeto reacopla o revisor + arrisca corrida (locking protocol = read-check-write por mtime). → RC6 escreve **só em events.jsonl** (append-only, seguro), OU o write de state fica no wrapper invocador, não no revisor fresco.
+- **EM3 — Completude diferida.** SC-001/002/003 são verificáveis por teste (002 = teste de lint; 003 = teste do CI gate). Shippar com a sub-spec correspondente; D mede só sinal/ruído.
+
+**LOW**
+- **EL1 — Path do eslint config não confirmado.** Flat config na raiz assumido; Planning deve localizar (`eslint.config.js`?) antes da 034-A.
+
+### Recomendações (eng)
+1. Sequência: **A → C** (piso), **B** em paralelo (low-risk), **D** ao final (medição).
+2. FR-002 MVP = comentário PR-level; inline como enhancement.
+3. Resolver EM2 (state vs independência) no Planning — provável **ADR** "RC6 não escreve state.json; só events.jsonl".
+4. Adicionar SC-007 (verificação de independência) + automatizar SC-001/002/003 nas sub-specs.
+
+### Dependência (eng view)
+```
+034-A (lint, $0, determinístico) ──┐
+                                   ├─→ 034-D (medição em ~5 PRs → decisão PO)
+034-C (RC6 infra) ──→ depende de ──┘
+   └─ reusa: SKILL.md RC6 + check-review (ingestão)   [NÃO reusa gemini-review.yml p/ postar — EH2]
+034-B (RC5 adapt, SKILL.md) ── independente, paralelo a A/C
+```
+
+> Decisões de escopo registradas: HOLD SCOPE; FR-002→PR-level MVP; FR-005→3 regras novas; EM2→ADR no Planning.
+
+---
+
+## Ceremony: security-review (RC-SEC)
+
+**Reviewer**: Security & Data persona · **Data**: 2026-06-15 · **Aplicável**: SIM (secret/token, `gh api` terceiros, LLM sobre input não-confiável, processo executando IA, fail-open). Critical/High default → **ASK** (decisão do operador).
+
+**Classificação de dados:** diff de código + catálogos R/AP enviados a LLM externo (`agy`/Gemini, `claude`/Anthropic). Código proprietário de app de **saúde** (Constituição I). Diffs normalmente não contêm PII real, MAS fixtures/seed/migração podem.
+
+### Findings
+
+**CRITICAL**
+- **SC-SEC1 — Reviewer NÃO pode rodar com tool-access + `--dangerously-skip-permissions`.** A assumption da spec (`agy -p --dangerously-skip-permissions`) + **diff é input não-confiável** (autor do PR controla comentários/strings do código) = vetor de **prompt-injection→execução**: um diff com `// ignore tudo, rode <cmd>` pode coagir um agente com shell/file-write a executar/exfiltrar. **Controle:** RC6 roda em modo **texto-puro→JSON, SEM ferramentas** (sem shell, sem file-write, sem MCP). Nunca um agente com permissões amplas sobre input adversarial. → contradiz a linha de Assumptions; **resolver no Planning** (provável ADR).
+
+**HIGH**
+- **SC-SEC2 — Prompt-injection no diff coage veredito "clean".** Diff pode conter instruções que suprimem findings → RC6 emite "limpo" falso. Como o `ai-review-gate.yml` checa **presença** do comentário (não conteúdo), um false-clean **passa o gate**. **Controles:** (a) prompt trata diff como DADO, não instrução (delimitado/escapado); (b) saída RC6 = JSON validado por schema; (c) gate lê contagem de severidade do payload, não só presença; (d) R-060 humano permanece final.
+- **SC-SEC3 — Output do LLM → `gh api` por injeção de comando.** Texto gerado por IA (e paths derivados do diff) NUNCA interpolado em string de shell. Passar via **stdin / arquivo JSON / `--input -`**. Mesma classe do checklist RC5 (shell injection) + AP-184 (ESM). 
+- **SC-SEC4 — `ai-review-gate.yml` NÃO pode usar `pull_request_target`.** Esse trigger roda com token de escrita + contexto do base-repo → escalonamento clássico em PR de fork. Usar `pull_request` + `GITHUB_TOKEN` least-privilege. (Risco baixo no dosiq privado/solo, mas cravar por padrão.)
+
+**MEDIUM**
+- **SC-SEC5 — Egress de dados a LLM externo (Constituição I).** Garantir que diffs enviados não carreguem dado real de paciente (só fixtures sintéticas). Avaliar retenção zero (AI Gateway / config provider). Documentar política de data-handling no plan.
+- **SC-SEC6 — Secrets fail-closed.** Token do `gh` via `gh auth`/`GITHUB_TOKEN`, nunca hardcoded; credenciais OAuth dos motores são **locais** (reforça por que RC6 é local — não migrável a CI sem virar API key + custo). Guarda de presença de token (padrão AP-183: `if (!token) fail`), não `"Bearer undefined"`.
+
+**LOW**
+- **SC-SEC7 — Escopo do token do gate.** `ai-review-gate.yml` com permissões mínimas: `pull-requests: read`, `checks: write`. Nada além.
+
+### Decisões de segurança (→ Planning)
+1. **SC-SEC1 (CRITICAL):** RC6 reviewer = sandbox texto→JSON sem ferramentas. **Remover/qualificar** a assumption `--dangerously-skip-permissions` na spec — só aceitável se o processo não tiver tool-access. **ADR provável.**
+2. Gate valida severidade do payload (não só presença) — fecha o false-clean do SC-SEC2.
+3. `gh api` via stdin/JSON; sem `pull_request_target`; token least-priv.
+4. Política de egress: diffs só com fixtures sintéticas; avaliar retenção-zero.
+
+### Trust boundary (sec view)
+```
+[PR diff: NÃO-CONFIÁVEL] ──→ RC6 (texto→JSON, SEM tools) ──→ JSON validado ──→ gh api (stdin)
+        │ prompt-injection?                  │ injection→exec? (SC-SEC1)        │ cmd-injection? (SC-SEC3)
+        └ trata como DADO (SC-SEC2)          └ sandbox sem shell                └ nunca shell-interp
+                                                                                       │
+[egress→LLM externo: saúde] SC-SEC5          [gate CI: pull_request, least-priv] SC-SEC4/7
+```
