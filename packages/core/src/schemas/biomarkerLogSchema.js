@@ -3,7 +3,8 @@
 //
 // Modelo genérico: um shape serve glicemia/peso/pressão_arterial/batimentos e cresce sem migração.
 // `type`/`source` extensíveis (ADR-060) — enum aqui é o guard v1 (DB não tem CHECK em type/source).
-// `context` é enum fechado, sincronizado com o CHECK SQL (R-082/R-271).
+// `context` é domínio EXTENSÍVEL por família (ADR-070) — sem CHECK no DB; Zod é autoridade única,
+// igual type/source. Zod valida a UNIÃO dos contextos; o refine cruza type↔família de contexto.
 // `value_secondary` = 2º componente de medida composta (PA: sistólica=value, diastólica=value_secondary;
 // NULL p/ demais). superRefine cruza type↔value_secondary (decisão PO 2026-06-10).
 // preprocess('' → null) nos numéricos: forms enviam '' ao limpar; sem isso z.coerce vira '' → 0 e
@@ -21,6 +22,12 @@ export const BIOMARKER_TYPE_LABELS = {
   batimentos: 'Batimentos',
 }
 
+// Rótulo curto p/ cards (onde acompanha o valor). "Pressão" basta no BR ("medir a pressão").
+// Só sobrescreve quando difere do label completo; o resolver cai no completo p/ o resto.
+export const BIOMARKER_TYPE_SHORT_LABELS = {
+  pressao_arterial: 'Pressão',
+}
+
 // Unidade fixa por tipo (a UI não deixa o usuário escolher unidade — FR-010).
 export const BIOMARKER_TYPE_UNITS = {
   glicemia: 'mg/dL',
@@ -29,7 +36,10 @@ export const BIOMARKER_TYPE_UNITS = {
   batimentos: 'bpm',
 }
 
-// Contexto da medida — enum fechado (sincronizado com CHECK SQL). Relevante p/ glicemia.
+// Contexto da medida. ADR-070: `context` é domínio EXTENSÍVEL por família (sem CHECK no DB —
+// Zod é autoridade única). A UI filtra por tipo; o Zod valida a UNIÃO; o refine cruza type↔família.
+
+// Contexto de glicemia.
 export const BIOMARKER_CONTEXTS = ['jejum', 'pre_refeicao', 'pos_refeicao', 'ao_deitar', 'outro']
 export const BIOMARKER_CONTEXT_LABELS = {
   jejum: 'Jejum',
@@ -37,6 +47,25 @@ export const BIOMARKER_CONTEXT_LABELS = {
   pos_refeicao: 'Depois de comer',
   ao_deitar: 'Ao deitar',
   outro: 'Outro',
+}
+
+// Contexto de pressão arterial (spec 032).
+export const BIOMARKER_PA_CONTEXTS = ['ao_acordar', 'em_repouso', 'ao_dormir', 'apos_exercicio', 'pos_medicacao']
+export const BIOMARKER_PA_CONTEXT_LABELS = {
+  ao_acordar: 'Ao acordar',
+  em_repouso: 'Em repouso',
+  ao_dormir: 'Indo dormir',
+  apos_exercicio: 'Após exercício',
+  pos_medicacao: 'Após medicação',
+}
+
+// União aceita pelo Zod (o refine restringe por tipo).
+export const BIOMARKER_ALL_CONTEXTS = [...BIOMARKER_CONTEXTS, ...BIOMARKER_PA_CONTEXTS]
+
+// Mapa tipo → contextos válidos (refine + UI). Tipos ausentes = sem contexto.
+export const BIOMARKER_CONTEXTS_BY_TYPE = {
+  glicemia: BIOMARKER_CONTEXTS,
+  pressao_arterial: BIOMARKER_PA_CONTEXTS,
 }
 
 // Origem do dado. v1 = manual; HealthSync futuro entra sem migração (ADR-060).
@@ -69,7 +98,8 @@ const biomarkerObject = z.object({
     .union([z.string().datetime({ offset: true }), z.date()])
     .optional(),
 
-  context: z.enum(BIOMARKER_CONTEXTS).nullable().optional(),
+  // União de contextos (ADR-070); o refine restringe por tipo.
+  context: z.enum(BIOMARKER_ALL_CONTEXTS).nullable().optional(),
 
   source: z.enum(BIOMARKER_SOURCES).default('manual'),
 
@@ -81,8 +111,10 @@ const biomarkerObject = z.object({
     .transform((val) => val || null),
 })
 
-// Regra composta PA: pressao_arterial exige value_secondary; demais tipos não podem tê-lo.
-// Schema-ready — a regra vive aqui mesmo sem UI de PA no v1.
+// Regras compostas (aplicadas separadamente — ZodEffects não expõe .partial(), R-274):
+//  1. PA exige value_secondary; demais tipos não podem tê-lo.
+//  2. context só vale p/ a família do tipo (BIOMARKER_CONTEXTS_BY_TYPE) — ADR-070: Zod é o guard
+//     (sem CHECK no DB), então o cruzamento type↔família vive aqui.
 const applyPaRefine = (schema) =>
   schema.superRefine((data, ctx) => {
     if (data.type === 'pressao_arterial') {
@@ -99,6 +131,18 @@ const applyPaRefine = (schema) =>
         path: ['value_secondary'],
         message: 'value_secondary só se aplica à pressão arterial',
       })
+    }
+
+    // Guard type↔família de contexto. context é opcional; só valida quando presente.
+    if (data.context != null) {
+      const allowed = BIOMARKER_CONTEXTS_BY_TYPE[data.type]
+      if (!allowed || !allowed.includes(data.context)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['context'],
+          message: 'Contexto inválido para este tipo de medida',
+        })
+      }
     }
   })
 

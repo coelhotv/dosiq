@@ -52,7 +52,10 @@ function fmtTick(v) {
   return Number.isInteger(v) ? String(v) : v.toFixed(1).replace('.', ',')
 }
 
-export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
+// PA = 2 séries (sistólica + diastólica). Cor diferencia SÉRIE, nunca qualidade (SaMD, ADR-062).
+const mean = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null)
+
+export default function ScatterTrend({ items, unit, typeLabel = 'Medida', isPa = false }) {
   // offset em semanas a partir da semana atual (0 = atual; negativo = passado).
   const [weekOffset, setWeekOffset] = useState(0)
 
@@ -68,14 +71,22 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
         const t = parseISO(it.measured_at).getTime()
         return t >= day.getTime() && t < dayEnd
       })
-      arr.push({ day, values: dayItems.map((it) => it.value) })
+      // PA: série diastólica ignora pontos sem value_secondary (dados legados/defensivo).
+      arr.push({
+        day,
+        values: dayItems.map((it) => it.value),
+        valuesSec: isPa ? dayItems.map((it) => it.value_secondary).filter((v) => v != null) : [],
+      })
     }
     return arr
-  }, [items, weekStart])
+  }, [items, weekStart, isPa])
 
-  const allValues = days.flatMap((d) => d.values)
+  const sysValues = days.flatMap((d) => d.values)
+  const diaValues = days.flatMap((d) => d.valuesSec)
+  const allValues = [...sysValues, ...diaValues] // escala unifica as 2 séries (PA)
   const hasData = allValues.length > 0
-  const avg = hasData ? allValues.reduce((a, b) => a + b, 0) / allValues.length : null
+  const avg = mean(sysValues)
+  const avgDia = mean(diaValues)
   const scale = useMemo(
     () => buildScale(hasData ? Math.min(...allValues) : NaN, hasData ? Math.max(...allValues) : NaN),
     [allValues, hasData]
@@ -121,7 +132,10 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
             {days.map((d, i) => (
               <View key={i} style={styles.col}>
                 {d.values.map((v, j) => (
-                  <View key={j} style={[styles.point, { top: yFor(v) - 4 }]} />
+                  <View key={`s${j}`} style={[styles.point, { top: yFor(v) - 4 }]} />
+                ))}
+                {d.valuesSec.map((v, j) => (
+                  <View key={`d${j}`} style={[styles.point, styles.pointDia, { top: yFor(v) - 4 }]} />
                 ))}
               </View>
             ))}
@@ -140,10 +154,19 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida' }) {
 
       <View style={styles.footer}>
         {hasData ? (
-          <Text style={styles.avg}>
-            Média da semana: <Text style={styles.avgValue}>{fmtTick(Math.round(avg * 10) / 10)} {unit}</Text>
-            <Text style={styles.count}>  ·  {allValues.length} {allValues.length === 1 ? 'medida' : 'medidas'}</Text>
-          </Text>
+          isPa ? (
+            <Text style={styles.avg}>
+              Média: <Text style={styles.avgValue}>SIS {fmtTick(Math.round(avg * 10) / 10)}</Text>
+              {avgDia != null ? <Text style={styles.avgValue}> · DIA {fmtTick(Math.round(avgDia * 10) / 10)}</Text> : null}
+              <Text style={styles.avgValue}> {unit}</Text>
+              <Text style={styles.count}>  ·  {sysValues.length} {sysValues.length === 1 ? 'medida' : 'medidas'}</Text>
+            </Text>
+          ) : (
+            <Text style={styles.avg}>
+              Média da semana: <Text style={styles.avgValue}>{fmtTick(Math.round(avg * 10) / 10)} {unit}</Text>
+              <Text style={styles.count}>  ·  {allValues.length} {allValues.length === 1 ? 'medida' : 'medidas'}</Text>
+            </Text>
+          )
         ) : (
           <Text style={styles.empty}>Sem medidas nesta semana.</Text>
         )}
@@ -167,6 +190,7 @@ const styles = StyleSheet.create({
   cols: { ...StyleSheet.absoluteFillObject, flexDirection: 'row' },
   col: { flex: 1, position: 'relative' },
   point: { position: 'absolute', alignSelf: 'center', width: 8, height: 8, borderRadius: 4, backgroundColor: colors.status.info },
+  pointDia: { backgroundColor: colors.neutral[300] }, // diastólica — cinza claro neutro; cor = série, nunca qualidade (SaMD: evita verde/amarelo/vermelho)
   xAxis: { flexDirection: 'row', marginTop: spacing[2], paddingLeft: Y_AXIS_W },
   xLabel: { flex: 1, textAlign: 'center', fontSize: 10, color: colors.text.muted },
   footer: { marginTop: spacing[3], borderTopWidth: 1, borderTopColor: colors.border.light, paddingTop: spacing[3] },

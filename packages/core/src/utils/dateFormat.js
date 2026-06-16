@@ -41,6 +41,20 @@ export function formatDateTimePtBR(input) {
 }
 
 /**
+ * Formata um timestamp (Date|ISO com hora) para "DD/mmm · HH:MM" PT-BR lowercase.
+ * Usado nos cards de histórico de medida (032) — data curta + hora p/ transparência
+ * com múltiplas entradas por dia ao longo da semana.
+ * @example formatDateTimeShortPtBR('2026-03-12T08:05:00Z') → '12/mar · 08:05'
+ */
+export function formatDateTimeShortPtBR(input) {
+  const d = toLocalDate(input)
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = MONTHS_PT_BR[d.getMonth()]
+  return `${day}/${month} · ${formatTimePtBR(d)}`
+}
+
+/**
  * Formata uma data ISO/string YYYY-MM-DD para "DD MMM YYYY" PT-BR lowercase.
  *
  * @example formatDatePtBR('2026-03-12') → '12 mar 2026'

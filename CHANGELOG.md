@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [Unreleased]
+
+### Adicionado
+- **Pressão arterial como medida** (spec 032, mobile `0.18.0`): registro com 2 campos
+  (sistólica "por" diastólica, mmHg), contexto opcional (ao acordar / em repouso / após exercício /
+  ao dormir / após medicação), tendência com 2 séries (sistólica + diastólica, cores neutras — sem
+  classificação de risco, SaMD) e exibição composta "120 por 80 mmHg" em toda a UI de medidas.
+
+### Alterado
+- **`biomarkers_log.context` agora é domínio extensível** (ADR-070): removido o `CHECK` do banco;
+  o Zod (core) passa a ser a autoridade única do conjunto de contextos por família de biomarcador,
+  igual a `type`/`source`. Encerra a necessidade de migração a cada nova família de contexto.
+- Formatação de medidas unificada no core (`formatBiomarkerDisplay`/`formatBiomarkerContext`) —
+  consolida 4 cópias locais; padrão de PA passou de "120/80" para "120 por 80".
+
+> **Migração:** `20260616_drop_biomarker_context_check.sql` (`DROP CONSTRAINT` — só afrouxa; valores
+> legados permanecem válidos; sem migração de dados).
+
+---
+
 ## App v0.17.0 (mobile) — 2026-06-15 — Suporte a Diabetes Tipo 2 (épico 012 A→D)
 
 > **Bump:** mobile `0.16.6 → 0.17.0` (minor — fechamento do épico 012). `versionCode`/`buildNumber` = `1700`.

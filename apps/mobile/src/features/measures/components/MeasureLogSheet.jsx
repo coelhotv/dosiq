@@ -20,12 +20,20 @@ import {
   BIOMARKER_TYPE_LABELS,
   BIOMARKER_CONTEXTS,
   BIOMARKER_CONTEXT_LABELS,
+  BIOMARKER_PA_CONTEXTS,
+  BIOMARKER_PA_CONTEXT_LABELS,
 } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
 
-// Tipos com UI no v1. PA/batimentos não entram aqui (schema-ready).
-const UI_TYPES = ['glicemia', 'peso']
+// Tipos com UI. PA entra na spec 032 (2 campos: sistólica + diastólica). batimentos = schema-ready.
+const UI_TYPES = ['glicemia', 'peso', 'pressao_arterial']
+
+// Contexto por família (ADR-070). Tipos ausentes = sem contexto.
+const CONTEXTS_BY_TYPE = {
+  glicemia: { values: BIOMARKER_CONTEXTS, labels: BIOMARKER_CONTEXT_LABELS },
+  pressao_arterial: { values: BIOMARKER_PA_CONTEXTS, labels: BIOMARKER_PA_CONTEXT_LABELS },
+}
 
 // Reusa o seletor data/hora do registro de dose (DoseActionSheet): Android = 2 etapas
 // (data → hora); iOS = picker datetime em modal.
@@ -59,6 +67,10 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
   const showTabs = !fixedType
   const [type, setType] = useState(fixedType || defaultType)
   const [value, setValue] = useState(editItem ? String(editItem.value).replace('.', ',') : '')
+  // Diastólica (PA) — 2º campo só visível p/ pressao_arterial.
+  const [valueSec, setValueSec] = useState(
+    editItem?.value_secondary != null ? String(editItem.value_secondary).replace('.', ',') : ''
+  )
   const [context, setContext] = useState(editItem?.context ?? null)
   // measuredAt editável só na edição (criação usa "Agora" via DEFAULT now()).
   const [measuredAt, setMeasuredAt] = useState(editItem?.measured_at ? parseISO(editItem.measured_at) : null)
@@ -68,11 +80,14 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
   const [errorMsg, setErrorMsg] = useState(null)
 
   const unit = BIOMARKER_TYPE_UNITS[type]
-  const showContext = type === 'glicemia'
+  const isPa = type === 'pressao_arterial'
+  const ctxConfig = CONTEXTS_BY_TYPE[type] ?? null
+  const showContext = !!ctxConfig
 
   function reset() {
     setType(fixedType || defaultType)
     setValue(editItem ? String(editItem.value).replace('.', ',') : '')
+    setValueSec(editItem?.value_secondary != null ? String(editItem.value_secondary).replace('.', ',') : '')
     setContext(editItem?.context ?? null)
     setMeasuredAt(editItem?.measured_at ? parseISO(editItem.measured_at) : null)
     setShowDatePicker(false)
@@ -104,15 +119,26 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
   function handleSelectType(t) {
     selectionTap()
     setType(t)
-    if (t !== 'glicemia') setContext(null)
+    // Contexto é por família — trocar de tipo zera o contexto (evita contexto inválido p/ o novo tipo).
+    setContext(null)
+    if (t !== 'pressao_arterial') setValueSec('')
     setErrorMsg(null)
   }
 
   async function handleSave() {
     const num = coerceDecimal(value)
     if (Number.isNaN(num) || num <= 0) {
-      setErrorMsg('Digite um valor válido maior que zero.')
+      setErrorMsg(isPa ? 'Digite a sistólica (maior que zero).' : 'Digite um valor válido maior que zero.')
       return
+    }
+    // PA: diastólica obrigatória e válida (refine do core exige ambas — não gravar PA pela metade).
+    let secNum = null
+    if (isPa) {
+      secNum = coerceDecimal(valueSec)
+      if (Number.isNaN(secNum) || secNum <= 0) {
+        setErrorMsg('Digite a diastólica (maior que zero).')
+        return
+      }
     }
     try {
       setSaving(true)
@@ -120,6 +146,7 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
       const payload = {
         type,
         value: num,
+        value_secondary: secNum,
         unit,
         context: showContext ? context : null,
       }
@@ -171,39 +198,74 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
             <Text style={styles.lockedType}>{BIOMARKER_TYPE_LABELS[type]}</Text>
           )}
 
-          {/* Valor gigante + unidade fixa */}
-          <View style={styles.valueRow}>
-            <TextInput
-              style={[styles.valueInput, errorMsg && styles.valueInputError]}
-              value={value}
-              onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
-              keyboardType="decimal-pad"
-              placeholder="0"
-              placeholderTextColor={colors.neutral[300]}
-              maxLength={6}
-              autoFocus
-              accessibilityLabel={`Valor da medida em ${unit}`}
-            />
-            <Text style={styles.unit}>{unit}</Text>
-          </View>
+          {/* Valor gigante + unidade fixa. PA = 2 campos (sistólica "por" diastólica). */}
+          {isPa ? (
+            <View style={styles.paRow}>
+              <View style={styles.paField}>
+                <TextInput
+                  style={[styles.paInput, errorMsg && styles.valueInputError]}
+                  value={value}
+                  onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
+                  keyboardType="decimal-pad"
+                  placeholder="120"
+                  placeholderTextColor={colors.neutral[300]}
+                  maxLength={3}
+                  autoFocus
+                  returnKeyType="next"
+                  accessibilityLabel="Sistólica em mmHg"
+                />
+                <Text style={styles.paFieldLabel}>Sistólica</Text>
+              </View>
+              <Text style={styles.paSep}>por</Text>
+              <View style={styles.paField}>
+                <TextInput
+                  style={[styles.paInput, errorMsg && styles.valueInputError]}
+                  value={valueSec}
+                  onChangeText={(v) => { setValueSec(v); if (errorMsg) setErrorMsg(null) }}
+                  keyboardType="decimal-pad"
+                  placeholder="80"
+                  placeholderTextColor={colors.neutral[300]}
+                  maxLength={3}
+                  accessibilityLabel="Diastólica em mmHg"
+                />
+                <Text style={styles.paFieldLabel}>Diastólica</Text>
+              </View>
+              <Text style={styles.unit}>{unit}</Text>
+            </View>
+          ) : (
+            <View style={styles.valueRow}>
+              <TextInput
+                style={[styles.valueInput, errorMsg && styles.valueInputError]}
+                value={value}
+                onChangeText={(v) => { setValue(v); if (errorMsg) setErrorMsg(null) }}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor={colors.neutral[300]}
+                maxLength={6}
+                autoFocus
+                accessibilityLabel={`Valor da medida em ${unit}`}
+              />
+              <Text style={styles.unit}>{unit}</Text>
+            </View>
+          )}
 
           {/* Caption de erro — altura-neutra (não empurra layout) */}
           <Text style={[styles.caption, !errorMsg && styles.captionHidden]}>{errorMsg || ' '}</Text>
 
-          {/* Contexto (só glicemia) — opcional, 1 toque */}
+          {/* Contexto por família (glicemia/PA) — opcional, 1 toque */}
           {showContext ? (
             <View style={styles.ctxGrid}>
-              {BIOMARKER_CONTEXTS.map((c) => (
+              {ctxConfig.values.map((c) => (
                 <Pressable
                   key={c}
                   onPress={() => { selectionTap(); setContext(context === c ? null : c) }}
                   style={[styles.ctxChip, context === c && styles.ctxChipActive]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: context === c }}
-                  accessibilityLabel={BIOMARKER_CONTEXT_LABELS[c]}
+                  accessibilityLabel={ctxConfig.labels[c]}
                 >
                   <Text style={[styles.ctxChipText, context === c && styles.ctxChipTextActive]}>
-                    {BIOMARKER_CONTEXT_LABELS[c]}
+                    {ctxConfig.labels[c]}
                   </Text>
                 </Pressable>
               ))}
@@ -323,6 +385,15 @@ const styles = StyleSheet.create({
   },
   valueInputError: { color: colors.status.error },
   unit: { fontSize: 22, fontWeight: '600', color: colors.text.muted },
+  // PA — 2 campos (sistólica "por" diastólica), unidade à direita.
+  paRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: spacing[2] },
+  paField: { alignItems: 'center' },
+  paInput: {
+    fontSize: 48, fontWeight: '700', color: colors.text.primary, textAlign: 'center', minWidth: 72,
+    padding: 0, fontFamily: typography.fontFamily.bold,
+  },
+  paFieldLabel: { fontSize: 12, color: colors.text.muted, marginTop: spacing[1] },
+  paSep: { fontSize: 20, fontWeight: '600', color: colors.text.muted },
   caption: { fontSize: 12, color: colors.status.error, textAlign: 'center', marginTop: spacing[1], minHeight: 16 },
   captionHidden: { opacity: 0 },
   ctxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], justifyContent: 'center', marginTop: spacing[3] },
