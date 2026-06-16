@@ -324,7 +324,7 @@ export default function DoseActionSheet({
           medicine_id: instance?.medicine_id,
           protocol_id: instance?.protocol_id,
         },
-        instance?.id
+        instance?.instanceId  // instanceId = UUID bruto; instance.id = "inst:<uuid>" (prefixo core)
       )
     }
     onClose?.()
@@ -334,7 +334,7 @@ export default function DoseActionSheet({
     if (isOrphan) {
       onDeleteLog?.(instance.logId)
     } else {
-      onUndo?.(instance?.id)
+      onUndo?.(instance?.instanceId)  // instanceId = UUID bruto; instance.id = "inst:<uuid>" (prefixo core)
     }
     onClose?.()
   }

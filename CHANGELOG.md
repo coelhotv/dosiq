@@ -7,6 +7,28 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.19.0 (mobile) — 2026-06-16 — Histórico Integrado (doses + biomarcadores)
+
+> **Bump:** mobile `0.18.1 → 0.19.0` (minor — nova feature user-facing: biomarcadores na lista do dia). Spec 033.
+
+### 📱 Alterado (mobile)
+
+- **Refactor arquitetural do histórico de doses** (spec 033 — service-first): `useHistoryData.js`
+  refatorado para hook fino; lógica de fetch/transform migrada para `historyTimelineService.js`
+  (novo service mobile que envolve `createTimelineService` do core — CON-023). Elimina
+  `fetchOrphanLogs`, `normalizeOrphanLog` e `enrichInstancesWithProtocol` locais ao hook.
+  Deduplicação log↔instância (AP-193) e `localDay` por fuso passam a ser responsabilidade do core.
+
+- **Biomarcadores na lista do dia** (US2/FR-004/FR-005): medidas de glicemia, peso e PA registradas
+  aparecem no histórico do dia selecionado, intercaladas com as doses por horário. Novo componente
+  `BiomarkerHistoryCard` com ações inline Editar (abre `MeasureLogSheet` sem sair do histórico) e
+  Excluir (com confirmação). Chip "X DOSES" continua contando apenas doses (FR-005, ADR-054).
+
+- **KPIs de aderência isolados** (ADR-054): `adherence30d`, `streak` e `dosesThisMonth` calculados
+  apenas sobre eventos `type === 'dose'`; biomarcadores não contaminam os cálculos de adesão.
+
+---
+
 ## [Unreleased]
 
 ### Adicionado
