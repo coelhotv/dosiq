@@ -11,6 +11,9 @@ import WeekCalendar from '@history/components/WeekCalendar'
 import DoseHistoryKpis from '@history/components/DoseHistoryKpis'
 import DoseHistoryList from '@history/components/DoseHistoryList'
 import DoseActionSheet from '@history/components/DoseActionSheet'
+import MeasureDetailSheet from '@features/measures/components/MeasureDetailSheet'
+import MeasureLogSheet from '@features/measures/components/MeasureLogSheet'
+import { measuresRepo } from '@features/measures/services/measuresRepo'
 
 const WEEK_DAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -24,19 +27,69 @@ export default function HistoryScreen() {
   const navigation = useNavigation()
   const { instances, selectedDay, setSelectedDay, kpis, instancesForDay, timezone, minDay, maxDay, refresh } = useHistoryData()
   const [sheetInstance, setSheetInstance] = useState(null)
+  // detailMeasure: shape normalizado para MeasureDetailSheet ({id, type, value, ...})
+  const [detailMeasure, setDetailMeasure] = useState(null)
+  const [editMeasure, setEditMeasure] = useState(null)
+  const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
   const mutation = useHistoryMutation({ onSuccess: refresh })
 
   const dayLabel = useMemo(() => formatDayHeader(selectedDay), [selectedDay])
-  const doseCount = instancesForDay.length
+  // Chip conta só doses (FR-005, ADR-054 — biomarkers excluídos da contagem)
+  const doseCount = useMemo(
+    () => instancesForDay.filter(ev => ev.type === 'dose').length,
+    [instancesForDay]
+  )
 
   const handleItemPress = useCallback((inst) => {
-    setSheetInstance(inst)
+    if (inst.type === 'biomarker') {
+      // Normaliza shape do histórico → shape esperado por MeasureDetailSheet
+      setDetailMeasure({
+        id: inst.biomarkerId,
+        type: inst.bioType,
+        value: inst.value,
+        value_secondary: inst.value_secondary ?? null,
+        unit: inst.unit ?? null,
+        context: inst.context ?? null,
+        measured_at: inst.measured_at,
+      })
+    } else {
+      setSheetInstance(inst)
+    }
   }, [])
 
-  const handleSheetClose = useCallback(() => {
-    setSheetInstance(null)
+  const handleSheetClose = useCallback(() => setSheetInstance(null), [])
+
+  // Editar via MeasureDetailSheet → abre MeasureLogSheet (mesmo fluxo de MeasuresScreen)
+  const handleDetailMeasureEdit = useCallback((item) => {
+    setDetailMeasure(null)
+    setEditMeasure(item)
+    setMeasureLogOpen(true)
   }, [])
+
+  const handleDetailMeasureDelete = useCallback(async (item) => {
+    await measuresRepo.remove(item.id)
+    setDetailMeasure(null)
+    refresh()
+  }, [refresh])
+
+  const handleMeasureLogClose = useCallback(() => {
+    setMeasureLogOpen(false)
+    setEditMeasure(null)
+  }, [])
+
+  const handleMeasureSaved = useCallback(async (payload) => {
+    let result
+    if (payload?.id) {
+      const { id, ...patch } = payload
+      result = await measuresRepo.update(id, patch)
+    } else {
+      result = await measuresRepo.create(payload)
+    }
+    handleMeasureLogClose()
+    refresh()
+    return result
+  }, [handleMeasureLogClose, refresh])
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -97,6 +150,24 @@ export default function HistoryScreen() {
         onUpdateLog={mutation.updateLog}
         onDeleteLog={mutation.deleteLog}
         loading={mutation.loading}
+      />
+
+      {/* Detalhe de medida — mesmo sheet do Histórico de Medidas (consistência de UX) */}
+      <MeasureDetailSheet
+        open={!!detailMeasure}
+        item={detailMeasure}
+        onClose={() => setDetailMeasure(null)}
+        onEdit={handleDetailMeasureEdit}
+        onDelete={handleDetailMeasureDelete}
+      />
+
+      {/* Edição inline de medida (SC-005 — sem navegar para MeasuresScreen) */}
+      <MeasureLogSheet
+        key={editMeasure?.id ?? 'create-measure'}
+        open={measureLogOpen}
+        onClose={handleMeasureLogClose}
+        onSaved={handleMeasureSaved}
+        editItem={editMeasure}
       />
     </SafeAreaView>
   )

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
 import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
+import BiomarkerHistoryCard from './BiomarkerHistoryCard'
 
 const COLORS = {
   teal: colors.brand.primary,
@@ -23,11 +24,29 @@ function StatusIcon({ status }) {
 }
 
 export default function DoseHistoryList({ instances = [], timezone = 'America/Sao_Paulo', onItemPress }) {
+  // Já chegam ordenados pelo buildTimeline (ASC); mantém sort local como fallback defensivo
   const sorted = useMemo(() => (
-    [...instances].sort((a, b) => parseISO(a.scheduled_for) - parseISO(b.scheduled_for))
+    [...instances].sort((a, b) => {
+      const tsA = a.occurred_at ?? a.scheduled_for ?? ''
+      const tsB = b.occurred_at ?? b.scheduled_for ?? ''
+      return tsA < tsB ? -1 : tsA > tsB ? 1 : 0
+    })
   ), [instances])
 
   const renderItem = ({ item, index }) => {
+    const isLast = index === sorted.length - 1
+
+    if (item.type === 'biomarker') {
+      return (
+        <BiomarkerHistoryCard
+          item={item}
+          timezone={timezone}
+          onPress={onItemPress}
+          isLast={isLast}
+        />
+      )
+    }
+
     const timeStr = (() => {
       try {
         return new Intl.DateTimeFormat('pt-BR', {
@@ -44,7 +63,6 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
     })()
 
     const medicineName = item.medicine_name || item.protocol_name || '—'
-    const isLast = index === sorted.length - 1
 
     return (
       <TouchableOpacity

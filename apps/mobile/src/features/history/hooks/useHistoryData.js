@@ -5,138 +5,67 @@ import {
   computeStreakFromInstances,
   parseISO,
 } from '@dosiq/core'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { getHistoryTimeline } from '../services/historyTimelineService'
 
 function shiftDateStr(dateStr, days) {
+  // T12:00:00 evita UTC-midnight (R-020); parseISO do core no lugar de new Date()
   const d = parseISO(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + days)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { getDoseInstancesForPeriod } from '../../dashboard/services/dashboardService'
 
-// Converte timestamp UTC para data local "YYYY-MM-DD" no tz do usuário.
-// Evita o bug de doses das 22h local (= T01:00Z no dia seguinte) aparecerem no dia errado.
-function utcToLocalDateStr(utcIso, tz) {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(parseISO(utcIso))
-  } catch {
-    // fallback: corta o ISO diretamente (device tz)
-    return utcIso.slice(0, 10)
-  }
-}
-
-async function enrichInstancesWithProtocol(instances) {
-  if (!instances.length) return instances
-
-  const protocolIds = [...new Set(instances.map(i => i.protocol_id).filter(Boolean))]
-  if (!protocolIds.length) return instances
-
-  const { data, error } = await supabase
-    .from('protocols')
-    .select('id, name, medicine_id, dosage_per_intake, intake_unit, medicine:medicines(name, dosage_per_pill, dosage_unit, units_per_ml), treatment_plan:treatment_plans(name)')
-    .in('id', protocolIds)
-
-  if (error || !data) return instances
-
-  const byId = {}
-  data.forEach(p => { byId[p.id] = p })
-
-  return instances.map(inst => {
-    const p = byId[inst.protocol_id]
-    if (!p) return inst
-    return {
-      ...inst,
-      medicine_id: p.medicine_id,
-      medicine_name: p.medicine?.name ?? p.name,
-      dosage_per_intake: p.dosage_per_intake,
-      intake_unit: p.intake_unit,
-      dosage_per_pill: p.medicine?.dosage_per_pill,
-      dosage_unit: p.medicine?.dosage_unit,
-      units_per_ml: p.medicine?.units_per_ml,
-      treatment_name: p.treatment_plan?.name,
-      protocol_name: p.name,
-    }
-  })
-}
-
-async function fetchOrphanLogs(userId, fromIso, toIso) {
-  const { data, error } = await supabase
-    .from('medicine_logs')
-    .select('id, protocol_id, medicine_id, taken_at, quantity_taken, notes')
-    .eq('user_id', userId)
-    .is('dose_instance_id', null)
-    .gte('taken_at', fromIso)
-    .lte('taken_at', toIso)
-    .order('taken_at', { ascending: false })
-  if (error || !data) return []
-  return data
-}
-
-// Normaliza log avulso para o mesmo shape de dose_instance consumido por DoseHistoryList.
-// scheduled_for = taken_at: permite que o filtro de dia e o sort funcionem sem mudança.
-// dosage_per_intake = quantity_taken: exibe a quantidade real tomada (não a do protocolo).
-function normalizeOrphanLog(log) {
-  return {
-    ...log,
-    id: `log:${log.id}`,
-    logId: log.id,
-    source: 'log',
-    scheduled_for: log.taken_at,
-    status: 'taken',
-    is_orphan: true,
-    dosage_per_intake: log.quantity_taken,
-  }
-}
-
-// Dias carregados para trás e para frente
 const HISTORY_PAST_DAYS = 30
 const HISTORY_FUTURE_DAYS = 7
 
 export function useHistoryData() {
-  // Separados para KPIs: aderência/streak usam só dose_instances (ADR-054)
-  const [doseInstances, setDoseInstances] = useState([])
-  const [orphanItems, setOrphanItems] = useState([])
+  const [allItems, setAllItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedDay, setSelectedDay] = useState(getTodayLocal())
-  // Timezone precisa estar antes dos memos que dependem dela
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
 
-  // Lista combinada para renderização (instances + logs avulsos)
-  const instances = useMemo(() => [...doseInstances, ...orphanItems], [doseInstances, orphanItems])
+  // ADR-054: KPIs usam apenas eventos de dose (nunca biomarkers)
+  const doseItems = useMemo(() => allItems.filter(ev => ev.type === 'dose'), [allItems])
+  const measureItems = useMemo(() => allItems.filter(ev => ev.type === 'biomarker'), [allItems])
+
+  // Combinação para renderização (doses + medidas, ordenados pelo service)
+  const instances = allItems
 
   const kpis = useMemo(() => {
-    // Aderência e streak: dose_instances apenas (ADR-054 / AP-193)
-    const adherenceData = computeAdherenceFromInstances(doseInstances)
+    // Converte itens flat de volta ao shape mínimo que computeAdherenceFromInstances espera
+    const adherenceData = computeAdherenceFromInstances(doseItems.map(ev => ({
+      status: ev.status,
+      scheduled_for: ev.scheduled_for,
+    })))
     const adherence30d = Math.round(adherenceData.rate * 100)
-    const streak = computeStreakFromInstances(doseInstances)
+    const streak = computeStreakFromInstances(doseItems.map(ev => ({
+      status: ev.status,
+      scheduled_for: ev.scheduled_for,
+    })))
 
-    const now = getTodayLocal()
-    const monthPrefix = now.slice(0, 7) // "YYYY-MM"
-    // Conta taken de instâncias + avulsas no mês
-    const dosesThisMonth = instances.filter(item => {
-      if (item.status !== 'taken') return false
-      return utcToLocalDateStr(item.scheduled_for, timezone).startsWith(monthPrefix)
+    const monthPrefix = getTodayLocal().slice(0, 7)
+    // Conta taken de doses no mês corrente (ADR-054: biomarkers excluídos)
+    const dosesThisMonth = doseItems.filter(ev => {
+      if (ev.status !== 'taken') return false
+      return ev.localDay?.startsWith(monthPrefix)
     }).length
 
     return { adherence30d, streak, dosesThisMonth }
-  }, [doseInstances, instances, timezone])
+  }, [doseItems])
 
-  // Limites de navegação derivados da janela carregada
   const today = getTodayLocal()
   const minDay = shiftDateStr(today, -(HISTORY_PAST_DAYS - 1))
   const maxDay = shiftDateStr(today, HISTORY_FUTURE_DAYS)
 
+  // T007: usa localDay derivado pelo core (fuso correto, sem utcToLocalDateStr custom)
   const instancesForDay = useMemo(() => {
-    return instances
-      .filter(item => item.status !== 'skipped_paused')
-      .filter(item => utcToLocalDateStr(item.scheduled_for, timezone) === selectedDay)
-  }, [instances, selectedDay, timezone])
+    return allItems.filter(ev => {
+      if (ev.localDay !== selectedDay) return false
+      if (ev.type === 'dose' && ev.status === 'skipped_paused') return false
+      return true
+    })
+  }, [allItems, selectedDay])
 
   const load = useCallback(async () => {
     try {
@@ -144,37 +73,29 @@ export function useHistoryData() {
       setError(null)
 
       const session = await supabase.auth.getSession()
-      if (!session?.data?.session?.user?.id) {
+      const userId = session?.data?.session?.user?.id
+      if (!userId) {
         setError('Usuário não autenticado')
         return
       }
 
-      const userId = session.data.session.user.id
+      // Carrega timezone antes do service para passar o fuso correto ao core
+      const { data: settingsData } = await supabase
+        .from('user_settings')
+        .select('timezone')
+        .eq('user_id', userId)
+        .single()
 
-      // Janela para busca de logs avulsos (mesma lógica dos dose_instances).
-      // Expande ±1 dia em UTC: o limite local (T00/T23:59Z) desloca por fuso e perderia
-      // doses na borda (ex: GMT-3, dose pós-21h cai no dia seguinte em UTC). O agrupamento
-      // preciso por dia local fica a cargo do filtro em memória (utcToLocalDateStr).
-      const fromIso = shiftDateStr(getTodayLocal(), -HISTORY_PAST_DAYS - 1) + 'T00:00:00Z'
-      const toIso = shiftDateStr(getTodayLocal(), HISTORY_FUTURE_DAYS + 1) + 'T23:59:59Z'
+      const tz = settingsData?.timezone || 'America/Sao_Paulo'
+      startTransition(() => setTimezone(tz))
 
-      const [raw, rawOrphanLogs, settings] = await Promise.all([
-        getDoseInstancesForPeriod(userId, HISTORY_PAST_DAYS, HISTORY_FUTURE_DAYS),
-        fetchOrphanLogs(userId, fromIso, toIso),
-        supabase.from('user_settings').select('timezone').eq('user_id', userId).single(),
-      ])
+      const items = await getHistoryTimeline(userId, {
+        pastDays: HISTORY_PAST_DAYS,
+        futureDays: HISTORY_FUTURE_DAYS,
+        tz,
+      })
 
-      if (settings?.data?.timezone) {
-        startTransition(() => setTimezone(settings.data.timezone))
-      }
-
-      const [enrichedInstances, enrichedOrphan] = await Promise.all([
-        enrichInstancesWithProtocol(raw || []),
-        enrichInstancesWithProtocol(rawOrphanLogs),
-      ])
-
-      setDoseInstances(enrichedInstances)
-      setOrphanItems(enrichedOrphan.map(normalizeOrphanLog))
+      setAllItems(items)
     } catch (err) {
       setError(err?.message || 'Erro ao carregar histórico')
       console.error('[useHistoryData] load:', err)
@@ -184,9 +105,7 @@ export function useHistoryData() {
   }, [])
 
   useEffect(() => {
-    startTransition(() => {
-      load()
-    })
+    startTransition(() => { load() })
   }, [load])
 
   return {
@@ -201,5 +120,6 @@ export function useHistoryData() {
     minDay,
     maxDay,
     refresh: load,
+    measureItems,
   }
 }
