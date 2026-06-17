@@ -4,6 +4,7 @@
 // R-121: validação Zod antes de qualquer mutação
 
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { cancelAlarm } from '../../../platform/alarms/alarmService'
 import { logSchema, createDoseInstanceRepository, parseISO } from '@dosiq/core'
 import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
@@ -12,6 +13,18 @@ import { debugLog } from '@shared/utils/debugLog'
 // Repo de instâncias para a âncora de log↔ocorrência (S3.6.2/AP-193). Usa o mesmo client
 // da sessão (RLS escopa por user_id); snap e markTaken filtram por protocol_id (AP-A03).
 const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+
+// Cancela o alarme local da instância resolvida (best-effort, R-245/246). Sem instanceId
+// (PRN/avulso) não há alarme atrelado → no-op. NUNCA lança — o registro/estoque já estão
+// commitados; um erro aqui não pode reverter a tomada. (036/AP-235)
+async function _cancelAlarmBestEffort(instanceId) {
+  if (!instanceId) return
+  try {
+    await cancelAlarm(instanceId)
+  } catch (err) {
+    if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
+  }
+}
 
 /**
  * Âncora de log → instância materializada (best-effort, R-245/R-246). Espelha o web
@@ -344,6 +357,10 @@ export async function registerDose(logData, { instanceId = null } = {}) {
     // Âncora best-effort (S3.6.2/AP-193) — após o estoque, antes do retorno.
     // F4.3c: âncora direta por instanceId quando a tomada parte da timeline.
     await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at, instanceId)
+    // Cancel-on-resolve cross-superfície (036/AP-235): resolver a dose pela timeline/FAB
+    // cancela o alarme local (trigger + nag + soneca) pra não reabrir numa dose já tomada.
+    // Best-effort (R-245/246) — falha NUNCA bloqueia registro/estoque.
+    await _cancelAlarmBestEffort(instanceId)
     await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
     return { success: true, data: logEntry }
   } catch (err) {
@@ -442,6 +459,7 @@ export async function registerDoseMany(logsData) {
       // F4.3d: direta por instance_id quando resolvido; senão snap por tolerância.
       if (result.success) {
         await _anchorLogToInstance(logEntry.protocol_id, logEntry.id, logEntry.taken_at, anchors[i])
+        await _cancelAlarmBestEffort(anchors[i]) // 036/AP-235 — cancela alarme de cada instância resolvida
       }
       results.push(result)
     }

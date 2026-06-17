@@ -46,6 +46,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   consolida 4 cópias locais; padrão de PA passou de "120/80" para "120 por 80".
 
 ### Corrigido
+- **Alarme reabria numa dose já registrada** (spec 036, mobile `0.19.1`): ao tirar soneca de um
+  alarme crítico e marcar a dose como tomada por outra superfície (timeline/FAB do app) antes do
+  re-disparo, o alarme de tela cheia voltava a abrir numa dose já resolvida, forçando Tomei/Soneca/
+  Pular (risco de dupla contagem / status corrompido). Agora registrar a dose por qualquer via
+  cancela o alarme local (incl. soneca/nag pendentes), e a tela cheia se fecha sozinha quando a dose
+  não está mais pendente. **Transparência clínica:** a tela cheia passa a mostrar a concentração do
+  medicamento e a quantidade a tomar, na unidade correta (mg/UI/mL/gotas), no modo single e agrupado.
+  No modo single, o ícone agora reflete a forma/tipo do medicamento (mesmo ícone das demais telas,
+  ex.: seringa p/ injetável) e o layout foi reordenado: ícone → "Hora da dose" → horário → nome +
+  concentração → "Dose:" + quantidade.
 - **Cursor do campo de PA no iOS** (mobile `0.18.1`): ao abrir o sheet de medida em PA ou trocar de
   tipo, o cursor não aparecia na sistólica e o teclado fechava. Causa: a árvore do input era trocada
   por tipo (desmontava o campo focado) e o placeholder divergente (`120`/`80`) re-media o input,

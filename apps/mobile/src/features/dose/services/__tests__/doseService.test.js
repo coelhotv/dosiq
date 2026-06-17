@@ -17,6 +17,13 @@ jest.mock('@dosiq/core', () => ({
 jest.mock('../../../../platform/analytics/firebaseAnalytics', () => ({ logEvent: jest.fn() }))
 jest.mock('@shared/utils/debugLog', () => ({ debugLog: jest.fn() }))
 
+// Cancel-on-resolve cross-superfície (036): doseService cancela o alarme local da
+// instância resolvida. Best-effort — falha não pode derrubar o registro.
+const mockCancelAlarm = jest.fn()
+jest.mock('../../../../platform/alarms/alarmService', () => ({
+  cancelAlarm: (...a) => mockCancelAlarm(...a),
+}))
+
 // Supabase mock: auth + from(insert/select/single, update/eq) + rpc.
 const mockInsertSingle = jest.fn()
 const mockRpc = jest.fn(() => ({ error: null }))
@@ -51,6 +58,7 @@ beforeEach(() => {
   mockGetUser.mockReturnValue({ data: { user: { id: 'user-1' } }, error: null })
   mockMarkTaken.mockResolvedValue(true)
   mockFindAnchorInstance.mockResolvedValue({ id: 'inst-snap' })
+  mockCancelAlarm.mockResolvedValue(undefined)
 })
 
 describe('registerDose — âncora por instanceId (F4.3c)', () => {
@@ -108,5 +116,37 @@ describe('registerDoseMany — âncora por instance_id (F4.3d)', () => {
     const res = await registerDoseMany([{ ...INPUT }]) // sem instance_id
     expect(res.success).toBe(true)
     expect(mockFindAnchorInstance).toHaveBeenCalledWith({ protocolId: PID, takenAt: INPUT.taken_at })
+  })
+})
+
+describe('cancel-on-resolve cross-superfície (036/AP-235)', () => {
+  it('registerDose com instanceId → cancela o alarme daquela instância', async () => {
+    await registerDose(INPUT, { instanceId: 'inst-direct' })
+    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-direct')
+  })
+
+  it('registerDose sem instanceId → não chama cancelAlarm (PRN/avulso, sem alarme)', async () => {
+    await registerDose(INPUT)
+    expect(mockCancelAlarm).not.toHaveBeenCalled()
+  })
+
+  it('cancelAlarm é best-effort — falha não derruba o registro', async () => {
+    mockCancelAlarm.mockRejectedValueOnce(new Error('notifee down'))
+    const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
+    expect(res.success).toBe(true)
+  })
+
+  it('registerDoseMany → cancela o alarme de cada instância resolvida', async () => {
+    mockBatch.data = [
+      { id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
+      { id: 'log-b', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
+    ]
+    mockBatch.error = null
+    await registerDoseMany([
+      { ...INPUT, instance_id: 'inst-a' },
+      { ...INPUT, instance_id: 'inst-b' },
+    ])
+    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-a')
+    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-b')
   })
 })
