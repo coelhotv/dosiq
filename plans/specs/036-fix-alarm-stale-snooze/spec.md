@@ -2,7 +2,7 @@
 
 **Feature Directory:** `plans/specs/036-fix-alarm-stale-snooze`
 **Created:** 2026-06-17
-**Status:** specified
+**Status:** delivered (PR #672, mobile 0.19.1)
 **Tier:** 1 (Standard — bug de produção, mobile-only, ~3 arquivos, sem migração/ADR/contrato novo)
 **Input:** Relato PO: (1) com alarme crítico, soneca + dose marcada tomada por outra via antes do
 re-disparo → alarme full-screen reabre numa dose já resolvida, sem saída; (2) a full-screen não

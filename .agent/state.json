@@ -2,8 +2,8 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "coding",
-    "status": "in-review",
+    "mode": "idle",
+    "status": "delivered",
     "goal": "Hotfix 036: alarme de soneca obsoleto cross-superfície + full-screen sem saída + transparência clínica (concentração/quantidade) na full-screen (Tier 1, mobile)",
     "goal_type": "fix",
     "tier": 1,
@@ -14,12 +14,12 @@
     "linked_adrs": [],
     "linked_contracts": [],
     "last_pr": 672,
-    "branch": "fix/alarm-stale-snooze",
+    "branch": "main",
     "mobile_version": "0.19.1"
   },
   "memory": {
     "last_distillation": "2026-06-15T00:00:00Z",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "rules_count": 227,
     "anti_patterns_count": 233,
     "decisions_count": 69,
