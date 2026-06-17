@@ -82,12 +82,13 @@ Esta convenção foi escolhida porque:
 
 ```
 apps/web/src/
-  services/
-    api/
-      medicineService.js
-      __tests__/
-        medicineService.test.js
-        medicineService.integration.test.js
+  features/
+    medications/
+      services/
+        medicineService.js
+        __tests__/
+          medicineService.test.js
+          medicineService.integration.test.js
   schemas/
     medicineSchema.js
     __tests__/

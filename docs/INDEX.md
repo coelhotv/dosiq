@@ -1,175 +1,104 @@
-# Documentação - Dosiq
+# Documentação Oficial - Dosiq
 
-**Versão:** 4.0.0  
-**Última Atualização:** 2026-04-02  
+**Versão:** 4.1.0  
+**Última Atualização:** Junho de 2026  
 **Status:** Índice Principal de Documentação
+
+Bem-vindo à documentação oficial do Dosiq. O projeto adota uma arquitetura Turborepo (monorepo), operando com React 19, Vite, Supabase, regras rigorosas via Zod, e processos guiados pelo **DEVFLOW**.
 
 ---
 
 ## 📚 Índice por Audiência
 
-### 🚀 Para Novos Desenvolvedores
+### 🚀 Para Novos Desenvolvedores & Onboarding
 
-1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido ✅
-2. [`getting-started/SETUP_NATIVE_HIBRIDO.md`](getting-started/SETUP_NATIVE_HIBRIDO.md) - Setup local para desenvolvimento iOS/Android/Expo da frente hibrida ✅
-3. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura (v4.0.0) ✅
-4. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos ✅
-5. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes ✅
+1. [`getting-started/SETUP.md`](getting-started/SETUP.md) - Configuração do ambiente e início rápido
+2. [`getting-started/SETUP_NATIVE_HIBRIDO.md`](getting-started/SETUP_NATIVE_HIBRIDO.md) - Setup local para desenvolvimento iOS/Android/Expo da frente mobile
+3. [`ARQUITETURA.md`](ARQUITETURA.md) - Visão geral da arquitetura atual (v4.0.0+)
+4. [`PADROES_CODIGO.md`](PADROES_CODIGO.md) - Padrões de código completos
+5. [`standards/TESTING.md`](standards/TESTING.md) - Guia completo de testes
+6. [`AGENTS.md`](../AGENTS.md) - **LEITURA OBRIGATÓRIA**: Guia de governança e workflow para agentes IA
 
 ### 🏗️ Arquitetura & Design
 
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema (v4.0.0) | ✅ Atual |
-| [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase com refactor de estoque/purchases | ✅ Atual |
-| [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system | ✅ Migrado |
-| [`architecture/NOTIFICATIONS.md`](architecture/NOTIFICATIONS.md) | Central de Notificações & Bot (Inbox-First) | ✅ Atual |
-| [`releases/v4.0.0.md`](releases/v4.0.0.md) | Release notes oficiais da v4.0.0 | ✅ Novo |
+| Documento | Descrição |
+|-----------|-----------|
+| [`ARQUITETURA.md`](ARQUITETURA.md) | Visão arquitetural completa do sistema |
+| [`architecture/DATABASE.md`](architecture/DATABASE.md) | Esquemas do banco de dados Supabase e lógica de constraints |
+| [`architecture/DOSE_INSTANCES.md`](architecture/DOSE_INSTANCES.md) | Engenharia e materialização de instâncias de doses (Core v4) |
+| [`architecture/NOTIFICATIONS.md`](architecture/NOTIFICATIONS.md) | Engenharia da Central de Notificações, DLQ e Bot Telegram |
+| [`architecture/CSS.md`](architecture/CSS.md) | Arquitetura CSS e design system |
+| [`architecture/TELEGRAM_BOT.md`](architecture/TELEGRAM_BOT.md) | Estrutura técnica e resiliência do Bot do Telegram |
+| [`architecture/CHATBOT_AI.md`](architecture/CHATBOT_AI.md) | Integrações de AI conversacional |
+| [`architecture/PWA_WEB_PUSH.md`](architecture/PWA_WEB_PUSH.md) | Arquitetura de Service Workers e Web Push do PWA |
+| [`architecture/EXPO_METRO_PIPELINE.md`](architecture/EXPO_METRO_PIPELINE.md) | Arquitetura Metro, Expo e Pipeline Mobile |
 
-**Nota**: ARQUITETURA.md permanece na raiz como documento primário. ARQUITETURA_FRAMEWORK.md arquivado (conteúdo sobreposto).
+### 📏 Padrões de Desenvolvimento & Qualidade
 
-### 📏 Padrões de Desenvolvimento
+| Documento | Descrição |
+|-----------|-----------|
+| [`PADROES_CODIGO.md`](PADROES_CODIGO.md) | Convenções completas de nomenclatura, imports e React |
+| [`standards/TESTING.md`](standards/TESTING.md) | Guia abrangente de Vitest e Testing Library (smoke, unit, integration) |
+| [`standards/MOBILE_PERFORMANCE.md`](standards/MOBILE_PERFORMANCE.md) | Padrões estritos de otimização de performance M2+ (lazy load, views) |
+| [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git e políticas de branches |
+| [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template oficial de PR |
+| [`standards/CHANGELOG_AND_RELEASES.md`](standards/CHANGELOG_AND_RELEASES.md) | Protocolos R-221 (SQP) para Changelog e Logs C5 |
+| [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) | Integração GitHub Actions + Gemini Code Assist |
+| [`standards/DELIVER_SPRINT_WORKFLOW.md`](standards/DELIVER_SPRINT_WORKFLOW.md) | Guia do workflow `/deliver-sprint` de agentes |
 
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| [`PADROES_CODIGO.md`](PADROES_CODIGO.md) | Convenções completas de nomenclatura, imports, React | ✅ Atual |
-| [`standards/TESTING.md`](standards/TESTING.md) | Guia completo de testes (smoke, unit, integration) | ✅ Completo (Fase 1) |
-| [`standards/GIT_WORKFLOW.md`](standards/GIT_WORKFLOW.md) | Workflow Git obrigatório extraído | ✅ Completo (Fase 3) |
-| [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) | Template de PR | ✅ Migrado |
-| [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) | Integração GitHub Actions + Gemini Code Assist | ✅ Atualizado (v2.0.0) |
+### 📖 Referência de API e Frontend
 
-**Nota**: PADROES_CODIGO.md permanece na raiz como documento primário (1500+ linhas). Consolidação futura opcional.
+| Documento | Descrição |
+|-----------|-----------|
+| [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services do Dosiq |
+| [`reference/HOOKS.md`](reference/HOOKS.md) | Hooks customizados globais |
+| [`reference/SCHEMAS.md`](reference/SCHEMAS.md) | Schemas Zod e documentação de validação |
+| [`reference/FORM_KIT.md`](reference/FORM_KIT.md) | Documentação do sistema de formulários da interface |
+| [`reference/LINTING.md`](reference/LINTING.md) | Regras configuradas no ESLint |
+| [`reference/GLOSSARY.md`](reference/GLOSSARY.md) | Dicionário do domínio da aplicação |
 
-### 📖 Referência de API
+### 🎯 Produto & Funcionalidades (Features)
 
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| [`reference/SERVICES.md`](reference/SERVICES.md) | API interna de services com purchases/stock transacional | ✅ Atual |
-| [`reference/HOOKS.md`](reference/HOOKS.md) | Hooks customizados | ✅ Migrado |
-| [`reference/SCHEMAS.md`](reference/SCHEMAS.md) | Schemas Zod e validação | ✅ Completo (Fase 3) |
+| Documento | Descrição |
+|-----------|-----------|
+| [`features/NOTIFICATIONS_EXPERIENCE.md`](features/NOTIFICATIONS_EXPERIENCE.md) | Estratégia de engajamento, agrupamento e "Inbox-First" |
+| [`features/TITRATION.md`](features/TITRATION.md) | Guia e lógica de protocolos em titulação |
+| [`features/AUTO_TRANSITION.md`](features/AUTO_TRANSITION.md) | Transição automática de doses e limites lógicos |
+| [`features/USER_GUIDE.md`](features/USER_GUIDE.md) | Guia do usuário final para funções principais |
 
-### 🎯 Guias de Features
+### 🤖 Workspace de Agentes de IA (DEVFLOW)
 
-| Documento | Descrição | Status |
-|-----------|-----------|--------|
-| [`features/TITRATION.md`](features/TITRATION.md) | Guia de protocolos em titulação | ✅ Migrado |
-| [`features/AUTO_TRANSITION.md`](features/AUTO_TRANSITION.md) | Transição automática de doses | ✅ Migrado |
-| [`features/USER_GUIDE.md`](features/USER_GUIDE.md) | Guia do usuário final | ✅ Migrado |
+O Dosiq usa um robusto sistema de memória para Agentes de Codificação. Como agente, você deve primariamente focar em:
 
-### 🤖 Para Agentes de IA
+1. **[CLAUDE.md](../CLAUDE.md)** e **[GEMINI.md](../GEMINI.md)** - Regras e contexto gerais.
+2. **[AGENTS.md](../AGENTS.md)** - Protocolos canônicos, workflows obrigatórios (DEVFLOW C1-C5).
+3. **`.agent/memory/RULES_INDEX.md`** - Fonte de verdade para as regras de codificação e produto ativas (`R-NNN`).
+4. **`.agent/memory/ANTI_PATTERNS_INDEX.md`** - Registro de antipadrões mapeados (`AP-NNN`).
 
-1. [`🛡️ AGENTS.md`](../AGENTS.md) - Guia principal para agentes (routing table)
-2. [`.roo/rules-code/rules.md`](../.roo/rules-code/rules.md) - Regras de código
-3. [`.roo/rules-architecture/rules.md`](../.roo/rules-architecture/rules.md) - Regras arquiteturais
-4. [`standards/TESTING.md`](standards/TESTING.md) - Padrões de testes
-5. [`.memory/rules.md`](../.memory/rules.md) - Memória de longo prazo
+*(Nota: Quaisquer menções passadas ao diretório `.memory/` estão oficialmente obsoletas em favor da estrutura `.agent/memory/`)*.
 
 ---
 
-## 🗂️ Ordem de Leitura Recomendada
+## 🗂️ Ordem de Leitura Sugerida para Contribuição
 
-### Onboarding Completo (Novos Desenvolvedores)
-
-```
-1. getting-started/SETUP.md          [30 min] - Setup do ambiente
-2. getting-started/SETUP_NATIVE_HIBRIDO.md [30 min] - Setup local iOS/Android/Expo
-3. ARQUITETURA.md                   [45 min] - Entender arquitetura
-4. PADROES_CODIGO.md               [45 min] - Aprender convenções
-5. standards/TESTING.md              [30 min] - Como escrever testes
-6. reference/SERVICES.md             [20 min] - API de services
-7. standards/GIT_WORKFLOW.md         [15 min] - Workflow obrigatório
-```
-
-### Quick Reference (Desenvolvedores Experientes)
-
-```
-- Padrões de código:     PADROES_CODIGO.md
-- Criar testes:          standards/TESTING.md
-- API de services:       reference/SERVICES.md
-- Hooks customizados:    reference/HOOKS.md
-- Schemas Zod:           reference/SCHEMAS.md
+```text
+1. CLAUDE.md / GEMINI.md             [10 min] - Regras de Ouro
+2. AGENTS.md                         [15 min] - Regras de workflow (Essencial para IA)
+3. ARQUITETURA.md                    [20 min] - Visão Macro e Turborepo
+4. architecture/DATABASE.md          [15 min] - Schema de tabelas Supabase
+5. architecture/DOSE_INSTANCES.md    [20 min] - O coração do sistema na v4.0.0+
+6. PADROES_CODIGO.md                 [20 min] - Regras de React e Features
+7. standards/TESTING.md              [15 min] - Política restritiva de testes e Timeouts
 ```
 
-### Tópicos Específicos
+---
 
-| Preciso entender... | Leia... |
-|---------------------|---------|
-| Como funciona a arquitetura | [`architecture/OVERVIEW.md`](ARQUITETURA.md) |
-| Esquemas do banco de dados | [`architecture/DATABASE.md`](architecture/DATABASE.md) |
-| Sistema CSS e tokens | [`architecture/CSS.md`](architecture/CSS.md) |
-| Notificações & Bot | [`architecture/NOTIFICATIONS.md`](architecture/NOTIFICATIONS.md) |
-| Experiência de Produto (Notificações) | [`features/NOTIFICATIONS_EXPERIENCE.md`](features/NOTIFICATIONS_EXPERIENCE.md) |
-| Release notes da versão atual | [`releases/v4.0.0.md`](releases/v4.0.0.md) |
-| Como nomear variáveis/funções | [`PADROES_CODIGO.md`](PADROES_CODIGO.md) |
-| Onde colocar testes | [`standards/TESTING.md`](standards/TESTING.md#localização-de-arquivos) |
-| Como criar PR | [`standards/PULL_REQUEST_TEMPLATE.md`](standards/PULL_REQUEST_TEMPLATE.md) |
-| Gemini Code Assist | [`standards/GEMINI_INTEGRATION.md`](standards/GEMINI_INTEGRATION.md) |
-| API de um service específico | [`reference/SERVICES.md`](reference/SERVICES.md) |
-| Como usar um hook | [`reference/HOOKS.md`](reference/HOOKS.md) |
-| Protocolos em titulação | [`features/TITRATION.md`](features/TITRATION.md) |
+## 🤝 Contribuição e Manutenção de Docs
+
+- **Status:** Todos os documentos mantidos fora do diretório `archive/` são considerados **ativos**.
+- Quando uma funcionalidade sofrer refactoring drástico, atualize o documento da respectiva `feature` ou `architecture` **antes** do merge.
+- Use path relativos nos links entre documentos.
 
 ---
 
-## 📦 Arquivo e Documentação Histórica
-
-Documentação mais antiga ou relatórios históricos foram arquivados em:
-
-- [`archive/past_deliveries/`](archive/past_deliveries/) - Relatórios de entregas passadas
-- [`archive/tech-specs/`](archive/tech-specs/) - Especificações técnicas antigas
-- [`archive/LINT_COVERAGE.md`](archive/LINT_COVERAGE.md) - Relatório histórico de lint *(para migrar)*
-- [`archive/OTIMIZACAO_TESTES_ESTRATEGIA.md`](archive/OTIMIZACAO_TESTES_ESTRATEGIA.md) - Estratégia antiga de testes *(para migrar)*
-
----
-
-## 🔄 Status da Migração de Documentação
-
-Este índice faz parte da **Phase 2: Documentation Restructure** do plano de overhaul.
-
-### ✅ Concluído (Phase 1)
-- Criação de `standards/TESTING.md`
-- Reestruturação da infraestrutura de testes
-
-### 🚧 Em Progresso (Phase 2)
-- Criação desta estrutura de diretórios
-- Migração de arquivos simples
-- Arquivamento de documentação antiga
-
-### 📋 Pendente (Phases 2-3)
-- Consolidação de `ARQUITETURA.md` + `ARQUITETURA_FRAMEWORK.md`
-- Consolidação de `PADROES_CODIGO.md`
-- Extração de Git Workflow para documento separado
-- Criação de `reference/SCHEMAS.md`
-- Reescrita de `AGENTS.md` como routing table conciso
-
----
-
-## 🤝 Como Contribuir com a Documentação
-
-1. **Para correções pequenas**: Edite diretamente e faça PR
-2. **Para novos documentos**: Siga a estrutura de diretórios acima
-3. **Para reestruturações grandes**: Consulte [`documentation-and-testing-overhaul.md`](./archive/documentation-and-testing-overhaul.md)
-
-### Padrões de Documentação
-
-- **Idioma**: Português para documentação, inglês para código
-- **Formato**: Markdown com hierarquia clara
-- **Metadados**: Incluir versão e data de atualização no topo
-- **Links**: Usar links relativos para navegação interna
-- **Status**: Indicar claramente se documento está completo/em migração/depreciado
-
----
-
-## 📞 Referências Externas
-
-- **Supabase Docs**: https://supabase.com/docs
-- **Vite Docs**: https://vitejs.dev/guide/
-- **Vitest Docs**: https://vitest.dev/
-- **Zod Docs**: https://zod.dev/
-- **Telegram Bot API**: https://core.telegram.org/bots/api
-- **Testing Library**: https://testing-library.com/docs/react-testing-library/intro/
-
----
-
-*Índice criado em: 2026-02-17*  
-*Última atualização: 2026-04-02*  
-*Versão do projeto: 4.0.0*
+*Índice atualizado estruturalmente de acordo com a fase de adequação de documentação do DEVFLOW e Dosiq v4.1.*
