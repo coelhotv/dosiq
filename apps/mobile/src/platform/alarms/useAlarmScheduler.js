@@ -28,6 +28,43 @@ import { alarmService } from './alarmService'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 
+// Campos do `data` da notificação (single): tudo string (contrato Notifee). Inclui os
+// campos clínicos (036) p/ a tela cheia exibir concentração/dose/ícone contextual.
+function buildSingleAlarmData(it) {
+  return {
+    protocolId: it.protocolId,
+    medicineId: it.medicineId,
+    quantityTaken: String(it.dosagePerIntake ?? 1),
+    scheduledTime: it.scheduledTime || '',
+    dosagePerPill: it.dosagePerPill != null ? String(it.dosagePerPill) : '',
+    dosageUnit: it.dosageUnit || '',
+    concentrationVolumeMl: it.concentrationVolumeMl != null ? String(it.concentrationVolumeMl) : '',
+    intakeUnit: it.intakeUnit || '',
+    unitsPerMl: it.unitsPerMl != null ? String(it.unitsPerMl) : '',
+    medicineType: it.medicineType || '',
+    presentation: it.presentation || '',
+  }
+}
+
+// Entrada de `groupedDoses` (vai serializada em JSON → mantém tipos crus).
+function buildGroupedDose(it) {
+  return {
+    instanceId: it.instanceId,
+    medicineName: it.medicineName,
+    protocolId: it.protocolId,
+    medicineId: it.medicineId,
+    dosagePerIntake: it.dosagePerIntake,
+    dosagePerPill: it.dosagePerPill,
+    dosageUnit: it.dosageUnit,
+    concentrationVolumeMl: it.concentrationVolumeMl,
+    intakeUnit: it.intakeUnit,
+    unitsPerMl: it.unitsPerMl,
+    treatmentPlanName: it.treatmentPlanName,
+    scheduledTime: it.scheduledTime,
+    toleranceMinutes: it.toleranceMinutes,
+  }
+}
+
 /**
  * Reconstrói o conjunto de alarmes para os próximos 72h. Idempotente (cancelAll +
  * re-agenda; ids === doseInstanceId). Best-effort — nunca lança.
@@ -84,31 +121,13 @@ export async function syncAlarms({ userId, protocols, tz }) {
         scheduledFor: it.scheduledFor, // F: instante absoluto
         toleranceMinutes: it.toleranceMinutes, // D: cutoff dinâmico
         isCritical: it.critical,
-        data: {
-          protocolId: it.protocolId,
-          medicineId: it.medicineId,
-          quantityTaken: String(it.dosagePerIntake ?? 1),
-          scheduledTime: it.scheduledTime || '',
-          dosagePerPill: it.dosagePerPill != null ? String(it.dosagePerPill) : '',
-          dosageUnit: it.dosageUnit || '',
-        },
+        data: buildSingleAlarmData(it),
       })
     } else {
       // Múltiplos alarmes no mesmo minuto
       const first = groupItems[0]
       const doseInstanceIds = groupItems.map((it) => it.instanceId).join(',')
-      const groupedDoses = groupItems.map((it) => ({
-        instanceId: it.instanceId,
-        medicineName: it.medicineName,
-        protocolId: it.protocolId,
-        medicineId: it.medicineId,
-        dosagePerIntake: it.dosagePerIntake,
-        dosagePerPill: it.dosagePerPill,
-        dosageUnit: it.dosageUnit,
-        treatmentPlanName: it.treatmentPlanName,
-        scheduledTime: it.scheduledTime,
-        toleranceMinutes: it.toleranceMinutes,
-      }))
+      const groupedDoses = groupItems.map(buildGroupedDose)
       const maxTolerance = Math.max(...groupItems.map((it) => it.toleranceMinutes ?? 120))
 
       await alarmService.scheduleAlarm({
