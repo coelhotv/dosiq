@@ -7,6 +7,55 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.19.1 (mobile) — 2026-06-17 — Alarme: transparência clínica + cancel cross-superfície (spec 036)
+
+> **Bump:** mobile `0.19.0 → 0.19.1` (patch — correção de bug + transparência clínica na tela cheia).
+> **Release nas lojas:** agrega as novidades desde a última versão publicada (`0.17.1`) — ou seja,
+> `0.18.0` (pressão arterial), `0.18.1` (fix cursor PA iOS), `0.19.0` (histórico integrado) e `0.19.1`
+> (alarme). Detalhes técnicos por versão nas seções abaixo e em `[Unreleased]`.
+
+### 📱 Release notes — Apple App Store (pt-BR)
+
+```
+Novidades da versão 0.19.1
+
+Mais controle da sua saúde, com lembretes mais seguros:
+
+• Pressão arterial: registre sua pressão (sistólica e diastólica) em segundos, com
+  o contexto da medição (em repouso, ao acordar, após exercício...) e acompanhe a
+  tendência ao longo do tempo.
+• Histórico integrado: glicemia, peso e pressão agora aparecem na sua linha do tempo,
+  lado a lado com as doses do dia — edite ou exclua um registro sem sair da tela.
+• Alarme mais claro e seguro: a tela do alarme agora mostra a concentração do
+  remédio e exatamente quanto tomar, na unidade certa (mg, UI, mL, gotas), com o
+  ícone da forma do medicamento.
+• Correção importante: o alarme não reabre mais para uma dose que você já registrou
+  por outro caminho (linha do tempo, web ou bot) — sem risco de contar a dose duas vezes.
+• Pequenas correções e melhorias de estabilidade.
+
+Continuamos cuidando da sua rotina com carinho e zero complicação. 💙
+```
+
+### 🤖 Release notes — Google Play (pt-BR)
+
+```
+Mais controle da sua saúde e lembretes mais seguros:
+
+• Pressão arterial: registre sistólica e diastólica em segundos, com o contexto da
+  medição (em repouso, ao acordar, após exercício) e veja a evolução ao longo do tempo.
+• Histórico integrado: glicemia, peso e pressão aparecem na linha do tempo do dia,
+  junto das doses — com edição e exclusão direto pela tela.
+• Alarme mais claro: agora mostra a concentração do remédio e quanto tomar, na unidade
+  certa (mg, UI, mL, gotas), com o ícone da forma do medicamento.
+• Correção: o alarme não reabre mais para uma dose já registrada por outro caminho,
+  evitando contar a dose duas vezes.
+• Estabilidade e pequenas correções.
+
+Cuidando da sua rotina com carinho e zero complicação. 💙
+```
+
+---
+
 ## App v0.19.0 (mobile) — 2026-06-16 — Histórico Integrado (doses + biomarcadores)
 
 > **Bump:** mobile `0.18.1 → 0.19.0` (minor — nova feature user-facing: biomarcadores na lista do dia). Spec 033.
