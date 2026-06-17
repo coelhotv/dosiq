@@ -40,7 +40,11 @@ function useAlarmAutoDismiss({ isGrouped, doseInstanceId, doseInstanceIds, onClo
           .in('id', ids)
         if (error || cancelled || !rows || rows.length === 0) return
         if (rows.some((r) => r.status === 'pending')) return
-        for (const id of ids) {
+        // O alarme agrupado é agendado com id = timestamp (recebido aqui como doseInstanceId),
+        // não com os ids individuais (que só existem como linhas em dose_instances). Incluir o
+        // doseInstanceId garante o cancelamento do trigger/notif do grupo.
+        const toCancel = isGrouped ? [doseInstanceId, ...ids] : ids
+        for (const id of toCancel) {
           try { await cancelAlarm(id) } catch { /* best-effort */ }
         }
         if (!cancelled) onClose()
@@ -103,8 +107,11 @@ function DoseHeadline({ data, isGrouped, medicineName }) {
     dosage_unit: data.dosageUnit,
     concentration_volume_ml: data.concentrationVolumeMl,
   })
+  // quantityTaken vem de route.params como string; Number('')||1 converteria 0→1
+  // (regressão em desmame/titulação). Só faz fallback p/ 1 quando ausente/NaN.
+  const parsedIntake = Number(data.quantityTaken)
   const quantity = formatDoseItem({
-    dosagePerIntake: Number(data.quantityTaken) || 1,
+    dosagePerIntake: Number.isFinite(parsedIntake) ? parsedIntake : 1,
     intakeUnit: data.intakeUnit,
     dosageUnit: data.dosageUnit,
     dosagePerPill: data.dosagePerPill,

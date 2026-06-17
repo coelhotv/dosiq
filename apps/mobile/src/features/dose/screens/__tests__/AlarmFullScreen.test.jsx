@@ -118,6 +118,28 @@ describe('AlarmFullScreen — auto-dismiss (US2/FR-004)', () => {
     await waitFor(() => expect(mockIn).toHaveBeenCalled())
     expect(nav.goBack).not.toHaveBeenCalled()
   })
+
+  it('grupo todas resolvidas → cancela o id do grupo (ts) + ids individuais e fecha', async () => {
+    mockIn.mockResolvedValue({
+      data: [{ id: 'a', status: 'taken' }, { id: 'b', status: 'skipped_user' }],
+      error: null,
+    })
+    const nav = makeNav()
+    const groupParams = {
+      isGrouped: 'true',
+      doseInstanceId: 'ts-123', // id real do alarme agrupado (timestamp)
+      doseInstanceIds: 'a,b',
+      groupedDoses: JSON.stringify([
+        { instanceId: 'a', medicineName: 'A', dosagePerIntake: 1, dosagePerPill: 25, dosageUnit: 'mg' },
+        { instanceId: 'b', medicineName: 'B', dosagePerIntake: 1, dosagePerPill: 50, dosageUnit: 'mg' },
+      ]),
+    }
+    render(<AlarmFullScreen navigation={nav} route={{ params: groupParams }} />)
+    await waitFor(() => expect(nav.goBack).toHaveBeenCalled())
+    expect(mockCancelAlarm).toHaveBeenCalledWith('ts-123')
+    expect(mockCancelAlarm).toHaveBeenCalledWith('a')
+    expect(mockCancelAlarm).toHaveBeenCalledWith('b')
+  })
 })
 
 describe('AlarmFullScreen — transparência clínica (US3/FR-006/007)', () => {
