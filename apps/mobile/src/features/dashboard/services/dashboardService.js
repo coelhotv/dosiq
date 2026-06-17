@@ -81,7 +81,7 @@ export async function getMedicinesData(medicineIds) {
 
   const { data, error } = await supabase
     .from('medicines')
-    .select('id, name, dosage_per_pill, dosage_unit, concentration_volume_ml, units_per_ml')
+    .select('id, name, type, presentation, dosage_per_pill, dosage_unit, concentration_volume_ml, units_per_ml')
     .in('id', medicineIds)
 
   if (error) throw error
@@ -89,8 +89,12 @@ export async function getMedicinesData(medicineIds) {
   return (data ?? []).reduce((acc, m) => {
     acc[m.id] = {
       name: m.name,
+      // type + presentation: ícone canônico de identificação (getMedicineIconName, 012 Fase A)
+      type: m.type,
+      presentation: m.presentation,
       dosage_per_pill: m.dosage_per_pill,
       dosage_unit: m.dosage_unit,
+      concentration_volume_ml: m.concentration_volume_ml,
       units_per_ml: m.units_per_ml
     }
     return acc
