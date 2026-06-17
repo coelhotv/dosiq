@@ -3,7 +3,7 @@
   "sprint": "2026-W25",
   "session": {
     "mode": "coding",
-    "status": "implemented",
+    "status": "in-review",
     "goal": "Hotfix 036: alarme de soneca obsoleto cross-superfície + full-screen sem saída + transparência clínica (concentração/quantidade) na full-screen (Tier 1, mobile)",
     "goal_type": "fix",
     "tier": 1,
@@ -13,7 +13,7 @@
     "tasks": "plans/specs/036-fix-alarm-stale-snooze/tasks.md",
     "linked_adrs": [],
     "linked_contracts": [],
-    "last_pr": 671,
+    "last_pr": 672,
     "branch": "fix/alarm-stale-snooze",
     "mobile_version": "0.19.1"
   },
