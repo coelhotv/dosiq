@@ -4,8 +4,8 @@ Convenções e melhores práticas para manter consistência no projeto.
 
 > **⚠️ AUTORIDADE:** Este documento deve ser usado em conjunto com:
 > - **[`CLAUDE.md`](../CLAUDE.md)** - Regras canônicas do projeto (fonte da verdade para agentes)
-> - **[`.memory/rules.md`](../.memory/rules.md)** - Regras positivas (R-NNN)
-> - **[`.memory/anti-patterns.md`](../.memory/anti-patterns.md)** - Anti-patterns (AP-NNN)
+> - **[`.agent/memory/RULES_INDEX.md`](../.agent/memory/RULES_INDEX.md)** - Regras positivas (R-NNN)
+> - **[`.agent/memory/ANTI_PATTERNS_INDEX.md`](../.agent/memory/ANTI_PATTERNS_INDEX.md)** - Anti-patterns (AP-NNN)
 > - **[`ARQUITETURA.md`](./ARQUITETURA.md)** - Framework arquitetural completo
 
 ## 📚 Referências Rápidas
@@ -13,8 +13,8 @@ Convenções e melhores práticas para manter consistência no projeto.
 | Documento | Conteúdo | Público |
 |-----------|----------|---------|
 | [`CLAUDE.md`](../CLAUDE.md) | Regras canônicas, checklist pré/pós-código | Todos os agentes |
-| [`.memory/rules.md`](../.memory/rules.md) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
-| [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
+| [`.agent/memory/RULES_INDEX.md`](../.agent/memory/RULES_INDEX.md) | Regras positivas (R-NNN) — padrões que funcionam | Agentes de código |
+| [`.agent/memory/ANTI_PATTERNS_INDEX.md`](../.agent/memory/ANTI_PATTERNS_INDEX.md) | Anti-patterns (AP-NNN) — erros a evitar | Agentes de código |
 | [`ARQUITETURA.md`](./ARQUITETURA.md) | Framework arquitetural completo | Desenvolvedores |
 
 
@@ -40,7 +40,7 @@ npm run build
 ### 2. Git Workflow Obrigatório (RIGID PROCESS)
 
 > **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
-> **Autoridade:** Veja [`CLAUDE.md`](../CLAUDE.md) (regras canônicas) e [`.memory/rules.md`](../.memory/rules.md)
+> **Autoridade:** Veja [`CLAUDE.md`](../CLAUDE.md) (regras canônicas) e [`.agent/memory/RULES_INDEX.md`](../.agent/memory/RULES_INDEX.md)
 
 **⚠️ NUNCA commitar diretamente na `main`**
 
@@ -87,7 +87,7 @@ git checkout -b feature/wave-X/nome-descritivo
 
 - Edit files following:
   - [`CLAUDE.md`](../CLAUDE.md) (coding standards + checklist)
-  - [`.memory/anti-patterns.md`](../.memory/anti-patterns.md) (patterns to avoid)
+  - [`.agent/memory/ANTI_PATTERNS_INDEX.md`](../.agent/memory/ANTI_PATTERNS_INDEX.md) (patterns to avoid)
 - Keep changes focused and atomic
 - One logical change per commit
 

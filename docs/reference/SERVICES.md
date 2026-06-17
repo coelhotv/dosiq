@@ -29,7 +29,7 @@ Local: [`apps/web/src/features/medications/services/medicineService.js`](../../a
 Retorna todos os medicamentos do usuário atual com dados de estoque e preço médio.
 
 ```javascript
-import { medicineService } from '../services/api/medicineService'
+import { medicineService } from '@features/medications/services/medicineService'
 
 // Uso
 const medicines = await medicineService.getAll()
@@ -74,7 +74,7 @@ const medicine = await medicineService.getById('uuid-do-medicamento')
 Cria um novo medicamento. **Validação Zod obrigatória.**
 
 ```javascript
-import { validateMedicineCreate } from '../schemas/medicineSchema'
+import { validateMedicineCreate } from '@schemas/medicineSchema'
 
 // Dados de exemplo
 const newMedicine = {
@@ -105,7 +105,7 @@ const created = await medicineService.create(validation.data)
 Atualiza campos de um medicamento. **Validação Zod obrigatória.**
 
 ```javascript
-import { validateMedicineUpdate } from '../schemas/medicineSchema'
+import { validateMedicineUpdate } from '@schemas/medicineSchema'
 
 const updates = {
   name: 'Dipirona 500mg',
@@ -195,7 +195,7 @@ const protocol = await protocolService.getById('uuid')
 Cria protocolo. Suporta titulação.
 
 ```javascript
-import { validateProtocolCreate } from '../schemas/protocolSchema'
+import { validateProtocolCreate } from '@schemas/protocolSchema'
 
 // Protocolo simples
 const simpleProtocol = {
@@ -329,7 +329,7 @@ const summary = await stockService.getSummaryByMedicineId('uuid')
 Cria compra + lote de estoque via RPC transacional `create_purchase_with_stock`.
 
 ```javascript
-import { validateStockCreate } from '../schemas/stockSchema'
+import { validateStockCreate } from '@schemas/stockSchema'
 
 const newStock = {
   medicine_id: 'uuid-medicamento',
@@ -353,7 +353,7 @@ if (validation.success) {
 Consome estoque via FIFO transacional e registra o vínculo em `stock_consumptions`.
 
 ```javascript
-import { validateStockDecrease } from '../schemas/stockSchema'
+import { validateStockDecrease } from '@schemas/stockSchema'
 
 const decreaseData = {
   medicine_id: 'uuid-medicamento',
@@ -461,7 +461,7 @@ const januaryLogs = await logService.getByMonth(2024, 1, {
 Registra que tomou o remédio.
 
 ```javascript
-import { validateLogCreate } from '../schemas/logSchema'
+import { validateLogCreate } from '@schemas/logSchema'
 
 const logEntry = {
   protocol_id: 'uuid-protocolo',
@@ -622,8 +622,8 @@ Versões cacheadas dos services para **leituras**. Usar em componentes React.
 
 ```javascript
 // ✅ USE cachedServices para leituras
-import { cachedMedicineService } from '../services/api/cachedServices'
-import { useCachedQuery } from '../hooks/useCachedQuery'
+import { cachedMedicineService } from '@shared/services/cachedServices'
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 
 function MedicineList() {
   const { data, isLoading, error } = useCachedQuery(
@@ -689,9 +689,9 @@ Cada cached service expõe os mesmos métodos do service original, mas com cache
 ```jsx
 // MedicineManager.jsx
 import { useState } from 'react'
-import { useCachedQuery } from '../hooks/useCachedQuery'
-import { cachedMedicineService } from '../services/api/cachedServices'
-import { validateMedicineCreate } from '../schemas/medicineSchema'
+import { useCachedQuery } from '@shared/hooks/useCachedQuery'
+import { cachedMedicineService } from '@shared/services/cachedServices'
+import { validateMedicineCreate } from '@schemas/medicineSchema'
 
 function MedicineManager() {
   // ✅ Leitura com cache

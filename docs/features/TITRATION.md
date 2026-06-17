@@ -196,30 +196,17 @@ Quando um protocolo está em titulação, o Dashboard exibe:
 - **Dias**: `Dia 3/7`
 - **Nota da etapa**: `50mg 2x ao dia`
 
-### Transição Automática (Comportamento Atual)
+### Transição Automática de Etapas
 
-⚠️ **Importante**: Atualmente, o sistema **NÃO** avança automaticamente para a próxima etapa. Você precisa:
+O sistema possui uma detecção automática de transição de etapas!
 
-1. Quando a etapa terminar (ex: após 7 dias), **editar o protocolo manualmente**
-2. Ir em **Protocolos** → encontrar o protocolo → clicar em **Editar**
-3. **Remover a primeira etapa** do `Regime de Titulação`
-4. Atualizar o campo **"Dose por Horário"** para refletir a nova dose
-5. Salvar
+Quando o período de uma etapa terminar (ex: após os 7 dias previstos), o sistema exibirá automaticamente um **Alerta de Transição no Dashboard**.
 
-> 🔮 **Funcionalidade Futura**: Nas próximas versões, o sistema poderá alertar automaticamente quando uma etapa terminar e permitir avançar diretamente do Dashboard.
+1. O alerta amarelo indicará que é hora de avançar para a próxima etapa.
+2. Você poderá ver um comparativo visual entre a "Etapa Atual" e a "Próxima Etapa", detalhando as dosagens.
+3. Ao clicar em **"🚀 Avançar Agora"**, o sistema atualizará o protocolo automaticamente, avançará o índice da etapa e reajustará sua dose sem necessidade de edição manual do protocolo!
 
-### Alternativa Manual (Recomendada para agora)
-
-Como a transição não é automática ainda, você pode:
-
-**Abordagem Simples**: 
-- Após os 7 dias, editar o protocolo e **ajustar manualmente** o campo `dosage_per_intake` para `1.5`
-- **Não usar o wizard de titulação**, apenas ajustar manualmente a cada mudança de dose
-
-**Abordagem com Wizard**:
-- Cadastrar todas as etapas como mostrado acima
-- Ter visibilidade do progresso
-- Quando a etapa terminar, editar e remover a etapa concluída
+> ✅ **Nota**: Na última etapa de manutenção, o botão exibirá **"✅ Marcar como Concluído"**. Isso irá alterar o status de titulação do protocolo para `'alvo_atingido'` e removerá a contagem de dias do painel, garantindo que o protocolo continuará usando a dosagem final definida.
 
 ---
 

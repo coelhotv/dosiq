@@ -120,6 +120,9 @@ dosiq.xcworkspace/
 # Plans archive (historical, not active)
 plans/archive_old/
 
+# Documentation archives
+docs/archive/
+
 # Added by code-review-graph
 .code-review-graph/
 
