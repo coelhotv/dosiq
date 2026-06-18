@@ -262,3 +262,57 @@ HistoryScreen.jsx
 - `createTimelineService`, `biomarkersToEvents`, `buildTimeline` já exportados pelo core ✅
 - `measuresRepo` já instanciado no mobile (`features/measures/services/measuresRepo.js`) ✅
 - `MeasureLogSheet` já existe no mobile ✅
+
+---
+
+## Ceremony: eng-review
+
+**Date**: 2026-06-18
+**Reviewer Role**: Engineering Manager / Tech Lead
+**Overall Assessment**: APPROVED (Paridade de Lógica com Core + Arquitetura Service-First + Testes Robustos)
+
+### 1. Scope Challenge & Complexity Analysis
+- **Existing Code Leverage**: Excelente aproveitamento dos métodos e factories do `@dosiq/core` (`createTimelineService`, `biomarkersToEvents`, `buildTimeline`). Reduz a lógica customizada no mobile e delega a ordenação e a deduplicação de logs/instâncias (AP-193) para a camada compartilhada.
+- **Minimum Change Set & Complexity**: Mudança extremamente contida e focada. Apenas 4 arquivos de código de negócio foram modificados/criados, bem abaixo do limite de 8 arquivos de complexidade do DEVFLOW.
+- **TODOS Cross-Reference**: Nenhum impeditivo técnico ou TODO pendente no workspace.
+
+### 2. Architecture & Data Flow
+A arquitetura implementada respeita o princípio **"service-first, screen-second"** (MASTER_PLAN D2). O mapeamento de dados através do anti-corruption layer (`mapToMobileShape`) garante o isolamento entre o core e as especificidades da UI mobile.
+
+```
++-------------------------------------------------------+
+|                 HistoryScreen.jsx                     |
+|  (Exibe timeline do dia e abre modal de edição/detalhe)|
++--------------------------+----------------------------+
+                           |
+                           v
++--------------------------+----------------------------+
+|                 useHistoryData.js                     |
+|  (Hook fino: estado da UI + cálculo isolado de KPIs)  |
++--------------------------+----------------------------+
+                           |
+                           v
++--------------------------+----------------------------+
+|             historyTimelineService.js                  |
+|  (Adapter Mobile: coordena timeline + bio + shape)   |
++----+---------------------+-----------------------+----+
+     |                     |                       |
+     v                     v                       v
++----+----+           +----+----+             +----+----+
+|  Core   |           |  Core   |             |  Repo   |
+|Timeline |           |BioEvents|             |Measures |
++---------+           +---------+             +---------+
+```
+
+### 3. Verification & Test Hygiene
+- **Service Coherence**: Os testes unitários em `historyTimelineService.test.js` atingem cobertura de 100% de linhas e funções, abordando as falhas de rede de biomarcadores (try/catch best-effort), protocolos não mapeados (lookup miss com degradação graciosa) e fuso horário.
+- **KPI Isolation**: Os testes validam com sucesso que a presença de biomarcadores não distorce os KPIs de adesão (`dosesThisMonth`, `adherence30d`, `streak`), preservando a regra de negócio ADR-054.
+
+### 4. Findings & Scope Decisions
+- **Finding #1 (Info)**: O fuso horário do usuário é adequadamente consultado nas configurações (`user_settings`) antes de construir a janela de filtragem UTC.
+- **Finding #2 (Info)**: Degradação graciosa robusta: em caso de falha de rede ao carregar biomarcadores, as doses ainda renderizam corretamente (SC-003).
+
+**Decisions**:
+- Validar no smoke se os chips de dosagem líquida (022) exibem corretamente a unidade de tomada derivada.
+- Manter o status como **delivered** e prosseguir sem novos bumps visto que a espec já estava entregue.
+
