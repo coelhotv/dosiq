@@ -9,6 +9,11 @@ node_modules/
 screenshots/
 plans/
 dist/
+ios/
+android/
+credentials/
+bug-logs/
+credentials.json
 *.log
 *.sql
 *.sqlite
