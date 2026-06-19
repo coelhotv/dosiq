@@ -230,8 +230,8 @@ describe('doseService adapter tests', () => {
       expect(res.success).toBe(true)
       expect(res.results).toHaveLength(2)
       expect(mockRegisterDoseMany).toHaveBeenCalledWith([
-        { ...INPUT, instanceId: 'inst-a' },
-        { ...INPUT, instanceId: 'inst-b' },
+        { ...INPUT, notes: null, instanceId: 'inst-a' },
+        { ...INPUT, notes: null, instanceId: 'inst-b' },
       ])
       expect(mockCancelAlarm).toHaveBeenCalledWith('inst-a')
       expect(mockCancelAlarm).toHaveBeenCalledWith('inst-b')

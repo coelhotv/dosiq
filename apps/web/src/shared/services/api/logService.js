@@ -160,13 +160,15 @@ export const logService = {
     }
 
     const validatedLogs = validation.data
-    const coreLogs = validatedLogs.map((log) => ({
+    // instanceId (metadado de ancoragem) é removido pelo Zod; lê do array original por
+    // índice para não perder a ancoragem em lote. Gemini #3444467549.
+    const coreLogs = validatedLogs.map((log, index) => ({
       protocol_id: log.protocol_id,
       medicine_id: log.medicine_id,
       taken_at: log.taken_at,
       quantity_taken: log.quantity_taken,
       notes: log.notes,
-      instanceId: log.instance_id ?? log.instanceId ?? null,
+      instanceId: logs[index].instance_id ?? logs[index].instanceId ?? null,
     }))
 
     const results = await doseLogCore.registerDoseMany(coreLogs)

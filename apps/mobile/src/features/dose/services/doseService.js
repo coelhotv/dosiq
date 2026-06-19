@@ -15,7 +15,8 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
 
 // Obtém usuário autenticado ou retorna erro de sessão
 async function _getAuthUser() {
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data, error } = await supabase.auth.getUser()
+  const user = data?.user
   if (error || !user) return { user: null, sessionError: 'Sessão expirada. Faça login novamente.' }
   return { user, sessionError: null }
 }
@@ -179,16 +180,18 @@ export async function registerDoseMany(logsData) {
     return { success: false, results: [], error: 'Nenhuma dose selecionada.' }
   }
 
-  const { error: validationError } = _validateManyLogs(logsData)
+  const { validatedLogs, error: validationError } = _validateManyLogs(logsData)
   if (validationError) return { success: false, results: [], error: validationError }
 
-  const coreLogs = logsData.map((log) => ({
+  // Mapeia sobre os dados já coeridos pelo Zod; instanceId vem do array original por índice
+  // (instance_id é metadado de ancoragem, removido pelo schema). Gemini #3444467545.
+  const coreLogs = validatedLogs.map((log, index) => ({
     protocol_id: log.protocol_id,
     medicine_id: log.medicine_id,
     taken_at: log.taken_at,
     quantity_taken: log.quantity_taken,
     notes: log.notes,
-    instanceId: log.instance_id ?? log.instanceId ?? null,
+    instanceId: logsData[index].instance_id ?? logsData[index].instanceId ?? null,
   }))
 
   try {
