@@ -146,6 +146,18 @@ describe('createDoseLogService', () => {
 
       await expect(service.updateOrphanLog('log-1', { quantity_taken: 99 })).rejects.toThrow('Estoque insuficiente')
     })
+
+    it('limpar notes (null explícito) envia p_has_notes=true para a RPC', async () => {
+      const client = makeClient(async () => ({ data: { id: 'log-1', notes: null }, error: null }))
+      const service = createDoseLogService({ client, getUserId })
+
+      await service.updateOrphanLog('log-1', { notes: null })
+
+      expect(client.rpc).toHaveBeenCalledWith(
+        'update_dose_log_atomic',
+        expect.objectContaining({ p_notes: null, p_has_notes: true, p_has_protocol: false })
+      )
+    })
   })
 
   describe('deleteOrphanLog', () => {

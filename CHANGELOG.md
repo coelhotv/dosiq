@@ -93,7 +93,8 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
   (`SET search_path = ''`, isolamento de tenant via `auth.uid()`, grants `authenticated`/`service_role`)
   que compõem `consume_stock_fifo`/`restore_stock_for_log` numa transação maior. Ancoragem estrita
   (tomada direta numa ocorrência → double-click aborta a transação inteira, Edge Case #1) vs
-  best-effort (snap retroativo/avulsa).
+  best-effort (snap retroativo/avulsa). `update_dose_log_atomic` usa flags de presença
+  (`p_has_notes`/`p_has_protocol`) para permitir limpar campos nullable para NULL no edit.
 
 #### Core (@dosiq/core)
 - **Added** (`minor`, CON-026): Factory `createDoseLogService` (`packages/core/src/services/doseLogService.js`)

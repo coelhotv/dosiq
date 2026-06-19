@@ -108,6 +108,7 @@ async function updateOrphanLog({ client, getUserId }, logId, updates) {
   }
   const userId = await getUserId()
   const u = validation.data
+  const has = (key) => Object.prototype.hasOwnProperty.call(u, key)
 
   const { data, error } = await client.rpc('update_dose_log_atomic', {
     p_user_id: userId,
@@ -117,6 +118,9 @@ async function updateOrphanLog({ client, getUserId }, logId, updates) {
     p_taken_at: u.taken_at ?? null,
     p_quantity_taken: u.quantity_taken ?? null,
     p_notes: u.notes ?? null,
+    // Flags de presença: distinguem "não enviado" de "enviado como NULL" (limpar campo).
+    p_has_protocol: has('protocol_id'),
+    p_has_notes: has('notes'),
   })
   if (error) throw error
   return data

@@ -104,6 +104,10 @@ $$;
 -- Atualiza um log. Campos não informados (NULL) preservam o valor antigo (COALESCE).
 -- Se quantidade ou medicamento mudarem: estorna o estoque antigo, atualiza e consome
 -- o novo — tudo na mesma transação. Falha de estoque reverte a atualização inteira.
+-- Nullable (protocol_id, notes) usam flags de presença (p_has_*) para distinguir
+-- "não enviado" (mantém valor antigo) de "enviado como NULL" (limpa) — sem isso seria
+-- impossível limpar notas/protocolo num edit. As flags leem do v_old já travado, sem fetch.
+DROP FUNCTION IF EXISTS public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT);
 CREATE OR REPLACE FUNCTION public.update_dose_log_atomic(
   p_user_id UUID,
   p_log_id UUID,
@@ -111,7 +115,9 @@ CREATE OR REPLACE FUNCTION public.update_dose_log_atomic(
   p_medicine_id UUID,
   p_taken_at TIMESTAMPTZ,
   p_quantity_taken NUMERIC,
-  p_notes TEXT
+  p_notes TEXT,
+  p_has_protocol BOOLEAN DEFAULT false,
+  p_has_notes BOOLEAN DEFAULT false
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -141,11 +147,13 @@ BEGIN
   END IF;
 
   -- 3. Valores efetivos (partial update via COALESCE)
+  -- Requeridos: nunca nulos → COALESCE preserva quando ausente.
   v_next_medicine := COALESCE(p_medicine_id, v_old.medicine_id);
   v_next_quantity := COALESCE(p_quantity_taken, v_old.quantity_taken);
-  v_next_protocol := COALESCE(p_protocol_id, v_old.protocol_id);
   v_next_taken    := COALESCE(p_taken_at, v_old.taken_at);
-  v_next_notes    := COALESCE(p_notes, v_old.notes);
+  -- Nullable: flag de presença permite limpar para NULL.
+  v_next_protocol := CASE WHEN p_has_protocol THEN p_protocol_id ELSE v_old.protocol_id END;
+  v_next_notes    := CASE WHEN p_has_notes THEN p_notes ELSE v_old.notes END;
 
   v_stock_affecting := (v_next_quantity <> v_old.quantity_taken)
                     OR (v_next_medicine <> v_old.medicine_id);
@@ -258,9 +266,9 @@ REVOKE EXECUTE ON FUNCTION public.register_dose_atomic(UUID, UUID, UUID, TIMESTA
 REVOKE EXECUTE ON FUNCTION public.register_dose_atomic(UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT, UUID, BOOLEAN) FROM anon;
 GRANT EXECUTE ON FUNCTION public.register_dose_atomic(UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT, UUID, BOOLEAN) TO authenticated, service_role;
 
-REVOKE EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT) FROM anon;
-GRANT EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT, BOOLEAN, BOOLEAN) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT, BOOLEAN, BOOLEAN) FROM anon;
+GRANT EXECUTE ON FUNCTION public.update_dose_log_atomic(UUID, UUID, UUID, UUID, TIMESTAMPTZ, NUMERIC, TEXT, BOOLEAN, BOOLEAN) TO authenticated, service_role;
 
 REVOKE EXECUTE ON FUNCTION public.delete_dose_log_atomic(UUID, UUID, INT) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.delete_dose_log_atomic(UUID, UUID, INT) FROM anon;
