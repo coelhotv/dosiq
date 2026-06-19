@@ -1,22 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  stockService: {
-    decrease: vi.fn(),
-    increase: vi.fn(),
-  },
+  registerDose: vi.fn(),
+  undoDose: vi.fn(),
+  updateOrphanLog: vi.fn(),
+  deleteOrphanLog: vi.fn(),
+  registerDoseMany: vi.fn(),
   getUserId: vi.fn().mockResolvedValue('test-user-id'),
   supabase: {
     from: vi.fn(),
   },
-  doseInstanceRepo: {
-    findAnchorInstance: vi.fn(),
-    markTaken: vi.fn(),
-  },
-}))
-
-vi.mock('@stock/services/stockService', () => ({
-  stockService: mocks.stockService,
 }))
 
 vi.mock('@shared/utils/supabase', () => ({
@@ -24,54 +17,23 @@ vi.mock('@shared/utils/supabase', () => ({
   getUserId: mocks.getUserId,
 }))
 
-// Repo de instâncias mockado — controla o snap/markTaken da âncora de log (S2.6).
-vi.mock('@dosiq/core', () => ({
-  createDoseInstanceRepository: () => mocks.doseInstanceRepo,
-}))
+// Mock do @dosiq/core para interceptar chamadas ao doseLogCore
+vi.mock('@dosiq/core', () => {
+  return {
+    createDoseLogService: () => ({
+      registerDose: mocks.registerDose,
+      undoDose: mocks.undoDose,
+      updateOrphanLog: mocks.updateOrphanLog,
+      deleteOrphanLog: mocks.deleteOrphanLog,
+      registerDoseMany: mocks.registerDoseMany,
+    }),
+    parseISO: (str) => new Date(str),
+  }
+})
 
 import { logService } from '@shared/services/api/logService'
 
-function buildLogUpdateChain(result = { error: null }) {
-  return {
-    update: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  }
-}
-
-function buildLogInsertChain(result) {
-  return {
-    insert: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  }
-}
-
-function buildSelectSingleChain(result) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  }
-}
-
-function buildDeleteChain(result = { error: null }) {
-  return {
-    delete: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue(result),
-      }),
-    }),
-  }
-}
-
-describe('logService', () => {
+describe('logService (Web Adapter)', () => {
   const baseLog = {
     protocol_id: '123e4567-e89b-12d3-a456-426614174001',
     medicine_id: '123e4567-e89b-12d3-a456-426614174000',
@@ -82,170 +44,109 @@ describe('logService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default: nenhuma instância casa (dose avulsa) — mantém os testes de estoque isolados.
-    mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValue(null)
   })
 
   describe('create', () => {
-    it('creates the log and consumes stock using the created log id', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+    it('delega para o core e busca o log completo com relações', async () => {
+      const coreResult = { id: 'log-123', ...baseLog }
+      const populatedLog = {
+        ...coreResult,
+        protocol: { id: baseLog.protocol_id, name: 'Protocolo A' },
+        medicine: { id: baseLog.medicine_id, name: 'Medicamento A' },
+      }
 
-      mocks.supabase.from.mockReturnValueOnce(
-        buildLogInsertChain({ data: createdLog, error: null })
-      )
-      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
+      mocks.registerDose.mockResolvedValueOnce(coreResult)
 
-      const result = await logService.create(baseLog)
+      // Mock da query do supabase.from('medicine_logs').select(...).eq().single()
+      const mockSingle = vi.fn().mockResolvedValueOnce({ data: populatedLog, error: null })
+      const mockEq = vi.fn().mockReturnValue({ single: mockSingle })
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
+      mocks.supabase.from.mockReturnValue({ select: mockSelect })
 
-      expect(mocks.stockService.decrease).toHaveBeenCalledWith(
-        baseLog.medicine_id,
-        baseLog.quantity_taken,
-        createdLog.id
-      )
-      expect(result).toEqual(createdLog)
+      const result = await logService.create(baseLog, { instanceId: 'inst-77' })
+
+      expect(mocks.registerDose).toHaveBeenCalledWith(baseLog, { instanceId: 'inst-77' })
+      expect(mocks.supabase.from).toHaveBeenCalledWith('medicine_logs')
+      expect(mockSelect).toHaveBeenCalledWith(expect.stringContaining('protocol:protocols'))
+      expect(mockEq).toHaveBeenCalledWith('id', 'log-123')
+      expect(result).toEqual(populatedLog)
+    })
+  })
+
+  describe('createBulk', () => {
+    it('delega para o core (registerDoseMany) e retorna os logs populados', async () => {
+      const logs = [baseLog, { ...baseLog, notes: 'Dose 2' }]
+      const coreResults = [
+        { success: true, data: { id: 'log-1', ...logs[0] } },
+        { success: true, data: { id: 'log-2', ...logs[1] } },
+      ]
+      const populatedLogs = [
+        { id: 'log-1', ...logs[0], protocol: {}, medicine: {} },
+        { id: 'log-2', ...logs[1], protocol: {}, medicine: {} },
+      ]
+
+      mocks.registerDoseMany.mockResolvedValueOnce(coreResults)
+
+      const mockOrder = vi.fn().mockResolvedValueOnce({ data: populatedLogs, error: null })
+      const mockIn = vi.fn().mockReturnValue({ order: mockOrder })
+      const mockSelect = vi.fn().mockReturnValue({ in: mockIn })
+      mocks.supabase.from.mockReturnValue({ select: mockSelect })
+
+      const result = await logService.createBulk(logs)
+
+      expect(mocks.registerDoseMany).toHaveBeenCalledWith([
+        { ...logs[0], instanceId: null },
+        { ...logs[1], instanceId: null },
+      ])
+      expect(mockIn).toHaveBeenCalledWith('id', ['log-1', 'log-2'])
+      expect(result).toEqual(populatedLogs)
     })
 
-    it('ancora o log à instância quando o snap casa (S2.6)', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+    it('lança erro se alguma dose no lote falhar', async () => {
+      const logs = [baseLog]
+      const coreResults = [
+        { success: false, error: 'Estoque insuficiente' },
+      ]
 
-      mocks.supabase.from
-        .mockReturnValueOnce(buildLogInsertChain({ data: createdLog, error: null }))
-        .mockReturnValueOnce(buildLogUpdateChain({ error: null }))
-      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
-      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce({ id: 'di-7' })
-      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(true)
+      mocks.registerDoseMany.mockResolvedValueOnce(coreResults)
 
-      const result = await logService.create(baseLog)
-
-      expect(mocks.doseInstanceRepo.findAnchorInstance).toHaveBeenCalledWith({
-        protocolId: baseLog.protocol_id,
-        takenAt: baseLog.taken_at,
-      })
-      expect(mocks.doseInstanceRepo.markTaken).toHaveBeenCalledWith('di-7', 'log-1')
-      expect(result.dose_instance_id).toBe('di-7')
-    })
-
-    it('não grava elo se a reserva falha em corrida (markTaken=false)', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
-
-      mocks.supabase.from.mockReturnValueOnce(
-        buildLogInsertChain({ data: createdLog, error: null })
-      )
-      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
-      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce({ id: 'di-7' })
-      mocks.doseInstanceRepo.markTaken.mockResolvedValueOnce(false)
-
-      const result = await logService.create(baseLog)
-
-      expect(mocks.doseInstanceRepo.markTaken).toHaveBeenCalledWith('di-7', 'log-1')
-      // reserva não pegou → log segue avulso, sem elo unidirecional
-      expect(result.dose_instance_id).toBeUndefined()
-    })
-
-    it('deixa o log avulso (sem markTaken) quando nenhuma instância casa', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
-
-      mocks.supabase.from.mockReturnValueOnce(
-        buildLogInsertChain({ data: createdLog, error: null })
-      )
-      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
-      mocks.doseInstanceRepo.findAnchorInstance.mockResolvedValueOnce(null)
-
-      const result = await logService.create(baseLog)
-
-      expect(mocks.doseInstanceRepo.markTaken).not.toHaveBeenCalled()
-      expect(result.dose_instance_id).toBeUndefined()
-    })
-
-    it('falha de âncora não quebra o registro da dose (best-effort, R-245)', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
-
-      mocks.supabase.from.mockReturnValueOnce(
-        buildLogInsertChain({ data: createdLog, error: null })
-      )
-      mocks.stockService.decrease.mockResolvedValueOnce({ ok: true })
-      mocks.doseInstanceRepo.findAnchorInstance.mockRejectedValueOnce(new Error('snap boom'))
-
-      const result = await logService.create(baseLog)
-
-      // dose registrada e estoque debitado permanecem válidos
-      expect(mocks.stockService.decrease).toHaveBeenCalled()
-      expect(result.id).toBe('log-1')
-      expect(result.dose_instance_id).toBeUndefined()
-    })
-
-    it('deletes the created log if stock consumption fails', async () => {
-      const createdLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
-
-      mocks.supabase.from
-        .mockReturnValueOnce(buildLogInsertChain({ data: createdLog, error: null }))
-        .mockReturnValueOnce(buildDeleteChain())
-
-      mocks.stockService.decrease.mockRejectedValueOnce(new Error('Estoque insuficiente'))
-
-      await expect(logService.create(baseLog)).rejects.toThrow(
-        'Não foi possível consumir o estoque'
-      )
+      await expect(logService.createBulk(logs)).rejects.toThrow('Estoque insuficiente')
     })
   })
 
   describe('update', () => {
-    it('restores old consumption and reapplies FIFO with the same log id', async () => {
-      const oldLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
-      const updatedLog = { ...oldLog, quantity_taken: 1 }
+    it('delega para o core e retorna o log atualizado populado', async () => {
+      const updates = { notes: 'Nova nota' }
+      const populatedLog = {
+        id: 'log-123',
+        ...baseLog,
+        ...updates,
+        protocol: {},
+        medicine: {},
+      }
 
-      mocks.supabase.from
-        .mockReturnValueOnce(buildSelectSingleChain({ data: oldLog, error: null }))
-        .mockReturnValueOnce({
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({ data: updatedLog, error: null }),
-                }),
-              }),
-            }),
-          }),
-        })
+      mocks.updateOrphanLog.mockResolvedValueOnce({ id: 'log-123' })
 
-      mocks.stockService.increase.mockResolvedValueOnce({ quantity_restored: 2 })
-      mocks.stockService.decrease.mockResolvedValueOnce({ quantity_consumed: 1 })
+      const mockSingle = vi.fn().mockResolvedValueOnce({ data: populatedLog, error: null })
+      const mockEq = vi.fn().mockReturnValue({ single: mockSingle })
+      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
+      mocks.supabase.from.mockReturnValue({ select: mockSelect })
 
-      const result = await logService.update('log-1', { quantity_taken: 1 })
+      const result = await logService.update('log-123', updates)
 
-      expect(mocks.stockService.increase).toHaveBeenCalledWith(
-        oldLog.medicine_id,
-        oldLog.quantity_taken,
-        {
-          medicine_log_id: 'log-1',
-          reason: 'dose_update_restore',
-        }
-      )
-      expect(mocks.stockService.decrease).toHaveBeenCalledWith(updatedLog.medicine_id, 1, 'log-1')
-      expect(result).toEqual(updatedLog)
+      expect(mocks.updateOrphanLog).toHaveBeenCalledWith('log-123', updates)
+      expect(mockEq).toHaveBeenCalledWith('id', 'log-123')
+      expect(result).toEqual(populatedLog)
     })
   })
 
   describe('delete', () => {
-    it('restores exact consumed lots before deleting the log', async () => {
-      const oldLog = { id: 'log-1', ...baseLog, user_id: 'test-user-id' }
+    it('delega para o core', async () => {
+      mocks.deleteOrphanLog.mockResolvedValueOnce()
 
-      mocks.supabase.from
-        .mockReturnValueOnce(buildSelectSingleChain({ data: oldLog, error: null }))
-        .mockReturnValueOnce(buildDeleteChain())
+      await logService.delete('log-123')
 
-      mocks.stockService.increase.mockResolvedValueOnce({ quantity_restored: 2 })
-
-      await logService.delete('log-1')
-
-      expect(mocks.stockService.increase).toHaveBeenCalledWith(
-        oldLog.medicine_id,
-        oldLog.quantity_taken,
-        {
-          medicine_log_id: 'log-1',
-          reason: 'dose_deleted_restore',
-        }
-      )
+      expect(mocks.deleteOrphanLog).toHaveBeenCalledWith('log-123')
     })
   })
 })

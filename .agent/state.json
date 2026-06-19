@@ -2,29 +2,29 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "specifying",
-    "status": "specified",
+    "mode": "coding",
+    "status": "coding",
     "goal": "Refactor: Dose-Log + Stock Service unificado no core",
     "goal_type": "refactor",
     "tier": 2,
     "spec_dir": "plans/specs/035-unified-dose-log-stock-core",
     "spec": "plans/specs/035-unified-dose-log-stock-core/spec.md",
-    "plan": null,
-    "tasks": null,
+    "plan": "plans/specs/035-unified-dose-log-stock-core/plan.md",
+    "tasks": "plans/specs/035-unified-dose-log-stock-core/tasks.md",
     "linked_adrs": [],
     "linked_contracts": [],
     "last_pr": 671,
-    "branch": "main",
+    "branch": "refactor/w25/035-unified-dose-log-stock-core",
     "mobile_version": "0.19.0"
   },
   "memory": {
     "last_distillation": "2026-06-15T00:00:00Z",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "rules_count": 227,
     "anti_patterns_count": 233,
     "decisions_count": 69,
     "contracts_count": 24,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,

@@ -40,7 +40,10 @@ import { adherenceService } from '../adherenceService'
 
 // scheduled_for absoluto; dia local SP (UTC-3).
 const at = (day, hourUtc = '12') => `${day}T${hourUtc}:00:00.000Z`
-const di = (status, extra = {}) => ({ status, protocol_id: 'p1', scheduled_for: at('2026-05-20'), ...extra })
+// Default relativo a hoje (5 dias atrás) — dentro das janelas 30d/90d em qualquer data.
+// Antes era fixo ('2026-05-20') e apodrecia ao cruzar a borda da janela de 30d (date-rot).
+const recentDay = () => new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10)
+const di = (status, extra = {}) => ({ status, protocol_id: 'p1', scheduled_for: at(recentDay()), ...extra })
 
 describe('adherenceService — leitura de dose_instances (Fase 3)', () => {
   beforeEach(() => {
