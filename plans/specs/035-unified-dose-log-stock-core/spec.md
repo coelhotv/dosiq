@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/035-unified-dose-log-stock-core/`
 **Created**: 2026-06-16
-**Status**: planned
+**Status**: in-progress
 **Tier**: 2
 **Input**: Auditoria de divergência arquitetural durante a 033. Mobile (`doseService`) e web (`logService`) duplicam a orquestração de registro de dose (validar → registrar log → mexer no estoque → ancorar instância) com **implementações de estoque divergentes**. Schema/validação já são compartilhados via `@dosiq/core`; a orquestração + modelo de estoque não.
 

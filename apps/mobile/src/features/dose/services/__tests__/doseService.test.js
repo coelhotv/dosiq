@@ -1,152 +1,263 @@
-// doseService.test.js — âncora determinística por instanceId vs snap (F4.3c)
+// doseService.test.js — testes do adaptador mobile doseService
 // Framework: Jest (jest-expo) — rodar em apps/mobile/
 
-// Spies do repo de instâncias (criado no load do módulo via createDoseInstanceRepository).
-// Prefixo `mock` exigido pelo guard de hoisting do jest.mock.
-const mockMarkTaken = jest.fn()
-const mockFindAnchorInstance = jest.fn()
-
-jest.mock('@dosiq/core', () => ({
-  ...jest.requireActual('@dosiq/core'),
-  createDoseInstanceRepository: () => ({
-    markTaken: (...a) => mockMarkTaken(...a),
-    findAnchorInstance: (...a) => mockFindAnchorInstance(...a),
-  }),
+const mockLogEvent = jest.fn()
+jest.mock('../../../../platform/analytics/firebaseAnalytics', () => ({
+  logEvent: (...args) => mockLogEvent(...args),
 }))
 
-jest.mock('../../../../platform/analytics/firebaseAnalytics', () => ({ logEvent: jest.fn() }))
-jest.mock('@shared/utils/debugLog', () => ({ debugLog: jest.fn() }))
+jest.mock('../../../../platform/analytics/analyticsEvents', () => ({
+  EVENTS: {
+    DOSE_LOGGED: 'dose_logged',
+    DOSE_LOGGED_BULK: 'dose_logged_bulk',
+  },
+}))
 
-// Cancel-on-resolve cross-superfície (036): doseService cancela o alarme local da
-// instância resolvida. Best-effort — falha não pode derrubar o registro.
+jest.mock('@shared/utils/debugLog', () => ({
+  debugLog: jest.fn(),
+}))
+
 const mockCancelAlarm = jest.fn()
 jest.mock('../../../../platform/alarms/alarmService', () => ({
   cancelAlarm: (...a) => mockCancelAlarm(...a),
 }))
 
-// Supabase mock: auth + from(insert/select/single, update/eq) + rpc.
-const mockInsertSingle = jest.fn()
-const mockRpc = jest.fn(() => ({ error: null }))
-const mockGetUser = jest.fn(() => ({ data: { user: { id: 'user-1' } }, error: null }))
-// Batch (registerDoseMany): `.insert([]).select('...')` é aguardado direto → {data,error}.
-// Individual: `.insert({}).select('...').single()`. select() serve os dois (tem single + data/error).
-const mockBatch = { data: [], error: null }
-
+const mockGetUser = jest.fn()
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => ({
   supabase: {
-    auth: { getUser: () => mockGetUser() },
-    from: jest.fn(() => ({
-      insert: jest.fn(() => ({ select: jest.fn(() => ({ single: mockInsertSingle, data: mockBatch.data, error: mockBatch.error })) })),
-      update: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
-      delete: jest.fn(() => ({ eq: jest.fn(() => ({ error: null })) })),
-    })),
-    rpc: (...args) => mockRpc(...args),
+    auth: {
+      getUser: () => mockGetUser(),
+    },
   },
 }))
 
-import { registerDose, registerDoseMany } from '../doseService'
+const mockRegisterDose = jest.fn()
+const mockUndoDose = jest.fn()
+const mockUpdateOrphanLog = jest.fn()
+const mockDeleteOrphanLog = jest.fn()
+const mockRegisterDoseMany = jest.fn()
+const mockGetById = jest.fn()
+
+jest.mock('@dosiq/core', () => {
+  const actual = jest.requireActual('@dosiq/core')
+  return {
+    ...actual,
+    createDoseLogService: jest.fn(() => ({
+      registerDose: (...args) => mockRegisterDose(...args),
+      undoDose: (...args) => mockUndoDose(...args),
+      updateOrphanLog: (...args) => mockUpdateOrphanLog(...args),
+      deleteOrphanLog: (...args) => mockDeleteOrphanLog(...args),
+      registerDoseMany: (...args) => mockRegisterDoseMany(...args),
+    })),
+    createDoseInstanceRepository: jest.fn(() => ({
+      getById: (...args) => mockGetById(...args),
+    })),
+  }
+})
+
+import {
+  registerDose,
+  undoDose,
+  updateOrphanLog,
+  deleteOrphanLog,
+  registerDoseMany,
+} from '../doseService'
+import { EVENTS } from '../../../../platform/analytics/analyticsEvents'
 
 const PID = '11111111-1111-4111-8111-111111111111'
 const MID = '22222222-2222-4222-8222-222222222222'
 const LOG = { id: 'log-1', taken_at: '2026-05-30T08:00:00.000Z', quantity_taken: 1, medicine_id: MID, protocol_id: PID }
 const INPUT = { protocol_id: PID, medicine_id: MID, taken_at: '2026-05-30T08:00:00.000Z', quantity_taken: 1 }
 
-beforeEach(() => {
-  jest.clearAllMocks()
-  mockInsertSingle.mockResolvedValue({ data: LOG, error: null })
-  mockRpc.mockReturnValue({ error: null })
-  mockGetUser.mockReturnValue({ data: { user: { id: 'user-1' } }, error: null })
-  mockMarkTaken.mockResolvedValue(true)
-  mockFindAnchorInstance.mockResolvedValue({ id: 'inst-snap' })
-  mockCancelAlarm.mockResolvedValue(undefined)
-})
-
-describe('registerDose — âncora por instanceId (F4.3c)', () => {
-  it('com instanceId → markTaken DIRETO na ocorrência, sem snap', async () => {
-    const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
-    expect(res.success).toBe(true)
-    expect(mockMarkTaken).toHaveBeenCalledWith('inst-direct', 'log-1')
-    expect(mockFindAnchorInstance).not.toHaveBeenCalled()
-  })
-
-  it('sem instanceId → snap por tolerância (findAnchorInstance + markTaken)', async () => {
-    const res = await registerDose(INPUT)
-    expect(res.success).toBe(true)
-    expect(mockFindAnchorInstance).toHaveBeenCalledWith({ protocolId: PID, takenAt: LOG.taken_at })
-    expect(mockMarkTaken).toHaveBeenCalledWith('inst-snap', 'log-1')
-  })
-
-  it('instanceId com markTaken falho → NÃO cai no snap (log fica avulso)', async () => {
-    mockMarkTaken.mockResolvedValueOnce(false)
-    const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
-    expect(res.success).toBe(true) // log é a fonte de verdade — registro não falha
-    expect(mockMarkTaken).toHaveBeenCalledWith('inst-direct', 'log-1')
-    expect(mockFindAnchorInstance).not.toHaveBeenCalled()
-  })
-
-  it('âncora é best-effort — falha não derruba o registro', async () => {
-    mockMarkTaken.mockRejectedValueOnce(new Error('db down'))
-    const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
-    expect(res.success).toBe(true)
-  })
-})
-
-describe('registerDoseMany — âncora por instance_id (F4.3d)', () => {
+describe('doseService adapter tests', () => {
   beforeEach(() => {
-    mockBatch.data = [
-      { id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
-      { id: 'log-b', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
-    ]
-    mockBatch.error = null
+    jest.clearAllMocks()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
+    mockCancelAlarm.mockResolvedValue(undefined)
   })
 
-  it('cada entrada com instance_id → markTaken direto na ocorrência (sem snap)', async () => {
-    const res = await registerDoseMany([
-      { ...INPUT, instance_id: 'inst-a' },
-      { ...INPUT, instance_id: 'inst-b' },
-    ])
-    expect(res.success).toBe(true)
-    expect(mockMarkTaken).toHaveBeenCalledWith('inst-a', 'log-a')
-    expect(mockMarkTaken).toHaveBeenCalledWith('inst-b', 'log-b')
-    expect(mockFindAnchorInstance).not.toHaveBeenCalled()
+  describe('registerDose', () => {
+    it('sucesso → chama core, cancela alarme e loga no analytics', async () => {
+      mockRegisterDose.mockResolvedValueOnce(LOG)
+
+      const res = await registerDose(INPUT, { instanceId: 'inst-1' })
+
+      expect(res).toEqual({ success: true, data: LOG })
+      expect(mockRegisterDose).toHaveBeenCalledWith(
+        expect.objectContaining({ protocol_id: PID, medicine_id: MID }),
+        { instanceId: 'inst-1' }
+      )
+      expect(mockCancelAlarm).toHaveBeenCalledWith('inst-1')
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { medicine_id: MID })
+    })
+
+    it('falha de validação Zod → retorna erro e não chama core', async () => {
+      const invalidInput = { ...INPUT, quantity_taken: -1 }
+
+      const res = await registerDose(invalidInput)
+
+      expect(res.success).toBe(false)
+      expect(res.error).toBeDefined()
+      expect(mockRegisterDose).not.toHaveBeenCalled()
+      expect(mockCancelAlarm).not.toHaveBeenCalled()
+    })
+
+    it('erro de rede → retorna _ERR_OFFLINE', async () => {
+      mockRegisterDose.mockRejectedValueOnce(new Error('Failed to fetch data'))
+
+      const res = await registerDose(INPUT, { instanceId: 'inst-1' })
+
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sem ligação à internet')
+      expect(mockCancelAlarm).not.toHaveBeenCalled()
+    })
+
+    it('erro de estoque insuficiente → retorna erro de estoque', async () => {
+      mockRegisterDose.mockRejectedValueOnce(new Error('Estoque insuficiente para esta operação'))
+
+      const res = await registerDose(INPUT)
+
+      expect(res).toEqual({ success: false, error: 'Estoque insuficiente para registrar esta dose.' })
+    })
+
+    it('erro generico → propaga a mensagem de erro', async () => {
+      mockRegisterDose.mockRejectedValueOnce(new Error('Algum erro interno'))
+
+      const res = await registerDose(INPUT)
+
+      expect(res).toEqual({ success: false, error: 'Algum erro interno' })
+    })
   })
 
-  it('entrada sem instance_id → snap por tolerância (fallback)', async () => {
-    mockBatch.data = [{ id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID }]
-    const res = await registerDoseMany([{ ...INPUT }]) // sem instance_id
-    expect(res.success).toBe(true)
-    expect(mockFindAnchorInstance).toHaveBeenCalledWith({ protocolId: PID, takenAt: INPUT.taken_at })
-  })
-})
+  describe('undoDose', () => {
+    it('sucesso → cancela dose no core e loga no analytics', async () => {
+      mockGetById.mockResolvedValueOnce({ id: 'inst-1', medicine_id: MID })
+      mockUndoDose.mockResolvedValueOnce()
 
-describe('cancel-on-resolve cross-superfície (036/AP-235)', () => {
-  it('registerDose com instanceId → cancela o alarme daquela instância', async () => {
-    await registerDose(INPUT, { instanceId: 'inst-direct' })
-    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-direct')
+      const res = await undoDose('inst-1')
+
+      expect(res).toEqual({ success: true })
+      expect(mockGetById).toHaveBeenCalledWith('inst-1')
+      expect(mockUndoDose).toHaveBeenCalledWith('inst-1')
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: MID })
+    })
+
+    it('erro de sessao → retorna erro', async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error('Sessão expirada') })
+
+      const res = await undoDose('inst-1')
+
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sessão expirada')
+      expect(mockUndoDose).not.toHaveBeenCalled()
+    })
+
+    it('instancia nao encontrada → retorna erro de registro', async () => {
+      mockGetById.mockResolvedValueOnce(null)
+
+      const res = await undoDose('inst-1')
+
+      expect(res).toEqual({ success: false, error: 'Registro não encontrado.' })
+      expect(mockUndoDose).not.toHaveBeenCalled()
+    })
+
+    it('erro de rede → retorna offline error', async () => {
+      mockGetById.mockResolvedValueOnce({ id: 'inst-1', medicine_id: MID })
+      mockUndoDose.mockRejectedValueOnce(new Error('network error'))
+
+      const res = await undoDose('inst-1')
+
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sem ligação à internet')
+    })
   })
 
-  it('registerDose sem instanceId → não chama cancelAlarm (PRN/avulso, sem alarme)', async () => {
-    await registerDose(INPUT)
-    expect(mockCancelAlarm).not.toHaveBeenCalled()
+  describe('updateOrphanLog', () => {
+    it('sucesso → atualiza no core e loga analytics', async () => {
+      mockUpdateOrphanLog.mockResolvedValueOnce(LOG)
+
+      const res = await updateOrphanLog('log-1', { quantity_taken: 2 })
+
+      expect(res).toEqual({ success: true })
+      expect(mockUpdateOrphanLog).toHaveBeenCalledWith('log-1', { quantity_taken: 2 })
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: MID })
+    })
+
+    it('erro de rede → retorna offline error', async () => {
+      mockUpdateOrphanLog.mockRejectedValueOnce(new Error('TypeError: fetch failed'))
+
+      const res = await updateOrphanLog('log-1', { quantity_taken: 2 })
+
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sem ligação à internet')
+    })
   })
 
-  it('cancelAlarm é best-effort — falha não derruba o registro', async () => {
-    mockCancelAlarm.mockRejectedValueOnce(new Error('notifee down'))
-    const res = await registerDose(INPUT, { instanceId: 'inst-direct' })
-    expect(res.success).toBe(true)
+  describe('deleteOrphanLog', () => {
+    it('sucesso → remove no core e loga analytics', async () => {
+      mockDeleteOrphanLog.mockResolvedValueOnce()
+
+      const res = await deleteOrphanLog('log-1')
+
+      expect(res).toEqual({ success: true })
+      expect(mockDeleteOrphanLog).toHaveBeenCalledWith('log-1')
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { action: 'delete_orphan' })
+    })
+
+    it('erro de rede → retorna offline error', async () => {
+      mockDeleteOrphanLog.mockRejectedValueOnce(new Error('network connection lost'))
+
+      const res = await deleteOrphanLog('log-1')
+
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sem ligação à internet')
+    })
   })
 
-  it('registerDoseMany → cancela o alarme de cada instância resolvida', async () => {
-    mockBatch.data = [
-      { id: 'log-a', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
-      { id: 'log-b', taken_at: INPUT.taken_at, quantity_taken: 1, medicine_id: MID, protocol_id: PID },
-    ]
-    mockBatch.error = null
-    await registerDoseMany([
-      { ...INPUT, instance_id: 'inst-a' },
-      { ...INPUT, instance_id: 'inst-b' },
-    ])
-    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-a')
-    expect(mockCancelAlarm).toHaveBeenCalledWith('inst-b')
+  describe('registerDoseMany', () => {
+    it('sucesso → chama core, cancela alarmes e loga bulk analytics', async () => {
+      const logs = [
+        { ...INPUT, instance_id: 'inst-a' },
+        { ...INPUT, instance_id: 'inst-b' },
+      ]
+      mockRegisterDoseMany.mockResolvedValueOnce([
+        { success: true, instanceId: 'inst-a', data: { id: 'log-a', medicine_id: MID } },
+        { success: true, instanceId: 'inst-b', data: { id: 'log-b', medicine_id: MID } },
+      ])
+
+      const res = await registerDoseMany(logs)
+
+      expect(res.success).toBe(true)
+      expect(res.results).toHaveLength(2)
+      expect(mockRegisterDoseMany).toHaveBeenCalledWith([
+        { ...INPUT, instanceId: 'inst-a' },
+        { ...INPUT, instanceId: 'inst-b' },
+      ])
+      expect(mockCancelAlarm).toHaveBeenCalledWith('inst-a')
+      expect(mockCancelAlarm).toHaveBeenCalledWith('inst-b')
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, { count: 2 })
+    })
+
+    it('lista vazia → retorna erro', async () => {
+      const res = await registerDoseMany([])
+      expect(res).toEqual({ success: false, results: [], error: 'Nenhuma dose selecionada.' })
+    })
+
+    it('validacao falha em um dos logs → retorna erro', async () => {
+      const res = await registerDoseMany([
+        { ...INPUT },
+        { ...INPUT, quantity_taken: -1 },
+      ])
+      expect(res.success).toBe(false)
+      expect(res.error).toBeDefined()
+      expect(mockRegisterDoseMany).not.toHaveBeenCalled()
+    })
+
+    it('erro de rede → retorna offline error', async () => {
+      mockRegisterDoseMany.mockRejectedValueOnce(new Error('fetch error'))
+      const res = await registerDoseMany([{ ...INPUT }])
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('Sem ligação à internet')
+    })
   })
 })

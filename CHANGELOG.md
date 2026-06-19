@@ -80,6 +80,38 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### 035 — Refactor: Dose-Log + Stock unificado e ATÔMICO no core (PR #TBD)
+
+> **Decisão (Option A, ADR-071):** a orquestração de tomada de dose passa a rodar dentro de
+> **uma única transação Postgres** por operação (RPCs `register_dose_atomic` /
+> `update_dose_log_atomic` / `delete_dose_log_atomic`). Elimina na origem a janela de log
+> órfão / furo de estoque (classe **AP-231**) — sem rollback compensatório `insert→delete`
+> em JS, que era o padrão que ambas as plataformas duplicavam.
+
+#### Banco de dados (migração)
+- **Added** (`minor`): `docs/migrations/20260619_atomic_dose_logging.sql` — 3 RPCs `SECURITY DEFINER`
+  (`SET search_path = ''`, isolamento de tenant via `auth.uid()`, grants `authenticated`/`service_role`)
+  que compõem `consume_stock_fifo`/`restore_stock_for_log` numa transação maior. Ancoragem estrita
+  (tomada direta numa ocorrência → double-click aborta a transação inteira, Edge Case #1) vs
+  best-effort (snap retroativo/avulsa).
+
+#### Core (@dosiq/core)
+- **Added** (`minor`, CON-026): Factory `createDoseLogService` (`packages/core/src/services/doseLogService.js`)
+  unifica registrar/desfazer/atualizar/excluir delegando 100% da atomicidade estoque↔log↔ocorrência às
+  RPCs transacionais. JS retém apenas validação Zod e snap de instância (`findAnchorInstance`).
+  Tolerância de undo/delete unificada em `DEFAULT_TOLERANCE_MINUTES` (120) com fallback à tolerância
+  da própria ocorrência (resolve divergência 30 vs 120 min).
+
+#### App mobile (mobile)
+- **Changed** (`patch`): `doseService.js` vira casca fina sobre o core. Mantidos side-effects locais
+  (`_ERR_OFFLINE`, `_cancelAlarmBestEffort`, Firebase `logEvent`). Cancelamento de alarmes em lote
+  passa a casar pelo `instanceId` ecoado em cada resultado (sem acoplamento posicional). Removido
+  o teste obsoleto `apps/mobile/src/__tests__/doseService.undoDose.test.js`.
+
+#### App web (@dosiq/web)
+- **Changed** (`patch`): `logService.js` delega mutações ao core. Mantida a consulta das relações
+  `protocol`/`medicine` pós-escrita para preservar a retrocompatibilidade visual do front-end.
+
 ### Adicionado
 - **Pressão arterial como medida** (spec 032, mobile `0.18.0` + web `4.9.0`): registro com 2 campos
   (sistólica "por" diastólica, mmHg), contexto opcional (ao acordar / em repouso / indo dormir /
