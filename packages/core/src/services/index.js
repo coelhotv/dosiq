@@ -20,3 +20,5 @@ export {
   biomarkersToEvents,
   createTimelineService,
 } from './timelineService.js'
+
+export { createDoseLogService } from './doseLogService.js'
