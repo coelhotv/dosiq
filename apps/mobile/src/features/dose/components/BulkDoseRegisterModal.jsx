@@ -350,6 +350,7 @@ function BulkDoseActions({ loading, selectedCount, onCancel, onConfirm }) {
 
 function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
   const [prevVisible, setPrevVisible] = useState(null)
+  const [prevItems, setPrevItems] = useState([])
   const [selected, setSelected] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -357,7 +358,11 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [tempDate, setTempDate] = useState(null)
 
-  if (visible !== prevVisible) {
+  const itemsChanged = expandedDoseItems !== prevItems
+  const visibilityChanged = visible !== prevVisible
+
+  if (itemsChanged || visibilityChanged) {
+    setPrevItems(expandedDoseItems)
     setPrevVisible(visible)
     if (!visible) {
       setSelected({})
