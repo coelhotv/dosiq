@@ -4,24 +4,123 @@
 import { useState, useEffect, useCallback, startTransition } from 'react'
 import nudgeAdminService from '@services/api/nudgeAdminService'
 
-export function useNudgesAdminState() {
-  const [nudges, setNudges] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+async function _runAction({ id, run, successText, setActionLoading, setActionMessage, onCompleted }) {
+  setActionLoading(id)
+  setActionMessage(null)
+  try {
+    await run()
+    setActionMessage({
+      type: 'success',
+      text: successText,
+    })
+    onCompleted()
+  } catch (err) {
+    setActionMessage({
+      type: 'error',
+      text: err.message || 'Erro ao realizar ação',
+    })
+  } finally {
+    setActionLoading(null)
+  }
+}
 
-  // Paginação
+function useNudgeFilters() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
   const [totalPages, setTotalPages] = useState(0)
 
-  // Filtros
   const [isActiveFilter, setIsActiveFilter] = useState('')
   const [targetViewFilter, setTargetViewFilter] = useState('')
 
-  // Ações
+  return {
+    total,
+    setTotal,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    setTotalPages,
+    isActiveFilter,
+    setIsActiveFilter,
+    targetViewFilter,
+    setTargetViewFilter,
+  }
+}
+
+function useNudgeActions(loadNudges, setPage) {
   const [actionMessage, setActionMessage] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
+
+  useEffect(() => {
+    if (actionMessage) {
+      const timer = setTimeout(() => setActionMessage(null), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [actionMessage])
+
+  const handleCreate = useCallback(
+    async (data) => {
+      await _runAction({
+        id: 'create',
+        run: () => nudgeAdminService.create(data),
+        successText: 'Nudge criado com sucesso!',
+        setActionLoading,
+        setActionMessage,
+        onCompleted: () => {
+          setPage(1)
+          loadNudges()
+        },
+      })
+    },
+    [loadNudges, setPage],
+  )
+
+  const handleUpdate = useCallback(
+    async (id, data) => {
+      await _runAction({
+        id,
+        run: () => nudgeAdminService.update(id, data),
+        successText: 'Nudge atualizado com sucesso!',
+        setActionLoading,
+        setActionMessage,
+        onCompleted: loadNudges,
+      })
+    },
+    [loadNudges],
+  )
+
+  const handleToggleActive = useCallback(
+    async (id, currentStatus) => {
+      const nextStatus = !currentStatus
+      await _runAction({
+        id,
+        run: () => nudgeAdminService.toggleActive(id, nextStatus),
+        successText: nextStatus ? 'Nudge ativado!' : 'Nudge desativado!',
+        setActionLoading,
+        setActionMessage,
+        onCompleted: loadNudges,
+      })
+    },
+    [loadNudges],
+  )
+
+  return {
+    actionMessage,
+    actionLoading,
+    handleCreate,
+    handleUpdate,
+    handleToggleActive,
+  }
+}
+
+export function useNudgesAdminState() {
+  const [nudges, setNudges] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const filters = useNudgeFilters()
+  const { page, pageSize, isActiveFilter, targetViewFilter, setTotal, setTotalPages, setPage } = filters
 
   const loadNudges = useCallback(async () => {
     setIsLoading(true)
@@ -47,7 +146,7 @@ export function useNudgesAdminState() {
     } finally {
       setIsLoading(false)
     }
-  }, [page, pageSize, isActiveFilter, targetViewFilter])
+  }, [page, pageSize, isActiveFilter, targetViewFilter, setTotal, setTotalPages])
 
   // Exceção R-010: loadNudges (useCallback) declarado antes para evitar TDZ no useEffect
   useEffect(() => {
@@ -56,107 +155,15 @@ export function useNudgesAdminState() {
     })
   }, [loadNudges])
 
-  useEffect(() => {
-    if (actionMessage) {
-      const timer = setTimeout(() => setActionMessage(null), 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [actionMessage])
-
-  const handleCreate = useCallback(
-    async (data) => {
-      setActionLoading('create')
-      setActionMessage(null)
-      try {
-        await nudgeAdminService.create(data)
-
-        setActionMessage({
-          type: 'success',
-          text: 'Nudge criado com sucesso!',
-        })
-
-        setPage(1)
-        loadNudges()
-      } catch (err) {
-        setActionMessage({
-          type: 'error',
-          text: err.message || 'Erro ao criar nudge',
-        })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [loadNudges],
-  )
-
-  const handleUpdate = useCallback(
-    async (id, data) => {
-      setActionLoading(id)
-      setActionMessage(null)
-      try {
-        await nudgeAdminService.update(id, data)
-
-        setActionMessage({
-          type: 'success',
-          text: 'Nudge atualizado com sucesso!',
-        })
-
-        loadNudges()
-      } catch (err) {
-        setActionMessage({
-          type: 'error',
-          text: err.message || 'Erro ao atualizar nudge',
-        })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [loadNudges],
-  )
-
-  const handleToggleActive = useCallback(
-    async (id, currentStatus) => {
-      setActionLoading(id)
-      setActionMessage(null)
-      try {
-        const nextStatus = !currentStatus
-        await nudgeAdminService.toggleActive(id, nextStatus)
-
-        setActionMessage({
-          type: 'success',
-          text: nextStatus ? 'Nudge ativado!' : 'Nudge desativado!',
-        })
-
-        loadNudges()
-      } catch (err) {
-        setActionMessage({
-          type: 'error',
-          text: err.message || 'Erro ao alternar nudge',
-        })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [loadNudges],
-  )
+  const actions = useNudgeActions(loadNudges, setPage)
 
   return {
     nudges,
     isLoading,
     error,
-    total,
-    page,
-    totalPages,
-    isActiveFilter,
-    setIsActiveFilter,
-    targetViewFilter,
-    setTargetViewFilter,
-    actionMessage,
-    actionLoading,
     loadNudges,
-    handleCreate,
-    handleUpdate,
-    handleToggleActive,
-    setPage,
+    ...filters,
+    ...actions,
   }
 }
+

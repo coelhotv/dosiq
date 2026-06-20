@@ -1,6 +1,137 @@
 import { getFieldDescribedBy } from '@utils/formUtils'
 import { formatActiveIngredientFormula, formatConcentration, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 
+
+function LiquidFormFields({ formData, errors, handleChange, totalMl }) {
+  return (
+    <>
+      <div className="form-row">
+        <div className="form-group">
+          <label htmlFor="num_bottles">
+            Nº de frascos <span className="required">*</span>
+          </label>
+          <input
+            type="number"
+            id="num_bottles"
+            name="num_bottles"
+            value={formData.num_bottles}
+            onChange={handleChange}
+            className={errors.num_bottles ? 'error' : ''}
+            placeholder="1"
+            min="1"
+            step="1"
+            aria-invalid={Boolean(errors.num_bottles)}
+          />
+          {errors.num_bottles && (
+            <span className="error-message">{errors.num_bottles}</span>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="volume_per_bottle">
+            Volume por frasco (ml) <span className="required">*</span>
+          </label>
+          <input
+            type="text"
+            inputMode="decimal"
+            id="volume_per_bottle"
+            name="volume_per_bottle"
+            value={formData.volume_per_bottle}
+            onChange={handleChange}
+            className={errors.volume_per_bottle ? 'error' : ''}
+            placeholder="100"
+            aria-invalid={Boolean(errors.volume_per_bottle)}
+          />
+          {errors.volume_per_bottle && (
+            <span className="error-message">{errors.volume_per_bottle}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="total_price">Preço total (R$)</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          id="total_price"
+          name="total_price"
+          value={formData.total_price}
+          onChange={handleChange}
+          className={errors.total_price ? 'error' : ''}
+          placeholder="0,00"
+          aria-invalid={Boolean(errors.total_price)}
+        />
+        {errors.total_price && (
+          <span className="error-message">{errors.total_price}</span>
+        )}
+        {totalMl > 0 && (
+          <span
+            className="helper-text"
+            style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}
+          >
+            💧 Total: {totalMl} ml em estoque
+          </span>
+        )}
+      </div>
+    </>
+  )
+}
+
+function SolidFormFields({ formData, errors, handleChange, selectedMedicine }) {
+  return (
+    <div className="form-row">
+      <div className="form-group">
+        <label htmlFor="quantity">
+          Quantidade <span className="required">*</span>
+        </label>
+        <input
+          type="text"
+          inputMode="decimal"
+          id="quantity"
+          name="quantity"
+          value={formData.quantity}
+          onChange={handleChange}
+          className={errors.quantity ? 'error' : ''}
+          placeholder="30"
+          aria-describedby={getFieldDescribedBy('quantity')}
+          aria-invalid={Boolean(errors.quantity)}
+        />
+        {errors.quantity && (
+          <span id="quantity-error" className="error-message">
+            {errors.quantity}
+          </span>
+        )}
+        {selectedMedicine && (
+          <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+            ✨ {formatActiveIngredientFormula(formData.quantity, selectedMedicine.dosage_per_pill, selectedMedicine.dosage_unit)}
+          </span>
+        )}
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="unit_price">Preço Unitário (R$)</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          id="unit_price"
+          name="unit_price"
+          value={formData.unit_price}
+          onChange={handleChange}
+          className={errors.unit_price ? 'error' : ''}
+          placeholder="0,50"
+          aria-describedby={getFieldDescribedBy('unit_price')}
+          aria-invalid={Boolean(errors.unit_price)}
+        />
+        {errors.unit_price && (
+          <span id="unit_price-error" className="error-message">
+            {errors.unit_price}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function StockFormMedicineDetails({
   formData,
   errors,
@@ -47,7 +178,6 @@ export default function StockFormMedicineDetails({
         )}
       </div>
 
-      {/* 012 Fase B4 (ADR-068): apresentação física do injetável, captada por LOTE em toda compra. */}
       {needsContainer && (
         <div className="form-group">
           <label htmlFor="injection_container">Apresentação (como vem embalado)</label>
@@ -69,127 +199,19 @@ export default function StockFormMedicineDetails({
       )}
 
       {isLiquid ? (
-        <>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="num_bottles">
-                Nº de frascos <span className="required">*</span>
-              </label>
-              <input
-                type="number"
-                id="num_bottles"
-                name="num_bottles"
-                value={formData.num_bottles}
-                onChange={handleChange}
-                className={errors.num_bottles ? 'error' : ''}
-                placeholder="1"
-                min="1"
-                step="1"
-                aria-invalid={Boolean(errors.num_bottles)}
-              />
-              {errors.num_bottles && (
-                <span className="error-message">{errors.num_bottles}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="volume_per_bottle">
-                Volume por frasco (ml) <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                id="volume_per_bottle"
-                name="volume_per_bottle"
-                value={formData.volume_per_bottle}
-                onChange={handleChange}
-                className={errors.volume_per_bottle ? 'error' : ''}
-                placeholder="100"
-                aria-invalid={Boolean(errors.volume_per_bottle)}
-              />
-              {errors.volume_per_bottle && (
-                <span className="error-message">{errors.volume_per_bottle}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="total_price">Preço total (R$)</label>
-            <input
-              type="text"
-              inputMode="decimal"
-              id="total_price"
-              name="total_price"
-              value={formData.total_price}
-              onChange={handleChange}
-              className={errors.total_price ? 'error' : ''}
-              placeholder="0,00"
-              aria-invalid={Boolean(errors.total_price)}
-            />
-            {errors.total_price && (
-              <span className="error-message">{errors.total_price}</span>
-            )}
-            {totalMl > 0 && (
-              <span
-                className="helper-text"
-                style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}
-              >
-                💧 Total: {totalMl} ml em estoque
-              </span>
-            )}
-          </div>
-        </>
+        <LiquidFormFields
+          formData={formData}
+          errors={errors}
+          handleChange={handleChange}
+          totalMl={totalMl}
+        />
       ) : (
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="quantity">
-              Quantidade <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              id="quantity"
-              name="quantity"
-              value={formData.quantity}
-              onChange={handleChange}
-              className={errors.quantity ? 'error' : ''}
-              placeholder="30"
-              aria-describedby={getFieldDescribedBy('quantity')}
-              aria-invalid={Boolean(errors.quantity)}
-            />
-            {errors.quantity && (
-              <span id="quantity-error" className="error-message">
-                {errors.quantity}
-              </span>
-            )}
-            {selectedMedicine && (
-              <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-                ✨ {formatActiveIngredientFormula(formData.quantity, selectedMedicine.dosage_per_pill, selectedMedicine.dosage_unit)}
-              </span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="unit_price">Preço Unitário (R$)</label>
-            <input
-              type="text"
-              inputMode="decimal"
-              id="unit_price"
-              name="unit_price"
-              value={formData.unit_price}
-              onChange={handleChange}
-              className={errors.unit_price ? 'error' : ''}
-              placeholder="0,50"
-              aria-describedby={getFieldDescribedBy('unit_price')}
-              aria-invalid={Boolean(errors.unit_price)}
-            />
-            {errors.unit_price && (
-              <span id="unit_price-error" className="error-message">
-                {errors.unit_price}
-              </span>
-            )}
-          </div>
-        </div>
+        <SolidFormFields
+          formData={formData}
+          errors={errors}
+          handleChange={handleChange}
+          selectedMedicine={selectedMedicine}
+        />
       )}
     </>
   )

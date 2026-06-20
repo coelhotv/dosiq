@@ -47,8 +47,155 @@ const SUPPLEMENT_TYPES = new Set(['suplemento', 'supplement'])
  *   medicineName: string       (display imediato no header)
  *   dailyConsumption: number   (consumo diário derivado do tratamento ativo)
  */
-export default function StockDetailScreen({ navigation }) {
-  const route = useRoute()
+function DetailHeader({ name, onBack, onAdjust }) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        onPress={onBack}
+        style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        hitSlop={8}
+      >
+        <ChevronLeft size={26} color={colors.text.primary} />
+      </Pressable>
+      <Text style={styles.headerTitle} numberOfLines={1}>
+        {name}
+      </Text>
+      <Pressable
+        onPress={onAdjust}
+        style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Acertar saldo"
+        hitSlop={8}
+      >
+        <SlidersHorizontal size={22} color={colors.text.primary} />
+      </Pressable>
+    </View>
+  )
+}
+
+function DetailHeroCard({ name, medicine, heroBg, heroColor, dosePill, dailyConsumption, badgeStatus, doseMetrics }) {
+  return (
+    <View style={styles.heroCard}>
+      <View style={[styles.heroIcon, { backgroundColor: heroBg }]}>
+        <MedicineIcon medicine={medicine} size={24} color={heroColor} />
+      </View>
+      <View style={styles.heroInfo}>
+        <View style={styles.heroNameRow}>
+          <Text style={styles.heroName} numberOfLines={2}>
+            {name}
+          </Text>
+          {dosePill ? (
+            <View style={styles.dosePill}>
+              <Text style={styles.dosePillText}>{dosePill}</Text>
+            </View>
+          ) : null}
+        </View>
+        {medicine?.active_ingredient ? (
+          <Text style={styles.heroLab} numberOfLines={1}>
+            {medicine.active_ingredient}
+          </Text>
+        ) : null}
+        {dailyConsumption > 0 ? (
+          <View style={styles.heroBadge}>
+            <StockLevelBadge
+              status={badgeStatus}
+              daysRemaining={doseMetrics.runwayDias}
+              dosesRemaining={doseMetrics.dosesRemaining}
+              isDailyStock={doseMetrics.isDaily}
+            />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  )
+}
+
+function LatestPurchaseSection({ purchases, latestPurchase, medicine, stockEntryMap, onHistory, onEditPurchase }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Histórico de compras</Text>
+        {purchases.length > 0 ? (
+          <Pressable
+            onPress={onHistory}
+            style={({ pressed }) => pressed && styles.pressed}
+            accessibilityRole="button"
+            accessibilityLabel="Ver todas as compras"
+            hitSlop={8}
+          >
+            <Text style={styles.linkText}>VER TODAS</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {latestPurchase ? (
+        <PurchaseCard
+          purchase={latestPurchase}
+          remaining={latestPurchase.remaining ?? 0}
+          isLatest
+          medicine={medicine}
+          stockEntry={stockEntryMap[latestPurchase.id] ?? null}
+          onPress={() => onEditPurchase(latestPurchase)}
+        />
+      ) : (
+        <Text style={styles.emptyText}>
+          Nenhuma compra registrada ainda.
+        </Text>
+      )}
+    </View>
+  )
+}
+
+function calculateDailyConsumption(medicine, paramConsumption, today) {
+  if (!medicine?.protocols) return paramConsumption ?? 0
+  const activeProtocols = medicine.protocols.filter(
+    (p) => p.active && isProtocolInPeriod(p, today)
+  )
+  const liquid = isLiquidMedicine(medicine)
+  return activeProtocols.reduce((acc, p) => {
+    const intakesPerDay = p.time_schedule?.length ?? 0
+    const perDose = liquid
+      ? doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill)
+      : Number(p.dosage_per_intake ?? 0)
+    return acc + perDose * intakesPerDay * frequencyDailyFactor(p)
+  }, 0)
+}
+
+function calculateConsumoPorDiaDose(medicine, paramConsumption, today) {
+  if (!medicine?.protocols) return paramConsumption ?? 0
+  const liquid = isLiquidMedicine(medicine)
+  return medicine.protocols
+    .filter((p) => p.active && isProtocolInPeriod(p, today))
+    .reduce((acc, p) => {
+      const intakesPerDay = p.time_schedule?.length ?? 0
+      const perDose = liquid
+        ? Number(doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill).toFixed(2))
+        : Number(p.dosage_per_intake ?? 0)
+      return acc + perDose * intakesPerDay
+    }, 0)
+}
+
+function calculateIntakesPerDay(medicine, today) {
+  if (!medicine?.protocols) return 0
+  return medicine.protocols
+    .filter((p) => p.active && isProtocolInPeriod(p, today))
+    .reduce((acc, p) => acc + (p.time_schedule?.length ?? 0), 0)
+}
+
+function calculateBadgeStatus(saldo, dailyConsumption) {
+  const status = resolveStockStatus(saldo, dailyConsumption)
+  const statusMap = {
+    critico: 'CRITICAL',
+    baixo: 'LOW',
+    normal: 'NORMAL',
+    alto: 'HIGH',
+    vencido: 'CRITICAL',
+  }
+  return statusMap[status] || 'NORMAL'
+}
+
+function useStockDetailState(route, navigation) {
   const { medicineId, medicineName } = route.params ?? {}
   const { user } = useAuth()
 
@@ -62,61 +209,16 @@ export default function StockDetailScreen({ navigation }) {
 
   // — Memos (R-010) —
   const today = useMemo(() => getTodayLocal(), [])
-
-  const dailyConsumption = useMemo(() => {
-    if (!medicine?.protocols) return route.params?.dailyConsumption ?? 0
-    const activeProtocols = medicine.protocols.filter(
-      (p) => p.active && isProtocolInPeriod(p, today)
-    )
-    // Líquidos (022): consumo em ml (gotas/UI → ml via units_per_ml).
-    const liquid = isLiquidMedicine(medicine)
-    return activeProtocols.reduce((acc, p) => {
-      const intakesPerDay = p.time_schedule?.length ?? 0
-      // mg → ml via dosage_per_pill; gotas/UI via units_per_ml; frequência aplicada (B2).
-      const perDose = liquid
-        ? doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill)
-        : Number(p.dosage_per_intake ?? 0)
-      return acc + perDose * intakesPerDay * frequencyDailyFactor(p)
-    }, 0)
-  }, [medicine, route.params?.dailyConsumption, today])
-
-  // 012 B4 (ADR-067): consumo do DIA-DOSE (dia agendado), sem frequencyDailyFactor —
-  // é o que sai num dia em que se toma (Mounjaro 1×/sem = 0,5 ml; 2× no dia = 1 ml).
-  // Para diário coincide com o consumo corrido. Alimenta o card "Consumo / dia".
-  const consumoPorDiaDose = useMemo(() => {
-    if (!medicine?.protocols) return route.params?.dailyConsumption ?? 0
-    const liquid = isLiquidMedicine(medicine)
-    return medicine.protocols
-      .filter((p) => p.active && isProtocolInPeriod(p, today))
-      .reduce((acc, p) => {
-        const intakesPerDay = p.time_schedule?.length ?? 0
-        // Líquido: arredonda cada dose a 2 casas (ml) p/ espelhar o débito real do
-        // consume_stock_fifo (ROUND(dose/conc, 2)) — senão a divisão (1÷1,34) vaza
-        // float pro card (Ozempic 0,7462… em vez de 0,75 ml). R-277/AP-226.
-        const perDose = liquid
-          ? Number(doseToMl(Number(p.dosage_per_intake ?? 0), p.intake_unit, medicine.units_per_ml, medicine.dosage_per_pill).toFixed(2))
-          : Number(p.dosage_per_intake ?? 0)
-        return acc + perDose * intakesPerDay
-      }, 0)
-  }, [medicine, route.params?.dailyConsumption, today])
+  const dailyConsumption = useMemo(() => calculateDailyConsumption(medicine, route.params?.dailyConsumption, today), [medicine, route.params?.dailyConsumption, today])
+  const consumoPorDiaDose = useMemo(() => calculateConsumoPorDiaDose(medicine, route.params?.dailyConsumption, today), [medicine, route.params?.dailyConsumption, today])
 
   const avgUnitPrice = useMemo(
     () => computeAverageUnitPrice(purchases),
     [purchases],
   )
 
-  // Tomadas/dia somadas dos tratamentos ativos (p/ custo por dose).
-  const intakesPerDay = useMemo(() => {
-    if (!medicine?.protocols) return 0
-    return medicine.protocols
-      .filter((p) => p.active && isProtocolInPeriod(p, today))
-      .reduce((acc, p) => acc + (p.time_schedule?.length ?? 0), 0)
-  }, [medicine, today])
+  const intakesPerDay = useMemo(() => calculateIntakesPerDay(medicine, today), [medicine, today])
 
-  // Custo por dose = custo/un|ml × consumo_do_dia-dose ÷ tomadas_dia (média ponderada
-  // por evento de tomada; cobre múltiplos protocolos). 012 B4: usa o consumo do
-  // dia-dose (sem frequencyDailyFactor) — senão o custo/dose ficava diluído pela
-  // frequência (Mounjaro semanal mostrava 1/7 do custo real da aplicação).
   const costPerDose = useMemo(() => {
     if (consumoPorDiaDose > 0 && intakesPerDay > 0 && avgUnitPrice > 0) {
       return (avgUnitPrice * consumoPorDiaDose) / intakesPerDay
@@ -124,32 +226,17 @@ export default function StockDetailScreen({ navigation }) {
     return null
   }, [avgUnitPrice, consumoPorDiaDose, intakesPerDay])
 
-  // Math.floor p/ alinhar com o badge do header (StockLevelBadge também usa floor);
-  // ceil mostrava 30 onde o badge mostra 29 (mesma fonte saldo/consumo).
   const daysRemaining = useMemo(
     () => (dailyConsumption > 0 ? Math.floor(saldo / dailyConsumption) : null),
     [saldo, dailyConsumption],
   )
 
-  // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário);
-  // cor/badge seguem runway (doseMetrics.runwayDias). Diário mantém "N dias".
   const doseMetrics = useMemo(() => {
     const active = (medicine?.protocols || []).filter((p) => p.active && isProtocolInPeriod(p, today))
     return stockDoseMetrics(saldo, active, medicine)
   }, [medicine, saldo, today])
-  // Status canônico via @dosiq/core (mesma lógica da listagem) — trata edge
-  // cases como saldo 0 sem consumo (critico) que o cálculo manual por dias errava.
-  const badgeStatus = useMemo(() => {
-    const status = resolveStockStatus(saldo, dailyConsumption)
-    const statusMap = {
-      critico: 'CRITICAL',
-      baixo: 'LOW',
-      normal: 'NORMAL',
-      alto: 'HIGH',
-      vencido: 'CRITICAL',
-    }
-    return statusMap[status] || 'NORMAL'
-  }, [saldo, dailyConsumption])
+
+  const badgeStatus = useMemo(() => calculateBadgeStatus(saldo, dailyConsumption), [saldo, dailyConsumption])
 
   const isSupplement = useMemo(
     () => SUPPLEMENT_TYPES.has(medicine?.type),
@@ -159,51 +246,54 @@ export default function StockDetailScreen({ navigation }) {
   const latestPurchase = useMemo(() => purchases[0] ?? null, [purchases])
 
   // — Effects (R-010) —
-  // SYNC callback obrigatório no useFocusEffect (NUNCA async direto — crash
-  // "An effect function must not return anything besides a function").
-  const fetchDetail = useCallback(async () => {
-    const userId = user?.id
-    if (!medicineId || !userId) return
-    setLoading(true)
-    try {
-      const [qty, purchaseList, med, stockRows] = await Promise.all([
-        stockService.getTotalQuantity(medicineId),
-        stockService.getPurchasesByMedicine(medicineId),
-        medicineService.getById(medicineId),
-        // Busca opened_at por lote para eixo TTL (012 Fase A). Direto via supabase
-        // pois o repositório compartilhado não expõe opened_at no select atual.
-        supabase
-          .from('stock')
-          .select('id, purchase_id, quantity, opened_at')
-          .eq('medicine_id', medicineId)
-          .gt('quantity', 0)
-          .then(({ data }) => data ?? []),
-      ])
-      setSaldo(qty ?? 0)
-      setPurchases(Array.isArray(purchaseList) ? purchaseList : [])
-      setMedicine(med ?? null)
-      // Monta mapa purchase_id → stock entry (primeiro lote de cada compra com saldo)
-      const entryMap = {}
-      for (const row of stockRows) {
-        if (row.purchase_id && !entryMap[row.purchase_id]) {
-          entryMap[row.purchase_id] = row
-        }
-      }
-      setStockEntryMap(entryMap)
-    } catch {
-      setSaldo(0)
-      setPurchases([])
-      setMedicine(null)
-      setStockEntryMap({})
-    } finally {
-      setLoading(false)
-    }
-  }, [medicineId, user])
-
   useFocusEffect(
     useCallback(() => {
-      fetchDetail()
-    }, [fetchDetail]),
+      const userId = user?.id
+      if (!medicineId || !userId) return
+      let cancelled = false
+      setLoading(true)
+
+      const run = async () => {
+        try {
+          const [qty, purchaseList, med, stockRows] = await Promise.all([
+            stockService.getTotalQuantity(medicineId),
+            stockService.getPurchasesByMedicine(medicineId),
+            medicineService.getById(medicineId),
+            supabase
+              .from('stock')
+              .select('id, purchase_id, quantity, opened_at')
+              .eq('medicine_id', medicineId)
+              .gt('quantity', 0)
+              .then(({ data }) => data ?? []),
+          ])
+          if (cancelled) return
+          setSaldo(qty ?? 0)
+          setPurchases(Array.isArray(purchaseList) ? purchaseList : [])
+          setMedicine(med ?? null)
+          const entryMap = {}
+          for (const row of stockRows) {
+            if (row.purchase_id && !entryMap[row.purchase_id]) {
+              entryMap[row.purchase_id] = row
+            }
+          }
+          setStockEntryMap(entryMap)
+        } catch {
+          if (!cancelled) {
+            setSaldo(0)
+            setPurchases([])
+            setMedicine(null)
+            setStockEntryMap({})
+          }
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      }
+
+      run()
+      return () => {
+        cancelled = true
+      }
+    }, [medicineId, user]),
   )
 
   // — Handlers (R-010) —
@@ -228,7 +318,7 @@ export default function StockDetailScreen({ navigation }) {
       navigation.navigate(ROUTES.PURCHASE_FORM, {
         mode: 'edit',
         purchaseId: purchase.id,
-        purchase, // sem isto o form abre vazio (initialValues cai no branch sem purchase)
+        purchase,
         medicineId,
         medicineName,
       })
@@ -252,129 +342,107 @@ export default function StockDetailScreen({ navigation }) {
   const heroColor = isSupplement ? colors.supplement[500] : colors.primary[500]
   const heroBg = isSupplement ? colors.supplement[50] : colors.primary[50]
 
+  return {
+    saldo,
+    purchases,
+    medicine,
+    loading,
+    stockEntryMap,
+    dailyConsumption,
+    consumoPorDiaDose,
+    avgUnitPrice,
+    costPerDose,
+    daysRemaining,
+    doseMetrics,
+    badgeStatus,
+    isSupplement,
+    latestPurchase,
+    handleBack,
+    handleAdjust,
+    handleHistory,
+    handleEditPurchase,
+    handleRegisterPurchase,
+    name,
+    dosePill,
+    heroColor,
+    heroBg,
+  }
+}
+
+export default function StockDetailScreen({ navigation }) {
+  const route = useRoute()
+  const state = useStockDetailState(route, navigation)
+
+  if (state.loading) {
+    return (
+      <ScreenContainer>
+        <DetailHeader
+          name={state.name}
+          onBack={state.handleBack}
+          onAdjust={state.handleAdjust}
+        />
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        </View>
+      </ScreenContainer>
+    )
+  }
+
   return (
     <ScreenContainer>
       <SafeAreaView edges={['top']} style={styles.flex}>
         {/* Header */}
-        <View style={styles.header}>
-          <Pressable
-            onPress={handleBack}
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Voltar"
-            hitSlop={8}
-          >
-            <ChevronLeft size={26} color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {name}
-          </Text>
-          <Pressable
-            onPress={handleAdjust}
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Acertar saldo"
-            hitSlop={8}
-          >
-            <SlidersHorizontal size={22} color={colors.text.primary} />
-          </Pressable>
-        </View>
+        <DetailHeader
+          name={state.name}
+          onBack={state.handleBack}
+          onAdjust={state.handleAdjust}
+        />
 
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={colors.primary[500]} />
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Card hero */}
+          <DetailHeroCard
+            name={state.name}
+            medicine={state.medicine}
+            heroBg={state.heroBg}
+            heroColor={state.heroColor}
+            dosePill={state.dosePill}
+            dailyConsumption={state.dailyConsumption}
+            badgeStatus={state.badgeStatus}
+            doseMetrics={state.doseMetrics}
+          />
+
+          {/* Indicadores */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Indicadores</Text>
+            <StockIndicators
+              saldo={state.saldo}
+              dailyConsumption={state.consumoPorDiaDose}
+              daysRemaining={state.daysRemaining}
+              dosesRemaining={state.doseMetrics.dosesRemaining}
+              isDailyStock={state.doseMetrics.isDaily}
+              avgUnitPrice={state.avgUnitPrice}
+              costPerDose={state.costPerDose}
+              medicine={state.medicine}
+            />
           </View>
-        ) : (
-          <ScrollView
-            contentContainerStyle={styles.content}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Card hero */}
-            <View style={styles.heroCard}>
-              <View style={[styles.heroIcon, { backgroundColor: heroBg }]}>
-                <MedicineIcon medicine={medicine} size={24} color={heroColor} />
-              </View>
-              <View style={styles.heroInfo}>
-                <View style={styles.heroNameRow}>
-                  <Text style={styles.heroName} numberOfLines={2}>
-                    {name}
-                  </Text>
-                  {dosePill ? (
-                    <View style={styles.dosePill}>
-                      <Text style={styles.dosePillText}>{dosePill}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                {medicine?.active_ingredient ? (
-                  <Text style={styles.heroLab} numberOfLines={1}>
-                    {medicine.active_ingredient}
-                  </Text>
-                ) : null}
-                {dailyConsumption > 0 ? (
-                  <View style={styles.heroBadge}>
-                    <StockLevelBadge
-                      status={badgeStatus}
-                      daysRemaining={doseMetrics.runwayDias}
-                      dosesRemaining={doseMetrics.dosesRemaining}
-                      isDailyStock={doseMetrics.isDaily}
-                    />
-                  </View>
-                ) : null}
-              </View>
-            </View>
 
-            {/* Indicadores */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Indicadores</Text>
-              <StockIndicators
-                saldo={saldo}
-                dailyConsumption={consumoPorDiaDose}
-                daysRemaining={daysRemaining}
-                dosesRemaining={doseMetrics.dosesRemaining}
-                isDailyStock={doseMetrics.isDaily}
-                avgUnitPrice={avgUnitPrice}
-                costPerDose={costPerDose}
-                medicine={medicine}
-              />
-            </View>
-
-            {/* Histórico de compras */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Histórico de compras</Text>
-                {purchases.length > 0 ? (
-                  <Pressable
-                    onPress={handleHistory}
-                    style={({ pressed }) => pressed && styles.pressed}
-                    accessibilityRole="button"
-                    accessibilityLabel="Ver todas as compras"
-                    hitSlop={8}
-                  >
-                    <Text style={styles.linkText}>VER TODAS</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-              {latestPurchase ? (
-                <PurchaseCard
-                  purchase={latestPurchase}
-                  remaining={latestPurchase.remaining ?? 0}
-                  isLatest
-                  medicine={medicine}
-                  stockEntry={stockEntryMap[latestPurchase.id] ?? null}
-                  onPress={() => handleEditPurchase(latestPurchase)}
-                />
-              ) : (
-                <Text style={styles.emptyText}>
-                  Nenhuma compra registrada ainda.
-                </Text>
-              )}
-            </View>
-          </ScrollView>
-        )}
+          {/* Histórico de compras */}
+          <LatestPurchaseSection
+            purchases={state.purchases}
+            latestPurchase={state.latestPurchase}
+            medicine={state.medicine}
+            stockEntryMap={state.stockEntryMap}
+            onHistory={state.handleHistory}
+            onEditPurchase={state.handleEditPurchase}
+          />
+        </ScrollView>
 
         {/* FAB ubíquo (PO-2) — Registrar compra */}
         <Pressable
-          onPress={handleRegisterPurchase}
+          onPress={state.handleRegisterPurchase}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           accessibilityRole="button"
           accessibilityLabel="Registrar compra"

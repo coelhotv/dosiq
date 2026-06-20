@@ -33,6 +33,75 @@ import { ROUTES } from '@navigation/routes'
  *   medicineId: string       (obrigatório)
  *   medicineName: string     (display no header)
  */
+function HistoryHeaderComponent({ medicine, medicineName, isLiquid, totalBought, totalCount, avgUnitPrice, unitLabel }) {
+  return (
+    <>
+      {/* Card de contexto do medicamento */}
+      <View style={styles.medicineCard}>
+        <View style={styles.medicineIcon}>
+          <MedicineIcon
+            medicine={medicine}
+            size={22}
+            color={medicine?.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+            strokeWidth={2}
+          />
+        </View>
+        <View style={styles.medicineInfo}>
+          <View style={styles.medicineNameRow}>
+            <Text style={styles.medicineName} numberOfLines={2}>
+              {medicine?.name ?? medicineName ?? 'Medicamento'}
+            </Text>
+            {medicine?.dosage_per_pill ? (
+              <View style={styles.dosePill}>
+                <Text style={styles.dosePillText}>
+                  {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {medicine?.active_ingredient ? (
+            <Text style={styles.medicineSub} numberOfLines={1}>
+              {medicine.active_ingredient}
+            </Text>
+          ) : null}
+          <Text style={styles.pageSubtitle}>Histórico de compras</Text>
+        </View>
+      </View>
+
+      {/* Cards de resumo — visíveis apenas quando há dados */}
+      {totalCount > 0 && (
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{totalCount}</Text>
+            <Text style={styles.summaryLabel}>Compra{totalCount !== 1 ? 's' : ''}</Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            {/* ADR-046 — unidade(s) · líquido em ml (022) */}
+            <Text style={styles.summaryValue}>
+              {isLiquid ? formatNumberPtBR(totalBought) : totalBought}
+            </Text>
+            <Text style={styles.summaryLabel}>
+              {isLiquid
+                ? 'ml comprados'
+                : `Unidade${totalBought !== 1 ? 's' : ''} comprada${totalBought !== 1 ? 's' : ''}`}
+            </Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{formatBRL(avgUnitPrice)}</Text>
+            <Text style={styles.summaryLabel}>Custo médio/{unitLabel}</Text>
+          </View>
+        </View>
+      )}
+
+      {totalCount > 0 && (
+        <Text style={styles.sectionTitle}>Todas as compras</Text>
+      )}
+    </>
+  )
+}
+
 export default function PurchaseHistoryScreen({ route, navigation }) {
   const { medicineId, medicineName } = route.params ?? {}
   const { user } = useAuth()
@@ -175,70 +244,15 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
           purchases.length === 0 && styles.listContentEmpty,
         ]}
         ListHeaderComponent={
-          <>
-            {/* Card de contexto do medicamento */}
-            <View style={styles.medicineCard}>
-              <View style={styles.medicineIcon}>
-                <MedicineIcon
-                  medicine={medicine}
-                  size={22}
-                  color={medicine?.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
-                  strokeWidth={2}
-                />
-              </View>
-              <View style={styles.medicineInfo}>
-                <View style={styles.medicineNameRow}>
-                  <Text style={styles.medicineName} numberOfLines={2}>
-                    {medicine?.name ?? medicineName ?? 'Medicamento'}
-                  </Text>
-                  {medicine?.dosage_per_pill ? (
-                    <View style={styles.dosePill}>
-                      <Text style={styles.dosePillText}>
-                        {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                {medicine?.active_ingredient ? (
-                  <Text style={styles.medicineSub} numberOfLines={1}>
-                    {medicine.active_ingredient}
-                  </Text>
-                ) : null}
-                <Text style={styles.pageSubtitle}>Histórico de compras</Text>
-              </View>
-            </View>
-
-            {/* Cards de resumo — visíveis apenas quando há dados */}
-            {purchases.length > 0 && (
-              <View style={styles.summaryRow}>
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{totalCount}</Text>
-                  <Text style={styles.summaryLabel}>Compra{totalCount !== 1 ? 's' : ''}</Text>
-                </View>
-
-                <View style={styles.summaryCard}>
-                  {/* ADR-046 — unidade(s) · líquido em ml (022) */}
-                  <Text style={styles.summaryValue}>
-                    {isLiquid ? formatNumberPtBR(totalBought) : totalBought}
-                  </Text>
-                  <Text style={styles.summaryLabel}>
-                    {isLiquid
-                      ? 'ml comprados'
-                      : `Unidade${totalBought !== 1 ? 's' : ''} comprada${totalBought !== 1 ? 's' : ''}`}
-                  </Text>
-                </View>
-
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{formatBRL(avgUnitPrice)}</Text>
-                  <Text style={styles.summaryLabel}>Custo médio/{unitLabel}</Text>
-                </View>
-              </View>
-            )}
-
-            {purchases.length > 0 && (
-              <Text style={styles.sectionTitle}>Todas as compras</Text>
-            )}
-          </>
+          <HistoryHeaderComponent
+            medicine={medicine}
+            medicineName={medicineName}
+            isLiquid={isLiquid}
+            totalBought={totalBought}
+            totalCount={totalCount}
+            avgUnitPrice={avgUnitPrice}
+            unitLabel={unitLabel}
+          />
         }
         ListEmptyComponent={
           <EmptyState

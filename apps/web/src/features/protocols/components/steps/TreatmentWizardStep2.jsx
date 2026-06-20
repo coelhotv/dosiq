@@ -66,6 +66,145 @@ function PlanSelector({ availablePlans, planMode, setPlanMode, selectedPlanId, s
   )
 }
 
+function StepFrequencySelector({
+  protocolData,
+  updateProtocol,
+  handleWeekdayToggle,
+}) {
+  return (
+    <>
+      <label className="wizard__label">
+        Frequência
+        <select
+          className="wizard__select"
+          value={protocolData.frequency}
+          onChange={(e) => updateProtocol('frequency', e.target.value)}
+        >
+          {FREQUENCIES.map((f) => (
+            <option key={f} value={f}>
+              {FREQUENCY_LABELS[f] || f}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {REQUIRES_WEEKDAYS.has(protocolData.frequency) && (
+        <div className="wizard__label">
+          Dias da Semana *
+          <div className="weekday-selector-pwa">
+            {VISUAL_ORDER.map(({ key, label }) => {
+              const isSelected = (protocolData.weekdays || []).includes(key)
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`weekday-btn ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleWeekdayToggle(key)}
+                  aria-pressed={isSelected}
+                  title={key.charAt(0).toUpperCase() + key.slice(1)}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function StepTimeScheduleSelector({
+  protocolData,
+  updateTime,
+  removeTime,
+  addTime,
+}) {
+  return (
+    <div className="wizard__label">
+      Horários
+      {protocolData.time_schedule.map((time, i) => (
+        <div key={i} className="wizard__time-row">
+          <input
+            type="time"
+            className="wizard__input"
+            value={time}
+            onChange={(e) => updateTime(i, e.target.value)}
+          />
+          {protocolData.time_schedule.length > 1 && (
+            <button className="wizard__remove-time" onClick={() => removeTime(i)}>
+              ✕
+            </button>
+          )}
+        </div>
+      ))}
+      <button className="wizard__add-time" onClick={addTime}>
+        + Adicionar horário
+      </button>
+    </div>
+  )
+}
+
+function StepDosageSelector({
+  protocolData,
+  updateProtocol,
+  isLiquid,
+  defaultIntake,
+  intakeOptions,
+  askDensity,
+  densityLabel,
+  densityHint,
+  defaultDensity,
+  medicine,
+}) {
+  return (
+    <label className="wizard__label">
+      {isLiquid ? 'Dose por tomada' : 'Dose por tomada (un.)'}
+      <input
+        type="text"
+        inputMode="decimal"
+        className="wizard__input"
+        value={protocolData.dosage_per_intake}
+        onChange={(e) => updateProtocol('dosage_per_intake', e.target.value)}
+      />
+      {isLiquid && (
+        <select
+          className="wizard__select"
+          style={{ marginTop: 6 }}
+          value={protocolData.intake_unit || defaultIntake}
+          onChange={(e) => updateProtocol('intake_unit', e.target.value)}
+          aria-label="Unidade de tomada"
+        >
+          {intakeOptions.map((unit) => (
+            <option key={unit} value={unit}>{INTAKE_UNIT_LABELS[unit] || unit}</option>
+          ))}
+        </select>
+      )}
+      {askDensity && (
+        <div style={{ marginTop: 8 }}>
+          <label style={{ fontSize: 13 }}>
+            {densityLabel}
+            <input
+              type="text"
+              inputMode="decimal"
+              className="wizard__input"
+              value={protocolData.units_per_ml}
+              onChange={(e) => updateProtocol('units_per_ml', e.target.value)}
+              placeholder={String(defaultDensity)}
+            />
+          </label>
+          <small className="wizard__label-note">{densityHint}.</small>
+        </div>
+      )}
+      {medicine && (
+        <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+          ✨ {formatDoseHint(protocolData.dosage_per_intake, protocolData.intake_unit, medicine)}
+        </span>
+      )}
+    </label>
+  )
+}
+
 export default function TreatmentWizardStep2({
   protocolData,
   updateProtocol,
@@ -90,7 +229,7 @@ export default function TreatmentWizardStep2({
   // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   // Default da unidade de tomada: gotas é a apresentação líquida mais comum (mg é
-  // exceção do GLP-1 — o usuário troca p/ mg manualmente). ui/ml → 'UI'. resto → 'ml'.
+  // exceção do GLP-1 — o usuário troca p/ mg manualmente). ui/ml → 'UI'. resto → 'gotas'.
   const defaultIntake = medicine?.dosage_unit === 'ui/ml' ? 'UI' : 'gotas'
   const isMg = protocolData.intake_unit === 'mg'
   // Densidade (units_per_ml) só p/ gotas/UI (razão física sub-ml). mg usa a
@@ -142,110 +281,31 @@ export default function TreatmentWizardStep2({
     <div className="wizard__step">
       <h3 className="wizard__title">Como Tomar</h3>
 
-      <label className="wizard__label">
-        Frequência
-        <select
-          className="wizard__select"
-          value={protocolData.frequency}
-          onChange={(e) => updateProtocol('frequency', e.target.value)}
-        >
-          {FREQUENCIES.map((f) => (
-            <option key={f} value={f}>
-              {FREQUENCY_LABELS[f] || f}
-            </option>
-          ))}
-        </select>
-      </label>
+      <StepFrequencySelector
+        protocolData={protocolData}
+        updateProtocol={updateProtocol}
+        handleWeekdayToggle={handleWeekdayToggle}
+      />
 
-      {REQUIRES_WEEKDAYS.has(protocolData.frequency) && (
-        <div className="wizard__label">
-          Dias da Semana *
-          <div className="weekday-selector-pwa">
-            {VISUAL_ORDER.map(({ key, label }) => {
-              const isSelected = (protocolData.weekdays || []).includes(key)
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`weekday-btn ${isSelected ? 'selected' : ''}`}
-                  onClick={() => handleWeekdayToggle(key)}
-                  aria-pressed={isSelected}
-                  title={key.charAt(0).toUpperCase() + key.slice(1)}
-                >
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      <StepTimeScheduleSelector
+        protocolData={protocolData}
+        updateTime={updateTime}
+        removeTime={removeTime}
+        addTime={addTime}
+      />
 
-      <div className="wizard__label">
-        Horários
-        {protocolData.time_schedule.map((time, i) => (
-          <div key={i} className="wizard__time-row">
-            <input
-              type="time"
-              className="wizard__input"
-              value={time}
-              onChange={(e) => updateTime(i, e.target.value)}
-            />
-            {protocolData.time_schedule.length > 1 && (
-              <button className="wizard__remove-time" onClick={() => removeTime(i)}>
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
-        <button className="wizard__add-time" onClick={addTime}>
-          + Adicionar horário
-        </button>
-      </div>
-
-      <label className="wizard__label">
-        {isLiquid ? 'Dose por tomada' : 'Dose por tomada (un.)'}
-        <input
-          type="text"
-          inputMode="decimal"
-          className="wizard__input"
-          value={protocolData.dosage_per_intake}
-          onChange={(e) => updateProtocol('dosage_per_intake', e.target.value)}
-        />
-        {isLiquid && (
-          <select
-            className="wizard__select"
-            style={{ marginTop: 6 }}
-            value={protocolData.intake_unit || defaultIntake}
-            onChange={(e) => updateProtocol('intake_unit', e.target.value)}
-            aria-label="Unidade de tomada"
-          >
-            {intakeOptions.map((unit) => (
-              <option key={unit} value={unit}>{INTAKE_UNIT_LABELS[unit] || unit}</option>
-            ))}
-          </select>
-        )}
-        {askDensity && (
-          <div style={{ marginTop: 8 }}>
-            <label style={{ fontSize: 13 }}>
-              {densityLabel}
-              <input
-                type="text"
-                inputMode="decimal"
-                className="wizard__input"
-                value={protocolData.units_per_ml}
-                onChange={(e) => updateProtocol('units_per_ml', e.target.value)}
-                placeholder={String(defaultDensity)}
-              />
-            </label>
-            <small className="wizard__label-note">{densityHint}.</small>
-          </div>
-        )}
-        {medicine && (
-          <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-            ✨ {formatDoseHint(protocolData.dosage_per_intake, protocolData.intake_unit, medicine)}
-          </span>
-        )}
-      </label>
+      <StepDosageSelector
+        protocolData={protocolData}
+        updateProtocol={updateProtocol}
+        isLiquid={isLiquid}
+        defaultIntake={defaultIntake}
+        intakeOptions={intakeOptions}
+        askDensity={askDensity}
+        densityLabel={densityLabel}
+        densityHint={densityHint}
+        defaultDensity={defaultDensity}
+        medicine={medicine}
+      />
 
       <label className="wizard__label">
         Data de início

@@ -76,6 +76,74 @@ function MedicineRow({ item, onPress }) {
   )
 }
 
+function SheetHeader({ onClose }) {
+  return (
+    <View style={styles.header}>
+      <Text style={styles.title}>Para qual medicamento?</Text>
+      <Pressable
+        onPress={onClose}
+        hitSlop={8}
+        style={styles.closeBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Fechar"
+      >
+        <X size={22} color={colors.text.secondary} strokeWidth={2} />
+      </Pressable>
+    </View>
+  )
+}
+
+function SheetEmptyState({ listLength, query }) {
+  return (
+    <View style={styles.centerWrap}>
+      {listLength === 0 ? (
+        <Text style={styles.emptyText}>
+          Cadastre primeiro um medicamento para registrar uma compra.
+        </Text>
+      ) : (
+        <Text style={styles.emptyText}>
+          Nenhum medicamento encontrado para "{query}".
+        </Text>
+      )}
+    </View>
+  )
+}
+
+function SheetContent({ loading, error, sorted, list, trimmed, handleSelect }) {
+  if (loading) {
+    return (
+      <View style={styles.centerWrap}>
+        <ActivityIndicator color={colors.primary[500]} />
+        <Text style={styles.centerText}>Carregando medicamentos…</Text>
+      </View>
+    )
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerWrap}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    )
+  }
+
+  return (
+    <FlatList
+      data={sorted}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <MedicineRow item={item} onPress={handleSelect} />
+      )}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      contentContainerStyle={styles.listContent}
+      ListEmptyComponent={
+        <SheetEmptyState listLength={list.length} query={trimmed} />
+      }
+    />
+  )
+}
+
 export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
   // States (R-010 — States → Memos → Effects → Handlers)
   const [query, setQuery] = useState('')
@@ -176,18 +244,7 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
           <View style={styles.handle} />
 
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Para qual medicamento?</Text>
-            <Pressable
-              onPress={handleClose}
-              hitSlop={8}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Fechar"
-            >
-              <X size={22} color={colors.text.secondary} strokeWidth={2} />
-            </Pressable>
-          </View>
+          <SheetHeader onClose={handleClose} />
 
           {/* Campo de busca */}
           <View style={styles.searchBox}>
@@ -225,43 +282,15 @@ export default function PurchaseMedicineSheet({ visible, onClose, onSelect }) {
             </Text>
           ) : null}
 
-          {/* Loading */}
-          {loading ? (
-            <View style={styles.centerWrap}>
-              <ActivityIndicator color={colors.primary[500]} />
-              <Text style={styles.centerText}>Carregando medicamentos…</Text>
-            </View>
-          ) : error ? (
-            /* Erro de carregamento */
-            <View style={styles.centerWrap}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : (
-            /* Lista */
-            <FlatList
-              data={sorted}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <MedicineRow item={item} onPress={handleSelect} />
-              )}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={
-                <View style={styles.centerWrap}>
-                  {list.length === 0 ? (
-                    <Text style={styles.emptyText}>
-                      Cadastre primeiro um medicamento para registrar uma compra.
-                    </Text>
-                  ) : (
-                    <Text style={styles.emptyText}>
-                      Nenhum medicamento encontrado para "{trimmed}".
-                    </Text>
-                  )}
-                </View>
-              }
-            />
-          )}
+          {/* Lista e estados */}
+          <SheetContent
+            loading={loading}
+            error={error}
+            sorted={sorted}
+            list={list}
+            trimmed={trimmed}
+            handleSelect={handleSelect}
+          />
         </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>

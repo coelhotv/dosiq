@@ -95,19 +95,136 @@ function formProps(form, name) {
 // Componente principal
 // ──────────────────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line max-lines-per-function
-export default function PurchaseFormScreen() {
-  // States (R-010 — States → Memos → Effects → Handlers)
-  const navigation = useNavigation()
-  const route = useRoute()
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers puros para reduzir tamanho e complexidade do hook
+// ──────────────────────────────────────────────────────────────────────────────
+
+function getInitialValues(isEdit, purchase, todayIso) {
+  if (isEdit && purchase) {
+    const q = purchase.quantity_bought ?? purchase.quantity
+    return {
+      quantity: q != null ? String(q).replace('.', ',') : '',
+      unit_price:
+        purchase.unit_price != null && purchase.unit_price !== 0
+          ? String(purchase.unit_price).replace('.', ',')
+          : '',
+      purchase_date: purchase.purchase_date ?? todayIso,
+      expiration_date: purchase.expiration_date ?? null,
+      pharmacy: purchase.pharmacy ?? '',
+      laboratory: purchase.laboratory ?? '',
+      notes: purchase.notes ?? '',
+    }
+  }
+  return {
+    quantity: '',
+    unit_price: '',
+    purchase_date: todayIso,
+    expiration_date: null,
+    pharmacy: '',
+    laboratory: '',
+    notes: '',
+  }
+}
+
+function getQuantityHelperText(isEdit, quantity, medicine) {
+  if (isEdit) return 'Corrija o saldo pelo "Acertar saldo"'
+  if (!medicine) return undefined
+  const shortHint = formatActiveIngredientShort(
+    quantity,
+    medicine.dosage_per_pill,
+    medicine.dosage_unit
+  )
+  return shortHint ? `✨ Equivale a ${shortHint} no total` : undefined
+}
+
+function calculateCoercedValues(useLiquidInputs, numBottles, volumePerBottle, totalPrice, formValues) {
+  if (useLiquidInputs) {
+    const bottles = coerceDecimal(numBottles)
+    const volume = coerceDecimal(volumePerBottle)
+    if (!bottles || bottles <= 0 || !volume || volume <= 0) {
+      return null
+    }
+    const quantityCoerced = bottles * volume
+    const total = coerceDecimal(totalPrice)
+    const priceCoerced =
+      total && total > 0 && quantityCoerced > 0
+        ? Math.floor((total / quantityCoerced) * 10000) / 10000
+        : undefined
+    return { quantityCoerced, priceCoerced }
+  }
+
+  return {
+    quantityCoerced: coerceDecimal(formValues.quantity),
+    priceCoerced: coerceDecimal(formValues.unit_price),
+  }
+}
+
+function validatePurchaseForm(form, overrides) {
+  if (!form.validate(overrides)) {
+    const parsed = stockCreateSchema.safeParse({ ...form.values, ...overrides })
+    const firstError = parsed.success ? null : parsed.error.issues[0]?.message
+    Alert.alert('Verifique o formulário', firstError || 'Há campos obrigatórios não preenchidos.')
+    return false
+  }
+  return true
+}
+
+async function submitPurchasePayload({
+  isEdit,
+  useLiquidInputs,
+  payload,
+  purchaseId,
+  medicineId,
+  numBottles,
+  volumePerBottle,
+  totalPrice,
+  isInjectable,
+  injectionContainer,
+  updatePurchase,
+  createLiquidPurchase,
+  createPurchase,
+}) {
+  if (isEdit) {
+    await updatePurchase(purchaseId, payload, { goBack: true })
+    return
+  }
+
+  if (useLiquidInputs) {
+    const bottlesCount = Math.trunc(coerceDecimal(numBottles) || 0)
+    if (bottlesCount <= 0) {
+      Alert.alert('Verifique o formulário', 'O número de frascos deve ser pelo menos 1.')
+      return
+    }
+    await createLiquidPurchase(
+      {
+        medicineId,
+        numBottles: bottlesCount,
+        volumePerBottle: coerceDecimal(volumePerBottle),
+        totalPrice: coerceDecimal(totalPrice) || 0,
+        purchaseDate: payload.purchase_date,
+        expirationDate: payload.expiration_date,
+        pharmacy: payload.pharmacy,
+        laboratory: payload.laboratory,
+        notes: payload.notes,
+        injectionContainer: isInjectable ? injectionContainer || null : null,
+      },
+      { goBack: true },
+    )
+    return
+  }
+
+  await createPurchase(payload, { goBack: true })
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Custom hook para encapsular o estado e lógica da tela
+// ──────────────────────────────────────────────────────────────────────────────
+function usePurchaseForm(route, navigation) {
   const [labLocked, setLabLocked] = useState(false)
   const [medicine, setMedicine] = useState(null)
-  // Líquidos (022): estoque em ml. Estados locais (fora do schema) p/ frascos/volume/preço total.
   const [numBottles, setNumBottles] = useState('')
   const [volumePerBottle, setVolumePerBottle] = useState('')
   const [totalPrice, setTotalPrice] = useState('')
-  // 012 Fase B4 (ADR-068): apresentação do LOTE. No edit, prefill do lote editado
-  // (route.params.purchase) — lazy init evita set-state-in-effect (AP-222).
   const [injectionContainer, setInjectionContainer] = useState(
     () => route.params?.purchase?.injection_container || ''
   )
@@ -121,88 +238,26 @@ export default function PurchaseFormScreen() {
   } = route.params ?? {}
 
   const isEdit = mode === 'edit'
-  // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
-  // Frascos/ml só no create (edit ajusta saldo em ml direto).
   const useLiquidInputs = isLiquid && !isEdit
-  // 012 Fase B4 (ADR-068): apresentação é atributo do LOTE → pergunta em TODA compra
-  // de injetável (create e edit). Grava em stock+purchases via RPC, não no medicine.
   const isInjectable = medicine?.presentation === 'injetavel'
   const needsContainer = isInjectable
 
-  // Memos — valores iniciais do form
-  // FormDatePicker recebe Date; schema armazena string YYYY-MM-DD.
-  // Campos numéricos convertidos para string (FormInput só aceita string — ver MedicineFormScreen).
   const todayIso = useMemo(() => getTodayLocal(), [])
-
-  const initialValues = useMemo(() => {
-    if (isEdit && purchase) {
-      return {
-        quantity: (() => {
-          // purchase vem da tabela (quantity_bought) ou do demo (quantity)
-          const q = purchase.quantity_bought ?? purchase.quantity
-          return q != null ? String(q).replace('.', ',') : ''
-        })(),
-        unit_price:
-          purchase.unit_price != null && purchase.unit_price !== 0
-            ? String(purchase.unit_price).replace('.', ',')
-            : '',
-        purchase_date: purchase.purchase_date ?? todayIso,
-        expiration_date: purchase.expiration_date ?? null,
-        pharmacy: purchase.pharmacy ?? '',
-        laboratory: purchase.laboratory ?? '',
-        notes: purchase.notes ?? '',
-      }
-    }
-    return {
-      quantity: '',
-      unit_price: '',
-      purchase_date: todayIso,
-      expiration_date: null,
-      pharmacy: '',
-      laboratory: '',
-      notes: '',
-    }
-  }, [isEdit, purchase, todayIso])
+  const initialValues = useMemo(() => getInitialValues(isEdit, purchase, todayIso), [isEdit, purchase, todayIso])
 
   const form = useFormState(stockCreateSchema, { initialValues })
   const { createPurchase, createLiquidPurchase, updatePurchase, isLoading } = useStockMutation()
   const { handleChange } = form
 
-  // Derivados para FormDatePicker (converte string → Date para exibição)
-  const purchaseDateObj = useMemo(
-    () =>
-      form.values.purchase_date
-        ? parseLocalDate(form.values.purchase_date)
-        : null,
-    [form.values.purchase_date]
+  const purchaseDateObj = useMemo(() => form.values.purchase_date ? parseLocalDate(form.values.purchase_date) : null, [form.values.purchase_date])
+  const expirationDateObj = useMemo(() => form.values.expiration_date ? parseLocalDate(form.values.expiration_date) : null, [form.values.expiration_date])
+
+  const quantityHelperText = useMemo(
+    () => getQuantityHelperText(isEdit, form.values.quantity, medicine),
+    [isEdit, form.values.quantity, medicine]
   )
 
-  const expirationDateObj = useMemo(
-    () =>
-      form.values.expiration_date
-        ? parseLocalDate(form.values.expiration_date)
-        : null,
-    [form.values.expiration_date]
-  )
-
-  const quantityHelperText = useMemo(() => {
-    if (isEdit) {
-      return 'Corrija o saldo pelo "Acertar saldo"'
-    }
-    if (!medicine) return undefined
-    const shortHint = formatActiveIngredientShort(
-      form.values.quantity,
-      medicine.dosage_per_pill,
-      medicine.dosage_unit
-    )
-    return shortHint ? `✨ Equivale a ${shortHint} no total` : undefined
-  }, [isEdit, form.values.quantity, medicine])
-
-  // Effects — busca categoria regulatória do medicamento. Se Novo/Similar, o
-  // laboratório é marca registrada (não muda por compra): preenche + trava.
-  // setState ocorre dentro do .then (microtask, não sync no corpo do effect),
-  // então não dispara react-hooks/set-state-in-effect.
   useEffect(() => {
     if (!medicineId) return
     let cancelled = false
@@ -220,72 +275,26 @@ export default function PurchaseFormScreen() {
     return () => { cancelled = true }
   }, [medicineId, handleChange])
 
-  // Handlers
-
-  // Decimal PT-BR para quantidade (AP-167)
-  const handleQuantityChange = useCallback(
-    (_name, raw) => {
-      form.handleChange('quantity', parseDecimalPtBR(raw))
-    },
-    [form]
-  )
-
-  // Decimal PT-BR para preço unitário (AP-167)
-  const handlePriceChange = useCallback(
-    (_name, raw) => {
-      form.handleChange('unit_price', parseDecimalPtBR(raw))
-    },
-    [form]
-  )
-
-  // FormDatePicker entrega Date → converte para string YYYY-MM-DD
-  const handlePurchaseDateChange = useCallback(
-    (_name, date) => form.handleChange('purchase_date', date ? formatLocalDate(date) : todayIso),
-    [form, todayIso]
-  )
-
-  const handleExpirationDateChange = useCallback(
-    (_name, date) => form.handleChange('expiration_date', date ? formatLocalDate(date) : null),
-    [form]
-  )
+  const handleQuantityChange = useCallback((_name, raw) => form.handleChange('quantity', parseDecimalPtBR(raw)), [form])
+  const handlePriceChange = useCallback((_name, raw) => form.handleChange('unit_price', parseDecimalPtBR(raw)), [form])
+  const handlePurchaseDateChange = useCallback((_name, date) => form.handleChange('purchase_date', date ? formatLocalDate(date) : todayIso), [form, todayIso])
+  const handleExpirationDateChange = useCallback((_name, date) => form.handleChange('expiration_date', date ? formatLocalDate(date) : null), [form])
 
   const handleSubmit = useCallback(async () => {
-    // AP-166: overrides para coerce de decimais antes do safeParse (evita race)
-    let quantityCoerced
-    let priceCoerced
-
-    if (useLiquidInputs) {
-      // Líquido: quantity (ml) = frascos × volume; preço por ml = total / ml (trunc 4 casas).
-      const bottles = coerceDecimal(numBottles)
-      const volume = coerceDecimal(volumePerBottle)
-      if (!bottles || bottles <= 0 || !volume || volume <= 0) {
-        Alert.alert('Verifique o formulário', 'Informe o número de frascos e o volume por frasco (ml).')
-        return
-      }
-      quantityCoerced = bottles * volume
-      const total = coerceDecimal(totalPrice)
-      priceCoerced =
-        total && total > 0 && quantityCoerced > 0
-          ? Math.floor((total / quantityCoerced) * 10000) / 10000
-          : undefined
-    } else {
-      quantityCoerced = coerceDecimal(form.values.quantity)
-      priceCoerced = coerceDecimal(form.values.unit_price)
+    const coerced = calculateCoercedValues(useLiquidInputs, numBottles, volumePerBottle, totalPrice, form.values)
+    if (useLiquidInputs && !coerced) {
+      Alert.alert('Verifique o formulário', 'Informe o número de frascos e o volume por frasco (ml).')
+      return
     }
 
+    const { quantityCoerced, priceCoerced } = coerced
     const overrides = {
       medicine_id: medicineId,
       quantity: quantityCoerced,
       unit_price: priceCoerced !== undefined ? priceCoerced : undefined,
     }
 
-    if (!form.validate(overrides)) {
-      // Anti-silent-no-op (smoke iOS 022): feedback sempre.
-      const parsed = stockCreateSchema.safeParse({ ...form.values, ...overrides })
-      const firstError = parsed.success ? null : parsed.error.issues[0]?.message
-      Alert.alert('Verifique o formulário', firstError || 'Há campos obrigatórios não preenchidos.')
-      return
-    }
+    if (!validatePurchaseForm(form, overrides)) return
 
     const payload = {
       medicine_id: medicineId,
@@ -296,39 +305,24 @@ export default function PurchaseFormScreen() {
       pharmacy: form.values.pharmacy || null,
       laboratory: form.values.laboratory || null,
       notes: form.values.notes || null,
-      // ADR-068: apresentação vai no LOTE (stock+purchases via RPC). Só p/ injetável.
       injection_container: isInjectable ? injectionContainer || null : null,
     }
 
-    if (isEdit) {
-      await updatePurchase(purchaseId, payload, { goBack: true })
-    } else if (useLiquidInputs) {
-      // 012 B4 (ADR-068/022): líquido com X frascos → X lotes (split + custo dividido).
-      // FIFO consome lote a lote; opened_at só na 1ª dose de cada lote.
-      // Gemini #664: frascos é inteiro ≥1 — decimal <1 truncaria p/ 0 e a RPC falharia.
-      const bottlesCount = Math.trunc(coerceDecimal(numBottles) || 0)
-      if (bottlesCount <= 0) {
-        Alert.alert('Verifique o formulário', 'O número de frascos deve ser pelo menos 1.')
-        return
-      }
-      await createLiquidPurchase(
-        {
-          medicineId,
-          numBottles: bottlesCount,
-          volumePerBottle: coerceDecimal(volumePerBottle),
-          totalPrice: coerceDecimal(totalPrice) || 0,
-          purchaseDate: form.values.purchase_date,
-          expirationDate: form.values.expiration_date || null,
-          pharmacy: form.values.pharmacy || null,
-          laboratory: form.values.laboratory || null,
-          notes: form.values.notes || null,
-          injectionContainer: isInjectable ? injectionContainer || null : null,
-        },
-        { goBack: true },
-      )
-    } else {
-      await createPurchase(payload, { goBack: true })
-    }
+    await submitPurchasePayload({
+      isEdit,
+      useLiquidInputs,
+      payload,
+      purchaseId,
+      medicineId,
+      numBottles,
+      volumePerBottle,
+      totalPrice,
+      isInjectable,
+      injectionContainer,
+      updatePurchase,
+      createLiquidPurchase,
+      createPurchase,
+    })
   }, [form, isEdit, medicineId, purchaseId, createPurchase, createLiquidPurchase, updatePurchase, useLiquidInputs, numBottles, volumePerBottle, totalPrice, isInjectable, injectionContainer])
 
   const goBack = useCallback(() => navigation.goBack(), [navigation])
@@ -336,12 +330,182 @@ export default function PurchaseFormScreen() {
   const screenTitle = isEdit ? 'Editar compra' : 'Registrar compra'
   const ctaLabel = isEdit ? 'Salvar alterações' : 'Registrar compra'
 
+  return {
+    mode,
+    medicineId,
+    medicineName,
+    purchaseId,
+    purchase,
+    isEdit,
+    isLiquid,
+    useLiquidInputs,
+    needsContainer,
+    form,
+    isLoading,
+    purchaseDateObj,
+    expirationDateObj,
+    quantityHelperText,
+    numBottles,
+    setNumBottles,
+    volumePerBottle,
+    setVolumePerBottle,
+    totalPrice,
+    setTotalPrice,
+    injectionContainer,
+    setInjectionContainer,
+    labLocked,
+    handleQuantityChange,
+    handlePriceChange,
+    handlePurchaseDateChange,
+    handleExpirationDateChange,
+    handleSubmit,
+    goBack,
+    screenTitle,
+    ctaLabel,
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Funções Auxiliares de Renderização (para manter TextInputs inline)
+// ──────────────────────────────────────────────────────────────────────────────
+
+function renderLiquidInputs(state) {
+  return (
+    <FormSection title="Quantidade e preço">
+      <View style={styles.row}>
+        <View style={styles.rowHalf}>
+          <FormInput
+            name="num_bottles"
+            label="Nº de frascos"
+            required
+            placeholder="1"
+            keyboardType="decimal-pad"
+            maxLength={6}
+            value={state.numBottles}
+            onChange={(_n, raw) => state.setNumBottles(parseDecimalPtBR(raw))}
+          />
+        </View>
+        <View style={styles.rowHalf}>
+          <FormInput
+            name="volume_per_bottle"
+            label="Volume/frasco (ml)"
+            required
+            placeholder="100"
+            keyboardType="decimal-pad"
+            maxLength={10}
+            value={state.volumePerBottle}
+            onChange={(_n, raw) => state.setVolumePerBottle(parseDecimalPtBR(raw))}
+          />
+        </View>
+      </View>
+      <FormInput
+        name="total_price"
+        label="Preço total"
+        placeholder="0,00"
+        keyboardType="decimal-pad"
+        maxLength={12}
+        helperText={
+          coerceDecimal(state.numBottles) > 0 && coerceDecimal(state.volumePerBottle) > 0
+            ? `💧 Total: ${coerceDecimal(state.numBottles) * coerceDecimal(state.volumePerBottle)} ml`
+            : 'R$ — opcional'
+        }
+        value={state.totalPrice}
+        onChange={(_n, raw) => state.setTotalPrice(parseDecimalPtBR(raw))}
+      />
+    </FormSection>
+  )
+}
+
+function renderStandardInputs(state) {
+  return (
+    <FormSection title="Quantidade e preço">
+      <View style={styles.row}>
+        <View style={styles.rowHalf}>
+          <FormInput
+            name="quantity"
+            label={state.isLiquid ? 'Quantidade (ml)' : 'Quantidade (un.)'}
+            required
+            placeholder="0"
+            keyboardType="decimal-pad"
+            maxLength={10}
+            disabled={state.isEdit}
+            helperText={state.quantityHelperText}
+            value={
+              state.form.values.quantity != null ? String(state.form.values.quantity) : ''
+            }
+            error={state.form.touched.quantity ? state.form.errors.quantity : undefined}
+            onChange={state.handleQuantityChange}
+            onBlur={() => state.form.handleBlur('quantity', coerceDecimal(state.form.values.quantity))}
+          />
+        </View>
+        <View style={styles.rowHalf}>
+          <FormInput
+            name="unit_price"
+            label={state.isLiquid ? 'Preço por ml' : 'Preço unitário'}
+            placeholder="0,00"
+            keyboardType="decimal-pad"
+            maxLength={12}
+            helperText="R$ — opcional"
+            value={
+              state.form.values.unit_price != null ? String(state.form.values.unit_price) : ''
+            }
+            error={state.form.touched.unit_price ? state.form.errors.unit_price : undefined}
+            onChange={state.handlePriceChange}
+            onBlur={() => state.form.handleBlur('unit_price', coerceDecimal(state.form.values.unit_price))}
+          />
+        </View>
+      </View>
+    </FormSection>
+  )
+}
+
+function renderDetailsSection(state) {
+  return (
+    <FormSection title="Detalhes">
+      <FormInput
+        name="pharmacy"
+        label="Farmácia"
+        placeholder="Onde você comprou?"
+        helperText="Opcional"
+        autoCapitalize="words"
+        maxLength={200}
+        {...formProps(state.form, 'pharmacy')}
+      />
+      <FormInput
+        name="laboratory"
+        label="Laboratório"
+        placeholder="Laboratório"
+        helperText={state.labLocked ? 'Marca registrada — definida pelo medicamento' : 'Opcional'}
+        autoCapitalize="words"
+        maxLength={200}
+        disabled={state.labLocked}
+        {...formProps(state.form, 'laboratory')}
+      />
+      <FormInput
+        name="notes"
+        label="Observações"
+        placeholder="Notas sobre essa compra…"
+        helperText="Opcional"
+        multiline
+        numberOfLines={3}
+        maxLength={500}
+        {...formProps(state.form, 'notes')}
+      />
+    </FormSection>
+  )
+}
+
+export default function PurchaseFormScreen() {
+  const route = useRoute()
+  const navigation = useNavigation()
+  const state = usePurchaseForm(route, navigation)
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={goBack}
+          onPress={state.goBack}
           style={styles.headerBtn}
           hitSlop={8}
           accessibilityRole="button"
@@ -349,7 +513,7 @@ export default function PurchaseFormScreen() {
         >
           <ChevronLeft size={24} color={colors.text.primary} />
         </Pressable>
-        <Text style={styles.title}>{screenTitle}</Text>
+        <Text style={styles.title}>{state.screenTitle}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -370,110 +534,28 @@ export default function PurchaseFormScreen() {
               </View>
               <View style={styles.medicineInfo}>
                 <Text style={styles.medicineName} numberOfLines={2}>
-                  {medicineName ?? '—'}
+                  {state.medicineName ?? '—'}
                 </Text>
                 <Text style={styles.medicineLocked}>Medicamento selecionado</Text>
               </View>
             </View>
           </FormSection>
 
-          {/* Quantidade e preço (ADR-046: unidade no label) */}
-          {useLiquidInputs ? (
-            <FormSection title="Quantidade e preço">
-              <View style={styles.row}>
-                <View style={styles.rowHalf}>
-                  <FormInput
-                    name="num_bottles"
-                    label="Nº de frascos"
-                    required
-                    placeholder="1"
-                    keyboardType="decimal-pad"
-                    maxLength={6}
-                    value={numBottles}
-                    onChange={(_n, raw) => setNumBottles(parseDecimalPtBR(raw))}
-                  />
-                </View>
-                <View style={styles.rowHalf}>
-                  <FormInput
-                    name="volume_per_bottle"
-                    label="Volume/frasco (ml)"
-                    required
-                    placeholder="100"
-                    keyboardType="decimal-pad"
-                    maxLength={10}
-                    value={volumePerBottle}
-                    onChange={(_n, raw) => setVolumePerBottle(parseDecimalPtBR(raw))}
-                  />
-                </View>
-              </View>
-              <FormInput
-                name="total_price"
-                label="Preço total"
-                placeholder="0,00"
-                keyboardType="decimal-pad"
-                maxLength={12}
-                helperText={
-                  coerceDecimal(numBottles) > 0 && coerceDecimal(volumePerBottle) > 0
-                    ? `💧 Total: ${coerceDecimal(numBottles) * coerceDecimal(volumePerBottle)} ml`
-                    : 'R$ — opcional'
-                }
-                value={totalPrice}
-                onChange={(_n, raw) => setTotalPrice(parseDecimalPtBR(raw))}
-              />
-            </FormSection>
-          ) : (
-            <FormSection title="Quantidade e preço">
-              <View style={styles.row}>
-                <View style={styles.rowHalf}>
-                  <FormInput
-                    name="quantity"
-                    label={isLiquid ? 'Quantidade (ml)' : 'Quantidade (un.)'}
-                    required
-                    placeholder="0"
-                    keyboardType="decimal-pad"
-                    maxLength={10}
-                    disabled={isEdit}
-                    helperText={quantityHelperText}
-                    value={
-                      form.values.quantity != null ? String(form.values.quantity) : ''
-                    }
-                    error={form.touched.quantity ? form.errors.quantity : undefined}
-                    onChange={handleQuantityChange}
-                    onBlur={() => form.handleBlur('quantity', coerceDecimal(form.values.quantity))}
-                  />
-                </View>
-                <View style={styles.rowHalf}>
-                  <FormInput
-                    name="unit_price"
-                    label={isLiquid ? 'Preço por ml' : 'Preço unitário'}
-                    placeholder="0,00"
-                    keyboardType="decimal-pad"
-                    maxLength={12}
-                    helperText="R$ — opcional"
-                    value={
-                      form.values.unit_price != null ? String(form.values.unit_price) : ''
-                    }
-                    error={form.touched.unit_price ? form.errors.unit_price : undefined}
-                    onChange={handlePriceChange}
-                    onBlur={() => form.handleBlur('unit_price', coerceDecimal(form.values.unit_price))}
-                  />
-                </View>
-              </View>
-            </FormSection>
-          )}
+          {/* Quantidade e preço */}
+          {state.useLiquidInputs ? renderLiquidInputs(state) : renderStandardInputs(state)}
 
-          {/* 012 Fase B2 (FR-019): apresentação física do injetável (captura/correção). */}
-          {needsContainer && (
+          {/* Apresentação do injetável */}
+          {state.needsContainer && (
             <FormSection title="Apresentação">
               <FormSelect
                 name="injection_container"
                 label="Como vem embalado"
-                value={injectionContainer}
+                value={state.injectionContainer}
                 options={[
                   { value: '', label: 'Selecione (opcional)' },
                   ...INJECTION_CONTAINERS.map((c) => ({ value: c, label: INJECTION_CONTAINER_LABELS[c] })),
                 ]}
-                onChange={(_n, v) => setInjectionContainer(v)}
+                onChange={(_n, v) => state.setInjectionContainer(v)}
                 helperText="Ex.: caneta, ampola — usado para mostrar quantas aplicações restam."
               />
             </FormSection>
@@ -488,12 +570,12 @@ export default function PurchaseFormScreen() {
                   label="Data da compra"
                   required
                   placeholder="Selecionar data"
-                  value={purchaseDateObj}
+                  value={state.purchaseDateObj}
                   error={
-                    form.touched.purchase_date ? form.errors.purchase_date : undefined
+                    state.form.touched.purchase_date ? state.form.errors.purchase_date : undefined
                   }
-                  onChange={handlePurchaseDateChange}
-                  onBlur={form.handleBlur}
+                  onChange={state.handlePurchaseDateChange}
+                  onBlur={state.form.handleBlur}
                   maximumDate={getNow()}
                 />
               </View>
@@ -503,61 +585,31 @@ export default function PurchaseFormScreen() {
                   label="Validade"
                   placeholder="MM/AAAA"
                   helperText="Opcional"
-                  value={expirationDateObj}
+                  value={state.expirationDateObj}
                   error={
-                    form.touched.expiration_date
-                      ? form.errors.expiration_date
+                    state.form.touched.expiration_date
+                      ? state.form.errors.expiration_date
                       : undefined
                   }
-                  onChange={handleExpirationDateChange}
-                  onBlur={form.handleBlur}
-                  minimumDate={purchaseDateObj || undefined}
+                  onChange={state.handleExpirationDateChange}
+                  onBlur={state.form.handleBlur}
+                  minimumDate={state.purchaseDateObj || undefined}
                 />
               </View>
             </View>
           </FormSection>
 
           {/* Detalhes */}
-          <FormSection title="Detalhes">
-            <FormInput
-              name="pharmacy"
-              label="Farmácia"
-              placeholder="Onde você comprou?"
-              helperText="Opcional"
-              autoCapitalize="words"
-              maxLength={200}
-              {...formProps(form, 'pharmacy')}
-            />
-            <FormInput
-              name="laboratory"
-              label="Laboratório"
-              placeholder="Laboratório"
-              helperText={labLocked ? 'Marca registrada — definida pelo medicamento' : 'Opcional'}
-              autoCapitalize="words"
-              maxLength={200}
-              disabled={labLocked}
-              {...formProps(form, 'laboratory')}
-            />
-            <FormInput
-              name="notes"
-              label="Observações"
-              placeholder="Notas sobre essa compra…"
-              helperText="Opcional"
-              multiline
-              numberOfLines={3}
-              maxLength={500}
-              {...formProps(form, 'notes')}
-            />
-          </FormSection>
+          {renderDetailsSection(state)}
         </ScrollView>
 
         {/* Sticky save bar */}
         <FormActions
-          primaryLabel={ctaLabel}
-          onPrimary={handleSubmit}
-          primaryLoading={isLoading}
+          primaryLabel={state.ctaLabel}
+          onPrimary={state.handleSubmit}
+          primaryLoading={state.isLoading}
           secondaryLabel="Cancelar"
-          onSecondary={goBack}
+          onSecondary={state.goBack}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

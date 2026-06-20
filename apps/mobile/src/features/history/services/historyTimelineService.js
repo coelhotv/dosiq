@@ -44,54 +44,81 @@ export async function buildProtocolsById(userId) {
 
 // Anti-corruption layer (GAP-2): TimelineEvent (camelCase aninhado) → shape flat snake_case
 // consumido por DoseHistoryList / DoseActionSheet (spec 030). Não expõe TimelineEvent cru à UI.
+function _mapBiomarkerEvent(ev) {
+  const p = ev.payload
+  return {
+    id: ev.id,
+    type: 'biomarker',
+    occurred_at: ev.occurred_at,
+    localDay: ev.localDay,
+    measured_at: ev.occurred_at,
+    bioType: p.biomarkerType,
+    value: p.value,
+    value_secondary: p.valueSecondary ?? null,
+    unit: p.unit,
+    context: p.context ?? null,
+    notes: p.notes ?? null,
+    biomarkerId: p.biomarkerId,
+  }
+}
+
+function _getMedicineName(p, proto, med) {
+  return p.medicineName || med.name || proto.name || null
+}
+
+function _getDosagePerIntake(p, proto) {
+  return proto.dosage_per_intake || p.expectedDose || null
+}
+
+function _getDosageUnit(p, med) {
+  return p.dosageUnit || med.dosage_unit || null
+}
+
+function _getMedicineId(p, proto) {
+  return p.medicineId || proto.medicine_id || null
+}
+
+function _getProtocolProperties(p, proto, med) {
+  return {
+    medicine_name: _getMedicineName(p, proto, med),
+    protocol_name: p.protocolName || proto.name || null,
+    dosage_per_pill: med.dosage_per_pill || null,
+    dosage_per_intake: _getDosagePerIntake(p, proto),
+    intake_unit: proto.intake_unit || null,
+    dosage_unit: _getDosageUnit(p, med),
+    units_per_ml: med.units_per_ml || null,
+  }
+}
+
+function _mapDoseEvent(ev, protocolsById) {
+  const p = ev.payload || {}
+  const proto = (p.protocolId && protocolsById[p.protocolId]) || {}
+  const med = proto.medicine || {}
+  return {
+    id: ev.id,
+    type: 'dose',
+    occurred_at: ev.occurred_at,
+    localDay: ev.localDay,
+    status: p.status,
+    source: p.source,
+    scheduled_for: p.scheduledFor || ev.occurred_at,
+    taken_at: p.takenAt || null,
+    ..._getProtocolProperties(p, proto, med),
+    quantity_taken: p.quantityTaken || null,
+    medicine_id: _getMedicineId(p, proto),
+    protocol_id: p.protocolId || null,
+    is_orphan: p.source === 'log',
+    logId: p.logId || null,
+    instanceId: p.instanceId || null,
+  }
+}
+
 export function mapToMobileShape(events, protocolsById = {}) {
   return events.map(ev => {
     if (ev.type === 'biomarker') {
-      const p = ev.payload
-      return {
-        id: ev.id,
-        type: 'biomarker',
-        occurred_at: ev.occurred_at,
-        localDay: ev.localDay,
-        measured_at: ev.occurred_at,
-        bioType: p.biomarkerType,
-        value: p.value,
-        value_secondary: p.valueSecondary ?? null,
-        unit: p.unit,
-        context: p.context ?? null,
-        notes: p.notes ?? null,
-        // id original do registro (p/ edição/exclusão via measuresRepo)
-        biomarkerId: p.biomarkerId,
-      }
+      return _mapBiomarkerEvent(ev)
     }
-
-    // type === 'dose'
-    const p = ev.payload
-    const proto = protocolsById[p.protocolId] ?? null
-
-    return {
-      id: ev.id,
-      type: 'dose',
-      occurred_at: ev.occurred_at,
-      localDay: ev.localDay,
-      status: p.status,
-      source: p.source,
-      scheduled_for: p.scheduledFor ?? ev.occurred_at,
-      taken_at: p.takenAt ?? null,
-      medicine_name: p.medicineName ?? proto?.medicine?.name ?? proto?.name ?? null,
-      protocol_name: p.protocolName ?? proto?.name ?? null,
-      dosage_per_pill: proto?.medicine?.dosage_per_pill ?? null,
-      dosage_per_intake: proto?.dosage_per_intake ?? p.expectedDose ?? null,
-      intake_unit: proto?.intake_unit ?? null,
-      dosage_unit: p.dosageUnit ?? proto?.medicine?.dosage_unit ?? null,
-      units_per_ml: proto?.medicine?.units_per_ml ?? null,
-      quantity_taken: p.quantityTaken ?? null,
-      medicine_id: p.medicineId ?? proto?.medicine_id ?? null,
-      protocol_id: p.protocolId ?? null,
-      is_orphan: p.source === 'log',
-      logId: p.logId ?? null,
-      instanceId: p.instanceId ?? null,
-    }
+    return _mapDoseEvent(ev, protocolsById)
   })
 }
 

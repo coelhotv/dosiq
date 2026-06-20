@@ -145,6 +145,143 @@ async function _updateNotifiedAt(instanceIds) {
   }
 }
 
+/**
+ * Mapeia uma dose_instance para o formato esperado pelo dispatcher.
+ * @private
+ */
+function mapInstanceToDose(inst) {
+  const protocol = inst.protocol || {};
+  const medicine = protocol.medicine || {};
+  const protocolName = protocol.name || '';
+  const medicineName = medicine.name || protocolName;
+  const dosagePerPill =
+    medicine.dosage_per_pill !== null && medicine.dosage_per_pill !== undefined
+      ? Number(medicine.dosage_per_pill)
+      : null;
+
+  return {
+    instanceId: inst.id,
+    protocolId: inst.protocol_id,
+    protocolName,
+    medicineName,
+    treatmentPlanId: protocol.treatment_plan_id ?? null,
+    treatmentPlanName: protocol.treatment_plan?.name ?? null,
+    dosagePerIntake: protocol.dosage_per_intake ?? 1,
+    dosageUnit: medicine.dosage_unit,
+    dosagePerPill,
+    intakeUnit: protocol.intake_unit ?? null,
+    medicineId: protocol.medicine_id,
+    critical_alarm: inst.critical_alarm ?? false,
+  };
+}
+
+/**
+ * Executa o dispatch de um bloco individual de doses da dose_instance.
+ * @private
+ */
+async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId) {
+  const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
+  const isBlockCritical = block.doses.some(d => d.critical_alarm === true);
+
+  let kind, data;
+
+  if (block.kind === 'by_plan') {
+    kind = 'dose_reminder_by_plan';
+    data = {
+      planId: block.planId,
+      planName: block.planName,
+      scheduledTime: currentHHMM,
+      hour: currentHour,
+      doses: block.doses,
+      protocolIds: block.doses.map(d => d.protocolId),
+      critical_alarm: isBlockCritical,
+    };
+  } else if (block.kind === 'misc') {
+    kind = 'dose_reminder_misc';
+    data = {
+      scheduledTime: currentHHMM,
+      hour: currentHour,
+      doses: block.doses,
+      protocolIds: block.doses.map(d => d.protocolId),
+      critical_alarm: isBlockCritical,
+    };
+  } else {
+    const dose = block.doses[0];
+    kind = 'dose_reminder';
+    data = {
+      medicineName: dose.medicineName,
+      protocolId: dose.protocolId,
+      medicineId: dose.medicineId,
+      time: currentHHMM,
+      dosagePerIntake: dose.dosagePerIntake,
+      dosageUnit: dose.dosageUnit,
+      dosagePerPill: dose.dosagePerPill,
+      intakeUnit: dose.intakeUnit ?? null,
+      hour: currentHour,
+      critical_alarm: dose.critical_alarm ?? false,
+    };
+  }
+
+  const result = await dispatcher.dispatch({
+    userId,
+    kind,
+    data,
+    context: { correlationId, jobType: 'dose_reminder_instances' },
+  });
+
+  if (result.success) {
+    await _updateNotifiedAt(instanceIdsInBlock);
+  } else {
+    logger.error('Falha no dispatch (instances)', null, {
+      userId,
+      kind,
+      errors: result.errors,
+      correlationId,
+    });
+  }
+}
+
+/**
+ * Organiza e envia os blocos de notificação para um usuário específico.
+ * @private
+ */
+async function _dispatchUserReminderBlocks(
+  userId,
+  dosesNow,
+  windowStart,
+  eligibleUsers,
+  dispatcher,
+  correlationId
+) {
+  if (dosesNow.length === 0) return;
+
+  const criticalDoses = dosesNow.filter(d => d.critical_alarm === true);
+  const nonCriticalDoses = dosesNow.filter(d => !d.critical_alarm);
+
+  const blocks = [];
+  if (criticalDoses.length > 0) {
+    blocks.push(...partitionDoses(criticalDoses));
+  }
+  if (nonCriticalDoses.length > 0) {
+    blocks.push(...partitionDoses(nonCriticalDoses));
+  }
+  const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
+  const currentHour = parseInt(
+    parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
+    10
+  );
+  const currentHHMM = new Intl.DateTimeFormat('en-GB', {
+    timeZone: userTz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(parseISO(windowStart));
+
+  for (const block of blocks) {
+    await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId);
+  }
+}
+
 async function _checkRemindersFromInstances(dispatcher, correlationId) {
   try {
     const { data: users, error: userError } = await supabase
@@ -160,15 +297,11 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
 
     const userIds = eligibleUsers.map(u => u.user_id);
 
-    const nowISO = getServerTimestamp(); // ex: "2026-06-04T15:23:45.123Z"
-    const windowStart = nowISO.slice(0, 16) + ':00.000Z';  // "2026-06-04T15:23:00.000Z"
-    const windowEnd = addMinutes(1, parseISO(windowStart)).toISOString(); // "2026-06-04T15:24:00.000Z"
+    const nowISO = getServerTimestamp();
+    const windowStart = nowISO.slice(0, 16) + ':00.000Z';
+    const windowEnd = addMinutes(1, parseISO(windowStart)).toISOString();
 
-    const instances = await _fetchDueInstancesForReminder(
-      userIds,
-      windowStart,
-      windowEnd
-    );
+    const instances = await _fetchDueInstancesForReminder(userIds, windowStart, windowEnd);
 
     if (instances.length === 0) {
       logger.info('Nenhuma dose_instance devida no minuto atual', { correlationId });
@@ -181,109 +314,22 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
       byUser[inst.user_id].push(inst);
     }
 
-    logger.info(`${instances.length} instância(s) devida(s) para ${Object.keys(byUser).length} usuário(s)`, { correlationId });
+    logger.info(`${instances.length} instância(s) devida(s) para ${Object.keys(byUser).length} usuário(s)`, {
+      correlationId,
+    });
 
     for (const userId of Object.keys(byUser)) {
       try {
         const userInstances = byUser[userId];
-
-        // critical_alarm é passado ao dispatcher junto com a dose; o expoPushChannel
-        // faz o gate granular por device (native_alarm_enabled). O helper não suprime —
-        // dispositivos sem alarme nativo (web/PWA/Telegram) devem receber push mesmo
-        // para doses críticas (ADR-056).
-        const dosesNow = userInstances.map(inst => ({
-          instanceId: inst.id,
-          protocolId: inst.protocol_id,
-          protocolName: inst.protocol?.name || '',
-          medicineName: inst.protocol?.medicine?.name || inst.protocol?.name || '',
-          treatmentPlanId: inst.protocol?.treatment_plan_id ?? null,
-          treatmentPlanName: inst.protocol?.treatment_plan?.name ?? null,
-          dosagePerIntake: inst.protocol?.dosage_per_intake ?? 1,
-          dosageUnit: inst.protocol?.medicine?.dosage_unit,
-          dosagePerPill: inst.protocol?.medicine?.dosage_per_pill !== null && inst.protocol?.medicine?.dosage_per_pill !== undefined ? Number(inst.protocol.medicine.dosage_per_pill) : null,
-          // Líquidos (022): unidade de tomada p/ exibir "2 gotas" no lembrete.
-          intakeUnit: inst.protocol?.intake_unit ?? null,
-          medicineId: inst.protocol?.medicine_id,
-          critical_alarm: inst.critical_alarm ?? false,
-        }));
-
-        if (dosesNow.length === 0) continue;
-
-        // Pré-separar doses críticas de normais (US2)
-        const criticalDoses = dosesNow.filter(d => d.critical_alarm === true);
-        const nonCriticalDoses = dosesNow.filter(d => !d.critical_alarm);
-
-        const blocks = [];
-        if (criticalDoses.length > 0) {
-          blocks.push(...partitionDoses(criticalDoses));
-        }
-        if (nonCriticalDoses.length > 0) {
-          blocks.push(...partitionDoses(nonCriticalDoses));
-        }
-        const userTz = eligibleUsers.find(u => u.user_id === userId)?.timezone || 'America/Sao_Paulo';
-        const currentHour = parseInt(
-          parseISO(windowStart).toLocaleString('en-US', { timeZone: userTz, hour: 'numeric', hour12: false }),
-          10
+        const dosesNow = userInstances.map(mapInstanceToDose);
+        await _dispatchUserReminderBlocks(
+          userId,
+          dosesNow,
+          windowStart,
+          eligibleUsers,
+          dispatcher,
+          correlationId
         );
-        // HH:MM no fuso do usuário (scheduled_for é UTC; display deve ser local)
-        const currentHHMM = new Intl.DateTimeFormat('en-GB', {
-          timeZone: userTz,
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }).format(parseISO(windowStart));
-
-        for (const block of blocks) {
-          const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
-          // Dose crítica se qualquer instância do bloco tiver critical_alarm=true
-          const isBlockCritical = block.doses.some(d => d.critical_alarm === true);
-
-          let kind, data;
-
-          if (block.kind === 'by_plan') {
-            kind = 'dose_reminder_by_plan';
-            data = {
-              planId: block.planId, planName: block.planName,
-              scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
-              protocolIds: block.doses.map(d => d.protocolId),
-              critical_alarm: isBlockCritical,
-            };
-          } else if (block.kind === 'misc') {
-            kind = 'dose_reminder_misc';
-            data = {
-              scheduledTime: currentHHMM, hour: currentHour, doses: block.doses,
-              protocolIds: block.doses.map(d => d.protocolId),
-              critical_alarm: isBlockCritical,
-            };
-          } else {
-            const dose = block.doses[0];
-            kind = 'dose_reminder';
-            data = {
-              medicineName: dose.medicineName,
-              protocolId: dose.protocolId,
-              medicineId: dose.medicineId,
-              time: currentHHMM,
-              dosagePerIntake: dose.dosagePerIntake,
-              dosageUnit: dose.dosageUnit,
-              dosagePerPill: dose.dosagePerPill,
-              intakeUnit: dose.intakeUnit ?? null,
-              hour: currentHour,
-              critical_alarm: dose.critical_alarm ?? false,
-            };
-          }
-
-          const result = await dispatcher.dispatch({
-            userId, kind, data, context: { correlationId, jobType: 'dose_reminder_instances' },
-          });
-
-          if (result.success) {
-            await _updateNotifiedAt(instanceIdsInBlock);
-          } else {
-            logger.error('Falha no dispatch (instances)', null, {
-              userId, kind, errors: result.errors, correlationId,
-            });
-          }
-        }
       } catch (err) {
         logger.error('Erro ao processar lembretes (instances) do usuário', err, { userId, correlationId });
       }
@@ -296,10 +342,55 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
 }
 
 /**
+ * Processa e envia os lembretes de notificação no modelo legado por usuário.
+ * @private
+ */
+async function _dispatchLegacyRemindersForUser(
+  userId,
+  user,
+  protocols,
+  currentHHMM,
+  currentHour,
+  dispatcher,
+  correlationId
+) {
+  const timezone = user.timezone || 'America/Sao_Paulo';
+  const { weekday } = getCurrentDatePartsInTimezone(timezone);
+  const todayStr = getTodayLocal();
+
+  const dosesNow = protocols
+    .filter(p => (p.time_schedule || []).includes(currentHHMM) && isProtocolActiveOnWeekday(p, weekday, todayStr))
+    .map(p => ({
+      protocolId: p.id,
+      protocolName: p.name,
+      medicineName: p.medicine?.name || p.name,
+      treatmentPlanId: p.treatment_plan_id ?? null,
+      treatmentPlanName: p.treatment_plan?.name ?? null,
+      dosagePerIntake: p.dosage_per_intake ?? 1,
+      dosageUnit: p.medicine?.dosage_unit,
+      intakeUnit: p.intake_unit ?? null,
+      medicineId: p.medicine_id,
+    }));
+
+  if (dosesNow.length === 0) return;
+
+  const blocks = partitionDoses(dosesNow);
+
+  logger.info(`${dosesNow.length} dose(s) → ${blocks.length} bloco(s) para userId=${userId} às ${currentHHMM}`, {
+    correlationId,
+    userId,
+    blockKinds: blocks.map(b => b.kind),
+  });
+
+  for (const block of blocks) {
+    await _processUserReminderBlock(userId, currentHHMM, currentHour, block, dispatcher, correlationId);
+  }
+}
+
+/**
  * Check reminders via dispatcher com agrupamento por treatment_plan (Wave N1).
  */
 export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
-  // ADR-057: feature flag para rollback sem deploy
   if (process.env.REMINDER_SOURCE === 'instances') {
     return _checkRemindersFromInstances(dispatcher, correlationId);
   }
@@ -311,10 +402,7 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     if (userError) throw userError;
 
-    // digest mode tem mecanismo próprio (daily_digest); excluir apenas digest, não silent
-    // silent users chegam ao dispatcher que loga 'silenciada' → aparece no inbox
     const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');
-
     if (eligibleUsers.length === 0) {
       logger.info('Nenhum usuário elegível para dispatch de lembretes', { correlationId });
       return;
@@ -328,7 +416,7 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
     for (const user of eligibleUsers) {
       const currentHHMM = getCurrentTime().substring(0, 5);
       userTimes.set(user.user_id, currentHHMM);
-      
+
       if (!userIdsByHHMM[currentHHMM]) userIdsByHHMM[currentHHMM] = [];
       userIdsByHHMM[currentHHMM].push(user.user_id);
     }
@@ -343,42 +431,21 @@ export async function checkRemindersViaDispatcher(dispatcher, correlationId) {
 
     for (const user of eligibleUsers) {
       const userId = user.user_id;
-
       try {
         const currentHHMM = userTimes.get(userId);
         const currentHour = parseInt(currentHHMM.split(':')[0], 10);
         const protocols = protocolsByUser[userId] || [];
         if (protocols.length === 0) continue;
 
-        const timezone = user.timezone || 'America/Sao_Paulo';
-        const { weekday } = getCurrentDatePartsInTimezone(timezone);
-        const todayStr = getTodayLocal();
-
-        const dosesNow = protocols
-          .filter(p => (p.time_schedule || []).includes(currentHHMM) && isProtocolActiveOnWeekday(p, weekday, todayStr))
-          .map(p => ({
-            protocolId: p.id,
-            protocolName: p.name,
-            medicineName: p.medicine?.name || p.name,
-            treatmentPlanId: p.treatment_plan_id ?? null,
-            treatmentPlanName: p.treatment_plan?.name ?? null,
-            dosagePerIntake: p.dosage_per_intake ?? 1,
-            dosageUnit: p.medicine?.dosage_unit,
-            intakeUnit: p.intake_unit ?? null,
-            medicineId: p.medicine_id,
-          }));
-
-        if (dosesNow.length === 0) continue;
-
-        const blocks = partitionDoses(dosesNow);
-
-        logger.info(`${dosesNow.length} dose(s) → ${blocks.length} bloco(s) para userId=${userId} às ${currentHHMM}`, {
-          correlationId, userId, blockKinds: blocks.map(b => b.kind),
-        });
-
-        for (const block of blocks) {
-          await _processUserReminderBlock(userId, currentHHMM, currentHour, block, dispatcher, correlationId);
-        }
+        await _dispatchLegacyRemindersForUser(
+          userId,
+          user,
+          protocols,
+          currentHHMM,
+          currentHour,
+          dispatcher,
+          correlationId
+        );
       } catch (err) {
         logger.error('Erro ao processar lembretes do usuário via dispatcher', err, { userId, correlationId });
       }
@@ -697,6 +764,12 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
   }
 }
 
+// Helper para obter a duração em dias de uma etapa de titulação.
+function _getTitrationStageDays(stage) {
+  const days = Number(stage?.duration_days ?? stage?.days);
+  return Number.isFinite(days) && days > 0 ? days : 0;
+}
+
 // 012 Fase B (FR-005b): detecta etapas de titulação vencidas por cronograma.
 // Caminha o schedule a partir de stage_started_at somando duration (days);
 // retorna null se nada venceu. stage_started_at novo = fim ACUMULADO da etapa
@@ -717,8 +790,8 @@ export function _titrationDueAdvance(protocol, nowMs) {
   let reachedTarget = false;
   while (index < schedule.length) {
     // duration_days = canônico (titrationStageSchema); days = fallback legado
-    const days = Number(schedule[index]?.duration_days ?? schedule[index]?.days);
-    if (!Number.isFinite(days) || days <= 0) break;
+    const days = _getTitrationStageDays(schedule[index]);
+    if (days === 0) break;
     const endMs = startMs + days * MS_DAY;
     if (nowMs < endMs) break;
     if (index === schedule.length - 1) {
@@ -732,6 +805,36 @@ export function _titrationDueAdvance(protocol, nowMs) {
   }
   if (!advanced && !reachedTarget) return null;
   return { newIndex: index, newStageStartedAt: parseTimestamp(startMs).toISOString(), reachedTarget };
+}
+
+// 012 Fase B2 (FR-021): Dispara o alerta de transição de etapa de titulação.
+async function _dispatchTitrationAlert(userId, protocol, due, dispatcher, correlationId) {
+  const medicine = protocol.medicine || {};
+  const schedule = protocol.titration_schedule;
+  const nextStageData = schedule?.[due.newIndex + 1];
+  const enteredStage = schedule?.[due.newIndex];
+  const requiresNewMedicine = Boolean(enteredStage?.requires_new_medicine) && !due.reachedTarget;
+
+  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}${requiresNewMedicine ? ' (requer nova apresentação)' : ''}`, {
+    userId, protocolId: protocol.id, correlationId
+  });
+
+  const data = {
+    medicineName: medicine.name || 'Medicamento',
+    currentStage: due.newIndex + 1,
+    totalStages: schedule.length,
+    status: due.reachedTarget ? 'alvo_atingido' : 'titulando',
+    requiresNewMedicine,
+    nextStage: !due.reachedTarget && nextStageData ? {
+      dosage: String(nextStageData.dosage),
+      unit: medicine.dosage_unit || 'mg',
+      date: nextStageData.date
+    } : undefined
+  };
+
+  await dispatcher.dispatch({
+    userId, kind: 'titration_alert', data, context: { correlationId, jobType: 'titration_alert' }
+  });
 }
 
 // 012 Fase B (FR-005b): avanço AUTOMÁTICO por cronograma + notificação SÓ no
@@ -761,37 +864,7 @@ async function _processProtocolTitration(userId, protocol, dispatcher, correlati
   if (updateErr) throw updateErr; // best-effort por protocolo no caller (R-245)
   if (!updatedRows || updatedRows.length === 0) return; // etapa mudou sob o cron → aborta
 
-  const medicine = protocol.medicine || {};
-  const schedule = protocol.titration_schedule;
-  const nextStageData = schedule?.[due.newIndex + 1];
-  // 012 Fase B2 (FR-021): a etapa que iniciou exige nova apresentação (GLP-1
-  // cross-força — caneta 0,25 → 0,5). A dose em mg permanece correta (registro
-  // passivo do cronograma prescrito, SaMD); a notificação vira CTA "hora de
-  // trocar de caneta". Reusa o kind titration_alert — o payload diferencia pela
-  // flag (sem novo kind, evita drift de enum R-193/AP-115).
-  const enteredStage = schedule?.[due.newIndex];
-  const requiresNewMedicine = Boolean(enteredStage?.requires_new_medicine) && !due.reachedTarget;
-
-  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}${requiresNewMedicine ? ' (requer nova apresentação)' : ''}`, {
-    userId, protocolId: protocol.id, correlationId
-  });
-
-  const data = {
-    medicineName: medicine.name || 'Medicamento',
-    currentStage: due.newIndex + 1,
-    totalStages: schedule.length,
-    status: due.reachedTarget ? 'alvo_atingido' : 'titulando',
-    requiresNewMedicine,
-    nextStage: !due.reachedTarget && nextStageData ? {
-      dosage: String(nextStageData.dosage),
-      unit: medicine.dosage_unit || 'mg',
-      date: nextStageData.date
-    } : undefined
-  };
-
-  await dispatcher.dispatch({
-    userId, kind: 'titration_alert', data, context: { correlationId, jobType: 'titration_alert' }
-  });
+  await _dispatchTitrationAlert(userId, protocol, due, dispatcher, correlationId);
 }
 
 export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationId) {

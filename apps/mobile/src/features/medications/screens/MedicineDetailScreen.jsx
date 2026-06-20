@@ -57,8 +57,204 @@ function KVRow({ label, value, isLast }) {
 }
 
 // eslint-disable-next-line max-lines-per-function
-export default function MedicineDetailScreen() {
-  // States (via hooks)
+function MedicineDetailHeader({ onBack, onEdit, hasData }) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        onPress={onBack}
+        hitSlop={8}
+        style={styles.iconButton}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+      >
+        <ChevronLeft size={24} color={colors.text.primary} />
+      </Pressable>
+      <View style={styles.headerActions}>
+        <Pressable
+          onPress={onEdit}
+          hitSlop={8}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Editar medicamento"
+          disabled={!hasData}
+        >
+          <Pencil
+            size={22}
+            color={hasData ? colors.text.primary : colors.text.muted}
+          />
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+function MedicineDetailHero({ type, name, doseLabel, active_ingredient, isTitrating, medicine }) {
+  return (
+    <View style={styles.heroCard}>
+      <View
+        style={[
+          styles.heroIconWrap,
+          {
+            backgroundColor:
+              type === 'suplemento' ? colors.supplement[50] : colors.primary[50],
+          },
+        ]}
+      >
+        <MedicineIcon
+          medicine={medicine}
+          size={48}
+          color={type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
+        />
+      </View>
+      <View style={styles.heroBody}>
+        <View style={styles.heroNameRow}>
+          <Text style={styles.heroName} numberOfLines={2}>
+            {name}
+          </Text>
+          {doseLabel && (
+            <View style={styles.dosePill}>
+              <Text style={styles.dosePillText}>{doseLabel}</Text>
+            </View>
+          )}
+        </View>
+        {active_ingredient && (
+          <Text style={styles.heroIngredient} numberOfLines={2}>
+            {active_ingredient}
+          </Text>
+        )}
+        <View style={styles.heroBadges}>
+          <View style={[styles.badge, styles.badgeSuccess]}>
+            <Text style={[styles.badgeText, styles.badgeTextSuccess]}>
+              {isTitrating ? 'TITULANDO' : 'ESTÁVEL'}
+            </Text>
+          </View>
+          <View style={[styles.badge, styles.badgeNeutral]}>
+            <Text style={[styles.badgeText, styles.badgeTextNeutral]}>
+              {(type ?? '—').toString().toUpperCase()}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+function MedicineDetailIdentification({
+  typeLabel,
+  presentation,
+  shelf_life_days,
+  active_ingredient,
+  laboratory,
+  therapeutic_class,
+  regulatory_category,
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>IDENTIFICAÇÃO</Text>
+      <View style={styles.sectionCard}>
+        <KVRow label="Tipo" value={typeLabel} />
+        <KVRow
+          label="Apresentação"
+          value={PRESENTATION_LABELS[presentation] ?? presentation}
+        />
+        {presentation === 'injetavel' && shelf_life_days ? (
+          <KVRow
+            label="Validade após aberto"
+            value={`${shelf_life_days} dias`}
+          />
+        ) : null}
+        <KVRow label="Princípio Ativo" value={active_ingredient} />
+        <KVRow label="Laboratório" value={laboratory} />
+        <KVRow label="Classe Terapêutica" value={therapeutic_class} />
+        <KVRow
+          label="Categoria Regulatória"
+          value={regulatory_category}
+          isLast
+        />
+      </View>
+    </View>
+  )
+}
+
+function MedicineDetailDosage({ dosage_per_pill, dosage_unit, concentration_volume_ml }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>DOSAGEM</Text>
+      <View style={styles.sectionCard}>
+        <KVRow
+          label="Concentração"
+          value={
+            dosage_per_pill
+              ? formatConcentration(dosage_per_pill, dosage_unit, concentration_volume_ml)
+              : null
+          }
+          isLast
+        />
+      </View>
+    </View>
+  )
+}
+
+function MedicineDetailUsage({
+  protocols,
+  protocolsSummary,
+  stockSummary,
+  hideDelete,
+  onDeletePress,
+  deleteLoading,
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>EM USO</Text>
+
+      {/* Card tratamentos */}
+      <View style={styles.useCard}>
+        <View style={[styles.useIconWrap, styles.useIconWrapPrimary]}>
+          <Layers size={18} color={colors.primary[700]} />
+        </View>
+        <Text style={styles.useLabel}>
+          {protocols.length === 0
+            ? 'Sem tratamentos associados'
+            : `${protocols.length} ${protocols.length === 1 ? 'tratamento associado' : 'tratamentos associados'}`}
+        </Text>
+        {protocolsSummary ? (
+          <Text style={styles.useMeta} numberOfLines={1}>
+            {protocolsSummary}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Card estoque */}
+      <View style={styles.useCard}>
+        <View style={[styles.useIconWrap, styles.useIconWrapSupplement]}>
+          <Package size={18} color={colors.supplement[700]} />
+        </View>
+        <Text style={styles.useLabel}>Estoque</Text>
+        <Text style={styles.useMeta}>{stockSummary ?? 'Não rastreado'}</Text>
+      </View>
+
+      {/* Botão Excluir medicamento — oculto quando vindo de um tratamento
+          (exclusão bloqueada por dependência; ação morta) */}
+      {!hideDelete && (
+        <Pressable
+          onPress={onDeletePress}
+          style={({ pressed }) => [
+            styles.deleteButton,
+            pressed && styles.deleteButtonPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Excluir medicamento"
+          disabled={deleteLoading}
+        >
+          <Trash2 size={18} color={colors.status.error} />
+          <Text style={styles.deleteButtonText}>Excluir medicamento</Text>
+        </Pressable>
+      )}
+    </View>
+  )
+}
+
+function useMedicineDetailState() {
   const navigation = useNavigation()
   const route = useRoute()
   const id = route.params?.id
@@ -70,21 +266,37 @@ export default function MedicineDetailScreen() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [blockedOpen, setBlockedOpen] = useState(false)
 
+  const {
+    type,
+    name,
+    active_ingredient,
+    presentation,
+    shelf_life_days,
+    laboratory,
+    therapeutic_class,
+    regulatory_category,
+    dosage_per_pill,
+    dosage_unit,
+    concentration_volume_ml,
+    id: dataId,
+    protocols: protocolsData,
+  } = data || {}
+
   // Memos
   const typeLabel = useMemo(() => {
-    if (!data?.type) return '—'
-    return TYPE_LABELS[data.type] ?? capitalize(data.type)
-  }, [data])
+    if (!type) return '—'
+    return TYPE_LABELS[type] ?? capitalize(type)
+  }, [type])
 
   const doseLabel = useMemo(() => {
-    if (!data?.dosage_per_pill) return null
-    return formatConcentration(data.dosage_per_pill, data.dosage_unit, data.concentration_volume_ml)
-  }, [data])
+    if (!dosage_per_pill) return null
+    return formatConcentration(dosage_per_pill, dosage_unit, concentration_volume_ml)
+  }, [dosage_per_pill, dosage_unit, concentration_volume_ml])
 
   const protocols = useMemo(() => {
-    if (!data?.protocols || !Array.isArray(data.protocols)) return []
-    return data.protocols
-  }, [data])
+    if (!protocolsData || !Array.isArray(protocolsData)) return []
+    return protocolsData
+  }, [protocolsData])
 
   const isTitrating = useMemo(
     () => protocols.some((p) => p?.titration_status === 'titulando'),
@@ -102,11 +314,10 @@ export default function MedicineDetailScreen() {
   }, [protocols])
 
   const stockSummary = useMemo(() => {
-    const stock = Array.isArray(data?.stock) ? data.stock : []
-    if (stock.length === 0) return null
-    const totalUnits = stock.reduce((acc, s) => acc + (Number(s?.quantity) || 0), 0)
+    if (!data?.stock || data.stock.length === 0) return null
+    const totalUnits = data.stock.reduce((acc, s) => acc + (Number(s?.quantity) || 0), 0)
     if (totalUnits <= 0) return null
-    // Líquido: saldo é em ml (022). B4 ajustará protocolos não-diários p/ doses.
+    // Líquido: saldo é em ml (022). B4 ajustará protocols não-diários p/ doses.
     const unitLabel = isLiquidMedicine(data) ? 'ml' : 'un.'
     return `${totalUnits} ${unitLabel}`
   }, [data])
@@ -152,239 +363,145 @@ export default function MedicineDetailScreen() {
     setBlockedOpen(false)
     navigation.navigate(ROUTES.STOCK, {
       screen: ROUTES.STOCK_DETAIL,
-      params: { medicineId: data?.id, medicineName: data?.name },
+      params: { medicineId: dataId, medicineName: name },
     })
-  }, [navigation, data])
+  }, [navigation, dataId, name])
 
-  // Header (reaproveitado em todos os estados)
-  const Header = (
-    <View style={styles.header}>
-      <Pressable
-        onPress={handleBack}
-        hitSlop={8}
-        style={styles.iconButton}
-        accessibilityRole="button"
-        accessibilityLabel="Voltar"
-      >
-        <ChevronLeft size={24} color={colors.text.primary} />
-      </Pressable>
-      <View style={styles.headerActions}>
-        <Pressable
-          onPress={handleEdit}
-          hitSlop={8}
-          style={styles.iconButton}
-          accessibilityRole="button"
-          accessibilityLabel="Editar medicamento"
-          disabled={!data}
-        >
-          <Pencil
-            size={22}
-            color={data ? colors.text.primary : colors.text.muted}
-          />
-        </Pressable>
-      </View>
-    </View>
-  )
+  return {
+    data,
+    loading,
+    error,
+    refresh,
+    preCheck,
+    deleteLoading,
+    deleteOpen,
+    setDeleteOpen,
+    blockedOpen,
+    setBlockedOpen,
+    hideDelete,
+    type,
+    name,
+    active_ingredient,
+    presentation,
+    shelf_life_days,
+    laboratory,
+    therapeutic_class,
+    regulatory_category,
+    dosage_per_pill,
+    dosage_unit,
+    concentration_volume_ml,
+    typeLabel,
+    doseLabel,
+    protocols,
+    isTitrating,
+    protocolsSummary,
+    stockSummary,
+    handleBack,
+    handleEdit,
+    handleDeletePress,
+    handleDeleteConfirm,
+    handleOpenProtocol,
+    handleOpenStock,
+  }
+}
 
-  if (loading) {
+export default function MedicineDetailScreen() {
+  const state = useMedicineDetailState()
+
+  if (state.loading) {
     return (
       <ScreenContainer>
-        {Header}
+        <MedicineDetailHeader onBack={state.handleBack} onEdit={state.handleEdit} hasData={false} />
         <LoadingState />
       </ScreenContainer>
     )
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <ScreenContainer>
-        {Header}
-        <ErrorState message={error} onRetry={refresh} />
+        <MedicineDetailHeader onBack={state.handleBack} onEdit={state.handleEdit} hasData={false} />
+        <ErrorState message={state.error} onRetry={state.refresh} />
       </ScreenContainer>
     )
   }
 
-  if (!data) {
+  if (!state.data) {
     return (
       <ScreenContainer>
-        {Header}
-        <ErrorState message="Medicamento não encontrado" onRetry={refresh} />
+        <MedicineDetailHeader onBack={state.handleBack} onEdit={state.handleEdit} hasData={false} />
+        <ErrorState message="Medicamento não encontrado" onRetry={state.refresh} />
       </ScreenContainer>
     )
   }
 
   return (
     <ScreenContainer>
-      {Header}
+      <MedicineDetailHeader onBack={state.handleBack} onEdit={state.handleEdit} hasData={true} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero card */}
-        <View style={styles.heroCard}>
-          <View
-            style={[
-              styles.heroIconWrap,
-              {
-                backgroundColor:
-                  data.type === 'suplemento' ? colors.supplement[50] : colors.primary[50],
-              },
-            ]}
-          >
-            <MedicineIcon
-              medicine={data}
-              size={48}
-              color={data.type === 'suplemento' ? colors.supplement[500] : colors.primary[500]}
-            />
-          </View>
-          <View style={styles.heroBody}>
-            <View style={styles.heroNameRow}>
-              <Text style={styles.heroName} numberOfLines={2}>
-                {data.name}
-              </Text>
-              {doseLabel && (
-                <View style={styles.dosePill}>
-                  <Text style={styles.dosePillText}>{doseLabel}</Text>
-                </View>
-              )}
-            </View>
-            {data.active_ingredient && (
-              <Text style={styles.heroIngredient} numberOfLines={2}>
-                {data.active_ingredient}
-              </Text>
-            )}
-            <View style={styles.heroBadges}>
-              <View style={[styles.badge, styles.badgeSuccess]}>
-                <Text style={[styles.badgeText, styles.badgeTextSuccess]}>
-                  {isTitrating ? 'TITULANDO' : 'ESTÁVEL'}
-                </Text>
-              </View>
-              <View style={[styles.badge, styles.badgeNeutral]}>
-                <Text style={[styles.badgeText, styles.badgeTextNeutral]}>
-                  {(data.type ?? '—').toString().toUpperCase()}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
+        <MedicineDetailHero
+          type={state.type}
+          name={state.name}
+          doseLabel={state.doseLabel}
+          active_ingredient={state.active_ingredient}
+          isTitrating={state.isTitrating}
+          medicine={state.data}
+        />
 
-        {/* Identificação */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>IDENTIFICAÇÃO</Text>
-          <View style={styles.sectionCard}>
-            <KVRow label="Tipo" value={typeLabel} />
-            {/* 012 Fase A: forma farmacêutica visível no dia-a-dia (não só no form) */}
-            <KVRow
-              label="Apresentação"
-              value={PRESENTATION_LABELS[data.presentation] ?? data.presentation}
-            />
-            {data.presentation === 'injetavel' && data.shelf_life_days ? (
-              <KVRow
-                label="Validade após aberto"
-                value={`${data.shelf_life_days} dias`}
-              />
-            ) : null}
-            <KVRow label="Princípio Ativo" value={data.active_ingredient} />
-            <KVRow label="Laboratório" value={data.laboratory} />
-            <KVRow label="Classe Terapêutica" value={data.therapeutic_class} />
-            <KVRow
-              label="Categoria Regulatória"
-              value={data.regulatory_category}
-              isLast
-            />
-          </View>
-        </View>
+        <MedicineDetailIdentification
+          typeLabel={state.typeLabel}
+          presentation={state.presentation}
+          shelf_life_days={state.shelf_life_days}
+          active_ingredient={state.active_ingredient}
+          laboratory={state.laboratory}
+          therapeutic_class={state.therapeutic_class}
+          regulatory_category={state.regulatory_category}
+        />
 
-        {/* Dosagem */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DOSAGEM</Text>
-          <View style={styles.sectionCard}>
-            <KVRow
-              label="Concentração"
-              value={
-                data.dosage_per_pill
-                  ? formatConcentration(data.dosage_per_pill, data.dosage_unit, data.concentration_volume_ml)
-                  : null
-              }
-              isLast
-            />
-          </View>
-        </View>
+        <MedicineDetailDosage
+          dosage_per_pill={state.dosage_per_pill}
+          dosage_unit={state.dosage_unit}
+          concentration_volume_ml={state.concentration_volume_ml}
+        />
 
-        {/* Em uso */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>EM USO</Text>
-
-          {/* Card tratamentos */}
-          <View style={styles.useCard}>
-            <View style={[styles.useIconWrap, styles.useIconWrapPrimary]}>
-              <Layers size={18} color={colors.primary[700]} />
-            </View>
-            <Text style={styles.useLabel}>
-              {protocols.length === 0
-                ? 'Sem tratamentos associados'
-                : `${protocols.length} ${protocols.length === 1 ? 'tratamento associado' : 'tratamentos associados'}`}
-            </Text>
-            {protocolsSummary ? (
-              <Text style={styles.useMeta} numberOfLines={1}>
-                {protocolsSummary}
-              </Text>
-            ) : null}
-          </View>
-
-          {/* Card estoque */}
-          <View style={styles.useCard}>
-            <View style={[styles.useIconWrap, styles.useIconWrapSupplement]}>
-              <Package size={18} color={colors.supplement[700]} />
-            </View>
-            <Text style={styles.useLabel}>Estoque</Text>
-            <Text style={styles.useMeta}>{stockSummary ?? 'Não rastreado'}</Text>
-          </View>
-
-          {/* Botão Excluir medicamento — oculto quando vindo de um tratamento
-              (exclusão bloqueada por dependência; ação morta) */}
-          {!hideDelete && (
-            <Pressable
-              onPress={handleDeletePress}
-              style={({ pressed }) => [
-                styles.deleteButton,
-                pressed && styles.deleteButtonPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Excluir medicamento"
-              disabled={!data || deleteLoading}
-            >
-              <Trash2 size={18} color={colors.status.error} />
-              <Text style={styles.deleteButtonText}>Excluir medicamento</Text>
-            </Pressable>
-          )}
-        </View>
+        <MedicineDetailUsage
+          protocols={state.protocols}
+          protocolsSummary={state.protocolsSummary}
+          stockSummary={state.stockSummary}
+          hideDelete={state.hideDelete}
+          onDeletePress={state.handleDeletePress}
+          deleteLoading={state.deleteLoading}
+        />
       </ScrollView>
 
       <DeleteConfirmation
-        visible={deleteOpen}
+        visible={state.deleteOpen}
         title="Remover medicamento"
         description="Esta ação não pode ser desfeita."
-        itemName={data?.name}
+        itemName={state.name}
         confirmLabel="Remover"
-        isLoading={deleteLoading}
-        onCancel={() => setDeleteOpen(false)}
-        onConfirm={handleDeleteConfirm}
+        isLoading={state.deleteLoading}
+        onCancel={() => state.setDeleteOpen(false)}
+        onConfirm={state.handleDeleteConfirm}
       />
 
       <MedicineDeleteBlockedSheet
-        visible={blockedOpen}
-        medicineName={data?.name}
-        protocols={preCheck.protocols}
-        stockUnits={preCheck.stockUnits}
-        stockLots={preCheck.stockLots}
-        onCancel={() => setBlockedOpen(false)}
-        onOpenProtocol={handleOpenProtocol}
-        onOpenStock={handleOpenStock}
+        visible={state.blockedOpen}
+        medicineName={state.name}
+        protocols={state.preCheck.protocols}
+        stockUnits={state.preCheck.stockUnits}
+        stockLots={state.preCheck.stockLots}
+        onCancel={() => state.setBlockedOpen(false)}
+        onOpenProtocol={state.handleOpenProtocol}
+        onOpenStock={state.handleOpenStock}
       />
     </ScreenContainer>
   )
 }
+
 
 const styles = StyleSheet.create({
   // Header

@@ -25,6 +25,66 @@ function formProps(form, name) {
   }
 }
 
+function FeedbackHeader({ onGoBack }) {
+  return (
+    <View style={styles.header}>
+      <TouchableOpacity
+        onPress={onGoBack}
+        style={styles.headerBtn}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+      >
+        <ChevronLeft size={24} color={colors.text.primary} />
+      </TouchableOpacity>
+      <Text style={styles.title}>Enviar Feedback</Text>
+      <View style={styles.headerSpacer} />
+    </View>
+  )
+}
+
+function StarSelector({ rating, onSelectRating }) {
+  const stars = []
+  const currentRating = rating || 0
+
+  for (let i = 1; i <= 5; i++) {
+    const isFilled = i <= currentRating
+    stars.push(
+      <TouchableOpacity
+        key={i}
+        onPress={() => onSelectRating(i)}
+        style={styles.starTouch}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Avaliar com ${i} estrela${i > 1 ? 's' : ''}`}
+      >
+        <Star
+          size={36}
+          color={isFilled ? '#fbbf24' : colors.neutral[300]}
+          fill={isFilled ? '#fbbf24' : 'transparent'}
+          strokeWidth={1.5}
+        />
+      </TouchableOpacity>
+    )
+  }
+
+  return (
+    <View style={styles.starsContainer}>
+      <View style={styles.starsRow}>
+        {stars}
+      </View>
+      {currentRating > 0 && (
+        <Text style={styles.starsLabel}>
+          {currentRating === 5 ? 'Excelente!' :
+           currentRating === 4 ? 'Muito bom' :
+           currentRating === 3 ? 'Bom / Regular' :
+           currentRating === 2 ? 'Precisa melhorar' : 'Não gostei'}
+        </Text>
+      )}
+    </View>
+  )
+}
+
 export default function FeedbackScreen() {
   // 1. States
   const navigation = useNavigation()
@@ -88,63 +148,9 @@ export default function FeedbackScreen() {
     }
   }, [form, show, navigation])
 
-  const renderStarSelector = () => {
-    const stars = []
-    const currentRating = form.values.rating || 0
-
-    for (let i = 1; i <= 5; i++) {
-      const isFilled = i <= currentRating
-      stars.push(
-        <TouchableOpacity
-          key={i}
-          onPress={() => handleRatingSelect(i)}
-          style={styles.starTouch}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`Avaliar com ${i} estrela${i > 1 ? 's' : ''}`}
-        >
-          <Star
-            size={36}
-            color={isFilled ? '#fbbf24' : colors.neutral[300]}
-            fill={isFilled ? '#fbbf24' : 'transparent'}
-            strokeWidth={1.5}
-          />
-        </TouchableOpacity>
-      )
-    }
-
-    return (
-      <View style={styles.starsContainer}>
-        <View style={styles.starsRow}>
-          {stars}
-        </View>
-        {currentRating > 0 && (
-          <Text style={styles.starsLabel}>
-            {currentRating === 5 ? 'Excelente!' :
-             currentRating === 4 ? 'Muito bom' :
-             currentRating === 3 ? 'Bom / Regular' :
-             currentRating === 2 ? 'Precisa melhorar' : 'Não gostei'}
-          </Text>
-        )}
-      </View>
-    )
-  }
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.headerBtn}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Voltar"
-        >
-          <ChevronLeft size={24} color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.title}>Enviar Feedback</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <FeedbackHeader onGoBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.introCard}>
@@ -181,7 +187,7 @@ export default function FeedbackScreen() {
         {/* Avaliação por Estrelas */}
         <View style={styles.field}>
           <Text style={styles.sectionLabel}>Como você avalia nosso app?</Text>
-          {renderStarSelector()}
+          <StarSelector rating={form.values.rating} onSelectRating={handleRatingSelect} />
           {form.errors.rating && (
             <Text style={styles.errorText}>{form.errors.rating}</Text>
           )}

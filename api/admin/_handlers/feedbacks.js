@@ -16,6 +16,85 @@ const supabase = (supabaseUrl && supabaseServiceKey)
   ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } })
   : null;
 
+// Auxiliar para decorar dados de feedbacks com informações de usuários (display_name e email).
+async function _decorateFeedbacksWithUserInfo(data) {
+  if (!data || data.length === 0) return;
+
+  const userIds = [...new Set(data.filter(f => f.user_id).map(f => f.user_id))];
+  if (userIds.length === 0) return;
+
+  // Query em paralelo para display_name (user_settings) e email (user_emails)
+  const [settingsRes, authRes] = await Promise.all([
+    supabase
+      .from('user_settings')
+      .select('user_id, display_name')
+      .in('user_id', userIds),
+    supabase
+      .from('user_emails')
+      .select('id, email')
+      .in('id', userIds)
+  ]);
+
+  if (settingsRes.error) {
+    logger.error('Erro ao buscar display_names de user_settings:', settingsRes.error);
+  }
+  if (authRes.error) {
+    logger.error('Erro ao buscar emails de user_emails:', authRes.error);
+  }
+
+  const userMap = {};
+  if (settingsRes.data) {
+    settingsRes.data.forEach(u => {
+      userMap[u.user_id] = { display_name: u.display_name };
+    });
+  }
+  if (authRes.data) {
+    authRes.data.forEach(au => {
+      if (!userMap[au.id]) {
+        userMap[au.id] = {};
+      }
+      userMap[au.id].email = au.email;
+    });
+  }
+
+  data.forEach(f => {
+    const uInfo = userMap[f.user_id] || {};
+    const name = uInfo.display_name?.trim();
+    const email = uInfo.email?.trim();
+
+    let display = 'Usuário do Dosiq';
+    if (name) {
+      display = email ? `${name} (${email})` : name;
+    } else if (email) {
+      display = email;
+    }
+
+    f.user_settings = { display_name: display };
+  });
+}
+
+// Auxiliar para obter as estatísticas agregadas de feedback.
+async function _fetchFeedbackStats() {
+  const { data: statsData, error: statsError } = await supabase
+    .from('feedback_stats')
+    .select('*')
+    .single();
+
+  if (statsError) {
+    logger.error('Erro ao buscar estatísticas de feedback:', statsError);
+    return null;
+  }
+
+  if (statsData) {
+    return {
+      avgRating: parseFloat(statsData.avg_rating) || 0,
+      pendingCount: parseInt(statsData.pending_count) || 0,
+      totalCount: parseInt(statsData.total_count) || 0
+    };
+  }
+  return null;
+}
+
 /**
  * handleListFeedbacks: GET /api/feedbacks
  * Lista feedbacks com suporte a paginação e filtros por is_resolved e rating
@@ -52,79 +131,9 @@ export async function handleListFeedbacks(req, res) {
       return res.status(500).json({ error: 'Erro ao carregar feedbacks' });
     }
 
-    // Busca os display_names de user_settings e emails de auth.users correspondentes aos user_ids retornados
-    if (data && data.length > 0) {
-      const userIds = [...new Set(data.filter(f => f.user_id).map(f => f.user_id))];
-      if (userIds.length > 0) {
-        // Query em paralelo para display_name (user_settings) e email (user_emails)
-        const [settingsRes, authRes] = await Promise.all([
-          supabase
-            .from('user_settings')
-            .select('user_id, display_name')
-            .in('user_id', userIds),
-          supabase
-            .from('user_emails')
-            .select('id, email')
-            .in('id', userIds)
-        ]);
+    await _decorateFeedbacksWithUserInfo(data);
 
-        if (settingsRes.error) {
-          logger.error('Erro ao buscar display_names de user_settings:', settingsRes.error);
-        }
-        if (authRes.error) {
-          logger.error('Erro ao buscar emails de user_emails:', authRes.error);
-        }
-
-        const userMap = {};
-        if (settingsRes.data) {
-          settingsRes.data.forEach(u => {
-            userMap[u.user_id] = { display_name: u.display_name };
-          });
-        }
-        if (authRes.data) {
-          authRes.data.forEach(au => {
-            if (!userMap[au.id]) {
-              userMap[au.id] = {};
-            }
-            userMap[au.id].email = au.email;
-          });
-        }
-
-        data.forEach(f => {
-          const uInfo = userMap[f.user_id] || {};
-          const name = uInfo.display_name?.trim();
-          const email = uInfo.email?.trim();
-
-          let display = 'Usuário do Dosiq';
-          if (name) {
-            display = email ? `${name} (${email})` : name;
-          } else if (email) {
-            display = email;
-          }
-
-          f.user_settings = { display_name: display };
-        });
-      }
-    }
-
-
-
-    // Obter estatísticas agregadas do banco de dados (View feedback_stats) para evitar OOM e latência
-    let stats = null;
-    const { data: statsData, error: statsError } = await supabase
-      .from('feedback_stats')
-      .select('*')
-      .single();
-
-    if (!statsError && statsData) {
-      stats = {
-        avgRating: parseFloat(statsData.avg_rating) || 0,
-        pendingCount: parseInt(statsData.pending_count) || 0,
-        totalCount: parseInt(statsData.total_count) || 0
-      };
-    } else if (statsError) {
-      logger.error('Erro ao buscar estatísticas de feedback:', statsError);
-    }
+    const stats = await _fetchFeedbackStats();
 
     return res.status(200).json({
       data: data || [],

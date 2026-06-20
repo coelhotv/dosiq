@@ -21,6 +21,160 @@ function intakeSuffix(intakeUnit, medicine) {
   return 'comp.'
 }
 
+function TitrationStageCard({
+  stage,
+  index,
+  suffix,
+  medicine,
+  intakeUnit,
+  handleUpdateStage,
+  handleDosageBlur,
+  handleRemoveStage,
+}) {
+  const stageHint = doseEquivalence(stage.dosage, intakeUnit, medicine)
+  return (
+    <div className="titration-stage-card">
+      <div className="stage-number">Etapa {index + 1}</div>
+
+      <div className="stage-grid">
+        <div className="form-group-mini">
+          <label>Duração</label>
+          <div className="input-with-suffix">
+            <input
+              type="number"
+              min="1"
+              value={stage.duration_days ?? stage.days ?? ''}
+              onChange={(e) => handleUpdateStage(index, 'duration_days', parseInt(e.target.value))}
+            />
+            <span>dias</span>
+          </div>
+        </div>
+
+        <div className="form-group-mini">
+          <label>Dose por tomada</label>
+          <div className="input-with-suffix">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={stage.dosage}
+              onChange={(e) => handleUpdateStage(index, 'dosage', e.target.value)}
+              onBlur={(e) => handleDosageBlur(index, e.target.value)}
+            />
+            <span>{suffix}</span>
+          </div>
+          {stageHint && <small className="dose-equivalence">✨ {stageHint}</small>}
+        </div>
+
+        <div className="form-group-mini full-width">
+          <label>Nota / Objetivo</label>
+          <input
+            type="text"
+            placeholder="Ex: Introdução, Aumento de dose..."
+            value={stage.description ?? stage.note ?? ''}
+            onChange={(e) => handleUpdateStage(index, 'description', e.target.value)}
+          />
+        </div>
+
+        <div className="form-group-mini full-width">
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={Boolean(stage.requires_new_medicine)}
+              onChange={(e) =>
+                handleUpdateStage(index, 'requires_new_medicine', e.target.checked)
+              }
+            />
+            Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
+          </label>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="btn-remove-stage"
+        onClick={() => handleRemoveStage(index)}
+        title="Remover etapa"
+      >
+        🗑️
+      </button>
+    </div>
+  )
+}
+
+function AddStageForm({
+  currentStage,
+  setCurrentStage,
+  suffix,
+  currentHint,
+  handleAddStage,
+}) {
+  return (
+    <div className="add-stage-form">
+      <h5>Nova Etapa</h5>
+      <div className="stage-input-row">
+        <div className="input-group">
+          <label>Duração</label>
+          <div className="input-with-suffix">
+            <input
+              type="number"
+              min="1"
+              value={currentStage.duration_days}
+              onChange={(e) =>
+                setCurrentStage((prev) => ({ ...prev, duration_days: parseInt(e.target.value) }))
+              }
+            />
+            <span>dias</span>
+          </div>
+        </div>
+
+        <div className="input-group">
+          <label>Dose por tomada</label>
+          <div className="input-with-suffix">
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="Ex: 0,25"
+              value={currentStage.dosage}
+              onChange={(e) =>
+                setCurrentStage((prev) => ({ ...prev, dosage: e.target.value }))
+              }
+            />
+            <span>{suffix}</span>
+          </div>
+          {currentHint && <small className="dose-equivalence">✨ {currentHint}</small>}
+        </div>
+      </div>
+
+      <div className="input-group">
+        <input
+          type="text"
+          placeholder="Nota (opcional) — Ex: Introdução, Aumento de dose..."
+          value={currentStage.description}
+          onChange={(e) => setCurrentStage((prev) => ({ ...prev, description: e.target.value }))}
+          className="input-note"
+        />
+      </div>
+
+      <div className="input-group">
+        <label className="checkbox-inline">
+          <input
+            type="checkbox"
+            checked={Boolean(currentStage.requires_new_medicine)}
+            onChange={(e) =>
+              setCurrentStage((prev) => ({ ...prev, requires_new_medicine: e.target.checked }))
+            }
+          />
+          Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
+        </label>
+      </div>
+
+      <Button type="button" variant="outline" onClick={handleAddStage} className="btn-add-stage">
+        ✓ Gravar Etapa
+      </Button>
+    </div>
+  )
+}
+
 export default function TitrationWizard({ schedule = [], onChange, medicine = null, intakeUnit = null }) {
   const [stages, setStages] = useState(schedule)
   // Form state for a stage
@@ -87,145 +241,28 @@ export default function TitrationWizard({ schedule = [], onChange, medicine = nu
       </div>
 
       <div className="stages-list">
-        {stages.map((stage, index) => {
-          const stageHint = doseEquivalence(stage.dosage, intakeUnit, medicine)
-          return (
-            <div key={index} className="titration-stage-card">
-              <div className="stage-number">Etapa {index + 1}</div>
-
-              <div className="stage-grid">
-                <div className="form-group-mini">
-                  <label>Duração</label>
-                  <div className="input-with-suffix">
-                    <input
-                      type="number"
-                      min="1"
-                      value={stage.duration_days ?? stage.days ?? ''}
-                      onChange={(e) => handleUpdateStage(index, 'duration_days', parseInt(e.target.value))}
-                    />
-                    <span>dias</span>
-                  </div>
-                </div>
-
-                <div className="form-group-mini">
-                  <label>Dose por tomada</label>
-                  <div className="input-with-suffix">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={stage.dosage}
-                      onChange={(e) => handleUpdateStage(index, 'dosage', e.target.value)}
-                      onBlur={(e) => handleDosageBlur(index, e.target.value)}
-                    />
-                    <span>{suffix}</span>
-                  </div>
-                  {stageHint && <small className="dose-equivalence">✨ {stageHint}</small>}
-                </div>
-
-                <div className="form-group-mini full-width">
-                  <label>Nota / Objetivo</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Introdução, Aumento de dose..."
-                    value={stage.description ?? stage.note ?? ''}
-                    onChange={(e) => handleUpdateStage(index, 'description', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group-mini full-width">
-                  <label className="checkbox-inline">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(stage.requires_new_medicine)}
-                      onChange={(e) =>
-                        handleUpdateStage(index, 'requires_new_medicine', e.target.checked)
-                      }
-                    />
-                    Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
-                  </label>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="btn-remove-stage"
-                onClick={() => handleRemoveStage(index)}
-                title="Remover etapa"
-              >
-                🗑️
-              </button>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="add-stage-form">
-        <h5>Nova Etapa</h5>
-        <div className="stage-input-row">
-          <div className="input-group">
-            <label>Duração</label>
-            <div className="input-with-suffix">
-              <input
-                type="number"
-                min="1"
-                value={currentStage.duration_days}
-                onChange={(e) =>
-                  setCurrentStage((prev) => ({ ...prev, duration_days: parseInt(e.target.value) }))
-                }
-              />
-              <span>dias</span>
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label>Dose por tomada</label>
-            <div className="input-with-suffix">
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="Ex: 0,25"
-                value={currentStage.dosage}
-                onChange={(e) =>
-                  setCurrentStage((prev) => ({ ...prev, dosage: e.target.value }))
-                }
-              />
-              <span>{suffix}</span>
-            </div>
-            {/* Equivalência em princípio ativo — sem isso o cuidador chuta a dose em
-                unidades e erra a titulação (feedback smoke PO 2026-06-11). */}
-            {currentHint && <small className="dose-equivalence">✨ {currentHint}</small>}
-          </div>
-        </div>
-
-        <div className="input-group">
-          <input
-            type="text"
-            placeholder="Nota (opcional) — Ex: Introdução, Aumento de dose..."
-            value={currentStage.description}
-            onChange={(e) => setCurrentStage((prev) => ({ ...prev, description: e.target.value }))}
-            className="input-note"
+        {stages.map((stage, index) => (
+          <TitrationStageCard
+            key={index}
+            stage={stage}
+            index={index}
+            suffix={suffix}
+            medicine={medicine}
+            intakeUnit={intakeUnit}
+            handleUpdateStage={handleUpdateStage}
+            handleDosageBlur={handleDosageBlur}
+            handleRemoveStage={handleRemoveStage}
           />
-        </div>
-
-        <div className="input-group">
-          <label className="checkbox-inline">
-            <input
-              type="checkbox"
-              checked={Boolean(currentStage.requires_new_medicine)}
-              onChange={(e) =>
-                setCurrentStage((prev) => ({ ...prev, requires_new_medicine: e.target.checked }))
-              }
-            />
-            Esta etapa troca de medicamento/apresentação (ex.: nova caneta)
-          </label>
-        </div>
-
-        {/* "Gravar" (não "Adicionar"): preencher os campos NÃO cria a etapa — o clique
-            grava o card acima; o form limpo é consequência (feedback smoke PO). */}
-        <Button type="button" variant="outline" onClick={handleAddStage} className="btn-add-stage">
-          ✓ Gravar Etapa
-        </Button>
+        ))}
       </div>
+
+      <AddStageForm
+        currentStage={currentStage}
+        setCurrentStage={setCurrentStage}
+        suffix={suffix}
+        currentHint={currentHint}
+        handleAddStage={handleAddStage}
+      />
 
       {stages.length > 0 && (
         <div className="titration-summary">

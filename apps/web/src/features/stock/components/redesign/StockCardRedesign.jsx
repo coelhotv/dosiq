@@ -111,6 +111,109 @@ function formatHeroMetric({ daysRemaining, dosesRemaining, isDailyStock, hasActi
   return { number: String(days), label: days === 1 ? 'DIA' : 'DIAS' }
 }
 
+function StockCardHeader({ medicine, isSupplement }) {
+  return (
+    <div className="stock-card-r__name-row">
+      <div className="stock-card-r__medicine">
+        <div className="stock-card-r__icon-wrap">
+          <MedicineIcon medicine={medicine} size={18} aria-label={isSupplement ? 'Suplemento' : 'Medicamento'} />
+        </div>
+        <div className="stock-card-r__name-dosage">
+          <h3 className="stock-card-r__name">{medicine.name}</h3>
+          {medicine.dosage_per_pill && (
+            <span className="stock-card-r__dosage">
+              {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StockCardProgressBar({
+  hasActiveProtocol,
+  daysNumber,
+  daysLabel,
+  barPercentage,
+  stockStatus,
+  isComplex,
+  motionConfig,
+  index,
+}) {
+  if (!hasActiveProtocol) return null
+  return (
+    <>
+      <div className="stock-card-r__days" aria-label={`${daysNumber} ${daysLabel}`}>
+        <span className="stock-card-r__days-number">{daysNumber}</span>
+        <span className="stock-card-r__days-label">{daysLabel}</span>
+      </div>
+
+      <div className="stock-card-r__bar-track" aria-hidden="true">
+        <motion.div
+          className={`stock-card-r__bar-fill stock-card-r__bar-fill--${stockStatus}`}
+          style={{ width: `${barPercentage}%`, ...motionConfig.fill.style }}
+          initial={motionConfig.fill.initial}
+          animate={motionConfig.fill.animate}
+          transition={{
+            ...motionConfig.fill.transition,
+            delay: 0.5 + index * 0.05,
+          }}
+        />
+      </div>
+      {isComplex && (
+        <span className="stock-card-r__bar-pct" aria-hidden="true">
+          {barPercentage}%
+        </span>
+      )}
+    </>
+  )
+}
+
+function StockCardTtlAlert({ ttlAlert }) {
+  if (!ttlAlert) return null
+  return (
+    <div
+      className={`stock-card-r__ttl-alert stock-card-r__ttl-alert--${ttlAlert.type}`}
+      role="alert"
+      aria-live="polite"
+    >
+      <Syringe size={13} aria-hidden="true" />
+      <span>{ttlAlert.message}</span>
+    </div>
+  )
+}
+
+function StockCardPrediction({ prediction }) {
+  if (!prediction?.predictedStockoutDate) return null
+  if (prediction.confidence !== 'high' && prediction.confidence !== 'medium') return null
+
+  return (
+    <div className="stock-card-r__prediction">
+      <span className="stock-card-r__prediction-date">
+        Previsão: acaba em ~
+        {parseLocalDate(prediction.predictedStockoutDate).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+        })}
+      </span>
+      <span
+        className={`stock-card-r__prediction-confidence stock-card-r__prediction-confidence--${prediction.confidence}`}
+      >
+        {prediction.confidence === 'high' ? (
+          <>
+            <ShieldCheck size={12} aria-hidden="true" /> Alta
+          </>
+        ) : (
+          <>
+            <ShieldAlert size={12} aria-hidden="true" /> Média
+          </>
+        )}
+      </span>
+    </div>
+  )
+}
+
 export default function StockCardRedesign({ item, isComplex, onAddStock, prediction, index = 0 }) {
   const motionConfig = useMotion()
   const {
@@ -134,6 +237,7 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
   const showCta = _shouldShowCta(isComplex, stockStatus)
   const lastPurchaseText = formatLastPurchase(lastPurchase, stockUnitLabel(medicine))
   const isSupplement = medicine.type === 'suplemento'
+  const appLine = isComplex ? applicationsLine(medicine, primaryProtocol, totalQuantity) : ''
 
   return (
     <motion.div
@@ -143,115 +247,37 @@ export default function StockCardRedesign({ item, isComplex, onAddStock, predict
       role="article"
       aria-label={`${medicine.name} — ${daysNumber} ${daysLabel}`}
     >
-      {/* ── Medicine name + dosage pill (inline) ── */}
-      <div className="stock-card-r__name-row">
-        <div className="stock-card-r__medicine">
-          <div className="stock-card-r__icon-wrap">
-            {/* Ícone canônico de identificação do medicamento */}
-            <MedicineIcon medicine={medicine} size={18} aria-label={isSupplement ? 'Suplemento' : 'Medicamento'} />
-          </div>
-          <div className="stock-card-r__name-dosage">
-            <h3 className="stock-card-r__name">{medicine.name}</h3>
-            {medicine.dosage_per_pill && (
-              <span className="stock-card-r__dosage">
-                {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+      <StockCardHeader medicine={medicine} isSupplement={isSupplement} />
 
-      {/* ── Complex only: linha de uso ── */}
       {isComplex && usageLine && <p className="stock-card-r__usage">{usageLine}</p>}
 
-      {/* ── Quantidade total (complex only — Dona Maria não precisa) ── */}
       {isComplex && (
         <p className="stock-card-r__quantity">
           {formatStockQuantity(totalQuantity, medicine)}
         </p>
       )}
 
-      {/* ── Rendimento em aplicações (injetável GLP-1 em mg — 012 Fase B2 FR-020) ── */}
-      {isComplex && applicationsLine(medicine, primaryProtocol, totalQuantity) && (
-        <p className="stock-card-r__applications">
-          {applicationsLine(medicine, primaryProtocol, totalQuantity)}
-        </p>
+      {appLine && (
+        <p className="stock-card-r__applications">{appLine}</p>
       )}
 
-      {/* ── Dias restantes — escondido para órfãos (sem protocolo ativo) ── */}
-      {hasActiveProtocol && (
-        <>
-          <div className="stock-card-r__days" aria-label={`${daysNumber} ${daysLabel}`}>
-            <span className="stock-card-r__days-number">{daysNumber}</span>
-            <span className="stock-card-r__days-label">{daysLabel}</span>
-          </div>
+      <StockCardProgressBar
+        hasActiveProtocol={hasActiveProtocol}
+        daysNumber={daysNumber}
+        daysLabel={daysLabel}
+        barPercentage={barPercentage}
+        stockStatus={stockStatus}
+        isComplex={isComplex}
+        motionConfig={motionConfig}
+        index={index}
+      />
 
-          {/* ── Progress bar (Living Fill — GPU scaleX) ── */}
-          <div className="stock-card-r__bar-track" aria-hidden="true">
-            <motion.div
-              className={`stock-card-r__bar-fill stock-card-r__bar-fill--${stockStatus}`}
-              style={{ width: `${barPercentage}%`, ...motionConfig.fill.style }}
-              initial={motionConfig.fill.initial}
-              animate={motionConfig.fill.animate}
-              transition={{
-                ...motionConfig.fill.transition,
-                delay: 0.5 + index * 0.05,
-              }}
-            />
-          </div>
-          {/* bar-pct: apenas no modo complex (Carlos quer precisão; Dona Maria não precisa) */}
-          {isComplex && (
-            <span className="stock-card-r__bar-pct" aria-hidden="true">
-              {barPercentage}%
-            </span>
-          )}
-        </>
-      )}
+      <StockCardTtlAlert ttlAlert={ttlAlert} />
 
-      {/* ── Alerta de validade biológica pós-abertura (012 Fase A) — eixo paralelo.
-          Antes da última compra: alerta clínico > referência de preço (PO smoke). */}
-      {ttlAlert && (
-        <div
-          className={`stock-card-r__ttl-alert stock-card-r__ttl-alert--${ttlAlert.type}`}
-          role="alert"
-          aria-live="polite"
-        >
-          <Syringe size={13} aria-hidden="true" />
-          <span>{ttlAlert.message}</span>
-        </div>
-      )}
-
-      {/* ── Última compra — subtexto de referência de preço ── */}
       {lastPurchaseText && <p className="stock-card-r__last-purchase">{lastPurchaseText}</p>}
 
-      {/* ── Previsão de reabastecimento (Sprint 15.7) ── */}
-      {prediction?.predictedStockoutDate &&
-        (prediction.confidence === 'high' || prediction.confidence === 'medium') && (
-          <div className="stock-card-r__prediction">
-            <span className="stock-card-r__prediction-date">
-              Previsão: acaba em ~
-              {parseLocalDate(prediction.predictedStockoutDate).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-              })}
-            </span>
-            <span
-              className={`stock-card-r__prediction-confidence stock-card-r__prediction-confidence--${prediction.confidence}`}
-            >
-              {prediction.confidence === 'high' ? (
-                <>
-                  <ShieldCheck size={12} aria-hidden="true" /> Alta
-                </>
-              ) : (
-                <>
-                  <ShieldAlert size={12} aria-hidden="true" /> Média
-                </>
-              )}
-            </span>
-          </div>
-        )}
+      <StockCardPrediction prediction={prediction} />
 
-      {/* ── CTA button — simple: apenas urgente/atencao; complex: todos ── */}
       {showCta && (
         <button
           className={`stock-card-r__cta stock-card-r__cta--${stockStatus}`}

@@ -14,6 +14,35 @@
 
 import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
 import { cleanFloat } from './formUtils.js'
+/**
+ * Converte string ou número para número de forma segura.
+ * @private
+ */
+function parseNumber(val) {
+  if (typeof val === 'string') {
+    return Number(val.replace(',', '.'))
+  }
+  return Number(val)
+}
+
+/**
+ * Formata a parte líquida quando volumeMl não é nulo/1.
+ * @private
+ */
+function formatLiquidConcentration(ratio, vol, unit) {
+  const baseUnit = (unit || 'mg/ml').split('/')[0]
+  const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
+  return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
+}
+
+/**
+ * Obtém o rótulo de dosagem formatado.
+ * @private
+ */
+function getConcentrationLabel(v, unit) {
+  const label = DOSAGE_UNIT_LABELS[unit] || unit || ''
+  return label ? `${v} ${label}` : v
+}
 
 /**
  * Formata a concentração/apresentação do medicamento (pill) com a unidade
@@ -33,22 +62,22 @@ import { cleanFloat } from './formUtils.js'
  */
 export function formatConcentration(value, unit, volumeMl = null) {
   if (value === undefined || value === null || value === '') return ''
-  const ratio = Number(typeof value === 'string' ? value.replace(',', '.') : value)
-  const vol = Number(typeof volumeMl === 'string' ? volumeMl.replace(',', '.') : volumeMl)
+  const ratio = parseNumber(value)
+  const vol = parseNumber(volumeMl)
   const isLiquid = Boolean(unit?.endsWith('/ml'))
   if (
     isLiquid &&
-    Number.isFinite(ratio) && ratio > 0 &&
-    Number.isFinite(vol) && vol > 0 && vol !== 1
+    ratio > 0 &&
+    vol > 0 &&
+    vol !== 1 &&
+    Number.isFinite(ratio) &&
+    Number.isFinite(vol)
   ) {
-    const baseUnit = (unit || 'mg/ml').split('/')[0]
-    const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
-    return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
+    return formatLiquidConcentration(ratio, vol, unit)
   }
   const v = formatNumberPtBR(value)
   if (v === '') return ''
-  const label = DOSAGE_UNIT_LABELS[unit] || unit || ''
-  return label ? `${v} ${label}` : v
+  return getConcentrationLabel(v, unit)
 }
 
 /**

@@ -15,11 +15,11 @@
     "linked_contracts": [],
     "last_pr": 671,
     "branch": "refactor/w25/035-unified-dose-log-stock-core",
-    "mobile_version": "0.19.0"
+    "mobile_version": "0.19.3"
   },
   "memory": {
     "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 3,
     "rules_count": 227,
     "anti_patterns_count": 233,
     "decisions_count": 71,

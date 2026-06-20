@@ -30,6 +30,54 @@ const FREQ_WEEKLY = 'semanal'
 
 const FAKE_UUID = '00000000-0000-0000-0000-000000000000'
 
+function FrequencySelectorSegment({ isWeekly, setFrequency }) {
+  return (
+    <View>
+      <Text style={styles.label}>Frequência</Text>
+      <View style={styles.segment}>
+        <Pressable
+          style={[styles.segmentBtn, !isWeekly && styles.segmentBtnActive]}
+          onPress={() => setFrequency(FREQ_DAILY)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !isWeekly }}
+        >
+          <Text style={[styles.segmentText, !isWeekly && styles.segmentTextActive]}>Todo dia</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.segmentBtn, isWeekly && styles.segmentBtnActive]}
+          onPress={() => setFrequency(FREQ_WEEKLY)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isWeekly }}
+        >
+          <Text style={[styles.segmentText, isWeekly && styles.segmentTextActive]}>Dias da semana</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+function OnboardingReminderCard({ remind, setRemind }) {
+  return (
+    <View style={styles.reminderCard}>
+      <View style={styles.reminderIcon}>
+        <Clock size={18} color={colors.primary[700]} strokeWidth={2} />
+      </View>
+      <View style={styles.reminderText}>
+        <Text style={styles.reminderTitle}>Me avise a hora de tomar</Text>
+        <Text style={styles.reminderSub}>
+          Notificação no celular — o sistema vai pedir a sua autorização, você precisa permitir.
+        </Text>
+      </View>
+      <Switch
+        value={remind}
+        onValueChange={setRemind}
+        trackColor={{ true: colors.brand.primary, false: colors.border.default }}
+        thumbColor={colors.bg.card}
+      />
+    </View>
+  )
+}
+
 export default function OnboardingTreatmentStep() {
   // States (R-010)
   const navigation = useNavigation()
@@ -162,28 +210,7 @@ export default function OnboardingTreatmentStep() {
             Defina a frequência, os horários e a quantidade. A gente te avisa na hora certa.
           </Text>
 
-          {/* Frequência — segmented */}
-          <View>
-            <Text style={styles.label}>Frequência</Text>
-            <View style={styles.segment}>
-              <Pressable
-                style={[styles.segmentBtn, !isWeekly && styles.segmentBtnActive]}
-                onPress={() => setFrequency(FREQ_DAILY)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: !isWeekly }}
-              >
-                <Text style={[styles.segmentText, !isWeekly && styles.segmentTextActive]}>Todo dia</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.segmentBtn, isWeekly && styles.segmentBtnActive]}
-                onPress={() => setFrequency(FREQ_WEEKLY)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isWeekly }}
-              >
-                <Text style={[styles.segmentText, isWeekly && styles.segmentTextActive]}>Dias da semana</Text>
-              </Pressable>
-            </View>
-          </View>
+          <FrequencySelectorSegment isWeekly={isWeekly} setFrequency={setFrequency} />
 
           {isWeekly ? (
             <WeekdaySelector
@@ -217,22 +244,7 @@ export default function OnboardingTreatmentStep() {
             onBlur={form.handleBlur}
           />
 
-          {/* Lembrete */}
-          <View style={styles.reminderCard}>
-            <View style={styles.reminderIcon}>
-              <Clock size={18} color={colors.primary[700]} strokeWidth={2} />
-            </View>
-            <View style={styles.reminderText}>
-              <Text style={styles.reminderTitle}>Me avise a hora de tomar</Text>
-              <Text style={styles.reminderSub}>Notificação no celular — o sistema vai pedir a sua autorização, você precisa permitir.</Text>
-            </View>
-            <Switch
-              value={remind}
-              onValueChange={setRemind}
-              trackColor={{ true: colors.brand.primary, false: colors.border.default }}
-              thumbColor={colors.bg.card}
-            />
-          </View>
+          <OnboardingReminderCard remind={remind} setRemind={setRemind} />
         </ScrollView>
 
         <FormActions

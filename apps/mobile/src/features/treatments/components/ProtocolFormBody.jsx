@@ -42,20 +42,7 @@ const FREQUENCY_OPTIONS = [
 
 const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
-export default function ProtocolFormBody({
-  form,
-  medicine,
-  onOpenMedicineSheet,
-  plans,
-  planField,
-  onPlanFieldChange,
-  onDoseChange,
-  onStartDateChange,
-  onEndDateChange,
-}) {
-  const [guideVisible, setGuideVisible] = useState(false)
-  const [guideMsg, setGuideMsg] = useState('')
-
+function useProtocolFormDerived(form, medicine) {
   const startDateAsDate = useMemo(
     () => (form.values.start_date ? parseLocalDate(form.values.start_date) : null),
     [form.values.start_date]
@@ -131,6 +118,232 @@ export default function ProtocolFormBody({
     else if (defaultDensity) form.handleChange('units_per_ml', String(defaultDensity))
   }, [needsDensity, inheritedDensity, defaultDensity, form])
 
+  const doseDisplay =
+    form.values.dosage_per_intake === ''
+      ? ''
+      : String(form.values.dosage_per_intake).replace('.', ',')
+
+  return {
+    startDateAsDate,
+    endDateAsDate,
+    isLiquid,
+    helperText,
+    defaultIntake,
+    intakeOptions,
+    askDensity,
+    densityLabel,
+    densityHint,
+    defaultDensity,
+    doseDisplay,
+  }
+}
+
+function DoseSection({
+  isLiquid,
+  doseDisplay,
+  intakeOptions,
+  defaultIntake,
+  helperText,
+  askDensity,
+  densityLabel,
+  densityHint,
+  defaultDensity,
+  onDoseChange,
+  form,
+}) {
+  if (isLiquid) {
+    return (
+      <>
+        <View style={styles.doseRow}>
+          <View style={styles.doseField}>
+            <FormInput
+              name="dosage_per_intake"
+              label="Dose por tomada"
+              value={doseDisplay}
+              error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
+              onChange={onDoseChange}
+              onBlur={form.handleBlur}
+              placeholder="0"
+              keyboardType="decimal-pad"
+              maxLength={10}
+              required
+            />
+          </View>
+          <View style={styles.unitField}>
+            <FormSelect
+              name="intake_unit"
+              label="💧 Unidade"
+              value={form.values.intake_unit || defaultIntake}
+              options={intakeOptions}
+              onChange={form.handleChange}
+              onBlur={form.handleBlur}
+              error={form.touched.intake_unit ? form.errors.intake_unit : null}
+              required
+            />
+          </View>
+        </View>
+        {!!helperText && <Text style={styles.doseHint}>{helperText}</Text>}
+        {askDensity && (
+          <FormInput
+            name="units_per_ml"
+            label={densityLabel}
+            value={form.values.units_per_ml != null ? String(form.values.units_per_ml) : ''}
+            onChange={form.handleChange}
+            onBlur={form.handleBlur}
+            placeholder={String(defaultDensity)}
+            keyboardType="decimal-pad"
+            maxLength={6}
+            helperText={densityHint}
+          />
+        )}
+      </>
+    )
+  }
+
+  return (
+    <FormInput
+      name="dosage_per_intake"
+      label="Dose por tomada"
+      value={doseDisplay}
+      error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
+      onChange={onDoseChange}
+      onBlur={form.handleBlur}
+      placeholder="0"
+      keyboardType="decimal-pad"
+      maxLength={10}
+      helperText={helperText}
+      required
+    />
+  )
+}
+
+function GuideModal({ visible, guideMsg, onClose }) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.dialog}>
+          <Text style={styles.dialogTitle}>Falta um passo no seu celular</Text>
+          <Text style={styles.dialogBody}>{guideMsg}</Text>
+          <TouchableOpacity
+            style={[styles.dialogBtn, styles.dialogBtnPrimary]}
+            onPress={() => openFullScreenIntentSettings()}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir configurações"
+          >
+            <Text style={styles.dialogBtnPrimaryText}>Abrir configurações</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dialogBtn}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar aviso"
+          >
+            <Text style={styles.dialogBtnText}>Fechar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+function FrequencySection({ form, showWeekdays }) {
+  return (
+    <Section title="Frequência">
+      <FormSelect
+        name="frequency"
+        label="Periodicidade"
+        value={form.values.frequency}
+        options={FREQUENCY_OPTIONS}
+        onChange={form.handleChange}
+        onBlur={form.handleBlur}
+        error={form.touched.frequency ? form.errors.frequency : null}
+        required
+      />
+      {showWeekdays ? (
+        <View style={styles.fieldBlock}>
+          <Text style={styles.fieldLabel}>Dias da semana</Text>
+          <WeekdaySelector
+            value={form.values.weekdays}
+            onChange={(next) => form.handleChange('weekdays', next)}
+            error={form.touched.weekdays ? form.errors.weekdays : null}
+          />
+        </View>
+      ) : null}
+      <View style={styles.fieldBlock}>
+        <Text style={styles.fieldLabel}>Horários</Text>
+        <TimeSchedulePicker
+          value={form.values.time_schedule}
+          onChange={(next) => form.handleChange('time_schedule', next)}
+          error={form.touched.time_schedule ? form.errors.time_schedule : null}
+        />
+      </View>
+    </Section>
+  )
+}
+
+function PrescriptionSection({ startDateAsDate, endDateAsDate, onStartDateChange, onEndDateChange, form }) {
+  return (
+    <Section title="Prescrição">
+      <View style={styles.dateRow}>
+        <View style={styles.flex}>
+          <FormDatePicker
+            name="start_date"
+            label="Data do início"
+            value={startDateAsDate}
+            onChange={onStartDateChange}
+            error={form.touched.start_date ? form.errors.start_date : null}
+          />
+        </View>
+        <View style={styles.flex}>
+          <FormDatePicker
+            name="end_date"
+            label="Data do término"
+            value={endDateAsDate}
+            onChange={onEndDateChange}
+            error={form.touched.end_date ? form.errors.end_date : null}
+            helperText="Sem prazo = uso contínuo"
+            minimumDate={startDateAsDate}
+          />
+        </View>
+      </View>
+    </Section>
+  )
+}
+
+export default function ProtocolFormBody({
+  form,
+  medicine,
+  onOpenMedicineSheet,
+  plans,
+  planField,
+  onPlanFieldChange,
+  onDoseChange,
+  onStartDateChange,
+  onEndDateChange,
+}) {
+  const [guideVisible, setGuideVisible] = useState(false)
+  const [guideMsg, setGuideMsg] = useState('')
+
+  const {
+    startDateAsDate,
+    endDateAsDate,
+    isLiquid,
+    helperText,
+    defaultIntake,
+    intakeOptions,
+    askDensity,
+    densityLabel,
+    densityHint,
+    defaultDensity,
+    doseDisplay,
+  } = useProtocolFormDerived(form, medicine)
+
   const handleCriticalAlarmToggle = useCallback(async (next) => {
     if (next) {
       // R-239: checar permissão no ponto de intenção
@@ -159,11 +372,6 @@ export default function ProtocolFormBody({
   }, [form])
   const showWeekdays = REQUIRES_WEEKDAYS.has(form.values.frequency)
 
-  const doseDisplay =
-    form.values.dosage_per_intake === ''
-      ? ''
-      : String(form.values.dosage_per_intake).replace('.', ',')
-
   return (
     <>
       <Section title="Medicamento">
@@ -186,98 +394,22 @@ export default function ProtocolFormBody({
           maxLength={200}
           required
         />
-        {isLiquid ? (
-          <>
-            <View style={styles.doseRow}>
-              <View style={styles.doseField}>
-                <FormInput
-                  name="dosage_per_intake"
-                  label="Dose por tomada"
-                  value={doseDisplay}
-                  error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
-                  onChange={onDoseChange}
-                  onBlur={form.handleBlur}
-                  placeholder="0"
-                  keyboardType="decimal-pad"
-                  maxLength={10}
-                  required
-                />
-              </View>
-              <View style={styles.unitField}>
-                <FormSelect
-                  name="intake_unit"
-                  label="💧 Unidade"
-                  value={form.values.intake_unit || defaultIntake}
-                  options={intakeOptions}
-                  onChange={form.handleChange}
-                  onBlur={form.handleBlur}
-                  error={form.touched.intake_unit ? form.errors.intake_unit : null}
-                  required
-                />
-              </View>
-            </View>
-            {!!helperText && <Text style={styles.doseHint}>{helperText}</Text>}
-          </>
-        ) : (
-          <FormInput
-            name="dosage_per_intake"
-            label="Dose por tomada"
-            value={doseDisplay}
-            error={form.touched.dosage_per_intake ? form.errors.dosage_per_intake : null}
-            onChange={onDoseChange}
-            onBlur={form.handleBlur}
-            placeholder="0"
-            keyboardType="decimal-pad"
-            maxLength={10}
-            helperText={helperText}
-            required
-          />
-        )}
-        {askDensity && (
-          <FormInput
-            name="units_per_ml"
-            label={densityLabel}
-            value={form.values.units_per_ml != null ? String(form.values.units_per_ml) : ''}
-            onChange={form.handleChange}
-            onBlur={form.handleBlur}
-            placeholder={String(defaultDensity)}
-            keyboardType="decimal-pad"
-            maxLength={6}
-            helperText={densityHint}
-          />
-        )}
+        <DoseSection
+          isLiquid={isLiquid}
+          doseDisplay={doseDisplay}
+          intakeOptions={intakeOptions}
+          defaultIntake={defaultIntake}
+          helperText={helperText}
+          askDensity={askDensity}
+          densityLabel={densityLabel}
+          densityHint={densityHint}
+          defaultDensity={defaultDensity}
+          onDoseChange={onDoseChange}
+          form={form}
+        />
       </Section>
 
-      <Section title="Frequência">
-        <FormSelect
-          name="frequency"
-          label="Periodicidade"
-          value={form.values.frequency}
-          options={FREQUENCY_OPTIONS}
-          onChange={form.handleChange}
-          onBlur={form.handleBlur}
-          error={form.touched.frequency ? form.errors.frequency : null}
-          required
-        />
-        {showWeekdays ? (
-          <View style={styles.fieldBlock}>
-            <Text style={styles.fieldLabel}>Dias da semana</Text>
-            <WeekdaySelector
-              value={form.values.weekdays}
-              onChange={(next) => form.handleChange('weekdays', next)}
-              error={form.touched.weekdays ? form.errors.weekdays : null}
-            />
-          </View>
-        ) : null}
-        <View style={styles.fieldBlock}>
-          <Text style={styles.fieldLabel}>Horários</Text>
-          <TimeSchedulePicker
-            value={form.values.time_schedule}
-            onChange={(next) => form.handleChange('time_schedule', next)}
-            error={form.touched.time_schedule ? form.errors.time_schedule : null}
-          />
-        </View>
-      </Section>
+      <FrequencySection form={form} showWeekdays={showWeekdays} />
 
       <Section title="Alertas Críticos">
         <View style={styles.toggleRow}>
@@ -297,30 +429,13 @@ export default function ProtocolFormBody({
         </View>
       </Section>
 
-      <Section title="Prescrição">
-        <View style={styles.dateRow}>
-          <View style={styles.flex}>
-            <FormDatePicker
-              name="start_date"
-              label="Data do início"
-              value={startDateAsDate}
-              onChange={onStartDateChange}
-              error={form.touched.start_date ? form.errors.start_date : null}
-            />
-          </View>
-          <View style={styles.flex}>
-            <FormDatePicker
-              name="end_date"
-              label="Data do término"
-              value={endDateAsDate}
-              onChange={onEndDateChange}
-              error={form.touched.end_date ? form.errors.end_date : null}
-              helperText="Sem prazo = uso contínuo"
-              minimumDate={startDateAsDate}
-            />
-          </View>
-        </View>
-      </Section>
+      <PrescriptionSection
+        startDateAsDate={startDateAsDate}
+        endDateAsDate={endDateAsDate}
+        onStartDateChange={onStartDateChange}
+        onEndDateChange={onEndDateChange}
+        form={form}
+      />
 
       <Section title="Organização">
         <PlanSelectField
@@ -347,36 +462,11 @@ export default function ProtocolFormBody({
         />
       </Section>
 
-      <Modal
+      <GuideModal
         visible={guideVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setGuideVisible(false)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Falta um passo no seu celular</Text>
-            <Text style={styles.dialogBody}>{guideMsg}</Text>
-            <TouchableOpacity
-              style={[styles.dialogBtn, styles.dialogBtnPrimary]}
-              onPress={() => openFullScreenIntentSettings()}
-              accessibilityRole="button"
-              accessibilityLabel="Abrir configurações"
-            >
-              <Text style={styles.dialogBtnPrimaryText}>Abrir configurações</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dialogBtn}
-              onPress={() => setGuideVisible(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Fechar aviso"
-            >
-              <Text style={styles.dialogBtnText}>Fechar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        guideMsg={guideMsg}
+        onClose={() => setGuideVisible(false)}
+      />
     </>
   )
 }

@@ -24,6 +24,68 @@ const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
  *   onPress?: () => void
  * }} props
  */
+const STATUS_TYPE_MAP = {
+  'estável': 'success',
+  'ajustando': 'warning',
+  'desmamando': 'info',
+}
+
+function getStatusType(status) {
+  return STATUS_TYPE_MAP[status] || 'neutral'
+}
+
+function getFrequencyLabel(freq, treatment) {
+  const map = {
+    'diário': 'Todos os dias',
+    'dias_alternados': 'Dias alternados',
+    'semanal': 'Semanal',
+    'quando_necessário': 'Quando necessário',
+    'personalizado': 'Personalizado'
+  }
+  const label = map[freq] || freq
+  if (freq === 'semanal' || freq === 'personalizado') {
+    const daysSource = getProtocolDays(treatment)
+    if (daysSource.length > 0) {
+      const WEEKDAY_ABBREVIATIONS = {
+        domingo: 'Dom',
+        segunda: 'Seg',
+        terça: 'Ter',
+        quarta: 'Qua',
+        quinta: 'Qui',
+        sexta: 'Sex',
+        sábado: 'Sáb',
+      }
+      const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
+      const sorted = [...daysSource].sort(
+        (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
+      )
+      const daysText = sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
+      return `${label} (${daysText})`
+    }
+  }
+  return label
+}
+
+function renderStatusBadge(isPaused, isFinished, endDate) {
+  if (isPaused) {
+    return (
+      <View style={styles.badgePaused}>
+        <Text style={styles.badgeText}>Pausado</Text>
+      </View>
+    )
+  }
+  if (isFinished) {
+    const dateLabel = endDate ? formatDatePtBR(endDate) : null
+    const label = dateLabel ? `Finalizado em ${dateLabel}` : 'Finalizado'
+    return (
+      <View style={styles.badgeFinished}>
+        <Text style={styles.badgeText}>{label}</Text>
+      </View>
+    )
+  }
+  return null
+}
+
 export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo', endDate = null }) {
   const { name, frequency, time_schedule, dosage_per_intake, intake_unit, titration_status, medicine } = treatment
 
@@ -35,97 +97,40 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
 
   const isPaused = resolvedStatus === 'pausado'
   const isFinished = resolvedStatus === 'finalizado'
+  const isMuted = isPaused || isFinished
 
-  // Mapeamento de status da titulação para o badge (estáveis na web usam verde)
-  const getStatusType = (status) => {
-    switch (status) {
-      case 'estável': return 'success'
-      case 'ajustando': return 'warning'
-      case 'desmamando': return 'info'
-      default: return 'neutral'
-    }
-  }
-
-  // Tradução do campo frequency para exibição (P-011 Paridade)
-  const getFrequencyLabel = (freq) => {
-    const map = {
-      'diário': 'Todos os dias',
-      'dias_alternados': 'Dias alternados',
-      'semanal': 'Semanal',
-      'quando_necessário': 'Quando necessário',
-      'personalizado': 'Personalizado'
-    }
-    const label = map[freq] || freq
-    if (freq === 'semanal' || freq === 'personalizado') {
-      const daysSource = getProtocolDays(treatment)
-      if (daysSource.length > 0) {
-        const WEEKDAY_ABBREVIATIONS = {
-          domingo: 'Dom',
-          segunda: 'Seg',
-          terça: 'Ter',
-          quarta: 'Qua',
-          quinta: 'Qui',
-          sexta: 'Sex',
-          sábado: 'Sáb',
-        }
-        const VISUAL_ORDER = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
-        const sorted = [...daysSource].sort(
-          (a, b) => VISUAL_ORDER.indexOf(a) - VISUAL_ORDER.indexOf(b)
-        )
-        const daysText = sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
-        return `${label} (${daysText})`
-      }
-    }
-    return label
-  }
-
-  // Badge condicional de status (null se ativo)
-  const renderStatusBadge = () => {
-    if (isPaused) {
-      return (
-        <View style={styles.badgePaused}>
-          <Text style={styles.badgeText}>Pausado</Text>
-        </View>
-      )
-    }
-    if (isFinished) {
-      const dateLabel = endDate ? formatDatePtBR(endDate) : null
-      const label = dateLabel ? `Finalizado em ${dateLabel}` : 'Finalizado'
-      return (
-        <View style={styles.badgeFinished}>
-          <Text style={styles.badgeText}>{label}</Text>
-        </View>
-      )
-    }
-    return null
-  }
+  const cardStyle = isFinished ? styles.cardFinished : undefined
+  const iconMutedStyle = isMuted ? styles.iconMuted : undefined
+  const textMutedStyle = isMuted ? styles.textMuted : undefined
+  const textMutedOpacityStyle = isMuted ? styles.textMutedOpacity : undefined
+  const contentMutedStyle = isMuted ? styles.contentMuted : undefined
 
   const card = (
     <SectionCard
-      style={isFinished ? styles.cardFinished : undefined}
+      style={cardStyle}
       title={
         <View style={styles.titleWrapper}>
-          <View style={[styles.iconMutedWrapper, (isPaused || isFinished) && styles.iconMuted]}>
-            <Text style={[styles.titleText, (isPaused || isFinished) && styles.textMuted]}>
+          <View style={[styles.iconMutedWrapper, iconMutedStyle]}>
+            <Text style={[styles.titleText, textMutedStyle]}>
               {medicine?.name || name}
             </Text>
           </View>
           {medicine?.dosage_per_pill && (
-            <View style={[styles.dosagePill, (isPaused || isFinished) && styles.textMutedOpacity]}>
+            <View style={[styles.dosagePill, textMutedOpacityStyle]}>
               <Text style={styles.dosagePillText}>
                 {formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)}
               </Text>
             </View>
           )}
-          {renderStatusBadge()}
+          {renderStatusBadge(isPaused, isFinished, endDate)}
         </View>
       }
       headerAction={<StatusBadge label={titration_status} type={getStatusType(titration_status)} />}
     >
-      <View style={[styles.content, (isPaused || isFinished) && styles.contentMuted]}>
+      <View style={[styles.content, contentMutedStyle]}>
         <View style={styles.row}>
           <Text style={styles.label}>Frequência:</Text>
-          <Text style={styles.value}>{getFrequencyLabel(frequency)}</Text>
+          <Text style={styles.value}>{getFrequencyLabel(frequency, treatment)}</Text>
         </View>
 
         <View style={styles.row}>

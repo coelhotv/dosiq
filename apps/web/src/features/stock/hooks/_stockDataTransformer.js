@@ -5,6 +5,76 @@ import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, 
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
  * Extraído de useStockData.js para reduzir linhas e complexidade.
  */
+function _getLotContainer(entries) {
+  const lotEntries = entries || []
+  return (
+    lotEntries
+      .filter((e) => e.quantity > 0 && e.opened_at && e.injection_container)
+      .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
+      ?.injection_container ||
+    lotEntries.find((e) => e.injection_container)?.injection_container ||
+    null
+  )
+}
+
+function _getLastPurchase(purchases) {
+  const purchaseEntries = [...(purchases || [])].sort(
+    (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
+  )
+  const latestEntry = purchaseEntries[0] || null
+  return {
+    purchaseEntries,
+    lastPurchase: latestEntry
+      ? {
+          date: latestEntry.purchase_date,
+          unitPrice: latestEntry.unit_price ?? null,
+          quantity: latestEntry.quantity_bought,
+          pharmacy: latestEntry.pharmacy ?? null,
+          laboratory: latestEntry.laboratory ?? null,
+        }
+      : null,
+  }
+}
+
+function _getTtlAlert(entries, medicine) {
+  if (!medicine.shelf_life_days) return null
+
+  // Lote com quantidade > 0 e opened_at mais ANTIGO
+  const openedLot = (entries || [])
+    .filter((e) => e.quantity > 0 && e.opened_at)
+    .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
+
+  if (!openedLot) return null
+
+  const expired = isBiologicallyExpired(openedLot, medicine)
+  const daysLeft = biologicalExpiryDaysLeft(openedLot, medicine)
+
+  if (expired) {
+    const opened = parseISO(openedLot.opened_at)
+    const daysOpen = Number.isNaN(opened.getTime())
+      ? null
+      : Math.floor((Date.now() - opened.getTime()) / 86400000)
+    return {
+      type: 'expired',
+      message: daysOpen != null
+        ? `Aberto há ${daysOpen} dia${daysOpen !== 1 ? 's' : ''} — vencido (validade após aberto)`
+        : 'Validade pós-abertura vencida',
+    }
+  }
+
+  if (daysLeft != null && daysLeft <= 3) {
+    const dias = Math.ceil(daysLeft)
+    return {
+      type: 'expiring',
+      message: dias <= 0
+        ? 'Vence hoje (validade após aberto)'
+        : `Vence em ${dias} dia${dias !== 1 ? 's' : ''} (validade após aberto)`,
+    }
+  }
+
+  return null
+}
+
 export function transformStockItems(medicines, protocols, stockMap, purchaseHistoryMap, getStockStatus, getBarPercentage) {
   if (medicines.length === 0) return []
 
@@ -33,7 +103,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     }
     const purchases = purchaseHistoryMap[medicine.id] || []
     // Líquidos (022): consumo convertido p/ ml (gotas/UI ÷ units_per_ml) para
-    // bater com o estoque (em ml). calculateDailyIntake é liquid-aware no core.
+    // bater com o estoque (em ml). calculateDailyIntake is liquid-aware no core.
     const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
     const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
     const stockStatus = getStockStatus(stock.total, daysRemaining)
@@ -44,71 +114,9 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
     const { dosesRemaining, isDaily } = stockDoseMetrics(stock.total, medProtocols, medicine)
 
-    // 012 B4 (ADR-068): apresentação agora vive no LOTE. Para o rendimento agregado
-    // do card, deriva do lote aberto mais antigo (o que está em uso); fallback p/ o
-    // lote mais recente com container. NULL → rótulo genérico "unidade".
-    const lotEntries = stock.entries || []
-    const lotContainer =
-      lotEntries
-        .filter((e) => e.quantity > 0 && e.opened_at && e.injection_container)
-        .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
-        ?.injection_container ||
-      lotEntries.find((e) => e.injection_container)?.injection_container ||
-      null
-
-    const purchaseEntries = [...purchases].sort(
-      (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
-    )
-    const latestEntry = purchaseEntries[0] || null
-    const lastPurchase = latestEntry
-      ? {
-          date: latestEntry.purchase_date,
-          unitPrice: latestEntry.unit_price ?? null,
-          quantity: latestEntry.quantity_bought,
-          pharmacy: latestEntry.pharmacy ?? null,
-          laboratory: latestEntry.laboratory ?? null,
-        }
-      : null
-
-    // ── 012 Fase A: alerta de validade biológica (TTL pós-abertura) ──────────
-    // Eixo PARALELO — não interfere no stockStatus de volume.
-    // Busca o lote aberto (opened_at não-nulo) com quantity > 0 mais antigo.
-    // Apenas medicamentos com shelf_life_days produzem alerta (helpers retornam false/null caso contrário).
-    let ttlAlert = null
-    if (medicine.shelf_life_days) {
-      // Lote com quantidade > 0 e opened_at mais ANTIGO — é o primeiro a expirar
-      // (entries chegam em created_at desc; .find() pegaria o mais recente e
-      // subnotificaria o vencimento do frasco aberto antes).
-      const openedLot = (stock.entries || [])
-        .filter((e) => e.quantity > 0 && e.opened_at)
-        .reduce((oldest, e) => (!oldest || e.opened_at < oldest.opened_at ? e : oldest), null)
-      if (openedLot) {
-        const expired = isBiologicallyExpired(openedLot, medicine)
-        const daysLeft = biologicalExpiryDaysLeft(openedLot, medicine)
-        if (expired) {
-          // Dias abertos calculados direto de opened_at (review Gemini #658:
-          // derivar de daysLeft já arredondado dobrava o arredondamento e inflava o texto)
-          const opened = parseISO(openedLot.opened_at)
-          const daysOpen = Number.isNaN(opened.getTime())
-            ? null
-            : Math.floor((Date.now() - opened.getTime()) / 86400000)
-          ttlAlert = {
-            type: 'expired',
-            message: daysOpen != null
-              ? `Aberto há ${daysOpen} dia${daysOpen !== 1 ? 's' : ''} — vencido (validade após aberto)`
-              : 'Validade pós-abertura vencida',
-          }
-        } else if (daysLeft != null && daysLeft <= 3) {
-          const dias = Math.ceil(daysLeft)
-          ttlAlert = {
-            type: 'expiring',
-            message: dias <= 0
-              ? 'Vence hoje (validade após aberto)'
-              : `Vence em ${dias} dia${dias !== 1 ? 's' : ''} (validade após aberto)`,
-          }
-        }
-      }
-    }
+    const lotContainer = _getLotContainer(stock.entries)
+    const { purchaseEntries, lastPurchase } = _getLastPurchase(purchases)
+    const ttlAlert = _getTtlAlert(stock.entries, medicine)
 
     return {
       medicine: {

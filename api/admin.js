@@ -70,6 +70,46 @@ async function handleListDLQ(req, res) {
   }
 }
 
+// Roteador auxiliar para recursos de DLQ.
+async function _routeDlq(req, res, action) {
+  if (req.method === 'GET' && !action) {
+    return handleListDLQ(req, res);
+  }
+  if (req.method === 'POST') {
+    if (action === 'retry') return handleRetry(req, res);
+    if (action === 'discard') return handleDiscard(req, res);
+  }
+  return res.status(405).json({ error: 'Method or action not allowed for DLQ' });
+}
+
+// Roteador auxiliar para recursos de Feedbacks.
+async function _routeFeedbacks(req, res, action) {
+  if (req.method === 'GET' && !action) {
+    return handleListFeedbacks(req, res);
+  }
+  if (req.method === 'POST') {
+    if (action === 'resolve') return handleResolveFeedback(req, res);
+  }
+  return res.status(405).json({ error: 'Method or action not allowed for feedbacks' });
+}
+
+// Roteador auxiliar para recursos de Nudges.
+async function _routeNudges(req, res, action, supabase) {
+  if (req.method === 'GET' && !action) {
+    return handleListNudges(req, res, supabase);
+  }
+  if (req.method === 'POST') {
+    return handleCreateNudge(req, res, supabase);
+  }
+  if (req.method === 'PATCH') {
+    return handleUpdateNudge(req, res, supabase);
+  }
+  if (req.method === 'PUT') {
+    return handleToggleNudge(req, res, supabase);
+  }
+  return res.status(405).json({ error: 'Method or action not allowed for nudges' });
+}
+
 /**
  * Main Router
  */
@@ -91,41 +131,16 @@ export default async function handler(req, res) {
   // action: 'retry' | 'discard' | 'resolve'
   const { resource, action } = req.query;
 
-  // 1. DLQ Resource Routing
   if (resource === 'dlq') {
-    if (req.method === 'GET' && !action) {
-      return handleListDLQ(req, res);
-    }
-    if (req.method === 'POST') {
-      if (action === 'retry') return handleRetry(req, res);
-      if (action === 'discard') return handleDiscard(req, res);
-    }
+    return _routeDlq(req, res, action);
   }
 
-  // 2. Feedbacks Resource Routing
   if (resource === 'feedbacks') {
-    if (req.method === 'GET' && !action) {
-      return handleListFeedbacks(req, res);
-    }
-    if (req.method === 'POST') {
-      if (action === 'resolve') return handleResolveFeedback(req, res);
-    }
+    return _routeFeedbacks(req, res, action);
   }
 
-  // 3. Nudges Resource Routing
   if (resource === 'nudges') {
-    if (req.method === 'GET' && !action) {
-      return handleListNudges(req, res, supabase);
-    }
-    if (req.method === 'POST') {
-      return handleCreateNudge(req, res, supabase);
-    }
-    if (req.method === 'PATCH') {
-      return handleUpdateNudge(req, res, supabase);
-    }
-    if (req.method === 'PUT') {
-      return handleToggleNudge(req, res, supabase);
-    }
+    return _routeNudges(req, res, action, supabase);
   }
 
   return res.status(405).json({ error: 'Method or action not allowed' });

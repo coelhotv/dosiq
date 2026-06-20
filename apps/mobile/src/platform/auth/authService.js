@@ -27,33 +27,22 @@ function translateAuthError(authError, context = 'login') {
 
   const message = authError.message?.toLowerCase() || ''
 
-  if (message.includes('invalid login credentials')) {
-    return 'Email ou senha inválidos'
-  }
-  if (message.includes('user not found')) {
-    return 'Usuário não encontrado'
-  }
-  if (message.includes('email not confirmed')) {
-    return 'Email não confirmado. Verifique sua caixa de entrada.'
-  }
-  if (message.includes('user already registered')) {
-    return 'Email já cadastrado. Faça login.'
-  }
-  if (message.includes('password should be at least') || message.includes('weak password')) {
-    return 'Senha muito fraca. Use no mínimo 8 caracteres.'
-  }
-  if (message.includes('password too long')) {
-    return 'Senha muito longa'
-  }
-  if (message.includes('email_not_authenticated')) {
-    return 'Email não autenticado'
-  }
-  if (message.includes('rate limit')) {
-    return 'Muitas tentativas. Tente novamente mais tarde.'
-  }
-  if (message.includes('different from the old password') || message.includes('same password')) {
-    return 'Nova senha deve ser diferente da senha atual.'
-  }
+  const errorMappings = [
+    { key: 'invalid login credentials', value: 'Email ou senha inválidos' },
+    { key: 'user not found', value: 'Usuário não encontrado' },
+    { key: 'email not confirmed', value: 'Email não confirmado. Verifique sua caixa de entrada.' },
+    { key: 'user already registered', value: 'Email já cadastrado. Faça login.' },
+    { key: 'password should be at least', value: 'Senha muito fraca. Use no mínimo 8 caracteres.' },
+    { key: 'weak password', value: 'Senha muito fraca. Use no mínimo 8 caracteres.' },
+    { key: 'password too long', value: 'Senha muito longa' },
+    { key: 'email_not_authenticated', value: 'Email não autenticado' },
+    { key: 'rate limit', value: 'Muitas tentativas. Tente novamente mais tarde.' },
+    { key: 'different from the old password', value: 'Nova senha deve ser diferente da senha atual.' },
+    { key: 'same password', value: 'Nova senha deve ser diferente da senha atual.' },
+  ]
+
+  const matched = errorMappings.find((m) => message.includes(m.key))
+  if (matched) return matched.value
 
   const fallbacks = {
     login: 'Erro ao fazer login',

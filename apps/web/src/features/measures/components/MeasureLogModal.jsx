@@ -27,6 +27,68 @@ const CONTEXTS_BY_TYPE = {
   pressao_arterial: { values: BIOMARKER_PA_CONTEXTS, labels: BIOMARKER_PA_CONTEXT_LABELS },
 }
 
+function MeasureValueInputs({ isPa, value, setValue, valueSec, setValueSec, errorMsg, setErrorMsg, saving, unit }) {
+  if (isPa) {
+    return (
+      <div className="mlm__value-row mlm__value-row--pa">
+        <span className="mlm__pa-field">
+          <input
+            className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
+            type="text"
+            inputMode="decimal"
+            value={value}
+            onChange={(e) => { setValue(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
+            placeholder="120"
+            maxLength={3}
+            autoFocus
+            disabled={saving}
+            aria-label="Sistólica em mmHg"
+          />
+          <span className="mlm__pa-label">Sistólica</span>
+        </span>
+        <span className="mlm__pa-sep">por</span>
+        <span className="mlm__pa-field">
+          <input
+            className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
+            type="text"
+            inputMode="decimal"
+            value={valueSec}
+            onChange={(e) => { setValueSec(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
+            placeholder="80"
+            maxLength={3}
+            disabled={saving}
+            aria-label="Diastólica em mmHg"
+          />
+          <span className="mlm__pa-label">Diastólica</span>
+        </span>
+        <span className="mlm__unit">{unit}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mlm__value-row">
+      <input
+        className={`mlm__value${errorMsg ? ' mlm__value--error' : ''}`}
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => {
+          // Só dígitos, vírgula e ponto (coerceDecimal normaliza no salvar — R-276).
+          setValue(e.target.value.replace(/[^0-9.,]/g, ''))
+          if (errorMsg) setErrorMsg(null)
+        }}
+        placeholder="0"
+        maxLength={6}
+        autoFocus
+        disabled={saving}
+        aria-label={`Valor da medida em ${unit}`}
+      />
+      <span className="mlm__unit">{unit}</span>
+    </div>
+  )
+}
+
 /**
  * @param {Object} props
  * @param {boolean} props.isOpen
@@ -122,61 +184,17 @@ export default function MeasureLogModal({ isOpen, onClose, onSaved, editItem = n
         )}
 
         {/* Valor grande + unidade fixa (layout B). PA = 2 campos (sistólica "por" diastólica). */}
-        {isPa ? (
-          <div className="mlm__value-row mlm__value-row--pa">
-            <span className="mlm__pa-field">
-              <input
-                className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
-                type="text"
-                inputMode="decimal"
-                value={value}
-                onChange={(e) => { setValue(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
-                placeholder="120"
-                maxLength={3}
-                autoFocus
-                disabled={saving}
-                aria-label="Sistólica em mmHg"
-              />
-              <span className="mlm__pa-label">Sistólica</span>
-            </span>
-            <span className="mlm__pa-sep">por</span>
-            <span className="mlm__pa-field">
-              <input
-                className={`mlm__value mlm__value--pa${errorMsg ? ' mlm__value--error' : ''}`}
-                type="text"
-                inputMode="decimal"
-                value={valueSec}
-                onChange={(e) => { setValueSec(e.target.value.replace(/[^0-9.,]/g, '')); if (errorMsg) setErrorMsg(null) }}
-                placeholder="80"
-                maxLength={3}
-                disabled={saving}
-                aria-label="Diastólica em mmHg"
-              />
-              <span className="mlm__pa-label">Diastólica</span>
-            </span>
-            <span className="mlm__unit">{unit}</span>
-          </div>
-        ) : (
-          <div className="mlm__value-row">
-            <input
-              className={`mlm__value${errorMsg ? ' mlm__value--error' : ''}`}
-              type="text"
-              inputMode="decimal"
-              value={value}
-              onChange={(e) => {
-                // Só dígitos, vírgula e ponto (coerceDecimal normaliza no salvar — R-276).
-                setValue(e.target.value.replace(/[^0-9.,]/g, ''))
-                if (errorMsg) setErrorMsg(null)
-              }}
-              placeholder="0"
-              maxLength={6}
-              autoFocus
-              disabled={saving}
-              aria-label={`Valor da medida em ${unit}`}
-            />
-            <span className="mlm__unit">{unit}</span>
-          </div>
-        )}
+        <MeasureValueInputs
+          isPa={isPa}
+          value={value}
+          setValue={setValue}
+          valueSec={valueSec}
+          setValueSec={setValueSec}
+          errorMsg={errorMsg}
+          setErrorMsg={setErrorMsg}
+          saving={saving}
+          unit={unit}
+        />
 
         {/* Caption de erro — altura-neutra não empurra o layout */}
         <p className="mlm__error" role={errorMsg ? 'alert' : undefined}>{errorMsg || ' '}</p>

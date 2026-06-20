@@ -14,6 +14,59 @@ const DOSE_REMINDER_KINDS = new Set([
   'dose_reminder_misc',
 ])
 
+// Constrói a lista de mensagens formatadas para o formato do Expo Push.
+function _buildExpoMessages(devices, payload, isCriticalDose) {
+  return devices.map((device) => ({
+    to: device.push_token,
+    sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
+    // Furo de Focus/DND no iOS (doses essenciais vão como 'time-sensitive', normais 'active').
+    interruptionLevel: isCriticalDose ? 'time-sensitive' : 'active',
+    // --- v1 (configuração com objeto que exige permissão especial de Critical Alerts no iOS):
+    // sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
+    // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
+    //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
+    //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
+    //     interruptionLevel: 'critical',
+    channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
+    title: payload.title,
+    body: payload.pushBody || payload.body,
+    data: {
+      ...(payload.metadata ?? {}),
+      notificationLogId: payload.metadata?.notificationLogId ?? null,
+    },
+  }))
+}
+
+// Executa o envio em lote das notificações via expoClient com fallback individual.
+async function _sendPushNotifications(expoClient, messages, correlationId, userId) {
+  try {
+    return await expoClient.sendPushNotificationsAsync(messages)
+  } catch (error) {
+    // Se falhar o lote inteiro por conflito de projeto (comum em migrações de marca),
+    // tentamos o envio individual para permitir que os tokens do projeto novo passem 
+    // e os antigos sejam identificados/desativados.
+    if (error.message.includes('All push notification messages in the same request must be for the same project')) {
+      console.warn('[expoPushChannel] conflito de projeto detectado, tentando envio individual...', { correlationId, userId })
+      const tickets = []
+      for (const msg of messages) {
+        try {
+          const [ticket] = await expoClient.sendPushNotificationsAsync([msg])
+          tickets.push(ticket)
+        } catch (individualError) {
+          // Se falhou individualmente, simulamos um ticket de erro para ser tratado no normalize
+          tickets.push({
+            status: 'error',
+            message: individualError.message,
+            details: { error: 'DeviceNotRegistered' } // Forçamos desativação se o projeto não bate
+          })
+        }
+      }
+      return tickets
+    }
+    throw error
+  }
+}
+
 export async function sendExpoPushNotification({ userId, payload, context, repositories, expoClient }) {
   const correlationId = context?.correlationId || 'unknown'
 
@@ -56,60 +109,21 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
     }
   }
 
-  const messages = devices.map((device) => ({
-    to: device.push_token,
-    sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
-    // Furo de Focus/DND no iOS (doses essenciais vão como 'time-sensitive', normais 'active').
-    interruptionLevel: isCriticalDose ? 'time-sensitive' : 'active',
-    // --- v1 (configuração com objeto que exige permissão especial de Critical Alerts no iOS):
-    // sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
-    // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
-    //     fura o mudo físico no lock screen. Trocar as 3 linhas acima por:
-    //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
-    //     interruptionLevel: 'critical',
-    channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
-    title: payload.title,
-    body: payload.pushBody || payload.body,
-    data: {
-      ...(payload.metadata ?? {}),
-      notificationLogId: payload.metadata?.notificationLogId ?? null,
-    },
-  }))
+  const messages = _buildExpoMessages(devices, payload, isCriticalDose)
 
   let tickets
   try {
-    tickets = await expoClient.sendPushNotificationsAsync(messages)
+    tickets = await _sendPushNotifications(expoClient, messages, correlationId, userId)
   } catch (error) {
-    // Se falhar o lote inteiro por conflito de projeto (comum em migrações de marca),
-    // tentamos o envio individual para permitir que os tokens do projeto novo passem 
-    // e os antigos sejam identificados/desativados.
-    if (error.message.includes('All push notification messages in the same request must be for the same project')) {
-      console.warn('[expoPushChannel] conflito de projeto detectado, tentando envio individual...', { correlationId, userId })
-      tickets = []
-      for (const msg of messages) {
-        try {
-          const [ticket] = await expoClient.sendPushNotificationsAsync([msg])
-          tickets.push(ticket)
-        } catch (individualError) {
-          // Se falhou individualmente, simulamos um ticket de erro para ser tratado no normalize
-          tickets.push({
-            status: 'error',
-            message: individualError.message,
-            details: { error: 'DeviceNotRegistered' } // Forçamos desativação se o projeto não bate
-          })
-        }
-      }
-    } else {
-      console.error('[expoPushChannel] falha fatal ao enviar para Expo', { correlationId, userId, error: error.message })
-      return {
-        channel: 'mobile_push',
-        success: false,
-        attempted: devices.length,
-        delivered: 0,
-        failed: devices.length,
-        deactivatedTokens: [],
-        errors: [{ message: error.message }],
-      }
+    console.error('[expoPushChannel] falha fatal ao enviar para Expo', { correlationId, userId, error: error.message })
+    return {
+      channel: 'mobile_push',
+      success: false,
+      attempted: devices.length,
+      delivered: 0,
+      failed: devices.length,
+      deactivatedTokens: [],
+      errors: [{ message: error.message }],
     }
   }
 

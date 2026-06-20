@@ -5,7 +5,7 @@
 // Tap-and-close: tap no item → callback onSelect(medicine) + close.
 // Footer "+ Cadastrar novo medicamento" → callback onCreateNew (parent navega).
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Search, X, Plus } from 'lucide-react-native'
+import { Search, X, Plus, Pill } from 'lucide-react-native'
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMedicines } from '../../medications/hooks/useMedicines'
 import { selectionTap, lightTap } from '@shared/utils/haptics'
@@ -32,6 +32,73 @@ function normalize(s) {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
+}
+
+function MedicineSelectItem({ item, isSelected, onSelect }) {
+  const isSupplement = item.type === 'suplemento'
+  const iconColor = isSupplement ? colors.supplement[500] : colors.primary[500]
+  const iconBg = isSupplement ? colors.supplement[50] : colors.primary[50]
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.item,
+        isSelected && styles.itemSelected,
+        pressed && styles.itemPressed,
+      ]}
+      onPress={() => onSelect(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`Selecionar ${item.name}`}
+      accessibilityState={{ selected: isSelected }}
+    >
+      <View style={[styles.itemIcon, { backgroundColor: iconBg }]}>
+        <MedicineIcon medicine={item} size={20} color={iconColor} strokeWidth={2} />
+      </View>
+      <View style={styles.itemText}>
+        <View style={styles.itemHeader}>
+          <Text style={styles.itemName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          {item.dosage_per_pill ? (
+            <View style={styles.dosagePill}>
+              <Text style={styles.dosagePillText}>
+                {formatConcentration(item.dosage_per_pill, item.dosage_unit, item.concentration_volume_ml)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {item.active_ingredient ? (
+          <Text style={styles.itemSub} numberOfLines={1}>
+            {item.active_ingredient}
+          </Text>
+        ) : null}
+      </View>
+      <View style={[styles.radio, isSelected && styles.radioSelected]} />
+    </Pressable>
+  )
+}
+
+function EmptySheetContent({ onCreateNew }) {
+  return (
+    <View style={styles.emptySheet}>
+      <View style={styles.emptyIconCircle}>
+        <Pill size={40} color={colors.primary[500]} strokeWidth={1.5} />
+      </View>
+      <Text style={styles.emptyTitle}>Você ainda não possui medicamentos</Text>
+      <Text style={styles.emptyMessage}>
+        Cadastre um novo medicamento para configurar o tratamento.
+      </Text>
+      <Pressable
+        onPress={onCreateNew}
+        style={({ pressed }) => [styles.emptyBtn, pressed && styles.footerBtnPressed]}
+        accessibilityRole="button"
+        accessibilityLabel="Cadastrar novo medicamento"
+      >
+        <Plus size={18} color={colors.text.inverse} />
+        <Text style={styles.emptyBtnText}>Cadastrar medicamento</Text>
+      </Pressable>
+    </View>
+  )
 }
 
 export default function MedicineSelectorSheet({
@@ -80,69 +147,32 @@ export default function MedicineSelectorSheet({
   }, [open, refresh])
 
   // Handlers
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setQuery('')
     onClose?.()
-  }
+  }, [onClose])
 
-  function handleSelect(item) {
+  const handleSelect = useCallback((item) => {
     selectionTap()
     setQuery('')
     onSelect?.(item)
     onClose?.()
-  }
+  }, [onSelect, onClose])
 
-  function handleCreateNew() {
+  const handleCreateNew = useCallback(() => {
     lightTap()
     setQuery('')
     onClose?.()
     onCreateNew?.()
-  }
+  }, [onClose, onCreateNew])
 
-  function renderItem({ item }) {
-    const isSelected = item.id === selectedId
-    const isSupplement = item.type === 'suplemento'
-    const iconColor = isSupplement ? colors.supplement[500] : colors.primary[500]
-    const iconBg = isSupplement ? colors.supplement[50] : colors.primary[50]
-
-    return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.item,
-          isSelected && styles.itemSelected,
-          pressed && styles.itemPressed,
-        ]}
-        onPress={() => handleSelect(item)}
-        accessibilityRole="button"
-        accessibilityLabel={`Selecionar ${item.name}`}
-        accessibilityState={{ selected: isSelected }}
-      >
-        <View style={[styles.itemIcon, { backgroundColor: iconBg }]}>
-          <MedicineIcon medicine={item} size={20} color={iconColor} strokeWidth={2} />
-        </View>
-        <View style={styles.itemText}>
-          <View style={styles.itemHeader}>
-            <Text style={styles.itemName} numberOfLines={1}>
-              {item.name}
-            </Text>
-            {item.dosage_per_pill ? (
-              <View style={styles.dosagePill}>
-                <Text style={styles.dosagePillText}>
-                  {formatConcentration(item.dosage_per_pill, item.dosage_unit, item.concentration_volume_ml)}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          {item.active_ingredient ? (
-            <Text style={styles.itemSub} numberOfLines={1}>
-              {item.active_ingredient}
-            </Text>
-          ) : null}
-        </View>
-        <View style={[styles.radio, isSelected && styles.radioSelected]} />
-      </Pressable>
-    )
-  }
+  const renderItem = useCallback(({ item }) => (
+    <MedicineSelectItem
+      item={item}
+      isSelected={item.id === selectedId}
+      onSelect={handleSelect}
+    />
+  ), [selectedId, handleSelect])
 
   const isEmpty = !loading && !error && (!list || list.length === 0)
 
@@ -171,24 +201,7 @@ export default function MedicineSelectorSheet({
           <View style={styles.handle} />
 
           {isEmpty ? (
-            <View style={styles.emptySheet}>
-              <View style={styles.emptyIconCircle}>
-                <Pill size={40} color={colors.primary[500]} strokeWidth={1.5} />
-              </View>
-              <Text style={styles.emptyTitle}>Você ainda não possui medicamentos</Text>
-              <Text style={styles.emptyMessage}>
-                Cadastre um novo medicamento para configurar o tratamento.
-              </Text>
-              <Pressable
-                onPress={handleCreateNew}
-                style={({ pressed }) => [styles.emptyBtn, pressed && styles.footerBtnPressed]}
-                accessibilityRole="button"
-                accessibilityLabel="Cadastrar novo medicamento"
-              >
-                <Plus size={18} color={colors.text.inverse} />
-                <Text style={styles.emptyBtnText}>Cadastrar medicamento</Text>
-              </Pressable>
-            </View>
+            <EmptySheetContent onCreateNew={handleCreateNew} />
           ) : (
             <>
               <Text style={styles.title}>Escolher medicamento</Text>

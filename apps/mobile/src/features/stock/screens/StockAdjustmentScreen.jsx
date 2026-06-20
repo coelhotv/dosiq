@@ -63,10 +63,11 @@ function sanitizeDecimal(raw) {
     .replace(/(,.*),/g, '$1') // só uma vírgula
 }
 
-export default function StockAdjustmentScreen() {
-  // States (R-010 — States → Memos → Effects → Handlers)
-  const navigation = useNavigation()
-  const route = useRoute()
+function fmtBalValue(n, isLiquid) {
+  return isLiquid ? formatNumberPtBR(n) : String(n)
+}
+
+function useStockAdjustment(route, navigation) {
   const { user } = useAuth()
   const { adjustBalance } = useStockMutation()
 
@@ -82,7 +83,6 @@ export default function StockAdjustmentScreen() {
   const [submitting, setSubmitting] = useState(false)
 
   // Memos
-  // Líquido (022): saldo em ml (decimal). Sólido: unidades inteiras.
   const isLiquid = isLiquidMedicine(medicine)
 
   const parsedNew = useMemo(() => {
@@ -93,7 +93,6 @@ export default function StockAdjustmentScreen() {
 
   const delta = useMemo(() => {
     if (parsedNew == null || currentBalance == null) return null
-    // cleanFloat: subtração de decimais vaza dízima (1,5−1,9 = -0,39999…99) — R-277.
     return cleanFloat(parsedNew - currentBalance)
   }, [parsedNew, currentBalance])
 
@@ -108,10 +107,13 @@ export default function StockAdjustmentScreen() {
     [submitting, currentBalance, parsedNew, delta, reason],
   )
 
-  // Effects — busca medicine (dose pill da ficha) sempre + saldo atual se não
-  // veio por param. NÃO depende de `currentBalance` (evita re-execução quando o
-  // saldo é setado); `needsBalance` deriva do param (estável). Callback sync;
-  // setState no .then = microtask (não dispara set-state-in-effect).
+  const saldoAtualText = useMemo(() => {
+    if (currentBalance == null) return 'Calculando saldo…'
+    return isLiquid
+      ? `Saldo atual: ${formatNumberPtBR(currentBalance)} ml`
+      : `Saldo atual: ${currentBalance} ${currentBalance === 1 ? 'unidade' : 'unidades'}`
+  }, [currentBalance, isLiquid])
+
   const needsBalance = typeof paramBalance !== 'number'
   useFocusEffect(
     useCallback(() => {
@@ -136,7 +138,6 @@ export default function StockAdjustmentScreen() {
     }, [medicineId, user, needsBalance]),
   )
 
-  // Handlers
   const handleNewBalanceChange = useCallback((_name, raw) => {
     setNewBalance(isLiquid ? sanitizeDecimal(raw) : sanitizeInt(raw))
   }, [isLiquid])
@@ -158,39 +159,60 @@ export default function StockAdjustmentScreen() {
       await adjustBalance(medicineId, Number(parsedNew), reason, notes || null)
       navigation.goBack()
     } catch {
-      // Hook já mostrou toast de erro; mantém usuário na tela para corrigir.
+      // erro ja tratado pelo hook de mutation
     } finally {
       setSubmitting(false)
     }
   }, [parsedNew, delta, reason, notes, adjustBalance, medicineId, navigation])
 
-  // Dose pill da ficha (sempre que houver medicine com dosagem).
+  const fmtBal = useCallback((n) => fmtBalValue(n, isLiquid), [isLiquid])
+
   const dosePill =
     medicine?.dosage_per_pill != null
       ? formatConcentration(medicine.dosage_per_pill, medicine.dosage_unit, medicine.concentration_volume_ml)
       : null
 
-  // Preview "APÓS AJUSTE" — cor do delta: verde se positivo, vermelho se negativo.
   const unitSuffix = isLiquid ? 'ml' : 'un.'
-  const fmtBal = (n) => (isLiquid ? formatNumberPtBR(n) : String(n))
   const deltaPositive = delta != null && delta > 0
   const deltaLabel =
-    delta != null ? `(${delta > 0 ? '+' : ''}${fmtBal(delta)})` : ''
+    delta != null ? `(${delta > 0 ? '+' : ''}${fmtBalValue(delta, isLiquid)})` : ''
 
-  // Texto do saldo atual (extraído p/ reduzir complexidade do JSX).
-  let saldoAtualText = 'Calculando saldo…'
-  if (currentBalance != null) {
-    saldoAtualText = isLiquid
-      ? `Saldo atual: ${formatNumberPtBR(currentBalance)} ml`
-      : `Saldo atual: ${currentBalance} ${currentBalance === 1 ? 'unidade' : 'unidades'}`
+  return {
+    medicineName,
+    currentBalance,
+    newBalance,
+    reason,
+    notes,
+    submitting,
+    isLiquid,
+    parsedNew,
+    delta,
+    canConfirm,
+    handleNewBalanceChange,
+    handleReasonChange,
+    handleNotesChange,
+    goBack,
+    handleConfirm,
+    dosePill,
+    unitSuffix,
+    fmtBal,
+    deltaPositive,
+    deltaLabel,
+    saldoAtualText,
   }
+}
+
+export default function StockAdjustmentScreen() {
+  const navigation = useNavigation()
+  const route = useRoute()
+  const state = useStockAdjustment(route, navigation)
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={goBack}
+          onPress={state.goBack}
           style={styles.headerBtn}
           hitSlop={8}
           accessibilityRole="button"
@@ -219,15 +241,15 @@ export default function StockAdjustmentScreen() {
             <View style={styles.contextInfo}>
               <View style={styles.contextNameRow}>
                 <Text style={styles.contextName} numberOfLines={2}>
-                  {medicine?.name ?? medicineName ?? '—'}
+                  {state.medicineName ?? '—'}
                 </Text>
-                {dosePill ? (
+                {state.dosePill ? (
                   <View style={styles.dosePill}>
-                    <Text style={styles.dosePillText}>{dosePill}</Text>
+                    <Text style={styles.dosePillText}>{state.dosePill}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={styles.contextBalance}>{saldoAtualText}</Text>
+              <Text style={styles.contextBalance}>{state.saldoAtualText}</Text>
             </View>
           </View>
 
@@ -235,37 +257,37 @@ export default function StockAdjustmentScreen() {
           <FormSection title="Ajuste">
             <FormInput
               name="newBalance"
-              label={isLiquid ? 'Novo saldo (ml)' : 'Novo saldo (un.)'}
+              label={state.isLiquid ? 'Novo saldo (ml)' : 'Novo saldo (un.)'}
               required
-              placeholder={currentBalance != null ? String(currentBalance) : '0'}
-              keyboardType={isLiquid ? 'decimal-pad' : 'number-pad'}
-              maxLength={isLiquid ? 10 : 6}
-              value={newBalance}
-              onChange={handleNewBalanceChange}
-              helperText={isLiquid ? 'Informe o saldo final desejado em ml' : 'Informe o saldo final desejado em unidades'}
+              placeholder={state.currentBalance != null ? String(state.currentBalance) : '0'}
+              keyboardType={state.isLiquid ? 'decimal-pad' : 'number-pad'}
+              maxLength={state.isLiquid ? 10 : 6}
+              value={state.newBalance}
+              onChange={state.handleNewBalanceChange}
+              helperText={state.isLiquid ? 'Informe o saldo final desejado em ml' : 'Informe o saldo final desejado em unidades'}
             />
 
             {/* Preview APÓS AJUSTE */}
-            {delta != null && (
+            {state.delta != null && (
               <View style={styles.previewBox}>
                 <Text style={styles.previewLabel}>APÓS AJUSTE</Text>
                 <View style={styles.previewRow}>
-                  <Text style={styles.previewFrom}>{fmtBal(currentBalance)}</Text>
+                  <Text style={styles.previewFrom}>{state.fmtBal(state.currentBalance)}</Text>
                   <Text style={styles.previewArrow}> → </Text>
-                  <Text style={styles.previewTo}>{fmtBal(parsedNew)} {unitSuffix}</Text>
-                  {delta !== 0 && (
+                  <Text style={styles.previewTo}>{state.fmtBal(state.parsedNew)} {state.unitSuffix}</Text>
+                  {state.delta !== 0 && (
                     <Text
                       style={[
                         styles.previewDelta,
                         {
-                          color: deltaPositive
+                          color: state.deltaPositive
                             ? colors.status.success
                             : colors.status.error,
                         },
                       ]}
                     >
                       {' '}
-                      {deltaLabel}
+                      {state.deltaLabel}
                     </Text>
                   )}
                 </View>
@@ -279,8 +301,8 @@ export default function StockAdjustmentScreen() {
               required
               placeholder="Selecionar motivo"
               options={REASON_OPTIONS}
-              value={reason}
-              onChange={handleReasonChange}
+              value={state.reason}
+              onChange={state.handleReasonChange}
             />
 
             {/* Observações (opcional) */}
@@ -292,8 +314,8 @@ export default function StockAdjustmentScreen() {
               multiline
               numberOfLines={3}
               maxLength={500}
-              value={notes}
-              onChange={handleNotesChange}
+              value={state.notes}
+              onChange={state.handleNotesChange}
             />
           </FormSection>
         </ScrollView>
@@ -301,11 +323,11 @@ export default function StockAdjustmentScreen() {
         {/* Sticky footer */}
         <FormActions
           primaryLabel="Confirmar ajuste"
-          onPrimary={handleConfirm}
-          primaryDisabled={!canConfirm}
-          primaryLoading={submitting}
+          onPrimary={state.handleConfirm}
+          primaryDisabled={!state.canConfirm}
+          primaryLoading={state.submitting}
           secondaryLabel="Cancelar"
-          onSecondary={goBack}
+          onSecondary={state.goBack}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

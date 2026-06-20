@@ -7,44 +7,29 @@ export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
 // Densidade padrão (gotas/ml) sugerida quando o usuário escolhe unidade líquida (ADR-058).
 export const DEFAULT_UNITS_PER_ML = 20
 
-export const getInitialFormData = (medicine = {}) => {
-  const {
-    name = '',
-    laboratory = '',
-    active_ingredient = '',
-    dosage_per_pill = '',
-    type = 'medicamento',
-    dosage_unit = 'mg',
-    units_per_ml = '',
-    concentration_volume_ml = null,
-    presentation = 'comprimido',
-    therapeutic_class = null,
-    regulatory_category = null,
-    shelf_life_days = null,
-  } = medicine
-
-  // FR-031 (ADR-066): o campo exibe o `amount` do rótulo, não a razão normalizada.
-  // amount = dosage_per_pill (razão mg/mL) × concentration_volume_ml. Só transforma quando
-  // há denominador salvo (≠ null); senão exibe a razão crua (volume = 1, caso comum).
+function _getAmountDisplay(dosage_per_pill, concentration_volume_ml) {
   const denom = Number(concentration_volume_ml)
-  const amountDisplay =
-    dosage_per_pill !== '' && dosage_per_pill != null && denom > 0
-      ? String(cleanFloat(Number(dosage_per_pill) * denom))
-      : dosage_per_pill
+  if (dosage_per_pill !== '' && dosage_per_pill != null && denom > 0) {
+    return String(cleanFloat(Number(dosage_per_pill) * denom))
+  }
+  return dosage_per_pill
+}
 
+export const getInitialFormData = (medicine) => {
+  const m = medicine || {}
   return {
-    name,
-    laboratory,
-    active_ingredient,
-    dosage_per_pill: amountDisplay,
-    type,
-    dosage_unit,
-    units_per_ml: units_per_ml ?? '',
-    concentration_volume_ml: concentration_volume_ml ?? '',
-    presentation,
-    therapeutic_class,
-    regulatory_category,
-    shelf_life_days: shelf_life_days ?? '',
+    name: m.name ?? '',
+    laboratory: m.laboratory ?? '',
+    active_ingredient: m.active_ingredient ?? '',
+    dosage_per_pill: _getAmountDisplay(m.dosage_per_pill ?? '', m.concentration_volume_ml),
+    type: m.type ?? 'medicamento',
+    dosage_unit: m.dosage_unit ?? 'mg',
+    units_per_ml: m.units_per_ml ?? '',
+    concentration_volume_ml: m.concentration_volume_ml ?? '',
+    presentation: m.presentation ?? 'comprimido',
+    therapeutic_class: m.therapeutic_class ?? null,
+    regulatory_category: m.regulatory_category ?? null,
+    shelf_life_days: m.shelf_life_days ?? '',
   }
 }
 
@@ -74,25 +59,39 @@ export const validateMedicineForm = (formData) => {
   return newErrors
 }
 
+function _getMedicinePresentation(isLiquid, presentation) {
+  if (isLiquid) {
+    return LIQUID_PRESENTATIONS.includes(presentation) ? presentation : 'liquido'
+  }
+  return presentation || 'comprimido'
+}
+
+function _getNormalizedDosage(isLiquid, dosagePerPill, concentrationVolumeMl) {
+  const rawDenom = isLiquid ? coerceDecimal(concentrationVolumeMl) : NaN
+  const denom = rawDenom > 0 ? rawDenom : 1
+  const amount = dosagePerPill ? coerceDecimal(dosagePerPill) : null
+  return {
+    dosage_per_pill: amount != null ? cleanFloat(amount / denom) : null,
+    concentration_volume_ml: denom !== 1 ? denom : null,
+  }
+}
+
 export const buildMedicinePayload = (formData) => {
   const isLiquid = isLiquidUnit(formData.dosage_unit)
   // /ml exige apresentação líquida, mas preserva 'injetavel' (líquido-compatível) se
   // escolhido — não engole o injetável (TTL/container). Senão default 'liquido'.
-  const presentation = isLiquid
-    ? (LIQUID_PRESENTATIONS.includes(formData.presentation) ? formData.presentation : 'liquido')
-    : formData.presentation || 'comprimido'
+  const presentation = _getMedicinePresentation(isLiquid, formData.presentation)
   // FR-031 (ADR-066): o usuário digita o `amount` do rótulo; normaliza p/ a razão mg/mL.
   // denominador (concentration_volume_ml) só p/ líquido; vazio/1 → razão = amount (passthrough)
   // e coluna NULL. ≠1 → grava razão = amount ÷ denominador + o denominador.
-  const rawDenom = isLiquid ? coerceDecimal(formData.concentration_volume_ml) : NaN
-  const denom = rawDenom > 0 ? rawDenom : 1
-  const amount = formData.dosage_per_pill ? coerceDecimal(formData.dosage_per_pill) : null
+  const { dosage_per_pill, concentration_volume_ml } = _getNormalizedDosage(isLiquid, formData.dosage_per_pill, formData.concentration_volume_ml)
+
   return {
     name: formData.name.trim(),
     laboratory: formData.laboratory.trim() || null,
     active_ingredient: formData.active_ingredient.trim() || null,
-    dosage_per_pill: amount != null ? cleanFloat(amount / denom) : null,
-    concentration_volume_ml: denom !== 1 ? denom : null,
+    dosage_per_pill,
+    concentration_volume_ml,
     type: formData.type,
     dosage_unit: formData.dosage_unit,
     // Líquido grava units_per_ml + presentation='liquido'; sólido zera units_per_ml.

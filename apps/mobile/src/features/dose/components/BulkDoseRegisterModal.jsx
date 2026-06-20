@@ -233,6 +233,206 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
   )
 }
 
+function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey) {
+  return selectedIds
+    .map(id => {
+      const item = expandedDoseItems.find(i => i.id === id)
+      if (!item) return null
+      const p = item.protocol
+      const instanceId = isBackdated
+        ? null
+        : (item.instanceId
+          ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
+      return {
+        protocol_id: p.id,
+        medicine_id: p.medicine?.id ?? p.medicine_id,
+        taken_at: finalTakenAt,
+        quantity_taken: p.dosage_per_intake ?? 1,
+        instance_id: instanceId,
+      }
+    })
+    .filter(Boolean)
+}
+
+function BulkDoseRetroactivePicker({ takenAtDate, handleOpenRetroactivePicker }) {
+  return (
+    <Pressable 
+      style={styles.retroRow} 
+      onPress={handleOpenRetroactivePicker}
+      accessibilityRole="button"
+      accessibilityLabel="Alterar horário de registro"
+    >
+      <View style={styles.retroTextCol}>
+        <Text style={styles.retroLabel}>Horário do Registro:</Text>
+        <Text style={styles.retroValue}>
+          {takenAtDate ? formatDateTime(takenAtDate) : 'Agora'}
+        </Text>
+      </View>
+      <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
+    </Pressable>
+  )
+}
+
+function IOSDateTimePickerModal({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
+  if (Platform.OS !== 'ios' || !visible) return null
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+    >
+      <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={onCancel} />
+      <View style={styles.pickerSheet}>
+        <SafeAreaView edges={['bottom']}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerTitle}>Ajustar horário</Text>
+            <TouchableOpacity onPress={onConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerConfirmText}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            mode="datetime"
+            display="spinner"
+            value={tempDate || getNow()}
+            onChange={(_, date) => { if (date) setTempDate(date) }}
+            locale="pt-BR"
+            textColor={colors.text.primary}
+            themeVariant="light"
+          />
+        </SafeAreaView>
+      </View>
+    </Modal>
+  )
+}
+
+function BulkDoseHeader({ header, scheduledTime }) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.titleCol}>
+        <Text style={styles.title}>{header}</Text>
+        <Text style={styles.subtitle}>Selecione os medicamentos tomados</Text>
+      </View>
+      {scheduledTime ? (
+        <View style={styles.timeBadge}>
+          <Text style={styles.timeBadgeText}>{scheduledTime}</Text>
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
+function BulkDoseActions({ loading, selectedCount, onCancel, onConfirm }) {
+  return (
+    <View style={styles.actions}>
+      <Pressable style={styles.cancelBtn} onPress={onCancel} disabled={loading}>
+        <Text style={styles.cancelText}>Cancelar</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.confirmBtn, (loading || selectedCount === 0) && styles.btnDisabled]}
+        onPress={onConfirm}
+        disabled={loading || selectedCount === 0}
+      >
+        {loading
+          ? <ActivityIndicator color="#fff" size="small" />
+          : <Text style={styles.confirmText}>
+              Registrar {selectedCount} {selectedCount === 1 ? 'dose' : 'doses'}
+            </Text>
+        }
+      </Pressable>
+    </View>
+  )
+}
+
+function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
+  const [prevVisible, setPrevVisible] = useState(null)
+  const [selected, setSelected] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [takenAtDate, setTakenAtDate] = useState(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [tempDate, setTempDate] = useState(null)
+
+  if (visible !== prevVisible) {
+    setPrevVisible(visible)
+    if (!visible) {
+      setSelected({})
+      setError(null)
+      setLoading(false)
+      setTakenAtDate(null)
+      setShowDatePicker(false)
+      setTempDate(null)
+    } else {
+      setTakenAtDate(getNow())
+      const initial = {}
+      expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
+      setSelected(initial)
+    }
+  }
+
+  return {
+    selected, setSelected,
+    loading, setLoading,
+    error, setError,
+    takenAtDate, setTakenAtDate,
+    showDatePicker, setShowDatePicker,
+    tempDate, setTempDate,
+  }
+}
+
+function _expandDoseItems(protocols, instancedItems) {
+  if (instancedItems) return instancedItems
+  const items = []
+  protocols.forEach(p => {
+    const schedules = p.time_schedule && p.time_schedule.length > 0
+      ? p.time_schedule
+      : [null]
+      
+    schedules.forEach(time => {
+      items.push({
+        id: `${p.id}-${time ?? 'adhoc'}`,
+        protocol: p,
+        scheduledTime: time,
+        plan: p.treatment_plan,
+      })
+    })
+  })
+
+  items.sort((a, b) => {
+    if (!a.scheduledTime) return 1
+    if (!b.scheduledTime) return -1
+    return a.scheduledTime.localeCompare(b.scheduledTime)
+  })
+  
+  return items
+}
+
+function openAndroidDateTimePicker(base, onSelect) {
+  DateTimePickerAndroid.open({
+    value: base,
+    mode: 'date',
+    onChange: (event, date) => {
+      if (event.type === 'set' && date) {
+        DateTimePickerAndroid.open({
+          value: base,
+          mode: 'time',
+          onChange: (timeEvent, timeDate) => {
+            if (timeEvent.type === 'set' && timeDate) {
+              const combined = cloneDate(date)
+              combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
+              onSelect(combined)
+            }
+          }
+        })
+      }
+    }
+  })
+}
+
 export default function BulkDoseRegisterModal({
   visible,
   onClose,
@@ -245,30 +445,11 @@ export default function BulkDoseRegisterModal({
   userId,
   isComplex = false,
   initialProtocols = null,
-  // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências de hoje.
-  // Permite âncora DIRETA por instância de cada entrada do bulk; ausência → snap.
   instancesByKey = null,
-  // F4.3d: itens já instanciados (HeroDoseCard) — { id, protocol, scheduledTime, plan, instanceId }.
-  // Quando presente, são a lista exata (sem re-expandir time_schedule).
   instancedItems = null,
 }) {
   const { show } = useToast()
 
-  // States (R-010: ordem obrigatória)
-  const [selected, setSelected] = useState({})
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  
-  // Seletor retroativo de data/hora
-  const [takenAtDate, setTakenAtDate] = useState(null)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [tempDate, setTempDate] = useState(null)
-  
-  // Trackers para ajuste de estado no render
-  const [prevItems, setPrevItems] = useState([])
-  const [prevVisible, setPrevVisible] = useState(false)
-
-  // Hero (instancedItems) e initialProtocols dispensam o fetch do usePlanProtocols.
   const bypassLoad = !!(initialProtocols || instancedItems)
   const { protocols: loadedProtocols, loading: protocolsLoading, error: protocolsError } = usePlanProtocols({
     mode: bypassLoad ? 'active' : mode,
@@ -282,89 +463,29 @@ export default function BulkDoseRegisterModal({
     return initialProtocols ?? loadedProtocols
   }, [initialProtocols, loadedProtocols])
 
-  // 1. Desmembramento cronológico de múltiplos horários
   const expandedDoseItems = useMemo(() => {
-    // Hero: lista exata já instanciada (não re-expande time_schedule).
-    if (instancedItems) return instancedItems
-    const items = []
-    protocols.forEach(p => {
-      const schedules = p.time_schedule && p.time_schedule.length > 0
-        ? p.time_schedule
-        : [null]
-        
-      schedules.forEach(time => {
-        items.push({
-          id: `${p.id}-${time ?? 'adhoc'}`,
-          protocol: p,
-          scheduledTime: time,
-          plan: p.treatment_plan,
-        })
-      })
-    })
-
-    // Ordenação cronológica crescente (timeline do dia)
-    items.sort((a, b) => {
-      if (!a.scheduledTime) return 1
-      if (!b.scheduledTime) return -1
-      return a.scheduledTime.localeCompare(b.scheduledTime)
-    })
-    
-    return items
+    return _expandDoseItems(protocols, instancedItems)
   }, [protocols, instancedItems])
 
-  // Ajuste de Estado no Render (R-010 + React 19)
-  if (expandedDoseItems !== prevItems || visible !== prevVisible) {
-    setPrevItems(expandedDoseItems)
-    setPrevVisible(visible)
-
-    if (!visible) {
-      setSelected({})
-      setError(null)
-      setLoading(false)
-      setTakenAtDate(null)
-      setShowDatePicker(false)
-      setTempDate(null)
-    } else {
-      if (!takenAtDate) {
-        setTakenAtDate(getNow())
-      }
-      const justOpened = visible && !prevVisible
-      const itemsChanged = expandedDoseItems !== prevItems
-      if (expandedDoseItems.length > 0 && (justOpened || itemsChanged)) {
-        const initial = {}
-        expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
-        setSelected(initial)
-      }
-    }
-  }
+  const {
+    selected, setSelected,
+    loading, setLoading,
+    error, setError,
+    takenAtDate, setTakenAtDate,
+    showDatePicker, setShowDatePicker,
+    tempDate, setTempDate,
+  } = useBulkDoseModalState({ visible, isComplex, expandedDoseItems })
 
   function toggleProtocol(id) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
   }
 
   function handleOpenRetroactivePicker() {
+    const base = takenAtDate || getNow()
     if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: takenAtDate || getNow(),
-        mode: 'date',
-        onChange: (event, date) => {
-          if (event.type === 'set' && date) {
-            DateTimePickerAndroid.open({
-              value: takenAtDate || getNow(),
-              mode: 'time',
-              onChange: (timeEvent, timeDate) => {
-                if (timeEvent.type === 'set' && timeDate) {
-                  const combined = cloneDate(date)
-                  combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
-                  setTakenAtDate(combined)
-                }
-              }
-            })
-          }
-        }
-      })
+      openAndroidDateTimePicker(base, setTakenAtDate)
     } else {
-      setTempDate(takenAtDate || getNow())
+      setTempDate(base)
       setShowDatePicker(true)
     }
   }
@@ -388,40 +509,11 @@ export default function BulkDoseRegisterModal({
     setLoading(true)
     setError(null)
 
-    // Captura "agora" uma única vez (atomicidade — evita double-read do relógio entre
-    // o fallback de taken_at e a checagem de backdate).
     const now = getNow()
     const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : now.toISOString()
-
-    // `instancesByKey` mapeia as ocorrências do DIA ATUAL (timeline de hoje). Se a tomada
-    // foi backdatada para outro dia local (ex.: relógio já virou para amanhã, mas o usuário
-    // registra a dose de ontem), a âncora direta por `protocol_id|HH:MM` resolveria para a
-    // instância do dia errado (bug: marcava a ocorrência de amanhã e deixava a real `missed`).
-    // Nesse caso NÃO usamos o mapa de hoje → `instance_id=null` força o snap por tolerância
-    // em `registerDoseMany`/`findAnchorInstance`, que ancora pelo `taken_at` real (dia correto).
     const isBackdated = !!takenAtDate && takenAtDate.toDateString() !== now.toDateString()
 
-    const logsData = selectedIds
-      .map(id => {
-        const item = expandedDoseItems.find(item => item.id === id)
-        if (!item) return null
-        const p = item.protocol
-        // F4.3d: âncora direta — item já instanciado (hero) tem instanceId; senão resolve
-        // a ocorrência do slot (protocol_id|HH:MM) no mapa do dia; senão null → snap.
-        // Dose backdatada para outro dia → ignora o mapa de hoje (snap pelo taken_at).
-        const instanceId = isBackdated
-          ? null
-          : (item.instanceId
-            ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
-        return {
-          protocol_id: p.id,
-          medicine_id: p.medicine?.id ?? p.medicine_id,
-          taken_at: finalTakenAt,
-          quantity_taken: p.dosage_per_intake ?? 1,
-          instance_id: instanceId,
-        }
-      })
-      .filter(Boolean)
+    const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey)
 
     const result = await registerDoseMany(logsData)
     setLoading(false)
@@ -458,33 +550,12 @@ export default function BulkDoseRegisterModal({
         <View style={styles.sheet}>
           <View style={styles.handle} />
 
-          <View style={styles.header}>
-            <View style={styles.titleCol}>
-              <Text style={styles.title}>{header}</Text>
-              <Text style={styles.subtitle}>Selecione os medicamentos tomados</Text>
-            </View>
-            {scheduledTime ? (
-              <View style={styles.timeBadge}>
-                <Text style={styles.timeBadgeText}>{scheduledTime}</Text>
-              </View>
-            ) : null}
-          </View>
+          <BulkDoseHeader header={header} scheduledTime={scheduledTime} />
 
-          {/* Seletor Retroativo de Data/Hora */}
-          <Pressable 
-            style={styles.retroRow} 
-            onPress={handleOpenRetroactivePicker}
-            accessibilityRole="button"
-            accessibilityLabel="Alterar horário de registro"
-          >
-            <View style={styles.retroTextCol}>
-              <Text style={styles.retroLabel}>Horário do Registro:</Text>
-              <Text style={styles.retroValue}>
-                {takenAtDate ? formatDateTime(takenAtDate) : 'Agora'}
-              </Text>
-            </View>
-            <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
-          </Pressable>
+          <BulkDoseRetroactivePicker
+            takenAtDate={takenAtDate}
+            handleOpenRetroactivePicker={handleOpenRetroactivePicker}
+          />
 
           {protocolsLoading ? (
             <View style={styles.centerState}>
@@ -506,60 +577,22 @@ export default function BulkDoseRegisterModal({
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <View style={styles.actions}>
-            <Pressable style={styles.cancelBtn} onPress={handleClose} disabled={loading}>
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.confirmBtn, (loading || selectedCount === 0) && styles.btnDisabled]}
-              onPress={handleConfirm}
-              disabled={loading || selectedCount === 0}
-            >
-              {loading
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.confirmText}>
-                    Registrar {selectedCount} {selectedCount === 1 ? 'dose' : 'doses'}
-                  </Text>
-              }
-            </Pressable>
-          </View>
+          <BulkDoseActions
+            loading={loading}
+            selectedCount={selectedCount}
+            onCancel={handleClose}
+            onConfirm={handleConfirm}
+          />
         </View>
       </View>
 
-      {/* Modal iOS DateTimePicker */}
-      {Platform.OS === 'ios' && showDatePicker && (
-        <Modal
-          visible={showDatePicker}
-          transparent
-          animationType="slide"
-          onRequestClose={handleIOSCancel}
-        >
-          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={handleIOSCancel} />
-          <View style={styles.pickerSheet}>
-            <SafeAreaView edges={['bottom']}>
-              <View style={styles.pickerHeader}>
-                <TouchableOpacity onPress={handleIOSCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerCancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <Text style={styles.pickerTitle}>Ajustar horário</Text>
-                <TouchableOpacity onPress={handleIOSConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerConfirmText}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                mode="datetime"
-                display="spinner"
-                value={tempDate || getNow()}
-                onChange={(_, date) => { if (date) setTempDate(date) }}
-                locale="pt-BR"
-                textColor={colors.text.primary}
-                themeVariant="light"
-              />
-            </SafeAreaView>
-          </View>
-        </Modal>
-      )}
+      <IOSDateTimePickerModal
+        visible={showDatePicker}
+        tempDate={tempDate}
+        setTempDate={setTempDate}
+        onCancel={handleIOSCancel}
+        onConfirm={handleIOSConfirm}
+      />
     </Modal>
   )
 }

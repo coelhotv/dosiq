@@ -5,7 +5,7 @@
 //
 // v1: glicemia + peso (Planning 2026-06-14). PA fora da UI (schema-ready no core).
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Modal, Pressable, TouchableOpacity, TextInput, StyleSheet, Platform, StatusBar, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
@@ -61,30 +61,132 @@ function openAndroidDateTime(currentDate, onPicked) {
 // key={editItem?.id || 'create'} p/ remontar e re-seedar o estado (R-273).
 // lockedType (opcional): contextualiza o sheet a UM tipo (esconde as tabs). Usado pelo hub de
 // Medidas, onde o FAB é relativo ao histórico aberto (glicemia OU peso). Edição também trava o tipo.
-export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 'glicemia', editItem = null, lockedType = null }) {
-  const isEdit = !!editItem
-  const fixedType = editItem?.type || lockedType
-  const showTabs = !fixedType
+function _validateBiomarkerValues(value, valueSec, isPa) {
+  const num = coerceDecimal(value)
+  if (Number.isNaN(num) || num <= 0) {
+    return { error: isPa ? 'Digite a sistólica (maior que zero).' : 'Digite um valor válido maior que zero.' }
+  }
+  let secNum = null
+  if (isPa) {
+    secNum = coerceDecimal(valueSec)
+    if (Number.isNaN(secNum) || secNum <= 0) {
+      return { error: 'Digite a diastólica (maior que zero).' }
+    }
+  }
+  return { num, secNum }
+}
+
+function MeasureTypeTabs({ showTabs, type, handleSelectType }) {
+  if (!showTabs) {
+    return <Text style={styles.lockedType}>{BIOMARKER_TYPE_LABELS[type]}</Text>
+  }
+  return (
+    <View style={styles.typeRow}>
+      {UI_TYPES.map((t) => (
+        <Pressable
+          key={t}
+          onPress={() => handleSelectType(t)}
+          style={[styles.typeChip, type === t && styles.typeChipActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: type === t }}
+          accessibilityLabel={BIOMARKER_TYPE_LABELS[t]}
+        >
+          <Text style={[styles.typeChipText, type === t && styles.typeChipTextActive]}>
+            {BIOMARKER_TYPE_LABELS[t]}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+}
+
+function MeasureContextGrid({ showContext, ctxConfig, context, setContext }) {
+  if (!showContext || !ctxConfig) return null
+  return (
+    <View style={styles.ctxGrid}>
+      {ctxConfig.values.map((c) => (
+        <Pressable
+          key={c}
+          onPress={() => { selectionTap(); setContext(context === c ? null : c) }}
+          style={[styles.ctxChip, context === c && styles.ctxChipActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: context === c }}
+          accessibilityLabel={ctxConfig.labels[c]}
+        >
+          <Text style={[styles.ctxChipText, context === c && styles.ctxChipTextActive]}>
+            {ctxConfig.labels[c]}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  )
+}
+
+function MeasureDateTimePicker({ isEdit, measuredAt, handleOpenPicker }) {
+  if (!isEdit) {
+    return <Text style={styles.timeHint}>Horário: Agora</Text>
+  }
+  return (
+    <Pressable
+      style={styles.dateRow}
+      onPress={handleOpenPicker}
+      accessibilityRole="button"
+      accessibilityLabel="Alterar data e hora da medida"
+    >
+      <View style={styles.dateTextCol}>
+        <Text style={styles.dateLabel}>Data e hora</Text>
+        <Text style={styles.dateValue}>{measuredAt ? formatDateTimePtBR(measuredAt) : 'Toque para definir'}</Text>
+      </View>
+      <Calendar size={18} color={colors.status.info} strokeWidth={2} />
+    </Pressable>
+  )
+}
+
+function MeasureIOSDatePickerModal({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
+  if (Platform.OS !== 'ios' || !visible) return null
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onCancel}>
+      <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={onCancel} />
+      <View style={styles.pickerSheet}>
+        <SafeAreaView edges={['bottom']}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerCancel}>Cancelar</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerTitle}>Ajustar data e hora</Text>
+            <TouchableOpacity onPress={onConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerConfirm}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            mode="datetime"
+            display="spinner"
+            value={tempDate || getNow()}
+            onChange={(_, date) => { if (date) setTempDate(date) }}
+            locale="pt-BR"
+            textColor={colors.text.primary}
+            themeVariant="light"
+          />
+        </SafeAreaView>
+      </View>
+    </Modal>
+  )
+}
+
+function useMeasureSheetState({ editItem, fixedType, defaultType, open }) {
   const [type, setType] = useState(fixedType || defaultType)
   const [value, setValue] = useState(editItem ? String(editItem.value).replace('.', ',') : '')
-  // Diastólica (PA) — 2º campo só visível p/ pressao_arterial.
   const [valueSec, setValueSec] = useState(
     editItem?.value_secondary != null ? String(editItem.value_secondary).replace('.', ',') : ''
   )
   const [context, setContext] = useState(editItem?.context ?? null)
-  // measuredAt editável só na edição (criação usa "Agora" via DEFAULT now()).
   const [measuredAt, setMeasuredAt] = useState(editItem?.measured_at ? parseISO(editItem.measured_at) : null)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [tempDate, setTempDate] = useState(null)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
 
-  const unit = BIOMARKER_TYPE_UNITS[type]
-  const isPa = type === 'pressao_arterial'
-  const ctxConfig = CONTEXTS_BY_TYPE[type] ?? null
-  const showContext = !!ctxConfig
-
-  function reset() {
+  const reset = useCallback(() => {
     setType(fixedType || defaultType)
     setValue(editItem ? String(editItem.value).replace('.', ',') : '')
     setValueSec(editItem?.value_secondary != null ? String(editItem.value_secondary).replace('.', ',') : '')
@@ -93,7 +195,92 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
     setShowDatePicker(false)
     setErrorMsg(null)
     setSaving(false)
+  }, [fixedType, defaultType, editItem])
+
+  useEffect(() => {
+    if (open) {
+      const handle = setTimeout(() => {
+        reset()
+      }, 0)
+      return () => clearTimeout(handle)
+    }
+  }, [open, reset])
+
+  return {
+    type, setType,
+    value, setValue,
+    valueSec, setValueSec,
+    context, setContext,
+    measuredAt, setMeasuredAt,
+    showDatePicker, setShowDatePicker,
+    tempDate, setTempDate,
+    saving, setSaving,
+    errorMsg, setErrorMsg,
+    reset,
   }
+}
+
+function MeasureSheetHeader({ isEdit }) {
+  return (
+    <>
+      <View style={styles.iconWrap}>
+        <Ruler size={24} color={colors.status.info} strokeWidth={2} />
+      </View>
+      <Text style={styles.title}>{isEdit ? 'Editar medida' : 'Registrar medida'}</Text>
+    </>
+  )
+}
+
+function MeasureActionButtons({ saving, onCancel, onSave }) {
+  return (
+    <View style={styles.btnRow}>
+      <Pressable
+        onPress={onCancel}
+        disabled={saving}
+        style={({ pressed }) => [styles.cancelBtn, pressed && !saving && styles.btnPressed, saving && styles.btnDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel="Cancelar"
+        accessibilityState={{ disabled: saving }}
+      >
+        <Text style={styles.cancelBtnText}>Cancelar</Text>
+      </Pressable>
+      <Pressable
+        onPress={onSave}
+        disabled={saving}
+        style={({ pressed }) => [styles.saveBtn, pressed && !saving && styles.btnPressed, saving && styles.btnDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel="Salvar medida"
+        accessibilityState={{ disabled: saving, busy: saving }}
+      >
+        <Check size={20} color={colors.text.inverse} strokeWidth={2.5} />
+        <Text style={styles.saveBtnText}>{saving ? 'Salvando…' : 'Salvar'}</Text>
+      </Pressable>
+    </View>
+  )
+}
+
+export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 'glicemia', editItem = null, lockedType = null }) {
+  const isEdit = !!editItem
+  const fixedType = editItem?.type || lockedType
+  const showTabs = !fixedType
+
+  const {
+    type, setType,
+    value, setValue,
+    valueSec, setValueSec,
+    context, setContext,
+    measuredAt, setMeasuredAt,
+    showDatePicker, setShowDatePicker,
+    tempDate, setTempDate,
+    saving, setSaving,
+    errorMsg, setErrorMsg,
+    reset,
+  } = useMeasureSheetState({ editItem, fixedType, defaultType, open })
+
+  const unit = BIOMARKER_TYPE_UNITS[type]
+  const isPa = type === 'pressao_arterial'
+  const ctxConfig = CONTEXTS_BY_TYPE[type] ?? null
+  const showContext = !!ctxConfig
 
   function handleOpenPicker() {
     const base = measuredAt || getNow()
@@ -119,45 +306,33 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
   function handleSelectType(t) {
     selectionTap()
     setType(t)
-    // Contexto é por família — trocar de tipo zera o contexto (evita contexto inválido p/ o novo tipo).
     setContext(null)
     if (t !== 'pressao_arterial') setValueSec('')
     setErrorMsg(null)
   }
 
   async function handleSave() {
-    const num = coerceDecimal(value)
-    if (Number.isNaN(num) || num <= 0) {
-      setErrorMsg(isPa ? 'Digite a sistólica (maior que zero).' : 'Digite um valor válido maior que zero.')
+    const valResult = _validateBiomarkerValues(value, valueSec, isPa)
+    if (valResult.error) {
+      setErrorMsg(valResult.error)
       return
     }
-    // PA: diastólica obrigatória e válida (refine do core exige ambas — não gravar PA pela metade).
-    let secNum = null
-    if (isPa) {
-      secNum = coerceDecimal(valueSec)
-      if (Number.isNaN(secNum) || secNum <= 0) {
-        setErrorMsg('Digite a diastólica (maior que zero).')
-        return
-      }
-    }
+
     try {
       setSaving(true)
       setErrorMsg(null)
       const payload = {
         type,
-        value: num,
-        value_secondary: secNum,
+        value: valResult.num,
+        value_secondary: valResult.secNum,
         unit,
         context: showContext ? context : null,
       }
-      // Criação: measured_at omitido → DB usa DEFAULT now() (evita new Date no app, R-020).
-      // Edição: envia o measured_at ajustado pelo usuário (data/hora editável, igual à dose).
       if (isEdit && measuredAt) payload.measured_at = measuredAt.toISOString()
       const saved = await onSaved?.(isEdit ? { id: editItem.id, ...payload } : payload)
       reset()
       onClose?.(saved)
     } catch {
-      // Transparência radical (Const. IX): diz o que falhou; nada salvo; valor mantido.
       setErrorMsg('Não foi possível salvar. Nada foi gravado — tente novamente.')
       setSaving(false)
     }
@@ -171,37 +346,14 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.handle} />
 
-          <View style={styles.iconWrap}>
-            <Ruler size={24} color={colors.status.info} strokeWidth={2} />
-          </View>
-          <Text style={styles.title}>{isEdit ? 'Editar medida' : 'Registrar medida'}</Text>
+          <MeasureSheetHeader isEdit={isEdit} />
 
-          {/* Tipo (recolhido em chips) — oculto quando contextual a um tipo (lockedType/edição) */}
-          {showTabs ? (
-          <View style={styles.typeRow}>
-            {UI_TYPES.map((t) => (
-              <Pressable
-                key={t}
-                onPress={() => handleSelectType(t)}
-                style={[styles.typeChip, type === t && styles.typeChipActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: type === t }}
-                accessibilityLabel={BIOMARKER_TYPE_LABELS[t]}
-              >
-                <Text style={[styles.typeChipText, type === t && styles.typeChipTextActive]}>
-                  {BIOMARKER_TYPE_LABELS[t]}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          ) : (
-            <Text style={styles.lockedType}>{BIOMARKER_TYPE_LABELS[type]}</Text>
-          )}
+          <MeasureTypeTabs
+            showTabs={showTabs}
+            type={type}
+            handleSelectType={handleSelectType}
+          />
 
-          {/* Valor gigante + unidade fixa. O campo principal é SEMPRE o mesmo TextInput
-              (mesma posição na árvore) — trocar de tipo não o desmonta, então teclado e
-              caret persistem (sem re-foco programático, que quebra o caret no iOS). PA
-              apenas ADICIONA o 2º campo (diastólica) como irmão. */}
           <View style={styles.valueRow}>
             <View style={styles.paField}>
               <TextInput
@@ -238,99 +390,36 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
             <Text style={styles.unit}>{unit}</Text>
           </View>
 
-          {/* Caption de erro — altura-neutra (não empurra layout) */}
           <Text style={[styles.caption, !errorMsg && styles.captionHidden]}>{errorMsg || ' '}</Text>
 
-          {/* Contexto por família (glicemia/PA) — opcional, 1 toque */}
-          {showContext ? (
-            <View style={styles.ctxGrid}>
-              {ctxConfig.values.map((c) => (
-                <Pressable
-                  key={c}
-                  onPress={() => { selectionTap(); setContext(context === c ? null : c) }}
-                  style={[styles.ctxChip, context === c && styles.ctxChipActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: context === c }}
-                  accessibilityLabel={ctxConfig.labels[c]}
-                >
-                  <Text style={[styles.ctxChipText, context === c && styles.ctxChipTextActive]}>
-                    {ctxConfig.labels[c]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
+          <MeasureContextGrid
+            showContext={showContext}
+            ctxConfig={ctxConfig}
+            context={context}
+            setContext={setContext}
+          />
 
-          {!isEdit ? (
-            <Text style={styles.timeHint}>Horário: Agora</Text>
-          ) : (
-            <Pressable
-              style={styles.dateRow}
-              onPress={handleOpenPicker}
-              accessibilityRole="button"
-              accessibilityLabel="Alterar data e hora da medida"
-            >
-              <View style={styles.dateTextCol}>
-                <Text style={styles.dateLabel}>Data e hora</Text>
-                <Text style={styles.dateValue}>{measuredAt ? formatDateTimePtBR(measuredAt) : 'Toque para definir'}</Text>
-              </View>
-              <Calendar size={18} color={colors.status.info} strokeWidth={2} />
-            </Pressable>
-          )}
+          <MeasureDateTimePicker
+            isEdit={isEdit}
+            measuredAt={measuredAt}
+            handleOpenPicker={handleOpenPicker}
+          />
 
-          <View style={styles.btnRow}>
-            <Pressable
-              onPress={handleClose}
-              disabled={saving}
-              style={({ pressed }) => [styles.cancelBtn, pressed && !saving && styles.btnPressed, saving && styles.btnDisabled]}
-              accessibilityRole="button"
-              accessibilityLabel="Cancelar"
-              accessibilityState={{ disabled: saving }}
-            >
-              <Text style={styles.cancelBtnText}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSave}
-              disabled={saving}
-              style={({ pressed }) => [styles.saveBtn, pressed && !saving && styles.btnPressed, saving && styles.btnDisabled]}
-              accessibilityRole="button"
-              accessibilityLabel="Salvar medida"
-              accessibilityState={{ disabled: saving, busy: saving }}
-            >
-              <Check size={20} color={colors.text.inverse} strokeWidth={2.5} />
-              <Text style={styles.saveBtnText}>{saving ? 'Salvando…' : 'Salvar'}</Text>
-            </Pressable>
-          </View>
+          <MeasureActionButtons
+            saving={saving}
+            onCancel={handleClose}
+            onSave={handleSave}
+          />
         </SafeAreaView>
       </KeyboardAvoidingView>
 
-      {Platform.OS === 'ios' && showDatePicker ? (
-        <Modal visible transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
-          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
-          <View style={styles.pickerSheet}>
-            <SafeAreaView edges={['bottom']}>
-              <View style={styles.pickerHeader}>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerCancel}>Cancelar</Text>
-                </TouchableOpacity>
-                <Text style={styles.pickerTitle}>Ajustar data e hora</Text>
-                <TouchableOpacity onPress={handleIOSConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerConfirm}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                mode="datetime"
-                display="spinner"
-                value={tempDate || getNow()}
-                onChange={(_, date) => { if (date) setTempDate(date) }}
-                locale="pt-BR"
-                textColor={colors.text.primary}
-                themeVariant="light"
-              />
-            </SafeAreaView>
-          </View>
-        </Modal>
-      ) : null}
+      <MeasureIOSDatePickerModal
+        visible={showDatePicker}
+        tempDate={tempDate}
+        setTempDate={setTempDate}
+        onCancel={() => setShowDatePicker(false)}
+        onConfirm={handleIOSConfirm}
+      />
     </Modal>
   )
 }

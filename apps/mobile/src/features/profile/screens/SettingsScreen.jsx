@@ -133,6 +133,64 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
+function SettingsHeader({ onGoBack }) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        onPress={onGoBack}
+        style={styles.headerBtn}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+      >
+        <ChevronLeft size={24} color={colors.text.primary} />
+      </Pressable>
+      <Text style={styles.title}>Configurações</Text>
+      <View style={styles.headerSpacer} />
+    </View>
+  )
+}
+
+function PreferencesCard({ loading, currentComplexity, activeLabel, onSelect }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Densidade de informação</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.primary[500]} style={styles.loader} />
+      ) : (
+        <DensityOptions
+          currentComplexity={currentComplexity}
+          activeLabel={activeLabel}
+          onSelect={onSelect}
+        />
+      )}
+    </View>
+  )
+}
+
+function TimezoneCard({ loading, timezone, options, onChange }) {
+  return (
+    <View style={styles.card}>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={colors.primary[500]}
+          style={styles.loader}
+        />
+      ) : (
+        <FormSelect
+          name="timezone"
+          label={null}
+          value={timezone}
+          options={options}
+          onChange={onChange}
+          placeholder="Selecionar fuso"
+        />
+      )}
+    </View>
+  )
+}
+
 export default function SettingsScreen() {
   // States (navigation faz parte da inicialização, não é estado reativo)
   const navigation = useNavigation()
@@ -228,22 +286,10 @@ export default function SettingsScreen() {
     () => navigation.navigate(ROUTES.CHANGE_PASSWORD), [navigation])
   const handleDeleteAccount = useCallback(
     () => navigation.navigate(ROUTES.DELETE_ACCOUNT), [navigation])
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.headerBtn}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Voltar"
-        >
-          <ChevronLeft size={24} color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.title}>Configurações</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <SettingsHeader onGoBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -255,19 +301,12 @@ export default function SettingsScreen() {
           <Text style={styles.sectionLabelText}>PREFERÊNCIAS</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Densidade de informação</Text>
-
-          {profileLoading ? (
-            <ActivityIndicator size="small" color={colors.primary[500]} style={styles.loader} />
-          ) : (
-            <DensityOptions
-              currentComplexity={currentComplexity}
-              activeLabel={activeLabel}
-              onSelect={handleSelectDensity}
-            />
-          )}
-        </View>
+        <PreferencesCard
+          loading={profileLoading}
+          currentComplexity={currentComplexity}
+          activeLabel={activeLabel}
+          onSelect={handleSelectDensity}
+        />
 
         {/* ── Seção FUSO HORÁRIO ── */}
         <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
@@ -275,24 +314,12 @@ export default function SettingsScreen() {
           <Text style={styles.sectionLabelText}>FUSO HORÁRIO</Text>
         </View>
 
-        <View style={styles.card}>
-          {profileLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary[500]}
-              style={styles.loader}
-            />
-          ) : (
-            <FormSelect
-              name="timezone"
-              label={null}
-              value={currentTimezone}
-              options={TIMEZONE_OPTIONS}
-              onChange={handleSelectTimezone}
-              placeholder="Selecionar fuso"
-            />
-          )}
-        </View>
+        <TimezoneCard
+          loading={profileLoading}
+          timezone={currentTimezone}
+          options={TIMEZONE_OPTIONS}
+          onChange={handleSelectTimezone}
+        />
 
         {/* ── Seção SEGURANÇA ── */}
         <SecuritySection
