@@ -103,7 +103,7 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     }
     const purchases = purchaseHistoryMap[medicine.id] || []
     // Líquidos (022): consumo convertido p/ ml (gotas/UI ÷ units_per_ml) para
-    // bater com o estoque (em ml). calculateDailyIntake is liquid-aware no core.
+    // bater com o estoque (em ml). calculateDailyIntake é liquid-aware no core.
     const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
     const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
     const stockStatus = getStockStatus(stock.total, daysRemaining)

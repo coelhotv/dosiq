@@ -32,5 +32,13 @@
   },
   "quality_gates": {
     "index_loaded_at": "2026-06-16T14:00:00Z"
+  },
+  "code_review": {
+    "pr": 674,
+    "status": "issues_found",
+    "critical": 0,
+    "high": 0,
+    "auto_fixed": 2,
+    "ask_items": 0
   }
 }

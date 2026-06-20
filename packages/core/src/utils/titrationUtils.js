@@ -41,7 +41,7 @@ function getStageDurationDays(stage) {
  * Caminha o cronograma a partir de stage_started_at/current_stage_index somando
  * duration (days) de cada etapa — permite ao gerador de dose_instances congelar
  * `expected_dose` da etapa vigente NA DATA da ocorrência (FP-1/ADR-050), mesmo
- * para instâncias futures geradas antes do avanço formal no banco.
+ * para instâncias futuras geradas antes do avanço formal no banco.
  *
  * Puro e clock-free (instante injetado). Retorna null quando titulação não rege
  * a dose: sem schedule, sem stage_started_at, status 'alvo_atingido'/'pausado',
