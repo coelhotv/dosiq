@@ -80,6 +80,18 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ✨ Adicionado (031 — Rotação de sítio de aplicação, slice A) — web `4.10.0` · core · mobile
+- **Sítio de injeção** registrável na tomada de injetáveis (`medicine_logs.injection_site`,
+  8 sítios anatômicos PT, opcional/nullable). Detecção por `presentation === 'injetavel'`.
+- **Rotação global** cross-medicamento: "última aplicação" no formulário (mais recente por
+  `taken_at`, sem filtro de medicamento) + alerta não-bloqueante ao repetir o último local.
+- **Histórico** (web + mobile) exibe o local da dose; oculto quando ausente (oral/legado).
+- **Hint educacional** de absorção por sítio (não-SaMD; sem recomendação de sítio).
+- Core: util `injectionSites`, `logSchema.injection_site` (sync c/ CHECK), RPCs
+  `register/update_dose_atomic` com `p_injection_site`, `getLastInjectionSite`.
+- Migração `20260621_injection_site.sql` (aditiva + CHECK + índice parcial; reversível).
+- ADR-072. Pendente slice B (editar local pós-registro, quick-pick em flows sem form).
+
 ---
 
 ## App v0.19.3 (mobile) & Web v4.9.2 — 2026-06-20 — Faxina de Complexidade e Tamanho do ESLint (Waves 1-3)
