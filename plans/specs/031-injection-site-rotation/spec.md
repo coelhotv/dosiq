@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/031-injection-site-rotation`
 **Created**: 2026-06-14
-**Status**: draft (Specifying)
+**Status**: specified
 **Tier**: 2 (Epic — migração em `medicine_logs` + ADR persistência/rotação-global + cross web+mobile)
 **Input**: "031 - injection site rotation: log do local de aplicação durante tomada de injetáveis; recuperar último local; dropdown de locais pré-definidos; alerta se local = último; hint absorção lenta/rápida; detalhe de dose no histórico mostra local (+ outras necessidades)"
 
@@ -158,6 +158,92 @@ local depois, já que não houve form na hora.
 - **SC-004**: Detalhe de dose no histórico (web+mobile) mostra o local registrado.
 - **SC-005**: Doses legadas (sem local) e orais aparecem sem campo de local (sem regressão).
 - **SC-006**: Enum core ↔ CHECK SQL sincronizados (teste de paridade).
+- **SC-007**: 100% das ACs têm PO fechada (`status [x]`) até o fim do C-mode.
+
+## Proof Obligations
+
+> Guard = **full** (Tier 2): suíte relevante verde + migração reversível + sem regressão em
+> FIFO de estoque / cálculo de adesão. POs nomeiam o CHECK (o *quê*), não a implementação.
+
+```po PO-1
+ac:     Form de tomada de injetável mostra campo de local; oral/tópico não mostra (US1/SC-001)
+proof:  rtk npm run test:critical -- injectionSite
+expect: teste "mostra campo só para injetável" passa; oral/tópico → campo ausente
+guard:  suíte de LogForm/registro de dose verde (sem regressão nos fluxos não-injetáveis)
+status: [ ] open
+```
+
+```po PO-2
+ac:     Após registrar local em qualquer injetável, próxima tomada de OUTRO injetável mostra "última: <local>" (global cross-medicamento) (US2/SC-002)
+proof:  rtk npm run test:critical -- injectionSite.lastSiteGlobal
+expect: query "último local" retorna o mais recente SEM filtro de medicine_id/protocol_id
+guard:  query não filtra por medicamento; suíte verde
+status: [ ] open
+```
+
+```po PO-2a
+ac:     Log retroativo (taken_at antigo) NÃO altera "último local" se já houver aplicação mais recente (US2/SC-002a)
+proof:  rtk npm run test:critical -- injectionSite.retroactiveOrdering
+expect: ORDER BY taken_at DESC (COALESCE taken_at,created_at); inserir taken_at antigo mantém o último
+guard:  ordenação por taken_at, nunca created_at; suíte verde
+status: [ ] open
+```
+
+```po PO-3
+ac:     Selecionar local = último global dispara alerta NÃO-bloqueante; dose ainda confirma (US3/SC-003)
+proof:  MANUAL — selecionar mesmo local da última no form e confirmar dose
+expect: alerta visível ("mesmo local — considere rotacionar") + confirmar permanece habilitado; dose persiste
+guard:  confirmação de dose nunca bloqueada pelo local em nenhum fluxo
+status: [ ] open
+```
+
+```po PO-4
+ac:     Cada local exibe hint informativo de absorção, texto educacional sem prescrição (US4/FR-006, não-SaMD)
+proof:  MANUAL — abrir seletor de sítio e inspecionar hint
+expect: hint educacional (ex.: abdômen "rápida", coxa "lenta") sem verbo prescritivo/recomendação clínica
+guard:  copy revisada anti-SaMD (herda T026/ADR-062); sem claim terapêutico
+status: [ ] open
+```
+
+```po PO-5
+ac:     Detalhe de dose no histórico (web + mobile) mostra o local quando presente (US5/SC-004)
+proof:  MANUAL — abrir detalhe de dose injetável com local em web e mobile
+expect: local de aplicação exibido no detalhe (ambas plataformas)
+guard:  timelineService/HistoryDayPanel + mobile sem regressão de render
+status: [ ] open
+```
+
+```po PO-6
+ac:     Doses legadas (sem local) e orais aparecem sem campo de local — sem placeholder vazio, sem regressão (US5/SC-005)
+proof:  MANUAL — abrir detalhe de dose oral e de dose legada NULL
+expect: campo de local simplesmente ausente (não "—" nem vazio)
+guard:  histórico de doses NULL/orais renderiza idêntico ao baseline
+status: [ ] open
+```
+
+```po PO-7
+ac:     Enum core injectionSites ↔ CHECK constraint SQL sincronizados (FR-008/SC-006, R-271/R-082)
+proof:  rtk npm run test:critical -- injectionSite.schemaSqlParity
+expect: teste de paridade compara valores do enum core com o CHECK; falha se divergir
+guard:  schema .nullable().optional(); safeParse; paridade verde
+status: [ ] open
+```
+
+```po PO-8
+ac:     Detalhe de dose injetável permite editar/adicionar local pós-registro; taken_at inalterado (US6/FR-011)
+proof:  rtk npm run test:critical -- injectionSite.editPostLog
+expect: editar local persiste em medicine_logs e passa a valer p/ rotação global; taken_at não muda
+guard:  edição não altera taken_at; rotação reflete novo valor
+status: [ ] open
+```
+
+```po PO-9
+ac:     Migração é aditiva (coluna nullable + CHECK), sem afetar logs existentes, FIFO de estoque nem adesão (FR-009)
+proof:  rtk npm run validate:agent
+expect: migração aplica sem backfill obrigatório; suíte crítica (estoque + adesão) verde
+guard:  migração reversível (DROP COLUMN); FIFO e computeAdherenceFromInstances inalterados
+status: [ ] open
+```
 
 ## Edge Cases
 
@@ -226,3 +312,66 @@ por-item ou fica NULL.
   no Planning.
 - ADR a registrar no Planning: "sítio de injeção como coluna em `medicine_logs` + rotação
   global por query" (documenta a escolha vs. tabela dedicada / biomarkers_log).
+
+---
+
+## Ceremony: eng-review (RC3 — 2026-06-21)
+
+Revisão fundamentada no repo real (não na narrativa da spec). Posture: **HOLD SCOPE** com
+1 recomendação de slice. Blast radius alto (`medicine_logs` alimenta adesão, FIFO, timeline,
+reminders) → guard **full** mantido (piso Tier 2; sem override-down).
+
+### F1 — CRÍTICO: escrita NÃO é INSERT direto, é RPC atômica (landmine AP-214)
+Evidência: [doseLogService.js:43-54](packages/core/src/services/doseLogService.js#L43-L54) —
+o registro de dose vai por `client.rpc('register_dose_atomic', {...})` (migração
+`20260619_atomic_dose_logging.sql`, ADR-071/CON-026). Update/delete idem
+(`update_dose_log_atomic`/`delete_dose_log_atomic`). **Adicionar só a coluna + o Zod NÃO grava
+`injection_site`** — a RPC tem lista fixa de `p_*` params e ignora campos extras (silent drop).
+**Plano DEVE incluir como Target Files (write-path completo):**
+1. `register_dose_atomic` SQL — novo param `p_injection_site` + coluna no INSERT
+2. `update_dose_log_atomic` SQL — novo param p/ FR-011 (editar sítio sem tocar `taken_at`)
+3. `callRegisterAtomic`/`callUpdate*` em doseLogService.js — passar o novo param
+4. `logSchema.js` (validateLogCreate/Update no core) — campo no schema (AP-214: `safeParse` corta desconhecido)
+
+### F2 — ALTO: read-path (selects) precisa do campo (AP-215)
+Há ~12 `from('medicine_logs')` em [logService.js](apps/web/src/shared/services/api/logService.js)
++ mobile (dashboard/notifications) + [createProfileRepository.js:133](packages/core/src/repositories/createProfileRepository.js#L133)
++ [doseActions.js](server/bot/callbacks/doseActions.js) (Telegram). Os selects que alimentam
+**detalhe de dose / timeline** (US5) e a **query "último global"** (US2) precisam incluir
+`injection_site` explicitamente. Plano DEVE enumerar QUAIS selects (não "todos") — só os do
+read-path de histórico e da rotação. Telegram/dashboard selects que não exibem sítio: deixar.
+
+### F3 — MÉDIO: índice parcial vs ORDER BY COALESCE
+Spec pede índice `(user_id, taken_at) WHERE injection_site IS NOT NULL` mas ordena por
+`COALESCE(taken_at, created_at)`. Planner pode NÃO usar o índice se a expressão de ordenação
+≠ coluna indexada. Mitigar: ou (a) índice na expressão `COALESCE(...)`, ou (b) garantir
+`taken_at` NOT NULL no write-path novo e ordenar direto por `taken_at` (COALESCE só p/ legado).
+Decidir no Planning.
+
+### F4 — MÉDIO: precedente do util compartilhado é `doseZones`, não R-231
+FR-002 cita R-231, mas R-231 = factory de **repositories** CRUD. `injectionSites` é util puro
+(lista+labels), cujo precedente real é [doseZones.js](packages/core/src/utils/doseZones.js) em
+`core/src/utils/`. Corrigir a citação no plan.md (colocar ao lado de doseZones, mesmo padrão de
+import web↔mobile). Confirma a separação que a spec já faz (sítio corporal ≠ zona de horário).
+
+### F5 — MÉDIO: CHECK é apropriado aqui (contraponto a ADR-070)
+ADR-070 removeu CHECK de `biomarkers_log.context` (domínio extensível → Zod autoridade). Sítios
+são **finitos e estáveis** (8 anatômicos) e o único writer é a RPC sob RLS → CHECK = defense-in-
+depth barato e correto (alinha R-271). Trade-off explícito: granularidade futura (sub-quadrante)
+custará 1 migração — aceitável, já registrado na spec ("sem sub-quadrante na v1"). Sem ação,
+só documentar a escolha no ADR do Planning.
+
+### F6 — Recomendação de SLICE (scope decision)
+Épico cruza db→core→web→mobile. Fatiar por entrega atômica (guia Tier 2):
+- **031-A** (wedge): migração + RPC params + core util + Zod + captura inline (US1) +
+  "último global" (US2) + alerta (US3) + exibição no histórico (US5). É o valor núcleo.
+- **031-B**: editar sítio pós-log (US6/FR-011 → `update_dose_log_atomic`) + hint de absorção
+  (US4) + quick-pick pós-1-click nos flows sem form (estratégia (b)).
+A migração e o write-path completo (F1) DEVEM estar em A — não dá pra fatiar a RPC depois sem
+re-migrar. POs PO-8 (edit) e PO-4 (hint) movem p/ slice B.
+
+### Guard calibration (RC3)
+Mantido **full** (Tier 2 floor). Confirmar que PO-9 guard exercita regressão de **FIFO de
+estoque** E **computeAdherenceFromInstances** (adesão vem de `dose_instances`, não de logs —
+ADR-054; coluna aditiva não deve tocar nenhum, mas a RPC alterada SIM passa perto → guard
+obrigatório). Sem override de guards para baixo.
