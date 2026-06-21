@@ -5,7 +5,7 @@
 
 import { PencilLine, Trash2, Check, X, Clock } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
-import { isLiquidMedicine, formatDose, formatConcentration } from '@dosiq/core'
+import { isLiquidMedicine, formatDose, formatConcentration, getInjectionSiteLabel } from '@dosiq/core'
 
 /** Metadados visuais por status (ícone + label + classe). Idoso-friendly: ícone + texto (R-137/R-138). */
 const STATUS_META = {
@@ -91,6 +91,9 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
     return `${qty} ${unit}`
   })()
 
+  // Local de aplicação (031/US5) — só exibe quando presente (oral/legado = NULL = oculto).
+  const injectionSiteLabel = getInjectionSiteLabel(p.injectionSite)
+
   const log = eventToLog(event)
   const canEdit = !!log
 
@@ -102,6 +105,9 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
           {dosageLabel && <span className="hlc-card__dosage-pill">{dosageLabel}</span>}
         </div>
         {quantityLabel && <span className="hlc-card__quantity">{quantityLabel}</span>}
+        {injectionSiteLabel && (
+          <span className="hlc-card__injection-site">📍 {injectionSiteLabel}</span>
+        )}
         <span className="hlc-card__status" data-status={status} title={meta.label} aria-label={meta.label}>
           <Icon size={14} aria-hidden="true" />
           <span className="hlc-card__status-label">{meta.label}</span>

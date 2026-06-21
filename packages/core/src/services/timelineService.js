@@ -81,6 +81,7 @@ function instanceToEvent(inst, logById, enrich) {
       medicineId: linkedLog?.medicine_id ?? null,
       quantityTaken: linkedLog?.quantity_taken ?? null,
       notes: linkedLog?.notes ?? null,
+      injectionSite: linkedLog?.injection_site ?? null,
       ...enrich(inst.protocol_id),
     },
   }
@@ -100,6 +101,7 @@ function logToEvent(log, enrich) {
       medicineId: log.medicine_id ?? null,
       quantityTaken: log.quantity_taken ?? null,
       notes: log.notes ?? null,
+      injectionSite: log.injection_site ?? null,
       ...enrich(log.protocol_id),
     },
   }
@@ -203,7 +205,9 @@ async function fetchLogsWindow(client, userId, fromIso, toIso) {
   for (;;) {
     let q = client
       .from(LOGS_TABLE)
-      .select('id, protocol_id, medicine_id, taken_at, quantity_taken, notes, dose_instance_id')
+      .select(
+        'id, protocol_id, medicine_id, taken_at, quantity_taken, notes, dose_instance_id, injection_site'
+      )
       .eq('user_id', userId)
       .gte('taken_at', fromIso)
       .lte('taken_at', toIso)
