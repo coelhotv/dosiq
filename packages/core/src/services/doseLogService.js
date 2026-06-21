@@ -47,6 +47,8 @@ async function callRegisterAtomic(client, userId, d, anchorId, strict) {
     p_notes: d.notes ?? null,
     p_dose_instance_id: anchorId,
     p_strict_anchor: strict,
+    // Sítio de injeção (031, ADR-072) — NULL p/ oral/legado/flows sem form.
+    p_injection_site: d.injection_site ?? null,
   })
   if (error) throw error
   return data
@@ -118,9 +120,12 @@ async function updateOrphanLog({ client, getUserId }, logId, updates) {
     p_taken_at: u.taken_at ?? null,
     p_quantity_taken: u.quantity_taken ?? null,
     p_notes: u.notes ?? null,
+    // Sítio de injeção (031/FR-011) — editar local pós-registro sem tocar taken_at.
+    p_injection_site: u.injection_site ?? null,
     // Flags de presença: distinguem "não enviado" de "enviado como NULL" (limpar campo).
     p_has_protocol: has('protocol_id'),
     p_has_notes: has('notes'),
+    p_has_injection_site: has('injection_site'),
   })
   if (error) throw error
   return data
@@ -190,6 +195,28 @@ async function registerDoseMany(deps, logsData) {
 }
 
 /**
+ * Recupera o último sítio de injeção aplicado pelo usuário — GLOBAL no corpo
+ * (cross-medicamento, SEM filtro de medicine_id/protocol_id), o mais recente por
+ * `taken_at` (031/US2, ADR-072). Tolerante a log retroativo: a ordenação é avaliada
+ * sobre o valor da coluna, então um log com `taken_at` antigo não vira "o último".
+ *
+ * @returns {Promise<string|null>} value do sítio (ex.: 'coxa_d') ou null quando não há.
+ */
+async function getLastInjectionSite({ client, getUserId }) {
+  const userId = await getUserId()
+  const { data, error } = await client
+    .from('medicine_logs')
+    .select('injection_site')
+    .eq('user_id', userId)
+    .not('injection_site', 'is', null)
+    .order('taken_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data?.injection_site ?? null
+}
+
+/**
  * Factory do serviço de registro e controle de doses.
  *
  * @param {Object} deps
@@ -211,5 +238,6 @@ export function createDoseLogService({ client, getUserId }) {
     updateOrphanLog: (logId, updates) => updateOrphanLog(deps, logId, updates),
     deleteOrphanLog: (logId) => deleteOrphanLog(deps, logId),
     registerDoseMany: (logsData) => registerDoseMany(deps, logsData),
+    getLastInjectionSite: () => getLastInjectionSite(deps),
   }
 }
