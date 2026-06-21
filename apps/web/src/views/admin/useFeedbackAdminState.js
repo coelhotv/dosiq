@@ -4,6 +4,20 @@
 import { useState, useEffect, useCallback, startTransition } from 'react'
 import feedbackAdminService from '@services/api/feedbackAdminService'
 
+function _calculateFallbackStats(result) {
+  const data = result.data || []
+  const totalCount = result.total || 0
+  const pendingCount = data.filter(f => !f.is_resolved).length
+  const ratedItems = data.filter(f => typeof f.rating === 'number' && f.rating > 0)
+  const sum = ratedItems.reduce((acc, curr) => acc + curr.rating, 0)
+  const divisor = ratedItems.length
+  return {
+    avgRating: divisor > 0 ? parseFloat((sum / divisor).toFixed(1)) : 0,
+    pendingCount,
+    totalCount
+  }
+}
+
 export function useFeedbackAdminState() {
   const [feedbacks, setFeedbacks] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -52,17 +66,7 @@ export function useFeedbackAdminState() {
       if (result.stats) {
         setStats(result.stats)
       } else if (page === 1 && isResolvedFilter === '' && ratingFilter === '') {
-        const data = result.data || []
-        const totalCount = result.total || 0
-        const pendingCount = data.filter(f => !f.is_resolved).length
-        const ratedItems = data.filter(f => typeof f.rating === 'number' && f.rating > 0)
-        const sum = ratedItems.reduce((acc, curr) => acc + curr.rating, 0)
-        const divisor = ratedItems.length
-        setStats({
-          avgRating: divisor > 0 ? parseFloat((sum / divisor).toFixed(1)) : 0,
-          pendingCount,
-          totalCount
-        })
+        setStats(_calculateFallbackStats(result))
       }
     } catch (err) {
       console.error('[FeedbackAdmin] Erro ao carregar feedbacks:', err)

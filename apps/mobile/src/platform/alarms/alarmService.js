@@ -178,6 +178,54 @@ export async function ensureAlarmCriticalChannel() {
   criticalChannelEnsured = true
 }
 
+function _getSingleDoseDesc(name, dosagePerPill, dosageUnit, quantity) {
+  const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
+  const intakeInfo = ` • ${quantity ?? '1'} un.`
+  return `${name}${dosageInfo}${intakeInfo}`
+}
+
+function _getGroupedAlarmCopy(doses, time) {
+  if (doses.length === 0) {
+    return {
+      title: '💊 Hora da dose',
+      body: 'Está na hora do seu remédio.',
+    }
+  }
+
+  if (doses.length === 1) {
+    const d = doses[0]
+    const desc = _getSingleDoseDesc(d.medicineName, d.dosagePerPill, d.dosageUnit, d.dosagePerIntake)
+    return {
+      title: '💊 Remédio essencial',
+      body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
+    }
+  }
+
+  const firstPlan = doses[0].treatmentPlanName
+  const samePlan = firstPlan && doses.every((d) => d.treatmentPlanName === firstPlan)
+
+  if (samePlan) {
+    return {
+      title: '📂 Plano essencial',
+      body: `Hora dos remédios do plano ${firstPlan}${time ? ` — ${time}` : ''}.`,
+    }
+  }
+
+  return {
+    title: '📋 Doses essenciais',
+    body: `Doses pendentes para as ${time || ''}.`,
+  }
+}
+
+function _getSingleAlarmCopy(medicineName, data, time) {
+  const name = medicineName || data?.medicineName || 'sua dose'
+  const desc = _getSingleDoseDesc(name, data?.dosagePerPill, data?.dosageUnit, data?.quantityTaken)
+  return {
+    title: '💊 Remédio essencial',
+    body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
+  }
+}
+
 // Monta o copy clínico customizado e acolhedor dos alarmes
 function getAlarmCopy({ medicineName, data }) {
   const time = data?.scheduledTime
@@ -191,54 +239,10 @@ function getAlarmCopy({ medicineName, data }) {
       // fallback
     }
 
-    if (doses.length === 0) {
-      return {
-        title: '💊 Hora da dose',
-        body: 'Está na hora do seu remédio.',
-      }
-    }
-
-    if (doses.length === 1) {
-      const d = doses[0]
-      const dosageInfo = d.dosagePerPill && d.dosageUnit ? ` (${d.dosagePerPill}${d.dosageUnit})` : ''
-      const intakeInfo = ` • ${d.dosagePerIntake ?? 1} un.`
-      const desc = `${d.medicineName}${dosageInfo}${intakeInfo}`
-      return {
-        title: '💊 Remédio essencial',
-        body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
-      }
-    }
-
-    // Verifica se todos pertencem ao mesmo plano de tratamento
-    const firstPlan = doses[0].treatmentPlanName
-    const samePlan = firstPlan && doses.every((d) => d.treatmentPlanName === firstPlan)
-
-    if (samePlan) {
-      return {
-        title: '📂 Plano essencial',
-        body: `Hora dos remédios do plano ${firstPlan}${time ? ` — ${time}` : ''}.`,
-      }
-    } else {
-      return {
-        title: '📋 Doses essenciais',
-        body: `Doses pendentes para as ${time || ''}.`,
-      }
-    }
-  } else {
-    // Dose única essencial
-    const name = medicineName || data?.medicineName || 'sua dose'
-    const dosagePerPill = data?.dosagePerPill
-    const dosageUnit = data?.dosageUnit
-    const quantity = data?.quantityTaken || '1'
-
-    const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
-    const intakeInfo = ` • ${quantity} un.`
-    const desc = `${name}${dosageInfo}${intakeInfo}`
-    return {
-      title: '💊 Remédio essencial',
-      body: `Hora de tomar ${desc}${time ? ` — ${time}` : ''}.`,
-    }
+    return _getGroupedAlarmCopy(doses, time)
   }
+
+  return _getSingleAlarmCopy(medicineName, data, time)
 }
 
 // Monta o objeto de notificação compartilhado por agendamento e nag.

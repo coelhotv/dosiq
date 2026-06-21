@@ -24,6 +24,116 @@ import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, st
  *   onPress?: () => void            // tap leva pra editar compra
  * }} props
  */
+// Helpers de derivação para simplificar a complexidade de PurchaseCard
+function getRemainingText(remaining, isLiquid) {
+  return isLiquid
+    ? `${formatNumberPtBR(remaining)} ml`
+    : `${remaining}`
+}
+
+function getBoughtText(purchase, medicine, isLiquid) {
+  const containerLabel = isLiquid ? INJECTION_CONTAINER_SINGULAR[purchase.injection_container] : null
+  if (containerLabel) {
+    return `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) comprados`
+  }
+  return `${formatStockCount(purchase.quantity_bought, medicine)} ${isLiquid ? 'comprados' : 'compradas'}`
+}
+
+function getExpiryStatusColor(expiryDays) {
+  if (expiryDays === null) return colors.neutral[400]
+  if (expiryDays < 30) return colors.status.error
+  if (expiryDays < 90) return colors.status.warning
+  return colors.text.secondary
+}
+
+function getExpiryLabel(expirationDate, expiryDays) {
+  if (!expirationDate) return null
+  if (expiryDays === null || expiryDays < 0) return 'Vencido'
+  if (expiryDays <= 60) return `Vence em ${expiryDays} ${expiryDays === 1 ? 'dia' : 'dias'}`
+  return `Vence em ${formatDateShortPtBR(expirationDate)}`
+}
+
+function getTtlInfo(remaining, stockEntry, medicine) {
+  const showTtlAlert = remaining > 0 && stockEntry !== null
+  if (!showTtlAlert) {
+    return { showTtlBadge: false, ttlLabel: null, ttlExpired: false }
+  }
+
+  const ttlExpired = isBiologicallyExpired(stockEntry, medicine)
+  const ttlDaysLeft = biologicalExpiryDaysLeft(stockEntry, medicine)
+  const showTtlBadge = ttlExpired || (ttlDaysLeft !== null && ttlDaysLeft >= 0 && ttlDaysLeft <= 3)
+
+  let ttlLabel = null
+  if (ttlExpired) {
+    ttlLabel = 'Vencido (validade após aberto)'
+  } else if (ttlDaysLeft === 0) {
+    ttlLabel = 'Vence hoje (validade após aberto)'
+  } else if (ttlDaysLeft === 1) {
+    ttlLabel = 'Vence amanhã (validade após aberto)'
+  } else if (ttlDaysLeft !== null) {
+    ttlLabel = `Vence em ${ttlDaysLeft} dias (validade após aberto)`
+  }
+
+  return { showTtlBadge, ttlLabel, ttlExpired }
+}
+
+function PurchaseCardHeader({ purchaseDateFormatted, isLatest }) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <Text style={styles.purchaseDate}>{purchaseDateFormatted}</Text>
+        {isLatest && (
+          <View style={styles.badgeLatest}>
+            <Text style={styles.badgeLatestText}>ÚLTIMA</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  )
+}
+
+function PurchaseCardQuantity({ boughtText, isInUse, remainingText }) {
+  return (
+    <View style={styles.quantityRow}>
+      <Text style={styles.quantityText}>{boughtText}</Text>
+      <Text style={styles.quantityDot}> · </Text>
+      <Text style={[styles.quantityText, { color: isInUse ? colors.status.success : colors.text.muted }]}>
+        {remainingText} restantes
+      </Text>
+    </View>
+  )
+}
+
+function PurchaseCardCost({ isFree, unitLabel, totalCost, unitPrice }) {
+  return (
+    <View style={styles.costRow}>
+      <Text style={styles.costLabel}>Custo: </Text>
+      {isFree ? (
+        <Text style={styles.costValue}>Grátis</Text>
+      ) : (
+        <>
+          <Text style={styles.costValue}>
+            {formatBRL(unitPrice)} por {unitLabel}
+          </Text>
+          <Text style={styles.costDot}> · </Text>
+          <Text style={styles.costValue}>Total {formatBRL(totalCost)}</Text>
+        </>
+      )}
+    </View>
+  )
+}
+
+function PurchaseCardBottomInfo({ pharmacy, laboratory }) {
+  if (!pharmacy && !laboratory) return null
+  return (
+    <View style={styles.bottomInfo}>
+      {pharmacy && <Text style={styles.bottomInfoText}>{pharmacy}</Text>}
+      {pharmacy && laboratory && <Text style={styles.bottomInfoDot}> · </Text>}
+      {laboratory && <Text style={styles.bottomInfoText}>{laboratory}</Text>}
+    </View>
+  )
+}
+
 export default function PurchaseCard({ purchase, remaining = 0, isLatest = false, onPress, medicine = null, stockEntry = null }) {
   // States (R-010 — ordem critica antes de derivações)
   // Nenhum hook complexo — apenas useMemo se houver heavy computation
@@ -32,54 +142,26 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
   // Líquidos (022): quantidades em ml, custo por ml.
   const isLiquid = isLiquidMedicine(medicine)
   const unitLabel = stockUnitLabel(medicine)
-  const remainingText = isLiquid
-    ? `${formatNumberPtBR(remaining)} ml`
-    : `${remaining}`
+  const remainingText = getRemainingText(remaining, isLiquid)
+  
   // 012 B4 (ADR-068): contextualiza o lote injetável com a apresentação (caneta/refil/…)
   // — "0,5 ml (caneta) comprados". 'ml' é masculino → "comprados"; unidades → "compradas".
-  const containerLabel = isLiquid ? INJECTION_CONTAINER_SINGULAR[purchase.injection_container] : null
-  const boughtText = containerLabel
-    ? `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) comprados`
-    : `${formatStockCount(purchase.quantity_bought, medicine)} ${isLiquid ? 'comprados' : 'compradas'}`
+  const boughtText = getBoughtText(purchase, medicine, isLiquid)
   const isInUse = remaining > 0
   const expiryDays = purchase.expiration_date ? computeExpiryDays(purchase.expiration_date) : null
   const purchaseDateFormatted = formatDateShortPtBR(purchase.purchase_date)
   const totalCost = purchase.unit_price * purchase.quantity_bought
   // Grátis: medicamentos distribuídos pelo SUS / Farmácia Popular (preço zero/nulo)
   const isFree = !(purchase.unit_price > 0)
-  const expiryStatusColor = expiryDays === null
-    ? colors.neutral[400] // sem data
-    : expiryDays < 30
-    ? colors.status.error    // <30 dias — vermelho
-    : expiryDays < 90
-    ? colors.status.warning  // <90 dias — amarelo
-    : colors.text.secondary  // >=90 dias — neutro
+  const expiryStatusColor = getExpiryStatusColor(expiryDays)
 
   // Contagem de dias só ajuda para validade próxima (<=60d). Para datas longas,
   // "vence em 680 dias" não é projetável — mostra a data formatada.
-  const expiryLabel = !purchase.expiration_date
-    ? null
-    : expiryDays === null || expiryDays < 0
-    ? 'Vencido'
-    : expiryDays <= 60
-    ? `Vence em ${expiryDays} ${expiryDays === 1 ? 'dia' : 'dias'}`
-    : `Vence em ${formatDateShortPtBR(purchase.expiration_date)}`
+  const expiryLabel = getExpiryLabel(purchase.expiration_date, expiryDays)
 
   // Eixo de validade biológica TTL pós-abertura (012 Fase A) — paralelo ao volume.
   // Ativo somente com stockEntry.opened_at + medicine.shelf_life_days presentes.
-  const showTtlAlert = remaining > 0 && stockEntry !== null
-  const ttlExpired = showTtlAlert ? isBiologicallyExpired(stockEntry, medicine) : false
-  const ttlDaysLeft = showTtlAlert ? biologicalExpiryDaysLeft(stockEntry, medicine) : null
-  const showTtlBadge = ttlExpired || (ttlDaysLeft !== null && ttlDaysLeft >= 0 && ttlDaysLeft <= 3)
-  const ttlLabel = ttlExpired
-    ? 'Vencido (validade após aberto)'
-    : ttlDaysLeft === 0
-    ? 'Vence hoje (validade após aberto)'
-    : ttlDaysLeft === 1
-    ? 'Vence amanhã (validade após aberto)'
-    : ttlDaysLeft !== null
-    ? `Vence em ${ttlDaysLeft} dias (validade após aberto)`
-    : null
+  const { showTtlBadge, ttlLabel, ttlExpired } = getTtlInfo(remaining, stockEntry, medicine)
 
   const card = (
     <View
@@ -88,59 +170,10 @@ export default function PurchaseCard({ purchase, remaining = 0, isLatest = false
         isLatest && styles.cardLatest,
       ]}
     >
-      {/* Header: data + badge de status */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.purchaseDate}>{purchaseDateFormatted}</Text>
-          {isLatest && (
-            <View style={styles.badgeLatest}>
-              <Text style={styles.badgeLatestText}>ÚLTIMA</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Quantidades: "30 un. compradas · 16 restantes" */}
-      <View style={styles.quantityRow}>
-        <Text style={styles.quantityText}>
-          {boughtText}
-        </Text>
-        <Text style={styles.quantityDot}> · </Text>
-        <Text style={[styles.quantityText, { color: isInUse ? colors.status.success : colors.text.muted }]}>
-          {remainingText} restantes
-        </Text>
-      </View>
-
-      {/* Custo: "R$ 0,89 por un. · Total R$ 26,70" — ou "Grátis" (SUS/Farmácia Popular) */}
-      <View style={styles.costRow}>
-        <Text style={styles.costLabel}>Custo: </Text>
-        {isFree ? (
-          <Text style={styles.costValue}>Grátis</Text>
-        ) : (
-          <>
-            <Text style={styles.costValue}>
-              {formatBRL(purchase.unit_price)} por {unitLabel}
-            </Text>
-            <Text style={styles.costDot}> · </Text>
-            <Text style={styles.costValue}>Total {formatBRL(totalCost)}</Text>
-          </>
-        )}
-      </View>
-
-      {/* Farmácia + Laboratório (se presentes) */}
-      {(purchase.pharmacy || purchase.laboratory) && (
-        <View style={styles.bottomInfo}>
-          {purchase.pharmacy && (
-            <Text style={styles.bottomInfoText}>{purchase.pharmacy}</Text>
-          )}
-          {purchase.pharmacy && purchase.laboratory && (
-            <Text style={styles.bottomInfoDot}> · </Text>
-          )}
-          {purchase.laboratory && (
-            <Text style={styles.bottomInfoText}>{purchase.laboratory}</Text>
-          )}
-        </View>
-      )}
+      <PurchaseCardHeader purchaseDateFormatted={purchaseDateFormatted} isLatest={isLatest} />
+      <PurchaseCardQuantity boughtText={boughtText} isInUse={isInUse} remainingText={remainingText} />
+      <PurchaseCardCost isFree={isFree} unitLabel={unitLabel} totalCost={totalCost} unitPrice={purchase.unit_price} />
+      <PurchaseCardBottomInfo pharmacy={purchase.pharmacy} laboratory={purchase.laboratory} />
 
       {/* Validade (se expiration_date) */}
       {expiryLabel && (

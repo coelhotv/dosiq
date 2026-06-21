@@ -20,47 +20,14 @@ import LaboratoryAutocomplete from '@features/medications/components/LaboratoryA
 // Ordem dos campos espelha o form mobile (012 Fase B3): Dosagem (prioritária) no
 // topo, depois Classificação (tipo, apresentação, validade, classe, categoria,
 // laboratório). Tipo e Classe Terapêutica migraram da seção Identificação p/ cá.
-export default function MedicineFormDosageInfo({
+function DosageSection({
+  liquid,
   formData,
   errors,
   isSubmitting,
   shakeFields,
-  saveSuccess,
-  setFormData,
-  setSaveSuccess,
   handleChange,
-  handleLaboratorySelect,
-  medicine,
 }) {
-  const liquid = isLiquidUnit(formData.dosage_unit)
-  // Apresentação efetiva: unidade /ml exige apresentação líquida, mas NÃO pode engolir
-  // 'injetavel' (GLP-1/insulina são líquidos injetáveis → TTL/container). Se o usuário
-  // já escolheu uma apresentação líquido-compatível, preserva; senão default 'liquido'.
-  const effectivePresentation = liquid
-    ? (LIQUID_PRESENTATIONS.includes(formData.presentation) ? formData.presentation : 'liquido')
-    : (formData.presentation || 'comprimido')
-  // Opções do select: /ml restringe a líquido-compatíveis (sólido não faz sentido);
-  // caso contrário, todas. Restringir (não travar) deixa escolher líquido ↔ injetável.
-  const presentationOptions = liquid
-    ? PRESENTATIONS.filter((p) => LIQUID_PRESENTATIONS.includes(p))
-    : PRESENTATIONS
-
-  // Prefill/limpeza no próprio onChange (espelha handlePresentationChange do mobile;
-  // review Gemini #658): injetavel → prefill 28 se vazio; outra apresentação → limpa
-  // shelf_life_days (campo oculto não pode persistir valor obsoleto no banco).
-  const handlePresentationChange = (e) => {
-    const presentation = e.target.value
-    setFormData((prev) => ({
-      ...prev,
-      presentation,
-      shelf_life_days:
-        presentation === 'injetavel'
-          ? (prev.shelf_life_days === '' || prev.shelf_life_days == null ? 28 : prev.shelf_life_days)
-          : '',
-    }))
-    if (saveSuccess) setSaveSuccess(false)
-  }
-
   return (
     <>
       {/* ──────────────── Dosagem (prioritária) ──────────────── */}
@@ -172,80 +139,13 @@ export default function MedicineFormDosageInfo({
           </div>
         )}
       </div>
+    </>
+  )
+}
 
-      {/* ──────────────── Classificação ──────────────── */}
-      <h4 className="medicine-form__section-title">Classificação</h4>
-
-      <div className="form-group">
-        <label htmlFor="type">Tipo</label>
-        <select
-          id="type"
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          disabled={isSubmitting}
-        >
-          {MEDICINE_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type === 'medicamento' ? 'Medicamento' : 'Suplemento'}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* ── Apresentação farmacêutica (012 Fase A) ── */}
-      <div className="form-group">
-        <label htmlFor="presentation">Apresentação</label>
-        <select
-          id="presentation"
-          name="presentation"
-          value={effectivePresentation}
-          onChange={handlePresentationChange}
-          disabled={isSubmitting}
-          aria-describedby="presentation-hint"
-        >
-          {presentationOptions.map((p) => (
-            <option key={p} value={p}>
-              {PRESENTATION_LABELS[p] || p}
-            </option>
-          ))}
-        </select>
-        <small id="presentation-hint" className="field-hint">
-          {liquid
-            ? 'Escolha Líquido ou Injetável (injetável possui validade após aberto).'
-            : 'Forma de apresentação do seu medicamento (comprimido, injeção, pomada etc.).'}
-        </small>
-      </div>
-
-      {/* ── Validade após aberto — apenas para injetavel (012 Fase A) ── */}
-      {effectivePresentation === 'injetavel' && (
-        <div className="form-group">
-          <label htmlFor="shelf_life_days">Validade após aberto (dias)</label>
-          <input
-            type="number"
-            id="shelf_life_days"
-            name="shelf_life_days"
-            value={formData.shelf_life_days ?? ''}
-            onChange={handleChange}
-            className={errors.shelf_life_days ? 'error' : ''}
-            placeholder="28"
-            min="1"
-            step="1"
-            disabled={isSubmitting}
-            aria-describedby="shelf_life_days-hint"
-            aria-invalid={Boolean(errors.shelf_life_days)}
-          />
-          <small id="shelf_life_days-hint" className="field-hint">
-            Dias de uso após abrir o frasco/caneta — confira a bula.
-          </small>
-          {errors.shelf_life_days && (
-            <span id="shelf_life_days-error" className="error-message">
-              {errors.shelf_life_days}
-            </span>
-          )}
-        </div>
-      )}
-
+function AnvisaFields({ formData, handleChange, isSubmitting, medicine }) {
+  return (
+    <>
       <div className="form-group">
         <label htmlFor="therapeutic_class">
           Classe Terapêutica
@@ -295,6 +195,105 @@ export default function MedicineFormDosageInfo({
           Preenchido via busca na base da ANVISA.
         </small>
       </div>
+    </>
+  )
+}
+
+function ClassificationSection({
+  formData,
+  handleChange,
+  isSubmitting,
+  effectivePresentation,
+  handlePresentationChange,
+  presentationOptions,
+  errors,
+  medicine,
+  setFormData,
+  saveSuccess,
+  setSaveSuccess,
+  handleLaboratorySelect,
+}) {
+  return (
+    <>
+      {/* ──────────────── Classificação ──────────────── */}
+      <h4 className="medicine-form__section-title">Classificação</h4>
+
+      <div className="form-group">
+        <label htmlFor="type">Tipo</label>
+        <select
+          id="type"
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          disabled={isSubmitting}
+        >
+          {MEDICINE_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type === 'medicamento' ? 'Medicamento' : 'Suplemento'}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* ── Apresentação farmacêutica (012 Fase A) ── */}
+      <div className="form-group">
+        <label htmlFor="presentation">Apresentação</label>
+        <select
+          id="presentation"
+          name="presentation"
+          value={effectivePresentation}
+          onChange={handlePresentationChange}
+          disabled={isSubmitting}
+          aria-describedby="presentation-hint"
+        >
+          {presentationOptions.map((p) => (
+            <option key={p} value={p}>
+              {PRESENTATION_LABELS[p] || p}
+            </option>
+          ))}
+        </select>
+        <small id="presentation-hint" className="field-hint">
+          {isLiquidUnit(formData.dosage_unit)
+            ? 'Escolha Líquido ou Injetável (injetável possui validade após aberto).'
+            : 'Forma de apresentação do seu medicamento (comprimido, injeção, pomada etc.).'}
+        </small>
+      </div>
+
+      {/* ── Validade após aberto — apenas para injetavel (012 Fase A) ── */}
+      {effectivePresentation === 'injetavel' && (
+        <div className="form-group">
+          <label htmlFor="shelf_life_days">Validade após aberto (dias)</label>
+          <input
+            type="number"
+            id="shelf_life_days"
+            name="shelf_life_days"
+            value={formData.shelf_life_days ?? ''}
+            onChange={handleChange}
+            className={errors.shelf_life_days ? 'error' : ''}
+            placeholder="28"
+            min="1"
+            step="1"
+            disabled={isSubmitting}
+            aria-describedby="shelf_life_days-hint"
+            aria-invalid={Boolean(errors.shelf_life_days)}
+          />
+          <small id="shelf_life_days-hint" className="field-hint">
+            Dias de uso após abrir o frasco/caneta — confira a bula.
+          </small>
+          {errors.shelf_life_days && (
+            <span id="shelf_life_days-error" className="error-message">
+              {errors.shelf_life_days}
+            </span>
+          )}
+        </div>
+      )}
+
+      <AnvisaFields
+        formData={formData}
+        handleChange={handleChange}
+        isSubmitting={isSubmitting}
+        medicine={medicine}
+      />
 
       <div className="form-group">
         <label htmlFor="laboratory">Marca / Laboratório</label>
@@ -314,6 +313,76 @@ export default function MedicineFormDosageInfo({
           Opcional. Fonte: Busca na base da ANVISA
         </small>
       </div>
+    </>
+  )
+}
+
+
+export default function MedicineFormDosageInfo({
+  formData,
+  errors,
+  isSubmitting,
+  shakeFields,
+  saveSuccess,
+  setFormData,
+  setSaveSuccess,
+  handleChange,
+  handleLaboratorySelect,
+  medicine,
+}) {
+  const liquid = isLiquidUnit(formData.dosage_unit)
+  // Apresentação efetiva: unidade /ml exige apresentação líquida, mas NÃO pode engolir
+  // 'injetavel' (GLP-1/insulina são líquidos injetáveis → TTL/container). Se o usuário
+  // já escolheu uma apresentação líquido-compatível, preserva; senão default 'liquido'.
+  const effectivePresentation = liquid
+    ? (LIQUID_PRESENTATIONS.includes(formData.presentation) ? formData.presentation : 'liquido')
+    : (formData.presentation || 'comprimido')
+  // Opções do select: /ml restringe a líquido-compatíveis (sólido não faz sentido);
+  // caso contrário, todas. Restringir (não travar) deixa escolher líquido ↔ injetável.
+  const presentationOptions = liquid
+    ? PRESENTATIONS.filter((p) => LIQUID_PRESENTATIONS.includes(p))
+    : PRESENTATIONS
+
+  // Prefill/limpeza no próprio onChange (espelha handlePresentationChange do mobile;
+  // review Gemini #658): injetavel → prefill 28 se vazio; outra apresentação → limpa
+  // shelf_life_days (campo oculto não pode persistir valor obsoleto no banco).
+  const handlePresentationChange = (e) => {
+    const presentation = e.target.value
+    setFormData((prev) => ({
+      ...prev,
+      presentation,
+      shelf_life_days:
+        presentation === 'injetavel'
+          ? (prev.shelf_life_days === '' || prev.shelf_life_days == null ? 28 : prev.shelf_life_days)
+          : '',
+    }))
+    if (saveSuccess) setSaveSuccess(false)
+  }
+
+  return (
+    <>
+      <DosageSection
+        liquid={liquid}
+        formData={formData}
+        errors={errors}
+        isSubmitting={isSubmitting}
+        shakeFields={shakeFields}
+        handleChange={handleChange}
+      />
+      <ClassificationSection
+        formData={formData}
+        handleChange={handleChange}
+        isSubmitting={isSubmitting}
+        effectivePresentation={effectivePresentation}
+        handlePresentationChange={handlePresentationChange}
+        presentationOptions={presentationOptions}
+        errors={errors}
+        medicine={medicine}
+        setFormData={setFormData}
+        saveSuccess={saveSuccess}
+        setSaveSuccess={setSaveSuccess}
+        handleLaboratorySelect={handleLaboratorySelect}
+      />
     </>
   )
 }

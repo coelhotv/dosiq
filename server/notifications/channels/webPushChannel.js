@@ -9,24 +9,15 @@ function mapDeeplinkToWebPath(deeplink) {
   return path
 }
 
-export async function sendWebPushNotification({ userId, payload, context, repositories }) {
-  const correlationId = context?.correlationId || 'unknown'
-
+// Inicializa a configuração VAPID para o envio de push.
+function _initVapid(correlationId, userId) {
   const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
   const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
   const vapidEmail = process.env.VAPID_EMAIL || 'mailto:admin@dosiq.app'
 
   if (!vapidPublicKey || !vapidPrivateKey) {
     console.warn('[webPushChannel] Chaves VAPID ausentes no ambiente. Ignorando envio.', { correlationId, userId })
-    return {
-      channel: 'web_push',
-      success: true, // Fail graceful
-      attempted: 0,
-      delivered: 0,
-      failed: 0,
-      deactivatedTokens: [],
-      errors: [{ message: 'VAPID keys not configured in environment' }]
-    }
+    return null
   }
 
   try {
@@ -34,29 +25,11 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
   } catch (e) {
     console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e?.message || String(e))
   }
+  return true
+}
 
-  const devices = await repositories.devices.listActiveByUser(userId, 'webpush')
-
-  if (devices.length === 0) {
-    console.info('[webPushChannel] sem devices ativos', { correlationId, userId })
-    return {
-      channel: 'web_push',
-      success: true,
-      attempted: 0,
-      delivered: 0,
-      failed: 0,
-      deactivatedTokens: [],
-      errors: [],
-    }
-  }
-
-  const pushPayload = JSON.stringify({
-    title: payload.title,
-    body: payload.pushBody || payload.body,
-    icon: '/app-icons/web/icon-512.png',
-    url: mapDeeplinkToWebPath(payload.deeplink)
-  })
-
+// Executa o envio individual em paralelo com tratamento de exceções.
+async function _sendIndividualWebPush(devices, pushPayload, correlationId, userId) {
   const sendPromises = devices.map(async (device) => {
     try {
       if (!device?.push_token) {
@@ -70,9 +43,11 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
       return { token: device?.push_token, success: false, error }
     }
   })
+  return await Promise.allSettled(sendPromises)
+}
 
-  const settledResults = await Promise.allSettled(sendPromises)
-
+// Processa o resultado do envio settled de web push.
+function _processSettledWebPushResults(settledResults) {
   let delivered = 0
   let failed = 0
   const errors = []
@@ -101,6 +76,49 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
       }
     }
   }
+
+  return { delivered, failed, errors, tokensToDeactivate }
+}
+
+export async function sendWebPushNotification({ userId, payload, context, repositories }) {
+  const correlationId = context?.correlationId || 'unknown'
+
+  if (!_initVapid(correlationId, userId)) {
+    return {
+      channel: 'web_push',
+      success: true, // Fail graceful
+      attempted: 0,
+      delivered: 0,
+      failed: 0,
+      deactivatedTokens: [],
+      errors: [{ message: 'VAPID keys not configured in environment' }]
+    }
+  }
+
+  const devices = await repositories.devices.listActiveByUser(userId, 'webpush')
+
+  if (devices.length === 0) {
+    console.info('[webPushChannel] sem devices ativos', { correlationId, userId })
+    return {
+      channel: 'web_push',
+      success: true,
+      attempted: 0,
+      delivered: 0,
+      failed: 0,
+      deactivatedTokens: [],
+      errors: [],
+    }
+  }
+
+  const pushPayload = JSON.stringify({
+    title: payload.title,
+    body: payload.pushBody || payload.body,
+    icon: '/app-icons/web/icon-512.png',
+    url: mapDeeplinkToWebPath(payload.deeplink)
+  })
+
+  const settledResults = await _sendIndividualWebPush(devices, pushPayload, correlationId, userId)
+  const { delivered, failed, errors, tokensToDeactivate } = _processSettledWebPushResults(settledResults)
 
   const deactivationResults = await Promise.allSettled(
     tokensToDeactivate.map((token) => repositories.devices.deactivateByToken(token))

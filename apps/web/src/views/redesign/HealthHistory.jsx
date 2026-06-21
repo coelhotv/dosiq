@@ -100,6 +100,62 @@ function useHistoryDoseLog(loadData, refresh, showSuccess, setIsModalOpen, setEd
   return { handleLogMedicine, handleDeleteLog }
 }
 
+function useAdherenceCharts(isComplex) {
+  const [dailyAdherence, setDailyAdherence] = useState([])
+  const [adherencePattern, setAdherencePattern] = useState(null)
+  const patternLoadedRef = useRef(false)
+
+  const loadAdherenceCharts = useCallback(() => {
+    if (!isComplex) return
+    const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 100))
+    scheduleIdle(async () => {
+      try {
+        const daily = await adherenceService.getDailyAdherenceFromView(90)
+        setDailyAdherence(daily)
+      } catch (err) { console.error('[HistoryRedesign] Erro daily adherence:', err.message) }
+      if (!patternLoadedRef.current) {
+        try {
+          const pattern = await adherenceService.getAdherencePatternFromView()
+          setAdherencePattern(pattern)
+          patternLoadedRef.current = true
+        } catch (err) { console.error('[HistoryRedesign] Erro pattern:', err.message) }
+      }
+    })
+  }, [isComplex])
+
+  return { dailyAdherence, adherencePattern, loadAdherenceCharts }
+}
+
+function useMeasureActions(loadData, showSuccess, setError, setMeasureModalOpen, setEditingMeasure) {
+  const handleDeleteMeasure = useCallback(async (m) => {
+    if (!window.confirm('Excluir esta medida? Esta ação não pode ser desfeita.')) return
+    try {
+      await measuresRepo.remove(m.id)
+      showSuccess('Medida removida!')
+      window.dispatchEvent(new CustomEvent('mr:measure-saved'))
+      await loadData()
+    } catch (err) { setError('Erro ao remover: ' + err.message) }
+  }, [loadData, showSuccess, setError])
+
+  const handleSaveMeasure = useCallback(async (payload) => {
+    let saved
+    if (payload.id) {
+      const patch = { ...payload }
+      delete patch.id
+      saved = await measuresRepo.update(payload.id, patch)
+    } else {
+      saved = await measuresRepo.create(payload)
+    }
+    window.dispatchEvent(new CustomEvent('mr:measure-saved'))
+    await loadData()
+    setMeasureModalOpen(false)
+    setEditingMeasure(null)
+    return saved
+  }, [loadData, setMeasureModalOpen, setEditingMeasure])
+
+  return { handleDeleteMeasure, handleSaveMeasure }
+}
+
 function useHealthHistoryState() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -111,13 +167,12 @@ function useHealthHistoryState() {
   const [selectedDate, setSelectedDate] = useState(getTodayLocal())
   const [monthEvents, setMonthEvents] = useState([])
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
-  const [dailyAdherence, setDailyAdherence] = useState([])
-  const [adherencePattern, setAdherencePattern] = useState(null)
 
   const { protocols, refresh } = useDashboard()
   const { mode: complexityMode } = useComplexityMode()
   const isComplex = complexityMode === 'complex'
-  const patternLoadedRef = useRef(false)
+
+  const { dailyAdherence, adherencePattern, loadAdherenceCharts } = useAdherenceCharts(isComplex)
 
   const treatmentPlans = useMemo(() => buildPlansByProtocols(protocols, true), [protocols])
   const treatmentPlansAll = useMemo(() => buildPlansByProtocols(protocols, false), [protocols])
@@ -168,24 +223,6 @@ function useHealthHistoryState() {
     const monthsSinceFloor = (now.getFullYear() - CALENDAR_FLOOR_YEAR) * 12 + now.getMonth()
     return { start: -Math.max(0, monthsSinceFloor), end: 1 }
   }, [])
-
-  const loadAdherenceCharts = useCallback(() => {
-    if (!isComplex) return
-    const scheduleIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 100))
-    scheduleIdle(async () => {
-      try {
-        const daily = await adherenceService.getDailyAdherenceFromView(90)
-        setDailyAdherence(daily)
-      } catch (err) { console.error('[HistoryRedesign] Erro daily adherence:', err.message) }
-      if (!patternLoadedRef.current) {
-        try {
-          const pattern = await adherenceService.getAdherencePatternFromView()
-          setAdherencePattern(pattern)
-          patternLoadedRef.current = true
-        } catch (err) { console.error('[HistoryRedesign] Erro pattern:', err.message) }
-      }
-    })
-  }, [isComplex])
 
   // loadData NÃO depende de protocolsById (enrich é no render) → identidade estável,
   // imune a refetch de protocolos no refocus da aba (não recarrega/reseta o mês — AP-192 classe).
@@ -250,31 +287,13 @@ function useHealthHistoryState() {
   const handleEditMeasure = useCallback((m) => { setEditingMeasure(m); setMeasureModalOpen(true) }, [])
   const handleCloseMeasureModal = useCallback(() => { setMeasureModalOpen(false); setEditingMeasure(null) }, [])
 
-  const handleDeleteMeasure = useCallback(async (m) => {
-    if (!window.confirm('Excluir esta medida? Esta ação não pode ser desfeita.')) return
-    try {
-      await measuresRepo.remove(m.id)
-      showSuccess('Medida removida!')
-      window.dispatchEvent(new CustomEvent('mr:measure-saved'))
-      await loadData()
-    } catch (err) { setError('Erro ao remover: ' + err.message) }
-  }, [loadData, showSuccess, setError])
-
-  const handleSaveMeasure = useCallback(async (payload) => {
-    let saved
-    if (payload.id) {
-      const patch = { ...payload }
-      delete patch.id
-      saved = await measuresRepo.update(payload.id, patch)
-    } else {
-      saved = await measuresRepo.create(payload)
-    }
-    window.dispatchEvent(new CustomEvent('mr:measure-saved'))
-    await loadData()
-    setMeasureModalOpen(false)
-    setEditingMeasure(null)
-    return saved
-  }, [loadData])
+  const { handleDeleteMeasure, handleSaveMeasure } = useMeasureActions(
+    loadData,
+    showSuccess,
+    setError,
+    setMeasureModalOpen,
+    setEditingMeasure
+  )
 
   return {
     isLoading,

@@ -47,105 +47,48 @@ import {
  * @param {object} params.data - Dados específicos para o tipo
  * @returns {object} Payload formatado { title, body, deeplink, metadata }
  */
+const PAYLOAD_BUILDERS = {
+  daily_digest: buildDailyDigestPayload,
+  adherence_report: buildAdherenceReportPayload,
+  weekly_adherence: buildWeeklyAdherencePayload,
+  stock_alert: buildStockAlertPayload,
+  stock_expiry_alert: buildStockExpiryAlertPayload,
+  titration_alert: buildTitrationAlertPayload,
+  monthly_report: buildMonthlyReportPayload,
+  prescription_alert: buildPrescriptionAlertPayload,
+  dlq_digest: buildDlqDigestPayload,
+};
+
+// Auxiliar para direcionar a construção do payload conforme o kind.
+function _buildPayloadContent(kind, data, metadata) {
+  if (kind === 'dose_reminder') {
+    return formatDoseReminder(data, metadata);
+  }
+  if (kind === 'dose_reminder_by_plan') {
+    return formatDoseReminderByPlan(data, metadata);
+  }
+  if (kind === 'dose_reminder_misc') {
+    return formatDoseReminderMisc(data, metadata);
+  }
+
+  const builder = PAYLOAD_BUILDERS[kind];
+  if (!builder) {
+    throw new Error(`Unknown notification kind: ${kind}`);
+  }
+  return builder(data);
+}
+
 export function buildNotificationPayload({ kind, data, context = {} }) {
   // 1. Validar Kind
   const validatedKind = kindSchema.parse(kind);
 
   const metadata = buildMetadata(validatedKind, context, data);
-  let title, body, pushBody;
-  let actions = [];
+  const content = _buildPayloadContent(validatedKind, data, metadata);
 
-  switch (validatedKind) {
-    case 'daily_digest': {
-      const content = buildDailyDigestPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'adherence_report': {
-      const content = buildAdherenceReportPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'weekly_adherence': {
-      const content = buildWeeklyAdherencePayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'dose_reminder': {
-      const formatted = formatDoseReminder(data, metadata);
-      title = formatted.title;
-      body = formatted.body;
-      pushBody = formatted.pushBody;
-      actions = formatted.actions;
-      break;
-    }
-    case 'dose_reminder_by_plan': {
-      const formatted = formatDoseReminderByPlan(data, metadata);
-      title = formatted.title;
-      body = formatted.body;
-      pushBody = formatted.pushBody;
-      actions = formatted.actions;
-      break;
-    }
-    case 'dose_reminder_misc': {
-      const formatted = formatDoseReminderMisc(data, metadata);
-      title = formatted.title;
-      body = formatted.body;
-      pushBody = formatted.pushBody;
-      actions = formatted.actions;
-      break;
-    }
-    case 'stock_alert': {
-      const content = buildStockAlertPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'stock_expiry_alert': {
-      const content = buildStockExpiryAlertPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'titration_alert': {
-      const content = buildTitrationAlertPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'monthly_report': {
-      const content = buildMonthlyReportPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'prescription_alert': {
-      const content = buildPrescriptionAlertPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    case 'dlq_digest': {
-      const content = buildDlqDigestPayload(data);
-      title = content.title;
-      body = content.body;
-      pushBody = content.pushBody;
-      break;
-    }
-    default:
-      throw new Error(`Unknown notification kind: ${kind}`);
-  }
+  const title = content.title;
+  const body = content.body;
+  const pushBody = content.pushBody;
+  const actions = content.actions || [];
 
   // 2. Resolver Deeplink lógico (Responsabilidade da Layer 2)
   const deeplink = resolveDeeplink(validatedKind, data);

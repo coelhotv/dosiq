@@ -15,6 +15,123 @@ import { ROUTES } from '../navigation/routes'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
+function SignupSuccessView({
+  email,
+  otpCode,
+  setOtpCode,
+  verifying,
+  otpError,
+  handleVerifyOtp,
+  onGoBack,
+}) {
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.successContainer} keyboardShouldPersistTaps="handled">
+        <View style={styles.successIconWrapper}>
+          <Mail size={56} color={colors.brand.primary} />
+        </View>
+        <Text style={styles.successTitle}>Só falta confirmar seu e-mail</Text>
+        <Text style={styles.successDescription}>
+          Mandamos uma mensagem para{'\n'}
+          <Text style={styles.successEmail}>{email}</Text>
+        </Text>
+        
+        <Text style={styles.successBody}>
+          Abra o e-mail e toque no link para ativar sua conta. É rapidinho!
+        </Text>
+
+        {/* Campo OTP Alternativo */}
+        <View style={[styles.field, styles.otpField]}>
+          <Text style={[styles.label, styles.otpLabel]}>
+            Ou digite o código de confirmação recebido:
+          </Text>
+          <TextInput
+            style={[styles.input, styles.otpInput]}
+            placeholder="Código"
+            placeholderTextColor={colors.text.muted}
+            value={otpCode}
+            onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
+            keyboardType="number-pad"
+            maxLength={8}
+            textContentType="oneTimeCode"
+            editable={!verifying}
+          />
+          {otpError ? <Text style={[styles.error, styles.otpError]}>{otpError}</Text> : null}
+        </View>
+
+        <Pressable 
+          style={[styles.successButton, styles.successButtonMargin, verifying && styles.buttonDisabled]} 
+          onPress={handleVerifyOtp}
+          disabled={verifying}
+        >
+          {verifying ? (
+            <ActivityIndicator color={colors.text.inverse} />
+          ) : (
+            <Text style={styles.buttonText}>Confirmar Código e Entrar</Text>
+          )}
+        </Pressable>
+
+        <Text style={[styles.successHint, styles.successHintMargin]}>
+          Não chegou em alguns minutos? Veja na pasta de spam. Se o link apresentar erro, a validação por código acima é o caminho mais seguro.
+        </Text>
+
+        <Pressable style={[styles.successButton, styles.successButtonBack]} onPress={onGoBack}>
+          <Text style={[styles.buttonText, styles.buttonTextPrimary]}>Voltar ao Login</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+function SignupBrandmark() {
+  return (
+    <View style={styles.brandmark}>
+      <Image
+        source={require('../../assets/icon.png')}
+        style={styles.brandIcon}
+        resizeMode="contain"
+      />
+      <Text style={styles.brandText}>dosiq</Text>
+    </View>
+  )
+}
+
+function SignupInfoCard() {
+  return (
+    <View style={styles.infoCard}>
+      <View style={styles.infoIcon}>
+        <ShieldCheck size={18} color={colors.primary[700]} strokeWidth={2.2} />
+      </View>
+      <View style={styles.infoBody}>
+        <Text style={styles.infoTitle}>Sua conta, suas regras</Text>
+        <Text style={styles.infoText}>
+          Seus dados ficam guardados em segurança e funcionam mesmo sem internet.
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+function SignupConfirmHint() {
+  return (
+    <View style={styles.confirmHint}>
+      <Info size={16} color={colors.text.muted} strokeWidth={2} />
+      <Text style={styles.confirmHintText}>
+        Vamos te enviar um link de confirmação por e-mail.
+      </Text>
+    </View>
+  )
+}
+
+function SignupTerms() {
+  return (
+    <Text style={styles.terms}>
+      Ao continuar, você aceita os <Text style={styles.termsLink}>Termos</Text> e a{' '}
+      <Text style={styles.termsLink}>Privacidade</Text>.
+    </Text>
+  )
+}
+
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -61,61 +178,15 @@ export default function SignupScreen({ navigation }) {
 
   if (emailSent) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.successContainer} keyboardShouldPersistTaps="handled">
-          <View style={styles.successIconWrapper}>
-            <Mail size={56} color={colors.brand.primary} />
-          </View>
-          <Text style={styles.successTitle}>Só falta confirmar seu e-mail</Text>
-          <Text style={styles.successDescription}>
-            Mandamos uma mensagem para{'\n'}
-            <Text style={styles.successEmail}>{email}</Text>
-          </Text>
-          
-          <Text style={styles.successBody}>
-            Abra o e-mail e toque no link para ativar sua conta. É rapidinho!
-          </Text>
-
-          {/* Campo OTP Alternativo */}
-          <View style={[styles.field, styles.otpField]}>
-            <Text style={[styles.label, styles.otpLabel]}>
-              Ou digite o código de confirmação recebido:
-            </Text>
-            <TextInput
-              style={[styles.input, styles.otpInput]}
-              placeholder="Código"
-              placeholderTextColor={colors.text.muted}
-              value={otpCode}
-              onChangeText={(text) => setOtpCode(text.replace(/\D/g, ''))}
-              keyboardType="number-pad"
-              maxLength={8}
-              textContentType="oneTimeCode"
-              editable={!verifying}
-            />
-            {otpError ? <Text style={[styles.error, styles.otpError]}>{otpError}</Text> : null}
-          </View>
-
-          <Pressable 
-            style={[styles.successButton, styles.successButtonMargin, verifying && styles.buttonDisabled]} 
-            onPress={handleVerifyOtp}
-            disabled={verifying}
-          >
-            {verifying ? (
-              <ActivityIndicator color={colors.text.inverse} />
-            ) : (
-              <Text style={styles.buttonText}>Confirmar Código e Entrar</Text>
-            )}
-          </Pressable>
-
-          <Text style={[styles.successHint, styles.successHintMargin]}>
-            Não chegou em alguns minutos? Veja na pasta de spam. Se o link apresentar erro, a validação por código acima é o caminho mais seguro.
-          </Text>
-
-          <Pressable style={[styles.successButton, styles.successButtonBack]} onPress={() => navigation.navigate(ROUTES.LOGIN)}>
-            <Text style={[styles.buttonText, styles.buttonTextPrimary]}>Voltar ao Login</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
+      <SignupSuccessView
+        email={email}
+        otpCode={otpCode}
+        setOtpCode={setOtpCode}
+        verifying={verifying}
+        otpError={otpError}
+        handleVerifyOtp={handleVerifyOtp}
+        onGoBack={() => navigation.navigate(ROUTES.LOGIN)}
+      />
     )
   }
 
@@ -128,14 +199,7 @@ export default function SignupScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <View style={styles.brandmark}>
-            <Image
-              source={require('../../assets/icon.png')}
-              style={styles.brandIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.brandText}>dosiq</Text>
-          </View>
+          <SignupBrandmark />
 
           <Text style={styles.title}>Vamos criar sua conta</Text>
           <Text style={styles.subtitle}>
@@ -189,25 +253,10 @@ export default function SignupScreen({ navigation }) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           {/* Card: Sua conta, suas regras */}
-          <View style={styles.infoCard}>
-            <View style={styles.infoIcon}>
-              <ShieldCheck size={18} color={colors.primary[700]} strokeWidth={2.2} />
-            </View>
-            <View style={styles.infoBody}>
-              <Text style={styles.infoTitle}>Sua conta, suas regras</Text>
-              <Text style={styles.infoText}>
-                Seus dados ficam guardados em segurança e funcionam mesmo sem internet.
-              </Text>
-            </View>
-          </View>
+          <SignupInfoCard />
 
           {/* Hint confirmação por email (borda sólida soft — AP-163, RN sem dashed) */}
-          <View style={styles.confirmHint}>
-            <Info size={16} color={colors.text.muted} strokeWidth={2} />
-            <Text style={styles.confirmHintText}>
-              Vamos te enviar um link de confirmação por e-mail.
-            </Text>
-          </View>
+          <SignupConfirmHint />
         </ScrollView>
 
         {/* Sticky: Continuar + termos */}
@@ -225,10 +274,7 @@ export default function SignupScreen({ navigation }) {
               <Text style={styles.buttonText}>Continuar</Text>
             )}
           </Pressable>
-          <Text style={styles.terms}>
-            Ao continuar, você aceita os <Text style={styles.termsLink}>Termos</Text> e a{' '}
-            <Text style={styles.termsLink}>Privacidade</Text>.
-          </Text>
+          <SignupTerms />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

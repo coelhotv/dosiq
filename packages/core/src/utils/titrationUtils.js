@@ -3,6 +3,39 @@ import { getNow, parseISO } from './dateUtils.js'
 const MS_DAY = 24 * 60 * 60 * 1000
 
 /**
+ * Verifica se a titulação está inativa.
+ * @private
+ */
+function isTitrationInactive(protocol) {
+  const schedule = protocol?.titration_schedule
+  return (
+    !Array.isArray(schedule) ||
+    schedule.length === 0 ||
+    !protocol.stage_started_at ||
+    protocol.titration_status !== 'titulando'
+  )
+}
+
+/**
+ * Obtém o timestamp MS de um instante.
+ * @private
+ */
+function getTimestamp(at) {
+  if (typeof at === 'number') return at
+  if (at instanceof Date) return at.getTime()
+  return parseISO(String(at)).getTime()
+}
+
+/**
+ * Obtém a duração em dias da etapa.
+ * @private
+ */
+function getStageDurationDays(stage) {
+  const days = Number(stage?.duration_days ?? stage?.days)
+  return Number.isFinite(days) && days > 0 ? days : null
+}
+
+/**
  * Resolve a etapa de titulação vigente num INSTANTE arbitrário (012 Fase B, FR-006).
  *
  * Caminha o cronograma a partir de stage_started_at/current_stage_index somando
@@ -19,18 +52,12 @@ const MS_DAY = 24 * 60 * 60 * 1000
  * @returns {{stageIndex: number, dosage: number}|null}
  */
 export function resolveTitrationStageAt(protocol, at) {
-  const schedule = protocol?.titration_schedule
-  if (!Array.isArray(schedule) || schedule.length === 0) return null
-  if (!protocol.stage_started_at) return null
-  // Só 'titulando' rege a dose (consistente com isTitrationActive); 'estável'/
-  // 'alvo_atingido' → dosage_per_intake manda.
-  if (protocol.titration_status !== 'titulando') return null
-
+  if (isTitrationInactive(protocol)) return null
+  const schedule = protocol.titration_schedule
   let index = protocol.current_stage_index || 0
   if (index >= schedule.length) return null
 
-  const atMs =
-    typeof at === 'number' ? at : at instanceof Date ? at.getTime() : parseISO(String(at)).getTime()
+  const atMs = getTimestamp(at)
   let stageStartMs = parseISO(protocol.stage_started_at).getTime()
   if (Number.isNaN(atMs) || Number.isNaN(stageStartMs)) return null
   // Ocorrência antes do início da etapa atual: histórico — não re-derivar (já congelado).
@@ -38,9 +65,8 @@ export function resolveTitrationStageAt(protocol, at) {
 
   // Avança etapas cuja duração já se esgotou antes do instante alvo.
   while (index < schedule.length - 1) {
-    // duration_days = canônico (titrationStageSchema); days = fallback legado
-    const days = Number(schedule[index]?.duration_days ?? schedule[index]?.days)
-    if (!Number.isFinite(days) || days <= 0) break
+    const days = getStageDurationDays(schedule[index])
+    if (!days) break
     const stageEndMs = stageStartMs + days * MS_DAY
     if (atMs < stageEndMs) break
     stageStartMs = stageEndMs

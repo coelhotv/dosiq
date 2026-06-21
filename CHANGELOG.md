@@ -80,6 +80,40 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+---
+
+## App v0.19.3 (mobile) & Web v4.9.2 — 2026-06-20 — Faxina de Complexidade e Tamanho do ESLint (Waves 1-3)
+
+> **Bump:** mobile `0.19.2 → 0.19.3` (patch), web `4.9.1 → 4.9.2` (patch), core/infra preventivos.
+> **Release notes:** Refatoração global preventiva para atingir conformidade estrita com as regras de ESLint de complexidade ciclomática e tamanho de funções em todas as superfícies (core, server/bot, web, mobile), sem alteração de comportamento clínico ou visual.
+
+### 📱 Alterado (mobile)
+- **Refatoração de telas e hooks** para eliminar warnings de complexidade ciclomática e tamanho de funções:
+  - `TodayScreen.jsx`: extraído `TodaySummary` e `NoDosesEmptyState`.
+  - `BulkDoseRegisterModal.jsx`: extraído seletor de doses e botões de rodapé.
+  - `DoseActionSheet.jsx`: simplificação de handlers e extração de botões de tomada de dose.
+  - `historyTimelineService.js`: extraído helper `_getProtocolProperties`.
+  - `MedicineDetailScreen.jsx`: extraído hook `useMedicineDetailState`.
+  - `MedicineSelectorSheet.jsx`: extraído `MedicineSelectItem` e `EmptySheetContent`.
+  - `ProtocolFormBody.jsx`: extraído hook `useProtocolFormDerived` e subseções do formulário.
+  - `TreatmentCard.jsx`: simplificadas checagens condicionais.
+  - `TreatmentsScreen.jsx`: extraído hook `useTreatmentsScreenState` e listas de protocolos ativos/arquivados.
+  - `Navigation.jsx`: extraído hook `useAuthSession`.
+  - `SignupScreen.jsx`: extraído `SignupBrandmark`, `SignupInfoCard`, `SignupConfirmHint` e `SignupTerms` (mantendo os inputs inline para evitar perda de foco).
+  - `alarmService.js` e `authService.js`: simplificadas construções de strings e mapeamentos de erros.
+
+### 💻 Alterado (web/PWA)
+- **Refatoração de views e utilitários** para eliminar todos os warnings do ESLint:
+  - `_medicineFormUtils.js`: simplificação de `getInitialFormData` utilizando um mapeamento flat com o operador `??` para reduzir complexidade de branches.
+  - `NudgesAdmin.jsx`: extraído `NudgesHeader` e `NudgeEmptyState` para reduzir a quantidade de linhas do componente principal.
+  - `useNudgesAdminState.js`: extraído sub-hooks `useNudgeFilters` and `useNudgeActions` para segregação de responsabilidades de paginação/filtros e mutações de CRUD.
+  - Demais componentes refatorados nas waves anteriores: `App.jsx`, `AppViewRouter.jsx`, `MeasureLogModal.jsx`, `MedicineFormDosageInfo.jsx`, `ProtocolForm.jsx`, `TitrationWizard.jsx`, `ProtocolFormDosesSection.jsx`, `TreatmentWizardStep2.jsx`, `_stockFormUtils.js`, `StockCardRedesign.jsx`, `StockFormMedicineDetails.jsx`, `_stockDataTransformer.js`, `FeedbackAdmin.jsx`, `NudgeFormModal.jsx` e `HealthHistory.jsx`.
+
+### ⚙️ Alterado (core e backend)
+- Refatoração dos utilitários `doseUnit.js`, `doseZones.js` e `titrationUtils.js` no pacote `@dosiq/core`.
+- Refatoração do scheduler e mappers em `server/bot/_reminderHelpers.js`, push notification channels (`expoPushChannel.js`, `webPushChannel.js`), payloads de notificação (`buildNotificationPayload.js`) e api handlers (`admin.js`, `feedbacks.js`).
+
+
 ### 035 — Refactor: Dose-Log + Stock unificado e ATÔMICO no core (PR #TBD)
 
 > **Decisão (Option A, ADR-071):** a orquestração de tomada de dose passa a rodar dentro de

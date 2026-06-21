@@ -29,6 +29,81 @@ const FILTER_EMPTY_LABEL = {
 /**
  * Tela principal de Gerenciamento de Estoque (H5.5).
  */
+function StockHeader({ filter, setFilter, counts }) {
+  return (
+    <View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Estoque</Text>
+        <Text style={styles.subtitle}>
+          Acompanhe o estoque dos medicamentos
+        </Text>
+      </View>
+      <StockFilterChips value={filter} onChange={setFilter} counts={counts} />
+    </View>
+  )
+}
+
+function StockEmptyState({ filter, onNavigationPress }) {
+  if (filter === 'todos') {
+    return (
+      <EmptyState
+        icon={<PackageOpen size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+        title="Ainda sem estoque"
+        message="Cadastre primeiro um tratamento para iniciar o controle de estoque."
+        action={{
+          label: '+ Criar primeiro tratamento',
+          onPress: onNavigationPress,
+        }}
+      />
+    )
+  }
+  return (
+    <EmptyState
+      icon="🔍"
+      title="Nenhum resultado"
+      message={`Nenhum medicamento ${FILTER_EMPTY_LABEL[filter]}.`}
+    />
+  )
+}
+
+function calculateCounts(active, inactive) {
+  return {
+    todos: active.length + inactive.length,
+    critico: active.filter((m) => m.status === 'CRITICAL').length,
+    baixo: active.filter((m) => m.status === 'LOW').length,
+    sem_tratamento: inactive.length,
+  }
+}
+
+function getFilteredSections(data, filter, active, inactive) {
+  if (!data) return []
+  const list = []
+
+  if (filter === 'sem_tratamento') {
+    if (inactive.length > 0) {
+      list.push({ title: 'Sem tratamento ativo', data: inactive })
+    }
+    return list
+  }
+
+  if (filter === 'critico' || filter === 'baixo') {
+    const status = filter === 'critico' ? 'CRITICAL' : 'LOW'
+    const filtered = active.filter((m) => m.status === status)
+    if (filtered.length > 0) {
+      list.push({ title: 'Estoque em Uso', data: filtered })
+    }
+    return list
+  }
+
+  if (active.length > 0) {
+    list.push({ title: 'Estoque em Uso', data: active })
+  }
+  if (inactive.length > 0) {
+    list.push({ title: 'Sem tratamento ativo', data: inactive })
+  }
+  return list
+}
+
 export default function StockScreen() {
   const navigation = useNavigation()
   const { data, loading, error, stale, refreshing, refresh } = useStock()
@@ -40,47 +115,8 @@ export default function StockScreen() {
   // — Memos (R-010) —
   const active = useMemo(() => data?.active ?? [], [data])
   const inactive = useMemo(() => data?.inactive ?? [], [data])
-
-  const counts = useMemo(
-    () => ({
-      todos: active.length + inactive.length,
-      critico: active.filter((m) => m.status === 'CRITICAL').length,
-      baixo: active.filter((m) => m.status === 'LOW').length,
-      sem_tratamento: inactive.length,
-    }),
-    [active, inactive],
-  )
-
-  // Aplica o filtro às seções do SectionList.
-  const sections = useMemo(() => {
-    if (!data) return []
-    const list = []
-
-    if (filter === 'sem_tratamento') {
-      if (inactive.length > 0) {
-        list.push({ title: 'Sem tratamento ativo', data: inactive })
-      }
-      return list
-    }
-
-    if (filter === 'critico' || filter === 'baixo') {
-      const status = filter === 'critico' ? 'CRITICAL' : 'LOW'
-      const filtered = active.filter((m) => m.status === status)
-      if (filtered.length > 0) {
-        list.push({ title: 'Estoque em Uso', data: filtered })
-      }
-      return list
-    }
-
-    // 'todos' — ambas as seções
-    if (active.length > 0) {
-      list.push({ title: 'Estoque em Uso', data: active })
-    }
-    if (inactive.length > 0) {
-      list.push({ title: 'Sem tratamento ativo', data: inactive })
-    }
-    return list
-  }, [data, filter, active, inactive])
+  const counts = useMemo(() => calculateCounts(active, inactive), [active, inactive])
+  const sections = useMemo(() => getFilteredSections(data, filter, active, inactive), [data, filter, active, inactive])
 
   // — Effects (R-010) —
   // Refresh ao re-focar (volta de PurchaseForm/Detail) pra refletir nova compra
@@ -180,34 +216,15 @@ export default function StockScreen() {
           />
         }
         ListHeaderComponent={
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.title}>Estoque</Text>
-              <Text style={styles.subtitle}>
-                Acompanhe o estoque dos medicamentos
-              </Text>
-            </View>
-            <StockFilterChips value={filter} onChange={setFilter} counts={counts} />
-          </View>
+          <StockHeader filter={filter} setFilter={setFilter} counts={counts} />
         }
         ListEmptyComponent={
-          filter === 'todos' ? (
-            <EmptyState
-              icon={<PackageOpen size={48} color={colors.primary[500]} strokeWidth={1.5} />}
-              title="Ainda sem estoque"
-              message="Cadastre primeiro um tratamento para iniciar o controle de estoque."
-              action={{
-                label: '+ Criar primeiro tratamento',
-                onPress: () => navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
-              }}
-            />
-          ) : (
-            <EmptyState
-              icon="🔍"
-              title="Nenhum resultado"
-              message={`Nenhum medicamento ${FILTER_EMPTY_LABEL[filter]}.`}
-            />
-          )
+          <StockEmptyState
+            filter={filter}
+            onNavigationPress={() =>
+              navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM })
+            }
+          />
         }
         ListFooterComponent={
           active.length > 0 ? (

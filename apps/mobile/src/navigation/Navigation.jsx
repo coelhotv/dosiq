@@ -38,25 +38,15 @@ import { debugLog } from '@shared/utils/debugLog'
 
 const Stack = createStackNavigator()
 
-export default function Navigation() {
-  // undefined = a verificar; null = sem sessão; object = sessão activa
+function useAuthSession() {
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
-  // Gate de onboarding: null = verificando; true = wizard; false = app.
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
 
   // Setup push notifications pós-login (H6.3)
   // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
-  // — onboarding/criação de tratamento/configs). Só registra token se já concedido.
+  // - onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
-
-  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
-  const handleNavigationStateChange = () => {
-    const routeName = navigationRef.current?.getCurrentRoute?.()?.name
-    if (routeName) {
-      logScreenView(routeName)
-    }
-  }
 
   useEffect(() => {
     // Restaurar sessão persistida (SecureStore chunked — R-160)
@@ -186,6 +176,32 @@ export default function Navigation() {
     return () => sub.remove()
   }, [])
 
+  return {
+    session,
+    setSession,
+    isPasswordRecovery,
+    setIsPasswordRecovery,
+    onboardingNeeded,
+    setOnboardingNeeded,
+  }
+}
+
+export default function Navigation() {
+  const {
+    session,
+    isPasswordRecovery,
+    setIsPasswordRecovery,
+    onboardingNeeded,
+    setOnboardingNeeded,
+  } = useAuthSession()
+
+  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
+  const handleNavigationStateChange = () => {
+    const routeName = navigationRef.current?.getCurrentRoute?.()?.name
+    if (routeName) {
+      logScreenView(routeName)
+    }
+  }
 
   // Aguarda verificação inicial — evita flash de ecrã errado.
   // Também aguarda o gate de onboarding resolver quando há sessão.
