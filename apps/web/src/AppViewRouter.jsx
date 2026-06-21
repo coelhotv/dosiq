@@ -35,6 +35,46 @@ const SKELETON = (
 
 const W = (children) => <Suspense fallback={SKELETON}>{children}</Suspense>
 
+const VIEW_MAP = {
+  landing: (props) => <Landing isAuthenticated={true} onOpenAuth={() => props.setShowAuth(true)} onContinue={() => props.setCurrentView('dashboard')} />,
+  medicines: (props) => <Medicines onNavigateToProtocol={props.navigateToProtocol} />,
+  stock: (props) => <Stock initialParams={props.initialStockParams} onClearParams={() => props.setInitialStockParams(null)} />,
+  protocols: (props) => <Protocols initialParams={props.initialProtocolParams} onClearParams={() => props.setInitialProtocolParams(null)} onNavigateToStock={props.navigateToStock} />,
+  treatment: (props) => <Treatment onNavigateToProtocol={() => props.setCurrentView('treatment')} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />,
+  profile: (props) => <Profile onNavigate={props.setCurrentView} />,
+  'health-history': (props) => <HealthHistory key="health-history" onNavigate={props.setCurrentView} />,
+  history: (props) => <HealthHistory key="history" onNavigate={props.setCurrentView} />,
+  consultation: (props) => <Consultation onBack={() => props.setCurrentView('profile')} />,
+  settings: (props) => <Settings onNavigate={props.setCurrentView} mode="notifications" />,
+  'account-settings': (props) => <Settings onNavigate={props.setCurrentView} mode="account" />,
+  emergency: (props) => <Emergency onNavigate={props.setCurrentView} />,
+  'admin-dlq': () => <DLQAdmin />,
+  'admin-feedbacks': (props) => <FeedbackAdmin onBack={() => props.setCurrentView('account-settings')} />,
+  'admin-nudges': (props) => <NudgesAdmin onBack={() => props.setCurrentView('account-settings')} />,
+  notifications: (props) => (
+    <NotificationInbox
+      userId={props.session?.id}
+      onNavigate={props.setCurrentView}
+      onBack={() => props.setCurrentView('dashboard')}
+      onOpenDoseModal={(initialValues) => { props.setDoseModalInitialValues(initialValues); props.setIsDoseModalOpen(true) }}
+    />
+  ),
+};
+
+function _renderViewContent(currentView, props) {
+  const renderer = VIEW_MAP[currentView];
+  if (renderer) {
+    return renderer(props);
+  }
+
+  const dashboardNavigate = (view, params) => {
+    if (view === 'stock' && params?.medicineId) props.setInitialStockParams({ medicineId: params.medicineId });
+    else if (view === 'protocols' && params?.medicineId) props.setInitialProtocolParams({ medicineId: params.medicineId });
+    props.setCurrentView(view);
+  };
+  return <Dashboard onNavigate={dashboardNavigate} />;
+}
+
 export default function AppViewRouter({
   session,
   currentView,
@@ -69,54 +109,21 @@ export default function AppViewRouter({
   const navigateToProtocol = (medicineId) => { setInitialTreatmentMedicineId(medicineId); setCurrentView('treatment') }
   const navigateToStock = (medicineId) => { setInitialStockParams({ medicineId }); setCurrentView('stock') }
 
-  switch (currentView) {
-    case 'landing':
-      return W(<Landing isAuthenticated={true} onOpenAuth={() => setShowAuth(true)} onContinue={() => setCurrentView('dashboard')} />)
-    case 'medicines':
-      return W(<Medicines onNavigateToProtocol={navigateToProtocol} />)
-    case 'stock':
-      return W(<Stock initialParams={initialStockParams} onClearParams={() => setInitialStockParams(null)} />)
-    case 'protocols':
-      return W(<Protocols initialParams={initialProtocolParams} onClearParams={() => setInitialProtocolParams(null)} onNavigateToStock={navigateToStock} />)
-    case 'treatment':
-      return W(<Treatment onNavigateToProtocol={() => setCurrentView('treatment')} onNavigate={setCurrentView} initialMedicineId={initialTreatmentMedicineId} onClearInitialMedicine={() => setInitialTreatmentMedicineId(null)} />)
-    case 'profile':
-      return W(<Profile onNavigate={setCurrentView} />)
-    case 'health-history':
-      return W(<HealthHistory key="health-history" onNavigate={setCurrentView} />)
-    case 'history':
-      return W(<HealthHistory key="history" onNavigate={setCurrentView} />)
-    case 'consultation':
-      return W(<Consultation onBack={() => setCurrentView('profile')} />)
-    case 'settings':
-      return W(<Settings onNavigate={setCurrentView} mode="notifications" />)
-    case 'account-settings':
-      return W(<Settings onNavigate={setCurrentView} mode="account" />)
-    case 'emergency':
-      return W(<Emergency onNavigate={setCurrentView} />)
-    case 'admin-dlq':
-      return W(<DLQAdmin />)
-    case 'admin-feedbacks':
-      return W(<FeedbackAdmin onBack={() => setCurrentView('account-settings')} />)
-    case 'admin-nudges':
-      return W(<NudgesAdmin onBack={() => setCurrentView('account-settings')} />)
-    case 'notifications':
-      return W(
-        <NotificationInbox
-          userId={session?.id}
-          onNavigate={setCurrentView}
-          onBack={() => setCurrentView('dashboard')}
-          onOpenDoseModal={(initialValues) => { setDoseModalInitialValues(initialValues); setIsDoseModalOpen(true) }}
-        />
-      )
-    case 'dashboard':
-    default: {
-      const dashboardNavigate = (view, params) => {
-        if (view === 'stock' && params?.medicineId) setInitialStockParams({ medicineId: params.medicineId })
-        else if (view === 'protocols' && params?.medicineId) setInitialProtocolParams({ medicineId: params.medicineId })
-        setCurrentView(view)
-      }
-      return W(<Dashboard onNavigate={dashboardNavigate} />)
-    }
-  }
+  const viewProps = {
+    session,
+    setShowAuth,
+    setCurrentView,
+    initialStockParams,
+    setInitialStockParams,
+    initialProtocolParams,
+    setInitialProtocolParams,
+    initialTreatmentMedicineId,
+    setInitialTreatmentMedicineId,
+    setDoseModalInitialValues,
+    setIsDoseModalOpen,
+    navigateToProtocol,
+    navigateToStock
+  };
+
+  return W(_renderViewContent(currentView, viewProps));
 }

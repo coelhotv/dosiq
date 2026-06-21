@@ -1,4 +1,4 @@
-import React, { useState, useEffect, startTransition } from 'react'
+import React, { useState, useMemo, useEffect, startTransition } from 'react'
 import {
   View,
   Text,
@@ -260,16 +260,87 @@ function openAndroidPicker(currentDate, onDatePicked) {
   })
 }
 
-export default function DoseActionSheet({
+function DoseActionSheetHeader({ instance, medicineName, hasPill, statusMeta, onClose }) {
+  return (
+    <View style={styles.header}>
+      <StatusHeaderIcon status={instance?.status} size={28} />
+      <View style={styles.headerBody}>
+        <View style={styles.headerNameRow}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{medicineName}</Text>
+          <View style={[styles.statusChip, { backgroundColor: statusMeta.bg }]}>
+            <Text style={[styles.statusChipText, { color: statusMeta.color }]}>{statusMeta.label}</Text>
+          </View>
+          {hasPill && (
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>{formatConcentration(instance.dosage_per_pill, instance.dosage_unit)}</Text>
+            </View>
+          )}
+        </View>
+        {instance?.dosage_per_intake != null && (
+          <Text style={styles.headerSub}>
+            {(() => {
+              const qty = instance.dosage_per_intake
+              if (isLiquidMedicine(instance)) return formatDose(qty, instance.intake_unit || 'ml')
+              const unit = instance.dosage_unit?.toLowerCase()
+              if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
+              if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
+              return `${qty} ${instance.dosage_unit}`
+            })()}
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity
+        onPress={onClose}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel="Fechar"
+      >
+        <X size={20} color={colors.text.secondary} />
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function DoseIOSDatePickerModal({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
+  if (Platform.OS !== 'ios' || !visible) return null
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={onCancel} />
+      <View style={styles.pickerSheet}>
+        <SafeAreaView edges={['bottom']}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerTitle}>Ajustar horário</Text>
+            <TouchableOpacity onPress={onConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerConfirmText}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            mode="datetime"
+            display="spinner"
+            value={tempDate || getNow()}
+            onChange={(_, date) => { if (date) setTempDate(date) }}
+            locale="pt-BR"
+            textColor={colors.text.primary}
+            themeVariant="light"
+          />
+        </SafeAreaView>
+      </View>
+    </Modal>
+  )
+}
+
+function useDoseActionSheetState({
   visible,
   instance,
-  timezone = DEFAULT_TZ,
-  onClose,
+  isOrphan,
+  onUpdateLog,
   onRegisterRetro,
   onUndo,
-  onUpdateLog,
   onDeleteLog,
-  loading = false,
+  onClose,
 }) {
   const [view, setView] = useState('main')
   const [takenAtDate, setTakenAtDate] = useState(null)
@@ -277,17 +348,28 @@ export default function DoseActionSheet({
   const [tempDate, setTempDate] = useState(null)
   const [quantityTaken, setQuantityTaken] = useState('')
 
+  const {
+    logId,
+    medicine_id,
+    protocol_id,
+    instanceId,
+    quantity_taken,
+    dosage_per_intake,
+    taken_at,
+    scheduled_for,
+  } = instance || {}
+
   useEffect(() => {
     if (visible && instance) {
       startTransition(() => {
         setView('main')
         setShowDatePicker(false)
-        const src = instance.taken_at || instance.scheduled_for
+        const src = taken_at || scheduled_for
         setTakenAtDate(src ? parseISO(src) : getNow())
-        setQuantityTaken(String(instance.quantity_taken ?? instance.dosage_per_intake ?? 1))
+        setQuantityTaken(String(quantity_taken ?? dosage_per_intake ?? 1))
       })
     }
-  }, [visible, instance])
+  }, [visible, instance, taken_at, scheduled_for, quantity_taken, dosage_per_intake])
 
   function handleOpenPicker() {
     if (Platform.OS === 'android') {
@@ -303,28 +385,24 @@ export default function DoseActionSheet({
     setShowDatePicker(false)
   }
 
-  const isOrphan = instance?.source === 'log' || !!instance?.is_orphan
-
   const handleSaveEdit = () => {
     if (!takenAtDate || !quantityTaken) return
-    // PT-BR: teclado numérico usa vírgula decimal — trocar por ponto antes do parseFloat,
-    // senão "1,5" trunca para "1" (perda de precisão na quantidade).
     const parsedQty = parseFloat(String(quantityTaken).replace(',', '.'))
     if (isNaN(parsedQty)) return
+    const payload = {
+      taken_at: takenAtDate.toISOString(),
+      quantity_taken: parsedQty,
+    }
     if (isOrphan) {
-      onUpdateLog?.(instance.logId, {
-        taken_at: takenAtDate.toISOString(),
-        quantity_taken: parsedQty,
-      })
+      onUpdateLog?.(logId, payload)
     } else {
       onRegisterRetro?.(
         {
-          taken_at: takenAtDate.toISOString(),
-          quantity_taken: parsedQty,
-          medicine_id: instance?.medicine_id,
-          protocol_id: instance?.protocol_id,
+          ...payload,
+          medicine_id,
+          protocol_id,
         },
-        instance?.instanceId  // instanceId = UUID bruto; instance.id = "inst:<uuid>" (prefixo core)
+        instanceId
       )
     }
     onClose?.()
@@ -332,21 +410,112 @@ export default function DoseActionSheet({
 
   const handleDelete = () => {
     if (isOrphan) {
-      onDeleteLog?.(instance.logId)
+      onDeleteLog?.(logId)
     } else {
-      onUndo?.(instance?.instanceId)  // instanceId = UUID bruto; instance.id = "inst:<uuid>" (prefixo core)
+      onUndo?.(instanceId)
     }
     onClose?.()
   }
 
-  const medicineName = instance?.medicine_name || instance?.protocol_name || '—'
-  const hasPill = instance?.dosage_per_pill != null && instance?.dosage_unit
-  const scheduledTime = formatTimeInTz(instance?.scheduled_for, timezone)
-  const takenTime = formatInTz(instance?.taken_at, timezone)
-  const punctuality = instance?.taken_at && !isOrphan ? punctualityLabel(instance.taken_at, instance.scheduled_for) : null
+  return {
+    view,
+    setView,
+    takenAtDate,
+    showDatePicker,
+    setShowDatePicker,
+    tempDate,
+    setTempDate,
+    quantityTaken,
+    setQuantityTaken,
+    handleOpenPicker,
+    handleIOSConfirm,
+    handleSaveEdit,
+    handleDelete,
+  }
+}
+
+export default function DoseActionSheet({
+  visible,
+  instance,
+  timezone = DEFAULT_TZ,
+  onClose,
+  onRegisterRetro,
+  onUndo,
+  onUpdateLog,
+  onDeleteLog,
+  loading = false,
+}) {
+  const {
+    source,
+    is_orphan,
+  } = instance || {}
+
+  const isOrphan = source === 'log' || !!is_orphan
+
+  const {
+    medicineName,
+    hasPill,
+    scheduledTime,
+    takenTime,
+    punctuality,
+    isTaken,
+    statusMeta,
+  } = useMemo(() => {
+    if (!instance) {
+      return {
+        medicineName: '—',
+        hasPill: false,
+        scheduledTime: '',
+        takenTime: '',
+        punctuality: null,
+        isTaken: false,
+        statusMeta: STATUS_META.pending,
+      }
+    }
+    const name = instance.medicine_name || instance.protocol_name || '—'
+    const pill = instance.dosage_per_pill != null && instance.dosage_unit
+    const sTime = formatTimeInTz(instance.scheduled_for, timezone)
+    const tTime = formatInTz(instance.taken_at, timezone)
+    const punct = instance.taken_at && !isOrphan ? punctualityLabel(instance.taken_at, instance.scheduled_for) : null
+    const taken = instance.status === 'taken'
+    const meta = STATUS_META[instance.status] ?? STATUS_META.pending
+    return {
+      medicineName: name,
+      hasPill: pill,
+      scheduledTime: sTime,
+      takenTime: tTime,
+      punctuality: punct,
+      isTaken: taken,
+      statusMeta: meta,
+    }
+  }, [instance, timezone, isOrphan])
+
+  const {
+    view,
+    setView,
+    takenAtDate,
+    showDatePicker,
+    setShowDatePicker,
+    tempDate,
+    setTempDate,
+    quantityTaken,
+    setQuantityTaken,
+    handleOpenPicker,
+    handleIOSConfirm,
+    handleSaveEdit,
+    handleDelete,
+  } = useDoseActionSheetState({
+    visible,
+    instance,
+    isOrphan,
+    onUpdateLog,
+    onRegisterRetro,
+    onUndo,
+    onDeleteLog,
+    onClose,
+  })
+
   const statusBarHeight = StatusBar.currentHeight || 24
-  const isTaken = instance?.status === 'taken'
-  const statusMeta = STATUS_META[instance?.status] ?? STATUS_META.pending
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
@@ -363,44 +532,13 @@ export default function DoseActionSheet({
             scrollEnabled={view !== 'main'}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.header}>
-              <StatusHeaderIcon status={instance?.status} size={28} />
-              <View style={styles.headerBody}>
-                <View style={styles.headerNameRow}>
-                  <Text style={styles.headerTitle} numberOfLines={1}>{medicineName}</Text>
-                  <View style={[styles.statusChip, { backgroundColor: statusMeta.bg }]}>
-                    <Text style={[styles.statusChipText, { color: statusMeta.color }]}>{statusMeta.label}</Text>
-                  </View>
-                  {hasPill && (
-                    <View style={styles.pill}>
-                      <Text style={styles.pillText}>{formatConcentration(instance.dosage_per_pill, instance.dosage_unit)}</Text>
-                    </View>
-                  )}
-                </View>
-                {instance?.dosage_per_intake != null && (
-                  <Text style={styles.headerSub}>
-                    {(() => {
-                      const qty = instance.dosage_per_intake
-                      // Líquido (022): unidade de TOMADA do tratamento (gotas/ml/UI), não a
-                      // unidade do medicamento — ex: "20 gotas", nunca "20 mg/ml".
-                      if (isLiquidMedicine(instance)) return formatDose(qty, instance.intake_unit || 'ml')
-                      const unit = instance.dosage_unit?.toLowerCase()
-                      if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
-                      if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
-                      return `${qty} ${instance.dosage_unit}`
-                    })()}
-                  </Text>
-                )}
-              </View>
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Fechar"
-              >
-                <X size={20} color={colors.text.secondary} />
-              </TouchableOpacity>
-            </View>
+            <DoseActionSheetHeader
+              instance={instance}
+              medicineName={medicineName}
+              hasPill={hasPill}
+              statusMeta={statusMeta}
+              onClose={onClose}
+            />
 
             {view === 'main' && (
               <SheetMainView
@@ -440,33 +578,13 @@ export default function DoseActionSheet({
         </TouchableOpacity>
       </TouchableOpacity>
 
-      {Platform.OS === 'ios' && showDatePicker && (
-        <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
-          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
-          <View style={styles.pickerSheet}>
-            <SafeAreaView edges={['bottom']}>
-              <View style={styles.pickerHeader}>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerCancelText}>Cancelar</Text>
-                </TouchableOpacity>
-                <Text style={styles.pickerTitle}>Ajustar horário</Text>
-                <TouchableOpacity onPress={handleIOSConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Text style={styles.pickerConfirmText}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                mode="datetime"
-                display="spinner"
-                value={tempDate || getNow()}
-                onChange={(_, date) => { if (date) setTempDate(date) }}
-                locale="pt-BR"
-                textColor={colors.text.primary}
-                themeVariant="light"
-              />
-            </SafeAreaView>
-          </View>
-        </Modal>
-      )}
+      <DoseIOSDatePickerModal
+        visible={showDatePicker}
+        tempDate={tempDate}
+        setTempDate={setTempDate}
+        onCancel={() => setShowDatePicker(false)}
+        onConfirm={handleIOSConfirm}
+      />
     </Modal>
   )
 }

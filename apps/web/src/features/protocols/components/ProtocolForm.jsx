@@ -82,6 +82,20 @@ function _getFormTitle(protocol, title) {
   return protocol ? 'Editar Tratamento' : 'Novo Tratamento'
 }
 
+function _findMedicine(medicines, medicineId) {
+  return medicines?.find((m) => m.id === medicineId) || null
+}
+
+function _getFormLayout(isSimpleMode, onCancel, saveSuccess) {
+  return {
+    formClass: isSimpleMode ? 'protocol-form-simple' : '',
+    formPaddingBottom: isSimpleMode ? '0' : '80px',
+    showCancelBtn: !isSimpleMode && !!onCancel,
+    showTopSuccess: !!(saveSuccess && !isSimpleMode),
+    showBottomSuccess: !!(saveSuccess && isSimpleMode),
+  }
+}
+
 export default function ProtocolForm({
   medicines,
   treatmentPlans = [],
@@ -125,11 +139,15 @@ export default function ProtocolForm({
   })
 
   const formTitle = _getFormTitle(protocol, title)
-  const formClass = isSimpleMode ? 'protocol-form-simple' : ''
-  const formPaddingBottom = isSimpleMode ? '0' : '80px'
-  const showCancelBtn = !isSimpleMode && onCancel
-  const showTopSuccess = saveSuccess && !isSimpleMode
-  const showBottomSuccess = saveSuccess && isSimpleMode
+  const {
+    formClass,
+    formPaddingBottom,
+    showCancelBtn,
+    showTopSuccess,
+    showBottomSuccess,
+  } = _getFormLayout(isSimpleMode, onCancel, saveSuccess)
+
+  const selectedMedicine = _findMedicine(medicines, formData.medicine_id)
 
   return (
     <form
@@ -162,12 +180,12 @@ export default function ProtocolForm({
         setTimeInput={setTimeInput}
         addTime={addTime}
         removeTime={removeTime}
-        medicine={medicines?.find((m) => m.id === formData.medicine_id) || null}
+        medicine={selectedMedicine}
       />
 
       <ProtocolFormAdvancedSection
         formData={formData}
-        medicine={medicines?.find((m) => m.id === formData.medicine_id) || null}
+        medicine={selectedMedicine}
         handleChange={handleChange}
         enableTitration={enableTitration}
         handleTitrationEnable={handleTitrationEnable}

@@ -30,6 +30,57 @@ import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
  *   medicine: object|null,
  * }} props
  */
+// Helpers e sub-componentes para simplificar a complexidade de StockIndicators
+function getDaysColor(daysRemaining) {
+  if (daysRemaining == null) return colors.text.primary
+  if (daysRemaining < 7) return colors.status.error
+  if (daysRemaining < 14) return colors.status.warning
+  return colors.text.primary
+}
+
+function RemainingKpi({ isDailyStock, daysRemaining, dosesRemaining, daysColor }) {
+  if (isDailyStock) {
+    return (
+      <Kpi
+        icon={<Clock size={18} color={colors.primary[700]} />}
+        label="Dias restantes"
+        value={daysRemaining == null ? '—' : String(daysRemaining)}
+        suffix={daysRemaining == null ? null : 'dias'}
+        valueColor={daysColor}
+      />
+    )
+  }
+  return (
+    <Kpi
+      icon={<Clock size={18} color={colors.primary[700]} />}
+      label="Doses restantes"
+      value={dosesRemaining == null ? '—' : String(dosesRemaining)}
+      suffix={dosesRemaining == null ? null : dosesRemaining === 1 ? 'dose' : 'doses'}
+      valueColor={daysColor}
+    />
+  )
+}
+
+function CostKpi({ costPerDose, avgUnitPrice, countSuffix }) {
+  if (costPerDose != null) {
+    return (
+      <Kpi
+        icon={<Tag size={18} color={colors.primary[700]} />}
+        label="Custo por dose"
+        value={formatBRL(costPerDose)}
+      />
+    )
+  }
+  return (
+    <Kpi
+      icon={<Tag size={18} color={colors.primary[700]} />}
+      label="Custo médio"
+      value={formatBRL(avgUnitPrice)}
+      suffix={`/ ${countSuffix}`}
+    />
+  )
+}
+
 export default function StockIndicators({
   saldo = 0,
   dailyConsumption = 0,
@@ -40,69 +91,41 @@ export default function StockIndicators({
   costPerDose = null,
   medicine = null,
 }) {
-  // Cor de alerta SEMPRE por runway (dias corridos): <7 vermelho · <14 amarelo.
-  // Vale para diário e ≠ diário — o rótulo muda (doses), a cor mede recompra.
-  const daysColor =
-    daysRemaining == null
-      ? colors.text.primary
-      : daysRemaining < 7
-        ? colors.status.error
-        : daysRemaining < 14
-          ? colors.status.warning
-          : colors.text.primary
-
-  // Líquidos (022): saldo/consumo em ml (sem hint de princípio ativo, custo /ml).
+  const daysColor = getDaysColor(daysRemaining)
   const isLiquid = isLiquidMedicine(medicine)
   const countSuffix = isLiquid ? 'ml' : 'un.'
-  const fmtCount = (n) => (isLiquid ? formatNumberPtBR(n) : String(n))
+  const fmtCount = isLiquid ? formatNumberPtBR(saldo) : String(saldo)
+  const fmtDaily = isLiquid ? formatNumberPtBR(dailyConsumption) : String(dailyConsumption)
+  const hintSaldo = isLiquid ? null : formatActiveIngredientShort(saldo, medicine?.dosage_per_pill, medicine?.dosage_unit)
+  const hintDaily = isLiquid ? null : formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)
 
   return (
     <View style={styles.grid}>
       <Kpi
         icon={<Package size={18} color={colors.primary[700]} />}
         label="Saldo"
-        value={fmtCount(saldo)}
+        value={fmtCount}
         suffix={countSuffix}
-        hint={isLiquid ? null : formatActiveIngredientShort(saldo, medicine?.dosage_per_pill, medicine?.dosage_unit)}
+        hint={hintSaldo}
       />
       <Kpi
         icon={<TrendingDown size={18} color={colors.primary[700]} />}
         label="Consumo / dia"
-        value={fmtCount(dailyConsumption)}
+        value={fmtDaily}
         suffix={countSuffix}
-        hint={isLiquid ? null : formatActiveIngredientShort(dailyConsumption, medicine?.dosage_per_pill, medicine?.dosage_unit)}
+        hint={hintDaily}
       />
-      {isDailyStock ? (
-        <Kpi
-          icon={<Clock size={18} color={colors.primary[700]} />}
-          label="Dias restantes"
-          value={daysRemaining == null ? '—' : String(daysRemaining)}
-          suffix={daysRemaining == null ? null : 'dias'}
-          valueColor={daysColor}
-        />
-      ) : (
-        <Kpi
-          icon={<Clock size={18} color={colors.primary[700]} />}
-          label="Doses restantes"
-          value={dosesRemaining == null ? '—' : String(dosesRemaining)}
-          suffix={dosesRemaining == null ? null : dosesRemaining === 1 ? 'dose' : 'doses'}
-          valueColor={daysColor}
-        />
-      )}
-      {costPerDose != null ? (
-        <Kpi
-          icon={<Tag size={18} color={colors.primary[700]} />}
-          label="Custo por dose"
-          value={formatBRL(costPerDose)}
-        />
-      ) : (
-        <Kpi
-          icon={<Tag size={18} color={colors.primary[700]} />}
-          label="Custo médio"
-          value={formatBRL(avgUnitPrice)}
-          suffix={`/ ${countSuffix}`}
-        />
-      )}
+      <RemainingKpi
+        isDailyStock={isDailyStock}
+        daysRemaining={daysRemaining}
+        dosesRemaining={dosesRemaining}
+        daysColor={daysColor}
+      />
+      <CostKpi
+        costPerDose={costPerDose}
+        avgUnitPrice={avgUnitPrice}
+        countSuffix={countSuffix}
+      />
     </View>
   )
 }

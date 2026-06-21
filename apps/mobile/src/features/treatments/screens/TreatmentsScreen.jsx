@@ -19,7 +19,7 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 
 const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
 
-export default function TreatmentsScreen() {
+function useTreatmentsScreenState() {
   const navigation = useNavigation()
   const {
     groups,
@@ -34,19 +34,14 @@ export default function TreatmentsScreen() {
     pausados,
     finalizados,
   } = useTreatments()
-  // complexity_override do perfil (Configurações → Densidade). Override manual
-  // tem prioridade sobre a heurística de contagem (paridade com TodayScreen).
   const { profile, refresh: refreshProfile } = useProfile()
   const complexityOverride = profile?.complexity_override
   const [expandedGroups, setExpandedGroups] = useState({})
 
-  // Heurística de Complexidade Adaptativa (Wave 10A) — APENAS ativos.
-  // Pausados e finalizados vão flat (sem grupos), conforme spec Fase 2.5 §3.1.
   const { isComplex, flatData } = useMemo(() => {
     if (!groups) return DEFAULT_COMPLEXITY
     const total = groups.reduce((acc, g) => acc + g.protocols.length, 0)
     const flat = groups.flatMap(g => g.protocols)
-    // Override manual ('simple'|'complex') vence a heurística; null = automático.
     const complex = complexityOverride
       ? complexityOverride === 'complex'
       : total > 3
@@ -74,21 +69,18 @@ export default function TreatmentsScreen() {
   }, [navigation])
 
   const totalAcrossTabs = (counts?.ativos ?? 0) + (counts?.pausados ?? 0) + (counts?.finalizados ?? 0)
-  const isFullyEmpty = totalAcrossTabs === 0
+  const isEmpty = totalAcrossTabs === 0
 
-  // Refresh ao ganhar foco: captura tratamentos/planos criados em ProtocolFormScreen
-  // (useTreatments cache key difere de @dosiq/protocols-snapshot invalidado pela mutation).
   useFocusEffect(
     useCallback(() => {
       refresh()
-      refreshProfile() // re-lê complexity_override alterado em Configurações
+      refreshProfile()
     }, [refresh, refreshProfile])
   )
 
   const toggleGroup = useCallback((groupId) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setExpandedGroups(prev => {
-      // Se for undefined (estado inicial), tratamos como true (aberto), então o toggle inverte para false.
       const isCurrentlyExpanded = prev[groupId] !== false
       return {
         ...prev,
@@ -97,7 +89,93 @@ export default function TreatmentsScreen() {
     })
   }, [])
 
-  if (!hasLoaded) {
+  return {
+    groups,
+    loading,
+    hasLoaded,
+    error,
+    stale,
+    refresh,
+    activeTab,
+    setActiveTab,
+    counts,
+    pausados,
+    finalizados,
+    expandedGroups,
+    isComplex,
+    flatData,
+    goToMedicines,
+    goToCreate,
+    openProtocolDetail,
+    goToCreateInGroup,
+    isEmpty,
+    toggleGroup,
+  }
+}
+
+function SimpleProtocolList({ items, emptyMessage, onOpenDetail }) {
+  if (items.length === 0) {
+    return <Text style={styles.tabEmpty}>{emptyMessage}</Text>
+  }
+  return (
+    <View style={styles.simpleList}>
+      {items.map(protocol => (
+        <TreatmentCard
+          key={protocol.id}
+          treatment={protocol}
+          tabStatus={protocol.tabStatus}
+          endDate={protocol.endDate}
+          onPress={() => onOpenDetail(protocol.id)}
+        />
+      ))}
+    </View>
+  )
+}
+
+function GroupedProtocolSection({ group, isExpanded, onToggle, onOpenDetail, onCreateInGroup }) {
+  return (
+    <View style={styles.groupContainer}>
+      <TreatmentPlanHeader
+        title={group.title}
+        emoji={group.emoji}
+        color={group.color}
+        isExpanded={isExpanded}
+        onToggle={onToggle}
+        count={group.protocols.length}
+      />
+      {isExpanded && (
+        <View style={styles.protocolsList}>
+          {group.protocols.map(protocol => (
+            <TreatmentCard
+              key={protocol.id}
+              treatment={protocol}
+              tabStatus={protocol.tabStatus}
+              endDate={protocol.endDate}
+              onPress={() => onOpenDetail(protocol.id)}
+            />
+          ))}
+          <Pressable
+            onPress={onCreateInGroup}
+            style={({ pressed }) => [
+              styles.addToGroup,
+              pressed && styles.addToGroupPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Adicionar novo tratamento ao grupo ${group.title}`}
+          >
+            <Plus size={16} color={colors.primary[700]} />
+            <Text style={styles.addToGroupText}>Adicionar novo tratamento ao grupo</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  )
+}
+
+export default function TreatmentsScreen() {
+  const state = useTreatmentsScreenState()
+
+  if (!state.hasLoaded) {
     return (
       <ScreenContainer>
         <LoadingState message="Carregando tratamentos..." />
@@ -105,26 +183,24 @@ export default function TreatmentsScreen() {
     )
   }
 
-  if (error && !groups) {
+  if (state.error && !state.groups) {
     return (
       <ScreenContainer>
-        <ErrorState message={error} onRetry={refresh} />
+        <ErrorState message={state.error} onRetry={state.refresh} />
       </ScreenContainer>
     )
   }
 
-  const isEmpty = isFullyEmpty
-
   return (
     <ScreenContainer>
-      {stale && <StaleBanner />}
+      {state.stale && <StaleBanner />}
       
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
           <RefreshControl
-            refreshing={loading && !!groups}
-            onRefresh={refresh}
+            refreshing={state.loading && !!state.groups}
+            onRefresh={state.refresh}
             tintColor={colors.status.success}
           />
         }
@@ -136,9 +212,9 @@ export default function TreatmentsScreen() {
 
         {/* Link Medicamentos no topo APENAS no estado zero — destaque para onboarding.
             Quando há tratamentos, o link migra para o rodapé (gestão diária = tratamentos). */}
-        {isEmpty && (
+        {state.isEmpty && (
           <Pressable
-            onPress={goToMedicines}
+            onPress={state.goToMedicines}
             style={({ pressed }) => [styles.medicinesLink, pressed && styles.medicinesLinkPressed]}
             accessibilityRole="button"
             accessibilityLabel="Medicamentos"
@@ -149,126 +225,69 @@ export default function TreatmentsScreen() {
           </Pressable>
         )}
 
-        {isEmpty ? (
+        {state.isEmpty ? (
           <EmptyState
             icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
             title="Nenhum tratamento cadastrado"
             message="Configure doses e horários para receber lembretes e acompanhar a adesão."
-            action={{ label: '+ Criar primeiro tratamento', onPress: goToCreate }}
+            action={{ label: '+ Criar primeiro tratamento', onPress: state.goToCreate }}
           />
         ) : (
           <>
             <TreatmentTabBar
-              activeTab={activeTab}
-              counts={counts}
-              onChange={setActiveTab}
+              activeTab={state.activeTab}
+              counts={state.counts}
+              onChange={state.setActiveTab}
             />
 
-            {activeTab === 'ativos' && counts.ativos === 0 ? (
+            {state.activeTab === 'ativos' && state.counts.ativos === 0 ? (
               <Text style={styles.tabEmpty}>Nenhum tratamento ativo no momento.</Text>
             ) : null}
 
-            {activeTab === 'pausados' && (
-              pausados.length === 0 ? (
-                <Text style={styles.tabEmpty}>Nenhum tratamento pausado.</Text>
-              ) : (
-                <View style={styles.simpleList}>
-                  {pausados.map(protocol => (
-                    <TreatmentCard
-                      key={protocol.id}
-                      treatment={protocol}
-                      tabStatus={protocol.tabStatus}
-                      endDate={protocol.endDate}
-                      onPress={() => openProtocolDetail(protocol.id)}
-                    />
-                  ))}
-                </View>
-              )
+            {state.activeTab === 'pausados' && (
+              <SimpleProtocolList
+                items={state.pausados}
+                emptyMessage="Nenhum tratamento pausado."
+                onOpenDetail={state.openProtocolDetail}
+              />
             )}
 
-            {activeTab === 'finalizados' && (
-              finalizados.length === 0 ? (
-                <Text style={styles.tabEmpty}>Nenhum tratamento finalizado ainda.</Text>
-              ) : (
-                <View style={styles.simpleList}>
-                  {finalizados.map(protocol => (
-                    <TreatmentCard
-                      key={protocol.id}
-                      treatment={protocol}
-                      tabStatus={protocol.tabStatus}
-                      endDate={protocol.endDate}
-                      onPress={() => openProtocolDetail(protocol.id)}
-                    />
-                  ))}
-                </View>
-              )
+            {state.activeTab === 'finalizados' && (
+              <SimpleProtocolList
+                items={state.finalizados}
+                emptyMessage="Nenhum tratamento finalizado ainda."
+                onOpenDetail={state.openProtocolDetail}
+              />
             )}
 
-            {activeTab === 'ativos' && counts.ativos > 0 && (
-              !isComplex ? (
+            {state.activeTab === 'ativos' && state.counts.ativos > 0 && (
+              !state.isComplex ? (
                 /* MODO SIMPLE: Dona Maria (Lista direta sem accordions) */
-                <View style={styles.simpleList}>
-                  {flatData.map(protocol => (
-                    <TreatmentCard
-                      key={protocol.id}
-                      treatment={protocol}
-                      tabStatus={protocol.tabStatus}
-                      endDate={protocol.endDate}
-                      onPress={() => openProtocolDetail(protocol.id)}
-                    />
-                  ))}
-                </View>
+                <SimpleProtocolList
+                  items={state.flatData}
+                  emptyMessage="Nenhum tratamento ativo no momento."
+                  onOpenDetail={state.openProtocolDetail}
+                />
               ) : (
                 /* MODO COMPLEX: Carlos (Agrupado por planos/classes) */
-                groups.map(group => {
-                  const isExpanded = expandedGroups[group.id] !== false
-                  return (
-                    <View key={group.id} style={styles.groupContainer}>
-                      <TreatmentPlanHeader
-                        title={group.title}
-                        emoji={group.emoji}
-                        color={group.color}
-                        isExpanded={isExpanded}
-                        onToggle={() => toggleGroup(group.id)}
-                        count={group.protocols.length}
-                      />
-                      {isExpanded && (
-                        <View style={styles.protocolsList}>
-                          {group.protocols.map(protocol => (
-                            <TreatmentCard
-                              key={protocol.id}
-                              treatment={protocol}
-                              tabStatus={protocol.tabStatus}
-                              endDate={protocol.endDate}
-                              onPress={() => openProtocolDetail(protocol.id)}
-                            />
-                          ))}
-                          <Pressable
-                            onPress={() => goToCreateInGroup(group.id)}
-                            style={({ pressed }) => [
-                              styles.addToGroup,
-                              pressed && styles.addToGroupPressed,
-                            ]}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Adicionar novo tratamento ao grupo ${group.title}`}
-                          >
-                            <Plus size={16} color={colors.primary[700]} />
-                            <Text style={styles.addToGroupText}>Adicionar novo tratamento ao grupo</Text>
-                          </Pressable>
-                        </View>
-                      )}
-                    </View>
-                  )
-                })
+                state.groups.map(group => (
+                  <GroupedProtocolSection
+                    key={group.id}
+                    group={group}
+                    isExpanded={state.expandedGroups[group.id] !== false}
+                    onToggle={() => state.toggleGroup(group.id)}
+                    onOpenDetail={state.openProtocolDetail}
+                    onCreateInGroup={() => state.goToCreateInGroup(group.id)}
+                  />
+                ))
               )
             )}
           </>
         )}
 
-        {/* Link Medicamentos no rodapé quando há tratamentos — mesmo estilo do topo, só posição diferente. */}
-        {!isEmpty && (
+        {!state.isEmpty && (
           <Pressable
-            onPress={goToMedicines}
+            onPress={state.goToMedicines}
             style={({ pressed }) => [
               styles.medicinesLink,
               styles.medicinesLinkFooter,
@@ -284,9 +303,9 @@ export default function TreatmentsScreen() {
         )}
       </ScrollView>
 
-      {!isEmpty && (
+      {!state.isEmpty && (
         <Pressable
-          onPress={goToCreate}
+          onPress={state.goToCreate}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           accessibilityRole="button"
           accessibilityLabel="Criar novo tratamento"

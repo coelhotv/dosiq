@@ -25,6 +25,178 @@ import {
 } from '@dosiq/core/schemas/nudgeSchema'
 import './NudgesAdmin.css'
 
+function NudgesFilters({ isActiveFilter, setIsActiveFilter, targetViewFilter, setTargetViewFilter, setPage, length, total }) {
+  return (
+    <section className="nudges-admin__filters">
+      <div className="nudges-admin__filters-group">
+        <div className="nudges-admin__meta-item">
+          <span className="nudges-admin__filter-label">Status:</span>
+          <select
+            value={isActiveFilter}
+            onChange={(e) => {
+              setIsActiveFilter(e.target.value)
+              setPage(1)
+            }}
+            className="nudges-admin__select"
+          >
+            <option value="">Todos</option>
+            <option value="true">Ativos</option>
+            <option value="false">Inativos</option>
+          </select>
+        </div>
+
+        <div className="nudges-admin__meta-item">
+          <span className="nudges-admin__filter-label">Tela Alvo:</span>
+          <select
+            value={targetViewFilter}
+            onChange={(e) => {
+              setTargetViewFilter(e.target.value)
+              setPage(1)
+            }}
+            className="nudges-admin__select"
+          >
+            <option value="">Todas</option>
+            {TARGET_VIEW_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {TARGET_VIEW_LABELS[opt]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="nudges-admin__pagination-info">
+        Exibindo <strong>{length}</strong> de <strong>{total}</strong> nudges
+      </div>
+    </section>
+  )
+}
+
+function NudgeCard({ nudge, actionLoading, handleToggleActive, handleOpenEdit }) {
+  return (
+    <article
+      className={`nudges-admin__card ${
+        nudge.is_active ? 'nudges-admin__card--active' : 'nudges-admin__card--inactive'
+      }`}
+    >
+      <div className="nudges-admin__card-header">
+        <div className="nudges-admin__card-title">
+          <h3>{nudge.title}</h3>
+          <span className={`nudges-admin__badge nudges-admin__badge--${nudge.platform}`}>
+            {PLATFORM_LABELS[nudge.platform]}
+          </span>
+        </div>
+        <div className="nudges-admin__card-meta">
+          <span className="nudges-admin__priority">
+            Prioridade: {nudge.priority}
+          </span>
+        </div>
+      </div>
+
+      <div className="nudges-admin__card-body">
+        <p className="nudges-admin__body-text">{nudge.body}</p>
+
+        <div className="nudges-admin__card-details">
+          <span className="nudges-admin__detail">
+            Tela: {TARGET_VIEW_LABELS[nudge.target_view]}
+          </span>
+          <span className="nudges-admin__detail">
+            Ação: {ACTION_TYPE_LABELS[nudge.action_type]}
+          </span>
+          {nudge.start_at && (
+            <span className="nudges-admin__detail">
+              Início: {parseISO(nudge.start_at).toLocaleDateString('pt-BR')}
+            </span>
+          )}
+          {nudge.end_at && (
+            <span className="nudges-admin__detail">
+              Fim: {parseISO(nudge.end_at).toLocaleDateString('pt-BR')}
+            </span>
+          )}
+        </div>
+
+        {nudge.action_payload && Object.keys(nudge.action_payload).length > 0 && (
+          <div className="nudges-admin__payload-preview">
+            <details>
+              <summary>
+                <Eye size={14} /> Payload
+              </summary>
+              <pre>{JSON.stringify(nudge.action_payload, null, 2)}</pre>
+            </details>
+          </div>
+        )}
+      </div>
+
+      <div className="nudges-admin__card-footer">
+        <button
+          onClick={() => handleToggleActive(nudge.id, nudge.is_active)}
+          className="nudges-admin__toggle-btn"
+          type="button"
+          disabled={actionLoading === nudge.id}
+          title={nudge.is_active ? 'Desativar' : 'Ativar'}
+        >
+          {nudge.is_active ? (
+            <ToggleRight size={20} className="toggle-on" />
+          ) : (
+            <ToggleLeft size={20} className="toggle-off" />
+          )}
+        </button>
+
+        <Button
+          onClick={() => handleOpenEdit(nudge)}
+          variant="secondary"
+          disabled={actionLoading === nudge.id}
+          size="sm"
+        >
+          <Edit size={14} /> Editar
+        </Button>
+
+        <Button
+          onClick={() => {
+            // TODO: implement delete after handleDelete is added to hook and API
+          }}
+          variant="secondary"
+          disabled={true}
+          size="sm"
+          title="Funcionalidade de exclusão em desenvolvimento"
+        >
+          <Trash2 size={14} /> Deletar
+        </Button>
+      </div>
+    </article>
+  )
+}
+
+function NudgesHeader({ onBack }) {
+  return (
+    <header className="nudges-admin__header">
+      <div className="nudges-admin__title-area">
+        <h1>Gerenciamento de Nudges</h1>
+        <p className="nudges-admin__subtitle">
+          Crie e configure banners in-app para engajar usuários
+        </p>
+      </div>
+      {onBack && (
+        <button onClick={onBack} className="nudges-admin__back-btn" type="button">
+          <ArrowLeft size={16} /> Voltar
+        </button>
+      )}
+    </header>
+  )
+}
+
+function NudgeEmptyState({ handleOpenCreate }) {
+  return (
+    <div className="nudges-admin__empty">
+      <AlertCircle size={48} className="nudges-admin__empty-icon" />
+      <h3>Sem Nudges</h3>
+      <p>Crie seu primeiro nudge para começar a engajar usuários.</p>
+      <Button onClick={handleOpenCreate} variant="secondary" size="sm">
+        Criar Nudge
+      </Button>
+    </div>
+  )
+}
+
 export default function NudgesAdmin({ onBack }) {
   const {
     nudges,
@@ -77,19 +249,7 @@ export default function NudgesAdmin({ onBack }) {
 
   return (
     <div className="nudges-admin">
-      <header className="nudges-admin__header">
-        <div className="nudges-admin__title-area">
-          <h1>Gerenciamento de Nudges</h1>
-          <p className="nudges-admin__subtitle">
-            Crie e configure banners in-app para engajar usuários
-          </p>
-        </div>
-        {onBack && (
-          <button onClick={onBack} className="nudges-admin__back-btn" type="button">
-            <ArrowLeft size={16} /> Voltar
-          </button>
-        )}
-      </header>
+      <NudgesHeader onBack={onBack} />
 
       {/* Botão Criar */}
       <div className="nudges-admin__toolbar">
@@ -99,47 +259,15 @@ export default function NudgesAdmin({ onBack }) {
       </div>
 
       {/* Filtros */}
-      <section className="nudges-admin__filters">
-        <div className="nudges-admin__filters-group">
-          <div className="nudges-admin__meta-item">
-            <span className="nudges-admin__filter-label">Status:</span>
-            <select
-              value={isActiveFilter}
-              onChange={(e) => {
-                setIsActiveFilter(e.target.value)
-                setPage(1)
-              }}
-              className="nudges-admin__select"
-            >
-              <option value="">Todos</option>
-              <option value="true">Ativos</option>
-              <option value="false">Inativos</option>
-            </select>
-          </div>
-
-          <div className="nudges-admin__meta-item">
-            <span className="nudges-admin__filter-label">Tela Alvo:</span>
-            <select
-              value={targetViewFilter}
-              onChange={(e) => {
-                setTargetViewFilter(e.target.value)
-                setPage(1)
-              }}
-              className="nudges-admin__select"
-            >
-              <option value="">Todas</option>
-              {TARGET_VIEW_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {TARGET_VIEW_LABELS[opt]}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="nudges-admin__pagination-info">
-          Exibindo <strong>{nudges.length}</strong> de <strong>{total}</strong> nudges
-        </div>
-      </section>
+      <NudgesFilters
+        isActiveFilter={isActiveFilter}
+        setIsActiveFilter={setIsActiveFilter}
+        targetViewFilter={targetViewFilter}
+        setTargetViewFilter={setTargetViewFilter}
+        setPage={setPage}
+        length={nudges.length}
+        total={total}
+      />
 
       {/* Mensagem de Ação */}
       {actionMessage && (
@@ -167,14 +295,7 @@ export default function NudgesAdmin({ onBack }) {
 
       {/* Empty State */}
       {!isLoading && !error && nudges.length === 0 && (
-        <div className="nudges-admin__empty">
-          <AlertCircle size={48} className="nudges-admin__empty-icon" />
-          <h3>Sem Nudges</h3>
-          <p>Crie seu primeiro nudge para começar a engajar usuários.</p>
-          <Button onClick={handleOpenCreate} variant="secondary" size="sm">
-            Criar Nudge
-          </Button>
-        </div>
+        <NudgeEmptyState handleOpenCreate={handleOpenCreate} />
       )}
 
       {/* Lista */}
@@ -182,97 +303,13 @@ export default function NudgesAdmin({ onBack }) {
         <>
           <div className="nudges-admin__list">
             {nudges.map((nudge) => (
-              <article
+              <NudgeCard
                 key={nudge.id}
-                className={`nudges-admin__card ${
-                  nudge.is_active ? 'nudges-admin__card--active' : 'nudges-admin__card--inactive'
-                }`}
-              >
-                <div className="nudges-admin__card-header">
-                  <div className="nudges-admin__card-title">
-                    <h3>{nudge.title}</h3>
-                    <span className={`nudges-admin__badge nudges-admin__badge--${nudge.platform}`}>
-                      {PLATFORM_LABELS[nudge.platform]}
-                    </span>
-                  </div>
-                  <div className="nudges-admin__card-meta">
-                    <span className="nudges-admin__priority">
-                      Prioridade: {nudge.priority}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="nudges-admin__card-body">
-                  <p className="nudges-admin__body-text">{nudge.body}</p>
-
-                  <div className="nudges-admin__card-details">
-                    <span className="nudges-admin__detail">
-                      Tela: {TARGET_VIEW_LABELS[nudge.target_view]}
-                    </span>
-                    <span className="nudges-admin__detail">
-                      Ação: {ACTION_TYPE_LABELS[nudge.action_type]}
-                    </span>
-                    {nudge.start_at && (
-                      <span className="nudges-admin__detail">
-                        Início: {parseISO(nudge.start_at).toLocaleDateString('pt-BR')}
-                      </span>
-                    )}
-                    {nudge.end_at && (
-                      <span className="nudges-admin__detail">
-                        Fim: {parseISO(nudge.end_at).toLocaleDateString('pt-BR')}
-                      </span>
-                    )}
-                  </div>
-
-                  {nudge.action_payload && Object.keys(nudge.action_payload).length > 0 && (
-                    <div className="nudges-admin__payload-preview">
-                      <details>
-                        <summary>
-                          <Eye size={14} /> Payload
-                        </summary>
-                        <pre>{JSON.stringify(nudge.action_payload, null, 2)}</pre>
-                      </details>
-                    </div>
-                  )}
-                </div>
-
-                <div className="nudges-admin__card-footer">
-                  <button
-                    onClick={() => handleToggleActive(nudge.id, nudge.is_active)}
-                    className="nudges-admin__toggle-btn"
-                    type="button"
-                    disabled={actionLoading === nudge.id}
-                    title={nudge.is_active ? 'Desativar' : 'Ativar'}
-                  >
-                    {nudge.is_active ? (
-                      <ToggleRight size={20} className="toggle-on" />
-                    ) : (
-                      <ToggleLeft size={20} className="toggle-off" />
-                    )}
-                  </button>
-
-                  <Button
-                    onClick={() => handleOpenEdit(nudge)}
-                    variant="secondary"
-                    disabled={actionLoading === nudge.id}
-                    size="sm"
-                  >
-                    <Edit size={14} /> Editar
-                  </Button>
-
-                  <Button
-                    onClick={() => {
-                      // TODO: implement delete after handleDelete is added to hook and API
-                    }}
-                    variant="secondary"
-                    disabled={true}
-                    size="sm"
-                    title="Funcionalidade de exclusão em desenvolvimento"
-                  >
-                    <Trash2 size={14} /> Deletar
-                  </Button>
-                </div>
-              </article>
+                nudge={nudge}
+                actionLoading={actionLoading}
+                handleToggleActive={handleToggleActive}
+                handleOpenEdit={handleOpenEdit}
+              />
             ))}
           </div>
 

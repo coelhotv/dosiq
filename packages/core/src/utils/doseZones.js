@@ -126,28 +126,45 @@ function toLocalHHMM(scheduledFor, tz) {
 }
 
 /**
+ * Mapeia propriedades e fallbacks do medicamento.
+ * @private
+ */
+function getMedicineDetails(medicine) {
+  const med = medicine || {}
+  return {
+    name: med.name || 'Desconhecido',
+    type: med.type || 'medicamento',
+    presentation: med.presentation ?? null,
+    dosage_per_pill: med.dosage_per_pill ?? null,
+    dosage_unit: med.dosage_unit ?? null,
+    concentration_volume_ml: med.concentration_volume_ml ?? null,
+    units_per_ml: med.units_per_ml ?? null,
+  }
+}
+
+/**
  * Cria um DoseItem a partir de uma dose_instance e do protocolo correspondente.
  * @private
  */
 function createDoseItem(instance, protocol, tz) {
-  const medicine = protocol.medicine || {}
+  const med = getMedicineDetails(protocol.medicine)
   const isRegistered = instance.status === TAKEN_STATUS
   return {
     instanceId: instance.id,
     protocolId: instance.protocol_id,
     medicineId: protocol.medicine_id,
-    medicineName: medicine.name || 'Desconhecido',
-    medicineType: medicine.type || 'medicamento',
+    medicineName: med.name,
+    medicineType: med.type,
     // 012 Fase A: forma farmacêutica p/ ícone canônico de identificação (getMedicineIconName)
-    presentation: medicine.presentation ?? null,
-    dosagePerPill: medicine.dosage_per_pill ?? null,
-    dosageUnit: medicine.dosage_unit ?? null,
+    presentation: med.presentation,
+    dosagePerPill: med.dosage_per_pill,
+    dosageUnit: med.dosage_unit,
     // 012 Fase B3 (FR-031): denominador do rótulo p/ reexibir concentração (ex: Mounjaro 0,5 mL)
-    concentrationVolumeMl: medicine.concentration_volume_ml ?? null,
+    concentrationVolumeMl: med.concentration_volume_ml,
     // Líquidos (022): unidade de tomada do tratamento + densidade do medicamento
     // p/ exibir dose na unidade certa (gotas/ml/UI) e converter p/ ml.
     intakeUnit: protocol.intake_unit ?? null,
-    unitsPerMl: medicine.units_per_ml ?? null,
+    unitsPerMl: med.units_per_ml,
     scheduledTime: toLocalHHMM(instance.scheduled_for, tz),
     scheduledFor: instance.scheduled_for,
     toleranceMinutes: instance.tolerance_minutes ?? null,

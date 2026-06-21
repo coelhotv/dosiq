@@ -242,6 +242,86 @@ function TodayModals({
   )
 }
 
+function TodayLastMeasureSection({ lastTodayMeasure, openMeasuresHub, setMeasureLogOpen }) {
+  return (
+    <View style={styles.lastMeasureSection}>
+      <Text style={styles.lastMeasureTitle}>Última medida</Text>
+      {lastTodayMeasure ? (
+        <MeasureCard
+          item={lastTodayMeasure}
+          showChevron
+          onPress={() => openMeasuresHub(lastTodayMeasure.type)}
+        />
+      ) : (
+        <Pressable
+          onPress={() => { lightTap(); setMeasureLogOpen(true) }}
+          style={({ pressed }) => [styles.measureNudge, pressed && styles.measureNudgePressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Nenhuma medida hoje. Registrar a primeira"
+        >
+          <View style={styles.measureNudgeIcon}>
+            <Ruler size={18} color={colors.status.info} strokeWidth={2} />
+          </View>
+          <Text style={styles.measureNudgeText}>Nenhuma medida hoje. Toque aqui e registre a primeira!</Text>
+          <ChevronRight size={18} color={colors.text.muted} strokeWidth={2} />
+        </Pressable>
+      )}
+    </View>
+  )
+}
+
+function TodaySpeedDial({ protocols, speedDialOpen, setSpeedDialOpen, setMeasureLogOpen, handleOpenBulkDose }) {
+  const handleFabPress = useCallback(() => {
+    lightTap()
+    setSpeedDialOpen((o) => !o)
+  }, [setSpeedDialOpen])
+
+  if (protocols.length === 0) return null
+
+  return (
+    <>
+      {speedDialOpen && (
+        <>
+          <Pressable style={styles.speedDialBackdrop} onPress={() => setSpeedDialOpen(false)} accessibilityLabel="Fechar menu" />
+          <View style={styles.speedDialActions}>
+            <Pressable
+              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
+              onPress={() => { setSpeedDialOpen(false); setMeasureLogOpen(true) }}
+              accessibilityRole="button"
+              accessibilityLabel="Registrar medida"
+            >
+              <Text style={styles.speedActionText}>Registrar medida</Text>
+              <View style={[styles.speedActionIcon, { backgroundColor: colors.status.info }]}>
+                <Ruler size={20} color={colors.text.inverse} strokeWidth={2.5} />
+              </View>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
+              onPress={() => { setSpeedDialOpen(false); handleOpenBulkDose() }}
+              accessibilityRole="button"
+              accessibilityLabel="Registrar dose"
+            >
+              <Text style={styles.speedActionText}>Registrar dose</Text>
+              <View style={styles.speedActionIcon}>
+                <Pill size={20} color={colors.text.inverse} strokeWidth={2.5} />
+              </View>
+            </Pressable>
+          </View>
+        </>
+      )}
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        onPress={handleFabPress}
+        accessibilityRole="button"
+        accessibilityLabel={speedDialOpen ? 'Fechar menu de registro' : 'Registrar dose ou medida'}
+        accessibilityState={{ expanded: speedDialOpen }}
+      >
+        <Plus size={24} color="#FFF" strokeWidth={3} style={speedDialOpen ? styles.fabIconOpen : null} />
+      </Pressable>
+    </>
+  )
+}
+
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
   timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
@@ -255,14 +335,9 @@ function TodayScreenContent({
   navigation,
 }) {
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
-  // 012 Fase C — states do speed-dial (R-010: States antes de Memos/Effects).
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
-  // F4.3e: hero = janela actionável DESLIZANTE cross-dia (não só hoje):
-  //  - carryOver  → atrasadas de ontem ainda no prazo (mais urgentes, todas entram);
-  //  - hoje       → late/now (ATRASADA/PROXIMA);
-  //  - lookAhead  → só as IMINENTES (zona now → PROXIMA); amanhã distante fica só em "Em breve".
-  // Ordena por instante absoluto (mais antigo/atrasado primeiro) e corta em 3.
+
   const priorityDoses = useMemo(() => {
     const todayUrgent = timeline.filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
     const aheadImminent = lookAhead.filter(d => d.timelineStatus === 'PROXIMA')
@@ -270,16 +345,14 @@ function TodayScreenContent({
       .sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
       .slice(0, 3)
   }, [carryOver, timeline, lookAhead])
-  // F4.3d: mapa { `${protocol_id}|${HH:MM}` → instanceId } das ocorrências do dia,
-  // p/ o bulk (FAB/plano) ancorar cada entrada à sua instância (snap só como fallback).
+
   const instancesByKey = useMemo(() => timeline.reduce((map, d) => {
     if (d.instanceId && d.protocol?.id && d.scheduledTime) {
       map[`${d.protocol.id}|${d.scheduledTime}`] = d.instanceId
     }
     return map
   }, {}), [timeline])
-  // Itens exatos das doses prioritárias (já instanciados) p/ o hero abrir o bulk.
-  // id = instanceId (explícito — não depende do aliasing id↔instanceId da timeline).
+
   const heroItems = useMemo(() => priorityDoses.map(d => ({
     id: d.instanceId,
     protocol: d.protocol,
@@ -287,31 +360,21 @@ function TodayScreenContent({
     plan: d.protocol?.treatment_plan,
     instanceId: d.instanceId,
   })), [priorityDoses])
+
   const { greeting, todayFormatted } = _buildHeaderData(data?.user)
   const adherenceTrend = stats.hasPreviousData
     ? `${stats.trend >= 0 ? '+' : ''}${stats.trend}% vs semana anterior`
     : ''
   const bulkMode = bulkModal?.mode ?? 'plan'
   const userId = data?.user?.id ?? ''
-
-  // 012 Fase C: card "Última medida" reflete o DIA (timeline do dia). todayMeasures
-  // já vem ordenado desc (repo) → [0] é a última de hoje; vazio → nudge de registro.
   const lastTodayMeasure = todayMeasures?.[0] ?? null
 
   const handleSaveMeasure = useCallback(async (payload) => {
     const created = await measuresRepo.create(payload)
-    refreshTodayMeasures?.() // auto-update do interleave + card "Última medida" ao registrar
+    refreshTodayMeasures?.()
     return created
   }, [refreshTodayMeasures])
 
-  const handleFabPress = useCallback(() => {
-    lightTap()
-    setSpeedDialOpen((o) => !o)
-  }, [])
-
-  // Cross-tab nav p/ o hub de Medidas (Profile stack). Dois passos via navigationRef
-  // (AP-028): navigate(tab, { screen }) reusa o estado do stack → back cai no dashboard
-  // e a aba fica "presa" na tela aninhada. Trocar de tab e SÓ DEPOIS navegar a screen.
   const openMeasuresHub = useCallback((measureType) => {
     navigationRef.navigate(ROUTES.PROFILE)
     InteractionManager.runAfterInteractions(() => {
@@ -334,9 +397,6 @@ function TodayScreenContent({
         ) : (
           <NudgeBanner nudge={dashboardNudge} onAction={handleNudgeAction} onDismiss={dismissNudge} />
         )}
-        {/* Doses pendentes (carry-over cross-dia, F4.3e / 012 Fase B FR-008b):
-            título renomeado "Doses pendentes" + subtítulo p/ contexto; rótulo
-            relativo habilitado nos cards (isCarryOver) p/ GLP-1 de 2-3 dias atrás. */}
         <OptionalDoseSection
           title="Doses pendentes"
           subtitle="Doses anteriores ainda no prazo de registro"
@@ -354,73 +414,23 @@ function TodayScreenContent({
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
           navigation={navigation}
         />
-        {/* Em breve (look-ahead cross-dia, F4.3e) */}
         <OptionalDoseSection title="Em breve" doses={lookAhead} onRegister={handleOpenRegister} keyPrefix="ahead" />
 
-        {/* 012 Fase C — "Última medida" reflete o DIA: card se houve medida hoje,
-            senão nudge p/ registrar a primeira (tap → sheet de medida). */}
-        <View style={styles.lastMeasureSection}>
-          <Text style={styles.lastMeasureTitle}>Última medida</Text>
-          {lastTodayMeasure ? (
-            <MeasureCard
-              item={lastTodayMeasure}
-              showChevron
-              onPress={() => openMeasuresHub(lastTodayMeasure.type)}
-            />
-          ) : (
-            <Pressable
-              onPress={() => { lightTap(); setMeasureLogOpen(true) }}
-              style={({ pressed }) => [styles.measureNudge, pressed && styles.measureNudgePressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Nenhuma medida hoje. Registrar a primeira"
-            >
-              <View style={styles.measureNudgeIcon}>
-                <Ruler size={18} color={colors.status.info} strokeWidth={2} />
-              </View>
-              <Text style={styles.measureNudgeText}>Nenhuma medida hoje. Toque aqui e registre a primeira!</Text>
-              <ChevronRight size={18} color={colors.text.muted} strokeWidth={2} />
-            </Pressable>
-          )}
-        </View>
+        <TodayLastMeasureSection
+          lastTodayMeasure={lastTodayMeasure}
+          openMeasuresHub={openMeasuresHub}
+          setMeasureLogOpen={setMeasureLogOpen}
+        />
       </ScrollView>
 
-      {/* Speed-dial (012 Fase C FR-010b): expande Registrar dose · Registrar medida */}
-      {protocols.length > 0 && speedDialOpen ? (
-        <>
-          <Pressable style={styles.speedDialBackdrop} onPress={() => setSpeedDialOpen(false)} accessibilityLabel="Fechar menu" />
-          <View style={styles.speedDialActions}>
-            <Pressable
-              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
-              onPress={() => { setSpeedDialOpen(false); setMeasureLogOpen(true) }}
-              accessibilityRole="button"
-              accessibilityLabel="Registrar medida"
-            >
-              <Text style={styles.speedActionText}>Registrar medida</Text>
-              <View style={[styles.speedActionIcon, { backgroundColor: colors.status.info }]}><Ruler size={20} color={colors.text.inverse} strokeWidth={2.5} /></View>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.speedAction, pressed && styles.fabPressed]}
-              onPress={() => { setSpeedDialOpen(false); handleOpenBulkDose() }}
-              accessibilityRole="button"
-              accessibilityLabel="Registrar dose"
-            >
-              <Text style={styles.speedActionText}>Registrar dose</Text>
-              <View style={styles.speedActionIcon}><Pill size={20} color={colors.text.inverse} strokeWidth={2.5} /></View>
-            </Pressable>
-          </View>
-        </>
-      ) : null}
-      {protocols.length > 0 && (
-        <Pressable
-          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-          onPress={handleFabPress}
-          accessibilityRole="button"
-          accessibilityLabel={speedDialOpen ? 'Fechar menu de registro' : 'Registrar dose ou medida'}
-          accessibilityState={{ expanded: speedDialOpen }}
-        >
-          <Plus size={24} color="#FFF" strokeWidth={3} style={speedDialOpen ? styles.fabIconOpen : null} />
-        </Pressable>
-      )}
+      <TodaySpeedDial
+        protocols={protocols}
+        speedDialOpen={speedDialOpen}
+        setSpeedDialOpen={setSpeedDialOpen}
+        setMeasureLogOpen={setMeasureLogOpen}
+        handleOpenBulkDose={handleOpenBulkDose}
+      />
+
       <MeasureLogSheet
         open={measureLogOpen}
         onClose={() => setMeasureLogOpen(false)}
@@ -494,6 +504,34 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
   })
 }
 
+function _extractTodayScreenData(data) {
+  const {
+    timeline = [],
+    carryOver = [],
+    lookAhead = [],
+    stockAlerts = [],
+    protocols = [],
+    medicines = {},
+    stats = { expected: 0, taken: 0, score: 0 },
+    user = null,
+    localDay = null,
+    timezone = 'America/Sao_Paulo',
+  } = data || {}
+
+  return {
+    timeline,
+    carryOver,
+    lookAhead,
+    stockAlerts,
+    protocols,
+    medicines,
+    stats,
+    user,
+    currentDay: localDay,
+    timezone,
+  }
+}
+
 export default function TodayScreen({ route, navigation }) {
   // States
   const [modalProtocol, setModalProtocol] = useState(null)
@@ -507,37 +545,31 @@ export default function TodayScreen({ route, navigation }) {
   const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
 
   // Pre-resolve optional chains do data para reduzir complexidade ciclomática
-  const rawTimeline = data?.timeline
-  const rawCarryOver = data?.carryOver
-  const rawLookAhead = data?.lookAhead
-  const rawProtocols = data?.protocols
-  const rawMedicines = data?.medicines
-  const rawStats = data?.stats
-  const rawUser = data?.user
-  const currentDay = data?.localDay
-
-  // Memos
-  const timeline = useMemo(() => rawTimeline ?? [], [rawTimeline])
-  const carryOver = useMemo(() => rawCarryOver ?? [], [rawCarryOver])
-  const lookAhead = useMemo(() => rawLookAhead ?? [], [rawLookAhead])
-  const stockAlerts = data?.stockAlerts ?? []
-  const protocols = useMemo(() => rawProtocols ?? [], [rawProtocols])
-  const medicines = useMemo(() => rawMedicines ?? {}, [rawMedicines])
-  const stats = rawStats ?? { expected: 0, taken: 0, score: 0 }
+  const {
+    timeline,
+    carryOver,
+    lookAhead,
+    stockAlerts,
+    protocols,
+    medicines,
+    stats,
+    user,
+    currentDay,
+    timezone,
+  } = useMemo(() => _extractTodayScreenData(data), [data])
 
   // 1. Lógica de Persona: Threshold de complexidade adaptativa (Wave 10A)
-  const complexityOverride = rawUser?.complexity_override
+  const complexityOverride = user?.complexity_override
   const isComplex = useMemo(() => {
     if (complexityOverride) return complexityOverride === 'complex'
     return Object.keys(medicines).length > 3
   }, [medicines, complexityOverride])
 
   // 012 Fase C — medidas do dia mescladas na agenda (interleave, FR-011).
-  const tz = data?.timezone || 'America/Sao_Paulo'
-  const { items: todayMeasures, refresh: refreshTodayMeasures } = useTodayMeasures(tz)
+  const { items: todayMeasures, refresh: refreshTodayMeasures } = useTodayMeasures(timezone)
   const timelineWithMeasures = useMemo(
-    () => _mergeTimelineWithMeasures(timeline, todayMeasures, tz),
-    [timeline, todayMeasures, tz]
+    () => _mergeTimelineWithMeasures(timeline, todayMeasures, timezone),
+    [timeline, todayMeasures, timezone]
   )
 
   // Carlos (isComplex) vê todos os turnos. Dona Maria vê apenas onde há doses.

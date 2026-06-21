@@ -31,6 +31,61 @@ function normalize(str) {
     .toLowerCase()
 }
 
+function MedicinesHeader({
+  searchOpen,
+  onGoBack,
+  onToggleSearch,
+  query,
+  onChangeQuery,
+  onCloseSearch,
+}) {
+  if (!searchOpen) {
+    return (
+      <View style={styles.header}>
+        <Pressable
+          onPress={onGoBack}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          hitSlop={8}
+        >
+          <ChevronLeft size={24} color={colors.text.primary} />
+        </Pressable>
+        <Text style={styles.title}>Medicamentos</Text>
+        <Pressable
+          onPress={onToggleSearch}
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel="Buscar medicamentos"
+          hitSlop={8}
+        >
+          <Search size={22} color={colors.text.primary} />
+        </Pressable>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.header}>
+      <View style={styles.searchBar}>
+        <Search size={18} color={colors.text.muted} />
+        <TextInput
+          value={query}
+          onChangeText={onChangeQuery}
+          placeholder="Buscar em medicamentos..."
+          placeholderTextColor={colors.text.muted}
+          style={styles.searchInput}
+          autoFocus
+          returnKeyType="search"
+        />
+        <Pressable onPress={onCloseSearch} hitSlop={8} accessibilityLabel="Fechar busca">
+          <X size={20} color={colors.text.secondary} />
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
 export default function MedicinesListScreen() {
   const navigation = useNavigation()
   const { data, loading, error, stale, refresh } = useMedicines()
@@ -108,47 +163,14 @@ export default function MedicinesListScreen() {
     <ScreenContainer>
       {stale && <StaleBanner />}
 
-      <View style={styles.header}>
-        {!searchOpen ? (
-          <>
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={styles.iconButton}
-              accessibilityRole="button"
-              accessibilityLabel="Voltar"
-              hitSlop={8}
-            >
-              <ChevronLeft size={24} color={colors.text.primary} />
-            </Pressable>
-            <Text style={styles.title}>Medicamentos</Text>
-            <Pressable
-              onPress={toggleSearch}
-              style={styles.iconButton}
-              accessibilityRole="button"
-              accessibilityLabel="Buscar medicamentos"
-              hitSlop={8}
-            >
-              <Search size={22} color={colors.text.primary} />
-            </Pressable>
-          </>
-        ) : (
-          <View style={styles.searchBar}>
-            <Search size={18} color={colors.text.muted} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Buscar em medicamentos..."
-              placeholderTextColor={colors.text.muted}
-              style={styles.searchInput}
-              autoFocus
-              returnKeyType="search"
-            />
-            <Pressable onPress={closeSearch} hitSlop={8} accessibilityLabel="Fechar busca">
-              <X size={20} color={colors.text.secondary} />
-            </Pressable>
-          </View>
-        )}
-      </View>
+      <MedicinesHeader
+        searchOpen={searchOpen}
+        onGoBack={() => navigation.goBack()}
+        onToggleSearch={toggleSearch}
+        query={query}
+        onChangeQuery={setQuery}
+        onCloseSearch={closeSearch}
+      />
 
       {isEmpty ? (
         <EmptyState

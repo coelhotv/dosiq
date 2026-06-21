@@ -25,6 +25,34 @@ export function calculateDaysRemaining(totalQuantity, dailyUsage) {
  * @param {number|null} daysRemaining - Dias restantes de estoque
  * @returns {string} Mensagem formatada com escape MarkdownV2
  */
+// Auxiliar para formatar status de estoque não-diário.
+function _formatNonDailyStockStatus(daysRemaining, doseMetrics, status) {
+  const d = doseMetrics.dosesRemaining;
+  let result = status + `💉 Restam ${d} ${d === 1 ? 'dose' : 'doses'}\n`;
+  if (daysRemaining !== null) {
+    // `~` é reservado em MarkdownV2 → escapar `\~` senão o Telegram falha o parse.
+    result += daysRemaining <= 0
+      ? `⚠️ *SEM ESTOQUE*\n`
+      : `${daysRemaining <= 7 ? '⚠️' : '✅'} Acaba em \\~${daysRemaining} dias\n`;
+  }
+  return result;
+}
+
+// Auxiliar para formatar status de estoque diário.
+function _formatDailyStockStatus(daysRemaining, status) {
+  let result = status;
+  if (daysRemaining !== null) {
+    if (daysRemaining <= 0) {
+      result += `⚠️ *SEM ESTOQUE*\n`;
+    } else if (daysRemaining <= 7) {
+      result += `⚠️ Acaba em ${daysRemaining} dias\n`;
+    } else {
+      result += `✅ Acaba em ${daysRemaining} dias\n`;
+    }
+  }
+  return result;
+}
+
 export function formatStockStatus(medicine, totalQuantity, daysRemaining, doseMetrics = null) {
   // Líquidos (022): saldo é em ml, não na unidade de concentração (mg/ml).
   const isLiquid = Boolean(medicine.dosage_unit?.endsWith('/ml'));
@@ -35,28 +63,10 @@ export function formatStockStatus(medicine, totalQuantity, daysRemaining, doseMe
 
   // 012 B4 / ADR-067: freq ≠ diário → doses como número-base, runway como contexto.
   if (doseMetrics && !doseMetrics.isDaily && Number.isFinite(doseMetrics.dosesRemaining)) {
-    const d = doseMetrics.dosesRemaining;
-    status += `💉 Restam ${d} ${d === 1 ? 'dose' : 'doses'}\n`;
-    if (daysRemaining !== null) {
-      // `~` é reservado em MarkdownV2 → escapar `\~` senão o Telegram falha o parse.
-      status += daysRemaining <= 0
-        ? `⚠️ *SEM ESTOQUE*\n`
-        : `${daysRemaining <= 7 ? '⚠️' : '✅'} Acaba em \\~${daysRemaining} dias\n`;
-    }
-    return status;
+    return _formatNonDailyStockStatus(daysRemaining, doseMetrics, status);
   }
 
-  if (daysRemaining !== null) {
-    if (daysRemaining <= 0) {
-      status += `⚠️ *SEM ESTOQUE*\n`;
-    } else if (daysRemaining <= 7) {
-      status += `⚠️ Acaba em ${daysRemaining} dias\n`;
-    } else {
-      status += `✅ Acaba em ${daysRemaining} dias\n`;
-    }
-  }
-
-  return status;
+  return _formatDailyStockStatus(daysRemaining, status);
 }
 
 /**

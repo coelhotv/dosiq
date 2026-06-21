@@ -20,6 +20,124 @@ import { measuresRepo } from '@features/measures/services/measuresRepo'
 const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
 
+function AppLoading() {
+  return (
+    <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Loading text="Carregando..." />
+    </div>
+  )
+}
+
+function AppShell({
+  isAuthenticated,
+  isPasswordRecovery,
+  currentView,
+  setCurrentView,
+  unreadCount,
+  setIsDoseModalOpen,
+  setIsMeasureModalOpen,
+  session,
+  showAuth,
+  setShowAuth,
+  onResetComplete,
+  initialProtocolParams,
+  initialStockParams,
+  initialTreatmentMedicineId,
+  setInitialStockParams,
+  setInitialProtocolParams,
+  setInitialTreatmentMedicineId,
+  isDoseModalOpen,
+  doseModalInitialValues,
+  setDoseModalInitialValues,
+  isMeasureModalOpen,
+  handleSaveMeasure,
+  isChatOpen,
+  setIsChatOpen,
+  shouldReduceMotion
+}) {
+  return (
+    <OnboardingProvider>
+      <DashboardProvider>
+        <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
+
+        <div className="app-container">
+          <MobileAppBanner />
+
+          {isAuthenticated && (
+            <Suspense fallback={null}>
+              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} />
+            </Suspense>
+          )}
+
+          <main id="main-content" className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={currentView}
+                initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
+              >
+                <AppViewRouter
+                  session={session}
+                  currentView={currentView}
+                  showAuth={showAuth}
+                  isPasswordRecovery={isPasswordRecovery}
+                  onResetComplete={onResetComplete}
+                  initialProtocolParams={initialProtocolParams}
+                  initialStockParams={initialStockParams}
+                  initialTreatmentMedicineId={initialTreatmentMedicineId}
+                  setShowAuth={setShowAuth}
+                  setCurrentView={setCurrentView}
+                  setInitialStockParams={setInitialStockParams}
+                  setInitialProtocolParams={setInitialProtocolParams}
+                  setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
+                  setIsDoseModalOpen={setIsDoseModalOpen}
+                  setDoseModalInitialValues={setDoseModalInitialValues}
+                />
+              </motion.div>
+            </AnimatePresence>
+            <footer style={{ textAlign: 'center', marginTop: 'var(--space-8)', paddingBottom: 'var(--space-8)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+              {' '}
+            </footer>
+          </main>
+
+          <OfflineBanner />
+
+          {isAuthenticated && !isPasswordRecovery && (
+            <Suspense fallback={null}>
+              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
+            </Suspense>
+          )}
+
+          {isMeasureModalOpen && (
+            <MeasureLogModal
+              isOpen={isMeasureModalOpen}
+              onClose={() => setIsMeasureModalOpen(false)}
+              onSaved={handleSaveMeasure}
+            />
+          )}
+
+          {isAuthenticated && !isPasswordRecovery && (
+            <AppAuthOverlays
+              isChatOpen={isChatOpen}
+              setIsChatOpen={setIsChatOpen}
+              isDoseModalOpen={isDoseModalOpen}
+              setIsDoseModalOpen={setIsDoseModalOpen}
+              doseModalInitialValues={doseModalInitialValues}
+              setDoseModalInitialValues={setDoseModalInitialValues}
+              onRegisterMeasure={() => setIsMeasureModalOpen(true)}
+            />
+          )}
+
+          <InstallPrompt />
+          {import.meta.env.PROD && <SpeedInsights />}
+        </div>
+      </DashboardProvider>
+    </OnboardingProvider>
+  )
+}
+
 function AppInner() {
   const shouldReduceMotion = useReducedMotion()
   const [session, setSession] = useState(null)
@@ -159,95 +277,37 @@ function AppInner() {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (isLoading) {
-    return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Loading text="Carregando..." />
-      </div>
-    )
+    return <AppLoading />
   }
 
-  const isAuthenticated = !!session
-
   return (
-    <OnboardingProvider>
-      <DashboardProvider>
-        <a href="#main-content" className="skip-to-content">Ir para conteúdo principal</a>
-
-        <div className="app-container">
-          <MobileAppBanner />
-
-          {isAuthenticated && (
-            <Suspense fallback={null}>
-              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} />
-            </Suspense>
-          )}
-
-          <main id="main-content" className={isAuthenticated ? 'app-main main-with-sidebar' : 'app-main'}>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={currentView}
-                initial={shouldReduceMotion ? undefined : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.25, ease: 'easeOut' }}
-              >
-                <AppViewRouter
-                  session={session}
-                  currentView={currentView}
-                  showAuth={showAuth}
-                  isPasswordRecovery={isPasswordRecovery}
-                  onResetComplete={() => { setIsPasswordRecovery(false); setCurrentView('dashboard') }}
-                  initialProtocolParams={initialProtocolParams}
-                  initialStockParams={initialStockParams}
-                  initialTreatmentMedicineId={initialTreatmentMedicineId}
-                  setShowAuth={setShowAuth}
-                  setCurrentView={setCurrentView}
-                  setInitialStockParams={setInitialStockParams}
-                  setInitialProtocolParams={setInitialProtocolParams}
-                  setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
-                  setIsDoseModalOpen={setIsDoseModalOpen}
-                  setDoseModalInitialValues={setDoseModalInitialValues}
-                />
-              </motion.div>
-            </AnimatePresence>
-            <footer style={{ textAlign: 'center', marginTop: 'var(--space-8)', paddingBottom: 'var(--space-8)', color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-              {' '}
-            </footer>
-          </main>
-
-          <OfflineBanner />
-
-          {isAuthenticated && !isPasswordRecovery && (
-            <Suspense fallback={null}>
-              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
-            </Suspense>
-          )}
-
-          {isMeasureModalOpen && (
-            <MeasureLogModal
-              isOpen={isMeasureModalOpen}
-              onClose={() => setIsMeasureModalOpen(false)}
-              onSaved={handleSaveMeasure}
-            />
-          )}
-
-          {isAuthenticated && !isPasswordRecovery && (
-            <AppAuthOverlays
-              isChatOpen={isChatOpen}
-              setIsChatOpen={setIsChatOpen}
-              isDoseModalOpen={isDoseModalOpen}
-              setIsDoseModalOpen={setIsDoseModalOpen}
-              doseModalInitialValues={doseModalInitialValues}
-              setDoseModalInitialValues={setDoseModalInitialValues}
-              onRegisterMeasure={() => setIsMeasureModalOpen(true)}
-            />
-          )}
-
-          <InstallPrompt />
-{import.meta.env.PROD && <SpeedInsights />}
-        </div>
-      </DashboardProvider>
-    </OnboardingProvider>
+    <AppShell
+      isAuthenticated={!!session}
+      isPasswordRecovery={isPasswordRecovery}
+      currentView={currentView}
+      setCurrentView={setCurrentView}
+      unreadCount={unreadCount}
+      setIsDoseModalOpen={setIsDoseModalOpen}
+      setIsMeasureModalOpen={setIsMeasureModalOpen}
+      session={session}
+      showAuth={showAuth}
+      setShowAuth={setShowAuth}
+      onResetComplete={() => { setIsPasswordRecovery(false); setCurrentView('dashboard') }}
+      initialProtocolParams={initialProtocolParams}
+      initialStockParams={initialStockParams}
+      initialTreatmentMedicineId={initialTreatmentMedicineId}
+      setInitialStockParams={setInitialStockParams}
+      setInitialProtocolParams={setInitialProtocolParams}
+      setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
+      isDoseModalOpen={isDoseModalOpen}
+      doseModalInitialValues={doseModalInitialValues}
+      setDoseModalInitialValues={setDoseModalInitialValues}
+      isMeasureModalOpen={isMeasureModalOpen}
+      handleSaveMeasure={handleSaveMeasure}
+      isChatOpen={isChatOpen}
+      setIsChatOpen={setIsChatOpen}
+      shouldReduceMotion={shouldReduceMotion}
+    />
   )
 }
 
