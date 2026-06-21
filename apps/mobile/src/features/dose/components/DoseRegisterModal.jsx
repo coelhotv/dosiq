@@ -15,7 +15,14 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native'
-import { getNow, formatActiveIngredientFormula, isLiquidMedicine, formatIntakeDose } from '@dosiq/core'
+import {
+  getNow,
+  formatActiveIngredientFormula,
+  isLiquidMedicine,
+  formatIntakeDose,
+  isInjectable,
+  INJECTION_SITES,
+} from '@dosiq/core'
 import { registerDose } from '../services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
@@ -30,6 +37,32 @@ import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
  *   onSuccess: Function,         — chamado após registo bem-sucedido
  * }} props
  */
+/** Seletor de sítio de injeção (chips) — só renderizado p/ injetáveis (031/US1). */
+function InjectionSitePicker({ value, onChange, disabled }) {
+  return (
+    <View style={styles.siteSection}>
+      <Text style={styles.label}>Local de aplicação (opcional)</Text>
+      <View style={styles.siteChips}>
+        {INJECTION_SITES.map((site) => {
+          const selected = value === site.value
+          return (
+            <Pressable
+              key={site.value}
+              style={[styles.siteChip, selected && styles.siteChipSelected]}
+              onPress={() => onChange(selected ? null : site.value)}
+              disabled={disabled}
+            >
+              <Text style={[styles.siteChipText, selected && styles.siteChipTextSelected]}>
+                {site.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+    </View>
+  )
+}
+
 export default function DoseRegisterModal({
   visible,
   protocol,
@@ -41,6 +74,7 @@ export default function DoseRegisterModal({
 }) {
   // States primeiro (R-010)
   const [quantity, setQuantity] = useState('')
+  const [injectionSite, setInjectionSite] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   
@@ -54,6 +88,8 @@ export default function DoseRegisterModal({
   // hint converte p/ ml. Sólido mantém unidades + equivalência de princípio ativo.
   const medicine = protocol.medicine
   const isLiquid = isLiquidMedicine(medicine)
+  // 031: sítio de injeção só p/ injetável (presentation==='injetavel'); opcional.
+  const injectable = isInjectable(medicine)
   const intakeUnit = protocol.intake_unit || (isLiquid ? 'ml' : null)
   const qtyLabel = isLiquid
     ? `Quantidade (${intakeUnit})`
@@ -86,6 +122,7 @@ export default function DoseRegisterModal({
         medicine_id: protocol.medicine_id,
         taken_at: takenAt,
         quantity_taken: qty,
+        injection_site: injectable ? injectionSite : null,
       },
       // F4.3c: âncora direta na ocorrência da timeline (determinística); null → snap.
       { instanceId }
@@ -100,12 +137,14 @@ export default function DoseRegisterModal({
 
     // Limpar estado e notificar tela pai
     setQuantity('')
+    setInjectionSite(null)
     setError(null)
     onSuccess()
   }
 
   function handleClose() {
     setQuantity('')
+    setInjectionSite(null)
     setError(null)
     onClose()
   }
@@ -157,6 +196,10 @@ export default function DoseRegisterModal({
               ✨ {formatActiveIngredientFormula(quantity || defaultQty, medicine.dosage_per_pill, medicine.dosage_unit)}
             </Text>
           ) : null}
+
+          {injectable && (
+            <InjectionSitePicker value={injectionSite} onChange={setInjectionSite} disabled={loading} />
+          )}
 
           {error && <Text style={styles.error}>{error}</Text>}
 
@@ -264,6 +307,34 @@ const styles = StyleSheet.create({
   error: {
     color: colors.status.error,
     fontSize: 13,
+  },
+  siteSection: {
+    gap: spacing[2],
+  },
+  siteChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  siteChip: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.screen,
+  },
+  siteChipSelected: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.primary[50],
+  },
+  siteChipText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
+  siteChipTextSelected: {
+    color: colors.primary[700],
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',

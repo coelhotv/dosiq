@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { parseISO, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
+import { parseISO, formatConcentration, isLiquidMedicine, formatDose, getInjectionSiteLabel } from '@dosiq/core'
 import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 import BiomarkerHistoryCard from './BiomarkerHistoryCard'
@@ -98,6 +98,11 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
                 if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
                 return `${qty} ${item.dosage_unit}`
               })()}
+            </Text>
+          )}
+          {item.injection_site && (
+            <Text style={styles.subtitle} numberOfLines={1}>
+              📍 {getInjectionSiteLabel(item.injection_site)}
             </Text>
           )}
         </View>

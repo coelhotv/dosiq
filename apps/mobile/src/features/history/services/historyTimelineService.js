@@ -105,6 +105,7 @@ function _mapDoseEvent(ev, protocolsById) {
     taken_at: p.takenAt || null,
     ..._getProtocolProperties(p, proto, med),
     quantity_taken: p.quantityTaken || null,
+    injection_site: p.injectionSite || null,
     medicine_id: _getMedicineId(p, proto),
     protocol_id: p.protocolId || null,
     is_orphan: p.source === 'log',
