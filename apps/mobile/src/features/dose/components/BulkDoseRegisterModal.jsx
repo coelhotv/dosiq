@@ -166,10 +166,10 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
 
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
-    const medicineName = item.protocol.medicine?.name ?? item.protocol.name ?? 'Medicamento'
+    const medicineName = item.protocol?.medicine?.name ?? item.protocol?.name ?? 'Medicamento'
     // Líquido → "40 gotas (≈ 2 ml)"; sólido → "10 un. (1.000 mg)" (formatIntakeDose).
-    const dose = formatIntakeDose(item.protocol.dosage_per_intake ?? 1, item.protocol.intake_unit, item.protocol.medicine)
-    const injectable = isInjectable(item.protocol.medicine)
+    const dose = formatIntakeDose(item.protocol?.dosage_per_intake ?? 1, item.protocol?.intake_unit, item.protocol?.medicine)
+    const injectable = isInjectable(item.protocol?.medicine)
 
     return (
       <View key={item.id}>
@@ -316,7 +316,7 @@ export function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, 
         : (item.instanceId
           ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
       // Sítio só p/ injetável; não-injetável sempre null (evita lixo no log).
-      const injection_site = isInjectable(p.medicine) ? (injectionSites[id] ?? null) : null
+      const injection_site = isInjectable(p?.medicine) ? (injectionSites[id] ?? null) : null
       return {
         protocol_id: p.id,
         medicine_id: p.medicine?.id ?? p.medicine_id,
