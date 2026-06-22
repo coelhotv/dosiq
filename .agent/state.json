@@ -16,7 +16,7 @@
     "tasks": "plans/specs/031-injection-site-rotation/tasks.md",
     "linked_adrs": [],
     "linked_contracts": [],
-    "last_pr": 674,
+    "last_pr": 675,
     "branch": "feature/w25/031-injection-site-rotation",
     "mobile_version": "0.20.0"
   },
