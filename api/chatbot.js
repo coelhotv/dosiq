@@ -54,13 +54,22 @@ function extractToken(req) {
   return match ? match[1] : null
 }
 
+// Cliente Supabase singleton (lazy) — evita recriar a cada request no serverless
+// (overhead de CPU/conexão). Reusado entre invocações na mesma instância (Fluid).
+let _supabase = null
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+  }
+  return _supabase
+}
+
 async function verifyAuth(token) {
   if (!token) return { success: false }
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    })
-    const { data, error } = await supabase.auth.getUser(token)
+    const { data, error } = await getSupabase().auth.getUser(token)
     if (error || !data.user) return { success: false }
     return { success: true, userId: data.user.id }
   } catch {
