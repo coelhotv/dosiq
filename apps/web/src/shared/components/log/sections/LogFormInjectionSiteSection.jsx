@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import { INJECTION_SITES, getInjectionSiteLabel, getInjectionSiteAbsorption } from '@dosiq/core'
 
 /**
@@ -35,7 +36,8 @@ export default function LogFormInjectionSiteSection({ value, lastInjectionSite, 
 
       {repeatedSite && (
         <p className="injection-site-alert" role="alert">
-          ⚠️ Mesmo local da última aplicação — considere rotacionar.
+          <AlertTriangle size={14} aria-hidden="true" />
+          Mesmo local da última aplicação — considere rotacionar.
         </p>
       )}
 

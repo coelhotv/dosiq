@@ -3,7 +3,7 @@
 // Substitui o HistoryLogCard (log-only) no painel do dia: agora reflete o ESTADO real
 // materializado em dose_instances — taken / missed / pending — não só doses tomadas.
 
-import { PencilLine, Trash2, Check, X, Clock } from 'lucide-react'
+import { PencilLine, Trash2, Check, X, Clock, LocateFixed } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
 import { isLiquidMedicine, formatDose, formatConcentration, getInjectionSiteLabel } from '@dosiq/core'
 
@@ -29,6 +29,8 @@ function eventToLog(event) {
     notes: p.notes ?? null,
     medicine_id: p.medicineId ?? null,
     protocol_id: p.protocolId ?? null,
+    // Sítio de injeção (031/FR-011) — pré-popula o LogForm na edição; oral/legado = null.
+    injection_site: p.injectionSite ?? null,
   }
 }
 
@@ -106,7 +108,10 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
         </div>
         {quantityLabel && <span className="hlc-card__quantity">{quantityLabel}</span>}
         {injectionSiteLabel && (
-          <span className="hlc-card__injection-site">📍 {injectionSiteLabel}</span>
+          <span className="hlc-card__injection-site">
+            <LocateFixed size={13} aria-hidden="true" />
+            {injectionSiteLabel}
+          </span>
         )}
         <span className="hlc-card__status" data-status={status} title={meta.label} aria-label={meta.label}>
           <Icon size={14} aria-hidden="true" />
