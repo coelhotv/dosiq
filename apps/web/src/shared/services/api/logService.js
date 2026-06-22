@@ -61,6 +61,15 @@ function normalizeTimestamps(logs) {
  */
 export const logService = {
   /**
+   * Último sítio de injeção aplicado (GLOBAL, cross-medicamento) — 031/US2.
+   * Delega ao core (query sem filtro de medicine, ORDER BY taken_at DESC).
+   * @returns {Promise<string|null>}
+   */
+  async getLastInjectionSite() {
+    return doseLogCore.getLastInjectionSite()
+  },
+
+  /**
    * Get all logs
    */
   async getAll(limit = 50) {

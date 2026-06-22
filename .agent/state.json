@@ -2,8 +2,8 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "completed",
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 6,
     "ceremony_scope_decisions": ["slice 031 em A(captura+rotação+histórico+migração) e B(edit pós-log+hint+quick-pick)"],
@@ -16,16 +16,16 @@
     "tasks": "plans/specs/031-injection-site-rotation/tasks.md",
     "linked_adrs": [],
     "linked_contracts": [],
-    "last_pr": 671,
-    "branch": "refactor/w25/035-unified-dose-log-stock-core",
-    "mobile_version": "0.19.3"
+    "last_pr": 675,
+    "branch": "feature/w25/031-injection-site-rotation",
+    "mobile_version": "0.20.0"
   },
   "memory": {
     "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 5,
     "rules_count": 227,
     "anti_patterns_count": 233,
-    "decisions_count": 71,
+    "decisions_count": 72,
     "contracts_count": 25,
     "distillation_due": false
   },

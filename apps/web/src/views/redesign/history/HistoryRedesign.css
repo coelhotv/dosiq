@@ -331,6 +331,15 @@
   opacity: 0.45;
 }
 
+.hlc-card__injection-site {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-on-surface);
+  opacity: 0.55;
+}
+
 .hlc-card__time {
   font-size: 0.8rem;
   font-weight: 600;

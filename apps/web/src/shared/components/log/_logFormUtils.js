@@ -20,6 +20,7 @@ export const getInitialFormData = (initialValues = {}, protocols = []) => {
     taken_at,
     quantity_taken,
     notes,
+    injection_site,
   } = initialValues || {}
 
   let finalType = type
@@ -41,6 +42,7 @@ export const getInitialFormData = (initialValues = {}, protocols = []) => {
     taken_at: toLocalISO(taken_at),
     quantity_taken: quantity_taken || '',
     notes: notes || '',
+    injection_site: injection_site || '',
   }
 }
 
@@ -82,6 +84,8 @@ export const buildLogPayloads = (formData, protocols, treatmentPlans, selectedPl
         : protocol.dosage_per_intake,
       taken_at: parseLocalDatetime(formData.taken_at).toISOString(),
       notes: formData.notes.trim() || null,
+      // Sítio de injeção (031) — só single-protocol; bulk/plano grava NULL (v1).
+      injection_site: formData.injection_site || null,
     }
 
     if (formData.id) {

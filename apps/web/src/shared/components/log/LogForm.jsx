@@ -2,6 +2,7 @@ import Button from '@shared/components/ui/Button'
 import { useLogFormState } from './_useLogFormState.js'
 import LogFormTimeSection from './sections/LogFormTimeSection'
 import LogFormMedicineSection from './sections/LogFormMedicineSection'
+import LogFormInjectionSiteSection from './sections/LogFormInjectionSiteSection'
 import './LogForm.css'
 
 export default function LogForm({
@@ -19,6 +20,8 @@ export default function LogForm({
     selectedProtocol,
     selectedPlan,
     selectedPlanProtocols,
+    injectable,
+    lastInjectionSite,
     handleChange,
     toggleProtocol,
     handleSubmit,
@@ -42,6 +45,14 @@ export default function LogForm({
       />
 
       <LogFormTimeSection formData={formData} handleChange={handleChange} />
+
+      {injectable && (
+        <LogFormInjectionSiteSection
+          value={formData.injection_site}
+          lastInjectionSite={lastInjectionSite}
+          handleChange={handleChange}
+        />
+      )}
 
       <div className="form-group">
         <label htmlFor="notes">Observações (opcional)</label>
