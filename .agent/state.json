@@ -18,11 +18,11 @@
     "linked_contracts": [],
     "last_pr": 674,
     "branch": "feature/w25/031-injection-site-rotation",
-    "mobile_version": "0.19.3"
+    "mobile_version": "0.20.0"
   },
   "memory": {
     "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 227,
     "anti_patterns_count": 233,
     "decisions_count": 72,

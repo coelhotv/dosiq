@@ -194,7 +194,7 @@ ac:     Selecionar local = último global dispara alerta NÃO-bloqueante; dose a
 proof:  MANUAL — selecionar mesmo local da última no form e confirmar dose
 expect: alerta visível ("mesmo local — considere rotacionar") + confirmar permanece habilitado; dose persiste
 guard:  confirmação de dose nunca bloqueada pelo local em nenhum fluxo
-status: [ ] open
+status: [x] done — web LogFormInjectionSiteSection (role="alert") + mobile single/edit/bulk (AlertTriangle lucide, accessibilityRole="alert"); getLastInjectionSite alimenta "última: X"; confirmar/salvar nunca desabilitado pelo sítio. Smoke PO aprovado (registrar repetindo último → alerta visível, dose persiste).
 ```
 
 ```po PO-4
@@ -202,7 +202,7 @@ ac:     Cada local exibe hint informativo de absorção, texto educacional sem p
 proof:  MANUAL — abrir seletor de sítio e inspecionar hint
 expect: hint educacional (ex.: abdômen "rápida", coxa "lenta") sem verbo prescritivo/recomendação clínica
 guard:  copy revisada anti-SaMD (herda T026/ADR-062); sem claim terapêutico
-status: [ ] open
+status: [x] done — getInjectionSiteAbsorption (texto educacional "absorção rápida/moderada/lenta", sem verbo prescritivo) renderizado: web LogFormInjectionSiteSection + mobile single/edit/bulk pickers. Smoke PO aprovado.
 ```
 
 ```po PO-5
@@ -234,7 +234,7 @@ ac:     Detalhe de dose injetável permite editar/adicionar local pós-registro;
 proof:  rtk npm run test:critical -- injectionSite.editPostLog
 expect: editar local persiste em medicine_logs e passa a valer p/ rotação global; taken_at não muda
 guard:  edição não altera taken_at; rotação reflete novo valor
-status: [ ] open
+status: [x] done — core updateOrphanLog passa p_injection_site + p_has_injection_site (flag presença distingue "não enviado" de "limpar"); doseLogService.injectionSite.test.js +3 casos (set/clear/preserve). Web: eventToLog +injection_site → LogForm pré-popula → update_dose_log_atomic (taken_at intacto). Mobile: DoseActionSheet edit p/ QUALQUER status (taken/missed/pending) — missed registra retroativo com sítio. Smoke PO aprovado.
 ```
 
 ```po PO-9

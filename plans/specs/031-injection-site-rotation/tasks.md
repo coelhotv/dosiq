@@ -38,8 +38,9 @@ PO refs → [spec.md](./spec.md) Proof Obligations.
 - [ ] T18 [C4] gates: `rtk lint` · `rtk npm run test:critical` · `rtk npm run validate:agent` (FIFO+adesão verde); fechar PO-1,2,2a,3,5,6,7,9 com evidência colada
 - [ ] T19 [C5] ADR accepted (coluna+rotação global) · CON-026 atualizado (param aditivo) · CHANGELOG [Unreleased] · README status `in-progress` · journal · state.json
 
-## Slice 031-B — edição pós-log + hint absorção (follow-up)
-- [ ] T20 [US6] `update_dose_log_atomic` exposto via service: editar sítio sem tocar `taken_at` [PO-8]
-- [ ] T21 [US6] HistoryDayPanel: editar/adicionar sítio em dose injetável (web+mobile) [PO-8]
-- [ ] T22 [US4] hint de absorção no seletor (texto educacional, não-SaMD) [PO-4]
-- [ ] T23 quick-pick pós-1-click nos flows sem form (estratégia (b)) — urgent/alarme/bulk
+## Slice 031-B — edição pós-log + hint absorção + rotação cross-superfície ✅
+- [x] T20 [US6] `update_dose_log_atomic` via service: editar sítio sem tocar `taken_at` [PO-8] — core updateOrphanLog (p_injection_site + p_has_injection_site); 3 testes
+- [x] T21 [US6] Editar/adicionar sítio em dose injetável (web+mobile) [PO-8] — web eventToLog→LogForm; mobile DoseActionSheet (QUALQUER status; missed→registro retroativo)
+- [x] T22 [US4] hint de absorção no seletor (texto educacional, não-SaMD) [PO-4] — web já tinha; +mobile single/edit/bulk
+- [x] T23 sítio nos flows sem form: **bulk per-item** (canetas não compartilham sítio) ✅. Alarme mantém 1-toque frictionless (R5-003) → sítio editável depois via sheet. PRN/avulso passa por single/bulk.
+- [x] T24 [US2/US3] paridade mobile: `getLastInjectionSite` exposto; "última aplicação" + alerta não-bloqueante de repetição nos 3 pickers mobile; emoji→lucide (LocateFixed/AlertTriangle) web+mobile

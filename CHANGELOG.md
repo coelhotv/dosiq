@@ -90,7 +90,23 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 - Core: util `injectionSites`, `logSchema.injection_site` (sync c/ CHECK), RPCs
   `register/update_dose_atomic` com `p_injection_site`, `getLastInjectionSite`.
 - Migração `20260621_injection_site.sql` (aditiva + CHECK + índice parcial; reversível).
-- ADR-072. Pendente slice B (editar local pós-registro, quick-pick em flows sem form).
+- ADR-072.
+
+### ✨ Adicionado (031 — slice B) — mobile `0.20.0` · web `4.10.0` · core
+- **Editar/adicionar sítio pós-registro** (FR-011): web via `LogForm` (edição do histórico);
+  mobile via `DoseActionSheet` para **qualquer status** — `taken`, `missed` ou `pending`. Editar
+  uma dose `missed` registra retroativamente já com o sítio (paciente sem app/conexão na hora),
+  sem alterar `taken_at`. Core `update_dose_log_atomic` ganha `p_has_injection_site` (flag de
+  presença: distingue "não enviado" de "limpar para NULL").
+- **Registro em lote per-item** (mobile `BulkDoseRegisterModal`): cada injetável marcado escolhe
+  o próprio sítio — canetas aplicadas no mesmo horário não podem compartilhar o mesmo local.
+- **Paridade mobile US2/US3**: "última aplicação" + alerta não-bloqueante de repetição nos 3
+  pickers mobile (single/lote/edição); `getLastInjectionSite` exposto no `doseService`.
+- **Hint de absorção** trazido para os pickers mobile (web já tinha).
+- **Ícones**: emoji `📍`/`⚠️` substituídos por lucide (`LocateFixed`/`AlertTriangle`) no histórico
+  (web + mobile) — alinhado à diretriz de só-lucide do projeto.
+- Decisão: alarme de tela cheia mantém ação de 1-toque (mínima fricção); sítio é editável depois
+  pela sheet do histórico.
 
 ---
 
