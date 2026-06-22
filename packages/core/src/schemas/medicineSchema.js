@@ -105,7 +105,7 @@ export const REGULATORY_CATEGORY_LABELS = {
   Outros: 'Outros',
 }
 
-const _COMBINING_MARKS = /[̀-ͯ]/g
+const _COMBINING_MARKS = /[\u0300-\u036f]/g
 const _stripAccents = (s) =>
   String(s ?? '')
     .toLowerCase()
