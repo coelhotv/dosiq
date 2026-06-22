@@ -1,5 +1,5 @@
-import { getTodayLocal, getSaoPauloTime, parseISO, getNow, isProtocolActiveOnDate } from '@utils/dateUtils'
-import { splitDayTimeline, formatDoseItem } from '@dosiq/core'
+import { getTodayLocal, getSaoPauloTime, parseISO, getNow } from '@utils/dateUtils'
+import { splitDayTimeline, formatDoseItem, isProtocolActiveOnDate } from '@dosiq/core'
 // Fonte única das regras estáticas e do system prompt (compartilhada com o serverless).
 // Reexportadas aqui para compatibilidade de imports existentes (tests, telegram).
 export { buildStaticSystemRules, buildSystemPrompt } from '@/features/chatbot/config/chatbotConfig'
@@ -82,7 +82,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   // Próximas doses pendentes (hoje) e atrasadas (dias anteriores ainda actionáveis)
   const { carryOver = [], today: todayDoses = [] } = splitDayTimeline(
     doseInstances || [],
-    protocols || [],
+    validProtocols,
     { now: getNow() }
   )
   const pendingToday = todayDoses
