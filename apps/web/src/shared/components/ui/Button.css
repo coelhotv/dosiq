@@ -45,18 +45,17 @@
   max-width: 100%; /* Não ultrapassar container */
 }
 
-/* Primary variant - Neon cyan glow */
+/* Primary variant - Gradient verde sanctuary (CTA principal) */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-secondary), var(--color-info));
-  color: #000; /* Contraste em fundo claro */
+  background: var(--gradient-primary);
+  color: var(--color-on-primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.3); /* Sutil */
+  box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: var(--glow-hover-primary);
-  transform: translateY(-1px); /* Era -2px, agora mais sutil */
-  transition: var(--transition-hover), var(--transition-glow);
+  transform: translateY(-1px);
+  transition: var(--transition-hover);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -121,18 +120,24 @@
   transition: var(--transition-active);
 }
 
-/* Danger variant */
+/* Danger variant - Vermelho sanctuary */
 .btn-danger {
-  background: linear-gradient(135deg, var(--color-primary), #ff3366);
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-on-primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 0, 110, 0.3);
+  box-shadow: var(--shadow-error);
 }
 
 .btn-danger:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+  background: var(--color-error-dark, #b91c1c); /* fallback R-097 */
   transform: translateY(-1px);
-  transition: var(--transition-hover), var(--transition-glow);
+  transition: var(--transition-hover);
+}
+
+@supports (background: color-mix(in srgb, red 85%, black)) {
+  .btn-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-error) 85%, #000000);
+  }
 }
 
 .btn-danger:active:not(:disabled) {

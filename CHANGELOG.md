@@ -80,6 +80,21 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### 🔒 Segurança / ✨ Melhorado (Chatbot IA — endurecimento) — web `4.10.0`→**`4.11.0`** · backend/infra · Telegram
+
+- **Segurança (A):** `api/chatbot.js` agora exige **autenticação** (Supabase JWT, `Bearer` → `getUser`; 401 sem token) — antes era endpoint aberto (abuso anônimo da quota Groq). O **system prompt passa a ser composto NO SERVIDOR**: o cliente envia apenas `patientContext` (dados, sem PII/IDs), nunca o prompt inteiro — fecha o bypass das "REGRAS ABSOLUTAS" (um POST direto podia remover os guardrails SaMD). Adicionados **safety guard** (`CHATBOT_BLOCKED_PATTERNS` → 422) e **rate limit por usuário** server-side (Map em memória, padrão `beta-signup`). AP-237.
+- **Contexto (B):** o contexto do paciente passa a considerar **somente tratamentos ativos com prescrição válida na data** (`p.active && isProtocolActiveOnDate(p, hoje)`) — corrige o bot sugerir repor estoque de cursos já finalizados/pausados. Por medicamento, inclui **consumo diário + dias restantes** (runway relativo), não só o total. Adiciona **próximas doses pendentes + atrasadas** (`splitDayTimeline`, core) e dose **líquido-aware** (`formatDoseItem`: gotas/ml/UI). Seção "Atenção de estoque". R-278.
+- **Modelo/Params/Prompt (C):** modelo padrão `groq/compound` → **`meta-llama/llama-4-scout-17b-16e-instruct`** (sem web search — alinha grounding clínico e contorna o RPD baixo do compound; `GROQ_MODEL` na Vercel permite A/B com `openai/gpt-oss-120b`). `max_tokens` 300 → **512**. **Prompt de dois níveis**: fatos do paciente com grounding rígido; conhecimento geral (pra que serve / como age / genérico vs marca) permitido em nível educativo, ancorado no princípio ativo + classe terapêutica; guardrails SaMD reforçados (ADR-062). Cold-start atualizado.
+- **Paridade Telegram:** `chatbotServerService` recebe modelo, `max_tokens`, prompt de dois níveis e escopo de tratamento ativo. (Próximas/atrasadas + runway + líquidos no Telegram ficam como follow-up — exigem buscar `dose_instances` na camada do bot.)
+- **Doc:** `docs/architecture/CHATBOT_AI.md` atualizado (seção "Atualização 2026-06").
+
+### 🧹 Limpeza / 🐛 Corrigido (web — pós-redesign) — web `4.11.0`
+
+- **Dead code:** removidas views legadas não referenciadas por nenhum menu/CTA após o redesign — `views/Medicines.{jsx,css}`, `views/Settings.{jsx,css}` (substituídas por `views/redesign/*`) e toda a subárvore da view `protocols` (`Protocols.{jsx,css}`, `ProtocolsContent`, `ProtocolsModals`, `ProtocolsTreatmentPlans`, `useProtocolHandlers`) — inalcançável (a navegação para "protocols" virou "treatment"). Limpeza do threading `initialProtocolParams` em `App.jsx`/`AppViewRouter.jsx`.
+- **Design system:** CTAs com gradiente/neon legado migrados para tokens sanctuary — `Button.css` `.btn-primary` (verde) e `.btn-danger` (vermelho), corrigindo "+ Novo" (Tratamentos), "+ Adicionar" (Medicines), botões "Excluir" dos cards e submits "Cadastrar"/"Atualizar" dos forms.
+- **Navegação:** botão "← Tratamentos" na view secundária Medicines (alcançada via Tratamentos).
+- **ANVISA autocomplete:** `normalizeRegulatoryCategory` (core) mapeia a categoria regulatória da base (sem acento/dados sujos: "Biologico", "Generico"…) para o enum canônico acentuado — corrige o campo "Categoria Regulatória" não preencher ao selecionar medicamento não-genérico.
+
 ### ✨ Adicionado (031 — Rotação de sítio de aplicação, slice A) — web `4.10.0` · core · mobile
 - **Sítio de injeção** registrável na tomada de injetáveis (`medicine_logs.injection_site`,
   8 sítios anatômicos PT, opcional/nullable). Detecção por `presentation === 'injetavel'`.

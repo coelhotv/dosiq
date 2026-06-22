@@ -17,13 +17,14 @@
 import Groq from 'groq-sdk'
 import { supabase } from '../../services/supabase.js'
 import { createLogger } from '../logger.js'
-import { 
-  getNow, 
-  getTodayLocal, 
-  getSaoPauloTime, 
+import {
+  getNow,
+  getTodayLocal,
+  getSaoPauloTime,
   addDays,
-  parseLocalDate 
+  parseLocalDate
 } from '../../utils/dateUtils.js'
+import { isProtocolActiveOnDate } from '@dosiq/core'
 import {
   CHATBOT_MAX_TOKENS,
   CHATBOT_TEMPERATURE,
@@ -38,7 +39,9 @@ import {
 
 const logger = createLogger('ChatbotServerService')
 
-const MODEL = process.env.GROQ_MODEL || 'groq/compound'
+// Modelo instruct fixo (sem web search — alinha com o grounding clínico).
+// Override via env GROQ_MODEL p/ A/B (ex.: openai/gpt-oss-120b). Paridade com api/chatbot.js (web).
+const MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct'
 const rateLimitMap = new Map()
 const historyMap = new Map()
 
@@ -137,7 +140,7 @@ async function _fetchRawPatientData(userId, yesterday) {
       .eq('user_id', userId),
     supabase
       .from('protocols')
-      .select('id, medicine_id, frequency, time_schedule, dosage_per_intake')
+      .select('id, medicine_id, frequency, time_schedule, dosage_per_intake, active, start_date, end_date')
       .eq('user_id', userId)
       .eq('active', true),
     supabase
@@ -264,29 +267,39 @@ async function calculateSimpleAdherence(userId, protocols) {
  * @returns {string}
  */
 export function buildServerContext({ medicines, protocols, logs, stockSummary, stats }) {
-  const todayStr = getTodayLocal().split('-').reverse().join('/')
+  const today = getTodayLocal() // YYYY-MM-DD
+  const todayStr = today.split('-').reverse().join('/')
 
-  const medsContext = (medicines || []).map(med => {
-    const protocol = (protocols || []).find(p => p.medicine_id === med.id)
-    const stockEntry = (stockSummary || []).find(s => s.medicine_id === med.id)
-    const totalStock = stockEntry?.quantity ?? 0
+  // Apenas tratamentos ATIVOS com prescrição válida hoje (exclui finalizados/futuros) — paridade web.
+  // Evita o bot sugerir repor estoque de cursos já encerrados.
+  const validProtocols = (protocols || []).filter(
+    (p) => p.active !== false && isProtocolActiveOnDate(p, today)
+  )
+  const validMedicineIds = new Set(validProtocols.map((p) => p.medicine_id))
 
-    return {
-      nome: med.name,
-      principioAtivo: med.active_ingredient,
-      classeTerapeutica: med.therapeutic_class,
-      dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
-      frequencia: protocol?.frequency ?? 'sem protocolo',
-      horarios: protocol?.time_schedule ?? [],
-      estoque: totalStock,
-    }
-  })
+  const medsContext = (medicines || [])
+    .filter((med) => validMedicineIds.has(med.id))
+    .map((med) => {
+      const protocol = validProtocols.find((p) => p.medicine_id === med.id)
+      const stockEntry = (stockSummary || []).find((s) => s.medicine_id === med.id)
+      const totalStock = stockEntry?.quantity ?? 0
+
+      return {
+        nome: med.name,
+        principioAtivo: med.active_ingredient,
+        classeTerapeutica: med.therapeutic_class,
+        dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
+        frequencia: protocol?.frequency ?? 'sem protocolo',
+        horarios: protocol?.time_schedule ?? [],
+        estoque: totalStock,
+      }
+    })
 
   const adherence7d = stats?.adherence != null ? Math.round(stats.adherence * 100) : null
 
   return [
     `Data: ${todayStr}`,
-    `Medicamentos ativos: ${medsContext.length}`,
+    `Tratamentos ativos: ${medsContext.length}`,
     ...medsContext.map(m => {
       const infos = [m.principioAtivo, m.classeTerapeutica].filter(Boolean).join(', ')
       const detalhe = infos ? ` [${infos}]` : ''
@@ -308,15 +321,30 @@ export function buildServerContext({ medicines, protocols, logs, stockSummary, s
  */
 export function buildStaticSystemRules() {
   return [
-    'Você é um assistente virtual do app Dosiq no Telegram.',
-    'Você ajuda o paciente a gerenciar seus medicamentos de forma amigavel.',
-    'REGRAS ABSOLUTAS:',
-    '- NUNCA recomende dosagens, diagnosticos ou substituicoes de medicamentos.',
-    '- NUNCA sugira parar ou alterar tratamento sem consultar o medico.',
-    '- Se sua resposta menciona medicamentos ou saúde, SEMPRE termine com uma linha em branco seguida de: "Não substituo orientação médica."',
-    '- Responda em portugues brasileiro, de forma concisa (max 3 frases).',
-    '- Responda em texto simples, sem Markdown (o Telegram usa formatacao diferente).',
-    '- Use os dados do paciente abaixo para contextualizar respostas.',
+    'Você é o assistente de saúde do app Dosiq no Telegram, focado em ajudar o paciente a seguir seus tratamentos e melhorar a adesão.',
+    'Missão: responder com clareza "o que o paciente precisa fazer agora" — doses de hoje, adesão e estoque — com tom acolhedor e sem alarmismo, adequado a pessoas com condições crônicas e a idosos.',
+    '',
+    'O QUE VOCÊ PODE FAZER:',
+    '- Informar as doses de hoje, a adesão e a situação de estoque a partir dos DADOS DO PACIENTE.',
+    '- Explicar, em termos gerais e educativos, para que serve um medicamento e como ele age, usando o princípio ativo e a classe terapêutica do contexto somados ao conhecimento geral. Pode comparar genérico e medicamento de marca de forma geral.',
+    '- Orientar de forma geral sobre organização e hábitos que melhoram a adesão.',
+    '- Você NÃO registra doses: para registrar, oriente o paciente a usar o botão "Tomei" no app.',
+    '',
+    'COMO USAR AS INFORMAÇÕES (dois níveis):',
+    '- FATOS DO PACIENTE (doses, horários, estoque, adesão, medicamentos em uso): use SOMENTE os DADOS DO PACIENTE abaixo. Se não estiverem lá, diga que não possui — NUNCA invente nomes, doses, horários, estoques ou números.',
+    '- CONHECIMENTO GERAL (para que serve, como age, genérico vs marca): pode responder em nível educativo. Se não tiver certeza de um fato específico, oriente a confirmar com o farmacêutico ou o médico — não invente dados.',
+    '',
+    'REGRAS ABSOLUTAS (segurança):',
+    '- NUNCA recomende, calcule ou ajuste dosagens; NUNCA sugira diagnósticos ou substituições de medicamentos.',
+    '- NUNCA calcule nem sugira dose de insulina ou bolus, e NUNCA defina metas de glicemia — apenas relate o que o paciente registrou.',
+    '- NUNCA sugira parar, iniciar ou alterar um tratamento sem consultar o médico.',
+    '- Não personalize recomendações clínicas para o caso do paciente; mantenha-se no nível educativo geral.',
+    '- Se a resposta mencionar medicamentos ou saúde, encerre com uma linha em branco seguida de: "Não substituo orientação médica."',
+    '',
+    'ESTILO:',
+    '- Português brasileiro, claro e conciso (2 a 4 frases).',
+    '- Responda em texto simples, sem Markdown (o Telegram usa formatação diferente).',
+    '- Não suponha o que o paciente tomou se não estiver registrado nos dados.',
   ].join('\n')
 }
 

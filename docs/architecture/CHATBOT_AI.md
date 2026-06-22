@@ -1,9 +1,51 @@
 # Arquitetura — Chatbot IA Multi-Canal (F8.1)
 
 > **Primeira integração de IA no projeto Dosiq**
-> **Status:** ✅ Entregue Sprint 8.3 + Bugfix 8.3.1 + Sprint 8.4 (History Persistence)
-> **Versão:** 1.2 | **Data:** 2026-03-20
-> **Modelo:** Groq `llama-3.3-70b-versatile` → `groq/compound` (seleção inteligente)
+> **Status:** ✅ Produção (Web + Telegram) — endurecido 2026-06 (segurança + contexto + modelo)
+> **Versão:** 2.0 | **Data:** 2026-06-22
+> **Modelo:** Groq `meta-llama/llama-4-scout-17b-16e-instruct` (padrão) · `openai/gpt-oss-120b` (A/B via env `GROQ_MODEL`)
+
+---
+
+## 🔁 Atualização 2026-06 — Segurança, Contexto e Modelo
+
+> Esta seção consolida o estado ATUAL e **supersede** os detalhes históricos (Sprint 8) abaixo onde houver conflito (modelo, segurança, params, contexto).
+
+### A. Segurança server-side (`api/chatbot.js`)
+
+Antes, o endpoint era **aberto** e o `systemPrompt` era montado no **cliente** (um POST direto podia remover as "REGRAS ABSOLUTAS" e gastar a quota Groq anonimamente). Agora:
+
+- **Auth obrigatória**: Supabase JWT (`Authorization: Bearer`, `supabase.auth.getUser`, padrão `share.js` / R-042). Sem token → `401`.
+- **System prompt autoritativo no servidor**: o cliente envia apenas `patientContext` (dados, sem PII/IDs); as REGRAS são compostas no servidor via `buildSystemPrompt` (fonte única em `chatbotConfig.js`, sem dependências).
+- **Safety guard server-side**: `CHATBOT_BLOCKED_PATTERNS` revalidados no endpoint (defesa em profundidade) → `422`.
+- **Rate limit server-side por usuário**: `Map` em memória (mesmo padrão de `beta-signup`), além do limite client-side.
+
+### B. Contexto enriquecido + escopo correto (`contextBuilder.js`)
+
+- **Escopo**: considera SOMENTE tratamentos **ativos com prescrição válida hoje** (`p.active && isProtocolActiveOnDate(p, hoje)`) — exclui finalizados/pausados/futuros (corrige bot sugerir repor estoque de cursos encerrados).
+- **Runway**: por medicamento, exibe **consumo diário** + **dias restantes** (relativo), não só o total absoluto.
+- **Doses do dia**: **próximas pendentes** + **atrasadas** via `splitDayTimeline` (core, CON-024).
+- **Líquidos**: dose nas linhas de ocorrência via `formatDoseItem` (gotas/ml/UI), não mg cru.
+- **Alertas de estoque**: seção "Atenção de estoque" (sem estoque / baixo ≤7 dias) só dos tratamentos válidos.
+
+### C. Modelo + Params + Prompt
+
+- **Modelo**: `groq/compound` (roteamento + web search) **aposentado** → instruct fixo `llama-4-scout-17b-16e-instruct`. Web search removido **de propósito**: conflita com o grounding clínico e tinha o menor RPD (250/dia). `GROQ_MODEL` (env Vercel) permite A/B com `gpt-oss-120b`.
+- **Params**: `max_tokens` 300 → **512** (300 truncava listas; modelos com reasoning consomem tokens de raciocínio no teto). `temperature 0.2` / `top_p 1.0` mantidos.
+- **Prompt de dois níveis**:
+  - *Fatos do paciente* (doses/estoque/adesão) → grounding rígido, nunca inventar.
+  - *Conhecimento geral* (pra que serve / como age / genérico vs marca) → permitido em nível educativo, ancorado no princípio ativo + classe terapêutica do contexto + conhecimento geral.
+  - Guardrails SaMD reforçados (ADR-062): nunca calcular/sugerir dose de insulina/bolus nem metas de glicemia; nunca personalizar conduta clínica.
+- **Cold-start** (Web, `ChatWindow`): `['Quais doses ainda faltam hoje?', 'Como está minha adesão?', 'Preciso repor algum estoque?']`.
+
+### Paridade Telegram (`server/bot/services/chatbotServerService.js`)
+
+- Modelo + `max_tokens` + prompt de dois níveis + **escopo ativo** (mesma regra `isProtocolActiveOnDate`).
+- **Follow-up**: próximas/atrasadas, runway e líquidos no Telegram exigem buscar `dose_instances` + computar runway na camada de dados do bot (a web pega do `DashboardContext`) — deferido.
+
+### Prompt caching
+
+Estrutura estático-primeiro mantida (regras → contexto); ganho é modesto dado prompts curtos (~350-700 tokens). Não vale investimento profundo agora — o lever de custo no free tier são os **limites** (RPD/TPD), atacados pela troca de modelo.
 
 ---
 
@@ -225,10 +267,13 @@ Display em ChatWindow
 
 | Camada | Responsável | Técnica |
 |--------|-------------|---------|
-| **Cliente** | `safetyGuard.js` | Regex patterns + localStorage rate limit |
-| **Servidor** | `api/chatbot.js` | Zod schema validation |
-| **LLM Prompt** | `buildSystemPrompt()` | Instrução explícita para não usar knowledge externo |
+| **Cliente** | `safetyGuard.js` | Regex patterns + localStorage rate limit (UX, não confiável) |
+| **Auth** | `api/chatbot.js` | Supabase JWT obrigatório (`Bearer` → `getUser`); 401 sem token |
+| **Servidor** | `api/chatbot.js` | Zod + `CHATBOT_BLOCKED_PATTERNS` (guard server-side, 422) + rate limit por usuário |
+| **System prompt** | servidor (`buildSystemPrompt`) | Composto NO SERVIDOR (cliente envia só `patientContext`); grounding de dois níveis |
 | **Response** | `safetyGuard.js` | Adiciona disclaimer em conteúdo médico |
+
+> ⚠️ **Atualizado 2026-06:** ver seção "Atualização 2026-06" no topo. O `systemPrompt` NÃO é mais montado/recebido do cliente, e o endpoint exige autenticação.
 
 ### Proteção contra Alucinação (Bugfix 8.3.1)
 
