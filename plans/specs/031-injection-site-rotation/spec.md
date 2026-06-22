@@ -170,7 +170,7 @@ ac:     Form de tomada de injetável mostra campo de local; oral/tópico não mo
 proof:  rtk npm run test:critical -- injectionSite
 expect: teste "mostra campo só para injetável" passa; oral/tópico → campo ausente
 guard:  suíte de LogForm/registro de dose verde (sem regressão nos fluxos não-injetáveis)
-status: [ ] open
+status: [x] done — write-path: doseLogService.injectionSite.test.js (passa p_injection_site / null / rejeita fora-enum, 6 testes); UI gate `isInjectable` testado (injectionSites.test.js). validate:agent 1385 verde. Render do campo = smoke PO.
 ```
 
 ```po PO-2
@@ -178,7 +178,7 @@ ac:     Após registrar local em qualquer injetável, próxima tomada de OUTRO i
 proof:  rtk npm run test:critical -- injectionSite.lastSiteGlobal
 expect: query "último local" retorna o mais recente SEM filtro de medicine_id/protocol_id
 guard:  query não filtra por medicamento; suíte verde
-status: [ ] open
+status: [x] done — doseLogService.injectionSite.test.js: getLastInjectionSite filtra user_id, NÃO medicine_id/protocol_id; retorna último; empty→null; erro propaga. Verde.
 ```
 
 ```po PO-2a
@@ -186,7 +186,7 @@ ac:     Log retroativo (taken_at antigo) NÃO altera "último local" se já houv
 proof:  rtk npm run test:critical -- injectionSite.retroactiveOrdering
 expect: ORDER BY taken_at DESC (COALESCE taken_at,created_at); inserir taken_at antigo mantém o último
 guard:  ordenação por taken_at, nunca created_at; suíte verde
-status: [ ] open
+status: [x] done — teste assere order.col==='taken_at' & ascending:false (não created_at). Verde.
 ```
 
 ```po PO-3
@@ -194,7 +194,7 @@ ac:     Selecionar local = último global dispara alerta NÃO-bloqueante; dose a
 proof:  MANUAL — selecionar mesmo local da última no form e confirmar dose
 expect: alerta visível ("mesmo local — considere rotacionar") + confirmar permanece habilitado; dose persiste
 guard:  confirmação de dose nunca bloqueada pelo local em nenhum fluxo
-status: [ ] open
+status: [x] done — web LogFormInjectionSiteSection (role="alert") + mobile single/edit/bulk (AlertTriangle lucide, accessibilityRole="alert"); getLastInjectionSite alimenta "última: X"; confirmar/salvar nunca desabilitado pelo sítio. Smoke PO aprovado (registrar repetindo último → alerta visível, dose persiste).
 ```
 
 ```po PO-4
@@ -202,7 +202,7 @@ ac:     Cada local exibe hint informativo de absorção, texto educacional sem p
 proof:  MANUAL — abrir seletor de sítio e inspecionar hint
 expect: hint educacional (ex.: abdômen "rápida", coxa "lenta") sem verbo prescritivo/recomendação clínica
 guard:  copy revisada anti-SaMD (herda T026/ADR-062); sem claim terapêutico
-status: [ ] open
+status: [x] done — getInjectionSiteAbsorption (texto educacional "absorção rápida/moderada/lenta", sem verbo prescritivo) renderizado: web LogFormInjectionSiteSection + mobile single/edit/bulk pickers. Smoke PO aprovado.
 ```
 
 ```po PO-5
@@ -210,7 +210,7 @@ ac:     Detalhe de dose no histórico (web + mobile) mostra o local quando prese
 proof:  MANUAL — abrir detalhe de dose injetável com local em web e mobile
 expect: local de aplicação exibido no detalhe (ambas plataformas)
 guard:  timelineService/HistoryDayPanel + mobile sem regressão de render
-status: [ ] open
+status: [x] done — timelineService.test.js PO-5: payload.injectionSite threaded (instance+log avulso); DoseEventCard (web) + DoseHistoryList (mobile) exibem. validate:agent verde (12 timeline tests). Render visual = smoke PO.
 ```
 
 ```po PO-6
@@ -218,7 +218,7 @@ ac:     Doses legadas (sem local) e orais aparecem sem campo de local — sem pl
 proof:  MANUAL — abrir detalhe de dose oral e de dose legada NULL
 expect: campo de local simplesmente ausente (não "—" nem vazio)
 guard:  histórico de doses NULL/orais renderiza idêntico ao baseline
-status: [ ] open
+status: [x] done — timelineService.test.js PO-6: dose sem sítio → payload.injectionSite null; cards renderizam condicional (`{injectionSiteLabel && ...}` web / `{item.injection_site && ...}` mobile) = oculto. Verde.
 ```
 
 ```po PO-7
@@ -226,7 +226,7 @@ ac:     Enum core injectionSites ↔ CHECK constraint SQL sincronizados (FR-008/
 proof:  rtk npm run test:critical -- injectionSite.schemaSqlParity
 expect: teste de paridade compara valores do enum core com o CHECK; falha se divergir
 guard:  schema .nullable().optional(); safeParse; paridade verde
-status: [ ] open
+status: [x] done — injectionSites.test.js: INJECTION_SITE_VALUES === CHECK SQL (8 valores, caixa exata). Zod rejeita 'Coxa_D'. Verde.
 ```
 
 ```po PO-8
@@ -234,7 +234,7 @@ ac:     Detalhe de dose injetável permite editar/adicionar local pós-registro;
 proof:  rtk npm run test:critical -- injectionSite.editPostLog
 expect: editar local persiste em medicine_logs e passa a valer p/ rotação global; taken_at não muda
 guard:  edição não altera taken_at; rotação reflete novo valor
-status: [ ] open
+status: [x] done — core updateOrphanLog passa p_injection_site + p_has_injection_site (flag presença distingue "não enviado" de "limpar"); doseLogService.injectionSite.test.js +3 casos (set/clear/preserve). Web: eventToLog +injection_site → LogForm pré-popula → update_dose_log_atomic (taken_at intacto). Mobile: DoseActionSheet edit p/ QUALQUER status (taken/missed/pending) — missed registra retroativo com sítio. Smoke PO aprovado.
 ```
 
 ```po PO-9
@@ -242,7 +242,7 @@ ac:     Migração é aditiva (coluna nullable + CHECK), sem afetar logs existen
 proof:  rtk npm run validate:agent
 expect: migração aplica sem backfill obrigatório; suíte crítica (estoque + adesão) verde
 guard:  migração reversível (DROP COLUMN); FIFO e computeAdherenceFromInstances inalterados
-status: [ ] open
+status: [x] done — validate:agent: 94 files / 1385 testes verdes (FIFO + adesão + timeline sem regressão). Migração escrita (aditiva nullable + CHECK + DROP COLUMN reversível). Apply no DB de prod = gate de deploy (PO).
 ```
 
 ## Edge Cases

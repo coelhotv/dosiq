@@ -14,8 +14,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose } from '@dosiq/core'
-import { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar } from 'lucide-react-native'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, INJECTION_SITES, getInjectionSiteLabel, getInjectionSiteAbsorption } from '@dosiq/core'
+import { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } from 'lucide-react-native'
+import { getLastInjectionSite } from '@dose/services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
@@ -119,6 +120,15 @@ function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, 
             )}
           </>
         )}
+        {instance?.injection_site && (
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>Local de aplicação</Text>
+            <View style={styles.siteValueRow}>
+              <LocateFixed size={13} color={colors.text.secondary} strokeWidth={2} />
+              <Text style={styles.infoValue}>{getInjectionSiteLabel(instance.injection_site)}</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={styles.actionsCard}>
@@ -154,7 +164,54 @@ function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, 
   )
 }
 
-function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
+/**
+ * Seletor de sítio de injeção na edição (031-B/FR-011). Renderiza para QUALQUER
+ * status de dose injetável — inclusive `missed`/`pending`: editar uma perdida
+ * registra retroativamente com o sítio (paciente sem app/conexão na hora). Opcional,
+ * não-bloqueante; inclui hint educacional de absorção (não-SaMD, ADR-062).
+ */
+function SheetSitePicker({ value, onChange, disabled, lastInjectionSite }) {
+  const absorption = getInjectionSiteAbsorption(value)
+  // US3: selecionar = último global → alerta NÃO-bloqueante (salvar nunca travado).
+  const repeated = value && lastInjectionSite && value === lastInjectionSite
+  return (
+    <View style={styles.formGroup}>
+      <Text style={styles.label}>Local de aplicação (opcional)</Text>
+      {lastInjectionSite && (
+        <Text style={styles.siteLast}>
+          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
+        </Text>
+      )}
+      <View style={styles.siteChips}>
+        {INJECTION_SITES.map((site) => {
+          const isSel = value === site.value
+          return (
+            <Pressable
+              key={site.value}
+              style={[styles.siteChip, isSel && styles.siteChipSelected]}
+              onPress={() => onChange(isSel ? null : site.value)}
+              disabled={disabled}
+            >
+              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
+                {site.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+      {repeated && (
+        <View style={styles.siteAlert} accessibilityRole="alert">
+          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
+          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
+        </View>
+      )}
+      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
+    </View>
+  )
+}
+
+function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, onChangeSite, lastInjectionSite, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
+  const injectable = isInjectable(instance)
   return (
     <View style={styles.formView}>
       <Text style={styles.formTitle}>Editar registro</Text>
@@ -193,6 +250,15 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, loading, onPicker
           </Text>
         )}
       </View>
+
+      {injectable && (
+        <SheetSitePicker
+          value={injectionSite}
+          onChange={onChangeSite}
+          disabled={loading}
+          lastInjectionSite={lastInjectionSite}
+        />
+      )}
 
       <TouchableOpacity
         style={[styles.primaryButton, loading && styles.buttonDisabled]}
@@ -347,6 +413,8 @@ function useDoseActionSheetState({
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [tempDate, setTempDate] = useState(null)
   const [quantityTaken, setQuantityTaken] = useState('')
+  const [injectionSite, setInjectionSite] = useState(null)
+  const [lastInjectionSite, setLastInjectionSite] = useState(null)
 
   const {
     logId,
@@ -357,6 +425,7 @@ function useDoseActionSheetState({
     dosage_per_intake,
     taken_at,
     scheduled_for,
+    injection_site,
   } = instance || {}
 
   useEffect(() => {
@@ -367,9 +436,20 @@ function useDoseActionSheetState({
         const src = taken_at || scheduled_for
         setTakenAtDate(src ? parseISO(src) : getNow())
         setQuantityTaken(String(quantity_taken ?? dosage_per_intake ?? 1))
+        setInjectionSite(injection_site ?? null)
       })
     }
-  }, [visible, instance, taken_at, scheduled_for, quantity_taken, dosage_per_intake])
+  }, [visible, instance, taken_at, scheduled_for, quantity_taken, dosage_per_intake, injection_site])
+
+  // US2: último sítio GLOBAL p/ exibir + alerta de repetição na edição. Best-effort.
+  // Sem reset síncrono: o picker só renderiza p/ injetável e o fetch sobrescreve.
+  useEffect(() => {
+    let alive = true
+    if (visible && isInjectable(instance)) {
+      getLastInjectionSite().then((s) => { if (alive) setLastInjectionSite(s) })
+    }
+    return () => { alive = false }
+  }, [visible, instance])
 
   function handleOpenPicker() {
     if (Platform.OS === 'android') {
@@ -389,9 +469,12 @@ function useDoseActionSheetState({
     if (!takenAtDate || !quantityTaken) return
     const parsedQty = parseFloat(String(quantityTaken).replace(',', '.'))
     if (isNaN(parsedQty)) return
+    // Sítio só relevante p/ injetável; oral mantém null (não polui o log).
+    const site = isInjectable(instance) ? (injectionSite ?? null) : null
     const payload = {
       taken_at: takenAtDate.toISOString(),
       quantity_taken: parsedQty,
+      injection_site: site,
     }
     if (isOrphan) {
       onUpdateLog?.(logId, payload)
@@ -427,6 +510,9 @@ function useDoseActionSheetState({
     setTempDate,
     quantityTaken,
     setQuantityTaken,
+    injectionSite,
+    setInjectionSite,
+    lastInjectionSite,
     handleOpenPicker,
     handleIOSConfirm,
     handleSaveEdit,
@@ -500,6 +586,9 @@ export default function DoseActionSheet({
     setTempDate,
     quantityTaken,
     setQuantityTaken,
+    injectionSite,
+    setInjectionSite,
+    lastInjectionSite,
     handleOpenPicker,
     handleIOSConfirm,
     handleSaveEdit,
@@ -558,6 +647,9 @@ export default function DoseActionSheet({
                 instance={instance}
                 takenAtDate={takenAtDate}
                 quantityTaken={quantityTaken}
+                injectionSite={injectionSite}
+                onChangeSite={setInjectionSite}
+                lastInjectionSite={lastInjectionSite}
                 loading={loading}
                 onPickerPress={handleOpenPicker}
                 onChangeQty={setQuantityTaken}
@@ -770,6 +862,67 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.secondary,
     marginTop: 4,
+  },
+  siteChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  siteChip: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.screen,
+  },
+  siteChipSelected: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.primary[50],
+  },
+  siteChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  siteChipTextSelected: {
+    color: colors.primary[700],
+  },
+  siteHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  siteLast: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginBottom: 8,
+  },
+  siteLastValue: {
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  siteAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.status.warningLight,
+  },
+  siteAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.status.warning,
+  },
+  siteValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 1,
   },
   retroRow: {
     flexDirection: 'row',

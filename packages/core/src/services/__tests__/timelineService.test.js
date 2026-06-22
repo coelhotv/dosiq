@@ -25,6 +25,7 @@ const log = (id, taken_at, extra = {}) => ({
   quantity_taken: extra.quantity_taken ?? 1,
   notes: extra.notes ?? null,
   dose_instance_id: extra.dose_instance_id ?? null,
+  injection_site: extra.injection_site ?? null,
 })
 
 describe('doseInstancesToEvents — dedupe e cobertura', () => {
@@ -37,6 +38,24 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
     expect(events[0].payload.source).toBe('instance')
     expect(events[0].payload.logId).toBe('l1')
     expect(events[0].payload.quantityTaken).toBe(1)
+  })
+
+  it('031/PO-5: payload carrega injectionSite do log ancorado e do log avulso', () => {
+    const instances = [inst('i1', 'taken', '2026-05-20T13:00:00Z', { medicine_log_id: 'l1' })]
+    const logs = [
+      log('l1', '2026-05-20T13:05:00Z', { dose_instance_id: 'i1', injection_site: 'coxa_d' }),
+      log('prn', '2026-05-22T09:00:00Z', { protocol_id: 'p2', injection_site: 'abdomen_e' }),
+    ]
+    const events = doseInstancesToEvents(instances, logs)
+    expect(events.find(e => e.id === 'inst:i1').payload.injectionSite).toBe('coxa_d')
+    expect(events.find(e => e.id === 'log:prn').payload.injectionSite).toBe('abdomen_e')
+  })
+
+  it('031/PO-6: dose sem sítio → payload.injectionSite null (oculto no histórico)', () => {
+    const instances = [inst('i1', 'taken', '2026-05-20T13:00:00Z', { medicine_log_id: 'l1' })]
+    const logs = [log('l1', '2026-05-20T13:05:00Z', { dose_instance_id: 'i1' })]
+    const [e] = doseInstancesToEvents(instances, logs)
+    expect(e.payload.injectionSite).toBeNull()
   })
 
   it('evento taken usa taken_at real como occurred_at (não scheduled_for)', () => {

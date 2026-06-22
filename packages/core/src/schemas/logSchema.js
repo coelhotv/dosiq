@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { getRawNow, parseISO } from '../utils/dateUtils.js'
+import { INJECTION_SITE_VALUES } from '../utils/injectionSites.js'
 
 /**
  * Schema de validação para Logs de Medicação
@@ -51,6 +52,15 @@ export const logSchema = z.object({
     .uuid('ID da instância de dose deve ser um UUID válido')
     .optional()
     .nullable()
+    .transform((val) => val || null),
+
+  // Sítio corporal de aplicação (injetáveis) — opcional, NULL p/ oral/legado/flows
+  // sem form (031, ADR-072). Enum sincronizado com CHECK injection_site (R-082/R-271);
+  // caixa exata. `.nullable().optional()` (R-021): campo pode chegar ausente OU null.
+  injection_site: z
+    .enum(INJECTION_SITE_VALUES, { message: 'Sítio de aplicação inválido' })
+    .nullable()
+    .optional()
     .transform((val) => val || null),
 })
 

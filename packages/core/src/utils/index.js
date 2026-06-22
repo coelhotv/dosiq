@@ -172,6 +172,15 @@ export {
   daysAgoLabel,
 } from './doseZones.js'
 
+// Sítios de injeção — locais corporais de aplicação + rotação (031, ADR-072)
+export {
+  INJECTION_SITES,
+  INJECTION_SITE_VALUES,
+  getInjectionSiteLabel,
+  getInjectionSiteAbsorption,
+  isInjectable,
+} from './injectionSites.js'
+
 // SemVer utilities (026 — Nudges In-App)
 export { compareSemver, satisfiesSemver } from './semver.js'
 

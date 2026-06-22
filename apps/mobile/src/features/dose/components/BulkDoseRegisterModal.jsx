@@ -2,7 +2,7 @@
 // Usado após tap em push notification ou FAB da tela de hoje (modo 'active')
 // R-010: estados → effects → handlers
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Modal,
   View,
@@ -15,11 +15,11 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp } from 'lucide-react-native'
+import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, AlertTriangle } from 'lucide-react-native'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
-import { registerDoseMany } from '../services/doseService'
-import { getNow, cloneDate, formatIntakeDose, formatConcentration } from '@dosiq/core'
+import { registerDoseMany, getLastInjectionSite } from '../services/doseService'
+import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable, INJECTION_SITES, getInjectionSiteAbsorption, getInjectionSiteLabel } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -87,9 +87,54 @@ export function buildBulkOutcome(result) {
 }
 
 /**
+ * Seletor de sítio por item injetável (031-B/US1). Canetas não podem partilhar o
+ * mesmo sítio numa aplicação simultânea → cada injetável escolhe o seu. Opcional,
+ * não-bloqueante. Só renderiza quando o item está marcado.
+ */
+function BulkItemSitePicker({ value, onChange, disabled, lastInjectionSite }) {
+  const absorption = getInjectionSiteAbsorption(value)
+  // US3: selecionar = último global → alerta NÃO-bloqueante (registro nunca travado).
+  const repeated = value && lastInjectionSite && value === lastInjectionSite
+  return (
+    <View style={styles.siteSection}>
+      <Text style={styles.siteLabel}>Local de aplicação (opcional)</Text>
+      {lastInjectionSite && (
+        <Text style={styles.siteLast}>
+          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
+        </Text>
+      )}
+      <View style={styles.siteChips}>
+        {INJECTION_SITES.map((site) => {
+          const isSel = value === site.value
+          return (
+            <Pressable
+              key={site.value}
+              style={[styles.siteChip, isSel && styles.siteChipSelected]}
+              onPress={() => onChange(isSel ? null : site.value)}
+              disabled={disabled}
+            >
+              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
+                {site.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+      {repeated && (
+        <View style={styles.siteAlert} accessibilityRole="alert">
+          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
+          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
+        </View>
+      )}
+      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
+    </View>
+  )
+}
+
+/**
  * Lista de protocolos para seleção em batch (Suporta layouts Simples e Complexo)
  */
-function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex }) {
+function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, injectionSites, onSiteChange, lastInjectionSite }) {
   const [collapsedPlans, setCollapsedPlans] = useState({})
 
   const togglePlanCollapse = (planId) => {
@@ -121,45 +166,55 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
 
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
-    const medicineName = item.protocol.medicine?.name ?? item.protocol.name ?? 'Medicamento'
+    const medicineName = item.protocol?.medicine?.name ?? item.protocol?.name ?? 'Medicamento'
     // Líquido → "40 gotas (≈ 2 ml)"; sólido → "10 un. (1.000 mg)" (formatIntakeDose).
-    const dose = formatIntakeDose(item.protocol.dosage_per_intake ?? 1, item.protocol.intake_unit, item.protocol.medicine)
+    const dose = formatIntakeDose(item.protocol?.dosage_per_intake ?? 1, item.protocol?.intake_unit, item.protocol?.medicine)
+    const injectable = isInjectable(item.protocol?.medicine)
 
     return (
-      <Pressable
-        key={item.id}
-        style={styles.item}
-        onPress={() => onToggle(item.id)}
-        disabled={loading}
-      >
-        {isChecked
-          ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
-          : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
-        }
-        <View style={styles.itemText}>
-          <View style={styles.medicineNameRow}>
-            <Text style={[styles.medicineName, !isChecked && styles.unchecked]} numberOfLines={1}>
-              {medicineName}
-            </Text>
-            {item.protocol.medicine?.dosage_per_pill && (
-              <View style={styles.dosageBadge}>
-                <Text style={styles.dosageBadgeText}>
-                  {formatConcentration(item.protocol.medicine.dosage_per_pill, item.protocol.medicine.dosage_unit, item.protocol.medicine.concentration_volume_ml)}
-                </Text>
-              </View>
-            )}
+      <View key={item.id}>
+        <Pressable
+          style={styles.item}
+          onPress={() => onToggle(item.id)}
+          disabled={loading}
+        >
+          {isChecked
+            ? <CheckCircle size={22} color={colors.brand.primary} strokeWidth={2} />
+            : <Circle size={22} color={colors.neutral[300]} strokeWidth={2} />
+          }
+          <View style={styles.itemText}>
+            <View style={styles.medicineNameRow}>
+              <Text style={[styles.medicineName, !isChecked && styles.unchecked]} numberOfLines={1}>
+                {medicineName}
+              </Text>
+              {item.protocol.medicine?.dosage_per_pill && (
+                <View style={styles.dosageBadge}>
+                  <Text style={styles.dosageBadgeText}>
+                    {formatConcentration(item.protocol.medicine.dosage_per_pill, item.protocol.medicine.dosage_unit, item.protocol.medicine.concentration_volume_ml)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.itemRow}>
+              <Text style={styles.doseInfo}>{dose}</Text>
+              {item.scheduledTime ? (
+                <View style={styles.timeRow}>
+                  <Clock size={12} color={colors.primary[700]} strokeWidth={2} />
+                  <Text style={styles.timeInfo}>{item.scheduledTime}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
-          <View style={styles.itemRow}>
-            <Text style={styles.doseInfo}>{dose}</Text>
-            {item.scheduledTime ? (
-              <View style={styles.timeRow}>
-                <Clock size={12} color={colors.primary[700]} strokeWidth={2} />
-                <Text style={styles.timeInfo}>{item.scheduledTime}</Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-      </Pressable>
+        </Pressable>
+        {injectable && isChecked && (
+          <BulkItemSitePicker
+            value={injectionSites?.[item.id] ?? null}
+            onChange={(site) => onSiteChange(item.id, site)}
+            disabled={loading}
+            lastInjectionSite={lastInjectionSite}
+          />
+        )}
+      </View>
     )
   }
 
@@ -233,7 +288,24 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex })
   )
 }
 
-function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey) {
+export /**
+ * Último sítio GLOBAL (US2) p/ o bulk. Hook isolado: mantém R-010 (states antes de
+ * memos no componente) e enxuga BulkDoseRegisterModal. Best-effort (null em erro).
+ */
+function useBulkLastSite(visible, items) {
+  const hasInjectable = items.some((i) => isInjectable(i.protocol?.medicine))
+  const [lastInjectionSite, setLastInjectionSite] = useState(null)
+  useEffect(() => {
+    let alive = true
+    if (visible && hasInjectable) {
+      getLastInjectionSite().then((s) => { if (alive) setLastInjectionSite(s) })
+    }
+    return () => { alive = false }
+  }, [visible, hasInjectable])
+  return lastInjectionSite
+}
+
+export function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites = {}) {
   return selectedIds
     .map(id => {
       const item = expandedDoseItems.find(i => i.id === id)
@@ -243,11 +315,14 @@ function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackd
         ? null
         : (item.instanceId
           ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
+      // Sítio só p/ injetável; não-injetável sempre null (evita lixo no log).
+      const injection_site = isInjectable(p?.medicine) ? (injectionSites[id] ?? null) : null
       return {
         protocol_id: p.id,
         medicine_id: p.medicine?.id ?? p.medicine_id,
         taken_at: finalTakenAt,
         quantity_taken: p.dosage_per_intake ?? 1,
+        injection_site,
         instance_id: instanceId,
       }
     })
@@ -352,6 +427,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
   const [prevVisible, setPrevVisible] = useState(null)
   const [prevItems, setPrevItems] = useState([])
   const [selected, setSelected] = useState({})
+  const [injectionSites, setInjectionSites] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [takenAtDate, setTakenAtDate] = useState(null)
@@ -366,6 +442,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
     setPrevVisible(visible)
     if (!visible) {
       setSelected({})
+      setInjectionSites({})
       setError(null)
       setLoading(false)
       setTakenAtDate(null)
@@ -373,6 +450,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
       setTempDate(null)
     } else {
       setTakenAtDate(getNow())
+      setInjectionSites({})
       const initial = {}
       expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
       setSelected(initial)
@@ -381,6 +459,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
 
   return {
     selected, setSelected,
+    injectionSites, setInjectionSites,
     loading, setLoading,
     error, setError,
     takenAtDate, setTakenAtDate,
@@ -472,8 +551,12 @@ export default function BulkDoseRegisterModal({
     return _expandDoseItems(protocols, instancedItems)
   }, [protocols, instancedItems])
 
+  // US2: último sítio GLOBAL — busca só se o bloco tem injetável (dentro do hook).
+  const lastInjectionSite = useBulkLastSite(visible, expandedDoseItems)
+
   const {
     selected, setSelected,
+    injectionSites, setInjectionSites,
     loading, setLoading,
     error, setError,
     takenAtDate, setTakenAtDate,
@@ -483,6 +566,10 @@ export default function BulkDoseRegisterModal({
 
   function toggleProtocol(id) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function handleSiteChange(id, site) {
+    setInjectionSites(prev => ({ ...prev, [id]: site }))
   }
 
   function handleOpenRetroactivePicker() {
@@ -518,7 +605,7 @@ export default function BulkDoseRegisterModal({
     const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : now.toISOString()
     const isBackdated = !!takenAtDate && takenAtDate.toDateString() !== now.toDateString()
 
-    const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey)
+    const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites)
 
     const result = await registerDoseMany(logsData)
     setLoading(false)
@@ -577,6 +664,9 @@ export default function BulkDoseRegisterModal({
               loading={loading}
               onToggle={toggleProtocol}
               isComplex={isComplex}
+              injectionSites={injectionSites}
+              onSiteChange={handleSiteChange}
+              lastInjectionSite={lastInjectionSite}
             />
           )}
 
@@ -756,6 +846,70 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   
+  // Sítio de injeção por item (031-B)
+  siteSection: {
+    paddingHorizontal: spacing[2],
+    paddingBottom: spacing[3],
+    gap: spacing[2],
+  },
+  siteLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+  siteChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  siteChip: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.screen,
+  },
+  siteChipSelected: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.primary[50],
+  },
+  siteChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  siteChipTextSelected: {
+    color: colors.primary[700],
+  },
+  siteHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
+  },
+  siteLast: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  siteLastValue: {
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  siteAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.status.warningLight,
+  },
+  siteAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.status.warning,
+  },
+
   // Custom Styles para agrupamento e horários
   planSection: {
     marginBottom: spacing[4],
