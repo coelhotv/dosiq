@@ -45,14 +45,14 @@ const formatDaySeparator = (timestamp) => {
   return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' })
 }
 
-const QUICK_SUGGESTIONS = ['Tomei meu remédio hoje?', 'Como está minha adesão?', 'Quando preciso repor estoque?']
+const QUICK_SUGGESTIONS = ['Quais doses ainda faltam hoje?', 'Como está minha adesão?', 'Preciso repor algum estoque?']
 
 /**
  * Drawer lateral de chat com o assistente IA.
  * Lazy-loaded — nao impacta main bundle.
  */
 export default function ChatWindow({ isOpen, onClose }) {
-  const { medicines, protocols, logs, stockSummary, stats } = useDashboard()
+  const { medicines, protocols, logs, stockSummary, stats, doseInstances } = useDashboard()
 
   const [messages, setMessages] = useState(() => {
     const persisted = loadPersistedHistory()
@@ -80,7 +80,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     addMessage({ role: 'user', content: userMessage, timestamp: getNow().getTime() })
     setIsLoading(true)
     try {
-      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats } })
+      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats, doseInstances } })
       addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime() })
     } finally {
       setIsLoading(false)
