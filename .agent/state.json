@@ -3,7 +3,7 @@
   "sprint": "2026-W25",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "delivered",
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 6,
     "ceremony_scope_decisions": ["slice 031 em A(captura+rotação+histórico+migração) e B(edit pós-log+hint+quick-pick)"],
