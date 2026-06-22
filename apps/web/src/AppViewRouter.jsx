@@ -8,7 +8,6 @@ import Auth from './views/Auth'
 const Landing = lazy(() => import('./views/Landing'))
 const Medicines = lazy(() => import('./views/redesign/Medicines'))
 const Stock = lazy(() => import('./views/redesign/Stock'))
-const Protocols = lazy(() => import('./views/Protocols'))
 const HealthHistory = lazy(() => import('./views/redesign/HealthHistory'))
 const Settings = lazy(() => import('./views/redesign/Settings'))
 const Emergency = lazy(() => import('./views/redesign/Emergency'))
@@ -36,10 +35,8 @@ const SKELETON = (
 const W = (children) => <Suspense fallback={SKELETON}>{children}</Suspense>
 
 const VIEW_MAP = {
-  landing: (props) => <Landing isAuthenticated={true} onOpenAuth={() => props.setShowAuth(true)} onContinue={() => props.setCurrentView('dashboard')} />,
-  medicines: (props) => <Medicines onNavigateToProtocol={props.navigateToProtocol} />,
+  medicines: (props) => <Medicines onNavigateToProtocol={props.navigateToProtocol} onBack={() => props.setCurrentView('treatment')} />,
   stock: (props) => <Stock initialParams={props.initialStockParams} onClearParams={() => props.setInitialStockParams(null)} />,
-  protocols: (props) => <Protocols initialParams={props.initialProtocolParams} onClearParams={() => props.setInitialProtocolParams(null)} onNavigateToStock={props.navigateToStock} />,
   treatment: (props) => <Treatment onNavigateToProtocol={() => props.setCurrentView('treatment')} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />,
   profile: (props) => <Profile onNavigate={props.setCurrentView} />,
   'health-history': (props) => <HealthHistory key="health-history" onNavigate={props.setCurrentView} />,
@@ -69,7 +66,6 @@ function _renderViewContent(currentView, props) {
 
   const dashboardNavigate = (view, params) => {
     if (view === 'stock' && params?.medicineId) props.setInitialStockParams({ medicineId: params.medicineId });
-    else if (view === 'protocols' && params?.medicineId) props.setInitialProtocolParams({ medicineId: params.medicineId });
     props.setCurrentView(view);
   };
   return <Dashboard onNavigate={dashboardNavigate} />;
@@ -79,13 +75,11 @@ export default function AppViewRouter({
   session,
   currentView,
   showAuth,
-  initialProtocolParams,
   initialStockParams,
   initialTreatmentMedicineId,
   setShowAuth,
   setCurrentView,
   setInitialStockParams,
-  setInitialProtocolParams,
   setInitialTreatmentMedicineId,
   setIsDoseModalOpen,
   setDoseModalInitialValues,
@@ -107,7 +101,6 @@ export default function AppViewRouter({
   }
 
   const navigateToProtocol = (medicineId) => { setInitialTreatmentMedicineId(medicineId); setCurrentView('treatment') }
-  const navigateToStock = (medicineId) => { setInitialStockParams({ medicineId }); setCurrentView('stock') }
 
   const viewProps = {
     session,
@@ -115,14 +108,11 @@ export default function AppViewRouter({
     setCurrentView,
     initialStockParams,
     setInitialStockParams,
-    initialProtocolParams,
-    setInitialProtocolParams,
     initialTreatmentMedicineId,
     setInitialTreatmentMedicineId,
     setDoseModalInitialValues,
     setIsDoseModalOpen,
-    navigateToProtocol,
-    navigateToStock
+    navigateToProtocol
   };
 
   return W(_renderViewContent(currentView, viewProps));

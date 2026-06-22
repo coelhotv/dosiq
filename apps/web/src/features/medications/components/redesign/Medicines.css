@@ -8,6 +8,27 @@
   padding: 1.5rem;
 }
 
+/* Back button — Medicines é view secundária de Tratamentos */
+.sr-medicines__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.sr-medicines__back:hover {
+  color: var(--color-primary);
+}
+
 /* Header */
 .sr-medicines__header {
   display: flex;

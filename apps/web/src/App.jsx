@@ -40,11 +40,9 @@ function AppShell({
   showAuth,
   setShowAuth,
   onResetComplete,
-  initialProtocolParams,
   initialStockParams,
   initialTreatmentMedicineId,
   setInitialStockParams,
-  setInitialProtocolParams,
   setInitialTreatmentMedicineId,
   isDoseModalOpen,
   doseModalInitialValues,
@@ -84,13 +82,11 @@ function AppShell({
                   showAuth={showAuth}
                   isPasswordRecovery={isPasswordRecovery}
                   onResetComplete={onResetComplete}
-                  initialProtocolParams={initialProtocolParams}
                   initialStockParams={initialStockParams}
                   initialTreatmentMedicineId={initialTreatmentMedicineId}
                   setShowAuth={setShowAuth}
                   setCurrentView={setCurrentView}
                   setInitialStockParams={setInitialStockParams}
-                  setInitialProtocolParams={setInitialProtocolParams}
                   setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
                   setIsDoseModalOpen={setIsDoseModalOpen}
                   setDoseModalInitialValues={setDoseModalInitialValues}
@@ -147,7 +143,6 @@ function AppInner() {
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false)
   const [doseModalInitialValues, setDoseModalInitialValues] = useState(null)
   const [isMeasureModalOpen, setIsMeasureModalOpen] = useState(false)
-  const [initialProtocolParams, setInitialProtocolParams] = useState(null)
   const [initialStockParams, setInitialStockParams] = useState(null)
   const [initialTreatmentMedicineId, setInitialTreatmentMedicineId] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
@@ -293,11 +288,9 @@ function AppInner() {
       showAuth={showAuth}
       setShowAuth={setShowAuth}
       onResetComplete={() => { setIsPasswordRecovery(false); setCurrentView('dashboard') }}
-      initialProtocolParams={initialProtocolParams}
       initialStockParams={initialStockParams}
       initialTreatmentMedicineId={initialTreatmentMedicineId}
       setInitialStockParams={setInitialStockParams}
-      setInitialProtocolParams={setInitialProtocolParams}
       setInitialTreatmentMedicineId={setInitialTreatmentMedicineId}
       isDoseModalOpen={isDoseModalOpen}
       doseModalInitialValues={doseModalInitialValues}

@@ -1,8 +1,19 @@
-import { Pill, Plus } from 'lucide-react'
+import { Pill, Plus, ArrowLeft } from 'lucide-react'
 
-export default function MedicineListHeader({ onAdd }) {
+export default function MedicineListHeader({ onAdd, onBack }) {
   return (
-    <div className="sr-medicines__header">
+    <>
+      {onBack && (
+        <button
+          type="button"
+          className="sr-medicines__back"
+          onClick={onBack}
+          aria-label="Voltar para Tratamentos"
+        >
+          <ArrowLeft size={18} /> Tratamentos
+        </button>
+      )}
+      <div className="sr-medicines__header">
       <div>
         <div className="sr-medicines__title-group">
           <div className="sr-medicines__title-icon">
@@ -12,9 +23,10 @@ export default function MedicineListHeader({ onAdd }) {
         </div>
         <p className="sr-medicines__subtitle">Gerencie seus medicamentos cadastrados</p>
       </div>
-      <button className="btn-primary" onClick={onAdd}>
+      <button className="btn btn-primary btn-md" onClick={onAdd}>
         <Plus size={18} /> Adicionar
       </button>
-    </div>
+      </div>
+    </>
   )
 }
