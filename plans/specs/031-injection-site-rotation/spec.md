@@ -2,7 +2,7 @@
 
 **Feature Directory**: `plans/specs/031-injection-site-rotation`
 **Created**: 2026-06-14
-**Status**: specified
+**Status**: delivered (PR #675, 2026-06-22 — web 4.10.0 · mobile 0.20.0)
 **Tier**: 2 (Epic — migração em `medicine_logs` + ADR persistência/rotação-global + cross web+mobile)
 **Input**: "031 - injection site rotation: log do local de aplicação durante tomada de injetáveis; recuperar último local; dropdown de locais pré-definidos; alerta se local = último; hint absorção lenta/rápida; detalhe de dose no histórico mostra local (+ outras necessidades)"
 
