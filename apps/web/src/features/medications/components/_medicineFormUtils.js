@@ -1,5 +1,6 @@
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils.js'
 import { LIQUID_PRESENTATIONS, coerceDecimal, cleanFloat } from '@dosiq/core'
+import { normalizeRegulatoryCategory } from '@schemas/medicineSchema'
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022). Único ponto de verdade na UI web.
 export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
@@ -111,6 +112,6 @@ export const formatSelectedMedicine = (selectedMedicine) => ({
   name: selectedMedicine.name,
   active_ingredient: toTitleCase(selectedMedicine.activeIngredient),
   therapeutic_class: toSentenceCase(selectedMedicine.therapeuticClass) || null,
-  regulatory_category: selectedMedicine.regulatoryCategory || null,
+  regulatory_category: normalizeRegulatoryCategory(selectedMedicine.regulatoryCategory),
   laboratory: selectedMedicine.laboratory || '',
 })

@@ -9,7 +9,7 @@ import MedicineGrid from '@medications/components/redesign/medicines/components/
 import MedicineModals from '@medications/components/redesign/medicines/components/MedicineModals'
 import '@medications/components/redesign/Medicines.css'
 
-export default function Medicines({ onNavigateToProtocol }) {
+export default function Medicines({ onNavigateToProtocol, onBack }) {
   const {
     medicines: contextMedicines,
     protocols,
@@ -103,7 +103,7 @@ export default function Medicines({ onNavigateToProtocol }) {
 
   return (
     <div className="sr-medicines">
-      <MedicineListHeader onAdd={() => { setEditingMedicine(null); setIsModalOpen(true); }} />
+      <MedicineListHeader onAdd={() => { setEditingMedicine(null); setIsModalOpen(true); }} onBack={onBack} />
       <MedicineFilterChips filterType={filterType} onFilterChange={setFilterType} />
       <MedicineFeedbackBanners successMessage={successMessage} error={error} />
       <MedicineGrid 

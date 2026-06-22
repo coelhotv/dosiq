@@ -22,6 +22,14 @@ const mockLocalStorage = (() => {
 })()
 vi.stubGlobal('localStorage', mockLocalStorage)
 
+// Mock supabase: endpoint exige Bearer token; service lê de getSession()
+const mockGetSession = vi.fn().mockResolvedValue({
+  data: { session: { access_token: 'test-access-token' } },
+})
+vi.mock('@shared/utils/supabase', () => ({
+  supabase: { auth: { getSession: () => mockGetSession() } },
+}))
+
 import { sendChatMessage } from '@/features/chatbot/services/chatbotService'
 
 const mockPatientData = {
@@ -78,8 +86,27 @@ describe('sendChatMessage', () => {
       '/api/chatbot',
       expect.objectContaining({ method: 'POST' })
     )
+    // Envia Authorization Bearer + patientContext (não mais systemPrompt)
+    const callOpts = mockFetch.mock.calls[0][1]
+    expect(callOpts.headers.Authorization).toBe('Bearer test-access-token')
+    const body = JSON.parse(callOpts.body)
+    expect(typeof body.patientContext).toBe('string')
+    expect(body.systemPrompt).toBeUndefined()
     expect(result.blocked).toBe(false)
     expect(result.rateLimited).toBe(false)
+  })
+
+  it('não chama o endpoint sem sessão autenticada', async () => {
+    mockGetSession.mockResolvedValueOnce({ data: { session: null } })
+
+    const result = await sendChatMessage({
+      message: 'ola',
+      history: [],
+      patientData: mockPatientData,
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(result.response).toContain('Faça login')
   })
 
   it('adiciona disclaimer na resposta sobre medicamento', async () => {

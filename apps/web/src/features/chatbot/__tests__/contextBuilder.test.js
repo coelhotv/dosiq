@@ -31,7 +31,9 @@ const mockLogs = [
   { taken_at: new Date().toISOString() }, // hoje
 ]
 
-const mockStockSummary = [{ medicine_id: 'uuid-1', quantity: 20 }]
+const mockStockSummary = [
+  { medicine: { id: 'uuid-1' }, total: 20, daysRemaining: 40, dailyIntake: 1, isLow: false, isZero: false },
+]
 
 const mockStats = { adherence: 0.85 }
 
@@ -139,8 +141,61 @@ describe('buildPatientContext', () => {
       stockSummary: [],
       stats: null,
     })
-    expect(result).toContain('Medicamentos ativos: 0')
+    expect(result).toContain('Tratamentos ativos: 0')
     expect(result).toContain('Doses registradas hoje: 0')
+  })
+
+  it('inclui consumo diario e dias restantes (relativo)', () => {
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+    })
+    expect(result).toContain('consumo ~1/dia')
+    expect(result).toContain('40 dias restantes')
+  })
+
+  it('exclui tratamento FINALIZADO (end_date passado) do contexto de estoque', () => {
+    const finishedProtocol = [
+      { medicine_id: 'uuid-1', active: true, frequency: 'diario', time_schedule: ['08:00'], end_date: '2020-01-01' },
+    ]
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: finishedProtocol,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+    })
+    expect(result).not.toContain('Metformina')
+    expect(result).toContain('Tratamentos ativos: 0')
+  })
+
+  it('exclui tratamento PAUSADO (active=false) do contexto', () => {
+    const pausedProtocol = [
+      { medicine_id: 'uuid-1', active: false, frequency: 'diario', time_schedule: ['08:00'] },
+    ]
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: pausedProtocol,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+    })
+    expect(result).not.toContain('Metformina')
+  })
+
+  it('sem doses materializadas → "Nenhuma dose pendente para hoje"', () => {
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: mockStockSummary,
+      stats: null,
+      doseInstances: [],
+    })
+    expect(result).toContain('Nenhuma dose pendente para hoje')
   })
 })
 

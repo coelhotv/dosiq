@@ -1,6 +1,7 @@
 import { validateUserMessage, addDisclaimerIfNeeded } from './safetyGuard'
-import { buildPatientContext, buildSystemPrompt } from './contextBuilder'
+import { buildPatientContext } from './contextBuilder'
 import { getNow } from '@utils/dateUtils'
+import { supabase } from '@shared/utils/supabase'
 import {
   CHATBOT_MAX_HISTORY,
   CHATBOT_RATE_LIMIT_WINDOW,
@@ -48,19 +49,32 @@ export async function sendChatMessage({ message, history = [], patientData }) {
     }
   }
 
-  // 3. Build context
-  const context = buildPatientContext(patientData)
-  const systemPrompt = buildSystemPrompt(context)
+  // 3. Build context (apenas DADOS — as REGRAS são compostas no servidor, não confiáveis do cliente)
+  const patientContext = buildPatientContext(patientData)
 
-  // 4. Enviar para serverless function
+  // 4. Token de sessão — endpoint exige autenticação (sem token = 401, evita abuso anônimo da quota Groq)
+  const { data: { session } } = await supabase.auth.getSession()
+  const accessToken = session?.access_token
+  if (!accessToken) {
+    return {
+      response: 'Faça login para usar o assistente.',
+      blocked: false,
+      rateLimited: false,
+    }
+  }
+
+  // 5. Enviar para serverless function
   try {
     const response = await fetch('/api/chatbot', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         message,
         history: history.slice(-MAX_HISTORY),
-        systemPrompt,
+        patientContext,
       }),
     })
 
