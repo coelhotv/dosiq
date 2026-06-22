@@ -54,6 +54,46 @@ describe('registerDose — propaga injection_site à RPC (PO-1, anti AP-214)', (
   })
 })
 
+describe('updateOrphanLog — edita sítio pós-registro com flag de presença (PO-8/FR-011)', () => {
+  const LOG_ID = 'b1ffbc99-9c0b-4ef8-bb6d-6bb9bd380a22'
+
+  it('envia p_injection_site + p_has_injection_site=true quando o campo está no update', async () => {
+    const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
+    const service = createDoseLogService({ client, getUserId })
+
+    await service.updateOrphanLog(LOG_ID, { injection_site: 'gluteo_d' })
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      'update_dose_log_atomic',
+      expect.objectContaining({ p_injection_site: 'gluteo_d', p_has_injection_site: true })
+    )
+  })
+
+  it('limpa o sítio (null) ainda com p_has_injection_site=true — distingue "não enviado" de "apagar"', async () => {
+    const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
+    const service = createDoseLogService({ client, getUserId })
+
+    await service.updateOrphanLog(LOG_ID, { injection_site: null })
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      'update_dose_log_atomic',
+      expect.objectContaining({ p_injection_site: null, p_has_injection_site: true })
+    )
+  })
+
+  it('p_has_injection_site=false quando o update não menciona o campo (COALESCE preserva)', async () => {
+    const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
+    const service = createDoseLogService({ client, getUserId })
+
+    await service.updateOrphanLog(LOG_ID, { quantity_taken: 2 })
+
+    expect(client.rpc).toHaveBeenCalledWith(
+      'update_dose_log_atomic',
+      expect.objectContaining({ p_has_injection_site: false })
+    )
+  })
+})
+
 describe('getLastInjectionSite — último global por taken_at (PO-2/PO-2a)', () => {
   // Builder encadeável que captura os filtros aplicados e devolve um resultado fixo.
   function makeQueryClient(result) {
