@@ -105,6 +105,31 @@ export const REGULATORY_CATEGORY_LABELS = {
   Outros: 'Outros',
 }
 
+const _COMBINING_MARKS = /[̀-ͯ]/g
+const _stripAccents = (s) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(_COMBINING_MARKS, '')
+    .trim()
+
+/**
+ * Normaliza a categoria regulatória vinda da base ANVISA (sem acento, dados sujos)
+ * para o enum canônico acentuado de `REGULATORY_CATEGORIES`.
+ *
+ * Compara ignorando acentos/caixa. Valores fora do enum (ex.: "Gases Medicinais",
+ * "Radiofarmaco") caem em 'Outros'. Vazio → null.
+ *
+ * @param {string|null|undefined} raw
+ * @returns {string|null}
+ */
+export function normalizeRegulatoryCategory(raw) {
+  if (!raw) return null
+  const normalized = _stripAccents(raw)
+  const match = REGULATORY_CATEGORIES.find((c) => _stripAccents(c) === normalized)
+  return match || 'Outros'
+}
+
 /**
  * Schema base para medicamento
  */

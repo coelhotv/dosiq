@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
+import { normalizeRegulatoryCategory } from '@schemas/medicineSchema'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
 
 export function useWizardNavigation(initialStep) {
@@ -48,7 +49,7 @@ function _applyMedicineSelect(prev, medicine) {
     name: medicine.name,
     active_ingredient: toTitleCase(medicine.activeIngredient) || '',
     therapeutic_class: toSentenceCase(medicine.therapeuticClass) || null,
-    regulatory_category: medicine.regulatoryCategory || null,
+    regulatory_category: normalizeRegulatoryCategory(medicine.regulatoryCategory),
     laboratory: medicine.laboratory || '',
   }
 }
