@@ -3,7 +3,7 @@
 // R5-003: menor fricção possível — mínimo de toques
 // R5-008: online-first — doseService retorna erro claro se offline
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Modal,
   View,
@@ -22,8 +22,11 @@ import {
   formatIntakeDose,
   isInjectable,
   INJECTION_SITES,
+  getInjectionSiteAbsorption,
+  getInjectionSiteLabel,
 } from '@dosiq/core'
-import { registerDose } from '../services/doseService'
+import { registerDose, getLastInjectionSite } from '../services/doseService'
+import { AlertTriangle } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
 
@@ -38,10 +41,18 @@ import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
  * }} props
  */
 /** Seletor de sítio de injeção (chips) — só renderizado p/ injetáveis (031/US1). */
-function InjectionSitePicker({ value, onChange, disabled }) {
+function InjectionSitePicker({ value, onChange, disabled, lastInjectionSite }) {
+  const absorption = getInjectionSiteAbsorption(value)
+  // US3: selecionar = último global → alerta NÃO-bloqueante (dose confirma sempre).
+  const repeated = value && lastInjectionSite && value === lastInjectionSite
   return (
     <View style={styles.siteSection}>
       <Text style={styles.label}>Local de aplicação (opcional)</Text>
+      {lastInjectionSite && (
+        <Text style={styles.siteLast}>
+          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
+        </Text>
+      )}
       <View style={styles.siteChips}>
         {INJECTION_SITES.map((site) => {
           const selected = value === site.value
@@ -59,6 +70,13 @@ function InjectionSitePicker({ value, onChange, disabled }) {
           )
         })}
       </View>
+      {repeated && (
+        <View style={styles.siteAlert} accessibilityRole="alert">
+          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
+          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
+        </View>
+      )}
+      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
     </View>
   )
 }
@@ -75,10 +93,21 @@ export default function DoseRegisterModal({
   // States primeiro (R-010)
   const [quantity, setQuantity] = useState('')
   const [injectionSite, setInjectionSite] = useState(null)
+  const [lastInjectionSite, setLastInjectionSite] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  
+
   const { isOnline } = useOnlineStatus()
+
+  // US2: último sítio GLOBAL p/ exibir + alerta de repetição. Best-effort (null em erro).
+  // Sem reset síncrono: o picker só renderiza p/ injetável e o fetch sobrescreve.
+  useEffect(() => {
+    let alive = true
+    if (visible && isInjectable(protocol?.medicine)) {
+      getLastInjectionSite().then((s) => { if (alive) setLastInjectionSite(s) })
+    }
+    return () => { alive = false }
+  }, [visible, protocol])
 
   if (!protocol) return null
 
@@ -198,7 +227,12 @@ export default function DoseRegisterModal({
           ) : null}
 
           {injectable && (
-            <InjectionSitePicker value={injectionSite} onChange={setInjectionSite} disabled={loading} />
+            <InjectionSitePicker
+              value={injectionSite}
+              onChange={setInjectionSite}
+              disabled={loading}
+              lastInjectionSite={lastInjectionSite}
+            />
           )}
 
           {error && <Text style={styles.error}>{error}</Text>}
@@ -335,6 +369,33 @@ const styles = StyleSheet.create({
   siteChipTextSelected: {
     color: colors.primary[700],
     fontWeight: '600',
+  },
+  siteHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
+  },
+  siteLast: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  siteLastValue: {
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  siteAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.status.warningLight,
+  },
+  siteAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.status.warning,
   },
   actions: {
     flexDirection: 'row',

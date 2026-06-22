@@ -32,7 +32,7 @@ function shiftDateStr(dateStr, days) {
 export async function buildProtocolsById(userId) {
   const { data, error } = await supabase
     .from('protocols')
-    .select('id, name, medicine_id, dosage_per_intake, intake_unit, medicine:medicines(name, dosage_per_pill, dosage_unit, units_per_ml), treatment_plan:treatment_plans(name)')
+    .select('id, name, medicine_id, dosage_per_intake, intake_unit, medicine:medicines(name, presentation, dosage_per_pill, dosage_unit, units_per_ml), treatment_plan:treatment_plans(name)')
     .eq('user_id', userId)
 
   if (error || !data) return {}
@@ -82,6 +82,7 @@ function _getProtocolProperties(p, proto, med) {
   return {
     medicine_name: _getMedicineName(p, proto, med),
     protocol_name: p.protocolName || proto.name || null,
+    presentation: med.presentation || null,
     dosage_per_pill: med.dosage_per_pill || null,
     dosage_per_intake: _getDosagePerIntake(p, proto),
     intake_unit: proto.intake_unit || null,

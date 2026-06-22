@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose, getInjectionSiteLabel } from '@dosiq/core'
-import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot } from 'lucide-react-native'
+import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot, LocateFixed } from 'lucide-react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 import BiomarkerHistoryCard from './BiomarkerHistoryCard'
 
@@ -101,9 +101,12 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
             </Text>
           )}
           {item.injection_site && (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              📍 {getInjectionSiteLabel(item.injection_site)}
-            </Text>
+            <View style={styles.injectionRow}>
+              <LocateFixed size={13} color={COLORS.gray} strokeWidth={1.75} />
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {getInjectionSiteLabel(item.injection_site)}
+              </Text>
+            </View>
           )}
         </View>
         <ChevronRight size={16} color={COLORS.gray} strokeWidth={1.5} />
@@ -158,6 +161,11 @@ const styles = StyleSheet.create({
   itemBody: {
     flex: 1,
     gap: 2,
+  },
+  injectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   nameRow: {
     flexDirection: 'row',

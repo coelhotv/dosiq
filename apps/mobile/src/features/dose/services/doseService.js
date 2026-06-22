@@ -137,6 +137,22 @@ export async function updateOrphanLog(logId, updates) {
 }
 
 /**
+ * Último sítio de injeção GLOBAL do usuário (cross-medicamento, mais recente por
+ * `taken_at`) — alimenta "última aplicação" + alerta de repetição (031/US2,US3).
+ * Best-effort: erro NUNCA bloqueia o registro → retorna null.
+ *
+ * @returns {Promise<string|null>}
+ */
+export async function getLastInjectionSite() {
+  try {
+    return await doseLogCore.getLastInjectionSite()
+  } catch (err) {
+    if (__DEV__) console.error('[doseService] getLastInjectionSite erro:', err)
+    return null
+  }
+}
+
+/**
  * Exclui um log avulso/PRN devolvendo o estoque ao inventário.
  *
  * @param {string} logId
@@ -191,6 +207,7 @@ export async function registerDoseMany(logsData) {
     taken_at: log.taken_at,
     quantity_taken: log.quantity_taken,
     notes: log.notes,
+    injection_site: log.injection_site ?? null,
     instanceId: logsData[index].instance_id ?? logsData[index].instanceId ?? null,
   }))
 
