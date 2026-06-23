@@ -80,6 +80,18 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ♻️ Refatorado (ANVISA on-demand — mobile consome o core, spec 037 Slice 2) — mobile `0.20.0`→**`0.20.1`** (patch) · core
+
+- **`useMedicineDatabase` (mobile) passa a consumir os helpers canônicos de `@dosiq/core`** (`fetchJson`/timeout, `shouldRefreshCache`, `resolveDataUrl`, `normalizeText`, `matchesPrefix` — CON-027/ADR-073), matando a triplicação que existia entre mobile e os 2 services web. O hook mantém sua orquestração de 2 fases (cache instantâneo + refresh em background) e o estado de erro — **comportamento idêntico** (rede de segurança `useMedicineDatabase.test.js` 22/22 verde). Persistência via novo `_asyncStorageAdapter` (AsyncStorage, interface CON-027), preservando as chaves de cache em produção.
+
+### 🐛 Corrigido (mobile — categoria regulatória não pré-preenchia no iOS) — mobile `0.20.1` · core
+
+- **Categoria regulatória vazia ao selecionar medicamento da base ANVISA (iOS):** `handleAnvisaSelect` (MedicineFormScreen) usava `item.regulatoryCategory` **cru** da base (sem acento, ex. `Biologico`), mas o Picker — estrito no iOS — só casa o valor canônico acentuado (`Biológico`), deixando o campo em branco (Android tolerava o valor cru). Fix: normalizar via `normalizeRegulatoryCategory` (mesma correção já aplicada na web) — agora exportado também pelo índice `@dosiq/core` (`schemas/index.js`). Mapeia para o enum canônico (fallback `Outros`, nunca vazio). Bug pré-existente, detectado no smoke iOS do 037 Slice 2.
+
+### 🔒 Segurança / Config (subdomínio Supabase fora do código — repo opensource)
+
+- **URL do Supabase deixa de ser hardcoded:** o subdomínio do projeto (`*.supabase.co`) estava embutido em `apps/mobile/src/shared/hooks/useMedicineDatabase.js` e em `scripts/analyze-notifications.js`. Passam a ler de env (`EXPO_PUBLIC_SUPABASE_URL` via `nativePublicAppConfig` no mobile; `SUPABASE_URL`/`VITE_SUPABASE_URL` no script) — alinhado ao padrão já usado no resto do app. AP-242.
+
 ### ♻️ Melhorado (ANVISA → wizard de tratamento — começa no passo 1) — web `4.12.0`
 
 - **Wizard de tratamento a partir da busca ANVISA agora inicia no passo 1 (Medicamento), pré-preenchido:** antes, selecionar um medicamento da base ANVISA pulava direto pro passo 2 (Como Tomar), saltando campos fundamentais do cadastro do medicamento que a base ANVISA **não fornece** — concentração, unidade de dosagem, forma de apresentação e TTL (injetáveis). Agora o wizard abre no passo 1 com nome/laboratório/princípio ativo/categoria já preenchidos, e o usuário completa os campos clínicos antes de avançar. Mudança em `useTreatmentWizardState` (`useWizardNavigation(1)`).

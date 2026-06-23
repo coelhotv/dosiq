@@ -12,7 +12,7 @@
       "guard MEDIUM-UP"
     ],
     "status": "completed",
-    "goal": "037 Slice 1 ENTREGUE local (core anvisaDatabase + CON-027/ADR-073 accepted + web cacheStorageAdapter + 2 services casca + JSONs→data/anvisa/ + manualChunks removido). PO-1/2/3 fechados, web 4.12.0. Falta: PR-1+check-review, depois Slice 2 (mobile paridade)",
+    "goal": "037 Slice 2 — mobile useMedicineDatabase consome createAnvisaDatabase do core via adapter AsyncStorage (paridade, sem mudança de comportamento). PO-4. Slice 1 mergeado (PR #682)",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/037-anvisa-web-ondemand",
@@ -21,13 +21,13 @@
     "tasks": "plans/specs/037-anvisa-web-ondemand/tasks.md",
     "linked_adrs": ["ADR-073"],
     "linked_contracts": ["CON-027"],
-    "last_pr": 680,
-    "branch": "refactor/037/slice-1-core-web",
-    "mobile_version": "0.20.0"
+    "last_pr": 682,
+    "branch": "refactor/037/slice-2-mobile",
+    "mobile_version": "0.20.1"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,

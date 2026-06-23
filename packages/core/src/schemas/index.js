@@ -28,6 +28,7 @@ export {
   INJECTION_CONTAINER_SINGULAR,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
+  normalizeRegulatoryCategory,
 } from './medicineSchema.js'
 
 export {
