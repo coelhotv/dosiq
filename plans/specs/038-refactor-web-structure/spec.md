@@ -63,6 +63,16 @@ status: [ ] open
 
 ---
 
+## Ceremony: eng-review (RC3) — 2026-06-22
+
+**Achado 1 (HIGH — blast radius subestimado):** além das pastas `redesign/` (views + 4 em features), existem **10+ arquivos com sufixo `*Redesign`** — vários FORA de pasta `redesign/` (`dashboard/components/{InsightCard,RingGauge,SmartAlerts}Redesign.jsx`, `stock/components/{PrescriptionTimeline,CostSummary}Redesign.jsx`, `shared/components/ui/BottomNavRedesign.jsx`). FR-002 (só pastas) não os cobre → novo **FR-010**.
+
+**Achado 2 (CRITICAL — collision na renomeação):** remover sufixo `*Redesign` colide com a versão pré-redesign quando ela ainda existe no disco (ex: `MedicineCardRedesign.jsx` vs `MedicineCard.jsx` vivo). Rename cego = sobrescrita do componente errado (clínico). Cada rename DEVE: (1) checar se base-name existe, (2) se existe, confirmar `importers==0` (é o morto), (3) deletar o morto, (4) só então renomear o vivo. Sistêmico (não só `CostSummary`).
+
+**Achado 3 (scope/process):** ~40+ arquivos. Diff único irreviewável → **fatiar em 3 slices/PRs** (A: views move; B: dissolver redesign/ + sufixos com collision-check; C: carve-out + doc). Strangler-fig, nunca estrutural+comportamental na mesma passada (Beck).
+
+**Guard override (UP, RC3):** Tier 1 floor = light → **promovido para FULL** (build + test:critical + bundle gzip ±5% R-117 + audit de collision por rename). Razão: colisão com componentes clínicos vivos (MedicineCard/StockCard) + AP-164/AP-H27. Aplica a TODAS as POs.
+
 ## Functional Requirements
 
 - **FR-001** Mover `apps/web/src/views/redesign/*` → `apps/web/src/views/` via `git mv` (preserva história).
@@ -74,6 +84,15 @@ status: [ ] open
 - **FR-007 (carve-out)** Extrair lógica de domínio vazada das views para feature/core — começar por `deriveProtocolStatus` (hoje em `Stock.jsx`) → `@dosiq/core` ou `features/stock`, com teste unitário.
 - **FR-008 (carve-out)** Remover dead code de naming legado: `CostSummary.jsx` (0 importers) e reconciliar pares `*Redesign`/não-`Redesign` (renomear o vivo, deletar o morto) — confirmar importer-count == 0 antes de deletar.
 - **FR-009 (carve-out)** Registrar R-NNN leve no C5: "lógica de domínio não nasce em `views/`; desce para feature/core" (disciplina anti-inchaço).
+- **FR-010 (RC3)** Remover sufixos `*Redesign` dos arquivos (não só pastas) com **collision-check obrigatório por arquivo**: se o base-name já existe, confirmar `importers==0` (versão morta), deletar, então renomear o vivo. Cobre `dashboard/components/*Redesign`, `stock/components/*Redesign`, `shared/components/ui/BottomNavRedesign`, etc.
+
+## Entrega (RC3) — fatiar em 3 slices/PRs
+
+- **Slice A:** `git mv views/redesign/* → views/` + 26 importers + `@settings` + 3 `manualChunks` + 3 test paths + Landing → `views/landing/` (FR-001/003/004).
+- **Slice B:** dissolver 4 pastas `features/*/components/redesign/` + remover sufixos `*Redesign` com collision-check (FR-002/008/010).
+- **Slice C:** carve-out `deriveProtocolStatus`→core + FR-009 R-NNN + doc CLAUDE.md (FR-005/007/009).
+
+**Guard (FULL, RC3 override):** todas as POs rodam `build` + `test:critical` + bundle gzip ±5% + audit de collision por rename.
 
 ## Success Criteria
 
