@@ -1,5 +1,5 @@
 /**
- * StockRedesign — View de Estoque redesenhada (Santuário Terapêutico, Wave 8).
+ * Stock — View de Estoque redesenhada (Santuário Terapêutico, Wave 8).
  */
 import { useState, useMemo, useEffect, startTransition } from 'react'
 import { useStockData } from '@stock/hooks/useStockData'
@@ -10,21 +10,11 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import Modal from '@shared/components/ui/Modal'
 import StockForm from '@stock/components/StockForm'
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
-import { parseLocalDate, getNow } from '@utils/dateUtils'
+import { derivePrescriptionStatus } from '@dosiq/core'
 import { stockService } from '@shared/services'
 import StockHeader from './StockHeader'
 import StockInventory from './StockInventory'
 import './Stock.css'
-
-function deriveProtocolStatus(protocol, now = getNow()) {
-  if (!protocol.end_date) return 'ativa'
-  const end = parseLocalDate(protocol.end_date)
-  const daysLeft = (end - now) / 86400000
-  if (daysLeft < 0) return 'vencida'
-  if (daysLeft <= 14) return 'vencendo'
-  if (protocol.active === false) return 'finalizada'
-  return 'ativa'
-}
 
 export default function Stock({ initialParams, onClearParams }) {
   const {
@@ -67,7 +57,7 @@ export default function Stock({ initialParams, onClearParams }) {
       const activeProtocols = protocols?.filter((p) => p.active) || []
       return calculateMonthlyCosts(medicinesWithStock, activeProtocols)
     } catch (err) {
-      console.error('[StockRedesign] Erro ao calcular custos:', err)
+      console.error('[Stock] Erro ao calcular custos:', err)
       return null
     }
   }, [medicines, items, allPurchases, protocols])
@@ -82,7 +72,7 @@ export default function Stock({ initialParams, onClearParams }) {
         medicineName: p.medicine?.name || medicines?.find((m) => m.id === p.medicine_id)?.name || 'Medicamento',
         startDate: p.start_date,
         endDate: p.end_date,
-        status: deriveProtocolStatus(p),
+        status: derivePrescriptionStatus(p),
       }))
   }, [protocols, medicines])
 
