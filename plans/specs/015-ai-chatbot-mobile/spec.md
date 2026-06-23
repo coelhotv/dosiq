@@ -158,19 +158,21 @@ status: [ ] open
 - **FR-007 (mobile):** Histórico local em AsyncStorage, teto `CHATBOT_MAX_HISTORY` (20).
 - **FR-008 (segurança):** `safetyGuard` + systemPrompt permanecem **server-side** (AP-237); o cliente
   só envia `patientContext`. Centralizar o contexto NÃO move guardrails para o cliente.
-- **FR-009 (contrato):** Registrar **CON-028** (interface do builder de contexto do core) e **ADR-074**
-  (decisão de centralização web↔server↔mobile).
-- **FR-010 (consistência cross-surface — chave):** Garantir que as 3 superfícies enviem o **mesmo
-  contexto** para o mesmo usuário. Centralizar o builder é necessário mas **insuficiente** — a
-  divergência mora a montante (no fetch). Três camadas obrigatórias:
+- **FR-009 (contrato):** Registrar **CON-028** (interface do builder do core) e **ADR-074**
+  (centralização web↔server↔mobile). **CON-028 define o input COMPLETO** (reconciliado pela RC3 — F1):
+  `{ medicines, protocols, logs, stockSummary, stats, doseInstances, treatmentPlans }`. Hoje Telegram
+  passa só 5 (sem `doseInstances`) e ninguém passa `treatmentPlans` — cada superfície passa a suprir o
+  conjunto completo (é onde a divergência real mora).
+- **FR-010 (consistência cross-surface — chave; reescrita pela RC3/F2):** Garantir que as 3 superfícies
+  enviem o **mesmo contexto** para o mesmo usuário. Centralizar o builder é necessário mas
+  **insuficiente** — a divergência mora a montante (no input). **Duas camadas obrigatórias** (a 3ª
+  — "inputs via core repos" — foi DESCOPADA pela RC3: nenhuma superfície usa repos hoje; forçar é
+  blast radius grande e desnecessário p/ paridade. Vira nice-to-have futuro, não requisito):
   1. **Builder dono de TODA derivação** (puro, core): runtime injeta só entidades **cruas**; o core
      faz filtro de ativos (R-278/`isProtocolActiveOnDate`), dias-restantes, agrupamento por plano,
-     ordenação. Mínima lógica no runtime = mínimo a divergir.
-  2. **Inputs pelas mesmas repositories do `@dosiq/core`** (ADR-045 — `createMedicineRepository`,
-     `createProtocolRepository`, etc.): web/mobile/bot buscam pelo mesmo repo → selects convergem por
-     construção. (Auditar se os fetches atuais já passam pelos repos ou divergem.)
-  3. **Input tipado + validado por Zod (CON-028):** runtime que injeta dado faltando/errado **falha
-     alto**, nunca gera contexto silenciosamente divergente.
+     ordenação (reusa `splitDayTimeline`/`formatDoseItem` já no core). Mínima lógica no runtime.
+  2. **Input tipado + validado por Zod (CON-028):** runtime que injeta dado faltando/errado **falha
+     alto**, nunca gera contexto silenciosamente divergente. O input completo da FR-009 é o contrato.
 - **FR-011 (guard de paridade):** Teste de paridade cross-surface — fixture de paciente "golden" →
   asserta que os caminhos web, mobile e Telegram produzem a **string de contexto idêntica**. É o
   trava-drift permanente da FR-010.
@@ -220,7 +222,7 @@ Onda 3 (PR-3) — Paridade & polish
 ac:     web, mobile e Telegram produzem string de contexto idêntica p/ a mesma fixture de paciente
 proof:  npm run test --workspace @dosiq/core -- chatbotContext.parity
 expect: teste de paridade cross-surface verde (golden fixture → 3 caminhos → mesma string)
-guard:  full — builder dono da derivação (runtime injeta cru); inputs via core repos; input Zod-validado
+guard:  full — builder dono da derivação (runtime injeta cru); input completo CON-028 Zod-validado nas 3 superfícies
 status: [ ] open
 ```
 
@@ -266,3 +268,71 @@ status: [ ] open
   stockSummary, stats, doseInstances, treatmentPlans }) → string`.
 - Sugerido rodar `/devflow eng-review 015` (RC3 — Tier 2) antes do planning para fechar as 2
   clarifications e calibrar guard.
+
+---
+
+## Ceremony: eng-review (RC3) — 2026-06-23
+
+### Reality check (código real, não a narrativa)
+| Superfície | Como obtém inputs | Campos passados ao builder | Usa core repos? |
+|---|---|---|---|
+| Web | `DashboardContext` (já no browser) → `ChatWindow.jsx:83` | `{medicines, protocols, logs, stockSummary, stats, doseInstances}` (6) | ❌ (DashboardContext) |
+| Telegram | fetch próprio com selects à mão (`chatbotServerService.js:138-153`) | `{medicines, protocols, logs, stockSummary, stats}` (5 — **sem doseInstances**) | ❌ (selects manuais) |
+| Mobile | inexistente (tem `dashboardService.js`/`useProtocols` como fonte potencial) | — (greenfield) | ❌ |
+
+**Conclusão:** a divergência cross-surface **já existe hoje** e mora **no input**, não no builder.
+Web manda 6 campos, Telegram manda 5 (sem `doseInstances` → Telegram não tem seção de doses
+pendentes/atrasadas). Nenhum carrega `treatment_plans`. `splitDayTimeline`/`isProtocolActiveOnDate`
+(a derivação) **já vivem em `@dosiq/core`** — o builder centralizado só os chama.
+
+### Findings
+
+- **F1 (HIGH) — o input é o eixo da consistência, não o builder.** Centralizar a função (US2) é
+  limpo e necessário, mas SC-007 (paridade) só fecha se as 3 superfícies passarem o **mesmo conjunto
+  cru**. Hoje Telegram não passa `doseInstances`; ninguém passa `treatmentPlans`. **CON-028 deve
+  definir o input completo** = `{medicines, protocols, logs, stockSummary, stats, doseInstances,
+  treatmentPlans}` e cada superfície passa a supri-lo (Telegram ganha `doseInstances` + planos).
+  Esse é o verdadeiro lift da Onda 1.
+
+- **F2 (HIGH) — descope FR-010 camada 2 ("inputs via core repos").** Nenhuma superfície usa core
+  repos hoje (web=DashboardContext é a espinha de dados; server=selects à mão; mobile=dashboardService).
+  Forçar as 3 para `createXRepository` é **blast radius grande** (mexe na espinha de dados da web) e
+  **desnecessário para paridade**. Minimum change set (RC3 §0): a garantia de consistência vem do
+  **builder ser dono de TODA a derivação a partir de entidades cruas** + **input Zod-validado
+  (CON-028)** + **teste de paridade (FR-011)**. "Mesmo input cru → mesma saída" já basta; COMO cada
+  runtime busca segue sendo problema dele, desde que entregue o conjunto cru completo. → **Reescrever
+  FR-010**: cair de 3 camadas para 2 (builder-dono-da-derivação + input-Zod). Camada repos vira
+  *nice-to-have futuro*, não requisito de paridade.
+
+- **F3 (MEDIUM) — Onda 1 concentra o risco.** Onda 1 = core builder + plan-grouping + reconciliar
+  input + adoção web + adoção server. É a maior. Sugiro sub-fatiar:
+  - **1a:** core builder (consolida lógica atual, SEM plan-grouping ainda) + web adota + server adota,
+    com input reconciliado (server passa `doseInstances`) + teste de paridade web↔server. (Refactor
+    puro de paridade — Beck: "make the change easy".)
+  - **1b:** plan-grouping (`treatment_plans.name`) no builder do core + as 3 superfícies passam
+    `treatmentPlans` (web/server; mobile vem na Onda 2). ("Then make the easy change.")
+  Nunca estrutural + comportamental no mesmo PR.
+
+- **F4 (LOW) — leverage.** O builder no core reusa `splitDayTimeline`, `isProtocolActiveOnDate`,
+  `formatDoseItem` (já exportados). Zero reimplementação de derivação.
+
+### Clarifications resolvidas (RC3 bate o martelo — operador confirma)
+
+1. **[onde montar o contexto — CHAVE] → (A) Client-build.** Telegram é inerentemente server (não
+   tem client); web+mobile mantêm client-build (reusam dados já carregados, sem refetch). Com o
+   builder dono da derivação, (A) é seguro. (B) server-build forçaria a web a abandonar o
+   DashboardContext + refetch no serverless — mais mudança, zero ganho de paridade depois que o
+   builder normaliza. **Decisão: (A).**
+2. **[local no core] → `packages/core/src/chatbot/`** (módulo coeso: builder + grouping + constantes),
+   não `utils/` (genérico). CON-028 mora aí.
+3. **[puro vs adapter] → PURO.** É o padrão de-facto já (web passa dados pré-buscados; server busca e
+   passa). Builder sem dependência de plataforma; cada runtime busca+injeta.
+
+### Guard calibration
+Tier 2 floor = **full** (mantido, sem override down). RC3 **eleva** o gate com o **teste de paridade
+cross-surface (FR-011/PO-5) como bloqueante de release** — é o trava-drift que protege a consolidação.
+Cada onda: suíte relevante verde + CON-028 honrado + paridade verde.
+
+### Recomendação de saída
+Spec sólida após reescrever FR-010 (F2) e detalhar CON-028 input completo (F1). Próximo: **planning**
+(plan.md + tasks.md + analysis.md + checklists — Tier 2 full bundle), fatiando Onda 1 em 1a/1b (F3).
