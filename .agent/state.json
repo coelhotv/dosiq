@@ -11,8 +11,8 @@
       "Slice 1 = core+adapters+web (tira JSON do build); Slice 2 = mobile paridade",
       "guard MEDIUM-UP"
     ],
-    "status": "completed",
-    "goal": "037 Slice 2 — mobile useMedicineDatabase consome createAnvisaDatabase do core via adapter AsyncStorage (paridade, sem mudança de comportamento). PO-4. Slice 1 mergeado (PR #682)",
+    "status": "merged",
+    "goal": "037 spec encerrada — Slice 1 (#682) + Slice 2 (#683) mergeados. Web 4.12.0 (sem JSON no build), mobile 0.20.1 (paridade core + fix iOS cat. regulatória + AP-242 URL env).",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/037-anvisa-web-ondemand",
@@ -21,13 +21,13 @@
     "tasks": "plans/specs/037-anvisa-web-ondemand/tasks.md",
     "linked_adrs": ["ADR-073"],
     "linked_contracts": ["CON-027"],
-    "last_pr": 682,
+    "last_pr": 683,
     "branch": "refactor/037/slice-2-mobile",
     "mobile_version": "0.20.1"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 6,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,
@@ -42,11 +42,12 @@
     "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
-    "pr": 674,
-    "status": "issues_found",
+    "pr": 683,
+    "status": "approved",
     "critical": 0,
     "high": 0,
-    "auto_fixed": 2,
+    "auto_fixed": 0,
+    "declined": 1,
     "ask_items": 0
   }
 }
