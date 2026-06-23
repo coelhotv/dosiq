@@ -41,7 +41,7 @@
 
 /* Scoped: quando redesign flag esta ativo */
 .app-main {
-  padding-bottom: 80px; /* espaço para BottomNavRedesign em mobile */
+  padding-bottom: 80px; /* espaço para BottomNav em mobile */
 }
 
 /* MAIN WITH SIDEBAR — offset para sidebar fixa */

@@ -1,5 +1,5 @@
 import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
-import './BottomNavRedesign.css'
+import './BottomNav.css'
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Hoje', Icon: Calendar },
@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Perfil', Icon: User },
 ]
 
-export default function BottomNavRedesign({ currentView, setCurrentView, unreadCount = 0 }) {
+export default function BottomNav({ currentView, setCurrentView, unreadCount = 0 }) {
   return (
     <div
       className="bottom-nav-redesign-container"

@@ -1,12 +1,12 @@
 /**
- * CostSummaryRedesign — Card de análise de custo mensal para o redesign do Estoque
+ * CostSummary — Card de análise de custo mensal para o redesign do Estoque
  * Renderiza custos de medicamentos com barras de progressão (Wave 15.5)
  */
 
 import { Receipt } from 'lucide-react'
-import './CostSummaryRedesign.css'
+import './CostSummary.css'
 
-export default function CostSummaryRedesign({ costData, isComplex }) {
+export default function CostSummary({ costData, isComplex }) {
   if (!costData || costData.items.length === 0) {
     return (
       <section
