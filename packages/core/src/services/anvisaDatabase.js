@@ -140,10 +140,17 @@ export function createAnvisaDatabase({
     if (!dataPromise) {
       dataPromise = resolveData()
       // Se resolver vazio por falha de rede sem cache, permite nova tentativa depois.
-      dataPromise = dataPromise.then((data) => {
-        if (!data || data.length === 0) dataPromise = null
-        return data
-      })
+      dataPromise = dataPromise
+        .then((data) => {
+          if (!data || data.length === 0) dataPromise = null
+          return data
+        })
+        .catch((err) => {
+          // resolveData() engole erros (retorna []), mas se ainda assim rejeitar
+          // (adapter/config inesperado), reseta p/ não travar o serviço e relança.
+          dataPromise = null
+          throw err
+        })
     }
     return dataPromise
   }

@@ -21,7 +21,9 @@ function cacheKeyUrl(fileKey) {
 
 export function createCacheStorageAdapter() {
   const memoryFallback = new Map()
-  const hasCaches = typeof caches !== 'undefined'
+  // `caches` pode existir mas ser `null` em alguns contextos (WebView Android,
+  // navegação anônima) — checar não-nulo evita exceções desnecessárias.
+  const hasCaches = typeof caches !== 'undefined' && caches !== null
 
   return {
     async read(fileKey) {
