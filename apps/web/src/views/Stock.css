@@ -180,7 +180,7 @@
 /* FAB mobile — fixo acima da BottomNav */
 .stock-redesign__fab {
   position: fixed;
-  bottom: calc(80px + 1rem); /* 80px = altura da BottomNavRedesign */
+  bottom: calc(80px + 1rem); /* 80px = altura da BottomNav */
   right: 1.25rem;
   width: 56px;
   height: 56px;

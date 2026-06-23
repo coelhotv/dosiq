@@ -4,8 +4,8 @@
 import { useMotion } from '@shared/hooks/useMotion'
 import CriticalAlertBanner from '@stock/components/redesign/CriticalAlertBanner'
 import EntradaHistorico from '@stock/components/redesign/EntradaHistorico'
-import CostSummaryRedesign from '@stock/components/CostSummaryRedesign'
-import PrescriptionTimelineRedesign from '@stock/components/PrescriptionTimelineRedesign'
+import CostSummary from '@stock/components/CostSummary'
+import PrescriptionTimeline from '@stock/components/PrescriptionTimeline'
 import StockInventoryGrid from './StockInventoryGrid'
 import StockCategorizedSections from './StockCategorizedSections'
 
@@ -50,13 +50,13 @@ export default function StockInventory({
 
       {costData && costData.items?.length > 0 && (
         <section className="mt-6" aria-label="Custo mensal dos medicamentos">
-          <CostSummaryRedesign costData={costData} isComplex={isComplex} />
+          <CostSummary costData={costData} isComplex={isComplex} />
         </section>
       )}
 
       {prescriptionTimelineData.length > 0 && (
         <section className="mt-4" aria-label="Vigência das prescrições">
-          <PrescriptionTimelineRedesign prescriptions={prescriptionTimelineData} isComplex={isComplex} />
+          <PrescriptionTimeline prescriptions={prescriptionTimelineData} isComplex={isComplex} />
         </section>
       )}
     </>

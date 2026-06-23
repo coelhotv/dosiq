@@ -4,11 +4,11 @@
   "session": {
     "mode": "coding",
     "ceremony_type": "eng-review",
-    "status": "completed",
+    "status": "analysis",
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 3,
-    "ceremony_scope_decisions": ["038 Slice A: views/redesign→views + Landing→views/landing", "guard FULL", "037 planned em paralelo (Tier 2)"],
-    "goal": "038 Slice A — git mv views/redesign→views + Landing→views/landing + atualizar 26 importers/vite/tests",
+    "ceremony_scope_decisions": ["038 Slice A entregue (PR #677)", "Slice B fatiado em B1 (dead code + 4 renames collision-free) e B2 (dissolver redesign/ + 6 renames base-morta)", "B1 entregue local — aguarda PR", "guard FULL"],
+    "goal": "038 Slice B1 entregue (dead code + 4 renames collision-free) — abrir PR; B2/C pendentes",
     "goal_type": "refactor",
     "tier": 1,
     "spec_dir": "plans/specs/038-refactor-web-structure",
@@ -23,7 +23,7 @@
   },
   "memory": {
     "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 228,
     "anti_patterns_count": 235,
     "decisions_count": 72,

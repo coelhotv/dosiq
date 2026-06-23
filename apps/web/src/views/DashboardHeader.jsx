@@ -1,4 +1,4 @@
-import RingGaugeRedesign from '@dashboard/components/RingGaugeRedesign'
+import RingGauge from '@dashboard/components/RingGauge'
 
 export default function DashboardHeader({ userName, adherenceScore, remainingDoses, streak, getMotivationalMessage }) {
   return (
@@ -43,7 +43,7 @@ export default function DashboardHeader({ userName, adherenceScore, remainingDos
         </p>
       </div>
 
-      <RingGaugeRedesign score={adherenceScore} streak={streak} size="large" />
+      <RingGauge score={adherenceScore} streak={streak} size="large" />
     </div>
   )
 }
