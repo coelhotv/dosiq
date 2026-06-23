@@ -1,4 +1,4 @@
-// src/views/redesign/HealthHistory.jsx
+// src/views/HealthHistory.jsx
 // Wave 10C — componente independente calendar-driven.
 // PR-F4.2/S4.3+S4.4 — fonte migrada de logService.getByMonthSlim (logs tomados) para
 // timelineService.getMonthTimeline (eventos taken/missed/pending de dose_instances, FP-3).
