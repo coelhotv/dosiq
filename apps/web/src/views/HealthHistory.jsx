@@ -13,7 +13,7 @@ import { timelineService } from '@services/api/timelineService'
 import { measuresRepo } from '@features/measures/services/measuresRepo'
 import { formatLocalDate, getTodayLocal, getNow } from '@utils/dateUtils'
 import HealthHistoryView from './history/HealthHistoryView'
-import './history/HistoryRedesign.css'
+import './history/History.css'
 
 /** Ordem fixa dos dots acumulados no dia: 🟢 tomada · ⚪ pendente · 🔴 perdida. */
 const STATUS_DOT_ORDER = ['taken', 'pending', 'missed']
@@ -81,7 +81,7 @@ function useHistoryDoseLog(loadData, refresh, showSuccess, setIsModalOpen, setEd
       await loadData()
       refresh()
     } catch (err) {
-      console.error('[HistoryRedesign] Erro ao salvar/atualizar log:', err)
+      console.error('[HealthHistory] Erro ao salvar/atualizar log:', err)
       throw new Error(err.message)
     }
   }, [loadData, refresh, showSuccess, setIsModalOpen, setEditingLog])
@@ -112,13 +112,13 @@ function useAdherenceCharts(isComplex) {
       try {
         const daily = await adherenceService.getDailyAdherenceFromView(90)
         setDailyAdherence(daily)
-      } catch (err) { console.error('[HistoryRedesign] Erro daily adherence:', err.message) }
+      } catch (err) { console.error('[HealthHistory] Erro daily adherence:', err.message) }
       if (!patternLoadedRef.current) {
         try {
           const pattern = await adherenceService.getAdherencePatternFromView()
           setAdherencePattern(pattern)
           patternLoadedRef.current = true
-        } catch (err) { console.error('[HistoryRedesign] Erro pattern:', err.message) }
+        } catch (err) { console.error('[HealthHistory] Erro pattern:', err.message) }
       }
     })
   }, [isComplex])
@@ -266,7 +266,7 @@ function useHealthHistoryState() {
       setSelectedDate(isCurrentMonth ? today : `${year}-${String(month + 1).padStart(2, '0')}-01`)
       return { data: events, total: events.length }
     } catch (err) {
-      console.error('[HistoryRedesign] Erro ao carregar mês:', err)
+      console.error('[HealthHistory] Erro ao carregar mês:', err)
       return { data: [], total: 0 }
     }
   }, [])

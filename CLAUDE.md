@@ -27,7 +27,10 @@ apps/
     services/api/  # adherenceService, dlqService, geminiReviewService
     shared/        # components/ hooks/ platform/ services/ styles/ utils/
     utils/         # adherenceLogic, dateUtils, titrationUtils
-    views/         # wrappers — TODAS lazy (R-117), exceto Dashboard
+    views/         # camada de COMPOSIÇÃO — orquestra hooks/services/features (R-279)
+                   # TODAS lazy (R-117), exceto Dashboard; subpastas history/ profile/
+                   # settings/ emergency/ landing/. NÃO nasce lógica de domínio aqui
+                   # (desce p/ @dosiq/core ou features/). Naming "redesign" aposentado (038)
   mobile/          # Expo: src/ assets/ android/ ios/ __tests__/
                    # App.js, app.config.js, eas.json, metro.config.js
 packages/
@@ -50,7 +53,7 @@ server/bot/        # Telegram bot (tasks, scheduler, bot-factory)
 ```
 @ @features @shared @services @schemas @utils
 @dashboard @medications @protocols @stock @adherence
-@calendar @emergency @prescriptions @settings(→views/redesign/settings)
+@calendar @emergency @prescriptions @settings(→views/settings)
 @design-tokens(→packages/design-tokens/src)
 @dosiq/core(→packages/core/src)
 ```

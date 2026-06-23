@@ -1,5 +1,5 @@
 /**
- * TreatmentsRedesign — Orquestração da view de tratamentos redesenhada
+ * Treatments — Orquestração da view de tratamentos
  */
 import { useTreatmentsState } from '@protocols/hooks/useTreatmentsState'
 import TreatmentTabBar from '@protocols/components/TreatmentTabBar'

@@ -1,6 +1,6 @@
 /**
  * src/views/Emergency.jsx
- * Wave 17 — Emergency View Redesign
+ * Wave 17 — Emergency View
  *
  * View consolidada para visualização e edição do Cartão de Emergência.
  * Usa componentes redesenhados (EmergencyCardView, EmergencyCardForm).
@@ -13,10 +13,10 @@ import { emergencyCardService } from '@features/emergency/services/emergencyCard
 import EmergencyCardView from '@features/emergency/components/EmergencyCardView'
 import EmergencyCardForm from '@features/emergency/components/EmergencyCardForm'
 import Loading from '@shared/components/ui/Loading'
-import './emergency/EmergencyRedesign.css'
+import './emergency/Emergency.css'
 
 /**
- * EmergencyRedesign — View integrada de Cartão de Emergência
+ * Emergency — View integrada de Cartão de Emergência
  *
  * Estados:
  * - view: 'display' (visualizar), 'edit' (editar)
@@ -50,7 +50,7 @@ export default function Emergency({ onNavigate }) {
       }
     } catch (err) {
       setError('Erro ao carregar cartão: ' + err.message)
-      console.error('[EmergencyRedesign] Load error:', err)
+      console.error('[Emergency] Load error:', err)
     } finally {
       setIsLoading(false)
     }
@@ -70,7 +70,7 @@ export default function Emergency({ onNavigate }) {
       }
     } catch (err) {
       setError('Erro ao salvar: ' + err.message)
-      console.error('[EmergencyRedesign] Save error:', err)
+      console.error('[Emergency] Save error:', err)
     }
   }, [])
 
