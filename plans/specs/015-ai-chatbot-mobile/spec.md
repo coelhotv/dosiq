@@ -158,26 +158,37 @@ status: [ ] open
 - **FR-007 (mobile):** Histórico local em AsyncStorage, teto `CHATBOT_MAX_HISTORY` (20).
 - **FR-008 (segurança):** `safetyGuard` + systemPrompt permanecem **server-side** (AP-237); o cliente
   só envia `patientContext`. Centralizar o contexto NÃO move guardrails para o cliente.
-- **FR-009 (contrato):** Registrar **CON-028** (interface do builder do core) e **ADR-074**
-  (centralização web↔server↔mobile). **CON-028 define o input COMPLETO** (reconciliado pela RC3 — F1):
-  `{ medicines, protocols, logs, stockSummary, stats, doseInstances, treatmentPlans }`. Hoje Telegram
-  passa só 5 (sem `doseInstances`) e ninguém passa `treatmentPlans` — cada superfície passa a suprir o
-  conjunto completo (é onde a divergência real mora).
-- **FR-010 (consistência cross-surface — chave; reescrita pela RC3/F2):** Garantir que as 3 superfícies
-  enviem o **mesmo contexto** para o mesmo usuário. Centralizar o builder é necessário mas
-  **insuficiente** — a divergência mora a montante (no input). **Duas camadas obrigatórias** (a 3ª
-  — "inputs via core repos" — foi DESCOPADA pela RC3: nenhuma superfície usa repos hoje; forçar é
-  blast radius grande e desnecessário p/ paridade. Vira nice-to-have futuro, não requisito):
-  1. **Builder dono de TODA derivação** (puro, core): runtime injeta só entidades **cruas**; o core
-     faz filtro de ativos (R-278/`isProtocolActiveOnDate`), dias-restantes, agrupamento por plano,
-     ordenação (reusa `splitDayTimeline`/`formatDoseItem` já no core). Mínima lógica no runtime.
-  2. **Input tipado + validado por Zod (CON-028):** runtime que injeta dado faltando/errado **falha
-     alto**, nunca gera contexto silenciosamente divergente. O input completo da FR-009 é o contrato.
+- **FR-009 (contrato):** Registrar **CON-028** (interface do **fetcher + builder** do core) e
+  **ADR-074** (centralização web↔server↔mobile). **CON-028 define o shape COMPLETO** (reconciliado
+  pela RC3 — F1): `{ medicines, protocols, logs, stockSummary, stats, doseInstances, treatmentPlans }`
+  — saída do fetcher == entrada do builder. Hoje Telegram passa 5 campos (sem `doseInstances`) e
+  ninguém passa `treatmentPlans`; o fetcher canônico (FR-010) elimina isso por construção.
+- **FR-010 (consistência cross-surface — chave; revisada pós-PO):** Garantir que as 3 superfícies
+  enviem o **mesmo contexto** para o mesmo usuário. A divergência mora a montante (no fetch), então
+  **três mecanismos** (não os CRUD repos full — DESCOPADOS por blast radius; e sim um fetcher estreito
+  e dedicado):
+  1. **Fetcher canônico no core** — `fetchChatbotContextData({ supabase, getUserId })` em
+     `@dosiq/core/chatbot/`: UMA definição dos selects (incl. `treatment_plans`), chamada pelas 3
+     superfícies. Inputs convergem **por construção**, não por disciplina. Estreito (uma leitura, não
+     migração do CRUD). Roda no runtime de cada um (web/mobile client-side, bot server-side) → preserva
+     "(A) client-build".
+  2. **Builder dono de TODA derivação** (puro, core): consome o shape do fetcher; filtro de ativos
+     (R-278/`isProtocolActiveOnDate`), dias-restantes, agrupamento por plano, ordenação (reusa
+     `splitDayTimeline`/`formatDoseItem` já no core). Zero lógica de derivação no runtime.
+  3. **Seam tipado + Zod (CON-028):** saída do fetcher validada antes do builder → dado faltando/errado
+     **falha alto**, nunca gera contexto silenciosamente divergente.
+- **FR-012 (UX latência — fetch-on-open):** O fetcher roda **na abertura da janela do chat** (não por
+  envio), com estado de loading branded ("Iniciando IA do dosiq…", mimetizando inicialização do
+  assistente). Contexto cacheado por sessão de chat e reusado a cada mensagem → o custo do fetch
+  dedicado (web perde o reuso do DashboardContext) é mascarado e pago uma vez. Revalidar em
+  re-foco/expiração curta (TTL) é opcional/futuro.
 - **FR-011 (guard de paridade):** Teste de paridade cross-surface — fixture de paciente "golden" →
   asserta que os caminhos web, mobile e Telegram produzem a **string de contexto idêntica**. É o
   trava-drift permanente da FR-010.
 
 ### Key Entities
+- **ChatbotContextData:** shape cru retornado pelo fetcher canônico = entrada do builder (CON-028):
+  `{ medicines, protocols, logs, stockSummary, stats, doseInstances, treatmentPlans }`.
 - **PatientContext (string):** prontuário compacto enviado ao LLM; agora seccionado por plano.
 - **TreatmentPlan:** `{ id, name }` — agrupa protocolos (já existe; `treatment_plan_id` em protocol).
 - **ChatMessage / ChatHistorySnapshot (mobile):** remetente, timestamp, corpo; snapshot AsyncStorage.
@@ -208,8 +219,9 @@ Onda 3 (PR-3) — Paridade & polish
 
 ## Success Criteria
 
-- **SC-001:** Builder de contexto **único** em `@dosiq/core`; 0 referências a `buildServerContext`/
-  `buildPatientContext` fora do core (forks removidos).
+- **SC-001:** **Fetcher + builder** de contexto **únicos** em `@dosiq/core`; 0 referências a
+  `buildServerContext`/`buildPatientContext` ou selects de contexto fora do core (forks + fetches
+  ad-hoc removidos; as 3 superfícies chamam `fetchChatbotContextData`).
 - **SC-002:** Contexto agrupado por plano nas 3 superfícies (web, Telegram, mobile) com mesma fonte.
 - **SC-003:** Chat nativo funcional (envio, resposta markdown, disclaimer, offline) iOS+Android.
 - **SC-004:** Rolagem mobile ≥ 55fps; histórico teto 20.
@@ -333,6 +345,16 @@ Tier 2 floor = **full** (mantido, sem override down). RC3 **eleva** o gate com o
 cross-surface (FR-011/PO-5) como bloqueante de release** — é o trava-drift que protege a consolidação.
 Cada onda: suíte relevante verde + CON-028 honrado + paridade verde.
 
+### Correção pós-RC3 (decisão PO 2026-06-23)
+PO apontou que F2 (descope total da camada de fetch) reabre drift: "cada um busca + Zod" valida
+**presença** do campo, não que foi buscado **igual** — se a web evolui o select e o Telegram não,
+diverge sem o Zod pegar. **Resolução:** descopar só a migração FULL dos CRUD repos (blast radius), e
+introduzir um **fetcher canônico estreito** `fetchChatbotContextData` em `@dosiq/core/chatbot/` (uma
+definição de selects, chamada pelas 3 superfícies) → inputs convergem por construção. Latência do
+fetch dedicado (web perde reuso do DashboardContext) mascarada por **fetch-on-open + loading branded
+"Iniciando IA do dosiq…"** + cache por sessão (FR-012). FR-010 atualizada para 3 mecanismos
+(fetcher + builder-puro + Zod seam). "(A) client-build" preservado — o fetcher roda no runtime de cada um.
+
 ### Recomendação de saída
-Spec sólida após reescrever FR-010 (F2) e detalhar CON-028 input completo (F1). Próximo: **planning**
-(plan.md + tasks.md + analysis.md + checklists — Tier 2 full bundle), fatiando Onda 1 em 1a/1b (F3).
+Spec sólida. Próximo: **planning** (plan.md + tasks.md + analysis.md + checklists — Tier 2 full bundle),
+fatiando Onda 1 em 1a (fetcher+builder core, web+server adotam, paridade) / 1b (plan-grouping) (F3).
