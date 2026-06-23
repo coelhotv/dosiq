@@ -80,6 +80,20 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ♻️ Melhorado (ANVISA → wizard de tratamento — começa no passo 1) — web `4.12.0`
+
+- **Wizard de tratamento a partir da busca ANVISA agora inicia no passo 1 (Medicamento), pré-preenchido:** antes, selecionar um medicamento da base ANVISA pulava direto pro passo 2 (Como Tomar), saltando campos fundamentais do cadastro do medicamento que a base ANVISA **não fornece** — concentração, unidade de dosagem, forma de apresentação e TTL (injetáveis). Agora o wizard abre no passo 1 com nome/laboratório/princípio ativo/categoria já preenchidos, e o usuário completa os campos clínicos antes de avançar. Mudança em `useTreatmentWizardState` (`useWizardNavigation(1)`).
+
+### 🐛 Corrigido (ANVISA → wizard de tratamento — prefill de laboratório) — web `4.12.0`
+
+- **Laboratório não pré-preenchia no wizard de tratamento:** ao selecionar um medicamento da base ANVISA na busca da aba Tratamentos (`AnvisaSearchBar`), o `TreatmentWizard` abria com `laboratory` (e `regulatory_category`) vazios para não-genéricos — o payload era montado à mão com só 3 campos, divergindo do mapper canônico `formatSelectedMedicine` usado pelo form de medicines. Fix: reusar `formatSelectedMedicine` nos dois pontos (paridade por construção) + teste de regressão. Bug pré-existente (não regressão do 037). AP-241.
+
+### ✨ Adicionado / ♻️ Refatorado (ANVISA on-demand na web — spec 037 Slice 1) — web `4.11.0`→**`4.12.0`** · core
+
+- **Base ANVISA on-demand na web (paridade mobile):** os services web `medicineDatabaseService` e `laboratoryDatabaseService` deixaram de importar os JSONs da ANVISA do bundle (`medicineDatabase.json` ≈ 1.35 MB + `laboratoryDatabase.json`) e passaram a **baixá-los on-demand do Supabase Storage público** com cache na **Cache Storage API** (versionado por `manifest.json` + TTL 7d). Resultado: **~1.36 MB a menos no build/deploy PWA** (precache caiu p/ 58 entries / 2451 KiB) e a base atualiza sem redeploy da web. API pública dos services **inalterada** (FR-004); degradação graciosa offline sem cache ⇒ autocomplete vazio, form 100% utilizável, sem throw (FR-003/FR-008). Removido o `manualChunks` `feature-medicines-db` do `vite.config.js`.
+- **Núcleo compartilhado em `@dosiq/core` (CON-027 / ADR-073):** criado `createAnvisaDatabase({baseUrl,fileKey,storageAdapter,ttlMs,timeoutMs})` + helpers puros (`fetchJson` com timeout/AbortController, `shouldRefreshCache`, `resolveDataUrl`, `normalizeText`, `matchesPrefix`) — extraídos do mobile `useMedicineDatabase`, parametrizados por um **storage adapter injetável**. Web injeta `_cacheStorageAdapter` (Cache Storage, guard `typeof caches` + fallback memória). Mata a triplicação na origem; o consumo pelo mobile (adapter AsyncStorage) vem no **Slice 2**.
+- **Fonte de upload movida p/ a raiz:** `git mv` dos 3 JSONs de `apps/web/src/features/medications/data/` → **`data/anvisa/`** (fora do grafo de build, co-locado com o upload). `scripts/process-anvisa.js` (`DATA_DIR`) e o guia de operações `GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md` atualizados (FR-007; web como consumidor + nova fonte + path `git-icloud`→`git`).
+
 ### ♻️ Refatorado (estrutura web — aposenta naming "redesign", Slice A) — web · no-user-impact
 
 - **Spec 038 / Slice A:** o redesign da experiência do paciente foi entregue, mas a pasta de produção das views ainda se chamava `views/redesign/`. `git mv views/redesign/* → views/` (Dashboard, Stock, Treatments, Medicines, HealthHistory, Settings, Emergency, Profile, Consultation, NotificationInbox + subpastas `history/ profile/ settings/`); artefatos Landing agrupados em `views/landing/`. Atualizados `AppViewRouter` (12 lazy imports), `vite.config.js` (alias `@settings` + manualChunks `HealthHistory`/`Stock`/`Landing`), o resolver `@settings` do `eslint.config.js` (alias duplicado fora do vite — AP-238) e 3 arquivos de teste. Refator puro, sem mudança de comportamento. Slices B (dissolver `*Redesign`/dead code) e C (carve-out + doc) a seguir.

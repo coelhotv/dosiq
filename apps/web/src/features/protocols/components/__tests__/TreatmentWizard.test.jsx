@@ -21,13 +21,23 @@ vi.mock('@shared/services', () => ({
 }))
 
 vi.mock('@schemas/medicineSchema', () => ({
-  DOSAGE_UNITS: ['mg', 'mcg', 'g'],
+  DOSAGE_UNITS: ['mg', 'mcg', 'g', 'ml', 'ui', 'gotas'],
+  DOSAGE_UNIT_LABELS: { mg: 'mg', mcg: 'mcg', g: 'g', ml: 'ml', ui: 'UI', gotas: 'gotas' },
+  PRESENTATIONS: ['comprimido', 'capsula', 'liquido', 'injetavel'],
+  PRESENTATION_LABELS: {
+    comprimido: 'Comprimido',
+    capsula: 'Cápsula',
+    liquido: 'Líquido',
+    injetavel: 'Injetável',
+  },
+  LIQUID_PRESENTATIONS: ['liquido', 'injetavel'],
   REGULATORY_CATEGORIES: ['Genérico', 'Similar', 'Novo'],
   REGULATORY_CATEGORY_LABELS: {
     Genérico: 'Genérico',
     Similar: 'Similar',
     Novo: 'Novo',
   },
+  normalizeRegulatoryCategory: (v) => v || null,
 }))
 
 vi.mock('@schemas/protocolSchema', () => ({
@@ -75,17 +85,23 @@ describe('TreatmentWizard', () => {
     ).toBeInTheDocument()
   })
 
-  it('renderiza step 2 quando preselectedMedicine fornecido', () => {
+  it('inicia no step 1 pré-preenchido quando preselectedMedicine fornecido', () => {
+    // Medicamento da busca ANVISA é novo (não está em medicines): deve começar no
+    // passo 1 com os dados pré-preenchidos, para o usuário definir concentração,
+    // unidade, apresentação e TTL (campos que a base ANVISA não fornece).
     const med = {
-      id: 'm1',
       name: 'Losartana',
       type: 'medicamento',
-      dosage_per_pill: 50,
-      dosage_unit: 'mg',
+      laboratory: 'EMS',
+      active_ingredient: 'Losartana Potássica',
+      regulatory_category: 'Genérico',
     }
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
 
-    expect(screen.getByText('Como Tomar')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Medicamento' })).toBeInTheDocument()
+    expect(screen.getByText('1/3')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Losartana')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('EMS')).toBeInTheDocument()
   })
 
   it('valida campos obrigatorios no step 1', () => {
@@ -145,6 +161,8 @@ describe('TreatmentWizard', () => {
     }
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
 
+    // preselected agora inicia no passo 1 (prefilled válido) → avança p/ o passo 2
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
     fireEvent.click(screen.getByText('+ Adicionar horário'))
 
     const removeButtons = screen.getAllByText('✕')
@@ -175,7 +193,7 @@ describe('TreatmentWizard', () => {
     render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} />)
 
     fireEvent.click(screen.getByText('Já cadastrado'))
-    expect(screen.getByText('Losartana 50mg')).toBeInTheDocument()
+    expect(screen.getByText('Losartana 50 mg')).toBeInTheDocument()
   })
 
   it('submete com Pular no step 2 (skip stock)', async () => {
@@ -189,6 +207,8 @@ describe('TreatmentWizard', () => {
     }
     render(<TreatmentWizard onComplete={onComplete} onCancel={vi.fn()} preselectedMedicine={med} />)
 
+    // preselected agora inicia no passo 1 (prefilled válido) → avança p/ o passo 2
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
     fireEvent.click(screen.getByText('Pular'))
 
     await waitFor(() => {

@@ -1,42 +1,31 @@
 /**
  * Serviço de busca na base de medicamentos ANVISA.
  *
- * Dados carregados via lazy import do JSON estático.
- * Busca por nome comercial ou princípio ativo com normalização de acentos.
+ * On-demand (037): os dados vêm do Supabase Storage público via o núcleo
+ * `createAnvisaDatabase` de `@dosiq/core` (CON-027), com cache na Cache Storage API
+ * (versionado por manifest + TTL 7d). Não há mais import do JSON no bundle.
  *
- * PRINCÍPIO: Zero chamadas ao Supabase — dados pré-carregados do JSON local.
+ * Degradação graciosa: falha de rede sem cache ⇒ base vazia (autocomplete vazio,
+ * form segue utilizável), sem throw para o caller. API pública inalterada (FR-004).
  */
 
-let _database = null
+import { createAnvisaDatabase, normalizeText } from '@dosiq/core'
+import { createCacheStorageAdapter } from '@medications/services/_cacheStorageAdapter'
+
+const ANVISA_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/dosiq-assets/anvisa/v1`
+
+const db = createAnvisaDatabase({
+  baseUrl: ANVISA_BASE_URL,
+  fileKey: 'medicineDatabase',
+  storageAdapter: createCacheStorageAdapter(),
+})
 
 /**
- * Carrega a base sob demanda (lazy loading para não impactar bundle inicial).
+ * Carrega a base sob demanda (Storage + cache). Nunca lança: offline sem cache ⇒ [].
  * @returns {Promise<Array>}
  */
 async function loadDatabase() {
-  if (!_database) {
-    try {
-      const module = await import('@medications/data/medicineDatabase.json')
-      _database = module.default
-    } catch (error) {
-      console.error('Erro ao carregar medicineDatabase.json:', error)
-      throw error
-    }
-  }
-  return _database
-}
-
-/**
- * Normaliza texto para busca (remove acentos, lowercase).
- * @param {string} text - Texto a normalizar
- * @returns {string}
- */
-function normalizeText(text) {
-  if (!text) return ''
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
+  return db.load()
 }
 
 /**
@@ -49,19 +38,16 @@ function normalizeText(text) {
 export async function searchMedicines(query, limit = 10) {
   if (!query || query.trim().length < 3) return []
 
-  const db = await loadDatabase()
+  const data = await loadDatabase()
   const normalizedQuery = normalizeText(query)
 
-  // Filtrar por nome ou princípio ativo
-  const results = db
+  return data
     .filter(
       (med) =>
         normalizeText(med.name).includes(normalizedQuery) ||
         normalizeText(med.activeIngredient).includes(normalizedQuery)
     )
     .slice(0, limit)
-
-  return results
 }
 
 /**
@@ -73,15 +59,13 @@ export async function searchMedicines(query, limit = 10) {
 export async function getMedicineDetails(name) {
   if (!name) return null
 
-  const db = await loadDatabase()
+  const data = await loadDatabase()
   const normalizedName = normalizeText(name)
 
-  // Buscar por match exato (normalizado) primeiro
-  let medicine = db.find((med) => normalizeText(med.name) === normalizedName)
-
-  // Se não encontrar exato, buscar por match parcial
+  // Match exato (normalizado) primeiro; senão match parcial.
+  let medicine = data.find((med) => normalizeText(med.name) === normalizedName)
   if (!medicine) {
-    medicine = db.find((med) => normalizeText(med.name).includes(normalizedName))
+    medicine = data.find((med) => normalizeText(med.name).includes(normalizedName))
   }
 
   return medicine || null
@@ -96,20 +80,20 @@ export async function getMedicineDetails(name) {
 export async function searchByActiveIngredient(activeIngredient) {
   if (!activeIngredient) return []
 
-  const db = await loadDatabase()
+  const data = await loadDatabase()
   const normalizedIngredient = normalizeText(activeIngredient)
 
-  return db.filter((med) => normalizeText(med.activeIngredient) === normalizedIngredient)
+  return data.filter((med) => normalizeText(med.activeIngredient) === normalizedIngredient)
 }
 
 /**
  * Retorna todos os medicamentos (útil para pré-carregamento em offline).
- * USE COM CUIDADO: Retorna 6.816 medicamentos — considere usar com pagination.
+ * USE COM CUIDADO: Retorna ~6.9k medicamentos — considere usar com pagination.
  *
  * @returns {Promise<Array>}
  */
 export async function getAllMedicines() {
-  return await loadDatabase()
+  return loadDatabase()
 }
 
 /**

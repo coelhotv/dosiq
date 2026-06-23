@@ -1,14 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+/**
+ * Base mock controlável (offline ⇒ []). O service consome `createAnvisaDatabase` de
+ * @dosiq/core; mockamos o núcleo para `load()` determinístico (sem fetch/JSON).
+ * Fetch/cache/offline reais cobertos no teste do core (anvisaDatabase.test.js).
+ */
+let mockData = []
+
+vi.mock('@dosiq/core', async (importActual) => {
+  const actual = await importActual()
+  return {
+    ...actual,
+    createAnvisaDatabase: () => ({ load: () => Promise.resolve(mockData) }),
+  }
+})
+
 import {
   searchLaboratories,
   getLaboratoryByName,
   getAllLaboratories,
 } from '@/features/medications/services/laboratoryDatabaseService'
 
-/**
- * Mock da base de laboratórios para testes isolados
- */
-const mockDatabase = [
+const DATABASE = [
   { laboratory: 'EMS' },
   { laboratory: 'LEGRAND PHARMA' },
   { laboratory: 'PFIZER BRASIL' },
@@ -16,13 +29,9 @@ const mockDatabase = [
   { laboratory: 'MERCK SHARP & DOHME' },
 ]
 
-// Mock do módulo de import dinâmico
-vi.mock('@medications/data/laboratoryDatabase.json', () => ({
-  default: mockDatabase,
-}))
-
 describe('laboratoryDatabaseService', () => {
   beforeEach(() => {
+    mockData = DATABASE
     vi.clearAllMocks()
   })
 
@@ -60,13 +69,8 @@ describe('laboratoryDatabaseService', () => {
     })
 
     it('respeita limite de resultados', async () => {
-      const results = await searchLaboratories('a', 2)
-      expect(results.length).toBeLessThanOrEqual(2)
-    })
-
-    it('retorna máximo 10 resultados por default', async () => {
-      const results = await searchLaboratories('a')
-      expect(results.length).toBeLessThanOrEqual(10)
+      const results = await searchLaboratories('bra', 1)
+      expect(results.length).toBeLessThanOrEqual(1)
     })
 
     it('busca é case-insensitive', async () => {
@@ -78,6 +82,18 @@ describe('laboratoryDatabaseService', () => {
     it('ignora caracteres especiais na busca', async () => {
       const results = await searchLaboratories('merck sharp')
       expect(results.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('degradação graciosa (offline sem cache)', () => {
+    it('load vazio ⇒ searchLaboratories retorna [] sem lançar', async () => {
+      mockData = []
+      await expect(searchLaboratories('ems')).resolves.toEqual([])
+    })
+
+    it('load vazio ⇒ getAllLaboratories retorna [] sem lançar', async () => {
+      mockData = []
+      await expect(getAllLaboratories()).resolves.toEqual([])
     })
   })
 
@@ -114,33 +130,12 @@ describe('laboratoryDatabaseService', () => {
   describe('getAllLaboratories', () => {
     it('retorna todos os laboratórios', async () => {
       const results = await getAllLaboratories()
-      expect(results.length).toBeGreaterThan(0)
-      expect(results.length).toBe(mockDatabase.length)
+      expect(results.length).toBe(DATABASE.length)
     })
 
     it('retorna laboratórios com campo laboratory', async () => {
       const results = await getAllLaboratories()
       expect(results[0]).toHaveProperty('laboratory')
-    })
-
-    it('retorna nomes em maiúscula', async () => {
-      const results = await getAllLaboratories()
-      expect(results.every((lab) => typeof lab.laboratory === 'string')).toBe(true)
-    })
-  })
-
-  describe('Lazy loading', () => {
-    it('carrega banco de dados na primeira chamada', async () => {
-      const results = await searchLaboratories('ems')
-      expect(results.length).toBeGreaterThan(0)
-    })
-
-    it('reutiliza banco carregado em chamadas subsequentes', async () => {
-      // Primeira chamada carrega o DB
-      await searchLaboratories('ems')
-      // Segunda chamada deve reutilizar
-      const results = await searchLaboratories('pfizer')
-      expect(results.length).toBeGreaterThan(0)
     })
   })
 })

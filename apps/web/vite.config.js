@@ -50,10 +50,8 @@ export default defineConfig({
           'feature-stock': ['./src/views/Stock.jsx'],
           'feature-landing': ['./src/views/landing/Landing.jsx'],
 
-          // Base ANVISA — 819KB, carregada apenas em Medicines/autocomplete
-          'feature-medicines-db': [
-            './src/features/medications/data/medicineDatabase.json',
-          ],
+          // Base ANVISA (037): movida p/ on-demand via @dosiq/core + Cache Storage.
+          // JSON não entra mais no bundle — manualChunk removido.
         },
       },
     },
