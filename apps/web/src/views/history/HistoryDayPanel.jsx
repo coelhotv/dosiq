@@ -1,4 +1,4 @@
-// src/views/redesign/history/HistoryDayPanel.jsx
+// src/views/history/HistoryDayPanel.jsx
 // S10C.3 — Painel de doses do dia selecionado no calendário.
 // PR-F4.2/S4.3 — agora consome a timeline event-agnóstica: itera `dayEvents` e resolve o
 // renderizador por `event.type` via registry (FP-3/ADR-050). Reflete o estado real

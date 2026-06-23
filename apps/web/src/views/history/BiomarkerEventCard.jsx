@@ -1,4 +1,4 @@
-// src/views/redesign/history/BiomarkerEventCard.jsx
+// src/views/history/BiomarkerEventCard.jsx
 // 012 Fase C / FR-011 — Renderizador do evento `biomarker` na timeline event-agnóstica
 // (FP-3/ADR-050/R-252). Card "registro tintado" (fundo infoSoft, plano, sem sombra, sem botão,
 // IconRuler inline): elevação=ação (dose), tinta=registro (medida) — medida nunca com mais peso

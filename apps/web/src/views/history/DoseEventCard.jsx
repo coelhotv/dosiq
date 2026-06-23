@@ -1,4 +1,4 @@
-// src/views/redesign/history/DoseEventCard.jsx
+// src/views/history/DoseEventCard.jsx
 // PR-F4.2/S4.3 — Renderizador do evento `dose` na timeline event-agnóstica (FP-3/ADR-050).
 // Substitui o HistoryLogCard (log-only) no painel do dia: agora reflete o ESTADO real
 // materializado em dose_instances — taken / missed / pending — não só doses tomadas.

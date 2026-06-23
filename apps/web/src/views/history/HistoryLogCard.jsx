@@ -1,4 +1,4 @@
-// src/views/redesign/history/HistoryLogCard.jsx
+// src/views/history/HistoryLogCard.jsx
 // S10C — Card de dose para o HistoryDayPanel (substitui LogEntry no contexto do histórico)
 
 import { PencilLine, Trash2 } from 'lucide-react'

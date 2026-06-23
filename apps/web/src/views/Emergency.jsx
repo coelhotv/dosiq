@@ -1,5 +1,5 @@
 /**
- * src/views/redesign/EmergencyRedesign.jsx
+ * src/views/Emergency.jsx
  * Wave 17 — Emergency View Redesign
  *
  * View consolidada para visualização e edição do Cartão de Emergência.

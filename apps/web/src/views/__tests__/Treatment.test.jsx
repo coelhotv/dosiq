@@ -94,7 +94,7 @@ vi.mock('react', async (importOriginal) => {
   }
 })
 
-import Treatment from '@/views/redesign/Treatments'
+import Treatment from '@/views/Treatments'
 import { useTreatmentList } from '@protocols/hooks/useTreatmentList'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 

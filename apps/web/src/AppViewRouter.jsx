@@ -5,20 +5,20 @@
 import { lazy, Suspense } from 'react'
 import Auth from './views/Auth'
 
-const Landing = lazy(() => import('./views/Landing'))
-const Medicines = lazy(() => import('./views/redesign/Medicines'))
-const Stock = lazy(() => import('./views/redesign/Stock'))
-const HealthHistory = lazy(() => import('./views/redesign/HealthHistory'))
-const Settings = lazy(() => import('./views/redesign/Settings'))
-const Emergency = lazy(() => import('./views/redesign/Emergency'))
-const Treatment = lazy(() => import('./views/redesign/Treatments'))
-const Profile = lazy(() => import('./views/redesign/Profile'))
-const Consultation = lazy(() => import('./views/redesign/Consultation'))
+const Landing = lazy(() => import('./views/landing/Landing'))
+const Medicines = lazy(() => import('./views/Medicines'))
+const Stock = lazy(() => import('./views/Stock'))
+const HealthHistory = lazy(() => import('./views/HealthHistory'))
+const Settings = lazy(() => import('./views/Settings'))
+const Emergency = lazy(() => import('./views/Emergency'))
+const Treatment = lazy(() => import('./views/Treatments'))
+const Profile = lazy(() => import('./views/Profile'))
+const Consultation = lazy(() => import('./views/Consultation'))
 const DLQAdmin = lazy(() => import('./views/admin/DLQAdmin'))
 const FeedbackAdmin = lazy(() => import('./views/admin/FeedbackAdmin'))
 const NudgesAdmin = lazy(() => import('./views/admin/NudgesAdmin'))
-const Dashboard = lazy(() => import('./views/redesign/Dashboard'))
-const NotificationInbox = lazy(() => import('./views/redesign/NotificationInbox'))
+const Dashboard = lazy(() => import('./views/Dashboard'))
+const NotificationInbox = lazy(() => import('./views/NotificationInbox'))
 const ResetPassword = lazy(() => import('./views/ResetPasswordView'))
 
 const SKELETON = (
