@@ -1,14 +1,32 @@
-# 037 — Tasks
+# Tasks — 037 ANVISA On-Demand via Core
 
-> Tier 1. Planning dobrado no gate C2 (sem plan.md, salvo decisão não-óbvia). POs do spec.md.
+> Tier 2, Guard MEDIUM-UP. 2 slices/PRs. Branch sync ritual (AP-169) por slice. ESM `.js` extension em core/api (AP-129/AP-184).
 
-- [ ] T001 [US1] Criar helper web compartilhado de base ANVISA on-demand (Cache Storage API + manifest version + TTL 7d + fetch com timeout/AbortController + degradação graciosa). Parametrizado por chave de arquivo (`medicineDatabase`|`laboratoryDatabase`) e baseUrl derivada de `VITE_SUPABASE_URL`. Espelha a lógica de [useMedicineDatabase.js](../../../apps/mobile/src/shared/hooks/useMedicineDatabase.js) (sem React/AsyncStorage). [PO-1][PO-3]
-- [ ] T002 [US1] Reescrever `loadDatabase()` em [medicineDatabaseService.js](../../../apps/web/src/features/medications/services/medicineDatabaseService.js) para usar o helper (T001); remover `import('@medications/data/medicineDatabase.json')`. API pública intacta. [PO-1]
-- [ ] T003 [US1] Reescrever `loadDatabase()` em [laboratoryDatabaseService.js](../../../apps/web/src/features/medications/services/laboratoryDatabaseService.js) idem. [PO-1]
-- [ ] T004 [US2] Remover entrada `manualChunks` de `medicineDatabase` em [vite.config.js](../../../apps/web/vite.config.js). [PO-2]
-- [ ] T004b [US2] **(BLOQUEADA pela decisão do `[NEEDS CLARIFICATION]` A4)** Realocar `medicineDatabase.json` + `laboratoryDatabase.json` de `apps/web/src/features/medications/data/` para fora de `apps/web/` (destino a definir); ajustar `scripts/process-anvisa.js` (paths de saída) e o guia (FR-007). Garantir que nenhuma referência em `apps/web/src` aponte mais para os arquivos. [PO-2]
-- [ ] T005 [C4] Testes: atualizar/criar suites dos services com fetch+manifest+cache mockados — caminhos: cold (download), warm cache (sem re-download), versão mudou (re-download), offline sem cache (vazio, sem throw), timeout. [PO-1][PO-3]
-- [ ] T006 [C4] Validação: `rtk lint`, `rtk npm run test:critical`, build web (PO-2 manual — inspecionar dist sem a base). Fechar PO-1/PO-2/PO-3 com evidência colada.
-- [ ] T007 [docs] Atualizar [GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md](../../../docs/operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md) (FR-007): web também consome on-demand; JSONs do repo = fonte de upload, fora do build PWA; fluxo de atualização reflete web (Cache Storage/TTL) + mobile sem redeploy; corrigir caminho `git-icloud`→`git`.
-- [ ] T008 [C4] R-221 SQP: plataforma=Web/PWA; impacto SemVer (patch — sem feature visível, mudança interna de carregamento/build); atualizar versão web se aplicável; CHANGELOG [Unreleased] em PT; sem store-note (mobile intocado).
-- [ ] T009 [C5] Registrar: ADR (decisão on-demand+CacheStorage para web) se elevar a arquitetural; journal YYYY-WWW.jsonl; events.jsonl; atualizar state.json; specs README status delivered.
+## Slice 1 — core + web (PR-1) [PO-1, PO-2, PO-3]
+- [ ] S1-01 Branch sync → `refactor/037/slice-1-core-web`
+- [ ] S1-02 [core] `packages/core/src/services/anvisaDatabase.js` — `createAnvisaDatabase({baseUrl,fileKey,storageAdapter,ttlMs,timeoutMs})` + helpers puros (fetchJson timeout, shouldRefreshCache, resolveDataUrl, normalizeText, matchesPrefix) extraídos do mobile [PO-1]
+- [ ] S1-03 [core] export em `services/index.js`; CON-027 doc
+- [ ] S1-04 [core] testes `anvisaDatabase.test.js` — fetch mock + cache + offline + timeout + failure modes (analysis §5) [PO-3]
+- [ ] S1-05 [web] `_cacheStorageAdapter.js` — Cache Storage API + guard `typeof caches` + fallback memória (FR-008) [PO-3]
+- [ ] S1-06 [web] `medicineDatabaseService.js` vira casca sobre core (preserva 5 exports) [PO-1]
+- [ ] S1-07 [web] `laboratoryDatabaseService.js` casca sobre core (preserva 3 exports) [PO-1]
+- [ ] S1-08 [web] adaptar testes dos 2 services (fetch mock + cache; sem import JSON) [PO-1]
+- [ ] S1-09 `git mv` JSONs web → `data/anvisa/` + `process-anvisa.js:24` DATA_DIR → `../data/anvisa` [PO-2]
+- [ ] S1-10 [web] remover import runtime + `vite.config.js:55` manualChunks medicineDatabase [PO-2]
+- [ ] S1-11 [web] FR-009: confirmar Workbox globPatterns não precacheia JSON + fetch cross-origin não interceptada
+- [ ] S1-12 doc FR-007: guia (web consumidor + nova fonte `data/anvisa/` + git-icloud→git)
+- [ ] S1-13 [C4] Guard: lint + test:critical + build (grep dist sem base) + grep import JSON zero. Colar evidência → PO-1/2/3
+- [ ] S1-14 PR-1 + check-review
+
+## Slice 2 — mobile paridade (PR-2) [PO-4]
+- [ ] S2-01 Branch sync → `refactor/037/slice-2-mobile`
+- [ ] S2-02 [mobile] `_asyncStorageAdapter.js` (AsyncStorage, comportamento atual)
+- [ ] S2-03 [mobile] `useMedicineDatabase.js` consome core via adapter (preserva retorno do hook) [PO-4]
+- [ ] S2-04 [mobile] `useMedicineDatabase.test.js` continua verde (rede de segurança) [PO-4]
+- [ ] S2-05 [C4] Guard: `npm test --workspace @dosiq/mobile` (Jest) verde + lint. Colar evidência → PO-4
+- [ ] S2-06 PR-2 + check-review
+
+## C5 (pós-slices)
+- [ ] Z01 [C5] CON-027 + ADR-073 → accepted; CONTRACTS/DECISIONS index
+- [ ] Z02 [C5] R-221 SQP: web minor + mobile patch + core minor; CHANGELOG [Unreleased]; store-note mobile (refactor, sem nota de usuário)
+- [ ] Z03 [C5] journal + state.json + README 037 → in-progress/delivered

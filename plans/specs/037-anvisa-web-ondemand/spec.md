@@ -105,6 +105,18 @@ status: [ ] open
 - **FR-009** (RC3) — Pós-remoção do import, confirmar que Workbox `globPatterns` não tenta precachear o JSON e que a fetch cross-origin ao Supabase Storage não é interceptada por `runtimeCaching` (nenhuma regra hoje — manter assim ou allowlist explícita).
 - **FR-007** — Atualizar [GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md](../../../docs/operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md): documentar que a **web também** passa a consumir o bucket on-demand (não só mobile); que os JSONs do repo (`apps/web/src/features/medications/data/*`) são a **fonte de upload** e deixaram de ser empacotados no build PWA; e que atualizar a base em `anvisa/v1/` (substituir arquivos + bump `manifest.version`) reflete em web (Cache Storage, TTL 7d) e mobile sem redeploy. Corrigir caminho legado `git-icloud` → `git` na seção 3.3.
 
+### US4 — Mobile consome o mesmo core, sem mudança de comportamento (P1, Slice 2)
+
+Como mantenedor, quero `useMedicineDatabase` (mobile) consumindo o núcleo `@dosiq/core` via adapter AsyncStorage, matando a triplicação, sem que o usuário note diferença.
+
+```po PO-4
+ac:     mobile useMedicineDatabase consome createAnvisaDatabase do core (adapter AsyncStorage); comportamento idêntico
+proof:  rtk npm test --workspace @dosiq/mobile -- useMedicineDatabase
+expect: suite existente verde (busca/cache/offline/TTL) sem alterar asserts de comportamento
+guard:  retorno do hook (database/manifest/isLoading/error/search/getByName) inalterado; lint 0 err
+status: [ ] open
+```
+
 ## Success Criteria
 
 - **SC-001** — Autocomplete de medicamentos e de laboratórios funciona online consumindo do Storage.
