@@ -1,5 +1,5 @@
 /**
- * CostSummary — Card de análise de custo mensal para o redesign do Estoque
+ * CostSummary — Card de análise de custo mensal do Estoque
  * Renderiza custos de medicamentos com barras de progressão (Wave 15.5)
  */
 

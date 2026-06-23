@@ -2,8 +2,8 @@
  * StockInventory — Seções de conteúdo do estoque (bifurcação Simple/Complex).
  */
 import { useMotion } from '@shared/hooks/useMotion'
-import CriticalAlertBanner from '@stock/components/redesign/CriticalAlertBanner'
-import EntradaHistorico from '@stock/components/redesign/EntradaHistorico'
+import CriticalAlertBanner from '@stock/components/CriticalAlertBanner'
+import EntradaHistorico from '@stock/components/EntradaHistorico'
 import CostSummary from '@stock/components/CostSummary'
 import PrescriptionTimeline from '@stock/components/PrescriptionTimeline'
 import StockInventoryGrid from './StockInventoryGrid'

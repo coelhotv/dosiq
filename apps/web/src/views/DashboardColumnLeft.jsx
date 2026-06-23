@@ -1,7 +1,7 @@
 import DashboardHeader from './DashboardHeader'
 import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
-import InsightCardRedesign from '@dashboard/components/InsightCardRedesign'
-import ReminderSuggestionRedesign from '@features/protocols/components/ReminderSuggestionRedesign'
+import InsightCard from '@dashboard/components/InsightCard'
+import ReminderSuggestion from '@features/protocols/components/ReminderSuggestion'
 
 export default function DashboardColumnLeft({
   userName,
@@ -51,7 +51,7 @@ export default function DashboardColumnLeft({
       {/* Insight Card */}
       {currentInsight && (
         <div className="dashboard-widget-wrapper">
-          <InsightCardRedesign
+          <InsightCard
             insight={currentInsight}
             onAction={(insight) => {
               if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
@@ -64,7 +64,7 @@ export default function DashboardColumnLeft({
       {/* Reminder Suggestion */}
       {reminderSuggestionData && (
         <div className="dashboard-widget-wrapper">
-          <ReminderSuggestionRedesign
+          <ReminderSuggestion
             suggestion={reminderSuggestionData.suggestion}
             protocolId={reminderSuggestionData.protocolId}
             protocolName={reminderSuggestionData.protocolName}

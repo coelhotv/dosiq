@@ -1,8 +1,8 @@
 import { TrendingUp, Target, Award, Package, Clock, AlertCircle, Lightbulb } from 'lucide-react'
-import './InsightCardRedesign.css'
+import './InsightCard.css'
 
 /**
- * InsightCardRedesign — Cartão redesenhado de insight inteligente (Wave 15.2)
+ * InsightCard — Cartão redesenhado de insight inteligente (Wave 15.2)
  * Exibe insights com badge, ícone e CTA opcional
  *
  * @param {Object} props
@@ -13,7 +13,7 @@ import './InsightCardRedesign.css'
  * @param {Function} props.onAction - Callback ao clicar em CTA: (insight) => void
  * @param {Function} props.onDismiss - Callback ao dispensar: (insightId) => void
  */
-export default function InsightCardRedesign({ insight, onAction, onDismiss }) {
+export default function InsightCard({ insight, onAction, onDismiss }) {
   // Handlers
   const handleCTA = () => {
     insight.onAction?.()

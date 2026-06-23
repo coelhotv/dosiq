@@ -1,6 +1,6 @@
 /**
  * useStockData — Hook compartilhado de dados para views de Estoque
- * Reutilizado por Stock.jsx (legado) e StockRedesign.jsx (redesign).
+ * Reutilizado por Stock.jsx (legado).
  *
  * Fonte: extração de Stock.jsx linhas 30-228.
  * Implementa: getStockStatus(), getBarPercentage(), lastPurchase computado.
@@ -47,7 +47,7 @@ export function getBarPercentage(totalQuantity, daysRemaining) {
 
 /**
  * Hook de dados para a view de Estoque.
- * Compartilhado por Stock.jsx (legado) e StockRedesign.jsx (redesign).
+ * Compartilhado por Stock.jsx (legado).
  *
  * @returns {Object} Dados processados de estoque + estado + handlers
  */

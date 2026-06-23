@@ -8,7 +8,7 @@ import Loading from '@shared/components/ui/Loading'
 import './Dashboard.css'
 import DashboardColumnLeft from './DashboardColumnLeft'
 import DashboardColumnRight from './DashboardColumnRight'
-import SmartAlertsRedesign from '@dashboard/components/SmartAlertsRedesign'
+import SmartAlerts from '@dashboard/components/SmartAlerts'
 import { useSmartAlerts } from '@dashboard/hooks/useSmartAlerts'
 import { useReminderSuggestion } from '@dashboard/hooks/useReminderSuggestion'
 import { useDashboardHandlers } from '@dashboard/hooks/useDashboardHandlers'
@@ -306,7 +306,7 @@ export default function Dashboard({ onNavigate }) {
       {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
       {smartAlerts.length > 0 && (
         <section className="dashboard-alerts-section" aria-label="Alertas inteligentes">
-          <SmartAlertsRedesign
+          <SmartAlerts
             alerts={smartAlerts}
             onAction={(alert, action) => {
               if (action.label === 'Registrar Compra') onNavigate?.('stock')
