@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import './RingGaugeRedesign.css'
+import './RingGauge.css'
 
 const RADIUS = 46
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
@@ -10,7 +10,7 @@ const SIZE_MAP = {
   compact: { svgSize: 56, strokeWidth: 8, fontSize: '0.875rem', labelSize: '0.5rem' },
 }
 
-export default function RingGaugeRedesign({
+export default function RingGauge({
   score = 0,
   streak = 0,
   size = 'medium',

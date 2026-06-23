@@ -17,7 +17,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react'
 import MeasureLogModal from '@features/measures/components/MeasureLogModal'
 import { measuresRepo } from '@features/measures/services/measuresRepo'
 
-const BottomNavRedesign = lazy(() => import('@shared/components/ui/BottomNavRedesign'))
+const BottomNav = lazy(() => import('@shared/components/ui/BottomNav'))
 const Sidebar = lazy(() => import('@shared/components/ui/Sidebar'))
 
 function AppLoading() {
@@ -102,7 +102,7 @@ function AppShell({
 
           {isAuthenticated && !isPasswordRecovery && (
             <Suspense fallback={null}>
-              <BottomNavRedesign currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
+              <BottomNav currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
           )}
 

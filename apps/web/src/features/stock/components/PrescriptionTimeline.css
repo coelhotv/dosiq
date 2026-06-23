@@ -1,123 +1,167 @@
-/**
- * PrescriptionTimeline — Barra visual de vigência de prescrição (W1-07)
- */
+.prescription-timeline-redesign {
+  background: var(--color-surface-container-lowest, #ffffff);
+  border-radius: var(--radius-card, 2rem);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-ambient, 0 24px 24px rgba(25, 28, 29, 0.04));
+}
 
-.prescription-timeline {
+.prescription-timeline-redesign__title {
+  font-family: var(--font-display, 'Public Sans', sans-serif);
+  font-weight: 700;
+  font-size: var(--text-headline-sm, 1.25rem);
+  color: var(--color-on-surface, #191c1d);
+  margin: 0 0 1.25rem;
+}
+
+.prescription-timeline-redesign__summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.prescription-timeline-redesign__list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  transition: background 0.15s ease;
-  border: none;
-  font: inherit;
-  color: inherit;
-  text-align: left;
+  gap: 1.25rem;
 }
 
-button.prescription-timeline {
-  cursor: pointer;
+.prescription-timeline-redesign__item {
 }
 
-button.prescription-timeline:hover {
-  background: var(--bg-tertiary);
-}
-
-button.prescription-timeline:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Cabeçalho */
-.prescription-timeline__header {
+.prescription-timeline-redesign__item-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: 0.375rem;
 }
 
-.prescription-timeline__name {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  white-space: nowrap;
+.prescription-timeline-redesign__name {
+  font-weight: 600;
+  font-size: var(--text-body-sm, 0.875rem);
+  color: var(--color-on-surface, #191c1d);
+}
+
+.prescription-timeline-redesign__dates,
+.prescription-timeline-redesign__dates-row {
+  font-size: var(--text-label-md, 0.75rem);
+  color: var(--color-outline, #6d7a76);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 0.375rem;
+}
+
+.prescription-timeline-redesign__bar-track {
+  height: 8px;
+  background: var(--color-surface-container-low, #f2f4f5);
+  border-radius: var(--radius-full, 9999px);
   overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
 }
 
-.prescription-timeline__badge {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* Vencida: badge em negrito */
-.prescription-timeline--expired .prescription-timeline__badge {
-  font-weight: var(--font-weight-bold);
-}
-
-/* Trilha */
-.prescription-timeline__track {
-  position: relative;
-  height: 6px;
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-full);
-  overflow: visible;
-  margin-top: var(--space-1);
-}
-
-/* Preenchimento animado (passado → hoje) */
-.prescription-timeline__fill {
-  position: absolute;
-  inset: 0;
+.prescription-timeline-redesign__bar-fill {
   height: 100%;
-  background: var(--timeline-color);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-full, 9999px);
+  width: 0;
 }
 
-/* Segmento futuro (outline) */
-.prescription-timeline__future {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  border-radius: 0 var(--radius-full) var(--radius-full) 0;
-  border: 1.5px solid var(--timeline-color);
-  background: transparent;
-  opacity: 0.35;
-  box-sizing: border-box;
+.prescription-timeline-redesign__bar-fill--ativa {
+  background: var(--color-primary, #006a5e);
 }
 
-/* Marcador "hoje" */
-.prescription-timeline__today-marker {
-  position: absolute;
-  top: -4px;
-  width: 2px;
-  height: calc(100% + 8px);
-  background: var(--text-secondary);
-  border-radius: var(--radius-full);
-  transform: translateX(-50%);
-  opacity: 0.6;
+.prescription-timeline-redesign__bar-fill--vencendo {
+  background: var(--color-tertiary, #7b5700);
 }
 
-/* Labels de data */
-.prescription-timeline__dates {
+.prescription-timeline-redesign__bar-fill--vencida {
+  background: var(--color-error, #ba1a1a);
+}
+
+.prescription-timeline-redesign__bar-fill--finalizada {
+  background: var(--color-outline, #6d7a76);
+}
+
+/* Timeline Fill animation */
+@media (prefers-reduced-motion: no-preference) {
+  .prescription-timeline-redesign__bar-fill {
+    animation: prxFill 1.2s cubic-bezier(0, 0, 0.2, 1) 0.3s both;
+  }
+
+  @keyframes prxFill {
+    from {
+      width: 0;
+    }
+    to {
+      width: var(--progress, 0%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prescription-timeline-redesign__bar-fill {
+    width: var(--progress, 0%);
+  }
+}
+
+/* Status badges reutilizados aqui */
+.prx-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-label-sm, 0.625rem);
+  font-weight: 600;
+  padding: 0.175rem 0.5rem;
+  border-radius: var(--radius-full, 9999px);
+}
+
+.prx-status--ativa {
+  background: color-mix(in srgb, var(--color-primary, #006a5e) 12%, transparent);
+  color: var(--color-primary, #006a5e);
+}
+
+.prx-status--vencendo {
+  background: color-mix(in srgb, var(--color-tertiary-fixed, #ffdea8) 60%, transparent);
+  color: var(--color-tertiary, #7b5700);
+}
+
+.prx-status--vencida {
+  background: color-mix(in srgb, var(--color-error, #ba1a1a) 12%, transparent);
+  color: var(--color-error, #ba1a1a);
+}
+
+.prx-status--finalizada {
+  background: color-mix(in srgb, var(--color-outline, #6d7a76) 12%, transparent);
+  color: var(--color-outline, #6d7a76);
+}
+
+/* ── Bar footer: datas + dias restantes ── */
+.prescription-timeline-redesign__bar-footer {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--space-1);
+  align-items: center;
+  margin-top: 0.25rem;
+  gap: 0.5rem;
 }
 
-.prescription-timeline__date {
-  font-size: var(--text-2xs);
-  color: var(--text-tertiary);
+.prescription-timeline-redesign__dates-label {
+  font-size: var(--text-label-sm, 0.6875rem);
+  color: var(--color-outline, #6d7a76);
+  font-family: var(--font-body, Lexend, sans-serif);
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .prescription-timeline {
-    transition: none;
-  }
+.prescription-timeline-redesign__days-left {
+  font-size: var(--text-label-sm, 0.6875rem);
+  font-weight: 600;
+  font-family: var(--font-body, Lexend, sans-serif);
+  white-space: nowrap;
+}
+
+.prx-days--ativa {
+  color: var(--color-primary, #006a5e);
+}
+.prx-days--vencendo {
+  color: var(--color-tertiary, #7b5700);
+}
+.prx-days--vencida {
+  color: var(--color-error, #ba1a1a);
+}
+.prx-days--finalizada {
+  color: var(--color-outline, #6d7a76);
 }

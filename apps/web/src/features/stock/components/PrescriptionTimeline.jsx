@@ -1,159 +1,109 @@
-import { useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { parseLocalDate, getTodayLocal } from '@utils/dateUtils'
-import { PRESCRIPTION_STATUS } from '@features/prescriptions/services/prescriptionService'
+/**
+ * PrescriptionTimeline — Visualização de vigência de prescrições com timeline
+ * Renderiza prescrições com data de fim, filtrando prescrições contínuas (Wave 15.6)
+ */
+
+import { parseLocalDate, getNow, daysDifference } from '@utils/dateUtils'
 import './PrescriptionTimeline.css'
 
-/** Cor da barra por status de prescrição */
-const STATUS_COLOR = {
-  [PRESCRIPTION_STATUS.VIGENTE]: 'var(--color-success)',
-  [PRESCRIPTION_STATUS.VENCENDO]: 'var(--color-warning)',
-  [PRESCRIPTION_STATUS.VENCIDA]: 'var(--color-error)',
+function deriveProgress(startDate, endDate) {
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
+  const today = getNow()
+  const totalDays = Math.max((end - start) / 86400000, 1)
+  const elapsed = (today - start) / 86400000
+  return Math.min(Math.max((elapsed / totalDays) * 100, 0), 100)
 }
 
-/**
- * Formata YYYY-MM-DD para DD/MM/YYYY sem usar new Date() (evita UTC timezone R-020).
- */
-function formatDate(dateStr) {
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`
-}
-
-/**
- * Calcula posição de "hoje" como percentual entre start e end (0–100).
- * Retorna null para prescrições contínuas (sem end_date).
- */
-function calcTodayPercent(startDate, endDate) {
-  if (!endDate) return null
-  const start = parseLocalDate(startDate).getTime()
-  const end = parseLocalDate(endDate).getTime()
-  const today = parseLocalDate(getTodayLocal()).getTime()
-  const total = end - start
-  if (total <= 0) return 100
-  return Math.min(Math.max(((today - start) / total) * 100, 0), 100)
-}
-
-/**
- * PrescriptionTimeline — barra visual de vigência de prescrição (W1-07)
- *
- * Componente puro da Onda 1: recebe dados apenas por props.
- * A posição do marcador "hoje" é derivada de startDate/endDate.
- *
- * @param {Object} props
- * @param {string} props.name - Nome do protocolo/medicamento
- * @param {string} props.startDate - Início da prescrição (YYYY-MM-DD)
- * @param {string|null} props.endDate - Fim da prescrição ou null (contínuo)
- * @param {'vigente'|'vencendo'|'vencida'} props.status - Status calculado pelo prescriptionService
- * @param {number|null} props.daysRemaining - Dias restantes (negativo se vencida, null se contínuo)
- * @param {Function} [props.onPress] - Callback ao tocar — navega para protocolo
- * @param {string} [props.className]
- */
-export default function PrescriptionTimeline({
-  name,
-  startDate,
-  endDate,
-  status,
-  daysRemaining,
-  onPress,
-  className = '',
-}) {
-  const color = STATUS_COLOR[status] ?? 'var(--color-info)'
-  const isExpired = status === PRESCRIPTION_STATUS.VENCIDA
-  const isContinuous = !endDate
-
-  const todayPercent = useMemo(() => calcTodayPercent(startDate, endDate), [startDate, endDate])
-  const filledWidth = useMemo(() => (isContinuous ? 100 : (todayPercent ?? 100)), [isContinuous, todayPercent])
+function getDaysRemaining(endDateStr) {
+  if (!endDateStr) return null
+  const end = parseLocalDate(endDateStr)
+  const today = getNow()
   
-  const { showTodayMarker, showFutureSegment } = useMemo(() => {
-    const todayMarker = !isContinuous && todayPercent !== null && todayPercent > 0 && todayPercent < 100
-    const futureSegment = !isContinuous && !isExpired && todayPercent !== null && todayPercent < 100
-    return { showTodayMarker: todayMarker, showFutureSegment: futureSegment }
-  }, [isContinuous, todayPercent, isExpired])
+  // Usar helper centralizado para evitar timezone drift
+  return daysDifference(today, end)
+}
 
-  // Label do badge de status
-  let badgeLabel
-  if (isContinuous) {
-    badgeLabel = 'Contínuo'
-  } else if (daysRemaining === null) {
-    badgeLabel = status
-  } else if (daysRemaining >= 0) {
-    badgeLabel = `${daysRemaining}d restantes`
-  } else {
-    badgeLabel = `Vencida há ${Math.abs(daysRemaining)}d`
-  }
+function formatShortDate(dateStr) {
+  if (!dateStr) return ''
+  const d = parseLocalDate(dateStr)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
 
-  const handleKeyDown = (e) => {
-    if (onPress && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault()
-      onPress()
-    }
-  }
+const STATUS_LABELS = {
+  ativa: 'Ativa',
+  vencendo: 'Vencendo',
+  vencida: 'Vencida',
+  finalizada: 'Finalizada',
+}
 
-  const rootClass = [
-    'prescription-timeline',
-    isExpired ? 'prescription-timeline--expired pulse-critical' : '',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  const Tag = onPress ? 'button' : 'div'
+export default function PrescriptionTimeline({ prescriptions, isComplex }) {
+  const timedPrescriptions = prescriptions.filter((p) => p.endDate != null && !p.isContinuous)
+  if (timedPrescriptions.length === 0) return null
 
   return (
-    <Tag
-      className={rootClass}
-      onClick={onPress}
-      onKeyDown={handleKeyDown}
-      aria-label={`Prescrição ${name}: ${badgeLabel}`}
-      data-testid="prescription-timeline"
-    >
-      {/* Cabeçalho: nome + badge */}
-      <div className="prescription-timeline__header">
-        <span className="prescription-timeline__name">{name}</span>
-        <span className="prescription-timeline__badge" style={{ color }} data-status={status}>
-          {badgeLabel}
-        </span>
+    <section className="prescription-timeline-redesign" aria-label="Vigência de prescrições">
+      <h3 className="prescription-timeline-redesign__title">
+        {isComplex ? 'Vigência das Prescrições' : 'Prescrições'}
+      </h3>
+
+      {isComplex && (
+        <div className="prescription-timeline-redesign__summary">
+          {['ativa', 'vencendo', 'vencida'].map((s) => {
+            const count = timedPrescriptions.filter((p) => p.status === s).length
+            return count > 0 ? (
+              <span key={s} className={`prx-status prx-status--${s}`}>
+                {count} {STATUS_LABELS[s].toLowerCase()}
+                {count > 1 ? 's' : ''}
+              </span>
+            ) : null
+          })}
+        </div>
+      )}
+
+      <div className="prescription-timeline-redesign__list">
+        {timedPrescriptions.map((p) => {
+          const progress = deriveProgress(p.startDate, p.endDate)
+          const daysLeft = getDaysRemaining(p.endDate)
+          const daysLabel =
+            daysLeft == null
+              ? ''
+              : daysLeft < 0
+                ? 'Vencida'
+                : daysLeft === 0
+                  ? 'Vence hoje'
+                  : `${daysLeft} dia${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}`
+          return (
+            <div key={p.id} className="prescription-timeline-redesign__item">
+              <div className="prescription-timeline-redesign__item-header">
+                <span className="prescription-timeline-redesign__name">{p.medicineName}</span>
+                <span className={`prx-status prx-status--${p.status}`}>
+                  {STATUS_LABELS[p.status]}
+                </span>
+              </div>
+              <div className="prescription-timeline-redesign__bar-track">
+                <div
+                  className={`prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--${p.status}`}
+                  style={{ '--progress': `${progress}%` }}
+                  role="progressbar"
+                  aria-valuenow={Math.round(progress)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${p.medicineName}: ${Math.round(progress)}% da vigência`}
+                />
+              </div>
+              <div className="prescription-timeline-redesign__bar-footer">
+                <span className="prescription-timeline-redesign__dates-label">
+                  {formatShortDate(p.startDate)} → {formatShortDate(p.endDate)}
+                </span>
+                <span className={`prescription-timeline-redesign__days-left prx-days--${p.status}`}>
+                  {daysLabel}
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
-
-      {/* Barra de progresso */}
-      <div className="prescription-timeline__track" aria-hidden="true">
-        {/* Segmento preenchido — passado até hoje */}
-        <motion.div
-          className="prescription-timeline__fill"
-          style={{ '--timeline-color': color }}
-          initial={{ width: 0 }}
-          animate={{ width: `${filledWidth}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-
-        {/* Segmento futuro (outline) */}
-        {showFutureSegment && (
-          <div
-            className="prescription-timeline__future"
-            style={{
-              '--timeline-color': color,
-              left: `${filledWidth}%`,
-              width: `${100 - filledWidth}%`,
-            }}
-          />
-        )}
-
-        {/* Marcador "hoje" */}
-        {showTodayMarker && (
-          <div
-            className="prescription-timeline__today-marker"
-            style={{ left: `${todayPercent}%` }}
-          />
-        )}
-      </div>
-
-      {/* Labels de data */}
-      <div className="prescription-timeline__dates">
-        <span className="prescription-timeline__date">{formatDate(startDate)}</span>
-        <span className="prescription-timeline__date prescription-timeline__date--end">
-          {isContinuous ? 'Sem vencimento' : formatDate(endDate)}
-        </span>
-      </div>
-    </Tag>
+    </section>
   )
 }
