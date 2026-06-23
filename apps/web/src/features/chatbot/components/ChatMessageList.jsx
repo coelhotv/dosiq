@@ -7,7 +7,7 @@
  */
 function renderInline(text) {
   const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g)
-  return parts.map((part, i) => {
+  return parts.filter(Boolean).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
     }
