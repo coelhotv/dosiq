@@ -70,7 +70,10 @@ status: [ ] open
 - **FR-003** Atualizar TODOS os 26 importers + `AppViewRouter` lazy imports + alias `@settings` e `manualChunks` em `vite.config.js`.
 - **FR-004** Agrupar artefatos Landing em `views/landing/`.
 - **FR-005** Documentar `features/measures/` e a estrutura `views/` em `CLAUDE.md`.
-- **FR-006** Resolver `[NEEDS CLARIFICATION]` sobre camada de views ANTES de mexer em código (define se há trabalho de FR-002 expandido).
+- **FR-006** Resolver `[NEEDS CLARIFICATION]` sobre camada de views ANTES de mexer em código. ✅ Resolvido (A + carve-out).
+- **FR-007 (carve-out)** Extrair lógica de domínio vazada das views para feature/core — começar por `deriveProtocolStatus` (hoje em `Stock.jsx`) → `@dosiq/core` ou `features/stock`, com teste unitário.
+- **FR-008 (carve-out)** Remover dead code de naming legado: `CostSummary.jsx` (0 importers) e reconciliar pares `*Redesign`/não-`Redesign` (renomear o vivo, deletar o morto) — confirmar importer-count == 0 antes de deletar.
+- **FR-009 (carve-out)** Registrar R-NNN leve no C5: "lógica de domínio não nasce em `views/`; desce para feature/core" (disciplina anti-inchaço).
 
 ## Success Criteria
 
@@ -84,6 +87,6 @@ status: [ ] open
 
 - **Assumção:** schemas/utils raiz são shims `export *` para `@dosiq/core` (R-129) — fora de escopo, mantidos.
 - **Assumção:** `views/admin/` já bem isolado — fora de escopo.
-- **[NEEDS CLARIFICATION 1]** Camada de views: hoje `views/redesign/<X>.jsx` contém composição substancial (ex: `Stock.jsx` 6.9K + sub-componentes), não wrappers finos como CLAUDE.md afirma ("views = wrappers lazy"). Duas saídas: **(A)** assumir `views/` como camada legítima de composição e corrigir o CLAUDE.md; **(B)** baixar lógica para `features/<x>/` e deixar views como wrappers magros (refator maior, expande FR-002). Decisão arquitetural — operador resolve antes do C-mode. Default recomendado: **(A)** (menor risco, casa com o estado entregue).
-- **[NEEDS CLARIFICATION 2]** FR-002 escopo: dissolver `features/medications/components/redesign/` só renomeia pasta, ou reorganiza por seção? Renomear simples se decisão 1 = (A).
-- **Open:** entregar em 1 PR ou fatiar (views → landing → doc)? Sugestão: 1 branch, commits semânticos separados por FR (mesmo modelo do sprint anterior).
+- **[RESOLVED — NC1] (2026-06-22):** Decisão **A + carve-out**. `views/` é camada de composição legítima → corrigir CLAUDE.md (não baixar lógica em massa, evita risco em lógica clínica testada — strangler-fig, RC3). Acréscimos baratos que capturam o benefício de B sem o risco: extrair vazamentos de domínio + matar dead code (ver FR-007/FR-008). B puro descartado (big-bang sobre dose/stock testado, ganho marginal — AP-190/191/193 no histórico).
+- **[RESOLVED — NC2] (2026-06-22):** FR-002 = **rename simples** de `features/*/components/redesign/` → achatar em `components/` (sem reorganização por seção).
+- **Open:** entregar em 1 PR ou fatiar (views → landing → carve-out → doc)? Sugestão: 1 branch, commits semânticos separados por FR (mesmo modelo do sprint anterior).
