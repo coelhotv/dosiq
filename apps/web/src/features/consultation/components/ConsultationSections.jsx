@@ -1,7 +1,18 @@
 /**
- * ConsultationSections — Seções reutilizáveis da ConsultationView.
+ * ConsultationSections — Seções da ConsultationView.
  */
 import { motion } from 'framer-motion'
+import {
+  Pill,
+  Package,
+  ClipboardList,
+  Target,
+  AlertTriangle,
+  AlertCircle,
+  XCircle,
+  CheckCircle2,
+  Bell,
+} from 'lucide-react'
 import { formatConcentration, formatDose } from '@dosiq/core'
 
 const itemVariants = {
@@ -14,11 +25,16 @@ const itemVariants = {
  */
 export function ConsultationMedicinesSection({ activeMedicines }) {
   return (
-    <motion.section className="consultation-section" variants={itemVariants}>
-      <h2 className="section-title">💊 Medicamentos Ativos</h2>
+    <motion.section
+      className="sr-consultation__section sr-consultation__section--full"
+      variants={itemVariants}
+    >
+      <h2 className="sr-consultation__section-title">
+        <Pill size={20} /> Medicamentos Ativos
+      </h2>
       {activeMedicines?.length > 0 ? (
-        <div className="medicines-table-container">
-          <table className="medicines-table">
+        <div className="sr-consultation__table-wrap">
+          <table className="sr-consultation__table">
             <thead>
               <tr>
                 <th>Nome</th>
@@ -27,51 +43,45 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
               </tr>
             </thead>
             <tbody>
-              {activeMedicines.map((medicine) => (
-                <tr key={medicine.id}>
-                  <td className="medicine-name">{medicine.name}</td>
+              {activeMedicines.map((med) => (
+                <tr key={med.id}>
+                  <td className="sr-consultation__med-name">{med.name}</td>
                   <td>
-                    {medicine.isLiquid && medicine.timesPerDay ? (
+                    {med.isLiquid && med.timesPerDay ? (
                       <span>
-                        {formatConcentration(medicine.dosagePerPill, medicine.dosageUnit)}
-                        <span className="dosage-detail">
+                        {formatConcentration(med.dosagePerPill, med.dosageUnit)}
+                        <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({medicine.timesPerDay}x ao dia
-                          {medicine.dailyDosage
-                            ? `, ${formatDose(medicine.dailyDosage, medicine.intakeUnit || 'ml')}/dia`
-                            : ''}
-                          )
+                          ({med.timesPerDay}x ao dia
+                          {med.dailyDosage ? `, ${formatDose(med.dailyDosage, med.intakeUnit || 'ml')}/dia` : ''})
                         </span>
                       </span>
-                    ) : medicine.dosagePerIntake && medicine.timesPerDay ? (
+                    ) : med.dosagePerIntake && med.timesPerDay ? (
                       <span>
-                        {medicine.dosagePerIntake}
-                        {medicine.dosageUnit}
-                        <span className="dosage-detail">
+                        {med.dosagePerIntake}
+                        {med.dosageUnit}
+                        <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({medicine.timesPerDay}x ao dia
-                          {medicine.dailyDosage
-                            ? `, ${medicine.dailyDosage}${medicine.dosageUnit}/dia`
-                            : ''}
-                          )
+                          ({med.timesPerDay}x ao dia
+                          {med.dailyDosage ? `, ${med.dailyDosage}${med.dosageUnit}/dia` : ''})
                         </span>
                       </span>
-                    ) : medicine.dosagePerPill ? (
+                    ) : med.dosagePerPill ? (
                       <span>
-                        {formatConcentration(medicine.dosagePerPill, medicine.dosageUnit)}
+                        {formatConcentration(med.dosagePerPill, med.dosageUnit)}
                       </span>
                     ) : (
-                      <span className="dosage-unknown">Não informado</span>
+                      <span className="sr-consultation__dosage-unknown">Não informado</span>
                     )}
                   </td>
-                  <td>{medicine.type}</td>
+                  <td>{med.type}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <p className="empty-state">Nenhum medicamento ativo</p>
+        <p className="sr-consultation__empty">Nenhum medicamento ativo</p>
       )}
     </motion.section>
   )
@@ -82,115 +92,131 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
  */
 export function ConsultationStockSection({ stockAlerts }) {
   return (
-    <motion.section className="consultation-section" variants={itemVariants}>
-      <h2 className="section-title">📦 Alertas de Estoque</h2>
+    <motion.section className="sr-consultation__section" variants={itemVariants}>
+      <h2 className="sr-consultation__section-title">
+        <Package size={20} /> Alertas de Estoque
+      </h2>
       {stockAlerts?.length > 0 ? (
-        <div className="stock-alerts-list">
+        <div className="sr-consultation__alerts">
           {stockAlerts.map((alert) => (
-            <div key={alert.medicineId} className={`stock-alert-item ${alert.severity}`}>
-              <span className="alert-icon">{alert.severity === 'critical' ? '⚠️' : '⚡'}</span>
-              <div className="alert-content">
-                <strong>{alert.medicineName}</strong>
-                <span className="alert-message">{alert.message}</span>
+            <div
+              key={alert.medicineId}
+              className={`sr-stock-alert sr-stock-alert--${alert.severity}`}
+            >
+              <span className="sr-stock-alert__icon">
+                {alert.severity === 'critical' ? (
+                  <AlertTriangle size={20} />
+                ) : (
+                  <AlertCircle size={20} />
+                )}
+              </span>
+              <div>
+                <strong className="sr-stock-alert__name">{alert.medicineName}</strong>
+                <span className="sr-stock-alert__message"> — {alert.message}</span>
                 {alert.daysRemaining > 0 && (
-                  <span className="alert-days">~{alert.daysRemaining} dias restantes</span>
+                  <div className="sr-stock-alert__days">
+                    ~{alert.daysRemaining} dias restantes
+                  </div>
                 )}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="empty-state">✅ Estoque em dia</p>
+        <p className="sr-consultation__empty">Estoque em dia</p>
       )}
     </motion.section>
   )
 }
 
-const PRESCRIPTION_STATUS_LABELS = {
-  vigente: 'Vigente',
-  vencendo: 'Vencendo',
-  vencida: 'Vencida',
-}
-
 /**
- * Status de prescrições.
+ * Prescrições.
  */
 export function ConsultationPrescriptionsSection({ prescriptionStatus }) {
   return (
-    <motion.section className="consultation-section" variants={itemVariants}>
-      <h2 className="section-title">📝 Status das Prescrições</h2>
+    <motion.section className="sr-consultation__section" variants={itemVariants}>
+      <h2 className="sr-consultation__section-title">
+        <ClipboardList size={20} /> Status das Prescrições
+      </h2>
       {prescriptionStatus?.length > 0 ? (
-        <div className="prescriptions-list">
-          {prescriptionStatus.map((prescription) => (
-            <div
-              key={prescription.protocolId}
-              className={`prescription-item ${prescription.status}`}
-            >
-              <span className={`status-badge ${prescription.status}`}>
-                {prescription.status === 'vencida' && '❌'}
-                {prescription.status === 'vencendo' && '⚠️'}
-                {prescription.status === 'vigente' && '✅'}{' '}
-                {PRESCRIPTION_STATUS_LABELS[prescription.status] || prescription.status}
-              </span>
-              <span className="prescription-medicine">{prescription.medicineName}</span>
-              {prescription.daysRemaining !== undefined && (
-                <span className="days-remaining">
-                  {prescription.daysRemaining > 0
-                    ? `${prescription.daysRemaining} dias`
-                    : 'Hoje'}
+        <div className="sr-consultation__prescriptions">
+          {prescriptionStatus.map((rx) => {
+            const statusConfig = {
+              vigente: { label: 'Vigente', Icon: CheckCircle2 },
+              vencendo: { label: 'Vencendo', Icon: AlertTriangle },
+              vencida: { label: 'Vencida', Icon: XCircle },
+            }
+            const statusKey = rx.status?.toLowerCase()
+            const currentStatus = statusConfig[statusKey] || {
+              label: rx.status || 'Desconhecido',
+              Icon: AlertCircle,
+            }
+            const BadgeIcon = currentStatus.Icon
+            return (
+              <div key={rx.protocolId} className="sr-prescription">
+                <span className={`sr-prescription__badge sr-prescription__badge--${statusKey}`}>
+                  <BadgeIcon size={14} />
+                  {currentStatus.label}
                 </span>
-              )}
-            </div>
-          ))}
+                <span className="sr-prescription__name">{rx.medicineName}</span>
+                {rx.daysRemaining !== undefined && (
+                  <span className="sr-prescription__days">
+                    {rx.daysRemaining > 0 ? `${rx.daysRemaining} dias` : 'Hoje'}
+                  </span>
+                )}
+              </div>
+            )
+          })}
         </div>
       ) : (
-        <p className="empty-state">Todas as prescrições em dia</p>
+        <p className="sr-consultation__empty">Todas as prescrições em dia</p>
       )}
     </motion.section>
   )
 }
 
 /**
- * Progresso de titulação.
+ * Titulações.
  */
 export function ConsultationTitrationsSection({ activeTitrations }) {
   return (
-    <motion.section className="consultation-section" variants={itemVariants}>
-      <h2 className="section-title">🎯 Progresso de Titulação</h2>
+    <motion.section
+      className="sr-consultation__section sr-consultation__section--full"
+      variants={itemVariants}
+    >
+      <h2 className="sr-consultation__section-title">
+        <Target size={20} /> Progresso de Titulação
+      </h2>
       {activeTitrations?.length > 0 ? (
-        <div className="titrations-list">
-          {activeTitrations.map((titration) => (
-            <div key={titration.protocolId} className="titration-card">
-              <div className="titration-header">
-                <strong>{titration.medicineName}</strong>
-                <span className="titration-dosage">
-                  {titration.currentDosage}
-                  mg
-                </span>
+        <div className="sr-consultation__titrations">
+          {activeTitrations.map((t) => (
+            <div key={t.protocolId} className="sr-titration-card">
+              <div className="sr-titration-card__header">
+                <strong className="sr-titration-card__name">{t.medicineName}</strong>
+                <span className="sr-titration-card__dosage">{t.currentDosage}mg</span>
               </div>
-              <div className="titration-progress">
-                <div className="progress-bar-container">
-                  <motion.div
-                    className="progress-bar"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${titration.progressPercent}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                  />
-                </div>
-                <span className="progress-text">
-                  {titration.progressPercent}% — Etapa {titration.currentStep}/
-                  {titration.totalSteps}
-                </span>
+              <div className="sr-titration-card__progress-bar">
+                <motion.div
+                  className="sr-titration-card__progress-fill"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${t.progressPercent}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                />
               </div>
-              {titration.stageNote && <p className="titration-note">{titration.stageNote}</p>}
-              {titration.isTransitionDue && (
-                <span className="transition-badge">🔔 Transição pendente</span>
+              <span className="sr-titration-card__progress-text">
+                {t.progressPercent}% — Etapa {t.currentStep}/{t.totalSteps}
+              </span>
+              {t.stageNote && <p className="sr-titration-card__note">{t.stageNote}</p>}
+              {t.isTransitionDue && (
+                <span className="sr-titration-card__transition">
+                  <Bell size={14} /> Transição pendente
+                </span>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <p className="empty-state">Nenhuma titulação ativa</p>
+        <p className="sr-consultation__empty">Nenhuma titulação ativa</p>
       )}
     </motion.section>
   )

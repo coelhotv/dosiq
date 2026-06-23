@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { AlertTriangle, AlertCircle, Info, X } from 'lucide-react'
-import './SmartAlertsRedesign.css'
+import './SmartAlerts.css'
 
 /**
- * SmartAlertsRedesign — Componente redesenhado de alertas inteligentes (Wave 15.1)
+ * SmartAlerts — Componente redesenhado de alertas inteligentes (Wave 15.1)
  * Exibe alertas com severidade (critical/warning/info) em ordem de prioridade
  * Suporta modo simple (max 2 visíveis) e complex (max 5 visíveis)
  *
@@ -15,7 +15,7 @@ import './SmartAlertsRedesign.css'
  */
 const severityOrder = { critical: 0, warning: 1, info: 2 }
 
-export default function SmartAlertsRedesign({
+export default function SmartAlerts({
   alerts = [],
   onAction,
   isComplex = false,

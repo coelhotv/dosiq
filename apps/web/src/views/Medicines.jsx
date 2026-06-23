@@ -2,12 +2,12 @@ import { useState, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { medicineService } from '@shared/services'
 import Loading from '@shared/components/ui/Loading'
-import MedicineListHeader from '@medications/components/redesign/medicines/components/MedicineListHeader'
-import MedicineFilterChips from '@medications/components/redesign/medicines/components/MedicineFilterChips'
-import MedicineFeedbackBanners from '@medications/components/redesign/medicines/components/MedicineFeedbackBanners'
-import MedicineGrid from '@medications/components/redesign/medicines/components/MedicineGrid'
-import MedicineModals from '@medications/components/redesign/medicines/components/MedicineModals'
-import '@medications/components/redesign/Medicines.css'
+import MedicineListHeader from '@medications/components/medicines/components/MedicineListHeader'
+import MedicineFilterChips from '@medications/components/medicines/components/MedicineFilterChips'
+import MedicineFeedbackBanners from '@medications/components/medicines/components/MedicineFeedbackBanners'
+import MedicineGrid from '@medications/components/medicines/components/MedicineGrid'
+import MedicineModals from '@medications/components/medicines/components/MedicineModals'
+import '@medications/components/Medicines.css'
 
 export default function Medicines({ onNavigateToProtocol, onBack }) {
   const {

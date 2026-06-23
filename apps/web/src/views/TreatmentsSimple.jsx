@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMotion } from '@shared/hooks/useMotion'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
-import ProtocolRow from '@protocols/components/redesign/ProtocolRow'
+import ProtocolRow from '@protocols/components/ProtocolRow'
 import ProtocolRiskBadge from '@adherence/components/ProtocolRiskBadge'
 import { calculateProtocolRisk } from '@adherence/services/protocolRiskService'
 

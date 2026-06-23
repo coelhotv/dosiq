@@ -1,5 +1,5 @@
 /**
- * StockCardRedesign — Card de medicamento para o redesign do Estoque (Wave 8)
+ * StockCard — Card de medicamento (Wave 8)
  * Dois modos: simples (Dona Maria) e complexo (Carlos).
  *
  * Simple: nome + dosagem pill + barra + dias + "última compra" + CTA (urgente/atencao apenas)
@@ -19,7 +19,7 @@ import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import { formatStockQuantity, formatConcentration, stockUnitLabel, formatStockApplications, INJECTION_CONTAINER_SINGULAR } from '@dosiq/core'
-import './StockCardRedesign.css'
+import './StockCard.css'
 
 /**
  * Rendimento de estoque em APLICAÇÕES p/ injetáveis dosados em mg (012 Fase B2,
@@ -214,7 +214,7 @@ function StockCardPrediction({ prediction }) {
   )
 }
 
-export default function StockCardRedesign({ item, isComplex, onAddStock, prediction, index = 0 }) {
+export default function StockCard({ item, isComplex, onAddStock, prediction, index = 0 }) {
   const motionConfig = useMotion()
   const {
     medicine,

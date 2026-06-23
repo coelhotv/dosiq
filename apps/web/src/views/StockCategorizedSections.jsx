@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import StockCardRedesign from '@stock/components/redesign/StockCardRedesign'
+import StockCard from '@stock/components/StockCard'
 
 export default function StockCategorizedSections({ 
   criticalItems, 
@@ -24,7 +24,7 @@ export default function StockCategorizedSections({
           </h2>
           <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
             {criticalItems.map((item, index) => (
-              <StockCardRedesign
+              <StockCard
                 key={item.medicine.id}
                 item={item}
                 isComplex={false}
@@ -43,7 +43,7 @@ export default function StockCategorizedSections({
           </h2>
           <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
             {warningItems.map((item, index) => (
-              <StockCardRedesign
+              <StockCard
                 key={item.medicine.id}
                 item={item}
                 isComplex={false}
@@ -62,7 +62,7 @@ export default function StockCategorizedSections({
           </h2>
           <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
             {okItems.map((item, index) => (
-              <StockCardRedesign
+              <StockCard
                 key={item.medicine.id}
                 item={item}
                 isComplex={false}
@@ -81,7 +81,7 @@ export default function StockCategorizedSections({
           </h2>
           <motion.div variants={motionConfig.cascade.item} className="stock-redesign__section">
             {orphanItems.map((item, index) => (
-              <StockCardRedesign
+              <StockCard
                 key={item.medicine.id}
                 item={item}
                 isComplex={false}
