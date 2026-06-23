@@ -21,6 +21,13 @@ describe('derivePrescriptionStatus', () => {
     ).toBe(PRESCRIPTION_STATUS.VENCIDA)
   })
 
+  it('returns VENCENDO (not VENCIDA) when end_date is today, even at noon (calendar-date compare)', () => {
+    // NOW = 12:00 local do dia 23; prescrição vence hoje → ainda válida (vencendo), não vencida.
+    expect(
+      derivePrescriptionStatus({ end_date: '2026-06-23' }, NOW)
+    ).toBe(PRESCRIPTION_STATUS.VENCENDO)
+  })
+
   it('returns VENCENDO when end_date is within 14 days', () => {
     expect(
       derivePrescriptionStatus({ end_date: '2026-07-01' }, NOW)
