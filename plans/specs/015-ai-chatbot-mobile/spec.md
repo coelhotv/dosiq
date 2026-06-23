@@ -28,7 +28,11 @@ Dois problemas se somam, e esta spec ataca os três eixos de uma vez (daí Tier 
    "dislipidemia"). Sem esse agrupamento, o bot infere a "intenção" por classe terapêutica e erra o
    enquadramento (output real do PO: listou 10 meds soltos ao perguntar "quais sintomas o conjunto
    trata", em vez de responder pelos planos nomeados).
-3. **Mobile sem chat.** O app nativo não tem o chatbot (gap 🔴 no MASTER_PLAN, Fase 6).
+3. **Mobile sem chat — zero hoje.** O app nativo **não tem nada** do chatbot (gap 🔴 total no
+   MASTER_PLAN). Não é "port de UI": é implementação **end-to-end na superfície mobile** — tela,
+   `chatbotService` nativo, persistência AsyncStorage, wiring de contexto via core e chamada ao
+   serverless. O único reuso é o `api/chatbot.js` (Groq/Vercel, já em prod) e o builder do core
+   (criado na Onda 1). Tudo o mais é novo no mobile.
 
 A solução segue a filosofia **Service-First** do MASTER_PLAN: centralizar o builder em `@dosiq/core`
 (fonte única), melhorar o contexto **uma vez** lá, e fazer web/Telegram/mobile **consumirem** o core.
@@ -78,11 +82,13 @@ guard:  full — validate:agent (web) verde + testes do bot verdes; CON-028 honr
 status: [ ] open
 ```
 
-### User Story 3 — Chat nativo no mobile com paridade de contexto (Priority: P1)
-**Why**: fecha o gap de paridade (MASTER_PLAN); o mobile herda o contexto melhorado de graça por
-consumir o core.
-**Independent Test**: abrir o chat no app nativo, perguntar "qual meu próximo remédio?"; o app monta
-o contexto via core (fuso GMT-3), envia ao `api/chatbot.js` e renderiza a resposta em markdown.
+### User Story 3 — Chat nativo no mobile, end-to-end (Priority: P1)
+**Why**: fecha o gap de paridade (MASTER_PLAN); o chat **não existe no mobile hoje** — esta onda o
+constrói inteiro nessa superfície (UI + service + histórico + wiring), herdando o contexto melhorado
+de graça por consumir o core.
+**Independent Test**: abrir o chat no app nativo (tela inexistente hoje), perguntar "qual meu próximo
+remédio?"; o app monta o contexto via core (fuso GMT-3), envia ao `api/chatbot.js` e renderiza a
+resposta em markdown.
 
 **Acceptance Scenarios**:
 1. Given o chat nativo aberto, When o paciente envia uma mensagem, Then o app monta o `patientContext`
@@ -133,16 +139,20 @@ status: [ ] open
 
 - **FR-001 (core):** Criar builder canônico de contexto do paciente em `@dosiq/core` (ex.
   `packages/core/src/chatbot/`), consolidando `buildPatientContext` (web) + `buildServerContext`
-  (server) numa única função pura. Entrada: dados já normalizados (medicines, protocols, logs,
-  stockSummary, stats, doseInstances, **treatmentPlans**).
+  (server) numa única **função pura, agnóstica de runtime**. Entrada: dados já buscados/normalizados
+  (medicines, protocols, logs, stockSummary, stats, doseInstances, **treatmentPlans**). O builder NÃO
+  busca dados nem conhece browser/app/server — quem busca é o runtime e injeta. (Por isso a dicotomia
+  "client vs server" não se aplica ao builder: ela é só sobre ONDE o runtime roda o fetch.)
 - **FR-002 (contexto):** Agrupar medicamentos por `treatment_plans.name`; protocolos sem plano →
   grupo "Sem plano". Manter os demais blocos (alertas de estoque, doses pendentes/atrasadas).
 - **FR-003 (web G3):** `chatbotService.js` (web) passa a importar o builder do core; `contextBuilder.js`
   local removido; passar `treatmentPlans` no fetch.
 - **FR-004 (server G3):** `chatbotServerService.js` (Telegram) passa a usar o builder do core;
   `buildServerContext` local removido (mantém só o fetch server-side dos dados); passar planos.
-- **FR-005 (mobile G1):** Tela de chat nativa (`FlatList` invertido, `TextInput`, chips "digitando")
-  + `chatbotService` mobile que monta contexto via core e chama `api/chatbot.js`.
+- **FR-005 (mobile G1 — greenfield e2e):** Implementar a superfície de chat inteira no mobile (não
+  existe hoje): tela nativa (`FlatList` invertido, `TextInput`, chips "digitando") + `chatbotService`
+  mobile (monta contexto via core, chama `api/chatbot.js`) + wiring de navegação/entry-point. Reusa
+  apenas `api/chatbot.js` (prod) e o builder do core.
 - **FR-006 (mobile):** Render markdown nativo com paridade ao web #681 (negrito, listas `-`/`*`/`+`,
   itálico, quebras) + disclaimer clínico obrigatório.
 - **FR-007 (mobile):** Histórico local em AsyncStorage, teto `CHATBOT_MAX_HISTORY` (20).
@@ -194,16 +204,24 @@ Onda 3 (PR-3) — Paridade & polish
 
 ## Assumptions / Open Questions
 
-- **[ASSUMPTION]** Mobile espelha o web: monta contexto **client-side** e chama o serverless
-  `api/chatbot.js` (Groq via Vercel) — NÃO cria um 3º builder server-side. (Confirmado pela arquitetura
-  atual: web é client-side; api só monta systemPrompt + chama Groq.)
+- **[ASSUMPTION] Onde cada runtime monta o contexto** (o builder é o mesmo do core nos 3 — só muda
+  ONDE roda o fetch+injeção):
+  - **Web/PWA:** no browser (client) — dados já carregados → injeta no builder → POST `api/chatbot.js`.
+  - **Mobile:** no app nativo (client) — espelha o web; busca dados no device → injeta → POST
+    `api/chatbot.js`. **NÃO** cria builder server-side novo.
+  - **Telegram:** **não tem client — o bot server É o runtime**; já busca os dados server-side e
+    chamará o builder do core ali mesmo. (Foi a imprecisão da versão anterior: falar em "client" do
+    Telegram não faz sentido — o server é o runtime.)
+  - **Invariante:** nenhuma superfície cria um 2º builder; todas chamam a função pura do core. A
+    construção do systemPrompt + safetyGuard continua server-side (AP-237), independente disso.
 - **[ASSUMPTION]** `treatment_plans` já expõe `name` consultável por `treatment_plan_id` via
   `treatmentPlanService`; o fetch de cada superfície passa a incluí-lo (additivo, sem migração DB).
 - **[NEEDS CLARIFICATION]** Localização canônica no core: `packages/core/src/chatbot/` (novo módulo)
   vs `packages/core/src/utils/` — resolver no eng-review/planning (afeta CON-028 e o index do core).
 - **[NEEDS CLARIFICATION]** O builder do core deve receber dados **já buscados** (puro, sem Supabase)
-  ou um adapter de fetch? Preferência: **puro** (cada plataforma busca e injeta — igual hoje), p/
-  manter o core sem dependência de plataforma (alinha ADR-045/repos). Confirmar no planning.
+  ou um adapter de fetch? Preferência: **puro** — cada runtime (browser, app, bot server) busca no
+  seu ambiente e injeta os dados, igual hoje; o core fica sem dependência de plataforma (alinha
+  ADR-045/repos). Confirmar no planning.
 
 ---
 
