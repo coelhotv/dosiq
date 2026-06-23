@@ -81,6 +81,18 @@ status: [ ] open
 
 ---
 
+## Ceremony: eng-review (RC3) — 2026-06-22
+
+**Achado 1 (HIGH — DRY/triplicação com mobile):** a lógica on-demand já existe em `apps/mobile/src/shared/hooks/useMedicineDatabase.js` (`fetchJson` timeout, `shouldRefreshCache` manifest+TTL, `resolveDataUrl`, `normalizeText`, `matchesPrefix`). `normalizeText` já triplicado (mobile + 2 web services). FR-006 só deduplica DENTRO da web. O núcleo (manifest/TTL/versão/normalize/match) é platform-agnostic; só o storage difere (AsyncStorage vs Cache Storage). → **decisão necessária** (ver Open Questions Q1): hoist p/ `@dosiq/core` com storage adapter (web consome agora, mobile migra em follow-up) vs aceitar duplicação consciente.
+
+**Achado 2 (MEDIUM — behavioral):** `caches` é undefined em jsdom/vitest e contexto não-seguro. PO-1/PO-3 quebram se chamarem `caches` cru. → **FR-008** (guard `typeof caches` + fallback in-memory).
+
+**Achado 3 (MEDIUM — Workbox):** sem `runtimeCaching` p/ storage hoje. Remover import tira JSON do precache (bom). Confirmar `globPatterns` não precacheia JSON pós-remoção + fetch cross-origin não interceptada → **FR-009**.
+
+**Achado 4 (LOW):** `data/manifest.json` local (397B) — garantir que `loadDatabase` não dependa do manifest local pós-mudança (busca o remoto).
+
+**Guard override (RC3): light → MEDIUM-UP.** POs dos 2 services com fetch mockado + cache + offline + timeout; build sem JSON; grep import zero. Não FULL (sem colisão clínica). Razão: cross-origin + cache + offline + PWA; autocomplete alimenta cadastro de medicamento.
+
 ## Functional Requirements
 
 - **FR-001** — `loadDatabase()` de `medicineDatabaseService` e `laboratoryDatabaseService` DEVEM buscar do Storage público derivado de `VITE_SUPABASE_URL` + `/storage/v1/object/public/dosiq-assets/anvisa/v1`, não mais via `import` do JSON.
@@ -89,6 +101,8 @@ status: [ ] open
 - **FR-004** — A API pública dos services permanece inalterada (assinaturas/contratos atuais; CON-012 não-breaking).
 - **FR-005** — Remover o `import` dos JSONs do runtime e a entrada `manualChunks` de `medicineDatabase` em `vite.config.js`.
 - **FR-006** — Lógica de cache/fetch compartilhada entre os dois services (sem duplicar manifest/TTL/timeout), parametrizada por chave de arquivo (`medicineDatabase` | `laboratoryDatabase`).
+- **FR-008** (RC3) — Service guarda `typeof caches !== 'undefined'`; quando ausente (jsdom/teste/contexto não-seguro) usa fallback in-memory (módulo-level `_database`), sem throw. Garante PO-1/PO-3 verdes em vitest.
+- **FR-009** (RC3) — Pós-remoção do import, confirmar que Workbox `globPatterns` não tenta precachear o JSON e que a fetch cross-origin ao Supabase Storage não é interceptada por `runtimeCaching` (nenhuma regra hoje — manter assim ou allowlist explícita).
 - **FR-007** — Atualizar [GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md](../../../docs/operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md): documentar que a **web também** passa a consumir o bucket on-demand (não só mobile); que os JSONs do repo (`apps/web/src/features/medications/data/*`) são a **fonte de upload** e deixaram de ser empacotados no build PWA; e que atualizar a base em `anvisa/v1/` (substituir arquivos + bump `manifest.version`) reflete em web (Cache Storage, TTL 7d) e mobile sem redeploy. Corrigir caminho legado `git-icloud` → `git` na seção 3.3.
 
 ## Success Criteria
@@ -106,4 +120,5 @@ status: [ ] open
 - **A2** — Os arquivos JSON **permanecem no repo** como fonte de upload ao bucket (confirmado: o [guia de operações](../../../docs/operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md) referencia os JSONs locais como origem do upload, processados via `scripts/process-anvisa.js`), mas deixam de ser importados em runtime (logo não entram no bundle). Resolve o antigo `[NEEDS CLARIFICATION]` sobre manter-vs-remover.
 - **A3** — Bucket é público (sem auth header — contrasta R-084, que vale para storage privado). Confirmado pelo guia: `dosiq-assets` é bucket público com leitura anônima; objeto `anvisa/v1/*` acessível sem auth (mesmo bucket do mobile).
 - **A4** — Hoje os JSONs vivem em `apps/web/src/features/medications/data/`. Remover só o `import` impede o bundling, mas deixá-los dentro de `apps/web/src/` mantém o peso no workspace e arrisca re-import acidental no futuro. Devem ser **realocados para fora de `apps/web/`** (fonte de upload, não código de app).
-- **[NEEDS CLARIFICATION: destino dos JSONs ao sair de `apps/web/src/features/medications/data/`. Candidatos: (a) `data/anvisa/` na raiz do repo; (b) junto ao processador em `scripts/anvisa/`; (c) `packages/shared-data/anvisa/`. Definir o destino determina o caminho de upload no guia (FR-007), os paths em `scripts/process-anvisa.js`, e qualquer referência remanescente.]**
+- **[NEEDS CLARIFICATION 1 (destino dos JSONs)]** Ao sair de `apps/web/src/features/medications/data/`. Writer real = `scripts/process-anvisa.js` (output) + import web + manifest local; **mobile NÃO importa** (busca do bucket). Candidatos: (a) `data/anvisa/` na raiz [**RC3 recomenda** — fora do grafo de build, co-locado com upload]; (b) `scripts/anvisa/`; (c) `packages/shared-data/anvisa/` [risco: re-import acidental volta a empacotar]. Define caminho de upload no guia (FR-007) + paths em `process-anvisa.js`. Operador decide.
+- **[NEEDS CLARIFICATION 2 (RC3 — DRY com mobile)]** Lógica on-demand está triplicada (mobile hook + 2 web services). Opções: **(A)** hoist núcleo platform-agnostic (manifest/TTL/versão/normalize/match) p/ `@dosiq/core` com storage adapter — web consome em 037, mobile migra em follow-up (não expande risco de 037); **(B)** web reimplementa local (FR-006), aceitando duplicação web↔mobile. RC3 recomenda **(A)** (fonte única, mata triplicação), mas (B) é menor escopo. Operador decide — muda arquitetura do FR-006.
