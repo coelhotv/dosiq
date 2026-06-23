@@ -37,7 +37,7 @@ const STATUS_LABELS = {
   finalizada: 'Finalizada',
 }
 
-export default function PrescriptionTimeline({ prescriptions, isComplex }) {
+export default function PrescriptionTimeline({ prescriptions = [], isComplex }) {
   const timedPrescriptions = prescriptions.filter((p) => p.endDate != null && !p.isContinuous)
   if (timedPrescriptions.length === 0) return null
 
@@ -53,8 +53,10 @@ export default function PrescriptionTimeline({ prescriptions, isComplex }) {
             const count = timedPrescriptions.filter((p) => p.status === s).length
             return count > 0 ? (
               <span key={s} className={`prx-status prx-status--${s}`}>
-                {count} {STATUS_LABELS[s].toLowerCase()}
-                {count > 1 ? 's' : ''}
+                {count}{' '}
+                {s === 'vencendo'
+                  ? 'vencendo'
+                  : `${STATUS_LABELS[s].toLowerCase()}${count > 1 ? 's' : ''}`}
               </span>
             ) : null
           })}
