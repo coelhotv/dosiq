@@ -20,15 +20,25 @@ function renderInline(text) {
 
 /**
  * Renderiza conteúdo com suporte básico a markdown inline:
- * **negrito**, _itálico_, listas com `-`/`*` e quebras de linha.
+ * **negrito**, _itálico_, listas com `-`/`*`/`+` (com sub-nível) e quebras de linha.
+ *
+ * Markers de lista: `-`/`*` = nível 0 (`•`); `+` = sub-item (`◦` indentado).
+ * O Groq emite `*` para categorias e `+` para itens aninhados.
  */
 function renderMessageContent(content) {
   return content.split('\n').map((line, lineIdx) => {
-    const bullet = line.match(/^\s*[-*]\s+(.*)$/)
+    const bullet = line.match(/^(\s*)([-*+])\s+(.*)$/)
     return (
       <span key={lineIdx}>
         {lineIdx > 0 && <br />}
-        {bullet ? <span>{'• '}{renderInline(bullet[1])}</span> : renderInline(line)}
+        {bullet ? (
+          <span style={{ paddingLeft: bullet[2] === '+' ? '1.25em' : 0 }}>
+            {bullet[2] === '+' ? '◦ ' : '• '}
+            {renderInline(bullet[3])}
+          </span>
+        ) : (
+          renderInline(line)
+        )}
       </span>
     )
   })
