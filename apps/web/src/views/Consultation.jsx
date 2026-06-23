@@ -1,7 +1,7 @@
 /**
- * ConsultationRedesign — Container view do Modo Consulta (Santuário Terapêutico).
+ * Consultation — Container view do Modo Consulta (Santuário Terapêutico).
  * Reutiliza 100% da lógica de dados do Consultation.jsx original.
- * Apenas o presenter muda (ConsultationViewRedesign).
+ * Apenas o presenter muda (ConsultationView).
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
@@ -9,7 +9,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { getCurrentUser } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
-import ConsultationViewRedesign from '@features/consultation/components/redesign/ConsultationViewRedesign'
+import ConsultationView from '@features/consultation/components/ConsultationView'
 import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
@@ -190,7 +190,7 @@ export default function Consultation({ onBack }) {
   }
 
   return (
-    <ConsultationViewRedesign
+    <ConsultationView
       data={consultationData}
       onGeneratePDF={handleGeneratePDF}
       onShare={handleShare}

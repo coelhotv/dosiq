@@ -3,13 +3,13 @@ import { motion } from 'framer-motion'
 import { parseISO } from '@utils/dateUtils'
 import { ArrowLeft, FileText, Share2 } from 'lucide-react'
 import {
-  RedesignMedicinesSection,
-  RedesignStockSection,
-  RedesignPrescriptionsSection,
-  RedesignTitrationsSection,
-} from './ConsultationRedesignSections'
+  ConsultationMedicinesSection,
+  ConsultationStockSection,
+  ConsultationPrescriptionsSection,
+  ConsultationTitrationsSection,
+} from './ConsultationSections'
 import ConsultationAdherenceSection from './ConsultationAdherenceSection'
-import './ConsultationViewRedesign.css'
+import './ConsultationView.css'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -20,7 +20,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 }
 
-export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare, onBack }) {
+export default function ConsultationView({ data, onGeneratePDF, onShare, onBack }) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
 
@@ -55,11 +55,11 @@ export default function ConsultationViewRedesign({ data, onGeneratePDF, onShare,
       </motion.header>
 
       <main className="sr-consultation__content">
-        <RedesignMedicinesSection activeMedicines={activeMedicines} />
+        <ConsultationMedicinesSection activeMedicines={activeMedicines} />
         <ConsultationAdherenceSection adherenceSummary={adherenceSummary} />
-        <RedesignStockSection stockAlerts={stockAlerts} />
-        <RedesignPrescriptionsSection prescriptionStatus={prescriptionStatus} />
-        <RedesignTitrationsSection activeTitrations={activeTitrations} />
+        <ConsultationStockSection stockAlerts={stockAlerts} />
+        <ConsultationPrescriptionsSection prescriptionStatus={prescriptionStatus} />
+        <ConsultationTitrationsSection activeTitrations={activeTitrations} />
       </main>
 
       <motion.section className="sr-consultation__section sr-consultation__section--actions" variants={itemVariants}>

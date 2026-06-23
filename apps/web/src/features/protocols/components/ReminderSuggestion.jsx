@@ -1,4 +1,4 @@
-import './ReminderSuggestionRedesign.css'
+import './ReminderSuggestion.css'
 import { dismissSuggestion } from '@features/protocols/services/reminderOptimizerService'
 import { BellRing } from 'lucide-react'
 
@@ -13,7 +13,7 @@ import { BellRing } from 'lucide-react'
  *   - onAccept: (suggestedTime: string) => void
  *   - onDismiss: () => void
  */
-export default function ReminderSuggestionRedesign({
+export default function ReminderSuggestion({
   suggestion,
   protocolId,
   protocolName,

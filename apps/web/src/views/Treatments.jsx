@@ -2,12 +2,12 @@
  * TreatmentsRedesign — Orquestração da view de tratamentos redesenhada
  */
 import { useTreatmentsState } from '@protocols/hooks/useTreatmentsState'
-import TreatmentTabBar from '@protocols/components/redesign/TreatmentTabBar'
-import AnvisaSearchBar from '@protocols/components/redesign/AnvisaSearchBar'
+import TreatmentTabBar from '@protocols/components/TreatmentTabBar'
+import AnvisaSearchBar from '@protocols/components/AnvisaSearchBar'
 import TreatmentsSimple from './TreatmentsSimple'
 import TreatmentsComplex from './TreatmentsComplex'
 import Loading from '@shared/components/ui/Loading'
-import NewTreatmentDropdown from '@protocols/components/redesign/NewTreatmentDropdown'
+import NewTreatmentDropdown from '@protocols/components/NewTreatmentDropdown'
 import TreatmentModals from './TreatmentModals'
 import { treatmentPlanService } from '@shared/services'
 import './Treatments.css'

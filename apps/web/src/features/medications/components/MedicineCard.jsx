@@ -9,9 +9,9 @@ import {
 } from 'lucide-react'
 import { PRESENTATION_LABELS, formatMedicineConcentration } from '@dosiq/core'
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
-import './MedicineCardRedesign.css'
+import './MedicineCard.css'
 
-export default function MedicineCardRedesign({ medicine, onEdit, onDelete, hasDependencies }) {
+export default function MedicineCard({ medicine, onEdit, onDelete, hasDependencies }) {
   const isSupplement = medicine.type === 'suplemento'
 
   return (

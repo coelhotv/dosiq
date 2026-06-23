@@ -136,7 +136,7 @@
 }
 
 /* ============================================
-   REDESIGN: SANTUÁRIO TERAPÊUTICO
+   SANTUÁRIO TERAPÊUTICO
    ============================================ */
 
 .medicine-form {
@@ -152,5 +152,5 @@
 }
 
 /* Os demais estilos (form h3, form-group, form-actions, error-*, success-*,
-   autocomplete-badge, field-hint, required) são herdados de components.redesign.css
+   autocomplete-badge, field-hint, required) são herdados dos componentes globais
    via Sprint 11.2 — NÃO duplicar aqui. */

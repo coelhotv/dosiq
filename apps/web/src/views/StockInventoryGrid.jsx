@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import StockCardRedesign from '@stock/components/redesign/StockCardRedesign'
+import StockCard from '@stock/components/StockCard'
 
 export default function StockInventoryGrid({ 
   items, 
@@ -19,7 +19,7 @@ export default function StockInventoryGrid({
         animate="visible"
       >
         {items.map((item, index) => (
-          <StockCardRedesign
+          <StockCard
             key={item.medicine.id}
             item={item}
             isComplex={true}

@@ -1,5 +1,5 @@
 import EmptyState from '@shared/components/ui/EmptyState'
-import MedicineCardRedesign from '@medications/components/redesign/MedicineCardRedesign'
+import MedicineCard from '@medications/components/MedicineCard'
 
 export default function MedicineGrid({ 
   medicines, 
@@ -24,7 +24,7 @@ export default function MedicineGrid({
   return (
     <div className="sr-medicines__grid">
       {filteredMedicines.map((medicine) => (
-        <MedicineCardRedesign
+        <MedicineCard
           key={medicine.id}
           medicine={medicine}
           onEdit={onEdit}
