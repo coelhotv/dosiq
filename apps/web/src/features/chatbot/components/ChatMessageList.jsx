@@ -3,20 +3,32 @@
  */
 
 /**
- * Renderiza conteúdo com suporte básico a markdown inline.
+ * Renderiza spans inline de uma linha: **bold** e _italic_.
+ */
+function renderInline(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('_') && part.endsWith('_') && part.length > 2) {
+      return <em key={i}>{part.slice(1, -1)}</em>
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
+/**
+ * Renderiza conteúdo com suporte básico a markdown inline:
+ * **negrito**, _itálico_, listas com `-`/`*` e quebras de linha.
  */
 function renderMessageContent(content) {
   return content.split('\n').map((line, lineIdx) => {
-    const parts = line.split(/(_[^_]+_)/g)
+    const bullet = line.match(/^\s*[-*]\s+(.*)$/)
     return (
       <span key={lineIdx}>
         {lineIdx > 0 && <br />}
-        {parts.map((part, i) => {
-          if (part.startsWith('_') && part.endsWith('_') && part.length > 2) {
-            return <em key={i}>{part.slice(1, -1)}</em>
-          }
-          return <span key={i}>{part}</span>
-        })}
+        {bullet ? <span>{'• '}{renderInline(bullet[1])}</span> : renderInline(line)}
       </span>
     )
   })
