@@ -3,20 +3,42 @@
  */
 
 /**
- * Renderiza conteúdo com suporte básico a markdown inline.
+ * Renderiza spans inline de uma linha: **bold** e _italic_.
+ */
+function renderInline(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|_[^_]+_)/g)
+  return parts.filter(Boolean).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('_') && part.endsWith('_') && part.length > 2) {
+      return <em key={i}>{part.slice(1, -1)}</em>
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
+/**
+ * Renderiza conteúdo com suporte básico a markdown inline:
+ * **negrito**, _itálico_, listas com `-`/`*`/`+` (com sub-nível) e quebras de linha.
+ *
+ * Markers de lista: `-`/`*` = nível 0 (`•`); `+` = sub-item (`◦` indentado).
+ * O Groq emite `*` para categorias e `+` para itens aninhados.
  */
 function renderMessageContent(content) {
   return content.split('\n').map((line, lineIdx) => {
-    const parts = line.split(/(_[^_]+_)/g)
+    const bullet = line.match(/^(\s*)([-*+])\s+(.*)$/)
     return (
       <span key={lineIdx}>
         {lineIdx > 0 && <br />}
-        {parts.map((part, i) => {
-          if (part.startsWith('_') && part.endsWith('_') && part.length > 2) {
-            return <em key={i}>{part.slice(1, -1)}</em>
-          }
-          return <span key={i}>{part}</span>
-        })}
+        {bullet ? (
+          <span style={{ paddingLeft: bullet[2] === '+' ? '1.25em' : 0 }}>
+            {bullet[2] === '+' ? '◦ ' : '• '}
+            {renderInline(bullet[3])}
+          </span>
+        ) : (
+          renderInline(line)
+        )}
       </span>
     )
   })
