@@ -22,7 +22,7 @@ export default defineConfig({
       '@calendar': path.resolve(__dirname, './src/features/calendar'),
       '@emergency': path.resolve(__dirname, './src/features/emergency'),
       '@prescriptions': path.resolve(__dirname, './src/features/prescriptions'),
-      '@settings': path.resolve(__dirname, './src/views/redesign/settings'),
+      '@settings': path.resolve(__dirname, './src/views/settings'),
       '@schemas': path.resolve(__dirname, './src/schemas'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@design-tokens': path.resolve(__dirname, '../../packages/design-tokens/src'),
@@ -43,12 +43,12 @@ export default defineConfig({
 
           // Feature chunks — carregados apenas quando a view é acessada
           'feature-history': [
-            './src/views/redesign/HealthHistory.jsx',
+            './src/views/HealthHistory.jsx',
             './src/features/adherence/components/AdherenceHeatmap.jsx',
             './src/features/adherence/services/adherencePatternService.js',
           ],
-          'feature-stock': ['./src/views/redesign/Stock.jsx'],
-          'feature-landing': ['./src/views/Landing.jsx'],
+          'feature-stock': ['./src/views/Stock.jsx'],
+          'feature-landing': ['./src/views/landing/Landing.jsx'],
 
           // Base ANVISA — 819KB, carregada apenas em Medicines/autocomplete
           'feature-medicines-db': [

@@ -1,4 +1,4 @@
-// src/views/redesign/history/eventCardRegistry.js
+// src/views/history/eventCardRegistry.js
 // PR-F4.2/S4.3 — Registry de renderizadores da timeline, indexado por `event.type` (FP-3/ADR-050).
 // Adicionar um tipo futuro (`biomarker`, `note`) = registrar um card aqui, SEM tocar a view
 // nem o painel. O builder/adapter no core já é agnóstico (R-252).

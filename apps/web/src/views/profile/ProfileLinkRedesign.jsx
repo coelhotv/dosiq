@@ -1,4 +1,4 @@
-// src/views/redesign/profile/ProfileLinkRedesign.jsx
+// src/views/profile/ProfileLinkRedesign.jsx
 import { ChevronRight } from 'lucide-react'
 import './ProfileRedesign.css'
 

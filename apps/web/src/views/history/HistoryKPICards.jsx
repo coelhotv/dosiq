@@ -1,4 +1,4 @@
-// src/views/redesign/history/HistoryKPICards.jsx
+// src/views/history/HistoryKPICards.jsx
 // S10C.2 — Wave 10C: KPI cards do topo do Histórico de Doses
 
 /**

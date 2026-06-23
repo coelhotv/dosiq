@@ -1,4 +1,4 @@
-// src/views/redesign/profile/ProfileHeaderRedesign.jsx
+// src/views/profile/ProfileHeaderRedesign.jsx
 import './ProfileRedesign.css'
 
 /**

@@ -43,11 +43,11 @@ vi.mock('@shared/components/ui/Calendar', () => ({
   default: () => <div data-testid="calendar" />,
 }))
 
-vi.mock('@/views/redesign/history/HistoryKPICards', () => ({
+vi.mock('@/views/history/HistoryKPICards', () => ({
   default: ({ adherenceScore }) => <div data-testid="kpi-cards">{adherenceScore}%</div>,
 }))
 
-vi.mock('@/views/redesign/history/HistoryDayPanel', () => ({
+vi.mock('@/views/history/HistoryDayPanel', () => ({
   default: () => <div data-testid="day-panel" />,
 }))
 
@@ -59,7 +59,7 @@ vi.mock('@shared/components/log/LogForm', () => ({
   default: () => <div data-testid="log-form" />,
 }))
 
-import HealthHistory from '@/views/redesign/HealthHistory'
+import HealthHistory from '@/views/HealthHistory'
 
 describe('HealthHistory', () => {
   beforeEach(() => {

@@ -81,7 +81,7 @@ vi.mock('qrcode', () => ({
   },
 }))
 
-import Profile from '@/views/redesign/Profile'
+import Profile from '@/views/Profile'
 
 describe('Profile', () => {
   beforeEach(() => {
