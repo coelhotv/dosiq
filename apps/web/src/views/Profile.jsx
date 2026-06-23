@@ -1,5 +1,5 @@
 /**
- * ProfileRedesign — Hub centralizado do Perfil
+ * Profile — Hub centralizado do Perfil
  */
 import { useState } from 'react'
 import { Settings, MapPinHouse, BriefcaseMedical } from 'lucide-react'
@@ -9,7 +9,7 @@ import EmergencyCard from './profile/EmergencyCard'
 import ProfileTools from './profile/ProfileTools'
 import ProfileModals from './profile/ProfileModals'
 import TzNudge from './profile/TzNudge'
-import './profile/ProfileRedesign.css'
+import './profile/Profile.css'
 
 export default function Profile({ onNavigate }) {
   const {

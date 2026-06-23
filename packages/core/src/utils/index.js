@@ -129,6 +129,13 @@ export {
   resolveTreatmentStatus,
 } from './treatmentStatus.js'
 
+// Prescription vigência status resolver (038 Slice C — paridade web↔mobile)
+export {
+  PRESCRIPTION_STATUS,
+  PRESCRIPTION_EXPIRY_WARNING_DAYS,
+  derivePrescriptionStatus,
+} from './prescriptionStatus.js'
+
 // Stock helpers (Fase 3 — paridade web↔mobile)
 // REUSA calculateDailyIntake + calculateDaysRemaining de adherenceLogic.js
 // (exportados acima) — não duplicar derivações de consumo/dias-restantes.

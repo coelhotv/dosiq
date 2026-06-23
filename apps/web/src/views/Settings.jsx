@@ -7,9 +7,9 @@ import AccountSection from '@settings/sections/AccountSection'
 import AdminSection from '@settings/sections/AdminSection'
 import { useSettingsState } from '@features/settings/hooks/useSettingsState'
 import { STORAGE_KEY_PREFIX } from '@features/emergency/services/emergencyCardService'
-import './settings/SettingsRedesign.css'
+import './settings/Settings.css'
 
-export default function SettingsRedesign({ onNavigate, mode }) {
+export default function Settings({ onNavigate, mode }) {
   const { loading, isAdmin, dlqCount, message, notification, integration, preference } = useSettingsState()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [newPassword, setNewPassword] = useState('')

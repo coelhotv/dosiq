@@ -68,7 +68,7 @@ function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate
 }
 
 /**
- * DashboardRedesign — View principal do Santuário Terapêutico.
+ * Dashboard — View principal do Santuário Terapêutico.
  * @param {Function} onNavigate — Callback de navegação (view, params?) => void
  */
 function useDashboardViewState(onNavigate) {
