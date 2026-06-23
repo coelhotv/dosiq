@@ -3,8 +3,8 @@
 **Feature Directory:** plans/specs/037-anvisa-web-ondemand
 **Created:** 2026-06-22
 **Status:** specified
-**Tier:** 1
-**Input:** Adequar a solução web da base ANVISA para carregar on-demand do Supabase Storage público (igual mobile), tirando o peso dos JSONs (~1.36 MB) do build PWA. Inclui base de medicamentos E de laboratórios.
+**Tier:** 2 (upgraded de 1 em 2026-06-22 via RC3 — escopo cresceu p/ cross-platform: hoist do núcleo on-demand p/ `@dosiq/core` + refatorar mobile, matando a triplicação na origem)
+**Input:** Adequar a solução web da base ANVISA para carregar on-demand do Supabase Storage público (igual mobile), tirando o peso dos JSONs (~1.36 MB) do build PWA. Inclui base de medicamentos E de laboratórios. **+ centralizar a lógica on-demand em `@dosiq/core` (web + mobile consomem).**
 
 ---
 
@@ -120,5 +120,5 @@ status: [ ] open
 - **A2** — Os arquivos JSON **permanecem no repo** como fonte de upload ao bucket (confirmado: o [guia de operações](../../../docs/operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md) referencia os JSONs locais como origem do upload, processados via `scripts/process-anvisa.js`), mas deixam de ser importados em runtime (logo não entram no bundle). Resolve o antigo `[NEEDS CLARIFICATION]` sobre manter-vs-remover.
 - **A3** — Bucket é público (sem auth header — contrasta R-084, que vale para storage privado). Confirmado pelo guia: `dosiq-assets` é bucket público com leitura anônima; objeto `anvisa/v1/*` acessível sem auth (mesmo bucket do mobile).
 - **A4** — Hoje os JSONs vivem em `apps/web/src/features/medications/data/`. Remover só o `import` impede o bundling, mas deixá-los dentro de `apps/web/src/` mantém o peso no workspace e arrisca re-import acidental no futuro. Devem ser **realocados para fora de `apps/web/`** (fonte de upload, não código de app).
-- **[NEEDS CLARIFICATION 1 (destino dos JSONs)]** Ao sair de `apps/web/src/features/medications/data/`. Writer real = `scripts/process-anvisa.js` (output) + import web + manifest local; **mobile NÃO importa** (busca do bucket). Candidatos: (a) `data/anvisa/` na raiz [**RC3 recomenda** — fora do grafo de build, co-locado com upload]; (b) `scripts/anvisa/`; (c) `packages/shared-data/anvisa/` [risco: re-import acidental volta a empacotar]. Define caminho de upload no guia (FR-007) + paths em `process-anvisa.js`. Operador decide.
-- **[NEEDS CLARIFICATION 2 (RC3 — DRY com mobile)]** Lógica on-demand está triplicada (mobile hook + 2 web services). Opções: **(A)** hoist núcleo platform-agnostic (manifest/TTL/versão/normalize/match) p/ `@dosiq/core` com storage adapter — web consome em 037, mobile migra em follow-up (não expande risco de 037); **(B)** web reimplementa local (FR-006), aceitando duplicação web↔mobile. RC3 recomenda **(A)** (fonte única, mata triplicação), mas (B) é menor escopo. Operador decide — muda arquitetura do FR-006.
+- **[RESOLVED — NC1] (2026-06-22):** destino = **`data/anvisa/` na raiz** (fora do grafo de build, co-locado com upload). Atualizar paths em `scripts/process-anvisa.js` + guia (FR-007).
+- **[RESOLVED — NC2] (2026-06-22):** **(A) — hoist p/ `@dosiq/core`** com storage adapter injetável. Web consome (Cache Storage adapter) E mobile refatora (`useMedicineDatabase` → AsyncStorage adapter). Mata triplicação na origem. **→ Tier 2 (cross-platform)**, bump mobile (patch, R-221). Fatiar: Slice 1 = core+adapters+web (tira JSON do build); Slice 2 = migrar mobile pro core (paridade, sem mudança de comportamento, protegido por `useMedicineDatabase.test.js`). FR-006 reescrito em torno do core.
