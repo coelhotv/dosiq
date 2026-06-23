@@ -37,7 +37,7 @@
 | 012 | diabetes-t2-support | **delivered** | **Épico fechado A→D (2026-06-15)**. A injetável+TTL (#658) · B GLP-1/titulação (#659) · B2 canetas mg (#660) · B3 units_per_ml NULL (#661) · B4 dose-primário+container (#663/#664) · C biomarkers (#665/#666) · D FR-015b+relatórios (#667). ADR-058..068. **Fase E DESCOPED → redistribuída p/ 005/006/007/008**; FR-016 → 007 |
 | 013 | whatsapp-bot-adapter | draft | migrated draft |
 | 014 | whatsapp-templates-webhook | draft | migrated draft |
-| 015 | ai-chatbot-mobile | draft | migrated draft |
+| 015 | ai-chatbot-mobile | **specified** | **Reescrita 2026-06-23 → Tier 2** (escopo ampliado, decisão PO). 3 eixos / 3 ondas (modelo MASTER_PLAN G1→G2→G3): (1) centralizar builder de contexto no `@dosiq/core` matando o fork web (`contextBuilder.js`) ↔ Telegram (`buildServerContext`); (2) melhorar contexto agrupando por plano terapêutico (`treatment_plans.name`); (3) port do chat p/ mobile consumindo o core. ADR-074 + CON-028 (proposed). 2 [NEEDS CLARIFICATION] (local no core; builder puro vs adapter). Aguarda eng-review/planning |
 | 016 | voice-dose-registration | draft | migrated draft |
 | 017 | voice-dose-summary | draft | migrated draft |
 | 018 | anvisa-interactions-local | draft | migrated draft |
