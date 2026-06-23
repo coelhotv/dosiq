@@ -141,21 +141,22 @@ export function ConsultationPrescriptionsSection({ prescriptionStatus }) {
       {prescriptionStatus?.length > 0 ? (
         <div className="sr-consultation__prescriptions">
           {prescriptionStatus.map((rx) => {
-            const BadgeIcon =
-              rx.status === 'vencida'
-                ? XCircle
-                : rx.status === 'vencendo'
-                  ? AlertTriangle
-                  : CheckCircle2
+            const statusConfig = {
+              vigente: { label: 'Vigente', Icon: CheckCircle2 },
+              vencendo: { label: 'Vencendo', Icon: AlertTriangle },
+              vencida: { label: 'Vencida', Icon: XCircle },
+            }
+            const statusKey = rx.status?.toLowerCase()
+            const currentStatus = statusConfig[statusKey] || {
+              label: rx.status || 'Desconhecido',
+              Icon: AlertCircle,
+            }
+            const BadgeIcon = currentStatus.Icon
             return (
               <div key={rx.protocolId} className="sr-prescription">
-                <span className={`sr-prescription__badge sr-prescription__badge--${rx.status}`}>
+                <span className={`sr-prescription__badge sr-prescription__badge--${statusKey}`}>
                   <BadgeIcon size={14} />
-                  {rx.status === 'vigente'
-                    ? 'Vigente'
-                    : rx.status === 'vencendo'
-                      ? 'Vencendo'
-                      : 'Vencida'}
+                  {currentStatus.label}
                 </span>
                 <span className="sr-prescription__name">{rx.medicineName}</span>
                 {rx.daysRemaining !== undefined && (
