@@ -8,7 +8,7 @@
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 3,
     "ceremony_scope_decisions": ["038 Slice A entregue (PR #677)", "Slice B fatiado em B1 (dead code + 4 renames collision-free) e B2 (dissolver redesign/ + 6 renames base-morta)", "B1 entregue local — aguarda PR", "guard FULL"],
-    "goal": "038 Slice C entregue (carve-out derivePrescriptionStatus->core + R-279 + views/*Redesign cleanup + doc) — abrir PR; spec 038 completa exceto classes CSS BEM cosméticas (opcional)",
+    "goal": "038 entregue completa (A #677 + B1 #678 + B2 #679 + C #680). Sprint encerrada; distill pós-fase pendente. Resta só CSS BEM cosmético (opcional)",
     "goal_type": "refactor",
     "tier": 1,
     "spec_dir": "plans/specs/038-refactor-web-structure",
@@ -17,8 +17,8 @@
     "tasks": "plans/specs/038-refactor-web-structure/tasks.md",
     "linked_adrs": [],
     "linked_contracts": [],
-    "last_pr": 675,
-    "branch": "feature/w26/chatbot-ia-hardening",
+    "last_pr": 680,
+    "branch": "main",
     "mobile_version": "0.20.0"
   },
   "memory": {

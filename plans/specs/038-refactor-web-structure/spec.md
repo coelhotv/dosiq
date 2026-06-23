@@ -2,7 +2,7 @@
 
 - **Feature Directory:** `plans/specs/038-refactor-web-structure`
 - **Created:** 2026-06-22
-- **Status:** specified
+- **Status:** delivered (A #677 · B1 #678 · B2 #679 · C #680) — naming "redesign" aposentado em arquivos/pastas/identificadores + carve-out `derivePrescriptionStatus`→core (R-279). Resta só CSS BEM `*-redesign__*` (cosmético, opcional).
 - **Tier:** 1 (Standard — 1 plataforma, sem DB/contrato/ADR; blast radius mecânico amplo → eng-review sugerido)
 - **Input:** Auditoria pós-sprint chatbot (2026-06-22) da estrutura `apps/web/src`. Naming `redesign/` legado (redesign entregue), UI de feature dividida entre `views/` e `features/`, Landing solto, `measures/` não documentada.
 
