@@ -4,7 +4,7 @@
   "session": {
     "mode": "coding",
     "ceremony_type": "eng-review",
-    "status": "analysis",
+    "status": "completed",
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 3,
     "ceremony_scope_decisions": ["038 Slice A: views/redesign→views + Landing→views/landing", "guard FULL", "037 planned em paralelo (Tier 2)"],
@@ -23,9 +23,9 @@
   },
   "memory": {
     "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 228,
-    "anti_patterns_count": 234,
+    "anti_patterns_count": 235,
     "decisions_count": 72,
     "contracts_count": 25,
     "distillation_due": false

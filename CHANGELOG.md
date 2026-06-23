@@ -80,6 +80,10 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ♻️ Refatorado (estrutura web — aposenta naming "redesign", Slice A) — web · no-user-impact
+
+- **Spec 038 / Slice A:** o redesign da experiência do paciente foi entregue, mas a pasta de produção das views ainda se chamava `views/redesign/`. `git mv views/redesign/* → views/` (Dashboard, Stock, Treatments, Medicines, HealthHistory, Settings, Emergency, Profile, Consultation, NotificationInbox + subpastas `history/ profile/ settings/`); artefatos Landing agrupados em `views/landing/`. Atualizados `AppViewRouter` (12 lazy imports), `vite.config.js` (alias `@settings` + manualChunks `HealthHistory`/`Stock`/`Landing`), o resolver `@settings` do `eslint.config.js` (alias duplicado fora do vite — AP-238) e 3 arquivos de teste. Refator puro, sem mudança de comportamento. Slices B (dissolver `*Redesign`/dead code) e C (carve-out + doc) a seguir.
+
 ### 🔒 Segurança / ✨ Melhorado (Chatbot IA — endurecimento) — web `4.10.0`→**`4.11.0`** · backend/infra · Telegram
 
 - **Segurança (A):** `api/chatbot.js` agora exige **autenticação** (Supabase JWT, `Bearer` → `getUser`; 401 sem token) — antes era endpoint aberto (abuso anônimo da quota Groq). O **system prompt passa a ser composto NO SERVIDOR**: o cliente envia apenas `patientContext` (dados, sem PII/IDs), nunca o prompt inteiro — fecha o bypass das "REGRAS ABSOLUTAS" (um POST direto podia remover os guardrails SaMD). Adicionados **safety guard** (`CHATBOT_BLOCKED_PATTERNS` → 422) e **rate limit por usuário** server-side (Map em memória, padrão `beta-signup`). AP-237.

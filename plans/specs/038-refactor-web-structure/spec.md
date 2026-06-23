@@ -33,7 +33,7 @@ ac:     views movidas para views/ sem subpasta redesign; zero referência a 'vie
 proof:  rtk grep -rn "views/redesign\|components/redesign\|/redesign'" apps/web/src apps/web/vite.config.js
 expect: nenhuma ocorrência (saída vazia)
 guard:  rtk npm run build && rtk npm run test:critical → build ok + 1388 testes verdes; bundle gzip dentro de ±5% de 102 kB
-status: [ ] open
+status: [x] done  # Slice A: grep redesign=0, build ok, 1388 testes verdes, lint 0
 ```
 
 ### US2 — Landing agrupado (P2)
@@ -47,7 +47,7 @@ ac:     artefatos Landing agrupados em views/landing/; imports e manualChunks at
 proof:  rtk ls apps/web/src/views/landing && rtk grep -rn "Landing" apps/web/src/AppViewRouter.jsx apps/web/vite.config.js
 expect: 5 arquivos em views/landing/; refs apontam para views/landing/
 guard:  rtk npm run build → landing chunk gerado, sem erro
-status: [ ] open
+status: [x] done  # Slice A: views/landing/ (5 arquivos), vite chunk Landing ok, build verde
 ```
 
 ### US3 — Doc alinhada (P3)
