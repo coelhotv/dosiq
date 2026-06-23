@@ -160,6 +160,20 @@ status: [ ] open
   só envia `patientContext`. Centralizar o contexto NÃO move guardrails para o cliente.
 - **FR-009 (contrato):** Registrar **CON-028** (interface do builder de contexto do core) e **ADR-074**
   (decisão de centralização web↔server↔mobile).
+- **FR-010 (consistência cross-surface — chave):** Garantir que as 3 superfícies enviem o **mesmo
+  contexto** para o mesmo usuário. Centralizar o builder é necessário mas **insuficiente** — a
+  divergência mora a montante (no fetch). Três camadas obrigatórias:
+  1. **Builder dono de TODA derivação** (puro, core): runtime injeta só entidades **cruas**; o core
+     faz filtro de ativos (R-278/`isProtocolActiveOnDate`), dias-restantes, agrupamento por plano,
+     ordenação. Mínima lógica no runtime = mínimo a divergir.
+  2. **Inputs pelas mesmas repositories do `@dosiq/core`** (ADR-045 — `createMedicineRepository`,
+     `createProtocolRepository`, etc.): web/mobile/bot buscam pelo mesmo repo → selects convergem por
+     construção. (Auditar se os fetches atuais já passam pelos repos ou divergem.)
+  3. **Input tipado + validado por Zod (CON-028):** runtime que injeta dado faltando/errado **falha
+     alto**, nunca gera contexto silenciosamente divergente.
+- **FR-011 (guard de paridade):** Teste de paridade cross-surface — fixture de paciente "golden" →
+  asserta que os caminhos web, mobile e Telegram produzem a **string de contexto idêntica**. É o
+  trava-drift permanente da FR-010.
 
 ### Key Entities
 - **PatientContext (string):** prontuário compacto enviado ao LLM; agora seccionado por plano.
@@ -199,6 +213,16 @@ Onda 3 (PR-3) — Paridade & polish
 - **SC-004:** Rolagem mobile ≥ 55fps; histórico teto 20.
 - **SC-005:** 100% dos ACs com PO fechado (status [x]) ao fim de cada onda.
 - **SC-006:** `safetyGuard`/systemPrompt permanecem server-side (AP-237 não regride).
+- **SC-007 (paridade — chave):** Para um mesmo usuário/fixture, as 3 superfícies produzem **string de
+  contexto idêntica** (teste de paridade FR-011 verde). Divergência = falha de release.
+
+```po PO-5
+ac:     web, mobile e Telegram produzem string de contexto idêntica p/ a mesma fixture de paciente
+proof:  npm run test --workspace @dosiq/core -- chatbotContext.parity
+expect: teste de paridade cross-surface verde (golden fixture → 3 caminhos → mesma string)
+guard:  full — builder dono da derivação (runtime injeta cru); inputs via core repos; input Zod-validado
+status: [ ] open
+```
 
 ---
 
@@ -216,6 +240,15 @@ Onda 3 (PR-3) — Paridade & polish
     construção do systemPrompt + safetyGuard continua server-side (AP-237), independente disso.
 - **[ASSUMPTION]** `treatment_plans` já expõe `name` consultável por `treatment_plan_id` via
   `treatmentPlanService`; o fetch de cada superfície passa a incluí-lo (additivo, sem migração DB).
+- **[NEEDS CLARIFICATION — CHAVE: onde montar o contexto]** Decide os processos seguintes do DEVFLOW:
+  - **(A) Client-build (atual, recomendado):** cada runtime monta+envia o contexto. Menor latência
+    (web reusa dados já carregados; sem refetch). Consistência garantida pelas 3 camadas da FR-010 +
+    teste de paridade FR-011. Divergência fica estruturalmente difícil, não impossível.
+  - **(B) Server-build:** client envia só `userId`; `api/chatbot.js` monta o contexto via core (1
+    fetch único p/ web+mobile). Consistência **máxima por construção** (web+mobile idênticos), mas
+    adiciona round-trip/refetch ao Supabase e muda mais a web (que hoje monta client-side).
+  - Recomendação: **(A)**. Trade-off latência×consistência — **RC3 bate o martelo**. A escolha muda
+    radicalmente o plano (B move lógica de fetch p/ o serverless; A reforça repos+paridade nos clients).
 - **[NEEDS CLARIFICATION]** Localização canônica no core: `packages/core/src/chatbot/` (novo módulo)
   vs `packages/core/src/utils/` — resolver no eng-review/planning (afeta CON-028 e o index do core).
 - **[NEEDS CLARIFICATION]** O builder do core deve receber dados **já buscados** (puro, sem Supabase)
