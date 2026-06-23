@@ -105,7 +105,7 @@ SEMPRE usar aliases. NUNCA caminhos relativos longos.
 ### Lazy Loading mobile (R-117)
 - Views (exceto Dashboard) **DEVEM** ser `React.lazy()` + `Suspense`
 - Suspense fallback **DEVE** ser `ViewSkeleton`
-- Vite manualChunks: vendor-{framer,supabase,virtuoso,pdf} + feature-{history,stock,landing,medicines-db}
+- Vite manualChunks: vendor-{framer,supabase,virtuoso,pdf} + feature-{history,stock,landing} (medicines-db removido na 037 — JSON fora do build)
 - Bundle: **102.47 kB gzip** (de 989KB — 89% redução)
 
 ### Telegram bot
@@ -171,6 +171,10 @@ Rodar do root via workspace:
 - Atualizar `.agent/state.json` (`journal_entries_since_distillation`)
 
 `.memory/` aposentado (somente leitura W01-W11). Tudo novo → `.agent/memory/`.
+
+> **`plans/` é local-only** (gitignored desde 2026-06-23). Specs em `plans/specs/NNN-nome/`
+> existem apenas no disco do PO — não são versionadas. Histórico purgado do GitHub
+> (git-filter-repo + force-push). Refs em docs devem indicar "(local-only, não versionado)".
 
 ## SQP (R-221) — obrigatório antes de alterar código
 

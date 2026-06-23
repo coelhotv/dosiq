@@ -261,7 +261,7 @@ Preencha:
 
 Os textos-base estão no guia:
 
-- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md`
+- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md` (local-only, não versionado)
 
 ## 9.2. App content
 
@@ -341,7 +341,7 @@ Como o app exige login, prepare desde cedo o material para revisão:
 
 Guia dedicado para isso:
 
-- [GUIA_APP_ACCESS_PLAY_CONSOLE.md](/Users/coelhotv/Library/Mobile%20Documents/com~apple~CloudDocs/git/dosiq/plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md)
+- `plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md` (local-only, não versionado)
 
 ### Sugestão prática
 
@@ -466,4 +466,4 @@ Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 
 Com a console pronta, finalize os textos e assets usando:
 
-- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md`
+- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md` (local-only, não versionado)

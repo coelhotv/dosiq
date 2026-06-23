@@ -3,7 +3,7 @@
 > **Status:** Guia operacional local
 > **Data:** 2026-03-30
 > **Publico-alvo:** maintainer do projeto e agentes/coders que vao trabalhar na frente native
-> **Base arquitetural:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+> **Base arquitetural:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (local-only, não versionado)
 
 ---
 
@@ -666,14 +666,15 @@ Depois valide os comandos do checklist da secao 18.
 
 ## 24. Leitura complementar obrigatoria
 
-Depois de preparar o ambiente, a ordem de leitura recomendada para a frente native e:
+Depois de preparar o ambiente, a ordem de leitura recomendada para a frente native e
+(todos em `plans/backlog-native_app/` — local-only, não versionados):
 
-1. `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
-2. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
-3. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
-4. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
-5. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
-6. `plans/backlog-native_app/EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
+1. `MASTER_SPEC_HIBRIDO_WEB_NATIVE.md`
+2. `EXEC_SPEC_HIBRIDO_FASE4_MOBILE_SCAFFOLD.md`
+3. `EXEC_SPEC_HIBRIDO_ADDENDUM_RELEASE_ENGINEERING.md`
+4. `EXEC_SPEC_HIBRIDO_ADDENDUM_DEEPLINKS_E_ROUTING.md`
+5. `EXEC_SPEC_HIBRIDO_ADDENDUM_OFFLINE_SYNC.md`
+6. `EXEC_SPEC_HIBRIDO_ADDENDUM_PRIVACY_PERMISSIONS_COMPLIANCE.md`
 
 ---
 

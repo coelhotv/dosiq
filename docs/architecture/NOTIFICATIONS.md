@@ -383,6 +383,6 @@ Para evitar spam de notificações (múltiplos medicamentos no mesmo horário), 
 
 ## 🔗 Documentação Relacionada
 
-- [`plans/backlog-notifications/NOTIFICATIONS_ARCHITECTURE_CONSOLIDATION.md`](../../plans/backlog-notifications/NOTIFICATIONS_ARCHITECTURE_CONSOLIDATION.md) — Spec do projeto de consolidação
+- `plans/backlog-notifications/NOTIFICATIONS_ARCHITECTURE_CONSOLIDATION.md` (local-only, não versionado) — Spec do projeto de consolidação
 - [`docs/architecture/DATABASE.md`](DATABASE.md) - Tabelas `notification_log` e `user_settings`
 - [`server/BOT README.md`](../../server/BOT%20README.md) - Guia de desenvolvimento local do bot

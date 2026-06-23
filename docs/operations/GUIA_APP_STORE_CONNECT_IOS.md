@@ -333,7 +333,7 @@ Como o app exige login, prepare material de review desde o início.
 
 Use como base:
 
-- `plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md`
+- `plans/backlog-native_app/GUIA_APP_ACCESS_PLAY_CONSOLE.md` (local-only, não versionado)
 
 Mesmo sendo um guia pensado para Google Play, a lógica também serve para Apple review:
 
@@ -457,7 +457,7 @@ Você vai precisar preparar:
 
 Use como base:
 
-- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md`
+- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md` (local-only, não versionado)
 
 Parte desse material pode ser adaptada para:
 
@@ -571,5 +571,7 @@ Se quiser complementar este material, os documentos mais próximos são:
 
 - `plans/backlog-native_app/GUIA_EXPO_DEV_E_EAS_ANDROID.md`
 - `plans/backlog-native_app/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md`
-- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md`
+- `plans/backlog-native_app/GUIA_EXPO_DEV_E_EAS_ANDROID.md` (local-only)
+- `plans/backlog-native_app/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md` (local-only)
+- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md` (local-only)
 - `docs/legal/POLITICA_DE_PRIVACIDADE.md`

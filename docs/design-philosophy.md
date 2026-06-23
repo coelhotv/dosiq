@@ -1,7 +1,7 @@
 # Design Philosophy — Linguagem Dicotômica
 
 **Estabelecido:** 2026-03-26 (Waves 7.5–8 — Sessão de refinamento ProtocolRow + StockCard)
-**Documentação canônica:** `plans/PRODUCT_STRATEGY_CONSOLIDATED.md` + `plans/DESIGN-SYSTEM.md` (Seções 0 e 5a)
+**Documentação canônica:** `plans/PRODUCT_STRATEGY_CONSOLIDATED.md` + `plans/DESIGN-SYSTEM.md` (Seções 0 e 5a) — local-only, não versionados
 
 ---
 

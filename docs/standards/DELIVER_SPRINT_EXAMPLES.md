@@ -9,7 +9,7 @@
 ### Fase 1: Setup (10 min)
 ```bash
 # Exploração
-cat plans/EXEC_SPEC_FASE_5.md  # Ler spec (era a mesma)
+cat plans/specs/NNN-nome/spec.md  # Ler spec (era a mesma)
 
 # Identificar arquivos
 find src -name "*process-anvisa*"
@@ -153,7 +153,7 @@ gh pr merge 287 --squash --delete-branch
 ### Fase 7: Documentação (10 min)
 ```bash
 # Atualizar spec
-cat > plans/EXEC_SPEC_FASE_5.md <<'EOF'
+cat > plans/specs/NNN-nome/spec.md <<'EOF'
 ## Status da Entrega
 
 ### Sprint 5.C — CONCLUÍDO
@@ -274,7 +274,7 @@ TOTAL: 130 minutos (setup → main merged)
 
 ```bash
 # PASSO 1: Ler spec
-cat plans/EXEC_SPEC_FASE_6.md
+cat plans/specs/NNN-nome/spec.md
 
 # PASSO 2: Invocar skill
 # "Estou pronto para entregar Fase 6.A. Usa deliver-sprint para organizar"
@@ -339,7 +339,7 @@ const rl = readline.createInterface({ input: decodedStream })
 ## Checklist Rápida por Fase
 
 ### Fase 1: Setup ✅
-- [ ] Spec lida (plans/EXEC_SPEC_*)
+- [ ] Spec lida (plans/specs/NNN-nome/spec.md — local-only)
 - [ ] Codebase explorado (files + patterns)
 - [ ] Branch criada (feature/fase-N/...)
 

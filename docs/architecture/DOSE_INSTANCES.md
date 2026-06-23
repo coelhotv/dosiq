@@ -3,7 +3,7 @@
 **Status:** Ativo (Fase 4 **concluída** — refactor completo) · **Criado:** 2026-06-01 · **Atualizado:** 2026-06-02
 **ADRs:** ADR-048, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053, ADR-054
 **Contratos:** CON-022, CON-023, CON-024
-**Plano-mãe:** [`plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md`](../../plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md)
+**Plano-mãe:** `plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md` (local-only, não versionado)
 
 > Mudança arquitetural grande: a adesão, a timeline e os lembretes deixam de **inferir**
 > doses a partir de `medicine_logs` + `time_schedule` e passam a **ler** ocorrências

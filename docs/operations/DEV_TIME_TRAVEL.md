@@ -174,4 +174,4 @@ DELETE FROM public.medicine_logs WHERE user_id='<UID>' AND taken_at > now();
 ## Relacionados
 - `AP-203` (time-travel vaza p/ escritas; nunca mexer no relógio do SO)
 - `CON-024` (`splitDayTimeline` — carry-over/today/look-ahead)
-- `plans/dose_instances_refactor/EXEC_PLAN_F4.3e.md`
+- `plans/dose_instances_refactor/EXEC_PLAN_F4.3e.md` (local-only, não versionado)

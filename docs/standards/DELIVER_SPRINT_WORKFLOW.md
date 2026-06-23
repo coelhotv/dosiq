@@ -9,7 +9,7 @@
 **Objetivo**: Entender completamente o escopo antes de codar.
 
 #### 1.1 Ler Especificação Executiva
-- Arquivo: `plans/EXEC_SPEC_FASE_N.md` (ou sprint específica)
+- Arquivo: `plans/specs/NNN-nome/spec.md` (local-only, não versionado — ver `.gitignore`)
 - Extrair: scope, deliverables, arquivos alvo, critérios de sucesso
 - Registrar: notas sobre decisões arquiteturais já documentadas
 - ⚠️ **Se spec não existir**: criar em EnterPlanMode antes de implementar
@@ -223,9 +223,10 @@ git commit -m "fix(medications): correct Mac Roman encoding in ETL script"
 #### 4.4 Verificar Status da PR Specification
 Se a spec foi atualizada durante implementação:
 ```bash
-# Abrir plans/EXEC_SPEC_FASE_N.md
+# Abrir plans/specs/NNN-nome/spec.md (local-only)
 # Atualizar seção "Entrega" se scope mudou
 # Adicionar commit hashes implementados
+# Atualizar plans/specs/README.md (índice canônico de status)
 ```
 
 ---
@@ -332,7 +333,8 @@ git pull origin main  # confirmar
 
 #### 7.1 Atualizar Spec Executiva
 ```bash
-# plans/EXEC_SPEC_FASE_N.md
+# plans/specs/NNN-nome/spec.md (local-only)
+# plans/specs/README.md → atualizar linha da spec para "delivered" + PR#
 
 # Seção "## Status da Entrega"
 - Marcar como CONCLUÍDO
@@ -465,7 +467,7 @@ Total: 110 minutos (desde especificação até merge completo)
 
 - [ ] Li `CLAUDE.md` (este arquivo + `.memory/rules.md`)
 - [ ] Li `.memory/anti-patterns.md` (50 problemas conhecidos)
-- [ ] Spec está atualizada? (`plans/EXEC_SPEC_FASE_N.md`)
+- [ ] Spec está atualizada? (`plans/specs/NNN-nome/spec.md` — local-only, gitignored)
 - [ ] Confirmei path aliases em `vite.config.js`
 - [ ] Entendi padrão de componentes/services existentes
 - [ ] Vou usar `parseLocalDate()` para datas

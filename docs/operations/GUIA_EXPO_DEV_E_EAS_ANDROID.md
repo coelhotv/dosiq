@@ -775,8 +775,8 @@ Considere o setup Expo/EAS pronto quando estes 6 critérios estiverem verdes:
 
 Depois de concluir este guia, siga imediatamente para:
 
-- `plans/backlog-native_app/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md`
+- `plans/backlog-native_app/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md` (local-only, não versionado)
 
 E, antes de publicar a ficha da loja:
 
-- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md`
+- `plans/backlog-native_app/GUIA_ASO_E_CONTEUDOS_PLAY_STORE.md` (local-only, não versionado)
