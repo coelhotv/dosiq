@@ -22,12 +22,12 @@
     "mobile_version": "0.20.0"
   },
   "memory": {
-    "last_distillation": "2026-06-19T21:01:22.841Z",
-    "journal_entries_since_distillation": 11,
+    "last_distillation": "2026-06-23T04:30:00.000Z",
+    "journal_entries_since_distillation": 0,
     "rules_count": 229,
-    "anti_patterns_count": 236,
-    "decisions_count": 72,
-    "contracts_count": 25,
+    "anti_patterns_count": 237,
+    "decisions_count": 73,
+    "contracts_count": 26,
     "distillation_due": false
   },
   "genes": {
