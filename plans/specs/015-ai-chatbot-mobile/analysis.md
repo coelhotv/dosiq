@@ -1,52 +1,18 @@
-# Artifact Coverage Analysis: AI Chatbot Mobile
+# Artifact Coverage Analysis — 015 Chatbot IA (Tier 2)
 
-**Feature Directory**: `plans/specs/015-ai-chatbot-mobile`  
-**Created**: 2026-06-01  
-**Status**: PASS
+**Status:** STUB — gerado por ONDA no C1.5 (não no planning).
 
----
+O `analysis.md` (Reality Check com evidence table + behavioral failure modes) é produzido **antes de
+codar cada onda** (C1.5), validado contra o repo real — não como narrativa de planning. O draft legado
+("PASS" sobre port-de-UI) foi invalidado pela reescrita Tier 2.
 
-## Legacy Source Coverage
+Quando entrar em coding da Onda 1a, gerar aqui:
+- **Evidence table** dos símbolos do fetcher/builder (selects reais web/server, join treatment_plan,
+  exports do core já existentes — splitDayTimeline/isProtocolActiveOnDate/formatDoseItem).
+- **Behavioral failure modes** do `buildPatientContext`/`fetchChatbotContextData`: protocolo sem
+  treatment_plan (NULL), treatment_plan.name nulo, doseInstances vazio, stockSummary ausente,
+  medicines/protocols vazios, plano 1-item.
+- **Cross-file consistency** spec↔plan↔tasks↔CON-028.
+- **Migração:** nenhuma (additivo).
 
-| Legacy Section | Migrated To | Notes |
-|:---|:---|:---|
-| `§1. Chatbot IA` | `spec.md §Context` | Alinhamento do assistente inteligente e port para aplicativo móvel. |
-| `§1. Arquitetura` | `plan.md §Architectural Approach` | Reuso de api/chatbot.js, contextBuilder e safetyGuard existentes. |
-| `§1. Config existente` | `plan.md §Target Files` | Reuso e centralização de `chatbotConfig.js` no core. |
-
----
-
-## Requirement Coverage
-
-| Requirement | Has Task? | Task IDs | Notes |
-|:---|:---|:---|:---|
-| **FR-001** (FlatList invertido UI) | Yes | `T004` | Tela `ChatbotScreen.jsx` nativa com scroll de mensagens. |
-| **FR-002** (Endpoint Groq Vercel) | Yes | `T004` | Conectividade REST e chamadas fetch normais. |
-| **FR-003** (AsyncStorage 20 logs) | Yes | `T006`, `T008` | Persistência e expurgação local limitada. |
-| **FR-004** (Disclaimer e bloqueios) | Yes | `T003`, `T010` | Segurança e centralização de disclaimers no core. |
-| **FR-005** (TypingIndicator animado) | Yes | `T005` | Indicador visual de espera de resposta. |
-| **SC-001** (Assertividade de dados) | Yes | `T011` | Validação clínica paralela com o PWA. |
-| **SC-002** (FPS rolagem ≥ 55fps) | Yes | `T004`, `T011` | Otimização de virtualização e scroll. |
-
----
-
-## Constitution Alignment
-
-* **Princípio I (Health Data Safety):** Validado. Filtros clínicos e disclaimer médico barram abusos posológicos por IA.
-* **Princípio II (Mobile-First Reliability):** Validado. FlatList com scroll dinâmico invertido leve.
-* **Princípio IV (Timezone Correctness):** Validado. Payload do prontuário posológico montado sob fuso local GMT-3.
-* **Princípio VI (Release and SQP):** Validado. Tarefas T012-T014 cobrem versionamento de aplicativo e logs de changelogs.
-
----
-
-## Gaps
-
-| ID | Severity | Summary | Required Action |
-|:---|:---|:---|:---|
-| *Nenhum* | `LOW` | Todos os DoDs legados foram catalogados e mapeados para tarefas exatas de implementação. | N/A |
-
----
-
-## Gate Decision
-
-**🟢 PASS:** O mapeamento técnico e a cobertura de DoDs estão completos e blindados contra falhas de design nativo. A especificação está pronta para ser executada na Wave M1.
+Referências de planning: plan.md (Technical Context com file:line), CON-028, ADR-074.
