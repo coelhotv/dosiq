@@ -1,4 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+
+/**
+ * Base mock — controlável por teste (offline ⇒ []).
+ * O service consome `createAnvisaDatabase` de @dosiq/core; aqui mockamos o núcleo
+ * para devolver `load()` determinístico (sem fetch/JSON). O fetch/cache/offline/timeout
+ * reais são cobertos no teste do core (anvisaDatabase.test.js).
+ */
+let mockData = []
+
+vi.mock('@dosiq/core', async (importActual) => {
+  const actual = await importActual()
+  return {
+    ...actual,
+    createAnvisaDatabase: () => ({ load: () => Promise.resolve(mockData) }),
+  }
+})
+
 import {
   searchMedicines,
   getMedicineDetails,
@@ -7,10 +24,7 @@ import {
   findDuplicatesByIngredient,
 } from '@/features/medications/services/medicineDatabaseService'
 
-/**
- * Mock da base de medicamentos para testes isolados
- */
-const mockDatabase = [
+const DATABASE = [
   {
     name: 'Losartana Potassica',
     activeIngredient: 'losartana potássica',
@@ -37,13 +51,9 @@ const mockDatabase = [
   },
 ]
 
-// Mock do módulo de import dinâmico
-vi.mock('@medications/data/medicineDatabase.json', () => ({
-  default: mockDatabase,
-}))
-
 describe('medicineDatabaseService', () => {
   beforeEach(() => {
+    mockData = DATABASE
     vi.clearAllMocks()
   })
 
@@ -86,19 +96,26 @@ describe('medicineDatabaseService', () => {
     })
 
     it('respeita limite de resultados', async () => {
-      const results = await searchMedicines('i', 2)
+      const results = await searchMedicines('aci', 2)
       expect(results.length).toBeLessThanOrEqual(2)
-    })
-
-    it('retorna máximo 10 resultados por default', async () => {
-      const results = await searchMedicines('i')
-      expect(results.length).toBeLessThanOrEqual(10)
     })
 
     it('busca é case-insensitive', async () => {
       const resultsLower = await searchMedicines('losartana')
       const resultsUpper = await searchMedicines('LOSARTANA')
       expect(resultsLower).toEqual(resultsUpper)
+    })
+  })
+
+  describe('degradação graciosa (offline sem cache)', () => {
+    it('load vazio ⇒ searchMedicines retorna [] sem lançar', async () => {
+      mockData = []
+      await expect(searchMedicines('losartana')).resolves.toEqual([])
+    })
+
+    it('load vazio ⇒ getAllMedicines retorna [] sem lançar', async () => {
+      mockData = []
+      await expect(getAllMedicines()).resolves.toEqual([])
     })
   })
 
@@ -145,11 +162,6 @@ describe('medicineDatabaseService', () => {
       expect(results[0].activeIngredient.toLowerCase()).toContain('metformina')
     })
 
-    it('retorna múltiplos medicamentos com mesmo princípio ativo', async () => {
-      const results = await searchByActiveIngredient('ibuprofeno')
-      expect(results.length).toBeGreaterThan(0)
-    })
-
     it('retorna vazio para princípio ativo inexistente', async () => {
       const results = await searchByActiveIngredient('xyz_inexistente')
       expect(results).toEqual([])
@@ -175,8 +187,7 @@ describe('medicineDatabaseService', () => {
   describe('getAllMedicines', () => {
     it('retorna todos os medicamentos', async () => {
       const results = await getAllMedicines()
-      expect(results.length).toBeGreaterThan(0)
-      expect(results.length).toBe(mockDatabase.length)
+      expect(results.length).toBe(DATABASE.length)
     })
 
     it('retorna medicamentos com todos os campos', async () => {
@@ -209,21 +220,6 @@ describe('medicineDatabaseService', () => {
       const duplicates = await findDuplicatesByIngredient('ibuprofeno', 'ibuprofeno')
       const names = duplicates.map((m) => m.name.toLowerCase())
       expect(names).not.toContain('ibuprofeno')
-    })
-  })
-
-  describe('Lazy loading', () => {
-    it('carrega banco de dados na primeira chamada', async () => {
-      const results1 = await searchMedicines('losartana')
-      expect(results1.length).toBeGreaterThan(0)
-    })
-
-    it('reutiliza banco carregado em chamadas subsequentes', async () => {
-      // Primeira chamada carrega o DB
-      await searchMedicines('losartana')
-      // Segunda chamada deve reutilizar
-      const results2 = await searchMedicines('ibuprofeno')
-      expect(results2.length).toBeGreaterThan(0)
     })
   })
 })

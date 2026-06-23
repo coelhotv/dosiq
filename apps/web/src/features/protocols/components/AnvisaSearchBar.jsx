@@ -7,8 +7,8 @@
  */
 import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
+import { formatSelectedMedicine } from '@medications/components/_medicineFormUtils'
 
 export default function AnvisaSearchBar({
   existingProtocols,
@@ -43,18 +43,11 @@ export default function AnvisaSearchBar({
         onNavigateToProtocol(match)
       }
     } else {
-      // Sem protocolo → abrir TreatmentWizard com medicamento pré-selecionado
-      // Title Case: name e active_ingredient
-      // Sentence Case: therapeutic_class
-      onOpenWizard({
-        name: toTitleCase(anvisaMedicine.name),
-        active_ingredient: anvisaMedicine.activeIngredient
-          ? toTitleCase(anvisaMedicine.activeIngredient)
-          : null,
-        therapeutic_class: anvisaMedicine.therapeuticClass
-          ? toSentenceCase(anvisaMedicine.therapeuticClass)
-          : null,
-      })
+      // Sem protocolo → abrir TreatmentWizard com medicamento pré-selecionado.
+      // Reusa o mapper canônico do form de medicines (formatSelectedMedicine) p/
+      // paridade total — inclui `laboratory` e `regulatory_category` (normalizado),
+      // que o mapeamento parcial anterior omitia (lab vazio no wizard p/ não-genéricos).
+      onOpenWizard(formatSelectedMedicine(anvisaMedicine))
     }
 
     setQuery('')

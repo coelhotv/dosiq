@@ -22,3 +22,13 @@ export {
 } from './timelineService.js'
 
 export { createDoseLogService } from './doseLogService.js'
+
+// Núcleo on-demand da base ANVISA (CON-027) — web (Cache Storage) + mobile (AsyncStorage)
+export {
+  createAnvisaDatabase,
+  normalizeText,
+  matchesPrefix,
+  fetchJson,
+  shouldRefreshCache,
+  resolveDataUrl,
+} from './anvisaDatabase.js'
