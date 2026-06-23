@@ -1,18 +1,38 @@
 # Tasks — 038 Refatorar Estrutura Web
 
-> Tier 1. Planning dobrada no C2 gate. Ordem: resolver clarifications → mover → atualizar refs → guard.
+> Tier 1, Guard FULL (RC3). 3 slices/PRs. Cada slice: branch sync ritual (AP-169) → mover → atualizar refs → guard FULL → PR.
+> Guard FULL = `lint` 0err + `build` gzip ±5% + `test:critical` verde + audit collision (grep imp==0 antes de delete).
 
-- [x] T001 [US1] Resolver [NEEDS CLARIFICATION 1+2] — ✅ A + carve-out; FR-002 = rename simples [PO-1]
-- [ ] T002 [US1] `git mv apps/web/src/views/redesign/*` → `apps/web/src/views/` (preserva história) [PO-1]
-- [ ] T003 [US1] Atualizar `AppViewRouter.jsx` lazy imports (`./views/redesign/X` → `./views/X`) [PO-1]
-- [ ] T004 [US1] Atualizar `vite.config.js`: alias `@settings` + 3 entradas `manualChunks` (HealthHistory, Stock, Landing) [PO-1]
-- [ ] T005 [P][US1] Atualizar os 26 importers restantes (`grep -rl views/redesign`) [PO-1]
-- [ ] T006 [US1] Dissolver `features/*/components/redesign/` conforme decisão T001 (rename simples se NC1=A) [PO-1]
-- [ ] T007 [P][US2] `git mv` Landing* → `views/landing/` + atualizar import lazy + manualChunks [PO-2]
-- [ ] T008a [carve-out FR-007] Extrair `deriveProtocolStatus` de `Stock.jsx` → core/feature + teste unit
-- [ ] T008b [carve-out FR-008] Remover `CostSummary.jsx` (0 importers) + reconciliar pares `*Redesign` (confirmar count==0 antes de deletar)
-- [ ] T008 [US3] Atualizar `CLAUDE.md` (raiz + apps/web/src) — `features/measures`, estrutura `views/` sem redesign [PO-3]
-- [ ] T009 [C4] Guard: `rtk lint` (0 errors) + `rtk npm run build` (bundle gzip ±5% de 102 kB) + `rtk npm run test:critical` (verde) — fecha PO-1/PO-2/PO-3
-- [ ] T010 [C4] Fechar todas as POs (colar evidência grep vazio + build + testes) antes do C5
-- [ ] T011 [C5] R-221 SQP: web refactor sem impacto de usuário (no-user-impact) — CHANGELOG [Unreleased]; sem bump (ou patch se preferir)
-- [ ] T012 [C5] Journal + state.json (status completed) + registrar AP se `git mv` quebrar import (reforço AP-H27/AP-164)
+- [x] T001 Resolver NC1+NC2 — ✅ A + carve-out; rename simples [PO-1]
+
+## Slice A — views/redesign → views/ + Landing (PR-A) [PO-1, PO-2]
+- [ ] A01 Branch sync ritual (`git fetch` + status) → branch `refactor/038/slice-a-views`
+- [ ] A02 `git mv apps/web/src/views/redesign/*` → `apps/web/src/views/` (inclui subpastas history/ profile/ settings/) [PO-1]
+- [ ] A03 `AppViewRouter.jsx:9-21` — 12 lazy imports `./views/redesign/X`→`./views/X` [PO-1]
+- [ ] A04 `vite.config.js` — alias `@settings` (l.25) + manualChunks HealthHistory/Stock (l.46,50) [PO-1]
+- [ ] A05 Atualizar test paths `views/__tests__/{Treatment,HealthHistory,Profile}.test.jsx` [PO-1]
+- [ ] A06 `git mv Landing*` → `views/landing/` + import lazy AppViewRouter + manualChunks Landing (l.51) [PO-2]
+- [ ] A07 [C4] Guard FULL: lint + build (gzip ±5%) + test:critical + `grep views/redesign` vazio. Colar evidência → fecha PO-1/PO-2
+- [ ] A08 PR-A + check-review
+
+## Slice B — dissolver redesign/ + sufixos *Redesign (PR-B) [PO-1]
+- [ ] B01 Branch sync → branch `refactor/038/slice-b-redesign-suffix`
+- [ ] B02 Investigar importer da base `PrescriptionTimeline.jsx` (1 imp) — decidir consolidar/manter; se ambíguo → ASK operador
+- [ ] B03 Para cada base morta (re-confirmar imp==0 AGORA): deletar `{InsightCard,RingGauge,SmartAlerts,CostSummary,StockCard,MedicineCard,ConsultationView,ReminderSuggestion,BottomNav}.jsx`+`.css`
+- [ ] B04 Renomear 9 `*Redesign.jsx`→base + atualizar todos importers (`grep ${name}Redesign`)
+- [ ] B05 Flatten 4 pastas `features/{consultation,medications,protocols,stock}/components/redesign/` → `components/`
+- [ ] B06 [C4] Guard FULL: lint + build (gzip ±5%) + test:critical + `grep -r "Redesign\|components/redesign"` só resolvido. Colar evidência [PO-1]
+- [ ] B07 PR-B + check-review
+
+## Slice C — carve-out + doc (PR-C) [PO-3]
+- [ ] C01 Branch sync → branch `refactor/038/slice-c-carveout`
+- [ ] C02 Extrair `deriveProtocolStatus` de `Stock.jsx` → `packages/core/src/utils/` + teste unit
+- [ ] C03 [C5] FR-009: R-NNN "lógica de domínio não nasce em views/; desce p/ feature/core" (RULES_INDEX + detalhe)
+- [ ] C04 Atualizar `CLAUDE.md` (raiz + apps/web/src) — `features/measures` + estrutura `views/` sem redesign [PO-3]
+- [ ] C05 [C4] Guard FULL: lint + build + test:critical. Colar evidência [PO-3]
+- [ ] C06 PR-C + check-review
+
+## C5 (pós-slices)
+- [ ] Z01 [C5] R-221 SQP: no-user-impact (refator) — CHANGELOG [Unreleased]; sem bump
+- [ ] Z02 [C5] AP se `git mv` quebrar import (reforço AP-H27/AP-164) + journal + state.json
+- [ ] Z03 [C5] README specs 038 → delivered
