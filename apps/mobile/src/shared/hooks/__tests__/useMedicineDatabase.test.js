@@ -5,10 +5,18 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
 }))
 
-jest.mock('@dosiq/core', () => ({
-  getNow: () => new Date('2026-05-14T12:00:00.000Z'),
-  parseISO: (s) => new Date(s),
-}))
+// 037 Slice 2: o hook consome os helpers canônicos do core (fetchJson, shouldRefreshCache,
+// resolveDataUrl, normalizeText, matchesPrefix) — usamos os reais. Só fixamos getNow para
+// tempo determinístico. O mock vai no MÓDULO dateUtils (não no índice do core): o core
+// importa getNow direto de '../utils/dateUtils.js', então um override no '@dosiq/core' não
+// alcançaria o getNow interno usado por shouldRefreshCache.
+jest.mock('@dosiq/core/utils/dateUtils', () => {
+  const actual = jest.requireActual('@dosiq/core/utils/dateUtils')
+  return {
+    ...actual,
+    getNow: () => new Date('2026-05-14T12:00:00.000Z'),
+  }
+})
 
 import { act, renderHook, waitFor } from '@testing-library/react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'

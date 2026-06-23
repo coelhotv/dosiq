@@ -18,6 +18,7 @@ import {
   PRESENTATION_LABELS,
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
+  normalizeRegulatoryCategory,
   cleanFloat,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
@@ -121,7 +122,11 @@ export default function MedicineFormScreen() {
         name: item.name ?? form.values.name,
         active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
         therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
-        regulatory_category: item.regulatoryCategory ?? form.values.regulatory_category,
+        // Base ANVISA traz a categoria sem acento/normalização ('Biologico'); o Picker
+        // (esp. iOS, match estrito) só casa o valor canônico acentuado ('Biológico').
+        // normalizeRegulatoryCategory mapeia p/ o enum canônico — mesma correção da web.
+        regulatory_category:
+          normalizeRegulatoryCategory(item.regulatoryCategory) ?? form.values.regulatory_category,
         laboratory: isGeneric ? '' : (item.laboratory ?? form.values.laboratory ?? ''),
       })
       setSheetOpen(false)

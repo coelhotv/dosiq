@@ -1,120 +1,52 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getNow, parseISO } from '@dosiq/core'
+import {
+  getNow,
+  parseISO,
+  fetchJson,
+  shouldRefreshCache,
+  resolveDataUrl,
+  normalizeText,
+  matchesPrefix,
+} from '@dosiq/core'
+import { createAsyncStorageAdapter } from '@shared/services/_asyncStorageAdapter'
+import { nativePublicAppConfig } from '@platform/config/nativePublicAppConfig'
 
 // Hook que baixa, faz cache local e expõe busca na base ANVISA de medicamentos.
 // Fluxo:
-//   1. Mount: lê manifest cacheado em AsyncStorage
+//   1. Mount: lê manifest cacheado em AsyncStorage (via storage adapter)
 //   2. Busca remoto manifest.json em background
 //   3. Se versão remota difere ou cache vazio: baixa medicineDatabase.json
-//      e atualiza AsyncStorage
+//      e atualiza o cache
 //   4. TTL 7 dias força re-check mesmo com versão igual
 //
 // Falha de rede → degradação graciosa: form continua funcional sem autocomplete.
+//
+// 037 Slice 2: a lógica pura (fetch/timeout, manifest/TTL, normalize, match) vive
+// em `@dosiq/core` (CON-027/ADR-073), compartilhada com a web; aqui o hook só orquestra
+// a UX de 2 fases (cache instantâneo + refresh em background) e a persistência via
+// `_asyncStorageAdapter` (AsyncStorage). Comportamento idêntico ao anterior.
 //
 // Uso:
 //   const { search, getByName, isReady, isLoading, lastUpdated, error } = useMedicineDatabase()
 //   const results = search('paracetamol', 10)
 
-const ANVISA_BASE_URL =
-  'https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1'
+// Subdomínio do Supabase vem do env (EXPO_PUBLIC_SUPABASE_URL via nativePublicAppConfig),
+// nunca hardcoded — repo é opensource público.
+const ANVISA_BASE_URL = `${nativePublicAppConfig.supabaseUrl}/storage/v1/object/public/dosiq-assets/anvisa/v1`
 
-const STORAGE_KEYS = {
-  manifest: '@dosiq/anvisa-manifest',
-  data: '@dosiq/anvisa-data',
-}
+const FILE_KEY = 'medicineDatabase'
 
 const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
 
-// Normaliza texto para busca (remove diacríticos + lowercase). Idêntico à web.
-function normalizeText(text) {
-  if (!text) return ''
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
+const storageAdapter = createAsyncStorageAdapter()
 
-// Match por prefixo com word-boundary: "trime" casa "Maleato de Trimebutina"
-// (após espaço) e "Trimetoprima" (início), mas NÃO "Sumatripta**" (mid-word).
-// Boundaries reconhecidos: início, espaço, hífen, ponto, parêntese, slash, vírgula.
-function matchesPrefix(normalizedText, normalizedQuery) {
-  if (!normalizedText || !normalizedQuery) return false
-  if (normalizedText.startsWith(normalizedQuery)) return true
-  // Procura ocorrências após boundary
-  const boundaryChars = ' -.,(/\\'
-  for (let i = 1; i < normalizedText.length; i += 1) {
-    if (boundaryChars.includes(normalizedText[i - 1])) {
-      if (normalizedText.startsWith(normalizedQuery, i)) return true
-    }
-  }
-  return false
-}
-
-// Fetch JSON com timeout (R-168) e tratamento de erro silencioso para o caller.
-async function fetchJson(url, timeoutMs = 30_000) {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} em ${url}`)
-    }
-    return await res.json()
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
-
-// Lê manifest+data cacheados em AsyncStorage. Retorna { manifest, data } ou null.
-async function readCachedDatabase() {
-  try {
-    const entries = await AsyncStorage.multiGet([
-      STORAGE_KEYS.manifest,
-      STORAGE_KEYS.data,
-    ])
-    const [rawManifest, rawData] = entries.map(([, v]) => v)
-    if (!rawManifest || !rawData) return null
-    return {
-      manifest: JSON.parse(rawManifest),
-      data: JSON.parse(rawData),
-    }
-  } catch (cacheErr) {
-    console.warn('[useMedicineDatabase] cache read falhou:', cacheErr?.message)
-    return null
-  }
-}
-
-// Decide se cache atual precisa ser substituído. Boolean.
-function shouldRefreshCache({ remoteManifest, cachedManifest, ttlMs, hasData }) {
-  if (!cachedManifest) return true
-  if (!hasData) return true
-  if (cachedManifest.version !== remoteManifest.version) return true
-  const cachedAtMs = cachedManifest.cachedAt
-    ? parseISO(cachedManifest.cachedAt).getTime()
-    : 0
-  // R-020: usa getNow() em vez de Date.now() para consistência com regras gerais
-  return getNow().getTime() - cachedAtMs > ttlMs
-}
-
-// Resolve URL absoluto do medicineDatabase.json a partir do manifest remoto.
-function resolveDataUrl(baseUrl, remoteManifest) {
-  const fileName =
-    remoteManifest?.files?.medicineDatabase?.path?.split('/').pop() ||
-    'medicineDatabase.json'
-  return `${baseUrl}/${fileName}`
-}
-
-// Persiste novo manifest+data em AsyncStorage; retorna manifestToCache.
+// Persiste novo manifest+data via adapter; retorna manifestToCache (com cachedAt).
 async function persistRemote(remoteManifest, remoteData) {
   const manifestToCache = {
     ...remoteManifest,
     cachedAt: getNow().toISOString(),
   }
-  await AsyncStorage.multiSet([
-    [STORAGE_KEYS.manifest, JSON.stringify(manifestToCache)],
-    [STORAGE_KEYS.data, JSON.stringify(remoteData)],
-  ])
+  await storageAdapter.write(FILE_KEY, { manifest: manifestToCache, data: remoteData })
   return manifestToCache
 }
 
@@ -152,7 +84,7 @@ export function useMedicineDatabase({
 
     async function bootstrap() {
       // 1. Cache local primeiro (UX instantânea)
-      const cached = await readCachedDatabase()
+      const cached = await storageAdapter.read(FILE_KEY)
       let hasData = false
       if (cached && !canceled) {
         setManifest(cached.manifest)
@@ -174,7 +106,7 @@ export function useMedicineDatabase({
         })
 
         if (refresh) {
-          const remoteData = await fetchJson(resolveDataUrl(baseUrl, remoteManifest))
+          const remoteData = await fetchJson(resolveDataUrl(baseUrl, remoteManifest, FILE_KEY))
           if (canceled) return
           const manifestToCache = await persistRemote(remoteManifest, remoteData)
           if (!canceled) {

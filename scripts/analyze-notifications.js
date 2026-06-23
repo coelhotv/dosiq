@@ -14,13 +14,14 @@ dotenv.config({ path: '.env.local' });
 const env = 'production'; // Always use .env.local for Supabase
 console.log(`🔍 Analisando notificações no ambiente: ${env}\n`);
 
-// Create Supabase client using .env.local
-const supabaseUrl = 'https://kwqjtdsqkkbebfiaxubb.supabase.co';
+// Create Supabase client using .env.local (URL via env — nunca hardcoded; repo opensource)
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Erro: Variáveis de ambiente do Supabase não configuradas');
-  console.error('   Configure SUPABASE_SERVICE_ROLE_KEY no .env.local');
+  console.error('   Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local');
   process.exit(1);
 }
 
