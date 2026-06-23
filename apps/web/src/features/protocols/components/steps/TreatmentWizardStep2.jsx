@@ -180,6 +180,11 @@ function StepDosageSelector({
           ))}
         </select>
       )}
+      {medicine && (
+        <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+          ✨ {formatDoseHint(protocolData.dosage_per_intake, protocolData.intake_unit, medicine)}
+        </span>
+      )}
       {askDensity && (
         <div style={{ marginTop: 8 }}>
           <label style={{ fontSize: 13 }}>
@@ -195,11 +200,6 @@ function StepDosageSelector({
           </label>
           <small className="wizard__label-note">{densityHint}.</small>
         </div>
-      )}
-      {medicine && (
-        <span className="helper-text active-ingredient-hint" style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
-          ✨ {formatDoseHint(protocolData.dosage_per_intake, protocolData.intake_unit, medicine)}
-        </span>
       )}
     </label>
   )

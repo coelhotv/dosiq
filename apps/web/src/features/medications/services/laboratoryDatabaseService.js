@@ -1,42 +1,28 @@
 /**
  * Serviço de busca na base de laboratórios ANVISA.
  *
- * Dados carregados via lazy import do JSON estático.
- * Busca por nome de laboratório com normalização de acentos.
- *
- * PRINCÍPIO: Zero chamadas ao Supabase — dados pré-carregados do JSON local.
+ * On-demand (037): dados do Supabase Storage público via `createAnvisaDatabase`
+ * de `@dosiq/core` (CON-027), cache na Cache Storage API. Sem import do JSON no bundle.
+ * Degradação graciosa: offline sem cache ⇒ base vazia, sem throw. API pública inalterada.
  */
 
-let _database = null
+import { createAnvisaDatabase, normalizeText } from '@dosiq/core'
+import { createCacheStorageAdapter } from '@medications/services/_cacheStorageAdapter'
+
+const ANVISA_BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/dosiq-assets/anvisa/v1`
+
+const db = createAnvisaDatabase({
+  baseUrl: ANVISA_BASE_URL,
+  fileKey: 'laboratoryDatabase',
+  storageAdapter: createCacheStorageAdapter(),
+})
 
 /**
- * Carrega a base sob demanda (lazy loading para não impactar bundle inicial).
+ * Carrega a base sob demanda (Storage + cache). Nunca lança: offline sem cache ⇒ [].
  * @returns {Promise<Array>}
  */
 async function loadDatabase() {
-  if (!_database) {
-    try {
-      const module = await import('@medications/data/laboratoryDatabase.json')
-      _database = module.default
-    } catch (error) {
-      console.error('Erro ao carregar laboratoryDatabase.json:', error)
-      throw error
-    }
-  }
-  return _database
-}
-
-/**
- * Normaliza texto para busca (remove acentos, lowercase).
- * @param {string} text - Texto a normalizar
- * @returns {string}
- */
-function normalizeText(text) {
-  if (!text) return ''
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos
+  return db.load()
 }
 
 /**
@@ -49,14 +35,12 @@ function normalizeText(text) {
 export async function searchLaboratories(query, limit = 10) {
   if (!query || query.trim().length < 3) return []
 
-  const db = await loadDatabase()
+  const data = await loadDatabase()
   const normalizedQuery = normalizeText(query)
 
-  const results = db
+  return data
     .filter((lab) => normalizeText(lab.laboratory).includes(normalizedQuery))
     .slice(0, limit)
-
-  return results
 }
 
 /**
@@ -68,10 +52,10 @@ export async function searchLaboratories(query, limit = 10) {
 export async function getLaboratoryByName(name) {
   if (!name) return null
 
-  const db = await loadDatabase()
+  const data = await loadDatabase()
   const normalizedName = normalizeText(name)
 
-  return db.find((lab) => normalizeText(lab.laboratory) === normalizedName) || null
+  return data.find((lab) => normalizeText(lab.laboratory) === normalizedName) || null
 }
 
 /**
@@ -80,5 +64,5 @@ export async function getLaboratoryByName(name) {
  * @returns {Promise<Array>}
  */
 export async function getAllLaboratories() {
-  return await loadDatabase()
+  return loadDatabase()
 }

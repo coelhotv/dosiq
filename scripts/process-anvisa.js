@@ -8,7 +8,7 @@
  * - laboratoryDatabase.json (~200-400 laboratorios unicos)
  *
  * Uso: node scripts/process-anvisa.js
- * Output: src/features/medications/data/{medicineDatabase,laboratoryDatabase}.json
+ * Output: data/anvisa/{medicineDatabase,laboratoryDatabase}.json (fonte de upload ao bucket)
  */
 
 import fs from 'fs'
@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const CSV_INPUT = path.join(__dirname, './medicamentos-ativos-anvisa.csv')
-const DATA_DIR = path.join(__dirname, '../src/features/medications/data')
+const DATA_DIR = path.join(__dirname, '../data/anvisa')
 const MEDICINE_JSON_OUTPUT = path.join(DATA_DIR, 'medicineDatabase.json')
 const LABORATORY_JSON_OUTPUT = path.join(DATA_DIR, 'laboratoryDatabase.json')
 

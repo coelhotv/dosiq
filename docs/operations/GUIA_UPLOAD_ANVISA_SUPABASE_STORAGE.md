@@ -5,6 +5,16 @@
 > **Executor**: Humano (PO)
 > **Tempo estimado**: 10 minutos
 
+>**Atualização 037 (web também consome on-demand):** a **web** passou a baixar a base
+> do mesmo bucket on-demand (antes embutia os JSONs no build PWA). Os services web
+> (`medicineDatabaseService` / `laboratoryDatabaseService`) consomem o núcleo
+> `createAnvisaDatabase` de `@dosiq/core` com cache na Cache Storage API (TTL 7d).
+> Consequências operacionais:
+> - Os JSONs do repo agora vivem em **`data/anvisa/`** (raiz) — são a **fonte de upload**
+>   ao bucket e **não são mais empacotados** no build da web.
+> - Atualizar a base em `anvisa/v1/` (substituir arquivos + bump `manifest.version`)
+>   reflete em **web E mobile** sem redeploy (web revalida via manifest+TTL na Cache Storage).
+
 ---
 
 ## 0. Fonte de dados
@@ -17,11 +27,11 @@
 
 ## 1. Pré-requisitos
 
-- Acesso ao projeto Supabase **`kwqjtdsqkkbebfiaxubb`** (dashboard web)
+- Acesso ao projeto Supabase **`[SEU-ID-PROJETO]`** (dashboard web)
 - Permissão de admin no projeto
 - Arquivos locais disponíveis em:
-  - `apps/web/src/features/medications/data/medicineDatabase.json` (≈ 1.34 MB)
-  - `apps/web/src/features/medications/data/laboratoryDatabase.json` (≈ 14 KB)
+  - `data/anvisa/medicineDatabase.json` (≈ 1.34 MB)
+  - `data/anvisa/laboratoryDatabase.json` (≈ 14 KB)
 
 ---
 
@@ -39,9 +49,9 @@ dosiq-assets/                 ← bucket (público, leitura anônima)
 URLs públicas resultantes:
 
 ```
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/manifest.json
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/medicineDatabase.json
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/laboratoryDatabase.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/manifest.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/medicineDatabase.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/laboratoryDatabase.json
 ```
 
 ---
@@ -50,7 +60,7 @@ https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/a
 
 ### 3.1 — Criar o bucket `dosiq-assets`
 
-1. Abra https://supabase.com/dashboard/project/kwqjtdsqkkbebfiaxubb/storage/buckets
+1. Abra https://supabase.com/dashboard/project/[SEU-ID-PROJETO]/storage/buckets
 2. Clique em **"New bucket"**
 3. Configure:
    - **Name**: `dosiq-assets`
@@ -73,7 +83,7 @@ https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/a
 No teu Mac, no diretório do projeto:
 
 ```bash
-cd "/Users/coelhotv/git-icloud/dosiq/apps/web/src/features/medications/data"
+cd "~/git/dosiq/data/anvisa"
 
 cat > manifest.json <<EOF
 {
@@ -139,19 +149,19 @@ Ainda dentro de `dosiq-assets/anvisa/v1/` no dashboard:
 Abra cada URL no browser (sem estar logado no Supabase):
 
 ```
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/manifest.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/manifest.json
 ```
 
 Deve retornar o JSON do manifest. Se voltar `403` ou `not found`, o bucket não está público — volte ao 3.1.
 
 ```
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/medicineDatabase.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/medicineDatabase.json
 ```
 
 Deve baixar/renderizar 1.34 MB de JSON.
 
 ```
-https://kwqjtdsqkkbebfiaxubb.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/laboratoryDatabase.json
+https://[SEU-ID-PROJETO].supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1/laboratoryDatabase.json
 ```
 
 Deve baixar/renderizar 14 KB de JSON.

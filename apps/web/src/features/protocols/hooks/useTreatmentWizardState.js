@@ -15,7 +15,11 @@ export function useTreatmentWizardState({
   treatmentPlanId,
   refresh,
 }) {
-  const nav = useWizardNavigation(preselectedMedicine ? 2 : 1)
+  // Sempre inicia no passo 1: medicamentos vindos da busca ANVISA (preselectedMedicine)
+  // são novos (não estão na tabela medicines) e precisam dos campos do passo 1 —
+  // concentração, unidade de dosagem, forma de apresentação e TTL (injetáveis) — que
+  // a base ANVISA não fornece. Os dados ANVISA entram pré-preenchidos via useWizardMedicine.
+  const nav = useWizardNavigation(1)
   const med = useWizardMedicine(preselectedMedicine)
   const prot = useWizardProtocol()
   const stock = useWizardStock()

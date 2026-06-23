@@ -12,7 +12,14 @@ dist/
 ios/
 android/
 credentials/
+.agent/
+.claude/
+.codex/
+.gemini/
+.github/
+scripts/
 bug-logs/
+data/
 credentials.json
 *.log
 *.sql

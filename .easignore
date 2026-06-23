@@ -20,6 +20,7 @@
 scratch/
 *.log
 .DS_Store
+/data/
 
 # 4. Ignorar dependências locais (o builder instala as suas)
 node_modules/

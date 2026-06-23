@@ -2,28 +2,32 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "planning",
+    "mode": "coding",
     "ceremony_type": "eng-review",
-    "status": "planned",
     "ceremonies_run": ["eng-review"],
     "ceremony_findings_count": 4,
-    "ceremony_scope_decisions": ["F1: CON-028 input completo (7 campos incl doseInstances+treatmentPlans); divergência mora no input", "F2: descope FR-010 camada repos (3→2 camadas); builder-dono-derivação + Zod basta p/ paridade", "F3: sub-fatiar Onda 1 em 1a (core+web+server paridade) / 1b (plan-grouping)", "clarifications: (A) client-build, core em packages/core/src/chatbot/, builder PURO", "guard: paridade cross-surface FR-011/PO-5 bloqueante de release"],
-    "goal": "015 rewrite Tier 2 — chatbot IA: centralizar contextBuilder no @dosiq/core (mata fork web↔server) + plan-grouping (treatment_plans.name) + port mobile. 3 ondas G1/G2/G3",
+    "ceremony_scope_decisions": [
+      "037 Tier 2 cross-platform: hoist on-demand ANVISA p/ @dosiq/core + storage adapter",
+      "Slice 1 = core+adapters+web (tira JSON do build); Slice 2 = mobile paridade",
+      "guard MEDIUM-UP"
+    ],
+    "status": "completed",
+    "goal": "037 Slice 1 ENTREGUE local (core anvisaDatabase + CON-027/ADR-073 accepted + web cacheStorageAdapter + 2 services casca + JSONs→data/anvisa/ + manualChunks removido). PO-1/2/3 fechados, web 4.12.0. Falta: PR-1+check-review, depois Slice 2 (mobile paridade)",
     "goal_type": "feature",
     "tier": 2,
-    "spec_dir": "plans/specs/015-ai-chatbot-mobile",
-    "spec": "plans/specs/015-ai-chatbot-mobile/spec.md",
-    "plan": "plans/specs/015-ai-chatbot-mobile/plan.md",
-    "tasks": "plans/specs/015-ai-chatbot-mobile/tasks.md",
-    "linked_adrs": ["ADR-074"],
-    "linked_contracts": ["CON-028"],
+    "spec_dir": "plans/specs/037-anvisa-web-ondemand",
+    "spec": "plans/specs/037-anvisa-web-ondemand/spec.md",
+    "plan": "plans/specs/037-anvisa-web-ondemand/plan.md",
+    "tasks": "plans/specs/037-anvisa-web-ondemand/tasks.md",
+    "linked_adrs": ["ADR-073"],
+    "linked_contracts": ["CON-027"],
     "last_pr": 680,
-    "branch": "main",
+    "branch": "refactor/037/slice-1-core-web",
     "mobile_version": "0.20.0"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 3,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,
@@ -35,7 +39,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-06-16T14:00:00Z"
+    "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
     "pr": 674,
