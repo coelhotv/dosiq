@@ -1,8 +1,23 @@
-import { getTodayLocal, getSaoPauloTime, parseISO, getNow } from '@utils/dateUtils'
-import { splitDayTimeline, formatDoseItem, isProtocolActiveOnDate } from '@dosiq/core'
-// Fonte única das regras estáticas e do system prompt (compartilhada com o serverless).
-// Reexportadas aqui para compatibilidade de imports existentes (tests, telegram).
-export { buildStaticSystemRules, buildSystemPrompt } from '@/features/chatbot/config/chatbotConfig'
+// buildPatientContext.js — Builder canônico de contexto do paciente p/ o LLM (CON-028, ADR-074).
+//
+// FONTE ÚNICA web↔Telegram↔mobile. Consolida os antigos forks `contextBuilder.js` (web) e
+// `buildServerContext` (Telegram). PURO e agnóstico de runtime: recebe os dados já buscados
+// (saída do fetcher canônico) e injeta — NÃO busca, NÃO conhece browser/app/server.
+//
+// Onda 1a: consolida a lógica atual (a versão rica do web) SEM agrupamento por plano
+// terapêutico — isso entra na Onda 1b. `treatmentPlans` faz parte do shape (CON-028) mas
+// ainda não é consumido aqui.
+//
+// REGRAS:
+// - NUNCA incluir IDs/UUIDs ou dados que identifiquem o usuário.
+// - NUNCA incluir dados de outros usuários.
+// - Manter o contexto compacto (<2000 tokens) p/ não estourar o free tier do LLM.
+// - dateUtils SEMPRE do core (R-020); zero `new Date()` direto.
+
+import { getTodayLocal, getSaoPauloTime, parseISO, getNow } from '../utils/dateUtils.js'
+import { splitDayTimeline } from '../utils/doseZones.js'
+import { formatDoseItem } from '../utils/doseUnit.js'
+import { isProtocolActiveOnDate } from '../utils/adherenceLogic.js'
 
 /** Formata dias restantes (relativo) — Infinity/sem consumo → null (omitido). */
 function _formatDaysRemaining(daysRemaining) {
@@ -12,28 +27,21 @@ function _formatDaysRemaining(daysRemaining) {
 
 /**
  * Monta contexto compacto do paciente para enviar ao LLM.
- * Dados vem do DashboardContext (cache SWR) — ZERO chamadas ao Supabase.
  *
- * ESCOPO (decisão de produto): considera SOMENTE tratamentos ATIVOS com prescrição
- * válida na data da interação (`p.active && isProtocolActiveOnDate(p, hoje)`). Tratamentos
- * finalizados (end_date passado), pausados (active=false) e não-iniciados (start_date futuro)
- * NÃO entram no contexto — evita o bot sugerir repor estoque de cursos já encerrados.
+ * ESCOPO (decisão de produto, R-278): considera SOMENTE tratamentos ATIVOS com prescrição
+ * válida na data da interação (`p.active && isProtocolActiveOnDate(p, hoje)`). Finalizados,
+ * pausados e não-iniciados NÃO entram — evita o bot sugerir repor estoque de cursos encerrados.
  *
- * REGRAS:
- * - NUNCA incluir IDs, UUIDs, ou dados que identifiquem o usuario
- * - NUNCA incluir dados de outros usuarios
- * - Manter o contexto compacto (<2000 tokens) para nao estourar free tier
- *
- * @param {Object} params
- * @param {Array} params.medicines - Medicamentos (incluem .stock[] embedded)
- * @param {Array} params.protocols - Protocolos (todos; filtrados por ativo+válido aqui)
- * @param {Array} params.logs - Logs do dia
- * @param {Array} params.stockSummary - Resumo de estoque ({ medicine, total, daysRemaining, dailyIntake, isLow, isZero })
- * @param {Object} params.stats - Stats de adesao (adherence: 0-1, etc.)
- * @param {Array} params.doseInstances - Ocorrências de dose materializadas (próximas/atrasadas)
- * @returns {string} - Contexto formatado para system prompt
+ * @param {Object} data - Saída do fetcher canônico (ver chatbotContextSchema / CON-028)
+ * @param {Array} data.medicines - Medicamentos (incluem .stock[] embedded)
+ * @param {Array} data.protocols - Protocolos (todos; filtrados por ativo+válido aqui)
+ * @param {Array} data.logs - Logs recentes (filtrados p/ hoje internamente)
+ * @param {Array} data.stockSummary - Resumo de estoque rich ({medicine,total,daysRemaining,dailyIntake,isZero,isLow})
+ * @param {Object} data.stats - Stats de adesão ({ adherence: 0-1 })
+ * @param {Array} data.doseInstances - Ocorrências de dose materializadas (próximas/atrasadas)
+ * @returns {string} - Contexto formatado para o system prompt
  */
-export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances }) {
+export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances } = {}) {
   const today = getTodayLocal() // String YYYY-MM-DD
   const [y, m, d] = today.split('-').map(Number)
   const todayStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`
@@ -123,4 +131,3 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
     .filter(Boolean)
     .join('\n')
 }
-

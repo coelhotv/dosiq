@@ -8,6 +8,12 @@
  * - Chama Groq SDK diretamente (sem fetch para /api/chatbot)
  * - Mantém histórico de conversa por userId em memória
  *
+ * CONTEXTO DO PACIENTE (spec 015 onda 1a): o fetcher + builder são CANÔNICOS em
+ * `@dosiq/core/chatbot` — fonte única web↔Telegram↔mobile. O antigo `buildServerContext` +
+ * `fetchPatientData` (forks server-side) foram removidos; o Telegram passa a buscar via
+ * `fetchChatbotContextData` (que inclui `doseInstances` + planos, antes ausentes aqui) e a
+ * montar a string via `buildPatientContext`. Paridade por construção (mesmo input → mesma string).
+ *
  * Configurações centralizadas em:
  * src/features/chatbot/config/chatbotConfig.js
  *
@@ -17,14 +23,8 @@
 import Groq from 'groq-sdk'
 import { supabase } from '../../services/supabase.js'
 import { createLogger } from '../logger.js'
-import {
-  getNow,
-  getTodayLocal,
-  getSaoPauloTime,
-  addDays,
-  parseLocalDate
-} from '../../utils/dateUtils.js'
-import { isProtocolActiveOnDate } from '@dosiq/core'
+import { getNow } from '../../utils/dateUtils.js'
+import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import {
   CHATBOT_MAX_TOKENS,
   CHATBOT_TEMPERATURE,
@@ -113,203 +113,37 @@ function incrementServerRateCounter(userId) {
   }
 }
 
-// -- Helpers Internos --
+// -- Busca de dados do paciente (fetcher canônico do core) --
 
-function _aggregateStock(stockData) {
-  const stockByMedicine = {}
-  for (const entry of (stockData || [])) {
-    stockByMedicine[entry.medicine_id] = (stockByMedicine[entry.medicine_id] || 0) + entry.quantity
-  }
-  return Object.entries(stockByMedicine).map(([medicine_id, quantity]) => ({
-    medicine_id,
-    quantity,
-  }))
-}
-
-function _filterTodayLogs(logsData, todayStr) {
-  return (logsData || []).filter(log => {
-    return getTodayLocal(getSaoPauloTime(log.taken_at)) === todayStr
-  })
-}
-
-async function _fetchRawPatientData(userId, yesterday) {
-  return Promise.all([
-    supabase
-      .from('medicines')
-      .select('id, name, dosage_per_pill, dosage_unit, active_ingredient, therapeutic_class')
-      .eq('user_id', userId),
-    supabase
-      .from('protocols')
-      .select('id, medicine_id, frequency, time_schedule, dosage_per_intake, active, start_date, end_date')
-      .eq('user_id', userId)
-      .eq('active', true),
-    supabase
-      .from('medicine_logs')
-      .select('protocol_id, taken_at')
-      .eq('user_id', userId)
-      .gte('taken_at', yesterday),
-    supabase
-      .from('stock')
-      .select('medicine_id, quantity')
-      .eq('user_id', userId)
-      .gt('quantity', 0),
-  ])
-}
-
-function _logQueryResults(userId, medicinesResult, protocolsResult, logsResult, stockResult) {
-  logger.debug('✅ Queries Supabase completadas', {
-    userId,
-    medicinesCount: medicinesResult.data?.length || 0,
-    medicinesError: medicinesResult.error?.message,
-    protocolsCount: protocolsResult.data?.length || 0,
-    protocolsError: protocolsResult.error?.message,
-    logsCount: logsResult.data?.length || 0,
-    logsError: logsResult.error?.message,
-    stockCount: stockResult.data?.length || 0,
-    stockError: stockResult.error?.message,
-  })
-}
-
-function _checkMedicineError(userId, medicinesResult) {
-  if (medicinesResult.error) {
-    const { code, details, hint } = medicinesResult.error
-    logger.error('❌ Erro ao buscar medicamentos', medicinesResult.error, {
+/**
+ * Busca + monta o contexto do paciente via core (fetcher + builder canônicos).
+ * Substitui os antigos fetchPatientData/buildServerContext (forks removidos na onda 1a).
+ * @param {string} userId
+ * @returns {Promise<{ context: string|null, error: string|null }>}
+ */
+async function _buildPatientContextForUser(userId) {
+  try {
+    logger.info('📊 Buscando contexto do paciente (core fetcher)', { userId })
+    const data = await fetchChatbotContextData({
+      supabase,
+      getUserId: async () => userId,
+    })
+    const context = buildPatientContext(data)
+    logger.info('✅ Contexto do paciente montado', {
       userId,
-      errorCode: code,
-      errorDetails: details,
-      errorHint: hint,
+      medicinesCount: data.medicines?.length || 0,
+      protocolsCount: data.protocols?.length || 0,
+      doseInstancesCount: data.doseInstances?.length || 0,
+      contextLen: context.length,
     })
-    throw medicinesResult.error
+    return { context, error: null }
+  } catch (error) {
+    logger.error('❌ Erro ao montar contexto do paciente', error, { userId })
+    return {
+      context: null,
+      error: 'Desculpe, tive um problema ao carregar seus dados. Tente novamente.',
+    }
   }
-}
-
-// -- Busca de dados do paciente --
-
-/**
- * Busca dados do paciente no Supabase para construção de contexto.
- * @param {string} userId
- * @returns {Promise<{ medicines, protocols, logs, stockSummary, stats }>}
- */
-export async function fetchPatientData(userId) {
-  logger.debug('📊 fetchPatientData: iniciando', { userId })
-
-  const now = getNow()
-  const todayStr = getTodayLocal()
-  const yesterday = addDays(parseLocalDate(todayStr), -1).toISOString()
-
-  logger.debug('📅 Intervalo de tempo', {
-    userId,
-    now: now.toISOString(),
-    yesterday,
-  })
-
-  logger.debug('🔄 Executando 4 queries em paralelo (Supabase)', { userId })
-
-  const [medicinesResult, protocolsResult, logsResult, stockResult] = await _fetchRawPatientData(userId, yesterday)
-
-  _logQueryResults(userId, medicinesResult, protocolsResult, logsResult, stockResult)
-  _checkMedicineError(userId, medicinesResult)
-
-  // Filtrar logs de hoje (com timezone correto)
-  const todayLogs = _filterTodayLogs(logsResult.data, todayStr)
-
-  // Agregar estoque por medicamento
-  const stockSummary = _aggregateStock(stockResult.data)
-
-  // Calcular adesão simples dos últimos 7 dias
-  const stats = await calculateSimpleAdherence(userId, protocolsResult.data || [])
-
-  return {
-    medicines: medicinesResult.data || [],
-    protocols: protocolsResult.data || [],
-    logs: todayLogs,
-    stockSummary,
-    stats,
-  }
-}
-
-/**
- * Calcula adesão simples nos últimos 7 dias.
- * Versão simplificada sem protocolo completo.
- * @param {string} userId
- * @param {Array} protocols
- * @returns {Promise<{ adherence: number|null }>}
- */
-async function calculateSimpleAdherence(userId, protocols) {
-  if (!protocols.length) return { adherence: null }
-
-  const sevenDaysAgo = addDays(getNow(), -7).toISOString()
-  const { data: logs } = await supabase
-    .from('medicine_logs')
-    .select('id')
-    .eq('user_id', userId)
-    .gte('taken_at', sevenDaysAgo)
-
-  // Estimativa simples: doses registradas / doses esperadas
-  const totalDosesPerDay = protocols.reduce(
-    (sum, p) => sum + (p.time_schedule?.length || 1),
-    0
-  )
-  const expectedDoses = totalDosesPerDay * 7
-  const actualDoses = logs?.length || 0
-
-  return {
-    adherence: expectedDoses > 0 ? Math.min(actualDoses / expectedDoses, 1) : null,
-  }
-}
-
-// -- Construção de contexto (adaptado de contextBuilder.js) --
-
-/**
- * Monta contexto compacto do paciente para o LLM.
- * Mesmo formato do contextBuilder.js do cliente web.
- * @param {{ medicines, protocols, logs, stockSummary, stats }} patientData
- * @returns {string}
- */
-export function buildServerContext({ medicines, protocols, logs, stockSummary, stats }) {
-  const today = getTodayLocal() // YYYY-MM-DD
-  const todayStr = today.split('-').reverse().join('/')
-
-  // Apenas tratamentos ATIVOS com prescrição válida hoje (exclui finalizados/futuros) — paridade web.
-  // Evita o bot sugerir repor estoque de cursos já encerrados.
-  const validProtocols = (protocols || []).filter(
-    (p) => p.active !== false && isProtocolActiveOnDate(p, today)
-  )
-  const validMedicineIds = new Set(validProtocols.map((p) => p.medicine_id))
-
-  const medsContext = (medicines || [])
-    .filter((med) => validMedicineIds.has(med.id))
-    .map((med) => {
-      const protocol = validProtocols.find((p) => p.medicine_id === med.id)
-      const stockEntry = (stockSummary || []).find((s) => s.medicine_id === med.id)
-      const totalStock = stockEntry?.quantity ?? 0
-
-      return {
-        nome: med.name,
-        principioAtivo: med.active_ingredient,
-        classeTerapeutica: med.therapeutic_class,
-        dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
-        frequencia: protocol?.frequency ?? 'sem protocolo',
-        horarios: protocol?.time_schedule ?? [],
-        estoque: totalStock,
-      }
-    })
-
-  const adherence7d = stats?.adherence != null ? Math.round(stats.adherence * 100) : null
-
-  return [
-    `Data: ${todayStr}`,
-    `Tratamentos ativos: ${medsContext.length}`,
-    ...medsContext.map(m => {
-      const infos = [m.principioAtivo, m.classeTerapeutica].filter(Boolean).join(', ')
-      const detalhe = infos ? ` [${infos}]` : ''
-      return `- ${m.nome}${detalhe} (${m.dosagem}): ${m.frequencia}, horarios ${m.horarios.join(', ') || 'nao definidos'}, estoque ${m.estoque} un.`
-    }),
-    `Doses registradas hoje: ${logs?.length ?? 0}`,
-    adherence7d != null ? `Adesao ultimos 7 dias: ${adherence7d}%` : '',
-  ]
-    .filter(Boolean)
-    .join('\n')
 }
 
 /**
@@ -398,30 +232,6 @@ export function updateConversationHistory(userId, userMessage, assistantResponse
 }
 
 // -- Função principal --
-
-async function _fetchAndLogPatientData(userId) {
-  try {
-    logger.info('📊 Buscando dados do paciente no Supabase', { userId })
-    const patientData = await fetchPatientData(userId)
-    logger.info('✅ Dados do paciente obtidos com sucesso', {
-      userId,
-      medicinesCount: patientData.medicines?.length || 0,
-      protocolsCount: patientData.protocols?.length || 0,
-      logsCount: patientData.logs?.length || 0,
-      stockCount: patientData.stockSummary?.length || 0,
-      adherencePercent: patientData.stats?.adherence
-        ? Math.round(patientData.stats.adherence * 100)
-        : null,
-    })
-    return { patientData, error: null }
-  } catch (error) {
-    logger.error('❌ Erro ao buscar dados do paciente', error, { userId })
-    return {
-      patientData: null,
-      error: 'Desculpe, tive um problema ao carregar seus dados. Tente novamente.',
-    }
-  }
-}
 
 async function _callGroqApi(userId, messages) {
   try {
@@ -520,18 +330,16 @@ export async function sendTelegramChatMessage({ message, userId }) {
     return { response: preconditionError, blocked, rateLimited }
   }
 
-  // 4. Buscar dados do paciente
-  const { patientData, error: fetchError } = await _fetchAndLogPatientData(userId)
-  if (fetchError) {
-    return { response: fetchError, blocked: false, rateLimited: false }
+  // 4. Buscar dados + montar contexto do paciente (fetcher + builder canônicos do core)
+  const { context, error: contextError } = await _buildPatientContextForUser(userId)
+  if (contextError) {
+    return { response: contextError, blocked: false, rateLimited: false }
   }
 
-  // 5. Construir contexto e system prompt
-  logger.debug('🔨 Construindo contexto do paciente', { userId })
-  const context = buildServerContext(patientData)
+  // 5. System prompt + histórico
   const systemPrompt = buildServerSystemPrompt(context)
   const history = getConversationHistory(userId)
-  logger.debug('✅ Contexto construído', {
+  logger.debug('✅ System prompt construído', {
     userId,
     contextLen: context.length,
     systemPromptLen: systemPrompt.length,

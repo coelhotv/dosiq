@@ -25,5 +25,8 @@ export * from './repositories/index.js'
 // Re-exporte de services (Fase 2 — orquestração de geração de dose_instances)
 export * from './services/index.js'
 
+// Re-exporte de chatbot (spec 015 — fetcher + builder canônico de contexto, CON-028)
+export * from './chatbot/index.js'
+
 // Re-exporte de protocols-utils (opcional, auditado em 2.4)
 // export * from './protocols-utils/index.js'
