@@ -1,5 +1,5 @@
 import { validateUserMessage, addDisclaimerIfNeeded } from './safetyGuard'
-import { buildPatientContext } from './contextBuilder'
+import { buildPatientContext } from '@dosiq/core'
 import { getNow } from '@utils/dateUtils'
 import { supabase } from '@shared/utils/supabase'
 import {

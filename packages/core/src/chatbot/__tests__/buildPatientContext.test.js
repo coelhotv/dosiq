@@ -1,5 +1,8 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { buildPatientContext, buildSystemPrompt } from '@/features/chatbot/services/contextBuilder'
+import { buildPatientContext } from '../buildPatientContext.js'
+
+// Builder canônico do core (spec 015 onda 1a) — porta os testes do antigo
+// contextBuilder.test.js (web) + failure modes degenerados (C1.5).
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -19,17 +22,10 @@ const mockMedicines = [
 ]
 
 const mockProtocols = [
-  {
-    medicine_id: 'uuid-1',
-    active: true,
-    frequency: 'diario',
-    time_schedule: ['08:00', '20:00'],
-  },
+  { medicine_id: 'uuid-1', active: true, frequency: 'diario', time_schedule: ['08:00', '20:00'] },
 ]
 
-const mockLogs = [
-  { taken_at: new Date().toISOString() }, // hoje
-]
+const mockLogs = [{ taken_at: new Date().toISOString() }] // hoje
 
 const mockStockSummary = [
   { medicine: { id: 'uuid-1' }, total: 20, daysRemaining: 40, dailyIntake: 1, isLow: false, isZero: false },
@@ -133,18 +129,6 @@ describe('buildPatientContext', () => {
     expect(result.length).toBeLessThan(2000)
   })
 
-  it('lida com dados vazios (sem medicamentos)', () => {
-    const result = buildPatientContext({
-      medicines: [],
-      protocols: [],
-      logs: [],
-      stockSummary: [],
-      stats: null,
-    })
-    expect(result).toContain('Tratamentos ativos: 0')
-    expect(result).toContain('Doses registradas hoje: 0')
-  })
-
   it('inclui consumo diario e dias restantes (relativo)', () => {
     const result = buildPatientContext({
       medicines: mockMedicines,
@@ -157,7 +141,7 @@ describe('buildPatientContext', () => {
     expect(result).toContain('40 dias restantes')
   })
 
-  it('exclui tratamento FINALIZADO (end_date passado) do contexto de estoque', () => {
+  it('exclui tratamento FINALIZADO (end_date passado) do contexto', () => {
     const finishedProtocol = [
       { medicine_id: 'uuid-1', active: true, frequency: 'diario', time_schedule: ['08:00'], end_date: '2020-01-01' },
     ]
@@ -197,18 +181,60 @@ describe('buildPatientContext', () => {
     })
     expect(result).toContain('Nenhuma dose pendente para hoje')
   })
-})
 
-describe('buildSystemPrompt', () => {
-  it('inclui regras absolutas no prompt', () => {
-    const result = buildSystemPrompt('contexto teste')
-    expect(result).toContain('REGRAS ABSOLUTAS')
-    expect(result).toContain('NUNCA')
+  // -- Failure modes degenerados (C1.5) --
+
+  it('não lança com argumento totalmente ausente (undefined)', () => {
+    expect(() => buildPatientContext()).not.toThrow()
+    const result = buildPatientContext()
+    expect(result).toContain('Tratamentos ativos: 0')
   })
 
-  it('inclui contexto do paciente', () => {
-    const result = buildSystemPrompt('Metformina 500mg')
-    expect(result).toContain('Metformina 500mg')
-    expect(result).toContain('DADOS DO PACIENTE')
+  it('não lança com arrays null', () => {
+    const result = buildPatientContext({
+      medicines: null,
+      protocols: null,
+      logs: null,
+      stockSummary: null,
+      stats: null,
+      doseInstances: null,
+    })
+    expect(result).toContain('Tratamentos ativos: 0')
+    expect(result).toContain('Doses registradas hoje: 0')
+  })
+
+  it('daysRemaining Infinity → omite linha de dias restantes', () => {
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: [{ medicine: { id: 'uuid-1' }, total: 20, daysRemaining: Infinity, dailyIntake: 0, isZero: false }],
+      stats: null,
+    })
+    expect(result).toContain('Metformina')
+    expect(result).not.toContain('Infinity')
+    expect(result).not.toContain('restantes')
+  })
+
+  it('protocolo órfão (medicine inexistente) não lista medicamento', () => {
+    const result = buildPatientContext({
+      medicines: [],
+      protocols: [{ medicine_id: 'uuid-orfao', active: true, frequency: 'diario', time_schedule: ['08:00'] }],
+      logs: [],
+      stockSummary: [],
+      stats: null,
+    })
+    expect(result).toContain('Tratamentos ativos: 0')
+  })
+
+  it('stockSummary ausente → fallback p/ soma de medicine.stock', () => {
+    const result = buildPatientContext({
+      medicines: mockMedicines,
+      protocols: mockProtocols,
+      logs: [],
+      stockSummary: [],
+      stats: null,
+    })
+    expect(result).toContain('estoque 20 un.')
   })
 })

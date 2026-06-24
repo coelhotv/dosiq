@@ -80,6 +80,13 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ♻️ Refatorado (Chatbot IA — fetcher + builder de contexto canônicos no core, spec 015 Onda 1a) — core · web (no-user-impact) · Telegram
+
+- **Contexto do paciente do chatbot centralizado em `@dosiq/core/chatbot`** (CON-028 / ADR-074): novo `fetchChatbotContextData({supabase,getUserId})` (selects únicos: medicines+stock, protocols+`treatment_plan`, logs, dose_instances, treatment_plans) + `buildPatientContext(data)` (builder **puro**, agnóstico de runtime) + seam Zod `ChatbotContextData`. Mata os dois forks: `contextBuilder.js` (web) e `buildServerContext`/`fetchPatientData` (Telegram) **removidos** — web `chatbotService` e o bot passam a importar do core. **Sem agrupamento por plano ainda** (Onda 1b).
+- **Telegram ganha paridade de contexto:** o bot agora envia `dose_instances` (doses pendentes/atrasadas de hoje) + alertas de estoque + dias-restantes, antes ausentes no fork server-side. **Adesão unificada instances-based** (`taken/(taken+missed)`, R-248) — antes web era 30d-instances e Telegram 7d-logs.
+- **Trava-drift:** teste de paridade (`packages/core/src/chatbot/__tests__/parity.test.js`) — mesmo `ChatbotContextData` → string idêntica nas superfícies (PO-5). Guardrails de segurança (systemPrompt + `safetyGuard`) permanecem **server-side**, intactos (AP-237 — `api/chatbot.js` não tocado).
+- **SemVer:** sem bump. Web = refatoração sem mudança de comportamento (builder é port exato → output idêntico). Telegram bot não é versionado (deploy contínuo). `@dosiq/core` interno.
+
 ### ♻️ Refatorado (ANVISA on-demand — mobile consome o core, spec 037 Slice 2) — mobile `0.20.0`→**`0.20.1`** (patch) · core
 
 - **`useMedicineDatabase` (mobile) passa a consumir os helpers canônicos de `@dosiq/core`** (`fetchJson`/timeout, `shouldRefreshCache`, `resolveDataUrl`, `normalizeText`, `matchesPrefix` — CON-027/ADR-073), matando a triplicação que existia entre mobile e os 2 services web. O hook mantém sua orquestração de 2 fases (cache instantâneo + refresh em background) e o estado de erro — **comportamento idêntico** (rede de segurança `useMedicineDatabase.test.js` 22/22 verde). Persistência via novo `_asyncStorageAdapter` (AsyncStorage, interface CON-027), preservando as chaves de cache em produção.
