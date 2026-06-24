@@ -49,8 +49,8 @@ function _toMedContext(med, validProtocols, stockByMedId) {
     consumoDiario: stockEntry?.dailyIntake ?? null,
     diasRestantes: _formatDaysRemaining(stockEntry?.daysRemaining),
     semEstoque: stockEntry?.isZero ?? totalStock === 0,
-    // Plano terapêutico nomeado (onda 1b). String vazia/nulo → sem plano (flat, sem header).
-    planName: protocol?.treatment_plan?.name || null,
+    // Plano terapêutico nomeado (onda 1b). Vazio/nulo/só-espaços → sem plano (flat, sem header).
+    planName: protocol?.treatment_plan?.name?.trim() || null,
   }
 }
 

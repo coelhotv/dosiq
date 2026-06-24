@@ -299,6 +299,19 @@ describe('buildPatientContext — agrupamento por plano (onda 1b)', () => {
     expect(result).not.toContain('Sem plano')
   })
 
+  it('treatment_plan.name só-espaços → tratado como sem plano (sem header vazio)', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [{ medicine_id: 'm1', active: true, frequency: 'diario', time_schedule: ['08:00'], treatment_plan: { name: '   ' } }],
+      logs: [],
+      stockSummary: stockOf(['m1']),
+      stats: null,
+    })
+    expect(result).toContain('Atorvastatina')
+    expect(result).not.toContain('Plano "')
+    expect(result).not.toContain('"   "')
+  })
+
   it('nenhum plano nomeado → formato legado flat idêntico (sem headers)', () => {
     const result = buildPatientContext({
       medicines: meds,
