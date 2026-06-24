@@ -12,7 +12,7 @@ import {
   CHATBOT_RATE_LIMIT_MAX,
   CHATBOT_RATE_LIMIT_WINDOW,
   CHATBOT_BLOCKED_PATTERNS,
-  buildSystemPrompt,
+  buildStaticSystemRules,
 } from '../apps/web/src/features/chatbot/config/chatbotConfig.js'
 import { getServerTimestamp } from '@dosiq/core/utils'
 
@@ -46,6 +46,50 @@ function rateLimited(key) {
 // direto ignoraria o safetyGuard do front). Bloqueia intenções clínicas perigosas.
 function isBlockedMessage(message) {
   return CHATBOT_BLOCKED_PATTERNS.some((pattern) => pattern.test(message))
+}
+
+// Monta as messages do Groq na ordem otimizada p/ Prompt Caching (prefix-match exato):
+//   1. system ESTÁTICO  → idêntico p/ TODOS os usuários → cache GLOBAL entre conversas.
+//   2. DADOS DO PACIENTE → estáveis na sessão (mudam 2-3x/dia, raramente mid-chat) →
+//      cacheados por usuário/conversa logo após o system.
+//   3. histórico         → cresce por turno, cacheado em cima do prefixo estável acima.
+//   4. pergunta          → 100% dinâmica, único trecho sempre não-cacheado.
+// Pôr o paciente ANTES do histórico maximiza o prefixo estável (ele não muda a cada
+// turno); só perde cache se o paciente mudar no meio da conversa (raro). Regras
+// compostas NO SERVIDOR (AP-237). Extraído do handler p/ baixar complexidade.
+function buildChatMessages({ staticRules, history, patientContext, message }) {
+  return [
+    { role: 'system', content: staticRules },
+    ...(patientContext
+      ? [{ role: 'system', content: `DADOS DO PACIENTE:\n${patientContext}` }]
+      : []),
+    ...history.slice(-CHATBOT_MAX_HISTORY).map((h) => ({
+      role: h.role === 'user' ? 'user' : 'assistant',
+      content: h.content,
+    })),
+    { role: 'user', content: message },
+  ]
+}
+
+// Loga métricas do Groq Prompt Caching (hit rate + economia estimada). Extraído do
+// handler p/ baixar complexidade. cached_prompt_tokens tem 50% de desconto.
+function logGroqUsage(completion) {
+  const promptTokens = completion.usage?.prompt_tokens || 0
+  const cachedTokens = completion.usage?.cached_prompt_tokens || 0
+  const cacheHitRate = promptTokens > 0 ? Math.round((cachedTokens / promptTokens) * 100) : 0
+  console.log(JSON.stringify({
+    timestamp: getServerTimestamp(),
+    service: 'chatbot-api',
+    level: 'info',
+    message: 'Groq response received',
+    model: MODEL,
+    promptTokens,
+    cachedTokens,
+    cacheHitRate: `${cacheHitRate}%`,
+    estimatedTokenSavings: Math.round(cachedTokens * 0.5),
+    completionTokens: completion.usage?.completion_tokens,
+    totalTokens: completion.usage?.total_tokens,
+  }))
 }
 
 function extractToken(req) {
@@ -138,17 +182,20 @@ export default async function handler(req, res) {
       })
     }
 
-    // 5. System prompt composto NO SERVIDOR (regras autoritativas + contexto do cliente)
-    const systemPrompt = buildSystemPrompt(patientContext)
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...history.slice(-CHATBOT_MAX_HISTORY).map((h) => ({
-        role: h.role === 'user' ? 'user' : 'assistant',
-        content: h.content,
-      })),
-      { role: 'user', content: message },
-    ]
+    // 5. Composição das messages otimizada p/ Groq Prompt Caching (prefix-match exato):
+    //    - system ESTÁTICO primeiro → idêntico p/ TODOS os usuários/conversas → cache
+    //      GLOBAL (maior pool de hits possível). Regras autoritativas, compostas NO
+    //      SERVIDOR (AP-237: nunca recebidas do cliente).
+    //    - histórico em seguida → prefixo estável por conversa (cresce a cada turno).
+    //    - DADOS DO PACIENTE (dinâmico) o MAIS TARDE possível, logo antes da pergunta:
+    //      assim ele só quebra o cache a partir dali, sem invalidar o system global nem
+    //      o histórico. (Antes era embutido no system → tornava o bloco inteiro por-usuário.)
+    const messages = buildChatMessages({
+      staticRules: buildStaticSystemRules(),
+      history,
+      patientContext,
+      message,
+    })
 
     const completion = await groq.chat.completions.create({
       model: MODEL,
@@ -161,25 +208,7 @@ export default async function handler(req, res) {
     const response =
       completion.choices[0]?.message?.content || 'Desculpe, não consegui responder.'
 
-    // Log cache hit metrics (Groq Prompt Caching)
-    const promptTokens = completion.usage?.prompt_tokens || 0
-    const cachedTokens = completion.usage?.cached_prompt_tokens || 0
-    const cacheHitRate = promptTokens > 0 ? Math.round((cachedTokens / promptTokens) * 100) : 0
-    const estimatedSavings = Math.round(cachedTokens * 0.5) // 50% desconto em cached_tokens
-
-    console.log(JSON.stringify({
-      timestamp: getServerTimestamp(),
-      service: 'chatbot-api',
-      level: 'info',
-      message: 'Groq response received',
-      model: MODEL,
-      promptTokens,
-      cachedTokens,
-      cacheHitRate: `${cacheHitRate}%`,
-      estimatedTokenSavings: estimatedSavings,
-      completionTokens: completion.usage?.completion_tokens,
-      totalTokens: completion.usage?.total_tokens,
-    }))
+    logGroqUsage(completion)
 
     return res.status(200).json({
       response,

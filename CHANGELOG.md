@@ -7,6 +7,51 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Web v4.15.0 + App v0.21.1 (mobile) — 2026-06-24 — Paridade do chat PWA↔mobile + textos no core (spec 015, Onda 3)
+
+> **Bump:** web `4.14.0 → 4.15.0` (minor — paridade de UX no chat) · mobile `0.21.0 → 0.21.1`
+> (patch — welcome deixa de embutir o disclaimer; passa a vir do banner). Textos de UI do chat
+> centralizados em `@dosiq/core/chatbot` (fonte única web↔mobile).
+
+### ✨ Melhorias (PWA — paridade com o app nativo)
+
+- **Bolhas alinhadas:** mensagens do usuário à direita, do assistente à esquerda (antes corriam
+  centralizadas — o alinhamento era anulado pelo wrapper da lista).
+- **Header com identidade:** ícone do assistente + título "Assistente Dosiq IA".
+- **Disclaimer em banner** próprio, com fundo amarelo claro (não se confunde com as bolhas ao rolar).
+- **"Digitando" animado** (pontos pulsando) no lugar do texto estático.
+- **Chips de sugestão** disparam a mensagem direto ao toque (antes só preenchiam o campo).
+- **Foco mantido** no campo de texto após enviar (não precisa reclicar a cada pergunta).
+
+### 🐛 Correções
+
+- **Adesão no payload (web):** o chat passava a adesão no shape do Dashboard (`rates.adherence`),
+  não no contrato do core (`stats.adherence`) — a linha sumia e o assistente respondia "não tenho
+  informações". Normalizado no adapter web.
+- Mensagens de erro transitórias (falha de conexão, limite atingido) deixam de poluir o histórico
+  persistido — exibidas na tela, não salvas.
+- Acesso defensivo à sessão (evita erro raro de inicialização).
+- Chave de renderização de mensagem estável (corrige warning de chave duplicada do `AnimatePresence`).
+
+### ⚡ Performance — Groq Prompt Caching
+
+- Reordenação das `messages` enviadas ao Groq (web/mobile + Telegram) p/ maximizar cache hit por
+  prefixo: `system` estático (cache global entre usuários) → dados do paciente (estáveis na sessão)
+  → histórico → pergunta. Antes o contexto do paciente era embutido no `system`, tornando o bloco
+  inteiro por-usuário e quase nunca cacheável.
+
+### 🛠️ Dev
+
+- Proxy do Vite dev (`/api` → `EXPO_PUBLIC_API_BASE_URL`) p/ smoke do chat IA em `vite dev` sem
+  rodar o serverless localmente (server-side, sem CORS). Dev-only; build de prod inalterado.
+
+### 🧹 Interno
+
+- Textos de UI do chat (boas-vindas, disclaimer, sugestões) numa fonte única em `@dosiq/core`,
+  consumida por web e mobile (fim da duplicação). Guardrails de segurança permanecem server-side.
+
+---
+
 ## App v0.21.0 (mobile) + Web v4.14.0 — 2026-06-24 — Assistente IA no mobile + payload cross-superfície enriquecido (spec 015, Onda 2)
 
 > **Bump:** mobile `0.20.1 → 0.21.0` (minor — nova feature: chat IA nativo) · web `4.13.0 → 4.14.0`

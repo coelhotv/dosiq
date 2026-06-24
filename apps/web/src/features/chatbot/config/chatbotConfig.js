@@ -62,12 +62,15 @@ export const CHATBOT_BLOCKED_PATTERNS = [
   /efeito\s+colateral\s+grave/i,
 ]
 
-/**
- * Disclaimer médico adicionado automaticamente quando a resposta do LLM
- * contém conteúdo relacionado a saúde/medicamentos.
- */
-export const CHATBOT_DISCLAIMER =
-  'Não substituo orientação médica. Consulte seu médico para decisões sobre o seu tratamento.'
+// Textos de UI canônicos vêm do core (Onda 3, FR-013 — fonte única web↔mobile). O core é
+// PURO (sem deps de plataforma), então o reexport preserva a portabilidade browser/node deste
+// arquivo (consumido por api/chatbot.js e Telegram). createWelcomeMessage do core NÃO embute
+// disclaimer (banner cobre — FR-016); o disclaimer no Telegram é anexado lá (não via welcome).
+export {
+  CHATBOT_DISCLAIMER,
+  CHATBOT_QUICK_SUGGESTIONS,
+  createWelcomeMessage,
+} from '@dosiq/core'
 
 /** Palavras-chave que disparam o disclaimer na resposta. */
 export const CHATBOT_HEALTH_KEYWORDS = [
@@ -87,18 +90,7 @@ export const CHATBOT_HISTORY_STORAGE_KEY = 'mr_chat_history'
 /** Máximo de mensagens a manter e exibir no histórico persistido (10 turnos = 20 mensagens). */
 export const CHATBOT_HISTORY_MAX_DISPLAY = 20
 
-/**
- * Cria mensagem de boas-vindas inicial com timestamp.
- * Reutilizável em web (ChatWindow) e server (Telegram).
- * @returns {{role: string, content: string, timestamp: number}}
- */
-export function createWelcomeMessage(timestamp = null) {
-  return {
-    role: 'assistant',
-    content: `Olá! Sou seu Assistente IA de medicamentos. Como posso ajudar?\n\n_${CHATBOT_DISCLAIMER}_`,
-    timestamp: timestamp,
-  }
-}
+// createWelcomeMessage: reexportado do core (acima). NÃO redefinir aqui.
 
 // -- System Prompt (regras estáticas) --
 

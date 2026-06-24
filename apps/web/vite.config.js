@@ -1,12 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Carrega .env* (inclui EXPO_PUBLIC_*) só no processo do Vite — NÃO expõe ao client.
+  // Permite smoke do chat IA em dev apontando /api/* para o backend serverless de prod
+  // (api/chatbot.js inalterado; proxy server-side evita CORS de localhost→dosiq.app).
+  const env = loadEnv(mode, path.resolve(__dirname), '')
+  const apiBase = (env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '')
+
+  return {
   server: {
     host: true, // expõe na rede local (0.0.0.0) — acesse pelo IP da máquina no celular
+    // Proxy /api → backend remoto quando EXPO_PUBLIC_API_BASE_URL setado (dev-only).
+    ...(apiBase
+      ? { proxy: { '/api': { target: apiBase, changeOrigin: true, secure: true } } }
+      : {}),
   },
   resolve: {
     alias: {
@@ -97,4 +108,5 @@ export default defineConfig({
       }
     })
   ]
+  }
 })
