@@ -18,7 +18,7 @@ import { getServerTimestamp } from '@dosiq/core/utils'
 
 // Modelo instruct fixo (sem web search — alinha com o grounding clínico).
 // Override via env GROQ_MODEL na Vercel p/ A/B (ex.: openai/gpt-oss-120b como secundário).
-const MODEL = process.env.GROQ_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct'
+const MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
 
 // Env Supabase (fallback VITE_ — R-090). Usado só para validar o JWT do usuário.
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL

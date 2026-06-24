@@ -238,3 +238,93 @@ describe('buildPatientContext', () => {
     expect(result).toContain('estoque 20 un.')
   })
 })
+
+// -- Plan-grouping (onda 1b) --
+describe('buildPatientContext — agrupamento por plano (onda 1b)', () => {
+  const meds = [
+    { id: 'm1', name: 'Atorvastatina', dosage_per_pill: 20, dosage_unit: 'mg', stock: [{ quantity: 30 }] },
+    { id: 'm2', name: 'Ezetimiba', dosage_per_pill: 10, dosage_unit: 'mg', stock: [{ quantity: 30 }] },
+    { id: 'm3', name: 'Metformina', dosage_per_pill: 500, dosage_unit: 'mg', stock: [{ quantity: 60 }] },
+    { id: 'm4', name: 'Sinvastatina', dosage_per_pill: 40, dosage_unit: 'mg', stock: [{ quantity: 30 }] },
+  ]
+  const plan = (name) => ({ active: true, frequency: 'diario', time_schedule: ['08:00'], treatment_plan: name ? { name } : null })
+  const stockOf = (ids) => ids.map((id) => ({ medicine: { id }, total: 30, daysRemaining: 30, dailyIntake: 1, isZero: false, isLow: false }))
+
+  it('agrupa por plano e lista os sem-plano flat ANTES dos grupos nomeados', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [
+        { medicine_id: 'm1', ...plan('dislipidemia') },
+        { medicine_id: 'm2', ...plan('dislipidemia') },
+        { medicine_id: 'm4', ...plan(null) }, // sem plano → flat
+      ],
+      logs: [],
+      stockSummary: stockOf(['m1', 'm2', 'm4']),
+      stats: null,
+    })
+    expect(result).toContain('Plano "dislipidemia":')
+    expect(result).toContain('Atorvastatina')
+    expect(result).toContain('Ezetimiba')
+    expect(result).toContain('Sinvastatina')
+    // sem rótulo "Sem plano"
+    expect(result).not.toContain('Sem plano')
+    // ordem: Sinvastatina (flat) ANTES do header do plano
+    expect(result.indexOf('Sinvastatina')).toBeLessThan(result.indexOf('Plano "dislipidemia":'))
+    // itens do plano DEPOIS do header
+    expect(result.indexOf('Plano "dislipidemia":')).toBeLessThan(result.indexOf('Atorvastatina'))
+  })
+
+  it('plano com 1 item ainda recebe header', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [{ medicine_id: 'm3', ...plan('quarteto') }],
+      logs: [],
+      stockSummary: stockOf(['m3']),
+      stats: null,
+    })
+    expect(result).toContain('Plano "quarteto":')
+    expect(result).toContain('Metformina')
+  })
+
+  it('treatment_plan.name nulo → tratado como sem plano (flat, sem header)', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [{ medicine_id: 'm1', active: true, frequency: 'diario', time_schedule: ['08:00'], treatment_plan: { name: null } }],
+      logs: [],
+      stockSummary: stockOf(['m1']),
+      stats: null,
+    })
+    expect(result).toContain('Atorvastatina')
+    expect(result).not.toContain('Plano "')
+    expect(result).not.toContain('Sem plano')
+  })
+
+  it('treatment_plan.name só-espaços → tratado como sem plano (sem header vazio)', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [{ medicine_id: 'm1', active: true, frequency: 'diario', time_schedule: ['08:00'], treatment_plan: { name: '   ' } }],
+      logs: [],
+      stockSummary: stockOf(['m1']),
+      stats: null,
+    })
+    expect(result).toContain('Atorvastatina')
+    expect(result).not.toContain('Plano "')
+    expect(result).not.toContain('"   "')
+  })
+
+  it('nenhum plano nomeado → formato legado flat idêntico (sem headers)', () => {
+    const result = buildPatientContext({
+      medicines: meds,
+      protocols: [
+        { medicine_id: 'm1', ...plan(null) },
+        { medicine_id: 'm4', ...plan(null) },
+      ],
+      logs: [],
+      stockSummary: stockOf(['m1', 'm4']),
+      stats: null,
+    })
+    expect(result).not.toContain('Plano "')
+    expect(result).toContain('- Atorvastatina')
+    expect(result).toContain('- Sinvastatina')
+  })
+})

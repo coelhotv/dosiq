@@ -80,6 +80,12 @@ Cuidando da sua rotina com carinho e zero complicação. 💙
 
 ## [Unreleased]
 
+### ✨ Adicionado (Chatbot IA — contexto agrupado por plano terapêutico, spec 015 Onda 1b) — web `4.12.0`→**`4.13.0`** (minor) · Telegram · core
+
+- **O contexto enviado ao LLM agora agrupa os medicamentos pelo nome do plano terapêutico** (`treatment_plans.name`): cada plano nomeado ganha um cabeçalho `Plano "<nome>":` com seus itens, fazendo o bot responder pela **intenção** do paciente (os planos que ele nomeou) em vez de inferir por classe terapêutica (US1/FR-002). Vale para as 3 superfícies (web, Telegram e — futuramente — mobile) por consumirem o builder único do core.
+- **Tratamentos sem plano nomeado** são listados flat **no início, sem cabeçalho** (sem rótulo "Sem plano" — evita injetar ruído/associação falsa no LLM e gasta menos tokens); os grupos nomeados vêm depois. Quando nenhum tratamento tem plano nomeado, a saída é o **formato legado idêntico** (compat).
+- **SemVer:** web minor (`4.12.0`→`4.13.0`, melhoria user-facing no assistente). Telegram bot não-versionado (deploy contínuo). `@dosiq/core` interno. PO-1 + PO-5 fechados; sem migração DB (join `treatment_plan` já trazido na Onda 1a).
+
 ### ♻️ Refatorado (Chatbot IA — fetcher + builder de contexto canônicos no core, spec 015 Onda 1a) — core · web (no-user-impact) · Telegram
 
 - **Contexto do paciente do chatbot centralizado em `@dosiq/core/chatbot`** (CON-028 / ADR-074): novo `fetchChatbotContextData({supabase,getUserId})` (selects únicos: medicines+stock, protocols+`treatment_plan`, logs, dose_instances, treatment_plans) + `buildPatientContext(data)` (builder **puro**, agnóstico de runtime) + seam Zod `ChatbotContextData`. Mata os dois forks: `contextBuilder.js` (web) e `buildServerContext`/`fetchPatientData` (Telegram) **removidos** — web `chatbotService` e o bot passam a importar do core. **Sem agrupamento por plano ainda** (Onda 1b).

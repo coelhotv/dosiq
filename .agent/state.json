@@ -13,8 +13,8 @@
       "015 RC3: fetcher+builder core, descope CRUD repos full, paridade bloqueante"
     ],
     "status": "completed",
-    "goal": "015 onda 1a — fetcher + builder canônico @dosiq/core/chatbot + adoção web/Telegram (refactor puro de paridade, sem plan-grouping). Tier 2.",
-    "goal_type": "refactor",
+    "goal": "015 onda 1b — plan-grouping: buildPatientContext agrupa por treatment_plan.name (flat sem-plano primeiro, grupos depois; sem rótulo 'Sem plano'). Tier 2.",
+    "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/015-ai-chatbot-mobile",
     "spec": "plans/specs/015-ai-chatbot-mobile/spec.md",
@@ -22,13 +22,13 @@
     "tasks": "plans/specs/015-ai-chatbot-mobile/tasks.md",
     "linked_adrs": ["ADR-074"],
     "linked_contracts": ["CON-028"],
-    "last_pr": 683,
-    "branch": "refactor/037/slice-2-mobile",
+    "last_pr": 684,
+    "branch": "feature/015/onda-1b-plan-grouping",
     "mobile_version": "0.20.1"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,
