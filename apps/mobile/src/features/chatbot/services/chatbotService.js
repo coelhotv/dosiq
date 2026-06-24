@@ -37,8 +37,8 @@ export async function buildMobilePatientContext() {
  * @returns {Promise<{ response: string, error: boolean }>}
  */
 export async function sendChatMessage({ message, history = [], patientContext }) {
-  const { data: { session } } = await supabase.auth.getSession()
-  const accessToken = session?.access_token
+  const { data } = await supabase.auth.getSession()
+  const accessToken = data?.session?.access_token
   if (!accessToken) {
     return { response: 'Faça login para usar o assistente.', error: true }
   }

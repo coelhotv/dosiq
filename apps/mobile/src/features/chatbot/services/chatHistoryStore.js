@@ -16,7 +16,7 @@ export async function loadHistory() {
     if (!raw) return []
     const data = JSON.parse(raw)
     if (!Array.isArray(data)) return []
-    return data.filter((m) => m && m.role && m.content && typeof m.timestamp === 'number')
+    return data.filter((m) => m && m.role && m.content && typeof m.timestamp === 'number' && !m.isError)
   } catch {
     return []
   }
@@ -28,7 +28,8 @@ export async function loadHistory() {
  */
 export async function saveHistory(messages) {
   try {
-    const trimmed = (messages || []).slice(-CHATBOT_MAX_HISTORY)
+    // Filtra mensagens de erro (isError) — falhas transitórias não devem poluir o histórico.
+    const trimmed = (messages || []).filter((m) => !m.isError).slice(-CHATBOT_MAX_HISTORY)
     await AsyncStorage.setItem(CHATBOT_HISTORY_STORAGE_KEY, JSON.stringify(trimmed))
   } catch {
     // no-op: persistência é best-effort

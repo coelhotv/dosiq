@@ -129,12 +129,14 @@ export default function ChatScreen({ navigation }) {
     const history = messages.map((m) => ({ role: m.role, content: m.content }))
     setMessages((prev) => [...prev, userMsg])
     setSending(true)
-    const { response } = await sendChatMessage({
+    const { response, error } = await sendChatMessage({
       message,
       history,
       patientContext: contextRef.current ?? '',
     })
-    setMessages((prev) => [...prev, { role: 'assistant', content: response, timestamp: Date.now() }])
+    // isError: exibe a falha na tela mas NÃO persiste no histórico (chatHistoryStore filtra) —
+    // evita que "dificuldades técnicas" fique grudado nas próximas aberturas do chat.
+    setMessages((prev) => [...prev, { role: 'assistant', content: response, timestamp: Date.now(), isError: error }])
     setSending(false)
   }, [input, sending, offline, messages])
 
@@ -163,7 +165,7 @@ export default function ChatScreen({ navigation }) {
           <FlatList
             data={reversed}
             inverted
-            keyExtractor={(_, i) => String(i)}
+            keyExtractor={(item) => `${item.timestamp}-${item.role}`}
             renderItem={({ item }) => <ChatBubble role={item.role} content={item.content} />}
             contentContainerStyle={styles.listContent}
             ListHeaderComponent={sending ? <TypingBubble /> : null}

@@ -44,6 +44,22 @@ describe('chatHistoryStore', () => {
     expect(saved[saved.length - 1].content).toBe(`m${CHATBOT_MAX_HISTORY + 9}`)
   })
 
+  it('saveHistory: filtra mensagens de erro (isError) — não poluem o histórico', async () => {
+    await saveHistory([msg(0), { role: 'assistant', content: 'falha técnica', timestamp: 1002, isError: true }, msg(1)])
+    const saved = JSON.parse(AsyncStorage.setItem.mock.calls[0][1])
+    expect(saved).toHaveLength(2)
+    expect(saved.some((m) => m.isError)).toBe(false)
+  })
+
+  it('loadHistory: filtra mensagens de erro (isError) persistidas anteriormente', async () => {
+    AsyncStorage.getItem.mockResolvedValue(JSON.stringify([
+      msg(0), { role: 'assistant', content: 'erro antigo', timestamp: 1002, isError: true },
+    ]))
+    const r = await loadHistory()
+    expect(r).toHaveLength(1)
+    expect(r[0].content).toBe('m0')
+  })
+
   it('saveHistory: falha de escrita não lança', async () => {
     AsyncStorage.setItem.mockRejectedValue(new Error('disk full'))
     await expect(saveHistory([msg(0)])).resolves.toBeUndefined()
