@@ -2,7 +2,8 @@
  * ChatWindowDrawer — Conteúdo visual do drawer de chat IA.
  */
 import { motion } from 'framer-motion'
-import { Trash2, X } from 'lucide-react'
+import { Trash2, X, BotMessageSquare } from 'lucide-react'
+import { CHATBOT_DISCLAIMER } from '@/features/chatbot/config/chatbotConfig'
 import ChatMessageList from './ChatMessageList'
 
 export default function ChatWindowDrawer({
@@ -11,7 +12,9 @@ export default function ChatWindowDrawer({
   input,
   setInput,
   messagesEndRef,
+  inputRef,
   quickSuggestions,
+  onSelectSuggestion,
   shouldShowDateSeparator,
   formatDaySeparator,
   formatMessageTime,
@@ -30,7 +33,10 @@ export default function ChatWindowDrawer({
       className={styles.drawer}
     >
       <div className={styles.header}>
-        <span className={styles.headerTitle}>Assistente IA</span>
+        <span className={styles.headerTitle}>
+          <BotMessageSquare size={18} aria-hidden="true" className={styles.headerIcon} />
+          Assistente Dosiq IA
+        </span>
         <div className={styles.headerActions}>
           <button onClick={onClearHistory} className={styles.clearButton} title="Limpar histórico" aria-label="Limpar histórico de conversa">
             <Trash2 size={16} aria-hidden="true" />
@@ -39,6 +45,10 @@ export default function ChatWindowDrawer({
             <X size={18} aria-hidden="true" />
           </button>
         </div>
+      </div>
+
+      <div className={styles.disclaimerBanner} role="note">
+        ⚠ {CHATBOT_DISCLAIMER}
       </div>
 
       <ChatMessageList
@@ -54,7 +64,7 @@ export default function ChatWindowDrawer({
       {messages.length <= 2 && (
         <div className={styles.suggestions}>
           {quickSuggestions.map((suggestion, i) => (
-            <button key={i} onClick={() => setInput(suggestion)} className={styles.suggestionButton}>
+            <button key={i} onClick={() => onSelectSuggestion(suggestion)} className={styles.suggestionButton}>
               {suggestion}
             </button>
           ))}
@@ -63,6 +73,7 @@ export default function ChatWindowDrawer({
 
       <div className={styles.inputRow}>
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}

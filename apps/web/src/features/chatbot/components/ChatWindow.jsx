@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, Fragment } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   sendChatMessage,
@@ -6,7 +6,7 @@ import {
   savePersistedHistory,
   clearPersistedHistory,
 } from '@/features/chatbot/services/chatbotService'
-import { createWelcomeMessage } from '@/features/chatbot/config/chatbotConfig'
+import { createWelcomeMessage, CHATBOT_QUICK_SUGGESTIONS } from '@/features/chatbot/config/chatbotConfig'
 import {
   getNow,
   getTodayLocal,
@@ -45,8 +45,6 @@ const formatDaySeparator = (timestamp) => {
   return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', timeZone: 'America/Sao_Paulo' })
 }
 
-const QUICK_SUGGESTIONS = ['Quais doses ainda faltam hoje?', 'Como está minha adesão?', 'Preciso repor algum estoque?']
-
 /**
  * Drawer lateral de chat com o assistente IA.
  * Lazy-loaded — nao impacta main bundle.
@@ -62,8 +60,13 @@ export default function ChatWindow({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  // Refoca o input ao fim do envio: `disabled={isLoading}` faz o browser soltar o foco;
+  // sem isto o usuário precisa reclicar no campo a cada pergunta.
+  useEffect(() => { if (!isLoading && isOpen) inputRef.current?.focus() }, [isLoading, isOpen])
 
   const addMessage = useCallback((message) => {
     setMessages((prev) => {
@@ -73,45 +76,59 @@ export default function ChatWindow({ isOpen, onClose }) {
     })
   }, [])
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || isLoading) return
-    const userMessage = input.trim()
+  const handleSend = useCallback(async (overrideMessage) => {
+    // overrideMessage: pills de sugestão disparam direto (sem passar pelo input/state async).
+    const raw = typeof overrideMessage === 'string' ? overrideMessage : input
+    if (!raw.trim() || isLoading) return
+    const userMessage = raw.trim()
     setInput('')
     addMessage({ role: 'user', content: userMessage, timestamp: getNow().getTime() })
     setIsLoading(true)
     try {
-      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats, doseInstances } })
-      addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime() })
+      // CON-028: o builder lê `stats.adherence` (0-1). O Dashboard expõe a adesão em
+      // `stats.rates.adherence` (e `stats.adherenceRate`), NÃO em `stats.adherence` —
+      // sem normalizar, a linha de adesão sumia do payload (LLM "não tenho info").
+      const normalizedStats = { adherence: stats?.rates?.adherence ?? stats?.adherenceRate ?? null }
+      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats: normalizedStats, doseInstances } })
+      // isError: exibe na tela mas NÃO persiste (savePersistedHistory filtra) — paridade mobile #686
+      addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime(), isError: result.error === true })
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats])
+  }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats, doseInstances])
 
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={styles.overlay} onClick={onClose} />
-          <ChatWindowDrawer
-            messages={messages}
-            isLoading={isLoading}
-            input={input}
-            setInput={setInput}
-            messagesEndRef={messagesEndRef}
-            quickSuggestions={QUICK_SUGGESTIONS}
-            shouldShowDateSeparator={shouldShowDateSeparator}
-            formatDaySeparator={formatDaySeparator}
-            formatMessageTime={formatMessageTime}
-            onClose={onClose}
-            onSend={handleSend}
-            onKeyDown={handleKeyDown}
-            onClearHistory={() => setShowClearConfirm(true)}
-            styles={styles}
-          />
-        </>
-      )}
+    <>
+      {/* AnimatePresence exige key única em cada filho direto animado; o fragment keyed
+          evita o warning "two children with the same key ``" (key vazia duplicada). */}
+      <AnimatePresence>
+        {isOpen && (
+          <Fragment key="chat-drawer">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={styles.overlay} onClick={onClose} />
+            <ChatWindowDrawer
+              messages={messages}
+              isLoading={isLoading}
+              input={input}
+              setInput={setInput}
+              messagesEndRef={messagesEndRef}
+              inputRef={inputRef}
+              quickSuggestions={CHATBOT_QUICK_SUGGESTIONS}
+              shouldShowDateSeparator={shouldShowDateSeparator}
+              formatDaySeparator={formatDaySeparator}
+              formatMessageTime={formatMessageTime}
+              onClose={onClose}
+              onSend={handleSend}
+              onSelectSuggestion={(suggestion) => handleSend(suggestion)}
+              onKeyDown={handleKeyDown}
+              onClearHistory={() => setShowClearConfirm(true)}
+              styles={styles}
+            />
+          </Fragment>
+        )}
+      </AnimatePresence>
+      {/* ConfirmDialog fica fora do AnimatePresence (não é filho animado por ele). */}
       <ConfirmDialog
         isOpen={showClearConfirm}
         title="Limpar histórico"
@@ -122,6 +139,6 @@ export default function ChatWindow({ isOpen, onClose }) {
         onCancel={() => setShowClearConfirm(false)}
         variant="danger"
       />
-    </AnimatePresence>
+    </>
   )
 }

@@ -47,6 +47,25 @@
 .headerTitle {
   font-weight: bold;
   color: var(--color-text, #fff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.headerIcon {
+  color: var(--color-primary, #006a5e);
+  flex-shrink: 0;
+}
+
+/* Banner de disclaimer (FR-016) — separado, estilo paridade com o mobile. */
+.disclaimerBanner {
+  padding: 8px 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  /* Fundo amarelo bem claro: destaca o aviso e evita se confundir com as bolhas que sobem. */
+  color: #6b5800;
+  background: #fffae6;
+  border-bottom: 1px solid #f3e3a0;
 }
 
 /* Redesign mode: ensure dark text on light background */
@@ -102,6 +121,21 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Linha que alinha a bolha em lados opostos (FR-014): user→direita, bot→esquerda.
+   O align-self da bolha sozinho não bastava — o wrapper é o flex-child de .messages. */
+.messageRow {
+  display: flex;
+  flex-direction: column;
+}
+
+.messageRowUser {
+  align-items: flex-end;
+}
+
+.messageRowAssistant {
+  align-items: flex-start;
 }
 
 .messageBubble {

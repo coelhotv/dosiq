@@ -336,19 +336,23 @@ export async function sendTelegramChatMessage({ message, userId }) {
     return { response: contextError, blocked: false, rateLimited: false }
   }
 
-  // 5. System prompt + histórico
-  const systemPrompt = buildServerSystemPrompt(context)
+  // 5. Regras estáticas + histórico (contexto do paciente entra mais tarde, ver passo 6)
+  const staticRules = buildStaticSystemRules()
   const history = getConversationHistory(userId)
   logger.debug('✅ System prompt construído', {
     userId,
     contextLen: context.length,
-    systemPromptLen: systemPrompt.length,
+    staticRulesLen: staticRules.length,
     historyLen: history.length,
   })
 
-  // 6. Chamar Groq API
+  // 6. Chamar Groq API — ordem otimizada p/ Prompt Caching (prefix-match), paridade com
+  //    api/chatbot.js: system ESTÁTICO (cache global) → DADOS DO PACIENTE (estáveis na
+  //    sessão, cacheados após o system) → histórico (cresce por turno) → pergunta.
+  //    Paciente ANTES do histórico maximiza o prefixo estável (não muda a cada turno).
   const messages = [
-    { role: 'system', content: systemPrompt },
+    { role: 'system', content: staticRules },
+    ...(context ? [{ role: 'system', content: `DADOS DO PACIENTE:\n${context}` }] : []),
     ...history,
     { role: 'user', content: message },
   ]

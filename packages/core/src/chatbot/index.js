@@ -7,3 +7,5 @@
 export { fetchChatbotContextData } from './fetchChatbotContextData.js'
 export { buildPatientContext } from './buildPatientContext.js'
 export { chatbotContextDataSchema, validateChatbotContextData } from './chatbotContextSchema.js'
+// Textos de UI compartilhados web↔mobile (Onda 3, FR-013)
+export { CHATBOT_DISCLAIMER, CHATBOT_QUICK_SUGGESTIONS, createWelcomeMessage } from './chatbotUiText.js'

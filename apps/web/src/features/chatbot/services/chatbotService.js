@@ -35,6 +35,7 @@ export async function sendChatMessage({ message, history = [], patientData }) {
       response: '',
       blocked: false,
       rateLimited: true,
+      error: true, // transitório — não persiste no histórico
       reason: 'Limite de mensagens atingido. Tente novamente em alguns minutos.',
     }
   }
@@ -53,13 +54,15 @@ export async function sendChatMessage({ message, history = [], patientData }) {
   const patientContext = buildPatientContext(patientData)
 
   // 4. Token de sessão — endpoint exige autenticação (sem token = 401, evita abuso anônimo da quota Groq)
-  const { data: { session } } = await supabase.auth.getSession()
-  const accessToken = session?.access_token
+  // Destructure defensivo: getSession() pode devolver data nulo sob falha de init do cliente (evita TypeError).
+  const { data } = await supabase.auth.getSession()
+  const accessToken = data?.session?.access_token
   if (!accessToken) {
     return {
       response: 'Faça login para usar o assistente.',
       blocked: false,
       rateLimited: false,
+      error: true, // transitório — não persiste no histórico
     }
   }
 
@@ -92,6 +95,7 @@ export async function sendChatMessage({ message, history = [], patientData }) {
       response: safeResponse,
       blocked: false,
       rateLimited: false,
+      error: false,
     }
   } catch (error) {
     console.error('[chatbot] Erro ao enviar mensagem:', error)
@@ -99,6 +103,7 @@ export async function sendChatMessage({ message, history = [], patientData }) {
       response: 'Desculpe, estou com dificuldades técnicas. Tente novamente em instantes.',
       blocked: false,
       rateLimited: false,
+      error: true, // transitório — não persiste no histórico
     }
   }
 }
@@ -146,7 +151,8 @@ export function loadPersistedHistory() {
     const data = JSON.parse(localStorage.getItem(CHATBOT_HISTORY_STORAGE_KEY) || '[]')
     // Validar estrutura mínima: array de objetos com role, content, timestamp
     if (!Array.isArray(data)) return []
-    return data.filter((msg) => msg.role && msg.content && typeof msg.timestamp === 'number')
+    // !isError: ignora mensagens de erro transitórias eventualmente persistidas antes (robustez)
+    return data.filter((msg) => msg.role && msg.content && typeof msg.timestamp === 'number' && !msg.isError)
   } catch {
     return []
   }
@@ -160,8 +166,10 @@ export function loadPersistedHistory() {
 export function savePersistedHistory(messages) {
   if (typeof window === 'undefined') return
   try {
-    // Filtrar mensagem de boas-vindas (primeira mensagem do assistente sem outras mensagens)
+    // Filtrar boas-vindas (1ª msg do assistente isolada) E mensagens de erro transitórias
+    // (isError) — falhas de conexão/rate-limit não devem grudar no histórico persistido.
     const filtered = messages.filter((msg) => {
+      if (msg.isError) return false
       if (msg.role === 'assistant' && messages.length === 1) return false // Mensagem inicial
       return true
     })
