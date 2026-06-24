@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, Fragment } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   sendChatMessage,
@@ -88,7 +88,9 @@ export default function ChatWindow({ isOpen, onClose }) {
       // CON-028: o builder lê `stats.adherence` (0-1). O Dashboard expõe a adesão em
       // `stats.rates.adherence` (e `stats.adherenceRate`), NÃO em `stats.adherence` —
       // sem normalizar, a linha de adesão sumia do payload (LLM "não tenho info").
-      const normalizedStats = { adherence: stats?.rates?.adherence ?? stats?.adherenceRate ?? null }
+      // Preserva demais métricas (...stats) e adiciona `adherence` no shape do contrato —
+      // defensivo caso o builder passe a usar outros campos (streak, etc.).
+      const normalizedStats = { ...stats, adherence: stats?.rates?.adherence ?? stats?.adherenceRate ?? stats?.adherence ?? null }
       const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats: normalizedStats, doseInstances } })
       // isError: exibe na tela mas NÃO persiste (savePersistedHistory filtra) — paridade mobile #686
       addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime(), isError: result.error === true })
@@ -101,31 +103,41 @@ export default function ChatWindow({ isOpen, onClose }) {
 
   return (
     <>
-      {/* AnimatePresence exige key única em cada filho direto animado; o fragment keyed
-          evita o warning "two children with the same key ``" (key vazia duplicada). */}
+      {/* Filhos diretos do AnimatePresence DEVEM ser componentes keyed separados (não um
+          Fragment): o Fragment quebra a animação de exit (o AnimatePresence precisa rastrear
+          cada motion/component por key p/ adiar a desmontagem). Keys distintas também evitam
+          o warning de chave duplicada. */}
       <AnimatePresence>
         {isOpen && (
-          <Fragment key="chat-drawer">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={styles.overlay} onClick={onClose} />
-            <ChatWindowDrawer
-              messages={messages}
-              isLoading={isLoading}
-              input={input}
-              setInput={setInput}
-              messagesEndRef={messagesEndRef}
-              inputRef={inputRef}
-              quickSuggestions={CHATBOT_QUICK_SUGGESTIONS}
-              shouldShowDateSeparator={shouldShowDateSeparator}
-              formatDaySeparator={formatDaySeparator}
-              formatMessageTime={formatMessageTime}
-              onClose={onClose}
-              onSend={handleSend}
-              onSelectSuggestion={(suggestion) => handleSend(suggestion)}
-              onKeyDown={handleKeyDown}
-              onClearHistory={() => setShowClearConfirm(true)}
-              styles={styles}
-            />
-          </Fragment>
+          <motion.div
+            key="chat-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={styles.overlay}
+            onClick={onClose}
+          />
+        )}
+        {isOpen && (
+          <ChatWindowDrawer
+            key="chat-drawer"
+            messages={messages}
+            isLoading={isLoading}
+            input={input}
+            setInput={setInput}
+            messagesEndRef={messagesEndRef}
+            inputRef={inputRef}
+            quickSuggestions={CHATBOT_QUICK_SUGGESTIONS}
+            shouldShowDateSeparator={shouldShowDateSeparator}
+            formatDaySeparator={formatDaySeparator}
+            formatMessageTime={formatMessageTime}
+            onClose={onClose}
+            onSend={handleSend}
+            onSelectSuggestion={(suggestion) => handleSend(suggestion)}
+            onKeyDown={handleKeyDown}
+            onClearHistory={() => setShowClearConfirm(true)}
+            styles={styles}
+          />
         )}
       </AnimatePresence>
       {/* ConfirmDialog fica fora do AnimatePresence (não é filho animado por ele). */}
