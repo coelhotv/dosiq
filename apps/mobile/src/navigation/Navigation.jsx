@@ -25,6 +25,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen'
 import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
 import AlarmFullScreen from '../features/dose/screens/AlarmFullScreen'
+import ChatScreen from '../features/chatbot/screens/ChatScreen'
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
@@ -242,6 +243,8 @@ export default function Navigation() {
               component={AlarmFullScreen}
               options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
             />
+            {/* Chat IA full-screen (spec 015 onda 2) — header próprio na tela */}
+            <Stack.Screen name={ROUTES.CHAT} component={ChatScreen} />
             {__DEV__ && (
               <>
                 <Stack.Screen

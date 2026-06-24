@@ -68,6 +68,9 @@ export const ROUTES = {
   // Área de Medidas / biomarcadores (012 Fase C)
   MEASURES: 'Measures',
 
+  // Chat IA (spec 015 onda 2) — tela full-screen via stack
+  CHAT: 'Chat',
+
   // Dev-only (apenas __DEV__)
   DEV_HUB: 'DevHub',
   STOCK_PRIMITIVES_DEMO: 'StockPrimitivesDemo',

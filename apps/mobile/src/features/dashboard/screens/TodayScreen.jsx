@@ -30,6 +30,7 @@ import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
 import HeroDoseCard from '@dashboard/components/HeroDoseCard'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
 import DoseRegisterModal from '@dose/components/DoseRegisterModal'
+import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
 import { lightTap } from '@shared/utils/haptics'
 import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
@@ -154,24 +155,15 @@ function _buildHeaderData(user) {
 }
 
 // Conteúdo principal da tela (pós-carregamento) — extrai render para reduzir complexidade
-function TodayHeader({ greeting, todayFormatted, onDevPress }) {
+// Entry-point IA top-right (spec 015 onda 2; PO-D1). O <DEV> migrou p/ o título do Perfil.
+function TodayHeader({ greeting, todayFormatted }) {
   return (
     <View style={styles.header}>
       <View style={styles.headerText}>
         <Text style={styles.greeting}>{greeting}</Text>
         <Text style={styles.date}>{todayFormatted}</Text>
       </View>
-      {__DEV__ && (
-        <TouchableOpacity
-          style={styles.devBtn}
-          onPress={onDevPress}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Abrir Dev Hub"
-        >
-          <Text style={styles.devBtnText}>DEV</Text>
-        </TouchableOpacity>
-      )}
+      <ChatEntryButton />
     </View>
   )
 }
@@ -389,7 +381,7 @@ function TodayScreenContent({
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge() }} tintColor={colors.status.success} />}
       >
-        <TodayHeader greeting={greeting} todayFormatted={todayFormatted} onDevPress={() => navigation?.navigate(ROUTES.DEV_HUB)} />
+        <TodayHeader greeting={greeting} todayFormatted={todayFormatted} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <StockAlertInline alerts={stockAlerts} />
         {priorityDoses.length > 0 ? (
@@ -677,19 +669,6 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     minWidth: 0,
-  },
-  devBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: colors.status.warning,
-    marginLeft: 8,
-  },
-  devBtnText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: colors.text.inverse,
-    letterSpacing: 1,
   },
   greeting: {
     fontSize: 28,

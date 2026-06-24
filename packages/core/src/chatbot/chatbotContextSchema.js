@@ -41,6 +41,9 @@ export const chatbotContextDataSchema = z.object({
   stats: statsSchema.nullable().default(null),
   doseInstances: z.array(looseRow).default([]),
   treatmentPlans: z.array(looseRow).default([]),
+  // Perfil leve do paciente (nome/idade). Secundário — pode ser null. passthrough tolera
+  // colunas extras de user_settings sem enrijecer o shape.
+  profile: looseRow.nullable().default(null),
 })
 
 /**

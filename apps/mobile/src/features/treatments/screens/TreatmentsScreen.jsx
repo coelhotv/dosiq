@@ -8,6 +8,7 @@ import ErrorState from '@shared/components/states/ErrorState'
 import EmptyState from '@shared/components/states/EmptyState'
 import TreatmentCard from '@treatments/components/TreatmentCard'
 import TreatmentPlanHeader from '@treatments/components/TreatmentPlanHeader'
+import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
 import TreatmentTabBar from '@treatments/components/TreatmentTabBar'
 import { useTreatments } from '@treatments/hooks/useTreatments'
 import { useProfile } from '@profile/hooks/useProfile'
@@ -206,8 +207,11 @@ export default function TreatmentsScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Tratamentos</Text>
-          <Text style={styles.subtitle}>Acompanhe os tratamentos ativos</Text>
+          <View style={styles.headerTextCol}>
+            <Text style={styles.title}>Tratamentos</Text>
+            <Text style={styles.subtitle}>Acompanhe os tratamentos ativos</Text>
+          </View>
+          <ChatEntryButton />
         </View>
 
         {/* Link Medicamentos no topo APENAS no estado zero — destaque para onboarding.
@@ -322,9 +326,15 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[10],
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[5],
     paddingVertical: spacing[4],
     marginBottom: spacing[2],
+  },
+  headerTextCol: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
