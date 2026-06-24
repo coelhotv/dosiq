@@ -92,7 +92,7 @@ export async function fetchChatbotContextData({ supabase, getUserId }) {
   const doseRepo = createDoseInstanceRepository({ client: supabase })
 
   // Selects canônicos — uma definição, paralelos.
-  const [medicinesRes, protocolsRes, logsRes, plansRes, doseInstances, stats] = await Promise.all([
+  const [medicinesRes, protocolsRes, logsRes, plansRes, profileRes, doseInstances, stats] = await Promise.all([
     supabase.from('medicines').select('*, stock(*)').eq('user_id', userId),
     supabase
       .from('protocols')
@@ -100,11 +100,14 @@ export async function fetchChatbotContextData({ supabase, getUserId }) {
       .eq('user_id', userId),
     supabase.from('medicine_logs').select('protocol_id, taken_at').eq('user_id', userId).gte('taken_at', yesterdayIso),
     supabase.from('treatment_plans').select('id, name').eq('user_id', userId),
+    // Perfil leve (nome/idade) p/ personalizar tom — DADO SECUNDÁRIO: degrada gracioso
+    // (não derruba o contexto se falhar). Perfil vive em user_settings (1 linha/user).
+    supabase.from('user_settings').select('display_name, birth_date').eq('user_id', userId).maybeSingle(),
     doseRepo.getWindow(userId, windowFrom, windowTo),
     computeInstancesAdherence(doseRepo, userId),
   ])
 
-  // Falha alto: erro de select não pode gerar contexto silenciosamente parcial (FR-010).
+  // Falha alto: erro de select PRIMÁRIO não pode gerar contexto silenciosamente parcial (FR-010).
   for (const res of [medicinesRes, protocolsRes, logsRes, plansRes]) {
     if (res.error) throw res.error
   }
@@ -119,6 +122,8 @@ export async function fetchChatbotContextData({ supabase, getUserId }) {
     stats,
     doseInstances: doseInstances || [],
     treatmentPlans: plansRes.data || [],
+    // Secundário: erro → null (não bloqueia o contexto).
+    profile: profileRes.error ? null : profileRes.data || null,
   }
 
   // Seam Zod (CON-028) — valida o shape antes do builder (FR-010 mecanismo 3).

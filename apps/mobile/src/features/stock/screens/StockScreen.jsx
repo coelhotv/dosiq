@@ -15,6 +15,7 @@ import StockItem from '@stock/components/StockItem'
 import StockFilterChips from '@stock/components/StockFilterChips'
 import PurchaseMedicineSheet from '@stock/components/PurchaseMedicineSheet'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
+import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 
@@ -33,10 +34,13 @@ function StockHeader({ filter, setFilter, counts }) {
   return (
     <View>
       <View style={styles.header}>
-        <Text style={styles.title}>Estoque</Text>
-        <Text style={styles.subtitle}>
-          Acompanhe o estoque dos medicamentos
-        </Text>
+        <View style={styles.headerTextCol}>
+          <Text style={styles.title}>Estoque</Text>
+          <Text style={styles.subtitle}>
+            Acompanhe o estoque dos medicamentos
+          </Text>
+        </View>
+        <ChatEntryButton />
       </View>
       <StockFilterChips value={filter} onChange={setFilter} counts={counts} />
     </View>
@@ -259,9 +263,15 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[12],
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[5],
     paddingVertical: spacing[4],
     marginBottom: spacing[2],
+  },
+  headerTextCol: {
+    flex: 1,
   },
   title: {
     fontSize: 28,

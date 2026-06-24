@@ -7,6 +7,55 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.21.0 (mobile) + Web v4.14.0 — 2026-06-24 — Assistente IA no mobile + payload cross-superfície enriquecido (spec 015, Onda 2)
+
+> **Bump:** mobile `0.20.1 → 0.21.0` (minor — nova feature: chat IA nativo) · web `4.13.0 → 4.14.0`
+> (minor — chat ganha contexto enriquecido + guardrails). Núcleo compartilhado em `@dosiq/core`,
+> então as melhorias de payload valem web + Telegram + mobile de uma vez.
+> **Release nas lojas:** primeira versão com o Assistente IA dentro do app nativo.
+
+### 📱 Release notes — App Store / Play Store (pt-BR)
+
+```
+Novidades da versão 0.21.0
+
+Chegou o Assistente IA do Dosiq no celular:
+
+• Converse com o assistente direto do app: toque no ícone do robô no topo das telas
+  Hoje, Tratamentos e Estoque e pergunte sobre suas doses, adesão e estoque.
+• Respostas no contexto do seu tratamento — incluindo medicamentos líquidos e injetáveis
+  com a unidade certa (mL, UI, gotas) e tratamentos semanais com o dia agendado.
+• Limpe a conversa quando quiser começar do zero, com um toque.
+• O assistente não substitui orientação médica e nunca recomenda doses.
+```
+
+### ✨ Novidades
+
+- **Chat IA nativo (mobile):** `ChatScreen` full-screen com bolhas assimétricas, markdown
+  (negrito/itálico/listas), histórico local (AsyncStorage), banner offline, chips de sugestão,
+  "digitando…" animado e botão de limpar conversa. Entry-point (ícone `BotMessageSquare`) no
+  header das abas Hoje/Tratamentos/Estoque.
+- **Markdown compartilhado:** parser puro em `@dosiq/core/markdown` (tokenizer único web↔mobile).
+
+### 🐛 Correções de payload do chatbot (web + Telegram + mobile via core)
+
+- **Tratamentos semanais/PRN/personalizados** voltam a aparecer no contexto: o filtro passou a
+  ser por período de vigência (não mais "a frequência cai hoje"), com o dia da semana agendado
+  na linha do medicamento.
+- **Unidades corretas para líquidos/injetáveis:** estoque, dose e consumo deixam de ser achatados
+  em "un." — agora em mL/UI/gotas (ex.: Lantus "5,2 mL", dose "10 UI (≈ 0,1 mL)").
+- **Doses pendentes** resolvem o nome do medicamento (fim do "Desconhecido").
+- **Consumo diário** arredondado (sem dízimas).
+- **Perfil do paciente** (nome/idade) e **dia da semana** entram no contexto quando disponíveis.
+
+### 🔒 Robustez do assistente
+
+- Guardrail de **escopo do app** no system prompt: o assistente não inventa funcionalidades
+  inexistentes (ex.: "entrega de medicamentos").
+- Contexto **regional Brasil/ANVISA** + `max_tokens` 512 → 1024 (respostas longas não truncam).
+
+---
+
 ## App v0.19.1 (mobile) — 2026-06-17 — Alarme: transparência clínica + cancel cross-superfície (spec 036)
 
 > **Bump:** mobile `0.19.0 → 0.19.1` (patch — correção de bug + transparência clínica na tela cheia).

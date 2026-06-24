@@ -10,6 +10,7 @@ import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import LogoutSheet from '@profile/components/LogoutSheet'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
+import DevBadge from '@features/_dev/components/DevBadge'
 import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
@@ -88,7 +89,10 @@ export default function ProfileScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Perfil</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Perfil</Text>
+            <DevBadge />
+          </View>
           <TouchableOpacity
             onPress={goToSettings}
             hitSlop={8}
@@ -298,6 +302,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     marginBottom: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
     fontSize: 28,

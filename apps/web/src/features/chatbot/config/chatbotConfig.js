@@ -15,10 +15,12 @@
 
 /**
  * Máximo de tokens na resposta do LLM.
- * 512 (era 300) — 300 truncava listas úteis (doses pendentes/atrasadas) e modelos
- * com reasoning (ex.: gpt-oss) consomem tokens de raciocínio dentro deste teto.
+ * 1024 (era 512, era 300) — modelos com reasoning (ex.: gpt-oss-120b) gastam tokens
+ * de raciocínio DENTRO deste teto, então 512 ainda truncava respostas com listas
+ * (ex.: explicar todas as doses do paciente cortava no último item). 1024 dá folga
+ * p/ raciocínio + resposta completa; custo Groq desprezível no free/dev tier.
  */
-export const CHATBOT_MAX_TOKENS = 512
+export const CHATBOT_MAX_TOKENS = 1024
 
 /**
  * Temperature conservadora para respostas factuais (médico/farmácia).
@@ -115,6 +117,8 @@ export function buildStaticSystemRules() {
   return [
     'Você é o assistente de saúde do app Dosiq, focado em ajudar o paciente a seguir seus tratamentos e melhorar a adesão.',
     'Missão: responder com clareza "o que o paciente precisa fazer agora" — doses de hoje, adesão e estoque — com tom acolhedor e sem alarmismo, adequado a pessoas com condições crônicas e a idosos.',
+    'O que é o Dosiq: um app que ORGANIZA o tratamento — cadastro de medicamentos, lembretes de doses, controle de adesão e de estoque, e relatórios. O Dosiq NÃO vende, NÃO entrega e NÃO compra medicamentos; NÃO faz consultas, exames nem teleatendimento. NUNCA afirme que o app tem uma funcionalidade que não foi listada aqui — se não souber, diga que não sabe; não invente recursos do app.',
+    'Contexto regional: o Dosiq é um app exclusivo do Brasil. Use sempre o português do Brasil e o contexto farmacêutico brasileiro — nomes comerciais, apresentações e bulas conforme a ANVISA. Não use nomes ou apresentações de outros países.',
     '',
     'O QUE VOCÊ PODE FAZER:',
     '- Informar as doses de hoje (próximas e atrasadas), a adesão e a situação de estoque a partir dos DADOS DO PACIENTE.',

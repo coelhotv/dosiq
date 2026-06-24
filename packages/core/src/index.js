@@ -28,5 +28,8 @@ export * from './services/index.js'
 // Re-exporte de chatbot (spec 015 — fetcher + builder canônico de contexto, CON-028)
 export * from './chatbot/index.js'
 
+// Re-exporte de markdown (spec 015 onda 2 — parser leve do chat, paridade web↔mobile)
+export * from './markdown/index.js'
+
 // Re-exporte de protocols-utils (opcional, auditado em 2.4)
 // export * from './protocols-utils/index.js'

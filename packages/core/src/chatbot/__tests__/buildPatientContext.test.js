@@ -66,7 +66,7 @@ describe('buildPatientContext', () => {
       stockSummary: mockStockSummary,
       stats: null,
     })
-    expect(result).toContain('20 un.')
+    expect(result).toContain('20 unidades')
   })
 
   it('inclui adesao 7d quando disponivel', () => {
@@ -137,7 +137,7 @@ describe('buildPatientContext', () => {
       stockSummary: mockStockSummary,
       stats: null,
     })
-    expect(result).toContain('consumo ~1/dia')
+    expect(result).toContain('consumo ~1 un./dia')
     expect(result).toContain('40 dias restantes')
   })
 
@@ -235,7 +235,7 @@ describe('buildPatientContext', () => {
       stockSummary: [],
       stats: null,
     })
-    expect(result).toContain('estoque 20 un.')
+    expect(result).toContain('estoque 20 unidades')
   })
 })
 
@@ -326,5 +326,84 @@ describe('buildPatientContext — agrupamento por plano (onda 1b)', () => {
     expect(result).not.toContain('Plano "')
     expect(result).toContain('- Atorvastatina')
     expect(result).toContain('- Sinvastatina')
+  })
+})
+
+// -- Fixes multi-superfície (líquidos, semanais, perfil, resolução de nome) --
+describe('buildPatientContext — unidades líquidas / semanais / perfil', () => {
+  const lantus = {
+    id: 'liq-1', name: 'Lantus', active_ingredient: 'Insulina Glargina', therapeutic_class: 'Antidiabeticos',
+    dosage_per_pill: 100, dosage_unit: 'ui/ml', units_per_ml: 100, stock: [{ quantity: 5.2 }],
+  }
+  const lantusProto = {
+    medicine_id: 'liq-1', active: true, frequency: 'diario', time_schedule: ['15:00'],
+    intake_unit: 'UI', dosage_per_intake: 10,
+  }
+  const lantusStock = [{ medicine: { id: 'liq-1' }, total: 5.2, daysRemaining: 52, dailyIntake: 0.1, isZero: false, isLow: false }]
+
+  it('líquido: estoque em ml, dose em UI com ≈ml, consumo em ml/dia (não "un.")', () => {
+    const result = buildPatientContext({
+      medicines: [lantus], protocols: [lantusProto], logs: [], stockSummary: lantusStock, stats: null,
+    })
+    expect(result).toContain('estoque 5,2 ml')
+    expect(result).toContain('dose 10 UI (≈ 0,1 ml)')
+    expect(result).toContain('consumo ~0,1 ml/dia')
+    expect(result).not.toContain('5,2 un.')
+  })
+
+  it('semanal: inclui o(s) dia(s) da semana agendado(s)', () => {
+    const ozempic = { id: 'liq-2', name: 'Ozempic', dosage_per_pill: 1.34, dosage_unit: 'mg/ml', stock: [{ quantity: 1.5 }] }
+    const result = buildPatientContext({
+      medicines: [ozempic],
+      protocols: [{ medicine_id: 'liq-2', active: true, frequency: 'semanal', weekdays: ['sábado'], time_schedule: ['15:00'] }],
+      logs: [], stockSummary: [{ medicine: { id: 'liq-2' }, total: 1.5, daysRemaining: 14, dailyIntake: 0.1, isZero: false, isLow: false }], stats: null,
+    })
+    expect(result).toContain('semanal (sábado)')
+  })
+
+  it('semanal entra no contexto MESMO quando a dose não cai hoje (filtro por período, não por frequência)', () => {
+    // start no passado, sem end_date → vigente; weekdays vazio não exclui da listagem
+    const result = buildPatientContext({
+      medicines: [{ id: 'w1', name: 'Mounjaro', dosage_per_pill: 5, dosage_unit: 'mg/ml', stock: [{ quantity: 1.5 }] }],
+      protocols: [{ medicine_id: 'w1', active: true, frequency: 'semanal', weekdays: ['quinta'], start_date: '2026-01-01', time_schedule: ['22:00'] }],
+      logs: [], stockSummary: [{ medicine: { id: 'w1' }, total: 1.5, daysRemaining: 21, dailyIntake: 0.07, isZero: false, isLow: false }], stats: null,
+    })
+    expect(result).toContain('Mounjaro')
+    expect(result).toContain('Tratamentos ativos: 1')
+  })
+
+  it('doses pendentes resolvem o NOME do medicamento (não "Desconhecido")', () => {
+    // Protocolo COM id casando a dose; medicine anexado pelo builder (medicine_id → medicines[]).
+    const proto = { ...lantusProto, id: 'p-liq-1' }
+    const result = buildPatientContext({
+      medicines: [lantus], protocols: [proto], logs: [], stockSummary: lantusStock, stats: null,
+      doseInstances: [{ id: 'di-1', protocol_id: 'p-liq-1', medicine_id: 'liq-1', scheduled_for: new Date().toISOString(), status: 'pending' }],
+    })
+    expect(result).toContain('Próximas doses pendentes hoje')
+    expect(result).toContain('Lantus')
+    expect(result).not.toContain('Desconhecido')
+  })
+
+  it('perfil preenchido → linha "Paciente: <nome>, <idade> anos"', () => {
+    const result = buildPatientContext({
+      medicines: [lantus], protocols: [lantusProto], logs: [], stockSummary: lantusStock, stats: null,
+      profile: { display_name: 'Maria Silva', birth_date: '1950-06-01' },
+    })
+    expect(result).toMatch(/Paciente: Maria Silva, \d+ anos/)
+  })
+
+  it('perfil vazio → sem linha Paciente', () => {
+    const result = buildPatientContext({
+      medicines: [lantus], protocols: [lantusProto], logs: [], stockSummary: lantusStock, stats: null,
+      profile: { display_name: null, birth_date: null },
+    })
+    expect(result).not.toContain('Paciente:')
+  })
+
+  it('data inclui o dia da semana nomeado', () => {
+    const result = buildPatientContext({
+      medicines: [lantus], protocols: [lantusProto], logs: [], stockSummary: lantusStock, stats: null,
+    })
+    expect(result).toMatch(/Data: (domingo|segunda-feira|terça-feira|quarta-feira|quinta-feira|sexta-feira|sábado),/)
   })
 })
