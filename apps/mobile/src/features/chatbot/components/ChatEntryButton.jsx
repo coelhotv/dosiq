@@ -11,7 +11,7 @@ import { colors } from '@shared/styles/tokens'
 import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 
-export default function ChatEntryButton({ size = 26, color = colors.text.brand }) {
+export default function ChatEntryButton({ size = 26, color = colors.brand.secondary }) {
   const navigation = useNavigation()
   return (
     <TouchableOpacity
