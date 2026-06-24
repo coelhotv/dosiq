@@ -42,7 +42,7 @@ function _formatDaysRemaining(daysRemaining) {
  * @returns {string} - Contexto formatado para o system prompt
  */
 export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances } = {}) {
-  const today = getTodayLocal() // String YYYY-MM-DD
+  const today = getTodayLocal('America/Sao_Paulo') // String YYYY-MM-DD (tz explícito — Hermes/Android)
   const [y, m, d] = today.split('-').map(Number)
   const todayStr = `${d.toString().padStart(2, '0')}/${m.toString().padStart(2, '0')}/${y}`
 

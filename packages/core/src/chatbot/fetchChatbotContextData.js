@@ -55,11 +55,19 @@ function deriveStockSummary(medicines, protocols) {
  * @returns {Promise<{adherence:number|null}>}
  */
 async function computeInstancesAdherence(repo, userId) {
-  const now = getNow()
-  const from = addDays(now, -ADHERENCE_WINDOW_DAYS)
-  const { taken, missed } = await repo.countByStatus({ userId, fromTs: from, toTs: now })
-  const denom = taken + missed
-  return { adherence: denom > 0 ? Math.min(taken / denom, 1) : null }
+  // Adesão é dado SECUNDÁRIO (1 linha no contexto): falha transitória na consulta NÃO deve
+  // derrubar todo o contexto do chatbot. Degrada gracioso (null) — diferente dos selects
+  // primários (medicines/protocols), que falham alto por design (FR-010).
+  try {
+    const now = getNow()
+    const from = addDays(now, -ADHERENCE_WINDOW_DAYS)
+    const { taken, missed } = await repo.countByStatus({ userId, fromTs: from, toTs: now })
+    const denom = taken + missed
+    return { adherence: denom > 0 ? Math.min(taken / denom, 1) : null }
+  } catch (error) {
+    console.error('[chatbot] Erro ao calcular adesão (degradando p/ null):', error?.message || error)
+    return { adherence: null }
+  }
 }
 
 /**
