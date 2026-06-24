@@ -26,6 +26,69 @@ function _formatDaysRemaining(daysRemaining) {
 }
 
 /**
+ * Deriva a entrada de contexto de UM medicamento (extraído p/ baixar complexidade do map).
+ * @param {Object} med
+ * @param {Array} validProtocols
+ * @param {Map} stockByMedId
+ */
+function _toMedContext(med, validProtocols, stockByMedId) {
+  const protocol = validProtocols.find((p) => p.medicine_id === med.id)
+  const stockEntry = stockByMedId.get(med.id)
+  const totalStock =
+    stockEntry?.total ??
+    (med.stock || []).filter((s) => s.quantity > 0).reduce((sum, s) => sum + s.quantity, 0)
+
+  return {
+    nome: med.name,
+    principioAtivo: med.active_ingredient,
+    classeTerapeutica: med.therapeutic_class,
+    dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
+    frequencia: protocol?.frequency ?? 'sem protocolo',
+    horarios: protocol?.time_schedule ?? [],
+    estoque: totalStock,
+    consumoDiario: stockEntry?.dailyIntake ?? null,
+    diasRestantes: _formatDaysRemaining(stockEntry?.daysRemaining),
+    semEstoque: stockEntry?.isZero ?? totalStock === 0,
+    // Plano terapêutico nomeado (onda 1b). String vazia/nulo → sem plano (flat, sem header).
+    planName: protocol?.treatment_plan?.name || null,
+  }
+}
+
+/** Linha flat de um medicamento (formato legado, reusado dentro e fora de grupos). */
+function _formatMedLine(mc) {
+  const infos = [mc.principioAtivo, mc.classeTerapeutica].filter(Boolean).join(', ')
+  const detalhe = infos ? ` [${infos}]` : ''
+  const consumo = mc.consumoDiario ? `, consumo ~${mc.consumoDiario}/dia` : ''
+  const dias = mc.diasRestantes ? `, ~${mc.diasRestantes} restantes` : ''
+  return `- ${mc.nome}${detalhe} (${mc.dosagem}): ${mc.frequencia}, horarios ${mc.horarios.join(', ') || 'nao definidos'}, estoque ${mc.estoque} un.${consumo}${dias}`
+}
+
+/**
+ * Monta as linhas de medicamentos: PRIMEIRO os sem plano nomeado (flat, sem cabeçalho —
+ * sem rótulo "Sem plano", evita ruído/associação falsa no LLM), DEPOIS os grupos nomeados
+ * (header `Plano "<nome>":` + itens). Quando nenhum med tem plano nomeado, a saída é o
+ * formato legado flat idêntico (compat PO-1).
+ * @param {Array} medsContext - entradas já derivadas (com `planName: string|null`)
+ * @returns {string[]} linhas prontas
+ */
+function _buildMedLines(medsContext) {
+  const ungrouped = medsContext.filter((mc) => !mc.planName)
+  const grouped = new Map() // nome do plano → mc[] (ordem de aparição)
+  for (const mc of medsContext) {
+    if (!mc.planName) continue
+    if (!grouped.has(mc.planName)) grouped.set(mc.planName, [])
+    grouped.get(mc.planName).push(mc)
+  }
+
+  const lines = ungrouped.map(_formatMedLine)
+  for (const [planName, items] of grouped) {
+    lines.push(`Plano "${planName}":`)
+    lines.push(...items.map(_formatMedLine))
+  }
+  return lines
+}
+
+/**
  * Monta contexto compacto do paciente para enviar ao LLM.
  *
  * ESCOPO (decisão de produto, R-278): considera SOMENTE tratamentos ATIVOS com prescrição
@@ -55,26 +118,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
 
   const medsContext = (medicines || [])
     .filter((med) => validMedicineIds.has(med.id))
-    .map((med) => {
-      const protocol = validProtocols.find((p) => p.medicine_id === med.id)
-      const stockEntry = stockByMedId.get(med.id)
-      const totalStock =
-        stockEntry?.total ??
-        (med.stock || []).filter((s) => s.quantity > 0).reduce((sum, s) => sum + s.quantity, 0)
-
-      return {
-        nome: med.name,
-        principioAtivo: med.active_ingredient,
-        classeTerapeutica: med.therapeutic_class,
-        dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
-        frequencia: protocol?.frequency ?? 'sem protocolo',
-        horarios: protocol?.time_schedule ?? [],
-        estoque: totalStock,
-        consumoDiario: stockEntry?.dailyIntake ?? null,
-        diasRestantes: _formatDaysRemaining(stockEntry?.daysRemaining),
-        semEstoque: stockEntry?.isZero ?? totalStock === 0,
-      }
-    })
+    .map((med) => _toMedContext(med, validProtocols, stockByMedId))
 
   const todayLogs = (logs || []).filter((log) => {
     const logDate = getSaoPauloTime(parseISO(log.taken_at))
@@ -110,13 +154,7 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
   return [
     `Data: ${todayStr}`,
     `Tratamentos ativos: ${medsContext.length}`,
-    ...medsContext.map((mc) => {
-      const infos = [mc.principioAtivo, mc.classeTerapeutica].filter(Boolean).join(', ')
-      const detalhe = infos ? ` [${infos}]` : ''
-      const consumo = mc.consumoDiario ? `, consumo ~${mc.consumoDiario}/dia` : ''
-      const dias = mc.diasRestantes ? `, ~${mc.diasRestantes} restantes` : ''
-      return `- ${mc.nome}${detalhe} (${mc.dosagem}): ${mc.frequencia}, horarios ${mc.horarios.join(', ') || 'nao definidos'}, estoque ${mc.estoque} un.${consumo}${dias}`
-    }),
+    ..._buildMedLines(medsContext),
     pendingToday.length
       ? `Próximas doses pendentes hoje: ${pendingToday.length}`
       : 'Nenhuma dose pendente para hoje',

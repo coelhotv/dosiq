@@ -12,8 +12,8 @@
       "015 chat = full-screen + bolhas assimétricas (não cards iguais); chips + disclaimer fixo",
       "015 RC3: fetcher+builder core, descope CRUD repos full, paridade bloqueante"
     ],
-    "status": "analysis",
-    "goal": "015 onda 1b — plan-grouping: buildPatientContext agrupa medicamentos por treatment_plan.name (grupo 'Sem plano'); fetcher já traz treatmentPlans+join (onda 1a). Tier 2.",
+    "status": "completed",
+    "goal": "015 onda 1b — plan-grouping: buildPatientContext agrupa por treatment_plan.name (flat sem-plano primeiro, grupos depois; sem rótulo 'Sem plano'). Tier 2.",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/015-ai-chatbot-mobile",
@@ -28,7 +28,7 @@
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,

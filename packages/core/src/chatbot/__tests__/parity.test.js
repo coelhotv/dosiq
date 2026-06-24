@@ -30,8 +30,8 @@ const goldenContextData = {
     },
   ],
   protocols: [
-    { medicine_id: 'med-1', active: true, frequency: 'diario', time_schedule: ['08:00', '20:00'] },
-    { medicine_id: 'med-2', active: true, frequency: 'diario', time_schedule: ['08:00'] },
+    { medicine_id: 'med-1', active: true, frequency: 'diario', time_schedule: ['08:00', '20:00'], treatment_plan: { id: 'tp-1', name: 'diabetes' } },
+    { medicine_id: 'med-2', active: true, frequency: 'diario', time_schedule: ['08:00'] }, // sem plano → flat
   ],
   logs: [],
   stockSummary: [
@@ -55,12 +55,17 @@ describe('paridade cross-surface do contexto do chatbot', () => {
     expect(webPath).toBe(serverPath)
   })
 
-  it('produz as seções unificadas esperadas (formato canônico único)', () => {
+  it('produz as seções unificadas esperadas (formato canônico único + grouping)', () => {
     const ctx = buildPatientContext(goldenContextData)
     expect(ctx).toContain('Tratamentos ativos: 2')
     expect(ctx).toContain('Metformina')
     expect(ctx).toContain('Losartana')
     expect(ctx).toContain('Adesão ultimos 7 dias: 90%')
+    // grouping: Metformina no plano "diabetes"; Losartana (sem plano) flat ANTES do header
+    expect(ctx).toContain('Plano "diabetes":')
+    expect(ctx).not.toContain('Sem plano')
+    expect(ctx.indexOf('Losartana')).toBeLessThan(ctx.indexOf('Plano "diabetes":'))
+    expect(ctx.indexOf('Plano "diabetes":')).toBeLessThan(ctx.indexOf('Metformina'))
     // Losartana com daysRemaining 5 (≤7) → alerta de estoque na string unificada
     expect(ctx).toContain('Atenção de estoque:')
     expect(ctx).toContain('Losartana: estoque baixo')
