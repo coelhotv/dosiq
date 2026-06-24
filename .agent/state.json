@@ -2,7 +2,7 @@
   "project": "dosiq",
   "sprint": "2026-W25",
   "session": {
-    "mode": "coding",
+    "mode": "specifying",
     "ceremony_type": "design-review",
     "ceremony_spec": "plans/specs/015-ai-chatbot-mobile/spec.md",
     "ceremonies_run": ["eng-review", "design-review"],
@@ -12,8 +12,8 @@
       "015 chat = full-screen + bolhas assimétricas (não cards iguais); chips + disclaimer fixo",
       "015 RC3: fetcher+builder core, descope CRUD repos full, paridade bloqueante"
     ],
-    "status": "coding",
-    "goal": "015 onda 2 — chat mobile e2e (greenfield): entry-point ícone IA header nas abas Hoje/Tratamentos/Estoque (header compartilhado) + <DEV> badge no título Perfil + ChatScreen full-screen bolhas assimétricas + chatbotService mobile (fetcher core) + AsyncStorage. Gate smoke antes de push. Tier 2.",
+    "status": "specified",
+    "goal": "015 onda 3 — paridade de UI (mobile→PWA): bolhas assimétricas + header branding + disclaimer móvel no web (FR-014/015/016) + extrair textos de UI do chat p/ @dosiq/core/chatbot consumido por web+mobile (FR-013, DRY; guardrails seguem server-side) + polish fps/offline/store notes (FR-017). Tier 2 (slice do épico). Onda 2 (PR #686) em review.",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/015-ai-chatbot-mobile",
@@ -22,14 +22,14 @@
     "tasks": "plans/specs/015-ai-chatbot-mobile/tasks.md",
     "linked_adrs": ["ADR-074"],
     "linked_contracts": ["CON-028"],
-    "last_pr": 685,
-    "branch": "feature/015/onda-2-chat-mobile",
+    "last_pr": 686,
+    "branch": "main",
     "mobile_version": "0.21.0",
     "web_version": "4.14.0"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 229,
     "anti_patterns_count": 237,
     "decisions_count": 73,
