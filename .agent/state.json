@@ -12,9 +12,8 @@
       "015 chat = full-screen + bolhas assimétricas (não cards iguais); chips + disclaimer fixo",
       "015 RC3: fetcher+builder core, descope CRUD repos full, paridade bloqueante"
     ],
-    "status": "coding",
-    "goal": "015 onda 3 — paridade de UI (mobile→PWA): alinhar bolhas L/R no web (FR-014) + header branding (FR-015) + banner de disclaimer nos dois (FR-016) + extrair textos UI p/ @dosiq/core/chatbot (FR-013, mobile=canônico) + carry-forward robustez #686 (key estável/isError/getSession/typing) + polish (FR-017). Decisões PO: web MANTÉM drawer (não full-screen); banner separado; mobile=canônico. Tier 2 slice.",
-    "branch_onda3": "feature/015/onda-3-pwa-parity",
+    "status": "idle",
+    "goal": "015 Onda 3 DONE (PR #687 mergeado a5d24ebe) — paridade chat PWA↔mobile + textos no core + fixes do smoke (pills autosend, refocus input, banner amarelo, AP-243 exit anim, AP-244 adesão no payload) + Groq prompt caching (R-280). Aguardando próxima instrução (R-065).",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/015-ai-chatbot-mobile",
@@ -23,16 +22,16 @@
     "tasks": "plans/specs/015-ai-chatbot-mobile/tasks.md",
     "linked_adrs": ["ADR-074"],
     "linked_contracts": ["CON-028"],
-    "last_pr": 686,
+    "last_pr": 687,
     "branch": "main",
     "mobile_version": "0.21.1",
     "web_version": "4.15.0"
   },
   "memory": {
     "last_distillation": "2026-06-23T04:30:00.000Z",
-    "journal_entries_since_distillation": 10,
-    "rules_count": 229,
-    "anti_patterns_count": 237,
+    "journal_entries_since_distillation": 11,
+    "rules_count": 230,
+    "anti_patterns_count": 239,
     "decisions_count": 73,
     "contracts_count": 26,
     "distillation_due": false
@@ -45,12 +44,12 @@
     "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
-    "pr": 683,
-    "status": "approved",
+    "pr": 687,
+    "status": "merged",
     "critical": 0,
-    "high": 0,
-    "auto_fixed": 0,
-    "declined": 1,
+    "high": 1,
+    "auto_fixed": 2,
+    "declined": 0,
     "ask_items": 0
   }
 }
