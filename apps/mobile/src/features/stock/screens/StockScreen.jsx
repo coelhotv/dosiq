@@ -37,7 +37,7 @@ function StockHeader({ filter, setFilter, counts }) {
         <View style={styles.headerTextCol}>
           <Text style={styles.title}>Estoque</Text>
           <Text style={styles.subtitle}>
-            Acompanhe o estoque dos medicamentos
+            Gerencie o estoque de medicamentos
           </Text>
         </View>
         <ChatEntryButton />

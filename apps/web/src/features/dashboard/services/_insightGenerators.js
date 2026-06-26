@@ -17,12 +17,8 @@ const IT = {
   PROTOCOL_REMINDER: 'PROTOCOL_REMINDER',
 }
 
-/**
- * Cria insight de celebração de streak.
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
+const openDoseModal = () => window.dispatchEvent(new CustomEvent('mr:open-dose-modal'))
+
 export function createStreakInsight(stats, onNavigate) {
   if (stats.currentStreak < 5) return null
   return {
@@ -40,13 +36,7 @@ export function createStreakInsight(stats, onNavigate) {
   }
 }
 
-/**
- * Cria insight de semana perfeita (100% de adesão).
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} shareAchievement - Callback de compartilhamento
- * @returns {Object|null}
- */
-export function createPerfectWeekInsight(stats, shareAchievement) {
+export function createPerfectWeekInsight(stats, onNavigate) {
   if (stats.adherence !== 100) return null
   return {
     id: 'perfect_week',
@@ -55,20 +45,14 @@ export function createPerfectWeekInsight(stats, shareAchievement) {
     icon: '⭐',
     text: 'Semana perfeita! 100% de adesão nos últimos 7 dias.',
     highlight: '100% de adesão',
-    actionLabel: 'Compartilhar',
+    actionLabel: 'Ver Histórico',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'perfect_week' })
-      shareAchievement()
+      onNavigate?.('history')
     },
   }
 }
 
-/**
- * Cria insight de boa semana (80–99% de adesão).
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
 export function createGoodWeekInsight(stats, onNavigate) {
   if (stats.adherence < 80 || stats.adherence >= 100) return null
   return {
@@ -86,12 +70,6 @@ export function createGoodWeekInsight(stats, onNavigate) {
   }
 }
 
-/**
- * Cria insight de melhoria de adesão.
- * @param {Object} trend - Dados de tendência { direction, percentage }
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
 export function createImprovementInsight(trend, onNavigate) {
   if (trend.direction !== 'up' || trend.percentage < 10) return null
   return {
@@ -101,20 +79,14 @@ export function createImprovementInsight(trend, onNavigate) {
     icon: '📈',
     text: `Sua adesão melhorou ${trend.percentage}% em relação à semana anterior!`,
     highlight: `${trend.percentage}% melhor`,
-    actionLabel: 'Ver Detalhes',
+    actionLabel: 'Ver Histórico',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'improvement' })
-      onNavigate?.('stats')
+      onNavigate?.('history')
     },
   }
 }
 
-/**
- * Cria insight de estoque saudável.
- * @param {Array} stockSummary - Resumo de estoque
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
 export function createStockHealthyInsight(stockSummary, onNavigate) {
   const lowStockCount = stockSummary?.filter((s) => s.isLow || s.isZero).length || 0
   if (lowStockCount !== 0 || !stockSummary?.length) return null
@@ -133,13 +105,7 @@ export function createStockHealthyInsight(stockSummary, onNavigate) {
   }
 }
 
-/**
- * Cria insight de doses pendentes hoje.
- * @param {number} todayMissed - Quantidade de doses perdidas hoje
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
-export function createMissedDosesTodayInsight(todayMissed, onNavigate) {
+export function createMissedDosesTodayInsight(todayMissed) {
   if (todayMissed <= 0 || todayMissed > 2) return null
   return {
     id: 'missed_doses_today',
@@ -148,20 +114,14 @@ export function createMissedDosesTodayInsight(todayMissed, onNavigate) {
     icon: '⏰',
     text: `Você tem ${todayMissed} doses pendentes hoje. Que tal completar agora?`,
     highlight: `${todayMissed} doses pendentes`,
-    actionLabel: 'Registrar Doses',
+    actionLabel: 'Registrar Dose',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'missed_doses_today' })
-      onNavigate?.('register')
+      openDoseModal()
     },
   }
 }
 
-/**
- * Cria insight de adesão baixa (< 80%).
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
 export function createLowAdherenceInsight(stats, onNavigate) {
   if (stats.adherence >= 80 || stats.adherence <= 0) return null
   return {
@@ -171,21 +131,15 @@ export function createLowAdherenceInsight(stats, onNavigate) {
     icon: '💪',
     text: `Sua adesão esta semana está em ${Math.round(stats.adherence)}%. Vamos melhorar juntos!`,
     highlight: `${Math.round(stats.adherence)}%`,
-    actionLabel: 'Ver Protocolos',
+    actionLabel: 'Ver Histórico',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'low_adherence_week' })
-      onNavigate?.('protocols')
+      onNavigate?.('history')
     },
   }
 }
 
-/**
- * Cria insight de streak quebrado.
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
-export function createStreakBrokenInsight(stats, onNavigate) {
+export function createStreakBrokenInsight(stats) {
   if (stats.currentStreak !== 0 || stats.longestStreak < 3) return null
   return {
     id: 'streak_broken',
@@ -197,17 +151,11 @@ export function createStreakBrokenInsight(stats, onNavigate) {
     actionLabel: 'Registrar Dose',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'streak_broken' })
-      onNavigate?.('register')
+      openDoseModal()
     },
   }
 }
 
-/**
- * Cria insight de protocolos ativos.
- * @param {Object} stats - Estatísticas de adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null}
- */
 export function createProtocolReminderInsight(stats, onNavigate) {
   const activeProtocols = stats.activeProtocols || 0
   if (activeProtocols <= 0 || activeProtocols > 3) return null
@@ -216,12 +164,12 @@ export function createProtocolReminderInsight(stats, onNavigate) {
     type: IT.PROTOCOL_REMINDER,
     priority: 'info',
     icon: '📋',
-    text: `Você tem ${activeProtocols} protocolo${activeProtocols > 1 ? 's' : ''} ativo${activeProtocols > 1 ? 's' : ''}. Todos em dia!`,
-    highlight: `${activeProtocols} protocolo${activeProtocols > 1 ? 's' : ''}`,
-    actionLabel: 'Ver Protocolos',
+    text: `Você tem ${activeProtocols} tratamento${activeProtocols > 1 ? 's' : ''} ativo${activeProtocols > 1 ? 's' : ''}. Todos em dia!`,
+    highlight: `${activeProtocols} tratamento${activeProtocols > 1 ? 's' : ''}`,
+    actionLabel: 'Ver Tratamentos',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'protocol_reminder' })
-      onNavigate?.('protocols')
+      onNavigate?.('treatments')
     },
   }
 }
