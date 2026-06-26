@@ -125,3 +125,37 @@
   transform: scale(0.98);
   opacity: 0.9;
 }
+
+/* Estado "atrasada" — fundo âmbar suave, texto escuro */
+.priority-dose-card--delayed {
+  background: linear-gradient(135deg, #fff8f0, #fff3e0);
+  border-color: #ffeb3b;
+  color: var(--color-neutral-800, #1a1a1a);
+}
+
+.priority-dose-card--delayed .priority-dose-card__badge {
+  background: rgba(255, 152, 0, 0.15);
+  color: #904d00;
+}
+
+.priority-dose-card--delayed .priority-dose-card__time-wrap {
+  color: var(--color-neutral-700, #333);
+}
+
+.priority-dose-card--delayed .priority-dose-card__relative-time {
+  opacity: 0.75;
+  color: var(--color-neutral-700, #333);
+}
+
+.priority-dose-card--delayed .priority-dose-card__bullet {
+  background: rgba(144, 77, 0, 0.4);
+}
+
+.priority-dose-card--delayed .priority-dose-card__overflow {
+  color: var(--color-neutral-600, #555);
+}
+
+.priority-dose-card--delayed .priority-dose-card__cta {
+  background: #ff9800;
+  color: var(--color-neutral-900, #111);
+}

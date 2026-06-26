@@ -8,8 +8,6 @@ import Loading from '@shared/components/ui/Loading'
 import './Dashboard.css'
 import DashboardColumnLeft from './DashboardColumnLeft'
 import DashboardColumnRight from './DashboardColumnRight'
-import SmartAlerts from '@dashboard/components/SmartAlerts'
-import { useSmartAlerts } from '@dashboard/hooks/useSmartAlerts'
 import { useReminderSuggestion } from '@dashboard/hooks/useReminderSuggestion'
 import { useDashboardHandlers } from '@dashboard/hooks/useDashboardHandlers'
 import insightService from '@dashboard/services/insightService'
@@ -50,7 +48,7 @@ async function resolveUserName(user, supabaseClient) {
 }
 
 /** Seleciona o insight atual baseado no estado do dashboard */
-function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate }) {
+function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds = [] }) {
   if (!stats) return null
   return insightService.selectBestInsight({
     stats: {
@@ -64,6 +62,7 @@ function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate
     stockSummary: stockSummary?.items ?? [],
     logs: logs ?? [],
     onNavigate,
+    excludeIds,
   })
 }
 
@@ -89,15 +88,13 @@ function useDashboardViewState(onNavigate) {
   const [isLoading, setIsLoading] = useState(true)
   const currentDateRef = useRef(getTodayLocal())
   const [dismissedSuggestionId, setDismissedSuggestionId] = useState(null)
-  const [snoozedAlerts, setSnoozedAlerts] = useState({})
+  const [dismissedInsightIds, setDismissedInsightIds] = useState([])
 
   // ── Custom Hooks ──
-  const smartAlerts = useSmartAlerts(stockSummary, zones, snoozedAlerts)
   const reminderSuggestionData = useReminderSuggestion(protocols, logs, dismissedSuggestionId)
   const {
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
-    handleSnoozeAlert,
     handleReminderAccept,
     actionError,
     clearActionError,
@@ -105,7 +102,6 @@ function useDashboardViewState(onNavigate) {
     refresh,
     reminderSuggestionData,
     protocols,
-    setSnoozedAlerts,
     setDismissedSuggestionId,
   })
 
@@ -145,10 +141,10 @@ function useDashboardViewState(onNavigate) {
       (d) => classifyDose(d.scheduledFor, nowRaw, 120, 60, 240, false, d.toleranceMinutes) === 'now'
     )
     return [
-      ...(carryOver || []).filter((d) => !d.isRegistered),
-      ...(zones.late || []).filter((d) => !d.isRegistered),
-      ...(zones.now || []).filter((d) => !d.isRegistered),
-      ...aheadImminent,
+      ...(carryOver || []).filter((d) => !d.isRegistered).map((d) => ({ ...d, zone: 'late' })),
+      ...(zones.late || []).filter((d) => !d.isRegistered).map((d) => ({ ...d, zone: 'late' })),
+      ...(zones.now || []).filter((d) => !d.isRegistered).map((d) => ({ ...d, zone: 'now' })),
+      ...aheadImminent.map((d) => ({ ...d, zone: 'now' })),
     ].sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
   }, [carryOver, zones, lookAhead, nowRaw])
 
@@ -160,9 +156,13 @@ function useDashboardViewState(onNavigate) {
   }, [stockSummary])
 
   const currentInsight = useMemo(
-    () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate }),
-    [stats, stockSummary, logs, protocols, onNavigate]
+    () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds: dismissedInsightIds }),
+    [stats, stockSummary, logs, protocols, onNavigate, dismissedInsightIds]
   )
+
+  const handleDismissInsight = (insightId) => {
+    setDismissedInsightIds((prev) => [...prev, insightId])
+  }
 
   // ── Effects ──
   useEffect(() => {
@@ -205,18 +205,16 @@ function useDashboardViewState(onNavigate) {
     isLoading,
     currentDateRef,
     dismissedSuggestionId,
-    snoozedAlerts,
     scheduleAllDoses,
     carryOverDoses,
     lookAheadDoses,
     urgentDoses,
     criticalStockItems,
-    smartAlerts,
     currentInsight,
+    handleDismissInsight,
     reminderSuggestionData,
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
-    handleSnoozeAlert,
     handleReminderAccept,
     actionError,
     clearActionError,
@@ -236,12 +234,11 @@ export default function Dashboard({ onNavigate }) {
     lookAheadDoses,
     urgentDoses,
     criticalStockItems,
-    smartAlerts,
     currentInsight,
+    handleDismissInsight,
     reminderSuggestionData,
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
-    handleSnoozeAlert,
     handleReminderAccept,
     actionError,
     clearActionError,
@@ -303,21 +300,6 @@ export default function Dashboard({ onNavigate }) {
         </div>
       )}
 
-      {/* ─── Smart Alerts (substitui StockAlertInline no topo) ─── */}
-      {smartAlerts.length > 0 && (
-        <section className="dashboard-alerts-section" aria-label="Alertas inteligentes">
-          <SmartAlerts
-            alerts={smartAlerts}
-            onAction={(alert, action) => {
-              if (action.label === 'Registrar Compra') onNavigate?.('stock')
-              if (action.label === 'Registrar Agora') onNavigate?.('dashboard')
-            }}
-            isComplex={complexityMode !== 'simple'}
-            onSnooze={handleSnoozeAlert}
-          />
-        </section>
-      )}
-
       {/* ─── 2-Column Grid: Left (Ring + Greeting + Priority) | Right (Schedule + Stock + Empty) ─── */}
       <div className="grid-dashboard">
         {/* ═══ LEFT COLUMN (1fr) ═══ */}
@@ -331,6 +313,7 @@ export default function Dashboard({ onNavigate }) {
           handleRegisterDoseQuick={handleRegisterDoseQuick}
           handleRegisterDosesAll={handleRegisterDosesAll}
           currentInsight={currentInsight}
+          onDismissInsight={handleDismissInsight}
           onNavigate={onNavigate}
           reminderSuggestionData={reminderSuggestionData}
           handleReminderAccept={handleReminderAccept}
