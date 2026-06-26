@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { BellRing, Check, AlertCircle } from 'lucide-react-native'
+import { getNow } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -15,7 +16,31 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   const firstDose = doses[0]
   const isMultiple = doses.length > 1
   const isDelayed = firstDose.timelineStatus === 'ATRASADA'
-  
+
+  const nextTime = firstDose.scheduledTime || ''
+  const scheduledFor = firstDose.scheduledFor
+  const now = getNow()
+  const [hour, minute] = nextTime.split(':').map(Number)
+  const scheduled = getNow()
+  scheduled.setHours(hour, minute, 0, 0)
+  const diffMin = Math.round((scheduled - now) / 60000)
+
+  const TZ = 'America/Sao_Paulo'
+  const isCarryOver =
+    !!scheduledFor &&
+    new Date(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
+      now.toLocaleDateString('pt-BR', { timeZone: TZ })
+
+  const timeLabel = (() => {
+    if (isCarryOver) {
+      const weekday = new Date(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
+      return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} às ${nextTime}`
+    }
+    if (diffMin <= 0) return 'Agora'
+    if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
+    return `Às ${nextTime}`
+  })()
+
   const medicineName = firstDose.medicine?.name || 'Medicamento'
   const displayTitle = isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA'
   const alertColor = isDelayed ? '#904d00' : colors.brand.light
@@ -39,13 +64,10 @@ export default function HeroDoseCard({ doses = [], onPress }) {
         </View>
         
         <Text style={[styles.medicineName, { color: textColor }]} numberOfLines={2}>
-          {isMultiple ? `${medicineName} e outros...` : medicineName}
+          {isMultiple ? `${medicineName} e mais ${doses.length - 1}` : medicineName}
         </Text>
         <Text style={[styles.timeInfo, { color: timeColor }]}>
-          {isMultiple 
-            ? `Próxima: ${firstDose.scheduledTime || '--:--'}`
-            : `Horário agendado: ${firstDose.scheduledTime || '--:--'}`
-          }
+          {timeLabel}
         </Text>
         
         <TouchableOpacity 
