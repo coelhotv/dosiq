@@ -20,7 +20,7 @@ const IT = {
 const openDoseModal = () => window.dispatchEvent(new CustomEvent('mr:open-dose-modal'))
 
 export function createStreakInsight(stats, onNavigate) {
-  if (stats.currentStreak < 5) return null
+  if (!stats || stats.currentStreak < 5) return null
   return {
     id: 'streak_achievement',
     type: IT.STREAK_CELEBRATION,
@@ -37,7 +37,7 @@ export function createStreakInsight(stats, onNavigate) {
 }
 
 export function createPerfectWeekInsight(stats, onNavigate) {
-  if (stats.adherence !== 100) return null
+  if (!stats || stats.adherence !== 100) return null
   return {
     id: 'perfect_week',
     type: IT.ADHERENCE_POSITIVE,
@@ -54,7 +54,7 @@ export function createPerfectWeekInsight(stats, onNavigate) {
 }
 
 export function createGoodWeekInsight(stats, onNavigate) {
-  if (stats.adherence < 80 || stats.adherence >= 100) return null
+  if (!stats || stats.adherence < 80 || stats.adherence >= 100) return null
   return {
     id: 'good_week',
     type: IT.ADHERENCE_POSITIVE,
@@ -123,7 +123,7 @@ export function createMissedDosesTodayInsight(todayMissed) {
 }
 
 export function createLowAdherenceInsight(stats, onNavigate) {
-  if (stats.adherence >= 80 || stats.adherence <= 0) return null
+  if (!stats || stats.adherence >= 80 || stats.adherence <= 0) return null
   return {
     id: 'low_adherence_week',
     type: IT.ADHERENCE_MOTIVATIONAL,
@@ -140,7 +140,7 @@ export function createLowAdherenceInsight(stats, onNavigate) {
 }
 
 export function createStreakBrokenInsight(stats) {
-  if (stats.currentStreak !== 0 || stats.longestStreak < 3) return null
+  if (!stats || stats.currentStreak !== 0 || stats.longestStreak < 3) return null
   return {
     id: 'streak_broken',
     type: IT.ADHERENCE_MOTIVATIONAL,
@@ -157,7 +157,7 @@ export function createStreakBrokenInsight(stats) {
 }
 
 export function createProtocolReminderInsight(stats, onNavigate) {
-  const activeProtocols = stats.activeProtocols || 0
+  const activeProtocols = stats?.activeProtocols || 0
   if (activeProtocols <= 0 || activeProtocols > 3) return null
   return {
     id: 'protocol_reminder',
