@@ -103,33 +103,6 @@ function formatHour(hour) {
 }
 
 /**
- * Determina quais features o usuário mais utiliza
- * @returns {Object} { mostUsed: string, leastUsed: string }
- */
-function getFeatureUsage() {
-  try {
-    const thirtyDaysAgo = addDays(getNow(), -30)
-    const summary = analyticsService.getSummary({ since: thirtyDaysAgo })
-
-    const featureEvents = {
-      swipe_used: summary.eventCounts?.['swipe_used'] || 0,
-      sparkline_tapped: summary.eventCounts?.['sparkline_tapped'] || 0,
-      milestone_achieved: summary.eventCounts?.['milestone_achieved'] || 0,
-    }
-
-    const sorted = Object.entries(featureEvents).sort((a, b) => b[1] - a[1])
-
-    return {
-      mostUsed: sorted[0]?.[0] || null,
-      leastUsed: sorted[sorted.length - 1]?.[0] || null,
-    }
-  } catch {
-    console.error('[InsightService] Erro ao buscar uso de features')
-    return { mostUsed: null, leastUsed: null }
-  }
-}
-
-/**
  * Analisa adesão por dia da semana
  * @returns {Object} { bestDay: string, worstDay: string, bestCount: number, worstCount: number }
  */
@@ -190,67 +163,33 @@ function createBestTimeInsight(onNavigate) {
     type: INSIGHT_TYPES.IMPROVEMENT_OPPORTUNITY,
     priority: 'info',
     icon: '🕐',
-    text: `Você costuma registrar doses às ${timeLabel}. Considere agendar mais lembretes neste horário!`,
+    text: `Você costuma registrar doses às ${timeLabel}. Considere agendar mais avisos neste horário!`,
     highlight: timeLabel,
-    actionLabel: 'Configurar Lembretes',
+    actionLabel: 'Configurar Avisos',
     onAction: () => {
       analyticsService.track('insight_action', { insight_id: 'best_time' })
-      onNavigate?.('profile')
+      onNavigate?.('inbox')
     },
   }
 }
 
-/**
- * Cria insight sobre feature não utilizada
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null} Insight ou null
- */
-function createFeatureDiscoveryInsight(onNavigate) {
-  const usage = getFeatureUsage()
-
-  // Se usuário nunca usou sparkline mas usa swipe regularmente
-  if (usage.leastUsed === 'sparkline_tapped' && usage.mostUsed === 'swipe_used') {
-    return {
-      id: 'feature_discovery_sparkline',
-      type: INSIGHT_TYPES.IMPROVEMENT_OPPORTUNITY,
-      priority: 'info',
-      icon: '📊',
-      text: 'Você sabia que pode tocar no gráfico de adesão para ver detalhes diários?',
-      highlight: 'tocar no gráfico',
-      actionLabel: 'Experimentar',
-      onAction: () => {
-        analyticsService.track('insight_action', { insight_id: 'feature_discovery_sparkline' })
-        onNavigate?.('stats')
-      },
-    }
-  }
-
-  return null
-}
-
-/**
- * Cria insight sobre dia da semana com menor adesão
- * @param {Function} onNavigate - Função de navegação
- * @returns {Object|null} Insight ou null
- */
 function createWeakDayInsight(onNavigate) {
   const dayAnalysis = getAdherenceByDayOfWeek()
 
   if (!dayAnalysis || !dayAnalysis.worstDay || dayAnalysis.bestCount === 0) return null
 
-  // Se o pior dia tem significativamente menos doses (menos de 50% do melhor)
   if (dayAnalysis.worstCount > 0 && dayAnalysis.worstCount < dayAnalysis.bestCount * 0.5) {
     return {
       id: 'weak_day',
       type: INSIGHT_TYPES.ADHERENCE_MOTIVATIONAL,
       priority: 'medium',
       icon: '📅',
-      text: `Sua adesão é menor aos ${dayAnalysis.worstDay}. Configure lembretes extras para este dia!`,
+      text: `Sua adesão é menor aos ${dayAnalysis.worstDay}. Configure avisos extras para este dia!`,
       highlight: dayAnalysis.worstDay,
-      actionLabel: 'Configurar Lembretes',
+      actionLabel: 'Configurar Avisos',
       onAction: () => {
         analyticsService.track('insight_action', { insight_id: 'weak_day' })
-        onNavigate?.('profile')
+        onNavigate?.('inbox')
       },
     }
   }
@@ -269,16 +208,15 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
 
   const generators = [
     () => createStreakInsight(stats, onNavigate),
-    () => createPerfectWeekInsight(stats, shareAchievement),
+    () => createPerfectWeekInsight(stats, onNavigate),
     () => createGoodWeekInsight(stats, onNavigate),
     () => createImprovementInsight(trend, onNavigate),
     () => createStockHealthyInsight(stockSummary, onNavigate),
-    () => createMissedDosesTodayInsight(todayMissed, onNavigate),
+    () => createMissedDosesTodayInsight(todayMissed),
     () => createLowAdherenceInsight(stats, onNavigate),
-    () => createStreakBrokenInsight(stats, onNavigate),
+    () => createStreakBrokenInsight(stats),
     () => createProtocolReminderInsight(stats, onNavigate),
     () => createBestTimeInsight(onNavigate),
-    () => createFeatureDiscoveryInsight(onNavigate),
     () => createWeakDayInsight(onNavigate),
   ]
 
@@ -347,22 +285,23 @@ function countTodayMissedDoses(logs, dailyAdherence) {
  * @returns {Object} - Insight selecionado
  */
 export function selectBestInsight(params) {
-  const insights = generateAllInsights(params)
+  const { excludeIds = [], ...rest } = params
+  const insights = generateAllInsights(rest)
 
-  // Filtrar insights aplicáveis (sem frequency capping)
   const applicableInsights = insights.filter(
-    (insight) => insight.condition === undefined || insight.condition
+    (insight) =>
+      (insight.condition === undefined || insight.condition) &&
+      !excludeIds.includes(insight.id)
   )
 
   if (applicableInsights.length === 0) {
-    return getDefaultInsight(params.onNavigate)
+    if (excludeIds.includes('default')) return null
+    return getDefaultInsight()
   }
 
-  // Rotacionar entre insights: tentar mostrar um diferente do último
   const history = getInsightHistory()
   const lastShownId = history[0]?.id
 
-  // Filtrar para mostrar insight diferente do último
   const differentInsights = applicableInsights.filter((i) => i.id !== lastShownId)
   const candidates = differentInsights.length > 0 ? differentInsights : applicableInsights
 
@@ -394,7 +333,7 @@ export function selectBestInsight(params) {
  * @param {Function} onNavigate - Função de navegação
  * @returns {Object} - Insight padrão
  */
-export function getDefaultInsight(onNavigate) {
+export function getDefaultInsight() {
   return {
     id: 'default',
     type: INSIGHT_TYPES.IMPROVEMENT_OPPORTUNITY,
@@ -402,11 +341,6 @@ export function getDefaultInsight(onNavigate) {
     icon: '💡',
     text: 'Continue registrando suas doses para manter o controle do seu tratamento.',
     highlight: '',
-    actionLabel: 'Saiba mais',
-    onAction: () => {
-      analyticsService.track('insight_action', { insight_id: 'default' })
-      onNavigate?.('help')
-    },
   }
 }
 
@@ -469,12 +403,6 @@ export function clearInsightHistory() {
   }
 }
 
-/**
- * Compartilha conquista (placeholder para Web Share API)
- */
-function shareAchievement() {
-  debugLog('InsightService', 'Compartilhar conquista - funcionalidade não implementada')
-}
 
 export default {
   generateAllInsights,

@@ -209,7 +209,7 @@ export default function TreatmentsScreen() {
         <View style={styles.header}>
           <View style={styles.headerTextCol}>
             <Text style={styles.title}>Tratamentos</Text>
-            <Text style={styles.subtitle}>Acompanhe os tratamentos ativos</Text>
+            <Text style={styles.subtitle}>Gerencie medicamentos e seus tratamentos</Text>
           </View>
           <ChatEntryButton />
         </View>

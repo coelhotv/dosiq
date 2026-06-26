@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[100],
   },
   chipSelected: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: colors.primary[100],
   },
   chipText: {
     fontSize: 13,
@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium || 'System',
   },
   chipTextSelected: {
-    color: colors.text.inverse,
+    color: colors.primary[700],
+    fontWeight: '700',
   },
 })

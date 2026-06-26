@@ -105,7 +105,7 @@ function _renderShiftDoses(items, handleOpenRegister) {
   if (items.length === 0) {
     return (
       <View style={styles.emptyShiftContainer}>
-        <Text style={styles.emptyShiftText}>Nenhum medicamento para este turno</Text>
+        <Text style={styles.emptyShiftText}>Nenhum medicamento para este período</Text>
       </View>
     )
   }
@@ -335,7 +335,6 @@ function TodayScreenContent({
     const aheadImminent = lookAhead.filter(d => d.timelineStatus === 'PROXIMA')
     return [...carryOver, ...todayUrgent, ...aheadImminent]
       .sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
-      .slice(0, 3)
   }, [carryOver, timeline, lookAhead])
 
   const instancesByKey = useMemo(() => timeline.reduce((map, d) => {

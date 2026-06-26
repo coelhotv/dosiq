@@ -80,6 +80,13 @@ export const colors = {
     light: '#ccfbf1',     // Para textos sobre fundos escuros
   },
 
+  // Dose card — estado "atrasada" (âmbar suave, paridade com PWA PriorityDoseCard--delayed)
+  doseDelayed: {
+    bg: '#FFF8F0',
+    border: '#ffeb3b',
+    borderNone: 'transparent',
+  },
+
   // Tab navigation
   tab: {
     activeTint: '#006A5E', 

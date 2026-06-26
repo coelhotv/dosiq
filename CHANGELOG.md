@@ -7,6 +7,50 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.21.3 (mobile) — 2026-06-26 — Correção: editar dose injetável já tomada
+
+> **Bump:** mobile `0.21.2 → 0.21.3` (patch — correção de bug). Web sem alteração.
+
+### 🐛 Correções
+
+- **Editar dose já tomada (mobile):** no histórico, editar uma dose agendada já tomada (ex.: alterar
+  o sítio de aplicação de um injetável) falhava com "Ocorrência já registrada ou indisponível" (P0001).
+  `DoseActionSheet` roteava a edição para `registerRetro` (INSERT via `register_dose_atomic`) em vez de
+  `updateLog`, pois só tratava doses órfãs (`source==='log'`) como editáveis. Doses agendadas tomadas
+  carregam `logId` (`medicine_log_id`), então o roteamento passa a usar a presença de `logId`:
+  com log de apoio → UPDATE atômico (`update_dose_log_atomic`); sem log (pending/missed) → registro retroativo.
+
+---
+
+## Web v4.15.1 + App v0.21.2 (mobile) — 2026-06-26 — Consistência multi-superfície no card de dose prioritária
+
+> **Bump:** web `4.15.0 → 4.15.1` (patch — polimento UX no PriorityDoseCard) · mobile `0.21.1 → 0.21.2`
+> (patch — paridade de comportamento no HeroDoseCard + todas as doses na modal).
+
+### ✨ Melhorias
+
+- **Visual por status (PWA):** `PriorityDoseCard` distingue doses "Agora" (azul brand) de doses
+  "Atrasada" (fundo âmbar, badge ⚠, CTA laranja) via campo `zone` injetado pelo `Dashboard.jsx`.
+- **Tempo relativo (mobile):** `HeroDoseCard` passa a exibir "Agora", "Em X min" ou "Às HH:MM"
+  — mesma lógica já presente no PWA.
+- **Carry-over com dia da semana (PWA + mobile):** doses de injetáveis semanais (ex.: GLP-1)
+  que permanecem pendentes 1-3 dias exibem "Quinta-feira às 22:00" em vez de apenas "Às 22:00"
+  ou "Agora" enganoso. Detecção via comparação de `scheduledFor` vs hoje no fuso `America/Sao_Paulo`.
+- **Todas as doses na modal (mobile):** removido `.slice(0, 3)` de `priorityDoses` no `TodayScreen`;
+  `BulkDoseRegisterModal` passa a receber o conjunto completo de doses pendentes (não apenas 3).
+
+### 🧹 Limpeza
+
+- Removidos 39 arquivos legados pré-redesign em `apps/web/src/features/dashboard/components/`:
+  `DoseZoneList`, `PlanModeZone`, `ZoneSection`, `BatchRegisterButton`, `DoseCard`,
+  `SwipeRegisterItem`, `TreatmentAccordion`, `DashboardWidgets`, `StockAlertsWidget`,
+  `QuickActionsWidget`, `HealthScoreCard`, `HealthScoreDetails`, `LastDosesWidget`,
+  `DailyDoseModal`, `DoseListItem`, `AdaptiveLayout`, `ViewModeToggle`, `StockBars`, `PlanBadge`
+  e respectivos CSS, testes e hook `useSmartAlerts`.
+- `SmartAlerts` substituído por `InsightCards` no Dashboard (refatoração interna sem impacto visível).
+
+---
+
 ## Web v4.15.0 + App v0.21.1 (mobile) — 2026-06-24 — Paridade do chat PWA↔mobile + textos no core (spec 015, Onda 3)
 
 > **Bump:** web `4.14.0 → 4.15.0` (minor — paridade de UX no chat) · mobile `0.21.0 → 0.21.1`

@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { BellRing, Check, AlertCircle } from 'lucide-react-native'
+import { getNow, parseISO, getUserTime } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -9,13 +10,43 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
  * @param {Array} props.doses - Conjunto de doses prioritárias
  * @param {Function} props.onPress - Ação de confirmar uso
  */
+const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+
 export default function HeroDoseCard({ doses = [], onPress }) {
-  if (doses.length === 0) return null
+  if (!doses || doses.length === 0) return null
 
   const firstDose = doses[0]
   const isMultiple = doses.length > 1
-  const isDelayed = firstDose.timelineStatus === 'ATRASADA'
-  
+  const isDelayed = ['atrasada', 'delayed'].includes(firstDose.timelineStatus?.toLowerCase())
+
+  const nextTime = firstDose.scheduledTime || ''
+  const scheduledFor = firstDose.scheduledFor
+  const now = getNow()
+  const [hour, minute] = nextTime.split(':').map(Number)
+  const scheduled = getNow()
+  if (!isNaN(hour) && !isNaN(minute)) {
+    scheduled.setHours(hour, minute, 0, 0)
+  }
+  const diffMin = Math.round((scheduled - now) / 60000)
+
+  const TZ = 'America/Sao_Paulo'
+  const scheduledLocal = scheduledFor ? getUserTime(parseISO(scheduledFor), TZ) : null
+  const isCarryOver =
+    !!scheduledLocal &&
+    (scheduledLocal.getFullYear() !== now.getFullYear() ||
+      scheduledLocal.getMonth() !== now.getMonth() ||
+      scheduledLocal.getDate() !== now.getDate())
+
+  const timeLabel = (() => {
+    if (isCarryOver && scheduledLocal) {
+      const weekday = WEEKDAYS[scheduledLocal.getDay()]
+      return `${weekday} às ${nextTime}`
+    }
+    if (diffMin <= 0) return 'Agora'
+    if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
+    return `Às ${nextTime}`
+  })()
+
   const medicineName = firstDose.medicine?.name || 'Medicamento'
   const displayTitle = isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA'
   const alertColor = isDelayed ? '#904d00' : colors.brand.light
@@ -39,13 +70,10 @@ export default function HeroDoseCard({ doses = [], onPress }) {
         </View>
         
         <Text style={[styles.medicineName, { color: textColor }]} numberOfLines={2}>
-          {isMultiple ? `${medicineName} e outros...` : medicineName}
+          {isMultiple ? `${medicineName} e mais ${doses.length - 1}` : medicineName}
         </Text>
         <Text style={[styles.timeInfo, { color: timeColor }]}>
-          {isMultiple 
-            ? `Próxima: ${firstDose.scheduledTime || '--:--'}`
-            : `Horário agendado: ${firstDose.scheduledTime || '--:--'}`
-          }
+          {timeLabel}
         </Text>
         
         <TouchableOpacity 
@@ -76,12 +104,12 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.doseDelayed.borderNone,
   },
   containerDelayed: {
-    backgroundColor: '#FFF8F0', // Creme ultra-leve (feedback H8.7)
-    borderColor: '#ffeb3b', // Borda sutil amarela para destaque
-    elevation: 2, // Sombra menor para parecer mais "leve"
+    backgroundColor: colors.doseDelayed.bg,
+    borderColor: colors.doseDelayed.border,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',

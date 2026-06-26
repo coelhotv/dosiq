@@ -163,6 +163,13 @@ function AppInner() {
     return () => window.removeEventListener('mr:open-measure-log', open)
   }, [])
 
+  // Insight cards com CTA "Registrar dose" disparam este evento.
+  useEffect(() => {
+    const open = () => setIsDoseModalOpen(true)
+    window.addEventListener('mr:open-dose-modal', open)
+    return () => window.removeEventListener('mr:open-dose-modal', open)
+  }, [])
+
   const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
 

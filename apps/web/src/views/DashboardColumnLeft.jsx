@@ -13,6 +13,7 @@ export default function DashboardColumnLeft({
   handleRegisterDoseQuick,
   handleRegisterDosesAll,
   currentInsight,
+  onDismissInsight,
   onNavigate,
   reminderSuggestionData,
   handleReminderAccept,
@@ -56,7 +57,7 @@ export default function DashboardColumnLeft({
             onAction={(insight) => {
               if (insight.action?.navigate) onNavigate?.(insight.action.navigate)
             }}
-            onDismiss={() => {}}
+            onDismiss={onDismissInsight}
           />
         </div>
       )}

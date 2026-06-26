@@ -21,7 +21,7 @@ function friendlyRegisterError(err) {
   return 'Não foi possível registrar a dose. Tente novamente.'
 }
 
-export function useDashboardHandlers({ refresh, reminderSuggestionData, protocols, setSnoozedAlerts, setDismissedSuggestionId }) {
+export function useDashboardHandlers({ refresh, reminderSuggestionData, protocols, setDismissedSuggestionId }) {
   // Erro de ação 1-click (Tomar/Confirmar agora): antes morria num throw sem
   // consumidor — usuário clicava e nada acontecia (smoke PO 2026-06-11).
   const [actionError, setActionError] = useState(null)
@@ -97,10 +97,6 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
     [refresh, showActionError]
   )
 
-  const handleSnoozeAlert = useCallback((alertId) => {
-    setSnoozedAlerts((prev) => ({ ...prev, [alertId]: true }))
-  }, [setSnoozedAlerts])
-
   const handleReminderAccept = useCallback(
     async (newTime) => {
       const protocolId = reminderSuggestionData?.protocolId
@@ -134,9 +130,8 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
   return useMemo(() => ({
     handleRegisterDoseQuick,
     handleRegisterDosesAll,
-    handleSnoozeAlert,
     handleReminderAccept,
     actionError,
     clearActionError
-  }), [handleRegisterDoseQuick, handleRegisterDosesAll, handleSnoozeAlert, handleReminderAccept, actionError, clearActionError])
+  }), [handleRegisterDoseQuick, handleRegisterDosesAll, handleReminderAccept, actionError, clearActionError])
 }

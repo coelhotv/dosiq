@@ -1,5 +1,5 @@
 import { Clock } from 'lucide-react'
-import { getNow } from '@utils/dateUtils'
+import { getNow, parseISO } from '@utils/dateUtils'
 import { formatDoseItem } from '@dosiq/core'
 import './PriorityDoseCard.css'
 
@@ -17,22 +17,33 @@ const DISPLAY_LIMIT = 3
 export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll }) {
   if (!doses || doses.length === 0) return null
 
+  const isDelayed = doses[0]?.zone === 'late'
   const visibleDoses = doses.slice(0, DISPLAY_LIMIT)
   const overflowCount = doses.length - DISPLAY_LIMIT
 
   const nextTime = doses[0]?.scheduledTime || ''
+  const scheduledFor = doses[0]?.scheduledFor
   const now = getNow()
   const [hour, minute] = nextTime.split(':').map(Number)
   const scheduled = getNow()
   scheduled.setHours(hour, minute, 0, 0)
   const diffMin = Math.round((scheduled - now) / 60000)
 
-  const timeLabel =
-    diffMin <= 0
-      ? 'Agora'
-      : diffMin < 60
-        ? `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
-        : `Às ${nextTime}`
+  const TZ = 'America/Sao_Paulo'
+  const isCarryOver =
+    !!scheduledFor &&
+    parseISO(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
+      now.toLocaleDateString('pt-BR', { timeZone: TZ })
+
+  const timeLabel = (() => {
+    if (isCarryOver) {
+      const weekday = parseISO(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
+      return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} às ${nextTime}`
+    }
+    if (diffMin <= 0) return 'Agora'
+    if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
+    return `Às ${nextTime}`
+  })()
 
   const handleCTA = () => {
     if (doses.length === 1) {
@@ -44,13 +55,19 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
 
   // ═══ PRIORITY CARD ═══
   return (
-    <div className="priority-dose-card" role="region" aria-label="Dose prioritária">
+    <div
+      className={`priority-dose-card${isDelayed ? ' priority-dose-card--delayed' : ''}`}
+      role="region"
+      aria-label="Dose prioritária"
+    >
       {/* Elemento decorativo para sensação "premium" */}
       <div className="priority-dose-card__decoration" aria-hidden="true" />
 
       {/* Header */}
       <div className="priority-dose-card__header">
-        <span className="priority-dose-card__badge">● Prioridade Máxima</span>
+        <span className="priority-dose-card__badge">
+          {isDelayed ? '⚠ Atrasada' : '● Agora'}
+        </span>
         <span className="priority-dose-card__time-wrap">
           <Clock size={16} aria-hidden="true" />
           {nextTime}
