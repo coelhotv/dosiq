@@ -22,16 +22,16 @@
     "tasks": "plans/specs/015-ai-chatbot-mobile/tasks.md",
     "linked_adrs": ["ADR-074"],
     "linked_contracts": ["CON-028"],
-    "last_pr": 687,
+    "last_pr": 688,
     "branch": "main",
-    "mobile_version": "0.21.1",
-    "web_version": "4.15.0"
+    "mobile_version": "0.21.3",
+    "web_version": "4.15.1"
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "rules_count": 230,
-    "anti_patterns_count": 241,
+    "anti_patterns_count": 242,
     "decisions_count": 74,
     "contracts_count": 27,
     "distillation_due": false
@@ -44,11 +44,11 @@
     "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
-    "pr": 687,
+    "pr": 688,
     "status": "merged",
     "critical": 0,
-    "high": 1,
-    "auto_fixed": 2,
+    "high": 2,
+    "auto_fixed": 0,
     "declined": 0,
     "ask_items": 0
   }
