@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.21.3 (mobile) — 2026-06-26 — Correção: editar dose injetável já tomada
+
+> **Bump:** mobile `0.21.2 → 0.21.3` (patch — correção de bug). Web sem alteração.
+
+### 🐛 Correções
+
+- **Editar dose já tomada (mobile):** no histórico, editar uma dose agendada já tomada (ex.: alterar
+  o sítio de aplicação de um injetável) falhava com "Ocorrência já registrada ou indisponível" (P0001).
+  `DoseActionSheet` roteava a edição para `registerRetro` (INSERT via `register_dose_atomic`) em vez de
+  `updateLog`, pois só tratava doses órfãs (`source==='log'`) como editáveis. Doses agendadas tomadas
+  carregam `logId` (`medicine_log_id`), então o roteamento passa a usar a presença de `logId`:
+  com log de apoio → UPDATE atômico (`update_dose_log_atomic`); sem log (pending/missed) → registro retroativo.
+
+---
+
 ## Web v4.15.1 + App v0.21.2 (mobile) — 2026-06-26 — Consistência multi-superfície no card de dose prioritária
 
 > **Bump:** web `4.15.0 → 4.15.1` (patch — polimento UX no PriorityDoseCard) · mobile `0.21.1 → 0.21.2`

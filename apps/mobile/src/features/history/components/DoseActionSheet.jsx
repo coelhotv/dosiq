@@ -476,7 +476,10 @@ function useDoseActionSheetState({
       quantity_taken: parsedQty,
       injection_site: site,
     }
-    if (isOrphan) {
+    // Dose com log de apoio (órfã OU agendada já tomada) → UPDATE atômico (não re-registrar:
+    // register_dose_atomic rejeita duplicata com P0001). Sem logId (pending/missed) → registro
+    // retroativo. AP — editar tomada não-órfã caía no registerRetro e batia em "Ocorrência já registrada".
+    if (logId) {
       onUpdateLog?.(logId, payload)
     } else {
       onRegisterRetro?.(
