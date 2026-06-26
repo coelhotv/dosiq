@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { BellRing, Check, AlertCircle } from 'lucide-react-native'
-import { getNow, parseISO } from '@dosiq/core'
+import { getNow, parseISO, getUserTime } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -10,31 +10,37 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
  * @param {Array} props.doses - Conjunto de doses prioritárias
  * @param {Function} props.onPress - Ação de confirmar uso
  */
+const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+
 export default function HeroDoseCard({ doses = [], onPress }) {
-  if (doses.length === 0) return null
+  if (!doses || doses.length === 0) return null
 
   const firstDose = doses[0]
   const isMultiple = doses.length > 1
-  const isDelayed = firstDose.timelineStatus === 'ATRASADA'
+  const isDelayed = ['atrasada', 'delayed'].includes(firstDose.timelineStatus?.toLowerCase())
 
   const nextTime = firstDose.scheduledTime || ''
   const scheduledFor = firstDose.scheduledFor
   const now = getNow()
   const [hour, minute] = nextTime.split(':').map(Number)
   const scheduled = getNow()
-  scheduled.setHours(hour, minute, 0, 0)
+  if (!isNaN(hour) && !isNaN(minute)) {
+    scheduled.setHours(hour, minute, 0, 0)
+  }
   const diffMin = Math.round((scheduled - now) / 60000)
 
   const TZ = 'America/Sao_Paulo'
+  const scheduledLocal = scheduledFor ? getUserTime(parseISO(scheduledFor), TZ) : null
   const isCarryOver =
-    !!scheduledFor &&
-    parseISO(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
-      now.toLocaleDateString('pt-BR', { timeZone: TZ })
+    !!scheduledLocal &&
+    (scheduledLocal.getFullYear() !== now.getFullYear() ||
+      scheduledLocal.getMonth() !== now.getMonth() ||
+      scheduledLocal.getDate() !== now.getDate())
 
   const timeLabel = (() => {
-    if (isCarryOver) {
-      const weekday = parseISO(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
-      return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} às ${nextTime}`
+    if (isCarryOver && scheduledLocal) {
+      const weekday = WEEKDAYS[scheduledLocal.getDay()]
+      return `${weekday} às ${nextTime}`
     }
     if (diffMin <= 0) return 'Agora'
     if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
