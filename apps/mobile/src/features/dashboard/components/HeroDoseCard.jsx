@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { BellRing, Check, AlertCircle } from 'lucide-react-native'
-import { getNow } from '@dosiq/core'
+import { getNow, parseISO } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
 /**
@@ -28,12 +28,12 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   const TZ = 'America/Sao_Paulo'
   const isCarryOver =
     !!scheduledFor &&
-    new Date(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
+    parseISO(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
       now.toLocaleDateString('pt-BR', { timeZone: TZ })
 
   const timeLabel = (() => {
     if (isCarryOver) {
-      const weekday = new Date(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
+      const weekday = parseISO(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
       return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} às ${nextTime}`
     }
     if (diffMin <= 0) return 'Agora'
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 8,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.doseDelayed.borderNone,
   },
   containerDelayed: {
-    backgroundColor: '#FFF8F0', // Creme ultra-leve (feedback H8.7)
-    borderColor: '#ffeb3b', // Borda sutil amarela para destaque
-    elevation: 2, // Sombra menor para parecer mais "leve"
+    backgroundColor: colors.doseDelayed.bg,
+    borderColor: colors.doseDelayed.border,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',

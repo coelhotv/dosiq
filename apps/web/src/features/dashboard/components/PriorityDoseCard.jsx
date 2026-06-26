@@ -1,5 +1,5 @@
 import { Clock } from 'lucide-react'
-import { getNow } from '@utils/dateUtils'
+import { getNow, parseISO } from '@utils/dateUtils'
 import { formatDoseItem } from '@dosiq/core'
 import './PriorityDoseCard.css'
 
@@ -32,12 +32,12 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
   const TZ = 'America/Sao_Paulo'
   const isCarryOver =
     !!scheduledFor &&
-    new Date(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
+    parseISO(scheduledFor).toLocaleDateString('pt-BR', { timeZone: TZ }) !==
       now.toLocaleDateString('pt-BR', { timeZone: TZ })
 
   const timeLabel = (() => {
     if (isCarryOver) {
-      const weekday = new Date(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
+      const weekday = parseISO(scheduledFor).toLocaleDateString('pt-BR', { weekday: 'long', timeZone: TZ })
       return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} às ${nextTime}`
     }
     if (diffMin <= 0) return 'Agora'
