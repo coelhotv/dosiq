@@ -128,6 +128,7 @@ module.exports = {
       ],
       './withFirebaseFix.js',
       './withAlarmPermissions.js',
+      './withDoseLiveActivity.js',
       '@react-native-community/datetimepicker'
     ],
     extra: {
