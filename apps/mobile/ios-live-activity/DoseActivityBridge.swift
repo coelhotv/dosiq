@@ -9,6 +9,7 @@
 
 import ActivityKit
 import Foundation
+import React
 
 @objc(DoseActivityBridge)
 class DoseActivityBridge: NSObject {

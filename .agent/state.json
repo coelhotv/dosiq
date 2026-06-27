@@ -14,7 +14,7 @@
       "039 modo discreto lock-screen = requisito privacidade LGPD/Const-I (default discreto p/ critico)",
       "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
     ],
-    "status": "coding",
+    "status": "completed",
     "goal": "039 Dose State Machine — épico Tier 2 cross-platform (iOS Live Activities + Dynamic Island / Android ongoing notification). spec.md + tasks.md criados (S6); 3 NEEDS CLARIFICATION RESOLVIDAS (iOS=custom Swift agora + expo-widgets roadmap p/ Expo56; Android=Notifee ongoing; criação schedule-driven ~60min; iOS17+ p/ botões interativos LA). Aguardando Planning (ADR abordagem iOS) OU ceremony (R-065).",
     "goal_type": "feature",
     "tier": 2,
@@ -31,10 +31,10 @@
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 4,
     "rules_count": 230,
     "anti_patterns_count": 242,
-    "decisions_count": 74,
+    "decisions_count": 75,
     "contracts_count": 27,
     "distillation_due": false
   },

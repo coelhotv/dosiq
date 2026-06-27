@@ -25,10 +25,10 @@ struct DoseLiveActivityWidget: Widget {
                 // ── Expanded ──────────────────────────────────────
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: "drop.fill")
-                        .foregroundColor(accentColor(context.state.state))
+                        .foregroundColor(stateColor(context.state.state))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: timerRange(context.state.scheduledAt),
+                    Text(timerInterval: timerRange(context.state.scheduledAt, context.state.state),
                          countsDown: countsDown(context.state.state))
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
@@ -41,19 +41,19 @@ struct DoseLiveActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     Text(context.state.stateLabel)
                         .font(.caption)
-                        .foregroundColor(accentColor(context.state.state))
+                        .foregroundColor(stateColor(context.state.state))
                 }
             } compactLeading: {
                 Image(systemName: "drop.fill")
-                    .foregroundColor(accentColor(context.state.state))
+                    .foregroundColor(stateColor(context.state.state))
             } compactTrailing: {
-                Text(timerInterval: timerRange(context.state.scheduledAt),
+                Text(timerInterval: timerRange(context.state.scheduledAt, context.state.state),
                      countsDown: countsDown(context.state.state))
                     .monospacedDigit()
                     .frame(maxWidth: 44)
             } minimal: {
                 Image(systemName: "drop.fill")
-                    .foregroundColor(accentColor(context.state.state))
+                    .foregroundColor(stateColor(context.state.state))
             }
         }
     }
@@ -65,7 +65,7 @@ private struct LockScreenView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "drop.fill")
-                .foregroundColor(accentColor(context.state.state))
+                .foregroundColor(stateColor(context.state.state))
                 .font(.title2)
             VStack(alignment: .leading, spacing: 2) {
                 Text(context.state.stateLabel)
@@ -76,7 +76,7 @@ private struct LockScreenView: View {
                     .foregroundColor(.white)
             }
             Spacer()
-            Text(timerInterval: timerRange(context.state.scheduledAt),
+            Text(timerInterval: timerRange(context.state.scheduledAt, context.state.state),
                  countsDown: countsDown(context.state.state))
                 .font(.title2)
                 .monospacedDigit()
@@ -85,11 +85,17 @@ private struct LockScreenView: View {
     }
 }
 
-// Faixa do timer: do agendado até +1h (espaço de contagem suficiente p/ o spike).
-private func timerRange(_ scheduledAt: Date) -> ClosedRange<Date> {
-    let start = min(scheduledAt, Date())
-    let end = max(scheduledAt, Date()).addingTimeInterval(3600)
-    return start...end
+// Faixa do timer. Regressivo (upcoming/now): agora → horário da dose (conta até o alvo).
+// Progressivo (late): horário da dose → agora+buffer (conta o atraso desde o alvo).
+private func timerRange(_ scheduledAt: Date, _ state: String) -> ClosedRange<Date> {
+    let now = Date()
+    if countsDown(state) {
+        let upper = max(scheduledAt, now.addingTimeInterval(1)) // garante lower <= upper
+        return now...upper
+    } else {
+        let lower = min(scheduledAt, now)
+        return lower...now.addingTimeInterval(3600) // upper só precisa ser >= now
+    }
 }
 
 // upcoming/now contam regressivo; late conta progressivo.
@@ -97,7 +103,7 @@ private func countsDown(_ state: String) -> Bool {
     return state == "upcoming" || state == "now"
 }
 
-private func accentColor(_ state: String) -> Color {
+private func stateColor(_ state: String) -> Color {
     switch state {
     case "now": return Color(red: 0.06, green: 0.46, blue: 0.43) // teal #0f766e
     case "late": return Color(red: 0.85, green: 0.47, blue: 0.02) // amber #d97706

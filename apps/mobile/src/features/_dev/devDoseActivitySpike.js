@@ -55,7 +55,10 @@ function buildSpikeNotification({ stateLabel, targetMs, countDown }) {
       showChronometer: true,
       chronometerDirection: countDown ? 'down' : 'up',
       timestamp: targetMs,
-      pressAction: { id: 'default', launchActivity: 'default' },
+      // Spike SEM pressAction de corpo: tocar a notif NÃO abre o app — evita o
+      // handler de push existente (usePushNotifications) capturar o press (AP-207)
+      // e cair no fallback navigate('Hoje'). Botões também sem launchActivity:
+      // são sentinela visual (o registro real vem no MVP via createDoseLogService).
       actions: [
         { title: 'Registrar', pressAction: { id: SPIKE_ACTION.REGISTER } },
         { title: 'Adiar', pressAction: { id: SPIKE_ACTION.SNOOZE } },
