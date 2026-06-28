@@ -92,7 +92,7 @@ function instantMs(scheduledFor) {
  * Dose registrada → `'done'` direto (via `classifyDose(isRegistered=true)`).
  *
  * @param {Object|null} item - DoseItem ({instanceId, scheduledFor, ...}) ou dose_instance crua
- * @param {Date} [now=getRawNow()] - "agora" injetável; NULL/Invalid → getRawNow() (R-020)
+ * @param {Date|string} [now=getRawNow()] - "agora" injetável (Date ou ISO string); NULL/Invalid → getRawNow() (R-020)
  * @param {Object} [opts] - janelas de classifyDose (override de teste)
  * @param {number} [opts.lateWindowMinutes]
  * @param {number} [opts.nowWindowMinutes]
@@ -102,7 +102,10 @@ function instantMs(scheduledFor) {
 export function deriveDoseActivityState(item, now = getRawNow(), opts = {}) {
   if (!item) return null
 
-  const nowDate = now instanceof Date && !Number.isNaN(now.getTime()) ? now : getRawNow()
+  // `now` aceita Date OU ISO string (paridade com splitDayTimeline/CON-024);
+  // Date inválido / string não-parseável → getRawNow() (R-020, evita RangeError no Intl).
+  let nowDate = now instanceof Date ? now : now ? parseISO(now) : getRawNow()
+  if (Number.isNaN(nowDate.getTime())) nowDate = getRawNow()
   const scheduledFor = pick(item, 'scheduledFor', 'scheduled_for')
   const isRegistered = item.isRegistered === true || item.status === 'taken'
   const toleranceMinutes = pick(item, 'toleranceMinutes', 'tolerance_minutes')

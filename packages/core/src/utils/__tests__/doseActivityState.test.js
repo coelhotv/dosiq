@@ -133,9 +133,15 @@ describe('deriveDoseActivityState — negative paths (degenerados)', () => {
   })
 
   it('now inválido → cai p/ getRawNow (não lança, deriva estado)', () => {
-    const st = deriveDoseActivityState(item({ scheduledFor: iso(0) }), new Date('invalid'))
+    const st = deriveDoseActivityState(item({ scheduledFor: iso(0) }), new Date(NaN))
     expect(st).not.toBeNull()
     expect(st.state).toBe(DOSE_ACTIVITY_STATES.NOW)
+  })
+
+  it('now como ISO string é aceito (paridade splitDayTimeline)', () => {
+    const st = deriveDoseActivityState(item({ scheduledFor: iso(-60) }), iso(0))
+    expect(st.state).toBe(DOSE_ACTIVITY_STATES.LATE)
+    expect(st.remainingSeconds).toBe(-3600)
   })
 
   it('isCritical undefined tratado como false', () => {
