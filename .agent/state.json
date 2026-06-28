@@ -31,9 +31,9 @@
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 230,
-    "anti_patterns_count": 242,
+    "anti_patterns_count": 243,
     "decisions_count": 75,
     "contracts_count": 27,
     "distillation_due": false
@@ -46,12 +46,12 @@
     "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
-    "pr": 688,
-    "status": "merged",
+    "pr": 689,
+    "status": "in_review",
     "critical": 0,
     "high": 2,
-    "auto_fixed": 0,
-    "declined": 0,
+    "auto_fixed": 1,
+    "declined": 1,
     "ask_items": 0
   }
 }
