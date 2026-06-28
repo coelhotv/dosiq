@@ -1,5 +1,8 @@
 # DEVFLOW Decisions Index
 
+## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[ADR-075]** *(accepted — spec 039 Planning)* Live Activity iOS via **config plugin custom + Widget Extension Swift + App Intents no Expo 53 atual** (não `expo-live-activity` deprecada/sem botões, não `expo-widgets` que exige SDK 56). Desbloqueia 039 sem amarrar ao upgrade de 3 majors; App Intents completos (Registrar/Adiar pela ilha). iOS 17+ efetivo p/ botões; App Group app↔widget exige revalidação de sessão (PO-SEC-2). Migração p/ expo-widgets = roadmap pós-upgrade 53→56. -> [`decisions/mobile_and_platform/ADR-075.md`](./decisions/mobile_and_platform/ADR-075.md)
+
 ## 📦 Data & Schema (`data_and_schema`)
 - **[ADR-072]** Sítio de injeção: coluna `medicine_logs.injection_site` (TEXT nullable + CHECK 8 valores), NÃO tabela dedicada nem `biomarkers_log`. Rotação **GLOBAL** cross-medicamento como semântica de query (SELECT sem filtro med, `ORDER BY taken_at DESC`), não shape de storage. CHECK (não Zod-only) pois domínio finito/estável — **contrasta ADR-070** (que removeu CHECK por domínio extensível). Param aditivo `p_injection_site` nas RPCs (CON-026, não-breaking). [accepted — 031] -> [`decisions/data_and_schema/ADR-072.md`](./decisions/data_and_schema/ADR-072.md)
 - **[ADR-074]** *(accepted — spec 015)* Centralizar fetcher + builder de contexto do chatbot em `@dosiq/core/chatbot` (fonte única web↔Telegram↔mobile). `fetchChatbotContextData` (selects únicos) + `buildPatientContext` puro (derivação + grouping por plano). Mata fork web↔server + drift de input por construção; mobile herda. (A) client-build; full-repo-migration rejeitada (blast radius). CON-028 -> [`decisions/architecture/ADR-074.md`](./decisions/architecture/ADR-074.md)
