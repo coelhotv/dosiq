@@ -15,7 +15,7 @@
       "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
     ],
     "status": "completed",
-    "goal": "039 Dose State Machine — épico Tier 2 cross-platform (iOS Live Activities + Dynamic Island / Android ongoing notification). spec.md + tasks.md criados (S6); 3 NEEDS CLARIFICATION RESOLVIDAS (iOS=custom Swift agora + expo-widgets roadmap p/ Expo56; Android=Notifee ongoing; criação schedule-driven ~60min; iOS17+ p/ botões interativos LA). Aguardando Planning (ADR abordagem iOS) OU ceremony (R-065).",
+    "goal": "039 Dose State Machine F1 — núcleo da máquina de estados (core) ENTREGUE: deriveDoseActivityState + selectActiveDoseActivity em @dosiq/core (CON-029). PO-1.1/1.2 fechados; core 920 + test:critical 1485 verde. PR #690 em review. F0 (#689) merged. Próximo: F2 (MVP Android ongoing) após merge #690.",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/039-dose-state-machine",
@@ -23,19 +23,19 @@
     "plan": "plans/specs/039-dose-state-machine/plan.md",
     "tasks": "plans/specs/039-dose-state-machine/tasks.md",
     "linked_adrs": ["ADR-075"],
-    "linked_contracts": ["CON-024", "CON-026", "CON-019"],
-    "last_pr": 688,
-    "branch": "main",
+    "linked_contracts": ["CON-024", "CON-026", "CON-019", "CON-029"],
+    "last_pr": 690,
+    "branch": "feature/039/f1-core",
     "mobile_version": "0.21.3",
     "web_version": "4.15.1"
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 230,
     "anti_patterns_count": 243,
     "decisions_count": 75,
-    "contracts_count": 27,
+    "contracts_count": 28,
     "distillation_due": false
   },
   "genes": {
@@ -46,12 +46,12 @@
     "index_loaded_at": "2026-06-23T14:30:00Z"
   },
   "code_review": {
-    "pr": 689,
+    "pr": 690,
     "status": "in_review",
     "critical": 0,
-    "high": 2,
-    "auto_fixed": 1,
-    "declined": 1,
+    "high": 0,
+    "auto_fixed": 0,
+    "declined": 0,
     "ask_items": 0
   }
 }

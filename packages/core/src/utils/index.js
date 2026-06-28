@@ -179,6 +179,14 @@ export {
   daysAgoLabel,
 } from './doseZones.js'
 
+// Máquina de estados de dose — superfícies contínuas iOS/Android (Spec 039 / F1)
+// Derivador + seletor de prioridade; aditivo a CON-024, novo CON candidato
+export {
+  DOSE_ACTIVITY_STATES,
+  deriveDoseActivityState,
+  selectActiveDoseActivity,
+} from './doseActivityState.js'
+
 // Sítios de injeção — locais corporais de aplicação + rotação (031, ADR-072)
 export {
   INJECTION_SITES,
