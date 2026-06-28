@@ -40,14 +40,20 @@ class DoseActivityBridge: NSObject {
             state: state, scheduledAt: scheduledAt, stateLabel: stateLabel
         )
 
-        do {
-            // Encerra qualquer Activity anterior do spike (1 superfície ativa).
-            Task { for activity in Activity<DoseActivityAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) } }
-            let content = ActivityContent(state: contentState, staleDate: scheduledAt.addingTimeInterval(3600))
-            let activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
-            resolve(activity.id)
-        } catch {
-            reject("request_failed", error.localizedDescription, error)
+        // Encerra qualquer Activity anterior do spike (1 superfície ativa) e SÓ
+        // ENTÃO solicita a nova — tudo dentro da mesma Task com await, p/ evitar
+        // race: request concorrente com o end() poderia encerrar a recém-criada.
+        Task {
+            for activity in Activity<DoseActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            do {
+                let content = ActivityContent(state: contentState, staleDate: scheduledAt.addingTimeInterval(3600))
+                let activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
+                resolve(activity.id)
+            } catch {
+                reject("request_failed", error.localizedDescription, error)
+            }
         }
     }
 
