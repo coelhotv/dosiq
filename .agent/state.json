@@ -15,7 +15,7 @@
       "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
     ],
     "status": "completed",
-    "goal": "039 Dose State Machine F1 — núcleo da máquina de estados (core) ENTREGUE: deriveDoseActivityState + selectActiveDoseActivity em @dosiq/core (CON-029). PO-1.1/1.2 fechados; core 920 + test:critical 1485 verde. PR #690 em review. F0 (#689) merged. Próximo: F2 (MVP Android ongoing) após merge #690.",
+    "goal": "039 Dose State Machine F1 MERGED (#690) — núcleo da máquina de estados em @dosiq/core (CON-029: deriveDoseActivityState + selectActiveDoseActivity). PO-1.1/1.2 fechados; 33 testes; core 920 + test:critical 1485 verde. F0 (#689) merged. Próximo: F2 (MVP Android ongoing) consome este core — invocar /devflow coding 039 - F2.",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/039-dose-state-machine",
@@ -25,7 +25,7 @@
     "linked_adrs": ["ADR-075"],
     "linked_contracts": ["CON-024", "CON-026", "CON-019", "CON-029"],
     "last_pr": 690,
-    "branch": "feature/039/f1-core",
+    "branch": "main",
     "mobile_version": "0.21.3",
     "web_version": "4.15.1"
   },
@@ -47,11 +47,12 @@
   },
   "code_review": {
     "pr": 690,
-    "status": "in_review",
+    "status": "merged",
     "critical": 0,
     "high": 0,
-    "auto_fixed": 0,
-    "declined": 0,
+    "medium": 3,
+    "auto_fixed": 2,
+    "declined": 1,
     "ask_items": 0
   }
 }
