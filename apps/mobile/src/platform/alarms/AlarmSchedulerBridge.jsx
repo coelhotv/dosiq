@@ -8,7 +8,7 @@
 //
 // Coexiste com expo-notifications: só trata eventos das notificações do Notifee.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
 import notifee, { EventType } from '@notifee/react-native'
 import { getTodayLocal } from '@dosiq/core'
@@ -19,7 +19,8 @@ import { ROUTES } from '@navigation/routes'
 import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
-import { ALARM_CHANNEL_ID } from './alarmService'
+import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from './alarmService'
+import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -27,9 +28,14 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
 // abre/está ativa no app (FR-002). Idempotente: não re-navega se já está lá.
 function isAlarmNotification(notification) {
   if (!notification) return false
-  // Android identifica pelo canal; iOS pela categoria (não tem `android`).
+  // Android identifica pelo canal; iOS pela categoria (não tem `android`). DEVE reconhecer o canal
+  // CRÍTICO também (dose-alarm-critical-v2) — senão alarmes críticos não abrem o fullscreen (bug
+  // smoke 2026-06-29: openAlarmScreen retornava cedo p/ doses críticas). NÃO confundir com a
+  // superfície 039 (canal dose-activity-v1) — essa é tratada pelo DoseActivityBridge.
+  const channelId = notification.android?.channelId
   return (
-    notification.android?.channelId === ALARM_CHANNEL_ID ||
+    channelId === ALARM_CHANNEL_ID ||
+    channelId === ALARM_CRITICAL_CHANNEL_ID ||
     notification.ios?.categoryId === ALARM_CHANNEL_ID
   )
 }
@@ -73,6 +79,7 @@ export default function AlarmSchedulerBridge() {
   const [loaded, setLoaded] = useState(!user?.id)
   const [prevUserId, setPrevUserId] = useState(user?.id ?? null)
   const userId = user?.id ?? null
+  const coldStartHandled = useRef(false) // cold-start tratado 1x por ciclo de vida (#893)
 
   // Padrão de derived state: reset síncrono sem useEffect (sem render extra).
   // React executa no mesmo render e descarta o output, re-renderizando com novo estado.
@@ -93,6 +100,15 @@ export default function AlarmSchedulerBridge() {
         } else if (event.type === EventType.PRESS || event.type === EventType.DELIVERED) {
           // tap no corpo OU entrega enquanto em foreground → tela cheia
           openAlarmScreen(event.detail?.notification)
+          // Marca-passo da superfície: alarme entregue em foreground (fullScreen trouxe a app) →
+          // reconcilia a cadeia de estados da dose (paridade com o bg handler; evita a race do T0).
+          if (event.type === EventType.DELIVERED) {
+            const data = event.detail?.notification?.data
+            if (data?.doseInstanceId && data.__surface !== 'true' && data.__surfaceEnd !== 'true') {
+              const { reconcileDoseActivityFromAlarm } = require('@platform/doseActivity/doseActivityScheduler')
+              await reconcileDoseActivityFromAlarm(data)
+            }
+          }
         }
       } catch (err) {
         if (__DEV__) console.warn('[AlarmSchedulerBridge] foreground event falhou', err?.message)
@@ -101,11 +117,22 @@ export default function AlarmSchedulerBridge() {
     return unsub
   }, [])
 
-  // Cold launch pela notificação (app estava morto) → abre a tela cheia.
+  // Cold launch pela notificação (app estava morto). Ação "Registrar" da superfície (canal
+  // dose-activity-v1) NÃO é alarme → openAlarmScreen a ignora; precisa ir pra handleAlarmAction
+  // (abre a modal bulk). Tap no corpo / alarme → tela cheia. Guard p/ rodar 1x por ciclo de vida.
   useEffect(() => {
+    if (coldStartHandled.current) return
+    coldStartHandled.current = true
     notifee
       .getInitialNotification()
-      .then((initial) => openAlarmScreen(initial?.notification))
+      .then((initial) => {
+        if (!initial) return
+        if (initial.pressAction?.id === SURFACE_ACTION.REGISTER) {
+          handleAlarmAction({ detail: initial })
+        } else {
+          openAlarmScreen(initial.notification)
+        }
+      })
       .catch(() => {})
   }, [])
 

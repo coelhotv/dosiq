@@ -381,8 +381,42 @@ Para evitar spam de notificações (múltiplos medicamentos no mesmo horário), 
 
 ---
 
+## 📱 Superfícies on-device (mobile / Notifee)
+
+Independente do motor server-side acima: o app mobile renderiza notificações **locais** via Notifee
+(alarmes + superfície de estado contínuo). São canais Android **no device**, não entregas do dispatcher.
+
+### Canais Android (Notifee)
+
+| Canal | Uso | Som | Observação |
+|---|---|---|---|
+| `dose-alarm-v3` | Alarme de dose (padrão) | sim | imutável ([[R-261]]); bumpar id ao trocar som |
+| `dose-alarm-critical-v2` | Alarme de dose **crítica** | sim | full-screen / loop |
+| `dose-activity-v1` | **Superfície de estado contínuo** (épico 039) | **não** (DEFAULT) | ongoing, sem som — extensão visual do alarme crítico |
+
+> **iOS não tem channels** (conceito Android). Usa *notification categories* (`ensureAlarmCategories`,
+> R-257) p/ os botões de ação.
+>
+> **Legados/órfãos** (bumps antigos — limpeza na F5 do 039 via `deleteChannel`): `dose-alarm`,
+> `dose-alarm-v1`, `dose-alarm-v2`, `dose-alarm-critical-v1`, `dose-activity-spike` (dev).
+
+### Superfície de estado contínuo da dose (épico 039)
+
+A dose aparece como **uma notificação persistente que transiciona de estado** (later→upcoming→now→
+late→done), consumindo a máquina de estados do core (`@dosiq/core` — CON-029). A camada mobile
+(`apps/mobile/src/platform/doseActivity/`) só APRESENTA (CON-030). Server-free.
+
+- **Sem toggle** — é extensão do alarme crítico (aparece p/ doses de tratamentos com `critical_alarm`).
+- **Cor↔rótulo por estado**, countdown contínuo (upcoming+now), card `done` verde com auto-dismiss.
+- **Registrar** abre a modal bulk (sítio do injetável); **Adiar** = soneca canônica.
+- Contrato completo: `.agent/memory/contracts/mobile_and_platform/CON-029.md` + `CON-030.md`;
+  spec `plans/specs/039-dose-state-machine/` (local-only, não versionado).
+
+---
+
 ## 🔗 Documentação Relacionada
 
 - `plans/backlog-notifications/NOTIFICATIONS_ARCHITECTURE_CONSOLIDATION.md` (local-only, não versionado) — Spec do projeto de consolidação
 - [`docs/architecture/DATABASE.md`](DATABASE.md) - Tabelas `notification_log` e `user_settings`
 - [`server/BOT README.md`](../../server/BOT%20README.md) - Guia de desenvolvimento local do bot
+- Épico 039 (superfície de estado contínuo): contratos CON-029/CON-030 em `.agent/memory/contracts/mobile_and_platform/`

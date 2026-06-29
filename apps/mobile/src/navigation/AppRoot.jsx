@@ -7,6 +7,7 @@ import Navigation from './Navigation'
 import { ToastProvider } from '@shared/components/feedback/Toast'
 import ErrorBoundary from '@shared/components/ErrorBoundary'
 import AlarmSchedulerBridge from '@platform/alarms/AlarmSchedulerBridge'
+import DoseActivityBridge from '@platform/doseActivity/DoseActivityBridge'
 import { debugLog } from '@shared/utils/debugLog'
 import {
   useFonts,
@@ -86,6 +87,7 @@ export default function AppRoot() {
       <SafeAreaProvider>
         <ToastProvider>
           <AlarmSchedulerBridge />
+          <DoseActivityBridge />
           <Navigation />
         </ToastProvider>
       </SafeAreaProvider>

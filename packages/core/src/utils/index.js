@@ -185,6 +185,7 @@ export {
   DOSE_ACTIVITY_STATES,
   deriveDoseActivityState,
   selectActiveDoseActivity,
+  doseActivityBoundaryTimes,
 } from './doseActivityState.js'
 
 // Sítios de injeção — locais corporais de aplicação + rotação (031, ADR-072)

@@ -27,6 +27,7 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService } from './alarmService'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
+const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
 
 // Campos do `data` da notificação (single): tudo string (contrato Notifee). Inclui os
 // campos clínicos (036) p/ a tela cheia exibir concentração/dose/ícone contextual.
@@ -75,6 +76,10 @@ export async function syncAlarms({ userId, protocols, tz }) {
   const repo = createDoseInstanceRepository({ client: supabase })
   const now = getRawNow() // instante absoluto (UTC real), sem date-string parse
   const end = addDays(now, LOOK_AHEAD_DAYS)
+  // Lookback: inclui doses recém-vencidas (scheduled_for ≤ now). Sem isto, uma dose snoozed no
+  // T0/late some da janela → no resync (cancelAll mata o trigger de soneca) não há o que re-armar →
+  // soneca perdida. Doses passadas NÃO-snoozed não geram alarme (guard timestamp ≤ now em scheduleAlarm).
+  const from = addDays(now, -LOOK_BACK_DAYS)
 
   // C: garante instâncias materializadas até o horizonte (por protocolo ativo).
   const active = (Array.isArray(protocols) ? protocols : []).filter((p) => p?.active !== false)
@@ -86,24 +91,43 @@ export async function syncAlarms({ userId, protocols, tz }) {
     }
   }
 
-  const instances = await repo.getWindow(userId, now, end)
+  const instances = await repo.getWindow(userId, from, end)
+  // snoozeFireAt anexado ao item: soneca ativa (snoozed_until futuro). cancelAll abaixo mata o
+  // trigger de soneca → re-armamos AQUI no snoozed_until (fireAt), senão a soneca some no resync.
   const items = buildDoseItemsFromInstances(instances, protocols, tz)
     .filter((it) => {
       if (it.status !== 'pending') return false
       if (!it.critical) return false // agenda somente alarmes críticos (Spec 010)
-      // Exclui itens com soneca ativa (snoozed_until no futuro)
-      if (it.snoozedUntil != null) {
-        const snoozedTs = typeof it.snoozedUntil === 'number'
-          ? it.snoozedUntil
-          : Date.parse(it.snoozedUntil) // ISO timestamptz → epoch (sem new Date — R-020)
-        if (!Number.isNaN(snoozedTs) && snoozedTs > now.getTime()) return false
-      }
       return true
     })
+    .map((it) => {
+      if (it.snoozedUntil == null) return it
+      const snoozedTs = typeof it.snoozedUntil === 'number'
+        ? it.snoozedUntil
+        : Date.parse(it.snoozedUntil) // ISO timestamptz → epoch (sem new Date — R-020)
+      return !Number.isNaN(snoozedTs) && snoozedTs > now.getTime() ? { ...it, snoozeFireAt: snoozedTs } : it
+    })
 
-  // Agrupa alarmes do mesmo minuto pelo epoch timestamp absoluto
+  await alarmService.cancelAll()
+
+  // Soneca ativa → re-armada individualmente no snoozed_until (fireAt), fora do agrupamento por
+  // minuto (horário deslocado). Mantém scheduledFor original p/ tolerância/labels.
+  const snoozed = items.filter((it) => it.snoozeFireAt != null)
+  for (const it of snoozed) {
+    await alarmService.scheduleAlarm({
+      doseInstanceId: it.instanceId,
+      medicineName: it.medicineName,
+      scheduledFor: it.scheduledFor,
+      toleranceMinutes: it.toleranceMinutes,
+      isCritical: it.critical,
+      data: buildSingleAlarmData(it),
+      fireAt: it.snoozeFireAt,
+    })
+  }
+
+  // Agrupa alarmes do mesmo minuto pelo epoch timestamp absoluto (exclui os já re-armados como soneca)
   const groups = new Map()
-  for (const it of items) {
+  for (const it of items.filter((x) => x.snoozeFireAt == null)) {
     const ts = parseISO(it.scheduledFor).getTime()
     if (!groups.has(ts)) {
       groups.set(ts, [])
@@ -111,7 +135,6 @@ export async function syncAlarms({ userId, protocols, tz }) {
     groups.get(ts).push(it)
   }
 
-  await alarmService.cancelAll()
   for (const [ts, groupItems] of groups.entries()) {
     if (groupItems.length === 1) {
       const it = groupItems[0]

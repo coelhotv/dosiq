@@ -29,6 +29,18 @@ import {
 /** tz default (G1 — injeção real do tz do usuário é follow-up; default SP). */
 export const DEFAULT_TZ = 'America/Sao_Paulo'
 
+/**
+ * Janelas temporais default da classificação de dose (minutos). Fonte ÚNICA dos defaults
+ * compartilhados — `classifyDose` (timeline web) e `SURFACE_WINDOWS` (superfície 039 / CON-029)
+ * derivam daqui p/ não divergir (amarração pedida 2026-06-28). A superfície sobrescreve só o que
+ * é próprio dela (now estreito ±10min) via `SURFACE_WINDOWS`.
+ */
+export const DOSE_ZONE_WINDOWS = Object.freeze({
+  lateWindowMinutes: 120, // cutoff de atraso (fallback quando a ocorrência não traz tolerância)
+  nowWindowMinutes: 60, // "agora" da timeline
+  upcomingWindowMinutes: 240, // limite p/ "próximas"
+})
+
 /** Status que representam dose efetivamente tomada (zona "done"). */
 const TAKEN_STATUS = 'taken'
 /** Status que não devem aparecer no "hoje" (pulados não são pendência). */
@@ -75,9 +87,9 @@ const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
 export function classifyDose(
   scheduledFor,
   now,
-  lateWindowMinutes = 120,
-  nowWindowMinutes = 60,
-  upcomingWindowMinutes = 240,
+  lateWindowMinutes = DOSE_ZONE_WINDOWS.lateWindowMinutes,
+  nowWindowMinutes = DOSE_ZONE_WINDOWS.nowWindowMinutes,
+  upcomingWindowMinutes = DOSE_ZONE_WINDOWS.upcomingWindowMinutes,
   isRegistered = false,
   toleranceMinutes = null
 ) {

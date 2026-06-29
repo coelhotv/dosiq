@@ -3,11 +3,12 @@
 // R5-008: online-first — escrita offline bloqueada com mensagem clara
 // R-121: validação Zod antes de qualquer mutação
 
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { cancelAlarm } from '../../../platform/alarms/alarmService'
-import { logSchema, createDoseInstanceRepository, createDoseLogService } from '@dosiq/core'
-import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
-import { EVENTS } from '../../../platform/analytics/analyticsEvents'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { cancelAlarm } from '@platform/alarms/alarmService'
+import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
+import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
+import { logEvent } from '@platform/analytics/firebaseAnalytics'
+import { EVENTS } from '@platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
 
 // Repo de instâncias para a âncora de log e leituras locais
@@ -34,14 +35,40 @@ const doseLogCore = createDoseLogService({
   getUserId: _getAuthUserId,
 })
 
-// Cancela o alarme local da instância resolvida (best-effort, R-245/246). Sem instanceId
-// (PRN/avulso) não há alarme atrelado → no-op. NUNCA lança.
+// Cancela o alarme local + a superfície de estado contínuo (039) da instância resolvida
+// (best-effort, R-245/246; cancel-on-resolve AP-235 / PO-2.2). Sem instanceId (PRN/avulso)
+// não há nada atrelado → no-op. NUNCA lança. A superfície usa id=instanceId (cancelAlarm já a
+// encerraria por coincidência de id); endDoseActivity torna a intenção explícita e robusta a
+// uma futura divergência de id.
 async function _cancelAlarmBestEffort(instanceId) {
   if (!instanceId) return
+  // Captura a superfície 039 (se houver) ANTES de cancelar — vira o card `done` no fim. cancelAlarm
+  // cancela a notif pelo mesmo id, então a leitura PRECISA vir antes. null = dose sem superfície
+  // (não-crítica/distante) → sem card de confirmação (auto-gate).
+  let doneLabel = null
+  try {
+    doneLabel = await readSurfaceLabel(instanceId)
+  } catch (err) {
+    if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
+  }
   try {
     await cancelAlarm(instanceId)
   } catch (err) {
     if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
+  }
+  try {
+    await endDoseActivity(instanceId)
+  } catch (err) {
+    if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
+  }
+  // Tinha superfície → confirma com o card `done` (verde, auto-dismiss). Cobre o registro pela
+  // modal (botão Registrar da superfície) e in-app, além do path silencioso do alarme.
+  if (doneLabel != null) {
+    try {
+      await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
+    } catch (err) {
+      if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
+    }
   }
 }
 

@@ -15,7 +15,7 @@
       "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
     ],
     "status": "completed",
-    "goal": "039 Dose State Machine F1 MERGED (#690) — núcleo da máquina de estados em @dosiq/core (CON-029: deriveDoseActivityState + selectActiveDoseActivity). PO-1.1/1.2 fechados; 33 testes; core 920 + test:critical 1485 verde. F0 (#689) merged. Próximo: F2 (MVP Android ongoing) consome este core — invocar /devflow coding 039 - F2.",
+    "goal": "039 Dose State Machine F2 — MVP Android ongoing notification IMPLEMENTADO (branch feature/039/f2-android-ongoing). Superfície contínua (Notifee canal DEFAULT) consome selectActiveDoseActivity (CON-029→CON-030 novo); SEM toggle próprio — é extensão do alarme crítico (CL-4, decisão PO; CL-2 revogada), late-chrono-cap (CL-3), cancel-on-resolve (AP-235), Registrar/Adiar via CON-026, ícone nativo (T026f). Lint limpo, 43/43 testes F2. SQP minor 0.21.3→0.22.0. PENDENTE: smoke on-device PO (PO-2.1/2.2 MANUAL) ANTES de push/PR (workflow local-commits-single-push). Próximo: F3 iOS.",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/039-dose-state-machine",
@@ -31,11 +31,11 @@
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 10,
     "rules_count": 230,
     "anti_patterns_count": 243,
     "decisions_count": 75,
-    "contracts_count": 28,
+    "contracts_count": 29,
     "distillation_due": false
   },
   "genes": {

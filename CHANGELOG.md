@@ -7,6 +7,39 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.22.0 (mobile) — 2026-06-28 — Dose como estado contínuo: notificação persistente (Android, alarme crítico)
+
+> **Bump:** mobile `0.21.3 → 0.22.0` (minor — nova feature, épico 039 Dose State Machine, F2). Web sem alteração.
+> **Plataforma:** Mobile (Android). **Server-free** (zero APNs/endpoint novo).
+> **Extensão do alarme crítico** (sem toggle novo): vale para tratamentos com alerta crítico ativado.
+
+### ✨ Novidades
+
+- **Superfície de estado contínuo da dose (Android):** uma notificação persistente "companheira"
+  (canal silencioso, sem som) acompanha a dose como um **estado que transiciona** —
+  próxima (cinza) → chegando/agora (teal, contagem regressiva contínua) → pendente (âmbar,
+  contagem progressiva) → tomada ✓ (verde). A cor e o rótulo mudam junto com o estado.
+- **Contagem regressiva contínua:** o cronômetro corre da janela "chegando" (90min antes) até o
+  horário da dose, sem sumir nos minutos finais; ao chegar a zero vira "agora".
+- **Botão Registrar abre a app na tela de registro** da(s) dose(s) — permite escolher quantidade e,
+  em injetáveis, o **sítio de aplicação**. **Adiar** age direto (soneca). Registrar por qualquer
+  caminho encerra a notificação (sem dose fantasma).
+- **Card de confirmação "Tomada às HH:mm ✓"** (verde) após registrar uma dose que estava sendo
+  acompanhada — some sozinho em ~3 minutos.
+- Aparece automaticamente para doses de tratamentos com **alerta crítico** ativado (extensão visual
+  do alarme crítico — sem configuração adicional).
+- Doses de longo atraso (ex.: semanais/GLP-1) mostram contagem progressiva só nas primeiras ~2h e
+  depois um rótulo estático ("ontem"/"há N dias"), sem cronômetro correndo por dias.
+- Modo discreto na tela de bloqueio (não revela o nome do medicamento) por padrão em doses críticas.
+
+### 🏪 Nota de loja (Android)
+
+Os tratamentos com alerta crítico agora acompanham a dose direto na barra de notificações: um
+lembrete contínuo que mostra quanto falta, avisa a hora e deixa você registrar com um toque —
+sem abrir o app.
+
+---
+
 ## App v0.21.3 (mobile) — 2026-06-26 — Correção: editar dose injetável já tomada
 
 > **Bump:** mobile `0.21.2 → 0.21.3` (patch — correção de bug). Web sem alteração.

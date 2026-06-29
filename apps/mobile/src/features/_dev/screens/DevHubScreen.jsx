@@ -11,6 +11,7 @@ import {
   devDoseSpikeLate,
   devDoseSpikeResolve,
 } from '../devDoseActivitySpike'
+import { startDoseBgSpike, clearDoseBgSpike } from '../devDoseActivityBgSpike'
 import {
   devLiveActivityUpcoming,
   devLiveActivityLate,
@@ -100,6 +101,35 @@ export default function DevHubScreen({ navigation }) {
           <Text style={styles.note}>
             Prova PO-0.2: notif fixa, cronômetro corre sozinho (sem update), botões Registrar/Adiar.
             Sem som (não é alarme). Registrar/Adiar = sentinela DEV.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 039 — Transição em BACKGROUND (spike F2)</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              startDoseBgSpike()
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>▶️ Iniciar sequência (chegando→agora→pendente→tomada)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              clearDoseBgSpike()
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>🧹 Limpar sequência</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            De-risk do US2.1: toque Iniciar e **FECHE o app** (ou bloqueie a tela). O card deve
+            transicionar sozinho via triggers nativos encadeados: chegando (countdown ~30s) → AGORA
+            (estático, teal) → pendente (count-up, âmbar, +15s) → tomada ✓ (verde, +30s). Se mudar de
+            estado com app fechado/Doze, o modelo trigger-driven é viável. Senão, encadeamento headless
+            não roda no device → replanejar.
           </Text>
         </View>
 
