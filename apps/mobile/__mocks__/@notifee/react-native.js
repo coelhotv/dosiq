@@ -5,6 +5,7 @@ const notifee = {
   createChannel: jest.fn(() => Promise.resolve('dose-alarm')),
   setNotificationCategories: jest.fn(() => Promise.resolve()),
   createTriggerNotification: jest.fn(() => Promise.resolve('notif-id')),
+  displayNotification: jest.fn(() => Promise.resolve('notif-id')),
   cancelTriggerNotification: jest.fn(() => Promise.resolve()),
   cancelTriggerNotifications: jest.fn(() => Promise.resolve()),
   cancelNotification: jest.fn(() => Promise.resolve()),
