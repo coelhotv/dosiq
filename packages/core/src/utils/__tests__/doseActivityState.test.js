@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
   deriveDoseActivityState,
   selectActiveDoseActivity,
+  doseActivityBoundaryTimes,
   DOSE_ACTIVITY_STATES,
 } from '../doseActivityState.js'
 
@@ -49,34 +50,32 @@ describe('deriveDoseActivityState — mapa zona → estado', () => {
     expect(st.state).toBe(DOSE_ACTIVITY_STATES.DONE)
   })
 
-  it('60min atrás → late', () => {
+  it('-60min (5min..tol depois) → late', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(-60) }), now).state).toBe(
       DOSE_ACTIVITY_STATES.LATE
     )
   })
 
-  it('instante exato → now', () => {
+  it('instante exato (d=0, ±10) → now', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(0) }), now).state).toBe(
       DOSE_ACTIVITY_STATES.NOW
     )
   })
 
-  it('+30min → now', () => {
+  it('+30min (10..60) → upcoming', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(30) }), now).state).toBe(
-      DOSE_ACTIVITY_STATES.NOW
+      DOSE_ACTIVITY_STATES.UPCOMING
     )
   })
 
-  it('+120min → upcoming', () => {
+  it('+120min (60..240) → later (estado próprio, sem cronômetro)', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(120) }), now).state).toBe(
-      DOSE_ACTIVITY_STATES.UPCOMING
+      DOSE_ACTIVITY_STATES.LATER
     )
   })
 
-  it('+300min (later) colapsa em upcoming', () => {
-    expect(deriveDoseActivityState(item({ scheduledFor: iso(300) }), now).state).toBe(
-      DOSE_ACTIVITY_STATES.UPCOMING
-    )
+  it('+300min (≥240) → null (distante demais, sem superfície)', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(300) }), now)).toBeNull()
   })
 
   it('passou da tolerância (instante válido) → missed', () => {
@@ -86,8 +85,23 @@ describe('deriveDoseActivityState — mapa zona → estado', () => {
   })
 })
 
-describe('deriveDoseActivityState — boundaries', () => {
-  it('exatamente -lateCutoff (-120) ainda é late (L96 usa <)', () => {
+describe('deriveDoseActivityState — boundaries das janelas da superfície', () => {
+  it('d=10 → upcoming; d=9 → now (fronteira upcoming/now, nowBefore=10)', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(10) }), now).state).toBe(DOSE_ACTIVITY_STATES.UPCOMING)
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(9) }), now).state).toBe(DOSE_ACTIVITY_STATES.NOW)
+  })
+
+  it('d=-10 → now; d=-11 → late (fronteira now/late, nowAfter=10min após o horário)', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-10) }), now).state).toBe(DOSE_ACTIVITY_STATES.NOW)
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(-11) }), now).state).toBe(DOSE_ACTIVITY_STATES.LATE)
+  })
+
+  it('d=60 → later; d=59 → upcoming (fronteira later/upcoming, upcomingMinutes=60)', () => {
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(60) }), now).state).toBe(DOSE_ACTIVITY_STATES.LATER)
+    expect(deriveDoseActivityState(item({ scheduledFor: iso(59) }), now).state).toBe(DOSE_ACTIVITY_STATES.UPCOMING)
+  })
+
+  it('exatamente -lateCutoff (-120) ainda é late', () => {
     expect(deriveDoseActivityState(item({ scheduledFor: iso(-120) }), now).state).toBe(
       DOSE_ACTIVITY_STATES.LATE
     )
@@ -176,6 +190,39 @@ describe('deriveDoseActivityState — negative paths (degenerados)', () => {
   })
 })
 
+describe('doseActivityBoundaryTimes — agendamento trigger-driven (F2)', () => {
+  it('6 boundaries em offsets corretos (tol default = lateMinutes 120)', () => {
+    const T = BASE_MS // scheduledFor = iso(0)
+    const out = doseActivityBoundaryTimes(iso(0))
+    const M = 60000
+    expect(out).toEqual([
+      T - 240 * M, // entra later
+      T - 60 * M, // later→upcoming
+      T - 10 * M, // upcoming→now
+      T, // horário (countdown para)
+      T + 10 * M, // now→late
+      T + 120 * M, // late→missed (tol default)
+    ])
+  })
+
+  it('toleranceMinutes encurta o boundary de missed', () => {
+    const T = BASE_MS
+    const out = doseActivityBoundaryTimes(iso(0), 30)
+    expect(out[out.length - 1]).toBe(T + 30 * 60000) // missed = T + tol(30)
+  })
+
+  it('instante inválido → [] (sem agendamento)', () => {
+    expect(doseActivityBoundaryTimes('not-a-date')).toEqual([])
+    expect(doseActivityBoundaryTimes(null)).toEqual([])
+  })
+
+  it('sempre ordenado asc', () => {
+    const out = doseActivityBoundaryTimes(iso(0), 5) // tol pequeno move missed p/ antes do late-cap
+    const sorted = [...out].sort((a, b) => a - b)
+    expect(out).toEqual(sorted)
+  })
+})
+
 // ─────────────────────────────────────────────
 // T013 — selectActiveDoseActivity (prioridade + agrupamento, 1 superfície)
 // ─────────────────────────────────────────────
@@ -211,7 +258,7 @@ describe('selectActiveDoseActivity — prioridade atrasada > crítica > now > pr
     const winner = selectActiveDoseActivity(
       [
         item({ instanceId: 'comum', scheduledFor: iso(10) }),
-        item({ instanceId: 'crit', scheduledFor: iso(20), critical: true }),
+        item({ instanceId: 'crit', scheduledFor: iso(5), critical: true }),
       ],
       now
     )
