@@ -8,7 +8,7 @@
 //
 // Coexiste com expo-notifications: só trata eventos das notificações do Notifee.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
 import notifee, { EventType } from '@notifee/react-native'
 import { getTodayLocal } from '@dosiq/core'
@@ -20,6 +20,7 @@ import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
 import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from './alarmService'
+import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -78,6 +79,7 @@ export default function AlarmSchedulerBridge() {
   const [loaded, setLoaded] = useState(!user?.id)
   const [prevUserId, setPrevUserId] = useState(user?.id ?? null)
   const userId = user?.id ?? null
+  const coldStartHandled = useRef(false) // cold-start tratado 1x por ciclo de vida (#893)
 
   // Padrão de derived state: reset síncrono sem useEffect (sem render extra).
   // React executa no mesmo render e descarta o output, re-renderizando com novo estado.
@@ -115,11 +117,22 @@ export default function AlarmSchedulerBridge() {
     return unsub
   }, [])
 
-  // Cold launch pela notificação (app estava morto) → abre a tela cheia.
+  // Cold launch pela notificação (app estava morto). Ação "Registrar" da superfície (canal
+  // dose-activity-v1) NÃO é alarme → openAlarmScreen a ignora; precisa ir pra handleAlarmAction
+  // (abre a modal bulk). Tap no corpo / alarme → tela cheia. Guard p/ rodar 1x por ciclo de vida.
   useEffect(() => {
+    if (coldStartHandled.current) return
+    coldStartHandled.current = true
     notifee
       .getInitialNotification()
-      .then((initial) => openAlarmScreen(initial?.notification))
+      .then((initial) => {
+        if (!initial) return
+        if (initial.pressAction?.id === SURFACE_ACTION.REGISTER) {
+          handleAlarmAction({ detail: initial })
+        } else {
+          openAlarmScreen(initial.notification)
+        }
+      })
       .catch(() => {})
   }, [])
 
