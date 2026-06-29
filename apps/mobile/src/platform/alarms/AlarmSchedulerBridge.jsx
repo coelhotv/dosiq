@@ -19,7 +19,7 @@ import { ROUTES } from '@navigation/routes'
 import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
-import { ALARM_CHANNEL_ID } from './alarmService'
+import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from './alarmService'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -27,9 +27,14 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
 // abre/está ativa no app (FR-002). Idempotente: não re-navega se já está lá.
 function isAlarmNotification(notification) {
   if (!notification) return false
-  // Android identifica pelo canal; iOS pela categoria (não tem `android`).
+  // Android identifica pelo canal; iOS pela categoria (não tem `android`). DEVE reconhecer o canal
+  // CRÍTICO também (dose-alarm-critical-v2) — senão alarmes críticos não abrem o fullscreen (bug
+  // smoke 2026-06-29: openAlarmScreen retornava cedo p/ doses críticas). NÃO confundir com a
+  // superfície 039 (canal dose-activity-v1) — essa é tratada pelo DoseActivityBridge.
+  const channelId = notification.android?.channelId
   return (
-    notification.android?.channelId === ALARM_CHANNEL_ID ||
+    channelId === ALARM_CHANNEL_ID ||
+    channelId === ALARM_CRITICAL_CHANNEL_ID ||
     notification.ios?.categoryId === ALARM_CHANNEL_ID
   )
 }
@@ -93,6 +98,15 @@ export default function AlarmSchedulerBridge() {
         } else if (event.type === EventType.PRESS || event.type === EventType.DELIVERED) {
           // tap no corpo OU entrega enquanto em foreground → tela cheia
           openAlarmScreen(event.detail?.notification)
+          // Marca-passo da superfície: alarme entregue em foreground (fullScreen trouxe a app) →
+          // reconcilia a cadeia de estados da dose (paridade com o bg handler; evita a race do T0).
+          if (event.type === EventType.DELIVERED) {
+            const data = event.detail?.notification?.data
+            if (data?.doseInstanceId && data.__surface !== 'true' && data.__surfaceEnd !== 'true') {
+              const { reconcileDoseActivityFromAlarm } = require('@platform/doseActivity/doseActivityScheduler')
+              await reconcileDoseActivityFromAlarm(data)
+            }
+          }
         }
       } catch (err) {
         if (__DEV__) console.warn('[AlarmSchedulerBridge] foreground event falhou', err?.message)

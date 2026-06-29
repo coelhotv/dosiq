@@ -13,7 +13,14 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   supabase: { from: (...a) => mockFrom(...a) },
 }))
 
+const mockNavigate = jest.fn()
+jest.mock('@navigation/navigationRef', () => ({
+  navigationRef: { isReady: () => true, navigate: (...a) => mockNavigate(...a) },
+}))
+jest.mock('@navigation/routes', () => ({ ROUTES: { TODAY: 'Hoje' } }))
+
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
+import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
 function evt(pressActionId, data) {
   return { detail: { pressAction: { id: pressActionId }, notification: { data } } }
@@ -101,6 +108,28 @@ describe('handleAlarmAction — Soneca', () => {
   it('estourou o teto (3) → não re-agenda', async () => {
     await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '3' }))
     expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
+  })
+})
+
+describe('handleAlarmAction — superfície 039 "Registrar" abre modal bulk', () => {
+  it('plano (treatmentId) → navega bulk-plan, NÃO registra silencioso', async () => {
+    const data = { ...BASE, treatmentId: 'plan-9', scheduledTime: '17:00', treatmentPlanName: 'Insulina' }
+    const res = await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
+    expect(res).toEqual({ handled: true, action: 'surface-open-register' })
+    expect(mockNavigate).toHaveBeenCalledWith('Hoje', {
+      screen: 'bulk-plan',
+      planId: 'plan-9',
+      at: '17:00',
+      treatmentPlanName: 'Insulina',
+    })
+    expect(mockRegisterDose).not.toHaveBeenCalled()
+  })
+
+  it('avulsa (sem treatmentId) → navega dose-individual', async () => {
+    const data = { doseInstanceId: 'inst-1', protocolId: 'proto-1', scheduledTime: '08:00' }
+    await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
+    expect(mockNavigate).toHaveBeenCalledWith('Hoje', { screen: 'dose-individual', protocolId: 'proto-1', at: '08:00' })
+    expect(mockRegisterDose).not.toHaveBeenCalled()
   })
 })
 

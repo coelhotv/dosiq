@@ -16,6 +16,9 @@ import { getRawNow } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
+import { SURFACE_ACTION, showDoseDone } from '@platform/doseActivity/doseActivitySurfaceService'
+import { navigationRef } from '@navigation/navigationRef'
+import { ROUTES } from '@navigation/routes'
 
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
@@ -80,6 +83,12 @@ export async function registerTaken(data) {
     { instanceId: doseInstanceId }
   )
   await invalidate(SNAPSHOTS_TAKEN)
+  // Estado `done` (039 / spec.md:366): a superfície da dose crítica vira card de confirmação
+  // verde ("Tomada às HH:mm ✓", auto-dismiss). registerDose já encerrou a ongoing (cancel-on-
+  // resolve); mostramos o done DEPOIS (mesmo id → substitui). Só p/ crítica (escopo da superfície).
+  if (data.isCritical === 'true') {
+    await showDoseDone({ instanceId: doseInstanceId, medicineLabel: data.medicineName, takenAt: getRawNow() })
+  }
   return { success: true }
 }
 
@@ -136,13 +145,53 @@ function rescheduleBase(data) {
   }
 }
 
-export async function handleAlarmAction(event) {
-  const notification = event?.detail?.notification
-  const pressActionId = event?.detail?.pressAction?.id
-  const data = notification?.data || {}
+// Normaliza a ação da superfície 039 → ação de alarme equivalente. "Adiar" da superfície
+// compartilha a soneca canônica do alarme. ("Registrar" NÃO entra aqui — abre a modal bulk via
+// navigateSurfaceRegister, tratado antes do switch.) Mantém o switch enxuto (complexity).
+const SURFACE_TO_ALARM_ACTION = {
+  [SURFACE_ACTION.SNOOZE]: ALARM_ACTION.SNOOZE,
+}
 
-  if (!data.doseInstanceId) return { handled: false }
+// Monta o deeplink da modal bulk a partir do payload da superfície. Plano → 'bulk-plan'
+// (modal multi-dose do tratamento); avulsa (sem treatmentId) → 'dose-individual'. `at` = HH:mm
+// agendado (param `at` esperado por _resolveDeeplinkModal no TodayScreen). @private
+function buildRegisterDeeplink(data) {
+  const at = data.scheduledTime || ''
+  if (data.treatmentId) {
+    return { screen: 'bulk-plan', planId: data.treatmentId, at, treatmentPlanName: data.treatmentPlanName || data.medicineName || '' }
+  }
+  if (data.protocolId) {
+    return { screen: 'dose-individual', protocolId: data.protocolId, at }
+  }
+  return {}
+}
 
+// "Registrar" da superfície 039 → abre o app na modal bulk (sítio de aplicação do injetável só
+// é selecionável lá). launchActivity (na ação) traz o app ao foreground; aqui navegamos via
+// navigationRef. Cold start: o container pode não ter montado → guard isReady() + retry curto
+// (mesmo padrão de usePushNotifications.navigateFromPush). @private
+function navigateSurfaceRegister(data) {
+  const params = buildRegisterDeeplink(data)
+  const go = () => navigationRef.navigate(ROUTES.TODAY, params)
+  if (navigationRef.isReady?.()) {
+    go()
+    return
+  }
+  let waited = 0
+  const interval = setInterval(() => {
+    waited += 100
+    if (navigationRef.isReady?.()) {
+      clearInterval(interval)
+      go()
+    } else if (waited >= 5000) {
+      clearInterval(interval)
+    }
+  }, 100)
+}
+
+// Despacha a ação canônica do alarme (Tomei/Pular/Soneca/nag). Extraído de handleAlarmAction
+// p/ manter ambas sob o teto de complexidade. @private
+async function dispatchCanonicalAction(pressActionId, data) {
   switch (pressActionId) {
     case ALARM_ACTION.TAKEN: {
       await registerTaken(data)
@@ -171,4 +220,21 @@ export async function handleAlarmAction(event) {
       return { handled: true, action: 'nag' }
     }
   }
+}
+
+export async function handleAlarmAction(event) {
+  const notification = event?.detail?.notification
+  const rawActionId = event?.detail?.pressAction?.id
+  const data = notification?.data || {}
+
+  if (!data.doseInstanceId) return { handled: false }
+
+  // Superfície 039: "Registrar" NÃO registra silencioso — abre a modal bulk (sítio p/ injetável).
+  if (rawActionId === SURFACE_ACTION.REGISTER) {
+    navigateSurfaceRegister(data)
+    return { handled: true, action: 'surface-open-register' }
+  }
+
+  const pressActionId = SURFACE_TO_ALARM_ACTION[rawActionId] ?? rawActionId
+  return dispatchCanonicalAction(pressActionId, data)
 }

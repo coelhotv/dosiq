@@ -12,26 +12,59 @@ import notifee, { EventType } from '@notifee/react-native'
 
 let registered = false
 
+// Ação do alarme (Tomei/Pular/soneca da superfície). Lazy-require (cold start leve, AP-205).
+async function onActionOrDismiss(event) {
+  try {
+    const { handleAlarmAction } = require('./quickDoseRegistration')
+    await handleAlarmAction(event)
+  } catch (err) {
+    if (__DEV__) console.warn('[alarm-bg] handleAlarmAction falhou', err?.message)
+  }
+}
+
+// Entrega de notificação (boundary da superfície 039 F2 trigger-driven): __surface → agenda o
+// próximo boundary (encadeamento headless); __surfaceEnd → encerra no missed. DEV: encadeia o spike.
+async function onDelivered(data) {
+  try {
+    if (data?.__surface === 'true') {
+      const { advanceDoseActivity } = require('../doseActivity/doseActivityScheduler')
+      await advanceDoseActivity(data)
+    } else if (data?.__surfaceEnd === 'true') {
+      const { endDoseActivity } = require('../doseActivity/doseActivitySurfaceService')
+      await endDoseActivity(data.doseInstanceId)
+    } else if (data?.doseInstanceId) {
+      // Alarme entregue (não-superfície): marca-passo confiável → reconcilia a superfície da dose
+      // (mantém a cadeia viva atravessando T0/soneca, onde a race do fullScreen droparia o boundary).
+      const { reconcileDoseActivityFromAlarm } = require('../doseActivity/doseActivityScheduler')
+      await reconcileDoseActivityFromAlarm(data)
+    }
+  } catch (err) {
+    if (__DEV__) console.warn('[alarm-bg] surface advance falhou', err?.message)
+  }
+  if (__DEV__) {
+    try {
+      const { onSpikeDelivered } = require('../../features/_dev/devDoseActivityBgSpike')
+      await onSpikeDelivered(data)
+    } catch (err) {
+      if (__DEV__) console.warn('[alarm-bg] spike chain falhou', err?.message)
+    }
+  }
+}
+
 export function registerAlarmBackgroundHandler() {
   if (registered) return
   registered = true
 
-  // IMPORTANTE: NÃO importar quickDoseRegistration no topo. Isso é chamado no
-  // entrypoint (index.js) antes do AppRegistry; importar a cadeia pesada
-  // (doseService → supabase client + firebase analytics) no cold start, antes
-  // dos módulos nativos inicializarem, crasha o app no launch (visto no emulador
-  // Android API 30). Lazy-require dentro do callback mantém o cold start leve —
-  // o handler só roda quando o SO entrega um evento, com o runtime já pronto.
+  // IMPORTANTE: NÃO importar quickDoseRegistration/scheduler no topo. Isso é chamado no entrypoint
+  // (index.js) antes do AppRegistry; importar a cadeia pesada (doseService → supabase + firebase) no
+  // cold start, antes dos módulos nativos inicializarem, crasha o app no launch (emulador Android API
+  // 30). Lazy-require dentro do callback mantém o cold start leve.
   notifee.onBackgroundEvent(async (event) => {
     const type = event?.type
     if (type === EventType.ACTION_PRESS || type === EventType.DISMISSED) {
-      try {
-        const { handleAlarmAction } = require('./quickDoseRegistration')
-        await handleAlarmAction(event)
-      } catch (err) {
-        // best-effort — não relançar no handler de background
-        if (__DEV__) console.warn('[alarm-bg] handleAlarmAction falhou', err?.message)
-      }
+      await onActionOrDismiss(event)
+    } else if (type === EventType.DELIVERED) {
+      await onDelivered(event?.detail?.notification?.data)
     }
   })
 }

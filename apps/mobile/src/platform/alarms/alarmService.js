@@ -301,8 +301,11 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
 
 /**
  * Agenda o alarme de uma ocorrência. Idempotente por `doseInstanceId` (A).
+ * `fireAt` (epoch ms, opcional) sobrescreve QUANDO dispara mantendo `scheduledFor` p/
+ * tolerância/labels — usado p/ re-armar soneca após resync (snoozed_until), já que
+ * `cancelAll` mata o trigger de soneca e o item snoozed sairia sem re-agendamento.
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor: string|number|Date,
- *           toleranceMinutes?: number|null, isCritical?: boolean, data?: object }} params
+ *           toleranceMinutes?: number|null, isCritical?: boolean, data?: object, fireAt?: number|null }} params
  */
 export async function scheduleAlarm({
   doseInstanceId,
@@ -311,10 +314,12 @@ export async function scheduleAlarm({
   toleranceMinutes = null,
   isCritical = false,
   data = {},
+  fireAt = null,
 }) {
   await ensureAlarmSetup()
   // F: instante absoluto (timestamptz) → epoch direto via parseISO (não date-string parse).
-  const timestamp = parseISO(scheduledFor).getTime()
+  // fireAt (epoch ms) tem precedência: re-arma a MESMA dose num horário deslocado (soneca).
+  const timestamp = fireAt != null ? fireAt : parseISO(scheduledFor).getTime()
   if (Number.isNaN(timestamp)) {
     if (__DEV__) console.warn('[alarmService] scheduledFor inválido:', scheduledFor)
     return
