@@ -15,7 +15,7 @@
       "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
     ],
     "status": "completed",
-    "goal": "039 Dose State Machine F2 — MVP Android ongoing notification IMPLEMENTADO (branch feature/039/f2-android-ongoing). Superfície contínua (Notifee canal DEFAULT) consome selectActiveDoseActivity (CON-029→CON-030 novo); SEM toggle próprio — é extensão do alarme crítico (CL-4, decisão PO; CL-2 revogada), late-chrono-cap (CL-3), cancel-on-resolve (AP-235), Registrar/Adiar via CON-026, ícone nativo (T026f). Lint limpo, 43/43 testes F2. SQP minor 0.21.3→0.22.0. PENDENTE: smoke on-device PO (PO-2.1/2.2 MANUAL) ANTES de push/PR (workflow local-commits-single-push). Próximo: F3 iOS.",
+    "goal": "039 Dose State Machine F2 — superfície de estado contínuo Android MERGEADA (PR #691, commit 8d894a0d, mobile 0.22.0). Modelo TRIGGER-DRIVEN (Notifee TimestampTrigger + allowWhileIdle encadeado via onBackgroundEvent) — transiciona later→upcoming→now→late→done/missed COM APP FECHADA (US2.1); flip-timer foreground-only do MVP aposentado. id próprio (:surface) coexiste com alarme no T0; marca-passo do alarme (reconcileDoseActivityFromAlarm) mantém a cadeia atravessando T0/soneca. Smoke on-device PO aprovado. Fixes de alarme: soneca sobrevive resync (fireAt+lookback, AP-248), fullscreen crítico, cold-start surface-register (AP-247). check-review #691: 5 sugestões aplicadas. Próximo: F3 iOS Live Activity (espelha CON-029/030).",
     "goal_type": "feature",
     "tier": 2,
     "spec_dir": "plans/specs/039-dose-state-machine",
@@ -24,18 +24,18 @@
     "tasks": "plans/specs/039-dose-state-machine/tasks.md",
     "linked_adrs": ["ADR-075"],
     "linked_contracts": ["CON-024", "CON-026", "CON-019", "CON-029"],
-    "last_pr": 690,
+    "last_pr": 691,
     "branch": "main",
-    "mobile_version": "0.21.3",
+    "mobile_version": "0.22.0",
     "web_version": "4.15.1"
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 12,
     "rules_count": 230,
-    "anti_patterns_count": 243,
+    "anti_patterns_count": 245,
     "decisions_count": 75,
-    "contracts_count": 29,
+    "contracts_count": 30,
     "distillation_due": false
   },
   "genes": {
