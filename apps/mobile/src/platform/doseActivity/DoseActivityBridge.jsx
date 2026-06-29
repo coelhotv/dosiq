@@ -43,7 +43,9 @@ const LOOK_AHEAD_DAYS = 3 // 72h — alinhado ao scheduler de alarmes
 const LOOK_BACK_DAYS = 3
 // Re-sync de segurança enquanto o app está vivo (re-arma a cadeia caso um boundary tenha sido
 // perdido em background/Doze). As transições NÃO dependem dele — são dirigidas por trigger nativo.
-const RESYNC_INTERVAL_MS = 60 * 1000
+// 60s re-exibia/re-agendava à toa (flicker + CPU); 15min basta como fallback (mount/foreground/bus
+// já re-sincronizam) (#910).
+const RESYNC_INTERVAL_MS = 15 * 60 * 1000
 
 /**
  * Deriva a dose ativa entre as CRÍTICAS pendentes e (re)arma a cadeia de boundaries (trigger-driven).

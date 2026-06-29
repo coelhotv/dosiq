@@ -16,7 +16,7 @@ import { getRawNow } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
-import { SURFACE_ACTION, showDoseDone } from '@platform/doseActivity/doseActivitySurfaceService'
+import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
 
@@ -83,12 +83,8 @@ export async function registerTaken(data) {
     { instanceId: doseInstanceId }
   )
   await invalidate(SNAPSHOTS_TAKEN)
-  // Estado `done` (039 / spec.md:366): a superfície da dose crítica vira card de confirmação
-  // verde ("Tomada às HH:mm ✓", auto-dismiss). registerDose já encerrou a ongoing (cancel-on-
-  // resolve); mostramos o done DEPOIS (mesmo id → substitui). Só p/ crítica (escopo da superfície).
-  if (data.isCritical === 'true') {
-    await showDoseDone({ instanceId: doseInstanceId, medicineLabel: data.medicineName, takenAt: getRawNow() })
-  }
+  // O card `done` (039) já é exibido por _cancelAlarmBestEffort dentro de registerDose (auto-gate
+  // via readSurfaceLabel). Chamar showDoseDone aqui era redundante → IPC extra + flicker (#901).
   return { success: true }
 }
 

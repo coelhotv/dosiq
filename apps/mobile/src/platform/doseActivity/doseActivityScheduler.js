@@ -87,7 +87,9 @@ function allBoundaryTimes(doseItem) {
   // T0 (horário exato) é mantido: a superfície re-exibe "agora" ESTÁTICO p/ PARAR o countdown nativo
   // (que iria negativo, -01:15). NÃO colide com o alarme — desde o fix de id próprio (`:surface`),
   // o alarme fullscreen tem id distinto e dispara no T0 em paralelo (não é sobrescrito).
-  return [...core, lateCap].sort((a, b) => a - b)
+  // Set: se tolerância == LATE_CHRONO_CAP_MINUTES, lateCap coincide com o boundary missed →
+  // dedupe evita trigger redundante no mesmo ms (#908).
+  return [...new Set([...core, lateCap])].sort((a, b) => a - b)
 }
 
 /**
