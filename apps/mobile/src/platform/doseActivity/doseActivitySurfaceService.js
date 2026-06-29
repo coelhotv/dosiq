@@ -248,11 +248,10 @@ export async function showDoseActivity(activity, { now = getRawNow(), discreet =
 function formatClock(takenAt) {
   const d = takenAt instanceof Date ? takenAt : takenAt ? parseISO(takenAt) : getRawNow()
   if (Number.isNaN(d.getTime())) return ''
-  try {
-    return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(d)
-  } catch {
-    return ''
-  }
+  // Hermes tem suporte ICU limitado → Intl.DateTimeFormat com opções pode falhar/divergir
+  // (.gemini/styleguide.md). HH:mm no fuso local: extrai direto do Date + zero-pad. (#898)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 /**
