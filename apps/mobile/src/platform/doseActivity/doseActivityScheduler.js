@@ -66,7 +66,7 @@ function buildEndPayload(instanceId) {
     data: { doseInstanceId: String(instanceId), __surfaceEnd: 'true' },
     android: {
       channelId: DOSE_ACTIVITY_CHANNEL_ID,
-      importance: AndroidImportance.DEFAULT,
+      importance: AndroidImportance.HIGH,
       smallIcon: 'ic_dosiq_mark',
       ongoing: false,
       autoCancel: true,

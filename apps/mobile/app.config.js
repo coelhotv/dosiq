@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.23.2' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.23.3' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -145,6 +145,9 @@ module.exports = {
       // 039/F3: injeta o bridge nativo do app (start/update/end/drain) + struct compartilhada
       // no target principal (ios-native/ é versionado; ios/ é efêmero no prebuild).
       './withDoseActivityBridge.js',
+      // 039/F2: escreve o vector drawable ic_dosiq_mark (smallIcon da superfície Android) no
+      // prebuild — sem ele displayNotification lança e a superfície não aparece no device.
+      './withDoseActivityAndroidIcon.js',
       '@react-native-community/datetimepicker'
     ],
     extra: {

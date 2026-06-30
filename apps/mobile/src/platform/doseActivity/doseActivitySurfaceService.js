@@ -22,7 +22,9 @@ import notifee, { AndroidImportance, AndroidVisibility } from '@notifee/react-na
 import { DOSE_ACTIVITY_STATES, daysAgoLabel, formatDoseItem, getRawNow, parseISO } from '@dosiq/core'
 import { colors } from '@shared/styles/tokens'
 
-export const DOSE_ACTIVITY_CHANNEL_ID = 'dose-activity-v1'
+// v2: importância HIGH (DEFAULT era silenciado pelo MIUI/HyperOS — canal já criado não é atualizável,
+// ID novo força recriação com a importância correta em todos os dispositivos).
+export const DOSE_ACTIVITY_CHANNEL_ID = 'dose-activity-v2'
 
 // id PRÓPRIO da superfície (distinto do alarme!). CRÍTICO: o alarme usa `doseInstanceId` como id de
 // notificação/trigger; o Notifee só mantém 1 trigger PENDENTE por id. Se a superfície usar o mesmo id,
@@ -74,9 +76,9 @@ export async function ensureSurfaceChannel() {
   if (channelEnsured) return
   await notifee.createChannel({
     id: DOSE_ACTIVITY_CHANNEL_ID,
-    name: 'Dose crítica – acompanhamento', // nome amigável p/ a paciente nas Configs do SO
+    name: 'Dose crítica – acompanhamento',
     description: 'Aviso fixo que acompanha sua dose com contagem e botões de Registrar/Adiar.',
-    importance: AndroidImportance.DEFAULT, // persistente, não intrusivo (não é alarme)
+    importance: AndroidImportance.HIGH, // HIGH: visível no status bar em MIUI/HyperOS (DEFAULT era silenciado)
     sound: undefined,
     vibration: false,
   })
@@ -214,7 +216,7 @@ export function buildSurfaceNotification(activity, { now, discreet, doseItem }) 
     data: buildRegistrationData(activity, doseItem, discreet),
     android: {
       channelId: DOSE_ACTIVITY_CHANNEL_ID,
-      importance: AndroidImportance.DEFAULT,
+      importance: AndroidImportance.HIGH,
       visibility: discreet ? AndroidVisibility.PRIVATE : AndroidVisibility.PUBLIC,
       color: STATE_ACCENT[activity.state] ?? colors.neutral[400],
       smallIcon: 'ic_dosiq_mark', // ícone dosiq (T026f — vector drawable mono)
