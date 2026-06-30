@@ -21,6 +21,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   período de vigência. Agora as superfícies de seleção de dose só trazem tratamentos **vigentes hoje**
   (ativos **e** com hoje dentro de `[start_date, end_date]`).
 
+- **Horário do picker ignorado no registro bulk (mobile):** ao ajustar a data/hora da tomada no
+  seletor da modal bulk, o valor escolhido não era gravado — a dose ficava com o horário "agora" do
+  sistema (ex.: tomada das 23:47 de ontem registrada como 01:05 de hoje, caindo no dia errado do
+  calendário). Duas causas: (1) o seletor iOS abria como Modal aninhada e os gestos não registravam;
+  (2) o horário escolhido era resetado para "agora" quando a lista de doses re-renderizava. Agora o
+  seletor é um overlay na mesma superfície e o horário só é inicializado na abertura da modal.
+
 ### 🧱 Interno
 
 - Novo predicado canônico `isTreatmentSchedulableOn(protocol, today)` em `@dosiq/core` (combina
