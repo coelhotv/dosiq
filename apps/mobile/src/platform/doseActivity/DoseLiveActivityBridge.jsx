@@ -177,18 +177,22 @@ async function processPendingActions(tz) {
       // reagendada fica genérica (sem nome do remédio). Paridade com o path de alarme do Android.
       if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
       const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
-      await scheduleSnooze({
-        doseInstanceId: item.instanceId,
-        medicineName: doseItem?.medicineName,
-        scheduledFor: doseItem?.scheduledFor,
-        toleranceMinutes: doseItem?.toleranceMinutes ?? null,
-        isCritical: doseItem?.critical ?? true,
-        data: {
+      // doseItem null (deletado/offline) → não agenda: passar scheduledFor undefined a um param
+      // obrigatório do scheduleSnooze daria agendamento inválido. Pular é mais seguro (Gemini #692).
+      if (doseItem) {
+        await scheduleSnooze({
           doseInstanceId: item.instanceId,
-          medicineName: doseItem?.medicineName,
-          scheduledFor: doseItem?.scheduledFor,
-        },
-      })
+          medicineName: doseItem.medicineName,
+          scheduledFor: doseItem.scheduledFor,
+          toleranceMinutes: doseItem.toleranceMinutes ?? null,
+          isCritical: doseItem.critical ?? true,
+          data: {
+            doseInstanceId: item.instanceId,
+            medicineName: doseItem.medicineName,
+            scheduledFor: doseItem.scheduledFor,
+          },
+        })
+      }
     } else if (item.action === 'open') {
       // "Abrir" (later) — só traz o app pra Hoje, sem registrar.
       navigateTodayWithRetry({})
@@ -202,7 +206,15 @@ export default function DoseLiveActivityBridge() {
   const [tz, setTz] = useState(DEFAULT_TZ)
   const userId = user?.id ?? null
   const prevInstanceRef = useRef(null)
+  // tz espelhado em ref p/ o effect de AppState NÃO depender de tz (senão load() atualiza tz no
+  // mount → re-dispara o effect → load() duplicado p/ fuso ≠ DEFAULT_TZ). Gemini #692. Sync em effect
+  // (R-010: refs no topo; não escrever ref durante render).
+  const tzRef = useRef(tz)
   const enabled = Platform.OS === 'ios' && liveActivitySupported
+
+  useEffect(() => {
+    tzRef.current = tz
+  }, [tz])
 
   const load = useCallback(async () => {
     if (!userId) return
@@ -244,14 +256,14 @@ export default function DoseLiveActivityBridge() {
     if (!enabled || !userId) return undefined
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
-    processPendingActions(tz)
+    processPendingActions(tzRef.current)
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
-      processPendingActions(tz)
+      processPendingActions(tzRef.current)
     })
     return () => sub.remove()
-  }, [enabled, userId, load, tz])
+  }, [enabled, userId, load])
 
   // Re-sync sob demanda (mutação de tratamento).
   useEffect(() => {
