@@ -1,6 +1,7 @@
 # DEVFLOW Decisions Index
 
 ## 📱 Mobile & Platform (`mobile_and_platform`)
+- **[ADR-076]** *(proposed — spec 041 Planning)* iOS Live Activity **push-to-start** via **APNs raw** (HTTP/2 + JWT ES256, chave .p8 dedicada, `apns-push-type:liveactivity`) — Expo Push não entrega esse push-type. Modelo **start-only**: push só INICIA a LA com app fechado (pré-T0); transições/encerramento seguem 039 (`staleDate`+foreground). Estado inicial recomputado no disparo (`deriveDoseActivityState`, CON-029). Disparo no loop de minuto (`api/notify.js`→`checkReminders`), estende `notification_devices` (provider `apns_liveactivity`) → zero tabela/função nova. Reversível. Controles RC-SEC: object-level check (S-1, service_role bypassa RLS), .p8 bot-only (S-2), discreto server-side (S-3), fail-open não suprime alarme (FR-008). -> [`decisions/mobile_and_platform/ADR-076.md`](./decisions/mobile_and_platform/ADR-076.md)
 - **[ADR-075]** *(accepted — spec 039 Planning)* Live Activity iOS via **config plugin custom + Widget Extension Swift + App Intents no Expo 53 atual** (não `expo-live-activity` deprecada/sem botões, não `expo-widgets` que exige SDK 56). Desbloqueia 039 sem amarrar ao upgrade de 3 majors; App Intents completos (Registrar/Adiar pela ilha). iOS 17+ efetivo p/ botões; App Group app↔widget exige revalidação de sessão (PO-SEC-2). Migração p/ expo-widgets = roadmap pós-upgrade 53→56. -> [`decisions/mobile_and_platform/ADR-075.md`](./decisions/mobile_and_platform/ADR-075.md)
 
 ## 📦 Data & Schema (`data_and_schema`)
