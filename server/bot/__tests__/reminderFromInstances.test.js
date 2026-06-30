@@ -137,6 +137,42 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
     });
   });
 
+  it('horário do body = scheduled_for ORIGINAL (não o instante de saída do push — bug snooze)', async () => {
+    process.env.REMINDER_SOURCE = 'instances';
+
+    setMockData([
+      { user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' },
+    ]);
+
+    // Dose agendada p/ 12:15 SP (15:15 UTC). Mesmo que o cron rode num minuto diferente
+    // (re-disparo de soneca), o body deve imprimir 12:15, não a hora atual.
+    setMockData([
+      {
+        id: 'inst-1',
+        user_id: 'user1',
+        protocol_id: 'proto-1',
+        critical_alarm: false,
+        scheduled_for: '2026-06-30T15:15:00.000Z',
+        protocol: {
+          id: 'proto-1', name: 'Losartana', dosage_per_intake: 1,
+          treatment_plan_id: null, medicine_id: 'med-1',
+          medicine: { name: 'Losartana', dosage_unit: 'mg' }, treatment_plan: null,
+        },
+      },
+    ]);
+    setMockData([]);
+    setMockData({ data: null, error: null });
+
+    await checkRemindersViaDispatcher(mockDispatcher, 'corr-time');
+
+    expect(mockDispatcher.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'dose_reminder',
+        data: expect.objectContaining({ time: '12:15' }),
+      })
+    );
+  });
+
   it('novo caminho: instância com notified_at já setado não aparece (filtro IS NULL)', async () => {
     process.env.REMINDER_SOURCE = 'instances';
 

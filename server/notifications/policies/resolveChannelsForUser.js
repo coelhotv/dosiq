@@ -44,9 +44,14 @@ export async function resolveChannelsForUser({ userId, repositories, isCritical 
     channels = resolveLegacy(preference, hasTelegram, activeExpoDevices)
   }
 
-  // Se for dose essencial/crítica, fura preferências e garante envio de push
-  if (isCritical && activeExpoDevices.length > 0 && !channels.includes('mobile_push')) {
-    channels.push('mobile_push')
+  // Dose essencial/crítica = extensão do alarme timeSensitive: deve ir SÓ pelo canal de alarme
+  // (mobile_push), NUNCA junto do telegram/web_push (que duplicam o aviso e imprimem o body com
+  // horário). Se o usuário tem device mobile ativo → restringe a mobile_push (fura preferências p/
+  // garantir o alarme). Se NÃO tem device → cai pra telegram como fallback (nunca fica mudo).
+  if (isCritical) {
+    if (activeExpoDevices.length > 0) return ['mobile_push']
+    if (hasTelegram) return ['telegram']
+    return []
   }
 
   return channels
