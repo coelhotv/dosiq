@@ -1,37 +1,22 @@
 {
   "project": "dosiq",
-  "sprint": "2026-W25",
+  "sprint": "2026-W27",
   "session": {
-    "mode": "coding",
-    "ceremony_type": "security-review",
-    "ceremony_spec": "plans/specs/039-dose-state-machine/spec.md",
-    "ceremonies_run": ["design-review", "eng-review", "security-review"],
-    "ceremony_findings_count": 14,
-    "ceremony_scope_decisions": [
-      "039 HOLD SCOPE (RC3) — sem expansão, foco em bulletproof",
-      "039 fatiar mandatório: 039a core -> 039b Android -> 039c iOS, core mergeado primeiro",
-      "039 guards de superficie provam nao-regressao do alarme legado (smoke R-255/R-260/R-261)",
-      "039 modo discreto lock-screen = requisito privacidade LGPD/Const-I (default discreto p/ critico)",
-      "039 revalidar sessao viva no handler background = bloqueante (registro conta errada = incidente)"
-    ],
-    "status": "completed",
-    "goal": "039 Dose State Machine F2 — superfície de estado contínuo Android MERGEADA (PR #691, commit 8d894a0d, mobile 0.22.0). Modelo TRIGGER-DRIVEN (Notifee TimestampTrigger + allowWhileIdle encadeado via onBackgroundEvent) — transiciona later→upcoming→now→late→done/missed COM APP FECHADA (US2.1); flip-timer foreground-only do MVP aposentado. id próprio (:surface) coexiste com alarme no T0; marca-passo do alarme (reconcileDoseActivityFromAlarm) mantém a cadeia atravessando T0/soneca. Smoke on-device PO aprovado. Fixes de alarme: soneca sobrevive resync (fireAt+lookback, AP-248), fullscreen crítico, cold-start surface-register (AP-247). check-review #691: 5 sugestões aplicadas. Próximo: F3 iOS Live Activity (espelha CON-029/030).",
-    "goal_type": "feature",
+    "mode": "planning",
+    "status": "planned",
+    "goal": "typescript-migration",
+    "goal_type": "refactor",
     "tier": 2,
-    "spec_dir": "plans/specs/039-dose-state-machine",
-    "spec": "plans/specs/039-dose-state-machine/spec.md",
-    "plan": "plans/specs/039-dose-state-machine/plan.md",
-    "tasks": "plans/specs/039-dose-state-machine/tasks.md",
-    "linked_adrs": ["ADR-075"],
-    "linked_contracts": ["CON-024", "CON-026", "CON-019", "CON-029"],
-    "last_pr": 691,
-    "branch": "main",
-    "mobile_version": "0.22.0",
-    "web_version": "4.15.1"
+    "spec_dir": "plans/specs/040-typescript-migration",
+    "spec": "plans/specs/040-typescript-migration/spec.md",
+    "plan": "plans/specs/040-typescript-migration/plan.md",
+    "tasks": "plans/specs/040-typescript-migration/tasks.md",
+    "ceremonies_run": ["rc1-scope", "rc2-design", "rc3-eng", "rc-sec", "rc4-devops"],
+    "ceremony_findings_count": 0
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 14,
     "rules_count": 230,
     "anti_patterns_count": 245,
     "decisions_count": 75,
@@ -43,16 +28,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-06-23T14:30:00Z"
-  },
-  "code_review": {
-    "pr": 690,
-    "status": "merged",
-    "critical": 0,
-    "high": 0,
-    "medium": 3,
-    "auto_fixed": 2,
-    "declined": 1,
-    "ask_items": 0
+    "index_loaded_at": "2026-06-29T23:01:14Z"
   }
 }

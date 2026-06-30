@@ -7,6 +7,31 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.23.0 (mobile) — 2026-06-29 — Dose como estado contínuo: Live Activity + Dynamic Island (iOS)
+
+> **Bump:** mobile `0.22.0 → 0.23.0` (minor — nova superfície iOS, épico 039 Dose State Machine, F3). Web sem alteração.
+> **Plataforma:** Mobile (iOS). **Server-free** (timer vivo da Live Activity, zero APNs).
+> **Extensão do alarme crítico** (sem toggle novo): mesma máquina de estados da F2 (Android), agora na ilha/lock screen iOS.
+> **iOS mínimo:** Live Activity a partir de 16.2; **botões Registrar/Adiar exigem iOS 17+** (App Intents).
+
+### ✨ Novidades (iOS)
+
+- **Live Activity + Dynamic Island:** a dose crítica vira um estado contínuo na ilha e na lock screen —
+  próxima (cinza) → chegando/agora (teal, contagem regressiva viva) → atrasada (âmbar, progressiva) →
+  tomada ✓ (verde) → perdida. Cor e rótulo acompanham o estado (paridade visual com o Android, CON-030).
+- **Botões na ilha (iOS 17+):** **Registrar** abre a app na tela de registro (escolha de quantidade e,
+  em injetáveis, sítio de aplicação) e **Adiar** soneca o alarme — direto da Dynamic Island.
+- **Encerramento automático:** registrar a dose por qualquer caminho encerra a Live Activity (sem dose fantasma).
+- **Server-free:** contador vivo (`Text(timerInterval:)`), sem push. Config plugin reproduzível
+  (`@bacons/apple-targets`) + Widget Extension Swift (ADR-075).
+
+### 🔧 Notas técnicas
+
+- Novo Widget Extension target gerado no prebuild/EAS (não mais wiring manual no Xcode).
+- App Group `group.com.coelhotv.dosiq` (App Intent → fila → RN registra com sessão viva, PO-SEC-2).
+
+---
+
 ## App v0.22.0 (mobile) — 2026-06-28 — Dose como estado contínuo: notificação persistente (Android, alarme crítico)
 
 > **Bump:** mobile `0.21.3 → 0.22.0` (minor — nova feature, épico 039 Dose State Machine, F2). Web sem alteração.

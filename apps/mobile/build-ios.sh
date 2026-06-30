@@ -4,6 +4,13 @@
 
 set -euo pipefail
 
+# Resiliência de locale (039/F3): CocoaPods sob Ruby 4.0 quebra com
+# "Unicode Normalization not appropriate for ASCII-8BIT (Encoding::CompatibilityError)"
+# ao normalizar paths quando o locale não é UTF-8. O `eas build --local` roda pod install
+# internamente → forçar UTF-8 aqui evita a falha. (Inofensivo se já estiver UTF-8.)
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

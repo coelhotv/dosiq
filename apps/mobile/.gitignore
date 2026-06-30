@@ -4,6 +4,11 @@ ios/
 android/
 credentials/
 
+# @bacons/apple-targets — gerados no prebuild a partir de targets/*/expo-target.config.js
+# (a fonte versionada é o expo-target.config.js + os .swift; estes são derivados)
+targets/**/Info.plist
+targets/**/generated.entitlements
+
 # Dependencies
 node_modules/
 

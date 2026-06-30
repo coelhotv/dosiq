@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.22.0' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.23.1' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -49,6 +49,10 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: current.iosBundleIdentifier,
+      // appleTeamId: exigido pelo @bacons/apple-targets p/ assinar o widget target (DoseActivity) de
+      // forma determinística — sem ele o EAS/CI pode falhar (no local o auto-signing resolve, mas warna).
+      // Team ID não é segredo (consta em todo provisioning profile).
+      appleTeamId: 'LU8V56S7QF',
       buildNumber: BUILD_NUMBER,
       supportsTablet: false,
       jsEngine: 'hermes',
@@ -71,6 +75,10 @@ module.exports = {
       // Notifications"). Declarado → EAS mantém habilitado e gera o profile com ela.
       entitlements: {
         'com.apple.developer.usernotifications.time-sensitive': true,
+        // 039/F3: App Group compartilhado app↔Widget Extension (Live Activity). O App Intent
+        // (Registrar/Adiar) escreve o pedido de ação aqui; o RN lê e registra via CON-026
+        // (PO-SEC-2: revalidar sessão VIVA, nunca usar userId cacheado). Mesmo id no target.
+        'com.apple.security.application-groups': ['group.com.coelhotv.dosiq'],
         // Spec 010: Critical Alerts — fura mudo físico iOS para doses inegociáveis.
         // AGUARDANDO APROVAÇÃO APPLE — não descomentar antes da aprovação ser concedida.
         // Quando aprovado: descomentar a linha abaixo + restaurar no Dosiq.entitlements.
@@ -128,7 +136,15 @@ module.exports = {
       ],
       './withFirebaseFix.js',
       './withAlarmPermissions.js',
+      // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',
+      // 039/F3: cria o Widget Extension target (Live Activity + App Intents) de forma
+      // reproduzível no prebuild/EAS a partir de targets/dose-activity/ (ADR-075 emenda).
+      // appleTeamId resolvido via EAS managed credentials.
+      '@bacons/apple-targets',
+      // 039/F3: injeta o bridge nativo do app (start/update/end/drain) + struct compartilhada
+      // no target principal (ios-native/ é versionado; ios/ é efêmero no prebuild).
+      './withDoseActivityBridge.js',
       '@react-native-community/datetimepicker'
     ],
     extra: {
