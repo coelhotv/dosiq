@@ -87,6 +87,74 @@ describe('usePlanProtocols', () => {
     expect(result.current.protocols[0].id).toBe('t1')
   })
 
+  it('no modo plan, exclui prescrição encerrada do mesmo plano (bug prod 039)', async () => {
+    // t5: finalizado (end_date < hoje), mesmo plan-1 e mesma janela das 08:00 que t1.
+    // Sem o filtro de status, vazaria para a modal bulk junto com t1.
+    getActiveTreatments.mockResolvedValue({
+      success: true,
+      data: [
+        ...MOCK_TREATMENTS,
+        {
+          id: 't5',
+          name: 'Selozok (prescrição antiga)',
+          active: true,
+          start_date: '2026-01-01',
+          end_date: '2026-05-20', // finalizado (hoje = 2026-05-27)
+          time_schedule: ['08:00'],
+          treatment_plan: { id: 'plan-1', name: 'Plano Cardio' },
+          medicine_id: 'med-5',
+        },
+      ],
+    })
+
+    const { result } = renderHook(() =>
+      usePlanProtocols({
+        mode: 'plan',
+        planId: 'plan-1',
+        scheduledTime: '08:00',
+        userId: 'user-123',
+      })
+    )
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    // Só t1 (ativo); t5 finalizado é excluído mesmo na janela/plano.
+    expect(result.current.protocols).toHaveLength(1)
+    expect(result.current.protocols[0].id).toBe('t1')
+  })
+
+  it('no modo plan, exclui prescrição FUTURA do mesmo plano (start_date > hoje)', async () => {
+    getActiveTreatments.mockResolvedValue({
+      success: true,
+      data: [
+        ...MOCK_TREATMENTS,
+        {
+          id: 't6',
+          name: 'Novo tratamento (começa amanhã)',
+          active: true,
+          start_date: '2026-05-28', // futuro (hoje = 2026-05-27)
+          end_date: null,
+          time_schedule: ['08:00'],
+          treatment_plan: { id: 'plan-1', name: 'Plano Cardio' },
+          medicine_id: 'med-6',
+        },
+      ],
+    })
+
+    const { result } = renderHook(() =>
+      usePlanProtocols({ mode: 'plan', planId: 'plan-1', scheduledTime: '08:00', userId: 'user-123' })
+    )
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.protocols).toHaveLength(1)
+    expect(result.current.protocols[0].id).toBe('t1')
+  })
+
   it('no modo misc, filtra pelos protocolIds explícitos', async () => {
     const { result } = renderHook(() =>
       usePlanProtocols({

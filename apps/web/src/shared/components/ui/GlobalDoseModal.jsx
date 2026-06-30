@@ -2,6 +2,7 @@
 // Modal global de registro de dose — disponível em todas as views via App.jsx
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { isTreatmentSchedulableOn } from '@dosiq/core'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import {
   cachedLogService as logService,
@@ -24,10 +25,14 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
   const [treatmentPlans, setTreatmentPlans] = useState([])
   const [plansError, setPlansError] = useState(null)
 
-  // Filtros para garantir que apenas tratamentos ativos apareçam no formulário
-  const activeProtocols = useMemo(() => protocols.filter((p) => p.active), [protocols])
+  // Só tratamentos elegíveis para dose HOJE (ativos + hoje dentro de [start_date, end_date]).
+  // `p.active` sozinho deixava vazar prescrições encerradas/futuras (end/start fora de hoje).
+  const activeProtocols = useMemo(
+    () => protocols.filter((p) => isTreatmentSchedulableOn(p)),
+    [protocols]
+  )
   const activeTreatmentPlans = useMemo(
-    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => p.active)),
+    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => isTreatmentSchedulableOn(p))),
     [treatmentPlans]
   )
 
