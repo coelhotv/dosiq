@@ -1,1 +1,2 @@
 {"timestamp":"2026-06-24T18:35:00.000Z","event":"distillation_complete","trigger":"manual_post_epic_015","rules_promoted":0,"aps_reconciled":2,"counters_corrected":["anti_patterns_count","decisions_count","contracts_count"]}
+{"timestamp":"2026-06-30T15:33:00Z","event":"distillation_complete","period":"2026-W26(partial)+W27","sessions":16,"rules_promoted":0,"aps_triggered_cycle":5,"aps_renamed_d5":3,"contracts_corrected":-1,"d3_candidates":["AP-124"]}
