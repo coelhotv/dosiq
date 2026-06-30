@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.23.4 (mobile) — 2026-06-30 — Fix: cor do estado "atrasada" nas Live Activities iOS (acessibilidade)
+
+> **Bump:** mobile `0.23.3 → 0.23.4` (patch — correção visual/acessibilidade). **Plataforma:** Mobile (iOS). **Server-free**, sem migração.
+
+### ♿ Acessibilidade
+
+- **Contraste do estado "atrasada" nas Live Activities iOS (Dynamic Island + lock screen):** a cor âmbar usada para o logo dosiq, rótulos e botão "Tomar" no estado `late` era `#904d00` (contraste 3,36:1 sobre preto — reprovado no WCAG AA). Substituída por `#F59E0B` (`warningBright`, contraste **9,82:1** — WCAG AAA), mantendo hue âmbar de atenção com legibilidade muito superior para pessoas com visão comprometida.
+- Android não afetado: mesma cor é usada como acento sobre fundo claro (Material), onde o contraste é adequado (6,25:1).
+
+### 🧱 Interno
+
+- Novo token `status.warningBright: '#F59E0B'` em `tokens.js` (mobile) para superfícies com fundo escuro.
+
+---
+
 ## App v0.23.3 (mobile) — 2026-06-30 — Fix: card de estado contínuo da dose não aparecia no Android (produção)
 
 > **Bump:** mobile `0.23.2 → 0.23.3` (patch — correção de bug em produção). **Plataforma:** Mobile (Android). **Server-free**, sem migração.

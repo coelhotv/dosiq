@@ -271,13 +271,13 @@ private func timerA11y(_ st: String, _ scheduledAt: Date, _ now: Date) -> String
 }
 
 // Hex espelha tokens.js: later neutral400 #8e9199 · upcoming primary200 #99f6e4 · now primary500
-// #14b8a6 · late warning #904d00 · done successDark #166534 · missed error #ba1a1a.
+// #14b8a6 · late warningBright #F59E0B (9.82:1 c/ preto; iOS LA/DI = fundo escuro) · done successDark #166534 · missed error #ba1a1a.
 private func stateColor(_ state: String) -> Color {
     switch state {
     case "later":    return Color(red: 0.557, green: 0.569, blue: 0.600)
     case "upcoming": return Color(red: 0.600, green: 0.965, blue: 0.894)
     case "now":      return Color(red: 0.078, green: 0.722, blue: 0.651)
-    case "late":     return Color(red: 0.565, green: 0.302, blue: 0.000)
+    case "late":     return Color(red: 0.961, green: 0.620, blue: 0.043) // #F59E0B warningBright — 9.82:1 c/ preto
     case "done":     return Color(red: 0.086, green: 0.396, blue: 0.204)
     case "missed":   return Color(red: 0.729, green: 0.102, blue: 0.102)
     default:         return .secondary

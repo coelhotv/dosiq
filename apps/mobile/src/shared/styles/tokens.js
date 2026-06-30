@@ -30,7 +30,8 @@ export const colors = {
   // Status semântico
   status: {
     success: '#4fb3a4',
-    warning: '#904d00',
+    warning: '#904d00',     // texto/acento s/ bg claro (Android notif, cards) — 6.25:1 c/ branco
+    warningBright: '#F59E0B', // LA/DI: acento s/ bg escuro (iOS Dynamic Island/lock) — 9.82:1 c/ preto
     error: '#ba1a1a',
     info: '#005db6',
     errorLight: '#fee2e2',
