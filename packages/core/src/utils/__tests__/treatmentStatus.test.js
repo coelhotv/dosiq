@@ -105,6 +105,11 @@ describe('isTreatmentActive', () => {
     expect(isTreatmentActive({ active: false, end_date: null }, '2026-05-18')).toBe(false)
     expect(isTreatmentActive({ active: true, end_date: '2026-05-17' }, '2026-05-18')).toBe(false)
   })
+
+  it('returns false for null/undefined protocol (guard defensivo)', () => {
+    expect(isTreatmentActive(null, '2026-05-18')).toBe(false)
+    expect(isTreatmentActive(undefined, '2026-05-18')).toBe(false)
+  })
 })
 
 describe('isTreatmentSchedulableOn', () => {
@@ -128,6 +133,11 @@ describe('isTreatmentSchedulableOn', () => {
 
   it('returns false for PAUSED treatment (active=false) inside period', () => {
     expect(isTreatmentSchedulableOn({ active: false, start_date: '2026-05-01', end_date: '2026-06-01' }, TODAY)).toBe(false)
+  })
+
+  it('returns false for null/undefined protocol (guard defensivo)', () => {
+    expect(isTreatmentSchedulableOn(null, TODAY)).toBe(false)
+    expect(isTreatmentSchedulableOn(undefined, TODAY)).toBe(false)
   })
 })
 

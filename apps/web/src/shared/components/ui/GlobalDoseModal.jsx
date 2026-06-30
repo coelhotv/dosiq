@@ -28,11 +28,11 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
   // Só tratamentos elegíveis para dose HOJE (ativos + hoje dentro de [start_date, end_date]).
   // `p.active` sozinho deixava vazar prescrições encerradas/futuras (end/start fora de hoje).
   const activeProtocols = useMemo(
-    () => protocols.filter((p) => isTreatmentSchedulableOn(p)),
+    () => (protocols || []).filter(Boolean).filter((p) => isTreatmentSchedulableOn(p)),
     [protocols]
   )
   const activeTreatmentPlans = useMemo(
-    () => treatmentPlans.filter((plan) => plan.protocols?.some((p) => isTreatmentSchedulableOn(p))),
+    () => (treatmentPlans || []).filter(Boolean).filter((plan) => plan.protocols?.some((p) => isTreatmentSchedulableOn(p))),
     [treatmentPlans]
   )
 

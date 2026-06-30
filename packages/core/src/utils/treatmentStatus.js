@@ -42,6 +42,7 @@ export function resolveTreatmentStatus(protocol, today) {
  * @returns {boolean}
  */
 export function isTreatmentActive(protocol, today) {
+  if (!protocol) return false
   return resolveTreatmentStatus(protocol, today) === TREATMENT_STATUS.ATIVO
 }
 
@@ -63,6 +64,7 @@ export function isTreatmentActive(protocol, today) {
  * @returns {boolean}
  */
 export function isTreatmentSchedulableOn(protocol, today) {
+  if (!protocol) return false
   const ref = today ?? formatLocalDate(getNow())
   return isTreatmentActive(protocol, ref) && isProtocolActiveOnDate(protocol, ref)
 }
