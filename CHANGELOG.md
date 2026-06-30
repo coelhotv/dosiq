@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.23.3 (mobile) — 2026-06-30 — Fix: card de estado contínuo da dose não aparecia no Android (produção)
+
+> **Bump:** mobile `0.23.2 → 0.23.3` (patch — correção de bug em produção). **Plataforma:** Mobile (Android). **Server-free**, sem migração.
+
+### 🐛 Correções
+
+- **Card de acompanhamento da dose crítica não aparecia (Android):** o aviso fixo (ongoing notification)
+  que acompanha a dose crítica — com cronômetro e botões Registrar/Adiar — nunca era exibido em
+  dispositivos reais, embora o alarme normal funcionasse. Causa: a notificação referenciava um ícone
+  (`ic_dosiq_mark`) que não estava no build do app; o Android rejeita notificações sem ícone válido e o
+  erro era engolido silenciosamente. O ícone também se perdia a cada build (não era versionado). Agora
+  a marca dosiq é gerada de forma reprodutível em todo build e assume a cor de cada estado da dose
+  (próxima/agora/atrasada), como no iOS.
+
+### 🧱 Interno
+
+- Novo config plugin `withDoseActivityAndroidIcon.js` escreve o vector drawable monocromático da marca
+  dosiq no prebuild (mesmo padrão dos plugins iOS de Live Activity).
+- Canal de notificação da superfície: `dose-activity-v1` → `dose-activity-v2`, importância `DEFAULT` →
+  `HIGH` (MIUI/HyperOS silenciava canais `DEFAULT`).
+
+---
+
 ## App v0.23.2 (mobile) / Web v4.15.2 — 2026-06-30 — Fix: superfícies de dose só mostram tratamentos vigentes hoje
 
 > **Bump:** mobile `0.23.1 → 0.23.2` (patch — correção de bug). Web `4.15.1 → 4.15.2` (patch). Core: novo predicado canônico.
