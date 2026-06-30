@@ -2,7 +2,7 @@
 // Reutiliza treatmentsService.getActiveTreatments e filtra por planId ou protocolIds[]
 
 import { useState, useEffect } from 'react'
-import { resolveTreatmentStatus, getTodayLocal } from '@dosiq/core'
+import { isTreatmentSchedulableOn, getTodayLocal } from '@dosiq/core'
 import { getActiveTreatments } from '../../treatments/services/treatmentsService'
 
 /**
@@ -64,9 +64,15 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
         }
         const all = result.data ?? []
         if (mode === 'plan') {
+          // getActiveTreatments é alias de getAllTreatments → traz TODOS os status.
+          // Só tratamentos elegíveis HOJE (ativos + dentro do período start/end) entram
+          // na modal bulk do plano; senão prescrições encerradas/futuras do mesmo
+          // treatment_plan vazam (bug prod 039).
+          const todayStr = getTodayLocal()
           setProtocols(
             all
               .filter(p => p.treatment_plan?.id === planId)
+              .filter(p => isTreatmentSchedulableOn(p, todayStr))
               .filter(p => isInWindow(p, scheduledTime))
           )
         } else if (mode === 'misc') {
@@ -74,7 +80,7 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
         } else if (mode === 'active') {
           const todayStr = getTodayLocal()
           setProtocols(
-            all.filter(p => resolveTreatmentStatus(p, todayStr) === 'ativo')
+            all.filter(p => isTreatmentSchedulableOn(p, todayStr))
           )
         }
       })

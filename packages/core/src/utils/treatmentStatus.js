@@ -5,7 +5,7 @@
 // `_treatmentListUtils.resolveTabStatus`. Helper canônico permite paridade
 // web↔mobile sem drift. Web adopt como wrapper no mesmo PR (G1 implícito).
 
-import { formatLocalDate, getNow } from './dateUtils.js'
+import { formatLocalDate, getNow, isProtocolActiveOnDate } from './dateUtils.js'
 
 export const TREATMENT_STATUS = Object.freeze({
   ATIVO: 'ativo',
@@ -30,4 +30,41 @@ export function resolveTreatmentStatus(protocol, today) {
   if (protocol?.end_date && protocol.end_date < ref) return TREATMENT_STATUS.FINALIZADO
   if (protocol?.active === false) return TREATMENT_STATUS.PAUSADO
   return TREATMENT_STATUS.ATIVO
+}
+
+/**
+ * Predicado canônico "tratamento operacionalmente ativo hoje" — evita repetir o
+ * literal `=== 'ativo'` espalhado pelos callsites (modal bulk, listas, transformers).
+ * Exclui FINALIZADO (end_date < hoje) e PAUSADO (active=false).
+ *
+ * @param {{ active?: boolean|null, end_date?: string|null }} protocol
+ * @param {string} [today] — YYYY-MM-DD; default = hoje local
+ * @returns {boolean}
+ */
+export function isTreatmentActive(protocol, today) {
+  if (!protocol) return false
+  return resolveTreatmentStatus(protocol, today) === TREATMENT_STATUS.ATIVO
+}
+
+/**
+ * Predicado canônico para SUPERFÍCIES DE SELEÇÃO DE DOSE (modal bulk mobile, FAB
+ * global de doses web): tratamento elegível para registrar dose HOJE.
+ *
+ * Exige AMBOS:
+ *   1. status operacional ATIVO (active=true, não pausado, end_date >= hoje), e
+ *   2. data de hoje DENTRO do período [start_date, end_date] (end inclusivo).
+ *
+ * Diferença vs `isTreatmentActive`: este TAMBÉM exclui tratamentos FUTUROS
+ * (start_date > hoje), que `resolveTreatmentStatus` classifica como ATIVO por não
+ * olhar start_date. Sem isto, prescrições futuras/encerradas do mesmo plano vazam
+ * na modal de registro (bug prod 039).
+ *
+ * @param {{ active?: boolean|null, start_date?: string|null, end_date?: string|null }} protocol
+ * @param {string} [today] — YYYY-MM-DD; default = hoje local
+ * @returns {boolean}
+ */
+export function isTreatmentSchedulableOn(protocol, today) {
+  if (!protocol) return false
+  const ref = today ?? formatLocalDate(getNow())
+  return isTreatmentActive(protocol, ref) && isProtocolActiveOnDate(protocol, ref)
 }

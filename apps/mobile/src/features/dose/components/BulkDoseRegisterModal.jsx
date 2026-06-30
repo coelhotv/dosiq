@@ -348,15 +348,14 @@ function BulkDoseRetroactivePicker({ takenAtDate, handleOpenRetroactivePicker })
   )
 }
 
-function IOSDateTimePickerModal({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
+// Picker iOS como OVERLAY ABSOLUTO (não Modal). Modal-sobre-Modal no iOS engole gestos: o
+// spinner aparecia mas o onChange não registrava, então o horário escolhido nunca chegava em
+// `takenAtDate` e a tomada era gravada com `agora` (bug). Renderizado DENTRO da Modal bulk,
+// na mesma superfície, os gestos funcionam.
+function IOSDateTimePickerOverlay({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
   if (Platform.OS !== 'ios' || !visible) return null
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onCancel}
-    >
+    <View style={styles.pickerOverlay}>
       <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={onCancel} />
       <View style={styles.pickerSheet}>
         <SafeAreaView edges={['bottom']}>
@@ -380,7 +379,7 @@ function IOSDateTimePickerModal({ visible, tempDate, setTempDate, onCancel, onCo
           />
         </SafeAreaView>
       </View>
-    </Modal>
+    </View>
   )
 }
 
@@ -449,11 +448,15 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
       setShowDatePicker(false)
       setTempDate(null)
     } else {
-      setTakenAtDate(getNow())
       setInjectionSites({})
       const initial = {}
       expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
       setSelected(initial)
+      // takenAtDate SÓ na transição de ABERTURA — nunca em itemsChanged. A lista de itens
+      // pode re-renderizar (async load, tick do pai) DEPOIS do usuário ajustar o horário no
+      // picker; resetar aqui clobberava a hora manual de volta p/ `agora` (bug: tomada de
+      // ontem à noite gravada com horário de hoje). Ver _buildConfirmLogs/isBackdated.
+      if (visibilityChanged) setTakenAtDate(getNow())
     }
   }
 
@@ -679,15 +682,16 @@ export default function BulkDoseRegisterModal({
             onConfirm={handleConfirm}
           />
         </View>
-      </View>
 
-      <IOSDateTimePickerModal
-        visible={showDatePicker}
-        tempDate={tempDate}
-        setTempDate={setTempDate}
-        onCancel={handleIOSCancel}
-        onConfirm={handleIOSConfirm}
-      />
+        {/* Overlay do picker DENTRO da Modal bulk (mesma superfície) — não Modal aninhada. */}
+        <IOSDateTimePickerOverlay
+          visible={showDatePicker}
+          tempDate={tempDate}
+          setTempDate={setTempDate}
+          onCancel={handleIOSCancel}
+          onConfirm={handleIOSConfirm}
+        />
+      </View>
     </Modal>
   )
 }
@@ -983,7 +987,13 @@ const styles = StyleSheet.create({
     color: colors.primary[700],
   },
 
-  // DateTimePicker iOS Modal
+  // DateTimePicker iOS — overlay absoluto (não Modal aninhada)
+  pickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 10,
+    elevation: 10,
+  },
   pickerBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.bg.overlay,

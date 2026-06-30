@@ -127,6 +127,8 @@ export {
 export {
   TREATMENT_STATUS,
   resolveTreatmentStatus,
+  isTreatmentActive,
+  isTreatmentSchedulableOn,
 } from './treatmentStatus.js'
 
 // Prescription vigência status resolver (038 Slice C — paridade web↔mobile)

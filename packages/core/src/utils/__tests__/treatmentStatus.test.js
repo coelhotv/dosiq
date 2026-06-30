@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveTreatmentStatus, TREATMENT_STATUS } from '../treatmentStatus.js'
+import { resolveTreatmentStatus, isTreatmentActive, isTreatmentSchedulableOn, TREATMENT_STATUS } from '../treatmentStatus.js'
 
 describe('resolveTreatmentStatus', () => {
   // Teste 1: active: true, end_date: null → ATIVO
@@ -92,6 +92,52 @@ describe('resolveTreatmentStatus', () => {
     expect(resolveTreatmentStatus(protocol, '2026-06-02')).toBe(
       TREATMENT_STATUS.FINALIZADO
     )
+  })
+})
+
+describe('isTreatmentActive', () => {
+  it('returns true only for ATIVO', () => {
+    expect(isTreatmentActive({ active: true, end_date: null }, '2026-05-18')).toBe(true)
+    expect(isTreatmentActive({ active: true, end_date: '2026-06-18' }, '2026-05-18')).toBe(true)
+  })
+
+  it('returns false for PAUSADO and FINALIZADO', () => {
+    expect(isTreatmentActive({ active: false, end_date: null }, '2026-05-18')).toBe(false)
+    expect(isTreatmentActive({ active: true, end_date: '2026-05-17' }, '2026-05-18')).toBe(false)
+  })
+
+  it('returns false for null/undefined protocol (guard defensivo)', () => {
+    expect(isTreatmentActive(null, '2026-05-18')).toBe(false)
+    expect(isTreatmentActive(undefined, '2026-05-18')).toBe(false)
+  })
+})
+
+describe('isTreatmentSchedulableOn', () => {
+  const TODAY = '2026-05-18'
+
+  it('returns true when active and today is inside [start, end]', () => {
+    expect(isTreatmentSchedulableOn({ active: true, start_date: '2026-05-01', end_date: '2026-06-01' }, TODAY)).toBe(true)
+  })
+
+  it('returns true when active with open-ended period (no end_date)', () => {
+    expect(isTreatmentSchedulableOn({ active: true, start_date: '2026-05-01', end_date: null }, TODAY)).toBe(true)
+  })
+
+  it('returns false for FUTURE treatment (start_date > today) even if active', () => {
+    expect(isTreatmentSchedulableOn({ active: true, start_date: '2026-05-19', end_date: null }, TODAY)).toBe(false)
+  })
+
+  it('returns false for ENDED treatment (end_date < today)', () => {
+    expect(isTreatmentSchedulableOn({ active: true, start_date: '2026-05-01', end_date: '2026-05-17' }, TODAY)).toBe(false)
+  })
+
+  it('returns false for PAUSED treatment (active=false) inside period', () => {
+    expect(isTreatmentSchedulableOn({ active: false, start_date: '2026-05-01', end_date: '2026-06-01' }, TODAY)).toBe(false)
+  })
+
+  it('returns false for null/undefined protocol (guard defensivo)', () => {
+    expect(isTreatmentSchedulableOn(null, TODAY)).toBe(false)
+    expect(isTreatmentSchedulableOn(undefined, TODAY)).toBe(false)
   })
 })
 

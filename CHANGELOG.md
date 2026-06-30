@@ -7,6 +7,35 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.23.2 (mobile) / Web v4.15.2 — 2026-06-30 — Fix: superfícies de dose só mostram tratamentos vigentes hoje
+
+> **Bump:** mobile `0.23.1 → 0.23.2` (patch — correção de bug). Web `4.15.1 → 4.15.2` (patch). Core: novo predicado canônico.
+> **Plataforma:** Mobile + Web. **Server-free**, sem migração.
+
+### 🐛 Correções
+
+- **Vazamento de prescrições encerradas/futuras na seleção de dose:** ao registrar dose por um plano
+  (modal bulk via botão "Tomar" da Dynamic Island/lock screen no mobile, ou FAB global de doses na web),
+  apareciam doses de tratamentos do mesmo plano que **já terminaram** (`end_date` < hoje) ou que **ainda
+  não começaram** (`start_date` > hoje). Causa: o filtro considerava só a flag `active`, ignorando o
+  período de vigência. Agora as superfícies de seleção de dose só trazem tratamentos **vigentes hoje**
+  (ativos **e** com hoje dentro de `[start_date, end_date]`).
+
+- **Horário do picker ignorado no registro bulk (mobile):** ao ajustar a data/hora da tomada no
+  seletor da modal bulk, o valor escolhido não era gravado — a dose ficava com o horário "agora" do
+  sistema (ex.: tomada das 23:47 de ontem registrada como 01:05 de hoje, caindo no dia errado do
+  calendário). Duas causas: (1) o seletor iOS abria como Modal aninhada e os gestos não registravam;
+  (2) o horário escolhido era resetado para "agora" quando a lista de doses re-renderizava. Agora o
+  seletor é um overlay na mesma superfície e o horário só é inicializado na abertura da modal.
+
+### 🧱 Interno
+
+- Novo predicado canônico `isTreatmentSchedulableOn(protocol, today)` em `@dosiq/core` (combina
+  `isTreatmentActive` + `isProtocolActiveOnDate`), elimina o literal `=== 'ativo'` espalhado e
+  centraliza a regra de elegibilidade de dose web↔mobile.
+
+---
+
 ## App v0.23.0 (mobile) — 2026-06-29 — Dose como estado contínuo: Live Activity + Dynamic Island (iOS)
 
 > **Bump:** mobile `0.22.0 → 0.23.0` (minor — nova superfície iOS, épico 039 Dose State Machine, F3). Web sem alteração.
