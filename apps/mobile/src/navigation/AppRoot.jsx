@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency'
 import analytics from '@react-native-firebase/analytics'
@@ -8,6 +8,7 @@ import { ToastProvider } from '@shared/components/feedback/Toast'
 import ErrorBoundary from '@shared/components/ErrorBoundary'
 import AlarmSchedulerBridge from '@platform/alarms/AlarmSchedulerBridge'
 import DoseActivityBridge from '@platform/doseActivity/DoseActivityBridge'
+import DoseLiveActivityBridge from '@platform/doseActivity/DoseLiveActivityBridge'
 import { debugLog } from '@shared/utils/debugLog'
 import {
   useFonts,
@@ -87,7 +88,9 @@ export default function AppRoot() {
       <SafeAreaProvider>
         <ToastProvider>
           <AlarmSchedulerBridge />
-          <DoseActivityBridge />
+          {/* Superfície contínua por plataforma: Android = Notifee ongoing; iOS = Live Activity. */}
+          {Platform.OS === 'android' && <DoseActivityBridge />}
+          {Platform.OS === 'ios' && <DoseLiveActivityBridge />}
           <Navigation />
         </ToastProvider>
       </SafeAreaProvider>

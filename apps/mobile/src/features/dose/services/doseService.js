@@ -3,9 +3,11 @@
 // R5-008: online-first — escrita offline bloqueada com mensagem clara
 // R-121: validação Zod antes de qualquer mutação
 
+import { Platform } from 'react-native'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
+import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
 import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
 import { logEvent } from '@platform/analytics/firebaseAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
@@ -42,34 +44,42 @@ const doseLogCore = createDoseLogService({
 // uma futura divergência de id.
 async function _cancelAlarmBestEffort(instanceId) {
   if (!instanceId) return
-  // Captura a superfície 039 (se houver) ANTES de cancelar — vira o card `done` no fim. cancelAlarm
-  // cancela a notif pelo mesmo id, então a leitura PRECISA vir antes. null = dose sem superfície
-  // (não-crítica/distante) → sem card de confirmação (auto-gate).
+  // Superfície de dose (CON-030) é POR PLATAFORMA. Android: ongoing notification (notifee) — captura
+  // o rótulo ANTES de cancelar (auto-gate), encerra, e posta o card `done`. SÓ no Android: no iOS o
+  // showDoseDone postava uma notificação local "Dose registrada" (parecia push de alarme), bug F3.
+  // iOS: a Live Activity é dirigida pelo DoseLiveActivityBridge; o card `done` vem do re-derive,
+  // acionado pelo triggerDoseActivityRefresh no fim (registrando in-app não muda o AppState).
+  const isAndroid = Platform.OS === 'android'
   let doneLabel = null
-  try {
-    doneLabel = await readSurfaceLabel(instanceId)
-  } catch (err) {
-    if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
+  if (isAndroid) {
+    try {
+      doneLabel = await readSurfaceLabel(instanceId)
+    } catch (err) {
+      if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
+    }
   }
   try {
     await cancelAlarm(instanceId)
   } catch (err) {
     if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
   }
-  try {
-    await endDoseActivity(instanceId)
-  } catch (err) {
-    if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
-  }
-  // Tinha superfície → confirma com o card `done` (verde, auto-dismiss). Cobre o registro pela
-  // modal (botão Registrar da superfície) e in-app, além do path silencioso do alarme.
-  if (doneLabel != null) {
+  if (isAndroid) {
     try {
-      await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
+      await endDoseActivity(instanceId)
     } catch (err) {
-      if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
+      if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
+    }
+    if (doneLabel != null) {
+      try {
+        await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
+      } catch (err) {
+        if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
+      }
     }
   }
+  // iOS: re-deriva → card `done` na LA, com o HORÁRIO REAL da tomada (getRawNow AGORA — dose_instances
+  // não persiste horário de tomada). Android: no-op (ninguém assina; o done já foi acima via notifee).
+  triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })
 }
 
 // Detecta erro de rede pelo conteúdo da mensagem ou código PGRST
