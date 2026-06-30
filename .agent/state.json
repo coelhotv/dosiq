@@ -3,25 +3,25 @@
   "sprint": "2026-W27",
   "session": {
     "mode": "planning",
-    "status": "planned",
-    "goal": "typescript-migration",
-    "goal_type": "refactor",
-    "tier": 2,
-    "spec_dir": "plans/specs/040-typescript-migration",
-    "spec": "plans/specs/040-typescript-migration/spec.md",
-    "plan": "plans/specs/040-typescript-migration/plan.md",
-    "tasks": "plans/specs/040-typescript-migration/tasks.md",
-    "ceremonies_run": ["rc1-scope", "rc2-design", "rc3-eng", "rc-sec", "rc4-devops"],
-    "ceremony_findings_count": 0
+    "status": "planning",
+    "goal": "039-F5-housekeeping",
+    "goal_type": "chore",
+    "tier": 1,
+    "spec_dir": "plans/specs/039-dose-state-machine",
+    "spec": "plans/specs/039-dose-state-machine/spec.md",
+    "tasks": "plans/specs/039-dose-state-machine/tasks.md",
+    "ceremonies_run": [],
+    "ceremony_findings_count": 0,
+    "parked": {"goal": "typescript-migration", "spec_dir": "plans/specs/040-typescript-migration", "note": "artefatos no disco; retomar depois"}
   },
   "memory": {
     "last_distillation": "2026-06-24T18:35:00.000Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 230,
-    "anti_patterns_count": 245,
+    "anti_patterns_count": 247,
     "decisions_count": 75,
     "contracts_count": 30,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
