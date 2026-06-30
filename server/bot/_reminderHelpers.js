@@ -185,13 +185,17 @@ function mapInstanceToDose(inst) {
 function _formatScheduledLabel(scheduledFor, userTz, fallback) {
   if (!scheduledFor) return fallback;
   const dt = parseISO(scheduledFor);
-  if (Number.isNaN(dt?.getTime?.())) return fallback;
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: userTz || 'America/Sao_Paulo',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
+  // dt null/undefined → Number.isNaN(undefined) é false, não captura; checar explicitamente.
+  if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return fallback;
+  const fmt = (tz) => new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(dt);
+  try {
+    // userTz vem do DB → pode ser inválido e Intl lança RangeError. Fallback p/ SP, depois p/ label.
+    return fmt(userTz || 'America/Sao_Paulo');
+  } catch {
+    try { return fmt('America/Sao_Paulo'); } catch { return fallback; }
+  }
 }
 
 /**
