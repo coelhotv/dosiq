@@ -373,15 +373,24 @@ describe('buildPatientContext — unidades líquidas / semanais / perfil', () =>
   })
 
   it('doses pendentes resolvem o NOME do medicamento (não "Desconhecido")', () => {
-    // Protocolo COM id casando a dose; medicine anexado pelo builder (medicine_id → medicines[]).
-    const proto = { ...lantusProto, id: 'p-liq-1' }
-    const result = buildPatientContext({
-      medicines: [lantus], protocols: [proto], logs: [], stockSummary: lantusStock, stats: null,
-      doseInstances: [{ id: 'di-1', protocol_id: 'p-liq-1', medicine_id: 'liq-1', scheduled_for: new Date().toISOString(), status: 'pending' }],
-    })
-    expect(result).toContain('Próximas doses pendentes hoje')
-    expect(result).toContain('Lantus')
-    expect(result).not.toContain('Desconhecido')
+    // Relógio fixo ao meio-dia UTC (= 09:00 SP) — mesma DATA (30/06) em UTC e America/Sao_Paulo,
+    // longe da meia-noite. Evita flakiness tz-dependente: com `new Date()` real o teste passava em
+    // BRT mas quebrava no runner UTC do CI (a dose caía em outro bucket de dia).
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-30T12:00:00Z'))
+    try {
+      // Protocolo COM id casando a dose; medicine anexado pelo builder (medicine_id → medicines[]).
+      const proto = { ...lantusProto, id: 'p-liq-1' }
+      const result = buildPatientContext({
+        medicines: [lantus], protocols: [proto], logs: [], stockSummary: lantusStock, stats: null,
+        doseInstances: [{ id: 'di-1', protocol_id: 'p-liq-1', medicine_id: 'liq-1', scheduled_for: new Date().toISOString(), status: 'pending' }],
+      })
+      expect(result).toContain('Próximas doses pendentes hoje')
+      expect(result).toContain('Lantus')
+      expect(result).not.toContain('Desconhecido')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('perfil preenchido → linha "Paciente: <nome>, <idade> anos"', () => {
