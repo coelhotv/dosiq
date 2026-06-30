@@ -95,7 +95,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
   const selectFields = `
-    id, user_id, protocol_id, critical_alarm,
+    id, user_id, protocol_id, critical_alarm, scheduled_for,
     protocol:protocols(
       id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
       medicine:medicines(name, dosage_unit, dosage_per_pill),
@@ -172,16 +172,43 @@ function mapInstanceToDose(inst) {
     intakeUnit: protocol.intake_unit ?? null,
     medicineId: protocol.medicine_id,
     critical_alarm: inst.critical_alarm ?? false,
+    // Horário ORIGINAL agendado da ocorrência (não o instante de saída do push). Sem isto, doses
+    // adiadas (snooze) re-disparadas imprimiam a hora da soneca no body em vez da agendada.
+    scheduledFor: inst.scheduled_for ?? null,
   };
+}
+
+/**
+ * Formata um instante absoluto (ISO) como HH:mm no fuso do usuário.
+ * @private
+ */
+function _formatScheduledLabel(scheduledFor, userTz, fallback) {
+  if (!scheduledFor) return fallback;
+  const dt = parseISO(scheduledFor);
+  // dt null/undefined → Number.isNaN(undefined) é false, não captura; checar explicitamente.
+  if (!(dt instanceof Date) || Number.isNaN(dt.getTime())) return fallback;
+  const fmt = (tz) => new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(dt);
+  try {
+    // userTz vem do DB → pode ser inválido e Intl lança RangeError. Fallback p/ SP, depois p/ label.
+    return fmt(userTz || 'America/Sao_Paulo');
+  } catch {
+    try { return fmt('America/Sao_Paulo'); } catch { return fallback; }
+  }
 }
 
 /**
  * Executa o dispatch de um bloco individual de doses da dose_instance.
  * @private
  */
-async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId) {
+async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz) {
   const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
   const isBlockCritical = block.doses.some(d => d.critical_alarm === true);
+
+  // Horário do body = instante ORIGINAL agendado da dose (não o de saída do push). Doses do mesmo
+  // bloco compartilham o minuto (partitionDoses). Fallback p/ currentHHMM se scheduled_for ausente.
+  const scheduledLabel = _formatScheduledLabel(block.doses[0]?.scheduledFor, userTz, currentHHMM);
 
   let kind, data;
 
@@ -190,7 +217,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
     data = {
       planId: block.planId,
       planName: block.planName,
-      scheduledTime: currentHHMM,
+      scheduledTime: scheduledLabel,
       hour: currentHour,
       doses: block.doses,
       protocolIds: block.doses.map(d => d.protocolId),
@@ -199,7 +226,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
   } else if (block.kind === 'misc') {
     kind = 'dose_reminder_misc';
     data = {
-      scheduledTime: currentHHMM,
+      scheduledTime: scheduledLabel,
       hour: currentHour,
       doses: block.doses,
       protocolIds: block.doses.map(d => d.protocolId),
@@ -212,7 +239,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
       medicineName: dose.medicineName,
       protocolId: dose.protocolId,
       medicineId: dose.medicineId,
-      time: currentHHMM,
+      time: scheduledLabel,
       dosagePerIntake: dose.dosagePerIntake,
       dosageUnit: dose.dosageUnit,
       dosagePerPill: dose.dosagePerPill,
@@ -278,7 +305,7 @@ async function _dispatchUserReminderBlocks(
   }).format(parseISO(windowStart));
 
   for (const block of blocks) {
-    await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId);
+    await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz);
   }
 }
 

@@ -7,6 +7,31 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Backend (bot) — 2026-06-30 — Fix: dose crítica vazava no Telegram + horário errado no body da soneca
+
+> **Bump:** nenhum (backend/bot — não versionado como app). **Plataforma:** Backend (servidor de notificações). **Server-side**, sem migração de schema.
+
+### 🐛 Correções
+
+- **Dose crítica (alarme timeSensitive) não vai mais junto pelo Telegram:** o lembrete de dose
+  essencial/crítica agora é entregue **só pelo canal de alarme** (push mobile). Antes, além do alarme,
+  disparava Telegram e web push em paralelo — duplicando o aviso. Se o usuário não tiver dispositivo
+  mobile ativo, cai para o Telegram como fallback (nunca fica sem aviso). Doses não-críticas seguem
+  multi-canal normalmente. Causa: o gate de canais (`resolveChannelsForUser`) só *adicionava* o push
+  para doses críticas, sem *remover* os demais canais.
+- **Horário no corpo do lembrete = horário ORIGINAL agendado da dose:** ao adiar uma dose (soneca),
+  o re-disparo imprimia no fim do texto a **hora de saída do push** (ex.: "15:08") em vez do horário
+  agendado da dose. Agora usa sempre o `scheduled_for` da ocorrência. Causa: o builder usava a hora
+  atual (`currentHHMM`) e o `SELECT` do reminder nem buscava `scheduled_for` (AP-215 — read-path).
+
+### 🧱 Interno
+
+- `_reminderHelpers.js`: `scheduled_for` no select + `mapInstanceToDose` + `_formatScheduledLabel` (tz do dono).
+- `resolveChannelsForUser`: gate crítico = só `mobile_push`, fallback `telegram`.
+- Testes: horário agendado (snooze) + 4 casos do gate de canal crítico.
+
+---
+
 ## App v0.23.4 (mobile) — 2026-06-30 — Fix: cor do estado "atrasada" nas Live Activities iOS (acessibilidade)
 
 > **Bump:** mobile `0.23.3 → 0.23.4` (patch — correção visual/acessibilidade). **Plataforma:** Mobile (iOS). **Server-free**, sem migração.
