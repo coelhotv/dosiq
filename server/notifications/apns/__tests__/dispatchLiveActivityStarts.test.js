@@ -23,7 +23,7 @@ function makeSupabase(queue) {
       lt() { return b; },
       update(payload) { b._update = payload; return b; },
       then(resolve) {
-        if (b._update) { updates.push(b._update); return Promise.resolve({ data: null, error: null }).then(resolve); }
+        if (b._update) { updates.push(b._update); return Promise.resolve({ data: [{ id: 'inst-1' }], error: null }).then(resolve); }
         const res = queue[i++] ?? { data: [], error: null };
         return Promise.resolve(res).then(resolve);
       },
@@ -92,6 +92,39 @@ describe('dispatchLiveActivityStarts', () => {
     expect(r.failed).toBe(1);
     expect(supabase._updates).toContainEqual({ is_active: false });
     expect(supabase._updates).not.toContainEqual({ la_push_started_at: NOW.toISOString() });
+  });
+
+  it('trava de idempotência já adquirida por outro cron (UPDATE ...is null → 0 linhas) → skipped, não conta como enviado', async () => {
+    // Corrida: 2 execuções no mesmo minuto. O UPDATE condicional .is('la_push_started_at', null)
+    // afeta 0 linhas na 2ª → data vazio → skipped (o start já saiu na 1ª).
+    const supabase = makeSupabase([
+      { data: [doseRow()], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ]);
+    // update-branch retorna 0 linhas (trava perdida)
+    supabase.from = () => {
+      const b = {
+        _update: null,
+        select() { return b; }, eq() { return b; }, is() { return b; }, gte() { return b; }, lt() { return b; },
+        update(p) { b._update = p; return b; },
+        then(resolve) {
+          if (b._update) return Promise.resolve({ data: [], error: null }).then(resolve);
+          const res = supabase.__q[supabase.__i++] ?? { data: [], error: null };
+          return Promise.resolve(res).then(resolve);
+        },
+      };
+      return b;
+    };
+    supabase.__q = [
+      { data: [doseRow()], error: null },
+      { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+    ];
+    supabase.__i = 0;
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+    expect(sendFn).toHaveBeenCalledTimes(1);
+    expect(r.sent).toBe(0);
+    expect(r.skipped).toBe(1);
   });
 
   it('fail-open: erro na query de instâncias → não lança, retorna zero', async () => {

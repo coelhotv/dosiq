@@ -54,7 +54,11 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     .eq('user_id', userId)
     .eq('provider', 'apns_liveactivity')
     .eq('is_active', true)
-  if (devErr || !devices || devices.length === 0) return 'skipped'
+  if (devErr) {
+    logger?.error?.('Falha ao buscar dispositivos apns_liveactivity (fail-open)', devErr, { userId })
+    return 'skipped'
+  }
+  if (!devices || devices.length === 0) return 'skipped'
 
   const sourceItem = items.find((it) => String(it.instanceId) === String(active.instanceId))
   const payload = buildFn(sourceItem, { discreet: true, now })
@@ -77,8 +81,14 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
       anySent = true
       logger?.info?.('push_start enviado', { userId, instanceId: active.instanceId, status: res.status })
     } else if (res.deactivate) {
-      await supabase.from('notification_devices').update({ is_active: false }).eq('id', device.id)
-      logger?.warn?.('token apns_liveactivity desativado (410/bad token)', { userId, deviceId: device.id })
+      const { error: updErr } = await supabase.from('notification_devices').update({ is_active: false }).eq('id', device.id)
+      if (updErr) {
+        // Se a desativação falhar silenciosamente, o token morto seguiria recebendo pushes nas
+        // próximas janelas. Loga p/ observabilidade (fail-open: não propaga).
+        logger?.error?.('Falha ao desativar token apns_liveactivity', updErr, { userId, deviceId: device.id })
+      } else {
+        logger?.warn?.('token apns_liveactivity desativado (410/bad token)', { userId, deviceId: device.id })
+      }
     } else {
       logger?.warn?.('push_start falhou (fail-open)', { userId, reason: res.reason, status: res.status })
     }
@@ -86,7 +96,23 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
 
   if (!anySent) return 'failed'
   // Idempotência: marca a ocorrência ativa (não re-dispara nas próximas janelas da `upcoming`).
-  await supabase.from('dose_instances').update({ la_push_started_at: now.toISOString() }).eq('id', active.instanceId)
+  // UPDATE condicional (.is null) + .select('id'): trava otimista contra corrida (2 crons no mesmo
+  // minuto). PostgREST não erra em no-op (0 linhas) — validar o retorno confirma que a trava foi
+  // adquirida por ESTE disparo (AP: elos órfãos / dupla marcação sob corrida).
+  const { data: locked, error: updErr } = await supabase
+    .from('dose_instances')
+    .update({ la_push_started_at: now.toISOString() })
+    .eq('id', active.instanceId)
+    .is('la_push_started_at', null)
+    .select('id')
+  if (updErr) {
+    logger?.error?.('Falha ao marcar la_push_started_at (fail-open)', updErr, { instanceId: active.instanceId })
+    return 'failed'
+  }
+  if (!locked || locked.length === 0) {
+    logger?.warn?.('Trava de idempotência já ativa (push iniciado por outro processo)', { instanceId: active.instanceId })
+    return 'skipped'
+  }
   return 'sent'
 }
 
