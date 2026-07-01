@@ -14,6 +14,7 @@ import jwt from 'jsonwebtoken'
 const APNS_HOST_PROD = 'https://api.push.apple.com'
 const APNS_HOST_SANDBOX = 'https://api.sandbox.push.apple.com'
 const JWT_TTL_MS = 50 * 60 * 1000 // Apple exige token < 1h; renova aos 50min
+const APNS_TIMEOUT_MS = 5000 // guarda contra conexão travada em serverless (Vercel)
 
 let _jwtCache = { token: null, issuedAt: 0 }
 
@@ -83,14 +84,25 @@ export async function sendLiveActivityStart({ pushToStartToken, attributes, cont
 
   return new Promise((resolve) => {
     let client
+    // Timeout defensivo: em serverless (Vercel) uma conexão travada pendura a função até o limite
+    // da plataforma, atrasando o fluxo de lembretes. 5s fecha o cliente e resolve fail-open.
+    const timer = setTimeout(() => {
+      try { client?.close() } catch { /* noop */ }
+      resolve({ ok: false, status: 0, reason: 'timeout' })
+    }, APNS_TIMEOUT_MS)
+    const safeResolve = (val) => {
+      clearTimeout(timer)
+      resolve(val)
+    }
+
     try {
       client = http2lib.connect(cfg.host)
     } catch (err) {
-      resolve({ ok: false, status: 0, reason: `connect_failed: ${err.message}` })
+      safeResolve({ ok: false, status: 0, reason: `connect_failed: ${err.message}` })
       return
     }
     client.on('error', (err) => {
-      resolve({ ok: false, status: 0, reason: `client_error: ${err.message}` })
+      safeResolve({ ok: false, status: 0, reason: `client_error: ${err.message}` })
       try { client.close() } catch { /* noop */ }
     })
 
@@ -110,14 +122,14 @@ export async function sendLiveActivityStart({ pushToStartToken, attributes, cont
     req.on('data', (chunk) => { body += chunk })
     req.on('end', () => {
       try { client.close() } catch { /* noop */ }
-      if (status === 200) { resolve({ ok: true, status }); return }
+      if (status === 200) { safeResolve({ ok: true, status }); return }
       // 410 (Unregistered) / 400 BadDeviceToken → revogar o token (S-6)
       const deactivate = status === 410 || body.includes('BadDeviceToken') || body.includes('Unregistered')
-      resolve({ ok: false, status, deactivate, reason: body || `http_${status}` })
+      safeResolve({ ok: false, status, deactivate, reason: body || `http_${status}` })
     })
     req.on('error', (err) => {
       try { client.close() } catch { /* noop */ }
-      resolve({ ok: false, status: 0, reason: `request_error: ${err.message}` })
+      safeResolve({ ok: false, status: 0, reason: `request_error: ${err.message}` })
     })
     req.end(JSON.stringify(payload))
   })
