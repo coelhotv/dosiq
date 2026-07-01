@@ -99,12 +99,18 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
  * fechado (ADR-076). Best-effort: token vazio (SO ainda não emitiu / iOS < 17.2) → no-op.
  * Sessão VIVA (PO-SEC-2): o RPC usa auth.uid() internamente — o token fica escopado ao dono. @private
  */
+// Cache do último par (userId,token) registrado com sucesso — evita upsert redundante no Supabase
+// a cada foreground/mount quando nada mudou. Escopado por usuário (login diferente re-registra).
+let lastRegistered = { userId: null, token: null }
+
 async function registerPushToStart(userId) {
   if (!userId) return
   try {
     const token = await getPushToStartToken()
     if (!token) return
+    if (userId === lastRegistered.userId && token === lastRegistered.token) return
     await syncNotificationDevice({ supabase, userId, token, provider: 'apns_liveactivity' })
+    lastRegistered = { userId, token }
   } catch (err) {
     if (__DEV__) console.warn('[DoseLiveActivityBridge] registro push-to-start falhou', err?.message)
   }
