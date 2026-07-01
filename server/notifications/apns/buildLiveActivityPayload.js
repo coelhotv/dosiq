@@ -8,6 +8,7 @@
 // entra no payload — o dado não pode sair do servidor, não basta ocultar no widget.
 
 import { deriveDoseActivityState } from '@dosiq/core'
+import { parseISO } from '../../utils/dateUtils.js'
 
 /**
  * @param {object} doseItem - shape CON-029 (scheduledFor/scheduled_for, critical_alarm, medicineName, ...)
@@ -20,8 +21,12 @@ export function buildLiveActivityStartPayload(doseItem, { discreet = true, now }
   const derived = deriveDoseActivityState(doseItem, now)
   if (!derived) return null // instante inválido / distante demais → sem superfície
 
-  const scheduledMs = derived.scheduledFor ? Date.parse(derived.scheduledFor) : NaN
-  const scheduledEpochSec = Number.isNaN(scheduledMs) ? Math.floor(Date.now() / 1000) : Math.floor(scheduledMs / 1000)
+  // R-020: parseISO (timestamptz absoluto), nunca Date.parse/new Date crus. Fallback usa o `now`
+  // injetado (determinístico em teste) — não Date.now() direto.
+  const scheduledDate = derived.scheduledFor ? parseISO(derived.scheduledFor) : null
+  const scheduledMs = scheduledDate && !Number.isNaN(scheduledDate.getTime()) ? scheduledDate.getTime() : NaN
+  const nowMs = now == null ? Date.now() : (now instanceof Date ? now.getTime() : now)
+  const scheduledEpochSec = Number.isNaN(scheduledMs) ? Math.floor(nowMs / 1000) : Math.floor(scheduledMs / 1000)
 
   // Attributes — discreto omite nome/dose (S-3). scheduledTime é só rótulo HH:mm (não-PII).
   const attributes = {
