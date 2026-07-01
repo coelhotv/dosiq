@@ -17,6 +17,16 @@ class DoseActivityBridge: NSObject {
 
     @objc static func requiresMainQueueSetup() -> Bool { return false }
 
+    override init() {
+        super.init()
+        // Spec 041 — inicia o observer de push-to-start o mais cedo possível (na criação da bridge),
+        // não só na primeira chamada do getter. Evita corrida na 1ª inicialização: o token já está
+        // sendo observado/persistido quando o JS chama getPushToStartToken (mount/foreground).
+        if #available(iOS 17.2, *) {
+            DoseActivityBridge.startPushToStartObserver()
+        }
+    }
+
     private func buildState(_ p: NSDictionary) -> (DoseActivityAttributes.ContentState) {
         let state = p["state"] as? String ?? "upcoming"
         let doneAtLabel = p["doneAtLabel"] as? String ?? ""
