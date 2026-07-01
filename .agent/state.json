@@ -2,9 +2,11 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "planning",
+    "mode": "coding",
     "ceremony_type": "security-review",
-    "status": "planned",
+    "status": "merged",
+    "merged_pr": 696,
+    "merged_squash": "2aa98862",
     "goal": "041 iOS Live Activity push-to-start via APNs",
     "goal_type": "feature",
     "plan": "plans/specs/041-ios-push-to-start/plan.md",
@@ -32,11 +34,11 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 230,
-    "anti_patterns_count": 251,
+    "anti_patterns_count": 252,
     "decisions_count": 76,
-    "contracts_count": 29,
+    "contracts_count": 30,
     "distillation_due": false
   },
   "genes": {
