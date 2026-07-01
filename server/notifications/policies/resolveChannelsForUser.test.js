@@ -297,7 +297,9 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       expect(result).toEqual([])
     })
 
-    it('deve preservar outros canais ativos e adicionar mobile_push se isCritical = true', async () => {
+    it('deve SUBSTITUIR os canais por só mobile_push se isCritical = true (AP-255)', async () => {
+      // AP-255: canal crítico (alarme timeSensitive) SUBSTITUI, não soma. Telegram não deve
+      // disparar junto do alarme quando há device expo ativo — evita notificação duplicada.
       const repos = makeRepositories()
       repos.preferences.hasTelegramChat.mockResolvedValue(true)
       repos.preferences.getSettingsByUserId.mockResolvedValue({
@@ -310,7 +312,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       )
 
       const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
-      expect(result).toEqual(['telegram', 'mobile_push'])
+      expect(result).toEqual(['mobile_push'])
     })
   })
 })

@@ -1,9 +1,10 @@
 // withDoseLiveActivity.js — config plugin (Spec 039 / Dose State Machine · F0 spike iOS)
 //
-// ESCOPO SPIKE (PO-0.1): só o que é automatizável via config plugin —
+// ESCOPO (PO-0.1 + Spec 041): o que é automatizável via config plugin —
 //   1. NSSupportsLiveActivities = true no Info.plist do app (habilita ActivityKit).
-//   2. NSSupportsLiveActivitiesFrequentUpdates = false (server-free: sem push de update;
-//      o timer é vivo via Text(timerInterval:), conta sozinho — ADR-075 / spec §1).
+//   2. NSSupportsLiveActivitiesFrequentUpdates = true (Spec 041: push-to-start via APNs exige
+//      frequent-updates p/ o SO iniciar a LA com o app fechado — ADR-076. Antes era false na 039
+//      server-free; o start por push é aditivo e não precisa aprovação especial da Apple).
 //
 // O QUE NÃO É AUTOMATIZADO AQUI (feito no Xcode após prebuild — ver SPIKE_iOS.md):
 //   - Criar o Widget Extension target (manipular .pbxproj de target novo é frágil
@@ -18,7 +19,7 @@ const { withInfoPlist } = require('@expo/config-plugins')
 module.exports = function withDoseLiveActivity(config) {
   return withInfoPlist(config, (cfg) => {
     cfg.modResults.NSSupportsLiveActivities = true
-    cfg.modResults.NSSupportsLiveActivitiesFrequentUpdates = false
+    cfg.modResults.NSSupportsLiveActivitiesFrequentUpdates = true
     return cfg
   })
 }

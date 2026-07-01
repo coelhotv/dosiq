@@ -5,6 +5,7 @@ import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 import { calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat } from '@dosiq/core';
+import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
 // Formatting helpers removed — moved to Layer 2
 
 const logger = createLogger('ReminderHelpers');
@@ -315,6 +316,17 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
       .from('user_settings')
       .select('user_id, timezone, notification_mode');
     if (userError) throw userError;
+
+    // Spec 041: push-to-start da Live Activity (iOS) — janela PRÓPRIA (now + lead), independente das
+    // doses devidas-agora. Best-effort + fail-open (não pode derrubar o reminder nem o alarme).
+    // Roda antes do early-return das doses-devidas (janela diferente). Critical-only + opt-in (só
+    // dispara se o device registrou token apns_liveactivity).
+    try {
+      const la = await dispatchLiveActivityStarts({ supabase, logger });
+      if (la.sent > 0) logger.info('push-to-start LA disparado', { ...la, correlationId });
+    } catch (laErr) {
+      logger.error('push-to-start LA falhou (fail-open, ignorado)', laErr, { correlationId });
+    }
 
     const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');
     if (eligibleUsers.length === 0) {

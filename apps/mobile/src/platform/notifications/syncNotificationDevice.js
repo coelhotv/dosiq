@@ -8,7 +8,7 @@ import { Platform } from 'react-native'
 import * as Device from 'expo-device'
 import * as Application from 'expo-application'
 
-export async function syncNotificationDevice({ supabase, userId, token, nativeAlarmEnabled = false }) {
+export async function syncNotificationDevice({ supabase, userId, token, nativeAlarmEnabled = false, provider = 'expo' }) {
   if (!supabase) {
     throw new Error('[syncNotificationDevice] supabase client required')
   }
@@ -27,7 +27,7 @@ export async function syncNotificationDevice({ supabase, userId, token, nativeAl
   })
 
   const { error } = await supabase.rpc('upsert_notification_device', {
-    p_provider:           'expo',
+    p_provider:           provider,
     p_push_token:         token,
     p_platform:           Platform.OS,
     p_app_kind:           'native',

@@ -115,4 +115,20 @@ export async function drainPendingActions() {
   }
 }
 
+/**
+ * Spec 041 — token push-to-start do ActivityKit (iOS 17.2+). Inicia o observer nativo (idempotente)
+ * e retorna o token hex persistido (ou '' se ainda não emitido pelo SO / iOS < 17.2). O backend usa
+ * o token p/ iniciar a Live Activity com o app fechado (ADR-076).
+ * @returns {Promise<string>}
+ */
+export async function getPushToStartToken() {
+  if (!available || !native.getPushToStartToken) return ''
+  try {
+    const token = await native.getPushToStartToken()
+    return typeof token === 'string' ? token : ''
+  } catch {
+    return ''
+  }
+}
+
 export const liveActivitySupported = available
