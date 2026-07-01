@@ -23,4 +23,9 @@ RCT_EXTERN_METHOD(end:(RCTPromiseResolveBlock)resolve
 RCT_EXTERN_METHOD(drainPendingActions:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+// Spec 041: token push-to-start do ActivityKit (iOS 17.2+). Inicia o observer (idempotente) e
+// retorna o token hex persistido no App Group (ou "" se ainda não emitido / iOS < 17.2).
+RCT_EXTERN_METHOD(getPushToStartToken:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end

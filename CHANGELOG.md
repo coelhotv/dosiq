@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.0 (mobile) + Backend — 2026-07-01 — Feat (041): Live Activity push-to-start no iOS
+
+> **Bump:** mobile `0.23.4 → 0.24.0` (minor — novo épico/feature). **Plataforma:** Mobile (iOS) + Backend. **NÃO server-free** (servidor dispara push). Migração aditiva (sem backfill).
+
+### ✨ Novidades
+
+- **Live Activity da dose crítica aparece antes do horário, com o app fechado (iOS 17.2+):** fecha o gap da 039/F3 — antes a superfície (Dynamic Island / lock screen) só iniciava com o app em foreground. Agora o servidor dispara um push APNs ActivityKit (`push-to-start`) na janela pré-dose (T0−60min) e o iOS inicia a Live Activity sem o app abrir. Transições e encerramento seguem o modelo 039 (`staleDate`/foreground). Estado inicial recomputado no disparo (dose editada nasce no estado certo).
+
+### 🔒 Segurança / Privacidade
+
+- Push escopado ao dono do token (object-level check — o disparo usa `service_role` que ignora RLS).
+- Modo discreto resolvido no servidor: nome do medicamento NÃO sai no payload do push.
+- Falha/ausência de APNs degrada com segurança para o comportamento 039 (foreground) e **nunca** suprime o alarme crítico.
+
+### 🧱 Interno
+
+- `server/notifications/apns/`: cliente APNs raw (JWT ES256 + HTTP/2), builder de content-state (CON-029), disparo no loop de minuto (`api/notify.js`→`checkReminders`, best-effort + fail-open).
+- Estende `notification_devices` (provider `apns_liveactivity`) + coluna `dose_instances.la_push_started_at` (idempotência) — migração `20260630`, zero tabela/função nova (R-090 intacto).
+- iOS nativo: observa `Activity.pushToStartTokenUpdates`; RN registra o token via RPC existente. `NSSupportsLiveActivitiesFrequentUpdates` habilitado. ADR-076, CON-030 estendido.
+- **Requer** chave APNs `.p8` dedicada nas envs do backend (`APNS_AUTH_KEY` base64 + KEY_ID/TEAM_ID/BUNDLE_ID) — guia em `plans/specs/041-ios-push-to-start/APNS_SETUP.md`.
+
+---
+
 ## Backend (bot) — 2026-06-30 — Fix: dose crítica vazava no Telegram + horário errado no body da soneca
 
 > **Bump:** nenhum (backend/bot — não versionado como app). **Plataforma:** Backend (servidor de notificações). **Server-side**, sem migração de schema.

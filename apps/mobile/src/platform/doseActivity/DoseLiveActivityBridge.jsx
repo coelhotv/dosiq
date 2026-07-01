@@ -42,8 +42,10 @@ import {
   endLiveActivity,
   showDoneLiveActivity,
   drainPendingActions,
+  getPushToStartToken,
   liveActivitySupported,
 } from './liveActivityService'
+import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
@@ -90,6 +92,22 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
     await startLiveActivity(active, doseItem)
   }
   return active.instanceId
+}
+
+/**
+ * Spec 041 — registra o token push-to-start (iOS 17.2+) no backend p/ a LA iniciar com o app
+ * fechado (ADR-076). Best-effort: token vazio (SO ainda não emitiu / iOS < 17.2) → no-op.
+ * Sessão VIVA (PO-SEC-2): o RPC usa auth.uid() internamente — o token fica escopado ao dono. @private
+ */
+async function registerPushToStart(userId) {
+  if (!userId) return
+  try {
+    const token = await getPushToStartToken()
+    if (!token) return
+    await syncNotificationDevice({ supabase, userId, token, provider: 'apns_liveactivity' })
+  } catch (err) {
+    if (__DEV__) console.warn('[DoseLiveActivityBridge] registro push-to-start falhou', err?.message)
+  }
 }
 
 /** PO-SEC-2: confirma sessão VIVA antes de agir sobre uma ação da ilha. @private */
@@ -257,10 +275,12 @@ export default function DoseLiveActivityBridge() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
     processPendingActions(tzRef.current)
+    registerPushToStart(userId) // Spec 041: registra token push-to-start no mount/foreground
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
       processPendingActions(tzRef.current)
+      registerPushToStart(userId)
     })
     return () => sub.remove()
   }, [enabled, userId, load])
