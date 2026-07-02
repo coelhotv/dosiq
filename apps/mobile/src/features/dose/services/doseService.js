@@ -94,6 +94,14 @@ function _isNetworkError(err) {
 // Retorno padronizado para erro de conectividade
 const _ERR_OFFLINE = { success: false, error: 'Sem ligação à internet. O registo de dose requer conexão.' }
 
+// Ocorrência já tomada/editada ou fora de janela → register_dose_atomic aborta com P0001
+// ('Ocorrência já registrada ou indisponível'). NÃO é crash: é uma superfície/alarme VELHO (ex.: dose
+// de ontem que ficou na tela) ou double-tap. A dose já está resolvida → tratar como no-op idempotente
+// (limpar a superfície, sem erro vermelho na UI). O erro do Supabase preserva `.code`.
+function _isAlreadyResolved(err) {
+  return err?.code === 'P0001' || /já registrada|indispon[íi]vel/i.test(err?.message || '')
+}
+
 /**
  * Regista uma dose tomada.
  *
@@ -120,6 +128,15 @@ export async function registerDose(logData, { instanceId = null } = {}) {
     return { success: true, data: logEntry }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
+
+    // Dose já resolvida (superfície velha / double-tap) → não é erro. Limpa a superfície+alarme
+    // remanescentes (idempotente) e retorna no-op silencioso, sem logar catastrófico nem alertar a UI.
+    if (_isAlreadyResolved(err)) {
+      if (__DEV__) console.warn('[doseService] dose já registrada/indisponível — no-op (superfície velha)')
+      await _cancelAlarmBestEffort(instanceId)
+      return { success: true, alreadyResolved: true }
+    }
+
     if (__DEV__) console.error('[doseService] erro catastrófico:', err)
 
     if (err.message?.includes('Estoque insuficiente')) {

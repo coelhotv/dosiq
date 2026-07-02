@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.2 (mobile) — 2026-07-02 — Fix: "Tomei" numa superfície velha não dá mais erro
+
+> **Bump:** mobile `0.24.1 → 0.24.2` (patch — bugfix). **Plataforma:** Mobile.
+
+### 🐛 Correções
+
+- **Tocar "Tomei" numa dose já registrada (superfície/alarme antigo na tela) não mostra mais erro vermelho:** quando a superfície de uma dose crítica ficava na tela de ontem para hoje e o usuário tocava "Tomei" para removê-la, o registro batia na guarda do banco (dose já registrada / fora de janela → `P0001`) e o app exibia um erro catastrófico. Agora esse caso é tratado como no-op idempotente: o app entende que a dose já está resolvida, limpa a superfície/alarme remanescente e não alerta erro. Não altera o registro normal nem a detecção de estoque insuficiente.
+
+---
+
 ## App v0.24.1 (mobile) + Backend — 2026-07-02 — Fix (041 fix-up): Live Activity transiciona e encerra via push (iOS)
 
 > **Bump:** mobile `0.24.0 → 0.24.1` (patch — fix-up da fase 041). **Plataforma:** Mobile (iOS) + Backend. Migração aditiva. **Só validável em prod** (serverless não roda em dev/preview).
