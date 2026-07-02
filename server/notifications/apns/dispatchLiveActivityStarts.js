@@ -8,7 +8,7 @@
 // (scheduled_for ≈ now + LEAD min) ainda sem start disparado (la_push_started_at IS NULL):
 //   selectActiveDoseActivity (CON-029, dose ativa única por paciente)
 //   → guard object-level dose.user_id == device.user_id (S-1; service_role bypassa RLS, R-042)
-//   → buildLiveActivityStartPayload (discreto, S-3; estado recomputado no disparo, NC-1)
+//   → buildLiveActivityStartPayload (EXPLÍCITO — iOS não redige a LA, decisão PO 2026-06-29; estado recomputado no disparo, NC-1)
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
@@ -61,7 +61,8 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   if (!devices || devices.length === 0) return 'skipped'
 
   const sourceItem = items.find((it) => String(it.instanceId) === String(active.instanceId))
-  const payload = buildFn(sourceItem, { discreet: true, now })
+  // Explícito (mostra nome) — iOS não redige a LA (decisão PO 2026-06-29; paridade com a 039/foreground).
+  const payload = buildFn(sourceItem, { discreet: false, now })
   if (!payload) return 'skipped'
 
   let anySent = false

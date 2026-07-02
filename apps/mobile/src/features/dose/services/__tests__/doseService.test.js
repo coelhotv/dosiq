@@ -127,6 +127,26 @@ describe('doseService adapter tests', () => {
 
       expect(res).toEqual({ success: false, error: 'Algum erro interno' })
     })
+
+    it('P0001 (ocorrência já registrada/indisponível) → no-op idempotente, limpa superfície, sem erro', async () => {
+      const err = new Error('Ocorrência já registrada ou indisponível')
+      err.code = 'P0001'
+      mockRegisterDose.mockRejectedValueOnce(err)
+
+      const res = await registerDose(INPUT, { instanceId: 'inst-1' })
+
+      expect(res).toEqual({ success: true, alreadyResolved: true })
+      expect(mockCancelAlarm).toHaveBeenCalledWith('inst-1') // superfície/alarme velho limpo
+    })
+
+    it('mensagem "já registrada" sem code também é tratada como no-op', async () => {
+      mockRegisterDose.mockRejectedValueOnce(new Error('Ocorrência já registrada ou indisponível'))
+
+      const res = await registerDose(INPUT, { instanceId: 'inst-1' })
+
+      expect(res.success).toBe(true)
+      expect(res.alreadyResolved).toBe(true)
+    })
   })
 
   describe('undoDose', () => {

@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.2 (mobile) + Backend — 2026-07-02 — Fix: superfícies presas + "Tomei" em dose velha + nome nos cards iOS
+
+> **Bump:** mobile `0.24.1 → 0.24.2` (patch — bugfix). **Plataforma:** Mobile + Backend.
+
+### 🐛 Correções
+
+- **Alarme/superfície não ficam mais presos na tela por horas/dias:** quando a cadeia de agendamentos quebrava (app fechado a noite toda / Doze / simulador suspenso), a notificação local de uma dose vencida não sumia sozinha — e ao abrir o app ela ainda era promovida para a tela cheia. Agora, ao abrir/voltar ao app, uma varredura cancela toda notificação de dose cuja janela de tomada já passou (missed), e a tela cheia só reabre para uma dose ainda ativa. Vale para Android e iOS.
+- **Tocar "Tomei" numa dose já registrada/vencida não mostra mais erro vermelho:** o registro batia na guarda do banco (`P0001` — dose já registrada / fora de janela) e exibia erro catastrófico. Agora é no-op idempotente: entende que a dose já está resolvida, limpa a superfície/alarme e não alerta. Não altera o registro normal nem a detecção de estoque insuficiente.
+- **Live Activity (iOS) volta a mostrar o nome do tratamento:** os cards iniciados/transicionados por push apareciam "discretos" (rótulo genérico "Hora da dose", sem o nome). Como o iOS não redige a Live Activity pela privacidade do sistema, o padrão passa a ser **explícito** (mostra o nome), em paridade com a superfície aberta em foreground. Ocultar o nome fica como toggle próprio futuro (backlog LGPD).
+
+---
+
 ## App v0.24.1 (mobile) + Backend — 2026-07-02 — Fix (041 fix-up): Live Activity transiciona e encerra via push (iOS)
 
 > **Bump:** mobile `0.24.0 → 0.24.1` (patch — fix-up da fase 041). **Plataforma:** Mobile (iOS) + Backend. Migração aditiva. **Só validável em prod** (serverless não roda em dev/preview).

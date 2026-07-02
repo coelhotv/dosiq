@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState } from 'react-native'
 import notifee, { EventType } from '@notifee/react-native'
-import { getTodayLocal } from '@dosiq/core'
+import { getTodayLocal, getRawNow } from '@dosiq/core'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { navigationRef } from '@navigation/navigationRef'
@@ -19,31 +19,26 @@ import { ROUTES } from '@navigation/routes'
 import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
-import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID } from './alarmService'
-import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
+import { cancelAlarm } from './alarmService'
+import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
+import { isAlarmNotification, isDoseNotificationStale, reconcileStaleDoseNotifications } from './staleDoseNotifications'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
-// Navega ao takeover de tela cheia quando uma notificação do canal de alarme
-// abre/está ativa no app (FR-002). Idempotente: não re-navega se já está lá.
-function isAlarmNotification(notification) {
-  if (!notification) return false
-  // Android identifica pelo canal; iOS pela categoria (não tem `android`). DEVE reconhecer o canal
-  // CRÍTICO também (dose-alarm-critical-v2) — senão alarmes críticos não abrem o fullscreen (bug
-  // smoke 2026-06-29: openAlarmScreen retornava cedo p/ doses críticas). NÃO confundir com a
-  // superfície 039 (canal dose-activity-v1) — essa é tratada pelo DoseActivityBridge.
-  const channelId = notification.android?.channelId
-  return (
-    channelId === ALARM_CHANNEL_ID ||
-    channelId === ALARM_CRITICAL_CHANNEL_ID ||
-    notification.ios?.categoryId === ALARM_CHANNEL_ID
-  )
-}
-
+// Navega ao takeover de tela cheia quando uma notificação do canal de alarme abre/está ativa no app
+// (FR-002). Idempotente: não re-navega se já está lá. (isAlarmNotification + staleness + sweep vivem
+// em staleDoseNotifications.js.)
 function openAlarmScreen(notification) {
   if (!isAlarmNotification(notification)) return
   const data = notification.data || {}
   if (!data.doseInstanceId) return
+  // Alarme VELHO (dose fora da janela) NÃO deve promover a fullscreen — limpa e sai. Evita o takeover
+  // de uma dose missed que, ao tocar "Tomei", batia em P0001 ('já registrada ou indisponível').
+  if (isDoseNotificationStale(data, getRawNow())) {
+    cancelAlarm(data.doseInstanceId).catch(() => {})
+    endDoseActivity(data.doseInstanceId).catch(() => {})
+    return
+  }
   if (!navigationRef.isReady()) return
   if (navigationRef.getCurrentRoute?.()?.name === ROUTES.ALARM_FULLSCREEN) return
   navigationRef.navigate(ROUTES.ALARM_FULLSCREEN, {
@@ -171,10 +166,11 @@ export default function AlarmSchedulerBridge() {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
-      // App veio a foreground (inclui launch pelo full-screen intent c/ app
-      // minimizado): se há alarme ativo no canal, abre o takeover de tela cheia.
-      notifee
-        .getDisplayedNotifications()
+      // App veio a foreground (inclui launch pelo full-screen intent c/ app minimizado): PRIMEIRO
+      // varre e cancela notificações de dose já vencidas (missed) que ficaram presas na tela; SÓ
+      // então promove um alarme AINDA ativo ao takeover (nunca reabre uma dose velha → P0001).
+      reconcileStaleDoseNotifications()
+        .then(() => notifee.getDisplayedNotifications())
         .then((list) => {
           const alarm = list.find((n) => isAlarmNotification(n.notification))
           openAlarmScreen(alarm?.notification)
