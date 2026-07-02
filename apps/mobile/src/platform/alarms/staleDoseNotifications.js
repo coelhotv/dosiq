@@ -59,13 +59,19 @@ export async function reconcileStaleDoseNotifications(now = getRawNow()) {
   } catch {
     return
   }
+  // Superfícies velhas são independentes → dispara em paralelo (best-effort) p/ não segurar
+  // a reconciliação no foreground quando há várias notificações presas.
+  const promises = []
   for (const item of displayed) {
     const notification = item?.notification || item
     const data = notification?.data || {}
     if (!data.doseInstanceId) continue
     if (!isAlarmNotification(notification) && !isSurfaceNotification(notification)) continue
     if (!isDoseNotificationStale(data, now)) continue
-    try { await cancelAlarm(data.doseInstanceId) } catch { /* best-effort */ }
-    try { await endDoseActivity(data.doseInstanceId) } catch { /* best-effort */ }
+    promises.push(
+      Promise.resolve(cancelAlarm(data.doseInstanceId)).catch(() => {}),
+      Promise.resolve(endDoseActivity(data.doseInstanceId)).catch(() => {}),
+    )
   }
+  if (promises.length > 0) await Promise.all(promises)
 }

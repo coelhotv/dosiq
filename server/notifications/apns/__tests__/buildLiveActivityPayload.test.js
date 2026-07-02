@@ -55,7 +55,7 @@ describe('buildLiveActivityStartPayload', () => {
     // dose em +30min (upcoming). staleDate deve ir p/ o boundary now→late (scheduled + 10min),
     // NÃO p/ upcoming→now (scheduled − 10min). 'now' é cosmético (push+alarme donos do T0).
     const p = buildLiveActivityStartPayload(item(), { now: NOW });
-    const lateBoundarySec = Math.floor((new Date(inUpcoming).getTime() + 10 * 60000) / 1000);
+    const lateBoundarySec = Math.floor((NOW.getTime() + 40 * 60000) / 1000);
     expect(p.staleEpochSec).toBe(lateBoundarySec);
   });
 

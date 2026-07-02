@@ -99,7 +99,7 @@ const _ERR_OFFLINE = { success: false, error: 'Sem ligação à internet. O regi
 // de ontem que ficou na tela) ou double-tap. A dose já está resolvida → tratar como no-op idempotente
 // (limpar a superfície, sem erro vermelho na UI). O erro do Supabase preserva `.code`.
 function _isAlreadyResolved(err) {
-  return err?.code === 'P0001' || /já registrada|indispon[íi]vel/i.test(err?.message || '')
+  return err?.code === 'P0001' || /já registrada|ocorrência já registrada ou indispon[íi]vel/i.test(err?.message || '')
 }
 
 /**
