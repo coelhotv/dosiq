@@ -131,4 +131,21 @@ export async function getPushToStartToken() {
   }
 }
 
+/**
+ * Spec 041 fix-up — token push PER-ACTIVITY (ActivityKit `Activity.pushTokenUpdates`, iOS 17.2+) da
+ * LA ativa de um instanceId. O backend usa p/ push de update/end (transição de estado + encerramento
+ * com app fechado). '' se ainda não emitido pelo SO / iOS < 17.2 / fora do iOS.
+ * @param {string} instanceId
+ * @returns {Promise<string>}
+ */
+export async function getActivityPushToken(instanceId) {
+  if (!available || !instanceId || !native.getActivityPushToken) return ''
+  try {
+    const token = await native.getActivityPushToken(String(instanceId))
+    return typeof token === 'string' ? token : ''
+  } catch {
+    return ''
+  }
+}
+
 export const liveActivitySupported = available

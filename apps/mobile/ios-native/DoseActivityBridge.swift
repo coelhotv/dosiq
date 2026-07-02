@@ -73,18 +73,51 @@ class DoseActivityBridge: NSObject {
         }
         let attributes = buildAttributes(params)
         let contentState = buildState(params)
+        let instanceId = params["instanceId"] as? String ?? ""
         Task {
             for activity in Activity<DoseActivityAttributes>.activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
             do {
+                // Spec 041 fix-up: pushType .token → o SO emite um token PER-ACTIVITY em
+                // `activity.pushTokenUpdates`. O backend usa esse token p/ push de update/end
+                // (transição de estado + encerramento com app fechado). Sem ele a LA só teria o
+                // start-only da Fase 1. iOS 17.2+ p/ o observer; <17.2 cai no start server-free (staleDate).
                 let content = ActivityContent(state: contentState, staleDate: staleDate(params, contentState))
-                let activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
+                let activity: Activity<DoseActivityAttributes>
+                if #available(iOS 17.2, *) {
+                    activity = try Activity.request(attributes: attributes, content: content, pushType: .token)
+                    DoseActivityBridge.observeActivityPushToken(activity, instanceId: instanceId)
+                } else {
+                    activity = try Activity.request(attributes: attributes, content: content, pushType: nil)
+                }
                 resolve(activity.id)
             } catch {
                 reject("request_failed", error.localizedDescription, error)
             }
         }
+    }
+
+    // Spec 041 fix-up — observa o token push PER-ACTIVITY e persiste (hex) no App Group por instanceId.
+    // O RN lê via getActivityPushToken e grava em dose_instances.la_push_token (sessão viva). @private
+    @available(iOS 17.2, *)
+    private static func observeActivityPushToken(_ activity: Activity<DoseActivityAttributes>, instanceId: String) {
+        guard !instanceId.isEmpty else { return }
+        Task {
+            for await tokenData in activity.pushTokenUpdates {
+                let hex = tokenData.map { String(format: "%02x", $0) }.joined()
+                UserDefaults(suiteName: DoseActivityAppGroup.suite)?.set(hex, forKey: "activityPushToken:\(instanceId)")
+            }
+        }
+    }
+
+    // Retorna o token push per-Activity persistido p/ um instanceId (ou '' se ainda não emitido).
+    @objc(getActivityPushToken:resolver:rejecter:)
+    func getActivityPushToken(_ instanceId: String,
+                              resolver resolve: @escaping RCTPromiseResolveBlock,
+                              rejecter reject: @escaping RCTPromiseRejectBlock) {
+        let token = UserDefaults(suiteName: DoseActivityAppGroup.suite)?.string(forKey: "activityPushToken:\(instanceId)")
+        resolve(token ?? "")
     }
 
     // Atualiza o estado da Activity ativa SEM recriar (transição de estado sem flicker).
