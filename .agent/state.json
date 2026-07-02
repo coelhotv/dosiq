@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "ceremony",
+    "mode": "planning",
     "ceremony_type": "eng-review",
-    "status": "reviewing",
+    "status": "planned",
     "merged_pr": 698,
     "merged_squash": "1c7d0c1f",
     "merged_history": [
@@ -25,8 +25,8 @@
     ],
     "goal": "042 audit trail de dose crítica (debug-first)",
     "goal_type": "feature",
-    "plan": "plans/specs/041-ios-push-to-start/plan.md",
-    "tasks": "plans/specs/041-ios-push-to-start/tasks.md",
+    "plan": "plans/specs/042-critical-audit-trail/plan.md",
+    "tasks": "plans/specs/042-critical-audit-trail/tasks.md",
     "tier": 2,
     "spec_dir": "plans/specs/042-critical-audit-trail",
     "spec": "plans/specs/042-critical-audit-trail/spec.md",
@@ -56,7 +56,7 @@
     "journal_entries_since_distillation": 4,
     "rules_count": 230,
     "anti_patterns_count": 253,
-    "decisions_count": 76,
+    "decisions_count": 77,
     "contracts_count": 30,
     "distillation_due": false
   },
