@@ -6,6 +6,7 @@ import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 import { calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat } from '@dosiq/core';
 import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
+import { dispatchLiveActivityLifecycle } from '../notifications/apns/dispatchLiveActivityLifecycle.js';
 // Formatting helpers removed — moved to Layer 2
 
 const logger = createLogger('ReminderHelpers');
@@ -326,6 +327,15 @@ async function _checkRemindersFromInstances(dispatcher, correlationId) {
       if (la.sent > 0) logger.info('push-to-start LA disparado', { ...la, correlationId });
     } catch (laErr) {
       logger.error('push-to-start LA falhou (fail-open, ignorado)', laErr, { correlationId });
+    }
+
+    // Spec 041 Fase 2 (fix-up): ciclo de vida da LA (update de estado + end na resolução) via push,
+    // p/ as LAs iOS ativas (la_push_token). Independente da janela do reminder. Best-effort + fail-open.
+    try {
+      const laLife = await dispatchLiveActivityLifecycle({ supabase, logger });
+      if (laLife.updated > 0 || laLife.ended > 0) logger.info('ciclo LA (update/end) disparado', { ...laLife, correlationId });
+    } catch (laErr) {
+      logger.error('ciclo LA falhou (fail-open, ignorado)', laErr, { correlationId });
     }
 
     const eligibleUsers = (users || []).filter(u => u.notification_mode !== 'digest');

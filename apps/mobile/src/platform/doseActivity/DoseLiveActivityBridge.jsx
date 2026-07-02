@@ -43,6 +43,7 @@ import {
   showDoneLiveActivity,
   drainPendingActions,
   getPushToStartToken,
+  getActivityPushToken,
   liveActivitySupported,
 } from './liveActivityService'
 import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
@@ -51,6 +52,40 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
 const LOOK_BACK_DAYS = 3
 const RESYNC_INTERVAL_MS = 15 * 60 * 1000
+
+/**
+ * Spec 041 fix-up — sincroniza o token push per-Activity da LA ativa em dose_instances.la_push_token,
+ * p/ o backend empurrar update/end com app fechado. Best-effort; token vazio (SO ainda não emitiu /
+ * iOS < 17.2) → no-op, tenta de novo no próximo derive. RLS escopa ao dono (auth.uid()=user_id). @private
+ */
+async function _syncActivityToken(instanceId) {
+  if (!instanceId) return
+  // O token per-Activity é emitido de forma ASSÍNCRONA pelo iOS após Activity.request — logo após o
+  // start quase sempre ainda está vazio. Retry curto com backoff linear aguarda a emissão; se falhar,
+  // o próximo derive (foreground/interval) tenta de novo. Best-effort: nunca derruba o derive.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const token = await getActivityPushToken(instanceId)
+      if (token) {
+        await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
+        return
+      }
+    } catch {
+      // best-effort
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+  }
+}
+
+/** Limpa o token per-Activity ao encerrar localmente a LA (paridade com o end-push do backend). @private */
+async function _clearActivityToken(instanceId) {
+  if (!instanceId) return
+  try {
+    await supabase.from('dose_instances').update({ la_push_token: null, la_push_state: null }).eq('id', instanceId)
+  } catch {
+    // best-effort
+  }
+}
 
 /** Deriva a dose ativa (crítica pendente) e start/update/end a LA. Retorna o instanceId ativo. @private */
 async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
@@ -76,6 +111,7 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
       const takenAt = prevTakenAt(prevInstanceId)
       if (takenAt) await showDoneLiveActivity({ instanceId: prevInstanceId, takenAt })
       else await endLiveActivity()
+      await _clearActivityToken(prevInstanceId) // LA encerrada → token não serve mais
     }
     return null
   }
@@ -88,9 +124,12 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
       const takenAt = prevTakenAt(prevInstanceId)
       if (takenAt) await showDoneLiveActivity({ instanceId: prevInstanceId, takenAt })
       else await endLiveActivity()
+      await _clearActivityToken(prevInstanceId)
     }
     await startLiveActivity(active, doseItem)
   }
+  // Fase 2: sincroniza o token per-Activity da LA ativa (idempotente; backend usa p/ update/end).
+  await _syncActivityToken(active.instanceId)
   return active.instanceId
 }
 

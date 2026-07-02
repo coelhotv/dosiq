@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.1 (mobile) + Backend — 2026-07-02 — Fix (041 fix-up): Live Activity transiciona e encerra via push (iOS)
+
+> **Bump:** mobile `0.24.0 → 0.24.1` (patch — fix-up da fase 041). **Plataforma:** Mobile (iOS) + Backend. Migração aditiva. **Só validável em prod** (serverless não roda em dev/preview).
+
+### 🐛 Correções
+
+- **Live Activity agora transiciona de estado e encerra sozinha, com o app fechado:** a entrega original (v0.24.0) só _iniciava_ a superfície por push; as transições (`próxima→na hora→atrasada`) e o encerramento dependiam do app estar aberto rodando — então, com o app fechado, o countdown congelava no zero, o estado `atrasada` ficava preso na lock screen até swipe manual, e registrar a dose não trocava para `Tomada ✓`. Agora o servidor dirige o ciclo completo via push APNs: **update** de estado ao cruzar cada limite e **end** (card `Tomada ✓` + dismiss) quando a dose é registrada — tudo sem depender de o app ir a foreground.
+
+### 🧱 Interno
+
+- `server/notifications/apns/liveActivityPush.js`: `sendLiveActivityUpdate` (event `update`, priority 5) + `sendLiveActivityEnd` (event `end` + `dismissal-date`), reusando o cliente HTTP/2 + timeout (AP-256).
+- `server/notifications/apns/dispatchLiveActivityLifecycle.js` (novo): no loop de minuto (`checkReminders`), para cada LA ativa (`dose_instances.la_push_token`) dispara update ao mudar de estado (idempotência via `la_push_state`) e end na resolução (`taken`/`skipped`/`missed`), limpando o token. Fail-open total (nunca toca o alarme).
+- iOS nativo: `Activity.request(pushType: .token)` + observa `activity.pushTokenUpdates` (token per-Activity) → RN grava em `dose_instances.la_push_token` (sessão viva). `getActivityPushToken` no bridge.
+- Migração `20260702` (aditiva): `dose_instances.la_push_token` + `la_push_state`.
+- **Decisão revertida:** ADR-076 Decisão 2 (start-only → start+update+end) — a premissa "transições degradam bem como na 039" era falsa. Ver `plans/specs/041-ios-push-to-start/spec.md §Fase Fix-up`.
+
+---
+
 ## App v0.24.0 (mobile) + Backend — 2026-07-01 — Feat (041): Live Activity push-to-start no iOS
 
 > **Bump:** mobile `0.23.4 → 0.24.0` (minor — novo épico/feature). **Plataforma:** Mobile (iOS) + Backend. **NÃO server-free** (servidor dispara push). Migração aditiva (sem backfill).

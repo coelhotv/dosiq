@@ -28,4 +28,10 @@ RCT_EXTERN_METHOD(drainPendingActions:(RCTPromiseResolveBlock)resolve
 RCT_EXTERN_METHOD(getPushToStartToken:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+// Spec 041 fix-up: token push PER-ACTIVITY (Activity.pushTokenUpdates) da LA de um instanceId,
+// usado pelo backend p/ push de update/end. "" se ainda não emitido.
+RCT_EXTERN_METHOD(getActivityPushToken:(NSString *)instanceId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end
