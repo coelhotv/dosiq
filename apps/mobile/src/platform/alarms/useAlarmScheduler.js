@@ -59,15 +59,18 @@ async function emitScheduledDedupe(criticalIds, userId) {
   const prevSet = new Set(Array.isArray(prev) ? prev : [])
   const audit = createCriticalAuditService({ client: supabase })
   const toEmit = criticalIds.filter((id) => !prevSet.has(id))
-  for (const id of toEmit) {
-    await audit.emit({
-      userId,
-      doseInstanceId: id,
-      event: 'alarm_scheduled',
-      platform: Platform.OS,
-      actor: 'system',
-    })
-  }
+  // Emits independentes e fail-open → paralelos (evita latência serial no resync).
+  await Promise.all(
+    toEmit.map((id) =>
+      audit.emit({
+        userId,
+        doseInstanceId: id,
+        event: 'alarm_scheduled',
+        platform: Platform.OS,
+        actor: 'system',
+      }),
+    ),
+  )
   // Persiste só os ids da janela atual (poda os que saíram).
   try {
     await AsyncStorage.setItem(SCHEDULED_AUDIT_KEY, JSON.stringify(criticalIds))

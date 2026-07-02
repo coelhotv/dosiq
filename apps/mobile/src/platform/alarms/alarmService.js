@@ -471,15 +471,19 @@ export async function scheduleSnooze({
   // Auditoria de dose crítica (spec 042): emite `snoozed` por ocorrência. Fail-open
   // (o service nunca lança). isCritical filtra: só doses críticas geram trail (FR-004).
   if (isCritical) {
-    for (const id of snoozedIds) {
-      await snoozeAudit.emit({
-        doseInstanceId: id,
-        event: 'snoozed',
-        platform: Platform.OS,
-        actor: 'user',
-        detail: { snoozeAttempt: next },
-      })
-    }
+    // Emits independentes (1 por ocorrência) e fail-open (emit nunca rejeita) → paralelos.
+    // Headless (onBackgroundEvent) tem orçamento de tempo limitado pelo SO: serial N inserts o queima.
+    await Promise.all(
+      snoozedIds.map((id) =>
+        snoozeAudit.emit({
+          doseInstanceId: id,
+          event: 'snoozed',
+          platform: Platform.OS,
+          actor: 'user',
+          detail: { snoozeAttempt: next },
+        }),
+      ),
+    )
   }
 
   debugLog('[alarmService] snooze', next, doseInstanceId)

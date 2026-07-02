@@ -254,9 +254,10 @@ export function createDoseLogService({ client, getUserId, platform = null }) {
     deleteOrphanLog: (logId) => deleteOrphanLog(deps, logId),
     registerDoseMany: async (logsData) => {
       const results = await registerDoseMany(deps, logsData)
-      for (const r of results) {
-        if (r.success && r.instanceId) await emitResolved(r.instanceId)
-      }
+      // Emits de auditoria independentes e fail-open → paralelos (reduz latência da resposta em lote).
+      await Promise.all(
+        results.filter((r) => r.success && r.instanceId).map((r) => emitResolved(r.instanceId)),
+      )
       return results
     },
     getLastInjectionSite: () => getLastInjectionSite(deps),
