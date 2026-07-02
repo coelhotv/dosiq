@@ -32,3 +32,6 @@ export {
   shouldRefreshCache,
   resolveDataUrl,
 } from './anvisaDatabase.js'
+
+// Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
+export { createCriticalAuditService } from './criticalAuditService.js'

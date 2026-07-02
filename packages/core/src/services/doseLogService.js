@@ -12,6 +12,7 @@
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository.js'
 import { validateLogCreate, validateLogUpdate } from '../schemas/logSchema.js'
 import { parseISO } from '../utils/dateUtils.js'
+import { createCriticalAuditService } from './criticalAuditService.js'
 
 /** Tolerância default (min) quando a ocorrência não define a sua. Casa com
  *  MAX_TOLERANCE_MINUTES do createDoseInstanceRepository (fonte única — resolve M1). */
@@ -223,7 +224,7 @@ async function getLastInjectionSite({ client, getUserId }) {
  * @param {Object} deps.client - Cliente Supabase.
  * @param {Function} deps.getUserId - Função async () => string (resolve user_id).
  */
-export function createDoseLogService({ client, getUserId }) {
+export function createDoseLogService({ client, getUserId, platform = null }) {
   if (!client) throw new Error('createDoseLogService: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createDoseLogService: getUserId deve ser função async')
@@ -232,12 +233,32 @@ export function createDoseLogService({ client, getUserId }) {
   const repo = createDoseInstanceRepository({ client })
   const deps = { client, repo, getUserId }
 
+  // Audit trail (spec 042, CON-031) — emit best-effort de `resolved` ao registrar dose
+  // atrelada a uma ocorrência. Fail-open: NUNCA afeta o registro (o próprio serviço não lança).
+  // `platform` é opcional: só emite quando o adapter informa (ios/android). Web fica fora do
+  // alvo de debug de alarme crítico → não emite (o enum não tem 'web').
+  const audit = createCriticalAuditService({ client, getUserId })
+  async function emitResolved(instanceId) {
+    if (!platform || !instanceId) return
+    await audit.emit({ doseInstanceId: instanceId, event: 'resolved', platform, actor: 'user' })
+  }
+
   return {
-    registerDose: (logData, options) => registerDose(deps, logData, options),
+    registerDose: async (logData, options) => {
+      const data = await registerDose(deps, logData, options)
+      await emitResolved(options?.instanceId ?? null)
+      return data
+    },
     undoDose: (instanceId) => undoDose(deps, instanceId),
     updateOrphanLog: (logId, updates) => updateOrphanLog(deps, logId, updates),
     deleteOrphanLog: (logId) => deleteOrphanLog(deps, logId),
-    registerDoseMany: (logsData) => registerDoseMany(deps, logsData),
+    registerDoseMany: async (logsData) => {
+      const results = await registerDoseMany(deps, logsData)
+      for (const r of results) {
+        if (r.success && r.instanceId) await emitResolved(r.instanceId)
+      }
+      return results
+    },
     getLastInjectionSite: () => getLastInjectionSite(deps),
   }
 }

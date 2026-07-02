@@ -179,3 +179,11 @@ export {
 
 // Helper geral de validação
 export { validateEntity, ValidationError } from './validationHelper.js'
+
+// Audit trail de dose crítica (spec 042 — CON-031)
+export {
+  default as criticalAuditEventSchema,
+  CRITICAL_AUDIT_EVENTS,
+  CRITICAL_AUDIT_PLATFORMS,
+  CRITICAL_AUDIT_ACTORS,
+} from './criticalAuditEventSchema.js'
