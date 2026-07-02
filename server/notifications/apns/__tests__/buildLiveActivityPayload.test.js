@@ -51,6 +51,14 @@ describe('buildLiveActivityStartPayload', () => {
     expect(p.attributes.scheduledTime).toBe('09:30');
   });
 
+  it('staleEpochSec = próximo boundary de estado (não +1h) → re-render app-fechado now→late', () => {
+    // dose em +30min (upcoming); próximo boundary (upcoming→now = scheduled-10) > now → staleDate nele.
+    const p = buildLiveActivityStartPayload(item(), { now: NOW });
+    const scheduledSec = Math.floor(new Date(inUpcoming).getTime() / 1000);
+    expect(p.staleEpochSec).toBeLessThan(scheduledSec + 3600); // não é o fallback +1h
+    expect(p.staleEpochSec).toBeGreaterThan(Math.floor(NOW.getTime() / 1000)); // futuro
+  });
+
   it('scheduled_for ausente/inválido → null (não elegível)', () => {
     expect(buildLiveActivityStartPayload(item({ scheduledFor: null }), { now: NOW })).toBeNull();
   });

@@ -11,7 +11,7 @@
 // transicionada por push aparece discreta e a da tela aberta explícita. "Ocultar nome" vira toggle
 // próprio do dosiq (backlog LGPD, CON-030) — não default. (Supersede o S-3 "discreto server-side".)
 
-import { deriveDoseActivityState } from '@dosiq/core'
+import { deriveDoseActivityState, doseActivityBoundaryTimes } from '@dosiq/core'
 import { parseISO } from '../../utils/dateUtils.js'
 
 /**
@@ -53,5 +53,13 @@ export function buildLiveActivityStartPayload(doseItem, { discreet = false, now 
     doneAtLabel: '',
   }
 
-  return { attributes, contentState, staleEpochSec: scheduledEpochSec + 3600 }
+  // staleDate = PRÓXIMO boundary de estado (não +1h fixo). Quando ele passa, o iOS re-renderiza a LA
+  // e o widget recomputa displayState (ex.: now→late) — SEM token per-Activity e SEM app aberto. É a
+  // única transição garantida no caso app-fechado (o token de update só é emitido ao app rodando —
+  // limitação do ActivityKit). Espelha liveActivityService.toParams (foreground). Fallback +1h.
+  const boundaries = derived.scheduledFor ? doseActivityBoundaryTimes(derived.scheduledFor) : []
+  const nextBoundaryMs = boundaries.find((b) => b > nowMs) ?? null
+  const staleEpochSec = nextBoundaryMs != null ? Math.floor(nextBoundaryMs / 1000) : scheduledEpochSec + 3600
+
+  return { attributes, contentState, staleEpochSec }
 }
