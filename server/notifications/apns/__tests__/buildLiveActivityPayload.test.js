@@ -31,7 +31,18 @@ describe('buildLiveActivityStartPayload', () => {
     expect(p.attributes.instanceId).toBe('inst-1');
   });
 
-  it('discreto (S-3): nome e dose NÃO saem no payload', () => {
+  it('DEFAULT explícito (decisão PO 2026-06-29): mostra o nome (iOS não redige a LA)', () => {
+    const p = buildLiveActivityStartPayload(item(), { now: NOW }); // sem discreet → default
+    expect(p.attributes.medicineName).toBe('Selozok');
+    expect(p.attributes.discreet).toBe(false);
+  });
+
+  it('fallback do nome: sem medicineLabel derivado usa doseItem.medicineName; senão "Dose"', () => {
+    const p = buildLiveActivityStartPayload(item({ medicineName: '' }), { now: NOW });
+    expect(p.attributes.medicineName).toBe('Dose');
+  });
+
+  it('discreto (opt-in): nome e dose NÃO saem no payload', () => {
     const p = buildLiveActivityStartPayload(item(), { discreet: true, now: NOW });
     expect(p.attributes.medicineName).toBe('');
     expect(p.attributes.doseLabel).toBe('');
