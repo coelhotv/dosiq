@@ -2,23 +2,34 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "coding",
+    "mode": "specifying",
     "ceremony_type": "security-review",
-    "status": "merged",
+    "status": "specified",
     "merged_pr": 697,
     "merged_squash": "1c7d0c1f",
     "merged_history": [
-      { "pr": 696, "squash": "2aa98862", "phase": "Fase 1 push-to-start" },
-      { "pr": 697, "squash": "1c7d0c1f", "phase": "Fase 2 fix-up push update+end" }
+      {
+        "pr": 696,
+        "squash": "2aa98862",
+        "phase": "Fase 1 push-to-start"
+      },
+      {
+        "pr": 697,
+        "squash": "1c7d0c1f",
+        "phase": "Fase 2 fix-up push update+end"
+      }
     ],
-    "goal": "041 iOS Live Activity push-to-start via APNs (+ fix-up ciclo update+end)",
+    "goal": "042 audit trail de dose crítica (debug-first)",
     "goal_type": "feature",
     "plan": "plans/specs/041-ios-push-to-start/plan.md",
     "tasks": "plans/specs/041-ios-push-to-start/tasks.md",
     "tier": 2,
-    "spec_dir": "plans/specs/041-ios-push-to-start",
-    "spec": "plans/specs/041-ios-push-to-start/spec.md",
-    "ceremonies_run": ["eng-review", "security-review"],
+    "spec_dir": "plans/specs/042-critical-audit-trail",
+    "spec": "plans/specs/042-critical-audit-trail/spec.md",
+    "ceremonies_run": [
+      "eng-review",
+      "security-review"
+    ],
     "ceremony_findings_count": 11,
     "ceremony_scope_decisions": [
       "NC-1 → start-only por push; transições via staleDate+foreground (modelo 039)",
