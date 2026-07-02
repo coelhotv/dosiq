@@ -3,7 +3,7 @@
   "sprint": "2026-W27",
   "session": {
     "mode": "ceremony",
-    "ceremony_type": "security-review",
+    "ceremony_type": "eng-review",
     "status": "reviewing",
     "merged_pr": 698,
     "merged_squash": "1c7d0c1f",
@@ -34,13 +34,16 @@
       "eng-review",
       "security-review"
     ],
-    "ceremony_findings_count": 5,
+    "ceremony_findings_count": 8,
     "ceremony_scope_decisions": [
       "SEC-1 Critical: RLS user_id=auth.uid() SELECT+INSERT (PO-SEC-1)",
       "SEC-2 High: emit service_role deriva user_id da dose_instance, não de input (PO-SEC-2, R-042)",
       "SEC-3 Medium: detail jsonb whitelist, sem token/segredo/label (PO-SEC-3)",
       "SEC-4 Medium: append-only, authenticated SELECT+INSERT only, prune só service_role/cron (PO-SEC-4)",
-      "SEC-5 aceito: cliente pode forjar próprio evento — debug-trail confia devices do dev/PO, não é forense"
+      "SEC-5 aceito: cliente pode forjar próprio evento — debug-trail confia devices do dev/PO, não é forense",
+      "ENG-1: iOS não captura alarm_fired no disparo (sem JS background) — outcome derivado no foreground, detail.captured_at_foreground",
+      "ENG-2: fatiar em Slice A (server-side: migração+core+emits round-trip) e Slice B (beacon device+fila)",
+      "ENG-3: emit helper único @dosiq/core (criticalAuditService), sem insert inline por site; guards PO-2/PO-3 calibrados ↑"
     ],
     "parked": {
       "goal": "typescript-migration",
