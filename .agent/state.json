@@ -5,9 +5,13 @@
     "mode": "coding",
     "ceremony_type": "security-review",
     "status": "merged",
-    "merged_pr": 696,
-    "merged_squash": "2aa98862",
-    "goal": "041 iOS Live Activity push-to-start via APNs",
+    "merged_pr": 697,
+    "merged_squash": "1c7d0c1f",
+    "merged_history": [
+      { "pr": 696, "squash": "2aa98862", "phase": "Fase 1 push-to-start" },
+      { "pr": 697, "squash": "1c7d0c1f", "phase": "Fase 2 fix-up push update+end" }
+    ],
+    "goal": "041 iOS Live Activity push-to-start via APNs (+ fix-up ciclo update+end)",
     "goal_type": "feature",
     "plan": "plans/specs/041-ios-push-to-start/plan.md",
     "tasks": "plans/specs/041-ios-push-to-start/tasks.md",
@@ -34,9 +38,9 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 230,
-    "anti_patterns_count": 252,
+    "anti_patterns_count": 253,
     "decisions_count": 76,
     "contracts_count": 30,
     "distillation_due": false
