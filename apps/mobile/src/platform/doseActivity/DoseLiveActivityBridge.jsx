@@ -60,12 +60,20 @@ const RESYNC_INTERVAL_MS = 15 * 60 * 1000
  */
 async function _syncActivityToken(instanceId) {
   if (!instanceId) return
-  try {
-    const token = await getActivityPushToken(instanceId)
-    if (!token) return
-    await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
-  } catch {
-    // best-effort — nunca derruba o derive
+  // O token per-Activity é emitido de forma ASSÍNCRONA pelo iOS após Activity.request — logo após o
+  // start quase sempre ainda está vazio. Retry curto com backoff linear aguarda a emissão; se falhar,
+  // o próximo derive (foreground/interval) tenta de novo. Best-effort: nunca derruba o derive.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const token = await getActivityPushToken(instanceId)
+      if (token) {
+        await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
+        return
+      }
+    } catch {
+      // best-effort
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
   }
 }
 
