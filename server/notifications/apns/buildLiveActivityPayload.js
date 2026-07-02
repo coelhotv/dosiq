@@ -53,13 +53,25 @@ export function buildLiveActivityStartPayload(doseItem, { discreet = false, now 
     doneAtLabel: '',
   }
 
-  // staleDate = PRÓXIMO boundary de estado (não +1h fixo). Quando ele passa, o iOS re-renderiza a LA
-  // e o widget recomputa displayState (ex.: now→late) — SEM token per-Activity e SEM app aberto. É a
-  // única transição garantida no caso app-fechado (o token de update só é emitido ao app rodando —
-  // limitação do ActivityKit). Espelha liveActivityService.toParams (foreground). Fallback +1h.
+  // staleDate — o ActivityKit dá UMA só transição em background por push (app fechado): o SO
+  // re-renderiza a LA quando o staleDate passa e o widget recomputa displayState, SEM token nem app
+  // aberto. Gastamos essa transição no boundary que MAIS importa (ADR-076 / decisão 2026-07-02):
+  //   • estado 'upcoming'/'now' no disparo → alvo = '→ late'. 'now' é cosmético (o timer do 'upcoming'
+  //     já mostra "agora" ao cruzar T0; o push time-sensitive + alarme fullscreen são donos do T0).
+  //     O que importa app-fechado é virar 'late' se o usuário não agir.
+  //   • estado 'later' (sem countdown) → alvo = '→ upcoming' (mostrar o countdown vale mais que o late).
+  // Fallback +1h se não houver boundary futuro (ex.: já em 'late').
   const boundaries = derived.scheduledFor ? doseActivityBoundaryTimes(derived.scheduledFor) : []
-  const nextBoundaryMs = boundaries.find((b) => b > nowMs) ?? null
-  const staleEpochSec = nextBoundaryMs != null ? Math.floor(nextBoundaryMs / 1000) : scheduledEpochSec + 3600
+  let targetMs = null
+  for (const b of boundaries) {
+    if (b <= nowMs) continue
+    // b é epoch ms (numérico, sem ambiguidade de tz — R-020 visa new Date('YYYY-MM-DD') strings).
+    // eslint-disable-next-line no-restricted-syntax
+    const st = deriveDoseActivityState(doseItem, new Date(b + 1000))?.state
+    if (derived.state === 'later' && st === 'upcoming') { targetMs = b; break }
+    if (st === 'late') { targetMs = b; break }
+  }
+  const staleEpochSec = targetMs != null ? Math.floor(targetMs / 1000) : scheduledEpochSec + 3600
 
   return { attributes, contentState, staleEpochSec }
 }
