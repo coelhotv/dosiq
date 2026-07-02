@@ -4,7 +4,7 @@ import { dispatchLiveActivityLifecycle } from '../dispatchLiveActivityLifecycle.
 
 const TEST_P8 = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' });
 
-const NOW = new Date('2026-07-01T12:00:00.000Z');
+const NOW = new Date(Date.UTC(2026, 6, 1, 12, 0, 0));
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 
 // Mock supabase: select(...).not(...) resolve a lista; update(...).eq(...) registra o patch.
@@ -15,6 +15,7 @@ function makeSupabase(rows) {
       _update: null,
       select() { return b; },
       not() { return b; },
+      gte() { return b; },
       update(p) { b._update = p; return b; },
       eq() {
         if (b._update) { updates.push(b._update); return Promise.resolve({ data: null, error: null }); }

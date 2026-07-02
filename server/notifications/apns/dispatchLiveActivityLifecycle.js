@@ -12,7 +12,7 @@
 // Fail-open total (FR-008): qualquer falha loga e segue — NUNCA propaga, NUNCA toca o alarme.
 
 import { deriveDoseActivityState } from '@dosiq/core'
-import { getServerTimestamp, parseISO } from '../../utils/dateUtils.js'
+import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig } from './liveActivityPush.js'
 
 // Status que encerram a LA (dose saiu de pendente).
@@ -130,10 +130,15 @@ export async function dispatchLiveActivityLifecycle({ supabase, logger, now = pa
 
   let instances
   try {
+    // iOS limita a exibição de uma Live Activity a ~8h → tokens de ocorrências além de 24h atrás são
+    // órfãos (limpeza falhou / app desinstalado). Restringe a janela p/ não varrer/processar lixo a
+    // cada minuto (carga DB + chamadas APNs redundantes).
+    const limitDate = addMinutes(-24 * 60, now).toISOString()
     const { data, error } = await supabase
       .from('dose_instances')
       .select(SELECT_FIELDS)
       .not('la_push_token', 'is', null)
+      .gte('scheduled_for', limitDate)
     if (error) throw error
     instances = data || []
   } catch (err) {
