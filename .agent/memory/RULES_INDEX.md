@@ -36,6 +36,7 @@
 
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[R-281]** Side-effects assíncronos **independentes** em loop → `Promise.all(list.map(...))`, nunca `for...of{await}` serial (latência = Σ vs max). Seguro p/ promessas fail-open (nunca rejeitam, ex. `criticalAuditService.emit`/CON-031); usar `allSettled` se podem rejeitar. NÃO paralelizar quando há ordem/dependência/trava (contra-ex. deliberado: AP-246 serializa ActivityKit). Crítico em headless/serverless (orçamento de tempo do SO). Promovido no 3º incidente (Gemini #698+#699) -> [`rules/infra_and_deploy/R-281.md`](./rules/infra_and_deploy/R-281.md)
 - **[R-040]** Always add explicit rewrites in vercel.json for new API routes. Catch-all must b... -> [`rules/infra_and_deploy/R-040.md`](./rules/infra_and_deploy/R-040.md)
 - **[R-041]** Never use process.exit() in Vercel serverless functions. Use throw new Error() i... [AUTOMATED via ESLint] -> [`rules/infra_and_deploy/R-041.md`](./rules/infra_and_deploy/R-041.md)
 - **[R-042]** Any endpoint using service_role key (bypasses RLS) MUST have authentication via ... -> [`rules/infra_and_deploy/R-042.md`](./rules/infra_and_deploy/R-042.md)

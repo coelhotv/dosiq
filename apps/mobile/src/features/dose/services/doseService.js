@@ -32,9 +32,12 @@ async function _getAuthUserId() {
 }
 
 // Instancia o serviço unificado do core
+// `platform` habilita o emit de auditoria de dose crítica (spec 042). Platform.OS é
+// 'ios'|'android' no mobile — casa com o enum CRITICAL_AUDIT_PLATFORMS.
 const doseLogCore = createDoseLogService({
   client: supabase,
   getUserId: _getAuthUserId,
+  platform: Platform.OS,
 })
 
 // Cancela o alarme local + a superfície de estado contínuo (039) da instância resolvida
