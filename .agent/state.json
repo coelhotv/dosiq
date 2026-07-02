@@ -5,7 +5,7 @@
     "mode": "specifying",
     "ceremony_type": "security-review",
     "status": "specified",
-    "merged_pr": 697,
+    "merged_pr": 698,
     "merged_squash": "1c7d0c1f",
     "merged_history": [
       {
@@ -17,6 +17,10 @@
         "pr": 697,
         "squash": "1c7d0c1f",
         "phase": "Fase 2 fix-up push update+end"
+      },
+      {
+        "pr": 698,
+        "phase": "041 fix-up: P0001 gracioso + sweep superfícies velhas (Android+iOS) + payload iOS explícito + staleDate→late"
       }
     ],
     "goal": "042 audit trail de dose crítica (debug-first)",
@@ -49,7 +53,7 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 230,
     "anti_patterns_count": 253,
     "decisions_count": 76,
