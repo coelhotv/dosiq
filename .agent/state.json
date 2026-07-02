@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "specifying",
+    "mode": "ceremony",
     "ceremony_type": "security-review",
-    "status": "specified",
+    "status": "reviewing",
     "merged_pr": 698,
     "merged_squash": "1c7d0c1f",
     "merged_history": [
@@ -34,16 +34,13 @@
       "eng-review",
       "security-review"
     ],
-    "ceremony_findings_count": 11,
+    "ceremony_findings_count": 5,
     "ceremony_scope_decisions": [
-      "NC-1 → start-only por push; transições via staleDate+foreground (modelo 039)",
-      "NC-2 → CORRIGIDO: disparo em api/notify.js (Vercel, cron externo 1min já existe); node-cron do bot é só dev local; inline/helper _prefixed = zero função nova R-090",
-      "NC-3 → .p8 + entitlement frequent-updates = pré-req do transporte APNs raw (ADR)",
-      "Expo Push não entrega liveactivity push-type → cliente APNs raw é infra nova (F-1)",
-      "S-4 → ESTENDER notification_devices (provider apns_liveactivity), NÃO criar tabela nova",
-      "S-1 IDOR é risco #1: service_role bypassa RLS → object-level check user_id obrigatório",
-      "S-2 → .p8 via APNS_AUTH_KEY base64 no bot; nunca no cliente; valida no startup",
-      "S-3 → modo discreto resolvido server-side (payload mínimo), não só no widget"
+      "SEC-1 Critical: RLS user_id=auth.uid() SELECT+INSERT (PO-SEC-1)",
+      "SEC-2 High: emit service_role deriva user_id da dose_instance, não de input (PO-SEC-2, R-042)",
+      "SEC-3 Medium: detail jsonb whitelist, sem token/segredo/label (PO-SEC-3)",
+      "SEC-4 Medium: append-only, authenticated SELECT+INSERT only, prune só service_role/cron (PO-SEC-4)",
+      "SEC-5 aceito: cliente pode forjar próprio evento — debug-trail confia devices do dev/PO, não é forense"
     ],
     "parked": {
       "goal": "typescript-migration",
