@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "planning",
+    "mode": "coding",
     "ceremony_type": "eng-review",
-    "status": "planned",
+    "status": "coding",
     "merged_pr": 698,
     "merged_squash": "1c7d0c1f",
     "merged_history": [
@@ -23,7 +23,7 @@
         "phase": "041 fix-up: P0001 gracioso + sweep superfícies velhas (Android+iOS) + payload iOS explícito + staleDate→late"
       }
     ],
-    "goal": "042 audit trail de dose crítica (debug-first)",
+    "goal": "042 Slice A — audit trail DB+core+emits",
     "goal_type": "feature",
     "plan": "plans/specs/042-critical-audit-trail/plan.md",
     "tasks": "plans/specs/042-critical-audit-trail/tasks.md",
@@ -53,11 +53,11 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 230,
     "anti_patterns_count": 253,
     "decisions_count": 77,
-    "contracts_count": 30,
+    "contracts_count": 31,
     "distillation_due": false
   },
   "genes": {

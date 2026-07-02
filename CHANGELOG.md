@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.3 (mobile) + Backend — 2026-07-02 — Feat (042 Slice A): trilha de auditoria de dose crítica (debug-first)
+
+> **Bump:** mobile `0.24.2 → 0.24.3` (patch — feature aditiva, sem UI). **Plataforma:** Mobile + Backend + Core. Migração aditiva (tabela nova `dose_critical_events`, append-only, RLS por usuário, prune 90d via pg_cron). Sem impacto para o usuário final — instrumentação de observabilidade.
+
+### ✨ Novidades (interno / observabilidade)
+
+- **Trilha de auditoria do ciclo de vida da dose crítica:** nasce a tabela append-only `dose_critical_events` que registra os marcos de uma dose crítica — `alarm_scheduled`, `snoozed`, `resolved` (mobile), e `push_sent`/`push_failed`/`push_skipped_no_token`/`surface_transitioned` (servidor APNs). Permite reconstruir a trajetória de uma dose ("por que o alarme não tocou?") sem depender do simulador conectado. Emissão **fail-open**: jamais quebra o alarme/registro/push.
+
+### 🔒 Segurança / Privacidade
+
+- **RLS por usuário** (SELECT/INSERT do próprio `user_id`), **append-only** (sem UPDATE/DELETE para `authenticated`; prune só via `service_role`/cron). Emits do servidor derivam `user_id` da própria `dose_instance` (não de input). `detail` sem PII: nunca grava nome de medicamento, token ou segredo.
+
+### 🧱 Interno
+
+- Novo `criticalAuditService` + `criticalAuditEventSchema` em `@dosiq/core` (CON-031, ADR-077). Enum espelha os CHECKs SQL (R-270).
+
+---
+
 ## App v0.24.2 (mobile) + Backend — 2026-07-02 — Fix: superfícies presas + "Tomei" em dose velha + nome nos cards iOS
 
 > **Bump:** mobile `0.24.1 → 0.24.2` (patch — bugfix). **Plataforma:** Mobile + Backend.

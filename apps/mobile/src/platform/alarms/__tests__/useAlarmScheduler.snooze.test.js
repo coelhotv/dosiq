@@ -18,6 +18,7 @@ jest.mock('../alarmService', () => ({
 let mockItems = []
 jest.mock('@dosiq/core', () => ({
   createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
+  createCriticalAuditService: () => ({ emit: jest.fn().mockResolvedValue({ ok: true }) }),
   buildDoseItemsFromInstances: () => mockItems,
   ensureInstancesUpTo: jest.fn().mockResolvedValue(),
   getRawNow: () => new Date('2026-03-05T12:00:00.000Z'),

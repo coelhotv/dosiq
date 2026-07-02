@@ -13,7 +13,7 @@
 //  - cancelAll usa cancelTriggerNotifications() → cancela só triggers do Notifee,
 //       NÃO toca as notificações do expo-notifications (push remoto preservado).
 
-import { createDoseInstanceRepository, parseISO } from '@dosiq/core'
+import { createDoseInstanceRepository, createCriticalAuditService, parseISO } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
   AndroidImportance,
@@ -47,6 +47,17 @@ const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
 const MAX_SNOOZE_ATTEMPTS = 3
+
+// Auditoria de dose crítica (spec 042). getUserId resolve o usuário logado a partir
+// da sessão persistida (AsyncStorage) — funciona também no handler headless do Android.
+// Retorna null se não houver sessão → o service trata como evento órfão (não insere).
+const snoozeAudit = createCriticalAuditService({
+  client: supabase,
+  getUserId: async () => {
+    const { data } = await supabase.auth.getUser()
+    return data?.user?.id ?? null
+  },
+})
 
 // Ações da notificação (R-222 — IDs estáveis, sem string solta no caller).
 export const ALARM_ACTION = Object.freeze({
@@ -446,16 +457,29 @@ export async function scheduleSnooze({
   })
 
   // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
+  const snoozedIds =
+    data?.isGrouped === 'true' && data?.doseInstanceIds
+      ? data.doseInstanceIds.split(',')
+      : [doseInstanceId]
   try {
     const repo = createDoseInstanceRepository({ client: supabase })
-    if (data?.isGrouped === 'true' && data?.doseInstanceIds) {
-      const ids = data.doseInstanceIds.split(',')
-      await Promise.all(ids.map((id) => repo.setSnoozedUntil(id, nextTs)))
-    } else {
-      await repo.setSnoozedUntil(doseInstanceId, nextTs)
-    }
+    await Promise.all(snoozedIds.map((id) => repo.setSnoozedUntil(id, nextTs)))
   } catch (err) {
     if (__DEV__) console.warn('[alarmService] setSnoozedUntil falhou', doseInstanceId, err?.message)
+  }
+
+  // Auditoria de dose crítica (spec 042): emite `snoozed` por ocorrência. Fail-open
+  // (o service nunca lança). isCritical filtra: só doses críticas geram trail (FR-004).
+  if (isCritical) {
+    for (const id of snoozedIds) {
+      await snoozeAudit.emit({
+        doseInstanceId: id,
+        event: 'snoozed',
+        platform: Platform.OS,
+        actor: 'user',
+        detail: { snoozeAttempt: next },
+      })
+    }
   }
 
   debugLog('[alarmService] snooze', next, doseInstanceId)

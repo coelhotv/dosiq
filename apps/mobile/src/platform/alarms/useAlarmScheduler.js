@@ -15,8 +15,11 @@
 // imperativamente após mutação de protocolo (FR-006 / insumo E).
 
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   createDoseInstanceRepository,
+  createCriticalAuditService,
   buildDoseItemsFromInstances,
   ensureInstancesUpTo,
   getRawNow,
@@ -28,6 +31,50 @@ import { alarmService } from './alarmService'
 
 const LOOK_AHEAD_DAYS = 3 // 72h (cota de alarmes exatos, Android 12+)
 const LOOK_BACK_DAYS = 1 // inclui doses recém-vencidas (cobre soneca de dose no T0/late)
+
+// Auditoria de dose crítica (spec 042): dedupe do `alarm_scheduled`. syncAlarms roda a
+// cada mudança de estado (cancelAll + re-agenda) → sem dedupe emitiria o mesmo scheduled
+// dezenas de vezes (risco MEDIUM do analysis). Persistimos o conjunto de instanceIds já
+// emitidos; a interseção com a janela atual poda ids não mais agendados (drop → re-emite
+// só se a dose voltar a ser agendada, o que é um scheduling genuinamente novo).
+const SCHEDULED_AUDIT_KEY = '@dosiq/audit/alarm_scheduled_ids'
+
+async function emitScheduledDedupe(criticalIds, userId) {
+  if (!userId || criticalIds.length === 0) {
+    // Sem doses críticas agendadas: zera o set (próxima dose re-emite).
+    try {
+      await AsyncStorage.removeItem(SCHEDULED_AUDIT_KEY)
+    } catch {
+      /* fail-open: dedupe é best-effort */
+    }
+    return
+  }
+  let prev = []
+  try {
+    const raw = await AsyncStorage.getItem(SCHEDULED_AUDIT_KEY)
+    prev = raw ? JSON.parse(raw) : []
+  } catch {
+    prev = []
+  }
+  const prevSet = new Set(Array.isArray(prev) ? prev : [])
+  const audit = createCriticalAuditService({ client: supabase })
+  const toEmit = criticalIds.filter((id) => !prevSet.has(id))
+  for (const id of toEmit) {
+    await audit.emit({
+      userId,
+      doseInstanceId: id,
+      event: 'alarm_scheduled',
+      platform: Platform.OS,
+      actor: 'system',
+    })
+  }
+  // Persiste só os ids da janela atual (poda os que saíram).
+  try {
+    await AsyncStorage.setItem(SCHEDULED_AUDIT_KEY, JSON.stringify(criticalIds))
+  } catch {
+    /* fail-open */
+  }
+}
 
 // Campos do `data` da notificação (single): tudo string (contrato Notifee). Inclui os
 // campos clínicos (036) p/ a tela cheia exibir concentração/dose/ícone contextual.
@@ -167,6 +214,15 @@ export async function syncAlarms({ userId, protocols, tz }) {
         },
       })
     }
+  }
+
+  // Auditoria (spec 042): emite `alarm_scheduled` uma vez por ocorrência crítica agendada.
+  // `items` já está filtrado a critical+pending → usamos os instanceIds reais (não o id
+  // sintético do grupo). Fail-open TOTAL: auditoria jamais pode quebrar o agendamento.
+  try {
+    await emitScheduledDedupe(items.map((it) => it.instanceId), userId)
+  } catch (err) {
+    if (__DEV__) console.warn('[useAlarmScheduler] emit alarm_scheduled falhou (fail-open)', err?.message)
   }
 }
 

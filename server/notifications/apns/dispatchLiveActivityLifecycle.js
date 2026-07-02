@@ -11,7 +11,7 @@
 // Idempotência do update: dose_instances.la_push_state guarda o último estado empurrado.
 // Fail-open total (FR-008): qualquer falha loga e segue — NUNCA propaga, NUNCA toca o alarme.
 
-import { deriveDoseActivityState } from '@dosiq/core'
+import { deriveDoseActivityState, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig } from './liveActivityPush.js'
 
@@ -56,7 +56,19 @@ async function _clearToken(supabase, logger, instanceId) {
 }
 
 /** Processa UMA ocorrência com LA ativa: end se resolvida, update se o estado mudou. @private */
-async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn }) {
+async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit }) {
+  // Auditoria (spec 042): surface_transitioned. userId = dono da instância (SEC-2). detail só
+  // estados derivados (from/to) — sem PII (nome de medicamento/token nunca entram no trail).
+  const emitTransition = (to) =>
+    audit?.emit({
+      userId: inst.user_id,
+      doseInstanceId: inst.id,
+      event: 'surface_transitioned',
+      platform: 'server',
+      actor: 'server',
+      detail: { from: inst.la_push_state ?? null, to },
+    })
+
   // Resolvida (dose registrada/pulada) → encerra a LA (card done p/ taken; dismiss p/ resto).
   if (RESOLVED_STATUSES.has(inst.status)) {
     const finalState = inst.status === 'taken' ? 'done' : 'missed'
@@ -66,6 +78,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn }) 
     })
     if (res.ok || res.deactivate) {
       await _clearToken(supabase, logger, inst.id)
+      await emitTransition(finalState)
       logger?.info?.('LA encerrada por push (end)', { instanceId: inst.id, status: inst.status, apns: res.status })
       return 'ended'
     }
@@ -86,6 +99,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn }) 
     })
     if (res.ok || res.deactivate) {
       await _clearToken(supabase, logger, inst.id)
+      await emitTransition('missed')
       return 'ended'
     }
     return 'failed'
@@ -101,6 +115,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn }) 
       .update({ la_push_state: derived.state })
       .eq('id', inst.id)
     if (error) logger?.error?.('Falha ao marcar la_push_state (fail-open)', error, { instanceId: inst.id })
+    await emitTransition(derived.state)
     logger?.info?.('LA atualizada por push (update)', { instanceId: inst.id, state: derived.state })
     return 'updated'
   }
@@ -146,10 +161,13 @@ export async function dispatchLiveActivityLifecycle({ supabase, logger, now = pa
     return result
   }
 
+  // Auditoria de dose crítica (spec 042). Server sem sessão → userId explícito por emit.
+  const audit = createCriticalAuditService({ client: supabase })
+
   for (const inst of instances) {
     result.processed += 1
     try {
-      const outcome = await _driveInstance({ supabase, logger, inst, now, updateFn, endFn })
+      const outcome = await _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit })
       result[outcome] += 1
     } catch (err) {
       result.failed += 1

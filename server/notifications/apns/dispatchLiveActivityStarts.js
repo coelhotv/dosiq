@@ -12,7 +12,7 @@
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
-import { selectActiveDoseActivity } from '@dosiq/core'
+import { selectActiveDoseActivity, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
@@ -42,10 +42,14 @@ function mapInstance(inst) {
 }
 
 /** Envia o start p/ os devices de UM usuário (IDOR guard + 410 + idempotência). @private */
-async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn }) {
+async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit }) {
   const items = instances.map(mapInstance)
   const active = selectActiveDoseActivity(items, now)
   if (!active || !active.instanceId) return 'skipped'
+  // Auditoria (spec 042): userId é o dono da dose (SEC-2 — derivado da instância, não de sessão).
+  // detail sem PII (sem nome de medicamento/token) — só status HTTP/APNs quando útil.
+  const emitAudit = (event, detail = null) =>
+    audit?.emit({ userId, doseInstanceId: active.instanceId, event, platform: 'server', actor: 'server', detail })
 
   // Token push-to-start do device (por-provider). RLS bypassada (service_role) → guard explícito.
   const { data: devices, error: devErr } = await supabase
@@ -58,7 +62,10 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     logger?.error?.('Falha ao buscar dispositivos apns_liveactivity (fail-open)', devErr, { userId })
     return 'skipped'
   }
-  if (!devices || devices.length === 0) return 'skipped'
+  if (!devices || devices.length === 0) {
+    await emitAudit('push_skipped_no_token')
+    return 'skipped'
+  }
 
   const sourceItem = items.find((it) => String(it.instanceId) === String(active.instanceId))
   // Explícito (mostra nome) — iOS não redige a LA (decisão PO 2026-06-29; paridade com a 039/foreground).
@@ -95,7 +102,11 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     }
   }
 
-  if (!anySent) return 'failed'
+  if (!anySent) {
+    await emitAudit('push_failed')
+    return 'failed'
+  }
+  await emitAudit('push_sent')
   // Idempotência: marca a ocorrência ativa (não re-dispara nas próximas janelas da `upcoming`).
   // UPDATE condicional (.is null) + .select('id'): trava otimista contra corrida (2 crons no mesmo
   // minuto). PostgREST não erra em no-op (0 linhas) — validar o retorno confirma que a trava foi
@@ -168,10 +179,13 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
     ;(byUser[inst.user_id] ||= []).push(inst)
   }
 
+  // Auditoria de dose crítica (spec 042). Server: sem sessão → cada emit passa userId explícito.
+  const audit = createCriticalAuditService({ client: supabase })
+
   for (const userId of Object.keys(byUser)) {
     result.processed += 1
     try {
-      const outcome = await _dispatchForUser({ supabase, logger, userId, instances: byUser[userId], now, buildFn, sendFn })
+      const outcome = await _dispatchForUser({ supabase, logger, userId, instances: byUser[userId], now, buildFn, sendFn, audit })
       result[outcome] += 1
     } catch (err) {
       result.failed += 1
