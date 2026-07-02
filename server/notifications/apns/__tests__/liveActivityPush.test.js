@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
-import { getApnsConfig, sendLiveActivityStart, _resetJwtCache } from '../liveActivityPush.js';
+import { getApnsConfig, sendLiveActivityStart, sendLiveActivityUpdate, sendLiveActivityEnd, _resetJwtCache } from '../liveActivityPush.js';
 
 // .p8 EC P-256 REAL gerada em runtime (não é segredo; só p/ assinar o JWT no unit).
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
@@ -77,5 +77,56 @@ describe('sendLiveActivityStart', () => {
   it('sem token → no_token', async () => {
     const r = await sendLiveActivityStart({ ...base, pushToStartToken: '' });
     expect(r.reason).toBe('no_token');
+  });
+});
+
+// Captura headers + body do request p/ asserção de payload (event/priority/dismissal).
+function makeCapturingHttp2(status, sink) {
+  const handlers = {};
+  const req = {
+    on: (ev, cb) => { handlers[ev] = cb; return req; },
+    setEncoding: () => {},
+    end: (payload) => { sink.body = JSON.parse(payload); handlers.response?.({ ':status': status }); handlers.end?.(); },
+  };
+  return { connect: () => ({ on: () => {}, request: (h) => { sink.headers = h; return req; }, close: () => {} }) };
+}
+
+describe('sendLiveActivityUpdate', () => {
+  beforeEach(() => _resetJwtCache());
+  const cfg = getApnsConfig(ENV);
+
+  it('payload event=update, priority 5, sem attributes', async () => {
+    const sink = {};
+    const r = await sendLiveActivityUpdate({ pushToken: 'tok', contentState: { state: 'late' }, config: cfg, http2lib: makeCapturingHttp2(200, sink) });
+    expect(r.ok).toBe(true);
+    expect(sink.body.aps.event).toBe('update');
+    expect(sink.body.aps['content-state']).toEqual({ state: 'late' });
+    expect(sink.body.aps.attributes).toBeUndefined();
+    expect(sink.headers['apns-priority']).toBe('5');
+    expect(sink.headers['apns-push-type']).toBe('liveactivity');
+  });
+
+  it('sem token → no_token; sem config → apns_not_configured', async () => {
+    expect((await sendLiveActivityUpdate({ pushToken: '', contentState: {}, config: cfg })).reason).toBe('no_token');
+    expect((await sendLiveActivityUpdate({ pushToken: 't', contentState: {}, config: null })).reason).toBe('apns_not_configured');
+  });
+});
+
+describe('sendLiveActivityEnd', () => {
+  beforeEach(() => _resetJwtCache());
+  const cfg = getApnsConfig(ENV);
+
+  it('payload event=end com dismissal-date', async () => {
+    const sink = {};
+    const r = await sendLiveActivityEnd({ pushToken: 'tok', contentState: { state: 'done' }, dismissEpochSec: 1000, config: cfg, http2lib: makeCapturingHttp2(200, sink) });
+    expect(r.ok).toBe(true);
+    expect(sink.body.aps.event).toBe('end');
+    expect(sink.body.aps['dismissal-date']).toBe(1000);
+    expect(sink.body.aps['content-state']).toEqual({ state: 'done' });
+  });
+
+  it('410 → deactivate', async () => {
+    const r = await sendLiveActivityEnd({ pushToken: 'tok', contentState: {}, config: cfg, http2lib: makeHttp2(410, 'Unregistered') });
+    expect(r.deactivate).toBe(true);
   });
 });
