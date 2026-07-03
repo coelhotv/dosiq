@@ -5,8 +5,8 @@
     "mode": "coding",
     "ceremony_type": "eng-review",
     "status": "coding",
-    "merged_pr": 700,
-    "merged_squash": "466298ba",
+    "merged_pr": 701,
+    "merged_squash": "6e3f330b",
     "merged_history": [
       {
         "pr": 696,
@@ -31,9 +31,14 @@
         "pr": 700,
         "squash": "466298ba",
         "phase": "042 Slice B: beacon device (criticalAuditBeacon Android + deriveIosAlarmOutcome + fila offline criticalAuditQueue + token_captured) — épico 042 COMPLETO. Review #700: mutex race AsyncStorage (AP-258) + dedupe iOS"
+      },
+      {
+        "pr": 701,
+        "squash": "6e3f330b",
+        "phase": "041 fix-up + fecho e2e do trail: janela push-to-start [now,now+lead] (AP-259) + push_failed no lifecycle (deactivate/BadDeviceToken visível) + dedupe token_captured mobile com cap FIFO 200. v0.24.5. Confirmado e2e no device real (surface_transitioned later→upcoming + push_sent)"
       }
     ],
-    "goal": "042 épico COMPLETO (Slice A #699 + Slice B #700 merged) — audit trail dose crítica end-to-end",
+    "goal": "042 épico COMPLETO + 041 gaps fechados (#701) — audit trail dose crítica end-to-end VALIDADO em device real (trajetória alarm_scheduled→token_captured→surface_transitioned server→push_sent)",
     "goal_type": "feature",
     "plan": "plans/specs/042-critical-audit-trail/plan.md",
     "tasks": "plans/specs/042-critical-audit-trail/tasks.md",
@@ -63,7 +68,7 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 231,
     "anti_patterns_count": 255,
     "decisions_count": 77,
