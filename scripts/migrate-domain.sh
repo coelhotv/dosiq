@@ -32,7 +32,14 @@ TSCONFIG=""
 DRY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --tsconfig) TSCONFIG="$2"; shift 2 ;;
+    --tsconfig)
+      if [[ $# -lt 2 ]]; then
+        echo "ERRO: --tsconfig requer um caminho de arquivo" >&2
+        exit 1
+      fi
+      TSCONFIG="$2"
+      shift 2
+      ;;
     --dry-run)  DRY=1; shift ;;
     *) echo "arg desconhecido: $1" >&2; exit 1 ;;
   esac
@@ -54,6 +61,7 @@ echo "== 040 migrate-domain: $DOMAIN (dry-run=$DRY) =="
 # 1) Coleta + rename (JSX por conteúdo: presença de tag de fechamento/self-close)
 # -----------------------------------------------------------------------------
 RENAMED_LIST="$(mktemp)"
+trap 'rm -f "$RENAMED_LIST"' EXIT
 while IFS= read -r f; do
   base="$(basename "$f")"
   [[ "$base" =~ $EXCLUDE_RE ]] && { echo "  skip (excluído): $f"; continue; }
@@ -83,6 +91,11 @@ echo "== renomeados: $COUNT arquivos =="
 #    de nome em dirs diferentes são raras e o tsc acusa.
 # -----------------------------------------------------------------------------
 echo "== reescrevendo import specifiers =="
+# sed -i difere entre BSD (macOS) e GNU (Linux/CI) — array evita o gap
+case "$(uname)" in
+  Darwin*) sed_i=(-i "") ;;
+  *)       sed_i=(-i) ;;
+esac
 SRC_GLOBS=(apps/web/src apps/mobile/src packages server api)
 while IFS= read -r stem; do
   name="$(basename "$stem")"
@@ -93,7 +106,7 @@ while IFS= read -r stem; do
   grep -rlE "/${name}\.(js|jsx)['\"]" "${SRC_GLOBS[@]}" 2>/dev/null \
     | grep -vE "$EXCLUDE_RE" \
     | while IFS= read -r importer; do
-        sed -E -i '' "$pattern" "$importer"
+        sed "${sed_i[@]}" -E "$pattern" "$importer"
       done || true
 done < "$RENAMED_LIST"
 rm -f "$RENAMED_LIST"
