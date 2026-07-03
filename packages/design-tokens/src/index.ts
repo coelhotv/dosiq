@@ -20,16 +20,16 @@
  * @module @dosiq/design-tokens
  */
 
-export { colors } from './colors.js'
-export { spacing } from './spacing.js'
-export { radii } from './radii.js'
-export { typography } from './typography.js'
+export { colors } from './colors'
+export { spacing } from './spacing'
+export { radii } from './radii'
+export { typography } from './typography'
 
 // Barrel export for convenience
-import { colors } from './colors.js'
-import { spacing } from './spacing.js'
-import { radii } from './radii.js'
-import { typography } from './typography.js'
+import { colors } from './colors'
+import { spacing } from './spacing'
+import { radii } from './radii'
+import { typography } from './typography'
 
 export const designTokens = {
   colors,
