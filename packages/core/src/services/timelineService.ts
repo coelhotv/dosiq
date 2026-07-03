@@ -15,6 +15,8 @@
  * @module timelineService
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { buildTimeline, TIMELINE_EVENT_TYPES, TIMELINE_ORDER } from '../utils/timeline.js'
 import { parseISO } from '../utils/dateUtils.js'
@@ -25,12 +27,49 @@ const DEFAULT_TOLERANCE_MINUTES = 120
 /** Status de instância que aparecem na timeline (skipped_* são neutros → ocultos). */
 const VISIBLE_INSTANCE_STATUSES = new Set(['taken', 'missed', 'pending'])
 
+interface DoseInstance {
+  id: string
+  status: string
+  protocol_id: string
+  scheduled_for: string
+  expected_dose?: unknown
+  tolerance_minutes?: number | null
+  medicine_log_id?: string | null
+  [key: string]: unknown
+}
+
+interface MedicineLog {
+  id: string
+  protocol_id?: string | null
+  medicine_id?: string | null
+  taken_at: string
+  quantity_taken?: number | null
+  notes?: string | null
+  dose_instance_id?: string | null
+  injection_site?: string | null
+  [key: string]: unknown
+}
+
+interface Biomarker {
+  id: string
+  measured_at?: string | null
+  type?: unknown
+  value?: unknown
+  value_secondary?: unknown
+  unit?: unknown
+  context?: unknown
+  notes?: unknown
+  [key: string]: unknown
+}
+
+type ProtocolsById = Record<string, { medicine?: { name?: unknown; dosage_unit?: unknown }; medicine_name?: unknown; dosage_unit?: unknown } | undefined>
+
 /**
  * Resolve o instante absoluto de uma instância:
  * - `taken` com log ancorado → o instante REAL da tomada (`taken_at`);
  * - demais → o horário agendado (`scheduled_for`).
  */
-function instanceOccurredAt(instance, linkedLog) {
+function instanceOccurredAt(instance: DoseInstance, linkedLog: MedicineLog | null | undefined) {
   if (instance.status === 'taken' && linkedLog?.taken_at) return linkedLog.taken_at
   return instance.scheduled_for
 }
@@ -39,8 +78,8 @@ function instanceOccurredAt(instance, linkedLog) {
  * IDs de logs já "consumidos" por uma instância: elo direto na instância
  * (medicine_log_id) OU elo inverso no log (dose_instance_id). Bidirecional (AP-185).
  */
-function collectConsumedLogIds(instances, logs) {
-  const consumed = new Set()
+function collectConsumedLogIds(instances: DoseInstance[], logs: MedicineLog[]) {
+  const consumed = new Set<string>()
   for (const inst of instances) {
     if (inst.medicine_log_id) consumed.add(inst.medicine_log_id)
   }
@@ -51,9 +90,9 @@ function collectConsumedLogIds(instances, logs) {
 }
 
 /** Enriquecimento opcional de payload (medicine name/unit) a partir do mapa de protocolos. */
-function makeEnricher(protocolsById) {
-  return (protocolId) => {
-    const p = protocolsById[protocolId]
+function makeEnricher(protocolsById: ProtocolsById) {
+  return (protocolId: string | null | undefined) => {
+    const p = protocolId ? protocolsById[protocolId] : undefined
     if (!p) return {}
     return {
       medicineName: p.medicine?.name ?? p.medicine_name ?? null,
@@ -63,7 +102,7 @@ function makeEnricher(protocolsById) {
 }
 
 /** Constrói o evento de uma instância visível (taken/missed/pending). */
-function instanceToEvent(inst, logById, enrich) {
+function instanceToEvent(inst: DoseInstance, logById: Map<string, MedicineLog>, enrich: (id: string | null | undefined) => Record<string, unknown>) {
   const linkedLog = inst.medicine_log_id ? logById.get(inst.medicine_log_id) : null
   return {
     id: `inst:${inst.id}`,
@@ -88,7 +127,7 @@ function instanceToEvent(inst, logById, enrich) {
 }
 
 /** Constrói o evento de um log avulso (PRN/freeform, sem instância representativa). */
-function logToEvent(log, enrich) {
+function logToEvent(log: MedicineLog, enrich: (id: string | null | undefined) => Record<string, unknown>) {
   return {
     id: `log:${log.id}`,
     type: TIMELINE_EVENT_TYPES.DOSE,
@@ -117,7 +156,11 @@ function logToEvent(log, enrich) {
  *        (medicine name/unit). Opcional — UI também resolve via contexto.
  * @returns {import('../utils/timeline.js').TimelineEvent[]}
  */
-export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = {}) {
+export function doseInstancesToEvents(
+  instances: DoseInstance[] | null | undefined,
+  logs: MedicineLog[] | null | undefined,
+  { protocolsById = {} }: { protocolsById?: ProtocolsById } = {},
+) {
   const safeInstances = Array.isArray(instances) ? instances : []
   const safeLogs = Array.isArray(logs) ? logs : []
   const logById = new Map(safeLogs.map((l) => [l.id, l]))
@@ -127,7 +170,7 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
   // Slots representados por instância visível, indexados por protocol_id (p/ dedupe
   // defensivo de avulsos, AP-193). Map por protocolo evita varrer todos os slots por
   // log avulso — busca fica limitada aos slots do mesmo protocolo (Gemini #620).
-  const slotsByProtocol = new Map()
+  const slotsByProtocol = new Map<string, { ms: number; tolMs: number }[]>()
   const events = []
   for (const inst of safeInstances) {
     if (!VISIBLE_INSTANCE_STATUSES.has(inst.status)) continue
@@ -138,13 +181,14 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
     // de segunda dose legítima no mesmo protocolo dentro da janela de tolerância (AP-193).
     if (inst.status === 'taken') continue
     if (!slotsByProtocol.has(inst.protocol_id)) slotsByProtocol.set(inst.protocol_id, [])
-    slotsByProtocol.get(inst.protocol_id).push({
+    slotsByProtocol.get(inst.protocol_id)?.push({
       ms: parseISO(inst.scheduled_for).getTime(),
       tolMs: (inst.tolerance_minutes ?? DEFAULT_TOLERANCE_MINUTES) * MS_PER_MINUTE,
     })
   }
 
-  const isCoveredBySlot = (log) => {
+  const isCoveredBySlot = (log: MedicineLog) => {
+    if (!log.protocol_id) return false
     const slots = slotsByProtocol.get(log.protocol_id)
     if (!slots || slots.length === 0) return false
     const takenMs = parseISO(log.taken_at).getTime()
@@ -168,7 +212,7 @@ export function doseInstancesToEvents(instances, logs, { protocolsById = {} } = 
  * @param {Array<Object>} biomarkers - linhas de biomarkers_log (repo.list).
  * @returns {import('../utils/timeline.js').TimelineEvent[]}
  */
-export function biomarkersToEvents(biomarkers) {
+export function biomarkersToEvents(biomarkers: Biomarker[] | null | undefined) {
   const safe = Array.isArray(biomarkers) ? biomarkers : []
   const events = []
   for (const b of safe) {
@@ -199,9 +243,9 @@ const LOG_PAGE_SIZE = 1000
  * Busca medicine_logs de um usuário na janela [fromIso, toIso] por keyset em `id`
  * (AP-186: PostgREST trunca em ~1000 sem paginação).
  */
-async function fetchLogsWindow(client, userId, fromIso, toIso) {
-  const out = []
-  let lastId = null
+async function fetchLogsWindow(client: SupabaseClient<Database>, userId: string, fromIso: string, toIso: string) {
+  const out: MedicineLog[] = []
+  let lastId: string | null = null
   for (;;) {
     let q = client
       .from(LOGS_TABLE)
@@ -217,7 +261,7 @@ async function fetchLogsWindow(client, userId, fromIso, toIso) {
     const { data, error } = await q
     if (error) throw error
     if (!data || data.length === 0) break
-    out.push(...data)
+    out.push(...(data as unknown as MedicineLog[]))
     if (data.length < LOG_PAGE_SIZE) break
     lastId = data[data.length - 1].id
   }
@@ -229,7 +273,7 @@ async function fetchLogsWindow(client, userId, fromIso, toIso) {
  * @param {Object} deps
  * @param {Object} deps.client - Cliente Supabase.
  */
-export function createTimelineService({ client }) {
+export function createTimelineService({ client }: { client: SupabaseClient<Database> }) {
   if (!client) throw new Error('createTimelineService: client é obrigatório')
   const doseInstanceRepo = createDoseInstanceRepository({ client })
 
@@ -253,10 +297,24 @@ export function createTimelineService({ client }) {
      * @param {Object<string,Object>} [args.protocolsById] - enriquecimento opcional
      * @returns {Promise<import('../utils/timeline.js').TimelineEvent[]>}
      */
-    async getTimeline({ userId, fromTs, toTs, tz = 'America/Sao_Paulo', order = TIMELINE_ORDER.DESC, protocolsById = {} }) {
+    async getTimeline({
+      userId,
+      fromTs,
+      toTs,
+      tz = 'America/Sao_Paulo',
+      order = TIMELINE_ORDER.DESC,
+      protocolsById = {},
+    }: {
+      userId: string
+      fromTs: Date | string
+      toTs: Date | string
+      tz?: string
+      order?: 'asc' | 'desc'
+      protocolsById?: ProtocolsById
+    }) {
       if (!userId) throw new Error('getTimeline: userId é obrigatório')
-      const fromIso = parseISO(fromTs).toISOString()
-      const toTsIso = parseISO(toTs).toISOString()
+      const fromIso = parseISO(fromTs instanceof Date ? fromTs.toISOString() : fromTs).toISOString()
+      const toTsIso = parseISO(toTs instanceof Date ? toTs.toISOString() : toTs).toISOString()
 
       const [instances, logs] = await Promise.all([
         doseInstanceRepo.getWindow(userId, fromIso, toTsIso),

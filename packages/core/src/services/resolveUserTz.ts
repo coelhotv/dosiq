@@ -12,9 +12,11 @@
  * @param {string} userId  dono do recurso.
  * @returns {Promise<string>} tz IANA (`user_settings.timezone` ou `America/Sao_Paulo`).
  */
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { DEFAULT_TIMEZONE } from '../schemas/userSettingsSchema.js'
 
-export async function resolveUserTz(client, userId) {
+export async function resolveUserTz(client: SupabaseClient<Database>, userId: string | null | undefined): Promise<string> {
   if (!userId) return DEFAULT_TIMEZONE
   try {
     const { data, error } = await client
@@ -35,9 +37,9 @@ export async function resolveUserTz(client, userId) {
  * @param {string[]} userIds  lista (pode ter repetidos).
  * @returns {Promise<Map<string,string>>} userId → tz (ausentes não entram; caller usa fallback).
  */
-export async function resolveUserTzMap(client, userIds) {
-  const unique = [...new Set((userIds || []).filter(Boolean))]
-  const map = new Map()
+export async function resolveUserTzMap(client: SupabaseClient<Database>, userIds: (string | null | undefined)[]): Promise<Map<string, string>> {
+  const unique = [...new Set((userIds || []).filter(Boolean))] as string[]
+  const map = new Map<string, string>()
   if (unique.length === 0) return map
   try {
     const { data, error } = await client

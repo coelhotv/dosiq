@@ -19,8 +19,8 @@ import {
 } from '../schemas/protocolSchema.js'
 import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils.js'
 import { createDoseInstanceRepository } from './createDoseInstanceRepository'
-import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js'
-import { resolveUserTz } from '../services/resolveUserTz.js'
+import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner'
+import { resolveUserTz } from '../services/resolveUserTz'
 
 // Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
 // critical_alarm incluído: mudar o flag de criticidade deve re-materializar as pending futuras
@@ -42,7 +42,7 @@ async function syncInstancesOnWrite({
   updates,
 }: {
   client: SupabaseClient<Database>
-  protocol: Record<string, any>
+  protocol: { id: string; user_id: string; end_date?: string | null; [key: string]: unknown }
   updates: Record<string, unknown> | null
 }) {
   try {
@@ -230,7 +230,7 @@ export function createProtocolRepository({
 
       if (error) throw error
       // ADR-048 S2.5: materializa a janela inicial de dose_instances (best-effort)
-      await syncInstancesOnWrite({ client, protocol: data, updates: null })
+      await syncInstancesOnWrite({ client, protocol: data as unknown as { id: string; user_id: string; end_date?: string | null; [key: string]: unknown }, updates: null })
       return detailTransform(data)
     },
 
@@ -253,7 +253,7 @@ export function createProtocolRepository({
       // ADR-048 S2.5: pausa/resume/mudança de agendamento → sincroniza instâncias (best-effort).
       // Usa `updates` CRU (não validation.data) — Zod pode injetar defaults e fazer toda
       // edição parecer mudança de agendamento.
-      await syncInstancesOnWrite({ client, protocol: data, updates })
+      await syncInstancesOnWrite({ client, protocol: data as unknown as { id: string; user_id: string; end_date?: string | null; [key: string]: unknown }, updates })
       return detailTransform(data)
     },
 

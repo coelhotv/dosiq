@@ -20,8 +20,19 @@ import { getNow, parseISO } from '../utils/dateUtils.js'
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
 const DEFAULT_TIMEOUT_MS = 30_000
 
+interface CachedManifest {
+  version?: string
+  cachedAt?: string
+  [key: string]: unknown
+}
+
+interface StorageAdapter {
+  read: (fileKey: string) => Promise<{ manifest?: CachedManifest; data?: unknown } | null>
+  write: (fileKey: string, value: { manifest: CachedManifest; data: unknown }) => Promise<void>
+}
+
 // Normaliza texto para busca (remove diacríticos + lowercase). Idêntico web↔mobile.
-export function normalizeText(text) {
+export function normalizeText(text: string | null | undefined): string {
   if (!text) return ''
   return text
     .toLowerCase()
@@ -32,7 +43,7 @@ export function normalizeText(text) {
 // Match por prefixo com word-boundary: "trime" casa "Maleato de Trimebutina"
 // (após espaço) e "Trimetoprima" (início), mas NÃO "Sumatripta**" (mid-word).
 // Boundaries reconhecidos: início, espaço, hífen, ponto, parêntese, slash, vírgula.
-export function matchesPrefix(normalizedText, normalizedQuery) {
+export function matchesPrefix(normalizedText: string | null | undefined, normalizedQuery: string | null | undefined): boolean {
   if (!normalizedText || !normalizedQuery) return false
   if (normalizedText.startsWith(normalizedQuery)) return true
   const boundaryChars = ' -.,(/\\'
@@ -46,7 +57,7 @@ export function matchesPrefix(normalizedText, normalizedQuery) {
 
 // Fetch JSON com timeout (R-168, AbortController). Lança em erro de rede/HTTP — o
 // caller (load) é quem decide a degradação graciosa.
-export async function fetchJson(url, timeoutMs = DEFAULT_TIMEOUT_MS) {
+export async function fetchJson(url: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<unknown> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -61,7 +72,17 @@ export async function fetchJson(url, timeoutMs = DEFAULT_TIMEOUT_MS) {
 }
 
 // Decide se cache atual precisa ser substituído. Boolean.
-export function shouldRefreshCache({ remoteManifest, cachedManifest, ttlMs, hasData }) {
+export function shouldRefreshCache({
+  remoteManifest,
+  cachedManifest,
+  ttlMs,
+  hasData,
+}: {
+  remoteManifest: CachedManifest
+  cachedManifest: CachedManifest | null | undefined
+  ttlMs: number
+  hasData: boolean
+}): boolean {
   if (!cachedManifest) return true
   if (!hasData) return true
   if (cachedManifest.version !== remoteManifest.version) return true
@@ -74,7 +95,11 @@ export function shouldRefreshCache({ remoteManifest, cachedManifest, ttlMs, hasD
 
 // Resolve URL absoluto do arquivo a partir do manifest remoto + fileKey.
 // Usa só o basename de files.<fileKey>.path (o baseUrl já aponta p/ anvisa/v1).
-export function resolveDataUrl(baseUrl, remoteManifest, fileKey) {
+export function resolveDataUrl(
+  baseUrl: string,
+  remoteManifest: { files?: Record<string, { path?: string }> } | null | undefined,
+  fileKey: string,
+): string {
   const fileName =
     remoteManifest?.files?.[fileKey]?.path?.split('/').pop() || `${fileKey}.json`
   return `${baseUrl}/${fileName}`
@@ -97,19 +122,25 @@ export function createAnvisaDatabase({
   storageAdapter,
   ttlMs = DEFAULT_TTL_MS,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-}) {
+}: {
+  baseUrl: string
+  fileKey: string
+  storageAdapter: StorageAdapter
+  ttlMs?: number
+  timeoutMs?: number
+}): { load: () => Promise<unknown[]> } {
   // Memoização por instância: 1ª chamada carrega; subsequentes reusam (igual ao
   // antigo _database). Evita re-fetch a cada keystroke do autocomplete.
-  let dataPromise = null
+  let dataPromise: Promise<unknown[]> | null = null
 
-  async function resolveData() {
+  async function resolveData(): Promise<unknown[]> {
     // 1. Cache local (rápido). Falha de leitura → trata como ausência.
     const cached = await storageAdapter.read(fileKey).catch(() => null)
     const hasData = Boolean(cached?.data)
 
     // 2. Background: busca manifest remoto e decide se re-download é necessário.
     try {
-      const remoteManifest = await fetchJson(`${baseUrl}/manifest.json`, timeoutMs)
+      const remoteManifest = (await fetchJson(`${baseUrl}/manifest.json`, timeoutMs)) as CachedManifest & { files?: Record<string, { path?: string }> }
       const refresh = shouldRefreshCache({
         remoteManifest,
         cachedManifest: cached?.manifest,

@@ -15,6 +15,15 @@
 
 import { generateInstances } from '../utils/doseInstanceGenerator.js'
 import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO } from '../utils/dateUtils.js'
+import type { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
+
+type DoseInstanceRepo = ReturnType<typeof createDoseInstanceRepository>
+
+interface Protocol {
+  id: string
+  end_date?: string | null
+  [key: string]: unknown
+}
 
 /** Janela padrão de geração para protocolos contínuos (sem end_date). */
 export const WINDOW_DAYS = 30
@@ -31,7 +40,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
  * @param {Date} baseDate - âncora (normalmente agora)
  * @returns {string} ISO UTC
  */
-export function computeWindowEnd(protocol, baseDate, tz = 'America/Sao_Paulo') {
+export function computeWindowEnd(protocol: Protocol, baseDate: Date, tz = 'America/Sao_Paulo'): string {
   const continuousEnd = parseTimestamp(baseDate.getTime() + WINDOW_DAYS * MS_PER_DAY).toISOString()
   if (!protocol.end_date) return continuousEnd
   const endOfEndDate = getEndOfDayISO(protocol.end_date, tz) // ISO do fim do dia de end_date no tz do dono
@@ -50,12 +59,24 @@ export function computeWindowEnd(protocol, baseDate, tz = 'America/Sao_Paulo') {
  * @param {string} [params.tz]
  * @returns {Promise<number>} nº de instâncias geradas (antes do ON CONFLICT)
  */
-export async function planWindow({ protocol, doseInstanceRepo, fromTs, toTs, tz = 'America/Sao_Paulo' }) {
+export async function planWindow({
+  protocol,
+  doseInstanceRepo,
+  fromTs,
+  toTs,
+  tz = 'America/Sao_Paulo',
+}: {
+  protocol: Protocol
+  doseInstanceRepo: DoseInstanceRepo
+  fromTs: Date | string | number
+  toTs: Date | string | number
+  tz?: string
+}): Promise<number> {
   const instances = generateInstances(protocol, fromTs, toTs, tz)
   if (instances.length > 0) {
     await doseInstanceRepo.upsertMany(instances)
   }
-  await doseInstanceRepo.setGeneratedThrough(protocol.id, toTs)
+  await doseInstanceRepo.setGeneratedThrough(protocol.id, toIsoLike(toTs))
   return instances.length
 }
 
@@ -65,7 +86,17 @@ export async function planWindow({ protocol, doseInstanceRepo, fromTs, toTs, tz 
  * No-op se já coberto.
  * @returns {Promise<number>} instâncias geradas no gap (0 se já coberto)
  */
-export async function ensureInstancesUpTo({ protocol, doseInstanceRepo, ts, tz = 'America/Sao_Paulo' }) {
+export async function ensureInstancesUpTo({
+  protocol,
+  doseInstanceRepo,
+  ts,
+  tz = 'America/Sao_Paulo',
+}: {
+  protocol: Protocol
+  doseInstanceRepo: DoseInstanceRepo
+  ts: Date | string | number | null | undefined
+  tz?: string
+}): Promise<number> {
   const nowMs = parseISO(getServerTimestamp()).getTime()
   const requestedMs = parseISO(toIsoLike(ts)).getTime()
   // alvo efetivo = min(ts pedido, fim-alvo da janela do protocolo)
@@ -83,7 +114,7 @@ export async function ensureInstancesUpTo({ protocol, doseInstanceRepo, ts, tz =
 }
 
 /** Converte Date|ISO|ms em ISO (R-020: sem `new Date()` direto). Null-safe. */
-function toIsoLike(value) {
+function toIsoLike(value: Date | string | number | null | undefined): string {
   if (value === null || value === undefined) return getServerTimestamp()
   if (typeof value === 'number') return parseTimestamp(value).toISOString()
   if (typeof value === 'string') return value
@@ -103,7 +134,19 @@ function toIsoLike(value) {
  *   Omitir (`undefined`) mantém o fallback que busca no repo.
  * @returns {Promise<number>} instâncias geradas (0 se não precisou renovar)
  */
-export async function renewProtocolWindow({ protocol, doseInstanceRepo, generatedThrough, now = parseISO(getServerTimestamp()), tz = 'America/Sao_Paulo' }) {
+export async function renewProtocolWindow({
+  protocol,
+  doseInstanceRepo,
+  generatedThrough,
+  now = parseISO(getServerTimestamp()),
+  tz = 'America/Sao_Paulo',
+}: {
+  protocol: Protocol
+  doseInstanceRepo: DoseInstanceRepo
+  generatedThrough?: string | null
+  now?: Date
+  tz?: string
+}): Promise<number> {
   const targetIso = computeWindowEnd(protocol, now, tz)
   const targetMs = parseISO(targetIso).getTime()
   const hwm = generatedThrough !== undefined

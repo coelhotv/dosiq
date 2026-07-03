@@ -16,8 +16,10 @@
  * futura — taken/missed/skipped e o passado ficam intactos.
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
-import { computeWindowEnd, planWindow } from './doseInstancePlanner.js'
+import { computeWindowEnd, planWindow } from './doseInstancePlanner'
 import { getServerTimestamp, getTodayLocal, parseISO } from '../utils/dateUtils.js'
 
 const PROTOCOLS = 'protocols'
@@ -32,7 +34,7 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
  * @param {string} userId
  * @returns {Promise<boolean>}
  */
-export async function hasFuturePendingDoses(client, userId) {
+export async function hasFuturePendingDoses(client: SupabaseClient<Database> | null | undefined, userId: string | null | undefined): Promise<boolean> {
   if (!client || !userId) return false
   try {
     const { count, error } = await client
@@ -60,11 +62,19 @@ export async function hasFuturePendingDoses(client, userId) {
  * @param {string} params.tz - tz IANA de destino (ex: 'Europe/London').
  * @returns {Promise<{processed:number, regenerated:number, failed:number}>}
  */
-export async function regenActiveProtocolsForTz({ client, userId, tz = DEFAULT_TZ }) {
+export async function regenActiveProtocolsForTz({
+  client,
+  userId,
+  tz = DEFAULT_TZ,
+}: {
+  client: SupabaseClient<Database> | null | undefined
+  userId: string | null | undefined
+  tz?: string
+}): Promise<{ processed: number; regenerated: number; failed: number }> {
   const result = { processed: 0, regenerated: 0, failed: 0 }
   if (!client || !userId) return result
 
-  let protocols
+  let protocols: { id: string; user_id: string; end_date?: string | null; [key: string]: unknown }[]
   try {
     const today = getTodayLocal(tz)
     const { data, error } = await client

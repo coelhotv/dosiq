@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { doseInstancesToEvents, createTimelineService } from '../timelineService.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+import { doseInstancesToEvents, createTimelineService } from '../timelineService'
+
+const asClient = (c: unknown) => c as SupabaseClient<Database>
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -7,25 +11,25 @@ afterEach(() => {
 })
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
-const inst = (id, status, scheduled_for, extra = {}) => ({
+const inst = (id: string, status: string, scheduled_for: string, extra: Record<string, unknown> = {}) => ({
   id,
-  protocol_id: extra.protocol_id ?? 'p1',
+  protocol_id: (extra.protocol_id as string) ?? 'p1',
   status,
   scheduled_for,
   expected_dose: 1,
   tolerance_minutes: 120,
-  medicine_log_id: extra.medicine_log_id ?? null,
+  medicine_log_id: (extra.medicine_log_id as string | null) ?? null,
   user_id: 'u1',
 })
-const log = (id, taken_at, extra = {}) => ({
+const log = (id: string, taken_at: string, extra: Record<string, unknown> = {}) => ({
   id,
-  protocol_id: extra.protocol_id ?? 'p1',
-  medicine_id: extra.medicine_id ?? 'm1',
+  protocol_id: (extra.protocol_id as string) ?? 'p1',
+  medicine_id: (extra.medicine_id as string) ?? 'm1',
   taken_at,
-  quantity_taken: extra.quantity_taken ?? 1,
-  notes: extra.notes ?? null,
-  dose_instance_id: extra.dose_instance_id ?? null,
-  injection_site: extra.injection_site ?? null,
+  quantity_taken: (extra.quantity_taken as number) ?? 1,
+  notes: (extra.notes as string | null) ?? null,
+  dose_instance_id: (extra.dose_instance_id as string | null) ?? null,
+  injection_site: (extra.injection_site as string | null) ?? null,
 })
 
 describe('doseInstancesToEvents — dedupe e cobertura', () => {
@@ -47,8 +51,8 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
       log('prn', '2026-05-22T09:00:00Z', { protocol_id: 'p2', injection_site: 'abdomen_e' }),
     ]
     const events = doseInstancesToEvents(instances, logs)
-    expect(events.find(e => e.id === 'inst:i1').payload.injectionSite).toBe('coxa_d')
-    expect(events.find(e => e.id === 'log:prn').payload.injectionSite).toBe('abdomen_e')
+    expect(events.find(e => e.id === 'inst:i1')?.payload.injectionSite).toBe('coxa_d')
+    expect(events.find(e => e.id === 'log:prn')?.payload.injectionSite).toBe('abdomen_e')
   })
 
   it('031/PO-6: dose sem sítio → payload.injectionSite null (oculto no histórico)', () => {
@@ -70,8 +74,8 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
       [inst('i1', 'missed', '2026-05-20T13:00:00Z'), inst('i2', 'pending', '2026-05-21T13:00:00Z')],
       [],
     )
-    expect(events.find(e => e.id === 'inst:i1').occurred_at).toBe('2026-05-20T13:00:00Z')
-    expect(events.find(e => e.id === 'inst:i2').occurred_at).toBe('2026-05-21T13:00:00Z')
+    expect(events.find(e => e.id === 'inst:i1')?.occurred_at).toBe('2026-05-20T13:00:00Z')
+    expect(events.find(e => e.id === 'inst:i2')?.occurred_at).toBe('2026-05-21T13:00:00Z')
   })
 
   it('log avulso (sem elo, fora de slot) vira evento próprio', () => {
@@ -83,8 +87,8 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
     const events = doseInstancesToEvents(instances, logs)
     expect(events.map(e => e.id).sort()).toEqual(['inst:i1', 'log:prn'])
     const avulso = events.find(e => e.id === 'log:prn')
-    expect(avulso.payload.source).toBe('log')
-    expect(avulso.payload.status).toBe('taken')
+    expect(avulso?.payload.source).toBe('log')
+    expect(avulso?.payload.status).toBe('taken')
   })
 
   it('AP-193: log avulso coberto por slot representado (tolerância) é suprimido', () => {
@@ -119,8 +123,8 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
       [],
       { protocolsById: { p1: { medicine_name: 'Apidra', dosage_unit: 'ml' } } },
     )
-    expect(events[0].payload.medicineName).toBe('Apidra')
-    expect(events[0].payload.dosageUnit).toBe('ml')
+    expect((events[0].payload as unknown as { medicineName: string }).medicineName).toBe('Apidra')
+    expect((events[0].payload as unknown as { dosageUnit: string }).dosageUnit).toBe('ml')
   })
 
   it('robustez: entradas não-array → []', () => {
@@ -129,8 +133,8 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
 })
 
 // ── getTimeline (client mockado) ─────────────────────────────────────────────
-function makeClient({ instances = [], logs = [] }) {
-  const chain = (resolveData) => {
+function makeClient({ instances = [] as unknown[], logs = [] as unknown[] }: { instances?: unknown[]; logs?: unknown[] } = {}) {
+  const chain = (resolveData: unknown) => {
     const obj = {
       select: () => obj,
       eq: () => obj,
@@ -140,24 +144,24 @@ function makeClient({ instances = [], logs = [] }) {
       order: () => obj,
       limit: () => obj,
       range: () => obj,
-      then: (resolve) => resolve({ data: resolveData, error: null }),
+      then: (resolve: (v: { data: unknown; error: null }) => void) => resolve({ data: resolveData, error: null }),
     }
     return obj
   }
-  return {
-    from: (table) => chain(table === 'dose_instances' ? instances : logs),
-  }
+  return asClient({
+    from: (table: string) => chain(table === 'dose_instances' ? instances : logs),
+  })
 }
 
 describe('createTimelineService.getTimeline', () => {
   it('exige userId', async () => {
     const svc = createTimelineService({ client: makeClient({}) })
-    await expect(svc.getTimeline({ fromTs: '2026-05-01T00:00:00Z', toTs: '2026-05-30T00:00:00Z' }))
+    await expect(svc.getTimeline({ fromTs: '2026-05-01T00:00:00Z', toTs: '2026-05-30T00:00:00Z' } as any))
       .rejects.toThrow('userId')
   })
 
   it('exige client na factory', () => {
-    expect(() => createTimelineService({})).toThrow('client')
+    expect(() => createTimelineService({} as any)).toThrow('client')
   })
 
   it('busca instâncias + logs e retorna stream ordenada desc com localDay', async () => {

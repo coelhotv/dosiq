@@ -13,12 +13,17 @@ vi.mock('../../repositories/createDoseInstanceRepository.js', () => ({
   createDoseInstanceRepository: vi.fn(() => ({ wipeFuturePending })),
 }))
 
-import { hasFuturePendingDoses, regenActiveProtocolsForTz } from '../timezoneRegen.js'
-import { planWindow } from '../doseInstancePlanner.js'
+import { hasFuturePendingDoses, regenActiveProtocolsForTz } from '../timezoneRegen'
+import { planWindow } from '../doseInstancePlanner'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+
+const mockedPlanWindow = vi.mocked(planWindow)
+const asClient = (c: unknown) => c as SupabaseClient<Database>
 
 // Client mínimo: `.from(table)` despacha por tabela.
-function makeClient({ pendingCount, pendingError, protocols, protocolsError, throws } = {}) {
-  return {
+function makeClient({ pendingCount, pendingError, protocols, protocolsError, throws }: { pendingCount?: number; pendingError?: unknown; protocols?: unknown[]; protocolsError?: unknown; throws?: boolean } = {}) {
+  return asClient({
     from: vi.fn((table) => {
       if (table === 'dose_instances') {
         // head-count: select().eq().eq().gt() → { count, error }
@@ -51,12 +56,12 @@ function makeClient({ pendingCount, pendingError, protocols, protocolsError, thr
         }),
       }
     }),
-  }
+  })
 }
 
 beforeEach(() => {
   wipeFuturePending.mockClear()
-  planWindow.mockClear()
+  mockedPlanWindow.mockClear()
 })
 afterEach(() => vi.clearAllMocks())
 
@@ -82,20 +87,20 @@ describe('regenActiveProtocolsForTz', () => {
     expect(res).toEqual({ processed: 2, regenerated: 10, failed: 0 })
     expect(wipeFuturePending).toHaveBeenCalledTimes(2)
     expect(wipeFuturePending).toHaveBeenCalledWith('p1')
-    expect(planWindow).toHaveBeenCalledTimes(2)
+    expect(mockedPlanWindow).toHaveBeenCalledTimes(2)
     // tz de destino propagado à geração
-    expect(planWindow.mock.calls[0][0]).toMatchObject({ tz: 'Europe/London' })
+    expect(mockedPlanWindow.mock.calls[0][0]).toMatchObject({ tz: 'Europe/London' })
   })
 
   it('sem tratamento ativo → noop', async () => {
     const client = makeClient({ protocols: [] })
     const res = await regenActiveProtocolsForTz({ client, userId: 'u1', tz: 'Europe/London' })
     expect(res).toEqual({ processed: 0, regenerated: 0, failed: 0 })
-    expect(planWindow).not.toHaveBeenCalled()
+    expect(mockedPlanWindow).not.toHaveBeenCalled()
   })
 
   it('best-effort: falha num tratamento não derruba o lote', async () => {
-    planWindow.mockImplementationOnce(async () => { throw new Error('gen fail') })
+    mockedPlanWindow.mockImplementationOnce(async () => { throw new Error('gen fail') })
     const client = makeClient({ protocols: [{ id: 'p1' }, { id: 'p2' }] })
     const res = await regenActiveProtocolsForTz({ client, userId: 'u1', tz: 'Europe/London' })
     expect(res.processed).toBe(2)
@@ -107,11 +112,11 @@ describe('regenActiveProtocolsForTz', () => {
     const client = makeClient({ protocolsError: { code: 'X' } })
     const res = await regenActiveProtocolsForTz({ client, userId: 'u1', tz: 'Europe/London' })
     expect(res).toEqual({ processed: 0, regenerated: 0, failed: 0 })
-    expect(planWindow).not.toHaveBeenCalled()
+    expect(mockedPlanWindow).not.toHaveBeenCalled()
   })
 
   it('sem client/userId → zeros', async () => {
-    expect(await regenActiveProtocolsForTz({ client: null, userId: 'u1', tz: 'X' }))
+    expect(await regenActiveProtocolsForTz({ client: null as unknown as SupabaseClient<Database>, userId: 'u1', tz: 'X' }))
       .toEqual({ processed: 0, regenerated: 0, failed: 0 })
     expect(await regenActiveProtocolsForTz({ client: makeClient({}), userId: null, tz: 'X' }))
       .toEqual({ processed: 0, regenerated: 0, failed: 0 })

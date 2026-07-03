@@ -11,11 +11,27 @@
 // explicitamente em `evt.userId`. Se nenhum dos dois estiver disponível, o evento seria
 // órfão (sem dono) — isso é proibido: não inserimos e retornamos `{ ok:false }` sem lançar.
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { criticalAuditEventSchema } from '../schemas/criticalAuditEventSchema.js'
+
+export interface CriticalAuditEvent {
+  doseInstanceId?: string | null
+  event: string
+  platform: string
+  actor: string
+  detail?: Record<string, unknown> | null
+  userId?: string | null
+}
+
+interface CreateCriticalAuditServiceDeps {
+  client: SupabaseClient<Database>
+  getUserId?: (() => Promise<string | null>) | null
+}
 
 /** Resolve o user_id do evento: evt.userId explícito (cenário server) tem prioridade;
  *  senão usa getUserId() quando disponível; senão null (evento órfão — não insere). */
-async function resolveUserId(evt, getUserId) {
+async function resolveUserId(evt: CriticalAuditEvent, getUserId?: (() => Promise<string | null>) | null): Promise<string | null> {
   if (evt.userId) return evt.userId
   if (typeof getUserId === 'function') {
     const id = await getUserId()
@@ -27,18 +43,12 @@ async function resolveUserId(evt, getUserId) {
 /**
  * Factory do serviço de auditoria de eventos críticos.
  *
- * @param {Object} deps
- * @param {Object} deps.client - Cliente Supabase.
- * @param {Function} [deps.getUserId] - Função async () => string. Ausente no server
- *   (worker/scheduler sem sessão) — nesse caso `evt.userId` é obrigatório.
+ * `getUserId` ausente no server (worker/scheduler sem sessão) — nesse caso
+ * `evt.userId` é obrigatório.
  */
-export function createCriticalAuditService({ client, getUserId } = {}) {
-  /**
-   * Emite (persiste) um evento de auditoria. Fail-open: nunca lança.
-   * @param {Object} evt - { doseInstanceId?, event, platform, actor, detail?, userId? }
-   * @returns {Promise<{ok: boolean}>}
-   */
-  async function emit(evt) {
+export function createCriticalAuditService({ client, getUserId }: CreateCriticalAuditServiceDeps) {
+  /** Emite (persiste) um evento de auditoria. Fail-open: nunca lança. */
+  async function emit(evt: CriticalAuditEvent): Promise<{ ok: boolean }> {
     try {
       const userId = await resolveUserId(evt, getUserId)
       if (!userId) {
@@ -67,7 +77,7 @@ export function createCriticalAuditService({ client, getUserId } = {}) {
         event: d.event,
         platform: d.platform,
         actor: d.actor,
-        detail: d.detail ?? null,
+        detail: (d.detail ?? null) as never,
       })
 
       if (error) return { ok: false }

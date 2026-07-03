@@ -5,7 +5,7 @@ import {
   matchesPrefix,
   shouldRefreshCache,
   resolveDataUrl,
-} from '../anvisaDatabase.js'
+} from '../anvisaDatabase'
 
 const BASE = 'https://x.supabase.co/storage/v1/object/public/dosiq-assets/anvisa/v1'
 const FILE = 'medicineDatabase'

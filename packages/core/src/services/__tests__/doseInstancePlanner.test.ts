@@ -6,7 +6,10 @@ import {
   renewProtocolWindow,
   WINDOW_DAYS,
   RENEWAL_THRESHOLD_DAYS,
-} from '../doseInstancePlanner.js'
+} from '../doseInstancePlanner'
+import type { createDoseInstanceRepository } from '../../repositories/createDoseInstanceRepository'
+
+type Repo = ReturnType<typeof createDoseInstanceRepository>
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -24,13 +27,14 @@ const protocol = {
   active: true,
 }
 
-function makeRepo(hwm = null) {
-  return {
+function makeRepo(hwm: string | null = null) {
+  const repo = {
     _hwm: hwm,
-    upsertMany: vi.fn(async () => []),
+    upsertMany: vi.fn(async (rows: unknown[]) => rows),
     setGeneratedThrough: vi.fn(async () => {}),
-    getGeneratedThrough: vi.fn(async function () { return this._hwm }),
+    getGeneratedThrough: vi.fn(async function (this: { _hwm: string | null }) { return this._hwm }),
   }
+  return repo as typeof repo & Repo
 }
 
 const MS_DAY = 86400000
@@ -130,7 +134,7 @@ describe('ensureInstancesUpTo (rede lazy)', () => {
     const future = new Date(Date.now() + 2 * MS_DAY).toISOString()
     await ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: future })
     // a janela gerada começa em >= now (nenhuma instância anterior a agora)
-    const upserted = repo.upsertMany.mock.calls[0]?.[0] ?? []
+    const upserted = (repo.upsertMany.mock.calls[0]?.[0] ?? []) as { scheduled_for: string }[]
     const nowMs = Date.now()
     expect(upserted.every((i) => new Date(i.scheduled_for).getTime() >= nowMs - 60000)).toBe(true)
   })

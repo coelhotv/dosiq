@@ -1,15 +1,17 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { createCriticalAuditService } from '../criticalAuditService.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+import { createCriticalAuditService } from '../criticalAuditService'
 
 // 042 Slice A — criticalAuditService. Fail-open: nunca lança, sempre { ok: bool }.
 
 const USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
 const DOSE_INSTANCE_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'
 
-function makeClient(insertImpl) {
+function makeClient(insertImpl?: () => Promise<{ error: unknown }>) {
   const insert = vi.fn(insertImpl ?? (async () => ({ error: null })))
   const from = vi.fn(() => ({ insert }))
-  return { client: { from }, insert, from }
+  return { client: { from } as unknown as SupabaseClient<Database>, insert, from }
 }
 
 afterEach(() => {

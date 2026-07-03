@@ -1,10 +1,12 @@
 // resolveUserTz.test.js — resolução de tz do dono p/ write-path + cron (F4.3f.1)
 // Framework: Vitest (@dosiq/web roda os testes do core)
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { resolveUserTz, resolveUserTzMap } from '../resolveUserTz.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+import { resolveUserTz, resolveUserTzMap } from '../resolveUserTz'
 
 // Mock client Supabase mínimo (chain from().select().eq().maybeSingle() e .in()).
-function makeClient({ single, list, throws } = {}) {
+function makeClient({ single, list, throws }: { single?: unknown; list?: unknown; throws?: boolean } = {}) {
   return {
     from: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -20,7 +22,7 @@ function makeClient({ single, list, throws } = {}) {
         }),
       })),
     })),
-  }
+  } as unknown as SupabaseClient<Database>
 }
 
 afterEach(() => vi.clearAllMocks())

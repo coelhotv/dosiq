@@ -9,7 +9,11 @@ vi.mock('../../repositories/createDoseInstanceRepository.js', () => ({
   }),
 }))
 
-import { createDoseLogService } from '../doseLogService.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+import { createDoseLogService } from '../doseLogService'
+
+const asClient = (c: unknown) => c as SupabaseClient<Database>
 
 const getUserId = async () => 'user-123'
 const MED = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
@@ -21,7 +25,7 @@ describe('registerDose — propaga injection_site à RPC (PO-1, anti AP-214)', (
 
   it('passa p_injection_site quando o log tem sítio', async () => {
     const client = { rpc: vi.fn(async () => ({ data: { id: 'log-1' }, error: null })) }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await service.registerDose({ ...baseLog, injection_site: 'coxa_d' })
 
@@ -33,7 +37,7 @@ describe('registerDose — propaga injection_site à RPC (PO-1, anti AP-214)', (
 
   it('passa p_injection_site = null para dose sem sítio (oral/flow sem form — PO-6)', async () => {
     const client = { rpc: vi.fn(async () => ({ data: { id: 'log-2' }, error: null })) }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await service.registerDose(baseLog)
 
@@ -45,7 +49,7 @@ describe('registerDose — propaga injection_site à RPC (PO-1, anti AP-214)', (
 
   it('rejeita sítio fora do enum antes da RPC (Zod — PO-7)', async () => {
     const client = { rpc: vi.fn() }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await expect(
       service.registerDose({ ...baseLog, injection_site: 'Coxa_D' })
@@ -59,7 +63,7 @@ describe('updateOrphanLog — edita sítio pós-registro com flag de presença (
 
   it('envia p_injection_site + p_has_injection_site=true quando o campo está no update', async () => {
     const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await service.updateOrphanLog(LOG_ID, { injection_site: 'gluteo_d' })
 
@@ -71,7 +75,7 @@ describe('updateOrphanLog — edita sítio pós-registro com flag de presença (
 
   it('limpa o sítio (null) ainda com p_has_injection_site=true — distingue "não enviado" de "apagar"', async () => {
     const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await service.updateOrphanLog(LOG_ID, { injection_site: null })
 
@@ -83,7 +87,7 @@ describe('updateOrphanLog — edita sítio pós-registro com flag de presença (
 
   it('p_has_injection_site=false quando o update não menciona o campo (COALESCE preserva)', async () => {
     const client = { rpc: vi.fn(async () => ({ data: { id: LOG_ID }, error: null })) }
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await service.updateOrphanLog(LOG_ID, { quantity_taken: 2 })
 
@@ -96,19 +100,19 @@ describe('updateOrphanLog — edita sítio pós-registro com flag de presença (
 
 describe('getLastInjectionSite — último global por taken_at (PO-2/PO-2a)', () => {
   // Builder encadeável que captura os filtros aplicados e devolve um resultado fixo.
-  function makeQueryClient(result) {
-    const calls = {}
+  function makeQueryClient(result: unknown) {
+    const calls: Record<string, any> = {}
     const builder = {
       select: vi.fn(() => builder),
-      eq: vi.fn((col, val) => {
+      eq: vi.fn((col: string, val: unknown) => {
         calls[col] = val
         return builder
       }),
-      not: vi.fn((col, op) => {
+      not: vi.fn((col: string, op: string) => {
         calls[`not_${col}`] = op
         return builder
       }),
-      order: vi.fn((col, opts) => {
+      order: vi.fn((col: string, opts: unknown) => {
         calls.order = { col, opts }
         return builder
       }),
@@ -121,7 +125,7 @@ describe('getLastInjectionSite — último global por taken_at (PO-2/PO-2a)', ()
 
   it('retorna o sítio mais recente, ordenando por taken_at DESC sem filtro de medicine', async () => {
     const client = makeQueryClient({ data: { injection_site: 'abdomen_e' }, error: null })
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     const last = await service.getLastInjectionSite()
 
@@ -140,14 +144,14 @@ describe('getLastInjectionSite — último global por taken_at (PO-2/PO-2a)', ()
 
   it('retorna null quando não há nenhum log com sítio (empty — PO-2)', async () => {
     const client = makeQueryClient({ data: null, error: null })
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     expect(await service.getLastInjectionSite()).toBeNull()
   })
 
   it('propaga erro da query', async () => {
     const client = makeQueryClient({ data: null, error: new Error('db down') })
-    const service = createDoseLogService({ client, getUserId })
+    const service = createDoseLogService({ client: asClient(client), getUserId })
 
     await expect(service.getLastInjectionSite()).rejects.toThrow('db down')
   })

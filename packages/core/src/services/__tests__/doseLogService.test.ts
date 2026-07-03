@@ -10,15 +10,19 @@ vi.mock('../../repositories/createDoseInstanceRepository.js', () => ({
   createDoseInstanceRepository: () => mockRepo,
 }))
 
-import { createDoseLogService, DEFAULT_TOLERANCE_MINUTES } from '../doseLogService.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+import { createDoseLogService, DEFAULT_TOLERANCE_MINUTES } from '../doseLogService'
+
+const asClient = (c: unknown) => c as SupabaseClient<Database>
 
 const mockUserId = 'user-123'
 const getUserId = async () => mockUserId
 const MED = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
 const PROTO = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12'
 
-function makeClient(rpcImpl) {
-  return { rpc: vi.fn(rpcImpl) }
+function makeClient(rpcImpl?: (...args: unknown[]) => Promise<unknown>) {
+  return asClient({ rpc: vi.fn(rpcImpl) })
 }
 
 beforeEach(() => {
@@ -32,8 +36,8 @@ afterEach(() => {
 
 describe('createDoseLogService', () => {
   it('exige client e getUserId na factory', () => {
-    expect(() => createDoseLogService({})).toThrow('client')
-    expect(() => createDoseLogService({ client: { rpc: vi.fn() } })).toThrow('getUserId')
+    expect(() => createDoseLogService({} as any)).toThrow('client')
+    expect(() => createDoseLogService({ client: asClient({ rpc: vi.fn() }) } as any)).toThrow('getUserId')
   })
 
   describe('registerDose', () => {
@@ -57,7 +61,7 @@ describe('createDoseLogService', () => {
           p_strict_anchor: true,
         })
       )
-      expect(result.dose_instance_id).toBe('inst-1')
+      expect((result as { dose_instance_id: string }).dose_instance_id).toBe('inst-1')
       // Âncora explícita NÃO dispara snap
       expect(mockRepo.findAnchorInstance).not.toHaveBeenCalled()
     })
@@ -133,7 +137,7 @@ describe('createDoseLogService', () => {
 
       const result = await service.updateOrphanLog('log-1', { quantity_taken: 3 })
 
-      expect(result.quantity_taken).toBe(3)
+      expect((result as { quantity_taken: number }).quantity_taken).toBe(3)
       expect(client.rpc).toHaveBeenCalledWith(
         'update_dose_log_atomic',
         expect.objectContaining({ p_log_id: 'log-1', p_quantity_taken: 3, p_medicine_id: null, p_notes: null })
@@ -176,7 +180,7 @@ describe('createDoseLogService', () => {
   })
 
   describe('registerDoseMany', () => {
-    const mk = (q) => ({ medicine_id: MED, taken_at: new Date().toISOString(), quantity_taken: q })
+    const mk = (q: number) => ({ medicine_id: MED, taken_at: new Date().toISOString(), quantity_taken: q })
 
     it('falha parcial: 2ª dose sem estoque não reverte 1ª e 3ª', async () => {
       let call = 0
