@@ -60,7 +60,7 @@
     "last_distillation": "2026-06-30T15:33:00.000Z",
     "journal_entries_since_distillation": 6,
     "rules_count": 231,
-    "anti_patterns_count": 253,
+    "anti_patterns_count": 254,
     "decisions_count": 77,
     "contracts_count": 31,
     "distillation_due": false
