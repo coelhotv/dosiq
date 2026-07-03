@@ -9,9 +9,13 @@
 // Coexiste com expo-notifications: só trata eventos das notificações do Notifee.
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { AppState } from 'react-native'
-import notifee, { EventType } from '@notifee/react-native'
-import { getTodayLocal, getRawNow } from '@dosiq/core'
+import { AppState, Platform } from 'react-native'
+import notifee, { EventType, AuthorizationStatus } from '@notifee/react-native'
+import { getTodayLocal, getRawNow, createCriticalAuditService } from '@dosiq/core'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
+import { deriveIosAlarmOutcome } from '@platform/audit/deriveIosAlarmOutcome'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { navigationRef } from '@navigation/navigationRef'
@@ -22,6 +26,76 @@ import { onAlarmResync } from './alarmResyncBus'
 import { cancelAlarm } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
 import { isAlarmNotification, isDoseNotificationStale, reconcileStaleDoseNotifications } from './staleDoseNotifications'
+
+// Auditoria de dose crítica (042 Slice B): no foreground, deriva o desfecho iOS (ENG-1 — iOS não
+// roda JS no disparo) e DRENA a fila offline (Android enfileira no headless). Fail-open total.
+const auditQueue = createCriticalAuditQueue()
+const auditEmitter = createCriticalAuditService({ client: supabase })
+
+// Dedupe dos desfechos iOS derivados no foreground: enquanto a notificação segue exibida, cada
+// foreground re-derivaria o MESMO alarm_fired/nag_fired → duplicatas no trail (review #700). Guarda
+// as chaves já enfileiradas (id:event:nag) em AsyncStorage; cap simples p/ não crescer sem limite.
+const IOS_DERIVE_SEEN_KEY = '@dosiq/audit/ios_derive_seen'
+const IOS_DERIVE_SEEN_CAP = 500
+
+async function filterUnseenDerived(derived) {
+  let seen = []
+  try {
+    const raw = await AsyncStorage.getItem(IOS_DERIVE_SEEN_KEY)
+    seen = raw ? JSON.parse(raw) : []
+  } catch {
+    seen = []
+  }
+  const seenSet = new Set(Array.isArray(seen) ? seen : [])
+  const keyOf = (e) => `${e.doseInstanceId}:${e.event}`
+  const fresh = derived.filter((e) => !seenSet.has(keyOf(e)))
+  if (fresh.length) {
+    const merged = [...seenSet, ...fresh.map(keyOf)].slice(-IOS_DERIVE_SEEN_CAP)
+    try {
+      await AsyncStorage.setItem(IOS_DERIVE_SEEN_KEY, JSON.stringify(merged))
+    } catch {
+      /* fail-open */
+    }
+  }
+  return fresh
+}
+
+/** Deriva desfechos iOS dos alarmes exibidos + drena a fila. Chamado no AppState 'active'. */
+async function flushCriticalAudit(userId) {
+  if (!userId) return
+  try {
+    // iOS: um alarme AINDA exibido implica dose não-resolvida (cancel-on-resolve, AP-235) → 'pending'.
+    if (Platform.OS === 'ios') {
+      const displayed = await notifee.getDisplayedNotifications()
+      const alarms = displayed
+        .filter((n) => isAlarmNotification(n.notification))
+        .map((n) => {
+          const d = n.notification?.data || {}
+          return {
+            doseInstanceId: d.doseInstanceId,
+            isCritical: d.isCritical === 'true',
+            nagAttempt: Number(d.nagAttempt ?? 0) || 0,
+            doseStatus: 'pending',
+          }
+        })
+        .filter((a) => a.doseInstanceId)
+      if (alarms.length) {
+        const settings = await notifee.getNotificationSettings()
+        const status = settings?.authorizationStatus
+        const permissionGranted =
+          status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL
+        const derived = deriveIosAlarmOutcome({ alarms, permissionGranted, userId })
+        // Dedupe: só enfileira desfechos ainda não vistos (evita duplicata a cada foreground).
+        const fresh = await filterUnseenDerived(derived)
+        for (const evt of fresh) await auditQueue.enqueue(evt)
+      }
+    }
+    // Drena a fila: insere cada evento via o helper único (CON-031). Item só sai após insert OK.
+    await auditQueue.flush((evt) => auditEmitter.emit(evt))
+  } catch (err) {
+    if (__DEV__) console.warn('[AlarmSchedulerBridge] flush audit falhou', err?.message)
+  }
+}
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -163,9 +237,12 @@ export default function AlarmSchedulerBridge() {
     // load é async — setState ocorre pós-await (não síncrono); fetch de mount legítimo.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
+    flushCriticalAudit(userId) // drena a fila de auditoria na montagem (foreground inicial)
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
+      flushCriticalAudit(userId) // 042 Slice B: deriva iOS + drena fila offline no foreground
+
       // App veio a foreground (inclui launch pelo full-screen intent c/ app minimizado): PRIMEIRO
       // varre e cancela notificações de dose já vencidas (missed) que ficaram presas na tela; SÓ
       // então promove um alarme AINDA ativo ao takeover (nunca reabre uma dose velha → P0001).

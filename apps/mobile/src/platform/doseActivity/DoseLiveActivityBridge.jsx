@@ -27,8 +27,19 @@ import {
   getRawNow,
   addDays,
   getTodayLocal,
+  createCriticalAuditService,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+
+// Auditoria (042 Slice B): token_captured emitido no foreground (online) — NUNCA grava o token no
+// detail (SEC-3), só marca que a captura ocorreu. Fail-open: emit nunca lança.
+const tokenAudit = createCriticalAuditService({
+  client: supabase,
+  getUserId: async () => {
+    const { data } = await supabase.auth.getUser()
+    return data?.user?.id ?? null
+  },
+})
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
@@ -68,6 +79,13 @@ async function _syncActivityToken(instanceId) {
       const token = await getActivityPushToken(instanceId)
       if (token) {
         await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
+        // token_captured: marca a captura SEM gravar o valor do token (SEC-3).
+        await tokenAudit.emit({
+          doseInstanceId: instanceId,
+          event: 'token_captured',
+          platform: 'ios',
+          actor: 'system',
+        })
         return
       }
     } catch {

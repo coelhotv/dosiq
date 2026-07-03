@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.4 (mobile) — 2026-07-02 — Feat (042 Slice B): beacon de dose crítica no device + fila offline
+
+> **Bump:** mobile `0.24.3 → 0.24.4` (patch — feature aditiva, sem UI). **Plataforma:** Mobile. Sem migração (tabela nasceu no Slice A). Instrumentação de observabilidade — sem impacto para o usuário final.
+
+### ✨ Novidades (interno / observabilidade)
+
+- **Beacon no disparo do alarme crítico (Android):** o handler headless do Notifee agora registra `alarm_fired`/`nag_fired` — ou `alarm_suppressed` quando as notificações/canal estão bloqueados — junto de um **snapshot de permissão** (sem PII). Fecha a lacuna "o alarme não tocou e não há rastro" sem depender do simulador conectado.
+- **Fila offline resiliente:** os eventos do disparo são enfileirados em AsyncStorage e **drenados no foreground** (zero perda quando o device está offline no momento do alarme). Cap de 200 itens com descarte FIFO + contador de overflow; um item só sai da fila após o insert confirmar (retry no próximo foreground).
+- **iOS (ENG-1):** como o iOS não roda JS no disparo, o desfecho (`alarm_fired`/`alarm_suppressed`) é **derivado no foreground** a partir das notificações ainda exibidas + permissão (`captured_at_foreground: true`).
+- **`token_captured`:** registra a captura do push-token da Live Activity (iOS) — **sem gravar o valor do token** (SEC-3).
+
+### 🔒 Segurança / Privacidade
+
+- `detail` dos eventos nunca contém token, rótulo de medicamento ou segredo (teste `criticalAuditDetailShape`). Emits fail-open: jamais quebram alarme/registro/push.
+
+---
+
 ## App v0.24.3 (mobile) + Backend — 2026-07-02 — Feat (042 Slice A): trilha de auditoria de dose crítica (debug-first)
 
 > **Bump:** mobile `0.24.2 → 0.24.3` (patch — feature aditiva, sem UI). **Plataforma:** Mobile + Backend + Core. Migração aditiva (tabela nova `dose_critical_events`, append-only, RLS por usuário, prune 90d via pg_cron). Sem impacto para o usuário final — instrumentação de observabilidade.
