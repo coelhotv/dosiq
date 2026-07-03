@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseMessageMarkdown, parseInlineSegments } from '../parseMessageMarkdown.js'
+import { parseMessageMarkdown, parseInlineSegments } from '../parseMessageMarkdown'
 
 describe('parseInlineSegments', () => {
   it('texto cru → 1 segmento text', () => {
