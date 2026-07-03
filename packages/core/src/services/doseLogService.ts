@@ -230,7 +230,7 @@ async function registerDoseMany(deps: DoseLogDeps, logsData: Record<string, unkn
       (logData.instanceId ?? logData.instance_id ?? logData.dose_instance_id ?? null) as string | null
     try {
       const { anchorId, data } = await registerOneBulk(deps, userId, logData)
-      results.push({ id: (data as { id: string }).id, instanceId: anchorId, success: true, data })
+      results.push({ id: (data as { id?: string } | null)?.id ?? null, instanceId: anchorId, success: true, data })
     } catch (err) {
       results.push({
         id: null,

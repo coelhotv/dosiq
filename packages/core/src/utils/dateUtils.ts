@@ -149,7 +149,7 @@ export function getServerTimestamp() {
  * @param {string} isoString 
  * @returns {Date}
  */
-export function parseISO(isoString) {
+export function parseISO(isoString: string | number | Date): Date {
   return new Date(isoString)
 }
 

@@ -16,15 +16,15 @@ TESTS='__tests__|\.test\.'
 
 OUT=$(npx tsc -p tsconfig.strict.json --noEmit 2>&1 | grep -E ': error TS' || true)
 
-A_ERRORS=$(echo "$OUT" | grep -E "$A_SRC" | grep -vE "$TESTS" || true)
-A_TEST_COUNT=$(echo "$OUT" | grep -E "$A_SRC" | grep -cE "$TESTS" || true)
-B_COUNT=$(echo "$OUT" | grep -vE "$A_SRC" | grep -c ': error TS' || true)
+A_ERRORS=$(printf '%s\n' "$OUT" | grep -E "$A_SRC" | grep -vE "$TESTS" || true)
+A_TEST_COUNT=$(printf '%s\n' "$OUT" | grep -E "$A_SRC" | grep -cE "$TESTS" || true)
+B_COUNT=$(printf '%s\n' "$OUT" | grep -vE "$A_SRC" | grep -c ': error TS' || true)
 
 echo "strict island — dívida tolerada: ${B_COUNT} erros nível-B transitivo, ${A_TEST_COUNT} em testes A"
 
 if [ -n "$A_ERRORS" ]; then
   echo "❌ RATCHET QUEBRADO — erros em fonte nível A:"
-  echo "$A_ERRORS"
+  printf '%s\n' "$A_ERRORS"
   exit 1
 fi
 echo "✅ fonte nível A strict-limpa"

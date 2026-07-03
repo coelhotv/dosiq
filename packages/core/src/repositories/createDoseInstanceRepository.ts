@@ -32,7 +32,7 @@ const MS_PER_MINUTE = 60 * 1000
 const PAGE_SIZE = 1000
 
 /** Converte Date|ISO em ISO string (R-020: sem `new Date()` fora de dateUtils). */
-const toIso = (value: Date | string | number) => parseISO(value as string).toISOString()
+const toIso = (value: Date | string | number) => parseISO(value).toISOString()
 
 interface CreateDoseInstanceRepositoryDeps {
   client: SupabaseClient<Database>
@@ -252,7 +252,7 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
      */
     async findAnchorInstance({ protocolId, takenAt }: { protocolId: string; takenAt: Date | string }) {
       if (!protocolId) return null
-      const takenMs = parseISO(takenAt as string).getTime()
+      const takenMs = parseISO(takenAt).getTime()
       const lowIso = parseTimestamp(takenMs - MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
       const highIso = parseTimestamp(takenMs + MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
 
@@ -350,8 +350,9 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
       now = getServerTimestamp(),
       pageSize = 1000,
     }: { now?: Date | string; pageSize?: number } = {}) {
-      const nowMs = parseISO(now as string).getTime()
-      const nowIso = parseISO(now as string).toISOString()
+      const nowObj = parseISO(now)
+      const nowMs = nowObj.getTime()
+      const nowIso = nowObj.toISOString()
 
       // 1. Ler todas as pending já no passado (scheduled_for < now), SEM escrever.
       // Paginação por CURSOR (keyset em `id`), não offset: durante o sweep um writer
