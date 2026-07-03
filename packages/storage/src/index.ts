@@ -13,6 +13,6 @@
  */
 
 export { assertStorageAdapter } from './contracts'
-export { createWebStorageAdapter } from './webStorage.js'
-export { createMemoryStorageAdapter } from './memoryStorage.js'
-export { getJSON, setJSON } from './json.js'
+export { createWebStorageAdapter } from './webStorage'
+export { createMemoryStorageAdapter } from './memoryStorage'
+export { getJSON, setJSON } from './json'
