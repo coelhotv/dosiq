@@ -59,6 +59,12 @@ import {
 } from './liveActivityService'
 import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
 
+// Dedupe do token_captured: _syncActivityToken roda a cada foreground/derive e quase sempre re-lê o
+// MESMO token → sem isto o trail enche de token_captured idênticos (rajada observada: 4× em 40s).
+// Emite só quando o token MUDA de fato (nova Activity / rotação). In-memory (sem storage/bloat);
+// no restart re-emite no máx 1×/dose/sessão. Não guarda o valor do token no trail (SEC-3).
+const lastSyncedToken = new Map()
+
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
 const LOOK_BACK_DAYS = 3
@@ -79,13 +85,17 @@ async function _syncActivityToken(instanceId) {
       const token = await getActivityPushToken(instanceId)
       if (token) {
         await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
-        // token_captured: marca a captura SEM gravar o valor do token (SEC-3).
-        await tokenAudit.emit({
-          doseInstanceId: instanceId,
-          event: 'token_captured',
-          platform: 'ios',
-          actor: 'system',
-        })
+        // token_captured só quando o token muda (dedupe da rajada de re-sync). Marca a captura SEM
+        // gravar o valor do token (SEC-3).
+        if (lastSyncedToken.get(instanceId) !== token) {
+          lastSyncedToken.set(instanceId, token)
+          await tokenAudit.emit({
+            doseInstanceId: instanceId,
+            event: 'token_captured',
+            platform: 'ios',
+            actor: 'system',
+          })
+        }
         return
       }
     } catch {
