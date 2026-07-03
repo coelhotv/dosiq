@@ -17,7 +17,7 @@ import {
   validateProtocolCreate,
   validateProtocolUpdate,
 } from '../schemas/protocolSchema'
-import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils.js'
+import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils'
 import { createDoseInstanceRepository } from './createDoseInstanceRepository'
 import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner'
 import { resolveUserTz } from '../services/resolveUserTz'

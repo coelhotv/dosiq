@@ -13,7 +13,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { validateLogCreate, validateLogUpdate } from '../schemas/logSchema'
-import { parseISO } from '../utils/dateUtils.js'
+import { parseISO } from '../utils/dateUtils'
 import { createCriticalAuditService } from './criticalAuditService'
 
 type Client = SupabaseClient<Database>

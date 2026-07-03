@@ -4,7 +4,7 @@
  * @module features/reports/services/consultationPdfDataBuilder
  */
 
-import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils.js'
+import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
 import { stockDoseMetrics } from '@dosiq/core'

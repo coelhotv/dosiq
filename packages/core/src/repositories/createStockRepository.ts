@@ -24,8 +24,8 @@ import {
   validateStockIncrease,
 } from '../schemas/stockSchema'
 import { z } from 'zod'
-import { getTodayLocal, isProtocolActiveOnDate } from '../utils/dateUtils.js'
-import { cleanFloat } from '../utils/formUtils.js'
+import { getTodayLocal, isProtocolActiveOnDate } from '../utils/dateUtils'
+import { cleanFloat } from '../utils/formUtils'
 
 interface ValidationError {
   field: string

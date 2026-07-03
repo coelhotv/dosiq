@@ -12,7 +12,7 @@
  */
 
 import { analyticsService } from './analyticsService'
-import { getNow, addDays, parseISO } from '@utils/dateUtils.js'
+import { getNow, addDays, parseISO } from '@utils/dateUtils'
 import { debugLog } from '@shared/utils/logger'
 import {
   createStreakInsight,

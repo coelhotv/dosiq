@@ -14,11 +14,11 @@
 // - Manter o contexto compacto (<2000 tokens) p/ não estourar o free tier do LLM.
 // - dateUtils SEMPRE do core (R-020); zero `new Date()` direto.
 
-import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate, isProtocolActiveOnDate as isProtocolInPeriod } from '../utils/dateUtils.js'
-import { splitDayTimeline } from '../utils/doseZones.js'
-import { formatDoseItem, formatStockCount, formatIntakeDose, stockUnitLabel, formatNumberPtBR } from '../utils/doseUnit.js'
-import { getProtocolDays } from '../utils/adherenceLogic.js'
-import { calculateAge } from '../utils/profile.js'
+import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate, isProtocolActiveOnDate as isProtocolInPeriod } from '../utils/dateUtils'
+import { splitDayTimeline } from '../utils/doseZones'
+import { formatDoseItem, formatStockCount, formatIntakeDose, stockUnitLabel, formatNumberPtBR } from '../utils/doseUnit'
+import { getProtocolDays } from '../utils/adherenceLogic'
+import { calculateAge } from '../utils/profile'
 
 /** Nomes dos dias da semana em PT (índice = Date.getDay(): 0=domingo). */
 const WEEKDAYS_PT = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']

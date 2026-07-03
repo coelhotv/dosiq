@@ -1,4 +1,4 @@
-import { getNow, addDays, parseISO } from '@utils/dateUtils.js'
+import { getNow, addDays, parseISO } from '@utils/dateUtils'
 
 /**
  * Utilitários de Detecção PWA

@@ -13,8 +13,8 @@
  * Fase 3; hoje 99% SP, consistente).
  */
 
-import { generateInstances } from '../utils/doseInstanceGenerator.js'
-import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO } from '../utils/dateUtils.js'
+import { generateInstances } from '../utils/doseInstanceGenerator'
+import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO } from '../utils/dateUtils'
 import type { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 
 type DoseInstanceRepo = ReturnType<typeof createDoseInstanceRepository>

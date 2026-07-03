@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import ws from 'ws'
 import { createHash } from 'crypto'
-import { getServerTimestamp, addHours } from '../server/utils/dateUtils.js'
+import { getServerTimestamp, addHours } from '../server/utils/dateUtils'
 
 // ============================================================================
 // CONFIGURAÇÃO

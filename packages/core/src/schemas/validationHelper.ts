@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod'
-import { parseLocalDate } from '../utils/dateUtils.js'
+import { parseLocalDate } from '../utils/dateUtils'
 import {
   validateMedicineCreate,
   validateMedicineUpdate,

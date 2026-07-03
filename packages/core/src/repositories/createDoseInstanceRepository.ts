@@ -18,7 +18,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
+import { getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils'
 
 const TABLE = 'dose_instances'
 const PROTOCOLS = 'protocols'

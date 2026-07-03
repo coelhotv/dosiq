@@ -1,4 +1,4 @@
-import { toTitleCase, toSentenceCase } from '@utils/stringUtils.js'
+import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
 import { LIQUID_PRESENTATIONS, coerceDecimal, cleanFloat } from '@dosiq/core'
 import { normalizeRegulatoryCategory } from '@schemas/medicineSchema'
 

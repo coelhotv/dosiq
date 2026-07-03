@@ -1,6 +1,6 @@
 import { supabase } from '../../services/supabase.js';
 import { notificationLogCreateSchema } from '@dosiq/core/schemas';
-import { getServerTimestamp } from '../../utils/dateUtils.js';
+import { getServerTimestamp } from '../../utils/dateUtils';
 
 export const notificationLogRepository = {
   /**

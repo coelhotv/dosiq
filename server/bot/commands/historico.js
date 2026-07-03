@@ -1,7 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
-import { parseISO } from '../../utils/dateUtils.js';
+import { parseISO } from '../../utils/dateUtils';
 
 export async function handleHistorico(bot, msg) {
   const chatId = msg.chat.id;

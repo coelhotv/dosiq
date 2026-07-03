@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getServerTimestamp } from '../utils/dateUtils.js';
+import { getCurrentDatePartsInTimezone, getTodayLocal, parseLocalDate, addDays, getServerTimestamp } from '../utils/dateUtils';
 import { createDoseInstanceRepository } from '@dosiq/core';
 import { sweepMissedInstances } from './doseInstanceScheduler.js';
 

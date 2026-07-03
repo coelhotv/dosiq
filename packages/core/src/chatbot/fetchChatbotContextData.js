@@ -10,8 +10,8 @@
 // de chegar ao builder.
 
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
-import { calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic.js'
-import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils.js'
+import { calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic'
+import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils'
 import { validateChatbotContextData } from './chatbotContextSchema.js'
 
 /** Janela (dias) de dose_instances ao redor de hoje p/ alimentar splitDayTimeline (carry-over+hoje+look-ahead). */

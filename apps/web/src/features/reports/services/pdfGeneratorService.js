@@ -4,7 +4,7 @@
  * @module features/reports/services/pdfGeneratorService
  */
 
-import { parseLocalDate, formatLocalDate, addDays, getNow } from '@utils/dateUtils.js'
+import { parseLocalDate, formatLocalDate, addDays, getNow } from '@utils/dateUtils'
 import { debugLog, errorLog } from '@shared/utils/logger'
 
 /**

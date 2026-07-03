@@ -5,7 +5,7 @@ import ws from 'ws';
 import { createLogger } from '../../../server/bot/logger.js';
 import { dispatchNotification } from '../../../server/notifications/dispatcher/dispatchNotification.js';
 import { Expo } from 'expo-server-sdk';
-import { getServerTimestamp } from '../../../server/utils/dateUtils.js';
+import { getServerTimestamp } from '../../../server/utils/dateUtils';
 
 const logger = createLogger('DLQRetry');
 

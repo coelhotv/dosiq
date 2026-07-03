@@ -1,6 +1,6 @@
 import {
   getCurrentTime as getLocalTime
-} from './dateUtils.js';
+} from './dateUtils';
 
 /**
  * Format time in HH:MM format for Brazil timezone (legacy)

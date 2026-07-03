@@ -1,5 +1,5 @@
 import { createLogger } from './logger.js';
-import { getServerTimestamp } from '../utils/dateUtils.js';
+import { getServerTimestamp } from '../utils/dateUtils';
 
 const logger = createLogger('HealthCheck');
 

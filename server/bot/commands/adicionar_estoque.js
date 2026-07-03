@@ -2,7 +2,7 @@ import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
-import { getTodayLocal } from '../../utils/dateUtils.js';
+import { getTodayLocal } from '../../utils/dateUtils';
 
 // Helper function to fetch medicines
 async function fetchMedicines(userId, medicineName = null) {

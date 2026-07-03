@@ -15,7 +15,7 @@
 //   read(fileKey)  → Promise<{ manifest, data } | null>
 //   write(fileKey, { manifest, data }) → Promise<void>
 
-import { getNow, parseISO } from '../utils/dateUtils.js'
+import { getNow, parseISO } from '../utils/dateUtils'
 
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
 const DEFAULT_TIMEOUT_MS = 30_000

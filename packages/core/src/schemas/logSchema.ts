@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getRawNow, parseISO } from '../utils/dateUtils.js'
-import { INJECTION_SITE_VALUES } from '../utils/injectionSites.js'
+import { getRawNow, parseISO } from '../utils/dateUtils'
+import { INJECTION_SITE_VALUES } from '../utils/injectionSites'
 
 /**
  * Schema de validação para Logs de Medicação

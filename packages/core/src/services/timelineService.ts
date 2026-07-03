@@ -18,8 +18,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
-import { buildTimeline, TIMELINE_EVENT_TYPES, TIMELINE_ORDER } from '../utils/timeline.js'
-import { parseISO } from '../utils/dateUtils.js'
+import { buildTimeline, TIMELINE_EVENT_TYPES, TIMELINE_ORDER } from '../utils/timeline'
+import { parseISO } from '../utils/dateUtils'
 
 const MS_PER_MINUTE = 60 * 1000
 const DEFAULT_TOLERANCE_MINUTES = 120
@@ -154,7 +154,7 @@ function logToEvent(log: MedicineLog, enrich: (id: string | null | undefined) =>
  * @param {Object} [opts]
  * @param {Object<string,Object>} [opts.protocolsById] - mapa p/ enriquecer payload
  *        (medicine name/unit). Opcional — UI também resolve via contexto.
- * @returns {import('../utils/timeline.js').TimelineEvent[]}
+ * @returns {import('../utils/timeline').TimelineEvent[]}
  */
 export function doseInstancesToEvents(
   instances: DoseInstance[] | null | undefined,
@@ -210,7 +210,7 @@ export function doseInstancesToEvents(
  * correlação só temporal (occurred_at = measured_at). SaMD: nenhum valor de meta/qualidade aqui.
  *
  * @param {Array<Object>} biomarkers - linhas de biomarkers_log (repo.list).
- * @returns {import('../utils/timeline.js').TimelineEvent[]}
+ * @returns {import('../utils/timeline').TimelineEvent[]}
  */
 export function biomarkersToEvents(biomarkers: Biomarker[] | null | undefined) {
   const safe = Array.isArray(biomarkers) ? biomarkers : []
@@ -295,7 +295,7 @@ export function createTimelineService({ client }: { client: SupabaseClient<Datab
      * @param {string} [args.tz='America/Sao_Paulo'] - fuso p/ derivar dia local
      * @param {'asc'|'desc'} [args.order=TIMELINE_ORDER.DESC]
      * @param {Object<string,Object>} [args.protocolsById] - enriquecimento opcional
-     * @returns {Promise<import('../utils/timeline.js').TimelineEvent[]>}
+     * @returns {Promise<import('../utils/timeline').TimelineEvent[]>}
      */
     async getTimeline({
       userId,

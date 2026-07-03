@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { biomarkersToEvents } from '../timelineService'
-import { TIMELINE_EVENT_TYPES, buildTimeline } from '../../utils/timeline.js'
+import { TIMELINE_EVENT_TYPES, buildTimeline } from '../../utils/timeline'
 
 // 012 Fase C — adapter biomarkersToEvents (ADR-060 / R-252). Puro, sem tocar builder.
 

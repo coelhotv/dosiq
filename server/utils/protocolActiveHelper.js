@@ -1,4 +1,4 @@
-import { parseLocalDate, getTodayLocal } from './dateUtils.js';
+import { parseLocalDate, getTodayLocal } from './dateUtils';
 
 const WEEKDAY_INDEX_MAP = {
   domingo: 0, sunday: 0,

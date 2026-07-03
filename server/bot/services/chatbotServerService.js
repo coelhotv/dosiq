@@ -23,7 +23,7 @@
 import Groq from 'groq-sdk'
 import { supabase } from '../../services/supabase.js'
 import { createLogger } from '../logger.js'
-import { getNow } from '../../utils/dateUtils.js'
+import { getNow } from '../../utils/dateUtils'
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import {
   CHATBOT_MAX_TOKENS,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths, formatLocalDate } from '@utils/dateUtils.js'
+import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths, formatLocalDate } from '@utils/dateUtils'
 import CalendarControls from './CalendarControls'
 import CalendarGrid from './CalendarGrid'
 import { buildCalendarDays } from './calendarUtils'

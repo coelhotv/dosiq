@@ -13,7 +13,7 @@ import {
   getYesterdayLocal,
   formatLocalDate,
   parseTimestamp,
-} from '@utils/dateUtils.js'
+} from '@utils/dateUtils'
 import ConfirmDialog from '@shared/components/ui/ConfirmDialog'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import ChatWindowDrawer from './ChatWindowDrawer'

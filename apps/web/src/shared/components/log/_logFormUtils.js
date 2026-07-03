@@ -1,4 +1,4 @@
-import { parseLocalDatetime, getNow, parseISO } from '@utils/dateUtils.js'
+import { parseLocalDatetime, getNow, parseISO } from '@utils/dateUtils'
 
 // Helper to format date to local ISO string (YYYY-MM-DDTHH:mm) for datetime-local input
 export const toLocalISO = (dateStr) => {

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { getServerTimestamp } from '../utils/dateUtils.js'
+import { getServerTimestamp } from '../utils/dateUtils'
 
 /**
  * Schema de validação para o Cartão de Emergência

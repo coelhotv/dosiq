@@ -20,7 +20,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { computeWindowEnd, planWindow } from './doseInstancePlanner'
-import { getServerTimestamp, getTodayLocal, parseISO } from '../utils/dateUtils.js'
+import { getServerTimestamp, getTodayLocal, parseISO } from '../utils/dateUtils'
 
 const PROTOCOLS = 'protocols'
 const TABLE = 'dose_instances'

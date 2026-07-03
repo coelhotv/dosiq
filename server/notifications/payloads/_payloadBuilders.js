@@ -10,7 +10,7 @@ import {
 } from './_payloadSchemas.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
-import { getSaoPauloTime } from '../../utils/dateUtils.js';
+import { getSaoPauloTime } from '../../utils/dateUtils';
 import { formatDoseItem } from '@dosiq/core';
 
 // 012 Fase D (FR-015b): frase de dose via formatters core (R-272). Líquido →
