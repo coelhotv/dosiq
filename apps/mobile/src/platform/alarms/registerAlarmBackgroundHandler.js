@@ -37,6 +37,10 @@ async function onDelivered(data) {
       // (mantém a cadeia viva atravessando T0/soneca, onde a race do fullScreen droparia o boundary).
       const { reconcileDoseActivityFromAlarm } = require('../doseActivity/doseActivityScheduler')
       await reconcileDoseActivityFromAlarm(data)
+      // Auditoria (spec 042 Slice B): beacon de dose crítica no disparo (Android roda JS headless).
+      // Fail-open, lazy-require (AP-205). iOS não roda JS aqui → derivado no foreground.
+      const { beaconAlarmDelivered } = require('../audit/criticalAuditBeacon')
+      await beaconAlarmDelivered(data)
     }
   } catch (err) {
     if (__DEV__) console.warn('[alarm-bg] surface advance falhou', err?.message)

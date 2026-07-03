@@ -28,7 +28,7 @@
         "phase": "042 Slice A: audit trail dose crítica (migração dose_critical_events RLS append-only + criticalAuditService @dosiq/core + emits mobile/server) + R-281 Promise.all"
       }
     ],
-    "goal": "042 Slice A entregue (PR #699 merged) — próximo: Slice B (beacon device + fila AsyncStorage)",
+    "goal": "042 Slice B — beacon device (fila AsyncStorage offline + alarm_fired/nag/suppressed + token_captured)",
     "goal_type": "feature",
     "plan": "plans/specs/042-critical-audit-trail/plan.md",
     "tasks": "plans/specs/042-critical-audit-trail/tasks.md",
@@ -58,7 +58,7 @@
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 231,
     "anti_patterns_count": 253,
     "decisions_count": 77,

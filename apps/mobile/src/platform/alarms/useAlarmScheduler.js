@@ -94,6 +94,8 @@ function buildSingleAlarmData(it) {
     unitsPerMl: it.unitsPerMl != null ? String(it.unitsPerMl) : '',
     medicineType: it.medicineType || '',
     presentation: it.presentation || '',
+    // Auditoria (042 Slice B): o beacon no DELIVERED lê isCritical do data p/ filtrar só dose crítica.
+    isCritical: String(it.critical === true),
   }
 }
 
