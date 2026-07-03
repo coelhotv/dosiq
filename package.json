@@ -38,6 +38,8 @@
     "validate:full": "npm run lint && npm run validate:full --workspace @dosiq/web",
     "// --- Other Scripts ---": "",
     "bot": "cd server && npm run dev",
+    "supabase:types": "npx supabase gen types typescript --project-id kwqjtdsqkkbebfiaxubb > packages/shared-data/src/database.types.ts",
+    "supabase:types:check": "npx supabase gen types typescript --project-id kwqjtdsqkkbebfiaxubb | diff - packages/shared-data/src/database.types.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -67,6 +69,8 @@
     "@testing-library/react": "^16.3.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/parser": "^8.62.1",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.1",

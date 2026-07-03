@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@features/*": ["./src/features/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@services/*": ["./src/services/*"],
+      "@dashboard/*": ["./src/features/dashboard/*"],
+      "@medications/*": ["./src/features/medications/*"],
+      "@protocols/*": ["./src/features/protocols/*"],
+      "@stock/*": ["./src/features/stock/*"],
+      "@adherence/*": ["./src/features/adherence/*"],
+      "@calendar/*": ["./src/features/calendar/*"],
+      "@emergency/*": ["./src/features/emergency/*"],
+      "@prescriptions/*": ["./src/features/prescriptions/*"],
+      "@settings/*": ["./src/views/settings/*"],
+      "@schemas/*": ["./src/schemas/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@design-tokens/*": ["../../packages/design-tokens/src/*"],
+      "@dosiq/core": ["../../packages/core/src"],
+      "@dosiq/core/*": ["../../packages/core/src/*"]
+    }
+  },
+  "include": ["src"]
+}

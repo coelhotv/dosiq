@@ -1,11 +1,11 @@
 module.exports = {
   // Testes apenas dos arquivos em staged - suporte a monorepo
-  "{apps/*/src,server,api}/**/*.{js,jsx}": [
+  "{apps/*/src,server,api}/**/*.{js,jsx,ts,tsx}": [
     "vitest related --run --passWithNoTests"
   ],
 
-  // Lint em todos os arquivos staged JS/JSX (incluindo apps, server e api)
-  "**/*.{js,jsx}": [
+  // Lint em todos os arquivos staged JS/JSX/TS/TSX (incluindo apps, server e api)
+  "**/*.{js,jsx,ts,tsx}": [
     "eslint --fix"
   ],
 
