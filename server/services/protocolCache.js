@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { createLogger } from '../bot/logger.js';
-import { getTodayLocal } from '../utils/dateUtils';
+import { getTodayLocal } from '../utils/dateUtils.js';
 
 const logger = createLogger('ProtocolCache');
 

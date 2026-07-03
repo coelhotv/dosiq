@@ -5,7 +5,7 @@
 import { createClient } from '@supabase/supabase-js'
 import ws from 'ws'
 import { z } from 'zod'
-import { getNow, getServerTimestamp } from '../../utils/dateUtils'
+import { getNow, getServerTimestamp } from '../../utils/dateUtils.js'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,

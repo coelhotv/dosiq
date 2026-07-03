@@ -7,7 +7,7 @@ import {
   parseLocalDate,
   getSaoPauloTime,
   addDays
-} from '../../utils/dateUtils';
+} from '../../utils/dateUtils.js';
 import { isProtocolActiveOnWeekday } from '../../utils/protocolActiveHelper.js';
 
 export async function handleHoje(bot, msg) {

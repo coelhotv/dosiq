@@ -4,7 +4,7 @@ import { getSession, setSession, clearSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 import { handleChatbotMessage } from '../commands/chatbot.js';
-import { getServerTimestamp, addDays } from '../../utils/dateUtils';
+import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 
 const logger = createLogger('ConversationalCallbacks');

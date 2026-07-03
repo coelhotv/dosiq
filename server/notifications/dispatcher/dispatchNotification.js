@@ -11,7 +11,7 @@ import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { 
   getNow, 
   getCurrentTime
-} from '../../utils/dateUtils'
+} from '../../utils/dateUtils.js'
 
 const logger = createLogger('Dispatcher')
 

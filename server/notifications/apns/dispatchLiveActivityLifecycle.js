@@ -12,7 +12,7 @@
 // Fail-open total (FR-008): qualquer falha loga e segue — NUNCA propaga, NUNCA toca o alarme.
 
 import { deriveDoseActivityState, createCriticalAuditService } from '@dosiq/core'
-import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils'
+import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig } from './liveActivityPush.js'
 
 // Status que encerram a LA (dose saiu de pendente).

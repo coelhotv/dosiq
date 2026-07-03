@@ -13,7 +13,7 @@
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
 import { selectActiveDoseActivity, createCriticalAuditService } from '@dosiq/core'
-import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils'
+import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
 

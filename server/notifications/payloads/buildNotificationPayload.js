@@ -3,7 +3,7 @@
 
 import { 
   getServerTimestamp 
-} from '../../utils/dateUtils';
+} from '../../utils/dateUtils.js';
 
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 

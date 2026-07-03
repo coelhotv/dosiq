@@ -1,4 +1,4 @@
-import { getServerTimestamp } from '../utils/dateUtils';
+import { getServerTimestamp } from '../utils/dateUtils.js';
 
 // Logger estruturado com níveis de log
 export const LOG_LEVELS = {

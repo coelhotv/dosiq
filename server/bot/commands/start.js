@@ -1,5 +1,5 @@
 import { supabase } from '../../services/supabase.js';
-import { getServerTimestamp } from '../../utils/dateUtils';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
 
 export async function handleStart(bot, msg) {
   const chatId = msg.chat.id;

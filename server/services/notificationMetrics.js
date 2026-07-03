@@ -4,7 +4,7 @@ import {
   getNow, 
   getServerTimestamp, 
   addMinutes 
-} from '../utils/dateUtils';
+} from '../utils/dateUtils.js';
 
 const logger = createLogger('NotificationMetrics');
 

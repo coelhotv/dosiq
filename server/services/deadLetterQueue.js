@@ -6,7 +6,7 @@ import {
   getServerTimestamp, 
   addDays, 
   parseISO 
-} from '../utils/dateUtils';
+} from '../utils/dateUtils.js';
 
 const logger = createLogger('DeadLetterQueue');
 

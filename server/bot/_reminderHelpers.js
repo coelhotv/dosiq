@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, parseTimestamp, addMinutes } from '../utils/dateUtils';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, parseTimestamp, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 import { calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat } from '@dosiq/core';

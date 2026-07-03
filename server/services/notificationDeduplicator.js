@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { addMinutes, addDays } from '../utils/dateUtils';
+import { addMinutes, addDays } from '../utils/dateUtils.js';
 
 const DEDUP_WINDOW_MINUTES = 5; // Don't send same notification twice within 5 minutes
 

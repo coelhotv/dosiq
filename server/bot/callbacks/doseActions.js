@@ -4,7 +4,7 @@ import { medicineLogService } from '../../services/medicineLogService.js';
 import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters.js';
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
-import { getServerTimestamp, addDays, addMinutes, parseISO } from '../../utils/dateUtils';
+import { getServerTimestamp, addDays, addMinutes, parseISO } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 import { createLogger } from '../logger.js';
 

@@ -12,7 +12,7 @@
 // próprio do dosiq (backlog LGPD, CON-030) — não default. (Supersede o S-3 "discreto server-side".)
 
 import { deriveDoseActivityState, doseActivityBoundaryTimes } from '@dosiq/core'
-import { parseISO } from '../../utils/dateUtils'
+import { parseISO } from '../../utils/dateUtils.js'
 
 /**
  * @param {object} doseItem - shape CON-029 (scheduledFor/scheduled_for, critical_alarm, medicineName, ...)

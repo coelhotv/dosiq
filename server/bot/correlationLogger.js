@@ -1,7 +1,7 @@
 // server/bot/correlationLogger.js
 import { createLogger } from './logger.js';
 import crypto from 'crypto';
-import { getServerTimestamp } from '../utils/dateUtils';
+import { getServerTimestamp } from '../utils/dateUtils.js';
 
 const logger = createLogger('Correlation');
 

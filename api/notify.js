@@ -15,7 +15,7 @@ import { dispatchNotification } from '../server/notifications/dispatcher/dispatc
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
-import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils';
+import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
 
 const logger = createLogger('CronNotify');
 

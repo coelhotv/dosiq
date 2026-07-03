@@ -18,7 +18,7 @@ import {
   getServerTimestamp, 
   addMinutes,
   parseISO
-} from '../utils/dateUtils';
+} from '../utils/dateUtils.js';
 import { createLogger } from '../bot/logger.js';
 
 const logger = createLogger('SessionManager');
