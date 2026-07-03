@@ -63,7 +63,20 @@ import { syncNotificationDevice } from '@platform/notifications/syncNotification
 // MESMO token → sem isto o trail enche de token_captured idênticos (rajada observada: 4× em 40s).
 // Emite só quando o token MUDA de fato (nova Activity / rotação). In-memory (sem storage/bloat);
 // no restart re-emite no máx 1×/dose/sessão. Não guarda o valor do token no trail (SEC-3).
+// Cap com evicção FIFO (Map preserva ordem de inserção) — evita crescimento sem limite em sessões
+// longas (review #700/#701). Chave = instanceId (escopo por dose; app é single-user por sessão).
+const LAST_TOKEN_CAP = 200
 const lastSyncedToken = new Map()
+
+/** Registra o token da instância com dedupe e cap FIFO. Retorna true se o token MUDOU (deve emitir). */
+function markTokenSynced(instanceId, token) {
+  if (lastSyncedToken.get(instanceId) === token) return false
+  lastSyncedToken.set(instanceId, token)
+  while (lastSyncedToken.size > LAST_TOKEN_CAP) {
+    lastSyncedToken.delete(lastSyncedToken.keys().next().value) // remove a entrada mais antiga
+  }
+  return true
+}
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
@@ -87,8 +100,7 @@ async function _syncActivityToken(instanceId) {
         await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
         // token_captured só quando o token muda (dedupe da rajada de re-sync). Marca a captura SEM
         // gravar o valor do token (SEC-3).
-        if (lastSyncedToken.get(instanceId) !== token) {
-          lastSyncedToken.set(instanceId, token)
+        if (markTokenSynced(instanceId, token)) {
           await tokenAudit.emit({
             doseInstanceId: instanceId,
             event: 'token_captured',
