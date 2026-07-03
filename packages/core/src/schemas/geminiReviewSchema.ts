@@ -29,7 +29,7 @@ export const REVIEW_STATUSES = [
   'em_progresso',
   'corrigido',
   'descartado',
-]
+] as const
 
 /**
  * Labels para exibição dos status
@@ -55,7 +55,7 @@ export const REVIEW_STATUS_LABELS = {
  * Tipos de resolução possíveis
  * @readonly
  */
-export const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial']
+export const RESOLUTION_TYPES = ['fixed', 'rejected', 'partial'] as const
 
 /**
  * Labels para exibição dos tipos de resolução
@@ -71,7 +71,7 @@ export const RESOLUTION_TYPE_LABELS = {
  * Prioridades possíveis (em português)
  * @readonly
  */
-export const REVIEW_PRIORITIES = ['critica', 'alta', 'media', 'baixa']
+export const REVIEW_PRIORITIES = ['critica', 'alta', 'media', 'baixa'] as const
 
 /**
  * Labels para exibição das prioridades
@@ -95,7 +95,7 @@ export const REVIEW_CATEGORIES = [
   'performance',
   'manutenibilidade',
   'general',
-]
+] as const
 
 /**
  * Labels para exibição das categorias
@@ -131,22 +131,16 @@ export const geminiReviewSchema = z.object({
 
   // Status, prioridade e categoria
   status: z
-    .enum(REVIEW_STATUSES, {
-      errorMap: () => ({ message: 'Status inválido' }),
-    })
+    .enum(REVIEW_STATUSES, { error: 'Status inválido' })
     .default('pendente'),
 
   priority: z
-    .enum(REVIEW_PRIORITIES, {
-      errorMap: () => ({ message: 'Prioridade inválida' }),
-    })
+    .enum(REVIEW_PRIORITIES, { error: 'Prioridade inválida' })
     .nullable()
     .optional(),
 
   category: z
-    .enum(REVIEW_CATEGORIES, {
-      errorMap: () => ({ message: 'Categoria inválida' }),
-    })
+    .enum(REVIEW_CATEGORIES, { error: 'Categoria inválida' })
     .nullable()
     .optional(),
 
@@ -192,9 +186,7 @@ export const geminiReviewUpdateSchema = geminiReviewSchema.partial().omit({
  * Schema para atualização de status
  */
 export const geminiReviewStatusUpdateSchema = z.object({
-  status: z.enum(REVIEW_STATUSES, {
-    errorMap: () => ({ message: 'Status inválido' }),
-  }),
+  status: z.enum(REVIEW_STATUSES, { error: 'Status inválido' }),
   resolution_type: z.enum(RESOLUTION_TYPES).nullable().optional(),
   resolved_by: z.string().uuid().nullable().optional(),
   resolved_at: z.string().datetime({ offset: true }).nullable().optional(),

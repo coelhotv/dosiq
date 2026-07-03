@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateFeedbackCreate } from '../feedbackSchema.js'
+import { validateFeedbackCreate } from '../feedbackSchema'
 
 describe('Feedback Schema Validation', () => {
   it('validates a minimum correct feedback payload', () => {

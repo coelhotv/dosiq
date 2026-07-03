@@ -1,1 +1,1 @@
-export * from '../../../../packages/core/src/schemas/notificationSchema.js'
+export * from '../../../../packages/core/src/schemas/notificationSchema'

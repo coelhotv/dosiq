@@ -7,7 +7,7 @@ import { getServerTimestamp } from '../utils/dateUtils.js'
  */
 
 // Tipos sanguíneos válidos
-export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'desconhecido']
+export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'desconhecido'] as const
 
 // Labels dos tipos sanguíneos para exibição
 export const BLOOD_TYPE_LABELS = {
@@ -74,9 +74,7 @@ export const emergencyCardSchema = z.object({
     .default([]),
 
   blood_type: z.enum(BLOOD_TYPES, {
-    errorMap: () => ({
-      message: 'Tipo sanguíneo inválido. Opções: A+, A-, B+, B-, AB+, AB-, O+, O-, desconhecido',
-    }),
+    error: 'Tipo sanguíneo inválido. Opções: A+, A-, B+, B-, AB+, AB-, O+, O-, desconhecido',
   }),
 
   notes: z

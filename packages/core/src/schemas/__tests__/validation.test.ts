@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { medicineSchema } from '../medicineSchema.js'
+import { medicineSchema } from '../medicineSchema'
 import {
   validateMedicineCreate,
   validateProtocolCreate,

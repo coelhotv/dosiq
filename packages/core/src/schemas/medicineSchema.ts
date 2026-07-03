@@ -343,11 +343,11 @@ export function validateMedicineUpdate(data) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapMedicineErrorsToForm(zodErrors) {
-  const formErrors = {}
+export function mapMedicineErrorsToForm(zodErrors: Array<{ path: PropertyKey[]; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path[0])
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }

@@ -104,7 +104,7 @@ export function validateUserProfile(data) {
     return {
       success: false,
       errors: result.error.issues.map((issue) => ({
-        field: issue.path[0],
+        field: String(issue.path[0]),
         message: issue.message,
       })),
     }

@@ -6,7 +6,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { validateMedicineCreate, validateMedicineUpdate } from '../schemas/medicineSchema.js'
+import { validateMedicineCreate, validateMedicineUpdate } from '../schemas/medicineSchema'
 
 const identity = <T,>(x: T) => x
 

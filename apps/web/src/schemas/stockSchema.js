@@ -1,1 +1,1 @@
-export * from '../../../../packages/core/src/schemas/stockSchema.js'
+export * from '../../../../packages/core/src/schemas/stockSchema'

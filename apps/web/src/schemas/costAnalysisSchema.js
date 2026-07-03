@@ -1,1 +1,1 @@
-export * from '../../../../packages/core/src/schemas/costAnalysisSchema.js'
+export * from '../../../../packages/core/src/schemas/costAnalysisSchema'

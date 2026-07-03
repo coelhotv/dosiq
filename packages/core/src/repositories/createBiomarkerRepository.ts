@@ -8,7 +8,7 @@ import {
   validateBiomarkerLog,
   validateBiomarkerLogUpdate,
   BIOMARKER_TYPE_UNITS,
-} from '../schemas/biomarkerLogSchema.js'
+} from '../schemas/biomarkerLogSchema'
 
 const TABLE = 'biomarkers_log'
 
@@ -91,7 +91,8 @@ export function createBiomarkerRepository({ client, getUserId }: CreateBiomarker
     /** Cria um biomarcador. measured_at default = agora; unit default = unidade fixa do tipo. */
     async create(biomarker: Record<string, unknown>) {
       const payload: Record<string, unknown> = { ...biomarker }
-      if (!payload.unit && payload.type) payload.unit = BIOMARKER_TYPE_UNITS[payload.type]
+      if (!payload.unit && payload.type)
+        payload.unit = BIOMARKER_TYPE_UNITS[payload.type as keyof typeof BIOMARKER_TYPE_UNITS]
 
       const validation = validateBiomarkerLog(payload)
       if (!validation.success) throw formatValidationError(validation.errors)

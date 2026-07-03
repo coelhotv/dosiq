@@ -1,7 +1,7 @@
 // api/admin/_handlers/nudges.js
 // Nudge admin handlers — create, read, update, toggle
 
-import { validateNudgeCreate, validateNudgeUpdate } from '../../../packages/core/src/schemas/nudgeSchema.js'
+import { validateNudgeCreate, validateNudgeUpdate } from '../../../packages/core/src/schemas/nudgeSchema'
 
 export async function handleListNudges(req, res, supabase) {
   try {

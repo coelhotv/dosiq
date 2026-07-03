@@ -29,7 +29,7 @@ export {
   REGULATORY_CATEGORIES,
   REGULATORY_CATEGORY_LABELS,
   normalizeRegulatoryCategory,
-} from './medicineSchema.js'
+} from './medicineSchema'
 
 export {
   protocolSchema,
@@ -49,7 +49,7 @@ export {
   INTAKE_UNIT_LABELS,
   WEEKDAYS,
   WEEKDAY_LABELS,
-} from './protocolSchema.js'
+} from './protocolSchema'
 
 export {
   stockSchema,
@@ -65,7 +65,7 @@ export {
   validateStockIncrease,
   mapStockErrorsToForm,
   getStockErrorMessage,
-} from './stockSchema.js'
+} from './stockSchema'
 
 export {
   logSchema,
@@ -82,7 +82,7 @@ export {
   mapBulkLogErrors,
   getLogErrorMessage,
   getBulkLogErrorMessage,
-} from './logSchema.js'
+} from './logSchema'
 export {
   biomarkerLogSchema,
   biomarkerLogCreateSchema,
@@ -100,24 +100,24 @@ export {
   BIOMARKER_ALL_CONTEXTS,
   BIOMARKER_CONTEXTS_BY_TYPE,
   BIOMARKER_SOURCES,
-} from './biomarkerLogSchema.js'
+} from './biomarkerLogSchema'
 
 export {
   geminiReviewSchema,
   validateGeminiReview,
-} from './geminiReviewSchema.js'
+} from './geminiReviewSchema'
 
 export {
   notificationLogSchema,
   notificationLogCreateSchema,
-} from './notificationLogSchema.js'
+} from './notificationLogSchema'
 
 export {
   NOTIFICATION_TYPES,
   DOSE_RELATED_NOTIFICATION_TYPES,
   notificationSchema,
   notificationListSchema,
-} from './notificationSchema.js'
+} from './notificationSchema'
 
 export {
   emergencyCardSchema,
@@ -130,36 +130,36 @@ export {
   validateEmergencyContact,
   mapEmergencyCardErrorsToForm,
   getEmergencyCardErrorMessage,
-} from './emergencyCardSchema.js'
+} from './emergencyCardSchema'
 
 export {
   validatePasswordChange,
-} from './authSchema.js'
+} from './authSchema'
 
 export {
   AnalyzeAdherencePatternsInputSchema,
   AnalyzeAdherencePatternsOutputSchema,
   validateAnalyzeAdherencePatternsInput,
   validateAnalyzeAdherencePatternsOutput,
-} from './adherencePatternSchema.js'
+} from './adherencePatternSchema'
 
 export {
   CalculateMonthlyCostsInputSchema,
   CalculateDailyIntakeInputSchema,
   CalculateAvgUnitPriceInputSchema,
   CalculateRealCostsInputSchema,
-} from './costAnalysisSchema.js'
+} from './costAnalysisSchema'
 
 export {
   AnalyzeReminderTimingInputSchema,
   ReminderSuggestionSchema,
-} from './reminderOptimizerSchema.js'
+} from './reminderOptimizerSchema'
 
 export {
   default as userProfileSchema,
   validateUserProfile,
   BRAZILIAN_STATES,
-} from './userProfileSchema.js'
+} from './userProfileSchema'
 
 export {
   userSettingsNotificationSchema,
@@ -170,15 +170,15 @@ export {
   getDeviceTimezone,
   resolveSupportedTz,
   deriveLegacyPreference,
-} from './userSettingsSchema.js'
+} from './userSettingsSchema'
 
 export {
   default as feedbackSchema,
   validateFeedbackCreate,
-} from './feedbackSchema.js'
+} from './feedbackSchema'
 
 // Helper geral de validação
-export { validateEntity, ValidationError } from './validationHelper.js'
+export { validateEntity, ValidationError } from './validationHelper'
 
 // Audit trail de dose crítica (spec 042 — CON-031)
 export {
@@ -186,4 +186,4 @@ export {
   CRITICAL_AUDIT_EVENTS,
   CRITICAL_AUDIT_PLATFORMS,
   CRITICAL_AUDIT_ACTORS,
-} from './criticalAuditEventSchema.js'
+} from './criticalAuditEventSchema'

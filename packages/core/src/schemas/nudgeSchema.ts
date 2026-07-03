@@ -4,21 +4,21 @@
 import { z } from 'zod'
 
 // Enums (Portuguese labels)
-export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any']
+export const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any'] as const
 export const TARGET_VIEW_LABELS = {
   dashboard: 'Dashboard',
   profile: 'Perfil',
   any: 'Todas',
 }
 
-export const ACTION_TYPE_OPTIONS = ['navigate', 'open_url', 'dismiss_only']
+export const ACTION_TYPE_OPTIONS = ['navigate', 'open_url', 'dismiss_only'] as const
 export const ACTION_TYPE_LABELS = {
   navigate: 'Navegar',
   open_url: 'Abrir URL',
   dismiss_only: 'Somente info',
 }
 
-export const PLATFORM_OPTIONS = ['ios', 'android', 'all']
+export const PLATFORM_OPTIONS = ['ios', 'android', 'all'] as const
 export const PLATFORM_LABELS = {
   ios: 'iOS',
   android: 'Android',
@@ -28,25 +28,25 @@ export const PLATFORM_LABELS = {
 // Zod schema — base sem refinements p/ permitir .partial() no update
 const nudgeBaseSchema = z.object({
   title: z
-    .string({ required_error: 'Título é obrigatório' })
+    .string({ error: 'Título é obrigatório' })
     .min(2, 'Título deve ter ao menos 2 caracteres')
     .max(100, 'Título não pode ter mais de 100 caracteres')
     .trim(),
 
   body: z
-    .string({ required_error: 'Descrição é obrigatório' })
+    .string({ error: 'Descrição é obrigatório' })
     .min(5, 'Descrição deve ter ao menos 5 caracteres')
     .max(200, 'Descrição não pode ter mais de 200 caracteres')
     .trim(),
 
   target_view: z
-    .enum(TARGET_VIEW_OPTIONS, { errorMap: () => ({ message: 'Superfície inválida' }) }),
+    .enum(TARGET_VIEW_OPTIONS, { error: 'Superfície inválida' }),
 
   action_type: z
-    .enum(ACTION_TYPE_OPTIONS, { errorMap: () => ({ message: 'Tipo de ação inválida' }) }),
+    .enum(ACTION_TYPE_OPTIONS, { error: 'Tipo de ação inválida' }),
 
   platform: z
-    .enum(PLATFORM_OPTIONS, { errorMap: () => ({ message: 'Plataforma inválida' }) }),
+    .enum(PLATFORM_OPTIONS, { error: 'Plataforma inválida' }),
 
   priority: z
     .number()
@@ -82,7 +82,7 @@ const nudgeBaseSchema = z.object({
     .optional(),
 
   action_payload: z
-    .record(z.any())
+    .record(z.string(), z.any())
     .nullable()
     .optional(),
 })

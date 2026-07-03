@@ -14,7 +14,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { DEFAULT_TIMEZONE } from '../schemas/userSettingsSchema.js'
+import { DEFAULT_TIMEZONE } from '../schemas/userSettingsSchema'
 
 export async function resolveUserTz(client: SupabaseClient<Database>, userId: string | null | undefined): Promise<string> {
   if (!userId) return DEFAULT_TIMEZONE

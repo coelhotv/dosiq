@@ -22,7 +22,7 @@ import type { Database } from '@dosiq/shared-data'
 import {
   validateStockDecrease,
   validateStockIncrease,
-} from '../schemas/stockSchema.js'
+} from '../schemas/stockSchema'
 import { z } from 'zod'
 import { getTodayLocal, isProtocolActiveOnDate } from '../utils/dateUtils.js'
 import { cleanFloat } from '../utils/formUtils.js'

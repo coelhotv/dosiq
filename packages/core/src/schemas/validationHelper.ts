@@ -10,14 +10,14 @@ import {
   validateMedicineUpdate,
   mapMedicineErrorsToForm,
   getMedicineErrorMessage,
-} from './medicineSchema.js'
+} from './medicineSchema'
 
 import {
   validateProtocolCreate,
   validateProtocolUpdate,
   mapProtocolErrorsToForm,
   getProtocolErrorMessage,
-} from './protocolSchema.js'
+} from './protocolSchema'
 
 import {
   validateStockCreate,
@@ -26,7 +26,7 @@ import {
   validateStockIncrease,
   mapStockErrorsToForm,
   getStockErrorMessage,
-} from './stockSchema.js'
+} from './stockSchema'
 
 import {
   validateLogCreate,
@@ -36,13 +36,16 @@ import {
   mapBulkLogErrors,
   getLogErrorMessage,
   getBulkLogErrorMessage,
-} from './logSchema.js'
+} from './logSchema'
 
 /**
  * Classe de erro de validação customizada
  */
 export class ValidationError extends Error {
-  constructor(message, errors, entityType) {
+  errors: Array<{ field: string; message: string }>
+  entityType: string
+
+  constructor(message: string, errors: Array<{ field: string; message: string }>, entityType: string) {
     super(message)
     this.name = 'ValidationError'
     this.errors = errors

@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { validateFeedbackCreate } from '../schemas/feedbackSchema.js'
+import { validateFeedbackCreate } from '../schemas/feedbackSchema'
 
 interface ValidationError {
   field: string

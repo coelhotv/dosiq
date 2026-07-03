@@ -6,7 +6,7 @@ import {
   getDeviceTimezone,
   resolveSupportedTz,
   userSettingsNotificationSchema,
-} from '../userSettingsSchema.js'
+} from '../userSettingsSchema'
 
 // S4.4b / ADR-053 — enum de fuso curado (BR-first + expat). Armazenar SEMPRE IANA;
 // DST resolvido pelo nome IANA, nunca por offset.
@@ -105,7 +105,7 @@ describe('resolveSupportedTz / getDeviceTimezone (F4.3f.0)', () => {
   it('getDeviceTimezone lê o fuso via Intl', () => {
     vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
       resolvedOptions: () => ({ timeZone: 'Europe/London' }),
-    })
+    } as unknown as Intl.DateTimeFormat)
     expect(getDeviceTimezone()).toBe('Europe/London')
   })
 

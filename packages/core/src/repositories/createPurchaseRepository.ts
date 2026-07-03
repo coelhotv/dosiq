@@ -14,7 +14,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { validateStockCreate } from '../schemas/stockSchema.js'
+import { validateStockCreate } from '../schemas/stockSchema'
 import { computeAverageUnitPrice } from '../utils/stock.js'
 
 interface ValidationError {

@@ -13,7 +13,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { criticalAuditEventSchema } from '../schemas/criticalAuditEventSchema.js'
+import { criticalAuditEventSchema } from '../schemas/criticalAuditEventSchema'
 
 export interface CriticalAuditEvent {
   doseInstanceId?: string | null

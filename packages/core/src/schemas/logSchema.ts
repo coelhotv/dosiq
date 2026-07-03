@@ -269,7 +269,7 @@ export function mapBulkLogErrors(errors) {
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem formatada
  */
-export function getLogErrorMessage(errors) {
+export function getLogErrorMessage(errors: Array<{ message: string }>) {
   if (!errors || errors.length === 0) return ''
 
   if (errors.length === 1) {
@@ -284,7 +284,7 @@ export function getLogErrorMessage(errors) {
  * @param {Array} errors - Array de erros com index
  * @returns {string} Mensagem formatada
  */
-export function getBulkLogErrorMessage(errors) {
+export function getBulkLogErrorMessage(errors: Array<{ index: number }>) {
   if (!errors || errors.length === 0) return ''
 
   const indicesAfetados = [...new Set(errors.map((e) => e.index))].filter((i) => i >= 0)

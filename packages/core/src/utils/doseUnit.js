@@ -12,7 +12,7 @@
 // Hermes (mobile) sem ICU completo: toLocaleString('pt-BR') cai em fallback
 // US. Por isso usamos replace('.', ',') manual (confiável em V8 e Hermes).
 
-import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema.js'
+import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema'
 import { cleanFloat } from './formUtils.js'
 /**
  * Converte string ou número para número de forma segura.

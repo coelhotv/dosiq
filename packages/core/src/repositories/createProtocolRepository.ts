@@ -16,7 +16,7 @@ import type { Database } from '@dosiq/shared-data'
 import {
   validateProtocolCreate,
   validateProtocolUpdate,
-} from '../schemas/protocolSchema.js'
+} from '../schemas/protocolSchema'
 import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils.js'
 import { createDoseInstanceRepository } from './createDoseInstanceRepository'
 import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner'

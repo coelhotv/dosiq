@@ -16,13 +16,13 @@ import { z } from 'zod'
  */
 const feedbackSchema = z.object({
   subject: z
-    .string({ required_error: 'O assunto é obrigatório' })
+    .string({ error: 'O assunto é obrigatório' })
     .min(1, 'O assunto não pode estar vazio')
     .max(100, 'O assunto não pode ter mais de 100 caracteres')
     .trim(),
 
   comment: z
-    .string({ required_error: 'O comentário é obrigatório' })
+    .string({ error: 'O comentário é obrigatório' })
     .min(1, 'O comentário não pode estar vazio')
     .max(2000, 'O comentário não pode ter mais de 2000 caracteres')
     .trim(),
@@ -63,7 +63,7 @@ export function validateFeedbackCreate(data) {
     return {
       success: false,
       errors: result.error.issues.map((issue) => ({
-        field: issue.path[0],
+        field: String(issue.path[0]),
         message: issue.message,
       })),
     }

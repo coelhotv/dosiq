@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { criticalAuditEventSchema } from '../criticalAuditEventSchema.js'
+import { criticalAuditEventSchema } from '../criticalAuditEventSchema'
 
 // 042 Slice A — criticalAuditEventSchema. Espelha CHECKs SQL de dose_critical_events.
 

@@ -7,7 +7,7 @@ import {
   BIOMARKER_PA_CONTEXT_LABELS,
   BIOMARKER_TYPE_LABELS,
   BIOMARKER_TYPE_SHORT_LABELS,
-} from '../schemas/biomarkerLogSchema.js'
+} from '../schemas/biomarkerLogSchema'
 
 // Número PT-BR (ponto → vírgula). Não força casas decimais.
 function ptBR(n) {

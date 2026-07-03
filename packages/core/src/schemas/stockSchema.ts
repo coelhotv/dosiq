@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { parseLocalDate, getNow, cloneDate } from '../utils/dateUtils.js'
-import { INJECTION_CONTAINERS } from './medicineSchema.js'
+import { INJECTION_CONTAINERS } from './medicineSchema'
 
 /**
  * Schema de validação para Estoque

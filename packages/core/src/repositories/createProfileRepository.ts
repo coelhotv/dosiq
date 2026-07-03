@@ -16,7 +16,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
-import { validateUserProfile } from '../schemas/userProfileSchema.js'
+import { validateUserProfile } from '../schemas/userProfileSchema'
 import { getServerTimestamp, getTodayLocal } from '../utils/dateUtils.js'
 
 // Colunas de perfil lidas/escritas (R-127: só o necessário).

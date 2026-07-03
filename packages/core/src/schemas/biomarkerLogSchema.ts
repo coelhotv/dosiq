@@ -74,7 +74,7 @@ export const BIOMARKER_SOURCES = ['manual', 'healthkit', 'google_fit', 'health_c
 const numericPositive = (msg) =>
   z.preprocess(
     (val) => (val === '' ? null : val),
-    z.coerce.number({ invalid_type_error: msg }).positive(msg)
+    z.coerce.number({ error: msg }).positive(msg)
   )
 
 // Objeto base (ZodObject) — preserva .partial()/.extend(). O refine de PA é aplicado SEPARADAMENTE

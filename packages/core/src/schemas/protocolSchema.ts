@@ -16,7 +16,7 @@ export const FREQUENCIES = [
   'semanal',
   'personalizado',
   'quando_necessário',
-]
+] as const
 
 // Labels de frequência para exibição
 export const FREQUENCY_LABELS = {
@@ -28,7 +28,7 @@ export const FREQUENCY_LABELS = {
 }
 
 // Status de titulação
-const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido']
+const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido'] as const
 
 // Dias da semana
 export const WEEKDAYS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
@@ -105,10 +105,8 @@ export const protocolSchema = z.object({
     .trim(),
 
   frequency: z.enum(FREQUENCIES, {
-    errorMap: () => ({
-      message:
-        'Frequência inválida. Opções: diário, dias_alternados, semanal, personalizado, quando_necessário',
-    }),
+    error:
+      'Frequência inválida. Opções: diário, dias_alternados, semanal, personalizado, quando_necessário',
   }),
 
   time_schedule: z
@@ -125,9 +123,7 @@ export const protocolSchema = z.object({
 
   titration_status: z
     .enum(TITRATION_STATUSES, {
-      errorMap: () => ({
-        message: 'Status de titulação inválido. Opções: estável, titulando, alvo_atingido',
-      }),
+      error: 'Status de titulação inválido. Opções: estável, titulando, alvo_atingido',
     })
     .default('estável'),
 

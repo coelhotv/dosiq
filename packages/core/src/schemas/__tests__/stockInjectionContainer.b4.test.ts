@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { validateStockCreate } from '../stockSchema.js'
-import { medicineSchema } from '../medicineSchema.js'
+import { validateStockCreate } from '../stockSchema'
+import { medicineSchema } from '../medicineSchema'
 
 // 012 Fase B4 / ADR-068 — injection_container migrou medicine-level → LOTE.
 describe('injection_container por lote (B4 — ADR-068)', () => {
