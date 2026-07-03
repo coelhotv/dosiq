@@ -5,8 +5,8 @@
     "mode": "coding",
     "ceremony_type": "eng-review",
     "status": "coding",
-    "merged_pr": 701,
-    "merged_squash": "6e3f330b",
+    "merged_pr": 702,
+    "merged_squash": "5d592ed5",
     "merged_history": [
       {
         "pr": 696,
@@ -36,15 +36,20 @@
         "pr": 701,
         "squash": "6e3f330b",
         "phase": "041 fix-up + fecho e2e do trail: janela push-to-start [now,now+lead] (AP-259) + push_failed no lifecycle (deactivate/BadDeviceToken visível) + dedupe token_captured mobile com cap FIFO 200. v0.24.5. Confirmado e2e no device real (surface_transitioned later→upcoming + push_sent)"
+      },
+      {
+        "pr": 702,
+        "squash": "5d592ed5",
+        "phase": "040 F1: infra TypeScript (tsconfig base+strict islands+9 workspaces, eslint TS, lint-staged, migrate-domain.sh). Review: baseUrl TS6 + expo/tsconfig.base FR-009; Gemini 4/5 aplicados"
       }
     ],
-    "goal": "042 épico COMPLETO + 041 gaps fechados (#701) — audit trail dose crítica end-to-end VALIDADO em device real (trajetória alarm_scheduled→token_captured→surface_transitioned server→push_sent)",
-    "goal_type": "feature",
-    "plan": "plans/specs/042-critical-audit-trail/plan.md",
-    "tasks": "plans/specs/042-critical-audit-trail/tasks.md",
+    "goal": "040 F1 mergeada (#702) — infra TS completa; próximo: F2 packages (shared-data→config→design-tokens→storage→core)",
+    "goal_type": "chore",
+    "plan": "plans/specs/040-typescript-migration/plan.md",
+    "tasks": "plans/specs/040-typescript-migration/tasks.md",
     "tier": 2,
-    "spec_dir": "plans/specs/042-critical-audit-trail",
-    "spec": "plans/specs/042-critical-audit-trail/spec.md",
+    "spec_dir": "plans/specs/040-typescript-migration",
+    "spec": "plans/specs/040-typescript-migration/spec.md",
     "ceremonies_run": [
       "eng-review",
       "security-review"
@@ -59,16 +64,11 @@
       "ENG-1: iOS não captura alarm_fired no disparo (sem JS background) — outcome derivado no foreground, detail.captured_at_foreground",
       "ENG-2: fatiar em Slice A (server-side: migração+core+emits round-trip) e Slice B (beacon device+fila)",
       "ENG-3: emit helper único @dosiq/core (criticalAuditService), sem insert inline por site; guards PO-2/PO-3 calibrados ↑"
-    ],
-    "parked": {
-      "goal": "typescript-migration",
-      "spec_dir": "plans/specs/040-typescript-migration",
-      "note": "artefatos no disco; retomar depois"
-    }
+    ]
   },
   "memory": {
     "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 231,
     "anti_patterns_count": 255,
     "decisions_count": 77,
