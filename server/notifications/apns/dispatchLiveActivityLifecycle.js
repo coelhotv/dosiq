@@ -88,10 +88,17 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: finalState, scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok || res.deactivate) {
+    if (res.ok) {
       await _clearToken(supabase, logger, inst.id)
       await emitTransition(finalState)
       logger?.info?.('LA encerrada por push (end)', { instanceId: inst.id, status: inst.status, apns: res.status })
+      return 'ended'
+    }
+    // Token morto (BadDeviceToken/410): a LA já não existe → limpa o token, MAS audita como falha
+    // (não foi um `end` bem-sucedido). O backstop de dismissal do device cobre o encerramento visual.
+    if (res.deactivate) {
+      await _clearToken(supabase, logger, inst.id)
+      await emitFailed('end', res)
       return 'ended'
     }
     logger?.warn?.('push end falhou (fail-open; backstop dismissal cobre)', { instanceId: inst.id, reason: res.reason })
@@ -110,9 +117,14 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: 'missed', scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok || res.deactivate) {
+    if (res.ok) {
       await _clearToken(supabase, logger, inst.id)
       await emitTransition('missed')
+      return 'ended'
+    }
+    if (res.deactivate) {
+      await _clearToken(supabase, logger, inst.id)
+      await emitFailed('end', res)
       return 'ended'
     }
     await emitFailed('end', res)
@@ -133,8 +145,11 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
     logger?.info?.('LA atualizada por push (update)', { instanceId: inst.id, state: derived.state })
     return 'updated'
   }
+  // Token morto (BadDeviceToken/Unregistered/410) — a causa MAIS comum de "a LA não atualiza".
+  // Limpa o token E audita push_failed (antes retornava 'skipped' silencioso, escondendo a falha).
   if (res.deactivate) {
-    await _clearToken(supabase, logger, inst.id) // token morto → LA não existe mais
+    await _clearToken(supabase, logger, inst.id)
+    await emitFailed('update', res)
     return 'skipped'
   }
   logger?.warn?.('push update falhou (fail-open)', { instanceId: inst.id, reason: res.reason })

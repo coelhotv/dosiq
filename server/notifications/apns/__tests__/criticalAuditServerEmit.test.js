@@ -154,10 +154,11 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     assertNoPii(payload);
   });
 
-  it('lifecycle: push_failed — update rejeitado pelo APNs (ex.: token de simulador) é auditado (sem PII)', async () => {
+  it('lifecycle: push_failed — token inválido (deactivate:true, BadDeviceToken) É auditado, não silencioso', async () => {
     const supabase = makeSupabase([{ data: [lifecycleRow()], error: null }]);
-    // update falha SEM deactivate (erro transitório / BadDeviceToken tratado como falha).
-    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 400, reason: 'BadDeviceToken' }));
+    // Prod: BadDeviceToken/Unregistered → _postToApns marca deactivate:true. Este é o caso REAL do
+    // "a LA não atualiza" (token de simulador/morto) — DEVE emitir push_failed (não skip silencioso).
+    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 400, deactivate: true, reason: 'BadDeviceToken' }));
     await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
 
     expect(supabase._captured).toHaveLength(1);
@@ -168,6 +169,17 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
       detail: { phase: 'update', status: 400, reason: 'BadDeviceToken' },
     });
     assertNoPii(payload);
+  });
+
+  it('lifecycle: push_failed — falha transitória (sem deactivate) também é auditada', async () => {
+    const supabase = makeSupabase([{ data: [lifecycleRow()], error: null }]);
+    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 503, reason: 'ServiceUnavailable' }));
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0]).toMatchObject({
+      event: 'push_failed', detail: { phase: 'update', status: 503, reason: 'ServiceUnavailable' },
+    });
   });
 
   it('GUARD PII: nenhum payload capturado em nenhum cenário vaza dados sensíveis', async () => {
