@@ -7,7 +7,7 @@
  * @param {Object} options - Mesmas opcoes de createSupabaseDependencies
  * @returns {import('@supabase/supabase-js').SupabaseClient}
  */
-import { createSupabaseDependencies } from './createSupabaseDependencies.js'
+import { createSupabaseDependencies } from './createSupabaseDependencies'
 
 export function createSupabaseClient(options) {
   const { supabase } = createSupabaseDependencies(options)

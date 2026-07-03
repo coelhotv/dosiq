@@ -6,7 +6,7 @@ import {
   BIOMARKER_CONTEXTS,
   BIOMARKER_PA_CONTEXTS,
   BIOMARKER_TYPE_UNITS,
-} from '../index.js'
+} from '../index'
 
 // 012 Fase C — biomarkerLogSchema (ADR-060). Enums PT, value_secondary (PA), failure modes.
 

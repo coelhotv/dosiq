@@ -13,13 +13,13 @@
  */
 
 // Query Cache
-export { createQueryCache } from './query-cache/createQueryCache.js'
-export { CACHE_KEYS, generateCacheKey } from './query-cache/cacheKeys.js'
+export { createQueryCache } from './query-cache/createQueryCache'
+export { CACHE_KEYS, generateCacheKey } from './query-cache/cacheKeys'
 
 // Supabase factories
-export { createSupabaseDependencies } from './supabase/createSupabaseDependencies.js'
-export { createSupabaseClient } from './supabase/createSupabaseClient.js'
+export { createSupabaseDependencies } from './supabase/createSupabaseDependencies'
+export { createSupabaseClient } from './supabase/createSupabaseClient'
 
 // Service factories
-export { createUserSessionRepository } from './services/createUserSessionRepository.js'
-export { createNotificationLogRepository } from './services/createNotificationLogRepository.js'
+export { createUserSessionRepository } from './services/createUserSessionRepository'
+export { createNotificationLogRepository } from './services/createNotificationLogRepository'

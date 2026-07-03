@@ -17,7 +17,7 @@ function _log(logger, level, msg) {
   if (fn) fn(`[QueryCache] ${msg}`)
 }
 
-function _isStale(timestamp, staleTime, customStaleTime) {
+function _isStale(timestamp, staleTime, customStaleTime?) {
   return Date.now() - timestamp > (customStaleTime ?? staleTime)
 }
 

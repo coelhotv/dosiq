@@ -5,7 +5,7 @@ import {
   validateProtocolCreate,
   validateMedicine,
   validateTitrationStage,
-} from '../index.js'
+} from '../index'
 
 // 012 Fase B2 — sincronização Zod ↔ CHECK (R-082/R-271) + flag de titulação N1.
 describe('intake_unit mg (FR-017)', () => {

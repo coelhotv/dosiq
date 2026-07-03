@@ -4,7 +4,7 @@ import {
   CHATBOT_QUICK_SUGGESTIONS,
   createWelcomeMessage,
 } from '../chatbotUiText.js'
-import * as chatbotIndex from '../index.js'
+import * as chatbotIndex from '../index'
 
 // FR-013/PO-7 — textos de UI centralizados no core (web+mobile consomem); guardrails NÃO descem.
 

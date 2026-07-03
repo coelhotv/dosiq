@@ -33,7 +33,13 @@ export function createQueryCache({
   staleTime = 30_000,
   maxEntries = 200,
   persistKey = 'dosiq_query_cache',
-} = {}) {
+}: {
+  storage: unknown
+  logger?: unknown
+  staleTime?: number
+  maxEntries?: number
+  persistKey?: string
+} = {} as any) { // TODO(040-strict)
   if (!storage) throw new Error('createQueryCache: storage adapter is required')
   return _buildCache({ storage, logger, staleTime, maxEntries, persistKey, setJSON, getJSON })
 }
