@@ -4,27 +4,24 @@
 // Default selects incluem protocolos aninhados (necessário para agrupamento web/mobile).
 // Sem validação Zod — treatmentPlanSchema canônico não existe ainda; fora de escopo desta task.
 
-const identity = (x) => x
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
+
+const identity = <T,>(x: T) => x
 
 const DEFAULT_SELECT = '*, protocols:protocols(*, medicine:medicines(*))'
 
+interface CreateTreatmentPlanRepositoryDeps {
+  client: SupabaseClient<Database>
+  getUserId: () => Promise<string>
+  listSelect?: string
+  detailSelect?: string
+  listTransform?: (rows: unknown) => unknown
+  detailTransform?: (row: unknown) => unknown
+}
+
 /**
  * Cria um repositório CRUD de planos terapêuticos parametrizado por plataforma.
- *
- * @param {Object} deps
- * @param {Object} deps.client       Cliente Supabase (`createClient(...)` ou nativeSupabaseClient).
- * @param {Function} deps.getUserId  Async () => string. Resolve user_id da sessão.
- * @param {string}   [deps.listSelect]    Select fragment usado em getAll. Default: join completo com protocolos.
- * @param {string}   [deps.detailSelect]  Select fragment usado em getById. Default: join completo com protocolos.
- * @param {Function} [deps.listTransform]     (rows) => rows. Pós-processamento de getAll.
- * @param {Function} [deps.detailTransform]   (row) => row. Pós-processamento de getById.
- * @returns {{
- *   getAll: () => Promise<Array>,
- *   getById: (id: string) => Promise<Object>,
- *   create: (plan: Object) => Promise<Object>,
- *   update: (id: string, updates: Object) => Promise<Object>,
- *   delete: (id: string) => Promise<void>,
- * }}
  */
 export function createTreatmentPlanRepository({
   client,
@@ -33,7 +30,7 @@ export function createTreatmentPlanRepository({
   detailSelect = DEFAULT_SELECT,
   listTransform = identity,
   detailTransform = identity,
-}) {
+}: CreateTreatmentPlanRepositoryDeps) {
   if (!client) throw new Error('createTreatmentPlanRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createTreatmentPlanRepository: getUserId deve ser função async')
@@ -52,7 +49,7 @@ export function createTreatmentPlanRepository({
       return listTransform(data ?? [])
     },
 
-    async getById(id) {
+    async getById(id: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('treatment_plans')
@@ -65,11 +62,11 @@ export function createTreatmentPlanRepository({
       return detailTransform(data)
     },
 
-    async create(plan) {
+    async create(plan: Record<string, unknown>) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('treatment_plans')
-        .insert([{ ...plan, user_id: userId }])
+        .insert([{ ...plan, user_id: userId }] as never)
         .select()
         .single()
 
@@ -77,11 +74,11 @@ export function createTreatmentPlanRepository({
       return detailTransform(data)
     },
 
-    async update(id, updates) {
+    async update(id: string, updates: Record<string, unknown>) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('treatment_plans')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .eq('user_id', userId)
         .select()
@@ -91,7 +88,7 @@ export function createTreatmentPlanRepository({
       return detailTransform(data)
     },
 
-    async delete(id) {
+    async delete(id: string) {
       // Nota: protocolos associados têm treatment_plan_id setado para NULL via ON DELETE SET NULL.
       const userId = await getUserId()
       const { error } = await client

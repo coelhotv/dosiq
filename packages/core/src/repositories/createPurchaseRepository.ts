@@ -12,21 +12,29 @@
 // - createPurchase(input)                            → validateStockCreate + RPC create_purchase_with_stock
 // - updatePurchase(id, input)                        → update metadados (NÃO quantity_bought)
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { validateStockCreate } from '../schemas/stockSchema.js'
 import { computeAverageUnitPrice } from '../utils/stock.js'
 
-function fmtZodErr(errors) {
+interface ValidationError {
+  field: string
+  message: string
+}
+
+function fmtZodErr(errors: ValidationError[]) {
   return errors.map((e) => `${e.field}: ${e.message}`).join('; ')
+}
+
+interface CreatePurchaseRepositoryDeps {
+  client: SupabaseClient<Database>
+  getUserId: () => Promise<string>
 }
 
 /**
  * Cria um repositório CRUD de compras parametrizado por plataforma.
- *
- * @param {Object} deps
- * @param {Object} deps.client       Cliente Supabase.
- * @param {Function} deps.getUserId  Async () => string. Resolve user_id da sessão.
  */
-export function createPurchaseRepository({ client, getUserId }) {
+export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRepositoryDeps) {
   if (!client) throw new Error('createPurchaseRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createPurchaseRepository: getUserId deve ser função async')
@@ -39,7 +47,7 @@ export function createPurchaseRepository({ client, getUserId }) {
      * saldo restante de cada compra. `remaining` = soma das entries do lote
      * (normalmente 1). Sem isso o PurchaseCard mostrava sempre "0 restantes".
      */
-    async getPurchasesByMedicine(medicineId) {
+    async getPurchasesByMedicine(medicineId: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('purchases')
@@ -59,7 +67,7 @@ export function createPurchaseRepository({ client, getUserId }) {
     /**
      * Última compra de cada medicineId (mapa medicineId → purchase).
      */
-    async getLatestPurchasesByMedicineIds(medicineIds) {
+    async getLatestPurchasesByMedicineIds(medicineIds: string[]) {
       if (!medicineIds || medicineIds.length === 0) return {}
       const userId = await getUserId()
       const { data, error } = await client
@@ -71,7 +79,7 @@ export function createPurchaseRepository({ client, getUserId }) {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return (data || []).reduce((map, p) => {
+      return (data || []).reduce((map: Record<string, any>, p: any) => {
         if (!map[p.medicine_id]) map[p.medicine_id] = p
         return map
       }, {})
@@ -81,7 +89,7 @@ export function createPurchaseRepository({ client, getUserId }) {
      * Histórico completo por medicineId (mapa medicineId → array de compras).
      * Web expõe; incluído pra paridade.
      */
-    async getHistoryByMedicineIds(medicineIds) {
+    async getHistoryByMedicineIds(medicineIds: string[]) {
       if (!medicineIds || medicineIds.length === 0) return {}
       const userId = await getUserId()
       const { data, error } = await client
@@ -93,7 +101,7 @@ export function createPurchaseRepository({ client, getUserId }) {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return (data || []).reduce((map, p) => {
+      return (data || []).reduce((map: Record<string, any[]>, p: any) => {
         if (!map[p.medicine_id]) map[p.medicine_id] = []
         map[p.medicine_id].push(p)
         return map
@@ -104,7 +112,7 @@ export function createPurchaseRepository({ client, getUserId }) {
      * Preço médio unitário ponderado por medicineId (mapa medicineId → preço).
      * Reusa computeAverageUnitPrice de @dosiq/core (lê quantity_bought ?? quantity).
      */
-    async getAverageUnitPriceByMedicineIds(medicineIds) {
+    async getAverageUnitPriceByMedicineIds(medicineIds: string[]) {
       if (!medicineIds || medicineIds.length === 0) return {}
       const historyByMedicine = await repo.getHistoryByMedicineIds(medicineIds)
       return Object.fromEntries(
@@ -119,7 +127,7 @@ export function createPurchaseRepository({ client, getUserId }) {
      * Cria compra + atualiza saldo (atômico via RPC).
      * @throws {Error} se validation Zod falhar
      */
-    async createPurchase(input) {
+    async createPurchase(input: Record<string, unknown>) {
       const validation = validateStockCreate(input)
       if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
       const p = validation.data
@@ -146,20 +154,20 @@ export function createPurchaseRepository({ client, getUserId }) {
      * com `unit_price` = custo POR ML. FIFO opera frasco a frasco. Compensa centavos no
      * último frasco p/ o total reconstruído (Σ unit_price·volume) fechar exato (022 Fase B).
      *
-     * @param {Object} input
-     * @param {string} input.medicineId
-     * @param {number} input.numBottles       Nº de frascos (inteiro > 0).
-     * @param {number} input.volumePerBottle  Volume nominal de cada frasco em ml (> 0).
-     * @param {number} input.totalPrice       Preço total da compra (R$, >= 0).
-     * @param {string} input.purchaseDate     YYYY-MM-DD.
-     * @param {string} [input.expirationDate]
-     * @param {string} [input.pharmacy]
-     * @param {string} [input.laboratory]
-     * @param {string} [input.notes]
-     * @returns {Promise<Array>} resultados das N RPCs (1 por lote).
      * @throws {Error} se numBottles/volumePerBottle inválidos ou validação Zod falhar.
      */
-    async createLiquidPurchase(input) {
+    async createLiquidPurchase(input: {
+      medicineId: string
+      numBottles: number
+      volumePerBottle: number
+      totalPrice?: number
+      purchaseDate: string
+      expirationDate?: string | null
+      pharmacy?: string | null
+      laboratory?: string | null
+      notes?: string | null
+      injectionContainer?: string | null
+    }) {
       const {
         medicineId,
         numBottles,
@@ -223,7 +231,7 @@ export function createPurchaseRepository({ client, getUserId }) {
      * fluxo dedicado "Acertar saldo" (PO-6). Editar quantidade aqui causaria
      * desync silencioso (sem trigger no DB que propague).
      */
-    async updatePurchase(id, input) {
+    async updatePurchase(id: string, input: Record<string, unknown>) {
       const userId = await getUserId()
       const validation = validateStockCreate(input)
       if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)

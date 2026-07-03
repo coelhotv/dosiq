@@ -3,7 +3,7 @@
 // skipped_paused, mudança de agendamento faz wipe+regen. Mock cobre protocols + dose_instances.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { createProtocolRepository } from '../createProtocolRepository.js'
+import { createProtocolRepository } from '../createProtocolRepository'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -26,7 +26,7 @@ const PROTOCOL_ROW = {
 function makeClient() {
   const ops = [] // { table, calls: [[method, args]] }
   function builder(table) {
-    const b = {
+    const b: any = {
       _table: table,
       calls: [],
       _result: { data: table === 'protocols' ? PROTOCOL_ROW : [], error: null },
@@ -57,7 +57,7 @@ function makeClient() {
     return b
   }
   const client = { _ops: ops, from: vi.fn((t) => builder(t)) }
-  return client
+  return client as any
 }
 
 const getUserId = async () => 'u1'
@@ -138,7 +138,7 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
       return b
     })
     const r = createProtocolRepository({ client: brokenClient, getUserId })
-    const out = await r.create({
+    const out: any = await r.create({
       medicine_id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
       name: 'Teste', frequency: 'diário', time_schedule: ['08:00'], dosage_per_intake: 1, start_date: '2026-01-01',
     })

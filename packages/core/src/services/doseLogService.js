@@ -9,7 +9,7 @@
 // - R-020 timezone: comparações temporais e snap ficam na camada já testada (dateUtils/repo)
 // - AP-231: sem janela de log órfão — não há mais insert→delete compensatório em JS
 
-import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { validateLogCreate, validateLogUpdate } from '../schemas/logSchema.js'
 import { parseISO } from '../utils/dateUtils.js'
 import { createCriticalAuditService } from './criticalAuditService.js'

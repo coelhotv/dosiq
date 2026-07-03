@@ -8,7 +8,7 @@
 // Não tocamos no Supabase real — mock builder fluente (espelha createMedicineRepository.test.js).
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createProtocolRepository } from '../createProtocolRepository.js'
+import { createProtocolRepository } from '../createProtocolRepository'
 
 // ---------- Mock Supabase fluent builder ----------
 function makeBuilder(result) {
@@ -35,7 +35,7 @@ function makeClient(result) {
     _from: null,
     from: vi.fn((table) => { client._from = table; return builder }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'user-123'
@@ -74,11 +74,11 @@ describe('createProtocolRepository — parity', () => {
   // ── Constructor validation ────────────────────────────────────────────────
 
   it('throws se client ausente', () => {
-    expect(() => createProtocolRepository({ getUserId })).toThrow(/client/)
+    expect(() => createProtocolRepository({ getUserId } as any)).toThrow(/client/)
   })
 
   it('throws se getUserId não for função', () => {
-    expect(() => createProtocolRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createProtocolRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   // ── getAll ────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ describe('createProtocolRepository — parity', () => {
       client = makeClient({ data: [{ id: 'p-1' }, { id: 'p-2' }], error: null })
       const repo = createProtocolRepository({
         client, getUserId,
-        listTransform: (rows) => rows.map((r) => ({ ...r, active: true })),
+        listTransform: (rows: any) => rows.map((r: any) => ({ ...r, active: true })),
       })
       const result = await repo.getActive('2026-01-01')
       expect(result).toEqual([{ id: 'p-1', active: true }, { id: 'p-2', active: true }])
@@ -162,7 +162,7 @@ describe('createProtocolRepository — parity', () => {
     it('aplica detailTransform', async () => {
       const repo = createProtocolRepository({
         client, getUserId,
-        detailTransform: (row) => ({ ...row, decorated: true }),
+        detailTransform: (row: any) => ({ ...row, decorated: true }),
       })
       const result = await repo.getById('p-1')
       expect(result).toEqual({ id: 'p-1', name: 'Atenolol', decorated: true })
@@ -310,7 +310,7 @@ describe('createProtocolRepository — parity', () => {
       const advClient = {
         _builder: builder,
         from: vi.fn(() => builder),
-      }
+      } as any
 
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1')
@@ -337,7 +337,7 @@ describe('createProtocolRepository — parity', () => {
         return Promise.resolve({ data: { ...protocol, titration_status: 'alvo_atingido' }, error: null })
       })
       builder.then = (resolve) => resolve({ data: [protocol], error: null })
-      const advClient = { _builder: builder, from: vi.fn(() => builder) }
+      const advClient = { _builder: builder, from: vi.fn(() => builder) } as any
 
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1', true)
@@ -361,7 +361,7 @@ describe('createProtocolRepository — parity', () => {
         return Promise.resolve({ data: { ...protocol, titration_status: 'alvo_atingido' }, error: null })
       })
       builder.then = (resolve) => resolve({ data: [protocol], error: null })
-      const advClient = { _builder: builder, from: vi.fn(() => builder) }
+      const advClient = { _builder: builder, from: vi.fn(() => builder) } as any
 
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1')

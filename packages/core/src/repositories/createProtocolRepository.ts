@@ -11,12 +11,14 @@
 // - getByMedicineId(medicineId)                  → lista protocolos vinculados a um medicamento
 // - advanceTitrationStage(id, markAsCompleted)   → web-only (mobile v1 não expõe; mantido na factory pra paridade)
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import {
   validateProtocolCreate,
   validateProtocolUpdate,
 } from '../schemas/protocolSchema.js'
 import { getTodayLocal, getServerTimestamp, parseISO } from '../utils/dateUtils.js'
-import { createDoseInstanceRepository } from './createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from './createDoseInstanceRepository'
 import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner.js'
 import { resolveUserTz } from '../services/resolveUserTz.js'
 
@@ -30,12 +32,19 @@ const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'w
  * lazy (ensureInstancesUpTo) são a malha de segurança. Um erro de geração não pode
  * bloquear a criação/edição do protocolo em si.
  *
- * @param {Object} params
- * @param {Object} params.client    client Supabase (mesmo da factory)
- * @param {Object} params.protocol  linha do protocolo recém-escrita
- * @param {Object|null} params.updates  updates do update() (null em create)
+ * @param params.client    client Supabase (mesmo da factory)
+ * @param params.protocol  linha do protocolo recém-escrita
+ * @param params.updates   updates do update() (null em create)
  */
-async function syncInstancesOnWrite({ client, protocol, updates }) {
+async function syncInstancesOnWrite({
+  client,
+  protocol,
+  updates,
+}: {
+  client: SupabaseClient<Database>
+  protocol: Record<string, any>
+  updates: Record<string, unknown> | null
+}) {
   try {
     if (!protocol?.id) return
     const repo = createDoseInstanceRepository({ client })
@@ -99,24 +108,30 @@ const DETAIL_SELECT = `
         medicine:medicines(*)
       `
 
-const identity = (x) => x
+const identity = <T,>(x: T) => x
 
-function formatValidationError(errors) {
+interface ValidationError {
+  field: string
+  message: string
+}
+
+function formatValidationError(errors: ValidationError[]) {
   const msg = errors.map((e) => `${e.field}: ${e.message}`).join('; ')
   return new Error(`Erro de validação: ${msg}`)
 }
 
+interface CreateProtocolRepositoryDeps {
+  client: SupabaseClient<Database>
+  getUserId: () => Promise<string>
+  listSelect?: string
+  detailSelect?: string
+  writeSelect?: string
+  listTransform?: (rows: unknown) => unknown
+  detailTransform?: (row: unknown) => unknown
+}
+
 /**
  * Cria um repositório CRUD de tratamentos (protocols) parametrizado por plataforma.
- *
- * @param {Object} deps
- * @param {Object} deps.client       Cliente Supabase (`createClient(...)` ou nativeSupabaseClient).
- * @param {Function} deps.getUserId  Async () => string. Resolve user_id da sessão.
- * @param {string}   [deps.listSelect]    Select fragment usado em getAll/getActive/getByMedicineId.
- * @param {string}   [deps.detailSelect]  Select fragment usado em getById.
- * @param {string}   [deps.writeSelect]   Select fragment usado após create/update/advance.
- * @param {Function} [deps.listTransform]     (rows) => rows. Pós-processamento de getAll.
- * @param {Function} [deps.detailTransform]   (row) => row. Pós-processamento de getById/create/update.
  */
 // NOTA: factory excede max-lines-per-function por agregar 7 métodos CRUD +
 // advanceTitrationStage no mesmo objeto (pattern canônico de createMedicineRepository).
@@ -129,7 +144,7 @@ export function createProtocolRepository({
   writeSelect = FULL_SELECT_AFTER_WRITE,
   listTransform = identity,
   detailTransform = identity,
-}) {
+}: CreateProtocolRepositoryDeps) {
   if (!client) throw new Error('createProtocolRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createProtocolRepository: getUserId deve ser função async')
@@ -148,7 +163,7 @@ export function createProtocolRepository({
       return listTransform(data ?? [])
     },
 
-    async getActive(date = getTodayLocal()) {
+    async getActive(date: string = getTodayLocal()) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('protocols')
@@ -163,7 +178,7 @@ export function createProtocolRepository({
       return listTransform(data ?? [])
     },
 
-    async getById(id) {
+    async getById(id: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('protocols')
@@ -176,7 +191,7 @@ export function createProtocolRepository({
       return detailTransform(data)
     },
 
-    async getByMedicineId(medicineId) {
+    async getByMedicineId(medicineId: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('protocols')
@@ -188,7 +203,7 @@ export function createProtocolRepository({
       return data ?? []
     },
 
-    async create(protocol) {
+    async create(protocol: Record<string, unknown>) {
       const validation = validateProtocolCreate(protocol)
       if (!validation.success) throw formatValidationError(validation.errors)
 
@@ -219,7 +234,7 @@ export function createProtocolRepository({
       return detailTransform(data)
     },
 
-    async update(id, updates) {
+    async update(id: string, updates: Record<string, unknown>) {
       const validation = validateProtocolUpdate(updates)
       if (!validation.success) throw formatValidationError(validation.errors)
 
@@ -242,7 +257,7 @@ export function createProtocolRepository({
       return detailTransform(data)
     },
 
-    async delete(id) {
+    async delete(id: string) {
       const userId = await getUserId()
       const { error } = await client
         .from('protocols')
@@ -258,7 +273,7 @@ export function createProtocolRepository({
      * expõe UI). Se markAsCompleted=true, força status alvo_atingido mesmo
      * antes de esgotar o schedule.
      */
-    async advanceTitrationStage(id, markAsCompleted = false) {
+    async advanceTitrationStage(id: string, markAsCompleted = false) {
       const protocol = await this.getById(id)
 
       if (!protocol.titration_schedule || protocol.titration_schedule.length === 0) {

@@ -14,6 +14,8 @@
 // - updateComplexity(value)   → upsert complexity_override ('simple'|'complex'|null)
 // - deleteAccount()           → RPC delete_user_account (bloqueia se tratamentos ativos)
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { validateUserProfile } from '../schemas/userProfileSchema.js'
 import { getServerTimestamp, getTodayLocal } from '../utils/dateUtils.js'
 
@@ -22,7 +24,12 @@ const PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, complexit
 
 const COMPLEXITY_VALUES = Object.freeze(['simple', 'complex', null])
 
-function formatValidationError(errors) {
+interface ValidationError {
+  field: string
+  message: string
+}
+
+function formatValidationError(errors: ValidationError[]) {
   const msg = errors.map((e) => `${e.field}: ${e.message}`).join('; ')
   return new Error(`Erro de validação: ${msg}`)
 }
@@ -38,23 +45,15 @@ function emptyProfile() {
   }
 }
 
+interface CreateProfileRepositoryDeps {
+  client: SupabaseClient<Database>
+  getUserId: () => Promise<string>
+}
+
 /**
  * Cria um repositório de perfil parametrizado por plataforma.
- *
- * @param {Object} deps
- * @param {Object} deps.client       Cliente Supabase.
- * @param {Function} deps.getUserId  Async () => string. Resolve user_id da sessão.
- * @returns {{
- *   getProfile: () => Promise<Object>,
- *   updateProfile: (input: Object) => Promise<Object>,
- *   updateComplexity: (value: 'simple'|'complex'|null) => Promise<Object>,
- *   getDeletionSummary: () => Promise<{activeTreatments:number, medicines:number, doses:number, treatmentPlanNames:string[]}>,
- *   isOnboardingNeeded: () => Promise<boolean>,
- *   completeOnboarding: () => Promise<void>,
- *   deleteAccount: () => Promise<any>,
- * }}
  */
-export function createProfileRepository({ client, getUserId }) {
+export function createProfileRepository({ client, getUserId }: CreateProfileRepositoryDeps) {
   if (!client) throw new Error('createProfileRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createProfileRepository: getUserId deve ser função async')
@@ -74,7 +73,7 @@ export function createProfileRepository({ client, getUserId }) {
       return data ?? emptyProfile()
     },
 
-    async updateProfile(input) {
+    async updateProfile(input: Record<string, unknown>) {
       const validation = validateUserProfile(input)
       if (!validation.success) throw formatValidationError(validation.errors)
 
@@ -92,7 +91,7 @@ export function createProfileRepository({ client, getUserId }) {
       return data
     },
 
-    async updateComplexity(value) {
+    async updateComplexity(value: 'simple' | 'complex' | null) {
       if (!COMPLEXITY_VALUES.includes(value)) {
         throw new Error("complexity_override deve ser 'simple', 'complex' ou null")
       }
@@ -171,7 +170,7 @@ export function createProfileRepository({ client, getUserId }) {
       return (count ?? 0) === 0
     },
 
-    async captureDeviceTimezone(timezone) {
+    async captureDeviceTimezone(timezone: string | null | undefined) {
       // F4.3f.0: captura do fuso real do device no PRIMEIRO ponto determinístico
       // da conta (confirmação de signup), ANTES do onboarding — cobre quem pula o
       // wizard e deixa o tz pronto para a geração do 1º tratamento (passo 3) no
@@ -187,16 +186,20 @@ export function createProfileRepository({ client, getUserId }) {
       if (error) throw error
     },
 
-    async completeOnboarding(timezone) {
+    async completeOnboarding(timezone?: string | null) {
       // F4.3f.0: contas novas nascem com o tz real do device (resolvido pelo
       // caller de plataforma via resolveSupportedTz). Só grava se vier um tz
       // válido — ausente mantém o DEFAULT do DB (R-082, sem sobrescrever com SP).
       const userId = await getUserId()
-      const row = { user_id: userId, onboarding_completed: true, updated_at: getServerTimestamp() }
+      const row: Record<string, unknown> = {
+        user_id: userId,
+        onboarding_completed: true,
+        updated_at: getServerTimestamp(),
+      }
       if (timezone) row.timezone = timezone
       const { error } = await client
         .from('user_settings')
-        .upsert(row, { onConflict: 'user_id' })
+        .upsert(row as never, { onConflict: 'user_id' })
       if (error) throw error
     },
 

@@ -1,7 +1,7 @@
 // Tests — createDoseInstanceRepository#countByStatus (Fase 3 — adesão por status)
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { createDoseInstanceRepository } from '../createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../createDoseInstanceRepository'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -40,7 +40,7 @@ function makeMultiClient(resultsPerCall) {
       return b
     }),
   }
-  return client
+  return client as any
 }
 
 function makeClient(result) {

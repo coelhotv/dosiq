@@ -16,7 +16,7 @@
  * futura — taken/missed/skipped e o passado ficam intactos.
  */
 
-import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { computeWindowEnd, planWindow } from './doseInstancePlanner.js'
 import { getServerTimestamp, getTodayLocal, parseISO } from '../utils/dateUtils.js'
 

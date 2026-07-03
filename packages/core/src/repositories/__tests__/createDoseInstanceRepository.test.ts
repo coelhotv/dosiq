@@ -5,7 +5,7 @@
 // não toca no Supabase real (espelha createProtocolRepository.test.js).
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { createDoseInstanceRepository } from '../createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../createDoseInstanceRepository'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -40,7 +40,7 @@ function makeClient(result) {
     _from: null,
     from: vi.fn((table) => { client._from = table; return builder }),
   }
-  return client
+  return client as any
 }
 
 function callNames(builder) {
@@ -49,7 +49,7 @@ function callNames(builder) {
 
 describe('createDoseInstanceRepository', () => {
   it('exige client', () => {
-    expect(() => createDoseInstanceRepository({})).toThrow(/client é obrigatório/)
+    expect(() => createDoseInstanceRepository({} as any)).toThrow(/client é obrigatório/)
   })
 
   describe('upsertMany — idempotência', () => {

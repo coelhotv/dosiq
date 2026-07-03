@@ -8,7 +8,7 @@
 // Não tocamos no Supabase real — mock builder fluente.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createTreatmentPlanRepository } from '../createTreatmentPlanRepository.js'
+import { createTreatmentPlanRepository } from '../createTreatmentPlanRepository'
 
 // ---------- Mock Supabase fluent builder ----------
 function makeBuilder(result) {
@@ -33,7 +33,7 @@ function makeClient(result) {
     _from: null,
     from: vi.fn((table) => { client._from = table; return builder }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'user-uuid-123'
@@ -53,11 +53,11 @@ describe('createTreatmentPlanRepository — parity', () => {
   })
 
   it('throws if client missing', () => {
-    expect(() => createTreatmentPlanRepository({ getUserId })).toThrow(/client/)
+    expect(() => createTreatmentPlanRepository({ getUserId } as any)).toThrow(/client/)
   })
 
   it('throws if getUserId not function', () => {
-    expect(() => createTreatmentPlanRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createTreatmentPlanRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   describe('getAll', () => {
@@ -86,7 +86,7 @@ describe('createTreatmentPlanRepository — parity', () => {
       client = makeClient({ data: [{ id: 'a' }, { id: 'b' }], error: null })
       const repo = createTreatmentPlanRepository({
         client, getUserId,
-        listTransform: (rows) => rows.map((r) => ({ ...r, tagged: true })),
+        listTransform: (rows: any) => rows.map((r: any) => ({ ...r, tagged: true })),
       })
       const result = await repo.getAll()
       expect(result).toEqual([{ id: 'a', tagged: true }, { id: 'b', tagged: true }])
@@ -126,7 +126,7 @@ describe('createTreatmentPlanRepository — parity', () => {
     it('applies detailTransform', async () => {
       const repo = createTreatmentPlanRepository({
         client, getUserId,
-        detailTransform: (row) => ({ ...row, decorated: 1 }),
+        detailTransform: (row: any) => ({ ...row, decorated: 1 }),
       })
       const result = await repo.getById('plan-1')
       expect(result).toEqual({ id: 'plan-1', name: 'X', protocols: [], decorated: 1 })

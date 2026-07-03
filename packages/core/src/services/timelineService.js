@@ -15,7 +15,7 @@
  * @module timelineService
  */
 
-import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { buildTimeline, TIMELINE_EVENT_TYPES, TIMELINE_ORDER } from '../utils/timeline.js'
 import { parseISO } from '../utils/dateUtils.js'
 

@@ -12,6 +12,9 @@
  * - Tudo criado por factory com dependencias injetadas
  */
 
+// Database types
+export type { Database } from './database.types'
+
 // Query Cache
 export { createQueryCache } from './query-cache/createQueryCache'
 export { CACHE_KEYS, generateCacheKey } from './query-cache/cacheKeys'

@@ -4,6 +4,6 @@
   "version": "0.0.0-phase1",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.ts"
   }
 }

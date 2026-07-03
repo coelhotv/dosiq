@@ -17,6 +17,8 @@
 // - adjustToBalance(medId, newBalance, ...)  → PO-6: delta → increase/decrease
 // - delete(id)                               → web-only (guarda contra apagar compra consumida); paridade
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import {
   validateStockDecrease,
   validateStockIncrease,
@@ -25,20 +27,26 @@ import { z } from 'zod'
 import { getTodayLocal, isProtocolActiveOnDate } from '../utils/dateUtils.js'
 import { cleanFloat } from '../utils/formUtils.js'
 
-function fmtZodErr(errors) {
+interface ValidationError {
+  field: string
+  message: string
+}
+
+function fmtZodErr(errors: ValidationError[]) {
   return errors.map((e) => `${e.field}: ${e.message}`).join('; ')
+}
+
+interface CreateStockRepositoryDeps {
+  client: SupabaseClient<Database>
+  getUserId: () => Promise<string>
 }
 
 /**
  * Cria um repositório CRUD de estoque parametrizado por plataforma.
- *
- * @param {Object} deps
- * @param {Object} deps.client       Cliente Supabase.
- * @param {Function} deps.getUserId  Async () => string. Resolve user_id da sessão.
  */
 // NOTA: factory excede max-lines-per-function por agregar os métodos de estoque
 // num único objeto (pattern canônico de createProtocolRepository). Warning aceito (R-221 SQP).
-export function createStockRepository({ client, getUserId }) {
+export function createStockRepository({ client, getUserId }: CreateStockRepositoryDeps) {
   if (!client) throw new Error('createStockRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createStockRepository: getUserId deve ser função async')
@@ -105,7 +113,7 @@ export function createStockRepository({ client, getUserId }) {
     /**
      * Stock entries de um medicamento (order created_at desc).
      */
-    async getByMedicine(medicineId) {
+    async getByMedicine(medicineId: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('stock')
@@ -122,7 +130,7 @@ export function createStockRepository({ client, getUserId }) {
      * Summary agregado (total_quantity, entries_count, datas).
      * Usa view medicine_stock_summary; default object se ausente.
      */
-    async getStockSummary(medicineId) {
+    async getStockSummary(medicineId: string) {
       const userId = await getUserId()
       const { data, error } = await client
         .from('medicine_stock_summary')
@@ -157,7 +165,7 @@ export function createStockRepository({ client, getUserId }) {
         .eq('user_id', userId)
 
       if (error) throw error
-      return (data || []).reduce((map, row) => {
+      return (data || []).reduce((map: Record<string, number>, row: any) => {
         map[row.medicine_id] = row.total_quantity ?? 0
         return map
       }, {})
@@ -166,7 +174,7 @@ export function createStockRepository({ client, getUserId }) {
     /**
      * Total quantity (com fallback manual caso view não retorne).
      */
-    async getTotalQuantity(medicineId) {
+    async getTotalQuantity(medicineId: string) {
       const userId = await getUserId()
       const { data: summary, error: summaryError } = await client
         .from('medicine_stock_summary')
@@ -190,7 +198,7 @@ export function createStockRepository({ client, getUserId }) {
     /**
      * Medicamentos com stock baixo. Usa RPC; fallback view direto.
      */
-    async getLowStockMedicines(threshold = 10) {
+    async getLowStockMedicines(threshold: number = 10) {
       const userId = await getUserId()
       const { data, error } = await client.rpc('get_low_stock_medicines', {
         p_user_id: userId,
@@ -217,7 +225,7 @@ export function createStockRepository({ client, getUserId }) {
      * Consumo FIFO (chamado quando dose é registrada).
      * @throws {Error} se medicineLogId ausente ou validation falhar
      */
-    async decreaseStock(medicineId, quantity, medicineLogId) {
+    async decreaseStock(medicineId: string, quantity: number, medicineLogId: string) {
       const validation = validateStockDecrease({ medicine_id: medicineId, quantity })
       if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
       if (!medicineLogId) throw new Error('medicineLogId é obrigatório para consumo FIFO rastreável')
@@ -239,8 +247,14 @@ export function createStockRepository({ client, getUserId }) {
      * Se `options.medicine_log_id` presente → restore_stock_for_log RPC.
      * Senão → apply_manual_stock_adjustment RPC.
      */
-    async increaseStock(medicineId, quantity, options = {}) {
-      const normalized =
+    async increaseStock(
+      medicineId: string,
+      quantity: number,
+      options:
+        | string
+        | { reason?: string; notes?: string | null; medicine_log_id?: string | null } = {},
+    ) {
+      const normalized: { reason?: string; notes?: string | null; medicine_log_id?: string | null; quantity: number } =
         typeof options === 'string'
           ? { reason: options, quantity }
           : { ...options, quantity }
@@ -286,7 +300,7 @@ export function createStockRepository({ client, getUserId }) {
      * @param {string|null} notes
      * @returns {Promise<{delta:number, before:number, after:number}>}
      */
-    async adjustToBalance(medicineId, newBalance, reason, notes) {
+    async adjustToBalance(medicineId: string, newBalance: number, reason: string, notes?: string | null) {
       if (!reason) throw new Error('Motivo é obrigatório para ajuste manual')
       if (newBalance < 0) throw new Error('Saldo final não pode ser negativo')
 
@@ -322,7 +336,7 @@ export function createStockRepository({ client, getUserId }) {
      * Apaga uma stock entry. Web-only (mobile não expõe — mantido na factory pra
      * paridade). Guarda contra apagar compra com consumo associado.
      */
-    async delete(id) {
+    async delete(id: string) {
       const userId = await getUserId()
       const { data: entry, error: fetchError } = await client
         .from('stock')

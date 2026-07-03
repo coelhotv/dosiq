@@ -16,6 +16,8 @@
 // - setGeneratedThrough(protocolId, ts)
 // - markSkippedPaused(protocolId, untilTs) → pendentes futuras até untilTs viram skipped_paused
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { getServerTimestamp, parseISO, parseTimestamp } from '../utils/dateUtils.js'
 
 const TABLE = 'dose_instances'
@@ -30,13 +32,13 @@ const MS_PER_MINUTE = 60 * 1000
 const PAGE_SIZE = 1000
 
 /** Converte Date|ISO em ISO string (R-020: sem `new Date()` fora de dateUtils). */
-const toIso = (value) => parseISO(value).toISOString()
+const toIso = (value: Date | string | number) => parseISO(value as string).toISOString()
 
-/**
- * @param {Object} deps
- * @param {Object} deps.client - Cliente Supabase.
- */
-export function createDoseInstanceRepository({ client }) {
+interface CreateDoseInstanceRepositoryDeps {
+  client: SupabaseClient<Database>
+}
+
+export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepositoryDeps) {
   if (!client) throw new Error('createDoseInstanceRepository: client é obrigatório')
 
   return {
@@ -46,11 +48,11 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Array<Object>} instances - linhas prontas (user_id, protocol_id, scheduled_for, expected_dose, tolerance_minutes)
      * @returns {Promise<Array>} linhas efetivamente inseridas
      */
-    async upsertMany(instances) {
+    async upsertMany(instances: Record<string, unknown>[]) {
       if (!Array.isArray(instances) || instances.length === 0) return []
       const { data, error } = await client
         .from(TABLE)
-        .upsert(instances, {
+        .upsert(instances as never, {
           onConflict: 'protocol_id,scheduled_for',
           ignoreDuplicates: true,
         })
@@ -66,7 +68,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} protocolId
      * @returns {Promise<void>}
      */
-    async wipeFuturePending(protocolId) {
+    async wipeFuturePending(protocolId: string) {
       const { error } = await client
         .from(TABLE)
         .delete()
@@ -83,7 +85,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string[]} protocolIds
      * @returns {Promise<void>}
      */
-    async wipeFuturePendingForProtocols(protocolIds) {
+    async wipeFuturePendingForProtocols(protocolIds: string[]) {
       if (!Array.isArray(protocolIds) || protocolIds.length === 0) return
       const { error } = await client
         .from(TABLE)
@@ -102,7 +104,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string} toTs
      * @returns {Promise<Array>}
      */
-    async getWindow(userId, fromTs, toTs) {
+    async getWindow(userId: string, fromTs: Date | string, toTs: Date | string) {
       // AP-186: PostgREST trunca em ~1000 linhas SEM erro. Uma janela de 90d de um
       // usuário pesado passa de 1000 ocorrências (visto: 1590) → adesão/timeline
       // truncadas (ex: "942/1000"). Paginar por offset (.range) — leitura pura, sem
@@ -135,7 +137,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} protocolId
      * @returns {Promise<string|null>} ISO timestamptz ou null
      */
-    async getGeneratedThrough(protocolId) {
+    async getGeneratedThrough(protocolId: string) {
       const { data, error } = await client
         .from(PROTOCOLS)
         .select('generated_through')
@@ -152,7 +154,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string} ts
      * @returns {Promise<void>}
      */
-    async setGeneratedThrough(protocolId, ts) {
+    async setGeneratedThrough(protocolId: string, ts: Date | string) {
       const { error } = await client
         .from(PROTOCOLS)
         .update({ generated_through: toIso(ts) })
@@ -167,7 +169,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string|null} ts - null limpa a marca (resume)
      * @returns {Promise<void>}
      */
-    async setPausedAt(protocolId, ts) {
+    async setPausedAt(protocolId: string, ts: Date | string | null) {
       const { error } = await client
         .from(PROTOCOLS)
         .update({ paused_at: ts === null ? null : toIso(ts) })
@@ -183,7 +185,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} protocolId
      * @returns {Promise<void>}
      */
-    async reactivateFuturePaused(protocolId) {
+    async reactivateFuturePaused(protocolId: string) {
       const { error } = await client
         .from(TABLE)
         .update({ status: 'pending' })
@@ -200,7 +202,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} protocolId
      * @returns {Promise<void>}
      */
-    async markAllFutureSkippedPaused(protocolId) {
+    async markAllFutureSkippedPaused(protocolId: string) {
       const { error } = await client
         .from(TABLE)
         .update({ status: 'skipped_paused' })
@@ -217,7 +219,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string} untilTs
      * @returns {Promise<void>}
      */
-    async markSkippedPaused(protocolId, untilTs) {
+    async markSkippedPaused(protocolId: string, untilTs: Date | string) {
       const { error } = await client
         .from(TABLE)
         .update({ status: 'skipped_paused' })
@@ -248,9 +250,9 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string} args.takenAt
      * @returns {Promise<{id: string, scheduled_for: string, tolerance_minutes: number}|null>}
      */
-    async findAnchorInstance({ protocolId, takenAt }) {
+    async findAnchorInstance({ protocolId, takenAt }: { protocolId: string; takenAt: Date | string }) {
       if (!protocolId) return null
-      const takenMs = parseISO(takenAt).getTime()
+      const takenMs = parseISO(takenAt as string).getTime()
       const lowIso = parseTimestamp(takenMs - MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
       const highIso = parseTimestamp(takenMs + MAX_TOLERANCE_MINUTES * MS_PER_MINUTE).toISOString()
 
@@ -290,8 +292,18 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string} args.toTs
      * @returns {Promise<{taken:number, missed:number, pending:number, skipped_paused:number, skipped_user:number}>}
      */
-    async countByStatus({ userId, protocolId, fromTs, toTs }) {
-      const statuses = ['taken', 'missed', 'pending', 'skipped_paused', 'skipped_user']
+    async countByStatus({
+      userId,
+      protocolId,
+      fromTs,
+      toTs,
+    }: {
+      userId: string
+      protocolId?: string
+      fromTs: Date | string
+      toTs: Date | string
+    }) {
+      const statuses = ['taken', 'missed', 'pending', 'skipped_paused', 'skipped_user'] as const
       const fromIso = toIso(fromTs)
       const toTsIso = toIso(toTs)
 
@@ -313,7 +325,7 @@ export function createDoseInstanceRepository({ client }) {
         }),
       )
 
-      const result = {}
+      const result: Record<(typeof statuses)[number], number> = {} as Record<(typeof statuses)[number], number>
       statuses.forEach((s, i) => { result[s] = counts[i] })
       return result
     },
@@ -334,9 +346,12 @@ export function createDoseInstanceRepository({ client }) {
      * @param {number} [args.pageSize=1000]
      * @returns {Promise<number>} nº de instâncias marcadas como missed
      */
-    async markMissedDueInstances({ now = getServerTimestamp(), pageSize = 1000 } = {}) {
-      const nowMs = parseISO(now).getTime()
-      const nowIso = parseISO(now).toISOString()
+    async markMissedDueInstances({
+      now = getServerTimestamp(),
+      pageSize = 1000,
+    }: { now?: Date | string; pageSize?: number } = {}) {
+      const nowMs = parseISO(now as string).getTime()
+      const nowIso = parseISO(now as string).toISOString()
 
       // 1. Ler todas as pending já no passado (scheduled_for < now), SEM escrever.
       // Paginação por CURSOR (keyset em `id`), não offset: durante o sweep um writer
@@ -405,7 +420,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} medicineLogId
      * @returns {Promise<boolean>} true se a instância foi efetivamente reservada
      */
-    async markTaken(instanceId, medicineLogId) {
+    async markTaken(instanceId: string, medicineLogId: string) {
       const { data, error } = await client
         .from(TABLE)
         .update({ status: 'taken', medicine_log_id: medicineLogId })
@@ -424,7 +439,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {Date|string|null} ts - ISO timestamp ou null para limpar
      * @returns {Promise<void>}
      */
-    async setSnoozedUntil(instanceId, ts) {
+    async setSnoozedUntil(instanceId: string, ts: Date | string | number | null) {
       const isoValue = ts === null
         ? null
         : typeof ts === 'number'
@@ -444,7 +459,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {string} instanceId
      * @returns {Promise<object|null>}
      */
-    async getById(instanceId) {
+    async getById(instanceId: string) {
       const { data, error } = await client
         .from(TABLE)
         .select('*')
@@ -462,7 +477,7 @@ export function createDoseInstanceRepository({ client }) {
      * @param {'pending'|'missed'} newStatus
      * @returns {Promise<boolean>} true se linha foi atualizada
      */
-    async revertToUnregistered(instanceId, newStatus) {
+    async revertToUnregistered(instanceId: string, newStatus: 'pending' | 'missed') {
       const { data, error } = await client
         .from(TABLE)
         .update({ status: newStatus, medicine_log_id: null })

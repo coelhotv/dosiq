@@ -9,7 +9,7 @@
 // (descopada por blast radius — RC3 F2). A saída é validada pelo seam Zod (CON-028) antes
 // de chegar ao builder.
 
-import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic.js'
 import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils.js'
 import { validateChatbotContextData } from './chatbotContextSchema.js'

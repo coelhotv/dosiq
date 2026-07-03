@@ -6,7 +6,7 @@
 // Mock builder fluente (espelha createProtocolRepository.test.js) + suporte a .rpc.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createPurchaseRepository } from '../createPurchaseRepository.js'
+import { createPurchaseRepository } from '../createPurchaseRepository'
 
 function makeBuilder(result) {
   const builder = {
@@ -22,7 +22,7 @@ function makeBuilder(result) {
   return builder
 }
 
-function makeClient(result, rpcResult) {
+function makeClient(result, rpcResult?) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
@@ -33,7 +33,7 @@ function makeClient(result, rpcResult) {
       return Promise.resolve(rpcResult ?? { data: { id: 'new' }, error: null })
     }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
@@ -56,10 +56,10 @@ describe('createPurchaseRepository — parity', () => {
 
   // ── Constructor validation ──
   it('throws se client ausente', () => {
-    expect(() => createPurchaseRepository({ getUserId })).toThrow(/client/)
+    expect(() => createPurchaseRepository({ getUserId } as any)).toThrow(/client/)
   })
   it('throws se getUserId não for função', () => {
-    expect(() => createPurchaseRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createPurchaseRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   // ── getPurchasesByMedicine (embed + remaining) ──

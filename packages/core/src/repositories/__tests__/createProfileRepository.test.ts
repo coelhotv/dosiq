@@ -8,7 +8,7 @@
 // Mock builder fluente (espelha createStockRepository.test.js) + upsert/maybeSingle/rpc.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createProfileRepository } from '../createProfileRepository.js'
+import { createProfileRepository } from '../createProfileRepository'
 
 // ---------- Mock Supabase fluent builder ----------
 function makeBuilder(result) {
@@ -24,7 +24,7 @@ function makeBuilder(result) {
   return builder
 }
 
-function makeClient(result, rpcResult) {
+function makeClient(result, rpcResult?) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
@@ -36,7 +36,7 @@ function makeClient(result, rpcResult) {
       return Promise.resolve(rpcResult ?? { data: { ok: true }, error: null })
     }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
@@ -59,10 +59,10 @@ describe('createProfileRepository — parity', () => {
 
   // ── Constructor validation ──
   it('throws se client ausente', () => {
-    expect(() => createProfileRepository({ getUserId })).toThrow(/client/)
+    expect(() => createProfileRepository({ getUserId } as any)).toThrow(/client/)
   })
   it('throws se getUserId não for função', () => {
-    expect(() => createProfileRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createProfileRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   // ── getProfile ──
@@ -130,7 +130,7 @@ describe('createProfileRepository — parity', () => {
 
   // ── updateComplexity (densidade da interface) ──
   describe('updateComplexity', () => {
-    it.each(['simple', 'complex', null])('aceita valor %s e faz upsert', async (value) => {
+    it.each(['simple', 'complex', null] as const)('aceita valor %s e faz upsert', async (value) => {
       client = makeClient({ data: { complexity_override: value }, error: null })
       const repo = createProfileRepository({ client, getUserId })
       await repo.updateComplexity(value)
@@ -142,7 +142,7 @@ describe('createProfileRepository — parity', () => {
 
     it('rejeita valor inválido', async () => {
       const repo = createProfileRepository({ client, getUserId })
-      await expect(repo.updateComplexity('detalhado')).rejects.toThrow(/complexity_override/)
+      await expect(repo.updateComplexity('detalhado' as any)).rejects.toThrow(/complexity_override/)
     })
   })
 
@@ -160,7 +160,7 @@ describe('createProfileRepository — parity', () => {
             then: (resolve) => resolve(result),
           }
         }),
-      }
+      } as any
     }
 
     it('agrega contagens + nomes de planos', async () => {

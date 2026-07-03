@@ -8,7 +8,7 @@
 // Mock builder fluente (espelha createProtocolRepository.test.js) + suporte a .rpc/.maybeSingle.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createStockRepository } from '../createStockRepository.js'
+import { createStockRepository } from '../createStockRepository'
 
 // ---------- Mock Supabase fluent builder ----------
 function makeBuilder(result) {
@@ -29,7 +29,7 @@ function makeBuilder(result) {
   return builder
 }
 
-function makeClient(result, rpcResult) {
+function makeClient(result, rpcResult?) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
@@ -40,7 +40,7 @@ function makeClient(result, rpcResult) {
       return Promise.resolve(rpcResult ?? { data: { ok: true }, error: null })
     }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
@@ -55,10 +55,10 @@ describe('createStockRepository — parity', () => {
 
   // ── Constructor validation ──
   it('throws se client ausente', () => {
-    expect(() => createStockRepository({ getUserId })).toThrow(/client/)
+    expect(() => createStockRepository({ getUserId } as any)).toThrow(/client/)
   })
   it('throws se getUserId não for função', () => {
-    expect(() => createStockRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createStockRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   // ── getMedicinesWithStockOrActiveProtocol (PO-9 filter) ──
@@ -147,7 +147,7 @@ describe('createStockRepository — parity', () => {
       builder.maybeSingle = vi.fn(() => Promise.resolve({ data: null, error: null }))
       builder.then = (resolve) => resolve({ data: [{ quantity: 2 }, { quantity: 3 }], error: null })
       void mode
-      const fbClient = { _builder: builder, from: vi.fn(() => builder), rpc: vi.fn() }
+      const fbClient = { _builder: builder, from: vi.fn(() => builder), rpc: vi.fn() } as any
       const repo = createStockRepository({ client: fbClient, getUserId })
       expect(await repo.getTotalQuantity('med-1')).toBe(5)
     })
@@ -217,7 +217,7 @@ describe('createStockRepository — parity', () => {
       builder.maybeSingle = vi.fn(() => Promise.resolve({ data: { total_quantity: total }, error: null }))
       const c = { _builder: builder, _rpcCalls: [], from: vi.fn(() => builder),
         rpc: vi.fn((name, args) => { c._rpcCalls.push([name, args]); return Promise.resolve({ data: {}, error: null }) }) }
-      return c
+      return c as any
     }
     it('throws se reason ausente', async () => {
       const repo = createStockRepository({ client, getUserId })

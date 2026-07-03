@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createFeedbackRepository } from '../createFeedbackRepository.js'
+import { createFeedbackRepository } from '../createFeedbackRepository'
 
 // ---------- Mock Supabase fluent builder ----------
 function makeBuilder(result) {
@@ -19,7 +19,7 @@ function makeClient(result) {
     _from: null,
     from: vi.fn((table) => { client._from = table; return builder }),
   }
-  return client
+  return client as any
 }
 
 const FAKE_USER = 'user-uuid-999'
@@ -42,11 +42,11 @@ describe('createFeedbackRepository', () => {
   })
 
   it('throws if client missing', () => {
-    expect(() => createFeedbackRepository({ getUserId })).toThrow(/client/)
+    expect(() => createFeedbackRepository({ getUserId } as any)).toThrow(/client/)
   })
 
   it('throws if getUserId is not a function', () => {
-    expect(() => createFeedbackRepository({ client, getUserId: null })).toThrow(/getUserId/)
+    expect(() => createFeedbackRepository({ client, getUserId: null } as any)).toThrow(/getUserId/)
   })
 
   describe('submitFeedback', () => {

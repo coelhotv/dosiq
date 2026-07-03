@@ -1,6 +1,6 @@
 // Tests — markMissedDueInstances (sweep, writer #3) + re-anchor de missed (F2.5).
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { createDoseInstanceRepository } from '../createDoseInstanceRepository.js'
+import { createDoseInstanceRepository } from '../createDoseInstanceRepository'
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -27,7 +27,7 @@ function makeQueueClient(queue) {
     then: (resolve) => resolve(queue.shift() ?? { data: [], error: null }),
   }
   const client = { from: vi.fn(() => builder), _calls: calls }
-  return client
+  return client as any
 }
 
 const NOW = '2026-05-20T12:00:00.000Z'
