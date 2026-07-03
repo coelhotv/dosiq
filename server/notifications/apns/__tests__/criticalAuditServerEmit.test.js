@@ -28,7 +28,7 @@ function makeSupabase(selectQueue) {
       eq() { return b; },
       is() { return b; },
       gte() { return b; },
-      lt() { return b; },
+      lt() { return b; }, lte() { return b; },
       not() { return b; },
       update(payload) { b._update = payload; return b; },
       insert(payload) {
@@ -151,6 +151,22 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     expect(updateFn).toHaveBeenCalledTimes(1);
     // O `to` emitido bate com o state realmente empurrado ao updateFn.
     expect(updateFn.mock.calls[0][0].contentState.state).toBe(payload.detail.to);
+    assertNoPii(payload);
+  });
+
+  it('lifecycle: push_failed — update rejeitado pelo APNs (ex.: token de simulador) é auditado (sem PII)', async () => {
+    const supabase = makeSupabase([{ data: [lifecycleRow()], error: null }]);
+    // update falha SEM deactivate (erro transitório / BadDeviceToken tratado como falha).
+    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 400, reason: 'BadDeviceToken' }));
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+
+    expect(supabase._captured).toHaveLength(1);
+    const payload = supabase._captured[0];
+    expect(payload).toMatchObject({
+      event: 'push_failed', platform: 'server', actor: 'server',
+      user_id: USER_A, dose_instance_id: INST_1,
+      detail: { phase: 'update', status: 400, reason: 'BadDeviceToken' },
+    });
     assertNoPii(payload);
   });
 

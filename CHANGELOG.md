@@ -7,6 +7,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Backend — 2026-07-03 — Fix (041): janela do push-to-start da LA + push_failed no ciclo
+
+> **Bump:** nenhum (backend serverless — sem versão de app). **Plataforma:** Backend. Só servidor, sem migração.
+
+### 🐛 Correções
+
+- **Push-to-start da Live Activity (iOS) pega doses de curto prazo:** a janela era uma fatia de **1 minuto em T−60min** exato — uma dose criada/editada para tocar em **<60min** (ou um minuto de cron pulado) nunca casava, e a LA não iniciava com o app fechado. Agora a janela é o **intervalo `[now, now+lead]`**: qualquer dose crítica pendente entrando no horizonte de 60min, ainda sem start, é disparada no próximo tick. Idempotência preservada por `la_push_started_at`.
+- **Falha de push da LA agora é auditada (`push_failed`):** o ciclo de vida (update/end) só registrava sucesso (`surface_transitioned`) — se o push falhava (ex.: token de simulador rejeitado pelo APNs), o trail ficava silencioso. Agora emite `push_failed` com `phase`/`status`/`reason` (sem PII), tornando visível *por que* a LA não transicionou.
+
+---
+
 ## Backend — 2026-07-03 — Chore (042): views de debug do audit trail
 
 > **Bump:** nenhum (no-user-impact — tooling de debug DB). **Plataforma:** Backend/DB. Aditivo, reversível.

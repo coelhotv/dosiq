@@ -68,6 +68,18 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       actor: 'server',
       detail: { from: inst.la_push_state ?? null, to },
     })
+  // push_failed: torna VISÍVEL a falha de push da LA (ex.: token de simulador rejeitado pelo APNs) —
+  // antes o lifecycle só auditava sucesso, então "a LA não transicionou" ficava silencioso. detail
+  // só status/reason/fase do APNs (sem PII: nunca token/rótulo).
+  const emitFailed = (phase, res) =>
+    audit?.emit({
+      userId: inst.user_id,
+      doseInstanceId: inst.id,
+      event: 'push_failed',
+      platform: 'server',
+      actor: 'server',
+      detail: { phase, status: res?.status ?? null, reason: res?.reason ?? null },
+    })
 
   // Resolvida (dose registrada/pulada) → encerra a LA (card done p/ taken; dismiss p/ resto).
   if (RESOLVED_STATUSES.has(inst.status)) {
@@ -83,6 +95,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       return 'ended'
     }
     logger?.warn?.('push end falhou (fail-open; backstop dismissal cobre)', { instanceId: inst.id, reason: res.reason })
+    await emitFailed('end', res)
     return 'failed'
   }
 
@@ -102,6 +115,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       await emitTransition('missed')
       return 'ended'
     }
+    await emitFailed('end', res)
     return 'failed'
   }
 
@@ -124,6 +138,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
     return 'skipped'
   }
   logger?.warn?.('push update falhou (fail-open)', { instanceId: inst.id, reason: res.reason })
+  await emitFailed('update', res)
   return 'failed'
 }
 

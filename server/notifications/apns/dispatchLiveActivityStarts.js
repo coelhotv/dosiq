@@ -148,11 +148,12 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   }
 
   const lead = leadMinutes ?? (Number(process.env.LA_PUSH_LEAD_MINUTES) || DEFAULT_LEAD_MINUTES)
-  // Janela do minuto-alvo: [now+lead, +1min) em UTC (scheduled_for é timestamptz UTC). Mesmo padrão
-  // do reminder (slice ISO ':00'), deslocado p/ frente — sem aritmética de Date crua (R-020).
-  const target = addMinutes(lead, now)
-  const windowStart = target.toISOString().slice(0, 16) + ':00.000Z'
-  const windowEnd = addMinutes(1, parseISO(windowStart)).toISOString()
+  // Janela = [now, now+lead]: QUALQUER dose crítica pendente entrando no horizonte de `lead`, ainda
+  // sem start disparado. Antes era uma fatia de 1min em T−lead exato — que perdia toda dose criada/
+  // editada para <lead min (o instante T−lead dela já passou) e também um minuto de cron pulado.
+  // A trava `la_push_started_at IS NULL` garante idempotência (não re-dispara nas próximas janelas).
+  const windowStart = now.toISOString()
+  const windowEnd = addMinutes(lead, now).toISOString()
 
   let instances
   try {
@@ -163,7 +164,7 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
       .eq('critical_alarm', true)
       .is('la_push_started_at', null)
       .gte('scheduled_for', windowStart)
-      .lt('scheduled_for', windowEnd)
+      .lte('scheduled_for', windowEnd)
     if (error) throw error
     instances = data || []
   } catch (err) {

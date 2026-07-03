@@ -20,7 +20,7 @@ function makeSupabase(queue) {
       eq() { return b; },
       is() { return b; },
       gte() { return b; },
-      lt() { return b; },
+      lt() { return b; }, lte() { return b; },
       update(payload) { b._update = payload; return b; },
       then(resolve) {
         if (b._update) { updates.push(b._update); return Promise.resolve({ data: [{ id: 'inst-1' }], error: null }).then(resolve); }
@@ -105,7 +105,7 @@ describe('dispatchLiveActivityStarts', () => {
     supabase.from = () => {
       const b = {
         _update: null,
-        select() { return b; }, eq() { return b; }, is() { return b; }, gte() { return b; }, lt() { return b; },
+        select() { return b; }, eq() { return b; }, is() { return b; }, gte() { return b; }, lt() { return b; }, lte() { return b; },
         update(p) { b._update = p; return b; },
         then(resolve) {
           if (b._update) return Promise.resolve({ data: [], error: null }).then(resolve);
@@ -145,5 +145,46 @@ describe('dispatchLiveActivityStarts', () => {
     const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
     expect(sendFn).not.toHaveBeenCalled();
     expect(r.skipped).toBe(1);
+  });
+
+  it('janela = [now, now+lead] inclusiva: dose criada p/ <lead min (não é fatia de T−60) é pega', async () => {
+    // Captura os limites de scheduled_for aplicados na query de instâncias e filtra por eles —
+    // prova que uma dose a 18min (dentro do horizonte, fora da antiga fatia de T−60) entra.
+    const bounds = {};
+    const near = new Date(NOW.getTime() + 18 * 60000).toISOString(); // now + 18min
+    const supabase = (() => {
+      let i = 0;
+      const rows = [
+        { data: [{ ...doseRow(), scheduled_for: near }], error: null }, // instâncias
+        { data: [{ id: 'dev1', user_id: 'userA', push_token: 'tok', is_active: true }], error: null },
+      ];
+      const updates = [];
+      const builder = () => {
+        const b = {
+          _update: null,
+          select() { return b; }, eq() { return b; }, is() { return b; },
+          gte(_c, v) { bounds.gte = v; return b; },
+          lte(_c, v) { bounds.lte = v; return b; },
+          lt() { return b; },
+          update(p) { b._update = p; return b; },
+          then(resolve) {
+            if (b._update) { updates.push(b._update); return Promise.resolve({ data: [{ id: 'inst-1' }], error: null }).then(resolve); }
+            // só devolve a dose se ela está dentro de [gte, lte] (a janela real).
+            const res = rows[i++] ?? { data: [], error: null };
+            if (i === 1 && !(near >= bounds.gte && near <= bounds.lte)) return Promise.resolve({ data: [], error: null }).then(resolve);
+            return Promise.resolve(res).then(resolve);
+          },
+        };
+        return b;
+      };
+      return { from: () => builder() };
+    })();
+    const sendFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+
+    expect(bounds.gte).toBe(NOW.toISOString());                                  // início = now
+    expect(bounds.lte).toBe(new Date(NOW.getTime() + 60 * 60000).toISOString()); // fim = now + 60min
+    expect(sendFn).toHaveBeenCalledTimes(1);                                      // dose a 18min ENTROU
+    expect(r.sent).toBe(1);
   });
 });
