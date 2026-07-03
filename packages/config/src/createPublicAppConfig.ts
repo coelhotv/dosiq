@@ -5,7 +5,7 @@
  * A injecao de valores acontece fora deste pacote (no app-specific bootstrap).
  */
 
-import { assertPublicAppConfig } from './contracts.js'
+import { assertPublicAppConfig } from './contracts'
 
 /**
  * Cria um objeto de config pública validado.

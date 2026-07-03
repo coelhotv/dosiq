@@ -5,7 +5,7 @@
  * Injetável em packages/shared-data sem acoplamento direto a window.
  */
 
-import { assertStorageAdapter } from './contracts.js'
+import { assertStorageAdapter } from './contracts'
 
 /**
  * Cria um adapter de storage que wraps window.localStorage.
