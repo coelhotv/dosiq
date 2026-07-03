@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Backend — 2026-07-03 — Chore (042): views de debug do audit trail
+
+> **Bump:** nenhum (no-user-impact — tooling de debug DB). **Plataforma:** Backend/DB. Aditivo, reversível.
+
+### 🧱 Interno
+
+- Duas views sobre `dose_critical_events` para inspeção do trail sem app: `v_dose_critical_summary` (1 linha/dose — trajetória compacta, duração, flags) e `v_dose_critical_trace` (linha-a-linha com `seq`/`elapsed`). `security_invoker=on` → herdam a RLS da tabela (cada usuário vê só as próprias doses). SQL em `docs/migrations/20260703_dose_critical_trace_views.sql`.
+
+---
+
 ## App v0.24.4 (mobile) — 2026-07-02 — Feat (042 Slice B): beacon de dose crítica no device + fila offline
 
 > **Bump:** mobile `0.24.3 → 0.24.4` (patch — feature aditiva, sem UI). **Plataforma:** Mobile. Sem migração (tabela nasceu no Slice A). Instrumentação de observabilidade — sem impacto para o usuário final.
