@@ -70,8 +70,15 @@ async function resolveAnchor(
   return { anchorId: null, strict: false }
 }
 
+/** Forma mínima do log persistido devolvido por register_dose_atomic (Returns: Json no
+ *  database.types.ts — a asserção de shape vive SÓ aqui, na fronteira do RPC). */
+interface RegisteredDoseLog {
+  id?: string
+  [key: string]: unknown
+}
+
 /** Chama a RPC atômica de registro; lança em erro. Retorna o log persistido. */
-async function callRegisterAtomic(client: Client, userId: string, d: ValidatedLog, anchorId: string | null, strict: boolean) {
+async function callRegisterAtomic(client: Client, userId: string, d: ValidatedLog, anchorId: string | null, strict: boolean): Promise<RegisteredDoseLog | null> {
   const { data, error } = await client.rpc('register_dose_atomic', {
     p_user_id: userId,
     p_protocol_id: d.protocol_id ?? null,
@@ -85,7 +92,7 @@ async function callRegisterAtomic(client: Client, userId: string, d: ValidatedLo
     p_injection_site: d.injection_site ?? null,
   } as never)
   if (error) throw error
-  return data
+  return (data ?? null) as RegisteredDoseLog | null
 }
 
 interface DoseLogDeps {
@@ -230,7 +237,7 @@ async function registerDoseMany(deps: DoseLogDeps, logsData: Record<string, unkn
       (logData.instanceId ?? logData.instance_id ?? logData.dose_instance_id ?? null) as string | null
     try {
       const { anchorId, data } = await registerOneBulk(deps, userId, logData)
-      results.push({ id: (data as { id?: string } | null)?.id ?? null, instanceId: anchorId, success: true, data })
+      results.push({ id: data?.id ?? null, instanceId: anchorId, success: true, data })
     } catch (err) {
       results.push({
         id: null,
