@@ -53,10 +53,30 @@ export class ValidationError extends Error {
   }
 }
 
+/** Item de erro de validação normalizado ({ field, message }) */
+export type ValidationIssue = { field: string; message: string }
+
+type ValidateFn = (data: unknown) => { success: boolean; data?: unknown; errors?: ValidationIssue[] }
+
+/** Formato aceito pelos mapeadores de erro (zod issue cru ou issue normalizado) */
+type FormIssue = { path?: Array<string | number>; field?: string; message: string }
+
+type ValidatorEntry = {
+  create: ValidateFn
+  update: ValidateFn
+  decrease?: ValidateFn
+  increase?: ValidateFn
+  bulk?: ValidateFn
+  mapErrors: (errors: FormIssue[]) => Record<string, string>
+  mapBulkErrors?: (errors: FormIssue[]) => unknown
+  getMessage: (errors: Array<{ field?: string; message: string }>) => string
+  getBulkMessage?: (errors: Array<{ field?: string; message: string }>) => string
+}
+
 /**
  * Mapeia tipos de entidade para suas funções de validação
  */
-const validationMap = {
+const validationMap: Record<'medicine' | 'protocol' | 'stock' | 'log', ValidatorEntry> = {
   medicine: {
     create: validateMedicineCreate,
     update: validateMedicineUpdate,
@@ -112,8 +132,10 @@ const validationMap = {
  *   console.log(result.errors)
  * }
  */
-export function validateEntity(entityType, data, operation = 'create') {
-  const validator = validationMap[entityType]
+export type EntityType = keyof typeof validationMap
+
+export function validateEntity(entityType: string, data: unknown, operation = 'create') {
+  const validator = validationMap[entityType as EntityType]
 
   if (!validator) {
     return {
@@ -126,7 +148,7 @@ export function validateEntity(entityType, data, operation = 'create') {
     }
   }
 
-  const validateFn = validator[operation]
+  const validateFn = (validator as unknown as Record<string, ValidateFn | undefined>)[operation]
 
   if (!validateFn) {
     return {
@@ -145,9 +167,10 @@ export function validateEntity(entityType, data, operation = 'create') {
     return { success: true, data: result.data }
   }
 
-  const error = new ValidationError(validator.getMessage(result.errors), result.errors, entityType)
+  const errors = result.errors ?? []
+  const error = new ValidationError(validator.getMessage(errors), errors, entityType)
 
-  return { success: false, errors: result.errors, error }
+  return { success: false, errors, error }
 }
 
 /**
@@ -158,8 +181,8 @@ export function validateEntity(entityType, data, operation = 'create') {
  * @param {boolean} isBulk - Se é validação em lote
  * @returns {Object} Erros mapeados para formulário
  */
-export function mapErrorsToForm(entityType, errors, isBulk = false) {
-  const validator = validationMap[entityType]
+export function mapErrorsToForm(entityType: string, errors: ValidationIssue[], isBulk = false) {
+  const validator = validationMap[entityType as EntityType]
 
   if (!validator) {
     return { general: `Tipo de entidade desconhecido: ${entityType}` }
@@ -180,8 +203,8 @@ export function mapErrorsToForm(entityType, errors, isBulk = false) {
  * @param {boolean} isBulk - Se é validação em lote
  * @returns {string} Mensagem formatada
  */
-export function getErrorMessage(entityType, errors, isBulk = false) {
-  const validator = validationMap[entityType]
+export function getErrorMessage(entityType: string, errors: ValidationIssue[], isBulk = false) {
+  const validator = validationMap[entityType as EntityType]
 
   if (!validator) {
     return 'Erro de validação desconhecido'
@@ -199,7 +222,7 @@ export function getErrorMessage(entityType, errors, isBulk = false) {
  * @param {string} id - ID a ser validado
  * @returns {boolean}
  */
-export function isValidUUID(id) {
+export function isValidUUID(id: string) {
   const uuidSchema = z.string().uuid()
   return uuidSchema.safeParse(id).success
 }
@@ -209,7 +232,7 @@ export function isValidUUID(id) {
  * @param {string} date - Data a ser validada
  * @returns {boolean}
  */
-export function isValidISODate(date) {
+export function isValidISODate(date: string) {
   const dateSchema = z.string().datetime()
   return dateSchema.safeParse(date).success
 }
@@ -219,7 +242,7 @@ export function isValidISODate(date) {
  * @param {string} date - Data a ser validada
  * @returns {boolean}
  */
-export function isValidDateString(date) {
+export function isValidDateString(date: string) {
   const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
   if (!dateSchema.safeParse(date).success) return false
 
@@ -232,7 +255,7 @@ export function isValidDateString(date) {
  * @param {string} time - Horário a ser validado
  * @returns {boolean}
  */
-export function isValidTime(time) {
+export function isValidTime(time: string) {
   const timeSchema = z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
   return timeSchema.safeParse(time).success
 }
@@ -242,7 +265,7 @@ export function isValidTime(time) {
  * @param {string} str - String a ser sanitizada
  * @returns {string}
  */
-export function sanitizeString(str) {
+export function sanitizeString(str: unknown) {
   if (typeof str !== 'string') return ''
 
   return str
@@ -274,11 +297,11 @@ export function sanitizeString(str) {
  *   // Prossegue com envio...
  * }
  */
-export function useValidationHelper(entityType) {
+export function useValidationHelper(entityType: string) {
   return {
-    validate: (data, operation = 'create') => validateEntity(entityType, data, operation),
-    getFormErrors: (errors) => mapErrorsToForm(entityType, errors),
-    getErrorMessage: (errors, isBulk = false) => getErrorMessage(entityType, errors, isBulk),
+    validate: (data: unknown, operation = 'create') => validateEntity(entityType, data, operation),
+    getFormErrors: (errors: ValidationIssue[]) => mapErrorsToForm(entityType, errors),
+    getErrorMessage: (errors: ValidationIssue[], isBulk = false) => getErrorMessage(entityType, errors, isBulk),
   }
 }
 

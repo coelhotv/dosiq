@@ -108,7 +108,7 @@ export const logBulkCreateSchema = z.object({
  * @param {Object} data - Dados do log
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateLog(data) {
+export function validateLog(data: unknown) {
   const result = logCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -128,7 +128,7 @@ export function validateLog(data) {
  * @param {Object} data - Dados do log
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateLogCreate(data) {
+export function validateLogCreate(data: unknown) {
   return validateLog(data)
 }
 
@@ -137,7 +137,7 @@ export function validateLogCreate(data) {
  * @param {Object} data - Dados do log
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateLogUpdate(data) {
+export function validateLogUpdate(data: unknown) {
   const result = logUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -157,7 +157,7 @@ export function validateLogUpdate(data) {
  * @param {Object} data - Dados com array de logs
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateLogBulkCreate(data) {
+export function validateLogBulkCreate(data: unknown) {
   const result = logBulkCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -177,7 +177,7 @@ export function validateLogBulkCreate(data) {
  * @param {Array} logs - Array de logs
  * @returns {{ success: boolean, data?: Array, errors?: Array<{index: number, field: string, message: string}> }}
  */
-export function validateLogBulkArray(logs) {
+export function validateLogBulkArray(logs: unknown) {
   if (!Array.isArray(logs)) {
     return {
       success: false,
@@ -201,8 +201,8 @@ export function validateLogBulkArray(logs) {
     }
   }
 
-  const allErrors = []
-  const validLogs = []
+  const allErrors: Array<{ index: number; field: string; message: string }> = []
+  const validLogs: Array<z.infer<typeof logCreateSchema>> = []
 
   logs.forEach((log, index) => {
     const result = logCreateSchema.safeParse(log)
@@ -231,11 +231,11 @@ export function validateLogBulkArray(logs) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapLogErrorsToForm(zodErrors) {
-  const formErrors = {}
+export function mapLogErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
@@ -249,15 +249,15 @@ export function mapLogErrorsToForm(zodErrors) {
  * @param {Array} errors - Array de erros com index
  * @returns {Object} Objeto organizado por índice
  */
-export function mapBulkLogErrors(errors) {
-  const mappedErrors = {}
+export function mapBulkLogErrors(errors: Array<{ index?: number; field?: string; message: string }>) {
+  const mappedErrors: Record<number, Record<string, string>> = {}
 
   errors.forEach((error) => {
-    if (error.index >= 0) {
+    if (error.index != null && error.index >= 0) {
       if (!mappedErrors[error.index]) {
         mappedErrors[error.index] = {}
       }
-      mappedErrors[error.index][error.field] = error.message
+      mappedErrors[error.index][error.field ?? 'general'] = error.message
     }
   })
 
@@ -284,10 +284,10 @@ export function getLogErrorMessage(errors: Array<{ message: string }>) {
  * @param {Array} errors - Array de erros com index
  * @returns {string} Mensagem formatada
  */
-export function getBulkLogErrorMessage(errors: Array<{ index: number }>) {
+export function getBulkLogErrorMessage(errors: Array<{ index?: number; field?: string; message?: string }>) {
   if (!errors || errors.length === 0) return ''
 
-  const indicesAfetados = [...new Set(errors.map((e) => e.index))].filter((i) => i >= 0)
+  const indicesAfetados = [...new Set(errors.map((e) => e.index))].filter((i): i is number => i != null && i >= 0)
 
   if (indicesAfetados.length === 1) {
     return `Erro no registro ${indicesAfetados[0] + 1}. Verifique os campos.`

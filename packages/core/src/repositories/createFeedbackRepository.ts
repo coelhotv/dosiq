@@ -40,7 +40,7 @@ export function createFeedbackRepository({
      */
     async submitFeedback(feedback: Record<string, unknown>) {
       const validation = validateFeedbackCreate(feedback)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
 

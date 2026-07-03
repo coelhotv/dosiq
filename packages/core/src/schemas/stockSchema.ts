@@ -183,7 +183,7 @@ export const stockIncreaseSchema = z.object({
  * @param {Object} data - Dados do estoque
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateStock(data) {
+export function validateStock(data: unknown) {
   const result = stockCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -203,7 +203,7 @@ export function validateStock(data) {
  * @param {Object} data - Dados do estoque
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateStockCreate(data) {
+export function validateStockCreate(data: unknown) {
   return validateStock(data)
 }
 
@@ -212,7 +212,7 @@ export function validateStockCreate(data) {
  * @param {Object} data - Dados do estoque
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateStockUpdate(data) {
+export function validateStockUpdate(data: unknown) {
   const result = stockUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -232,7 +232,7 @@ export function validateStockUpdate(data) {
  * @param {Object} data - Dados da operação
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateStockDecrease(data) {
+export function validateStockDecrease(data: unknown) {
   const result = stockDecreaseSchema.safeParse(data)
 
   if (result.success) {
@@ -252,7 +252,7 @@ export function validateStockDecrease(data) {
  * @param {Object} data - Dados da operação
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateStockIncrease(data) {
+export function validateStockIncrease(data: unknown) {
   const result = stockIncreaseSchema.safeParse(data)
 
   if (result.success) {
@@ -272,11 +272,11 @@ export function validateStockIncrease(data) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapStockErrorsToForm(zodErrors) {
-  const formErrors = {}
+export function mapStockErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
@@ -290,7 +290,7 @@ export function mapStockErrorsToForm(zodErrors) {
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem formatada
  */
-export function getStockErrorMessage(errors) {
+export function getStockErrorMessage(errors: Array<{ field?: string; message: string }>) {
   if (!errors || errors.length === 0) return ''
 
   if (errors.length === 1) {

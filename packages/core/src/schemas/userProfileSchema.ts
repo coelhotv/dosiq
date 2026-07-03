@@ -97,7 +97,7 @@ const userProfileSchema = z.object({
  * @param {Object} data - { display_name, birth_date, city, state, phone }
  * @returns {Object} { success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }
  */
-export function validateUserProfile(data) {
+export function validateUserProfile(data: unknown) {
   const result = userProfileSchema.safeParse(data)
 
   if (!result.success) {

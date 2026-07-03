@@ -56,7 +56,7 @@ const feedbackSchema = z.object({
  * @param {Object} data
  * @returns {Object} { success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }
  */
-export function validateFeedbackCreate(data) {
+export function validateFeedbackCreate(data: unknown) {
   const result = feedbackSchema.safeParse(data)
 
   if (!result.success) {

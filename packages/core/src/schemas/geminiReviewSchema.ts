@@ -216,7 +216,7 @@ export const geminiReviewFullSchema = geminiReviewSchema
  * @param {Object} data - Dados da review
  * @returns {Object} Resultado da validação { success, data, errors }
  */
-export function validateGeminiReview(data) {
+export function validateGeminiReview(data: unknown) {
   const result = geminiReviewSchema.safeParse(data)
 
   if (result.success) {
@@ -243,7 +243,7 @@ export function validateGeminiReview(data) {
  * @param {Object} data - Dados da review
  * @returns {Object} Resultado da validação { success, data, errors }
  */
-export function validateGeminiReviewCreate(data) {
+export function validateGeminiReviewCreate(data: unknown) {
   const result = geminiReviewCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -270,7 +270,7 @@ export function validateGeminiReviewCreate(data) {
  * @param {Object} data - Dados da review
  * @returns {Object} Resultado da validação { success, data, errors }
  */
-export function validateGeminiReviewUpdate(data) {
+export function validateGeminiReviewUpdate(data: unknown) {
   const result = geminiReviewUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -297,7 +297,7 @@ export function validateGeminiReviewUpdate(data) {
  * @param {Object} data - Dados de status
  * @returns {Object} Resultado da validação { success, data, errors }
  */
-export function validateGeminiReviewStatusUpdate(data) {
+export function validateGeminiReviewStatusUpdate(data: unknown) {
   const result = geminiReviewStatusUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -324,7 +324,7 @@ export function validateGeminiReviewStatusUpdate(data) {
  * @param {Object} filters - Filtros
  * @returns {Object} Resultado da validação { success, data, errors }
  */
-export function validateGeminiReviewFilters(filters) {
+export function validateGeminiReviewFilters(filters: unknown) {
   const result = geminiReviewFiltersSchema.safeParse(filters)
 
   if (result.success) {
@@ -355,11 +355,11 @@ export function validateGeminiReviewFilters(filters) {
  * @param {Array} errors - Array de erros do Zod
  * @returns {Object} Objeto com erros por campo
  */
-export function mapGeminiReviewErrorsToForm(errors) {
-  const formErrors = {}
+export function mapGeminiReviewErrorsToForm(errors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   errors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (field) {
       formErrors[field] = error.message
     }
@@ -373,7 +373,7 @@ export function mapGeminiReviewErrorsToForm(errors) {
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem de erro
  */
-export function getGeminiReviewErrorMessage(errors) {
+export function getGeminiReviewErrorMessage(errors: Array<{ field?: string; message: string }>) {
   if (!errors || errors.length === 0) {
     return 'Erro de validação desconhecido'
   }
@@ -391,8 +391,8 @@ export function getGeminiReviewErrorMessage(errors) {
  * @param {string} status - Status da review
  * @returns {string} Label em português
  */
-export function getStatusLabel(status) {
-  return REVIEW_STATUS_LABELS[status] || status
+export function getStatusLabel(status: string) {
+  return REVIEW_STATUS_LABELS[status as keyof typeof REVIEW_STATUS_LABELS] || status
 }
 
 /**
@@ -400,8 +400,8 @@ export function getStatusLabel(status) {
  * @param {string} priority - Prioridade da review
  * @returns {string} Label em português
  */
-export function getPriorityLabel(priority) {
-  return REVIEW_PRIORITY_LABELS[priority] || priority
+export function getPriorityLabel(priority: string) {
+  return REVIEW_PRIORITY_LABELS[priority as keyof typeof REVIEW_PRIORITY_LABELS] || priority
 }
 
 /**
@@ -409,8 +409,8 @@ export function getPriorityLabel(priority) {
  * @param {string} category - Categoria da review
  * @returns {string} Label em português
  */
-export function getCategoryLabel(category) {
-  return REVIEW_CATEGORY_LABELS[category] || category
+export function getCategoryLabel(category: string) {
+  return REVIEW_CATEGORY_LABELS[category as keyof typeof REVIEW_CATEGORY_LABELS] || category
 }
 
 /**
@@ -418,7 +418,7 @@ export function getCategoryLabel(category) {
  * @param {string} status - Status da review
  * @returns {boolean} true se o status é final
  */
-export function isFinalStatus(status) {
+export function isFinalStatus(status: string) {
   return [
     'corrigido',
     'descartado',

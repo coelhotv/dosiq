@@ -71,7 +71,7 @@ export const BIOMARKER_CONTEXTS_BY_TYPE = {
 // Origem do dado. v1 = manual; HealthSync futuro entra sem migração (ADR-060).
 export const BIOMARKER_SOURCES = ['manual', 'healthkit', 'google_fit', 'health_connect']
 
-const numericPositive = (msg) =>
+const numericPositive = (msg: string) =>
   z.preprocess(
     (val) => (val === '' ? null : val),
     z.coerce.number({ error: msg }).positive(msg)
@@ -115,8 +115,8 @@ const biomarkerObject = z.object({
 //  1. PA exige value_secondary; demais tipos não podem tê-lo.
 //  2. context só vale p/ a família do tipo (BIOMARKER_CONTEXTS_BY_TYPE) — ADR-070: Zod é o guard
 //     (sem CHECK no DB), então o cruzamento type↔família vive aqui.
-const applyPaRefine = (schema) =>
-  schema.superRefine((data, ctx) => {
+const applyPaRefine = <S extends typeof biomarkerObject>(schema: S) =>
+  schema.superRefine((data: z.infer<typeof biomarkerObject>, ctx: z.RefinementCtx) => {
     if (data.type === 'pressao_arterial') {
       if (data.value_secondary == null) {
         ctx.addIssue({
@@ -135,7 +135,7 @@ const applyPaRefine = (schema) =>
 
     // Guard type↔família de contexto. context é opcional; só valida quando presente.
     if (data.context != null) {
-      const allowed = BIOMARKER_CONTEXTS_BY_TYPE[data.type]
+      const allowed = BIOMARKER_CONTEXTS_BY_TYPE[data.type as keyof typeof BIOMARKER_CONTEXTS_BY_TYPE]
       if (!allowed || !allowed.includes(data.context)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -163,11 +163,11 @@ export const biomarkerLogFullSchema = applyPaRefine(
   })
 )
 
-function toResult(result) {
+function toResult<T>(result: { success: boolean; data?: T; error?: z.ZodError }) {
   if (result.success) return { success: true, data: result.data }
   return {
     success: false,
-    errors: result.error.issues.map((issue) => ({
+    errors: (result.error?.issues ?? []).map((issue) => ({
       field: issue.path.join('.'),
       message: issue.message,
     })),
@@ -175,12 +175,12 @@ function toResult(result) {
 }
 
 /** Valida criação de biomarcador */
-export function validateBiomarkerLog(data) {
+export function validateBiomarkerLog(data: unknown) {
   return toResult(biomarkerLogSchema.safeParse(data))
 }
 
 /** Valida atualização parcial de biomarcador */
-export function validateBiomarkerLogUpdate(data) {
+export function validateBiomarkerLogUpdate(data: unknown) {
   return toResult(biomarkerLogUpdateSchema.safeParse(data))
 }
 

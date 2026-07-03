@@ -62,8 +62,8 @@ export function getDeviceTimezone() {
  * @param {string|null|undefined} deviceTz
  * @returns {string} tz IANA suportado.
  */
-export function resolveSupportedTz(deviceTz) {
-  return TIMEZONES_BR.includes(deviceTz) ? deviceTz : DEFAULT_TIMEZONE
+export function resolveSupportedTz(deviceTz: string | null | undefined) {
+  return deviceTz != null && (TIMEZONES_BR as readonly string[]).includes(deviceTz) ? deviceTz : DEFAULT_TIMEZONE
 }
 
 const timeSchema = z.string()
@@ -104,7 +104,7 @@ export const userSettingsNotificationSchema = z.object({
 })
 
 // Derivar notification_preference legado a partir dos booleans de canal
-export function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_enabled }) {
+export function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_enabled }: { channel_mobile_push_enabled?: boolean; channel_telegram_enabled?: boolean }) {
   if (channel_mobile_push_enabled && channel_telegram_enabled) return 'both'
   if (channel_mobile_push_enabled) return 'mobile_push'
   if (channel_telegram_enabled) return 'telegram'

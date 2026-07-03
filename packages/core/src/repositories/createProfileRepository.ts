@@ -75,7 +75,7 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
 
     async updateProfile(input: Record<string, unknown>) {
       const validation = validateUserProfile(input)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       const { data, error } = await client

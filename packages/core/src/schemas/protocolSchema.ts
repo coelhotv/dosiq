@@ -275,7 +275,7 @@ export const protocolFullSchema = protocolSchema.extend({
  * @param {Object} data - Dados do protocolo
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateProtocol(data) {
+export function validateProtocol(data: unknown) {
   const result = protocolCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -295,7 +295,7 @@ export function validateProtocol(data) {
  * @param {Object} data - Dados do protocolo
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateProtocolCreate(data) {
+export function validateProtocolCreate(data: unknown) {
   return validateProtocol(data)
 }
 
@@ -304,7 +304,7 @@ export function validateProtocolCreate(data) {
  * @param {Object} data - Dados do protocolo
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateProtocolUpdate(data) {
+export function validateProtocolUpdate(data: unknown) {
   const result = protocolUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -324,7 +324,7 @@ export function validateProtocolUpdate(data) {
  * @param {Object} stage - Dados do estágio
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateTitrationStage(stage) {
+export function validateTitrationStage(stage: unknown) {
   const result = titrationStageSchema.safeParse(stage)
 
   if (result.success) {
@@ -344,11 +344,11 @@ export function validateTitrationStage(stage) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapProtocolErrorsToForm(zodErrors) {
-  const formErrors = {}
+export function mapProtocolErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
@@ -362,7 +362,7 @@ export function mapProtocolErrorsToForm(zodErrors) {
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem formatada
  */
-export function getProtocolErrorMessage(errors) {
+export function getProtocolErrorMessage(errors: Array<{ field?: string; message: string }>) {
   if (!errors || errors.length === 0) return ''
 
   if (errors.length === 1) {

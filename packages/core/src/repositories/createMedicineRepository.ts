@@ -73,7 +73,7 @@ export function createMedicineRepository({
 
     async create(medicine: Record<string, unknown>) {
       const validation = validateMedicineCreate(medicine)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       const { data, error } = await client
@@ -88,7 +88,7 @@ export function createMedicineRepository({
 
     async update(id: string, updates: Record<string, unknown>) {
       const validation = validateMedicineUpdate(updates)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       const { data, error } = await client

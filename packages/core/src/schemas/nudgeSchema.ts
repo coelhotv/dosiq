@@ -119,7 +119,7 @@ const nudgeSchema = nudgeBaseSchema.superRefine((data, ctx) => {
   }
 })
 
-export function validateNudgeCreate(data) {
+export function validateNudgeCreate(data: unknown) {
   const result = nudgeSchema.safeParse(data)
 
   if (!result.success) {
@@ -138,7 +138,7 @@ export function validateNudgeCreate(data) {
   }
 }
 
-export function validateNudgeUpdate(data) {
+export function validateNudgeUpdate(data: unknown) {
   const partialSchema = nudgeBaseSchema.partial()
   const result = partialSchema.safeParse(data)
 

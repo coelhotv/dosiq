@@ -112,7 +112,7 @@ export const emergencyCardFullSchema = emergencyCardSchema.extend({
  * @param {Object} data - Dados do cartão de emergência
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateEmergencyCard(data) {
+export function validateEmergencyCard(data: unknown) {
   const result = emergencyCardSchema.safeParse(data)
 
   if (result.success) {
@@ -132,7 +132,7 @@ export function validateEmergencyCard(data) {
  * @param {Object} data - Dados do cartão de emergência
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateEmergencyCardCreate(data) {
+export function validateEmergencyCardCreate(data: unknown) {
   return validateEmergencyCard(data)
 }
 
@@ -141,7 +141,7 @@ export function validateEmergencyCardCreate(data) {
  * @param {Object} data - Dados do cartão de emergência
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateEmergencyCardUpdate(data) {
+export function validateEmergencyCardUpdate(data: unknown) {
   const result = emergencyCardUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -161,7 +161,7 @@ export function validateEmergencyCardUpdate(data) {
  * @param {Object} contact - Dados do contato
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateEmergencyContact(contact) {
+export function validateEmergencyContact(contact: unknown) {
   const result = emergencyContactSchema.safeParse(contact)
 
   if (result.success) {
@@ -181,11 +181,11 @@ export function validateEmergencyContact(contact) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapEmergencyCardErrorsToForm(zodErrors) {
-  const formErrors = {}
+export function mapEmergencyCardErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = error.path[0]
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
@@ -199,7 +199,7 @@ export function mapEmergencyCardErrorsToForm(zodErrors) {
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem formatada
  */
-export function getEmergencyCardErrorMessage(errors) {
+export function getEmergencyCardErrorMessage(errors: Array<{ field?: string; message: string }>) {
   if (!errors || errors.length === 0) return ''
 
   if (errors.length === 1) {

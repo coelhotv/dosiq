@@ -227,7 +227,7 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
      */
     async decreaseStock(medicineId: string, quantity: number, medicineLogId: string) {
       const validation = validateStockDecrease({ medicine_id: medicineId, quantity })
-      if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
+      if (!validation.success || !validation.data) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors ?? [])}`)
       if (!medicineLogId) throw new Error('medicineLogId é obrigatório para consumo FIFO rastreável')
 
       const userId = await getUserId()
@@ -267,7 +267,7 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
         notes: normalized.notes ?? null,
       })
 
-      if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
+      if (!validation.success || !validation.data) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors ?? [])}`)
       const payload = validation.data
 
       if (payload.medicine_log_id) {
@@ -283,8 +283,8 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
         p_medicine_id: medicineId,
         p_quantity_delta: quantity,
         p_reason: payload.reason,
-        p_notes: payload.notes,
-      })
+        p_notes: payload.notes ?? null,
+      } as never)
 
       if (error) throw error
       return data
@@ -309,10 +309,10 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
       const current = await repo.getTotalQuantity(medicineId)
       // cleanFloat: subtração de decimais vaza dízima (1,5−1,9 = -0,39999…) e o delta
       // sujo vira residue persistido na quantity do lote (R-277). Limpa antes do RPC.
-      const delta = cleanFloat(newBalance - current)
+      const delta = cleanFloat(newBalance - (current ?? 0))
 
       if (delta === 0) {
-        return { delta: 0, before: current, after: newBalance }
+        return { delta: 0, before: current ?? 0, after: newBalance }
       }
 
       if (delta > 0) {
@@ -324,7 +324,7 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
           p_quantity_delta: delta,
           p_reason: reason,
           p_notes: notes ?? null,
-        })
+        } as never)
         if (error) throw error
       }
 

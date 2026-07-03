@@ -129,20 +129,23 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
      */
     async createPurchase(input: Record<string, unknown>) {
       const validation = validateStockCreate(input)
-      if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
+      if (!validation.success || !validation.data) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors ?? [])}`)
       const p = validation.data
 
-      const { data, error } = await client.rpc('create_purchase_with_stock', {
+      // NULL explícito (não omitir a key): o RPC espera receber NULL nos opcionais.
+      // supabase gen tipa Args nullable como `| undefined` — cast local TODO(040-strict).
+      const rpcArgs = {
         p_medicine_id: p.medicine_id,
         p_quantity: p.quantity,
         p_unit_price: p.unit_price ?? 0,
         p_purchase_date: p.purchase_date,
-        p_expiration_date: p.expiration_date,
-        p_pharmacy: p.pharmacy,
-        p_laboratory: p.laboratory,
-        p_notes: p.notes,
+        p_expiration_date: p.expiration_date ?? null,
+        p_pharmacy: p.pharmacy ?? null,
+        p_laboratory: p.laboratory ?? null,
+        p_notes: p.notes ?? null,
         p_injection_container: p.injection_container ?? null,
-      })
+      }
+      const { data, error } = await client.rpc('create_purchase_with_stock', rpcArgs as never)
 
       if (error) throw error
       return data
@@ -192,8 +195,8 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
         throw new Error('Preço total não pode ser negativo')
       }
 
-      const round2 = (x) => Number(x.toFixed(2))
-      const round4 = (x) => Number(x.toFixed(4))
+      const round2 = (x: number) => Number(x.toFixed(2))
+      const round4 = (x: number) => Number(x.toFixed(4))
 
       // Math.floor (não round2) p/ truncar: garante que pricePerBottle nunca exceda a fração
       // do total. Senão, em centavos baixos (ex: R$0,04 / 6 frascos) o arredondamento p/ cima
@@ -234,7 +237,7 @@ export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRe
     async updatePurchase(id: string, input: Record<string, unknown>) {
       const userId = await getUserId()
       const validation = validateStockCreate(input)
-      if (!validation.success) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors)}`)
+      if (!validation.success || !validation.data) throw new Error(`Erro de validação: ${fmtZodErr(validation.errors ?? [])}`)
       const p = validation.data
 
       const { data, error } = await client

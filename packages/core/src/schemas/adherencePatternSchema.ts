@@ -71,7 +71,7 @@ export const AnalyzeAdherencePatternsOutputSchema = z.object({
  * @param {Object} data - Dados de entrada
  * @returns {{ success: boolean, data?: Object, errors?: Array }}
  */
-export function validateAnalyzeAdherencePatternsInput(data) {
+export function validateAnalyzeAdherencePatternsInput(data: unknown) {
   const result = AnalyzeAdherencePatternsInputSchema.safeParse(data)
 
   if (result.success) {
@@ -91,7 +91,7 @@ export function validateAnalyzeAdherencePatternsInput(data) {
  * @param {Object} data - Dados de saída
  * @returns {{ success: boolean, data?: Object, errors?: Array }}
  */
-export function validateAnalyzeAdherencePatternsOutput(data) {
+export function validateAnalyzeAdherencePatternsOutput(data: unknown) {
   const result = AnalyzeAdherencePatternsOutputSchema.safeParse(data)
 
   if (result.success) {

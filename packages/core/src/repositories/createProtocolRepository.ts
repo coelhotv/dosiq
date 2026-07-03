@@ -205,7 +205,7 @@ export function createProtocolRepository({
 
     async create(protocol: Record<string, unknown>) {
       const validation = validateProtocolCreate(protocol)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       // _medicineIsLiquid é flag transiente de validação (refine intake_unit), não
@@ -236,7 +236,7 @@ export function createProtocolRepository({
 
     async update(id: string, updates: Record<string, unknown>) {
       const validation = validateProtocolUpdate(updates)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       // Strip flag transiente (não é coluna) — idem create (022 Fase C).

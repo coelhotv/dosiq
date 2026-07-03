@@ -106,7 +106,7 @@ export const REGULATORY_CATEGORY_LABELS = {
 }
 
 const _COMBINING_MARKS = /[\u0300-\u036f]/g
-const _stripAccents = (s) =>
+const _stripAccents = (s: unknown) =>
   String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
@@ -123,7 +123,7 @@ const _stripAccents = (s) =>
  * @param {string|null|undefined} raw
  * @returns {string|null}
  */
-export function normalizeRegulatoryCategory(raw) {
+export function normalizeRegulatoryCategory(raw: string | null | undefined) {
   if (!raw) return null
   const normalized = _stripAccents(raw)
   const match = REGULATORY_CATEGORIES.find((c) => _stripAccents(c) === normalized)
@@ -283,7 +283,7 @@ export const medicineFullSchema = medicineObject.extend({
  * @param {Object} data - Dados do medicamento
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateMedicine(data) {
+export function validateMedicine(data: unknown) {
   const result = medicineSchema.safeParse(data)
 
   if (result.success) {
@@ -303,7 +303,7 @@ export function validateMedicine(data) {
  * @param {Object} data - Dados do medicamento
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateMedicineCreate(data) {
+export function validateMedicineCreate(data: unknown) {
   const result = medicineCreateSchema.safeParse(data)
 
   if (result.success) {
@@ -323,7 +323,7 @@ export function validateMedicineCreate(data) {
  * @param {Object} data - Dados do medicamento
  * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
  */
-export function validateMedicineUpdate(data) {
+export function validateMedicineUpdate(data: unknown) {
   const result = medicineUpdateSchema.safeParse(data)
 
   if (result.success) {
@@ -343,11 +343,11 @@ export function validateMedicineUpdate(data) {
  * @param {Array} zodErrors - Array de erros do Zod
  * @returns {Object} Objeto com campo como chave e mensagem como valor
  */
-export function mapMedicineErrorsToForm(zodErrors: Array<{ path: PropertyKey[]; message: string }>) {
+export function mapMedicineErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
   const formErrors: Record<string, string> = {}
 
   zodErrors.forEach((error) => {
-    const field = String(error.path[0])
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
     if (!formErrors[field]) {
       formErrors[field] = error.message
     }
@@ -361,7 +361,7 @@ export function mapMedicineErrorsToForm(zodErrors: Array<{ path: PropertyKey[]; 
  * @param {Array} errors - Array de erros
  * @returns {string} Mensagem formatada
  */
-export function getMedicineErrorMessage(errors) {
+export function getMedicineErrorMessage(errors: Array<{ field?: string; message: string }>) {
   if (!errors || errors.length === 0) return ''
 
   if (errors.length === 1) {

@@ -95,11 +95,19 @@ export function createBiomarkerRepository({ client, getUserId }: CreateBiomarker
         payload.unit = BIOMARKER_TYPE_UNITS[payload.type as keyof typeof BIOMARKER_TYPE_UNITS]
 
       const validation = validateBiomarkerLog(payload)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
       // measured_at ausente → coluna usa DEFAULT now() no banco (evita new Date() no core, R-020).
-      const row = { ...validation.data, user_id: userId }
+      // Zod aceita string ISO ou Date; a coluna é timestamptz (string) — normaliza antes do insert.
+      const { measured_at, ...restRow } = validation.data
+      const row = {
+        ...restRow,
+        ...(measured_at != null
+          ? { measured_at: measured_at instanceof Date ? measured_at.toISOString() : measured_at }
+          : {}),
+        user_id: userId,
+      }
 
       const { data, error } = await client
         .from(TABLE)
@@ -115,12 +123,19 @@ export function createBiomarkerRepository({ client, getUserId }: CreateBiomarker
     async update(id: string, patch: Record<string, unknown>) {
       if (!id) throw new Error('update: id é obrigatório')
       const validation = validateBiomarkerLogUpdate(patch)
-      if (!validation.success) throw formatValidationError(validation.errors)
+      if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
+      const { measured_at: patchMeasuredAt, ...restPatch } = validation.data
+      const updateRow = {
+        ...restPatch,
+        ...(patchMeasuredAt != null
+          ? { measured_at: patchMeasuredAt instanceof Date ? patchMeasuredAt.toISOString() : patchMeasuredAt }
+          : {}),
+      }
       const { data, error } = await client
         .from(TABLE)
-        .update(validation.data)
+        .update(updateRow)
         .eq('id', id)
         .eq('user_id', userId)
         .select(SELECT_COLS)

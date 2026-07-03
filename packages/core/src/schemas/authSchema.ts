@@ -22,7 +22,7 @@ const passwordChangeSchema = z.object({
  * @param {Object} input - { newPassword: string }
  * @returns {Object} { success: boolean, data?: Object, error?: string }
  */
-export function validatePasswordChange(input) {
+export function validatePasswordChange(input: unknown) {
   const result = passwordChangeSchema.safeParse(input)
   if (!result.success) {
     const error = result.error.issues[0]
