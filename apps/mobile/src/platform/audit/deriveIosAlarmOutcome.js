@@ -27,6 +27,11 @@ export function deriveIosAlarmOutcome({ alarms, permissionGranted, userId }) {
     let event
     let detail
 
+    // NOTA (review #700): o ramo `suppressed` é RESERVADO. O caller atual (AlarmSchedulerBridge)
+    // alimenta `alarms` a partir das notificações EXIBIDAS — com permissão bloqueada nada é exibido,
+    // então na wiring de hoje este ramo não dispara (o suppressed iOS fica coberto pelo follow-up que
+    // compara doses críticas AGENDADAS × exibidas). A função permanece pura/genérica: se um caller
+    // passar um alarme agendado-mas-não-exibido com permissionGranted:false, o suppressed é correto.
     if (permissionGranted === false) {
       event = 'alarm_suppressed'
       detail = { captured_at_foreground: true, reason: 'permission_denied' }

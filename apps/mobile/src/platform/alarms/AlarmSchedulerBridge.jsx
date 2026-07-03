@@ -13,6 +13,7 @@ import { AppState, Platform } from 'react-native'
 import notifee, { EventType, AuthorizationStatus } from '@notifee/react-native'
 import { getTodayLocal, getRawNow, createCriticalAuditService } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
 import { deriveIosAlarmOutcome } from '@platform/audit/deriveIosAlarmOutcome'
 import { useAuth } from '@platform/auth/hooks/useAuth'
@@ -30,6 +31,34 @@ import { isAlarmNotification, isDoseNotificationStale, reconcileStaleDoseNotific
 // roda JS no disparo) e DRENA a fila offline (Android enfileira no headless). Fail-open total.
 const auditQueue = createCriticalAuditQueue()
 const auditEmitter = createCriticalAuditService({ client: supabase })
+
+// Dedupe dos desfechos iOS derivados no foreground: enquanto a notificação segue exibida, cada
+// foreground re-derivaria o MESMO alarm_fired/nag_fired → duplicatas no trail (review #700). Guarda
+// as chaves já enfileiradas (id:event:nag) em AsyncStorage; cap simples p/ não crescer sem limite.
+const IOS_DERIVE_SEEN_KEY = '@dosiq/audit/ios_derive_seen'
+const IOS_DERIVE_SEEN_CAP = 500
+
+async function filterUnseenDerived(derived) {
+  let seen = []
+  try {
+    const raw = await AsyncStorage.getItem(IOS_DERIVE_SEEN_KEY)
+    seen = raw ? JSON.parse(raw) : []
+  } catch {
+    seen = []
+  }
+  const seenSet = new Set(Array.isArray(seen) ? seen : [])
+  const keyOf = (e) => `${e.doseInstanceId}:${e.event}`
+  const fresh = derived.filter((e) => !seenSet.has(keyOf(e)))
+  if (fresh.length) {
+    const merged = [...seenSet, ...fresh.map(keyOf)].slice(-IOS_DERIVE_SEEN_CAP)
+    try {
+      await AsyncStorage.setItem(IOS_DERIVE_SEEN_KEY, JSON.stringify(merged))
+    } catch {
+      /* fail-open */
+    }
+  }
+  return fresh
+}
 
 /** Deriva desfechos iOS dos alarmes exibidos + drena a fila. Chamado no AppState 'active'. */
 async function flushCriticalAudit(userId) {
@@ -56,7 +85,9 @@ async function flushCriticalAudit(userId) {
         const permissionGranted =
           status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL
         const derived = deriveIosAlarmOutcome({ alarms, permissionGranted, userId })
-        for (const evt of derived) await auditQueue.enqueue(evt)
+        // Dedupe: só enfileira desfechos ainda não vistos (evita duplicata a cada foreground).
+        const fresh = await filterUnseenDerived(derived)
+        for (const evt of fresh) await auditQueue.enqueue(evt)
       }
     }
     // Drena a fila: insere cada evento via o helper único (CON-031). Item só sai após insert OK.

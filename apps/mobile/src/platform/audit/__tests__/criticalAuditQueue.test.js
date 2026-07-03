@@ -175,4 +175,33 @@ describe('criticalAuditQueue', () => {
 
     await expect(queue.enqueue({ event: 'A' })).resolves.not.toThrow()
   })
+
+  test('10. race enqueue↔flush: item enfileirado durante o flush NÃO é perdido (mutex, review #700)', async () => {
+    const storage = createMockStorage()
+    storage.store[AUDIT_QUEUE_KEY] = JSON.stringify({ items: [{ event: 'A' }], overflowDropped: 0 })
+    const queue = createCriticalAuditQueue({ storage })
+
+    // insertOne do 'A' fica pendente → flush segura o lock durante o await.
+    let releaseInsert
+    const insertGate = new Promise((r) => {
+      releaseInsert = r
+    })
+    const insertOne = jest.fn(async () => {
+      await insertGate
+      return { ok: true }
+    })
+
+    const flushPromise = queue.flush(insertOne)
+    await Promise.resolve() // deixa o flush entrar no lock + começar o insert de 'A'
+
+    // Enqueue de 'B' durante o flush: espera o lock e anexa ao estado pós-drenagem (sem clobber).
+    const enqueuePromise = queue.enqueue({ event: 'B' })
+
+    releaseInsert()
+    await flushPromise
+    await enqueuePromise
+
+    const state = await queue.peek()
+    expect(state.items).toEqual([{ event: 'B' }]) // 'A' drenado, 'B' preservado
+  })
 })
