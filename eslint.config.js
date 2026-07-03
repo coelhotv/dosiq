@@ -6,6 +6,8 @@ import importX from 'eslint-plugin-import-x'
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths'
 import n from 'eslint-plugin-n'
 import reactNative from 'eslint-plugin-react-native'
+import tsParser from '@typescript-eslint/parser'
+import tsPlugin from '@typescript-eslint/eslint-plugin'
 
 export default [
   { ignores: [
@@ -26,7 +28,7 @@ export default [
     '**/plans/**',
   ] },
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,ts,tsx}'],
     ignores: ['**/*.config.{js,jsx}', '**/vite.config.js', '**/vitest.config.js'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -180,6 +182,25 @@ export default [
     },
   },
   {
+    // Bloco TS/TSX — parser dedicado; regras herdadas do bloco principal acima
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^(motion|AnimatePresence|[A-Z_])' }],
+    },
+  },
+  {
     files: [
       '**/*.config.{js,jsx,cjs}',
       '**/*.config.js',
@@ -204,7 +225,7 @@ export default [
   // Estágio 3: Domínios Específicos
   {
     // Server & API (Node.js Strict)
-    files: ['server/**/*.js', 'api/**/*.js'],
+    files: ['server/**/*.{js,ts}', 'api/**/*.{js,ts}'],
     plugins: {
       n,
     },
@@ -288,15 +309,15 @@ export default [
   },
   // Override 0: API handlers têm complexidade estrutural legítima (parse/validate/respond)
   {
-    files: ['api/**/*.js', 'api/**/_handlers/**/*.js'],
+    files: ['api/**/*.{js,ts}', 'api/**/_handlers/**/*.{js,ts}'],
     rules: {
       'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
       'complexity': ['warn', { max: 20 }],
     }
   },
-  // Override 1: Componentes React (.jsx)
+  // Override 1: Componentes React (.jsx/.tsx)
   {
-    files: ['**/*.jsx'],
+    files: ['**/*.{jsx,tsx}'],
     rules: {
       'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
       'complexity': ['warn', { max: 20 }],
@@ -304,7 +325,7 @@ export default [
   },
   // Override 2: Repositórios e Hooks do Monorepo (legitimamente mais complexos/longos)
   {
-    files: ['packages/core/src/repositories/**/*.js', '**/hooks/**/*.js'],
+    files: ['packages/core/src/repositories/**/*.{js,ts}', '**/hooks/**/*.{js,ts}'],
     rules: {
       'max-lines-per-function': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
       'complexity': ['warn', { max: 25 }],
@@ -312,7 +333,7 @@ export default [
   },
   // Override 3: Arquivos de teste — describe/it são "funções" para o ESLint
   {
-    files: ['**/*.test.{js,jsx}', '**/*.spec.{js,jsx}'],
+    files: ['**/*.test.{js,jsx,ts,tsx}', '**/*.spec.{js,jsx,ts,tsx}'],
     rules: {
       'max-lines-per-function': 'off',
       'complexity': 'off',
