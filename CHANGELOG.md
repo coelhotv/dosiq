@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## App v0.24.5 (mobile) + Backend — 2026-07-03 — Fix (041): janela do push-to-start + push_failed + dedupe token_captured
+
+> **Bump:** mobile `0.24.4 → 0.24.5` (patch). **Plataforma:** Mobile + Backend. Sem migração. Fixes server redeployam no merge; o dedupe mobile exige o novo build.
+
+### 🐛 Correções
+
+- **Push-to-start da Live Activity (iOS) pega doses de curto prazo (server):** a janela era uma fatia de **1 minuto em T−60min** exato — uma dose criada/editada para tocar em **<60min** (ou um minuto de cron pulado) nunca casava, e a LA não iniciava com o app fechado. Agora a janela é o **intervalo `[now, now+lead]`**: qualquer dose crítica pendente entrando no horizonte de 60min, ainda sem start, é disparada no próximo tick. Idempotência preservada por `la_push_started_at`.
+- **Falha de push da LA agora é auditada (`push_failed`, server):** o ciclo de vida (update/end) só registrava sucesso (`surface_transitioned`) — se o push falhava (ex.: token de simulador rejeitado pelo APNs), o trail ficava silencioso. Agora emite `push_failed` com `phase`/`status`/`reason` (sem PII), tornando visível *por que* a LA não transicionou.
+- **`token_captured` sem rajada de duplicatas (mobile):** o sync do token da LA rodava a cada foreground/derive e re-emitia o mesmo `token_captured` (observado 4× em 40s no device real). Agora só emite quando o token **muda de fato** (nova Activity / rotação), cortando o ruído no trail sem perder a captura genuína.
+
+---
+
 ## Backend — 2026-07-03 — Chore (042): views de debug do audit trail
 
 > **Bump:** nenhum (no-user-impact — tooling de debug DB). **Plataforma:** Backend/DB. Aditivo, reversível.

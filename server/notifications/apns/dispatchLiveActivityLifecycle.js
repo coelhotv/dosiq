@@ -68,6 +68,18 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       actor: 'server',
       detail: { from: inst.la_push_state ?? null, to },
     })
+  // push_failed: torna VISÍVEL a falha de push da LA (ex.: token de simulador rejeitado pelo APNs) —
+  // antes o lifecycle só auditava sucesso, então "a LA não transicionou" ficava silencioso. detail
+  // só status/reason/fase do APNs (sem PII: nunca token/rótulo).
+  const emitFailed = (phase, res) =>
+    audit?.emit({
+      userId: inst.user_id,
+      doseInstanceId: inst.id,
+      event: 'push_failed',
+      platform: 'server',
+      actor: 'server',
+      detail: { phase, status: res?.status ?? null, reason: res?.reason ?? null },
+    })
 
   // Resolvida (dose registrada/pulada) → encerra a LA (card done p/ taken; dismiss p/ resto).
   if (RESOLVED_STATUSES.has(inst.status)) {
@@ -76,13 +88,21 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: finalState, scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok || res.deactivate) {
+    if (res.ok) {
       await _clearToken(supabase, logger, inst.id)
       await emitTransition(finalState)
       logger?.info?.('LA encerrada por push (end)', { instanceId: inst.id, status: inst.status, apns: res.status })
       return 'ended'
     }
+    // Token morto (BadDeviceToken/410): a LA já não existe → limpa o token, MAS audita como falha
+    // (não foi um `end` bem-sucedido). O backstop de dismissal do device cobre o encerramento visual.
+    if (res.deactivate) {
+      await _clearToken(supabase, logger, inst.id)
+      await emitFailed('end', res)
+      return 'ended'
+    }
     logger?.warn?.('push end falhou (fail-open; backstop dismissal cobre)', { instanceId: inst.id, reason: res.reason })
+    await emitFailed('end', res)
     return 'failed'
   }
 
@@ -97,11 +117,17 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: 'missed', scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok || res.deactivate) {
+    if (res.ok) {
       await _clearToken(supabase, logger, inst.id)
       await emitTransition('missed')
       return 'ended'
     }
+    if (res.deactivate) {
+      await _clearToken(supabase, logger, inst.id)
+      await emitFailed('end', res)
+      return 'ended'
+    }
+    await emitFailed('end', res)
     return 'failed'
   }
 
@@ -119,11 +145,15 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
     logger?.info?.('LA atualizada por push (update)', { instanceId: inst.id, state: derived.state })
     return 'updated'
   }
+  // Token morto (BadDeviceToken/Unregistered/410) — a causa MAIS comum de "a LA não atualiza".
+  // Limpa o token E audita push_failed (antes retornava 'skipped' silencioso, escondendo a falha).
   if (res.deactivate) {
-    await _clearToken(supabase, logger, inst.id) // token morto → LA não existe mais
+    await _clearToken(supabase, logger, inst.id)
+    await emitFailed('update', res)
     return 'skipped'
   }
   logger?.warn?.('push update falhou (fail-open)', { instanceId: inst.id, reason: res.reason })
+  await emitFailed('update', res)
   return 'failed'
 }
 

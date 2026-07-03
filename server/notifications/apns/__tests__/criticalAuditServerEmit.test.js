@@ -28,7 +28,7 @@ function makeSupabase(selectQueue) {
       eq() { return b; },
       is() { return b; },
       gte() { return b; },
-      lt() { return b; },
+      lt() { return b; }, lte() { return b; },
       not() { return b; },
       update(payload) { b._update = payload; return b; },
       insert(payload) {
@@ -152,6 +152,34 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     // O `to` emitido bate com o state realmente empurrado ao updateFn.
     expect(updateFn.mock.calls[0][0].contentState.state).toBe(payload.detail.to);
     assertNoPii(payload);
+  });
+
+  it('lifecycle: push_failed — token inválido (deactivate:true, BadDeviceToken) É auditado, não silencioso', async () => {
+    const supabase = makeSupabase([{ data: [lifecycleRow()], error: null }]);
+    // Prod: BadDeviceToken/Unregistered → _postToApns marca deactivate:true. Este é o caso REAL do
+    // "a LA não atualiza" (token de simulador/morto) — DEVE emitir push_failed (não skip silencioso).
+    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 400, deactivate: true, reason: 'BadDeviceToken' }));
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+
+    expect(supabase._captured).toHaveLength(1);
+    const payload = supabase._captured[0];
+    expect(payload).toMatchObject({
+      event: 'push_failed', platform: 'server', actor: 'server',
+      user_id: USER_A, dose_instance_id: INST_1,
+      detail: { phase: 'update', status: 400, reason: 'BadDeviceToken' },
+    });
+    assertNoPii(payload);
+  });
+
+  it('lifecycle: push_failed — falha transitória (sem deactivate) também é auditada', async () => {
+    const supabase = makeSupabase([{ data: [lifecycleRow()], error: null }]);
+    const updateFn = vi.fn(() => Promise.resolve({ ok: false, status: 503, reason: 'ServiceUnavailable' }));
+    await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn: vi.fn() });
+
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0]).toMatchObject({
+      event: 'push_failed', detail: { phase: 'update', status: 503, reason: 'ServiceUnavailable' },
+    });
   });
 
   it('GUARD PII: nenhum payload capturado em nenhum cenário vaza dados sensíveis', async () => {
