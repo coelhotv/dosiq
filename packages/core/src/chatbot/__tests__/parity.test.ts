@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildPatientContext } from '../buildPatientContext.js'
-import { validateChatbotContextData } from '../chatbotContextSchema.js'
+import { buildPatientContext } from '../buildPatientContext'
+import { validateChatbotContextData } from '../chatbotContextSchema'
 
 // Trava-drift de paridade (FR-011 / PO-5): com o builder centralizado no core, as 3
 // superfícies (web/Telegram/mobile) consomem a MESMA função. Dado o MESMO ChatbotContextData

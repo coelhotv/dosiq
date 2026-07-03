@@ -189,7 +189,9 @@ function _resolveDoseQueues(doseInstances, validProtocols) {
  * @param {Object} [data.profile] - Perfil leve do paciente ({ display_name, birth_date }) — sem PII sensível
  * @returns {string} - Contexto formatado para o system prompt
  */
-export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances, profile } = {}) {
+export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances, profile }: {
+  medicines?: any[]; protocols?: any[]; logs?: any[]; stockSummary?: any[]; stats?: any; doseInstances?: any[]; profile?: any
+} = {}) {
   const today = getTodayLocal('America/Sao_Paulo') // String YYYY-MM-DD (tz explícito — Hermes/Android)
   const [y, m, d] = today.split('-').map(Number)
   // Dia da semana nomeado: permite ao LLM raciocinar sobre semanais/personalizados quando

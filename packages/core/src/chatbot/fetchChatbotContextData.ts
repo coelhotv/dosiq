@@ -12,7 +12,7 @@
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic'
 import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils'
-import { validateChatbotContextData } from './chatbotContextSchema.js'
+import { validateChatbotContextData } from './chatbotContextSchema'
 
 /** Janela (dias) de dose_instances ao redor de hoje p/ alimentar splitDayTimeline (carry-over+hoje+look-ahead). */
 const DOSE_WINDOW_DAYS = 2
@@ -75,7 +75,7 @@ async function computeInstancesAdherence(repo, userId) {
  * @param {Object} deps
  * @param {Object} deps.supabase - Cliente Supabase do runtime
  * @param {Function} deps.getUserId - () => Promise<string> (id do usuário autenticado)
- * @returns {Promise<import('./chatbotContextSchema.js').chatbotContextDataSchema>} ChatbotContextData
+ * @returns {Promise<import('./chatbotContextSchema').chatbotContextDataSchema>} ChatbotContextData
  */
 export async function fetchChatbotContextData({ supabase, getUserId }) {
   if (!supabase) throw new Error('fetchChatbotContextData: supabase é obrigatório')

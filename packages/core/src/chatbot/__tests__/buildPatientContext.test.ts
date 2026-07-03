@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { buildPatientContext } from '../buildPatientContext.js'
+import { buildPatientContext } from '../buildPatientContext'
 
 // Builder canônico do core (spec 015 onda 1a) — porta os testes do antigo
 // contextBuilder.test.js (web) + failure modes degenerados (C1.5).

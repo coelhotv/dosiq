@@ -4,8 +4,8 @@
 // entre web (PWA), Telegram bot e mobile. Mata os forks `contextBuilder.js` (web) e
 // `buildServerContext` (Telegram).
 
-export { fetchChatbotContextData } from './fetchChatbotContextData.js'
-export { buildPatientContext } from './buildPatientContext.js'
-export { chatbotContextDataSchema, validateChatbotContextData } from './chatbotContextSchema.js'
+export { fetchChatbotContextData } from './fetchChatbotContextData'
+export { buildPatientContext } from './buildPatientContext'
+export { chatbotContextDataSchema, validateChatbotContextData } from './chatbotContextSchema'
 // Textos de UI compartilhados web↔mobile (Onda 3, FR-013)
-export { CHATBOT_DISCLAIMER, CHATBOT_QUICK_SUGGESTIONS, createWelcomeMessage } from './chatbotUiText.js'
+export { CHATBOT_DISCLAIMER, CHATBOT_QUICK_SUGGESTIONS, createWelcomeMessage } from './chatbotUiText'

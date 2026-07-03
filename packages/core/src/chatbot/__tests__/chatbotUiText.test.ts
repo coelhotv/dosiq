@@ -3,7 +3,7 @@ import {
   CHATBOT_DISCLAIMER,
   CHATBOT_QUICK_SUGGESTIONS,
   createWelcomeMessage,
-} from '../chatbotUiText.js'
+} from '../chatbotUiText'
 import * as chatbotIndex from '../index'
 
 // FR-013/PO-7 — textos de UI centralizados no core (web+mobile consomem); guardrails NÃO descem.
@@ -39,8 +39,8 @@ describe('chatbotUiText (core)', () => {
   })
 
   it('módulo de UI NÃO vaza guardrails (systemPrompt/safetyGuard/BLOCKED) — AP-237', () => {
-    expect(chatbotIndex.buildSystemPrompt).toBeUndefined()
-    expect(chatbotIndex.CHATBOT_BLOCKED_PATTERNS).toBeUndefined()
-    expect(chatbotIndex.safetyGuard).toBeUndefined()
+    expect((chatbotIndex as any).buildSystemPrompt).toBeUndefined()
+    expect((chatbotIndex as any).CHATBOT_BLOCKED_PATTERNS).toBeUndefined()
+    expect((chatbotIndex as any).safetyGuard).toBeUndefined()
   })
 })
