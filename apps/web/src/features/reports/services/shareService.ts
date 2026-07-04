@@ -340,7 +340,8 @@ function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onloadend = () => {
-      const base64 = reader.result as string
+      if (typeof reader.result !== 'string') return
+      const base64 = reader.result
       // Remover prefixo data:application/pdf;base64, se existir
       const cleanBase64 = base64.replace(/^data:.*?;base64,/, '')
       resolve(cleanBase64)
