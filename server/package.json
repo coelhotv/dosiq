@@ -12,8 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@dosiq/core": "*",
-    "@dosiq/shared-data": "*",
     "@supabase/supabase-js": "^2.90.1",
     "dotenv": "^17.2.3",
     "groq-sdk": "^1.1.1",

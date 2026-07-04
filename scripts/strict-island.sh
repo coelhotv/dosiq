@@ -35,6 +35,20 @@ echo "✅ fonte nível A strict-limpa"
 # invisíveis ao strict island. Erro de FONTE aqui é regressão observável no
 # build/runtime Vercel — bloqueante. Testes seguem como dívida contada.
 # Adicionar tsconfigs consumidores conforme F4/F5 os criarem.
+# Guard de extensão (lição gate F3, 2ª ocorrência): imports relativos em api/ e
+# server/ DEVEM ter extensão .js — tsx e vitest resolvem extensionless (smoke
+# local passa), mas o Node ESM puro da Vercel quebra com ERR_MODULE_NOT_FOUND.
+# O tsc local (moduleResolution bundler) não valida extensão; este grep valida.
+EXTLESS=$(grep -rnE "from '\.\.?/[^']*'" server api --include='*.ts' \
+  --exclude-dir=node_modules --exclude-dir=__tests__ 2>/dev/null \
+  | grep -vE '\.test\.' | grep -vE "\.(js|json)';?\$" || true)
+if [ -n "$EXTLESS" ]; then
+  echo "❌ IMPORT EXTENSIONLESS em server/api (quebra Node ESM Vercel):"
+  printf '%s\n' "$EXTLESS"
+  exit 1
+fi
+echo "✅ server/api sem import relativo extensionless"
+
 CONSUMERS="api/tsconfig.json server/tsconfig.json"
 for P in $CONSUMERS; do
   [ -f "$P" ] || continue
