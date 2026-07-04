@@ -11,23 +11,28 @@
  * const { containerRef, handleKeyDown } = useFocusTrap(isOpen)
  * return <div ref={containerRef} onKeyDown={handleKeyDown}>...</div>
  */
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, type KeyboardEvent, type RefObject } from 'react'
 
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
-export function useFocusTrap(isOpen) {
-  const containerRef = useRef(null)
-  const previousFocusRef = useRef(null)
+export interface UseFocusTrapResult {
+  containerRef: RefObject<HTMLElement | null>
+  handleKeyDown: (e: KeyboardEvent) => void
+}
+
+export function useFocusTrap(isOpen: boolean): UseFocusTrapResult {
+  const containerRef = useRef<HTMLElement | null>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (isOpen) {
       // Salvar elemento com foco antes de abrir
-      previousFocusRef.current = document.activeElement
+      previousFocusRef.current = document.activeElement as HTMLElement | null
 
       // Focar no primeiro elemento focável após a animação de abertura
       const timer = setTimeout(() => {
-        const firstFocusable = containerRef.current?.querySelector(FOCUSABLE_SELECTOR)
+        const firstFocusable = containerRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
         firstFocusable?.focus()
       }, 100)
 
@@ -39,10 +44,10 @@ export function useFocusTrap(isOpen) {
     }
   }, [isOpen])
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'Tab') return
 
-    const focusableElements = containerRef.current?.querySelectorAll(FOCUSABLE_SELECTOR)
+    const focusableElements = containerRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
     if (!focusableElements?.length) return
 
     const firstElement = focusableElements[0]

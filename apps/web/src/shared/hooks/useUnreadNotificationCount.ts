@@ -9,11 +9,22 @@ import { parseISO, getServerTimestamp } from '@utils/dateUtils'
 
 const STORAGE_KEY = 'dosiq:notif-last-seen'
 
+interface NotificationLike {
+  sent_at?: string
+}
+
+export interface UseUnreadNotificationCountResult {
+  unreadCount: number
+  markAllRead: () => void
+  lastSeen: string | null
+}
+
 /**
- * @param {Array|null} notifications - Lista retornada por useNotificationLog
- * @returns {{ unreadCount: number, markAllRead: () => void, lastSeen: string|null }}
+ * @param notifications - Lista retornada por useNotificationLog
  */
-export function useUnreadNotificationCount(notifications) {
+export function useUnreadNotificationCount(
+  notifications: NotificationLike[] | null | undefined
+): UseUnreadNotificationCountResult {
   const lastSeen = useMemo(() => {
     try {
       return localStorage.getItem(STORAGE_KEY)

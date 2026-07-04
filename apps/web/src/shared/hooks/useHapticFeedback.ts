@@ -14,6 +14,19 @@ import { debugLog } from '@shared/utils/logger'
 /**
  * Tipos de feedback háptico pré-definidos
  */
+export type HapticType = keyof typeof HAPTIC_PATTERNS
+
+interface HapticOptions {
+  pattern?: number | number[] | null
+  duration?: number
+}
+
+export interface UseHapticFeedbackResult {
+  trigger: (type: HapticType, options?: HapticOptions) => void
+  vibrate: (duration: number | number[]) => void
+  isSupported: boolean
+}
+
 const HAPTIC_PATTERNS = {
   // Feedback positivo (sucesso)
   success: {
@@ -71,7 +84,7 @@ const HAPTIC_PATTERNS = {
  * // Vibração customizada
  * vibrate(100)
  */
-export function useHapticFeedback() {
+export function useHapticFeedback(): UseHapticFeedbackResult {
   // Verificar se Vibration API é suportada
   const isSupported =
     typeof navigator !== 'undefined' &&
@@ -88,7 +101,7 @@ export function useHapticFeedback() {
    * @param {Object} options - Opções adicionais
    */
   const trigger = useCallback(
-    (type, options = {}) => {
+    (type: HapticType, options: HapticOptions = {}) => {
       // Se reduced-motion está ativo, não vibrate
       if (prefersReducedMotion) {
         return
@@ -126,7 +139,7 @@ export function useHapticFeedback() {
    * @param {number|number[]} duration - Duração em ms ou array de pattern
    */
   const vibrate = useCallback(
-    (duration) => {
+    (duration: number | number[]) => {
       if (prefersReducedMotion || !isSupported) {
         return
       }

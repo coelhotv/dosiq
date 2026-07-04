@@ -1,6 +1,21 @@
 import { useMemo } from 'react'
 import { isIOSSafari as detectIOSSafari } from '@shared/components/pwa/pwaUtils'
 
+interface NavigatorUAData {
+  mobile?: boolean
+}
+
+interface NavigatorWithExtras extends Navigator {
+  userAgentData?: NavigatorUAData
+  standalone?: boolean
+}
+
+export interface UseIsMobileWebResult {
+  isMobile: boolean
+  isStandalone: boolean
+  isIOSSafari: boolean
+}
+
 /**
  * Detecta se o usuário está em um dispositivo móvel e se o app está rodando
  * no modo PWA standalone (instalado), para exibir ou ocultar o banner "Abra no app".
@@ -12,14 +27,15 @@ import { isIOSSafari as detectIOSSafari } from '@shared/components/pwa/pwaUtils'
  *   - isIOSSafari: true no Safari iOS — onde o Smart App Banner nativo
  *     (`apple-itunes-app`) já cobre o "abra no app", então o banner custom é suprimido
  */
-export function useIsMobileWeb() {
+export function useIsMobileWeb(): UseIsMobileWebResult {
   // Memos — calculados uma única vez (UA e matchMedia não mudam durante a sessão)
   const isMobile = useMemo(() => {
     // Guard SSR/testes (Vitest em Node sem DOM completo)
     if (typeof navigator === 'undefined') return false
+    const nav = navigator as NavigatorWithExtras
     // Preferir a API moderna quando disponível (Chromium 90+)
-    if (navigator.userAgentData?.mobile !== undefined) {
-      return navigator.userAgentData.mobile
+    if (nav.userAgentData?.mobile !== undefined) {
+      return nav.userAgentData.mobile
     }
     // Fallback: regex clássica de UA
     return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
@@ -31,7 +47,7 @@ export function useIsMobileWeb() {
     // Guard SSR/testes
     if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
     // iOS Safari expõe navigator.standalone
-    if (navigator.standalone === true) return true
+    if ((navigator as NavigatorWithExtras).standalone === true) return true
     // Todos os outros browsers (Chrome, Firefox, Samsung…)
     return window.matchMedia('(display-mode: standalone)').matches
   }, [])

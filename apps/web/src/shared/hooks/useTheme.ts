@@ -12,17 +12,27 @@ import { useState, useEffect, useCallback } from 'react'
 
 const THEME_STORAGE_KEY = 'mr_theme'
 
+export type Theme = 'light' | 'dark'
+
+export interface UseThemeResult {
+  theme: Theme
+  toggleTheme: () => void
+  systemTheme: Theme
+  isDark: boolean
+  isLight: boolean
+  prefersReducedMotion: boolean
+}
+
 /**
  * Hook para gerenciar tema da aplicação
- * @returns {Object} { theme, toggleTheme, systemTheme }
  */
-export function useTheme() {
-  const [theme, setTheme] = useState(() => {
+export function useTheme(): UseThemeResult {
+  const [theme, setTheme] = useState<Theme>(() => {
     // Primeiro verifica se há preferência salva no localStorage
     const savedTheme =
       typeof window !== 'undefined' ? localStorage.getItem(THEME_STORAGE_KEY) : null
 
-    if (savedTheme) {
+    if (savedTheme === 'light' || savedTheme === 'dark') {
       return savedTheme
     }
 
@@ -35,7 +45,7 @@ export function useTheme() {
     return 'light'
   })
 
-  const [systemTheme, setSystemTheme] = useState('light')
+  const [systemTheme, setSystemTheme] = useState<Theme>('light')
 
   // Detectar mudança na preferência do sistema
   useEffect(() => {
@@ -43,7 +53,7 @@ export function useTheme() {
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
-    const handleChange = (e) => {
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
       setSystemTheme(e.matches ? 'dark' : 'light')
     }
 

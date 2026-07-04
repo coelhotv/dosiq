@@ -14,36 +14,50 @@ import { useState, useEffect, useCallback, useRef, useMemo, startTransition } fr
 import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
 import { debugLog } from '@shared/utils/logger'
 
+type Fetcher<T> = () => Promise<T>
+
 // Aliases locais para a engine — mantem chamadas internas compactas
-const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
-const invalidateCache = (pattern) => webQueryCache.invalidate(pattern)
+const cachedQuery = <T,>(key: string, fetcher: Fetcher<T>, opts: { staleTime?: number }) =>
+  webQueryCache.cachedQuery(key, fetcher, opts) as Promise<T>
+const invalidateCache = (pattern: string) => webQueryCache.invalidate(pattern)
+
+export interface UseCachedQueryOptions<T> {
+  enabled?: boolean
+  staleTime?: number
+  initialData?: T | null
+  onSuccess?: (result: T) => void
+  onError?: (err: unknown) => void
+}
+
+export interface UseCachedQueryResult<T> {
+  data: T | null | undefined
+  isLoading: boolean
+  isFetching: boolean
+  error: unknown
+  refetch: () => Promise<T | undefined>
+  refresh: () => Promise<T | undefined>
+}
 
 /**
  * Hook para executar queries com cache SWR
- *
- * @param {string} key - Chave única da query (ou null para desabilitar)
- * @param {Function} fetcher - Função que retorna Promise com os dados
- * @param {Object} options - Opções do hook
- * @param {boolean} options.enabled - Se a query está habilitada (padrão: true)
- * @param {number} options.staleTime - Tempo de stale em ms
- * @param {*} options.initialData - Dados iniciais para SSR/hidratação
- * @param {Function} options.onSuccess - Callback quando dados são carregados
- * @param {Function} options.onError - Callback quando ocorre erro
- * @returns {Object} Estado e controles da query
  */
-export function useCachedQuery(key, fetcher, options = {}) {
+export function useCachedQuery<T>(
+  key: string | null | undefined,
+  fetcher: Fetcher<T> | null | undefined,
+  options: UseCachedQueryOptions<T> = {}
+): UseCachedQueryResult<T> {
   const { enabled = true, staleTime, initialData, onSuccess, onError } = options
 
-  const [data, setData] = useState(initialData)
+  const [data, setData] = useState<T | null | undefined>(initialData)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<unknown>(null)
 
   // Refs para controle de cancelamento e duplicação
   const isMounted = useRef(true)
   const fetchCount = useRef(0)
 
-  const handleFetchSuccess = useCallback((result, fetchId) => {
+  const handleFetchSuccess = useCallback((result: T, fetchId: number) => {
     if (isMounted.current && fetchId === fetchCount.current) {
       setData(result)
       setIsLoading(false)
@@ -52,7 +66,7 @@ export function useCachedQuery(key, fetcher, options = {}) {
     }
   }, [onSuccess])
 
-  const handleFetchError = useCallback((err, fetchId) => {
+  const handleFetchError = useCallback((err: unknown, fetchId: number) => {
     if (isMounted.current && fetchId === fetchCount.current) {
       setError(err)
       setIsLoading(false)
@@ -62,7 +76,7 @@ export function useCachedQuery(key, fetcher, options = {}) {
   }, [onError])
 
   const executeQuery = useCallback(
-    async (options = {}) => {
+    async (options: { force?: boolean; background?: boolean } = {}) => {
       const { force = false, background = false } = options
       if (!key || !enabled || !fetcher) return
 
@@ -123,11 +137,41 @@ export function useCachedQuery(key, fetcher, options = {}) {
   }
 }
 
+export interface CachedQueryDescriptor<T> {
+  key: string | null | undefined
+  fetcher: Fetcher<T> | null | undefined
+  options?: { enabled?: boolean; staleTime?: number }
+}
+
+interface QueryResult<T> {
+  data: T | undefined
+  isLoading: boolean
+  isFetching: boolean
+  error: unknown
+}
+
+interface SettledQuery<T> {
+  index: number
+  data: T | undefined
+  error: unknown
+}
+
+export interface UseCachedQueriesResult<T> {
+  results: QueryResult<T>[]
+  isLoading: boolean
+  isFetching: boolean
+  hasError: boolean
+  errors: unknown[]
+  refetchAll: () => Promise<void>
+}
+
 /**
  * Utilitário para executar múltiplas queries em paralelo
  * Extraído para evitar duplicação entre fetchAll e refetchAll
  */
-async function executeParallelQueries(queries) {
+async function executeParallelQueries<T>(
+  queries: CachedQueryDescriptor<T>[]
+): Promise<SettledQuery<T>[]> {
   const promises = queries.map(async (query, index) => {
     const { key, fetcher, options = {} } = query
     const { enabled = true, staleTime } = options
@@ -149,12 +193,9 @@ async function executeParallelQueries(queries) {
 
 /**
  * Hook para múltiplas queries em paralelo com cache SWR
- *
- * @param {Array} queries - Array de { key, fetcher, options }
- * @returns {Object} Estado combinado das queries
  */
-export function useCachedQueries(queries) {
-  const [results, setResults] = useState(() =>
+export function useCachedQueries<T>(queries: CachedQueryDescriptor<T>[]): UseCachedQueriesResult<T> {
+  const [results, setResults] = useState<QueryResult<T>[]>(() =>
     queries.map(() => ({
       data: undefined,
       isLoading: false,
@@ -181,7 +222,7 @@ export function useCachedQueries(queries) {
   // We manually update queriesRef.current inside effect to access fresh query values.
   // This is intentional — queriesKey is a stable string derived from query keys.
 
-  const updateResults = useCallback((settled) => {
+  const updateResults = useCallback((settled: SettledQuery<T>[]) => {
     if (isMounted.current) {
       setResults((prev) => {
         const next = [...prev]
@@ -240,25 +281,36 @@ export function useCachedQueries(queries) {
   }
 }
 
+export interface UseCachedMutationOptions<T> {
+  invalidateKeys?: string | (string | null | undefined)[]
+  onSuccess?: (result: T) => void
+  onError?: (err: unknown) => void
+}
+
+export interface UseCachedMutationResult<T, V> {
+  mutate: (variables: V) => Promise<T>
+  reset: () => void
+  data: T | null
+  isLoading: boolean
+  error: unknown
+  isError: boolean
+}
+
 /**
  * Hook para mutações que invalidam cache após sucesso
- *
- * @param {Function} mutationFn - Função de mutação
- * @param {Object} options - Opções
- * @param {string|Array} options.invalidateKeys - Chaves a invalidar após sucesso
- * @param {Function} options.onSuccess - Callback de sucesso
- * @param {Function} options.onError - Callback de erro
- * @returns {Object} Estado e função de mutação
  */
-export function useCachedMutation(mutationFn, options = {}) {
+export function useCachedMutation<T, V = unknown>(
+  mutationFn: (variables: V) => Promise<T>,
+  options: UseCachedMutationOptions<T> = {}
+): UseCachedMutationResult<T, V> {
   const { invalidateKeys = [], onSuccess, onError } = options
 
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [data, setData] = useState(null)
+  const [error, setError] = useState<unknown>(null)
+  const [data, setData] = useState<T | null>(null)
 
   const mutate = useCallback(
-    async (variables) => {
+    async (variables: V) => {
       setIsLoading(true)
       setError(null)
 
@@ -310,7 +362,7 @@ export { generateCacheKey } from '@dosiq/shared-data'
 
 export { invalidateCache }
 
-export function prefetchCache(key, data) {
+export function prefetchCache<T>(key: string, data: T): void {
   webQueryCache.prefetch(key, data)
 }
 
