@@ -54,7 +54,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
     color: plan?.color || '',
   })
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<any>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
@@ -66,7 +66,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
   }
 
   const validate = () => {
-    const newErrors = {}
+    const newErrors: any = {}
     if (!formData.name.trim()) {
       newErrors.name = 'Nome do plano é obrigatório'
     }
@@ -136,7 +136,7 @@ export default function TreatmentPlanForm({ plan, onSave, onCancel }) {
           value={formData.description}
           onChange={handleChange}
           placeholder="Ex: Protocolo para controle de insuficiência cardíaca conforme prescrição do Dr. Silva."
-          rows="3"
+          rows={3}
         />
       </div>
 

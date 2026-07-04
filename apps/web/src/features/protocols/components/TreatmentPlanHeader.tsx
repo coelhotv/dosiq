@@ -3,6 +3,7 @@
  * S7.5.5: Adicionar botão de editar plano com ícone PencilLine
  * Exibe: dot + emoji + nome + count + alert + chevron + [edit btn se for plano real]
  */
+import type { CSSProperties } from 'react'
 import { PencilLine, Trash2 } from 'lucide-react'
 
 export default function TreatmentPlanHeader({
@@ -20,7 +21,7 @@ export default function TreatmentPlanHeader({
       <button
         className="plan-header"
         onClick={onToggle}
-        style={{ '--plan-color': group.groupColor }}
+        style={{ '--plan-color': group.groupColor } as CSSProperties}
       >
         <span className="plan-header__dot" style={{ background: group.groupColor }} />
         <span className="plan-header__emoji">{group.groupEmoji}</span>

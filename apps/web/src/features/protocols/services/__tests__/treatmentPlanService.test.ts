@@ -151,7 +151,7 @@ describe('treatmentPlanService', () => {
         }),
       })
 
-      const result = await treatmentPlanService.create(newPlan)
+      const result: any = await treatmentPlanService.create(newPlan)
       expect(result).toEqual(createdPlan)
       expect(result.user_id).toBe('test-user-id')
     })
@@ -186,7 +186,7 @@ describe('treatmentPlanService', () => {
         }),
       })
 
-      const result = await treatmentPlanService.create(newPlan)
+      const result: any = await treatmentPlanService.create(newPlan)
       expect(result.name).toBe('Plano Mínimo')
     })
   })
@@ -214,7 +214,7 @@ describe('treatmentPlanService', () => {
         }),
       })
 
-      const result = await treatmentPlanService.update('1', updates)
+      const result: any = await treatmentPlanService.update('1', updates)
       expect(result.name).toBe('Plano Atualizado')
       expect(result.description).toBe('Nova descrição')
     })
@@ -264,7 +264,7 @@ describe('treatmentPlanService', () => {
         }),
       })
 
-      const result = await treatmentPlanService.update('1', updates)
+      const result: any = await treatmentPlanService.update('1', updates)
       expect(result.description).toBe('Apenas descrição atualizada')
       expect(result.name).toBe('Plano Original')
     })

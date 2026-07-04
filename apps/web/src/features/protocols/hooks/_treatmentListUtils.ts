@@ -137,7 +137,7 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
     logs: [],
     protocols: [protocol],
     medicine: protocol.medicine, // 022: liquid-aware (converte consumo p/ ml)
-  })
+  } as any)
 
   // 012 B4 / ADR-067: número exibido = doses físicas restantes (não dias). A COR
   // (stockStatus) mede runwayDias — dias corridos, recompra é cronológica. Antes a

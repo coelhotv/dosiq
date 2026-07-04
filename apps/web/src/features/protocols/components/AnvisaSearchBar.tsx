@@ -16,7 +16,7 @@ export default function AnvisaSearchBar({
   onEditProtocol, // Novo: callback para editar protocolo existente
   onOpenWizard,
   onViewAllMedicines, // Novo: link "todos medicamentos" abaixo da busca
-}) {
+}: any) {
   const [query, setQuery] = useState('')
 
   /**
@@ -60,6 +60,8 @@ export default function AnvisaSearchBar({
         onChange={setQuery}
         onSelect={handleSelect}
         placeholder="Buscar na base ANVISA..."
+        inputId="anvisa-search-input"
+        ariaDescribedBy={undefined}
       />
       {onViewAllMedicines && (
         <button className="anvisa-search__view-all" onClick={onViewAllMedicines}>

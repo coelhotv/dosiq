@@ -5,7 +5,7 @@ import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CAT
 import { formatConcentration } from '@dosiq/core'
 
 /** Renderiza o formulário de cadastro de novo medicamento. */
-function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }) {
+function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }: any) {
   return (
     <>
       <label className="wizard__label">
@@ -15,6 +15,8 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
           onChange={(value) => updateMedicine('name', value)}
           onSelect={handleMedicineSelect}
           placeholder="Ex: Losartana ou busque na base ANVISA..."
+          inputId="wizard-medicine-name"
+          ariaDescribedBy={undefined}
         />
       </label>
       <label className="wizard__label">
@@ -31,6 +33,8 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
           onChange={(value) => updateMedicine('laboratory', value)}
           onSelect={handleLaboratorySelect}
           placeholder="Ex: EMS, Medley..."
+          inputId="wizard-laboratory-name"
+          ariaDescribedBy={undefined}
         />
       </label>
       {medicineData.active_ingredient && (
@@ -164,7 +168,7 @@ export default function TreatmentWizardStep1({
   onCancel,
   goNext,
   isMedicineValid,
-}) {
+}: any) {
   return (
     <div className="wizard__step">
       <h3 className="wizard__title">Medicamento</h3>

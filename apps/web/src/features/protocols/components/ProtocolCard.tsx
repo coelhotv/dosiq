@@ -3,6 +3,7 @@ import Card from '@shared/components/ui/Card'
 import Button from '@shared/components/ui/Button'
 
 import StreakBadge from '@adherence/components/StreakBadge'
+const StreakBadgeAny: any = StreakBadge
 
 import Modal from '@shared/components/ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
@@ -44,7 +45,7 @@ function _renderProtocolStatusBadge({ active, streak }) {
   return (
     <div className="protocol-header-badges">
       {streak > 0 && (
-        <StreakBadge streak={streak} size="sm" showLabel={false} />
+        <StreakBadgeAny streak={streak} size="sm" showLabel={false} />
       )}
       <div className={`protocol-status ${active ? 'active' : 'inactive'}`}>
         {active ? '✅ Ativo' : '⏸️ Pausado'}

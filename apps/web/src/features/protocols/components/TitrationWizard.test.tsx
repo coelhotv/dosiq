@@ -136,9 +136,9 @@ describe('TitrationWizard', () => {
     fireEvent.click(screen.getByText('✓ Gravar Etapa'))
 
     // Note should be reset but days and dosage should remain
-    expect(daysInput.value).toBe('7')
-    expect(dosageInput.value).toBe('1')
-    expect(noteInput.value).toBe('')
+    expect((daysInput as HTMLInputElement).value).toBe('7')
+    expect((dosageInput as HTMLInputElement).value).toBe('1')
+    expect((noteInput as HTMLInputElement).value).toBe('')
   })
 
   it('syncs with schedule prop changes', () => {

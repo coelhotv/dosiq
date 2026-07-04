@@ -27,7 +27,7 @@ export default function ProtocolFormBasicSection({
               onChange={handleChange}
               className={errors.medicine_id ? 'error' : ''}
               disabled={!!protocol} // Não permite mudar medicamento ao editar
-              aria-describedby={getFieldDescribedBy('medicine_id')}
+              aria-describedby={getFieldDescribedBy('medicine_id', errors)}
               aria-invalid={Boolean(errors.medicine_id)}
             >
               <option value="">Selecione um medicamento</option>
@@ -89,7 +89,7 @@ export default function ProtocolFormBasicSection({
             className={errors.name ? 'error' : ''}
             placeholder="Ex: Paracetamol para dor"
             autoFocus={!protocol}
-            aria-describedby={getFieldDescribedBy('name')}
+            aria-describedby={getFieldDescribedBy('name', errors)}
             aria-invalid={Boolean(errors.name)}
           />
         </ShakeEffect>

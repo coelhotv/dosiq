@@ -35,7 +35,7 @@ function FrequencySelector({ formData, handleChange, shakeFields, errors }) {
           value={formData.frequency}
           onChange={handleChange}
           className={errors.frequency ? 'error' : ''}
-          aria-describedby={getFieldDescribedBy('frequency')}
+          aria-describedby={getFieldDescribedBy('frequency', errors)}
           aria-invalid={Boolean(errors.frequency)}
         >
           <option value="">Selecione a frequência</option>
@@ -86,7 +86,7 @@ function DosagePerIntakeInput({
           onChange={handleChange}
           className={errors.dosage_per_intake ? 'error' : ''}
           placeholder="1"
-          aria-describedby={getFieldDescribedBy('dosage_per_intake')}
+          aria-describedby={getFieldDescribedBy('dosage_per_intake', errors)}
           aria-invalid={Boolean(errors.dosage_per_intake)}
         />
       </ShakeEffect>
@@ -212,7 +212,7 @@ function TimeScheduleInput({
             value={timeInput}
             onChange={(e) => setTimeInput(e.target.value)}
             className={errors.time_schedule ? 'error' : ''}
-            aria-describedby={getFieldDescribedBy('time_schedule')}
+            aria-describedby={getFieldDescribedBy('time_schedule', errors)}
             aria-invalid={Boolean(errors.time_schedule)}
           />
           <Button type="button" variant="outline" size="sm" onClick={addTime}>

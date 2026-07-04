@@ -18,7 +18,7 @@ export default function TreatmentWizard({
   onCancel,
   preselectedMedicine,
   treatmentPlanId,
-}) {
+}: any) {
   const { refresh, medicines } = useDashboard()
 
   const state = useTreatmentWizardState({

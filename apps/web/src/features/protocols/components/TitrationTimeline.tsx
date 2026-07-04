@@ -22,7 +22,7 @@ import './TitrationTimeline.css'
  * @param {boolean} [props.compact=false] - Modo compacto (para cards)
  * @param {function} [props.onStepClick] - Callback ao clicar em uma etapa
  */
-export default function TitrationTimeline({ protocol, compact = false, onStepClick }) {
+export default function TitrationTimeline({ protocol, compact = false, onStepClick = undefined }) {
   const titrationData = useMemo(() => {
     if (!protocol?.titration_schedule?.length) {
       return null

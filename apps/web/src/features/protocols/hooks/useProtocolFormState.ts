@@ -17,7 +17,7 @@ export function useProtocolFormState({
   onSave,
   onSuccess,
   autoAdvance,
-}) {
+}: any) {
   const [formData, setFormData] = useState(() => {
     const data = getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
     return buildProtocolFormInitialData(protocol, data, preselectedMedicine, isSimpleMode, getTitrationInitialDosage)
@@ -26,7 +26,7 @@ export function useProtocolFormState({
   const [enableTitration, setEnableTitration] = useState(getTitrationEnabledStatus(protocol))
 
   const [timeInput, setTimeInput] = useState('')
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<any>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [shakeFields, setShakeFields] = useState({})
   const [saveSuccess, setSaveSuccess] = useState(false)
