@@ -101,8 +101,11 @@ export function createBiomarkerRepository({ client, getUserId }: CreateBiomarker
       // measured_at ausente → coluna usa DEFAULT now() no banco (evita new Date() no core, R-020).
       // Zod aceita string ISO ou Date; a coluna é timestamptz (string) — normaliza antes do insert.
       const { measured_at, ...restRow } = validation.data
+      // `value` explícito: obrigatório no schema, mas a inferência Zod sob programas
+      // non-strict (api/tsconfig) o marca opcional e quebra o tipo Insert gerado.
       const row = {
         ...restRow,
+        value: validation.data.value,
         ...(measured_at != null
           ? { measured_at: measured_at instanceof Date ? measured_at.toISOString() : measured_at }
           : {}),

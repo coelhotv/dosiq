@@ -28,3 +28,23 @@ if [ -n "$A_ERRORS" ]; then
   exit 1
 fi
 echo "✅ fonte nível A strict-limpa"
+
+# Cross-program (lição gate F3): "strict-limpo" ≠ "limpo em todo programa que
+# inclui o core". api/ e server/ compilam o core transitivamente sob flags
+# non-strict (base) — a inferência muda (ex.: opcionalidade Zod) e revela erros
+# invisíveis ao strict island. Erro de FONTE aqui é regressão observável no
+# build/runtime Vercel — bloqueante. Testes seguem como dívida contada.
+# Adicionar tsconfigs consumidores conforme F4/F5 os criarem.
+CONSUMERS="api/tsconfig.json server/tsconfig.json"
+for P in $CONSUMERS; do
+  [ -f "$P" ] || continue
+  P_OUT=$(npx tsc -p "$P" --noEmit 2>&1 | grep -E ': error TS' || true)
+  P_SRC=$(printf '%s\n' "$P_OUT" | grep -vE "$TESTS" || true)
+  P_TEST_COUNT=$(printf '%s\n' "$P_OUT" | grep -cE "$TESTS" || true)
+  if [ -n "$P_SRC" ]; then
+    echo "❌ CROSS-PROGRAM QUEBRADO — erros de fonte no programa $P:"
+    printf '%s\n' "$P_SRC"
+    exit 1
+  fi
+  echo "✅ $P fonte limpa (dívida em testes: ${P_TEST_COUNT})"
+done
