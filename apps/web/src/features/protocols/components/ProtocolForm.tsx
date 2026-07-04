@@ -110,7 +110,7 @@ export default function ProtocolForm({
   title,
   showTitration = true,
   showTreatmentPlan = true,
-}) {
+}: any) {
   const isSimpleMode = mode === 'simple'
 
   const {

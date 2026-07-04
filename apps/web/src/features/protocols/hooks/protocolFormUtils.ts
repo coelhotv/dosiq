@@ -132,7 +132,7 @@ function _triggerShakeAnimation(newErrors, setShakeFields) {
 }
 
 export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
-  const newErrors = {}
+  const newErrors: any = {}
 
   _validateMedicineId(formData.medicine_id, newErrors)
   _validateName(formData.name, newErrors)

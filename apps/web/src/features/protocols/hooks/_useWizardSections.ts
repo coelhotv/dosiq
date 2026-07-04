@@ -146,7 +146,7 @@ export function useWizardPlan(treatmentPlanId) {
   useEffect(() => {
     treatmentPlanService
       .getAll()
-      .then((plans) => setAvailablePlans(plans || []))
+      .then((plans: any) => setAvailablePlans(plans || []))
       .catch(() => setAvailablePlans([]))
   }, [])
 

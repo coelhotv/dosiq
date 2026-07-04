@@ -11,10 +11,12 @@ import {
 } from './_useWizardSections'
 
 export function useTreatmentWizardState({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onComplete,
   preselectedMedicine,
   treatmentPlanId,
   refresh,
-}) {
+}: any) {
   // Sempre inicia no passo 1: medicamentos vindos da busca ANVISA (preselectedMedicine)
   // são novos (não estão na tabela medicines) e precisam dos campos do passo 1 —
   // concentração, unidade de dosagem, forma de apresentação e TTL (injetáveis) — que

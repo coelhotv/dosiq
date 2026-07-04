@@ -34,7 +34,7 @@ async function resolveMedicine(existing, data) {
 async function resolvePlan(mode, selectedId, newName, newEmoji) {
   if (mode === 'existing' && selectedId) return selectedId
   if (mode === 'new' && newName.trim()) {
-    const newPlan = await treatmentPlanService.create({
+    const newPlan: any = await treatmentPlanService.create({
       name: newName.trim(),
       emoji: newEmoji || '📋',
     })

@@ -251,7 +251,7 @@ describe('protocolService', () => {
         }),
       })
 
-      const result = await protocolService.create(protocolWithTitration)
+      const result: any = await protocolService.create(protocolWithTitration)
       expect(result.titration_schedule).toHaveLength(2)
     })
   })
@@ -274,7 +274,7 @@ describe('protocolService', () => {
         }),
       })
 
-      const result = await protocolService.update('1', updates)
+      const result: any = await protocolService.update('1', updates)
       expect(result.name).toBe('Protocolo Atualizado')
     })
 
@@ -379,7 +379,7 @@ describe('protocolService', () => {
         }),
       })
 
-      const result = await protocolService.advanceTitrationStage('1')
+      const result: any = await protocolService.advanceTitrationStage('1')
       expect(result.current_stage_index).toBe(1)
     })
 
@@ -419,7 +419,7 @@ describe('protocolService', () => {
         }),
       })
 
-      const result = await protocolService.advanceTitrationStage('1')
+      const result: any = await protocolService.advanceTitrationStage('1')
       expect(result.titration_status).toBe('alvo_atingido')
     })
 

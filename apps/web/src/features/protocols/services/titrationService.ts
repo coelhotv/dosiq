@@ -96,7 +96,7 @@ export function calculateTitrationSteps(protocol) {
   })
 
   // Calcular dias restantes para próxima etapa
-  const daysUntilNext = getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt)
+  const daysUntilNext = getDaysUntilNextStep(currentStageIndex, steps)
 
   // Calcular progresso geral
   const progressPercent = calculateOverallProgress(currentStageIndex, schedule, stageStartedAt)
@@ -120,8 +120,7 @@ export function calculateTitrationSteps(protocol) {
  * @param {Date} stageStartedAt - Data de início da etapa atual
  * @returns {number} Dias restantes (0 se for última etapa)
  */
-/* eslint-disable-next-line no-unused-vars */
-export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
+export function getDaysUntilNextStep(currentStageIndex, steps) {
   // Se for a última etapa, retorna 0
   if (currentStageIndex >= steps.length - 1) {
     return 0
@@ -151,7 +150,7 @@ export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
  * @param {Date} stageStartedAt - Data de início da etapa atual
  * @returns {number} Percentual de progresso (0-100)
  */
-/* eslint-disable-next-line no-unused-vars */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getStepProgress(currentStageIndex, steps, stageStartedAt) {
   const currentStep = steps[currentStageIndex]
   if (!currentStep) return 0
@@ -212,7 +211,7 @@ function calculateOverallProgress(currentStageIndex, schedule, stageStartedAt) {
  * @param {number} [dosagePerPill] - Dosagem por comprimido (para cálculo de mg)
  * @returns {string} String formatada da dose
  */
-export function formatDose(dose, unit, dosagePerPill) {
+export function formatDose(dose, unit, dosagePerPill?) {
   // Se temos dosagePerPill, calcular mg totais
   if (dosagePerPill && unit === 'mg') {
     const totalMg = dose * dosagePerPill
