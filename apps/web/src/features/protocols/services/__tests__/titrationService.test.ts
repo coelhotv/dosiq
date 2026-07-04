@@ -92,7 +92,7 @@ describe('titrationService', () => {
   describe('getDaysUntilNextStep', () => {
     it('should return 0 for last step', () => {
       const steps = [{ endDate: new Date('2024-01-07') }, { endDate: new Date('2024-01-14') }]
-      const result = getDaysUntilNextStep(1, steps, new Date('2024-01-01'))
+      const result = getDaysUntilNextStep(1, steps)
       expect(result).toBe(0)
     })
 
@@ -106,13 +106,13 @@ describe('titrationService', () => {
         { endDate: new Date(today.getTime() + 86400000 * 10) },
       ]
 
-      const result = getDaysUntilNextStep(0, steps, today)
+      const result = getDaysUntilNextStep(0, steps)
       expect(result).toBeGreaterThanOrEqual(4)
       expect(result).toBeLessThanOrEqual(6)
     })
 
     it('should return 0 when no current step', () => {
-      const result = getDaysUntilNextStep(0, [], new Date())
+      const result = getDaysUntilNextStep(0, [])
       expect(result).toBe(0)
     })
   })

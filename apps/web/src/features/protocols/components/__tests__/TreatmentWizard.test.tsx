@@ -173,7 +173,7 @@ describe('TreatmentWizard', () => {
   })
 
   it('mostra toggle e select quando ha medicamentos cadastrados', () => {
-    ;(useDashboard as any).mockReturnValue({
+    vi.mocked(useDashboard).mockReturnValue({
       refresh: vi.fn(),
       medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
     })
@@ -185,7 +185,7 @@ describe('TreatmentWizard', () => {
   })
 
   it('modo existente mostra select de medicamentos', () => {
-    ;(useDashboard as any).mockReturnValue({
+    vi.mocked(useDashboard).mockReturnValue({
       refresh: vi.fn(),
       medicines: [{ id: 'm1', name: 'Losartana', dosage_per_pill: 50, dosage_unit: 'mg' }],
     })

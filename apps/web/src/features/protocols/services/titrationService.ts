@@ -96,7 +96,7 @@ export function calculateTitrationSteps(protocol) {
   })
 
   // Calcular dias restantes para próxima etapa
-  const daysUntilNext = getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt)
+  const daysUntilNext = getDaysUntilNextStep(currentStageIndex, steps)
 
   // Calcular progresso geral
   const progressPercent = calculateOverallProgress(currentStageIndex, schedule, stageStartedAt)
@@ -120,8 +120,7 @@ export function calculateTitrationSteps(protocol) {
  * @param {Date} stageStartedAt - Data de início da etapa atual
  * @returns {number} Dias restantes (0 se for última etapa)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getDaysUntilNextStep(currentStageIndex, steps, stageStartedAt) {
+export function getDaysUntilNextStep(currentStageIndex, steps) {
   // Se for a última etapa, retorna 0
   if (currentStageIndex >= steps.length - 1) {
     return 0
