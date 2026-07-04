@@ -12,7 +12,7 @@ const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 
 const logger = createLogger('DoseActions');
 // Mesmo client service_role do bot; o snap/markTaken escopam por protocol_id (AP-A03).
-const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
 
 /**
  * Âncora de log → instância (S2.6/ADR-048, best-effort). Snap por tolerância (escopo
@@ -75,7 +75,7 @@ async function resolveProtocolMedicine(protocolId) {
     .single();
 
   if (error || !protocol) throw new Error('Protocolo não encontrado');
-  return { medicineId: protocol.medicine_id, medicineName: protocol.medicine.name };
+  return { medicineId: protocol.medicine_id, medicineName: (protocol.medicine as any).name };
 }
 
 async function createLogAndConsumeStock(userId, protocolId, medicineId, quantity) {
@@ -128,7 +128,7 @@ async function calculateAdherenceAndStockWarnings(userId, medicineId) {
     .eq('user_id', userId)
     .eq('active', true);
 
-  const dailyUsage = activeProtocols?.reduce((sum, p) => sum + ((p.time_schedule?.length || 0) * (p.dosage_per_intake || 0)), 0) || 0;
+  const dailyUsage = activeProtocols?.reduce((sum, p) => sum + (((p.time_schedule as any[])?.length || 0) * (p.dosage_per_intake || 0)), 0) || 0;
   const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
   
   // Streak ← dose_instances (S3.7): dias consecutivos ≥80% por status, não infere sobre logs.
@@ -228,7 +228,7 @@ async function handleSkipDose(bot, callbackQuery) {
       return;
     }
 
-    const medicineName = protocol.medicine?.name || 'Medicamento';
+    const medicineName = (protocol.medicine as any)?.name || 'Medicamento';
     
     // Store original message state for potential restoration
     const originalState = {
@@ -380,7 +380,7 @@ async function handleSnoozeDose(bot, callbackQuery) {
       return;
     }
 
-    const medicineName = protocol.medicine?.name || 'Medicamento';
+    const medicineName = (protocol.medicine as any)?.name || 'Medicamento';
 
     // Busca ocorrência pendente ou perdida dentro da janela de tolerância para adiar
     const nowIso = getServerTimestamp();
@@ -442,7 +442,7 @@ async function handleCancelSkipDose(bot, callbackQuery) {
   const chatId = message.chat.id;
   
   // Parse: cancel_skip_:{protocolId}
-  // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, protocolId] = data.split(':');
   
   try {
@@ -546,7 +546,7 @@ async function handleTakePlan(bot, callbackQuery) {
 
     // Filter: horário matches + planId starts with
     const validProtocols = (allActive || []).filter(p =>
-      (p.time_schedule || []).includes(hhmm) &&
+      (p.time_schedule as any[] || []).includes(hhmm) &&
       p.treatment_plan_id?.startsWith(planIdShort)
     );
     console.log(`[handleTakePlan] validProtocols: ${validProtocols.length}`);
@@ -557,7 +557,7 @@ async function handleTakePlan(bot, callbackQuery) {
       return;
     }
 
-    const planName = validProtocols[0].treatment_plan?.name || 'Plano';
+    const planName = (validProtocols[0].treatment_plan as any)?.name || 'Plano';
 
     const logsToSave = validProtocols.map((p) => ({
       protocol_id: p.id,
@@ -609,13 +609,13 @@ async function handleTakeList(bot, callbackQuery) {
     if (protocolsError) throw protocolsError;
 
     const dosesNow = (allActive || [])
-      .filter(p => (p.time_schedule || []).includes(hhmm))
+      .filter(p => (p.time_schedule as any[] || []).includes(hhmm))
       .map(p => ({
         protocolId: p.id,
         protocolName: p.name,
-        medicineName: p.medicine?.name || 'Medicamento',
+        medicineName: (p.medicine as any)?.name || 'Medicamento',
         treatmentPlanId: p.treatment_plan_id ?? null,
-        treatmentPlanName: p.treatment_plan?.name ?? null,
+        treatmentPlanName: (p.treatment_plan as any)?.name ?? null,
         dosagePerIntake: p.dosage_per_intake ?? 1,
         medicineId: p.medicine_id,
       }));

@@ -51,16 +51,16 @@ describe('handleTakeList', () => {
     
     vi.mocked(getUserIdByChatId).mockResolvedValue(userId)
     
-    vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: [], error: null }))
+    vi.mocked((supabase as any).then).mockImplementation((resolve) => resolve({ data: [], error: null }));
 
-    partitionDoses.mockReturnValue([
+    (partitionDoses as any).mockReturnValue([
       { kind: 'misc', doses: [
         { protocolId: 'p1', medicineId: 'm1', dosagePerIntake: 1 },
         { protocolId: 'p2', medicineId: 'm2', dosagePerIntake: 1 }
       ]}
-    ])
+    ]);
 
-    medicineLogService.createMany.mockResolvedValue({ success: true, count: 2 })
+    (medicineLogService.createMany as any).mockResolvedValue({ success: true, count: 2 });
 
     await handleCallbacks(mockBot)
     const callbackHandler = mockBot.on.mock.calls.find(c => c[0] === 'callback_query')[1]

@@ -30,7 +30,7 @@ let calculateDelay
 let sleep
 
 beforeAll(async () => {
-  const mod = await import('../../../../server/utils/retryManager.js')
+  const mod = await import('../retryManager')
   DEFAULT_RETRY_CONFIG = mod.DEFAULT_RETRY_CONFIG
   sendWithRetry = mod.sendWithRetry
   isRetryableError = mod.isRetryableError
@@ -55,25 +55,25 @@ describe('RetryManager', () => {
 
   describe('isRetryableError', () => {
     it('deve identificar erros de rede como retryable', () => {
-      const networkError = new Error('ETIMEDOUT')
+      const networkError = new Error('ETIMEDOUT');
       expect(isRetryableError(networkError)).toBe(true)
     })
 
     it('deve identificar erro 429 como retryable', () => {
-      const rateLimitError = new Error('Rate limited')
-      rateLimitError.response = { status: 429 }
+      const rateLimitError = new Error('Rate limited');
+      (rateLimitError as any).response = { status: 429 }
       expect(isRetryableError(rateLimitError)).toBe(true)
     })
 
     it('deve identificar erro 5xx como retryable', () => {
-      const serverError = new Error('Internal server error')
-      serverError.response = { status: 500 }
+      const serverError = new Error('Internal server error');
+      (serverError as any).response = { status: 500 }
       expect(isRetryableError(serverError)).toBe(true)
     })
 
     it('não deve identificar erros de cliente como retryable', () => {
-      const clientError = new Error('Bad request')
-      clientError.response = { status: 400 }
+      const clientError = new Error('Bad request');
+      (clientError as any).response = { status: 400 }
       expect(isRetryableError(clientError)).toBe(false)
     })
   })
@@ -118,7 +118,7 @@ describe('RetryManager', () => {
     })
 
     it('deve fazer retry em erro de rede', async () => {
-      const networkError = new Error('ETIMEDOUT')
+      const networkError = new Error('ETIMEDOUT');
       const mockOperation = vi
         .fn()
         .mockRejectedValueOnce(networkError)
@@ -137,7 +137,7 @@ describe('RetryManager', () => {
     })
 
     it('deve falhar após todas as tentativas', async () => {
-      const networkError = new Error('ETIMEDOUT')
+      const networkError = new Error('ETIMEDOUT');
       const mockOperation = vi.fn().mockRejectedValue(networkError)
 
       const result = await sendWithRetry(
@@ -154,8 +154,8 @@ describe('RetryManager', () => {
     })
 
     it('deve não fazer retry para erros não recuperáveis', async () => {
-      const clientError = new Error('Bad request')
-      clientError.response = { status: 400 }
+      const clientError = new Error('Bad request');
+      (clientError as any).response = { status: 400 }
       const mockOperation = vi.fn().mockRejectedValue(clientError)
 
       const result = await sendWithRetry(mockOperation, DEFAULT_RETRY_CONFIG, {

@@ -24,20 +24,20 @@ function scheduleTask(name, schedule, task) {
   logger.info(`Scheduled task registered: ${name}`, { schedule });
 }
 
-export function startScheduler(bot, options = {}) {
+export function startScheduler(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   // Main notification scheduler - runs every minute
   scheduleTask('checkReminders', '* * * * *', () => checkReminders(bot, options));
   console.log('✅ Notificador de lembretes iniciado');
 }
 
-export function startDailyDigest(bot, options = {}) {
+export function startDailyDigest(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   // Bug B-cron: digest precisa rodar a cada minuto para honrar o digest_time por usuário
   // A função runDailyDigestViaDispatcher filtra internamente quem está no horário correto
   scheduleTask('runDailyDigest', '* * * * *', () => runDailyDigest(bot, options));
   console.log('✅ Resumo diário configurado (verifica a cada minuto, envia no horário do usuário)');
 }
 
-export function startPrescriptionAlerts(bot, options = {}) {
+export function startPrescriptionAlerts(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   // Run once daily at 8h to check for prescription alerts
   scheduleTask('checkPrescriptionAlerts', '0 8 * * *', () => checkPrescriptionAlerts(bot, options));
   console.log('✅ Alertas de prescrição configurados (diariamente às 8h)');

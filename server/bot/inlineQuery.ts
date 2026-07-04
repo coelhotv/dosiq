@@ -28,7 +28,7 @@ export function handleInlineQueries(bot) {
         // Calculate daily usage
         const activeProtocols = (medicine.protocols || []).filter(p => p.active);
         const dailyUsage = activeProtocols.reduce((sum, p) => {
-          const timesPerDay = p.time_schedule?.length || 0;
+          const timesPerDay = (p.time_schedule as any[])?.length || 0;
           const dosagePerIntake = p.dosage_per_intake || 0;
           return sum + (timesPerDay * dosagePerIntake);
         }, 0);

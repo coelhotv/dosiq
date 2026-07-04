@@ -11,7 +11,7 @@ globalThis.__mockWeekday = 0;
 globalThis.__mockDayOfMonth = 1;
 
 vi.mock('../../utils/dateUtils.js', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal() as object;
   return {
     ...actual,
     getCurrentTimeInTimezone: vi.fn(() => {

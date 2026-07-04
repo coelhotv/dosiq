@@ -263,7 +263,7 @@ export async function getDLQStats() {
     };
     
     data.forEach(item => {
-      const count = parseInt(item.count, 10) || 0;
+      const count = parseInt(String(item.count), 10) || 0;
       const status = item.status;
       
       // Basic counts

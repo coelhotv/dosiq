@@ -104,7 +104,7 @@ export async function setSession(chatId, context) {
         context,
         expires_at: expiresAt,
         updated_at: getServerTimestamp()
-      }, {
+      } as any, {
         onConflict: 'chat_id'
       });
 
@@ -146,7 +146,7 @@ export async function getSession(chatId) {
     const { data, error } = await supabase
       .from('bot_sessions')
       .select('context, expires_at')
-      .eq('chat_id', chatIdStr)
+      .eq('chat_id', chatIdStr as any)
       .single();
 
     if (error) {
@@ -197,7 +197,7 @@ export async function clearSession(chatId) {
     const { error } = await supabase
       .from('bot_sessions')
       .delete()
-      .eq('chat_id', chatIdStr);
+      .eq('chat_id', chatIdStr as any);
 
     if (error) {
       console.error(`[SessionManager] Error clearing session for chat ${chatId}:`, error);

@@ -1,4 +1,6 @@
-import logger from '../logger.js';
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('commandWrapper');
 
 /**
  * Standard error messages for bot commands
@@ -19,7 +21,7 @@ export const ERROR_MESSAGES = {
  * @param {boolean} options.logUsage - Whether to log command usage (default: true)
  * @returns {Function} Wrapped command handler
  */
-export function commandWrapper(commandName, handler, options = {}) {
+export function commandWrapper(commandName: string, handler: (...args: any[]) => any, options: { logUsage?: boolean } = {}) {
   const { logUsage = true } = options;
   
   return async (bot, msg, ...args) => {

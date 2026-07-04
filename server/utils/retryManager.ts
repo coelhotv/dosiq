@@ -140,7 +140,7 @@ function handleRetryError(err, attempt, maxRetries, config, correlationId, conte
   return { shouldRetry: true, delay };
 }
 
-export async function sendWithRetry(fn, config = DEFAULT_RETRY_CONFIG, context = {}) {
+export async function sendWithRetry(fn: (...args: any[]) => any, config: typeof DEFAULT_RETRY_CONFIG = DEFAULT_RETRY_CONFIG, context: { correlationId?: string; operation?: string } = {}) {
   const { maxRetries } = config;
   const correlationId = context.correlationId || generateCorrelationId();
 

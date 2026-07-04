@@ -41,7 +41,7 @@ const BATCH_SIZE = 100
  * @returns {Promise<{processed: number, generated: number}>}
  */
 export async function generateDoseInstances() {
-  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
   // Limiar: protocolos cujo hwm cai dentro da janela de renovação a partir de agora.
   const renewalCutoffIso = parseTimestamp(Date.now() + RENEWAL_THRESHOLD_DAYS * MS_PER_DAY).toISOString()
   let processed = 0
@@ -64,7 +64,7 @@ export async function generateDoseInstances() {
 
     // F4.3f.1: resolve o tz do DONO de cada protocolo numa query por lote (evita N+1) —
     // a renovação materializa `scheduled_for` no fuso do usuário; ausente → SP.
-    const tzMap = await resolveUserTzMap(supabase, protocols.map((p) => p.user_id))
+    const tzMap = await resolveUserTzMap(supabase as any, protocols.map((p) => p.user_id)) // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
 
     for (const protocol of protocols) {
       try {
@@ -117,7 +117,7 @@ export async function cleanupPausedProtocols() {
   }
 
   // DELETE único em lote (evita N+1): mesma regra inviolável (só pending + futuro).
-  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
   await doseInstanceRepo.wipeFuturePendingForProtocols(pausedIds)
 
   logger.info('Limpeza de pausados concluída', { cleaned: pausedIds.length })
@@ -135,7 +135,7 @@ export async function cleanupPausedProtocols() {
  * @returns {Promise<{missed: number}>}
  */
 export async function sweepMissedInstances() {
-  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+  const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
   const missed = await doseInstanceRepo.markMissedDueInstances({})
   logger.info('Sweep de missed concluído', { missed })
   return { missed }

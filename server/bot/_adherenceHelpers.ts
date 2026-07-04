@@ -10,7 +10,7 @@ const ADHERENCE_REPORT_TIME = '09:00';
 
 // Adesão do bot ← dose_instances (S3.7/ADR-054): % = taken/(taken+missed), skipped_* neutro.
 // countByStatus é head-count server-side (R-249 OOM-safe, imune a truncamento PostgREST AP-186).
-const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
 
 // % de adesão a partir das contagens por status (clamp 0-100, AP-191). denom vazio → 0.
 function _adherencePct(taken, missed) {

@@ -15,7 +15,7 @@ const adminChatId = process.env.ADMIN_CHAT_ID;
  * @param {string} authHeader - Header de autorização com Bearer token
  * @returns {Promise<{authorized: boolean, error?: string, userId?: string}>}
  */
-export async function verifyAdminAccess(authHeader) {
+export async function verifyAdminAccess(authHeader: string | undefined) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { authorized: false, error: 'Token de autorização não fornecido' };
   }
@@ -26,7 +26,7 @@ export async function verifyAdminAccess(authHeader) {
     global: {
       headers: { Authorization: `Bearer ${token}` }
     },
-    realtime: { transport: ws },
+    realtime: { transport: ws as any },
   });
 
   try {

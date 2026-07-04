@@ -11,7 +11,7 @@
  * @param {Date|string} [date] - Data base (default: agora)
  * @returns {Date}
  */
-export function getSaoPauloTime(date = new Date()) {
+export function getSaoPauloTime(date: Date | string = new Date()) {
   const d = typeof date === 'string' ? new Date(date) : date;
   
   // Se a data de entrada for inválida, retorna a data atual como fallback seguro
@@ -102,7 +102,7 @@ export function parseTimestamp(ms) {
  * @param {number} days 
  * @returns {Date}
  */
-export function addDays(date, days) {
+export function addDays(date: Date | string | number, days: number = 0) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;

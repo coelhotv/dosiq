@@ -18,7 +18,7 @@ export async function resolveUser(chatId) {
  * @param {boolean} options.requiresAuth - Whether user must be linked (default: true)
  * @returns {Function} Wrapped handler
  */
-export function withUser(handler, options = {}) {
+export function withUser(handler: (...args: any[]) => any, options: { requiresAuth?: boolean } = {}) {
   const { requiresAuth = true } = options;
   
   return async (bot, msg, ...args) => {
@@ -58,7 +58,7 @@ export function withUser(handler, options = {}) {
  * @param {boolean} options.requiresAuth - Whether user must be linked (default: true)
  * @returns {Function} Wrapped handler
  */
-export function withUserCallback(handler, options = {}) {
+export function withUserCallback(handler: (...args: any[]) => any, options: { requiresAuth?: boolean } = {}) {
   const { requiresAuth = true } = options;
   
   return async (bot, callbackQuery) => {

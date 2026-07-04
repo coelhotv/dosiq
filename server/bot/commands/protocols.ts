@@ -25,11 +25,11 @@ export async function handlePausar(bot, msg, match) {
       const protocolMap = protocols.map((p, index) => ({
         index,
         protocolId: p.id,
-        medicineName: p.medicine.name
+        medicineName: (p.medicine as any).name
       }));
       
       const keyboard = protocols.map((p, index) => ([
-        { text: `Pausar ${p.medicine.name}`, callback_data: `pause_prot:${index}` }
+        { text: `Pausar ${(p.medicine as any).name}`, callback_data: `pause_prot:${index}` }
       ]));
       
       setSession(chatId, { protocolMap });
@@ -72,11 +72,11 @@ export async function handleRetomar(bot, msg, match) {
       const protocolMap = protocols.map((p, index) => ({
         index,
         protocolId: p.id,
-        medicineName: p.medicine.name
+        medicineName: (p.medicine as any).name
       }));
       
       const keyboard = protocols.map((p, index) => ([
-        { text: `Retomar ${p.medicine.name}`, callback_data: `resume_prot:${index}` }
+        { text: `Retomar ${(p.medicine as any).name}`, callback_data: `resume_prot:${index}` }
       ]));
       
       setSession(chatId, { protocolMap });
@@ -126,7 +126,7 @@ async function toggleProtocol(bot, chatId, userId, medicineName, active) {
     }
 
     const statusStr = active ? 'retomado' : 'pausado';
-    const escapedMedName = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
+    const escapedMedName = escapeMarkdownV2((protocol.medicine as any)?.name || 'Medicamento');
     await bot.sendMessage(chatId, `✅ Protocolo de *${escapedMedName}* foi ${statusStr}\\.`, { parse_mode: 'MarkdownV2' });
 
   } catch (err) {
@@ -161,7 +161,7 @@ export async function handleProtocolCallback(bot, callbackQuery) {
     if (error) throw error;
 
     const statusStr = active ? 'retomado' : 'pausado';
-    const escapedMedName = escapeMarkdownV2(protocol.medicine?.name || 'Medicamento');
+    const escapedMedName = escapeMarkdownV2((protocol.medicine as any)?.name || 'Medicamento');
     await bot.editMessageText(`✅ Protocolo de *${escapedMedName}* foi ${statusStr}\\.`, {
       chat_id: chatId,
       message_id: message.message_id,

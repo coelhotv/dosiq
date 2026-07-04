@@ -4,18 +4,21 @@ import { getServerTimestamp } from '../utils/dateUtils.js';
 const logger = createLogger('HealthCheck');
 
 export class HealthCheck {
+  checks: Map<string, (...args: any[]) => any>;
+  lastCheck: any;
+
   constructor() {
     this.checks = new Map();
     this.lastCheck = null;
   }
 
-  register(name, checkFn) {
+  register(name: string, checkFn: (...args: any[]) => any) {
     this.checks.set(name, checkFn);
     logger.info(`Health check registered: ${name}`);
   }
 
   async runAll() {
-    const results = {
+    const results: { timestamp: string; overall: string; checks: Record<string, any> } = {
       timestamp: getServerTimestamp(),
       overall: 'healthy',
       checks: {}

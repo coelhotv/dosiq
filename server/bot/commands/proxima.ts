@@ -25,7 +25,7 @@ export async function handleProxima(bot, msg) {
     // Collect all upcoming doses
     const upcomingDoses = [];
     protocols.forEach(protocol => {
-      protocol.time_schedule.forEach(time => {
+      (protocol.time_schedule as any[]).forEach(time => {
         if (time >= currentTime) {
           upcomingDoses.push({
             time,

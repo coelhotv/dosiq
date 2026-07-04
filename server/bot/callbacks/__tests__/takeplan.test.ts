@@ -59,7 +59,7 @@ describe('handleTakePlan', () => {
       }
     ]
 
-    vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
+    vi.mocked((supabase as any).then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
 
     const spy = vi.spyOn(medicineLogService, 'createMany').mockResolvedValue({ success: true, count: 1 })
 
@@ -110,7 +110,7 @@ describe('handleTakePlan', () => {
       }
     ]
 
-    vi.mocked(supabase.then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
+    vi.mocked((supabase as any).then).mockImplementation((resolve) => resolve({ data: mockProtocols, error: null }))
 
     const spy = vi.spyOn(medicineLogService, 'createMany').mockResolvedValue({ success: true, count: 1 })
 

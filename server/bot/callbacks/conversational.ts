@@ -8,7 +8,7 @@ import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
 import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
 
 const logger = createLogger('ConversationalCallbacks');
-const doseInstanceRepo = createDoseInstanceRepository({ client: supabase });
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
 
 export async function handleConversationalCallbacks(bot) {
   bot.on('callback_query', async (callbackQuery) => {
@@ -174,9 +174,10 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
 
   console.log(`[Conversational] Protocol from DB:`, protocol);
 
-  const unit = protocol?.medicine?.dosage_unit || 'x';
+  const medicine = protocol?.medicine as any;
+  const unit = medicine?.dosage_unit || 'x';
   const pillsPerIntake = protocol?.dosage_per_intake || 1;
-  const dosagePerPill = protocol?.medicine?.dosage_per_pill || 1;
+  const dosagePerPill = medicine?.dosage_per_pill || 1;
   
   // Calculate actual dosage: pills per intake * dosage per pill
   const defaultDosage = pillsPerIntake * dosagePerPill;

@@ -28,7 +28,7 @@ const DLQ_DIGEST_LIMIT = 10;
  * @param {object} options - Opções com correlationId
  * @returns {Promise<object>} Resultado da operação
  */
-export async function sendDLQDigest(notificationDispatcher, options = {}) {
+export async function sendDLQDigest(notificationDispatcher: any, options: { correlationId?: string } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
   
@@ -41,7 +41,7 @@ export async function sendDLQDigest(notificationDispatcher, options = {}) {
       .limit(DLQ_DIGEST_LIMIT);
     
     if (error) {
-      logger.error('Erro ao buscar notificações falhadas', { correlationId, error });
+      logger.error('Erro ao buscar notificações falhadas', null, { correlationId, error });
       return { sent: false, reason: 'query_failed', error: error.message };
     }
     
@@ -82,7 +82,7 @@ export async function sendDLQDigest(notificationDispatcher, options = {}) {
 /**
  * Check reminders for ALL users (cron job)
  */
-export async function checkReminders(bot, options = {}) {
+export async function checkReminders(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -98,7 +98,7 @@ export async function checkReminders(bot, options = {}) {
 /**
  * Check stock alerts for a specific user
  */
-export async function checkStockAlerts(bot, options = {}) {
+export async function checkStockAlerts(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -114,7 +114,7 @@ export async function checkStockAlerts(bot, options = {}) {
 /**
  * Check adherence reports for ALL users (weekly)
  */
-export async function checkAdherenceReports(bot, options = {}) {
+export async function checkAdherenceReports(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -130,7 +130,7 @@ export async function checkAdherenceReports(bot, options = {}) {
 /**
  * Check titration alerts for ALL users
  */
-export async function checkTitrationAlerts(bot, options = {}) {
+export async function checkTitrationAlerts(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -146,7 +146,7 @@ export async function checkTitrationAlerts(bot, options = {}) {
 /**
  * Check monthly reports for ALL users
  */
-export async function checkMonthlyReport(bot, options = {}) {
+export async function checkMonthlyReport(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -162,7 +162,7 @@ export async function checkMonthlyReport(bot, options = {}) {
 /**
  * Check prescription alerts for ALL users
  */
-export async function checkPrescriptionAlerts(bot, options = {}) {
+export async function checkPrescriptionAlerts(bot: any, options: { correlationId?: string; notificationDispatcher?: any } = {}) {
   const correlationId = options.correlationId || getCurrentCorrelationId();
   const notificationDispatcher = options.notificationDispatcher;
 
@@ -175,7 +175,7 @@ export async function checkPrescriptionAlerts(bot, options = {}) {
   return checkPrescriptionAlertsViaDispatcher(notificationDispatcher, correlationId);
 }
 
-export async function runDailyAdherenceReport(bot, { correlationId, notificationDispatcher }) {
+export async function runDailyAdherenceReport(bot: any, { correlationId, notificationDispatcher }: { correlationId?: string; notificationDispatcher?: any }) {
   if (!notificationDispatcher) {
     logger.warn('NotificationDispatcher não fornecido para runDailyAdherenceReport. Skipping.', { correlationId });
     return;
@@ -183,7 +183,7 @@ export async function runDailyAdherenceReport(bot, { correlationId, notification
   return runDailyAdherenceReportViaDispatcher(notificationDispatcher, correlationId);
 }
 
-export async function runDailyDigest(bot, { correlationId, notificationDispatcher }) {
+export async function runDailyDigest(bot: any, { correlationId, notificationDispatcher }: { correlationId?: string; notificationDispatcher?: any }) {
   if (!notificationDispatcher) {
     logger.warn('NotificationDispatcher não fornecido para runDailyDigest. Skipping.', { correlationId });
     return;

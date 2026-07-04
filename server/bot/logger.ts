@@ -12,17 +12,19 @@ export const LOG_LEVELS = {
 const CURRENT_LEVEL = LOG_LEVELS[process.env.LOG_LEVEL?.toUpperCase()] ?? LOG_LEVELS.INFO;
 
 class Logger {
-  constructor(context) {
+  context: string;
+
+  constructor(context: string) {
     this.context = context;
   }
 
-  formatMessage(level, message, data = null) {
+  formatMessage(level: string, message: string, data: unknown = null) {
     const timestamp = getServerTimestamp();
     const dataStr = data ? ` ${JSON.stringify(data)}` : '';
     return `[${timestamp}] [${level}] [${this.context}] ${message}${dataStr}`;
   }
 
-  error(message, error = null, data = null) {
+  error(message: string, error: Error | null = null, data: unknown = null) {
     if (CURRENT_LEVEL >= LOG_LEVELS.ERROR) {
       console.error(this.formatMessage('ERROR', message, data));
       if (error) {
@@ -32,31 +34,31 @@ class Logger {
     }
   }
 
-  warn(message, data = null) {
+  warn(message: string, data: unknown = null) {
     if (CURRENT_LEVEL >= LOG_LEVELS.WARN) {
       console.warn(this.formatMessage('WARN', message, data));
     }
   }
 
-  info(message, data = null) {
+  info(message: string, data: unknown = null) {
     if (CURRENT_LEVEL >= LOG_LEVELS.INFO) {
       console.log(this.formatMessage('INFO', message, data));
     }
   }
 
-  debug(message, data = null) {
+  debug(message: string, data: unknown = null) {
     if (CURRENT_LEVEL >= LOG_LEVELS.DEBUG) {
       console.log(this.formatMessage('DEBUG', message, data));
     }
   }
 
-  trace(message, data = null) {
+  trace(message: string, data: unknown = null) {
     if (CURRENT_LEVEL >= LOG_LEVELS.TRACE) {
       console.log(this.formatMessage('TRACE', message, data));
     }
   }
 }
 
-export function createLogger(context) {
+export function createLogger(context: string) {
   return new Logger(context);
 }

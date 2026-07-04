@@ -24,5 +24,7 @@ if (!supabaseUrl || (!supabaseAnonKey && !supabaseServiceKey)) {
 // Em ambiente de servidor, preferimos a service_role key para ignorar RLS.
 // Node.js < 22 não tem WebSocket nativo — ws passado como transport (supabase-js 2.90+).
 export const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
-  realtime: { transport: ws },
+  realtime: { transport: ws as any },
 });
+
+export const MOCK_USER_ID = process.env.MOCK_USER_ID || '00000000-0000-0000-0000-000000000000';

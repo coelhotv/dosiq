@@ -36,7 +36,7 @@ export function getOrGenerateCorrelationId() {
  * @param {object} context - Contexto com correlationId e outros dados
  * @returns {Promise<any>} Resultado da função
  */
-export async function withCorrelation(fn, context = {}) {
+export async function withCorrelation(fn: (ctx: any) => any, context: Record<string, any> = {}) {
   const correlationId = context.correlationId || generateCorrelationId();
   const fullContext = {
     correlationId,

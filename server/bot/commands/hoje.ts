@@ -64,7 +64,7 @@ export async function handleHoje(bot, msg) {
 
       const protocolLogs = todayLogs.filter(l => l.protocol_id === protocol.id);
       
-      (protocol.time_schedule || []).forEach(time => {
+      (protocol.time_schedule as any[] || []).forEach(time => {
         const scheduledMin = toMin(time);
         
         // Find if any log matches this slot (within 3h window)

@@ -17,6 +17,17 @@ const METRICS_RETENTION_MINUTES = 60;
  * Estrutura de métricas em memória
  */
 class MetricsStore {
+  successCount: Map<string, number>;
+  failureCount: Map<string, number>;
+  retryCount: Map<string, number>;
+  deliveryTimes: Map<string, number[]>;
+  errorBreakdown: Map<string, number>;
+  rateLimitHits: Map<string, number>;
+  lastSuccessfulSend: any;
+  lastFailure: any;
+  dlqSize: number;
+  lastDlqCheck: any;
+
   constructor() {
     this.successCount = new Map();      // key: "YYYY-MM-DDTHH:mm", value: count
     this.failureCount = new Map();      // key: "YYYY-MM-DDTHH:mm", value: count

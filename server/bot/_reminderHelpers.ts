@@ -11,8 +11,8 @@ import { dispatchLiveActivityLifecycle } from '../notifications/apns/dispatchLiv
 
 const logger = createLogger('ReminderHelpers');
 
-async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
-  const allProtocols = [];
+async function _fetchProtocolsForUsers(userIdsByHHMM: Record<string, string[]>, correlationId: string) {
+  const allProtocols: any[] = [];
   for (const [hhmm, ids] of Object.entries(userIdsByHHMM)) {
     for (let i = 0; i < ids.length; i += 50) {
       const chunk = ids.slice(i, i + 50);
@@ -40,14 +40,14 @@ async function _fetchProtocolsForUsers(userIdsByHHMM, correlationId) {
   return allProtocols;
 }
 
-async function _processUserReminderBlock(userId, currentHHMM, currentHour, block, dispatcher, correlationId) {
+async function _processUserReminderBlock(userId: string, currentHHMM: string, currentHour: number, block: any, dispatcher: any, correlationId: string) {
   const normalizedKind = block.kind?.toLowerCase();
   if (['by_plan', 'misc'].includes(normalizedKind)) {
     const notificationType = 'dose_reminder_' + normalizedKind;
     const options = normalizedKind === 'by_plan' ? { planId: block.planId } : {};
     const shouldSend = await shouldSendGroupedNotification(userId, notificationType, options);
     if (!shouldSend) {
-      const logContext = { userId, correlationId };
+      const logContext: { userId: string; correlationId: string; planId?: string } = { userId, correlationId };
       if (block.planId) logContext.planId = block.planId;
       logger.debug('Dose reminder ' + normalizedKind + ' suprimido por deduplicação', logContext);
       return;
@@ -894,7 +894,7 @@ async function _processProtocolTitration(userId, protocol, dispatcher, correlati
   const due = _titrationDueAdvance(protocol, Date.now());
   if (!due) return;
 
-  const updatePayload = {
+  const updatePayload: { current_stage_index: any; stage_started_at: any; titration_status?: string } = {
     current_stage_index: due.newIndex,
     stage_started_at: due.newStageStartedAt,
   };
@@ -932,7 +932,7 @@ export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationI
       
       // 012 Fase B: stage_started_at no select (R-267 — sem ele o cron não sabia
       // se a transição venceu e notificava diariamente); só 'titulando' interessa.
-      const { data: protocols } = await supabase
+      const { data: protocols } = await (supabase as any)
         .from('protocols')
         .select(`
           id, current_stage_index, titration_schedule, titration_status, stage_started_at,
@@ -981,9 +981,9 @@ async function _processPrescriptionProtocol(userId, protocol, todayDate, dispatc
   });
 }
 
-export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlationId) {
+export async function checkPrescriptionAlertsViaDispatcher(dispatcher: any, correlationId: string) {
   try {
-    const { data: users, error: userError } = await supabase
+    const { data: users, error: userError } = await (supabase as any)
       .from('user_settings')
       .select('user_id, timezone')
       .eq('notifications_enabled', true);
@@ -997,7 +997,7 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher, correlati
       const userId = user.user_id;
       const todayDate = parseLocalDate(getTodayLocal());
 
-      const { data: protocols } = await supabase
+      const { data: protocols } = await (supabase as any)
         .from('protocols')
         .select(`
           *,

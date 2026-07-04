@@ -98,7 +98,7 @@ export async function logNotification(userId, protocolId, notificationType, stat
  * @param {object} metadata - Metadados adicionais (messageId, etc)
  * @returns {Promise<boolean>} true se logado com sucesso
  */
-export async function logSuccessfulNotification(userId, protocolId, notificationType, metadata = {}) {
+export async function logSuccessfulNotification(userId: string, protocolId: string | null, notificationType: string, metadata: { messageId?: string } = {}) {
   if (!userId) {
     console.error('[Deduplicator] logSuccessfulNotification chamado sem userId');
     return false;
@@ -113,7 +113,7 @@ export async function logSuccessfulNotification(userId, protocolId, notification
         notification_type: notificationType,
         status: 'enviada',
         telegram_message_id: metadata.messageId || null
-      });
+      } as any);
 
     if (error) {
       console.error('[Deduplicator] Erro ao logar notificação:', error);
@@ -154,7 +154,7 @@ export async function cleanupOldNotificationLogs() {
  * @param {object} [options] - { planId?: string }
  * @returns {Promise<boolean>} true se deve enviar, false se duplicado
  */
-export async function shouldSendGroupedNotification(userId, notificationType, { planId } = {}) {
+export async function shouldSendGroupedNotification(userId: string, notificationType: string, { planId }: { planId?: string } = {}) {
   if (!userId) {
     console.error('[Deduplicator] shouldSendGroupedNotification chamado sem userId');
     return true; // Fail open
