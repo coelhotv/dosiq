@@ -13,7 +13,7 @@
 import { CACHE_KEYS, generateCacheKey } from '@dosiq/shared-data'
 import { invalidateCache } from '@shared/hooks/useCachedQuery'
 import { webQueryCache } from '@shared/platform/query-cache/webQueryCache'
-const cachedQuery = (key, fetcher, opts) => webQueryCache.cachedQuery(key, fetcher, opts)
+const cachedQuery = (key, fetcher, opts = {}) => webQueryCache.cachedQuery(key, fetcher, opts)
 import { medicineService } from '@medications/services/medicineService'
 import { protocolService } from '@protocols/services/protocolService'
 import { stockService } from '@stock/services/stockService'
@@ -306,7 +306,7 @@ export const cachedLogService = {
   },
 
   // Métodos de escrita (com invalidação de cache)
-  async create(log, opts) {
+  async create(log, opts = {}) {
     const result = await logService.create(log, opts)
     _invalidateAllLogsCache()
     // Invalida estoque (foi decrementado)

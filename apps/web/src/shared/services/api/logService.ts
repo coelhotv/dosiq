@@ -186,7 +186,7 @@ export const logService = {
       throw new Error(failure.error || 'Erro ao processar dose no lote.')
     }
 
-    const successLogs = results.map((r) => r.data)
+    const successLogs = results.map((r) => r.data as any)
     const ids = successLogs.map((l) => l.id)
     const { data, error } = await supabase
       .from('medicine_logs')
