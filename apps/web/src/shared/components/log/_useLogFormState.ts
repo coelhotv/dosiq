@@ -35,7 +35,7 @@ export function useLogFormState({
   const [formData, setFormData] = useState(() => getInitialFormData(initialValues, protocols))
 
   const [selectedPlanProtocols, setSelectedPlanProtocols] = useState([])
-  const [errors, setErrors] = useState<Record<string, any>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const selectedProtocol = protocols.find((p) => p.id === formData.protocol_id)

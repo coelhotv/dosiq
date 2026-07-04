@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, type RefObject, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 import './Modal.css'
@@ -23,7 +23,7 @@ export default function Modal({
 }: {
   isOpen: boolean
   onClose: () => void
-  children?: any
+  children?: ReactNode
   title?: string
 }) {
   const { containerRef, handleKeyDown } = useFocusTrap(isOpen)

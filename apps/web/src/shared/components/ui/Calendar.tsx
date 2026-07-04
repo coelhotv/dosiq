@@ -56,7 +56,7 @@ export default function Calendar({
   selectedDate?: any
   onDayClick?: any
   enableLazyLoad?: boolean
-  onLoadMonth?: any
+  onLoadMonth?: (year: number, month: number) => Promise<void>
   enableSwipe?: boolean
   enableMonthPicker?: boolean
   monthPickerRange?: { start: number; end: number }

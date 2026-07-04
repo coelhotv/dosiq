@@ -12,11 +12,11 @@ export default function LogForm({
   onSave,
   onCancel,
 }: {
-  protocols: any
+  protocols: any[]
   treatmentPlans?: any[]
   initialValues?: any
-  onSave: any
-  onCancel: any
+  onSave: (payloads: any) => Promise<void> | void
+  onCancel: () => void
 }) {
   const {
     formData,

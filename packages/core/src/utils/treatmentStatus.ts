@@ -41,7 +41,7 @@ export function resolveTreatmentStatus(protocol, today?: string) {
  * @param {string} [today] — YYYY-MM-DD; default = hoje local
  * @returns {boolean}
  */
-export function isTreatmentActive(protocol, today) {
+export function isTreatmentActive(protocol, today?: string) {
   if (!protocol) return false
   return resolveTreatmentStatus(protocol, today) === TREATMENT_STATUS.ATIVO
 }

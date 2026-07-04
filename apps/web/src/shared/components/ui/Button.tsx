@@ -1,3 +1,4 @@
+import type { ReactNode, MouseEventHandler } from 'react'
 import './Button.css'
 
 export default function Button({
@@ -9,10 +10,10 @@ export default function Button({
   type = 'button',
   className = '',
 }: {
-  children?: any
+  children?: ReactNode
   variant?: string
   size?: string
-  onClick?: any
+  onClick?: MouseEventHandler<HTMLButtonElement>
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
   className?: string
