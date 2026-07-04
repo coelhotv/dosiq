@@ -7,10 +7,32 @@
  */
 
 import { useMemo, useCallback } from 'react'
-import { useCachedQuery, generateCacheKey } from '@shared/hooks/useCachedQuery'
+import { useCachedQuery, generateCacheKey, type UseCachedQueryResult } from '@shared/hooks/useCachedQuery'
 import { createNotificationLogRepository, CACHE_KEYS } from '@dosiq/shared-data'
 import { supabase } from '@shared/utils/supabase'
 import { parseISO } from '@utils/dateUtils'
+
+interface DoseEntry {
+  medicineName: string
+  dosage: number
+}
+
+interface NotificationLogRow {
+  notification_type: string
+  treatment_plan_id?: string | null
+  sent_at: string
+  provider_metadata?: { protocol_ids?: string[] } | null
+  doses?: DoseEntry[]
+  [key: string]: unknown
+}
+
+interface ProtocolRow {
+  id: string
+  dosage_per_intake?: number | null
+  treatment_plan_id?: string
+  time_schedule?: string[]
+  medicine?: { name?: string } | null
+}
 
 // Repositório singleton para a plataforma web
 const repo = createNotificationLogRepository({ supabase })
@@ -19,7 +41,7 @@ const repo = createNotificationLogRepository({ supabase })
  * Enriquece logs agrupados com lista de medicamentos via join relacional.
  * Evita duplicar dados no notification_log — busca do estado atual dos protocolos.
  */
-async function enrichWithDoses(logs) {
+async function enrichWithDoses(logs: NotificationLogRow[]): Promise<NotificationLogRow[]> {
   const byPlanLogs      = logs.filter(l => l.notification_type === 'dose_reminder_by_plan' && l.treatment_plan_id)
   const miscLogs        = logs.filter(l => l.notification_type === 'dose_reminder_misc')
   const planIds         = [...new Set(byPlanLogs.map(l => l.treatment_plan_id))]
@@ -33,22 +55,23 @@ async function enrichWithDoses(logs) {
           .in('treatment_plan_id', planIds)
           .eq('active', true)
           .then(({ data }) => {
-            const map = {}
-            for (const p of data ?? []) {
+            const map: Record<string, ProtocolRow[]> = {}
+            for (const p of (data ?? []) as ProtocolRow[]) {
+              if (!p.treatment_plan_id) continue
               if (!map[p.treatment_plan_id]) map[p.treatment_plan_id] = []
               map[p.treatment_plan_id].push(p)
             }
             return map
           })
-      : Promise.resolve({}),
+      : Promise.resolve({} as Record<string, ProtocolRow[]>),
 
     miscProtocolIds.length > 0
       ? supabase
           .from('protocols')
           .select('id, dosage_per_intake, medicine:medicine_id(name)')
           .in('id', miscProtocolIds)
-          .then(({ data }) => Object.fromEntries((data ?? []).map(p => [p.id, p])))
-      : Promise.resolve({}),
+          .then(({ data }) => Object.fromEntries(((data ?? []) as ProtocolRow[]).map(p => [p.id, p])) as Record<string, ProtocolRow>)
+      : Promise.resolve({} as Record<string, ProtocolRow>),
   ])
 
   return logs.map(log => {
@@ -63,7 +86,7 @@ async function enrichWithDoses(logs) {
     if (log.notification_type === 'dose_reminder_misc') {
       const doses = (log.provider_metadata?.protocol_ids ?? [])
         .map(pid => miscProtoMap[pid])
-        .filter(Boolean)
+        .filter((p): p is ProtocolRow => Boolean(p))
         .map(p => ({ medicineName: p.medicine?.name ?? 'Medicamento', dosage: p.dosage_per_intake ?? 1 }))
       return { ...log, doses }
     }
@@ -71,17 +94,19 @@ async function enrichWithDoses(logs) {
   })
 }
 
+export interface UseNotificationLogOptions {
+  userId?: string | null
+  limit?: number
+  offset?: number
+  enabled?: boolean
+}
+
 /**
  * Hook para buscar logs de notificações com cache SWR.
- *
- * @param {Object} options
- * @param {string} options.userId - ID do usuário (UUID)
- * @param {number} [options.limit=20] - Itens por página
- * @param {number} [options.offset=0] - Offset de paginação
- * @param {boolean} [options.enabled=true] - Se a query deve rodar
- * @returns {Object} { data, isLoading, isFetching, error, refetch, refresh }
  */
-export function useNotificationLog(options = {}) {
+export function useNotificationLog(
+  options: UseNotificationLogOptions = {}
+): UseCachedQueryResult<NotificationLogRow[]> {
   const { userId, limit = 20, offset = 0, enabled = true } = options
 
   // Chave de cache canônica e estável
@@ -94,7 +119,7 @@ export function useNotificationLog(options = {}) {
   // High Priority: Memorizado para evitar loops de re-renderização
   const fetcher = useCallback(async () => {
     if (!userId) return []
-    const raw = await repo.listByUserId(userId, { limit, offset })
+    const raw = (await repo.listByUserId(userId, { limit, offset })) as NotificationLogRow[]
     return enrichWithDoses(raw)
   }, [userId, limit, offset])
 

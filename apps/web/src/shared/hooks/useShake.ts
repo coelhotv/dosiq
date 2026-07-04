@@ -7,15 +7,16 @@
 import { useState, useCallback } from 'react'
 import { useHapticFeedback } from './useHapticFeedback'
 
-/**
- * Hook useShake
- *
- * @param {Object} options
- * @param {string} options.direction - Direção: 'horizontal' ou 'vertical'
- * @param {Function} options.onComplete - Callback quando animação terminar
- * @returns {Object} { isShaking, shake, shakeClass }
- */
-export function useShake(options = {}) {
+export interface UseShakeOptions {
+  onComplete?: () => void
+}
+
+export interface UseShakeResult {
+  isShaking: boolean
+  shake: () => void
+}
+
+export function useShake(options: UseShakeOptions = {}): UseShakeResult {
   const [isShaking, setIsShaking] = useState(false)
   const { trigger: haptic } = useHapticFeedback()
   const { onComplete } = options

@@ -29,15 +29,15 @@ export default mergeConfig(
       bail: 1,
 
       include: [
-        'src/services/**/*.test.{js,jsx}',
-        'src/utils/**/*.test.{js,jsx}',
-        'src/schemas/**/*.test.{js,jsx}',
-        'src/shared/hooks/**/*.test.{js,jsx}',
-        'src/features/**/services/**/*.test.{js,jsx}',
-        'src/features/**/utils/**/*.test.{js,jsx}',
-        'src/features/**/hooks/**/*.test.{js,jsx}',
+        'src/services/**/*.test.{js,jsx,ts,tsx}',
+        'src/utils/**/*.test.{js,jsx,ts,tsx}',
+        'src/schemas/**/*.test.{js,jsx,ts,tsx}',
+        'src/shared/hooks/**/*.test.{js,jsx,ts,tsx}',
+        'src/features/**/services/**/*.test.{js,jsx,ts,tsx}',
+        'src/features/**/utils/**/*.test.{js,jsx,ts,tsx}',
+        'src/features/**/hooks/**/*.test.{js,jsx,ts,tsx}',
         // Helpers canônicos compartilhados (Fase 2.5+) — críticos pra paridade web↔mobile
-        '../../packages/core/src/**/*.test.{js,jsx}',
+        '../../packages/core/src/**/*.test.{js,jsx,ts,tsx}',
       ],
       exclude: [
         '**/*.smoke.test.*',

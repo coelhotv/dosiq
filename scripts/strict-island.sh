@@ -11,7 +11,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications)/'
+A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications|apps/web/src/shared/hooks)/'
 TESTS='__tests__|\.test\.'
 
 OUT=$(npx tsc -p tsconfig.strict.json --noEmit 2>&1 | grep -E ': error TS' || true)

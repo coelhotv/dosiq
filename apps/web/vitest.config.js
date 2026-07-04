@@ -15,7 +15,7 @@ export default mergeConfig(
       minThreads: 1,
 
       include: [
-        'src/**/*.test.{js,jsx}',
+        'src/**/*.test.{js,jsx,ts,tsx}',
         '../../server/**/*.test.{js,jsx,ts,tsx}',
         '../../packages/core/src/**/*.test.{js,jsx,ts,tsx}',
       ],
