@@ -1,5 +1,8 @@
 {
   "extends": "../tsconfig.base.json",
+  // NOTA (lição F3.1): Vercel (@vercel/node) roda Node ESM puro e typechecka com
+  // nodenext — imports relativos em api/ DEVEM ter extensão .js explícita.
+  // Não dá pra espelhar nodenext aqui: vazaria pro src do @dosiq/core (bundler-resolved).
   "include": ["."],
   "exclude": ["node_modules", "admin/_handlers", "users/_handlers"]
 }

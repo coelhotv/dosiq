@@ -1,5 +1,5 @@
-import { handleBetaSignup } from './users/_handlers/beta-signup'
-import { handleRegisterWebpush } from './users/_handlers/register-webpush'
+import { handleBetaSignup } from './users/_handlers/beta-signup.js'
+import { handleRegisterWebpush } from './users/_handlers/register-webpush.js'
 
 const ROUTES = {
   'beta-signup': handleBetaSignup,
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   const { action } = req.query
-  const routeHandler = action && Object.hasOwn(ROUTES, action) ? ROUTES[action] : null
+  const routeHandler = action && Object.prototype.hasOwnProperty.call(ROUTES, action) ? ROUTES[action] : null
 
   if (!routeHandler) {
     return res.status(404).json({ error: 'Action not found' })
