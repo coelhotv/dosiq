@@ -22,7 +22,7 @@ describe('nudgeAdminService', () => {
   })
 
   it('should fetch nudges', async () => {
-    supabase.auth.getSession.mockResolvedValue({
+    (supabase.auth.getSession as any).mockResolvedValue({
       data: { session: { access_token: 'test-token' } },
     })
 
@@ -37,7 +37,7 @@ describe('nudgeAdminService', () => {
             totalPages: 1,
           }),
       })
-    )
+    ) as any
 
     const result = await nudgeAdminService.getAll({ limit: 10, offset: 0 })
     expect(result.data).toHaveLength(1)
@@ -45,7 +45,7 @@ describe('nudgeAdminService', () => {
   })
 
   it('should create nudge', async () => {
-    supabase.auth.getSession.mockResolvedValue({
+    (supabase.auth.getSession as any).mockResolvedValue({
       data: { session: { access_token: 'test-token' } },
     })
 
@@ -58,7 +58,7 @@ describe('nudgeAdminService', () => {
             data: { id: 'nudge-1', title: 'New Nudge' },
           }),
       })
-    )
+    ) as any
 
     const result = await nudgeAdminService.create({
       title: 'New Nudge',
@@ -72,7 +72,7 @@ describe('nudgeAdminService', () => {
   })
 
   it('should toggle nudge', async () => {
-    supabase.auth.getSession.mockResolvedValue({
+    (supabase.auth.getSession as any).mockResolvedValue({
       data: { session: { access_token: 'test-token' } },
     })
 
@@ -85,14 +85,14 @@ describe('nudgeAdminService', () => {
             data: { id: 'nudge-1', is_active: true },
           }),
       })
-    )
+    ) as any
 
     const result = await nudgeAdminService.toggleActive('nudge-1', true)
     expect(result.success).toBe(true)
   })
 
   it('should throw on auth error', async () => {
-    supabase.auth.getSession.mockResolvedValue({ data: { session: null } })
+    (supabase.auth.getSession as any).mockResolvedValue({ data: { session: null } })
 
     try {
       await nudgeAdminService.getAll()

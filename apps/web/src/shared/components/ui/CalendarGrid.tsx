@@ -6,7 +6,15 @@
 /**
  * Renderiza as linhas do calendário agrupadas por semana.
  */
-export default function CalendarGrid({ days, isLoading, enableLazyLoad }) {
+export default function CalendarGrid({
+  days,
+  isLoading,
+  enableLazyLoad,
+}: {
+  days: any[]
+  isLoading: boolean
+  enableLazyLoad?: boolean
+}) {
   if (isLoading && enableLazyLoad) {
     return (
       <div className="calendar-skeleton">

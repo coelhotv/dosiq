@@ -1,3 +1,4 @@
+import type { ReactNode, MouseEventHandler } from 'react'
 import './Card.css'
 
 export default function Card({
@@ -6,6 +7,12 @@ export default function Card({
   onClick,
   hover = true,
   variant = 'default',
+}: {
+  children?: ReactNode
+  className?: string
+  onClick?: MouseEventHandler<HTMLElement>
+  hover?: boolean
+  variant?: string
 }) {
   const Tag = onClick ? 'button' : 'div'
   return (

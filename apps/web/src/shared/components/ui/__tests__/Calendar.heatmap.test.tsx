@@ -30,7 +30,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
       [today]: { adherence: 100, taken: 4, expected: 4 },
     }
     const { container } = render(<Calendar adherenceData={adherenceData} />)
-    const heatDay = container.querySelector('.calendar-day.has-adherence')
+    const heatDay = container.querySelector<HTMLElement>('.calendar-day.has-adherence')
     expect(heatDay.style.getPropertyValue('--heat-color')).toBe('var(--color-success)')
   })
 
@@ -40,7 +40,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
       [today]: { adherence: 50, taken: 2, expected: 4 },
     }
     const { container } = render(<Calendar adherenceData={adherenceData} />)
-    const heatDay = container.querySelector('.calendar-day.has-adherence')
+    const heatDay = container.querySelector<HTMLElement>('.calendar-day.has-adherence')
     expect(heatDay.style.getPropertyValue('--heat-color')).toBe('var(--color-warning)')
   })
 
@@ -50,7 +50,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
       [today]: { adherence: 0, taken: 0, expected: 4 },
     }
     const { container } = render(<Calendar adherenceData={adherenceData} />)
-    const heatDay = container.querySelector('.calendar-day.has-adherence')
+    const heatDay = container.querySelector<HTMLElement>('.calendar-day.has-adherence')
     expect(heatDay.style.getPropertyValue('--heat-color')).toBe('var(--color-error)')
   })
 
@@ -84,7 +84,7 @@ describe('Calendar — heat map de adesão (W1-08)', () => {
     }
     const { container } = render(<Calendar markedDates={[today]} adherenceData={adherenceData} />)
     // has-adherence dias não renderizam log-dot (CSS visual, mas verificamos pela ausência no DOM)
-    const heatDay = container.querySelector('.calendar-day.has-adherence')
+    const heatDay = container.querySelector<HTMLElement>('.calendar-day.has-adherence')
     expect(heatDay).toBeTruthy()
     const logDot = heatDay.querySelector('.log-dot')
     expect(logDot).toBeNull()

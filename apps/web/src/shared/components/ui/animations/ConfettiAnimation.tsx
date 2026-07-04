@@ -7,7 +7,7 @@
  * - Suporta prefers-reduced-motion
  */
 
-import { useEffect, useState, memo } from 'react'
+import { useEffect, useState, memo, type CSSProperties } from 'react'
 import { useHapticFeedback } from '@shared/hooks/useHapticFeedback'
 import { SANCTUARY_COLORS } from './confettiColors'
 import './Animations.css'
@@ -96,7 +96,7 @@ function ConfettiAnimation({
             '--vy': `${p.vy}`,
             animation: `confetti-fall ${p.duration}s linear forwards`,
             transform: `rotate(${p.rotation}deg)`,
-          }}
+          } as CSSProperties}
         />
       ))}
     </div>

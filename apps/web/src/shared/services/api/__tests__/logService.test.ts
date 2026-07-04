@@ -142,7 +142,7 @@ describe('logService (Web Adapter)', () => {
 
   describe('delete', () => {
     it('delega para o core', async () => {
-      mocks.deleteOrphanLog.mockResolvedValueOnce()
+      mocks.deleteOrphanLog.mockResolvedValueOnce(undefined)
 
       await logService.delete('log-123')
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, startTransition } from 'react'
 import { isInjectable } from '@dosiq/core'
 import { logService } from '@shared/services/api/logService'
-import { validateLogForm, buildLogPayloads, getInitialFormData } from './_logFormUtils.js'
+import { validateLogForm, buildLogPayloads, getInitialFormData } from './_logFormUtils'
 
 // Busca o último sítio de injeção global (auxílio de rotação). Falha é silenciosa —
 // é apenas dica de UX, nunca bloqueia o registro da dose (031/US2).
@@ -21,11 +21,21 @@ function useLastInjectionSite(injectable) {
   return lastInjectionSite
 }
 
-export function useLogFormState({ protocols, treatmentPlans, initialValues, onSave }) {
+export function useLogFormState({
+  protocols,
+  treatmentPlans,
+  initialValues,
+  onSave,
+}: {
+  protocols: any[]
+  treatmentPlans?: any[]
+  initialValues?: any
+  onSave: any
+}) {
   const [formData, setFormData] = useState(() => getInitialFormData(initialValues, protocols))
 
   const [selectedPlanProtocols, setSelectedPlanProtocols] = useState([])
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const selectedProtocol = protocols.find((p) => p.id === formData.protocol_id)

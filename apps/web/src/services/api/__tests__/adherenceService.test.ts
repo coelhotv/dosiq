@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => {
   let listResult = { data: [], error: null }
   let singleResult = { data: null, error: null }
   const makeBuilder = () => {
-    const b = {}
+    const b: any = {}
     b.select = vi.fn(() => b)
     b.eq = vi.fn(() => b)
     b.single = vi.fn(() => Promise.resolve(singleResult))
@@ -32,7 +32,7 @@ vi.mock('@shared/utils/supabase', () => ({
 }))
 
 vi.mock('@dosiq/core', async (importActual) => {
-  const actual = await importActual()
+  const actual: any = await importActual()
   return { ...actual, createDoseInstanceRepository: () => mocks.repo }
 })
 
