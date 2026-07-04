@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const { getTimelineMock, maybeSingleMock, bioListMock } = vi.hoisted(() => ({
-  getTimelineMock: vi.fn(() => Promise.resolve([])),
+  getTimelineMock: vi.fn((..._args: any[]) => Promise.resolve([])),
   maybeSingleMock: vi.fn(() => Promise.resolve({ data: { timezone: 'America/New_York' }, error: null })),
   bioListMock: vi.fn(() => Promise.resolve([])),
 }))
@@ -12,7 +12,7 @@ vi.mock('@features/measures/services/measuresRepo', () => ({
 }))
 
 vi.mock('@dosiq/core', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual: any = await importOriginal()
   return {
     ...actual,
     createTimelineService: vi.fn(() => ({ getTimeline: getTimelineMock })),
@@ -55,7 +55,7 @@ describe('timelineService (web)', () => {
   it('injeta o tz resolvido e limites de janela em UTC real no getTimeline (AP-194)', async () => {
     await getMonthTimeline(2026, 4, {}) // maio (month 0-based = 4)
     expect(getTimelineMock).toHaveBeenCalledTimes(1)
-    const arg = getTimelineMock.mock.calls[0][0]
+    const arg: any = getTimelineMock.mock.calls[0][0]
     expect(arg.userId).toBe('user-123')
     expect(arg.tz).toBe('America/New_York')
     // Limites são ISO UTC (terminam em Z) — janela absoluta, não wall-clock.
@@ -67,7 +67,7 @@ describe('timelineService (web)', () => {
   it('respeita tz fornecido sem nova query de settings', async () => {
     await getMonthTimeline(2026, 0, { tz: 'Europe/Lisbon' })
     expect(maybeSingleMock).not.toHaveBeenCalled()
-    expect(getTimelineMock.mock.calls[0][0].tz).toBe('Europe/Lisbon')
+    expect((getTimelineMock.mock.calls[0][0] as any).tz).toBe('Europe/Lisbon')
   })
 
   it('mescla biomarcadores como eventos tipados, ordenados por instante (FR-011)', async () => {

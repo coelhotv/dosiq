@@ -241,7 +241,7 @@ export const adherenceService = {
     return {
       protocolId,
       name: protocol.name,
-      medicineName: protocol.medicine?.name,
+      medicineName: (protocol.medicine as any)?.name,
       score,
       taken: counts.taken,
       expected,
