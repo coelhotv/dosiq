@@ -1,5 +1,5 @@
-import { handleBetaSignup } from './users/_handlers/beta-signup.js'
-import { handleRegisterWebpush } from './users/_handlers/register-webpush.js'
+import { handleBetaSignup } from './users/_handlers/beta-signup'
+import { handleRegisterWebpush } from './users/_handlers/register-webpush'
 
 const ROUTES = {
   'beta-signup': handleBetaSignup,

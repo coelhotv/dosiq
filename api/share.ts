@@ -118,16 +118,6 @@ function logWarn(message, data = {}) {
 }
 
 /**
- * Log de debug
- * @param {string} message - Mensagem descritiva
- * @param {Object} data - Dados adicionais
- */
-// eslint-disable-next-line no-unused-vars
-function logDebug(message, data = {}) {
-  log(LOG_LEVELS.DEBUG, message, data)
-}
-
-/**
  * Log de requisição recebida (sanitizado)
  * @param {Object} req - Requisição HTTP
  */
@@ -210,7 +200,7 @@ async function verifyAuth(token) {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { realtime: { transport: ws } })
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } })
     const { data, error } = await supabase.auth.getUser(token)
 
     if (error || !data.user) {

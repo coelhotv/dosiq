@@ -5,9 +5,9 @@
   "installCommand": "npm install",
   "devCommand": "cd apps/web && npx vite --port $PORT",
   "functions": {
-    "api/notify.js": { "maxDuration": 60 },
-    "api/telegram.js": { "maxDuration": 10 },
-    "api/generate-doses.js": { "maxDuration": 60 }
+    "api/notify.ts": { "maxDuration": 60 },
+    "api/telegram.ts": { "maxDuration": 10 },
+    "api/generate-doses.ts": { "maxDuration": 60 }
   },
   "headers": [
     {
@@ -22,64 +22,60 @@
     },
     {
       "source": "/api/dlq/:id/retry",
-      "destination": "/api/admin.js?resource=dlq&action=retry&id=:id"
+      "destination": "/api/admin.ts?resource=dlq&action=retry&id=:id"
     },
     {
       "source": "/api/dlq/:id/discard",
-      "destination": "/api/admin.js?resource=dlq&action=discard&id=:id"
+      "destination": "/api/admin.ts?resource=dlq&action=discard&id=:id"
     },
     {
       "source": "/api/dlq",
-      "destination": "/api/admin.js?resource=dlq"
+      "destination": "/api/admin.ts?resource=dlq"
     },
     {
       "source": "/api/feedbacks/:id/resolve",
-      "destination": "/api/admin.js?resource=feedbacks&action=resolve&id=:id"
+      "destination": "/api/admin.ts?resource=feedbacks&action=resolve&id=:id"
     },
     {
       "source": "/api/feedbacks",
-      "destination": "/api/admin.js?resource=feedbacks"
+      "destination": "/api/admin.ts?resource=feedbacks"
     },
     {
       "source": "/api/admin/nudges/:id",
-      "destination": "/api/admin.js?resource=nudges&id=:id"
+      "destination": "/api/admin.ts?resource=nudges&id=:id"
     },
     {
       "source": "/api/admin/nudges",
-      "destination": "/api/admin.js?resource=nudges"
-    },
-    {
-      "source": "/api/gemini-reviews/:action",
-      "destination": "/api/gemini-reviews.js"
+      "destination": "/api/admin.ts?resource=nudges"
     },
     {
       "source": "/api/telegram",
-      "destination": "/api/telegram.js"
+      "destination": "/api/telegram.ts"
     },
     {
       "source": "/api/notify",
-      "destination": "/api/notify.js"
+      "destination": "/api/notify.ts"
     },
     {
       "source": "/api/generate-doses",
-      "destination": "/api/generate-doses.js"
+      "destination": "/api/generate-doses.ts"
     },
     {
       "source": "/api/users/beta-signup",
-      "destination": "/api/users.js?action=beta-signup"
+      "destination": "/api/users.ts?action=beta-signup"
     },
 
     {
       "source": "/api/share",
-      "destination": "/api/share.js"
+      "destination": "/api/share.ts"
     },
     {
       "source": "/api/chatbot",
-      "destination": "/api/chatbot.js"
+      "destination": "/api/chatbot.ts"
     },
     {
       "source": "/api/users/register-webpush",
-      "destination": "/api/users.js?action=register-webpush"
+      "destination": "/api/users.ts?action=register-webpush"
     },
     {
       "source": "/(.*)",

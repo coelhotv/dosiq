@@ -23,7 +23,7 @@ const logger = createLogger('CronNotify');
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { realtime: { transport: ws } }
+  { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } }
 );
 const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
@@ -128,14 +128,14 @@ function createNotifyBotAdapter(token) {
 
       if (!data.ok) {
         logger.error(`Erro na API do Telegram (${method})`, null, { error: data });
-        const error = new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`);
+        const error = new Error(`Erro Telegram API: ${data.error_code} - ${data.description}`) as any; // TODO(040-strict): tipar erro custom
         error.response = { status: res.status };
         error.statusCode = res.status;
         throw error;
       }
 
       return data.result;
-    } catch (err) {
+    } catch (err: any) {
       if (!err.response && res) {
         err.response = { status: res.status };
         err.statusCode = res.status;
@@ -205,6 +205,7 @@ function _createNotificationDispatcher(bot) {
           userId,
           kind,
           data,
+          channels: undefined, // TODO(040-strict): canais explícitos por chamada
           context,
           repositories: {
             preferences: preferencesRepo,

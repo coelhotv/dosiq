@@ -13,7 +13,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Cliente Supabase instanciado com Service Role para bypass de RLS (inicializado com segurança)
 const supabase = (supabaseUrl && supabaseServiceKey)
-  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } })
+  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } })
   : null;
 
 // Auxiliar para decorar dados de feedbacks com informações de usuários (display_name e email).

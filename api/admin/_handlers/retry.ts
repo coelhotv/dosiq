@@ -115,7 +115,7 @@ export async function handleRetry(req, res) {
 
   if (!id) return res.status(400).json({ error: 'Missing notification ID' });
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } });
   const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
   try {
@@ -136,6 +136,7 @@ export async function handleRetry(req, res) {
       userId: notification.user_id,
       kind: notification.notification_type,
       data: notification.notification_payload || {},
+      channels: undefined, // TODO(040-strict): canais explícitos por chamada
       context: {
         correlationId: notification.correlation_id || `retry_${id}`,
         isRetry: true,

@@ -10,13 +10,13 @@ export async function handleRegisterWebpush(req, res) {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
       process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY,
-      { realtime: { transport: ws } }
+      { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } }
     )
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) return res.status(401).json({ error: 'Unauthorized' })
 
-    const { pushToken, provider, appKind, platform, deviceName } = req.body
+    const { pushToken, provider, appKind, platform, deviceName, deviceFingerprint, appVersion } = req.body
 
     await notificationDeviceRepository.upsert({
       userId: user.id,
@@ -24,7 +24,9 @@ export async function handleRegisterWebpush(req, res) {
       platform,
       provider,
       pushToken,
-      deviceName
+      deviceName,
+      deviceFingerprint,
+      appVersion
     })
 
     return res.status(200).json({ success: true })

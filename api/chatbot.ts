@@ -168,7 +168,7 @@ export default async function handler(req, res) {
   try {
     const parseResult = chatbotRequestSchema.safeParse(req.body)
     if (!parseResult.success) {
-      return res.status(400).json({ error: parseResult.error.errors[0].message })
+      return res.status(400).json({ error: parseResult.error.issues[0].message })
     }
 
     const { message, history, patientContext } = parseResult.data

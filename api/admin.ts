@@ -5,10 +5,10 @@
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { verifyAdminAccess } from '../server/utils/auth.js';
-import { handleRetry } from './admin/_handlers/retry.js';
-import { handleDiscard } from './admin/_handlers/discard.js';
-import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks.js';
-import { handleListNudges, handleCreateNudge, handleUpdateNudge, handleToggleNudge } from './admin/_handlers/nudges.js';
+import { handleRetry } from './admin/_handlers/retry';
+import { handleDiscard } from './admin/_handlers/discard';
+import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks';
+import { handleListNudges, handleCreateNudge, handleUpdateNudge, handleToggleNudge } from './admin/_handlers/nudges';
 import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -18,7 +18,7 @@ const adminChatId = process.env.ADMIN_CHAT_ID;
 
 // Singleton client usando a service_role para operações de administração (inicializado com segurança)
 const supabase = (supabaseUrl && supabaseServiceKey)
-  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } })
+  ? createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } })
   : null;
 
 /**

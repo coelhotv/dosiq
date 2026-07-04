@@ -31,7 +31,7 @@ export async function handleDiscard(req, res) {
   }
 
   // Create Supabase client with service role key
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: ws } });
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } });
 
   try {
     // Fetch the failed notification

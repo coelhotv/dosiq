@@ -37,7 +37,7 @@ export async function handleBetaSignup(req, res) {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
-      { realtime: { transport: ws } }
+      { realtime: { transport: /* TODO(040-strict): typar transport supabase realtime */ ws as any } }
     )
 
     const { error } = await supabase
