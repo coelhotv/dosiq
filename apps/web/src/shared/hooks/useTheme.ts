@@ -32,8 +32,8 @@ export function useTheme(): UseThemeResult {
     const savedTheme =
       typeof window !== 'undefined' ? localStorage.getItem(THEME_STORAGE_KEY) : null
 
-    if (savedTheme) {
-      return savedTheme as Theme
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      return savedTheme
     }
 
     // Se não houver, usa preferência do sistema
