@@ -583,7 +583,7 @@ async function _loadPdfModules(includeStock, includeRiskTable) {
     import('@services/api/adherenceService.js'),
     import('@features/protocols/services/protocolService.js'),
     includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
-    includeRiskTable ? import('@adherence/services/protocolRiskService.js') : Promise.resolve(null),
+    includeRiskTable ? import('@adherence/services/protocolRiskService') : Promise.resolve(null),
     includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
   ])
   return {
