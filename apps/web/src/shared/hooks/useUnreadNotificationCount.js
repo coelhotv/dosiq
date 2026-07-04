@@ -5,7 +5,7 @@
  * Zero roundtrip extra — tudo local.
  */
 import { useMemo, useCallback } from 'react'
-import { parseISO, getServerTimestamp } from '@utils/dateUtils.js'
+import { parseISO, getServerTimestamp } from '@utils/dateUtils'
 
 const STORAGE_KEY = 'dosiq:notif-last-seen'
 

@@ -13,7 +13,7 @@ import ConsultationView from '@features/consultation/components/ConsultationView
 import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
-import { formatLocalDate, getNow } from '@utils/dateUtils.js'
+import { formatLocalDate, getNow } from '@utils/dateUtils'
 import './Consultation.css'
 
 /**

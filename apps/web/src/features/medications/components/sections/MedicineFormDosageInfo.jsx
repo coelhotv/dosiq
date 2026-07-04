@@ -13,7 +13,7 @@ import {
   formatNumberPtBR,
 } from '@dosiq/core'
 import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
-import { getFieldDescribedBy } from '@utils/formUtils.js'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
 import LaboratoryAutocomplete from '@features/medications/components/LaboratoryAutocomplete.jsx'
 

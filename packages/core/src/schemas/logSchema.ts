@@ -1,0 +1,299 @@
+import { z } from 'zod'
+import { getRawNow, parseISO } from '../utils/dateUtils'
+import { INJECTION_SITE_VALUES } from '../utils/injectionSites'
+
+/**
+ * Schema de validação para Logs de Medicação
+ * Baseado na tabela 'medicine_logs' do Supabase
+ */
+
+/**
+ * Schema base para log de medicação
+ */
+export const logSchema = z.object({
+  protocol_id: z
+    .string()
+    .uuid('ID do protocolo deve ser um UUID válido')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  medicine_id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
+
+  taken_at: z
+    .string()
+    .datetime('Data e hora devem estar no formato ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)')
+    .refine((date) => {
+      // Usa getRawNow() (UTC real) pois parseISO também retorna UTC real.
+      // getNow()/getSaoPauloTime() retorna Date "shifted" que em ambiente UTC fica 3h atrás.
+      const parsedMs = parseISO(date).getTime()
+      const futureLimitMs = getRawNow().getTime() + 5 * 60 * 1000
+      return parsedMs <= futureLimitMs
+    }, 'Data/hora não pode estar no futuro'),
+
+  quantity_taken: z
+    .number()
+    .positive('Quantidade tomada deve ser maior que zero')
+    // Cap revisado 100→1000 (022 Fase B): cobre doses líquidas em gotas. Cap Zod = guarda
+    // anti-erro de digitação; integridade física do saldo = CHECK(quantity>=0)+FIFO (Fase A). Ver R-022.
+    .max(1000, 'Quantidade máxima por registro é 1000'),
+
+  notes: z
+    .string()
+    .max(500, 'Notas não podem ter mais de 500 caracteres')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  // Elo opcional com a ocorrência materializada (dose_instances) — populado por
+  // snap na escrita (S2.6/ADR-048). null = dose avulsa (fora de qualquer janela).
+  dose_instance_id: z
+    .string()
+    .uuid('ID da instância de dose deve ser um UUID válido')
+    .optional()
+    .nullable()
+    .transform((val) => val || null),
+
+  // Sítio corporal de aplicação (injetáveis) — opcional, NULL p/ oral/legado/flows
+  // sem form (031, ADR-072). Enum sincronizado com CHECK injection_site (R-082/R-271);
+  // caixa exata. `.nullable().optional()` (R-021): campo pode chegar ausente OU null.
+  injection_site: z
+    .enum(INJECTION_SITE_VALUES, { message: 'Sítio de aplicação inválido' })
+    .nullable()
+    .optional()
+    .transform((val) => val || null),
+})
+
+/**
+ * Schema para criação de log
+ */
+export const logCreateSchema = logSchema.refine(
+  () => {
+    // Se tem protocol_id, deve ter medicine_id (já é obrigatório)
+    // Mas verificamos se os dois são consistentes quando necessário
+    return true
+  },
+  {
+    message: 'Dados de log inconsistentes',
+  }
+)
+
+/**
+ * Schema para atualização de log (campos opcionais)
+ */
+export const logUpdateSchema = logSchema.partial()
+
+/**
+ * Schema completo com ID
+ */
+export const logFullSchema = logSchema.extend({
+  id: z.string().uuid('ID do log deve ser um UUID válido'),
+  user_id: z.string().uuid('ID do usuário deve ser um UUID válido'),
+  created_at: z.string().datetime({ offset: true }).optional(),
+  updated_at: z.string().datetime({ offset: true }).optional(),
+})
+
+/**
+ * Schema para criação em lote de logs
+ */
+export const logBulkCreateSchema = z.object({
+  logs: z
+    .array(logCreateSchema)
+    .min(1, 'Adicione pelo menos um registro')
+    .max(50, 'Máximo de 50 registros por operação em lote'),
+})
+
+/**
+ * Valida um objeto de log
+ * @param {Object} data - Dados do log
+ * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
+ */
+export function validateLog(data: unknown) {
+  const result = logCreateSchema.safeParse(data)
+
+  if (result.success) {
+    return { success: true, data: result.data }
+  }
+
+  const errors = result.error.issues.map((err) => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }))
+
+  return { success: false, errors }
+}
+
+/**
+ * Valida dados para criação de log
+ * @param {Object} data - Dados do log
+ * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
+ */
+export function validateLogCreate(data: unknown) {
+  return validateLog(data)
+}
+
+/**
+ * Valida dados para atualização de log
+ * @param {Object} data - Dados do log
+ * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
+ */
+export function validateLogUpdate(data: unknown) {
+  const result = logUpdateSchema.safeParse(data)
+
+  if (result.success) {
+    return { success: true, data: result.data }
+  }
+
+  const errors = result.error.issues.map((err) => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }))
+
+  return { success: false, errors }
+}
+
+/**
+ * Valida dados para criação em lote de logs
+ * @param {Object} data - Dados com array de logs
+ * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
+ */
+export function validateLogBulkCreate(data: unknown) {
+  const result = logBulkCreateSchema.safeParse(data)
+
+  if (result.success) {
+    return { success: true, data: result.data }
+  }
+
+  const errors = result.error.issues.map((err) => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }))
+
+  return { success: false, errors }
+}
+
+/**
+ * Valida dados para criação em lote (array direto)
+ * @param {Array} logs - Array de logs
+ * @returns {{ success: boolean, data?: Array, errors?: Array<{index: number, field: string, message: string}> }}
+ */
+export function validateLogBulkArray(logs: unknown) {
+  if (!Array.isArray(logs)) {
+    return {
+      success: false,
+      errors: [{ index: -1, field: 'logs', message: 'Deve ser um array de registros' }],
+    }
+  }
+
+  if (logs.length === 0) {
+    return {
+      success: false,
+      errors: [{ index: -1, field: 'logs', message: 'Adicione pelo menos um registro' }],
+    }
+  }
+
+  if (logs.length > 50) {
+    return {
+      success: false,
+      errors: [
+        { index: -1, field: 'logs', message: 'Máximo de 50 registros por operação em lote' },
+      ],
+    }
+  }
+
+  const allErrors: Array<{ index: number; field: string; message: string }> = []
+  const validLogs: Array<z.infer<typeof logCreateSchema>> = []
+
+  logs.forEach((log, index) => {
+    const result = logCreateSchema.safeParse(log)
+    if (result.success) {
+      validLogs.push(result.data)
+    } else {
+      result.error.issues.forEach((err) => {
+        allErrors.push({
+          index,
+          field: err.path.join('.'),
+          message: err.message,
+        })
+      })
+    }
+  })
+
+  if (allErrors.length > 0) {
+    return { success: false, errors: allErrors }
+  }
+
+  return { success: true, data: validLogs }
+}
+
+/**
+ * Converte erros do Zod para formato amigável para formulários
+ * @param {Array} zodErrors - Array de erros do Zod
+ * @returns {Object} Objeto com campo como chave e mensagem como valor
+ */
+export function mapLogErrorsToForm(zodErrors: Array<{ path?: Array<string | number>; field?: string; message: string }>) {
+  const formErrors: Record<string, string> = {}
+
+  zodErrors.forEach((error) => {
+    const field = String(error.path?.[0] ?? error.field ?? 'general')
+    if (!formErrors[field]) {
+      formErrors[field] = error.message
+    }
+  })
+
+  return formErrors
+}
+
+/**
+ * Converte erros de validação em lote para formato amigável
+ * @param {Array} errors - Array de erros com index
+ * @returns {Object} Objeto organizado por índice
+ */
+export function mapBulkLogErrors(errors: Array<{ index?: number; field?: string; message: string }>) {
+  const mappedErrors: Record<number, Record<string, string>> = {}
+
+  errors.forEach((error) => {
+    if (error.index != null && error.index >= 0) {
+      if (!mappedErrors[error.index]) {
+        mappedErrors[error.index] = {}
+      }
+      mappedErrors[error.index][error.field ?? 'general'] = error.message
+    }
+  })
+
+  return mappedErrors
+}
+
+/**
+ * Obtém mensagem de erro geral para exibição
+ * @param {Array} errors - Array de erros
+ * @returns {string} Mensagem formatada
+ */
+export function getLogErrorMessage(errors: Array<{ message: string }>) {
+  if (!errors || errors.length === 0) return ''
+
+  if (errors.length === 1) {
+    return errors[0].message
+  }
+
+  return `Existem ${errors.length} erros no formulário. Verifique os campos destacados.`
+}
+
+/**
+ * Obtém mensagem de erro para validação em lote
+ * @param {Array} errors - Array de erros com index
+ * @returns {string} Mensagem formatada
+ */
+export function getBulkLogErrorMessage(errors: Array<{ index?: number; field?: string; message?: string }>) {
+  if (!errors || errors.length === 0) return ''
+
+  const indicesAfetados = [...new Set(errors.map((e) => e.index))].filter((i): i is number => i != null && i >= 0)
+
+  if (indicesAfetados.length === 1) {
+    return `Erro no registro ${indicesAfetados[0] + 1}. Verifique os campos.`
+  }
+
+  return `${errors.length} erro(s) encontrado(s) em ${indicesAfetados.length} registro(s). Verifique os campos destacados.`
+}
+
+export default logSchema

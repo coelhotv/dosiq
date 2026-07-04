@@ -4,7 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { createLogger } from '../../../server/bot/logger.js';
-import { getServerTimestamp } from '../../../packages/core/src/utils/dateUtils.js';
+import { getServerTimestamp } from '../../../server/utils/dateUtils.js';
 
 const logger = createLogger('FeedbacksAdmin');
 

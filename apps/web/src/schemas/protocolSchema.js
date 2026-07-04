@@ -1,1 +1,1 @@
-export * from '../../../../packages/core/src/schemas/protocolSchema.js'
+export * from '../../../../packages/core/src/schemas/protocolSchema'

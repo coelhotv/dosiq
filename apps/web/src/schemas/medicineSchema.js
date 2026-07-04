@@ -1,1 +1,1 @@
-export * from '../../../../packages/core/src/schemas/medicineSchema.js'
+export * from '../../../../packages/core/src/schemas/medicineSchema'

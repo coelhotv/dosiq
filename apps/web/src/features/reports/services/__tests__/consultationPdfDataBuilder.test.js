@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { addDays, formatLocalDate } from '@utils/dateUtils.js'
+import { addDays, formatLocalDate } from '@utils/dateUtils'
 import {
   buildConsultationPdfData,
   formatTreatmentLabel,

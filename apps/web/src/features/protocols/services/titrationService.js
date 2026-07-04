@@ -1,4 +1,4 @@
-import { getNow, parseISO, addDays, daysDifference, formatLocalDate } from '@utils/dateUtils.js'
+import { getNow, parseISO, addDays, daysDifference, formatLocalDate } from '@utils/dateUtils'
 
 /**
  * Titration Service

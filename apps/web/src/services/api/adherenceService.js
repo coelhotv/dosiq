@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { addDays, getRawNow, parseISO, formatLocalDate, getUserTime } from '@utils/dateUtils.js'
+import { addDays, getRawNow, parseISO, formatLocalDate, getUserTime } from '@utils/dateUtils'
 import {
   createDoseInstanceRepository,
   computeAdherenceFromInstances,

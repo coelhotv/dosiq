@@ -1,0 +1,37 @@
+// @dosiq/core services — orquestração (geração + persistência) reusável web/mobile/server.
+export {
+  WINDOW_DAYS,
+  RENEWAL_THRESHOLD_DAYS,
+  computeWindowEnd,
+  planWindow,
+  ensureInstancesUpTo,
+  renewProtocolWindow,
+} from './doseInstancePlanner'
+
+// Resolução de tz do dono (write-path + cron) — F4.3f.1
+export { resolveUserTz, resolveUserTzMap } from './resolveUserTz'
+
+// Regeneração em massa ao mudar o fuso do perfil ("Me mudei") — F4.3f.2
+export { hasFuturePendingDoses, regenActiveProtocolsForTz } from './timezoneRegen'
+
+// Timeline read + adapter dose_instances→eventos (Fase 4 — FP-3 / ADR-050)
+export {
+  doseInstancesToEvents,
+  biomarkersToEvents,
+  createTimelineService,
+} from './timelineService'
+
+export { createDoseLogService } from './doseLogService'
+
+// Núcleo on-demand da base ANVISA (CON-027) — web (Cache Storage) + mobile (AsyncStorage)
+export {
+  createAnvisaDatabase,
+  normalizeText,
+  matchesPrefix,
+  fetchJson,
+  shouldRefreshCache,
+  resolveDataUrl,
+} from './anvisaDatabase'
+
+// Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
+export { createCriticalAuditService } from './criticalAuditService'

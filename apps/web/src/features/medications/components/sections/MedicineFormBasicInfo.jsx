@@ -1,5 +1,5 @@
 import React from 'react'
-import { getFieldDescribedBy } from '@utils/formUtils.js'
+import { getFieldDescribedBy } from '@utils/formUtils'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
 import MedicineAutocomplete from '@features/medications/components/MedicineAutocomplete.jsx'
 

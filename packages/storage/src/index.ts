@@ -1,0 +1,18 @@
+/**
+ * @dosiq/storage — Storage Adapter Layer (Fase 3: H3.1)
+ *
+ * Platform-agnostic, async-first storage interface.
+ * Desacoplado de window.localStorage, AsyncStorage, ou qualquer storage específico de plataforma.
+ *
+ * Usage:
+ *   import { createWebStorageAdapter, getJSON, setJSON } from '@dosiq/storage'
+ *   const adapter = createWebStorageAdapter(window.localStorage)
+ *   await adapter.setItem('key', 'value')
+ *   const value = await adapter.getItem('key')
+ *   const json = await getJSON(adapter, 'jsonKey', defaultValue)
+ */
+
+export { assertStorageAdapter } from './contracts'
+export { createWebStorageAdapter } from './webStorage'
+export { createMemoryStorageAdapter } from './memoryStorage'
+export { getJSON, setJSON } from './json'

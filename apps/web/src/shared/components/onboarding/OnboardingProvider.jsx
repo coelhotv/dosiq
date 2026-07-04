@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, startTransition } from 'react'
 import { getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
 import { supabase, getUserId } from '@shared/utils/supabase'
-import { getNow } from '@utils/dateUtils.js'
+import { getNow } from '@utils/dateUtils'
 import { OnboardingContext } from './OnboardingContext'
 
 export function OnboardingProvider({ children }) {

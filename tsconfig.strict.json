@@ -5,7 +5,6 @@
     "packages/core/src/types/**/*",
     "packages/core/src/repositories/**/*",
     "packages/core/src/services/**/*",
-    "packages/core/src/schemas/**/*",
-    "server/notifications/**/*"
+    "packages/core/src/schemas/**/*"
   ]
 }

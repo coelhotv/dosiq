@@ -13,7 +13,7 @@ import { generateConsultationPDF } from '@/features/reports/services/consultatio
 import { shareReport, shareNative, copyToClipboard } from '@/features/reports/services/shareService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import Button from '@shared/components/ui/Button'
-import { getNow, formatLocalDate } from '@utils/dateUtils.js'
+import { getNow, formatLocalDate } from '@utils/dateUtils'
 import './ReportGenerator.css'
 
 /**
