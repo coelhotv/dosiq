@@ -6,13 +6,13 @@ import {
   formatSelectedMedicine,
 } from './_medicineFormUtils'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export function useMedicineFormState({
   medicine,
   onSave,
   onSuccess,
   autoAdvance,
   showSuccessMessage,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 }: any) {
   const [formData, setFormData] = useState(() => getInitialFormData(medicine))
   const [errors, setErrors] = useState<Record<string, string>>({})

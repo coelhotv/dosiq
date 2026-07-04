@@ -10,9 +10,10 @@ export const DEFAULT_UNITS_PER_ML = 20
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 function _getAmountDisplay(dosage_per_pill: any, concentration_volume_ml: any) {
-  const denom = Number(concentration_volume_ml)
-  if (dosage_per_pill !== '' && dosage_per_pill != null && denom > 0) {
-    return String(cleanFloat(Number(dosage_per_pill) * denom))
+  const denom = coerceDecimal(concentration_volume_ml)
+  const amount = coerceDecimal(dosage_per_pill)
+  if (dosage_per_pill !== '' && dosage_per_pill != null && denom > 0 && !isNaN(amount)) {
+    return String(cleanFloat(amount * denom))
   }
   return dosage_per_pill
 }
@@ -40,7 +41,7 @@ export const getInitialFormData = (medicine: any) => {
 export const validateMedicineForm = (formData: any) => {
   const newErrors: Record<string, string> = {}
 
-  if (!formData.name.trim()) {
+  if (!formData.name?.trim()) {
     newErrors.name = 'Nome é obrigatório'
   }
 

@@ -11,8 +11,8 @@ import { measuresRepo } from '@features/measures/services/measuresRepo'
  * @param {string} [opts.type] - filtra por tipo (glicemia/peso/...).
  * @param {number} [opts.days=90] - janela em dias p/ histórico + tendência.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export function useMeasures({ type, days = 90 }: { type?: string; days?: number } = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
