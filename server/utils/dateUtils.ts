@@ -1,0 +1,215 @@
+/* eslint-disable no-restricted-syntax */
+
+/**
+ * Date Utilities - Funções utilitárias para manipulação de datas no Servidor
+ * Ancorado no fuso horário de Brasília (GMT-3).
+ */
+
+/**
+ * Retorna um objeto Date "ajustado" para o fuso de São Paulo
+ * para facilitar extração de horas/minutos locais em ambientes UTC.
+ * @param {Date|string} [date] - Data base (default: agora)
+ * @returns {Date}
+ */
+export function getSaoPauloTime(date: Date | string = new Date()) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Se a data de entrada for inválida, retorna a data atual como fallback seguro
+  if (isNaN(d.getTime())) return new Date();
+
+  try {
+    // R-020: Forçamos hour12: false para evitar 'p.m.' em certas versões de Node (ex: v24)
+    // O en-CA retorna YYYY-MM-DD, HH:mm:ss. Substituímos ', ' por 'T' para ISO parsing garantido.
+    const s = d.toLocaleString('en-CA', { 
+      timeZone: 'America/Sao_Paulo',
+      hour12: false 
+    }).replace(', ', 'T');
+    
+    const shifted = new Date(s);
+    
+    // Se a conversão falhar, retorna a data original (melhor que Invalid Date)
+    if (isNaN(shifted.getTime())) return d;
+    
+    return shifted;
+  } catch {
+    // Log silencioso ou fallback se o timezone não existir no ambiente
+    return d;
+  }
+}
+
+/**
+ * Retorna a data/hora atual como objeto Date ancorado em SP
+ * @returns {Date}
+ */
+export function getNow() {
+  return getSaoPauloTime();
+}
+
+/**
+ * Retorna a data/hora atual "bruta" (sem ajuste de fuso horário).
+ * Útil para timers e momentos que serão processados por outras funções de fuso.
+ * @returns {Date}
+ */
+export function getRawNow() {
+  return new Date();
+}
+
+
+/**
+ * Converte string de data (YYYY-MM-DD) para Date em timezone local (SP)
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {Date} Date object em timezone local (meia-noite local de SP)
+ */
+export function parseLocalDate(dateStr) {
+  // O sufixo T00:00:00 sem Z ou fuso garante que o JS entenda como tempo local
+  return new Date(dateStr + 'T00:00:00');
+}
+
+/**
+ * Formata Date para string YYYY-MM-DD em fuso SP
+ * @param {Date} [date] - Date object
+ * @returns {string} Data no formato YYYY-MM-DD
+ */
+export function getTodayLocal(date = getNow()) {
+  // R-020: Como date já é shifted para SP via getNow/getSaoPauloTime, 
+  // o toISOString reflete o "tempo de parede" de SP.
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Retorna o timestamp atual em formato ISO (UTC)
+ * Útil para logs de sistema e salvamento no banco (timestamptz).
+ * @returns {string} ISO 8601 string
+ */
+export function getServerTimestamp() {
+  return new Date().toISOString();
+}
+
+/**
+ * Converte epoch ms em Date (espelho do parseTimestamp do core).
+ * Único lugar autorizado a construir Date a partir de número — consumidores
+ * ficam livres da regra R-020 (que barra new Date fora daqui).
+ * @param {number} ms
+ * @returns {Date}
+ */
+export function parseTimestamp(ms) {
+  return new Date(ms);
+}
+
+/**
+ * Adiciona dias a uma data.
+ * @param {Date|string} date 
+ * @param {number} days 
+ * @returns {Date}
+ */
+export function addDays(date: Date | string | number, days: number = 0) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/**
+ * Adiciona horas a uma data (ou a partir de agora)
+ * @param {number} hours - Horas a adicionar
+ * @param {Date} [date] - Data base (opcional, default: agora)
+ * @returns {Date} Nova data
+ */
+export function addHours(hours, date = getNow()) {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
+
+/**
+ * Adiciona minutos a uma data
+ * @param {number} minutes 
+ * @param {Date} [date] 
+ * @returns {Date}
+ */
+export function addMinutes(minutes, date = getNow()) {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+/**
+ * Converte string ISO para objeto Date
+ * @param {string} isoString 
+ * @returns {Date}
+ */
+export function parseISO(isoString) {
+  return new Date(isoString);
+}
+
+/**
+ * Retorna o horário atual formatado para HH:mm (fuso SP).
+ * @returns {string}
+ */
+export function getCurrentTime() {
+  const now = getNow();
+  
+  // Defesa extra: se mesmo com o endurecimento de getNow() tivermos Invalid Date
+  if (isNaN(now.getTime())) {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  
+  // R-020: date já é shifted, toISOString reflete tempo de parede de SP
+  return now.toISOString().slice(11, 16);
+}
+
+/**
+ * Retorna o horário atual formatado para HH:mm em um fuso específico.
+ * @param {string} timezone - IANA timezone string (ex: 'America/Sao_Paulo')
+ * @returns {string}
+ */
+export function getCurrentTimeInTimezone(timezone = 'America/Sao_Paulo') {
+  return new Date().toLocaleTimeString('pt-BR', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
+/**
+ * Retorna { hhmm, weekday (0=dom..6=sab), dayOfMonth } na timezone do usuário.
+ * @param {string} timezone
+ */
+export function getCurrentDatePartsInTimezone(timezone = 'America/Sao_Paulo') {
+  const now = new Date();
+  const hhmm = now.toLocaleTimeString('pt-BR', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short', day: 'numeric' }).formatToParts(now);
+  const weekdayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const weekday = weekdayMap[parts.find(p => p.type === 'weekday')?.value] ?? -1;
+  const dayOfMonth = parseInt(parts.find(p => p.type === 'day')?.value ?? '0', 10);
+  return { hhmm, weekday, dayOfMonth };
+}
+
+/**
+ * Retorna o ISO UTC correspondente ao início do dia (00:00:00) em São Paulo.
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {string} ISO 8601 string (UTC)
+ */
+export function getStartOfDayISO(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  const spHour = parseInt(d.toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' }), 10);
+  const offset = spHour >= 12 ? spHour - 24 : spHour;
+  return new Date(d.getTime() - offset * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Retorna o ISO UTC correspondente ao fim do dia (23:59:59.999) em São Paulo.
+ * @param {string} dateStr - Data no formato YYYY-MM-DD
+ * @returns {string} ISO 8601 string (UTC)
+ */
+export function getEndOfDayISO(dateStr) {
+  const start = new Date(getStartOfDayISO(dateStr));
+  return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+}
+
+/**
+ * Retorna o último dia de um determinado mês/ano.
+ * @param {number} year 
+ * @param {number} month - 0-11
+ * @returns {number}
+ */
+export function getLastDayOfMonth(year, month) {
+  return new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+}

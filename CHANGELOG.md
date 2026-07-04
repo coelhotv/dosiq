@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Server v4.0.1 (backend) — 2026-07-04 — Refactor (040 F3): migração TypeScript de api/ e server/
+
+> **Bump:** server `4.0.0 → 4.0.1` (patch). **Plataforma:** backend (Vercel serverless + bot Telegram). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.
+
+### ♻️ Refactor
+
+- **api/ e server/ 100% TypeScript**: 7 entries + 6 handlers de `api/`, `server/notifications/` (nível A — contratos de canal tipados, zero `any` público, entra no strict island), `server/bot/` + services/utils/index (nível B). Scripts `start`/`dev` do server migrados pra `tsx`
+- **vercel.json**: 17 refs `api/*.js → *.ts` + remoção de rewrite fantasma `/api/gemini-reviews`
+- **Ratchet cross-program** (`scripts/strict-island.sh`): além do strict island, compila `api/` e `server/` sob flags próprias (non-strict) — erro de fonte é bloqueante; fecha o gap "strict-limpo ≠ limpo em todo programa que inclui o core"
+
+### 🐛 Correções (dentro da fase)
+
+- **Runtime Node ESM Vercel**: extensão `.js` obrigatória em imports relativos de `api/*.ts` (F3.1) e `server/notifications/` (gate) — extensionless passa no tsc local (bundler) e no tsx, mas quebra `ERR_MODULE_NOT_FOUND` na Vercel; preview revalidado com 11/11 rotas OK
+- **Repos inline de api/ alinhados aos contratos tipados**: `deactivateByToken` ausente causava `TypeError` em runtime quando Expo retorna `DeviceNotRegistered`; `quiet_hours_enabled` ausente no settings; `originalNotificationId` movido pra `context.details`
+- **Core sob non-strict**: `value` explícito no insert de `createBiomarkerRepository` (inferência Zod sem `strictNullChecks` marcava opcional e quebrava o tipo Insert gerado do Supabase — erro latente da F2)
+
+---
+
 ## Core v0.2.1 (packages) — 2026-07-04 — Refactor (040 F2): migração TypeScript do core
 
 > **Bump:** core `0.2.0-phase3 → 0.2.1` (patch). **Plataforma:** packages/ (web+mobile consomem fonte — sem mudança de comportamento). Sem migração de dados. Sem relevância pra notas de loja.

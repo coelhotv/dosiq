@@ -125,9 +125,9 @@ describe('Stock Alerts via Dispatcher (ADR-030)', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    const mod = await import('../../../../../../server/services/supabase.js')
+    const mod = await import('../../../../../../server/services/supabase')
     supabase = mod.supabase
-    const tasks = await import('../../../../../../server/bot/tasks.js')
+    const tasks = await import('../../../../../../server/bot/tasks')
     checkStockAlerts = tasks.checkStockAlerts
   })
 

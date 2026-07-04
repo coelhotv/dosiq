@@ -1,0 +1,195 @@
+import { supabase } from './supabase.js';
+import { addMinutes, addDays } from '../utils/dateUtils.js';
+
+const DEDUP_WINDOW_MINUTES = 5; // Don't send same notification twice within 5 minutes
+
+/**
+ * Verifica se a notificação deve ser enviada (sem duplicatas)
+ * NÃO mais loga automaticamente - o log deve ser feito APÓS envio confirmado
+ * @param {string} userId - UUID do usuário (obrigatório)
+ * @param {string|null} protocolId - UUID do protocolo (opcional)
+ * @param {string} notificationType - Tipo: 'dose_reminder', 'daily_digest', etc.
+ * @returns {Promise<boolean>} true se deve enviar, false se duplicado
+ */
+export async function shouldSendNotification(userId, protocolId, notificationType) {
+  if (!userId) {
+    console.error('[Deduplicator] shouldSendNotification chamado sem userId');
+    return true; // Fail open
+  }
+
+  const cutoffTime = addMinutes(-DEDUP_WINDOW_MINUTES).toISOString();
+
+  try {
+    // Build query based on notification type
+    let query = supabase
+      .from('notification_log')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('notification_type', notificationType)
+      .gte('sent_at', cutoffTime)
+      .limit(1);
+    
+    // Add protocol filter only for protocol-level notifications
+    if (protocolId) {
+      query = query.eq('protocol_id', protocolId);
+    } else {
+      query = query.is('protocol_id', null);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Deduplicator] Erro ao verificar log de notificação:', error);
+      return true; // Fail open on error
+    }
+
+    // If we found a recent notification, this is a duplicate
+    if (data) {
+      console.log(`[Deduplicator] Ignorando duplicata ${notificationType} para usuário ${userId}`);
+      return false;
+    }
+
+    // Not a duplicate - return true (but DON'T log yet)
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Erro inesperado:', err);
+    return true; // Fail open
+  }
+}
+
+/**
+ * Loga uma notificação (função legada - usar logSuccessfulNotification)
+ * @deprecated Use logSuccessfulNotification após envio confirmado
+ */
+export async function logNotification(userId, protocolId, notificationType, status = 'enviada') {
+  if (!userId) {
+    console.error('[Deduplicator] logNotification chamado sem userId');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('notification_log')
+      .insert({
+        user_id: userId,
+        protocol_id: protocolId,  // Can be null for user-level alerts
+        notification_type: notificationType,
+        status: status
+      });
+
+    if (error) {
+      console.error('[Deduplicator] Erro ao logar notificação:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Erro inesperado em logNotification:', err);
+    return false;
+  }
+}
+
+/**
+ * Loga uma notificação como enviada com sucesso
+ * Deve ser chamado APÓS confirmação de envio pelo Telegram
+ * @param {string} userId - UUID do usuário (obrigatório)
+ * @param {string|null} protocolId - UUID do protocolo (opcional)
+ * @param {string} notificationType - Tipo de notificação
+ * @param {object} metadata - Metadados adicionais (messageId, etc)
+ * @returns {Promise<boolean>} true se logado com sucesso
+ */
+export async function logSuccessfulNotification(userId: string, protocolId: string | null, notificationType: string, metadata: { messageId?: string } = {}) {
+  if (!userId) {
+    console.error('[Deduplicator] logSuccessfulNotification chamado sem userId');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('notification_log')
+      .insert({
+        user_id: userId,
+        protocol_id: protocolId,
+        notification_type: notificationType,
+        status: 'enviada',
+        telegram_message_id: metadata.messageId || null
+      } as any);
+
+    if (error) {
+      console.error('[Deduplicator] Erro ao logar notificação:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Erro inesperado em logSuccessfulNotification:', err);
+    return false;
+  }
+}
+
+/**
+ * Limpa logs de notificação antigos (mais de 7 dias)
+ */
+export async function cleanupOldNotificationLogs() {
+  const sevenDaysAgo = addDays(-7).toISOString();
+
+  const { error } = await supabase
+    .from('notification_log')
+    .delete()
+    .lt('created_at', sevenDaysAgo);
+
+  if (error) {
+    console.error('[Deduplicator] Erro ao limpar logs:', error);
+  } else {
+    console.log('[Deduplicator] Limpeza concluída');
+  }
+}
+
+/**
+ * Verifica deduplicação para notificações agrupadas (dose_reminder_by_plan / dose_reminder_misc).
+ * Para by_plan: discrimina por treatment_plan_id no provider_metadata.
+ * Para misc: só verifica tipo + user + janela de 5min.
+ * @param {string} userId - UUID do usuário
+ * @param {string} notificationType - 'dose_reminder_by_plan' | 'dose_reminder_misc'
+ * @param {object} [options] - { planId?: string }
+ * @returns {Promise<boolean>} true se deve enviar, false se duplicado
+ */
+export async function shouldSendGroupedNotification(userId: string, notificationType: string, { planId }: { planId?: string } = {}) {
+  if (!userId) {
+    console.error('[Deduplicator] shouldSendGroupedNotification chamado sem userId');
+    return true; // Fail open
+  }
+
+  const cutoffTime = addMinutes(-DEDUP_WINDOW_MINUTES).toISOString();
+
+  try {
+    let query = supabase
+      .from('notification_log')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('notification_type', notificationType)
+      .gte('sent_at', cutoffTime)
+      .limit(1);
+
+    if (planId) {
+      query = query.filter('provider_metadata->>treatment_plan_id', 'eq', planId);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('[Deduplicator] Erro ao verificar grouped notification:', error);
+      return true; // Fail open
+    }
+
+    if (data) {
+      console.log(`[Deduplicator] Ignorando duplicata grouped ${notificationType} para userId ${userId}${planId ? ` planId ${planId}` : ''}`);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[Deduplicator] Erro inesperado em shouldSendGroupedNotification:', err);
+    return true; // Fail open
+  }
+}

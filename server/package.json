@@ -1,12 +1,12 @@
 {
   "name": "server",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
+    "start": "tsx index.ts",
+    "dev": "tsx watch index.ts"
   },
   "keywords": [],
   "author": "",

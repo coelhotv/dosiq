@@ -16,7 +16,7 @@ export default mergeConfig(
 
       include: [
         'src/**/*.test.{js,jsx}',
-        '../../server/**/*.test.{js,jsx}',
+        '../../server/**/*.test.{js,jsx,ts,tsx}',
         '../../packages/core/src/**/*.test.{js,jsx,ts,tsx}',
       ],
 
