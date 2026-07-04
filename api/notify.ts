@@ -41,11 +41,12 @@ const preferencesRepo = {
   async getSettingsByUserId(userId) {
     const { data } = await supabase
       .from('user_settings')
-      .select('notification_mode, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
+      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
       .eq('user_id', userId)
       .single();
     return data ?? {
       notification_mode: 'realtime',
+      quiet_hours_enabled: false,
       quiet_hours_start: null,
       quiet_hours_end: null,
       digest_time: '08:00',
@@ -58,6 +59,13 @@ const devicesRepo = {
   async listActiveByUser(userId, provider) {
     const { data } = await supabase.from('notification_devices').select('*').eq('user_id', userId).eq('provider', provider).eq('is_active', true);
     return data || [];
+  },
+  async deactivateByToken(token) {
+    const { error } = await supabase
+      .from('notification_devices')
+      .update({ is_active: false, updated_at: getServerTimestamp() })
+      .eq('push_token', token);
+    if (error) logger.error('Falha ao desativar device por token', null, { error: error.message });
   }
 };
 

@@ -35,6 +35,13 @@ function _createRepositories(supabase) {
     async listActiveByUser(userId, provider) {
       const { data } = await supabase.from('notification_devices').select('*').eq('user_id', userId).eq('provider', provider).eq('is_active', true);
       return data || [];
+    },
+    async deactivateByToken(token) {
+      const { error } = await supabase
+        .from('notification_devices')
+        .update({ is_active: false, updated_at: getServerTimestamp() })
+        .eq('push_token', token);
+      if (error) logger.error('Falha ao desativar device por token', null, { error: error.message });
     }
   };
 
@@ -140,7 +147,7 @@ export async function handleRetry(req, res) {
       context: {
         correlationId: notification.correlation_id || `retry_${id}`,
         isRetry: true,
-        originalNotificationId: notification.id
+        details: { originalNotificationId: notification.id }
       },
       repositories: { preferences: preferencesRepo, devices: devicesRepo, dlq: dlqRepo },
       bot,
