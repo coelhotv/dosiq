@@ -1,14 +1,27 @@
 {
   "name": "@dosiq/core",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./schemas": "./src/schemas/index.ts",
+    ".": {
+      "node": "./dist/index.js",
+      "default": "./src/index.ts"
+    },
+    "./schemas": {
+      "node": "./dist/schemas/index.js",
+      "default": "./src/schemas/index.ts"
+    },
     "./schemas/*": "./src/schemas/*.ts",
-    "./utils": "./src/utils/index.ts",
+    "./utils": {
+      "node": "./dist/utils/index.js",
+      "default": "./src/utils/index.ts"
+    },
     "./utils/*": "./src/utils/*.ts",
     "./protocols-utils": "./src/protocols-utils/index.ts"
+  },
+  "scripts": {
+    "build": "esbuild src/index.ts src/schemas/index.ts src/utils/index.ts --bundle --format=esm --platform=node --packages=external --outdir=dist --entry-names=[dir]/[name] --log-level=warning",
+    "prepare": "npm run build"
   }
 }

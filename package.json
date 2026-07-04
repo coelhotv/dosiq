@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace @dosiq/web",
-    "build": "npm run build --workspace @dosiq/web",
+    "build": "npm run build --workspace @dosiq/core && npm run build --workspace @dosiq/web",
     "lint": "eslint .",
     "preview": "npm run preview --workspace @dosiq/web",
     "dev:web": "npm run dev --workspace @dosiq/web",
