@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Core v0.2.1 (packages) — 2026-07-04 — Refactor (040 F2): migração TypeScript do core
+
+> **Bump:** core `0.2.0-phase3 → 0.2.1` (patch). **Plataforma:** packages/ (web+mobile consomem fonte — sem mudança de comportamento). Sem migração de dados. Sem relevância pra notas de loja.
+
+### ♻️ Refactor
+
+- **packages/ 100% TypeScript** (203 arquivos): shared-data, config, design-tokens, storage e todo `packages/core/src` (repositories, services, schemas, utils, chatbot, markdown, types). Zero `.js` restante em `packages/core/src`
+- **Nível A real**: repositories tipados com `SupabaseClient<Database>` (`database.types.ts` gerado do Supabase), schemas exportando `z.infer<>`, `types/` novo com branded types (`PatientUid`/`CaregiverUid`) e `ActiveContext`
+- **Ratchet strict redesenhado** (`scripts/strict-island.sh`, R-283): fonte nível A strict-limpa é bloqueante; nível B transitivo + testes = dívida contada (TODO 040-strict, queima na F6). 152 erros de fonte A zerados no gate
+
+### 🐛 Correções (dentro da fase)
+
+- Runtime Node ESM de api/server restaurado — extensão `.js` em imports relativos (AP-260/R-282, commits 434144e→4808b6ca)
+- Exports órfãos de config/design-tokens/storage/core/shared-data apontados pra `.ts` (AP-261) — lint global (`import-x/no-cycle`) desbloqueado
+- `parseISO` tipado na assinatura (`string | number | Date`) eliminando casts nos call-sites; retorno de `register_dose_atomic` tipado na fronteira do RPC (review Gemini PR #703)
+
+---
+
 ## App v0.24.5 (mobile) + Backend — 2026-07-03 — Fix (041): janela do push-to-start + push_failed + dedupe token_captured
 
 > **Bump:** mobile `0.24.4 → 0.24.5` (patch). **Plataforma:** Mobile + Backend. Sem migração. Fixes server redeployam no merge; o dedupe mobile exige o novo build.
