@@ -4,9 +4,10 @@
  */
 
 import { Receipt } from 'lucide-react'
+import type { CSSProperties } from 'react'
 import './CostSummary.css'
 
-export default function CostSummary({ costData, isComplex }) {
+export default function CostSummary({ costData, isComplex }: any) {
   if (!costData || costData.items.length === 0) {
     return (
       <section
@@ -63,7 +64,7 @@ export default function CostSummary({ costData, isComplex }) {
               <div className="cost-summary-redesign__bar-track" role="presentation">
                 <div
                   className={`cost-summary-redesign__bar-fill${isTop ? ' cost-summary-redesign__bar-fill--top' : ''}`}
-                  style={{ '--bar-width': `${widthPct}%` }}
+                  style={{ '--bar-width': `${widthPct}%` } as CSSProperties}
                 />
               </div>
             </div>

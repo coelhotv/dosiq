@@ -193,8 +193,8 @@ export default function ExportDialog({ isOpen, onClose }) {
       }
 
       // Track analytics event
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'export_data', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        ;(window as any).gtag('event', 'export_data', {
           format,
           includeProtocols,
           includeLogs,

@@ -85,7 +85,7 @@ describe('stockService', () => {
       const { stockService } = await import('@stock/services/stockService')
 
       await expect(
-        stockService.decrease('123e4567-e89b-12d3-a456-426614174000', 2)
+        (stockService.decrease as any)('123e4567-e89b-12d3-a456-426614174000', 2)
       ).rejects.toThrow('medicineLogId é obrigatório')
     })
 

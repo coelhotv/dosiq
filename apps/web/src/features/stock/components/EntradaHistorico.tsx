@@ -15,7 +15,7 @@ import { useMotion } from '@shared/hooks/useMotion'
 import { parseLocalDate } from '@utils/dateUtils'
 import { stockUnitLabel, formatNumberPtBR } from '@dosiq/core'
 
-function formatDate(dateStr) {
+function formatDate(dateStr: any) {
   if (!dateStr) return '—'
   return parseLocalDate(dateStr).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -23,7 +23,7 @@ function formatDate(dateStr) {
   })
 }
 
-function formatQuantity(entry) {
+function formatQuantity(entry: any) {
   // Líquidos (022): quantidade em ml.
   const label = stockUnitLabel(entry)
   return `+${formatNumberPtBR(entry.quantity_bought)} ${label}`
@@ -33,14 +33,14 @@ function formatQuantity(entry) {
  * Formata o preço unitário: "R$ X,XX/un." (ou /ml líquido) ou null se não registrado.
  * Custo total seria irreal pois FIFO decrementa quantity após cada dose.
  */
-function formatCost(entry) {
+function formatCost(entry: any) {
   if (entry.unit_price == null) return null
   if (entry.unit_price < 0.01) return 'Grátis'
   const label = stockUnitLabel(entry)
   return `${entry.unit_price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/${label}`
 }
 
-export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
+export default function EntradaHistorico({ purchases = [], maxVisible = 3 }: any) {
   const motionConfig = useMotion()
   const [expanded, setExpanded] = useState(false)
 
@@ -48,7 +48,8 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
 
   // Ordenar por data mais recente primeiro
   const sorted = [...purchases].sort(
-    (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
+    (a: any, b: any) =>
+      (parseLocalDate(b.purchase_date) as any) - (parseLocalDate(a.purchase_date) as any)
   )
   const visible = expanded ? sorted : sorted.slice(0, maxVisible)
   const hasMore = sorted.length > maxVisible
@@ -56,9 +57,9 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
   return (
     <div className="entrada-historico">
       <motion.ul
-        key={expanded}
+        key={String(expanded)}
         className="entrada-historico__list"
-        variants={motionConfig.cascade.container}
+        variants={motionConfig.cascade.container as any}
         initial="hidden"
         animate="visible"
       >
@@ -69,7 +70,7 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }) {
             <motion.li
               key={entry.id}
               className="entrada-historico__item"
-              variants={motionConfig.cascade.item}
+              variants={motionConfig.cascade.item as any}
             >
               {/* Ícone canônico de identificação do medicamento */}
               <div className="entrada-historico__type-icon">

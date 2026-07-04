@@ -1,10 +1,10 @@
-import { motion } from 'framer-motion'
+import { motion, type Variants } from 'framer-motion'
 import './CostChart.css'
 
-const formatBRL = (value) =>
+const formatBRL = (value: any) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
@@ -13,14 +13,14 @@ const containerVariants = {
   },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, x: -8 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.25 } },
 }
 
-const barVariants = {
+const barVariants: Variants = {
   hidden: { width: 0 },
-  visible: (percent) => ({
+  visible: (percent: any) => ({
     width: `${percent}%`,
     transition: { duration: 0.45, ease: 'easeOut' },
   }),
@@ -45,7 +45,7 @@ export default function CostChart({
   projection6m,
   isRealData = false,
   onExpand,
-}) {
+}: any) {
   const hasData = items.length > 0 && totalMonthly > 0
 
   if (!hasData) {

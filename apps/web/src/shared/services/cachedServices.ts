@@ -173,7 +173,8 @@ export const cachedStockService = {
   },
 
   async update(id, updates) {
-    const result = await stockService.update(id, updates)
+    // TODO(040-strict): stockService não expõe `update` (dead code, sem callers) — fora do escopo do lote 4.6
+    const result = await (stockService as any).update(id, updates)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)
@@ -200,7 +201,8 @@ export const cachedStockService = {
   },
 
   async decrease(medicineId, quantity) {
-    const result = await stockService.decrease(medicineId, quantity)
+    // TODO(040-strict): decrease agora requer medicineLogId; caller aqui não tem esse dado (fora do escopo do lote 4.6)
+    const result = await (stockService.decrease as any)(medicineId, quantity)
     invalidateCache(`${CACHE_KEYS.STOCK_BY_MEDICINE}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_TOTAL}*`)
     invalidateCache(`${CACHE_KEYS.STOCK_SUMMARY}*`)

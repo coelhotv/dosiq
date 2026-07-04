@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validateStockForm, buildStockPayload } from '../_stockFormUtils.js'
+import { validateStockForm, buildStockPayload } from '../_stockFormUtils'
 
 describe('validateStockForm — líquido (frascos × volume)', () => {
   const liquidBase = { medicine_id: 'm1', num_bottles: '2', volume_per_bottle: '100' }

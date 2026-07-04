@@ -8,7 +8,7 @@ export default function StockFormPurchaseDetails({
   fixedLaboratory,
   effectiveLaboratory,
   regulatoryCategory,
-}) {
+}: any) {
   return (
     <>
       <div className="form-row">
@@ -32,7 +32,7 @@ export default function StockFormPurchaseDetails({
             value={formData.expiration_date}
             onChange={handleChange}
             className={errors.expiration_date ? 'error' : ''}
-            aria-describedby={getFieldDescribedBy('expiration_date')}
+            aria-describedby={getFieldDescribedBy('expiration_date', errors)}
             aria-invalid={Boolean(errors.expiration_date)}
           />
           {errors.expiration_date && (
@@ -100,7 +100,7 @@ export default function StockFormPurchaseDetails({
           value={formData.notes}
           onChange={handleChange}
           placeholder="Ex: promoção, lote especial, compra emergencial"
-          rows="3"
+          rows={3}
           maxLength={500}
         />
       </div>
