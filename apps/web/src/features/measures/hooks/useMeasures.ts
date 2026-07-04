@@ -11,10 +11,11 @@ import { measuresRepo } from '@features/measures/services/measuresRepo'
  * @param {string} [opts.type] - filtra por tipo (glicemia/peso/...).
  * @param {number} [opts.days=90] - janela em dias p/ histórico + tendência.
  */
-export function useMeasures({ type, days = 90 } = {}) {
-  const [items, setItems] = useState([])
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+export function useMeasures({ type, days = 90 }: { type?: string; days?: number } = {}) {
+  const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -23,7 +24,7 @@ export function useMeasures({ type, days = 90 } = {}) {
       const fromTs = addDays(getRawNow(), -days).toISOString()
       const data = await measuresRepo.list({ type, fromTs })
       setItems(data)
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Erro ao carregar medidas')
       console.error('[useMeasures] load:', err)
     } finally {
@@ -41,19 +42,19 @@ export function useMeasures({ type, days = 90 } = {}) {
     return () => window.removeEventListener('mr:measure-saved', load)
   }, [load])
 
-  const create = useCallback(async (biomarker) => {
+  const create = useCallback(async (biomarker: any) => {
     const created = await measuresRepo.create(biomarker)
     await load()
     return created
   }, [load])
 
-  const update = useCallback(async (id, patch) => {
+  const update = useCallback(async (id: any, patch: any) => {
     const updated = await measuresRepo.update(id, patch)
     await load()
     return updated
   }, [load])
 
-  const remove = useCallback(async (id) => {
+  const remove = useCallback(async (id: any) => {
     await measuresRepo.remove(id)
     await load()
   }, [load])
