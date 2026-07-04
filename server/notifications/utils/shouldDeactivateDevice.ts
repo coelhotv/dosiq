@@ -3,6 +3,6 @@
 
 const PERMANENT_ERRORS = ['DeviceNotRegistered', 'InvalidCredentials', 'MessageTooBig']
 
-export function shouldDeactivateDevice(errorCode) {
-  return PERMANENT_ERRORS.includes(errorCode)
+export function shouldDeactivateDevice(errorCode: string | undefined): boolean {
+  return errorCode !== undefined && PERMANENT_ERRORS.includes(errorCode)
 }

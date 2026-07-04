@@ -5,7 +5,7 @@
 // Consultar expoPushChannel.js para a API exata usada (Gate 6 — R-275).
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { sendExpoPushNotification } from './expoPushChannel.js'
+import { sendExpoPushNotification } from './expoPushChannel'
 
 const makePayload = () => ({
   title: 'Estoque baixo',

@@ -8,15 +8,29 @@ import { z } from 'zod'
 const notificationPreferenceSchema = z.enum(['telegram', 'mobile_push', 'both', 'none'])
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { realtime: { transport: ws } }
+  (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+  { realtime: { transport: ws as unknown as typeof WebSocket } }
 )
+
+export type NotificationPreference = 'telegram' | 'mobile_push' | 'both' | 'none'
+
+export interface NotificationSettings {
+  notification_mode: string
+  quiet_hours_enabled: boolean
+  quiet_hours_start: string | null
+  quiet_hours_end: string | null
+  digest_time: string
+  timezone: string
+  channel_mobile_push_enabled?: boolean
+  channel_web_push_enabled?: boolean
+  channel_telegram_enabled?: boolean
+}
 
 export const notificationPreferenceRepository = {
   // Obtém preferência de notificação do usuário
   // Retorna: 'telegram', 'mobile_push', 'both', ou 'none'
-  async getByUserId(userId) {
+  async getByUserId(userId: string): Promise<NotificationPreference> {
     const { data, error } = await supabase
       .from('user_settings')
       .select('notification_preference')
@@ -37,7 +51,7 @@ export const notificationPreferenceRepository = {
 
   // Verifica se usuário tem chat_id do Telegram registrado
   // Retorna: true se telegram_chat_id está preenchido, false caso contrário
-  async hasTelegramChat(userId) {
+  async hasTelegramChat(userId: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('user_settings')
       .select('telegram_chat_id')
@@ -56,7 +70,7 @@ export const notificationPreferenceRepository = {
   },
 
   // Atualiza preferência de notificação do usuário
-  async setPreference(userId, preference) {
+  async setPreference(userId: string, preference: NotificationPreference): Promise<void> {
     const parsed = notificationPreferenceSchema.safeParse(preference)
     if (!parsed.success) {
       throw new Error(
@@ -80,7 +94,7 @@ export const notificationPreferenceRepository = {
   },
 
   // Obtém configurações completas de notificação para o gate/dispatcher (Wave N2)
-  async getSettingsByUserId(userId) {
+  async getSettingsByUserId(userId: string): Promise<NotificationSettings> {
     const { data, error } = await supabase
       .from('user_settings')
       .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')

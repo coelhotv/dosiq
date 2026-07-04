@@ -13,7 +13,31 @@
 
 import { deriveDoseActivityState, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
-import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig } from './liveActivityPush.js'
+import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush'
+
+interface Logger {
+  info?: (...args: unknown[]) => void
+  warn?: (...args: unknown[]) => void
+  error?: (...args: unknown[]) => void
+}
+
+interface DoseInstanceRow {
+  id: string
+  user_id: string
+  scheduled_for: string
+  critical_alarm?: boolean
+  status?: string
+  la_push_token?: string | null
+  la_push_state?: string | null
+  protocol?: {
+    name?: string
+    treatment_plan_id?: string | null
+    medicine?: { name?: string }
+  }
+}
+
+type UpdateFn = (params: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise<ApnsResult>
+type EndFn = UpdateFn
 
 // Status que encerram a LA (dose saiu de pendente).
 const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
@@ -27,7 +51,7 @@ const SELECT_FIELDS = `
 `
 
 /** dose_instance → shape CON-029 (mínimo p/ deriveDoseActivityState). @private */
-function mapInstance(inst) {
+function mapInstance(inst: DoseInstanceRow) {
   const protocol = inst.protocol || {}
   const medicine = protocol.medicine || {}
   return {
@@ -40,14 +64,14 @@ function mapInstance(inst) {
 }
 
 /** Epoch (s) do scheduled_for (R-020: parseISO, nunca Date cru). @private */
-function scheduledEpochSec(inst, now) {
+function scheduledEpochSec(inst: DoseInstanceRow, now: Date): number {
   const d = inst.scheduled_for ? parseISO(inst.scheduled_for) : null
   const ms = d && !Number.isNaN(d.getTime()) ? d.getTime() : now.getTime()
   return Math.floor(ms / 1000)
 }
 
 /** Limpa o token+estado da LA da ocorrência (encerrada ou token morto). @private */
-async function _clearToken(supabase, logger, instanceId) {
+async function _clearToken(supabase: any, logger: Logger | undefined, instanceId: string): Promise<void> {
   const { error } = await supabase
     .from('dose_instances')
     .update({ la_push_token: null, la_push_state: null })
@@ -55,11 +79,21 @@ async function _clearToken(supabase, logger, instanceId) {
   if (error) logger?.error?.('Falha ao limpar la_push_token (fail-open)', error, { instanceId })
 }
 
+interface DriveInstanceParams {
+  supabase: any
+  logger?: Logger
+  inst: DoseInstanceRow
+  now: Date
+  updateFn: UpdateFn
+  endFn: EndFn
+  audit: ReturnType<typeof createCriticalAuditService>
+}
+
 /** Processa UMA ocorrência com LA ativa: end se resolvida, update se o estado mudou. @private */
-async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit }) {
+async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, audit }: DriveInstanceParams): Promise<'ended' | 'failed' | 'skipped' | 'updated'> {
   // Auditoria (spec 042): surface_transitioned. userId = dono da instância (SEC-2). detail só
   // estados derivados (from/to) — sem PII (nome de medicamento/token nunca entram no trail).
-  const emitTransition = (to) =>
+  const emitTransition = (to: string) =>
     audit?.emit({
       userId: inst.user_id,
       doseInstanceId: inst.id,
@@ -71,7 +105,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
   // push_failed: torna VISÍVEL a falha de push da LA (ex.: token de simulador rejeitado pelo APNs) —
   // antes o lifecycle só auditava sucesso, então "a LA não transicionou" ficava silencioso. detail
   // só status/reason/fase do APNs (sem PII: nunca token/rótulo).
-  const emitFailed = (phase, res) =>
+  const emitFailed = (phase: string, res: ApnsResult) =>
     audit?.emit({
       userId: inst.user_id,
       doseInstanceId: inst.id,
@@ -82,7 +116,7 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
     })
 
   // Resolvida (dose registrada/pulada) → encerra a LA (card done p/ taken; dismiss p/ resto).
-  if (RESOLVED_STATUSES.has(inst.status)) {
+  if (RESOLVED_STATUSES.has(inst.status ?? '')) {
     const finalState = inst.status === 'taken' ? 'done' : 'missed'
     const res = await endFn({
       pushToken: inst.la_push_token,
@@ -157,23 +191,30 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
   return 'failed'
 }
 
-/**
- * Empurra update/end para todas as LAs iOS ativas (la_push_token IS NOT NULL) no loop de minuto.
- * @param {object} deps
- * @param {object} deps.supabase - client service_role
- * @param {object} deps.logger
- * @param {Date}   [deps.now]
- * @param {Function} [deps.updateFn] - override (testes) do envio de update APNs
- * @param {Function} [deps.endFn] - override (testes) do envio de end APNs
- * @returns {Promise<{processed:number, updated:number, ended:number, skipped:number, failed:number}>}
- */
-export async function dispatchLiveActivityLifecycle({ supabase, logger, now = parseISO(getServerTimestamp()), updateFn = sendLiveActivityUpdate, endFn = sendLiveActivityEnd } = {}) {
-  const result = { processed: 0, updated: 0, ended: 0, skipped: 0, failed: 0 }
+interface DispatchLiveActivityLifecycleParams {
+  supabase: any
+  logger?: Logger
+  now?: Date
+  updateFn?: UpdateFn
+  endFn?: EndFn
+}
+
+interface DispatchLiveActivityLifecycleResult {
+  processed: number
+  updated: number
+  ended: number
+  skipped: number
+  failed: number
+}
+
+/** Empurra update/end para todas as LAs iOS ativas (la_push_token IS NOT NULL) no loop de minuto. */
+export async function dispatchLiveActivityLifecycle({ supabase, logger, now = parseISO(getServerTimestamp()), updateFn = sendLiveActivityUpdate, endFn = sendLiveActivityEnd }: DispatchLiveActivityLifecycleParams): Promise<DispatchLiveActivityLifecycleResult> {
+  const result: DispatchLiveActivityLifecycleResult = { processed: 0, updated: 0, ended: 0, skipped: 0, failed: 0 }
 
   // Fail-closed na config (R-088): sem APNs, sem ciclo (LA degrada p/ foreground 039).
   if (!getApnsConfig()) return result
 
-  let instances
+  let instances: DoseInstanceRow[]
   try {
     // iOS limita a exibição de uma Live Activity a ~8h → tokens de ocorrências além de 24h atrás são
     // órfãos (limpeza falhou / app desinstalado). Restringe a janela p/ não varrer/processar lixo a

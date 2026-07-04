@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { buildLiveActivityStartPayload } from '../buildLiveActivityPayload.js';
+import { buildLiveActivityStartPayload } from '../buildLiveActivityPayload';
 
 // now fixo p/ estado determinístico. Dose em +30min → upcoming (10..60).
 const NOW = new Date('2026-07-01T12:00:00.000Z');

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { notificationLogRepository } from './notificationLogRepository.js';
+import { notificationLogRepository } from './notificationLogRepository';
 import { supabase } from '../../services/supabase.js';
 
 // Mock do Supabase

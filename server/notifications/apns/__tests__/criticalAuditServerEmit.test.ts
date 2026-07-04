@@ -5,8 +5,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
-import { dispatchLiveActivityStarts } from '../dispatchLiveActivityStarts.js';
-import { dispatchLiveActivityLifecycle } from '../dispatchLiveActivityLifecycle.js';
+import { dispatchLiveActivityStarts } from '../dispatchLiveActivityStarts';
+import { dispatchLiveActivityLifecycle } from '../dispatchLiveActivityLifecycle';
 
 const TEST_P8 = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' });
 

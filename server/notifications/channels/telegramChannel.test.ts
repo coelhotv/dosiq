@@ -2,7 +2,7 @@
 // Cobre entrega com sucesso e ausência de telegram_chat_id
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { sendTelegramNotification } from './telegramChannel.js'
+import { sendTelegramNotification } from './telegramChannel'
 
 const makePayload = () => ({
   title: 'Hora do remédio',

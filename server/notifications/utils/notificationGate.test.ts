@@ -2,7 +2,7 @@
 // Vitest é o test runner canônico deste projeto. node:test não é reconhecido pelo vitest.
 
 import { describe, it, expect } from 'vitest'
-import { shouldSendNow, isInQuietHours } from './notificationGate.js'
+import { shouldSendNow, isInQuietHours } from './notificationGate'
 
 describe('shouldSendNow', () => {
   it('silent → false', () => {

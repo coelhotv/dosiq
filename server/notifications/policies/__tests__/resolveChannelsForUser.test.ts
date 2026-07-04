@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { resolveChannelsForUser } from '../resolveChannelsForUser.js';
+import { resolveChannelsForUser } from '../resolveChannelsForUser';
 
 // Repos mock: dose crítica deve ir SÓ pelo canal de alarme (mobile_push), com fallback telegram
 // quando não há device mobile ativo. Não-crítica segue as preferências normais.

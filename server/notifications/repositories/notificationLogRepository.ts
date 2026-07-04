@@ -1,13 +1,15 @@
+import type { z } from 'zod';
 import { supabase } from '../../services/supabase.js';
 import { notificationLogCreateSchema } from '@dosiq/core/schemas';
 import { getServerTimestamp } from '../../utils/dateUtils.js';
 
+export type NotificationLogCreateInput = z.input<typeof notificationLogCreateSchema>;
+
 export const notificationLogRepository = {
   /**
    * Registra uma nova entrada no log de notificações
-   * @param {Object} data - Dados da notificação (userId, protocolId, kind, status, etc)
    */
-  async create(data) {
+  async create(data: NotificationLogCreateInput) {
     const parsed = notificationLogCreateSchema.safeParse(data);
     
     if (!parsed.success) {
@@ -51,7 +53,7 @@ export const notificationLogRepository = {
    * Lista notificações de um usuário de forma paginada para a Inbox
    * (Será usado principalmente na v8.2/8.3, mas deixamos pronto o backend)
    */
-  async listByUserId(userId, { limit = 20, offset = 0 } = {}) {
+  async listByUserId(userId: string, { limit = 20, offset = 0 }: { limit?: number; offset?: number } = {}) {
     const { data, error } = await supabase
       .from('notification_log')
       .select(`

@@ -14,8 +14,29 @@
 
 import { selectActiveDoseActivity, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
-import { sendLiveActivityStart, getApnsConfig } from './liveActivityPush.js'
-import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
+import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush'
+import { buildLiveActivityStartPayload } from './buildLiveActivityPayload'
+
+interface Logger {
+  info?: (...args: unknown[]) => void
+  warn?: (...args: unknown[]) => void
+  error?: (...args: unknown[]) => void
+}
+
+interface DoseInstanceRow {
+  id: string
+  user_id: string
+  scheduled_for: string
+  critical_alarm?: boolean
+  protocol?: {
+    name?: string
+    treatment_plan_id?: string | null
+    medicine?: { name?: string }
+  }
+}
+
+type SendFn = (params: { pushToStartToken: string; attributes: Record<string, unknown>; contentState: Record<string, unknown>; staleEpochSec: number }) => Promise<ApnsResult>
+type BuildFn = typeof buildLiveActivityStartPayload
 
 const DEFAULT_LEAD_MINUTES = 60 // = SURFACE_WINDOWS.upcomingMinutes (later→upcoming, início do countdown)
 
@@ -29,7 +50,7 @@ const SELECT_FIELDS = `
 `
 
 /** Mapeia dose_instance → shape CON-029 (espelha mapInstanceToDose do reminder). @private */
-function mapInstance(inst) {
+function mapInstance(inst: DoseInstanceRow) {
   const protocol = inst.protocol || {}
   const medicine = protocol.medicine || {}
   return {
@@ -41,14 +62,25 @@ function mapInstance(inst) {
   }
 }
 
+interface DispatchForUserParams {
+  supabase: any
+  logger?: Logger
+  userId: string
+  instances: DoseInstanceRow[]
+  now: Date
+  buildFn: BuildFn
+  sendFn: SendFn
+  audit: ReturnType<typeof createCriticalAuditService>
+}
+
 /** Envia o start p/ os devices de UM usuário (IDOR guard + 410 + idempotência). @private */
-async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit }) {
+async function _dispatchForUser({ supabase, logger, userId, instances, now, buildFn, sendFn, audit }: DispatchForUserParams): Promise<'skipped' | 'failed' | 'sent'> {
   const items = instances.map(mapInstance)
   const active = selectActiveDoseActivity(items, now)
   if (!active || !active.instanceId) return 'skipped'
   // Auditoria (spec 042): userId é o dono da dose (SEC-2 — derivado da instância, não de sessão).
   // detail sem PII (sem nome de medicamento/token) — só status HTTP/APNs quando útil.
-  const emitAudit = (event, detail = null) =>
+  const emitAudit = (event: string, detail: Record<string, unknown> | null = null) =>
     audit?.emit({ userId, doseInstanceId: active.instanceId, event, platform: 'server', actor: 'server', detail })
 
   // Token push-to-start do device (por-provider). RLS bypassada (service_role) → guard explícito.
@@ -68,6 +100,7 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   }
 
   const sourceItem = items.find((it) => String(it.instanceId) === String(active.instanceId))
+  if (!sourceItem) return 'skipped'
   // Explícito (mostra nome) — iOS não redige a LA (decisão PO 2026-06-29; paridade com a 039/foreground).
   const payload = buildFn(sourceItem, { discreet: false, now })
   if (!payload) return 'skipped'
@@ -128,18 +161,25 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   return 'sent'
 }
 
-/**
- * @param {object} deps
- * @param {object} deps.supabase - client service_role
- * @param {object} deps.logger
- * @param {Date}   [deps.now]
- * @param {number} [deps.leadMinutes]
- * @param {Function} [deps.sendFn] - override do envio APNs (testes)
- * @param {Function} [deps.buildFn] - override do builder (testes)
- * @returns {Promise<{processed:number, sent:number, skipped:number, failed:number}>}
- */
-export async function dispatchLiveActivityStarts({ supabase, logger, now = parseISO(getServerTimestamp()), leadMinutes, sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload } = {}) {
-  const result = { processed: 0, sent: 0, skipped: 0, failed: 0 }
+interface DispatchLiveActivityStartsParams {
+  supabase: any
+  logger?: Logger
+  now?: Date
+  leadMinutes?: number
+  sendFn?: SendFn
+  buildFn?: BuildFn
+}
+
+interface DispatchLiveActivityStartsResult {
+  processed: number
+  sent: number
+  skipped: number
+  failed: number
+}
+
+/** Dispara o push-to-start (event=start) para doses críticas entrando na janela `upcoming`. */
+export async function dispatchLiveActivityStarts({ supabase, logger, now = parseISO(getServerTimestamp()), leadMinutes, sendFn = sendLiveActivityStart, buildFn = buildLiveActivityStartPayload }: DispatchLiveActivityStartsParams): Promise<DispatchLiveActivityStartsResult> {
+  const result: DispatchLiveActivityStartsResult = { processed: 0, sent: 0, skipped: 0, failed: 0 }
 
   // Fail-closed na config (R-088): sem credencial APNs, não dispara (alarme intacto). NÃO é erro.
   if (!getApnsConfig()) {
@@ -155,7 +195,7 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   const windowStart = now.toISOString()
   const windowEnd = addMinutes(lead, now).toISOString()
 
-  let instances
+  let instances: DoseInstanceRow[]
   try {
     const { data, error } = await supabase
       .from('dose_instances')
@@ -175,7 +215,7 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   if (instances.length === 0) return result
 
   // Agrupa por usuário → dose ativa única (CON-029)
-  const byUser = {}
+  const byUser: Record<string, DoseInstanceRow[]> = {}
   for (const inst of instances) {
     ;(byUser[inst.user_id] ||= []).push(inst)
   }

@@ -1,6 +1,27 @@
 import webpush from 'web-push'
 
-function mapDeeplinkToWebPath(deeplink) {
+interface WebPushDevice {
+  push_token: string
+  [key: string]: unknown
+}
+
+interface NotificationPayload {
+  title?: string
+  body: string
+  pushBody?: string
+  deeplink?: string | null
+}
+
+interface DeviceRepository {
+  listActiveByUser(userId: string, provider: string): Promise<WebPushDevice[]>
+  deactivateByToken(token: string): Promise<void>
+}
+
+interface Repositories {
+  devices: DeviceRepository
+}
+
+function mapDeeplinkToWebPath(deeplink: string | null | undefined): string {
   if (!deeplink) return '/'
   let path = deeplink.replace('dosiq://', '/')
   if (path.startsWith('/admin/dlq')) {
@@ -10,7 +31,7 @@ function mapDeeplinkToWebPath(deeplink) {
 }
 
 // Inicializa a configuração VAPID para o envio de push.
-function _initVapid(correlationId, userId) {
+function _initVapid(correlationId: string, userId: string): boolean | null {
   const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
   const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
   const vapidEmail = process.env.VAPID_EMAIL || 'mailto:admin@dosiq.app'
@@ -22,15 +43,21 @@ function _initVapid(correlationId, userId) {
 
   try {
     webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey)
-  } catch (e) {
+  } catch (e: any) {
     console.error('[webPushChannel] Falha ao configurar chaves VAPID:', e?.message || String(e))
   }
   return true
 }
 
+interface WebPushSendResult {
+  token?: string
+  success: boolean
+  error?: any
+}
+
 // Executa o envio individual em paralelo com tratamento de exceções.
-async function _sendIndividualWebPush(devices, pushPayload, correlationId, userId) {
-  const sendPromises = devices.map(async (device) => {
+async function _sendIndividualWebPush(devices: WebPushDevice[], pushPayload: string, correlationId: string, userId: string): Promise<PromiseSettledResult<WebPushSendResult>[]> {
+  const sendPromises = devices.map(async (device): Promise<WebPushSendResult> => {
     try {
       if (!device?.push_token) {
         throw new Error('Token de push ausente ou inválido')
@@ -38,7 +65,7 @@ async function _sendIndividualWebPush(devices, pushPayload, correlationId, userI
       const subscription = JSON.parse(device.push_token)
       await webpush.sendNotification(subscription, pushPayload)
       return { token: device.push_token, success: true }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[webPushChannel] Falha no push individual', { correlationId, userId, token: device?.push_token, error: error?.message || String(error) })
       return { token: device?.push_token, success: false, error }
     }
@@ -47,11 +74,11 @@ async function _sendIndividualWebPush(devices, pushPayload, correlationId, userI
 }
 
 // Processa o resultado do envio settled de web push.
-function _processSettledWebPushResults(settledResults) {
+function _processSettledWebPushResults(settledResults: PromiseSettledResult<WebPushSendResult>[]) {
   let delivered = 0
   let failed = 0
-  const errors = []
-  const tokensToDeactivate = []
+  const errors: Array<{ token?: string; code?: number; message?: string }> = []
+  const tokensToDeactivate: string[] = []
 
   for (const r of settledResults) {
     if (r.status === 'rejected') {
@@ -80,7 +107,14 @@ function _processSettledWebPushResults(settledResults) {
   return { delivered, failed, errors, tokensToDeactivate }
 }
 
-export async function sendWebPushNotification({ userId, payload, context, repositories }) {
+interface SendWebPushParams {
+  userId: string
+  payload: NotificationPayload
+  context?: { correlationId?: string }
+  repositories: Repositories
+}
+
+export async function sendWebPushNotification({ userId, payload, context, repositories }: SendWebPushParams) {
   const correlationId = context?.correlationId || 'unknown'
 
   if (!_initVapid(correlationId, userId)) {

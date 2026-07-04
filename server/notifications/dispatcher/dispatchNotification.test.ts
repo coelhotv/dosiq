@@ -5,7 +5,7 @@ process.env.VAPID_PUBLIC_KEY = 'mock-public-key'
 process.env.VAPID_PRIVATE_KEY = 'mock-private-key'
 
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest'
-import { dispatchNotification } from './dispatchNotification.js'
+import { dispatchNotification } from './dispatchNotification'
 
 const mockSendNotification = vi.fn()
 vi.mock('web-push', () => ({

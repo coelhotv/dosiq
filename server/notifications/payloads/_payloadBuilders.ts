@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import {
   dailyDigestDataSchema,
   adherenceReportDataSchema,
@@ -6,18 +7,28 @@ import {
   stockExpiryAlertDataSchema,
   titrationAlertDataSchema,
   prescriptionAlertDataSchema,
-  dlqDigestDataSchema
-} from './_payloadSchemas.js';
+  dlqDigestDataSchema,
+  doseReminderByPlanDataSchema,
+  doseReminderMiscDataSchema
+} from './_payloadSchemas';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { getSaoPauloTime } from '../../utils/dateUtils.js';
 import { formatDoseItem } from '@dosiq/core';
 
+interface NotificationPayload {
+  title: string
+  body: string
+  pushBody: string
+}
+
+type DailyDigestMedicine = z.input<typeof dailyDigestDataSchema>['medicines'][number];
+
 // 012 Fase D (FR-015b): frase de dose via formatters core (R-272). Líquido →
 // unidade de tomada real (gotas/ml/UI + ≈ml), case canônico (UI upper). Sólido →
 // hint de princípio ativo. Substitui o antigo formatDose local lossy ("1 un." p/
 // mg/ml; lowercase). Sem dose válida → undefined (mantém guarda do call site).
-const formatDigestDose = (m) => {
+const formatDigestDose = (m: DailyDigestMedicine): string | undefined => {
   if (m.dosagePerIntake === undefined || m.dosagePerIntake === null) return undefined;
   return formatDoseItem({
     dosagePerIntake: m.dosagePerIntake,
@@ -28,7 +39,7 @@ const formatDigestDose = (m) => {
   });
 };
 
-export function buildDailyDigestPayload(data) {
+export function buildDailyDigestPayload(data: z.input<typeof dailyDigestDataSchema>): NotificationPayload {
   const { firstName, hour, pendingCount, medicines } = dailyDigestDataSchema.parse(data);
   const greeting = getGreeting(hour);
   const title = '📅 Resumo do Dia';
@@ -60,7 +71,7 @@ export function buildDailyDigestPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildAdherenceReportPayload(data) {
+export function buildAdherenceReportPayload(data: z.input<typeof adherenceReportDataSchema>): NotificationPayload {
   const { firstName, period, percentage, taken, total, comparison } = adherenceReportDataSchema.parse(data);
   const nudge = getMotivationalNudge(percentage);
   const title = '📈 Relatório diário';
@@ -97,7 +108,7 @@ export function buildAdherenceReportPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildWeeklyAdherencePayload(data) {
+export function buildWeeklyAdherencePayload(data: z.input<typeof weeklyAdherenceDataSchema>): NotificationPayload {
   const { firstName, percentage, taken, total } = weeklyAdherenceDataSchema.parse(data);
   const nudge = getMotivationalNudge(percentage);
   const title = '📊 Relatório Semanal';
@@ -117,32 +128,32 @@ export function buildWeeklyAdherencePayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildDoseReminderByPlanPayload(data) {
+export function buildDoseReminderByPlanPayload(data: z.input<typeof doseReminderByPlanDataSchema>): NotificationPayload {
   const n = data.doses?.length ?? 0;
   const planName = data.planName ?? 'Plano de tratamento';
   const scheduledTime = data.scheduledTime ?? 'agora';
   const hour = data.hour ?? getSaoPauloTime().getHours();
-  
+
   const greeting = getTimeOfDayGreeting(hour);
   const title = `${greeting} — ${planName}`;
-  
+
   const body = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano \\(${escapeMarkdownV2(scheduledTime)}\\)\\.`;
   const pushBody = `Está na hora de tomar ${n} medicamento${n !== 1 ? 's' : ''} do seu plano (${scheduledTime}).`;
   return { title, body, pushBody };
 }
 
-export function buildDoseReminderMiscPayload(data) {
+export function buildDoseReminderMiscPayload(data: z.input<typeof doseReminderMiscDataSchema>): NotificationPayload {
   const n = data.doses?.length ?? 0;
   const scheduledTime = data.scheduledTime ?? 'agora';
   const hour = data.hour ?? getSaoPauloTime().getHours();
-  
+
   const title = getTimeOfDayGreeting(hour);
   const body = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${escapeMarkdownV2(scheduledTime)}\\. Clique para registrar\\.`;
   const pushBody = `Você tem ${n} medicamento${n !== 1 ? 's' : ''} pendente${n !== 1 ? 's' : ''} para ${scheduledTime}. Clique para registrar.`;
   return { title, body, pushBody };
 }
 
-export function buildStockAlertPayload(data) {
+export function buildStockAlertPayload(data: z.input<typeof stockAlertDataSchema>): NotificationPayload {
   const { medicineName, remaining, daysRemaining } = stockAlertDataSchema.parse(data);
   const title = `📦 Alerta de Estoque: ${medicineName}`;
   
@@ -164,7 +175,7 @@ export function buildStockAlertPayload(data) {
 
 // 012 Fase A (ADR-059): validade biologica (TTL pos-abertura) — eixo distinto do
 // alerta de volume (stock_alert). Cadencia D-3 + vencimento e controlada no cron.
-export function buildStockExpiryAlertPayload(data) {
+export function buildStockExpiryAlertPayload(data: z.input<typeof stockExpiryAlertDataSchema>): NotificationPayload {
   const { medicineName, daysLeft } = stockExpiryAlertDataSchema.parse(data);
   const title = `⏰ Validade após aberto: ${medicineName}`;
   const safeName = escapeMarkdownV2(medicineName);
@@ -183,7 +194,7 @@ export function buildStockExpiryAlertPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildTitrationAlertPayload(data) {
+export function buildTitrationAlertPayload(data: z.input<typeof titrationAlertDataSchema>): NotificationPayload {
   const { medicineName, currentStage, totalStages, status, nextStage, requiresNewMedicine } = titrationAlertDataSchema.parse(data);
   // 012 Fase B2 (FR-021): etapa cross-força → CTA de troca de apresentação.
   const title = requiresNewMedicine ? '🔄 Hora de trocar de apresentação' : '🎯 Atualização de Titulação';
@@ -222,7 +233,7 @@ export function buildTitrationAlertPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildMonthlyReportPayload(data) {
+export function buildMonthlyReportPayload(data: z.input<typeof adherenceReportDataSchema>): NotificationPayload {
   const { firstName, percentage, taken, total } = adherenceReportDataSchema.parse(data);
   const title = '🗓️ Relatório Mensal';
   
@@ -248,7 +259,7 @@ export function buildMonthlyReportPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildPrescriptionAlertPayload(data) {
+export function buildPrescriptionAlertPayload(data: z.input<typeof prescriptionAlertDataSchema>): NotificationPayload {
   const { medicineName, endDate, daysRemaining } = prescriptionAlertDataSchema.parse(data);
   const date = getSaoPauloTime(endDate).toLocaleDateString('pt-BR');
   const title = '📋 Alerta de Prescrição';
@@ -286,7 +297,7 @@ export function buildPrescriptionAlertPayload(data) {
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildDlqDigestPayload(data) {
+export function buildDlqDigestPayload(data: z.input<typeof dlqDigestDataSchema>): NotificationPayload {
   const { failedCount, failures } = dlqDigestDataSchema.parse(data);
   const title = '⚠️ DLQ Digest';
   

@@ -1,17 +1,20 @@
 // Constrói payload canônico de notificação a partir de evento de domínio
 // Todos os canais (Telegram, Expo) consomem este shape normalizado
 
-import { 
-  getServerTimestamp 
+import type { z } from 'zod';
+
+import {
+  getServerTimestamp,
+  getSaoPauloTime
 } from '../../utils/dateUtils.js';
 
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 
 import { DOSAGE_UNIT_LABELS } from '@dosiq/core';
 
-import { 
-  getTimeOfDayGreeting, 
-  getTimeOfDayEmoji 
+import {
+  getTimeOfDayGreeting,
+  getTimeOfDayEmoji
 } from '../../bot/utils/notificationHelpers.js';
 
 import {
@@ -22,7 +25,7 @@ import {
   doseReminderDataSchema,
   doseReminderByPlanDataSchema,
   doseReminderMiscDataSchema
-} from './_payloadSchemas.js';
+} from './_payloadSchemas';
 
 export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
 
@@ -36,31 +39,62 @@ import {
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
   buildDlqDigestPayload
-} from './_payloadBuilders.js';
+} from './_payloadBuilders';
+
+type Kind = z.infer<typeof kindSchema>;
+
+interface NotificationPayloadContent {
+  title: string;
+  body: string;
+  pushBody: string;
+  actions?: Array<z.input<typeof actionSchema>>;
+  metadata?: Metadata;
+}
+
+interface NotificationContext {
+  correlationId?: string;
+  details?: Record<string, unknown>;
+  isRetry?: boolean;
+}
+
+// Shape amplo dos dados de evento de domínio — cada builder valida (via zod)
+// só os campos que realmente usa; os demais campos aqui são acesso oportunista
+// (deeplink/metadata) e por isso ficam opcionais.
+interface NotificationEventData {
+  scheduledTime?: string;
+  time?: string;
+  protocolId?: string;
+  protocolIds?: string[];
+  planId?: string;
+  planName?: string;
+  medicineName?: string;
+  percentage?: number;
+  nudge?: string;
+  critical_alarm?: boolean;
+  doses?: Array<{ protocolId?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
+type Metadata = z.infer<typeof metadataSchema>;
 
 /**
  * Centralizador de construção de payloads de notificação.
  * Garante que todas as mensagens sigam o mesmo padrão visual e de escape.
- * 
- * @param {object} params - Parâmetros da notificação
- * @param {string} params.kind - Tipo da notificação
- * @param {object} params.data - Dados específicos para o tipo
- * @returns {object} Payload formatado { title, body, deeplink, metadata }
  */
-const PAYLOAD_BUILDERS = {
-  daily_digest: buildDailyDigestPayload,
-  adherence_report: buildAdherenceReportPayload,
-  weekly_adherence: buildWeeklyAdherencePayload,
-  stock_alert: buildStockAlertPayload,
-  stock_expiry_alert: buildStockExpiryAlertPayload,
-  titration_alert: buildTitrationAlertPayload,
-  monthly_report: buildMonthlyReportPayload,
-  prescription_alert: buildPrescriptionAlertPayload,
-  dlq_digest: buildDlqDigestPayload,
+const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title: string; body: string; pushBody: string }> = {
+  daily_digest: (data) => buildDailyDigestPayload(data as never),
+  adherence_report: (data) => buildAdherenceReportPayload(data as never),
+  weekly_adherence: (data) => buildWeeklyAdherencePayload(data as never),
+  stock_alert: (data) => buildStockAlertPayload(data as never),
+  stock_expiry_alert: (data) => buildStockExpiryAlertPayload(data as never),
+  titration_alert: (data) => buildTitrationAlertPayload(data as never),
+  monthly_report: (data) => buildMonthlyReportPayload(data as never),
+  prescription_alert: (data) => buildPrescriptionAlertPayload(data as never),
+  dlq_digest: (data) => buildDlqDigestPayload(data as never),
 };
 
 // Auxiliar para direcionar a construção do payload conforme o kind.
-function _buildPayloadContent(kind, data, metadata) {
+function _buildPayloadContent(kind: Kind, data: NotificationEventData, metadata: Metadata): NotificationPayloadContent {
   if (kind === 'dose_reminder') {
     return formatDoseReminder(data, metadata);
   }
@@ -75,10 +109,10 @@ function _buildPayloadContent(kind, data, metadata) {
   if (!builder) {
     throw new Error(`Unknown notification kind: ${kind}`);
   }
-  return builder(data);
+  return { ...builder(data), metadata };
 }
 
-export function buildNotificationPayload({ kind, data, context = {} }) {
+export function buildNotificationPayload({ kind, data, context = {} }: { kind: string; data: NotificationEventData; context?: NotificationContext }) {
   // 1. Validar Kind
   const validatedKind = kindSchema.parse(kind);
 
@@ -109,12 +143,18 @@ export function buildNotificationPayload({ kind, data, context = {} }) {
  * Auxiliar para formatar a descrição clínica do medicamento com quantidade e dosagem.
  * Exemplo: "Xarope (10ml) • 1 un." ou "Dipirona (500mg) • 2 un."
  */
-const formatMedicineDescription = (name, qty, dosagePerPill, unit, intakeUnit) => {
+const formatMedicineDescription = (
+  name: string,
+  qty: number | undefined | null,
+  dosagePerPill: number | undefined | null,
+  unit: string | undefined,
+  intakeUnit: string | undefined | null
+): string => {
   let desc = name;
   if (dosagePerPill !== undefined && dosagePerPill !== null && unit) {
     // 012 Fase D (FR-015b c): case canônico do acrônimo — 'ui/ml' → 'UI/ml',
     // 'ui' → 'UI' (DOSAGE_UNIT_LABELS); 'mg'/'ml' inalterados. Sem label → unit cru.
-    const unitLabel = DOSAGE_UNIT_LABELS?.[unit] || unit;
+    const unitLabel = (DOSAGE_UNIT_LABELS as Record<string, string>)?.[unit] || unit;
     desc += ` (${dosagePerPill}${unitLabel})`;
   }
   if (qty !== undefined && qty !== null) {
@@ -128,7 +168,7 @@ const formatMedicineDescription = (name, qty, dosagePerPill, unit, intakeUnit) =
 /**
  * Formata payload de lembrete de dose única.
  */
-function formatDoseReminder(data, metadata) {
+function formatDoseReminder(data: NotificationEventData, metadata: Metadata): NotificationPayloadContent {
   const result = doseReminderDataSchema.safeParse(data);
   if (!result.success) {
     throw new Error(`Invalid data for dose_reminder: ${result.error.message}`);
@@ -136,8 +176,9 @@ function formatDoseReminder(data, metadata) {
 
   const { medicineName, time, dosage, hour, protocolId, critical_alarm, dosagePerIntake, dosageUnit, dosagePerPill, intakeUnit } = result.data;
   const isCritical = critical_alarm === true;
-  const emoji = getTimeOfDayEmoji(hour);
-  const greeting = getTimeOfDayGreeting(hour);
+  const safeHour = hour ?? getSaoPauloTime().getHours();
+  const emoji = getTimeOfDayEmoji(safeHour);
+  const greeting = getTimeOfDayGreeting(safeHour);
   const title = isCritical ? '💊 Remédio essencial' : `${emoji} ${greeting}`;
 
   const safeTime = escapeMarkdownV2(time);
@@ -180,7 +221,7 @@ function formatDoseReminder(data, metadata) {
     }
   }
 
-  const actions = [
+  const actions: Array<z.input<typeof actionSchema>> = [
     { id: 'take', label: '✅ Tomar', params: { protocolId: protocolId ?? '', dosage: dosagePerIntake ?? 1 } },
     { id: 'snooze', label: '⏰ Soneca', params: { protocolId: protocolId ?? '' } },
     { id: 'skip', label: '⏭️ Pular', params: { protocolId: protocolId ?? '' } }
@@ -192,7 +233,7 @@ function formatDoseReminder(data, metadata) {
 /**
  * Formata payload de lembrete de doses por plano.
  */
-function formatDoseReminderByPlan(data, metadata) {
+function formatDoseReminderByPlan(data: NotificationEventData, metadata: Metadata): NotificationPayloadContent {
   const result = doseReminderByPlanDataSchema.safeParse(data);
   if (!result.success) {
     throw new Error(`Invalid data for dose_reminder_by_plan: ${result.error.message}`);
@@ -237,7 +278,7 @@ function formatDoseReminderByPlan(data, metadata) {
   }
 
   const planIdShort = String(planId ?? '').slice(0, 8);
-  const actions = [
+  const actions: Array<z.input<typeof actionSchema>> = [
     { id: 'take_plan', label: '✅ Registrar este plano', params: { planIdShort, hhmm: scheduledTime } }
   ];
 
@@ -247,7 +288,7 @@ function formatDoseReminderByPlan(data, metadata) {
 /**
  * Formata payload de lembrete de doses avulsas (misc).
  */
-function formatDoseReminderMisc(data, metadata) {
+function formatDoseReminderMisc(data: NotificationEventData, metadata: Metadata): NotificationPayloadContent {
   const result = doseReminderMiscDataSchema.safeParse(data);
   if (!result.success) {
     throw new Error(`Invalid data for dose_reminder_misc: ${result.error.message}`);
@@ -291,7 +332,7 @@ function formatDoseReminderMisc(data, metadata) {
   }
 
   const hhmm = scheduledTime;
-  const actions = [
+  const actions: Array<z.input<typeof actionSchema>> = [
     { id: 'take_misc', label: '✅ Registrar todos', params: { hhmm } }
   ];
 
@@ -302,7 +343,10 @@ function formatDoseReminderMisc(data, metadata) {
  * Aplica decoração visual de reenvio se necessário.
  * Isolado para reduzir complexidade da função principal.
  */
-function applyRetryDecoration(content, context) {
+function applyRetryDecoration(
+  content: { title: string; body: string; pushBody: string },
+  context: NotificationContext
+): { title: string; body: string; pushBody: string } {
   const isRetry = context.isRetry ?? false;
   if (!isRetry) return content;
 
@@ -314,10 +358,15 @@ function applyRetryDecoration(content, context) {
   };
 }
 
-function getNavigationMetadata(kind, data, protocolIds) {
+interface NavigationMetadata {
+  screen: string;
+  params: Record<string, unknown>;
+}
+
+function getNavigationMetadata(kind: Kind, data: NotificationEventData, protocolIds: string[]): NavigationMetadata {
   const at = data.scheduledTime || data.time || 'now'
 
-  const routes = {
+  const routes: Record<string, NavigationMetadata> = {
     dose_reminder: { screen: 'dose-individual', params: { protocolId: data.protocolId, at } },
     dose_reminder_by_plan: { screen: 'bulk-plan', params: { planId: data.planId, treatmentPlanName: data.planName, at } },
     dose_reminder_misc: { screen: 'bulk-misc', params: { protocolIds, at } },
@@ -338,11 +387,11 @@ function getNavigationMetadata(kind, data, protocolIds) {
  * Constrói objeto de metadados conforme whitelist estrita de `metadataSchema`.
  * Nenhum campo além dos definidos no schema é permitido (Gate 6).
  */
-function buildMetadata(kind, context, data = {}) {
+function buildMetadata(kind: Kind, context: NotificationContext, data: NotificationEventData = {}): Metadata {
   // Extrair protocolIds se for um array ou se estiver em data.doses (para grouped/misc)
   let protocolIds = data.protocolIds || []
   if (protocolIds.length === 0 && Array.isArray(data.doses)) {
-    protocolIds = data.doses.map(d => d.protocolId).filter(Boolean)
+    protocolIds = data.doses.map((d) => d.protocolId).filter((id): id is string => Boolean(id))
   }
 
   const navigation = getNavigationMetadata(kind, data, protocolIds)
@@ -365,18 +414,18 @@ function buildMetadata(kind, context, data = {}) {
   }
 
   // Remove chaves com valor undefined
-  return Object.fromEntries(Object.entries(rawMetadata).filter((entry) => entry[1] !== undefined))
+  return metadataSchema.parse(Object.fromEntries(Object.entries(rawMetadata).filter((entry) => entry[1] !== undefined)))
 }
 
 /**
  * Resolve o deeplink canônico para cada tipo de notificação.
  * Centraliza a lógica de rotas e parâmetros.
  */
-function resolveDeeplink(kind, data) {
+function resolveDeeplink(kind: Kind, data: NotificationEventData): string {
   const BASE_URL = 'dosiq://';
   
   // 1. Mapeamento de rotas estáticas
-  const staticRoutes = {
+  const staticRoutes: Record<string, string> = {
     adherence_report: 'history',
     weekly_adherence: 'history',
     monthly_report: 'history',

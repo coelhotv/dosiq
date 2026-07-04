@@ -1,18 +1,43 @@
 import { supabase } from '../../services/supabase.js'
 import { escapeMarkdownV2 } from '../../utils/formatters.js'
 
+interface NotificationAction {
+  id: string
+  label: string
+  params?: Record<string, unknown>
+}
+
+interface NotificationPayload {
+  title?: string
+  body: string
+  pushBody?: string
+  actions?: NotificationAction[]
+  metadata?: { kind?: string; [key: string]: unknown }
+}
+
+interface TelegramBot {
+  sendMessage(chatId: string, message: string, options: Record<string, unknown>): Promise<{ messageId?: string; message_id?: string } | undefined>
+}
+
+interface TelegramChannelParams {
+  userId: string
+  payload: NotificationPayload
+  context?: { correlationId?: string }
+  bot: TelegramBot
+}
+
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
 const EMPTY_RESULT = { channel: 'telegram', success: true, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [] }
 const TELEGRAM_CALLBACK_LIMIT = 64
 
-async function getTelegramChatId(userId) {
-  if (userId === SYSTEM_USER_ID) return process.env.ADMIN_CHAT_ID
+async function getTelegramChatId(userId: string): Promise<string | null> {
+  if (userId === SYSTEM_USER_ID) return process.env.ADMIN_CHAT_ID || null
   const { data, error } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single()
   if (error) console.error('[telegramChannel.getTelegramChatId]', { userId, error: error.message })
   return data?.telegram_chat_id || null
 }
 
-function encodeCallback(action) {
+function encodeCallback(action: NotificationAction): string | null {
   const { id, params: p = {} } = action
   let raw
   switch (id) {
@@ -29,7 +54,7 @@ function encodeCallback(action) {
   return Buffer.byteLength(raw, 'utf8') <= TELEGRAM_CALLBACK_LIMIT ? raw : raw.slice(0, TELEGRAM_CALLBACK_LIMIT)
 }
 
-export async function sendTelegramNotification({ userId, payload, context, bot }) {
+export async function sendTelegramNotification({ userId, payload, context, bot }: TelegramChannelParams) {
   const correlationId = context?.correlationId || 'unknown'
   const chatId = await getTelegramChatId(userId)
 
@@ -38,19 +63,19 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
     return EMPTY_RESULT
   }
 
-  const options = { parse_mode: 'MarkdownV2' }
+  const options: { parse_mode: string; reply_markup?: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> } } = { parse_mode: 'MarkdownV2' }
 
-  if (payload.actions?.length > 0) {
+  if (payload.actions && payload.actions.length > 0) {
     const buttons = payload.actions
-      .map(a => {
+      .map((a) => {
         const data = encodeCallback(a)
         return data ? { text: a.label, callback_data: data } : null
       })
-      .filter(Boolean)
+      .filter((b): b is { text: string; callback_data: string } => b !== null)
 
     if (buttons.length > 0) {
       const singleRow = payload.metadata?.kind === 'dose_reminder'
-      options.reply_markup = { inline_keyboard: singleRow ? [buttons] : buttons.map(b => [b]) }
+      options.reply_markup = { inline_keyboard: singleRow ? [buttons] : buttons.map((b) => [b]) }
     }
   }
 

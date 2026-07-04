@@ -5,9 +5,9 @@ import { createLogger } from '../../bot/logger.js'
 // correlationId é obrigatório em todos os logs (R-087)
 
 import { z } from 'zod'
-import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
-import { resolveChannelsForUser } from '../policies/resolveChannelsForUser.js'
-import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
+import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload'
+import { resolveChannelsForUser } from '../policies/resolveChannelsForUser'
+import { normalizeChannelResults } from '../utils/normalizeChannelResults'
 import { 
   getNow, 
   getCurrentTime
@@ -21,15 +21,37 @@ const dispatchInputSchema = z.object({
   channels: z.array(z.string()).default([]),
 })
 
-import { 
-  dispatchChannel, 
-  checkGatePolicy, 
-  logNotificationEvent, 
-  enqueueToDlq 
-} from './_dispatchHelpers.js'
+import {
+  dispatchChannel,
+  checkGatePolicy,
+  logNotificationEvent,
+  enqueueToDlq
+} from './_dispatchHelpers'
+import type { ChannelResult } from '../utils/normalizeChannelResults'
+import type { NotificationSettings, NotificationPreference } from '../repositories/notificationPreferenceRepository'
+import type { NotificationDevice } from '../repositories/notificationDeviceRepository'
 
-export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }) {
-  const parsed = dispatchInputSchema.safeParse({ userId, kind, channels })
+interface DispatchNotificationParams {
+  userId: string
+  kind: string
+  data: Record<string, unknown> & { critical_alarm?: boolean }
+  channels?: string[]
+  context?: { correlationId?: string; isRetry?: boolean; details?: Record<string, unknown> }
+  repositories: {
+    devices: { listActiveByUser(userId: string, provider?: string): Promise<NotificationDevice[]>; deactivateByToken(token: string): Promise<void> }
+    preferences: {
+      hasTelegramChat(userId: string): Promise<boolean>
+      getByUserId(userId: string): Promise<NotificationPreference>
+      getSettingsByUserId(userId: string): Promise<NotificationSettings>
+    }
+    dlq?: { enqueue(payload: Record<string, unknown>, firstError: unknown, attempt: number, correlationId?: string): Promise<void> }
+  }
+  bot: { sendMessage(chatId: string, message: string, options: Record<string, unknown>): Promise<{ messageId?: string; message_id?: string } | undefined> }
+  expoClient: { sendPushNotificationsAsync(messages: unknown[]): Promise<Array<{ status: string; message?: string; id?: string; details?: { error?: string } }>> }
+}
+
+export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }: DispatchNotificationParams) {
+  const parsed = dispatchInputSchema.safeParse({ userId, kind, channels: channels ?? [] })
   if (!parsed.success) {
     throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
   }
@@ -66,29 +88,29 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
     console.info('[dispatchNotification] nenhum canal físico ativo — prosseguindo apenas com log (Inbox-First)', { correlationId, userId, kind })
   }
 
-  logger.info('Iniciando dispatch de notificação', { 
-    correlationId, 
-    userId, 
-    kind, 
+  logger.info('Iniciando dispatch de notificação', {
+    correlationId,
+    userId,
+    kind,
     channels: validChannels,
-    suppressed: isSuppressed 
-  })
+    suppressed: isSuppressed
+  } as unknown as undefined)
 
-  let results = []
+  let results: ChannelResult[] = []
   if (!isSuppressed && validChannels.length > 0) {
     const settledResults = await Promise.allSettled(
       validChannels.map((channel) => dispatchChannel({ channel, userId, payload: finalPayload, context: ctx, repositories, bot, expoClient }))
     )
 
     results = settledResults
-      .map((r, i) => {
+      .map((r, i): ChannelResult | null => {
         if (r.status === 'rejected') {
           console.error('[dispatchNotification] canal rejeitou promise', { correlationId, channel: validChannels[i], reason: r.reason?.message })
           return { channel: validChannels[i], success: false, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [{ message: r.reason?.message }] }
         }
         return r.value
       })
-      .filter(Boolean)
+      .filter((r): r is ChannelResult => r !== null)
   }
 
   const normalized = normalizeChannelResults(results);
@@ -114,7 +136,7 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
     channels: validChannels,
     totalDelivered: normalized.totalDelivered,
     totalFailed: normalized.totalFailed,
-  })
+  } as unknown as undefined)
 
   // --- DLQ Integration (Gate 3.5) ---
   ;(async () => {
@@ -125,7 +147,7 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
       finalPayload,
       userId,
       repositories,
-      context,
+      context: ctx,
       results,
       correlationId
     })

@@ -11,21 +11,38 @@
 import http2 from 'node:http2'
 import jwt from 'jsonwebtoken'
 
+export interface ApnsConfig {
+  authKey: string
+  keyId: string
+  teamId: string
+  bundleId: string
+  host: string
+}
+
+export interface ApnsResult {
+  ok: boolean
+  status: number
+  deactivate?: boolean
+  reason?: string
+}
+
+type Http2Lib = Pick<typeof http2, 'connect'>
+
 const APNS_HOST_PROD = 'https://api.push.apple.com'
 const APNS_HOST_SANDBOX = 'https://api.sandbox.push.apple.com'
 const JWT_TTL_MS = 50 * 60 * 1000 // Apple exige token < 1h; renova aos 50min
 const APNS_TIMEOUT_MS = 5000 // guarda contra conexão travada em serverless (Vercel)
 
-let _jwtCache = { token: null, issuedAt: 0 }
+let _jwtCache: { token: string | null; issuedAt: number } = { token: null, issuedAt: 0 }
 
 /** Lê e valida as credenciais APNs do ambiente (R-088 — fail-closed se faltar). */
-export function getApnsConfig(env = process.env) {
+export function getApnsConfig(env: Record<string, string | undefined> = process.env): ApnsConfig | null {
   const authKeyB64 = env.APNS_AUTH_KEY
   const keyId = env.APNS_KEY_ID
   const teamId = env.APNS_TEAM_ID
   const bundleId = env.APNS_BUNDLE_ID
   if (!authKeyB64 || !keyId || !teamId || !bundleId) return null
-  let authKey
+  let authKey: string
   try {
     authKey = Buffer.from(authKeyB64, 'base64').toString('utf8')
   } catch {
@@ -37,7 +54,7 @@ export function getApnsConfig(env = process.env) {
 }
 
 /** Assina (e cacheia <1h) o JWT ES256 do provider APNs. @private */
-function _providerToken(config, now = Date.now()) {
+function _providerToken(config: ApnsConfig, now = Date.now()): string {
   if (_jwtCache.token && now - _jwtCache.issuedAt < JWT_TTL_MS) return _jwtCache.token
   const token = jwt.sign(
     { iss: config.teamId, iat: Math.floor(now / 1000) },
@@ -49,36 +66,43 @@ function _providerToken(config, now = Date.now()) {
 }
 
 /** Reseta o cache do JWT (testes). @private */
-export function _resetJwtCache() {
+export function _resetJwtCache(): void {
   _jwtCache = { token: null, issuedAt: 0 }
+}
+
+interface PostToApnsParams {
+  cfg: ApnsConfig
+  pushToken: string
+  payload: Record<string, unknown>
+  priority?: number
+  http2lib: Http2Lib
 }
 
 /**
  * POST HTTP/2 de um payload APNs liveactivity p/ um token. Timeout defensivo (AP-256): em serverless
  * uma conexão travada penduraria a função até o teto da plataforma. Fail-open em qualquer falha. @private
- * @returns {Promise<{ok:boolean, status:number, deactivate?:boolean, reason?:string}>}
  */
-function _postToApns({ cfg, pushToken, payload, priority, http2lib }) {
+function _postToApns({ cfg, pushToken, payload, priority, http2lib }: PostToApnsParams): Promise<ApnsResult> {
   return new Promise((resolve) => {
-    let client
+    let client: ReturnType<Http2Lib['connect']> | undefined
     const timer = setTimeout(() => {
       try { client?.close() } catch { /* noop */ }
       resolve({ ok: false, status: 0, reason: 'timeout' })
     }, APNS_TIMEOUT_MS)
-    const safeResolve = (val) => {
+    const safeResolve = (val: ApnsResult) => {
       clearTimeout(timer)
       resolve(val)
     }
 
     try {
       client = http2lib.connect(cfg.host)
-    } catch (err) {
+    } catch (err: any) {
       safeResolve({ ok: false, status: 0, reason: `connect_failed: ${err.message}` })
       return
     }
-    client.on('error', (err) => {
+    client.on('error', (err: any) => {
       safeResolve({ ok: false, status: 0, reason: `client_error: ${err.message}` })
-      try { client.close() } catch { /* noop */ }
+      try { client?.close() } catch { /* noop */ }
     })
 
     const req = client.request({
@@ -92,18 +116,18 @@ function _postToApns({ cfg, pushToken, payload, priority, http2lib }) {
 
     let status = 0
     let body = ''
-    req.on('response', (headers) => { status = Number(headers[':status']) || 0 })
+    req.on('response', (headers: http2.IncomingHttpHeaders) => { status = Number(headers[':status']) || 0 })
     req.setEncoding('utf8')
-    req.on('data', (chunk) => { body += chunk })
+    req.on('data', (chunk: string) => { body += chunk })
     req.on('end', () => {
-      try { client.close() } catch { /* noop */ }
+      try { client?.close() } catch { /* noop */ }
       if (status === 200) { safeResolve({ ok: true, status }); return }
       // 410 (Unregistered) / 400 BadDeviceToken → token morto, revogar (S-6)
       const deactivate = status === 410 || body.includes('BadDeviceToken') || body.includes('Unregistered')
       safeResolve({ ok: false, status, deactivate, reason: body || `http_${status}` })
     })
-    req.on('error', (err) => {
-      try { client.close() } catch { /* noop */ }
+    req.on('error', (err: any) => {
+      try { client?.close() } catch { /* noop */ }
       safeResolve({ ok: false, status: 0, reason: `request_error: ${err.message}` })
     })
     req.end(JSON.stringify(payload))
@@ -121,7 +145,16 @@ function _postToApns({ cfg, pushToken, payload, priority, http2lib }) {
  * @param {object} [args.http2lib] - override do http2 (testes)
  * @returns {Promise<{ok:boolean, status:number, deactivate?:boolean, reason?:string}>}
  */
-export async function sendLiveActivityStart({ pushToStartToken, attributes, contentState, staleEpochSec, config, http2lib = http2 }) {
+interface SendLiveActivityStartParams {
+  pushToStartToken: string
+  attributes: Record<string, unknown>
+  contentState: Record<string, unknown>
+  staleEpochSec?: number
+  config?: ApnsConfig | null
+  http2lib?: Http2Lib
+}
+
+export async function sendLiveActivityStart({ pushToStartToken, attributes, contentState, staleEpochSec, config, http2lib = http2 }: SendLiveActivityStartParams): Promise<ApnsResult> {
   const cfg = config || getApnsConfig()
   if (!cfg) return { ok: false, status: 0, reason: 'apns_not_configured' } // fail-open: caller degrada p/ 039
   if (!pushToStartToken) return { ok: false, status: 0, reason: 'no_token' }
@@ -151,7 +184,15 @@ export async function sendLiveActivityStart({ pushToStartToken, attributes, cont
  * @param {object} [args.config] @param {object} [args.http2lib]
  * @returns {Promise<{ok:boolean, status:number, deactivate?:boolean, reason?:string}>}
  */
-export async function sendLiveActivityUpdate({ pushToken, contentState, staleEpochSec, config, http2lib = http2 }) {
+interface SendLiveActivityUpdateParams {
+  pushToken: string
+  contentState: Record<string, unknown>
+  staleEpochSec?: number
+  config?: ApnsConfig | null
+  http2lib?: Http2Lib
+}
+
+export async function sendLiveActivityUpdate({ pushToken, contentState, staleEpochSec, config, http2lib = http2 }: SendLiveActivityUpdateParams): Promise<ApnsResult> {
   const cfg = config || getApnsConfig()
   if (!cfg) return { ok: false, status: 0, reason: 'apns_not_configured' }
   if (!pushToken) return { ok: false, status: 0, reason: 'no_token' }
@@ -178,7 +219,15 @@ export async function sendLiveActivityUpdate({ pushToken, contentState, staleEpo
  * @param {object} [args.config] @param {object} [args.http2lib]
  * @returns {Promise<{ok:boolean, status:number, deactivate?:boolean, reason?:string}>}
  */
-export async function sendLiveActivityEnd({ pushToken, contentState, dismissEpochSec, config, http2lib = http2 }) {
+interface SendLiveActivityEndParams {
+  pushToken: string
+  contentState: Record<string, unknown>
+  dismissEpochSec?: number
+  config?: ApnsConfig | null
+  http2lib?: Http2Lib
+}
+
+export async function sendLiveActivityEnd({ pushToken, contentState, dismissEpochSec, config, http2lib = http2 }: SendLiveActivityEndParams): Promise<ApnsResult> {
   const cfg = config || getApnsConfig()
   if (!cfg) return { ok: false, status: 0, reason: 'apns_not_configured' }
   if (!pushToken) return { ok: false, status: 0, reason: 'no_token' }

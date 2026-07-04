@@ -8,9 +8,9 @@ import { z } from 'zod'
 import { getNow, getServerTimestamp } from '../../utils/dateUtils.js'
 
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { realtime: { transport: ws } }
+  (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+  { realtime: { transport: ws as unknown as typeof WebSocket } }
 )
 
 const upsertSchema = z.object({
@@ -24,10 +24,30 @@ const upsertSchema = z.object({
   appVersion: z.string().optional(),
 })
 
+export interface NotificationDevice {
+  id: string
+  push_token: string
+  device_name?: string | null
+  app_version?: string | null
+  [key: string]: unknown
+}
+
+export interface UpsertDeviceParams {
+  userId: string
+  appKind: 'native' | 'pwa'
+  platform: 'ios' | 'android' | 'web'
+  provider: 'expo' | 'webpush'
+  pushToken: string
+  deviceName?: string
+  deviceFingerprint?: string
+  appVersion?: string
+  now?: Date
+}
+
 export const notificationDeviceRepository = {
   // Lista dispositivos ativos de um usuário para um provedor específico
   // Retorna: array de objetos { id, push_token, device_name, app_version, ... }
-  async listActiveByUser(userId, provider = 'expo') {
+  async listActiveByUser(userId: string, provider = 'expo'): Promise<NotificationDevice[]> {
     const { data, error } = await supabase
       .from('notification_devices')
       .select('*')
@@ -60,7 +80,7 @@ export const notificationDeviceRepository = {
     deviceFingerprint,
     appVersion,
     now = getNow(),
-  }) {
+  }: UpsertDeviceParams): Promise<void> {
     const parsed = upsertSchema.safeParse({ userId, appKind, platform, provider, pushToken, deviceName, deviceFingerprint, appVersion })
     if (!parsed.success) {
       throw new Error(`[notificationDeviceRepository.upsert] Invalid input: ${parsed.error.message}`)
@@ -98,7 +118,7 @@ export const notificationDeviceRepository = {
 
   // Desativa um dispositivo pelo token (marca como is_active=false)
   // Usado quando Expo retorna erro permanente (DeviceNotRegistered, etc)
-  async deactivateByToken(pushToken) {
+  async deactivateByToken(pushToken: string): Promise<void> {
     const { error } = await supabase
       .from('notification_devices')
       .update({ is_active: false, updated_at: getServerTimestamp() })
@@ -115,7 +135,7 @@ export const notificationDeviceRepository = {
 
   // Desativa todos os dispositivos de um usuário para um provedor
   // Usado em logout ou quando usuário remove preferência de push
-  async deactivateAllForUser(userId, provider = 'expo') {
+  async deactivateAllForUser(userId: string, provider = 'expo'): Promise<void> {
     const { error } = await supabase
       .from('notification_devices')
       .update({ is_active: false, updated_at: getServerTimestamp() })

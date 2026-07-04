@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildNotificationPayload } from '../buildNotificationPayload.js';
+import { buildNotificationPayload } from '../buildNotificationPayload';
 
 describe('buildNotificationPayload', () => {
 

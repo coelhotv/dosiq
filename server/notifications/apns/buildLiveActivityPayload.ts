@@ -14,15 +14,33 @@
 import { deriveDoseActivityState, doseActivityBoundaryTimes } from '@dosiq/core'
 import { parseISO } from '../../utils/dateUtils.js'
 
+interface DoseItem {
+  medicineName?: string
+  doseLabel?: string
+  scheduledTime?: string
+  groupSize?: number
+  [key: string]: unknown
+}
+
+interface BuildLiveActivityStartOpts {
+  discreet?: boolean
+  now?: Date | number
+}
+
+interface LiveActivityStartPayload {
+  attributes: Record<string, unknown>
+  contentState: Record<string, unknown>
+  staleEpochSec: number
+}
+
 /**
- * @param {object} doseItem - shape CON-029 (scheduledFor/scheduled_for, critical_alarm, medicineName, ...)
- * @param {object} [opts]
- * @param {boolean} [opts.discreet=false] - oculta nome (default false: iOS não redige a LA — ver topo)
- * @param {Date|number} [opts.now]
- * @returns {{ attributes: object, contentState: object, staleEpochSec: number }|null} null se não elegível
+ * Monta attributes + content-state do push-to-start para uma dose_instance elegível.
+ * discreet=false por padrão (iOS não redige a LA pela config de privacidade — ver topo do arquivo).
  */
-export function buildLiveActivityStartPayload(doseItem, { discreet = false, now } = {}) {
-  const derived = deriveDoseActivityState(doseItem, now)
+export function buildLiveActivityStartPayload(doseItem: DoseItem, { discreet = false, now }: BuildLiveActivityStartOpts = {}): LiveActivityStartPayload | null {
+  // eslint-disable-next-line no-restricted-syntax -- epoch ms numérico (sem ambiguidade de tz), não string R-020
+  const nowAsDate = now === undefined ? undefined : (now instanceof Date ? now : new Date(now))
+  const derived = deriveDoseActivityState(doseItem, nowAsDate)
   if (!derived) return null // instante inválido / distante demais → sem superfície
 
   // R-020: parseISO (timestamptz absoluto), nunca Date.parse/new Date crus. Fallback usa o `now`

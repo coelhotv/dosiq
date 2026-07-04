@@ -3,28 +3,59 @@
 
 // Retorna array de canais válidos: [], ['telegram'], ['mobile_push'], ['web_push'], ou combinações
 
-function resolveWaveN2(settings, activeExpoDevices, activeWebDevices, hasTelegram) {
-  const channels = []
+import type { NotificationDevice } from '../repositories/notificationDeviceRepository.js'
+import type { NotificationPreference, NotificationSettings } from '../repositories/notificationPreferenceRepository.js'
+
+type Channel = 'telegram' | 'mobile_push' | 'web_push'
+
+export interface ResolveChannelsRepositories {
+  preferences: {
+    hasTelegramChat(userId: string): Promise<boolean>
+    getSettingsByUserId?(userId: string): Promise<NotificationSettings>
+    getByUserId(userId: string): Promise<NotificationPreference>
+  }
+  devices: {
+    listActiveByUser(userId: string, provider?: string): Promise<NotificationDevice[]>
+  }
+}
+
+function resolveWaveN2(
+  settings: NotificationSettings,
+  activeExpoDevices: NotificationDevice[],
+  activeWebDevices: NotificationDevice[],
+  hasTelegram: boolean
+): Channel[] {
+  const channels: Channel[] = []
   if (settings.channel_mobile_push_enabled && activeExpoDevices.length > 0) channels.push('mobile_push')
   if (settings.channel_web_push_enabled    && activeWebDevices.length > 0)  channels.push('web_push')
   if (settings.channel_telegram_enabled    && hasTelegram)                   channels.push('telegram')
   return channels
 }
 
-function resolveLegacy(preference, hasTelegram, activeExpoDevices) {
+function resolveLegacy(
+  preference: NotificationPreference,
+  hasTelegram: boolean,
+  activeExpoDevices: NotificationDevice[]
+): Channel[] {
   if (preference === 'none') return []
   if (preference === 'telegram') return hasTelegram ? ['telegram'] : []
   if (preference === 'mobile_push') return activeExpoDevices.length > 0 ? ['mobile_push'] : []
   if (preference === 'both') {
     return [
-      ...(hasTelegram ? ['telegram'] : []),
-      ...(activeExpoDevices.length > 0 ? ['mobile_push'] : []),
+      ...(hasTelegram ? (['telegram'] as Channel[]) : []),
+      ...(activeExpoDevices.length > 0 ? (['mobile_push'] as Channel[]) : []),
     ]
   }
   return []
 }
 
-export async function resolveChannelsForUser({ userId, repositories, isCritical = false }) {
+export interface ResolveChannelsForUserParams {
+  userId: string
+  repositories: ResolveChannelsRepositories
+  isCritical?: boolean
+}
+
+export async function resolveChannelsForUser({ userId, repositories, isCritical = false }: ResolveChannelsForUserParams): Promise<Channel[]> {
   const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
   if (userId === SYSTEM_USER_ID) return ['telegram']
 
@@ -36,7 +67,7 @@ export async function resolveChannelsForUser({ userId, repositories, isCritical 
     ? await repositories.preferences.getSettingsByUserId(userId)
     : null
 
-  let channels = []
+  let channels: Channel[] = []
   if (settings?.channel_mobile_push_enabled !== undefined && settings?.channel_telegram_enabled !== undefined) {
     channels = resolveWaveN2(settings, activeExpoDevices, activeWebDevices, hasTelegram)
   } else {

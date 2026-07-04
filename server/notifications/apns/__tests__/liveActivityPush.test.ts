@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
-import { getApnsConfig, sendLiveActivityStart, sendLiveActivityUpdate, sendLiveActivityEnd, _resetJwtCache } from '../liveActivityPush.js';
+import { getApnsConfig, sendLiveActivityStart, sendLiveActivityUpdate, sendLiveActivityEnd, _resetJwtCache } from '../liveActivityPush';
 
 // .p8 EC P-256 REAL gerada em runtime (não é segredo; só p/ assinar o JWT no unit).
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });

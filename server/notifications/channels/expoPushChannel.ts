@@ -3,7 +3,40 @@
 // expoClient é injetado para facilitar testes sem chamadas HTTP reais
 // Desativa tokens com erros permanentes via shouldDeactivateDevice (R-042)
 
-import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
+import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice'
+
+interface ExpoDevice {
+  push_token: string
+  native_alarm_enabled?: boolean
+  [key: string]: unknown
+}
+
+interface NotificationPayload {
+  title?: string
+  body: string
+  pushBody?: string
+  metadata?: { kind?: string; critical_alarm?: boolean; notificationLogId?: string; [key: string]: unknown }
+}
+
+interface ExpoTicket {
+  status: string
+  message?: string
+  id?: string
+  details?: { error?: string }
+}
+
+interface ExpoClient {
+  sendPushNotificationsAsync(messages: ReturnType<typeof _buildExpoMessages>): Promise<ExpoTicket[]>
+}
+
+interface DeviceRepository {
+  listActiveByUser(userId: string, provider: string): Promise<ExpoDevice[]>
+  deactivateByToken(token: string): Promise<void>
+}
+
+interface Repositories {
+  devices: DeviceRepository
+}
 
 // Kinds de lembrete de dose — cobertos pelo alarme nativo (Notifee) no mobile.
 // Gate de duplicata (Spec 001 A2): devices com native_alarm_enabled NÃO recebem
@@ -15,7 +48,7 @@ const DOSE_REMINDER_KINDS = new Set([
 ])
 
 // Constrói a lista de mensagens formatadas para o formato do Expo Push.
-function _buildExpoMessages(devices, payload, isCriticalDose) {
+function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload, isCriticalDose: boolean) {
   return devices.map((device) => ({
     to: device.push_token,
     sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
@@ -38,21 +71,21 @@ function _buildExpoMessages(devices, payload, isCriticalDose) {
 }
 
 // Executa o envio em lote das notificações via expoClient com fallback individual.
-async function _sendPushNotifications(expoClient, messages, correlationId, userId) {
+async function _sendPushNotifications(expoClient: ExpoClient, messages: ReturnType<typeof _buildExpoMessages>, correlationId: string, userId: string): Promise<ExpoTicket[]> {
   try {
     return await expoClient.sendPushNotificationsAsync(messages)
-  } catch (error) {
+  } catch (error: any) {
     // Se falhar o lote inteiro por conflito de projeto (comum em migrações de marca),
-    // tentamos o envio individual para permitir que os tokens do projeto novo passem 
+    // tentamos o envio individual para permitir que os tokens do projeto novo passem
     // e os antigos sejam identificados/desativados.
     if (error.message.includes('All push notification messages in the same request must be for the same project')) {
       console.warn('[expoPushChannel] conflito de projeto detectado, tentando envio individual...', { correlationId, userId })
-      const tickets = []
+      const tickets: ExpoTicket[] = []
       for (const msg of messages) {
         try {
           const [ticket] = await expoClient.sendPushNotificationsAsync([msg])
           tickets.push(ticket)
-        } catch (individualError) {
+        } catch (individualError: any) {
           // Se falhou individualmente, simulamos um ticket de erro para ser tratado no normalize
           tickets.push({
             status: 'error',
@@ -67,7 +100,15 @@ async function _sendPushNotifications(expoClient, messages, correlationId, userI
   }
 }
 
-export async function sendExpoPushNotification({ userId, payload, context, repositories, expoClient }) {
+interface SendExpoPushParams {
+  userId: string
+  payload: NotificationPayload
+  context?: { correlationId?: string }
+  repositories: Repositories
+  expoClient: ExpoClient
+}
+
+export async function sendExpoPushNotification({ userId, payload, context, repositories, expoClient }: SendExpoPushParams) {
   const correlationId = context?.correlationId || 'unknown'
 
   const allDevices = await repositories.devices.listActiveByUser(userId, 'expo')
@@ -78,7 +119,7 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
   // - Dose normal (critical_alarm=false/ausente): push para TODOS os devices
   //   (alarme não suprime doses não-críticas — elas não têm alarme local).
   // - Outros kinds (não dose_reminder): todos os devices recebem normalmente.
-  const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind)
+  const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind ?? '')
   const isCriticalDose = payload?.metadata?.critical_alarm === true
 
   const devices = isDoseReminder && isCriticalDose
@@ -111,10 +152,10 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const messages = _buildExpoMessages(devices, payload, isCriticalDose)
 
-  let tickets
+  let tickets: ExpoTicket[]
   try {
     tickets = await _sendPushNotifications(expoClient, messages, correlationId, userId)
-  } catch (error) {
+  } catch (error: any) {
     console.error('[expoPushChannel] falha fatal ao enviar para Expo', { correlationId, userId, error: error.message })
     return {
       channel: 'mobile_push',
@@ -130,11 +171,19 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
   return normalizeExpoResult({ devices, tickets, repositories, correlationId, userId })
 }
 
-async function normalizeExpoResult({ devices, tickets, repositories, correlationId, userId }) {
+interface NormalizeExpoResultParams {
+  devices: ExpoDevice[]
+  tickets: ExpoTicket[]
+  repositories: Repositories
+  correlationId: string
+  userId: string
+}
+
+async function normalizeExpoResult({ devices, tickets, repositories, correlationId, userId }: NormalizeExpoResultParams) {
   let delivered = 0
   let failed = 0
-  const errors = []
-  const tokensToDeactivate = []
+  const errors: Array<{ token: string; code?: string; message?: string }> = []
+  const tokensToDeactivate: string[] = []
 
   for (let i = 0; i < tickets.length; i++) {
     const ticket = tickets[i]
