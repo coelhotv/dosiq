@@ -13,7 +13,7 @@
 
 import { deriveDoseActivityState, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
-import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush'
+import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 
 interface Logger {
   info?: (...args: unknown[]) => void

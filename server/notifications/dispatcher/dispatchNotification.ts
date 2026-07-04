@@ -5,9 +5,9 @@ import { createLogger } from '../../bot/logger.js'
 // correlationId é obrigatório em todos os logs (R-087)
 
 import { z } from 'zod'
-import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload'
-import { resolveChannelsForUser } from '../policies/resolveChannelsForUser'
-import { normalizeChannelResults } from '../utils/normalizeChannelResults'
+import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
+import { resolveChannelsForUser } from '../policies/resolveChannelsForUser.js'
+import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { 
   getNow, 
   getCurrentTime
@@ -26,10 +26,10 @@ import {
   checkGatePolicy,
   logNotificationEvent,
   enqueueToDlq
-} from './_dispatchHelpers'
-import type { ChannelResult } from '../utils/normalizeChannelResults'
-import type { NotificationSettings, NotificationPreference } from '../repositories/notificationPreferenceRepository'
-import type { NotificationDevice } from '../repositories/notificationDeviceRepository'
+} from './_dispatchHelpers.js'
+import type { ChannelResult } from '../utils/normalizeChannelResults.js'
+import type { NotificationSettings, NotificationPreference } from '../repositories/notificationPreferenceRepository.js'
+import type { NotificationDevice } from '../repositories/notificationDeviceRepository.js'
 
 interface DispatchNotificationParams {
   userId: string

@@ -25,7 +25,7 @@ import {
   doseReminderDataSchema,
   doseReminderByPlanDataSchema,
   doseReminderMiscDataSchema
-} from './_payloadSchemas';
+} from './_payloadSchemas.js';
 
 export { kindSchema, notificationPayloadSchema, actionSchema, metadataSchema };
 
@@ -39,7 +39,7 @@ import {
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
   buildDlqDigestPayload
-} from './_payloadBuilders';
+} from './_payloadBuilders.js';
 
 type Kind = z.infer<typeof kindSchema>;
 

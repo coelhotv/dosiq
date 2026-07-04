@@ -14,8 +14,8 @@
 
 import { selectActiveDoseActivity, createCriticalAuditService } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
-import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush'
-import { buildLiveActivityStartPayload } from './buildLiveActivityPayload'
+import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
+import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
 
 interface Logger {
   info?: (...args: unknown[]) => void

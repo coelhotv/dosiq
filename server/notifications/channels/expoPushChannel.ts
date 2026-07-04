@@ -3,7 +3,7 @@
 // expoClient é injetado para facilitar testes sem chamadas HTTP reais
 // Desativa tokens com erros permanentes via shouldDeactivateDevice (R-042)
 
-import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice'
+import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
 
 interface ExpoDevice {
   push_token: string

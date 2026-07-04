@@ -10,7 +10,7 @@ import {
   dlqDigestDataSchema,
   doseReminderByPlanDataSchema,
   doseReminderMiscDataSchema
-} from './_payloadSchemas';
+} from './_payloadSchemas.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { getSaoPauloTime } from '../../utils/dateUtils.js';

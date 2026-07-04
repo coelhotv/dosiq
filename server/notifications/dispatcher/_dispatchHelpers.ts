@@ -1,10 +1,10 @@
-import { shouldSendNow } from '../utils/notificationGate'
-import { notificationLogRepository, type NotificationLogCreateInput } from '../repositories/notificationLogRepository'
+import { shouldSendNow } from '../utils/notificationGate.js'
+import { notificationLogRepository, type NotificationLogCreateInput } from '../repositories/notificationLogRepository.js'
 import { createLogger } from '../../bot/logger.js'
-import { sendTelegramNotification } from '../channels/telegramChannel'
-import { sendExpoPushNotification } from '../channels/expoPushChannel'
-import { sendWebPushNotification } from '../channels/webPushChannel'
-import type { ChannelResult } from '../utils/normalizeChannelResults'
+import { sendTelegramNotification } from '../channels/telegramChannel.js'
+import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
+import { sendWebPushNotification } from '../channels/webPushChannel.js'
+import type { ChannelResult } from '../utils/normalizeChannelResults.js'
 
 const logger = createLogger('DispatchHelpers')
 
