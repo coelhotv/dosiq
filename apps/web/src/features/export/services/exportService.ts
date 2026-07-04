@@ -295,7 +295,7 @@ function exportStockCSV(stockData, medicines) {
  * @param {boolean} options.includeMedicines - Incluir medicamentos
  * @returns {Promise<void>} Faz download do arquivo JSON
  */
-export async function exportAsJSON(options = {}) {
+export async function exportAsJSON(options: any = {}) {
   const {
     dateRange,
     includeProtocols = true,
@@ -304,7 +304,7 @@ export async function exportAsJSON(options = {}) {
     includeMedicines = true,
   } = options
 
-  const exportData = {
+  const exportData: any = {
     metadata: {
       exportDate: getServerTimestamp(),
       version: EXPORT_VERSION,
@@ -319,11 +319,11 @@ export async function exportAsJSON(options = {}) {
   }
 
   // Busca medicamentos (base para outros dados)
-  let medicines = []
+  let medicines: any[] = []
   if (includeMedicines || includeStock) {
-    medicines = await medicineService.getAll()
+    medicines = (await medicineService.getAll()) as any[]
     if (includeMedicines) {
-      exportData.data.medicines = medicines.map((m) => ({
+      exportData.data.medicines = medicines.map((m: any) => ({
         id: m.id,
         name: m.name,
         dosage_mg: m.dosage_mg,
@@ -336,8 +336,8 @@ export async function exportAsJSON(options = {}) {
 
   // Busca protocolos
   if (includeProtocols) {
-    const protocols = await protocolService.getAll()
-    exportData.data.protocols = protocols.map((p) => ({
+    const protocols = (await protocolService.getAll()) as any[]
+    exportData.data.protocols = protocols.map((p: any) => ({
       id: p.id,
       medicine_id: p.medicine_id,
       medicine_name: p.medicine?.name || null,
@@ -354,7 +354,7 @@ export async function exportAsJSON(options = {}) {
 
   // Busca registros de dose
   if (includeLogs) {
-    let logs = []
+    let logs: any[] = []
     if (dateRange) {
       const result = await logService.getByDateRange(
         formatLocalDate(dateRange.start),
@@ -366,7 +366,7 @@ export async function exportAsJSON(options = {}) {
     } else {
       logs = await logService.getAll(10000)
     }
-    exportData.data.logs = logs.map((l) => ({
+    exportData.data.logs = logs.map((l: any) => ({
       id: l.id,
       medicine_id: l.medicine_id,
       medicine_name: l.medicine?.name || null,
@@ -380,7 +380,7 @@ export async function exportAsJSON(options = {}) {
 
   // Busca estoque
   if (includeStock) {
-    exportData.data.stock = medicines.map((m) => ({
+    exportData.data.stock = medicines.map((m: any) => ({
       medicine_id: m.id,
       medicine_name: m.name,
       stock_entries: (m.stock || []).map((s) => ({
@@ -416,7 +416,7 @@ export async function exportAsJSON(options = {}) {
  * @param {boolean} options.includeMedicines - Incluir medicamentos
  * @returns {Promise<void>} Faz download do arquivo CSV
  */
-export async function exportAsCSV(options = {}) {
+export async function exportAsCSV(options: any = {}) {
   const {
     dateRange,
     includeProtocols = true,
@@ -425,12 +425,12 @@ export async function exportAsCSV(options = {}) {
     includeMedicines = true,
   } = options
 
-  const csvSections = []
+  const csvSections: any[] = []
 
   // Busca medicamentos (base para outros dados)
-  let medicines = []
+  let medicines: any[] = []
   if (includeMedicines || includeStock) {
-    medicines = await medicineService.getAll()
+    medicines = (await medicineService.getAll()) as any[]
   }
 
   // Exporta medicamentos
