@@ -39,6 +39,7 @@ export const medicineService = createMedicineRepository({
     stock(*),
     purchases(*)
   `,
-  listTransform: (rows) => rows.map(withAvgPrice),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+  listTransform: (rows: any) => rows.map(withAvgPrice),
   detailTransform: withAvgPrice,
 })

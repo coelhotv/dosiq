@@ -8,7 +8,8 @@ export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
 // Densidade padrão (gotas/ml) sugerida quando o usuário escolhe unidade líquida (ADR-058).
 export const DEFAULT_UNITS_PER_ML = 20
 
-function _getAmountDisplay(dosage_per_pill, concentration_volume_ml) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+function _getAmountDisplay(dosage_per_pill: any, concentration_volume_ml: any) {
   const denom = Number(concentration_volume_ml)
   if (dosage_per_pill !== '' && dosage_per_pill != null && denom > 0) {
     return String(cleanFloat(Number(dosage_per_pill) * denom))
@@ -16,7 +17,8 @@ function _getAmountDisplay(dosage_per_pill, concentration_volume_ml) {
   return dosage_per_pill
 }
 
-export const getInitialFormData = (medicine) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+export const getInitialFormData = (medicine: any) => {
   const m = medicine || {}
   return {
     name: m.name ?? '',
@@ -34,8 +36,9 @@ export const getInitialFormData = (medicine) => {
   }
 }
 
-export const validateMedicineForm = (formData) => {
-  const newErrors = {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+export const validateMedicineForm = (formData: any) => {
+  const newErrors: Record<string, string> = {}
 
   if (!formData.name.trim()) {
     newErrors.name = 'Nome é obrigatório'

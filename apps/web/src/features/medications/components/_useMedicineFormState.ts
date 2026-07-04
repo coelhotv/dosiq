@@ -4,22 +4,24 @@ import {
   validateMedicineForm,
   buildMedicinePayload,
   formatSelectedMedicine,
-} from './_medicineFormUtils.js'
+} from './_medicineFormUtils'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export function useMedicineFormState({
   medicine,
   onSave,
   onSuccess,
   autoAdvance,
   showSuccessMessage,
-}) {
+}: any) {
   const [formData, setFormData] = useState(() => getInitialFormData(medicine))
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [shakeFields, setShakeFields] = useState({})
+  const [shakeFields, setShakeFields] = useState<Record<string, boolean>>({})
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const handleChange = (e) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+  const handleChange = (e: any) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
@@ -30,7 +32,8 @@ export function useMedicineFormState({
     }
   }
 
-  const handleMedicineSelect = (selectedMedicine) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+  const handleMedicineSelect = (selectedMedicine: any) => {
     setFormData((prev) => ({
       ...prev,
       ...formatSelectedMedicine(selectedMedicine),
@@ -38,7 +41,8 @@ export function useMedicineFormState({
     if (saveSuccess) setSaveSuccess(false)
   }
 
-  const handleLaboratorySelect = (laboratory) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+  const handleLaboratorySelect = (laboratory: any) => {
     setFormData((prev) => ({
       ...prev,
       laboratory: laboratory.laboratory,
@@ -59,7 +63,8 @@ export function useMedicineFormState({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+  const handleSubmit = async (e: any) => {
     e.preventDefault()
     if (!validate()) return
 
@@ -72,7 +77,7 @@ export function useMedicineFormState({
       if (autoAdvance && onSuccess) {
         setTimeout(() => onSuccess(savedMedicine), 800)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar medicamento:', error)
       setErrors({ submit: error?.message || 'Erro desconhecido ao salvar medicamento' })
     } finally {

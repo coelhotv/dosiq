@@ -3,7 +3,7 @@ import {
   isLiquidUnit,
   validateMedicineForm,
   buildMedicinePayload,
-} from '../_medicineFormUtils.js'
+} from '../_medicineFormUtils'
 
 describe('isLiquidUnit', () => {
   it('detecta unidades /ml como líquidas', () => {

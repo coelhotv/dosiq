@@ -3,7 +3,7 @@ import {
   buildMedicinePayload,
   getInitialFormData,
   validateMedicineForm,
-} from '../_medicineFormUtils.js'
+} from '../_medicineFormUtils'
 
 // 012 Fase B3 (FR-031/ADR-066): concentração com denominador.
 const baseLiquid = {
