@@ -4,7 +4,7 @@
   "session": {
     "mode": "coding",
     "ceremony_type": "eng-review",
-    "status": "coding",
+    "status": "distilled",
     "merged_pr": 703,
     "merged_squash": "be75d2d5",
     "merged_history": [
@@ -72,12 +72,12 @@
     ]
   },
   "memory": {
-    "last_distillation": "2026-06-30T15:33:00.000Z",
-    "journal_entries_since_distillation": 11,
-    "rules_count": 231,
-    "anti_patterns_count": 255,
+    "last_distillation": "2026-07-04T00:51:43.000Z",
+    "journal_entries_since_distillation": 0,
+    "rules_count": 233,
+    "anti_patterns_count": 257,
     "decisions_count": 77,
-    "contracts_count": 31,
+    "contracts_count": 30,
     "distillation_due": false
   },
   "genes": {
