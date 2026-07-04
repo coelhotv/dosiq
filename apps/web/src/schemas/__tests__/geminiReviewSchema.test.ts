@@ -190,7 +190,7 @@ describe('Gemini Review Schema', () => {
       const result = geminiReviewCreateSchema.safeParse(withManagedFields)
       // O omit remove esses campos, então a validação deve passar ignorando-os
       expect(result.success).toBe(true)
-      expect(result.data.id).toBeUndefined()
+      expect(result.data).not.toHaveProperty('id')
     })
   })
 

@@ -1,18 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { calculateTitrationData } from '@/utils/titrationUtils'
 
 describe('calculateTitrationData', () => {
   const baseDate = '2024-01-01'
-  let originalDate
 
   beforeEach(() => {
-    // Store original Date constructor
-    originalDate = global.Date
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    // Restore original Date constructor
-    global.Date = originalDate
+    vi.useRealTimers()
   })
 
   describe('protocol validation', () => {
@@ -90,15 +87,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be 1 day after start
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-02')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-02'))
 
       const result = calculateTitrationData(protocol)
 
@@ -113,15 +102,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be 11 days after start (past the 7 day stage)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-12')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-12'))
 
       const result = calculateTitrationData(protocol)
 
@@ -136,15 +117,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be same day as start
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-01')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-01'))
 
       const result = calculateTitrationData(protocol)
 
@@ -160,15 +133,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be 5 days after start (50%)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-06')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-06'))
 
       const result = calculateTitrationData(protocol)
 
@@ -182,15 +147,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be well past the stage end
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-20')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-20'))
 
       const result = calculateTitrationData(protocol)
 
@@ -204,15 +161,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be 1 day after start
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-02')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-02'))
 
       const result = calculateTitrationData(protocol)
 
@@ -229,15 +178,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be past the stage end (day 9)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-09')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-09'))
 
       const result = calculateTitrationData(protocol)
 
@@ -251,15 +192,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be within stage (day 5)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-05')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-05'))
 
       const result = calculateTitrationData(protocol)
 
@@ -275,15 +208,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be day 3 (4th day)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-04')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-04'))
 
       const result = calculateTitrationData(protocol)
 
@@ -298,15 +223,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be past stage end (day 10)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-11')
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-11'))
 
       const result = calculateTitrationData(protocol)
 
@@ -351,15 +268,7 @@ describe('calculateTitrationData', () => {
       }
 
       // Mock current date to be 5 days into stage 3 (day 20 total)
-      global.Date = class extends Date {
-        constructor(...args) {
-          if (args.length === 0) {
-            super('2024-01-20') // Day 20, stage 3 starts day 15
-          } else {
-            super(...args)
-          }
-        }
-      }
+      vi.setSystemTime(new Date('2024-01-20'))// Day 20, stage 3 starts day 15
 
       const result = calculateTitrationData(protocol)
 
