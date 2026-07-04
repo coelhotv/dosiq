@@ -40,8 +40,10 @@ export default function FirstProtocolStep() {
 
       <ProtocolForm
         medicines={[medicine]}
+        protocol={null}
         preselectedMedicine={medicine}
         initialValues={onboardingData.protocol}
+        onCancel={() => {}}
         onSave={async (data) => {
           const saved = await cachedProtocolService.create({
             ...data,

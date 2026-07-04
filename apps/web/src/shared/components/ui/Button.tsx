@@ -8,6 +8,14 @@ export default function Button({
   disabled = false,
   type = 'button',
   className = '',
+}: {
+  children?: any
+  variant?: string
+  size?: string
+  onClick?: any
+  disabled?: boolean
+  type?: 'button' | 'submit' | 'reset'
+  className?: string
 }) {
   return (
     <button

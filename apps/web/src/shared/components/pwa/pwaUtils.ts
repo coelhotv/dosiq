@@ -13,7 +13,8 @@ import { getNow, addDays, parseISO } from '@utils/dateUtils'
  */
 export function isStandalone() {
   return (
-    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
   )
 }
 

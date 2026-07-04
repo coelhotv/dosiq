@@ -6,6 +6,12 @@ export default function Card({
   onClick,
   hover = true,
   variant = 'default',
+}: {
+  children?: any
+  className?: string
+  onClick?: any
+  hover?: boolean
+  variant?: string
 }) {
   const Tag = onClick ? 'button' : 'div'
   return (

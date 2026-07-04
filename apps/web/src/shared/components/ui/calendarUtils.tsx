@@ -86,7 +86,7 @@ export function buildCalendarDays({
         key={d}
         type="button"
         className={`calendar-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''} ${hasLog ? 'has-log' : ''} ${hasHeatColor ? 'has-adherence' : ''}`}
-        style={hasHeatColor ? { '--heat-color': heatColor } : undefined}
+        style={hasHeatColor ? ({ '--heat-color': heatColor } as React.CSSProperties) : undefined}
         role="gridcell"
         aria-selected={isSelected}
         aria-label={ariaLabel}

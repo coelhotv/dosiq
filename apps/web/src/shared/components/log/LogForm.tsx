@@ -1,5 +1,5 @@
 import Button from '@shared/components/ui/Button'
-import { useLogFormState } from './_useLogFormState.js'
+import { useLogFormState } from './_useLogFormState'
 import LogFormTimeSection from './sections/LogFormTimeSection'
 import LogFormMedicineSection from './sections/LogFormMedicineSection'
 import LogFormInjectionSiteSection from './sections/LogFormInjectionSiteSection'
@@ -11,6 +11,12 @@ export default function LogForm({
   initialValues,
   onSave,
   onCancel,
+}: {
+  protocols: any
+  treatmentPlans?: any[]
+  initialValues?: any
+  onSave: any
+  onCancel: any
 }) {
   const {
     formData,
@@ -62,7 +68,7 @@ export default function LogForm({
           value={formData.notes}
           onChange={handleChange}
           placeholder="Ex: Tomei com água, após café da manhã..."
-          rows="3"
+          rows={3}
         />
       </div>
 

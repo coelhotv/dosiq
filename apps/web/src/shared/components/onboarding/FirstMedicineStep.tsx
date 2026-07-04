@@ -52,7 +52,9 @@ export default function FirstMedicineStep() {
       </div>
 
       <MedicineForm
+        medicine={null}
         onSave={handleSave}
+        onCancel={() => {}}
         onSuccess={handleSuccess}
         autoAdvance={true}
         showCancelButton={false}

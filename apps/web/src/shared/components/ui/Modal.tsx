@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type RefObject } from 'react'
 import { X } from 'lucide-react'
 import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 import './Modal.css'
@@ -15,7 +15,17 @@ import './Modal.css'
  * @param {React.ReactNode} children - Conteúdo do modal
  * @param {string} title - Título exibido no header (opcional)
  */
-export default function Modal({ isOpen, onClose, children, title }) {
+export default function Modal({
+  isOpen,
+  onClose,
+  children,
+  title,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  children?: any
+  title?: string
+}) {
   const { containerRef, handleKeyDown } = useFocusTrap(isOpen)
 
   // Bloquear scroll do body quando aberto
@@ -50,7 +60,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
         className="modal-backdrop-button" 
         onClick={onClose} 
         aria-label="Fechar diálogo"
-        tabIndex="-1"
+        tabIndex={-1}
       />
       <div
         className="modal-content"
@@ -58,7 +68,7 @@ export default function Modal({ isOpen, onClose, children, title }) {
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
         aria-label={!title ? 'Diálogo' : undefined}
-        ref={containerRef}
+        ref={containerRef as RefObject<HTMLDivElement>}
         onKeyDown={handleKeyDown}
       >
         <div className="modal-header">

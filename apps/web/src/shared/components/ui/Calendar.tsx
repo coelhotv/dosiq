@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths, formatLocalDate } from '@utils/dateUtils'
+import { getTodayLocal, parseLocalDate, getSaoPauloTime, cloneDate, addMonths } from '@utils/dateUtils'
 import CalendarControls from './CalendarControls'
 import CalendarGrid from './CalendarGrid'
 import { buildCalendarDays } from './calendarUtils'
@@ -50,6 +50,17 @@ export default function Calendar({
   enableMonthPicker = false,
   monthPickerRange = { start: -12, end: 3 },
   adherenceData = {},
+}: {
+  markedDates?: any[]
+  markedStatusesByDay?: Record<string, any>
+  selectedDate?: any
+  onDayClick?: any
+  enableLazyLoad?: boolean
+  onLoadMonth?: any
+  enableSwipe?: boolean
+  enableMonthPicker?: boolean
+  monthPickerRange?: { start: number; end: number }
+  adherenceData?: Record<string, any>
 }) {
   const [viewDate, setViewDate] = useState(getSaoPauloTime())
   const [isLoading, setIsLoading] = useState(false)
@@ -109,7 +120,7 @@ export default function Calendar({
 
   const days = buildCalendarDays({
     year, month, monthNames: MONTH_NAMES, todayKey, selectedDate, markedDates, markedStatusesByDay,
-    adherenceData, daysInMonth, firstDayOfMonth, parseLocalDate, formatLocalDate, onDayClick,
+    adherenceData, daysInMonth, firstDayOfMonth, parseLocalDate, onDayClick,
   })
 
   return (
@@ -139,7 +150,7 @@ export default function Calendar({
         onTouchMove={enableSwipe ? handleTouchMove : undefined}
         onTouchEnd={enableSwipe ? handleTouchEnd : undefined}
       >
-        <CalendarGrid days={days} isLoading={isLoading} enableLazyLoad={enableLazyLoad} monthNames={MONTH_NAMES} month={month} year={year} />
+        <CalendarGrid days={days} isLoading={isLoading} enableLazyLoad={enableLazyLoad} />
       </div>
     </div>
   )

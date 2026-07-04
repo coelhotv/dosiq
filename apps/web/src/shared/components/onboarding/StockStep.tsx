@@ -8,7 +8,7 @@ import './StockStep.css'
 
 const stockFormSchema = z.object({
   quantity: z.coerce
-    .number({ invalid_type_error: 'Quantidade é obrigatória.' })
+    .number({ error: 'Quantidade é obrigatória.' })
     .positive('Quantidade deve ser maior que 0.'),
   unitPrice: z.coerce.number().nonnegative('Preço não pode ser negativo.').optional().nullable(),
 })
@@ -34,7 +34,7 @@ export default function StockStep() {
     // Validação com Zod
     const result = stockFormSchema.safeParse({ quantity, unitPrice })
     if (!result.success) {
-      setError(result.error.errors[0]?.message || 'Erro na validação')
+      setError(result.error.issues[0]?.message || 'Erro na validação')
       return
     }
 

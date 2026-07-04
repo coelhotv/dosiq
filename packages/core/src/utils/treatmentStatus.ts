@@ -63,7 +63,7 @@ export function isTreatmentActive(protocol, today) {
  * @param {string} [today] — YYYY-MM-DD; default = hoje local
  * @returns {boolean}
  */
-export function isTreatmentSchedulableOn(protocol, today) {
+export function isTreatmentSchedulableOn(protocol, today?: string) {
   if (!protocol) return false
   const ref = today ?? formatLocalDate(getNow())
   return isTreatmentActive(protocol, ref) && isProtocolActiveOnDate(protocol, ref)

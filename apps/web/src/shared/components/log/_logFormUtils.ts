@@ -11,7 +11,7 @@ export const toLocalISO = (dateStr) => {
   return `${year}-${month}-${day}T${hours}:${mins}`
 }
 
-export const getInitialFormData = (initialValues = {}, protocols = []) => {
+export const getInitialFormData = (initialValues: any = {}, protocols: any[] = []) => {
   const {
     type,
     protocol_id,
@@ -47,7 +47,7 @@ export const getInitialFormData = (initialValues = {}, protocols = []) => {
 }
 
 export const validateLogForm = (formData, selectedPlanProtocols, setErrors) => {
-  const newErrors = {}
+  const newErrors: Record<string, string> = {}
 
   if (formData.type === 'protocol') {
     if (!formData.protocol_id) {
