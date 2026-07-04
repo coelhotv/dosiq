@@ -9,7 +9,7 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
 import { supabase } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
-import { generateConsultationPDF } from '@/features/reports/services/consultationPdfService.js'
+import { generateConsultationPDF } from '@/features/reports/services/consultationPdfService'
 import { shareReport, shareNative, copyToClipboard } from '@/features/reports/services/shareService'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import Button from '@shared/components/ui/Button'
@@ -222,7 +222,8 @@ function downloadBlob(blob, filename) {
  * // Com callback de fechamento
  * <ReportGenerator onClose={() => setIsModalOpen(false)} />
  */
-export default function ReportGenerator() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ReportGenerator(props: any = {}) {
   // 1. States (R-010: Hook order)
   const [patientName, setPatientName] = useState('')
   const [patientEmail, setPatientEmail] = useState('')

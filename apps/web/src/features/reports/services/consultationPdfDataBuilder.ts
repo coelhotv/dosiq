@@ -466,7 +466,7 @@ export function buildConsultationPdfData({
   generatedAt = getNow(),
   title = 'Dosiq - Consulta Médica',
   patientEmail = '',
-} = {}) {
+}: any = {}) {
   const inp = _extractInputs(consultationData, dashboardData)
   const periodDays = _calculatePeriodDays(period, inp.dailyAdherence.length)
 

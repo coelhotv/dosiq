@@ -7,7 +7,7 @@ import {
   formatIntakeDose,
   formatFrequency,
   formatDailyDose,
-} from '@/features/reports/services/consultationPdfDataBuilder.js'
+} from '@/features/reports/services/consultationPdfDataBuilder'
 
 describe('consultationPdfDataBuilder', () => {
   const now = new Date()
