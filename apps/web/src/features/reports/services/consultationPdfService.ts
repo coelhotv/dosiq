@@ -4,7 +4,7 @@
  * @module features/reports/services/consultationPdfService
  */
 
-import { buildConsultationPdfData } from './consultationPdfDataBuilder.js'
+import { buildConsultationPdfData } from './consultationPdfDataBuilder'
 import { getNow } from '@utils/dateUtils'
 
 /**
@@ -753,7 +753,7 @@ function renderTitrationPage(doc, autoTable, pdfData) {
  * @param {string} [options.title='Dosiq - Consulta Médica'] - Titulo do documento.
  * @returns {Promise<Blob>} Blob do PDF.
  */
-export async function generateConsultationPDF(options = {}) {
+export async function generateConsultationPDF(options: any = {}) {
   const {
     consultationData,
     dashboardData,

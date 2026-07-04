@@ -166,7 +166,7 @@ function getStockColor(daysRemaining) {
  * @param {string} [options.baseline='middle'] - Alinhamento vertical.
  * @private
  */
-function drawText(ctx, text, x, y, options = {}) {
+function drawText(ctx, text, x, y, options: { color?: string; font?: string; align?: string; baseline?: string } = {}) {
   const {
     color = COLORS.text,
     font = '12px Inter, sans-serif',
@@ -176,8 +176,8 @@ function drawText(ctx, text, x, y, options = {}) {
 
   ctx.fillStyle = color
   ctx.font = font
-  ctx.textAlign = align
-  ctx.textBaseline = baseline
+  ctx.textAlign = align as any
+  ctx.textBaseline = baseline as any
   ctx.fillText(text, x, y)
 }
 

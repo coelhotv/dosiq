@@ -68,7 +68,7 @@ vi.mock('@dashboard/services/analyticsService', () => ({
   },
 }))
 
-import ReportGenerator from '@/features/reports/components/ReportGenerator.jsx'
+import ReportGenerator from '@/features/reports/components/ReportGenerator'
 
 describe('ReportGenerator', () => {
   beforeEach(() => {

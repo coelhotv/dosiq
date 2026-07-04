@@ -579,12 +579,12 @@ async function _loadPdfModules(includeStock, includeRiskTable) {
   ] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
-    import('./chartRenderer.js'),
-    import('@services/api/adherenceService.js'),
-    import('@features/protocols/services/protocolService.js'),
-    includeStock ? import('@features/stock/services/stockService.js') : Promise.resolve(null),
+    import('./chartRenderer'),
+    import('@services/api/adherenceService'),
+    import('@features/protocols/services/protocolService'),
+    includeStock ? import('@features/stock/services/stockService') : Promise.resolve(null),
     includeRiskTable ? import('@adherence/services/protocolRiskService') : Promise.resolve(null),
-    includeRiskTable ? import('@shared/services/api/logService.js') : Promise.resolve(null),
+    includeRiskTable ? import('@shared/services/api/logService') : Promise.resolve(null),
   ])
   return {
     jsPDF,
@@ -678,7 +678,7 @@ function _renderDocument(jsPDF, data, opts, renderers) {
   return doc.output('blob')
 }
 
-export async function generatePDF(options = {}) {
+export async function generatePDF(options: any = {}) {
   const startTime = getNow().getTime()
   const {
     title = 'Dosiq - Relatório',
