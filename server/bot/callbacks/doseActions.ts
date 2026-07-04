@@ -75,6 +75,7 @@ async function resolveProtocolMedicine(protocolId) {
     .single();
 
   if (error || !protocol) throw new Error('Protocolo não encontrado');
+  // TODO(040-strict): tipar o shape do join medicine:medicines na fronteira (nível B — F6)
   return { medicineId: protocol.medicine_id, medicineName: (protocol.medicine as any).name };
 }
 

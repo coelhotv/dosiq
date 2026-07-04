@@ -59,11 +59,11 @@ export async function dispatchChannel({ channel, userId, payload, context, repos
     } else if (channel === 'web_push') {
       return await sendWebPushNotification({ userId, payload, context, repositories })
     } else {
-      logger.warn('canal desconhecido ignorado', { correlationId, channel } as unknown as undefined)
+      logger.warn('canal desconhecido ignorado', { correlationId, channel })
       return null
     }
   } catch (error: any) {
-    logger.error('canal falhou', error, { correlationId, userId, channel } as unknown as undefined)
+    logger.error('canal falhou', error, { correlationId, userId, channel })
     return {
       channel,
       success: false,
@@ -272,9 +272,9 @@ export async function enqueueToDlq({
         type: kind,
         ...(data || {}) // L1 payload original para futura retentativa
       }, firstError, 1, correlationId)
-      logger.info('Notificação falha enfileirada na DLQ', { correlationId, userId, kind } as unknown as undefined)
+      logger.info('Notificação falha enfileirada na DLQ', { correlationId, userId, kind })
     } catch (dlqErr: any) {
-      logger.error('Falha ao enfileirar na DLQ', dlqErr, { correlationId, userId, kind } as unknown as undefined)
+      logger.error('Falha ao enfileirar na DLQ', dlqErr, { correlationId, userId, kind })
     }
   }
 }
