@@ -5,7 +5,7 @@ import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, 
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
  * Extraído de useStockData.js para reduzir linhas e complexidade.
  */
-function _getLotContainer(entries) {
+function _getLotContainer(entries: any) {
   const lotEntries = entries || []
   return (
     lotEntries
@@ -17,9 +17,10 @@ function _getLotContainer(entries) {
   )
 }
 
-function _getLastPurchase(purchases) {
+function _getLastPurchase(purchases: any) {
   const purchaseEntries = [...(purchases || [])].sort(
-    (a, b) => parseLocalDate(b.purchase_date) - parseLocalDate(a.purchase_date)
+    (a: any, b: any) =>
+      (parseLocalDate(b.purchase_date) as any) - (parseLocalDate(a.purchase_date) as any)
   )
   const latestEntry = purchaseEntries[0] || null
   return {

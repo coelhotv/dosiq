@@ -11,14 +11,14 @@ import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine, fr
  * doses por dia de um medicamento = Σ (tomadas/dia × cadência da frequência).
  * 012 B4 / ADR-067 — base do custo/dose (custoPorDose = custoPorDia ÷ dosesPorDia).
  */
-function dosesPerDayFor(protocols) {
+function dosesPerDayFor(protocols: any) {
   return (protocols || []).reduce(
-    (sum, p) => sum + (p.time_schedule?.length || 1) * frequencyDailyFactor(p),
+    (sum: number, p: any) => sum + (p.time_schedule?.length || 1) * frequencyDailyFactor(p),
     0
   )
 }
 
-function getPriceEntries(medicine = {}) {
+function getPriceEntries(medicine: any = {}) {
   if (Array.isArray(medicine.purchases) && medicine.purchases.length > 0) {
     return medicine.purchases
   }

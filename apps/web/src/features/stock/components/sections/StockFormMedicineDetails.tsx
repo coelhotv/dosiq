@@ -2,7 +2,7 @@ import { getFieldDescribedBy } from '@utils/formUtils'
 import { formatActiveIngredientFormula, formatConcentration, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 
 
-function LiquidFormFields({ formData, errors, handleChange, totalMl }) {
+function LiquidFormFields({ formData, errors, handleChange, totalMl }: any) {
   return (
     <>
       <div className="form-row">
@@ -77,7 +77,7 @@ function LiquidFormFields({ formData, errors, handleChange, totalMl }) {
   )
 }
 
-function SolidFormFields({ formData, errors, handleChange, selectedMedicine }) {
+function SolidFormFields({ formData, errors, handleChange, selectedMedicine }: any) {
   return (
     <div className="form-row">
       <div className="form-group">
@@ -93,7 +93,7 @@ function SolidFormFields({ formData, errors, handleChange, selectedMedicine }) {
           onChange={handleChange}
           className={errors.quantity ? 'error' : ''}
           placeholder="30"
-          aria-describedby={getFieldDescribedBy('quantity')}
+          aria-describedby={getFieldDescribedBy('quantity', errors)}
           aria-invalid={Boolean(errors.quantity)}
         />
         {errors.quantity && (
@@ -119,7 +119,7 @@ function SolidFormFields({ formData, errors, handleChange, selectedMedicine }) {
           onChange={handleChange}
           className={errors.unit_price ? 'error' : ''}
           placeholder="0,50"
-          aria-describedby={getFieldDescribedBy('unit_price')}
+          aria-describedby={getFieldDescribedBy('unit_price', errors)}
           aria-invalid={Boolean(errors.unit_price)}
         />
         {errors.unit_price && (
@@ -139,8 +139,8 @@ export default function StockFormMedicineDetails({
   medicines,
   isLiquid = false,
   needsContainer = false,
-}) {
-  const selectedMedicine = medicines?.find((m) => m.id === formData.medicine_id) || null
+}: any) {
+  const selectedMedicine = medicines?.find((m: any) => m.id === formData.medicine_id) || null
   const totalMl =
     parseFloat(formData.num_bottles) > 0 && parseFloat(formData.volume_per_bottle) > 0
       ? parseFloat(formData.num_bottles) * parseFloat(formData.volume_per_bottle)
@@ -158,11 +158,11 @@ export default function StockFormMedicineDetails({
           value={formData.medicine_id}
           onChange={handleChange}
           className={errors.medicine_id ? 'error' : ''}
-          aria-describedby={getFieldDescribedBy('medicine_id')}
+          aria-describedby={getFieldDescribedBy('medicine_id', errors)}
           aria-invalid={Boolean(errors.medicine_id)}
         >
           <option value="">Selecione um medicamento</option>
-          {medicines.map((medicine) => (
+          {medicines.map((medicine: any) => (
             <option key={medicine.id} value={medicine.id}>
               {medicine.name}{' '}
               {medicine.dosage_per_pill

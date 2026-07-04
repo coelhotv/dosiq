@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { getInitialFormData, validateStockForm, buildStockPayload } from './_stockFormUtils.js'
+import { getInitialFormData, validateStockForm, buildStockPayload } from './_stockFormUtils'
 
-export function useStockFormState({ medicines, initialValues, onSave }) {
-  const [formData, setFormData] = useState(() => getInitialFormData(initialValues))
-  const [errors, setErrors] = useState({})
+export function useStockFormState({ medicines, initialValues, onSave }: any) {
+  const [formData, setFormData] = useState<any>(() => getInitialFormData(initialValues))
+  const [errors, setErrors] = useState<Record<string, any>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) {
@@ -34,7 +34,7 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault()
     if (!validate()) return
 
@@ -45,7 +45,7 @@ export function useStockFormState({ medicines, initialValues, onSave }) {
       await onSave(buildStockPayload(formData, effectiveLaboratory, isLiquid, isInjectable))
     } catch (error) {
       console.error('Erro ao salvar:', error)
-      setErrors({ submit: error.message })
+      setErrors({ submit: (error as any).message })
     } finally {
       setIsSubmitting(false)
     }

@@ -6,39 +6,39 @@
 import { parseLocalDate, getNow, daysDifference } from '@utils/dateUtils'
 import './PrescriptionTimeline.css'
 
-function deriveProgress(startDate, endDate) {
-  const start = parseLocalDate(startDate)
-  const end = parseLocalDate(endDate)
-  const today = getNow()
+function deriveProgress(startDate: any, endDate: any) {
+  const start: any = parseLocalDate(startDate)
+  const end: any = parseLocalDate(endDate)
+  const today: any = getNow()
   const totalDays = Math.max((end - start) / 86400000, 1)
   const elapsed = (today - start) / 86400000
   return Math.min(Math.max((elapsed / totalDays) * 100, 0), 100)
 }
 
-function getDaysRemaining(endDateStr) {
+function getDaysRemaining(endDateStr: any) {
   if (!endDateStr) return null
   const end = parseLocalDate(endDateStr)
   const today = getNow()
-  
+
   // Usar helper centralizado para evitar timezone drift
   return daysDifference(today, end)
 }
 
-function formatShortDate(dateStr) {
+function formatShortDate(dateStr: any) {
   if (!dateStr) return ''
   const d = parseLocalDate(dateStr)
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   ativa: 'Ativa',
   vencendo: 'Vencendo',
   vencida: 'Vencida',
   finalizada: 'Finalizada',
 }
 
-export default function PrescriptionTimeline({ prescriptions = [], isComplex }) {
-  const timedPrescriptions = prescriptions.filter((p) => p.endDate != null && !p.isContinuous)
+export default function PrescriptionTimeline({ prescriptions = [], isComplex }: any) {
+  const timedPrescriptions = prescriptions.filter((p: any) => p.endDate != null && !p.isContinuous)
   if (timedPrescriptions.length === 0) return null
 
   return (
@@ -50,7 +50,7 @@ export default function PrescriptionTimeline({ prescriptions = [], isComplex }) 
       {isComplex && (
         <div className="prescription-timeline-redesign__summary">
           {['ativa', 'vencendo', 'vencida'].map((s) => {
-            const count = timedPrescriptions.filter((p) => p.status === s).length
+            const count = timedPrescriptions.filter((p: any) => p.status === s).length
             return count > 0 ? (
               <span key={s} className={`prx-status prx-status--${s}`}>
                 {count}{' '}
@@ -64,7 +64,7 @@ export default function PrescriptionTimeline({ prescriptions = [], isComplex }) 
       )}
 
       <div className="prescription-timeline-redesign__list">
-        {timedPrescriptions.map((p) => {
+        {timedPrescriptions.map((p: any) => {
           const progress = deriveProgress(p.startDate, p.endDate)
           const daysLeft = getDaysRemaining(p.endDate)
           const daysLabel =
@@ -86,7 +86,7 @@ export default function PrescriptionTimeline({ prescriptions = [], isComplex }) 
               <div className="prescription-timeline-redesign__bar-track">
                 <div
                   className={`prescription-timeline-redesign__bar-fill prescription-timeline-redesign__bar-fill--${p.status}`}
-                  style={{ '--progress': `${progress}%` }}
+                  style={{ '--progress': `${progress}%` } as any}
                   role="progressbar"
                   aria-valuenow={Math.round(progress)}
                   aria-valuemin={0}

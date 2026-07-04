@@ -37,7 +37,8 @@ export function predictRefill({ medicineId, currentStock, logs, protocols, medic
   const activeProtocols = protocols.filter((p) => p.active === true)
   const intakeUnit = activeProtocols[0]?.intake_unit ?? null
   const unitsPerMl = medicine?.units_per_ml ?? null
-  const toMl = (qty, unit) => (liquid ? doseToMl(qty, unit ?? intakeUnit, unitsPerMl) : qty)
+  const toMl = (qty: any, unit: any = null) =>
+    liquid ? doseToMl(qty, unit ?? intakeUnit, unitsPerMl) : qty
 
   let dailyConsumption
   let isRealData

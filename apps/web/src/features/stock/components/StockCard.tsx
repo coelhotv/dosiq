@@ -214,7 +214,7 @@ function StockCardPrediction({ prediction }) {
   )
 }
 
-export default function StockCard({ item, isComplex, onAddStock, prediction, index = 0 }) {
+export default function StockCard({ item, isComplex, onAddStock, prediction, index = 0 }: any) {
   const motionConfig = useMotion()
   const {
     medicine,
@@ -242,8 +242,8 @@ export default function StockCard({ item, isComplex, onAddStock, prediction, ind
   return (
     <motion.div
       className={`stock-card-r stock-card-r--${stockStatus} stock-card-r--${isSupplement ? 'supplement' : 'medicine'}`}
-      variants={motionConfig.cascade.item}
-      {...motionConfig.tactile}
+      variants={motionConfig.cascade.item as any}
+      {...(motionConfig.tactile as any)}
       role="article"
       aria-label={`${medicine.name} — ${daysNumber} ${daysLabel}`}
     >

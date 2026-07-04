@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { transformStockItems } from '../_stockDataTransformer.js'
+import { transformStockItems } from '../_stockDataTransformer'
 
 // 012 Fase B4 / ADR-068 — apresentação (injection_container) derivada do LOTE ativo,
 // não mais do medicine. Card lê item.medicine.injection_container (vindo do lote).

@@ -53,12 +53,12 @@ export function getBarPercentage(totalQuantity, daysRemaining) {
  */
 export function useStockData() {
   // 1. States
-  const [medicines, setMedicines] = useState([])
-  const [protocols, setProtocols] = useState([])
-  const [stockMap, setStockMap] = useState({})
-  const [purchaseHistoryMap, setPurchaseHistoryMap] = useState({})
+  const [medicines, setMedicines] = useState<any[]>([])
+  const [protocols, setProtocols] = useState<any[]>([])
+  const [stockMap, setStockMap] = useState<Record<string, any>>({})
+  const [purchaseHistoryMap, setPurchaseHistoryMap] = useState<Record<string, any>>({})
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<any>(null)
 
   // 2. Memos — Computar items, sub-listas por urgência
   const items = useMemo(
@@ -114,10 +114,10 @@ export function useStockData() {
       setIsLoading(true)
       setError(null)
 
-      const [medicinesData, protocolsData] = await Promise.all([
+      const [medicinesData, protocolsData] = (await Promise.all([
         medicineService.getAll(),
         protocolService.getActive(),
-      ])
+      ])) as [any[], any[]]
 
       setMedicines(medicinesData)
       setProtocols(protocolsData)

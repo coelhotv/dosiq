@@ -1,7 +1,7 @@
 import { formatLocalDate, getNow } from '@utils/dateUtils'
 import { coerceDecimal, cleanFloat } from '@dosiq/core'
 
-export const getInitialFormData = (initialValues) => {
+export const getInitialFormData = (initialValues: any) => {
   const values = initialValues || {}
   return {
     medicine_id: values.medicine_id || '',
@@ -22,7 +22,7 @@ export const getInitialFormData = (initialValues) => {
   }
 }
 
-const validateLiquidFields = (formData, errors) => {
+const validateLiquidFields = (formData: any, errors: any) => {
   if (!formData.num_bottles || formData.num_bottles <= 0) {
     errors.num_bottles = 'Informe o número de frascos (maior que zero)'
   }
@@ -35,7 +35,7 @@ const validateLiquidFields = (formData, errors) => {
   }
 }
 
-const validateSolidFields = (formData, errors) => {
+const validateSolidFields = (formData: any, errors: any) => {
   const qty = coerceDecimal(formData.quantity)
   if (Number.isNaN(qty) || qty <= 0) {
     errors.quantity = 'Quantidade deve ser maior que zero'
@@ -45,14 +45,14 @@ const validateSolidFields = (formData, errors) => {
   }
 }
 
-const validateDateFields = (formData, errors) => {
+const validateDateFields = (formData: any, errors: any) => {
   if (formData.expiration_date && formData.expiration_date < formData.purchase_date) {
     errors.expiration_date = 'Data de validade não pode ser anterior à compra'
   }
 }
 
-export const validateStockForm = (formData, isLiquid = false) => {
-  const newErrors = {}
+export const validateStockForm = (formData: any, isLiquid = false) => {
+  const newErrors: Record<string, any> = {}
 
   if (!formData.medicine_id) {
     newErrors.medicine_id = 'Selecione um medicamento'
