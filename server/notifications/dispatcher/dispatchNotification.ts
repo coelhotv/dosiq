@@ -94,7 +94,7 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
     kind,
     channels: validChannels,
     suppressed: isSuppressed
-  } as unknown as undefined)
+  })
 
   let results: ChannelResult[] = []
   if (!isSuppressed && validChannels.length > 0) {
@@ -105,8 +105,9 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
     results = settledResults
       .map((r, i): ChannelResult | null => {
         if (r.status === 'rejected') {
-          console.error('[dispatchNotification] canal rejeitou promise', { correlationId, channel: validChannels[i], reason: r.reason?.message })
-          return { channel: validChannels[i], success: false, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [{ message: r.reason?.message }] }
+          const reasonMessage = r.reason instanceof Error ? r.reason.message : String(r.reason)
+          console.error('[dispatchNotification] canal rejeitou promise', { correlationId, channel: validChannels[i], reason: reasonMessage })
+          return { channel: validChannels[i], success: false, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [{ message: reasonMessage }] }
         }
         return r.value
       })
@@ -136,7 +137,7 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
     channels: validChannels,
     totalDelivered: normalized.totalDelivered,
     totalFailed: normalized.totalFailed,
-  } as unknown as undefined)
+  })
 
   // --- DLQ Integration (Gate 3.5) ---
   ;(async () => {

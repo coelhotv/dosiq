@@ -74,22 +74,23 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
 async function _sendPushNotifications(expoClient: ExpoClient, messages: ReturnType<typeof _buildExpoMessages>, correlationId: string, userId: string): Promise<ExpoTicket[]> {
   try {
     return await expoClient.sendPushNotificationsAsync(messages)
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Se falhar o lote inteiro por conflito de projeto (comum em migrações de marca),
     // tentamos o envio individual para permitir que os tokens do projeto novo passem
     // e os antigos sejam identificados/desativados.
-    if (error.message.includes('All push notification messages in the same request must be for the same project')) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('All push notification messages in the same request must be for the same project')) {
       console.warn('[expoPushChannel] conflito de projeto detectado, tentando envio individual...', { correlationId, userId })
       const tickets: ExpoTicket[] = []
       for (const msg of messages) {
         try {
           const [ticket] = await expoClient.sendPushNotificationsAsync([msg])
           tickets.push(ticket)
-        } catch (individualError: any) {
+        } catch (individualError: unknown) {
           // Se falhou individualmente, simulamos um ticket de erro para ser tratado no normalize
           tickets.push({
             status: 'error',
-            message: individualError.message,
+            message: individualError instanceof Error ? individualError.message : String(individualError),
             details: { error: 'DeviceNotRegistered' } // Forçamos desativação se o projeto não bate
           })
         }
