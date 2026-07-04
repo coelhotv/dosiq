@@ -1,12 +1,12 @@
 import React from 'react'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
-import Button from '@shared/components/ui/Button.jsx'
+import Button from '@shared/components/ui/Button'
 import './MedicineForm.css'
 
 // Custom Hook e Seções
-import { useMedicineFormState } from '@features/medications/components/_useMedicineFormState.js'
-import MedicineFormBasicInfo from '@features/medications/components/sections/MedicineFormBasicInfo.jsx'
-import MedicineFormDosageInfo from '@features/medications/components/sections/MedicineFormDosageInfo.jsx'
+import { useMedicineFormState } from '@features/medications/components/_useMedicineFormState'
+import MedicineFormBasicInfo from '@features/medications/components/sections/MedicineFormBasicInfo'
+import MedicineFormDosageInfo from '@features/medications/components/sections/MedicineFormDosageInfo'
 
 /**
  * @typedef {Object} MedicineFormProps
@@ -21,6 +21,7 @@ import MedicineFormDosageInfo from '@features/medications/components/sections/Me
  * @property {string} [title] - Título customizado do formulário
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export default function MedicineForm({
   medicine,
   onSave,
@@ -31,7 +32,7 @@ export default function MedicineForm({
   showCancelButton = true,
   submitButtonLabel,
   title,
-}) {
+}: any) {
   const {
     formData,
     setFormData,

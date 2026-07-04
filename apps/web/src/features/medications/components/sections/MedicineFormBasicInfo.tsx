@@ -1,11 +1,12 @@
 import React from 'react'
 import { getFieldDescribedBy } from '@utils/formUtils'
-import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
-import MedicineAutocomplete from '@features/medications/components/MedicineAutocomplete.jsx'
+import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
+import MedicineAutocomplete from '@features/medications/components/MedicineAutocomplete'
 
 // Ordem dos campos espelha o form mobile (012 Fase B3): Identificação no topo
 // (nome + princípio ativo), prioritários primeiro. Tipo/Classe migraram p/ a
 // seção "Classificação" (MedicineFormDosageInfo).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export default function MedicineFormBasicInfo({
   formData,
   errors,
@@ -18,7 +19,7 @@ export default function MedicineFormBasicInfo({
   handleChange,
   handleMedicineSelect,
   medicine,
-}) {
+}: any) {
   return (
     <>
       <h4 className="medicine-form__section-title">Identificação</h4>
@@ -45,7 +46,7 @@ export default function MedicineFormBasicInfo({
             inputId="name"
             placeholder="Ex: Paracetamol ou digite para buscar..."
             disabled={isSubmitting}
-            ariaDescribedBy={getFieldDescribedBy('name')}
+            ariaDescribedBy={getFieldDescribedBy('name', errors)}
             ariaInvalid={Boolean(errors.name)}
           />
         </ShakeEffect>

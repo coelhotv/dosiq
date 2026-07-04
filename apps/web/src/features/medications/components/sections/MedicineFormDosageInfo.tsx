@@ -12,10 +12,10 @@ import {
   cleanFloat,
   formatNumberPtBR,
 } from '@dosiq/core'
-import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils.js'
+import { isLiquidUnit } from '@features/medications/components/_medicineFormUtils'
 import { getFieldDescribedBy } from '@utils/formUtils'
-import ShakeEffect from '@shared/components/ui/animations/ShakeEffect.jsx'
-import LaboratoryAutocomplete from '@features/medications/components/LaboratoryAutocomplete.jsx'
+import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
+import LaboratoryAutocomplete from '@features/medications/components/LaboratoryAutocomplete'
 
 // Ordem dos campos espelha o form mobile (012 Fase B3): Dosagem (prioritária) no
 // topo, depois Classificação (tipo, apresentação, validade, classe, categoria,

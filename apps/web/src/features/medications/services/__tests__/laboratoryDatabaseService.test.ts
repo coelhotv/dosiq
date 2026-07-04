@@ -5,10 +5,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
  * @dosiq/core; mockamos o núcleo para `load()` determinístico (sem fetch/JSON).
  * Fetch/cache/offline reais cobertos no teste do core (anvisaDatabase.test.js).
  */
-let mockData = []
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
+let mockData: any[] = []
 
 vi.mock('@dosiq/core', async (importActual) => {
-  const actual = await importActual()
+  const actual = (await importActual()) as any
   return {
     ...actual,
     createAnvisaDatabase: () => ({ load: () => Promise.resolve(mockData) }),
