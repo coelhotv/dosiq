@@ -35,7 +35,7 @@ vi.mock('@shared/utils/queryCache', () => ({
   invalidateCache: vi.fn(),
 }))
 
-import { useDashboard, DashboardProvider } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard, DashboardProvider } from '@dashboard/hooks/useDashboardContext'
 
 describe('useDashboard', () => {
   beforeEach(() => {

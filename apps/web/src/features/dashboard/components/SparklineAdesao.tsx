@@ -5,7 +5,7 @@
  * (adesão absoluta; clamp AP-191), curva que passa pelos pontos (Catmull-Rom) e tooltip
  * como overlay HTML (não SVG <text>, que esticava no preserveAspectRatio="none").
  */
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, type CSSProperties } from 'react'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { useSparklineData } from '@dashboard/hooks/useSparklineData'
 import {
@@ -25,7 +25,7 @@ const SIZES = {
   expanded: { width: 320, height: 56, padding: 8 },
 }
 
-export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = null, showAxis = false, showTooltip = true, className = '', onDayClick }) {
+export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = null, showAxis = false, showTooltip = true, className = '', onDayClick = (() => {}) as (dayData?: any) => void }) {
   // 1. States
   const [activePoint, setActivePoint] = useState(null)
 
@@ -128,7 +128,7 @@ export function SparklineAdesao({ adherenceByDay = [], size = 'medium', days = n
       )}
       {showTooltip && size !== 'inline' && size !== 'expanded' && (
         <div className="sparkline-tooltip-container">
-          {chartData.map((d, i) => <div key={d.date} className="sparkline-day-tooltip" style={{ '--day-index': i }}><span className="sparkline-day-name">{d.dayName}</span><span style={{ color: getAdherenceColor(d.adherence) }}>{d.adherence}%</span></div>)}
+          {chartData.map((d, i) => <div key={d.date} className="sparkline-day-tooltip" style={{ '--day-index': i } as CSSProperties}><span className="sparkline-day-name">{d.dayName}</span><span style={{ color: getAdherenceColor(d.adherence) }}>{d.adherence}%</span></div>)}
         </div>
       )}
       <div className={`sparkline-stats sparkline-stats-${size}`}>

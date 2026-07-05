@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isTreatmentSchedulableOn } from '@dosiq/core'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import {
   cachedLogService as logService,
   cachedTreatmentPlanService as treatmentPlanService,

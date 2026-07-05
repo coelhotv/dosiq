@@ -6,7 +6,7 @@
 // ponta-a-ponta e governa a derivação do dia local (cross-meia-noite correto, sem double-shift).
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 import { cachedLogService as logService, cachedAdherenceService as adherenceService } from '@shared/services'
 import { timelineService } from '@services/api/timelineService'

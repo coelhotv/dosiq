@@ -128,12 +128,12 @@ export function DashboardProvider({ children }) {
   // tamanho antigo (menos queries) por 1 render até o efeito re-sincronizar — evita
   // `undefined.data` derrubar o Provider e cascatear "fora do DashboardProvider".
   const [
-    medicinesResult = {},
-    protocolsResult = {},
-    logsResult = {},
-    doseInstancesResult = {},
-    adherenceSummaryResult = {},
-    timezoneResult = {},
+    medicinesResult = {} as any, // TODO(040-strict)
+    protocolsResult = {} as any, // TODO(040-strict)
+    logsResult = {} as any, // TODO(040-strict)
+    doseInstancesResult = {} as any, // TODO(040-strict)
+    adherenceSummaryResult = {} as any, // TODO(040-strict)
+    timezoneResult = {} as any, // TODO(040-strict)
   ] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
@@ -190,7 +190,7 @@ export function DashboardProvider({ children }) {
         invalidateCache(CACHE_KEYS.DOSE_INSTANCES_TODAY)
         invalidateCache(CACHE_KEYS.USER_TIMEZONE)
         invalidateCache(`${CACHE_KEYS.ADHERENCE_SUMMARY}*`)
-        refetchAll({ force: true })
+        refetchAll()
       }
     })
     return () => subscription.unsubscribe()

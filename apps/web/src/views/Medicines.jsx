@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { medicineService } from '@shared/services'
 import Loading from '@shared/components/ui/Loading'
 import MedicineListHeader from '@medications/components/medicines/components/MedicineListHeader'

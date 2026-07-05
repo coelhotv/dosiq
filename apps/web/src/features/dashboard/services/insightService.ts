@@ -69,7 +69,7 @@ function getMostActiveHour() {
 
     if (doseEvents.length === 0) return null
 
-    const hourCounts = {}
+    const hourCounts: Record<string, number> = {}
     doseEvents.forEach((event) => {
       // M9.0: Extrair hora no fuso de SP
       const date = parseISO(event.timestamp)
@@ -116,7 +116,7 @@ function getAdherenceByDayOfWeek() {
 
     if (doseEvents.length === 0) return null
 
-    const dayCounts = {}
+    const dayCounts: Record<string, number> = {}
     doseEvents.forEach((event) => {
       // M9.0: Fixar fuso de Brasília para determinar dia da semana real
       const day = parseISO(event.timestamp).toLocaleDateString('pt-BR', { 
@@ -289,7 +289,7 @@ export function selectBestInsight(params) {
   const insights = generateAllInsights(rest)
 
   const applicableInsights = insights.filter(
-    (insight) =>
+    (insight: any) => // TODO(040-strict)
       (insight.condition === undefined || insight.condition) &&
       !excludeIds.includes(insight.id)
   )
@@ -355,7 +355,7 @@ export function shouldShowInsight(insightId) {
 
   if (!lastShown) return true
 
-  const timeSinceLastShown = getNow() - lastShown.timestamp
+  const timeSinceLastShown = getNow().getTime() - lastShown.timestamp
   return timeSinceLastShown >= MIN_DISPLAY_INTERVAL
 }
 
