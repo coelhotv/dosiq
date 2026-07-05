@@ -26,10 +26,10 @@ export default mergeConfig(
         exclude: [
           'node_modules/',
           'src/test/',
-          'src/main.jsx',
-          'src/App.jsx',
+          'src/main.tsx',
+          'src/App.tsx',
           '**/__tests__/**',
-          '**/*.test.{js,jsx}',
+          '**/*.test.{js,jsx,ts,tsx}',
           '**/*.config.js',
         ],
       },

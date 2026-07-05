@@ -12,7 +12,7 @@ export default mergeConfig(
     test: {
       setupFiles: './src/test/setup.js',
 
-      include: ['src/**/*.test.{js,jsx}'],
+      include: ['src/**/*.test.{js,jsx,ts,tsx}'],
 
       pool: 'threads',
       poolOptions: {
@@ -29,13 +29,13 @@ export default mergeConfig(
         provider: 'v8',
         reporter: ['text', 'lcov', 'html', 'json'],
 
-        include: ['src/**/*.{js,jsx}'],
+        include: ['src/**/*.{js,jsx,ts,tsx}'],
         exclude: [
           'src/test/',
-          'src/main.jsx',
-          'src/App.jsx',
+          'src/main.tsx',
+          'src/App.tsx',
           '**/__tests__/**',
-          '**/*.test.{js,jsx}',
+          '**/*.test.{js,jsx,ts,tsx}',
           '**/*.config.js',
           '**/node_modules/**',
         ],
