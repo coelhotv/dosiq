@@ -8,6 +8,12 @@
 import { createProtocolRepository } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
+// TODO(040-strict): apps/mobile pina @supabase/supabase-js 2.91.0 vs ^2.90.1 na
+// root — duplicata de instalação quebra nominal typing do client (protected member
+// 'supabaseUrl' não bate estruturalmente). Fix real = alinhar versão (fora do lote).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const typedClient = supabase as any
+
 async function getUserId() {
   const { data, error } = await supabase.auth.getUser()
   const user = data?.user
@@ -22,7 +28,7 @@ const MOBILE_DETAIL_SELECT = `
 `
 
 export const protocolService = createProtocolRepository({
-  client: supabase,
+  client: typedClient,
   getUserId,
   detailSelect: MOBILE_DETAIL_SELECT,
 })

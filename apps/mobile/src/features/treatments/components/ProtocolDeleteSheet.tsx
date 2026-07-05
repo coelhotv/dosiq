@@ -7,13 +7,12 @@
 
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import {
-  AlertTriangle,
-  CheckCircle2,
-  CalendarDays,
-  Info,
-  Trash2,
-} from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305/TS2724
+// sob apps/mobile/tsconfig.json (CheckCircle2 nem existe em runtime — bug
+// pré-existente preservado, fora de escopo deste lote) — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { AlertTriangle, CheckCircle2, CalendarDays, Info, Trash2 } = LucideIcons as any
 import { useProtocolStats } from '@treatments/hooks/useProtocolStats'
 import { selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'

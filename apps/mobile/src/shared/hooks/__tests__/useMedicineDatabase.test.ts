@@ -19,11 +19,15 @@ jest.mock('@dosiq/core/utils/dateUtils', () => {
 })
 
 import { act, renderHook, waitFor } from '@testing-library/react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorageImport from '@react-native-async-storage/async-storage'
 import { useMedicineDatabase } from '../useMedicineDatabase'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AsyncStorage = AsyncStorageImport as any
+
 // Fetch global mockado
-global.fetch = jest.fn()
+global.fetch = jest.fn() as unknown as typeof fetch
+const fetchMock = global.fetch as unknown as jest.Mock
 
 const mockManifest = {
   version: '1.0.0',
@@ -65,7 +69,7 @@ beforeEach(() => {
     ['@dosiq/anvisa-manifest', null],
     ['@dosiq/anvisa-data', null],
   ])
-  global.fetch.mockReset()
+  fetchMock.mockReset()
 })
 
 // -------------------------------------------------------------------
@@ -73,7 +77,7 @@ beforeEach(() => {
 // -------------------------------------------------------------------
 describe('cold start — rede OK', () => {
   it('deve baixar manifest e data, expor isReady=true e salvar no AsyncStorage', async () => {
-    global.fetch.mockImplementation((url) =>
+    fetchMock.mockImplementation((url) =>
       url.endsWith('manifest.json') ? mockFetchOk(mockManifest) : mockFetchOk(mockData),
     )
 
@@ -101,7 +105,7 @@ describe('warm start — cache fresco', () => {
     AsyncStorage.multiGet.mockResolvedValue(buildCacheMultiGet())
 
     // Manifest remoto com mesma versão
-    global.fetch.mockImplementation(() => mockFetchOk(mockManifest))
+    fetchMock.mockImplementation(() => mockFetchOk(mockManifest))
 
     const { result } = renderHook(() => useMedicineDatabase())
 
@@ -124,7 +128,7 @@ describe('warm start — versão remota diferente', () => {
     const newManifest = { ...mockManifest, version: '2.0.0' }
     const newData = [...mockData, { name: 'Ibuprofeno', activeIngredient: 'Ibuprofeno', therapeuticClass: 'AINE', laboratory: 'Lab D' }]
 
-    global.fetch.mockImplementation((url) =>
+    fetchMock.mockImplementation((url) =>
       url.endsWith('manifest.json') ? mockFetchOk(newManifest) : mockFetchOk(newData),
     )
 
@@ -152,7 +156,7 @@ describe('warm start — cache expirado pelo TTL', () => {
     // cachedAt muito antigo
     AsyncStorage.multiGet.mockResolvedValue(buildCacheMultiGet({ cachedAt: '2025-01-01T00:00:00Z' }))
 
-    global.fetch.mockImplementation((url) =>
+    fetchMock.mockImplementation((url) =>
       url.endsWith('manifest.json') ? mockFetchOk(mockManifest) : mockFetchOk(mockData),
     )
 
@@ -171,7 +175,7 @@ describe('falha de rede — cache disponível', () => {
   it('não deve expor erro e deve manter busca funcional', async () => {
     AsyncStorage.multiGet.mockResolvedValue(buildCacheMultiGet())
 
-    global.fetch.mockImplementation(() => mockFetchError())
+    fetchMock.mockImplementation(() => mockFetchError())
 
     const { result } = renderHook(() => useMedicineDatabase())
 
@@ -189,7 +193,7 @@ describe('falha de rede — cache disponível', () => {
 describe('falha de rede — sem cache', () => {
   it('deve expor error e isReady=false', async () => {
     // multiGet já retorna null por padrão no beforeEach
-    global.fetch.mockImplementation(() => mockFetchError())
+    fetchMock.mockImplementation(() => mockFetchError())
 
     const { result } = renderHook(() => useMedicineDatabase())
 
@@ -207,7 +211,7 @@ describe('search()', () => {
   beforeEach(() => {
     // Cache fresco, sem fetch necessário
     AsyncStorage.multiGet.mockResolvedValue(buildCacheMultiGet())
-    global.fetch.mockImplementation(() => mockFetchOk(mockManifest))
+    fetchMock.mockImplementation(() => mockFetchOk(mockManifest))
   })
 
   async function getReadyHook() {
@@ -300,7 +304,7 @@ describe('search()', () => {
 describe('getByName()', () => {
   beforeEach(() => {
     AsyncStorage.multiGet.mockResolvedValue(buildCacheMultiGet())
-    global.fetch.mockImplementation(() => mockFetchOk(mockManifest))
+    fetchMock.mockImplementation(() => mockFetchOk(mockManifest))
   })
 
   async function getReadyHook() {

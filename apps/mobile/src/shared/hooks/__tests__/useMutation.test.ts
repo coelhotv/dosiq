@@ -8,7 +8,10 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }))
 
 import { act, renderHook, waitFor } from '@testing-library/react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import AsyncStorageImport from '@react-native-async-storage/async-storage'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const AsyncStorage = AsyncStorageImport as any
 import * as Haptics from 'expo-haptics'
 import { useMutation } from '../useMutation'
 
@@ -173,7 +176,8 @@ test('timeout: error.message contém "Timeout: operação excedeu"', async () =>
   })
 
   expect(result.current.error).not.toBeNull()
-  expect(result.current.error.message).toMatch(/Timeout: operação excedeu/)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expect((result.current.error as any).message).toMatch(/Timeout: operação excedeu/)
   expect(onError).toHaveBeenCalled()
 }, 3000)
 

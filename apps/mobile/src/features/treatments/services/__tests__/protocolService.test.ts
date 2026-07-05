@@ -1,5 +1,8 @@
 import { protocolService } from '../protocolService'
-import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
+import { supabase as supabaseImport } from '../../../../platform/supabase/nativeSupabaseClient'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const supabase = supabaseImport as any
 
 // Mock supabase mobile client com cadeia fluente completa para protocolos.
 jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {

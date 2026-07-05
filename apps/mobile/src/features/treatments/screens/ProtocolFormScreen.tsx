@@ -20,7 +20,11 @@ import {
   Platform,
 } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
-import { ArrowLeft, AlertCircle } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ArrowLeft, AlertCircle } = LucideIcons as any
 import { getTodayLocal, formatLocalDate } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import FormActions from '@shared/components/form/FormActions'
@@ -38,8 +42,8 @@ import { ROUTES } from '@navigation/routes'
 
 export default function ProtocolFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
-  const navigation = useNavigation()
-  const route = useRoute()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const editId = route.params?.id ?? null
   const isEdit = !!editId
   const presetPlanId = isEdit ? null : (route.params?.treatment_plan_id ?? null)
@@ -282,7 +286,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: colors.status.errorSoft ?? colors.neutral[100],
+    backgroundColor: (colors.status as any).errorSoft ?? colors.neutral[100],
   },
   errorsBannerText: {
     flex: 1,

@@ -13,11 +13,11 @@ export default function FormSelect({
   options,
   error,
   onChange,
-  onBlur,
-  disabled,
-  placeholder,
-  helperText,
-  required,
+  onBlur = undefined,
+  disabled = false,
+  placeholder = undefined,
+  helperText = undefined,
+  required = false,
 }) {
   const [open, setOpen] = useState(false)
 

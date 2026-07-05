@@ -1,7 +1,10 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import TreatmentsScreen from '../TreatmentsScreen';
-import { useTreatments } from '@features/treatments/hooks/useTreatments';
+import { useTreatments as useTreatmentsImport } from '@features/treatments/hooks/useTreatments';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const useTreatments = useTreatmentsImport as any
 
 jest.mock('@features/treatments/hooks/useTreatments');
 jest.mock('@shared/components/ui/ScreenContainer', () => ({ children }) => <>{children}</>);
