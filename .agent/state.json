@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "coding",
-    "ceremony_type": "eng-review",
-    "status": "c5_done",
+    "mode": "planning",
+    "ceremony_type": null,
+    "status": "planned",
     "merged_pr": 715,
     "merged_squash": "2c1348c5",
     "merged_history": [
@@ -58,32 +58,38 @@
         "phase": "040 F4: apps/web 100% TS (10 lotes #705-714 + gate Fable). AP-265 (globs vitest pós-rename). Web 4.15.3. Review Gemini 5/5 aplicados"
       }
     ],
-    "goal": "040 F4 mergeada (#715) — apps/web 100% TS, web 4.15.3. Próximo: F5 mobile (5.1 hooks clínicos A = fecha marco SC-006; branch integração feature/040/fase-5)",
-    "goal_type": "chore",
-    "plan": "plans/specs/040-typescript-migration/plan.md",
-    "tasks": "plans/specs/040-typescript-migration/tasks.md",
+    "goal": "043 notify-improvements — performance do cron api/notify (paralelismo, batch queries, idempotência/retomada) + estratégia de pushes (higiene de devices, isolamento reminders vs relatórios)",
+    "goal_type": "feature",
+    "plan": "plans/specs/043-notify-improvements/plan.md",
+    "tasks": "plans/specs/043-notify-improvements/tasks.md",
     "tier": 2,
-    "spec_dir": "plans/specs/040-typescript-migration",
-    "spec": "plans/specs/040-typescript-migration/spec.md",
+    "spec_dir": "plans/specs/043-notify-improvements",
+    "spec": "plans/specs/043-notify-improvements/spec.md",
     "ceremonies_run": [
       "eng-review",
       "security-review"
     ],
-    "ceremony_findings_count": 8,
+    "ceremony_findings_count": 14,
     "ceremony_scope_decisions": [
-      "SEC-1 Critical: RLS user_id=auth.uid() SELECT+INSERT (PO-SEC-1)",
-      "SEC-2 High: emit service_role deriva user_id da dose_instance, não de input (PO-SEC-2, R-042)",
-      "SEC-3 Medium: detail jsonb whitelist, sem token/segredo/label (PO-SEC-3)",
-      "SEC-4 Medium: append-only, authenticated SELECT+INSERT only, prune só service_role/cron (PO-SEC-4)",
-      "SEC-5 aceito: cliente pode forjar próprio evento — debug-trail confia devices do dev/PO, não é forense",
-      "ENG-1: iOS não captura alarm_fired no disparo (sem JS background) — outcome derivado no foreground, detail.captured_at_foreground",
-      "ENG-2: fatiar em Slice A (server-side: migração+core+emits round-trip) e Slice B (beacon device+fila)",
-      "ENG-3: emit helper único @dosiq/core (criticalAuditService), sem insert inline por site; guards PO-2/PO-3 calibrados ↑"
+      "ENG-1: estrutural antes de comportamental — migração+drenador sem consumidor, cutover job-a-job com flag env (modelo ADR-057), daily primeiro",
+      "ENG-2: fatiar em Slice A (outbox+drenador+relatórios) e Slice B (higiene devices+fingerprint); B primeiro (menor, ganho imediato)",
+      "ENG-3: period_key canônico por kind, tz-aware, função única no core (evita duplicata cross-tz)",
+      "ENG-4: identidade de device = push_token (não trocar chave); fingerprint vira diagnóstico; ler RPC no planning",
+      "ENG-5: fronteira outbox×DLQ — falha de canal→DLQ, falha de build→outbox failed com attempts cap 3",
+      "ENG-6: health check de fila entupida em api/health/notifications",
+      "ENG-7: drenador com cap de lote (25) + deadline (~40s); teste essencial = conflito unique (integração)",
+      "ENG-8: pool só DENTRO do lote; SKIP LOCKED já serializa entre ticks",
+      "Guards ↑: PO-3 (≥2 kinds + tz-boundary), PO-4 (query negativa em prod obrigatória)",
+      "SEC-1 RESOLVIDO (PO 2026-07-05): outbox com REFERÊNCIAS (user+kind+period), sem coluna payload — conteúdo construído no drain; FR-004/009 + Key Entities atualizados",
+      "SEC-2 Critical: outbox server-internal — RLS + zero grants authenticated/anon (PO-SEC-2)",
+      "SEC-3: resultado por canal sem push token bruto — contagens/device_id (PO-SEC-3)",
+      "SEC-4: prune 90d pg_cron na mesma migração (PO-SEC-4, LGPD minimização)",
+      "SEC-5: CREATE OR REPLACE da RPC repete REVOKEs + search_path (PO-SEC-5)"
     ]
   },
   "memory": {
     "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 6,
     "rules_count": 234,
     "anti_patterns_count": 261,
     "decisions_count": 77,
