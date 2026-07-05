@@ -30,7 +30,7 @@ function isInWindow(protocol, scheduledTime, windowMinutes = 120) {
  * @param {{ mode: 'plan'|'misc'|'active', planId?: string, protocolIds?: string[], scheduledTime?: string, userId: string }} params
  * @returns {{ protocols: Object[], loading: boolean, error: string|null }}
  */
-export function usePlanProtocols({ mode, planId = undefined, protocolIds = undefined, scheduledTime = undefined, userId }) {
+export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, userId }) {
   const [protocols, setProtocols] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

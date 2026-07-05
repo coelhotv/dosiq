@@ -530,7 +530,7 @@ export default function BulkDoseRegisterModal({
   onSuccess,
   mode,
   planId,
-  protocolIds = null,
+  protocolIds = undefined,
   scheduledTime,
   treatmentPlanName,
   userId,
