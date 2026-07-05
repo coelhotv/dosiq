@@ -7,11 +7,18 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { colors, spacing, borderRadius } from '../../styles/tokens'
 
 export default function EmptyState({
-  title,
+  title = undefined,
   message = 'Nenhum dado encontrado',
   icon = '💊',
   action = null,
   hint = null,
+}: {
+  // TODO(040-strict): tipar de verdade (icon: ReactNode | string, action: { label, onPress })
+  title?: any
+  message?: string
+  icon?: any
+  action?: any
+  hint?: any
 }) {
   const isReactElement = icon !== null && typeof icon === 'object'
 
