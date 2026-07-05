@@ -39,7 +39,7 @@ const VIEW_MAP = {
   stock: (props) => <Stock initialParams={props.initialStockParams} onClearParams={() => props.setInitialStockParams(null)} />,
   treatment: (props) => {
     const TreatmentAny = Treatment as any
-    return <TreatmentAny onNavigateToProtocol={() => props.setCurrentView('treatment')} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />
+    return <TreatmentAny onNavigateToProtocol={props.navigateToProtocol} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />
   },
   profile: (props) => <Profile onNavigate={props.setCurrentView} />,
   'health-history': (props) => <HealthHistory key="health-history" onNavigate={props.setCurrentView} />,
