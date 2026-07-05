@@ -252,7 +252,7 @@ export default function FormAutocomplete({
             blurOnSubmit={false}
             accessibilityLabel={label}
             accessibilityHint={helperText || placeholder}
-            accessibilityState={error ? { invalid: true } : undefined}
+            accessibilityState={(error ? { invalid: true } : undefined) as any}
           />
           {value ? (
             <Pressable
