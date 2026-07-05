@@ -20,7 +20,7 @@ function _getLotContainer(entries: any) {
 function _getLastPurchase(purchases: any) {
   const purchaseEntries = [...(purchases || [])].sort(
     (a: any, b: any) =>
-      (parseLocalDate(b.purchase_date) as any) - (parseLocalDate(a.purchase_date) as any)
+      parseLocalDate(b.purchase_date).getTime() - parseLocalDate(a.purchase_date).getTime()
   )
   const latestEntry = purchaseEntries[0] || null
   return {

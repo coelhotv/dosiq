@@ -49,7 +49,7 @@ export default function EntradaHistorico({ purchases = [], maxVisible = 3 }: any
   // Ordenar por data mais recente primeiro
   const sorted = [...purchases].sort(
     (a: any, b: any) =>
-      (parseLocalDate(b.purchase_date) as any) - (parseLocalDate(a.purchase_date) as any)
+      parseLocalDate(b.purchase_date).getTime() - parseLocalDate(a.purchase_date).getTime()
   )
   const visible = expanded ? sorted : sorted.slice(0, maxVisible)
   const hasMore = sorted.length > maxVisible

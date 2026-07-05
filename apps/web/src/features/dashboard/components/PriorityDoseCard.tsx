@@ -24,8 +24,8 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
   const nextTime = doses[0]?.scheduledTime || ''
   const scheduledFor = doses[0]?.scheduledFor
   const now = getNow()
-  const scheduled = parseISO(scheduledFor)
-  const diffMin = Math.round((scheduled.getTime() - now.getTime()) / 60000)
+  const scheduled = scheduledFor ? parseISO(scheduledFor) : now
+  const diffMin = scheduledFor ? Math.round((scheduled.getTime() - now.getTime()) / 60000) : 0
 
   const TZ = 'America/Sao_Paulo'
   const isCarryOver =

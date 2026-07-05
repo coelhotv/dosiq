@@ -7,11 +7,11 @@ import { parseLocalDate, getNow, daysDifference } from '@utils/dateUtils'
 import './PrescriptionTimeline.css'
 
 function deriveProgress(startDate: any, endDate: any) {
-  const start: any = parseLocalDate(startDate)
-  const end: any = parseLocalDate(endDate)
-  const today: any = getNow()
-  const totalDays = Math.max((end - start) / 86400000, 1)
-  const elapsed = (today - start) / 86400000
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
+  const today = getNow()
+  const totalDays = Math.max((end.getTime() - start.getTime()) / 86400000, 1)
+  const elapsed = (today.getTime() - start.getTime()) / 86400000
   return Math.min(Math.max((elapsed / totalDays) * 100, 0), 100)
 }
 
