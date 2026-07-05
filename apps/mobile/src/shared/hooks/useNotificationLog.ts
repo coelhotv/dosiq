@@ -14,12 +14,34 @@ import { createNotificationLogRepository } from '@dosiq/shared-data'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { debugLog } from '@shared/utils/debugLog'
 
+interface DoseInfo {
+  medicineName: string
+  dosage: number
+}
+
+interface NotificationLogRecord {
+  notification_type?: string
+  treatment_plan_id?: string | null
+  sent_at?: string
+  provider_metadata?: { protocol_ids?: string[] } | null
+  doses?: DoseInfo[]
+  [key: string]: unknown
+}
+
+interface ProtocolSummary {
+  id: string
+  dosage_per_intake?: number | null
+  treatment_plan_id?: string
+  time_schedule?: string[] | null
+  medicine?: { name?: string } | null
+}
+
 /**
  * Gera chave de cache dinâmica por usuário para evitar vazamento de dados (Security Fix)
- * @param {string} userId 
+ * @param {string} userId
  * @returns {string}
  */
-const getCacheKey = (userId) => `@dosiq/notif-log-snapshot:${userId}`
+const getCacheKey = (userId: string) => `@dosiq/notif-log-snapshot:${userId}`
 
 // Repositório singleton para a plataforma mobile
 const repo = createNotificationLogRepository({ supabase })
@@ -30,11 +52,11 @@ const repo = createNotificationLogRepository({ supabase })
  * Para misc: busca protocolos pelos IDs em provider_metadata.protocol_ids.
  * Evita duplicar dados no notification_log — busca sempre do estado atual dos protocolos.
  */
-async function enrichWithDoses(logs) {
+async function enrichWithDoses(logs: NotificationLogRecord[]): Promise<NotificationLogRecord[]> {
   const byPlanLogs = logs.filter(l => l.notification_type === 'dose_reminder_by_plan' && l.treatment_plan_id)
   const miscLogs   = logs.filter(l => l.notification_type === 'dose_reminder_misc')
 
-  const planIds        = [...new Set(byPlanLogs.map(l => l.treatment_plan_id))]
+  const planIds         = [...new Set(byPlanLogs.map(l => l.treatment_plan_id as string))]
   const miscProtocolIds = [...new Set(miscLogs.flatMap(l => l.provider_metadata?.protocol_ids ?? []))]
 
   const [planProtoMap, miscProtoMap] = await Promise.all([
@@ -45,27 +67,30 @@ async function enrichWithDoses(logs) {
           .in('treatment_plan_id', planIds)
           .eq('active', true)
           .then(({ data }) => {
-            const map = {}
-            for (const p of data ?? []) {
-              if (!map[p.treatment_plan_id]) map[p.treatment_plan_id] = []
-              map[p.treatment_plan_id].push(p)
+            const map: Record<string, ProtocolSummary[]> = {}
+            for (const p of (data ?? []) as ProtocolSummary[]) {
+              const key = p.treatment_plan_id as string
+              if (!map[key]) map[key] = []
+              map[key].push(p)
             }
             return map
           })
-      : Promise.resolve({}),
+      : Promise.resolve({} as Record<string, ProtocolSummary[]>),
 
     miscProtocolIds.length > 0
       ? supabase
           .from('protocols')
           .select('id, dosage_per_intake, medicine:medicine_id(name)')
           .in('id', miscProtocolIds)
-          .then(({ data }) => Object.fromEntries((data ?? []).map(p => [p.id, p])))
-      : Promise.resolve({}),
+          .then(({ data }) => Object.fromEntries(
+            ((data ?? []) as ProtocolSummary[]).map(p => [p.id, p]),
+          ) as Record<string, ProtocolSummary>)
+      : Promise.resolve({} as Record<string, ProtocolSummary>),
   ])
 
   return logs.map(log => {
     if (log.notification_type === 'dose_reminder_by_plan' && log.treatment_plan_id) {
-      const d    = parseISO(log.sent_at)
+      const d    = parseISO(log.sent_at as string)
       const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       const doses = (planProtoMap[log.treatment_plan_id] ?? [])
         .filter(p => (p.time_schedule ?? []).includes(hhmm))
@@ -76,13 +101,19 @@ async function enrichWithDoses(logs) {
     if (log.notification_type === 'dose_reminder_misc') {
       const doses = (log.provider_metadata?.protocol_ids ?? [])
         .map(pid => miscProtoMap[pid])
-        .filter(Boolean)
+        .filter((p): p is ProtocolSummary => Boolean(p))
         .map(p => ({ medicineName: p.medicine?.name ?? 'Medicamento', dosage: p.dosage_per_intake ?? 1 }))
       return { ...log, doses }
     }
 
     return log
   })
+}
+
+interface UseNotificationLogOptions {
+  userId?: string
+  limit?: number
+  enabled?: boolean
 }
 
 /**
@@ -94,12 +125,12 @@ async function enrichWithDoses(logs) {
  * @param {boolean} [options.enabled=true] - Se deve ativar o carregamento e listeners
  * @returns {Object} { data, loading, error, stale, refresh }
  */
-export function useNotificationLog(options = {}) {
+export function useNotificationLog(options: UseNotificationLogOptions = {}) {
   const { userId, limit = 20, enabled = true } = options
 
-  const [data, setData] = useState(null)
+  const [data, setData] = useState<NotificationLogRecord[] | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
   const [stale, setStale] = useState(false)
 
   // Ref para evitar atualizações em componente desmontado
@@ -136,7 +167,8 @@ export function useNotificationLog(options = {}) {
         setError(null)
       }
     } catch (err) {
-      if (__DEV__) console.warn('[useNotificationLog] Fetch failed, checking cache:', err.message)
+      const message = err instanceof Error ? err.message : undefined
+      if (__DEV__) console.warn('[useNotificationLog] Fetch failed, checking cache:', message)
 
       try {
         const cacheKey = getCacheKey(userId)
@@ -147,7 +179,7 @@ export function useNotificationLog(options = {}) {
           setStale(true)
           setError(null)
         } else if (isMounted.current) {
-          setError(err.message || 'Erro ao carregar notificações.')
+          setError(message || 'Erro ao carregar notificações.')
         }
       } catch {
         if (isMounted.current) setError('Erro de conexão e cache ausente.')
@@ -172,7 +204,7 @@ export function useNotificationLog(options = {}) {
   useEffect(() => {
     if (!enabled) return
 
-    let midnightTimer
+    let midnightTimer: ReturnType<typeof setTimeout>
 
     const scheduleMidnightRefresh = () => {
       const now = getNow()
@@ -191,7 +223,7 @@ export function useNotificationLog(options = {}) {
 
     scheduleMidnightRefresh()
 
-    const handleStateChange = (nextState) => {
+    const handleStateChange = (nextState: string) => {
       if (nextState === 'active') {
         // Forçar um refresh leve ao voltar, opcionalmente checar se o dia mudou
         debugLog('[useNotificationLog] App active: Refreshing...')
