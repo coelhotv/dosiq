@@ -15,7 +15,11 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, AlertTriangle } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx (features/treatments)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, AlertTriangle } = LucideIcons as any
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany, getLastInjectionSite } from '../services/doseService'
@@ -526,7 +530,7 @@ export default function BulkDoseRegisterModal({
   onSuccess,
   mode,
   planId,
-  protocolIds,
+  protocolIds = undefined,
   scheduledTime,
   treatmentPlanName,
   userId,

@@ -12,7 +12,7 @@ import { colors, spacing, borderRadius } from '../../styles/tokens'
  *   headerAction?: React.ReactNode
  * }} props
  */
-export default function SectionCard({ title, children, style, headerAction }) {
+export default function SectionCard({ title = undefined, children, style = undefined, headerAction = undefined }) {
   return (
     <View style={[styles.container, style]}>
       {(title || headerAction) && (

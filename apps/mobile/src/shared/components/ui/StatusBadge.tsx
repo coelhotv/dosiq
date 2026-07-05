@@ -11,7 +11,7 @@ import { colors, borderRadius, spacing } from '../../styles/tokens'
  *   style?: any
  * }} props
  */
-export default function StatusBadge({ label, type = 'neutral', style }) {
+export default function StatusBadge({ label, type = 'neutral', style = undefined }) {
   const badgeStyle = [
     styles.badge,
     styles[`badge_${type}`],

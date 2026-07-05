@@ -52,7 +52,7 @@ export function useProtocolMutation() {
       show('Tratamento criado', { variant: 'success' })
       triggerAlarmResync() // FR-006: reagenda alarmes c/ a nova agenda
     },
-    onError: (err) => show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' }),
   })
 
   /**
@@ -75,7 +75,7 @@ export function useProtocolMutation() {
       show('Tratamento atualizado', { variant: 'success' })
       triggerAlarmResync() // FR-006: horários/dose podem ter mudado
     },
-    onError: (err) => show(err?.message ?? 'Erro ao atualizar tratamento', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao atualizar tratamento', { variant: 'error' }),
   })
 
   const create = useCallback(

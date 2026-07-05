@@ -1,7 +1,12 @@
 import { useState, useCallback, useMemo } from 'react'
 import { ScrollView, View, Text, Pressable, StyleSheet, RefreshControl, LayoutAnimation } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Pill, ChevronRight, Plus, CalendarClock } from 'lucide-react-native'
+// TODO(040-strict): named imports de 4 ícones simultâneos do lucide-react-native
+// batem em TS2305 sob apps/mobile/tsconfig.json (moduleResolution bundler + expo
+// base) mesmo existindo no barrel — resolver isolado confirma export presente.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Pill, ChevronRight, Plus, CalendarClock } = LucideIcons as any
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
@@ -21,7 +26,7 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 const DEFAULT_COMPLEXITY = { isComplex: false, flatData: [] }
 
 function useTreatmentsScreenState() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<any>()
   const {
     groups,
     loading,
@@ -231,7 +236,7 @@ export default function TreatmentsScreen() {
 
         {state.isEmpty ? (
           <EmptyState
-            icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+            icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} /> as any}
             title="Nenhum tratamento cadastrado"
             message="Configure doses e horários para receber lembretes e acompanhar a adesão."
             action={{ label: '+ Criar primeiro tratamento', onPress: state.goToCreate }}

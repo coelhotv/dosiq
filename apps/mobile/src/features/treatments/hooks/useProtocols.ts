@@ -38,7 +38,7 @@ export function useProtocols() {
         if (cached) {
           const parsed = JSON.parse(cached)
           const capturedAt = parseISO(parsed.capturedAt)
-          const diffHours = (getNow() - capturedAt) / MS_PER_HOUR
+          const diffHours = (getNow().getTime() - capturedAt.getTime()) / MS_PER_HOUR
           if (diffHours < CACHE_TTL_HOURS) {
             setData(parsed.data)
             setStale(true)

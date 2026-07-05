@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { colors } from '../../styles/tokens'
 
-export default function ScreenContainer({ children, style }) {
+export default function ScreenContainer({ children, style = undefined }) {
   return (
     <SafeAreaView style={[styles.container, style]} edges={['top']}>
       {children}

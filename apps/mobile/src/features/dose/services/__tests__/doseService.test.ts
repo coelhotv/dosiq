@@ -129,7 +129,7 @@ describe('doseService adapter tests', () => {
     })
 
     it('P0001 (ocorrência já registrada/indisponível) → no-op idempotente, limpa superfície, sem erro', async () => {
-      const err = new Error('Ocorrência já registrada ou indisponível')
+      const err: any = new Error('Ocorrência já registrada ou indisponível')
       err.code = 'P0001'
       mockRegisterDose.mockRejectedValueOnce(err)
 
@@ -152,7 +152,7 @@ describe('doseService adapter tests', () => {
   describe('undoDose', () => {
     it('sucesso → cancela dose no core e loga no analytics', async () => {
       mockGetById.mockResolvedValueOnce({ id: 'inst-1', medicine_id: MID })
-      mockUndoDose.mockResolvedValueOnce()
+      mockUndoDose.mockResolvedValueOnce(undefined)
 
       const res = await undoDose('inst-1')
 
@@ -215,7 +215,7 @@ describe('doseService adapter tests', () => {
 
   describe('deleteOrphanLog', () => {
     it('sucesso → remove no core e loga analytics', async () => {
-      mockDeleteOrphanLog.mockResolvedValueOnce()
+      mockDeleteOrphanLog.mockResolvedValueOnce(undefined)
 
       const res = await deleteOrphanLog('log-1')
 

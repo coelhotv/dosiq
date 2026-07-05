@@ -2,8 +2,13 @@
 // Framework: Jest (jest-expo) — rodar em apps/mobile/
 
 import { renderHook, waitFor } from '@testing-library/react-native'
-import { usePlanProtocols } from '../usePlanProtocols'
-import { getActiveTreatments } from '../../../treatments/services/treatmentsService'
+import { usePlanProtocols as usePlanProtocolsImport } from '../usePlanProtocols'
+import { getActiveTreatments as getActiveTreatmentsImport } from '../../../treatments/services/treatmentsService'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const usePlanProtocols = usePlanProtocolsImport as any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getActiveTreatments = getActiveTreatmentsImport as any
 
 jest.mock('../../../treatments/services/treatmentsService', () => ({
   getActiveTreatments: jest.fn(),
