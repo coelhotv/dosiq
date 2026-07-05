@@ -87,14 +87,15 @@ vi.mock('@protocols/components/TreatmentWizard', () => ({
 
 // Mock Suspense
 vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal() as any
   return {
     ...actual,
     Suspense: ({ children }) => children,
   }
 })
 
-import Treatment from '@/views/Treatments'
+import TreatmentBase from '@/views/Treatments'
+const Treatment = TreatmentBase as any
 import { useTreatmentList } from '@protocols/hooks/useTreatmentList'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
 
@@ -128,7 +129,7 @@ describe('Treatment', () => {
       loading: false,
       error: null,
       refetch: vi.fn(),
-    })
+    } as any)
   })
 
   afterEach(() => {
@@ -153,7 +154,7 @@ describe('Treatment', () => {
       loading: false,
       error: null,
       refetch: vi.fn(),
-    })
+    } as any)
 
     render(<Treatment onNavigate={vi.fn()} />)
 
@@ -174,7 +175,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza tratamentos no modo simples', () => {
-    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple' })
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple' } as any)
     vi.mocked(useTreatmentList).mockReturnValue({
       activeItems: mockGroups[0].items,
       pausedItems: [],
@@ -185,7 +186,7 @@ describe('Treatment', () => {
       loading: false,
       error: null,
       refetch: vi.fn(),
-    })
+    } as any)
 
     render(<Treatment onNavigate={vi.fn()} />)
 
@@ -194,7 +195,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza grupos no modo complexo', () => {
-    useComplexityMode.mockReturnValue({ mode: 'complex' })
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'complex' } as any)
     
     const mockGroup = {
       groupKey: 'plan:1',
@@ -229,7 +230,7 @@ describe('Treatment', () => {
       loading: false,
       error: null,
       refetch: vi.fn(),
-    })
+    } as any)
 
     render(<Treatment onNavigate={vi.fn()} />)
     expect(screen.getByText('Hipertensao')).toBeInTheDocument()

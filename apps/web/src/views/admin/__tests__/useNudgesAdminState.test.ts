@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
 
 vi.mock('@services/api/nudgeAdminService', () => ({
   default: {
@@ -24,7 +24,7 @@ describe('useNudgesAdminState', () => {
   })
 
   it('should initialize with default state', () => {
-    nudgeAdminService.getAll.mockResolvedValue({
+    ;(nudgeAdminService.getAll as any).mockResolvedValue({
       data: [],
       total: 0,
       page: 1,
@@ -46,7 +46,7 @@ describe('useNudgesAdminState', () => {
       totalPages: 1,
     }
 
-    nudgeAdminService.getAll.mockResolvedValue(mockData)
+    ;(nudgeAdminService.getAll as any).mockResolvedValue(mockData)
 
     const { result } = renderHook(() => useNudgesAdminState())
 
@@ -58,14 +58,14 @@ describe('useNudgesAdminState', () => {
   })
 
   it('should handle create action', async () => {
-    nudgeAdminService.getAll.mockResolvedValue({
+    ;(nudgeAdminService.getAll as any).mockResolvedValue({
       data: [],
       total: 0,
       page: 1,
       totalPages: 0,
     })
 
-    nudgeAdminService.create.mockResolvedValue({
+    ;(nudgeAdminService.create as any).mockResolvedValue({
       id: 'nudge-1',
       title: 'New Nudge',
     })
@@ -91,7 +91,7 @@ describe('useNudgesAdminState', () => {
   })
 
   it('should handle filter changes', async () => {
-    nudgeAdminService.getAll.mockResolvedValue({
+    ;(nudgeAdminService.getAll as any).mockResolvedValue({
       data: [],
       total: 0,
       page: 1,
@@ -110,7 +110,7 @@ describe('useNudgesAdminState', () => {
   })
 
   it('should handle pagination', async () => {
-    nudgeAdminService.getAll.mockResolvedValue({
+    ;(nudgeAdminService.getAll as any).mockResolvedValue({
       data: [],
       total: 100,
       page: 1,
@@ -131,14 +131,14 @@ describe('useNudgesAdminState', () => {
   it('should auto-clear action message after 4s', async () => {
     vi.useFakeTimers()
 
-    nudgeAdminService.getAll.mockResolvedValue({
+    ;(nudgeAdminService.getAll as any).mockResolvedValue({
       data: [],
       total: 0,
       page: 1,
       totalPages: 0,
     })
 
-    nudgeAdminService.create.mockResolvedValue({ id: 1 })
+    ;(nudgeAdminService.create as any).mockResolvedValue({ id: 1 })
 
     const { result } = renderHook(() => useNudgesAdminState())
 

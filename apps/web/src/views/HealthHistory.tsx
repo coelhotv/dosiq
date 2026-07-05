@@ -200,7 +200,7 @@ function useHealthHistoryState() {
 
   // Status presentes em cada dia → dots acumulados (🟢⚪🔴) em ordem fixa.
   const markedStatusesByDay = useMemo(() => {
-    const byDay = {}
+    const byDay: Record<string, Set<string>> = {}
     for (const ev of monthEvents) {
       if (ev.type !== 'dose') continue // só doses pintam dot de status (FP-3)
       const day = ev.localDay

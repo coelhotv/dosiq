@@ -43,7 +43,7 @@ export default function DashboardHeader({ userName, adherenceScore, remainingDos
         </p>
       </div>
 
-      <RingGauge score={adherenceScore} streak={streak} size="large" />
+      <RingGauge score={adherenceScore} streak={streak} size="large" onClick={() => {}} />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { supabase } from '@shared/utils/supabase'
 
 export default function ResetPasswordView({ onComplete }) {
@@ -78,7 +78,7 @@ export default function ResetPasswordView({ onComplete }) {
   )
 }
 
-const styles = {
+const styles: Record<string, CSSProperties> = {
   container: {
     minHeight: '80vh',
     display: 'flex',

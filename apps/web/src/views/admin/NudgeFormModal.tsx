@@ -449,7 +449,7 @@ export default function NudgeFormModal({ nudge, isOpen, onClose, onSubmit, isLoa
     }
   )
 
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, any>>({})
   const isEditMode = !!nudge
 
   const handleChange = useCallback((field, value) => {
@@ -564,8 +564,7 @@ function isValidUrl(string) {
   try {
     new URL(string)
     return true
-    // eslint-disable-next-line no-unused-vars
-  } catch (_) {
+  } catch {
     return false
   }
 }

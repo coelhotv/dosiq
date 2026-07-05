@@ -37,7 +37,10 @@ const W = (children) => <Suspense fallback={SKELETON}>{children}</Suspense>
 const VIEW_MAP = {
   medicines: (props) => <Medicines onNavigateToProtocol={props.navigateToProtocol} onBack={() => props.setCurrentView('treatment')} />,
   stock: (props) => <Stock initialParams={props.initialStockParams} onClearParams={() => props.setInitialStockParams(null)} />,
-  treatment: (props) => <Treatment onNavigateToProtocol={() => props.setCurrentView('treatment')} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />,
+  treatment: (props) => {
+    const TreatmentAny = Treatment as any
+    return <TreatmentAny onNavigateToProtocol={() => props.setCurrentView('treatment')} onNavigate={props.setCurrentView} initialMedicineId={props.initialTreatmentMedicineId} onClearInitialMedicine={() => props.setInitialTreatmentMedicineId(null)} />
+  },
   profile: (props) => <Profile onNavigate={props.setCurrentView} />,
   'health-history': (props) => <HealthHistory key="health-history" onNavigate={props.setCurrentView} />,
   history: (props) => <HealthHistory key="history" onNavigate={props.setCurrentView} />,

@@ -1,5 +1,6 @@
 import DashboardHeader from './DashboardHeader'
-import PriorityDoseCard from '@dashboard/components/PriorityDoseCard'
+import PriorityDoseCardBase from '@dashboard/components/PriorityDoseCard'
+const PriorityDoseCard = PriorityDoseCardBase as any
 import InsightCard from '@dashboard/components/InsightCard'
 import ReminderSuggestion from '@features/protocols/components/ReminderSuggestion'
 

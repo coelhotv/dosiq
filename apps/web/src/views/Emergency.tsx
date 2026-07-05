@@ -66,7 +66,7 @@ export default function Emergency({ onNavigate }) {
         setMessage('Cartão atualizado com sucesso!')
         setTimeout(() => setMessage(null), 3000)
       } else {
-        setError('Erro ao salvar: ' + (result.error || 'Erro desconhecido'))
+        setError('Erro ao salvar: ' + ((result as any).error || 'Erro desconhecido'))
       }
     } catch (err) {
       setError('Erro ao salvar: ' + err.message)

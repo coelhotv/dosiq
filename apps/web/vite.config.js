@@ -54,12 +54,12 @@ export default defineConfig(({ mode }) => {
 
           // Feature chunks — carregados apenas quando a view é acessada
           'feature-history': [
-            './src/views/HealthHistory.jsx',
+            './src/views/HealthHistory.tsx',
             './src/features/adherence/components/AdherenceHeatmap.jsx',
             './src/features/adherence/services/adherencePatternService.js',
           ],
-          'feature-stock': ['./src/views/Stock.jsx'],
-          'feature-landing': ['./src/views/landing/Landing.jsx'],
+          'feature-stock': ['./src/views/Stock.tsx'],
+          'feature-landing': ['./src/views/landing/Landing.tsx'],
 
           // Base ANVISA (037): movida p/ on-demand via @dosiq/core + Cache Storage.
           // JSON não entra mais no bundle — manualChunk removido.
