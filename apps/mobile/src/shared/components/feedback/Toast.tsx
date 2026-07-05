@@ -2,7 +2,7 @@
 // Toast.jsx — Provider global de notificações toast + hook useToast
 // Exporta: ToastProvider (default), useToast (named)
 
-import { createContext, memo, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, memo, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AlertCircle, AlertTriangle, CheckCircle, Info } from 'lucide-react-native'
@@ -40,13 +40,21 @@ const VARIANT_CONFIG = {
 
 // ─── ToastItem ────────────────────────────────────────────────────────────────
 
-const ToastItem = memo(function ToastItem({ toast, onDismiss }) {
+const ToastItem = memo(function ToastItem({ toast, onDismiss }: { toast: any; onDismiss: () => void }) {
   // States
   const [translateY] = useState(() => new Animated.Value(-100))
   const [opacity] = useState(() => new Animated.Value(0))
 
   const config = VARIANT_CONFIG[toast.variant] ?? VARIANT_CONFIG.info
   const { Icon } = config
+
+  // Mantém a referência do onDismiss atualizada sem recriar handleDismiss
+  // (onDismiss é uma arrow inline no ToastProvider — sem isso o timer de
+  // auto-dismiss reseta a cada re-render do provider)
+  const onDismissRef = useRef(onDismiss)
+  useEffect(() => {
+    onDismissRef.current = onDismiss
+  }, [onDismiss])
 
   // Handlers
   const handleDismiss = useCallback(() => {
@@ -62,8 +70,8 @@ const ToastItem = memo(function ToastItem({ toast, onDismiss }) {
         duration: 150,
         useNativeDriver: true,
       }),
-    ]).start(() => onDismiss())
-  }, [opacity, onDismiss, translateY])
+    ]).start(() => onDismissRef.current())
+  }, [opacity, translateY])
 
   // Effects
   useEffect(() => {
@@ -103,7 +111,7 @@ const ToastItem = memo(function ToastItem({ toast, onDismiss }) {
 
 // ─── ToastProvider ────────────────────────────────────────────────────────────
 
-export function ToastProvider({ children }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets()
   const counterRef = useRef(0)
 
@@ -115,7 +123,7 @@ export function ToastProvider({ children }) {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
-  const show = useCallback((message, opts = {}) => {
+  const show = useCallback((message: string, opts: { variant?: string; duration?: number } = {}) => {
     const id = ++counterRef.current
     const variant = opts.variant ?? 'info'
     const duration = opts.duration ?? 3000
