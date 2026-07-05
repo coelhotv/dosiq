@@ -4,7 +4,13 @@
 // R-121: validação Zod antes de qualquer mutação
 
 import { Platform } from 'react-native'
-import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { supabase as supabaseImport } from '@platform/supabase/nativeSupabaseClient'
+
+// TODO(040-strict): apps/mobile pina @supabase/supabase-js 2.91.0 vs ^2.90.1 na
+// root — duplicata de instalação quebra nominal typing do client (protected member
+// 'supabaseUrl' não bate estruturalmente). Fix real = alinhar versão (fora do lote).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const supabase = supabaseImport as any
 import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
 import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
@@ -165,7 +171,8 @@ export async function undoDose(instanceId) {
 
     await doseLogCore.undoDose(instanceId)
 
-    await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: instance.medicine_id })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: (instance as any).medicine_id })
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -184,7 +191,8 @@ export async function undoDose(instanceId) {
 export async function updateOrphanLog(logId, updates) {
   try {
     const logEntry = await doseLogCore.updateOrphanLog(logId, updates)
-    await logEvent(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: logEntry.medicine_id })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await logEvent(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id })
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE

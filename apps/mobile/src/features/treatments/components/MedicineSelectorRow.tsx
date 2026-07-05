@@ -1,7 +1,11 @@
 // MedicineSelectorRow — row de seleção de medicamento (Fase 2 T2.3)
 // (componente puro controlado)
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Plus, ChevronRight } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Plus, ChevronRight } = LucideIcons as any
 import { formatConcentration } from '@dosiq/core'
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'

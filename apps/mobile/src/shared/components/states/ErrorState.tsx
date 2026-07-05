@@ -6,7 +6,7 @@ import { colors } from '../../styles/tokens'
 
 export default function ErrorState({
   message = 'Ocorreu um erro ao carregar os dados.',
-  onRetry,
+  onRetry = undefined,
 }) {
   return (
     <View style={styles.container}>

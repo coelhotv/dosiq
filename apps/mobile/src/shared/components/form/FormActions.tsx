@@ -10,11 +10,11 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 export default function FormActions({
   primaryLabel,
   onPrimary,
-  primaryDisabled,
+  primaryDisabled = false,
   primaryLoading,
   secondaryLabel,
   onSecondary,
-  destructive,
+  destructive = false,
 }) {
   // Cor de fundo do botão primário (destruidor ou normal)
   const primaryBgColor = destructive ? colors.status.error : colors.primary[700]

@@ -10,9 +10,9 @@ import { AlertCircle } from 'lucide-react-native'
  * @param {string} [props.message] - Mensagem customizada
  * @param {boolean} [props.isDaySegregated] - Se verdadeiro, indica que logs são de ontem
  */
-export default function StaleBanner({ 
-  message, 
-  isDaySegregated = false 
+export default function StaleBanner({
+  message = undefined,
+  isDaySegregated = false
 }) {
   const defaultMessage = isDaySegregated
     ? "Sem conexão. Mostrando agenda (logs de hoje não disponíveis)."

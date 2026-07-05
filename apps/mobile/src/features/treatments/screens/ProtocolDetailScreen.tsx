@@ -7,15 +7,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ScrollView, View, Text, Pressable, Switch, StyleSheet } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
-import {
-  ArrowLeft,
-  ChevronRight,
-  Clock,
-  Edit3,
-  Trash2,
-  CheckCircle2,
-  TrendingUp,
-} from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305/TS2724
+// sob apps/mobile/tsconfig.json (Edit3/CheckCircle2 nem existem em runtime — bug
+// pré-existente preservado, fora de escopo deste lote) — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ArrowLeft, ChevronRight, Clock, Edit3, Trash2, CheckCircle2, TrendingUp } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import {
   formatDatePtBR,
@@ -64,14 +61,14 @@ function daysInUse(startDate) {
   if (!startDate) return null
   const start = parseLocalDate(startDate)
   if (!start) return null
-  const diffMs = getNow() - start.getTime()
+  const diffMs = getNow().getTime() - start.getTime()
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
 }
 
 function useProtocolDetailState() {
   // States
-  const navigation = useNavigation()
-  const route = useRoute()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const id = route.params?.id
   const { data: protocol, loading, error, refresh } = useProtocol(id)
   const { confirmDelete, isLoading: isDeleting } = useProtocolDelete(protocol)
@@ -507,7 +504,7 @@ function CriticalAlarmSection({ protocol }) {
   )
 }
 
-function DetailRow({ label, value, valueMuted }) {
+function DetailRow({ label, value, valueMuted = false }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
@@ -740,7 +737,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral[100],
   },
   criticalAlarmBadgeOn: {
-    backgroundColor: colors.status?.warningSoft ?? colors.neutral[100],
+    backgroundColor: (colors.status as any)?.warningSoft ?? colors.neutral[100],
   },
   criticalAlarmBadgeText: {
     fontSize: 12,

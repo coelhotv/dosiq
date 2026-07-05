@@ -21,14 +21,14 @@ export default function FormDatePicker({
   value,
   error,
   onChange,
-  onBlur,
-  disabled,
-  placeholder,
-  helperText,
-  required,
-  minimumDate,
-  maximumDate,
-  format,
+  onBlur = undefined,
+  disabled = false,
+  placeholder = undefined,
+  helperText = undefined,
+  required = false,
+  minimumDate = undefined,
+  maximumDate = undefined,
+  format = undefined,
 }) {
   const [open, setOpen] = useState(false)
   // Valor temporário usado no picker iOS antes de confirmar

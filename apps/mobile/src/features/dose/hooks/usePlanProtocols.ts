@@ -71,7 +71,8 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
           const todayStr = getTodayLocal()
           setProtocols(
             all
-              .filter(p => p.treatment_plan?.id === planId)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .filter(p => (p.treatment_plan as any)?.id === planId)
               .filter(p => isTreatmentSchedulableOn(p, todayStr))
               .filter(p => isInWindow(p, scheduledTime))
           )

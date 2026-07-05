@@ -95,7 +95,7 @@ export function useTreatments() {
           const parsed = JSON.parse(cached)
           const capturedAt = parseISO(parsed.capturedAt)
           const now = getNow()
-          const diffHours = (now - capturedAt) / (1000 * 60 * 60)
+          const diffHours = (now.getTime() - capturedAt.getTime()) / (1000 * 60 * 60)
 
           if (diffHours < 24) {
             setData(parsed.data)
