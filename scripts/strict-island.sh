@@ -49,7 +49,7 @@ if [ -n "$EXTLESS" ]; then
 fi
 echo "✅ server/api sem import relativo extensionless"
 
-CONSUMERS="api/tsconfig.json server/tsconfig.json"
+CONSUMERS="api/tsconfig.json server/tsconfig.json apps/mobile/tsconfig.json"
 for P in $CONSUMERS; do
   [ -f "$P" ] || continue
   P_OUT=$(npx tsc -p "$P" --noEmit 2>&1 | grep -E ': error TS' || true)
