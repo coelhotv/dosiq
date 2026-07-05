@@ -5,8 +5,8 @@
     "mode": "coding",
     "ceremony_type": "eng-review",
     "status": "c5_done",
-    "merged_pr": 704,
-    "merged_squash": "419b6272",
+    "merged_pr": 715,
+    "merged_squash": "2c1348c5",
     "merged_history": [
       {
         "pr": 696,
@@ -51,9 +51,14 @@
         "pr": 704,
         "squash": "419b6272",
         "phase": "040 F3: backend 100% TS (api/+server/) — gate F3 corrigiu contratos inline api/, erro latente F2 (biomarker non-strict), 20 imports extensionless (AP-263), deps workspace no CI (AP-264); ratchet cross-program (R-284). Server 4.0.1"
+      },
+      {
+        "pr": 715,
+        "squash": "2c1348c5",
+        "phase": "040 F4: apps/web 100% TS (10 lotes #705-714 + gate Fable). AP-265 (globs vitest pós-rename). Web 4.15.3. Review Gemini 5/5 aplicados"
       }
     ],
-    "goal": "040 F3 mergeada (#704) — backend 100% TS, ratchet cross-program+extensionless guard ativo. Próximo: distill manual pós-fase, depois F4 web (4.1 utils+schemas; 4.2 hooks clínicos A = parte do marco SC-006)",
+    "goal": "040 F4 mergeada (#715) — apps/web 100% TS, web 4.15.3. Próximo: F5 mobile (5.1 hooks clínicos A = fecha marco SC-006; branch integração feature/040/fase-5)",
     "goal_type": "chore",
     "plan": "plans/specs/040-typescript-migration/plan.md",
     "tasks": "plans/specs/040-typescript-migration/tasks.md",
@@ -78,9 +83,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 234,
-    "anti_patterns_count": 260,
+    "anti_patterns_count": 261,
     "decisions_count": 77,
     "contracts_count": 30,
     "distillation_due": false
