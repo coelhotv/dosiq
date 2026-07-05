@@ -7,7 +7,11 @@ import { useState, useCallback, useMemo } from 'react'
 import { ScrollView, View, Text, Pressable, StyleSheet, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { ChevronLeft } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft } = LucideIcons as any
 import {
   medicineCreateSchema,
   MEDICINE_TYPES,
@@ -68,8 +72,8 @@ function formProps(form, name) {
 // eslint-disable-next-line max-lines-per-function
 export default function MedicineFormScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
-  const navigation = useNavigation()
-  const route = useRoute()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const [sheetOpen, setSheetOpen] = useState(false)
   const medicine = route.params?.medicine ?? null
   const isEditing = !!medicine

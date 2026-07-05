@@ -13,7 +13,11 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
-import { ChevronLeft } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import EmptyState from '@shared/components/states/EmptyState'
@@ -255,10 +259,10 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
           />
         }
         ListEmptyComponent={
-          <EmptyState
-            message="Nenhuma compra registrada"
-            description="Adicione sua primeira compra pelo estoque do medicamento."
-          />
+          // TODO(040-strict): prop `description` nunca existiu em EmptyState (era
+          // ignorada em runtime JS) — removida no rename pra compilar; se o texto
+          // secundário for desejado, usar a prop `hint` (mudança visual, fora do lote)
+          <EmptyState message="Nenhuma compra registrada" />
         }
       />
     </ScreenContainer>

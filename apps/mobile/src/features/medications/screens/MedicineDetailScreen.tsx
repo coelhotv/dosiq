@@ -10,13 +10,11 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
-import {
-  ChevronLeft,
-  Pencil,
-  Trash2,
-  Layers,
-  Package,
-} from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft, Pencil, Trash2, Layers, Package } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -45,7 +43,7 @@ function displayValue(value) {
   return String(value)
 }
 
-function KVRow({ label, value, isLast }) {
+function KVRow({ label, value, isLast = false }) {
   return (
     <View style={[styles.kvRow, isLast && styles.kvRowLast]}>
       <Text style={styles.kvLabel}>{label}</Text>
@@ -255,8 +253,8 @@ function MedicineDetailUsage({
 }
 
 function useMedicineDetailState() {
-  const navigation = useNavigation()
-  const route = useRoute()
+  const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const id = route.params?.id
   // Vindo do detalhe de um tratamento: a exclusão é sempre bloqueada (medicamento
   // tem dependência), então ocultamos o botão pra não exibir ação morta.

@@ -5,7 +5,11 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { SectionList, RefreshControl, StyleSheet, Text, View, Pressable } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Plus, PackageOpen } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Plus, PackageOpen } = LucideIcons as any
 import { useStock } from '@stock/hooks/useStock'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -109,7 +113,7 @@ function getFilteredSections(data, filter, active, inactive) {
 }
 
 export default function StockScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<any>()
   const { data, loading, error, stale, refreshing, refresh } = useStock()
 
   // — States (R-010) —
