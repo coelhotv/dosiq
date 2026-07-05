@@ -157,7 +157,7 @@ function NudgeCard({ nudge, actionLoading, handleToggleActive, handleOpenEdit })
           variant="secondary"
           disabled={true}
           size="sm"
-          title="Funcionalidade de exclusão em desenvolvimento"
+          {...({ title: 'Funcionalidade de exclusão em desenvolvimento' } as any)}
         >
           <Trash2 size={14} /> Deletar
         </Button>

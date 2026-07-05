@@ -9,7 +9,8 @@ import { ArrowLeft, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
-import NotificationList from '@features/notifications/components/NotificationList'
+import NotificationListBase from '@features/notifications/components/NotificationList'
+const NotificationList = NotificationListBase as any
 import './NotificationInbox.css'
 
 /**

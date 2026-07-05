@@ -16,7 +16,7 @@ export default function Profile({ onNavigate }) {
     isLoading, error, message, initials, displayName, age, bloodType, location,
     emergencyCard, qrMiniatureUrl, profileForm, setProfileForm, handleSaveProfile,
     isSaving, isEditingProfile, setIsEditingProfile
-  } = useProfileState()
+  } = useProfileState() as any
 
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)

@@ -33,7 +33,7 @@ export default function DLQTable({
           <tbody>
             {entries.length === 0 ? (
               <tr>
-                <td colSpan="7" className="dlq-admin__empty">
+                <td colSpan={7} className="dlq-admin__empty">
                   Nenhuma notificação encontrada
                 </td>
               </tr>

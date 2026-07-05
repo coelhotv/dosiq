@@ -145,7 +145,6 @@ export default function Stock({ initialParams, onClearParams }) {
 
       <StockInventory
         isComplex={isComplex}
-        items={items}
         criticalItems={criticalItems}
         warningItems={warningItems}
         okItems={okItems}

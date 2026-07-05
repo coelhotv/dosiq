@@ -2,7 +2,8 @@
 // Framework: Vitest (@dosiq/web)
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import TzNudge from '../TzNudge'
+import TzNudgeBase from '../TzNudge'
+const TzNudge = TzNudgeBase as any
 
 describe('TzNudge', () => {
   beforeEach(() => {

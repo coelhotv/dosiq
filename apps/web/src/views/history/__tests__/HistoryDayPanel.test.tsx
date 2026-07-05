@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import HistoryDayPanel from '../HistoryDayPanel'
+import HistoryDayPanelBase from '../HistoryDayPanel'
+const HistoryDayPanel = HistoryDayPanelBase as any
 
 function doseEvent(id, status = 'taken') {
   return {

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import DoseEventCard from '../DoseEventCard'
 
-function makeEvent(overrides = {}) {
+function makeEvent(overrides: any = {}) {
   return {
     id: 'inst:1',
     type: 'dose',
