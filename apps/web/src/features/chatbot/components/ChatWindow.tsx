@@ -76,7 +76,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     })
   }, [])
 
-  const handleSend = useCallback(async (overrideMessage?: string) => {
+  const handleSend = useCallback(async (overrideMessage?: string | React.MouseEvent) => {
     // overrideMessage: pills de sugestão disparam direto (sem passar pelo input/state async).
     const raw = typeof overrideMessage === 'string' ? overrideMessage : input
     if (!raw.trim() || isLoading) return
