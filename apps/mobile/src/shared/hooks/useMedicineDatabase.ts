@@ -23,6 +23,17 @@ interface CachedManifest {
   [key: string]: unknown
 }
 
+// Extrai mensagem de erro de valores que não são instâncias de Error
+// (ex: erros de rede/fetch, que trafegam como objetos { message }).
+function getErrorMessage(err: unknown): string | undefined {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = (err as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  return undefined
+}
+
 // Hook que baixa, faz cache local e expõe busca na base ANVISA de medicamentos.
 // Fluxo:
 //   1. Mount: lê manifest cacheado em AsyncStorage (via storage adapter)
@@ -140,7 +151,7 @@ export function useMedicineDatabase({
         if (canceled) return
         // Degradação graciosa: se já tem cache, ignora erro de rede
         if (!hasData) {
-          const message = fetchErr instanceof Error ? fetchErr.message : undefined
+          const message = getErrorMessage(fetchErr)
           setError(message || 'Falha ao baixar base ANVISA')
         }
       } finally {

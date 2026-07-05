@@ -19,6 +19,17 @@ interface DoseInfo {
   dosage: number
 }
 
+// Extrai mensagem de erro de valores que não são instâncias de Error
+// (ex: erros do Supabase/fetch, que trafegam como objetos { message }).
+function getErrorMessage(err: unknown): string | undefined {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = (err as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  return undefined
+}
+
 interface NotificationLogRecord {
   notification_type?: string
   treatment_plan_id?: string | null
@@ -69,7 +80,8 @@ async function enrichWithDoses(logs: NotificationLogRecord[]): Promise<Notificat
           .then(({ data }) => {
             const map: Record<string, ProtocolSummary[]> = {}
             for (const p of (data ?? []) as ProtocolSummary[]) {
-              const key = p.treatment_plan_id as string
+              const key = p.treatment_plan_id
+              if (!key) continue
               if (!map[key]) map[key] = []
               map[key].push(p)
             }
@@ -167,7 +179,7 @@ export function useNotificationLog(options: UseNotificationLogOptions = {}) {
         setError(null)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : undefined
+      const message = getErrorMessage(err)
       if (__DEV__) console.warn('[useNotificationLog] Fetch failed, checking cache:', message)
 
       try {

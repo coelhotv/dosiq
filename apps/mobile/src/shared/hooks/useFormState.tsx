@@ -120,7 +120,7 @@ export function useFormState(schema: ZodTypeAny, { initialValues = EMPTY }: UseF
         const next = { ...prev }
         for (const issue of result.error.issues) {
           const path = issue.path[0]
-          if (path) next[String(path)] = true
+          if (path !== undefined) next[String(path)] = true
         }
         return next
       })
