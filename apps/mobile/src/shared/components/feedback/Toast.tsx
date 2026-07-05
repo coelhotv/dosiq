@@ -48,6 +48,14 @@ const ToastItem = memo(function ToastItem({ toast, onDismiss }: { toast: any; on
   const config = VARIANT_CONFIG[toast.variant] ?? VARIANT_CONFIG.info
   const { Icon } = config
 
+  // Mantém a referência do onDismiss atualizada sem recriar handleDismiss
+  // (onDismiss é uma arrow inline no ToastProvider — sem isso o timer de
+  // auto-dismiss reseta a cada re-render do provider)
+  const onDismissRef = useRef(onDismiss)
+  useEffect(() => {
+    onDismissRef.current = onDismiss
+  }, [onDismiss])
+
   // Handlers
   const handleDismiss = useCallback(() => {
     // Animação de saída antes de remover
@@ -62,8 +70,8 @@ const ToastItem = memo(function ToastItem({ toast, onDismiss }: { toast: any; on
         duration: 150,
         useNativeDriver: true,
       }),
-    ]).start(() => onDismiss())
-  }, [opacity, onDismiss, translateY])
+    ]).start(() => onDismissRef.current())
+  }, [opacity, translateY])
 
   // Effects
   useEffect(() => {

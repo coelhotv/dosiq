@@ -106,7 +106,7 @@ export default function FormInput({
           onSubmitEditing={onSubmitEditing}
           accessibilityLabel={label}
           accessibilityHint={helperText || placeholder}
-          accessibilityState={(error ? { invalid: true } : undefined) as any}
+          aria-invalid={!!error}
         />
       </Animated.View>
 
