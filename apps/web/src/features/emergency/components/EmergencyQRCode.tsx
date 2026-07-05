@@ -88,7 +88,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }: 
       m:
         medications?.map((med) => ({
           n: med.name,
-          d: med.dosage ? `${med.dosage}${med.unit ? ` ${med.unit}` : ''}` : '',
+          d: med.dosagePerPill ? `${med.dosagePerPill}${med.unit ? ` ${med.unit}` : ''}` : '',
           f: med.frequency || '',
         })) || [],
       a: cardData.allergies || [],
