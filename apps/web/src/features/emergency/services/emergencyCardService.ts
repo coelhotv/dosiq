@@ -312,7 +312,7 @@ export const emergencyCardService = {
    * @param {string} userId - ID do usuário autenticado
    * @returns {Object|null} Dados do cartão ou null se vazio
    */
-  getOfflineCard(userId) {
+  getOfflineCard(userId?: string) {
     log('info', 'Recuperando cartão offline (síncrono)')
     if (!userId) {
       log('warn', 'getOfflineCard chamado sem userId — retornando null para evitar vazamento')
@@ -326,7 +326,7 @@ export const emergencyCardService = {
    * (Não remove do Supabase - apenas limpa cache local)
    * @param {string} userId - ID do usuário autenticado
    */
-  clearLocalCache(userId) {
+  clearLocalCache(userId?: string) {
     if (shouldSkipLocalStorage()) {
       return
     }

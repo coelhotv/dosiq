@@ -146,7 +146,7 @@ export default function EmergencyCardView({ data, onEdit }) {
     return medicines
       .filter((med) => activeProtocolMedicineIds.has(med.id))
       .map((med) => {
-        const protocol = protocolByMedicineId.get(med.id)
+        const protocol: any = protocolByMedicineId.get(med.id)
         return {
           name: med.name,
           dosagePerPill: med.dosage_per_pill,
