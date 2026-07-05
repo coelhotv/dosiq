@@ -30,7 +30,7 @@ function isInWindow(protocol, scheduledTime, windowMinutes = 120) {
  * @param {{ mode: 'plan'|'misc'|'active', planId?: string, protocolIds?: string[], scheduledTime?: string, userId: string }} params
  * @returns {{ protocols: Object[], loading: boolean, error: string|null }}
  */
-export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, userId }) {
+export function usePlanProtocols({ mode, planId = undefined, protocolIds = undefined, scheduledTime = undefined, userId }) {
   const [protocols, setProtocols] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -71,7 +71,8 @@ export function usePlanProtocols({ mode, planId, protocolIds, scheduledTime, use
           const todayStr = getTodayLocal()
           setProtocols(
             all
-              .filter(p => p.treatment_plan?.id === planId)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              .filter(p => (p.treatment_plan as any)?.id === planId)
               .filter(p => isTreatmentSchedulableOn(p, todayStr))
               .filter(p => isInWindow(p, scheduledTime))
           )
