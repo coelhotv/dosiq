@@ -24,9 +24,7 @@ export default function PriorityDoseCard({ doses = [], onRegister, onRegisterAll
   const nextTime = doses[0]?.scheduledTime || ''
   const scheduledFor = doses[0]?.scheduledFor
   const now = getNow()
-  const [hour, minute] = nextTime.split(':').map(Number)
-  const scheduled = getNow()
-  scheduled.setHours(hour, minute, 0, 0)
+  const scheduled = parseISO(scheduledFor)
   const diffMin = Math.round((scheduled.getTime() - now.getTime()) / 60000)
 
   const TZ = 'America/Sao_Paulo'

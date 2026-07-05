@@ -144,7 +144,7 @@ export const analyticsService = {
       events = events.filter((e) => parseISO(e.timestamp) <= untilDate)
     }
 
-    return events.sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime())
+    return events.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
   },
 
   /**
