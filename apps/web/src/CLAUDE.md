@@ -40,7 +40,7 @@ export const xxxService = {
 ```jsx
 // src/features/{feature}/components/{Component}.jsx
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { useDashboardContext } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboardContext } from '@dashboard/hooks/useDashboardContext'
 import Button from '@shared/components/ui/Button'
 import './Component.css'
 
@@ -183,7 +183,7 @@ const date = new Date('2026-02-24')           // UTC midnight = 23:00 dia 23 em 
 ## Dashboard Context
 
 ```jsx
-import { useDashboardContext } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboardContext } from '@dashboard/hooks/useDashboardContext'
 
 // Dentro de qualquer componente filho de DashboardProvider
 const { dashboardData, loading, error, refetch } = useDashboardContext()

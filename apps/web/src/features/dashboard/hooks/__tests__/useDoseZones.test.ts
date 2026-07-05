@@ -173,7 +173,7 @@ describe('useDoseZones — hook behavior', () => {
     dosage_per_intake: 1,
   }
 
-  function setupDashboard(doseInstances = [], protocols = [protocol], timezone) {
+  function setupDashboard(doseInstances = [], protocols = [protocol], timezone = undefined) {
     mockUseDashboard.mockReturnValue({
       protocols,
       doseInstances,

@@ -137,7 +137,7 @@ function _deriveDailyAdherence(protocols, logs) {
  * Hook privado para processamento de dados derivados do Dashboard.
  * Extraído para reduzir linhas e complexidade do useDashboardContext.
  */
-export function useDashboardDerived(medicinesResult, protocolsResult, logsResult, adherenceSummaryResult = {}) {
+export function useDashboardDerived(medicinesResult: any, protocolsResult: any, logsResult: any, adherenceSummaryResult: any = {}) { // TODO(040-strict)
   const medicines = useMemo(() => medicinesResult.data || [], [medicinesResult.data])
   const protocols = useMemo(() => protocolsResult.data || [], [protocolsResult.data])
   const logs = useMemo(() => logsResult.data || [], [logsResult.data])

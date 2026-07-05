@@ -207,7 +207,7 @@ function determineDayStatus(expected, taken) {
  * // Retorna: { '2026-02-01': { expected: 2, taken: 2, status: 'completo' }, ... }
  */
 export function calculateMonthlyDoseMap(logs, protocols, year, month) {
-  const doseMap = {}
+  const doseMap: Record<string, any> = {} // TODO(040-strict)
   const daysInMonth = getDaysInMonth(year, month)
 
   // Inicializar mapa com todos os dias do mês
@@ -273,14 +273,14 @@ export function calculateMonthlyDoseMap(logs, protocols, year, month) {
  * @returns {number} returns.missedDays - Dias com status 'perdido'
  * @returns {number} returns.adherenceRate - Taxa de adesão (0-100)
  */
-export function calculateMonthlyStats(doseMap) {
+export function calculateMonthlyStats(doseMap: any) { // TODO(040-strict)
   let totalExpected = 0
   let totalTaken = 0
   let completeDays = 0
   let partialDays = 0
   let missedDays = 0
 
-  Object.values(doseMap).forEach((dayInfo) => {
+  Object.values(doseMap).forEach((dayInfo: any) => { // TODO(040-strict)
     totalExpected += dayInfo.expected
     totalTaken += dayInfo.taken
 

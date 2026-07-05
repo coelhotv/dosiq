@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { getRawNow, getUserTime } from '@utils/dateUtils'
 // F4.3a (CON-024): lógica pura de zonas extraída para o core (R-231, sem duplicata).
 // Re-exportada aqui para os consumidores web existentes (CronogramaDoseItem, Dashboard).

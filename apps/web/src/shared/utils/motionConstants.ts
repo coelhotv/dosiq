@@ -15,7 +15,9 @@
 // 1. CASCADE REVEAL — entrada em listas
 // Stagger: cada item aparece com 100ms de delay após o anterior.
 // ============================================
-export const cascadeReveal = {
+import type { Variants } from 'framer-motion'
+
+export const cascadeReveal: { container: Variants; item: Variants } = {
   container: {
     hidden: { opacity: 0 },
     visible: {

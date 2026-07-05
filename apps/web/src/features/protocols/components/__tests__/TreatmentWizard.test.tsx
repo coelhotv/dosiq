@@ -65,7 +65,7 @@ vi.mock('framer-motion', () => ({
 }))
 
 import TreatmentWizard from '@/features/protocols/components/TreatmentWizard'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 
 describe('TreatmentWizard', () => {
   beforeEach(() => {

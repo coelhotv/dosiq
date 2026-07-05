@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { useTreatmentWizardState } from '@protocols/hooks/useTreatmentWizardState'
 import TreatmentWizardStep1 from './steps/TreatmentWizardStep1'
 import TreatmentWizardStep2 from './steps/TreatmentWizardStep2'

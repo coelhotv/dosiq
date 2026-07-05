@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { cachedMedicineService as medicineService, cachedTreatmentPlanService as treatmentPlanService, cachedProtocolService as protocolService } from '@shared/services'
 import { useTreatmentList } from '@protocols/hooks/useTreatmentList'
 import { useComplexityMode } from '@dashboard/hooks/useComplexityMode'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 
 export function useTreatmentsState(onClearInitialMedicine) {
   const [activeTab, setActiveTab] = useState('ativos')

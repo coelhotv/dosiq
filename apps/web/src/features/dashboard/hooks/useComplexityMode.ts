@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 
 const STORAGE_KEY = 'mr_complexity_override'
 

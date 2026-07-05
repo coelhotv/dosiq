@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useDashboard } from '@dashboard/hooks/useDashboardContext.jsx'
+import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { getCurrentUser } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'

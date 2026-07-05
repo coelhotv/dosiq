@@ -127,7 +127,7 @@ export const analyticsService = {
    * @param {Date} [filter.until] - Filter events before date
    * @returns {Array} Filtered events
    */
-  getEvents: (filter = {}) => {
+  getEvents: (filter: any = {}) => { // TODO(040-strict)
     let events = getAllEvents()
 
     if (filter.name) {
@@ -144,7 +144,7 @@ export const analyticsService = {
       events = events.filter((e) => parseISO(e.timestamp) <= untilDate)
     }
 
-    return events.sort((a, b) => parseISO(b.timestamp) - parseISO(a.timestamp))
+    return events.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
   },
 
   /**
@@ -155,7 +155,7 @@ export const analyticsService = {
    * @param {Date} [options.until] - Only count events before date
    * @returns {Object} Summary object with event counts
    */
-  getSummary: (options = {}) => {
+  getSummary: (options: any = {}) => { // TODO(040-strict)
     const events = getAllEvents()
 
     let filtered = events
@@ -171,7 +171,7 @@ export const analyticsService = {
     }
 
     // Count events by name
-    const counts = {}
+    const counts: Record<string, number> = {}
     for (const event of filtered) {
       counts[event.name] = (counts[event.name] || 0) + 1
     }
