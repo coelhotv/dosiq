@@ -76,7 +76,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     })
   }, [])
 
-  const handleSend = useCallback(async (overrideMessage) => {
+  const handleSend = useCallback(async (overrideMessage?: string | React.MouseEvent) => {
     // overrideMessage: pills de sugestão disparam direto (sem passar pelo input/state async).
     const raw = typeof overrideMessage === 'string' ? overrideMessage : input
     if (!raw.trim() || isLoading) return
@@ -99,7 +99,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     }
   }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats, doseInstances])
 
-  const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
+  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
 
   return (
     <>

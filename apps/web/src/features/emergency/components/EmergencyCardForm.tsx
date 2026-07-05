@@ -10,7 +10,7 @@ import './EmergencyCard.css'
  * Formulário para edição do Cartão de Emergência.
  * Suporta até 5 contatos de emergência e validação com Zod.
  */
-export default function EmergencyCardForm({ initialData, onSave, onCancel }) {
+export default function EmergencyCardForm({ initialData, onSave, onCancel }: { initialData?: any, onSave: any, onCancel: any }) {
   const [contacts, setContacts] = useState(initialData?.emergency_contacts || [{ name: '', phone: '', relationship: '' }])
   const [allergies, setAllergies] = useState(initialData?.allergies || [])
   const [allergyInput, setAllergyInput] = useState('')

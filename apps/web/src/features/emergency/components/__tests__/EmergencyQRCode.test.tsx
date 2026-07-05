@@ -22,8 +22,8 @@ describe('EmergencyQRCode', () => {
   }
 
   const mockMedications = [
-    { name: 'Losartana', dosage: '50', unit: 'mg', frequency: '1x/dia' },
-    { name: 'Metformina', dosage: '500', unit: 'mg', frequency: '2x/dia' },
+    { name: 'Losartana', dosagePerPill: '50', unit: 'mg', frequency: '1x/dia' },
+    { name: 'Metformina', dosagePerPill: '500', unit: 'mg', frequency: '2x/dia' },
   ]
 
   const mockLastUpdated = '2026-03-05T10:00:00.000Z'

@@ -9,10 +9,10 @@ const getUser = vi.fn(async () => ({ data: { user: { id: 'u1' } } }))
 
 vi.mock('@shared/utils/supabase', () => ({
   supabase: {
-    auth: { getUser: (...a) => getUser(...a) },
+    auth: { getUser: (...a: any[]) => (getUser as any)(...a) },
     from: vi.fn(() => ({
-      select: vi.fn(() => ({ eq: vi.fn(() => ({ single: (...a) => single(...a) })) })),
-      update: (...a) => update(...a),
+      select: vi.fn(() => ({ eq: vi.fn(() => ({ single: (...a: any[]) => (single as any)(...a) })) })),
+      update: (...a: any[]) => (update as any)(...a),
     })),
   },
 }))
@@ -27,8 +27,8 @@ vi.mock('@dashboard/hooks/useComplexityMode', () => ({
 const hasFuturePendingDoses = vi.fn(async () => false)
 const regenActiveProtocolsForTz = vi.fn(async () => ({ processed: 1, regenerated: 5, failed: 0 }))
 vi.mock('@dosiq/core', () => ({
-  hasFuturePendingDoses: (...a) => hasFuturePendingDoses(...a),
-  regenActiveProtocolsForTz: (...a) => regenActiveProtocolsForTz(...a),
+  hasFuturePendingDoses: (...a: any[]) => (hasFuturePendingDoses as any)(...a),
+  regenActiveProtocolsForTz: (...a: any[]) => (regenActiveProtocolsForTz as any)(...a),
 }))
 
 const invalidateCache = vi.fn()

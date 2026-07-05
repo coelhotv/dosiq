@@ -57,7 +57,7 @@ import './EmergencyQRCode.css'
  * @param {EmergencyQRCodeProps} props - Propriedades do componente
  * @returns {JSX.Element} Componente de QR code com controles de download
  */
-export default function EmergencyQRCode({ cardData, medications, lastUpdated }) {
+export default function EmergencyQRCode({ cardData, medications, lastUpdated }: { cardData: any, medications: any, lastUpdated?: any }) {
   // ===== STATES (R-010: Hook Order) =====
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [error, setError] = useState(null)
@@ -82,13 +82,13 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }) 
   const qrPayload = useMemo(() => {
     if (!cardData) return null
 
-    const payload = {
+    const payload: any = {
       v: '1',
       n: cardData.name || 'Paciente',
       m:
         medications?.map((med) => ({
           n: med.name,
-          d: med.dosage ? `${med.dosage}${med.unit ? ` ${med.unit}` : ''}` : '',
+          d: med.dosagePerPill ? `${med.dosagePerPill}${med.unit ? ` ${med.unit}` : ''}` : '',
           f: med.frequency || '',
         })) || [],
       a: cardData.allergies || [],
