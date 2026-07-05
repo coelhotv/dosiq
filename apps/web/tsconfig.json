@@ -16,6 +16,7 @@
       "@emergency/*": ["./src/features/emergency/*"],
       "@prescriptions/*": ["./src/features/prescriptions/*"],
       "@settings/*": ["./src/views/settings/*"],
+      "@schemas": ["./src/schemas"],
       "@schemas/*": ["./src/schemas/*"],
       "@utils/*": ["./src/utils/*"],
       "@design-tokens/*": ["../../packages/design-tokens/src/*"],
