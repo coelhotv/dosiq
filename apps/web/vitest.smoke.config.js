@@ -2,7 +2,7 @@ import { defineConfig, mergeConfig } from 'vitest/config'
 import baseConfig from './vitest.base.config.js'
 
 /**
- * Configuração de Smoke Tests — apenas arquivos *.smoke.test.{js,jsx}.
+ * Configuração de Smoke Tests — apenas arquivos *.smoke.test.{js,jsx,ts,tsx}.
  *
  * Pool threads single. Timeout curto (5s).
  */
@@ -11,7 +11,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       setupFiles: './src/test/setup.js',
-      include: ['src/**/*.smoke.test.{js,jsx}'],
+      include: ['src/**/*.smoke.test.{js,jsx,ts,tsx}'],
 
       pool: 'threads',
       poolOptions: {

@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Web v4.15.3 — 2026-07-05 — Refactor (040 F4): migração TypeScript de apps/web
+
+> **Bump:** web `4.15.2 → 4.15.3` (patch). **Plataforma:** web. Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.
+
+### ♻️ Refactor
+
+- **apps/web/src 100% TypeScript** (~400 arquivos, 10 lotes — PRs #705-#714): utils, schemas, shared, services, todas as features (protocols, medications, measures, stock, export, adherence, reports, consultation, dashboard, calendar, chatbot, emergency, notifications, prescriptions, profile, settings), views, App/main. Zero `.js/.jsx` restante
+- **Nível A**: `src/shared/hooks` (dados clínicos) tipados e promovidos ao strict island (lote 4.2)
+- **vite.config**: refs de `manualChunks` atualizadas pra `.ts/.tsx` no mesmo commit do lote 4.10; bundle principal 82.9 kB gzip (baseline 102 kB preservado)
+
+### 🐛 Correções (dentro da fase)
+
+- `no-undef` de tipos `React.*` sem import em `ChatWindow.tsx` — tipos `MouseEvent`/`KeyboardEvent` importados de `react` (gate F4)
+
+---
+
 ## Server v4.0.1 (backend) — 2026-07-04 — Refactor (040 F3): migração TypeScript de api/ e server/
 
 > **Bump:** server `4.0.0 → 4.0.1` (patch). **Plataforma:** backend (Vercel serverless + bot Telegram). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.

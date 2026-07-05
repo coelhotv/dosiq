@@ -85,13 +85,13 @@ const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
  * @returns {'done'|'late'|'now'|'upcoming'|'later'|null} null = fora da janela, não exibir
  */
 export function classifyDose(
-  scheduledFor,
-  now,
-  lateWindowMinutes = DOSE_ZONE_WINDOWS.lateWindowMinutes,
-  nowWindowMinutes = DOSE_ZONE_WINDOWS.nowWindowMinutes,
-  upcomingWindowMinutes = DOSE_ZONE_WINDOWS.upcomingWindowMinutes,
+  scheduledFor: string | Date | null | undefined,
+  now: Date,
+  lateWindowMinutes: number = DOSE_ZONE_WINDOWS.lateWindowMinutes,
+  nowWindowMinutes: number = DOSE_ZONE_WINDOWS.nowWindowMinutes,
+  upcomingWindowMinutes: number = DOSE_ZONE_WINDOWS.upcomingWindowMinutes,
   isRegistered = false,
-  toleranceMinutes = null
+  toleranceMinutes: number | null = null
 ) {
   if (isRegistered) return 'done'
   if (!scheduledFor) return null // guard: null/undefined não chega ao parseISO

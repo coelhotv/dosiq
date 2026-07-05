@@ -22,7 +22,7 @@ export default mergeConfig(
 
       testTimeout: 15000,
 
-      include: ['src/**/*.test.{js,jsx}'],
+      include: ['src/**/*.test.{js,jsx,ts,tsx}'],
 
       coverage: {
         enabled: false,

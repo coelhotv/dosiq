@@ -80,7 +80,7 @@ export const CACHE_KEYS = {
  * @param {Object|null} params - Parâmetros opcionais para compor a chave
  * @returns {string} Chave composta
  */
-export function generateCacheKey(baseKey, params = null) {
+export function generateCacheKey(baseKey: string, params: Record<string, unknown> | null = null): string {
   if (!params) return baseKey
   const suffix = JSON.stringify(params, Object.keys(params).sort())
   return `${baseKey}:${suffix}`
