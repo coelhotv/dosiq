@@ -10,14 +10,14 @@ import { useFocusEffect } from '@react-navigation/native'
 import { supabase } from '../../platform/supabase/nativeSupabaseClient'
 import { errorLog } from '@shared/utils/debugLog'
 
-const getStorageKey = (userId) =>
+const getStorageKey = (userId: string | null | undefined) =>
   userId ? `@dosiq/notif-last-seen:${userId}` : '@dosiq/notif-last-seen'
 
 /**
  * @param {string|null} userId
  * @returns {{ unreadCount: number, refreshBadge: () => Promise<void> }}
  */
-export function useUnreadBadgeCount(userId) {
+export function useUnreadBadgeCount(userId: string | null | undefined) {
   const [unreadCount, setUnreadCount] = useState(0)
 
   const refreshBadge = useCallback(async () => {
@@ -37,7 +37,8 @@ export function useUnreadBadgeCount(userId) {
       if (!error) setUnreadCount(count ?? 0)
     } catch (e) {
       // Silencioso — badge é cosmético
-      if (__DEV__) errorLog('useUnreadBadgeCount', `Fetch failed: ${e.message}`)
+      const message = e instanceof Error ? e.message : String(e)
+      if (__DEV__) errorLog('useUnreadBadgeCount', `Fetch failed: ${message}`)
     }
   }, [userId])
 

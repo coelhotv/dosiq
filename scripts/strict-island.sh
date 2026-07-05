@@ -11,7 +11,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications|apps/web/src/shared/hooks)/'
+A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications|apps/web/src/shared/hooks|apps/mobile/src/shared/hooks)/'
 TESTS='__tests__|\.test\.'
 
 OUT=$(npx tsc -p tsconfig.strict.json --noEmit 2>&1 | grep -E ': error TS' || true)
@@ -49,7 +49,7 @@ if [ -n "$EXTLESS" ]; then
 fi
 echo "✅ server/api sem import relativo extensionless"
 
-CONSUMERS="api/tsconfig.json server/tsconfig.json"
+CONSUMERS="api/tsconfig.json server/tsconfig.json apps/mobile/tsconfig.json"
 for P in $CONSUMERS; do
   [ -f "$P" ] || continue
   P_OUT=$(npx tsc -p "$P" --noEmit 2>&1 | grep -E ': error TS' || true)
