@@ -11,6 +11,29 @@ import {
 import { createAsyncStorageAdapter } from '@shared/services/_asyncStorageAdapter'
 import { nativePublicAppConfig } from '@platform/config/nativePublicAppConfig'
 
+interface Medicine {
+  name: string
+  activeIngredient: string
+  [key: string]: unknown
+}
+
+interface CachedManifest {
+  cachedAt?: string
+  files?: Record<string, { path?: string }>
+  [key: string]: unknown
+}
+
+// Extrai mensagem de erro de valores que não são instâncias de Error
+// (ex: erros de rede/fetch, que trafegam como objetos { message }).
+function getErrorMessage(err: unknown): string | undefined {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = (err as { message?: unknown }).message
+    if (typeof message === 'string') return message
+  }
+  return undefined
+}
+
 // Hook que baixa, faz cache local e expõe busca na base ANVISA de medicamentos.
 // Fluxo:
 //   1. Mount: lê manifest cacheado em AsyncStorage (via storage adapter)
@@ -41,8 +64,8 @@ const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
 const storageAdapter = createAsyncStorageAdapter()
 
 // Persiste novo manifest+data via adapter; retorna manifestToCache (com cachedAt).
-async function persistRemote(remoteManifest, remoteData) {
-  const manifestToCache = {
+async function persistRemote(remoteManifest: CachedManifest, remoteData: unknown) {
+  const manifestToCache: CachedManifest = {
     ...remoteManifest,
     cachedAt: getNow().toISOString(),
   }
@@ -50,15 +73,20 @@ async function persistRemote(remoteManifest, remoteData) {
   return manifestToCache
 }
 
+interface UseMedicineDatabaseOptions {
+  baseUrl?: string
+  ttlMs?: number
+}
+
 export function useMedicineDatabase({
   baseUrl = ANVISA_BASE_URL,
   ttlMs = TTL_MS,
-} = {}) {
+}: UseMedicineDatabaseOptions = {}) {
   // States
-  const [database, setDatabase] = useState(null)
-  const [manifest, setManifest] = useState(null)
+  const [database, setDatabase] = useState<Medicine[] | null>(null)
+  const [manifest, setManifest] = useState<CachedManifest | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   // Memos (R-010: declarados antes de Effects e Handlers)
   // Pré-normaliza nome e princípio ativo uma única vez quando a base carrega.
@@ -84,7 +112,9 @@ export function useMedicineDatabase({
 
     async function bootstrap() {
       // 1. Cache local primeiro (UX instantânea)
-      const cached = await storageAdapter.read(FILE_KEY)
+      const cached = (await storageAdapter.read()) as
+        | { manifest: CachedManifest; data: Medicine[] }
+        | null
       let hasData = false
       if (cached && !canceled) {
         setManifest(cached.manifest)
@@ -95,7 +125,7 @@ export function useMedicineDatabase({
 
       // 2. Background: busca remoto e decide se re-download é necessário
       try {
-        const remoteManifest = await fetchJson(`${baseUrl}/manifest.json`)
+        const remoteManifest = (await fetchJson(`${baseUrl}/manifest.json`)) as CachedManifest
         if (canceled) return
 
         const refresh = shouldRefreshCache({
@@ -106,7 +136,9 @@ export function useMedicineDatabase({
         })
 
         if (refresh) {
-          const remoteData = await fetchJson(resolveDataUrl(baseUrl, remoteManifest, FILE_KEY))
+          const remoteData = (await fetchJson(
+            resolveDataUrl(baseUrl, remoteManifest, FILE_KEY),
+          )) as Medicine[]
           if (canceled) return
           const manifestToCache = await persistRemote(remoteManifest, remoteData)
           if (!canceled) {
@@ -119,7 +151,8 @@ export function useMedicineDatabase({
         if (canceled) return
         // Degradação graciosa: se já tem cache, ignora erro de rede
         if (!hasData) {
-          setError(fetchErr?.message || 'Falha ao baixar base ANVISA')
+          const message = getErrorMessage(fetchErr)
+          setError(message || 'Falha ao baixar base ANVISA')
         }
       } finally {
         if (!canceled) setIsLoading(false)
@@ -137,11 +170,11 @@ export function useMedicineDatabase({
   // Ranking: matches no name vêm antes dos só-em-activeIngredient.
   // Early break: para de iterar assim que atinge o limite total.
   const search = useCallback(
-    (query, limit = 10) => {
+    (query: string, limit = 10): Medicine[] => {
       if (!normalizedDatabase || !query || query.trim().length < 3) return []
       const q = normalizeText(query)
-      const nameMatches = []
-      const ingredientMatches = []
+      const nameMatches: Medicine[] = []
+      const ingredientMatches: Medicine[] = []
       for (const entry of normalizedDatabase) {
         if (matchesPrefix(entry.nName, q)) {
           nameMatches.push(entry.med)
@@ -159,7 +192,7 @@ export function useMedicineDatabase({
   )
 
   const getByName = useCallback(
-    (name) => {
+    (name: string): Medicine | null => {
       if (!normalizedDatabase || !name) return null
       const n = normalizeText(name)
       const exact = normalizedDatabase.find((entry) => entry.nName === n)

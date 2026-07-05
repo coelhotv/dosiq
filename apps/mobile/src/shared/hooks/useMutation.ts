@@ -19,9 +19,9 @@ import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 const DEFAULT_TIMEOUT_MS = 15_000
 
 // Promise que rejeita após N ms (Hermes-safe; sem AbortController em fn arbitrária)
-function withTimeout(promise, ms) {
-  let timeoutId
-  const timeout = new Promise((_, reject) => {
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>
+  const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(
       () => reject(new Error(`Timeout: operação excedeu ${ms / 1000}s`)),
       ms,
@@ -30,14 +30,21 @@ function withTimeout(promise, ms) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
 }
 
-export function useMutation({
+interface UseMutationOptions<TResult> {
+  onSuccess?: (result: TResult) => void
+  onError?: (err: unknown) => void
+  invalidateKeys?: string[]
+  timeoutMs?: number
+}
+
+export function useMutation<TResult = unknown>({
   onSuccess,
   onError,
   invalidateKeys = [],
   timeoutMs = DEFAULT_TIMEOUT_MS,
-} = {}) {
+}: UseMutationOptions<TResult> = {}) {
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<unknown>(null)
   // Ref para guard de double-submit (sincrono, antes do re-render de isLoading)
   const inFlightRef = useRef(false)
 
@@ -46,7 +53,7 @@ export function useMutation({
   }, [])
 
   const mutate = useCallback(
-    async (asyncFn) => {
+    async (asyncFn: () => TResult | Promise<TResult>) => {
       if (inFlightRef.current) return undefined
       inFlightRef.current = true
       setIsLoading(true)
