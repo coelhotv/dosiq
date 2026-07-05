@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, type MouseEvent, type KeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   sendChatMessage,
@@ -76,7 +76,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     })
   }, [])
 
-  const handleSend = useCallback(async (overrideMessage?: string | React.MouseEvent) => {
+  const handleSend = useCallback(async (overrideMessage?: string | MouseEvent) => {
     // overrideMessage: pills de sugestão disparam direto (sem passar pelo input/state async).
     const raw = typeof overrideMessage === 'string' ? overrideMessage : input
     if (!raw.trim() || isLoading) return
@@ -99,7 +99,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     }
   }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats, doseInstances])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
+  const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
 
   return (
     <>
