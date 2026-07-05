@@ -259,10 +259,12 @@ export default function PurchaseHistoryScreen({ route, navigation }) {
           />
         }
         ListEmptyComponent={
-          // TODO(040-strict): prop `description` nunca existiu em EmptyState (era
-          // ignorada em runtime JS) — removida no rename pra compilar; se o texto
-          // secundário for desejado, usar a prop `hint` (mudança visual, fora do lote)
-          <EmptyState message="Nenhuma compra registrada" />
+          // A prop `description` nunca existiu em EmptyState (era ignorada em
+          // runtime) — `hint` é a prop correta pro texto secundário (review #719)
+          <EmptyState
+            message="Nenhuma compra registrada"
+            hint="Adicione sua primeira compra pelo estoque do medicamento."
+          />
         }
       />
     </ScreenContainer>
