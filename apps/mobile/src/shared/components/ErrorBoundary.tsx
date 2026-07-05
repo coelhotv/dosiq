@@ -7,8 +7,9 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import crashlytics from '@react-native-firebase/crashlytics'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
-export default class ErrorBoundary extends Component {
-  constructor(props) {
+// TODO(040-strict): props/state any — tipar melhor exige contrato children/error
+export default class ErrorBoundary extends Component<any, { hasError: boolean }> {
+  constructor(props: any) {
     super(props)
     this.state = { hasError: false }
   }
@@ -17,7 +18,7 @@ export default class ErrorBoundary extends Component {
     return { hasError: true }
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: any, info: any) {
     // Sempre reporta ao Crashlytics (mesmo em dev — útil para validar pipeline)
     crashlytics().recordError(error, 'ErrorBoundary')
     crashlytics().log(`ErrorBoundary caught: ${info?.componentStack ?? 'no stack'}`)
