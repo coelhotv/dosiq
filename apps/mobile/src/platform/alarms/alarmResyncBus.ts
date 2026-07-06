@@ -8,12 +8,12 @@
 // Idempotente e best-effort: emitir com o alarme desligado é no-op (o bridge
 // ignora quando isAlarmEnabled=false).
 
-const listeners = new Set()
+const listeners = new Set<() => void>()
 
 /** Assina o sinal de re-sync. Retorna unsubscribe. */
-export function onAlarmResync(fn) {
+export function onAlarmResync(fn: () => void) {
   listeners.add(fn)
-  return () => listeners.delete(fn)
+  return () => { listeners.delete(fn) }
 }
 
 /** Dispara o re-sync em todos os assinantes (chamar após mutação de tratamento). */

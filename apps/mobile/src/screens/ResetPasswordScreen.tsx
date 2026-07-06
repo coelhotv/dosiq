@@ -14,7 +14,7 @@ import {
   Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { CheckCircle2, Eye, EyeOff } from 'lucide-react-native'
+import { CheckCircle, Eye, EyeOff } from 'lucide-react-native'
 import { updatePassword } from '../platform/auth/authService'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
@@ -47,7 +47,7 @@ export default function ResetPasswordScreen({ route }) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.successContainer}>
-          <CheckCircle2
+          <CheckCircle
             size={80}
             color={colors.brand.primary}
             style={styles.successIcon}

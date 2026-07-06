@@ -9,7 +9,7 @@ import { isAlarmEnabled as readPref, setAlarmEnabled as writePref } from './alar
 
 let current = false // default OFF (opt-in)
 let hydrated = false
-const listeners = new Set()
+const listeners = new Set<(v: boolean) => void>()
 
 function emit() {
   for (const l of listeners) l(current)
@@ -31,7 +31,7 @@ export function useAlarmEnabled() {
   const [enabled, setLocal] = useState(current)
 
   useEffect(() => {
-    const listener = (v) => setLocal(v)
+    const listener = (v: boolean) => setLocal(v)
     listeners.add(listener)
     hydrate()
     return () => {
@@ -39,7 +39,7 @@ export function useAlarmEnabled() {
     }
   }, [])
 
-  const setEnabled = useCallback(async (v) => {
+  const setEnabled = useCallback(async (v: boolean) => {
     current = v
     emit()
     await writePref(v)

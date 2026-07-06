@@ -239,7 +239,7 @@ export async function signOut() {
 /**
  * Valida o código OTP numérico enviado por e-mail
  */
-export async function verifyOtpWithEmail(email, token, type = 'signup') {
+export async function verifyOtpWithEmail(email, token, type: any = 'signup') {
   const tokenClean = token.trim()
   if ((tokenClean.length !== 6 && tokenClean.length !== 8) || isNaN(Number(tokenClean))) {
     return { success: false, error: 'O código deve conter 6 ou 8 dígitos numéricos' }

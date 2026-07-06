@@ -37,7 +37,8 @@ import { usePushNotifications } from '../platform/notifications/usePushNotificat
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
 
-const Stack = createStackNavigator()
+// TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
+const Stack = createStackNavigator<any>()
 
 function useAuthSession() {
   const [session, setSession] = useState(undefined)
@@ -198,7 +199,8 @@ export default function Navigation() {
 
   // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
-    const routeName = navigationRef.current?.getCurrentRoute?.()?.name
+    // TODO(040-strict): navigationRef sem ParamList tipada — never no generic ref
+    const routeName = (navigationRef.current as any)?.getCurrentRoute?.()?.name
     if (routeName) {
       logScreenView(routeName)
     }
@@ -226,6 +228,7 @@ export default function Navigation() {
         <OnboardingNavigator onComplete={() => setOnboardingNeeded(false)} />
       ) : (
       <Stack.Navigator
+        id="RootStack"
         screenOptions={{ headerShown: false }}
       >
         {isPasswordRecovery ? (
@@ -241,7 +244,7 @@ export default function Navigation() {
             <Stack.Screen
               name={ROUTES.ALARM_FULLSCREEN}
               component={AlarmFullScreen}
-              options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+              options={{ presentation: 'modal', gestureEnabled: false }}
             />
             {/* Chat IA full-screen (spec 015 onda 2) — header próprio na tela */}
             <Stack.Screen name={ROUTES.CHAT} component={ChatScreen} />

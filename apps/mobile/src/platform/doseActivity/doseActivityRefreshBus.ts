@@ -10,12 +10,13 @@
 // Android resolve o done no próprio choke point via doseActivitySurfaceService); no Android nada
 // assina → no-op. Best-effort: um listener com erro não derruba o registro.
 
-const listeners = new Set()
+type RefreshPayload = { instanceId?: string; medicineLabel?: string; takenAt?: Date | string; doseItem?: any }
+const listeners = new Set<(payload?: RefreshPayload) => void>()
 
 /** Assina o sinal de refresh da superfície de dose. Retorna unsubscribe. */
-export function onDoseActivityRefresh(fn) {
+export function onDoseActivityRefresh(fn: (payload?: RefreshPayload) => void) {
   listeners.add(fn)
-  return () => listeners.delete(fn)
+  return () => { listeners.delete(fn) }
 }
 
 /**
@@ -24,7 +25,7 @@ export function onDoseActivityRefresh(fn) {
  *   REAL da tomada (getRawNow no registro). dose_instances NÃO tem coluna de horário de tomada
  *   (registeredAt do doseItem = scheduled_for), então a hora real só existe aqui, no momento do registro.
  */
-export function triggerDoseActivityRefresh(payload) {
+export function triggerDoseActivityRefresh(payload?: RefreshPayload) {
   for (const fn of listeners) {
     try {
       fn(payload)

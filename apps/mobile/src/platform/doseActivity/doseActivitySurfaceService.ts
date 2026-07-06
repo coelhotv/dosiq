@@ -95,7 +95,7 @@ function lateChronoConfig(activity, now) {
     // count-up curto: timestamp no passado (scheduledFor) → cronômetro progressivo.
     return {
       showChronometer: true,
-      chronometerDirection: 'up',
+      chronometerDirection: 'up' as const,
       timestamp: now.getTime() + (activity.remainingSeconds ?? 0) * 1000,
       bodySuffix: '',
     }
@@ -163,7 +163,7 @@ function resolveBodyAndChrono(activity, now, time) {
   if (wantsCountdown) {
     return {
       body,
-      chrono: { showChronometer: true, chronometerDirection: 'down', timestamp: now.getTime() + activity.remainingSeconds * 1000 },
+      chrono: { showChronometer: true, chronometerDirection: 'down' as const, timestamp: now.getTime() + activity.remainingSeconds * 1000 },
     }
   }
   if (activity.state === DOSE_ACTIVITY_STATES.LATE) {
@@ -235,7 +235,7 @@ export function buildSurfaceNotification(activity, { now, discreet, doseItem }) 
  * @param {object|null} activity - DoseActivityState (saída de selectActiveDoseActivity) ou null
  * @param {{ now?: Date, discreet?: boolean, doseItem?: object }} [ctx]
  */
-export async function showDoseActivity(activity, { now = getRawNow(), discreet = false, doseItem } = {}) {
+export async function showDoseActivity(activity, { now = getRawNow(), discreet = false, doseItem }: { now?: Date; discreet?: boolean; doseItem?: any } = {}) {
   if (!activity || !activity.instanceId) return
   // Terminais não ocupam superfície persistente (cancel-on-resolve cuida do done real).
   if (activity.state === DOSE_ACTIVITY_STATES.DONE || activity.state === DOSE_ACTIVITY_STATES.MISSED) {
@@ -262,7 +262,7 @@ function formatClock(takenAt) {
  * cancel-on-resolve. Sem ações/cronômetro — é só confirmação de leitura.
  * @param {{ instanceId: string, medicineLabel?: string, takenAt?: Date|string, doseItem?: object }} ctx
  */
-export async function showDoseDone({ instanceId, medicineLabel, takenAt, doseItem } = {}) {
+export async function showDoseDone({ instanceId, medicineLabel, takenAt, doseItem }: { instanceId?: string; medicineLabel?: string; takenAt?: Date | string; doseItem?: any } = {}) {
   if (!instanceId) return
   await ensureSurfaceChannel()
   const doseLabel = doseItem ? formatDoseItem(doseItem) : ''

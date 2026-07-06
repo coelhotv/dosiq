@@ -12,11 +12,12 @@ import FeedbackScreen from '../features/profile/screens/FeedbackScreen'
 import HistoryScreen from '../features/history/screens/HistoryScreen'
 import MeasuresScreen from '../features/measures/screens/MeasuresScreen'
 
-const Stack = createStackNavigator()
+// TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
+const Stack = createStackNavigator<any>()
 
 export default function ProfileStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="ProfileStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name={ROUTES.PROFILE_MAIN} component={ProfileScreen} />
       <Stack.Screen name={ROUTES.PROFILE_EDIT} component={ProfileEditScreen} />
       <Stack.Screen name={ROUTES.SETTINGS} component={SettingsScreen} />

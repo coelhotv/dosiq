@@ -58,7 +58,7 @@ async function deriveAndRender({ userId, protocols, tz, prevInstanceId }) {
     if (prevInstanceId) await endDoseActivity(prevInstanceId)
     return null
   }
-  const repo = createDoseInstanceRepository({ client: supabase })
+  const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
   // Apenas doses críticas pendentes — a superfície é extensão do alarme crítico (CL-4).
