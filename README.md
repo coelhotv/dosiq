@@ -346,7 +346,7 @@ Este é um projeto piloto em desenvolvimento. Sugestões e feedback são bem-vin
 
 ## 📄 Licença
 
-GNU Affero General Public License v3.0 (AGPL-3.0) — veja [LICENSE](LICENSE) para detalhes.
+GNU Affero General Public License v3.0 ou posterior (AGPL-3.0-or-later) — veja [LICENSE](LICENSE) para detalhes.
 
 O código é livre para usar, estudar, modificar e redistribuir. Se você hospedar uma versão
 modificada do Dosiq como serviço, a AGPL exige que o código dessa versão também seja
@@ -354,7 +354,7 @@ disponibilizado aos usuários. Para licenciamento comercial alternativo (uso em 
 fechado), entre em contato: contact@dosiq.app.
 
 Contribuições externas: ao abrir um PR, você concorda em licenciar sua contribuição sob a
-AGPL-3.0 e concede ao mantenedor o direito de relicenciá-la em ofertas comerciais do Dosiq
+AGPL-3.0-or-later e concede ao mantenedor o direito de relicenciá-la em ofertas comerciais do Dosiq
 (dual licensing).
 
 ---
