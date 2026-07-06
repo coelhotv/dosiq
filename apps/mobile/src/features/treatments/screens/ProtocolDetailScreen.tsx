@@ -8,8 +8,8 @@ import { useCallback, useMemo, useState } from 'react'
 import { ScrollView, View, Text, Pressable, Switch, StyleSheet } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305/TS2724
-// sob apps/mobile/tsconfig.json (Edit3/CheckCircle2 nem existem em runtime — bug
-// pré-existente preservado, fora de escopo deste lote) — ver nota em TreatmentsScreen.tsx
+// sob apps/mobile/tsconfig.json (Edit3/CheckCircle2 são aliases deprecated de
+// Pen/CircleCheck — existem em runtime, só não no .d.ts) — ver nota em TreatmentsScreen.tsx
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { ArrowLeft, ChevronRight, Clock, Edit3, Trash2, CheckCircle2, TrendingUp } = LucideIcons as any

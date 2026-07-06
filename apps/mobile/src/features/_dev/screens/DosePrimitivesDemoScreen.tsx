@@ -185,9 +185,6 @@ export default function DosePrimitivesDemoScreen({ navigation }) {
         userId={useMockData ? 'demo-user' : userId}
         isComplex={isComplexMode}
         initialProtocols={useMockData ? FAKE_TREATMENTS : null}
-        planId={undefined}
-        scheduledTime={undefined}
-        treatmentPlanName={undefined}
       />
     </SafeAreaView>
   )

@@ -12,8 +12,8 @@ export default function FormActions({
   onPrimary,
   primaryDisabled = false,
   primaryLoading,
-  secondaryLabel,
-  onSecondary,
+  secondaryLabel = undefined,
+  onSecondary = undefined,
   destructive = false,
 }) {
   // Cor de fundo do botão primário (destruidor ou normal)

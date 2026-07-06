@@ -253,8 +253,6 @@ export default function OnboardingTreatmentStep() {
           primaryLabel="Concluir"
           onPrimary={handleConcluir}
           primaryLoading={submitting}
-          secondaryLabel={undefined}
-          onSecondary={undefined}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
