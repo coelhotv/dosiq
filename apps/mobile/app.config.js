@@ -126,6 +126,7 @@ module.exports = {
           // (android/app), onde o allprojects avalia a url → sobe 4 níveis até o
           // repo-root node_modules (monorepo hoisted), portável.
           extraMavenRepos: ['../../../../node_modules/@notifee/react-native/android/libs'],
+          useLegacyPackaging: true,
         },
       }],
       [
