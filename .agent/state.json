@@ -1,12 +1,12 @@
 {
   "project": "dosiq",
-  "sprint": "2026-W27",
+  "sprint": "2026-W28",
   "session": {
     "mode": "specifying",
     "ceremony_type": null,
     "status": "specified",
-    "merged_pr": 715,
-    "merged_squash": "2c1348c5",
+    "merged_pr": 725,
+    "merged_squash": "2b8e2ed8",
     "merged_history": [
       {
         "pr": 696,
@@ -56,6 +56,11 @@
         "pr": 715,
         "squash": "2c1348c5",
         "phase": "040 F4: apps/web 100% TS (10 lotes #705-714 + gate Fable). AP-265 (globs vitest pós-rename). Web 4.15.3. Review Gemini 5/5 aplicados"
+      },
+      {
+        "pr": 725,
+        "squash": "2b8e2ed8",
+        "phase": "040 F5: apps/mobile 100% TS (8 lotes #716-724 + gate Fable). AP-268/269, R-285. Mobile 0.24.6. Review Gemini 4 aplicados/2 declinados com evidência. F6 = modelo 3 blocos no playbook"
       }
     ],
     "goal": "044 dose-only-mode — modo light sem controle de estoque: pergunta no onboarding, registro de doses (horário, qtd, pushes, alarmes) sem exigir/consumir estoque, opt-in de estoque posterior com upsell contextual. Origem: feedback beta testers + 52% silenciosos (026). Tese 2026 etapa 2.0",
@@ -82,9 +87,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 10,
-    "rules_count": 234,
-    "anti_patterns_count": 262,
+    "journal_entries_since_distillation": 11,
+    "rules_count": 235,
+    "anti_patterns_count": 264,
     "decisions_count": 78,
     "contracts_count": 30,
     "distillation_due": false
