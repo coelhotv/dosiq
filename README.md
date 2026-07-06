@@ -361,7 +361,7 @@ AGPL-3.0-or-later e concede ao mantenedor o direito de relicenciá-la em ofertas
 
 ## 👨‍💻 Desenvolvedor
 
-Desenvolvido com ❤️ usando Google Antigravity, Kilo Code e Roo Code.
+Desenvolvido com ❤️ usando Claude Code & Google Antigravity
 
 ---
 
@@ -447,4 +447,4 @@ Para dúvidas ou problemas:
 ---
 
 **Versão**: 3.3.0 (Phase 5: Brand Migration Complete)
-**Última atualização**: 22 Abril 2026
+**Última atualização**: 05 Julho 2026
