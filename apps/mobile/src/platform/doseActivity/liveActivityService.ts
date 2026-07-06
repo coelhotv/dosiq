@@ -56,7 +56,7 @@ function toParams(activity, doseItem, medicineName) {
 }
 
 /** Inicia/substitui a Live Activity p/ o estado atual. */
-export async function startLiveActivity(activity, doseItem, { medicineLabel } = {}) {
+export async function startLiveActivity(activity, doseItem, { medicineLabel }: { medicineLabel?: string } = {}) {
   if (!available || !activity?.instanceId) return null
   try {
     return await native.start(toParams(activity, doseItem, medicineLabel))
@@ -66,7 +66,7 @@ export async function startLiveActivity(activity, doseItem, { medicineLabel } = 
 }
 
 /** Atualiza o estado da Live Activity ativa (transição sem recriar). */
-export async function updateLiveActivity(activity, doseItem, { medicineLabel } = {}) {
+export async function updateLiveActivity(activity, doseItem, { medicineLabel }: { medicineLabel?: string } = {}) {
   if (!available || !activity?.instanceId) return
   try {
     await native.update(toParams(activity, doseItem, medicineLabel))
@@ -80,7 +80,7 @@ export async function updateLiveActivity(activity, doseItem, { medicineLabel } =
  * encerra sozinho (paridade showDoseDone Android). Chamado quando a dose ativa vira `taken`.
  * @param {{ instanceId: string, takenAt?: Date|string }} ctx
  */
-export async function showDoneLiveActivity({ instanceId, takenAt } = {}) {
+export async function showDoneLiveActivity({ instanceId, takenAt }: { instanceId?: string; takenAt?: Date | string } = {}) {
   if (!available || !instanceId) return
   try {
     await native.done({

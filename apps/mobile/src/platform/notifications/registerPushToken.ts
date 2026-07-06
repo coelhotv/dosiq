@@ -12,7 +12,7 @@ export const PUSH_TOKEN_KEY = '@dosiq/expo-push-token'
 // Resolve userId pela sessão atual quando não passado. Retorna o token ou null.
 // nativeAlarmEnabled propaga o flag do alarme nativo pro device (gate de duplicata,
 // Spec 001 A2); se não passado, lê o estado atual do toggle (default OFF).
-export async function registerPushToken({ supabase, userId, nativeAlarmEnabled }) {
+export async function registerPushToken({ supabase, userId, nativeAlarmEnabled }: { supabase: any; userId?: any; nativeAlarmEnabled?: any }) {
   const token = await getExpoPushToken()
   if (!token) return null
 

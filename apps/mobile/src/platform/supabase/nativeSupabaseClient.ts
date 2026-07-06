@@ -4,6 +4,7 @@
 
 import { AppState } from 'react-native'
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { nativePublicAppConfig } from '../config/nativePublicAppConfig'
 import { secureStoreAuthStorage } from '../auth/secureStoreAuthStorage'
 import { debugLog } from '@shared/utils/debugLog'
@@ -12,7 +13,7 @@ function createNativeSupabaseClient() {
   // Debug: confirmar URL e que URLSearchParams está patchado antes do createClient
   debugLog('[supabase-init] URL:', nativePublicAppConfig.supabaseUrl)
   debugLog('[supabase-init] URLSearchParams.set type:', typeof global.URLSearchParams?.prototype?.set)
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     nativePublicAppConfig.supabaseUrl,
     nativePublicAppConfig.supabaseAnonKey,
     {

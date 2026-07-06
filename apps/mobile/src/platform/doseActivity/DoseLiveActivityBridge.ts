@@ -34,7 +34,7 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 // Auditoria (042 Slice B): token_captured emitido no foreground (online) — NUNCA grava o token no
 // detail (SEC-3), só marca que a captura ocorreu. Fail-open: emit nunca lança.
 const tokenAudit = createCriticalAuditService({
-  client: supabase,
+  client: supabase as any,
   getUserId: async () => {
     const { data } = await supabase.auth.getUser()
     return data?.user?.id ?? null
@@ -129,7 +129,7 @@ async function _clearActivityToken(instanceId) {
 
 /** Deriva a dose ativa (crítica pendente) e start/update/end a LA. Retorna o instanceId ativo. @private */
 async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
-  const repo = createDoseInstanceRepository({ client: supabase })
+  const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
   const allItems = buildDoseItemsFromInstances(instances, protocols, tz)
@@ -216,7 +216,7 @@ async function fetchEnrichedProtocols(userId, tz) {
 
 /** Resolve o doseItem (CON-029) de um instanceId p/ montar o deeplink da modal. @private */
 async function resolveDoseItem(userId, protocols, tz, instanceId) {
-  const repo = createDoseInstanceRepository({ client: supabase })
+  const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow()
   const instances = await repo.getWindow(userId, addDays(now, -LOOK_BACK_DAYS), addDays(now, LOOK_AHEAD_DAYS))
   const items = buildDoseItemsFromInstances(instances, protocols, tz)

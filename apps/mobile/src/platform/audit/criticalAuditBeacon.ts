@@ -22,7 +22,8 @@ async function buildPermissionSnapshot() {
     const status = settings?.authorizationStatus
     const authorized =
       status === AuthorizationStatus.AUTHORIZED || status === AuthorizationStatus.PROVISIONAL
-    const snapshot = { authorization_status: status ?? null, blocked: !authorized }
+    const snapshot: { authorization_status: any; blocked: boolean; android_channel_importance?: any } =
+      { authorization_status: status ?? null, blocked: !authorized }
     // Android: o canal crítico pode estar rebaixado a NONE mesmo com app "autorizado" → bloqueia o som.
     if (Platform.OS === 'android') {
       try {
@@ -69,7 +70,7 @@ export async function beaconAlarmDelivered(data) {
     const nagAttempt = Number(data?.nagAttempt ?? 0) || 0
 
     let event
-    const detail = { permission_snapshot: snapshot }
+    const detail: { permission_snapshot: any; reason?: string } = { permission_snapshot: snapshot }
     if (snapshot?.blocked) {
       event = 'alarm_suppressed'
       detail.reason = 'notifications_blocked'

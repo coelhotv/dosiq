@@ -57,7 +57,7 @@ async function emitScheduledDedupe(criticalIds, userId) {
     prev = []
   }
   const prevSet = new Set(Array.isArray(prev) ? prev : [])
-  const audit = createCriticalAuditService({ client: supabase })
+  const audit = createCriticalAuditService({ client: supabase as any })
   const toEmit = criticalIds.filter((id) => !prevSet.has(id))
   // Emits independentes e fail-open → paralelos (evita latência serial no resync).
   await Promise.all(
@@ -125,7 +125,7 @@ function buildGroupedDose(it) {
  */
 export async function syncAlarms({ userId, protocols, tz }) {
   if (!userId) return
-  const repo = createDoseInstanceRepository({ client: supabase })
+  const repo = createDoseInstanceRepository({ client: supabase as any })
   const now = getRawNow() // instante absoluto (UTC real), sem date-string parse
   const end = addDays(now, LOOK_AHEAD_DAYS)
   // Lookback: inclui doses recém-vencidas (scheduled_for ≤ now). Sem isto, uma dose snoozed no

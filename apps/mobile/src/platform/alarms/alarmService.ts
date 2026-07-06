@@ -42,7 +42,7 @@ const SOUND_IOS = 'alarm_dose.wav'
 // o entitlement com.apple.developer.usernotifications.critical-alerts (formulário
 // em avaliação). Ao promover: trocar aqui + add `critical:true` no bloco ios do
 // buildNotification + declarar o entitlement no app.config/ios entitlements.
-const IOS_INTERRUPTION_LEVEL = 'timeSensitive'
+const IOS_INTERRUPTION_LEVEL = 'timeSensitive' as const
 const NAG_INTERVAL_MS = 5 * 60 * 1000
 const MAX_NAG_ATTEMPTS = 3
 const SNOOZE_INTERVAL_MS = 5 * 60 * 1000 // soneca manual = +5min
@@ -52,7 +52,7 @@ const MAX_SNOOZE_ATTEMPTS = 3
 // da sessão persistida (AsyncStorage) — funciona também no handler headless do Android.
 // Retorna null se não houver sessão → o service trata como evento órfão (não insere).
 const snoozeAudit = createCriticalAuditService({
-  client: supabase,
+  client: supabase as any,
   getUserId: async () => {
     const { data } = await supabase.auth.getUser()
     return data?.user?.id ?? null
@@ -259,8 +259,8 @@ function getAlarmCopy({ medicineName, data }) {
 // Monta o objeto de notificação compartilhado por agendamento e nag.
 // isCritical=true: iOS fura modo silencioso (entitlement critical-alerts); Android: canal crítico dedicado.
 function buildNotification({ doseInstanceId, medicineName, data, notificationId, isCritical = false }) {
-  const { title, body } = getAlarmCopy({ doseInstanceId, medicineName, data })
-  const sanitizedData = {}
+  const { title, body } = getAlarmCopy({ medicineName, data })
+  const sanitizedData: Record<string, string> = {}
   if (data) {
     for (const [key, value] of Object.entries(data)) {
       if (value !== null && value !== undefined) {
@@ -425,7 +425,7 @@ export async function scheduleSnooze({
   toleranceMinutes = null,
   currentSnoozeAttempt = 0,
   isCritical = false,
-  data = {},
+  data = {} as Record<string, any>,
 }) {
   // Cancela primeiro: mata o loop do som da notif atual.
   await cancelAlarm(doseInstanceId)
@@ -462,7 +462,7 @@ export async function scheduleSnooze({
       ? data.doseInstanceIds.split(',')
       : [doseInstanceId]
   try {
-    const repo = createDoseInstanceRepository({ client: supabase })
+    const repo = createDoseInstanceRepository({ client: supabase as any })
     await Promise.all(snoozedIds.map((id) => repo.setSnoozedUntil(id, nextTs)))
   } catch (err) {
     if (__DEV__) console.warn('[alarmService] setSnoozedUntil falhou', doseInstanceId, err?.message)
