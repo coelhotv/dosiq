@@ -61,10 +61,16 @@ function HubLayout({ item, label, showLabel, showChevron }) {
 
 export default function MeasureCard({
   item,
-  onPress = (item?: any) => { void item },
+  onPress = () => {},
   showLabel = true,
   showChevron = false,
   variant = 'hub',
+}: {
+  item: any
+  onPress?: (item?: any) => void
+  showLabel?: boolean
+  showChevron?: boolean
+  variant?: 'hub' | 'timeline'
 }) {
   const label = biomarkerCardLabel(item.type)
 
