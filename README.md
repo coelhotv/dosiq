@@ -5,7 +5,7 @@
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
 ![Version](https://img.shields.io/badge/version-4.0.0-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/license-AGPL--3.0-green?style=for-the-badge)
+![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
