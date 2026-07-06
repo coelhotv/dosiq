@@ -52,10 +52,11 @@ async function loadDismissedKeys(keysToCheck) {
  * Hook principal de nudges para mobile.
  *
  * @param {'dashboard'|'profile'|'any'} targetView  view onde os nudges serão exibidos
- * @returns {{ nudge, dismiss, handleAction }}
+ * @returns {{ nudge, dismiss, handleAction, refresh }}
  *   nudge: nudge de maior prioridade para exibir (ou null)
  *   dismiss: fn para dispensar o nudge atual
  *   handleAction: fn para executar a ação do nudge
+ *   refresh: fn para forçar novo fetch
  */
 export function useNudges(targetView) {
   const navigation = useNavigation()
