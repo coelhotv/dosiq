@@ -2,7 +2,9 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
-import { ArrowLeft } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { ArrowLeft } = LucideIcons as any
 import { parseISO } from '@dosiq/core'
 import { colors } from '@shared/styles/tokens'
 import { useHistoryData } from '@history/hooks/useHistoryData'
