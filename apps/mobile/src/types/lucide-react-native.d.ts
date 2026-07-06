@@ -31,4 +31,14 @@ declare module 'lucide-react-native' {
   export const SoapDispenserDroplet: LucideIcon
   export const SprayCan: LucideIcon
   export const PillBottle: LucideIcon
+  export const Sun: LucideIcon
+  export const UserPlus: LucideIcon
+  export const LogIn: LucideIcon
+  export const Bell: LucideIcon
+  export const Package: LucideIcon
+  export const ArrowLeft: LucideIcon
+  export const Eye: LucideIcon
+  export const EyeOff: LucideIcon
+  export const Mail: LucideIcon
+  export const ShieldCheck: LucideIcon
 }

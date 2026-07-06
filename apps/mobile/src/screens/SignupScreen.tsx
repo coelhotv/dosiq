@@ -192,7 +192,7 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <OnboardingHeader step={0} totalSteps={3} onBack={() => navigation.goBack()} />
+      <OnboardingHeader step={0} totalSteps={3} onBack={() => navigation.goBack()} onSkip={undefined} />
 
       <KeyboardAvoidingView
         style={styles.flex}
