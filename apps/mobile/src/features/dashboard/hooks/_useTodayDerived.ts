@@ -60,8 +60,9 @@ export function useTodayDerived(data) {
       protocols,
       { now: nowRaw, tz }
     )
+    // TODO(040-strict): protocolById não tipado (nível B)
     const mapToTimeline = (item) => {
-      const protocol = protocolById.get(item.protocolId) || null
+      const protocol: any = protocolById.get(item.protocolId) || null
       return {
         id: item.instanceId,
         instanceId: item.instanceId,
@@ -107,7 +108,8 @@ export function useTodayDerived(data) {
     }
 
     // 3. Alertas de estoque
-    const stockAlerts = Object.values(data.medicines || {})
+    // TODO(040-strict): data.medicines não tipado (nível B)
+    const stockAlerts = (Object.values(data.medicines || {}) as any[])
       .filter((m) => m && (m.daysRemaining ?? Infinity) <= 7)
       .map((m) => ({
         medicineId: m.id,

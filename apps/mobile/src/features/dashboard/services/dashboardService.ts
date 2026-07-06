@@ -8,7 +8,8 @@ import { parseLocalDate, getTodayLocal, addDays, createDoseInstanceRepository } 
 import { debugLog } from '@shared/utils/debugLog'
 
 // Repo de instâncias (leitura de adesão ← dose_instances, S3.6). RLS escopa por user_id.
-const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
+// TODO(040-strict): supabase client local não tipado como Database (nível B)
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any })
 
 /**
  * Busca protocolos ativos do utilizador.

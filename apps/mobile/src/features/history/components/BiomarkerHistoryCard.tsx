@@ -2,7 +2,9 @@
 // Tap abre MeasureDetailSheet (padrão idêntico ao DoseActionSheet dos cards de dose).
 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Ruler, ChevronRight } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Ruler, ChevronRight } = LucideIcons as any
 import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS, parseISO } from '@dosiq/core'
 import { colors } from '@shared/styles/tokens'
 

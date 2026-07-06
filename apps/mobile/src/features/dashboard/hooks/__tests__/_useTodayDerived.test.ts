@@ -42,7 +42,7 @@ const inst = (id, offsetMin, status, toleranceMinutes = 120) => ({
   tolerance_minutes: toleranceMinutes,
 })
 
-const build = (instances, timezone) =>
+const build = (instances, timezone?) =>
   renderHook(() =>
     useTodayDerived({ protocols, doseInstances: instances, logs: [], medicines: {}, timezone })
   ).result.current

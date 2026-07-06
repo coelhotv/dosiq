@@ -1,5 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
-import { TrendingUp, TrendingDown } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { TrendingUp, TrendingDown } = LucideIcons as any
 import AdherenceRing from './AdherenceRing'
 import { colors, spacing, borderRadius, shadows } from '../../../shared/styles/tokens'
 

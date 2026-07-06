@@ -6,7 +6,9 @@
 // SaMD (ADR-062): cor diferencia TIPO de evento (medida), nunca qualidade do valor.
 
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Ruler, ChevronRight } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Ruler, ChevronRight } = LucideIcons as any
 import { biomarkerCardLabel, formatBiomarkerContext, formatBiomarkerDisplay, formatDateTimeShortPtBR, formatTimePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
@@ -59,10 +61,16 @@ function HubLayout({ item, label, showLabel, showChevron }) {
 
 export default function MeasureCard({
   item,
-  onPress,
+  onPress = () => {},
   showLabel = true,
   showChevron = false,
   variant = 'hub',
+}: {
+  item: any
+  onPress?: (item?: any) => void
+  showLabel?: boolean
+  showChevron?: boolean
+  variant?: 'hub' | 'timeline'
 }) {
   const label = biomarkerCardLabel(item.type)
 

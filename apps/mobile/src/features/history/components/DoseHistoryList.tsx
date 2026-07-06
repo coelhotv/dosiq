@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose, getInjectionSiteLabel } from '@dosiq/core'
-import { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot, LocateFixed } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronRight, CircleCheckBig, XCircle, Clock, RedoDot, LocateFixed } = LucideIcons as any
 import { colors, spacing } from '@shared/styles/tokens'
 import BiomarkerHistoryCard from './BiomarkerHistoryCard'
 

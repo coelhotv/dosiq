@@ -7,7 +7,9 @@ import { useState, useCallback } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, Pressable, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { ArrowLeft, Plus, Ruler } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { ArrowLeft, Plus, Ruler } = LucideIcons as any
 import { BIOMARKER_TYPE_LABELS, BIOMARKER_TYPE_UNITS, biomarkerCardLabel } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'
@@ -24,7 +26,7 @@ export default function MeasuresScreen() {
   const navigation = useNavigation()
   const route = useRoute()
   // Tipo inicial via deeplink (card "Última medida" do dashboard); default glicemia.
-  const [type, setType] = useState(route.params?.type ?? 'glicemia')
+  const [type, setType] = useState((route.params as any)?.type ?? 'glicemia')
   const { items, loading, error, create, update, remove } = useMeasures({ type })
 
   const [logOpen, setLogOpen] = useState(false)

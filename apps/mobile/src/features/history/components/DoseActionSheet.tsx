@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, INJECTION_SITES, getInjectionSiteLabel, getInjectionSiteAbsorption } from '@dosiq/core'
-import { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } = LucideIcons as any
 import { getLastInjectionSite } from '@dose/services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
@@ -85,7 +87,7 @@ function formatDateObj(d) {
 
 function punctualityLabel(takenAt, scheduledFor) {
   if (!takenAt || !scheduledFor) return null
-  const diffMin = Math.round((parseISO(takenAt) - parseISO(scheduledFor)) / 60000)
+  const diffMin = Math.round((parseISO(takenAt).getTime() - parseISO(scheduledFor).getTime()) / 60000)
   if (Math.abs(diffMin) <= 5) return { text: 'No horário', color: colors.brand.primary }
   if (diffMin > 0) return { text: `+${diffMin} min · Atrasado`, color: colors.status.warning }
   return { text: `${diffMin} min · No horário`, color: colors.brand.primary }

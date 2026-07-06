@@ -1,6 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { BellRing, Check, AlertCircle } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { BellRing, Check, AlertCircle } = LucideIcons as any
 import { getNow, parseISO, getUserTime } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 
@@ -22,12 +24,10 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   const nextTime = firstDose.scheduledTime || ''
   const scheduledFor = firstDose.scheduledFor
   const now = getNow()
-  const [hour, minute] = nextTime.split(':').map(Number)
-  const scheduled = getNow()
-  if (!isNaN(hour) && !isNaN(minute)) {
-    scheduled.setHours(hour, minute, 0, 0)
-  }
-  const diffMin = Math.round((scheduled - now) / 60000)
+  // scheduledFor é o timestamp absoluto correto da dose — usar direto evita
+  // discrepância de fuso (dispositivo vs. usuário) e datas erradas em carry-over/look-ahead.
+  const scheduledDate = scheduledFor ? parseISO(scheduledFor) : null
+  const diffMin = scheduledDate ? Math.round((scheduledDate.getTime() - now.getTime()) / 60000) : 0
 
   const TZ = 'America/Sao_Paulo'
   const scheduledLocal = scheduledFor ? getUserTime(parseISO(scheduledFor), TZ) : null
@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
     borderColor: colors.doseDelayed.border,
     elevation: 2,
   },
+  content: {},
   header: {
     flexDirection: 'row',
     alignItems: 'center',

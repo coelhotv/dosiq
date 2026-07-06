@@ -9,7 +9,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Modal, Pressable, TouchableOpacity, TextInput, StyleSheet, Platform, StatusBar, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { Ruler, Check, Calendar } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Ruler, Check, Calendar } = LucideIcons as any
 import {
   coerceDecimal,
   parseISO,
@@ -321,7 +323,8 @@ export default function MeasureLogSheet({ open, onClose, onSaved, defaultType = 
     try {
       setSaving(true)
       setErrorMsg(null)
-      const payload = {
+      // TODO(040-strict): payload não tipado (nível B)
+      const payload: Record<string, any> = {
         type,
         value: valResult.num,
         value_secondary: valResult.secNum,

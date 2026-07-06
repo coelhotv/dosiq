@@ -10,7 +10,7 @@ import { measuresRepo } from '../services/measuresRepo'
  * @param {string} [opts.type] - filtra por tipo (glicemia/peso/...).
  * @param {number} [opts.days] - janela em dias (default 90) p/ histórico + tendência.
  */
-export function useMeasures({ type, days = 90 } = {}) {
+export function useMeasures({ type, days = 90 }: { type?: string; days?: number } = {}) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)

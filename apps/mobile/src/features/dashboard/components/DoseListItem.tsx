@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, AlertCircle } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
-import { getNow, parseLocalDate, formatLocalDate, parseISO, getTodayLocal } from '@dosiq/core'
+import { getNow, parseLocalDate, getUserTime, parseISO, getTodayLocal } from '@dosiq/core'
 
 // Config de status por estado da dose (LOOKUP_TABLE)
 const _STATUS_CONFIG = {
@@ -17,9 +17,9 @@ function _getDoseStatus(isTaken, isMissed) {
   return 'pending'
 }
 
-function _formatTakenTime(takenAt) {
-  const formatted = formatLocalDate(parseISO(takenAt), true)
-  return formatted.split(' ')[1].substring(0, 5) // HH:mm
+function _formatTakenTime(takenAt: string): string {
+  const d = getUserTime(parseISO(takenAt))
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 function _isWithinTwoHours(scheduledTime) {

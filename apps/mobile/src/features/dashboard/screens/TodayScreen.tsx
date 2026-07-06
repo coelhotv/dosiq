@@ -13,7 +13,9 @@ import {
 } from 'react-native'
 import { ROUTES } from '../../../navigation/routes'
 import { navigationRef } from '@navigation/navigationRef'
-import { Plus, CalendarClock, Pill, Ruler, ChevronRight } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Plus, CalendarClock, Pill, Ruler, ChevronRight } = LucideIcons as any
 import { measuresRepo } from '@measures/services/measuresRepo'
 import MeasureLogSheet from '@measures/components/MeasureLogSheet'
 import MeasureCard from '@measures/components/MeasureCard'
@@ -175,7 +177,7 @@ function TodayHeader({ greeting, todayFormatted }) {
  * cards — necessário para doses semanais (GLP-1) cujo prazo de tolerância (5040min)
  * excede "ontem" e pode recuar até 3,5 dias.
  */
-function OptionalDoseSection({ title, subtitle, doses, onRegister, keyPrefix, isCarryOver = false }) {
+function OptionalDoseSection({ title, subtitle = null, doses = [], onRegister, keyPrefix, isCarryOver = false }) {
   if (doses.length === 0) return null
   return (
     <View style={styles.carryOverSection}>
@@ -366,10 +368,11 @@ function TodayScreenContent({
     return created
   }, [refreshTodayMeasures])
 
+  // TODO(040-strict): navigationRef.navigate não tipado p/ rotas dinâmicas (nível B)
   const openMeasuresHub = useCallback((measureType) => {
-    navigationRef.navigate(ROUTES.PROFILE)
+    (navigationRef.navigate as any)(ROUTES.PROFILE)
     InteractionManager.runAfterInteractions(() => {
-      navigationRef.navigate(ROUTES.MEASURES, { type: measureType })
+      (navigationRef.navigate as any)(ROUTES.MEASURES, { type: measureType })
     })
   }, [])
 
@@ -639,7 +642,7 @@ export default function TodayScreen({ route, navigation }) {
   return (
     <TodayScreenContent
       data={data} stale={stale} isDaySegregated={isDaySegregated} loading={loading} refresh={refresh}
-      timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats} medicines={medicines}
+      timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats}
       refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
@@ -710,6 +713,7 @@ const styles = StyleSheet.create({
   dosesList: {
     marginTop: 4,
   },
+  simpleList: {},
   emptyShiftContainer: {
     paddingVertical: spacing[6],
     paddingHorizontal: spacing[4],

@@ -19,21 +19,21 @@ jest.mock('lucide-react-native', () => ({
 }));
 
 // Redefinir View localmente para uso nos mocks (hoisted)
-const mockView = require('react-native').View;
+const MockView = require('react-native').View;
 
 // Mock dos componentes como host components strings com testID
-jest.mock('../../../../shared/components/ui/ScreenContainer', () => (props) => <mockView {...props} />);
-jest.mock('../../../../shared/components/states/LoadingState', () => (props) => <mockView testID="loading-state" {...props} />);
-jest.mock('../../../../shared/components/states/ErrorState', () => (props) => <mockView testID="error-state" {...props} />);
-jest.mock('../../../../shared/components/states/EmptyState', () => (props) => <mockView testID="empty-state" {...props} />);
-jest.mock('../../../dose/components/DoseRegisterModal', () => (props) => <mockView testID="dose-modal" {...props} />);
-jest.mock('@dose/components/BulkDoseRegisterModal', () => (props) => <mockView testID="bulk-dose-modal" {...props} />);
-jest.mock('../../components/AdherenceDayCard', () => (props) => <mockView testID="adherence-card" {...props} />);
-jest.mock('../../components/TimeBlockSeparator', () => (props) => <mockView testID="time-separator" {...props} />);
-jest.mock('../../components/DoseTimelineCard', () => (props) => <mockView testID="dose-card" {...props} />);
-jest.mock('../../components/HeroDoseCard', () => (props) => <mockView testID="hero-card" {...props} />);
-jest.mock('../../components/StockAlertInline', () => (props) => <mockView testID="stock-alerts" {...props} />);
-jest.mock('../../../../shared/components/feedback/StaleBanner', () => (props) => <mockView testID="stale-banner" {...props} />);
+jest.mock('../../../../shared/components/ui/ScreenContainer', () => (props) => <MockView {...props} />);
+jest.mock('../../../../shared/components/states/LoadingState', () => (props) => <MockView testID="loading-state" {...props} />);
+jest.mock('../../../../shared/components/states/ErrorState', () => (props) => <MockView testID="error-state" {...props} />);
+jest.mock('../../../../shared/components/states/EmptyState', () => (props) => <MockView testID="empty-state" {...props} />);
+jest.mock('../../../dose/components/DoseRegisterModal', () => (props) => <MockView testID="dose-modal" {...props} />);
+jest.mock('@dose/components/BulkDoseRegisterModal', () => (props) => <MockView testID="bulk-dose-modal" {...props} />);
+jest.mock('../../components/AdherenceDayCard', () => (props) => <MockView testID="adherence-card" {...props} />);
+jest.mock('../../components/TimeBlockSeparator', () => (props) => <MockView testID="time-separator" {...props} />);
+jest.mock('../../components/DoseTimelineCard', () => (props) => <MockView testID="dose-card" {...props} />);
+jest.mock('../../components/HeroDoseCard', () => (props) => <MockView testID="hero-card" {...props} />);
+jest.mock('../../components/StockAlertInline', () => (props) => <MockView testID="stock-alerts" {...props} />);
+jest.mock('../../../../shared/components/feedback/StaleBanner', () => (props) => <MockView testID="stale-banner" {...props} />);
 
 describe('TodayScreen', () => {
   const mockRefresh = jest.fn();
@@ -52,19 +52,19 @@ describe('TodayScreen', () => {
   });
 
   it('renders loading state when loading is true and no data', () => {
-    useTodayData.mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: null,
       loading: true,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
-    const { getByTestId } = render(<TodayScreen />);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('loading-state')).toBeTruthy();
   });
 
   it('renders summary and doses when data is present', () => {
-    useTodayData.mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: {
         ...baseMockData,
         protocols: [{ id: '1', name: 'Protocol A', medicine_id: 'm1' }],
@@ -74,9 +74,9 @@ describe('TodayScreen', () => {
       loading: false,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
-    const { getByTestId, queryByTestId } = render(<TodayScreen />);
+    const { getByTestId, queryByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     
     expect(queryByTestId('loading-state')).toBeNull();
     expect(getByTestId('adherence-card')).toBeTruthy();
@@ -84,39 +84,39 @@ describe('TodayScreen', () => {
   });
 
   it('renders error state when error is present', () => {
-    useTodayData.mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: null,
       loading: false,
       error: new Error('Failed to fetch'),
       refresh: mockRefresh,
-    });
+    } as any);
 
-    const { getByTestId } = render(<TodayScreen />);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('error-state')).toBeTruthy();
   });
 
   it('renders empty state when there are no protocols', () => {
-    useTodayData.mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: { ...baseMockData, protocols: [] },
       loading: false,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
-    const { getByTestId } = render(<TodayScreen />);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('empty-state')).toBeTruthy();
   });
 
   it('renders stale banner when data is stale', () => {
-    useTodayData.mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: { ...baseMockData, protocols: [{ id: '1' }] },
       loading: false,
       error: null,
       stale: true,
       refresh: mockRefresh,
-    });
+    } as any);
 
-    const { getByTestId } = render(<TodayScreen />);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('stale-banner')).toBeTruthy();
   });
 });

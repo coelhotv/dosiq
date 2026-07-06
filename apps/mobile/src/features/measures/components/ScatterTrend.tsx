@@ -6,7 +6,9 @@
 
 import { useMemo, useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { ChevronLeft, ChevronRight } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft, ChevronRight } = LucideIcons as any
 import { addDays, parseISO, getRawNow } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 

@@ -16,7 +16,7 @@ const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
  *   error: string | null
  * }}
  */
-export function useHistoryMutation({ onSuccess } = {}) {
+export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Promise<void> } = {}) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 

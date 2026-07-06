@@ -1,6 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { Moon, Sun, CloudSun, ChevronRight, ChevronUp } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Moon, Sun, CloudSun, ChevronRight, ChevronUp } = LucideIcons as any
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
 
 /**

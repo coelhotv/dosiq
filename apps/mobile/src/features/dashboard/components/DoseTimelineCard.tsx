@@ -1,6 +1,8 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Check, Clock, XCircle } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Check, Clock, XCircle } = LucideIcons as any
 import { colors, typography, shadows } from '@shared/styles/tokens'
 import { formatIntakeDose, daysAgoLabel, getRawNow, DEFAULT_TZ } from '@dosiq/core'
 

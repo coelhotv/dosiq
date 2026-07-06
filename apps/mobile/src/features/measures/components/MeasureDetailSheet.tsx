@@ -4,7 +4,9 @@
 import { useState } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Ruler, Pencil, Trash2 } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { Ruler, Pencil, Trash2 } = LucideIcons as any
 import { BIOMARKER_TYPE_LABELS, formatBiomarkerContext, formatBiomarkerDisplay, formatDateTimePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { selectionTap } from '@shared/utils/haptics'

@@ -138,7 +138,8 @@ export async function getHistoryTimeline(userId, {
 
   const protocolsById = await buildProtocolsById(userId)
 
-  const coreTimeline = createTimelineService({ client: supabase })
+  // TODO(040-strict): supabase client local não tipado como Database (nível B)
+  const coreTimeline = createTimelineService({ client: supabase as any })
   const doseEvents = await coreTimeline.getTimeline({
     userId,
     fromTs,
