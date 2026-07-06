@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Mobile v0.24.6 — 2026-07-06 — Refactor (040 F5): migração TypeScript de apps/mobile
+
+> **Bump:** mobile `0.24.5 → 0.24.6` (patch, `APP_VERSION` canônico). **Plataforma:** mobile (Expo/RN). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.
+
+### ♻️ Refactor
+
+- **apps/mobile/src 100% TypeScript** (8 lotes — PRs #716-#724): shared (hooks clínicos nível A no strict island — lote 5.1), components/services/styles/utils, todas as features (treatments, dose, medications, stock, dashboard, history, measures, profile, onboarding, chatbot, notifications, _dev), screens, navigation, platform, `App.tsx`/`index.ts`. Configs Expo permanecem `.js` (FR-010)
+- **Tooling**: `apps/mobile/tsconfig.json` adicionado aos `CONSUMERS` do `strict-island.sh`; sweep preventivo de globs js-only (AP-265)
+
+### 🐛 Correções (dentro da fase)
+
+- **ASI hazard em cast statement-position** (AP-267): `(obj as any)` após statement sem `;` vira chamada de função em runtime, invisível ao tsc — 2 ocorrências em `navigation.navigate` + mocks silenciosamente quebrados (AP-266, fix getUserTime/getHours no HeroDoseCard com teste de regressão)
+- **`presentation: 'fullScreenModal'` inválido no JS stack** — `as any` mascarava bug real; corrigido pra `'modal'` (lote 7)
+- **DevHubScreen**: `SafeAreaView` de RN → `react-native-safe-area-context` (`edges` era ignorado)
+- **Gate F5**: mocks desatualizados em `TodayScreen.test`/`TreatmentsScreen.test` (namespace lucide, `createNavigationContainerRef`, texto de empty state) + `.claude/**` no ignores do eslint (worktree morto gerava centenas de erros fantasmas)
+
+---
+
 ## Web v4.15.3 — 2026-07-05 — Refactor (040 F4): migração TypeScript de apps/web
 
 > **Bump:** web `4.15.2 → 4.15.3` (patch). **Plataforma:** web. Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.

@@ -10,13 +10,11 @@ jest.mock('@dashboard/hooks/useTodayData');
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: jest.fn() }),
   useFocusEffect: () => {},
+  createNavigationContainerRef: () => ({ isReady: () => false, navigate: jest.fn() }),
 }));
 
 // Mock do lucide-react-native
-jest.mock('lucide-react-native', () => ({
-  Pill: 'Pill',
-  Plus: 'Plus',
-}));
+jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 
 // Redefinir View localmente para uso nos mocks (hoisted)
 const MockView = require('react-native').View;
