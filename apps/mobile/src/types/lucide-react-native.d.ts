@@ -41,4 +41,5 @@ declare module 'lucide-react-native' {
   export const EyeOff: LucideIcon
   export const Mail: LucideIcon
   export const ShieldCheck: LucideIcon
+  export const User: LucideIcon
 }

@@ -14,11 +14,12 @@ import MedicinesListScreen from '../features/medications/screens/MedicinesListSc
 import MedicineDetailScreen from '../features/medications/screens/MedicineDetailScreen'
 import MedicineFormScreen from '../features/medications/screens/MedicineFormScreen'
 
-const Stack = createStackNavigator()
+// TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
+const Stack = createStackNavigator<any>()
 
 export default function TreatmentsStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="TreatmentsStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name={ROUTES.TREATMENTS_LIST} component={TreatmentsScreen} />
       <Stack.Screen name={ROUTES.PROTOCOL_DETAIL} component={ProtocolDetailScreen} />
       <Stack.Screen name={ROUTES.PROTOCOL_FORM} component={ProtocolFormScreen} />

@@ -13,11 +13,12 @@ import PurchaseFormScreen from '../features/stock/screens/PurchaseFormScreen'
 import PurchaseHistoryScreen from '../features/stock/screens/PurchaseHistoryScreen'
 import StockAdjustmentScreen from '../features/stock/screens/StockAdjustmentScreen'
 
-const Stack = createStackNavigator()
+// TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
+const Stack = createStackNavigator<any>()
 
 export default function StockStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id="StockStack" screenOptions={{ headerShown: false }}>
       <Stack.Screen name={ROUTES.STOCK_MAIN} component={StockScreen} />
       <Stack.Screen name={ROUTES.STOCK_DETAIL} component={StockDetailScreen} />
       <Stack.Screen name={ROUTES.PURCHASE_FORM} component={PurchaseFormScreen} />

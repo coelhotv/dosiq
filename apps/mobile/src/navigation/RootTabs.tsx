@@ -15,7 +15,8 @@ import StockStack from './StockStack'
 import ProfileStack from './ProfileStack'
 import { colors } from '../shared/styles/tokens'
 
-const Tab = createBottomTabNavigator()
+// TODO(040-strict): createBottomTabNavigator<any>() — sem ParamList tipada, overload exige `id`
+const Tab = createBottomTabNavigator<any>()
 
 // Mesmos ícones do BottomNavRedesign.jsx e Sidebar.jsx da web (lucide-react)
 // Calendar → Hoje | Pill → Tratamentos | Package → Estoque | User → Perfil
@@ -31,6 +32,7 @@ export default function RootTabs() {
 
   return (
     <Tab.Navigator
+      id="RootTabs"
       screenOptions={({ route }) => {
         const Icon = TAB_ICONS[route.name]
         return {
@@ -71,10 +73,11 @@ export default function RootTabs() {
             // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
             // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
             const isFocused = navigation.isFocused()
-            const tabState = route.state
+            // TODO(040-strict): route.state/e.preventDefault não tipados p/ tabPress genérico
+            const tabState = (route as any).state
             const isOnSubScreen = tabState && tabState.index > 0
             if (isFocused && isOnSubScreen) {
-              e.preventDefault()
+              (e as any).preventDefault()
               navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.TREATMENTS_LIST })
             }
           },
@@ -89,10 +92,11 @@ export default function RootTabs() {
             // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
             // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
             const isFocused = navigation.isFocused()
-            const tabState = route.state
+            // TODO(040-strict): route.state/e.preventDefault não tipados p/ tabPress genérico
+            const tabState = (route as any).state
             const isOnSubScreen = tabState && tabState.index > 0
             if (isFocused && isOnSubScreen) {
-              e.preventDefault()
+              (e as any).preventDefault()
               navigation.navigate(ROUTES.STOCK, { screen: ROUTES.STOCK_MAIN })
             }
           },
@@ -105,10 +109,11 @@ export default function RootTabs() {
         listeners={({ navigation, route }) => ({
           tabPress: (e) => {
             const isFocused = navigation.isFocused()
-            const tabState = route.state
+            // TODO(040-strict): route.state/e.preventDefault não tipados p/ tabPress genérico
+            const tabState = (route as any).state
             const isOnSubScreen = tabState && tabState.index > 0
             if (isFocused && isOnSubScreen) {
-              e.preventDefault()
+              (e as any).preventDefault()
               navigation.navigate(ROUTES.PROFILE, { screen: ROUTES.PROFILE_MAIN })
             }
           },
