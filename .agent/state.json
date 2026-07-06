@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W27",
   "session": {
-    "mode": "planning",
+    "mode": "specifying",
     "ceremony_type": null,
-    "status": "planned",
+    "status": "specified",
     "merged_pr": 715,
     "merged_squash": "2c1348c5",
     "merged_history": [
@@ -58,41 +58,24 @@
         "phase": "040 F4: apps/web 100% TS (10 lotes #705-714 + gate Fable). AP-265 (globs vitest pós-rename). Web 4.15.3. Review Gemini 5/5 aplicados"
       }
     ],
-    "goal": "043 notify-improvements — performance do cron api/notify (paralelismo, batch queries, idempotência/retomada) + estratégia de pushes (higiene de devices, isolamento reminders vs relatórios)",
+    "goal": "044 dose-only-mode — modo light sem controle de estoque: pergunta no onboarding, registro de doses (horário, qtd, pushes, alarmes) sem exigir/consumir estoque, opt-in de estoque posterior com upsell contextual. Origem: feedback beta testers + 52% silenciosos (026). Tese 2026 etapa 2.0",
     "goal_type": "feature",
-    "plan": "plans/specs/043-notify-improvements/plan.md",
-    "tasks": "plans/specs/043-notify-improvements/tasks.md",
+    "plan": null,
+    "tasks": null,
     "tier": 2,
-    "spec_dir": "plans/specs/043-notify-improvements",
-    "spec": "plans/specs/043-notify-improvements/spec.md",
-    "ceremonies_run": [
-      "eng-review",
-      "security-review"
-    ],
-    "ceremony_findings_count": 14,
-    "ceremony_scope_decisions": [
-      "ENG-1: estrutural antes de comportamental — migração+drenador sem consumidor, cutover job-a-job com flag env (modelo ADR-057), daily primeiro",
-      "ENG-2: fatiar em Slice A (outbox+drenador+relatórios) e Slice B (higiene devices+fingerprint); B primeiro (menor, ganho imediato)",
-      "ENG-3: period_key canônico por kind, tz-aware, função única no core (evita duplicata cross-tz)",
-      "ENG-4: identidade de device = push_token (não trocar chave); fingerprint vira diagnóstico; ler RPC no planning",
-      "ENG-5: fronteira outbox×DLQ — falha de canal→DLQ, falha de build→outbox failed com attempts cap 3",
-      "ENG-6: health check de fila entupida em api/health/notifications",
-      "ENG-7: drenador com cap de lote (25) + deadline (~40s); teste essencial = conflito unique (integração)",
-      "ENG-8: pool só DENTRO do lote; SKIP LOCKED já serializa entre ticks",
-      "Guards ↑: PO-3 (≥2 kinds + tz-boundary), PO-4 (query negativa em prod obrigatória)",
-      "SEC-1 RESOLVIDO (PO 2026-07-05): outbox com REFERÊNCIAS (user+kind+period), sem coluna payload — conteúdo construído no drain; FR-004/009 + Key Entities atualizados",
-      "SEC-2 Critical: outbox server-internal — RLS + zero grants authenticated/anon (PO-SEC-2)",
-      "SEC-3: resultado por canal sem push token bruto — contagens/device_id (PO-SEC-3)",
-      "SEC-4: prune 90d pg_cron na mesma migração (PO-SEC-4, LGPD minimização)",
-      "SEC-5: CREATE OR REPLACE da RPC repete REVOKEs + search_path (PO-SEC-5)"
-    ]
+    "spec_dir": "plans/specs/044-dose-only-mode",
+    "spec": "plans/specs/044-dose-only-mode/spec.md",
+    "previous_session_note": "043 notify-improvements permanece 'planned' (plan.md/tasks.md prontos no spec dir); retomar via planning/coding quando invocado",
+    "ceremonies_run": [],
+    "ceremony_findings_count": 0,
+    "ceremony_scope_decisions": []
   },
   "memory": {
     "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 8,
     "rules_count": 234,
     "anti_patterns_count": 261,
-    "decisions_count": 77,
+    "decisions_count": 78,
     "contracts_count": 30,
     "distillation_due": false
   },

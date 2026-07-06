@@ -128,4 +128,62 @@ Na Apple, o visual tende a ser mais minimalista. As imagens devem focar em legib
 - [ ] Resposta sobre Criptografia (ITSAppUsesNonExemptEncryption: NO)
 
 ---
-*Gerado em: 22 de Abril de 2026 para o projeto Dosiq.*
+
+## 7. Revisão 2026-07-05 — alinhamento à Tese 2026 (wedge GLP-1/injetáveis)
+
+> Contexto: `plans/strategy-2026/DESCONSTRUCAO_E_TESE_2026.md` (local-only). Decisão do PO
+> em 2026-07-05: aquisição orientada ao wedge "companheiro de tratamento GLP-1/injetáveis".
+> Mesma regra de marcas do guia da Play Store: **nunca** marcas comerciais (Ozempic, Wegovy,
+> Mounjaro) em metadados — usar princípios ativos (INN), livres de trademark.
+
+### 7.1. Correções no Keywords Field atual
+
+O campo sugerido na seção 2.3 tem dois problemas:
+
+- `pila` — typo (provavelmente "pilula"); caractere desperdiçado.
+- `cura` — termo de risco (promessa médica) e de baixa intenção para este app. Remover.
+
+### 7.2. Keywords Field revisado (100 chars, sem repetir Nome/Subtítulo)
+
+```text
+remedio,lembrete,alarme,insulina,caneta,semaglutida,tirzepatida,glicemia,diabetes,adesao,pilula
+```
+
+(97 caracteres. Troca `vitamina,historico,diario,cura,agenda,saude,paciente,medicamento` — termos
+genéricos saturados ou inúteis — por termos do wedge com concorrência baixa em pt-BR.)
+
+### 7.3. Subtitle — opção wedge para teste
+
+```text
+Doses, canetas e tratamentos
+```
+
+### 7.4. Promotional Text sazonal (170 chars, editável sem release)
+
+Usar o campo para surfar a onda dos genéricos (patente da semaglutida expira mar/2026):
+
+```text
+Novo: suporte a canetas de aplicacao semanal, titulacao de dose e rodizio de local de
+injecao. Acompanhe glicemia e peso junto com a adesao ao seu tratamento.
+```
+
+### 7.5. Bloco novo na descrição (inserir após "POR QUE USAR O DOSIQ?")
+
+```text
+FEITO PARA TRATAMENTOS INJETAVEIS:
+- Canetas GLP-1 e insulina, com doses semanais ou diarias
+- Titulacao: veja o cronograma de aumento gradual da dose
+- Rodizio do local de aplicacao, com historico
+- Diario de glicemia, peso e pressao arterial
+```
+
+### 7.6. Screenshot adicional (posição 3)
+
+**Headline:** `Feito para canetas e injetaveis` | **Tela:** Titulação/registro de injeção.
+
+### 7.7. Avaliações
+
+Implementar `SKStoreReviewController` (requestReview) após momento de sucesso (streak de
+adesão), nunca após alarme/erro. Volume+nota de avaliações é o principal lever de ranking
+que a ficha atual ignora.
+

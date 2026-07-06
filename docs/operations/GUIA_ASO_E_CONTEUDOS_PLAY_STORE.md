@@ -411,3 +411,78 @@ app para organizar tratamentos, registrar doses e acompanhar estoque
 ```text
 Health & Fitness
 ```
+
+---
+
+## 13. Revisão 2026-07-05 — alinhamento à Tese 2026 (wedge GLP-1/injetáveis)
+
+> Contexto: `plans/strategy-2026/DESCONSTRUCAO_E_TESE_2026.md` (local-only). Decisão do PO
+> em 2026-07-05: identidade de **aquisição** passa a ser "companheiro de tratamento
+> GLP-1/injetáveis em português". O produto segue geral; a ficha da loja passa a capturar
+> também a demanda específica, que é onde há volume crescente e concorrência fraca em pt-BR.
+
+### 13.1. Diagnóstico da ficha atual
+
+- Posicionamento 100% genérico ("organize remédios, doses e estoque") disputa as keywords
+  mais saturadas da categoria contra Medisafe/MyTherapy — sem nenhum diferencial de busca.
+- Zero termos do wedge: nada de injetável, caneta, insulina, semaglutida, tirzepatida,
+  titulação, glicemia, diabetes — recursos que o app JÁ tem e os concorrentes genéricos não.
+- Nenhuma menção ao lever de ranking mais forte da Play Store: volume e nota de avaliações.
+
+### 13.2. Regra de marcas (importante)
+
+**Não usar marcas comerciais (Ozempic, Wegovy, Mounjaro, Saxenda) em campos de metadados**
+— risco de remoção por trademark. Usar os nomes de princípio ativo (INN), que são livres e
+têm busca crescente com a chegada dos genéricos (patente da semaglutida expira mar/2026):
+
+```text
+semaglutida, tirzepatida, liraglutida, insulina, caneta, GLP-1
+```
+
+Na descrição longa, preferir formulações factuais por princípio ativo e categoria
+("tratamentos com caneta de aplicação semanal", "semaglutida", "insulina basal").
+
+### 13.3. Short description — nova opção para teste (wedge)
+
+```text
+Doses, canetas e injetaveis: controle tratamento, titulacao e estoque.
+```
+
+Manter a atual como controle; testar via experimento de ficha (Play Console A/B nativo).
+
+### 13.4. Bloco novo para a descrição completa (inserir após "O que voce encontra no app")
+
+```text
+Suporte completo a tratamentos injetaveis:
+
+- Canetas e injetaveis (GLP-1, insulina)
+Acompanhe tratamentos com semaglutida, tirzepatida ou insulina, incluindo doses semanais.
+
+- Titulacao de dose
+Visualize o cronograma de aumento gradual da dose, como prescrito pelo seu medico.
+
+- Rodizio de local de aplicacao
+Registre onde aplicou e receba sugestao do proximo local, para evitar reacoes na pele.
+
+- Diario de glicemia, peso e pressao
+Registre seus indicadores e veja a evolucao junto com a adesao ao tratamento.
+```
+
+### 13.5. Keywords adicionais (usar naturalmente no texto)
+
+- caneta de emagrecimento / caneta aplicacao semanal
+- semaglutida / tirzepatida / liraglutida
+- insulina / diario de glicemia / diabetes
+- titulacao de dose / aumento gradual de dose
+- rodizio de aplicacao / local de injecao
+
+### 13.6. Screenshot adicional (posição 3)
+
+`Titulação/injeção` — Texto: `Feito para canetas e injetaveis`
+
+### 13.7. Avaliações — o lever ignorado
+
+- Implementar prompt de avaliação in-app (Google Play In-App Review API) disparado após
+  momento de sucesso (ex.: 7º dia consecutivo de adesão) — nunca após erro/alarme.
+- Meta: sair de ~0 avaliações; ranking da Play Store pesa volume+nota+recência.
+
