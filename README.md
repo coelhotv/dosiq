@@ -5,7 +5,7 @@
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
 ![Version](https://img.shields.io/badge/version-4.0.0-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
+![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=for-the-badge)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
@@ -346,7 +346,16 @@ Este é um projeto piloto em desenvolvimento. Sugestões e feedback são bem-vin
 
 ## 📄 Licença
 
-MIT License - veja [LICENSE](LICENSE) para detalhes
+GNU Affero General Public License v3.0 ou posterior (AGPL-3.0-or-later) — veja [LICENSE](LICENSE) para detalhes.
+
+O código é livre para usar, estudar, modificar e redistribuir. Se você hospedar uma versão
+modificada do Dosiq como serviço, a AGPL exige que o código dessa versão também seja
+disponibilizado aos usuários. Para licenciamento comercial alternativo (uso em produto
+fechado), entre em contato: contact@dosiq.app.
+
+Contribuições externas: ao abrir um PR, você concorda em licenciar sua contribuição sob a
+AGPL-3.0-or-later e concede ao mantenedor o direito de relicenciá-la em ofertas comerciais do Dosiq
+(dual licensing).
 
 ---
 
