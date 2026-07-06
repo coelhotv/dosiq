@@ -130,8 +130,8 @@ export default function FeedbackScreen() {
       const repo = createFeedbackRepository({ client: supabase as any, getUserId })
 
       const payload = {
-        subject: (form.values.subject as string).trim(),
-        comment: (form.values.comment as string).trim(),
+        subject: (form.values.subject as string)?.trim() ?? '',
+        comment: (form.values.comment as string)?.trim() ?? '',
         rating: form.values.rating,
         platform: form.values.platform,
         device: form.values.device,
