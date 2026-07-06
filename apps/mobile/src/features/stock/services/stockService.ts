@@ -95,7 +95,13 @@ export async function getStockData(userId) {
 // FASE 3 S3.2 G2 — composição das factories de @dosiq/core
 // ───────────────────────────────────────────────────────────────────────────
 
-const stockRepo = createStockRepository({ client: nativeSupabaseClient, getUserId })
-const purchaseRepo = createPurchaseRepository({ client: nativeSupabaseClient, getUserId })
+// TODO(040-strict): apps/mobile pina @supabase/supabase-js 2.91.0 vs ^2.90.1 na
+// factory do core — tipos nominais do client divergem entre versões (private
+// 'supabaseUrl' não bate estruturalmente). Fix real = alinhar versão (fora do lote).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const typedClient = nativeSupabaseClient as any
+
+const stockRepo = createStockRepository({ client: typedClient, getUserId })
+const purchaseRepo = createPurchaseRepository({ client: typedClient, getUserId })
 
 export const stockService = { ...stockRepo, ...purchaseRepo }

@@ -41,7 +41,7 @@ export function useMedicineMutation() {
   const mutationCreate = useMutation({
     invalidateKeys: [MEDICINES_CACHE_KEY],
     onSuccess: () => show('Medicamento criado', { variant: 'success' }),
-    onError: (err) => show(err?.message ?? 'Erro ao criar medicamento', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao criar medicamento', { variant: 'error' }),
   })
 
   /**
@@ -63,7 +63,7 @@ export function useMedicineMutation() {
       STOCK_CACHE_KEY,
     ],
     onSuccess: () => show('Medicamento atualizado', { variant: 'success' }),
-    onError: (err) => show(err?.message ?? 'Erro ao atualizar medicamento', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao atualizar medicamento', { variant: 'error' }),
   })
 
   /**
@@ -85,7 +85,7 @@ export function useMedicineMutation() {
       STOCK_CACHE_KEY,
     ],
     onSuccess: () => show('Medicamento removido', { variant: 'success' }),
-    onError: (err) => show(err?.message ?? 'Erro ao remover medicamento', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao remover medicamento', { variant: 'error' }),
   })
 
   const create = useCallback(

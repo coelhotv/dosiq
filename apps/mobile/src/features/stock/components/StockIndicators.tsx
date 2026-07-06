@@ -7,7 +7,11 @@
 //   [ Dias restantes | Custo médio   ]
 
 import { View, Text, StyleSheet } from 'react-native'
-import { Package, TrendingDown, Clock, Tag } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Package, TrendingDown, Clock, Tag } = LucideIcons as any
 import { formatBRL, formatActiveIngredientShort, isLiquidMedicine, formatNumberPtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
@@ -130,7 +134,7 @@ export default function StockIndicators({
   )
 }
 
-function Kpi({ icon, label, value, suffix, valueColor, hint }) {
+function Kpi({ icon, label, value, suffix = null, valueColor = null, hint = null }) {
   return (
     <View style={styles.card}>
       <View style={styles.iconWrap}>{icon}</View>

@@ -18,11 +18,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRoute, useFocusEffect } from '@react-navigation/native'
-import {
-  ChevronLeft,
-  Plus,
-  SlidersHorizontal,
-} from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft, Plus, SlidersHorizontal } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import { stockService } from '@stock/services/stockService'

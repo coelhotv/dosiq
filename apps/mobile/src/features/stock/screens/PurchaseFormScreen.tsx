@@ -26,7 +26,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
-import { ChevronLeft, Package } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft, Package } = LucideIcons as any
 import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -263,7 +267,9 @@ function usePurchaseForm(route, navigation) {
     let cancelled = false
     medicineService
       .getById(medicineId)
-      .then((med) => {
+      // TODO(040-strict): getById do repo core retorna unknown — tipar Medicine no core
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((med: any) => {
         if (cancelled || !med) return
         setMedicine(med)
         if (med.laboratory && shouldPrefillLab(med.regulatory_category)) {

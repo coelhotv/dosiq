@@ -11,7 +11,11 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
-import { Search, X, Plus, ChevronLeft, Pill } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Search, X, Plus, ChevronLeft, Pill } = LucideIcons as any
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
@@ -87,7 +91,7 @@ function MedicinesHeader({
 }
 
 export default function MedicinesListScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<any>()
   const { data, loading, error, stale, refresh } = useMedicines()
 
   const [searchOpen, setSearchOpen] = useState(false)

@@ -1,6 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { Plus, Syringe } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { Plus, Syringe } = LucideIcons as any
 import SectionCard from '../../../shared/components/ui/SectionCard'
 import StockLevelBadge from './StockLevelBadge'
 import { formatStockQuantity, formatConcentration } from '@dosiq/core'

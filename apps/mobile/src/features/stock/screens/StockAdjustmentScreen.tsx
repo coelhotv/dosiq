@@ -28,7 +28,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
-import { ChevronLeft, Package } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { ChevronLeft, Package } = LucideIcons as any
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
 import FormSection from '@shared/components/form/FormSection'
@@ -126,7 +130,7 @@ function useStockAdjustment(route, navigation) {
         .catch(() => {})
       if (needsBalance) {
         stockService
-          .getTotalQuantity(medicineId, userId)
+          .getTotalQuantity(medicineId)
           .then((total) => {
             if (!cancelled && typeof total === 'number') setCurrentBalance(total)
           })

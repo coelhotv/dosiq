@@ -49,7 +49,7 @@ export function useStockMutation() {
       TODAY_CACHE_KEY,
     ],
     onSuccess: () => show('Compra registrada', { variant: 'success' }),
-    onError: (err) => show(err?.message ?? 'Erro ao registrar compra', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao registrar compra', { variant: 'error' }),
   })
 
   /**
@@ -68,7 +68,7 @@ export function useStockMutation() {
       TODAY_CACHE_KEY,
     ],
     onSuccess: () => show('Compra atualizada', { variant: 'success' }),
-    onError: (err) => show(err?.message ?? 'Erro ao atualizar compra', { variant: 'error' }),
+    onError: (err: any) => show(err?.message ?? 'Erro ao atualizar compra', { variant: 'error' }),
   })
 
   const createPurchase = useCallback(

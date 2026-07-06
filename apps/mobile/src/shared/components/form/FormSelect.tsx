@@ -11,7 +11,7 @@ export default function FormSelect({
   label,
   value,
   options,
-  error,
+  error = undefined,
   onChange,
   onBlur = undefined,
   disabled = false,

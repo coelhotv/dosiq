@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { colors, spacing } from '@shared/styles/tokens'
 
-export default function FormSection({ title, description, children, style }) {
+export default function FormSection({ title = undefined, description = undefined, children, style = undefined }) {
   return (
     <View style={[styles.wrapper, style]}>
       {/* Título em maiúsculas com estilo eyebrow */}

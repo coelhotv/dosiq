@@ -1,6 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { AlertCircle, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
+// apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
+const { AlertCircle, AlertTriangle, CheckCircle, TrendingUp } = LucideIcons as any
 
 /**
  * Badge visual para nível de estoque conforme ADR-018.
