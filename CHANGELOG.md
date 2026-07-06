@@ -9,7 +9,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## Mobile v0.24.6 — 2026-07-06 — Refactor (040 F5): migração TypeScript de apps/mobile
 
-> **Bump:** mobile `0.24.5 → 0.24.6` (patch, `APP_VERSION` canônico). **Plataforma:** mobile (Expo/RN). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja.
+> **Bump:** mobile `0.24.5 → 0.24.6` (patch, `APP_VERSION` canônico). **Plataforma:** mobile (Expo/RN). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja. **Plataforma:** mobile (Android). Sem mudança de comportamento clínico nem migração de dados. Sem relevância para notas de loja (apenas correção de compatibilidade em emuladores e camadas de tradução).
 
 ### ♻️ Refactor
 
@@ -22,6 +22,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **`presentation: 'fullScreenModal'` inválido no JS stack** — `as any` mascarava bug real; corrigido pra `'modal'` (lote 7)
 - **DevHubScreen**: `SafeAreaView` de RN → `react-native-safe-area-context` (`edges` era ignorado)
 - **Gate F5**: mocks desatualizados em `TodayScreen.test`/`TreatmentsScreen.test` (namespace lucide, `createNavigationContainerRef`, texto de empty state) + `.claude/**` no ignores do eslint (worktree morto gerava centenas de erros fantasmas)
+- **Android**: Correção de falha de carregamento da biblioteca nativa `libreactnative.so` no `MainApplication` ao forçar a propriedade `useLegacyPackaging=true` nas propriedades do build nativo (AGP). As bibliotecas nativas agora são comprimidas no APK e extraídas no sistema de arquivos durante a instalação, o que permite o correto funcionamento de camadas de tradução binária (Houdini) em emuladores e arquiteturas híbridas.
+
 
 ---
 
