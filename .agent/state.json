@@ -2,9 +2,9 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "specifying",
+    "mode": "distillation",
     "ceremony_type": null,
-    "status": "specified",
+    "status": "distilled",
     "merged_pr": 725,
     "merged_squash": "2b8e2ed8",
     "merged_history": [
@@ -86,11 +86,11 @@
     }
   },
   "memory": {
-    "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 11,
-    "rules_count": 235,
-    "anti_patterns_count": 264,
-    "decisions_count": 78,
+    "last_distillation": "2026-07-06T22:29:20.000Z",
+    "journal_entries_since_distillation": 0,
+    "rules_count": 233,
+    "anti_patterns_count": 164,
+    "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
   },
