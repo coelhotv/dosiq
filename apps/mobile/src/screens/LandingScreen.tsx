@@ -91,7 +91,7 @@ export default function LandingScreen({ navigation }) {
               <Bell size={22} color={colors.brand.primary} strokeWidth={1.75} />
             </View>
             <Text style={styles.featureTitle}>Lembretes</Text>
-            <Text style={styles.featureCaption}>push + WhatsApp em breve</Text>
+            <Text style={styles.featureCaption}>push + Telegram</Text>
           </View>
           <View style={[styles.card, styles.featureChip]}>
             <View style={styles.featureIcon}>
