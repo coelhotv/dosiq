@@ -24,12 +24,10 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   const nextTime = firstDose.scheduledTime || ''
   const scheduledFor = firstDose.scheduledFor
   const now = getNow()
-  const [hour, minute] = nextTime.split(':').map(Number)
-  const scheduled = getNow()
-  if (!isNaN(hour) && !isNaN(minute)) {
-    scheduled.setHours(hour, minute, 0, 0)
-  }
-  const diffMin = Math.round((scheduled.getTime() - now.getTime()) / 60000)
+  // scheduledFor é o timestamp absoluto correto da dose — usar direto evita
+  // discrepância de fuso (dispositivo vs. usuário) e datas erradas em carry-over/look-ahead.
+  const scheduledDate = scheduledFor ? parseISO(scheduledFor) : null
+  const diffMin = scheduledDate ? Math.round((scheduledDate.getTime() - now.getTime()) / 60000) : 0
 
   const TZ = 'America/Sao_Paulo'
   const scheduledLocal = scheduledFor ? getUserTime(parseISO(scheduledFor), TZ) : null

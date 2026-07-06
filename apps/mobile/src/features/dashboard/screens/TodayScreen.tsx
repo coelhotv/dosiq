@@ -177,7 +177,7 @@ function TodayHeader({ greeting, todayFormatted }) {
  * cards — necessário para doses semanais (GLP-1) cujo prazo de tolerância (5040min)
  * excede "ontem" e pode recuar até 3,5 dias.
  */
-function OptionalDoseSection({ title, subtitle = null, doses, onRegister, keyPrefix, isCarryOver = false }) {
+function OptionalDoseSection({ title, subtitle = null, doses = [], onRegister, keyPrefix, isCarryOver = false }) {
   if (doses.length === 0) return null
   return (
     <View style={styles.carryOverSection}>

@@ -17,8 +17,11 @@ function _getDoseStatus(isTaken, isMissed) {
   return 'pending'
 }
 
+// TODO(040-strict): formatLocalDate (core) só aceita 1 param — assinatura pública não
+// alterada nesta sessão (migração de domínio). Cast local preserva o comportamento
+// original (2º arg já era ignorado em runtime antes da migração — mesmo resultado).
 function _formatTakenTime(takenAt) {
-  const formatted = formatLocalDate(parseISO(takenAt))
+  const formatted = (formatLocalDate as any)(parseISO(takenAt), true)
   return formatted.split(' ')[1].substring(0, 5) // HH:mm
 }
 

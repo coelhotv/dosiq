@@ -1,7 +1,6 @@
 import { render } from '@testing-library/react-native';
 import TodayScreen from '../TodayScreen';
 import { useTodayData } from '@dashboard/hooks/useTodayData';
-import type { Mock } from 'jest-mock';
 
 // Mock do hook de dados
 jest.mock('@dashboard/hooks/useTodayData');
@@ -53,19 +52,19 @@ describe('TodayScreen', () => {
   });
 
   it('renders loading state when loading is true and no data', () => {
-    (useTodayData as unknown as Mock).mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: null,
       loading: true,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('loading-state')).toBeTruthy();
   });
 
   it('renders summary and doses when data is present', () => {
-    (useTodayData as unknown as Mock).mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: {
         ...baseMockData,
         protocols: [{ id: '1', name: 'Protocol A', medicine_id: 'm1' }],
@@ -75,7 +74,7 @@ describe('TodayScreen', () => {
       loading: false,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
     const { getByTestId, queryByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     
@@ -85,37 +84,37 @@ describe('TodayScreen', () => {
   });
 
   it('renders error state when error is present', () => {
-    (useTodayData as unknown as Mock).mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: null,
       loading: false,
       error: new Error('Failed to fetch'),
       refresh: mockRefresh,
-    });
+    } as any);
 
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('error-state')).toBeTruthy();
   });
 
   it('renders empty state when there are no protocols', () => {
-    (useTodayData as unknown as Mock).mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: { ...baseMockData, protocols: [] },
       loading: false,
       error: null,
       refresh: mockRefresh,
-    });
+    } as any);
 
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('empty-state')).toBeTruthy();
   });
 
   it('renders stale banner when data is stale', () => {
-    (useTodayData as unknown as Mock).mockReturnValue({
+    jest.mocked(useTodayData).mockReturnValue({
       data: { ...baseMockData, protocols: [{ id: '1' }] },
       loading: false,
       error: null,
       stale: true,
       refresh: mockRefresh,
-    });
+    } as any);
 
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('stale-banner')).toBeTruthy();
