@@ -1,6 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { BellRing, Check } from 'lucide-react-native'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { BellRing, Check } = LucideIcons as any
 import { LinearGradient } from 'expo-linear-gradient'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
 

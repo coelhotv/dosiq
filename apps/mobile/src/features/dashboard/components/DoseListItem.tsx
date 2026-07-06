@@ -18,7 +18,7 @@ function _getDoseStatus(isTaken, isMissed) {
 }
 
 function _formatTakenTime(takenAt) {
-  const formatted = formatLocalDate(parseISO(takenAt), true)
+  const formatted = formatLocalDate(parseISO(takenAt))
   return formatted.split(' ')[1].substring(0, 5) // HH:mm
 }
 

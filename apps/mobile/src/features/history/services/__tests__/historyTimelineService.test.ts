@@ -108,8 +108,8 @@ beforeEach(() => {
   jest.clearAllMocks()
 
   // createTimelineService retorna objeto com getTimeline mockado
-  mockGetTimeline = jest.fn()
-  (createTimelineService as jest.Mock).mockReturnValue({ getTimeline: mockGetTimeline })
+  mockGetTimeline = jest.fn();
+  (createTimelineService as jest.Mock).mockReturnValue({ getTimeline: mockGetTimeline });
 
   // Supabase .from() default: retorna erro (para buildProtocolsById)
   (supabase.from as jest.Mock).mockReturnValue({
@@ -118,7 +118,7 @@ beforeEach(() => {
     in: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data: null, error: null }),
     then: undefined,
-  })
+  });
 })
 
 afterEach(() => {
@@ -234,9 +234,9 @@ describe('getHistoryTimeline', () => {
 
   test('happy path — doses + biomarkers mesclados e mapeados', async () => {
     setupSupa([PROTOCOL])
-    mockGetTimeline.mockResolvedValue([DOSE_EVENT])
-    (measuresRepo.list as jest.Mock).mockResolvedValue([BIO_ROW])
-    (biomarkersToEvents as jest.Mock).mockReturnValue([BIO_EVENT])
+    mockGetTimeline.mockResolvedValue([DOSE_EVENT]);
+    (measuresRepo.list as jest.Mock).mockResolvedValue([BIO_ROW]);
+    (biomarkersToEvents as jest.Mock).mockReturnValue([BIO_EVENT]);
     (buildTimeline as jest.Mock).mockReturnValue([BIO_EVENT, DOSE_EVENT])
 
     const items = await getHistoryTimeline('user-1', { tz: 'America/Sao_Paulo' })
@@ -251,7 +251,7 @@ describe('getHistoryTimeline', () => {
 
   test('biomarkers vazia — retorna só doses sem chamar buildTimeline', async () => {
     setupSupa([PROTOCOL])
-    mockGetTimeline.mockResolvedValue([DOSE_EVENT])
+    mockGetTimeline.mockResolvedValue([DOSE_EVENT]);
     (measuresRepo.list as jest.Mock).mockResolvedValue([])
 
     const items = await getHistoryTimeline('user-1', { tz: 'America/Sao_Paulo' })
@@ -263,7 +263,7 @@ describe('getHistoryTimeline', () => {
 
   test('GAP-1: falha de biomarkers não derruba doses (best-effort)', async () => {
     setupSupa([PROTOCOL])
-    mockGetTimeline.mockResolvedValue([DOSE_EVENT])
+    mockGetTimeline.mockResolvedValue([DOSE_EVENT]);
     (measuresRepo.list as jest.Mock).mockRejectedValue(new Error('network fail'))
 
     const items = await getHistoryTimeline('user-1', { tz: 'America/Sao_Paulo' })
@@ -281,7 +281,7 @@ describe('getHistoryTimeline', () => {
 
   test('passa protocolsById correto para getTimeline', async () => {
     setupSupa([PROTOCOL])
-    mockGetTimeline.mockResolvedValue([])
+    mockGetTimeline.mockResolvedValue([]);
     (measuresRepo.list as jest.Mock).mockResolvedValue([])
 
     await getHistoryTimeline('user-1', { tz: 'America/Sao_Paulo' })

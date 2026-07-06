@@ -21,23 +21,28 @@ jest.mock('../_useTodayDerived', () => ({
   useTodayDerived: jest.fn(data => data)
 }));
 
+// TODO(040-strict): jest.mock automock não preserva tipos — jest.mocked() traz de volta
+const mockedDashboardService = jest.mocked(dashboardService);
+const mockedAsyncStorage = jest.mocked(AsyncStorage);
+const mockedSupabase = supabase as any;
+
 describe('useTodayData', () => {
   const mockUser = { id: 'user-123' };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    AsyncStorage.getItem.mockResolvedValue(null);
-    AsyncStorage.setItem.mockResolvedValue();
-    dashboardService.getUserSettings.mockResolvedValue({ id: 'u1', name: 'Test' });
-    dashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
+    mockedAsyncStorage.getItem.mockResolvedValue(null);
+    mockedAsyncStorage.setItem.mockResolvedValue();
+    mockedDashboardService.getUserSettings.mockResolvedValue({ id: 'u1', name: 'Test' } as any);
+    mockedDashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
   });
 
   it('loads data successfully from online service', async () => {
-    supabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
-    
-    dashboardService.getActiveProtocols.mockResolvedValue([{ id: 'p1', medicine_id: 'm1' }]);
-    dashboardService.getLogsForPeriod.mockResolvedValue([{ id: 'l1', protocol_id: 'p1' }]);
-    dashboardService.getMedicinesData.mockResolvedValue({ 'm1': { name: 'Pills' } });
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([{ id: 'p1', medicine_id: 'm1' }] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([{ id: 'l1', protocol_id: 'p1' }] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({ 'm1': { name: 'Pills' } });
 
     const { result } = renderHook(() => useTodayData());
 
@@ -48,14 +53,14 @@ describe('useTodayData', () => {
     expect(result.current.stale).toBe(false);
 
     // Verificar se salvou no cache
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+    expect(mockedAsyncStorage.setItem).toHaveBeenCalledWith(
       '@dosiq/today-snapshot',
       expect.stringContaining('"localDay"')
     );
   }, 10000);
 
   it('fails online and loads from cache (stale mode)', async () => {
-    supabase.auth.getSession.mockRejectedValue(new Error('Network error'));
+    mockedSupabase.auth.getSession.mockRejectedValue(new Error('Network error'));
     
     const mockCache = {
       protocols: [{ id: 'p1' }],
@@ -64,7 +69,7 @@ describe('useTodayData', () => {
       capturedAt: new Date().toISOString(),
       localDay: new Date().toISOString().split('T')[0]
     };
-    AsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockCache));
+    mockedAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockCache));
 
     const { result } = renderHook(() => useTodayData());
 
@@ -75,8 +80,8 @@ describe('useTodayData', () => {
   }, 20000);
 
   it('returns error when both online and cache fail', async () => {
-    supabase.auth.getSession.mockRejectedValue(new Error('Network error'));
-    AsyncStorage.getItem.mockResolvedValue(null);
+    mockedSupabase.auth.getSession.mockRejectedValue(new Error('Network error'));
+    mockedAsyncStorage.getItem.mockResolvedValue(null);
 
     const { result } = renderHook(() => useTodayData());
 
