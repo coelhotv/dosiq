@@ -11,4 +11,5 @@ async function getUserId() {
   return userId
 }
 
-export const measuresRepo = createBiomarkerRepository({ client: supabase, getUserId })
+// TODO(040-strict): supabase client local não tipado como Database (nível B)
+export const measuresRepo = createBiomarkerRepository({ client: supabase as any, getUserId })
