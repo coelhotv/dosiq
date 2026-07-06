@@ -1,4 +1,34 @@
 {
   "extends": ["expo/tsconfig.base", "../../tsconfig.base.json"],
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@features/*": ["./src/features/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@schemas/*": ["./src/schemas/*"],
+      "@adherence/*": ["./src/features/adherence/*"],
+      "@medications/*": ["./src/features/medications/*"],
+      "@protocols/*": ["./src/features/protocols/*"],
+      "@stock/*": ["./src/features/stock/*"],
+      "@dashboard/*": ["./src/features/dashboard/*"],
+      "@navigation/*": ["./src/navigation/*"],
+      "@platform/*": ["./src/platform/*"],
+      "@profile/*": ["./src/features/profile/*"],
+      "@notifications/*": ["./src/features/notifications/*"],
+      "@treatments/*": ["./src/features/treatments/*"],
+      "@dose/*": ["./src/features/dose/*"],
+      "@history/*": ["./src/features/history/*"],
+      "@measures/*": ["./src/features/measures/*"],
+      "@dosiq/core": ["../../packages/core/src"],
+      "@dosiq/core/*": ["../../packages/core/src/*"],
+      "@dosiq/shared-data": ["../../packages/shared-data/src"],
+      "@dosiq/shared-data/*": ["../../packages/shared-data/src/*"],
+      "@dosiq/storage": ["../../packages/storage/src"],
+      "@dosiq/storage/*": ["../../packages/storage/src/*"],
+      "@dosiq/config": ["../../packages/config/src"],
+      "@dosiq/config/*": ["../../packages/config/src/*"]
+    }
+  },
   "include": ["src"]
 }

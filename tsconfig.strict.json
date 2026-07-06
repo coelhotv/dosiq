@@ -3,12 +3,14 @@
   "compilerOptions": {
     "strictNullChecks": true,
     "noImplicitAny": true,
-    "baseUrl": ".",
     "paths": {
-      "@shared/*": ["apps/web/src/shared/*"],
-      "@utils/*": ["apps/web/src/utils/*"],
-      "@dosiq/core": ["packages/core/src"],
-      "@dosiq/core/*": ["packages/core/src/*"]
+      "@shared/*": ["./apps/web/src/shared/*", "./apps/mobile/src/shared/*"],
+      "@utils/*": ["./apps/web/src/utils/*"],
+      "@platform/*": ["./apps/mobile/src/platform/*"],
+      "@dosiq/core": ["./packages/core/src"],
+      "@dosiq/core/*": ["./packages/core/src/*"],
+      "@dosiq/shared-data": ["./packages/shared-data/src"],
+      "@dosiq/shared-data/*": ["./packages/shared-data/src/*"]
     }
   },
   "include": [
@@ -17,6 +19,7 @@
     "packages/core/src/services/**/*",
     "packages/core/src/schemas/**/*",
     "server/notifications/**/*",
-    "apps/web/src/shared/hooks/**/*"
+    "apps/web/src/shared/hooks/**/*",
+    "apps/mobile/src/shared/hooks/**/*"
   ]
 }

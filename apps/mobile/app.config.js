@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.24.5' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.24.6' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -126,6 +126,7 @@ module.exports = {
           // (android/app), onde o allprojects avalia a url → sobe 4 níveis até o
           // repo-root node_modules (monorepo hoisted), portável.
           extraMavenRepos: ['../../../../node_modules/@notifee/react-native/android/libs'],
+          useLegacyPackaging: true,
         },
       }],
       [

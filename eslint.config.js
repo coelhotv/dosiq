@@ -25,6 +25,7 @@ export default [
     '**/scratch/**',
     '**/__tests__/**',
     '**/.agent/**',
+    '**/.claude/**',
     '**/plans/**',
   ] },
   {

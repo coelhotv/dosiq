@@ -68,13 +68,23 @@
     "previous_session_note": "043 notify-improvements permanece 'planned' (plan.md/tasks.md prontos no spec dir); retomar via planning/coding quando invocado",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": []
+    "ceremony_scope_decisions": [],
+    "ai_review": {
+      "engine": "agy",
+      "status": "clean",
+      "pr": 721,
+      "critical": 0,
+      "high": 1,
+      "introduced_critical": 0,
+      "introduced_high": 0,
+      "note": "Single-pass agy test (pre-refinement prompt). agy HIGH=DoseListItem is introduced:false (pre-existing crash; true arg was dead — verified callee). 0 introduced critical/high => merge not blocked by RC6. Benchmarked vs Gemini official; drove SKILL RC6 Extensions #6/#7/#8 + full-file ctx + introduced/causation schema + tier-scaled multi-pass."
+    }
   },
   "memory": {
     "last_distillation": "2026-07-04T00:51:43.000Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 10,
     "rules_count": 234,
-    "anti_patterns_count": 261,
+    "anti_patterns_count": 262,
     "decisions_count": 78,
     "contracts_count": 30,
     "distillation_due": false

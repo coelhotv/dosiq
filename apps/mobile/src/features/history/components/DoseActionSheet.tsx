@@ -1,0 +1,1049 @@
+import React, { useState, useMemo, useEffect, startTransition } from 'react'
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  Pressable,
+  TextInput,
+  Platform,
+  StyleSheet,
+  StatusBar,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, INJECTION_SITES, getInjectionSiteLabel, getInjectionSiteAbsorption } from '@dosiq/core'
+// TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
+import * as LucideIcons from 'lucide-react-native'
+const { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } = LucideIcons as any
+import { getLastInjectionSite } from '@dose/services/doseService'
+import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+
+const DEFAULT_TZ = 'America/Sao_Paulo'
+
+const STATUS_META = {
+  taken:        { label: 'Tomada',   color: colors.brand.primary,  bg: colors.primary[100] },
+  missed:       { label: 'Perdida',  color: colors.status.error,   bg: colors.status.errorLight },
+  pending:      { label: 'Pendente', color: colors.neutral[600],   bg: colors.neutral[100] },
+  skipped_user: { label: 'Pulada',   color: colors.neutral[500],   bg: colors.neutral[100] },
+}
+
+function StatusHeaderIcon({ status, size = 28 }) {
+  if (status === 'taken')        return <CircleCheckBig size={size} color={colors.brand.primary} strokeWidth={2} />
+  if (status === 'missed')       return <XCircle size={size} color={colors.status.error} strokeWidth={2} />
+  if (status === 'skipped_user') return <RedoDot size={size} color={colors.neutral[400]} strokeWidth={2} />
+  return <Clock size={size} color={colors.neutral[400]} strokeWidth={2} />
+}
+
+function formatInTz(isoStr, tz) {
+  if (!isoStr) return '--:--'
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: tz,
+      weekday: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(parseISO(isoStr))
+  } catch {
+    const d = parseISO(isoStr)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+  }
+}
+
+function formatTimeInTz(isoStr, tz) {
+  if (!isoStr) return '--:--'
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(parseISO(isoStr))
+  } catch {
+    const d = parseISO(isoStr)
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${hh}:${min}`
+  }
+}
+
+function formatDateObj(d) {
+  if (!d) return ''
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm} às ${hh}:${min}`
+}
+
+function punctualityLabel(takenAt, scheduledFor) {
+  if (!takenAt || !scheduledFor) return null
+  const diffMin = Math.round((parseISO(takenAt).getTime() - parseISO(scheduledFor).getTime()) / 60000)
+  if (Math.abs(diffMin) <= 5) return { text: 'No horário', color: colors.brand.primary }
+  if (diffMin > 0) return { text: `+${diffMin} min · Atrasado`, color: colors.status.warning }
+  return { text: `${diffMin} min · No horário`, color: colors.brand.primary }
+}
+
+function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, punctuality, onEditPress, onDeletePress }) {
+  return (
+    <>
+      <View style={styles.infoCard}>
+        {isOrphan ? (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Horário registrado</Text>
+            <Text style={styles.infoValue}>{takenTime}</Text>
+          </View>
+        ) : (
+          <>
+            {isTaken && instance?.taken_at && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tomada em</Text>
+                <Text style={styles.infoValue}>{takenTime}</Text>
+              </View>
+            )}
+            <View style={[styles.infoRow, isTaken && instance?.taken_at && styles.infoRowBorder]}>
+              <Text style={styles.infoLabel}>Horário previsto</Text>
+              <Text style={styles.infoValue}>{scheduledTime}</Text>
+            </View>
+            {punctuality && (
+              <View style={[styles.infoRow, styles.infoRowBorder]}>
+                <Text style={styles.infoLabel}>Pontualidade</Text>
+                <Text style={[styles.infoValue, { color: punctuality.color }]}>{punctuality.text}</Text>
+              </View>
+            )}
+          </>
+        )}
+        {instance?.injection_site && (
+          <View style={[styles.infoRow, styles.infoRowBorder]}>
+            <Text style={styles.infoLabel}>Local de aplicação</Text>
+            <View style={styles.siteValueRow}>
+              <LocateFixed size={13} color={colors.text.secondary} strokeWidth={2} />
+              <Text style={styles.infoValue}>{getInjectionSiteLabel(instance.injection_site)}</Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.actionsCard}>
+        <TouchableOpacity style={styles.actionRow} onPress={onEditPress} activeOpacity={0.7}>
+          <View style={[styles.actionIcon, { backgroundColor: colors.primary[100] }]}>
+            <Clock size={18} color={colors.brand.primary} strokeWidth={2} />
+          </View>
+          <View style={styles.actionBody}>
+            <Text style={styles.actionTitle}>Editar registro</Text>
+            <Text style={styles.actionDesc}>Ajustar a hora ou a dose que você efetivamente tomou</Text>
+          </View>
+          <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
+        </TouchableOpacity>
+
+        {isTaken && (
+          <TouchableOpacity
+            style={[styles.actionRow, styles.actionRowBorder]}
+            onPress={onDeletePress}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: colors.status.errorLight }]}>
+              <Trash2 size={18} color={colors.status.error} strokeWidth={2} />
+            </View>
+            <View style={styles.actionBody}>
+              <Text style={[styles.actionTitle, { color: colors.status.error }]}>Excluir registro</Text>
+              <Text style={styles.actionDesc}>A dose volta para pendente — útil se foi um engano</Text>
+            </View>
+            <ChevronRight size={16} color={colors.neutral[400]} strokeWidth={1.5} />
+          </TouchableOpacity>
+        )}
+      </View>
+    </>
+  )
+}
+
+/**
+ * Seletor de sítio de injeção na edição (031-B/FR-011). Renderiza para QUALQUER
+ * status de dose injetável — inclusive `missed`/`pending`: editar uma perdida
+ * registra retroativamente com o sítio (paciente sem app/conexão na hora). Opcional,
+ * não-bloqueante; inclui hint educacional de absorção (não-SaMD, ADR-062).
+ */
+function SheetSitePicker({ value, onChange, disabled, lastInjectionSite }) {
+  const absorption = getInjectionSiteAbsorption(value)
+  // US3: selecionar = último global → alerta NÃO-bloqueante (salvar nunca travado).
+  const repeated = value && lastInjectionSite && value === lastInjectionSite
+  return (
+    <View style={styles.formGroup}>
+      <Text style={styles.label}>Local de aplicação (opcional)</Text>
+      {lastInjectionSite && (
+        <Text style={styles.siteLast}>
+          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
+        </Text>
+      )}
+      <View style={styles.siteChips}>
+        {INJECTION_SITES.map((site) => {
+          const isSel = value === site.value
+          return (
+            <Pressable
+              key={site.value}
+              style={[styles.siteChip, isSel && styles.siteChipSelected]}
+              onPress={() => onChange(isSel ? null : site.value)}
+              disabled={disabled}
+            >
+              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
+                {site.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+      {repeated && (
+        <View style={styles.siteAlert} accessibilityRole="alert">
+          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
+          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
+        </View>
+      )}
+      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
+    </View>
+  )
+}
+
+function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, onChangeSite, lastInjectionSite, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
+  const injectable = isInjectable(instance)
+  return (
+    <View style={styles.formView}>
+      <Text style={styles.formTitle}>Editar registro</Text>
+
+      <Pressable
+        style={styles.retroRow}
+        onPress={onPickerPress}
+        accessibilityRole="button"
+        accessibilityLabel="Alterar horário de registro"
+      >
+        <View style={styles.retroTextCol}>
+          <Text style={styles.retroLabel}>Horário da dose</Text>
+          <Text style={styles.retroValue}>
+            {takenAtDate ? formatDateObj(takenAtDate) : 'Toque para definir'}
+          </Text>
+        </View>
+        <Calendar size={18} color={colors.primary[700]} strokeWidth={2} />
+      </Pressable>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Quantidade (unidades)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: 1"
+          value={quantityTaken}
+          onChangeText={onChangeQty}
+          keyboardType="decimal-pad"
+          editable={!loading}
+          maxLength={10}
+        />
+        {instance?.dosage_per_pill && instance?.dosage_unit && (
+          <Text style={styles.inputHint}>
+            ✨ {isLiquidMedicine(instance)
+              ? formatIntakeDose(quantityTaken || '1', instance.intake_unit, instance)
+              : formatActiveIngredientFormula(quantityTaken || '1', instance.dosage_per_pill, instance.dosage_unit)}
+          </Text>
+        )}
+      </View>
+
+      {injectable && (
+        <SheetSitePicker
+          value={injectionSite}
+          onChange={onChangeSite}
+          disabled={loading}
+          lastInjectionSite={lastInjectionSite}
+        />
+      )}
+
+      <TouchableOpacity
+        style={[styles.primaryButton, loading && styles.buttonDisabled]}
+        onPress={onSave}
+        disabled={loading}
+      >
+        {loading
+          ? <ActivityIndicator size="small" color={colors.text.inverse} />
+          : <Text style={styles.primaryButtonText}>Salvar</Text>
+        }
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.ghostButton} onPress={onCancel} disabled={loading}>
+        <Text style={styles.ghostButtonText}>Cancelar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function SheetDeleteView({ isOrphan, loading, onConfirm, onCancel }) {
+  return (
+    <View style={styles.formView}>
+      <View style={styles.deleteWarning}>
+        <AlertTriangle size={20} color={colors.status.error} strokeWidth={2} />
+        <Text style={styles.deleteWarningText}>
+          {isOrphan
+            ? 'Excluir este registro? O registro será removido e o estoque restaurado.'
+            : 'Excluir este registro? A dose volta para pendente e o estoque será restaurado.'}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.deleteButton, loading && styles.buttonDisabled]}
+        onPress={onConfirm}
+        disabled={loading}
+      >
+        {loading
+          ? <ActivityIndicator size="small" color={colors.text.inverse} />
+          : <Text style={styles.deleteButtonText}>Confirmar exclusão</Text>
+        }
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.ghostButton} onPress={onCancel} disabled={loading}>
+        <Text style={styles.ghostButtonText}>Cancelar</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function openAndroidPicker(currentDate, onDatePicked) {
+  DateTimePickerAndroid.open({
+    value: currentDate,
+    mode: 'date',
+    onChange: (event, date) => {
+      if (event.type !== 'set' || !date) return
+      DateTimePickerAndroid.open({
+        value: currentDate,
+        mode: 'time',
+        onChange: (timeEvent, timeDate) => {
+          if (timeEvent.type !== 'set' || !timeDate) return
+          const combined = cloneDate(date)
+          combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0)
+          onDatePicked(combined)
+        },
+      })
+    },
+  })
+}
+
+function DoseActionSheetHeader({ instance, medicineName, hasPill, statusMeta, onClose }) {
+  return (
+    <View style={styles.header}>
+      <StatusHeaderIcon status={instance?.status} size={28} />
+      <View style={styles.headerBody}>
+        <View style={styles.headerNameRow}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{medicineName}</Text>
+          <View style={[styles.statusChip, { backgroundColor: statusMeta.bg }]}>
+            <Text style={[styles.statusChipText, { color: statusMeta.color }]}>{statusMeta.label}</Text>
+          </View>
+          {hasPill && (
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>{formatConcentration(instance.dosage_per_pill, instance.dosage_unit)}</Text>
+            </View>
+          )}
+        </View>
+        {instance?.dosage_per_intake != null && (
+          <Text style={styles.headerSub}>
+            {(() => {
+              const qty = instance.dosage_per_intake
+              if (isLiquidMedicine(instance)) return formatDose(qty, instance.intake_unit || 'ml')
+              const unit = instance.dosage_unit?.toLowerCase()
+              if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
+              if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
+              return `${qty} ${instance.dosage_unit}`
+            })()}
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity
+        onPress={onClose}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel="Fechar"
+      >
+        <X size={20} color={colors.text.secondary} />
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+function DoseIOSDatePickerModal({ visible, tempDate, setTempDate, onCancel, onConfirm }) {
+  if (Platform.OS !== 'ios' || !visible) return null
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={onCancel} />
+      <View style={styles.pickerSheet}>
+        <SafeAreaView edges={['bottom']}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+            <Text style={styles.pickerTitle}>Ajustar horário</Text>
+            <TouchableOpacity onPress={onConfirm} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.pickerConfirmText}>Confirmar</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            mode="datetime"
+            display="spinner"
+            value={tempDate || getNow()}
+            onChange={(_, date) => { if (date) setTempDate(date) }}
+            locale="pt-BR"
+            textColor={colors.text.primary}
+            themeVariant="light"
+          />
+        </SafeAreaView>
+      </View>
+    </Modal>
+  )
+}
+
+function useDoseActionSheetState({
+  visible,
+  instance,
+  isOrphan,
+  onUpdateLog,
+  onRegisterRetro,
+  onUndo,
+  onDeleteLog,
+  onClose,
+}) {
+  const [view, setView] = useState('main')
+  const [takenAtDate, setTakenAtDate] = useState(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [tempDate, setTempDate] = useState(null)
+  const [quantityTaken, setQuantityTaken] = useState('')
+  const [injectionSite, setInjectionSite] = useState(null)
+  const [lastInjectionSite, setLastInjectionSite] = useState(null)
+
+  const {
+    logId,
+    medicine_id,
+    protocol_id,
+    instanceId,
+    quantity_taken,
+    dosage_per_intake,
+    taken_at,
+    scheduled_for,
+    injection_site,
+  } = instance || {}
+
+  useEffect(() => {
+    if (visible && instance) {
+      startTransition(() => {
+        setView('main')
+        setShowDatePicker(false)
+        const src = taken_at || scheduled_for
+        setTakenAtDate(src ? parseISO(src) : getNow())
+        setQuantityTaken(String(quantity_taken ?? dosage_per_intake ?? 1))
+        setInjectionSite(injection_site ?? null)
+      })
+    }
+  }, [visible, instance, taken_at, scheduled_for, quantity_taken, dosage_per_intake, injection_site])
+
+  // US2: último sítio GLOBAL p/ exibir + alerta de repetição na edição. Best-effort.
+  // Sem reset síncrono: o picker só renderiza p/ injetável e o fetch sobrescreve.
+  useEffect(() => {
+    let alive = true
+    if (visible && isInjectable(instance)) {
+      getLastInjectionSite().then((s) => { if (alive) setLastInjectionSite(s) })
+    }
+    return () => { alive = false }
+  }, [visible, instance])
+
+  function handleOpenPicker() {
+    if (Platform.OS === 'android') {
+      openAndroidPicker(takenAtDate || getNow(), setTakenAtDate)
+    } else {
+      setTempDate(takenAtDate || getNow())
+      setShowDatePicker(true)
+    }
+  }
+
+  function handleIOSConfirm() {
+    if (tempDate) setTakenAtDate(tempDate)
+    setShowDatePicker(false)
+  }
+
+  const handleSaveEdit = () => {
+    if (!takenAtDate || !quantityTaken) return
+    const parsedQty = parseFloat(String(quantityTaken).replace(',', '.'))
+    if (isNaN(parsedQty)) return
+    // Sítio só relevante p/ injetável; oral mantém null (não polui o log).
+    const site = isInjectable(instance) ? (injectionSite ?? null) : null
+    const payload = {
+      taken_at: takenAtDate.toISOString(),
+      quantity_taken: parsedQty,
+      injection_site: site,
+    }
+    // Dose com log de apoio (órfã OU agendada já tomada) → UPDATE atômico (não re-registrar:
+    // register_dose_atomic rejeita duplicata com P0001). Sem logId (pending/missed) → registro
+    // retroativo. AP — editar tomada não-órfã caía no registerRetro e batia em "Ocorrência já registrada".
+    if (logId) {
+      onUpdateLog?.(logId, payload)
+    } else {
+      onRegisterRetro?.(
+        {
+          ...payload,
+          medicine_id,
+          protocol_id,
+        },
+        instanceId
+      )
+    }
+    onClose?.()
+  }
+
+  const handleDelete = () => {
+    if (isOrphan) {
+      onDeleteLog?.(logId)
+    } else {
+      onUndo?.(instanceId)
+    }
+    onClose?.()
+  }
+
+  return {
+    view,
+    setView,
+    takenAtDate,
+    showDatePicker,
+    setShowDatePicker,
+    tempDate,
+    setTempDate,
+    quantityTaken,
+    setQuantityTaken,
+    injectionSite,
+    setInjectionSite,
+    lastInjectionSite,
+    handleOpenPicker,
+    handleIOSConfirm,
+    handleSaveEdit,
+    handleDelete,
+  }
+}
+
+export default function DoseActionSheet({
+  visible,
+  instance,
+  timezone = DEFAULT_TZ,
+  onClose,
+  onRegisterRetro,
+  onUndo,
+  onUpdateLog,
+  onDeleteLog,
+  loading = false,
+}) {
+  const {
+    source,
+    is_orphan,
+  } = instance || {}
+
+  const isOrphan = source === 'log' || !!is_orphan
+
+  const {
+    medicineName,
+    hasPill,
+    scheduledTime,
+    takenTime,
+    punctuality,
+    isTaken,
+    statusMeta,
+  } = useMemo(() => {
+    if (!instance) {
+      return {
+        medicineName: '—',
+        hasPill: false,
+        scheduledTime: '',
+        takenTime: '',
+        punctuality: null,
+        isTaken: false,
+        statusMeta: STATUS_META.pending,
+      }
+    }
+    const name = instance.medicine_name || instance.protocol_name || '—'
+    const pill = instance.dosage_per_pill != null && instance.dosage_unit
+    const sTime = formatTimeInTz(instance.scheduled_for, timezone)
+    const tTime = formatInTz(instance.taken_at, timezone)
+    const punct = instance.taken_at && !isOrphan ? punctualityLabel(instance.taken_at, instance.scheduled_for) : null
+    const taken = instance.status === 'taken'
+    const meta = STATUS_META[instance.status] ?? STATUS_META.pending
+    return {
+      medicineName: name,
+      hasPill: pill,
+      scheduledTime: sTime,
+      takenTime: tTime,
+      punctuality: punct,
+      isTaken: taken,
+      statusMeta: meta,
+    }
+  }, [instance, timezone, isOrphan])
+
+  const {
+    view,
+    setView,
+    takenAtDate,
+    showDatePicker,
+    setShowDatePicker,
+    tempDate,
+    setTempDate,
+    quantityTaken,
+    setQuantityTaken,
+    injectionSite,
+    setInjectionSite,
+    lastInjectionSite,
+    handleOpenPicker,
+    handleIOSConfirm,
+    handleSaveEdit,
+    handleDelete,
+  } = useDoseActionSheetState({
+    visible,
+    instance,
+    isOrphan,
+    onUpdateLog,
+    onRegisterRetro,
+    onUndo,
+    onDeleteLog,
+    onClose,
+  })
+
+  const statusBarHeight = StatusBar.currentHeight || 24
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
+      <TouchableOpacity
+        style={[styles.overlay, { paddingTop: statusBarHeight }]}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.sheet}>
+          <View style={styles.handle} />
+
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            scrollEnabled={view !== 'main'}
+            keyboardShouldPersistTaps="handled"
+          >
+            <DoseActionSheetHeader
+              instance={instance}
+              medicineName={medicineName}
+              hasPill={hasPill}
+              statusMeta={statusMeta}
+              onClose={onClose}
+            />
+
+            {view === 'main' && (
+              <SheetMainView
+                instance={instance}
+                isTaken={isTaken}
+                isOrphan={isOrphan}
+                takenTime={takenTime}
+                scheduledTime={scheduledTime}
+                punctuality={punctuality}
+                onEditPress={() => setView('edit')}
+                onDeletePress={() => setView('confirm_delete')}
+              />
+            )}
+
+            {view === 'edit' && (
+              <SheetEditView
+                instance={instance}
+                takenAtDate={takenAtDate}
+                quantityTaken={quantityTaken}
+                injectionSite={injectionSite}
+                onChangeSite={setInjectionSite}
+                lastInjectionSite={lastInjectionSite}
+                loading={loading}
+                onPickerPress={handleOpenPicker}
+                onChangeQty={setQuantityTaken}
+                onSave={handleSaveEdit}
+                onCancel={() => setView('main')}
+              />
+            )}
+
+            {view === 'confirm_delete' && (
+              <SheetDeleteView
+                isOrphan={isOrphan}
+                loading={loading}
+                onConfirm={handleDelete}
+                onCancel={() => setView('main')}
+              />
+            )}
+          </ScrollView>
+        </TouchableOpacity>
+      </TouchableOpacity>
+
+      <DoseIOSDatePickerModal
+        visible={showDatePicker}
+        tempDate={tempDate}
+        setTempDate={setTempDate}
+        onCancel={() => setShowDatePicker(false)}
+        onConfirm={handleIOSConfirm}
+      />
+    </Modal>
+  )
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: colors.bg.overlay,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.bg.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+    flexShrink: 1,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.neutral[300],
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 2,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  headerBody: {
+    flex: 1,
+    gap: 2,
+  },
+  headerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    flexWrap: 'wrap',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+    flexShrink: 1,
+  },
+  statusChip: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  pill: {
+    backgroundColor: colors.neutral[100],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: colors.neutral[300],
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.neutral[700],
+  },
+  headerSub: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
+  infoCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: colors.bg.screen,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  infoRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
+  infoValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.primary,
+    flexShrink: 1,
+    textAlign: 'right',
+    marginLeft: 8,
+  },
+  actionsCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: colors.bg.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    overflow: 'hidden',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  actionRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionBody: {
+    flex: 1,
+    gap: 2,
+  },
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  actionDesc: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    lineHeight: 16,
+  },
+  formView: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    gap: 0,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 16,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.text.primary,
+    backgroundColor: colors.bg.screen,
+  },
+  inputHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: 4,
+  },
+  siteChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  siteChip: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.screen,
+  },
+  siteChipSelected: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.primary[50],
+  },
+  siteChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  siteChipTextSelected: {
+    color: colors.primary[700],
+  },
+  siteHint: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  siteLast: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginBottom: 8,
+  },
+  siteLastValue: {
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  siteAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.status.warningLight,
+  },
+  siteAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.status.warning,
+  },
+  siteValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 1,
+  },
+  retroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.bg.screen,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+    marginBottom: 16,
+  },
+  retroTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  retroLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+  retroValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primary[700],
+  },
+  pickerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bg.overlay,
+  },
+  pickerSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.bg.card,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  pickerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  pickerCancelText: {
+    fontSize: 15,
+    color: colors.text.secondary,
+  },
+  pickerConfirmText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.brand.primary,
+  },
+  primaryButton: {
+    backgroundColor: colors.brand.primary,
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  primaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text.inverse,
+  },
+  deleteButton: {
+    backgroundColor: colors.status.error,
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  deleteButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text.inverse,
+  },
+  ghostButton: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ghostButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  deleteWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: colors.status.errorLight,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  deleteWarningText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.status.error,
+    lineHeight: 18,
+  },
+})
