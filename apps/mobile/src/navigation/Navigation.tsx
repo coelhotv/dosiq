@@ -244,7 +244,7 @@ export default function Navigation() {
             <Stack.Screen
               name={ROUTES.ALARM_FULLSCREEN}
               component={AlarmFullScreen}
-              options={{ presentation: 'fullScreenModal' as any, gestureEnabled: false }}
+              options={{ presentation: 'modal', gestureEnabled: false }}
             />
             {/* Chat IA full-screen (spec 015 onda 2) — header próprio na tela */}
             <Stack.Screen name={ROUTES.CHAT} component={ChatScreen} />
