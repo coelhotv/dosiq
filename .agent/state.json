@@ -2,9 +2,21 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "distillation",
+    "mode": "planning",
     "ceremony_type": null,
-    "status": "distilled",
+    "status": "planned",
+    "plan": "plans/specs/046-lgpd-consent/plan.md",
+    "tasks": "plans/specs/046-lgpd-consent/tasks.md",
+    "goal": "Tese 2026 — specs Fase 1 (046 lgpd-consent NOVA + adendo 008 export mobile) e Fase 2 (044 planned, 029 re-specified, 047 review-prompt NOVA, 048 landing-glp1 NOVA)",
+    "goal_type": "feature",
+    "spec_dirs": [
+      "plans/specs/046-lgpd-consent",
+      "plans/specs/044-dose-only-mode",
+      "plans/specs/029-treatment-level-titration",
+      "plans/specs/047-inapp-review-prompt",
+      "plans/specs/048-landing-glp1",
+      "plans/specs/008-complete-data-export-lgpd"
+    ],
     "merged_pr": 725,
     "merged_squash": "2b8e2ed8",
     "merged_history": [
@@ -87,7 +99,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-06T22:29:20.000Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 5,
     "rules_count": 233,
     "anti_patterns_count": 164,
     "decisions_count": 79,
