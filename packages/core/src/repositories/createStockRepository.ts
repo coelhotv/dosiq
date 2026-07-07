@@ -46,7 +46,9 @@ interface CreateStockRepositoryDeps {
  */
 // NOTA: factory excede max-lines-per-function por agregar os métodos de estoque
 // num único objeto (pattern canônico de createProtocolRepository). Warning aceito (R-221 SQP).
-export function createStockRepository({ client, getUserId }: CreateStockRepositoryDeps) {
+// Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
+// inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
+export function createStockRepository({ client, getUserId }: CreateStockRepositoryDeps): Record<string, (...args: any[]) => Promise<any>> {
   if (!client) throw new Error('createStockRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createStockRepository: getUserId deve ser função async')

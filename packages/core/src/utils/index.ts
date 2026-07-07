@@ -19,6 +19,7 @@ export {
   getRawNow,
   getServerTimestamp,
   parseISO,
+  parseISOOrNull,
   getSaoPauloTime,
   getUserTime,
   getStartOfDayISO,

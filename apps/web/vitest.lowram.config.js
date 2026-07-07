@@ -14,11 +14,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       pool: 'forks',
-      poolOptions: {
-        forks: {
-          singleFork: true,
-        },
-      },
+      fileParallelism: false,
 
       testTimeout: 15000,
 

@@ -272,7 +272,11 @@ async function getLastInjectionSite({ client, getUserId }: Pick<DoseLogDeps, 'cl
   return data?.injection_site ?? null
 }
 
-/** Factory do serviço de registro e controle de doses. */
+/**
+ * Factory do serviço de registro e controle de doses.
+ * Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
+ * inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
+ */
 export function createDoseLogService({
   client,
   getUserId,
@@ -281,7 +285,7 @@ export function createDoseLogService({
   client: Client
   getUserId: GetUserId
   platform?: string | null
-}) {
+}): Record<string, (...args: any[]) => Promise<any>> {
   if (!client) throw new Error('createDoseLogService: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createDoseLogService: getUserId deve ser função async')

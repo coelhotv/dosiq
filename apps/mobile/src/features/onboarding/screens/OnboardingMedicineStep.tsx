@@ -137,7 +137,6 @@ export default function OnboardingMedicineStep() {
             search={search}
             getItemSubtitle={anvisaSubtitle}
             onSelect={handleAnvisaSelect}
-            helperText={undefined}
             disabled={false}
           />
 
@@ -185,8 +184,6 @@ export default function OnboardingMedicineStep() {
           primaryLabel="Continuar"
           onPrimary={handleContinue}
           primaryLoading={false}
-          secondaryLabel={undefined}
-          onSecondary={undefined}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
