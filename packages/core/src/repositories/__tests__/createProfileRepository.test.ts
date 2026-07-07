@@ -76,7 +76,7 @@ describe('createProfileRepository — parity', () => {
       const calls = client._builder._calls.map((c: any) => c[0])
       expect(calls).toContain('select')
       expect(calls).toContain('maybeSingle')
-      expect(client._builder._calls.find((c: any) => c[0] === 'eq')[1]).toEqual(['user_id', FAKE_USER])
+      expect(client._builder._calls.find((c: any) => c[0] === 'eq')?.[1]).toEqual(['user_id', FAKE_USER])
       expect(out.display_name).toBe('Antonio')
     })
 

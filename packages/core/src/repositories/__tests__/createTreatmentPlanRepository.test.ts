@@ -207,8 +207,8 @@ describe('createTreatmentPlanRepository — parity', () => {
       await repoWeb.create(VALID_PLAN)
       await repoMob.create(VALID_PLAN)
 
-      const webInsert = clientWeb._builder._calls.find(([m]: any) => m === 'insert')[1][0][0]
-      const mobInsert = clientMob._builder._calls.find(([m]: any) => m === 'insert')[1][0][0]
+      const webInsert = clientWeb._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
+      const mobInsert = clientMob._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
       expect(webInsert).toEqual(mobInsert)
     })
 
@@ -221,8 +221,8 @@ describe('createTreatmentPlanRepository — parity', () => {
       await repoWeb.update('id-1', { name: 'Atualizado' })
       await repoMob.update('id-1', { name: 'Atualizado' })
 
-      const webUpdate = clientWeb._builder._calls.find(([m]: any) => m === 'update')[1][0]
-      const mobUpdate = clientMob._builder._calls.find(([m]: any) => m === 'update')[1][0]
+      const webUpdate = clientWeb._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
+      const mobUpdate = clientMob._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
       expect(webUpdate).toEqual(mobUpdate)
     })
   })
