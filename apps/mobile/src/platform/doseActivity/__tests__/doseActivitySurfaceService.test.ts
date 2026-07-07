@@ -46,8 +46,11 @@ const doseItem = {
   scheduledTime: '17:00',
 }
 
+const mockedDisplayNotification = notifee.displayNotification as jest.Mock
+const mockedGetDisplayedNotifications = notifee.getDisplayedNotifications as jest.Mock
+
 function lastDisplay() {
-  return notifee.displayNotification.mock.calls.at(-1)[0]
+  return mockedDisplayNotification.mock.calls.at(-1)[0]
 }
 
 describe('showDoseActivity — canal + estados', () => {
@@ -200,19 +203,19 @@ describe('showDoseActivity — modo discreto (PO-SEC-1) + payload', () => {
 
 describe('readSurfaceLabel — auto-gate do card done', () => {
   it('superfície 039 ativa (__surface) → retorna medicineName', async () => {
-    notifee.getDisplayedNotifications.mockResolvedValueOnce([
+    mockedGetDisplayedNotifications.mockResolvedValueOnce([
       { id: 'inst-1:surface', notification: { id: 'inst-1:surface', data: { __surface: 'true', medicineName: 'Lantus' } } },
     ])
     expect(await readSurfaceLabel('inst-1')).toBe('Lantus')
   })
 
   it('nenhuma notif com o id → null', async () => {
-    notifee.getDisplayedNotifications.mockResolvedValueOnce([])
+    mockedGetDisplayedNotifications.mockResolvedValueOnce([])
     expect(await readSurfaceLabel('inst-1')).toBeNull()
   })
 
   it('notif do alarme (sem __surface) → null (não confunde com a superfície)', async () => {
-    notifee.getDisplayedNotifications.mockResolvedValueOnce([
+    mockedGetDisplayedNotifications.mockResolvedValueOnce([
       { id: 'inst-1:surface', notification: { id: 'inst-1:surface', data: { medicineName: 'Lantus' } } },
     ])
     expect(await readSurfaceLabel('inst-1')).toBeNull()

@@ -4,14 +4,16 @@
 import { syncAlarms } from '../useAlarmScheduler'
 import { alarmService } from '../alarmService'
 
+const mockedScheduleAlarm = alarmService.scheduleAlarm as jest.Mock
+
 const NOW = new Date('2026-03-05T12:00:00.000Z')
 
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({ supabase: {} }))
 
 jest.mock('../alarmService', () => ({
   alarmService: {
-    cancelAll: jest.fn().mockResolvedValue(),
-    scheduleAlarm: jest.fn().mockResolvedValue(),
+    cancelAll: jest.fn().mockResolvedValue(undefined),
+    scheduleAlarm: jest.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -20,7 +22,7 @@ jest.mock('@dosiq/core', () => ({
   createDoseInstanceRepository: () => ({ getWindow: jest.fn().mockResolvedValue([]) }),
   createCriticalAuditService: () => ({ emit: jest.fn().mockResolvedValue({ ok: true }) }),
   buildDoseItemsFromInstances: () => mockItems,
-  ensureInstancesUpTo: jest.fn().mockResolvedValue(),
+  ensureInstancesUpTo: jest.fn().mockResolvedValue(undefined),
   getRawNow: () => new Date('2026-03-05T12:00:00.000Z'),
   addDays: (d, n) => new Date(d.getTime() + n * 86400000),
   parseISO: (s) => new Date(s),
@@ -46,7 +48,7 @@ describe('syncAlarms — soneca re-armada no resync', () => {
 
     expect(alarmService.cancelAll).toHaveBeenCalled()
     expect(alarmService.scheduleAlarm).toHaveBeenCalledTimes(1)
-    const arg = alarmService.scheduleAlarm.mock.calls[0][0]
+    const arg = mockedScheduleAlarm.mock.calls[0][0]
     expect(arg.doseInstanceId).toBe('inst-1')
     expect(arg.fireAt).toBe(snoozedTs)
     expect(arg.scheduledFor).toBe('2026-03-05T11:00:00.000Z') // original preservado
@@ -55,7 +57,7 @@ describe('syncAlarms — soneca re-armada no resync', () => {
   it('snoozed_until no passado → NÃO trata como soneca (agenda normal, sem fireAt)', async () => {
     mockItems = [baseItem({ snoozedUntil: NOW.getTime() - 60000, scheduledFor: '2026-03-05T13:00:00.000Z' })]
     await syncAlarms({ userId: 'u1', protocols: [], tz: 'America/Sao_Paulo' })
-    const arg = alarmService.scheduleAlarm.mock.calls[0][0]
+    const arg = mockedScheduleAlarm.mock.calls[0][0]
     expect(arg.fireAt).toBeUndefined()
   })
 })

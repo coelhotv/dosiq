@@ -62,8 +62,8 @@ test('erro: onError chamado, error state definido, retorna undefined', async () 
 test('double-submit: segunda chamada retorna undefined, fn executada uma vez', async () => {
   const { result } = renderHook(() => useMutation())
 
-  let resolveFn
-  const slowFn = jest.fn(() => new Promise((r) => { resolveFn = r }))
+  let resolveFn: (value: string) => void
+  const slowFn = jest.fn(() => new Promise<string>((r) => { resolveFn = r }))
 
   let firstReturn
   let secondReturn

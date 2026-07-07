@@ -12,8 +12,16 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   },
 }))
 
+import type {
+  AuthError,
+  User,
+  AuthTokenResponsePassword,
+  AuthResponse,
+} from '@supabase/supabase-js'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { signInWithEmail, signUpWithEmail, sendPasswordReset, signOut } from '../authService'
+
+const mockedAuth = supabase.auth as jest.Mocked<typeof supabase.auth>
 
 describe('authService', () => {
   afterEach(() => {
@@ -34,19 +42,20 @@ describe('authService', () => {
     })
 
     it('retorna erro traduzido para credenciais inválidas', async () => {
-      supabase.auth.signInWithPassword.mockResolvedValue({
-        error: { message: 'Invalid login credentials' },
-      })
+      mockedAuth.signInWithPassword.mockResolvedValue({
+        data: { user: null, session: null },
+        error: { message: 'Invalid login credentials' } as AuthError,
+      } as AuthTokenResponsePassword)
       const result = await signInWithEmail('test@example.com', 'senhaerrada')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Email ou senha inválidos')
     })
 
     it('retorna success em login bem-sucedido', async () => {
-      supabase.auth.signInWithPassword.mockResolvedValue({
-        data: { user: { id: 'user-123' } },
+      mockedAuth.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'user-123' } as User, session: {} },
         error: null,
-      })
+      } as AuthTokenResponsePassword)
       const result = await signInWithEmail('test@example.com', 'Senha123!')
       expect(result.success).toBe(true)
       expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
@@ -56,7 +65,7 @@ describe('authService', () => {
     })
 
     it('trata erro de rede inesperado com fallback', async () => {
-      supabase.auth.signInWithPassword.mockRejectedValue(new Error('Network error'))
+      mockedAuth.signInWithPassword.mockRejectedValue(new Error('Network error'))
       const result = await signInWithEmail('test@example.com', 'Senha123!')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Erro inesperado ao fazer login')
@@ -89,22 +98,23 @@ describe('authService', () => {
     })
 
     it('retorna erro PT-BR quando email já está cadastrado', async () => {
-      supabase.auth.signUp.mockResolvedValue({
-        error: { message: 'User already registered' },
-      })
+      mockedAuth.signUp.mockResolvedValue({
+        data: { user: null, session: null },
+        error: { message: 'User already registered' } as AuthError,
+      } as AuthResponse)
       const result = await signUpWithEmail('test@example.com', 'Senha123!', 'Senha123!')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Email já cadastrado. Faça login.')
     })
 
     it('em produção usa emailRedirectTo https (Universal Link)', async () => {
-      const prevDev = global.__DEV__
-      global.__DEV__ = false
+      const prevDev = (global as unknown as { __DEV__: boolean }).__DEV__;
+      (global as unknown as { __DEV__: boolean }).__DEV__ = false
       try {
-        supabase.auth.signUp.mockResolvedValue({
-          data: { user: { id: 'user-456', email: 'novo@example.com' } },
+        mockedAuth.signUp.mockResolvedValue({
+          data: { user: { id: 'user-456', email: 'novo@example.com' } as User, session: {} },
           error: null,
-        })
+        } as AuthResponse)
         const result = await signUpWithEmail('novo@example.com', 'Senha123!', 'Senha123!')
         expect(result.success).toBe(true)
         expect(supabase.auth.signUp).toHaveBeenCalledWith({
@@ -113,18 +123,18 @@ describe('authService', () => {
           options: { emailRedirectTo: 'https://dosiq.app/auth/callback' },
         })
       } finally {
-        global.__DEV__ = prevDev
+        (global as unknown as { __DEV__: boolean }).__DEV__ = prevDev
       }
     })
 
     it('em dev usa o scheme dosiq:// (abre build de dev direto)', async () => {
-      const prevDev = global.__DEV__
-      global.__DEV__ = true
+      const prevDev = (global as unknown as { __DEV__: boolean }).__DEV__;
+      (global as unknown as { __DEV__: boolean }).__DEV__ = true
       try {
-        supabase.auth.signUp.mockResolvedValue({
-          data: { user: { id: 'user-789', email: 'dev@example.com' } },
+        mockedAuth.signUp.mockResolvedValue({
+          data: { user: { id: 'user-789', email: 'dev@example.com' } as User, session: {} },
           error: null,
-        })
+        } as AuthResponse)
         await signUpWithEmail('dev@example.com', 'Senha123!', 'Senha123!')
         expect(supabase.auth.signUp).toHaveBeenCalledWith({
           email: 'dev@example.com',
@@ -132,12 +142,12 @@ describe('authService', () => {
           options: { emailRedirectTo: 'dosiq://auth/callback' },
         })
       } finally {
-        global.__DEV__ = prevDev
+        (global as unknown as { __DEV__: boolean }).__DEV__ = prevDev
       }
     })
 
     it('trata erro de rede inesperado com fallback', async () => {
-      supabase.auth.signUp.mockRejectedValue(new Error('Network error'))
+      mockedAuth.signUp.mockRejectedValue(new Error('Network error'))
       const result = await signUpWithEmail('test@example.com', 'Senha123!', 'Senha123!')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Erro inesperado ao criar conta')
@@ -152,7 +162,7 @@ describe('authService', () => {
     })
 
     it('retorna success após envio de reset (Supabase não revela se email existe)', async () => {
-      supabase.auth.resetPasswordForEmail.mockResolvedValue({
+      mockedAuth.resetPasswordForEmail.mockResolvedValue({
         data: {},
         error: null,
       })
@@ -165,8 +175,9 @@ describe('authService', () => {
     })
 
     it('retorna erro traduzido para rate limit', async () => {
-      supabase.auth.resetPasswordForEmail.mockResolvedValue({
-        error: { message: 'rate limit exceeded' },
+      mockedAuth.resetPasswordForEmail.mockResolvedValue({
+        data: null,
+        error: { message: 'rate limit exceeded' } as AuthError,
       })
       const result = await sendPasswordReset('test@example.com')
       expect(result.success).toBe(false)
@@ -174,7 +185,7 @@ describe('authService', () => {
     })
 
     it('trata erro de rede inesperado com fallback', async () => {
-      supabase.auth.resetPasswordForEmail.mockRejectedValue(new Error('Network error'))
+      mockedAuth.resetPasswordForEmail.mockRejectedValue(new Error('Network error'))
       const result = await sendPasswordReset('test@example.com')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Erro inesperado ao enviar email de recuperação')
@@ -183,21 +194,21 @@ describe('authService', () => {
 
   describe('signOut', () => {
     it('retorna success em logout bem-sucedido', async () => {
-      supabase.auth.signOut.mockResolvedValue({ error: null })
+      mockedAuth.signOut.mockResolvedValue({ error: null })
       const result = await signOut()
       expect(result.success).toBe(true)
     })
 
     it('retorna failure quando Supabase retorna erro', async () => {
-      supabase.auth.signOut.mockResolvedValue({
-        error: { message: 'Logout failed' },
+      mockedAuth.signOut.mockResolvedValue({
+        error: { message: 'Logout failed' } as AuthError,
       })
       const result = await signOut()
       expect(result.success).toBe(false)
     })
 
     it('trata exceção inesperada', async () => {
-      supabase.auth.signOut.mockRejectedValue(new Error('Network error'))
+      mockedAuth.signOut.mockRejectedValue(new Error('Network error'))
       const result = await signOut()
       expect(result.success).toBe(false)
     })

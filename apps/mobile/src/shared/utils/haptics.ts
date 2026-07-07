@@ -4,8 +4,8 @@ import * as Haptics from 'expo-haptics'
 // e evita boilerplate de catch em cada call site. Erros silenciados (haptic
 // é UX-only — falha não deve quebrar fluxo do usuário).
 
-function safe(fn) {
-  return (...args) => {
+function safe(fn: (...args: unknown[]) => Promise<unknown>) {
+  return (...args: unknown[]) => {
     try {
       fn(...args).catch(() => {})
     } catch {

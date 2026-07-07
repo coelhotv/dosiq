@@ -18,7 +18,7 @@ const CHUNK_SIZE = 1800 // margem segura abaixo dos 2048 bytes
 // migram no próximo refresh/login. No-op no Android (usa Keystore). Spec 001 A2.
 const KEYCHAIN_OPTS = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK }
 
-async function getChunked(key) {
+async function getChunked(key: string) {
   const countStr = await SecureStore.getItemAsync(`${key}_chunks`)
   if (countStr === null) {
     // fallback: valor armazenado directamente (sessões antigas ou valores pequenos)
@@ -32,7 +32,7 @@ async function getChunked(key) {
   return parts.join('')
 }
 
-async function setChunked(key, value) {
+async function setChunked(key: string, value: string) {
   if (value.length <= CHUNK_SIZE) {
     // valor pequeno — armazenar directamente, limpar chunks antigos se existirem
     await SecureStore.setItemAsync(key, value, KEYCHAIN_OPTS)
@@ -50,12 +50,12 @@ async function setChunked(key, value) {
   await SecureStore.deleteItemAsync(key).catch(() => {})
 }
 
-async function removeChunked(key) {
+async function removeChunked(key: string) {
   await cleanChunks(key)
   await SecureStore.deleteItemAsync(key).catch(() => {})
 }
 
-async function cleanChunks(key) {
+async function cleanChunks(key: string) {
   const countStr = await SecureStore.getItemAsync(`${key}_chunks`)
   if (countStr === null) return
   const count = parseInt(countStr, 10)
@@ -68,13 +68,13 @@ async function cleanChunks(key) {
 }
 
 export const secureStoreAuthStorage = {
-  async getItem(key) {
+  async getItem(key: string) {
     return getChunked(key)
   },
-  async setItem(key, value) {
+  async setItem(key: string, value: string) {
     return setChunked(key, value)
   },
-  async removeItem(key) {
+  async removeItem(key: string) {
     return removeChunked(key)
   },
 }
