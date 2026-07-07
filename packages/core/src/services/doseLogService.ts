@@ -285,7 +285,14 @@ export function createDoseLogService({
   client: Client
   getUserId: GetUserId
   platform?: string | null
-}): Record<string, (...args: any[]) => Promise<any>> {
+}): {
+  registerDose(logData: Record<string, unknown>, options?: { instanceId?: string | null }): Promise<any>
+  undoDose(instanceId: string): Promise<{ success: boolean }>
+  updateOrphanLog(logId: string, updates: Record<string, unknown>): Promise<any>
+  deleteOrphanLog(logId: string): Promise<{ success: boolean }>
+  registerDoseMany(logsData: Record<string, unknown>[]): Promise<any[]>
+  getLastInjectionSite(): Promise<string | null>
+} {
   if (!client) throw new Error('createDoseLogService: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createDoseLogService: getUserId deve ser função async')

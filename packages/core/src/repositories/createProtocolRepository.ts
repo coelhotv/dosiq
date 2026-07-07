@@ -146,7 +146,16 @@ export function createProtocolRepository({
   writeSelect = FULL_SELECT_AFTER_WRITE,
   listTransform = identity,
   detailTransform = identity,
-}: CreateProtocolRepositoryDeps): Record<string, (...args: any[]) => Promise<any>> {
+}: CreateProtocolRepositoryDeps): {
+  getAll(): Promise<any>
+  getActive(date?: string): Promise<any>
+  getById(id: string): Promise<any>
+  getByMedicineId(medicineId: string): Promise<any[]>
+  create(protocol: Record<string, unknown>): Promise<any>
+  update(id: string, updates: Record<string, unknown>): Promise<any>
+  delete(id: string): Promise<void>
+  advanceTitrationStage(id: string, markAsCompleted?: boolean): Promise<any>
+} {
   if (!client) throw new Error('createProtocolRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createProtocolRepository: getUserId deve ser função async')

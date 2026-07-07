@@ -48,7 +48,27 @@ interface CreateStockRepositoryDeps {
 // num único objeto (pattern canônico de createProtocolRepository). Warning aceito (R-221 SQP).
 // Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
 // inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
-export function createStockRepository({ client, getUserId }: CreateStockRepositoryDeps): Record<string, (...args: any[]) => Promise<any>> {
+export function createStockRepository({ client, getUserId }: CreateStockRepositoryDeps): {
+  getMedicinesWithStockOrActiveProtocol(): Promise<any[]>
+  getByMedicine(medicineId: string): Promise<any[]>
+  getStockSummary(medicineId: string): Promise<any>
+  getStockSummaryMap(): Promise<Record<string, number>>
+  getTotalQuantity(medicineId: string): Promise<number | null>
+  getLowStockMedicines(threshold?: number): Promise<any[]>
+  decreaseStock(medicineId: string, quantity: number, medicineLogId: string): Promise<any>
+  increaseStock(
+    medicineId: string,
+    quantity: number,
+    options?: string | { reason?: string; notes?: string | null; medicine_log_id?: string | null }
+  ): Promise<any>
+  adjustToBalance(
+    medicineId: string,
+    newBalance: number,
+    reason: string,
+    notes?: string | null
+  ): Promise<{ delta: number; before: number | null; after: number }>
+  delete(id: string): Promise<void>
+} {
   if (!client) throw new Error('createStockRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createStockRepository: getUserId deve ser função async')
