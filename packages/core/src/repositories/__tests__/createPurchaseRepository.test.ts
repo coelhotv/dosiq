@@ -8,27 +8,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createPurchaseRepository } from '../createPurchaseRepository'
 
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
-    _calls: [],
+    _calls: [] as any[],
     select: vi.fn(function (...a) { this._calls.push(['select', a]); return this }),
     update: vi.fn(function (...a) { this._calls.push(['update', a]); return this }),
     eq:     vi.fn(function (...a) { this._calls.push(['eq', a]); return this }),
     in:     vi.fn(function (...a) { this._calls.push(['in', a]); return this }),
     order:  vi.fn(function (...a) { this._calls.push(['order', a]); return this }),
     single: vi.fn(function ()     { this._calls.push(['single', []]); return Promise.resolve(result) }),
-    then: (resolve) => resolve(result),
+    then: (resolve: any) => resolve(result),
   }
   return builder
 }
 
-function makeClient(result, rpcResult?) {
+function makeClient(result: any, rpcResult?: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
-    _rpcCalls: [],
+    _rpcCalls: [] as any[],
     from: vi.fn(() => builder),
-    rpc: vi.fn((name, args) => {
+    rpc: vi.fn((name: any, args: any) => {
       client._rpcCalls.push([name, args])
       return Promise.resolve(rpcResult ?? { data: { id: 'new' }, error: null })
     }),
@@ -48,7 +48,7 @@ const VALID_INPUT = {
 }
 
 describe('createPurchaseRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: [], error: null })
@@ -158,7 +158,7 @@ describe('createPurchaseRepository — parity', () => {
     it('validation ok → RPC create_purchase_with_stock com param mapping', async () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createPurchase(VALID_INPUT)
-      const call = client._rpcCalls.find(([n]) => n === 'create_purchase_with_stock')
+      const call = client._rpcCalls.find(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(call[1]).toMatchObject({
         p_medicine_id: VALID_INPUT.medicine_id,
         p_quantity: 30,
@@ -170,13 +170,13 @@ describe('createPurchaseRepository — parity', () => {
     it('passa p_injection_container quando informado', async () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createPurchase({ ...VALID_INPUT, injection_container: 'caneta' })
-      const call = client._rpcCalls.find(([n]) => n === 'create_purchase_with_stock')
+      const call = client._rpcCalls.find(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(call[1].p_injection_container).toBe('caneta')
     })
     it('p_injection_container = null quando ausente', async () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createPurchase(VALID_INPUT)
-      const call = client._rpcCalls.find(([n]) => n === 'create_purchase_with_stock')
+      const call = client._rpcCalls.find(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(call[1].p_injection_container).toBeNull()
     })
   })
@@ -190,7 +190,7 @@ describe('createPurchaseRepository — parity', () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.updatePurchase('p-1', VALID_INPUT)
       const calls = client._builder._calls
-      const updateCall = calls.find(([m]) => m === 'update')
+      const updateCall = calls.find(([m]: [string]) => m === 'update')
       const payload = updateCall[1][0]
       expect(payload).toHaveProperty('unit_price', 12.5)
       expect(payload).toHaveProperty('purchase_date', '2026-01-10')
@@ -207,7 +207,7 @@ describe('createPurchaseRepository — parity', () => {
     it('grava injection_container em purchases e propaga ao stock', async () => {
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.updatePurchase('p-1', { ...VALID_INPUT, injection_container: 'refil' })
-      const updateCalls = client._builder._calls.filter(([m]) => m === 'update')
+      const updateCalls = client._builder._calls.filter(([m]: [string]) => m === 'update')
       // 1ª update = purchases (com container), 2ª = stock (só container).
       expect(updateCalls[0][1][0]).toHaveProperty('injection_container', 'refil')
       expect(client.from).toHaveBeenCalledWith('stock')
@@ -228,9 +228,9 @@ describe('createPurchaseRepository — parity', () => {
       const repo = createPurchaseRepository({ client, getUserId })
       const res = await repo.createLiquidPurchase({ ...LIQ, numBottles: 3, totalPrice: 30 })
       expect(res).toHaveLength(3)
-      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(rpcs).toHaveLength(3)
-      rpcs.forEach(([, args]) => {
+      rpcs.forEach(([, args]: [string, any]) => {
         expect(args.p_quantity).toBe(100)
         expect(args.p_unit_price).toBeCloseTo(0.1, 4) // R$10/frasco ÷ 100ml = 0.10/ml
       })
@@ -240,13 +240,13 @@ describe('createPurchaseRepository — parity', () => {
       client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createLiquidPurchase({ ...LIQ, numBottles: 3, totalPrice: 10 })
-      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
       // pricePerBottle=3.33 → unit_price 0.0333; último: 10-3.33*2=3.34 → 0.0334.
-      const prices = rpcs.map(([, a]) => a.p_unit_price)
+      const prices = rpcs.map(([, a]: [string, any]) => a.p_unit_price)
       expect(prices[0]).toBeCloseTo(0.0333, 4)
       expect(prices[2]).toBeCloseTo(0.0334, 4)
       // total reconstruído ≈ R$10 (sem perda de centavos)
-      const total = prices.reduce((s, p) => s + p * 100, 0)
+      const total = prices.reduce((s: number, p: number) => s + p * 100, 0)
       expect(total).toBeCloseTo(10, 2)
     })
 
@@ -254,7 +254,7 @@ describe('createPurchaseRepository — parity', () => {
       client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createLiquidPurchase({ ...LIQ, numBottles: 1, totalPrice: 50 })
-      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(rpcs).toHaveLength(1)
       expect(rpcs[0][1].p_unit_price).toBeCloseTo(0.5, 4)
     })
@@ -283,9 +283,9 @@ describe('createPurchaseRepository — parity', () => {
       client = makeClient({ data: [], error: null }, { data: { id: 'x' }, error: null })
       const repo = createPurchaseRepository({ client, getUserId })
       await repo.createLiquidPurchase({ ...LIQ, numBottles: 6, totalPrice: 0.04 })
-      const rpcs = client._rpcCalls.filter(([n]) => n === 'create_purchase_with_stock')
+      const rpcs = client._rpcCalls.filter(([n]: [string]) => n === 'create_purchase_with_stock')
       expect(rpcs).toHaveLength(6)
-      rpcs.forEach(([, a]) => expect(a.p_unit_price).toBeGreaterThanOrEqual(0))
+      rpcs.forEach(([, a]: [string, any]) => expect(a.p_unit_price).toBeGreaterThanOrEqual(0))
     })
   })
 })
