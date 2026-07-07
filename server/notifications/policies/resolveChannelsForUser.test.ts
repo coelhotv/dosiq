@@ -143,7 +143,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_telegram_enabled: false,
     })
     repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
-      type === 'expo' ? [{ id: 'dev-1' }] : []
+      Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
     )
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -173,7 +173,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_telegram_enabled: false,
     })
     repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
-      type === 'webpush' ? [{ id: 'web-1' }] : []
+      Promise.resolve(type === 'webpush' ? [{ id: 'web-1' }] : [])
     )
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -231,9 +231,9 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_telegram_enabled: true,
     })
     repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) => {
-      if (type === 'expo') return [{ id: 'expo-1' }]
-      if (type === 'webpush') return [{ id: 'web-1' }]
-      return []
+      if (type === 'expo') return Promise.resolve([{ id: 'expo-1' }])
+      if (type === 'webpush') return Promise.resolve([{ id: 'web-1' }])
+      return Promise.resolve([])
     })
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -278,7 +278,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_telegram_enabled: false,
       })
       repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
-        type === 'expo' ? [{ id: 'dev-1' }] : []
+        Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
       )
 
       const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
@@ -310,7 +310,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_telegram_enabled: true,
       })
       repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
-        type === 'expo' ? [{ id: 'dev-1' }] : []
+        Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
       )
 
       const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
