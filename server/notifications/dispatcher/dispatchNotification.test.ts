@@ -11,7 +11,7 @@ const mockSendNotification = vi.fn()
 vi.mock('web-push', () => ({
   default: {
     setVapidDetails: vi.fn(),
-    sendNotification: (...args) => mockSendNotification(...args)
+    sendNotification: (...args: unknown[]) => mockSendNotification(...args)
   }
 }))
 
@@ -23,7 +23,7 @@ vi.mock('../repositories/notificationLogRepository.js', () => ({
 }))
 
 vi.mock('../../utils/dateUtils.js', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof import('../../utils/dateUtils.js')>()
   return {
     ...actual,
     getNow: vi.fn(() => actual.parseISO('2026-05-02T12:00:00Z')),
@@ -124,15 +124,15 @@ describe('dispatchNotification', () => {
     const telegramResult = result.channels.find((c) => c.channel === 'telegram')
     const pushResult = result.channels.find((c) => c.channel === 'mobile_push')
 
-    expect(telegramResult.delivered).toBe(1)
-    expect(pushResult.success).toBe(false)
+    expect(telegramResult!.delivered).toBe(1)
+    expect(pushResult!.success).toBe(false)
     expect(result.totalDelivered).toBe(1)
   })
 
   // Caso 3: mobile_push com DeviceNotRegistered → token desativado
   it('caso 3: DeviceNotRegistered desativa o token', async () => {
     mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[bad]' }])
-    mockRepositories.devices.deactivateByToken.mockResolvedValue()
+    mockRepositories.devices.deactivateByToken.mockResolvedValue(undefined)
     mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([
       { status: 'error', message: 'DeviceNotRegistered', details: { error: 'DeviceNotRegistered' } },
     ])
@@ -221,13 +221,12 @@ describe('dispatchNotification', () => {
 
   // Caso 7: web_push com erro 410 (Gone) desativa o token
   it('caso 7: web_push com erro 410 (Gone) desativa o token', async () => {
-    const error = new Error('Subscription no longer active')
-    error.statusCode = 410
+    const error = Object.assign(new Error('Subscription no longer active'), { statusCode: 410 })
     mockSendNotification.mockRejectedValue(error)
     
     const mockToken = '{"endpoint":"https://fcm.googleapis.com","keys":{"p256dh":"bad","auth":"456"}}'
     mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: mockToken }])
-    mockRepositories.devices.deactivateByToken.mockResolvedValue()
+    mockRepositories.devices.deactivateByToken.mockResolvedValue(undefined)
 
     const result = await dispatchNotification({
       userId: 'user-7',

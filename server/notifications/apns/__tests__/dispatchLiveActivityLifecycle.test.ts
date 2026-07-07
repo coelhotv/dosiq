@@ -8,20 +8,20 @@ const NOW = new Date(Date.UTC(2026, 6, 1, 12, 0, 0));
 const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 
 // Mock supabase: select(...).not(...) resolve a lista; update(...).eq(...) registra o patch.
-function makeSupabase(rows) {
-  const updates = [];
+function makeSupabase(rows: unknown[]) {
+  const updates: Array<Record<string, unknown>> = [];
   const from = () => {
     const b = {
-      _update: null,
+      _update: null as Record<string, unknown> | null,
       select() { return b; },
       not() { return b; },
       gte() { return b; },
-      update(p) { b._update = p; return b; },
+      update(p: Record<string, unknown>) { b._update = p; return b; },
       eq() {
         if (b._update) { updates.push(b._update); return Promise.resolve({ data: null, error: null }); }
         return b;
       },
-      then(resolve) { return Promise.resolve({ data: rows, error: null }).then(resolve); },
+      then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: rows, error: null }).then(resolve); },
     };
     return b;
   };
@@ -29,7 +29,7 @@ function makeSupabase(rows) {
 }
 
 // scheduled_for relativo a NOW p/ cair no estado desejado (SURFACE_WINDOWS: now ±10, late < -10).
-const at = (min) => new Date(NOW.getTime() + min * 60000).toISOString();
+const at = (min: number) => new Date(NOW.getTime() + min * 60000).toISOString();
 const row = (over = {}) => ({
   id: 'inst-1', user_id: 'userA', scheduled_for: at(0), critical_alarm: true,
   status: 'pending', la_push_token: 'tok-activity', la_push_state: null,
@@ -59,11 +59,11 @@ describe('dispatchLiveActivityLifecycle', () => {
 
   it('estado mudou (now) e la_push_state=null → 1 update + marca la_push_state', async () => {
     const supabase = makeSupabase([row({ scheduled_for: at(0), la_push_state: null })]); // now
-    const updateFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const updateFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
     const endFn = vi.fn();
     const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn });
     expect(updateFn).toHaveBeenCalledTimes(1);
-    expect(updateFn.mock.calls[0][0].contentState.state).toBe('now');
+    expect(updateFn.mock.calls[0]![0].contentState.state).toBe('now');
     expect(r.updated).toBe(1);
     expect(supabase._updates).toContainEqual({ la_push_state: 'now' });
   });
@@ -78,12 +78,12 @@ describe('dispatchLiveActivityLifecycle', () => {
 
   it('dose taken → end (done) + limpa token/estado', async () => {
     const supabase = makeSupabase([row({ status: 'taken', la_push_state: 'late' })]);
-    const endFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const endFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) => Promise.resolve({ ok: true, status: 200 }));
     const updateFn = vi.fn();
     const r = await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn });
     expect(updateFn).not.toHaveBeenCalled();
     expect(endFn).toHaveBeenCalledTimes(1);
-    expect(endFn.mock.calls[0][0].contentState.state).toBe('done');
+    expect(endFn.mock.calls[0]![0].contentState.state).toBe('done');
     expect(r.ended).toBe(1);
     expect(supabase._updates).toContainEqual({ la_push_token: null, la_push_state: null });
   });

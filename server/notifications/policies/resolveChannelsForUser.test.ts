@@ -119,7 +119,9 @@ describe('resolveChannelsForUser', () => {
 describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
   const userId = 'user-n2'
 
-  const makeRepositories = (overrides = {}) => ({
+  const makeRepositories = (
+    overrides: { preferences?: Record<string, ReturnType<typeof vi.fn>>; devices?: Record<string, ReturnType<typeof vi.fn>> } = {}
+  ) => ({
     preferences: {
       getByUserId: vi.fn(),
       hasTelegramChat: vi.fn(),
@@ -140,7 +142,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: false,
       channel_telegram_enabled: false,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
       type === 'expo' ? [{ id: 'dev-1' }] : []
     )
 
@@ -170,7 +172,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: true,
       channel_telegram_enabled: false,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
       type === 'webpush' ? [{ id: 'web-1' }] : []
     )
 
@@ -228,7 +230,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: true,
       channel_telegram_enabled: true,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) => {
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) => {
       if (type === 'expo') return [{ id: 'expo-1' }]
       if (type === 'webpush') return [{ id: 'web-1' }]
       return []
@@ -275,7 +277,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_web_push_enabled: false,
         channel_telegram_enabled: false,
       })
-      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+      repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
         type === 'expo' ? [{ id: 'dev-1' }] : []
       )
 
@@ -307,7 +309,7 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_web_push_enabled: false,
         channel_telegram_enabled: true,
       })
-      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
+      repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
         type === 'expo' ? [{ id: 'dev-1' }] : []
       )
 
