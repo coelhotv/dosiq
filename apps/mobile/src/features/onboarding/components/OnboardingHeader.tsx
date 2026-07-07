@@ -7,7 +7,7 @@ import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft } = LucideIcons as any
 import { colors, spacing } from '@shared/styles/tokens'
 
-export default function OnboardingHeader({ step, totalSteps = 2, onBack, onSkip }) {
+export default function OnboardingHeader({ step, totalSteps = 2, onBack = undefined, onSkip = undefined }) {
   return (
     <View style={styles.header}>
       <View style={styles.side}>

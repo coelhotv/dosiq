@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "outDir": "dist"
+  },
+  "include": ["src/index.ts", "src/schemas/index.ts", "src/utils/index.ts"]
+}

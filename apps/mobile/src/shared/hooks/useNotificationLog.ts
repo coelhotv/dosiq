@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import { AppState } from 'react-native'
-import { getTodayLocal, getNow, parseISO, addDays } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISOOrNull, addDays } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createNotificationLogRepository } from '@dosiq/shared-data'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
@@ -102,11 +102,11 @@ async function enrichWithDoses(logs: NotificationLogRecord[]): Promise<Notificat
 
   return logs.map(log => {
     if (log.notification_type === 'dose_reminder_by_plan' && log.treatment_plan_id) {
-      const d    = parseISO(log.sent_at as string)
-      const hhmm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-      const doses = (planProtoMap[log.treatment_plan_id] ?? [])
+      const d    = parseISOOrNull(log.sent_at)
+      const hhmm = d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : null
+      const doses = hhmm ? (planProtoMap[log.treatment_plan_id] ?? [])
         .filter(p => (p.time_schedule ?? []).includes(hhmm))
-        .map(p => ({ medicineName: p.medicine?.name ?? 'Medicamento', dosage: p.dosage_per_intake ?? 1 }))
+        .map(p => ({ medicineName: p.medicine?.name ?? 'Medicamento', dosage: p.dosage_per_intake ?? 1 })) : []
       return { ...log, doses }
     }
 

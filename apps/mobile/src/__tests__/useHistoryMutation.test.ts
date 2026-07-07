@@ -27,7 +27,7 @@ describe('useHistoryMutation', () => {
 
   test('registerRetro — sucesso — chama onSuccess e limpa cache', async () => {
     // Setup
-    registerDose.mockResolvedValue({ success: true })
+    jest.mocked(registerDose).mockResolvedValue({ success: true, data: {} })
     const onSuccess = jest.fn()
 
     const { result } = renderHook(() =>
@@ -63,7 +63,7 @@ describe('useHistoryMutation', () => {
 
   test('registerRetro — falha — seta error', async () => {
     // Setup
-    registerDose.mockResolvedValue({
+    jest.mocked(registerDose).mockResolvedValue({
       success: false,
       error: 'Estoque insuficiente',
     })
@@ -92,7 +92,7 @@ describe('useHistoryMutation', () => {
 
   test('undo — sucesso — chama onSuccess', async () => {
     // Setup
-    undoDose.mockResolvedValue({ success: true })
+    jest.mocked(undoDose).mockResolvedValue({ success: true })
     const onSuccess = jest.fn()
 
     const { result } = renderHook(() =>
@@ -111,7 +111,7 @@ describe('useHistoryMutation', () => {
 
   test('undo — falha — seta error', async () => {
     // Setup
-    undoDose.mockResolvedValue({
+    jest.mocked(undoDose).mockResolvedValue({
       success: false,
       error: 'Erro ao desfazer',
     })

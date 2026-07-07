@@ -136,6 +136,8 @@ interface CreateProtocolRepositoryDeps {
 // NOTA: factory excede max-lines-per-function por agregar 7 métodos CRUD +
 // advanceTitrationStage no mesmo objeto (pattern canônico de createMedicineRepository).
 // Quebrar prejudica leitura; warning aceito (R-221 SQP).
+// Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
+// inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
 export function createProtocolRepository({
   client,
   getUserId,
@@ -144,7 +146,16 @@ export function createProtocolRepository({
   writeSelect = FULL_SELECT_AFTER_WRITE,
   listTransform = identity,
   detailTransform = identity,
-}: CreateProtocolRepositoryDeps) {
+}: CreateProtocolRepositoryDeps): {
+  getAll(): Promise<any>
+  getActive(date?: string): Promise<any>
+  getById(id: string): Promise<any>
+  getByMedicineId(medicineId: string): Promise<any[]>
+  create(protocol: Record<string, unknown>): Promise<any>
+  update(id: string, updates: Record<string, unknown>): Promise<any>
+  delete(id: string): Promise<void>
+  advanceTitrationStage(id: string, markAsCompleted?: boolean): Promise<any>
+} {
   if (!client) throw new Error('createProtocolRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createProtocolRepository: getUserId deve ser função async')

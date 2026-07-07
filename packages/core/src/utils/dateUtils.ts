@@ -154,6 +154,18 @@ export function parseISO(isoString: string | number | Date): Date {
 }
 
 /**
+ * Variante nullable de parseISO — para call-sites com entrada opcional.
+ * NUNCA afrouxar a assinatura de parseISO em si (R-283/D2 040-F6): `new Date(null)`
+ * vira epoch 1970 (data clínica fantasma silenciosa) e `new Date(undefined)` vira
+ * Invalid Date — ambos silenciosos se o compilador aceitasse null|undefined direto
+ * no parseISO. Aqui o null é explícito no tipo de retorno, forçando o chamador a tratar.
+ */
+export function parseISOOrNull(value: string | number | Date | null | undefined): Date | null {
+  if (value === null || value === undefined) return null
+  return parseISO(value)
+}
+
+/**
  * Retorna o ISO UTC correspondente ao início do dia (00:00:00) no fuso informado.
  * @param {string} dateStr - Data no formato YYYY-MM-DD
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)

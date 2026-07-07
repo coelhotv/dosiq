@@ -17,18 +17,18 @@ describe('Hermes Polyfills Implementation', () => {
     delete global.URLSearchParams;
     
     // Simular uma URL "quebrada" do Hermes
-    global.URL = function(href) {
+    global.URL = function(this: { href: string }, href: string) {
       this.href = href;
-    };
-    
-    global.URL.prototype = {
+    } as unknown as typeof URL;
+
+    (global.URL as unknown as { prototype: Record<string, unknown> }).prototype = {
       get protocol() { throw new Error('not implemented'); },
       get hostname() { throw new Error('not implemented'); },
       get searchParams() { throw new Error('not implemented'); },
-      toString() { return this.href; }
+      toString() { return (this as unknown as { href: string }).href; }
     };
-    
-    global.URLSearchParams = undefined;
+
+    global.URLSearchParams = undefined as unknown as typeof URLSearchParams;
     
     // Carregar o polyfill
     require('../../polyfills.js');
