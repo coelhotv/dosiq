@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createProtocolRepository } from '../createProtocolRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     select: vi.fn(function (...args) { this._calls.push(['select', args]); return this }),
@@ -23,17 +23,17 @@ function makeBuilder(result) {
     or:     vi.fn(function (...args) { this._calls.push(['or', args]); return this }),
     order:  vi.fn(function (...args) { this._calls.push(['order', args]); return this }),
     single: vi.fn(function ()        { this._calls.push(['single', []]); return Promise.resolve(result) }),
-    then:   (resolve) => resolve(result),
+    then:   (resolve: any) => resolve(result),
   }
   return builder
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
     _from: null,
-    from: vi.fn((table) => { client._from = table; return builder }),
+    from: vi.fn((table: any) => { client._from = table; return builder }),
   }
   return client as any
 }
@@ -65,7 +65,7 @@ const VALID_PROTOCOL_TITRATION = {
 
 // ---------- Suite ----------
 describe('createProtocolRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: [{ id: 'p-1', name: 'Atenolol' }], error: null })
@@ -111,10 +111,10 @@ describe('createProtocolRepository — parity', () => {
       await repo.getActive()
       const calls = client._builder._calls
       expect(calls).toContainEqual(['eq', ['active', true]])
-      const lteCall = calls.find(([m]) => m === 'lte')
+      const lteCall = calls.find(([m]: any) => m === 'lte')
       expect(lteCall).toBeDefined()
       expect(lteCall[1][0]).toBe('start_date')
-      const orCall = calls.find(([m]) => m === 'or')
+      const orCall = calls.find(([m]: any) => m === 'or')
       expect(orCall).toBeDefined()
       expect(orCall[1][0]).toMatch(/end_date\.is\.null/)
     })
@@ -123,9 +123,9 @@ describe('createProtocolRepository — parity', () => {
       const repo = createProtocolRepository({ client, getUserId })
       await repo.getActive('2026-06-01')
       const calls = client._builder._calls
-      const lteCall = calls.find(([m]) => m === 'lte')
+      const lteCall = calls.find(([m]: any) => m === 'lte')
       expect(lteCall[1]).toEqual(['start_date', '2026-06-01'])
-      const orCall = calls.find(([m]) => m === 'or')
+      const orCall = calls.find(([m]: any) => m === 'or')
       expect(orCall[1][0]).toContain('2026-06-01')
     })
 
@@ -199,7 +199,7 @@ describe('createProtocolRepository — parity', () => {
     it('validation ok → insert recebe payload com user_id e defaults de titulação', async () => {
       const repo = createProtocolRepository({ client, getUserId })
       await repo.create(VALID_PROTOCOL)
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       expect(insertCall[1][0]).toEqual([
         expect.objectContaining({
           name: 'Atenolol 25mg',
@@ -216,7 +216,7 @@ describe('createProtocolRepository — parity', () => {
       client = makeClient({ data: { id: 'new-p-2', ...VALID_PROTOCOL_TITRATION }, error: null })
       const repo = createProtocolRepository({ client, getUserId })
       await repo.create(VALID_PROTOCOL_TITRATION)
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       const payload = insertCall[1][0][0]
       expect(typeof payload.stage_started_at).toBe('string')
       expect(payload.stage_started_at).not.toBeNull()
@@ -228,7 +228,7 @@ describe('createProtocolRepository — parity', () => {
       const repo = createProtocolRepository({ client, getUserId, writeSelect: customSelect })
       await repo.create(VALID_PROTOCOL)
       const selectCall = client._builder._calls.find(
-        ([m, args]) => m === 'select' && args[0] === customSelect
+        ([m, args]: any) => m === 'select' && args[0] === customSelect
       )
       expect(selectCall).toBeDefined()
     })
@@ -251,7 +251,7 @@ describe('createProtocolRepository — parity', () => {
       const repo = createProtocolRepository({ client, getUserId })
       await repo.update('p-1', { name: 'Nome Atualizado' })
       const calls = client._builder._calls
-      const updateCall = calls.find(([m]) => m === 'update')
+      const updateCall = calls.find(([m]: any) => m === 'update')
       expect(updateCall[1][0]).toMatchObject({ name: 'Nome Atualizado' })
       expect(calls).toContainEqual(['eq', ['id', 'p-1']])
       expect(calls).toContainEqual(['eq', ['user_id', FAKE_USER]])
@@ -303,7 +303,7 @@ describe('createProtocolRepository — parity', () => {
         if (singleCallCount === 1) return Promise.resolve({ data: protocol, error: null })
         return Promise.resolve({ data: { ...protocol, current_stage_index: 1 }, error: null })
       })
-      builder.then = (resolve) => {
+      builder.then = (resolve: any) => {
         callCount++
         resolve({ data: [protocol], error: null })
       }
@@ -315,7 +315,7 @@ describe('createProtocolRepository — parity', () => {
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1')
 
-      const updateCall = builder._calls.find(([m]) => m === 'update')
+      const updateCall = builder._calls.find(([m]: any) => m === 'update')!
       expect(updateCall[1][0]).toMatchObject({
         current_stage_index: 1,
         dosage_per_intake: 50, // nextStage.dosage
@@ -336,13 +336,13 @@ describe('createProtocolRepository — parity', () => {
         if (singleCallCount === 1) return Promise.resolve({ data: protocol, error: null })
         return Promise.resolve({ data: { ...protocol, titration_status: 'alvo_atingido' }, error: null })
       })
-      builder.then = (resolve) => resolve({ data: [protocol], error: null })
+      builder.then = (resolve: any) => resolve({ data: [protocol], error: null })
       const advClient = { _builder: builder, from: vi.fn(() => builder) } as any
 
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1', true)
 
-      const updateCall = builder._calls.find(([m]) => m === 'update')
+      const updateCall = builder._calls.find(([m]: any) => m === 'update')!
       expect(updateCall[1][0]).toMatchObject({ titration_status: 'alvo_atingido' })
     })
 
@@ -360,13 +360,13 @@ describe('createProtocolRepository — parity', () => {
         if (singleCallCount === 1) return Promise.resolve({ data: protocol, error: null })
         return Promise.resolve({ data: { ...protocol, titration_status: 'alvo_atingido' }, error: null })
       })
-      builder.then = (resolve) => resolve({ data: [protocol], error: null })
+      builder.then = (resolve: any) => resolve({ data: [protocol], error: null })
       const advClient = { _builder: builder, from: vi.fn(() => builder) } as any
 
       const repo = createProtocolRepository({ client: advClient, getUserId })
       await repo.advanceTitrationStage('p-1')
 
-      const updateCall = builder._calls.find(([m]) => m === 'update')
+      const updateCall = builder._calls.find(([m]: any) => m === 'update')!
       expect(updateCall[1][0]).toMatchObject({
         titration_status: 'alvo_atingido',
         current_stage_index: 1, // length-1 = 2-1

@@ -10,13 +10,13 @@ afterEach(() => {
  * Mock client com FILA de resultados: cada cadeia encadeável termina num `await`
  * (thenable) que consome o próximo resultado da fila, na ordem das queries.
  */
-function makeQueueClient(queue) {
-  const calls = []
+function makeQueueClient(queue: any[]) {
+  const calls: any[] = []
   const builder = {
     select: vi.fn(() => builder),
-    update: vi.fn((...a) => { calls.push(['update', a]); return builder }),
-    eq: vi.fn((...a) => { calls.push(['eq', a]); return builder }),
-    in: vi.fn((...a) => { calls.push(['in', a]); return builder }),
+    update: vi.fn((...a: any[]) => { calls.push(['update', a]); return builder }),
+    eq: vi.fn((...a: any[]) => { calls.push(['eq', a]); return builder }),
+    in: vi.fn((...a: any[]) => { calls.push(['in', a]); return builder }),
     lt: vi.fn(() => builder),
     gt: vi.fn(() => builder),
     gte: vi.fn(() => builder),
@@ -24,7 +24,7 @@ function makeQueueClient(queue) {
     order: vi.fn(() => builder),
     range: vi.fn(() => builder),
     limit: vi.fn(() => builder),
-    then: (resolve) => resolve(queue.shift() ?? { data: [], error: null }),
+    then: (resolve: any) => resolve(queue.shift() ?? { data: [], error: null }),
   }
   const client = { from: vi.fn(() => builder), _calls: calls }
   return client as any
@@ -32,7 +32,7 @@ function makeQueueClient(queue) {
 
 const NOW = '2026-05-20T12:00:00.000Z'
 // helpers de instante relativo a NOW
-const minsAgo = (m) => new Date(Date.parse(NOW) - m * 60000).toISOString()
+const minsAgo = (m: number) => new Date(Date.parse(NOW) - m * 60000).toISOString()
 
 describe('markMissedDueInstances (sweep)', () => {
   it('marca como missed só pending cuja tolerância (por linha) expirou', async () => {
@@ -51,9 +51,9 @@ describe('markMissedDueInstances (sweep)', () => {
     const missed = await repo.markMissedDueInstances({ now: NOW })
     expect(missed).toBe(2)
     // UPDATE reafirma status pending (guard de corrida, AP-185) e filtra os ids due.
-    const updateEq = client._calls.find(([n, a]) => n === 'eq' && a[0] === 'status')
+    const updateEq = client._calls.find(([n, a]: [string, any[]]) => n === 'eq' && a[0] === 'status')
     expect(updateEq[1]).toEqual(['status', 'pending'])
-    const inIds = client._calls.find(([n, a]) => n === 'in' && a[0] === 'id')
+    const inIds = client._calls.find(([n, a]: [string, any[]]) => n === 'in' && a[0] === 'id')
     expect(inIds[1][1]).toEqual(['a', 'c'])
   })
 
@@ -65,7 +65,7 @@ describe('markMissedDueInstances (sweep)', () => {
     const repo = createDoseInstanceRepository({ client })
     const missed = await repo.markMissedDueInstances({ now: NOW })
     expect(missed).toBe(0)
-    expect(client._calls.some(([n]) => n === 'update')).toBe(false)
+    expect(client._calls.some(([n]: [string]) => n === 'update')).toBe(false)
   })
 
   it('erro no SELECT propaga (throw)', async () => {
@@ -83,7 +83,7 @@ describe('markTaken — re-anchor de missed (self-heal F2.5)', () => {
 
     const ok = await repo.markTaken('di-1', 'log-9')
     expect(ok).toBe(true)
-    const statusIn = client._calls.find(([n, a]) => n === 'in' && a[0] === 'status')
+    const statusIn = client._calls.find(([n, a]: [string, any[]]) => n === 'in' && a[0] === 'status')
     expect(statusIn[1][1]).toEqual(['pending', 'missed', 'skipped_user'])
   })
 

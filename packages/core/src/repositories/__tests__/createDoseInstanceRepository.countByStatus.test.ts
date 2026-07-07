@@ -12,14 +12,14 @@ afterEach(() => {
  * Builder encadeável que resolve `result` via thenable (await no fim do chain).
  * Cada chamada anota em `_calls` para inspeção de args.
  */
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
-    _calls: [],
+    _calls: [] as any[],
     select: vi.fn(function (...a) { this._calls.push(['select', a]); return this }),
     eq:     vi.fn(function (...a) { this._calls.push(['eq', a]); return this }),
     gte:    vi.fn(function (...a) { this._calls.push(['gte', a]); return this }),
     lte:    vi.fn(function (...a) { this._calls.push(['lte', a]); return this }),
-    then:   (resolve) => resolve(result),
+    then:   (resolve: any) => resolve(result),
   }
   return builder
 }
@@ -29,7 +29,7 @@ function makeBuilder(result) {
  * acumulando calls de todas as queries (5 status).
  * Para os testes de contagem, passamos uma factory de result por chamada.
  */
-function makeMultiClient(resultsPerCall) {
+function makeMultiClient(resultsPerCall: any[]) {
   let callIndex = 0
   const builders = resultsPerCall.map((r) => makeBuilder(r))
   const client = {
@@ -43,7 +43,7 @@ function makeMultiClient(resultsPerCall) {
   return client as any
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   return makeMultiClient(Array(5).fill(result))
 }
 
@@ -91,7 +91,7 @@ describe('countByStatus', () => {
 
     for (const b of client._builders) {
       const protocolEqCalls = b._calls.filter(
-        ([name, args]) => name === 'eq' && args[0] === 'protocol_id'
+        ([name, args]: [string, any[]]) => name === 'eq' && args[0] === 'protocol_id'
       )
       expect(protocolEqCalls).toHaveLength(0)
     }
