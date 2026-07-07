@@ -11,7 +11,8 @@ type Channel = 'telegram' | 'mobile_push' | 'web_push'
 export interface ResolveChannelsRepositories {
   preferences: {
     hasTelegramChat(userId: string): Promise<boolean>
-    getSettingsByUserId?(userId: string): Promise<NotificationSettings>
+    // Partial|null: a policy trata settings ausentes/incompletos com fallback legado (ver guard abaixo)
+    getSettingsByUserId?(userId: string): Promise<Partial<NotificationSettings> | null>
     getByUserId(userId: string): Promise<NotificationPreference>
   }
   devices: {
@@ -20,7 +21,7 @@ export interface ResolveChannelsRepositories {
 }
 
 function resolveWaveN2(
-  settings: NotificationSettings,
+  settings: Partial<NotificationSettings>,
   activeExpoDevices: NotificationDevice[],
   activeWebDevices: NotificationDevice[],
   hasTelegram: boolean

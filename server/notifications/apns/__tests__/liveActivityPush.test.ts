@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generateKeyPairSync } from 'node:crypto';
+import type * as http2 from 'node:http2';
 import { getApnsConfig, sendLiveActivityStart, sendLiveActivityUpdate, sendLiveActivityEnd, _resetJwtCache } from '../liveActivityPush';
+
+// Espelha o type local do módulo (não exportado). Mock implementa a superfície mínima
+// connect→request→{on,setEncoding,end} — cast único e documentado no helper.
+type Http2Lib = Pick<typeof http2, 'connect'>;
+type Handlers = Record<string, ((arg?: unknown) => void) | undefined>;
+interface CapturedBody { aps: { event?: string; attributes?: unknown; 'content-state'?: unknown; 'dismissal-date'?: number } }
+interface Sink { body?: CapturedBody; headers?: Record<string, string> }
 
 // .p8 EC P-256 REAL gerada em runtime (não é segredo; só p/ assinar o JWT no unit).
 const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
@@ -18,17 +26,17 @@ describe('getApnsConfig', () => {
     expect(getApnsConfig({ ...ENV, APNS_AUTH_KEY: Buffer.from('lixo').toString('base64') })).toBeNull();
   });
   it('credenciais completas → config com host de produção', () => {
-    const c = getApnsConfig(ENV);
+    const c = getApnsConfig(ENV)!;
     expect(c.bundleId).toBe('com.x.dosiq');
     expect(c.host).toContain('api.push.apple.com');
   });
 });
 
 // Mock http2: simula a resposta APNs (status configurável).
-function makeHttp2(status, body = '') {
-  const handlers = {};
+function makeHttp2(status: number, body = ''): Http2Lib {
+  const handlers: Handlers = {};
   const req = {
-    on: (ev, cb) => { handlers[ev] = cb; return req; },
+    on: (ev: string, cb: (arg?: unknown) => void) => { handlers[ev] = cb; return req; },
     setEncoding: () => {},
     end: () => {
       handlers.response?.({ ':status': status });
@@ -36,7 +44,7 @@ function makeHttp2(status, body = '') {
       handlers.end?.();
     },
   };
-  return { connect: () => ({ on: () => {}, request: () => req, close: () => {} }) };
+  return { connect: () => ({ on: () => {}, request: () => req, close: () => {} }) } as unknown as Http2Lib;
 }
 
 describe('sendLiveActivityStart', () => {
@@ -81,14 +89,14 @@ describe('sendLiveActivityStart', () => {
 });
 
 // Captura headers + body do request p/ asserção de payload (event/priority/dismissal).
-function makeCapturingHttp2(status, sink) {
-  const handlers = {};
+function makeCapturingHttp2(status: number, sink: Sink): Http2Lib {
+  const handlers: Handlers = {};
   const req = {
-    on: (ev, cb) => { handlers[ev] = cb; return req; },
+    on: (ev: string, cb: (arg?: unknown) => void) => { handlers[ev] = cb; return req; },
     setEncoding: () => {},
-    end: (payload) => { sink.body = JSON.parse(payload); handlers.response?.({ ':status': status }); handlers.end?.(); },
+    end: (payload: string) => { sink.body = JSON.parse(payload); handlers.response?.({ ':status': status }); handlers.end?.(); },
   };
-  return { connect: () => ({ on: () => {}, request: (h) => { sink.headers = h; return req; }, close: () => {} }) };
+  return { connect: () => ({ on: () => {}, request: (h: Record<string, string>) => { sink.headers = h; return req; }, close: () => {} }) } as unknown as Http2Lib;
 }
 
 describe('sendLiveActivityUpdate', () => {
@@ -96,14 +104,14 @@ describe('sendLiveActivityUpdate', () => {
   const cfg = getApnsConfig(ENV);
 
   it('payload event=update, priority 5, sem attributes', async () => {
-    const sink = {};
+    const sink: Sink = {};
     const r = await sendLiveActivityUpdate({ pushToken: 'tok', contentState: { state: 'late' }, config: cfg, http2lib: makeCapturingHttp2(200, sink) });
     expect(r.ok).toBe(true);
-    expect(sink.body.aps.event).toBe('update');
-    expect(sink.body.aps['content-state']).toEqual({ state: 'late' });
-    expect(sink.body.aps.attributes).toBeUndefined();
-    expect(sink.headers['apns-priority']).toBe('5');
-    expect(sink.headers['apns-push-type']).toBe('liveactivity');
+    expect(sink.body!.aps.event).toBe('update');
+    expect(sink.body!.aps['content-state']).toEqual({ state: 'late' });
+    expect(sink.body!.aps.attributes).toBeUndefined();
+    expect(sink.headers!['apns-priority']).toBe('5');
+    expect(sink.headers!['apns-push-type']).toBe('liveactivity');
   });
 
   it('sem token → no_token; sem config → apns_not_configured', async () => {
@@ -117,12 +125,12 @@ describe('sendLiveActivityEnd', () => {
   const cfg = getApnsConfig(ENV);
 
   it('payload event=end com dismissal-date', async () => {
-    const sink = {};
+    const sink: Sink = {};
     const r = await sendLiveActivityEnd({ pushToken: 'tok', contentState: { state: 'done' }, dismissEpochSec: 1000, config: cfg, http2lib: makeCapturingHttp2(200, sink) });
     expect(r.ok).toBe(true);
-    expect(sink.body.aps.event).toBe('end');
-    expect(sink.body.aps['dismissal-date']).toBe(1000);
-    expect(sink.body.aps['content-state']).toEqual({ state: 'done' });
+    expect(sink.body!.aps.event).toBe('end');
+    expect(sink.body!.aps['dismissal-date']).toBe(1000);
+    expect(sink.body!.aps['content-state']).toEqual({ state: 'done' });
   });
 
   it('410 → deactivate', async () => {

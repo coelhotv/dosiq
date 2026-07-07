@@ -23,11 +23,11 @@ MAX_B_WEB=37              # apps/web nível-B transitivo
 MAX_B_MOBILE=18           # apps/mobile nível-B transitivo
 MAX_B_SERVER=36           # server/* nível-B transitivo (utils 25 + bot 10 + services 1)
 MAX_A_TESTS_CORE=350      # testes dos domínios A do core (lote 6.3 → ≤120)
-MAX_A_TESTS_SERVER=119    # testes de server/notifications (lote 6.2 → 0)
+MAX_A_TESTS_SERVER=0      # testes de server/notifications (zerado no lote 6.2)
 MAX_A_TESTS_WEB=0         # testes hooks web (já zerado — trava)
 MAX_A_TESTS_MOBILE=11     # testes hooks mobile (lote 6.4 → 0)
 MAX_TESTS_PROG_API=0      # programa api/ (testes)
-MAX_TESTS_PROG_SERVER=48  # programa server/ (testes; lote 6.2 → 0)
+MAX_TESTS_PROG_SERVER=0   # programa server/ (testes; zerado no lote 6.2)
 MAX_TESTS_PROG_MOBILE=86  # programa mobile (testes; lote 6.4 → ≤30)
 
 A_SRC='^(packages/core/src/(types|repositories|services|schemas)|server/notifications|apps/web/src/shared/hooks|apps/mobile/src/shared/hooks)/'
