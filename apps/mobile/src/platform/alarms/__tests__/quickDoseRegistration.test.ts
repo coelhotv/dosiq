@@ -1,7 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import notifee from '@notifee/react-native'
 
-type LogData = Record<string, unknown>
+interface LogData {
+  protocol_id?: string | null
+  medicine_id?: string
+  taken_at?: string
+  quantity_taken?: number
+}
 type RegisterDoseOpts = { instanceId?: string | null }
 
 const mockRegisterDose = jest.fn((_logData: LogData, _opts?: RegisterDoseOpts) =>

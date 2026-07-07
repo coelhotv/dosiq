@@ -321,7 +321,7 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
 interface ScheduleAlarmParams {
   doseInstanceId: string
   medicineName?: string
-  scheduledFor?: string | number
+  scheduledFor: string | number | Date
   toleranceMinutes?: number | null
   isCritical?: boolean
   data?: Record<string, unknown>
@@ -388,7 +388,7 @@ export async function cancelAlarm(doseInstanceId) {
 interface ScheduleNagParams {
   doseInstanceId: string
   medicineName?: string
-  scheduledFor?: string | number
+  scheduledFor?: string | number | Date
   toleranceMinutes?: number | null
   currentNagAttempt?: number
   isCritical?: boolean
