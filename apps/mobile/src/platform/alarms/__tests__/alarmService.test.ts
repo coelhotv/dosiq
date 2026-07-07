@@ -1,6 +1,8 @@
 import notifee, { TriggerType } from '@notifee/react-native'
 import { scheduleAlarm, cancelAlarm, scheduleNag, cancelAll } from '../alarmService'
 
+const mockedCreateTriggerNotification = notifee.createTriggerNotification as jest.Mock
+
 afterEach(() => {
   jest.clearAllMocks()
 })
@@ -11,7 +13,7 @@ describe('scheduleAlarm', () => {
   it('agenda trigger TIMESTAMP com allowWhileIdle e id = doseInstanceId (idempotência)', async () => {
     await scheduleAlarm({ doseInstanceId: 'inst-1', medicineName: 'Losartana', scheduledFor: FUTURE() })
     expect(notifee.createTriggerNotification).toHaveBeenCalledTimes(1)
-    const [notification, trigger] = notifee.createTriggerNotification.mock.calls[0]
+    const [notification, trigger] = mockedCreateTriggerNotification.mock.calls[0]
     expect(notification.id).toBe('inst-1')
     expect(trigger.type).toBe(TriggerType.TIMESTAMP)
     expect(trigger.alarmManager).toEqual({ allowWhileIdle: true })
@@ -64,7 +66,7 @@ describe('scheduleNag', () => {
       currentNagAttempt: 0,
     })
     expect(notifee.createTriggerNotification).toHaveBeenCalledTimes(1)
-    const [notification] = notifee.createTriggerNotification.mock.calls[0]
+    const [notification] = mockedCreateTriggerNotification.mock.calls[0]
     expect(notification.id).toBe('inst-1:nag:1')
     expect(notification.data.nagAttempt).toBe('1')
   })

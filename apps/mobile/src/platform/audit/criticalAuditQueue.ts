@@ -3,6 +3,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 export const AUDIT_QUEUE_KEY = '@dosiq/audit/queue'
 export const AUDIT_QUEUE_CAP = 200
 
+export type AuditQueueItem = Record<string, unknown>
+
+interface AuditQueueState {
+  items: AuditQueueItem[]
+  overflowDropped: number
+}
+
+interface AuditQueueStorage {
+  getItem(key: string): Promise<string | null>
+  setItem(key: string, value: string): Promise<void>
+  removeItem(key: string): Promise<void>
+}
+
+interface CreateCriticalAuditQueueOptions {
+  storage?: AuditQueueStorage
+  key?: string
+  cap?: number
+}
+
+export type FlushInsertOne = (item: AuditQueueItem) => Promise<boolean | { ok: boolean }>
+
+export interface FlushResult {
+  inserted: number
+  remaining: number
+  skipped?: boolean
+}
+
 // Fila offline de eventos de auditoria de dose crítica (spec 042 Slice B, CON-031).
 // Persistência via AsyncStorage; drenada no foreground. NÃO importa supabase —
 // o inserter é injetado no flush() para manter o cold-start do background handler
@@ -11,15 +38,15 @@ export function createCriticalAuditQueue({
   storage = AsyncStorage,
   key = AUDIT_QUEUE_KEY,
   cap = AUDIT_QUEUE_CAP,
-} = {}) {
+}: CreateCriticalAuditQueueOptions = {}) {
   // Flag em memória para pular flush concorrente (reentrância — retorna skipped).
   let flushInFlight = false
 
   // Mutex: serializa TODA operação de read-modify-write no AsyncStorage. Sem isto, um enqueue(B)
   // que roda enquanto o flush(A) está entre o read e o write-back grava [A,B]; o flush então grava
   // os "remaining" (calculados sobre [A]) e clobbera B → perda de evento (race crítica, review #700).
-  let lockChain = Promise.resolve()
-  function withLock(op) {
+  let lockChain: Promise<unknown> = Promise.resolve()
+  function withLock<T>(op: () => Promise<T>): Promise<T> {
     const run = lockChain.then(op, op) // encadeia mesmo se o anterior rejeitou (não deve — ops são fail-open)
     // Mantém a corrente viva sem propagar rejeição/valor pro próximo elo.
     lockChain = run.then(
@@ -29,7 +56,7 @@ export function createCriticalAuditQueue({
     return run
   }
 
-  async function readState() {
+  async function readState(): Promise<AuditQueueState> {
     try {
       const raw = await storage.getItem(key)
       if (!raw) return { items: [], overflowDropped: 0 }
@@ -47,7 +74,7 @@ export function createCriticalAuditQueue({
     }
   }
 
-  async function writeState(state) {
+  async function writeState(state: AuditQueueState): Promise<void> {
     try {
       await storage.setItem(key, JSON.stringify(state))
     } catch {
@@ -55,7 +82,7 @@ export function createCriticalAuditQueue({
     }
   }
 
-  function enqueue(payload) {
+  function enqueue(payload: AuditQueueItem): Promise<void> {
     return withLock(async () => {
       try {
         const state = await readState()
@@ -71,7 +98,7 @@ export function createCriticalAuditQueue({
     })
   }
 
-  async function flush(insertOne) {
+  async function flush(insertOne: FlushInsertOne): Promise<FlushResult> {
     // Skip imediato (sem tomar o lock) se um flush já roda — evita empilhar drenagens.
     if (flushInFlight) {
       const state = await readState()
@@ -81,13 +108,13 @@ export function createCriticalAuditQueue({
     try {
       // O read→process→write inteiro roda sob o lock: um enqueue concorrente espera e anexa
       // ao estado JÁ drenado (não é clobberado).
-      return await withLock(async () => {
+      return await withLock(async (): Promise<FlushResult> => {
         const state = await readState()
         if (state.items.length === 0) {
           return { inserted: 0, remaining: 0 }
         }
 
-        const remainingItems = []
+        const remainingItems: AuditQueueItem[] = []
         let inserted = 0
 
         // Loop sequencial (não Promise.all): a ordem importa para retry.
@@ -124,14 +151,14 @@ export function createCriticalAuditQueue({
     }
   }
 
-  function peek() {
+  function peek(): Promise<AuditQueueState> {
     return withLock(async () => {
       const state = await readState()
       return { items: [...state.items], overflowDropped: state.overflowDropped }
     })
   }
 
-  function clear() {
+  function clear(): Promise<void> {
     return withLock(async () => {
       try {
         await storage.removeItem(key)

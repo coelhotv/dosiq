@@ -318,6 +318,16 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor: string|number|Date,
  *           toleranceMinutes?: number|null, isCritical?: boolean, data?: object, fireAt?: number|null }} params
  */
+interface ScheduleAlarmParams {
+  doseInstanceId: string
+  medicineName?: string
+  scheduledFor?: string | number
+  toleranceMinutes?: number | null
+  isCritical?: boolean
+  data?: Record<string, unknown>
+  fireAt?: number | null
+}
+
 export async function scheduleAlarm({
   doseInstanceId,
   medicineName,
@@ -326,7 +336,7 @@ export async function scheduleAlarm({
   isCritical = false,
   data = {},
   fireAt = null,
-}) {
+}: ScheduleAlarmParams) {
   await ensureAlarmSetup()
   // F: instante absoluto (timestamptz) → epoch direto via parseISO (não date-string parse).
   // fireAt (epoch ms) tem precedência: re-arma a MESMA dose num horário deslocado (soneca).
@@ -375,6 +385,16 @@ export async function cancelAlarm(doseInstanceId) {
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor?: string|number|Date,
  *           toleranceMinutes?: number|null, currentNagAttempt?: number, isCritical?: boolean, data?: object }} params
  */
+interface ScheduleNagParams {
+  doseInstanceId: string
+  medicineName?: string
+  scheduledFor?: string | number
+  toleranceMinutes?: number | null
+  currentNagAttempt?: number
+  isCritical?: boolean
+  data?: Record<string, unknown>
+}
+
 export async function scheduleNag({
   doseInstanceId,
   medicineName,
@@ -383,7 +403,7 @@ export async function scheduleNag({
   currentNagAttempt = 0,
   isCritical = false,
   data = {},
-}) {
+}: ScheduleNagParams) {
   const next = currentNagAttempt + 1
   if (next > MAX_NAG_ATTEMPTS) return
 

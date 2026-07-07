@@ -33,7 +33,7 @@ export function createAsyncStorageAdapter() {
     },
 
     // write(fileKey, { manifest, data }) → void. Persiste ambas as chaves.
-    async write(_fileKey, { manifest, data }) {
+    async write(_fileKey: string, { manifest, data }: { manifest: unknown; data: unknown }) {
       await AsyncStorage.multiSet([
         [STORAGE_KEYS.manifest, JSON.stringify(manifest)],
         [STORAGE_KEYS.data, JSON.stringify(data)],

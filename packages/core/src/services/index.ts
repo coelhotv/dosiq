@@ -35,3 +35,4 @@ export {
 
 // Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
 export { createCriticalAuditService } from './criticalAuditService'
+export type { CriticalAuditEvent } from './criticalAuditService'

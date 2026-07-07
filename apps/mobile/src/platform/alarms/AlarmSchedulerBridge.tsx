@@ -11,7 +11,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppState, Platform } from 'react-native'
 import notifee, { EventType, AuthorizationStatus } from '@notifee/react-native'
-import { getTodayLocal, getRawNow, createCriticalAuditService } from '@dosiq/core'
+import {
+  getTodayLocal,
+  getRawNow,
+  createCriticalAuditService,
+  type CriticalAuditEvent,
+} from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
@@ -91,7 +96,7 @@ async function flushCriticalAudit(userId) {
       }
     }
     // Drena a fila: insere cada evento via o helper único (CON-031). Item só sai após insert OK.
-    await auditQueue.flush((evt) => auditEmitter.emit(evt))
+    await auditQueue.flush((evt) => auditEmitter.emit(evt as unknown as CriticalAuditEvent))
   } catch (err) {
     if (__DEV__) console.warn('[AlarmSchedulerBridge] flush audit falhou', err?.message)
   }
