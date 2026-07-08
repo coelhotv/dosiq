@@ -40,22 +40,22 @@ O Dosiq utiliza um **Motor de Notificações Unificado** baseado no princípio *
 O sistema opera através de um motor desacoplado em **3 Camadas**, garantindo que lógica de negócio, formatação visual e entrega técnica sejam completamente independentes.
 
 ```
-server/bot/tasks.js (L1)
+server/bot/tasks.ts (L1)
          │  { kind, data: { raw_domain_fields } }
          ▼
-server/notifications/payloads/buildNotificationPayload.js (L2)
+server/notifications/payloads/buildNotificationPayload.ts (L2)
          │  { title, body, pushBody, deeplink, actions[], metadata{} }
          ▼
-server/notifications/dispatcher/dispatchNotification.js (L3)
+server/notifications/dispatcher/dispatchNotification.ts (L3)
          │
-         ├── telegramChannel.js     → Telegram Bot API
-         ├── expoPushChannel.js     → Expo Push (iOS/Android)
-         └── inboxChannel.js        → notification_log (Supabase)
+         ├── telegramChannel.ts     → Telegram Bot API
+         ├── expoPushChannel.ts     → Expo Push (iOS/Android)
+         └── webPushChannel.ts      → Web Push (Browser)
 ```
 
 ### Camada 1 — Business Logic (L1)
 
-**Localização:** `server/bot/tasks.js`, `server/bot/_reminderHelpers.js`, `server/bot/_adherenceHelpers.js`
+**Localização:** `server/bot/tasks.ts`, `server/bot/_reminderHelpers.ts`, `server/bot/_adherenceHelpers.ts`
 
 **Responsabilidade:** Decidir *quem* notificar e *o quê* (dados brutos de domínio).
 
@@ -77,7 +77,7 @@ await dispatchNotification({
 
 ### Camada 2 — Presentation Layer (L2)
 
-**Localização:** `server/notifications/payloads/buildNotificationPayload.js`, `server/notifications/payloads/_payloadSchemas.js`, `server/notifications/payloads/_payloadBuilders.js`
+**Localização:** `server/notifications/payloads/buildNotificationPayload.ts`, `server/notifications/payloads/_payloadSchemas.ts`, `server/notifications/payloads/_payloadBuilders.ts`
 
 **Responsabilidade:** Transformar dados brutos em experiência visual rica e validada.
 
@@ -116,7 +116,7 @@ await dispatchNotification({
 
 ### Camada 3 — Delivery Layer (L3)
 
-**Localização:** `server/notifications/dispatcher/dispatchNotification.js`, `server/notifications/channels/`
+**Localização:** `server/notifications/dispatcher/dispatchNotification.ts`, `server/notifications/channels/`
 
 **Responsabilidade:** Adaptar o payload canônico para os canais nativos de entrega.
 
@@ -127,7 +127,7 @@ await dispatchNotification({
 - ✅ **Gate de supressão**: Quiet Hours e Notification Modes
 - ✅ **DLQ automático**: Se todos os canais falharem → auto-enfileira
 
-> **Nota (desvio aceito):** O `telegramChannel.js` aplica `escapeMarkdownV2(payload.title)` antes do wrapping `*bold*`. Isso é necessário porque o `title` em L2 é construído com emojis + texto puro (não escapado). Documentado como exceção pragmática do Gate 4; a refatoração para que L2 entregue o title já escapado está planejada para uma wave futura.
+> **Nota (desvio aceito):** O `telegramChannel.ts` aplica `escapeMarkdownV2(payload.title)` antes do wrapping `*bold*`. Isso é necessário porque o `title` em L2 é construído com emojis + texto puro (não escapado). Documentado como exceção pragmática do Gate 4; a refatoração para que L2 entregue o title já escapado está planejada para uma wave futura.
 
 ---
 
@@ -154,8 +154,8 @@ Siga estes 6 passos para adicionar um novo tipo de notificação:
 
 ### 1. Schema de dados (L1 → L2)
 
-Em `server/notifications/payloads/_payloadSchemas.js`:
-```js
+Em `server/notifications/payloads/_payloadSchemas.ts`:
+```ts
 // Adicione o schema dos dados brutos que L1 enviará
 export const myNewKindDataSchema = z.object({
   field1: z.string(),
@@ -171,8 +171,8 @@ export const kindSchema = z.enum([
 
 ### 2. Builder de apresentação (L2)
 
-Em `server/notifications/payloads/_payloadBuilders.js` (ou direto no switch do `buildNotificationPayload.js`):
-```js
+Em `server/notifications/payloads/_payloadBuilders.ts` (ou direto no switch do `buildNotificationPayload.ts`):
+```ts
 export function buildMyNewKindPayload(data, context) {
   const parsed = myNewKindDataSchema.safeParse(data);
   if (!parsed.success) throw new Error(`[L2] my_new_kind data inválido`);
@@ -190,8 +190,8 @@ export function buildMyNewKindPayload(data, context) {
 
 ### 3. Registrar no switch
 
-Em `server/notifications/payloads/buildNotificationPayload.js`, dentro do `switch(kind)`:
-```js
+Em `server/notifications/payloads/buildNotificationPayload.ts`, dentro do `switch(kind)`:
+```ts
 case 'my_new_kind':
   specific = buildMyNewKindPayload(data, context);
   break;
@@ -200,7 +200,7 @@ case 'my_new_kind':
 ### 4. Metadados de navegação
 
 Em `buildMetadata()` (mesmo arquivo), adicionar ao mapeamento de navegação se necessário:
-```js
+```ts
 } else if (kind === 'my_new_kind') {
   navigation.screen = 'minha-tela';
   navigation.params = { field1: data.field1 };
@@ -209,15 +209,15 @@ Em `buildMetadata()` (mesmo arquivo), adicionar ao mapeamento de navegação se 
 
 ### 5. Labels no frontend
 
-Em `apps/web/src/services/api/dlqService.js`, adicionar ao `formatNotificationType`:
-```js
+Em `apps/web/src/services/api/dlqService.ts`, adicionar ao `formatNotificationType`:
+```ts
 my_new_kind: 'Meu Novo Tipo',
 ```
 
 ### 6. Teste unitário
 
-Em `server/notifications/payloads/__tests__/buildNotificationPayload.test.js`:
-```js
+Em `server/notifications/payloads/__tests__/buildNotificationPayload.test.ts`:
+```ts
 it('my_new_kind — gera payload correto', () => {
   const payload = buildNotificationPayload({
     kind: 'my_new_kind',
@@ -238,8 +238,8 @@ Siga estes 5 passos para adicionar um novo canal de entrega (ex: WhatsApp, Email
 
 ### 1. Criar o channel adapter
 
-Em `server/notifications/channels/whatsappChannel.js`:
-```js
+Em `server/notifications/channels/whatsappChannel.ts`:
+```ts
 /**
  * Canal WhatsApp — Adapter L3
  * Recebe payload canônico (L2) e adapta para a API do WhatsApp.
@@ -266,8 +266,8 @@ export async function sendWhatsappNotification({ userId, payload, context, repos
 
 ### 2. Registrar no dispatcher
 
-Em `server/notifications/dispatcher/resolveChannelsForUser.js`:
-```js
+Em `server/notifications/policies/resolveChannelsForUser.ts`:
+```ts
 // Adicionar à lista de canais disponíveis
 if (settings.channel_whatsapp_enabled && user.whatsapp_number) {
   channels.push({ type: 'whatsapp', adapter: sendWhatsappNotification });
@@ -283,7 +283,7 @@ ALTER TABLE user_settings ADD COLUMN channel_whatsapp_enabled boolean DEFAULT fa
 
 ### 4. Testar o adapter
 
-Criar `server/notifications/channels/whatsappChannel.test.js` com mocks do client e repositório.
+Criar `server/notifications/channels/whatsappChannel.test.ts` com mocks do client e repositório.
 
 ### 5. Documentar
 
@@ -298,7 +298,7 @@ Adicionar o canal às tabelas desta documentação (Adaptadores na seção L3, e
 Quando uma notificação falha em todos os canais, ela é enfileirada na `failed_notification_queue` (DLQ). Ao ser re-despachada:
 
 ```js
-// api/dlq/_handlers/retry.js
+// api/admin/_handlers/retry.ts
 await dispatchNotification({
   userId,
   kind: entry.notification_type,
@@ -319,7 +319,7 @@ O builder L2 usa `context.isRetry` para:
 
 ---
 
-## 📨 Tipos de Tarefas Agendadas (`server/bot/tasks.js`)
+## 📨 Tipos de Tarefas Agendadas (`server/bot/tasks.ts`)
 
 As tarefas são disparadas por um cron central (`/api/notify`) e processadas com consciência de **Timezone** e **Preferências do Usuário**.
 

@@ -190,8 +190,8 @@ O tema é controlado pelo atributo `data-theme` no elemento `html`:
 
 ### Hook useTheme
 
-```javascript
-import { useTheme } from './hooks/useTheme'
+```typescript
+import { useTheme } from '@shared/hooks/useTheme'
 
 function MyComponent() {
   const { theme, toggleTheme, isDark } = useTheme()
@@ -212,11 +212,11 @@ function MyComponent() {
 - Componentes complexos com muitos estilos específicos
 - Componentes que podem conflitar com estilos globais
 - Componentes com lógica de estado visual complexa
-- `Dashboard.jsx`, `SmartAlerts.jsx`, `TreatmentAccordion.jsx`, `HealthScoreCard.jsx`
+- `Dashboard.tsx`, `SmartAlerts.tsx`, `TreatmentAccordion.tsx`, `HealthScoreCard.tsx`
 
 **Mantenha CSS global para:**
 - Componentes simples e reutilizáveis
-- `Button.jsx`, `Modal.jsx`, `EmptyState.jsx`
+- `Button.tsx`, `Modal.tsx`, `EmptyState.tsx`
 - Estilos de reset e base
 - Utilitários compartilhados
 
@@ -241,7 +241,7 @@ function MyComponent() {
 ```
 
 ```javascript
-// Dashboard.jsx
+// Dashboard.tsx
 import styles from './Dashboard.module.css'
 
 function Dashboard() {
@@ -312,7 +312,7 @@ Adicionados padrões CSS para componentes consolidados na Fase 3.6.
 
 #### AlertList Componente Base
 
-Novo componente base em [`src/components/ui/AlertList.jsx`](src/components/ui/AlertList.jsx) com variantes visuais:
+Novo componente base em [`apps/web/src/shared/components/ui/AlertList.tsx`](apps/web/src/shared/components/ui/AlertList.tsx) com variantes visuais:
 
 ```css
 /* Estrutura BEM-like do AlertList */
@@ -466,7 +466,7 @@ Após a refatoração da arquitetura CSS, foram identificadas e corrigidas regre
 
 **Antes:**
 ```javascript
-// Dashboard.jsx
+// Dashboard.tsx
 import './Dashboard.css'
 
 function Dashboard() {
@@ -476,7 +476,7 @@ function Dashboard() {
 
 **Depois:**
 ```javascript
-// Dashboard.jsx
+// Dashboard.tsx
 import styles from './Dashboard.module.css'
 
 function Dashboard() {

@@ -23,16 +23,16 @@ updated_at: "2026-06-22"
 
 > Esta seção consolida o estado ATUAL e **supersede** os detalhes históricos (Sprint 8) abaixo onde houver conflito (modelo, segurança, params, contexto).
 
-### A. Segurança server-side (`api/chatbot.js`)
+### A. Segurança server-side (`api/chatbot.ts`)
 
 Antes, o endpoint era **aberto** e o `systemPrompt` era montado no **cliente** (um POST direto podia remover as "REGRAS ABSOLUTAS" e gastar a quota Groq anonimamente). Agora:
 
-- **Auth obrigatória**: Supabase JWT (`Authorization: Bearer`, `supabase.auth.getUser`, padrão `share.js` / R-042). Sem token → `401`.
-- **System prompt autoritativo no servidor**: o cliente envia apenas `patientContext` (dados, sem PII/IDs); as REGRAS são compostas no servidor via `buildSystemPrompt` (fonte única em `chatbotConfig.js`, sem dependências).
+- **Auth obrigatória**: Supabase JWT (`Authorization: Bearer`, `supabase.auth.getUser`, padrão `share.ts` / R-042). Sem token → `401`.
+- **System prompt autoritativo no servidor**: o cliente envia apenas `patientContext` (dados, sem PII/IDs); as REGRAS são compostas no servidor via `buildSystemPrompt` (fonte única em `chatbotConfig.ts`, sem dependências).
 - **Safety guard server-side**: `CHATBOT_BLOCKED_PATTERNS` revalidados no endpoint (defesa em profundidade) → `422`.
 - **Rate limit server-side por usuário**: `Map` em memória (mesmo padrão de `beta-signup`), além do limite client-side.
 
-### B. Contexto enriquecido + escopo correto (`contextBuilder.js`)
+### B. Contexto enriquecido + escopo correto (`@dosiq/core`)
 
 - **Escopo**: considera SOMENTE tratamentos **ativos com prescrição válida hoje** (`p.active && isProtocolActiveOnDate(p, hoje)`) — exclui finalizados/pausados/futuros (corrige bot sugerir repor estoque de cursos encerrados).
 - **Runway**: por medicamento, exibe **consumo diário** + **dias restantes** (relativo), não só o total absoluto.
@@ -50,7 +50,7 @@ Antes, o endpoint era **aberto** e o `systemPrompt` era montado no **cliente** (
   - Guardrails SaMD reforçados (ADR-062): nunca calcular/sugerir dose de insulina/bolus nem metas de glicemia; nunca personalizar conduta clínica.
 - **Cold-start** (Web, `ChatWindow`): `['Quais doses ainda faltam hoje?', 'Como está minha adesão?', 'Preciso repor algum estoque?']`.
 
-### Paridade Telegram (`server/bot/services/chatbotServerService.js`)
+### Paridade Telegram (`server/bot/services/chatbotServerService.ts`)
 
 - Modelo + `max_tokens` + prompt de dois níveis + **escopo ativo** (mesma regra `isProtocolActiveOnDate`).
 - **Follow-up**: próximas/atrasadas, runway e líquidos no Telegram exigem buscar `dose_instances` + computar runway na camada de dados do bot (a web pega do `DashboardContext`) — deferido.
@@ -81,13 +81,13 @@ O Chatbot IA Multi-Canal é uma assistente virtual que ajuda pacientes a:
 ```
 Client (React)                  Serverless (Vercel)
 ┌──────────────────┐            ┌─────────────────────┐
-│  ChatWindow.jsx  │            │  api/chatbot.js     │
+│  ChatWindow.tsx  │            │  api/chatbot.ts     │
 │  (Drawer UI)     │            │  (Groq Handler)     │
 └─────────┬────────┘            └──────────┬──────────┘
           │                                │
-          ├─ contextBuilder.js   ← Monta contexto compacto
-          ├─ safetyGuard.js      ← Bloqueia perguntas perigosas
-          ├─ chatbotService.js   ← Rate limit + orquestração
+          ├─ @dosiq/core         ← Monta contexto compacto
+          ├─ safetyGuard.ts      ← Bloqueia perguntas perigosas
+          ├─ chatbotService.ts   ← Rate limit + orquestração
           │
           └─ fetch('/api/chatbot')────────┬────────────┐
                                            │            │
@@ -100,7 +100,7 @@ Client (React)                  Serverless (Vercel)
 
 ## 📦 Componentes Principais
 
-### 1. **contextBuilder.js** — Monta Contexto Compacto
+### 1. **@dosiq/core (antigo contextBuilder.js)** — Monta Contexto Compacto
 
 **Responsabilidade:** Transformar dados do paciente (medicine, protocols, logs, stock) em um string formatado para o LLM.
 
@@ -133,7 +133,7 @@ buildSystemPrompt(patientContext)
 
 ---
 
-### 2. **safetyGuard.js** — Filtra Intenções Perigosas
+### 2. **safetyGuard.ts** — Filtra Intenções Perigosas
 
 **Responsabilidade:** Bloquear perguntas que o LLM não deve responder.
 
@@ -162,7 +162,7 @@ addDisclaimerIfNeeded(response)
 
 ---
 
-### 3. **chatbotService.js** — Orquestração Client-Side
+### 3. **chatbotService.ts** — Orquestração Client-Side
 
 **Responsabilidade:**
 - Rate limiting (30 msg/hora via localStorage)
@@ -186,7 +186,7 @@ sendChatMessage({ message, history, patientData })
 
 ---
 
-### 4. **api/chatbot.js** — Handler Serverless (Vercel)
+### 4. **api/chatbot.ts** — Handler Serverless (Vercel)
 
 **Responsabilidade:**
 - Validar request com Zod
@@ -217,7 +217,7 @@ max_tokens: 300,
 
 ---
 
-### 5. **ChatWindow.jsx** — Componente UI
+### 5. **ChatWindow.tsx** — Componente UI
 
 **Responsabilidade:**
 - Drawer lateral responsivo
@@ -228,7 +228,7 @@ max_tokens: 300,
 
 **Integração:**
 ```jsx
-// App.jsx
+// App.tsx
 const ChatWindow = lazy(() => import('@features/chatbot/components/ChatWindow'))
 
 <Suspense fallback={<ViewSkeleton />}>
@@ -251,13 +251,13 @@ validateUserMessage() [safetyGuard]
 isRateLimited() [localStorage]
    ├─ LIMITE ATINGIDO? → return { rateLimited: true }
    └─ OK? ↓
-buildPatientContext() [contextBuilder]
+buildPatientContext() [@dosiq/core]
    ↓
 buildSystemPrompt()
    ↓
 fetch('/api/chatbot', { message, history, systemPrompt })
        ↓
-   api/chatbot.js
+   api/chatbot.ts
    ├─ Zod validation
    ├─ Groq API call
    ├─ Return response
@@ -279,11 +279,11 @@ Display em ChatWindow
 
 | Camada | Responsável | Técnica |
 |--------|-------------|---------|
-| **Cliente** | `safetyGuard.js` | Regex patterns + localStorage rate limit (UX, não confiável) |
-| **Auth** | `api/chatbot.js` | Supabase JWT obrigatório (`Bearer` → `getUser`); 401 sem token |
-| **Servidor** | `api/chatbot.js` | Zod + `CHATBOT_BLOCKED_PATTERNS` (guard server-side, 422) + rate limit por usuário |
+| **Cliente** | `safetyGuard.ts` | Regex patterns + localStorage rate limit (UX, não confiável) |
+| **Auth** | `api/chatbot.ts` | Supabase JWT obrigatório (`Bearer` → `getUser`); 401 sem token |
+| **Servidor** | `api/chatbot.ts` | Zod + `CHATBOT_BLOCKED_PATTERNS` (guard server-side, 422) + rate limit por usuário |
 | **System prompt** | servidor (`buildSystemPrompt`) | Composto NO SERVIDOR (cliente envia só `patientContext`); grounding de dois níveis |
-| **Response** | `safetyGuard.js` | Adiciona disclaimer em conteúdo médico |
+| **Response** | `safetyGuard.ts` | Adiciona disclaimer em conteúdo médico |
 
 > ⚠️ **Atualizado 2026-06:** ver seção "Atualização 2026-06" no topo. O `systemPrompt` NÃO é mais montado/recebido do cliente, e o endpoint exige autenticação.
 
@@ -335,13 +335,13 @@ Adesao ultimos 7 dias: N%
 
 ## 🧪 Testes
 
-**Arquivo:** `src/features/chatbot/__tests__/`
+**Arquivo:** `apps/web/src/features/chatbot/__tests__/`
 
 | Teste | Arquivo | Coverage |
 |-------|---------|----------|
-| `contextBuilder.test.js` | Contexto compacto, ausência de IDs, therapeutic_class | 11 testes ✅ |
-| `safetyGuard.test.js` | Bloqueio de padrões, disclaimer, ausência de null | 15 testes ✅ |
-| `chatbotService.test.js` | Rate limit, validação, fetch, error handling | 7 testes ✅ |
+| `contextBuilder.test.ts` | Contexto compacto, ausência de IDs, therapeutic_class | 11 testes ✅ |
+| `safetyGuard.test.ts` | Bloqueio de padrões, disclaimer, ausência de null | 15 testes ✅ |
+| `chatbotService.test.ts` | Rate limit, validação, fetch, error handling | 7 testes ✅ |
 
 **Total:** 33/33 testes ✅ (Sprint 8.3.1)
 
@@ -369,7 +369,7 @@ vi.stubGlobal('localStorage', mockLocalStorage)
 - **Main bundle:** 0 KB adicionado (tudo lazy)
 
 ### Serverless Budget
-- **Função:** `api/chatbot.js` (slot 7/12)
+- **Função:** `api/chatbot.ts` (slot 7/12)
 - **maxDuration:** default (padrão do Vercel, ~30s)
 - **Rate Limit Groq:** 30 req/min (free tier)
 
@@ -404,21 +404,21 @@ O usuário pode agora recuperar o histórico de conversas anteriores ao fechar e
 
 ### Componentes Novos / Modificados
 
-**chatbotConfig.js:**
+**chatbotConfig.ts:**
 ```javascript
 export const CHATBOT_HISTORY_STORAGE_KEY = 'mr_chat_history'
 export const CHATBOT_HISTORY_MAX_DISPLAY = 20
 export function createWelcomeMessage() // → mensagem inicial reutilizável
 ```
 
-**chatbotService.js:**
+**chatbotService.ts:**
 ```javascript
 export function loadPersistedHistory()         // → carrega do localStorage
 export function savePersistedHistory(messages) // → salva com limite
 export function clearPersistedHistory()        // → limpa ao usuario pedir
 ```
 
-**ChatWindow.jsx:**
+**ChatWindow.tsx:**
 - Lazy init: `useState(() => loadPersistedHistory() || [createWelcomeMessage()])`
 - Helper `addMessage()` — encapsula duplicação de save + setState
 - Funções puras movidas para fora do componente (performance):
@@ -492,7 +492,7 @@ Implementação de **Groq Prompt Caching** para otimizar custo e latência em co
 
 **Nova função helper:**
 ```javascript
-// contextBuilder.js (web) + chatbotServerService.js (Telegram)
+// chatbotConfig.ts (web) + chatbotServerService.ts (Telegram)
 
 export function buildStaticSystemRules() {
   return [
@@ -524,8 +524,8 @@ export function buildSystemPrompt(patientContext) {
 #### 2. Logging de Cache Hit Rate
 
 **Implementado em:**
-- `api/chatbot.js` (Vercel serverless, web/PWA)
-- `server/bot/services/chatbotServerService.js` (Telegram)
+- `api/chatbot.ts` (Vercel serverless, web/PWA)
+- `server/bot/services/chatbotServerService.ts` (Telegram)
 
 **Métricas capturadas:**
 
@@ -596,7 +596,7 @@ logger.info('✅ Groq respondeu', {
 ### Referências
 
 - **Groq Prompt Caching Docs:** https://console.groq.com/docs/caching
-- **Implementação:** `src/features/chatbot/services/contextBuilder.js`, `api/chatbot.js`, `server/bot/services/chatbotServerService.js`
+- **Implementação:** `apps/web/src/features/chatbot/config/chatbotConfig.ts`, `api/chatbot.ts`, `server/bot/services/chatbotServerService.ts`
 - **Branch de implementação:** `feature/8-5-chatbot-groq-optimization` (merged)
 - **Journal entry:** `.memory/journal/2026-W12.md` (Sprint 8.5)
 
@@ -610,13 +610,13 @@ Implementado em `server/bot/` com arquitetura server-side:
 
 ```
 Telegram msg (texto)
-  → webhook handler (api/telegram.js — Vercel entry point)
+  → webhook handler (api/telegram.ts — Vercel entry point)
       → logs estruturados AQUI (visível em Vercel prod)
       → dispatch: command vs message vs callback_query
       ↓ (para textos livres)
-  → handleChatbotMessage (server/bot/commands/chatbot.js)
+  → handleChatbotMessage (server/bot/commands/chatbot.ts)
       → getUserIdByChatId() — verifica vinculação
-      → sendTelegramChatMessage() (server/bot/services/chatbotServerService.js)
+      → sendTelegramChatMessage() (server/bot/services/chatbotServerService.ts)
           → validateServerMessage() — safetyGuard patterns
           → isServerRateLimited() — 30 msg/hora via Map em memória
           → fetchPatientData() — busca Supabase (medicines + protocols + logs + stock)
@@ -633,19 +633,19 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 
 | Camada | Problema | Root Cause | Fix | Impacto |
 |--------|----------|-----------|-----|---------|
-| **1. Observabilidade** | Logs não visíveis em Vercel | Structured logging em `server/bot/**` (Node context) invisível para Vercel | Adicionar logging em `api/telegram.js` (serverless entry point) | Logs agora visíveis em prod (R-132) |
-| **2. Lógica** | Mensagens sem sessão ignoradas silenciosamente | Router não tinha fallback para mensagens livres | Adicionar `else { handleChatbotMessage() }` em conversational.js | Textos livres agora routeados (R-133) |
+| **1. Observabilidade** | Logs não visíveis em Vercel | Structured logging em `server/bot/**` (Node context) invisível para Vercel | Adicionar logging em `api/telegram.ts` (serverless entry point) | Logs agora visíveis em prod (R-132) |
+| **2. Lógica** | Mensagens sem sessão ignoradas silenciosamente | Router não tinha fallback para mensagens livres | Adicionar `else { handleChatbotMessage() }` em conversational.ts | Textos livres agora routeados (R-133) |
 | **3. API Compatibility** | `bot.sendChatAction is not a function` | Mock bot adapter incompleto (faltava sendChatAction) | Implementar method no adapter | Typing indicator funcionando |
 
 **Lições de Integração:**
 
-1. **Logging em contextos diferentes:** Node.js server vs Vercel serverless são VMs separadas. Logs estruturados DEVEM estar no entry point Vercel (`api/telegram.js`), não em níveis inferiores.
+1. **Logging em contextos diferentes:** Node.js server vs Vercel serverless são VMs separadas. Logs estruturados DEVEM estar no entry point Vercel (`api/telegram.ts`), não em níveis inferiores.
 
 2. **Event-driven dispatch:** Quando múltiplos handlers competem (commands específicos vs fallback conversacional), SEMPRE ter fallback explícito + logging. Casos não-capturados caem silenciosamente.
 
 3. **Mock completeness:** Testar localmente que mock bot implementa TODOS os métodos que handlers chamam. Interface incompleta = erro silencioso em produção.
 
-4. **Multi-channel adaptation:** Web chatbot reutiliza contextBuilder + safetyGuard + Groq. Telegram precisa de adaptação:
+4. **Multi-channel adaptation:** Web chatbot reutiliza @dosiq/core + safetyGuard + Groq. Telegram precisa de adaptação:
    - Dados: DashboardContext → Supabase queries direto
    - Rate limit: localStorage → Map em memória
    - Groq call: `/api/chatbot` endpoint → SDK direto
@@ -659,7 +659,7 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 | Groq call | Vercel endpoint `/api/chatbot` | Groq SDK direto no server |
 | Histórico | Estado React (Suspense) | Map por userId (em memória) |
 | Graceful degradation | Mensagem UI "chatbot disabled" | Silencioso (não vinculado = sem resposta) |
-| Logging | Console + Vercel (ChatWindow.jsx logs) | Structured logs em `api/telegram.js` |
+| Logging | Console + Vercel (ChatWindow.tsx logs) | Structured logs em `api/telegram.ts` |
 
 **Env vars necessárias no servidor:** `GROQ_API_KEY` (requerido), `LOG_LEVEL` (optional, default: INFO)
 
@@ -681,8 +681,8 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 ## 🎓 Decisões de Design
 
 ### 1. **ChatWindow chama `useDashboard()` diretamente**
-❌ **Evitado:** Prop drilling via App.jsx
-✅ **Motivo:** App.jsx é wrapper, não filho do DashboardProvider
+❌ **Evitado:** Prop drilling via App.tsx
+✅ **Motivo:** App.tsx é wrapper, não filho do DashboardProvider
 
 ### 2. **Groq SDK instanciado no handler**
 ❌ **Evitado:** No topo do módulo
@@ -720,7 +720,7 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 - [x] contextBuilder: sem IDs/UUIDs, < 2000 tokens
 - [x] safetyGuard: bloqueia dosagem/diagnóstico/parar/efeito colateral
 - [x] chatbotService: rate limit 30/hora via localStorage
-- [x] api/chatbot.js: Zod validation, Groq SDK no handler
+- [x] api/chatbot.ts: Zod validation, Groq SDK no handler
 - [x] ChatWindow: lazy-loaded, CSS Modules, animação Framer
 - [x] Testes: 33/33 passando, localStorage mock (AP-T03)
 - [x] Bugfix 8.3.1: active_ingredient + therapeutic_class, temperature 0.2
@@ -728,9 +728,7 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 
 ## ✅ Checklist Telegram Integration (Sprint 8.5 — Debug & Fix)
 
-- [x] api/telegram.js: Logging estruturado no entry point Vercel (R-132)
-- [x] server/bot/callbacks/conversational.js: Fallback listener para mensagens livres (R-133)
-- [x] api/telegram.js bot adapter: Implementar `sendChatAction` (R-134)
+- [x] api/telegram.ts bot adapter: Implementar `sendChatAction` (R-134)
 - [x] Verificar mock completeness: todos `bot.*` chamados existem no adapter
 - [x] Testes: 539/539 ainda passando (zero regressão)
 - [x] Logs: cadeia completa visível em Vercel (webhook → roteamento → contexto → Groq → resposta)
@@ -738,10 +736,10 @@ User testou chatbot IA no Telegram → "não aconteceu nada" → 3-layer bug fix
 
 ## ✅ Checklist Groq Prompt Caching (Sprint 8.5 — Performance Optimization)
 
-- [x] Refatorar buildSystemPrompt em contextBuilder.js: extrair buildStaticSystemRules()
-- [x] Refatorar buildSystemPrompt em chatbotServerService.js: extrair buildStaticSystemRules()
-- [x] Implementar logging de cache hit rate em api/chatbot.js
-- [x] Implementar logging de cache hit rate em chatbotServerService.js
+- [x] Refatorar buildSystemPrompt em chatbotConfig.ts: extrair buildStaticSystemRules()
+- [x] Refatorar buildSystemPrompt em chatbotServerService.ts: extrair buildStaticSystemRules()
+- [x] Implementar logging de cache hit rate em api/chatbot.ts
+- [x] Implementar logging de cache hit rate em chatbotServerService.ts
 - [x] Padronizar nomes de métricas (promptTokens, cachedTokens, etc.) entre canais
 - [x] Documentação de estratégia de caching em CHATBOT_AI.md
 - [x] Testes: 539/539 ainda passando (zero regressão)

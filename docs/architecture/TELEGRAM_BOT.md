@@ -51,57 +51,55 @@ O bot Telegram do Dosiq é uma interface de comunicação que permite aos usuár
 
 ```
 server/
-├── index.js                    # Entry point (desenvolvimento local)
+├── index.ts                    # Entry point (desenvolvimento local)
 ├── bot/
 │   ├── commands/               # Handlers de comandos
-│   │   ├── start.js           # /start - Vincular conta
-│   │   ├── status.js          # /status - Protocolos ativos
-│   │   ├── estoque.js         # /estoque - Níveis de estoque
-│   │   ├── hoje.js            # /hoje - Cronograma do dia
-│   │   ├── proxima.js         # /proxima - Próxima dose
-│   │   ├── historico.js       # /historico - Histórico de doses
-│   │   ├── ajuda.js           # /ajuda - Ajuda
-│   │   ├── registrar.js       # /registrar - Registrar dose
-│   │   ├── adicionar_estoque.js # /adicionar_estoque
-│   │   └── protocols.js       # /pausar, /retomar
+│   │   ├── start.ts           # /start - Vincular conta
+│   │   ├── status.ts          # /status - Protocolos ativos
+│   │   ├── estoque.ts         # /estoque - Níveis de estoque
+│   │   ├── hoje.ts            # /hoje - Cronograma do dia
+│   │   ├── proxima.ts         # /proxima - Próxima dose
+│   │   ├── historico.ts       # /historico - Histórico de doses
+│   │   ├── ajuda.ts           # /ajuda - Ajuda
+│   │   ├── registrar.ts       # /registrar - Registrar dose
+│   │   ├── adicionar_estoque.ts # /adicionar_estoque
+│   │   └── protocols.ts       # /pausar, /retomar
 │   ├── callbacks/
-│   │   ├── conversational.js  # Fluxos conversacionais
-│   │   └── doseActions.js     # Botões de dose (Tomar/Pular)
-│   ├── bot-factory.js         # Factory do bot
-│   ├── correlationLogger.js   # UUID tracing
-│   ├── health-check.js        # Health check
-│   ├── inlineQuery.js         # Busca inline
-│   ├── logger.js              # Logger estruturado
-│   ├── scheduler.js           # Agendador de tarefas
-│   ├── state.js               # Gerenciamento de sessão
-│   └── tasks.js               # Tarefas do cron
+│   │   ├── conversational.ts  # Fluxos conversacionais
+│   │   └── doseActions.ts     # Botões de dose (Tomar/Pular)
+│   ├── bot-factory.ts         # Factory do bot
+│   ├── correlationLogger.ts   # UUID tracing
+│   ├── health-check.ts        # Health check
+│   ├── inlineQuery.ts         # Busca inline
+│   ├── logger.ts              # Logger estruturado
+│   ├── scheduler.ts           # Agendador de tarefas
+│   ├── state.ts               # Gerenciamento de sessão
+│   └── tasks.ts               # Tarefas do cron
 ├── services/
-│   ├── supabase.js            # Cliente Supabase
-│   ├── deadLetterQueue.js     # DLQ PostgreSQL
-│   ├── notificationMetrics.js # Métricas em memória
-│   ├── notificationDeduplicator.js # Controle de duplicados
-│   ├── protocolCache.js       # Cache de protocolos
-│   └── sessionManager.js      # Gerenciador de sessões
+│   ├── supabase.ts            # Cliente Supabase
+│   ├── deadLetterQueue.ts     # DLQ PostgreSQL
+│   ├── notificationMetrics.ts # Métricas em memória
+│   ├── notificationDeduplicator.ts # Controle de duplicados
+│   ├── protocolCache.ts       # Cache de protocolos
+│   └── sessionManager.ts      # Gerenciador de sessões
 └── utils/
-    ├── formatters.js          # Formatação de mensagens
-    ├── retryManager.js        # Retry helpers
-    └── timezone.js            # Utilitários de timezone
+    ├── formatters.ts          # Formatação de mensagens
+    ├── retryManager.ts        # Retry helpers
+    └── timezone.ts            # Utilitários de timezone
 
 api/
-├── telegram.js                # Webhook handler
-├── notify.js                  # Cron job endpoint
-├── dlq.js                     # DLQ list endpoint
-├── dlq/
-│   └── [id]/
-│       ├── retry.js           # Retry endpoint
-│       └── discard.js         # Discard endpoint
-└── health/
-    └── notifications.js       # Health check API
+├── telegram.ts                # Webhook handler
+├── notify.ts                  # Cron job endpoint
+├── admin.ts                   # Painel admin principal (DLQ/feedbacks/nudges)
+└── admin/
+    └── _handlers/
+        ├── retry.ts           # Retry endpoint do DLQ
+        └── discard.ts         # Discard endpoint do DLQ
 
-src/
+apps/web/src/
 └── views/
     └── admin/
-        └── DLQAdmin.jsx       # Interface admin DLQ
+        └── DLQAdmin.tsx       # Interface admin DLQ
 ```
 
 ---
@@ -185,7 +183,7 @@ logSuccessfulNotification
 
 ### Função `escapeMarkdownV2()`
 
-A API do Telegram exige que caracteres especiais sejam escapados no formato MarkdownV2. A função [`escapeMarkdownV2()`](../../server/utils/formatters.js:130) implementa essa formatação.
+A API do Telegram exige que caracteres especiais sejam escapados no formato MarkdownV2. A função [`escapeMarkdownV2()`](../../server/utils/formatters.ts:130) implementa essa formatação.
 
 #### Caracteres Reservados (18 caracteres)
 
@@ -243,10 +241,10 @@ export function escapeMarkdownV2(text) {
 
 #### Arquivos que Utilizam
 
-- [`server/utils/formatters.js`](../../server/utils/formatters.js) - Funções de formatação
-- [`server/bot/tasks.js`](../../server/bot/tasks.js) - Mensagens de notificação
-- [`server/bot/commands/*.js`](../../server/bot/commands/) - Respostas de comandos
-- [`server/bot/callbacks/*.js`](../../server/bot/callbacks/) - Mensagens de callback
+- [`server/utils/formatters.ts`](../../server/utils/formatters.ts) - Funções de formatação
+- [`server/bot/tasks.ts`](../../server/bot/tasks.ts) - Mensagens de notificação
+- [`server/bot/commands/*.ts`](../../server/bot/commands/) - Respostas de comandos
+- [`server/bot/callbacks/*.ts`](../../server/bot/callbacks/) - Mensagens de callback
 
 ---
 
@@ -257,7 +255,7 @@ export function escapeMarkdownV2(text) {
 O sistema implementa retry simples com 2 tentativas:
 
 ```javascript
-// api/notify.js
+// api/notify.ts
 const maxAttempts = 2;
 
 for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -439,7 +437,7 @@ LOG_LEVEL=INFO  # ERROR | WARN | INFO | DEBUG | TRACE
 ```json
 {
   "functions": {
-    "api/notify.js": {
+    "api/notify.ts": {
       "maxDuration": 60
     }
   },

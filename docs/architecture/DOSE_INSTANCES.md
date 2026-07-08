@@ -101,10 +101,10 @@ PostgREST (`countByStatus`).
 
 ## 4. Motor de geração
 
-**Caminho de produção (ADR-051):** endpoint serverless dedicado `api/generate-doses.js`,
+**Caminho de produção (ADR-051):** endpoint serverless dedicado `api/generate-doses.ts`,
 disparado por agendamento próprio (~03:00), com invoke/orçamento **isolados** dos reminders
-(`api/notify.js`) — geração não pode roubar tempo de notificação crítica. O `node-cron` em
-`server/bot/scheduler.js` é só paridade de DEV (AP-182).
+(`api/notify.ts`) — geração não pode roubar tempo de notificação crítica. O `node-cron` em
+`server/bot/scheduler.ts` é só paridade de DEV (AP-182).
 
 Lógica pura compartilhada em `@dosiq/core`:
 - `doseInstanceGenerator.generateInstances(protocol, fromTs, toTs, tz)` — expande o schedule
@@ -186,7 +186,7 @@ Tudo lê a **fonte única** `dose_instances` (R-248), nunca mais infere sobre lo
    (`v_daily_adherence`, `v_adherence_heatmap`) reescritas para agregação server-side a partir de
    `dose_instances`, clamp 0-100, `security_invoker` (G6).
 
-2. **Timeline event-agnóstica (FP-3 / ADR-050, CON-023)** — `packages/core/src/utils/timeline.js`
+2. **Timeline event-agnóstica (FP-3 / ADR-050, CON-023)** — `packages/core/src/utils/timeline.ts`
    (builder puro `buildTimeline(events, {tz, order})` + `groupByLocalDay` + `deriveLocalDay`;
    modelo `TimelineEvent = {id, type, occurred_at, payload}` com `type` string aberta) +
    `timelineService.doseInstancesToEvents(...)` (adapter puro `dose_instances`+`logs`→eventos
@@ -194,7 +194,7 @@ Tudo lê a **fonte única** `dose_instances` (R-248), nunca mais infere sobre lo
    adapter + um card, **sem tocar o builder nem a UI**. Consumido pelo Histórico web (registry por
    `event.type`).
 
-3. **Zonas de dose / "hoje" (CON-024)** — `packages/core/src/utils/doseZones.js` (puro,
+3. **Zonas de dose / "hoje" (CON-024)** — `packages/core/src/utils/doseZones.ts` (puro,
    compartilhado web↔mobile, R-231):
    - `classifyDose(scheduledFor, now, …, toleranceMinutes)` → `done|late|now|upcoming|later|null`
      pelo **instante absoluto** (mata o cross-meia-noite), cutoff = tolerância da ocorrência.
@@ -228,19 +228,19 @@ A âncora original fica **travada** (Q-E): editar `taken_at` não re-ancora; rea
 
 | Camada | Arquivo |
 |--------|---------|
-| Geração (puro) | `packages/core/src/utils/doseInstanceGenerator.js` |
-| Orquestração | `packages/core/src/services/doseInstancePlanner.js` |
-| Repo I/O | `packages/core/src/repositories/createDoseInstanceRepository.js` |
-| Lifecycle protocolo | `packages/core/src/repositories/createProtocolRepository.js` (`syncInstancesOnWrite`) |
-| Adesão (puro) | `packages/core/src/utils/adherenceLogic.js` (`computeAdherenceFromInstances`, `computeStreakFromInstances`) |
-| Timeline FP-3 | `packages/core/src/utils/timeline.js` + `packages/core/src/services/timelineService.js` |
-| Zonas de dose | `packages/core/src/utils/doseZones.js` |
-| Endpoint geração | `api/generate-doses.js` |
-| Web — hoje | `apps/web/src/features/dashboard/hooks/useDoseZones.js` |
+| Geração (puro) | `packages/core/src/utils/doseInstanceGenerator.ts` |
+| Orquestração | `packages/core/src/services/doseInstancePlanner.ts` |
+| Repo I/O | `packages/core/src/repositories/createDoseInstanceRepository.ts` |
+| Lifecycle protocolo | `packages/core/src/repositories/createProtocolRepository.ts` (`syncInstancesOnWrite`) |
+| Adesão (puro) | `packages/core/src/utils/adherenceLogic.ts` (`computeAdherenceFromInstances`, `computeStreakFromInstances`) |
+| Timeline FP-3 | `packages/core/src/utils/timeline.ts` + `packages/core/src/services/timelineService.ts` |
+| Zonas de dose | `packages/core/src/utils/doseZones.ts` |
+| Endpoint geração | `api/generate-doses.ts` |
+| Web — hoje | `apps/web/src/features/dashboard/hooks/useDoseZones.ts` |
 | Web — histórico | `apps/web/src/features/.../HealthHistory*` + `eventCardRegistry` |
-| Web — escrita | `apps/web/src/shared/services/api/logService.js` |
-| Mobile — hoje | `apps/mobile/src/features/dashboard/hooks/_useTodayDerived.js` |
-| Mobile — escrita | `apps/mobile/src/features/dose/services/doseService.js` + modais |
+| Web — escrita | `apps/web/src/shared/services/api/logService.ts` |
+| Mobile — hoje | `apps/mobile/src/features/dashboard/hooks/_useTodayDerived.ts` |
+| Mobile — escrita | `apps/mobile/src/features/dose/services/doseService.ts` + modais |
 
 ---
 

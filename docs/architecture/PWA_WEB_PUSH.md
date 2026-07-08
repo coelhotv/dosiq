@@ -27,8 +27,8 @@ A infraestrutura de Web Push Notifications foi elaborada no Dosiq como um PWA na
 
 A aplicação cliente obtém e fornece o token gerador pelo próprio browser (via PushManager do Service Worker) utilizando uma Public Key contida diretamente no ambiente (`import.meta.env.VITE_VAPID_PUBLIC_KEY`). 
 
-```javascript
-// webpushService.js
+```typescript
+// webpushService.ts
 const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: convertedVapidKey
@@ -69,4 +69,4 @@ Permite acoplar a mesma abstração universal do Dosiq que atende React Native �
 
 ## 📝 Exibição UX Dinâmicas
 
-A detecção de compatibilidade é gerenciada no módulo **`@shared/components/pwa/pwaUtils.js`**. O app foi treinado para exigir o trigger opt-in (botão "Habilitar Notificações") nativamente se o usuário possuir a tab PWA na modalidade `Standalone` e ainda não possuir a permissão `granted`. O componente **`InstallPrompt.jsx`** reencaminha essa exigência nativa para ele com estilo.
+A detecção de compatibilidade é gerenciada no módulo **`@shared/components/pwa/pwaUtils.ts`**. O app foi treinado para exigir o trigger opt-in (botão "Habilitar Notificações") nativamente se o usuário possuir a tab PWA na modalidade `Standalone` e ainda não possuir a permissão `granted`. O componente **`InstallPrompt.tsx`** reencaminha essa exigência nativa para ele com estilo.
