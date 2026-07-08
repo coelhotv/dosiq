@@ -241,7 +241,7 @@ Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
 
 Tipos: `feat fix docs test refactor style chore`.
 
-**Gitdir externo (Mac Mini):** `docs/setup/GIT_ARCHITECTURE.md`. Usar `gsync` para sync origin+bridge.
+**Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`. Usar `gsync` para sync origin+bridge.
 
 ---
 

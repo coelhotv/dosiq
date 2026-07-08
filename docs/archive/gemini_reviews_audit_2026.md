@@ -2,7 +2,7 @@
 title: "Relatório de Auditoria Gemini Reviews"
 description: "Relatório estatístico consolidador de incidentes, manutenibilidade, segurança e performance gerado pelo data mining de críticas do Gemini Reviews no Dosiq."
 version: "1.0.0"
-status: active
+status: archived
 category: guide
 audience:
   - dev

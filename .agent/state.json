@@ -6,8 +6,8 @@
     "ceremony_type": null,
     "status": "analysis",
     "plan": null,
-    "tasks": "plans/specs/049-docs-revamp/fase-2/tasks.md",
-    "goal": "049-docs-revamp - Fase 2: Aplicação do YAML Frontmatter (Batch 2H)",
+    "tasks": "plans/specs/049-docs-revamp/fase-4/tasks.md",
+    "goal": "049-docs-revamp - Fase 4: Limpeza Estrutural",
     "goal_type": "docs",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -82,9 +82,9 @@
       }
     ],
     "tier": 1,
-    "spec_dir": "plans/specs/049-docs-revamp/fase-2",
-    "spec": "plans/specs/049-docs-revamp/fase-2/spec.md",
-    "previous_session_note": "Iniciando codificação da Fase 2 (Batch 2A) da Reorganização de Documentação.",
+    "spec_dir": "plans/specs/049-docs-revamp/fase-4",
+    "spec": "plans/specs/049-docs-revamp/fase-4/spec.md",
+    "previous_session_note": "Iniciando a Fase 4 da Reorganização de Documentação.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -101,12 +101,12 @@
   },
   "memory": {
     "last_distillation": "2026-07-06T22:29:20.000Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 234,
     "anti_patterns_count": 166,
     "decisions_count": 79,
     "contracts_count": 30,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,

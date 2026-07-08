@@ -5,6 +5,11 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Shared/Core
+- **Process** (`no-user-impact`, PR #TBD): Reorganização de arquivos e limpeza estrutural de diretórios da documentação oficial do Dosiq (Fase 4).
+
 ---
 
 ## Web v4.15.4 · Core v0.2.3 — 2026-07-08 — Refactor (040 F6): fechamento da migração TypeScript

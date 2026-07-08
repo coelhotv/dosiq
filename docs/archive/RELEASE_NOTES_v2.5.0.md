@@ -1,11 +1,19 @@
-# 🎉 Release v2.5.0 - Health Command Center
-
-**Data:** 05 de Fevereiro de 2026  
-**Versão:** 2.5.0  
-**Tipo:** Minor Release  
-**Codinome:** Health Command Center (Onda 2.5)
-
 ---
+title: "Release v2.5.0 - Health Command Center"
+description: "Notas de lançamento da versão 2.5.0 do Dosiq (Health Command Center)"
+version: "2.5.0"
+status: archived
+category: release
+audience:
+  - dev
+  - agent
+tags:
+  - release
+created_at: "2026-02-05"
+updated_at: "2026-07-08"
+---
+
+# 🎉 Release v2.5.0 - Health Command Center
 
 ## 🎯 Resumo Executivo
 

@@ -2,7 +2,7 @@
 title: "Guia de Nudges"
 description: "Guia prático para criação, controle de dismiss e exibição contextual de banners (nudges) via painel administrativo no Dosiq."
 version: "1.0.0"
-status: active
+status: archived
 category: guide
 audience:
   - ops
