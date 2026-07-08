@@ -176,8 +176,9 @@ export function isProtocolFollowed(scheduledTime: string, logs: AdherenceLog[] |
   if (!scheduledTime || !logs || logs.length === 0) return false
 
   return logs.some((log) => {
+    if (!log.taken_at) return false
     // 1. Verificar se o log é do mesmo dia local
-    const logDateStr = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at ?? '')))
+    const logDateStr = formatLocalDate(getSaoPauloTime(parseISO(log.taken_at)))
 
     if (logDateStr !== dateStr) return false
 

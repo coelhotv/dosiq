@@ -130,7 +130,7 @@ export function calculateTitrationData(protocol: TitrationProtocol): {
   const totalDays = currentStage.duration_days ?? currentStage.days ?? 0
 
   // Calculate progress percent (capped at 100)
-  const progressPercent = Math.min(100, (currentDay / totalDays) * 100)
+  const progressPercent = totalDays > 0 ? Math.min(100, (currentDay / totalDays) * 100) : 0
 
   const isTransitionDue = currentDay > totalDays // Or >= depending on logic. Let's say > implies finished yesterday.
 
