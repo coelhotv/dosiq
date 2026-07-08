@@ -1,7 +1,21 @@
-# Design Philosophy — Linguagem Dicotômica
+---
+title: "Design Philosophy"
+description: "Filosofia de design e a dicotomia de personas (modo simple vs complex) no Dosiq."
+version: "1.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - product
+tags:
+  - ux
+  - ui
+  - design-system
+created_at: "2026-03-26"
+updated_at: "2026-07-08"
+---
 
-**Estabelecido:** 2026-03-26 (Waves 7.5–8 — Sessão de refinamento ProtocolRow + StockCard)
-**Documentação canônica:** `plans/PRODUCT_STRATEGY_CONSOLIDATED.md` + `plans/DESIGN-SYSTEM.md` (Seções 0 e 5a) — local-only, não versionados
+# Design Philosophy — Linguagem Dicotômica
 
 ---
 

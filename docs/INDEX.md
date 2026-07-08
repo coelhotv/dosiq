@@ -1,8 +1,21 @@
-# Documentação Oficial - Dosiq
+---
+title: "Documentação Oficial - Dosiq"
+description: "Índice principal de documentação técnica, padrões e guias do Dosiq."
+version: "4.1.0"
+status: active
+category: reference
+audience:
+  - dev
+  - agent
+tags:
+  - index
+  - docs
+  - reference
+created_at: "2026-02-01"
+updated_at: "2026-07-08"
+---
 
-**Versão:** 4.1.0  
-**Última Atualização:** Junho de 2026  
-**Status:** Índice Principal de Documentação
+# Documentação Oficial - Dosiq
 
 Bem-vindo à documentação oficial do Dosiq. O projeto adota uma arquitetura Turborepo (monorepo), operando com React 19, Vite, Supabase, regras rigorosas via Zod, e processos guiados pelo **DEVFLOW**.
 

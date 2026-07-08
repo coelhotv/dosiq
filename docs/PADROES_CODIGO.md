@@ -1,3 +1,20 @@
+---
+title: "Padrões de Código"
+description: "Convenções e melhores práticas para manter consistência no código do Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - standard
+  - linting
+  - code-style
+created_at: "2026-02-01"
+updated_at: "2026-07-08"
+---
+
 # 📋 Padrões de Código - Dosiq
 
 Convenções e melhores práticas para manter consistência no projeto.

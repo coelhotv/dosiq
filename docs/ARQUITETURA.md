@@ -1,8 +1,21 @@
-# 🏗️ Arquitetura do Dosiq
+---
+title: "Arquitetura do Dosiq"
+description: "Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados."
+version: "4.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - architecture
+  - database
+  - data-flow
+created_at: "2026-02-01"
+updated_at: "2026-06-02"
+---
 
-**Versão:** Web 4.0.0 · Mobile 0.8.0
-**Data:** 2026-06-02
-**Status:** Ativo — **Fase 4 concluída** (refactor `dose_instances` completo: adesão/timeline/hoje viram query + fuso do usuário respeitado ponta-a-ponta, épico F4.3f #628/#629/#630). Histórico: refactor de estoque/purchases v4.0.0 + redesign-first + Mobile Performance Initiative M0-M8/P1-P4/D0-D3.
+# 🏗️ Arquitetura do Dosiq
 
 Visão geral da arquitetura técnica do projeto, padrões de design e fluxo de dados.
 
