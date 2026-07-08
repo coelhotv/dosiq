@@ -187,7 +187,7 @@ Arquitetura resiliente implementada em 3 fases:
 **Fase P2 - Observabilidade:**
 - `notificationMetrics.js` - Métricas em memória (p50/p95/p99)
 - `api/health/notifications.js` - Health check endpoint
-- `NotificationStatsWidget.jsx` - Widget no Dashboard
+- `NotificationStatsWidget.tsx` - Widget no Dashboard
 
 ```
 Cron Job
@@ -296,8 +296,8 @@ import { Button } from '../../../shared/components/ui/Button'
 
 ```
 src/shared/components/pwa/
-├── InstallPrompt.jsx      # Prompt de instalação PWA (iOS/Android)
-├── PushPermission.jsx     # Gerenciamento de permissões push
+├── InstallPrompt.tsx      # Prompt de instalação PWA (iOS/Android)
+├── PushPermission.tsx     # Gerenciamento de permissões push
 └── pwaUtils.js           # Detecção de plataforma e utilitários
 ```
 
@@ -530,8 +530,8 @@ public/
 └── icons/                 # Ícones em 8 tamanhos (72x72 a 512x512)
 
 apps/web/src/shared/components/pwa/
-├── InstallPrompt.jsx      # Custom install prompt
-├── PushPermission.jsx     # Permission UI
+├── InstallPrompt.tsx      # Custom install prompt
+├── PushPermission.tsx     # Permission UI
 └── pwaUtils.js           # Platform detection
 ```
 

@@ -44,8 +44,8 @@ Convenções e melhores práticas para manter consistência no projeto.
 Todo código DEVE passar pelas seguintes validações ANTES de commit:
 
 ```bash
-# 1. Validação de sintaxe
-node -c arquivo.js
+# 1. Validação de tipos e sintaxe (TypeScript)
+npx tsc --noEmit
 
 # 2. Lint - deve passar sem erros
 npm run lint
@@ -54,7 +54,15 @@ npm run lint
 npm run build
 ```
 
-### 2. Git Workflow Obrigatório (RIGID PROCESS)
+### 2. Regime Strict Islands (TypeScript Ratchet - R-283/R-284)
+
+O projeto adota uma estratégia de migração e manutenção de tipagem estrita chamada **Strict Islands** regida por um mecanismo de catraca (*ratchet*):
+
+- **Green Ratchet**: O script `./scripts/strict-island.sh` deve rodar com sucesso (retornar verde) antes de qualquer commit. Erros de arquivos de origem do nível A (strict islands) e erros de dependência entre programas bloqueiam a integração.
+- **Debt Ceiling (Teto de Dívida)**: Os limites máximos de erros permitidos em áreas não estritas só podem diminuir (ir para baixo). Nenhuma nova dívida de tipos é tolerada.
+- **Regra do Toque (On-Touch Rule)**: Se você modificar um arquivo que está em uma ilha não estrita, deve elevar a qualidade de sua tipagem e, se possível, convertê-lo definitivamente para o regime estrito (`strict` no `tsconfig`).
+
+### 3. Git Workflow Obrigatório (RIGID PROCESS)
 
 > **⚠️ CRITICAL:** ALL code/documentation changes MUST follow this workflow exactly. NO exceptions.
 > **Autoridade:** Veja [`CLAUDE.md`](../CLAUDE.md) (regras canônicas) e [`.agent/memory/RULES_INDEX.md`](../.agent/memory/RULES_INDEX.md)
@@ -136,7 +144,7 @@ npm run validate:quick  # Lint + testes alterados
 
 ```bash
 # Stage related files
-git add apps/web/src/features/medications/components/MedicineForm.jsx
+git add apps/web/src/features/medications/components/MedicineForm.tsx
 git add apps/web/src/features/medications/components/MedicineForm.css
 
 # Commit with semantic message (in Portuguese)
@@ -269,18 +277,18 @@ git push origin --delete feature/wave-X/nome-descritivo
 └─────────────────────────────────────────────┘
 ```
 
-### 3. Nomenclatura Obrigatória
+### 4. Nomenclatura Obrigatória
 
 | Elemento | Convenção | Exemplo |
 |----------|-----------|---------|
-| Componentes | PascalCase | `AdherenceWidget.jsx` |
+| Componentes | PascalCase | `AdherenceWidget.tsx` |
 | Funções | camelCase | `calculateAdherence` |
 | Constantes | SCREAMING_SNAKE | `MAX_RETRY` |
-| Arquivos | kebab-case | `adherence-service.js` |
+| Arquivos | kebab-case | `adherence-service.ts` |
 | Branches | kebab-case | `feature/wave-2/fix-login` |
 | Hooks | use + PascalCase | `useCachedQuery` |
 
-### 4. Estrutura de Arquivos Obrigatória (v2.8.0)
+### 5. Estrutura de Arquivos Obrigatória (v2.8.0)
 
 #### Estrutura Feature-Based (F4.6)
 
@@ -333,7 +341,7 @@ import { Button } from '../../../shared/components/ui/Button'
 - `@dashboard`, `@medications`, `@protocols`, `@stock`, `@adherence`
 - `@design-tokens` → `packages/design-tokens/src/`
 
-### 5. Scripts Obrigatórios
+### 6. Scripts Obrigatórios
 
 | Quando | Comando | Propósito |
 |--------|---------|-----------|
@@ -355,18 +363,18 @@ import { Button } from '../../../shared/components/ui/Button'
 ✅ BOM:
 apps/web/src/
 ├── features/medications/components/
-│   ├── MedicineCard.jsx      # PascalCase
+│   ├── MedicineCard.tsx      # PascalCase
 │   ├── MedicineCard.css      # Mesmo nome do componente
 │   └── __tests__/
-│       └── MedicineCard.test.jsx
+│       └── MedicineCard.test.tsx
 ├── shared/components/ui/
-│   └── Button.jsx
+│   └── Button.tsx
 
 ❌ EVITAR:
 ├── components/
-│   ├── medicine-card.jsx         # kebab-case
+│   ├── medicine-card.tsx         # kebab-case
 │   ├── MedicineCard/
-│   │   └── index.jsx             # index desnecessário
+│   │   └── index.tsx             # index desnecessário
 ```
 
 ### Organização por Domínio
@@ -429,10 +437,10 @@ const handle_submit = () => { }
 ### Arquivos de Schema
 
 ```javascript
-// ✅ schema + Nome + .js
-medicineSchema.js
-protocolSchema.js
-stockSchema.js
+// ✅ schema + Nome + .ts
+medicineSchema.ts
+protocolSchema.ts
+stockSchema.ts
 
 // ✅ Exportações nomeadas
 export const medicineSchema = z.object({...})
@@ -529,7 +537,7 @@ async function createMedicine(data) {
 ### Estrutura de Testes
 
 ```jsx
-// MedicineCard.test.jsx
+// MedicineCard.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import MedicineCard from './MedicineCard'
@@ -640,7 +648,7 @@ O projeto possui 3 configurações de teste otimizadas:
 ### Padrão de Schema
 
 ```javascript
-// medicineSchema.js
+// medicineSchema.ts
 import { z } from 'zod'
 
 // 1. Constantes
@@ -687,7 +695,7 @@ export function validateMedicineCreate(data) {
 ### Uso nos Services
 
 ```javascript
-// medicineService.js
+// medicineService.ts
 import { validateMedicineCreate, validateMedicineUpdate } from '../schemas/medicineSchema'
 
 export const medicineService = {
@@ -804,7 +812,7 @@ const CACHE_KEYS = {
 | Mensagens de erro | Português | `'Nome é obrigatório'` |
 | UI (labels, botões) | Português | `Salvar Medicamento` |
 | Commits | Português | `feat: adiciona validação Zod` |
-| Nomes de arquivos | Inglês | `medicineService.js` |
+| Nomes de arquivos | Inglês | `medicineService.ts` |
 | Tabelas/Colunas DB | Português | `medicamentos.nome` |
 
 > **Nota para agentes:** Use inglês para todo o processamento lógico e raciocínio técnico interno.
@@ -1211,7 +1219,7 @@ Crie um componente base genérico em `ui/` com wrappers específicos por domíni
 
 ```jsx
 // ✅ BOM: AlertList como componente base
-// src/components/ui/AlertList.jsx
+// src/components/ui/AlertList.tsx
 export default function AlertList({
   alerts = [],
   onAction,
@@ -1225,7 +1233,7 @@ export default function AlertList({
 })
 
 // Wrapper específico para SmartAlerts
-// src/components/dashboard/SmartAlerts.jsx
+// src/components/dashboard/SmartAlerts.tsx
 export default function SmartAlerts({ alerts, onAction }) {
   return (
     <AlertList
@@ -1238,7 +1246,7 @@ export default function SmartAlerts({ alerts, onAction }) {
 }
 
 // Wrapper específico para StockAlertsWidget
-// src/components/dashboard/StockAlertsWidget.jsx
+// src/components/dashboard/StockAlertsWidget.tsx
 export default function StockAlertsWidget({ lowStockItems, ... }) {
   return (
     <AlertList
@@ -1306,18 +1314,18 @@ Estratégia para consolidar componentes duplicados:
 
 ```jsx
 // ANTES: Dois componentes separados
-// MedicineForm.jsx - uso geral
-// FirstMedicineStep.jsx - onboarding específico (~200 linhas duplicadas)
+// MedicineForm.tsx - uso geral
+// FirstMedicineStep.tsx - onboarding específico (~200 linhas duplicadas)
 
 // DEPOIS: Um componente com props de onboarding
-// MedicineForm.jsx - suporta ambos os casos
+// MedicineForm.tsx - suporta ambos os casos
 <MedicineForm
   onSave={handleSave}
   onSuccess={nextStep}      // Opcional: ativa modo onboarding
   autoAdvance={true}        // Opcional: comportamento onboarding
 />
 
-// FirstMedicineStep.jsx - wrapper simplificado
+// FirstMedicineStep.tsx - wrapper simplificado
 export default function FirstMedicineStep() {
   const { nextStep, updateOnboardingData } = useOnboarding()
   return (
@@ -1370,9 +1378,9 @@ function MedicineForm({
 
 ### MedicineForm
 
-**Local:** `apps/web/src/features/medications/components/MedicineForm.jsx`
+**Local:** `apps/web/src/features/medications/components/MedicineForm.tsx`
 
-```jsx
+```tsx
 <MedicineForm
   medicine={object}              // Dados para edição (opcional)
   onSave={function}              // Callback ao salvar
@@ -1388,9 +1396,9 @@ function MedicineForm({
 
 ### ProtocolForm
 
-**Local:** `apps/web/src/features/protocols/components/ProtocolForm.jsx`
+**Local:** `apps/web/src/features/protocols/components/ProtocolForm.tsx`
 
-```jsx
+```tsx
 <ProtocolForm
   medicines={array}              // Lista de medicamentos
   treatmentPlans={array}         // Lista de planos (opcional)
@@ -1410,9 +1418,9 @@ function MedicineForm({
 
 ### Calendar
 
-**Local:** `apps/web/src/shared/components/ui/Calendar.jsx`
+**Local:** `apps/web/src/shared/components/ui/Calendar.tsx`
 
-```jsx
+```tsx
 <Calendar
   markedDates={array}            // Datas marcadas
   selectedDate={Date}            // Data selecionada
@@ -1427,9 +1435,9 @@ function MedicineForm({
 
 ### AlertList
 
-**Local:** `apps/web/src/shared/components/ui/AlertList.jsx`
+**Local:** `apps/web/src/shared/components/ui/AlertList.tsx`
 
-```jsx
+```tsx
 <AlertList
   alerts={array}                 // Lista de alertas
   onAction={function}            // Callback para ações
@@ -1445,9 +1453,9 @@ function MedicineForm({
 
 ### LogForm
 
-**Local:** `apps/web/src/shared/components/log/LogForm.jsx`
+**Local:** `apps/web/src/shared/components/log/LogForm.tsx`
 
-```jsx
+```tsx
 <LogForm
   medicines={array}              // Lista de medicamentos
   protocols={array}              // Lista de protocolos
@@ -1462,7 +1470,7 @@ function MedicineForm({
 
 O `LogForm` pode retornar **dois tipos diferentes** dependendo do modo selecionado:
 
-```javascript
+```typescript
 // Quando type === 'protocol' → Retorna objeto único
 const logData = {
   protocol_id: 'uuid',
@@ -1480,7 +1488,7 @@ const logData = [
 
 **SEMPRE verificar ambos os casos no handler:**
 
-```jsx
+```tsx
 async function handleLogMedicine(logData) {
   try {
     if (Array.isArray(logData)) {
@@ -1499,8 +1507,8 @@ async function handleLogMedicine(logData) {
 ```
 
 **Regra de Ouro:**
-- **Dashboard.jsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
-- **History.jsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
+- **Dashboard.tsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
+- **History.tsx**: Sempre passa `treatmentPlans` → habilita modo "Plano Completo"
 - Sem `treatmentPlans` → apenas modo "Único Remédio" disponível
 
 ---

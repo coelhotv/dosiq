@@ -55,9 +55,9 @@ O produto serve duas personas com **intenções fundamentalmente diferentes**. O
 
 ## Regra da Bifurcação (`isComplex`)
 
-```javascript
+```typescript
 // Único ponto de decisão — sem modo "moderate"
-const isComplex = mode !== 'simple'
+const isComplex: boolean = mode !== 'simple';
 ```
 
 **Por que não existe `moderate`:** Um terceiro modo artificial cria uma terceira persona inexistente. Carlos em 4 medicamentos não é diferente de Carlos em 8. O CSS gerencia a densidade visual por contagem (grid-2 → grid-3) sem precisar de prop de modo.
@@ -118,7 +118,7 @@ Esses componentes têm **aparência idêntica** independente de persona — a se
 | `low` | 7–13 | `CalendarSync` | Âmbar |
 | `critical` | <7 | `CalendarX2` | Vermelho |
 
-Fonte: `src/features/protocols/components/redesign/StockPill.jsx`
+Fonte: `src/features/protocols/components/redesign/StockPill.tsx`
 **REUTILIZAR** em qualquer tela que precise de status de estoque — não criar badge system novo.
 
 ---
@@ -133,7 +133,7 @@ Fonte: `src/features/protocols/components/redesign/StockPill.jsx`
 | <50% | "Muitas doses perdidas" | `adherence-label--critical` |
 | 0% / sem histórico | — não renderiza — | — |
 
-Fonte: `src/features/protocols/components/redesign/AdherenceLabel.jsx`
+Fonte: `src/features/protocols/components/redesign/AdherenceLabel.tsx`
 
 ---
 
