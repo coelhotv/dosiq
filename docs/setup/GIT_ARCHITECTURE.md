@@ -1,3 +1,19 @@
+---
+title: "Arquitetura Git"
+description: "Especificação da arquitetura Git com isolamento de gitdir externo para contornar travamentos e lentidão do daemon iCloud."
+version: "1.0.0"
+status: active
+category: setup
+audience:
+  - dev
+tags:
+  - git
+  - icloud
+  - local-setup
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Arquitetura Git — Mac Mini M2 (gitdir externo + iCloud)
 
 Setup usa **gitdir externo** para isolar objetos git do daemon de sync do iCloud.

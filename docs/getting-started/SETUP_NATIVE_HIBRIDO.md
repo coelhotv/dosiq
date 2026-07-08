@@ -1,10 +1,20 @@
+---
+title: "Setup Local Native Híbrido"
+description: "Guia operacional de preparação de ambiente macOS para desenvolvimento mobile/híbrido (Expo, iOS Simulator, Android Emulator) no Dosiq."
+version: "1.0.0"
+status: active
+category: setup
+audience:
+  - dev
+tags:
+  - setup
+  - mobile
+  - hybrid
+created_at: "2026-03-30"
+updated_at: "2026-03-30"
+---
+
 # Meus Remedios - Guia de Setup Local para Desenvolvimento Native Hibrido
-
-> **Status:** Guia operacional local
-> **Data:** 2026-03-30
-> **Publico-alvo:** maintainer do projeto e agentes/coders que vao trabalhar na frente native
-> **Base arquitetural:** `plans/backlog-native_app/MASTER_SPEC_HIBRIDO_WEB_NATIVE.md` (local-only, não versionado)
-
 ---
 
 ## 1. Objetivo

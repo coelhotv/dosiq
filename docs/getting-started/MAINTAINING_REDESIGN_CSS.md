@@ -1,3 +1,19 @@
+---
+title: "Guia de Manutenção CSS Redesign"
+description: "Orientações e arquitetura de estilo para evolução e manutenção manual do CSS do redesign (Santuário Terapêutico) no Dosiq."
+version: "1.0.0"
+status: active
+category: setup
+audience:
+  - dev
+tags:
+  - css
+  - styling
+  - redesign
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Guia de Manutenção CSS: Redesign (Santuário Terapêutico)
 
 Este documento orienta desenvolvedores na evolução manual do CSS para o novo sistema visual "Santuário Terapêutico". O foco é manter a integridade arquitetural sem depender de ferramentas de geração automática.

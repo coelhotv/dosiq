@@ -1,3 +1,19 @@
+---
+title: "Guia de Configuração"
+description: "Guia passo a passo de setup do ambiente local e provisionamento de serviços de terceiros (Supabase, Vercel) para rodar o Dosiq."
+version: "1.0.0"
+status: active
+category: setup
+audience:
+  - dev
+tags:
+  - setup
+  - local-environment
+  - databases
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Dosiq - Guia de Configuração
 
 Este guia vai te ajudar a configurar todos os serviços necessários para rodar o projeto.

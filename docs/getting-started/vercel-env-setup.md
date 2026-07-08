@@ -1,6 +1,21 @@
-# Configuração de Ambiente Vercel para GitHub Actions
+---
+title: "Configuração de Ambiente Vercel"
+description: "Procedimentos de setup de segredos de ambiente no Vercel e variáveis do GitHub Actions para infraestrutura de deploy do Dosiq."
+version: "1.0.0"
+status: active
+category: setup
+audience:
+  - dev
+  - ops
+tags:
+  - vercel
+  - github-actions
+  - environment-variables
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
 
-> Documentação de setup da infraestrutura segura: GitHub Actions ↔ Vercel ↔ Supabase
+# Configuração de Ambiente Vercel para GitHub Actions
 
 ---
 
