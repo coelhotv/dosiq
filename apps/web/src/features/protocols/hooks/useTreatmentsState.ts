@@ -53,8 +53,8 @@ export function useTreatmentsState(onClearInitialMedicine) {
   useEffect(() => {
     Promise.all([medicineService.getAll(), treatmentPlanService.getAll()])
       .then(([med, plans]) => {
-        setMedicines(med || [])
-        setTreatmentPlans(plans || [])
+        setMedicines((med as any[]) || []) // TODO(040-strict): tipar retorno do service
+        setTreatmentPlans((plans as any[]) || []) // TODO(040-strict): tipar retorno do service
       })
       .catch(err => console.error(err))
   }, [])
