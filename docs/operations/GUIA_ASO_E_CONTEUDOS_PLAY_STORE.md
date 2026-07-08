@@ -1,9 +1,21 @@
+---
+title: "ASO e Conteúdos da Play Store"
+description: "Guia prático de otimização de busca (ASO), metadados e posicionamento de conteúdo na Google Play Store para o Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - ops
+  - dev
+tags:
+  - play-store
+  - aso
+  - marketing
+created_at: "2026-04-14"
+updated_at: "2026-04-14"
+---
+
 # Guia Pratico - ASO e Conteudos da Play Store
-
-> **Contexto:** Dosiq hybrid/native | Android first
-> **Data:** 2026-04-14
-> **Objetivo:** deixar prontos os textos-base da loja e um posicionamento inicial de ASO para o lançamento do MVP
-
 ---
 
 ## 1. Objetivo deste documento

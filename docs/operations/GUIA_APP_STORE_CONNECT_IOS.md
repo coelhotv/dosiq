@@ -1,9 +1,21 @@
+---
+title: "Apple Developer e App Store Connect para iOS"
+description: "Guia prático para configuração da aplicação iOS no ecossistema Apple, cobrando desde a criação do App ID até a distribuição via TestFlight."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - ops
+tags:
+  - app-store
+  - ios
+  - setup
+created_at: "2026-04-20"
+updated_at: "2026-04-20"
+---
+
 # Guia Pratico - Apple Developer e App Store Connect para iOS
-
-> **Contexto:** Dosik hybrid/native | iOS first setup
-> **Data:** 2026-04-20
-> **Objetivo:** configurar a aplicação iOS no ecossistema Apple do zero, do App ID ao TestFlight
-
 ---
 
 ## 1. O que este guia resolve

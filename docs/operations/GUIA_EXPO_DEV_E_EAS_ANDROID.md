@@ -1,9 +1,21 @@
+---
+title: "Expo.dev e EAS para Android"
+description: "Guia prático para configuração do ecossistema Expo.dev, EAS Build e geração de builds de produção e testes para Android no Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - ops
+tags:
+  - expo
+  - eas
+  - android
+created_at: "2026-04-14"
+updated_at: "2026-04-18"
+---
+
 # Guia Pratico - Expo.dev e EAS para Android
-
-> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
-> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
-> **Escopo deste guia:** configurar o projeto no `expo.dev`, validar o setup real do repositório e gerar builds Android para testes e publicação na Google Play
-
 ---
 
 ## 1. Objetivo

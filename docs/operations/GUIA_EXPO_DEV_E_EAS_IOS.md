@@ -1,9 +1,21 @@
+---
+title: "Expo.dev e EAS para iOS"
+description: "Guia prático de configuração de perfis, EAS Build e provisionamento de certificados para geração de builds iOS (ipa) no Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - ops
+tags:
+  - expo
+  - eas
+  - ios
+created_at: "2026-04-22"
+updated_at: "2026-04-22"
+---
+
 # Guia Pratico - Expo.dev e EAS para iOS
-
-> **Contexto:** Dosiq hybrid/native | Rebranding Finalizado
-> **Data:** 2026-04-22
-> **Escopo:** configurar certificados Apple, resolver dependências de build local e gerar .ipa/.app para testes e App Store.
-
 ---
 
 ## 1. Identidade do App (iOS)

@@ -1,9 +1,21 @@
+---
+title: "Google Play Console para o MVP Android"
+description: "Guia prático passo a passo de configuração do Google Play Console para o primeiro ciclo de release Android do Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - ops
+tags:
+  - google-play
+  - setup
+  - android
+created_at: "2026-04-14"
+updated_at: "2026-04-18"
+---
+
 # Guia Pratico - Google Play Console para o MVP Android
-
-> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
-> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
-> **Objetivo:** configurar a Google Play Console do zero para o primeiro envio Android do projeto
-
 ---
 
 ### 13.5. Status de Validação

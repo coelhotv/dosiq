@@ -1,3 +1,20 @@
+---
+title: "Configuração de E-mails Transacionais"
+description: "Guia operacional de configuração de e-mails transacionais e templates HTML/CSS otimizados para Modo Escuro no Supabase para o Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - ops
+  - dev
+tags:
+  - supabase
+  - email
+  - dark-mode
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Configuração de E-mails Transacionais — Supabase + Dosiq (Revisado para Modo Escuro)
 
 Este guia detalha a configuração operacional dos templates de e-mail transacional do **Dosiq** no painel do Supabase. Todos os templates foram otimizados com técnicas híbridas de CSS inline para garantir **legibilidade absoluta em Modo Escuro** (especialmente no aplicativo **Outlook para iOS/Android** e **Gmail**), utilizando realces em verde esmeralda vibrante de alta legibilidade no fundo preto/escuro.

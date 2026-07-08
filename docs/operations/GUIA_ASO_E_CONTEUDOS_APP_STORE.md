@@ -1,9 +1,21 @@
+---
+title: "ASO e Conteúdos da App Store"
+description: "Guia prático de otimização de busca (ASO), metadados e posicionamento de conteúdo na Apple App Store para o Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - ops
+  - dev
+tags:
+  - app-store
+  - aso
+  - marketing
+created_at: "2026-04-22"
+updated_at: "2026-04-22"
+---
+
 # Guia Pratico - ASO e Conteudos da App Store (Apple)
-
-> **Contexto:** Dosiq hybrid/native | App Store Connect
-> **Data:** 2026-04-22
-> **Objetivo:** Estabelecer textos, metadados e posicionamento de App Store Optimization (ASO) para o lançamento na Apple App Store.
-
 ---
 
 ## 1. Diferenças Críticas: Apple vs. Google

@@ -1,9 +1,21 @@
+---
+title: "App Access para Google Play"
+description: "Guia prático para configuração e fornecimento de instruções de acesso (App Access) para revisores do Google Play Console."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - ops
+tags:
+  - google-play
+  - review
+  - app-access
+created_at: "2026-04-14"
+updated_at: "2026-04-18"
+---
+
 # Guia Pratico - App Access para Google Play Console
-
-> **Contexto:** Dosik hybrid/native | Fase 6 Push Native e Beta Interno
-> **Data:** 2026-04-14 | **Ultima atualizacao:** 2026-04-18
-> **Objetivo:** deixar pronto o material que a Google Play pode pedir para autenticação e revisão do app
-
 ---
 
 ## 1. Quando este guia é necessário

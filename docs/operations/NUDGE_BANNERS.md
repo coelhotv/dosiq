@@ -1,8 +1,21 @@
-# Guia Operacional — Nudge Banners (Epic 026)
+---
+title: "Nudge Banners"
+description: "Guia operacional para criação, controle de dismiss e exibição contextual de banners (nudges) via banco de dados no Dosiq."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - ops
+  - dev
+tags:
+  - nudges
+  - banners
+  - database
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
 
-> **Acesso:** Supabase Dashboard → Table Editor → `in_app_nudges`
->
-> **Permissões:** escrita requer `service_role`. Leitura para usuários autenticados (RLS ativo).
+# Guia Operacional — Nudge Banners (Epic 026)
 
 ---
 

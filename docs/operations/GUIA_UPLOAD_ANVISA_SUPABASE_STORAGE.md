@@ -1,10 +1,21 @@
+---
+title: "Upload da Base ANVISA para Supabase"
+description: "Guia prático para processamento, atualização e upload da base de medicamentos ANVISA para o Supabase Storage."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - ops
+  - dev
+tags:
+  - supabase
+  - anvisa
+  - database
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Guia — Upload da Base ANVISA para Supabase Storage
-
-> **Contexto**: Sprint P.2 (Fase 0 CRUD Native) — disponibiliza a base de medicamentos ANVISA via Supabase Storage para que o app mobile faça download + cache local (`useMedicineDatabase`).
-> **Tarefa**: P2.3 do `EXEC_SPEC_PRE_REQUISITOS.md`
-> **Executor**: Humano (PO)
-> **Tempo estimado**: 10 minutos
-
 >**Atualização 037 (web também consome on-demand):** a **web** passou a baixar a base
 > do mesmo bucket on-demand (antes embutia os JSONs no build PWA). Os services web
 > (`medicineDatabaseService` / `laboratoryDatabaseService`) consomem o núcleo

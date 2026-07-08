@@ -1,8 +1,21 @@
-# Dev Time-Travel — smoke de janelas cross-dia (carry-over / look-ahead)
+---
+title: "Dev Time-Travel"
+description: "Procedimento técnico e receitas para simulação de passagens de tempo (time-travel) em ambiente de desenvolvimento sem afetar o relógio do sistema."
+version: "1.0.0"
+status: active
+category: operation
+audience:
+  - dev
+  - agent
+tags:
+  - testing
+  - time-travel
+  - smoke-test
+created_at: "2026-06-01"
+updated_at: "2026-06-01"
+---
 
-> **Status:** receita reproduzível (não está no código — foi removida do diff da F4.3e após o smoke).
-> **Quando usar:** validar manualmente comportamento dependente da virada-de-dia — "Pendências de ontem" (carry-over), "Em breve" (look-ahead), sweep de `missed`, streak cross-meia-noite — **sem esperar a meia-noite real**.
-> **Criado:** 2026-06-01 (smoke F4.3e). Autor: DEVFLOW.
+# Dev Time-Travel — smoke de janelas cross-dia (carry-over / look-ahead)
 
 ---
 
