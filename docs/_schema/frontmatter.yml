@@ -1,0 +1,91 @@
+# Schema formal do YAML frontmatter para a documentação do Dosiq
+# Versão do Schema: 1.0.0
+# Criado em: 2026-07-08
+
+title:
+  type: string
+  required: true
+  description: "Título do documento em português."
+  example: "Reorganização e Atualização da Documentação Dosiq"
+
+description:
+  type: string
+  required: true
+  description: "Descrição breve do conteúdo do documento em português."
+  example: "Visão geral da arquitetura técnica pós-040 TypeScript"
+
+version:
+  type: string
+  required: true
+  description: "Versão do conteúdo do documento seguindo o formato SemVer."
+  pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+  example: "1.0.0"
+
+status:
+  type: string
+  required: true
+  enum:
+    - active
+    - draft
+    - deprecated
+    - archived
+  description: "Status do documento no ciclo de vida."
+
+category:
+  type: string
+  required: true
+  enum:
+    - architecture
+    - reference
+    - standard
+    - feature
+    - guide
+    - operation
+    - setup
+    - legal
+    - release
+  description: "Categoria/Diretório conceitual do documento."
+
+audience:
+  type: array
+  items:
+    type: string
+    enum:
+      - dev
+      - agent
+      - ops
+      - product
+      - legal
+  required: true
+  description: "Público-alvo principal do documento."
+
+tags:
+  type: array
+  items:
+    type: string
+  required: false
+  description: "Lista livre de tags para busca semântica."
+
+created_at:
+  type: string
+  format: "date (YYYY-MM-DD)"
+  required: true
+  description: "Data de criação do documento."
+
+updated_at:
+  type: string
+  format: "date (YYYY-MM-DD)"
+  required: true
+  description: "Data da última atualização do documento."
+
+epic:
+  type: string
+  required: false
+  description: "Identificador ou slug do épico correspondente."
+  example: "040"
+
+supersedes:
+  type: string
+  required: false
+  description: "Caminho relativo de outro documento substituído."
+  example: "reference/SCHEMAS.md"

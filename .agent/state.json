@@ -4,12 +4,13 @@
   "session": {
     "mode": "coding",
     "ceremony_type": null,
-    "status": "delivered",
+    "status": "completed",
     "plan": null,
     "tasks": null,
-    "goal": "044 dose-only-mode — modo light sem controle de estoque: pergunta no onboarding, registro de doses (horário, qtd, pushes, alarmes) sem exigir/consumir estoque, opt-in de estoque posterior com upsell contextual. Origem: feedback beta testers + 52% silenciosos (026). Tese 2026 etapa 2.0",
-    "goal_type": "feature",
+    "goal": "049-docs-revamp - Fase 1: Schema e Infraestrutura",
+    "goal_type": "docs",
     "spec_dirs": [
+      "plans/specs/049-docs-revamp",
       "plans/specs/046-lgpd-consent",
       "plans/specs/044-dose-only-mode",
       "plans/specs/029-treatment-level-titration",
@@ -80,10 +81,10 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "tier": 2,
-    "spec_dir": "plans/specs/044-dose-only-mode",
-    "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "040 COMPLETO (F1-F6). Distill pós-fase ADIADO por decisão PO (2026-07-08) — rodar no próximo checkpoint. 043 notify-improvements segue 'planned'. Próximo épico: 044 dose-only-mode (planned, gate TS satisfeito).",
+    "tier": 1,
+    "spec_dir": "plans/specs/049-docs-revamp/fase-1",
+    "spec": "plans/specs/049-docs-revamp/fase-1/spec.md",
+    "previous_session_note": "Iniciando codificação da Fase 1 da Reorganização de Documentação.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -100,7 +101,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-06T22:29:20.000Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 234,
     "anti_patterns_count": 166,
     "decisions_count": 79,
@@ -112,6 +113,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-06-30T15:26:20Z"
+    "index_loaded_at": "2026-07-08T16:24:00Z"
   }
 }
