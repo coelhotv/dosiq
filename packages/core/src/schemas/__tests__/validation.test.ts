@@ -20,7 +20,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(true)
-      expect(result.data.name).toBe('Paracetamol')
+      expect(result.data!.name).toBe('Paracetamol')
     })
 
     it('deve rejeitar nome muito curto', () => {
@@ -31,8 +31,8 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('name')
-      expect(result.errors[0].message).toContain('pelo menos 2 caracteres')
+      expect(result.errors![0].field).toBe('name')
+      expect(result.errors![0].message).toContain('pelo menos 2 caracteres')
     })
 
     it('deve rejeitar dosagem negativa', () => {
@@ -43,7 +43,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('dosage_per_pill')
+      expect(result.errors![0].field).toBe('dosage_per_pill')
     })
 
     it('deve rejeitar unidade inválida', () => {
@@ -54,7 +54,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('dosage_unit')
+      expect(result.errors![0].field).toBe('dosage_unit')
     })
 
     it('deve aplicar valor padrão para tipo', () => {
@@ -65,7 +65,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateMedicineCreate(medicine)
       expect(result.success).toBe(true)
-      expect(result.data.type).toBe('medicamento')
+      expect(result.data!.type).toBe('medicamento')
     })
 
     it('deve mapear erros para formato de formulário', () => {
@@ -108,8 +108,8 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('medicine_id')
-      expect(result.errors[0].message).toContain('UUID')
+      expect(result.errors![0].field).toBe('medicine_id')
+      expect(result.errors![0].message).toContain('UUID')
     })
 
     it('deve rejeitar quantidade negativa', () => {
@@ -120,7 +120,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toBe('quantity')
+      expect(result.errors![0].field).toBe('quantity')
     })
 
     it('deve rejeitar data de compra no futuro', () => {
@@ -131,7 +131,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('futuro')
+      expect(result.errors![0].message).toContain('futuro')
     })
 
     it('deve rejeitar data de validade anterior à compra', () => {
@@ -143,7 +143,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateStockCreate(stock)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('posterior')
+      expect(result.errors![0].message).toContain('posterior')
     })
 
     it('deve aceitar data de validade ausente', () => {
@@ -176,7 +176,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('futuro')
+      expect(result.errors![0].message).toContain('futuro')
     })
 
     it('deve rejeitar quantidade muito alta', () => {
@@ -188,7 +188,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateLogCreate(log)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('1000')
+      expect(result.errors![0].message).toContain('1000')
     })
 
     it('deve aceitar dose líquida em gotas acima do antigo cap-100', () => {
@@ -226,7 +226,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
-      expect(result.errors[0].field).toContain('time_schedule')
+      expect(result.errors![0].field).toContain('time_schedule')
     })
 
     it('deve rejeitar schedule vazio', () => {
@@ -240,7 +240,7 @@ describe('Schemas de Validação Zod', () => {
       }
       const result = validateProtocolCreate(protocol)
       expect(result.success).toBe(false)
-      expect(result.errors[0].message).toContain('pelo menos um horário')
+      expect(result.errors![0].message).toContain('pelo menos um horário')
     })
 
     describe('Validação end_date >= start_date', () => {
@@ -266,8 +266,8 @@ describe('Schemas de Validação Zod', () => {
       it('deve rejeitar end_date menor que start_date', () => {
         const result = validateProtocolCreate({ ...baseProtocol, end_date: '2024-01-01' })
         expect(result.success).toBe(false)
-        expect(result.errors.some((e) => e.field === 'end_date')).toBe(true)
-        expect(result.errors.some((e) => e.message.includes('maior ou igual'))).toBe(true)
+        expect(result.errors!.some((e) => e.field === 'end_date')).toBe(true)
+        expect(result.errors!.some((e) => e.message.includes('maior ou igual'))).toBe(true)
       })
 
       it('deve aceitar end_date ausente (protocolo sem data de término)', () => {
@@ -307,13 +307,13 @@ describe('Schemas de Validação Zod', () => {
     it('deve retornar erro para tipo inválido', () => {
       const result = validateEntity('invalid', {}, 'create')
       expect(result.success).toBe(false)
-      expect(result.error.message).toContain('desconhecido')
+      expect(result.error!.message).toContain('desconhecido')
     })
 
     it('deve retornar erro para operação inválida', () => {
       const result = validateEntity('medicine', {}, 'invalid_op')
       expect(result.success).toBe(false)
-      expect(result.error.message).toContain('não suportada')
+      expect(result.error!.message).toContain('não suportada')
     })
   })
 
@@ -341,7 +341,7 @@ describe('Schemas de Validação Zod', () => {
         _medicineIsLiquid: true,
       })
       expect(r.success).toBe(false)
-      expect(r.errors.some((e) => e.field === 'intake_unit')).toBe(true)
+      expect(r.errors!.some((e) => e.field === 'intake_unit')).toBe(true)
     })
     it('protocolo líquido COM intake_unit gotas + dose decimal → aceita', () => {
       const r = validateProtocolCreate({
@@ -366,13 +366,13 @@ describe('medicineSchema shelf_life_days', () => {
   it('aceita inteiro positivo (28)', () => {
     const r = medicineSchema.safeParse({ ...base, shelf_life_days: 28 })
     expect(r.success).toBe(true)
-    expect(r.data.shelf_life_days).toBe(28)
+    expect(r.data!.shelf_life_days).toBe(28)
   })
 
   it("campo limpo ('') vira null — não 0 (R-270)", () => {
     const r = medicineSchema.safeParse({ ...base, shelf_life_days: '' })
     expect(r.success).toBe(true)
-    expect(r.data.shelf_life_days).toBe(null)
+    expect(r.data!.shelf_life_days).toBe(null)
   })
 
   it('ausente/null aceito (eixo inativo)', () => {
@@ -389,6 +389,6 @@ describe('medicineSchema shelf_life_days', () => {
   it('coerção de string numérica do form ("28" → 28)', () => {
     const r = medicineSchema.safeParse({ ...base, shelf_life_days: '28' })
     expect(r.success).toBe(true)
-    expect(r.data.shelf_life_days).toBe(28)
+    expect(r.data!.shelf_life_days).toBe(28)
   })
 })

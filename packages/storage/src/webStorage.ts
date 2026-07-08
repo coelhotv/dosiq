@@ -5,24 +5,31 @@
  * Injetável em packages/shared-data sem acoplamento direto a window.
  */
 
-import { assertStorageAdapter } from './contracts'
+import { assertStorageAdapter, type StorageAdapter } from './contracts'
+
+/** Superfície mínima de Storage usada pelo adapter (aceita fallbacks de teste). */
+export interface WebStorageLike {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
+}
 
 /**
  * Cria um adapter de storage que wraps window.localStorage.
- * @param {Storage} storage - window.localStorage ou window.sessionStorage
- * @returns {Object} Storage adapter com métodos assincronos
+ * @param storage - window.localStorage ou window.sessionStorage
+ * @returns Storage adapter com métodos assincronos
  */
-export function createWebStorageAdapter(storage) {
+export function createWebStorageAdapter(storage: WebStorageLike): StorageAdapter {
   if (!storage) throw new Error('Web storage provider is required')
 
-  const adapter = {
-    async getItem(key) {
+  const adapter: StorageAdapter = {
+    async getItem(key: string) {
       return storage.getItem(key)
     },
-    async setItem(key, value) {
+    async setItem(key: string, value: string) {
       storage.setItem(key, value)
     },
-    async removeItem(key) {
+    async removeItem(key: string) {
       storage.removeItem(key)
     },
   }

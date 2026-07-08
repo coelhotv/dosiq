@@ -8,20 +8,29 @@
 // quebras de linha. (O Groq emite `*` p/ categorias e `+` p/ itens aninhados.)
 
 /**
- * @typedef {{ type: 'text'|'bold'|'italic', value: string }} InlineSegment
- * @typedef {{ bullet: 'none'|'item'|'subitem', segments: InlineSegment[] }} MarkdownLine
+ * Segmento inline de texto (negrito/itálico/texto cru).
  */
+export interface InlineSegment {
+  type: 'text' | 'bold' | 'italic'
+  value: string
+}
+
+/** Linha estruturada (bullet + segmentos inline). */
+export interface MarkdownLine {
+  bullet: 'none' | 'item' | 'subitem'
+  segments: InlineSegment[]
+}
 
 /**
  * Quebra uma linha em segmentos inline (**bold** / _italic_ / texto cru).
- * @param {string} text
- * @returns {InlineSegment[]}
+ * @param text
+ * @returns segmentos inline
  */
-export function parseInlineSegments(text) {
+export function parseInlineSegments(text: string | null | undefined): InlineSegment[] {
   const parts = (text ?? '').split(/(\*\*[^*]+\*\*|_[^_]+_)/g)
   return parts
     .filter(Boolean)
-    .map((part) => {
+    .map((part): InlineSegment => {
       if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
         return { type: 'bold', value: part.slice(2, -2) }
       }
@@ -35,11 +44,11 @@ export function parseInlineSegments(text) {
 /**
  * Parseia uma mensagem em linhas estruturadas (bullet + segmentos inline).
  * Markdown malformado degrada para texto cru (nunca lança).
- * @param {string} content
- * @returns {MarkdownLine[]}
+ * @param content
+ * @returns linhas estruturadas
  */
-export function parseMessageMarkdown(content) {
-  return (content ?? '').split('\n').map((line) => {
+export function parseMessageMarkdown(content: string | null | undefined): MarkdownLine[] {
+  return (content ?? '').split('\n').map((line): MarkdownLine => {
     const bullet = line.match(/^(\s*)([-*+])\s+(.*)$/)
     if (bullet) {
       return {

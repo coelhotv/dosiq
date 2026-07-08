@@ -27,11 +27,19 @@ export const SUPPLEMENT_ICON = 'pill-bottle'
  * @param {{type?: string, presentation?: string|null, dosage_unit?: string|null}|null} medicine
  * @returns {'pill'|'tablets'|'droplets'|'syringe'|'soap-dispenser-droplet'|'spray-can'|'pill-bottle'}
  */
-export function getMedicineIconName(medicine) {
+interface MedicineIconInput {
+  type?: string
+  presentation?: string | null
+  dosage_unit?: string | null
+}
+
+export function getMedicineIconName(medicine: MedicineIconInput | null | undefined): string {
   if (!medicine) return 'pill'
   if (medicine.type === 'suplemento') return SUPPLEMENT_ICON
 
-  const byPresentation = MEDICINE_ICON_BY_PRESENTATION[medicine.presentation]
+  const byPresentation = medicine.presentation
+    ? MEDICINE_ICON_BY_PRESENTATION[medicine.presentation as keyof typeof MEDICINE_ICON_BY_PRESENTATION]
+    : undefined
   if (byPresentation) return byPresentation
 
   // Legado sem presentation: líquido derivado da unidade (decisão-mãe 022).

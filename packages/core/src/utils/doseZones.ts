@@ -46,6 +46,43 @@ const TAKEN_STATUS = 'taken'
 /** Status que não devem aparecer no "hoje" (pulados não são pendência). */
 const SKIPPED_STATUS = new Set(['skipped_paused', 'skipped_user'])
 
+interface DoseZoneMedicine {
+  name?: string | null
+  type?: string | null
+  presentation?: string | null
+  dosage_per_pill?: number | null
+  dosage_unit?: string | null
+  concentration_volume_ml?: number | null
+  units_per_ml?: number | null
+}
+
+interface DoseZoneTreatmentPlan {
+  name?: string | null
+  emoji?: string | null
+  color?: string | null
+}
+
+export interface DoseZoneProtocol {
+  id?: string
+  medicine?: DoseZoneMedicine | null
+  medicine_id?: string | null
+  intake_unit?: string | null
+  dosage_per_intake?: number | null
+  treatment_plan_id?: string | null
+  treatment_plan?: DoseZoneTreatmentPlan | null
+}
+
+export interface DoseZoneInstance {
+  id?: string
+  protocol_id?: string
+  scheduled_for?: string | null
+  status?: string
+  tolerance_minutes?: number | null
+  expected_dose?: number | null
+  critical_alarm?: boolean
+  snoozed_until?: string | null
+}
+
 /**
  * Tipo DoseItem — Representa uma ocorrência de dose do dia.
  * @typedef {Object} DoseItem
@@ -115,7 +152,7 @@ export function classifyDose(
  * Cria o badge do plano de tratamento.
  * @private
  */
-function getPlanBadge(plan) {
+function getPlanBadge(plan: DoseZoneTreatmentPlan | null | undefined) {
   if (!plan) return null
   return {
     emoji: plan.emoji || '📋',
@@ -127,7 +164,7 @@ function getPlanBadge(plan) {
  * Formata "HH:MM" local a partir de um instante absoluto, no tz informado.
  * @private
  */
-function toLocalHHMM(scheduledFor, tz) {
+function toLocalHHMM(scheduledFor: string, tz: string) {
   const parsed = parseISO(scheduledFor)
   // Date inválido → fallback amigável (getUserTime/Intl estoura em Invalid Date).
   if (Number.isNaN(parsed.getTime())) return '--:--'
@@ -141,7 +178,7 @@ function toLocalHHMM(scheduledFor, tz) {
  * Mapeia propriedades e fallbacks do medicamento.
  * @private
  */
-function getMedicineDetails(medicine) {
+function getMedicineDetails(medicine: DoseZoneMedicine | null | undefined) {
   const med = medicine || {}
   return {
     name: med.name || 'Desconhecido',
@@ -158,7 +195,7 @@ function getMedicineDetails(medicine) {
  * Cria um DoseItem a partir de uma dose_instance e do protocolo correspondente.
  * @private
  */
-function createDoseItem(instance, protocol, tz) {
+function createDoseItem(instance: DoseZoneInstance, protocol: DoseZoneProtocol, tz: string) {
   const med = getMedicineDetails(protocol.medicine)
   const isRegistered = instance.status === TAKEN_STATUS
   return {
@@ -177,7 +214,7 @@ function createDoseItem(instance, protocol, tz) {
     // p/ exibir dose na unidade certa (gotas/ml/UI) e converter p/ ml.
     intakeUnit: protocol.intake_unit ?? null,
     unitsPerMl: med.units_per_ml,
-    scheduledTime: toLocalHHMM(instance.scheduled_for, tz),
+    scheduledTime: toLocalHHMM(instance.scheduled_for ?? '', tz),
     scheduledFor: instance.scheduled_for,
     toleranceMinutes: instance.tolerance_minutes ?? null,
     status: instance.status,
@@ -202,14 +239,18 @@ function createDoseItem(instance, protocol, tz) {
  * @param {string} [tz=DEFAULT_TZ]
  * @returns {DoseItem[]}
  */
-export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_TZ) {
+export function buildDoseItemsFromInstances(
+  instances: DoseZoneInstance[],
+  protocols: DoseZoneProtocol[],
+  tz = DEFAULT_TZ
+) {
   if (!Array.isArray(instances) || instances.length === 0) return []
   const protocolsList = Array.isArray(protocols) ? protocols : []
   const byId = new Map(protocolsList.filter(Boolean).map((p) => [p.id, p]))
 
   const doses = []
   for (const inst of instances) {
-    if (!inst?.scheduled_for || SKIPPED_STATUS.has(inst.status)) continue
+    if (!inst?.scheduled_for || (inst.status && SKIPPED_STATUS.has(inst.status))) continue
     const protocol = byId.get(inst.protocol_id)
     if (!protocol) continue
     doses.push(createDoseItem(inst, protocol, tz))
@@ -244,7 +285,12 @@ export function buildDoseItemsFromInstances(instances, protocols, tz = DEFAULT_T
  * @param {{ now: Date, tz?: string }} opts
  * @returns {{ carryOver: DoseItem[], today: DoseItem[], lookAhead: DoseItem[] }}
  */
-function classifyInstanceDay(inst, dayStart, dayEnd, nowMs) {
+function classifyInstanceDay(
+  inst: DoseZoneInstance,
+  dayStart: number,
+  dayEnd: number,
+  nowMs: number
+): 'today' | 'carry' | 'ahead' | null {
   if (!inst?.scheduled_for) return null
   const t = parseISO(inst.scheduled_for).getTime()
   if (Number.isNaN(t)) return null
@@ -271,7 +317,7 @@ function classifyInstanceDay(inst, dayStart, dayEnd, nowMs) {
  * @param {string} [tz]
  * @returns {string|null} null = mesmo dia; 'ontem'; 'há N dias'
  */
-export function daysAgoLabel(scheduledFor, now, tz = DEFAULT_TZ) {
+export function daysAgoLabel(scheduledFor: string | Date | null | undefined, now: Date, tz = DEFAULT_TZ) {
   if (!scheduledFor || !(now instanceof Date)) return null
   const sched = scheduledFor instanceof Date ? scheduledFor : parseISO(scheduledFor)
   if (Number.isNaN(sched.getTime()) || Number.isNaN(now.getTime())) return null
@@ -284,7 +330,11 @@ export function daysAgoLabel(scheduledFor, now, tz = DEFAULT_TZ) {
   return days === 1 ? 'ontem' : `há ${days} dias`
 }
 
-export function splitDayTimeline(instances, protocols, { now, tz = DEFAULT_TZ }: { now?: Date | string; tz?: string } = {}) {
+export function splitDayTimeline(
+  instances: DoseZoneInstance[],
+  protocols: DoseZoneProtocol[],
+  { now, tz = DEFAULT_TZ }: { now?: Date | string; tz?: string } = {}
+) {
   const list = Array.isArray(instances) ? instances : []
   // `now` ausente/inválido → fallback p/ getRawNow (respeita offset dev) + guard NaN:
   // getUserTime usa Intl e estoura RangeError em Invalid Date (AP-194/PR #623).

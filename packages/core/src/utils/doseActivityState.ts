@@ -34,7 +34,45 @@ export const DOSE_ACTIVITY_STATES = Object.freeze({
   LATE: 'late', // atrasada (>10min depois, dentro da tolerância) — count-up
   DONE: 'done', // registrada — superfície encerra (cancel-on-resolve)
   MISSED: 'missed', // passou da tolerância sem registro — terminal
-})
+} as const)
+
+export type DoseActivityStateValue = (typeof DOSE_ACTIVITY_STATES)[keyof typeof DOSE_ACTIVITY_STATES]
+
+interface DoseActivityItemInput {
+  scheduledFor?: string | Date | null
+  scheduled_for?: string | Date | null
+  isRegistered?: boolean
+  status?: string
+  toleranceMinutes?: number | null
+  tolerance_minutes?: number | null
+  instanceId?: string | null
+  id?: string | null
+  treatmentPlanId?: string | null
+  treatment_plan_id?: string | null
+  critical?: boolean
+  critical_alarm?: boolean
+  medicineName?: string | null
+  medicine?: { name?: string | null } | null
+}
+
+interface SurfaceWindows {
+  laterMinutes: number
+  upcomingMinutes: number
+  lateMinutes: number
+  nowBeforeMinutes: number
+  nowAfterMinutes: number
+}
+
+export interface DoseActivityState {
+  state: DoseActivityStateValue
+  instanceId: string | null
+  treatmentId: string | null
+  scheduledFor: string | Date | null
+  remainingSeconds: number | null
+  isCritical: boolean
+  isRegistered: boolean
+  medicineLabel: string
+}
 
 /**
  * Janelas (minutos até a dose, `d = scheduled - now`; + futuro, − passado) da máquina de estados
@@ -78,12 +116,12 @@ const SURFACE_WINDOWS = Object.freeze({
  * acoplar o chamador a uma única forma.
  * @private
  */
-function pick(item, camel, snake) {
-  return item[camel] ?? item[snake] ?? null
+function pick<T>(item: DoseActivityItemInput, camel: keyof DoseActivityItemInput, snake: keyof DoseActivityItemInput): T | null {
+  return ((item[camel] as T | null | undefined) ?? (item[snake] as T | null | undefined) ?? null)
 }
 
 /** Instante é válido se presente e parseável. @private */
-function instantMs(scheduledFor) {
+function instantMs(scheduledFor: string | Date | null | undefined): number | null {
   if (!scheduledFor) return null
   const ms = scheduledFor instanceof Date ? scheduledFor.getTime() : parseISO(scheduledFor).getTime()
   return Number.isNaN(ms) ? null : ms
@@ -93,7 +131,7 @@ function instantMs(scheduledFor) {
  * Normaliza `now` (Date OU ISO string; paridade com splitDayTimeline/CON-024). Date inválido /
  * string não-parseável → getRawNow() (R-020, evita RangeError no Intl). @private
  */
-function resolveNow(now) {
+function resolveNow(now: Date | string | null | undefined): Date {
   const d = now instanceof Date ? now : now ? parseISO(now) : getRawNow()
   return Number.isNaN(d.getTime()) ? getRawNow() : d
 }
@@ -104,7 +142,11 @@ function resolveNow(now) {
  * (dose distante demais, d ≥ later). `missed` quando passou da tolerância.
  * @private
  */
-function resolveSurfaceState(diffMinutes, toleranceMinutes, w) {
+function resolveSurfaceState(
+  diffMinutes: number,
+  toleranceMinutes: number | null | undefined,
+  w: SurfaceWindows
+): DoseActivityStateValue | null {
   const tol = toleranceMinutes ?? w.lateMinutes // tolerância da ocorrência > fallback (lateMinutes)
   if (diffMinutes >= w.laterMinutes) return null // distante demais → sem superfície
   if (diffMinutes >= w.upcomingMinutes) return DOSE_ACTIVITY_STATES.LATER
@@ -132,32 +174,37 @@ function resolveSurfaceState(diffMinutes, toleranceMinutes, w) {
  *   upcomingMinutes, lateMinutes, nowBeforeMinutes, nowAfterMinutes
  * @returns {DoseActivityState|null} null = sem superfície
  */
-export function deriveDoseActivityState(item, now = getRawNow(), opts = {}) {
+export function deriveDoseActivityState(
+  item: DoseActivityItemInput | null | undefined,
+  now: Date | string = getRawNow(),
+  opts: Partial<SurfaceWindows> = {}
+): DoseActivityState | null {
   if (!item) return null
 
   const nowDate = resolveNow(now)
-  const scheduledFor = pick(item, 'scheduledFor', 'scheduled_for')
+  const scheduledFor = pick<string | Date>(item, 'scheduledFor', 'scheduled_for')
   const isRegistered = item.isRegistered === true || item.status === 'taken'
-  const toleranceMinutes = pick(item, 'toleranceMinutes', 'tolerance_minutes')
+  const toleranceMinutes = pick<number>(item, 'toleranceMinutes', 'tolerance_minutes')
   const ms = instantMs(scheduledFor)
 
-  let state
+  let state: DoseActivityStateValue
   if (isRegistered) {
     state = DOSE_ACTIVITY_STATES.DONE
   } else {
     if (ms === null) return null // instante inválido/ausente → sem superfície
     const diffMinutes = (ms - nowDate.getTime()) / 60000
     const w = { ...SURFACE_WINDOWS, ...opts }
-    state = resolveSurfaceState(diffMinutes, toleranceMinutes, w)
-    if (state === null) return null // distante demais → sem superfície
+    const resolved = resolveSurfaceState(diffMinutes, toleranceMinutes, w)
+    if (resolved === null) return null // distante demais → sem superfície
+    state = resolved
   }
 
   const remainingSeconds = ms === null ? null : Math.round((ms - nowDate.getTime()) / 1000)
 
   return {
     state,
-    instanceId: pick(item, 'instanceId', 'id'),
-    treatmentId: pick(item, 'treatmentPlanId', 'treatment_plan_id'),
+    instanceId: pick<string>(item, 'instanceId', 'id'),
+    treatmentId: pick<string>(item, 'treatmentPlanId', 'treatment_plan_id'),
     scheduledFor,
     remainingSeconds,
     isCritical: item.critical === true || item.critical_alarm === true,
@@ -177,7 +224,11 @@ export function deriveDoseActivityState(item, now = getRawNow(), opts = {}) {
  * @param {Object} [opts] - override das janelas (mesmo de deriveDoseActivityState)
  * @returns {number[]} timestamps absolutos (ms) ordenados asc; [] se instante inválido
  */
-export function doseActivityBoundaryTimes(scheduledFor, toleranceMinutes = null, opts = {}) {
+export function doseActivityBoundaryTimes(
+  scheduledFor: string | Date | null | undefined,
+  toleranceMinutes: number | null = null,
+  opts: Partial<SurfaceWindows> = {}
+): number[] {
   const ms = instantMs(scheduledFor)
   if (ms === null) return []
   const w = { ...SURFACE_WINDOWS, ...opts }
@@ -198,7 +249,7 @@ export function doseActivityBoundaryTimes(scheduledFor, toleranceMinutes = null,
  * terminais — não competem (a superfície encerra ou nem aparece).
  * @private
  */
-const ACTIONABLE = new Set([
+const ACTIONABLE: Set<DoseActivityStateValue> = new Set([
   DOSE_ACTIVITY_STATES.LATE,
   DOSE_ACTIVITY_STATES.NOW,
   DOSE_ACTIVITY_STATES.UPCOMING,
@@ -211,7 +262,7 @@ const ACTIONABLE = new Set([
  * `late` (uma dose atrasada é o sinal mais urgente, crítica ou não).
  * @private
  */
-function priorityRank(s) {
+function priorityRank(s: DoseActivityState): number {
   if (s.state === DOSE_ACTIVITY_STATES.LATE) return 0
   if (s.isCritical) return 1
   if (s.state === DOSE_ACTIVITY_STATES.NOW) return 2
@@ -238,7 +289,7 @@ function priorityRank(s) {
  * `c` vence `winner`? Maior prioridade; empate → mais urgente (menor remainingSeconds;
  * null por último). @private
  */
-function beats(c, winner) {
+function beats(c: DoseActivityState, winner: DoseActivityState): boolean {
   const dr = priorityRank(c) - priorityRank(winner)
   if (dr !== 0) return dr < 0
   const cr = c.remainingSeconds ?? Number.POSITIVE_INFINITY
@@ -246,10 +297,14 @@ function beats(c, winner) {
   return cr < wr
 }
 
-export function selectActiveDoseActivity(items, now = getRawNow(), opts = {}) {
+export function selectActiveDoseActivity(
+  items: DoseActivityItemInput[],
+  now: Date | string = getRawNow(),
+  opts: Partial<SurfaceWindows> = {}
+): (DoseActivityState & { groupSize: number }) | null {
   if (!Array.isArray(items) || items.length === 0) return null
 
-  const candidates = []
+  const candidates: DoseActivityState[] = []
   for (const item of items) {
     const st = deriveDoseActivityState(item, now, opts)
     if (st && ACTIONABLE.has(st.state)) candidates.push(st)

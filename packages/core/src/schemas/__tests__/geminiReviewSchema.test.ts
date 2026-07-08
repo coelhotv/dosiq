@@ -149,11 +149,10 @@ describe('Gemini Review Schema', () => {
     })
 
     it('deve aplicar status padrão "pending"', () => {
-      const withoutStatus = { ...validReview }
-      delete withoutStatus.status
+      const { status: _status, ...withoutStatus } = validReview
       const result = geminiReviewSchema.safeParse(withoutStatus)
       expect(result.success).toBe(true)
-      expect(result.data.status).toBe('pendente')
+      expect(result.data!.status).toBe('pendente')
     })
   })
 
@@ -336,13 +335,13 @@ describe('Gemini Review Schema', () => {
         const result = validateGeminiReview(invalidReview)
         expect(result.success).toBe(false)
         expect(result.errors).toBeDefined()
-        expect(result.errors.length).toBeGreaterThan(0)
+        expect(result.errors!.length).toBeGreaterThan(0)
       })
 
       it('deve incluir field nos erros', () => {
         const invalidReview = { ...validReview, pr_number: -1 }
         const result = validateGeminiReview(invalidReview)
-        expect(result.errors[0].field).toBe('pr_number')
+        expect(result.errors![0].field).toBe('pr_number')
       })
     })
 

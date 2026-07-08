@@ -30,6 +30,32 @@ export const STOCK_THRESHOLDS = Object.freeze({
   EXPIRY_WARNING_DAYS: 90,
 })
 
+interface StockProtocol {
+  active?: boolean
+  dosage_per_intake?: number | null
+  intake_unit?: string | null
+  medicine_id?: string
+  time_schedule?: string[] | null
+  frequency?: string | null
+}
+
+interface StockMedicine {
+  dosage_unit?: string | null
+  units_per_ml?: number | null
+  dosage_per_pill?: number | null
+  shelf_life_days?: number | null
+}
+
+interface StockRow {
+  opened_at?: string | Date | null
+}
+
+interface Purchase {
+  quantity_bought?: number | null
+  quantity?: number | null
+  unit_price?: number | null
+}
+
 /**
  * resolveStockStatus — deriva status do estoque a partir de saldo + consumo
  * + data de validade mais proxima.
@@ -41,7 +67,12 @@ export const STOCK_THRESHOLDS = Object.freeze({
  * @param {string} [today] - data ref em YYYY-MM-DD (default: hoje local)
  * @returns {'critico'|'baixo'|'normal'|'alto'|'vencido'}
  */
-export function resolveStockStatus(qty, dailyConsumption, nearestExpiryYYYYMM = null, today = null) {
+export function resolveStockStatus(
+  qty: number,
+  dailyConsumption: number,
+  nearestExpiryYYYYMM: string | null = null,
+  today: string | null = null
+): string {
   const ref = today ?? formatLocalDate(getNow())
 
   // Vencido sobrepoe qualquer outra classificacao por seguranca.
@@ -81,7 +112,11 @@ export function resolveStockStatus(qty, dailyConsumption, nearestExpiryYYYYMM = 
  * @param {{dosage_unit?: string, units_per_ml?: number, dosage_per_pill?: number}|null} [medicine]
  * @returns {{dosesRemaining: number, runwayDias: number, dosesPorDia: number, isDaily: boolean}}
  */
-export function stockDoseMetrics(qty, protocols = [], medicine = null) {
+export function stockDoseMetrics(
+  qty: number,
+  protocols: StockProtocol[] = [],
+  medicine: StockMedicine | null = null
+) {
   const active = (protocols || []).filter((p) => p && p.active !== false)
   if (active.length === 0 || !(qty > 0)) {
     return { dosesRemaining: 0, runwayDias: 0, dosesPorDia: 0, isDaily: true }
@@ -127,7 +162,7 @@ export function stockDoseMetrics(qty, protocols = [], medicine = null) {
  * @param {Array<{quantity_bought?: number, quantity?: number, unit_price: number}>} purchases
  * @returns {number} preco medio (0 se nao houver compras validas)
  */
-export function computeAverageUnitPrice(purchases) {
+export function computeAverageUnitPrice(purchases: Purchase[]): number {
   if (!Array.isArray(purchases) || purchases.length === 0) return 0
 
   let totalCost = 0
@@ -157,7 +192,7 @@ export function computeAverageUnitPrice(purchases) {
  * @param {string} [today] - data ref YYYY-MM-DD (default: hoje local)
  * @returns {number|null} dias (negativo se vencido) ou null se invalido
  */
-export function computeExpiryDays(expiry, today = null) {
+export function computeExpiryDays(expiry: string, today: string | null = null): number | null {
   if (!expiry || typeof expiry !== 'string') return null
   const ref = today ?? formatLocalDate(getNow())
 
@@ -199,7 +234,11 @@ export function computeExpiryDays(expiry, today = null) {
  * @param {Date} [now] - instante de referência (injetável p/ teste)
  * @returns {boolean}
  */
-export function isBiologicallyExpired(stockRow, medicine, now = null) {
+export function isBiologicallyExpired(
+  stockRow: StockRow | null | undefined,
+  medicine: StockMedicine | null | undefined,
+  now: Date | null = null
+): boolean {
   const openedAt = stockRow?.opened_at
   const shelfDays = Number(medicine?.shelf_life_days)
   if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return false
@@ -226,7 +265,11 @@ export function isBiologicallyExpired(stockRow, medicine, now = null) {
  * @param {Date} [now]
  * @returns {number|null} dias restantes (negativo se expirado) ou null se eixo inativo
  */
-export function biologicalExpiryDaysLeft(stockRow, medicine, now = null) {
+export function biologicalExpiryDaysLeft(
+  stockRow: StockRow | null | undefined,
+  medicine: StockMedicine | null | undefined,
+  now: Date | null = null
+): number | null {
   const openedAt = stockRow?.opened_at
   const shelfDays = Number(medicine?.shelf_life_days)
   if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return null
@@ -252,7 +295,7 @@ export function biologicalExpiryDaysLeft(stockRow, medicine, now = null) {
  * @param {number} value
  * @returns {string}
  */
-export function formatBRL(value) {
+export function formatBRL(value: number | string): string {
   const n = Number.isFinite(Number(value)) ? Number(value) : 0
   const sign = n < 0 ? '-' : ''
   const [intPart, decPart] = Math.abs(n).toFixed(2).split('.')

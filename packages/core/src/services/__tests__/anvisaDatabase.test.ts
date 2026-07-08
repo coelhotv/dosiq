@@ -20,15 +20,17 @@ const DATA = [
 ]
 
 // Response-like helper
-function ok(body) {
+function ok(body: unknown) {
   return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) })
 }
 function httpErr(status = 500) {
   return Promise.resolve({ ok: false, status, json: () => Promise.resolve(null) })
 }
 
+type CachedRecord = { manifest: Record<string, unknown>; data: unknown[] } | null
+
 // Adapter in-memory configurável (simula Cache Storage / AsyncStorage)
-function makeAdapter(initial = null, { writeFails = false } = {}) {
+function makeAdapter(initial: CachedRecord = null, { writeFails = false } = {}) {
   let store = initial
   return {
     read: vi.fn(() => Promise.resolve(store)),
@@ -88,7 +90,7 @@ describe('anvisaDatabase — createAnvisaDatabase.load()', () => {
     const data = await db.load()
     expect(data).toEqual(DATA)
     expect(adapter.write).toHaveBeenCalledTimes(1)
-    expect(adapter._get().data).toEqual(DATA)
+    expect(adapter._get()!.data).toEqual(DATA)
   })
 
   it('memoiza: 2ª chamada não refaz fetch', async () => {
@@ -159,7 +161,7 @@ describe('anvisaDatabase — createAnvisaDatabase.load()', () => {
     const data = await db.load()
     expect(data).toEqual(DATA)
     expect(adapter.write).toHaveBeenCalledTimes(1)
-    expect(adapter._get().manifest.version).toBe('1.1.2')
+    expect(adapter._get()!.manifest.version).toBe('1.1.2')
   })
 
   it('read do adapter rejeita: trata como sem cache (baixa do remoto)', async () => {

@@ -18,6 +18,7 @@ import {
   getTodayLocal,
   isProtocolActiveOnDate,
 } from '@dosiq/core'
+import type { AdherenceProtocol } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
 
@@ -81,7 +82,8 @@ export async function getStockData(userId) {
 
     const today = getTodayLocal()
     const validData = (rawData || []).filter((m) =>
-      (m.protocols || []).some((p) => isProtocolActiveOnDate(p, today)),
+      // TODO(040-strict): Row Supabase traz time_schedule como Json; em runtime é string[] (CHECK no schema)
+      (m.protocols || []).some((p) => isProtocolActiveOnDate(p as AdherenceProtocol, today)),
     )
 
     return { success: true, data: validData }

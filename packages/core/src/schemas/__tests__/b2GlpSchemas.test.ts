@@ -53,7 +53,7 @@ describe('injection_container — enum (FR-019)', () => {
       injection_container: 'caneta',
     })
     expect(res.success).toBe(true)
-    expect('injection_container' in res.data).toBe(false)
+    expect('injection_container' in res.data!).toBe(false)
   })
 })
 

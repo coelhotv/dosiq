@@ -15,7 +15,7 @@ import { parseLocalDate, getSaoPauloTime } from './dateUtils'
  * @param {string|null|undefined} birthDate - YYYY-MM-DD
  * @returns {number|null} idade em anos, ou null se ausente/inválida
  */
-export function calculateAge(birthDate) {
+export function calculateAge(birthDate: string | null | undefined): number | null {
   if (!birthDate) return null
   try {
     const birth = parseLocalDate(birthDate)
@@ -37,7 +37,7 @@ export function calculateAge(birthDate) {
  * @param {string|null|undefined} name
  * @returns {string}
  */
-export function getInitials(name) {
+export function getInitials(name: string | null | undefined): string {
   if (!name || typeof name !== 'string') return ''
   return name
     .trim()

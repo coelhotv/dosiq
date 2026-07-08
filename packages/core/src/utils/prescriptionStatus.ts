@@ -42,7 +42,12 @@ const MS_PER_DAY = 86400000
  * @param {Date} [now] — referência temporal; default = agora (America/Sao_Paulo)
  * @returns {'ativa'|'vencendo'|'vencida'|'finalizada'}
  */
-export function derivePrescriptionStatus(protocol, now = getNow()) {
+interface PrescriptionStatusProtocol {
+  end_date?: string | null
+  active?: boolean | null
+}
+
+export function derivePrescriptionStatus(protocol: PrescriptionStatusProtocol | null | undefined, now = getNow()): string {
   if (!protocol?.end_date) return PRESCRIPTION_STATUS.ATIVA
   const end = parseLocalDate(protocol.end_date)
   // Meia-noite local de hoje, sem `new Date()` (R-020): formata→reparse.

@@ -48,10 +48,16 @@ export const chatbotContextDataSchema = z.object({
 
 /**
  * Valida (e normaliza com defaults) o shape do contexto do chatbot.
- * @param {unknown} data
- * @returns {{success:true,data:object}|{success:false,errors:Array<{field:string,message:string}>}}
+ * @param data
+ * @returns {success:true,data:object}|{success:false,errors:Array<{field:string,message:string}>}
  */
-export function validateChatbotContextData(data) {
+export type ChatbotContextData = z.infer<typeof chatbotContextDataSchema>
+
+export type ValidateChatbotContextDataResult =
+  | { success: true; data: ChatbotContextData }
+  | { success: false; errors: Array<{ field: string; message: string }> }
+
+export function validateChatbotContextData(data: unknown): ValidateChatbotContextDataResult {
   const result = chatbotContextDataSchema.safeParse(data)
   if (!result.success) {
     return {

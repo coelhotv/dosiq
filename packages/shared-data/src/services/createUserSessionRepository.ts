@@ -9,12 +9,26 @@
  * const user = await repo.getCurrentUser()
  */
 
+import type { AuthError, Session, User } from '@supabase/supabase-js'
+
 /**
- * @param {Object} deps
- * @param {import('@supabase/supabase-js').SupabaseClient} deps.supabase
+ * Shape mínimo do client Supabase consumido aqui (apenas `.auth`) — estrutural, para
+ * não acoplar a uma instanciação genérica específica de `SupabaseClient<Database>`.
+ */
+interface SupabaseLike {
+  auth: {
+    getUser(): Promise<{ data: { user: User | null }; error: AuthError | null }>
+    getSession(): Promise<{ data: { session: Session | null }; error: AuthError | null }>
+    signOut(): Promise<{ error: AuthError | null }>
+  }
+}
+
+/**
+ * @param deps
+ * @param deps.supabase
  * @returns {UserSessionRepository}
  */
-export function createUserSessionRepository({ supabase }) {
+export function createUserSessionRepository({ supabase }: { supabase: SupabaseLike }) {
   if (!supabase) throw new Error('createUserSessionRepository: supabase client is required')
 
   /**

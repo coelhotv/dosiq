@@ -12,7 +12,7 @@
  *   const json = await getJSON(adapter, 'jsonKey', defaultValue)
  */
 
-export { assertStorageAdapter } from './contracts'
+export { assertStorageAdapter, type StorageAdapter } from './contracts'
 export { createWebStorageAdapter } from './webStorage'
 export { createMemoryStorageAdapter } from './memoryStorage'
 export { getJSON, setJSON } from './json'

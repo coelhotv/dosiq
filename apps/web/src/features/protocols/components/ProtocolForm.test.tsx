@@ -147,6 +147,8 @@ describe('ProtocolForm', () => {
         active: true,
         start_date: expect.any(String),
         end_date: null,
+        intake_unit: null,
+        weekdays: [],
       })
     })
   })

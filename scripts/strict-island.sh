@@ -18,11 +18,11 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 # ── Tetos por bucket (baseline 2026-07-06, F6 Bloco 0; lotes 6.x abaixam) ──
-MAX_B_PACKAGES=444        # packages/* nível-B transitivo (core 381 + shared-data 44 + storage 15 + config 4)
+MAX_B_PACKAGES=0          # packages/* nível-B transitivo (zerado no lote 6.5 — utils clínicos + chatbot + shared-data + storage + config tipados)
 MAX_B_WEB=37              # apps/web nível-B transitivo
 MAX_B_MOBILE=0            # apps/mobile nível-B transitivo (zerado no lote 6.4 — secureStore/asyncStorageAdapter/debugLog/haptics tipados)
 MAX_B_SERVER=36           # server/* nível-B transitivo (utils 25 + bot 10 + services 1)
-MAX_A_TESTS_CORE=85       # testes dos domínios A do core (lote 6.3: 350→85, repos tipados; alvo ≤120 batido)
+MAX_A_TESTS_CORE=0        # testes dos domínios A do core (zerado no lote 6.5 — triagem TIPA: narrow pós-expect via `!` + fixtures anvisaDatabase)
 MAX_A_TESTS_SERVER=0      # testes de server/notifications (zerado no lote 6.2)
 MAX_A_TESTS_WEB=0         # testes hooks web (já zerado — trava)
 MAX_A_TESTS_MOBILE=0      # testes hooks mobile (zerado no lote 6.4 — useMedicineDatabase/useMutation tipados)

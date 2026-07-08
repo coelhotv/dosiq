@@ -14,11 +14,27 @@
 
 import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema'
 import { cleanFloat } from './formUtils'
+
+interface MedicineLike {
+  dosage_unit?: string | null
+  dosage_per_pill?: number | string | null
+  units_per_ml?: number | string | null
+  concentration_volume_ml?: number | string | null
+}
+
+interface DoseItemLike {
+  dosagePerIntake?: number | string
+  intakeUnit?: string | null
+  dosageUnit?: string | null
+  dosagePerPill?: number | string | null
+  unitsPerMl?: number | string | null
+}
+
 /**
  * Converte string ou número para número de forma segura.
  * @private
  */
-function parseNumber(val) {
+function parseNumber(val: number | string | null | undefined): number {
   if (typeof val === 'string') {
     return Number(val.replace(',', '.'))
   }
@@ -29,9 +45,9 @@ function parseNumber(val) {
  * Formata a parte líquida quando volumeMl não é nulo/1.
  * @private
  */
-function formatLiquidConcentration(ratio, vol, unit) {
+function formatLiquidConcentration(ratio: number, vol: number, unit: string | null | undefined): string {
   const baseUnit = (unit || 'mg/ml').split('/')[0]
-  const baseLabel = DOSAGE_UNIT_LABELS[baseUnit] || baseUnit
+  const baseLabel = DOSAGE_UNIT_LABELS[baseUnit as keyof typeof DOSAGE_UNIT_LABELS] || baseUnit
   return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
 }
 
@@ -39,8 +55,8 @@ function formatLiquidConcentration(ratio, vol, unit) {
  * Obtém o rótulo de dosagem formatado.
  * @private
  */
-function getConcentrationLabel(v, unit) {
-  const label = DOSAGE_UNIT_LABELS[unit] || unit || ''
+function getConcentrationLabel(v: string, unit: string | null | undefined): string {
+  const label = (unit && DOSAGE_UNIT_LABELS[unit as keyof typeof DOSAGE_UNIT_LABELS]) || unit || ''
   return label ? `${v} ${label}` : v
 }
 
@@ -60,7 +76,11 @@ function getConcentrationLabel(v, unit) {
  * @param {number|string|null} [volumeMl=null] - concentration_volume_ml (denominador do rótulo)
  * @returns {string} ex: '100 UI/ml' · '500 mg' · '2,5 mg / 0,5 mL' · '' se value vazio
  */
-export function formatConcentration(value, unit, volumeMl = null) {
+export function formatConcentration(
+  value: number | string | null | undefined,
+  unit: string | null | undefined,
+  volumeMl: number | string | null = null
+): string {
   if (value === undefined || value === null || value === '') return ''
   const ratio = parseNumber(value)
   const vol = parseNumber(volumeMl)
@@ -87,7 +107,7 @@ export function formatConcentration(value, unit, volumeMl = null) {
  * @param {{dosage_per_pill?: number|string|null, dosage_unit?: string|null, concentration_volume_ml?: number|string|null}|null} medicine
  * @returns {string}
  */
-export function formatMedicineConcentration(medicine) {
+export function formatMedicineConcentration(medicine: MedicineLike | null | undefined): string {
   if (!medicine) return ''
   return formatConcentration(
     medicine.dosage_per_pill,
@@ -104,7 +124,7 @@ export function formatMedicineConcentration(medicine) {
  * @param {{dosage_unit?: string}|null} medicine
  * @returns {boolean}
  */
-export function isLiquidMedicine(medicine) {
+export function isLiquidMedicine(medicine: { dosage_unit?: string | null } | null | undefined): boolean {
   return Boolean(medicine?.dosage_unit?.endsWith('/ml'))
 }
 
@@ -115,7 +135,7 @@ export function isLiquidMedicine(medicine) {
  * @param {{dosage_unit?: string}|null} medicine
  * @returns {'ml'|'un.'}
  */
-export function stockUnitLabel(medicine) {
+export function stockUnitLabel(medicine: { dosage_unit?: string | null } | null | undefined): 'ml' | 'un.' {
   return isLiquidMedicine(medicine) ? 'ml' : 'un.'
 }
 
@@ -130,7 +150,7 @@ export function stockUnitLabel(medicine) {
  * @example formatStockCount(30, {dosage_unit:'mg/ml'}) → '30 ml'
  * @example formatStockCount(30, {dosage_unit:'mg'})    → '30 unidades'
  */
-export function formatStockCount(qty, medicine) {
+export function formatStockCount(qty: number | string, medicine: { dosage_unit?: string | null } | null | undefined): string {
   if (isLiquidMedicine(medicine)) return formatDose(qty, 'ml')
   return formatDoseUnit(qty)
 }
@@ -143,7 +163,7 @@ export function formatStockCount(qty, medicine) {
  * @param {{dosage_unit?: string, dosage_per_pill?: number}|null} medicine
  * @returns {string}
  */
-export function formatStockQuantity(qty, medicine) {
+export function formatStockQuantity(qty: number | string, medicine: MedicineLike | null | undefined): string {
   if (isLiquidMedicine(medicine)) return formatDose(qty, 'ml')
   return (
     formatActiveIngredientHint(qty, medicine?.dosage_per_pill, medicine?.dosage_unit) ||
@@ -190,7 +210,11 @@ export function formatConcentrationLabel(mgPerMl: number | string | null, volume
  * @example formatStockApplications(1.5, 0.37, null)    → '≈ 4 aplicações'
  * @example formatStockApplications(10, 0, 'caneta')    → '10 ml'
  */
-export function formatStockApplications(mlRemaining, mlPerApplication, containerSingular) {
+export function formatStockApplications(
+  mlRemaining: number | string,
+  mlPerApplication: number | string,
+  containerSingular: string | null
+): string {
   const ml = Number(typeof mlRemaining === 'string' ? mlRemaining.replace(',', '.') : mlRemaining)
   const perApp = Number(
     typeof mlPerApplication === 'string' ? mlPerApplication.replace(',', '.') : mlPerApplication
@@ -208,7 +232,7 @@ export function formatStockApplications(mlRemaining, mlPerApplication, container
  * Plural simples de rótulos de container PT-BR (caneta→canetas, frasco→frascos,
  * aplicação→aplicações). Regra mínima: termina em vogal → +s; em 'ão' → 'ões'.
  */
-function pluralizeContainer(singular) {
+function pluralizeContainer(singular: string): string {
   if (singular.endsWith('ão')) return `${singular.slice(0, -2)}ões`
   return `${singular}s`
 }
@@ -223,7 +247,7 @@ function pluralizeContainer(singular) {
  * @example pluralizeDoseUnit('1') → 'unidade'
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- assinatura legada (2º arg ignorado)
-export function pluralizeDoseUnit(qty, _legacyUnit?: string) {
+export function pluralizeDoseUnit(qty: number | string, _legacyUnit?: string): string {
   return Number(qty) === 1 ? 'unidade' : 'unidades'
 }
 
@@ -236,7 +260,7 @@ export function pluralizeDoseUnit(qty, _legacyUnit?: string) {
  * @example formatNumberPtBR(1.5)    → '1,5'
  * @example formatNumberPtBR(15000)  → '15.000'
  */
-export function formatNumberPtBR(num) {
+export function formatNumberPtBR(num: number | string | null | undefined): string {
   if (num == null) return ''
   const normalized = typeof num === 'string' ? num.replace(',', '.') : num
   if (isNaN(Number(normalized))) return ''
@@ -255,7 +279,7 @@ export function formatNumberPtBR(num) {
  * @example formatDoseUnit(0.5)  → '0,5 unidades'
  * @example formatDoseUnit(15.5) → '15,5 unidades'
  */
-export function formatDoseUnit(qty) {
+export function formatDoseUnit(qty: number | string): string {
   const display = formatNumberPtBR(qty)
   return `${display} ${pluralizeDoseUnit(qty)}`
 }
@@ -271,7 +295,7 @@ export function formatDoseUnit(qty) {
  * @example formatDose(10, 'UI')    → '10 UI'
  * @example formatDose(null, 'ml')  → ''
  */
-export function formatDose(value, unit) {
+export function formatDose(value: number | string | null | undefined, unit: string | null | undefined): string {
   if (value === undefined || value === null) return ''
   const v = formatNumberPtBR(value)
   if (v === '') return ''
@@ -312,7 +336,7 @@ export function formatDose(value, unit) {
  * @param {number|string|null} unitsPerMl - densidade explícita do cadastro
  * @returns {number|null} densidade a aplicar, ou null se indefinível
  */
-export function densityFor(intakeUnit, unitsPerMl) {
+export function densityFor(intakeUnit: string | null | undefined, unitsPerMl: number | string | null | undefined): number | null {
   const explicit = Number(typeof unitsPerMl === 'string' ? unitsPerMl.replace(',', '.') : unitsPerMl)
   if (explicit > 0) return explicit
   switch ((intakeUnit || '').toLowerCase()) {
@@ -322,7 +346,7 @@ export function densityFor(intakeUnit, unitsPerMl) {
   }
 }
 
-export function formatIntakeDose(qty, intakeUnit, medicine) {
+export function formatIntakeDose(qty: number | string, intakeUnit: string | null | undefined, medicine: MedicineLike | null | undefined): string {
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   if (!isLiquid) {
     return (
@@ -341,7 +365,7 @@ export function formatIntakeDose(qty, intakeUnit, medicine) {
   const divisor =
     intake === 'mg'
       ? Number(medicine?.dosage_per_pill) > 0
-        ? Number(medicine.dosage_per_pill)
+        ? Number(medicine?.dosage_per_pill)
         : null
       : densityFor(intake, medicine?.units_per_ml)
   if (!divisor) return base // sem concentração/densidade não há como exibir ≈ml
@@ -360,7 +384,7 @@ export function formatIntakeDose(qty, intakeUnit, medicine) {
  * @param {{dosage_unit?: string, dosage_per_pill?: number, units_per_ml?: number}|null} medicine
  * @returns {string}
  */
-export function formatDoseHint(qty, intakeUnit, medicine) {
+export function formatDoseHint(qty: number | string, intakeUnit: string | null | undefined, medicine: MedicineLike | null | undefined): string {
   if (isLiquidMedicine(medicine)) return formatIntakeDose(qty, intakeUnit, medicine)
   return formatActiveIngredientFormula(qty, medicine?.dosage_per_pill, medicine?.dosage_unit)
 }
@@ -373,7 +397,7 @@ export function formatDoseHint(qty, intakeUnit, medicine) {
  * @param {{dosagePerIntake?: number, intakeUnit?: string|null, dosageUnit?: string|null, dosagePerPill?: number|null, unitsPerMl?: number|null}} item
  * @returns {string}
  */
-export function formatDoseItem(item) {
+export function formatDoseItem(item: DoseItemLike | null | undefined): string {
   if (!item) return ''
   return formatIntakeDose(item.dosagePerIntake ?? 1, item.intakeUnit, {
     dosage_unit: item.dosageUnit,
@@ -390,7 +414,7 @@ export function formatDoseItem(item) {
  * @example formatActiveIngredientShort(1.5, 100, 'ui')  → '150 UI'
  * @example formatActiveIngredientShort(3, 1, 'gotas')  → ''
  */
-function convertMetricUnit(total, unit) {
+function convertMetricUnit(total: number, unit: string | null | undefined): { total: number; currentUnit: string | null | undefined } {
   if (total >= 5000) {
     if (unit === 'mcg') return { total: total / 1000, currentUnit: 'mg' }
     if (unit === 'mg') return { total: total / 1000, currentUnit: 'g' }
@@ -400,20 +424,21 @@ function convertMetricUnit(total, unit) {
   return { total, currentUnit: unit }
 }
 
-export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
+export function formatActiveIngredientShort(qty: number | string | null | undefined, dosagePerPill: number | string | null | undefined, unit: string | null | undefined): string {
   if (
     qty == null ||
     qty === '' ||
     isNaN(Number(String(qty).replace(',', '.'))) ||
     dosagePerPill == null ||
-    dosagePerPill <= 0
+    Number(dosagePerPill) <= 0
   ) {
     return ''
   }
   const qtyNum = Number(String(qty).replace(',', '.'))
+  const dosagePerPillNum = Number(dosagePerPill)
   // cleanFloat no produto (R-277): formatNumberPtBR não arredonda, então o artefato
   // de float (1,5×0,1=0,15000000000000002) vazaria pro chip de estoque (AP-226).
-  const { total, currentUnit } = convertMetricUnit(cleanFloat(qtyNum * dosagePerPill), unit)
+  const { total, currentUnit } = convertMetricUnit(cleanFloat(qtyNum * dosagePerPillNum), unit)
 
   const displayTotal = formatNumberPtBR(total)
 
@@ -429,7 +454,7 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
     gotas: total === 1 ? 'gota' : 'gotas',
   }
 
-  const displayTotalUnit = totalUnitLabels[currentUnit] || currentUnit || ''
+  const displayTotalUnit = (currentUnit && totalUnitLabels[currentUnit as keyof typeof totalUnitLabels]) || currentUnit || ''
 
   // Se o próprio medicamento for medido em unidades ou gotas e a dosagem unitária for 1,
   // a quantidade física já é a quantidade ativa (ex: "3 gotas"). Não precisa de concentração separada.
@@ -449,7 +474,7 @@ export function formatActiveIngredientShort(qty, dosagePerPill, unit) {
  * @example formatActiveIngredientHint(3, 1, 'gotas') → '3 gotas'
  * @example formatActiveIngredientHint(1, 1, 'un')    → '1 unidade'
  */
-export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
+export function formatActiveIngredientHint(qty: number | string | null | undefined, dosagePerPill: number | string | null | undefined, unit: string | null | undefined): string {
   if (
     qty == null ||
     qty === '' ||
@@ -470,7 +495,7 @@ export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
   }
 
-  const displayUnit = unitLabels[unit] || 'un.'
+  const displayUnit = (unit && unitLabels[unit as keyof typeof unitLabels]) || 'un.'
 
   // Se o próprio medicamento for medido em unidades ou gotas e a dosagem unitária for 1
   if ((unit === 'un' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
@@ -500,7 +525,7 @@ export function formatActiveIngredientHint(qty, dosagePerPill, unit) {
  * @example formatActiveIngredientFormula(1.5, 100, 'ui') → 'Equivale a 150 UI'
  * @example formatActiveIngredientFormula(3, 1, 'gotas') → 'Equivale a 3 gotas'
  */
-export function formatActiveIngredientFormula(qty, dosagePerPill, unit) {
+export function formatActiveIngredientFormula(qty: number | string | null | undefined, dosagePerPill: number | string | null | undefined, unit: string | null | undefined): string {
   if (
     qty == null ||
     qty === '' ||
@@ -522,7 +547,7 @@ export function formatActiveIngredientFormula(qty, dosagePerPill, unit) {
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
   }
 
-  const displayUnit = unitLabels[unit] || 'un.'
+  const displayUnit = (unit && unitLabels[unit as keyof typeof unitLabels]) || 'un.'
 
   if ((unit === 'un' || unit === 'gotas') && (dosagePerPill == null || dosagePerPill === 1)) {
     return `Equivale a ${displayQty} ${displayUnit}`

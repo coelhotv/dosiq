@@ -6,11 +6,21 @@
  */
 
 /**
+ * Candidato de config pública (shape parcial, ainda não validado).
+ */
+export interface PublicAppConfigCandidate {
+  supabaseUrl?: string
+  supabaseAnonKey?: string
+  detectSessionInUrl?: boolean
+  appEnv?: string
+}
+
+/**
  * Valida que um objeto contém todos os valores obrigatórios de config pública.
- * @param {Object} config - Candidato para config pública
+ * @param config - Candidato para config pública
  * @throws {Error} Se algum campo obrigatório estiver faltando ou invalido
  */
-export function assertPublicAppConfig(config) {
+export function assertPublicAppConfig(config: PublicAppConfigCandidate | null | undefined) {
   if (!config) throw new Error('Config object is required')
 
   if (!config.supabaseUrl) {

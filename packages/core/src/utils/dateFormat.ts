@@ -12,7 +12,7 @@ const MONTHS_PT_BR = [
 
 // Aceita Date | timestamp ISO completo (com hora). Hermes sem ICU → NÃO usar
 // toLocale*; parse manual via parseISO (timestamp) e tabela de meses.
-function toLocalDate(input) {
+function toLocalDate(input: Date | string): Date | null {
   if (input instanceof Date) return input
   if (typeof input === 'string') return parseISO(input)
   return null
@@ -22,7 +22,7 @@ function toLocalDate(input) {
  * Formata um timestamp (Date|ISO com hora) para "HH:MM" 24h.
  * @example formatTimePtBR('2026-03-12T08:05:00Z') → '08:05'
  */
-export function formatTimePtBR(input) {
+export function formatTimePtBR(input: Date | string): string {
   const d = toLocalDate(input)
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
@@ -32,7 +32,7 @@ export function formatTimePtBR(input) {
  * Formata um timestamp (Date|ISO com hora) para "DD mmm · HH:MM" PT-BR lowercase.
  * @example formatDateTimePtBR('2026-03-12T08:05:00Z') → '12 mar · 08:05'
  */
-export function formatDateTimePtBR(input) {
+export function formatDateTimePtBR(input: Date | string): string {
   const d = toLocalDate(input)
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
   const day = String(d.getDate()).padStart(2, '0')
@@ -46,7 +46,7 @@ export function formatDateTimePtBR(input) {
  * com múltiplas entradas por dia ao longo da semana.
  * @example formatDateTimeShortPtBR('2026-03-12T08:05:00Z') → '12/mar · 08:05'
  */
-export function formatDateTimeShortPtBR(input) {
+export function formatDateTimeShortPtBR(input: Date | string): string {
   const d = toLocalDate(input)
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
   const day = String(d.getDate()).padStart(2, '0')
@@ -60,7 +60,7 @@ export function formatDateTimeShortPtBR(input) {
  * @example formatDatePtBR('2026-03-12') → '12 mar 2026'
  * @example formatDatePtBR(null)         → ''
  */
-export function formatDatePtBR(isoDate) {
+export function formatDatePtBR(isoDate: string | Date | null | undefined): string {
   if (!isoDate) return ''
   const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
@@ -77,7 +77,7 @@ export function formatDatePtBR(isoDate) {
  * @example formatDateShortPtBR('2026-03-12') → '12/03/26'
  * @example formatDateShortPtBR(null)         → ''
  */
-export function formatDateShortPtBR(isoDate) {
+export function formatDateShortPtBR(isoDate: string | Date | null | undefined): string {
   if (!isoDate) return ''
   const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
@@ -93,7 +93,7 @@ export function formatDateShortPtBR(isoDate) {
  * @example formatEndDate(null)         → 'Uso contínuo'
  * @example formatEndDate('2026-12-31') → '31 dez 2026'
  */
-export function formatEndDate(isoDate) {
+export function formatEndDate(isoDate: string | Date | null | undefined): string {
   if (!isoDate) return 'Uso contínuo'
   return formatDatePtBR(isoDate)
 }

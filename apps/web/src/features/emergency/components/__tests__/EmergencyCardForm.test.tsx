@@ -11,9 +11,9 @@ vi.mock('@features/emergency/services/emergencyCardService', () => ({
 describe('EmergencyCardForm Smoke Test', () => {
   it('renders correctly', () => {
     render(<EmergencyCardForm onSave={vi.fn()} onCancel={vi.fn()} />)
-    expect(screen.getByText('📞 Contatos de Emergência')).toBeInTheDocument()
-    expect(screen.getByText('⚠️ Alergias')).toBeInTheDocument()
-    expect(screen.getByText('🩸 Tipo Sanguíneo')).toBeInTheDocument()
-    expect(screen.getByText('📝 Observações')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Contatos de Emergência' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Alergias' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Tipo Sanguíneo' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Observações' })).toBeInTheDocument()
   })
 })

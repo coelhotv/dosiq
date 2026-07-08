@@ -18,24 +18,36 @@ import { z } from 'zod'
 /**
  * Cria uma instância do repositório de logs de notificações.
  *
- * @param {Object} deps
- * @param {import('@supabase/supabase-js').SupabaseClient} deps.supabase - Cliente Supabase injetado
+ * @param deps
+ * @param deps.supabase - Cliente Supabase injetado
  * @returns {NotificationLogRepository}
  */
-export function createNotificationLogRepository({ supabase }) {
+export function createNotificationLogRepository({
+  supabase,
+}: {
+  // TODO(040-strict): `SupabaseClient<Database>` nominal diverge entre generic
+  // instantiations de plataformas (web/mobile) dependendo da versão resolvida de
+  // @supabase/supabase-js — tipagem estrutural equivalente causa "type instantiation
+  // excessively deep" no consumidor (hooks nível A). Mantido como injeção duck-typed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any
+}) {
   if (!supabase) throw new Error('createNotificationLogRepository: supabase client is required')
 
   /**
    * Retorna os logs de notificação de um usuário, ordenados por data de envio.
    * R-130: Validado via Zod para garantir integridade do contrato.
    *
-   * @param {string} userId - ID do usuário (UUID)
-   * @param {Object} [options]
-   * @param {number} [options.limit=20] - Limite de logs (padrão 20)
-   * @param {number} [options.offset=0] - Ponto de partida (padrão 0)
-   * @returns {Promise<Array>} Lista de logs validados
+   * @param userId - ID do usuário (UUID)
+   * @param options
+   * @param options.limit - Limite de logs (padrão 20)
+   * @param options.offset - Ponto de partida (padrão 0)
+   * @returns Lista de logs validados
    */
-  async function listByUserId(userId, { limit = 20, offset = 0 } = {}) {
+  async function listByUserId(
+    userId: string,
+    { limit = 20, offset = 0 }: { limit?: number; offset?: number } = {}
+  ) {
     if (!userId) {
       throw new Error('listByUserId: userId is required')
     }

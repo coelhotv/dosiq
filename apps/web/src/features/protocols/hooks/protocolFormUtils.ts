@@ -113,8 +113,8 @@ function _validateDosagePerIntake(dosage, errors) {
   // Cap 1000 (Fase B): líquidos podem ter doses maiores em gotas/ml/UI.
   // Normaliza vírgula→ponto antes de comparar (R-270): "2,5" não pode falhar.
   const n = coerceDecimal(dosage)
-  if (dosage === '' || dosage === null || Number.isNaN(n) || n < 0 || n > 1000) {
-    errors.dosage_per_intake = 'Dosagem deve estar entre 0 e 1000'
+  if (dosage === '' || dosage === null || Number.isNaN(n) || n <= 0 || n > 1000) {
+    errors.dosage_per_intake = 'Dosagem deve ser maior que 0 e até 1000'
   }
 }
 

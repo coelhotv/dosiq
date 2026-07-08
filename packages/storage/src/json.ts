@@ -5,14 +5,20 @@
  * Usa try-catch para fallback seguro em caso de parse error.
  */
 
+import type { StorageAdapter } from './contracts'
+
 /**
  * Le um valor JSON do storage.
- * @param {Object} adapter - Storage adapter (deve implementar getItem)
- * @param {string} key - Chave de armazenamento
- * @param {*} fallback - Valor padrao se chave nao existir ou JSON for invalido
- * @returns {Promise<*>} Valor desserializado ou fallback
+ * @param adapter - Storage adapter (deve implementar getItem)
+ * @param key - Chave de armazenamento
+ * @param fallback - Valor padrao se chave nao existir ou JSON for invalido
+ * @returns Valor desserializado ou fallback
  */
-export async function getJSON(adapter, key, fallback = null) {
+export async function getJSON<T = unknown>(
+  adapter: Pick<StorageAdapter, 'getItem'>,
+  key: string,
+  fallback: T | null = null
+): Promise<T | null> {
   const raw = await adapter.getItem(key)
   if (!raw) return fallback
 
@@ -26,19 +32,23 @@ export async function getJSON(adapter, key, fallback = null) {
 
 /**
  * Escreve um valor JSON no storage.
- * @param {Object} adapter - Storage adapter (deve implementar setItem)
- * @param {string} key - Chave de armazenamento
- * @param {*} value - Valor a serializar
- * @returns {Promise<void>}
+ * @param adapter - Storage adapter (deve implementar setItem)
+ * @param key - Chave de armazenamento
+ * @param value - Valor a serializar
  * @throws {Error} Se JSON.stringify ou adapter.setItem falharem
  */
-export async function setJSON(adapter, key, value) {
+export async function setJSON(
+  adapter: Pick<StorageAdapter, 'setItem'>,
+  key: string,
+  value: unknown
+): Promise<void> {
   try {
     const serialized = JSON.stringify(value)
     await adapter.setItem(key, serialized)
   } catch (error) {
     // Log error para debugging (mesmo que falha seja silenciosa para caller)
-    console.error(`[setJSON] Failed to store key "${key}":`, error.message)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`[setJSON] Failed to store key "${key}":`, message)
     throw error
   }
 }

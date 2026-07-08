@@ -13,12 +13,12 @@ describe('injection_container por lote (B4 — ADR-068)', () => {
   it('stockCreate aceita injection_container válido', () => {
     const r = validateStockCreate({ ...BASE, injection_container: 'caneta' })
     expect(r.success).toBe(true)
-    expect(r.data.injection_container).toBe('caneta')
+    expect(r.data!.injection_container).toBe('caneta')
   })
 
   it('stockCreate normaliza ausência/"" → null', () => {
-    expect(validateStockCreate(BASE).data.injection_container).toBeNull()
-    expect(validateStockCreate({ ...BASE, injection_container: null }).data.injection_container).toBeNull()
+    expect(validateStockCreate(BASE).data!.injection_container).toBeNull()
+    expect(validateStockCreate({ ...BASE, injection_container: null }).data!.injection_container).toBeNull()
   })
 
   it('stockCreate rejeita enum inválido', () => {
