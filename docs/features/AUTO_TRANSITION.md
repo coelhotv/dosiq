@@ -1,3 +1,20 @@
+---
+title: "Transição Automática de Etapas"
+description: "Especificação do sistema de transição automática de etapas para protocolos em regime de titulação no Dosiq."
+version: "1.0.0"
+status: active
+category: feature
+audience:
+  - dev
+  - agent
+tags:
+  - titration
+  - auto-transition
+  - workflow
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Transição Automática de Etapas de Titulação
 
 ## 🎯 Funcionalidade Implementada

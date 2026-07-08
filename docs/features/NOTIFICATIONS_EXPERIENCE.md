@@ -1,9 +1,22 @@
+---
+title: "Experiência de Notificações e Engajamento"
+description: "Estratégia de produto, canais e experiência de notificações (inbox-first, DLQ) no Dosiq."
+version: "1.0.0"
+status: active
+category: feature
+audience:
+  - dev
+  - product
+  - agent
+tags:
+  - notifications
+  - engagement
+  - ux
+created_at: "2026-02-01"
+updated_at: "2026-07-08"
+---
+
 # 💊 Experiência de Notificações e Engajamento
-
-**Versão:** 1.0.0 (Product Perspective)  
-**Persona Responsável:** Senior Product Manager  
-**Status:** Canonical Reference (Phase 5 / Wave N2+)
-
 As notificações no Dosiq não são apenas lembretes; elas são a **espinha dorsal da retenção (stickiness)** e a interface primária de interação do paciente com seu tratamento. Este documento detalha a estratégia de produto, os sistemas implementados e o roadmap de experiência para este componente crítico.
 
 ---

@@ -1,12 +1,21 @@
-# Sistema de Insight Cards (Hints) — Dashboard PWA
+---
+title: "Sistema de Insight Cards"
+description: "Especificação e arquitetura do componente Insight Card para exibição de dicas contextuais no Dashboard do Dosiq."
+version: "1.0.0"
+status: active
+category: feature
+audience:
+  - dev
+  - agent
+tags:
+  - insights
+  - hints
+  - dashboard
+created_at: "2026-02-01"
+updated_at: "2026-06-26"
+---
 
-> **Última atualização:** 2026-06-26
-> **Arquivos-chave:**
-> - `apps/web/src/features/dashboard/services/insightService.js`
-> - `apps/web/src/features/dashboard/services/_insightGenerators.js`
-> - `apps/web/src/features/dashboard/components/InsightCard.jsx` + `InsightCard.css`
-> - `apps/web/src/views/Dashboard.jsx` (`selectCurrentInsight`, `handleDismissInsight`)
-> - `apps/web/src/views/DashboardColumnLeft.jsx`
+# Sistema de Insight Cards (Hints) — Dashboard PWA
 
 ---
 

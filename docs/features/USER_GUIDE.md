@@ -1,3 +1,20 @@
+---
+title: "Guia do Usuário"
+description: "Guia prático de onboarding, cadastros, protocolos, estoque e uso geral do aplicativo Dosiq para pacientes."
+version: "1.0.0"
+status: active
+category: feature
+audience:
+  - dev
+  - product
+tags:
+  - user-guide
+  - patient
+  - features
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # 📖 Guia do Usuário
 
 Bem-vindo ao **Dosiq**! Este guia explica como utilizar as principais funcionalidades do aplicativo.

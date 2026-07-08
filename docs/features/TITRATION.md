@@ -1,3 +1,20 @@
+---
+title: "Cadastro e Gerenciamento de Protocolos em Titulação"
+description: "Guia técnico e de uso sobre o cadastro de medicamentos em regime de titulação e ajuste de doses no Dosiq."
+version: "1.0.0"
+status: active
+category: feature
+audience:
+  - dev
+  - agent
+tags:
+  - titration
+  - protocols
+  - usage-guide
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Guia Completo: Cadastro e Gerenciamento de Protocolos em Titulação
 
 Este guia explica como cadastrar medicamentos em regime de titulação e registrar suas doses no sistema **Dosiq**.
