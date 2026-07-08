@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "planning",
+    "mode": "coding",
     "ceremony_type": null,
-    "status": "planned",
-    "plan": "plans/specs/046-lgpd-consent/plan.md",
-    "tasks": "plans/specs/046-lgpd-consent/tasks.md",
-    "goal": "Tese 2026 — specs Fase 1 (046 lgpd-consent NOVA + adendo 008 export mobile) e Fase 2 (044 planned, 029 re-specified, 047 review-prompt NOVA, 048 landing-glp1 NOVA)",
+    "status": "delivered",
+    "plan": null,
+    "tasks": null,
+    "goal": "044 dose-only-mode — modo light sem controle de estoque: pergunta no onboarding, registro de doses (horário, qtd, pushes, alarmes) sem exigir/consumir estoque, opt-in de estoque posterior com upsell contextual. Origem: feedback beta testers + 52% silenciosos (026). Tese 2026 etapa 2.0",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/046-lgpd-consent",
@@ -17,8 +17,8 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 725,
-    "merged_squash": "2b8e2ed8",
+    "merged_pr": 731,
+    "merged_squash": "c0f29fb2",
     "merged_history": [
       {
         "pr": 696,
@@ -73,16 +73,17 @@
         "pr": 725,
         "squash": "2b8e2ed8",
         "phase": "040 F5: apps/mobile 100% TS (8 lotes #716-724 + gate Fable). AP-268/269, R-285. Mobile 0.24.6. Review Gemini 4 aplicados/2 declinados com evidência. F6 = modelo 3 blocos no playbook"
+      },
+      {
+        "pr": 731,
+        "squash": "c0f29fb2",
+        "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "goal": "044 dose-only-mode — modo light sem controle de estoque: pergunta no onboarding, registro de doses (horário, qtd, pushes, alarmes) sem exigir/consumir estoque, opt-in de estoque posterior com upsell contextual. Origem: feedback beta testers + 52% silenciosos (026). Tese 2026 etapa 2.0",
-    "goal_type": "feature",
-    "plan": null,
-    "tasks": null,
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "043 notify-improvements permanece 'planned' (plan.md/tasks.md prontos no spec dir); retomar via planning/coding quando invocado",
+    "previous_session_note": "040 COMPLETO (F1-F6). Distill pós-fase ADIADO por decisão PO (2026-07-08) — rodar no próximo checkpoint. 043 notify-improvements segue 'planned'. Próximo épico: 044 dose-only-mode (planned, gate TS satisfeito).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -99,9 +100,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-06T22:29:20.000Z",
-    "journal_entries_since_distillation": 5,
-    "rules_count": 233,
-    "anti_patterns_count": 164,
+    "journal_entries_since_distillation": 6,
+    "rules_count": 234,
+    "anti_patterns_count": 166,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
