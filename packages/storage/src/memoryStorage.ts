@@ -5,7 +5,7 @@
  * Dados sao perdidos ao reiniciar a sessao (esperado).
  */
 
-import { assertStorageAdapter, type StorageAdapter } from './contracts'
+import { assertStorageAdapter, type StorageAdapter } from './contracts.js'
 
 /**
  * Cria um adapter de storage que usa Map em memoria.

@@ -5,7 +5,7 @@
  * A injecao de valores acontece fora deste pacote (no app-specific bootstrap).
  */
 
-import { assertPublicAppConfig } from './contracts'
+import { assertPublicAppConfig } from './contracts.js'
 
 /**
  * Valores de entrada aceitos pela factory (injetados por quem chama).

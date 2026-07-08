@@ -10,7 +10,7 @@
 import {
   createSupabaseDependencies,
   type CreateSupabaseDependenciesOptions,
-} from './createSupabaseDependencies'
+} from './createSupabaseDependencies.js'
 
 export function createSupabaseClient(options: CreateSupabaseDependenciesOptions) {
   const { supabase } = createSupabaseDependencies(options)

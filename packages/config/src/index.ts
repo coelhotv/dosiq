@@ -11,6 +11,6 @@
  *   const result = validatePublicAppConfig(config)
  */
 
-export { assertPublicAppConfig } from './contracts'
-export { createPublicAppConfig } from './createPublicAppConfig'
-export { validatePublicAppConfig, checkRequiredFields } from './validateConfig'
+export { assertPublicAppConfig } from './contracts.js'
+export { createPublicAppConfig } from './createPublicAppConfig.js'
+export { validatePublicAppConfig, checkRequiredFields } from './validateConfig.js'

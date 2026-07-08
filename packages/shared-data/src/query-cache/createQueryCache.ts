@@ -15,7 +15,7 @@
 
 import { setJSON, getJSON } from '@dosiq/storage'
 import type { StorageAdapter } from '@dosiq/storage'
-import { _buildCache, type CacheLogger } from './_cacheBuilder'
+import { _buildCache, type CacheLogger } from './_cacheBuilder.js'
 
 /**
  * Cria uma instancia de query cache com dependencias injetadas.

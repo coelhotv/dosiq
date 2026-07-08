@@ -24,7 +24,7 @@
     "./protocols-utils": "./src/protocols-utils/index.ts"
   },
   "scripts": {
-    "build": "rm -rf dist && esbuild src/index.ts src/schemas/index.ts src/utils/index.ts --bundle --format=esm --platform=node --packages=external --outdir=dist --entry-names=[dir]/[name] --log-level=warning && tsc -p tsconfig.declarations.json",
+    "build": "rm -rf dist && esbuild src/index.ts src/schemas/index.ts src/utils/index.ts --bundle --format=esm --platform=node --packages=external --outdir=dist --entry-names=[dir]/[name] --log-level=warning && tsc -p tsconfig.declarations.json && node scripts/fix-dts-extensions.mjs",
     "prepare": "npm run build"
   }
 }

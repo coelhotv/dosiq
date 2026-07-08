@@ -5,7 +5,7 @@
  * Usa try-catch para fallback seguro em caso de parse error.
  */
 
-import type { StorageAdapter } from './contracts'
+import type { StorageAdapter } from './contracts.js'
 
 /**
  * Le um valor JSON do storage.

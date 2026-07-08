@@ -5,7 +5,7 @@
  * Injetável em packages/shared-data sem acoplamento direto a window.
  */
 
-import { assertStorageAdapter, type StorageAdapter } from './contracts'
+import { assertStorageAdapter, type StorageAdapter } from './contracts.js'
 
 /** Superfície mínima de Storage usada pelo adapter (aceita fallbacks de teste). */
 export interface WebStorageLike {

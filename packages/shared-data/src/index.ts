@@ -13,16 +13,16 @@
  */
 
 // Database types
-export type { Database } from './database.types'
+export type { Database } from './database.types.js'
 
 // Query Cache
-export { createQueryCache } from './query-cache/createQueryCache'
-export { CACHE_KEYS, generateCacheKey } from './query-cache/cacheKeys'
+export { createQueryCache } from './query-cache/createQueryCache.js'
+export { CACHE_KEYS, generateCacheKey } from './query-cache/cacheKeys.js'
 
 // Supabase factories
-export { createSupabaseDependencies } from './supabase/createSupabaseDependencies'
-export { createSupabaseClient } from './supabase/createSupabaseClient'
+export { createSupabaseDependencies } from './supabase/createSupabaseDependencies.js'
+export { createSupabaseClient } from './supabase/createSupabaseClient.js'
 
 // Service factories
-export { createUserSessionRepository } from './services/createUserSessionRepository'
-export { createNotificationLogRepository } from './services/createNotificationLogRepository'
+export { createUserSessionRepository } from './services/createUserSessionRepository.js'
+export { createNotificationLogRepository } from './services/createNotificationLogRepository.js'

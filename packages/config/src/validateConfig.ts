@@ -5,7 +5,7 @@
  * Util para logging e diagnostico.
  */
 
-import { assertPublicAppConfig, type PublicAppConfigCandidate } from './contracts'
+import { assertPublicAppConfig, type PublicAppConfigCandidate } from './contracts.js'
 
 /**
  * Valida config pública sem lançar erro.
