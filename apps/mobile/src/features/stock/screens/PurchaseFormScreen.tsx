@@ -254,8 +254,8 @@ function usePurchaseForm(route, navigation) {
   const { createPurchase, createLiquidPurchase, updatePurchase, isLoading } = useStockMutation()
   const { handleChange } = form
 
-  const purchaseDateObj = useMemo(() => form.values.purchase_date ? parseLocalDate(form.values.purchase_date) : null, [form.values.purchase_date])
-  const expirationDateObj = useMemo(() => form.values.expiration_date ? parseLocalDate(form.values.expiration_date) : null, [form.values.expiration_date])
+  const purchaseDateObj = useMemo(() => typeof form.values.purchase_date === 'string' && form.values.purchase_date ? parseLocalDate(form.values.purchase_date) : null, [form.values.purchase_date])
+  const expirationDateObj = useMemo(() => typeof form.values.expiration_date === 'string' && form.values.expiration_date ? parseLocalDate(form.values.expiration_date) : null, [form.values.expiration_date])
 
   const quantityHelperText = useMemo(
     () => getQuantityHelperText(isEdit, form.values.quantity, medicine),

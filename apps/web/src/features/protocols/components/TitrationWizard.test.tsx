@@ -53,7 +53,9 @@ describe('TitrationWizard', () => {
 
     fireEvent.click(screen.getByText('✓ Gravar Etapa'))
 
-    expect(onChange).toHaveBeenCalledWith([{ duration_days: 7, dosage: 1, description: 'Introdução' }])
+    expect(onChange).toHaveBeenCalledWith([
+      { duration_days: 7, dosage: 1, description: 'Introdução', requires_new_medicine: false },
+    ])
   })
 
   it('aceita vírgula PT-BR na dose da nova etapa (R-270): "0,25" → 0.25', () => {

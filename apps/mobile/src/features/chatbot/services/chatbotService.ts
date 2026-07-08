@@ -24,7 +24,12 @@ async function getUserId() {
  * @returns {Promise<string>} patientContext (string compacta p/ o LLM)
  */
 export async function buildMobilePatientContext() {
-  const data = await fetchChatbotContextData({ supabase, getUserId })
+  // TODO(040-strict): divergência nominal de generics — mobile resolve @supabase/supabase-js
+  // do node_modules próprio (Expo) e o core do root; mesmo Database, instâncias distintas.
+  const data = await fetchChatbotContextData({
+    supabase: supabase as unknown as Parameters<typeof fetchChatbotContextData>[0]['supabase'],
+    getUserId,
+  })
   return buildPatientContext(data)
 }
 

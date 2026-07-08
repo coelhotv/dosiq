@@ -26,7 +26,30 @@ import {
   parseTimestamp,
 } from './dateUtils'
 import { isProtocolActiveOnDate } from './adherenceLogic'
-import { resolveTitrationStageAt } from './titrationUtils'
+
+interface GeneratorProtocol extends TitrationProtocol {
+  id?: string
+  user_id?: string
+  frequency?: string | null
+  time_schedule?: string[] | null
+  dosage_per_intake?: number | null
+  critical_alarm?: boolean | null
+  start_date?: string | null
+  end_date?: string | null
+  active?: boolean
+  weekdays?: string[] | null
+  days?: string[] | null
+}
+
+type GeneratedInstance = {
+  user_id?: string
+  protocol_id?: string
+  scheduled_for: string
+  expected_dose: number
+  tolerance_minutes: number
+  critical_alarm: boolean
+}
+import { resolveTitrationStageAt, TitrationProtocol } from './titrationUtils'
 
 /**
  * Converte Date | ISO string | timestamp(ms) num Date absoluto.
@@ -34,7 +57,7 @@ import { resolveTitrationStageAt } from './titrationUtils'
  * @param {Date|string|number} value
  * @returns {Date}
  */
-function toInstant(value) {
+function toInstant(value: Date | string | number): Date {
   if (value instanceof Date) return value
   if (typeof value === 'number') return parseTimestamp(value)
   return parseISO(value)
@@ -53,7 +76,7 @@ const MAX_TOLERANCE_MINUTES = 120
  * não-diária (ADR-061/FR-007): a janela de perdão clínica de uma dose semanal
  * é dias, não horas. Frequências fora do mapa (personalizado etc.) mantêm 120.
  */
-const FREQUENCY_PERIOD_MINUTES = {
+const FREQUENCY_PERIOD_MINUTES: Record<string, number> = {
   semanal: 10080,
   semanalmente: 10080,
   weekly: 10080,
@@ -68,7 +91,7 @@ const FREQUENCY_PERIOD_MINUTES = {
  * @param {string} time
  * @returns {number|null}
  */
-function timeToMinutes(time) {
+function timeToMinutes(time: string): number | null {
   if (typeof time !== 'string') return null
   const [h, m] = time.split(':').map(Number)
   if (Number.isNaN(h) || Number.isNaN(m)) return null
@@ -94,7 +117,7 @@ function timeToMinutes(time) {
  * @param {string} frequency - frequência normalizada (lowercase) do protocolo
  * @returns {number[]} tolerância por slot (mesma ordem de sortedMinutes)
  */
-function computeTolerances(sortedMinutes, frequency) {
+function computeTolerances(sortedMinutes: number[], frequency: string): number[] {
   const isDaily = DAILY_FREQUENCIES.has(frequency)
   const periodMinutes = isDaily ? 1440 : FREQUENCY_PERIOD_MINUTES[frequency]
   // Sem período conhecido (personalizado etc.): comportamento legado, 120 fixo.
@@ -104,7 +127,7 @@ function computeTolerances(sortedMinutes, frequency) {
     return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
   }
   const len = sortedMinutes.length
-  return sortedMinutes.map((minute, i) => {
+  return sortedMinutes.map((minute: number, i: number) => {
     // Para o 1º/último slot, o intervalo adjacente cruza o período (wrap-around):
     // diário = meia-noite; semanal/alternados = próxima ocorrência do ciclo.
     const prevGap = i > 0
@@ -129,7 +152,7 @@ function computeTolerances(sortedMinutes, frequency) {
  * @param {string} tz
  * @returns {string} ISO 8601 UTC
  */
-function buildScheduledFor(dateStr, minutesOfDay, tz) {
+function buildScheduledFor(dateStr: string, minutesOfDay: number, tz: string): string {
   const startOfDayMs = parseISO(getStartOfDayISO(dateStr, tz)).getTime()
   return parseTimestamp(startOfDayMs + minutesOfDay * 60 * 1000).toISOString()
 }
@@ -141,8 +164,8 @@ function buildScheduledFor(dateStr, minutesOfDay, tz) {
  * @param {string} tz
  * @returns {string[]}
  */
-function localDateRange(fromDate, toDate, tz) {
-  const dates = []
+function localDateRange(fromDate: Date, toDate: Date, tz: string): string[] {
+  const dates: string[] = []
   // Itera em UTC (T00:00:00Z + setUTCDate): imune a DST e ao fuso do ambiente de
   // execução (servidor Vercel ou device móvel em fuso arbitrário). UTC não tem
   // transições, então cada incremento é exatamente 24h. parseISO mantém R-020.
@@ -170,7 +193,12 @@ function localDateRange(fromDate, toDate, tz) {
  *                  expected_dose: number, tolerance_minutes: number}>}
  *          Ordenadas por scheduled_for; só dentro de [fromTs, toTs].
  */
-export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paulo') {
+export function generateInstances(
+  protocol: GeneratorProtocol | null | undefined,
+  fromTs: Date | string | number,
+  toTs: Date | string | number,
+  tz = 'America/Sao_Paulo'
+): GeneratedInstance[] {
   if (!protocol || !protocol.id) return []
 
   const frequency = (protocol.frequency || 'diário').toLowerCase()
@@ -190,14 +218,14 @@ export function generateInstances(protocol, fromTs, toTs, tz = 'America/Sao_Paul
 
   // Slots do dia, ordenados, com tolerância pré-computada (estável dia a dia).
   const slots = schedule
-    .map((t) => ({ time: t, minutes: timeToMinutes(t) }))
-    .filter((s) => s.minutes !== null)
+    .map((t: string) => ({ time: t, minutes: timeToMinutes(t) }))
+    .filter((s): s is { time: string; minutes: number } => s.minutes !== null)
     .sort((a, b) => a.minutes - b.minutes)
   if (slots.length === 0) return []
 
   const tolerances = computeTolerances(slots.map((s) => s.minutes), frequency)
 
-  const instances = []
+  const instances: GeneratedInstance[] = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {
     if (!isProtocolActiveOnDate(protocol, dateStr)) continue
     slots.forEach((slot, i) => {

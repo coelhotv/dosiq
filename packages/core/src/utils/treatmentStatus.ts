@@ -25,7 +25,13 @@ export const TREATMENT_STATUS = Object.freeze({
  * @param {string} [today] — YYYY-MM-DD; default = hoje local
  * @returns {'ativo'|'pausado'|'finalizado'}
  */
-export function resolveTreatmentStatus(protocol, today?: string) {
+interface TreatmentStatusProtocol {
+  active?: boolean | null
+  end_date?: string | null
+  start_date?: string | null
+}
+
+export function resolveTreatmentStatus(protocol: TreatmentStatusProtocol | null | undefined, today?: string): string {
   const ref = today ?? formatLocalDate(getNow())
   if (protocol?.end_date && protocol.end_date < ref) return TREATMENT_STATUS.FINALIZADO
   if (protocol?.active === false) return TREATMENT_STATUS.PAUSADO
@@ -41,7 +47,7 @@ export function resolveTreatmentStatus(protocol, today?: string) {
  * @param {string} [today] — YYYY-MM-DD; default = hoje local
  * @returns {boolean}
  */
-export function isTreatmentActive(protocol, today?: string) {
+export function isTreatmentActive(protocol: TreatmentStatusProtocol | null | undefined, today?: string): boolean {
   if (!protocol) return false
   return resolveTreatmentStatus(protocol, today) === TREATMENT_STATUS.ATIVO
 }
@@ -63,7 +69,7 @@ export function isTreatmentActive(protocol, today?: string) {
  * @param {string} [today] — YYYY-MM-DD; default = hoje local
  * @returns {boolean}
  */
-export function isTreatmentSchedulableOn(protocol, today?: string) {
+export function isTreatmentSchedulableOn(protocol: TreatmentStatusProtocol | null | undefined, today?: string): boolean {
   if (!protocol) return false
   const ref = today ?? formatLocalDate(getNow())
   return isTreatmentActive(protocol, ref) && isProtocolActiveOnDate(protocol, ref)

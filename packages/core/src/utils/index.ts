@@ -60,6 +60,7 @@ export {
   ADHERENCE_MODE,
   INSTANCE_STATUS,
 } from './adherenceLogic'
+export type { AdherenceProtocol } from './adherenceLogic'
 
 // Dose instance generation engine (ADR-048, Fase 2)
 export {

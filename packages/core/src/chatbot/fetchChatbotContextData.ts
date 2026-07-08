@@ -9,8 +9,10 @@
 // (descopada por blast radius — RC3 F2). A saída é validada pelo seam Zod (CON-028) antes
 // de chegar ao builder.
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
-import { calculateDailyIntake, calculateDaysRemaining } from '../utils/adherenceLogic'
+import { calculateDailyIntake, calculateDaysRemaining, type AdherenceProtocol } from '../utils/adherenceLogic'
 import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils'
 import { validateChatbotContextData } from './chatbotContextSchema'
 
@@ -19,21 +21,43 @@ const DOSE_WINDOW_DAYS = 2
 /** Janela de adesão instances-based (R-248). */
 const ADHERENCE_WINDOW_DAYS = 30
 
+/** Medicamento (linha crua do Supabase, `stock(*)` embedded). */
+interface MedicineRow {
+  id: string
+  min_stock_threshold?: number | null
+  stock?: Array<{ quantity: number }> | null
+  [key: string]: unknown
+}
+
+/** Protocolo (linha crua do Supabase). */
+interface ProtocolRow {
+  medicine_id: string | null
+  active?: boolean | null
+  [key: string]: unknown
+}
+
 /**
  * Resumo de estoque rich (paridade web — `_deriveStockSummary`). Movido p/ o core para que
  * as 3 superfícies derivem igual. Lê `medicine.stock[]` embedded + protocolos ativos.
- * @param {Array} medicines
- * @param {Array} protocols
- * @returns {Array<{medicine,total,daysRemaining,isZero,isLow,dailyIntake}>}
+ * @param medicines
+ * @param protocols
+ * @returns Array<{medicine,total,daysRemaining,isZero,isLow,dailyIntake}>
  */
-function deriveStockSummary(medicines, protocols) {
+function deriveStockSummary(medicines: MedicineRow[] | null | undefined, protocols: ProtocolRow[] | null | undefined) {
   const activeMedicineIds = new Set((protocols || []).filter((p) => p.active).map((p) => p.medicine_id))
   return (medicines || [])
     .filter((m) => activeMedicineIds.has(m.id))
     .map((medicine) => {
       const activeStockEntries = (medicine.stock || []).filter((s) => s.quantity > 0)
       const totalQuantity = activeStockEntries.reduce((sum, s) => sum + s.quantity, 0)
-      const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
+      // Cast local: `protocols`/`medicine` aqui são linhas cruas do Supabase (shape amplo,
+      // `medicine_id` pode ser `null`); `AdherenceProtocol` (adherenceLogic.ts) não modela
+      // `null` no FK — seguro pois a comparação `p.medicine_id === medicineId` tolera null.
+      const dailyIntake = calculateDailyIntake(
+        medicine.id,
+        protocols as AdherenceProtocol[] | null | undefined,
+        medicine as AdherenceProtocol['medicine']
+      )
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyIntake)
       const threshold = medicine.min_stock_threshold || 0
       const isZero = totalQuantity === 0
@@ -50,11 +74,11 @@ function deriveStockSummary(medicines, protocols) {
  * Adesão leve instances-based (R-248): taken/(taken+missed) na janela; skipped_* neutro;
  * denom vazio → null. Substitui as duas implementações divergentes (web 30d-instances via
  * adherenceService vs Telegram 7d-logs) por uma fonte única no core.
- * @param {Object} repo - createDoseInstanceRepository
- * @param {string} userId
- * @returns {Promise<{adherence:number|null}>}
+ * @param repo - createDoseInstanceRepository
+ * @param userId
+ * @returns Promise<{adherence:number|null}>
  */
-async function computeInstancesAdherence(repo, userId) {
+async function computeInstancesAdherence(repo: ReturnType<typeof createDoseInstanceRepository>, userId: string) {
   // Adesão é dado SECUNDÁRIO (1 linha no contexto): falha transitória na consulta NÃO deve
   // derrubar todo o contexto do chatbot. Degrada gracioso (null) — diferente dos selects
   // primários (medicines/protocols), que falham alto por design (FR-010).
@@ -72,12 +96,18 @@ async function computeInstancesAdherence(repo, userId) {
 
 /**
  * Busca + deriva o contexto do paciente para o chatbot (saída == entrada do builder, CON-028).
- * @param {Object} deps
- * @param {Object} deps.supabase - Cliente Supabase do runtime
- * @param {Function} deps.getUserId - () => Promise<string> (id do usuário autenticado)
- * @returns {Promise<import('./chatbotContextSchema').chatbotContextDataSchema>} ChatbotContextData
+ * @param deps
+ * @param deps.supabase - Cliente Supabase do runtime
+ * @param deps.getUserId - () => Promise<string> (id do usuário autenticado)
+ * @returns ChatbotContextData
  */
-export async function fetchChatbotContextData({ supabase, getUserId }) {
+export async function fetchChatbotContextData({
+  supabase,
+  getUserId,
+}: {
+  supabase: SupabaseClient<Database>
+  getUserId: () => Promise<string>
+}) {
   if (!supabase) throw new Error('fetchChatbotContextData: supabase é obrigatório')
   if (typeof getUserId !== 'function') throw new Error('fetchChatbotContextData: getUserId é obrigatório')
 
@@ -128,7 +158,8 @@ export async function fetchChatbotContextData({ supabase, getUserId }) {
 
   // Seam Zod (CON-028) — valida o shape antes do builder (FR-010 mecanismo 3).
   const validation = validateChatbotContextData(data)
-  if (!validation.success) {
+  // `=== false` (não `!`): consumidores non-strict (mobile) só estreitam a união com literal
+  if (validation.success === false) {
     const detail = validation.errors.map((e) => `${e.field}: ${e.message}`).join('; ')
     throw new Error(`fetchChatbotContextData: shape inválido (CON-028) — ${detail}`)
   }

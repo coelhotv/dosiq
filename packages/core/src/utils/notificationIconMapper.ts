@@ -7,7 +7,13 @@ import { parseISO } from './dateUtils'
  * @param {string} type - Valor do campo notification_type no DB
  * @returns {{ iconName: string, color: string, bgColor: string, label: string, deepLinkAction: string|null }}
  */
-export function getNotificationIcon(type) {
+export function getNotificationIcon(type: string): {
+  iconName: string
+  color: string
+  bgColor: string
+  label: string
+  deepLinkAction: string | null
+} {
   const map = {
     dose_reminder: {
       iconName: 'Pill',
@@ -73,7 +79,7 @@ export function getNotificationIcon(type) {
       deepLinkAction: 'stats-monthly',
     },
   }
-  return map[type] ?? {
+  return map[type as keyof typeof map] ?? {
     iconName: 'Bell',
     color: '#6b7280',
     bgColor: 'rgba(107, 114, 128, 0.10)',
@@ -88,7 +94,7 @@ export function getNotificationIcon(type) {
  * @param {string} isoString - Data ISO do campo sent_at
  * @returns {string}
  */
-export function formatRelativeTime(isoString) {
+export function formatRelativeTime(isoString: string): string {
   if (!isoString) return ''
   const now = Date.now()
   const then = parseISO(isoString).getTime()

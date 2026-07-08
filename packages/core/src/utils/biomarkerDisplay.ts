@@ -10,7 +10,7 @@ import {
 } from '../schemas/biomarkerLogSchema'
 
 // Número PT-BR (ponto → vírgula). Não força casas decimais.
-function ptBR(n) {
+function ptBR(n: number): string {
   return String(n).replace('.', ',')
 }
 
@@ -22,7 +22,13 @@ function ptBR(n) {
  * @param {{value:number, value_secondary?:number|null, unit:string}} item
  * @returns {string}
  */
-export function formatBiomarkerDisplay(item) {
+interface BiomarkerMeasure {
+  value: number
+  value_secondary?: number | null
+  unit: string
+}
+
+export function formatBiomarkerDisplay(item: BiomarkerMeasure | null | undefined): string {
   if (!item || item.value == null) return ''
   const v = ptBR(item.value)
   if (item.value_secondary != null) {
@@ -38,9 +44,13 @@ export function formatBiomarkerDisplay(item) {
  * @param {string|null|undefined} context
  * @returns {string|null}
  */
-export function formatBiomarkerContext(context) {
+export function formatBiomarkerContext(context: string | null | undefined): string | null {
   if (!context) return null
-  return BIOMARKER_CONTEXT_LABELS[context] ?? BIOMARKER_PA_CONTEXT_LABELS[context] ?? null
+  return (
+    BIOMARKER_CONTEXT_LABELS[context as keyof typeof BIOMARKER_CONTEXT_LABELS] ??
+    BIOMARKER_PA_CONTEXT_LABELS[context as keyof typeof BIOMARKER_PA_CONTEXT_LABELS] ??
+    null
+  )
 }
 
 /**
@@ -50,6 +60,10 @@ export function formatBiomarkerContext(context) {
  * @param {string} type
  * @returns {string}
  */
-export function biomarkerCardLabel(type) {
-  return BIOMARKER_TYPE_SHORT_LABELS[type] ?? BIOMARKER_TYPE_LABELS[type] ?? type
+export function biomarkerCardLabel(type: string): string {
+  return (
+    BIOMARKER_TYPE_SHORT_LABELS[type as keyof typeof BIOMARKER_TYPE_SHORT_LABELS] ??
+    BIOMARKER_TYPE_LABELS[type as keyof typeof BIOMARKER_TYPE_LABELS] ??
+    type
+  )
 }

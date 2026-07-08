@@ -42,6 +42,14 @@ export const TIMELINE_ORDER = Object.freeze({
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
+export interface TimelineEvent {
+  id: string
+  type: string
+  occurred_at: string
+  payload?: Record<string, unknown>
+  localDay?: string | null
+}
+
 /**
  * Deriva o dia local (YYYY-MM-DD) de um instante absoluto no fuso informado.
  * Cross-meia-noite: um evento 23:50 e outro 00:10 (UTC convertidos ao tz) caem
@@ -51,7 +59,7 @@ const DEFAULT_TZ = 'America/Sao_Paulo'
  * @param {string} [tz=DEFAULT_TZ] - Timezone IANA.
  * @returns {string|null} YYYY-MM-DD no fuso, ou null se inválido.
  */
-export function deriveLocalDay(occurredAt, tz = DEFAULT_TZ) {
+export function deriveLocalDay(occurredAt: string, tz = DEFAULT_TZ): string | null {
   const d = parseISO(occurredAt)
   if (Number.isNaN(d.getTime())) return null
   return formatLocalDate(getUserTime(d, tz))
@@ -73,10 +81,13 @@ export function deriveLocalDay(occurredAt, tz = DEFAULT_TZ) {
  * @param {'asc'|'desc'} [opts.order=TIMELINE_ORDER.DESC] - Ordem por instante.
  * @returns {TimelineEvent[]} Eventos ordenados, cada um com `localDay`.
  */
-export function buildTimeline(events, { tz = DEFAULT_TZ, order = TIMELINE_ORDER.DESC as 'asc' | 'desc' } = {}) {
+export function buildTimeline(
+  events: TimelineEvent[],
+  { tz = DEFAULT_TZ, order = TIMELINE_ORDER.DESC as 'asc' | 'desc' } = {}
+): TimelineEvent[] {
   if (!Array.isArray(events)) return []
 
-  const annotated = []
+  const annotated: Array<{ ev: TimelineEvent; ts: number }> = []
   for (const ev of events) {
     if (!ev || !ev.occurred_at) continue
     const ts = parseISO(ev.occurred_at).getTime()
@@ -105,10 +116,10 @@ export function buildTimeline(events, { tz = DEFAULT_TZ, order = TIMELINE_ORDER.
  * @param {TimelineEvent[]} events - Saída de `buildTimeline` (com `localDay`).
  * @returns {Array<{ localDay: string, events: TimelineEvent[] }>}
  */
-export function groupByLocalDay(events) {
+export function groupByLocalDay(events: TimelineEvent[]): Array<{ localDay: string | null; events: TimelineEvent[] }> {
   if (!Array.isArray(events)) return []
-  const groups = []
-  let current = null
+  const groups: Array<{ localDay: string | null; events: TimelineEvent[] }> = []
+  let current: { localDay: string | null; events: TimelineEvent[] } | null = null
   for (const ev of events) {
     const day = ev.localDay ?? deriveLocalDay(ev.occurred_at)
     if (!current || current.localDay !== day) {

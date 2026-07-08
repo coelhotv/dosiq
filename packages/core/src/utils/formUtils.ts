@@ -1,4 +1,8 @@
-export const getFieldDescribedBy = (fieldName, errors, hintId = null) =>
+export const getFieldDescribedBy = (
+  fieldName: string,
+  errors: Record<string, unknown> | null | undefined,
+  hintId: string | null = null
+): string | undefined =>
   [hintId, errors?.[fieldName] ? `${fieldName}-error` : null].filter(Boolean).join(' ') || undefined
 
 /**
@@ -9,7 +13,8 @@ export const getFieldDescribedBy = (fieldName, errors, hintId = null) =>
  * @param {string|number|null|undefined} value
  * @returns {number} NaN quando vazio/ inválido (deixa a validação decidir)
  */
-export const coerceDecimal = (value) => parseFloat(String(value ?? '').replace(',', '.'))
+export const coerceDecimal = (value: string | number | null | undefined): number =>
+  parseFloat(String(value ?? '').replace(',', '.'))
 
 /**
  * Limpa artefatos de ponto flutuante do JS (012 Fase B3; review Gemini #661).
@@ -22,7 +27,7 @@ export const coerceDecimal = (value) => parseFloat(String(value ?? '').replace('
  * @returns {number}
  * @example cleanFloat(1.2 * 0.3) → 0.36
  */
-export const cleanFloat = (value) => {
+export const cleanFloat = (value: number | string | null | undefined): number => {
   const n = Number(value)
   return Number.isFinite(n) ? parseFloat(n.toPrecision(12)) : n
 }

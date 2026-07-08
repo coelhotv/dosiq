@@ -79,7 +79,7 @@ export default function ProfileEditScreen() {
 
   // birth_date é string 'YYYY-MM-DD' no form; FormDatePicker opera com Date.
   const birthDateAsDate = useMemo(
-    () => (form.values.birth_date ? parseLocalDate(form.values.birth_date) : null),
+    () => (typeof form.values.birth_date === 'string' && form.values.birth_date ? parseLocalDate(form.values.birth_date) : null),
     [form.values.birth_date],
   )
 

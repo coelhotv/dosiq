@@ -27,9 +27,9 @@ describe('Smoke: Medicine Schema', () => {
     it('update parcial (só therapeutic_class) não traz presentation/type', () => {
       const result = validateMedicineUpdate({ therapeutic_class: 'Análogo de GLP-1' })
       expect(result.success).toBe(true)
-      expect('presentation' in result.data).toBe(false)
-      expect('type' in result.data).toBe(false)
-      expect(result.data.therapeutic_class).toBe('Análogo de GLP-1')
+      expect('presentation' in result.data!).toBe(false)
+      expect('type' in result.data!).toBe(false)
+      expect(result.data!.therapeutic_class).toBe('Análogo de GLP-1')
     })
 
     it('create ainda aplica os defaults (comprimido/medicamento)', () => {
@@ -39,14 +39,14 @@ describe('Smoke: Medicine Schema', () => {
         dosage_unit: 'mg',
       })
       expect(result.success).toBe(true)
-      expect(result.data.presentation).toBe('comprimido')
-      expect(result.data.type).toBe('medicamento')
+      expect(result.data!.presentation).toBe('comprimido')
+      expect(result.data!.type).toBe('medicamento')
     })
 
     it('update preserva presentation quando explicitamente enviado', () => {
       const result = validateMedicineUpdate({ presentation: 'injetavel' })
       expect(result.success).toBe(true)
-      expect(result.data.presentation).toBe('injetavel')
+      expect(result.data!.presentation).toBe('injetavel')
     })
   })
 })

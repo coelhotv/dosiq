@@ -19,7 +19,8 @@ function makeData(days, adherence = 80) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     data.push({
-      date: d.toISOString().split('T')[0],
+      // Data LOCAL (nunca toISOString): após 21h BRT o UTC vira o dia seguinte e a janela do hook não casa
+      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
       adherence,
       taken: Math.round((adherence / 100) * 4),
       expected: 4,

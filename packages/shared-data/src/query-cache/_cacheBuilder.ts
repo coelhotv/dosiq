@@ -7,21 +7,71 @@
  * @module _cacheBuilder
  */
 
+import type { StorageAdapter } from '@dosiq/storage'
+
 const GC_INTERVAL = 60_000
+
+/** Logger opcional com métodos log/warn/error. */
+export interface CacheLogger {
+  log?: (msg: string) => void
+  warn?: (msg: string) => void
+  error?: (msg: string) => void
+  [level: string]: ((msg: string) => void) | undefined
+}
+
+/** Entrada armazenada no cache. */
+interface CacheEntry<T = unknown> {
+  data: T
+  timestamp: number
+  isRevalidating: boolean
+}
+
+/** Dependências injetadas pela factory (createQueryCache). */
+interface CacheDeps {
+  storage: StorageAdapter
+  logger?: CacheLogger | null
+  staleTime: number
+  maxEntries: number
+  persistKey: string
+  setJSON: (storage: StorageAdapter, key: string, value: unknown) => Promise<void>
+  getJSON: <T>(storage: StorageAdapter, key: string, fallback: T | null) => Promise<T | null>
+}
+
+/** Estado interno completo do cache (deps + estruturas de runtime). */
+interface CacheState extends CacheDeps {
+  cache: Map<string, CacheEntry>
+  pendingRequests: Map<string, Promise<unknown>>
+  accessCount: Map<string, number>
+  accessCounter: number
+  cacheGeneration: number
+  gcInterval: ReturnType<typeof setInterval> | null
+  persistTimer: ReturnType<typeof setTimeout> | null
+  initialized: boolean
+}
+
+interface CachedQueryOptions {
+  dedupe?: boolean
+  staleTime?: number
+}
 
 // --- helpers puros (sem estado) ---
 
-function _log(logger, level, msg) {
+function _log(logger: CacheLogger | null | undefined, level: string, msg: string) {
   if (!logger) return
   const fn = logger[level] ?? logger.log
   if (fn) fn(`[QueryCache] ${msg}`)
 }
 
-function _isStale(timestamp, staleTime, customStaleTime?) {
+function _isStale(timestamp: number, staleTime: number, customStaleTime?: number) {
   return Date.now() - timestamp > (customStaleTime ?? staleTime)
 }
 
-function _deleteFromMaps(key, cache, accessCount, pendingRequests) {
+function _deleteFromMaps(
+  key: string,
+  cache: CacheState['cache'],
+  accessCount: CacheState['accessCount'],
+  pendingRequests: CacheState['pendingRequests']
+) {
   cache.delete(key)
   accessCount.delete(key)
   pendingRequests.delete(key)
@@ -29,7 +79,7 @@ function _deleteFromMaps(key, cache, accessCount, pendingRequests) {
 
 // --- helpers com estado injetado ---
 
-function _schedulePersist(state) {
+function _schedulePersist(state: CacheState) {
   const { cache, maxEntries, persistKey, storage, logger, setJSON } = state
   if (state.persistTimer) clearTimeout(state.persistTimer)
   state.persistTimer = setTimeout(async () => {
@@ -39,13 +89,14 @@ function _schedulePersist(state) {
         .slice(0, maxEntries)
       await setJSON(storage, persistKey, entries)
     } catch (err) {
-      _log(logger, 'warn', `Falha ao persistir cache: ${err.message}`)
+      const message = err instanceof Error ? err.message : String(err)
+      _log(logger, 'warn', `Falha ao persistir cache: ${message}`)
     }
     state.persistTimer = null
   }, 500)
 }
 
-function _garbageCollect(state) {
+function _garbageCollect(state: CacheState) {
   const { cache, accessCount, pendingRequests, maxEntries, staleTime, logger } = state
   const now = Date.now()
   const ttlThreshold = staleTime * 2
@@ -71,7 +122,12 @@ function _garbageCollect(state) {
   }
 }
 
-async function _revalidateStale(key, fetcher, cached, state) {
+async function _revalidateStale(
+  key: string,
+  fetcher: () => Promise<unknown>,
+  cached: CacheEntry,
+  state: CacheState
+) {
   const { cache, logger } = state
   try {
     const capturedGen = state.cacheGeneration
@@ -85,13 +141,14 @@ async function _revalidateStale(key, fetcher, cached, state) {
     }
     return data
   } catch (err) {
-    _log(logger, 'warn', `Revalidacao falhou: ${key} — ${err.message}`)
+    const message = err instanceof Error ? err.message : String(err)
+    _log(logger, 'warn', `Revalidacao falhou: ${key} — ${message}`)
     cached.isRevalidating = false
     throw err
   }
 }
 
-async function _fetchAndStore(key, fetcher, state) {
+async function _fetchAndStore(key: string, fetcher: () => Promise<unknown>, state: CacheState) {
   const { cache, pendingRequests, logger } = state
   try {
     const capturedGen = state.cacheGeneration
@@ -105,7 +162,8 @@ async function _fetchAndStore(key, fetcher, state) {
     }
     return data
   } catch (err) {
-    _log(logger, 'warn', `Fetch falhou: ${key} — ${err.message}`)
+    const message = err instanceof Error ? err.message : String(err)
+    _log(logger, 'warn', `Fetch falhou: ${key} — ${message}`)
     throw err
   } finally {
     pendingRequests.delete(key)
@@ -114,23 +172,29 @@ async function _fetchAndStore(key, fetcher, state) {
 
 // --- API publica ---
 
-async function _init(state) {
+async function _init(state: CacheState) {
   if (state.initialized) return
   const { storage, persistKey, cache, logger, getJSON: _getJSON } = state
   try {
-    const persisted = await _getJSON(storage, persistKey, null)
+    const persisted = await _getJSON<Array<[string, CacheEntry]>>(storage, persistKey, null)
     if (Array.isArray(persisted)) {
       persisted.forEach(([key, value]) => cache.set(key, { ...value, isRevalidating: false }))
       _log(logger, 'log', `Hidracao: ${persisted.length} entradas carregadas`)
     }
   } catch (err) {
-    _log(logger, 'warn', `Falha ao hidratar cache: ${err.message}`)
+    const message = err instanceof Error ? err.message : String(err)
+    _log(logger, 'warn', `Falha ao hidratar cache: ${message}`)
   }
   state.gcInterval = setInterval(() => _garbageCollect(state), GC_INTERVAL)
   state.initialized = true
 }
 
-async function _cachedQuery(key, fetcher, options, state) {
+async function _cachedQuery(
+  key: string,
+  fetcher: () => Promise<unknown>,
+  options: CachedQueryOptions,
+  state: CacheState
+) {
   const { dedupe = true, staleTime: customStaleTime } = options
   const { cache, pendingRequests, logger, staleTime } = state
   const cached = cache.get(key)
@@ -160,7 +224,7 @@ async function _cachedQuery(key, fetcher, options, state) {
   return fetchPromise
 }
 
-function _invalidate(pattern, state) {
+function _invalidate(pattern: string | RegExp, state: CacheState) {
   const { cache, accessCount, pendingRequests, logger } = state
   let count = 0
   if (typeof pattern === 'string') {
@@ -182,7 +246,7 @@ function _invalidate(pattern, state) {
   return count
 }
 
-function _clear(state) {
+function _clear(state: CacheState) {
   const { cache, accessCount, pendingRequests, logger } = state
   if (state.persistTimer) { clearTimeout(state.persistTimer); state.persistTimer = null }
   state.cacheGeneration++
@@ -192,7 +256,7 @@ function _clear(state) {
   _log(logger, 'log', `Cache limpo: ${size} entradas removidas`)
 }
 
-function _getStats(state) {
+function _getStats(state: CacheState) {
   const { cache, pendingRequests, maxEntries, staleTime } = state
   const entries = Array.from(cache.entries())
   const staleCount = entries.filter(([, v]) => _isStale(v.timestamp, staleTime)).length
@@ -204,11 +268,11 @@ function _getStats(state) {
 
 /**
  * Constrói e retorna uma instância do QueryCache com estado encapsulado.
- * @param {Object} deps - Dependências injetadas pela factory
- * @returns {QueryCache}
+ * @param deps - Dependências injetadas pela factory
+ * @returns QueryCache
  */
-export function _buildCache(deps) {
-  const state = {
+export function _buildCache(deps: CacheDeps) {
+  const state: CacheState = {
     ...deps,
     cache: new Map(),
     pendingRequests: new Map(),
@@ -222,10 +286,11 @@ export function _buildCache(deps) {
 
   return {
     init: () => _init(state),
-    cachedQuery: (key, fetcher, options = {}) => _cachedQuery(key, fetcher, options, state),
-    invalidate: (pattern) => _invalidate(pattern, state),
+    cachedQuery: (key: string, fetcher: () => Promise<unknown>, options: CachedQueryOptions = {}) =>
+      _cachedQuery(key, fetcher, options, state),
+    invalidate: (pattern: string | RegExp) => _invalidate(pattern, state),
     clear: () => _clear(state),
-    prefetch(key, data) {
+    prefetch(key: string, data: unknown) {
       state.cache.set(key, { data, timestamp: Date.now(), isRevalidating: false })
       state.accessCounter++
       state.accessCount.set(key, state.accessCounter)

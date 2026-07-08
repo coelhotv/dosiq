@@ -46,7 +46,7 @@ describe('userSettingsSchema — timezone (ADR-053)', () => {
     for (const tz of ['Europe/London', 'America/New_York', 'Europe/Lisbon', 'America/Los_Angeles']) {
       const r = userSettingsNotificationSchema.safeParse({ timezone: tz })
       expect(r.success).toBe(true)
-      expect(r.data.timezone).toBe(tz)
+      expect(r.data!.timezone).toBe(tz)
     }
   })
 
