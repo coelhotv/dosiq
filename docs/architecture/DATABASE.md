@@ -1,10 +1,23 @@
+---
+title: "Esquema do Banco de Dados"
+description: "Definições de tabelas, relacionamentos e restrições no banco de dados Supabase (PostgreSQL)."
+version: "1.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - database
+  - supabase
+  - postgresql
+created_at: "2026-02-01"
+updated_at: "2026-06-01"
+---
+
 # 🗄️ Esquema do Banco de Dados
 
 O banco de dados do **Dosiq** roda em **Supabase (PostgreSQL)** e usa `auth.users` como origem canônica de identidade. As tabelas do schema `public` armazenam os dados de negócio, preferências do usuário, estoque, notificações e integrações auxiliares.
-
-> **Última atualização**: 2026-06-01 (adicionadas `dose_instances` + `dose_adherence_monthly`; novas colunas em `protocols` e `medicine_logs` — refactor de doses persistidas, ver [`DOSE_INSTANCES.md`](./DOSE_INSTANCES.md))
-> **Fonte**: exportação real do schema atual do Supabase (DDL colado manualmente)
-> **Escopo desta documentação**: tabelas, colunas, FKs e `CHECK constraints` presentes no DDL. Índices, triggers, políticas RLS, views e funções não foram incluídos porque não aparecem no SQL de origem desta revisão.
 
 ## Visão Geral
 

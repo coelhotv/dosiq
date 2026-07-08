@@ -1,10 +1,21 @@
+---
+title: "Arquitetura de Dose Instances"
+description: "Especificação da arquitetura e materialização de instâncias de doses persistidas (dose_instances) no Dosiq."
+version: "1.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - dose-instances
+  - database
+  - scheduler
+created_at: "2026-06-01"
+updated_at: "2026-06-02"
+---
+
 # 💊 Arquitetura — `dose_instances` (modelo de doses persistido)
-
-**Status:** Ativo (Fase 4 **concluída** — refactor completo) · **Criado:** 2026-06-01 · **Atualizado:** 2026-06-02
-**ADRs:** ADR-048, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053, ADR-054
-**Contratos:** CON-022, CON-023, CON-024
-**Plano-mãe:** `plans/dose_instances_refactor/MASTER_PLAN_REFACTOR_DOSE_INSTANCE.md` (local-only, não versionado)
-
 > Mudança arquitetural grande: a adesão, a timeline e os lembretes deixam de **inferir**
 > doses a partir de `medicine_logs` + `time_schedule` e passam a **ler** ocorrências
 > materializadas (`dose_instances`). Este documento descreve a solução, seus invariantes e

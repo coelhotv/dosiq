@@ -1,9 +1,21 @@
-# Arquitetura — Chatbot IA Multi-Canal (F8.1)
+---
+title: "Chatbot IA Multi-Canal"
+description: "Primeira integração de IA no projeto Dosiq, em produção via Web e Telegram."
+version: "2.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - chatbot
+  - ai
+  - groq
+created_at: "2026-02-01"
+updated_at: "2026-06-22"
+---
 
-> **Primeira integração de IA no projeto Dosiq**
-> **Status:** ✅ Produção (Web + Telegram) — endurecido 2026-06 (segurança + contexto + modelo)
-> **Versão:** 2.0 | **Data:** 2026-06-22
-> **Modelo:** Groq `meta-llama/llama-4-scout-17b-16e-instruct` (padrão) · `openai/gpt-oss-120b` (A/B via env `GROQ_MODEL`)
+# Arquitetura — Chatbot IA Multi-Canal (F8.1)
 
 ---
 

@@ -1,8 +1,21 @@
-# 🔔 Sistema de Notificações & Bot Telegram
+---
+title: "Sistema de Notificações & Bot Telegram"
+description: "Documentação central do motor de notificações do Dosiq, abrangendo a arquitetura multicanal (Telegram, Push, Web), o sistema de agrupamento inteligente e a lógica de engajamento comportamental."
+version: "6.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - notifications
+  - telegram-bot
+  - push
+created_at: "2026-02-01"
+updated_at: "2026-05-13"
+---
 
-**Versão:** 6.0.0  
-**Última atualização:** 2026-05-13  
-**Status:** Produção (Waves N1, N2, M2.5 & Gate 6 — Arquitetura 3 Camadas Consolidada)
+# 🔔 Sistema de Notificações & Bot Telegram
 
 Documentação central do motor de notificações do Dosiq, abrangendo a arquitetura multicanal (Telegram, Push, Web), o sistema de agrupamento inteligente e a lógica de engajamento comportamental.
 

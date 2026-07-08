@@ -1,8 +1,21 @@
-# 🤖 Bot Telegram - Dosiq
+---
+title: "Bot Telegram"
+description: "Documentação de arquitetura, fluxos conversacionais, comandos e integração de estoque do bot Telegram do Dosiq."
+version: "4.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - telegram-bot
+  - stock-control
+  - conversation
+created_at: "2026-02-01"
+updated_at: "2026-04-02"
+---
 
-**Versão:** 4.0.0  
-**Última atualização:** 2026-04-02  
-**Status:** Produção
+# 🤖 Bot Telegram - Dosiq
 
 Documentação consolidada do bot Telegram do Dosiq, incluindo arquitetura, comandos, sistema de notificações e desenvolvimentos recentes.
 

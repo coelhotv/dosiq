@@ -1,8 +1,20 @@
-# Arquitetura CSS - Dosiq
+---
+title: "Arquitetura CSS"
+description: "Estrutura de arquivos CSS, tokens de design, convenções e estratégias de tema no Dosiq."
+version: "1.1.0"
+status: active
+category: architecture
+audience:
+  - dev
+tags:
+  - css
+  - styles
+  - theme
+created_at: "2026-02-01"
+updated_at: "2026-02-10"
+---
 
-**Versão:** 1.1
-**Data:** 2026-02-10
-**Status:** Ativo
+# Arquitetura CSS - Dosiq
 
 ---
 

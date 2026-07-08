@@ -1,3 +1,21 @@
+---
+title: "Arquitetura Metro & Expo Pipeline"
+description: "Especificação da arquitetura do Metro Bundler, configurações de build do Expo e pipeline de submissão do Dosiq."
+version: "1.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - ops
+tags:
+  - metro
+  - expo
+  - mobile
+  - pipeline
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # 📱 Arquitetura Metro & Expo Pipeline
 
 Este documento descreve a arquitetura do bundler (Metro), as configurações específicas do Expo, os Smoke Tests e a pipeline de submissão do Dosiq para as lojas de aplicativos (App Store e Play Console).

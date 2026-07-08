@@ -1,3 +1,20 @@
+---
+title: "Arquitetura de Notificações PWA Web Push"
+description: "Especificação técnica da infraestrutura de notificações push web usando HTML5 Push API e VAPID no PWA do Dosiq."
+version: "1.0.0"
+status: active
+category: architecture
+audience:
+  - dev
+  - agent
+tags:
+  - webpush
+  - pwa
+  - service-worker
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # 🌐 Arquitetura de Notificações PWA Web Push
 
 A infraestrutura de Web Push Notifications foi elaborada no Dosiq como um PWA nativamente independente de pesados frameworks terceiros no client. Adotamos o modelo puro **HTML5 Push API**, intermediando o VAPID (Voluntary Application Server Identification) sob o protocolo de Web Push comum aos navegadores modernos.
