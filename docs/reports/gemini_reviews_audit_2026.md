@@ -1,3 +1,20 @@
+---
+title: "Relatório de Auditoria Gemini Reviews"
+description: "Relatório estatístico consolidador de incidentes, manutenibilidade, segurança e performance gerado pelo data mining de críticas do Gemini Reviews no Dosiq."
+version: "1.0.0"
+status: active
+category: guide
+audience:
+  - dev
+  - agent
+tags:
+  - audit
+  - quality
+  - reviews
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # 📊 Relatório Consolidado de Auditoria — Gemini Reviews (2026)
 
 Este relatório apresenta os resultados do data mining e da auditoria técnica realizados sobre a tabela `gemini_reviews` no Supabase antes do decommission completo de seu backend. Analisamos **1.125 registros de críticas técnicas** geradas pelo Gemini para o código desenvolvido por agentes de IA ao longo de três meses.

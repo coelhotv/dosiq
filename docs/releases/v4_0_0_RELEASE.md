@@ -1,9 +1,21 @@
-# Dosiq v4.0.0 Release Guide
+---
+title: "v4.0.0 Release Guide"
+description: "Comprehensive release guide and changelog for Dosiq v4.0.0, completing the Santuário Terapêutico design system."
+version: "4.0.0"
+status: active
+category: release
+audience:
+  - dev
+  - agent
+tags:
+  - release
+  - redesign
+  - accessibility
+created_at: "2026-04-09"
+updated_at: "2026-04-09"
+---
 
-> **Santuário Terapêutico Complete — Healthcare Redesign + Accessibility + Performance**
->
-> Release Date: **2026-04-09**  
-> Status: **Production Ready** ✅
+# Dosiq v4.0.0 Release Guide
 
 ---
 

@@ -1,3 +1,20 @@
+---
+title: "Release Notes v3.0.0"
+description: "Release notes for version v3.0.0, introducing protocol start and end dates for accurate adherence calculation."
+version: "3.0.0"
+status: active
+category: release
+audience:
+  - dev
+  - agent
+tags:
+  - release
+  - adherence
+  - protocols
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Release v3.0.0 - Protocol Start/End Dates for Accurate Adherence
 
 ## Summary

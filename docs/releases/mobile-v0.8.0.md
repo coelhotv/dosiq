@@ -1,11 +1,21 @@
-# Release Notes — Mobile v0.8.0
+---
+title: "Release Notes Mobile v0.8.0"
+description: "Release notes for Mobile v0.8.0, compiling all Phase 4 changes including schedule states, timezone support and store texts."
+version: "0.8.0"
+status: active
+category: release
+audience:
+  - dev
+  - agent
+tags:
+  - release
+  - mobile
+  - timezone
+created_at: "2026-06-02"
+updated_at: "2026-06-02"
+---
 
-**Data:** 2026-06-02
-**Plataforma:** Mobile (iOS / Android — EAS)
-**Tipo:** Minor (release de loja)
-**versionCode/buildNumber:** 800
-**Última versão publicada:** v0.6.2 (esta build acumula 0.6.3 → 0.8.0)
-**Status:** Pré-merge (PR #630) — fecha a Fase 4
+# Release Notes — Mobile v0.8.0
 
 Esta é a maior atualização do Dosiq desde a v0.6.2. Ela acumula toda a Fase 4:
 uma agenda do dia que mostra o que realmente aconteceu com cada dose, lembretes

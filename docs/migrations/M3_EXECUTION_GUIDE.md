@@ -1,3 +1,19 @@
+---
+title: "M3 Execution Guide"
+description: "Database migration execution guide for mobile performance optimizations and correct aggregation views in Dosiq."
+version: "1.0.0"
+status: active
+category: guide
+audience:
+  - dev
+tags:
+  - migrations
+  - performance
+  - database
+created_at: "2026-03-13"
+updated_at: "2026-03-13"
+---
+
 # M3 Execution Guide — Database Migrations for Mobile Performance
 
 ## 🐛 Fixes Applied (2026-03-13)

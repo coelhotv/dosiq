@@ -1,3 +1,20 @@
+---
+title: "Guia de Nudges"
+description: "Guia prático para criação, controle de dismiss e exibição contextual de banners (nudges) via painel administrativo no Dosiq."
+version: "1.0.0"
+status: active
+category: guide
+audience:
+  - ops
+  - dev
+tags:
+  - nudges
+  - banners
+  - remote-config
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Guia — Nudges (In-App Banners)
 
 ## Visão Geral

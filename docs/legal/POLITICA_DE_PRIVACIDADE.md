@@ -1,8 +1,21 @@
-# Política de Privacidade - Dosik
+---
+title: "Política de Privacidade"
+description: "Política de privacidade e termos de tratamento de dados pessoais de pacientes em conformidade com a LGPD para o aplicativo Dosiq."
+version: "1.0.0"
+status: active
+category: legal
+audience:
+  - dev
+  - legal
+tags:
+  - privacy
+  - lgpd
+  - security
+created_at: "2026-04-14"
+updated_at: "2026-04-14"
+---
 
-> **Status:** Rascunho operacional para MVP/beta
-> **Data:** 2026-04-14
-> **Aplicável a:** app web e app mobile Dosik
+# Política de Privacidade - Dosik
 
 ---
 
