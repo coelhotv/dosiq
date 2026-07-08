@@ -1,6 +1,7 @@
 # Dosiq - AI Agent Guide
 
-> **PWA de gerenciamento de medicamentos** | v3.3.0 | React 19 + Vite + Supabase + Zod + Framer Motion
+> **PWA de gerenciamento de medicamentos** | React 19 + Vite + **TypeScript 5.9** + Supabase + Zod + Framer Motion
+> **Monorepo 100% TypeScript desde o épico 040** (strict islands + ratchet — ver seção TypeScript no [CLAUDE.md](CLAUDE.md))
 > **Implementation rules, path aliases, coding conventions, critical constraints:** see [CLAUDE.md](CLAUDE.md)
 
 ---
@@ -17,6 +18,9 @@
 | 5 | **Serverless Limit** | Vercel Hobby max 12 functions. Utilities in `api/_`-prefixed dirs | R-090 |
 | 6 | **Mobile Performance** | All views lazy-loaded + Suspense + ViewSkeleton | R-117 |
 | 7 | **SQP Release Logging** | Before code changes, follow R-221 SQP: classify impact, update versions/changelog, record C5 release log | R-221 |
+| 8 | **TS Ratchet** | `./scripts/strict-island.sh` green before every commit — level-A source + cross-program errors block; debt ceilings only go DOWN | R-283/R-284 |
+| 9 | **ESM Extensions** | Relative imports in `server/`/`api/` (and src-exporting packages + core `.d.ts`) keep `.js` extension; extensionless only in bundler code | R-282 |
+| 10 | **Core narrowing** | Discriminated unions in `@dosiq/core` narrow with `=== false`, never `!x.success` (non-strict consumers) | R-286 |
 
 ---
 
@@ -25,7 +29,7 @@
 | Domain | Canonical Path |
 |--------|---------------|
 | Feature services | `src/features/{domain}/services/` |
-| Shared services | `src/shared/services/` + `src/shared/services/api/logService.js` |
+| Shared services | `src/shared/services/` + `src/shared/services/api/logService.ts` |
 | Adherence + DLQ (only 2 non-feature services) | `src/services/api/` |
 | Schemas | `src/schemas/` — **único local**, use `@schemas/` |
 | Utils | `src/utils/` |
@@ -116,6 +120,8 @@ ORCHESTRATOR → NEXT SPECIALIST:
 | Lint passes | `npm run lint` |
 | Tests pass | `npm run test:critical` |
 | Build works | `npm run build` |
+| TS ratchet green | `./scripts/strict-island.sh` (level-A source + cross-program blocking; per-bucket debt ceilings) |
+| Web typecheck clean | `npx tsc -p apps/web/tsconfig.json --noEmit` (0 errors since 040) |
 | No duplicates | `find src -name "*File*" -type f` |
 | Memory updated | DEVFLOW C5 → `.agent/memory/journal/YYYY-WWW.jsonl` |
 | SQP release log | R-221 → versão/changelog/log C5 ou `no-user-impact` justificado |
@@ -134,7 +140,7 @@ ORCHESTRATOR → NEXT SPECIALIST:
 ```markdown
 ## Task Complete: [Name]
 ### Changes Made
-- `src/path/file.js` (line 42): description
+- `src/path/file.ts` (line 42): description
 ### Issues Found
 - ...
 ### Validation

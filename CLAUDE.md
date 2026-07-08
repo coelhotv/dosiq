@@ -6,12 +6,14 @@
 
 ## Projeto
 
-**Dosiq v4.0.0** — gerenciamento de medicamentos. Monorepo npm workspaces + Turborepo.
+**Dosiq** — gerenciamento de medicamentos. Monorepo npm workspaces + Turborepo. **100% TypeScript desde o épico 040** (2026-07-08; `strict: false` global + strict islands — ver §TypeScript).
 
 | App | Stack | Deploy |
 |-----|-------|--------|
-| `apps/web` (`@dosiq/web` v4.0.0) | React 19 + Vite 7 + Supabase + Zod 4 + Framer Motion 12 + Vitest 4 (PWA Workbox) | Vercel Hobby |
-| `apps/mobile` (`@dosiq/mobile` v0.3.3) | Expo 53 + RN 0.79 + React Nav 7 + Firebase Analytics + AsyncStorage | EAS (iOS/Android) |
+| `apps/web` (`@dosiq/web`) | React 19 + Vite 7 + **TS 5.9** + Supabase + Zod 4 + Framer Motion 12 + Vitest 4 (PWA Workbox) | Vercel Hobby |
+| `apps/mobile` (`@dosiq/mobile`) | Expo 53 + RN 0.79 + **TS 5.9** + React Nav 7 + Firebase Analytics + AsyncStorage | EAS (iOS/Android) |
+
+Versões atuais: sempre no `CHANGELOG.md` (topo) — não confiar em versões hardcoded em docs.
 
 ---
 
@@ -32,7 +34,8 @@ apps/
                    # settings/ emergency/ landing/. NÃO nasce lógica de domínio aqui
                    # (desce p/ @dosiq/core ou features/). Naming "redesign" aposentado (038)
   mobile/          # Expo: src/ assets/ android/ ios/ __tests__/
-                   # App.js, app.config.js, eas.json, metro.config.js
+                   # App.tsx, index.ts; configs Expo ficam .js (app.config.js,
+                   # eas.json, metro.config.js, babel.config.js — FR-010 do 040)
 packages/
   core/            # @dosiq/core — lógica compartilhada web↔mobile
   config/          # configs comuns
@@ -59,6 +62,7 @@ server/bot/        # Telegram bot (tasks, scheduler, bot-factory)
 ```
 
 SEMPRE usar aliases. NUNCA caminhos relativos longos.
+Aliases vivem em 3 configs que DEVEM espelhar: `vite.config.js` + `apps/web/tsconfig.json` (`paths`) + `eslint.config.js` (resolver). Mover alias = atualizar os três (AP-238).
 
 ---
 
@@ -71,11 +75,26 @@ SEMPRE usar aliases. NUNCA caminhos relativos longos.
 | Commits | Português semântico (`feat(scope): descrição`) |
 | DB tables/columns | Inglês snake_case |
 
-**Nomes:** Componentes `PascalCase` · funções/vars `camelCase` · constantes `SCREAMING_SNAKE` · hooks `usePascal` · services `camelCase.js` · schemas `{name}Schema.js`.
+**Nomes:** Componentes `PascalCase.tsx` · funções/vars `camelCase` · constantes `SCREAMING_SNAKE` · hooks `usePascal` · services `camelCase.ts` · schemas `{name}Schema.ts` · tipos derivados de schema via `z.infer<>`.
 
 **Ordem React (TDZ crítico):** States → Memos → Effects → Handlers.
 
 **Imports:** React/libs → componentes internos → hooks/utils (`@shared`) → services/schemas → CSS (último).
+
+---
+
+## TypeScript (pós-040 — obrigatório)
+
+Monorepo 100% TS. Regime: `strict: false` na base (`tsconfig.base.json`, moduleResolution bundler) + **strict islands** (`tsconfig.strict.json`, `strictNullChecks`) nos módulos nível A: `packages/core/src/{types,repositories,services,schemas}`, `server/notifications/`, hooks clínicos web/mobile. Meta futura: `strict: true` global.
+
+**Gate permanente (R-283/R-284):** `./scripts/strict-island.sh` em TODA sessão que toca código — fonte nível A suja e erro cross-program (core compilado dentro dos programas api/server/mobile) são BLOQUEANTES; dívida nível B conta contra tetos por bucket (catraca: só desce, nunca sobe; abaixar o teto no mesmo commit que queima dívida).
+
+- **Extensões (R-282):** imports relativos em `server/`/`api/` SEMPRE com `.js` (Node ESM puro; aponta pro `.ts` em compile). Vale também para packages que exportam src cru (`shared-data`/`storage`/`config`/`design-tokens`) e para os `.d.ts` do core (pós-build `packages/core/scripts/fix-dts-extensions.mjs` — não remover do build). Extensionless SÓ em código de bundler (Vite/Metro).
+- **Nível A vs B:** exports públicos do core = 100% anotados, zero `any` (nível A). Código nível B tolera `any` interno com `// TODO(040-strict)` — mas se o fix real custa ≤ o any, fazer o fix real.
+- **Narrowing no core (R-286):** união discriminada estreita com `=== false`, nunca `!x.success` (consumers non-strict não discriminam com `!`).
+- **Dívida congelada:** web 37 + server 36 erros nível B (tetos no script). **Regra on-touch:** épico que tocar domínio X triageia/tipa os testes e a dívida de X antes de refatorar. Teste novo nasce strict-limpo.
+- **Tipos DB:** `packages/shared-data/src/database.types.ts` gerado (`npm run supabase:types`); client tipado `SupabaseClient<Database>`. Exceção: client do `server/` ainda sem generic (cast de fronteira documentado; resolver no 043).
+- `tsc -p apps/web/tsconfig.json --noEmit` deve permanecer ZERO erros.
 
 ---
 
@@ -136,7 +155,8 @@ ALTER TABLE public.<tabela> ENABLE ROW LEVEL SECURITY;
 
 ### Vercel Serverless (R-090)
 - Hobby: **máx 12 funções**. Utilitários em `api/_prefixo/` não contam
-- Verificar budget antes de criar `.js` em `api/` (ver `api/CLAUDE.md`)
+- Verificar budget antes de criar `.ts` em `api/` (ver `api/CLAUDE.md`)
+- api/ é transpilado arquivo-a-arquivo pela Vercel (nodenext): import relativo `.js` obrigatório mesmo entre `.ts` (R-282); evitar `Object.hasOwn` (lib do builder < es2022)
 - **NUNCA** `process.exit()` → `throw new Error()`
 - **SEMPRE** `res.status(code).json(body)` (nunca `res.json()`)
 - Env vars: fallback `process.env.X || process.env.VITE_X`
@@ -155,7 +175,7 @@ Rodar do root via workspace:
 | CI completo | `rtk npm run validate:full` (lint+ci+build) |
 | Dev rápido | `rtk npm run test:fast` |
 
-**Regras:** `afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório · `vi.mock()` antes dos imports · `waitFor()` em vez de `setTimeout` em `act()` · arquivo de teste ≤300 linhas.
+**Regras:** `afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório · `vi.mock()` antes dos imports · `waitFor()` em vez de `setTimeout` em `act()` · arquivo de teste ≤300 linhas · datas em fixture SEMPRE locais, nunca `toISOString()` p/ derivar dia (AP-270) · teste novo nasce strict-limpo; mock tipado contra o contrato atual do módulo (erro TS em teste costuma ser mock stale).
 
 **Mobile:** Jest + jest-expo (`npm test --workspace @dosiq/mobile`).
 
@@ -210,7 +230,7 @@ Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
 2. branch (feature/wave-X/nome)
 3. R-221 SQP — classificar impacto, plataforma, versionamento e changelog
 4. C1-C4
-5. rtk npm run validate:agent
+5. rtk npm run validate:agent + ./scripts/strict-island.sh (ratchet TS — R-283)
 6. C5 — registrar lições + release log SQP
 7. commit semântico (PT)
 8. push + PR

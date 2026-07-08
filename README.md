@@ -6,6 +6,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ![Version](https://img.shields.io/badge/version-4.0.0-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/TypeScript_5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
@@ -122,9 +123,10 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ## 🛠️ Tecnologias
 
+- **Linguagem**: **TypeScript 5.9** — monorepo 100% TS desde julho/2026 (épico 040): web, mobile, packages compartilhados, API serverless e bot. Regime incremental: `strict: false` na base + *strict islands* (`strictNullChecks`) nos módulos clínicos críticos, com ratchet automatizado (`scripts/strict-island.sh`) impedindo regressão de dívida de tipos
 - **Frontend**: React 19 + Vite (ES Modules nativo)
-- **Backend**: Supabase (PostgreSQL + REST API + Auth)
-- **Validação**: Zod 4.x (Schemas runtime com TypeScript-like inference)
+- **Backend**: Supabase (PostgreSQL + REST API + Auth) — tipos do banco gerados (`database.types.ts`) e cliente tipado `SupabaseClient<Database>`
+- **Validação**: Zod 4.x (schemas runtime; tipos estáticos derivados via `z.infer<>`)
 - **Cache**: SWR (Stale-While-Revalidate) customizado - 95% mais rápido
 - **Styling**: CSS Vanilla com design system customizado
 - **Deployment**: Vercel (Frontend, API Webhooks & Cron Jobs) + Supabase (Database)
@@ -210,7 +212,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 
 ---
 
-## 🏗️ Estrutura do Projeto (v2.8.0 - Feature-Based)
+## 🏗️ Estrutura do Projeto (feature-based · 100% TypeScript desde o 040)
 
 ```
 dosiq/
@@ -231,56 +233,56 @@ dosiq/
 │   ├── components/          # [LEGACY] Componentes - migrando para features/
 │   │   ├── ui/              # Componentes reutilizáveis consolidados
 │   │   │   ├── Button, Card, Modal, Loading
-│   │   │   ├── Calendar.jsx        # Features opcionais: lazyLoad, swipe
-│   │   │   └── AlertList.jsx       # Componente base para alertas 🆕
+│   │   │   ├── Calendar.tsx        # Features opcionais: lazyLoad, swipe
+│   │   │   └── AlertList.tsx       # Componente base para alertas 🆕
 │   │   ├── medicine/        # Componentes de medicamentos
-│   │   │   └── MedicineForm.jsx    # Consolidado com FirstMedicineStep
+│   │   │   └── MedicineForm.tsx    # Consolidado com FirstMedicineStep
 │   │   ├── protocol/        # Componentes de protocolos
-│   │   │   └── ProtocolForm.jsx    # Modo 'full'|'simple'
+│   │   │   └── ProtocolForm.tsx    # Modo 'full'|'simple'
 │   │   ├── stock/           # Componentes de estoque
 │   │   ├── log/             # Componentes de registro
-│   │   │   └── LogForm.jsx         # UX padronizada
+│   │   │   └── LogForm.tsx         # UX padronizada
 │   │   ├── dashboard/       # Widgets do dashboard
-│   │   │   ├── SmartAlerts.jsx     # Usa AlertList
-│   │   │   └── StockAlertsWidget.jsx # Usa AlertList
+│   │   │   ├── SmartAlerts.tsx     # Usa AlertList
+│   │   │   └── StockAlertsWidget.tsx # Usa AlertList
 │   │   ├── adherence/       # Componentes de adesão
 │   │   └── onboarding/      # Wizard de onboarding (4 steps)
-│   │       ├── FirstMedicineStep.jsx   # Wrapper de MedicineForm
-│   │       └── FirstProtocolStep.jsx   # Wrapper de ProtocolForm
+│   │       ├── FirstMedicineStep.tsx   # Wrapper de MedicineForm
+│   │       └── FirstProtocolStep.tsx   # Wrapper de ProtocolForm
 │   ├── hooks/
-│   │   └── useCachedQuery.js # Hook SWR para cache de queries
+│   │   └── useCachedQuery.ts # Hook SWR para cache de queries
 │   ├── lib/
-│   │   ├── supabase.js      # Cliente Supabase
-│   │   └── queryCache.js    # Implementação SWR (Stale-While-Revalidate)
+│   │   ├── supabase.ts      # Cliente Supabase
+│   │   └── queryCache.ts    # Implementação SWR (Stale-While-Revalidate)
 │   ├── schemas/             # Validação Zod
-│   │   ├── index.js         # Exportações dos schemas
-│   │   ├── medicineSchema.js
-│   │   ├── protocolSchema.js
-│   │   ├── stockSchema.js
-│   │   ├── logSchema.js
-│   │   └── validationHelper.js
+│   │   ├── index.ts         # Exportações dos schemas
+│   │   ├── medicineSchema.ts
+│   │   ├── protocolSchema.ts
+│   │   ├── stockSchema.ts
+│   │   ├── logSchema.ts
+│   │   └── validationHelper.ts
 │   ├── services/
 │   │   ├── api/             # Serviços da API com validação Zod
-│   │   │   ├── cachedServices.js  # Wrappers com cache SWR
-│   │   │   ├── medicineService.js
-│   │   │   ├── protocolService.js
-│   │   │   ├── stockService.js
-│   │   │   ├── logService.js
-│   │   │   └── treatmentPlanService.js
-│   │   └── api.js           # Exportações principais
+│   │   │   ├── cachedServices.ts  # Wrappers com cache SWR
+│   │   │   ├── medicineService.ts
+│   │   │   ├── protocolService.ts
+│   │   │   ├── stockService.ts
+│   │   │   ├── logService.ts
+│   │   │   └── treatmentPlanService.ts
+│   │   └── api.ts           # Exportações principais
 │   ├── styles/
 │   │   ├── tokens.css       # Design tokens (cores, espaçamentos)
 │   │   └── index.css        # Estilos globais
 │   ├── views/               # Páginas principais
-│   ├── App.jsx              # Componente principal
-│   └── main.jsx             # Entry point
+│   ├── App.tsx              # Componente principal
+│   └── main.tsx             # Entry point
 ├── docs/                    # Documentação técnica expandida 📚
 │   ├── ARQUITETURA.md       # Visão arquitetural incluindo padrões consolidados
 │   ├── PADROES_CODIGO.md    # Convenções e padrões de componentes
 │   ├── API_SERVICES.md      # APIs dos services
 │   ├── CSS_ARCHITECTURE.md  # Arquitetura CSS com AlertList patterns
 │   └── HOOKS.md             # Hooks customizados
-├── server/                  # Bot do Telegram (Node.js)
+├── server/                  # Bot do Telegram (Node + tsx)
 │   └── bot/
 ├── api/                     # API Serverless (Vercel)
 ├── .migrations/             # Migrações SQL
@@ -312,6 +314,7 @@ O projeto utiliza uma suíte de testes unitários moderna para garantir a confia
 - **Framework**: [Vitest](https://vitest.dev/) (Velocidade e compatibilidade com Vite)
 - **Library**: [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
 - **Cobertura**: Services (API/Lógica de Negócio) e Componentes Críticos.
+- **Type-safety**: 100% TypeScript com typecheck limpo no web (`tsc --noEmit`) e *strict islands* nos módulos clínicos (dose, estoque, adesão, schemas, notificações) — erros de shape/null pegos em compile-time.
 
 ## 🧪 Scripts Disponíveis
 
@@ -446,5 +449,5 @@ Para dúvidas ou problemas:
 
 ---
 
-**Versão**: 3.3.0 (Phase 5: Brand Migration Complete)
-**Última atualização**: 05 Julho 2026
+**Versão**: 4.15.4 (040: monorepo 100% TypeScript)
+**Última atualização**: 08 Julho 2026
