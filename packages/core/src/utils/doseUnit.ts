@@ -425,17 +425,19 @@ function convertMetricUnit(total: number, unit: string | null | undefined): { to
 }
 
 export function formatActiveIngredientShort(qty: number | string | null | undefined, dosagePerPill: number | string | null | undefined, unit: string | null | undefined): string {
+  // Vírgula decimal PT-BR normalizada nos DOIS parâmetros (review Gemini #731):
+  // Number('0,5') = NaN, e NaN <= 0 é false — passaria no guard e vazaria '' no chip.
+  const dosagePerPillNum = dosagePerPill == null ? NaN : Number(String(dosagePerPill).replace(',', '.'))
   if (
     qty == null ||
     qty === '' ||
     isNaN(Number(String(qty).replace(',', '.'))) ||
-    dosagePerPill == null ||
-    Number(dosagePerPill) <= 0
+    isNaN(dosagePerPillNum) ||
+    dosagePerPillNum <= 0
   ) {
     return ''
   }
   const qtyNum = Number(String(qty).replace(',', '.'))
-  const dosagePerPillNum = Number(dosagePerPill)
   // cleanFloat no produto (R-277): formatNumberPtBR não arredonda, então o artefato
   // de float (1,5×0,1=0,15000000000000002) vazaria pro chip de estoque (AP-226).
   const { total, currentUnit } = convertMetricUnit(cleanFloat(qtyNum * dosagePerPillNum), unit)
