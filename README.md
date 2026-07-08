@@ -295,18 +295,6 @@ dosiq/
 
 ---
 
-## 🎨 Design System
-
-O app usa um design system customizado com:
-
-- **Cores Neon**: Cyan (#00f0ff), Magenta (#ff00ff), Purple (#b000ff)
-- **Tema Escuro**: Suporte automático baseado nas preferências do sistema
-- **Glass-morphism**: Efeitos de vidro com blur e transparência
-- **Animações**: Transições suaves e micro-interações
-- **Responsivo**: Mobile-first design
-
----
-
 ## 🧪 Garantia de Qualidade
 
 O projeto utiliza uma suíte de testes unitários moderna para garantir a confiabilidade das regras de negócio:
