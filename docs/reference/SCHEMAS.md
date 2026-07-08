@@ -1,8 +1,21 @@
-# Schemas Zod - Referência de Validação
+---
+title: "Schemas Zod"
+description: "Documentação de schemas Zod e princípios de validação em runtime (enums, constraints, nullable/optional) do Dosiq."
+version: "4.0.0"
+status: active
+category: reference
+audience:
+  - dev
+  - agent
+tags:
+  - zod
+  - schemas
+  - validation
+created_at: "2026-02-01"
+updated_at: "2026-04-02"
+---
 
-**Versão:** 4.0.0
-**Última Atualização:** 2026-04-02
-**Status:** Referência de API
+# Schemas Zod - Referência de Validação
 
 ---
 

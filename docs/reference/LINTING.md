@@ -1,3 +1,20 @@
+---
+title: "Configurações de Linting"
+description: "Visão geral das regras personalizadas do ESLint (ordem de hooks R-010, restrição de timezone R-020) no Dosiq."
+version: "1.0.0"
+status: active
+category: reference
+audience:
+  - dev
+  - agent
+tags:
+  - eslint
+  - linting
+  - rules
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # Configurações de Linting e Padrões de Código (Dosiq)
 
 Este documento centraliza e descreve de forma extensiva todas as regras de linting configuradas, as decisões de design associadas a cada uma e as diretrizes recomendadas para novos desenvolvedores que integrem o time do **Dosiq**.

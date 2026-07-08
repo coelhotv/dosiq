@@ -1,3 +1,19 @@
+---
+title: "Hooks Customizados"
+description: "Documentação técnica de assinatura e uso de hooks React customizados do projeto Dosiq."
+version: "1.0.0"
+status: active
+category: reference
+audience:
+  - dev
+tags:
+  - react
+  - hooks
+  - custom-hooks
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 # 🪝 Hooks Customizados - Dosiq
 
 Documentação completa dos hooks customizados do projeto.

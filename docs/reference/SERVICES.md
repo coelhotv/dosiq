@@ -1,7 +1,21 @@
-# 💻 API dos Services - Dosiq
+---
+title: "API dos Services"
+description: "Documentação completa e exemplos das APIs internas dos services da aplicação (medicamentos, protocolos, estoque, logs) do Dosiq."
+version: "4.0.0"
+status: active
+category: reference
+audience:
+  - dev
+  - agent
+tags:
+  - services
+  - api
+  - business-logic
+created_at: "2026-02-01"
+updated_at: "2026-04-02"
+---
 
-**Versão:** 4.0.0
-**Data:** 2026-04-02
+# 💻 API dos Services - Dosiq
 
 Documentação completa das APIs internas dos services com exemplos de uso.
 

@@ -1,8 +1,20 @@
-# Form Kit — Reference
+---
+title: "Form Kit"
+description: "Conjunto de hooks e componentes reutilizáveis para construção de formulários nativos em apps/mobile."
+version: "1.0.0"
+status: active
+category: reference
+audience:
+  - dev
+tags:
+  - forms
+  - mobile
+  - components
+created_at: "2026-02-01"
+updated_at: "2026-07-08"
+---
 
-> **Status**: Estável (Fase 0 — Pré-Requisitos completa)
-> **Plataforma**: Mobile (`apps/mobile`)
-> **Última atualização**: Sprint P.3 (fechamento Fase 0 CRUD Native)
+# Form Kit — Reference
 
 Conjunto de hooks e componentes reutilizáveis para construção de formulários nativos. Pensado para os fluxos de CRUD da app (Medicamentos, Protocolos, Estoque) mas serve para qualquer formulário do produto.
 

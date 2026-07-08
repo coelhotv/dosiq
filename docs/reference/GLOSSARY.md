@@ -1,8 +1,22 @@
-# Glossário Dosiq — Termos UI ↔ Código
+---
+title: "Glossário Dosiq"
+description: "Glossário de termos e regras de padronização linguística e convenções de string na UI e no código do Dosiq."
+version: "1.0.0"
+status: active
+category: reference
+audience:
+  - dev
+  - product
+  - agent
+tags:
+  - glossary
+  - strings
+  - conventions
+created_at: "2026-02-01"
+updated_at: "2026-05-16"
+---
 
-> **Status**: vivo (atualizar a cada fase)
-> **Última atualização**: 2026-05-16 (Spike Pre-Fase-2)
-> **Consulta obrigatória**: parte do brief padrão cavecrew (R-230) em todo spawn de implementação UI.
+# Glossário Dosiq — Termos UI ↔ Código
 
 ---
 
