@@ -1,8 +1,22 @@
-# Guia de Testes - Dosiq
+---
+title: "Guia de Testes"
+description: "Guia e padrões oficiais para testes unitários, de integração e e2e (Vitest, Jest) na codebase do Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - testing
+  - vitest
+  - jest
+  - cypress
+created_at: "2026-02-17"
+updated_at: "2026-02-17"
+---
 
-**Versão:** 1.0  
-**Última Atualização:** 2026-02-17  
-**Status:** Documento Oficial de Testes
+# Guia de Testes - Dosiq
 
 ---
 

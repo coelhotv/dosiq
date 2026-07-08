@@ -1,6 +1,21 @@
-# deliver-sprint — Exemplos Práticos
+---
+title: "Exemplos de Deliver Sprint"
+description: "Casos de uso e exemplos reais da execução da skill deliver-sprint nos fluxos do Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - workflow
+  - deliver-sprint
+  - examples
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
 
-> Casos de uso reais da skill compilada de sprints 5.A, 5.B, 5.C.
+# deliver-sprint — Exemplos Práticos
 
 ## Exemplo 1: Sprint 5.B Fixes (Encoding + Autocomplete)
 

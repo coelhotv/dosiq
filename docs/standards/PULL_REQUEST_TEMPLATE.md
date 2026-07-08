@@ -1,3 +1,20 @@
+---
+title: "Pull Request Template"
+description: "Template padrão de estrutura e checklist obrigatório para submissão de Pull Requests no Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - git
+  - pull-request
+  - template
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
+
 <!--
   ⚠️  IMPORTANTE: Este é um TEMPLATE de estrutura para Pull Requests.
 

@@ -1,3 +1,20 @@
+---
+title: "Changelog and Release Logging"
+description: "Regras e governança para versionamento de plataformas (SemVer mobile v0.x, web v1.x) e escrita do log de release no Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - release
+  - changelog
+  - versioning
+created_at: "2026-05-28"
+updated_at: "2026-07-08"
+---
+
 # Changelog and Release Logging
 
 This document defines the Dosiq release logging process. Rules are written in English for agents. Changelog and store-note text must be written in Portuguese.

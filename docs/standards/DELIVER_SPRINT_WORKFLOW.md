@@ -1,6 +1,21 @@
-# DELIVER SPRINT — Workflow de Entrega Completo
+---
+title: "Workflow de Deliver Sprint"
+description: "Passo a passo e workflow executivo para organização, implementação, testes e merge de entregas de sprints no Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - workflow
+  - deliver-sprint
+  - guidelines
+created_at: "2026-07-08"
+updated_at: "2026-07-08"
+---
 
-> Skill compilada da experiência das sprints 5.A, 5.B e 5.C. Use este workflow para organizar entregas de sprints especificadas.
+# DELIVER SPRINT — Workflow de Entrega Completo
 
 ## Fases da Entrega
 

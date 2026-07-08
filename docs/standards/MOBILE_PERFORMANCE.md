@@ -1,8 +1,21 @@
-# Guia de Performance Mobile — Dosiq
+---
+title: "Guia de Performance Mobile"
+description: "Práticas e restrições técnicas para otimização de bundle, renderização, animações e consumo de API no mobile do Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - performance
+  - mobile
+  - optimization
+created_at: "2026-02-01"
+updated_at: "2026-03-20"
+---
 
-> Documento vivo. Construído incrementalmente nos sprints M0–M8, P1–P4, D0–D3.
-> **Última atualização:** 2026-03-20 — seções 3 (CSS/Assets) e 4 (HTTP/2, Auth Cache, Barrel Exports) adicionadas.
-> Leia ANTES de adicionar qualquer view, componente pesado, biblioteca ou query ao Supabase.
+# Guia de Performance Mobile — Dosiq
 
 ---
 

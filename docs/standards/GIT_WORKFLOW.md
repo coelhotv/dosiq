@@ -1,8 +1,21 @@
-# Git Workflow - Dosiq
+---
+title: "Git Workflow"
+description: "Convenções e processo oficial obrigatório de branches, commits e pull requests do Dosiq."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - git
+  - workflow
+  - branch-strategy
+created_at: "2026-02-17"
+updated_at: "2026-02-17"
+---
 
-**Versão:** 1.0  
-**Última Atualização:** 2026-02-17  
-**Status:** Documento Oficial de Workflow
+# Git Workflow - Dosiq
 
 ---
 
