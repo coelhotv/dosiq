@@ -17,7 +17,7 @@ credentials/
 .codex/
 .gemini/
 .github/
-scripts/
+/scripts/
 bug-logs/
 data/
 credentials.json
