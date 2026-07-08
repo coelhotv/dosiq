@@ -4,7 +4,7 @@
   "session": {
     "mode": "coding",
     "ceremony_type": null,
-    "status": "analysis",
+    "status": "completed",
     "plan": null,
     "tasks": "plans/specs/049-docs-revamp/fase-2/tasks.md",
     "goal": "049-docs-revamp - Fase 2: Aplicação do YAML Frontmatter (Batch 2B)",
