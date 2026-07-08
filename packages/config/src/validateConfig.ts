@@ -5,31 +5,32 @@
  * Util para logging e diagnostico.
  */
 
-import { assertPublicAppConfig } from './contracts'
+import { assertPublicAppConfig, type PublicAppConfigCandidate } from './contracts.js'
 
 /**
  * Valida config pública sem lançar erro.
  * Retorna {valid: true} ou {valid: false, error: string}
  *
- * @param {Object} config - Config a validar
- * @returns {Object} {valid: boolean, error?: string}
+ * @param config - Config a validar
+ * @returns {valid: boolean, error?: string}
  */
-export function validatePublicAppConfig(config) {
+export function validatePublicAppConfig(config: PublicAppConfigCandidate | null | undefined) {
   try {
     assertPublicAppConfig(config)
     return { valid: true }
   } catch (error) {
-    return { valid: false, error: error.message }
+    const message = error instanceof Error ? error.message : String(error)
+    return { valid: false, error: message }
   }
 }
 
 /**
  * Valida se um objeto tem os campos minimos (sem lancar erro).
  *
- * @param {Object} input - Objeto a verificar
- * @returns {Object} {hasAll: boolean, missing: string[]}
+ * @param input - Objeto a verificar
+ * @returns {hasAll: boolean, missing: string[]}
  */
-export function checkRequiredFields(input) {
+export function checkRequiredFields(input: Record<string, unknown> | null | undefined) {
   const required = ['supabaseUrl', 'supabaseAnonKey']
   const missing = required.filter((field) => !input?.[field])
 

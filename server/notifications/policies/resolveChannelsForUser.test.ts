@@ -119,7 +119,9 @@ describe('resolveChannelsForUser', () => {
 describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
   const userId = 'user-n2'
 
-  const makeRepositories = (overrides = {}) => ({
+  const makeRepositories = (
+    overrides: { preferences?: Record<string, ReturnType<typeof vi.fn>>; devices?: Record<string, ReturnType<typeof vi.fn>> } = {}
+  ) => ({
     preferences: {
       getByUserId: vi.fn(),
       hasTelegramChat: vi.fn(),
@@ -140,8 +142,8 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: false,
       channel_telegram_enabled: false,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) =>
-      type === 'expo' ? [{ id: 'dev-1' }] : []
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
+      Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
     )
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -170,8 +172,8 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: true,
       channel_telegram_enabled: false,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) =>
-      type === 'webpush' ? [{ id: 'web-1' }] : []
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
+      Promise.resolve(type === 'webpush' ? [{ id: 'web-1' }] : [])
     )
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -228,10 +230,10 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
       channel_web_push_enabled: true,
       channel_telegram_enabled: true,
     })
-    repos.devices.listActiveByUser.mockImplementation((uid, type) => {
-      if (type === 'expo') return [{ id: 'expo-1' }]
-      if (type === 'webpush') return [{ id: 'web-1' }]
-      return []
+    repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) => {
+      if (type === 'expo') return Promise.resolve([{ id: 'expo-1' }])
+      if (type === 'webpush') return Promise.resolve([{ id: 'web-1' }])
+      return Promise.resolve([])
     })
 
     const result = await resolveChannelsForUser({ userId, repositories: repos })
@@ -275,8 +277,8 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_web_push_enabled: false,
         channel_telegram_enabled: false,
       })
-      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
-        type === 'expo' ? [{ id: 'dev-1' }] : []
+      repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
+        Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
       )
 
       const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })
@@ -307,8 +309,8 @@ describe('resolveChannelsForUser — flags explícitas Wave N2', () => {
         channel_web_push_enabled: false,
         channel_telegram_enabled: true,
       })
-      repos.devices.listActiveByUser.mockImplementation((uid, type) =>
-        type === 'expo' ? [{ id: 'dev-1' }] : []
+      repos.devices.listActiveByUser.mockImplementation((uid: string, type?: string) =>
+        Promise.resolve(type === 'expo' ? [{ id: 'dev-1' }] : [])
       )
 
       const result = await resolveChannelsForUser({ userId, repositories: repos, isCritical: true })

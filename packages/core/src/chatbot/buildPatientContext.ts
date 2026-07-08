@@ -15,7 +15,7 @@
 // - dateUtils SEMPRE do core (R-020); zero `new Date()` direto.
 
 import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate, isProtocolActiveOnDate as isProtocolInPeriod } from '../utils/dateUtils'
-import { splitDayTimeline } from '../utils/doseZones'
+import { splitDayTimeline, type DoseZoneInstance, type DoseZoneProtocol } from '../utils/doseZones'
 import { formatDoseItem, formatStockCount, formatIntakeDose, stockUnitLabel, formatNumberPtBR } from '../utils/doseUnit'
 import { getProtocolDays } from '../utils/adherenceLogic'
 import { calculateAge } from '../utils/profile'
@@ -23,14 +23,79 @@ import { calculateAge } from '../utils/profile'
 /** Nomes dos dias da semana em PT (índice = Date.getDay(): 0=domingo). */
 const WEEKDAYS_PT = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
 
+/** Medicamento (shape mínimo consumido por este builder). */
+interface MedicineLike {
+  id: string
+  name: string
+  active_ingredient?: string | null
+  therapeutic_class?: string | null
+  dosage_per_pill?: number | null
+  dosage_unit?: string | null
+  units_per_ml?: number | null
+  stock?: Array<{ quantity: number }>
+}
+
+/** Protocolo (shape mínimo consumido por este builder). */
+interface ProtocolLike {
+  medicine_id: string
+  medicine?: MedicineLike | null
+  active?: boolean
+  start_date?: string | null
+  end_date?: string | null
+  frequency?: string
+  time_schedule?: string[]
+  dosage_per_intake?: number | null
+  intake_unit?: string | null
+  treatment_plan?: { name?: string | null } | null
+}
+
+/** Entrada de resumo de estoque (rich, já calculada pelo fetcher). */
+interface StockSummaryEntry {
+  medicine?: { id: string } | null
+  total?: number
+  dailyIntake?: number | null
+  daysRemaining?: number | null
+  isZero?: boolean
+}
+
+/** Perfil leve do paciente (sem PII sensível). */
+interface ProfileLike {
+  display_name?: string | null
+  birth_date?: string | null
+}
+
+/** Log de dose registrada. */
+interface LogLike {
+  taken_at: string
+}
+
+/** Contexto derivado de UM medicamento (saída de _toMedContext). */
+interface MedContext {
+  nome: string
+  principioAtivo?: string | null
+  classeTerapeutica?: string | null
+  dosagem: string
+  estoque: number
+  consumoDiario: number | null
+  diasRestantes: string | null
+  semEstoque: boolean
+  medLike: { dosage_unit: string | null; dosage_per_pill: number | null; units_per_ml: number | null }
+  frequencia: string
+  horarios: string[]
+  weekdays?: string[]
+  dosePerIntake: number | null
+  intakeUnit: string | null
+  planName: string | null
+}
+
 /** Formata dias restantes (relativo) — Infinity/sem consumo → null (omitido). */
-function _formatDaysRemaining(daysRemaining) {
+function _formatDaysRemaining(daysRemaining: number | null | undefined) {
   if (daysRemaining == null || !Number.isFinite(daysRemaining)) return null
   return `${Math.floor(daysRemaining)} dia${Math.floor(daysRemaining) === 1 ? '' : 's'}`
 }
 
 /** Campos derivados do PROTOCOLO (extraído p/ baixar complexidade de _toMedContext). */
-function _protocolFields(protocol) {
+function _protocolFields(protocol: ProtocolLike | null | undefined) {
   return {
     frequencia: protocol?.frequency ?? 'sem protocolo',
     horarios: protocol?.time_schedule ?? [],
@@ -50,7 +115,7 @@ function _protocolFields(protocol) {
  * contexto etário (idoso → linguagem mais simples). Nome/idade não são PII sensível
  * (nada de IDs, CPF, contato). Retorna '' (omitido) quando vazio.
  */
-function _formatPatientLine(profile) {
+function _formatPatientLine(profile: ProfileLike | null | undefined) {
   const name = profile?.display_name?.trim() || null
   const age = calculateAge(profile?.birth_date)
   if (!name && age == null) return ''
@@ -58,7 +123,7 @@ function _formatPatientLine(profile) {
 }
 
 /** Saldo de estoque: stockSummary.total, ou soma dos lotes embedded (fallback). */
-function _resolveStock(med, stockEntry) {
+function _resolveStock(med: MedicineLike, stockEntry: StockSummaryEntry | undefined) {
   return (
     stockEntry?.total ??
     (med.stock || []).filter((s) => s.quantity > 0).reduce((sum, s) => sum + s.quantity, 0)
@@ -67,11 +132,15 @@ function _resolveStock(med, stockEntry) {
 
 /**
  * Deriva a entrada de contexto de UM medicamento (extraído p/ baixar complexidade do map).
- * @param {Object} med
- * @param {Array} validProtocols
- * @param {Map} stockByMedId
+ * @param med
+ * @param validProtocols
+ * @param stockByMedId
  */
-function _toMedContext(med, validProtocols, stockByMedId) {
+function _toMedContext(
+  med: MedicineLike,
+  validProtocols: ProtocolLike[],
+  stockByMedId: Map<string | undefined, StockSummaryEntry>
+): MedContext {
   const protocol = validProtocols.find((p) => p.medicine_id === med.id)
   const stockEntry = stockByMedId.get(med.id)
   const totalStock = _resolveStock(med, stockEntry)
@@ -96,7 +165,7 @@ function _toMedContext(med, validProtocols, stockByMedId) {
 }
 
 /** Cronograma: frequência + (dias da semana p/ semanal) + horários. */
-function _formatSchedule(mc) {
+function _formatSchedule(mc: MedContext) {
   const horarios = mc.horarios.join(', ') || 'nao definidos'
   const freq = (mc.frequencia || '').toLowerCase()
   if ((freq === 'semanal' || freq === 'weekly') && mc.weekdays?.length) {
@@ -110,7 +179,7 @@ function _formatSchedule(mc) {
  * dose por tomada usam a unidade real do medicamento (ml/UI/gotas p/ líquidos; un./mg p/
  * sólidos) — NUNCA "un." cego (ex.: "5,2 ml" de Lantus, não "5,2 un.").
  */
-function _formatMedLine(mc) {
+function _formatMedLine(mc: MedContext) {
   const infos = [mc.principioAtivo, mc.classeTerapeutica].filter(Boolean).join(', ')
   const detalhe = infos ? ` [${infos}]` : ''
   const dose = mc.dosePerIntake ? `, dose ${formatIntakeDose(mc.dosePerIntake, mc.intakeUnit, mc.medLike)}` : ''
@@ -127,16 +196,16 @@ function _formatMedLine(mc) {
  * sem rótulo "Sem plano", evita ruído/associação falsa no LLM), DEPOIS os grupos nomeados
  * (header `Plano "<nome>":` + itens). Quando nenhum med tem plano nomeado, a saída é o
  * formato legado flat idêntico (compat PO-1).
- * @param {Array} medsContext - entradas já derivadas (com `planName: string|null`)
- * @returns {string[]} linhas prontas
+ * @param medsContext - entradas já derivadas (com `planName: string|null`)
+ * @returns linhas prontas
  */
-function _buildMedLines(medsContext) {
+function _buildMedLines(medsContext: MedContext[]): string[] {
   const ungrouped = medsContext.filter((mc) => !mc.planName)
-  const grouped = new Map() // nome do plano → mc[] (ordem de aparição)
+  const grouped = new Map<string, MedContext[]>() // nome do plano → mc[] (ordem de aparição)
   for (const mc of medsContext) {
     if (!mc.planName) continue
     if (!grouped.has(mc.planName)) grouped.set(mc.planName, [])
-    grouped.get(mc.planName).push(mc)
+    grouped.get(mc.planName)?.push(mc)
   }
 
   const lines = ungrouped.map(_formatMedLine)
@@ -148,7 +217,7 @@ function _buildMedLines(medsContext) {
 }
 
 /** Logs registrados HOJE (no tz local) — filtragem por ano/mês/dia. */
-function _countTodayLogs(logs, y, m, d) {
+function _countTodayLogs(logs: LogLike[] | null | undefined, y: number, m: number, d: number) {
   return (logs || []).filter((log) => {
     const logDate = getSaoPauloTime(parseISO(log.taken_at))
     return logDate.getFullYear() === y && logDate.getMonth() + 1 === m && logDate.getDate() === d
@@ -156,7 +225,7 @@ function _countTodayLogs(logs, y, m, d) {
 }
 
 /** Filas de doses: pendentes de hoje (ordenadas) + atrasadas actionáveis (carry-over). */
-function _resolveDoseQueues(doseInstances, validProtocols) {
+function _resolveDoseQueues(doseInstances: DoseZoneInstance[] | undefined, validProtocols: DoseZoneProtocol[]) {
   const { carryOver = [], today: todayDoses = [] } = splitDayTimeline(
     doseInstances || [],
     validProtocols,

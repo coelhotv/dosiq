@@ -223,6 +223,15 @@ export default [
       'import-x/no-unresolved': 'off',
     },
   },
+  {
+    // Packages: imports relativos usam extensão .js apontando pra fonte .ts
+    // (padrão nodenext — exigido pela cadeia de .d.ts do core na Vercel, 040/F6 D1).
+    // O resolver node do import-x não mapeia .js→.ts; tsc/strict-island cobrem resolução.
+    files: ['packages/*/src/**/*.{ts,tsx}'],
+    rules: {
+      'import-x/no-unresolved': 'off',
+    },
+  },
   // Estágio 3: Domínios Específicos
   {
     // Server & API (Node.js Strict)

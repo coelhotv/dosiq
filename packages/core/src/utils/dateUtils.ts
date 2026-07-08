@@ -16,7 +16,7 @@
  * @param {string} dateStr - Data no formato YYYY-MM-DD
  * @returns {Date} Date object em timezone local (meia-noite local)
  */
-export function parseLocalDate(dateStr) {
+export function parseLocalDate(dateStr: string): Date {
   return new Date(dateStr + 'T00:00:00')
 }
 
@@ -25,7 +25,7 @@ export function parseLocalDate(dateStr) {
  * @param {Date} date - Date object
  * @returns {string} Data no formato YYYY-MM-DD
  */
-export function formatLocalDate(date) {
+export function formatLocalDate(date: Date): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -40,7 +40,12 @@ export function formatLocalDate(date) {
  * @param {string|Date} date - Data a verificar (string YYYY-MM-DD ou Date object)
  * @returns {boolean} True se o protocolo estava ativo na data
  */
-export function isProtocolActiveOnDate(protocol, date) {
+interface ProtocolDateRange {
+  start_date?: string | null
+  end_date?: string | null
+}
+
+export function isProtocolActiveOnDate(protocol: ProtocolDateRange, date: string | Date): boolean {
   // Converte para Date em timezone local
   const currentDate = typeof date === 'string' ? parseLocalDate(date) : date
 
@@ -65,7 +70,7 @@ export function isProtocolActiveOnDate(protocol, date) {
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} Data de hoje no formato YYYY-MM-DD
  */
-export function getTodayLocal(tz = 'America/Sao_Paulo') {
+export function getTodayLocal(tz = 'America/Sao_Paulo'): string {
   return formatLocalDate(getUserTime(new Date(), tz))
 }
 
@@ -74,7 +79,7 @@ export function getTodayLocal(tz = 'America/Sao_Paulo') {
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} Data de ontem no formato YYYY-MM-DD
  */
-export function getYesterdayLocal(tz = 'America/Sao_Paulo') {
+export function getYesterdayLocal(tz = 'America/Sao_Paulo'): string {
   const yesterday = getUserTime(new Date(), tz)
   yesterday.setDate(yesterday.getDate() - 1)
   return formatLocalDate(yesterday)
@@ -86,7 +91,7 @@ export function getYesterdayLocal(tz = 'America/Sao_Paulo') {
  * @param {number} days - Número de dias a adicionar (pode ser negativo)
  * @returns {Date} Nova data em timezone local
  */
-export function addDays(date, days) {
+export function addDays(date: Date | string, days: number): Date {
   const baseDate = typeof date === 'string' ? parseLocalDate(date) : new Date(date)
   baseDate.setDate(baseDate.getDate() + days)
   return baseDate
@@ -98,7 +103,7 @@ export function addDays(date, days) {
  * @param {Date|string} date2 - Segunda data
  * @returns {number} Diferença em dias (positivo se date2 > date1)
  */
-export function daysDifference(date1, date2) {
+export function daysDifference(date1: Date | string, date2: Date | string): number {
   const d1 = typeof date1 === 'string' ? parseLocalDate(date1) : date1
   const d2 = typeof date2 === 'string' ? parseLocalDate(date2) : date2
   const diffTime = d2.getTime() - d1.getTime()
@@ -109,7 +114,7 @@ export function daysDifference(date1, date2) {
  * @param {string} timeStr - Horário no formato HH:mm
  * @returns {'Madrugada'|'Manhã'|'Tarde'|'Noite'}
  */
-export function getPeriodFromTime(timeStr) {
+export function getPeriodFromTime(timeStr: string): 'Madrugada' | 'Manhã' | 'Tarde' | 'Noite' {
   if (!timeStr) return 'Manhã'
   const [h] = timeStr.split(':').map(Number)
   if (h >= 5 && h < 12) return 'Manhã'
@@ -123,7 +128,7 @@ export function getPeriodFromTime(timeStr) {
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {Date}
  */
-export function getNow(tz = 'America/Sao_Paulo') {
+export function getNow(tz = 'America/Sao_Paulo'): Date {
   return getUserTime(new Date(), tz)
 }
 
@@ -132,7 +137,7 @@ export function getNow(tz = 'America/Sao_Paulo') {
  * Útil para timers e momentos que serão processados por outras funções de fuso.
  * @returns {Date}
  */
-export function getRawNow() {
+export function getRawNow(): Date {
   return new Date()
 }
 
@@ -140,7 +145,7 @@ export function getRawNow() {
  * Retorna o timestamp atual em formato ISO (UTC)
  * @returns {string} ISO 8601 string
  */
-export function getServerTimestamp() {
+export function getServerTimestamp(): string {
   return new Date().toISOString()
 }
 
@@ -154,12 +159,24 @@ export function parseISO(isoString: string | number | Date): Date {
 }
 
 /**
+ * Variante nullable de parseISO — para call-sites com entrada opcional.
+ * NUNCA afrouxar a assinatura de parseISO em si (R-283/D2 040-F6): `new Date(null)`
+ * vira epoch 1970 (data clínica fantasma silenciosa) e `new Date(undefined)` vira
+ * Invalid Date — ambos silenciosos se o compilador aceitasse null|undefined direto
+ * no parseISO. Aqui o null é explícito no tipo de retorno, forçando o chamador a tratar.
+ */
+export function parseISOOrNull(value: string | number | Date | null | undefined): Date | null {
+  if (value === null || value === undefined) return null
+  return parseISO(value)
+}
+
+/**
  * Retorna o ISO UTC correspondente ao início do dia (00:00:00) no fuso informado.
  * @param {string} dateStr - Data no formato YYYY-MM-DD
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} ISO 8601 string (UTC)
  */
-export function getStartOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
+export function getStartOfDayISO(dateStr: string, tz = 'America/Sao_Paulo'): string {
   const d = new Date(dateStr + 'T00:00:00Z')
   // Descobrir o offset do fuso para esta data específica.
   // Reusa getUserTime (Intl.DateTimeFormat + formatToParts) em vez de
@@ -176,7 +193,7 @@ export function getStartOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA opcional (default São Paulo)
  * @returns {string} ISO 8601 string (UTC)
  */
-export function getEndOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
+export function getEndOfDayISO(dateStr: string, tz = 'America/Sao_Paulo'): string {
   const start = new Date(getStartOfDayISO(dateStr, tz))
   return new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString()
 }
@@ -192,7 +209,7 @@ export function getEndOfDayISO(dateStr, tz = 'America/Sao_Paulo') {
  * @param {string} [tz='America/Sao_Paulo'] - Timezone IANA (ex: 'America/New_York')
  * @returns {Date}
  */
-export function getUserTime(date = new Date(), tz = 'America/Sao_Paulo') {
+export function getUserTime(date: Date = new Date(), tz = 'America/Sao_Paulo'): Date {
   const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: tz,
     year: 'numeric',
@@ -234,7 +251,7 @@ export function getUserTime(date = new Date(), tz = 'America/Sao_Paulo') {
  * @param {Date} [date] - Data base (default: agora)
  * @returns {Date}
  */
-export function getSaoPauloTime(date = new Date()) {
+export function getSaoPauloTime(date: Date = new Date()): Date {
   return getUserTime(date, 'America/Sao_Paulo')
 }
 
@@ -243,7 +260,7 @@ export function getSaoPauloTime(date = new Date()) {
  * @param {Date} date 
  * @returns {Date}
  */
-export function cloneDate(date) {
+export function cloneDate(date: Date): Date {
   return new Date(date.getTime())
 }
 
@@ -253,7 +270,7 @@ export function cloneDate(date) {
  * @param {number} months - Número de meses a adicionar (pode ser negativo)
  * @returns {Date} Nova data
  */
-export function addMonths(date, months) {
+export function addMonths(date: Date | string, months: number): Date {
   const baseDate = typeof date === 'string' ? parseLocalDate(date) : cloneDate(date)
   baseDate.setDate(1) // Seta dia 1 para evitar problemas com meses curtos
   baseDate.setMonth(baseDate.getMonth() + months)
@@ -266,7 +283,7 @@ export function addMonths(date, months) {
  * @param {number} month - 0-11
  * @returns {number}
  */
-export function getLastDayOfMonth(year, month) {
+export function getLastDayOfMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
 }
 
@@ -275,7 +292,7 @@ export function getLastDayOfMonth(year, month) {
  * @param {string} datetimeStr 
  * @returns {Date}
  */
-export function parseLocalDatetime(datetimeStr) {
+export function parseLocalDatetime(datetimeStr: string): Date {
   if (!datetimeStr) return getNow()
   // Adiciona segundos e offset de Brasília se não houver
   const fullStr = datetimeStr.length === 16 ? `${datetimeStr}:00-03:00` : datetimeStr
@@ -287,7 +304,7 @@ export function parseLocalDatetime(datetimeStr) {
  * @param {number|string} timestamp 
  * @returns {Date}
  */
-export function parseTimestamp(timestamp) {
+export function parseTimestamp(timestamp: number | string): Date {
   if (!timestamp) return getNow()
   return new Date(Number(timestamp))
 }

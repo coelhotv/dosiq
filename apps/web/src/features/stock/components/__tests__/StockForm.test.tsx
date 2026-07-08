@@ -66,8 +66,8 @@ describe('StockForm', () => {
       expect(screen.getByLabelText(/Medicamento/i)).toBeInTheDocument()
 
       // Check that medicines are listed with dosage info
-      expect(screen.getByText('Dipirona (500mg)')).toBeInTheDocument()
-      expect(screen.getByText('Paracetamol (750mg)')).toBeInTheDocument()
+      expect(screen.getByText('Dipirona (500 mg)')).toBeInTheDocument()
+      expect(screen.getByText('Paracetamol (750 mg)')).toBeInTheDocument()
     })
 
     it('should render quantity input', () => {
@@ -75,9 +75,8 @@ describe('StockForm', () => {
 
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       expect(quantityInput).toBeInTheDocument()
-      expect(quantityInput).toHaveAttribute('type', 'number')
-      expect(quantityInput).toHaveAttribute('min', '0.1')
-      expect(quantityInput).toHaveAttribute('step', '0.1')
+      expect(quantityInput).toHaveAttribute('type', 'text')
+      expect(quantityInput).toHaveAttribute('inputMode', 'decimal')
     })
 
     it('should render unit price input', () => {
@@ -85,9 +84,8 @@ describe('StockForm', () => {
 
       const priceInput = screen.getByLabelText(/Preço Unitário/i)
       expect(priceInput).toBeInTheDocument()
-      expect(priceInput).toHaveAttribute('type', 'number')
-      expect(priceInput).toHaveAttribute('step', '0.001')
-      expect(priceInput).toHaveAttribute('min', '0')
+      expect(priceInput).toHaveAttribute('type', 'text')
+      expect(priceInput).toHaveAttribute('inputMode', 'decimal')
     })
 
     it('should render purchase date input with default to today', () => {
@@ -138,8 +136,8 @@ describe('StockForm', () => {
       )
 
       expect(screen.getByLabelText(/Medicamento/i)).toHaveValue('med-2')
-      expect(screen.getByLabelText(/Quantidade/i)).toHaveValue(30)
-      expect(screen.getByLabelText(/Preço Unitário/i)).toHaveValue(0.5)
+      expect(screen.getByLabelText(/Quantidade/i)).toHaveValue('30')
+      expect(screen.getByLabelText(/Preço Unitário/i)).toHaveValue('0.5')
       expect(screen.getByLabelText(/Data da Compra/i)).toHaveValue('2024-01-15')
       expect(screen.getByLabelText(/Data de Validade/i)).toHaveValue('2025-01-15')
     })
@@ -159,7 +157,7 @@ describe('StockForm', () => {
       )
 
       expect(screen.getByLabelText(/Medicamento/i)).toHaveValue('med-1')
-      expect(screen.getByLabelText(/Quantidade/i)).toHaveValue(null)
+      expect(screen.getByLabelText(/Quantidade/i)).toHaveValue('')
     })
   })
 
@@ -312,6 +310,7 @@ describe('StockForm', () => {
           unit_price: 0.5,
           purchase_date: '2024-01-15',
           expiration_date: '2025-01-15',
+          injection_container: null,
           pharmacy: null,
           laboratory: null,
           notes: null,
@@ -467,7 +466,7 @@ describe('StockForm', () => {
 
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '50' } })
-      expect(quantityInput).toHaveValue(50)
+      expect(quantityInput).toHaveValue('50')
     })
 
     it('should handle decimal values correctly', () => {
@@ -475,11 +474,11 @@ describe('StockForm', () => {
 
       const quantityInput = screen.getByLabelText(/Quantidade/i)
       fireEvent.change(quantityInput, { target: { value: '10.5' } })
-      expect(quantityInput).toHaveValue(10.5)
+      expect(quantityInput).toHaveValue('10.5')
 
       const priceInput = screen.getByLabelText(/Preço Unitário/i)
       fireEvent.change(priceInput, { target: { value: '0.123' } })
-      expect(priceInput).toHaveValue(0.123)
+      expect(priceInput).toHaveValue('0.123')
     })
   })
 })

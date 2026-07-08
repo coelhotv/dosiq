@@ -49,11 +49,7 @@ export default mergeConfig(
       ],
 
       pool: 'forks',
-      poolOptions: {
-        forks: {
-          singleFork: true,
-        },
-      },
+      fileParallelism: false,
 
       reporters: ['dot'],
 

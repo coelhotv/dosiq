@@ -18,24 +18,33 @@ const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
 // Mock supabase: builder encadeável/awaitable (mesmo padrão de dispatchLiveActivityStarts.test.js),
 // mas com `insert` dedicado p/ capturar payloads de auditoria (tabela dose_critical_events) e
 // `not` p/ suportar a query de lifecycle (.not('la_push_token', 'is', null)).
-function makeSupabase(selectQueue) {
-  const captured = [];
+type QueryResult = { data: unknown[] | null; error: { message: string } | null };
+interface AuditPayload {
+  user_id?: string
+  dose_instance_id?: string
+  event?: string
+  platform?: string
+  actor?: string
+  detail?: { from?: string | null; to?: string; phase?: string; status?: number; reason?: string } | null
+}
+function makeSupabase(selectQueue: QueryResult[]) {
+  const captured: AuditPayload[] = [];
   let i = 0;
   const builder = () => {
     const b = {
-      _update: null,
+      _update: null as Record<string, unknown> | null,
       select() { return b; },
       eq() { return b; },
       is() { return b; },
       gte() { return b; },
       lt() { return b; }, lte() { return b; },
       not() { return b; },
-      update(payload) { b._update = payload; return b; },
-      insert(payload) {
+      update(payload: Record<string, unknown>) { b._update = payload; return b; },
+      insert(payload: AuditPayload) {
         captured.push(payload);
         return Promise.resolve({ error: null });
       },
-      then(resolve) {
+      then(resolve: (value: unknown) => unknown) {
         if (b._update) return Promise.resolve({ data: [{ id: 'inst-1' }], error: null }).then(resolve);
         const res = selectQueue[i++] ?? { data: [], error: null };
         return Promise.resolve(res).then(resolve);
@@ -62,7 +71,7 @@ const lifecycleRow = (userId = USER_A, id = INST_1) => ({
 });
 
 // Guard PII (SEC-3): nenhuma chave/valor sensível pode vazar pro trail de auditoria.
-function assertNoPii(payload) {
+function assertNoPii(payload: unknown) {
   const json = JSON.stringify(payload);
   expect(json).not.toContain('Selozok');
   expect(json).not.toContain('push_token');
@@ -135,7 +144,8 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     const supabase = makeSupabase([
       { data: [lifecycleRow()], error: null }, // LAs ativas (la_push_token IS NOT NULL)
     ]);
-    const updateFn = vi.fn(() => Promise.resolve({ ok: true, status: 200 }));
+    const updateFn = vi.fn((_p: { pushToken: string | null | undefined; contentState: Record<string, unknown> }) =>
+      Promise.resolve({ ok: true, status: 200 }));
     const endFn = vi.fn();
     await dispatchLiveActivityLifecycle({ supabase, logger, now: NOW, updateFn, endFn });
 
@@ -150,7 +160,7 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     expect(payload.detail).toEqual({ from: null, to: 'later' });
     expect(updateFn).toHaveBeenCalledTimes(1);
     // O `to` emitido bate com o state realmente empurrado ao updateFn.
-    expect(updateFn.mock.calls[0][0].contentState.state).toBe(payload.detail.to);
+    expect(updateFn.mock.calls[0]![0].contentState.state).toBe(payload.detail!.to);
     assertNoPii(payload);
   });
 

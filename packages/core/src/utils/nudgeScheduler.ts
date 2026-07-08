@@ -7,11 +7,30 @@
 import { satisfiesSemver } from './semver'
 import { getNow, parseISO } from './dateUtils'
 
+export interface Nudge {
+  id: string
+  version?: string
+  platform?: 'ios' | 'android' | 'web' | 'all'
+  start_at?: string | null
+  end_at?: string | null
+  min_app_version?: string | null
+  max_app_version?: string | null
+  priority?: number | null
+  [key: string]: unknown
+}
+
+interface BuildNudgeListOpts {
+  platform?: 'ios' | 'android' | 'web'
+  appVersion?: string | null
+  dismissed?: Set<string>
+  now?: Date
+}
+
 /**
  * Chave de dismiss para um nudge (remote ou local).
  * Formato: "<id>:<version>"
  */
-export function dismissKey(nudge) {
+export function dismissKey(nudge: Nudge): string {
   return `${nudge.id}:${nudge.version}`
 }
 
@@ -20,7 +39,7 @@ export function dismissKey(nudge) {
  * @param {object[]} nudges
  * @param {'ios'|'android'|'web'} platform
  */
-function filterByPlatform(nudges, platform) {
+function filterByPlatform(nudges: Nudge[], platform: string | undefined): Nudge[] {
   if (!platform) return nudges
   return nudges.filter((n) => n.platform === 'all' || n.platform === platform)
 }
@@ -30,7 +49,7 @@ function filterByPlatform(nudges, platform) {
  * @param {object[]} nudges
  * @param {Date} now
  */
-function filterByDates(nudges, now) {
+function filterByDates(nudges: Nudge[], now: Date): Nudge[] {
   return nudges.filter((n) => {
     if (n.start_at && parseISO(n.start_at) > now) return false
     if (n.end_at && parseISO(n.end_at) < now) return false
@@ -43,10 +62,10 @@ function filterByDates(nudges, now) {
  * @param {object[]} nudges
  * @param {string|null} appVersion  ex: "0.3.4"
  */
-function filterByVersion(nudges, appVersion) {
+function filterByVersion(nudges: Nudge[], appVersion: string | null | undefined): Nudge[] {
   if (!appVersion) return nudges
   return nudges.filter((n) =>
-    satisfiesSemver(appVersion, n.min_app_version, n.max_app_version)
+    satisfiesSemver(appVersion, n.min_app_version ?? null, n.max_app_version ?? null)
   )
 }
 
@@ -56,14 +75,14 @@ function filterByVersion(nudges, appVersion) {
  * @param {object[]} nudges
  * @param {Set<string>} dismissed  conjunto de chaves já lidas do storage
  */
-function filterDismissed(nudges, dismissed) {
+function filterDismissed(nudges: Nudge[], dismissed: Set<string>): Nudge[] {
   return nudges.filter((n) => !dismissed.has(dismissKey(n)))
 }
 
 /**
  * Ordena por prioridade decrescente; empate mantém ordem original.
  */
-function sortByPriority(nudges) {
+function sortByPriority(nudges: Nudge[]): Nudge[] {
   return [...nudges].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 }
 
@@ -80,17 +99,17 @@ function sortByPriority(nudges) {
  *
  * @returns {object[]} nudges ordenados por prioridade, prontos para exibição
  */
-export function buildNudgeList(remoteNudges, localNudges, opts) {
+export function buildNudgeList(remoteNudges: Nudge[] | null | undefined, localNudges: Nudge[] | null | undefined, opts: BuildNudgeListOpts | null | undefined): Nudge[] {
   const {
     platform,
     appVersion = null,
-    dismissed = new Set(),
+    dismissed = new Set<string>(),
     now = getNow(),
   } = opts ?? {}
 
   const all = [...(remoteNudges ?? []), ...(localNudges ?? [])]
 
-  const pipeline = [
+  const pipeline: Array<(n: Nudge[]) => Nudge[]> = [
     (n) => filterByPlatform(n, platform),
     (n) => filterByDates(n, now),
     (n) => filterByVersion(n, appVersion),

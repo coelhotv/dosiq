@@ -15,12 +15,8 @@ export default mergeConfig(
       include: ['src/**/*.test.{js,jsx,ts,tsx}'],
 
       pool: 'threads',
-      poolOptions: {
-        threads: {
-          maxThreads: 2,
-          minThreads: 1,
-        },
-      },
+      maxWorkers: 2,
+      minWorkers: 1,
 
       testTimeout: 15000,
 

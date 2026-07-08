@@ -34,11 +34,11 @@ async function saveCachedNudges(view, nudges) {
  * Carrega as chaves de dismiss salvas no AsyncStorage apenas para os nudges recebidos.
  * Evita getAllKeys() que varre todo o storage independente do tamanho.
  */
-async function loadDismissedKeys(keysToCheck) {
+async function loadDismissedKeys(keysToCheck: string[]): Promise<Set<string>> {
   if (!keysToCheck || keysToCheck.length === 0) return new Set()
   try {
     const pairs = await AsyncStorage.multiGet(keysToCheck)
-    const dismissed = new Set()
+    const dismissed = new Set<string>()
     for (const [key, value] of pairs) {
       if (value === '1') dismissed.add(key)
     }

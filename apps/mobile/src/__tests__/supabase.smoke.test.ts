@@ -13,17 +13,17 @@ const { supabase } = require('../platform/supabase/nativeSupabaseClient');
 
 describe('Supabase + Polyfills Smoke Test', () => {
   // Mock fetch global para interceptar as chamadas do Supabase
-  let originalFetch;
-  
+  let originalFetch: typeof global.fetch;
+
   beforeAll(() => {
     originalFetch = global.fetch;
-    global.fetch = jest.fn(() => 
+    global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         json: () => Promise.resolve([]),
         headers: new Map(),
       })
-    );
+    ) as unknown as typeof global.fetch;
   });
 
   afterAll(() => {
@@ -41,7 +41,7 @@ describe('Supabase + Polyfills Smoke Test', () => {
     // Verificar a URL chamada no fetch
     // No Supabase, a URL é construída via toString() da URL do Postgrest
     expect(global.fetch).toHaveBeenCalled();
-    const callUrl = global.fetch.mock.calls[0][0];
+    const callUrl = jest.mocked(global.fetch).mock.calls[0][0];
     
     // Validar se contém os parâmetros e não tem a barra final problemática (PGRST125)
     expect(callUrl).toContain('rest/v1/protocols?');
@@ -54,7 +54,8 @@ describe('Supabase + Polyfills Smoke Test', () => {
   it('should build an RPC URL correctly', async () => {
     await supabase.rpc('generate_telegram_token', { user_id: '123' });
 
-    const lastCall = global.fetch.mock.calls[global.fetch.mock.calls.length - 1][0];
+    const fetchCalls = jest.mocked(global.fetch).mock.calls;
+    const lastCall = fetchCalls[fetchCalls.length - 1][0];
     expect(lastCall).toContain('rest/v1/rpc/generate_telegram_token');
     expect(lastCall).not.toContain('generate_telegram_token/');
   });

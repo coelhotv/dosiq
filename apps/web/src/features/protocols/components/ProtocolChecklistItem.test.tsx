@@ -17,7 +17,7 @@ describe('ProtocolChecklistItem', () => {
     render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
 
     expect(screen.getByText('💊 Manhã')).toBeInTheDocument()
-    expect(screen.getByText('1 comp.')).toBeInTheDocument()
+    expect(screen.getByText('1 un.')).toBeInTheDocument()
     expect(screen.queryByText('✓')).not.toBeInTheDocument()
   })
 
@@ -145,7 +145,7 @@ describe('ProtocolChecklistItem', () => {
 
     render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
 
-    expect(screen.getByText('1 comp.')).toBeInTheDocument()
+    expect(screen.getByText('1 un.')).toBeInTheDocument()
   })
 
   it('renders correct dosage text for multiple pills', () => {
@@ -161,6 +161,6 @@ describe('ProtocolChecklistItem', () => {
 
     render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
 
-    expect(screen.getByText('2 comps.')).toBeInTheDocument()
+    expect(screen.getByText('2 un.')).toBeInTheDocument()
   })
 })

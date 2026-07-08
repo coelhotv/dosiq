@@ -20,6 +20,19 @@ vi.mock('@shared/utils/supabase', () => ({
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockImplementation(() =>
+        Promise.resolve({
+          data: {
+            display_name: 'Joao Silva',
+            birth_date: '1990-01-01',
+            city: 'São Paulo',
+            state: 'SP',
+            phone: null,
+            complexity_override: null,
+          },
+          error: null,
+        })
+      ),
       single: vi.fn().mockImplementation(() =>
         Promise.resolve({
           data: {
@@ -27,13 +40,16 @@ vi.mock('@shared/utils/supabase', () => ({
             birth_date: '1990-01-01',
             city: 'São Paulo',
             state: 'SP',
+            phone: null,
+            complexity_override: null,
           },
           error: null,
         })
       ),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
+      upsert: vi.fn().mockReturnThis(),
     })),
   },
+  getUserId: vi.fn(() => Promise.resolve('user-1')),
 }))
 
 vi.mock('@shared/components/ui/Loading', () => ({

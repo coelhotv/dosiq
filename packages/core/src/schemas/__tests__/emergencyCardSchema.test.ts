@@ -106,7 +106,7 @@ describe('emergencyCardSchema', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors.some((e) => e.field === 'phone')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'phone')).toBe(true)
     })
 
     it('should reject name shorter than 2 characters', () => {
@@ -119,7 +119,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyContact(invalidContact)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'name')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'name')).toBe(true)
     })
 
     it('should reject name longer than 200 characters', () => {
@@ -132,7 +132,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyContact(invalidContact)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'name')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'name')).toBe(true)
     })
 
     it('should reject relationship shorter than 2 characters', () => {
@@ -145,7 +145,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyContact(invalidContact)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'relationship')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'relationship')).toBe(true)
     })
 
     it('should reject relationship longer than 100 characters', () => {
@@ -158,7 +158,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyContact(invalidContact)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'relationship')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'relationship')).toBe(true)
     })
   })
 
@@ -180,16 +180,16 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(validCard)
 
       expect(result.success).toBe(true)
-      expect(result.data.emergency_contacts).toHaveLength(1)
-      expect(result.data.allergies).toHaveLength(2)
-      expect(result.data.blood_type).toBe('A+')
+      expect(result.data!.emergency_contacts).toHaveLength(1)
+      expect(result.data!.allergies).toHaveLength(2)
+      expect(result.data!.blood_type).toBe('A+')
     })
 
     it('should add default last_updated timestamp', () => {
       const result = validateEmergencyCard(validCard)
 
       expect(result.success).toBe(true)
-      expect(result.data.last_updated).toBeDefined()
+      expect(result.data!.last_updated).toBeDefined()
     })
 
     it('should accept empty allergies array', () => {
@@ -201,7 +201,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithEmptyAllergies)
 
       expect(result.success).toBe(true)
-      expect(result.data.allergies).toEqual([])
+      expect(result.data!.allergies).toEqual([])
     })
 
     it('should accept null notes', () => {
@@ -213,7 +213,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithNullNotes)
 
       expect(result.success).toBe(true)
-      expect(result.data.notes).toBeNull()
+      expect(result.data!.notes).toBeNull()
     })
 
     it('should accept undefined notes (converted to null)', () => {
@@ -222,7 +222,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithoutNotes)
 
       expect(result.success).toBe(true)
-      expect(result.data.notes).toBeNull()
+      expect(result.data!.notes).toBeNull()
     })
 
     it('should reject missing emergency_contacts', () => {
@@ -243,7 +243,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithEmptyContacts)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'emergency_contacts')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'emergency_contacts')).toBe(true)
     })
 
     it('should reject more than 5 emergency contacts', () => {
@@ -261,7 +261,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithTooManyContacts)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'emergency_contacts')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'emergency_contacts')).toBe(true)
     })
 
     it('should accept exactly 5 emergency contacts', () => {
@@ -279,7 +279,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWith5Contacts)
 
       expect(result.success).toBe(true)
-      expect(result.data.emergency_contacts).toHaveLength(5)
+      expect(result.data!.emergency_contacts).toHaveLength(5)
     })
 
     it('should reject invalid blood type', () => {
@@ -291,7 +291,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithInvalidBloodType)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'blood_type')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'blood_type')).toBe(true)
     })
 
     it('should accept all valid blood types', () => {
@@ -304,7 +304,7 @@ describe('emergencyCardSchema', () => {
         const result = validateEmergencyCard(card)
 
         expect(result.success).toBe(true)
-        expect(result.data.blood_type).toBe(bloodType)
+        expect(result.data!.blood_type).toBe(bloodType)
       })
     })
 
@@ -317,7 +317,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithLongNotes)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'notes')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'notes')).toBe(true)
     })
 
     it('should reject more than 20 allergies', () => {
@@ -331,7 +331,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithTooManyAllergies)
 
       expect(result.success).toBe(false)
-      expect(result.errors.some((e) => e.field === 'allergies')).toBe(true)
+      expect(result.errors!.some((e) => e.field === 'allergies')).toBe(true)
     })
 
     it('should reject empty allergy string', () => {
@@ -371,7 +371,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCard(cardWithInvalidContact)
 
       expect(result.success).toBe(false)
-      expect(result.errors.length).toBeGreaterThan(0)
+      expect(result.errors!.length).toBeGreaterThan(0)
     })
   })
 
@@ -404,7 +404,7 @@ describe('emergencyCardSchema', () => {
       const result = validateEmergencyCardUpdate(partialData)
 
       expect(result.success).toBe(true)
-      expect(result.data.blood_type).toBe('B-')
+      expect(result.data!.blood_type).toBe('B-')
     })
 
     it('should accept empty object', () => {
@@ -435,8 +435,8 @@ describe('emergencyCardSchema', () => {
       const result = emergencyContactSchema.safeParse(contactWithWhitespace)
 
       expect(result.success).toBe(true)
-      expect(result.data.name).toBe('Maria Silva')
-      expect(result.data.relationship).toBe('Esposa')
+      expect(result.data!.name).toBe('Maria Silva')
+      expect(result.data!.relationship).toBe('Esposa')
     })
   })
 
@@ -457,7 +457,7 @@ describe('emergencyCardSchema', () => {
       const result = emergencyCardSchema.safeParse(cardWithWhitespaceAllergies)
 
       expect(result.success).toBe(true)
-      expect(result.data.allergies).toEqual(['Penicilina', 'Dipirona'])
+      expect(result.data!.allergies).toEqual(['Penicilina', 'Dipirona'])
     })
   })
 })

@@ -14,7 +14,8 @@
  */
 
 import { setJSON, getJSON } from '@dosiq/storage'
-import { _buildCache } from './_cacheBuilder'
+import type { StorageAdapter } from '@dosiq/storage'
+import { _buildCache, type CacheLogger } from './_cacheBuilder.js'
 
 /**
  * Cria uma instancia de query cache com dependencias injetadas.
@@ -34,12 +35,12 @@ export function createQueryCache({
   maxEntries = 200,
   persistKey = 'dosiq_query_cache',
 }: {
-  storage: unknown
-  logger?: unknown
+  storage?: StorageAdapter
+  logger?: CacheLogger | null
   staleTime?: number
   maxEntries?: number
   persistKey?: string
-} = {} as any) { // TODO(040-strict)
+} = {}) {
   if (!storage) throw new Error('createQueryCache: storage adapter is required')
   return _buildCache({ storage, logger, staleTime, maxEntries, persistKey, setJSON, getJSON })
 }

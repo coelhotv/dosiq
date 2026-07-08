@@ -14,13 +14,9 @@ export default mergeConfig(
       include: ['src/**/*.smoke.test.{js,jsx,ts,tsx}'],
 
       pool: 'threads',
-      poolOptions: {
-        threads: {
-          singleThread: true,
-          maxThreads: 1,
-          minThreads: 1,
-        },
-      },
+      fileParallelism: false,
+      maxWorkers: 1,
+      minWorkers: 1,
 
       testTimeout: 5000,
 

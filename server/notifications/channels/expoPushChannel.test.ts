@@ -73,7 +73,7 @@ describe('expoPushChannel', () => {
       { push_token: 'ExponentPushToken[good]' },
     ]
     mockRepositories.devices.listActiveByUser.mockResolvedValue(devices)
-    mockRepositories.devices.deactivateByToken.mockResolvedValue()
+    mockRepositories.devices.deactivateByToken.mockResolvedValue(undefined)
     mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([
       { status: 'error', message: 'DeviceNotRegistered', details: { error: 'DeviceNotRegistered' } },
       { status: 'ok' },

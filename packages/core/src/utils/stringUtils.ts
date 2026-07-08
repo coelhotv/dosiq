@@ -3,7 +3,7 @@
  * @param {string} str - Texto a converter
  * @returns {string} Texto convertido ou string vazia
  */
-export const toSentenceCase = (str) => {
+export const toSentenceCase = (str: string): string => {
   if (!str) return ''
   const lower = str.toLowerCase()
   return lower.charAt(0).toUpperCase() + lower.slice(1)
@@ -19,13 +19,13 @@ export const toSentenceCase = (str) => {
  * @param {string} str - Texto a converter
  * @returns {string} Texto em Title Case ou string vazia
  */
-export const toTitleCase = (str) => {
+export const toTitleCase = (str: string): string => {
   if (!str) return ''
   const lower = str.toLowerCase()
   const exceptions = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'em', 'para', 'por'])
   return lower
     .split(/\s+/)
-    .map((word, index) => {
+    .map((word: string, index: number) => {
       if (index > 0 && exceptions.has(word)) return word
       return word.charAt(0).toUpperCase() + word.slice(1)
     })

@@ -10,7 +10,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'ios'
     })
     expect(result.success).toBe(true)
-    expect(result.data.subject).toBe('Problema no login')
+    expect(result.data!.subject).toBe('Problema no login')
   })
 
   it('accepts other and android as platforms and optional fields', () => {
@@ -23,8 +23,8 @@ describe('Feedback Schema Validation', () => {
       app_version: '3.3.0'
     })
     expect(result.success).toBe(true)
-    expect(result.data.device).toBe('Samsung Galaxy S21')
-    expect(result.data.app_version).toBe('3.3.0')
+    expect(result.data!.device).toBe('Samsung Galaxy S21')
+    expect(result.data!.app_version).toBe('3.3.0')
   })
 
   it('rejects empty subject', () => {
@@ -35,7 +35,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'other'
     })
     expect(result.success).toBe(false)
-    expect(result.errors.some(e => e.field === 'subject')).toBe(true)
+    expect(result.errors!.some(e => e.field === 'subject')).toBe(true)
   })
 
   it('rejects subject longer than 100 characters', () => {
@@ -46,7 +46,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'other'
     })
     expect(result.success).toBe(false)
-    expect(result.errors.find(e => e.field === 'subject').message).toContain('mais de 100 caracteres')
+    expect(result.errors!.find(e => e.field === 'subject')!.message).toContain('mais de 100 caracteres')
   })
 
   it('rejects empty comment', () => {
@@ -57,7 +57,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'other'
     })
     expect(result.success).toBe(false)
-    expect(result.errors.some(e => e.field === 'comment')).toBe(true)
+    expect(result.errors!.some(e => e.field === 'comment')).toBe(true)
   })
 
   it('rejects comment longer than 2000 characters', () => {
@@ -68,7 +68,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'other'
     })
     expect(result.success).toBe(false)
-    expect(result.errors.find(e => e.field === 'comment').message).toContain('mais de 2000 caracteres')
+    expect(result.errors!.find(e => e.field === 'comment')!.message).toContain('mais de 2000 caracteres')
   })
 
   it('rejects invalid rating values', () => {
@@ -105,7 +105,7 @@ describe('Feedback Schema Validation', () => {
       platform: 'ios'
     })
     expect(nullRating.success).toBe(true)
-    expect(nullRating.data.rating).toBe(null)
+    expect(nullRating.data!.rating).toBe(null)
 
     const missingRating = validateFeedbackCreate({
       subject: 'Assunto',
@@ -123,6 +123,6 @@ describe('Feedback Schema Validation', () => {
       platform: 'web'
     })
     expect(result.success).toBe(false)
-    expect(result.errors.some(e => e.field === 'platform')).toBe(true)
+    expect(result.errors!.some(e => e.field === 'platform')).toBe(true)
   })
 })

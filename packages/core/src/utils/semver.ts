@@ -4,7 +4,7 @@
  * Ignora pre-release e build metadata.
  */
 
-function parseSemver(version) {
+function parseSemver(version: string | null | undefined): number[] | null {
   if (!version || typeof version !== 'string') return null
   const clean = version.trim().split('-')[0].split('+')[0]
   const parts = clean.split('.')
@@ -20,7 +20,7 @@ function parseSemver(version) {
  * Retorna -1 se a < b, 0 se a == b, 1 se a > b.
  * Retorna null se alguma versão for inválida.
  */
-export function compareSemver(a, b) {
+export function compareSemver(a: string | null | undefined, b: string | null | undefined): number | null {
   const pa = parseSemver(a)
   const pb = parseSemver(b)
   if (!pa || !pb) return null
@@ -36,7 +36,11 @@ export function compareSemver(a, b) {
  * `min` e `max` são opcionais (null/undefined = sem limite).
  * Retorna false para versões inválidas.
  */
-export function satisfiesSemver(version, min, max) {
+export function satisfiesSemver(
+  version: string | null | undefined,
+  min: string | null | undefined,
+  max: string | null | undefined
+): boolean {
   const pv = parseSemver(version)
   if (!pv) return false
   if (min) {

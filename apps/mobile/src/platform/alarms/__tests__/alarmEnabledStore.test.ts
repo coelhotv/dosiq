@@ -8,23 +8,25 @@ import {
   ALARM_NUDGE_SEEN_KEY,
 } from '../alarmEnabledStore'
 
+const mockedGetItem = AsyncStorage.getItem as jest.Mock
+
 afterEach(() => {
   jest.clearAllMocks()
 })
 
 describe('alarmEnabledStore', () => {
   it('default OFF quando não há valor persistido', async () => {
-    AsyncStorage.getItem.mockResolvedValueOnce(null)
+    mockedGetItem.mockResolvedValueOnce(null)
     expect(await isAlarmEnabled()).toBe(false)
   })
 
   it('lê true quando persistido', async () => {
-    AsyncStorage.getItem.mockResolvedValueOnce('true')
+    mockedGetItem.mockResolvedValueOnce('true')
     expect(await isAlarmEnabled()).toBe(true)
   })
 
   it('default OFF em erro de storage (fail-safe)', async () => {
-    AsyncStorage.getItem.mockRejectedValueOnce(new Error('boom'))
+    mockedGetItem.mockRejectedValueOnce(new Error('boom'))
     expect(await isAlarmEnabled()).toBe(false)
   })
 
@@ -36,14 +38,14 @@ describe('alarmEnabledStore', () => {
   })
 
   it('nudge: não visto por padrão, marca visto', async () => {
-    AsyncStorage.getItem.mockResolvedValueOnce(null)
+    mockedGetItem.mockResolvedValueOnce(null)
     expect(await hasSeenAlarmNudge()).toBe(false)
     await markAlarmNudgeSeen()
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(ALARM_NUDGE_SEEN_KEY, 'true')
   })
 
   it('nudge: erro de leitura → não insistir (true)', async () => {
-    AsyncStorage.getItem.mockRejectedValueOnce(new Error('x'))
+    mockedGetItem.mockRejectedValueOnce(new Error('x'))
     expect(await hasSeenAlarmNudge()).toBe(true)
   })
 })

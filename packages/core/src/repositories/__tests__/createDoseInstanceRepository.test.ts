@@ -12,9 +12,9 @@ afterEach(() => {
   vi.clearAllTimers()
 })
 
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
-    _calls: [],
+    _calls: [] as any[],
     select: vi.fn(function (...a) { this._calls.push(['select', a]); return this }),
     insert: vi.fn(function (...a) { this._calls.push(['insert', a]); return this }),
     upsert: vi.fn(function (...a) { this._calls.push(['upsert', a]); return this }),
@@ -28,23 +28,23 @@ function makeBuilder(result) {
     order:  vi.fn(function (...a) { this._calls.push(['order', a]); return this }),
     range:  vi.fn(function (...a) { this._calls.push(['range', a]); return this }),
     single: vi.fn(function ()     { this._calls.push(['single', []]); return Promise.resolve(result) }),
-    then:   (resolve) => resolve(result),
+    then:   (resolve: any) => resolve(result),
   }
   return builder
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
-    _from: null,
-    from: vi.fn((table) => { client._from = table; return builder }),
+    _from: null as string | null,
+    from: vi.fn((table: string) => { client._from = table; return builder }),
   }
   return client as any
 }
 
-function callNames(builder) {
-  return builder._calls.map(([name]) => name)
+function callNames(builder: any) {
+  return builder._calls.map(([name]: [string]) => name)
 }
 
 describe('createDoseInstanceRepository', () => {
@@ -53,7 +53,7 @@ describe('createDoseInstanceRepository', () => {
   })
 
   describe('upsertMany — idempotência', () => {
-    let client, repo
+    let client: any, repo: any
     beforeEach(() => {
       client = makeClient({ data: [{ id: 'di-1' }], error: null })
       repo = createDoseInstanceRepository({ client })
@@ -61,7 +61,7 @@ describe('createDoseInstanceRepository', () => {
 
     it('usa ON CONFLICT DO NOTHING (onConflict + ignoreDuplicates)', async () => {
       await repo.upsertMany([{ protocol_id: 'p1', scheduled_for: '2026-05-10T11:00:00Z' }])
-      const upsertCall = client._builder._calls.find(([n]) => n === 'upsert')
+      const upsertCall = client._builder._calls.find(([n]: [string]) => n === 'upsert')
       expect(client._from).toBe('dose_instances')
       expect(upsertCall[1][1]).toEqual({
         onConflict: 'protocol_id,scheduled_for',
@@ -96,7 +96,7 @@ describe('createDoseInstanceRepository', () => {
       expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
       expect(b.in).toHaveBeenCalledWith('status', ['pending', 'skipped_paused'])
       // corte temporal estritamente futuro (gt, não gte)
-      const gtCall = b._calls.find(([n]) => n === 'gt')
+      const gtCall = b._calls.find(([n]: [string]) => n === 'gt')
       expect(gtCall[1][0]).toBe('scheduled_for')
       const cutoff = new Date(gtCall[1][1]).getTime()
       expect(cutoff).toBeGreaterThanOrEqual(before)
@@ -113,7 +113,7 @@ describe('createDoseInstanceRepository', () => {
       const b = client._builder
       expect(b.update).toHaveBeenCalledWith({ status: 'skipped_paused' })
       expect(b.eq).toHaveBeenCalledWith('status', 'pending')
-      const lteCall = b._calls.find(([n]) => n === 'lte')
+      const lteCall = b._calls.find(([n]: [string]) => n === 'lte')
       expect(new Date(lteCall[1][1]).toISOString()).toBe(new Date(until).toISOString())
     })
   })
@@ -130,7 +130,7 @@ describe('createDoseInstanceRepository', () => {
       expect(callNames(b)).toContain('delete')
       expect(b.in).toHaveBeenCalledWith('protocol_id', ['p1', 'p2'])
       expect(b.in).toHaveBeenCalledWith('status', ['pending', 'skipped_paused'])
-      const gtCall = b._calls.find(([n]) => n === 'gt')
+      const gtCall = b._calls.find(([n]: [string]) => n === 'gt')
       expect(gtCall[1][0]).toBe('scheduled_for')
       expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)
     })
@@ -154,7 +154,7 @@ describe('createDoseInstanceRepository', () => {
       expect(b.update).toHaveBeenCalledWith({ status: 'pending' })
       expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
       expect(b.eq).toHaveBeenCalledWith('status', 'skipped_paused')
-      const gtCall = b._calls.find(([n]) => n === 'gt')
+      const gtCall = b._calls.find(([n]: [string]) => n === 'gt')
       expect(gtCall[1][0]).toBe('scheduled_for')
       expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)
     })
@@ -222,7 +222,7 @@ describe('createDoseInstanceRepository', () => {
       })
       const repo = createDoseInstanceRepository({ client })
       const out = await repo.findAnchorInstance({ protocolId: 'p1', takenAt })
-      expect(out.id).toBe('near')
+      expect(out?.id).toBe('near')
     })
 
     it('respeita a tolerância de CADA linha — exclui slot fora da própria janela', async () => {
@@ -246,7 +246,7 @@ describe('createDoseInstanceRepository', () => {
     it('protocolId ausente → null sem tocar no client', async () => {
       const client = makeClient({ data: [], error: null })
       const repo = createDoseInstanceRepository({ client })
-      const out = await repo.findAnchorInstance({ protocolId: null, takenAt })
+      const out = await repo.findAnchorInstance({ protocolId: null as any, takenAt })
       expect(out).toBeNull()
       expect(client.from).not.toHaveBeenCalled()
     })

@@ -48,7 +48,7 @@ const SITE_ABSORPTION = Object.fromEntries(INJECTION_SITES.map((s) => [s.value, 
  * @param {string|null|undefined} value
  * @returns {string|null} label PT, ou null quando value é vazio/null
  */
-export function getInjectionSiteLabel(value) {
+export function getInjectionSiteLabel(value: string | null | undefined): string | null {
   if (!value) return null
   return SITE_LABELS[value] ?? value
 }
@@ -58,7 +58,7 @@ export function getInjectionSiteLabel(value) {
  * @param {string|null|undefined} value
  * @returns {string|null}
  */
-export function getInjectionSiteAbsorption(value) {
+export function getInjectionSiteAbsorption(value: string | null | undefined): string | null {
   if (!value) return null
   return SITE_ABSORPTION[value] ?? null
 }
@@ -70,6 +70,6 @@ export function getInjectionSiteAbsorption(value) {
  * @param {{ presentation?: string|null }|null|undefined} medicine
  * @returns {boolean}
  */
-export function isInjectable(medicine) {
+export function isInjectable(medicine: { presentation?: string | null } | null | undefined): boolean {
   return medicine?.presentation === 'injetavel'
 }

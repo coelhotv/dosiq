@@ -12,7 +12,7 @@ import pt from 'zod/v4/locales/pt.js'
 
 // Mensagens base por código (sem mencionar tipo/recebido/expected etc).
 // eslint-disable-next-line complexity
-function friendlyMessage(issue) {
+function friendlyMessage(issue: z.core.$ZodRawIssue) {
   switch (issue.code) {
     case 'invalid_type': {
       // Vazio/null/undefined → obrigatório.
@@ -57,7 +57,6 @@ function friendlyMessage(issue) {
       return 'Formato inválido'
     }
     case 'invalid_value':
-    case 'invalid_enum_value':
       return 'Escolha uma das opções disponíveis'
     case 'not_multiple_of':
       return 'Valor inválido'

@@ -1,28 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import notifee from '@notifee/react-native'
 
-const mockRegisterDose = jest.fn(() => Promise.resolve({ success: true, data: { id: 'log-1' } }))
+interface LogData {
+  protocol_id?: string | null
+  medicine_id?: string
+  taken_at?: string
+  quantity_taken?: number
+}
+type RegisterDoseOpts = { instanceId?: string | null }
+
+const mockRegisterDose = jest.fn((_logData: LogData, _opts?: RegisterDoseOpts) =>
+  Promise.resolve({ success: true, data: { id: 'log-1' } }),
+)
 jest.mock('@dose/services/doseService', () => ({
-  registerDose: (...args) => mockRegisterDose(...args),
+  registerDose: (logData: LogData, opts?: RegisterDoseOpts) => mockRegisterDose(logData, opts),
 }))
 
 const mockEq = jest.fn(() => Promise.resolve({ error: null }))
 const mockUpdate = jest.fn(() => ({ eq: mockEq }))
-const mockFrom = jest.fn(() => ({ update: mockUpdate }))
+const mockFrom = jest.fn((_table?: string) => ({ update: mockUpdate }))
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
-  supabase: { from: (...a) => mockFrom(...a) },
+  supabase: { from: (table?: string) => mockFrom(table) },
 }))
 
 const mockNavigate = jest.fn()
 jest.mock('@navigation/navigationRef', () => ({
-  navigationRef: { isReady: () => true, navigate: (...a) => mockNavigate(...a) },
+  navigationRef: {
+    isReady: () => true,
+    navigate: (screen?: unknown, params?: unknown) => mockNavigate(screen, params),
+  },
 }))
 jest.mock('@navigation/routes', () => ({ ROUTES: { TODAY: 'Hoje' } }))
 
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
-function evt(pressActionId, data) {
+function evt(pressActionId: string | undefined, data: Record<string, unknown>) {
   return { detail: { pressAction: { id: pressActionId }, notification: { data } } }
 }
 
@@ -71,7 +84,7 @@ describe('handleAlarmAction — Pular', () => {
     expect(mockFrom).toHaveBeenCalledWith('dose_instances')
     expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped_user' })
     expect(mockEq).toHaveBeenCalledWith('id', 'inst-1')
-    expect(res.action).toBe('dose-skip')
+    expect((res as { action: string }).action).toBe('dose-skip')
   })
 
   it('invalida today + treatments (sem stock, não consome)', async () => {
@@ -87,7 +100,7 @@ describe('handleAlarmAction — ignorado', () => {
   it('agenda nag reativo', async () => {
     const res = await handleAlarmAction(evt(undefined, { ...BASE, nagAttempt: '0', scheduledFor: new Date(Date.now() - 1000).toISOString() }))
     expect(notifee.createTriggerNotification).toHaveBeenCalled()
-    expect(res.action).toBe('nag')
+    expect((res as { action: string }).action).toBe('nag')
   })
 
   it('sem doseInstanceId → não trata', async () => {
@@ -102,7 +115,7 @@ describe('handleAlarmAction — Soneca', () => {
     const res = await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '0' }))
     expect(notifee.createTriggerNotification).toHaveBeenCalled()
     expect(mockRegisterDose).not.toHaveBeenCalled()
-    expect(res.action).toBe('dose-snooze')
+    expect((res as { action: string }).action).toBe('dose-snooze')
   })
 
   it('estourou o teto (3) → não re-agenda', async () => {

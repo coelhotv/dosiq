@@ -1,14 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { resolveChannelsForUser } from '../resolveChannelsForUser';
+import type { NotificationDevice } from '../../repositories/notificationDeviceRepository';
+import type { NotificationSettings } from '../../repositories/notificationPreferenceRepository';
 
 // Repos mock: dose crítica deve ir SÓ pelo canal de alarme (mobile_push), com fallback telegram
 // quando não há device mobile ativo. Não-crítica segue as preferências normais.
-function makeRepos({ telegram = true, expo = [], web = [], settings = null } = {}) {
+interface MakeReposOptions {
+  telegram?: boolean
+  expo?: NotificationDevice[]
+  web?: NotificationDevice[]
+  settings?: Partial<NotificationSettings> | null
+}
+function makeRepos({ telegram = true, expo = [], web = [], settings = null }: MakeReposOptions = {}) {
   return {
     preferences: {
       hasTelegramChat: vi.fn(() => Promise.resolve(telegram)),
       getSettingsByUserId: vi.fn(() => Promise.resolve(settings)),
-      getByUserId: vi.fn(() => Promise.resolve('both')),
+      getByUserId: vi.fn(() => Promise.resolve('both' as const)),
     },
     devices: {
       listActiveByUser: vi.fn((_u, kind) => Promise.resolve(kind === 'expo' ? expo : web)),
@@ -23,7 +31,7 @@ describe('resolveChannelsForUser — gate de dose crítica', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
   it('crítica + device mobile ativo → SÓ mobile_push (sem telegram)', async () => {
-    const repositories = makeRepos({ telegram: true, expo: [{ id: 'd1' }], settings: WAVE_N2 });
+    const repositories = makeRepos({ telegram: true, expo: [{ id: 'd1' } as NotificationDevice], settings: WAVE_N2 });
     const channels = await resolveChannelsForUser({ userId: 'u1', repositories, isCritical: true });
     expect(channels).toEqual(['mobile_push']);
   });
@@ -41,7 +49,7 @@ describe('resolveChannelsForUser — gate de dose crítica', () => {
   });
 
   it('NÃO-crítica → segue preferências (telegram + mobile_push)', async () => {
-    const repositories = makeRepos({ telegram: true, expo: [{ id: 'd1' }], settings: WAVE_N2 });
+    const repositories = makeRepos({ telegram: true, expo: [{ id: 'd1' } as NotificationDevice], settings: WAVE_N2 });
     const channels = await resolveChannelsForUser({ userId: 'u1', repositories, isCritical: false });
     expect(channels).toContain('telegram');
     expect(channels).toContain('mobile_push');

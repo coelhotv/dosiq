@@ -34,7 +34,28 @@ interface CreatePurchaseRepositoryDeps {
 /**
  * Cria um repositório CRUD de compras parametrizado por plataforma.
  */
-export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRepositoryDeps) {
+// Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
+// inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
+export function createPurchaseRepository({ client, getUserId }: CreatePurchaseRepositoryDeps): {
+  getPurchasesByMedicine(medicineId: string): Promise<any[]>
+  getLatestPurchasesByMedicineIds(medicineIds: string[]): Promise<Record<string, any>>
+  getHistoryByMedicineIds(medicineIds: string[]): Promise<Record<string, any[]>>
+  getAverageUnitPriceByMedicineIds(medicineIds: string[]): Promise<Record<string, number>>
+  createPurchase(input: Record<string, unknown>): Promise<any>
+  createLiquidPurchase(input: {
+    medicineId: string
+    numBottles: number
+    volumePerBottle: number
+    totalPrice?: number
+    purchaseDate: string
+    expirationDate?: string | null
+    pharmacy?: string | null
+    laboratory?: string | null
+    notes?: string | null
+    injectionContainer?: string | null
+  }): Promise<any[]>
+  updatePurchase(id: string, input: Record<string, unknown>): Promise<any>
+} {
   if (!client) throw new Error('createPurchaseRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
     throw new Error('createPurchaseRepository: getUserId deve ser função async')

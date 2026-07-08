@@ -45,7 +45,7 @@ const mockData = [
   { name: 'Aparat', activeIngredient: 'Aparat', therapeuticClass: 'Misc', laboratory: 'Lab F' },
 ]
 
-function mockFetchOk(body) {
+function mockFetchOk(body: unknown) {
   return Promise.resolve({ ok: true, json: () => Promise.resolve(body) })
 }
 
@@ -90,8 +90,8 @@ describe('cold start — rede OK', () => {
     expect(AsyncStorage.multiSet).toHaveBeenCalledTimes(1)
 
     // Ambas as chaves devem ter sido salvas
-    const [[pairs]] = AsyncStorage.multiSet.mock.calls
-    const keys = pairs.map(([k]) => k)
+    const [[pairs]] = (AsyncStorage.multiSet as jest.Mock).mock.calls
+    const keys = pairs.map(([k]: [string, string]) => k)
     expect(keys).toContain('@dosiq/anvisa-manifest')
     expect(keys).toContain('@dosiq/anvisa-data')
   })
@@ -142,8 +142,8 @@ describe('warm start — versão remota diferente', () => {
 
     expect(AsyncStorage.multiSet).toHaveBeenCalledTimes(1)
     // Manifest persistido deve ter versão 2.0.0
-    const [[pairs]] = AsyncStorage.multiSet.mock.calls
-    const manifestEntry = pairs.find(([k]) => k === '@dosiq/anvisa-manifest')
+    const [[pairs]] = (AsyncStorage.multiSet as jest.Mock).mock.calls
+    const manifestEntry = pairs.find(([k]: [string, string]) => k === '@dosiq/anvisa-manifest')
     expect(JSON.parse(manifestEntry[1]).version).toBe('2.0.0')
   })
 })
@@ -317,21 +317,21 @@ describe('getByName()', () => {
     const result = await getReadyHook()
     const med = result.current.getByName('paracetamol')
     expect(med).not.toBeNull()
-    expect(med.name).toBe('Paracetamol')
+    expect(med?.name).toBe('Paracetamol')
   })
 
   it('retorna match exato com acento normalizado', async () => {
     const result = await getReadyHook()
     const med = result.current.getByName('acido acetilsalicilico')
     expect(med).not.toBeNull()
-    expect(med.name).toBe('Ácido Acetilsalicílico')
+    expect(med?.name).toBe('Ácido Acetilsalicílico')
   })
 
   it('prefere match exato sobre parcial', async () => {
     // Dipirona corresponde a exact; não deve retornar Dipirona Sódica (activeIngredient)
     const result = await getReadyHook()
     const med = result.current.getByName('Dipirona')
-    expect(med.name).toBe('Dipirona')
+    expect(med?.name).toBe('Dipirona')
   })
 
   it('retorna null quando não encontrado', async () => {

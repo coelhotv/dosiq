@@ -11,7 +11,7 @@ describe('BottomNav', () => {
     render(<BottomNav currentView="dashboard" setCurrentView={vi.fn()} />)
 
     expect(screen.getByText('Hoje')).toBeInTheDocument()
-    expect(screen.getByText('Tratamento')).toBeInTheDocument()
+    expect(screen.getByText('Tratamentos')).toBeInTheDocument()
     expect(screen.getByText('Estoque')).toBeInTheDocument()
     expect(screen.getByText('Avisos')).toBeInTheDocument()
     expect(screen.getByText('Perfil')).toBeInTheDocument()
@@ -31,7 +31,7 @@ describe('BottomNav', () => {
     const setCurrentView = vi.fn()
     render(<BottomNav currentView="dashboard" setCurrentView={setCurrentView} />)
 
-    fireEvent.click(screen.getByText('Tratamento'))
+    fireEvent.click(screen.getByText('Tratamentos'))
     expect(setCurrentView).toHaveBeenCalledWith('treatment')
   })
 

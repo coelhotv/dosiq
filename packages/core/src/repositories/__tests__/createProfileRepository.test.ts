@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createProfileRepository } from '../createProfileRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     select:      vi.fn(function (...a) { this._calls.push(['select', a]); return this }),
@@ -19,19 +19,19 @@ function makeBuilder(result) {
     eq:          vi.fn(function (...a) { this._calls.push(['eq', a]); return this }),
     single:      vi.fn(function ()     { this._calls.push(['single', []]); return Promise.resolve(result) }),
     maybeSingle: vi.fn(function ()     { this._calls.push(['maybeSingle', []]); return Promise.resolve(result) }),
-    then: (resolve) => resolve(result),
+    then: (resolve: any) => resolve(result),
   }
   return builder
 }
 
-function makeClient(result, rpcResult?) {
+function makeClient(result: any, rpcResult?: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
-    _from: null,
-    _rpcCalls: [],
-    from: vi.fn((table) => { client._from = table; return builder }),
-    rpc: vi.fn((name, args) => {
+    _from: null as any,
+    _rpcCalls: [] as any[],
+    from: vi.fn((table: any) => { client._from = table; return builder }),
+    rpc: vi.fn((name: any, args: any) => {
       client._rpcCalls.push([name, args])
       return Promise.resolve(rpcResult ?? { data: { ok: true }, error: null })
     }),
@@ -51,7 +51,7 @@ const VALID_PROFILE = {
 }
 
 describe('createProfileRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: null, error: null })
@@ -73,10 +73,10 @@ describe('createProfileRepository — parity', () => {
       const out = await repo.getProfile()
 
       expect(client.from).toHaveBeenCalledWith('user_settings')
-      const calls = client._builder._calls.map((c) => c[0])
+      const calls = client._builder._calls.map((c: any) => c[0])
       expect(calls).toContain('select')
       expect(calls).toContain('maybeSingle')
-      expect(client._builder._calls.find((c) => c[0] === 'eq')[1]).toEqual(['user_id', FAKE_USER])
+      expect(client._builder._calls.find((c: any) => c[0] === 'eq')?.[1]).toEqual(['user_id', FAKE_USER])
       expect(out.display_name).toBe('Antonio')
     })
 
@@ -104,7 +104,7 @@ describe('createProfileRepository — parity', () => {
       const repo = createProfileRepository({ client, getUserId })
       await repo.updateProfile(VALID_PROFILE)
 
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert).toBeTruthy()
       const [payload, opts] = upsert[1]
       expect(payload.user_id).toBe(FAKE_USER)
@@ -135,7 +135,7 @@ describe('createProfileRepository — parity', () => {
       const repo = createProfileRepository({ client, getUserId })
       await repo.updateComplexity(value)
 
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, complexity_override: value })
       expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
     })
@@ -149,15 +149,15 @@ describe('createProfileRepository — parity', () => {
   // ── getDeletionSummary ──
   describe('getDeletionSummary', () => {
     // Client por-tabela: cada from(table) resolve seu próprio { count } / { data }.
-    function makeCountClient(perTable) {
+    function makeCountClient(perTable: any) {
       return {
-        from: vi.fn((table) => {
+        from: vi.fn((table: any) => {
           const result = perTable[table]
           return {
             select: vi.fn(function () { return this }),
             eq: vi.fn(function () { return this }),
             or: vi.fn(function () { return this }),
-            then: (resolve) => resolve(result),
+            then: (resolve: any) => resolve(result),
           }
         }),
       } as any
@@ -232,7 +232,7 @@ describe('createProfileRepository — parity', () => {
       client = makeClient({ data: null, error: null })
       const repo = createProfileRepository({ client, getUserId })
       await repo.completeOnboarding()
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, onboarding_completed: true })
       expect(upsert[1][0]).not.toHaveProperty('timezone') // ausente preserva DEFAULT do DB
       expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
@@ -242,7 +242,7 @@ describe('createProfileRepository — parity', () => {
       client = makeClient({ data: null, error: null })
       const repo = createProfileRepository({ client, getUserId })
       await repo.completeOnboarding('Europe/London')
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert[1][0]).toMatchObject({ user_id: FAKE_USER, onboarding_completed: true, timezone: 'Europe/London' })
     })
   })
@@ -253,7 +253,7 @@ describe('createProfileRepository — parity', () => {
       client = makeClient({ data: null, error: null })
       const repo = createProfileRepository({ client, getUserId })
       await repo.captureDeviceTimezone('Europe/London')
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert[1][0]).toEqual({ user_id: FAKE_USER, timezone: 'Europe/London' })
       expect(upsert[1][1]).toEqual({ onConflict: 'user_id' })
     })
@@ -262,7 +262,7 @@ describe('createProfileRepository — parity', () => {
       client = makeClient({ data: null, error: null })
       const repo = createProfileRepository({ client, getUserId })
       await repo.captureDeviceTimezone(null)
-      const upsert = client._builder._calls.find((c) => c[0] === 'upsert')
+      const upsert = client._builder._calls.find((c: any) => c[0] === 'upsert')
       expect(upsert).toBeUndefined()
     })
   })

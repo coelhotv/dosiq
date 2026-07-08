@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createMedicineRepository } from '../createMedicineRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     select: vi.fn(function (...args) { this._calls.push(['select', args]); return this }),
@@ -21,17 +21,17 @@ function makeBuilder(result) {
     eq:     vi.fn(function (...args) { this._calls.push(['eq', args]); return this }),
     order:  vi.fn(function (...args) { this._calls.push(['order', args]); return this }),
     single: vi.fn(function ()        { this._calls.push(['single', []]); return Promise.resolve(result) }),
-    then:   (resolve) => resolve(result), // permite await em chain sem .single()
+    then:   (resolve: any) => resolve(result), // permite await em chain sem .single()
   }
   return builder
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
     _from: null,
-    from: vi.fn((table) => { client._from = table; return builder }),
+    from: vi.fn((table: any) => { client._from = table; return builder }),
   }
   return client as any
 }
@@ -47,7 +47,7 @@ const VALID_MEDICINE = {
 
 // ---------- Suite ----------
 describe('createMedicineRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: [{ id: 'med-1', name: 'X' }], error: null })
@@ -151,7 +151,7 @@ describe('createMedicineRepository — parity', () => {
     it('valida + insere payload com user_id', async () => {
       const repo = createMedicineRepository({ client, getUserId })
       await repo.create(VALID_MEDICINE)
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       expect(insertCall[1][0]).toEqual([
         expect.objectContaining({
           name: 'Paracetamol',
@@ -171,7 +171,7 @@ describe('createMedicineRepository — parity', () => {
     it('aceita string em dosage_per_pill (z.coerce.number)', async () => {
       const repo = createMedicineRepository({ client, getUserId })
       await repo.create({ ...VALID_MEDICINE, dosage_per_pill: '500' })
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       expect(insertCall[1][0][0].dosage_per_pill).toBe(500)
     })
   })
@@ -237,8 +237,8 @@ describe('createMedicineRepository — parity', () => {
       await repoWeb.create(VALID_MEDICINE)
       await repoMob.create(VALID_MEDICINE)
 
-      const webInsert = clientWeb._builder._calls.find(([m]) => m === 'insert')[1][0][0]
-      const mobInsert = clientMob._builder._calls.find(([m]) => m === 'insert')[1][0][0]
+      const webInsert = clientWeb._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
+      const mobInsert = clientMob._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
       expect(webInsert).toEqual(mobInsert)
     })
 
@@ -251,8 +251,8 @@ describe('createMedicineRepository — parity', () => {
       await repoWeb.update('id-1', { name: 'Atualizado' })
       await repoMob.update('id-1', { name: 'Atualizado' })
 
-      const webUpdate = clientWeb._builder._calls.find(([m]) => m === 'update')[1][0]
-      const mobUpdate = clientMob._builder._calls.find(([m]) => m === 'update')[1][0]
+      const webUpdate = clientWeb._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
+      const mobUpdate = clientMob._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
       expect(webUpdate).toEqual(mobUpdate)
     })
   })

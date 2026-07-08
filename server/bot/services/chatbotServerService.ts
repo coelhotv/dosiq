@@ -25,6 +25,7 @@ import { supabase } from '../../services/supabase.js'
 import { createLogger } from '../logger.js'
 import { getNow } from '../../utils/dateUtils.js'
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
+type CoreSupabaseClient = Parameters<typeof fetchChatbotContextData>[0]['supabase']
 import {
   CHATBOT_MAX_TOKENS,
   CHATBOT_TEMPERATURE,
@@ -125,7 +126,11 @@ async function _buildPatientContextForUser(userId) {
   try {
     logger.info('📊 Buscando contexto do paciente (core fetcher)', { userId })
     const data = await fetchChatbotContextData({
-      supabase,
+      // TODO(040-strict): cast de fronteira — client do server ainda não tipado com
+      // <Database> (tipá-lo expõe 4 erros de inferência postgrest em server/notifications;
+      // dívida server congelada, on-touch no 043). Usa o tipo do próprio core porque
+      // server/node_modules tem cópia própria do supabase-js (nominal mismatch).
+      supabase: supabase as unknown as CoreSupabaseClient,
       getUserId: async () => userId,
     })
     const context = buildPatientContext(data)

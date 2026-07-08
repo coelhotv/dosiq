@@ -27,8 +27,10 @@ const doseItem = (over = {}) => ({
   ...over,
 })
 
+const mockedCreateTriggerNotification = notifee.createTriggerNotification as jest.Mock
+
 function lastTrigger() {
-  return notifee.createTriggerNotification.mock.calls.at(-1)
+  return mockedCreateTriggerNotification.mock.calls.at(-1)
 }
 
 describe('armDoseActivity — exibe atual + agenda próximo boundary', () => {

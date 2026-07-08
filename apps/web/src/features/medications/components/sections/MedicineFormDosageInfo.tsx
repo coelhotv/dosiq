@@ -60,7 +60,7 @@ function DosageSection({
               className={errors.dosage_per_pill ? 'error' : ''}
               placeholder={formData.type === 'suplemento' ? 'Opcional' : '500'}
               disabled={isSubmitting}
-              aria-describedby={getFieldDescribedBy('dosage_per_pill', 'dosage_per_pill-hint')}
+              aria-describedby={getFieldDescribedBy('dosage_per_pill', errors, 'dosage_per_pill-hint')}
               aria-invalid={Boolean(errors.dosage_per_pill)}
             />
           </ShakeEffect>

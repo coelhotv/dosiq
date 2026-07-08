@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createTreatmentPlanRepository } from '../createTreatmentPlanRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     select: vi.fn(function (...args) { this._calls.push(['select', args]); return this }),
@@ -21,17 +21,17 @@ function makeBuilder(result) {
     eq:     vi.fn(function (...args) { this._calls.push(['eq', args]); return this }),
     order:  vi.fn(function (...args) { this._calls.push(['order', args]); return this }),
     single: vi.fn(function ()        { this._calls.push(['single', []]); return Promise.resolve(result) }),
-    then:   (resolve) => resolve(result), // permite await em chain sem .single()
+    then:   (resolve: any) => resolve(result), // permite await em chain sem .single()
   }
   return builder
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
     _from: null,
-    from: vi.fn((table) => { client._from = table; return builder }),
+    from: vi.fn((table: any) => { client._from = table; return builder }),
   }
   return client as any
 }
@@ -46,7 +46,7 @@ const VALID_PLAN = {
 
 // ---------- Suite ----------
 describe('createTreatmentPlanRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: [{ id: 'plan-1', name: 'X', protocols: [] }], error: null })
@@ -141,7 +141,7 @@ describe('createTreatmentPlanRepository — parity', () => {
     it('insere payload com user_id', async () => {
       const repo = createTreatmentPlanRepository({ client, getUserId })
       await repo.create(VALID_PLAN)
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       expect(insertCall[1][0]).toEqual([
         expect.objectContaining({
           name: 'Tratamento hipertensão',
@@ -207,8 +207,8 @@ describe('createTreatmentPlanRepository — parity', () => {
       await repoWeb.create(VALID_PLAN)
       await repoMob.create(VALID_PLAN)
 
-      const webInsert = clientWeb._builder._calls.find(([m]) => m === 'insert')[1][0][0]
-      const mobInsert = clientMob._builder._calls.find(([m]) => m === 'insert')[1][0][0]
+      const webInsert = clientWeb._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
+      const mobInsert = clientMob._builder._calls.find(([m]: any) => m === 'insert')?.[1]?.[0]?.[0]
       expect(webInsert).toEqual(mobInsert)
     })
 
@@ -221,8 +221,8 @@ describe('createTreatmentPlanRepository — parity', () => {
       await repoWeb.update('id-1', { name: 'Atualizado' })
       await repoMob.update('id-1', { name: 'Atualizado' })
 
-      const webUpdate = clientWeb._builder._calls.find(([m]) => m === 'update')[1][0]
-      const mobUpdate = clientMob._builder._calls.find(([m]) => m === 'update')[1][0]
+      const webUpdate = clientWeb._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
+      const mobUpdate = clientMob._builder._calls.find(([m]: any) => m === 'update')?.[1]?.[0]
       expect(webUpdate).toEqual(mobUpdate)
     })
   })

@@ -64,7 +64,7 @@ const { usePushNotifications } = require('../usePushNotifications')
 
 const makeSession = () => ({ user: { id: 'user-abc' } })
 
-function makeResponse(screen, params = { at: '08:00' }) {
+function makeResponse(screen: string, params: Record<string, unknown> = { at: '08:00' }) {
   return {
     notification: {
       request: {

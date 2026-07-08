@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createFeedbackRepository } from '../createFeedbackRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     insert: vi.fn(function (...args) { this._calls.push(['insert', args]); return this }),
@@ -12,12 +12,12 @@ function makeBuilder(result) {
   return builder
 }
 
-function makeClient(result) {
+function makeClient(result: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
     _from: null,
-    from: vi.fn((table) => { client._from = table; return builder }),
+    from: vi.fn((table: any) => { client._from = table; return builder }),
   }
   return client as any
 }
@@ -35,7 +35,7 @@ const VALID_FEEDBACK = {
 }
 
 describe('createFeedbackRepository', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: { id: 'feedback-uuid-1', ...VALID_FEEDBACK, user_id: FAKE_USER }, error: null })
@@ -57,7 +57,7 @@ describe('createFeedbackRepository', () => {
       expect(client.from).toHaveBeenCalledWith('feedbacks')
       expect(result.id).toBe('feedback-uuid-1')
 
-      const insertCall = client._builder._calls.find(([m]) => m === 'insert')
+      const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       expect(insertCall).toBeDefined()
       expect(insertCall[1][0]).toEqual([
         expect.objectContaining({

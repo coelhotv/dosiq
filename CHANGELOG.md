@@ -7,6 +7,28 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## Web v4.15.4 · Core v0.2.3 — 2026-07-08 — Refactor (040 F6): fechamento da migração TypeScript
+
+> **Bump:** web `4.15.3 → 4.15.4` + core `0.2.2 → 0.2.3` (patch). **Plataformas:** web + packages (core). Sem mudança de comportamento nem migração de dados. Sem relevância para notas de loja.
+
+### ♻️ Refactor
+
+- **Queima da dívida strict do épico 040** (5 lotes — PRs #726-#730): contadores baseline → final por bucket: nível-B transitivo 535 → 73 (packages 444→0 · mobile 18→0 · congelados: web 37 + server 36) · testes A 483 → 0 (core 353→0 · server/notifications 119→0 · mobile 11→0) · programas consumidores (api/server/mobile) 134 → 0
+- **D1**: `@dosiq/core` passa a emitir `.d.ts` no dist (`tsconfig.declarations.json` + condition `types` no `exports`) — elimina TS2305 no build da Vercel
+- **D2**: novo helper `parseISOOrNull()` no core para call-sites nullable; assinatura de `parseISO` preservada (evita data clínica fantasma de `new Date(null)`)
+- **D3**: props opcionais de form shared mobile com default `= undefined` (`FormAutocomplete`, `OnboardingHeader`) + remoção dos remendos `prop={undefined}` nos consumers
+- **Triagem MATA/TIPA de testes**: testes mock-contra-mock/snapshot morto deletados; mocks stale do backlog F4 zerados (Profile, Treatment, StockForm, ProtocolForm, TitrationWizard, EmergencyCardForm, ProtocolChecklistItem)
+- **Tooling**: 4 configs vitest web migradas de `poolOptions` deprecated (Vitest 4); 3 testes `.js` residuais do mobile renomeados; sweep `baseUrl` nos tsconfigs
+
+### 🐛 Correções (dentro da fase)
+
+- **Validação de dose aceitava 0** (`protocolFormUtils`, `n < 0` → `n <= 0`) — bug clínico real achado na triagem de teste "quebrado"
+- **Guard `taken_at` pré-`parseISO`** + divisão por zero em `titrationUtils` (review Gemini #730)
+- **`aria-describedby` de `dosage_per_pill` nunca apontava pro erro** (`MedicineFormDosageInfo` — argumento `errors` omitido na chamada de `getFieldDescribedBy`)
+- **Fixture com `toISOString()` flaky pós-21h BRT** (SparklineAdesao) — datas em teste sempre locais
+
+---
+
 ## Mobile v0.24.6 — 2026-07-06 — Refactor (040 F5): migração TypeScript de apps/mobile
 
 > **Bump:** mobile `0.24.5 → 0.24.6` (patch, `APP_VERSION` canônico). **Plataforma:** mobile (Expo/RN). Sem mudança de comportamento nem migração de dados. Sem relevância pra notas de loja. **Plataforma:** mobile (Android). Sem mudança de comportamento clínico nem migração de dados. Sem relevância para notas de loja (apenas correção de compatibilidade em emuladores e camadas de tradução).

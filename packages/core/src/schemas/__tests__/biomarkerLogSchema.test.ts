@@ -31,12 +31,12 @@ describe('biomarkerLogSchema — context por família (ADR-070)', () => {
   it('PA + contexto de glicemia → rejeitado', () => {
     const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg', context: 'jejum' })
     expect(r.success).toBe(false)
-    expect(r.errors.some((e) => e.field === 'context')).toBe(true)
+    expect(r.errors!.some((e) => e.field === 'context')).toBe(true)
   })
   it('glicemia + contexto PA → rejeitado', () => {
     const r = validateBiomarkerLog({ type: 'glicemia', value: 110, unit: 'mg/dL', context: 'em_repouso' })
     expect(r.success).toBe(false)
-    expect(r.errors.some((e) => e.field === 'context')).toBe(true)
+    expect(r.errors!.some((e) => e.field === 'context')).toBe(true)
   })
   it('PA + contexto null → aceito (opcional)', () => {
     const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg' })
@@ -48,7 +48,7 @@ describe('biomarkerLogSchema — happy path', () => {
   it('glicemia válida', () => {
     const r = validateBiomarkerLog({ type: 'glicemia', value: 110, unit: 'mg/dL', context: 'jejum' })
     expect(r.success).toBe(true)
-    expect(r.data.value).toBe(110)
+    expect(r.data!.value).toBe(110)
   })
   it('peso válido sem contexto', () => {
     const r = validateBiomarkerLog({ type: 'peso', value: 82.5, unit: BIOMARKER_TYPE_UNITS.peso })
@@ -68,7 +68,7 @@ describe('biomarkerLogSchema — failure modes', () => {
   it('vírgula PT-BR — string "110,5" coage (decimal-pad)', () => {
     const r = validateBiomarkerLog({ type: 'glicemia', value: '110.5', unit: 'mg/dL' })
     expect(r.success).toBe(true)
-    expect(r.data.value).toBeCloseTo(110.5)
+    expect(r.data!.value).toBeCloseTo(110.5)
   })
 })
 
@@ -76,7 +76,7 @@ describe('biomarkerLogSchema — PA / value_secondary (superRefine)', () => {
   it('PA exige value_secondary', () => {
     const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, unit: 'mmHg' })
     expect(r.success).toBe(false)
-    expect(r.errors.some((e) => e.field === 'value_secondary')).toBe(true)
+    expect(r.errors!.some((e) => e.field === 'value_secondary')).toBe(true)
   })
   it('PA com sistólica+diastólica válida', () => {
     const r = validateBiomarkerLog({ type: 'pressao_arterial', value: 120, value_secondary: 80, unit: 'mmHg' })

@@ -170,7 +170,7 @@ export function useMedicineDatabase({
   // Ranking: matches no name vêm antes dos só-em-activeIngredient.
   // Early break: para de iterar assim que atinge o limite total.
   const search = useCallback(
-    (query: string, limit = 10): Medicine[] => {
+    (query: string | null | undefined, limit = 10): Medicine[] => {
       if (!normalizedDatabase || !query || query.trim().length < 3) return []
       const q = normalizeText(query)
       const nameMatches: Medicine[] = []
@@ -192,7 +192,7 @@ export function useMedicineDatabase({
   )
 
   const getByName = useCallback(
-    (name: string): Medicine | null => {
+    (name: string | null | undefined): Medicine | null => {
       if (!normalizedDatabase || !name) return null
       const n = normalizeText(name)
       const exact = normalizedDatabase.find((entry) => entry.nName === n)

@@ -47,10 +47,27 @@ vi.mock('@protocols/hooks/useTreatmentList', () => ({
 vi.mock('@shared/services', () => ({
   protocolService: { update: vi.fn(), delete: vi.fn() },
   medicineService: { getAll: vi.fn(() => Promise.resolve([])) },
-  treatmentPlanService: { 
+  treatmentPlanService: {
     getAll: vi.fn(() => Promise.resolve([])),
     delete: vi.fn(() => Promise.resolve()),
     getById: vi.fn(() => Promise.resolve({}))
+  },
+  cachedMedicineService: {
+    getAll: vi.fn(() => Promise.resolve([])),
+    getById: vi.fn(() => Promise.resolve(null)),
+    create: vi.fn(() => Promise.resolve({})),
+  },
+  cachedProtocolService: {
+    getById: vi.fn(() => Promise.resolve({})),
+    update: vi.fn(() => Promise.resolve()),
+    delete: vi.fn(() => Promise.resolve()),
+  },
+  cachedTreatmentPlanService: {
+    getAll: vi.fn(() => Promise.resolve([])),
+    getById: vi.fn(() => Promise.resolve({})),
+    create: vi.fn(() => Promise.resolve()),
+    update: vi.fn(() => Promise.resolve()),
+    delete: vi.fn(() => Promise.resolve()),
   },
 }))
 

@@ -111,7 +111,7 @@ function useAdherenceCharts(isComplex) {
     scheduleIdle(async () => {
       try {
         const daily = await adherenceService.getDailyAdherenceFromView(90)
-        setDailyAdherence(daily)
+        setDailyAdherence(daily as any[]) // TODO(040-strict): tipar retorno do service
       } catch (err) { console.error('[HealthHistory] Erro daily adherence:', err.message) }
       if (!patternLoadedRef.current) {
         try {

@@ -3,7 +3,7 @@
  * 
  * Evita violações de no-console e garante que logs não vazem em produção.
  */
-export const debugLog = (message, ...args) => {
+export const debugLog = (message: unknown, ...args: unknown[]) => {
   if (__DEV__) {
     // Usamos um objeto para evitar que o linter detecte o console.log diretamente
     // se a regra for muito estrita, mas geralmente console.log dentro de um 
@@ -13,7 +13,7 @@ export const debugLog = (message, ...args) => {
   }
 }
 
-export const errorLog = (message, ...args) => {
+export const errorLog = (message: unknown, ...args: unknown[]) => {
   if (__DEV__) {
     console.error(message, ...args)
   }

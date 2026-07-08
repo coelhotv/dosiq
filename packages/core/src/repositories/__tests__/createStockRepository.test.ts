@@ -11,7 +11,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createStockRepository } from '../createStockRepository'
 
 // ---------- Mock Supabase fluent builder ----------
-function makeBuilder(result) {
+function makeBuilder(result: any) {
   const builder = {
     _calls: [],
     select:      vi.fn(function (...a) { this._calls.push(['select', a]); return this }),
@@ -24,18 +24,18 @@ function makeBuilder(result) {
     order:       vi.fn(function (...a) { this._calls.push(['order', a]); return this }),
     single:      vi.fn(function ()     { this._calls.push(['single', []]); return Promise.resolve(result) }),
     maybeSingle: vi.fn(function ()     { this._calls.push(['maybeSingle', []]); return Promise.resolve(result) }),
-    then: (resolve) => resolve(result),
+    then: (resolve: any) => resolve(result),
   }
   return builder
 }
 
-function makeClient(result, rpcResult?) {
+function makeClient(result: any, rpcResult?: any) {
   const builder = makeBuilder(result)
   const client = {
     _builder: builder,
-    _rpcCalls: [],
+    _rpcCalls: [] as any[],
     from: vi.fn(() => builder),
-    rpc: vi.fn((name, args) => {
+    rpc: vi.fn((name: any, args: any) => {
       client._rpcCalls.push([name, args])
       return Promise.resolve(rpcResult ?? { data: { ok: true }, error: null })
     }),
@@ -47,7 +47,7 @@ const FAKE_USER = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
 const getUserId = async () => FAKE_USER
 
 describe('createStockRepository — parity', () => {
-  let client
+  let client: any
 
   beforeEach(() => {
     client = makeClient({ data: [], error: null })
@@ -80,8 +80,8 @@ describe('createStockRepository — parity', () => {
       const calls = client._builder._calls
       expect(calls).toContainEqual(['eq', ['user_id', FAKE_USER]])
       // NÃO filtra protocols.active no servidor (apenas user_id + order)
-      expect(calls.find(([m, a]) => m === 'eq' && a[0] === 'protocols.active')).toBeUndefined()
-      const ids = result.map((m) => m.id)
+      expect(calls.find(([m, a]: any) => m === 'eq' && a[0] === 'protocols.active')).toBeUndefined()
+      const ids = result.map((m: any) => m.id)
       expect(ids).toContain('m-keep-stock')
       expect(ids).toContain('m-keep-proto')
       expect(ids).not.toContain('m-drop')
@@ -142,10 +142,10 @@ describe('createStockRepository — parity', () => {
     })
     it('fallback soma manual quando view vazia', async () => {
       // maybeSingle retorna null → cai no fallback (then resolve mesma data... ajustamos)
-      const builder = makeBuilder(null)
+      const builder: any = makeBuilder(null)
       let mode = 'summary'
       builder.maybeSingle = vi.fn(() => Promise.resolve({ data: null, error: null }))
-      builder.then = (resolve) => resolve({ data: [{ quantity: 2 }, { quantity: 3 }], error: null })
+      builder.then = (resolve: any) => resolve({ data: [{ quantity: 2 }, { quantity: 3 }], error: null })
       void mode
       const fbClient = { _builder: builder, from: vi.fn(() => builder), rpc: vi.fn() } as any
       const repo = createStockRepository({ client: fbClient, getUserId })
@@ -175,7 +175,7 @@ describe('createStockRepository — parity', () => {
   describe('decreaseStock', () => {
     it('throws se medicineLogId ausente', async () => {
       const repo = createStockRepository({ client, getUserId })
-      await expect(repo.decreaseStock('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 2, null)).rejects.toThrow(/medicineLogId/)
+      await expect(repo.decreaseStock('a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 2, null as any)).rejects.toThrow(/medicineLogId/)
     })
     it('validation fail → Erro de validação', async () => {
       const repo = createStockRepository({ client, getUserId })
@@ -198,13 +198,13 @@ describe('createStockRepository — parity', () => {
       const repo = createStockRepository({ client, getUserId })
       const LOG_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'
       await repo.increaseStock(MED, 2, { medicine_log_id: LOG_ID, reason: 'estorno' })
-      const call = client._rpcCalls.find(([n]) => n === 'restore_stock_for_log')
+      const call = client._rpcCalls.find(([n]: any) => n === 'restore_stock_for_log')
       expect(call[1]).toMatchObject({ p_medicine_log_id: LOG_ID, p_reason: 'estorno' })
     })
     it('sem medicine_log_id → apply_manual_stock_adjustment delta positivo', async () => {
       const repo = createStockRepository({ client, getUserId })
       await repo.increaseStock(MED, 4, { reason: 'ajuste', notes: 'x' })
-      const call = client._rpcCalls.find(([n]) => n === 'apply_manual_stock_adjustment')
+      const call = client._rpcCalls.find(([n]: any) => n === 'apply_manual_stock_adjustment')
       expect(call[1]).toMatchObject({ p_medicine_id: MED, p_quantity_delta: 4, p_reason: 'ajuste' })
     })
   })
@@ -212,16 +212,16 @@ describe('createStockRepository — parity', () => {
   // ── adjustToBalance (PO-6 delta branches) ──
   describe('adjustToBalance', () => {
     const MED = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
-    function clientWithTotal(total) {
-      const builder = makeBuilder(null)
+    function clientWithTotal(total: any) {
+      const builder: any = makeBuilder(null)
       builder.maybeSingle = vi.fn(() => Promise.resolve({ data: { total_quantity: total }, error: null }))
-      const c = { _builder: builder, _rpcCalls: [], from: vi.fn(() => builder),
-        rpc: vi.fn((name, args) => { c._rpcCalls.push([name, args]); return Promise.resolve({ data: {}, error: null }) }) }
+      const c: any = { _builder: builder, _rpcCalls: [], from: vi.fn(() => builder),
+        rpc: vi.fn((name: any, args: any) => { c._rpcCalls.push([name, args]); return Promise.resolve({ data: {}, error: null }) }) }
       return c as any
     }
     it('throws se reason ausente', async () => {
       const repo = createStockRepository({ client, getUserId })
-      await expect(repo.adjustToBalance(MED, 10, null)).rejects.toThrow(/Motivo/)
+      await expect(repo.adjustToBalance(MED, 10, null as any)).rejects.toThrow(/Motivo/)
     })
     it('throws se newBalance negativo', async () => {
       const repo = createStockRepository({ client, getUserId })
@@ -239,7 +239,7 @@ describe('createStockRepository — parity', () => {
       const repo = createStockRepository({ client: c, getUserId })
       const res = await repo.adjustToBalance(MED, 12, 'compra extra')
       expect(res).toEqual({ delta: 7, before: 5, after: 12 })
-      const call = c._rpcCalls.find(([n]) => n === 'apply_manual_stock_adjustment')
+      const call = c._rpcCalls.find(([n]: any) => n === 'apply_manual_stock_adjustment')
       expect(call[1]).toMatchObject({ p_quantity_delta: 7 })
     })
     it('delta<0 → apply_manual_stock_adjustment com delta negativo', async () => {
@@ -247,7 +247,7 @@ describe('createStockRepository — parity', () => {
       const repo = createStockRepository({ client: c, getUserId })
       const res = await repo.adjustToBalance(MED, 8, 'perda')
       expect(res).toEqual({ delta: -12, before: 20, after: 8 })
-      const call = c._rpcCalls.find(([n]) => n === 'apply_manual_stock_adjustment')
+      const call = c._rpcCalls.find(([n]: any) => n === 'apply_manual_stock_adjustment')
       expect(call[1]).toMatchObject({ p_quantity_delta: -12, p_reason: 'perda' })
     })
     it('sobrevive a destructuring (usa repo.* não this.*)', async () => {

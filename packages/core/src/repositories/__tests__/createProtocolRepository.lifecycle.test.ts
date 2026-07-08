@@ -24,14 +24,14 @@ const PROTOCOL_ROW = {
 
 // Mock fluente que registra operações por tabela e resolve resultados plausíveis.
 function makeClient() {
-  const ops = [] // { table, calls: [[method, args]] }
-  function builder(table) {
+  const ops: any[] = [] // { table, calls: [[method, args]] }
+  function builder(table: any) {
     const b: any = {
       _table: table,
       calls: [],
       _result: { data: table === 'protocols' ? PROTOCOL_ROW : [], error: null },
     }
-    const chain = (name) => vi.fn(function (...a) { b.calls.push([name, a]); return b })
+    const chain = (name: any) => vi.fn(function (...a) { b.calls.push([name, a]); return b })
     b.select = chain('select')
     b.insert = chain('insert')
     b.upsert = chain('upsert')
@@ -52,25 +52,25 @@ function makeClient() {
         : b._result
       return Promise.resolve(res)
     })
-    b.then = (resolve) => resolve(b._result)
+    b.then = (resolve: any) => resolve(b._result)
     ops.push(b)
     return b
   }
-  const client = { _ops: ops, from: vi.fn((t) => builder(t)) }
+  const client = { _ops: ops, from: vi.fn((t: any) => builder(t)) }
   return client as any
 }
 
 const getUserId = async () => 'u1'
 
-function tableOps(client, table) {
-  return client._ops.filter((b) => b._table === table)
+function tableOps(client: any, table: any) {
+  return client._ops.filter((b: any) => b._table === table)
 }
-function methodsFor(client, table) {
-  return tableOps(client, table).flatMap((b) => b.calls.map(([m]) => m))
+function methodsFor(client: any, table: any) {
+  return tableOps(client, table).flatMap((b: any) => b.calls.map(([m]: any) => m))
 }
 
 describe('createProtocolRepository — lifecycle dose_instances', () => {
-  let client, repo
+  let client: any, repo: any
   beforeEach(() => {
     client = makeClient()
     repo = createProtocolRepository({ client, getUserId })
@@ -88,14 +88,14 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     // houve upsert em dose_instances (geração)
     expect(methodsFor(client, 'dose_instances')).toContain('upsert')
     // setGeneratedThrough = update em protocols (além do insert original)
-    const protocolUpdates = tableOps(client, 'protocols').filter((b) => b.calls.some(([m]) => m === 'update'))
+    const protocolUpdates = tableOps(client, 'protocols').filter((b: any) => b.calls.some(([m]: any) => m === 'update'))
     expect(protocolUpdates.length).toBeGreaterThan(0)
   })
 
   it('update active:false (pausa) → marca skipped_paused, NÃO regenera', async () => {
     await repo.update('p1', { active: false })
     const diOps = tableOps(client, 'dose_instances')
-    const methods = diOps.flatMap((b) => b.calls.map(([m]) => m))
+    const methods = diOps.flatMap((b: any) => b.calls.map(([m]: any) => m))
     // marcou skipped_paused (update em dose_instances) mas não fez upsert (sem regen)
     expect(methods).toContain('update')
     expect(methods).not.toContain('upsert')
@@ -104,12 +104,12 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
   it('update active:true (resume) → reativa skipped_paused (update status) + regen (upsert)', async () => {
     await repo.update('p1', { active: true })
     const diOps = tableOps(client, 'dose_instances')
-    const methods = diOps.flatMap((b) => b.calls.map(([m]) => m))
+    const methods = diOps.flatMap((b: any) => b.calls.map(([m]: any) => m))
     // reactivateFuturePaused = update em dose_instances filtrando status=skipped_paused
     expect(methods).toContain('update')
-    const updatedToPending = diOps.some((b) =>
-      b.calls.some(([m, a]) => m === 'update' && a[0]?.status === 'pending') &&
-      b.calls.some(([m, a]) => m === 'eq' && a[0] === 'status' && a[1] === 'skipped_paused')
+    const updatedToPending = diOps.some((b: any) =>
+      b.calls.some(([m, a]: any) => m === 'update' && a[0]?.status === 'pending') &&
+      b.calls.some(([m, a]: any) => m === 'eq' && a[0] === 'status' && a[1] === 'skipped_paused')
     )
     expect(updatedToPending).toBe(true)
     // e regenera a janela
@@ -132,7 +132,7 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     // força erro no caminho de dose_instances
     const brokenClient = makeClient()
     const origFrom = brokenClient.from
-    brokenClient.from = vi.fn((t) => {
+    brokenClient.from = vi.fn((t: any) => {
       const b = origFrom(t)
       if (t === 'dose_instances') b.upsert = vi.fn(() => { throw new Error('boom') })
       return b
