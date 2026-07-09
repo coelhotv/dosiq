@@ -50,7 +50,7 @@ const rl = readline.createInterface({
   crlfDelay: Infinity,
 })
 
-// 2. Integrar Autocomplete: src/features/protocols/components/TreatmentWizard.jsx
+// 2. Integrar Autocomplete: src/features/protocols/components/TreatmentWizard.tsx
 // Adicionar imports
 import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
@@ -112,7 +112,7 @@ EOF
 git add scripts/process-anvisa.js package.json
 git commit -m "fix(medications): correct Mac Roman encoding in ETL"
 
-git add src/features/protocols/components/TreatmentWizard.jsx
+git add src/features/protocols/components/TreatmentWizard.tsx
 git commit -m "feat(protocols): add ANVISA autocomplete to TreatmentWizard"
 ```
 
@@ -130,7 +130,7 @@ gh pr create \
 
 ## Mudanças
 - scripts/process-anvisa.js: iconv-lite piped stream
-- TreatmentWizard.jsx: handlers + autocomplete components
+- TreatmentWizard.tsx: handlers + autocomplete components
 - TreatmentWizard.css: .wizard__label-note class
 
 ## Testes
@@ -244,9 +244,9 @@ FASE 1 (Setup): 10 min
   ✓ git checkout -b feature/fase-5/cost-analysis
 
 FASE 2 (Implementation): 60 min
-  ✓ Criar costAnalysisSchema.js (Zod with .coerce, .min(), .nullable().optional())
-  ✓ Criar costAnalysisService.js (171 linhas, O(M+P) optimized)
-  ✓ Integrar em Stock.jsx (componente CostChart)
+  ✓ Criar costAnalysisSchema.ts (Zod with .coerce, .min(), .nullable().optional())
+  ✓ Criar costAnalysisService.ts (171 linhas, O(M+P) optimized)
+  ✓ Integrar em Stock.tsx (componente CostChart)
   ✓ 524 linhas de testes (getAnalysis, calculate, edge cases)
 
 FASE 3 (Validation): 10 min
@@ -275,9 +275,9 @@ TOTAL: 130 minutos (setup → main merged)
 ```
 
 ### Deliverables
-- ✅ costAnalysisSchema.js (73 linhas)
-- ✅ costAnalysisService.js (171 linhas, 6.7x faster than naive)
-- ✅ Integration em Stock.jsx
+- ✅ costAnalysisSchema.ts (73 linhas)
+- ✅ costAnalysisService.ts (171 linhas, 6.7x faster than naive)
+- ✅ Integration em Stock.tsx
 - ✅ 524 linhas de testes (100% happy path)
 - ✅ Journal entry com aprendizados
 
@@ -328,7 +328,7 @@ const rl = readline.createInterface({ input: decodedStream })
 // Solução: analisar padrão (ex: MedicineAutocomplete em MedicineForm)
 // Depois aplicar ao novo local (TreatmentWizard)
 
-// 1. Ler componente existente (MedicineForm.jsx)
+// 1. Ler componente existente (MedicineForm.tsx)
 // 2. Identificar handler pattern (onSelect callback)
 // 3. Replicar em novo contexto (TreatmentWizard)
 ```

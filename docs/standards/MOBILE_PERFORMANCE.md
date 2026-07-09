@@ -57,10 +57,10 @@ Limites práticos:
 
 ```jsx
 // ✅ CORRETO — view carrega só quando acessada
-const HealthHistory = lazy(() => import('./views/HealthHistory'))
+const HealthHistory = lazy(() => import('./views/HealthHistory.tsx'))
 
 // ❌ ERRADO — vai para o bundle inicial mesmo sem o usuário abrir a view
-import HealthHistory from './views/HealthHistory'
+import HealthHistory from './views/HealthHistory.tsx'
 ```
 
 **Quando usar eager (import estático):**
@@ -76,7 +76,7 @@ Componentes com > 200 linhas não usados no LCP devem ser lazy:
 
 ```jsx
 // ✅ CORRETO — SparklineAdesao é pesado (518 ln), não aparece no primeira renderização
-const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao'))
+const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao.tsx'))
 
 // Depois, envolver com Suspense:
 <Suspense fallback={<SkeletonSVG />}>
@@ -84,7 +84,7 @@ const SparklineAdesao = lazy(() => import('@dashboard/components/SparklineAdesao
 </Suspense>
 
 // ❌ ERRADO — importa sincronamente, bloqueia parse/compile do Safari antes do render
-import SparklineAdesao from '@dashboard/components/SparklineAdesao'
+import SparklineAdesao from '@dashboard/components/SparklineAdesao.tsx'
 ```
 
 ### 2.3 Bibliotecas Pesadas: Dynamic Import no Handler
@@ -116,12 +116,12 @@ manualChunks: {
   'vendor-pdf': ['jspdf', 'html2canvas'],       // só carrega ao exportar
   'feature-medicines-db': ['./apps/web/src/features/medications/data/medicineDatabase.json'], // 819KB
   'feature-history': [                          // Saúde + dependências
-    './apps/web/src/views/HealthHistory.jsx',
-    './apps/web/src/features/adherence/components/AdherenceHeatmap.jsx',
-    './apps/web/src/features/adherence/services/adherencePatternService.js',
+    './apps/web/src/views/HealthHistory.tsx',
+    './apps/web/src/features/adherence/components/AdherenceHeatmap.tsx',
+    './apps/web/src/features/adherence/services/adherencePatternService.ts',
   ],
-  'feature-stock': ['./apps/web/src/views/Stock.jsx'],
-  'feature-landing': ['./apps/web/src/views/Landing.jsx'],
+  'feature-stock': ['./apps/web/src/views/Stock.tsx'],
+  'feature-landing': ['./apps/web/src/views/Landing.tsx'],
 }
 ```
 
@@ -814,7 +814,7 @@ body {
 Execute antes de criar qualquer PR que modifique views, componentes ou configuração de build:
 
 ### 8.1 JavaScript & Bundle
-- [ ] Novas views adicionadas com `lazy()` em App.jsx (nunca sync)
+- [ ] Novas views adicionadas com `lazy()` em App.tsx (nunca sync)
 - [ ] Bibliotecas > 100KB: dynamic import no ponto de uso
 - [ ] `npm run build` → chunk do index principal < 200KB gzipped
 - [ ] `npm run build` → nova lib NÃO aparece no chunk index

@@ -37,7 +37,7 @@ updated_at: "2026-07-08"
 - **Testes existentes**: localizar `__tests__/` do módulo alvo
 
 #### 1.3 Analisar Componentes Base
-- Se integrar componente (ex: Autocomplete): ler `src/features/*/components/{base}.jsx`
+- Se integrar componente (ex: Autocomplete): ler `src/features/*/components/{base}.tsx`
 - Se criar service: ler padrão existente em `src/features/*/services/`
 - Se modificar schema: ler `src/schemas/` equivalente + CHECK constraints do Supabase
 - Usar: `Explore` agent se escopo > 5 arquivos
@@ -65,7 +65,7 @@ git checkout -b feature/fase-N/nome-descritivo
 #### 2.2 Padrões Obrigatórios
 
 **React Hooks** (ordem imutável):
-```jsx
+```tsx
 // 1. Estados
 const [data, setData] = useState()
 
@@ -102,14 +102,16 @@ test(scope): descrição (apenas testes)
 #### 2.3 Checklist por Tipo de Mudança
 
 **✓ Novo Componente**:
-- [ ] Criar `.jsx` + `.css` junto
+- [ ] Criar `.tsx` + `.css` junto
 - [ ] Adicionar JSDoc comentários em português
 - [ ] Integrar imports em index files se necessário
-- [ ] Criar `__tests__/{Component}.test.js`
+- [ ] Criar `__tests__/{Component}.test.tsx`
 - [ ] Mock Supabase se usar servico
+- [ ] Exemplo real no mobile/web
+- [ ] Exportações organizadas
 
 **✓ Novo Service**:
-- [ ] Criar `{name}Service.js`
+- [ ] Criar `{name}Service.ts`
 - [ ] Exportar objeto com métodos públicos
 - [ ] Usar `safeParse` para validações
 - [ ] Adicionar test file com 100% coverage de happy path
@@ -144,7 +146,7 @@ test(scope): descrição (apenas testes)
 - ❌ `select('*')` genérico → ✅ listar colunas necessárias; `{ count: 'exact', head: true }` para counts
 - ❌ Import estático de componente pesado em view crítica → ✅ `React.lazy()` para componentes > 200 linhas fora do LCP
 - ❌ Import estático de service pesado no top-level → ✅ `import()` dinâmico dentro do handler que usa
-- ❌ Re-exportar services pesados em barrel (`@shared/services/index.js`) → ✅ importar direto do arquivo
+- ❌ Re-exportar services pesados em barrel (`@shared/services/index.ts`) → ✅ importar direto do arquivo
 - ❌ Queries de background logo após `setIsLoading(false)` → ✅ `requestIdleCallback(() => ..., { timeout: 2000 })`
 - ❌ Animações com `width`/`height` em `@keyframes` → ✅ `transform: scaleX()` (GPU, zero reflow)
 - ❌ `new Date()` em hot loop (> 100 iterações) → ✅ string comparison `YYYY-MM-DD` (lexicograficamente ordenável)
@@ -181,7 +183,7 @@ npm run validate:quick          # Lint + test:changed (mais rápido)
 #### 3.4 Debug Rápido
 ```bash
 # Testar arquivo específico
-npm run test -- src/features/x/services/y.test.js
+npm run test -- src/features/x/services/y.test.ts
 
 # Modo watch para TDD
 npm run test:watch -- src/features/x/

@@ -112,7 +112,7 @@ npm run validate      # Runs lint + test
 
 ```bash
 # Stage related files
-git add src/components/MedicineForm.jsx
+git add src/components/MedicineForm.tsx
 git add src/components/MedicineForm.css
 
 # Commit with semantic message (in Portuguese)

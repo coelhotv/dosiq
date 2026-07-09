@@ -75,10 +75,10 @@ Este projeto utiliza **Vitest 4.0+** como framework de testes, com uma arquitetu
 
 | Categoria | Convenção de Nomenclatura | Configuração | Comando | Escopo |
 |-----------|---------------------------|-------------|---------|--------|
-| **Smoke** | `*.smoke.test.{js,jsx}` | `vitest.smoke.config.js` | `npm run test:smoke` | Verificação de build, validação de critical paths |
-| **Unit** | `*.test.{js,jsx}` | `vitest.config.js` | `npm run test` | Toda lógica pura: schemas, utils, hooks, services |
-| **Component** | `*.test.jsx` (em components/) | `vitest.config.js` | `npm run test:components` | Renderização e interação de componentes React |
-| **Integration** | `*.integration.test.{js,jsx}` | `vitest.config.js` | `npm run test:integration` | Fluxos cross-service, multi-módulo |
+| **Smoke** | `*.smoke.test.{ts,tsx}` | `vitest.smoke.config.js` | `npm run test:smoke` | Verificação de build, validação de critical paths |
+| **Unit** | `*.test.{ts,tsx}` | `vitest.config.js` | `npm run test` | Toda lógica pura: schemas, utils, hooks, services |
+| **Component** | `*.test.tsx` (em components/) | `vitest.config.js` | `npm run test:components` | Renderização e interação de componentes React |
+| **Integration** | `*.integration.test.{ts,tsx}` | `vitest.config.js` | `npm run test:integration` | Fluxos cross-service, multi-módulo |
 
 ---
 
@@ -99,52 +99,52 @@ apps/web/src/
   features/
     medications/
       services/
-        medicineService.js
+        medicineService.ts
         __tests__/
-          medicineService.test.js
-          medicineService.integration.test.js
+          medicineService.test.ts
+          medicineService.integration.test.ts
   schemas/
-    medicineSchema.js
+    medicineSchema.ts
     __tests__/
-      medicineSchema.test.js
-      medicineSchema.smoke.test.js
+      medicineSchema.test.ts
+      medicineSchema.smoke.test.ts
   utils/
-    adherenceLogic.js
+    adherenceLogic.ts
     __tests__/
-      adherenceLogic.test.js
+      adherenceLogic.test.ts
   shared/hooks/
-    useCachedQuery.js
+    useCachedQuery.ts
     __tests__/
-      useCachedQuery.test.jsx
+      useCachedQuery.test.tsx
   shared/components/
     ui/
-      MedicineCard.jsx
+      MedicineCard.tsx
       __tests__/
-        MedicineCard.test.jsx
+        MedicineCard.test.tsx
   features/
     dashboard/
       hooks/
-        useDashboardContext.jsx
+        useDashboardContext.tsx
         __tests__/
-          useDashboardContext.test.jsx
+          useDashboardContext.test.tsx
       services/
-        insightService.js
+        insightService.ts
         __tests__/
-          insightService.test.js
-
+          insightService.test.ts
+ 
 server/
   bot/
-    tasks.js
+    tasks.ts
     __tests__/
-      tasks.test.js
+      tasks.test.ts
   services/
-    deadLetterQueue.js
+    deadLetterQueue.ts
     __tests__/
-      deadLetterQueue.test.js
+      deadLetterQueue.test.ts
   utils/
-    retryManager.js
+    retryManager.ts
     __tests__/
-      retryManager.test.js
+      retryManager.test.ts
 ```
 
 ---
@@ -153,10 +153,10 @@ server/
 
 | Tipo | Padrão | Exemplo |
 |------|--------|---------|
-| Teste unitário | `{sourceFileName}.test.{js,jsx}` | `medicineSchema.test.js` |
-| Smoke test | `{sourceFileName}.smoke.test.{js,jsx}` | `medicineSchema.smoke.test.js` |
-| Teste de integração | `{sourceFileName}.integration.test.{js,jsx}` | `stockService.integration.test.js` |
-| Teste de componente | `{ComponentName}.test.jsx` | `MedicineCard.test.jsx` |
+| Teste unitário | `{sourceFileName}.test.{ts,tsx}` | `medicineSchema.test.ts` |
+| Smoke test | `{sourceFileName}.smoke.test.{ts,tsx}` | `medicineSchema.smoke.test.ts` |
+| Teste de integração | `{sourceFileName}.integration.test.{ts,tsx}` | `stockService.integration.test.ts` |
+| Teste de componente | `{ComponentName}.test.tsx` | `MedicineCard.test.tsx` |
 
 ---
 
@@ -179,7 +179,7 @@ server/
 
 **Exemplo**:
 ```javascript
-// apps/web/src/schemas/__tests__/medicineSchema.smoke.test.js
+// apps/web/src/schemas/__tests__/medicineSchema.smoke.test.ts
 import { describe, it, expect } from 'vitest'
 import { medicineSchema, validateMedicine } from '../medicineSchema'
 
@@ -217,7 +217,7 @@ describe('medicineSchema - Smoke', () => {
 
 **Exemplo**:
 ```javascript
-// apps/web/src/schemas/__tests__/medicineSchema.test.js
+// apps/web/src/schemas/__tests__/medicineSchema.test.ts
 import { describe, it, expect } from 'vitest'
 import { validateMedicine } from '../medicineSchema'
 
@@ -265,7 +265,7 @@ describe('medicineSchema', () => {
 
 **Exemplo**:
 ```javascript
-// apps/web/src/shared/components/ui/__tests__/Button.test.jsx
+// apps/web/src/shared/components/ui/__tests__/Button.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import Button from '../Button'
@@ -303,7 +303,7 @@ describe('Button', () => {
 
 **Exemplo**:
 ```javascript
-// apps/web/src/services/api/__tests__/logService.integration.test.js
+// apps/web/src/services/api/__tests__/logService.integration.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { logService } from '../logService'
 import { stockService } from '../stockService'
@@ -341,7 +341,7 @@ describe('logService - Integration', () => {
 ### Mocking Supabase
 
 ```javascript
-// __mocks__/supabase.js (mock compartilhado)
+// __mocks__/supabase.ts (mock compartilhado)
 import { vi } from 'vitest'
 
 export const mockSupabase = {
@@ -442,7 +442,7 @@ export default defineConfig({
     hookTimeout: 10000,
     
     // src/ relativo a apps/web/ + server/ na raiz do monorepo
-    include: ['src/**/*.test.{js,jsx}', '../../server/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{ts,tsx}', '../../server/**/*.test.{ts,tsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
@@ -455,8 +455,8 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/test/',
-        'src/main.jsx',
-        'src/App.jsx',
+        'src/main.tsx',
+        'src/App.tsx',
       ],
     },
   },
@@ -474,7 +474,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
-    include: ['src/**/*.smoke.test.{js,jsx}'],
+    include: ['src/**/*.smoke.test.{ts,tsx}'],
     pool: 'threads',
     maxThreads: 1,
     minThreads: 1,
@@ -505,13 +505,13 @@ export default defineConfig({
     hookTimeout: 10000,
     teardownTimeout: 5000,
 
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{ts,tsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/.{idea,git,cache,output,temp}/**',
-      '**/useCachedQueries.test.jsx',
-      '**/useCachedMutation.test.jsx',
+      '**/useCachedQueries.test.tsx',
+      '**/useCachedMutation.test.tsx',
     ],
 
     coverage: { enabled: false },
@@ -537,7 +537,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{ts,tsx}'],
     pool: 'threads',
     maxThreads: 2,
     minThreads: 1,
@@ -548,13 +548,13 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      include: ['src/**/*.{js,jsx}'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/test/',
-        'src/main.jsx',
-        'src/App.jsx',
+        'src/main.tsx',
+        'src/App.tsx',
         '**/__tests__/**',
-        '**/*.test.{js,jsx}',
+        '**/*.test.{ts,tsx}',
         '**/*.config.js',
       ],
       thresholds: {
@@ -585,8 +585,8 @@ export default defineConfig({
     "test:lowram": "vitest run --config vitest.lowram.config.js",
     "test:changed": "vitest run --changed=main",
     "test:coverage": "vitest run --config vitest.ci.config.js",
-    "test:components": "vitest run 'src/**/components/**/__tests__/*.test.jsx'",
-    "test:services": "vitest run 'src/**/services/**/__tests__/*.test.js'",
+    "test:components": "vitest run 'src/**/components/**/__tests__/*.test.tsx'",
+    "test:services": "vitest run 'src/**/services/**/__tests__/*.test.ts'",
     "validate:quick": "npm run lint && node scripts/run-tests-with-timeout.mjs 300 npm run test:changed",
     "validate:agent": "node scripts/run-tests-with-timeout.mjs 600 npm run -- test:critical --bail=1",
     "validate:full": "npm run lint && node scripts/run-tests-with-timeout.mjs 900 npm run test:coverage && npm run build"
@@ -745,7 +745,7 @@ Exemplo:
 ```javascript
 // Temporário — exclusão de 2 semanas (resolver até 2026-03-08)
 // TODO: FIXME — https://github.com/project/issues/123
-'src/shared/hooks/__tests__/useCachedQuery.test.jsx',
+'src/shared/hooks/__tests__/useCachedQuery.test.tsx',
 ```
 
 ---
@@ -892,7 +892,7 @@ Usa execução sequencial e exclui testes memory-intensive.
 **Opção 2 - Para desenvolvimento**:
 ```bash
 # Rode testes em arquivo individual (cada arquivo = novo worker)
-NODE_ENV=test npx vitest run src/shared/hooks/__tests__/useCachedQuery.test.jsx
+NODE_ENV=test npx vitest run src/shared/hooks/__tests__/useCachedQuery.test.tsx
 
 # Rode sem cache accumulation
 npm run test:smoke  # Testes básicos, sempre funciona
