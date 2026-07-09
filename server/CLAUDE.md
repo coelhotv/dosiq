@@ -1,28 +1,49 @@
 # server/ — Telegram Bot
 
-> Referencia para agentes trabalhando no bot Telegram.
+> Referência para agentes trabalhando no bot Telegram.
 
-## Estrutura
+## Estrutura (Pós-040 TypeScript)
 
 ```
 server/bot/
-  tasks.js            # ~939 linhas — schedulers + message formatters (ARQUIVO PRINCIPAL)
-  scheduler.js        # Cron scheduling
-  bot-factory.js      # Instanciacao do bot
-  health-check.js     # Monitoramento de saude
-  logger.js           # Logging estruturado
-  correlationLogger.js # UUID tracing para requests
-  callbacks/          # Handlers de callback (botoes inline)
-  commands/           # Handlers de comandos (/start, /status, etc.)
-  middleware/         # Processamento de requests
-  utils/              # Funcoes helper
+  tasks.ts             # schedulers + message formatters (ARQUIVO PRINCIPAL)
+  scheduler.ts         # Cron scheduling
+  bot-factory.ts       # Instanciação do bot (Telegraf)
+  health-check.ts      # Monitoramento de saúde e comandos /health
+  logger.ts            # Logging estruturado
+  correlationLogger.ts  # UUID tracing para requests
+  alerts.ts            # Orquestrador de alertas inteligentes
+  inlineQuery.ts       # Handlers de busca inline
+  _adherenceHelpers.ts # Helpers internos de adesão
+  _reminderHelpers.ts  # Helpers internos de lembretes
+  callbacks/           # Handlers de callback (botões inline)
+  commands/            # Handlers de comandos (/start, /status, etc.)
+  middleware/          # Processamento de requests e sessões
+  utils/               # Funções helper (formatação de datas, etc.)
 ```
 
-## Message Formatter Pattern
+## Regra de Resolução ESM (CRÍTICO)
 
-```javascript
-// server/bot/tasks.js — padrao para novas mensagens
-function formatNovaAlertaMessage(data) {
+> [!IMPORTANT]
+> **Extensões de Import ESM**: O projeto usa a resolução ESM padrão do Node.js (`node16`/`nodenext`). Isso exige que todos os imports relativos dentro de `server/` **devem obrigatoriamente** incluir a extensão `.js` no caminho do import, mesmo que o arquivo físico no disco seja `.ts`.
+>
+> **Exemplo correto**: `import { escapeMarkdownV2 } from './utils/formatters.js'`  
+> **Exemplo incorreto**: `import { escapeMarkdownV2 } from './utils/formatters'` (isso causará quebra de execução do servidor).
+
+---
+
+## Message Formatter Pattern (TypeScript)
+
+```typescript
+import { escapeMarkdownV2 } from './utils/formatters.js'
+
+interface NovaAlertaData {
+  name?: string;
+  dosage?: number;
+  notes?: string;
+}
+
+function formatNovaAlertaMessage(data: NovaAlertaData): string {
   const name = escapeMarkdownV2(data.name || 'Medicamento')
   const dosage = escapeMarkdownV2(String(data.dosage ?? 1))
 
@@ -40,84 +61,84 @@ function formatNovaAlertaMessage(data) {
 }
 ```
 
-## REGRAS CRITICAS
+---
+
+## REGRAS CRÍTICAS
 
 ### MarkdownV2 Escaping
-```javascript
-// SEMPRE usar escapeMarkdownV2() para TODA string de usuario
-// Ordem de escape: backslash PRIMEIRO, depois outros caracteres
+```typescript
+// SEMPRE usar escapeMarkdownV2() para TODA string que venha do banco ou input do usuário
+// Ordem de escape interna: backslash PRIMEIRO, depois outros caracteres especiais
 const safe = escapeMarkdownV2(unsafeString)
 ```
 
-### Callback Data
-```javascript
-// MAXIMO 64 bytes — usar indices numericos, NUNCA UUIDs
-// CORRETO
-const callbackData = `reg_med:${index}`          // ~12 bytes
-const callbackData = `confirm:${protocolIndex}`   // ~12 bytes
-
-// ERRADO — excede 64 bytes
-const callbackData = `register:${uuid}`           // ~45+ bytes
+### Callback Data (Max 64 Bytes)
+```typescript
+// O payload de botões inline do Telegram tem limite de 64 bytes.
+// Usar índices numéricos e strings de identificação curtas. NUNCA passar UUIDs diretamente.
+const callbackData = `reg_med:${index}`          // Correto (~12 bytes)
+const callbackData = `confirm:${protocolIndex}`   // Correto (~12 bytes)
 ```
 
 ### Session
-```javascript
-// SEMPRE obter session e userId dinamicamente
+```typescript
+// SEMPRE obter session e userId de forma dinâmica a partir da biblioteca de contexto
 const session = await getSession(chatId)
 const userId = session.get('userId')
-// NUNCA hardcodar userId
+// NUNCA hardcodar ou assumir userId global
 ```
 
-### Notificacoes
-```javascript
-// shouldSendNotification() ja faz log internamente
-// NUNCA chamar logNotification() DEPOIS de shouldSendNotification()
+### Notificações e Deduplicação
+```typescript
+// shouldSendNotification() verifica limites e já realiza logs internos
+// Evite chamadas duplicadas a logNotification() após a verificação de envio.
 if (await shouldSendNotification(userId, type, protocolId)) {
   await sendMessage(chatId, message)
-  // NAO chamar logNotification() aqui — ja foi feito
 }
 ```
 
-### Deduplicacao
-```javascript
-// Usar notificationDeduplicator para evitar notificacoes duplicadas
-// Tipos existentes: 'dose_reminder', 'stock_alert', 'soft_reminder', etc.
-// Para novos tipos: adicionar ao deduplicator com novo tipo string
-```
+---
 
 ## Formatadores Existentes
 
-| Funcao | Tipo | Descricao |
-|--------|------|-----------|
-| `formatDoseReminderMessage` | Dose reminder | Lembrete de dose com medicamento, dosagem, horario |
-| `formatSoftReminderMessage` | Soft reminder | Lembrete suave para dose perdida |
-| `formatStockAlertMessage` | Stock alert | Alerta de estoque baixo/zerado |
-| `formatTitrationMessage` | Titulation | Notificacao de mudanca de titulacao |
-| `formatDailyDigestMessage` | Digest | Resumo diario |
-| `formatWeeklyReportMessage` | Report | Relatorio semanal de adesao |
-| `formatMonthlyReportMessage` | Report | Relatorio mensal |
+| Função | Tipo de Mensagem | Descrição |
+|--------|------------------|-----------|
+| `formatDoseReminderMessage` | Lembrete de Dose | Medicamento, dosagem, horário e botões de ação |
+| `formatSoftReminderMessage` | Lembrete Suave | Alerta sobre dose perdida recente (+15min) |
+| `formatStockAlertMessage` | Alerta de Estoque | Notificação de estoque baixo ou zerado |
+| `formatTitrationMessage` | Titulação | Instruções sobre mudança de fase de titulação |
+| `formatDailyDigestMessage` | Daily Digest | Resumo diário de adesão do usuário |
+| `formatWeeklyReportMessage` | Relatório Semanal | Estatísticas e gráficos de adesão semanais |
+| `formatMonthlyReportMessage` | Relatório Mensal | Relatório completo de adesão do mês |
+
+---
 
 ## Comandos do Bot
 
-| Comando | Descricao |
+| Comando | Descrição |
 |---------|-----------|
-| `/start` | Iniciar bot + configurar conta |
-| `/status` | Status geral (adesao, estoque) |
-| `/estoque` | Ver estoque de medicamentos |
-| `/hoje` | Doses de hoje |
-| `/proxima` | Proxima dose programada |
-| `/historico` | Historico recente de doses |
-| `/registrar` | Registrar dose tomada |
-| `/adicionar_estoque` | Adicionar estoque |
+| `/start` | Iniciar interação com o bot + vincular conta Dosiq |
+| `/status` | Status geral do tratamento e protocolos ativos |
+| `/estoque` | Consulta de estoque atual de medicamentos |
+| `/hoje` | Lista das doses programadas para o dia atual |
+| `/proxima` | Consulta da próxima dose agendada |
+| `/historico` | Histórico de doses tomadas recentemente |
+| `/registrar` | Registro interativo de dose tomada retroativa |
+| `/adicionar_estoque` | Adiciona estoque de forma interativa |
 
-## Para Adicionar Novo Tipo de Notificacao
+---
 
-1. Criar formatter em `tasks.js` seguindo o padrao acima
-2. Adicionar novo tipo ao `notificationDeduplicator`
-3. Criar funcao `sendNovaNotificacao()` que:
-   - Chama `shouldSendNotification(userId, 'novo_tipo', entityId)`
-   - Formata mensagem com `formatNovaMessage()`
-   - Envia com `bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' })`
-   - Wrapa resultado com `wrapSendMessageResult(result, correlationId)`
-4. Integrar na schedule do cron (`api/notify.js`) ou no scheduler
-5. Adicionar testes em `server/bot/__tests__/`
+## Para Adicionar Novo Tipo de Notificação
+
+1. Criar o formatador em `tasks.ts` seguindo o padrão tipado acima.
+2. Adicionar o novo identificador de notificação ao `notificationDeduplicator` para prevenir envios redundantes.
+3. Criar a lógica de envio:
+   - Verificar permissão com `shouldSendNotification(userId, 'novo_tipo', entityId)`.
+   - Gerar a mensagem formatada.
+   - Enviar via `bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' })` com tratamento de erro.
+4. Integrar o disparo na agenda cron (em `api/notify.ts`) ou nos schedulers correspondentes.
+5. Adicionar testes unitários sob `server/bot/__tests__/`.
+
+---
+
+*Última atualização: 2026-07-09*

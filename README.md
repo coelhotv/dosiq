@@ -4,7 +4,7 @@
 
 Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples e eficiente. Agora com **Autenticação Multi-usuário**, **Planos de Tratamento complexos** e **Titulação de Dose**.
 
-![Version](https://img.shields.io/badge/version-4.0.0-blue?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-4.15.4-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript_5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -14,11 +14,11 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-3E67B3?style=for-the-badge&logo=zod&logoColor=white)
-![Coverage](https://img.shields.io/badge/coverage-140%2B%20tests-brightgreen?style=for-the-badge)
+![Coverage](https://img.shields.io/badge/coverage-1520%2B%20tests-brightgreen?style=for-the-badge)
 
 ---
 
-## 🎯 Funcionalidades (v4.0.0)
+## 🎯 Funcionalidades (v4.15.4)
 
 ### Phase 4-5 - Consolidação PWA e Dados ANVISA
 
@@ -111,7 +111,7 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 - ✅ **Edição e Exclusão**: Flexibilidade total para ajustar registros passados com restauração automática de estoque.
 - ✅ **Registros Retroativos**: Registro de doses em qualquer data/hora com ajuste de fuso horário local.
 - ✅ **Dashboard Premium**: Interface Neo-Glass com saudações dinâmicas e indicadores em tempo real.
-- ✅ **Garantia de Qualidade**: Suíte de testes unitários com Vitest (140+ testes) e linting rigoroso.
+- ✅ **Garantia de Qualidade**: Suíte de testes unitários com Vitest (1520+ testes) e linting rigoroso.
 
 ## 🚀 Roadmap Futuro
 
@@ -129,8 +129,8 @@ Gerencie seus medicamentos, protocolos de tratamento e estoque de forma simples 
 - **Validação**: Zod 4.x (schemas runtime; tipos estáticos derivados via `z.infer<>`)
 - **Cache**: SWR (Stale-While-Revalidate) customizado - 95% mais rápido
 - **Styling**: CSS Vanilla com design system customizado
-- **Deployment**: Vercel (Frontend, API Webhooks & Cron Jobs) + Supabase (Database)
-- **Testes**: Vitest + React Testing Library (140+ testes)
+- **Deployment**: Vercel (Frontend, API Webhooks & Serveless Functions) + Supabase (Database)
+- **Testes**: Vitest + React Testing Library (1520+ testes)
 - **Custo**: R$ 0 (tier gratuito)
 
 ---
@@ -400,7 +400,7 @@ Para dúvidas ou problemas:
 - 7 novos eventos: `pwa_installed`, `push_opted_in/out`, `offline_session`, etc.
 
 **F4.5: Bot Standardization**
-- Utilities `messageFormatter.js` e `errorHandler.js`
+- Utilities `messageFormatter.ts` e `errorHandler.ts`
 - 49 testes unitários para bot
 - MarkdownV2 escaping centralizado
 - >30% redução de código duplicado
@@ -412,7 +412,7 @@ Para dúvidas ou problemas:
 - 150+ arquivos migrados sem breaking changes
 
 #### 📊 Estatísticas
-- **Total de testes**: 140+ (93 críticos + 11 smoke + 36+ componentes)
+- **Total de testes**: 1520+ (incluindo testes críticos, smoke e componentes)
 - **Cobertura Phase 4**: 100% dos novos features
 - **Bundle size**: 762KB (gzipped: 219KB)
 - **Build time**: ~9.5s
@@ -438,4 +438,4 @@ Para dúvidas ou problemas:
 ---
 
 **Versão**: 4.15.4 (040: monorepo 100% TypeScript)
-**Última atualização**: 08 Julho 2026
+**Última atualização**: 09 Julho 2026

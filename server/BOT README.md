@@ -7,20 +7,20 @@ Para detalhes sobre a arquitetura do sistema de notificações, consulte:
 
 ---
 
-## 📁 Estrutura de Pastas
+## 📁 Estrutura de Pastas (Pós-040 TypeScript)
 
 ```
 server/bot/
 ├── commands/               # Handlers para comandos (/start, /status, etc.)
-│   ├── start.js           # Vinculação de conta
-│   ├── status.js          # Resumo de protocolos
-│   ├── hoje.js            # Cronograma diário
-│   └── registrar.js       # Registro interativo de dose
+│   ├── start.ts           # Vinculação de conta
+│   ├── status.ts          # Resumo de protocolos
+│   ├── hoje.ts            # Cronograma diário
+│   └── registrar.ts       # Registro interativo de dose
 ├── callbacks/
-│   └── doseActions.js     # Handlers para botões de notificação (Tomar/Pular)
-├── tasks.js               # Lógica de tarefas agendadas (reminders, reports)
-├── bot-factory.js         # Instanciação do bot (Telegraf)
-└── logger.js              # Logger estruturado para o bot
+│   └── doseActions.ts     # Handlers para botões de notificação (Tomar/Pular)
+├── tasks.ts               # Lógica de tarefas agendadas (reminders, reports)
+├── bot-factory.ts         # Instanciação do bot (Telegraf)
+└── logger.ts              # Logger estruturado para o bot
 ```
 
 ## 🚀 Desenvolvimento Local
@@ -37,7 +37,7 @@ O bot iniciará em modo de **polling** localmente, ignorando os webhooks da Verc
 
 ## 🧪 Testando Tarefas Agendadas
 
-Como o bot local não roda o cron da Vercel automaticamente, você pode testar as funções de `tasks.js` chamando-as diretamente em um script de teste ou modificando temporariamente o `index.js`.
+Como o bot local não roda o cron da Vercel automaticamente, você pode testar as funções de `tasks.ts` chamando-as diretamente em um script de teste ou modificando temporariamente o `index.ts`.
 
 Funções principais para teste:
 - `checkRemindersViaDispatcher()`: Simula o cron de lembretes de dose.
@@ -46,6 +46,6 @@ Funções principais para teste:
 
 ## 📝 Convenções Técnicas
 
-1. **MarkdownV2**: O Telegram exige escape de caracteres especiais. Use `escapeMarkdownV2()` de `server/utils/formatters.js` em todas as strings dinâmicas.
+1. **MarkdownV2**: O Telegram exige escape de caracteres especiais. Use `escapeMarkdownV2()` de `server/utils/formatters.ts` em todas as strings dinâmicas.
 2. **Atomic Logs**: Sempre use os serviços em `src/shared/services/` para garantir que as mutações de banco (logs de dose, estoque) sejam transacionais.
 3. **Correlation ID**: Todos os logs do bot incluem um `correlationId` para facilitar o rastreamento de fluxos complexos.
