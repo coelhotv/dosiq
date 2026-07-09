@@ -299,7 +299,7 @@ WHERE id = '<uuid-do-nudge>';
 |-------|---------|
 | `screen` não existe no stack do `tab` | Consultar [Dicionário de Rotas](#dicionário-de-rotas-campo-screen-e-tab) |
 | Usou `route` em vez de `tab+screen` para cross-tab | Usar ambos: `tab` + `screen` |
-| Nome de rota com erro de digitação | Valores são case-sensitive; conferir em `routes.js` |
+| Nome de rota com erro de digitação | Valores são case-sensitive; conferir em `routes.ts` |
 
 ---
 

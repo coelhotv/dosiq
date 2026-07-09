@@ -85,7 +85,7 @@ O app mobile usa:
 Pacotes compartilhados não devem ler `process.env` diretamente. A leitura pública do ambiente mobile já está centralizada em:
 
 - `apps/mobile/app.config.js`
-- `apps/mobile/src/platform/config/nativePublicAppConfig.js`
+- `apps/mobile/src/platform/config/nativePublicAppConfig.ts`
 
 ---
 

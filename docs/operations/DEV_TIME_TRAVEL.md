@@ -48,7 +48,7 @@ core (offset injetável, puro)  ←  plataforma seta o offset em __DEV__
      getNow/getRawNow/getTodayLocal/getYesterdayLocal lêem Date REAL + offset
 ```
 
-### 1. Core — `packages/core/src/utils/dateUtils.js`
+### 1. Core — `packages/core/src/utils/dateUtils.ts`
 
 Adicionar um offset em ms aplicado SÓ às funções de "agora". **Usar `new Date().getTime()`
 (não `Date.now()`)** — senão mocks de construtor `Date` em testes (ex. `titrationUtils.test`) quebram,
@@ -66,13 +66,13 @@ export function getRawNow() { return new Date(_nowMs()) }
 // getTodayLocal / getYesterdayLocal idem: trocar `new Date()` por `new Date(_nowMs())`.
 ```
 
-Exportar `__setDevNowOffsetMs` / `__getDevNowOffsetMs` no barrel `packages/core/src/utils/index.js`.
+Exportar `__setDevNowOffsetMs` / `__getDevNowOffsetMs` no barrel `packages/core/src/utils/index.ts`.
 
 > **Importante:** `getTodayLocal`/`getYesterdayLocal` também precisam honrar o offset — o write-path
 > e o fetch do dashboard (fronteiras de dia) dependem deles; senão a janela buscada não cobre o dia
 > deslocado.
 
-### 2. Web — `apps/web/src/shared/utils/devTimeTravel.js` (+ init em `main.jsx`)
+### 2. Web — `apps/web/src/shared/utils/devTimeTravel.ts` (+ init em `main.tsx`)
 
 Lê o offset de `localStorage` (persiste no reload), aplica no boot, expõe helpers no `window`.
 Gated `import.meta.env.DEV` → NO-OP em prod.
@@ -105,7 +105,7 @@ export function initDevTimeTravel() {
 }
 ```
 
-`main.jsx`: `import { initDevTimeTravel } from '@shared/utils/devTimeTravel'; initDevTimeTravel()` antes do `createRoot`.
+`main.tsx`: `import { initDevTimeTravel } from '@shared/utils/devTimeTravel'; initDevTimeTravel()` antes do `createRoot`.
 
 **Uso (console, build dev `npm run dev`):**
 ```js
@@ -115,7 +115,7 @@ __devNowReset()          // tempo real
 ```
 Sempre **reload** após cada comando.
 
-### 3. Mobile — `apps/mobile/src/shared/utils/devTimeTravel.js` (+ init em `AppRoot` + botões no DevHub)
+### 3. Mobile — `apps/mobile/src/shared/utils/devTimeTravel.ts` (+ init em `AppRoot.tsx` + botões no DevHub)
 
 Igual ao web, mas offset em `AsyncStorage` e controles via Dev Hub (sem console). Gated `__DEV__`.
 
@@ -147,9 +147,9 @@ export async function resetDevOffset() { if (__DEV__) { __setDevNowOffsetMs(0); 
 export function getDevOffsetMinutes() { return Math.round(__getDevNowOffsetMs() / 60_000) }
 ```
 
-`AppRoot.jsx`: `useEffect(() => { initDevTimeTravel() }, [])`.
+`AppRoot.tsx`: `useEffect(() => { initDevTimeTravel() }, [])`.
 
-Botões no `DevHubScreen.jsx` (cada um chama `apply()` → set + `Alert` "reabra a aba Hoje"):
+Botões no `DevHubScreen.tsx` (cada um chama `apply()` → set + `Alert` "reabra a aba Hoje"):
 - 🌙 **Pré (23:30):** `anchorDevNowAt('23:30')` → valida "Em breve".
 - 🌑 **Pós (amanhã 00:30):** `anchorDevNowAt('00:30', 1)` → valida "Pendências de ontem".
 - ↩️ **Reset:** `resetDevOffset()`.

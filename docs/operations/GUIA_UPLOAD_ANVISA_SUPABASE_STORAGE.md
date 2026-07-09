@@ -193,7 +193,7 @@ No dashboard do bucket → **"Configuration"** → **"Cache control"**:
 Quando atualizar a base ANVISA:
 
 1. Substitua os arquivos em `anvisa/v1/` (mesma versão) → app mobile detecta via `manifest.generatedAt` e re-baixa em background
-2. **OU** crie nova pasta `anvisa/v2/` para mudança breaking → bump da constante `ANVISA_VERSION` no código mobile (`useMedicineDatabase.js`) → app mobile reseta cache e baixa do zero
+2. **OU** crie nova pasta `anvisa/v2/` para mudança breaking → bump da constante `ANVISA_VERSION` no código mobile (`useMedicineDatabase.ts`) → app mobile reseta cache e baixa do zero
 
 ---
 
