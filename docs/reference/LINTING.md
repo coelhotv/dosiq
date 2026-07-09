@@ -87,10 +87,10 @@ Para manter as funções pequenas, legíveis e testáveis, limitamos a complexid
 
 ### Overrides por Domínio
 O linter foi configurado com permissões estendidas baseadas no tipo de arquivo:
-1.  **Componentes React (.jsx):** Limite de **150 linhas** e complexidade **20** (para tolerar estruturação de layouts complexos).
-2.  **API Handlers (`api/**/*.js`):** Limite de **150 linhas** e complexidade **20** (por conta de parses e validações JSON).
-3.  **Hooks Customizados e Repositórios (`**/hooks/**/*.js`, `packages/core/src/repositories/**/*.js`):** Limite estendido para **250 linhas** e complexidade **25**.
-4.  **Testes (`**/*.test.js`):** Regras de complexidade e tamanho de função são **desativadas** por completo.
+1.  **Componentes React (.tsx):** Limite de **150 linhas** e complexidade **20** (para tolerar estruturação de layouts complexos).
+2.  **API Handlers (`api/**/*.ts`):** Limite de **150 linhas** e complexidade **20** (por conta de parses e validações JSON).
+3.  **Hooks Customizados e Repositórios (`**/hooks/**/*.ts`, `packages/core/src/repositories/**/*.ts`):** Limite estendido para **250 linhas** e complexidade **25**.
+4.  **Testes (`**/*.test.ts`, `**/*.test.tsx`):** Regras de complexidade e tamanho de função são **desativadas** por completo.
 
 ---
 

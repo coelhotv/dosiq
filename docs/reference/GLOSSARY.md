@@ -29,7 +29,7 @@ Aplicam-se a TODA UI do app (mobile + web).
 | **Sem pronomes possessivos** em headers, placeholders, subtitles, CTAs (proibido: "meu/minha/meus/minhas/sua/seu/seus") | App pode ser usado por cuidadores/familiares; remédios/tratamentos não são "deles" | ❌ "Meus Tratamentos" → ✅ "Tratamentos" ❌ "Buscar nos meus medicamentos" → ✅ "Buscar em medicamentos" |
 | **"Uso contínuo"** em vez de "Sem prazo" para `end_date` null em tratamentos | Termo mais claro para paciente — comunica intent | ❌ "Sem prazo" → ✅ "Uso contínuo" |
 | **Unidades formatadas via helper** (`pluralizeDoseUnit`/`formatDoseUnit`) | Nunca hardcoded "comprimidos" — render correto baseado em `medicine.dosage_unit` | `formatDoseUnit(15, 'ml')` → `"15 ml"` `formatDoseUnit(2, 'mg')` → `"2 comprimidos"` |
-| **Datas PT-BR** formato `"12 mar 2026"` (`DD MMM YYYY`, mês abreviado lowercase) | Padrão visual brasileiro | Via `formatDatePtBR` em `@dosiq/core/utils/dateFormat.js` |
+| **Datas PT-BR** formato `"12 mar 2026"` (`DD MMM YYYY`, mês abreviado lowercase) | Padrão visual brasileiro | Via `formatDatePtBR` em `@dosiq/core/utils/dateFormat.ts` |
 | **Vírgula decimal** em valores numéricos exibidos | Convenção PT-BR | `15,5 ml` (não `15.5 ml`) — via helper manual `.replace('.', ',')` (Hermes default NÃO tem ICU completo; `toLocaleString('pt-BR')` cai em fallback US e mantém ponto) |
 | **Sem ponto final** em microcopy curto (titles, CTAs, labels) | Estilo mobile-first | ❌ "Criar tratamento." → ✅ "Criar tratamento" |
 | **Verbos de CTA no infinitivo** | Padrão | "Criar tratamento", "Excluir", "Salvar alterações" |
@@ -115,11 +115,11 @@ Aplicam-se a TODA UI do app (mobile + web).
 
 | Helper | Local | Quando usar |
 |--------|-------|-------------|
-| `formatDoseUnit(qty, dosage_unit)` | `@dosiq/core/utils/doseUnit.js` (Fase 2) | Qualquer render de quantidade de dose em UI |
+| `formatDoseUnit(qty, dosage_unit)` | `@dosiq/core/utils/doseUnit.ts` (Fase 2) | Qualquer render de quantidade de dose em UI |
 | `pluralizeDoseUnit(qty, dosage_unit)` | mesmo | Suffix de input dinâmico |
-| `formatDatePtBR(isoDate)` | `@dosiq/core/utils/dateFormat.js` (Fase 2) | Qualquer render de data |
+| `formatDatePtBR(isoDate)` | `@dosiq/core/utils/dateFormat.ts` (Fase 2) | Qualquer render de data |
 | `formatEndDate(isoDate)` | mesmo | `end_date` de tratamento (null → "Uso contínuo") |
-| `getTodayLocal()` | `@dosiq/core/utils/dateUtils.js` (existente) | NUNCA usar `new Date()` direto (R-020) |
+| `getTodayLocal()` | `@dosiq/core/utils/dateUtils.ts` (existente) | NUNCA usar `new Date()` direto (R-020) |
 | `parseLocalDate(str)` | mesmo | Parse de "YYYY-MM-DD" para Date sem timezone bug |
 
 ---
@@ -141,7 +141,7 @@ Componentes interativos DEVEM ter `accessibilityLabel` em PT-BR, descritivo. Exe
 
 ## 6. Mensagens de erro Zod (R-232 — Dona Maria friendly)
 
-Locale global em `@dosiq/core/zodSetup.js` cobre defaults. Schemas só sobrescrevem quando regra dá info útil:
+Locale global em `@dosiq/core/zodSetup.ts` cobre defaults. Schemas só sobrescrevem quando regra dá info útil:
 
 | Default global (não duplicar) | Quando sobrescrever |
 |-------------------------------|---------------------|

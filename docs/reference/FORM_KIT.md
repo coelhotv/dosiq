@@ -44,7 +44,7 @@ Conjunto de hooks e componentes reutilizáveis para construção de formulários
 
 ### `useFormState`
 
-`apps/mobile/src/shared/hooks/useFormState.js`
+`apps/mobile/src/shared/hooks/useFormState.tsx`
 
 Hook genérico Zod-aware para gerenciar estado de formulário.
 
@@ -71,7 +71,7 @@ form.setValues(partial)  // merge — útil para auto-fill
 
 ### `useMutation`
 
-`apps/mobile/src/shared/hooks/useMutation.js`
+`apps/mobile/src/shared/hooks/useMutation.ts`
 
 Hook para mutations C/U/D com guards e feedback.
 
@@ -94,7 +94,7 @@ await mutate(() => medicineService.create(form.values))
 
 ### `useMedicineDatabase`
 
-`apps/mobile/src/shared/hooks/useMedicineDatabase.js`
+`apps/mobile/src/shared/hooks/useMedicineDatabase.ts`
 
 Cache local + busca na base ANVISA (~6800 medicamentos) com sync background.
 
@@ -137,7 +137,7 @@ Todos usam `tokens` (sem cores literais) e `StyleSheet.create()`.
 
 ### `FormInput`
 
-`@shared/components/form/FormInput.jsx`
+`@shared/components/form/FormInput.tsx`
 
 `TextInput` controlled com:
 - Animação spring na borda quando entra em estado de erro.
@@ -147,13 +147,13 @@ Todos usam `tokens` (sem cores literais) e `StyleSheet.create()`.
 
 ### `FormSelect`
 
-`@shared/components/form/FormSelect.jsx`
+`@shared/components/form/FormSelect.tsx`
 
 Trigger igual `FormInput` + modal sheet com `FlatList` de opções. Opções `{ label, value }[]`. Estado selecionado destacado. Tap fora ou X fecha.
 
 ### `FormDatePicker` / `FormTimePicker`
 
-`@shared/components/form/FormDatePicker.jsx` · `FormTimePicker.jsx`
+`@shared/components/form/FormDatePicker.tsx` · `FormTimePicker.tsx`
 
 - iOS: modal slide-from-bottom com `DateTimePicker` spinner (`textColor` + `themeVariant="light"` explícitos — previne texto invisível em devices com dark mode forçado).
 - Android: `DateTimePickerAndroid.open` imperativo (dialog nativo).
@@ -162,19 +162,19 @@ Trigger igual `FormInput` + modal sheet com `FlatList` de opções. Opções `{ 
 
 ### `FormSection`
 
-`@shared/components/form/FormSection.jsx`
+`@shared/components/form/FormSection.tsx`
 
 Wrapper visual: title (uppercase eyebrow) + description + `gap` entre filhos.
 
 ### `FormActions`
 
-`@shared/components/form/FormActions.jsx`
+`@shared/components/form/FormActions.tsx`
 
 Row primary + secondary. `primaryLoading` mostra `ActivityIndicator`. `destructive=true` deixa o primary vermelho.
 
 ### `FormAutocomplete`
 
-`@shared/components/form/FormAutocomplete.jsx`
+`@shared/components/form/FormAutocomplete.tsx`
 
 Input com overlay de sugestões — para uso **inline em forms** onde overlay basta. Para tela dedicada de browse, ver `AnvisaSearchScreen`.
 
@@ -202,11 +202,11 @@ Input com overlay de sugestões — para uso **inline em forms** onde overlay ba
 
 ### `DeleteConfirmation`
 
-`@shared/components/feedback/DeleteConfirmation.jsx`
+`@shared/components/feedback/DeleteConfirmation.tsx`
 
 Bottom sheet modal de confirmação destrutiva. Dispara `warningHaptic` ao abrir.
 
-```jsx
+```tsx
 <DeleteConfirmation
   visible={open}
   title="Excluir medicamento"
@@ -224,12 +224,12 @@ Reusa `FormActions` com `destructive=true`.
 
 ### Toast
 
-`@shared/components/feedback/Toast.jsx`
+`@shared/components/feedback/Toast.tsx`
 
 Provider montado em `AppRoot` (root). Hook `useToast()` retorna `{ show }`.
 
-```jsx
-// AppRoot.jsx (uma vez):
+```tsx
+// AppRoot.tsx (uma vez):
 <SafeAreaProvider>
   <ToastProvider>
     <Navigation />
@@ -274,14 +274,14 @@ Todas são funções sem args, fire-and-forget. Não precisa `await` nem `try/ca
 
 ### `MedicineAnvisaSheet` (Fase 1 — pattern canônico)
 
-`apps/mobile/src/features/medications/components/MedicineAnvisaSheet.jsx`
+`apps/mobile/src/features/medications/components/MedicineAnvisaSheet.tsx`
 
 Bottom sheet 85% altura sobreposto ao form de medicamento. Substitui a versão fullscreen anterior (`AnvisaSearchScreen` — **REMOVIDO** na Sprint M1.2).
 
 **Razão da escolha bottom sheet**: preserva contexto do form aberto; após selecionar, o sheet fecha e o form recebe os campos preenchidos via `setValues`. Evita o anti-pattern "callback em route.params" (AP-158) e o dead-end UX quando usuário tap no resultado da busca standalone.
 
 **Pattern de seleção via setValues**:
-```js
+```tsx
 const handleAnvisaSelect = useCallback((item) => {
   form.setValues({
     name: item.name ?? form.values.name,
@@ -296,7 +296,7 @@ const handleAnvisaSelect = useCallback((item) => {
 
 ### `MedicineSelectorSheet` (Fase 2 — pattern análogo)
 
-`apps/mobile/src/features/treatments/components/MedicineSelectorSheet.jsx` (a criar em T2.4)
+`apps/mobile/src/features/treatments/components/MedicineSelectorSheet.tsx` (a criar em T2.4)
 
 Mesmo pattern bottom sheet, mas dados vêm de `useMedicines()` (biblioteca do user, não ANVISA). Selecionar atualiza `medicine_id` no form de tratamento + autocompleta nome sugerido.
 
@@ -306,8 +306,8 @@ Dois patterns distintos de delete UX, conforme natureza da entidade:
 
 | Entidade | Pattern | Onde |
 |----------|---------|------|
-| Medicamento | **Hard block** se há tratamentos OU estoque > 0 (`AP-159`) | `MedicineDeleteBlockedSheet.jsx` |
-| Tratamento | **Warning soft** com histórico de doses (não bloqueia) | `ProtocolDeleteSheet.jsx` (a criar em T2.11) |
+| Medicamento | **Hard block** se há tratamentos OU estoque > 0 (`AP-159`) | `MedicineDeleteBlockedSheet.tsx` |
+| Tratamento | **Warning soft** com histórico de doses (não bloqueia) | `ProtocolDeleteSheet.tsx` (a criar em T2.11) |
 
 Razão: medicamento órfão = inconsistência crítica de dados de saúde; tratamento delete não afeta doses já registradas no histórico.
 
@@ -329,7 +329,7 @@ Comentários em PT. Identifiers em EN. Strings de UI em PT.
 
 ### Testes
 - Hooks: cobertura unitária no diretório `__tests__/` adjacente.
-- Form Kit integrado: `apps/mobile/src/shared/components/form/__tests__/FormKit.integration.test.jsx` (Sprint P.3).
+- Form Kit integrado: `apps/mobile/src/shared/components/form/__tests__/FormKit.integration.test.tsx` (Sprint P.3).
 
 ### Acessibilidade
 Todos os inputs/buttons usam `accessibilityLabel`, `accessibilityHint`, `accessibilityRole` apropriados.
@@ -410,7 +410,7 @@ function formProps(form, name) {
 - Adicionado pattern `MedicineDeleteBlockedSheet` (AP-159 hard block para medicamento) — protege dados de saúde de ficarem órfãos.
 - Adicionado `Toast`/`useToast` para feedback transitório (já documentado em §Componentes — Feedback).
 - Padrão **wrappers de mutation** estabelecido: `useMedicineMutation` (Fase 1) → `useProtocolMutation` (Fase 2): hooks que envolvem `useMutation` + Toast + cache invalidation centralizado.
-- Padrão **Zod 4 locale global** via `@dosiq/core/zodSetup.js` (R-232): elimina necessidade de `errorMap` por schema. Mensagens "Dona Maria friendly" por código (`invalid_type`, `too_small`, `too_big`).
+- Padrão **Zod 4 locale global** via `@dosiq/core/zodSetup.ts` (R-232): elimina necessidade de `errorMap` por schema. Mensagens "Dona Maria friendly" por código (`invalid_type`, `too_small`, `too_big`).
 - Padrão **decimal vírgula → ponto** em tempo real para campos numéricos PT-BR (`replace(',', '.')` + filter chars + colapsa pontos).
 - Helpers a criar em Fase 2 (`@dosiq/core/utils/`):
   - `formatDoseUnit(qty, dosage_unit)` / `pluralizeDoseUnit` — render correto de unidades

@@ -29,7 +29,7 @@ Documentação completa dos hooks customizados do projeto.
 
 ## useCachedQuery
 
-Local: [`apps/web/src/shared/hooks/useCachedQuery.js`](../../apps/web/src/shared/hooks/useCachedQuery.js)
+Local: [`apps/web/src/shared/hooks/useCachedQuery.ts`](../../apps/web/src/shared/hooks/useCachedQuery.ts)
 
 Hook React para integração com o sistema de cache SWR.
 
@@ -265,7 +265,7 @@ useCachedQuery(`data`, ...) // Muito genérico
 
 ## useOnboarding
 
-Local: [`apps/web/src/shared/components/onboarding/OnboardingProvider.jsx`](../../apps/web/src/shared/components/onboarding/OnboardingProvider.jsx)
+Local: [`apps/web/src/shared/components/onboarding/OnboardingProvider.tsx`](../../apps/web/src/shared/components/onboarding/OnboardingProvider.tsx)
 
 Hook para controle do wizard de onboarding.
 
@@ -429,8 +429,8 @@ function FirstProtocolStep() {
 
 O hook deve ser usado dentro do `OnboardingProvider`:
 
-```jsx
-// App.jsx
+```tsx
+// App.tsx
 import { OnboardingProvider, OnboardingWizard } from './components/onboarding'
 
 function App() {

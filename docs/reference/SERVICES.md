@@ -36,7 +36,7 @@ Documentação completa das APIs internas dos services com exemplos de uso.
 
 ## Medicine Service
 
-Local: [`apps/web/src/features/medications/services/medicineService.js`](../../apps/web/src/features/medications/services/medicineService.js)
+Local: [`apps/web/src/features/medications/services/medicineService.ts`](../../apps/web/src/features/medications/services/medicineService.ts)
 
 ### `getAll()`
 
@@ -149,7 +149,7 @@ await medicineService.delete('uuid-do-medicamento')
 
 ## Protocol Service
 
-Local: [`apps/web/src/features/protocols/services/protocolService.js`](../../apps/web/src/features/protocols/services/protocolService.js)
+Local: [`apps/web/src/features/protocols/services/protocolService.ts`](../../apps/web/src/features/protocols/services/protocolService.ts)
 
 ### `getAll()`
 
@@ -292,7 +292,7 @@ const result = await protocolService.advanceTitration('uuid')
 
 ## Stock Service
 
-Local: [`apps/web/src/features/stock/services/stockService.js`](../../apps/web/src/features/stock/services/stockService.js)
+Local: [`apps/web/src/features/stock/services/stockService.ts`](../../apps/web/src/features/stock/services/stockService.ts)
 
 ### `getByMedicineId(medicineId)`
 
@@ -415,7 +415,7 @@ await stockService.delete('uuid-estoque')
 
 ## Log Service
 
-Local: [`apps/web/src/shared/services/api/logService.js`](../../apps/web/src/shared/services/api/logService.js)
+Local: [`apps/web/src/shared/services/api/logService.ts`](../../apps/web/src/shared/services/api/logService.ts)
 
 ### `getAll(options)`
 
@@ -528,7 +528,7 @@ await logService.delete('uuid-log')
 
 ## Purchase Service
 
-Local: [`apps/web/src/features/stock/services/purchaseService.js`](../../apps/web/src/features/stock/services/purchaseService.js)
+Local: [`apps/web/src/features/stock/services/purchaseService.ts`](../../apps/web/src/features/stock/services/purchaseService.ts)
 
 Service canônico para histórico de compras e custo médio.
 
@@ -544,7 +544,7 @@ Service canônico para histórico de compras e custo médio.
 
 ## Treatment Plan Service
 
-Local: [`apps/web/src/features/protocols/services/treatmentPlanService.js`](../../apps/web/src/features/protocols/services/treatmentPlanService.js)
+Local: [`apps/web/src/features/protocols/services/treatmentPlanService.ts`](../../apps/web/src/features/protocols/services/treatmentPlanService.ts)
 
 ### `getAll()`
 
@@ -628,7 +628,7 @@ await treatmentPlanService.delete('uuid')
 
 ## Cached Services
 
-Local: [`apps/web/src/shared/services/cachedServices.js`](../../apps/web/src/shared/services/cachedServices.js)
+Local: [`apps/web/src/shared/services/cachedServices.ts`](../../apps/web/src/shared/services/cachedServices.ts)
 
 Versões cacheadas dos services para **leituras**. Usar em componentes React.
 
@@ -700,8 +700,8 @@ Cada cached service expõe os mesmos métodos do service original, mas com cache
 
 ## 🔄 Exemplo Completo: Fluxo de Uso
 
-```jsx
-// MedicineManager.jsx
+```tsx
+// MedicineManager.tsx
 import { useState } from 'react'
 import { useCachedQuery } from '@shared/hooks/useCachedQuery'
 import { cachedMedicineService } from '@shared/services/cachedServices'

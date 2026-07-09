@@ -36,9 +36,9 @@ Este projeto usa **Zod** para validação de dados em runtime. Todos os schemas 
 
 ### Medicine Schema
 
-**Localização**: `apps/web/src/schemas/medicineSchema.js`
+**Localização**: `apps/web/src/schemas/medicineSchema.ts`
 
-```javascript
+```typescript
 import { z } from 'zod'
 
 export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
@@ -63,9 +63,9 @@ export const medicineSchema = z.object({
 
 ### Protocol Schema
 
-**Localização**: `apps/web/src/schemas/protocolSchema.js`
+**Localização**: `apps/web/src/schemas/protocolSchema.ts`
 
-```javascript
+```typescript
 import { z } from 'zod'
 
 export const FREQUENCIES = [
@@ -106,9 +106,9 @@ export const protocolSchema = z.object({
 
 ### Log Schema
 
-**Localização**: `apps/web/src/schemas/logSchema.js`
+**Localização**: `apps/web/src/schemas/logSchema.ts`
 
-```javascript
+```typescript
 import { z } from 'zod'
 
 export const logSchema = z.object({
@@ -128,9 +128,9 @@ export const logSchema = z.object({
 
 ### Stock Schema
 
-**Localização**: `apps/web/src/schemas/stockSchema.js`
+**Localização**: `apps/web/src/schemas/stockSchema.ts`
 
-```javascript
+```typescript
 import { z } from 'zod'
 
 export const stockSchema = z.object({
@@ -157,8 +157,8 @@ export const stockSchema = z.object({
 
 ### Pattern de Validação
 
-```javascript
-// apps/web/src/features/{feature}/services/{feature}Service.js
+```typescript
+// apps/web/src/features/{feature}/services/{feature}Service.ts
 import { validateMedicineCreate } from '@schemas/medicineSchema'
 
 export const medicineService = {
@@ -184,18 +184,18 @@ export const medicineService = {
 
 ## Constantes de Validação
 
-### Unidades de Dosagem (`medicineSchema.js`)
-```javascript
+### Unidades de Dosagem (`medicineSchema.ts`)
+```typescript
 export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'ml', 'ui', 'cp', 'gotas']
 ```
 
-### Tipos de Medicamento (`medicineSchema.js`)
-```javascript
+### Tipos de Medicamento (`medicineSchema.ts`)
+```typescript
 export const MEDICINE_TYPES = ['medicamento', 'suplemento']
 ```
 
-### Frequências (`protocolSchema.js`)
-```javascript
+### Frequências (`protocolSchema.ts`)
+```typescript
 export const FREQUENCIES = [
   'diário',
   'dias_alternados',
@@ -205,13 +205,13 @@ export const FREQUENCIES = [
 ]
 ```
 
-### Dias da Semana (`protocolSchema.js`)
-```javascript
+### Dias da Semana (`protocolSchema.ts`)
+```typescript
 export const WEEKDAYS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
 ```
 
-### Status de Titulação (`protocolSchema.js`)
-```javascript
+### Status de Titulação (`protocolSchema.ts`)
+```typescript
 const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido']
 ```
 
@@ -219,8 +219,8 @@ const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido']
 
 ## Labels para UI
 
-```javascript
-// protocolSchema.js
+```typescript
+// protocolSchema.ts
 export const FREQUENCY_LABELS = {
   diário: 'Diário',
   dias_alternados: 'Dias Alternados',
@@ -239,7 +239,7 @@ export const WEEKDAY_LABELS = {
   domingo: 'Domingo',
 }
 
-// medicineSchema.js
+// medicineSchema.ts
 export const MEDICINE_TYPE_LABELS = {
   medicamento: 'Medicamento',
   suplemento: 'Suplemento',
@@ -256,7 +256,7 @@ export const DOSAGE_UNIT_LABELS = {
 
 Todas as mensagens de erro devem ser em português:
 
-```javascript
+```typescript
 // ✅ CORRETO
 z.string().min(2, 'Nome deve ter pelo menos 2 caracteres')
 
