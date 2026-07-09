@@ -269,7 +269,7 @@ Quando você salva o protocolo do Selozok, o registro fica assim:
 }
 ```
 
-### Cálculo do Progresso (titrationUtils.js)
+### Cálculo do Progresso (titrationUtils.ts)
 
 A função `calculateTitrationData()` é chamada pelo Dashboard e calcula:
 

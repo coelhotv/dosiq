@@ -96,7 +96,7 @@ Ao clicar, o sistema automaticamente:
 
 ### **Arquivos Criados/Modificados**
 
-#### 1. **`TitrationTransitionAlert.jsx`** (Novo)
+#### 1. **`TitrationTransitionAlert.tsx`** (Novo)
 Componente React que renderiza o alerta de transição com:
 - Comparação visual entre etapa atual e próxima
 - Botões de ação
@@ -109,8 +109,8 @@ Estilos premium com:
 - Layout responsivo
 - Design consistente com o resto da aplicação
 
-#### 3. **`api.js`** - Método `advanceTitrationStage`
-```javascript
+#### 3. **`protocolService.ts`** - Método `advanceTitrationStage`
+```typescript
 async advanceTitrationStage(id, markAsCompleted = false) {
   // 1. Busca o protocolo atual
   const protocol = await this.getById(id)
@@ -151,8 +151,8 @@ async advanceTitrationStage(id, markAsCompleted = false) {
 }
 ```
 
-#### 4. **`Dashboard.jsx`** - Integração
-```javascript
+#### 4. **`Dashboard.tsx`** - Integração
+```typescript
 // Estado para rastrear alertas dispensados
 const [dismissedTransitions, setDismissedTransitions] = useState(new Set())
 

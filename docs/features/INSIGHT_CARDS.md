@@ -30,15 +30,15 @@ O sistema de Insight Cards exibe um cartão contextual na coluna esquerda do Das
 ## Arquitetura
 
 ```
-Dashboard.jsx
+Dashboard.tsx
   └── useDashboardViewState()
         ├── selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds })
         │     └── insightService.selectBestInsight(params)
-        │           └── generateAllInsights(params)  ← _insightGenerators.js
+        │           └── generateAllInsights(params)  ← _insightGenerators.ts
         ├── dismissedInsightIds: string[]  (estado local, volátil — reset no reload)
         └── handleDismissInsight(id)  → adiciona ao array → insight recalcula
 
-DashboardColumnLeft.jsx
+DashboardColumnLeft.tsx
   └── <InsightCard insight={...} onDismiss={handleDismissInsight} />
 ```
 
@@ -115,7 +115,7 @@ Menor número = maior prioridade. Dentro da mesma prioridade, a posição no arr
 
 ## Abertura do modal de dose a partir de insights
 
-`missed_doses_today` e `streak_broken` disparam `window.dispatchEvent(new CustomEvent('mr:open-dose-modal'))`. O `App.jsx` escuta esse evento e chama `setIsDoseModalOpen(true)`. Não há prop drilling — o insight não precisa receber nenhum callback extra.
+`missed_doses_today` e `streak_broken` disparam `window.dispatchEvent(new CustomEvent('mr:open-dose-modal'))`. O `App.tsx` escuta esse evento e chama `setIsDoseModalOpen(true)`. Não há prop drilling — o insight não precisa receber nenhum callback extra.
 
 Padrão equivalente ao `mr:open-measure-log` já existente.
 
@@ -135,7 +135,7 @@ Padrão equivalente ao `mr:open-measure-log` já existente.
 
 ## Como adicionar um novo insight
 
-### 1. Criar o generator em `_insightGenerators.js`
+### 1. Criar o generator em `_insightGenerators.ts`
 
 ```js
 export function createMeuInsight(dado, onNavigate) {
@@ -156,20 +156,20 @@ export function createMeuInsight(dado, onNavigate) {
 }
 ```
 
-### 2. Registrar em `insightService.js` → `generateAllInsights`
+### 2. Registrar em `insightService.ts` → `generateAllInsights`
 
 ```js
 import { createMeuInsight } from './_insightGenerators'
 
 // dentro de generators[]:
-() => createMeuInsight(dado, onNavigate),
+// ...
 ```
 
-### 3. Adicionar o dado ao payload em `Dashboard.jsx` → `selectCurrentInsight`
+### 3. Adicionar o dado ao payload em `Dashboard.tsx` → `selectCurrentInsight`
 
 Se o generator precisa de um dado novo (ex.: `medicamentos`), adicionar ao objeto passado para `insightService.selectBestInsight`.
 
-### 4. Registrar o tipo em `InsightCard.jsx` (se novo tipo)
+### 4. Registrar o tipo em `InsightCard.tsx` (se novo tipo)
 
 Adicionar entradas em `getBadgeLabel` e `getIconComponent` para o novo `INSIGHT_TYPES` value.
 
@@ -178,7 +178,7 @@ Adicionar entradas em `getBadgeLabel` e `getIconComponent` para o novo `INSIGHT_
 ## Regras de manutenção
 
 - **Nunca** criar lógica de domínio dentro do `InsightCard` — ele é puramente de apresentação
-- **Nunca** acessar `localStorage` diretamente fora de `insightService.js`
+- **Nunca** acessar `localStorage` diretamente fora de `insightService.ts`
 - Cada generator **deve** retornar `null` quando a condição não for atendida — não lançar exceção
 - IDs de insight **devem** ser únicos globalmente; duplicatas causam comportamento inesperado na rotação
 - O campo `actionLabel` é obrigatório para que o CTA apareça; omiti-lo esconde o botão silenciosamente

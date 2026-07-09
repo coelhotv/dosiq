@@ -73,7 +73,7 @@ O sistema não envia 5 pushes se o usuário tem 5 remédios às 08:00. Ele anali
 
 ### Modos de Experiência e Supressão Centralizada
 
-O sistema utiliza um **Portão de Supressão Único** (`dispatchNotification.js`) que garante que as preferências do usuário sejam respeitadas em todos os canais:
+O sistema utiliza um **Portão de Supressão Único** (`dispatchNotification.ts`) que garante que as preferências do usuário sejam respeitadas em todos os canais:
 
 | Modo | Escopo de Supressão | Comportamento de Entrega |
 | :--- | :--- | :--- |
