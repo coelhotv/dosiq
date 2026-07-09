@@ -75,7 +75,7 @@ type UpdateValidationResult =
 
 ### Narrowing Correto no Core (R-286)
 
-Os serviços estruturais do pacote `@dosiq/core` fornecem infraestrutura para pacotes de aplicativos que muitas vezes operam em camadas legadas ou menos restritas (fora da strict island). Para garantir o refinamento do tipo de modo infalível, a regra global **R-286** estabelece que comparações contra `success` não podem ser falsy checks (`!result.success`). Elas exigem equiparação de igualdade literal com o valor `false`.
+Os serviços estruturais do pacote `@dosiq/core` fornecem infraestrutura para pacotes de aplicativos que muitas vezes operam em camadas legadas ou menos restritas (fora da strict island). Para garantir o refinamento do tipo de modo infalível, a regra global **R-286** estabelece que comparações contra `success` não podem ser falsy checks (`!result.success`). Elas exigem comparação de igualdade literal com o valor `false`.
 
 ```typescript
 // ✅ CORRETO (Narrowing Seguro)
@@ -420,7 +420,7 @@ export async function resolveUserTz(
 
 ## Tipando Rotas API (Vercel Serverless)
 
-Endpoints de resposta em ambientes como Vercel ou middlewares Node.js exigem definições para solicitações sem estado predefinido. A regra **R-282** fixa importações com terminação `.js` obrigatória. Para a arquitetura Serverless, estipulamos tipagens formais dos métodos e a execução em cascata protegida pelo validator Zod.
+Endpoints de resposta em ambientes como Vercel ou middlewares Node.js exigem definições para solicitações sem estado predefinido. A regra **R-282** fixa importações com terminação `.js` obrigatória. Para a arquitetura Serverless, estipulamos tipagens formais dos métodos e a execução em cascata protegida pelo validador Zod.
 
 ```mermaid
 sequenceDiagram

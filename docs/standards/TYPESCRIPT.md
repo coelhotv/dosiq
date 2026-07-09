@@ -243,7 +243,7 @@ if (validation.success === false) {
 }
 ```
 
-Esta prática garante consistência na verificação de tipos independente de qual aplicativo no monorepo chame a função. O estreitamento ocorre perfeitamente mesmo em diretórios onde o `strict` ainda está desligado.
+Esta prática garante consistência na verificação de tipos independentemente de qual aplicativo no monorepo chame a função. O estreitamento ocorre perfeitamente mesmo em diretórios onde o `strict` ainda está desligado.
 
 ## Hierarquia de TSConfig
 

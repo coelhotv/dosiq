@@ -235,7 +235,7 @@ MAX_A_TESTS_CORE=0        # testes dos domínios A do core
 ```
 
 Por que Catraca?
-Sempre que um desenvolvedor soluciona erros em pastas obsoletas e re-avalia o script, os tetos `MAX_B_` decrecem fisicamente. Subir erros é proibido pelo CI, prevenindo envelhecimento de refatoração.
+Sempre que um desenvolvedor soluciona erros em pastas obsoletas e re-avalia o script, os tetos `MAX_B_` decrescem fisicamente. Subir erros é proibido pelo CI, prevenindo envelhecimento de refatoração.
 
 ## Scripts e Comandos
 

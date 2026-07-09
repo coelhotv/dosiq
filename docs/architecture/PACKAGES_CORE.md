@@ -341,7 +341,7 @@ z.config({
 
 ### Tipos (`src/types`)
 
-O núcleo exporta apenas os contratos puramente locais. Tipagens mais densas associadas à formatação do client Supabase (`Database`) advém de outro pacote (`@dosiq/shared-data`). Em compensação, estados transitórios e objetos estruturados na memória habitam este diretório para proverem IntelliSense unificado para transição de dados entre pacotes.
+O núcleo exporta apenas os contratos puramente locais. Tipagens mais densas associadas à formatação do client Supabase (`Database`) advêm de outro pacote (`@dosiq/shared-data`). Em compensação, estados transitórios e objetos estruturados na memória habitam este diretório para proverem IntelliSense unificado para transição de dados entre pacotes.
 
 ```typescript
 // packages/core/src/types/activeContext.ts
@@ -433,5 +433,5 @@ Antes de fazer o merge das alterações em `@dosiq/core`:
 - [ ] Arquivo criado está livre de chamadas diretas a APIs do React (`useMemo`, `useContext`, `useState`).
 - [ ] O tratamento matemático de datas emprega estritamente os utilitários blindados exportados pela pasta `utils` em vez do formato `new Date()` literal da linguagem.
 - [ ] O serviço criado delega as obrigações estritas da tipagem para `src/types` e disponibiliza o alias seguro no `index.ts` raiz de cada módulo.
-- [ ] Schemas complexos recém desenhados contêm o fallback de mensagens amigáveis embutidas (se destoantes do setup global em `friendlyMessage`).
+- [ ] Schemas complexos recém-desenhados contêm o fallback de mensagens amigáveis embutidas (se destoantes do setup global em `friendlyMessage`).
 - [ ] A execução do pacote passa intacta pelo script limitador de TypeScript (`scripts/strict-island.sh`), o que previne retrocessos de qualidade tipográfica no core.
