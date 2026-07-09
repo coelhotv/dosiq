@@ -330,7 +330,7 @@ Se vir `expected_doses: 10` → **Contagem de protocolos** (re-execute BLOCO 2, 
 | `relation 'v_daily_adherence' does not exist` | View não foi criada | Execute BLOCO 2 completo |
 | `expected_doses: 120` | Cartesian product | Verify BLOCO 2 tem `expected_aggregated` CTE |
 | `adherence_percentage: NULL` para todos | expected_doses sempre 0 | Check: tables têm dados? active protocols? |
-| Heatmap still slow | Views não usadas no client | Verify HealthHistory.jsx chama `getDailyAdherenceFromView()` |
+| Heatmap still slow | Views não usadas no client | Verify HealthHistory.tsx chama `getDailyAdherenceFromView()` |
 
 ---
 

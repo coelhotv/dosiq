@@ -2,8 +2,8 @@
 title: "Guia de Nudges"
 description: "Guia prático para criação, controle de dismiss e exibição contextual de banners (nudges) via painel administrativo no Dosiq."
 version: "1.0.0"
-status: archived
-category: guide
+status: active
+category: operation
 audience:
   - ops
   - dev
@@ -259,10 +259,10 @@ Versão 4.2.0 não inclui analytics de nudges. Próxima iteração pode incluir:
 ## Referências
 
 - **Painel Admin:** `/admin-nudges` (após login, role admin)
-- **Schema Validação:** `packages/core/src/schemas/nudgeSchema.js`
-- **Service API:** `apps/web/src/services/api/nudgeAdminService.js`
-- **Hook:** `apps/web/src/views/admin/useNudgesAdminState.js`
-- **Endpoints Vercel:** `api/admin.js` resource router (consolidado, R-090)
+- **Schema Validação:** `packages/core/src/schemas/nudgeSchema.ts`
+- **Service API:** `apps/web/src/services/api/nudgeAdminService.ts`
+- **Hook:** `apps/web/src/views/admin/useNudgesAdminState.ts`
+- **Endpoints Vercel:** `api/admin.ts` resource router (consolidado, R-090)
 - **DB:** `in_app_nudges` table (RLS: leitura authenticated, escrita nenhuma — admin-only no app)
 
 ---

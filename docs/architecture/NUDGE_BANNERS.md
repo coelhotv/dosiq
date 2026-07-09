@@ -3,7 +3,7 @@ title: "Nudge Banners"
 description: "Guia operacional para criação, controle de dismiss e exibição contextual de banners (nudges) via banco de dados no Dosiq."
 version: "1.0.0"
 status: active
-category: operation
+category: architecture
 audience:
   - ops
   - dev
