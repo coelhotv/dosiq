@@ -21,7 +21,7 @@ Setup usa **gitdir externo** para isolar objetos git do daemon de sync do iCloud
 ## Estrutura de diretórios
 
 ```
-~/git-icloud/dosiq/              ← working tree (iCloud sincroniza os arquivos fonte)
+~/git/dosiq/              ← working tree (iCloud sincroniza os arquivos fonte)
   .git                           ← ARQUIVO (não dir): "gitdir: ../../../../../local_git/dosiq/.git"
 
 ~/local_git/dosiq/.git/          ← gitdir REAL (fora do iCloud — sem locks do daemon)
@@ -29,7 +29,6 @@ Setup usa **gitdir externo** para isolar objetos git do daemon de sync do iCloud
 
 ~/Library/.../git_server/dosiq.git/  ← bridge bare repo (relay via iCloud entre máquinas)
 
-~/local/test-native-dosiq/       ← worktree para testes Expo/native (fora do iCloud)
 ```
 
 ## Por que gitdir externo?
@@ -58,7 +57,7 @@ iCloud sincroniza tudo em `~/git-icloud/`, causando locks em `index`/`COMMIT_EDI
 ## Diagnóstico rápido
 
 ```bash
-cat ~/git-icloud/dosiq/.git                          # confirma gitdir externo
+cat ~/git/dosiq/.git                          # confirma gitdir externo
 cat ~/local_git/dosiq/.git/config                    # ver remotes
 git fetch bridge origin --quiet && git log --oneline bridge/main -3 origin/main -3
 # Se SHAs diferentes: git push bridge origin/main:refs/heads/main --force
@@ -67,6 +66,6 @@ source ~/.bashrc && gsync                            # re-sync completo
 
 ## Proibido
 
-- Nunca criar `.git/` como diretório em `~/git-icloud/dosiq/` — quebra gitdir, iCloud sincroniza objetos
+- Nunca criar `.git/` como diretório em `~/git/dosiq/` — quebra gitdir, iCloud sincroniza objetos
 - Nunca `git push bridge $branch` diretamente — sempre via `gsync`
 - Nunca ignorar o check de `~/local_git/dosiq` no `gsync-native`
