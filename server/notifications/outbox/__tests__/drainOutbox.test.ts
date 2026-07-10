@@ -18,6 +18,7 @@ function makeRow(id: string, kind: OutboxRow['kind'] = 'daily_adherence', overri
     attempts: 1,
     channel_results: null,
     created_at: '2026-07-10T00:00:00.000Z',
+    claimed_at: null,
     sent_at: null,
     ...overrides,
   }

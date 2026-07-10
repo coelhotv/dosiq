@@ -22,31 +22,35 @@ export interface EnqueueUserRow {
 }
 
 // Partes do calendário local do usuário para um instante absoluto (sem aritmética manual — DST-safe).
-function localParts(now: Date, tz: string): { hour: number; weekday: number; dayOfMonth: number } {
+function localParts(now: Date, tz: string): { hour: number; minute: number; weekday: number; dayOfMonth: number } {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, hour: '2-digit', hour12: false, weekday: 'short', day: 'numeric',
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'short', day: 'numeric',
   }).formatToParts(now);
   const val = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
   const weekdayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   let hour = parseInt(val('hour'), 10);
   if (hour === 24) hour = 0; // en-US hour12:false pode emitir '24' à meia-noite
-  return { hour, weekday: weekdayMap[val('weekday')] ?? -1, dayOfMonth: parseInt(val('day'), 10) || 0 };
+  const minute = parseInt(val('minute'), 10) || 0;
+  return { hour, minute, weekday: weekdayMap[val('weekday')] ?? -1, dayOfMonth: parseInt(val('day'), 10) || 0 };
 }
 
 // Elegibilidade por RANGE por kind — mesma âncora dos jobs legados (09:00 tz do usuário),
 // mas por JANELA de hora local em vez de minuto exato. Supressão hierárquica mensal>semanal>
 // diário preservada (dia 1 cede ao mensal; domingo cede ao semanal).
-function isEligible(kind: OutboxKind, p: { hour: number; weekday: number; dayOfMonth: number }): boolean {
+function isEligible(kind: OutboxKind, p: { hour: number; minute: number; weekday: number; dayOfMonth: number }): boolean {
+  // Janela ESTREITA 09:00–09:09 local: cron roda 1×/min; a UNIQUE já dá idempotência, mas uma
+  // janela larga (1-3h) faria upsert massivo por minuto (WAL/índice) — 10min basta p/ catch-up
+  // se um tick pular, cortando ~36× as escritas redundantes (Gemini #734).
   switch (kind) {
     case 'daily_adherence':
-      // Janela 09:xx local; cede ao mensal (dia 1) e ao semanal (domingo).
-      return p.hour === 9 && p.weekday !== 0 && p.dayOfMonth !== 1;
+      // 09:00-09:09 local; cede ao mensal (dia 1) e ao semanal (domingo).
+      return p.hour === 9 && p.minute < 10 && p.weekday !== 0 && p.dayOfMonth !== 1;
     case 'weekly_adherence':
-      // Domingo 09:00–11:59 local; cede ao mensal no dia 1.
-      return p.weekday === 0 && p.hour >= 9 && p.hour <= 11 && p.dayOfMonth !== 1;
+      // Domingo 09:00–09:09 local; cede ao mensal no dia 1.
+      return p.weekday === 0 && p.hour === 9 && p.minute < 10 && p.dayOfMonth !== 1;
     case 'monthly_report':
-      // Dia 1, 09:00–11:59 local.
-      return p.dayOfMonth === 1 && p.hour >= 9 && p.hour <= 11;
+      // Dia 1, 09:00–09:09 local.
+      return p.dayOfMonth === 1 && p.hour === 9 && p.minute < 10;
     default:
       // daily_digest / stock_alert: cutover futuro (mecanismo pronto; janela específica a definir).
       return false;

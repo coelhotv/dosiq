@@ -19,10 +19,11 @@ export interface OutboxRow {
   user_id: string;
   kind: OutboxKind;
   period_key: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: 'pending' | 'processing' | 'sent' | 'failed';
   attempts: number;
   channel_results: ChannelResult[] | null;
   created_at: string;
+  claimed_at: string | null;
   sent_at: string | null;
 }
 
@@ -96,11 +97,12 @@ export function createOutboxRepository(
       if (error) throw new Error(`outbox.markSent: ${error.message}`);
     },
 
-    // Reverte o attempts++ do claim p/ uma linha reivindicada mas pulada por deadline (Gemini #734).
+    // Reverte o claim de uma linha reivindicada mas pulada por deadline (Gemini #734): volta a
+    // 'pending' (senão fica presa em 'processing') + limpa claimed_at + decrementa o attempts++.
     async revertClaim(id, currentAttempts) {
       const { error } = await client
         .from('notification_outbox')
-        .update({ attempts: Math.max(0, currentAttempts - 1) })
+        .update({ status: 'pending', claimed_at: null, attempts: Math.max(0, currentAttempts - 1) })
         .eq('id', id);
       if (error) throw new Error(`outbox.revertClaim: ${error.message}`);
     },
@@ -109,7 +111,8 @@ export function createOutboxRepository(
     // e o próximo drain tenta de novo (o claim voltará a incrementar attempts).
     async markFailed(id, attempts, channelResults) {
       const status = attempts >= MAX_OUTBOX_ATTEMPTS ? 'failed' : 'pending';
-      const patch: Record<string, unknown> = { status };
+      // claimed_at=null: sai de 'processing' → linha volta a pending limpa (re-claimable) ou failed.
+      const patch: Record<string, unknown> = { status, claimed_at: null };
       if (channelResults) patch.channel_results = channelResults;
       const { error } = await client
         .from('notification_outbox')

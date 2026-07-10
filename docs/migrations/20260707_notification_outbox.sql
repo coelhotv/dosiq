@@ -23,10 +23,12 @@ CREATE TABLE IF NOT EXISTS public.notification_outbox (
                     'daily_adherence','weekly_adherence','monthly_report','daily_digest','stock_alert'
                   )),
   period_key      text NOT NULL,
-  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','failed')),
+  -- 'processing' = reivindicada por um drenador (exclusão mútua sob concorrência — Gemini #734).
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','processing','sent','failed')),
   attempts        int  NOT NULL DEFAULT 0,
   channel_results jsonb,  -- [{channel, attempted, delivered, failed, deactivated_count}] — SEM tokens (SEC-3)
   created_at      timestamptz NOT NULL DEFAULT now(),
+  claimed_at      timestamptz,  -- quando entrou em 'processing'; NULL em pending/terminal. Recupera stuck.
   sent_at         timestamptz,
   -- Idempotência por constraint (ADR-078): 1 linha por (usuário, kind, período).
   CONSTRAINT notification_outbox_uniq UNIQUE (user_id, kind, period_key)
@@ -51,11 +53,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.notification_outbox TO service_ro
 REVOKE ALL ON public.notification_outbox FROM anon;
 REVOKE ALL ON public.notification_outbox FROM authenticated;
 
--- 3. Claim atômico (ENG-4/ADR-078): reivindica um lote de pendentes para um drenador.
---    FOR UPDATE SKIP LOCKED → drenadores concorrentes pegam lotes disjuntos sem bloquear
---    (retomada K/N segura). O incremento de `attempts` acontece NO claim: um row reivindicado
---    e nunca resolvido (crash antes do markSent) já teve attempts++ e será promovido a 'failed'
---    ao atingir o cap 3 — limita reciclagem infinita de linha-veneno. Server-internal (service_role).
+-- 3. Claim atômico (ENG-4/ADR-078): reivindica um lote e o marca 'processing' na MESMA transação.
+--    Exclusão mútua sob concorrência (Gemini #734): sem mudar o status, após o commit do RPC o
+--    lock solta e outro drenador re-reivindicaria a MESMA linha (envio duplicado). 'processing'
+--    tira a linha do conjunto reivindicável enquanto o envio assíncrono roda.
+--    FOR UPDATE SKIP LOCKED → lotes disjuntos sem bloquear. attempts++ no claim limita reciclagem
+--    de linha-veneno. Recuperação de stuck: linhas presas em 'processing' há >15min (drenador que
+--    crashou entre claim e finalize) voltam a ser elegíveis — senão 'processing' vira buraco negro.
 CREATE OR REPLACE FUNCTION public.claim_notification_outbox(batch_limit int DEFAULT 25)
 RETURNS SETOF public.notification_outbox
 LANGUAGE sql
@@ -63,11 +67,14 @@ SECURITY DEFINER
 SET search_path = ''
 AS $$
   UPDATE public.notification_outbox o
-     SET attempts = o.attempts + 1
+     SET attempts = o.attempts + 1,
+         status = 'processing',
+         claimed_at = now()
    WHERE o.id IN (
      SELECT id
        FROM public.notification_outbox
       WHERE status = 'pending'
+         OR (status = 'processing' AND claimed_at < now() - interval '15 minutes')
       ORDER BY created_at
       FOR UPDATE SKIP LOCKED
       LIMIT batch_limit

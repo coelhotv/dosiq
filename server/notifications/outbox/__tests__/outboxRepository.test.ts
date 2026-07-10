@@ -117,7 +117,7 @@ describe('createOutboxRepository', () => {
 
       await repo.markFailed('row-1', MAX_OUTBOX_ATTEMPTS)
 
-      expect(update).toHaveBeenCalledWith({ status: 'failed' })
+      expect(update).toHaveBeenCalledWith({ status: 'failed', claimed_at: null })
       expect(eq).toHaveBeenCalledWith('id', 'row-1')
     })
 
@@ -127,7 +127,7 @@ describe('createOutboxRepository', () => {
 
       await repo.markFailed('row-1', MAX_OUTBOX_ATTEMPTS - 1)
 
-      expect(update).toHaveBeenCalledWith({ status: 'pending' })
+      expect(update).toHaveBeenCalledWith({ status: 'pending', claimed_at: null })
     })
 
     it('inclui channel_results no patch quando informado', async () => {
@@ -137,7 +137,7 @@ describe('createOutboxRepository', () => {
 
       await repo.markFailed('row-1', 1, channelResults)
 
-      expect(update).toHaveBeenCalledWith({ status: 'pending', channel_results: channelResults })
+      expect(update).toHaveBeenCalledWith({ status: 'pending', claimed_at: null, channel_results: channelResults })
     })
 
     it('propaga erro do client como throw', async () => {
@@ -154,11 +154,11 @@ describe('createOutboxRepository', () => {
       const repo = createOutboxRepository({ client })
 
       await repo.revertClaim('row-1', 2)
-      expect(update).toHaveBeenCalledWith({ attempts: 1 })
+      expect(update).toHaveBeenCalledWith({ status: 'pending', claimed_at: null, attempts: 1 })
       expect(eq).toHaveBeenCalledWith('id', 'row-1')
 
       await repo.revertClaim('row-2', 0)
-      expect(update).toHaveBeenCalledWith({ attempts: 0 })
+      expect(update).toHaveBeenCalledWith({ status: 'pending', claimed_at: null, attempts: 0 })
     })
 
     it('propaga erro do client como throw', async () => {
