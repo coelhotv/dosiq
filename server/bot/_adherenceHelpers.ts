@@ -169,6 +169,87 @@ export async function runDailyAdherenceReportViaDispatcher(dispatcher, correlati
   }
 }
 
+// ===========================================================================================
+// Builders PUROS para a notification_outbox (spec 043 Slice A, ADR-078).
+// O drenador constrói o conteúdo NO ENVIO (SEC-1: a fila só guarda referências). Estes
+// builders reusam a MESMA computação de adesão dos jobs legados (_hasActiveProtocols,
+// _adherencePct, doseInstanceRepo, janelas) — paridade por construção (evita AP-241/drift).
+// Retornam `null` quando o usuário deixou de ser elegível no momento do envio (sem tratamento
+// ativo ou sem doses esperadas no período) → o drain marca 'sent' sem disparar nada.
+// Os jobs *ViaDispatcher legados permanecem intactos como cinto de segurança na transição.
+// ===========================================================================================
+
+// daily_adherence → payload kind 'adherence_report' (ontem vs anteontem). data|null.
+export async function buildDailyAdherenceData(userId: string, displayName?: string | null) {
+  const hasActive = await _hasActiveProtocols(userId);
+  if (!hasActive) return null;
+
+  const startOfDay = parseLocalDate(getTodayLocal());
+  const dateYesterdayDate = addDays(startOfDay, -1);
+  // eslint-disable-next-line no-restricted-syntax
+  const yesterdayEndExclusive = new Date(startOfDay.getTime() - 1).toISOString();
+  const yesterdayCounts = await doseInstanceRepo.countByStatus({
+    userId, fromTs: dateYesterdayDate.toISOString(), toTs: yesterdayEndExclusive,
+  });
+  const totalYesterday = yesterdayCounts.taken + yesterdayCounts.missed;
+  if (totalYesterday === 0) return null;
+
+  const dateBeforeYesterdayDate = addDays(startOfDay, -2);
+  // eslint-disable-next-line no-restricted-syntax
+  const beforeYesterdayEndExclusive = new Date(dateYesterdayDate.getTime() - 1).toISOString();
+  const beforeYesterdayCounts = await doseInstanceRepo.countByStatus({
+    userId, fromTs: dateBeforeYesterdayDate.toISOString(), toTs: beforeYesterdayEndExclusive,
+  });
+
+  const percentage = _adherencePct(yesterdayCounts.taken, yesterdayCounts.missed);
+  const percentageBeforeYesterday = _adherencePct(beforeYesterdayCounts.taken, beforeYesterdayCounts.missed);
+  const hasBeforeYesterday = (beforeYesterdayCounts.taken + beforeYesterdayCounts.missed) > 0;
+  const delta = percentage - percentageBeforeYesterday;
+  const trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+  const comparison = hasBeforeYesterday
+    ? { previousPercentage: percentageBeforeYesterday, deltaPercent: Math.abs(delta), trend }
+    : undefined;
+
+  return {
+    firstName: displayName || 'Paciente',
+    period: 'ontem',
+    percentage,
+    taken: yesterdayCounts.taken,
+    total: totalYesterday,
+    comparison,
+  };
+}
+
+// weekly_adherence → payload kind 'weekly_adherence' (janela 7d). data|null.
+export async function buildWeeklyAdherenceData(userId: string, displayName?: string | null) {
+  const hasActive = await _hasActiveProtocols(userId);
+  if (!hasActive) return null;
+  const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(7) });
+  const total = counts.taken + counts.missed;
+  if (total === 0) return null;
+  return {
+    firstName: displayName || 'Paciente',
+    percentage: _adherencePct(counts.taken, counts.missed),
+    taken: counts.taken,
+    total,
+  };
+}
+
+// monthly_report → payload kind 'monthly_report' (janela 30d). data|null.
+export async function buildMonthlyReportData(userId: string, displayName?: string | null) {
+  const hasActive = await _hasActiveProtocols(userId);
+  if (!hasActive) return null;
+  const counts = await doseInstanceRepo.countByStatus({ userId, ..._utcWindow(30) });
+  const total = counts.taken + counts.missed;
+  if (total === 0) return null;
+  return {
+    firstName: displayName || 'Paciente',
+    percentage: _adherencePct(counts.taken, counts.missed),
+    taken: counts.taken,
+    total,
+  };
+}
+
 /**
  * Check adherence reports for ALL users (weekly) via Dispatcher
  */
