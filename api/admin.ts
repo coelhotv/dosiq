@@ -120,7 +120,8 @@ async function _routeHealth(req, res, scope, supabase) {
   if (scope !== 'notifications') {
     return res.status(400).json({ error: `Unknown health scope: ${scope}` });
   }
-  const thresholdMin = Math.min(Math.max(parseInt(req.query.max_pending_age_min) || 15, 1), 240);
+  const parsedAge = parseInt(req.query.max_pending_age_min, 10);
+  const thresholdMin = Math.min(Math.max(isNaN(parsedAge) ? 15 : parsedAge, 1), 240);
   // eslint-disable-next-line no-restricted-syntax -- aritmética de instante UTC absoluto, não parse de date-string
   const cutoff = new Date(Date.now() - thresholdMin * 60_000).toISOString();
   const { count, error } = await supabase

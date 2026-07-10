@@ -43,10 +43,12 @@ export async function runOutboxCycle(
       const map = new Map();
       if (userIds.length === 0) return map;
       // Lote ≤ batchLimit (25) → single IN (bem abaixo do teto AP-186 de ~1000).
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_settings')
         .select('user_id, timezone, display_name')
         .in('user_id', userIds);
+      // Falha silenciosa aqui = todo o lote enviado com settings default ('Paciente') — logar (Gemini #734).
+      if (error) logger?.error('[runOutboxCycle] falha ao buscar settings dos usuários', { error: error.message });
       (data ?? []).forEach((r: any) => map.set(r.user_id, r));
       return map;
     },
