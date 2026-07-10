@@ -28,6 +28,7 @@ function makeRepo(rows: OutboxRow[]) {
     claim: vi.fn().mockResolvedValue(rows),
     markSent: vi.fn().mockResolvedValue(undefined),
     markFailed: vi.fn().mockResolvedValue(undefined),
+    revertClaim: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -123,6 +124,8 @@ describe('drainOutbox', () => {
 
     expect(summary.deadlineHit).toBe(true)
     expect(dispatcher.dispatch.mock.calls.length).toBeLessThan(rows.length)
+    // Linhas puladas por deadline revertem o attempts++ do claim (Gemini #734).
+    expect(repo.revertClaim.mock.calls.length).toBeGreaterThan(0)
   })
 
   it('builder retornando null → markSent(id, []) e skippedNoContent++, sem dispatch', async () => {

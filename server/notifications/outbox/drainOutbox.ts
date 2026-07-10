@@ -13,7 +13,7 @@
 import type { OutboxRepository, OutboxRow, ChannelResult } from './outboxRepository.js';
 
 // O drenador só reivindica e finaliza linhas — nunca enfileira (enqueue é do caminho de entrada).
-type DrainRepo = Pick<OutboxRepository, 'claim' | 'markSent' | 'markFailed'>;
+type DrainRepo = Pick<OutboxRepository, 'claim' | 'markSent' | 'markFailed' | 'revertClaim'>;
 
 // Settings mínimos que o builder precisa (o dispatcher busca devices internamente).
 export interface UserSettings {
@@ -110,8 +110,15 @@ export async function drainOutbox(deps: DrainDeps): Promise<DrainSummary> {
 
   await runPool(rows, poolSize, async (row) => {
     // Deadline (ENG-7): não inicia novo envio após o orçamento — evita estourar maxDuration.
+    // Reverte o attempts++ do claim: a linha foi reivindicada mas não tentada, não deve gastar
+    // tentativa (senão vira 'failed' prematuro em cargas altas — Gemini #734).
     if (now() - start > deadlineMs) {
       summary.deadlineHit = true;
+      try {
+        await repo.revertClaim(row.id, row.attempts);
+      } catch (revertErr: any) {
+        logger.error('[drainOutbox] falha ao reverter claim por deadline', { id: row.id, error: revertErr?.message });
+      }
       return;
     }
     try {

@@ -147,4 +147,25 @@ describe('createOutboxRepository', () => {
       await expect(repo.markFailed('row-1', 1)).rejects.toThrow('outbox.markFailed: fail boom')
     })
   })
+
+  describe('revertClaim', () => {
+    it('decrementa attempts (clamp em 0) e filtra por id', async () => {
+      const { client, update, eq } = makeClient()
+      const repo = createOutboxRepository({ client })
+
+      await repo.revertClaim('row-1', 2)
+      expect(update).toHaveBeenCalledWith({ attempts: 1 })
+      expect(eq).toHaveBeenCalledWith('id', 'row-1')
+
+      await repo.revertClaim('row-2', 0)
+      expect(update).toHaveBeenCalledWith({ attempts: 0 })
+    })
+
+    it('propaga erro do client como throw', async () => {
+      const { client } = makeClient({ updateError: { message: 'revert boom' } })
+      const repo = createOutboxRepository({ client })
+
+      await expect(repo.revertClaim('row-1', 1)).rejects.toThrow('outbox.revertClaim: revert boom')
+    })
+  })
 })

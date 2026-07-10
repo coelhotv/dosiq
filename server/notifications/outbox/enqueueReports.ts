@@ -62,6 +62,7 @@ async function fetchAllUserSettings(supabase: any): Promise<EnqueueUserRow[]> {
     const { data, error } = await supabase
       .from('user_settings')
       .select('user_id, timezone, display_name')
+      .order('user_id')  // ordenação estável: sem ela .range() é não-determinístico (pula/duplica) — Gemini #734
       .range(from, from + pageSize - 1);
     if (error) throw new Error(`enqueueReports.fetchAllUserSettings: ${error.message}`);
     if (!data || data.length === 0) break;
@@ -96,12 +97,18 @@ export async function enqueueEligibleReports(
   for (const kind of migrated) {
     const entries: EnqueueEntry[] = [];
     for (const u of users) {
-      // TODO(046): quando consent_status existir, pular `revoked` aqui (suspensão de push de saúde).
-      // if (u.consent_status === 'revoked') continue;
-      const tz = u.timezone || 'America/Sao_Paulo';
-      const p = localParts(now, tz);
-      if (!isEligible(kind, p)) continue;
-      entries.push({ userId: u.user_id, kind, periodKey: periodKey(kind, now, tz) });
+      // Isola por usuário: tz corrompida no DB → Intl lança RangeError; sem try/catch derrubaria
+      // o enqueue de TODOS os outros usuários (Gemini #734).
+      try {
+        // TODO(046): quando consent_status existir, pular `revoked` aqui (suspensão de push de saúde).
+        // if (u.consent_status === 'revoked') continue;
+        const tz = u.timezone || 'America/Sao_Paulo';
+        const p = localParts(now, tz);
+        if (!isEligible(kind, p)) continue;
+        entries.push({ userId: u.user_id, kind, periodKey: periodKey(kind, now, tz) });
+      } catch (err: any) {
+        console.error(`[enqueueEligibleReports] elegibilidade falhou p/ user ${u.user_id}:`, err?.message);
+      }
     }
     if (entries.length > 0) {
       await repo.enqueue(entries);

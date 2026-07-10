@@ -52,6 +52,9 @@ export interface OutboxRepository {
   claim(batchLimit?: number): Promise<OutboxRow[]>;
   markSent(id: string, channelResults: ChannelResult[]): Promise<void>;
   markFailed(id: string, attempts: number, channelResults?: ChannelResult[]): Promise<void>;
+  // Reverte o attempts++ do claim quando a linha foi reivindicada mas NÃO processada (deadline).
+  // Sem isso, um row sempre-no-fim-do-lote acumula attempts sem nunca ser tentado → falha prematura.
+  revertClaim(id: string, currentAttempts: number): Promise<void>;
 }
 
 export function createOutboxRepository(
@@ -91,6 +94,15 @@ export function createOutboxRepository(
         .update({ status: 'sent', sent_at: now(), channel_results: channelResults })
         .eq('id', id);
       if (error) throw new Error(`outbox.markSent: ${error.message}`);
+    },
+
+    // Reverte o attempts++ do claim p/ uma linha reivindicada mas pulada por deadline (Gemini #734).
+    async revertClaim(id, currentAttempts) {
+      const { error } = await client
+        .from('notification_outbox')
+        .update({ attempts: Math.max(0, currentAttempts - 1) })
+        .eq('id', id);
+      if (error) throw new Error(`outbox.revertClaim: ${error.message}`);
     },
 
     // Fronteira DLQ/retry (ENG-5): >= cap → 'failed' (para de reciclar); senão fica 'pending'
