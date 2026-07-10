@@ -18,9 +18,14 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 732,
-    "merged_squash": "637210a0",
+    "merged_pr": 733,
+    "merged_squash": "ebb13351",
     "merged_history": [
+      {
+        "pr": 733,
+        "squash": "ebb13351",
+        "phase": "043 Slice B: higiene notification_devices — função deactivate_stale_notification_devices(ttl 30d) SECURITY DEFINER+search_path=''+pg_cron '30 3 * * *'+one-shot (nunca DELETE); appVersion fora do device_fingerprint mobile (FR-006, raiz AP-208). Migração 20260706 aplicada prod (MCP): one-shot desativou 11 rows (reviewer 1bfec269 24→19); guard recent_wrongly_deactivated=0; 66 preservados. TTL=30d decisão operador (prod: farm todo <32d, 60d desativaria 0; ≤3 é gradual SC-002). Mobile 0.24.6→0.24.7. AP-273 (calibrar threshold vs distribuição real de prod). Review Gemini 1/1 aplicado (v_now clareza). Aprovado PO → squash+delete. Slice A (outbox) = próximo PR"
+      },
       {
         "pr": 732,
         "squash": "637210a0",
@@ -89,7 +94,7 @@
     "tier": 1,
     "spec_dir": "plans/specs/049-docs-revamp/fase-4",
     "spec": "plans/specs/049-docs-revamp/fase-4/spec.md",
-    "previous_session_note": "Iniciando a Fase 4 da Reorganização de Documentação.",
+    "previous_session_note": "043 Slice B mergeado (#733, ebb13351). Próximo: 043 Slice A (outbox+drenador+cutover) — branch feature/tese/043-slice-a, tasks T010-T024. Coord VINCULANTE: Slice A ANTES de 046 Slice B (api/notify.ts compartilhado); enqueue pula revoked; health check = resource api/admin.ts (NÃO criar api/health/*.js — R-090). ADR-078→accepted no T032.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
