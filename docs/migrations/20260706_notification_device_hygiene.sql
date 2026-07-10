@@ -28,13 +28,14 @@ SET search_path = ''
 AS $$
 DECLARE
   v_count integer;
+  v_now   timestamptz := now();  -- now() já é estável na txn; variável torna o instante explícito/determinístico
 BEGIN
   UPDATE public.notification_devices
      SET is_active  = false,
-         updated_at = now()
+         updated_at = v_now
    WHERE is_active
-     AND last_seen_at IS NOT NULL                                  -- guarda defensiva (coluna é NOT NULL)
-     AND last_seen_at < now() - make_interval(days => ttl_days);   -- device abandonado além do TTL
+     AND last_seen_at IS NOT NULL                                    -- guarda defensiva (coluna é NOT NULL)
+     AND last_seen_at < v_now - make_interval(days => ttl_days);     -- device abandonado além do TTL
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
