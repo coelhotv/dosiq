@@ -8,7 +8,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Backend/Infra
+- **Feat** (`no-user-impact`, PR #TBD): Higiene de `notification_devices` (043 Slice B, trilha de confiabilidade). Nova função `deactivate_stale_notification_devices(ttl_days default 30)` (SECURITY DEFINER, `search_path=''`, EXECUTE só `service_role`) desativa (`is_active=false`, **nunca DELETE**) devices sem atividade (`last_seen_at`) além do TTL; agendada via pg_cron diário (`30 3 * * *`) + one-shot retroativo na mesma migração. Corrige o acúmulo de rows ativos por aparelho físico (AP-208): revisor de loja com 24 devices ativos (1 aparelho × 10 versões, tokens Expo rotacionados) recebia 24 pushes idênticos por notificação. TTL=30d aplicado em prod desativou 11 rows históricos (reviewer 24→19; colapso completo é gradual — SC-002). Guard validado: 0 devices recentes (<30d) desativados; todos os rows preservados p/ auditoria. Migração `20260706_notification_device_hygiene.sql`. RPC `upsert_notification_device` intacta.
 - **Fix** (`no-user-impact`, PR #TBD): FK `ON DELETE CASCADE` de `user_id` → `auth.users` em `dose_instances`, `dose_critical_events` e `dose_adherence_monthly`. A exclusão de conta (e o prune via Admin API) agora elimina o dado clínico do titular junto com a conta — atende LGPD art. 16. Corrige furo latente: as 3 tabelas tinham `user_id` sem FK e ficavam fora do pipeline de exclusão (`delete_user_account()` não as deletava). 0 órfãos em prod. Migração `20260708_dose_tables_fk_cascade.sql`, validada com `BEGIN..ROLLBACK` (pre[1,1,1]→post[0,0,0]) antes de aplicar. Sem mudança de comportamento no cliente.
+
+### Mobile
+- **Feat** (`patch`, 0.24.6 → 0.24.7, PR #TBD): Registro de device (`syncNotificationDevice`) não gera mais row novo por bump de versão do mesmo aparelho — `appVersion` sai da identidade (`device_fingerprint`) e segue como atributo atualizável (`p_app_version`). Raiz do AP-208; complementa a higiene de TTL server-side acima (FR-006). Sem impacto visível na UI.
 
 ### Shared/Core
 - **Process** (`no-user-impact`, PR #TBD): Reorganização de arquivos e limpeza estrutural de diretórios da documentação oficial do Dosiq (Fase 4).

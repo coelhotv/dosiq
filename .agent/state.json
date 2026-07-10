@@ -4,11 +4,11 @@
   "session": {
     "mode": "coding",
     "ceremony_type": null,
-    "status": "analysis",
-    "plan": null,
-    "tasks": "plans/specs/049-docs-revamp/fase-4/tasks.md",
-    "goal": "049-docs-revamp - Fase 4: Limpeza Estrutural",
-    "goal_type": "docs",
+    "status": "completed",
+    "plan": "plans/specs/043-notify-improvements/plan.md",
+    "tasks": "plans/specs/043-notify-improvements/tasks.md",
+    "goal": "043-notify-improvements - Slice B: higiene notification_devices (TTL + fingerprint)",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
       "plans/specs/046-lgpd-consent",
@@ -106,9 +106,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "rules_count": 235,
-    "anti_patterns_count": 167,
+    "anti_patterns_count": 168,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
