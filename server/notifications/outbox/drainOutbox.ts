@@ -73,13 +73,6 @@ function toChannelResults(dispatchResult: any): ChannelResult[] {
   }));
 }
 
-// Executa `tasks` com no máximo `poolSize` em voo. allSettled: uma falha não derruba o lote.
-async function runPool<T>(items: T[], poolSize: number, worker: (item: T) => Promise<void>): Promise<void> {
-  for (let i = 0; i < items.length; i += poolSize) {
-    await Promise.allSettled(items.slice(i, i + poolSize).map(worker));
-  }
-}
-
 export async function drainOutbox(deps: DrainDeps): Promise<DrainSummary> {
   const {
     repo, dispatcher, contentBuilders, dispatchKind = {}, fetchSettings,
@@ -108,19 +101,9 @@ export async function drainOutbox(deps: DrainDeps): Promise<DrainSummary> {
   const userIds = [...new Set(rows.map((r) => r.user_id))];
   const settingsMap = await fetchSettings(userIds);
 
-  await runPool(rows, poolSize, async (row) => {
-    // Deadline (ENG-7): não inicia novo envio após o orçamento — evita estourar maxDuration.
-    // Reverte o attempts++ do claim: a linha foi reivindicada mas não tentada, não deve gastar
-    // tentativa (senão vira 'failed' prematuro em cargas altas — Gemini #734).
-    if (now() - start > deadlineMs) {
-      summary.deadlineHit = true;
-      try {
-        await repo.revertClaim(row.id, row.attempts);
-      } catch (revertErr: any) {
-        logger.error('[drainOutbox] falha ao reverter claim por deadline', { id: row.id, error: revertErr?.message });
-      }
-      return;
-    }
+  // Processa uma linha (envia + finaliza). Sem checagem de deadline aqui — o deadline é avaliado
+  // por LOTE antes de iniciar (ver loop abaixo), evitando iniciar workers só p/ pular.
+  const processRow = async (row: OutboxRow) => {
     try {
       const builder = contentBuilders[row.kind];
       if (!builder) {
@@ -155,7 +138,27 @@ export async function drainOutbox(deps: DrainDeps): Promise<DrainSummary> {
       }
       summary.failed += 1;
     }
-  });
+  };
+
+  // Loop por LOTE (poolSize em voo, allSettled). Deadline (ENG-7) avaliado ANTES de cada lote:
+  // se estourou, reverte TODAS as linhas restantes de uma vez (não gasta tentativa — attempts++
+  // do claim revertido) e interrompe — evita iniciar dezenas de workers/reverts espalhados só
+  // p/ pular (Gemini #734).
+  for (let i = 0; i < rows.length; i += poolSize) {
+    if (now() - start > deadlineMs) {
+      summary.deadlineHit = true;
+      const remaining = rows.slice(i);
+      await Promise.allSettled(remaining.map(async (row) => {
+        try {
+          await repo.revertClaim(row.id, row.attempts);
+        } catch (revertErr: any) {
+          logger.error('[drainOutbox] falha ao reverter claim por deadline', { id: row.id, error: revertErr?.message });
+        }
+      }));
+      break;
+    }
+    await Promise.allSettled(rows.slice(i, i + poolSize).map(processRow));
+  }
 
   summary.durationMs = now() - start;
   // Log agregado único (FR-007): um registro por drain, não por usuário.
