@@ -44,7 +44,12 @@ CREATE INDEX IF NOT EXISTS notification_outbox_pending_idx
 ALTER TABLE public.notification_outbox ENABLE ROW LEVEL SECURITY;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.notification_outbox TO service_role;
--- authenticated/anon: NENHUM grant (fila interna — SEC-2/PO-SEC-2).
+-- ⚠️ Este projeto TEM default privileges legados que auto-concedem grants a anon/authenticated
+-- em tabelas novas do schema public (a nota da CLAUDE.md "novas tabelas não recebem grants" NÃO
+-- vale aqui — verificado em prod 2026-07-10). RLS sem policy já nega linhas, mas removemos os
+-- grants por defense-in-depth e para satisfazer PO-SEC-2 (zero grant authenticated/anon).
+REVOKE ALL ON public.notification_outbox FROM anon;
+REVOKE ALL ON public.notification_outbox FROM authenticated;
 
 -- 3. Claim atômico (ENG-4/ADR-078): reivindica um lote de pendentes para um drenador.
 --    FOR UPDATE SKIP LOCKED → drenadores concorrentes pegam lotes disjuntos sem bloquear
