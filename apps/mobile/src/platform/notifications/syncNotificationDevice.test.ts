@@ -108,8 +108,26 @@ describe('syncNotificationDevice', () => {
         os: 'ios',
         osVersion: 17,
         deviceModel: 'iPhone 15 Pro',
-        appVersion: '4.0.0',
       })
+    })
+
+    // FR-006 (043 Slice B): appVersion NÃO faz mais parte da identidade do device (fingerprint),
+    // mas segue como atributo atualizável do row via p_app_version.
+    it('não deve incluir appVersion no fingerprint, mas sim em p_app_version', async () => {
+      const mockSupabase = {
+        rpc: jest.fn().mockResolvedValue({ error: null }),
+      }
+
+      await syncNotificationDevice({
+        supabase: mockSupabase,
+        userId: 'user-123',
+        token: 'ExponentPushToken[abc123]',
+      })
+
+      const [, params] = mockSupabase.rpc.mock.calls[0]
+      const fingerprint = JSON.parse(params.p_device_fingerprint)
+      expect(fingerprint).not.toHaveProperty('appVersion')
+      expect(params.p_app_version).toBe('4.0.0')
     })
   })
 })

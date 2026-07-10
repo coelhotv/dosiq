@@ -19,11 +19,13 @@ export async function syncNotificationDevice({ supabase, userId, token, nativeAl
     throw new Error('[syncNotificationDevice] token required')
   }
 
+  // FR-006 (043 Slice B): appVersion FORA da identidade do device (fingerprint) — era a raiz
+  // do AP-208 (novo row ativo por bump de versão). A versão segue como atributo atualizável do
+  // row via p_app_version; o fingerprint agora é estável entre versões do mesmo aparelho.
   const deviceFingerprint = JSON.stringify({
     os: Platform.OS,
     osVersion: Platform.Version,
     deviceModel: Device.modelName,
-    appVersion: Application.nativeApplicationVersion,
   })
 
   const { error } = await supabase.rpc('upsert_notification_device', {
