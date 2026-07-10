@@ -18,9 +18,14 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 731,
-    "merged_squash": "c0f29fb2",
+    "merged_pr": 732,
+    "merged_squash": "637210a0",
     "merged_history": [
+      {
+        "pr": 732,
+        "squash": "637210a0",
+        "phase": "046 T000: FK ON DELETE CASCADE user_id->auth.users em dose_instances/dose_critical_events/dose_adherence_monthly (LGPD art.16; furo latente fora do delete_user_account). Testado BEGIN..ROLLBACK pre[1,1,1]->post[0,0,0]; aplicado prod via MCP. AP-272, R-287. PR carregou tb docs(049) bc90c212 (main local ahead) — 6 correções gramaticais Gemini aplicadas. Aprovado PO -> squash+delete"
+      },
       {
         "pr": 696,
         "squash": "2aa98862",
