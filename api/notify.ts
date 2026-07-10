@@ -12,12 +12,34 @@ import {
   sendDLQDigest
 } from '../server/bot/tasks.js';
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
+import { runOutboxCycle } from '../server/notifications/outbox/runOutboxCycle.js';
+import {
+  buildDailyAdherenceData,
+  buildWeeklyAdherenceData,
+  buildMonthlyReportData
+} from '../server/bot/_adherenceHelpers.js';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
 import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
 
 const logger = createLogger('CronNotify');
+
+// Cutover kind-a-kind (ADR-078): kinds em OUTBOX_KINDS são servidos pela outbox; seu job legado
+// é PULADO (evita envio duplo). Ausente/vazio → tudo legado (deploy neutro — ENG-1). Rollback por env.
+const OUTBOX_KINDS = new Set(
+  (process.env.OUTBOX_KINDS || '').split(',').map((s) => s.trim()).filter(Boolean)
+);
+
+// Registry outbox-kind → builder puro (nível B; injetado no ciclo da outbox para não arrastar
+// server/bot pro island strict-A — R-283). Só kinds aqui podem ser drenados.
+const OUTBOX_CONTENT_BUILDERS = {
+  daily_adherence: ({ userId, settings }) => buildDailyAdherenceData(userId, settings?.display_name),
+  weekly_adherence: ({ userId, settings }) => buildWeeklyAdherenceData(userId, settings?.display_name),
+  monthly_report: ({ userId, settings }) => buildMonthlyReportData(userId, settings?.display_name)
+};
+// outbox kind → kind de dispatch quando divergem (payload legado usa 'adherence_report').
+const OUTBOX_DISPATCH_KIND = { daily_adherence: 'adherence_report' };
 
 // Singleton clients — instanciados no module scope para reuso em warm invocations (R-089)
 const supabase = createClient(
@@ -251,67 +273,77 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   const currentWeekDay = spDate.getDay();
   const results = [];
 
-  // 1. Always check dose reminders (Every minute)
-  await withCorrelation(
-    (context) => checkReminders(bot, { ...context, notificationDispatcher }),
-    { correlationId, jobType: 'reminders' }
-  );
-  results.push('reminders');
+  // Isolamento por job (PO-1/FR-001): a falha de um relatório NÃO propaga — reminders (que já
+  // rodou) e os demais jobs seguem. Cada job vira um registro discreto ('<job>' ou '<job>:failed').
+  const runJob = async (name, jobType, fn) => {
+    try {
+      await withCorrelation((context) => fn(context), { correlationId, jobType });
+      results.push(name);
+    } catch (err) {
+      logger.error(`Job '${name}' falhou (isolado — não propaga)`, err, { correlationId, jobType });
+      results.push(`${name}:failed`);
+    }
+  };
 
-  // 2. Daily Digest
-  await withCorrelation(
-    (context) => runDailyDigest(bot, { ...context, notificationDispatcher }),
-    { correlationId, jobType: 'daily_digest' }
-  );
-  results.push('daily_digest');
+  // 1. Reminders — SEMPRE primeiro (ADR-057 intocado), isolado de qualquer relatório.
+  await runJob('reminders', 'reminders',
+    (context) => checkReminders(bot, { ...context, notificationDispatcher }));
 
-  // 2.1 Daily Adherence Report
-  await withCorrelation(
-    (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }),
-    { correlationId, jobType: 'daily_adherence_report' }
-  );
-  results.push('daily_adherence_report');
+  // 2. Ciclo da outbox (ADR-078): enqueue por range + drain dos kinds migrados. Isolado.
+  //    No-op quando OUTBOX_KINDS vazio (deploy neutro). Falha aqui não afeta reminders/legado.
+  await runJob('outbox_cycle', 'outbox_cycle', async () => {
+    const outcome = await runOutboxCycle({
+      supabase,
+      dispatcher: notificationDispatcher,
+      outboxKinds: OUTBOX_KINDS,
+      contentBuilders: OUTBOX_CONTENT_BUILDERS,
+      dispatchKind: OUTBOX_DISPATCH_KIND,
+      correlationId,
+      logger,
+    });
+    logger.info('[outbox] ciclo concluído', { correlationId, ...outcome });
+  });
 
-  // 3. Tasks at 10:00
+  // --- Jobs LEGADOS: pulados quando o kind já é servido pela outbox (evita envio duplo). ---
+
+  // Daily Digest
+  if (!OUTBOX_KINDS.has('daily_digest')) {
+    await runJob('daily_digest', 'daily_digest',
+      (context) => runDailyDigest(bot, { ...context, notificationDispatcher }));
+  }
+
+  // Daily Adherence Report
+  if (!OUTBOX_KINDS.has('daily_adherence')) {
+    await runJob('daily_adherence_report', 'daily_adherence_report',
+      (context) => runDailyAdherenceReport(bot, { ...context, notificationDispatcher }));
+  }
+
+  // Tasks at 10:00
   if (currentHour === 10 && currentMinute === 0) {
-    await withCorrelation(
-      (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'stock_alerts' }
-    );
-    results.push('stock_alerts');
-
-    await withCorrelation(
-      (context) => sendDLQDigest(notificationDispatcher, context),
-      { correlationId, jobType: 'dlq_digest' }
-    );
-    results.push('dlq_digest');
+    if (!OUTBOX_KINDS.has('stock_alert')) {
+      await runJob('stock_alerts', 'stock_alerts',
+        (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }));
+    }
+    await runJob('dlq_digest', 'dlq_digest',
+      (context) => sendDLQDigest(notificationDispatcher, context));
   }
 
-  // 4. Titration Alerts: Daily at 08:00
+  // Titration Alerts: Daily at 08:00 (não migra para outbox)
   if (currentHour === 8 && currentMinute === 0) {
-    await withCorrelation(
-      (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'titration_alerts' }
-    );
-    results.push('titration_alerts');
+    await runJob('titration_alerts', 'titration_alerts',
+      (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }));
   }
 
-  // 5. Adherence Reports: Sunday 09:00-12:00 SP (window covers UTC-3 to UTC-5 at 09:00 local)
-  if (currentWeekDay === 0 && currentHour >= 9 && currentHour <= 12) {
-    await withCorrelation(
-      (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'adherence_reports' }
-    );
-    results.push('adherence_reports');
+  // Adherence Reports: Sunday 09:00-12:00 SP
+  if (currentWeekDay === 0 && currentHour >= 9 && currentHour <= 12 && !OUTBOX_KINDS.has('weekly_adherence')) {
+    await runJob('adherence_reports', 'adherence_reports',
+      (context) => checkAdherenceReports(bot, { ...context, notificationDispatcher }));
   }
 
-  // 6. Monthly Report: 1st of month (per-user timezone handles exact 10:00)
-  if (currentDay === 1) {
-    await withCorrelation(
-      (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }),
-      { correlationId, jobType: 'monthly_report' }
-    );
-    results.push('monthly_report');
+  // Monthly Report: 1st of month
+  if (currentDay === 1 && !OUTBOX_KINDS.has('monthly_report')) {
+    await runJob('monthly_report', 'monthly_report',
+      (context) => checkMonthlyReport(bot, { ...context, notificationDispatcher }));
   }
 
   return results;

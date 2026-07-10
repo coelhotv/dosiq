@@ -110,6 +110,38 @@ async function _routeNudges(req, res, action, supabase) {
   return res.status(405).json({ error: 'Method or action not allowed for nudges' });
 }
 
+// Roteador auxiliar para health check (ENG-6, spec 043). Sem função serverless nova (R-090):
+// vive como resource do admin. Reporta 'degraded' quando há pendências na notification_outbox
+// mais velhas que o limite (fila entupida = drenador não vazando). Herda a auth de admin.
+async function _routeHealth(req, res, scope, supabase) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed for health' });
+  }
+  if (scope !== 'notifications') {
+    return res.status(400).json({ error: `Unknown health scope: ${scope}` });
+  }
+  const thresholdMin = Math.min(Math.max(parseInt(req.query.max_pending_age_min) || 15, 1), 240);
+  // eslint-disable-next-line no-restricted-syntax -- aritmética de instante UTC absoluto, não parse de date-string
+  const cutoff = new Date(Date.now() - thresholdMin * 60_000).toISOString();
+  const { count, error } = await supabase
+    .from('notification_outbox')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+    .lt('created_at', cutoff);
+  if (error) {
+    console.error('[Admin API] health notifications query error:', error);
+    return res.status(500).json({ status: 'error', error: 'Failed to query outbox health' });
+  }
+  const pendingAged = count || 0;
+  const degraded = pendingAged > 0;
+  return res.status(200).json({
+    status: degraded ? 'degraded' : 'ok',
+    scope: 'notifications',
+    pendingAged,
+    thresholdMin,
+  });
+}
+
 /**
  * Main Router
  */
@@ -127,9 +159,13 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: authResult.error });
   }
 
-  // resource: 'dlq' | 'feedbacks'
+  // resource: 'dlq' | 'feedbacks' | 'nudges' | 'health'
   // action: 'retry' | 'discard' | 'resolve'
-  const { resource, action } = req.query;
+  const { resource, action, scope } = req.query;
+
+  if (resource === 'health') {
+    return _routeHealth(req, res, scope, supabase);
+  }
 
   if (resource === 'dlq') {
     return _routeDlq(req, res, action);

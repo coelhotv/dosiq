@@ -49,6 +49,10 @@
       "destination": "/api/admin.ts?resource=nudges"
     },
     {
+      "source": "/api/health/notifications",
+      "destination": "/api/admin.ts?resource=health&scope=notifications"
+    },
+    {
       "source": "/api/telegram",
       "destination": "/api/telegram.ts"
     },

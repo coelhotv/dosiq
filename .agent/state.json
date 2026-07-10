@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/043-notify-improvements/plan.md",
     "tasks": "plans/specs/043-notify-improvements/tasks.md",
-    "goal": "043-notify-improvements - Slice B: higiene notification_devices (TTL + fingerprint)",
+    "goal": "043-notify-improvements - Slice A: outbox + drenador + cutover (ADR-078)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -94,7 +94,7 @@
     "tier": 1,
     "spec_dir": "plans/specs/049-docs-revamp/fase-4",
     "spec": "plans/specs/049-docs-revamp/fase-4/spec.md",
-    "previous_session_note": "043 Slice B mergeado (#733, ebb13351). Próximo: 043 Slice A (outbox+drenador+cutover) — branch feature/tese/043-slice-a, tasks T010-T024. Coord VINCULANTE: Slice A ANTES de 046 Slice B (api/notify.ts compartilhado); enqueue pula revoked; health check = resource api/admin.ts (NÃO criar api/health/*.js — R-090). ADR-078→accepted no T032.",
+    "previous_session_note": "043 Slice A CODADO em feature/tese/043-slice-a (não mergeado). Estrutural T010-T013 (migração outbox 20260707 + periodKey/outboxRepository/drainOutbox/enqueueReports/runOutboxCycle) + cutover T020-T024 (notify.ts reminders-primeiro+isolamento por job + ciclo outbox atrás de OUTBOX_KINDS; kinds migrados daily_adherence/weekly_adherence/monthly_report; daily_digest+stock_alert=cutover futuro no mesmo mecanismo, legado segue) + health resource api/admin.ts (/api/health/notifications, zero função nova). ADR-078→accepted. Server 4.1.0. AP-274 (island A importando B arrasta dívida strict → DI do caller B). Gates: lint clean, strict-island ratchet OK (B server 36/36), validate:agent 104/1520 verde, outbox 28/28 (Sonnet). POs [x] com evidência estática/teste. PENDENTE antes/no merge: (1) aplicar migração 20260707 em prod via MCP → confirmar live PO-SEC-2 (role_table_grants) + cron.job + PO-2 duration pós-deploy; (2) OUTBOX_KINDS fica vazio no deploy (neutro), operador flipa kind-a-kind; (3) teste automatizado de ordem/isolamento notify (PO-1) = follow-up; (4) hook revoked do enqueue = 046 Slice B. Falta commit + push + PR.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -111,9 +111,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 235,
-    "anti_patterns_count": 168,
+    "anti_patterns_count": 169,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
@@ -123,6 +123,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-08T21:33:00Z"
+    "index_loaded_at": "2026-07-10T00:00:00Z"
   }
 }

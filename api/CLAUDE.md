@@ -173,9 +173,12 @@ if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
 | `/api/admin/:id/discard` | POST | discard | Descarta notificação no DLQ |
 | `/api/admin/feedbacks` | GET/POST | feedbacks | Gerencia feedbacks dos usuários |
 | `/api/admin/nudges` | POST | nudges | Dispara nudges informativos/alerta |
+| `/api/health/notifications` | GET | health (scope=notifications) | Saúde da `notification_outbox`: `degraded` se há pendências além do limite (ENG-6, spec 043) |
 
 **Auth:** Administrador (validação via Supabase JWT + Admin Chat ID).  
-**Handlers:** `api/admin/_handlers/{retry.ts, discard.ts, feedbacks.ts, nudges.ts}`
+**Handlers:** `api/admin/_handlers/{retry.ts, discard.ts, feedbacks.ts, nudges.ts}` (health é inline no roteador — zero função nova, R-090).
+
+> **Health check da outbox (spec 043):** NÃO existe `api/health/*.ts` (seria função serverless nova — R-090). O check vive como `resource=health` do `admin.ts`, exposto via rewrite `/api/health/notifications` no `vercel.json`.
 
 ### Users Roteador (`api/users.ts`)
 
