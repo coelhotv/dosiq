@@ -7,6 +7,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Backend/Infra
+- **Fix** (`no-user-impact`, PR #TBD): FK `ON DELETE CASCADE` de `user_id` → `auth.users` em `dose_instances`, `dose_critical_events` e `dose_adherence_monthly`. A exclusão de conta (e o prune via Admin API) agora elimina o dado clínico do titular junto com a conta — atende LGPD art. 16. Corrige furo latente: as 3 tabelas tinham `user_id` sem FK e ficavam fora do pipeline de exclusão (`delete_user_account()` não as deletava). 0 órfãos em prod. Migração `20260708_dose_tables_fk_cascade.sql`, validada com `BEGIN..ROLLBACK` (pre[1,1,1]→post[0,0,0]) antes de aplicar. Sem mudança de comportamento no cliente.
+
 ### Shared/Core
 - **Process** (`no-user-impact`, PR #TBD): Reorganização de arquivos e limpeza estrutural de diretórios da documentação oficial do Dosiq (Fase 4).
 
