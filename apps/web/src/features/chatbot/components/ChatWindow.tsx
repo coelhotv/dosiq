@@ -50,7 +50,7 @@ const formatDaySeparator = (timestamp) => {
  * Lazy-loaded — nao impacta main bundle.
  */
 export default function ChatWindow({ isOpen, onClose }) {
-  const { medicines, protocols, logs, stockSummary, stats, doseInstances } = useDashboard()
+  const { medicines, protocols, logs, stockSummary, stats, doseInstances, stockTrackingEnabled } = useDashboard()
 
   const [messages, setMessages] = useState(() => {
     const persisted = loadPersistedHistory()
@@ -91,7 +91,10 @@ export default function ChatWindow({ isOpen, onClose }) {
       // Preserva demais métricas (...stats) e adiciona `adherence` no shape do contrato —
       // defensivo caso o builder passe a usar outros campos (streak, etc.).
       const normalizedStats = { ...stats, adherence: stats?.rates?.adherence ?? stats?.adherenceRate ?? stats?.adherence ?? null }
-      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats: normalizedStats, doseInstances } })
+      // 044: `stockTrackingEnabled` é OBRIGATÓRIO aqui — este payload é uma ALLOWLIST explícita
+      // de campos, então um campo novo do contexto NÃO viaja sozinho. Sem ele, o builder cai no
+      // default `true` e o chat afirmaria "SEM ESTOQUE" para um usuário dose-only (US3).
+      const result = await sendChatMessage({ message: userMessage, history: messages, patientData: { medicines, protocols, logs, stockSummary, stats: normalizedStats, doseInstances, stockTrackingEnabled } })
       // isError: exibe na tela mas NÃO persiste (savePersistedHistory filtra) — paridade mobile #686
       addMessage({ role: 'assistant', content: result.response || result.reason || '', timestamp: getNow().getTime(), isError: result.error === true })
     } finally {
