@@ -5,9 +5,9 @@
     "mode": "coding",
     "ceremony_type": null,
     "status": "completed",
-    "plan": "plans/specs/043-notify-improvements/plan.md",
-    "tasks": "plans/specs/043-notify-improvements/tasks.md",
-    "goal": "043-notify-improvements - Slice A: outbox + drenador + cutover (ADR-078)",
+    "plan": "plans/specs/044-dose-only-mode/plan.md",
+    "tasks": "plans/specs/044-dose-only-mode/tasks.md",
+    "goal": "044-dose-only-mode - F1: fundação SQL (T001 migração + T002 testes BEGIN..ROLLBACK)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -97,10 +97,10 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "tier": 1,
-    "spec_dir": "plans/specs/049-docs-revamp/fase-4",
-    "spec": "plans/specs/049-docs-revamp/fase-4/spec.md",
-    "previous_session_note": "043 Slice A MERGEADO (#734, squash b5a832a7, 2026-07-10). Épico 043 quase completo — FALTA só T023b: cutover digest+stock (PR próprio Slice A.2, VINCULADO a 044 em prod pelo filtro stock_tracking_enabled; mecanismo pronto, só registrar 2 kinds no registry de api/notify.ts). OUTBOX_KINDS está VAZIO em prod (deploy neutro) — operador flipa kind-a-kind quando quiser ativar. Migrações 20260707+20260710 já em prod. Observação pós-merge pendente: SC-004 duration do 1º drain real + SC-002/003. HISTÓRICO Slice A (arquivado): 043 Slice A CODADO em feature/tese/043-slice-a (não mergeado). Estrutural T010-T013 (migração outbox 20260707 + periodKey/outboxRepository/drainOutbox/enqueueReports/runOutboxCycle) + cutover T020-T024 (notify.ts reminders-primeiro+isolamento por job + ciclo outbox atrás de OUTBOX_KINDS; kinds migrados daily_adherence/weekly_adherence/monthly_report; daily_digest+stock_alert=cutover futuro no mesmo mecanismo, legado segue) + health resource api/admin.ts (/api/health/notifications, zero função nova). ADR-078→accepted. Server 4.1.0. AP-274 (island A importando B arrasta dívida strict → DI do caller B) + AP-275 (tabela nova recebeu grants anon/authenticated de default privileges legados apesar do 'sem grant' da CLAUDE.md — RLS negava linhas mas REVOKE explícito obrigatório; corrigido em prod, migração 2ª aplicada). Migração 20260707 APLICADA EM PROD 2026-07-10 (MCP): tabela+funções+cron OK; PO-SEC-2/4 LIVE fechados (role_table_grants só postgres+service_role pós-REVOKE; cron.job '15 3 * * *'; search_path=''). PR #734 aberto (aguarda Gemini). Gates: lint clean, strict-island ratchet OK (B server 36/36), validate:agent 104/1520 verde, outbox 28/28 (Sonnet). POs [x] com evidência estática/teste. PENDENTE antes/no merge: (1) aplicar migração 20260707 em prod via MCP → confirmar live PO-SEC-2 (role_table_grants) + cron.job + PO-2 duration pós-deploy; (2) OUTBOX_KINDS fica vazio no deploy (neutro), operador flipa kind-a-kind; (3) teste automatizado de ordem/isolamento notify (PO-1) = follow-up; (4) hook revoked do enqueue = 046 Slice B. REVIEW #734: ciclo 1 (8 sugestões Gemini aplicadas: order/range, try/catch por user, revertClaim, parseInt health, log fetchSettings) + ciclo 2 (re-review pegou FURO DE ARQUITETURA de concorrência: claim deixava status='pending' → re-claim concorrente pós-commit → envio duplicado; fix estado 'processing'+claimed_at+recuperação stuck>15min, migração corretiva 20260710 aplicada prod). AP-276 + R-288 gravados (trace de interleaving obrigatório em fila/claim; não mockar primitivo sob teste). Lição-chave: agente principal não pode depender de revisor externo p/ furo de concorrência — gate de failure-modes precisa de linha temporal/interleaving, não só inputs degenerados. Aguarda 3º re-review Gemini.",
+    "tier": 2,
+    "spec_dir": "plans/specs/044-dose-only-mode",
+    "spec": "plans/specs/044-dose-only-mode/spec.md",
+    "previous_session_note": "044 F1 CODADO em feature/044/f1-sql (PR aberto, NAO mergeado). Migração 20260707_stock_tracking_preference.sql NAO aplicada em prod (só testada BEGIN..ROLLBACK e revertida — 0 colunas residuais confirmado). user_settings +stock_tracking_enabled (NOT NULL DEFAULT true, FR-009) +stock_paused_at; 3 RPCs atômicas com curto-circuito de estoque, ASSINATURAS INALTERADAS (base = dump pg_get_functiondef de prod). BUG PEGO PELO TESTE: AP-277 — SELECT INTO sem linha atribui NULL (não preserva init da var), COALESCE dentro do SELECT nunca roda → flag NULL → estoque desligado por omissão (fail-OPEN, contra FR-009). Fix: COALESCE DEPOIS do SELECT. Testes 10/10 PASS (OFF 4 caminhos com saldo 0 + zero mutação de estoque; ON guard 10->7->6->10 + 'Estoque insuficiente' vivo; fail-safe sem user_settings). Gates: lint 0, validate:agent 104/1520, strict-island OK. PENDENTE: (1) aplicar migração em prod via MCP no merge/deploy; (2) SQP fica na F5 (instrução do PO). ACHADOS LATENTES (fora do escopo F1, AGENDADOS p/ F2): restore_stock_for_log usa auth.uid() em vez de p_user_id + search_path='public' (service_role → 'Usuário não autenticado') → T007b da F2; medicines.type DEFAULT 'medicine' viola o próprio CHECK → vira T007c da F2 (decisão PO 2026-07-11). Próximo: F2 (T003-T007).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -117,9 +117,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 236,
-    "anti_patterns_count": 171,
+    "anti_patterns_count": 172,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
@@ -129,6 +129,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-10T00:00:00Z"
+    "index_loaded_at": "2026-07-11T15:00:00Z"
   }
 }
