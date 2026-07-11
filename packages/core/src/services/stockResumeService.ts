@@ -119,7 +119,11 @@ export function createStockResumeService({
       const zeroedMedicineIds: string[] = []
 
       for (const [medicineId, quantity] of Object.entries(summary ?? {})) {
-        if (!(Number(quantity) > 0)) continue
+        const qty = Number(quantity)
+        // `!== 0` (não `> 0`): saldo NEGATIVO acidental também precisa ser zerado — senão o
+        // FIFO religaria sobre um saldo negativo. Saldo já em 0 não gera ajuste inútil;
+        // valor não-numérico é ignorado (nunca chamar o RPC com NaN).
+        if (!Number.isFinite(qty) || qty === 0) continue
         await stockRepo.adjustToBalance(
           medicineId,
           0,

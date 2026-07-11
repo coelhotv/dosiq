@@ -147,6 +147,22 @@ describe('createStockResumeService', () => {
     expect(deps._profileRepo.setStockTracking).toHaveBeenCalledWith(true)
   })
 
+  it('(c) saldo NEGATIVO acidental também é zerado; 0 e valor inválido são pulados', async () => {
+    const deps = makeDeps({
+      pausedAt: daysAgo(60),
+      summary: { 'med-neg': -3, 'med-zero': 0, 'med-nan': Number.NaN as any, 'med-pos': 5 },
+    })
+
+    const { zeroedMedicineIds } = await createStockResumeService(deps).resumeAndZero()
+
+    // Sem isto o FIFO religaria sobre um saldo negativo (review #736).
+    expect(zeroedMedicineIds).toEqual(['med-neg', 'med-pos'])
+    expect(deps._stockRepo.adjustToBalance).toHaveBeenCalledWith(
+      'med-neg', 0, LEGACY_UNRECOVERABLE_REASON, expect.any(String)
+    )
+    expect(deps._stockRepo.adjustToBalance).toHaveBeenCalledTimes(2)
+  })
+
   it('(c) zerar falhou → preferência continua OFF (nunca liga FIFO sobre saldo meio-zerado)', async () => {
     const deps = makeDeps({ pausedAt: daysAgo(60), summary: { 'med-1': 12 } })
     deps._stockRepo.adjustToBalance.mockRejectedValueOnce(new Error('rpc caiu'))
