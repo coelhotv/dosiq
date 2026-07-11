@@ -156,6 +156,13 @@ export type Database = {
             referencedRelation: "protocols"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dose_adherence_monthly_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
         ]
       }
       dose_critical_events: {
@@ -189,7 +196,15 @@ export type Database = {
           platform?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dose_critical_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dose_instances: {
         Row: {
@@ -256,6 +271,13 @@ export type Database = {
             columns: ["protocol_id"]
             isOneToOne: false
             referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dose_instances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
             referencedColumns: ["id"]
           },
         ]
@@ -769,6 +791,53 @@ export type Database = {
           },
           {
             foreignKeyName: "notification_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_outbox: {
+        Row: {
+          attempts: number
+          channel_results: Json | null
+          claimed_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          period_key: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel_results?: Json | null
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          period_key: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          channel_results?: Json | null
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          period_key?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_outbox_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_emails"
@@ -1395,7 +1464,15 @@ export type Database = {
           taken_doses: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dose_instances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_daily_adherence: {
         Row: {
@@ -1405,7 +1482,15 @@ export type Database = {
           taken_doses: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dose_instances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_dose_critical_summary: {
         Row: {
@@ -1419,7 +1504,15 @@ export type Database = {
           trajetoria: string | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dose_critical_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_dose_critical_trace: {
         Row: {
@@ -1434,7 +1527,15 @@ export type Database = {
           seq: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dose_critical_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -1454,6 +1555,27 @@ export type Database = {
           review_ids: string[]
         }
         Returns: number
+      }
+      claim_notification_outbox: {
+        Args: { batch_limit?: number }
+        Returns: {
+          attempts: number
+          channel_results: Json | null
+          claimed_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          period_key: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notification_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       cleanup_expired_bot_sessions: { Args: never; Returns: number }
       consume_stock_fifo: {
@@ -1478,6 +1600,10 @@ export type Database = {
           p_unit_price?: number
         }
         Returns: Json
+      }
+      deactivate_stale_notification_devices: {
+        Args: { ttl_days?: number }
+        Returns: number
       }
       delete_dose_log_atomic: {
         Args: {
@@ -1509,6 +1635,10 @@ export type Database = {
         }[]
       }
       migrate_pilot_data: { Args: never; Returns: undefined }
+      prune_notification_outbox: {
+        Args: { retention_days?: number }
+        Returns: number
+      }
       refresh_stock_summary: { Args: never; Returns: undefined }
       register_dose_atomic: {
         Args: {
@@ -1525,7 +1655,11 @@ export type Database = {
         Returns: Json
       }
       restore_stock_for_log: {
-        Args: { p_medicine_log_id: string; p_reason?: string; p_user_id?: string }
+        Args: {
+          p_medicine_log_id: string
+          p_reason?: string
+          p_user_id?: string
+        }
         Returns: Json
       }
       update_dose_log_atomic: {
