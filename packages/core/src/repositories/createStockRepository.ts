@@ -293,9 +293,14 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
       const payload = validation.data
 
       if (payload.medicine_log_id) {
+        // 044 T007b: a RPC passou a aceitar `p_user_id` (DEFAULT NULL → cai em auth.uid()).
+        // Passar o dono explicitamente mantém o caller alinhado à assinatura nova (AP-221) e
+        // o mesmo caminho funciona server-side (service_role, sem sessão).
+        const userId = await getUserId()
         const { data, error } = await client.rpc('restore_stock_for_log', {
           p_medicine_log_id: payload.medicine_log_id,
           p_reason: payload.reason,
+          p_user_id: userId,
         })
         if (error) throw error
         return data

@@ -33,6 +33,15 @@ export {
   resolveDataUrl,
 } from './anvisaDatabase'
 
+// Reativação do controle de estoque (spec 044 — FR-012, gap lazy sem cron)
+export {
+  STOCK_RESUME_RECONCILE_DAYS,
+  LEGACY_UNRECOVERABLE_REASON,
+  computeStockPauseGapDays,
+  createStockResumeService,
+} from './stockResumeService'
+export type { StockResumeAssessment, StockResumeService } from './stockResumeService'
+
 // Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
 export { createCriticalAuditService } from './criticalAuditService'
 export type { CriticalAuditEvent } from './criticalAuditService'

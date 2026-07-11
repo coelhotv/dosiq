@@ -199,7 +199,8 @@ describe('createStockRepository — parity', () => {
       const LOG_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'
       await repo.increaseStock(MED, 2, { medicine_log_id: LOG_ID, reason: 'estorno' })
       const call = client._rpcCalls.find(([n]: any) => n === 'restore_stock_for_log')
-      expect(call[1]).toMatchObject({ p_medicine_log_id: LOG_ID, p_reason: 'estorno' })
+      // 044 T007b: dono explícito (p_user_id) — mesmo caminho funciona server-side.
+      expect(call[1]).toMatchObject({ p_medicine_log_id: LOG_ID, p_reason: 'estorno', p_user_id: FAKE_USER })
     })
     it('sem medicine_log_id → apply_manual_stock_adjustment delta positivo', async () => {
       const repo = createStockRepository({ client, getUserId })

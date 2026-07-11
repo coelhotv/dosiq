@@ -96,6 +96,8 @@ export function DashboardProvider({ children }) {
       {
         // Fuso do perfil (F4.3f.1) — governa a derivação do "hoje"/HH:MM e a partição
         // cross-dia (splitDayTimeline). Fallback SP quando ausente. Leitura curta/cacheada.
+        // 044: a preferência de estoque viaja no MESMO select (read-path R-267) — nenhuma
+        // query nova; consumidores leem `stockTrackingEnabled` do contexto.
         key: CACHE_KEYS.USER_TIMEZONE,
         fetcher: async () => {
           // Dado secundário (fallback SP no consumidor) — engole erro e retorna null
@@ -105,16 +107,20 @@ export function DashboardProvider({ children }) {
             if (!userId) return null
             const { data, error } = await supabase
               .from('user_settings')
-              .select('timezone')
+              .select('timezone, stock_tracking_enabled')
               .eq('user_id', userId)
               .maybeSingle()
             if (error) {
-              console.error('Erro ao buscar timezone:', error)
+              console.error('Erro ao buscar settings do usuário:', error)
               return null
             }
-            return data?.timezone || null
+            return {
+              timezone: data?.timezone || null,
+              // Fail-safe (AP-277): ausente/NULL → estoque ATIVO (FR-009). Só `false` desliga.
+              stockTrackingEnabled: data?.stock_tracking_enabled !== false,
+            }
           } catch (err) {
-            console.error('Erro ao buscar timezone:', err)
+            console.error('Erro ao buscar settings do usuário:', err)
             return null
           }
         },
@@ -133,7 +139,7 @@ export function DashboardProvider({ children }) {
     logsResult = {} as any, // TODO(040-strict)
     doseInstancesResult = {} as any, // TODO(040-strict)
     adherenceSummaryResult = {} as any, // TODO(040-strict)
-    timezoneResult = {} as any, // TODO(040-strict)
+    settingsResult = {} as any, // TODO(040-strict) — { timezone, stockTrackingEnabled }
   ] = results
 
   // Lógica de derivação extraída para hook privado (Lint Compliance)
@@ -151,7 +157,10 @@ export function DashboardProvider({ children }) {
       protocols: protocolsWithNextDose,
       logs: logsResult.data || [],
       doseInstances: doseInstancesResult.data || [],
-      timezone: timezoneResult.data || 'America/Sao_Paulo',
+      timezone: settingsResult.data?.timezone || 'America/Sao_Paulo',
+      // 044: default TRUE enquanto o fetch não resolve / falha (nunca esconder estoque por
+      // omissão — o modo dose-only é sempre uma escolha explícita do usuário).
+      stockTrackingEnabled: settingsResult.data?.stockTrackingEnabled !== false,
       stockSummary,
       stats,
       dailyAdherence,
@@ -167,7 +176,7 @@ export function DashboardProvider({ children }) {
       protocolsWithNextDose,
       logsResult.data,
       doseInstancesResult.data,
-      timezoneResult.data,
+      settingsResult.data,
       stockSummary,
       stats,
       dailyAdherence,

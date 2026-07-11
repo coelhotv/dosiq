@@ -132,7 +132,14 @@ export async function fetchChatbotContextData({
     supabase.from('treatment_plans').select('id, name').eq('user_id', userId),
     // Perfil leve (nome/idade) p/ personalizar tom — DADO SECUNDÁRIO: degrada gracioso
     // (não derruba o contexto se falhar). Perfil vive em user_settings (1 linha/user).
-    supabase.from('user_settings').select('display_name, birth_date').eq('user_id', userId).maybeSingle(),
+    // 044 (CON-028 aditivo): `stock_tracking_enabled` no MESMO select do perfil — em modo
+    // dose-only o bloco de estoque é OMITIDO do contexto (o payload nunca pode afirmar
+    // "estoque 0"/"repor" para quem desligou o recurso).
+    supabase
+      .from('user_settings')
+      .select('display_name, birth_date, stock_tracking_enabled')
+      .eq('user_id', userId)
+      .maybeSingle(),
     doseRepo.getWindow(userId, windowFrom, windowTo),
     computeInstancesAdherence(doseRepo, userId),
   ])
@@ -144,16 +151,21 @@ export async function fetchChatbotContextData({
 
   const medicines = medicinesRes.data || []
   const protocols = protocolsRes.data || []
+  // Fail-safe (AP-277): perfil ausente / erro no select secundário → estoque LIGADO (default do
+  // DB, FR-009). Só o `false` explícito omite o bloco.
+  const stockTrackingEnabled = profileRes.error ? true : profileRes.data?.stock_tracking_enabled !== false
   const data = {
     medicines,
     protocols,
     logs: logsRes.data || [],
-    stockSummary: deriveStockSummary(medicines, protocols),
+    // Dose-only: array vazio → o builder não emite nenhuma linha de estoque.
+    stockSummary: stockTrackingEnabled ? deriveStockSummary(medicines, protocols) : [],
     stats,
     doseInstances: doseInstances || [],
     treatmentPlans: plansRes.data || [],
     // Secundário: erro → null (não bloqueia o contexto).
     profile: profileRes.error ? null : profileRes.data || null,
+    stockTrackingEnabled,
   }
 
   // Seam Zod (CON-028) — valida o shape antes do builder (FR-010 mecanismo 3).

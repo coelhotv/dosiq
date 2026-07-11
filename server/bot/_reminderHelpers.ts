@@ -762,17 +762,33 @@ async function _processBiologicalExpiryAlerts(allStock, dispatcher, correlationI
 
 export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
   try {
+    // 044 (FR-006 / PO-4): a preferência vem no MESMO fetch de settings — nenhuma query extra.
     const { data: users, error: usersErr } = await supabase
       .from('user_settings')
-      .select('user_id, timezone, notification_mode');
+      .select('user_id, timezone, notification_mode, stock_tracking_enabled');
 
     if (usersErr || !users || users.length === 0) {
       logger.info('Nenhum usuário encontrado em user_settings para alertas de estoque', { correlationId });
       return;
     }
 
-    const userIds = users.map(u => u.user_id);
-    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, { correlationId });
+    // Usuário em modo dose-only não recebe NENHUM alerta de estoque (volume ou validade).
+    // Fail-safe (AP-277): coluna ausente/NULL → tratado como TRACKING LIGADO (paridade com o
+    // COALESCE das RPCs atômicas). A ausência de dado nunca silencia alerta por omissão.
+    const stockTrackingOff = new Set(
+      users.filter(u => u.stock_tracking_enabled === false).map(u => u.user_id)
+    );
+    const trackingUsers = users.filter(u => !stockTrackingOff.has(u.user_id));
+
+    if (trackingUsers.length === 0) {
+      logger.info('Nenhum usuário com controle de estoque ativo — alertas de estoque pulados', { correlationId });
+      return;
+    }
+
+    const userIds = trackingUsers.map(u => u.user_id);
+    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, {
+      correlationId, doseOnlySkipped: stockTrackingOff.size
+    });
 
     // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
     // converte por intake_unit); units_per_ml/dosage_unit/dosage_per_pill p/ a conversão

@@ -446,6 +446,8 @@ function _extractInputs(consultationData, dashboardData) {
     logs: dashboardData.logs || [],
     dailyAdherence: dashboardData.dailyAdherence || [],
     stockSummary: dashboardData.stockSummary || [],
+    // 044/US3: só `false` explícito desliga a seção (ausente → controlado, FR-009).
+    stockTrackingEnabled: dashboardData.stockTrackingEnabled !== false,
     patientInfo: consultationData?.patientInfo || {},
     activeMedicines: consultationData?.activeMedicines || [],
     prescriptionStatus: consultationData?.prescriptionStatus || [],
@@ -471,7 +473,11 @@ export function buildConsultationPdfData({
   const periodDays = _calculatePeriodDays(period, inp.dailyAdherence.length)
 
   const activeTreatments = buildTreatmentRows(inp.protocols, inp.medicines)
-  const stockRows = buildStockRows(inp.stockSummary, inp.protocols, inp.medicines)
+  // 044/US3 (dose-only): NENHUMA row de estoque — nem tabela vazia, nem "0 dias" fantasma.
+  // Some também dos summary cards e dos itens de atenção (que derivam de stockRows).
+  const stockRows = inp.stockTrackingEnabled
+    ? buildStockRows(inp.stockSummary, inp.protocols, inp.medicines)
+    : []
   const prescriptionRows = buildPrescriptionRows(inp.prescriptionStatus, inp.protocols, inp.medicines)
   const titrationRows = buildTitrationRows(inp.activeTitrations, inp.protocols, inp.medicines)
   const adherenceTrend = buildAdherenceTrend(inp.dailyAdherence, inp.logs, inp.protocols, periodDays)
@@ -500,6 +506,7 @@ export function buildConsultationPdfData({
       trend: adherenceTrend, trendLabel: selectedPeriodLabel, currentStreak,
     },
     stockRows, prescriptionRows, titrationRows, attentionItems, clinicalNotes,
+    stockTrackingEnabled: inp.stockTrackingEnabled,
   }
 }
 

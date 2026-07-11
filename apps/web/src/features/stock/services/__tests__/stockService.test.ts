@@ -116,9 +116,11 @@ describe('stockService', () => {
         reason: 'dose_deleted_restore',
       })
 
+      // 044 T007b: a RPC passou a aceitar p_user_id (dono explícito → também roda server-side).
       expect(mockSupabase.rpc).toHaveBeenCalledWith('restore_stock_for_log', {
         p_medicine_log_id: '123e4567-e89b-12d3-a456-426614174111',
         p_reason: 'dose_deleted_restore',
+        p_user_id: 'test-user-id',
       })
     })
 

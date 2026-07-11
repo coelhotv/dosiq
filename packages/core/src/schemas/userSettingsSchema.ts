@@ -103,6 +103,18 @@ export const userSettingsNotificationSchema = z.object({
   timezone: z.enum(TIMEZONES_BR).default('America/Sao_Paulo'),
 })
 
+// Spec 044 (dose-only mode) — preferência GLOBAL de controle de estoque.
+// DB: stock_tracking_enabled BOOLEAN NOT NULL DEFAULT true → .default(true) sem nullable
+// (mesmo tratamento de timezone, R-082): a ausência da preferência NUNCA pode desligar o
+// estoque por omissão (FR-009; fail-safe do AP-277, espelhado aqui no client).
+// stock_paused_at é NULL quando o estoque está ativo → .nullable().optional() (R-085).
+export const stockTrackingSchema = z.object({
+  stock_tracking_enabled: z.boolean().default(true),
+  stock_paused_at: z.string().nullable().optional(),
+})
+
+export type StockTrackingPreference = z.infer<typeof stockTrackingSchema>
+
 // Derivar notification_preference legado a partir dos booleans de canal
 export function deriveLegacyPreference({ channel_mobile_push_enabled, channel_telegram_enabled }: { channel_mobile_push_enabled?: boolean; channel_telegram_enabled?: boolean }) {
   if (channel_mobile_push_enabled && channel_telegram_enabled) return 'both'
