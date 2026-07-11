@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 734,
-    "merged_squash": "b5a832a7",
+    "merged_pr": 735,
+    "merged_squash": "7f6c9882",
     "merged_history": [
+      {
+        "pr": 735,
+        "squash": "7f6c9882",
+        "phase": "044 F1: fundação SQL dose-only (T001+T002) — user_settings +stock_tracking_enabled (NOT NULL DEFAULT true = FR-009, zero backfill) +stock_paused_at; CREATE OR REPLACE das 3 RPCs atômicas (CON-026) lendo a preferência DENTRO da txn e curto-circuitando estoque, ASSINATURAS INALTERADAS (base = dump pg_get_functiondef de prod; sem overload AP-227, sem caller tocado AP-221). AP-277 (SELECT INTO sem linha atribui NULL → fail-OPEN; pego pelo teste do failure mode, o preflight do agente afirmava a premissa errada). Review Gemini 3 CRITICAL (guard não cobria anon): auditoria de grants antes de aceitar → não explorável nas 3 RPCs (anon sem EXECUTE), aplicado como defesa em profundidade; mas a auditoria achou o furo REAL: restore_stock_for_log (SECURITY DEFINER que muta estoque) TINHA EXECUTE p/ anon, protegida por acidente — e a T007b da F2 abriria bypass real. Grant fechado (AP-278). Migração APLICADA EM PROD 2026-07-11 (MCP): colunas OK, 1 assinatura por RPC, anon EXECUTE=false nas 4, COALESCE+guard live. 11/11 asserts BEGIN..ROLLBACK. PO-1 [x]. Aprovado PO → squash+delete",
+        "note": "SQP adiado p/ F5. Próximo: F2 (T003-T007 + T007b/T007c)"
+      },
       {
         "pr": 734,
         "squash": "b5a832a7",
@@ -100,7 +106,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F1 CODADO em feature/044/f1-sql (PR aberto, NAO mergeado). Migração 20260707_stock_tracking_preference.sql NAO aplicada em prod (só testada BEGIN..ROLLBACK e revertida — 0 colunas residuais confirmado). user_settings +stock_tracking_enabled (NOT NULL DEFAULT true, FR-009) +stock_paused_at; 3 RPCs atômicas com curto-circuito de estoque, ASSINATURAS INALTERADAS (base = dump pg_get_functiondef de prod). BUG PEGO PELO TESTE: AP-277 — SELECT INTO sem linha atribui NULL (não preserva init da var), COALESCE dentro do SELECT nunca roda → flag NULL → estoque desligado por omissão (fail-OPEN, contra FR-009). Fix: COALESCE DEPOIS do SELECT. Testes 10/10 PASS (OFF 4 caminhos com saldo 0 + zero mutação de estoque; ON guard 10->7->6->10 + 'Estoque insuficiente' vivo; fail-safe sem user_settings). Gates: lint 0, validate:agent 104/1520, strict-island OK. PENDENTE: (1) aplicar migração em prod via MCP no merge/deploy; (2) SQP fica na F5 (instrução do PO). ACHADOS LATENTES (fora do escopo F1, AGENDADOS p/ F2): restore_stock_for_log usa auth.uid() em vez de p_user_id + search_path='public' (service_role → 'Usuário não autenticado') → T007b da F2; medicines.type DEFAULT 'medicine' viola o próprio CHECK → vira T007c da F2 (decisão PO 2026-07-11). Próximo: F2 (T003-T007).",
+    "previous_session_note": "044 F1 MERGEADA (#735, squash 7f6c9882, 2026-07-11) e migração 20260707_stock_tracking_preference APLICADA EM PROD (MCP) — verificado live: colunas OK (stock_tracking_enabled NOT NULL DEFAULT true = FR-009, ninguém em dose-only ainda), 1 assinatura por RPC (zero overload), COALESCE pós-SELECT + guard anon presentes nas 3, anon EXECUTE=false nas 4 funções. PO-1 fechado com evidência. DOIS APs novos: AP-277 (SELECT INTO sem linha ATRIBUI NULL — não preserva init da var → flag de política caía em fail-OPEN, estoque desligado por omissão; pego pelo teste do failure mode, NÃO pela leitura — o preflight do próprio agente afirmava a premissa errada) e AP-278 (grant de anon em SECURITY DEFINER que muta dado = proteção por acidente; evapora no próximo refactor legítimo — a T007b abriria bypass real; grant fechado preventivamente). PRÓXIMO: F2 (T003-T007). T007b REDUZIDA: o REVOKE/GRANT já foi feito no F1; resta só (a) aceitar p_user_id com COALESCE(p_user_id, auth.uid()) — ⚠️ DROP FUNCTION da assinatura antiga ANTES (AP-227) + atualizar caller createStockRepository.ts:296 (AP-221) — e (b) alinhar search_path=''. T007c intacta: ALTER medicines ALTER COLUMN type SET DEFAULT 'medicamento' (default atual 'medicine' viola o próprio CHECK; hoje mascarado pelo Zod). SQP do 044 fica na F5.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -117,9 +123,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 236,
-    "anti_patterns_count": 172,
+    "anti_patterns_count": 173,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
