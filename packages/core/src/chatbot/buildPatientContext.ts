@@ -75,7 +75,9 @@ interface MedContext {
   principioAtivo?: string | null
   classeTerapeutica?: string | null
   dosagem: string
-  estoque: number
+  /** 044: false = usuário dose-only → os campos de estoque abaixo são inertes. */
+  stockTracked: boolean
+  estoque: number | null
   consumoDiario: number | null
   diasRestantes: string | null
   semEstoque: boolean
@@ -139,21 +141,26 @@ function _resolveStock(med: MedicineLike, stockEntry: StockSummaryEntry | undefi
 function _toMedContext(
   med: MedicineLike,
   validProtocols: ProtocolLike[],
-  stockByMedId: Map<string | undefined, StockSummaryEntry>
+  stockByMedId: Map<string | undefined, StockSummaryEntry>,
+  stockTrackingEnabled: boolean = true
 ): MedContext {
   const protocol = validProtocols.find((p) => p.medicine_id === med.id)
   const stockEntry = stockByMedId.get(med.id)
-  const totalStock = _resolveStock(med, stockEntry)
+  // 044 dose-only: `stockTracked=false` desliga TODOS os campos de estoque. Sem isto o
+  // fallback de lotes embedded (_resolveStock) ainda somaria saldo e `semEstoque` viraria
+  // `true` por saldo 0 — exatamente o "estoque 0" fantasma que a spec proíbe (US3).
+  const totalStock = stockTrackingEnabled ? _resolveStock(med, stockEntry) : null
 
   return {
     nome: med.name,
     principioAtivo: med.active_ingredient,
     classeTerapeutica: med.therapeutic_class,
     dosagem: `${med.dosage_per_pill ?? ''}${med.dosage_unit ?? ''}`.trim(),
+    stockTracked: stockTrackingEnabled,
     estoque: totalStock,
-    consumoDiario: stockEntry?.dailyIntake ?? null,
-    diasRestantes: _formatDaysRemaining(stockEntry?.daysRemaining),
-    semEstoque: stockEntry?.isZero ?? totalStock === 0,
+    consumoDiario: stockTrackingEnabled ? (stockEntry?.dailyIntake ?? null) : null,
+    diasRestantes: stockTrackingEnabled ? _formatDaysRemaining(stockEntry?.daysRemaining) : null,
+    semEstoque: stockTrackingEnabled ? (stockEntry?.isZero ?? totalStock === 0) : false,
     // Objeto medicine-like p/ os formatadores unit-aware (líquidos vs sólidos) do doseUnit.
     medLike: {
       dosage_unit: med.dosage_unit ?? null,
@@ -183,12 +190,17 @@ function _formatMedLine(mc: MedContext) {
   const infos = [mc.principioAtivo, mc.classeTerapeutica].filter(Boolean).join(', ')
   const detalhe = infos ? ` [${infos}]` : ''
   const dose = mc.dosePerIntake ? `, dose ${formatIntakeDose(mc.dosePerIntake, mc.intakeUnit, mc.medLike)}` : ''
-  const estoque = formatStockCount(mc.estoque, mc.medLike)
+  const base = `- ${mc.nome}${detalhe} (${mc.dosagem}): ${_formatSchedule(mc)}${dose}`
+
+  // 044 dose-only: a linha termina na dose — sem "estoque", sem consumo, sem dias restantes.
+  if (!mc.stockTracked) return base
+
+  const estoque = formatStockCount(mc.estoque ?? 0, mc.medLike)
   const consumo = mc.consumoDiario
     ? `, consumo ~${formatNumberPtBR(Math.round(mc.consumoDiario * 100) / 100)} ${stockUnitLabel(mc.medLike)}/dia`
     : ''
   const dias = mc.diasRestantes ? `, ~${mc.diasRestantes} restantes` : ''
-  return `- ${mc.nome}${detalhe} (${mc.dosagem}): ${_formatSchedule(mc)}${dose}, estoque ${estoque}${consumo}${dias}`
+  return `${base}, estoque ${estoque}${consumo}${dias}`
 }
 
 /**
@@ -258,8 +270,14 @@ function _resolveDoseQueues(doseInstances: DoseZoneInstance[] | undefined, valid
  * @param {Object} [data.profile] - Perfil leve do paciente ({ display_name, birth_date }) — sem PII sensível
  * @returns {string} - Contexto formatado para o system prompt
  */
-export function buildPatientContext({ medicines, protocols, logs, stockSummary, stats, doseInstances, profile }: {
-  medicines?: any[]; protocols?: any[]; logs?: any[]; stockSummary?: any[]; stats?: any; doseInstances?: any[]; profile?: any
+export function buildPatientContext({
+  medicines, protocols, logs, stockSummary, stats, doseInstances, profile,
+  stockTrackingEnabled = true,
+}: {
+  medicines?: any[]; protocols?: any[]; logs?: any[]; stockSummary?: any[]; stats?: any; doseInstances?: any[]
+  profile?: any
+  /** 044: false = dose-only → NENHUMA menção a estoque no contexto. Default true (FR-009). */
+  stockTrackingEnabled?: boolean
 } = {}) {
   const today = getTodayLocal('America/Sao_Paulo') // String YYYY-MM-DD (tz explícito — Hermes/Android)
   const [y, m, d] = today.split('-').map(Number)
@@ -284,14 +302,16 @@ export function buildPatientContext({ medicines, protocols, logs, stockSummary, 
 
   const medsContext = (medicines || [])
     .filter((med) => validMedicineIds.has(med.id))
-    .map((med) => _toMedContext(med, validProtocols, stockByMedId))
+    .map((med) => _toMedContext(med, validProtocols, stockByMedId, stockTrackingEnabled))
 
   const todayLogs = _countTodayLogs(logs, y, m, d)
   const adherence7d = stats?.adherence != null ? Math.round(stats.adherence * 100) : null
   const { pendingToday, overdue } = _resolveDoseQueues(doseInstances, validProtocols)
 
-  // Alertas de estoque (somente tratamentos válidos) — sem estoque ou baixo
-  const stockAlerts = medsContext
+  // Alertas de estoque (somente tratamentos válidos) — sem estoque ou baixo.
+  // 044: em dose-only o usuário DESLIGOU o recurso — nem alerta, nem "SEM ESTOQUE"
+  // (o payload jamais pode sugerir "repor" um estoque que ele não controla).
+  const stockAlerts = !stockTrackingEnabled ? [] : medsContext
     .filter((mc) => mc.semEstoque || (mc.diasRestantes && parseInt(mc.diasRestantes, 10) <= 7))
     .map((mc) =>
       mc.semEstoque

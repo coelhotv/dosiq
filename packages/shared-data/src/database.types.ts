@@ -1276,6 +1276,8 @@ export type Database = {
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           state: string | null
+          stock_paused_at: string | null
+          stock_tracking_enabled: boolean
           telegram_chat_id: string | null
           timezone: string | null
           updated_at: string | null
@@ -1302,6 +1304,8 @@ export type Database = {
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           state?: string | null
+          stock_paused_at?: string | null
+          stock_tracking_enabled?: boolean
           telegram_chat_id?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -1328,6 +1332,8 @@ export type Database = {
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           state?: string | null
+          stock_paused_at?: string | null
+          stock_tracking_enabled?: boolean
           telegram_chat_id?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -1519,7 +1525,7 @@ export type Database = {
         Returns: Json
       }
       restore_stock_for_log: {
-        Args: { p_medicine_log_id: string; p_reason?: string }
+        Args: { p_medicine_log_id: string; p_reason?: string; p_user_id?: string }
         Returns: Json
       }
       update_dose_log_atomic: {

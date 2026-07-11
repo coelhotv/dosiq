@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/044-dose-only-mode/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044-dose-only-mode - F1: fundação SQL (T001 migração + T002 testes BEGIN..ROLLBACK)",
+    "goal": "044-dose-only-mode - F2: core + server + dívida SQL (T003-T007 + T007b/T007c)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -106,7 +106,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F1 MERGEADA (#735, squash 7f6c9882, 2026-07-11) e migração 20260707_stock_tracking_preference APLICADA EM PROD (MCP) — verificado live: colunas OK (stock_tracking_enabled NOT NULL DEFAULT true = FR-009, ninguém em dose-only ainda), 1 assinatura por RPC (zero overload), COALESCE pós-SELECT + guard anon presentes nas 3, anon EXECUTE=false nas 4 funções. PO-1 fechado com evidência. DOIS APs novos: AP-277 (SELECT INTO sem linha ATRIBUI NULL — não preserva init da var → flag de política caía em fail-OPEN, estoque desligado por omissão; pego pelo teste do failure mode, NÃO pela leitura — o preflight do próprio agente afirmava a premissa errada) e AP-278 (grant de anon em SECURITY DEFINER que muta dado = proteção por acidente; evapora no próximo refactor legítimo — a T007b abriria bypass real; grant fechado preventivamente). PRÓXIMO: F2 (T003-T007). T007b REDUZIDA: o REVOKE/GRANT já foi feito no F1; resta só (a) aceitar p_user_id com COALESCE(p_user_id, auth.uid()) — ⚠️ DROP FUNCTION da assinatura antiga ANTES (AP-227) + atualizar caller createStockRepository.ts:296 (AP-221) — e (b) alinhar search_path=''. T007c intacta: ALTER medicines ALTER COLUMN type SET DEFAULT 'medicamento' (default atual 'medicine' viola o próprio CHECK; hoje mascarado pelo Zod). SQP do 044 fica na F5.",
+    "previous_session_note": "044 F2 PRONTA (branch feature/044/f2-core-server, PR aberto): core (preferência + stockResumeService), server (filtro dose-only nos alertas), chatbot CON-028, PDF/export. Migração 20260711_stock_fn_hardening (restore_stock_for_log +p_user_id com DROP da assinatura antiga + search_path='' + guard IDOR; update/delete_dose_log_atomic repassam p_user_id; medicines.type DEFAULT 'medicamento') VALIDADA em BEGIN..ROLLBACK contra prod (8 failure modes verdes) mas NÃO APLICADA — o PO aplica no merge. AP-279 (mock que ignora .in() mede o mock). PO-4 fechado; PO-5 core testado (fecha na F4a). PRÓXIMO: F3 (UI modo-off, T008-T012).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
@@ -123,9 +123,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 236,
-    "anti_patterns_count": 173,
+    "anti_patterns_count": 275,
     "decisions_count": 79,
     "contracts_count": 30,
     "distillation_due": false
@@ -135,6 +135,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-11T15:00:00Z"
+    "index_loaded_at": "2026-07-11T18:30:00Z"
   }
 }

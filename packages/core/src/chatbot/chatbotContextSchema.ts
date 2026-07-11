@@ -44,6 +44,9 @@ export const chatbotContextDataSchema = z.object({
   // Perfil leve do paciente (nome/idade). Secundário — pode ser null. passthrough tolera
   // colunas extras de user_settings sem enrijecer o shape.
   profile: looseRow.nullable().default(null),
+  // 044 (aditivo, não-breaking): preferência de controle de estoque. Ausente → true (FR-009:
+  // consumidor que ainda não passa o campo mantém o comportamento atual).
+  stockTrackingEnabled: z.boolean().default(true),
 })
 
 /**

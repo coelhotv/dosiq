@@ -10,13 +10,35 @@
  * - R-050: JSDoc em português
  */
 
+import { createProfileRepository } from '@dosiq/core'
 import { protocolService } from '@features/protocols/services/protocolService'
 import { logService } from '@shared/services/api/logService'
 import { medicineService } from '@features/medications/services/medicineService'
+import { supabase, getUserId } from '@shared/utils/supabase'
 import { formatLocalDate, parseLocalDate, getNow, parseISO, getServerTimestamp } from '@utils/dateUtils'
 
 /** Versão do formato de exportação */
 const EXPORT_VERSION = '1.0.0'
+
+/** Texto único da seção de estoque quando o usuário é dose-only (044 / US3). */
+const STOCK_NOT_TRACKED_LABEL = 'Estoque: não controlado'
+
+const profileRepo = createProfileRepository({ client: supabase, getUserId })
+
+/**
+ * Preferência de controle de estoque (044). Fail-safe: qualquer falha de leitura → `true`
+ * (exportar estoque a mais é inócuo; omitir por engano esconderia dado real do usuário).
+ * @returns {Promise<boolean>}
+ */
+async function isStockTracked() {
+  try {
+    const { stock_tracking_enabled: enabled } = await profileRepo.getStockTracking()
+    return enabled !== false
+  } catch (err) {
+    console.error('Erro ao ler preferência de estoque (assumindo controlado):', err)
+    return true
+  }
+}
 
 /** BOM UTF-8 para compatibilidade com Excel */
 const UTF8_BOM = '\uFEFF'
@@ -378,8 +400,11 @@ export async function exportAsJSON(options: any = {}) {
     }))
   }
 
-  // Busca estoque
-  if (includeStock) {
+  // Busca estoque — 044/US3: dose-only exporta UMA linha, não uma lista vazia de lotes
+  // (lista vazia sugeriria "acabou o estoque"; o correto é "não controlado").
+  if (includeStock && !(await isStockTracked())) {
+    exportData.data.stock = { tracked: false, note: STOCK_NOT_TRACKED_LABEL }
+  } else if (includeStock) {
     exportData.data.stock = medicines.map((m: any) => ({
       medicine_id: m.id,
       medicine_name: m.name,
@@ -467,10 +492,12 @@ export async function exportAsCSV(options: any = {}) {
     csvSections.push('')
   }
 
-  // Exporta estoque
+  // Exporta estoque — 044/US3: dose-only vira 1 linha, sem tabela de lotes vazia.
   if (includeStock) {
     csvSections.push('=== ESTOQUE ===')
-    csvSections.push(exportStockCSV(medicines, medicines))
+    csvSections.push(
+      (await isStockTracked()) ? exportStockCSV(medicines, medicines) : STOCK_NOT_TRACKED_LABEL
+    )
     csvSections.push('')
   }
 

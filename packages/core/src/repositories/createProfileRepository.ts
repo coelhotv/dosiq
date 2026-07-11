@@ -17,10 +17,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { validateUserProfile } from '../schemas/userProfileSchema'
+import type { StockTrackingPreference } from '../schemas/userSettingsSchema'
 import { getServerTimestamp, getTodayLocal } from '../utils/dateUtils'
 
 // Colunas de perfil lidas/escritas (R-127: só o necessário).
 const PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, complexity_override'
+
+// Spec 044 — preferência de controle de estoque (read-path R-267: schema + este select).
+const STOCK_TRACKING_COLUMNS = 'stock_tracking_enabled, stock_paused_at'
 
 const COMPLEXITY_VALUES = Object.freeze(['simple', 'complex', null])
 
@@ -201,6 +205,59 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
         .from('user_settings')
         .upsert(row as never, { onConflict: 'user_id' })
       if (error) throw error
+    },
+
+    /**
+     * Preferência GLOBAL de controle de estoque (spec 044).
+     * Fail-safe: sem linha em user_settings → estoque ATIVO (espelha o COALESCE das RPCs
+     * atômicas — AP-277: ausência de dado NUNCA desliga o estoque por omissão / FR-009).
+     */
+    async getStockTracking(): Promise<StockTrackingPreference> {
+      const userId = await getUserId()
+      const { data, error } = await client
+        .from('user_settings')
+        .select(STOCK_TRACKING_COLUMNS)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) throw error
+      return {
+        stock_tracking_enabled: data?.stock_tracking_enabled ?? true,
+        stock_paused_at: data?.stock_paused_at ?? null,
+      }
+    },
+
+    /**
+     * Liga/desliga o controle de estoque.
+     * off → carimba `stock_paused_at` (instante do congelamento; insumo do gap lazy da
+     * reativação — FR-012). on → limpa. Nenhuma mutação de saldo/compras aqui: o opt-out
+     * CONGELA (NC3 da spec) — quem zera é o service de reativação, via adjustments.
+     */
+    async setStockTracking(enabled: boolean): Promise<StockTrackingPreference> {
+      if (typeof enabled !== 'boolean') {
+        throw new Error('setStockTracking: enabled deve ser boolean')
+      }
+
+      const userId = await getUserId()
+      const { data, error } = await client
+        .from('user_settings')
+        .upsert(
+          {
+            user_id: userId,
+            stock_tracking_enabled: enabled,
+            stock_paused_at: enabled ? null : getServerTimestamp(),
+            updated_at: getServerTimestamp(),
+          },
+          { onConflict: 'user_id' },
+        )
+        .select(STOCK_TRACKING_COLUMNS)
+        .single()
+
+      if (error) throw error
+      return {
+        stock_tracking_enabled: data.stock_tracking_enabled ?? true,
+        stock_paused_at: data.stock_paused_at ?? null,
+      }
     },
 
     async deleteAccount() {

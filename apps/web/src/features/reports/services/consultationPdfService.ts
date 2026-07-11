@@ -607,6 +607,14 @@ function renderStockPage(doc, autoTable, pdfData) {
   doc.setTextColor(...rgb(COLORS.text))
   doc.text('Estoque', PAGE.margin, 18)
 
+  // 044/US3: usuário em modo dose-only — UMA linha honesta, sem tabela e sem "0 dias" fantasma.
+  if (pdfData.stockTrackingEnabled === false) {
+    doc.setFontSize(9)
+    doc.setTextColor(...rgb(COLORS.muted))
+    doc.text('Estoque: nao controlado pelo paciente.', PAGE.margin, 26)
+    return
+  }
+
   doc.setFontSize(9)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text(
