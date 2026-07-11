@@ -57,6 +57,17 @@ describe('computeStockPauseGapDays', () => {
     expect(computeStockPauseGapDays(daysAgo(29), NOW)).toBe(29)
     expect(computeStockPauseGapDays(daysAgo(30), NOW)).toBe(30)
   })
+
+  it('gap é duração FÍSICA — o fuso do runner não pode encolher/inflar o resultado', () => {
+    // Regressão: com `getNow()` (relógio deslocado p/ SP) o gap perdia o offset do fuso —
+    // 29d viravam 28d em runner UTC (CI) e passavam por acaso em máquina GMT-3.
+    // O default de `now` é lido do relógio do sistema: fixamos e conferimos o mesmo número.
+    vi.useFakeTimers()
+    vi.setSystemTime(NOW)
+    expect(computeStockPauseGapDays(daysAgo(29))).toBe(29)
+    expect(computeStockPauseGapDays(daysAgo(30))).toBe(30)
+    vi.useRealTimers()
+  })
 })
 
 describe('createStockResumeService', () => {

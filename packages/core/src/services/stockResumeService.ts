@@ -14,7 +14,7 @@
 
 import type { createProfileRepository } from '../repositories/createProfileRepository'
 import type { createStockRepository } from '../repositories/createStockRepository'
-import { getNow, parseISO } from '../utils/dateUtils'
+import { parseISO } from '../utils/dateUtils'
 
 /**
  * Limiar (dias) a partir do qual a reativação pede reconciliação ao usuário.
@@ -45,13 +45,23 @@ export interface StockResumeAssessment {
  * Carimbo ausente/inválido/no futuro (clock skew) → null = "sem gap conhecido" → retoma
  * silencioso. Fail-safe deliberado: na dúvida NÃO se pede reconciliação, porque o caminho
  * de reconciliação é o único que pode ZERAR saldo.
+ *
+ * ⚠️ Instante ABSOLUTO (`Date.now()`), NUNCA `getNow()`: `getNow()` devolve o relógio
+ * DESLOCADO para o fuso do usuário, e `stock_paused_at` é um timestamptz absoluto — misturar
+ * os dois subtrai o offset do fuso do gap (em GMT-3 o gap encolhe 3h, e um congelamento de
+ * 29d0h vira 28d21h → floor 28: verde em runner GMT-3, vermelho em UTC). O gap aqui é uma
+ * duração FÍSICA (quanto tempo o estoque ficou congelado), não uma diferença de calendário —
+ * é justamente o caso em que a conversão de fuso do R-020 não se aplica.
+ *
+ * @param pausedAt - carimbo do opt-out (ISO absoluto)
+ * @param now - instante de referência (injetável em teste); default = agora, em ms
  */
-export function computeStockPauseGapDays(pausedAt: string | null | undefined, now: Date = getNow()): number | null {
+export function computeStockPauseGapDays(pausedAt: string | null | undefined, now?: Date): number | null {
   if (!pausedAt) return null
   const paused = parseISO(pausedAt)
   const pausedMs = paused.getTime()
   if (Number.isNaN(pausedMs)) return null
-  const diff = now.getTime() - pausedMs
+  const diff = (now ? now.getTime() : Date.now()) - pausedMs
   if (diff < 0) return null
   return Math.floor(diff / MS_DAY)
 }
