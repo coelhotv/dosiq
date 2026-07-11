@@ -91,7 +91,12 @@ DECLARE
   -- Spec 044: TRUE por omissão — sem linha em user_settings o estoque NUNCA desliga.
   v_stock_tracking BOOLEAN := true;
 BEGIN
-  IF auth.role() = 'authenticated' AND auth.uid() <> p_user_id THEN
+  -- Defesa em profundidade (review #735): bloquear `anon` EXPLICITAMENTE. O check antigo só
+  -- cobria 'authenticated'; um anon caía no ELSE e passava. Hoje não é explorável (anon não tem
+  -- EXECUTE nestas 3 RPCs — verificado em prod), mas grants vazam por default privileges legados
+  -- (AP-275): o guard não pode depender só do grant. service_role/postgres seguem passando.
+  IF auth.role() = 'anon'
+     OR (auth.role() = 'authenticated' AND auth.uid() <> p_user_id) THEN
     RAISE EXCEPTION 'Acesso não autorizado';
   END IF;
 
@@ -185,7 +190,12 @@ DECLARE
   v_new RECORD;
   v_stock_tracking BOOLEAN := true;  -- Spec 044: TRUE por omissão.
 BEGIN
-  IF auth.role() = 'authenticated' AND auth.uid() <> p_user_id THEN
+  -- Defesa em profundidade (review #735): bloquear `anon` EXPLICITAMENTE. O check antigo só
+  -- cobria 'authenticated'; um anon caía no ELSE e passava. Hoje não é explorável (anon não tem
+  -- EXECUTE nestas 3 RPCs — verificado em prod), mas grants vazam por default privileges legados
+  -- (AP-275): o guard não pode depender só do grant. service_role/postgres seguem passando.
+  IF auth.role() = 'anon'
+     OR (auth.role() = 'authenticated' AND auth.uid() <> p_user_id) THEN
     RAISE EXCEPTION 'Acesso não autorizado';
   END IF;
 
@@ -269,7 +279,12 @@ DECLARE
   v_new_status TEXT;
   v_stock_tracking BOOLEAN := true;  -- Spec 044: TRUE por omissão.
 BEGIN
-  IF auth.role() = 'authenticated' AND auth.uid() <> p_user_id THEN
+  -- Defesa em profundidade (review #735): bloquear `anon` EXPLICITAMENTE. O check antigo só
+  -- cobria 'authenticated'; um anon caía no ELSE e passava. Hoje não é explorável (anon não tem
+  -- EXECUTE nestas 3 RPCs — verificado em prod), mas grants vazam por default privileges legados
+  -- (AP-275): o guard não pode depender só do grant. service_role/postgres seguem passando.
+  IF auth.role() = 'anon'
+     OR (auth.role() = 'authenticated' AND auth.uid() <> p_user_id) THEN
     RAISE EXCEPTION 'Acesso não autorizado';
   END IF;
 
@@ -319,6 +334,37 @@ BEGIN
   );
 END;
 $function$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 5. Least privilege nas RPCs de estoque/dose (review #735 — CLAUDE.md §Migrações)
+--
+--    O reviewer apontou o guard de authz que não bloqueava `anon`. A auditoria dos GRANTS em
+--    prod (2026-07-11) mostrou que o cenário NÃO é explorável nas 3 RPCs atômicas (anon não tem
+--    EXECUTE nelas) — mas encontrou um furo REAL ao lado:
+--
+--      restore_stock_for_log  →  anon TEM EXECUTE  (grant legado, classe AP-275)
+--
+--    Hoje ela se salva por acidente: resolve o dono por `auth.uid()`, que vem NULL para anon, e
+--    aborta com 'Usuário não autenticado'. Mas é SECURITY DEFINER e MUTA ESTOQUE — depender de
+--    um NULL acidental não é controle de acesso. Pior: a T007b (044 F2) vai fazer essa função
+--    aceitar `p_user_id` para poder rodar server-side; com o grant de anon aberto, isso viraria
+--    um bypass REAL (anon restaura estoque de terceiro passando o user_id na chamada).
+--    Fechar o grant AGORA, antes que a F2 abra a porta.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+REVOKE EXECUTE ON FUNCTION public.restore_stock_for_log(uuid, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.restore_stock_for_log(uuid, text) FROM anon;
+
+-- Idempotente: reafirma o least privilege das 3 atômicas (já correto em prod; protege contra
+-- default privileges legados voltarem a conceder EXECUTE a anon numa recriação futura).
+REVOKE EXECUTE ON FUNCTION public.register_dose_atomic(uuid, uuid, uuid, timestamptz, numeric, text, uuid, boolean, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.update_dose_log_atomic(uuid, uuid, uuid, uuid, timestamptz, numeric, text, boolean, boolean, text, boolean) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.delete_dose_log_atomic(uuid, uuid, integer) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.register_dose_atomic(uuid, uuid, uuid, timestamptz, numeric, text, uuid, boolean, text) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.update_dose_log_atomic(uuid, uuid, uuid, uuid, timestamptz, numeric, text, boolean, boolean, text, boolean) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.delete_dose_log_atomic(uuid, uuid, integer) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.restore_stock_for_log(uuid, text) TO authenticated, service_role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Verificação pós-aplicação

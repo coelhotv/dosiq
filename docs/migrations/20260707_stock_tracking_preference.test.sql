@@ -204,6 +204,21 @@ BEGIN
   END IF;
   RAISE NOTICE 'OK fail-safe: sem linha em user_settings → estoque permanece ATIVO (nunca desliga por omissão)';
 
+  -- ═══ SEGURANÇA (review #735): role `anon` é BLOQUEADO explicitamente ═══════
+  -- Guard do bypass de autorização: antes, um anon caía no ELSE do IF e passava.
+  -- (Ortogonal ao grant — anon não tem EXECUTE nestas RPCs; isto é defesa em profundidade.)
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_u_on, 'role', 'anon')::text, true);
+  v_blocked := false;
+  BEGIN
+    PERFORM public.register_dose_atomic(v_u_on, v_prot_on, v_med_on, now(), 1, NULL, NULL, false, NULL);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    v_blocked := (v_err = 'Acesso não autorizado');
+  END;
+  IF NOT v_blocked THEN RAISE EXCEPTION 'FALHA SEC: role anon NAO foi bloqueado'; END IF;
+  PERFORM set_config('request.jwt.claims', NULL, true);
+  RAISE NOTICE 'OK SEC: role anon bloqueado com "Acesso não autorizado"';
+
   RAISE NOTICE '=== 044 F1: TODOS OS ASSERTS PASSARAM ===';
 END;
 $test$;
