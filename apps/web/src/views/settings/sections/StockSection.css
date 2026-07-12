@@ -1,0 +1,180 @@
+/* StockSection — toggle de controle de estoque + congelamento/reconciliação (spec 044, F4a). */
+
+.stock-toggle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stock-toggle__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.stock-toggle__label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+.stock-toggle__sub {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.stock-toggle__hint {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  line-height: 1.4;
+}
+
+.stock-toggle__switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-outline-ghost, rgba(25, 28, 29, 0.18));
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stock-toggle__switch--on {
+  background: var(--color-primary);
+}
+
+.stock-toggle__switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stock-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.stock-toggle__switch--on .stock-toggle__knob {
+  transform: translateX(20px);
+}
+
+.stock-toggle__status:empty {
+  display: none;
+}
+
+.stock-toggle__status {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+}
+
+.stock-toggle__error {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-error, #b3261e);
+}
+
+/* ── Modal de congelamento (cadeado, NÃO é ação danger) ── */
+
+.stock-freeze__icon {
+  color: var(--color-primary);
+}
+
+.stock-freeze__body {
+  margin: 0.75rem 0 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-on-surface);
+}
+
+.stock-freeze__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.stock-btn {
+  flex: 1;
+  min-height: 48px;
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.12));
+  background: transparent;
+  color: var(--color-on-surface);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stock-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stock-btn--primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ── Modal de reconciliação (>=30d) ── */
+
+.stock-reconcile__body {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-on-surface);
+}
+
+.stock-reconcile__actions {
+  margin-top: 1.25rem;
+}
+
+.stock-reconcile__option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid var(--color-outline-ghost, rgba(25, 28, 29, 0.08));
+  background: transparent;
+  color: var(--color-on-surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.stock-reconcile__option:hover {
+  border-color: var(--color-primary);
+}
+
+.stock-reconcile__option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stock-reconcile__option--default {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg, rgba(0, 106, 94, 0.12));
+}
+
+.stock-reconcile__option-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.stock-reconcile__option-desc {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
