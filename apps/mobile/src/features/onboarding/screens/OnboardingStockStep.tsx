@@ -21,6 +21,7 @@ import { protocolService } from '@treatments/services/protocolService'
 import { medicineService } from '@medications/services/medicineService'
 import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -45,6 +46,7 @@ const OPTIONS = [
 export default function OnboardingStockStep() {
   const navigation = useNavigation()
   const { medicine, treatment, finish } = useOnboarding()
+  const { refresh: refreshStockTracking } = useStockTracking()
   const { show } = useToast()
 
   // Opção 1 pré-marcada: o modo dose-only é o default do onboarding (a preferência no banco
@@ -77,6 +79,9 @@ export default function OnboardingStockStep() {
       })
 
       await setStockTracking(option.tracking)
+      // O provider lê a preferência UMA vez (no login) — sem este refresh, o app abre com o
+      // valor lido ANTES desta escolha e a aba Estoque aparece para quem escolheu dose-only.
+      await refreshStockTracking()
 
       // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete no passo 3.
       // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO → segue o
@@ -97,7 +102,7 @@ export default function OnboardingStockStep() {
       setSubmitting(false)
       show(err?.message ?? 'Não foi possível concluir. Tente de novo.', { variant: 'error' })
     }
-  }, [selected, medicine, treatment, finish, show])
+  }, [selected, medicine, treatment, finish, show, refreshStockTracking])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
