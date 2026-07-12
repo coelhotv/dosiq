@@ -40,7 +40,7 @@ const VARIANT_CONFIG = {
 
 // ─── Duração de leitura ───────────────────────────────────────────────────────
 
-const TOAST_BASE_MS = 2500 // tempo para notar o toast antes de começar a ler
+const TOAST_BASE_MS = 2000 // tempo para notar o toast antes de começar a ler
 const TOAST_MS_PER_WORD = 450 // ~130 palavras/min: leitura em tela, com distração
 const TOAST_MIN_MS = 3000
 const TOAST_MAX_MS = 9000
