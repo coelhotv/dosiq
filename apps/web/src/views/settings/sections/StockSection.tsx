@@ -4,7 +4,7 @@
 // o modal de confirmação usa cadeado e botão primário comum — não é ação `danger`.
 // Fechar o modal de reconciliação NÃO ativa o estoque.
 
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Package, Lock } from 'lucide-react'
 import Modal from '@shared/components/ui/Modal'
 import { parseISO, formatDatePtBR } from '@dosiq/core'
@@ -30,6 +30,106 @@ function pausedDateLabel(pausedAt) {
   const date = parseISO(pausedAt)
   if (Number.isNaN(date.getTime())) return null
   return formatDatePtBR(date) || null
+}
+
+/**
+ * Modal de reconciliação (gap >= 30d). Montado apenas enquanto o sheet está aberto: a
+ * desmontagem é o que devolve a escolha ao default "Começar do zero" a cada nova tentativa —
+ * a opção de uma tentativa anterior nunca volta pré-marcada, muito menos a destrutiva.
+ *
+ * Selecionar NÃO executa: "Começar do zero" zera o saldo, então a confirmação é um segundo ato
+ * deliberado (paridade com o mobile). Radiogroup com roving tabindex — o foco acompanha a
+ * seleção, senão o leitor de tela não anuncia a troca.
+ */
+function ReconcileModal({ gapDays, dateLabel, busy, onZero, onResume, onClose }) {
+  const [choice, setChoice] = useState('zero')
+
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (busy) return
+      const { key } = event
+      let next = null
+      if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(key)) {
+        next = choice === 'zero' ? 'resume' : 'zero'
+      } else if (key === 'Home') {
+        next = 'zero'
+      } else if (key === 'End') {
+        next = 'resume'
+      }
+      if (!next) return
+
+      event.preventDefault()
+      setChoice(next)
+      const radios = event.currentTarget.querySelectorAll('[role="radio"]')
+      radios[next === 'zero' ? 0 : 1]?.focus()
+    },
+    [busy, choice],
+  )
+
+  return (
+    <Modal
+      isOpen
+      onClose={busy ? noop : onClose}
+      title={`Seu estoque está congelado há ${gapDays} ${gapDays === 1 ? 'dia' : 'dias'}`}
+    >
+      <div className="stock-reconcile">
+        <p className="stock-reconcile__body">Como você quer voltar a usar o estoque?</p>
+
+        <div
+          className="stock-reconcile__options"
+          role="radiogroup"
+          aria-label="Opções de reconciliação do estoque"
+          onKeyDown={handleKeyDown}
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={choice === 'zero'}
+            tabIndex={choice === 'zero' ? 0 : -1}
+            className={`stock-reconcile__option ${choice === 'zero' ? 'stock-reconcile__option--default' : ''}`}
+            onClick={() => setChoice('zero')}
+            disabled={busy}
+          >
+            <span className="stock-reconcile__option-label">Começar do zero</span>
+            <span className="stock-reconcile__option-desc">
+              O saldo volta a zero. O histórico de compras fica guardado.
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="radio"
+            aria-checked={choice === 'resume'}
+            tabIndex={choice === 'resume' ? 0 : -1}
+            className={`stock-reconcile__option ${choice === 'resume' ? 'stock-reconcile__option--default' : ''}`}
+            onClick={() => setChoice('resume')}
+            disabled={busy}
+          >
+            <span className="stock-reconcile__option-label">
+              {dateLabel ? `Retomar o saldo de ${dateLabel}` : 'Retomar o saldo congelado'}
+            </span>
+            <span className="stock-reconcile__option-desc">
+              Volta exatamente como estava quando você desativou.
+            </span>
+          </button>
+        </div>
+
+        <div className="stock-freeze__actions stock-reconcile__actions">
+          <button
+            type="button"
+            className="stock-btn stock-btn--primary"
+            onClick={choice === 'zero' ? onZero : onResume}
+            disabled={busy}
+          >
+            Ativar estoque
+          </button>
+          <button type="button" className="stock-btn" onClick={onClose} disabled={busy}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
 }
 
 export default function StockSection() {
@@ -135,43 +235,15 @@ export default function StockSection() {
         </Modal>
       ) : null}
 
-      {sheet === 'reconcile' ? (
-        <Modal
-          isOpen
-          onClose={busy ? noop : closeSheet}
-          title={`Seu estoque está congelado há ${gapDays} ${gapDays === 1 ? 'dia' : 'dias'}`}
-        >
-          <div className="stock-reconcile">
-            <p className="stock-reconcile__body">Como você quer voltar a usar o estoque?</p>
-
-            {/* "Começar do zero" primeiro = default visual (§7 do design). Fechar não ativa. */}
-            <button
-              type="button"
-              className="stock-reconcile__option stock-reconcile__option--default"
-              onClick={resumeAndZero}
-              disabled={busy}
-            >
-              <span className="stock-reconcile__option-label">Começar do zero</span>
-              <span className="stock-reconcile__option-desc">
-                O saldo volta a zero. O histórico de compras fica guardado.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="stock-reconcile__option"
-              onClick={resumeAsIs}
-              disabled={busy}
-            >
-              <span className="stock-reconcile__option-label">
-                {dateLabel ? `Retomar o saldo de ${dateLabel}` : 'Retomar o saldo congelado'}
-              </span>
-              <span className="stock-reconcile__option-desc">
-                Volta exatamente como estava quando você desativou.
-              </span>
-            </button>
-          </div>
-        </Modal>
+      {sheet === 'reconcile' && reconcile ? (
+        <ReconcileModal
+          gapDays={gapDays}
+          dateLabel={dateLabel}
+          busy={busy}
+          onZero={resumeAndZero}
+          onResume={resumeAsIs}
+          onClose={closeSheet}
+        />
       ) : null}
     </section>
   )

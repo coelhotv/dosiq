@@ -134,6 +134,10 @@
   color: var(--color-on-surface);
 }
 
+.stock-reconcile__actions {
+  margin-top: 1.25rem;
+}
+
 .stock-reconcile__option {
   display: flex;
   flex-direction: column;
