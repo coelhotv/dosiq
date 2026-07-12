@@ -9,7 +9,12 @@ import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Info } = LucideIcons as any
-import { medicineCreateSchema, DOSAGE_UNITS, DOSAGE_UNIT_LABELS } from '@dosiq/core'
+import {
+  medicineCreateSchema,
+  DOSAGE_UNITS,
+  DOSAGE_UNIT_LABELS,
+  normalizeRegulatoryCategory,
+} from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
 import FormInput from '@shared/components/form/FormInput'
@@ -27,6 +32,11 @@ const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
   label: DOSAGE_UNIT_LABELS[value] ?? value,
 }))
 const DEFAULT_INITIAL = { type: 'medicamento', dosage_unit: 'mg' }
+
+// Campos que esta tela realmente renderiza — o resto do schema (categoria regulatória,
+// classe terapêutica, princípio ativo) é preenchido pelo auto-fill da ANVISA e não tem
+// onde "destacar" um erro.
+const VISIBLE_FIELDS = ['name', 'dosage_per_pill', 'dosage_unit']
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
 const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
@@ -62,7 +72,12 @@ export default function OnboardingMedicineStep() {
         name: item.name ?? form.values.name,
         active_ingredient: item.activeIngredient ?? form.values.active_ingredient,
         therapeutic_class: item.therapeuticClass ?? form.values.therapeutic_class,
-        regulatory_category: item.regulatoryCategory ?? form.values.regulatory_category,
+        // A base ANVISA traz a categoria crua ('Biologico', 'Gases Medicinais') e o enum é
+        // acentuado — sem normalizar, o safeParse falha em `regulatory_category`, um campo
+        // que NÃO existe nesta tela: o usuário via "Verifique os campos destacados" sem
+        // nenhum campo destacado. Mesma correção já aplicada no cadastro (F1) e na web.
+        regulatory_category:
+          normalizeRegulatoryCategory(item.regulatoryCategory) ?? form.values.regulatory_category,
       })
     },
     [form],
@@ -95,7 +110,17 @@ export default function OnboardingMedicineStep() {
 
   const handleContinue = useCallback(() => {
     if (!form.validate()) {
-      show('Verifique os campos destacados', { variant: 'error' })
+      // "Verifique os campos destacados" só ajuda se houver campo destacado. Erro em campo
+      // que esta tela não renderiza (ex: regulatory_category vinda da ANVISA) deixava o
+      // usuário travado sem nenhuma pista. Reparseia aqui porque `form.errors` só reflete o
+      // validate() no render seguinte — dentro deste handler ainda é o valor anterior.
+      const issues = medicineCreateSchema.safeParse(form.values).error?.issues ?? []
+      const hidden = issues.find((issue) => !VISIBLE_FIELDS.includes(String(issue.path[0])))
+      const hasVisible = issues.some((issue) => VISIBLE_FIELDS.includes(String(issue.path[0])))
+      show(
+        !hasVisible && hidden ? hidden.message : 'Verifique os campos destacados',
+        { variant: 'error' },
+      )
       return
     }
     setMedicine(form.values)
