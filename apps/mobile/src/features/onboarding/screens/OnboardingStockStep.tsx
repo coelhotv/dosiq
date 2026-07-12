@@ -31,7 +31,7 @@ const OPTIONS = [
     tracking: false,
     Icon: CalendarClock,
     title: 'Só lembrar e registrar minhas doses',
-    subtitle: 'Lembretes na hora certa e um toque para marcar como tomada.',
+    subtitle: 'Lembretes na hora certa e um toque para marcar a dose como tomada.',
   },
   {
     id: 'stock',
@@ -141,7 +141,7 @@ export default function OnboardingStockStep() {
 
         <View style={styles.tip}>
           <Info size={18} color={colors.text.secondary} strokeWidth={2} />
-          <Text style={styles.tipText}>Dá para mudar isso quando quiser, em Configurações.</Text>
+          <Text style={styles.tipText}>Dá para mudar isso quando quiser, em Perfil &gt; Configurações.</Text>
         </View>
       </ScrollView>
 
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   tipText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: typography.fontFamily.regular || 'System',
     color: colors.text.secondary,
     lineHeight: 20,
