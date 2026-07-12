@@ -86,6 +86,9 @@ export function useStockToggle(): UseStockToggle {
     // Fechar sem decidir nunca ativa: a preferência no banco continua como está.
     setSheet(null)
     setReconcile(null)
+    // O erro pertence à tentativa que acabou de ser abandonada — mantê-lo faria a mensagem
+    // ressurgir fora de contexto na próxima interação.
+    setError(null)
   }, [])
 
   /** Liga o estoque retomando o saldo as-is (gap curto ou escolha explícita do usuário). */

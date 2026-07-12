@@ -22,7 +22,15 @@ export default function StockFreezeSheet({ visible, applying, onConfirm, onCance
   if (!visible) return null
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onCancel} statusBarTranslucent>
+    // `onRequestClose` = botão voltar do Android: inibido enquanto a escrita está em voo, senão
+    // o sheet some no meio da operação e a UI passa a opinar sobre um resultado inexistente.
+    <Modal
+      visible
+      transparent
+      animationType="slide"
+      onRequestClose={applying ? undefined : onCancel}
+      statusBarTranslucent
+    >
       {Platform.OS === 'android' ? <View style={{ height: StatusBar.currentHeight ?? 0 }} /> : null}
       <Pressable style={styles.backdrop} onPress={applying ? undefined : onCancel} />
       <SafeAreaView edges={['bottom']} style={styles.sheet}>

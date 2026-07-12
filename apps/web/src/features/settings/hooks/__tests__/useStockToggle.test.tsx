@@ -205,6 +205,29 @@ describe('useStockToggle (044 F4a)', () => {
     expect(result.current.announcement).toBeNull()
   })
 
+  it('fechar o sheet limpa o erro da tentativa abandonada', async () => {
+    trackingState = { enabled: false, pausedAt: '2026-05-01T10:00:00Z', ready: true }
+    assessResume.mockResolvedValue({
+      pausedAt: '2026-05-01T10:00:00Z',
+      gapDays: 47,
+      needsReconciliation: true,
+    })
+    resumeAndZero.mockRejectedValue(new Error('falha no ajuste'))
+    const { result } = renderHook(() => useStockToggle())
+
+    act(() => result.current.requestToggle())
+    await waitFor(() => expect(result.current.sheet).toBe('reconcile'))
+    await act(async () => {
+      await result.current.resumeAndZero()
+    })
+    expect(result.current.error).toBe('falha no ajuste')
+
+    act(() => result.current.closeSheet())
+
+    // Erro de uma ação que o usuário desistiu de fazer não pode sobreviver ao fechamento.
+    expect(result.current.error).toBeNull()
+  })
+
   it('usuário que nunca teve estoque (off sem carimbo) é distinguido do congelado', () => {
     trackingState = { enabled: false, pausedAt: null, ready: true }
     const { result } = renderHook(() => useStockToggle())

@@ -43,10 +43,15 @@ export function useStockToggle() {
   const neverHadStock = useMemo(() => !enabled && !pausedAt, [enabled, pausedAt])
 
   // Handlers
+  const clearAnnouncement = useCallback(() => setAnnouncement(null), [])
+
   const closeSheet = useCallback(() => {
     // Fechar sem decidir NÃO ativa: nada é escrito, a preferência continua OFF.
     setSheet(null)
     setReconcile(null)
+    // O erro é da tentativa abandonada: na web ele fica renderizado abaixo do toggle, então
+    // deixá-lo vivo mostraria a falha de uma ação que o usuário já desistiu de fazer.
+    setError(null)
   }, [])
 
   const resumeAsIs = useCallback(async () => {
@@ -134,6 +139,7 @@ export function useStockToggle() {
     reconcile,
     busy,
     announcement,
+    clearAnnouncement,
     error,
     requestToggle,
     confirmFreeze,

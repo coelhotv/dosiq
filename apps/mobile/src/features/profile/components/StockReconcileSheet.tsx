@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Check } = LucideIcons as any
-import { parseISO } from '@dosiq/core'
+import { parseISO, formatDatePtBR } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 type Choice = 'zero' | 'resume'
@@ -27,12 +27,17 @@ interface Props {
   onClose: () => void
 }
 
-/** Data do congelamento em PT-BR; carimbo ausente/inválido → null (o rótulo cai no genérico). */
+/**
+ * Data do congelamento em PT-BR; carimbo ausente/inválido → null (o rótulo cai no genérico).
+ * `formatDatePtBR` (tabela manual de meses), NUNCA `toLocaleDateString('pt-BR')`: o Hermes não
+ * tem ICU completo e cairia no formato US, mostrando "Retomar o saldo de 06/12/2026" para um
+ * congelamento de 12 de junho.
+ */
 function pausedDateLabel(pausedAt: string | null): string | null {
   if (!pausedAt) return null
   const date = parseISO(pausedAt)
   if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleDateString('pt-BR')
+  return formatDatePtBR(date) || null
 }
 
 function Option({
@@ -82,7 +87,16 @@ export default function StockReconcileSheet({
   const resumeTitle = dateLabel ? `Retomar o saldo de ${dateLabel}` : 'Retomar o saldo congelado'
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    // `onRequestClose` = botão voltar do Android: inibido durante a escrita (o zeramento por
+    // medicamento leva tempo) — fechar no meio deixaria a UI opinando sobre um resultado que
+    // ainda não existe.
+    <Modal
+      visible
+      transparent
+      animationType="slide"
+      onRequestClose={applying ? undefined : onClose}
+      statusBarTranslucent
+    >
       {Platform.OS === 'android' ? <View style={{ height: StatusBar.currentHeight ?? 0 }} /> : null}
       <Pressable style={styles.backdrop} onPress={applying ? undefined : onClose} />
       <SafeAreaView edges={['bottom']} style={styles.sheet}>

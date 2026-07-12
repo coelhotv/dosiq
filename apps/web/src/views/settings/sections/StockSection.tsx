@@ -4,11 +4,15 @@
 // o modal de confirmação usa cadeado e botão primário comum — não é ação `danger`.
 // Fechar o modal de reconciliação NÃO ativa o estoque.
 
+import { useEffect } from 'react'
 import { Package, Lock } from 'lucide-react'
 import Modal from '@shared/components/ui/Modal'
-import { parseISO } from '@dosiq/core'
+import { parseISO, formatDatePtBR } from '@dosiq/core'
 import { useStockToggle } from '@features/settings/hooks/useStockToggle'
 import './StockSection.css'
+
+/** Fechamento inibido enquanto a escrita está em voo (ver os modais abaixo). */
+const noop = () => {}
 
 /** Subtítulo por estado (§5 das decisões de design do 044). */
 function stockSubtitle(enabled, neverHadStock) {
@@ -17,12 +21,15 @@ function stockSubtitle(enabled, neverHadStock) {
   return 'Desligado — só lembretes e registro de doses.'
 }
 
-/** Data do congelamento em PT-BR; carimbo ausente/inválido → null (rótulo cai no genérico). */
+/**
+ * Data do congelamento em PT-BR; carimbo ausente/inválido → null (rótulo cai no genérico).
+ * Mesma função do mobile (`formatDatePtBR`) para que a copy seja idêntica nas duas superfícies.
+ */
 function pausedDateLabel(pausedAt) {
   if (!pausedAt) return null
   const date = parseISO(pausedAt)
   if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleDateString('pt-BR')
+  return formatDatePtBR(date) || null
 }
 
 export default function StockSection() {
@@ -34,6 +41,7 @@ export default function StockSection() {
     reconcile,
     busy,
     announcement,
+    clearAnnouncement,
     error,
     requestToggle,
     confirmFreeze,
@@ -44,6 +52,14 @@ export default function StockSection() {
 
   const gapDays = reconcile?.gapDays ?? 0
   const dateLabel = pausedDateLabel(reconcile?.pausedAt ?? null)
+
+  // A confirmação é um anúncio, não um estado da tela: sai depois de lida, senão fica poluindo
+  // as Configurações para sempre. 8s — a frase é longa e a região é `aria-live=polite`.
+  useEffect(() => {
+    if (!announcement) return undefined
+    const timer = setTimeout(clearAnnouncement, 8000)
+    return () => clearTimeout(timer)
+  }, [announcement, clearAnnouncement])
 
   return (
     <section className="sr-section">
@@ -88,7 +104,9 @@ export default function StockSection() {
       </div>
 
       {sheet === 'freeze' ? (
-        <Modal isOpen onClose={closeSheet} title="Desativar o controle de estoque?">
+        // Fechar no meio da escrita deixaria a UI opinando sobre um resultado que ainda não
+        // existe: enquanto `busy`, o modal não fecha.
+        <Modal isOpen onClose={busy ? noop : closeSheet} title="Desativar o controle de estoque?">
           <div className="stock-freeze">
             <Lock size={24} className="stock-freeze__icon" aria-hidden="true" />
             <p className="stock-freeze__body">
@@ -120,7 +138,7 @@ export default function StockSection() {
       {sheet === 'reconcile' ? (
         <Modal
           isOpen
-          onClose={closeSheet}
+          onClose={busy ? noop : closeSheet}
           title={`Seu estoque está congelado há ${gapDays} ${gapDays === 1 ? 'dia' : 'dias'}`}
         >
           <div className="stock-reconcile">
