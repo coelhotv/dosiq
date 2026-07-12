@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F3 — UI modo dose-only (T008-T012), PO-2 fechado; smoke do PO validado; PR pendente",
+    "goal": "044 F3 mergeada (#738) — próximo: F4a (T013-T016)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 736,
-    "merged_squash": "83bd49af",
+    "merged_pr": 738,
+    "merged_squash": "226c5614",
     "merged_history": [
+      {
+        "pr": 738,
+        "squash": "226c5614",
+        "phase": "044 F3: UI do modo dose-only (T008-T012) — PO-2 fechado, smoke do PO validado. Contrato novo useStockTracking() (provider web+mobile; fail-safe AP-277 + flag `ready` p/ não piscar superfície de estoque antes de saber o modo). T009 inventário C1.5 por GREP desmentiu o design: 7 superfícies mapeadas vs 18 reais — achados extras incluem /repor do bot (porta lateral p/ o FIFO), onboarding web (tinha passo de estoque próprio, fora da spec), badge da agenda, insights, hasStock, export, consulta e guard de deep-link. T008 onboarding mobile 4/4 (copy §9, radiogroup a11y, ícones do mock). T010/T011 delegados a sub-agentes Sonnet: entregaram, mas o principal achou 4 furos que passaram — PDF de consulta lia dashboardData.stockTrackingEnabled sem NINGUÉM alimentar o campo (allowlist explícita, mesma classe do furo do ChatWindow na F2); resolveStock do wizard protegido só por stockData.quantity vazio (proteção por acidente); DoseActionSheet prometia 'estoque será restaurado' (falso em dose-only). T012 guard do bot com convite de ativação. QUATRO bugs apareceram SÓ NO SMOKE, nenhum pego por teste/lint (todos de ciclo de vida, não de lógica — cada peça isolada estava correta): AP-281 (provider cacheia a preferência 1x/sessão; onboarding gravava sem refresh() → app abria com a aba Estoque CONTRADIZENDO a escolha; reload consertava = dado certo, cache errado), AP-282 (auto-fill ANVISA gravava regulatory_category cru contra enum acentuado → erro em campo que a tela NÃO renderiza → 'verifique os campos destacados' sem nenhum destaque; passo 2 travado. normalizeRegulatoryCategory já existia e era usada no cadastro e na web — só o onboarding ficou de fora), AP-283 (o 4º passo transformou o passo que GRAVAVA em intermediário → voltar duplicaria medicamento+tratamento; gravação movida p/ o FIM do wizard, o que também parou de deixar lixo em conta abandonada e de queimar permissão de push antes da gravação), + stepper do signup com 3 dots. Review Gemini 2/2 aplicados: HIGH (as 3 escritas remotas em sequência do passo 4 — falha parcial deixava o medicamento persistido e o retry duplicava; ESTENDI ao tratamento, que o reviewer não cobriu) e MEDIUM (roving tabindex no radiogroup web). Aprovado PO → squash+delete",
+        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO: F4a (T013-T016 — toggle Settings + freeze sheet + reconciliação ≥30d). ⚠️ o toggle de Settings tem a MESMA classe do AP-281: gravar + refresh() do provider, senão a UI contradiz a escolha até o reload."
+      },
       {
         "pr": 736,
         "squash": "83bd49af",
@@ -112,7 +118,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F3 COMPLETA (branch feature/044/f3-ui-modo-off, smoke do PO validado 2026-07-12; PR a abrir). Contrato novo: useStockTracking() provider web+mobile (fail-safe AP-277 + `ready` p/ não piscar superfície). T009 inventário por grep desmentiu o design: 7 superfícies mapeadas vs 18 reais. T010/T011 via sub-agentes Sonnet (render condicional) — o principal revisou e achou 4 furos que os sub-agentes deixaram passar. QUATRO bugs achados só no SMOKE (nenhum pego por teste/lint): AP-281 (provider cacheia a preferência 1x por sessão e o onboarding gravava sem chamar refresh → app abria com a aba Estoque contradizendo a escolha; reload consertava = cache errado, dado certo), AP-282 (auto-fill ANVISA gravava regulatory_category cru contra enum acentuado → erro em campo que a tela NÃO renderiza → 'verifique os campos destacados' sem destaque; passo 2 do onboarding travado — normalizeRegulatoryCategory existia e era usada no cadastro e na web, só o onboarding ficou de fora), AP-283 (4º passo transformou o passo que GRAVAVA em intermediário → voltar duplicaria medicamento+tratamento; gravação movida p/ o fim do wizard, o que também parou de deixar lixo em conta abandonada e de queimar permissão de push antes da gravação), e o stepper do signup com 3 dots. ATENÇÃO NA F4a: o toggle de Settings tem a MESMA classe do AP-281 — gravar + refresh(). SQP do 044 segue na F5. PRÓXIMO: F4a (T013-T016).",
+    "previous_session_note": "044 F3 MERGEADA (#738, squash 226c5614) — PO-2 fechado com smoke manual do PO. LIÇÃO CENTRAL DA FASE: os gates automáticos passaram limpos o tempo todo (1542 testes, strict-island, lint) e os 4 bugs que importavam só apareceram no SMOKE — todos de ciclo de vida (cache não reconciliado pós-escrita, validação em campo invisível, wizard gravando no passo errado), não de lógica. Cada peça isolada estava correta; o furo morava ENTRE elas. Teste de unidade não pega essa classe. Segunda lição: o inventário por grep (T009) desmentiu o design em 11 superfícies — confiar na lista de memória teria entregue metade da fase. O risco R2 do plano estava certo. Terceira: sub-agentes Sonnet entregam render condicional bem, mas o principal PRECISA auditar o caminho do dado (os 4 furos que passaram eram todos de propagação de flag / allowlist de payload). ⚠️ F4a: o toggle de Settings tem a MESMA classe do AP-281 — gravar + refresh(). PRÓXIMO: F4a (T013-T016). SQP do épico na F5. journal=14, threshold=15 → distill logo.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
