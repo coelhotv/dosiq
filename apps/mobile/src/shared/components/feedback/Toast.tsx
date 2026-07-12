@@ -38,6 +38,25 @@ const VARIANT_CONFIG = {
   },
 }
 
+// ─── Duração de leitura ───────────────────────────────────────────────────────
+
+const TOAST_BASE_MS = 2500 // tempo para notar o toast antes de começar a ler
+const TOAST_MS_PER_WORD = 450 // ~130 palavras/min: leitura em tela, com distração
+const TOAST_MIN_MS = 3000
+const TOAST_MAX_MS = 9000
+
+/**
+ * Duração default proporcional ao tamanho da mensagem.
+ * Toast de confirmação com frase longa (ex.: "Controle de estoque reativado · saldo
+ * retomado como estava") sumia antes de dar tempo de ler com os 3s fixos anteriores.
+ * Chamadas com `duration` explícito continuam mandando.
+ */
+export function readingDuration(message: string): number {
+  const words = String(message ?? '').trim().split(/\s+/).filter(Boolean).length
+  const ms = TOAST_BASE_MS + words * TOAST_MS_PER_WORD
+  return Math.min(TOAST_MAX_MS, Math.max(TOAST_MIN_MS, ms))
+}
+
 // ─── ToastItem ────────────────────────────────────────────────────────────────
 
 const ToastItem = memo(function ToastItem({ toast, onDismiss }: { toast: any; onDismiss: () => void }) {
@@ -126,7 +145,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((message: string, opts: { variant?: string; duration?: number } = {}) => {
     const id = ++counterRef.current
     const variant = opts.variant ?? 'info'
-    const duration = opts.duration ?? 3000
+    const duration = opts.duration ?? readingDuration(message)
     const toast = { id, message, variant, duration }
 
     // Dispara haptic conforme variante
