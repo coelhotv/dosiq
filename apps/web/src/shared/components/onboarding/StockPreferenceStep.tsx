@@ -9,7 +9,7 @@
  * Se a opção "também avisar estoque" for escolhida, o StockStep original (saldo
  * inicial) continua aparecendo em seguida, dentro do mesmo passo do wizard.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useOnboarding } from './useOnboarding'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { supabase, getUserId } from '@shared/utils/supabase'
@@ -38,6 +38,7 @@ export default function StockPreferenceStep() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState(null)
   const [phase, setPhase] = useState('choice') // 'choice' | 'initial-stock'
+  const optionRefs = useRef([])
 
   // 2. Context
   const { nextStep } = useOnboarding()
@@ -48,11 +49,24 @@ export default function StockPreferenceStep() {
     setSelected(optionId)
   }, [])
 
-  const handleKeyDown = useCallback((e, optionId) => {
+  // Radiogroup ARIA: só o item selecionado é focável (roving tabindex) e as setas movem a
+  // seleção — um radiogroup em que Tab passa por todas as opções não é um radiogroup.
+  const handleKeyDown = useCallback((e, index) => {
+    const optionId = OPTIONS[index].id
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       setSelected(optionId)
+      return
     }
+    const delta =
+      e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1
+        : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1
+          : 0
+    if (delta === 0) return
+    e.preventDefault()
+    const next = (index + delta + OPTIONS.length) % OPTIONS.length
+    setSelected(OPTIONS[next].id)
+    optionRefs.current[next]?.focus()
   }, [])
 
   const handleContinue = useCallback(async () => {
@@ -91,17 +105,19 @@ export default function StockPreferenceStep() {
         role="radiogroup"
         aria-label="Como o Dosiq pode te ajudar?"
       >
-        {OPTIONS.map((option) => {
+        {OPTIONS.map((option, index) => {
           const isChecked = selected === option.id
           return (
             <button
               key={option.id}
+              ref={(el) => { optionRefs.current[index] = el }}
               type="button"
               role="radio"
               aria-checked={isChecked}
+              tabIndex={isChecked ? 0 : -1}
               className={`stock-preference-option${isChecked ? ' stock-preference-option--selected' : ''}`}
               onClick={() => handleSelect(option.id)}
-              onKeyDown={(e) => handleKeyDown(e, option.id)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
             >
               <span className="stock-preference-option__title">{option.title}</span>
               <span className="stock-preference-option__description">{option.description}</span>

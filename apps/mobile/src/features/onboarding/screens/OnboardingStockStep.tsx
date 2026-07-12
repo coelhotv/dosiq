@@ -53,6 +53,12 @@ export default function OnboardingStockStep() {
   // nasce `true` por FR-009 — quem escolhe aqui é quem está criando a conta agora).
   const [selected, setSelected] = useState('doses')
   const [submitting, setSubmitting] = useState(false)
+  // Idempotência do retry: a gravação são 3 escritas remotas em sequência (medicamento →
+  // tratamento → preferência). Se a 2ª falhar (rede), a 1ª JÁ persistiu — sem estes ids, um
+  // segundo "Continuar" criaria medicamento/tratamento duplicados. Guarda o que já foi gravado
+  // e retoma de onde parou.
+  const [createdMedicineId, setCreatedMedicineId] = useState<string | null>(null)
+  const [protocolCreated, setProtocolCreated] = useState(false)
 
   const headerProps = useMemo(
     () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: finish }),
@@ -70,13 +76,21 @@ export default function OnboardingStockStep() {
         throw new Error('Dados do onboarding não encontrados. Volte e revise os passos.')
       }
 
-      const createdMedicine = await medicineService.create(medicine)
+      let medicineId = createdMedicineId
+      if (!medicineId) {
+        const createdMedicine = await medicineService.create(medicine)
+        medicineId = createdMedicine.id
+        setCreatedMedicineId(medicineId)
+      }
 
       const { _remind, ...protocolData } = treatment
-      await protocolService.create({
-        ...protocolData,
-        medicine_id: createdMedicine.id,
-      })
+      if (!protocolCreated) {
+        await protocolService.create({
+          ...protocolData,
+          medicine_id: medicineId,
+        })
+        setProtocolCreated(true)
+      }
 
       await setStockTracking(option.tracking)
       // O provider lê a preferência UMA vez (no login) — sem este refresh, o app abre com o
@@ -102,7 +116,16 @@ export default function OnboardingStockStep() {
       setSubmitting(false)
       show(err?.message ?? 'Não foi possível concluir. Tente de novo.', { variant: 'error' })
     }
-  }, [selected, medicine, treatment, finish, show, refreshStockTracking])
+  }, [
+    selected,
+    medicine,
+    treatment,
+    finish,
+    show,
+    refreshStockTracking,
+    createdMedicineId,
+    protocolCreated,
+  ])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
