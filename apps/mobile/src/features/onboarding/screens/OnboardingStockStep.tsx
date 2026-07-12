@@ -10,12 +10,17 @@
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { CalendarClock, Box, Info } = LucideIcons as any
 import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
 import { setStockTracking } from '@profile/services/profileService'
+import { protocolService } from '@treatments/services/protocolService'
+import { medicineService } from '@medications/services/medicineService'
+import { enablePushAtIntent } from '@platform/notifications/pushPermission'
+import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -38,7 +43,8 @@ const OPTIONS = [
 ]
 
 export default function OnboardingStockStep() {
-  const { finish } = useOnboarding()
+  const navigation = useNavigation()
+  const { medicine, treatment, finish } = useOnboarding()
   const { show } = useToast()
 
   // Opção 1 pré-marcada: o modo dose-only é o default do onboarding (a preferência no banco
@@ -47,25 +53,51 @@ export default function OnboardingStockStep() {
   const [submitting, setSubmitting] = useState(false)
 
   const headerProps = useMemo(
-    () => ({ step: 3, totalSteps: 4, onSkip: finish }),
-    [finish],
+    () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: finish }),
+    [navigation, finish],
   )
 
+  // Este é o passo que GRAVA o onboarding inteiro: medicamento, tratamento, permissão de push
+  // e a preferência de estoque. Os passos anteriores só acumulam no contexto — é o que torna o
+  // botão "voltar" seguro (voltar e continuar de novo não duplica nada no banco).
   const handleContinue = useCallback(async () => {
     const option = OPTIONS.find((o) => o.id === selected)
     setSubmitting(true)
     try {
+      if (!medicine || !treatment) {
+        throw new Error('Dados do onboarding não encontrados. Volte e revise os passos.')
+      }
+
+      const createdMedicine = await medicineService.create(medicine)
+
+      const { _remind, ...protocolData } = treatment
+      await protocolService.create({
+        ...protocolData,
+        medicine_id: createdMedicine.id,
+      })
+
       await setStockTracking(option.tracking)
+
+      // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete no passo 3.
+      // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO → segue o
+      // fluxo; a dona Maria reativa depois em Configurações (sem nag aqui).
+      if (_remind) {
+        const { granted } = await enablePushAtIntent({ supabase }).catch(() => ({ granted: false }))
+        if (!granted) {
+          show('Tudo bem! Você pode ligar os lembretes depois em Configurações.', { variant: 'info', duration: 6000 })
+        }
+      }
+
       // Opção 2 (opt-in) leva ao saldo inicial (Artefato F) — entregue na F4b da spec 044.
       // Até lá, ativar aqui já entrega o comportamento atual do app (estoque ligado).
       await finish()
     } catch (err) {
-      // Não avança em silêncio: a preferência é o produto desta tela. Deixa o usuário tentar
-      // de novo em vez de cair num app que não é o que ele escolheu.
+      // Não avança em silêncio: deixa o usuário tentar de novo em vez de cair num app que não
+      // é o que ele escolheu — ou pior, sem o tratamento que ele acabou de configurar.
       setSubmitting(false)
-      show(err?.message ?? 'Não foi possível salvar sua escolha. Tente de novo.', { variant: 'error' })
+      show(err?.message ?? 'Não foi possível concluir. Tente de novo.', { variant: 'error' })
     }
-  }, [selected, finish, show])
+  }, [selected, medicine, treatment, finish, show])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

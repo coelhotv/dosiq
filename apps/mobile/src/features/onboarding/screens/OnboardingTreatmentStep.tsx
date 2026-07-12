@@ -1,6 +1,9 @@
-// OnboardingTreatmentStep — passo 2 do wizard: primeiro tratamento (Fase 4 S4.2).
-// REUSA o fluxo da Fase 2: protocolService.create + WeekdaySelector +
-// TimeSchedulePicker + protocolCreateSchema (PO-8). Mock: mock-onboarding-passo3.
+// OnboardingTreatmentStep — passo 3 do wizard: primeiro tratamento (Fase 4 S4.2).
+// REUSA o fluxo da Fase 2: WeekdaySelector + TimeSchedulePicker + protocolCreateSchema
+// (PO-8). Mock: mock-onboarding-passo3.
+//
+// Spec 044: NÃO persiste — só valida e guarda no contexto. Medicamento, tratamento e push
+// são gravados no passo 4 (escolha do modo), para que voltar não duplique dado.
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
@@ -19,10 +22,6 @@ import FormActions from '@shared/components/form/FormActions'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import { useToast } from '@shared/components/feedback/Toast'
-import { protocolService } from '@treatments/services/protocolService'
-import { medicineService } from '@medications/services/medicineService'
-import { enablePushAtIntent } from '@platform/notifications/pushPermission'
-import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -86,8 +85,8 @@ export default function OnboardingTreatmentStep() {
   const navigation = useNavigation()
   const { medicine, treatment, setTreatment, finish } = useOnboarding()
   const { show } = useToast()
-  const [remind, setRemind] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  // Preserva a escolha do lembrete quando o usuário volta do passo 4 (o wizard só grava no fim).
+  const [remind, setRemind] = useState(treatment?._remind ?? true)
 
   // Memos (R-010)
   const initialValues = useMemo(() => {
@@ -159,48 +158,32 @@ export default function OnboardingTreatmentStep() {
     [form],
   )
 
-  const handleConcluir = useCallback(async () => {
+  // Este passo NÃO persiste nada: valida e guarda no contexto, igual o passo 2 faz com o
+  // medicamento. A gravação (medicamento + tratamento + push) acontece no passo 4, no
+  // "Continuar" final — assim o usuário pode voltar e revisar sem criar um par duplicado
+  // no banco a cada ida e volta.
+  const handleContinuar = useCallback(() => {
     // Coerce dose string ("1" / "0,5") → number antes do validate (AP-167).
     const dose = Number(String(form.values.dosage_per_intake ?? '').replace(',', '.'))
     if (!form.validate({ dosage_per_intake: dose })) {
       show('Verifique os campos destacados', { variant: 'error' })
       return
     }
-    setSubmitting(true)
-    try {
-      if (!medicine) {
-        throw new Error('Dados do medicamento não encontrados.')
-      }
-
-      // 1. Criar o medicamento e obter seu ID retornado
-      const createdMedicine = await medicineService.create(medicine)
-
-      // 2. Criar o tratamento amarrando ao ID do medicamento persistido
-      await protocolService.create({
-        ...form.values,
-        medicine_id: createdMedicine.id,
-        dosage_per_intake: dose,
-        treatment_plan_id: null,
-      })
-
-      // Ponto de intenção: só pede permissão de push se o usuário LIGOU o lembrete.
-      // Concedeu → registra token já (lembretes funcionam de cara). Negou no SO →
-      // segue o fluxo; a dona Maria reativa depois em Configurações (sem nag aqui).
-      if (remind) {
-        const { granted } = await enablePushAtIntent({ supabase }).catch(() => ({ granted: false }))
-        if (!granted) {
-          show('Tudo bem! Você pode ligar os lembretes depois em Configurações.', { variant: 'info', duration: 6000 })
-        }
-      }
-      // Último passo: escolha do modo de uso (spec 044). `reset` em vez de `navigate` —
-      // voltar para cá após o medicamento/tratamento já persistidos criaria um SEGUNDO
-      // par no banco a cada novo "Continuar".
-      ;(navigation as any).reset({ index: 0, routes: [{ name: ROUTES.ONBOARDING_STOCK }] })
-    } catch (err) {
-      setSubmitting(false)
-      show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' })
+    if (!medicine) {
+      show('Dados do medicamento não encontrados.', { variant: 'error' })
+      return
     }
-  }, [form, medicine, remind, show, navigation])
+
+    setTreatment({
+      ...form.values,
+      dosage_per_intake: dose,
+      treatment_plan_id: null,
+      // Intenção de lembrete: o pedido de permissão de push vive no passo 4, junto da
+      // gravação (pedir agora e falhar na gravação queimaria a permissão à toa).
+      _remind: remind,
+    })
+    ;(navigation.navigate as any)(ROUTES.ONBOARDING_STOCK)
+  }, [form, medicine, remind, show, setTreatment, navigation])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -255,8 +238,8 @@ export default function OnboardingTreatmentStep() {
 
         <FormActions
           primaryLabel="Continuar"
-          onPrimary={handleConcluir}
-          primaryLoading={submitting}
+          onPrimary={handleContinuar}
+          primaryLoading={false}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
