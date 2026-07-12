@@ -13,6 +13,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
+import { AppState } from 'react-native'
+import type { AppStateStatus } from 'react-native'
 import { createProfileRepository } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
@@ -84,6 +86,19 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh()
+  }, [refresh])
+
+  // Revalidação multi-device: a preferência é uma POLÍTICA DE CONTA, não um estado de tela —
+  // desligar o estoque na web tem que refletir no celular que estava minimizado. O `refresh()`
+  // do AP-281 só cobre a escrita feita NESTE device; aqui cobrimos a escrita feita em OUTRO.
+  // Ponto de retomada = volta ao primeiro plano (1 query numa linha; sem polling e sem canal
+  // realtime vivo para um valor que muda uma vez por mês).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (next === 'active') refresh()
+    })
+    return () => sub.remove()
   }, [refresh])
 
   return (

@@ -74,6 +74,23 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
     refresh()
   }, [refresh])
 
+  // Revalidação multi-device (espelho do mobile): a preferência é uma POLÍTICA DE CONTA — se o
+  // usuário desligou o estoque no celular, a aba que ficou aberta aqui não pode seguir mostrando
+  // saldos. Ponto de retomada = a aba voltar ao foco/visível. Sem polling, sem canal realtime.
+  useEffect(() => {
+    const revalidate = () => {
+      if (document.visibilityState !== 'visible') return
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      refresh()
+    }
+    window.addEventListener('focus', revalidate)
+    document.addEventListener('visibilitychange', revalidate)
+    return () => {
+      window.removeEventListener('focus', revalidate)
+      document.removeEventListener('visibilitychange', revalidate)
+    }
+  }, [refresh])
+
   return (
     <StockTrackingContext.Provider value={value}>
       {children}
