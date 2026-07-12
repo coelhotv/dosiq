@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { medicineService } from '@shared/services'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import Loading from '@shared/components/ui/Loading'
 import MedicineListHeader from '@medications/components/medicines/components/MedicineListHeader'
 import MedicineFilterChips from '@medications/components/medicines/components/MedicineFilterChips'
@@ -17,6 +18,9 @@ export default function Medicines({ onNavigateToProtocol, onBack }) {
     isLoading,
     refresh,
   } = useDashboard()
+  // Spec 044 F3: com estoque desligado, `hasStock` fica sempre false — senão a dependência
+  // bloqueia exclusão de medicamento por um estoque que o usuário nem vê mais.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
   const [error, setError] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -32,11 +36,11 @@ export default function Medicines({ onNavigateToProtocol, onBack }) {
     if (!contextMedicines || !protocols || !stockSummary) return deps
     contextMedicines.forEach((med) => {
       const hasProtocols = protocols.some((p) => p.medicine_id === med.id)
-      const hasStock = stockSummary.some((s) => s.medicine_id === med.id)
+      const hasStock = stockTrackingEnabled && stockSummary.some((s) => s.medicine_id === med.id)
       deps[med.id] = { hasProtocols, hasStock }
     })
     return deps
-  }, [contextMedicines, protocols, stockSummary])
+  }, [contextMedicines, protocols, stockSummary, stockTrackingEnabled])
 
   const filteredMedicines = useMemo(
     () => contextMedicines?.filter((m) => filterType === 'all' || m.type === filterType) || [],

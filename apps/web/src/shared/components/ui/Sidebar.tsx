@@ -1,5 +1,6 @@
 import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
 import RegisterSpeedDial from './RegisterSpeedDial'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -11,6 +12,11 @@ const NAV_ITEMS = [
 ]
 
 export default function Sidebar({ currentView, setCurrentView, onRegisterDose, onRegisterMeasure, unreadCount = 0 }) {
+  // Spec 044 F3: item "Estoque" some da navegação quando o controle de estoque está
+  // desligado (preferência global — fail-safe = ligado enquanto o provider não resolve).
+  const { enabled: stockTrackingEnabled } = useStockTracking()
+  const navItems = NAV_ITEMS.filter((item) => item.id !== 'stock' || stockTrackingEnabled)
+
   return (
     <aside className="sidebar" aria-label="Menu lateral">
       <div className="sidebar-brand">
@@ -23,7 +29,7 @@ export default function Sidebar({ currentView, setCurrentView, onRegisterDose, o
 
       <nav className="sidebar-nav">
         {/* eslint-disable-next-line no-unused-vars */}
-        {NAV_ITEMS.map(({ id, label, Icon }) => (
+        {navItems.map(({ id, label, Icon }) => (
           <button
             key={id}
             className={`sidebar-nav-item${currentView === id ? ' sidebar-nav-item--active' : ''}`}

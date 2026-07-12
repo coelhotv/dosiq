@@ -59,8 +59,11 @@ async function resolveProtocol(step, skipStock, medicine, data, planId) {
   return null
 }
 
-async function resolveStock(skipStock, data, medicineId) {
-  if (!skipStock && data.quantity) {
+// `stockTrackingEnabled === false` (spec 044) NUNCA cria estoque: em dose-only o Step3 nem
+// renderiza, mas depender de `data.quantity` vir vazio seria proteção por acidente — qualquer
+// default/prefill futuro no wizard religaria o FIFO pelas costas do usuário.
+async function resolveStock(skipStock, data, medicineId, stockTrackingEnabled = true) {
+  if (stockTrackingEnabled && !skipStock && data.quantity) {
     await stockService.add({
       medicine_id: medicineId,
       quantity: coerceDecimal(data.quantity),
@@ -81,12 +84,13 @@ export async function submitTreatmentWizard({
   newPlanName,
   newPlanEmoji,
   step,
-  skipStock
+  skipStock,
+  stockTrackingEnabled = true
 }) {
   const medicine = await resolveMedicine(selectedExistingMedicine, medicineData)
   const planId = await resolvePlan(planMode, selectedPlanId, newPlanName, newPlanEmoji)
   const protocol = await resolveProtocol(step, skipStock, medicine, protocolData, planId)
-  await resolveStock(skipStock, stockData, medicine.id)
+  await resolveStock(skipStock, stockData, medicine.id, stockTrackingEnabled)
 
   return { medicine, protocol }
 }

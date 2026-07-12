@@ -22,15 +22,19 @@ const CTA_MAP = {
  * NotificationActions — Componente unificado para CTAs de notificação (Mobile).
  * Renderiza o rodapé com label de ação ou status de dose.
  */
-export default function NotificationActions({ 
-  notification, 
-  wasTaken, 
+export default function NotificationActions({
+  notification,
+  wasTaken,
   onNavigate,
   isDoseReminder,
-  groupedComplete
+  groupedComplete,
+  stockTrackingEnabled = true,
 }) {
   const { notification_type } = notification
-  const cta = CTA_MAP[notification_type]
+  // Spec 044/F3: sem CTA "Ver estoque" quando o controle de estoque está desligado
+  // (a StockStack não existe na nav — o item fica sem ação, não quebra).
+  const isStockNotification = notification_type === 'stock_alert' || notification_type === 'prescription_alert'
+  const cta = (isStockNotification && !stockTrackingEnabled) ? null : CTA_MAP[notification_type]
 
   // Caso: Dose já tomada individualmente
   if (isDoseReminder && wasTaken === true) {

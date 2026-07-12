@@ -4,6 +4,7 @@
 // REUSAM os fluxos das Fases 1 e 2 (PO-8, zero duplicação de lógica):
 //   1. Primeiro remédio  → medicineService.create (F1)
 //   2. Primeiro tratamento → protocolService.create (F2)
+//   3. Modo de uso (estoque sim/não) → setStockTracking (spec 044, FR-001)
 // Ao concluir OU pular, marca onboarding_completed e chama onComplete (Navigation
 // troca para o app autenticado — "aha moment" no Dashboard).
 //
@@ -17,6 +18,7 @@ import { OnboardingContext } from './OnboardingContext'
 import OnboardingWelcomeStep from './screens/OnboardingWelcomeStep'
 import OnboardingMedicineStep from './screens/OnboardingMedicineStep'
 import OnboardingTreatmentStep from './screens/OnboardingTreatmentStep'
+import OnboardingStockStep from './screens/OnboardingStockStep'
 
 // TODO(040-strict): Stack.Navigator não tipado p/ rotas dinâmicas (nível B)
 const Stack: any = createStackNavigator()
@@ -45,6 +47,7 @@ export default function OnboardingNavigator({ onComplete }) {
         <Stack.Screen name={ROUTES.ONBOARDING_WELCOME} component={OnboardingWelcomeStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_MEDICINE} component={OnboardingMedicineStep} />
         <Stack.Screen name={ROUTES.ONBOARDING_TREATMENT} component={OnboardingTreatmentStep} />
+        <Stack.Screen name={ROUTES.ONBOARDING_STOCK} component={OnboardingStockStep} />
       </Stack.Navigator>
     </OnboardingContext.Provider>
   )

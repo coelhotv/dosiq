@@ -16,6 +16,7 @@ import Modal from '@shared/components/ui/Modal'
 import Button from '@shared/components/ui/Button'
 import { exportAsJSON, exportAsCSV } from '@features/export/services/exportService'
 import { parseLocalDate } from '@utils/dateUtils'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import './ExportDialog.css'
 
 /** Renderiza seletor de formato de exportação. */
@@ -78,18 +79,20 @@ function DateRangeSelector({ dateRange, isExporting, onDateChange }) {
 }
 
 /** Renderiza checkboxes de seleção de tipos de dados. */
-function DataTypeCheckboxes({ states, isExporting, onCheckboxChange }) {
+function DataTypeCheckboxes({ states, isExporting, onCheckboxChange, stockTrackingEnabled }) {
   const { includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines } = states
+  // Spec 044 F3: checkbox "Estoque" some do diálogo quando o controle de estoque está desligado.
+  const options = [
+    { checked: includeProtocols, setter: setIncludeProtocols, label: DATA_TYPE_LABELS.protocols },
+    { checked: includeLogs, setter: setIncludeLogs, label: DATA_TYPE_LABELS.logs },
+    ...(stockTrackingEnabled ? [{ checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock }] : []),
+    { checked: includeMedicines, setter: setIncludeMedicines, label: DATA_TYPE_LABELS.medicines },
+  ]
   return (
     <div className="export-section">
       <label className="export-label">Dados a exportar</label>
       <div className="checkbox-group">
-        {[
-          { checked: includeProtocols, setter: setIncludeProtocols, label: DATA_TYPE_LABELS.protocols },
-          { checked: includeLogs, setter: setIncludeLogs, label: DATA_TYPE_LABELS.logs },
-          { checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock },
-          { checked: includeMedicines, setter: setIncludeMedicines, label: DATA_TYPE_LABELS.medicines },
-        ].map(({ checked, setter, label }) => (
+        {options.map(({ checked, setter, label }) => (
           <label key={label} className="checkbox-label">
             <input
               type="checkbox"
@@ -128,26 +131,34 @@ const DATA_TYPE_LABELS = {
  * @returns {JSX.Element} Componente ExportDialog
  */
 export default function ExportDialog({ isOpen, onClose }) {
+  // Spec 044 F3: preferência global de controle de estoque (contexto, lido antes dos states).
+  const { enabled: stockTrackingEnabled } = useStockTracking()
+
   // 1. States (R-010: Hook order)
   const [format, setFormat] = useState('json')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [includeProtocols, setIncludeProtocols] = useState(true)
   const [includeLogs, setIncludeLogs] = useState(true)
-  const [includeStock, setIncludeStock] = useState(true)
+  const [includeStock, setIncludeStock] = useState(stockTrackingEnabled)
   const [includeMedicines, setIncludeMedicines] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState(null)
 
   // 2. Memos (R-010: Hook order)
+  // Estoque só entra no export se o usuário controla estoque (spec 044). Derivado, não
+  // espelhado em estado: um `setState` em effect deixaria o checkbox e a exportação
+  // divergindo por um render.
+  const exportStock = includeStock && stockTrackingEnabled
+
   const isExportDisabled = useMemo(() => {
-    return !includeProtocols && !includeLogs && !includeStock && !includeMedicines
-  }, [includeProtocols, includeLogs, includeStock, includeMedicines])
+    return !includeProtocols && !includeLogs && !exportStock && !includeMedicines
+  }, [includeProtocols, includeLogs, exportStock, includeMedicines])
 
   const hasDateFilter = useMemo(() => {
     return dateRange.start || dateRange.end
   }, [dateRange])
 
-  // 3. Handlers (R-010: Hook order)
+  // 4. Handlers (R-010: Hook order)
   const handleFormatChange = useCallback((value) => {
     setFormat(value)
     setExportError(null)
@@ -182,7 +193,7 @@ export default function ExportDialog({ isOpen, onClose }) {
       const options = {
         includeProtocols,
         includeLogs,
-        includeStock,
+        includeStock: exportStock,
         includeMedicines,
         dateRange: hasDateFilter
           ? {
@@ -198,7 +209,7 @@ export default function ExportDialog({ isOpen, onClose }) {
           format,
           includeProtocols,
           includeLogs,
-          includeStock,
+          includeStock: exportStock,
           includeMedicines,
           hasDateFilter,
         })
@@ -223,7 +234,7 @@ export default function ExportDialog({ isOpen, onClose }) {
     format,
     includeProtocols,
     includeLogs,
-    includeStock,
+    exportStock,
     includeMedicines,
     hasDateFilter,
     dateRange,
@@ -246,6 +257,7 @@ export default function ExportDialog({ isOpen, onClose }) {
           states={{ includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines }}
           isExporting={isExporting}
           onCheckboxChange={handleCheckboxChange}
+          stockTrackingEnabled={stockTrackingEnabled}
         />
         {exportError && <div className="export-error">{exportError}</div>}
         <div className="export-actions">

@@ -89,8 +89,9 @@ function resolveTitle(notification, label) {
  * @param {Object}   props.notification - Objeto notificationLog do DB
  * @param {boolean|Object} [props.wasTaken] - Se dose já foi registrada ou objeto de progresso
  * @param {function} [props.onNavigate] - (routeName) => void
+ * @param {boolean} [props.stockTrackingEnabled] - Spec 044/F3: controle de estoque ligado
  */
-export default function NotificationItem({ notification, wasTaken, onNavigate }) {
+export default function NotificationItem({ notification, wasTaken, onNavigate, stockTrackingEnabled = true }) {
   const [expanded, setExpanded] = useState(false)
 
   const { notification_type, status, sent_at, body } = notification
@@ -100,6 +101,9 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const isFailed       = ['falhou', 'failed'].includes(status?.toLowerCase())
   const isDailyDigest  = notification_type === 'daily_digest'
   const isDoseReminder = ['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'].includes(notification_type)
+  // Notificações de estoque perdem o CTA quando o controle de estoque está desligado
+  // (spec 044/F3) — o item histórico continua visível, só sem ação de navegação.
+  const isStockNotification = ['stock_alert', 'prescription_alert'].includes(notification_type)
 
   const displayTitle = resolveTitle(notification, label)
   const displayBody  = body ?? null
@@ -108,7 +112,9 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
   const IconComponent = ICON_COMPONENTS[iconName] ?? Bell
 
   // Verifica se deve ser clicável baseado no CTA_MAP consolidado
-  const cta = NotificationActions.getCTA(notification_type)
+  const cta = (isStockNotification && !stockTrackingEnabled)
+    ? null
+    : NotificationActions.getCTA(notification_type)
   const groupedComplete = isDoseReminder && typeof wasTaken === 'object' && wasTaken.taken === wasTaken.total
   const hasNavAction = cta && !!onNavigate && !(isDoseReminder && wasTaken === true) && !groupedComplete
 
@@ -146,12 +152,13 @@ export default function NotificationItem({ notification, wasTaken, onNavigate })
 
         {/* Rodapé: Ações Consolidadas */}
         <View style={styles.footer}>
-          <NotificationActions 
+          <NotificationActions
             notification={notification}
             wasTaken={wasTaken}
             onNavigate={onNavigate}
             isDoseReminder={isDoseReminder}
             groupedComplete={groupedComplete}
+            stockTrackingEnabled={stockTrackingEnabled}
           />
         </View>
       </View>

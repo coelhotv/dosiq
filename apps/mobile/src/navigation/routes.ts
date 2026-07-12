@@ -47,6 +47,7 @@ export const ROUTES = {
   ONBOARDING_WELCOME: 'OnboardingWelcome',
   ONBOARDING_MEDICINE: 'OnboardingMedicine',
   ONBOARDING_TREATMENT: 'OnboardingTreatment',
+  ONBOARDING_STOCK: 'OnboardingStock',
 
   // Sub-rotas de Medicamentos (Fase 1)
   MEDICINES_LIST: 'MedicinesList',

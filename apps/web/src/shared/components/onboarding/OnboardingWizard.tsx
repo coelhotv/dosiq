@@ -2,7 +2,7 @@ import { useOnboarding } from './useOnboarding'
 import WelcomeStep from './WelcomeStep'
 import FirstMedicineStep from './FirstMedicineStep'
 import FirstProtocolStep from './FirstProtocolStep'
-import StockStep from './StockStep'
+import StockPreferenceStep from './StockPreferenceStep'
 import TelegramIntegrationStep from './TelegramIntegrationStep'
 import './OnboardingWizard.css'
 
@@ -25,7 +25,7 @@ export default function OnboardingWizard() {
     { id: 0, name: 'Boas-vindas', component: WelcomeStep },
     { id: 1, name: 'Medicamento', component: FirstMedicineStep },
     { id: 2, name: 'Protocolo', component: FirstProtocolStep },
-    { id: 3, name: 'Estoque', component: StockStep },
+    { id: 3, name: 'Estoque', component: StockPreferenceStep },
     { id: 4, name: 'Telegram', component: TelegramIntegrationStep },
   ]
 

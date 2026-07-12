@@ -225,6 +225,7 @@ export default function TreatmentWizardStep2({
   handleComplete,
   isProtocolValid,
   medicine,
+  stockTrackingEnabled = true,
 }) {
   // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
@@ -341,8 +342,15 @@ export default function TreatmentWizardStep2({
         >
           Pular
         </Button>
-        <Button variant="primary" onClick={goNext} disabled={!isProtocolValid}>
-          Próximo →
+        {/* Spec 044 F3: sem etapa de estoque (Step3), "Próximo" conclui direto. `skipStock`
+            segue false — é ele que autoriza a criação do TRATAMENTO no passo 2; quem barra o
+            estoque é o `stockTrackingEnabled` propagado até resolveStock. */}
+        <Button
+          variant="primary"
+          onClick={() => (stockTrackingEnabled ? goNext() : handleComplete(false))}
+          disabled={!isProtocolValid}
+        >
+          {stockTrackingEnabled ? 'Próximo →' : 'Concluir'}
         </Button>
       </div>
     </div>

@@ -1,0 +1,110 @@
+.stock-preference-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 0;
+}
+
+.stock-preference-header {
+  text-align: center;
+}
+
+.stock-preference-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #191c1d);
+}
+
+.stock-preference-header p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.stock-preference-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stock-preference-option {
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--color-surface-container-high, #e6e8e9);
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-container-low, #f2f4f5);
+  cursor: pointer;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.stock-preference-option:focus-visible {
+  outline: 2px solid var(--color-primary, #006a5e);
+  outline-offset: 2px;
+}
+
+.stock-preference-option--selected {
+  border-color: var(--color-primary, #006a5e);
+  background-color: var(--color-surface-container-lowest, #ffffff);
+}
+
+.stock-preference-option__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #191c1d);
+}
+
+.stock-preference-option__description {
+  font-size: 0.875rem;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.stock-preference-error {
+  padding: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+  border-radius: 0.25rem;
+  color: #dc2626;
+  font-size: 0.95rem;
+}
+
+.stock-preference-footnote {
+  margin: 0;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.stock-preference-actions {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.5rem;
+}
+
+.stock-preference-continue {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  background: var(--color-primary, #006a5e);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 106, 94, 0.2);
+  cursor: pointer;
+  transition: background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.stock-preference-continue:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(0, 106, 94, 0.3);
+  transform: translateY(-1px);
+}
+
+.stock-preference-continue:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

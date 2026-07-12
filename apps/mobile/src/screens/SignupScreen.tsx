@@ -1,6 +1,7 @@
 // SignupScreen.jsx — criar conta (Fase 4 S4.2). UI alinhada ao mock
-// mock-onboarding-passo1 (Step1_Account): é o "passo 1 de 3" visual do
-// onboarding. Ao continuar, valida e mostra a tela "email enviado"; após
+// mock-onboarding-passo1 (Step1_Account): é o "passo 1 de 4" visual do
+// onboarding (conta → medicamento → tratamento → estoque; o 4º passo entrou na
+// spec 044). Ao continuar, valida e mostra a tela "email enviado"; após
 // confirmar o email + login, o wizard retoma no passo 2 (gate em Navigation).
 
 import { useState } from 'react'
@@ -192,7 +193,7 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <OnboardingHeader step={0} totalSteps={3} onBack={() => navigation.goBack()} />
+      <OnboardingHeader step={0} totalSteps={4} onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView
         style={styles.flex}

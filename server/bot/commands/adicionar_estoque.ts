@@ -3,6 +3,7 @@ import { getUserIdByChatId } from '../../services/userService.js';
 import { setSession } from '../state.js';
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getTodayLocal } from '../../utils/dateUtils.js';
+import { replyIfStockDisabled } from '../services/stockTrackingGuard.js';
 
 // Helper function to fetch medicines
 async function fetchMedicines(userId, medicineName = null) {
@@ -29,6 +30,11 @@ export async function handleAdicionarEstoque(bot, msg) {
 
   try {
     const userId = await getUserIdByChatId(chatId);
+
+    // Dose-only (spec 044): registrar compra abriria o FIFO pelas costas do usuário que
+    // optou por não controlar estoque — convite de ativação em vez do fluxo de compra.
+    if (await replyIfStockDisabled(bot, chatId, userId)) return;
+
     const medicines = await fetchMedicines(userId);
 
     if (!medicines || medicines.length === 0) {
@@ -82,6 +88,11 @@ export async function handleReporShortcut(bot, msg, match) {
 
   try {
     const userId = await getUserIdByChatId(chatId);
+
+    // Dose-only (spec 044): mesmo guard do /adicionar_estoque — o atalho não pode abrir
+    // o FIFO por uma porta lateral.
+    if (await replyIfStockDisabled(bot, chatId, userId)) return;
+
     const medicines = await fetchMedicines(userId, medicineName);
 
     if (!medicines || medicines.length === 0) {

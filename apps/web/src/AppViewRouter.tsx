@@ -2,8 +2,9 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Auth from './views/Auth'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 
 const Landing = lazy(() => import('./views/landing/Landing'))
 const Medicines = lazy(() => import('./views/Medicines'))
@@ -62,6 +63,13 @@ const VIEW_MAP = {
 };
 
 function _renderViewContent(currentView, props) {
+  // Spec 044 F3: bloqueia o render de /stock no MESMO frame em que ela deixou de ser
+  // válida (o redirect via useEffect só corrige o estado no próximo tick) — sem isso
+  // a tela de estoque pisca antes do redirect silencioso pro dashboard.
+  if (currentView === 'stock' && props.stockTrackingReady && !props.stockTrackingEnabled) {
+    return <Dashboard onNavigate={props.setCurrentView} />;
+  }
+
   const renderer = VIEW_MAP[currentView];
   if (renderer) {
     return renderer(props);
@@ -89,6 +97,17 @@ export default function AppViewRouter({
   isPasswordRecovery,
   onResetComplete,
 }) {
+  // Spec 044 F3: rota /stock não existe quando o controle de estoque está desligado —
+  // redirect SILENCIOSO pro dashboard (decisão do PO, sem tela de erro/toast).
+  // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
+  const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
+
+  useEffect(() => {
+    if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
+      setCurrentView('dashboard')
+    }
+  }, [stockTrackingReady, stockTrackingEnabled, currentView, setCurrentView])
+
   if (isPasswordRecovery) {
     return W(<ResetPassword onComplete={onResetComplete} />)
   }
@@ -115,7 +134,9 @@ export default function AppViewRouter({
     setInitialTreatmentMedicineId,
     setDoseModalInitialValues,
     setIsDoseModalOpen,
-    navigateToProtocol
+    navigateToProtocol,
+    stockTrackingEnabled,
+    stockTrackingReady,
   };
 
   return W(_renderViewContent(currentView, viewProps));

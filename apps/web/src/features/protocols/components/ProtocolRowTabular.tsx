@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import AdherenceBar7d from './AdherenceBar7d'
 import StockPill from './StockPill'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 
 export default function ProtocolRowTabular({
   item,
@@ -11,6 +12,8 @@ export default function ProtocolRowTabular({
   onRowClick,
   onDelete,
 }) {
+  // Spec 044 F3: pill de estoque some quando o controle de estoque está desligado.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
   const hoverClass = isHovered ? 'protocol-row-tabular__cell--hovered' : ''
 
   return (
@@ -69,12 +72,14 @@ export default function ProtocolRowTabular({
       </div>
 
       <div className={`protocol-row-tabular__cell protocol-row-tabular__stock-cell ${hoverClass}`}>
-        <StockPill
-          status={item.stockStatus}
-          daysRemaining={item.daysRemaining}
-          dosesRemaining={item.dosesRemaining}
-          isDailyStock={item.isDailyStock}
-        />
+        {stockTrackingEnabled && (
+          <StockPill
+            status={item.stockStatus}
+            daysRemaining={item.daysRemaining}
+            dosesRemaining={item.dosesRemaining}
+            isDailyStock={item.isDailyStock}
+          />
+        )}
       </div>
     </>
   )

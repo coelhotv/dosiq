@@ -34,6 +34,7 @@ import { isOnboardingNeeded } from '../features/profile/services/profileService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
+import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
 
@@ -220,6 +221,7 @@ export default function Navigation() {
   // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a
   // mesma ref disparavam "navigation hasn't been initialized" na troca.
   return (
+    <StockTrackingProvider session={session}>
     <NavigationContainer
       ref={navigationRef}
       onStateChange={handleNavigationStateChange}
@@ -281,6 +283,7 @@ export default function Navigation() {
       </Stack.Navigator>
       )}
     </NavigationContainer>
+    </StockTrackingProvider>
   )
 }
 
