@@ -12,7 +12,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
-const { Check } = LucideIcons as any
+const { CalendarClock, Box, Info } = LucideIcons as any
 import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
 import { setStockTracking } from '@profile/services/profileService'
@@ -24,12 +24,14 @@ const OPTIONS = [
   {
     id: 'doses',
     tracking: false,
+    Icon: CalendarClock,
     title: 'Só lembrar e registrar minhas doses',
     subtitle: 'Lembretes na hora certa e um toque para marcar como tomada.',
   },
   {
     id: 'stock',
     tracking: true,
+    Icon: Box,
     title: 'Também avisar quando o remédio estiver acabando',
     subtitle: 'Além dos lembretes, o Dosiq acompanha seu estoque e avisa antes de faltar.',
   },
@@ -76,6 +78,7 @@ export default function OnboardingStockStep() {
         <View style={styles.options} accessibilityRole="radiogroup">
           {OPTIONS.map((option) => {
             const isSelected = option.id === selected
+            const { Icon } = option
             return (
               <Pressable
                 key={option.id}
@@ -85,19 +88,29 @@ export default function OnboardingStockStep() {
                 accessibilityState={{ checked: isSelected }}
                 accessibilityLabel={`${option.title}. ${option.subtitle}`}
               >
-                <View style={[styles.radio, isSelected ? styles.radioSelected : null]}>
-                  {isSelected ? <Check size={16} color="#ffffff" strokeWidth={3} /> : null}
+                <View style={[styles.optionIcon, isSelected ? styles.optionIconSelected : null]}>
+                  <Icon size={22} color={colors.brand.primary} strokeWidth={1.75} />
                 </View>
+
                 <View style={styles.optionText}>
                   <Text style={styles.optionTitle}>{option.title}</Text>
                   <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
+                </View>
+
+                {/* Radio à direita (mock onboarding-s3-dose-mode): decorativo — o estado de
+                    seleção é anunciado pelo accessibilityState do card inteiro. */}
+                <View style={[styles.radio, isSelected ? styles.radioSelected : null]}>
+                  {isSelected ? <View style={styles.radioDot} /> : null}
                 </View>
               </Pressable>
             )
           })}
         </View>
 
-        <Text style={styles.footnote}>Dá para mudar isso quando quiser, em Configurações.</Text>
+        <View style={styles.tip}>
+          <Info size={18} color={colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.tipText}>Dá para mudar isso quando quiser, em Configurações.</Text>
+        </View>
       </ScrollView>
 
       <FormActions
@@ -141,7 +154,7 @@ const styles = StyleSheet.create({
     // Alvo de toque generoso (≥76px): o card inteiro é o alvo, não só o radio.
     minHeight: 76,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing[3],
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
@@ -154,6 +167,20 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.primary,
     backgroundColor: colors.brand.light || colors.bg.card,
   },
+  optionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md || 12,
+    backgroundColor: colors.bg.card,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionIconSelected: {
+    backgroundColor: colors.bg.card,
+    borderColor: colors.brand.primary,
+  },
   radio: {
     width: 24,
     height: 24,
@@ -162,10 +189,14 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
   radioSelected: {
     borderColor: colors.brand.primary,
+  },
+  radioDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colors.brand.primary,
   },
   optionText: {
@@ -184,11 +215,21 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 20,
   },
-  footnote: {
-    marginTop: spacing[6],
-    fontSize: 13,
+  tip: {
+    marginTop: spacing[4],
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing[3],
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[4],
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg || 16,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 14,
     fontFamily: typography.fontFamily.regular || 'System',
     color: colors.text.secondary,
-    textAlign: 'center',
+    lineHeight: 20,
   },
 })
