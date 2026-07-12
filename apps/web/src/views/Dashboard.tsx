@@ -12,6 +12,7 @@ import { useReminderSuggestion } from '@dashboard/hooks/useReminderSuggestion'
 import { useDashboardHandlers } from '@dashboard/hooks/useDashboardHandlers'
 import insightService from '@dashboard/services/insightService'
 import { useTodayMeasures } from '@features/measures/hooks/useTodayMeasures'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { formatTimePtBR } from '@dosiq/core'
 
 /**
@@ -47,8 +48,13 @@ async function resolveUserName(user, supabaseClient) {
   return ''
 }
 
-/** Seleciona o insight atual baseado no estado do dashboard */
-function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds = [] }) {
+/**
+ * Seleciona o insight atual baseado no estado do dashboard.
+ * `stockTrackingEnabled` é passado explicitamente (spec 044 F3) — o insightService
+ * decide por esse flag, não por inferir do shape de `stockSummary` (não deixar o
+ * campo "viajar sozinho" no payload).
+ */
+function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds = [], stockTrackingEnabled }) {
   if (!stats) return null
   return insightService.selectBestInsight({
     stats: {
@@ -63,6 +69,7 @@ function selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate
     logs: logs ?? [],
     onNavigate,
     excludeIds,
+    stockTrackingEnabled,
   })
 }
 
@@ -82,6 +89,9 @@ function useDashboardViewState(onNavigate) {
   } = useDashboard()
   const { zones, totals, carryOver, lookAhead, todayDoses, now, nowRaw } = useDoseZones()
   const { mode: complexityMode } = useComplexityMode()
+  // Spec 044 F3: preferência global de controle de estoque — corta na origem (badges,
+  // alertas e insight de estoque nascem null/vazios aqui, nunca escondidos rio abaixo).
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
   // ── Estado local ──
   const [userName, setUserName] = useState('')
@@ -115,26 +125,26 @@ function useDashboardViewState(onNavigate) {
   const scheduleAllDoses = useMemo(() => {
     return todayDoses.map((dose) => ({
       ...dose,
-      stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
-      stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
+      stockDays: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null : null,
+      stockStatus: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null : null,
     }))
-  }, [todayDoses, stockByMedicineId])
+  }, [todayDoses, stockByMedicineId, stockTrackingEnabled])
 
   const carryOverDoses = useMemo(() => {
     return (carryOver || []).map((dose) => ({
       ...dose,
-      stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
-      stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
+      stockDays: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null : null,
+      stockStatus: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null : null,
     }))
-  }, [carryOver, stockByMedicineId])
+  }, [carryOver, stockByMedicineId, stockTrackingEnabled])
 
   const lookAheadDoses = useMemo(() => {
     return (lookAhead || []).map((dose) => ({
       ...dose,
-      stockDays: stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null,
-      stockStatus: stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null,
+      stockDays: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.daysRemaining ?? null : null,
+      stockStatus: stockTrackingEnabled ? stockByMedicineId.get(dose.medicineId)?.stockStatus ?? null : null,
     }))
-  }, [lookAhead, stockByMedicineId])
+  }, [lookAhead, stockByMedicineId, stockTrackingEnabled])
 
   const urgentDoses = useMemo(() => {
     const aheadImminent = (lookAhead || []).filter(
@@ -149,15 +159,15 @@ function useDashboardViewState(onNavigate) {
   }, [carryOver, zones, lookAhead, nowRaw])
 
   const criticalStockItems = useMemo(() => {
-    if (!stockSummary?.items) return []
+    if (!stockTrackingEnabled || !stockSummary?.items) return []
     return stockSummary.items.filter(
       (item) => item.stockStatus === 'critical' || item.stockStatus === 'low'
     )
-  }, [stockSummary])
+  }, [stockSummary, stockTrackingEnabled])
 
   const currentInsight = useMemo(
-    () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds: dismissedInsightIds }),
-    [stats, stockSummary, logs, protocols, onNavigate, dismissedInsightIds]
+    () => selectCurrentInsight({ stats, stockSummary, logs, protocols, onNavigate, excludeIds: dismissedInsightIds, stockTrackingEnabled }),
+    [stats, stockSummary, logs, protocols, onNavigate, dismissedInsightIds, stockTrackingEnabled]
   )
 
   const handleDismissInsight = (insightId) => {

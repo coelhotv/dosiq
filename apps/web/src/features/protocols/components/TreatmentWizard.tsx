@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { useTreatmentWizardState } from '@protocols/hooks/useTreatmentWizardState'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import TreatmentWizardStep1 from './steps/TreatmentWizardStep1'
 import TreatmentWizardStep2 from './steps/TreatmentWizardStep2'
 import TreatmentWizardStep3 from './steps/TreatmentWizardStep3'
@@ -20,6 +21,9 @@ export default function TreatmentWizard({
   treatmentPlanId,
 }: any) {
   const { refresh, medicines } = useDashboard()
+  // Spec 044 F3 (FR-003): sem controle de estoque, a etapa "Estoque Atual" (Step3) some
+  // do wizard — a contagem de passos tem que refletir isso (nunca "3 de 4" com 3 passos).
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
   const state = useTreatmentWizardState({
     onComplete,
@@ -28,15 +32,17 @@ export default function TreatmentWizard({
     refresh,
   })
 
+  const progressSteps = stockTrackingEnabled ? [1, 2, 3] : [1, 2]
+
   return (
     <div className="wizard">
       {/* Progress dots */}
       {state.step < 4 && (
         <div className="wizard__progress">
-          {[1, 2, 3].map((s) => (
+          {progressSteps.map((s) => (
             <div key={s} className={`wizard__dot ${s <= state.step ? 'wizard__dot--active' : ''}`} />
           ))}
-          <span className="wizard__step-label">{state.step}/3</span>
+          <span className="wizard__step-label">{state.step}/{progressSteps.length}</span>
         </div>
       )}
 
@@ -90,10 +96,11 @@ export default function TreatmentWizard({
               handleComplete={state.handleComplete}
               isProtocolValid={state.isProtocolValid}
               medicine={state.medicineMode === 'existing' ? state.selectedExistingMedicine : state.medicineData}
+              stockTrackingEnabled={stockTrackingEnabled}
             />
           )}
 
-          {state.step === 3 && (
+          {state.step === 3 && stockTrackingEnabled && (
             <TreatmentWizardStep3
               stockData={state.stockData}
               updateStock={state.updateStock}
@@ -113,6 +120,7 @@ export default function TreatmentWizard({
               stockData={state.stockData}
               onComplete={onComplete}
               resetWizard={state.resetWizard}
+              stockTrackingEnabled={stockTrackingEnabled}
             />
           )}
         </motion.div>

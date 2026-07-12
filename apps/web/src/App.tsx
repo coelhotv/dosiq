@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supabase'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
+import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import '@shared/styles/index.css'
 import Loading from '@shared/components/ui/Loading'
 import AppViewRouter from './AppViewRouter'
@@ -283,6 +284,7 @@ function AppInner() {
   }
 
   return (
+    <StockTrackingProvider session={session}>
     <AppShell
       isAuthenticated={!!session}
       isPasswordRecovery={isPasswordRecovery}
@@ -308,6 +310,7 @@ function AppInner() {
       setIsChatOpen={setIsChatOpen}
       shouldReduceMotion={shouldReduceMotion}
     />
+    </StockTrackingProvider>
   )
 }
 

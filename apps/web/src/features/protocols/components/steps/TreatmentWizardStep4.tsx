@@ -9,6 +9,7 @@ export default function TreatmentWizardStep4({
   stockData,
   onComplete,
   resetWizard,
+  stockTrackingEnabled = true,
 }) {
   if (!result) return null
 
@@ -19,7 +20,9 @@ export default function TreatmentWizardStep4({
       <p className="wizard__complete-summary">
         <strong>{result.medicine?.name || medicineData.name}</strong> cadastrado
         {result.protocol && ` com tratamento ${FREQUENCY_LABELS[protocolData.frequency]}`}
-        {stockData.quantity && ` e ${formatActiveIngredientHint(stockData.quantity, result.medicine?.dosage_per_pill, result.medicine?.dosage_unit) || `${stockData.quantity} un.`} em estoque`}.
+        {/* Spec 044 F3: com estoque desligado, stockData nunca chega preenchido aqui
+            (skipStock no submit) — gate explícito por robustez. */}
+        {stockTrackingEnabled && stockData.quantity && ` e ${formatActiveIngredientHint(stockData.quantity, result.medicine?.dosage_per_pill, result.medicine?.dosage_unit) || `${stockData.quantity} un.`} em estoque`}.
       </p>
       <div className="wizard__actions wizard__actions--center">
         <Button variant="primary" onClick={() => onComplete(result)}>

@@ -22,6 +22,7 @@ import { getTodayLocal, getNow, parseISO, daysDifference, cloneDate, addDays, ge
 import { ROUTES } from '@navigation/routes'
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import NotificationItem from '@notifications/components/NotificationItem'
 import { colors } from '@shared/styles/tokens'
@@ -52,8 +53,9 @@ const DOSE_KINDS = [
   'daily_digest',
 ]
 
-// Chips de filtro
-const FILTERS = [
+// Chips de filtro (spec 044/F3: chip "Estoque" some quando o controle de estoque
+// está desligado — filtrado em NotificationInboxFilters via prop `filters`)
+const FILTERS_ALL = [
   { key: 'all',    label: 'Todos' },
   { key: 'unread', label: 'Não lidos' },
   { key: 'doses',  label: 'Doses' },
@@ -247,7 +249,7 @@ function NotificationInboxHeader({ navigation, unreadCount, loading }) {
   )
 }
 
-function NotificationInboxFilters({ activeFilter, onFilter }) {
+function NotificationInboxFilters({ filters, activeFilter, onFilter }) {
   const primaryColor = colors.brand.primary
   return (
     <ScrollView
@@ -256,7 +258,7 @@ function NotificationInboxFilters({ activeFilter, onFilter }) {
       style={styles.filtersScroll}
       contentContainerStyle={styles.filtersContent}
     >
-      {FILTERS.map((f) => {
+      {filters.map((f) => {
         const isActive = activeFilter === f.key
         return (
           <TouchableOpacity
@@ -288,6 +290,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
 
   const { data, loading, error, stale, refresh } = useNotificationLog({ userId, limit: 30 })
   const { unreadCount, markAllRead } = useUnreadNotificationCount(data, userId)
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
   // 1. States / Refs
   // lastSeen local: necessário para filtro "Não lidos" (R-187)
@@ -308,15 +311,26 @@ export default function NotificationInboxScreen({ navigation, route }) {
     [data, localDay]
   )
 
+  // Filtro efetivo: se o controle de estoque desligar com o chip "Estoque" ativo, o filtro
+  // cai para "Todos". Derivado (não espelhado em estado): um setState em effect deixaria a
+  // lista filtrada por um chip que não existe mais durante um render.
+  const effectiveFilter = !stockTrackingEnabled && activeFilter === 'stock' ? 'all' : activeFilter
+
   // Sections com filtro aplicado
   const filteredSections = useMemo(
-    () => _applyFilter(sections, activeFilter, lastSeen),
-    [sections, activeFilter, lastSeen]
+    () => _applyFilter(sections, effectiveFilter, lastSeen),
+    [sections, effectiveFilter, lastSeen]
   )
 
   const wasTakenMap = useMemo(
     () => buildWasTakenMap(data ?? [], doseLogs),
     [data, doseLogs]
+  )
+
+  // Chip "Estoque" some quando o controle de estoque está desligado (spec 044/F3)
+  const filters = useMemo(
+    () => stockTrackingEnabled ? FILTERS_ALL : FILTERS_ALL.filter(f => f.key !== 'stock'),
+    [stockTrackingEnabled]
   )
 
   // 3. Effects
@@ -381,13 +395,20 @@ export default function NotificationInboxScreen({ navigation, route }) {
     <NotificationItem
       notification={item}
       wasTaken={wasTakenMap[item.id]}
+      stockTrackingEnabled={stockTrackingEnabled}
       onNavigate={(view) => {
-        const target = DEEP_LINK_TARGETS[view]
+        let target = DEEP_LINK_TARGETS[view]
         if (!target) return
+        // Guard de deep-link (spec 044/F3): a StockStack não é montada quando o
+        // controle de estoque está desligado — navegar pra ROUTES.STOCK crasharia.
+        // Redirect silencioso pra Hoje, sem tela de erro/toast (decisão PO).
+        if (target === ROUTES.STOCK && !stockTrackingEnabled) {
+          target = ROUTES.TODAY
+        }
         navigation.navigate(target, _buildNavParams(item))
       }}
     />
-  ), [navigation, wasTakenMap])
+  ), [navigation, wasTakenMap, stockTrackingEnabled])
 
   const renderSectionHeader = useCallback(({ section }) => (
     <View style={styles.sectionHeader}>
@@ -404,13 +425,15 @@ export default function NotificationInboxScreen({ navigation, route }) {
         <BellOff size={40} color={colors.text?.muted ?? '#9ca3af'} strokeWidth={1.5} />
         <Text style={styles.emptyTitle}>Tudo em dia por aqui</Text>
         <Text style={styles.emptyBody}>
-          {activeFilter === 'all'
-            ? 'Quando houver lembretes, alertas de estoque ou resumos, eles aparecem aqui.'
-            : 'Nenhum item nesta categoria.'}
+          {effectiveFilter !== 'all'
+            ? 'Nenhum item nesta categoria.'
+            : stockTrackingEnabled
+              ? 'Quando houver lembretes, alertas de estoque ou resumos, eles aparecem aqui.'
+              : 'Quando houver lembretes ou resumos, eles aparecem aqui.'}
         </Text>
       </View>
     )
-  }, [loading, activeFilter])
+  }, [loading, effectiveFilter, stockTrackingEnabled])
 
   const primaryColor = colors.brand.primary
 
@@ -426,7 +449,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
         </View>
       )}
 
-      <NotificationInboxFilters activeFilter={activeFilter} onFilter={setActiveFilter} />
+      <NotificationInboxFilters filters={filters} activeFilter={effectiveFilter} onFilter={setActiveFilter} />
 
       {/* ── Conteúdo principal ── */}
       {loading && !data && (

@@ -4,6 +4,7 @@ import AdherenceBar7d from './AdherenceBar7d'
 import AdherenceLabel from './AdherenceLabel'
 import StockPill from './StockPill'
 import TitrationBadge from './TitrationBadge'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 
 export default function ProtocolRowCard({
   item,
@@ -14,6 +15,8 @@ export default function ProtocolRowCard({
   onDelete,
   showAdherence,
 }) {
+  // Spec 044 F3: pill de estoque some quando o controle de estoque está desligado.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
   const canExpand = isComplex && (item.hasTitration || item.notes)
 
   function handleClick() {
@@ -48,12 +51,14 @@ export default function ProtocolRowCard({
               <span className="protocol-row__dosage">{item.concentrationLabel}</span>
             )}
           </div>
-          <StockPill
-            status={item.stockStatus}
-            daysRemaining={item.daysRemaining}
-            dosesRemaining={item.dosesRemaining}
-            isDailyStock={item.isDailyStock}
-          />
+          {stockTrackingEnabled && (
+            <StockPill
+              status={item.stockStatus}
+              daysRemaining={item.daysRemaining}
+              dosesRemaining={item.dosesRemaining}
+              isDailyStock={item.isDailyStock}
+            />
+          )}
         </div>
 
         <div className="protocol-row__intake">{item.intakeLabel}</div>

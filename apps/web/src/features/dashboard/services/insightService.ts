@@ -200,9 +200,12 @@ function createWeakDayInsight(onNavigate) {
 /**
  * Gera todos os insights possíveis baseados nos dados do usuário
  * @param {Object} params - Parâmetros de dados do usuário
+ * @param {boolean} [params.stockTrackingEnabled=true] - Spec 044 F3: preferência global de
+ *   controle de estoque, passada explicitamente pelo chamador — não confiar em `stockSummary`
+ *   estar vazio para inferir que o estoque está desligado.
  * @returns {Array} - Lista de insights aplicáveis
  */
-export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs, onNavigate }) {
+export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs, onNavigate, stockTrackingEnabled = true }) {
   const trend = calculateTrendFromData(dailyAdherence)
   const todayMissed = countTodayMissedDoses(logs, dailyAdherence)
 
@@ -211,7 +214,7 @@ export function generateAllInsights({ stats, dailyAdherence, stockSummary, logs,
     () => createPerfectWeekInsight(stats, onNavigate),
     () => createGoodWeekInsight(stats, onNavigate),
     () => createImprovementInsight(trend, onNavigate),
-    () => createStockHealthyInsight(stockSummary, onNavigate),
+    ...(stockTrackingEnabled ? [() => createStockHealthyInsight(stockSummary, onNavigate)] : []),
     () => createMissedDosesTodayInsight(todayMissed),
     () => createLowAdherenceInsight(stats, onNavigate),
     () => createStreakBrokenInsight(stats),

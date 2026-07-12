@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { getCurrentUser } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
@@ -39,10 +40,14 @@ export default function Consultation({ onBack }) {
   const [error, setError] = useState(null)
 
   const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
+  // `stockTrackingEnabled` é ALLOWLIST explícita do payload do PDF (consultationPdfDataBuilder):
+  // campo novo não viaja sozinho — sem ele o PDF do usuário dose-only imprimiria a tabela de
+  // estoque em vez da linha "Estoque: não controlado".
   const dashboardData = useMemo(
-    () => ({ medicines, protocols, logs, stockSummary, stats, dailyAdherence }),
-    [medicines, protocols, logs, stockSummary, stats, dailyAdherence]
+    () => ({ medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled }),
+    [medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled]
   )
 
   // Create single 'now' instance for temporal consistency across PDF export, share, and filename generation

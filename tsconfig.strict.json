@@ -7,6 +7,7 @@
       "@shared/*": ["./apps/web/src/shared/*", "./apps/mobile/src/shared/*"],
       "@utils/*": ["./apps/web/src/utils/*"],
       "@platform/*": ["./apps/mobile/src/platform/*"],
+      "@profile/*": ["./apps/mobile/src/features/profile/*"],
       "@dosiq/core": ["./packages/core/src"],
       "@dosiq/core/*": ["./packages/core/src/*"],
       "@dosiq/shared-data": ["./packages/shared-data/src"],

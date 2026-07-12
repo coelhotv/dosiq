@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
 import { coerceDecimal } from '@dosiq/core'
 import { submitTreatmentWizard } from './_treatmentWizardSubmit'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import {
   useWizardNavigation,
   useWizardMedicine,
@@ -26,6 +27,8 @@ export function useTreatmentWizardState({
   const prot = useWizardProtocol()
   const stock = useWizardStock()
   const plan = useWizardPlan(treatmentPlanId)
+  // Spec 044: a preferência precisa VIAJAR até o submit — o payload é allowlist explícita.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -47,6 +50,7 @@ export function useTreatmentWizardState({
           newPlanEmoji: plan.newPlanEmoji,
           step: nav.step,
           skipStock,
+          stockTrackingEnabled,
         })
         if (refresh) refresh()
         setResult({ medicine, protocol })
@@ -69,6 +73,7 @@ export function useTreatmentWizardState({
       plan.newPlanEmoji,
       nav,
       refresh,
+      stockTrackingEnabled,
     ]
   )
 

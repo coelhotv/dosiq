@@ -22,6 +22,7 @@ export function MedicineDeleteBlockedSheet({
   protocols = [],
   stockUnits = 0,
   stockLots = 0,
+  stockTrackingEnabled = true,
   onCancel,
   onOpenProtocol,
   onOpenStock,
@@ -94,7 +95,9 @@ export function MedicineDeleteBlockedSheet({
             </Pressable>
           ))}
 
-          {stockUnits > 0 ? (
+          {/* Bloco de estoque some por completo quando o controle de estoque está
+              desligado — o bloqueio por tratamento (protocolItems acima) continua. */}
+          {stockTrackingEnabled && stockUnits > 0 ? (
             <Pressable
               style={({ pressed }) => [styles.depCard, pressed && styles.depCardPressed]}
               onPress={onOpenStock}

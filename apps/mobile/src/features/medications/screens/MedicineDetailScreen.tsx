@@ -25,6 +25,7 @@ import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
 import { MedicineDeleteBlockedSheet } from '@medications/components/MedicineDeleteBlockedSheet'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { formatConcentration, PRESENTATION_LABELS, isLiquidMedicine } from '@dosiq/core'
 import { colors, spacing, borderRadius, shadows } from '@shared/styles/tokens'
 
@@ -197,6 +198,7 @@ function MedicineDetailUsage({
   protocols,
   protocolsSummary,
   stockSummary,
+  stockTrackingEnabled,
   hideDelete,
   onDeletePress,
   deleteLoading,
@@ -222,14 +224,17 @@ function MedicineDetailUsage({
         ) : null}
       </View>
 
-      {/* Card estoque */}
-      <View style={styles.useCard}>
-        <View style={[styles.useIconWrap, styles.useIconWrapSupplement]}>
-          <Package size={18} color={colors.supplement[700]} />
+      {/* Card estoque — some por completo quando o controle de estoque está desligado
+          (regra de ouro 044/F3: nunca "Não rastreado" fantasma) */}
+      {stockTrackingEnabled && (
+        <View style={styles.useCard}>
+          <View style={[styles.useIconWrap, styles.useIconWrapSupplement]}>
+            <Package size={18} color={colors.supplement[700]} />
+          </View>
+          <Text style={styles.useLabel}>Estoque</Text>
+          <Text style={styles.useMeta}>{stockSummary ?? 'Não rastreado'}</Text>
         </View>
-        <Text style={styles.useLabel}>Estoque</Text>
-        <Text style={styles.useMeta}>{stockSummary ?? 'Não rastreado'}</Text>
-      </View>
+      )}
 
       {/* Botão Excluir medicamento — oculto quando vindo de um tratamento
           (exclusão bloqueada por dependência; ação morta) */}
@@ -261,6 +266,7 @@ function useMedicineDetailState() {
   const hideDelete = route.params?.hideDelete === true
   const { data, loading, error, refresh } = useMedicine(id)
   const { preCheck, confirmDelete, isLoading: deleteLoading } = useMedicineDelete(data)
+  const { enabled: stockTrackingEnabled } = useStockTracking()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [blockedOpen, setBlockedOpen] = useState(false)
 
@@ -359,11 +365,19 @@ function useMedicineDetailState() {
 
   const handleOpenStock = useCallback(() => {
     setBlockedOpen(false)
+    // Guard de deep-link (spec 044/F3): com a StockStack fora da nav quando o
+    // controle de estoque está desligado, navegar pra ROUTES.STOCK crasharia.
+    // Redirect silencioso pra Hoje — o botão que dispara isso já some quando off,
+    // mas mantemos a defesa aqui também (AP-277).
+    if (!stockTrackingEnabled) {
+      navigation.navigate(ROUTES.TODAY)
+      return
+    }
     navigation.navigate(ROUTES.STOCK, {
       screen: ROUTES.STOCK_DETAIL,
       params: { medicineId: dataId, medicineName: name },
     })
-  }, [navigation, dataId, name])
+  }, [navigation, dataId, name, stockTrackingEnabled])
 
   return {
     data,
@@ -394,6 +408,7 @@ function useMedicineDetailState() {
     isTitrating,
     protocolsSummary,
     stockSummary,
+    stockTrackingEnabled,
     handleBack,
     handleEdit,
     handleDeletePress,
@@ -469,6 +484,7 @@ export default function MedicineDetailScreen() {
           protocols={state.protocols}
           protocolsSummary={state.protocolsSummary}
           stockSummary={state.stockSummary}
+          stockTrackingEnabled={state.stockTrackingEnabled}
           hideDelete={state.hideDelete}
           onDeletePress={state.handleDeletePress}
           deleteLoading={state.deleteLoading}
@@ -492,6 +508,7 @@ export default function MedicineDetailScreen() {
         protocols={state.preCheck.protocols}
         stockUnits={state.preCheck.stockUnits}
         stockLots={state.preCheck.stockLots}
+        stockTrackingEnabled={state.stockTrackingEnabled}
         onCancel={() => state.setBlockedOpen(false)}
         onOpenProtocol={state.handleOpenProtocol}
         onOpenStock={state.handleOpenStock}

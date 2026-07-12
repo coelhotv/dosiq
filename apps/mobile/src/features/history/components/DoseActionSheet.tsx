@@ -20,6 +20,7 @@ import * as LucideIcons from 'lucide-react-native'
 const { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } = LucideIcons as any
 import { getLastInjectionSite } from '@dose/services/doseService'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 
@@ -280,14 +281,23 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, on
 }
 
 function SheetDeleteView({ isOrphan, loading, onConfirm, onCancel }) {
+  // Em dose-only a RPC não restaura estoque (spec 044) — prometer restauração seria afirmar
+  // um efeito que não acontece.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
+  const deleteWarning = isOrphan
+    ? (stockTrackingEnabled
+      ? 'Excluir este registro? O registro será removido e o estoque restaurado.'
+      : 'Excluir este registro? O registro será removido.')
+    : (stockTrackingEnabled
+      ? 'Excluir este registro? A dose volta para pendente e o estoque será restaurado.'
+      : 'Excluir este registro? A dose volta para pendente.')
+
   return (
     <View style={styles.formView}>
       <View style={styles.deleteWarning}>
         <AlertTriangle size={20} color={colors.status.error} strokeWidth={2} />
         <Text style={styles.deleteWarningText}>
-          {isOrphan
-            ? 'Excluir este registro? O registro será removido e o estoque restaurado.'
-            : 'Excluir este registro? A dose volta para pendente e o estoque será restaurado.'}
+          {deleteWarning}
         </Text>
       </View>
 

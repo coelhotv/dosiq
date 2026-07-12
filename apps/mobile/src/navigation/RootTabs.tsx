@@ -5,7 +5,7 @@
 // Iconografia: lucide-react-native — mesmos ícones do BottomNavRedesign.jsx e Sidebar.jsx web
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { Platform } from 'react-native'
+import { Platform, View, ActivityIndicator, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Calendar, Pill, Package, User } from 'lucide-react-native'
 import { ROUTES } from './routes'
@@ -13,6 +13,7 @@ import TodayScreen from '../features/dashboard/screens/TodayScreen'
 import TreatmentsStack from './TreatmentsStack'
 import StockStack from './StockStack'
 import ProfileStack from './ProfileStack'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { colors } from '../shared/styles/tokens'
 
 // TODO(040-strict): createBottomTabNavigator<any>() — sem ParamList tipada, overload exige `id`
@@ -29,6 +30,17 @@ const TAB_ICONS = {
 
 export default function RootTabs() {
   const insets = useSafeAreaInsets()
+  // Spec 044 F3: enquanto `ready === false` não sabemos se a Estoque deve existir —
+  // não renderizar as tabs evita o piscar da aba pro usuário dose-only (AP-277).
+  const { enabled: stockEnabled, ready: stockReady } = useStockTracking()
+
+  if (!stockReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color={colors.tab.activeTint} size="large" />
+      </View>
+    )
+  }
 
   return (
     <Tab.Navigator
@@ -83,25 +95,27 @@ export default function RootTabs() {
           },
         })}
       />
-      <Tab.Screen
-        name={ROUTES.STOCK}
-        component={StockStack}
-        options={{ title: 'Estoque' }}
-        listeners={({ navigation, route }) => ({
-          tabPress: (e) => {
-            // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
-            // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
-            const isFocused = navigation.isFocused()
-            // TODO(040-strict): route.state/e.preventDefault não tipados p/ tabPress genérico
-            const tabState = (route as any).state
-            const isOnSubScreen = tabState && tabState.index > 0
-            if (isFocused && isOnSubScreen) {
-              (e as any).preventDefault()
-              navigation.navigate(ROUTES.STOCK, { screen: ROUTES.STOCK_MAIN })
-            }
-          },
-        })}
-      />
+      {stockEnabled && (
+        <Tab.Screen
+          name={ROUTES.STOCK}
+          component={StockStack}
+          options={{ title: 'Estoque' }}
+          listeners={({ navigation, route }) => ({
+            tabPress: (e) => {
+              // Re-tap na tab ativa enquanto em sub-tela → volta para a raiz do stack.
+              // Necessário em createStackNavigator (JS) — native-stack faria por padrão.
+              const isFocused = navigation.isFocused()
+              // TODO(040-strict): route.state/e.preventDefault não tipados p/ tabPress genérico
+              const tabState = (route as any).state
+              const isOnSubScreen = tabState && tabState.index > 0
+              if (isFocused && isOnSubScreen) {
+                (e as any).preventDefault()
+                navigation.navigate(ROUTES.STOCK, { screen: ROUTES.STOCK_MAIN })
+              }
+            },
+          })}
+        />
+      )}
       <Tab.Screen
         name={ROUTES.PROFILE}
         component={ProfileStack}
@@ -122,3 +136,12 @@ export default function RootTabs() {
     </Tab.Navigator>
   )
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.tab.bgDefault,
+  },
+})

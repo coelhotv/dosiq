@@ -38,6 +38,7 @@ import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
 
@@ -329,6 +330,7 @@ function TodayScreenContent({
   navigation,
 }) {
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
+  const { enabled: stockTrackingEnabled } = useStockTracking()
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
@@ -385,7 +387,7 @@ function TodayScreenContent({
       >
         <TodayHeader greeting={greeting} todayFormatted={todayFormatted} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
-        <StockAlertInline alerts={stockAlerts} />
+        {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
         {priorityDoses.length > 0 ? (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
         ) : (

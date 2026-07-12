@@ -1,4 +1,5 @@
 import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import './BottomNav.css'
 
 const NAV_ITEMS = [
@@ -10,6 +11,11 @@ const NAV_ITEMS = [
 ]
 
 export default function BottomNav({ currentView, setCurrentView, unreadCount = 0 }) {
+  // Spec 044 F3: espelha o Sidebar — item "Estoque" some quando a preferência global
+  // de controle de estoque está desligada.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
+  const navItems = NAV_ITEMS.filter((item) => item.id !== 'stock' || stockTrackingEnabled)
+
   return (
     <div
       className="bottom-nav-redesign-container"
@@ -18,7 +24,7 @@ export default function BottomNav({ currentView, setCurrentView, unreadCount = 0
     >
       <nav className="bottom-nav-redesign">
         {/* eslint-disable-next-line no-unused-vars */}
-        {NAV_ITEMS.map(({ id, label, Icon }) => (
+        {navItems.map(({ id, label, Icon }) => (
           <button
             key={id}
             className={`bnr-item${currentView === id ? ' bnr-item--active' : ''}`}

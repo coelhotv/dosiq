@@ -52,7 +52,7 @@ export default function OnboardingMedicineStep() {
   // Memos (R-010)
   // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
   // pós-login do wizard).
-  const headerProps = useMemo(() => ({ step: 1, totalSteps: 3, onSkip: finish }), [finish])
+  const headerProps = useMemo(() => ({ step: 1, totalSteps: 4, onSkip: finish }), [finish])
 
   // Handlers
   // Auto-fill ao escolher uma sugestão ANVISA (mesmo mapeamento do cadastro F1).

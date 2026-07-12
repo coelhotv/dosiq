@@ -365,6 +365,22 @@ export async function completeOnboarding() {
 }
 
 /**
+ * Preferência global de controle de estoque (spec 044).
+ * Propaga o erro: quem trata o fail-safe (ausência → ativo) é o provider da UI.
+ */
+export async function getStockTracking() {
+  return profileRepo.getStockTracking()
+}
+
+/**
+ * Liga/desliga o controle de estoque. off → congela (carimba stock_paused_at);
+ * nenhuma mutação de saldo aqui (NC3 da spec 044).
+ */
+export async function setStockTracking(enabled) {
+  return profileRepo.setStockTracking(enabled)
+}
+
+/**
  * Excluir conta (RPC delete_user_account — bloqueia se tratamentos ativos).
  * @returns {Promise<{success: boolean, error: string|null}>}
  */

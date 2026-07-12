@@ -9,6 +9,7 @@ import {
   ConsultationTitrationsSection,
 } from './ConsultationSections'
 import ConsultationAdherenceSection from './ConsultationAdherenceSection'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import './ConsultationView.css'
 
 const containerVariants = {
@@ -21,6 +22,9 @@ const itemVariants = {
 }
 
 export default function ConsultationView({ data, onGeneratePDF, onShare, onBack }) {
+  // Spec 044 F3: "Alertas de Estoque" some do Modo Consulta quando o controle de estoque
+  // está desligado.
+  const { enabled: stockTrackingEnabled } = useStockTracking()
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
 
@@ -57,7 +61,7 @@ export default function ConsultationView({ data, onGeneratePDF, onShare, onBack 
       <main className="sr-consultation__content">
         <ConsultationMedicinesSection activeMedicines={activeMedicines} />
         <ConsultationAdherenceSection adherenceSummary={adherenceSummary} />
-        <ConsultationStockSection stockAlerts={stockAlerts} />
+        {stockTrackingEnabled && <ConsultationStockSection stockAlerts={stockAlerts} />}
         <ConsultationPrescriptionsSection prescriptionStatus={prescriptionStatus} />
         <ConsultationTitrationsSection activeTitrations={activeTitrations} />
       </main>

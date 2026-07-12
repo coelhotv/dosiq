@@ -2,12 +2,16 @@ import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { calculateDaysRemaining, formatStockStatus } from '../../utils/formatters.js';
 import { calculateDailyIntake, stockDoseMetrics } from '@dosiq/core';
+import { replyIfStockDisabled } from '../services/stockTrackingGuard.js';
 
 export async function handleEstoque(bot, msg) {
   const chatId = msg.chat.id;
 
   try {
     const userId = await getUserIdByChatId(chatId);
+
+    // Dose-only (spec 044): convite de ativação em vez de saldo vazio / "estoque 0".
+    if (await replyIfStockDisabled(bot, chatId, userId)) return;
 
     // Get all medicines with their stock and active protocols
     const { data: medicines, error: medError } = await supabase

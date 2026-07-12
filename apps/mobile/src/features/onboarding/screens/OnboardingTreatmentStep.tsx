@@ -8,6 +8,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
+import { ROUTES } from '@navigation/routes'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Clock } = LucideIcons as any
@@ -123,7 +124,7 @@ export default function OnboardingTreatmentStep() {
   const timeCount = Array.isArray(form.values.time_schedule) ? form.values.time_schedule.length : 0
   // Passo 3 de 3.
   const headerProps = useMemo(
-    () => ({ step: 2, totalSteps: 3, onBack: () => navigation.goBack(), onSkip: finish }),
+    () => ({ step: 2, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: finish }),
     [navigation, finish],
   )
 
@@ -191,12 +192,15 @@ export default function OnboardingTreatmentStep() {
           show('Tudo bem! Você pode ligar os lembretes depois em Configurações.', { variant: 'info', duration: 6000 })
         }
       }
-      await finish()
+      // Último passo: escolha do modo de uso (spec 044). `reset` em vez de `navigate` —
+      // voltar para cá após o medicamento/tratamento já persistidos criaria um SEGUNDO
+      // par no banco a cada novo "Continuar".
+      ;(navigation as any).reset({ index: 0, routes: [{ name: ROUTES.ONBOARDING_STOCK }] })
     } catch (err) {
       setSubmitting(false)
       show(err?.message ?? 'Erro ao criar tratamento', { variant: 'error' })
     }
-  }, [form, medicine, remind, show, finish])
+  }, [form, medicine, remind, show, navigation])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -250,7 +254,7 @@ export default function OnboardingTreatmentStep() {
         </ScrollView>
 
         <FormActions
-          primaryLabel="Concluir"
+          primaryLabel="Continuar"
           onPrimary={handleConcluir}
           primaryLoading={submitting}
         />
