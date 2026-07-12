@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F3 mergeada (#738) — próximo: F4a (T013-T016)",
+    "goal": "044 F4a (T013-T016) — PR #739 aberto, aguardando review Gemini + smoke do PO",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -118,7 +118,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F3 MERGEADA (#738, squash 226c5614) — PO-2 fechado com smoke manual do PO. LIÇÃO CENTRAL DA FASE: os gates automáticos passaram limpos o tempo todo (1542 testes, strict-island, lint) e os 4 bugs que importavam só apareceram no SMOKE — todos de ciclo de vida (cache não reconciliado pós-escrita, validação em campo invisível, wizard gravando no passo errado), não de lógica. Cada peça isolada estava correta; o furo morava ENTRE elas. Teste de unidade não pega essa classe. Segunda lição: o inventário por grep (T009) desmentiu o design em 11 superfícies — confiar na lista de memória teria entregue metade da fase. O risco R2 do plano estava certo. Terceira: sub-agentes Sonnet entregam render condicional bem, mas o principal PRECISA auditar o caminho do dado (os 4 furos que passaram eram todos de propagação de flag / allowlist de payload). ⚠️ F4a: o toggle de Settings tem a MESMA classe do AP-281 — gravar + refresh(). PRÓXIMO: F4a (T013-T016). SQP do épico na F5. journal=14, threshold=15 → distill logo.",
+    "previous_session_note": "044 F4a implementada (PR #739): ciclo de opt-out — toggle na seção ESTOQUE do Settings (mobile + espelho web), sheet de congelamento (cadeado, NÃO danger), retomada <30d silenciosa com anúncio TEXTUAL, sheet de reconciliação >=30d (default 'começar do zero'; fechar sem decidir NÃO ativa). Hook useStockToggle espelhado consome o stockResumeService da F2 — gap não reimplementado na UI. 'Nunca teve estoque' vs 'congelado' sai de stock_paused_at (null vs carimbo), sem query extra. AP-281 aplicado por desenho (refresh() após TODA escrita da preferência). RC5 do próprio diff pegou 1 furo de ciclo de vida (estado interno do sheet sobrevivia ao fechamento → default visual errado no reabrir); montagem condicional resolve. Gates: 1551 testes, tsc 0, ratchet OK, lint 0 errors. PO-5 SEGUE ABERTO até o smoke do PO — a classe de bug desta feature (ciclo de vida do cache/estado) não aparece em unit test, foi assim na F3. PRÓXIMO: F4b (T017-T021, opt-in: saldo inicial + upsell + analytics), depois F5 (POs com evidência + SQP do épico + C5). journal=15 → distill DEVIDO.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
@@ -143,12 +143,12 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 237,
     "anti_patterns_count": 279,
     "decisions_count": 80,
     "contracts_count": 30,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
