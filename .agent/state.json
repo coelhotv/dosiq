@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F4a (T013-T016) — PR #739 aberto, aguardando review Gemini + smoke do PO",
+    "goal": "044 F4a mergeada (#739) — próximo: F4b (T017-T020)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 738,
-    "merged_squash": "226c5614",
+    "merged_pr": 739,
+    "merged_squash": "cd4839b7",
     "merged_history": [
+      {
+        "pr": 739,
+        "squash": "cd4839b7",
+        "phase": "044 F4a: ciclo de opt-out (T013-T016) — PO-5 na UI. Toggle 'Controle de estoque' na seção ESTOQUE do Settings (mobile + espelho web), sheet de congelamento (cadeado, NÃO danger), retomada <30d silenciosa com anúncio TEXTUAL, sheet de reconciliação >=30d (default 'começar do zero'; fechar sem decidir NÃO ativa). Hook useStockToggle espelhado consome o stockResumeService da F2 — gap não reimplementado na UI. 'Nunca teve estoque' vs 'congelado' derivado de stock_paused_at (null vs carimbo), sem query extra. Invariante honrada: opt-out congela, zero mutação; único caminho que muta saldo é 'começar do zero' (append-only R-226), por escolha explícita. TRÊS achados fora do plano: AP-284 (SMOKE multi-device do PO — o refresh() do AP-281 só reconcilia a escrita LOCAL; desligar na web deixava o mobile minimizado mostrando estoque até reabrir, e pull-to-refresh não cobre porque refaz DADOS, não a preferência. Providers passam a revalidar no ponto de retomada: AppState 'active' / focus+visibilitychange. Sem polling, sem realtime; fail-safe AP-277 vale NA revalidação — rede caiu → estoque ATIVO). AP-285 (review Gemini HIGH — na web, clicar em 'Começar do zero' ZERAVA o saldo no próprio clique: ação destrutiva sem confirmação E divergente do mobile, que já era rádio + confirmar. Virou radiogroup completo (roving tabindex, setas, foco acompanhando a seleção) + botão 'Ativar estoque'; escolha reseta por MONTAGEM CONDICIONAL do modal, nunca via effect — senão a opção destrutiva volta pré-marcada). Adendo AP-171 (toLocaleDateString('pt-BR') cai em formato US no Hermes E a data alimenta a DECISÃO: 'Retomar o saldo de {data}', 12/jun viraria 06/12/2026 → formatDatePtBR). Bônus de UX pedido no smoke: ToastProvider mobile deriva a duração da contagem de palavras (2s + 450ms/palavra, [3s,9s]) — os 3s fixos cortavam a leitura das confirmações longas; vale p/ TODOS os toasts (nenhuma chamada passava duration). RC5 do próprio diff pegou 1 furo (choice do sheet sobrevivia ao fechamento). Review: 12 threads, 12 aplicados, 0 declinados. Gates: 1556 testes, tsc 0, ratchet OK, lint 0. Aprovado PO → squash+delete",
+        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO: F4b (T017-T020 — saldo inicial + upsell + analytics; fecha PO-3), INCLUINDO a dívida da F3: o onboarding MOBILE opção-2 ainda não encadeia a tela de saldo inicial (a web já encadeia). ⚠️ o opt-in é MAIS UM escritor da preferência: grava → refresh() (AP-281) e instrumenta o evento na ORIGEM COMUM (T019), não em cada tela."
+      },
       {
         "pr": 738,
         "squash": "226c5614",
@@ -118,7 +124,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F4a implementada (PR #739): ciclo de opt-out — toggle na seção ESTOQUE do Settings (mobile + espelho web), sheet de congelamento (cadeado, NÃO danger), retomada <30d silenciosa com anúncio TEXTUAL, sheet de reconciliação >=30d (default 'começar do zero'; fechar sem decidir NÃO ativa). Hook useStockToggle espelhado consome o stockResumeService da F2 — gap não reimplementado na UI. 'Nunca teve estoque' vs 'congelado' sai de stock_paused_at (null vs carimbo), sem query extra. AP-281 aplicado por desenho (refresh() após TODA escrita da preferência). RC5 do próprio diff pegou 1 furo de ciclo de vida (estado interno do sheet sobrevivia ao fechamento → default visual errado no reabrir); montagem condicional resolve. Gates: 1551 testes, tsc 0, ratchet OK, lint 0 errors. PO-5 SEGUE ABERTO até o smoke do PO — a classe de bug desta feature (ciclo de vida do cache/estado) não aparece em unit test, foi assim na F3. PRÓXIMO: F4b (T017-T021, opt-in: saldo inicial + upsell + analytics), depois F5 (POs com evidência + SQP do épico + C5). journal=15 → distill DEVIDO.",
+    "previous_session_note": "044 F4a MERGEADA (#739, squash cd4839b7). LIÇÃO CENTRAL: pela segunda fase seguida, os gates automáticos passaram limpos o tempo todo (1556 testes, strict-island, lint) e TUDO que importou veio do SMOKE e do REVISOR EXTERNO — e nada era bug de lógica. Foram: ciclo de vida (cache reconciliado só na escrita local → AP-284, multi-device), affordance (selecionar = executar numa ação que ZERA saldo → AP-285, pego pelo Gemini) e plataforma (ICU do Hermes numa data que alimenta a decisão → adendo AP-171). A RC5 do próprio diff pegou 1 (o choice do sheet sobrevivendo ao fechamento) justamente por caçar ciclo de vida de propósito — vale manter esse foco na F4b. Segunda lição: corrigir só o AP-281 dá FALSA COMPLETUDE — o fluxo single-device fica perfeito e o multi-device continua quebrado do mesmo jeito. Pergunta de preflight p/ todo provider que cacheia servidor: QUEM MAIS ESCREVE ISSO? PRÓXIMO: F4b (T017-T020 — saldo inicial + upsell + analytics; fecha PO-3), incl. dívida da F3 (onboarding mobile opção-2 sem tela de saldo inicial). Depois F5 (POs com evidência + SQP do épico). journal=17, threshold=15 → DISTILL DEVIDO (rodar /devflow distill antes de abrir a F4b).",
     "ceremonies_run": [
       "eng-review",
       "security-review"
@@ -143,9 +149,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 17,
     "rules_count": 237,
-    "anti_patterns_count": 279,
+    "anti_patterns_count": 281,
     "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": true
