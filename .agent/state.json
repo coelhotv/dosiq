@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "coding",
+    "mode": "planning",
     "ceremony_type": null,
-    "status": "completed",
-    "plan": "plans/specs/044-dose-only-mode/plan.md",
-    "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044-dose-only-mode - F2 MERGEADA (#736); próximo F3 (UI modo-off)",
+    "status": "planned",
+    "plan": "plans/specs/029-treatment-level-titration/plan.md",
+    "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
+    "goal": "029-treatment-level-titration — planejada (ADR-080 proposed; 6 slices F1-F6; próximo: aceitar ADR-080 + coding F1)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -110,12 +110,20 @@
       }
     ],
     "tier": 2,
-    "spec_dir": "plans/specs/044-dose-only-mode",
-    "spec": "plans/specs/044-dose-only-mode/spec.md",
+    "spec_dir": "plans/specs/029-treatment-level-titration",
+    "spec": "plans/specs/029-treatment-level-titration/spec.md",
     "previous_session_note": "044 F2 MERGEADA (#736, squash 83bd49af) e migração 20260711_stock_fn_hardening APLICADA EM PROD (MCP, 2026-07-11) — verificado live: restore_stock_for_log com UMA assinatura (uuid,text,uuid), search_path='' nas 3, anon EXECUTE=false, authenticated/service_role=true, medicines.type DEFAULT 'medicamento'; smoke server-side (sem sessão) FIFO 10→7→6→10 verde. PO-4 fechado; PO-5 tem o core pronto+testado (fecha na F4a com a UI). TRÊS lições da fase: AP-280 (getNow() é relógio DESLOCADO — usar instante absoluto em DURAÇÃO contra timestamptz; passou local GMT-3, quebrou no CI UTC), AP-279 (mock que ignora o .in() mede o mock, não o código), e o furo do ChatWindow (payload é ALLOWLIST explícita — campo novo do contexto NÃO viaja sozinho; achado só porque o PO pediu auditoria de gaps). database.types.ts REGENERADO (#737, squash 449b796a — PO rodou `npx supabase login`): hand-edit batia exatamente com o gerador; o regen ainda trouxe drift antigo (notification_outbox da 043 + FKs da 046, nunca regenerados). PENDÊNCIAS DE ESCOPO p/ F3: bot Telegram ainda responde comandos de estoque p/ user off (T012); PDF de dose-only SEM prescrições não renderiza a página de estoque (some a linha 'não controlado' — decidir com o PO). PRÓXIMO: F3 (UI modo-off, T008-T012).",
-    "ceremonies_run": [],
-    "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": [],
+    "ceremonies_run": [
+      "eng-review",
+      "security-review"
+    ],
+    "ceremony_findings_count": 14,
+    "ceremony_scope_decisions": [
+      "F1 RESOLVIDO: freeze só da ESCRITA web (wizard/service off + nota); leitura preservada via adapter F2 + string swap vocabulário — deliverable do slice F5",
+      "F2: cutover via adapter strangler-fig (assinatura resolveTitrationStageAt preservada)",
+      "F7: RC-SEC recomendado antes do planning",
+      "RC-SEC: 7 findings (SEC-1..7) + 4 PO-SEC formais (RLS/IDOR/replay/migração) com audit-evidence (dado regulado); push do switch respeita modo discreto ADR-076 S-3; telemetria FR-009 sem nome de medicamento"
+    ],
     "ai_review": {
       "engine": "agy",
       "status": "clean",
@@ -129,10 +137,10 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 13,
     "rules_count": 237,
     "anti_patterns_count": 276,
-    "decisions_count": 79,
+    "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": false
   },
@@ -141,6 +149,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-11T18:30:00Z"
+    "index_loaded_at": "2026-07-12T00:00:00Z"
   }
 }
