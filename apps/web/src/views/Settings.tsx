@@ -3,6 +3,7 @@ import { supabase } from '@shared/utils/supabase'
 import SettingsHeader from '@settings/sections/SettingsHeader'
 import NotificationSection from '@settings/sections/NotificationSection'
 import PreferenceSection from '@settings/sections/PreferenceSection'
+import StockSection from '@settings/sections/StockSection'
 import AccountSection from '@settings/sections/AccountSection'
 import AdminSection from '@settings/sections/AdminSection'
 import { useSettingsState } from '@features/settings/hooks/useSettingsState'
@@ -48,6 +49,7 @@ export default function Settings({ onNavigate, mode }) {
       ) : mode === 'account' ? (
         <>
           <PreferenceSection {...preference} />
+          <StockSection />
           <AdminSection isAdmin={isAdmin} dlqCount={dlqCount} onNavigate={onNavigate} />
           <AccountSection
             showPasswordForm={showPasswordForm} setShowPasswordForm={setShowPasswordForm}
@@ -65,6 +67,7 @@ export default function Settings({ onNavigate, mode }) {
         <>
           <NotificationSection {...notification} {...integration} />
           <PreferenceSection {...preference} />
+          <StockSection />
           <AccountSection
             showPasswordForm={showPasswordForm} setShowPasswordForm={setShowPasswordForm}
             handleUpdatePassword={handleUpdatePassword} newPassword={newPassword}

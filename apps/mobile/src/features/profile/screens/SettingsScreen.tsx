@@ -1,7 +1,7 @@
-// SettingsScreen.jsx — Configurações (Fase 4): densidade da interface + fuso horário + segurança
+// SettingsScreen.jsx — Configurações (Fase 4): densidade da interface + estoque + fuso horário + segurança
 // R-010: States → Memos → Effects → Handlers
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -9,20 +9,24 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Switch,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
-const { ChevronLeft, ChevronRight, AlignLeft, Sparkles, LayoutGrid, Shield, Trash2, Globe, } = LucideIcons as any
+const { ChevronLeft, ChevronRight, AlignLeft, Sparkles, LayoutGrid, Shield, Trash2, Globe, Package, } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useProfile } from '@profile/hooks/useProfile'
 import { useProfileMutation } from '@profile/hooks/useProfileMutation'
+import { useStockToggle } from '@profile/hooks/useStockToggle'
 import { useToast } from '@shared/components/feedback/Toast'
 import FormSelect from '@shared/components/form/FormSelect'
 import { TIMEZONE_OPTIONS } from '@dosiq/core'
 import TzIntentSheet from '@profile/components/TzIntentSheet'
+import StockFreezeSheet from '@profile/components/StockFreezeSheet'
+import StockReconcileSheet from '@profile/components/StockReconcileSheet'
 
 // ─── Opções de densidade ──────────────────────────────────────────────────────
 
@@ -161,6 +165,55 @@ function PreferencesCard({ loading, currentComplexity, activeLabel, onSelect }) 
   )
 }
 
+// ─── Sub-componente: controle de estoque (spec 044 · T013) ───────────────────
+
+/**
+ * Subtítulo por estado (§5 das decisões de design):
+ *  on                → saldos e avisos ativos
+ *  off + já congelou → desligado (o saldo está guardado)
+ *  off + nunca teve  → convite + hint do que acontece ao ativar
+ */
+function stockSubtitle(enabled, neverHadStock) {
+  if (enabled) return 'Saldos e avisos de reposição ativos.'
+  if (neverHadStock) return 'Avisa quando o remédio estiver acabando.'
+  return 'Desligado — só lembretes e registro de doses.'
+}
+
+function StockCard({ ready, enabled, neverHadStock, busy, onToggle }) {
+  const subtitle = stockSubtitle(enabled, neverHadStock)
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.stockRow}>
+        <View style={styles.stockInfo}>
+          <Text style={styles.securityRowTitle}>Controle de estoque</Text>
+          <Text style={styles.securityRowSub}>{subtitle}</Text>
+          {!enabled && neverHadStock ? (
+            <Text style={styles.stockHint}>
+              Ao ativar, a gente pergunta quanto você tem de cada remédio agora.
+            </Text>
+          ) : null}
+        </View>
+        {ready && !busy ? (
+          <Switch
+            value={enabled}
+            onValueChange={onToggle}
+            trackColor={{ false: colors.neutral[300], true: colors.primary[500] }}
+            thumbColor={colors.bg.card}
+            accessibilityRole="switch"
+            accessibilityLabel={
+              enabled ? 'Controle de estoque ativado' : 'Controle de estoque desativado'
+            }
+            accessibilityState={{ checked: enabled }}
+          />
+        ) : (
+          <ActivityIndicator size="small" color={colors.primary[500]} />
+        )}
+      </View>
+    </View>
+  )
+}
+
 function TimezoneCard({ loading, timezone, options, onChange }) {
   return (
     <View style={styles.card}>
@@ -195,6 +248,7 @@ export default function SettingsScreen() {
   // Memos/hooks de dados
   const { profile, settings, loading: profileLoading, refresh, updateTimezone, checkFuturePendingDoses } = useProfile()
   const { setComplexity, loading: mutating } = useProfileMutation()
+  const stock = useStockToggle()
   const toast = useToast()
 
   const currentComplexity = useMemo(
@@ -211,6 +265,18 @@ export default function SettingsScreen() {
     () => settings?.timezone ?? 'America/Sao_Paulo',
     [settings],
   )
+
+  // Effects — o anúncio da retomada/congelamento é TEXTUAL (leitor de tela), não só visual.
+  const { announcement: stockAnnouncement, clearAnnouncement: clearStockAnnouncement } = stock
+  useEffect(() => {
+    if (!stockAnnouncement) return
+    toast.show(stockAnnouncement, { variant: 'success' })
+    clearStockAnnouncement()
+  }, [stockAnnouncement, clearStockAnnouncement, toast])
+
+  useEffect(() => {
+    if (stock.error) toast.show(stock.error, { variant: 'error' })
+  }, [stock.error, toast])
 
   // Handlers
   const persistTimezone = useCallback(
@@ -301,6 +367,20 @@ export default function SettingsScreen() {
           onSelect={handleSelectDensity}
         />
 
+        {/* ── Seção ESTOQUE (spec 044 · T013) ── */}
+        <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
+          <Package size={12} color={colors.text.muted} />
+          <Text style={styles.sectionLabelText}>ESTOQUE</Text>
+        </View>
+
+        <StockCard
+          ready={stock.ready}
+          enabled={stock.enabled}
+          neverHadStock={stock.neverHadStock}
+          busy={stock.busy}
+          onToggle={stock.requestToggle}
+        />
+
         {/* ── Seção FUSO HORÁRIO ── */}
         <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
           <Globe size={12} color={colors.text.muted} />
@@ -320,6 +400,26 @@ export default function SettingsScreen() {
           onDeleteAccount={handleDeleteAccount}
         />
       </ScrollView>
+
+      <StockFreezeSheet
+        visible={stock.sheet === 'freeze'}
+        applying={stock.busy}
+        onConfirm={stock.confirmFreeze}
+        onCancel={stock.closeSheet}
+      />
+
+      {/* Montagem condicional (não só `visible`): desmontar reseta o `choice` interno para o
+          default "Começar do zero" — senão a escolha da tentativa anterior voltaria pré-marcada. */}
+      {stock.sheet === 'reconcile' && stock.reconcile ? (
+        <StockReconcileSheet
+          gapDays={stock.reconcile.gapDays}
+          pausedAt={stock.reconcile.pausedAt}
+          applying={stock.busy}
+          onZero={stock.resumeAndZero}
+          onResume={stock.resumeAsIs}
+          onClose={stock.closeSheet}
+        />
+      ) : null}
 
       <TzIntentSheet
         prompt={tzPrompt}
@@ -436,6 +536,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.muted,
     marginTop: spacing[3],
+  },
+  stockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    minHeight: 48,
+  },
+  stockInfo: {
+    flex: 1,
+  },
+  stockHint: {
+    fontSize: 12,
+    color: colors.text.muted,
+    lineHeight: 16,
+    marginTop: spacing[1],
   },
   securityRow: {
     flexDirection: 'row',
