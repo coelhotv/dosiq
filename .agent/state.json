@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F4b MERGEADO (PR #740). PRÓXIMO: F5 (T021-T024) — fecha o épico",
+    "goal": "044 F5 — épico Dose-Only COMPLETO (POs 5/5, SQP, T024/AP-289). PRÓXIMO: PR + distill",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -155,7 +155,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 19,
+    "journal_entries_since_distillation": 20,
     "rules_count": 238,
     "anti_patterns_count": 284,
     "decisions_count": 80,
@@ -167,6 +167,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-12T22:20:00Z"
+    "index_loaded_at": "2026-07-13T00:00:00Z"
   }
 }
