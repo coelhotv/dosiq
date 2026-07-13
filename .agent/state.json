@@ -2,21 +2,22 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "coding",
+    "mode": "specifying",
     "ceremony_type": null,
-    "status": "completed",
+    "status": "specified",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "ÉPICO 044 (Dose-Only Mode) COMPLETO e mergeado (#741). Nenhuma fase pendente.",
+    "goal": "050 — integridade de entrega das notificações (fan-out subject_id + claim atômico do lembrete)",
     "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/049-docs-revamp",
-      "plans/specs/046-lgpd-consent",
-      "plans/specs/044-dose-only-mode",
+      "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
+      "plans/specs/044-dose-only-mode",
+      "plans/specs/046-lgpd-consent",
       "plans/specs/047-inapp-review-prompt",
       "plans/specs/048-landing-glp1",
-      "plans/specs/008-complete-data-export-lgpd"
+      "plans/specs/049-docs-revamp",
+      "plans/specs/050-notification-integrity"
     ],
     "merged_pr": 742,
     "merged_squash": "2d5ef14c",
@@ -140,8 +141,8 @@
       }
     ],
     "tier": 2,
-    "spec_dir": "plans/specs/044-dose-only-mode",
-    "spec": "plans/specs/044-dose-only-mode/spec.md",
+    "spec_dir": "plans/specs/050-notification-integrity",
+    "spec": "plans/specs/050-notification-integrity/spec.md",
     "previous_session_note": "044 F4b IMPLEMENTADA (branch feature/044/f4b-opt-in, AGUARDANDO SMOKE DO PO — sem push). T017 saldo inicial (mobile+web) com skip por item, T018 upsell não-modal com dismiss persistente, T019 analytics na ORIGEM COMUM (stockPreferenceService envelopa toda escrita da preferência + emite o evento na MESMA chamada — os 4 escritores passam por ele; grep confirma zero setStockTracking fora), T020 testes. Dívida da F3 fechada (onboarding mobile opção-2 encadeia o saldo). PO-3 (sem retro-consumo) garantido POR CONSTRUÇÃO: o service de ativação só recebe profileRepo+stockRepo, não alcança log/dose_instance; guard de contagem em teste. LIÇÃO: a RC5 do próprio diff pegou o furo mais caro ANTES do smoke (AP-286 — a tela nova entrou entre a gravação do onboarding e o finish(), reabrindo a janela de duplicação do AP-283 sem violar uma linha dele, porque os guards de idempotência são estado de COMPONENTE e morrem no restart). Caçar ciclo de vida de propósito na RC5 pagou pela 2ª fase seguida. Os 2 furos dos sub-agentes foram DE NOVO de propagação (refresh() ausente no form web; upsell web navegando p/ view inexistente) — a lição da F3 se confirmou. R-290 (novo): regra derivada client-side tem que recortar a PRÓPRIA janela — o gatilho do upsell divergia entre web (~1 ano de logs) e mobile (30d). DÍVIDA PRÉ-EXISTENTE achada: 8 suites do Jest mobile não CARREGAM (moduleNameMapper vs .js do R-282) — confirmado na main limpa, não é da F4b. PRÓXIMO: smoke → PR → F5 (T021-T023: POs com evidência + SQP do épico + distill). journal=18, threshold=15 → DISTILL DEVIDO.",
     "ceremonies_run": [
       "eng-review",
@@ -167,7 +168,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 1,
     "rules_count": 240,
     "anti_patterns_count": 285,
     "decisions_count": 80,
