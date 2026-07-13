@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { doseToMl, calculateDailyIntake } from '../adherenceLogic'
+import { calculateDailyIntake } from '../adherenceLogic'
+import { doseToMl } from '../doseUnit'
 import {
   formatIntakeDose,
   isLiquidMedicine,

@@ -73,6 +73,28 @@ describe('createProfileRepository — preferência de estoque (044)', () => {
       expect(client.rpc).not.toHaveBeenCalled()
     })
 
+    it('off com freeze:false → NÃO carimba (escolha do onboarding não é congelamento)', async () => {
+      // Regressão do smoke 044 F4b: o onboarding gravava dose-only com o carimbo, o usuário
+      // nascia parecendo "congelado" e o toggle de Settings RETOMAVA em silêncio (gap de
+      // minutos) em vez de pedir o saldo inicial — a tela do PO-3 nunca aparecia.
+      const client = makeClient({ data: { stock_tracking_enabled: false, stock_paused_at: null }, error: null })
+      const repo = createProfileRepository({ client, getUserId })
+
+      await repo.setStockTracking(false, { freeze: false })
+
+      const [payload] = client._builder.upsert.mock.calls[0]
+      expect(payload.stock_tracking_enabled).toBe(false)
+      expect(payload.stock_paused_at).toBeNull()
+    })
+
+    it('off sem options → carimba (default preserva o opt-out da F4a)', async () => {
+      const client = makeClient({ data: { stock_tracking_enabled: false, stock_paused_at: '2026-07-11T12:00:00Z' }, error: null })
+      await createProfileRepository({ client, getUserId }).setStockTracking(false)
+
+      const [payload] = client._builder.upsert.mock.calls[0]
+      expect(payload.stock_paused_at).toEqual(expect.any(String))
+    })
+
     it('on → limpa stock_paused_at', async () => {
       const client = makeClient({ data: { stock_tracking_enabled: true, stock_paused_at: null }, error: null })
       await createProfileRepository({ client, getUserId }).setStockTracking(true)

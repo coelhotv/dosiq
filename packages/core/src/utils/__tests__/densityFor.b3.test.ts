@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { densityFor, formatConcentrationLabel } from '../doseUnit'
-import { doseToMl } from '../adherenceLogic'
+import { doseToMl } from '../doseUnit'
 
 // 012 Fase B3 (ADR-065): densidade unit-aware substitui o blanket 20.
 describe('densityFor (FR-024)', () => {

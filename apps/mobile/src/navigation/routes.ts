@@ -48,6 +48,7 @@ export const ROUTES = {
   ONBOARDING_MEDICINE: 'OnboardingMedicine',
   ONBOARDING_TREATMENT: 'OnboardingTreatment',
   ONBOARDING_STOCK: 'OnboardingStock',
+  ONBOARDING_STOCK_INITIAL_BALANCE: 'OnboardingStockInitialBalance', // F4b/T017
 
   // Sub-rotas de Medicamentos (Fase 1)
   MEDICINES_LIST: 'MedicinesList',
@@ -62,6 +63,11 @@ export const ROUTES = {
   PURCHASE_HISTORY: 'PurchaseHistory',
   STOCK_ADJUSTMENT: 'StockAdjustment',
   // ❌ PURCHASE_DELETE removido (PO-1 — Fase 3 não tem exclusão de compra)
+
+  // Saldo inicial na ativação do estoque (spec 044, F4b/T017) — 3 entradas: Settings
+  // (registrada no ProfileStack e no StockStack), Onboarding (rota própria acima) e
+  // upsell do dashboard (mesma rota, param `source`).
+  STOCK_INITIAL_BALANCE: 'StockInitialBalance',
 
   // Histórico de doses (Fase X)
   DOSE_HISTORY: 'DoseHistory',

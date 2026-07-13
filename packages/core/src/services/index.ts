@@ -42,6 +42,23 @@ export {
 } from './stockResumeService'
 export type { StockResumeAssessment, StockResumeService } from './stockResumeService'
 
+// Ativação do controle de estoque pelo saldo inicial (spec 044 — FR-007, sem retro-consumo)
+export { INITIAL_BALANCE_REASON, createStockActivationService } from './stockActivationService'
+export type {
+  InitialBalanceEntry,
+  StockActivationResult,
+  StockActivationService,
+} from './stockActivationService'
+
+// Elegibilidade do upsell de estoque (spec 044 — FR-008, derivado client-side)
+export {
+  UPSELL_MIN_DOSES,
+  UPSELL_MIN_STREAK_DAYS,
+  computeDoseStreakDays,
+  evaluateStockUpsell,
+} from './stockUpsell'
+export type { StockUpsellCriteria, StockUpsellEvaluation } from './stockUpsell'
+
 // Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
 export { createCriticalAuditService } from './criticalAuditService'
 export type { CriticalAuditEvent } from './criticalAuditService'

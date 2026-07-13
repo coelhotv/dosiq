@@ -1,29 +1,28 @@
 // useStockToggle (web) — espelho do hook mobile: máquina de estados do toggle "Controle de
-// estoque" (spec 044, F4a / PO-5). MESMA preferência global, MESMO serviço do core — a web e o
-// mobile não podem divergir (senão uma consome FIFO e a outra não: corrupção, classe AP-231).
+// estoque" (spec 044, F4a/F4b / PO-5). MESMA preferência global, MESMO serviço do core — a web e
+// o mobile não podem divergir (senão uma consome FIFO e a outra não: corrupção, classe AP-231).
 //
 // Invariante: OPT-OUT SEMPRE CONGELA (zero mutação de saldo/compras). Único caminho que muta
-// estoque = "começar do zero" da reconciliação (adjustment append-only, R-226), por escolha
-// explícita do usuário.
+// estoque = "começar do zero" da reconciliação (adjustment append-only, R-226) ou o saldo
+// inicial (T017), por escolha explícita do usuário.
+//
+// T017/T019: toda escrita passa por `stockPreferenceService` — é a origem comum que garante o
+// analytics do opt-in. Este hook NUNCA chama profileRepo/createStockResumeService direto.
 //
 // ⚠️ AP-281: toda escrita da preferência chama `refresh()` do provider — senão as superfícies
 // de estoque (sidebar, cards, export) continuam contradizendo a escolha até dar reload.
 // R-010: States → Memos → Effects → Handlers.
 
 import { useCallback, useMemo, useState } from 'react'
-import {
-  createProfileRepository,
-  createStockRepository,
-  createStockResumeService,
-} from '@dosiq/core'
-import { supabase, getUserId } from '@shared/utils/supabase'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import {
+  assessStockResume,
+  disableStockTracking,
+  resumeStockAndZero,
+  resumeStockAsIs,
+} from '@features/settings/services/stockPreferenceService'
 
-const profileRepo = createProfileRepository({ client: supabase, getUserId })
-const stockRepo = createStockRepository({ client: supabase, getUserId })
-const resumeService = createStockResumeService({ profileRepo, stockRepo })
-
-export type StockToggleSheet = null | 'freeze' | 'reconcile'
+export type StockToggleSheet = null | 'freeze' | 'reconcile' | 'initial-balance'
 
 export interface StockToggleReconcile {
   gapDays: number
@@ -58,7 +57,7 @@ export function useStockToggle() {
     setBusy(true)
     setError(null)
     try {
-      await resumeService.resumeAsIs()
+      await resumeStockAsIs('settings')
       await refresh() // AP-281
       setSheet(null)
       setReconcile(null)
@@ -76,7 +75,7 @@ export function useStockToggle() {
     try {
       // Zera por medicamento (append-only) e só então liga a preferência: falha no meio
       // deixa o controle OFF e o sheet reaparece — nunca religa o FIFO sobre saldo parcial.
-      await resumeService.resumeAndZero()
+      await resumeStockAndZero('settings')
       await refresh() // AP-281
       setSheet(null)
       setReconcile(null)
@@ -92,7 +91,7 @@ export function useStockToggle() {
     setBusy(true)
     setError(null)
     try {
-      await profileRepo.setStockTracking(false) // carimba stock_paused_at; zero mutação de saldo
+      await disableStockTracking('settings') // carimba stock_paused_at; zero mutação de saldo
       await refresh() // AP-281
       setSheet(null)
       setAnnouncement('Controle de estoque desativado · seu saldo ficou guardado como estava')
@@ -103,6 +102,18 @@ export function useStockToggle() {
     }
   }, [refresh])
 
+  // T017: quem nunca teve estoque (off e sem stock_paused_at) não ativa direto — abre o form
+  // de saldo inicial. A escrita real (saldos + liga a preferência) só acontece lá.
+  const closeInitialBalance = useCallback(() => {
+    setSheet(null)
+  }, [])
+
+  const finishInitialBalance = useCallback(async () => {
+    await refresh() // AP-281 — activateStockWithInitialBalance já escreveu
+    setSheet(null)
+    setAnnouncement('Controle de estoque ativado')
+  }, [refresh])
+
   const requestToggle = useCallback(() => {
     if (busy || !ready) return
     setError(null)
@@ -110,17 +121,28 @@ export function useStockToggle() {
       setSheet('freeze')
       return
     }
+    if (neverHadStock) {
+      setSheet('initial-balance')
+      return
+    }
     void (async () => {
       setBusy(true)
       try {
         // Só leitura: decide entre retomada silenciosa e reconciliação ANTES de escrever.
-        const assessment = await resumeService.assessResume()
+        const assessment = await assessStockResume()
+        // Carimbo SEM saldo por trás (legado, ou opt-out com o estoque já vazio): não há o que
+        // retomar — retomar "as-is" ligaria o FIFO sobre zero e pularia a pergunta do saldo
+        // inicial. Trata como quem nunca teve estoque (PO-3).
+        if (!assessment.hasFrozenBalance) {
+          setSheet('initial-balance')
+          return
+        }
         if (assessment.needsReconciliation && assessment.gapDays !== null) {
           setReconcile({ gapDays: assessment.gapDays, pausedAt: assessment.pausedAt })
           setSheet('reconcile')
           return
         }
-        await resumeService.resumeAsIs()
+        await resumeStockAsIs('settings')
         await refresh() // AP-281
         setAnnouncement('Controle de estoque reativado · saldo retomado como estava')
       } catch (err) {
@@ -129,7 +151,7 @@ export function useStockToggle() {
         setBusy(false)
       }
     })()
-  }, [busy, ready, enabled, refresh])
+  }, [busy, ready, enabled, neverHadStock, refresh])
 
   return {
     enabled,
@@ -146,5 +168,7 @@ export function useStockToggle() {
     resumeAsIs,
     resumeAndZero,
     closeSheet,
+    closeInitialBalance,
+    finishInitialBalance,
   }
 }

@@ -39,6 +39,8 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
+import StockUpsellCard from '@dashboard/components/StockUpsellCard'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
 
 
@@ -331,6 +333,7 @@ function TodayScreenContent({
 }) {
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
   const { enabled: stockTrackingEnabled } = useStockTracking()
+  const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell(data?.timezone)
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
@@ -401,6 +404,16 @@ function TodayScreenContent({
           keyPrefix="carry"
           isCarryOver
         />
+        {/* Upsell de estoque (spec 044, F4b / T018) — nudge, não modal (R-239). Posição do
+            mock: entre o card de PENDÊNCIAS e o título "Agenda de Hoje". */}
+        {stockUpsellVisible && (
+          <StockUpsellCard
+            onActivate={() =>
+              navigation?.navigate?.(ROUTES.STOCK_INITIAL_BALANCE, { source: 'upsell' })
+            }
+            onDismiss={dismissStockUpsell}
+          />
+        )}
         <View style={styles.agendaHeader}>
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
         </View>

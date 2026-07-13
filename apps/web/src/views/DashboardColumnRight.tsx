@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import CronogramaPeriodo from '@dashboard/components/CronogramaPeriodo'
 import CronogramaDoseItem from '@dashboard/components/CronogramaDoseItem'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
 import DashboardEmptyState from './DashboardEmptyState'
 import LastMeasureCard from '@features/measures/components/LastMeasureCard'
+import StockUpsellCard from '@dashboard/components/StockUpsellCard'
+import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
+import Modal from '@shared/components/ui/Modal'
+import InitialBalanceForm from '@features/stock/components/InitialBalanceForm'
 
 export default function DashboardColumnRight({
   scheduleAllDoses,
@@ -24,6 +29,8 @@ export default function DashboardColumnRight({
   const hasTimeline = scheduleAllDoses.length > 0 || measureItems.length > 0
   const onRegister = (dose) =>
     handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake, dose.instanceId)
+  const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell()
+  const [showInitialBalance, setShowInitialBalance] = useState(false)
   return (
     <div className="dashboard-column-right">
       {/* Pendências de ontem (carry-over cross-dia, F4.3e) — doses de ontem ainda
@@ -50,6 +57,30 @@ export default function DashboardColumnRight({
             ))}
           </div>
         </section>
+      )}
+
+      {/* Upsell de estoque (spec 044, F4b / T018) — nudge, não modal (R-239). Fica entre
+          "Doses pendentes" (equivalente de PENDÊNCIAS no mock mobile) e o título do
+          cronograma, espelhando a posição do card no app. */}
+      {stockUpsellVisible && (
+        <StockUpsellCard
+          onActivate={() => setShowInitialBalance(true)}
+          onDismiss={dismissStockUpsell}
+        />
+      )}
+
+      {/* "Ativar" abre o saldo inicial em modal, no lugar — a web não tem rota própria para
+          essa tela (o /stock se auto-redireciona enquanto o estoque está desligado, então não
+          serve de host). Montagem CONDICIONAL (AP-285): o form nasce limpo a cada abertura e
+          nada é escrito até o botão "Ativar estoque". */}
+      {showInitialBalance && (
+        <Modal isOpen onClose={() => setShowInitialBalance(false)}>
+          <InitialBalanceForm
+            source="upsell"
+            onDone={() => setShowInitialBalance(false)}
+            onCancel={() => setShowInitialBalance(false)}
+          />
+        </Modal>
       )}
 
       {/* Cronograma do Dia (doses + medidas interleaved — FR-011) */}

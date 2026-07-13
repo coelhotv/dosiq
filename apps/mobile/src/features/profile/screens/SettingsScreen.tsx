@@ -239,7 +239,7 @@ function TimezoneCard({ loading, timezone, options, onChange }) {
 
 export default function SettingsScreen() {
   // States (navigation faz parte da inicialização, não é estado reativo)
-  const navigation = useNavigation()
+  const navigation = useNavigation<any>()
 
   // States
   const [tzPrompt, setTzPrompt] = useState(null) // { fromTz, toTz } enquanto o sheet está aberto
@@ -277,6 +277,15 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (stock.error) toast.show(stock.error, { variant: 'error' })
   }, [stock.error, toast])
+
+  // neverHadStock sem saldo pra retomar: hook sinaliza `needsInitialBalance` (F4b/T017)
+  // em vez de ativar direto — aqui abrimos a tela e devolvemos o sinal (senão reabre em loop).
+  const { needsInitialBalance, acknowledgeInitialBalanceRequest } = stock
+  useEffect(() => {
+    if (!needsInitialBalance) return
+    acknowledgeInitialBalanceRequest()
+    navigation.navigate(ROUTES.STOCK_INITIAL_BALANCE, { source: 'settings' })
+  }, [needsInitialBalance, acknowledgeInitialBalanceRequest, navigation])
 
   // Handlers
   const persistTimezone = useCallback(

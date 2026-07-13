@@ -17,7 +17,9 @@ import {
   cloneDate,
   parseTimestamp
 } from './dateUtils'
-import { densityFor } from './doseUnit'
+// `doseToMl` mora em doseUnit.ts (junto de `densityFor`, de quem depende): manter os dois
+// separados criava um ciclo doseUnit → adherenceLogic → doseUnit.
+import { doseToMl } from './doseUnit'
 
 export interface AdherenceProtocol {
   id?: string
@@ -302,30 +304,6 @@ export function isInToleranceWindow(nextDoseTime: string | null | undefined): bo
  * @param {Array} protocols
  * @returns {number}
  */
-/**
- * Converte a dose de tomada para ml, quando o medicamento é líquido (022).
- * Estoque de líquidos é em ml; doses em gotas/UI precisam virar ml via units_per_ml
- * (gotas/UI por ml). Sólidos e doses já em ml retornam o valor original.
- *
- * @param {number} dosage - dosagem por tomada na unidade de tomada
- * @param {string|null} intakeUnit - 'gotas' | 'ml' | 'UI' | null
- * @param {number|null} unitsPerMl - densidade (gotas ou UI por ml)
- * @returns {number} dose equivalente em ml (ou a dose original se não-líquido)
- */
-export function doseToMl(dosage: number, intakeUnit: string | null | undefined, unitsPerMl: number | string | null | undefined, mgConcentration: number | string | null = null): number {
-  if (intakeUnit === 'ml' || !intakeUnit) return dosage
-  // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg/ml do cadastro). 012 Fase B2.
-  // Sem concentração não inventa (retorna a dose crua — evita conversão fantasma).
-  if (intakeUnit === 'mg') {
-    const c = Number(mgConcentration)
-    return c > 0 ? dosage / c : dosage
-  }
-  // gotas/UI → ml: densidade unit-aware (ADR-065 — gotas≈20, UI≈100; explícita tem prioridade).
-  // Sem densidade definível não inventa (retorna dose crua — evita conversão fantasma).
-  const density = densityFor(intakeUnit, unitsPerMl)
-  return density ? dosage / density : dosage
-}
-
 /**
  * Fator médio de doses por DIA de uma frequência (012 Fase B2 — corrige o consumo
  * de líquidos não-diários, ex.: GLP-1 semanal). Sem isso, semanal/dias_alternados

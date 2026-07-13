@@ -38,6 +38,16 @@ export interface StockResumeAssessment {
   gapDays: number | null
   /** true → gap >= STOCK_RESUME_RECONCILE_DAYS: exige escolha do usuário. */
   needsReconciliation: boolean
+  /**
+   * Existe saldo congelado a retomar? (algum medicamento com quantidade != 0)
+   *
+   * O carimbo sozinho NÃO é prova de saldo: um carimbo pode existir sem nenhum estoque por trás
+   * (dado legado, ou um opt-out feito com o estoque já vazio). Retomar "as-is" um saldo que não
+   * existe liga o FIFO em cima de zero e pula a pergunta do saldo inicial — o usuário fica com
+   * alertas de "acabando" sem nunca ter dito quanto tem. Quando isto é `false`, a UI deve pedir
+   * o saldo inicial (PO-3), não retomar.
+   */
+  hasFrozenBalance: boolean
 }
 
 /**
@@ -92,10 +102,20 @@ export function createStockResumeService({
     async assessResume(): Promise<StockResumeAssessment> {
       const { stock_paused_at: pausedAt } = await profileRepo.getStockTracking()
       const gapDays = computeStockPauseGapDays(pausedAt ?? null)
+
+      // Saldo real por trás do carimbo (F4b): `!== 0` pelo mesmo motivo do resumeAndZero —
+      // saldo negativo acidental também é "tem saldo" (e precisa ser reconciliado, não ignorado).
+      const summary = await stockRepo.getStockSummaryMap()
+      const hasFrozenBalance = Object.values(summary ?? {}).some((quantity) => {
+        const qty = Number(quantity)
+        return Number.isFinite(qty) && qty !== 0
+      })
+
       return {
         pausedAt: pausedAt ?? null,
         gapDays,
         needsReconciliation: gapDays !== null && gapDays >= STOCK_RESUME_RECONCILE_DAYS,
+        hasFrozenBalance,
       }
     },
 

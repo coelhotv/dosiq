@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F4a mergeada (#739) — próximo: F4b (T017-T020)",
+    "goal": "044 F4b (T017-T020) — UI opt-in: saldo inicial + upsell + analytics; PO-3",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -124,7 +124,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/044-dose-only-mode",
     "spec": "plans/specs/044-dose-only-mode/spec.md",
-    "previous_session_note": "044 F4a MERGEADA (#739, squash cd4839b7). LIÇÃO CENTRAL: pela segunda fase seguida, os gates automáticos passaram limpos o tempo todo (1556 testes, strict-island, lint) e TUDO que importou veio do SMOKE e do REVISOR EXTERNO — e nada era bug de lógica. Foram: ciclo de vida (cache reconciliado só na escrita local → AP-284, multi-device), affordance (selecionar = executar numa ação que ZERA saldo → AP-285, pego pelo Gemini) e plataforma (ICU do Hermes numa data que alimenta a decisão → adendo AP-171). A RC5 do próprio diff pegou 1 (o choice do sheet sobrevivendo ao fechamento) justamente por caçar ciclo de vida de propósito — vale manter esse foco na F4b. Segunda lição: corrigir só o AP-281 dá FALSA COMPLETUDE — o fluxo single-device fica perfeito e o multi-device continua quebrado do mesmo jeito. Pergunta de preflight p/ todo provider que cacheia servidor: QUEM MAIS ESCREVE ISSO? PRÓXIMO: F4b (T017-T020 — saldo inicial + upsell + analytics; fecha PO-3), incl. dívida da F3 (onboarding mobile opção-2 sem tela de saldo inicial). Depois F5 (POs com evidência + SQP do épico). journal=17, threshold=15 → DISTILL DEVIDO (rodar /devflow distill antes de abrir a F4b).",
+    "previous_session_note": "044 F4b IMPLEMENTADA (branch feature/044/f4b-opt-in, AGUARDANDO SMOKE DO PO — sem push). T017 saldo inicial (mobile+web) com skip por item, T018 upsell não-modal com dismiss persistente, T019 analytics na ORIGEM COMUM (stockPreferenceService envelopa toda escrita da preferência + emite o evento na MESMA chamada — os 4 escritores passam por ele; grep confirma zero setStockTracking fora), T020 testes. Dívida da F3 fechada (onboarding mobile opção-2 encadeia o saldo). PO-3 (sem retro-consumo) garantido POR CONSTRUÇÃO: o service de ativação só recebe profileRepo+stockRepo, não alcança log/dose_instance; guard de contagem em teste. LIÇÃO: a RC5 do próprio diff pegou o furo mais caro ANTES do smoke (AP-286 — a tela nova entrou entre a gravação do onboarding e o finish(), reabrindo a janela de duplicação do AP-283 sem violar uma linha dele, porque os guards de idempotência são estado de COMPONENTE e morrem no restart). Caçar ciclo de vida de propósito na RC5 pagou pela 2ª fase seguida. Os 2 furos dos sub-agentes foram DE NOVO de propagação (refresh() ausente no form web; upsell web navegando p/ view inexistente) — a lição da F3 se confirmou. R-290 (novo): regra derivada client-side tem que recortar a PRÓPRIA janela — o gatilho do upsell divergia entre web (~1 ano de logs) e mobile (30d). DÍVIDA PRÉ-EXISTENTE achada: 8 suites do Jest mobile não CARREGAM (moduleNameMapper vs .js do R-282) — confirmado na main limpa, não é da F4b. PRÓXIMO: smoke → PR → F5 (T021-T023: POs com evidência + SQP do épico + distill). journal=18, threshold=15 → DISTILL DEVIDO.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
@@ -149,9 +149,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 17,
-    "rules_count": 237,
-    "anti_patterns_count": 281,
+    "journal_entries_since_distillation": 18,
+    "rules_count": 238,
+    "anti_patterns_count": 284,
     "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": true
@@ -161,6 +161,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-12T00:00:00Z"
+    "index_loaded_at": "2026-07-12T22:20:00Z"
   }
 }

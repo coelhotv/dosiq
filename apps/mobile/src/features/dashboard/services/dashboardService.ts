@@ -170,3 +170,33 @@ export async function getDoseInstancesForPeriod(userId, days = 14, lookAheadDays
 
   return doseInstanceRepo.getWindow(userId, startUTC, endUTC)
 }
+
+/**
+ * Busca SÓ a data das doses registradas nos últimos `days` dias (select enxuto — R-127).
+ * Fonte do gatilho do card de upsell de estoque (spec 044, F4b / T018): `useTodayData`
+ * só carrega 14 dias de logs, insuficiente para o critério de streak de 14 dias
+ * consecutivos "ancorado no presente" (precisa de folga antes do início da janela).
+ * Não reutiliza `getLogsForPeriod` porque este não precisa de protocol_id/medicine_id/
+ * quantity_taken — só `taken_at`, o suficiente pra `evaluateStockUpsell` (@dosiq/core).
+ *
+ * @param {string} userId
+ * @param {number} days
+ * @returns {Promise<Array<{ taken_at: string }>>}
+ */
+export async function getDoseLogDatesForPeriod(userId, days = 30) {
+  z.string().uuid().parse(userId)
+
+  const todayStr = getTodayLocal()
+  const startUTC = addDays(todayStr, -(days - 1)).toISOString()
+  const endUTC = addDays(todayStr, 1).toISOString()
+
+  const { data, error } = await supabase
+    .from('medicine_logs')
+    .select('taken_at')
+    .eq('user_id', userId)
+    .gte('taken_at', startUTC)
+    .lt('taken_at', endUTC)
+
+  if (error) throw error
+  return data ?? []
+}

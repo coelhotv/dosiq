@@ -20,6 +20,8 @@ interface MedicineLike {
   dosage_per_pill?: number | string | null
   units_per_ml?: number | string | null
   concentration_volume_ml?: number | string | null
+  /** 'injetavel' conta "aplicações"; o resto conta "doses" (ver formatStockDoses). */
+  presentation?: string | null
 }
 
 interface DoseItemLike {
@@ -346,6 +348,30 @@ export function densityFor(intakeUnit: string | null | undefined, unitsPerMl: nu
   }
 }
 
+/**
+ * Converte a dose de tomada para ml, quando o medicamento é líquido (022).
+ * Estoque de líquidos é em ml; doses em gotas/UI precisam virar ml via units_per_ml
+ * (gotas/UI por ml). Sólidos e doses já em ml retornam o valor original.
+ *
+ * @param {number} dosage - dosagem por tomada na unidade de tomada
+ * @param {string|null} intakeUnit - 'gotas' | 'ml' | 'UI' | null
+ * @param {number|null} unitsPerMl - densidade (gotas ou UI por ml)
+ * @returns {number} dose equivalente em ml (ou a dose original se não-líquido)
+ */
+export function doseToMl(dosage: number, intakeUnit: string | null | undefined, unitsPerMl: number | string | null | undefined, mgConcentration: number | string | null = null): number {
+  if (intakeUnit === 'ml' || !intakeUnit) return dosage
+  // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg/ml do cadastro). 012 Fase B2.
+  // Sem concentração não inventa (retorna a dose crua — evita conversão fantasma).
+  if (intakeUnit === 'mg') {
+    const c = Number(mgConcentration)
+    return c > 0 ? dosage / c : dosage
+  }
+  // gotas/UI → ml: densidade unit-aware (ADR-065 — gotas≈20, UI≈100; explícita tem prioridade).
+  // Sem densidade definível não inventa (retorna dose crua — evita conversão fantasma).
+  const density = densityFor(intakeUnit, unitsPerMl)
+  return density ? dosage / density : dosage
+}
+
 export function formatIntakeDose(qty: number | string, intakeUnit: string | null | undefined, medicine: MedicineLike | null | undefined): string {
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   if (!isLiquid) {
@@ -358,21 +384,13 @@ export function formatIntakeDose(qty: number | string, intakeUnit: string | null
   const base = formatDose(qty, intake)
   if (intake === 'ml') return base
   const numQty = Number(typeof qty === 'string' ? qty.replace(',', '.') : qty)
-  // mg → ml: divide pela CONCENTRAÇÃO (dosage_per_pill = mg por ml; já no cadastro).
-  // gotas/UI → ml: divide pela razão física units_per_ml (fallback 20).
-  // São campos distintos (012 Fase B2): mg não usa units_per_ml.
-  // mg → concentração (dosage_per_pill); gotas/UI → densidade unit-aware (ADR-065).
-  const divisor =
-    intake === 'mg'
-      ? Number(medicine?.dosage_per_pill) > 0
-        ? Number(medicine?.dosage_per_pill)
-        : null
-      : densityFor(intake, medicine?.units_per_ml)
-  if (!divisor) return base // sem concentração/densidade não há como exibir ≈ml
-  // Arredonda a 2 casas — sem isso, mg ÷ concentração gera dízima ("0,3676 ml").
-  const ml = Math.round((numQty / divisor) * 100) / 100
-  return `${base} (≈ ${formatDose(ml, 'ml')})`
+  const ml = doseToMl(numQty, intake, medicine?.units_per_ml, medicine?.dosage_per_pill)
+  // doseToMl devolve a dose CRUA quando não há divisor (evita conversão fantasma) — nesse caso
+  // não há "≈ ml" a mostrar.
+  if (!Number.isFinite(ml) || ml === numQty) return base
+  return `${base} (≈ ${formatDose(Math.round(ml * 100) / 100, 'ml')})`
 }
+
 
 /**
  * Hint de dose para formulários (✨ Equivale a…). Líquido → unidade de tomada +
@@ -564,3 +582,69 @@ export function formatActiveIngredientFormula(qty: number | string | null | unde
 }
 
 
+
+/**
+ * Saldo de estoque traduzido em DOSES (spec 044, F4b) — "≈ 4 doses", "≈ 27 aplicações".
+ *
+ * Por que existe: no momento de informar o saldo inicial, o hint de princípio ativo é
+ * redundante para líquido (só repete a concentração já exibida ao lado do nome) e pouco
+ * acionável para sólido ("15.000 mg" não diz nada a ninguém). O que a pessoa quer saber é
+ * quanto tempo de tratamento ela tem na mão — e isso é a contagem de DOSES.
+ *
+ * Sólido: saldo (unidades) ÷ `dosage_per_intake` (unidades por tomada).
+ * Líquido: saldo (ml) ÷ dose convertida para ml (`doseToMl`) — a dose pode estar cadastrada em
+ * mg/gotas/UI, e o estoque vive em ml.
+ *
+ * Sempre FLOOR (via formatStockApplications): meia dose não é dose disponível — arredondar para
+ * cima prometeria uma tomada que não existe na caixa.
+ *
+ * Sem protocolo ativo, sem dose por tomada, ou sem divisor válido → `''` (a UI cai no hint
+ * anterior; NUNCA inventa contagem).
+ *
+ * @param stockQty - saldo na unidade de estoque (un. para sólido, ml para líquido)
+ * @param medicine - precisa de dosage_unit / dosage_per_pill / units_per_ml / presentation
+ * @param protocol - protocolo ATIVO: dosage_per_intake + intake_unit
+ * @example formatStockDoses(1.7, mounjaro, { dosage_per_intake: 2.5, intake_unit: 'mg' }) → '≈ 3 aplicações'
+ * @example formatStockDoses(24, losartana, { dosage_per_intake: 2, intake_unit: null })   → '≈ 12 doses'
+ */
+export function formatStockDoses(
+  stockQty: number | string,
+  medicine: MedicineLike | null | undefined,
+  protocol: { dosage_per_intake?: number | string | null; intake_unit?: string | null } | null | undefined,
+): string {
+  const qty = Number(typeof stockQty === 'string' ? stockQty.replace(',', '.') : stockQty)
+  if (!Number.isFinite(qty) || qty <= 0) return ''
+
+  const perIntake = Number(protocol?.dosage_per_intake)
+  if (!Number.isFinite(perIntake) || perIntake <= 0) return ''
+
+  // Injetável conta "aplicações"; o resto conta "doses" (o plural sai de pluralizeContainer:
+  // dose→doses, aplicação→aplicações).
+  const label = medicine?.presentation === 'injetavel' ? 'aplicação' : 'dose'
+
+  if (isLiquidMedicine(medicine)) {
+    // O estoque está em ml, mas a dose pode estar cadastrada em mg/gotas/UI: converte antes.
+    // `doseToMl` (adherenceLogic) é o MESMO conversor que o cálculo de dias restantes usa —
+    // reusar mantém a contagem de doses da tela coerente com a do resto do app.
+    const intake = protocol?.intake_unit
+    const mlPerDose = doseToMl(
+      perIntake,
+      intake,
+      medicine?.units_per_ml,
+      medicine?.dosage_per_pill,
+    )
+    if (!Number.isFinite(mlPerDose) || mlPerDose <= 0) return ''
+
+    // ⚠️ `doseToMl` devolve a dose CRUA quando não há divisor (decisão dele: não inventar
+    // conversão). Aqui isso seria pior que não mostrar nada — contaríamos "2,5 mg" como se
+    // fossem 2,5 ml e a tela prometeria aplicações que não existem. Se a dose está em outra
+    // unidade e a conversão não aconteceu, não há contagem honesta a dar.
+    const converted = intake && intake !== 'ml' && mlPerDose !== Number(perIntake)
+    if (intake && intake !== 'ml' && !converted) return ''
+
+    return formatStockApplications(qty, mlPerDose, label)
+  }
+
+  // Sólido: saldo e dose já estão na mesma unidade (comprimidos/cápsulas).
+  return formatStockApplications(qty, perIntake, label)
+}

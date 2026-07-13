@@ -1,0 +1,87 @@
+.stock-upsell-card {
+  background: color-mix(in srgb, var(--color-primary-fixed, #90f4e3) 18%, var(--color-surface-container-lowest, #ffffff));
+  border: 1px solid color-mix(in srgb, var(--color-primary-fixed, #90f4e3) 45%, transparent);
+  border-radius: var(--radius-card, 1.5rem);
+  padding: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+.stock-upsell-card__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.stock-upsell-card__icon-wrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--color-surface-container-lowest, #ffffff);
+  color: var(--color-primary, #006a5e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stock-upsell-card__text {
+  min-width: 0;
+}
+
+.stock-upsell-card__title {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-weight: 700;
+  font-size: var(--text-title-md, 1rem);
+  color: var(--color-on-surface, #191c1d);
+  margin: 0 0 0.375rem;
+  line-height: 1.35;
+}
+
+.stock-upsell-card__subtitle {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-size: var(--text-body-md, 0.875rem);
+  color: var(--color-on-surface-variant, #3e4946);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.stock-upsell-card__actions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.stock-upsell-card__cta-primary,
+.stock-upsell-card__cta-neutral {
+  font-family: var(--font-body, Lexend, sans-serif);
+  font-weight: 700;
+  font-size: var(--text-label-md, 0.8125rem);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.625rem 1.25rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.stock-upsell-card__cta-primary {
+  background: var(--color-primary, #006a5e);
+  color: #ffffff;
+}
+
+.stock-upsell-card__cta-primary:hover {
+  filter: brightness(1.08);
+}
+
+.stock-upsell-card__cta-neutral {
+  background: var(--color-surface-container-lowest, #ffffff);
+  color: var(--color-on-surface, #191c1d);
+  border-color: var(--color-outline-variant, #bec9c5);
+}
+
+.stock-upsell-card__cta-neutral:hover {
+  background: color-mix(in srgb, var(--color-on-surface, #191c1d) 6%, var(--color-surface-container-lowest, #ffffff));
+}

@@ -9,6 +9,7 @@ import { Package, Lock } from 'lucide-react'
 import Modal from '@shared/components/ui/Modal'
 import { parseISO, formatDatePtBR } from '@dosiq/core'
 import { useStockToggle } from '@features/settings/hooks/useStockToggle'
+import InitialBalanceForm from '@features/stock/components/InitialBalanceForm'
 import './StockSection.css'
 
 /** Fechamento inibido enquanto a escrita está em voo (ver os modais abaixo). */
@@ -148,6 +149,8 @@ export default function StockSection() {
     resumeAsIs,
     resumeAndZero,
     closeSheet,
+    closeInitialBalance,
+    finishInitialBalance,
   } = useStockToggle()
 
   const gapDays = reconcile?.gapDays ?? 0
@@ -244,6 +247,18 @@ export default function StockSection() {
           onResume={resumeAsIs}
           onClose={closeSheet}
         />
+      ) : null}
+
+      {sheet === 'initial-balance' ? (
+        // T017: quem nunca teve estoque preenche o saldo aqui — a escrita (saldos + liga a
+        // preferência) é toda do InitialBalanceForm/stockPreferenceService.
+        <Modal isOpen onClose={closeInitialBalance}>
+          <InitialBalanceForm
+            source="settings"
+            onDone={finishInitialBalance}
+            onCancel={closeInitialBalance}
+          />
+        </Modal>
       ) : null}
     </section>
   )

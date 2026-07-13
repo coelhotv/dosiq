@@ -1,0 +1,163 @@
+.initial-balance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.initial-balance-form__header {
+  text-align: center;
+}
+
+.initial-balance-form__header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #191c1d);
+}
+
+.initial-balance-form__header p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.initial-balance-form__status {
+  text-align: center;
+  padding: 1rem 0;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.initial-balance-form__status--error {
+  color: #dc2626;
+}
+
+.initial-balance-form__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.initial-balance-form__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-surface-container-high, #e6e8e9);
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-container-low, #f2f4f5);
+}
+
+.initial-balance-form__item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.initial-balance-form__item-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-on-surface, #191c1d);
+}
+
+.initial-balance-form__item-dosage {
+  font-size: 0.8rem;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+.initial-balance-form__input-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.initial-balance-form__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-surface-container-highest, #dde1e2);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background-color: var(--color-surface-container-lowest, #ffffff);
+}
+
+.initial-balance-form__input {
+  width: 4.5rem;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  background: transparent;
+  color: var(--color-on-surface, #191c1d);
+}
+
+.initial-balance-form__input--error {
+  color: #dc2626;
+}
+
+.initial-balance-form__suffix {
+  font-size: 0.8rem;
+  color: var(--color-on-surface-variant, #3f484a);
+}
+
+/* Coluna do input: caixa numérica + equivalência, alinhadas pela borda direita. */
+.initial-balance-form__input-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* Equivalência colada na caixa que explica — apoio à leitura, não ação (sem cor de link). */
+.initial-balance-form__hint {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-text-secondary, #5b6b68);
+}
+
+.initial-balance-form__link {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--color-primary, #006a5e);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.initial-balance-form__link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.initial-balance-form__field-error {
+  width: 100%;
+  font-size: 0.8rem;
+  color: #dc2626;
+}
+
+.initial-balance-form__skipped {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.initial-balance-form__skipped-label {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-variant, #3f484a);
+  font-style: italic;
+}
+
+.initial-balance-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
