@@ -18,6 +18,7 @@ import {
   buildWeeklyAdherenceData,
   buildMonthlyReportData
 } from '../server/bot/_adherenceHelpers.js';
+import { buildDailyDigestData } from '../server/bot/_reminderHelpers.js';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
@@ -36,7 +37,10 @@ const OUTBOX_KINDS = new Set(
 const OUTBOX_CONTENT_BUILDERS = {
   daily_adherence: ({ userId, settings }) => buildDailyAdherenceData(userId, settings?.display_name),
   weekly_adherence: ({ userId, settings }) => buildWeeklyAdherenceData(userId, settings?.display_name),
-  monthly_report: ({ userId, settings }) => buildMonthlyReportData(userId, settings?.display_name)
+  monthly_report: ({ userId, settings }) => buildMonthlyReportData(userId, settings?.display_name),
+  // 043 T023b: o digest revalida o modo/horário no DB no momento do envio (settings do drain
+  // pode estar defasado) e devolve null se o usuário saiu do modo digest.
+  daily_digest: ({ userId, settings }) => buildDailyDigestData(userId, settings)
 };
 // outbox kind → kind de dispatch quando divergem (payload legado usa 'adherence_report').
 const OUTBOX_DISPATCH_KIND = { daily_adherence: 'adherence_report' };

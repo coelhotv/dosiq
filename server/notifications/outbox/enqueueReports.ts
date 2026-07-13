@@ -15,6 +15,10 @@ export interface EnqueueUserRow {
   user_id: string;
   timezone?: string | null;
   display_name?: string | null;
+  // 043 T023b (daily_digest): a âncora do digest NÃO é 09:00 — é o horário escolhido pelo
+  // usuário, e só vale p/ quem está em `digest_morning`. Ambos vêm no MESMO select.
+  notification_mode?: string | null;
+  digest_time?: string | null;
   // Hook coord 046 (LGPD consent): quando 046 Slice B estiver em prod, este campo passa a existir
   // e usuários `revoked` são pulados no enqueue (suspensão de pushes de saúde). Enquanto 046 não
   // mergeia, a coluna não é selecionada (não existe) e o filtro é inerte. Ver TODO(046) abaixo.
@@ -37,7 +41,11 @@ function localParts(now: Date, tz: string): { hour: number; minute: number; week
 // Elegibilidade por RANGE por kind — mesma âncora dos jobs legados (09:00 tz do usuário),
 // mas por JANELA de hora local em vez de minuto exato. Supressão hierárquica mensal>semanal>
 // diário preservada (dia 1 cede ao mensal; domingo cede ao semanal).
-function isEligible(kind: OutboxKind, p: { hour: number; minute: number; weekday: number; dayOfMonth: number }): boolean {
+function isEligible(
+  kind: OutboxKind,
+  p: { hour: number; minute: number; weekday: number; dayOfMonth: number },
+  u: EnqueueUserRow
+): boolean {
   // Janela ESTREITA 09:00–09:09 local: cron roda 1×/min; a UNIQUE já dá idempotência, mas uma
   // janela larga (1-3h) faria upsert massivo por minuto (WAL/índice) — 10min basta p/ catch-up
   // se um tick pular, cortando ~36× as escritas redundantes (Gemini #734).
@@ -51,8 +59,25 @@ function isEligible(kind: OutboxKind, p: { hour: number; minute: number; weekday
     case 'monthly_report':
       // Dia 1, 09:00–09:09 local.
       return p.dayOfMonth === 1 && p.hour === 9 && p.minute < 10;
+    case 'daily_digest': {
+      // 043 T023b. Duas diferenças em relação aos relatórios:
+      //   1. só quem escolheu o modo digest (o resto recebe lembrete por dose);
+      //   2. a âncora é o `digest_time` DO USUÁRIO, não 09:00.
+      // O legado comparava `HH:MM` exato (família AP-259: tick que pula o minuto perde o dia
+      // inteiro). Aqui a janela é [digest_time, +10min) e a UNIQUE dá a idempotência.
+      if (u.notification_mode !== 'digest_morning') return false;
+      const [dh, dm] = String(u.digest_time || '07:00').slice(0, 5).split(':').map(Number);
+      if (!Number.isFinite(dh) || !Number.isFinite(dm)) return false;
+      // Janela dentro da MESMA hora local: digest_time 09:55 → 09:55-09:59 (não vaza p/ 10:0x,
+      // onde a data local já pode ter virado em algum tz).
+      return p.hour === dh && p.minute >= dm && p.minute < dm + 10;
+    }
     default:
-      // daily_digest / stock_alert: cutover futuro (mecanismo pronto; janela específica a definir).
+      // stock_alert: NÃO migra aqui. É fan-out (1 alerta por MEDICAMENTO, + stock_expiry_alert
+      // por LOTE) e a UNIQUE (user_id, kind, period_key) só expressa 1 linha por usuário/dia —
+      // enfileirar o 2º medicamento seria recusado pela constraint e o alerta sumiria em
+      // silêncio. Precisa de `subject_id` no modelo (spec própria). Legado segue rodando e já
+      // carrega o filtro dose-only (044/T005).
       return false;
   }
 }
@@ -65,7 +90,8 @@ async function fetchAllUserSettings(supabase: any): Promise<EnqueueUserRow[]> {
     const from = page * pageSize;
     const { data, error } = await supabase
       .from('user_settings')
-      .select('user_id, timezone, display_name')
+      // notification_mode + digest_time: elegibilidade do daily_digest (T023b) no MESMO select.
+      .select('user_id, timezone, display_name, notification_mode, digest_time')
       .order('user_id')  // ordenação estável: sem ela .range() é não-determinístico (pula/duplica) — Gemini #734
       .range(from, from + pageSize - 1);
     if (error) throw new Error(`enqueueReports.fetchAllUserSettings: ${error.message}`);
@@ -92,7 +118,7 @@ export async function enqueueEligibleReports(
 ): Promise<EnqueueReportsResult> {
   const enqueuedByKind: Record<string, number> = {};
   const migrated = [...kinds].filter((k): k is OutboxKind =>
-    ['daily_adherence', 'weekly_adherence', 'monthly_report'].includes(k)
+    ['daily_adherence', 'weekly_adherence', 'monthly_report', 'daily_digest'].includes(k)
   );
   if (migrated.length === 0) return { enqueuedByKind, usersScanned: 0 };
 
@@ -108,7 +134,7 @@ export async function enqueueEligibleReports(
         // if (u.consent_status === 'revoked') continue;
         const tz = u.timezone || 'America/Sao_Paulo';
         const p = localParts(now, tz);
-        if (!isEligible(kind, p)) continue;
+        if (!isEligible(kind, p, u)) continue;
         entries.push({ userId: u.user_id, kind, periodKey: periodKey(kind, now, tz) });
       } catch (err: any) {
         console.error(`[enqueueEligibleReports] elegibilidade falhou p/ user ${u.user_id}:`, err?.message);

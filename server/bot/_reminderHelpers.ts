@@ -535,6 +535,89 @@ async function _getEligibleUsersForDigest(users, correlationId) {
   return eligibleEntries;
 }
 
+// 043 T023b — monta o payload do digest a partir dos protocolos do dia. Função ÚNICA de
+// conteúdo: o caminho legado e o builder da outbox chamam ESTA — sem ela, o cutover
+// manteria duas implementações do mesmo texto, que divergem em silêncio.
+function _buildDigestPayload({ protocols, displayName, digestTime, timezone }) {
+  const { weekday } = getCurrentDatePartsInTimezone(timezone);
+  const todayStr = getTodayLocal();
+
+  const todaySchedule = [];
+  (protocols || []).forEach(p => {
+    if (!isProtocolActiveOnWeekday(p, weekday, todayStr)) return;
+
+    (p.time_schedule || []).forEach(time => {
+      todaySchedule.push({
+        time,
+        medicineName: p.medicine?.name || p.name,
+        dosagePerIntake: p.dosage_per_intake || 1,
+        dosageUnit: p.medicine?.dosage_unit,
+        // 012 Fase D (FR-015b / R-267): frase de dose líquida no digest.
+        dosagePerPill: p.medicine?.dosage_per_pill ?? null,
+        unitsPerMl: p.medicine?.units_per_ml ?? null,
+        intakeUnit: p.intake_unit ?? null
+      });
+    });
+  });
+  todaySchedule.sort((a, b) => a.time.localeCompare(b.time));
+
+  return {
+    firstName: displayName || 'Paciente',
+    hour: parseInt(String(digestTime).split(':')[0], 10),
+    pendingCount: todaySchedule.length,
+    medicines: todaySchedule.map(s => ({
+      name: s.medicineName,
+      time: s.time,
+      dosagePerIntake: s.dosagePerIntake,
+      dosageUnit: s.dosageUnit,
+      dosagePerPill: s.dosagePerPill,
+      unitsPerMl: s.unitsPerMl,
+      intakeUnit: s.intakeUnit
+    }))
+  };
+}
+
+// Protocolos ativos hoje de UM usuário (o caminho legado busca em lote p/ N usuários; o drain
+// da outbox chega com 1 usuário por linha).
+async function _fetchActiveProtocolsForUser(userId: string) {
+  const today = getTodayLocal();
+  const { data, error } = await supabase
+    .from('protocols')
+    .select('*, medicine:medicines(name, dosage_unit, dosage_per_pill, units_per_ml)')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .lte('start_date', today)
+    .or(`end_date.is.null,end_date.gte.${today}`);
+  if (error) throw new Error(`_fetchActiveProtocolsForUser: ${error.message}`);
+  return data ?? [];
+}
+
+/**
+ * 043 T023b — content builder do `daily_digest` para a outbox (ADR-078).
+ *
+ * Conteúdo construído NO ENVIO a partir de dados FRESCOS (SEC-1: a fila guarda só referências).
+ * Revalida a elegibilidade no momento do disparo: entre o enqueue e o drain o usuário pode ter
+ * saído do modo `digest_morning` — nesse caso retorna null e a linha é marcada sem envio.
+ */
+export async function buildDailyDigestData(userId: string, settings?: Record<string, any>) {
+  // Revalida contra o DB (o settings do drain traz só o básico e pode estar defasado).
+  const { data: row } = await supabase
+    .from('user_settings')
+    .select('notification_mode, digest_time, timezone, display_name')
+    .eq('user_id', userId)
+    .single();
+
+  const mode = row?.notification_mode;
+  if (mode !== 'digest_morning') return null; // deixou de ser elegível → nada a enviar
+
+  const timezone = row?.timezone || settings?.timezone || 'America/Sao_Paulo';
+  const digestTime = (row?.digest_time || '07:00').slice(0, 5);
+  const displayName = row?.display_name ?? settings?.display_name;
+
+  const protocols = await _fetchActiveProtocolsForUser(userId);
+  return _buildDigestPayload({ protocols, displayName, digestTime, timezone });
+}
+
 /**
  * Run daily digest via dispatcher (Sprint 6.4 — ADR-029, ADR-030)
  */
@@ -578,45 +661,13 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
 
     for (const { userId, displayName, digestTime, timezone } of eligibleEntries) {
       try {
-        const protocols = protocolsByUser[userId] || [];
-        const { weekday } = getCurrentDatePartsInTimezone(timezone);
-        const todayStr = getTodayLocal();
-
-        const todaySchedule = [];
-        protocols.forEach(p => {
-          if (!isProtocolActiveOnWeekday(p, weekday, todayStr)) return;
-
-          (p.time_schedule || []).forEach(time => {
-            todaySchedule.push({
-              time,
-              medicineName: p.medicine?.name || p.name,
-              dosagePerIntake: p.dosage_per_intake || 1,
-              dosageUnit: p.medicine?.dosage_unit,
-              // 012 Fase D (FR-015b / R-267): frase de dose líquida no digest.
-              dosagePerPill: p.medicine?.dosage_per_pill ?? null,
-              unitsPerMl: p.medicine?.units_per_ml ?? null,
-              intakeUnit: p.intake_unit ?? null
-            });
-          });
+        // Mesmo payload builder do caminho da outbox (T023b) — uma implementação só.
+        const data = _buildDigestPayload({
+          protocols: protocolsByUser[userId] || [],
+          displayName,
+          digestTime,
+          timezone,
         });
-        todaySchedule.sort((a, b) => a.time.localeCompare(b.time));
-
-        const currentHour = parseInt(digestTime.split(':')[0], 10);
-        
-        const data = {
-          firstName: displayName || 'Paciente',
-          hour: currentHour,
-          pendingCount: todaySchedule.length,
-          medicines: todaySchedule.map(s => ({
-            name: s.medicineName,
-            time: s.time,
-            dosagePerIntake: s.dosagePerIntake,
-            dosageUnit: s.dosageUnit,
-            dosagePerPill: s.dosagePerPill,
-            unitsPerMl: s.unitsPerMl,
-            intakeUnit: s.intakeUnit
-          }))
-        };
 
         await dispatcher.dispatch({
           userId, kind: 'daily_digest', data, context: { correlationId, jobType: 'daily_digest' }
