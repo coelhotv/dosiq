@@ -5,6 +5,9 @@ module.exports = {
   ],
   setupFilesAfterEnv: ['<rootDir>/jest-setup.js'],
   moduleNameMapper: {
+    // R-282 exige extensão .js em imports relativos de packages/ (Node ESM puro aponta
+    // pro .ts em compile). O Jest não resolve isso sozinho — mapear de volta pro extensionless.
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@features/(.*)$': '<rootDir>/src/features/$1',
