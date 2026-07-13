@@ -7,7 +7,7 @@
     "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F4b (T017-T020) — UI opt-in: saldo inicial + upsell + analytics; PO-3",
+    "goal": "044 F4b MERGEADO (PR #740). PRÓXIMO: F5 (T021-T024) — fecha o épico",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 739,
-    "merged_squash": "cd4839b7",
+    "merged_pr": 740,
+    "merged_squash": "75c61859",
     "merged_history": [
+      {
+        "pr": 740,
+        "squash": "75c61859",
+        "phase": "044 F4b: UI de opt-in (T017-T020) — PO-3 fechado, smoke do PO validado. O CAMINHO DE VOLTA do dose-only. PO-3 (\"liga o FIFO DAQUI PRA FRENTE, sem retro-consumo\") garantido POR CONSTRUÇÃO, não por promessa: stockActivationService recebe SÓ profileRepo + stockRepo, então não existe superfície por onde alcançar um medicine_log ou uma dose_instance; guard mede contagem antes == depois. T019 não tem como furar: gravar a preferência e emitir o evento viraram a MESMA chamada (stockPreferenceService é a origem comum dos 4 escritores) — nenhum caminho pode perder o evento. T017 saldo inicial com skip por item (AUSÊNCIA no array, não flag persistida), 3 entradas (settings, onboarding opção-2, upsell) + a dívida da F3 (mobile não encadeava a tela). T018 upsell NÃO-modal (R-239), gatilho 20 doses OU 14 dias, dismiss local persistente, sem cron novo. QUATRO achados no smoke, nenhum pego por lint ou teste — todos de ciclo de vida/topologia/plataforma, não de lógica: AP-287 (o mais sutil — setStockTracking(false) carimbava stock_paused_at SEMPRE, inclusive no onboarding dose-only. O carimbo AFIRMA \"existe saldo congelado desde T\"; sem saldo, era afirmação FALSA no dado. A conta nascia parecendo congelada, o toggle acreditava e ia pro fluxo de RETOMADA, e a tela de saldo inicial nunca aparecia: o fluxo ERRADO executou COM SUCESSO. Fix na raiz — setStockTracking(enabled, {freeze}) + hasFrozenBalance como cinto. Prod: 1 conta com carimbo, com saldo real → SEM backfill), AP-286 (a tela nova entrou ENTRE as escritas do onboarding e o finish(), reabrindo a janela de duplicação do AP-283 — guards de idempotência são estado de componente e morrem no restart; markCompleted() antes de navegar), AP-288 (sob edgeToEdgeEnabled o Android NÃO redimensiona a janela → adjustResize do manifest é letra morta → KeyboardAvoidingView sem behavior é NO-OP; teclado cobria lista e rodapé), rota no stack RAIZ (a tela estava no ProfileStack e o upsell dispara da aba Hoje; navigate só sobe pela cadeia de PAIS — mesma classe que a spec 028 contorna). R-290 (a regra recorta a PRÓPRIA janela no core: web passava ~1 ano de logs e mobile 30d → a mesma regra fazia PERGUNTAS DIFERENTES por plataforma). UX pedida pelo PO no smoke: unidade REAL por medicamento (stockUnitLabel — líquido pede ml, sólido un.; o literal \"un.\" faria os GLP-1 gravarem ml sob outro rótulo, corrompendo o FIFO em silêncio) + hint conta DOSES/aplicações, não princípio ativo (que no líquido só repetia a concentração já exibida). Review Gemini: 8 threads, todas medium, 6 aplicadas / 2 recusadas. Os 2 achados que valeram: sanitizeDecimal (regex removia UMA vírgula; 4+ → NaN → item caía fora de entries SEM erro e o medicamento entrava no FIFO sem o saldo digitado) e ciclo de import doseUnit↔adherenceLogic REAL (invisível ao tsc; sob Hermes resolveria undefined em runtime). Recusados: useCallback (conflita com R-010, lint error) e isMounted ref (React 18 tornou setState pós-unmount no-op). Gates: core 1020, web 1609, mobile 335, tsc 0, ratchet OK, lint 0. Aprovado PO → squash+delete",
+        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO e ÚLTIMO: F5 (T021-T024) — fechar POs com evidência colada, SQP R-221 (minor web + minor mobile + CHANGELOG + store-note), C5 do épico. ⚠️ T024 é DECISÃO, não task: 8 suites do Jest mobile não CARREGAM (contracts.js / moduleNameMapper vs R-282) e a cobertura delas é silenciosamente ZERO — TodayScreen é uma delas. Ligar pode acender vermelhos apagados há tempo. ⚠️ DISTILL ADIADO POR DECISÃO DO PO para o FIM do 044 (F5) — contador em 19, acima do threshold 15."
+      },
       {
         "pr": 739,
         "squash": "cd4839b7",
@@ -149,7 +155,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 18,
+    "journal_entries_since_distillation": 19,
     "rules_count": 238,
     "anti_patterns_count": 284,
     "decisions_count": 80,
