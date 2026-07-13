@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "distillation",
+    "mode": "coding",
     "ceremony_type": null,
-    "status": "distilled",
+    "status": "completed",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 Dose-Only COMPLETO (6 fases). PR #741 aberto (SQP + T024/AP-289) — aguarda review Gemini + merge do PO. Distill feito.",
+    "goal": "ÉPICO 044 (Dose-Only Mode) COMPLETO e mergeado (#741). Nenhuma fase pendente.",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 740,
-    "merged_squash": "75c61859",
+    "merged_pr": 741,
+    "merged_squash": "97ba5f54",
     "merged_history": [
+      {
+        "pr": 741,
+        "squash": "97ba5f54",
+        "phase": "044 F5: fechamento do épico Dose-Only (T021-T024). POs 5/5 fechados com evidência COLADA no spec.md (SC-001=100%): PO-1 (11/11 asserts BEGIN..ROLLBACK contra o banco real — modo off não toca uma linha de stock/purchases), PO-2 (MANUAL, smoke do PO; 18 superfícies, não as 7 do design), PO-3 (noRetroConsumption 3/3 — garantido POR CONSTRUÇÃO: o service de ativação só recebe profileRepo+stockRepo, não alcança log/dose_instance; o teste é só o cinto), PO-4 (alertas pulam dose-only, 5/5), PO-5 (stockResumeService 17/17 — os 3 caminhos + append-only R-226, zero delete). SQP R-221: web 4.15.4→4.16.0 · mobile 0.24.7→0.25.0 (APP_VERSION canônico) · core 0.2.3→0.3.0 (API aditiva: stockActivation/stockResume/stockPreference); CHANGELOG [Unreleased] em PT + store-note SIM (dose-only é a resposta ao feedback dos beta testers Android que abandonavam no passo de estoque). T024 (dívida herdada, era DECISÃO) resolvido pela opção (a): apliquei o fix e MEDI antes de decidir — o custo da informação era baixo e desarmou o medo. 8 suites do Jest mobile não CARREGAVAM (Cannot find module './contracts.js'); não é teste vermelho, é falha de CARGA — o Jest não conta uma suite que não importa, então ela some do total em SILÊNCIO. 325 'passando, 0 falhando' escondiam TodayScreen (a tela que a F4b acabou de tocar), StockScreen, alarmService, buildConfirmLogs, buildBulkOutcome, useMedicineDatabase e supabase.smoke com cobertura ZERO. Causa: moduleNameMapper não resolvia a extensão .js que o R-282 EXIGE em packages/ (Node ESM puro aponta pro .ts em compile; Vite/Metro resolvem, Jest não) — mesma classe do AP-263. Fix de 1 linha: 325→384 testes, 46 suites, ZERO vermelho novo. AP-289. Gates: web 1609 · mobile 384 · core 1020 · tsc 0 · ratchet OK · lint 0 errors. Distill feito (D5 sem órfãos: R 240/240 · AP 285/285 · ADR 80/80 · CON 30/30; contador 20→0). Aprovado PO → squash+delete",
+        "note": "ÉPICO 044 COMPLETO (6 fases: #735 F1 · #736 F2 · #738 F3 · #739 F4a · #740 F4b · #741 F5). Lição transversal do épico: os bugs caros NÃO foram de lógica — foram de CICLO DE VIDA e TOPOLOGIA (AP-281 cache do provider contradizendo a escrita · AP-283/AP-286 passo novo reabrindo a janela de duplicação · AP-287 carimbo afirmando um estado FALSO no dado · rota no stack errado · AP-289 suite que não carrega). Cada peça isolada estava correta; nenhum foi pego por lint ou teste unitário. O que pegou: RC5 caçando ciclo de vida DE PROPÓSITO no próprio diff, o inventário C1.5 por GREP e o smoke do PO em device real. FOLLOW-UP EM ABERTO: 043 T023b (cutover de digest+stock_alert pra outbox) depende do filtro stock_tracking_enabled — agora em prod."
+      },
       {
         "pr": 740,
         "squash": "75c61859",
