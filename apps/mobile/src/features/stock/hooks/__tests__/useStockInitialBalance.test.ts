@@ -121,6 +121,29 @@ describe('useStockInitialBalance', () => {
     )
   })
 
+  // Regressão (review do PR #740): o sanitizador antigo (`/(,.*),/g`) só removia UMA vírgula.
+  // Com 4+ ("1,2,3,4") sobrava a segunda → `Number('1.2.34')` = NaN → o item era descartado de
+  // entries SEM erro, e o medicamento entrava no FIFO sem o saldo digitado.
+  it('múltiplas vírgulas (colagem) → no máximo uma; valor continua numérico', async () => {
+    const { result } = renderHook(() => useStockInitialBalance('upsell', onDone))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    act(() => {
+      result.current.setValue('med-1', '1,2,3,4')
+    })
+
+    expect(result.current.getItem('med-1').value).toBe('1,234')
+
+    await act(async () => {
+      await result.current.activate()
+    })
+
+    expect(activateStockWithInitialBalance).toHaveBeenCalledWith(
+      [{ medicineId: 'med-1', quantity: 1.234 }],
+      'upsell',
+    )
+  })
+
   it('skip() explícito também mantém o item fora de entries mesmo com valor prévio', async () => {
     const { result } = renderHook(() => useStockInitialBalance('upsell', onDone))
     await waitFor(() => expect(result.current.loading).toBe(false))

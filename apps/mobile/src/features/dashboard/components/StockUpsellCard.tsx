@@ -12,7 +12,14 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
  * (plans/mocks_app_mobile/export/044-dose-only-mode/hoje-card-prompt-habilita-estoque.png),
  * copiada — não reescrita.
  */
-export default function StockUpsellCard({ onActivate, onDismiss }) {
+interface StockUpsellCardProps {
+  /** "Ativar": navega para o saldo inicial (root stack — ver ROUTES.STOCK_INITIAL_BALANCE). */
+  onActivate: () => void
+  /** "Agora não": dismiss local persistente (useStockUpsell) — não re-insiste. */
+  onDismiss: () => void
+}
+
+export default function StockUpsellCard({ onActivate, onDismiss }: StockUpsellCardProps) {
   return (
     <View style={styles.card} accessibilityRole="summary">
       <View style={styles.body}>

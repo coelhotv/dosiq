@@ -95,11 +95,18 @@ export function balanceHint(
   return short ? `Equivale a ${short} no total` : ''
 }
 
+// Mantém no MÁXIMO uma vírgula, para QUALQUER número de vírgulas (digitadas ou coladas).
+// O regex anterior (`/(,.*),/g`) só removia UMA: com 4+ vírgulas ("1,2,3,4") sobrava a
+// segunda ("1,2,34"), e `Number('1,2,34'.replace(',','.'))` é NaN — o saldo do item sumia
+// de `entries` sem erro visível, e o medicamento entrava no FIFO sem o saldo que o usuário
+// digitou. Descartar a vírgula excedente (e não os dígitos) é o comportamento de campo
+// decimal: digitar "1,2," e depois "3" resulta em "1,23".
 function sanitizeDecimal(raw: string): string {
-  return String(raw ?? '')
+  const clean = String(raw ?? '')
     .replace('.', ',')
     .replace(/[^0-9,]/g, '')
-    .replace(/(,.*),/g, '$1') // só uma vírgula
+  const [head, ...rest] = clean.split(',')
+  return rest.length > 0 ? `${head},${rest.join('')}` : clean
 }
 
 export interface UseStockInitialBalance {

@@ -32,6 +32,9 @@ export default function OnboardingNavigator({ onComplete }) {
 
   // Concluir OU pular: marca onboarding_completed e entrega o app. Mesmo se a
   // marcação falhar, não prende o usuário no wizard.
+  // useMemo (e não useCallback) porque o `value` do Provider é um Memo que depende destes:
+  // R-010 exige Memos ANTES de Handlers, e um useCallback aqui empurraria o `value` para
+  // depois de um handler (erro de lint). O par é equivalente para uma função estável.
   const finish = useMemo(() => async () => {
     await completeOnboarding()
     onComplete?.()

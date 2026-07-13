@@ -64,6 +64,7 @@ export function useStockUpsell(timezone: string = 'America/Sao_Paulo'): UseStock
     let cancelled = false
     async function loadDoses() {
       const { data, error } = await supabase.auth.getUser()
+      if (cancelled) return // desmontou durante o getUser: não busca os logs à toa
       const userId = data?.user?.id
       if (error || !userId) return
       try {

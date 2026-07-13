@@ -7,11 +7,15 @@ import './StockUpsellCard.css'
  * NÃO é modal (R-239): card inline, sem interromper o fluxo. Copy exata do mock
  * (plans/mocks_app_mobile/export/044-dose-only-mode/hoje-card-prompt-habilita-estoque.png),
  * copiada — não reescrita.
- *
- * @param {Function} props.onActivate — "Ativar": navega para o saldo inicial
- * @param {Function} props.onDismiss — "Agora não": dismiss local persistente (useStockUpsell)
  */
-export default function StockUpsellCard({ onActivate, onDismiss }) {
+interface StockUpsellCardProps {
+  /** "Ativar": abre o modal de saldo inicial (a web não tem rota própria para ele). */
+  onActivate: () => void
+  /** "Agora não": dismiss local persistente (useStockUpsell) — não re-insiste. */
+  onDismiss: () => void
+}
+
+export default function StockUpsellCard({ onActivate, onDismiss }: StockUpsellCardProps) {
   return (
     <div className="stock-upsell-card" role="complementary" aria-label="Ativar controle de estoque">
       <div className="stock-upsell-card__body">
