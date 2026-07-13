@@ -29,6 +29,7 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.FEEDBACK} component={FeedbackScreen} />
       <Stack.Screen name={ROUTES.DOSE_HISTORY} component={HistoryScreen} />
       <Stack.Screen name={ROUTES.MEASURES} component={MeasuresScreen} />
+      {/* F4b/T017 — Settings (useStockToggle) e upsell chegam por aqui via source param */}
     </Stack.Navigator>
   )
 }

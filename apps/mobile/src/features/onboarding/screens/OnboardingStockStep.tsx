@@ -16,12 +16,13 @@ import * as LucideIcons from 'lucide-react-native'
 const { CalendarClock, Box, Info } = LucideIcons as any
 import FormActions from '@shared/components/form/FormActions'
 import { useToast } from '@shared/components/feedback/Toast'
-import { setStockTracking } from '@profile/services/profileService'
+import { chooseStockModeInOnboarding } from '@profile/services/stockPreferenceService'
 import { protocolService } from '@treatments/services/protocolService'
 import { medicineService } from '@medications/services/medicineService'
 import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { ROUTES } from '@navigation/routes'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -44,8 +45,8 @@ const OPTIONS = [
 ]
 
 export default function OnboardingStockStep() {
-  const navigation = useNavigation()
-  const { medicine, treatment, finish } = useOnboarding()
+  const navigation = useNavigation<any>()
+  const { medicine, treatment, finish, markCompleted } = useOnboarding()
   const { refresh: refreshStockTracking } = useStockTracking()
   const { show } = useToast()
 
@@ -92,7 +93,7 @@ export default function OnboardingStockStep() {
         setProtocolCreated(true)
       }
 
-      await setStockTracking(option.tracking)
+      await chooseStockModeInOnboarding(option.tracking)
       // O provider lê a preferência UMA vez (no login) — sem este refresh, o app abre com o
       // valor lido ANTES desta escolha e a aba Estoque aparece para quem escolheu dose-only.
       await refreshStockTracking()
@@ -107,8 +108,22 @@ export default function OnboardingStockStep() {
         }
       }
 
-      // Opção 2 (opt-in) leva ao saldo inicial (Artefato F) — entregue na F4b da spec 044.
-      // Até lá, ativar aqui já entrega o comportamento atual do app (estoque ligado).
+      // Opção 2 (opt-in) leva ao saldo inicial (spec 044, F4b/T017) — a tela seguinte sai do
+      // wizard tanto em "Ativar estoque" quanto em "Cancelar". A preferência já está ON aqui
+      // (chooseStockModeInOnboarding acima); medicamento/tratamento/push já gravados.
+      //
+      // ⚠️ MARCAR A CONCLUSÃO ANTES DE NAVEGAR (não no fim da tela de saldo): o setup já está
+      // TODO persistido neste ponto, e o saldo é coleta opcional. Se a marcação ficasse para
+      // depois, matar o app na tela de saldo reabriria o wizard do zero — e os guards de
+      // idempotência abaixo (`createdMedicineId`/`protocolCreated`) são estado de componente,
+      // perdidos no restart → medicamento e tratamento duplicados (classe do AP-283).
+      if (option.tracking) {
+        await markCompleted()
+        setSubmitting(false)
+        navigation.navigate(ROUTES.ONBOARDING_STOCK_INITIAL_BALANCE)
+        return
+      }
+
       await finish()
     } catch (err) {
       // Não avança em silêncio: deixa o usuário tentar de novo em vez de cair num app que não
@@ -121,10 +136,12 @@ export default function OnboardingStockStep() {
     medicine,
     treatment,
     finish,
+    markCompleted,
     show,
     refreshStockTracking,
     createdMedicineId,
     protocolCreated,
+    navigation,
   ])
 
   return (

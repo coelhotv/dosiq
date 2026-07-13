@@ -108,6 +108,31 @@ describe('createStockResumeService', () => {
     expect(assessment.needsReconciliation).toBe(false)
   })
 
+  // ── hasFrozenBalance: o carimbo não é prova de saldo (F4b) ──────────────────
+  it('carimbo COM saldo → hasFrozenBalance true (há o que retomar)', async () => {
+    const deps = makeDeps({ pausedAt: daysAgo(10), summary: { 'med-1': 12 } })
+    const assessment = await createStockResumeService(deps).assessResume()
+    expect(assessment.hasFrozenBalance).toBe(true)
+  })
+
+  it('carimbo SEM saldo → hasFrozenBalance false (a UI pede saldo inicial, não retoma sobre zero)', async () => {
+    const deps = makeDeps({ pausedAt: daysAgo(10), summary: { 'med-1': 0 } })
+    const assessment = await createStockResumeService(deps).assessResume()
+    expect(assessment.hasFrozenBalance).toBe(false)
+  })
+
+  it('sem nenhum medicamento com estoque → hasFrozenBalance false', async () => {
+    const deps = makeDeps({ pausedAt: daysAgo(10), summary: {} })
+    const assessment = await createStockResumeService(deps).assessResume()
+    expect(assessment.hasFrozenBalance).toBe(false)
+  })
+
+  it('saldo NEGATIVO acidental conta como saldo (precisa reconciliar, não ser ignorado)', async () => {
+    const deps = makeDeps({ pausedAt: daysAgo(10), summary: { 'med-1': -3 } })
+    const assessment = await createStockResumeService(deps).assessResume()
+    expect(assessment.hasFrozenBalance).toBe(true)
+  })
+
   // ── (b) gap >= 30d, escolhe RETOMAR ─────────────────────────────────────────
   it('(b) gap >= 30d: pede reconciliação; "retomar" mantém o saldo congelado as-is', async () => {
     const deps = makeDeps({ pausedAt: daysAgo(45), summary: { 'med-1': 12, 'med-2': 4 } })

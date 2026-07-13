@@ -31,4 +31,13 @@ export const EVENTS = {
   // Estoque
   STOCK_ADDED: 'stock_added',
   STOCK_LOW_VIEWED: 'stock_low_viewed',
+
+  // Modo dose-only (spec 044, FR-010) — insumo da métrica dos 90 dias (SC-004).
+  // Emitidos SÓ pelo stockPreferenceService (origem comum): tela nenhuma loga preferência.
+  STOCK_ONBOARDING_CHOICE: 'stock_onboarding_choice',   // mode: 'dose_only' | 'stock'
+  STOCK_OPT_IN: 'stock_opt_in',                          // source: onboarding | settings | upsell
+  STOCK_OPT_OUT: 'stock_opt_out',                        // source
+  STOCK_UPSELL_SHOWN: 'stock_upsell_shown',
+  STOCK_UPSELL_CONVERSION: 'stock_upsell_conversion',
+  STOCK_UPSELL_DISMISSED: 'stock_upsell_dismissed',
 }

@@ -21,13 +21,15 @@ const refresh = vi.fn()
 
 let trackingState = { enabled: true, pausedAt: null as string | null, ready: true }
 
-vi.mock('@dosiq/core', () => ({
-  createProfileRepository: () => ({ setStockTracking }),
-  createStockRepository: () => ({}),
-  createStockResumeService: () => ({ assessResume, resumeAsIs, resumeAndZero }),
+// T017: useStockToggle não fala mais direto com @dosiq/core — a origem comum é o
+// stockPreferenceService (garante o analytics do opt-in, AP-281/R-284). Mock aqui, não em
+// @dosiq/core, senão o teste passaria "por acidente" contra um caminho que o hook já não usa.
+vi.mock('@features/settings/services/stockPreferenceService', () => ({
+  disableStockTracking: (...args: unknown[]) => setStockTracking(false, ...args),
+  resumeStockAsIs: (...args: unknown[]) => resumeAsIs(...args),
+  resumeStockAndZero: (...args: unknown[]) => resumeAndZero(...args),
+  assessStockResume: (...args: unknown[]) => assessResume(...args),
 }))
-
-vi.mock('@shared/utils/supabase', () => ({ supabase: {}, getUserId: vi.fn() }))
 
 vi.mock('@shared/hooks/useStockTracking', () => ({
   useStockTracking: () => ({ ...trackingState, refresh }),
@@ -38,8 +40,8 @@ const { useStockToggle } = await import('../useStockToggle')
 describe('useStockToggle (044 F4a)', () => {
   beforeEach(() => {
     trackingState = { enabled: true, pausedAt: null, ready: true }
-    assessResume.mockResolvedValue({ pausedAt: null, gapDays: null, needsReconciliation: false })
-    resumeAsIs.mockResolvedValue({ pausedAt: null, gapDays: null, needsReconciliation: false })
+    assessResume.mockResolvedValue({ pausedAt: null, gapDays: null, needsReconciliation: false, hasFrozenBalance: true })
+    resumeAsIs.mockResolvedValue({ pausedAt: null, gapDays: null, needsReconciliation: false, hasFrozenBalance: true })
     resumeAndZero.mockResolvedValue({ zeroedMedicineIds: [] })
     setStockTracking.mockResolvedValue({ stock_tracking_enabled: false, stock_paused_at: '2026-06-01T10:00:00Z' })
   })
@@ -67,7 +69,7 @@ describe('useStockToggle (044 F4a)', () => {
       await result.current.confirmFreeze()
     })
 
-    expect(setStockTracking).toHaveBeenCalledWith(false)
+    expect(setStockTracking).toHaveBeenCalledWith(false, 'settings')
     // OPT-OUT SEMPRE CONGELA: zero mutação de saldo.
     expect(resumeAndZero).not.toHaveBeenCalled()
     expect(refresh).toHaveBeenCalled()
@@ -81,6 +83,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-07-01T10:00:00Z',
       gapDays: 11,
       needsReconciliation: false,
+      hasFrozenBalance: true,
     })
     const { result } = renderHook(() => useStockToggle())
 
@@ -101,6 +104,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     const { result } = renderHook(() => useStockToggle())
 
@@ -119,6 +123,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     const { result } = renderHook(() => useStockToggle())
 
@@ -141,6 +146,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     const { result } = renderHook(() => useStockToggle())
 
@@ -162,6 +168,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     const { result } = renderHook(() => useStockToggle())
 
@@ -188,6 +195,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     resumeAndZero.mockRejectedValue(new Error('falha no ajuste'))
     const { result } = renderHook(() => useStockToggle())
@@ -211,6 +219,7 @@ describe('useStockToggle (044 F4a)', () => {
       pausedAt: '2026-05-01T10:00:00Z',
       gapDays: 47,
       needsReconciliation: true,
+      hasFrozenBalance: true,
     })
     resumeAndZero.mockRejectedValue(new Error('falha no ajuste'))
     const { result } = renderHook(() => useStockToggle())
@@ -237,5 +246,67 @@ describe('useStockToggle (044 F4a)', () => {
     trackingState = { enabled: false, pausedAt: '2026-05-01T10:00:00Z', ready: true }
     const frozen = renderHook(() => useStockToggle())
     expect(frozen.result.current.neverHadStock).toBe(false)
+  })
+
+  // T017: quem nunca teve estoque não ativa direto — abre o form de saldo inicial. A escrita
+  // real fica com InitialBalanceForm/stockPreferenceService, fora deste hook.
+  it('off→on de quem nunca teve estoque: abre o form de saldo inicial sem escrever nada', () => {
+    trackingState = { enabled: false, pausedAt: null, ready: true }
+    const { result } = renderHook(() => useStockToggle())
+
+    act(() => result.current.requestToggle())
+
+    expect(result.current.sheet).toBe('initial-balance')
+    expect(assessResume).not.toHaveBeenCalled()
+    expect(resumeAsIs).not.toHaveBeenCalled()
+    expect(setStockTracking).not.toHaveBeenCalled()
+  })
+
+  // Regressão do smoke da F4b: carimbo SEM saldo por trás (conta que nasceu dose-only com o
+  // carimbo indevido, ou opt-out feito com o estoque já vazio). Não há o que retomar — retomar
+  // as-is ligaria o FIFO sobre zero e o usuário nunca seria perguntado quanto tem (PO-3).
+  it('off→on com carimbo mas SEM saldo: abre o saldo inicial em vez de retomar', async () => {
+    trackingState = { enabled: false, pausedAt: '2026-07-12T23:29:00Z', ready: true }
+    assessResume.mockResolvedValue({
+      pausedAt: '2026-07-12T23:29:00Z',
+      gapDays: 0,
+      needsReconciliation: false,
+      hasFrozenBalance: false,
+    })
+    const { result } = renderHook(() => useStockToggle())
+
+    await act(async () => { result.current.requestToggle() })
+
+    expect(result.current.sheet).toBe('initial-balance')
+    expect(resumeAsIs).not.toHaveBeenCalled()
+  })
+
+  it('fechar o form de saldo inicial sem concluir NÃO ativa (zero escrita)', () => {
+    trackingState = { enabled: false, pausedAt: null, ready: true }
+    const { result } = renderHook(() => useStockToggle())
+
+    act(() => result.current.requestToggle())
+    expect(result.current.sheet).toBe('initial-balance')
+
+    act(() => result.current.closeInitialBalance())
+
+    expect(result.current.sheet).toBeNull()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('concluir o saldo inicial fecha o sheet, chama refresh (AP-281) e anuncia', async () => {
+    trackingState = { enabled: false, pausedAt: null, ready: true }
+    const { result } = renderHook(() => useStockToggle())
+
+    act(() => result.current.requestToggle())
+    expect(result.current.sheet).toBe('initial-balance')
+
+    await act(async () => {
+      await result.current.finishInitialBalance()
+    })
+
+    expect(refresh).toHaveBeenCalled()
+    expect(result.current.sheet).toBeNull()
+    expect(result.current.announcement).toBe('Controle de estoque ativado')
   })
 })

@@ -3,21 +3,20 @@
  *
  * Spec 044 F3: espelha a pergunta do mobile — o usuário escolhe entre dose-only
  * (controle de estoque desligado, pré-marcado) ou manter o controle de estoque ligado.
- * A preferência é GLOBAL (persistida no backend via createProfileRepository) — a MESMA
- * usada pelo mobile, para não haver consumo de FIFO divergente entre plataformas.
+ * A preferência é GLOBAL (persistida no backend) — a MESMA usada pelo mobile, para não
+ * haver consumo de FIFO divergente entre plataformas.
  *
- * Se a opção "também avisar estoque" for escolhida, o StockStep original (saldo
- * inicial) continua aparecendo em seguida, dentro do mesmo passo do wizard.
+ * Spec 044 F4b (T017): a escrita passa pelo stockPreferenceService (origem comum — R-284/
+ * AP-281). Se a opção "também avisar estoque" for escolhida, o passo segue para o
+ * InitialBalanceForm (saldo de TODOS os medicamentos, com skip por item) — o StockStep
+ * antigo (um medicamento só, com preço) sai do fluxo.
  */
 import { useState, useCallback, useRef } from 'react'
 import { useOnboarding } from './useOnboarding'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
-import { supabase, getUserId } from '@shared/utils/supabase'
-import { createProfileRepository } from '@dosiq/core'
-import StockStep from './StockStep'
+import { chooseStockModeInOnboarding } from '@features/settings/services/stockPreferenceService'
+import InitialBalanceForm from '@features/stock/components/InitialBalanceForm'
 import './StockPreferenceStep.css'
-
-const profileRepo = createProfileRepository({ client: supabase, getUserId })
 
 const OPTIONS = [
   {
@@ -73,7 +72,7 @@ export default function StockPreferenceStep() {
     setError(null)
     setIsSaving(true)
     try {
-      await profileRepo.setStockTracking(selected === 'with_stock')
+      await chooseStockModeInOnboarding(selected === 'with_stock')
       await refresh()
       if (selected === 'with_stock') {
         setPhase('initial-stock')
@@ -88,9 +87,11 @@ export default function StockPreferenceStep() {
     }
   }, [selected, refresh, nextStep])
 
-  // Opção 2 (manter estoque ligado): segue pro form de saldo inicial já existente.
+  // Opção 2 (manter estoque ligado): segue pro form de saldo inicial (multi-medicamento,
+  // com skip por item — T017). A preferência já foi ligada em handleContinue; aqui só
+  // se informa o saldo de cada medicamento (ou pula, sem escrever nada extra).
   if (phase === 'initial-stock') {
-    return <StockStep />
+    return <InitialBalanceForm source="onboarding" onDone={nextStep} onCancel={nextStep} />
   }
 
   return (

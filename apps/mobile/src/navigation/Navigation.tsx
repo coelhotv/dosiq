@@ -26,6 +26,7 @@ import ResetPasswordScreen from '../screens/ResetPasswordScreen'
 import RootTabs from './RootTabs'
 import AlarmFullScreen from '../features/dose/screens/AlarmFullScreen'
 import ChatScreen from '../features/chatbot/screens/ChatScreen'
+import StockInitialBalanceScreen from '../features/stock/screens/StockInitialBalanceScreen'
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
@@ -250,6 +251,15 @@ export default function Navigation() {
             />
             {/* Chat IA full-screen (spec 015 onda 2) — header próprio na tela */}
             <Stack.Screen name={ROUTES.CHAT} component={ChatScreen} />
+            {/* Saldo inicial da ativação do estoque (spec 044, F4b/T017) — mora no stack RAIZ,
+                não no ProfileStack: as entradas vêm de abas DIFERENTES (upsell na Hoje, toggle no
+                Perfil) e stacks irmãos não se enxergam — `navigate` só sobe pela cadeia de pais.
+                Registrada aqui, qualquer aba alcança. (O onboarding tem a sua própria rota, no
+                navigator dele.) */}
+            <Stack.Screen
+              name={ROUTES.STOCK_INITIAL_BALANCE}
+              component={StockInitialBalanceScreen}
+            />
             {__DEV__ && (
               <>
                 <Stack.Screen

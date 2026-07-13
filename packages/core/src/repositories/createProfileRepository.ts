@@ -232,11 +232,22 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
      * off → carimba `stock_paused_at` (instante do congelamento; insumo do gap lazy da
      * reativação — FR-012). on → limpa. Nenhuma mutação de saldo/compras aqui: o opt-out
      * CONGELA (NC3 da spec) — quem zera é o service de reativação, via adjustments.
+     *
+     * ⚠️ `freeze: false` — desligar SEM carimbar. O carimbo afirma "existe um saldo congelado
+     * desde T", e é ele que distingue "congelou" de "nunca teve estoque" (`neverHadStock`).
+     * Quando o usuário escolhe dose-only NO ONBOARDING não existe saldo nenhum para congelar:
+     * carimbar ali é uma afirmação FALSA, e ela se vinga na reativação — o toggle acha que há
+     * saldo a retomar, entra no fluxo de retomada (gap de minutos → silencioso) e NUNCA pergunta
+     * o saldo inicial (PO-3). Escolha inicial usa `freeze: false`; opt-out de verdade carimba.
      */
-    async setStockTracking(enabled: boolean): Promise<StockTrackingPreference> {
+    async setStockTracking(
+      enabled: boolean,
+      options: { freeze?: boolean } = {},
+    ): Promise<StockTrackingPreference> {
       if (typeof enabled !== 'boolean') {
         throw new Error('setStockTracking: enabled deve ser boolean')
       }
+      const freeze = options.freeze ?? true
 
       const userId = await getUserId()
       const { data, error } = await client
@@ -245,7 +256,7 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
           {
             user_id: userId,
             stock_tracking_enabled: enabled,
-            stock_paused_at: enabled ? null : getServerTimestamp(),
+            stock_paused_at: enabled || !freeze ? null : getServerTimestamp(),
             updated_at: getServerTimestamp(),
           },
           { onConflict: 'user_id' },

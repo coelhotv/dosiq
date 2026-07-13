@@ -112,6 +112,7 @@ export {
   formatStockQuantity,
   formatConcentrationLabel,
   formatStockApplications,
+  formatStockDoses,
   densityFor,
 } from './doseUnit'
 
