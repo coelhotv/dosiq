@@ -11,8 +11,8 @@
  */
 
 import { getNow, formatLocalDate, parseLocalDate, parseISO, daysDifference, getLastDayOfMonth } from './dateUtils'
-import { doseToMl, frequencyDailyFactor, calculateDailyIntake } from './adherenceLogic'
-import { isLiquidMedicine } from './doseUnit'
+import { frequencyDailyFactor, calculateDailyIntake } from './adherenceLogic'
+import { doseToMl, isLiquidMedicine } from './doseUnit'
 import { cleanFloat } from './formUtils'
 
 export const STOCK_STATUS = Object.freeze({

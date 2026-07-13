@@ -46,7 +46,6 @@ export {
   isInToleranceWindow,
   calculateDailyIntake,
   calculateDaysRemaining,
-  doseToMl,
   frequencyDailyFactor,
   calculateDosesByDate,
   evaluateDoseTimelineState,
@@ -114,6 +113,7 @@ export {
   formatStockApplications,
   formatStockDoses,
   densityFor,
+  doseToMl,
 } from './doseUnit'
 
 // Date presentation PT-BR (Fase 2)

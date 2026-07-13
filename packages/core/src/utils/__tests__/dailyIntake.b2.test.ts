@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { doseToMl, frequencyDailyFactor, calculateDailyIntake, calculateDaysRemaining } from '../adherenceLogic'
+import { frequencyDailyFactor, calculateDailyIntake, calculateDaysRemaining } from '../adherenceLogic'
+import { doseToMl } from '../doseUnit'
 
 // 012 Fase B2 — consumo diário de líquidos: mg via concentração + cadência da frequência.
 describe('doseToMl mg (FR-017)', () => {
