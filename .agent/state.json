@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W28",
   "session": {
-    "mode": "coding",
+    "mode": "distillation",
     "ceremony_type": null,
-    "status": "completed",
+    "status": "distilled",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "044 F5 — épico Dose-Only COMPLETO (POs 5/5, SQP, T024/AP-289). PRÓXIMO: PR + distill",
+    "goal": "044 Dose-Only COMPLETO (6 fases). PR #741 aberto (SQP + T024/AP-289) — aguarda review Gemini + merge do PO. Distill feito.",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/049-docs-revamp",
@@ -154,13 +154,13 @@
     }
   },
   "memory": {
-    "last_distillation": "2026-07-09T22:30:00.000Z",
-    "journal_entries_since_distillation": 20,
-    "rules_count": 238,
-    "anti_patterns_count": 284,
+    "last_distillation": "2026-07-13T00:00:00Z",
+    "journal_entries_since_distillation": 0,
+    "rules_count": 240,
+    "anti_patterns_count": 285,
     "decisions_count": 80,
     "contracts_count": 30,
-    "distillation_due": true
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
