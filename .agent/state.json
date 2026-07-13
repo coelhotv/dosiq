@@ -18,9 +18,15 @@
       "plans/specs/048-landing-glp1",
       "plans/specs/008-complete-data-export-lgpd"
     ],
-    "merged_pr": 741,
-    "merged_squash": "97ba5f54",
+    "merged_pr": 742,
+    "merged_squash": "2d5ef14c",
     "merged_history": [
+      {
+        "pr": 742,
+        "squash": "2d5ef14c",
+        "phase": "043 T023b: cutover do daily_digest p/ a outbox + AP-290 (gate cego pro server). daily_digest MIGRADO: elegibilidade por JANELA [digest_time, +10min) em MINUTOS DESDE A MEIA-NOITE no tz do usuário (o legado exigia HH:MM exato — família AP-259); idempotência pela UNIQUE; conteúdo construído no envio (SEC-1) revalidando digest_morning no DB; builder ÚNICO (_buildDigestPayload) consumido pelo legado E pela outbox (sem duas implementações do mesmo texto p/ divergir na transição); atrás de OUTBOX_KINDS (deploy neutro). stock_alert NÃO migrado (decisão do PO): é FAN-OUT (1 alerta por MEDICAMENTO + stock_expiry_alert por LOTE) e a UNIQUE (user_id,kind,period_key) só expressa 1 linha por usuário/dia — o 2º medicamento seria RECUSADO PELA CONSTRAINT e o alerta sumiria em silêncio (bug de omissão). Exige subject_id no modelo → spec própria. AP-290: o validate:agent NÃO EXECUTAVA NENHUM teste de server/ (globs do vitest.critical.config.js cobriam src/** e packages/core/**, nada cobria server/) — a suíte da outbox (043) e o teste do filtro dose-only (044/PO-4, EVIDÊNCIA COLADA DE UM PROOF OBLIGATION) passavam e nunca rodavam no gate. Sintoma: escrevi 10 testes e o total continuou EXATAMENTE 1609 — número que não se move quando deveria é sinal. Corrigido: 114→142 suites, 1609→1901 testes. Review Gemini 3/3 aplicados, 2 HIGH reais: (1) a janela presa à mesma hora local truncava horário quebrado (08:55→5min, 08:59→1min) reabrindo a perda por tick pulado que a janela existe p/ evitar — meu comentário justificava com 'virada de data', mas a data local só vira à MEIA-NOITE: não havia nada a proteger; (2) buildDailyDigestData ignorava o error do select → falha momentânea do DB virava 'deixou de ser elegível' → digest do dia descartado em SILÊNCIO sem retry (agora lança; PGRST116 segue como inelegibilidade real). CI vermelho pós-glob: titrationAutoAdvance importava função PURA de um módulo que instancia o client no topo (supabase.ts LANÇA sem env) → morria na CARGA; mock do client; reproduzido sem .env (142/1901 verdes). Aprovado PO → squash+delete",
+        "note": "PRÓXIMO: spec do modelo da outbox — subject_id (fan-out: stock_alert por medicamento, stock_expiry_alert por lote) + claim atômico dos lembretes de dose (hoje notified_at é CHECK-THEN-SET: seleciona → dispara → carimba DEPOIS; mesma classe do AP-276/R-288) + audit de entrega (channel_results). Recorte decidido com o PO: NÃO é 'migrar tudo pra outbox' — dose_instances JÁ é uma fila durável melhor (a linha existe porque a dose existe; não dá p/ esquecer de enfileirar). O objetivo é fechar as 2 lacunas de confiabilidade ONDE ELAS ESTÃO, e usar a outbox só onde ela é o mecanismo certo (notificações derivadas, sem linha própria no domínio)."
+      },
       {
         "pr": 741,
         "squash": "97ba5f54",
