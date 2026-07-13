@@ -1,7 +1,14 @@
 // 012 Fase B (FR-005b): avanço automático de titulação por cronograma.
 // Testa a função pura de detecção de etapa vencida (_titrationDueAdvance);
 // o update no banco + dispatch são exercitados via mocks no caller.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// `_titrationDueAdvance` é PURA, mas mora num módulo que instancia o client do Supabase no topo
+// (fail-fast: sem env vars, `server/services/supabase.ts` LANÇA). O import da função pura arrasta
+// esse efeito colateral, e o CI não tem as env vars — a suíte morria na CARGA, não num assert.
+// Mockar o client (mesmo padrão das outras suítes de server/) isola a função pura do módulo.
+vi.mock('../../services/supabase.js', () => ({ supabase: {} }));
+
 import { _titrationDueAdvance } from '../_reminderHelpers.js';
 
 const MS_DAY = 24 * 60 * 60 * 1000;

@@ -38,6 +38,10 @@ export default mergeConfig(
         'src/features/**/hooks/**/*.test.{js,jsx,ts,tsx}',
         // Helpers canônicos compartilhados (Fase 2.5+) — críticos pra paridade web↔mobile
         '../../packages/core/src/**/*.test.{js,jsx,ts,tsx}',
+        // 043 T023b: o gate do agente NÃO executava server/ — a outbox (043) e o filtro
+        // dose-only dos alertas (044/PO-4) tinham teste e ficavam FORA do validate:agent.
+        // Mesma classe do AP-289: um gate verde que não roda o que promete proteger.
+        '../../server/**/*.test.{js,jsx,ts,tsx}',
       ],
       exclude: [
         '**/*.smoke.test.*',
