@@ -601,11 +601,19 @@ async function _fetchActiveProtocolsForUser(userId: string) {
  */
 export async function buildDailyDigestData(userId: string, settings?: Record<string, any>) {
   // Revalida contra o DB (o settings do drain traz só o básico e pode estar defasado).
-  const { data: row } = await supabase
+  const { data: row, error } = await supabase
     .from('user_settings')
     .select('notification_mode, digest_time, timezone, display_name')
     .eq('user_id', userId)
     .single();
+
+  // Erro de infra NÃO pode virar "deixou de ser elegível" (review #742): com o error ignorado,
+  // uma falha momentânea do DB devolvia row=undefined → null → o drain marcava a linha como
+  // "sem conteúdo" e o digest do dia era descartado em silêncio, sem retry. Lançar deixa a
+  // linha na fila p/ o próximo tick. PGRST116 (nenhuma linha) é ausência de verdade, não falha.
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(`buildDailyDigestData: ${error.message}`);
+  }
 
   const mode = row?.notification_mode;
   if (mode !== 'digest_morning') return null; // deixou de ser elegível → nada a enviar

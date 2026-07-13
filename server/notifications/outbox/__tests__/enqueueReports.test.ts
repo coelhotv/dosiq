@@ -137,11 +137,24 @@ describe('enqueueEligibleReports — daily_digest (T023b)', () => {
     expect(repo.enqueue).not.toHaveBeenCalled()
   })
 
-  it('digest com hora quebrada (09:55) não vaza para a hora seguinte', async () => {
-    const { repo } = makeRepo()
+  // A janela ATRAVESSA a fronteira de hora de propósito (review #742): a data local só vira à
+  // meia-noite, então 09:55 + 7min = 10:02 ainda é o mesmo period_key. Prender a janela na
+  // mesma hora daria 5min a quem escolhe 09:55 e 1min a quem escolhe 09:59 — a perda por tick
+  // pulado que a janela existe p/ evitar.
+  it('digest com hora quebrada (09:55) AINDA entra às 10:02 (7min depois — janela cruza a hora)', async () => {
+    const { repo, enqueued } = makeRepo()
     await enqueueEligibleReports({
       repo, supabase: makeSupabase([digestUser({ digest_time: '09:55' })]),
       kinds: new Set(['daily_digest']), now: at('2026-07-13T13:02:00Z'), // 10:02 SP
+    })
+    expect(enqueued).toHaveLength(1)
+  })
+
+  it('digest 09:55 não entra às 10:06 (11min depois — fora da janela)', async () => {
+    const { repo } = makeRepo()
+    await enqueueEligibleReports({
+      repo, supabase: makeSupabase([digestUser({ digest_time: '09:55' })]),
+      kinds: new Set(['daily_digest']), now: at('2026-07-13T13:06:00Z'), // 10:06 SP
     })
     expect(repo.enqueue).not.toHaveBeenCalled()
   })

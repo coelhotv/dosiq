@@ -68,9 +68,14 @@ function isEligible(
       if (u.notification_mode !== 'digest_morning') return false;
       const [dh, dm] = String(u.digest_time || '07:00').slice(0, 5).split(':').map(Number);
       if (!Number.isFinite(dh) || !Number.isFinite(dm)) return false;
-      // Janela dentro da MESMA hora local: digest_time 09:55 → 09:55-09:59 (não vaza p/ 10:0x,
-      // onde a data local já pode ter virado em algum tz).
-      return p.hour === dh && p.minute >= dm && p.minute < dm + 10;
+      // Janela em MINUTOS DESDE A MEIA-NOITE local — cruza a fronteira de hora de propósito
+      // (review #742): prender a janela na mesma hora truncaria o horário quebrado (08:55 teria
+      // 5min, 08:59 teria 1min) e reabriria exatamente a perda que a janela existe p/ evitar.
+      // A data local só vira à MEIA-NOITE, então cruzar 09:59→10:00 não muda o period_key.
+      // Sem wrap por design: digest às 23:5x não "vaza" p/ o dia seguinte (o period_key já seria
+      // outro dia — enfileiraria o digest errado).
+      const diff = (p.hour * 60 + p.minute) - (dh * 60 + dm);
+      return diff >= 0 && diff < 10;
     }
     default:
       // stock_alert: NÃO migra aqui. É fan-out (1 alerta por MEDICAMENTO, + stock_expiry_alert
