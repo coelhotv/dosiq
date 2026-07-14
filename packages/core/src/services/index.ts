@@ -66,3 +66,7 @@ export type { BuildExportInput, ExportFile, ExportFormat } from './exportService
 // Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
 export { createCriticalAuditService } from './criticalAuditService'
 export type { CriticalAuditEvent } from './criticalAuditService'
+
+// Trilha de consentimento LGPD (spec 046 — grant/revoke são RPC, nunca INSERT)
+export { createConsentService } from './consentService'
+export type { ConsentService, ConsentIntent } from './consentService'

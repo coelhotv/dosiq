@@ -187,3 +187,23 @@ export {
   CRITICAL_AUDIT_PLATFORMS,
   CRITICAL_AUDIT_ACTORS,
 } from './criticalAuditEventSchema'
+
+// Consentimento LGPD (spec 046 — copy canônica do opt-in + vocabulário da trilha)
+export {
+  default as consentEventSchema,
+  CONSENT_TYPES,
+  CONSENT_ACTIONS,
+  CONSENT_PLATFORMS,
+  CONSENT_STATUSES,
+  CURRENT_POLICY_VERSION,
+  HEALTH_CONSENT_COPY,
+  deriveConsentState,
+} from './consentSchema'
+export type {
+  ConsentType,
+  ConsentAction,
+  ConsentPlatform,
+  ConsentStatus,
+  ConsentEvent,
+  ConsentState,
+} from './consentSchema'

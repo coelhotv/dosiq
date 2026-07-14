@@ -123,6 +123,65 @@ export type Database = {
           },
         ]
       }
+      consent_log: {
+        Row: {
+          action: string
+          consent_type: string
+          created_at: string
+          id: string
+          platform: string
+          policy_version: string | null
+          subject_hash: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          consent_type: string
+          created_at?: string
+          id?: string
+          platform: string
+          policy_version?: string | null
+          subject_hash: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          policy_version?: string | null
+          subject_hash?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consent_policy: {
+        Row: {
+          id: number
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          id?: number
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          id?: number
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       dose_adherence_monthly: {
         Row: {
           expected: number
@@ -1332,6 +1391,8 @@ export type Database = {
           channel_web_push_enabled: boolean
           city: string | null
           complexity_override: string | null
+          consent_prompt_last_seen_at: string | null
+          consent_prompt_sessions: number
           created_at: string | null
           digest_time: string | null
           display_name: string | null
@@ -1360,6 +1421,8 @@ export type Database = {
           channel_web_push_enabled?: boolean
           city?: string | null
           complexity_override?: string | null
+          consent_prompt_last_seen_at?: string | null
+          consent_prompt_sessions?: number
           created_at?: string | null
           digest_time?: string | null
           display_name?: string | null
@@ -1388,6 +1451,8 @@ export type Database = {
           channel_web_push_enabled?: boolean
           city?: string | null
           complexity_override?: string | null
+          consent_prompt_last_seen_at?: string | null
+          consent_prompt_sessions?: number
           created_at?: string | null
           digest_time?: string | null
           display_name?: string | null
@@ -1539,6 +1604,10 @@ export type Database = {
       }
     }
     Functions: {
+      _delete_user_account_core: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       apply_manual_stock_adjustment: {
         Args: {
           p_medicine_id: string
@@ -1578,6 +1647,20 @@ export type Database = {
         }
       }
       cleanup_expired_bot_sessions: { Args: never; Returns: number }
+      consent_grant: {
+        Args: { p_consent_type: string; p_platform: string }
+        Returns: string
+      }
+      consent_pepper: { Args: never; Returns: string }
+      consent_revoke: {
+        Args: { p_consent_type: string; p_platform: string }
+        Returns: string
+      }
+      consent_subject_hash: { Args: { p_email: string }; Returns: string }
+      consent_write: {
+        Args: { p_action: string; p_consent_type: string; p_platform: string }
+        Returns: string
+      }
       consume_stock_fifo: {
         Args: {
           p_medicine_id: string
@@ -1614,6 +1697,10 @@ export type Database = {
         Returns: Json
       }
       delete_user_account: { Args: never; Returns: undefined }
+      delete_user_account_by_id: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       generate_telegram_token: { Args: never; Returns: string }
       get_dlq_stats: {
         Args: never
