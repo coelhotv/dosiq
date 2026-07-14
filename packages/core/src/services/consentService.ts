@@ -75,30 +75,38 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
     }
   }
 
+  /**
+   * ⚠️ LANÇA em falha de leitura — de propósito, e o motivo é grave.
+   *
+   * A tentação é devolver `missing` quando a query falha. Mas `missing` é uma AFIRMAÇÃO ("este
+   * titular nunca se manifestou"), e uma rede que piscou não afirma nada. Pior: quem consome
+   * `missing` age sobre ele — `materializeSignupIntent` concederia o consentimento, RESSUSCITANDO
+   * um que o titular tinha REVOGADO. O erro de infra viraria uma decisão de consentimento que o
+   * usuário nunca tomou (mesma família do AP-290: erro de DB tratado como estado do domínio).
+   *
+   * Então o desconhecimento sobe como exceção, e cada chamador decide o que fazer com ele —
+   * explicitamente. Guard do Slice B: estado indeterminado NÃO libera nem bloqueia por si só;
+   * trata-se como falha de carregamento, nunca como "não consentiu".
+   */
   async function getStatus(consentType: ConsentType): Promise<ConsentState> {
-    try {
-      // Sem `.eq('user_id', ...)` — de propósito. Ver cabeçalho (2).
-      const res = await client
-        .from('consent_log')
-        .select(CONSENT_COLUMNS)
-        .eq('consent_type', consentType)
-        .order('created_at', { ascending: false })
-        .limit(20)
+    // Sem `.eq('user_id', ...)` — de propósito. Ver cabeçalho (2).
+    const res = await client
+      .from('consent_log')
+      .select(CONSENT_COLUMNS)
+      .eq('consent_type', consentType)
+      .order('created_at', { ascending: false })
+      .limit(20)
 
-      const error = res?.error
-      const data = res?.data
-      if (error || !data) {
-        // Falha de leitura NÃO é "nunca consentiu". Devolver `missing` aqui faria o guard do
-        // Slice B bloquear um usuário que consentiu, só porque a rede piscou. `revoked` seria
-        // pior ainda. Propagamos o desconhecimento como `missing` SEM `stale`, e o chamador
-        // (guard) trata rede como estado indeterminado — nunca como decisão do titular.
-        return { status: 'missing', policyVersion: null, updatedAt: null, stale: false }
-      }
-
-      return deriveConsentState(data as unknown as ConsentEvent[])
-    } catch {
-      return { status: 'missing', policyVersion: null, updatedAt: null, stale: false }
+    const error = res?.error
+    const data = res?.data
+    if (error) {
+      throw new Error(`Falha ao ler a trilha de consentimento: ${error.message}`)
     }
+    if (!data) {
+      throw new Error('Falha ao ler a trilha de consentimento: resposta sem dados')
+    }
+
+    return deriveConsentState(data as unknown as ConsentEvent[])
   }
 
   return {
@@ -122,7 +130,16 @@ export function createConsentService({ client }: CreateConsentServiceDeps): Cons
     async materializeSignupIntent(intent, platform) {
       if (!intent || intent.health_consent !== true) return { materialized: false }
 
-      const current = await getStatus('health_data')
+      let current: ConsentState
+      try {
+        current = await getStatus('health_data')
+      } catch {
+        // Não conseguimos LER a trilha ⇒ não sabemos se ele já revogou ⇒ NÃO escrevemos.
+        // Materializar no escuro seria ressuscitar um consentimento retirado. A intenção do
+        // signup não expira: o próximo bootstrap tenta de novo, com a leitura funcionando.
+        return { materialized: false }
+      }
+
       // Já existe ato do titular (granted OU revoked) — a intenção do signup é história velha.
       // Materializar sobre um `revoked` RESSUSCITARIA um consentimento que o titular retirou.
       if (current.status !== 'missing') return { materialized: false }

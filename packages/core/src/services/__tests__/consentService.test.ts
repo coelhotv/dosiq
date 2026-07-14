@@ -207,14 +207,18 @@ describe('createConsentService — getStatus', () => {
     expect(state.status).toBe('granted')
   })
 
-  it('erro de leitura NÃO vira revoked (falha de rede não é decisão do titular)', async () => {
+  it('erro de leitura LANÇA — não pode virar `missing` (rede que piscou não afirma nada)', async () => {
     const { client } = makeClient({ selectResult: { data: null, error: { message: 'timeout' } } })
     const service = createConsentService({ client })
 
-    const state = await service.getStatus('health_data')
+    await expect(service.getStatus('health_data')).rejects.toThrow(/trilha de consentimento/i)
+  })
 
-    expect(state.status).toBe('missing')
-    expect(state.status).not.toBe('revoked')
+  it('resposta sem data também lança (não silencia como `missing`)', async () => {
+    const { client } = makeClient({ selectResult: { data: null, error: null } })
+    const service = createConsentService({ client })
+
+    await expect(service.getStatus('health_data')).rejects.toThrow(/sem dados/i)
   })
 })
 
@@ -256,6 +260,22 @@ describe('createConsentService — materializeSignupIntent', () => {
     const result = await service.materializeSignupIntent({ health_consent: true }, 'web')
 
     expect(result).toEqual({ materialized: false })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('falha de LEITURA não pode virar concessão (o furo do review — consentimento revogado ressuscitado)', async () => {
+    // Cenário: o titular REVOGOU meses atrás, mas o `user_metadata` do signup ainda diz
+    // `health_consent: true`. Se a leitura da trilha falhar por rede e virar `missing`, a
+    // materialização concede de novo — reescrevendo a vontade do titular com um dado velho.
+    const { client, rpc } = makeClient({
+      selectResult: { data: null, error: { message: 'network timeout' } },
+    })
+    const service = createConsentService({ client })
+
+    const result = await service.materializeSignupIntent({ health_consent: true }, 'mobile')
+
+    expect(result).toEqual({ materialized: false })
+    // A prova: nenhuma escrita saiu no escuro.
     expect(rpc).not.toHaveBeenCalled()
   })
 
