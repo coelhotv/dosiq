@@ -1,13 +1,14 @@
 {
   "project": "dosiq",
-  "sprint": "2026-W28",
+  "sprint": "2026-W29",
   "session": {
-    "mode": "specifying",
-    "ceremony_type": null,
-    "status": "specified",
-    "plan": "plans/specs/029-treatment-level-titration/plan.md",
-    "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "008 export LGPD ENTREGUE — próximo: 046 (consentimento + trilha que sobrevive à exclusão)",
+    "mode": "ceremony",
+    "ceremony_type": "security-review",
+    "status": "reviewing",
+    "tier": 2,
+    "plan": "plans/specs/046-lgpd-consent/plan.md",
+    "tasks": "plans/specs/046-lgpd-consent/tasks.md",
+    "goal": "046 recalibrado por RC3 + RC-SEC — escopo ampliado reavaliado; artefatos ajustados; aguardando Slice A",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -146,20 +147,24 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "tier": 2,
     "spec_dir": "plans/specs/046-lgpd-consent",
     "spec": "plans/specs/046-lgpd-consent/spec.md",
-    "previous_session_note": "008 ENTREGUE (PR #743). Export LGPD completo: mobile nativo (share sheet) + hub Privacidade e dados; web ganhou biomarkers/perfil/colunas reais. AP-291/R-291 (inventário à mão vs schema que anda sozinho). PRÓXIMO: 046 — escopo AMPLIADO nesta sessão (FR-011..FR-014 + PO-6): consent_log com ON DELETE SET NULL + subject_hash (HMAC c/ pepper) + recibo account_deleted DENTRO da txn de delete_user_account(). Motivo: a exclusão apaga 100% (17 tabelas por cascade, verificado em prod) mas não deixa PROVA — e um consent_log com cascade morreria junto com a conta, justo quando a prova importa. T000 da 046 já mergeado (#732); Slice A = T001/T001b/T001c + T008b.",
+    "previous_session_note": "046 RECALIBRADO (RC3 eng-review + RC-SEC, 2026-07-14, sem código). 17 findings; spec/plan/tasks/PLAYBOOK reescritos. O escopo ampliado (adendos 07-13 hub 008 e 07-14 trilha que sobrevive à exclusão) NÃO fechava com a arquitetura: a trilha era FORJÁVEL pelo próprio auditado (authenticated com INSERT direto — append-only barra UPDATE/DELETE, não INSERT falso) e o subject_hash era IMPOSSÍVEL no caminho escrito (pepper server-only + INSERT no client). Ambos morrem no mesmo fix: escrita só via RPC SECURITY DEFINER. RC-SEC achou o pior: delete_user_account() NÃO é 'a função que apaga' — ela RECUSA apagar com tratamento ativo (active_treatments_block, :38). Reusá-la no prune (como o RC3 mandou, por DRY) faria o job falhar EXATAMENTE nas contas que mais precisam ser apagadas (o alvo típico do prune tem tratamento ativo): lei descumprida em silêncio, testes verdes. Bloqueio MOVE pro wrapper; núcleo _by_id não o tem. Re-slice: A (trilha) → B (gate) → C (prune, dry-run first). NOVOS: FR-015..FR-021, PO-SEC-2/3/4. Próximo: Slice A (T001/T001a/T001b/T001c/T002/T002b/T003/T004/T008b). Contexto anterior: 008 ENTREGUE (PR #743). Export LGPD completo: mobile nativo (share sheet) + hub Privacidade e dados; web ganhou biomarkers/perfil/colunas reais. AP-291/R-291 (inventário à mão vs schema que anda sozinho). PRÓXIMO: 046 — escopo AMPLIADO nesta sessão (FR-011..FR-014 + PO-6): consent_log com ON DELETE SET NULL + subject_hash (HMAC c/ pepper) + recibo account_deleted DENTRO da txn de delete_user_account(). Motivo: a exclusão apaga 100% (17 tabelas por cascade, verificado em prod) mas não deixa PROVA — e um consent_log com cascade morreria junto com a conta, justo quando a prova importa. T000 da 046 já mergeado (#732); Slice A = T001/T001b/T001c + T008b.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
     ],
-    "ceremony_findings_count": 14,
+    "ceremony_findings_count": 17,
     "ceremony_scope_decisions": [
-      "F1 RESOLVIDO: freeze só da ESCRITA web (wizard/service off + nota); leitura preservada via adapter F2 + string swap vocabulário — deliverable do slice F5",
-      "F2: cutover via adapter strangler-fig (assinatura resolveTitrationStageAt preservada)",
-      "F7: RC-SEC recomendado antes do planning",
-      "RC-SEC: 7 findings (SEC-1..7) + 4 PO-SEC formais (RLS/IDOR/replay/migração) com audit-evidence (dado regulado); push do switch respeita modo discreto ADR-076 S-3; telemetria FR-009 sem nome de medicamento"
+      "046 RC3 F1: consent_log SEM grant de INSERT p/ authenticated — escrita só via RPC SECURITY DEFINER (consent_grant/consent_revoke). Trilha que o próprio auditado escreve tem valor probatório zero; append-only barra UPDATE/DELETE, não INSERT forjado (FR-015)",
+      "046 RC3 F2/F3: subject_hash SEMPRE derivado no servidor; pepper precisa existir DENTRO do Postgres (env da Vercel não é legível de plpgsql) com RAISE EXCEPTION se ausente — silêncio = HMAC de string vazia = hash igual pra todos (FR-016)",
+      "046 RC3 F4: pipeline ÚNICO de exclusão — delete_user_account_by_id(uuid); Admin API deleteUser PROIBIDA (dois caminhos = próxima tabela nova conserta um e esquece o outro, R6/T000 se repetindo) (FR-017)",
+      "046 RC3 F5: prune D+90 nasce freado — dry_run default + cap por run + kill-switch; PO-5 não fecha em dry-run (FR-009 revisado)",
+      "046 RC3 re-slicing: A (trilha) → B (gate/superfícies) → C (prune). Prune sai do caminho crítico: é a única peça irreversível e a revogação já suspende o tratamento sem ela",
+      "046 RC-SEC S1 (CRÍTICO): delete_user_account() RECUSA exclusão com tratamento ativo (active_treatments_block :38) — regra de UX do titular. Fica no WRAPPER; o núcleo _by_id não a tem. Herdada, o prune (cujo alvo típico É alguém com tratamento ativo) nunca apagaria a conta: lei descumprida em silêncio, job verde (FR-018)",
+      "046 RC-SEC S2: DEFINER que recebe p_user_id e apaga tudo = IDOR se o grant escorregar (default do Postgres é PUBLIC) — REVOKE FROM PUBLIC/anon/authenticated antes do GRANT + guarda interna current_user <> 'service_role' (FR-019)",
+      "046 RC-SEC S3/S5: pepper no Vault (GUC é legível e vaza em pg_settings; pepper vazado torna subject_hash reversível por dicionário — e-mail tem entropia baixíssima); HMAC qualificado extensions.hmac (pgcrypto não está em uso e search_path='' não resolve hmac()) (FR-016/FR-021)",
+      "046 RC-SEC S4: grant de COLUNA — authenticated não lê subject_hash nem user_id (identificador da trilha do controlador; expor cria oráculo e-mail↔hash sem servir a nenhum caso de uso) (FR-020)"
     ],
     "ai_review": {
       "engine": "agy",
@@ -174,7 +179,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 241,
     "anti_patterns_count": 291,
     "decisions_count": 80,
@@ -186,6 +191,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-13T00:00:00Z"
+    "index_loaded_at": "2026-07-14T04:30:00Z"
   }
 }
