@@ -5,7 +5,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
 const { Bell, ChevronRight, Settings: SettingsIcon, UserCircle2, MapPin, Pencil } = LucideIcons as any
 import Constants from 'expo-constants'
-import * as WebBrowser from 'expo-web-browser'
 import { useProfile } from '@profile/hooks/useProfile'
 import { logoutUser } from '../services/profileService'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
@@ -17,7 +16,6 @@ import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
-import { EXTERNAL_URLS } from '../../../shared/constants'
 
 /**
  * Hub do Perfil (Fase 4) — evolui o MVP read-only (H5.6).
@@ -49,9 +47,9 @@ export default function ProfileScreen() {
   // Linha "49 anos · São Paulo, SP" — só os pedaços disponíveis.
   const identitySubtitle = [age != null ? `${age} anos` : null, location].filter(Boolean).join('  ·  ')
 
-  const handlePrivacyPolicy = async () => {
-    await WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
-  }
+  // Spec 008: "Privacidade e dados" deixa de abrir a webview da política direto e passa a
+  // abrir o hub nativo (export + política + exclusão). A webview segue existindo, lá dentro.
+  const handlePrivacyData = () => (navigation.navigate as any)(ROUTES.PRIVACY_DATA)
 
   const handleConfirmLogout = async () => {
     setLoggingOut(true)
@@ -220,7 +218,7 @@ export default function ProfileScreen() {
           <View style={[styles.card, { paddingVertical: 0 }]}>
             <TouchableOpacity
               style={styles.otherRow}
-              onPress={handlePrivacyPolicy}
+              onPress={handlePrivacyData}
               activeOpacity={0.7}
             >
               <View style={styles.otherLabelContainer}>

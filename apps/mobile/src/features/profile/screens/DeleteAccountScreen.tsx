@@ -129,7 +129,7 @@ export default function DeleteAccountScreen() {
         </View>
         <Text style={styles.title}>Excluir sua conta?</Text>
         <Text style={styles.description}>
-          Essa ação é permanente e irreversível. Vamos apagar seus dados pessoais
+          Essa ação é permanente e irreversível. Vamos apagar todos os seus dados pessoais
           e revogar seu acesso. Antes, veja o que será removido:
         </Text>
 
@@ -167,12 +167,17 @@ export default function DeleteAccountScreen() {
               />
             </View>
 
-            <View style={styles.exportBanner}>
+            <Pressable
+              style={styles.exportBanner}
+              onPress={() => (navigation.navigate as any)(ROUTES.PRIVACY_DATA, { openExport: true })}
+              accessibilityRole="button"
+              accessibilityLabel="Exportar seus dados antes de excluir a conta"
+            >
               <TriangleAlert size={16} color={colors.status.warning} strokeWidth={2} />
               <Text style={styles.exportText}>
-                Exporte seus dados antes? Vá em Perfil → Privacidade e dados.
+                Quer exportar seus dados antes de excluir a conta? Toque aqui para exportar.
               </Text>
-            </View>
+            </Pressable>
 
             {isBlocked ? (
               <View style={styles.blockedBox}>

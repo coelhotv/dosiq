@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Web + Mobile — Spec 008: Exportação completa de dados (LGPD) + hub "Privacidade e dados"
+
+- **Feat** (`minor`, web `4.16.0 → 4.17.0` · mobile `0.25.0 → 0.26.0` · core `0.3.0 → 0.4.0`, PR #TBD): **Exportação de dados chegou ao app** e o export web passou a incluir o que faltava. **Relevante para as notas de loja** (portabilidade de dados, art. 18 da LGPD).
+  - **Novo hub "Privacidade e dados"** no Perfil do app (antes, o item abria direto a webview da política): exportar dados, política de privacidade e exclusão de conta num lugar só. A exclusão **saiu de Configurações** — o hub é o lar único (a rota interna e o fluxo de exclusão continuam intactos). O aviso "exporte seus dados antes de excluir" deixou de ser texto morto: agora leva ao export.
+  - **Export nativo** (JSON ou CSV) via compartilhamento do sistema, com seleção do que entra no pacote e aviso de que o arquivo contém dados de saúde antes de compartilhar.
+  - **Web: o pacote estava incompleto.** Passam a sair as **medidas e biomarcadores** (glicemia, peso, pressão — incluindo a pressão diastólica, que ficava de fora) e uma seção nova de **perfil e configurações** (sem tokens nem segredos). Medicamentos e tratamentos passam a exportar as colunas reais do schema: o inventário pedia campos que **não existem no banco** (`dosage_mg`, `pill_count`, `times`), então esses valores saíam vazios em silêncio — agora saem a dosagem, a unidade, os horários, os dados de líquidos/injetáveis (apresentação, unidades/ml, volume, validade após abertura) e os campos de titulação.
+  - **Prova de atendimento** no pacote: o cabeçalho passa a registrar o titular (id + e-mail), o escopo pedido e o período.
+  - Inventário e formatação (JSON/CSV, sanitização anti-fórmula do CSV) foram para o `@dosiq/core`: **uma implementação só** para web e app — a paridade do que é exportado deixa de depender de duas listas de colunas mantidas à mão.
+  - Auditoria LGPD: as 22 tabelas com `user_id` receberam decisão explícita de exportar/não exportar (8 exportam), documentada na spec. Tokens de push, filas de notificação e trilhas técnicas ficam fora por decisão registrada.
+
 ### Web + Mobile — Épico 044: Modo Dose-Only (controle de estoque opcional)
 
 - **Feat** (`minor`, web `4.15.4 → 4.16.0` · mobile `0.24.7 → 0.25.0` · core `0.2.3 → 0.3.0`, PRs #735 #736 #738 #739 #740 #TBD): **O controle de estoque virou opcional.** Quem só quer registrar doses não precisa mais informar caixas, quantidades ou compras — a resposta direta ao feedback dos beta testers Android, que abandonavam o cadastro no passo de estoque. **Relevante para as notas de loja.**

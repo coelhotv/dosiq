@@ -59,6 +59,10 @@ export {
 } from './stockUpsell'
 export type { StockUpsellCriteria, StockUpsellEvaluation } from './stockUpsell'
 
+// Coletor do bundle de export LGPD (spec 008 — inventário único web↔mobile)
+export { createExportService, FULL_EXPORT_SCOPE } from './exportService'
+export type { BuildExportInput, ExportFile, ExportFormat } from './exportService'
+
 // Serviço de auditoria de dose crítica (spec 042 — CON-031, fail-open)
 export { createCriticalAuditService } from './criticalAuditService'
 export type { CriticalAuditEvent } from './criticalAuditService'

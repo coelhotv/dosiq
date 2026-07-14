@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
-const { ChevronLeft, ChevronRight, AlignLeft, Sparkles, LayoutGrid, Shield, Trash2, Globe, Package, } = LucideIcons as any
+const { ChevronLeft, ChevronRight, AlignLeft, Sparkles, LayoutGrid, Shield, Globe, Package, } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useProfile } from '@profile/hooks/useProfile'
@@ -92,7 +92,10 @@ function DensityOptions({ currentComplexity, activeLabel, onSelect }) {
 
 // ─── Sub-componente: secção de segurança ─────────────────────────────────────
 
-function SecuritySection({ onChangePassword, onDeleteAccount }) {
+// Spec 008 (FR-008): "Excluir minha conta" SAIU daqui — lar único é o hub
+// "Privacidade e dados" (Perfil), junto do export e da política. A rota DELETE_ACCOUNT
+// segue intacta (deep link e compliance de loja preservados).
+function SecuritySection({ onChangePassword }) {
   return (
     <>
       <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
@@ -108,20 +111,6 @@ function SecuritySection({ onChangePassword, onDeleteAccount }) {
           </View>
           <Text style={styles.securityAction}>Alterar</Text>
           <ChevronRight size={16} color={colors.primary[500]} />
-        </Pressable>
-        <View style={styles.divider} />
-        <Pressable style={styles.securityRow} onPress={onDeleteAccount}
-          accessibilityRole="button" accessibilityLabel="Excluir minha conta">
-          <View style={styles.deleteIconBg}>
-            <Trash2 size={16} color={colors.status.error} />
-          </View>
-          <View style={styles.securityInfo}>
-            <Text style={styles.securityRowTitle}>Excluir minha conta</Text>
-            <Text style={styles.securityRowSub}>
-              Remove acesso e apaga todos os dados. Bloqueado se houver tratamentos ativos.
-            </Text>
-          </View>
-          <ChevronRight size={16} color={colors.text.muted} />
         </Pressable>
       </View>
     </>
@@ -352,8 +341,6 @@ export default function SettingsScreen() {
 
   const handleChangePassword = useCallback(
     () => (navigation.navigate as any)(ROUTES.CHANGE_PASSWORD), [navigation])
-  const handleDeleteAccount = useCallback(
-    () => (navigation.navigate as any)(ROUTES.DELETE_ACCOUNT), [navigation])
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -404,10 +391,7 @@ export default function SettingsScreen() {
         />
 
         {/* ── Seção SEGURANÇA ── */}
-        <SecuritySection
-          onChangePassword={handleChangePassword}
-          onDeleteAccount={handleDeleteAccount}
-        />
+        <SecuritySection onChangePassword={handleChangePassword} />
       </ScrollView>
 
       <StockFreezeSheet
@@ -591,13 +575,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border.light,
     marginVertical: spacing[2],
     marginHorizontal: -spacing[1],
-  },
-  deleteIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.status.error + '1A',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 })

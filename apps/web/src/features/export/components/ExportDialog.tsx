@@ -80,13 +80,15 @@ function DateRangeSelector({ dateRange, isExporting, onDateChange }) {
 
 /** Renderiza checkboxes de seleção de tipos de dados. */
 function DataTypeCheckboxes({ states, isExporting, onCheckboxChange, stockTrackingEnabled }) {
-  const { includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines } = states
+  const { includeProfile, setIncludeProfile, includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines, includeBiomarkers, setIncludeBiomarkers } = states
   // Spec 044 F3: checkbox "Estoque" some do diálogo quando o controle de estoque está desligado.
   const options = [
+    { checked: includeProfile, setter: setIncludeProfile, label: DATA_TYPE_LABELS.profile },
     { checked: includeProtocols, setter: setIncludeProtocols, label: DATA_TYPE_LABELS.protocols },
     { checked: includeLogs, setter: setIncludeLogs, label: DATA_TYPE_LABELS.logs },
     ...(stockTrackingEnabled ? [{ checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock }] : []),
     { checked: includeMedicines, setter: setIncludeMedicines, label: DATA_TYPE_LABELS.medicines },
+    { checked: includeBiomarkers, setter: setIncludeBiomarkers, label: DATA_TYPE_LABELS.biomarkers },
   ]
   return (
     <div className="export-section">
@@ -116,10 +118,12 @@ const FORMAT_OPTIONS = [
 
 /** Labels para tipos de dados */
 const DATA_TYPE_LABELS = {
-  protocols: 'Protocolos',
-  logs: 'Registros de Dose',
+  profile: 'Perfil e configurações',
+  protocols: 'Tratamentos',
+  logs: 'Registros de dose',
   stock: 'Estoque',
   medicines: 'Medicamentos',
+  biomarkers: 'Medidas e biomarcadores',
 }
 
 /**
@@ -137,10 +141,12 @@ export default function ExportDialog({ isOpen, onClose }) {
   // 1. States (R-010: Hook order)
   const [format, setFormat] = useState('json')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [includeProfile, setIncludeProfile] = useState(true)
   const [includeProtocols, setIncludeProtocols] = useState(true)
   const [includeLogs, setIncludeLogs] = useState(true)
   const [includeStock, setIncludeStock] = useState(stockTrackingEnabled)
   const [includeMedicines, setIncludeMedicines] = useState(true)
+  const [includeBiomarkers, setIncludeBiomarkers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState(null)
 
@@ -151,8 +157,15 @@ export default function ExportDialog({ isOpen, onClose }) {
   const exportStock = includeStock && stockTrackingEnabled
 
   const isExportDisabled = useMemo(() => {
-    return !includeProtocols && !includeLogs && !exportStock && !includeMedicines
-  }, [includeProtocols, includeLogs, exportStock, includeMedicines])
+    return (
+      !includeProfile &&
+      !includeProtocols &&
+      !includeLogs &&
+      !exportStock &&
+      !includeMedicines &&
+      !includeBiomarkers
+    )
+  }, [includeProfile, includeProtocols, includeLogs, exportStock, includeMedicines, includeBiomarkers])
 
   const hasDateFilter = useMemo(() => {
     return dateRange.start || dateRange.end
@@ -191,10 +204,12 @@ export default function ExportDialog({ isOpen, onClose }) {
 
     try {
       const options = {
+        includeProfile,
         includeProtocols,
         includeLogs,
         includeStock: exportStock,
         includeMedicines,
+        includeBiomarkers,
         dateRange: hasDateFilter
           ? {
               start: dateRange.start ? parseLocalDate(dateRange.start) : null,
@@ -207,10 +222,12 @@ export default function ExportDialog({ isOpen, onClose }) {
       if (typeof window !== 'undefined' && (window as any).gtag) {
         ;(window as any).gtag('event', 'export_data', {
           format,
+          includeProfile,
           includeProtocols,
           includeLogs,
           includeStock: exportStock,
           includeMedicines,
+          includeBiomarkers,
           hasDateFilter,
         })
       }
@@ -232,10 +249,12 @@ export default function ExportDialog({ isOpen, onClose }) {
     }
   }, [
     format,
+    includeProfile,
     includeProtocols,
     includeLogs,
     exportStock,
     includeMedicines,
+    includeBiomarkers,
     hasDateFilter,
     dateRange,
     isExportDisabled,
@@ -254,7 +273,7 @@ export default function ExportDialog({ isOpen, onClose }) {
         <FormatSelector format={format} isExporting={isExporting} onFormatChange={handleFormatChange} />
         <DateRangeSelector dateRange={dateRange} isExporting={isExporting} onDateChange={handleDateChange} />
         <DataTypeCheckboxes
-          states={{ includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines }}
+          states={{ includeProfile, setIncludeProfile, includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines, includeBiomarkers, setIncludeBiomarkers }}
           isExporting={isExporting}
           onCheckboxChange={handleCheckboxChange}
           stockTrackingEnabled={stockTrackingEnabled}
