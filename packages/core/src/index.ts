@@ -31,5 +31,8 @@ export * from './chatbot/index'
 // Re-exporte de markdown (spec 015 onda 2 — parser leve do chat, paridade web↔mobile)
 export * from './markdown/index'
 
+// Re-exporte de export (spec 008 — formatadores puros do bundle LGPD, JSON/CSV)
+export * from './export/index'
+
 // Re-exporte de protocols-utils (opcional, auditado em 2.4)
 // export * from './protocols-utils/index'

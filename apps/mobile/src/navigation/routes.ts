@@ -37,6 +37,7 @@ export const ROUTES = {
   SETTINGS: 'Settings',                  // Fase 4 — Configurações (densidade + segurança)
   CHANGE_PASSWORD: 'ChangePassword',     // Fase 4 — Alterar senha
   DELETE_ACCOUNT: 'DeleteAccount',       // Fase 4 — Excluir conta
+  PRIVACY_DATA: 'PrivacyData',           // Spec 008 — hub Privacidade e dados (export + política + exclusão)
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
   NOTIFICATION_INBOX: 'NotificationInbox',

@@ -26,6 +26,12 @@ const PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, complexit
 // Spec 044 — preferência de controle de estoque (read-path R-267: schema + este select).
 const STOCK_TRACKING_COLUMNS = 'stock_tracking_enabled, stock_paused_at'
 
+// Spec 008 — allowlist do export LGPD. NUNCA incluir `verification_token` (segredo).
+// Literal (não `[].join()`): o supabase-js tipa o retorno a partir da STRING do select —
+// uma string derivada em runtime derruba a inferência para `GenericStringError`.
+// prettier-ignore
+const EXPORT_PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, timezone, complexity_override, onboarding_completed, emergency_card, telegram_chat_id, notification_preference, notification_mode, digest_time, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled, stock_tracking_enabled, stock_paused_at, created_at, updated_at'
+
 const COMPLEXITY_VALUES = Object.freeze(['simple', 'complex', null])
 
 interface ValidationError {
@@ -205,6 +211,24 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
         .from('user_settings')
         .upsert(row as never, { onConflict: 'user_id' })
       if (error) throw error
+    },
+
+    /**
+     * Perfil + configurações para o export LGPD (spec 008, FR-002/FR-010).
+     * Allowlist EXPLÍCITA de colunas: `verification_token` fica fora (segredo do vínculo
+     * Telegram, não é dado do titular). `select('*')` aqui seria um vazamento a cada coluna
+     * nova — a lista tem que doer para ser revisada.
+     */
+    async getProfileForExport(): Promise<Record<string, unknown> | null> {
+      const userId = await getUserId()
+      const { data, error } = await client
+        .from('user_settings')
+        .select(EXPORT_PROFILE_COLUMNS)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) throw error
+      return data ?? null
     },
 
     /**
