@@ -2,13 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "ceremony",
-    "ceremony_type": "security-review",
-    "status": "reviewing",
+    "mode": "coding",
+    "status": "delivered",
     "tier": 2,
     "plan": "plans/specs/046-lgpd-consent/plan.md",
     "tasks": "plans/specs/046-lgpd-consent/tasks.md",
-    "goal": "046 recalibrado por RC3 + RC-SEC — escopo ampliado reavaliado; artefatos ajustados; aguardando Slice A",
+    "goal": "046 Slice A MERGEADO (#744) — trilha probatória + recibo de exclusão. Próximo: Slice B (gate/guards/superfícies).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -20,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 743,
-    "merged_squash": "fa8132c6",
+    "merged_pr": 744,
+    "merged_squash": "ff0f67bc",
     "merged_history": [
+      {
+        "pr": 744,
+        "squash": "ff0f67bc",
+        "phase": "Trilha de consentimento que o próprio auditado não consegue forjar + recibo de exclusão. Só DB + core, zero UI. `authenticated` tem SELECT e nada mais em consent_log: escrita só por RPC SECURITY DEFINER (consent_grant/consent_revoke), que deriva o titular de auth.uid() e carimba policy_version e subject_hash NO SERVIDOR. Append-only protege contra UPDATE/DELETE, NÃO contra INSERT forjado — dar INSERT ao dono anularia a US2. A trilha SOBREVIVE ao titular (user_id ON DELETE SET NULL, nunca cascade): o dado clínico cascateia (T000), a prova da base legal não. Recibo `account_deleted` gravado DENTRO da txn de exclusão, antes do DELETE FROM auth.users — última chance de ler o e-mail p/ derivar o hash, e emitir depois abriria a janela 'apagou e morreu antes de registrar'. TRÊS ACHADOS, todos passariam VERDES em produção: (1) AP-292 — guarda de current_user dentro de SECURITY DEFINER é INERTE (ali current_user é sempre o OWNER, nunca o chamador; jamais dispararia nem para um authenticated com EXECUTE indevido). Trocada por auth.role(). Isso colidiu com AP-227 (o wrapper do titular não podia passar por guarda de service_role) → topologia final com núcleo PRIVADO _delete_user_account_core + duas entradas guardadas; pipeline segue único. CORRIGE o candidato a R do eng-review, que pedia guarda de current_user. (2) AP-293 — pepper em GUC é PÚBLICO: o ataque leu a chave em claro como authenticated (GUC não tem ACL). Como FALLBACK do Vault era pior ainda — só entraria em cena na falha do cofre, degradando EM SILÊNCIO de segredo p/ público, e o pepper vazado torna todo subject_hash reversível por dicionário, reidentificando os titulares JÁ EXCLUÍDOS. Fallback REMOVIDO: Vault-only, RAISE se ausente → exclusão ABORTA (melhor não apagar do que apagar deixando recibo reidentificável). (3) Review Gemini 2 HIGH — getStatus engolia erro de leitura e devolvia `missing`; como materializeSignupIntent AGE sobre esse valor, uma oscilação de rede RESSUSCITARIA um consentimento REVOGADO (família AP-290: erro de DB tratado como estado do domínio). Agora lança. Os 2 declínios do review (bloquear anon nas DEFINER) foram recusados COM PROVA — auth.uid() do anon é NULL, o RAISE existente já barra, testado COM GRANT FORÇADO; Gemini concordou. Prova: 26/26 asserts BEGIN..ROLLBACK contra o banco real; varredura do PO-6 DINÂMICA (information_schema), não lista à mão. PO-SEC-1/2/4 + PO-6 fechados. Migrações em prod; pepper no Vault (não roda). SQP: core 0.5.0 + backend/infra, sem bump web/mobile. Gates: 34 testes, test:changed 884/884, lint 0, ratchet OK. Aprovado PO → squash+delete",
+        "note": "PRÓXIMO: Slice B (gate no signup + guards + superfícies; dep 008 ✅ mergeado). ⚠️ CONTRATO NOVO: getStatus LANÇA em falha de leitura — o guard TEM que tratar estado indeterminado como falha de carregamento, NUNCA como \"não consentiu\" (senão reintroduz o furo do review). C5 completo (AP-292/AP-293 + ADR da trilha que sobrevive ao titular) fica no T020, no fechamento do épico, conforme playbook."
+      },
       {
         "pr": 743,
         "squash": "fa8132c6",
@@ -179,7 +184,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 241,
     "anti_patterns_count": 291,
     "decisions_count": 80,
