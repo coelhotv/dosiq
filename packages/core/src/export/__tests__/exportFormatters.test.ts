@@ -291,6 +291,20 @@ describe('buildExportCSV — seções e sanitização', () => {
     }
   })
 
+  it('escopo sai em português no cabeçalho (não a chave de código)', () => {
+    const csv = buildExportCSV(BUNDLE, { ...FULL_SCOPE, includeStock: false })
+    expect(csv).toContain(
+      'Escopo Selecionado;Perfil e configurações, Medicamentos, Tratamentos, Registros de dose, Medidas e biomarcadores',
+    )
+    expect(csv).not.toContain('includeProfile')
+  })
+
+  it('preço usa vírgula decimal (pt-BR), coerente com o vazio "0,00"', () => {
+    const csv = buildExportCSV(BUNDLE, FULL_SCOPE)
+    expect(csv).toContain('300,00')
+    expect(csv).not.toContain('300.00')
+  })
+
   it('medidas trazem valor secundário da PA', () => {
     const csv = buildExportCSV(BUNDLE, FULL_SCOPE)
     expect(csv).toContain('Valor Secundário')

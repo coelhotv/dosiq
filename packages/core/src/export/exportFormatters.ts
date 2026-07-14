@@ -170,7 +170,21 @@ export function generateExportFilename(prefix: string, extension: string, now: D
 
 const boolLabel = (val: unknown) => (val ? 'Sim' : 'Não')
 const listLabel = (val: unknown) => (Array.isArray(val) ? val.join(', ') : '')
-const priceLabel = (val: unknown) => (typeof val === 'number' ? val.toFixed(2) : '0,00')
+// Decimal com VÍRGULA (pt-BR): o separador do CSV é `;`, então a vírgula decimal é segura — e
+// sem ela o arquivo saía incoerente consigo mesmo (valor "300.00" ao lado do vazio "0,00").
+// `replace` em vez de toLocaleString: o Hermes (mobile) não tem ICU completo e cairia no formato US.
+const priceLabel = (val: unknown) =>
+  typeof val === 'number' ? val.toFixed(2).replace('.', ',') : '0,00'
+
+/** Rótulos das seções — o CSV é lido por humano; chave de código (`includeProfile`) não serve. */
+const SCOPE_LABELS: Record<keyof ExportScope, string> = {
+  includeProfile: 'Perfil e configurações',
+  includeMedicines: 'Medicamentos',
+  includeProtocols: 'Tratamentos',
+  includeStock: 'Estoque',
+  includeLogs: 'Registros de dose',
+  includeBiomarkers: 'Medidas e biomarcadores',
+}
 
 /**
  * Perfil e configurações do titular (user_settings). Allowlist explícita: `verification_token`
@@ -554,9 +568,9 @@ export function buildExportCSV(bundle: ExportBundle, scope: ExportScope): string
     sections.push('')
   }
 
-  const scopeLabel = Object.entries(scope)
-    .filter(([, v]) => v)
-    .map(([k]) => k)
+  const scopeLabel = (Object.keys(SCOPE_LABELS) as (keyof ExportScope)[])
+    .filter((key) => scope[key])
+    .map((key) => SCOPE_LABELS[key])
     .join(', ')
 
   const metadataSection = [

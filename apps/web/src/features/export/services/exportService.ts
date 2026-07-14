@@ -12,7 +12,7 @@
  */
 
 import { createExportService, FULL_EXPORT_SCOPE } from '@dosiq/core'
-import type { ExportScope } from '@dosiq/core'
+import type { ExportDateRange, ExportScope } from '@dosiq/core'
 import { supabase, getUserId } from '@shared/utils/supabase'
 import { getNow } from '@utils/dateUtils'
 
@@ -50,8 +50,12 @@ function toScope(options: Partial<ExportScope>): ExportScope {
 }
 
 interface ExportOptions extends Partial<ExportScope> {
-  /** Filtra SOMENTE os registros de dose — demais seções saem completas. */
-  dateRange?: { start: Date; end: Date } | null
+  /**
+   * Filtra SOMENTE os registros de dose — demais seções saem completas.
+   * `ExportDateRange` tem as bordas independentes (`Date | null`): o dialog permite preencher
+   * só "De" ou só "Até", e um tipo exigindo as duas mentiria sobre o que o chamador faz.
+   */
+  dateRange?: ExportDateRange | null
 }
 
 /**
