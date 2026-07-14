@@ -7,7 +7,7 @@
     "status": "specified",
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/044-dose-only-mode/tasks.md",
-    "goal": "050 — integridade de entrega das notificações (fan-out subject_id + claim atômico do lembrete)",
+    "goal": "008 export LGPD ENTREGUE — próximo: 046 (consentimento + trilha que sobrevive à exclusão)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 742,
-    "merged_squash": "2d5ef14c",
+    "merged_pr": 743,
+    "merged_squash": "fa8132c6",
     "merged_history": [
+      {
+        "pr": 743,
+        "squash": "fa8132c6",
+        "phase": "008: exportação completa de dados (LGPD). O achado central não estava na spec: o export web tinha 3 buracos SILENCIOSOS, não 1 (AP-291). (1) biomarkers_log — glicemia/peso/PA, DADO SENSÍVEL, em prod desde o 012 — NUNCA saiu no bundle; (2) seção perfil inteira ausente; (3) COLUNAS FANTASMA: o inventário pedia medicines.dosage_mg, pill_count e protocols.times, que NÃO EXISTEM no schema — o CSV entregava a coluna 'Dosagem (mg)' vazia em TODAS as linhas. Nada falhava: tsc (era any), lint, teste (só checava que não estourou), runtime (propriedade inexistente é undefined, não erro). DECISÃO DE ARQUITETURA além do pedido: hoistei não só os formatadores mas o COLETOR (createExportService no core) — web e mobile buscam E formatam pelo MESMO código, então a paridade do inventário (PO-1) é POR CONSTRUÇÃO, não duas listas de colunas que alguém promete manter iguais. Perfil por ALLOWLIST explícita: verification_token não é nem SELECIONADO (a proteção fica no read-path, não no formatador — select('*') levaria o segredo pra dentro de um arquivo que o usuário compartilha por WhatsApp). FR-010/PO-4: 22 tabelas com user_id auditadas contra o information_schema de prod (8 exportam / 14 não, cada uma com justificativa). Hub 'Privacidade e dados' nativo: export + política + exclusão (que SAIU de Configurações); banner da exclusão deixou de ser texto morto. Smoke do PO (iOS+Android) rendeu 4 ajustes que teste nenhum pegaria: picker inline empurrava o sheet pra fora da tela (virou overlay do SO — o BulkDoseRegisterModal já documentava que Modal-sobre-Modal no iOS engole gestos); o sheet mantinha o escopo da exportação ANTERIOR (reset por montagem condicional, AP-285 — um checkbox velho silenciaria uma seção inteira do bundle); ordem dos domínios; e o banner passou a abrir o hub JÁ com o sheet aberto (param consumido na chegada, senão qualquer volta futura o reabriria sozinho). Review Gemini 4 threads: 3 aplicadas (HIGH real — ExportOptions.dateRange exigia as 2 bordas, mas o dialog sempre permitiu preencher uma só: o tipo MENTIA sobre o chamador, invisível porque apps/web é non-strict; decimal do preço saía '300.00' ao lado do fallback '0,00'; escopo do CSV com chave de código), 1 declinada com evidência (themeVariant='light': a premissa exigia token dinâmico, mas colors.text.primary é literal estático e o mobile é light-only). SQP: web 4.17.0 · mobile 0.26.0 · core 0.4.0 · CHANGELOG + store-note. Gates: 1937 web/core/server · 405 mobile · tsc 0 · lint 0 · ratchet OK. Aprovado PO → squash+delete",
+        "note": "046 AMPLIADA nesta sessão (spec/plan/tasks/PLAYBOOK atualizados): a exclusão de conta apaga 100% dos dados (17 tabelas por cascade — verificado em prod via MCP) mas NÃO deixa recibo. FR-011..FR-014 + PO-6: consent_log com user_id ON DELETE SET NULL (nunca cascade) + subject_hash HMAC-SHA256 com pepper server-side + evento account_deleted emitido DENTRO da txn de delete_user_account() (emitir depois abre a janela \"apagou e morreu antes de registrar\"). Hash não é reversível DE PROPÓSITO: o fluxo jurídico é VERIFICAR (requerimento nomeia o titular → recalcula o HMAC → acha as linhas), não listar excluídos (isso exigiria guardar o e-mail = não excluir). Retenção: mínimo probatório (trilha + recibo), 5 anos, base \"exercício regular de direitos\" — NUNCA cópia do dado clínico."
+      },
       {
         "pr": 742,
         "squash": "2d5ef14c",
@@ -141,9 +147,9 @@
       }
     ],
     "tier": 2,
-    "spec_dir": "plans/specs/050-notification-integrity",
-    "spec": "plans/specs/050-notification-integrity/spec.md",
-    "previous_session_note": "050 SPECIFIED + PO-5 JÁ FECHADO na mesma sessão (medição em prod via MCP): ZERO duplicatas em 1256 lembretes/30d. Isso REBAIXOU a US2 (claim atômico) de P1 p/ P3 e matou uma refatoração do caminho mais crítico ANTES de planejar: a janela de check-then-set existe no código (classe AP-276/R-288) mas os ticks não se sobrepõem em prod. Fix proporcional = UPDATE..WHERE notified_at IS NULL RETURNING (1 query, zero migração); coluna de estado + TTL + stuck recovery DESCARTADA enquanto o número for zero. US1 (fan-out subject_id p/ stock_alert + stock_expiry_alert) segue P1 e é o corpo real da spec. NC1 resolvida; PO-4 fora de escopo. PRÓXIMO: eng-review (Tier 2, migração) ou planning.",
+    "spec_dir": "plans/specs/046-lgpd-consent",
+    "spec": "plans/specs/046-lgpd-consent/spec.md",
+    "previous_session_note": "008 ENTREGUE (PR #743). Export LGPD completo: mobile nativo (share sheet) + hub Privacidade e dados; web ganhou biomarkers/perfil/colunas reais. AP-291/R-291 (inventário à mão vs schema que anda sozinho). PRÓXIMO: 046 — escopo AMPLIADO nesta sessão (FR-011..FR-014 + PO-6): consent_log com ON DELETE SET NULL + subject_hash (HMAC c/ pepper) + recibo account_deleted DENTRO da txn de delete_user_account(). Motivo: a exclusão apaga 100% (17 tabelas por cascade, verificado em prod) mas não deixa PROVA — e um consent_log com cascade morreria junto com a conta, justo quando a prova importa. T000 da 046 já mergeado (#732); Slice A = T001/T001b/T001c + T008b.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
@@ -168,9 +174,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 241,
-    "anti_patterns_count": 285,
+    "anti_patterns_count": 291,
     "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": false
