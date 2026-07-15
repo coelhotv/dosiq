@@ -65,15 +65,20 @@ export default function PrivacyConsentSection() {
 
   const handleRevoke = async () => {
     setRevoking(true)
-    const res = await consentService.revoke('health_data', 'mobile')
-    setRevoking(false)
-    setConfirmStep(0)
-    if (res.ok) {
-      await load()
-      // Reavalia o GUARD RAIZ na hora — sem isto, revogar aqui atualizaria só este card e o app
-      // seguiria navegável até o próximo foreground (o bug pego no smoke). O gate é compartilhado
-      // (Provider): este refresh trava o app na tela de resolução imediatamente.
-      await gate.refresh()
+    try {
+      const res = await consentService.revoke('health_data', 'mobile')
+      if (res.ok) {
+        await load()
+        // Reavalia o GUARD RAIZ na hora — sem isto, revogar aqui atualizaria só este card e o app
+        // seguiria navegável até o próximo foreground (o bug pego no smoke). O gate é compartilhado
+        // (Provider): este refresh trava o app na tela de resolução imediatamente.
+        await gate.refresh()
+      }
+    } catch {
+      // revoke rejeitou — sem isto o botão ficaria travado em loading.
+    } finally {
+      setRevoking(false)
+      setConfirmStep(0)
     }
   }
 

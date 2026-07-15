@@ -39,14 +39,19 @@ export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted 
     }
     setSaving(true)
     setError(null)
-    const res = await onGrant()
-    setSaving(false)
-
-    if (!res.ok) {
+    try {
+      const res = await onGrant()
+      if (!res.ok) {
+        setError('Não foi possível registrar o consentimento agora. Tente de novo.')
+        return
+      }
+      onGranted()
+    } catch {
+      // onGrant() rejeitou (ex.: rede) — sem isto o botão ficaria travado em loading.
       setError('Não foi possível registrar o consentimento agora. Tente de novo.')
-      return
+    } finally {
+      setSaving(false)
     }
-    onGranted()
   }
 
   return (

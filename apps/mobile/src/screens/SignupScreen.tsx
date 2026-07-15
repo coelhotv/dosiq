@@ -158,15 +158,21 @@ export default function SignupScreen({ navigation }) {
 
     setLoading(true)
     setError(null)
-    // Campo único de senha: usamos o mesmo valor como confirmação (a validação
-    // canônica de signup exige confirmPassword).
-    const { success, error: signupError } = await signUpWithEmail(email, password, password, { healthConsent })
-    setLoading(false)
-    if (!success) {
-      setError(signupError)
-      return
+    try {
+      // Campo único de senha: usamos o mesmo valor como confirmação (a validação
+      // canônica de signup exige confirmPassword).
+      const { success, error: signupError } = await signUpWithEmail(email, password, password, { healthConsent })
+      if (!success) {
+        setError(signupError)
+        return
+      }
+      setEmailSent(true)
+    } catch {
+      // Exceção inesperada — sem isto o botão ficaria travado em loading.
+      setError('Erro inesperado ao criar conta')
+    } finally {
+      setLoading(false)
     }
-    setEmailSent(true)
   }
 
   function handleConsentChange(checked) {

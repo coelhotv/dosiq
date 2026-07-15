@@ -36,13 +36,18 @@ export default function ConsentRegularizationSheet({
   const handleAccept = async () => {
     setSaving(true)
     setError(null)
-    const res = await consentService.grant('health_data', 'mobile')
-    setSaving(false)
-    if (!res.ok) {
+    try {
+      const res = await consentService.grant('health_data', 'mobile')
+      if (!res.ok) {
+        setError('Não foi possível registrar agora. Tente de novo.')
+        return
+      }
+      onConfirmed()
+    } catch {
       setError('Não foi possível registrar agora. Tente de novo.')
-      return
+    } finally {
+      setSaving(false)
     }
-    onConfirmed()
   }
 
   return (

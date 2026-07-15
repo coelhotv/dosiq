@@ -29,13 +29,18 @@ export default function ConsentRegularizationModal({
   const handleAccept = async () => {
     setSaving(true)
     setError(null)
-    const res = await grant()
-    setSaving(false)
-    if (!res.ok) {
+    try {
+      const res = await grant()
+      if (!res.ok) {
+        setError('Não foi possível registrar agora. Tente de novo.')
+        return
+      }
+      onConfirmed()
+    } catch {
       setError('Não foi possível registrar agora. Tente de novo.')
-      return
+    } finally {
+      setSaving(false)
     }
-    onConfirmed()
   }
 
   return (
