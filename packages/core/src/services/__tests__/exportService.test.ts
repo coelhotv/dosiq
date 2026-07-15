@@ -91,15 +91,18 @@ describe('createExportService.collectBundle', () => {
     expect(profileSelect).not.toContain('verification_token')
   })
 
-  it('dose-only (044): estoque não é exportado como lista de lotes', async () => {
+  it('046 Slice D: controle off vira metadado, mas os dados de estoque SÃO coletados (R-291)', async () => {
     const { client } = makeClient({
       ...ROWS,
       user_settings: [{ ...PROFILE_ROW, stock_tracking_enabled: false }],
     })
     const bundle = await createExportService({ client, getUserId }).collectBundle(FULL_EXPORT_SCOPE)
 
+    // `stockTracked` reflete a preferência (metadado), mas NÃO gateia os dados: `stock` traz os
+    // medicamentos com lotes/compras congelados — dado do titular, art. 18.
     expect(bundle.stockTracked).toBe(false)
-    expect(bundle.stock).toBeNull()
+    expect(bundle.stock).not.toBeNull()
+    expect(Array.isArray(bundle.stock)).toBe(true)
   })
 
   it('período filtra SOMENTE os registros de dose', async () => {

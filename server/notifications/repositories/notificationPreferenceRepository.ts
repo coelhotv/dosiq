@@ -25,6 +25,10 @@ export interface NotificationSettings {
   channel_mobile_push_enabled?: boolean
   channel_web_push_enabled?: boolean
   channel_telegram_enabled?: boolean
+  /** Spec 046: instante da revogação do consentimento de saúde. NULL = não revogou. */
+  consent_revoked_at?: string | null
+  /** Spec 046: a leitura desta linha falhou e os defaults entraram — "não sabemos" (ver consentSuppression). */
+  _read_failed?: boolean
 }
 
 export const notificationPreferenceRepository = {
@@ -94,10 +98,12 @@ export const notificationPreferenceRepository = {
   },
 
   // Obtém configurações completas de notificação para o gate/dispatcher (Wave N2)
+  // 046 T014: `consent_revoked_at` entra NESTE fetch — o estado do consentimento é por usuário e o
+  // dispatcher já lê a linha dele. Nenhuma query nova, nenhuma leitura global (ver consentSuppression).
   async getSettingsByUserId(userId: string): Promise<NotificationSettings> {
     const { data, error } = await supabase
       .from('user_settings')
-      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
+      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled, consent_revoked_at')
       .eq('user_id', userId)
       .single()
 
@@ -106,14 +112,19 @@ export const notificationPreferenceRepository = {
         userId,
         error: error.message,
       })
-      // Defaults seguros
+      // Defaults seguros — MENOS para o consentimento. `_read_failed` marca que não sabemos se este
+      // titular revogou; o dispatcher trata "não sei" como "não envia" (fail-closed POR USUÁRIO).
+      // Sem esta marca, o default silencioso (consent_revoked_at ausente) seria lido como "não
+      // revogou" e um erro de leitura viraria permissão de envio (família AP-290).
       return {
         notification_mode: 'realtime',
         quiet_hours_enabled: false,
         quiet_hours_start: null,
         quiet_hours_end: null,
         digest_time: '08:00',
-        timezone: 'America/Sao_Paulo'
+        timezone: 'America/Sao_Paulo',
+        consent_revoked_at: null,
+        _read_failed: true
       }
     }
 

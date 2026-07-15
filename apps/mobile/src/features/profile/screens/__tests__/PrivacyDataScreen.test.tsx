@@ -26,6 +26,22 @@ jest.mock('../../../export/components/ExportSheet', () => {
   return (props) => <MockView testID="export-sheet" {...props} />
 })
 
+// PrivacyConsentSection (T012) tem teste próprio — aqui é só um placeholder pra não puxar
+// consentService/supabase real dentro deste suite.
+jest.mock('../../components/PrivacyConsentSection', () => {
+  const MockView = require('react-native').View
+  return () => <MockView testID="privacy-consent-section" />
+})
+
+// Subtítulo de versão/data na linha de Política (T012) usa consentService.getStatus — mockado
+// para resolver `missing` (sem evento), que é o caso mais comum e não exige asserts extras aqui.
+jest.mock('@dosiq/core', () => ({
+  ...jest.requireActual('@dosiq/core'),
+  createConsentService: () => ({
+    getStatus: jest.fn().mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false }),
+  }),
+}))
+
 describe('PrivacyDataScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks()

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { signIn, signUp, sendPasswordReset, verifyOtp, captureDeviceTimezone } from '@shared/utils/supabase'
+import HealthConsentBlock from '@features/consent/components/HealthConsentBlock'
 import './Auth.css'
 
 function ForgotPasswordCard({ email, setEmail, onBack, onClose }) {
@@ -247,9 +248,22 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
   const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
   const [otpToken, setOtpToken] = useState('')
+  // 046 T005 — opt-in de dado de saúde. Nasce DESMARCADO: consentimento pré-marcado não é
+  // consentimento (LGPD art. 8º §4 — tem que ser manifestação livre e inequívoca do titular).
+  const [healthConsent, setHealthConsent] = useState(false)
+  const [consentError, setConsentError] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Gate de submit (FR-002): sem opt-in, o cadastro não sai daqui. Barrar ANTES do signUp é o
+    // que dá sentido ao "consentimento é condição de uso" — criar a conta e só depois pedir
+    // deixaria uma conta órfã, sem base legal para tratar o dado que ela já teria começado a gerar.
+    if (!isLogin && !healthConsent) {
+      setConsentError(true)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setMessage(null)
@@ -259,7 +273,7 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
         await signIn(email, password)
         if (onAuthSuccess) onAuthSuccess()
       } else {
-        await signUp(email, password)
+        await signUp(email, password, { healthConsent })
         setIsVerifyingOtp(true)
         setMessage('Conta criada! Enviamos um link e um código de confirmação para o seu e-mail.')
       }
@@ -269,6 +283,11 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleConsentChange = (checked) => {
+    setHealthConsent(checked)
+    if (checked) setConsentError(false)
   }
 
   const handleVerifySignUpOtp = async (e) => {
@@ -374,6 +393,17 @@ export default function Auth({ onAuthSuccess, onClose, defaultLogin = true }) {
                 Esqueci minha senha
               </button>
             </div>
+          )}
+
+          {/* Opt-in de dado de saúde — só no cadastro. Destacado por exigência legal (art. 11):
+              não pode estar embutido num aceite genérico de termos. */}
+          {!isLogin && (
+            <HealthConsentBlock
+              checked={healthConsent}
+              onChange={handleConsentChange}
+              disabled={isLoading}
+              showError={consentError}
+            />
           )}
 
           {error && <div className="auth-error">{error}</div>}

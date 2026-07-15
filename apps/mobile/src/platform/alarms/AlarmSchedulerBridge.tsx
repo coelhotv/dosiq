@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCriticalAuditQueue } from '@platform/audit/criticalAuditQueue'
 import { deriveIosAlarmOutcome } from '@platform/audit/deriveIosAlarmOutcome'
 import { useAuth } from '@platform/auth/hooks/useAuth'
+import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
@@ -66,11 +67,14 @@ async function filterUnseenDerived(derived) {
 }
 
 /** Deriva desfechos iOS dos alarmes exibidos + drena a fila. Chamado no AppState 'active'. */
-async function flushCriticalAudit(userId) {
+async function flushCriticalAudit(userId, consentSuppressed = false) {
   if (!userId) return
   try {
-    // iOS: um alarme AINDA exibido implica dose não-resolvida (cancel-on-resolve, AP-235) → 'pending'.
-    if (Platform.OS === 'ios') {
+    // 046: consentimento revogado NÃO gera evento de auditoria novo — sintetizar 'pending' a partir de
+    // alarmes exibidos seria processar dado de dose sem base legal (AP-295). A drenagem da fila abaixo
+    // segue: são eventos que JÁ ocorreram (base de segurança/defesa, não consentimento) e o prune 90d /
+    // exclusão de conta cuidam da retenção.
+    if (Platform.OS === 'ios' && !consentSuppressed) {
       const displayed = await notifee.getDisplayedNotifications()
       const alarms = displayed
         .filter((n) => isAlarmNotification(n.notification))
@@ -146,6 +150,9 @@ function openAlarmScreen(notification) {
 
 export default function AlarmSchedulerBridge() {
   const { user } = useAuth()
+  // 046: consentimento revogado desarma os alarmes locais (lembrete de dose é tratamento de dado de
+  // saúde). isAlarmEnabled=false faz o useAlarmScheduler cancelAll — sem reprogramar no reload.
+  const consentSuppressed = useConsentSuppressed(user?.id ?? null)
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
   // loaded: false enquanto aguarda o primeiro load() para userId corrente.
@@ -242,11 +249,11 @@ export default function AlarmSchedulerBridge() {
     // load é async — setState ocorre pós-await (não síncrono); fetch de mount legítimo.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
-    flushCriticalAudit(userId) // drena a fila de auditoria na montagem (foreground inicial)
+    flushCriticalAudit(userId, consentSuppressed) // drena a fila de auditoria na montagem (foreground inicial)
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
-      flushCriticalAudit(userId) // 042 Slice B: deriva iOS + drena fila offline no foreground
+      flushCriticalAudit(userId, consentSuppressed) // 042 Slice B: deriva iOS + drena fila offline no foreground
 
       // App veio a foreground (inclui launch pelo full-screen intent c/ app minimizado): PRIMEIRO
       // varre e cancela notificações de dose já vencidas (missed) que ficaram presas na tela; SÓ
@@ -260,7 +267,7 @@ export default function AlarmSchedulerBridge() {
         .catch(() => {})
     })
     return () => sub.remove()
-  }, [userId, load])
+  }, [userId, load, consentSuppressed])
 
   // Re-sync sob demanda: mutação de tratamento (criar/editar/pausar/excluir)
   // altera as dose_instances → refetch + reagenda (FR-006 / insumo E).
@@ -269,7 +276,7 @@ export default function AlarmSchedulerBridge() {
   // Gate: não executa o scheduler antes do primeiro load bem-sucedido — evita
   // cancelAll prematuro enquanto protocols ainda é [] (race condition no mount).
   return loaded ? (
-    <AlarmScheduler isAlarmEnabled={hasCriticalProtocol} userId={userId} protocols={protocols} tz={tz} />
+    <AlarmScheduler isAlarmEnabled={hasCriticalProtocol && !consentSuppressed} userId={userId} protocols={protocols} tz={tz} />
   ) : null
 }
 

@@ -4,6 +4,7 @@ import { getCurrentUser, onAuthStateChange, supabase } from '@shared/utils/supab
 import { useNotificationLog } from '@shared/hooks/useNotificationLog'
 import { useUnreadNotificationCount } from '@shared/hooks/useUnreadNotificationCount'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
+import { ConsentGateProvider, useConsentGate } from '@shared/hooks/useConsentGate'
 import '@shared/styles/index.css'
 import Loading from '@shared/components/ui/Loading'
 import AppViewRouter from './AppViewRouter'
@@ -54,6 +55,12 @@ function AppShell({
   setIsChatOpen,
   shouldReduceMotion
 }) {
+  // 046: com o consentimento revogado (ou prompt bloqueante), some tudo que é acesso a PRODUTO fora
+  // do fluxo de resolução — o speeddial de registro, o FAB do chatbot, a bottom nav. Sem isto, a
+  // trava do AppViewRouter cobre só o CONTEÚDO da view, e esses atalhos (que vivem no shell, fora do
+  // router) seguiriam disparando registro de dose e chat com dado de saúde de quem pediu para parar.
+  const { locked: consentLocked } = useConsentGate()
+
   return (
     <OnboardingProvider>
       <DashboardProvider>
@@ -64,7 +71,7 @@ function AppShell({
 
           {isAuthenticated && (
             <Suspense fallback={null}>
-              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} />
+              <Sidebar currentView={currentView} setCurrentView={setCurrentView} onRegisterDose={() => setIsDoseModalOpen(true)} onRegisterMeasure={() => setIsMeasureModalOpen(true)} unreadCount={unreadCount} consentLocked={consentLocked} />
             </Suspense>
           )}
 
@@ -101,7 +108,7 @@ function AppShell({
 
           <OfflineBanner />
 
-          {isAuthenticated && !isPasswordRecovery && (
+          {isAuthenticated && !isPasswordRecovery && !consentLocked && (
             <Suspense fallback={null}>
               <BottomNav currentView={currentView} setCurrentView={setCurrentView} unreadCount={unreadCount} />
             </Suspense>
@@ -115,7 +122,7 @@ function AppShell({
             />
           )}
 
-          {isAuthenticated && !isPasswordRecovery && (
+          {isAuthenticated && !isPasswordRecovery && !consentLocked && (
             <AppAuthOverlays
               isChatOpen={isChatOpen}
               setIsChatOpen={setIsChatOpen}
@@ -284,6 +291,7 @@ function AppInner() {
   }
 
   return (
+    <ConsentGateProvider session={session}>
     <StockTrackingProvider session={session}>
     <AppShell
       isAuthenticated={!!session}
@@ -311,6 +319,7 @@ function AppInner() {
       shouldReduceMotion={shouldReduceMotion}
     />
     </StockTrackingProvider>
+    </ConsentGateProvider>
   )
 }
 

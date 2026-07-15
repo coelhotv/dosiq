@@ -23,6 +23,7 @@ import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, AlertCircle, Layers, Package, CalendarClock, User, TriangleAlert, Eye, EyeOff, } = LucideIcons as any
 import { getDeletionSummary, deleteAccount, logoutUser } from '../services/profileService'
 import { verifyPassword } from '@platform/auth/authService'
+import { useConsentGate } from '@platform/consent/useConsentGate'
 import FormActions from '@shared/components/form/FormActions'
 import { ROUTES } from '@navigation/routes'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
@@ -33,6 +34,10 @@ const CONFIRM_WORD = 'EXCLUIR'
 export default function DeleteAccountScreen() {
   // States (R-010)
   const navigation = useNavigation()
+  // Sob a trava do 046 (consent revogado), a rota de tratamentos é inalcançável. O UX-block
+  // "pause os tratamentos antes" viraria dead-end — a eliminação (art. 18, VI) não pode depender de
+  // um fluxo que a trava esconde. O RPC levanta o block server-side; a UI espelha aqui.
+  const { locked: consentLocked } = useConsentGate()
   const [loadingSummary, setLoadingSummary] = useState(true)
   const [summary, setSummary] = useState(null)
   const [summaryError, setSummaryError] = useState(null)
@@ -43,7 +48,7 @@ export default function DeleteAccountScreen() {
   const [deleteError, setDeleteError] = useState(null)
 
   // Memos
-  const isBlocked = (summary?.activeTreatments ?? 0) > 0
+  const isBlocked = !consentLocked && (summary?.activeTreatments ?? 0) > 0
   const canDelete = useMemo(
     () =>
       !isBlocked &&
@@ -118,12 +123,17 @@ export default function DeleteAccountScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      {/* Android precisa de behavior='height' (NÃO undefined) e keyboardVerticalOffset=0 — esta tela
+          tem AppBar próprio (dentro da SafeAreaView), não header de navegação. Mesmo padrão da
+          StockInitialBalanceScreen (044): sem isto o teclado cobre os inputs de confirmação. */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      {/* flex:1 no ScrollView (não só no contentContainer): dentro do KeyboardAvoidingView ele
+          cresceria com o conteúdo e empurraria o rodapé (FormActions) para fora da tela. */}
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.headerIcon}>
           <AlertCircle size={26} color={colors.status.error} strokeWidth={2} />
         </View>

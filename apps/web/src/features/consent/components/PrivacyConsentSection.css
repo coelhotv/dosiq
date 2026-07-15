@@ -1,0 +1,100 @@
+.privacy-consent-section {
+  margin-top: 20px;
+}
+
+.privacy-consent-section__label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.privacy-consent-section__card {
+  padding: 16px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-bg-card, #fff);
+}
+
+.privacy-consent-section__status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.privacy-consent-section__status-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.privacy-consent-section__meta {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.privacy-consent-section__retry {
+  margin-top: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary, #16a34a);
+  cursor: pointer;
+}
+
+.privacy-consent-section__revoke {
+  margin-top: 12px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--color-error, #b91c1c);
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  color: var(--color-error, #b91c1c);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.privacy-consent-section__confirm {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-error-bg, #fef2f2);
+}
+
+.privacy-consent-section__confirm-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.privacy-consent-section__confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.privacy-consent-section__confirm-actions button {
+  flex: 1;
+  height: 40px;
+  border: 1px solid var(--color-border, #e1e3e8);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg-card, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.privacy-consent-section__confirm-danger {
+  border-color: var(--color-error, #b91c1c);
+  background: var(--color-error, #b91c1c);
+  color: #fff;
+}
+
+.privacy-consent-section__confirm-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

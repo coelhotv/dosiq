@@ -6,6 +6,7 @@ import SettingsScreen from '../features/profile/screens/SettingsScreen'
 import ChangePasswordScreen from '../features/profile/screens/ChangePasswordScreen'
 import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen'
 import PrivacyDataScreen from '../features/profile/screens/PrivacyDataScreen'
+import ConsentPromptScreen from '../features/consent/screens/ConsentPromptScreen'
 import TelegramLinkScreen from '../features/profile/screens/TelegramLinkScreen'
 import NotificationPreferencesScreen from '../features/profile/screens/NotificationPreferencesScreen'
 import NotificationInboxScreen from '../features/notifications/screens/NotificationInboxScreen'
@@ -25,6 +26,8 @@ export default function ProfileStack() {
       <Stack.Screen name={ROUTES.CHANGE_PASSWORD} component={ChangePasswordScreen} />
       {/* Spec 008 — hub "Privacidade e dados": export + política + exclusão (lar único) */}
       <Stack.Screen name={ROUTES.PRIVACY_DATA} component={PrivacyDataScreen} />
+      {/* Spec 046 — opt-in voluntário a partir do card de consentimento (estado "não informado") */}
+      <Stack.Screen name={ROUTES.CONSENT_PROMPT} component={ConsentPromptScreen} />
       <Stack.Screen name={ROUTES.DELETE_ACCOUNT} component={DeleteAccountScreen} />
       <Stack.Screen name={ROUTES.TELEGRAM_LINK} component={TelegramLinkScreen} />
       <Stack.Screen name={ROUTES.NOTIFICATION_PREFERENCES} component={NotificationPreferencesScreen} />

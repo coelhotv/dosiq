@@ -41,6 +41,7 @@ const tokenAudit = createCriticalAuditService({
   },
 })
 import { useAuth } from '@platform/auth/hooks/useAuth'
+import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { onDoseActivityRefresh } from './doseActivityRefreshBus'
@@ -307,7 +308,10 @@ export default function DoseLiveActivityBridge() {
   const { user } = useAuth()
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
-  const userId = user?.id ?? null
+  // 046: consentimento revogado equivale a "sem usuário" para a Live Activity — dispara o teardown do
+  // logout (endLiveActivity) e trava load/derive. Re-consentir religa o userId.
+  const consentSuppressed = useConsentSuppressed(user?.id ?? null)
+  const userId = consentSuppressed ? null : (user?.id ?? null)
   const prevInstanceRef = useRef(null)
   // tz espelhado em ref p/ o effect de AppState NÃO depender de tz (senão load() atualiza tz no
   // mount → re-dispara o effect → load() duplicado p/ fuso ≠ DEFAULT_TZ). Gemini #692. Sync em effect

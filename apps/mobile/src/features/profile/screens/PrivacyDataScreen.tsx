@@ -18,6 +18,19 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 import { ROUTES } from '@navigation/routes'
 import { EXTERNAL_URLS } from '../../../shared/constants'
 import ExportSheet from '@features/export/components/ExportSheet'
+import PrivacyConsentSection from '@profile/components/PrivacyConsentSection'
+import { createConsentService, parseISO } from '@dosiq/core'
+import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+
+const consentService = createConsentService({ client: supabase as never })
+
+/** dd/mm/aaaa a partir de um timestamp ISO — só formatação de exibição. */
+function formatConsentDate(iso) {
+  const d = parseISO(iso)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()}`
+}
 
 function Header({ onGoBack }) {
   return (
@@ -40,7 +53,7 @@ function Header({ onGoBack }) {
 function ExportSection({ onOpenSheet }) {
   return (
     <>
-      <View style={styles.sectionLabel}>
+      <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
         <ShieldCheck size={12} color={colors.text.muted} />
         <Text style={styles.sectionLabelText}>SEUS DADOS</Text>
       </View>
@@ -58,12 +71,11 @@ function ExportSection({ onOpenSheet }) {
           <Text style={styles.exportButtonText}>Exportar dados</Text>
         </Pressable>
       </View>
-      <Text style={styles.hint}>Precisa de um PDF para o médico? Use a consulta.</Text>
     </>
   )
 }
 
-function TransparencySection({ onOpenPrivacyPolicy }) {
+function TransparencySection({ onOpenPrivacyPolicy, consentMeta }) {
   return (
     <>
       <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
@@ -76,7 +88,17 @@ function TransparencySection({ onOpenPrivacyPolicy }) {
           accessibilityRole="button"
           accessibilityLabel="Política de privacidade"
         >
-          <Text style={styles.linkRowTitle}>Política de privacidade</Text>
+          <View>
+            <Text style={styles.linkRowTitle}>Política de privacidade</Text>
+            {/* Datas cortadas do mock fase-5 do 008 (sem fonte na época) — voltam aqui com fonte
+                real (consent_log, via consentService.getStatus). Sem evento, some sem quebrar. */}
+            {consentMeta ? (
+              <Text style={styles.linkRowSubtitle}>
+                Aceito em {consentMeta.date}
+                {consentMeta.version ? ` · v${consentMeta.version}` : ''}
+              </Text>
+            ) : null}
+          </View>
           <ChevronRight size={16} color={colors.primary[500]} />
         </Pressable>
       </View>
@@ -114,12 +136,31 @@ export default function PrivacyDataScreen() {
   // usuário não ter que caçar o botão depois de pedir "exportar antes de apagar".
   const openExportParam = !!(route.params as { openExport?: boolean } | undefined)?.openExport
   const [exportSheetOpen, setExportSheetOpen] = useState(openExportParam)
+  const [consentMeta, setConsentMeta] = useState(null)
 
   // O param é uma ORDEM, não estado da tela: consumir na chegada. Se ficar no state da
   // navegação, qualquer volta futura pra este hub (back, deep link) reabriria o sheet sozinho.
   useEffect(() => {
     if (openExportParam) (navigation as any).setParams({ openExport: undefined })
   }, [openExportParam, navigation])
+
+  // Subtítulo "Aceito em dd/mm/aaaa · vX" na linha de Política — best-effort: falha de leitura
+  // (getStatus lança) NÃO é tratada como "não informado", só deixa o subtítulo ausente.
+  useEffect(() => {
+    let active = true
+    consentService
+      .getStatus('health_data')
+      .then((state) => {
+        if (!active || state.status !== 'granted' || !state.updatedAt) return
+        setConsentMeta({ date: formatConsentDate(state.updatedAt), version: state.policyVersion })
+      })
+      .catch(() => {
+        if (active) setConsentMeta(null)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const goBack = () => (navigation as any).goBack()
   const openExportSheet = () => setExportSheetOpen(true)
@@ -136,8 +177,9 @@ export default function PrivacyDataScreen() {
         </View>
         <Text style={styles.subtitle}>Você decide quando exportar, compartilhar ou apagar.</Text>
 
+        <PrivacyConsentSection />
         <ExportSection onOpenSheet={openExportSheet} />
-        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} />
+        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} consentMeta={consentMeta} />
         <DangerZoneSection onDeleteAccount={goToDeleteAccount} />
       </ScrollView>
 
@@ -241,12 +283,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.inverse,
   },
-  hint: {
-    fontSize: 12,
-    color: colors.text.muted,
-    marginTop: spacing[2],
-    lineHeight: 16,
-  },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,6 +292,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  linkRowSubtitle: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: 2,
   },
   dangerRowTitle: {
     fontSize: 15,

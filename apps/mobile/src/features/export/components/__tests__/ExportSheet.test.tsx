@@ -100,12 +100,24 @@ describe('ExportSheet', () => {
     expect(call.dateRange).toBeNull()
   })
 
-  it('checkbox de estoque ausente quando dose-only', () => {
+  it('046 Slice D: checkbox de estoque PRESENTE mesmo dose-only — dado do titular (R-291)', () => {
+    // Antes, o checkbox sumia quando o controle estava off, escondendo os lotes/compras congelados
+    // do titular. Agora ele é permanente: exportar é acesso (art. 18), não uma feature ligável.
     useStockTracking.mockReturnValue({ enabled: false, pausedAt: null, ready: true, refresh: jest.fn() })
 
-    const { queryByLabelText } = render(<ExportSheet visible onClose={onClose} />)
+    const { getByLabelText } = render(<ExportSheet visible onClose={onClose} />)
 
-    expect(queryByLabelText('Estoque')).toBeNull()
+    expect(getByLabelText('Estoque').props.accessibilityState.checked).toBe(true)
+  })
+
+  it('046 Slice D: dose-only inclui estoque no scope passado ao core (não recorta mais)', async () => {
+    useStockTracking.mockReturnValue({ enabled: false, pausedAt: null, ready: true, refresh: jest.fn() })
+
+    const { getByText } = render(<ExportSheet visible onClose={onClose} />)
+    fireEvent.press(getByText('Exportar'))
+
+    await waitFor(() => expect(mockBuildExport).toHaveBeenCalled())
+    expect(mockBuildExport.mock.calls[0][0].scope.includeStock).toBe(true)
   })
 
   it('caminho de sucesso: writeAsStringAsync + shareAsync com o filename do core', async () => {

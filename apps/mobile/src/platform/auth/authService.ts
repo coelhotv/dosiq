@@ -1,5 +1,6 @@
 // authService.js — serviço de autenticação com validação Zod
 import { z } from 'zod'
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 const loginCredentialsSchema = z.object({
@@ -84,8 +85,14 @@ export async function signInWithEmail(email, password) {
 /**
  * Cria nova conta com email e senha
  * Supabase envia email de confirmação após cadastro bem-sucedido
+ *
+ * `healthConsent` (spec 046, T005) viaja no `user_metadata`.
+ * ⚠️ `user_metadata` é CLIENT-WRITABLE — é CARONA da intenção, jamais prova. Existe porque, com
+ * confirmação de e-mail ligada, não há sessão no cadastro, e sem sessão o RPC `SECURITY DEFINER`
+ * não tem `auth.uid()` para carimbar o evento. Quem grava a trilha é `materializeSignupIntent`, no
+ * 1º bootstrap autenticado, via RPC — o servidor deriva titular, versão e hash.
  */
-export async function signUpWithEmail(email, password, confirmPassword) {
+export async function signUpWithEmail(email, password, confirmPassword, options: { healthConsent?: boolean } = {}) {
   const validation = signupCredentialsSchema.safeParse({ email, password, confirmPassword })
 
   if (!validation.success) {
@@ -93,11 +100,21 @@ export async function signUpWithEmail(email, password, confirmPassword) {
     return { success: false, error: errorMessage }
   }
 
+  // Gate de submit (FR-002): sem opt-in, a conta não é criada. Barrar aqui, e não só na tela,
+  // fecha o caminho de qualquer outro caller chegar ao signUp sem consentimento.
+  if (options.healthConsent !== true) {
+    return { success: false, error: 'É necessário autorizar o tratamento dos dados de saúde para criar a conta.' }
+  }
+
   try {
     const { error: authError } = await supabase.auth.signUp({
       email: validation.data.email,
       password: validation.data.password,
       options: {
+        data: {
+          health_consent: true,
+          policy_version: CURRENT_POLICY_VERSION,
+        },
         // Universal Link / App Link (UL-S2): em produção, https abre o app se
         // instalado (associatedDomains iOS; Android autoVerify), senão cai no web
         // /auth/callback (detectSessionInUrl auto-completa). Em dev (__DEV__),

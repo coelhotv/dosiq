@@ -14,8 +14,11 @@ import { formatLocalDate, parseISO, parseLocalDate } from '../utils/dateUtils'
 /** Versão do formato de exportação. */
 export const EXPORT_VERSION = '1.0.0'
 
-/** Texto único da seção de estoque quando o usuário é dose-only (044 / US3). */
-export const STOCK_NOT_TRACKED_LABEL = 'Estoque: não controlado'
+/** Metadado: o controle de estoque do titular está desligado (044) — informativo, não gateia dados. */
+export const STOCK_NOT_TRACKED_LABEL = 'Controle de estoque desligado'
+
+/** Seção de estoque quando o titular não tem NENHUM lote/compra registrado (046 Slice D). */
+export const STOCK_NO_DATA_LABEL = 'Nenhum dado de estoque registrado.'
 
 /** BOM UTF-8 para compatibilidade com Excel. */
 export const UTF8_BOM = '\uFEFF'
@@ -372,11 +375,19 @@ export function buildExportJSON(bundle: ExportBundle, scope: ExportScope): strin
   }
 
   if (scope.includeStock) {
-    // 044/US3: dose-only exporta UMA linha, não uma lista vazia de lotes (lista vazia
-    // sugeriria "acabou o estoque"; o correto é "não controlado").
-    data.stock = bundle.stockTracked
-      ? mapStockByMedicine(bundle.stock ?? [])
-      : { tracked: false, note: STOCK_NOT_TRACKED_LABEL }
+    // 046 Slice D: o estoque SEMPRE sai quando pedido — é dado do titular (art. 18). O controle
+    // desligado (044) é METADADO (`control_enabled`), não um portão que esconde os lotes/compras
+    // congelados. Quem nunca teve estoque recebe uma seção honesta ("nenhum dado"), não a ausência
+    // da seção — a ausência sugeriria que o dado nunca poderia existir.
+    const stockRows = mapStockByMedicine(bundle.stock ?? [])
+    const hasStockData = stockRows.some(
+      (m) => ((m.stock_entries as Row[]) ?? []).length > 0 || ((m.purchases as Row[]) ?? []).length > 0,
+    )
+    data.stock = {
+      control_enabled: bundle.stockTracked,
+      medicines: stockRows,
+      ...(hasStockData ? {} : { note: STOCK_NO_DATA_LABEL }),
+    }
   }
 
   if (scope.includeBiomarkers && bundle.biomarkers) {
@@ -549,15 +560,22 @@ export function buildExportCSV(bundle: ExportBundle, scope: ExportScope): string
   }
 
   if (scope.includeStock) {
+    // 046 Slice D: estoque sempre presente quando pedido (dado do titular). O controle desligado
+    // (044) vira uma LINHA de metadado, não a supressão das seções. Sem nenhum lote/compra, a
+    // seção fica vazia com a nota honesta — nunca omitida.
+    const medicines = bundle.stock ?? []
+    const stockRows = flattenStock(medicines)
+    const purchaseRows = flattenPurchases(medicines)
+
     sections.push('=== ESTOQUE ===')
-    if (bundle.stockTracked) {
-      const medicines = bundle.stock ?? []
-      sections.push(arrayToCSV(flattenStock(medicines), STOCK_HEADERS))
+    if (!bundle.stockTracked) sections.push(STOCK_NOT_TRACKED_LABEL)
+    if (stockRows.length > 0 || purchaseRows.length > 0) {
+      sections.push(arrayToCSV(stockRows, STOCK_HEADERS))
       sections.push('')
       sections.push('=== COMPRAS ===')
-      sections.push(arrayToCSV(flattenPurchases(medicines), PURCHASE_HEADERS))
+      sections.push(arrayToCSV(purchaseRows, PURCHASE_HEADERS))
     } else {
-      sections.push(STOCK_NOT_TRACKED_LABEL)
+      sections.push(STOCK_NO_DATA_LABEL)
     }
     sections.push('')
   }

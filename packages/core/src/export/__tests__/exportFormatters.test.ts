@@ -11,6 +11,7 @@ import {
   generateExportFilename,
   sanitizeCSVValue,
   STOCK_NOT_TRACKED_LABEL,
+  STOCK_NO_DATA_LABEL,
   type ExportBundle,
   type ExportScope,
 } from '../exportFormatters'
@@ -247,9 +248,21 @@ describe('buildExportJSON — inventário (FR-006/FR-010)', () => {
     expect(out.data.medicines).toBeDefined()
   })
 
-  it('dose-only (044): estoque vira 1 linha, não lista vazia de lotes', () => {
-    const out = parseJSON({ ...BUNDLE, stockTracked: false, stock: null })
-    expect(out.data.stock).toEqual({ tracked: false, note: STOCK_NOT_TRACKED_LABEL })
+  it('046 Slice D: controle desligado NÃO esconde os lotes congelados — dado do titular sai', () => {
+    // stockTracked=false (controle off) mas HÁ lotes/compras congelados (044 congela, não apaga).
+    // O export tem que trazer os dados; `control_enabled: false` é só metadado.
+    const out = parseJSON({ ...BUNDLE, stockTracked: false })
+    const stock = out.data.stock as { control_enabled: boolean; medicines: unknown[]; note?: string }
+    expect(stock.control_enabled).toBe(false)
+    expect(stock.medicines.length).toBeGreaterThan(0)
+    expect(stock.note).toBeUndefined()
+  })
+
+  it('046 Slice D: sem NENHUM lote/compra → seção honesta "sem dados", nunca omitida', () => {
+    const out = parseJSON({ ...BUNDLE, stockTracked: false, stock: [] })
+    const stock = out.data.stock as { control_enabled: boolean; medicines: unknown[]; note?: string }
+    expect(stock.medicines).toEqual([])
+    expect(stock.note).toBe(STOCK_NO_DATA_LABEL)
   })
 })
 
@@ -317,10 +330,17 @@ describe('buildExportCSV — seções e sanitização', () => {
     expect(csv).not.toContain('segredo-nao-deve-vazar')
   })
 
-  it('dose-only (044): seção de estoque vira o rótulo único', () => {
-    const csv = buildExportCSV({ ...BUNDLE, stockTracked: false, stock: null }, FULL_SCOPE)
-    expect(csv).toContain(`=== ESTOQUE ===\n${STOCK_NOT_TRACKED_LABEL}`)
-    expect(csv).not.toContain('=== COMPRAS ===')
+  it('046 Slice D: controle off marca o metadado, mas as COMPRAS/lotes congelados saem', () => {
+    const csv = buildExportCSV({ ...BUNDLE, stockTracked: false }, FULL_SCOPE)
+    // A linha de metadado aparece, mas os dados reais NÃO são suprimidos.
+    expect(csv).toContain(STOCK_NOT_TRACKED_LABEL)
+    expect(csv).toContain('=== COMPRAS ===')
+  })
+
+  it('046 Slice D: sem nenhum lote/compra → nota honesta, seção nunca omitida', () => {
+    const csv = buildExportCSV({ ...BUNDLE, stockTracked: false, stock: [] }, FULL_SCOPE)
+    expect(csv).toContain('=== ESTOQUE ===')
+    expect(csv).toContain(STOCK_NO_DATA_LABEL)
   })
 
   it('seção sem linhas mantém o cabeçalho (tabela vazia, não seção ausente)', () => {

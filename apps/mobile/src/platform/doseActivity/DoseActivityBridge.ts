@@ -29,6 +29,7 @@ import {
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { useAuth } from '@platform/auth/hooks/useAuth'
+import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { endDoseActivity } from './doseActivitySurfaceService'
@@ -84,7 +85,10 @@ export default function DoseActivityBridge() {
   const { user } = useAuth()
   const [protocols, setProtocols] = useState([])
   const [tz, setTz] = useState(DEFAULT_TZ)
-  const userId = user?.id ?? null
+  // 046: consentimento revogado equivale a "sem usuário" para a superfície — dispara o mesmo teardown
+  // do logout (encerra a ongoing notification) e trava load/derive. Re-consentir religa o userId.
+  const consentSuppressed = useConsentSuppressed(user?.id ?? null)
+  const userId = consentSuppressed ? null : (user?.id ?? null)
   const prevInstanceRef = useRef(null)
 
   // Refetch protocolos + tz (mesmo enriquecimento do AlarmSchedulerBridge: medicine aninhado).
