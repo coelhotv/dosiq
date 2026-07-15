@@ -1,7 +1,7 @@
 ---
 title: "Changelog and Release Logging"
 description: "Regras e governança para versionamento de plataformas (SemVer mobile v0.x, web v1.x) e escrita do log de release no Dosiq."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: standard
 audience:
@@ -12,12 +12,28 @@ tags:
   - changelog
   - versioning
 created_at: "2026-05-28"
-updated_at: "2026-07-08"
+updated_at: "2026-07-15"
 ---
 
 # Changelog and Release Logging
 
 This document defines the Dosiq release logging process. Rules are written in English for agents. Changelog and store-note text must be written in Portuguese.
+
+## Two Files, Two Audiences
+
+Keep the **internal change log** and the **external store releases** in separate files:
+
+| File | Audience | Content |
+|------|----------|---------|
+| `CHANGELOG.md` | Internal (team / agent) | Technical log of changes, per PR/version. SemVer bumps, migrations, review notes. |
+| `docs/standards/RELEASES.md` | External (end user) | **Source of truth for store notes** — the text published on Apple App Store / Google Play, per published mobile minor. |
+
+Rules for `RELEASES.md`:
+- Portuguese, warm tone, no technical jargon or internal detail.
+- **No emojis** — neither store accepts them (Apple and Google strip/reject).
+- Apple allows long text (~4000 chars); **Google Play has a hard 500-char limit** — keep the short variant under it.
+- One store release = one mobile **minor** bump (0.x convention below). Intermediate patches fold into the next store note as "estabilidade e correções".
+- When a mobile minor ships to stores, add its block to `RELEASES.md` **and** keep the technical detail in `CHANGELOG.md`.
 
 ## Canonical Version Sources
 
@@ -94,9 +110,11 @@ Allowed categories:
 - `Removed`
 - `Process`
 
-## Store Notes Template
+## Store Notes
 
-Store notes are derived from mobile changelog entries:
+Store notes live in **`docs/standards/RELEASES.md`** (the external source of truth), derived from
+mobile changelog entries. Write an Apple block (long) and a Google Play block (≤500 chars), both
+emoji-free. Base skeleton:
 
 ```markdown
 Novidades da versão X.Y.Z:
@@ -105,7 +123,8 @@ Novidades da versão X.Y.Z:
 - Evite detalhes internos sem impacto para usuário.
 ```
 
-If a mobile release is internal-only, keep the changelog entry and mark it `no-user-impact` with a short Portuguese justification.
+If a mobile release is internal-only, keep the `CHANGELOG.md` entry, mark it `no-user-impact` with a
+short Portuguese justification, and do **not** add a `RELEASES.md` block.
 
 ## PR Version Section
 
