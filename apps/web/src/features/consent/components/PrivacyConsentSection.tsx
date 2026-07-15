@@ -7,13 +7,16 @@
 // ⚠️ getStatus() LANÇA em falha de leitura (contrato do Slice A) — vira estado de ERRO
 // explícito aqui, nunca "não informado" (ver useConsentGate.tsx para o mesmo cuidado).
 //
-// Componente NOVO, ainda não pendurado em nenhuma view (o Principal decide onde plugar).
+// Montado no hub de Privacidade (Profile). Ao revogar, chama gate.refresh() para reavaliar o
+// guard raiz na hora (paridade com o card mobile) — senão o app seguiria navegável até o próximo
+// ciclo de foreground.
 
 import { useCallback, useEffect, useState } from 'react'
 import { ShieldCheck, ShieldOff, ShieldQuestion } from 'lucide-react'
 import { HEALTH_CONSENT_COPY, createConsentService, parseISO } from '@dosiq/core'
 import type { ConsentState } from '@dosiq/core'
 import { supabase } from '@shared/utils/supabase'
+import { useConsentGate } from '@shared/hooks/useConsentGate'
 import './PrivacyConsentSection.css'
 
 const consentService = createConsentService({ client: supabase })
@@ -27,6 +30,7 @@ function formatConsentDate(iso: string): string {
 }
 
 export default function PrivacyConsentSection() {
+  const gate = useConsentGate()
   const [state, setState] = useState<ConsentState | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -54,10 +58,21 @@ export default function PrivacyConsentSection() {
 
   const handleRevoke = async () => {
     setRevoking(true)
-    const res = await consentService.revoke('health_data', 'web')
-    setRevoking(false)
-    setConfirmStep(0)
-    if (res.ok) await load()
+    try {
+      const res = await consentService.revoke('health_data', 'web')
+      if (res.ok) {
+        await load()
+        // Reavalia o guard raiz na hora: sem isto o app segue navegável até o próximo ciclo
+        // (paridade com o mobile). O revoke tira a base de tratamento → trava imediata.
+        await gate.refresh()
+      }
+    } catch {
+      // Falha de rede/Supabase: o finally garante que a UI não trava em "Retirando..."; o estado
+      // real é relido no próximo load()/foreground. Não sintetiza revoke otimista.
+    } finally {
+      setRevoking(false)
+      setConfirmStep(0)
+    }
   }
 
   // Resolvido UMA vez — evita repetir o mesmo encadeamento loading/erro/status em 2 lugares

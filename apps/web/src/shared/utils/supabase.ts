@@ -102,12 +102,19 @@ export const signIn = async (email, password) => {
  * titular, versão e hash. Nunca gravar o evento "confiando" neste metadata.
  */
 export const signUp = async (email, password, options: { healthConsent?: boolean } = {}) => {
+  // Consentimento como CONDIÇÃO DE USO (FR-002): a conta não nasce sem opt-in. O gate de UI já
+  // barra o form, mas a trava vive TAMBÉM aqui — paridade com o mobile (authService), fechando o
+  // caminho de qualquer caller chegar ao signUp sem consentimento.
+  if (options.healthConsent !== true) {
+    throw new Error('É necessário autorizar o tratamento dos dados de saúde para criar a conta.')
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        health_consent: options.healthConsent === true,
+        health_consent: true,
         policy_version: CURRENT_POLICY_VERSION,
       },
     },

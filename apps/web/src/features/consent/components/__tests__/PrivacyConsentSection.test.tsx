@@ -6,9 +6,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
-const { getStatusMock, revokeMock } = vi.hoisted(() => ({
+const { getStatusMock, revokeMock, refreshMock } = vi.hoisted(() => ({
   getStatusMock: vi.fn(),
   revokeMock: vi.fn(),
+  refreshMock: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@shared/utils/supabase', () => ({ supabase: {} }))
@@ -19,6 +20,10 @@ vi.mock('@dosiq/core', async () => {
     createConsentService: () => ({ getStatus: getStatusMock, revoke: revokeMock }),
   }
 })
+// O componente reavalia o guard raiz (gate.refresh) após revogar — mock evita puxar o Provider real.
+vi.mock('@shared/hooks/useConsentGate', () => ({
+  useConsentGate: () => ({ refresh: refreshMock }),
+}))
 
 import PrivacyConsentSection from '../PrivacyConsentSection'
 
@@ -85,5 +90,24 @@ describe('PrivacyConsentSection', () => {
 
     fireEvent.click(screen.getByText('Retirar consentimento'))
     await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('health_data', 'web'))
+  })
+
+  it('revogar com sucesso reavalia o guard raiz na hora (gate.refresh) — senão o app seguiria navegável', async () => {
+    getStatusMock.mockResolvedValue({
+      status: 'granted',
+      policyVersion: '0.3',
+      updatedAt: '2026-07-01T12:00:00-03:00',
+      stale: false,
+    })
+    revokeMock.mockResolvedValue({ ok: true })
+
+    render(<PrivacyConsentSection />)
+    await screen.findByText('Ativo')
+
+    fireEvent.click(screen.getByText('Retirar consentimento'))
+    fireEvent.click(screen.getByText('Continuar'))
+    fireEvent.click(screen.getByText('Retirar consentimento'))
+
+    await waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1))
   })
 })

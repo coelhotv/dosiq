@@ -91,7 +91,7 @@ Esses dados são **dados pessoais sensíveis**, nos termos da LGPD, por estarem 
 
 > A LGPD (art. 11) exige que dado de saúde tenha consentimento **específico** (não misturado com o aceite geral de Termos) e **destacado** (visível, não escondido em letra miúda). Por isso, no cadastro, você vê uma caixa de marcação separada, com este texto exato:
 
-> **"Autorizo o dosiq a tratar meus dados de saúde (medicamentos, doses, adesão e biomarcadores) para me enviar lembretes, registrar meu histórico e calcular minha adesão ao tratamento."**
+> **"Autorizo o dosiq a tratar meus dados de saúde (medicamentos, doses, adesão e biomarcadores) para me enviar lembretes, registrar meu histórico e calcular minha adesão ao tratamento, e declaro ter 16 anos ou mais."**
 
 Esse é o mesmo texto que aparece na tela de cadastro — não existem duas redações diferentes para o mesmo consentimento.
 
