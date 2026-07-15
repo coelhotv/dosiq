@@ -14,6 +14,14 @@ afterEach(() => {
   vi.clearAllTimers()
 })
 
+/** Cumpre o gate de leitura (abre a política) antes de aceitar. */
+function readPolicy() {
+  const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
+  fireEvent.click(screen.getByText('Ler a nova política'))
+  expect(openSpy).toHaveBeenCalledWith('/politica-de-privacidade.html', '_blank', 'noopener,noreferrer')
+  return openSpy
+}
+
 describe('ConsentRegularizationModal', () => {
   it('não renderiza nada quando visible=false', () => {
     const { container } = render(
@@ -32,10 +40,30 @@ describe('ConsentRegularizationModal', () => {
     expect(grantMock).not.toHaveBeenCalled()
   })
 
-  it('"Aceitar a nova versão" chama o grant do gate e onConfirmed em sucesso', async () => {
+  it('não deixa aceitar antes de abrir a política (não se pede aceite sem via de ler)', () => {
     const onConfirmed = vi.fn()
     render(<ConsentRegularizationModal visible onDismiss={vi.fn()} onConfirmed={onConfirmed} />)
 
+    // Botão de aceitar nasce desabilitado — o click não dispara o grant.
+    fireEvent.click(screen.getByText('Aceitar a nova versão'))
+
+    expect(grantMock).not.toHaveBeenCalled()
+    expect(onConfirmed).not.toHaveBeenCalled()
+  })
+
+  it('"Ler a nova política" abre a política em nova aba e destrava o aceite', () => {
+    render(<ConsentRegularizationModal visible onDismiss={vi.fn()} onConfirmed={vi.fn()} />)
+
+    readPolicy()
+
+    expect(screen.getByText('Política lida ✓')).toBeTruthy()
+  })
+
+  it('"Aceitar a nova versão" (após ler) chama o grant do gate e onConfirmed em sucesso', async () => {
+    const onConfirmed = vi.fn()
+    render(<ConsentRegularizationModal visible onDismiss={vi.fn()} onConfirmed={onConfirmed} />)
+
+    readPolicy()
     fireEvent.click(screen.getByText('Aceitar a nova versão'))
 
     await waitFor(() => expect(onConfirmed).toHaveBeenCalledTimes(1))
@@ -47,6 +75,7 @@ describe('ConsentRegularizationModal', () => {
     const onConfirmed = vi.fn()
     render(<ConsentRegularizationModal visible onDismiss={vi.fn()} onConfirmed={onConfirmed} />)
 
+    readPolicy()
     fireEvent.click(screen.getByText('Aceitar a nova versão'))
 
     expect(await screen.findByText(/Não foi possível registrar/)).toBeTruthy()

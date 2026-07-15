@@ -19,18 +19,7 @@ import { ROUTES } from '@navigation/routes'
 import { EXTERNAL_URLS } from '../../../shared/constants'
 import ExportSheet from '@features/export/components/ExportSheet'
 import PrivacyConsentSection from '@profile/components/PrivacyConsentSection'
-import { createConsentService, parseISO } from '@dosiq/core'
-import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-
-const consentService = createConsentService({ client: supabase as never })
-
-/** dd/mm/aaaa a partir de um timestamp ISO — só formatação de exibição. */
-function formatConsentDate(iso) {
-  const d = parseISO(iso)
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  return `${dd}/${mm}/${d.getFullYear()}`
-}
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 
 function Header({ onGoBack }) {
   return (
@@ -75,7 +64,7 @@ function ExportSection({ onOpenSheet }) {
   )
 }
 
-function TransparencySection({ onOpenPrivacyPolicy, consentMeta }) {
+function TransparencySection({ onOpenPrivacyPolicy }) {
   return (
     <>
       <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
@@ -90,14 +79,10 @@ function TransparencySection({ onOpenPrivacyPolicy, consentMeta }) {
         >
           <View>
             <Text style={styles.linkRowTitle}>Política de privacidade</Text>
-            {/* Datas cortadas do mock fase-5 do 008 (sem fonte na época) — voltam aqui com fonte
-                real (consent_log, via consentService.getStatus). Sem evento, some sem quebrar. */}
-            {consentMeta ? (
-              <Text style={styles.linkRowSubtitle}>
-                Aceito em {consentMeta.date}
-                {consentMeta.version ? ` · v${consentMeta.version}` : ''}
-              </Text>
-            ) : null}
+            {/* Versão PUBLICADA vigente (não "quando você aceitou" — isso vive na seção
+                Consentimento). Fonte canônica: CURRENT_POLICY_VERSION (@dosiq/core), síncrona,
+                independe de o usuário ter aceito esta versão ou não. */}
+            <Text style={styles.linkRowSubtitle}>Versão vigente: v{CURRENT_POLICY_VERSION}</Text>
           </View>
           <ChevronRight size={16} color={colors.primary[500]} />
         </Pressable>
@@ -136,31 +121,12 @@ export default function PrivacyDataScreen() {
   // usuário não ter que caçar o botão depois de pedir "exportar antes de apagar".
   const openExportParam = !!(route.params as { openExport?: boolean } | undefined)?.openExport
   const [exportSheetOpen, setExportSheetOpen] = useState(openExportParam)
-  const [consentMeta, setConsentMeta] = useState(null)
 
   // O param é uma ORDEM, não estado da tela: consumir na chegada. Se ficar no state da
   // navegação, qualquer volta futura pra este hub (back, deep link) reabriria o sheet sozinho.
   useEffect(() => {
     if (openExportParam) (navigation as any).setParams({ openExport: undefined })
   }, [openExportParam, navigation])
-
-  // Subtítulo "Aceito em dd/mm/aaaa · vX" na linha de Política — best-effort: falha de leitura
-  // (getStatus lança) NÃO é tratada como "não informado", só deixa o subtítulo ausente.
-  useEffect(() => {
-    let active = true
-    consentService
-      .getStatus('health_data')
-      .then((state) => {
-        if (!active || state.status !== 'granted' || !state.updatedAt) return
-        setConsentMeta({ date: formatConsentDate(state.updatedAt), version: state.policyVersion })
-      })
-      .catch(() => {
-        if (active) setConsentMeta(null)
-      })
-    return () => {
-      active = false
-    }
-  }, [])
 
   const goBack = () => (navigation as any).goBack()
   const openExportSheet = () => setExportSheetOpen(true)
@@ -179,7 +145,7 @@ export default function PrivacyDataScreen() {
 
         <PrivacyConsentSection />
         <ExportSection onOpenSheet={openExportSheet} />
-        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} consentMeta={consentMeta} />
+        <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} />
         <DangerZoneSection onDeleteAccount={goToDeleteAccount} />
       </ScrollView>
 

@@ -59,7 +59,7 @@ describe('PrivacyConsentSection', () => {
   it('mostra "Ativo" + data/versão quando granted', async () => {
     mockGetStatus.mockResolvedValue({
       status: 'granted',
-      policyVersion: '0.2',
+      policyVersion: '0.3',
       updatedAt: '2026-07-01T12:00:00-03:00',
       stale: false,
     })
@@ -67,13 +67,13 @@ describe('PrivacyConsentSection', () => {
     render(<PrivacyConsentSection />)
 
     expect(await screen.findByText('Ativo')).toBeTruthy()
-    expect(screen.getByText(/Aceito em 01\/07\/2026 · v0\.2/)).toBeTruthy()
+    expect(screen.getByText(/Aceito em 01\/07\/2026 · v0\.3/)).toBeTruthy()
   })
 
   it('mostra "Retirado" sem botão de revogar', async () => {
     mockGetStatus.mockResolvedValue({
       status: 'revoked',
-      policyVersion: '0.2',
+      policyVersion: '0.3',
       updatedAt: '2026-07-05T09:00:00-03:00',
       stale: false,
     })
@@ -108,7 +108,7 @@ describe('PrivacyConsentSection', () => {
   it('revogar exige duas etapas antes de chamar consentService.revoke', async () => {
     mockGetStatus.mockResolvedValue({
       status: 'granted',
-      policyVersion: '0.2',
+      policyVersion: '0.3',
       updatedAt: '2026-07-01T12:00:00-03:00',
       stale: false,
     })
@@ -128,7 +128,7 @@ describe('PrivacyConsentSection', () => {
   })
 
   it('🔴 revogar reavalia o GUARD RAIZ na hora — senão o app seguiria navegável (bug do smoke)', async () => {
-    mockGetStatus.mockResolvedValue({ status: 'granted', policyVersion: '0.2', updatedAt: '2026-07-01T12:00:00-03:00', stale: false })
+    mockGetStatus.mockResolvedValue({ status: 'granted', policyVersion: '0.3', updatedAt: '2026-07-01T12:00:00-03:00', stale: false })
     mockRevoke.mockResolvedValue({ ok: true })
 
     render(<PrivacyConsentSection />)

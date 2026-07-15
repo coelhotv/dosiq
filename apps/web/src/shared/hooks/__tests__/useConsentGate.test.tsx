@@ -39,7 +39,7 @@ vi.mock('@dosiq/core', async (importOriginal) => {
 
 import { ConsentGateProvider, useConsentGate, isConsentAllowedView } from '../useConsentGate'
 
-const SESSION = { user_metadata: { health_consent: true, policy_version: '0.2' } }
+const SESSION = { user_metadata: { health_consent: true, policy_version: '0.3' } }
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return <ConsentGateProvider session={SESSION}>{children}</ConsentGateProvider>
@@ -89,7 +89,7 @@ describe('useConsentGate — falha de leitura da trilha (PO-2)', () => {
 
 describe('useConsentGate — estados lidos com sucesso', () => {
   it('granted → allow', async () => {
-    mockGetStatus.mockResolvedValue({ status: 'granted', policyVersion: '0.2', updatedAt: '2026-07-01T10:00:00Z', stale: false })
+    mockGetStatus.mockResolvedValue({ status: 'granted', policyVersion: '0.3', updatedAt: '2026-07-01T10:00:00Z', stale: false })
 
     const { result } = renderHook(() => useConsentGate(), { wrapper })
     await waitFor(() => expect(result.current.ready).toBe(true))
@@ -99,7 +99,7 @@ describe('useConsentGate — estados lidos com sucesso', () => {
   })
 
   it('revoked → trava (e não conta sessão: sessão é do prompt de quem nunca se manifestou)', async () => {
-    mockGetStatus.mockResolvedValue({ status: 'revoked', policyVersion: '0.2', updatedAt: '2026-07-10T10:00:00Z', stale: false })
+    mockGetStatus.mockResolvedValue({ status: 'revoked', policyVersion: '0.3', updatedAt: '2026-07-10T10:00:00Z', stale: false })
 
     const { result } = renderHook(() => useConsentGate(), { wrapper })
     await waitFor(() => expect(result.current.ready).toBe(true))

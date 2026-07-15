@@ -67,6 +67,10 @@ describe('consentSchema — copy canônica do opt-in', () => {
     expect(label).toContain('biomarcadores')
   })
 
+  it('o label embute a auto-declaração de idade 16+ no mesmo ato do consentimento (spec 046, item C)', () => {
+    expect(HEALTH_CONSENT_COPY.label.toLowerCase()).toContain('16 anos ou mais')
+  })
+
   it('o aviso de revogação informa o prune de 90 dias e as saídas do titular', () => {
     expect(HEALTH_CONSENT_COPY.revokeWarning).toContain('90 dias')
     expect(HEALTH_CONSENT_COPY.revokeWarning.toLowerCase()).toContain('exportar')

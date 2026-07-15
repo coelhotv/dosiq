@@ -8,11 +8,13 @@
 import { useState } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import * as WebBrowser from 'expo-web-browser'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
-const { ShieldCheck } = LucideIcons as any
+const { ShieldCheck, FileText } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { createConsentService } from '@dosiq/core'
+import { EXTERNAL_URLS } from '../../../shared/constants'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 
 const consentService = createConsentService({ client: supabase as never })
@@ -30,8 +32,22 @@ export default function ConsentRegularizationSheet({
 }: ConsentRegularizationSheetProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Não se pode pedir novo aceite sem dar como ler a nova política. "Aceitar" fica travado até o
+  // titular ABRIR e FECHAR a webview da política (openBrowserAsync resolve no fechamento) — assim
+  // o aceite carimbado no consent_log corresponde a alguém que teve a política diante dos olhos.
+  const [hasRead, setHasRead] = useState(false)
 
   if (!visible) return null
+
+  const handleOpenPolicy = async () => {
+    setError(null)
+    try {
+      await WebBrowser.openBrowserAsync(EXTERNAL_URLS.PRIVACY_POLICY)
+      setHasRead(true)
+    } catch {
+      setError('Não foi possível abrir a política agora. Tente de novo.')
+    }
+  }
 
   const handleAccept = async () => {
     setSaving(true)
@@ -64,17 +80,35 @@ export default function ConsentRegularizationSheet({
         </View>
         <Text style={styles.title}>A política de privacidade mudou</Text>
         <Text style={styles.description}>
-          Atualizamos a política de privacidade. Aceite a nova versão para continuar em dia com o
-          seu consentimento de dados de saúde.
+          Atualizamos a política de privacidade. Leia a nova versão e, se concordar, confirme seu
+          consentimento de dados de saúde para continuar em dia.
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Pressable
-          onPress={handleAccept}
+          onPress={handleOpenPolicy}
           disabled={saving}
-          style={({ pressed }) => [styles.optionPrimary, (pressed || saving) && styles.pressed]}
+          style={({ pressed }) => [styles.btnRead, pressed && styles.pressed]}
           accessibilityRole="button"
+          accessibilityLabel="Ler a nova política de privacidade"
+        >
+          <FileText size={16} color={colors.primary[600]} strokeWidth={2} />
+          <Text style={styles.btnReadText}>
+            {hasRead ? 'Política lida ✓' : 'Ler a nova política'}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleAccept}
+          disabled={saving || !hasRead}
+          style={({ pressed }) => [
+            styles.optionPrimary,
+            (pressed || saving) && styles.pressed,
+            !hasRead && styles.optionDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: saving || !hasRead }}
           accessibilityLabel="Aceitar a nova versão"
         >
           {saving ? (
@@ -150,6 +184,23 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     marginBottom: spacing[3],
   },
+  btnRead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    minHeight: 48,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+    backgroundColor: colors.primary[50],
+    marginBottom: spacing[3],
+  },
+  btnReadText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary[600],
+  },
   optionPrimary: {
     minHeight: 52,
     borderRadius: borderRadius.lg,
@@ -157,6 +208,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing[3],
+  },
+  optionDisabled: {
+    opacity: 0.45,
   },
   optionPrimaryLabel: {
     fontSize: 15,

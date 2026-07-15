@@ -101,9 +101,9 @@ export function LandingPrivacidade() {
             <h2>Seu histórico sob seu controle.</h2>
             <p className="lp-dark-copy">
               Acreditamos que dados de saúde não devem ser mercadoria. Por isso, usamos
-              criptografia <b>HTTPS</b> e proteção por <b>Row Level Security (RLS)</b> para
-              garantir que seu histórico permaneça privado e inacessível a qualquer pessoa,
-              incluindo nossa equipe.
+              criptografia <b>HTTPS</b> em trânsito e isolamento por <b>Row Level Security (RLS)</b>,
+              que restringe o acesso a cada registro ao seu próprio dono. Seu histórico não é
+              vendido nem compartilhado com terceiros.
             </p>
 
             <ul className="lp-check-list">
@@ -112,6 +112,15 @@ export function LandingPrivacidade() {
               <li><CircleCheckIcon className="lp-text-green" size={18} />Arquitetura técnica segura (HTTPS e RLS)</li>
               <li><CircleCheckIcon className="lp-text-green" size={18} />Exportação completa (CSV/JSON)</li>
             </ul>
+
+            <a
+              className="lp-dark-link"
+              href="/politica-de-privacidade.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ler a política de privacidade
+            </a>
           </div>
 
           <div className="lp-quote-card">

@@ -33,14 +33,10 @@ jest.mock('../../components/PrivacyConsentSection', () => {
   return () => <MockView testID="privacy-consent-section" />
 })
 
-// Subtítulo de versão/data na linha de Política (T012) usa consentService.getStatus — mockado
-// para resolver `missing` (sem evento), que é o caso mais comum e não exige asserts extras aqui.
-jest.mock('@dosiq/core', () => ({
-  ...jest.requireActual('@dosiq/core'),
-  createConsentService: () => ({
-    getStatus: jest.fn().mockResolvedValue({ status: 'missing', policyVersion: null, updatedAt: null, stale: false }),
-  }),
-}))
+// A linha de Política mostra a VERSÃO PUBLICADA vigente (CURRENT_POLICY_VERSION), não mais
+// "quando você aceitou" (T019b: essa info é da seção Consentimento). Fonte síncrona do core —
+// requireActual garante o valor real.
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 
 describe('PrivacyDataScreen', () => {
   beforeEach(() => {
@@ -123,5 +119,13 @@ describe('PrivacyDataScreen', () => {
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith(
       'https://dosiq.app/politica-de-privacidade',
     )
+  })
+
+  it('Transparência mostra a versão publicada vigente, não a data/versão do aceite', () => {
+    const { getByText, queryByText } = render(<PrivacyDataScreen />)
+
+    expect(getByText(`Versão vigente: v${CURRENT_POLICY_VERSION}`)).toBeTruthy()
+    // A info de "quando você aceitou" mudou de casa (agora só na seção Consentimento).
+    expect(queryByText(/Aceito em/)).toBeNull()
   })
 })

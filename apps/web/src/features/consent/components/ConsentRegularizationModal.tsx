@@ -5,9 +5,11 @@
 // useConsentGate, nunca insert direto), que carimba a versão vigente no servidor.
 
 import { useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, FileText } from 'lucide-react'
 import { useConsentGate } from '@shared/hooks/useConsentGate'
 import './ConsentRegularizationModal.css'
+
+const PRIVACY_POLICY_URL = '/politica-de-privacidade.html'
 
 interface ConsentRegularizationModalProps {
   visible: boolean
@@ -23,8 +25,17 @@ export default function ConsentRegularizationModal({
   const { grant } = useConsentGate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Não se pode pedir novo aceite sem dar como ler a nova política. "Aceitar" fica travado até o
+  // titular abrir a política. Em aba nova o navegador NÃO avisa o fechamento — o proxy honesto é
+  // "abriu para ler" (clicou no link), não "leu e fechou" (indetectável fora de webview embutida).
+  const [hasRead, setHasRead] = useState(false)
 
   if (!visible) return null
+
+  const handleOpenPolicy = () => {
+    window.open(PRIVACY_POLICY_URL, '_blank', 'noopener,noreferrer')
+    setHasRead(true)
+  }
 
   const handleAccept = async () => {
     setSaving(true)
@@ -51,17 +62,27 @@ export default function ConsentRegularizationModal({
         </div>
         <h2 className="consent-regularization-modal__title">A política de privacidade mudou</h2>
         <p className="consent-regularization-modal__description">
-          Atualizamos a política de privacidade. Aceite a nova versão para continuar em dia com o
-          seu consentimento de dados de saúde.
+          Atualizamos a política de privacidade. Leia a nova versão e, se concordar, confirme seu
+          consentimento de dados de saúde para continuar em dia.
         </p>
 
         {error && <p className="consent-regularization-modal__error">{error}</p>}
 
         <button
           type="button"
+          className="consent-regularization-modal__read"
+          onClick={handleOpenPolicy}
+          disabled={saving}
+        >
+          <FileText size={16} aria-hidden="true" />
+          {hasRead ? 'Política lida ✓' : 'Ler a nova política'}
+        </button>
+
+        <button
+          type="button"
           className="consent-regularization-modal__accept"
           onClick={handleAccept}
-          disabled={saving}
+          disabled={saving || !hasRead}
         >
           {saving ? 'Registrando...' : 'Aceitar a nova versão'}
         </button>

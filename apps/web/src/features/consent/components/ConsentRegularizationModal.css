@@ -50,6 +50,28 @@
   color: var(--color-error, #b91c1c);
 }
 
+.consent-regularization-modal__read {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  margin-bottom: 10px;
+  border: 1px solid var(--color-primary, #16a34a);
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-primary-bg, #f0fdf4);
+  color: var(--color-primary, #16a34a);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.consent-regularization-modal__read:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .consent-regularization-modal__accept {
   width: 100%;
   height: 48px;
