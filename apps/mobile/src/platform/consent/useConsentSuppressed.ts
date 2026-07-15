@@ -13,7 +13,7 @@
 // piscar de rede. Um revoke real está persistido no servidor; a próxima leitura bem-sucedida (foreground
 // ou bus) suprime. A trava da UI do app é gateada à parte (ConsentGateProvider, que trata indeterminado).
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AppState } from 'react-native'
 import { createConsentService } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
@@ -24,18 +24,15 @@ const consentService = createConsentService({ client: supabase as never })
 /** true quando o consentimento de dado de saúde está REVOGADO — o bridge deve desarmar suas superfícies. */
 export function useConsentSuppressed(userId: string | null): boolean {
   const [suppressed, setSuppressed] = useState(false)
-  const suppressedRef = useRef(false)
 
   const check = useCallback(async () => {
     if (!userId) {
-      suppressedRef.current = false
       setSuppressed(false)
       return
     }
     try {
       const current = await consentService.getStatus('health_data')
       const next = current.status === 'revoked'
-      suppressedRef.current = next
       setSuppressed(next)
     } catch {
       // Indeterminado (falha de leitura): mantém o valor anterior — ver FAIL-OPEN no cabeçalho.
