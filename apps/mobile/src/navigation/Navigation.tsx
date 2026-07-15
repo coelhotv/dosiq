@@ -33,6 +33,7 @@ import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDem
 import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
 import ConsentResolutionScreen from '../features/consent/screens/ConsentResolutionScreen'
 import ConsentPrompt from '../features/consent/components/ConsentPrompt'
+import ConsentRegularizationSheet from '../features/consent/components/ConsentRegularizationSheet'
 import PrivacyDataScreen from '../features/profile/screens/PrivacyDataScreen'
 import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen'
 import { ConsentGateProvider, useConsentGate } from '../platform/consent/useConsentGate'
@@ -251,6 +252,8 @@ function NavigationTree({
   setOnboardingNeeded,
 }: ReturnType<typeof useAuthSession>) {
   const consent = useConsentGate()
+  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
+  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
   // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
@@ -297,6 +300,14 @@ function NavigationTree({
     !isPasswordRecovery &&
     consent.mode === 'prompt_dismissible' &&
     !consent.dismissed
+
+  // Nudge de regularização: consentiu numa política ANTIGA (`stale`, mode 'allow' → não trava).
+  // Overlay dispensável por cima do app, como o prompt dispensável.
+  const showRegularization =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.needsRegularization &&
+    !regularizationDismissed
 
   // Um único NavigationContainer (ref compartilhada). O filho alterna entre o
   // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a
@@ -393,6 +404,14 @@ function NavigationTree({
         />
       </View>
     )}
+
+    {/* Nudge de política nova (stale): Modal próprio, flutua sobre o app. Aceitar carimba a versão
+        vigente (o Sheet chama grant internamente) → refresh reavalia o gate e some o stale. */}
+    <ConsentRegularizationSheet
+      visible={showRegularization}
+      onDismiss={() => setRegularizationDismissed(true)}
+      onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+    />
     </View>
     </StockTrackingProvider>
   )

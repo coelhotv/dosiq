@@ -2,11 +2,12 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Auth from './views/Auth'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useConsentGate, isConsentAllowedView } from '@shared/hooks/useConsentGate'
 import ConsentPrompt from '@features/consent/components/ConsentPrompt'
+import ConsentRegularizationModal from '@features/consent/components/ConsentRegularizationModal'
 
 const Landing = lazy(() => import('./views/landing/Landing'))
 const Medicines = lazy(() => import('./views/Medicines'))
@@ -109,6 +110,8 @@ export default function AppViewRouter({
   // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
   const consent = useConsentGate()
+  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
+  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
   useEffect(() => {
     if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
@@ -207,5 +210,16 @@ export default function AppViewRouter({
     )
   }
 
-  return content;
+  // 5. CONSENTIU numa política ANTIGA (`stale`) — nudge de regularização. NÃO trava (mode 'allow'):
+  //    o app segue livre, o modal é um convite dispensável por cima. Aceitar carimba a versão nova.
+  return (
+    <>
+      {content}
+      <ConsentRegularizationModal
+        visible={consent.needsRegularization && !regularizationDismissed}
+        onDismiss={() => setRegularizationDismissed(true)}
+        onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+      />
+    </>
+  );
 }
