@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/046-lgpd-consent/plan.md",
     "tasks": "plans/specs/046-lgpd-consent/tasks.md",
-    "goal": "046 Slice A MERGEADO (#744) — trilha probatória + recibo de exclusão. Próximo: Slice B (gate/guards/superfícies).",
+    "goal": "046 ÉPICO FECHADO — Slice B + publicação política v0.3 MERGEADOS (#745). Gate de consentimento ativo em prod sobre a v0.3. Próximo: nova spec (047/048/049/050 no backlog) ou publicar build mobile 0.27.0 (notas em docs/standards/RELEASES.md).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 744,
-    "merged_squash": "ff0f67bc",
+    "merged_pr": 745,
+    "merged_squash": "eed05724",
     "merged_history": [
+      {
+        "pr": 745,
+        "squash": "eed05724",
+        "phase": "046 ÉPICO FECHADO — Slice B (gate de consentimento na UI) + T019a/T019b (publicação política v0.3). O gate ficou em DRAFT de propósito para estrear já sobre a política completa: a base consente UMA vez, sobre a v0.3, sem aceite intermediário em v0.2 virar stale. policy_version 0.2->0.3 sincronizado nos TRÊS lugares que são contrato (CURRENT_POLICY_VERSION @dosiq/core, os 2 HTMLs em public/, a linha de consent_policy que os RPCs carimbam) — migração 20260715_consent_policy_v03.sql em prod; grep provou zero '0.2' hardcoded. Auto-declaração de idade 16+ embutida no MESMO label do opt-in (art. 14): mesmo clique, mesmo evento granted, prova correlacionada ao ato, sem UI nova — política cita verbatim. Ajustes de UX da fase final (pedido do PO): (1) nudge de política nova (web+mobile) não pede novo aceite sem dar como ler — link + Aceitar TRAVADO até abrir a política (mobile: fecha a webview; web: abre em aba nova); (2) hub mobile Transparência mostra a versão PUBLICADA vigente (CURRENT_POLICY_VERSION) em vez de 'Aceito em...vX' (info já na seção Consentimento); (3) landing web ganhou link p/ a política + suavizou overclaim 'inacessível incluindo nossa equipe' (RLS não é E2E). AP-296 (re-review Gemini): feature espelhada web<->mobile com trava presente só de um lado — signUp guard + gate.refresh existiam no mobile e faltavam no web, ambos VERDES porque o gate de UI mascarava a falta e o teste web codificava o comportamento incompleto; diff superfície-a-superfície entre plataformas, trava de um lado = checklist do outro. Declínios com prova: guard consentSuppressed no AlarmBridge (flushCriticalAudit já recebe o flag; RLS não bloqueia o dono após revoke; guardar quebraria self-healing no re-consent) e rethrow nos hooks (setState(null)=indeterminado é contrato do Slice A; FAIL-OPEN do useConsentSuppressed é decisão de segurança). SQP: web 4.18.0 · mobile 0.27.0 · core 0.6.0 · consent_policy prod 0.3 · CHANGELOG + RELEASES.md novo. Gates: strict-island ratchet OK · lint 0 · validate:agent 2014/2014 · mobile 434. Aprovado PO -> squash+delete.",
+        "note": "ÉPICO 046 COMPLETO (Slice A #744 + Slice B/publicação #745). Gate ativo em prod sobre v0.3. Docs: separação CHANGELOG interno vs RELEASES.md externo (notas de loja) — 0.27.0 pronta para submissão quando publicar o build mobile. Avaliar /devflow distill no fechamento de fase (counter=7, threshold 15 — não obrigatório por threshold, mas é fim de épico)."
+      },
       {
         "pr": 744,
         "squash": "ff0f67bc",
@@ -184,9 +190,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 241,
-    "anti_patterns_count": 291,
+    "anti_patterns_count": 292,
     "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": false
