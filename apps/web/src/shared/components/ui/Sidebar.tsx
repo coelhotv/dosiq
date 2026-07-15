@@ -1,6 +1,7 @@
 import { Calendar, Pill, Package, User, Bell } from 'lucide-react'
 import RegisterSpeedDial from './RegisterSpeedDial'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { isConsentAllowedView } from '@shared/hooks/useConsentGate'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -11,11 +12,18 @@ const NAV_ITEMS = [
   { id: 'profile', label: 'Perfil', Icon: User },
 ]
 
-export default function Sidebar({ currentView, setCurrentView, onRegisterDose, onRegisterMeasure, unreadCount = 0 }) {
+export default function Sidebar({ currentView, setCurrentView, onRegisterDose, onRegisterMeasure, unreadCount = 0, consentLocked = false }) {
   // Spec 044 F3: item "Estoque" some da navegação quando o controle de estoque está
   // desligado (preferência global — fail-safe = ligado enquanto o provider não resolve).
   const { enabled: stockTrackingEnabled } = useStockTracking()
-  const navItems = NAV_ITEMS.filter((item) => item.id !== 'stock' || stockTrackingEnabled)
+  // 046: com o consentimento revogado, a navegação some tudo que é PRODUTO — sobram só as rotas da
+  // allowlist (perfil, onde vive o export). Clicar em produto cairia no guard de qualquer forma;
+  // esconder aqui evita a UI que promete acesso que a trava vai negar.
+  const navItems = NAV_ITEMS.filter((item) => {
+    if (item.id === 'stock' && !stockTrackingEnabled) return false
+    if (consentLocked && !isConsentAllowedView(item.id)) return false
+    return true
+  })
 
   return (
     <aside className="sidebar" aria-label="Menu lateral">
@@ -50,13 +58,16 @@ export default function Sidebar({ currentView, setCurrentView, onRegisterDose, o
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <RegisterSpeedDial
-          variant="sidebar"
-          onRegisterDose={onRegisterDose}
-          onRegisterMeasure={onRegisterMeasure}
-        />
-      </div>
+      {/* Registro de dose/medida é tratamento de dado de saúde — some com o consentimento revogado. */}
+      {!consentLocked && (
+        <div className="sidebar-footer">
+          <RegisterSpeedDial
+            variant="sidebar"
+            onRegisterDose={onRegisterDose}
+            onRegisterMeasure={onRegisterMeasure}
+          />
+        </div>
+      )}
     </aside>
   )
 }

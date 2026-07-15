@@ -18,6 +18,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { validateUserProfile } from '../schemas/userProfileSchema'
 import type { StockTrackingPreference } from '../schemas/userSettingsSchema'
+import { isNewConsentSession } from '../services/consentGate'
 import { getServerTimestamp, getTodayLocal } from '../utils/dateUtils'
 
 // Colunas de perfil lidas/escritas (R-127: só o necessário).
@@ -25,6 +26,9 @@ const PROFILE_COLUMNS = 'display_name, birth_date, city, state, phone, complexit
 
 // Spec 044 — preferência de controle de estoque (read-path R-267: schema + este select).
 const STOCK_TRACKING_COLUMNS = 'stock_tracking_enabled, stock_paused_at'
+
+// Spec 046 — contador do prompt de consentimento (sessão = bootstrap com gap > 30 min).
+const CONSENT_PROMPT_COLUMNS = 'consent_prompt_sessions, consent_prompt_last_seen_at'
 
 // Spec 008 — allowlist do export LGPD. NUNCA incluir `verification_token` (segredo).
 // Literal (não `[].join()`): o supabase-js tipa o retorno a partir da STRING do select —
@@ -293,6 +297,58 @@ export function createProfileRepository({ client, getUserId }: CreateProfileRepo
         stock_tracking_enabled: data.stock_tracking_enabled ?? true,
         stock_paused_at: data.stock_paused_at ?? null,
       }
+    },
+
+    /**
+     * Contador de sessões em que o prompt de consentimento apareceu (spec 046, T009).
+     * Fail-safe: sem linha em `user_settings` ⇒ zero sessões (titular novo, cortesia intacta).
+     */
+    async getConsentPrompt(): Promise<{ sessions: number; lastSeenAt: string | null }> {
+      const userId = await getUserId()
+      const { data, error } = await client
+        .from('user_settings')
+        .select(CONSENT_PROMPT_COLUMNS)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) throw error
+      return {
+        sessions: data?.consent_prompt_sessions ?? 0,
+        lastSeenAt: data?.consent_prompt_last_seen_at ?? null,
+      }
+    },
+
+    /**
+     * Conta UMA nova sessão de prompt, se o bootstrap atual for mesmo uma sessão nova
+     * (gap > 30 min desde o último visto — `isNewConsentSession`).
+     *
+     * Sem o gap, um refresh de página ou um retorno do background queimaria a cortesia do titular
+     * em segundos: ele chegaria ao prompt BLOQUEANTE sem nunca ter tido três oportunidades reais de
+     * responder. Idempotente dentro da janela — chamar a cada bootstrap é seguro.
+     *
+     * ⚠️ SÓ chamar quando o estado do consentimento é `missing` DE FATO (lido com sucesso). Sob
+     * estado indeterminado (falha de leitura) o guard não conta sessão — ver `consentGate`.
+     */
+    async bumpConsentPromptSession(): Promise<{ sessions: number; counted: boolean }> {
+      const current = await repo.getConsentPrompt()
+      if (!isNewConsentSession(current.lastSeenAt)) {
+        return { sessions: current.sessions, counted: false }
+      }
+
+      const userId = await getUserId()
+      const sessions = current.sessions + 1
+      const { error } = await client.from('user_settings').upsert(
+        {
+          user_id: userId,
+          consent_prompt_sessions: sessions,
+          consent_prompt_last_seen_at: getServerTimestamp(),
+          updated_at: getServerTimestamp(),
+        },
+        { onConflict: 'user_id' },
+      )
+
+      if (error) throw error
+      return { sessions, counted: true }
     },
 
     async deleteAccount() {

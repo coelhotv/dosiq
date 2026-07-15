@@ -9,6 +9,7 @@ import EmergencyCard from './profile/EmergencyCard'
 import ProfileTools from './profile/ProfileTools'
 import ProfileModals from './profile/ProfileModals'
 import TzNudge from './profile/TzNudge'
+import PrivacyConsentSection from '@features/consent/components/PrivacyConsentSection'
 import './profile/Profile.css'
 
 export default function Profile({ onNavigate }) {
@@ -64,6 +65,10 @@ export default function Profile({ onNavigate }) {
       </div>
 
       <ProfileTools onNavigate={onNavigate} setIsReportModalOpen={setIsReportModalOpen} setIsExportDialogOpen={setIsExportDialogOpen} />
+
+      {/* 046: card de consentimento no hub de privacidade (espelha o PrivacyDataScreen mobile) —
+          é aqui que o usuário web vê o estado e revoga sem estar já travado. */}
+      <PrivacyConsentSection />
 
       <ProfileModals
         isEditingProfile={isEditingProfile} setIsEditingProfile={setIsEditingProfile} profileForm={profileForm} setProfileForm={setProfileForm}

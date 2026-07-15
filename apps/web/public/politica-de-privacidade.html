@@ -144,9 +144,38 @@
         padding-left: 20px;
       }
 
+      .section table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+
+      .section th,
+      .section td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        line-height: 1.5;
+        vertical-align: top;
+      }
+
+      .section th {
+        color: var(--text);
+        font-size: 0.9rem;
+      }
+
       .callout {
         border-left: 4px solid var(--brand-2);
         background: rgba(198, 127, 69, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        margin-top: 16px;
+      }
+
+      .highlight {
+        border-left: 4px solid var(--brand);
+        background: rgba(29, 108, 99, 0.08);
         border-radius: 14px;
         padding: 14px 16px;
         margin-top: 16px;
@@ -180,6 +209,38 @@
         .section {
           padding: 22px;
         }
+
+        .section table,
+        .section thead,
+        .section tbody,
+        .section th,
+        .section td,
+        .section tr {
+          display: block;
+        }
+
+        .section thead {
+          display: none;
+        }
+
+        .section tr {
+          border-bottom: 1px solid var(--line);
+          padding: 10px 0;
+        }
+
+        .section td {
+          border-bottom: none;
+          padding: 4px 0;
+        }
+
+        .section td::before {
+          content: attr(data-label);
+          display: block;
+          font-weight: 700;
+          color: var(--text);
+          font-size: 0.82rem;
+          margin-bottom: 2px;
+        }
       }
     </style>
   </head>
@@ -196,8 +257,8 @@
           </p>
           <div class="meta">
             <span>Produto: Dosiq</span>
-            <span>Versão do documento: 0.2</span>
-            <span>Última atualização: 08/05/2026</span>
+            <span>Versão do documento: 0.3</span>
+            <span>Última atualização: 15/07/2026</span>
           </div>
         </div>
       </div>
@@ -208,76 +269,157 @@
         <section class="section">
           <h2>1. Introdução</h2>
           <p>
-            O <strong>Dosiq</strong> é um aplicativo para organização da rotina de
+            O <strong>dosiq</strong> é um aplicativo para organização da rotina de
             medicamentos, acompanhamento de tratamentos, registro de doses e controle de estoque.
           </p>
           <p>
-            Esta Política de Privacidade explica quais dados podem ser tratados pelo aplicativo,
-            para quais finalidades, como esses dados são protegidos e quais escolhas e direitos o
-            usuário possui.
+            Esta Política explica quais dados o dosiq trata, para quê, com que base legal, com
+            quem eles podem ser compartilhados, por quanto tempo ficam guardados e quais escolhas
+            e direitos você tem sobre eles.
           </p>
         </section>
 
         <section class="section">
           <h2>2. Responsável pelo tratamento dos dados</h2>
           <div class="contact-card">
-            <p><strong>Responsável pelo aplicativo:</strong> Dosiq</p>
-            <p><strong>Contato de suporte e privacidade:</strong> contact@dosiq.app</p>
+            <p><strong>Controlador:</strong> Antonio Carlos do C. G. Coelho (pessoa física), CPF 199.366.348-70.</p>
+            <p><strong>Encarregado (DPO):</strong> Antonio Carlos do C. G. Coelho — mesmo contato.</p>
+            <p><strong>Contato de suporte e privacidade:</strong> privacidade@dosiq.app</p>
           </div>
         </section>
 
         <section class="section">
-          <h2>3. Quais dados podem ser tratados</h2>
+          <h2>3. Quais dados tratamos</h2>
           <h3>3.1. Dados de cadastro e autenticação</h3>
           <ul>
             <li>e-mail</li>
-            <li>identificador interno de usuário</li>
+            <li>identificador interno da conta</li>
             <li>informações necessárias para autenticação e manutenção de sessão</li>
           </ul>
 
-          <h3>3.2. Dados de saúde e rotina informados pelo usuário</h3>
+          <h3>3.2. Dados de saúde e rotina que você informa</h3>
           <ul>
             <li>nomes de medicamentos</li>
-            <li>tratamentos e protocolos cadastrados</li>
-            <li>doses, horários e frequências</li>
+            <li>tratamentos cadastrados (dose, horário, frequência)</li>
             <li>registros de doses tomadas</li>
-            <li>informações de estoque dos medicamentos</li>
+            <li>estoque de medicamentos</li>
+            <li><strong>biomarcadores</strong> (glicemia, peso, pressão arterial)</li>
           </ul>
 
           <p>
-            Esses dados podem ser considerados <strong>dados pessoais sensíveis</strong>, nos
-            termos da LGPD, por estarem relacionados à saúde.
+            Esses dados são <strong>dados pessoais sensíveis</strong>, nos termos da LGPD, por
+            estarem relacionados à sua saúde.
           </p>
 
           <h3>3.3. Dados técnicos mínimos de funcionamento</h3>
           <ul>
             <li>informações básicas de sessão</li>
-            <li>identificadores técnicos necessários para funcionamento da conta</li>
-            <li>dados necessários para segurança, autenticação e integridade da aplicação</li>
-            <li>tokens ou identificadores necessários para notificações, quando o usuário ativar esse recurso</li>
+            <li>identificadores técnicos da conta</li>
+            <li>token de notificação push, quando você ativa lembretes (no computador ou no celular)</li>
+            <li>identificador de vínculo com o Telegram, se você conectar o bot</li>
           </ul>
 
-          <h3>3.4. O que o app não faz por padrão</h3>
+          <h3>3.4. O que não fazemos por padrão</h3>
           <ul>
-            <li>não vende dados pessoais</li>
-            <li>não compartilha dados de saúde com anunciantes</li>
-            <li>não usa rastreamento publicitário como finalidade principal do produto</li>
+            <li>não vendemos seus dados pessoais</li>
+            <li>não compartilhamos dados de saúde com anunciantes</li>
+            <li>não usamos rastreamento publicitário como finalidade do produto</li>
           </ul>
         </section>
 
         <section class="section">
-          <h2>4. Para que usamos esses dados</h2>
-          <ul>
-            <li>permitir login e acesso seguro à conta</li>
-            <li>mostrar a rotina diária de medicamentos</li>
-            <li>registrar doses e acompanhar adesão ao tratamento</li>
-            <li>exibir tratamentos ativos</li>
-            <li>controlar estoque de medicamentos</li>
-            <li>manter sincronização entre dispositivos, quando aplicável</li>
-            <li>enviar lembretes e notificações configurados pelo usuário</li>
-            <li>oferecer suporte ao usuário</li>
-            <li>cumprir obrigações legais e de segurança, quando necessário</li>
-          </ul>
+          <h2>5. Consentimento específico e destacado para dados de saúde</h2>
+          <div class="callout">
+            <p>
+              A LGPD (art. 11) exige que dado de saúde tenha consentimento <strong>específico</strong>
+              (não misturado com o aceite geral de Termos) e <strong>destacado</strong> (visível, não
+              escondido em letra miúda). Por isso, no cadastro, você vê uma caixa de marcação
+              separada, com este texto exato:
+            </p>
+          </div>
+          <div class="highlight">
+            <p>
+              <strong>"Autorizo o dosiq a tratar meus dados de saúde (medicamentos, doses, adesão e
+              biomarcadores) para me enviar lembretes, registrar meu histórico e calcular minha
+              adesão ao tratamento, e declaro ter 16 anos ou mais."</strong>
+            </p>
+          </div>
+          <p>
+            Esse é o mesmo texto que aparece na tela de cadastro — não existem duas redações
+            diferentes para o mesmo consentimento.
+          </p>
+          <p>
+            <strong>Sem essa marcação, sua conta não é criada.</strong> Isso não é um truque para
+            forçar aceite: o dosiq é, por definição, um serviço que trata dado de saúde — não
+            existe uma versão do app "sem dados de saúde" para oferecer como alternativa. A base
+            legal aqui é o art. 11, II, alíneas 'a' e 'f' da LGPD: o tratamento é indispensável
+            para a execução do próprio serviço que você pediu. Você pode ler mais sobre isso nos
+            <a href="/termos-de-uso.html">Termos de Uso</a>.
+          </p>
+          <p>
+            Cada vez que você marca ou retira esse consentimento, o dosiq registra um evento numa
+            trilha própria — com a data, a versão desta política que você aceitou e se foi pelo
+            computador ou pelo celular. Essa trilha não pode ser adulterada nem por você mesmo:
+            nem o próprio dosiq escreve linhas diretas nela, só através de uma rotina de banco de
+            dados que carimba os dados automaticamente. É o que garante que, se um dia precisarmos
+            provar que você consentiu (ou que revogou), a prova é confiável.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>4. Para que tratamos cada dado, e com que base legal</h2>
+          <table>
+            <thead>
+              <tr><th>Finalidade</th><th>Dados envolvidos</th><th>Base legal (LGPD)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Finalidade">Lembretes de dose</td>
+                <td data-label="Dados envolvidos">tratamentos, horários, token de push/e-mail</td>
+                <td data-label="Base legal">consentimento específico (art. 11, dado de saúde) + execução do serviço solicitado</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Registro de doses tomadas</td>
+                <td data-label="Dados envolvidos">registros de dose</td>
+                <td data-label="Base legal">consentimento específico (art. 11) + execução do serviço</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Cálculo de adesão ao tratamento</td>
+                <td data-label="Dados envolvidos">registros de dose, tratamentos</td>
+                <td data-label="Base legal">consentimento específico (art. 11) + execução do serviço</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Controle de estoque</td>
+                <td data-label="Dados envolvidos">estoque, compras</td>
+                <td data-label="Base legal">execução do serviço solicitado (art. 7º, V)</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Biomarcadores (glicemia, peso, pressão)</td>
+                <td data-label="Dados envolvidos">biomarcadores</td>
+                <td data-label="Base legal">consentimento específico (art. 11) — você escolhe registrar cada medida</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Login e segurança da conta</td>
+                <td data-label="Dados envolvidos">e-mail, sessão</td>
+                <td data-label="Base legal">execução do serviço + cumprimento de obrigação legal (segurança, art. 46)</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Assistente de conversa (chatbot)</td>
+                <td data-label="Dados envolvidos">pergunta digitada + dados do seu painel usados como contexto da resposta</td>
+                <td data-label="Base legal">consentimento (você inicia a conversa) + legítimo interesse na qualidade da resposta</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Vínculo com o Telegram</td>
+                <td data-label="Dados envolvidos">identificador de chat do Telegram</td>
+                <td data-label="Base legal">consentimento — você é quem inicia a vinculação (link direto no bot)</td>
+              </tr>
+              <tr>
+                <td data-label="Finalidade">Prova de conformidade LGPD</td>
+                <td data-label="Dados envolvidos">trilha de consentimento, recibo de exclusão</td>
+                <td data-label="Base legal">exercício regular de direitos (art. 7º, VI · art. 16, III) — ver seção 11</td>
+              </tr>
+            </tbody>
+          </table>
           <p>
             O app não substitui acompanhamento médico, diagnóstico, prescrição ou atendimento de
             urgência.
@@ -285,129 +427,244 @@
         </section>
 
         <section class="section">
-          <h2>5. Base legal e princípios de privacidade</h2>
+          <h2>6. Com quem seus dados podem ser compartilhados</h2>
           <p>
-            O tratamento de dados pessoais é realizado com fundamento nas bases legais aplicáveis,
-            incluindo execução dos serviços solicitados pelo usuário, segurança da aplicação,
-            cumprimento de obrigações legais e, quando necessário, consentimento para tratamentos
-            específicos.
+            Não vendemos dados pessoais. O compartilhamento existe só com <strong>operadores</strong> —
+            empresas que processam dados por nós, sob instrução nossa, para o app funcionar:
           </p>
-          <p>O Dosiq busca seguir os princípios da LGPD, especialmente:</p>
-          <ul>
-            <li>finalidade</li>
-            <li>necessidade</li>
-            <li>transparência</li>
-            <li>segurança</li>
-            <li>prevenção</li>
-          </ul>
+          <table>
+            <thead>
+              <tr><th>Operador</th><th>O que trata</th><th>Onde/como</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Operador"><strong>Supabase</strong></td>
+                <td data-label="O que trata">banco de dados, autenticação, todos os dados de cadastro e saúde</td>
+                <td data-label="Onde/como">infraestrutura de banco de dados na nuvem que hospeda a persistência do app</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Vercel</strong></td>
+                <td data-label="O que trata">hospedagem da versão para computador e das funções de servidor de aplicações (envio de notificações, chatbot)</td>
+                <td data-label="Onde/como">hospedagem/computação na nuvem</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Expo / push notifications</strong></td>
+                <td data-label="O que trata">token de notificação, para entregar lembretes no app do celular</td>
+                <td data-label="Onde/como">serviço de push do ecossistema Expo (Android/iOS)</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Push do navegador (computador)</strong></td>
+                <td data-label="O que trata">inscrição de notificação do navegador, para lembretes na versão para computador</td>
+                <td data-label="Onde/como">padrão de push do navegador (tecnicamente "Web Push/VAPID"), sem operador terceiro adicional além do próprio navegador</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Firebase Analytics</strong> (Google)</td>
+                <td data-label="O que trata">eventos de uso do app do celular (telas vistas, ações realizadas) — não inclui conteúdo de doses/medicamentos no evento</td>
+                <td data-label="Onde/como">serviço de analytics do Google, só no app do celular</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Telegram</strong></td>
+                <td data-label="O que trata">identificador de chat, se você optar por vincular o bot</td>
+                <td data-label="Onde/como">serviço de mensageria do próprio Telegram; a vinculação é sempre uma ação sua, nunca automática</td>
+              </tr>
+              <tr>
+                <td data-label="Operador"><strong>Groq</strong></td>
+                <td data-label="O que trata">o texto da sua pergunta ao assistente + um resumo dos seus dados de tratamento, enviados como contexto para gerar a resposta</td>
+                <td data-label="Onde/como">provedor de inferência de IA que processa a conversa. A Groq <strong>não usa</strong> o conteúdo das chamadas de API para treinar modelos, e retém logs de entrada/saída por até <strong>30 dias</strong>, só para resolução de falhas ou investigação de abuso — não como prática padrão de guarda.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            O compartilhamento com autoridades só ocorre mediante obrigação legal ou ordem de
+            autoridade competente.
+          </p>
         </section>
 
         <section class="section">
-          <h2>6. Armazenamento e infraestrutura</h2>
-          <p>
-            O Dosiq pode utilizar infraestrutura própria e de terceiros para operar a
-            aplicação, incluindo autenticação, banco de dados, hospedagem e serviços necessários ao
-            funcionamento do produto.
-          </p>
-          <p>
-            No estado atual do projeto, parte central da persistência e autenticação é operada com
-            apoio de infraestrutura Supabase.
-          </p>
-          <p>
-            Quando notificações, hospedagem, monitoramento técnico ou outros recursos auxiliares
-            forem utilizados, os respectivos provedores poderão tratar somente os dados necessários
-            para entregar esses recursos e manter a segurança da aplicação.
-          </p>
-        </section>
-
-        <section class="section">
-          <h2>7. Compartilhamento de dados</h2>
-          <p>Os dados não são compartilhados com terceiros para venda de informações pessoais.</p>
-          <p>O compartilhamento pode ocorrer apenas nas seguintes hipóteses:</p>
-          <ul>
-            <li>com provedores de infraestrutura necessários para operar o aplicativo</li>
-            <li>quando houver obrigação legal ou ordem de autoridade competente</li>
-            <li>quando o usuário solicitar ou autorizar uma integração específica</li>
-          </ul>
-        </section>
-
-        <section class="section">
-          <h2>8. Segurança das informações</h2>
+          <h2>7. Segurança das informações</h2>
           <p>
             São adotadas medidas razoáveis para proteger os dados pessoais contra acesso não
-            autorizado, uso indevido, alteração, divulgação ou destruição indevida.
+            autorizado, uso indevido, alteração, divulgação ou destruição indevida:
           </p>
           <ul>
-            <li>autenticação de usuário</li>
-            <li>controle de acesso por conta</li>
-            <li>segregação lógica de dados</li>
-            <li>uso de infraestrutura com mecanismos adequados de segurança</li>
+            <li>autenticação de usuário;</li>
+            <li>controle de acesso por conta;</li>
+            <li>segregação lógica de dados;</li>
+            <li>uso de infraestrutura com mecanismos adequados de segurança;</li>
+            <li>as rotinas que gravam ou apagam sua trilha de consentimento rodam com permissões restritas dentro do banco de dados — nem o próprio dosiq acessa esses registros por um caminho direto, só por rotinas auditadas;</li>
+            <li>o identificador usado para localizar sua trilha após a exclusão da conta é irreversível (explicado na seção 11) — mesmo em caso de vazamento do banco, não é possível transformar esse identificador de volta no seu e-mail.</li>
           </ul>
           <p>
             Ainda assim, nenhum sistema é totalmente invulnerável. Por isso, também é importante
-            que o usuário proteja suas credenciais de acesso.
+            que você proteja suas credenciais de acesso.
           </p>
         </section>
 
         <section class="section">
-          <h2>9. Direitos do usuário</h2>
-          <p>Nos termos da legislação aplicável, o usuário pode solicitar:</p>
-          <ul>
-            <li>confirmação da existência de tratamento</li>
-            <li>acesso aos próprios dados</li>
-            <li>correção de dados incompletos, inexatos ou desatualizados</li>
-            <li>anonimização, bloqueio ou eliminação, quando cabível</li>
-            <li>portabilidade, quando aplicável</li>
-            <li>informações sobre compartilhamento</li>
-            <li>revogação de consentimento, quando essa for a base legal aplicável</li>
-            <li>solicitação de exclusão de conta e dados, conforme limites legais e operacionais</li>
-          </ul>
+          <h2>8. Direitos do titular e como exercer cada um</h2>
+          <p>
+            As ações abaixo são de <strong>autoatendimento, com efeito imediato</strong>, tanto no
+            app do celular quanto no computador (Perfil → seção "Consentimento" / "Privacidade e
+            dados", conforme a plataforma):
+          </p>
+          <table>
+            <thead>
+              <tr><th>Direito</th><th>Onde</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Direito">Confirmação de tratamento e acesso aos dados</td>
+                <td data-label="Onde">Perfil → Privacidade e dados (celular) / Perfil (computador)</td>
+              </tr>
+              <tr>
+                <td data-label="Direito">Exportar uma cópia completa dos seus dados (portabilidade, art. 18, V)</td>
+                <td data-label="Onde">Perfil → Privacidade e dados → Exportar dados (celular) / Perfil → Exportar dados (computador)</td>
+              </tr>
+              <tr>
+                <td data-label="Direito">Revogar o consentimento de dados de saúde</td>
+                <td data-label="Onde">Perfil → Privacidade e dados → Revogar consentimento (celular) / Perfil → "Consentimento" → Revogar (computador)</td>
+              </tr>
+              <tr>
+                <td data-label="Direito">Excluir a conta e os dados</td>
+                <td data-label="Onde">Perfil → Privacidade e dados → Excluir conta (<strong>só no app do celular</strong> — ver nota abaixo)</td>
+              </tr>
+              <tr>
+                <td data-label="Direito">Correção de dados incompletos ou desatualizados</td>
+                <td data-label="Onde">diretamente nas telas de cadastro/medicamentos/tratamentos</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout">
+            <p>
+              <strong>Exclusão de conta pelo computador:</strong> essa ação ainda não tem botão de
+              autoatendimento na versão para computador. Você tem duas opções:
+            </p>
+            <ul>
+              <li><strong>Baixar o app no celular</strong> — mesma conta, ação imediata; ou</li>
+              <li>
+                <strong>Escrever para <a href="mailto:privacidade@dosiq.app">privacidade@dosiq.app</a></strong>
+                pedindo a exclusão. Respondemos e executamos em <strong>até 15 dias úteis</strong> a
+                partir da confirmação da sua identidade (nos alinhamos ao prazo do art. 19 da LGPD
+                para confirmação/acesso, e adotamos o mesmo prazo por padrão para os demais pedidos
+                que ainda dependem de e-mail). Podemos pedir uma confirmação simples de identidade
+                (ex.: responder de dentro do próprio e-mail de cadastro) antes de agir, para
+                proteger sua conta contra pedidos indevidos de terceiros.
+              </li>
+            </ul>
+          </div>
+          <p>
+            Confirmação/acesso e correção de dados também podem ser pedidos por e-mail, com o
+            mesmo prazo, se por algum motivo você preferir não usar o app.
+          </p>
+        </section>
+
+        <section class="section">
+          <h2>9. O que acontece quando você revoga o consentimento</h2>
+          <p>
+            Revogar não é a mesma coisa que excluir a conta — é um estado intermediário, para você
+            decidir com calma o que fazer. A revogação é <strong>autoatendimento tanto no app do
+            celular quanto no computador</strong> (Perfil → Revogar consentimento).
+          </p>
+          <ol>
+            <li>
+              Ao revogar, o app <strong>para de te enviar lembretes de dose</strong> imediatamente
+              e trava numa tela única, com exatamente três saídas: <strong>exportar seus
+              dados</strong>, <strong>excluir a conta</strong> ou <strong>voltar a
+              consentir</strong>.
+            </li>
+            <li>
+              Você consegue exportar seus dados e excluir a conta mesmo estando nesse estado
+              travado — essas duas ações nunca ficam bloqueadas.
+            </li>
+            <li>
+              Se você não tomar nenhuma dessas três ações em <strong>90 dias</strong>, o dosiq
+              apaga automaticamente sua conta e seus dados, do mesmo jeito que uma exclusão
+              manual. Você recebe avisos antes disso acontecer (dois avisos genéricos, sem menção
+              a medicamento ou condição de saúde, para não expor sua situação em uma notificação
+              bloqueada na tela do celular).
+            </li>
+          </ol>
         </section>
 
         <section class="section">
           <h2>10. Exclusão de conta e dados</h2>
           <p>
-            O usuário pode solicitar a exclusão da conta e dos dados pessoais associados ao Dosiq
-            a qualquer momento. Para fazer a solicitação, envie um e-mail para
-            <a href="mailto:contact@dosiq.app">contact@dosiq.app</a> com o assunto
-            "Exclusão de conta e dados" e informe o e-mail usado no cadastro.
+            <strong>No app do celular</strong>, você pode excluir sua conta a qualquer momento em
+            <strong>Perfil → Privacidade e dados → Excluir conta</strong>, sem precisar de e-mail —
+            ação imediata. <strong>No computador</strong>, o pedido é por e-mail
+            (<a href="mailto:privacidade@dosiq.app">privacidade@dosiq.app</a>), com prazo de
+            execução de até <strong>15 dias úteis</strong> a partir da confirmação da sua
+            identidade (mesmo prazo da seção 8) — continua valendo enquanto o computador não tiver
+            o botão de autoatendimento.
           </p>
+          <p>Ao confirmar a exclusão:</p>
+          <ul>
+            <li>todos os seus dados de saúde e uso são apagados — medicamentos, tratamentos, registros de dose, estoque, biomarcadores, preferências;</li>
+            <li>sua conta de login é apagada;</li>
+            <li><strong>exceção deliberada</strong>: a trilha do seu consentimento e um recibo da própria exclusão continuam existindo, mas sem o seu e-mail nem qualquer dado clínico — ver seção 11 para o porquê.</li>
+          </ul>
           <p>
-            Após receber a solicitação, o Dosiq poderá pedir confirmação de identidade para proteger
-            a conta contra pedidos indevidos. Confirmada a solicitação, serão apagados ou
-            anonimizados os dados de conta e os dados associados ao uso do aplicativo, incluindo
-            medicamentos, tratamentos, registros de doses, estoque e preferências, salvo quando a
-            retenção for necessária para cumprir obrigação legal, regulatória, antifraude, de
-            segurança ou para resguardar direitos.
+            Se você tiver um tratamento marcado como ativo no momento, o app pede confirmação
+            extra antes de excluir (para evitar que você perca o controle de um tratamento em
+            curso por engano). Você pode exportar seus dados antes de excluir — é a forma
+            recomendada de manter uma cópia pessoal.
           </p>
-          <div class="contact-card">
-            <p><strong>Canal de solicitação:</strong> contact@dosiq.app</p>
-            <p><strong>Pedido recomendado:</strong> exclusão da conta e dos dados associados</p>
-          </div>
         </section>
 
         <section class="section">
-          <h2>11. Retenção de dados</h2>
-          <p>Os dados podem ser mantidos pelo tempo necessário para:</p>
-          <ul>
-            <li>executar as funcionalidades do app</li>
-            <li>atender solicitações do usuário</li>
-            <li>cumprir obrigações legais e regulatórias</li>
-            <li>preservar segurança e integridade do serviço</li>
-          </ul>
+          <h2>11. Retenção de dados — o que sobrevive à exclusão da conta, e por quê</h2>
+          <p>Esta é a parte que mais gera dúvida, então vamos com calma.</p>
           <p>
-            Quando os dados deixarem de ser necessários, eles serão eliminados ou anonimizados,
-            observadas as hipóteses legais aplicáveis e as solicitações de exclusão feitas pelo
-            usuário.
+            <strong>Regra geral</strong>: quando você exclui sua conta, apagamos tudo — sem
+            exceção para os dados clínicos. Nenhuma cópia de "backup por precaução" do seu
+            histórico de medicamentos, doses ou biomarcadores fica guardada em lugar nenhum. Se
+            você quiser uma cópia, exporte antes de excluir (seção 8) — essa é a única cópia que
+            existe depois.
+          </p>
+          <p>
+            <strong>A única coisa que sobrevive</strong> é um registro mínimo de que você existiu
+            como usuário, consentiu (ou revogou) em determinada data, e que sua conta foi excluída
+            em determinado momento. Não é o dado — é a <strong>prova de que houve base legal</strong>
+            para tratar o dado enquanto ele existiu.
+          </p>
+          <p>
+            Por que guardamos essa prova, e por quanto tempo? Porque se um dia alguém questionar
+            judicialmente se o dosiq tratou os dados de saúde de uma pessoa de forma correta, o
+            dosiq precisa conseguir mostrar: "sim, essa pessoa consentiu nesta data, com este
+            texto, e quando pediu para sair, apagamos tudo nesta outra data". Sem esse registro,
+            "apagar direito" e "nunca ter cuidado direito" ficam indistinguíveis. A LGPD prevê
+            exatamente essa retenção mínima, sob a base legal de <strong>exercício regular de
+            direitos</strong> (art. 7º, VI e art. 16, III), pelo prazo de <strong>5 anos</strong> —
+            o mesmo prazo geral de prescrição usado no Código de Defesa do Consumidor.
+          </p>
+          <p>
+            <strong>Como isso é guardado sem manter seu e-mail</strong>: em vez do seu e-mail,
+            guardamos uma versão embaralhada dele (um "hash" com uma chave secreta que só existe
+            dentro do banco de dados). Esse embaralhamento é <strong>de mão única</strong> — não
+            existe operação que transforme o resultado de volta no seu e-mail. Ele só serve para
+            uma coisa: se um dia recebermos um requerimento judicial nomeando você
+            especificamente, conseguimos embaralhar o e-mail informado no requerimento da mesma
+            forma e comparar, para confirmar que a linha é sua — sem nunca ter mantido seu e-mail
+            em claro depois da exclusão. Se a chave secreta usada nesse embaralhamento for
+            perdida, essa trilha vira permanentemente anônima — e essa chave nunca é trocada,
+            exatamente para não correr esse risco.
           </p>
         </section>
 
         <section class="section">
           <h2>12. Crianças e adolescentes</h2>
           <p>
-            O Dosiq não é direcionado intencionalmente a crianças sem supervisão de
-            responsável. Se o uso envolver dados de menores de idade, devem ser observados os
-            requisitos legais aplicáveis.
+            O dosiq é classificado para maiores de <strong>16 anos</strong> nas lojas de
+            aplicativo. O dosiq não é direcionado a crianças (0-12 anos, definição do Estatuto da
+            Criança e do Adolescente) em nenhuma circunstância.
+          </p>
+          <p>
+            Para adolescentes de 16-17 anos, o dosiq trata o consentimento de dados de saúde
+            conforme o princípio do melhor interesse do adolescente (LGPD, art. 14, caput): seus
+            dados nunca são usados para publicidade direcionada, perfilamento comercial ou
+            qualquer finalidade além da organização do próprio tratamento medicamentoso que você
+            mesmo cadastra. A linguagem do consentimento (seção 5) é a mesma para todos os
+            usuários — simples e direta, sem juridiquês.
           </p>
         </section>
 
@@ -423,9 +680,9 @@
         <section class="section">
           <h2>14. Alterações desta política</h2>
           <p>
-            Esta Política de Privacidade poderá ser atualizada periodicamente para refletir evolução
-            do produto, mudanças legais ou alterações técnicas relevantes. A versão atualizada
-            passará a ser disponibilizada no canal oficial do produto.
+            Esta Política de Privacidade poderá ser atualizada periodicamente para refletir
+            evolução do produto, mudanças legais ou alterações técnicas relevantes. A versão
+            atualizada passará a ser disponibilizada no canal oficial do produto.
           </p>
         </section>
       </div>

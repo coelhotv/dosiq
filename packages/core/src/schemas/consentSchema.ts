@@ -47,7 +47,7 @@ export type ConsentPlatform = (typeof CONSENT_PLATFORMS)[number]
  * auditado escolheria a versão que diz ter aceitado). Ela serve para EXIBIR ("você aceitou a
  * versão X") e para detectar política nova.
  */
-export const CURRENT_POLICY_VERSION = '0.2'
+export const CURRENT_POLICY_VERSION = '0.3'
 
 /**
  * COPY CANÔNICA do opt-in de dado de saúde (LGPD art. 11 — consentimento específico e destacado).
@@ -59,9 +59,14 @@ export const CURRENT_POLICY_VERSION = '0.2'
  */
 export const HEALTH_CONSENT_COPY = Object.freeze({
   title: 'Consentimento para dados de saúde',
+  // Declaração de idade (16+) embutida na MESMA frase do opt-in (spec 046, item C das TAREFAS):
+  // mesmo clique, mesmo evento `granted` no consent_log — a prova de diligência nasce
+  // correlacionada ao ato que tratou o dado sensível, sem UI nova. A política cita este texto
+  // VERBATIM (T017) — mudou aqui, muda no HTML.
   label:
     'Autorizo o dosiq a tratar meus dados de saúde (medicamentos, doses, adesão e biomarcadores) ' +
-    'para me enviar lembretes, registrar meu histórico e calcular minha adesão ao tratamento.',
+    'para me enviar lembretes, registrar meu histórico e calcular minha adesão ao tratamento, ' +
+    'e declaro ter 16 anos ou mais.',
   helper:
     'Sem essa autorização o dosiq não consegue funcionar — é o dado de saúde que gera os ' +
     'lembretes e o histórico. Você pode retirar o consentimento a qualquer momento em ' +

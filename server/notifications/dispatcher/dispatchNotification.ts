@@ -7,6 +7,7 @@ import { createLogger } from '../../bot/logger.js'
 import { z } from 'zod'
 import { buildNotificationPayload, kindSchema } from '../payloads/buildNotificationPayload.js'
 import { resolveChannelsForUser } from '../policies/resolveChannelsForUser.js'
+import { isConsentSuppressed } from '../policies/consentSuppression.js'
 import { normalizeChannelResults } from '../utils/normalizeChannelResults.js'
 import { 
   getNow, 
@@ -81,6 +82,20 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
   let isSuppressed = false
   const settings = await repositories.preferences.getSettingsByUserId(userId)
   const currentHHMM = getCurrentTime()
+
+  // 046 T014 — consentimento REVOGADO suspende TODA notificação, de qualquer kind. Fica aqui, no
+  // funil por onde toda notificação passa, e não job a job: filtrar em cinco jobs significa lembrar
+  // do sexto quando ele nascer; aqui, um kind novo já nasce coberto.
+  //
+  // O estado vem do MESMO fetch de settings logo acima (`consent_revoked_at`) — sem query nova e sem
+  // leitura global. É o que garante o isolamento: um erro ao ler a linha DESTE usuário suprime só
+  // ele (fail-closed por usuário), e nunca a necessidade clínica dos outros pacientes.
+  if (isConsentSuppressed(settings)) {
+    logger.info('Notificação suprimida — consentimento de dado de saúde revogado (ou estado ilegível)', {
+      correlationId, userId, kind
+    })
+    return normalizeChannelResults([])
+  }
 
   isSuppressed = checkGatePolicy({ userId, kind, settings, currentHHMM, correlationId })
 

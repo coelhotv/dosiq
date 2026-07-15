@@ -70,3 +70,15 @@ export type { CriticalAuditEvent } from './criticalAuditService'
 // Trilha de consentimento LGPD (spec 046 — grant/revoke são RPC, nunca INSERT)
 export { createConsentService } from './consentService'
 export type { ConsentService, ConsentIntent } from './consentService'
+
+// Gate de consentimento (spec 046 Slice B — decisão pura, web e mobile compartilham)
+export {
+  resolveConsentGate,
+  isConsentAllowedRoute,
+  isNewConsentSession,
+  CONSENT_PROMPT_FREE_SESSIONS,
+  CONSENT_SESSION_GAP_MS,
+  CONSENT_ALLOWED_WEB_VIEWS,
+  CONSENT_ALLOWED_MOBILE_ROUTES,
+} from './consentGate'
+export type { ConsentGateMode, ConsentGateDecision } from './consentGate'

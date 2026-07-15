@@ -177,11 +177,14 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
       dateRange: ExportDateRange | null = null,
     ): Promise<ExportBundle> {
       const userId = await getUserId()
+      // 046 Slice D: `stockTracked` é só METADADO informativo agora — NÃO gateia mais os dados.
+      // O estoque desligado (044) congela lotes/compras no banco; eles são do titular (art. 18) e
+      // saem no export independentemente da preferência. Condicionar a inclusão a `stockTracked`
+      // escondia dado real (o furo de cobertura LGPD — R-291).
       const stockTracked = scope.includeStock ? await isStockTracked() : true
 
       // Estoque e compras vêm aninhados nos medicamentos — uma busca serve às duas seções.
-      const needsMedicines =
-        scope.includeMedicines || (scope.includeStock && stockTracked)
+      const needsMedicines = scope.includeMedicines || scope.includeStock
 
       const [profile, medicines, protocols, logs, biomarkers, email] = await Promise.all([
         scope.includeProfile ? profileRepo.getProfileForExport() : Promise.resolve(null),
@@ -201,7 +204,8 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
         medicines: scope.includeMedicines ? (medicines ?? []) : null,
         protocols,
         logs,
-        stock: scope.includeStock && stockTracked ? (medicines ?? []) : null,
+        // Sempre que o titular pediu estoque, os dados vão — mesmo com o controle desligado.
+        stock: scope.includeStock ? (medicines ?? []) : null,
         biomarkers,
       }
     },

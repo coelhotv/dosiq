@@ -14,6 +14,7 @@ import { signUpWithEmail, verifyOtpWithEmail } from '../platform/auth/authServic
 import { captureDeviceTimezone } from '@profile/services/profileService'
 import { ROUTES } from '../navigation/routes'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
+import HealthConsentCheckbox from '@features/consent/components/HealthConsentCheckbox'
 import { colors, spacing, borderRadius, typography, shadows } from '@shared/styles/tokens'
 
 function SignupSuccessView({
@@ -143,19 +144,40 @@ export default function SignupScreen({ navigation }) {
   const [otpCode, setOtpCode] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [otpError, setOtpError] = useState(null)
+  // 046 T005 — nasce DESMARCADO: consentimento pré-marcado não é consentimento (LGPD art. 8º §4).
+  const [healthConsent, setHealthConsent] = useState(false)
+  const [consentError, setConsentError] = useState(false)
 
   async function handleSignup() {
-    setLoading(true)
-    setError(null)
-    // Campo único de senha: usamos o mesmo valor como confirmação (a validação
-    // canônica de signup exige confirmPassword).
-    const { success, error: signupError } = await signUpWithEmail(email, password, password)
-    setLoading(false)
-    if (!success) {
-      setError(signupError)
+    // Gate de submit (FR-002): sem opt-in, o cadastro para aqui. Criar a conta e só depois pedir
+    // consentimento deixaria uma conta sem base legal para o dado que ela já começou a gerar.
+    if (!healthConsent) {
+      setConsentError(true)
       return
     }
-    setEmailSent(true)
+
+    setLoading(true)
+    setError(null)
+    try {
+      // Campo único de senha: usamos o mesmo valor como confirmação (a validação
+      // canônica de signup exige confirmPassword).
+      const { success, error: signupError } = await signUpWithEmail(email, password, password, { healthConsent })
+      if (!success) {
+        setError(signupError)
+        return
+      }
+      setEmailSent(true)
+    } catch {
+      // Exceção inesperada — sem isto o botão ficaria travado em loading.
+      setError('Erro inesperado ao criar conta')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleConsentChange(checked) {
+    setHealthConsent(checked)
+    if (checked) setConsentError(false)
   }
 
   async function handleVerifyOtp() {
@@ -252,6 +274,15 @@ export default function SignupScreen({ navigation }) {
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          {/* Opt-in de dado de saúde — destacado por exigência legal (art. 11): não pode estar
+              embutido no aceite genérico de Termos/Privacidade do rodapé. */}
+          <HealthConsentCheckbox
+            checked={healthConsent}
+            onChange={handleConsentChange}
+            disabled={loading}
+            showError={consentError}
+          />
 
           {/* Card: Sua conta, suas regras */}
           <SignupInfoCard />

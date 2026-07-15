@@ -9,7 +9,7 @@
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
 import { useEffect, useState } from 'react'
-import { View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
+import { View, Text, Pressable, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
@@ -31,6 +31,12 @@ import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
 import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
+import ConsentResolutionScreen from '../features/consent/screens/ConsentResolutionScreen'
+import ConsentPrompt from '../features/consent/components/ConsentPrompt'
+import ConsentRegularizationSheet from '../features/consent/components/ConsentRegularizationSheet'
+import PrivacyDataScreen from '../features/profile/screens/PrivacyDataScreen'
+import DeleteAccountScreen from '../features/profile/screens/DeleteAccountScreen'
+import { ConsentGateProvider, useConsentGate } from '../platform/consent/useConsentGate'
 import { isOnboardingNeeded } from '../features/profile/services/profileService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -190,14 +196,64 @@ function useAuthSession() {
   }
 }
 
+/**
+ * TRAVA DO CONSENTIMENTO — allowlist ESTRUTURAL (spec 046, T009 / R2 / F8).
+ *
+ * Com o app travado, o navigator registra SÓ estas telas. Não é uma checagem que alguém pode
+ * esquecer de escrever: a rota fora desta lista literalmente NÃO EXISTE enquanto a trava está de
+ * pé. Uma denylist faria o oposto — bastaria esquecer uma rota para o titular revogado ficar preso
+ * numa tela sem export e sem exclusão, justamente os direitos que a revogação deveria tornar MAIS
+ * acessíveis, não menos. Aqui, rota nova nasce trancada, e liberar é um ato deliberado.
+ */
+function ConsentLockedNavigator({ mode, onGrant, onGranted }) {
+  return (
+    <Stack.Navigator id="ConsentLockedStack" screenOptions={{ headerShown: false }}>
+      {mode === 'blocked_revoked' ? (
+        <Stack.Screen name={ROUTES.CONSENT_RESOLUTION} component={ConsentResolutionScreen} />
+      ) : (
+        <Stack.Screen name={ROUTES.CONSENT_RESOLUTION}>
+          {() => <ConsentPrompt blocking onGrant={onGrant} onGranted={onGranted} />}
+        </Stack.Screen>
+      )}
+      {/* Hub do 008: export + política + exclusão. É esta rota que sustenta o anti-deadlock.
+          headerShown:false — ambas as telas trazem header próprio (SafeAreaView + linha de voltar);
+          o header nativo empilharia por cima e viraria header duplo. */}
+      <Stack.Screen
+        name={ROUTES.PRIVACY_DATA}
+        component={PrivacyDataScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name={ROUTES.DELETE_ACCOUNT}
+        component={DeleteAccountScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  )
+}
+
 export default function Navigation() {
-  const {
-    session,
-    isPasswordRecovery,
-    setIsPasswordRecovery,
-    onboardingNeeded,
-    setOnboardingNeeded,
-  } = useAuthSession()
+  const auth = useAuthSession()
+  // ConsentGateProvider ENVOLVE a árvore: assim o guard raiz (NavigationTree) e o card do hub
+  // (PrivacyConsentSection, lá dentro) leem o MESMO estado. Revogar no card chama refresh do MESMO
+  // gate → a trava aparece na hora, sem esperar o próximo foreground.
+  return (
+    <ConsentGateProvider session={auth.session}>
+      <NavigationTree {...auth} />
+    </ConsentGateProvider>
+  )
+}
+
+function NavigationTree({
+  session,
+  isPasswordRecovery,
+  setIsPasswordRecovery,
+  onboardingNeeded,
+  setOnboardingNeeded,
+}: ReturnType<typeof useAuthSession>) {
+  const consent = useConsentGate()
+  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
+  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
   // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
@@ -209,8 +265,9 @@ export default function Navigation() {
   }
 
   // Aguarda verificação inicial — evita flash de ecrã errado.
-  // Também aguarda o gate de onboarding resolver quando há sessão.
-  if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null)) {
+  // Também aguarda o gate de onboarding e o de consentimento resolverem quando há sessão.
+  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
+  if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
@@ -218,16 +275,57 @@ export default function Navigation() {
     )
   }
 
+  // INDETERMINADO — não conseguimos LER a trilha de consentimento. NÃO libera e NÃO bloqueia por si
+  // só: é falha de carregamento, não um fato sobre a vontade do titular. Tratar isto como `missing`
+  // ressuscitaria, na materialização, um consentimento REVOGADO numa oscilação de rede (furo HIGH do
+  // review do Slice A). Nada é escrito e nenhuma sessão de prompt é contada aqui.
+  if (session && !isPasswordRecovery && consent.mode === 'indeterminate') {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.gateErrorText}>
+          Não foi possível verificar suas preferências de privacidade. Verifique sua conexão e tente de novo.
+        </Text>
+        <Pressable style={styles.gateRetry} onPress={() => consent.refresh()} accessibilityRole="button">
+          <Text style={styles.gateRetryText}>Tentar de novo</Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  // O gate do consentimento vem ANTES do onboarding: quem nunca consentiu não pode ser levado ao
+  // wizard, que existe justamente para começar a gerar dado de saúde.
+  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
+  const showDismissiblePrompt =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.mode === 'prompt_dismissible' &&
+    !consent.dismissed
+
+  // Nudge de regularização: consentiu numa política ANTIGA (`stale`, mode 'allow' → não trava).
+  // Overlay dispensável por cima do app, como o prompt dispensável.
+  const showRegularization =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.needsRegularization &&
+    !regularizationDismissed
+
   // Um único NavigationContainer (ref compartilhada). O filho alterna entre o
   // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a
   // mesma ref disparavam "navigation hasn't been initialized" na troca.
   return (
     <StockTrackingProvider session={session}>
+    <View style={styles.flex}>
     <NavigationContainer
       ref={navigationRef}
       onStateChange={handleNavigationStateChange}
     >
-      {session && !isPasswordRecovery && onboardingNeeded ? (
+      {consentLocked ? (
+        <ConsentLockedNavigator
+          mode={consent.mode}
+          onGrant={consent.grant}
+          onGranted={() => consent.refresh()}
+        />
+      ) : session && !isPasswordRecovery && onboardingNeeded ? (
         <OnboardingNavigator onComplete={() => setOnboardingNeeded(false)} />
       ) : (
       <Stack.Navigator
@@ -293,14 +391,64 @@ export default function Navigation() {
       </Stack.Navigator>
       )}
     </NavigationContainer>
+
+    {/* Prompt dispensável (até a 3ª sessão): overlay POR CIMA do app, com saída. Da 4ª em diante
+        ele vira tela bloqueante e sai daqui — passa a ser o ConsentLockedNavigator. */}
+    {showDismissiblePrompt && (
+      <View style={styles.promptOverlay}>
+        <ConsentPrompt
+          blocking={false}
+          onGrant={consent.grant}
+          onDismiss={consent.dismiss}
+          onGranted={() => consent.refresh()}
+        />
+      </View>
+    )}
+
+    {/* Nudge de política nova (stale): Modal próprio, flutua sobre o app. Aceitar carimba a versão
+        vigente (o Sheet chama grant internamente) → refresh reavalia o gate e some o stale. */}
+    <ConsentRegularizationSheet
+      visible={showRegularization}
+      onDismiss={() => setRegularizationDismissed(true)}
+      onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+    />
+    </View>
     </StockTrackingProvider>
   )
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  gateErrorText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#64748b',
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+  gateRetry: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  gateRetryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0f172a',
+  },
+  promptOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#fff',
   },
 })

@@ -38,6 +38,8 @@ export const ROUTES = {
   CHANGE_PASSWORD: 'ChangePassword',     // Fase 4 — Alterar senha
   DELETE_ACCOUNT: 'DeleteAccount',       // Fase 4 — Excluir conta
   PRIVACY_DATA: 'PrivacyData',           // Spec 008 — hub Privacidade e dados (export + política + exclusão)
+  CONSENT_RESOLUTION: 'ConsentResolution', // Spec 046 — saída da revogação (export | excluir | re-consentir)
+  CONSENT_PROMPT: 'ConsentPrompt',         // Spec 046 — opt-in voluntário (quem deu "Agora não" e voltou pra autorizar)
   TELEGRAM_LINK: 'TelegramLink',
   NOTIFICATION_PREFERENCES: 'NotificationPreferences',
   NOTIFICATION_INBOX: 'NotificationInbox',

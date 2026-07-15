@@ -773,6 +773,20 @@
   gap: 16px;
 }
 
+.lp-dark-link {
+  display: inline-block;
+  margin-top: 28px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--lp-blue-light, #7dd3fc);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lp-dark-link:hover {
+  opacity: 0.85;
+}
+
 .lp-check-list li {
   display: flex;
   align-items: center;

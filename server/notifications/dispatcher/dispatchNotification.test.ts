@@ -81,6 +81,82 @@ afterEach(() => {
   mockSendNotification.mockReset()
 })
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 046 T014 — supressão por consentimento revogado.
+//
+// Ela vive no dispatcher (o funil de TODA notificação) e se decide com a linha de `user_settings`
+// DAQUELE usuário. O teste que mais importa é o do isolamento: o defeito da 1ª versão era um SELECT
+// global cuja falha abortava o run inteiro — a situação de um titular derrubava o lembrete de dose
+// de todos os outros pacientes.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('dispatchNotification — consentimento revogado (046 T014)', () => {
+  const dispatchFor = (userId: string) =>
+    dispatchNotification({
+      userId,
+      kind: 'dose_reminder',
+      data: mockData,
+      channels: ['telegram', 'mobile_push'],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+
+  it('🔴 titular que revogou não recebe NADA — nenhum canal é sequer tocado', async () => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      notification_mode: 'realtime',
+      quiet_hours_enabled: false,
+      channel_mobile_push_enabled: true,
+      channel_telegram_enabled: true,
+      consent_revoked_at: '2026-07-10T10:00:00Z',
+    })
+
+    const result = await dispatchFor('user-revogou')
+
+    expect(result.totalDelivered).toBe(0)
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+  })
+
+  it('🔴 falha ao ler as settings de UM usuário suprime só ele (não vira permissão de envio)', async () => {
+    mockRepositories.preferences.getSettingsByUserId.mockResolvedValueOnce({
+      notification_mode: 'realtime',
+      quiet_hours_enabled: false,
+      consent_revoked_at: null,
+      _read_failed: true,
+    })
+
+    const result = await dispatchFor('user-leitura-falhou')
+
+    expect(result.totalDelivered).toBe(0)
+    expect(mockBot.sendMessage).not.toHaveBeenCalled()
+  })
+
+  it('🔴 ISOLAMENTO: o paciente ao lado recebe normalmente na mesma execução', async () => {
+    // Este é o teste que existe por causa do defeito da 1ª versão. Um usuário revogado (ou com a
+    // linha ilegível) NÃO pode custar o lembrete de dose de quem consentiu.
+    mockBot.sendMessage.mockResolvedValue({ message_id: 7 })
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([{ push_token: 'ExponentPushToken[ok]' }])
+
+    mockRepositories.preferences.getSettingsByUserId
+      .mockResolvedValueOnce({ notification_mode: 'realtime', quiet_hours_enabled: false, consent_revoked_at: '2026-07-10T10:00:00Z' })
+      .mockResolvedValueOnce({
+        notification_mode: 'realtime',
+        quiet_hours_enabled: false,
+        channel_mobile_push_enabled: true,
+        channel_telegram_enabled: true,
+        consent_revoked_at: null,
+      })
+
+    const suprimido = await dispatchFor('user-revogou')
+    const entregue = await dispatchFor('user-consentiu')
+
+    expect(suprimido.totalDelivered).toBe(0)
+    expect(entregue.totalDelivered).toBe(2)
+  })
+})
+
 describe('dispatchNotification', () => {
   // Caso 1: both com Telegram OK + push OK → ambos entregues
   it('caso 1: both — Telegram e push entregues', async () => {

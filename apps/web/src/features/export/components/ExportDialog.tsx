@@ -16,7 +16,6 @@ import Modal from '@shared/components/ui/Modal'
 import Button from '@shared/components/ui/Button'
 import { exportAsJSON, exportAsCSV } from '@features/export/services/exportService'
 import { parseLocalDate } from '@utils/dateUtils'
-import { useStockTracking } from '@shared/hooks/useStockTracking'
 import './ExportDialog.css'
 
 /** Renderiza seletor de formato de exportação. */
@@ -79,14 +78,16 @@ function DateRangeSelector({ dateRange, isExporting, onDateChange }) {
 }
 
 /** Renderiza checkboxes de seleção de tipos de dados. */
-function DataTypeCheckboxes({ states, isExporting, onCheckboxChange, stockTrackingEnabled }) {
+function DataTypeCheckboxes({ states, isExporting, onCheckboxChange }) {
   const { includeProfile, setIncludeProfile, includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines, includeBiomarkers, setIncludeBiomarkers } = states
-  // Spec 044 F3: checkbox "Estoque" some do diálogo quando o controle de estoque está desligado.
+  // 046 Slice D: checkbox "Estoque" SEMPRE presente — é dado do titular (art. 18), não uma feature
+  // ligável. Condicioná-lo a `stock_tracking_enabled` (preferência de UX) escondia os lotes/compras
+  // congelados de quem desligou o controle (044 congela, não apaga) — o furo de cobertura LGPD (R-291).
   const options = [
     { checked: includeProfile, setter: setIncludeProfile, label: DATA_TYPE_LABELS.profile },
     { checked: includeProtocols, setter: setIncludeProtocols, label: DATA_TYPE_LABELS.protocols },
     { checked: includeLogs, setter: setIncludeLogs, label: DATA_TYPE_LABELS.logs },
-    ...(stockTrackingEnabled ? [{ checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock }] : []),
+    { checked: includeStock, setter: setIncludeStock, label: DATA_TYPE_LABELS.stock },
     { checked: includeMedicines, setter: setIncludeMedicines, label: DATA_TYPE_LABELS.medicines },
     { checked: includeBiomarkers, setter: setIncludeBiomarkers, label: DATA_TYPE_LABELS.biomarkers },
   ]
@@ -135,26 +136,24 @@ const DATA_TYPE_LABELS = {
  * @returns {JSX.Element} Componente ExportDialog
  */
 export default function ExportDialog({ isOpen, onClose }) {
-  // Spec 044 F3: preferência global de controle de estoque (contexto, lido antes dos states).
-  const { enabled: stockTrackingEnabled } = useStockTracking()
-
   // 1. States (R-010: Hook order)
   const [format, setFormat] = useState('json')
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [includeProfile, setIncludeProfile] = useState(true)
   const [includeProtocols, setIncludeProtocols] = useState(true)
   const [includeLogs, setIncludeLogs] = useState(true)
-  const [includeStock, setIncludeStock] = useState(stockTrackingEnabled)
+  // 046 Slice D: nasce marcado para TODOS. O estoque é dado do titular, não condicionado à
+  // preferência de controle (044). Quem não tem estoque recebe uma seção "sem dados" honesta.
+  const [includeStock, setIncludeStock] = useState(true)
   const [includeMedicines, setIncludeMedicines] = useState(true)
   const [includeBiomarkers, setIncludeBiomarkers] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState(null)
 
   // 2. Memos (R-010: Hook order)
-  // Estoque só entra no export se o usuário controla estoque (spec 044). Derivado, não
-  // espelhado em estado: um `setState` em effect deixaria o checkbox e a exportação
-  // divergindo por um render.
-  const exportStock = includeStock && stockTrackingEnabled
+  // 046 Slice D: o export do estoque segue APENAS o checkbox — não é mais recortado por
+  // `stock_tracking_enabled`. A preferência de controle é UX do app, não permissão de acesso.
+  const exportStock = includeStock
 
   const isExportDisabled = useMemo(() => {
     return (
@@ -276,7 +275,6 @@ export default function ExportDialog({ isOpen, onClose }) {
           states={{ includeProfile, setIncludeProfile, includeProtocols, setIncludeProtocols, includeLogs, setIncludeLogs, includeStock, setIncludeStock, includeMedicines, setIncludeMedicines, includeBiomarkers, setIncludeBiomarkers }}
           isExporting={isExporting}
           onCheckboxChange={handleCheckboxChange}
-          stockTrackingEnabled={stockTrackingEnabled}
         />
         {exportError && <div className="export-error">{exportError}</div>}
         <div className="export-actions">

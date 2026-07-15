@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { getDeviceTimezone, resolveSupportedTz } from '@dosiq/core'
+import { getDeviceTimezone, resolveSupportedTz, CURRENT_POLICY_VERSION } from '@dosiq/core'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -92,10 +92,32 @@ export const signIn = async (email, password) => {
   return data
 }
 
-export const signUp = async (email, password) => {
+/**
+ * Cadastro. `healthConsent` viaja no `user_metadata` (spec 046, T005).
+ *
+ * ⚠️ `user_metadata` é CLIENT-WRITABLE (`auth.updateUser`) — isto é CARONA da intenção, jamais
+ * prova. Existe porque, com confirmação de e-mail ligada, não há sessão no momento do cadastro, e
+ * sem sessão o RPC `SECURITY DEFINER` não tem `auth.uid()` para carimbar o evento. Quem grava a
+ * trilha é `materializeSignupIntent` no 1º bootstrap autenticado, via RPC — o servidor deriva
+ * titular, versão e hash. Nunca gravar o evento "confiando" neste metadata.
+ */
+export const signUp = async (email, password, options: { healthConsent?: boolean } = {}) => {
+  // Consentimento como CONDIÇÃO DE USO (FR-002): a conta não nasce sem opt-in. O gate de UI já
+  // barra o form, mas a trava vive TAMBÉM aqui — paridade com o mobile (authService), fechando o
+  // caminho de qualquer caller chegar ao signUp sem consentimento.
+  if (options.healthConsent !== true) {
+    throw new Error('É necessário autorizar o tratamento dos dados de saúde para criar a conta.')
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        health_consent: true,
+        policy_version: CURRENT_POLICY_VERSION,
+      },
+    },
   })
   if (error) throw error
   return data

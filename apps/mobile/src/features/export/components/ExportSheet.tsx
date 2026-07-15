@@ -17,7 +17,6 @@ import * as LucideIcons from 'lucide-react-native'
 const { FileJson, FileSpreadsheet, TriangleAlert, CalendarDays, X } = LucideIcons as any
 import { createExportService, formatDatePtBR, getNow, type ExportFormat } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
-import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 async function getUserId() {
@@ -71,14 +70,19 @@ function FormatToggle({ format, disabled, onChange }) {
   )
 }
 
-function ScopeCheckboxes({ scope, disabled, showStock, onToggle }) {
+function ScopeCheckboxes({ scope, disabled, onToggle }) {
   // Ordem = do cadastro ao registro (perfil → o que se toma → como se toma → o que se tem →
-  // o que se fez → o que se mediu). Estoque some para o usuário dose-only (044).
+  // o que se fez → o que se mediu).
+  // 046 Slice D: o estoque está SEMPRE presente — é dado do titular (art. 18), não uma feature
+  // ligável. `stock_tracking_enabled` é preferência de UX do app, não permissão de acesso aos
+  // dados. Quem desligou o controle mantém os lotes/compras congelados no banco (044 congela, não
+  // apaga); quem nunca teve estoque exporta uma seção que diz "sem dados". Condicionar o checkbox
+  // à preferência escondia dados reais do titular — o furo de cobertura LGPD (R-291).
   const rows = [
     { key: 'includeProfile', label: DATA_TYPE_LABELS.profile },
     { key: 'includeMedicines', label: DATA_TYPE_LABELS.medicines },
     { key: 'includeProtocols', label: DATA_TYPE_LABELS.protocols },
-    ...(showStock ? [{ key: 'includeStock', label: DATA_TYPE_LABELS.stock }] : []),
+    { key: 'includeStock', label: DATA_TYPE_LABELS.stock },
     { key: 'includeLogs', label: DATA_TYPE_LABELS.logs },
     { key: 'includeBiomarkers', label: DATA_TYPE_LABELS.biomarkers },
   ]
@@ -213,9 +217,6 @@ const DEFAULT_SCOPE = Object.freeze({
 })
 
 export default function ExportSheet({ visible, onClose }) {
-  // Spec 044: checkbox "Estoque" some para usuário dose-only.
-  const { enabled: stockTrackingEnabled } = useStockTracking()
-
   // 1. States (R-010)
   const [format, setFormat] = useState<ExportFormat>('json')
   const [scope, setScope] = useState(DEFAULT_SCOPE)
@@ -231,10 +232,9 @@ export default function ExportSheet({ visible, onClose }) {
   const [error, setError] = useState(null)
 
   // 2. Memos (R-010)
-  const exportScope = useMemo(
-    () => ({ ...scope, includeStock: scope.includeStock && stockTrackingEnabled }),
-    [scope, stockTrackingEnabled],
-  )
+  // 046 Slice D: o escopo do export NÃO é mais recortado por `stock_tracking_enabled` — o titular
+  // exporta o que pediu, e o estoque é dado dele independentemente de o controle estar ligado.
+  const exportScope = scope
 
   const isExportDisabled = useMemo(() => {
     return !Object.values(exportScope).some(Boolean)
@@ -363,7 +363,6 @@ export default function ExportSheet({ visible, onClose }) {
         <ScopeCheckboxes
           scope={exportScope}
           disabled={exporting}
-          showStock={stockTrackingEnabled}
           onToggle={handleToggleScope}
         />
 

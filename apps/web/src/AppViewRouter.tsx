@@ -2,9 +2,12 @@
  * AppViewRouter — Roteador de views da aplicação.
  * Renderiza a view correta baseado em currentView e session.
  */
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Auth from './views/Auth'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { useConsentGate, isConsentAllowedView } from '@shared/hooks/useConsentGate'
+import ConsentPrompt from '@features/consent/components/ConsentPrompt'
+import ConsentRegularizationModal from '@features/consent/components/ConsentRegularizationModal'
 
 const Landing = lazy(() => import('./views/landing/Landing'))
 const Medicines = lazy(() => import('./views/Medicines'))
@@ -21,6 +24,7 @@ const NudgesAdmin = lazy(() => import('./views/admin/NudgesAdmin'))
 const Dashboard = lazy(() => import('./views/Dashboard'))
 const NotificationInbox = lazy(() => import('./views/NotificationInbox'))
 const ResetPassword = lazy(() => import('./views/ResetPasswordView'))
+const ConsentResolution = lazy(() => import('./views/ConsentResolution'))
 
 const SKELETON = (
   <div
@@ -59,6 +63,10 @@ const VIEW_MAP = {
       onBack={() => props.setCurrentView('dashboard')}
       onOpenDoseModal={(initialValues) => { props.setDoseModalInitialValues(initialValues); props.setIsDoseModalOpen(true) }}
     />
+  ),
+  // Alcançável pela allowlist mesmo com o app travado (é a saída da revogação, não um beco).
+  'consent-resolution': (props) => (
+    <ConsentResolution onNavigate={props.setCurrentView} onReconsented={props.onReconsented} />
   ),
 };
 
@@ -101,6 +109,9 @@ export default function AppViewRouter({
   // redirect SILENCIOSO pro dashboard (decisão do PO, sem tela de erro/toast).
   // Hook sempre no topo (ordem R-010) — mesmo nos early-returns abaixo.
   const { enabled: stockTrackingEnabled, ready: stockTrackingReady } = useStockTracking()
+  const consent = useConsentGate()
+  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
+  const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
   useEffect(() => {
     if (stockTrackingReady && !stockTrackingEnabled && currentView === 'stock') {
@@ -122,6 +133,41 @@ export default function AppViewRouter({
     ) : W(<Landing isAuthenticated={false} onOpenAuth={() => setShowAuth(true)} />)
   }
 
+  // ── Gate de consentimento (046, T009) ────────────────────────────────────────────────────────
+  // Ordem deliberada: carregando → indeterminado → travado → prompt. Cada ramo abaixo depende de o
+  // anterior ter sido descartado.
+
+  // 1. Bootstrap do gate ainda rodando: não dá para decidir nada sem o estado.
+  if (!consent.ready) {
+    return SKELETON
+  }
+
+  // 2. INDETERMINADO — não conseguimos LER a trilha. NÃO libera e NÃO bloqueia por conta própria:
+  //    é falha de carregamento, não um fato sobre a vontade do titular. Tratar isto como `missing`
+  //    (liberando com prompt) ressuscitaria, na materialização, um consentimento REVOGADO numa
+  //    simples oscilação de rede — o furo HIGH do review do Slice A. Nada é escrito, nenhuma sessão
+  //    de prompt é contada: só uma tela de erro com retry.
+  if (consent.mode === 'indeterminate') {
+    return (
+      <div className="consent-gate-error" role="alert" style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', maxWidth: '360px' }}>
+          Não foi possível verificar suas preferências de privacidade. Verifique sua conexão e tente de novo.
+        </p>
+        <button type="button" onClick={() => { consent.refresh() }} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'transparent', cursor: 'pointer' }}>
+          Tentar de novo
+        </button>
+      </div>
+    )
+  }
+
+  // 3. REVOGADO — app travado na tela de resolução. A trava respeita a ALLOWLIST (R2/F8): as rotas
+  //    de export, conta e a própria resolução seguem alcançáveis. Allowlist, nunca denylist — uma
+  //    denylist esquece uma rota e prende o titular numa tela sem export e sem exclusão, que são
+  //    justamente os direitos que a revogação deveria tornar MAIS acessíveis.
+  if (consent.mode === 'blocked_revoked' && !isConsentAllowedView(currentView)) {
+    return W(<ConsentResolution onNavigate={setCurrentView} onReconsented={() => { consent.refresh(); setCurrentView('dashboard') }} />)
+  }
+
   const navigateToProtocol = (medicineId) => { setInitialTreatmentMedicineId(medicineId); setCurrentView('treatment') }
 
   const viewProps = {
@@ -137,7 +183,43 @@ export default function AppViewRouter({
     navigateToProtocol,
     stockTrackingEnabled,
     stockTrackingReady,
+    onReconsented: () => { consent.refresh(); setCurrentView('dashboard') },
   };
 
-  return W(_renderViewContent(currentView, viewProps));
+  const content = W(_renderViewContent(currentView, viewProps));
+
+  // 4. NUNCA SE MANIFESTOU — prompt. Dispensável até a 3ª sessão (overlay POR CIMA do app, dá para
+  //    fechar), bloqueante da 4ª em diante (substitui o app; a cortesia acabou). Nas rotas da
+  //    allowlist o prompt não aparece: quem quer só exportar ou mexer na conta não é interrogado.
+  const showPrompt =
+    consent.mode === 'prompt_blocking' ||
+    (consent.mode === 'prompt_dismissible' && !consent.dismissed)
+
+  if (showPrompt && !isConsentAllowedView(currentView)) {
+    const blocking = consent.mode === 'prompt_blocking'
+    return (
+      <>
+        {!blocking && content}
+        <ConsentPrompt
+          blocking={blocking}
+          onGrant={consent.grant}
+          onDismiss={consent.dismiss}
+          onGranted={() => { consent.refresh() }}
+        />
+      </>
+    )
+  }
+
+  // 5. CONSENTIU numa política ANTIGA (`stale`) — nudge de regularização. NÃO trava (mode 'allow'):
+  //    o app segue livre, o modal é um convite dispensável por cima. Aceitar carimba a versão nova.
+  return (
+    <>
+      {content}
+      <ConsentRegularizationModal
+        visible={consent.needsRegularization && !regularizationDismissed}
+        onDismiss={() => setRegularizationDismissed(true)}
+        onConfirmed={() => { setRegularizationDismissed(true); consent.refresh() }}
+      />
+    </>
+  );
 }

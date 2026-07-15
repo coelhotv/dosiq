@@ -394,6 +394,9 @@ export default async function handler(req, res) {
   }
 
   const bot = createNotifyBotAdapter(token);
+  // 046 T014: a supressão por consentimento revogado vive DENTRO do dispatcher, a partir do fetch de
+  // `user_settings` que ele já faz por usuário. Nada a preparar aqui — e nada global a falhar: o
+  // estado de um titular não pode derrubar o lembrete de dose dos outros pacientes (R-292).
   const notificationDispatcher = _createNotificationDispatcher(bot);
 
   const now = getRawNow();

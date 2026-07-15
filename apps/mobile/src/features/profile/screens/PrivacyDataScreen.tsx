@@ -18,6 +18,8 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 import { ROUTES } from '@navigation/routes'
 import { EXTERNAL_URLS } from '../../../shared/constants'
 import ExportSheet from '@features/export/components/ExportSheet'
+import PrivacyConsentSection from '@profile/components/PrivacyConsentSection'
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
 
 function Header({ onGoBack }) {
   return (
@@ -40,7 +42,7 @@ function Header({ onGoBack }) {
 function ExportSection({ onOpenSheet }) {
   return (
     <>
-      <View style={styles.sectionLabel}>
+      <View style={[styles.sectionLabel, styles.sectionLabelMargin]}>
         <ShieldCheck size={12} color={colors.text.muted} />
         <Text style={styles.sectionLabelText}>SEUS DADOS</Text>
       </View>
@@ -58,7 +60,6 @@ function ExportSection({ onOpenSheet }) {
           <Text style={styles.exportButtonText}>Exportar dados</Text>
         </Pressable>
       </View>
-      <Text style={styles.hint}>Precisa de um PDF para o médico? Use a consulta.</Text>
     </>
   )
 }
@@ -76,7 +77,13 @@ function TransparencySection({ onOpenPrivacyPolicy }) {
           accessibilityRole="button"
           accessibilityLabel="Política de privacidade"
         >
-          <Text style={styles.linkRowTitle}>Política de privacidade</Text>
+          <View>
+            <Text style={styles.linkRowTitle}>Política de privacidade</Text>
+            {/* Versão PUBLICADA vigente (não "quando você aceitou" — isso vive na seção
+                Consentimento). Fonte canônica: CURRENT_POLICY_VERSION (@dosiq/core), síncrona,
+                independe de o usuário ter aceito esta versão ou não. */}
+            <Text style={styles.linkRowSubtitle}>Versão vigente: v{CURRENT_POLICY_VERSION}</Text>
+          </View>
           <ChevronRight size={16} color={colors.primary[500]} />
         </Pressable>
       </View>
@@ -136,6 +143,7 @@ export default function PrivacyDataScreen() {
         </View>
         <Text style={styles.subtitle}>Você decide quando exportar, compartilhar ou apagar.</Text>
 
+        <PrivacyConsentSection />
         <ExportSection onOpenSheet={openExportSheet} />
         <TransparencySection onOpenPrivacyPolicy={openPrivacyPolicy} />
         <DangerZoneSection onDeleteAccount={goToDeleteAccount} />
@@ -241,12 +249,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.inverse,
   },
-  hint: {
-    fontSize: 12,
-    color: colors.text.muted,
-    marginTop: spacing[2],
-    lineHeight: 16,
-  },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,6 +258,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  linkRowSubtitle: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: 2,
   },
   dangerRowTitle: {
     fontSize: 15,

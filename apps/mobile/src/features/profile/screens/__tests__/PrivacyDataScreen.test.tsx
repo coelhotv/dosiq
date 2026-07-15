@@ -26,6 +26,18 @@ jest.mock('../../../export/components/ExportSheet', () => {
   return (props) => <MockView testID="export-sheet" {...props} />
 })
 
+// PrivacyConsentSection (T012) tem teste próprio — aqui é só um placeholder pra não puxar
+// consentService/supabase real dentro deste suite.
+jest.mock('../../components/PrivacyConsentSection', () => {
+  const MockView = require('react-native').View
+  return () => <MockView testID="privacy-consent-section" />
+})
+
+// A linha de Política mostra a VERSÃO PUBLICADA vigente (CURRENT_POLICY_VERSION), não mais
+// "quando você aceitou" (T019b: essa info é da seção Consentimento). Fonte síncrona do core —
+// requireActual garante o valor real.
+import { CURRENT_POLICY_VERSION } from '@dosiq/core'
+
 describe('PrivacyDataScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -107,5 +119,13 @@ describe('PrivacyDataScreen', () => {
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith(
       'https://dosiq.app/politica-de-privacidade',
     )
+  })
+
+  it('Transparência mostra a versão publicada vigente, não a data/versão do aceite', () => {
+    const { getByText, queryByText } = render(<PrivacyDataScreen />)
+
+    expect(getByText(`Versão vigente: v${CURRENT_POLICY_VERSION}`)).toBeTruthy()
+    // A info de "quando você aceitou" mudou de casa (agora só na seção Consentimento).
+    expect(queryByText(/Aceito em/)).toBeNull()
   })
 })
