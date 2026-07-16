@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F2 PRONTO p/ PR (branch feature/029/f2-adapter-migracao) — repository + adapter dual-read + migração dados N1→N2. PO-SEC-4 (9/9 live) + PO-5 (52 testes) fechados. Migração NÃO aplicada em prod (aguarda PO). Próximo: F3 (motor + RPC confirmação + cutover, T011-T017).",
+    "goal": "029 F2 MERGEADO (#747, squash d4caf8ad) + migração N1→N2 APLICADA EM PROD (1 escada + 3 steps, user smoke GLP; jsonb intacto; TITRATION_SOURCE ainda n1 = zero mudança de comportamento). Próximo: F3 (motor avanço + RPC confirmação + cutover TITRATION_SOURCE=n2, T011-T017). ANTES do F3: trace de interleaving R-288 (T011) + validar dose vigente correta em prod ≥1 semana.",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 746,
-    "merged_squash": "139808b6",
+    "merged_pr": 747,
+    "merged_squash": "d4caf8ad",
     "merged_history": [
+      {
+        "pr": 747,
+        "squash": "d4caf8ad",
+        "phase": "029 F2: repository + adapter strangler-fig dual-read + migração dados N1→N2. createTitrationRepository (nível A strict, user_id do dono AP-293). resolveTitrationStageAtFromSteps/calculateTitrationDataFromSteps puras (flag TITRATION_SOURCE, default n1, assinaturas legadas intactas, consumers NÃO tocados = cutover é F3). Migração APLICADA EM PROD após aprovação PO: 1 escada + 3 steps (user smoke doktorr/GLP, titulando/stage_started_at NULL → step0 current sem started_at = paridade perfeita N1↔N2, ambos dormentes/null); jsonb read-only intacto. POs: PO-SEC-4 (BEGIN..ROLLBACK live 9/9, RAISE força rollback) + PO-5 (paridade 52 testes). Review Gemini: 1 High (calculateTitrationDataFromSteps null p/ etapa contínua) + Mediums (getById ordena steps no banco, afterEach nos testes, guard CASE jsonb_typeof→length passos 1/2, .test.sql TEMP) aplicados; Math.abs declinado (paridade legado). core 0.7.0→0.8.0. Gates: 23 core tests, strict ratchet OK, lint 0, validate:agent 2045/2045.",
+        "note": "META-LIÇÃO (pedido do PO): volume alto de revisões nos últimos PRs = RC5 (self-review pré-PR) sendo pulado → Gemini vira o 1º revisor. Documentado AP-297 + R-270 estendido (gotcha AND-order Postgres). A PARTIR DO F3: rodar /devflow code-review ANTES de gh pr create."
+      },
       {
         "pr": 746,
         "squash": "139808b6",
@@ -195,9 +201,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 14,
     "rules_count": 241,
-    "anti_patterns_count": 293,
+    "anti_patterns_count": 294,
     "decisions_count": 80,
     "contracts_count": 30,
     "distillation_due": false
