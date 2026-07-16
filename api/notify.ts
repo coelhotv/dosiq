@@ -229,6 +229,82 @@ function createNotifyBotAdapter(token) {
   };
 }
 
+// === HELPER: retryPendingDlq ===
+// Reprocessa entradas 'pending'/'retrying' da DLQ com retry_count < max_retries (AP a registrar:
+// getPendingForRetry/markForRetry em server/services/deadLetterQueue.ts eram código morto — nada
+// chamava; sem isso, falhas transitórias (ex.: Expo 503) ficavam presas até retry manual no admin).
+async function retryPendingDlq(notificationDispatcher, correlationId) {
+  const { data: pendingEntries, error: fetchError } = await supabase
+    .from('failed_notification_queue')
+    .select('*')
+    .in('status', ['pending', 'retrying'])
+    .lt('retry_count', 3)
+    .order('created_at', { ascending: true })
+    .limit(50);
+
+  if (fetchError) {
+    logger.error('[dlq_auto_retry] Falha ao buscar pendências', fetchError, { correlationId });
+    return { attempted: 0, resolved: 0, failed: 0 };
+  }
+
+  let resolved = 0;
+  let failedCount = 0;
+
+  for (const entry of pendingEntries || []) {
+    const dispatchResult = await notificationDispatcher.dispatch({
+      userId: entry.user_id,
+      kind: entry.notification_type,
+      data: entry.notification_payload || {},
+      context: {
+        correlationId: entry.correlation_id || `dlq_retry_${entry.id}`,
+        isRetry: true,
+        details: { originalNotificationId: entry.id }
+      }
+    });
+
+    if (dispatchResult.success) {
+      const { error: updateError } = await supabase
+        .from('failed_notification_queue')
+        .update({
+          status: 'resolved',
+          resolved_at: getServerTimestamp(),
+          resolution_notes: 'Reprocessado automaticamente via cron dlq_auto_retry'
+        })
+        .eq('id', entry.id);
+      if (updateError) {
+        logger.error('[dlq_auto_retry] Falha ao marcar como resolvido no banco', updateError, { entryId: entry.id });
+      } else {
+        resolved++;
+      }
+    } else {
+      const nextRetryCount = (entry.retry_count || 0) + 1;
+      const { error: updateError } = await supabase
+        .from('failed_notification_queue')
+        .update({
+          retry_count: nextRetryCount,
+          status: nextRetryCount >= entry.max_retries ? 'failed' : 'retrying',
+          updated_at: getServerTimestamp(),
+          error_message: dispatchResult.errors?.[0]?.message || entry.error_message
+        })
+        .eq('id', entry.id);
+      if (updateError) {
+        logger.error('[dlq_auto_retry] Falha ao atualizar tentativas no banco', updateError, { entryId: entry.id });
+      } else {
+        failedCount++;
+      }
+    }
+  }
+
+  logger.info('[dlq_auto_retry] Ciclo concluído', {
+    correlationId,
+    attempted: (pendingEntries || []).length,
+    resolved,
+    failed: failedCount
+  });
+
+  return { attempted: (pendingEntries || []).length, resolved, failed: failedCount };
+}
+
 // === HELPER: createNotificationDispatcher ===
 
 function _createNotificationDispatcher(bot) {
@@ -328,6 +404,8 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       await runJob('stock_alerts', 'stock_alerts',
         (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }));
     }
+    await runJob('dlq_auto_retry', 'dlq_auto_retry',
+      (context) => retryPendingDlq(notificationDispatcher, context.correlationId));
     await runJob('dlq_digest', 'dlq_digest',
       (context) => sendDLQDigest(notificationDispatcher, context));
   }
