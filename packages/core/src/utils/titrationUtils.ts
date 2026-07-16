@@ -112,14 +112,22 @@ export function resolveTitrationStageAt(
 //   - nenhuma etapa 'current' → escada pausada/inativa → null (igual legado 'pausado')
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** Etapa da escada N2 como o adapter precisa (subconjunto de titration_steps). */
+/**
+ * Etapa da escada N2 como o adapter precisa (subconjunto de `titration_steps`).
+ *
+ * ⚠️ Só declare aqui campos que a tabela TEM. Este tipo é a fonte de onde os `select()` do
+ * PostgREST são escritos — um campo fantasma aqui vira `42703` em runtime, não erro de compilação
+ * (o select é string). Conferir contra `database.types.ts` (gerado) antes de somar campo. AP-300.
+ *
+ * NÃO tem `description`: "nota/objetivo por etapa (N1 web) **não migra** — a etapa se descreve por
+ * medicamento+dose" (Decisões §2, linha 100). `stageNote` é campo do N1 e morre com ele no F6.
+ */
 export interface TitrationStepLike {
   position: number
   dose?: number
   duration_days?: number | null
   status?: string | null
   started_at?: string | null
-  description?: string | null
 }
 
 /**
@@ -238,7 +246,10 @@ export function calculateTitrationDataFromSteps(
     totalDays,
     progressPercent,
     isTransitionDue: currentDay > totalDays,
-    stageNote: currentStep.description ?? undefined,
+    // Sempre undefined no N2, por decisão de PRODUTO (Decisões §2 linha 100): a nota/objetivo por
+    // etapa do N1 web não migra — a etapa se descreve por medicamento+dose. Consumers de stageNote
+    // (PDF de consulta, ProtocolCard) já tratam ausência; some de vez no F6 com o N1.
+    stageNote: undefined,
     daysRemaining: totalDays - currentDay,
   }
 }

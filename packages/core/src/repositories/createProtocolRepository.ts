@@ -96,7 +96,7 @@ async function syncInstancesOnWrite({
 // query extra. É o recorte que o gerador exige (a escada inteira vazaria a dose de outro
 // medicamento no caso cross-med). Sem o embed, `TITRATION_SOURCE=n2` degradaria a dose de
 // titulação para `dosage_per_intake` em SILÊNCIO — por isso ele vive nos selects, não num if.
-const TITRATION_STEPS_EMBED = `titration_steps(id, position, dose, duration_days, status, started_at, description)`
+const TITRATION_STEPS_EMBED = `titration_steps(id, position, dose, duration_days, status, started_at)`
 
 const DEFAULT_SELECT = `
         *,
