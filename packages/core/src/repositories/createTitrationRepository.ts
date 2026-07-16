@@ -68,6 +68,7 @@ export function createTitrationRepository({ client, getUserId }: CreateTitration
         .select(DEFAULT_TITRATION_DETAIL_SELECT)
         .eq('id', id)
         .eq('user_id', userId)
+        .order('position', { referencedTable: 'titration_steps', ascending: true })
         .single()
 
       if (error) throw error

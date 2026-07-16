@@ -4,7 +4,7 @@
 // E em titration_steps (AP-293 — nunca do payload); ordenação de etapas por position; propagação
 // de erro Supabase. Mock builder fluente — não toca Supabase real.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createTitrationRepository } from '../createTitrationRepository'
 
 function makeBuilder(result: any) {
@@ -51,6 +51,11 @@ describe('createTitrationRepository', () => {
     client = makeClient({ data: [{ id: 'tit-1' }], error: null })
   })
 
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
   it('lança se client ausente', () => {
     expect(() => createTitrationRepository({ getUserId } as any)).toThrow(/client/)
   })
@@ -85,6 +90,7 @@ describe('createTitrationRepository', () => {
         ['select', ['*, steps:titration_steps(*)']],
         ['eq', ['id', 'tit-1']],
         ['eq', ['user_id', FAKE_USER]],
+        ['order', ['position', { referencedTable: 'titration_steps', ascending: true }]],
         ['single', []],
       ])
     })

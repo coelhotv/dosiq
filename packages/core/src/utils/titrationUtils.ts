@@ -213,23 +213,26 @@ export function calculateTitrationDataFromSteps(
   const currentStep = ordered[currentIndex]
   if (!currentStep?.started_at) return null
 
-  const totalDays = getStepDurationDays(currentStep) ?? 0
+  // Etapa vigente contínua (sem duração) = manutenção/alvo: não há progresso a exibir.
+  // Retorna null — coerente com o comentário desta função e com resolveTitrationStageAtFromSteps.
+  const totalDays = getStepDurationDays(currentStep)
+  if (totalDays === null) return null
+
   const startDate = parseISO(currentStep.started_at)
   const diffTime = Math.abs(now.getTime() - startDate.getTime())
   const daysElapsed = Math.ceil(diffTime / MS_DAY)
   const currentDay = Math.max(1, daysElapsed)
 
-  const progressPercent = totalDays > 0 ? Math.min(100, (currentDay / totalDays) * 100) : 0
-  const isTransitionDue = totalDays > 0 && currentDay > totalDays
+  const progressPercent = Math.min(100, (currentDay / totalDays) * 100)
 
   return {
     currentStep: currentIndex + 1,
     totalSteps: ordered.length,
-    day: totalDays > 0 ? Math.min(currentDay, totalDays) : currentDay,
+    day: Math.min(currentDay, totalDays),
     realDay: currentDay,
     totalDays,
     progressPercent,
-    isTransitionDue,
+    isTransitionDue: currentDay > totalDays,
     stageNote: currentStep.description ?? undefined,
     daysRemaining: totalDays - currentDay,
   }

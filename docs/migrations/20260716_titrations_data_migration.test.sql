@@ -21,9 +21,11 @@
 
 BEGIN;
 
-CREATE TABLE public._r (n int, caso text, esperado text, obtido text, ok boolean);
-CREATE TABLE public._ids (k text PRIMARY KEY, v uuid);
-INSERT INTO public._ids (k, v) VALUES
+-- Tabelas auxiliares TEMP (sem troca de role neste teste): evitam poluir o catálogo public
+-- e colisão entre execuções concorrentes. Caem sozinhas no fim da sessão / ROLLBACK.
+CREATE TEMP TABLE _r (n int, caso text, esperado text, obtido text, ok boolean);
+CREATE TEMP TABLE _ids (k text PRIMARY KEY, v uuid);
+INSERT INTO _ids (k, v) VALUES
   ('u', gen_random_uuid()),
   ('med', gen_random_uuid()),
   ('p_titulando', gen_random_uuid()),
@@ -35,7 +37,7 @@ INSERT INTO auth.users (id, email)
 
 INSERT INTO public.medicines (id, user_id, name, dosage_unit, type)
   VALUES ((SELECT v FROM _ids WHERE k='med'), (SELECT v FROM _ids WHERE k='u'),
-          'Semaglutida F2', 'mg', 'injetavel');
+          'Semaglutida F2', 'mg', 'medicamento');
 
 -- Escada 3 estágios (0,25 → 0,5 → 1,0 mg, 28d). intake_unit NULL = sólido → migra p/ 'cp' (caso 8).
 -- p_titulando: current_stage_index=1, titulando
@@ -61,7 +63,7 @@ VALUES ((SELECT v FROM _ids WHERE k='p_alvo'), (SELECT v FROM _ids WHERE k='u'),
         2, '2026-03-01T00:00:00', 'alvo_atingido');
 
 -- Snapshot do jsonb ANTES (caso 7).
-CREATE TABLE public._jsonb_before AS
+CREATE TEMP TABLE _jb AS
   SELECT id, titration_schedule FROM public.protocols
   WHERE id IN (SELECT v FROM _ids WHERE k IN ('p_titulando','p_pausado','p_alvo'));
 
@@ -115,7 +117,7 @@ END $$;
 -- ASSERÇÕES
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 1. contagem escadas
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 1, 'escadas migradas = 3', '3',
   (SELECT count(*)::text FROM public.titrations WHERE migrated_from_protocol_id IN
     (SELECT v FROM _ids WHERE k IN ('p_titulando','p_pausado','p_alvo'))),
@@ -123,7 +125,7 @@ SELECT 1, 'escadas migradas = 3', '3',
     (SELECT v FROM _ids WHERE k IN ('p_titulando','p_pausado','p_alvo'))) = 3;
 
 -- 2. contagem etapas = 9
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 2, 'etapas criadas = 9', '9',
   (SELECT count(*)::text FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
      WHERE t.migrated_from_protocol_id IN (SELECT v FROM _ids WHERE k IN ('p_titulando','p_pausado','p_alvo'))),
@@ -131,14 +133,14 @@ SELECT 2, 'etapas criadas = 9', '9',
      WHERE t.migrated_from_protocol_id IN (SELECT v FROM _ids WHERE k IN ('p_titulando','p_pausado','p_alvo'))) = 9;
 
 -- 3. titulando: pos1 current + started_at
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 3, 'titulando: pos1 current + started_at not null', 'current/true',
   s.status || '/' || (s.started_at IS NOT NULL)::text, s.status='current' AND s.started_at IS NOT NULL
 FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
 WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_titulando') AND s.position=1;
 
 -- 4. titulando: pos0 completed, pos2 upcoming
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 4, 'titulando: pos0=completed, pos2=upcoming', 'completed/upcoming',
   string_agg(s.status, '/' ORDER BY s.position),
   bool_and((s.position=0 AND s.status='completed') OR (s.position=2 AND s.status='upcoming'))
@@ -146,7 +148,7 @@ FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
 WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_titulando') AND s.position IN (0,2);
 
 -- 5. alvo: última etapa current + duration_days NULL
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 5, 'alvo: pos2 current + duration_days NULL', 'current/NULL',
   s.status || '/' || COALESCE(s.duration_days::text,'NULL'),
   s.status='current' AND s.duration_days IS NULL
@@ -154,7 +156,7 @@ FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
 WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_alvo') AND s.position=2;
 
 -- 6. pausado: nenhuma etapa current
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 6, 'pausado: 0 etapas current', '0',
   (SELECT count(*)::text FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
      WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_pausado') AND s.status='current'),
@@ -162,15 +164,15 @@ SELECT 6, 'pausado: 0 etapas current', '0',
      WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_pausado') AND s.status='current') = 0;
 
 -- 7. jsonb byte-idêntico antes/depois
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 7, 'jsonb intacto (read-only)', '0 diffs',
-  (SELECT count(*)::text FROM public._jsonb_before b JOIN public.protocols p ON p.id=b.id
+  (SELECT count(*)::text FROM _jb b JOIN public.protocols p ON p.id=b.id
      WHERE p.titration_schedule IS DISTINCT FROM b.titration_schedule),
-  (SELECT count(*) FROM public._jsonb_before b JOIN public.protocols p ON p.id=b.id
+  (SELECT count(*) FROM _jb b JOIN public.protocols p ON p.id=b.id
      WHERE p.titration_schedule IS DISTINCT FROM b.titration_schedule) = 0;
 
 -- 8. intake_unit sólido → 'cp'
-INSERT INTO public._r
+INSERT INTO _r
 SELECT 8, 'intake_unit NULL migra p/ cp', 'cp',
   (SELECT DISTINCT s.intake_unit FROM public.titration_steps s JOIN public.titrations t ON t.id=s.titration_id
      WHERE t.migrated_from_protocol_id=(SELECT v FROM _ids WHERE k='p_titulando') LIMIT 1),
@@ -201,11 +203,11 @@ BEGIN
     AND NOT EXISTS (SELECT 1 FROM public.titration_steps s WHERE s.titration_id=t.id);
   GET DIAGNOSTICS v_steps = ROW_COUNT;
 
-  INSERT INTO public._r VALUES (9, 'idempotente: re-run cria 0/0', '0 escada + 0 etapa',
+  INSERT INTO _r VALUES (9, 'idempotente: re-run cria 0/0', '0 escada + 0 etapa',
     v_created||' escada + '||v_steps||' etapa', v_created=0 AND v_steps=0);
 END $$;
 
 SELECT n, CASE WHEN ok THEN 'PASS' ELSE '*** FAIL ***' END AS r, caso, esperado, obtido
-FROM public._r ORDER BY n;
+FROM _r ORDER BY n;
 
 ROLLBACK;

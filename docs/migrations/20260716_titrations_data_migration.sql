@@ -39,8 +39,8 @@ BEGIN
   SELECT count(*) INTO v_eligible
   FROM public.protocols p
   WHERE p.titration_schedule IS NOT NULL
-    AND jsonb_typeof(p.titration_schedule) = 'array'
-    AND jsonb_array_length(p.titration_schedule) > 0;
+    AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+             THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0;
 
   SELECT count(*) INTO v_titrations_before
   FROM public.titrations WHERE migrated_from_protocol_id IS NOT NULL;
@@ -53,8 +53,8 @@ BEGIN
   SELECT p.user_id, p.treatment_plan_id, p.id
   FROM public.protocols p
   WHERE p.titration_schedule IS NOT NULL
-    AND jsonb_typeof(p.titration_schedule) = 'array'
-    AND jsonb_array_length(p.titration_schedule) > 0
+    AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+             THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0
     AND NOT EXISTS (
       SELECT 1 FROM public.titrations t WHERE t.migrated_from_protocol_id = p.id
     );
@@ -97,6 +97,10 @@ BEGIN
   CROSS JOIN LATERAL jsonb_array_elements(p.titration_schedule) WITH ORDINALITY AS stage(val, ord)
   CROSS JOIN LATERAL (SELECT jsonb_array_length(p.titration_schedule) AS n) cnt
   WHERE t.migrated_from_protocol_id IS NOT NULL
+    -- mesma salvaguarda do passo 1 (jsonb_array_elements aborta a migração em array inválido):
+    AND p.titration_schedule IS NOT NULL
+    AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+             THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0
     AND NOT EXISTS (
       SELECT 1 FROM public.titration_steps s WHERE s.titration_id = t.id
     );
@@ -119,28 +123,28 @@ SELECT
   'contagem escadas = protocolos N1 com schedule' AS verificacao,
   (SELECT count(*) FROM public.protocols p
      WHERE p.titration_schedule IS NOT NULL
-       AND jsonb_typeof(p.titration_schedule) = 'array'
-       AND jsonb_array_length(p.titration_schedule) > 0) AS protocolos_n1,
+       AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+                THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0) AS protocolos_n1,
   (SELECT count(*) FROM public.titrations WHERE migrated_from_protocol_id IS NOT NULL) AS escadas_migradas,
   (SELECT count(*) FROM public.protocols p
      WHERE p.titration_schedule IS NOT NULL
-       AND jsonb_typeof(p.titration_schedule) = 'array'
-       AND jsonb_array_length(p.titration_schedule) > 0)
+       AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+                THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0)
    = (SELECT count(*) FROM public.titrations WHERE migrated_from_protocol_id IS NOT NULL) AS ok
 UNION ALL
 SELECT
   'toda etapa bate soma de estágios jsonb' AS verificacao,
   (SELECT COALESCE(sum(jsonb_array_length(p.titration_schedule)), 0)::int FROM public.protocols p
      WHERE p.titration_schedule IS NOT NULL
-       AND jsonb_typeof(p.titration_schedule) = 'array'
-       AND jsonb_array_length(p.titration_schedule) > 0) AS estagios_jsonb,
+       AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+                THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0) AS estagios_jsonb,
   (SELECT count(*)::int FROM public.titration_steps s
      JOIN public.titrations t ON t.id = s.titration_id
      WHERE t.migrated_from_protocol_id IS NOT NULL) AS etapas_criadas,
   (SELECT COALESCE(sum(jsonb_array_length(p.titration_schedule)), 0) FROM public.protocols p
      WHERE p.titration_schedule IS NOT NULL
-       AND jsonb_typeof(p.titration_schedule) = 'array'
-       AND jsonb_array_length(p.titration_schedule) > 0)
+       AND CASE WHEN jsonb_typeof(p.titration_schedule) = 'array'
+                THEN jsonb_array_length(p.titration_schedule) ELSE 0 END > 0)
    = (SELECT count(*) FROM public.titration_steps s
         JOIN public.titrations t ON t.id = s.titration_id
         WHERE t.migrated_from_protocol_id IS NOT NULL) AS ok;
