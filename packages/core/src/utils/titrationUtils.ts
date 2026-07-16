@@ -123,7 +123,12 @@ export interface TitrationStepLike {
 }
 
 /**
- * Fonte de leitura da titulação. Default 'n1' até o cutover na F3 (flag env `TITRATION_SOURCE`).
+ * Fonte de leitura da titulação (flag env `TITRATION_SOURCE`).
+ *
+ * Default **'n1'**: o F3 entregou a maquinaria do N2 mas NÃO virou a chave — ligar o cutover é um
+ * passo separado e reversível sem deploy, não um efeito do merge. Vira 'n2' setando a env var em
+ * prod; a flag inteira (e esta função) morrem no F6.
+ *
  * Isomórfico: guarda o acesso a `process.env` (indefinido em alguns bundles).
  */
 export function getTitrationSource(): 'n1' | 'n2' {
