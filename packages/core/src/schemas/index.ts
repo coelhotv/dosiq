@@ -207,3 +207,22 @@ export type {
   ConsentEvent,
   ConsentState,
 } from './consentSchema'
+
+// Evolução do tratamento / titulação N2 (spec 029 — ADR-080; modelo titrations + titration_steps)
+export {
+  default as titrationSchema,
+  titrationStepSchema,
+  titrationCreateSchema,
+  titrationStepCreateSchema,
+  validateTitrationStep,
+  TITRATION_INTAKE_UNITS,
+  TITRATION_STEP_STATUSES,
+} from './titrationSchema'
+export type {
+  Titration,
+  TitrationStep,
+  TitrationCreate,
+  TitrationStepCreate,
+  TitrationIntakeUnit,
+  TitrationStepStatus,
+} from './titrationSchema'

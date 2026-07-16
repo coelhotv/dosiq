@@ -1,3 +1,19 @@
+---
+title: "Releases externos — Notas de loja (dosiq mobile)"
+description: "Releases para as versões dos apps Android e iOS"
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - po
+  - agent
+tags:
+  - release
+  - changelog
+  - versioning
+created_at: "2026-07-15"
+updated_at: "2026-07-15"
+---
 # Releases externos — Notas de loja (dosiq mobile)
 
 > **Fonte de verdade das notas de loja.** Este arquivo guarda o texto **publicado** (ou a publicar)

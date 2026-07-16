@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Core — Spec 029 Slice F1: modelo da Evolução do tratamento (titulação N2)
+
+- **Feat** (`minor`, core `0.6.0 → 0.7.0`, PR #TBD): **Fundação de dados da titulação em nível de tratamento (ADR-080).** Duas tabelas novas em prod — `titrations` (escada / orquestrador) e `titration_steps` (etapas: medicamento + dose + unidade + duração, `duration_days` NULL = etapa contínua) — com o template de segurança da casa: RLS `user_id = auth.uid()`, grants mínimos (nunca `anon`), FK `user_id → auth.users ON DELETE CASCADE` (R-287) e CHECK em toda coluna de domínio finito (R-271). Schema Zod `titrationSchema` no `@dosiq/core` sincronizado com os CHECKs. É o que permite a escada SALTAR de medicamento (caso GLP-1: semaglutida 0,25 → 0,5 → 1 mg), o que o jsonb N1 intra-protocolo não fazia. **Sem impacto de usuário** (nenhuma superfície UI ainda — motor, migração N1→N2 e telas vêm em F2–F5); jsonb N1 dos `protocols` intacto. PO-SEC-1 fechado com BEGIN..ROLLBACK 16/16 contra o banco real. **Sem relevância para notas de loja.**
+
 ### Web + Mobile — Spec 046 Slice B: consentimento no cadastro, trava do app e suspensão de lembretes
 
 - **Feat** (`minor`, web `4.17.0 → 4.18.0` · mobile `0.26.0 → 0.27.0` · core `0.5.0 → 0.6.0`, PR #TBD): **O consentimento de dado de saúde virou superfície de usuário.** O Slice A construiu a trilha; aqui ela ganha as três portas por onde o titular passa: o cadastro, a trava e a retirada. **Relevante para as notas de loja** (consentimento específico e destacado, art. 11 da LGPD).
