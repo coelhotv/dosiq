@@ -1350,6 +1350,135 @@ export type Database = {
           },
         ]
       }
+      titration_steps: {
+        Row: {
+          created_at: string
+          dose: number
+          duration_days: number | null
+          ended_at: string | null
+          id: string
+          intake_unit: string
+          medicine_id: string
+          position: number
+          protocol_id: string | null
+          started_at: string | null
+          status: string
+          titration_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dose: number
+          duration_days?: number | null
+          ended_at?: string | null
+          id?: string
+          intake_unit: string
+          medicine_id: string
+          position: number
+          protocol_id?: string | null
+          started_at?: string | null
+          status?: string
+          titration_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dose?: number
+          duration_days?: number | null
+          ended_at?: string | null
+          id?: string
+          intake_unit?: string
+          medicine_id?: string
+          position?: number
+          protocol_id?: string | null
+          started_at?: string | null
+          status?: string
+          titration_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "titration_steps_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "titration_steps_protocol_id_fkey"
+            columns: ["protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "titration_steps_titration_id_fkey"
+            columns: ["titration_id"]
+            isOneToOne: false
+            referencedRelation: "titrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "titration_steps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      titrations: {
+        Row: {
+          created_at: string
+          id: string
+          migrated_from_protocol_id: string | null
+          treatment_plan_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          migrated_from_protocol_id?: string | null
+          treatment_plan_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          migrated_from_protocol_id?: string | null
+          treatment_plan_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "titrations_migrated_from_protocol_id_fkey"
+            columns: ["migrated_from_protocol_id"]
+            isOneToOne: false
+            referencedRelation: "protocols"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "titrations_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "titrations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treatment_plans: {
         Row: {
           color: string | null
@@ -1393,6 +1522,7 @@ export type Database = {
           complexity_override: string | null
           consent_prompt_last_seen_at: string | null
           consent_prompt_sessions: number
+          consent_revoked_at: string | null
           created_at: string | null
           digest_time: string | null
           display_name: string | null
@@ -1423,6 +1553,7 @@ export type Database = {
           complexity_override?: string | null
           consent_prompt_last_seen_at?: string | null
           consent_prompt_sessions?: number
+          consent_revoked_at?: string | null
           created_at?: string | null
           digest_time?: string | null
           display_name?: string | null
@@ -1453,6 +1584,7 @@ export type Database = {
           complexity_override?: string | null
           consent_prompt_last_seen_at?: string | null
           consent_prompt_sessions?: number
+          consent_revoked_at?: string | null
           created_at?: string | null
           digest_time?: string | null
           display_name?: string | null
