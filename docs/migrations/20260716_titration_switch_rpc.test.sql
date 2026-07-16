@@ -34,6 +34,9 @@
 -- | 16 | dose_change via RPC (mesmo medicine_id)                      | não pausa, ajusta dose   |
 -- | 17 | 🔴 etapa 'cp' → protocols.intake_unit                        | NULL (não viola CHECK)   |
 -- | 18 | backfill: steps migrados ganham protocol_id                  | 0 NULL                   |
+-- | 19 | 1ª etapa da escada (v_prev NULL) — review #749               | success, sem exceção     |
+-- | 20 | sem antecessora ⇒ transição derivada                         | medicine_switch          |
+-- | 21 | executor nasce dos fallbacks (v_prev_protocol NULL)          | ativo/diário/unit NULL   |
 -- └────────────────────────────────────────────────────────────────────────────────────────────┘
 
 BEGIN;
@@ -417,6 +420,43 @@ BEGIN
    WHERE t.migrated_from_protocol_id IS NOT NULL AND s.protocol_id IS NULL;
   INSERT INTO public._r VALUES (18,'backfill: steps migrados ganham protocol_id','0 sem executor', v_cnt::text, v_cnt = 0);
 END $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PARTE 9 — escada SEM etapa anterior vigente (19/20/21) — review PR #749
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- A primeira etapa de uma escada nova não tem antecessora: `SELECT * INTO v_prev`
+-- não acha linha. O review alegou exceção de runtime aqui. Não há: v_prev e
+-- v_prev_protocol são %ROWTYPE (campos NULL, nunca "unassigned" — record CRU é que
+-- estouraria), e todo acesso passa por `v_prev.id IS NOT NULL` ou COALESCE. Este
+-- caso fixa o comportamento para que uma futura troca p/ `record` quebre AQUI.
+DO $$
+DECLARE v_tit uuid := gen_random_uuid(); v_step uuid := gen_random_uuid();
+        v_uid uuid := (SELECT v FROM public._ids WHERE k='u_a');
+        v_res jsonb; v_proto public.protocols%ROWTYPE;
+BEGIN
+  INSERT INTO public.titrations (id, user_id) VALUES (v_tit, v_uid);
+  -- position 0, sem protocol_id: nenhuma antecessora E nenhum executor a herdar.
+  INSERT INTO public.titration_steps (id, titration_id, user_id, position, medicine_id, dose, intake_unit, duration_days, status)
+    VALUES (v_step, v_tit, v_uid, 0, (SELECT v FROM public._ids WHERE k='med_cp'), 1, 'cp', 28, 'pending_confirmation');
+
+  PERFORM public._as_user(v_uid);
+  SET LOCAL ROLE authenticated;
+  v_res := public.confirm_titration_switch(v_step);   -- não deve levantar exceção
+  SET LOCAL ROLE postgres;
+
+  INSERT INTO public._r VALUES (19,'1ª etapa da escada (v_prev NULL): confirma sem exceção','success=true',
+    COALESCE(v_res->>'success','<excecao>'), (v_res->>'success')::boolean IS TRUE);
+  INSERT INTO public._r VALUES (20,'sem antecessora ⇒ transição é medicine_switch','medicine_switch',
+    COALESCE(v_res->>'transition','<null>'), v_res->>'transition' = 'medicine_switch');
+
+  -- v_prev_protocol NULL ⇒ o executor NASCE dos fallbacks (COALESCE), não estoura.
+  SELECT * INTO v_proto FROM public.protocols WHERE id = (v_res->>'protocol_activated')::uuid;
+  INSERT INTO public._r VALUES (21,'executor nasce c/ fallbacks (nome do medicamento, freq acentuada, cp→NULL)',
+    'ativo / diário / intake_unit NULL',
+    COALESCE(v_proto.active::text,'<null>') || ' / ' || COALESCE(v_proto.frequency,'<null>') || ' / ' || COALESCE(v_proto.intake_unit,'NULL'),
+    v_proto.active IS TRUE AND v_proto.frequency = 'diário' AND v_proto.intake_unit IS NULL AND v_proto.name IS NOT NULL);
+END $$;
+RESET ROLE;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- RESULTADO
