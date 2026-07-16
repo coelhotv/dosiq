@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F3 CODADO (branch feature/029/f3-motor, pré-PR). Motor N2 + RPC de confirmação + cutover. Migração APLICADA em prod (backfill 3/3 + RPC + CHECK aditivo) e types regenerados. TITRATION_SOURCE segue 'n1' (merge não muda comportamento; ligar só após validação). Gates: 2060/2060 vitest, 18/18 live SQL, lint 0 erros, ratchet OK. Achados: AP-298 (auto-avanço de titulação NUNCA rodou em prod desde #526 — filtro por coluna inexistente + error descartado), AP-299 (fronteira 'cp'→NULL protocols), drift CLAUDE.md↔banco (frequency 'diário' com acento; medicines.type vs presentation), drift de types do F1 (FK composta). CON-032 novo + CON-031 estendido. PR #749 ABERTO (sem merge). RC5: 3 achados (1 crítico: falha parcial do cron deixaria escada sem etapa vigente → corrigido por ordem convergente), 0 ASK. Distill DEVIDO (16/15).",
+    "goal": "029 F3 MERGEADO (PR #749, squash 4adfa381). Motor N2 + RPC confirm_titration_switch + cutover. TITRATION_SOURCE segue 'n1' — merge NÃO muda comportamento; ligar o cutover é env var, reversível sem deploy, após validação (escada GLP do smoke está dormente: started_at NULL ⇒ N1 e N2 concordam hoje). F6 conta >=1 semana a partir do CUTOVER, não do merge. PRÓXIMO: /devflow distill (DEVIDO, 17/15) com D5 self-clean profundo — há drift real de contadores (AP: disco 294 / índice 193 / state 296; R: 244/242/241). NÃO ajustei no C5 para não mascarar com número inventado. Depois: 034 (sunset Gemini) — tasks.md reconciliado contra o código em 16/07; RC6 majoritariamente pronto no repo da skill, mas DIVERGE do ADR-069 em 3 pontos (DIV-1 é segurança: revisor roda com tool-access, que o ADR §26 rejeitou explicitamente).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 747,
-    "merged_squash": "d4caf8ad",
+    "merged_pr": 749,
+    "merged_squash": "4adfa381",
     "merged_history": [
+      {
+        "pr": 749,
+        "squash": "4adfa381",
+        "phase": "029 F3 — o coração do épico. Motor puro resolveTitrationAdvanceFromSteps (core, nível A) + orquestração no cron (_processUserTitrationsN2/_applyTitrationPlan) + RPC confirm_titration_switch (SECURITY DEFINER, user_id DA ROW, claim atômico) + cutover via embed titration_steps(...) nos 4 chamadores. dose_change automático por dia LOCAL do dono (R-253/254); medicine_switch NUNCA automático (pendura pending_confirmation; a vigente segue regendo a dose). DOIS BUGS DE PRODUÇÃO ACHADOS: AP-298 — auto-avanço de titulação NUNCA rodou em prod desde #526 (2026-05-06, ~2.5 meses): filtro .eq('status','ativo') numa coluna inexistente (é 'active') + error descartado = varredura morta em silêncio; invisível porque a dose exibida vem do gerador puro, só a linha não avançava. AP-299 — protocols_intake_unit_check rejeita 'cp' (steps materializam 'cp', protocols usam NULL): toda titulação de comprimido abortaria com 23514; pego no preflight R-270, corrigido com NULLIF. RC5 (AP-297) achou 3, 1 crítico NO MEU PRÓPRIO CÓDIGO NOVO: _applyTitrationPlan faz 3+ escritas PostgREST sem txn; crash entre 'encerra anterior' e 'ativa próxima' deixaria a escada SEM etapa vigente -> resolver null p/ sempre -> titulação morre em silêncio (pior que AP-276: efeito PERDIDO, não duplicado). Corrigido por ORDEM convergente (ativa antes de encerrar: estado intermediário = 2 current, transitório e auto-corrigível). O trace do T011 AFIRMAVA atomicidade do dose_change — verdade no legado, FALSO no N2; corrigido no plan.md. Review Gemini: 1 CRITICAL falso positivo (exceção por v_prev NULL — improcedente, %ROWTYPE não é record; refutado com prova live em prod) + 1 MEDIUM procedente (cobertura do caminho v_prev NULL) -> PARTE 9, suíte 18/18 -> 21/21 live. SQP: core 0.8.0 -> 0.9.0. Gates: validate:agent 2068/2068, SQL live 21/21 sem mockar o primitivo (R-288), lint 0 erros, strict ratchet OK. CON-032 novo (motor) + CON-031 estendido (titration_transitioned).",
+        "note": "TITRATION_SOURCE=n2 é passo SEPARADO e reversível — decidir quando ligar. F6 conta do cutover. F5/T025 herdou actionSchema + payload builder + política de modo discreto (ADR-076 S-3). Drift CLAUDE.md<->banco corrigido neste C5: frequency é 'diário' COM acento; medicines.type é ('medicamento','suplemento') e a forma farmacêutica mora em 'presentation' (o que o doc chamava de MEDICINE_TYPES). #749 foi provavelmente o ÚLTIMO PR revisado pelo Gemini (cessa 2026-07-17)."
+      },
       {
         "pr": 747,
         "squash": "d4caf8ad",
@@ -204,12 +210,13 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 16,
+    "journal_entries_since_distillation": 17,
     "rules_count": 241,
     "anti_patterns_count": 296,
     "decisions_count": 80,
     "contracts_count": 31,
-    "distillation_due": true
+    "distillation_due": true,
+    "counter_drift_note": "D5 self-clean DEVIDO: AP disco 294 / índice 193 / state 296; R disco 244 / índice 242 / state 241. ~101 arquivos de AP fora do índice. Contadores NÃO ajustados no C5 do #749 de propósito — reconciliar contra os índices no distill."
   },
   "genes": {
     "memory_distillation_threshold": 15,

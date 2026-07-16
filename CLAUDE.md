@@ -110,10 +110,11 @@ Monorepo 100% TS. Regime: `strict: false` na base (`tsconfig.base.json`, moduleR
 - **NUNCA** `new Date('YYYY-MM-DD')` → UTC midnight = dia anterior em GMT-3
 
 ### Zod
-- Enums em português: `['diario','semanal','quando_necessario']`
+- Enums em português **com acento**: `['diário','semanal','quando_necessário']` — o acento É o valor;
+  o CHECK rejeita a versão sem (23514). Valores verbatim em §Schemas — enums.
 - `safeParse()` para validação não-bloqueante
 - Nullable: `.nullable().optional()` (nunca só `.optional()`)
-- Schemas sincronizados com CHECK constraints SQL
+- Schemas sincronizados com CHECK constraints SQL — na dúvida, `pg_get_constraintdef` é a verdade, não este doc
 
 ### Dosagem
 - `quantity_taken` em comprimidos (não mg) — limite Zod 100
@@ -247,10 +248,25 @@ Tipos: `feat fix docs test refactor style chore`.
 
 ## Schemas — enums
 
-- `DOSAGE_UNITS`: `mg mcg g ml ui cp gotas`
-- `MEDICINE_TYPES`: `comprimido capsula liquido injetavel pomada spray outro`
-- `FREQUENCIES`: `diario dias_alternados semanal personalizado quando_necessario`
+> Valores **verbatim** — conferidos contra os CHECK de prod E contra os schemas em 2026-07-16.
+> Acento e caixa fazem parte do valor: `'diario'` e `'cp'` são REJEITADOS pelo banco (23514).
+> Fonte: `packages/core/src/schemas/{medicineSchema,protocolSchema}.ts`.
+
+| Enum | Valores | Coluna / CHECK |
+|------|---------|----------------|
+| `DOSAGE_UNITS` | `mg` `mcg` `g` `mg/ml` `ui/ml` `ui` `un` | `medicines.dosage_unit` — mg/ml e ui/ml são razões massa/volume: **líquido := `dosage_unit LIKE '%/ml'`** |
+| `MEDICINE_TYPES` | `medicamento` `suplemento` | `medicines.type` — é a NATUREZA, não a forma |
+| `PRESENTATIONS` | `comprimido` `capsula` `liquido` `injetavel` `pomada` `spray` `outro` | `medicines.presentation` — a FORMA farmacêutica mora aqui |
+| `FREQUENCIES` | `diário` `dias_alternados` `semanal` `personalizado` `quando_necessário` | `protocols.frequency` — ⚠️ **`diário` e `quando_necessário` COM acento** |
+| `INTAKE_UNITS` | `gotas` `ml` `UI` `mg` | `protocols.intake_unit` — ⚠️ **`UI` maiúsculo**; comprimido = **NULL**, não `'cp'` |
+
 - Stock: CRITICAL <7d · LOW <14d · NORMAL <30d · HIGH ≥30d
+
+**Duas armadilhas que já causaram bug (AP-299, #749):**
+- `DOSAGE_UNITS` (mg/cp do medicamento) ≠ `INTAKE_UNITS` (unidade da tomada no protocol). São enums
+  DIFERENTES, com valores diferentes. `cp` não existe em nenhum dos dois — comprimido é `intake_unit NULL`.
+- `titration_steps.intake_unit` aceita `'cp'`; `protocols.intake_unit` **não**. Ao escrever de um pro
+  outro: `NULLIF(unit, 'cp')` (fronteira N2→N1 — CON-032 §5).
 
 ---
 
