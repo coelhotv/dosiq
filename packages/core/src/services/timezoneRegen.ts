@@ -79,7 +79,9 @@ export async function regenActiveProtocolsForTz({
     const today = getTodayLocal(tz)
     const { data, error } = await client
       .from(PROTOCOLS)
-      .select('*')
+      // 029 F3 (T014): embed da escada N2 deste protocolo — o gerador precisa das etapas
+      // filtradas por protocol_id (grátis via FK; ver createProtocolRepository).
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at, description)')
       .eq('user_id', userId)
       .eq('active', true)
       .lte('start_date', today)

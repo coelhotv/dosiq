@@ -80,9 +80,22 @@ export {
 } from './stringUtils'
 
 // Titration utilities
+// Legado N1 (jsonb em protocols) + adapter N2 (titration_steps, spec 029) + motor de avanço.
+// O adapter e o motor são PUROS: quem busca as etapas é o chamador (cron/generator/UI).
 export {
   calculateTitrationData,
   resolveTitrationStageAt,
+  calculateTitrationDataFromSteps,
+  resolveTitrationStageAtFromSteps,
+  resolveTitrationAdvanceFromSteps,
+  getTitrationSource,
+} from './titrationUtils'
+export type {
+  TitrationStepLike,
+  TitrationStepEngineLike,
+  TitrationAdvancePlan,
+  TitrationStepTarget,
+  TitrationStepClosure,
 } from './titrationUtils'
 
 // Notification utilities

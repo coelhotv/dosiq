@@ -63,11 +63,11 @@ Mais rapidez para quem só quer registrar doses, mais controle para quem gosta d
 ### Google Play (pt-BR — 500 chars)
 
 ```
-Grande atualização do dosiq:
+Uma grande atualização no dosiq:
 
 - Controle de estoque agora é OPCIONAL — só registrar doses ficou bem mais rápido. Ligue ou desligue quando quiser, sem perder histórico.
 - Exporte todo o histórico em JSON ou CSV direto pelo app.
-- Novo hub Privacidade e dados: exportação, política e exclusão de conta num lugar só.
+- Novo hub 'Privacidade e dados': exportação, política e exclusão de conta num lugar só.
 - Consentimento de dados de saúde explícito e reversível a qualquer momento.
 
 Mais controle, mais transparência, mais tranquilidade.

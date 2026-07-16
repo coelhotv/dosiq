@@ -8,7 +8,11 @@
 import { z } from 'zod'
 
 // Eventos do ciclo de vida de dose crítica (alarme → nag → snooze → resolved) + push
-// (envio/falha/skip) + observabilidade (surface_transitioned, token_captured).
+// (envio/falha/skip) + observabilidade (surface_transitioned, token_captured) + evolução do
+// tratamento (titration_transitioned).
+//
+// ⚠️ R-271: este array espelha o CHECK `dose_critical_events_event_check`. Valor novo aqui
+// SEM migração do CHECK = insert que falha só em runtime (23514). Andam sempre juntos.
 export const CRITICAL_AUDIT_EVENTS = [
   'alarm_scheduled',
   'alarm_fired',
@@ -21,6 +25,10 @@ export const CRITICAL_AUDIT_EVENTS = [
   'surface_transitioned',
   'push_skipped_no_token',
   'token_captured',
+  // 029 F3 (ADR-080): transição de etapa da Evolução do tratamento. `doseInstanceId` fica NULL —
+  // a transição é do TRATAMENTO, não de uma ocorrência de dose. Emitido pela RPC
+  // `confirm_titration_switch` (actor 'user') e pelo motor do cron (actor 'system').
+  'titration_transitioned',
 ]
 
 export const CRITICAL_AUDIT_PLATFORMS = ['ios', 'android', 'server']
