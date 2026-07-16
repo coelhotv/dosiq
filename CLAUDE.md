@@ -100,6 +100,47 @@ Monorepo 100% TS. Regime: `strict: false` na base (`tsconfig.base.json`, moduleR
 
 ## Regras Críticas
 
+### 🔴🔴 Coluna de tabela: VERIFICAR NO BANCO antes de tipar (R-295)
+
+**Nenhum nome de coluna entra em tipo, Zod, `select()`, `.eq()`/filtro, `insert`/`update`, `order`
+ou RPC sem ser verificado no banco. Uma chamada MCP. Sempre. Sem exceção.**
+
+```sql
+SELECT column_name, data_type, is_nullable FROM information_schema.columns
+WHERE table_schema='public' AND table_name='<tabela>' ORDER BY ordinal_position;
+```
+
+**Hierarquia de verdade** (a de baixo NUNCA sobrepõe a de cima):
+
+| # | Fonte | Confiança |
+|---|-------|-----------|
+| 1 | **o banco** (`information_schema`, `pg_get_constraintdef` — via MCP) | única verdade |
+| 2 | `database.types.ts` | gerado do banco (verdade se o regen está em dia — R-289) |
+| 3 | schema Zod | hipótese sincronizada à mão |
+| 4 | **tipo `*Like` escrito à mão** | **HIPÓTESE. Mente sem avisar. NÃO é fonte.** |
+| 5 | este CLAUDE.md | foto do passado (já divergiu 4x só em 07/2026) |
+| 6 | **a sua memória** | **é onde a alucinação mora** |
+
+**Escrever `select()` a partir de 3/4/5/6 É o bug.** O select é uma **string**: o TS não valida, o
+lint não valida, e o teste **mocka o client**. Campo fantasma atravessa TODOS os gates e só aparece
+em produção.
+
+> **Isto não é hipotético.** 2026-07-16, #749: agente **alucinou** a coluna
+> `titration_steps.description`, declarou no tipo, escreveu 5 selects a partir do tipo → `42703`
+> em todo o read-path de `protocols`: **web, mobile e cron sem dose e sem estoque em produção**.
+> Passaram tsc + 2068 testes + jest 434 + lint + SQL live 21/21 + RC5 + review externo — **a lista
+> inteira**. Ver `AP-300` / `R-295`.
+
+**Gate de saída** — select novo/alterado é contrato com o banco, **só vale EXECUTADO**:
+```bash
+curl -s "$SUPABASE_URL/rest/v1/<tabela>?select=<SELECT>&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+```
+⚠️ supabase-js remove whitespace do select → reproduzir com `tr -d '[:space:]'` (senão `PGRST100`
+por motivo errado). `200` passa · `42703` coluna · `42501` grant · `PGRST200` FK do embed.
+
+**Campo que existe no legado e não no modelo novo** = decisão de produto. Anotar no tipo **por que**
+não está lá — senão o próximo slice o reintroduz "pra compilar". Foi exatamente o que aconteceu.
+
 ### Antes de modificar arquivo
 1. `find apps/web/src -name "*Nome*"` (duplicatas)
 2. `grep -r "from.*Nome" apps/web/src/` (importações)

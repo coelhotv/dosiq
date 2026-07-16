@@ -1024,7 +1024,7 @@ const TITRATION_STEPS_SELECT = `
   id,
   steps:titration_steps (
     id, position, medicine_id, dose, intake_unit, duration_days, status,
-    started_at, protocol_id, description,
+    started_at, protocol_id,
     medicine:medicine_id (name, dosage_unit)
   )
 `;
