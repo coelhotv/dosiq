@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F1 MERGEADO (#746) — modelo titrations+titration_steps em prod (RLS+grants+FK composta pós-review IDOR). Próximo: F2 (adapter dual-read + migração N1→N2, T006-T010).",
+    "goal": "029 F2 PRONTO p/ PR (branch feature/029/f2-adapter-migracao) — repository + adapter dual-read + migração dados N1→N2. PO-SEC-4 (9/9 live) + PO-5 (52 testes) fechados. Migração NÃO aplicada em prod (aguarda PO). Próximo: F3 (motor + RPC confirmação + cutover, T011-T017).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -195,7 +195,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 11,
     "rules_count": 241,
     "anti_patterns_count": 293,
     "decisions_count": 80,
