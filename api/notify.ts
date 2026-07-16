@@ -263,7 +263,7 @@ async function retryPendingDlq(notificationDispatcher, correlationId) {
     });
 
     if (dispatchResult.success) {
-      await supabase
+      const { error: updateError } = await supabase
         .from('failed_notification_queue')
         .update({
           status: 'resolved',
@@ -271,10 +271,14 @@ async function retryPendingDlq(notificationDispatcher, correlationId) {
           resolution_notes: 'Reprocessado automaticamente via cron dlq_auto_retry'
         })
         .eq('id', entry.id);
-      resolved++;
+      if (updateError) {
+        logger.error('[dlq_auto_retry] Falha ao marcar como resolvido no banco', updateError, { entryId: entry.id });
+      } else {
+        resolved++;
+      }
     } else {
       const nextRetryCount = (entry.retry_count || 0) + 1;
-      await supabase
+      const { error: updateError } = await supabase
         .from('failed_notification_queue')
         .update({
           retry_count: nextRetryCount,
@@ -283,7 +287,11 @@ async function retryPendingDlq(notificationDispatcher, correlationId) {
           error_message: dispatchResult.errors?.[0]?.message || entry.error_message
         })
         .eq('id', entry.id);
-      failedCount++;
+      if (updateError) {
+        logger.error('[dlq_auto_retry] Falha ao atualizar tentativas no banco', updateError, { entryId: entry.id });
+      } else {
+        failedCount++;
+      }
     }
   }
 
