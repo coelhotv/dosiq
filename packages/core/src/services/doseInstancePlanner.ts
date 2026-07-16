@@ -15,6 +15,7 @@
 
 import { generateInstances } from '../utils/doseInstanceGenerator'
 import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO } from '../utils/dateUtils'
+import type { TitrationStepLike } from '../utils/titrationUtils'
 import type { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 
 type DoseInstanceRepo = ReturnType<typeof createDoseInstanceRepository>
@@ -22,6 +23,13 @@ type DoseInstanceRepo = ReturnType<typeof createDoseInstanceRepository>
 interface Protocol {
   id: string
   end_date?: string | null
+  /**
+   * Etapas da escada N2 DESTE protocolo (spec 029 F3/T014). Vêm de graça no embed
+   * `titration_steps(...)` do select — a FK `titration_steps.protocol_id → protocols.id` faz o
+   * PostgREST filtrar por protocolo, que é exatamente o recorte que o gerador precisa (a escada
+   * inteira vazaria a dose de outro medicamento no caso cross-med). Ausente = titulação N1/nenhuma.
+   */
+  titration_steps?: TitrationStepLike[] | null
   [key: string]: unknown
 }
 
@@ -65,14 +73,16 @@ export async function planWindow({
   fromTs,
   toTs,
   tz = 'America/Sao_Paulo',
+  titrationSteps,
 }: {
   protocol: Protocol
   doseInstanceRepo: DoseInstanceRepo
   fromTs: Date | string | number
   toTs: Date | string | number
   tz?: string
+  titrationSteps?: TitrationStepLike[] | null
 }): Promise<number> {
-  const instances = generateInstances(protocol, fromTs, toTs, tz)
+  const instances = generateInstances(protocol, fromTs, toTs, tz, titrationSteps ?? protocol.titration_steps)
   if (instances.length > 0) {
     await doseInstanceRepo.upsertMany(instances)
   }

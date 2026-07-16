@@ -22,7 +22,13 @@ export async function getActiveProtocols(userId, dateStr) {
   z.string().uuid().parse(userId)
   const { data, error } = await supabase
     .from('protocols')
-    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color)')
+    // 029 F3 (T014): `titration_steps(...)` é a escada N2 DESTE protocolo — a FK
+    // titration_steps.protocol_id → protocols.id faz o filtro por protocolo sair de graça.
+    // O `useAlarmScheduler` repassa estes protocolos ao `ensureInstancesUpTo` → gerador; sem o
+    // embed, a dose de titulação degradaria para `dosage_per_intake` em silêncio sob
+    // TITRATION_SOURCE=n2 (a escada inteira, por outro lado, vazaria a dose de outro
+    // medicamento no caso cross-med — por isso o recorte é por protocolo).
+    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, description)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)

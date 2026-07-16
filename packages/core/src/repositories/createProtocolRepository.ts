@@ -91,16 +91,25 @@ async function syncInstancesOnWrite({
   }
 }
 
+// 029 F3 (T014): `titration_steps(...)` é o embed da escada N2 DESTE protocolo — a FK
+// `titration_steps.protocol_id → protocols.id` faz o filtro por protocolo sair de graça, sem
+// query extra. É o recorte que o gerador exige (a escada inteira vazaria a dose de outro
+// medicamento no caso cross-med). Sem o embed, `TITRATION_SOURCE=n2` degradaria a dose de
+// titulação para `dosage_per_intake` em SILÊNCIO — por isso ele vive nos selects, não num if.
+const TITRATION_STEPS_EMBED = `titration_steps(id, position, dose, duration_days, status, started_at, description)`
+
 const DEFAULT_SELECT = `
         *,
         medicine:medicines(*),
-        treatment_plan:treatment_plans(id, name, emoji, color)
+        treatment_plan:treatment_plans(id, name, emoji, color),
+        ${TITRATION_STEPS_EMBED}
       `
 
 const FULL_SELECT_AFTER_WRITE = `
         *,
         medicine:medicines(*),
-        treatment_plan:treatment_plans(*)
+        treatment_plan:treatment_plans(*),
+        ${TITRATION_STEPS_EMBED}
       `
 
 const DETAIL_SELECT = `

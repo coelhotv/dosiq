@@ -1415,11 +1415,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "titration_steps_titration_id_fkey"
-            columns: ["titration_id"]
+            foreignKeyName: "titration_steps_titration_user_fkey"
+            columns: ["titration_id", "user_id"]
             isOneToOne: false
             referencedRelation: "titrations"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
           {
             foreignKeyName: "titration_steps_user_id_fkey"
@@ -1779,6 +1779,7 @@ export type Database = {
         }
       }
       cleanup_expired_bot_sessions: { Args: never; Returns: number }
+      confirm_titration_switch: { Args: { p_step_id: string }; Returns: Json }
       consent_grant: {
         Args: { p_consent_type: string; p_platform: string }
         Returns: string

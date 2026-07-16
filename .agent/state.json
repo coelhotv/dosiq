@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F2 MERGEADO (#747, squash d4caf8ad) + migração N1→N2 APLICADA EM PROD (1 escada + 3 steps, user smoke GLP; jsonb intacto; TITRATION_SOURCE ainda n1 = zero mudança de comportamento). Próximo: F3 (motor avanço + RPC confirmação + cutover TITRATION_SOURCE=n2, T011-T017). ANTES do F3: trace de interleaving R-288 (T011) + validar dose vigente correta em prod ≥1 semana.",
+    "goal": "029 F3 CODADO (branch feature/029/f3-motor, pré-PR). Motor N2 + RPC de confirmação + cutover. Migração APLICADA em prod (backfill 3/3 + RPC + CHECK aditivo) e types regenerados. TITRATION_SOURCE segue 'n1' (merge não muda comportamento; ligar só após validação). Gates: 2060/2060 vitest, 18/18 live SQL, lint 0 erros, ratchet OK. Achados: AP-298 (auto-avanço de titulação NUNCA rodou em prod desde #526 — filtro por coluna inexistente + error descartado), AP-299 (fronteira 'cp'→NULL protocols), drift CLAUDE.md↔banco (frequency 'diário' com acento; medicines.type vs presentation), drift de types do F1 (FK composta). CON-032 novo + CON-031 estendido. Falta: RC5 + PR. Distill DEVIDO (16/15).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -197,15 +197,17 @@
       "introduced_critical": 0,
       "introduced_high": 0,
       "note": "Single-pass agy test (pre-refinement prompt). agy HIGH=DoseListItem is introduced:false (pre-existing crash; true arg was dead — verified callee). 0 introduced critical/high => merge not blocked by RC6. Benchmarked vs Gemini official; drove SKILL RC6 Extensions #6/#7/#8 + full-file ctx + introduced/causation schema + tier-scaled multi-pass."
-    }
+    },
+    "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
+    "branch": "feature/029/f3-motor"
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "rules_count": 241,
-    "anti_patterns_count": 294,
+    "anti_patterns_count": 296,
     "decisions_count": 80,
-    "contracts_count": 30,
+    "contracts_count": 31,
     "distillation_due": true
   },
   "genes": {
@@ -213,6 +215,6 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-16T01:56:14.570Z"
+    "index_loaded_at": "2026-07-16T20:10:00Z"
   }
 }

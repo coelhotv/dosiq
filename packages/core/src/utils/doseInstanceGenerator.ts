@@ -49,7 +49,13 @@ type GeneratedInstance = {
   tolerance_minutes: number
   critical_alarm: boolean
 }
-import { resolveTitrationStageAt, TitrationProtocol } from './titrationUtils'
+import {
+  resolveTitrationStageAt,
+  resolveTitrationStageAtFromSteps,
+  getTitrationSource,
+  TitrationProtocol,
+  TitrationStepLike,
+} from './titrationUtils'
 
 /**
  * Converte Date | ISO string | timestamp(ms) num Date absoluto.
@@ -189,6 +195,12 @@ function localDateRange(fromDate: Date, toDate: Date, tz: string): string[] {
  * @param {Date|string|number} fromTs - início da janela (instante absoluto)
  * @param {Date|string|number} toTs - fim da janela (instante absoluto, inclusive)
  * @param {string} [tz='America/Sao_Paulo'] - fuso do usuário (user_settings.timezone)
+ * @param {Array} [titrationSteps] - etapas da escada N2 **deste protocolo** (spec 029 F3/T014).
+ *   Injetadas pelo chamador (a pureza da função é o motivo): quem faz I/O é o repository/cron.
+ *   ⚠️ DEVEM vir filtradas por `protocol_id = protocol.id`. A escada inteira quebraria o caso
+ *   cross-medicamento: o walk-forward adotaria a dose de OUTRO medicamento para as instâncias
+ *   deste executor. Filtradas, o walk para na etapa do protocolo — que é exatamente o
+ *   comportamento desejado enquanto um medicine_switch aguarda confirmação.
  * @returns {Array<{user_id: string, protocol_id: string, scheduled_for: string,
  *                  expected_dose: number, tolerance_minutes: number}>}
  *          Ordenadas por scheduled_for; só dentro de [fromTs, toTs].
@@ -197,7 +209,8 @@ export function generateInstances(
   protocol: GeneratorProtocol | null | undefined,
   fromTs: Date | string | number,
   toTs: Date | string | number,
-  tz = 'America/Sao_Paulo'
+  tz = 'America/Sao_Paulo',
+  titrationSteps?: TitrationStepLike[] | null
 ): GeneratedInstance[] {
   if (!protocol || !protocol.id) return []
 
@@ -225,6 +238,9 @@ export function generateInstances(
 
   const tolerances = computeTolerances(slots.map((s) => s.minutes), frequency)
 
+  // Resolvido UMA vez por chamada (não por slot): a flag não muda no meio da janela.
+  const useN2 = getTitrationSource() === 'n2'
+
   const instances: GeneratedInstance[] = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {
     if (!isProtocolActiveOnDate(protocol, dateStr)) continue
@@ -234,7 +250,11 @@ export function generateInstances(
       if (scheduledMs < fromMs || scheduledMs > toMs) return
       // 012 Fase B (FR-006/FP-1): titulação ativa congela a dose da ETAPA vigente
       // na data da ocorrência — instância futura nasce com a dose da etapa futura.
-      const titrationStage = resolveTitrationStageAt(protocol, scheduledMs)
+      // 029 F3 (T014): a fonte da escada é a flag `TITRATION_SOURCE`. As duas variantes são
+      // gêmeas puras e a paridade N1↔N2 é o contrato (titrationAdapter.test.ts).
+      const titrationStage = useN2
+        ? resolveTitrationStageAtFromSteps(titrationSteps, scheduledMs)
+        : resolveTitrationStageAt(protocol, scheduledMs)
       instances.push({
         user_id: protocol.user_id,
         protocol_id: protocol.id,
