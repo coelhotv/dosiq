@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F3 CODADO (branch feature/029/f3-motor, pré-PR). Motor N2 + RPC de confirmação + cutover. Migração APLICADA em prod (backfill 3/3 + RPC + CHECK aditivo) e types regenerados. TITRATION_SOURCE segue 'n1' (merge não muda comportamento; ligar só após validação). Gates: 2060/2060 vitest, 18/18 live SQL, lint 0 erros, ratchet OK. Achados: AP-298 (auto-avanço de titulação NUNCA rodou em prod desde #526 — filtro por coluna inexistente + error descartado), AP-299 (fronteira 'cp'→NULL protocols), drift CLAUDE.md↔banco (frequency 'diário' com acento; medicines.type vs presentation), drift de types do F1 (FK composta). CON-032 novo + CON-031 estendido. Falta: RC5 + PR. Distill DEVIDO (16/15).",
+    "goal": "029 F3 CODADO (branch feature/029/f3-motor, pré-PR). Motor N2 + RPC de confirmação + cutover. Migração APLICADA em prod (backfill 3/3 + RPC + CHECK aditivo) e types regenerados. TITRATION_SOURCE segue 'n1' (merge não muda comportamento; ligar só após validação). Gates: 2060/2060 vitest, 18/18 live SQL, lint 0 erros, ratchet OK. Achados: AP-298 (auto-avanço de titulação NUNCA rodou em prod desde #526 — filtro por coluna inexistente + error descartado), AP-299 (fronteira 'cp'→NULL protocols), drift CLAUDE.md↔banco (frequency 'diário' com acento; medicines.type vs presentation), drift de types do F1 (FK composta). CON-032 novo + CON-031 estendido. PR #749 ABERTO (sem merge). RC5: 3 achados (1 crítico: falha parcial do cron deixaria escada sem etapa vigente → corrigido por ordem convergente), 0 ASK. Distill DEVIDO (16/15).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -199,7 +199,8 @@
       "note": "Single-pass agy test (pre-refinement prompt). agy HIGH=DoseListItem is introduced:false (pre-existing crash; true arg was dead — verified callee). 0 introduced critical/high => merge not blocked by RC6. Benchmarked vs Gemini official; drove SKILL RC6 Extensions #6/#7/#8 + full-file ctx + introduced/causation schema + tier-scaled multi-pass."
     },
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
-    "branch": "feature/029/f3-motor"
+    "branch": "feature/029/f3-motor",
+    "pr": 749
   },
   "memory": {
     "last_distillation": "2026-07-13T00:00:00Z",
@@ -216,5 +217,11 @@
   },
   "quality_gates": {
     "index_loaded_at": "2026-07-16T20:10:00Z"
+  },
+  "code_review": {
+    "status": "issues_found",
+    "critical": 1,
+    "auto_fixed": 3,
+    "ask_items": 0
   }
 }
