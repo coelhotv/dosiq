@@ -1,6 +1,7 @@
 export { createMedicineRepository } from './createMedicineRepository'
 export { createProtocolRepository } from './createProtocolRepository'
 export { createTreatmentPlanRepository } from './createTreatmentPlanRepository'
+export { createTitrationRepository } from './createTitrationRepository'
 export { createStockRepository } from './createStockRepository'
 export { createPurchaseRepository } from './createPurchaseRepository'
 export { createProfileRepository } from './createProfileRepository'
