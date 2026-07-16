@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS public.titrations (
   treatment_plan_id uuid REFERENCES public.treatment_plans(id) ON DELETE SET NULL,
   migrated_from_protocol_id uuid REFERENCES public.protocols(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT titrations_id_user_id_key UNIQUE (id, user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_titrations_user ON public.titrations (user_id);
 CREATE INDEX IF NOT EXISTS idx_titrations_treatment_plan ON public.titrations (treatment_plan_id);
@@ -57,7 +58,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.titrations TO service_role;
 
 CREATE TABLE IF NOT EXISTS public.titration_steps (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  titration_id uuid NOT NULL REFERENCES public.titrations(id) ON DELETE CASCADE,
+  titration_id uuid NOT NULL,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   position integer NOT NULL CHECK (position >= 0),
   medicine_id uuid NOT NULL REFERENCES public.medicines(id),
@@ -70,9 +71,10 @@ CREATE TABLE IF NOT EXISTS public.titration_steps (
   ended_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT titration_steps_position_unique UNIQUE (titration_id, position)
+  CONSTRAINT titration_steps_position_unique UNIQUE (titration_id, position),
+  CONSTRAINT titration_steps_titration_user_fkey FOREIGN KEY (titration_id, user_id) REFERENCES public.titrations(id, user_id) ON DELETE CASCADE,
+  CONSTRAINT titration_steps_dates_check CHECK (ended_at IS NULL OR started_at IS NULL OR ended_at >= started_at)
 );
-CREATE INDEX IF NOT EXISTS idx_titration_steps_titration ON public.titration_steps (titration_id, position);
 CREATE INDEX IF NOT EXISTS idx_titration_steps_user ON public.titration_steps (user_id);
 CREATE INDEX IF NOT EXISTS idx_titration_steps_protocol ON public.titration_steps (protocol_id);
 ALTER TABLE public.titration_steps ENABLE ROW LEVEL SECURITY;
@@ -265,6 +267,43 @@ SELECT 16,'CASCADE: excluir auth.users(A) apaga escada+etapas','0 linhas',
        || ' etapa(s)',
        (SELECT count(*) FROM public.titrations WHERE user_id = (SELECT v FROM public._ids WHERE k='u_a')) = 0
        AND (SELECT count(*) FROM public.titration_steps WHERE user_id = (SELECT v FROM public._ids WHERE k='u_a')) = 0;
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PARTE 7 — review Gemini #746: IDOR cross-user (FK composta) + CHECK temporal (17/18/19)
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- med de B (a escada tit_a é de A; step_a já ocupa position 0)
+INSERT INTO public.medicines (id,user_id,name,dosage_unit,type)
+  VALUES (gen_random_uuid(),(SELECT v FROM _ids WHERE k='u_b'),'Med B 746','mg','medicamento');
+DO $$
+DECLARE v_b uuid:=(SELECT v FROM _ids WHERE k='u_b'); v_tit_a uuid:=(SELECT v FROM _ids WHERE k='tit_a');
+        v_med_b uuid; v_a uuid:=(SELECT v FROM _ids WHERE k='u_a'); v_med_a uuid:=(SELECT v FROM _ids WHERE k='med_a');
+BEGIN
+  SELECT id INTO v_med_b FROM public.medicines WHERE user_id = v_b AND name = 'Med B 746' LIMIT 1;
+  -- 17. IDOR: B insere step (user_id=B, passa RLS) mas titration_id = escada de A → FK composta REJEITA
+  BEGIN
+    INSERT INTO public.titration_steps (titration_id,user_id,position,medicine_id,dose,intake_unit)
+    VALUES (v_tit_a, v_b, 50, v_med_b, 1, 'mg');
+    INSERT INTO _r VALUES (17,'IDOR: B insere step (user_id=B) na escada de A','FK composta rejeita','INSERIU — escada alheia contaminada',false);
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES (17,'IDOR: B insere step (user_id=B) na escada de A','FK composta rejeita',SQLERRM,SQLSTATE IN ('23503','23514'));
+  END;
+  -- 18. CHECK temporal: ended_at < started_at rejeita
+  BEGIN
+    INSERT INTO public.titration_steps (titration_id,user_id,position,medicine_id,dose,intake_unit,started_at,ended_at)
+    VALUES (v_tit_a, v_a, 51, v_med_a, 1, 'mg', now(), now() - interval '1 day');
+    INSERT INTO _r VALUES (18,'CHECK ended_at < started_at','erro 23514','ACEITOU',false);
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES (18,'CHECK ended_at < started_at','erro 23514',SQLERRM,SQLSTATE='23514');
+  END;
+  -- 19. ended_at >= started_at aceita
+  BEGIN
+    INSERT INTO public.titration_steps (titration_id,user_id,position,medicine_id,dose,intake_unit,started_at,ended_at)
+    VALUES (v_tit_a, v_a, 52, v_med_a, 1, 'mg', now() - interval '1 day', now());
+    INSERT INTO _r VALUES (19,'ended_at >= started_at aceita','insere OK','inseriu',true);
+  EXCEPTION WHEN OTHERS THEN
+    INSERT INTO _r VALUES (19,'ended_at >= started_at aceita','insere OK',SQLERRM,false);
+  END;
+END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- RESULTADO

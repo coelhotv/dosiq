@@ -72,7 +72,12 @@ CREATE TABLE IF NOT EXISTS public.titrations (
   migrated_from_protocol_id uuid REFERENCES public.protocols(id) ON DELETE SET NULL,
 
   created_at               timestamptz NOT NULL DEFAULT now(),
-  updated_at               timestamptz NOT NULL DEFAULT now()
+  updated_at               timestamptz NOT NULL DEFAULT now(),
+
+  -- Alvo da FK composta de titration_steps (review Gemini #746): garante que uma etapa só
+  -- referencie uma escada do MESMO dono. `id` já é PK (único); esta UNIQUE existe só para ser
+  -- referenciável pela FK (titration_id, user_id) — fecha o IDOR descrito no titration_steps.
+  CONSTRAINT titrations_id_user_id_key UNIQUE (id, user_id)
 );
 
 COMMENT ON TABLE public.titrations IS
@@ -113,7 +118,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.titrations TO service_role;
 CREATE TABLE IF NOT EXISTS public.titration_steps (
   id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
-  titration_id   uuid NOT NULL REFERENCES public.titrations(id) ON DELETE CASCADE,
+  titration_id   uuid NOT NULL,
 
   -- Denormalizado p/ RLS direta por linha (decisão 1). CASCADE = mesmo motivo da titração.
   user_id        uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -145,7 +150,18 @@ CREATE TABLE IF NOT EXISTS public.titration_steps (
   created_at     timestamptz NOT NULL DEFAULT now(),
   updated_at     timestamptz NOT NULL DEFAULT now(),
 
-  CONSTRAINT titration_steps_position_unique UNIQUE (titration_id, position)
+  CONSTRAINT titration_steps_position_unique UNIQUE (titration_id, position),
+
+  -- FK COMPOSTA (review Gemini #746 — IDOR). Referencia (id, user_id) da titração, não só o id:
+  -- torna IMPOSSÍVEL uma etapa apontar p/ escada de outro dono, mesmo com user_id spoofado no
+  -- INSERT (a RLS `user_id=auth.uid()` sozinha deixava passar `titration_id` alheio). CASCADE
+  -- pela titração; a exclusão de conta também cascateia por user_id→auth.users.
+  CONSTRAINT titration_steps_titration_user_fkey
+    FOREIGN KEY (titration_id, user_id) REFERENCES public.titrations(id, user_id) ON DELETE CASCADE,
+
+  -- Uma etapa não termina antes de começar (review Gemini #746). NULL-safe: só vincula com ambos.
+  CONSTRAINT titration_steps_dates_check
+    CHECK (ended_at IS NULL OR started_at IS NULL OR ended_at >= started_at)
 );
 
 COMMENT ON TABLE public.titration_steps IS
@@ -155,8 +171,8 @@ COMMENT ON TABLE public.titration_steps IS
 COMMENT ON COLUMN public.titration_steps.duration_days IS
   'NULL = etapa contínua (dose de manutenção, substitui o requires_new_medicine implícito do N1).';
 
-CREATE INDEX IF NOT EXISTS idx_titration_steps_titration
-  ON public.titration_steps (titration_id, position);
+-- (sem índice em (titration_id, position): a UNIQUE titration_steps_position_unique já cria um —
+--  review Gemini #746, índice redundante removido.)
 CREATE INDEX IF NOT EXISTS idx_titration_steps_user
   ON public.titration_steps (user_id);
 CREATE INDEX IF NOT EXISTS idx_titration_steps_protocol
