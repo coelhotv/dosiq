@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F1 — modelo titrations+titration_steps (SQL+Zod+types), PO-SEC-1",
+    "goal": "029 F1 MERGEADO (#746) — modelo titrations+titration_steps em prod (RLS+grants+FK composta pós-review IDOR). Próximo: F2 (adapter dual-read + migração N1→N2, T006-T010).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,14 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 745,
-    "merged_squash": "eed05724",
+    "merged_pr": 746,
+    "merged_squash": "139808b6",
     "merged_history": [
+      {
+        "pr": 746,
+        "squash": "139808b6",
+        "phase": "029 F1: modelo titrations+titration_steps (ADR-080). PO-SEC-1 (16/16 ROLLBACK). Review Gemini 3/3 aplicados (FK composta IDOR/AP-293, indice redundante, CHECK temporal). core 0.7.0"
+      },
       {
         "pr": 745,
         "squash": "eed05724",
@@ -160,7 +165,7 @@
     ],
     "spec_dir": "plans/specs/029-treatment-level-titration",
     "spec": "plans/specs/029-treatment-level-titration/spec.md",
-    "previous_session_note": "046 RECALIBRADO (RC3 eng-review + RC-SEC, 2026-07-14, sem código). 17 findings; spec/plan/tasks/PLAYBOOK reescritos. O escopo ampliado (adendos 07-13 hub 008 e 07-14 trilha que sobrevive à exclusão) NÃO fechava com a arquitetura: a trilha era FORJÁVEL pelo próprio auditado (authenticated com INSERT direto — append-only barra UPDATE/DELETE, não INSERT falso) e o subject_hash era IMPOSSÍVEL no caminho escrito (pepper server-only + INSERT no client). Ambos morrem no mesmo fix: escrita só via RPC SECURITY DEFINER. RC-SEC achou o pior: delete_user_account() NÃO é 'a função que apaga' — ela RECUSA apagar com tratamento ativo (active_treatments_block, :38). Reusá-la no prune (como o RC3 mandou, por DRY) faria o job falhar EXATAMENTE nas contas que mais precisam ser apagadas (o alvo típico do prune tem tratamento ativo): lei descumprida em silêncio, testes verdes. Bloqueio MOVE pro wrapper; núcleo _by_id não o tem. Re-slice: A (trilha) → B (gate) → C (prune, dry-run first). NOVOS: FR-015..FR-021, PO-SEC-2/3/4. Próximo: Slice A (T001/T001a/T001b/T001c/T002/T002b/T003/T004/T008b). Contexto anterior: 008 ENTREGUE (PR #743). Export LGPD completo: mobile nativo (share sheet) + hub Privacidade e dados; web ganhou biomarkers/perfil/colunas reais. AP-291/R-291 (inventário à mão vs schema que anda sozinho). PRÓXIMO: 046 — escopo AMPLIADO nesta sessão (FR-011..FR-014 + PO-6): consent_log com ON DELETE SET NULL + subject_hash (HMAC c/ pepper) + recibo account_deleted DENTRO da txn de delete_user_account(). Motivo: a exclusão apaga 100% (17 tabelas por cascade, verificado em prod) mas não deixa PROVA — e um consent_log com cascade morreria junto com a conta, justo quando a prova importa. T000 da 046 já mergeado (#732); Slice A = T001/T001b/T001c + T008b.",
+    "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
       "eng-review",
       "security-review"
