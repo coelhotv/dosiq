@@ -22,34 +22,17 @@ export default function ProtocolChecklistItem({ protocol, isSelected, onToggle }
         <div className="checklist-info">
           <span className="checklist-name">💊 {protocol.name}</span>
           <div className="checklist-meta">
-            {protocol.titration_scheduler_data ? (
-              <div className="titration-mini-status">
-                <span className="titration-step-badge">
-                  Etapa {protocol.titration_scheduler_data.currentStep}/
-                  {protocol.titration_scheduler_data.totalSteps}
-                </span>
-                <span className="titration-days-text">
-                  Dia {protocol.titration_scheduler_data.day}/
-                  {protocol.titration_scheduler_data.totalDays}
-                </span>
-              </div>
-            ) : (
-              <span className={`titration-badge ${protocol.titration_status}`}>
-                {protocol.titration_status === 'titulando' ? '📈 Titulando' : 'Estável'}
-              </span>
-            )}
+            {/* 029 F3.1: o ramo "Etapa X/Y" + a barra de progresso liam
+                `titration_scheduler_data`, campo SEM produtor no repositório inteiro — o ternário
+                caía SEMPRE aqui. Removidos (AP-301: código que aparenta capacidade que não
+                existe). O que a web exibe da escada N2 é decisão do F6/T033b. */}
+            <span className={`titration-badge ${protocol.titration_status}`}>
+              {protocol.titration_status === 'titulando' ? '📈 Titulando' : 'Estável'}
+            </span>
             <span className="dosage-badge">
               {formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, protocol.medicine)}
             </span>
           </div>
-          {protocol.titration_scheduler_data && (
-            <div className="titration-progress-bar-container">
-              <div
-                className="titration-progress-bar-fill"
-                style={{ width: `${protocol.titration_scheduler_data.progressPercent}%` }}
-              />
-            </div>
-          )}
         </div>
       </div>
 

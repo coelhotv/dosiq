@@ -282,14 +282,21 @@ function _extractActiveTitrations(protocols, medicines) {
   if (!protocols) return []
 
   return protocols
-    .filter((p) => p.titration_schedule && p.titration_schedule.length > 0)
     .map((protocol) => {
-      const titrationData = calculateTitrationData(protocol)
-      const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
+      // 029 F3.1 (T017d): a escada vem de `titration_steps` — embed do select de
+      // `createProtocolRepository` (CON-032 §invariante 1: já filtrado por este protocol via FK).
+      // O jsonb N1 (`titration_schedule`) morreu com o AP-301.
+      const steps = protocol.titration_steps
+      if (!Array.isArray(steps) || steps.length === 0) return null
 
+      const titrationData = calculateTitrationData(steps)
       if (!titrationData) return null
 
-      const currentStage = protocol.titration_schedule[protocol.current_stage_index || 0]
+      const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
+      // `currentStep` é 1-based (é rótulo de exibição); a escada é ordenada por position.
+      const currentStep = [...steps].sort((a, b) => a.position - b.position)[
+        titrationData.currentStep - 1
+      ]
 
       return {
         protocolId: protocol.id,
@@ -301,9 +308,14 @@ function _extractActiveTitrations(protocols, medicines) {
         totalDays: titrationData.totalDays,
         progressPercent: Math.round(titrationData.progressPercent),
         isTransitionDue: titrationData.isTransitionDue,
-        stageNote: titrationData.stageNote || null,
+        // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou — a etapa se
+        // descreve por medicamento+dose (Decisões §2). É decisão de PRODUTO, não coluna
+        // faltando: `titration_steps` não tem `description` (R-295 — conferido no banco).
+        // Não "resolver" isso somando o campo a um select: foi assim que o #749 derrubou prod.
+        // Consumers degradam sozinhos (PDF → 'Sem observacoes'; ConsultationSections não renderiza).
+        stageNote: null,
         daysRemaining: titrationData.daysRemaining,
-        currentDosage: currentStage?.dosage || null,
+        currentDosage: currentStep?.dose ?? null,
       }
     })
     .filter(Boolean) // Remove nulls

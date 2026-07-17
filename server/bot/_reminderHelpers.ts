@@ -1,15 +1,14 @@
 import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { shouldSendNotification, shouldSendGroupedNotification } from '../services/notificationDeduplicator.js';
-import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, parseTimestamp, addMinutes } from '../utils/dateUtils.js';
+import { getCurrentTime, getCurrentTimeInTimezone, parseLocalDate, getTodayLocal, getCurrentDatePartsInTimezone, getServerTimestamp, parseISO, addMinutes } from '../utils/dateUtils.js';
 import { partitionDoses } from './utils/partitionDoses.js';
 import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 // 029 F3: `getTodayLocal` do server é hardcoded em SP (R-020 histórico); o do core aceita o fuso
 // do DONO — obrigatório para o vencimento por dia local da titulação (R-253/R-254). Daí o alias.
 import {
   calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat,
-  resolveTitrationAdvanceFromSteps,
-  getTitrationSource,
+  resolveTitrationAdvance,
   getTodayLocal as getTodayLocalInTz,
 } from '@dosiq/core';
 import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
@@ -895,113 +894,11 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
   }
 }
 
-// Helper para obter a duração em dias de uma etapa de titulação.
-function _getTitrationStageDays(stage) {
-  const days = Number(stage?.duration_days ?? stage?.days);
-  return Number.isFinite(days) && days > 0 ? days : 0;
-}
-
-// 012 Fase B (FR-005b): detecta etapas de titulação vencidas por cronograma.
-// Caminha o schedule a partir de stage_started_at somando duration (days);
-// retorna null se nada venceu. stage_started_at novo = fim ACUMULADO da etapa
-// anterior (fiel ao cronograma), não now() — atraso do cron não desloca etapas.
-export function _titrationDueAdvance(protocol, nowMs) {
-  const schedule = protocol?.titration_schedule;
-  if (!Array.isArray(schedule) || schedule.length === 0) return null;
-  if (protocol.titration_status !== 'titulando') return null;
-  if (!protocol.stage_started_at) return null;
-
-  let index = protocol.current_stage_index || 0;
-  if (index >= schedule.length) return null;
-  let startMs = parseISO(protocol.stage_started_at).getTime();
-  if (Number.isNaN(startMs)) return null;
-
-  const MS_DAY = 24 * 60 * 60 * 1000;
-  let advanced = false;
-  let reachedTarget = false;
-  while (index < schedule.length) {
-    // duration_days = canônico (titrationStageSchema); days = fallback legado
-    const days = _getTitrationStageDays(schedule[index]);
-    if (days === 0) break;
-    const endMs = startMs + days * MS_DAY;
-    if (nowMs < endMs) break;
-    if (index === schedule.length - 1) {
-      // Última etapa esgotada → dose alvo atingida (índice congela na última).
-      reachedTarget = true;
-      break;
-    }
-    startMs = endMs;
-    index += 1;
-    advanced = true;
-  }
-  if (!advanced && !reachedTarget) return null;
-  return { newIndex: index, newStageStartedAt: parseTimestamp(startMs).toISOString(), reachedTarget };
-}
-
-// 012 Fase B2 (FR-021): Dispara o alerta de transição de etapa de titulação.
-async function _dispatchTitrationAlert(userId, protocol, due, dispatcher, correlationId) {
-  const medicine = protocol.medicine || {};
-  const schedule = protocol.titration_schedule;
-  const nextStageData = schedule?.[due.newIndex + 1];
-  const enteredStage = schedule?.[due.newIndex];
-  const requiresNewMedicine = Boolean(enteredStage?.requires_new_medicine) && !due.reachedTarget;
-
-  logger.info(`Titulação avançada por cronograma: etapa ${due.newIndex + 1}/${schedule.length}${due.reachedTarget ? ' (alvo atingido)' : ''}${requiresNewMedicine ? ' (requer nova apresentação)' : ''}`, {
-    userId, protocolId: protocol.id, correlationId
-  });
-
-  const data = {
-    medicineName: medicine.name || 'Medicamento',
-    currentStage: due.newIndex + 1,
-    totalStages: schedule.length,
-    status: due.reachedTarget ? 'alvo_atingido' : 'titulando',
-    requiresNewMedicine,
-    nextStage: !due.reachedTarget && nextStageData ? {
-      dosage: String(nextStageData.dosage),
-      unit: medicine.dosage_unit || 'mg',
-      date: nextStageData.date
-    } : undefined
-  };
-
-  await dispatcher.dispatch({
-    userId, kind: 'titration_alert', data, context: { correlationId, jobType: 'titration_alert' }
-  });
-}
-
-// 012 Fase B (FR-005b): avanço AUTOMÁTICO por cronograma + notificação SÓ no
-// evento (antes o cron disparava titration_alert todo dia para todo protocolo
-// em titulação — spam sem informação nova; regressão corrigida em T009).
-// Evento informativo, sem CTA de dose (SaMD/ADR-062).
-async function _processProtocolTitration(userId, protocol, dispatcher, correlationId) {
-  const due = _titrationDueAdvance(protocol, Date.now());
-  if (!due) return;
-
-  const updatePayload: { current_stage_index: any; stage_started_at: any; titration_status?: string } = {
-    current_stage_index: due.newIndex,
-    stage_started_at: due.newStageStartedAt,
-  };
-  if (due.reachedTarget) updatePayload.titration_status = 'alvo_atingido';
-
-  // Trava otimista (AP-221): confirma que a linha ainda está na etapa esperada
-  // antes de avançar. Se o usuário mexeu na titulação manualmente entre o SELECT
-  // do cron e este UPDATE, PostgREST faz no-op (0 linhas, sem erro) → não dispara
-  // notificação de avanço sobre estado obsoleto.
-  const { data: updatedRows, error: updateErr } = await supabase
-    .from('protocols')
-    .update(updatePayload)
-    .eq('id', protocol.id)
-    .eq('current_stage_index', protocol.current_stage_index ?? 0)
-    .select('id');
-  if (updateErr) throw updateErr; // best-effort por protocolo no caller (R-245)
-  if (!updatedRows || updatedRows.length === 0) return; // etapa mudou sob o cron → aborta
-
-  await _dispatchTitrationAlert(userId, protocol, due, dispatcher, correlationId);
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 029 F3 (T012) — MOTOR N2: avanço da Evolução do tratamento a partir de titration_steps.
 //
-// Divisão de trabalho: a DECISÃO é pura e vive no core (`resolveTitrationAdvanceFromSteps`,
+// Divisão de trabalho: a DECISÃO é pura e vive no core (`resolveTitrationAdvance`,
 // nível A strict, testável sem banco); aqui fica só o I/O + as travas.
 //
 // CONCORRÊNCIA (R-288 — trace em plans/specs/029.../plan.md §Apêndice F3): cada UPDATE carrega
@@ -1191,7 +1088,7 @@ async function _processUserTitrationsN2(userId, tz, dispatcher, correlationId) {
   for (const titration of titrations) {
     try {
       const steps = Array.isArray(titration.steps) ? titration.steps : [];
-      const plan = resolveTitrationAdvanceFromSteps(steps, todayLocal, tz);
+      const plan = resolveTitrationAdvance(steps, todayLocal, tz);
       if (!plan) continue; // nada venceu (inclui a titulação dormente: 'current' sem started_at)
 
       // O join só existe aqui: o motor é puro e não conhece nomes nem executores.
@@ -1233,49 +1130,12 @@ export async function checkTitrationAlertsViaDispatcher(dispatcher, correlationI
       const userId = user.user_id;
       const tz = user.timezone || 'America/Sao_Paulo'; // fallback idêntico ao resolveUserTz (R-254)
 
-      // 029 F3 (T014): a escada vive em titration_steps. `getTitrationSource()` mantém o
-      // caminho legado disponível por env var — rollback sem deploy.
-      if (getTitrationSource() === 'n2') {
-        await _processUserTitrationsN2(userId, tz, dispatcher, correlationId);
-        continue;
-      }
-
-      // 012 Fase B: stage_started_at no select (R-267 — sem ele o cron não sabia
-      // se a transição venceu e notificava diariamente); só 'titulando' interessa.
-      //
-      // ⚠️ `error` DESTRUTURADO de propósito (029 F3): esta query filtrava por
-      // `.eq('status','ativo')` — coluna que NÃO EXISTE em protocols (é `active` boolean).
-      // O PostgREST devolvia 42703 e o código descartava o `error`, então `protocols` vinha
-      // undefined e a varredura inteira era um no-op SILENCIOSO desde 2026-05-06 (PR #526):
-      // nenhuma titulação jamais avançou em prod. Sintoma invisível porque o `expected_dose`
-      // das instâncias vem do gerador puro, que caminha a escada em memória.
-      const { data: protocols, error: protocolsError } = await (supabase as any)
-        .from('protocols')
-        .select(`
-          id, current_stage_index, titration_schedule, titration_status, stage_started_at,
-          medicine:medicine_id (name, dosage_unit)
-        `)
-        .eq('user_id', userId)
-        .eq('active', true)
-        .eq('titration_status', 'titulando')
-        .not('titration_schedule', 'is', null);
-
-      if (protocolsError) {
-        logger.error('Erro ao buscar protocolos em titulação', protocolsError, { userId, correlationId });
-        continue;
-      }
-      if (!protocols || protocols.length === 0) continue;
-
-      for (const protocol of protocols) {
-        try {
-          await _processProtocolTitration(userId, protocol, dispatcher, correlationId);
-        } catch (err) {
-          // Best-effort por protocolo (R-245): erro num avanço não derruba a varredura.
-          logger.error('Erro ao processar avanço de titulação', err, {
-            userId, protocolId: protocol?.id, correlationId
-          });
-        }
-      }
+      // 029 F3.1 (T017b): a escada vive em `titration_steps` e é a fonte ÚNICA. O caminho N1
+      // (jsonb em `protocols`) e a flag `TITRATION_SOURCE` foram removidos: a titulação N1
+      // nunca avançou em produção (AP-298 matou a varredura em 2026-05-06 e o AP-301 já a
+      // deixava zumbi antes disso) e a feature tinha zero usuários — não havia rollback a
+      // preservar. As colunas N1 são dropadas no F6.
+      await _processUserTitrationsN2(userId, tz, dispatcher, correlationId);
     }
   } catch (err) {
     logger.error('Erro em checkTitrationAlertsViaDispatcher', err, { correlationId });

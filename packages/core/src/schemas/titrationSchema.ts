@@ -33,14 +33,17 @@ export type TitrationStepStatus = (typeof TITRATION_STEP_STATUSES)[number]
 /**
  * Linha de `titrations` como o banco a entrega (escada / orquestrador).
  *
- * `treatment_plan_id` e `migrated_from_protocol_id` são `.nullable().optional()` (R-085): a FK é
- * `ON DELETE SET NULL`, então o banco PODE devolver `null`, e o cliente PODE omiti-los na criação.
+ * `treatment_plan_id` é `.nullable().optional()` (R-085): a FK é `ON DELETE SET NULL`, então o
+ * banco PODE devolver `null`, e o cliente PODE omiti-lo na criação.
+ *
+ * NÃO tem `migrated_from_protocol_id`: era o vestígio da migração N1→N2, removida no pivô da 029
+ * (F3.1/T017f) junto com a coluna — a titulação N1 nunca funcionou em prod e não havia o que
+ * migrar (AP-301). Não reintroduzir.
  */
 export const titrationSchema = z.object({
   id: z.string().uuid(),
   user_id: z.string().uuid(),
   treatment_plan_id: z.string().uuid().nullable().optional(),
-  migrated_from_protocol_id: z.string().uuid().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -91,7 +94,6 @@ export type TitrationStepCreate = z.infer<typeof titrationStepCreateSchema>
 /** Entrada de criação de uma escada. `user_id` é derivado no serviço (nunca do cliente). */
 export const titrationCreateSchema = z.object({
   treatment_plan_id: z.string().uuid().nullable().optional(),
-  migrated_from_protocol_id: z.string().uuid().nullable().optional(),
 })
 
 export type TitrationCreate = z.infer<typeof titrationCreateSchema>

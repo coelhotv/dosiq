@@ -190,6 +190,14 @@
   border-radius: var(--radius-card);
 }
 
+/* 029 F3.1 (T017i): linha read-only que substituiu o wizard + o select "Status Manual".
+   A evolução do tratamento é criada e gerenciada no app; a web só lê. */
+.protocol-form .titration-section__frozen {
+  margin: 0;
+  color: var(--color-on-surface-variant);
+  font-size: var(--font-size-sm);
+}
+
 /* Os demais estilos (form h3, form-group, form-row, form-actions, error-*,
    checkbox-label, required) são herdados de components.redesign.css via Sprint 11.2. */
 

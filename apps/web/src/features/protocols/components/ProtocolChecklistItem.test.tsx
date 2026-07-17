@@ -89,29 +89,11 @@ describe('ProtocolChecklistItem', () => {
     expect(screen.getByText('Estável')).toBeInTheDocument()
   })
 
-  it('renders titration scheduler data when present', () => {
-    const protocol = {
-      id: 'p1',
-      name: 'Manhã',
-      dosage_per_intake: 1,
-      active: true,
-      medicine_id: 'm1',
-      medicine: { name: 'Aspirina' },
-      titration_scheduler_data: {
-        currentStep: 2,
-        totalSteps: 5,
-        day: 10,
-        totalDays: 30,
-        progressPercent: 33,
-      },
-    }
-    const onToggle = vi.fn()
-
-    render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
-
-    expect(screen.getByText('Etapa 2/5')).toBeInTheDocument()
-    expect(screen.getByText('Dia 10/30')).toBeInTheDocument()
-  })
+  // 029 F3.1: removido 'renders titration scheduler data when present'. Montava
+  // `titration_scheduler_data` à mão — um campo que NENHUM produtor do repositório escreve.
+  // Ficou verde 6 meses provando um render que a produção nunca alcançou; o componente caía
+  // sempre no ramo do badge. É a mesma armadilha do PO-5 (paridade com um cadáver): um teste só
+  // vale se o estado que ele monta puder existir de verdade. Ver AP-301.
 
   it('renders time schedule pills', () => {
     const protocol = {

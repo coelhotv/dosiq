@@ -9,7 +9,6 @@
 // - getAll / getById / create / update / delete  → CRUD CRUD básico
 // - getActive(date)                              → filtro por janela period (active=true ∧ start ≤ date ∧ end ≥ date|null)
 // - getByMedicineId(medicineId)                  → lista protocolos vinculados a um medicamento
-// - advanceTitrationStage(id, markAsCompleted)   → web-only (mobile v1 não expõe; mantido na factory pra paridade)
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
@@ -143,7 +142,7 @@ interface CreateProtocolRepositoryDeps {
  * Cria um repositório CRUD de tratamentos (protocols) parametrizado por plataforma.
  */
 // NOTA: factory excede max-lines-per-function por agregar 7 métodos CRUD +
-// advanceTitrationStage no mesmo objeto (pattern canônico de createMedicineRepository).
+// no mesmo objeto (pattern canônico de createMedicineRepository).
 // Quebrar prejudica leitura; warning aceito (R-221 SQP).
 // Retorno anotado explicitamente (TS2742 — declaration emit não nomeia o tipo
 // inferido do `.select()` dinâmico sem referenciar caminho interno de @dosiq/shared-data).
@@ -163,7 +162,6 @@ export function createProtocolRepository({
   create(protocol: Record<string, unknown>): Promise<any>
   update(id: string, updates: Record<string, unknown>): Promise<any>
   delete(id: string): Promise<void>
-  advanceTitrationStage(id: string, markAsCompleted?: boolean): Promise<any>
 } {
   if (!client) throw new Error('createProtocolRepository: client é obrigatório')
   if (typeof getUserId !== 'function') {
@@ -288,61 +286,5 @@ export function createProtocolRepository({
       if (error) throw error
     },
 
-    /**
-     * Avança para o próximo estágio de titulação. Web-only no v1 (mobile não
-     * expõe UI). Se markAsCompleted=true, força status alvo_atingido mesmo
-     * antes de esgotar o schedule.
-     */
-    async advanceTitrationStage(id: string, markAsCompleted = false) {
-      const protocol = await this.getById(id)
-
-      if (!protocol.titration_schedule || protocol.titration_schedule.length === 0) {
-        throw new Error('Este protocolo não possui regime de titulação')
-      }
-
-      // user_id já veio em getById (que validou posse via getUserId interno).
-      // Reutilizar evita 2º await desnecessário.
-      const userId = protocol.user_id
-      const currentStageIndex = protocol.current_stage_index || 0
-      const nextStageIndex = currentStageIndex + 1
-
-      // Esgotou o schedule — marca como alvo_atingido e fixa no último stage
-      if (nextStageIndex >= protocol.titration_schedule.length) {
-        const { data, error } = await client
-          .from('protocols')
-          .update({
-            titration_status: 'alvo_atingido',
-            current_stage_index: protocol.titration_schedule.length - 1,
-            stage_started_at: getServerTimestamp(),
-          })
-          .eq('id', id)
-          .eq('user_id', userId)
-          .select(writeSelect)
-          .single()
-
-        if (error) throw error
-        return detailTransform(data)
-      }
-
-      // Avança normalmente — pega dose do próximo stage do schedule
-      const nextStage = protocol.titration_schedule[nextStageIndex]
-      const updates = {
-        current_stage_index: nextStageIndex,
-        stage_started_at: getServerTimestamp(),
-        dosage_per_intake: nextStage.dosage,
-        titration_status: markAsCompleted ? 'alvo_atingido' : 'titulando',
-      }
-
-      const { data, error } = await client
-        .from('protocols')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', userId)
-        .select(writeSelect)
-        .single()
-
-      if (error) throw error
-      return detailTransform(data)
-    },
   }
 }

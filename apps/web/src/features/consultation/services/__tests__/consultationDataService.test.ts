@@ -29,7 +29,6 @@ const mocks = vi.hoisted(() => ({
     totalDays: 7,
     progressPercent: 71.4,
     isTransitionDue: false,
-    stageNote: 'Aumentar gradualmente',
     daysRemaining: 2,
   },
   mockPrescriptions: [],
@@ -102,7 +101,6 @@ describe('consultationDataService', () => {
       totalDays: 7,
       progressPercent: 71.4,
       isTransitionDue: false,
-      stageNote: 'Aumentar gradualmente',
       daysRemaining: 2,
     }
     mocks.mockPrescriptions = []
@@ -145,7 +143,7 @@ describe('consultationDataService', () => {
       dosage_per_intake: 1,
       start_date: '2026-01-01',
       end_date: '2026-12-31',
-      titration_schedule: null,
+      // Sem escada: nenhum `titration_steps` no embed.
     },
     {
       id: 'prot-2',
@@ -157,11 +155,11 @@ describe('consultationDataService', () => {
       dosage_per_intake: 1,
       start_date: '2026-01-15',
       end_date: '2026-06-30',
-      titration_schedule: [
-        { dosage: 1, days: 3 },
-        { dosage: 2, days: 4 },
+      // 029 F3.1 (T017d): a escada vem do embed `titration_steps(...)`, não do jsonb N1.
+      titration_steps: [
+        { position: 0, dose: 1, duration_days: 3, status: 'current', started_at: '2026-02-21T00:00:00' },
+        { position: 1, dose: 2, duration_days: 4, status: 'upcoming', started_at: null },
       ],
-      current_stage_index: 0,
     },
   ]
 
@@ -396,7 +394,9 @@ describe('consultationDataService', () => {
         totalDays: 7,
         progressPercent: 71,
         isTransitionDue: false,
-        stageNote: 'Aumentar gradualmente',
+        // SEMPRE null: a nota por etapa era campo do N1 e não migrou (Decisões §2) —
+        // `titration_steps` não tem `description`. Decisão de produto, não omissão.
+        stageNote: null,
         daysRemaining: 2,
         currentDosage: 1,
       })
