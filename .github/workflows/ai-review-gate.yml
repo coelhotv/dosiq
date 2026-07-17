@@ -22,6 +22,12 @@ on:
       - '*.md'
       - 'scripts/**'
       - 'scratches/**'
+  # Re-avalia quando a review RC6 é publicada DEPOIS do último push (T041:
+  # no #753 o gate rodou no push e ficou em warning stale — o --post veio depois
+  # e nada re-disparava). pull_request_review NÃO suporta paths-ignore; o guard
+  # de payload no step ignora reviews que não são do RC6.
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   pull-requests: read
@@ -42,6 +48,14 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request.number;
+
+            // Em pull_request_review, só interessa a chegada de uma review RC6
+            // (review humana não muda o veredito do gate; evita run redundante).
+            if (context.eventName === 'pull_request_review' &&
+                !(context.payload.review?.body || '').includes('RC6 — Independent AI Review')) {
+              core.info('Review não-RC6 — nada a reavaliar.');
+              return;
+            }
 
             // Reviews do PR (o RC6 posta como review COMMENT com header fixo)
             const reviews = await github.paginate(github.rest.pulls.listReviews, {
