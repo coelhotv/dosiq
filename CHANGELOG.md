@@ -10,6 +10,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ### Tooling — Spec 034: substituição do revisor Gemini (sunset 2026-07-17)
 
 - **Chore** (`no-user-impact`, sem bump de produto, PR #TBD): o `gemini-code-assist[bot]` — revisor independente dos PRs — foi descontinuado pelo Google. Substituto em camadas (ADR-069, aceito): revisor IA independente **RC6** roda local (`ai-review.sh` na skill devflow, quota OAuth ~$0, sandbox sem ferramentas — diff é insumo não-confiável) e publica no PR; o CI ganha o gate **soft** `ai-review-gate.yml` (sem LLM, lê a severidade do payload, nunca bloqueia — merge é decisão humana R-060). Workflow morto `gemini-review.yml` (~34K) removido. Hook `post-push` de exemplo em `scripts/git-hooks/` dispara o RC6 em dry-run quando há PR aberto. **Sem relevância para notas de loja** (processo interno).
+- **Chore** (`no-user-impact`, PR #753): camada determinística L0 — duas regras ESLint novas: enum de banco em inglês ou sem acento dentro de `z.enum()` (a classe do AP-299, que derrubou o read-path de protocols em produção) e `res.json(body)` sem `res.status()` (lição do Sprint 7). Zero falso-positivo na base; 8 testes garantem que as regras continuam no config. Smoke validou o revisor RC6 de ponta a ponta (Critical citando AP-231 em bypass sintético) — e expôs+corrigiu degradação silenciosa do motor com contexto >160KB. **Sem relevância para notas de loja.**
 
 ### Core + Web — Spec 029 Slice F3.1: demolição do andaime e a trava que faltava
 
