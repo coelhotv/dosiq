@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 RE-ESCOPADA (PIVÔ 2026-07-16). A titulação N1 NUNCA funcionou em prod em 6 meses (AP-301): update() nunca setava stage_started_at (escada nascia zumbi), advanceTitrationStage() era código morto, cron morto desde 06/05 (AP-298), e nenhum CHECK proibia o zumbi. Feature com ZERO usuários — 1 protocolo com escada no banco, o de TESTE do PO, APAGADO (autorizado; backup local-only). Banco: titrations=0, steps=0, n1_titulando=0. Logo: strangler-fig/dual-read/flag/paridade eram seguro contra risco inexistente; PO-5 e PO-SEC-4 REVOGADOS (provavam paridade com um cadáver). ESCOPO NOVO: CONSTRUIR titulação — same-med (só muda qtd de comprimidos ⇒ dose_change automático) e multi-med (dosagem muda ⇒ outro medicamento, injetável ou não ⇒ medicine_switch com confirmação). O motor do F3 JÁ é isso (deriva por medicine_id) — o pivô não muda o motor, muda o que está em volta. PRÓXIMO: F3.1 (novo) — demolir andaime (flag+legado+paridade+migrated_from_protocol_id) + CHECK anti-zumbi (status='current' ⇒ started_at NOT NULL) + WEB WRITE-FREEZE (T017i, antecipado do F5/T027 por decisão do PO: o select 'Status Manual' + o TitrationWizard em ProtocolFormAdvancedSection são a FÁBRICA DE ZUMBI — deixam marcar 'titulando' sem nunca setar stage_started_at; absurdo adicionar o CHECK que invalida o dado e deixar aberta a superfície que o cria. NOTA: o plan.md ERRA o alvo — titrationService.ts web não tem escrita, é 100% display). Branch feature/029/f3-1-demolicao. Depois F4 (virou a ORIGEM da feature: T019a seta started_at). F6 RE-ESCOPADO (decisão PO): DROP + LIMPEZA do código N1-era no MESMO PR (T033b) — dropar sem limpar reproduz o #750 (TitrationTransitionAlert lê 5 refs às colunas). Critério: não é 'quem escreveu', é O QUE LÊ. Duas pilhas: MORTO (TitrationWizard, shim web, titrationService web, protocolSchema N1) vs VIVO-repontar (Badge/Timeline/Step/TransitionAlert — a spec mantém leitura web). DECISÃO DE PRODUTO EM ABERTO: web mantém display da escada ou perde? Sem soak. HOJE TAMBÉM: hotfix #750 (AP-300 — coluna fantasma 'description' que EU inventei derrubou web+mobile+cron em prod; R-295 hot criada + CLAUDE.md). Gemini Code Assist morre 2026-07-17 (#749 foi o último PR revisado). Integração Vercel↔GitHub parada por incidente major do GitHub — deploy via 'vercel --prod' até normalizar. DISTILL DEVIDO (18/15) com D5 self-clean: contadores em drift (AP disco 296 / índice ~195 / state 296; R disco 245).",
+    "goal": "029 F3.1 ENTREGUE (branch feature/029/f3-1-demolicao, PR aberto, SEM merge). Demolição do andaime N1: fonte única (titration_steps), flag TITRATION_SOURCE + legadas + advanceTitrationStage removidas, web write-freeze (Wizard + select 'Status Manual' + payload), CHECK anti-zumbi (preflight 8/8, NÃO aplicado em prod — aguarda PO), migrated_from_protocol_id fora do Zod. Achados: 4º call-site (_reminderHelpers → matou o branch N1 do cron); titration_scheduler_data SEM produtor no repo (3 camadas mortas — fecha o círculo do AP-301); trava 'escada sem current' RECUSADA (estado legítimo: target_reached/pausada); validate:agent não roda components (furo de gate). RC5: DETAIL_SELECT sem embed (armadilha p/ o F4) — corrigido. PENDENTE: (1) autorização p/ aplicar a migração em prod; (2) regen types (R-289) BLOQUEADO até o DROP; (3) decisão T033b (web mantém display da escada?). PRÓXIMO: F4 — a titulação passa a existir de verdade (T019a seta started_at).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -210,8 +210,8 @@
   },
   "memory": {
     "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 0,
-    "rules_count": 245,
+    "journal_entries_since_distillation": 1,
+    "rules_count": 246,
     "anti_patterns_count": 297,
     "decisions_count": 80,
     "contracts_count": 31,
@@ -222,7 +222,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-17T00:30:00Z"
+    "index_loaded_at": "2026-07-17T02:30:00Z"
   },
   "code_review": {
     "status": "issues_found",

@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Core + Web — Spec 029 Slice F3.1: demolição do andaime e a trava que faltava
+
+- **Refactor** (`minor`, core `0.9.0 → 0.10.0` · web `patch`, PR #TBD): **A titulação nunca funcionou em produção — em 6 meses.** Descoberto ao investigar por que nenhuma escada jamais avançou. O status dizia "titulando"; o relógio que faz a escada andar (`stage_started_at`) **nunca era setado** pelo caminho que as pessoas de fato usam (criar o tratamento e depois editar para somar a escada). Sem relógio, o motor não tem de onde contar — então nada acontecia. Sem erro, sem log, sem alerta: a tela mostrava a escada bonita, ela só não andava. A feature tinha **zero usuários**.
+  - **A trava que faltava desde o início.** O banco aceitava representar a contradição "ligada, mas sem relógio". Agora não aceita mais: um CHECK torna o estado **impossível**, em criação e em edição. Esquecer de iniciar o relógio virou um erro na cara de quem programa, em vez de uma feature morta em silêncio.
+  - **A web parou de fabricar tratamento quebrado.** O assistente de titulação e o seletor "Status Manual" deixavam marcar "titulando" na mão sem nunca iniciar o relógio — eram a **origem** do problema. Saíram. A **evolução do tratamento passa a ser criada e gerenciada no aplicativo**; a web continua **mostrando** a escada (etapa, progresso, PDF de consulta), agora lendo o modelo novo. Editar um tratamento pela web segue funcionando normalmente — só não cria mais escada.
+  - **Fim do andaime de migração.** Como não havia nada a migrar, caiu tudo o que existia para proteger a migração: a chave de troca de fonte, as funções antigas, a suíte que provava "equivalência com o comportamento legado" (equivalência com um cadáver) e o rastro `migrated_from_protocol_id`. As etapas passam a ser a **fonte única** — menos código, menos caminho para divergir.
+  - **Código morto que aparentava capacidade.** Três camadas empilhadas: um campo que nenhum lugar do sistema jamais escrevia, o aviso de transição que dependia dele (e por isso nunca aparecia, além de não estar montado em tela alguma) e a função de avanço que só aquele aviso chamaria. Removidas. Era isso que dava a impressão de que a titulação existia.
+  - **Sem impacto para o usuário final:** nenhum tratamento em produção estava em titulação (verificado: 0 de 70). O que muda é que a web deixa de oferecer um caminho que só produzia dado inválido. **Sem relevância para notas de loja.**
+
+
 ### Core + Server — Spec 029 Slice F3: o motor da Evolução do tratamento (avanço + confirmação + cutover)
 
 - **Feat** (`minor`, core `0.8.0 → 0.9.0` · server `minor`, PR #TBD): **A escada da titulação ganhou motor: ela agora anda sozinha quando é seguro, e pede permissão quando não é.** É o coração do épico — e, de quebra, conserta um avanço que estava morto em produção sem ninguém saber.
