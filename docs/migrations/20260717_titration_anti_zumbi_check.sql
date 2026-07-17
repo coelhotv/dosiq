@@ -1,6 +1,15 @@
 -- 029 F3.1 — T017a (CHECK anti-zumbi) + T017f (DROP do vestígio da migração)
 -- Data: 2026-07-17 · Spec: plans/specs/029-treatment-level-titration (local-only)
--- Preflight R-270 executado contra prod em BEGIN..ROLLBACK: 8/8 PASS (evidência no PR).
+-- Preflight R-270 contra prod em BEGIN..ROLLBACK: 8/8 PASS.
+-- ✅ APLICADA EM PROD em 2026-07-17 (autorizada pelo PO; via MCP `apply_migration`).
+--    Estado reconfirmado imediatamente antes: titrations=0, titration_steps=0 (0 linhas violariam
+--    o CHECK, 0 perderiam dado no DROP). Prova pós-aplicação contra o banco real (BEGIN..ROLLBACK):
+--      INSERT zumbi (current + started_at NULL) ....... REJEITADO (23514)  PASS
+--      INSERT ativação legítima (F4/T019a) ............ ACEITO (1 linha)   PASS
+--      UPDATE zumbificando etapa já ativa ............. REJEITADO (23514)  PASS
+--    `database.types.ts` regenerado no MESMO PR (R-289): -10 linhas, diff EXCLUSIVAMENTE
+--    `migrated_from_protocol_id` (Row/Insert/Update + bloco da FK); 35 tabelas antes e depois;
+--    `supabase:types:check` limpo.
 --
 -- ─────────────────────────────────────────────────────────────────────────────
 -- T017a — A TRAVA QUE FALTOU DESDE O INÍCIO (AP-301)

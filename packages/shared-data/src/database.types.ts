@@ -1434,7 +1434,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          migrated_from_protocol_id: string | null
           treatment_plan_id: string | null
           updated_at: string
           user_id: string
@@ -1442,7 +1441,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          migrated_from_protocol_id?: string | null
           treatment_plan_id?: string | null
           updated_at?: string
           user_id: string
@@ -1450,19 +1448,11 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          migrated_from_protocol_id?: string | null
           treatment_plan_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "titrations_migrated_from_protocol_id_fkey"
-            columns: ["migrated_from_protocol_id"]
-            isOneToOne: false
-            referencedRelation: "protocols"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "titrations_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
