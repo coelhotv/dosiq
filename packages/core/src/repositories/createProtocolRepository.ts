@@ -111,9 +111,15 @@ const FULL_SELECT_AFTER_WRITE = `
         ${TITRATION_STEPS_EMBED}
       `
 
+// O embed também aqui (029 F3.1): sem ele, `getById` devolve um protocolo cuja escada é
+// `undefined` — e qualquer caminho que leve esse objeto ao gerador materializa a dose de
+// titulação como `dosage_per_intake`, EM SILÊNCIO (nem erro, nem log: só a dose errada).
+// Hoje nenhum consumidor de `getById` faz isso, mas a assimetria entre os selects é uma
+// armadilha armada para o próximo slice. O contrato é "a escada vem nos selects" (CON-032).
 const DETAIL_SELECT = `
         *,
-        medicine:medicines(*)
+        medicine:medicines(*),
+        ${TITRATION_STEPS_EMBED}
       `
 
 const identity = <T,>(x: T) => x
