@@ -9,7 +9,7 @@
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
 import { useEffect, useState } from 'react'
-import { View, Text, Pressable, ActivityIndicator, Linking, StyleSheet } from 'react-native'
+import { View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
@@ -275,22 +275,17 @@ function NavigationTree({
     )
   }
 
-  // INDETERMINADO — não conseguimos LER a trilha de consentimento. NÃO libera e NÃO bloqueia por si
-  // só: é falha de carregamento, não um fato sobre a vontade do titular. Tratar isto como `missing`
-  // ressuscitaria, na materialização, um consentimento REVOGADO numa oscilação de rede (furo HIGH do
-  // review do Slice A). Nada é escrito e nenhuma sessão de prompt é contada aqui.
-  if (session && !isPasswordRecovery && consent.mode === 'indeterminate') {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.gateErrorText}>
-          Não foi possível verificar suas preferências de privacidade. Verifique sua conexão e tente de novo.
-        </Text>
-        <Pressable style={styles.gateRetry} onPress={() => consent.refresh()} accessibilityRole="button">
-          <Text style={styles.gateRetryText}>Tentar de novo</Text>
-        </Pressable>
-      </View>
-    )
-  }
+  // INDETERMINADO — não conseguimos LER a trilha de consentimento (ex.: offline, contrato do Slice A).
+  // NÃO libera NEM bloqueia por si só (`locked: false`): é falha de carregamento, não um fato sobre a
+  // vontade do titular. O dosiq é offline-first — navegar doses/estoque sem rede é valor de produto
+  // prometido nas landings —, então sob indeterminação o app RENDERIZA normalmente e NÃO trava numa
+  // tela de erro. A trava real (revogado → blocked) é reaplicada quando a rede volta: o listener de
+  // `AppState 'active'` chama `refresh()` e reavalia o gate.
+  //
+  // Segurança preservada: indeterminação NÃO escreve nada e NÃO conta sessão de prompt — tratá-la como
+  // `missing` é que ressuscitaria, na materialização, um consentimento REVOGADO numa oscilação de rede
+  // (furo HIGH do review do Slice A). Essa proteção mora na LEITURA (hook → `state: null`), não em
+  // barrar a renderização. Renderizar offline não materializa consentimento algum.
 
   // O gate do consentimento vem ANTES do onboarding: quem nunca consentiu não pode ser levado ao
   // wizard, que existe justamente para começar a gerar dado de saúde.
@@ -427,25 +422,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     gap: 12,
-  },
-  gateErrorText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#64748b',
-    textAlign: 'center',
-    maxWidth: 320,
-  },
-  gateRetry: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-  },
-  gateRetryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
   },
   promptOverlay: {
     ...StyleSheet.absoluteFillObject,
