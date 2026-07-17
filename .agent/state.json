@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F3.1 ENTREGUE + MIGRAÇÃO APLICADA EM PROD (2026-07-17, autorizada). Branch feature/029/f3-1-demolicao, PR #751 — AGUARDA MERGE DO PO. CHECK anti-zumbi VIVO em prod (prova 3/3 contra o banco real: INSERT zumbi e UPDATE zumbificando REJEITADOS 23514; ativação legítima do F4 ACEITA) + `migrated_from_protocol_id` dropada + types regenerados (R-289: diff exclusivamente a coluna; 35 tabelas antes/depois; types:check limpo). Demolição: fonte única (titration_steps), flag+legadas+advanceTitrationStage removidas, web write-freeze. Gates pós-migração: validate:agent 2023/2023 · web CI 817/817 · core+server 1447/1447 · lint 0 · ratchet OK · R-295 6/6 selects a 200 + RPC do F3 viva. PENDENTE PO: (1) merge do #751; (2) decisão T033b (web mantém display da escada?). PRÓXIMO: F4 — a titulação passa a EXISTIR (T019a seta started_at; o CHECK agora garante que ninguém esqueça).",
+    "goal": "029 F3.1 MERGEADA (PR #751 → squash `3bdbe49e`, branch deletada) + MIGRAÇÃO VIVA EM PROD. CHECK anti-zumbi ativo (INSERT e UPDATE): o estado que matou a titulação N1 por 6 meses é IRREPRESENTÁVEL. `migrated_from_protocol_id` dropada; types regenerados (R-289 auditado: diff exclusivamente a coluna). Demolição: fonte única (titration_steps), flag+legadas+advanceTitrationStage removidas, web write-freeze. Verificado na main pós-merge: grep zero (só comentários) · validate:agent 2023/2023. Review: Gemini achou 2 Medium (param morto que o lint não pega) — fix foi além (wrapper no-op deletado); ele validou. PENDENTE PO: decisão T033b (a web mantém o display da escada, repontado p/ N2, ou perde?) — é do F6. PRÓXIMO: F4 — a titulação passa a EXISTIR de verdade (T019a seta started_at; o CHECK garante que ninguém esqueça).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -210,7 +210,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 246,
     "anti_patterns_count": 297,
     "decisions_count": 80,
