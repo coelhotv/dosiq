@@ -1,453 +1,115 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { calculateTitrationData } from '../titrationUtils'
+// Progresso da etapa vigente para EXIBIÇÃO (badge/timeline/PDF de consulta) — 029 F3.1 / T017e.
+//
+// Reancorada no pivô da 029: a versão anterior exercitava `calculateTitrationData(protocol)`
+// lendo o jsonb N1 (`titration_schedule`/`current_stage_index`/`stage_started_at`) — a titulação
+// que nunca funcionou em produção (AP-301) e cujas colunas caem no F6. A função agora lê
+// `titration_steps`, a fonte única.
+//
+// `now` é INJETADO em todo caso (a função é clock-free por parâmetro): sumiu o mock de
+// `global.Date` que a versão anterior precisava. Datas locais (AP-270).
 
-describe('calculateTitrationData', () => {
-  const baseDate = '2024-01-01'
-  let originalDate
+import { describe, it, expect } from 'vitest'
+import { calculateTitrationData, type TitrationStepLike } from '../titrationUtils'
 
-  beforeEach(() => {
-    // Store original Date constructor
-    originalDate = global.Date
-  })
+const STAGE_START = '2026-03-01T00:00:00'
+const start = new Date(STAGE_START)
+const DAY = 24 * 60 * 60 * 1000
+const atDay = (n: number) => new Date(start.getTime() + n * DAY)
 
-  afterEach(() => {
-    // Restore original Date constructor
-    global.Date = originalDate
-  })
+/** Escada 3 etapas, 28 dias cada; vigente = posição 1 (a do meio). */
+const emEvolucao: TitrationStepLike[] = [
+  { position: 0, dose: 0.25, duration_days: 28, status: 'completed', started_at: null },
+  { position: 1, dose: 0.5, duration_days: 28, status: 'current', started_at: STAGE_START },
+  { position: 2, dose: 1.0, duration_days: 28, status: 'upcoming', started_at: null },
+]
 
-  describe('protocol validation', () => {
-    it('should return null when protocol has no titration_schedule', () => {
-      const protocol = {
-        titration_schedule: [],
-        stage_started_at: baseDate,
-      }
-
-      expect(calculateTitrationData(protocol)).toBeNull()
-    })
-
-    it('should return null when titration_schedule is undefined', () => {
-      const protocol = {
-        stage_started_at: baseDate,
-      }
-
-      expect(calculateTitrationData(protocol)).toBeNull()
-    })
-
-    it('should return null when stage_started_at is not set', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-      }
-
-      expect(calculateTitrationData(protocol)).toBeNull()
-    })
-
-    it('should return null when current_stage_index exceeds schedule length', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-        current_stage_index: 5,
-      }
-
-      expect(calculateTitrationData(protocol)).toBeNull()
+describe('calculateTitrationData — progresso da etapa vigente', () => {
+  it('etapa 2 de 3, dia 5 de 28', () => {
+    expect(calculateTitrationData(emEvolucao, atDay(5))).toEqual({
+      currentStep: 2, // 1-based p/ exibição ("Etapa 2/3")
+      totalSteps: 3,
+      day: 5, // Math.ceil dos dias corridos, com piso 1
+      realDay: 5,
+      totalDays: 28,
+      progressPercent: (5 / 28) * 100,
+      isTransitionDue: false,
+      daysRemaining: 23,
     })
   })
 
-  describe('current stage calculation', () => {
-    it('should calculate correct current step (1-indexed)', () => {
-      const protocol = {
-        titration_schedule: [
-          { days: 7, dosage: 1, note: 'Etapa 1' },
-          { days: 7, dosage: 2, note: 'Etapa 2' },
-          { days: 7, dosage: 3, note: 'Etapa 3' },
-        ],
-        stage_started_at: baseDate,
-        current_stage_index: 1,
-      }
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.currentStep).toBe(2)
-      expect(result.totalSteps).toBe(3)
-    })
-
-    it('should default to stage 0 when current_stage_index is undefined', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1, note: 'Etapa 1' }],
-        stage_started_at: baseDate,
-      }
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.currentStep).toBe(1)
-    })
+  it('piso do dia 1: no próprio instante de início já é "dia 1", nunca 0', () => {
+    const r = calculateTitrationData(emEvolucao, atDay(0))
+    expect(r?.day).toBe(1)
+    expect(r?.realDay).toBe(1)
   })
 
-  describe('days calculation', () => {
-    it('should calculate days elapsed correctly for single day', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be 1 day after start
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-02')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.day).toBe(1)
-      expect(result.realDay).toBe(1)
-    })
-
-    it('should cap visual day at totalDays', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be 11 days after start (past the 7 day stage)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-12')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.day).toBe(7) // Capped at totalDays
-      expect(result.realDay).toBe(11) // Actual days elapsed (12 - 1 = 11, due to Math.ceil)
-    })
-
-    it('should ensure day is at least 1', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be same day as start
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-01')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.day).toBeGreaterThanOrEqual(1)
-    })
+  it('no último dia da etapa a transição ainda NÃO venceu', () => {
+    const r = calculateTitrationData(emEvolucao, atDay(28))
+    expect(r?.realDay).toBe(28)
+    expect(r?.isTransitionDue).toBe(false) // vence em > 28, não em == 28
+    expect(r?.daysRemaining).toBe(0)
   })
 
-  describe('progress calculation', () => {
-    it('should calculate progress percentage correctly at 50%', () => {
-      const protocol = {
-        titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be 5 days after start (50%)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-06')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.progressPercent).toBe(50)
-    })
-
-    it('should cap progress at 100%', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be well past the stage end
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-20')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.progressPercent).toBe(100)
-    })
-
-    it('should calculate low progress at start', () => {
-      const protocol = {
-        titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be 1 day after start
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-02')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      // Day 1 of 10 days = 10%
-      expect(result.progressPercent).toBe(10)
-    })
+  it('transição vencida: passou dos 28 dias → isTransitionDue, com day/percent CAPADOS', () => {
+    const r = calculateTitrationData(emEvolucao, atDay(29))
+    expect(r?.isTransitionDue).toBe(true)
+    expect(r?.realDay).toBe(29) // dia real segue contando (é o atraso)
+    expect(r?.day).toBe(28) // `day` é o cap VISUAL: a barra não passa do fim
+    expect(r?.progressPercent).toBe(100) // idem — nunca > 100%
+    expect(r?.daysRemaining).toBe(-1) // negativo = quantos dias de atraso
   })
 
-  describe('transition detection', () => {
-    it('should indicate transition is due when days exceed total', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be past the stage end (day 9)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-09')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.isTransitionDue).toBe(true)
-    })
-
-    it('should not indicate transition when within stage duration', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be within stage (day 5)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-05')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.isTransitionDue).toBe(false)
-    })
+  it('ordena por position (entrada desordenada não desloca o índice exibido)', () => {
+    const desordenada = [emEvolucao[2], emEvolucao[0], emEvolucao[1]]
+    expect(calculateTitrationData(desordenada, atDay(5))?.currentStep).toBe(2)
   })
 
-  describe('days remaining calculation', () => {
-    it('should calculate positive days remaining', () => {
-      const protocol = {
-        titration_schedule: [{ days: 10, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be day 3 (4th day)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-04')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      // 10 - 3 = 7 days remaining
-      expect(result.daysRemaining).toBe(7)
-    })
-
-    it('should calculate negative days remaining when past end', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      // Mock current date to be past stage end (day 10)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-11')
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.daysRemaining).toBeLessThan(0)
-    })
-  })
-
-  describe('stage note', () => {
-    it('should return stage note from current stage', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1, note: 'Introdução gradual' }],
-        stage_started_at: baseDate,
-      }
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.stageNote).toBe('Introdução gradual')
-    })
-
-    it('should handle stage without note', () => {
-      const protocol = {
-        titration_schedule: [{ days: 7, dosage: 1 }],
-        stage_started_at: baseDate,
-      }
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.stageNote).toBeUndefined()
-    })
-  })
-
-  describe('integration scenarios', () => {
-    it('should handle multi-stage protocol correctly', () => {
-      const protocol = {
-        titration_schedule: [
-          { days: 7, dosage: 0.5, note: 'Semana 1' },
-          { days: 7, dosage: 1, note: 'Semana 2' },
-          { days: 14, dosage: 2, note: 'Manutenção' },
-        ],
-        stage_started_at: baseDate,
-        current_stage_index: 2,
-      }
-
-      // Mock current date to be 5 days into stage 3 (day 20 total)
-      global.Date = class extends Date {
-        constructor(...args: any[]) {
-          if (args.length === 0) {
-            super('2024-01-20') // Day 20, stage 3 starts day 15
-          } else {
-            super(...(args as ConstructorParameters<typeof Date>))
-          }
-        }
-      } as unknown as DateConstructor
-
-      const result = calculateTitrationData(protocol)
-
-      expect(result.currentStep).toBe(3)
-      expect(result.totalSteps).toBe(3)
-      expect(result.totalDays).toBe(14)
-      expect(result.stageNote).toBe('Manutenção')
-    })
+  it('escada de 1 etapa: etapa 1 de 1', () => {
+    const unica: TitrationStepLike[] = [
+      { position: 0, dose: 1, duration_days: 7, status: 'current', started_at: STAGE_START },
+    ]
+    const r = calculateTitrationData(unica, atDay(1))
+    expect(r?.currentStep).toBe(1)
+    expect(r?.totalSteps).toBe(1)
   })
 })
 
-// ── 012 Fase B (FR-006/FP-1): resolução da etapa vigente num instante ──────────
-import { resolveTitrationStageAt } from '../titrationUtils'
-
-describe('resolveTitrationStageAt', () => {
-  // GLP-1 clássico: 0,25mg/28d → 0,5mg/28d → 1,0mg/28d
-  const glp1 = {
-    titration_schedule: [
-      { days: 28, dosage: 0.25 },
-      { days: 28, dosage: 0.5 },
-      { days: 28, dosage: 1.0 },
-    ],
-    current_stage_index: 0,
-    stage_started_at: '2026-06-01T08:00:00.000Z',
-    titration_status: 'titulando',
-  }
-
-  it('instante dentro da etapa atual → dose da etapa atual', () => {
-    const out = resolveTitrationStageAt(glp1, '2026-06-15T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 0, dosage: 0.25 })
+describe('calculateTitrationData — sem progresso a exibir (null)', () => {
+  it('lista vazia/null/undefined → null', () => {
+    expect(calculateTitrationData([], atDay(5))).toBeNull()
+    expect(calculateTitrationData(null, atDay(5))).toBeNull()
+    expect(calculateTitrationData(undefined, atDay(5))).toBeNull()
   })
 
-  it('instante na 2ª etapa (29º dia) → dose da etapa futura (congela ANTES do avanço no banco)', () => {
-    const out = resolveTitrationStageAt(glp1, '2026-06-30T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
+  it('nenhuma etapa current (escada pausada/concluída) → null', () => {
+    const semVigente: TitrationStepLike[] = [
+      { position: 0, dose: 0.25, duration_days: 28, status: 'completed', started_at: STAGE_START },
+      { position: 1, dose: 0.5, duration_days: 28, status: 'upcoming', started_at: null },
+    ]
+    expect(calculateTitrationData(semVigente, atDay(5))).toBeNull()
   })
 
-  it('instante na 3ª etapa (57º dia) → caminha múltiplas etapas', () => {
-    const out = resolveTitrationStageAt(glp1, '2026-07-28T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 2, dosage: 1.0 })
+  it('vigente CONTÍNUA (duration_days null) = manutenção/alvo → null (não há progresso)', () => {
+    const manutencao: TitrationStepLike[] = [
+      { position: 0, dose: 1.0, duration_days: null, status: 'current', started_at: STAGE_START },
+    ]
+    expect(calculateTitrationData(manutencao, atDay(5))).toBeNull()
   })
 
-  it('além do fim da última etapa → mantém dose alvo (última etapa)', () => {
-    const out = resolveTitrationStageAt(glp1, '2026-12-01T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 2, dosage: 1.0 })
+  it('vigente SEM started_at (o zumbi do AP-301) → null', () => {
+    // Sem relógio não há progresso a calcular. O CHECK do T017a impede o estado de existir no
+    // banco; a exibição segue defensiva (defesa em profundidade).
+    const zumbi: TitrationStepLike[] = [
+      { position: 0, dose: 0.5, duration_days: 28, status: 'current', started_at: null },
+    ]
+    expect(calculateTitrationData(zumbi, atDay(5))).toBeNull()
   })
 
-  it('respeita current_stage_index como ponto de partida (avanço manual prévio)', () => {
-    const p = { ...glp1, current_stage_index: 1, stage_started_at: '2026-06-29T08:00:00.000Z' }
-    const out = resolveTitrationStageAt(p, '2026-07-01T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
-  })
-
-  it('instante ANTERIOR ao início da etapa atual → null (histórico já congelado)', () => {
-    expect(resolveTitrationStageAt(glp1, '2026-05-20T08:00:00.000Z')).toBeNull()
-  })
-
-  it('status estável/alvo_atingido → null (dosage_per_intake rege)', () => {
-    expect(resolveTitrationStageAt({ ...glp1, titration_status: 'estável' }, '2026-06-15T08:00:00.000Z')).toBeNull()
-    expect(resolveTitrationStageAt({ ...glp1, titration_status: 'alvo_atingido' }, '2026-06-15T08:00:00.000Z')).toBeNull()
-  })
-
-  it('degenerados → null: sem schedule, sem stage_started_at, índice fora, dose inválida, days inválido na etapa atual', () => {
-    expect(resolveTitrationStageAt(null, '2026-06-15T08:00:00.000Z')).toBeNull()
-    expect(resolveTitrationStageAt({ ...glp1, titration_schedule: [] }, '2026-06-15T08:00:00.000Z')).toBeNull()
-    expect(resolveTitrationStageAt({ ...glp1, stage_started_at: null }, '2026-06-15T08:00:00.000Z')).toBeNull()
-    expect(resolveTitrationStageAt({ ...glp1, current_stage_index: 9 }, '2026-06-15T08:00:00.000Z')).toBeNull()
-    expect(resolveTitrationStageAt({ ...glp1, titration_schedule: [{ days: 28, dosage: 0 }] }, '2026-06-15T08:00:00.000Z')).toBeNull()
-  })
-
-  it('days inválido impede SAIR da etapa, não entrar nela (caminha até ela e para)', () => {
-    const p = { ...glp1, titration_schedule: [{ days: 28, dosage: 0.25 }, { days: 0, dosage: 0.5 }] }
-    const out = resolveTitrationStageAt(p, '2026-08-01T08:00:00.000Z')
-    expect(out).toEqual({ stageIndex: 1, dosage: 0.5 })
-  })
-})
-
-describe('resolveTitrationStageAt — shape canônico duration_days', () => {
-  it('aceita duration_days (titrationStageSchema) além do legado days', () => {
-    const p = {
-      titration_schedule: [
-        { duration_days: 28, dosage: 0.25 },
-        { duration_days: 28, dosage: 0.5 },
-      ],
-      current_stage_index: 0,
-      stage_started_at: '2026-06-01T08:00:00.000Z',
-      titration_status: 'titulando',
-    }
-    expect(resolveTitrationStageAt(p, '2026-06-30T08:00:00.000Z')).toEqual({ stageIndex: 1, dosage: 0.5 })
+  it('duração 0/negativa → tratada como contínua → null (nunca divide por zero)', () => {
+    const mk = (d: any): TitrationStepLike[] => [
+      { position: 0, dose: 0.5, duration_days: d, status: 'current', started_at: STAGE_START },
+    ]
+    expect(calculateTitrationData(mk(0), atDay(5))).toBeNull()
+    expect(calculateTitrationData(mk(-7), atDay(5))).toBeNull()
   })
 })

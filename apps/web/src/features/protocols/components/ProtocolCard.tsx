@@ -61,31 +61,12 @@ function _renderTitrationSection(protocol) {
       <span className={`titration-badge ${protocol.titration_status}`}>
         {protocol.titration_status === 'titulando' ? '📈 Titulando' : '🎯 Alvo Atingido'}
       </span>
-      {protocol.titration_scheduler_data && (
-        <div className="titration-card-progress">
-          <div className="titration-progress-stats">
-            <span>
-              Etapa {protocol.titration_scheduler_data.currentStep}/
-              {protocol.titration_scheduler_data.totalSteps}
-            </span>
-            <span>
-              Dia {protocol.titration_scheduler_data.day}/
-              {protocol.titration_scheduler_data.totalDays}
-            </span>
-          </div>
-          <div className="titration-progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${protocol.titration_scheduler_data.progressPercent}%` }}
-            />
-          </div>
-          {protocol.titration_scheduler_data.stageNote && (
-            <p className="stage-objective">
-              Objetivo: {protocol.titration_scheduler_data.stageNote}
-            </p>
-          )}
-        </div>
-      )}
+      {/* 029 F3.1: o bloco de progresso que vivia aqui lia `protocol.titration_scheduler_data` —
+          um campo que NENHUM produtor no repositório jamais escreveu (grep global). Nunca
+          renderizou, em nenhuma versão. Era a terceira camada morta da titulação N1, junto com
+          `advanceTitrationStage()` (sem chamador) e o `TitrationTransitionAlert` (sem montagem):
+          a UI que chamaria o avanço não aparecia porque o campo que ela guardava não existia.
+          Ver AP-301. O que a web exibe da escada N2 é decisão de produto do F6/T033b. */}
       {protocol.titration_schedule?.length > 0 && (
         <div className="titration-schedule-preview">
           <h5>Cronograma Planejado:</h5>

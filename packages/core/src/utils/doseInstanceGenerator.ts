@@ -27,7 +27,9 @@ import {
 } from './dateUtils'
 import { isProtocolActiveOnDate } from './adherenceLogic'
 
-interface GeneratorProtocol extends TitrationProtocol {
+// 029 F3.1 (T017c): não estende mais `TitrationProtocol` (o jsonb N1, deletado com o AP-301).
+// A escada chega pelo parâmetro `titrationSteps`, não pelo protocol.
+interface GeneratorProtocol {
   id?: string
   user_id?: string
   frequency?: string | null
@@ -49,13 +51,7 @@ type GeneratedInstance = {
   tolerance_minutes: number
   critical_alarm: boolean
 }
-import {
-  resolveTitrationStageAt,
-  resolveTitrationStageAtFromSteps,
-  getTitrationSource,
-  TitrationProtocol,
-  TitrationStepLike,
-} from './titrationUtils'
+import { resolveTitrationStageAt, TitrationStepLike } from './titrationUtils'
 
 /**
  * Converte Date | ISO string | timestamp(ms) num Date absoluto.
@@ -238,9 +234,6 @@ export function generateInstances(
 
   const tolerances = computeTolerances(slots.map((s) => s.minutes), frequency)
 
-  // Resolvido UMA vez por chamada (não por slot): a flag não muda no meio da janela.
-  const useN2 = getTitrationSource() === 'n2'
-
   const instances: GeneratedInstance[] = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {
     if (!isProtocolActiveOnDate(protocol, dateStr)) continue
@@ -250,11 +243,11 @@ export function generateInstances(
       if (scheduledMs < fromMs || scheduledMs > toMs) return
       // 012 Fase B (FR-006/FP-1): titulação ativa congela a dose da ETAPA vigente
       // na data da ocorrência — instância futura nasce com a dose da etapa futura.
-      // 029 F3 (T014): a fonte da escada é a flag `TITRATION_SOURCE`. As duas variantes são
-      // gêmeas puras e a paridade N1↔N2 é o contrato (titrationAdapter.test.ts).
-      const titrationStage = useN2
-        ? resolveTitrationStageAtFromSteps(titrationSteps, scheduledMs)
-        : resolveTitrationStageAt(protocol, scheduledMs)
+      // 029 F3.1 (T017b): as etapas são a fonte ÚNICA e chegam INJETADAS, já filtradas por
+      // `protocol_id` (embed via FK — CON-032 §invariante 1). Sem elas, a dose cai para
+      // `dosage_per_intake`: quem chama sem passar `titrationSteps` de um protocolo COM escada
+      // degrada a dose em silêncio. Por isso o embed vive nos selects, não num if.
+      const titrationStage = resolveTitrationStageAt(titrationSteps, scheduledMs)
       instances.push({
         user_id: protocol.user_id,
         protocol_id: protocol.id,

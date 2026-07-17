@@ -4,10 +4,8 @@ import {
   validateProtocolForm,
   handleAddTime,
   handleRemoveTime,
-  getTitrationInitialDosage,
 } from './protocolFormUtils'
 import { submitProtocolForm } from './_protocolFormSubmit'
-import { getTitrationEnabledStatus, buildProtocolFormInitialData } from './_protocolFormHelpers'
 
 export function useProtocolFormState({
   protocol,
@@ -18,12 +16,9 @@ export function useProtocolFormState({
   onSuccess,
   autoAdvance,
 }: any) {
-  const [formData, setFormData] = useState(() => {
-    const data = getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
-    return buildProtocolFormInitialData(protocol, data, preselectedMedicine, isSimpleMode, getTitrationInitialDosage)
-  })
-
-  const [enableTitration, setEnableTitration] = useState(getTitrationEnabledStatus(protocol))
+  const [formData, setFormData] = useState(() =>
+    getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
+  )
 
   const [timeInput, setTimeInput] = useState('')
   const [errors, setErrors] = useState<any>({})
@@ -67,7 +62,6 @@ export function useProtocolFormState({
       try {
         await submitProtocolForm({
           formData,
-          enableTitration,
           onSave,
           onSuccess,
           isSimpleMode,
@@ -80,32 +74,16 @@ export function useProtocolFormState({
         // Error already handled in submitProtocolForm
       }
     },
-    [formData, enableTitration, isSimpleMode, autoAdvance, onSave, onSuccess, validate]
+    [formData, isSimpleMode, autoAdvance, onSave, onSuccess, validate]
   )
 
-  const handleTitrationEnable = useCallback((enabled) => {
-    setEnableTitration(enabled)
-    setFormData((prev) => {
-      const titration_status = enabled ? 'titulando' : 'estável'
-      const dosage_per_intake = (!protocol && enabled && !prev.dosage_per_intake)
-        ? getTitrationInitialDosage(prev)
-        : prev.dosage_per_intake
-
-      return {
-        ...prev,
-        titration_status,
-        dosage_per_intake,
-      }
-    })
-  }, [protocol])
-
-  const setTitrationSchedule = useCallback((newSchedule) => {
-    setFormData((prev) => ({ ...prev, titration_schedule: newSchedule }))
-  }, [])
+  // 029 F3.1 (T017i): `handleTitrationEnable`/`setTitrationSchedule` removidos com o
+  // web write-freeze — eram os escritores de `titulando`/`titration_schedule` que
+  // fabricavam o zumbi do AP-301 (marcavam o status sem nunca setar `stage_started_at`).
+  // A escada nasce no app, sobre `titration_steps` (029 F4).
 
   return {
     formData,
-    enableTitration,
     timeInput,
     errors,
     isSubmitting,
@@ -116,7 +94,5 @@ export function useProtocolFormState({
     addTime,
     removeTime,
     handleSubmit,
-    handleTitrationEnable,
-    setTitrationSchedule,
   }
 }

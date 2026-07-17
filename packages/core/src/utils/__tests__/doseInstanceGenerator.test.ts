@@ -270,6 +270,9 @@ describe('generateInstances — casos de borda', () => {
 })
 
 // ── 012 Fase B (FR-006/FP-1): expected_dose congela a etapa de titulação vigente ──
+// 029 F3.1 (T017b/T017e): a escada chega INJETADA (`titration_steps`), não mais no jsonb do
+// protocol. O fixture antigo passava `titration_schedule`/`current_stage_index`/`stage_started_at`
+// no protocol — o N1 que nunca funcionou em prod (AP-301) e cujas colunas caem no F6.
 describe('generateInstances — titulação congela expected_dose por etapa', () => {
   const glp1Protocol = {
     id: 'p-glp1',
@@ -280,14 +283,19 @@ describe('generateInstances — titulação congela expected_dose por etapa', ()
     dosage_per_intake: 1,
     start_date: '2026-06-01',
     active: true,
-    titration_schedule: [
-      { days: 28, dosage: 0.25 },
-      { days: 28, dosage: 0.5 },
-    ],
-    current_stage_index: 0,
-    stage_started_at: '2026-06-01T08:00:00.000Z',
-    titration_status: 'titulando',
   }
+
+  // Escada same-med: 0,25mg/28d → 0,5mg. Vigente desde 01/06 ⇒ vence em 29/06.
+  const steps = [
+    {
+      position: 0,
+      dose: 0.25,
+      duration_days: 28,
+      status: 'current',
+      started_at: '2026-06-01T08:00:00.000Z',
+    },
+    { position: 1, dose: 0.5, duration_days: 28, status: 'upcoming', started_at: null },
+  ]
 
   it('instâncias futuras nascem com a dose da etapa vigente NA DATA (não a atual)', () => {
     // Janela cruza a fronteira da etapa 1 (28d → 2026-06-29): domingos 07/06..05/07
@@ -295,7 +303,8 @@ describe('generateInstances — titulação congela expected_dose por etapa', ()
       glp1Protocol,
       '2026-06-01T00:00:00-03:00',
       '2026-07-05T23:59:59-03:00',
-      'America/Sao_Paulo'
+      'America/Sao_Paulo',
+      steps
     )
     expect(out.length).toBeGreaterThanOrEqual(4)
     const byDate = Object.fromEntries(out.map((i) => [i.scheduled_for.slice(0, 10), i.expected_dose]))
@@ -304,9 +313,24 @@ describe('generateInstances — titulação congela expected_dose por etapa', ()
     expect(byDate['2026-07-05']).toBe(0.5)  // etapa 2 (após 29/06)
   })
 
-  it('sem titulação ativa (estável) → dosage_per_intake chapado', () => {
+  it('escada pausada (nenhuma etapa current) → dosage_per_intake chapado', () => {
+    const pausada = steps.map((s) => ({ ...s, status: 'upcoming', started_at: null }))
     const out = generateInstances(
-      { ...glp1Protocol, titration_status: 'estável' },
+      glp1Protocol,
+      '2026-06-01T00:00:00-03:00',
+      '2026-07-05T23:59:59-03:00',
+      'America/Sao_Paulo',
+      pausada
+    )
+    expect(out.every((i) => i.expected_dose === 1)).toBe(true)
+  })
+
+  it('SEM escada injetada → dosage_per_intake chapado (protocolo sem titulação)', () => {
+    // 🔴 O modo de falha do T017b: um protocolo COM escada cujo chamador esquece de passar os
+    // steps degrada a dose em silêncio, sem erro. Por isso o embed `titration_steps(...)` vive
+    // nos selects (CON-032), não num if.
+    const out = generateInstances(
+      glp1Protocol,
       '2026-06-01T00:00:00-03:00',
       '2026-07-05T23:59:59-03:00',
       'America/Sao_Paulo'

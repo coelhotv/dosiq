@@ -115,7 +115,6 @@ export default function ProtocolForm({
 
   const {
     formData,
-    enableTitration,
     timeInput,
     errors,
     isSubmitting,
@@ -126,8 +125,6 @@ export default function ProtocolForm({
     addTime,
     removeTime,
     handleSubmit,
-    handleTitrationEnable,
-    setTitrationSchedule,
   } = useProtocolFormState({
     protocol,
     initialValues,
@@ -185,11 +182,7 @@ export default function ProtocolForm({
 
       <ProtocolFormAdvancedSection
         formData={formData}
-        medicine={selectedMedicine}
         handleChange={handleChange}
-        enableTitration={enableTitration}
-        handleTitrationEnable={handleTitrationEnable}
-        setTitrationSchedule={setTitrationSchedule}
         isSimpleMode={isSimpleMode}
         showTitration={showTitration}
       />

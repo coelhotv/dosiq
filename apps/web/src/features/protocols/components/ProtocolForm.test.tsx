@@ -11,16 +11,6 @@ vi.mock('../ui/Button', () => ({
   ),
 }))
 
-// Mock TitrationWizard since it's used in component
-vi.mock('./TitrationWizard', () => ({
-  default: ({ schedule, onChange }) => (
-    <div data-testid="titration-wizard">
-      <div>Titration Wizard</div>
-      <button onClick={() => onChange(schedule)}>Mock Wizard</button>
-    </div>
-  ),
-}))
-
 describe('ProtocolForm', () => {
   const mockMedicines = [
     { id: '1', name: 'Medicine A', dosage_per_pill: 50, dosage_unit: 'mg' },
@@ -141,8 +131,6 @@ describe('ProtocolForm', () => {
         time_schedule: ['08:00'],
         dosage_per_intake: 1,
         target_dosage: null,
-        titration_status: 'estável',
-        titration_schedule: [],
         notes: null,
         active: true,
         start_date: expect.any(String),
@@ -189,27 +177,51 @@ describe('ProtocolForm', () => {
     expect(screen.getByText('Horário já adicionado')).toBeInTheDocument()
   })
 
-  it('enables titration mode', () => {
+  // ── 029 F3.1 (T017i): WEB WRITE-FREEZE ────────────────────────────────────────
+  // Substituem 'enables/disables titration mode', que exercitavam a FÁBRICA DE ZUMBI: o
+  // checkbox + wizard + select "Status Manual" marcavam `titulando` sem NUNCA setar
+  // `stage_started_at`, o relógio que faz a escada andar (AP-301). A escada nasce no app.
+  it('não oferece nenhuma superfície de escrita de titulação', () => {
     render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
 
-    const titrationCheckbox = screen.getByLabelText(/Regime de Titulação Inteligente/i)
-    expect(titrationCheckbox).not.toBeChecked()
-
-    fireEvent.click(titrationCheckbox)
-    expect(titrationCheckbox).toBeChecked()
-    expect(screen.getByTestId('titration-wizard')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Regime de Titulação Inteligente/i)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('titration-wizard')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Status Manual/i)).not.toBeInTheDocument()
+    // A leitura e a dose alvo continuam; o encaminhamento p/ o app aparece.
+    expect(screen.getByLabelText(/Dose Alvo/i)).toBeInTheDocument()
+    expect(screen.getByText(/Gerencie a evolução do tratamento no aplicativo/i)).toBeInTheDocument()
   })
 
-  it('disables titration mode', () => {
-    render(<ProtocolForm medicines={mockMedicines} onSave={mockOnSave} onCancel={mockOnCancel} />)
+  it('🔴 editar tratamento pela web NÃO consegue produzir titulação (guard do AP-301)', async () => {
+    mockOnSave.mockResolvedValue({})
+    const emTitulacao = {
+      id: 'p1',
+      name: 'Existing Protocol',
+      medicine_id: '1',
+      frequency: 'diário',
+      time_schedule: ['08:00'],
+      dosage_per_intake: 1,
+      active: true,
+      // Estado N1 herdado (as colunas caem no F6): a web não pode propagá-lo de volta.
+      titration_status: 'titulando',
+      titration_schedule: [{ dosage: 1, duration_days: 7 }],
+    }
 
-    const titrationCheckbox = screen.getByLabelText(/Regime de Titulação Inteligente/i)
-    fireEvent.click(titrationCheckbox)
+    render(
+      <ProtocolForm
+        medicines={mockMedicines}
+        protocol={emTitulacao}
+        onSave={mockOnSave}
+        onCancel={mockOnCancel}
+      />
+    )
+    fireEvent.click(screen.getByText('Atualizar'))
 
-    // Disable titration
-    fireEvent.click(titrationCheckbox)
-    expect(titrationCheckbox).not.toBeChecked()
-    expect(screen.getByLabelText(/Dose Alvo/i)).toBeInTheDocument()
+    await waitFor(() => expect(mockOnSave).toHaveBeenCalled())
+    const payload = mockOnSave.mock.calls[0][0]
+    expect(payload).not.toHaveProperty('titration_status')
+    expect(payload).not.toHaveProperty('titration_schedule')
+    expect(JSON.stringify(payload)).not.toContain('titulando')
   })
 
   it('calls onCancel when cancel button is clicked', () => {

@@ -4,7 +4,6 @@ import { medicineService } from '@shared/services'
 
 export async function submitProtocolForm({
   formData,
-  enableTitration,
   onSave,
   onSuccess,
   isSimpleMode,
@@ -33,7 +32,7 @@ export async function submitProtocolForm({
       }
     }
 
-    const dataToSave = prepareDataToSave(formData, enableTitration)
+    const dataToSave = prepareDataToSave(formData)
     const savedProtocol = await onSave(dataToSave)
 
     if (isSimpleMode) setSaveSuccess(true)

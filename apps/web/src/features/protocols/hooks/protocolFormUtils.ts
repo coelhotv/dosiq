@@ -40,14 +40,6 @@ function _getTargetDosage(protocol, initialValues) {
   return protocol?.target_dosage ?? initialValues?.target_dosage ?? ''
 }
 
-function _getTitrationStatus(protocol, initialValues) {
-  return protocol?.titration_status || initialValues?.titration_status || 'estável'
-}
-
-function _getTitrationSchedule(protocol, initialValues) {
-  return protocol?.titration_schedule || initialValues?.titration_schedule || []
-}
-
 function _getNotes(protocol, initialValues) {
   return protocol?.notes || initialValues?.notes || ''
 }
@@ -72,8 +64,6 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
     // Densidade do medicamento (gotas/UI por ml) — editável aqui (022 Fase C), grava no medicine.
     units_per_ml: protocol?.medicine?.units_per_ml ?? preselectedMedicine?.units_per_ml ?? '',
     target_dosage: _getTargetDosage(protocol, initialValues),
-    titration_status: _getTitrationStatus(protocol, initialValues),
-    titration_schedule: _getTitrationSchedule(protocol, initialValues),
     notes: _getNotes(protocol, initialValues),
     active: _getActive(protocol, initialValues),
     start_date: _getStartDate(protocol, initialValues),
@@ -83,14 +73,6 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
       return days.length > 0 ? days : (initialValues?.weekdays || [])
     })(),
   }
-}
-
-export const getTitrationInitialDosage = (formData) => {
-  if (formData.titration_schedule?.length > 0) {
-    const firstStage = formData.titration_schedule[0]
-    if (firstStage.dosage) return firstStage.dosage
-  }
-  return ''
 }
 
 function _validateMedicineId(medicineId, errors) {
@@ -153,9 +135,7 @@ export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
   return Object.keys(newErrors).length === 0
 }
 
-export const prepareDataToSave = (formData, enableTitration) => {
-  const isTitrating = enableTitration && formData.titration_schedule.length > 0
-
+export const prepareDataToSave = (formData) => {
   return {
     medicine_id: formData.medicine_id,
     treatment_plan_id: formData.treatment_plan_id || null,
@@ -165,20 +145,10 @@ export const prepareDataToSave = (formData, enableTitration) => {
     dosage_per_intake: coerceDecimal(formData.dosage_per_intake),
     intake_unit: formData.intake_unit || null,
     target_dosage: (formData.target_dosage ?? '') !== '' ? coerceDecimal(formData.target_dosage) : null,
-    titration_status: isTitrating ? 'titulando' : formData.titration_status,
-    // R-270 (012 Fase B): wizard mantém o texto cru durante a digitação ("0,5");
-    // normaliza vírgula→ponto e força number aqui — o banco nunca vê string.
-    titration_schedule: isTitrating
-      ? formData.titration_schedule.map((stage) => ({
-          // Shape canônico do Zod (titrationStageSchema): duration_days/description.
-          // Migra registros legados days/note na gravação.
-          duration_days: parseInt(stage.duration_days ?? stage.days, 10) || 1,
-          dosage: coerceDecimal(stage.dosage) || 0,
-          ...((stage.description ?? stage.note) ? { description: stage.description ?? stage.note } : {}),
-          // FR-021 (012 Fase B2): só persiste a flag quando marcada (etapa cross-medicamento).
-          ...(stage.requires_new_medicine ? { requires_new_medicine: true } : {}),
-        }))
-      : [],
+    // 029 F3.1 (T017i) — WEB WRITE-FREEZE: `titration_status` e `titration_schedule` saíram do
+    // payload. Eram o par que fabricava o zumbi do AP-301 — marcavam a escada como "titulando"
+    // sem nunca setar `stage_started_at`, o relógio que a faz andar. A evolução do tratamento
+    // nasce no app (029 F4), sobre `titrations`/`titration_steps`. As colunas caem no F6.
     notes: formData.notes.trim() || null,
     active: formData.active,
     start_date: formData.start_date || null,

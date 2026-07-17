@@ -1,69 +1,39 @@
-import TitrationWizard from '@protocols/components/TitrationWizard'
-
 export default function ProtocolFormAdvancedSection({
   formData,
-  medicine,
   handleChange,
-  enableTitration,
-  handleTitrationEnable,
-  setTitrationSchedule,
   isSimpleMode,
   showTitration,
 }) {
   return (
     <>
-      {/* Classe própria (não .form-row): o .form-row global do MedicineForm.css é
-          display:grid 2-col no desktop — espremia o wizard na coluna direita
-          (smoke PO 2026-06-11; mobile escapava pelo breakpoint 1fr). */}
+      {/* 029 F3.1 (T017i) — WEB WRITE-FREEZE. A evolução do tratamento passou a ser criada e
+          gerenciada no app; a web só LÊ (badge/timeline/PDF de consulta).
+
+          O que estava aqui era a FÁBRICA DE ZUMBI (AP-301): o TitrationWizard e o select "Status
+          Manual" deixavam marcar `titulando` na mão, e NENHUM caminho de escrita da web setava
+          `stage_started_at` — o relógio que faz a escada andar. A escada nascia com status de
+          "ligada" e um relógio nunca iniciado: nada avançava, sem erro e sem log, por 6 meses.
+          A trava que faltava é o CHECK `titration_steps_current_exige_started_check` (T017a);
+          esta seção é a superfície que produzia o dado que o CHECK agora recusa. */}
       {!isSimpleMode && showTitration && (
         <div className="titration-section">
-          <div className="form-group checkbox-group" style={{ marginBottom: 0 }}>
-            <label className="checkbox-label">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="target_dosage">Dose Alvo (mg)</label>
               <input
-                type="checkbox"
-                checked={enableTitration}
-                onChange={(e) => handleTitrationEnable(e.target.checked)}
+                type="text"
+                inputMode="decimal"
+                id="target_dosage"
+                name="target_dosage"
+                value={formData.target_dosage}
+                onChange={handleChange}
+                placeholder="Ex: 50"
               />
-              <span>📈 Regime de Titulação Inteligente</span>
-            </label>
-          </div>
-
-          {enableTitration ? (
-            <TitrationWizard
-              schedule={formData.titration_schedule}
-              onChange={setTitrationSchedule}
-              medicine={medicine}
-              intakeUnit={formData.intake_unit || null}
-            />
-          ) : (
-            <div className="form-row" style={{ marginTop: 'var(--space-2)' }}>
-              <div className="form-group">
-                <label htmlFor="target_dosage">Dose Alvo (mg)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="target_dosage"
-                  name="target_dosage"
-                  value={formData.target_dosage}
-                  onChange={handleChange}
-                  placeholder="Ex: 50"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="titration_status">Status Manual</label>
-                <select
-                  id="titration_status"
-                  name="titration_status"
-                  value={formData.titration_status}
-                  onChange={handleChange}
-                >
-                  <option value="estável">✅ Estável</option>
-                  <option value="titulando">📈 Titulando</option>
-                  <option value="alvo_atingido">🎯 Alvo Atingido</option>
-                </select>
-              </div>
             </div>
-          )}
+          </div>
+          <p className="titration-section__frozen">
+            📈 Gerencie a evolução do tratamento no aplicativo
+          </p>
         </div>
       )}
 

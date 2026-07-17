@@ -85,10 +85,7 @@ export {
 export {
   calculateTitrationData,
   resolveTitrationStageAt,
-  calculateTitrationDataFromSteps,
-  resolveTitrationStageAtFromSteps,
-  resolveTitrationAdvanceFromSteps,
-  getTitrationSource,
+  resolveTitrationAdvance,
 } from './titrationUtils'
 export type {
   TitrationStepLike,
