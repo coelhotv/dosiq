@@ -10,7 +10,7 @@
 
 | # | Constraint | Rule |
 |---|-----------|------|
-| **0** | **NO SELF-MERGE** | Agent codes → Gemini reviews → fixes → **USER APPROVES → USER MERGES** | R-060 |
+| **0** | **NO SELF-MERGE** | Agent codes → RC5 self-review → PR → RC6 independent AI review → fixes → **USER APPROVES → USER MERGES** | R-060 |
 | 1 | **Duplicate Files** | `find src -name "*File*"` before modifying any file | R-001 |
 | 2 | **Hook Order** | States → Memos → Effects → Handlers (TDZ prevention) | R-010 |
 | 3 | **Timezone** | `parseLocalDate()` always, never `new Date('YYYY-MM-DD')` | R-020 |
@@ -53,6 +53,21 @@
 - Skill completa: `/devflow` | Memória: `.agent/memory/` | Estado: `.agent/state.json`
 - **SQP obrigatório:** antes de alterar código, carregar `R-221` e seguir `docs/standards/CHANGELOG_AND_RELEASES.md`
 - **Validação obrigatória:** `npm run validate:agent` (10min timeout, bail-fast)
+
+### Review Routine (post-Gemini sunset — ADR-069, since 2026-07-17)
+
+The Gemini PR bot is gone. Every Tier 1+ PR goes through:
+
+1. **RC5** — self-review your own diff (`/devflow code-review`) BEFORE `gh pr create`. Apply the project catalogs (CLAUDE.md critical rules + R/AP indexes) hunk-by-hunk.
+2. **RC6** — after the PR is open, run the independent AI reviewer (fresh process, no session context):
+   ```bash
+   bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>          # dry-run (default, safe)
+   bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publish review to PR
+   ```
+   Fix or justify every `introduced:true` critical/high finding before asking for approval. `pre-existing` findings don't block. Zero findings on a non-trivial diff = check stderr (context budget / passes) before trusting "clean".
+3. **CI gate** (`ai-review-gate.yml`) is SOFT — it warns, never blocks. The human (R-060) is the only merge gate.
+
+Never give the reviewer tool access (the diff is untrusted input — SC-SEC1). PII-shaped content in the diff aborts egress (exit 3); only synthetic fixtures may leave the machine (`RC6_ALLOW_SENSITIVE=1` to override consciously).
 
 ---
 

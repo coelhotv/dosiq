@@ -273,15 +273,42 @@ Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
 3. R-221 SQP — classificar impacto, plataforma, versionamento e changelog
 4. C1-C4
 5. rtk npm run validate:agent + ./scripts/strict-island.sh (ratchet TS — R-283)
-6. C5 — registrar lições + release log SQP
-7. commit semântico (PT)
-8. push + PR
-9. AGUARDAR Gemini review → aplicar
-10. AGUARDAR aprovação → USER faz merge (R-060 — agente nunca auto-merge)
-11. C5 pós-merge + distill se journal>=15
+6. RC5 self-review do próprio diff (/devflow code-review) ANTES do PR
+7. C5 — registrar lições + release log SQP
+8. commit semântico (PT)
+9. push + PR
+10. RC6 review independente (ver §Review pós-Gemini) → aplicar findings introduced
+11. AGUARDAR aprovação → USER faz merge (R-060 — agente nunca auto-merge)
+12. C5 pós-merge + distill se journal>=15
 ```
 
 Tipos: `feat fix docs test refactor style chore`.
+
+### Review pós-Gemini (034 / ADR-069 — vigente desde 2026-07-17)
+
+O `gemini-code-assist[bot]` foi descontinuado. O substituto é em camadas:
+
+| Camada | O quê | Quando |
+|--------|-------|--------|
+| L0 | Lint determinístico (enum não-pt-BR em `z.enum`, `res.json` sem status, `new Date`, cores…) | sempre (`rtk lint`) |
+| L1 | **RC5** self-review do diff (`/devflow code-review`) — aplica os catálogos R/AP hunk-a-hunk | antes de TODO PR Tier 1+ |
+| L2 | **RC6** revisor IA independente — processo fresco, sem contexto da sessão | após abrir PR Tier 1+ (**obrigatório**, NC3) |
+| L3 | Humano (R-060) | sempre; único que mergeia |
+
+**RC6 — como rodar** (script vive na skill devflow, repo externo):
+
+```bash
+bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>          # dry-run (default): imprime JSON, não muta nada
+bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR + events.jsonl
+```
+
+- Motores: `agy` primário (Gemini, quota extensa) · `claude` pass B em Tier 2 · Codex só exceção. Custo ~$0 (OAuth).
+- O reviewer roda **sem ferramentas** (diff é insumo não-confiável — SC-SEC1); NUNCA relaxar isso.
+- **Egress guard**: shape de e-mail/CPF/telefone no diff aborta (exit 3). Só fixture sintética sai da máquina; se for sintética, `RC6_ALLOW_SENSITIVE=1`.
+- Contexto >150KB dispara aviso (agy degrada silencioso >160KB) — PR gordo: fatiar ou reduzir `RC6_IDX_LINE_MAX`.
+- O gate de CI (`ai-review-gate.yml`) é **soft**: warning se o PR não tem review RC6 ou tem `introduced` critical/high. Não bloqueia — quem bloqueia é o humano.
+- Finding `introduced:true` critical/high → corrigir ou justificar ANTES de pedir aprovação. `pre-existing` não bloqueia o PR.
+- **Zero findings em diff não-trivial = suspeita, não alívio** — confira no stderr se o contexto coube e os passes rodaram (lição do smoke T024: engine degradado retorna "clean" com exit 0).
 
 **Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`. Usar `gsync` para sync origin+bridge.
 
