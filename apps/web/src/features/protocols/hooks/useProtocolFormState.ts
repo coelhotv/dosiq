@@ -6,7 +6,6 @@ import {
   handleRemoveTime,
 } from './protocolFormUtils'
 import { submitProtocolForm } from './_protocolFormSubmit'
-import { buildProtocolFormInitialData } from './_protocolFormHelpers'
 
 export function useProtocolFormState({
   protocol,
@@ -17,10 +16,9 @@ export function useProtocolFormState({
   onSuccess,
   autoAdvance,
 }: any) {
-  const [formData, setFormData] = useState(() => {
-    const data = getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
-    return buildProtocolFormInitialData(protocol, data)
-  })
+  const [formData, setFormData] = useState(() =>
+    getInitialFormData(protocol, initialValues, preselectedMedicine, isSimpleMode)
+  )
 
   const [timeInput, setTimeInput] = useState('')
   const [errors, setErrors] = useState<any>({})
