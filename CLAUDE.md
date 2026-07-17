@@ -309,6 +309,7 @@ bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR
 - O gate de CI (`ai-review-gate.yml`) é **soft**: warning se o PR não tem review RC6 ou tem `introduced` critical/high. Não bloqueia — quem bloqueia é o humano.
 - Finding `introduced:true` critical/high → corrigir ou justificar ANTES de pedir aprovação. `pre-existing` não bloqueia o PR.
 - **Zero findings em diff não-trivial = suspeita, não alívio** — confira no stderr se o contexto coube e os passes rodaram (lição do smoke T024: engine degradado retorna "clean" com exit 0).
+- **📏 Medição 034-D (temporário, até ~5 PRs):** no C5 de todo PR Tier 1+ que rodou RC6, appendar 1 linha em `plans/specs/034-gemini-sunset/measurement.md` (template e critérios no próprio arquivo; KPI = caminhos não-pretendidos, não críticos). Ao atingir ~5 linhas: consolidar → decisão T051 do PO → remover esta linha daqui.
 
 **Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`. Usar `gsync` para sync origin+bridge.
 
