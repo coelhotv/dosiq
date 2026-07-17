@@ -28,4 +28,7 @@ AI_REVIEW="${AI_REVIEW_BIN:-$HOME/SKILLS/devflow/scripts/ai-review.sh}"
 [ -x "$AI_REVIEW" ] || { echo "[post-push] ai-review.sh não encontrado em $AI_REVIEW" >&2; exit 0; }
 
 echo "[post-push] PR #$PR aberto — rodando RC6 em dry-run (publicar: rtk ai-review $PR --post)" >&2
-"$AI_REVIEW" "$PR" --dry-run
+# Fail-open (FR-008/FR-011): falha do RC6 não pode contaminar o exit do wrapper
+# `git pushr` (o push em si já deu certo) — mas nunca em silêncio (Const. IX).
+"$AI_REVIEW" "$PR" --dry-run \
+  || echo "[post-push] ⚠️ RC6 falhou (rc=$?) — review manual obrigatória: rtk ai-review $PR" >&2
