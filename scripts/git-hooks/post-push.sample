@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# post-push.sample — dispara o RC6 (ai-review) após o push, se houver PR aberto.
+# 034-C T038 / ADR-069 (NC2: gatilho manual + post-push).
+#
+# ⚠️ O git NÃO tem hook `post-push` nativo (a suíte oficial para no pre-push,
+# que roda ANTES — bloquearia o push, violando FR-011 não-bloqueante).
+# Este script é chamado por um WRAPPER de push. Instalação (uma vez):
+#
+#   git config alias.pushr '!git push "$@" && .git/hooks/post-push #'
+#   cp scripts/git-hooks/post-push.sample .git/hooks/post-push
+#   chmod +x .git/hooks/post-push
+#
+# Uso: `git pushr` no lugar de `git push` quando quiser o RC6 automático.
+# `git push` puro continua existindo e não roda nada (opt-in, FR-011).
+#
+# Comportamento:
+#   - sem PR aberto p/ a branch → sai em silêncio (mitigação de quota, NC2)
+#   - com PR → roda ai-review em DRY-RUN e mostra o resultado; o --post
+#     (que publica no PR) continua decisão explícita do operador.
+set -euo pipefail
+
+command -v gh >/dev/null 2>&1 || exit 0
+
+PR="$(gh pr view --json number -q .number 2>/dev/null || true)"
+[ -n "$PR" ] || exit 0   # sem PR aberto — não gasta quota
+
+AI_REVIEW="${AI_REVIEW_BIN:-$HOME/SKILLS/devflow/scripts/ai-review.sh}"
+[ -x "$AI_REVIEW" ] || { echo "[post-push] ai-review.sh não encontrado em $AI_REVIEW" >&2; exit 0; }
+
+echo "[post-push] PR #$PR aberto — rodando RC6 em dry-run (publicar: rtk ai-review $PR --post)" >&2
+"$AI_REVIEW" "$PR" --dry-run

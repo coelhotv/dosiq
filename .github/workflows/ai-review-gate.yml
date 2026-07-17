@@ -1,0 +1,84 @@
+# ai-review-gate.yml — enforcement SOFT da revisão RC6 (034-C / ADR-069 §21)
+#
+# NÃO roda LLM (custo $0 em CI — ADR-069 §29: OAuth é local, API metered não).
+# Apenas verifica se o PR tem o comentário do RC6 (`rtk ai-review <PR#> --post`)
+# e lê a SEVERIDADE do payload (SC-SEC2: presença sozinha aceitaria um
+# "clean" forjado por prompt-injection; contagem vem do corpo estruturado).
+#
+# SOFT por decisão do PO (NC1): o job SEMPRE termina verde; a saída é um
+# warning visível + step summary. Quem bloqueia merge é o humano (R-060).
+#
+# Segurança (RC-SEC):
+#   - trigger `pull_request`, NUNCA `pull_request_target` (SC-SEC4)
+#   - token least-privilege: só leitura de PR (SC-SEC7)
+name: RC6 AI Review Gate
+
+on:
+  pull_request:
+    branches: [main, develop, "feat/**"]
+    paths-ignore:
+      - 'docs/**'
+      - '.agent/**'
+      - '*.md'
+      - 'scripts/**'
+      - 'scratches/**'
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rc6-gate:
+    name: RC6 review present?
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verificar review RC6 no PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request.number;
+
+            // Reviews do PR (o RC6 posta como review COMMENT com header fixo)
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner, repo, pull_number: pr, per_page: 100,
+            });
+            const HEADER = 'RC6 — Independent AI Review';
+            const rc6 = reviews.filter(r => (r.body || '').includes(HEADER));
+
+            const warn = (msg) => {
+              core.warning(msg);
+              core.summary.addRaw(`⚠️ ${msg}`).write();
+            };
+
+            if (rc6.length === 0) {
+              warn(`PR #${pr} sem review RC6. Rodar localmente: rtk ai-review ${pr} --post ` +
+                   `(obrigatório em Tier 1+ — ADR-069/NC3). Gate é SOFT: merge é decisão humana (R-060).`);
+              return;
+            }
+
+            // Mais recente vence (re-runs após correção substituem o veredito)
+            const last = rc6[rc6.length - 1];
+
+            // Corpo estruturado do script: "**Introduced:** N critical · M high"
+            const m = (last.body || '').match(/\*\*Introduced:\*\*\s*(\d+)\s*critical\s*·\s*(\d+)\s*high/);
+            if (!m) {
+              warn(`Review RC6 encontrada no PR #${pr}, mas sem o bloco de contagem estruturado — ` +
+                   `payload fora do formato do ai-review.sh. Verificar manualmente (SC-SEC2).`);
+              return;
+            }
+
+            const [ , critical, high ] = m.map(Number);
+            if (critical > 0 || high > 0) {
+              warn(`RC6 no PR #${pr}: ${critical} critical / ${high} high INTRODUZIDOS. ` +
+                   `Resolver ou justificar antes do merge (decisão humana — R-060).`);
+            } else {
+              core.summary
+                .addRaw(`✅ RC6 presente no PR #${pr}: 0 critical / 0 high introduzidos ` +
+                        `(review ${last.html_url}).`)
+                .write();
+            }

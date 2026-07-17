@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Tooling — Spec 034: substituição do revisor Gemini (sunset 2026-07-17)
+
+- **Chore** (`no-user-impact`, sem bump de produto, PR #TBD): o `gemini-code-assist[bot]` — revisor independente dos PRs — foi descontinuado pelo Google. Substituto em camadas (ADR-069, aceito): revisor IA independente **RC6** roda local (`ai-review.sh` na skill devflow, quota OAuth ~$0, sandbox sem ferramentas — diff é insumo não-confiável) e publica no PR; o CI ganha o gate **soft** `ai-review-gate.yml` (sem LLM, lê a severidade do payload, nunca bloqueia — merge é decisão humana R-060). Workflow morto `gemini-review.yml` (~34K) removido. Hook `post-push` de exemplo em `scripts/git-hooks/` dispara o RC6 em dry-run quando há PR aberto. **Sem relevância para notas de loja** (processo interno).
+
 ### Core + Web — Spec 029 Slice F3.1: demolição do andaime e a trava que faltava
 
 - **Refactor** (`minor`, core `0.9.0 → 0.10.0` · web `patch`, PR #TBD): **A titulação nunca funcionou em produção — em 6 meses.** Descoberto ao investigar por que nenhuma escada jamais avançou. O status dizia "titulando"; o relógio que faz a escada andar (`stage_started_at`) **nunca era setado** pelo caminho que as pessoas de fato usam (criar o tratamento e depois editar para somar a escada). Sem relógio, o motor não tem de onde contar — então nada acontecia. Sem erro, sem log, sem alerta: a tela mostrava a escada bonita, ela só não andava. A feature tinha **zero usuários**.
