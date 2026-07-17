@@ -137,6 +137,20 @@ export default [
         {
           selector: 'BlockStatement > :matches(VariableDeclaration:has(CallExpression[callee.name="useCallback"]), ExpressionStatement:has(CallExpression[callee.name=/^(useEffect|useLayoutEffect|useFocusEffect|useInsertionEffect)$/])) ~ VariableDeclaration:has(CallExpression[callee.name="useMemo"])',
           message: 'R-010: Ordem dos hooks incorreta. Declare Memos (useMemo) antes de Effects e Handlers.'
+        },
+        // 034-A/AP-299: enum de DB em z.enum() DEVE ser pt-BR COM acento (o CHECK do banco
+        // rejeita a versão sem — 23514). Só literais DIRETOS no z.enum(); constantes tolerantes
+        // de leitura (mapas de normalização) ficam fora de propósito. 'cp' só existe em
+        // titration_steps (TITRATION_INTAKE_UNITS compõe via [...INTAKE_UNITS, 'cp'], não aqui).
+        {
+          selector: 'CallExpression[callee.object.name="z"][callee.property.name="enum"] Literal[value=/^(daily|weekly|monthly|biweekly|as_needed|when_needed|diario|quando_necessario|cp)$/]',
+          message: 'Enum de DB em inglês ou sem acento dentro de z.enum(). Os CHECKs do banco exigem pt-BR verbatim (ex.: "diário", "quando_necessário"; comprimido = NULL, não "cp"). Ver CLAUDE.md §Schemas — enums (AP-299).'
+        },
+        // 034-A/R-090 (lição Sprint 7): res.json(body) sem res.status() quebra no Vercel.
+        // [arguments.length>0] distingue do res.json() de fetch Response (0 args).
+        {
+          selector: 'CallExpression[callee.object.name="res"][callee.property.name="json"][arguments.length>0]',
+          message: 'res.json(body) direto quebra no Vercel. Use SEMPRE res.status(code).json(body) (R-090 / lição Sprint 7).'
         }
       ],
 
