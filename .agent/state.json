@@ -2,8 +2,8 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "respecified",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
@@ -209,21 +209,20 @@
     "pr": 749
   },
   "memory": {
-    "last_distillation": "2026-07-13T00:00:00Z",
-    "journal_entries_since_distillation": 18,
-    "rules_count": 241,
-    "anti_patterns_count": 296,
+    "last_distillation": "2026-07-17T00:30:00Z",
+    "journal_entries_since_distillation": 0,
+    "rules_count": 245,
+    "anti_patterns_count": 297,
     "decisions_count": 80,
     "contracts_count": 31,
-    "distillation_due": true,
-    "counter_drift_note": "D5 self-clean DEVIDO: AP disco 294 / índice 193 / state 296; R disco 244 / índice 242 / state 241. ~101 arquivos de AP fora do índice. Contadores NÃO ajustados no C5 do #749 de propósito — reconciliar contra os índices no distill."
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-16T20:10:00Z"
+    "index_loaded_at": "2026-07-17T00:30:00Z"
   },
   "code_review": {
     "status": "issues_found",
