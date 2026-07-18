@@ -143,32 +143,53 @@ export function createTitrationRepository({ client, getUserId }: CreateTitration
       return (data ?? []) as TitrationStepRow[]
     },
 
+    /**
+     * Atualiza uma etapa. `expectedStatuses` (opcional) é um CLAIM atômico: filtra o UPDATE por
+     * `status IN (...)`, então a linha só muda se ainda estiver num desses estados. Serve o guard
+     * A4 (plan §A4:247): a edição client-side só pode tocar etapas futuras — se o cron avançou a
+     * etapa (upcoming→current) entre o load e o save, o claim volta vazio e retorna `null` em vez de
+     * clobberar uma etapa já vigente (reabriria a classe zumbi — AP-301). Sem o guard: comportamento
+     * de sempre (só id+user_id).
+     */
     async updateStep(
       id: string,
       updates: Partial<Omit<TitrationStepRow, 'id' | 'user_id' | 'titration_id'>>,
-    ): Promise<TitrationStepRow> {
+      expectedStatuses?: TitrationStepRow['status'][],
+    ): Promise<TitrationStepRow | null> {
       const userId = await getUserId()
-      const { data, error } = await client
+      let query = client
         .from('titration_steps')
         .update(updates as never)
         .eq('id', id)
         .eq('user_id', userId)
-        .select()
-        .single()
+      if (expectedStatuses && expectedStatuses.length > 0) {
+        query = query.in('status', expectedStatuses as never)
+      }
+      const { data, error } = await query.select().maybeSingle()
 
       if (error) throw error
-      return data as TitrationStepRow
+      return (data ?? null) as TitrationStepRow | null
     },
 
-    async deleteStep(id: string): Promise<void> {
+    /**
+     * Remove uma etapa. `expectedStatuses` (opcional) = claim atômico (ver `updateStep`): retorna
+     * `false` se nenhuma linha casou (a etapa avançou sob a edição — guard A4). Sem o guard: apaga
+     * por id+user_id e retorna `true`.
+     */
+    async deleteStep(id: string, expectedStatuses?: TitrationStepRow['status'][]): Promise<boolean> {
       const userId = await getUserId()
-      const { error } = await client
+      let query = client
         .from('titration_steps')
         .delete()
         .eq('id', id)
         .eq('user_id', userId)
+      if (expectedStatuses && expectedStatuses.length > 0) {
+        query = query.in('status', expectedStatuses as never)
+      }
+      const { data, error } = await query.select('id')
 
       if (error) throw error
+      return Array.isArray(data) && data.length > 0
     },
   }
 }

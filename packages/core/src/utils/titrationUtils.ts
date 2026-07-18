@@ -157,6 +157,32 @@ export function calculateTitrationData(
   }
 }
 
+/**
+ * Badge de estado da Evolução do tratamento, DERIVADO da escada N2 (spec 029 §2 / F4).
+ *
+ * Fonte ÚNICA = `titration_steps` (a coluna N1 `protocols.titration_status` está deprecada e não é
+ * mais escrita — não ler dela). Regra (Decisões §2):
+ *   - etapa vigente FINITA (duração > 0)  → 'em_evolucao' ("Em evolução")
+ *   - etapa vigente CONTÍNUA, ou sem etapa vigente, ou SEM escada → 'estavel' ("Estável")
+ * "Estável" é o mesmo badge de um tratamento sem escada (§2), por isso é o default.
+ *
+ * As etapas DEVEM vir filtradas por `protocol_id = protocol.id` (embed) — a etapa vigente do
+ * protocolo é a que importa (CON-032 / A5).
+ */
+export type EvolutionBadgeKey = 'em_evolucao' | 'estavel'
+export interface EvolutionBadge {
+  key: EvolutionBadgeKey
+  label: string
+}
+
+export function getEvolutionBadge(
+  steps: TitrationStepLike[] | null | undefined
+): EvolutionBadge {
+  const current = Array.isArray(steps) ? steps.find((s) => s?.status === 'current') : null
+  const isFinite = current != null && getStepDurationDays(current) !== null
+  return isFinite ? { key: 'em_evolucao', label: 'Em evolução' } : { key: 'estavel', label: 'Estável' }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MOTOR DE AVANÇO (spec 029 / ADR-080 / Slice F3 — T012). PURO e clock-free.
 //

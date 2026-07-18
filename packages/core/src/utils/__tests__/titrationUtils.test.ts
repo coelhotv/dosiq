@@ -9,7 +9,36 @@
 // `global.Date` que a versão anterior precisava. Datas locais (AP-270).
 
 import { describe, it, expect } from 'vitest'
-import { calculateTitrationData, type TitrationStepLike } from '../titrationUtils'
+import { calculateTitrationData, getEvolutionBadge, type TitrationStepLike } from '../titrationUtils'
+
+describe('getEvolutionBadge — badge derivado da escada N2 (não da coluna N1)', () => {
+  it('etapa vigente FINITA → Em evolução', () => {
+    const steps: TitrationStepLike[] = [
+      { position: 0, status: 'current', started_at: '2026-07-01T00:00:00Z', duration_days: 28 },
+      { position: 1, status: 'upcoming', duration_days: null },
+    ]
+    expect(getEvolutionBadge(steps)).toEqual({ key: 'em_evolucao', label: 'Em evolução' })
+  })
+
+  it('etapa vigente CONTÍNUA (duration null) → Estável', () => {
+    const steps: TitrationStepLike[] = [
+      { position: 0, status: 'completed', duration_days: 28 },
+      { position: 1, status: 'current', started_at: '2026-08-01T00:00:00Z', duration_days: null },
+    ]
+    expect(getEvolutionBadge(steps)).toEqual({ key: 'estavel', label: 'Estável' })
+  })
+
+  it('sem etapa vigente (pausada/concluída) → Estável', () => {
+    const steps: TitrationStepLike[] = [{ position: 0, status: 'completed', duration_days: 28 }]
+    expect(getEvolutionBadge(steps)).toEqual({ key: 'estavel', label: 'Estável' })
+  })
+
+  it('sem escada (vazio/null/undefined) → Estável (default de tratamento sem escada)', () => {
+    expect(getEvolutionBadge([]).key).toBe('estavel')
+    expect(getEvolutionBadge(null).key).toBe('estavel')
+    expect(getEvolutionBadge(undefined).key).toBe('estavel')
+  })
+})
 
 const STAGE_START = '2026-03-01T00:00:00'
 const start = new Date(STAGE_START)

@@ -2,9 +2,9 @@
 // R-166: UX Parity P-011
 
 import { View, Text, StyleSheet, Pressable } from 'react-native'
-import SectionCard from '../../../shared/components/ui/SectionCard'
-import StatusBadge from '../../../shared/components/ui/StatusBadge'
-import { colors, spacing } from '../../../shared/styles/tokens'
+import SectionCard from '@shared/components/ui/SectionCard'
+import EvolutionBadge from './EvolutionBadge'
+import { colors, spacing } from '@shared/styles/tokens'
 import { formatDatePtBR, getProtocolDays, formatIntakeDose, formatConcentration } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
@@ -24,16 +24,6 @@ const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
  *   onPress?: () => void
  * }} props
  */
-const STATUS_TYPE_MAP = {
-  'estável': 'success',
-  'ajustando': 'warning',
-  'desmamando': 'info',
-}
-
-function getStatusType(status) {
-  return STATUS_TYPE_MAP[status] || 'neutral'
-}
-
 function getFrequencyLabel(freq, treatment) {
   const map = {
     'diário': 'Todos os dias',
@@ -87,7 +77,8 @@ function renderStatusBadge(isPaused, isFinished, endDate) {
 }
 
 export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo', endDate = null }) {
-  const { name, frequency, time_schedule, dosage_per_intake, intake_unit, titration_status, medicine } = treatment
+  const { name, frequency, time_schedule, dosage_per_intake, intake_unit, medicine } = treatment
+
 
   // Dose exibida (022): helper único líquido/sólido (evita drift entre telas).
   const doseDisplay = formatIntakeDose(dosage_per_intake, intake_unit, medicine)
@@ -125,7 +116,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
           {renderStatusBadge(isPaused, isFinished, endDate)}
         </View>
       }
-      headerAction={<StatusBadge label={titration_status} type={getStatusType(titration_status)} />}
+      headerAction={<EvolutionBadge steps={treatment.titration_steps} paused={isPaused} />}
     >
       <View style={[styles.content, contentMutedStyle]}>
         <View style={styles.row}>

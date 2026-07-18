@@ -10,9 +10,9 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305/TS2724
 // sob apps/mobile/tsconfig.json (Edit3/CheckCircle2 são aliases deprecated de
 // Pen/CircleCheck — existem em runtime, só não no .d.ts) — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import * as LucideIcons from 'lucide-react-native'
-const { ArrowLeft, ChevronRight, Clock, Edit3, Trash2, CheckCircle2, TrendingUp } = LucideIcons as any
+const { ArrowLeft, ChevronRight, Clock, Edit3, Trash2 } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
 import {
   formatDatePtBR,
@@ -33,6 +33,7 @@ import { useProtocol } from '@treatments/hooks/useProtocols'
 import { useProtocolDelete } from '@treatments/hooks/useProtocolDelete'
 import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import ProtocolDeleteSheet from '@treatments/components/ProtocolDeleteSheet'
+import TitrationTimeline from '@treatments/components/TitrationTimeline'
 import { lightTap, selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
@@ -209,6 +210,7 @@ function ProtocolDetailAppBar({ name, goBack, goEdit }) {
 
 export default function ProtocolDetailScreen() {
   const {
+    id,
     protocol,
     loading,
     error,
@@ -266,6 +268,10 @@ export default function ProtocolDetailScreen() {
           goToMedicine={goToMedicine}
           inUseDays={inUseDays}
         />
+
+        {/* Evolução do tratamento (029 F4 / T020) — só aparece se há escada; hero/Dosagem
+            já refletem a etapa vigente. paused acompanha o tratamento (sem estado próprio). */}
+        <TitrationTimeline protocolId={id} paused={!effectiveActive} hasLadderHint={(protocol.titration_steps?.length ?? 0) > 0} />
 
         <DosageFrequencySection
           protocol={protocol}
@@ -400,17 +406,8 @@ function ProtocolHero({ protocol, goToMedicine, inUseDays }) {
           <Text style={styles.heroSubtitle} numberOfLines={1}>{medicine.active_ingredient}</Text>
         ) : null}
         <View style={styles.heroFooter}>
-          {protocol.titration_status === 'titulando' ? (
-            <View style={styles.statusBadge}>
-              <TrendingUp size={14} color={colors.primary[700]} />
-              <Text style={styles.statusBadgeText}>Titulando</Text>
-            </View>
-          ) : (
-            <View style={styles.statusBadge}>
-              <CheckCircle2 size={14} color={colors.primary[700]} />
-              <Text style={styles.statusBadgeText}>Estável</Text>
-            </View>
-          )}
+          {/* 029 F4: o badge de evolução vive na seção "Evolução do tratamento" (timeline) — não
+              se repete aqui no hero. */}
           {inUseDays !== null ? (
             <Text style={styles.heroFooterHint}>
               {inUseDays === 0 ? 'Iniciado hoje' : `Em uso há ${inUseDays} ${inUseDays === 1 ? 'dia' : 'dias'}`}
