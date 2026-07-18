@@ -305,7 +305,10 @@ bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR
 - Motores: `agy` primário (Gemini, quota extensa) · `claude` pass B em Tier 2 · Codex só exceção. Custo ~$0 (OAuth).
 - O reviewer roda **sem ferramentas** (diff é insumo não-confiável — SC-SEC1); NUNCA relaxar isso.
 - **Egress guard**: shape de e-mail/CPF/telefone no diff aborta (exit 3). Só fixture sintética sai da máquina; se for sintética, `RC6_ALLOW_SENSITIVE=1`.
-- Contexto >150KB dispara aviso (agy degrada silencioso >160KB) — PR gordo: fatiar ou reduzir `RC6_IDX_LINE_MAX`.
+- **PR grande: chunking automático** — acima do budget (~150KB) o script fatia o diff por arquivo e roda 1 chamada agy por chunk (o merge consolida). Cap de 6 chunks: além disso a coverage fica PARCIAL com aviso — fatiar o PR é o fix, não insistir. (Causa: >160KB o agy AMOSTRA o input — 3 runs no #757 deram 3 resultados disjuntos + 1 critical fabricado.)
+- **RC6 roda UMA vez por PR.** Nunca re-rodar "pra confirmar" — acima do budget não existe consistência entre runs, e cada run queima quota (5 runs no #757 = >30% da quota 5h do claude). Resultado com aviso de budget no stderr = advisory: julgar findings no mérito.
+- **Finding de coluna/schema → verificar no banco ANTES de virar trabalho** (R-295 vale contra o revisor também — o critical falso do #757 caiu com 1 query no `information_schema`).
+- **Antes de rodar**: conferir `base=` no stderr — o script agora usa `origin/main` (fetch automático), mas offline cai pro main local (pode estar velho → revisa diff errado, caso #756).
 - O gate de CI (`ai-review-gate.yml`) é **soft**: warning se o PR não tem review RC6 ou tem `introduced` critical/high. Não bloqueia — quem bloqueia é o humano.
 - Finding `introduced:true` critical/high → corrigir ou justificar ANTES de pedir aprovação. `pre-existing` não bloqueia o PR.
 - **Zero findings em diff não-trivial = suspeita, não alívio** — confira no stderr se o contexto coube e os passes rodaram (lição do smoke T024: engine degradado retorna "clean" com exit 0).
