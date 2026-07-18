@@ -1,5 +1,7 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
-import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity } from 'react-native'
+import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import * as LucideIcons from 'lucide-react-native'
 import {
   parseLocalDate,
   formatDoseHint,
@@ -20,6 +22,8 @@ import {
   openFullScreenIntentSettings,
   isXiaomiDevice,
 } from '@platform/alarms/alarmService'
+
+const { ArrowDownNarrowWide, ChevronRight } = LucideIcons as any
 
 const XIAOMI_MSG =
   'Você precisa de uma etapa extra para o alarme funcionar na tela bloqueada. Abra as configurações abaixo e:\n\n' +
@@ -320,6 +324,9 @@ export default function ProtocolFormBody({
   form,
   medicine,
   onOpenMedicineSheet,
+  onOpenTitration,
+  isEditMode,
+  titrationStepCount = 0,
   plans,
   planField,
   onPlanFieldChange,
@@ -410,6 +417,42 @@ export default function ProtocolFormBody({
       </Section>
 
       <FrequencySection form={form} showWeekdays={showWeekdays} />
+
+      {/* T018 — entrada opcional da Evolução do tratamento. Toca → salva o tratamento e abre o
+          cadastro da escada (create-on-transition). Quem ignora salva igual (US3.2). */}
+      {onOpenTitration ? (
+        <Section title="Evolução do tratamento">
+          <View style={styles.evoBlock}>
+            <Pressable
+              onPress={onOpenTitration}
+              style={({ pressed }) => [styles.evoRow, pressed && styles.evoRowPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="A dose muda ao longo do tempo? Cadastrar a evolução do tratamento"
+            >
+              <View style={styles.evoIcon}>
+                <ArrowDownNarrowWide size={20} color={colors.primary[600]} strokeWidth={2.4} />
+              </View>
+              <View style={styles.evoText}>
+                <Text style={styles.evoTitle}>
+                  {titrationStepCount > 0 ? 'Evolução do tratamento' : 'A dose muda ao longo do tempo?'}
+                </Text>
+                <Text style={styles.evoHint}>
+                  {titrationStepCount > 0
+                    ? `${titrationStepCount} ${titrationStepCount === 1 ? 'etapa cadastrada' : 'etapas cadastradas'} · toque para ver`
+                    : 'Nenhuma etapa cadastrada · opcional'}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.text.muted} />
+            </Pressable>
+            {/* Só faz sentido no cadastro (na edição o tratamento já existe). */}
+            {!isEditMode ? (
+              <Text style={styles.evoFootnote}>
+                Você pode cadastrar as etapas agora ou depois, editando o tratamento.
+              </Text>
+            ) : null}
+          </View>
+        </Section>
+      ) : null}
 
       <Section title="Alertas Críticos">
         <View style={styles.toggleRow}>
@@ -529,6 +572,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing[3],
   },
+  evoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    minHeight: 48,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.bg.card,
+  },
+  evoBlock: { gap: spacing[2] },
+  evoRowPressed: { opacity: 0.85 },
+  evoIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.primary[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  evoText: { flex: 1, gap: 2 },
+  evoTitle: { fontSize: 15, fontWeight: '600', color: colors.text.primary },
+  evoHint: { fontSize: 12, color: colors.text.muted },
+  evoFootnote: { fontSize: 12, color: colors.text.muted, paddingHorizontal: spacing[1], lineHeight: 17 },
   toggleText: {
     flex: 1,
     gap: spacing[1],

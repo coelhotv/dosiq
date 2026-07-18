@@ -20,6 +20,9 @@ export async function getAllTreatments(userId) {
 
     debugLog('treatmentsService', `Buscando todos os tratamentos para: ${userId}`)
 
+    // R-295: o embed `titration_steps(status, duration_days)` abaixo tem status/duration_days
+    // verificadas no banco; resolve via FK `titration_steps.protocol_id → protocols.id` (mesmo shape
+    // do MOBILE_DETAIL_SELECT — executado contra o PostgREST: 401 auth, não 42703/PGRST200).
     const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
       .select(`
@@ -34,6 +37,7 @@ export async function getAllTreatments(userId) {
         start_date,
         end_date,
         weekdays,
+        titration_steps(status, duration_days),
         treatment_plan:treatment_plan_id (
           id,
           name,

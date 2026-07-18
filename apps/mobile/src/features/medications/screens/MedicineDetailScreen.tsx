@@ -12,7 +12,7 @@ import {
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, Pencil, Trash2, Layers, Package } = LucideIcons as any
 import MedicineIcon from '@shared/components/ui/MedicineIcon'
@@ -55,7 +55,7 @@ function KVRow({ label, value, isLast = false }) {
   )
 }
 
-// eslint-disable-next-line max-lines-per-function
+ 
 function MedicineDetailHeader({ onBack, onEdit, hasData }) {
   return (
     <View style={styles.header}>
@@ -87,7 +87,7 @@ function MedicineDetailHeader({ onBack, onEdit, hasData }) {
   )
 }
 
-function MedicineDetailHero({ type, name, doseLabel, active_ingredient, isTitrating, medicine }) {
+function MedicineDetailHero({ type, name, doseLabel, active_ingredient, medicine }) {
   return (
     <View style={styles.heroCard}>
       <View
@@ -122,11 +122,8 @@ function MedicineDetailHero({ type, name, doseLabel, active_ingredient, isTitrat
           </Text>
         )}
         <View style={styles.heroBadges}>
-          <View style={[styles.badge, styles.badgeSuccess]}>
-            <Text style={[styles.badgeText, styles.badgeTextSuccess]}>
-              {isTitrating ? 'TITULANDO' : 'ESTÁVEL'}
-            </Text>
-          </View>
+          {/* 029 F4: quem titula é o TRATAMENTO, não o medicamento — badge de evolução removido
+              daqui (vive no detalhe/listagem de tratamentos via getEvolutionBadge). */}
           <View style={[styles.badge, styles.badgeNeutral]}>
             <Text style={[styles.badgeText, styles.badgeTextNeutral]}>
               {(type ?? '—').toString().toUpperCase()}
@@ -302,11 +299,6 @@ function useMedicineDetailState() {
     return protocolsData
   }, [protocolsData])
 
-  const isTitrating = useMemo(
-    () => protocols.some((p) => p?.titration_status === 'titulando'),
-    [protocols],
-  )
-
   const protocolsSummary = useMemo(() => {
     if (protocols.length === 0) return null
     const labels = protocols
@@ -405,7 +397,6 @@ function useMedicineDetailState() {
     typeLabel,
     doseLabel,
     protocols,
-    isTitrating,
     protocolsSummary,
     stockSummary,
     stockTrackingEnabled,
@@ -460,7 +451,6 @@ export default function MedicineDetailScreen() {
           name={state.name}
           doseLabel={state.doseLabel}
           active_ingredient={state.active_ingredient}
-          isTitrating={state.isTitrating}
           medicine={state.data}
         />
 

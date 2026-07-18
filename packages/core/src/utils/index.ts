@@ -86,6 +86,7 @@ export {
   calculateTitrationData,
   resolveTitrationStageAt,
   resolveTitrationAdvance,
+  getEvolutionBadge,
 } from './titrationUtils'
 export type {
   TitrationStepLike,
@@ -93,6 +94,8 @@ export type {
   TitrationAdvancePlan,
   TitrationStepTarget,
   TitrationStepClosure,
+  EvolutionBadge,
+  EvolutionBadgeKey,
 } from './titrationUtils'
 
 // Notification utilities

@@ -15,8 +15,10 @@ function makeBuilder(result: any) {
     update: vi.fn(function (this: any, ...args: any[]) { this._calls.push(['update', args]); return this }),
     delete: vi.fn(function (this: any, ...args: any[]) { this._calls.push(['delete', args]); return this }),
     eq:     vi.fn(function (this: any, ...args: any[]) { this._calls.push(['eq', args]); return this }),
+    in:     vi.fn(function (this: any, ...args: any[]) { this._calls.push(['in', args]); return this }),
     order:  vi.fn(function (this: any, ...args: any[]) { this._calls.push(['order', args]); return this }),
     single: vi.fn(function (this: any)                 { this._calls.push(['single', []]); return Promise.resolve(result) }),
+    maybeSingle: vi.fn(function (this: any)            { this._calls.push(['maybeSingle', []]); return Promise.resolve(result) }),
     then:   (resolve: any) => resolve(result),
   }
   return builder
@@ -164,25 +166,51 @@ describe('createTitrationRepository', () => {
       expect(client.from).not.toHaveBeenCalled()
     })
 
-    it('updateStep filtra id + user_id', async () => {
+    it('updateStep filtra id + user_id (sem guard) e devolve a linha', async () => {
       client = makeClient({ data: { id: 's-1' }, error: null })
       const repo = createTitrationRepository({ client, getUserId })
-      await repo.updateStep('s-1', { status: 'current' })
+      const row = await repo.updateStep('s-1', { status: 'current' })
       const calls = client._builder._calls
       expect(calls[0]).toEqual(['update', [expect.objectContaining({ status: 'current' })]])
       expect(calls[1]).toEqual(['eq', ['id', 's-1']])
       expect(calls[2]).toEqual(['eq', ['user_id', FAKE_USER]])
+      expect(calls.some(([m]: any) => m === 'in')).toBe(false) // sem guard = sem .in()
+      expect(row).toEqual({ id: 's-1' })
     })
 
-    it('deleteStep filtra id + user_id', async () => {
-      client = makeClient({ data: null, error: null })
+    it('updateStep com expectedStatuses adiciona o claim .in(status,...)', async () => {
+      client = makeClient({ data: { id: 's-1' }, error: null })
       const repo = createTitrationRepository({ client, getUserId })
-      await repo.deleteStep('s-1')
-      expect(client._builder._calls).toEqual([
-        ['delete', []],
-        ['eq', ['id', 's-1']],
-        ['eq', ['user_id', FAKE_USER]],
-      ])
+      await repo.updateStep('s-1', { dose: 2 }, ['upcoming', 'pending_confirmation'])
+      const inCall = client._builder._calls.find(([m]: any) => m === 'in')
+      expect(inCall).toEqual(['in', ['status', ['upcoming', 'pending_confirmation']]])
+    })
+
+    it('updateStep retorna null quando o claim não casa (etapa avançou — guard A4)', async () => {
+      client = makeClient({ data: null, error: null }) // maybeSingle → sem linha
+      const repo = createTitrationRepository({ client, getUserId })
+      const row = await repo.updateStep('s-1', { dose: 2 }, ['upcoming'])
+      expect(row).toBeNull()
+    })
+
+    it('deleteStep filtra id + user_id e retorna true quando apagou', async () => {
+      client = makeClient({ data: [{ id: 's-1' }], error: null })
+      const repo = createTitrationRepository({ client, getUserId })
+      const ok = await repo.deleteStep('s-1')
+      const calls = client._builder._calls
+      expect(calls[0]).toEqual(['delete', []])
+      expect(calls[1]).toEqual(['eq', ['id', 's-1']])
+      expect(calls[2]).toEqual(['eq', ['user_id', FAKE_USER]])
+      expect(ok).toBe(true)
+    })
+
+    it('deleteStep com expectedStatuses claima e retorna false quando nada casa (guard A4)', async () => {
+      client = makeClient({ data: [], error: null }) // 0 linhas = etapa avançou
+      const repo = createTitrationRepository({ client, getUserId })
+      const ok = await repo.deleteStep('s-1', ['upcoming', 'pending_confirmation'])
+      const inCall = client._builder._calls.find(([m]: any) => m === 'in')
+      expect(inCall).toEqual(['in', ['status', ['upcoming', 'pending_confirmation']]])
+      expect(ok).toBe(false)
     })
   })
 })

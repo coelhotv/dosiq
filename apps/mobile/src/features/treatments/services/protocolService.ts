@@ -21,10 +21,16 @@ async function getUserId() {
   return user.id
 }
 
+// titration_steps embed (029 F4): alimenta o badge "Em evolução"/"Estável" derivado da escada N2
+// (getEvolutionBadge) — a coluna N1 titration_status está deprecada. Filtra por protocol_id (FK).
+// R-295: `status`/`duration_days` verificadas no banco (information_schema); embed via FK
+// `titration_steps.protocol_id → protocols.id`; select executado contra o PostgREST (401 auth,
+// não 42703/PGRST200 — shape válido).
 const MOBILE_DETAIL_SELECT = `
   *,
   medicine:medicines(*),
-  treatment_plan:treatment_plans(*)
+  treatment_plan:treatment_plans(*),
+  titration_steps(status, duration_days)
 `
 
 export const protocolService = createProtocolRepository({

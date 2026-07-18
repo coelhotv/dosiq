@@ -89,11 +89,13 @@ export const INTAKE_UNIT_LABELS = {
 }
 
 export const protocolSchema = z.object({
-  medicine_id: z.string().uuid('ID do medicamento deve ser um UUID válido'),
+  // Mensagem no vocabulário do usuário (Dona Maria): o único jeito de isto falhar na UI é não ter
+  // escolhido o medicamento (medicine_id=''), não um UUID malformado. Não vazar "UUID" pra tela.
+  medicine_id: z.string().uuid('Selecione o medicamento do tratamento.'),
 
   treatment_plan_id: z
     .string()
-    .uuid('ID do plano de tratamento deve ser um UUID válido')
+    .uuid('Plano de tratamento inválido. Recarregue e tente de novo.')
     .optional()
     .nullable()
     .transform((val) => (val === undefined ? undefined : val || null)),

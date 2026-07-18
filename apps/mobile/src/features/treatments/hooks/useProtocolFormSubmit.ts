@@ -55,7 +55,12 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
   const [submitting, setSubmitting] = useState(false)
 
   // Handlers
-  const submit = useCallback(async () => {
+  // `options.onSaved`: quando fornecido (ex.: linha "Evolução do tratamento" — T018), salva o
+  // protocolo SEM goBack e chama onSaved(result) pra encadear a navegação (create-on-transition).
+  // FormActions passa o evento de press como 1º arg, por isso o typeof guard.
+  const submit = useCallback(async (options?: { onSaved?: (result: any) => void }) => {
+    const onSaved =
+      options && typeof options.onSaved === 'function' ? options.onSaved : null
     if (submitting) return
     const currentDose = coerceDose(form)
 
@@ -93,8 +98,8 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
       await persistDensity(form)
 
       const result = editId
-        ? await mutation.update(editId, payload, { goBack: true })
-        : await mutation.create(payload, { goBack: true })
+        ? await mutation.update(editId, payload, { goBack: !onSaved })
+        : await mutation.create(payload, { goBack: !onSaved })
 
       // Ponto de intenção #2: ao criar tratamento manualmente, se NUNCA pedimos
       // push (status undetermined), pede agora — é o momento em que lembretes de
@@ -104,6 +109,13 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
         if (status === 'undetermined') {
           await enablePushAtIntent({ supabase }).catch(() => {})
         }
+      }
+
+      // T018: encadeia a navegação para o cadastro da escada com o protocolo já salvo.
+      if (result && onSaved) {
+        setSubmitting(false)
+        onSaved(result)
+        return
       }
 
       if (!result) setSubmitting(false)

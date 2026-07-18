@@ -38,6 +38,7 @@ import ProtocolFormBody from '@treatments/components/ProtocolFormBody'
 import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import { useProtocolFormState } from '@treatments/hooks/useProtocolFormState'
 import { useProtocolFormSubmit } from '@treatments/hooks/useProtocolFormSubmit'
+import { useTitrationTimeline } from '@treatments/hooks/useTitrationTimeline'
 import { ROUTES } from '@navigation/routes'
 
 export default function ProtocolFormScreen() {
@@ -68,6 +69,10 @@ export default function ProtocolFormScreen() {
 
   const mutation = useProtocolMutation()
 
+  // Escada existente (só EDIT tem protocol.id) — a contagem alimenta o card de entrada.
+  // Refresh on focus: ao voltar do cadastro da escada, o card reflete as etapas gravadas.
+  const { steps: titrationSteps, refresh: refreshTitration } = useTitrationTimeline(editId)
+
   // Memos
   const visibleErrorCount = useMemo(() => {
     const errorKeys = Object.keys(form.errors)
@@ -88,14 +93,15 @@ export default function ProtocolFormScreen() {
     onValidateFail: scrollToTop,
   })
 
-  // Effects — reabrir sheet ao retornar de MedicineFormScreen
+  // Effects — reabrir sheet ao retornar de MedicineFormScreen + refresh da escada on focus
   useFocusEffect(
     useCallback(() => {
       if (pendingReopenSheet) {
         setPendingReopenSheet(false)
         setSheetOpen(true)
       }
-    }, [pendingReopenSheet, setPendingReopenSheet, setSheetOpen])
+      if (editId) refreshTitration()
+    }, [pendingReopenSheet, setPendingReopenSheet, setSheetOpen, editId, refreshTitration])
   )
 
   // Handlers
@@ -115,6 +121,33 @@ export default function ProtocolFormScreen() {
     setPendingReopenSheet(true)
     navigation.navigate(ROUTES.MEDICINE_CREATE)
   }, [navigation, setPendingReopenSheet])
+
+  // T018 — "A dose muda ao longo do tempo?": salva o tratamento (create-on-transition, decisão do
+  // PO) e navega para o cadastro da escada COM protocol.id (a etapa 0 precisa dele — ativação T019a
+  // + vínculo A5). Em EDIT o id já existe; em CREATE vem do result. Se o form for inválido, o submit
+  // mostra os erros e não chama onSaved — a navegação não acontece.
+  const handleOpenTitration = useCallback(() => {
+    submit({
+      onSaved: (result) => {
+        const protocolId = editId ?? result?.id
+        if (!protocolId) return
+        const params = {
+          protocolId,
+          medicine,
+          currentDose: form.values.dosage_per_intake,
+          treatmentPlanId: form.values.treatment_plan_id ?? null,
+        }
+        // CREATE: o tratamento já foi salvo — trocar o form (stale, e re-salvar duplicaria) pelo
+        // DETALHE antes de abrir a escada. Ao voltar da escada, cai no detalhe (com a timeline).
+        if (!editId) {
+          navigation.replace(ROUTES.PROTOCOL_DETAIL, { id: protocolId })
+          navigation.navigate(ROUTES.TITRATION_FORM, params)
+        } else {
+          navigation.navigate(ROUTES.TITRATION_FORM, params)
+        }
+      },
+    })
+  }, [submit, editId, navigation, medicine, form])
 
   const handleDoseChange = useCallback(
     (name, raw) => {
@@ -185,6 +218,9 @@ export default function ProtocolFormScreen() {
             form={form}
             medicine={medicine}
             onOpenMedicineSheet={handleOpenSheet}
+            onOpenTitration={handleOpenTitration}
+            isEditMode={isEdit}
+            titrationStepCount={titrationSteps.length}
             plans={plans}
             planField={planField}
             onPlanFieldChange={changePlanField}

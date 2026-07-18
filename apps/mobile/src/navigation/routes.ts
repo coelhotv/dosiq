@@ -31,6 +31,9 @@ export const ROUTES = {
   PROTOCOL_FORM: 'ProtocolForm',
   PROTOCOL_DETAIL: 'ProtocolDetail',
 
+  // Evolução do tratamento / titulação (spec 029 F4)
+  TITRATION_FORM: 'TitrationForm',
+
   // Sub-rotas de Perfil
   PROFILE_MAIN: 'ProfileMain',
   PROFILE_EDIT: 'ProfileEdit',           // Fase 4 — Editar Perfil V1
