@@ -256,6 +256,21 @@ describe('createProtocolRepository — parity', () => {
       expect(calls).toContainEqual(['eq', ['id', 'p-1']])
       expect(calls).toContainEqual(['eq', ['user_id', FAKE_USER]])
     })
+
+    // 🔴 Regressão: update parcial NÃO pode arrastar defaults injetados pelo Zod. Pausar um
+    // tratamento (só `{active}`) zerava `weekdays`/`titration_status`/`time_schedule` no banco.
+    it('update parcial persiste SÓ as chaves enviadas (não os defaults do Zod)', async () => {
+      const repo = createProtocolRepository({ client, getUserId })
+      await repo.update('p-1', { active: false })
+      const updateCall = client._builder._calls.find(([m]: any) => m === 'update')
+      const payload = updateCall[1][0]
+      expect(payload).toEqual({ active: false })
+      // Os campos que o Zod injeta como default NÃO podem ir ao banco num update parcial.
+      expect(payload).not.toHaveProperty('weekdays')
+      expect(payload).not.toHaveProperty('titration_status')
+      expect(payload).not.toHaveProperty('time_schedule')
+      expect(payload).not.toHaveProperty('current_stage_index')
+    })
   })
 
   // ── delete ────────────────────────────────────────────────────────────────

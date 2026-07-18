@@ -263,8 +263,19 @@ export function createProtocolRepository({
       if (!validation.success || !validation.data) throw formatValidationError(validation.errors ?? [])
 
       const userId = await getUserId()
+      // 🔴 Persistir SÓ as chaves que o chamador ENVIOU (com o valor já validado/transformado).
+      // `protocolUpdateSchema = protocolSchema.partial()` NÃO tira os `.default()`: parsear um update
+      // parcial injeta defaults para campos ausentes (`weekdays:[]`, `titration_status:'estável'`,
+      // `current_stage_index:0`, `time_schedule:[]`, `critical_alarm:false`…). Escrever `validation.data`
+      // cru sobrescreve dados que o usuário não tocou — bug real: pausar (só `{active}`) um tratamento
+      // semanal ZERAVA `weekdays` (o dia sumia e não voltava). O `updates` cru é a intenção; o
+      // `validation.data`, a validação de tipos. Interseção das duas = o que de fato deve ir ao banco.
+      const sentKeys = new Set(Object.keys(updates))
       // Strip flag transiente (não é coluna) — idem create (022 Fase C).
-      const { _medicineIsLiquid: _omit, ...cleanUpdates } = validation.data
+      const { _medicineIsLiquid: _omit, ...validated } = validation.data
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(validated).filter(([key]) => sentKeys.has(key)),
+      ) as typeof validated
       const { data, error } = await client
         .from('protocols')
         .update(cleanUpdates)
