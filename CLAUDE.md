@@ -1,369 +1,140 @@
 # CLAUDE.md — Dosiq
 
-> **DEVFLOW** = processo oficial. Skill: `/devflow` | Memória: `.agent/memory/`
+> **DEVFLOW** = processo oficial. Skill: `/devflow` | Memória: `.agent/memory/` | Estado: `.agent/state.json`
 >
 > **Antes de qualquer tarefa:** ler `.agent/state.json` → `/devflow` (hot+warm; cold sob demanda) → carregar `R-221 SQP` antes de alterar código → `/deliver-sprint` para entregas → `/devflow distill` quando `journal_entries >= 15`.
+>
+> **Este arquivo é o mínimo carregado em toda sessão.** Detalhe mora nos catálogos (`R-NNN`/`AP-NNN`/`ADR-NNN` em `.agent/memory/`) e em `docs/standards/` — os ponteiros aqui são obrigatórios de seguir quando o domínio é tocado.
 
 ## Projeto
 
-**Dosiq** — gerenciamento de medicamentos. Monorepo npm workspaces + Turborepo. **100% TypeScript desde o épico 040** (2026-07-08; `strict: false` global + strict islands — ver §TypeScript).
+**Dosiq** — gerenciamento de medicamentos. Monorepo npm workspaces + Turborepo, **100% TypeScript** (épico 040).
 
 | App | Stack | Deploy |
 |-----|-------|--------|
-| `apps/web` (`@dosiq/web`) | React 19 + Vite 7 + **TS 5.9** + Supabase + Zod 4 + Framer Motion 12 + Vitest 4 (PWA Workbox) | Vercel Hobby |
-| `apps/mobile` (`@dosiq/mobile`) | Expo 53 + RN 0.79 + **TS 5.9** + React Nav 7 + Firebase Analytics + AsyncStorage | EAS (iOS/Android) |
+| `apps/web` (`@dosiq/web`) | React 19 + Vite 7 + TS 5.9 + Supabase + Zod 4 + Vitest 4 (PWA) | Vercel Hobby |
+| `apps/mobile` (`@dosiq/mobile`) | Expo 53 + RN 0.79 + TS 5.9 + React Nav 7 + Jest | EAS (iOS/Android) |
 
-Versões atuais: sempre no `CHANGELOG.md` (topo) — não confiar em versões hardcoded em docs.
-
----
+Versões atuais: topo do `CHANGELOG.md` — não confiar em versão hardcoded em doc.
 
 ## Estrutura
 
 ```
-apps/
-  web/src/
-    features/      # adherence calendar chatbot consultation dashboard emergency
-                   # export medications notifications prescriptions profile
-                   # protocols reports settings stock
-    schemas/       # Zod — ÚNICO local
-    services/api/  # adherenceService, dlqService, geminiReviewService
-    shared/        # components/ hooks/ platform/ services/ styles/ utils/
-    utils/         # adherenceLogic, dateUtils, titrationUtils
-    views/         # camada de COMPOSIÇÃO — orquestra hooks/services/features (R-279)
-                   # TODAS lazy (R-117), exceto Dashboard; subpastas history/ profile/
-                   # settings/ emergency/ landing/. NÃO nasce lógica de domínio aqui
-                   # (desce p/ @dosiq/core ou features/). Naming "redesign" aposentado (038)
-  mobile/          # Expo: src/ assets/ android/ ios/ __tests__/
-                   # App.tsx, index.ts; configs Expo ficam .js (app.config.js,
-                   # eas.json, metro.config.js, babel.config.js — FR-010 do 040)
-packages/
-  core/            # @dosiq/core — lógica compartilhada web↔mobile
-  config/          # configs comuns
-  design-tokens/   # @design-tokens — tokens CSS/JS
-  shared-data/     # dados estáticos compartilhados
-  storage/         # abstração storage (web localStorage / RN AsyncStorage)
-api/               # Vercel serverless (máx 12 — Hobby R-090)
-                   # routers: dlq, gemini-reviews, notify, share, telegram,
-                   # chatbot, register-webpush, health/notifications
-server/bot/        # Telegram bot (tasks, scheduler, bot-factory)
-.agent/            # DEVFLOW — rules/APs/ADRs/knowledge/journal
+apps/web/src/      features/ schemas/(Zod, único local) services/api/ shared/ utils/
+                   views/(composição, todas lazy exceto Dashboard — R-279/R-117;
+                          lógica de domínio desce p/ @dosiq/core ou features/)
+apps/mobile/       Expo; configs Expo ficam .js (app.config.js, eas.json, metro, babel)
+packages/          core/(compartilhado web↔mobile) config/ design-tokens/ shared-data/ storage/
+api/               Vercel serverless (máx 12 — R-090; ver api/CLAUDE.md)
+server/bot/        Telegram bot
+.agent/            DEVFLOW — rules/APs/ADRs/journal
 ```
-
----
 
 ## Path Aliases (`apps/web/vite.config.js`)
 
 ```
-@ @features @shared @services @schemas @utils
-@dashboard @medications @protocols @stock @adherence
-@calendar @emergency @prescriptions @settings(→views/settings)
-@design-tokens(→packages/design-tokens/src)
-@dosiq/core(→packages/core/src)
+@ @features @shared @services @schemas @utils @dashboard @medications @protocols
+@stock @adherence @calendar @emergency @prescriptions @settings(→views/settings)
+@design-tokens(→packages/design-tokens/src) @dosiq/core(→packages/core/src)
 ```
 
-SEMPRE usar aliases. NUNCA caminhos relativos longos.
-Aliases vivem em 3 configs que DEVEM espelhar: `vite.config.js` + `apps/web/tsconfig.json` (`paths`) + `eslint.config.js` (resolver). Mover alias = atualizar os três (AP-238).
-
----
+SEMPRE aliases, NUNCA relativo longo. Aliases vivem em 3 configs que DEVEM espelhar: `vite.config.js` + `apps/web/tsconfig.json` + `eslint.config.js` (AP-238).
 
 ## Convenções
 
-| Contexto | Idioma |
-|----------|--------|
-| Código (vars/funções) | Inglês |
-| Comentários, JSDoc, UI, erros | Português |
-| Commits | Português semântico (`feat(scope): descrição`) |
-| DB tables/columns | Inglês snake_case |
+Código EN · comentários/JSDoc/UI/erros PT · commits PT semântico (`feat(scope): descrição`) · DB snake_case EN.
+Componentes `PascalCase.tsx` · hooks `usePascal` · constantes `SCREAMING_SNAKE` · schemas `{name}Schema.ts` · tipos via `z.infer<>`.
+**Ordem React (TDZ):** States → Memos → Effects → Handlers.
+**Imports:** React/libs → componentes → hooks/utils → services/schemas → CSS.
 
-**Nomes:** Componentes `PascalCase.tsx` · funções/vars `camelCase` · constantes `SCREAMING_SNAKE` · hooks `usePascal` · services `camelCase.ts` · schemas `{name}Schema.ts` · tipos derivados de schema via `z.infer<>`.
+## TypeScript — regime e gate
 
-**Ordem React (TDZ crítico):** States → Memos → Effects → Handlers.
+`strict: false` base + **strict islands** nível A (core types/repositories/services/schemas, server/notifications, hooks clínicos). Detalhe: `docs/standards/TYPESCRIPT.md`.
 
-**Imports:** React/libs → componentes internos → hooks/utils (`@shared`) → services/schemas → CSS (último).
-
----
-
-## TypeScript (pós-040 — obrigatório)
-
-Monorepo 100% TS. Regime: `strict: false` na base (`tsconfig.base.json`, moduleResolution bundler) + **strict islands** (`tsconfig.strict.json`, `strictNullChecks`) nos módulos nível A: `packages/core/src/{types,repositories,services,schemas}`, `server/notifications/`, hooks clínicos web/mobile. Meta futura: `strict: true` global.
-
-**Gate permanente (R-283/R-284):** `./scripts/strict-island.sh` em TODA sessão que toca código — fonte nível A suja e erro cross-program (core compilado dentro dos programas api/server/mobile) são BLOQUEANTES; dívida nível B conta contra tetos por bucket (catraca: só desce, nunca sobe; abaixar o teto no mesmo commit que queima dívida).
-
-- **Extensões (R-282):** imports relativos em `server/`/`api/` SEMPRE com `.js` (Node ESM puro; aponta pro `.ts` em compile). Vale também para packages que exportam src cru (`shared-data`/`storage`/`config`/`design-tokens`) e para os `.d.ts` do core (pós-build `packages/core/scripts/fix-dts-extensions.mjs` — não remover do build). Extensionless SÓ em código de bundler (Vite/Metro).
-- **Nível A vs B:** exports públicos do core = 100% anotados, zero `any` (nível A). Código nível B tolera `any` interno com `// TODO(040-strict)` — mas se o fix real custa ≤ o any, fazer o fix real.
-- **Narrowing no core (R-286):** união discriminada estreita com `=== false`, nunca `!x.success` (consumers non-strict não discriminam com `!`).
-- **Dívida congelada:** web 37 + server 36 erros nível B (tetos no script). **Regra on-touch:** épico que tocar domínio X triageia/tipa os testes e a dívida de X antes de refatorar. Teste novo nasce strict-limpo.
-- **Tipos DB:** `packages/shared-data/src/database.types.ts` gerado (`npm run supabase:types`); client tipado `SupabaseClient<Database>`. Exceção: client do `server/` ainda sem generic (cast de fronteira documentado; resolver no 043).
-- `tsc -p apps/web/tsconfig.json --noEmit` deve permanecer ZERO erros.
-
----
+- **Gate obrigatório (R-283/R-284):** `./scripts/strict-island.sh` em toda sessão que toca código — nível A sujo e erro cross-program BLOQUEIAM; dívida B tem teto por bucket (catraca só desce).
+- Imports relativos em `server/`/`api/` e packages src-cru: SEMPRE `.js` (R-282); extensionless só em código de bundler.
+- Core: união discriminada estreita com `=== false`, nunca `!x.success` (R-286). Exports públicos sem `any`.
+- `tsc -p apps/web/tsconfig.json --noEmit` = ZERO erros, sempre.
 
 ## Regras Críticas
 
 ### 🔴🔴 Coluna de tabela: VERIFICAR NO BANCO antes de tipar (R-295)
 
-**Nenhum nome de coluna entra em tipo, Zod, `select()`, `.eq()`/filtro, `insert`/`update`, `order`
-ou RPC sem ser verificado no banco. Uma chamada MCP. Sempre. Sem exceção.**
+**Nenhum nome de coluna entra em tipo, Zod, `select()`, filtro, insert/update ou RPC sem verificação no banco (1 chamada MCP no `information_schema`). Sem exceção.** O select é string: tsc/lint/teste NÃO pegam campo fantasma — só produção pega (AP-300, #749: derrubou web+mobile+cron).
 
-```sql
-SELECT column_name, data_type, is_nullable FROM information_schema.columns
-WHERE table_schema='public' AND table_name='<tabela>' ORDER BY ordinal_position;
-```
+Hierarquia de verdade: **banco** > `database.types.ts` (se regen em dia — R-289) > Zod > tipo à mão (*Like = hipótese) > este doc > sua memória. Escrever select a partir dos últimos 4 É o bug.
 
-**Hierarquia de verdade** (a de baixo NUNCA sobrepõe a de cima):
-
-| # | Fonte | Confiança |
-|---|-------|-----------|
-| 1 | **o banco** (`information_schema`, `pg_get_constraintdef` — via MCP) | única verdade |
-| 2 | `database.types.ts` | gerado do banco (verdade se o regen está em dia — R-289) |
-| 3 | schema Zod | hipótese sincronizada à mão |
-| 4 | **tipo `*Like` escrito à mão** | **HIPÓTESE. Mente sem avisar. NÃO é fonte.** |
-| 5 | este CLAUDE.md | foto do passado (já divergiu 4x só em 07/2026) |
-| 6 | **a sua memória** | **é onde a alucinação mora** |
-
-**Escrever `select()` a partir de 3/4/5/6 É o bug.** O select é uma **string**: o TS não valida, o
-lint não valida, e o teste **mocka o client**. Campo fantasma atravessa TODOS os gates e só aparece
-em produção.
-
-> **Isto não é hipotético.** 2026-07-16, #749: agente **alucinou** a coluna
-> `titration_steps.description`, declarou no tipo, escreveu 5 selects a partir do tipo → `42703`
-> em todo o read-path de `protocols`: **web, mobile e cron sem dose e sem estoque em produção**.
-> Passaram tsc + 2068 testes + jest 434 + lint + SQL live 21/21 + RC5 + review externo — **a lista
-> inteira**. Ver `AP-300` / `R-295`.
-
-**Gate de saída** — select novo/alterado é contrato com o banco, **só vale EXECUTADO**:
+**Gate de saída** — select novo/alterado só vale EXECUTADO:
 ```bash
 curl -s "$SUPABASE_URL/rest/v1/<tabela>?select=<SELECT>&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
 ```
-⚠️ supabase-js remove whitespace do select → reproduzir com `tr -d '[:space:]'` (senão `PGRST100`
-por motivo errado). `200` passa · `42703` coluna · `42501` grant · `PGRST200` FK do embed.
-
-**Campo que existe no legado e não no modelo novo** = decisão de produto. Anotar no tipo **por que**
-não está lá — senão o próximo slice o reintroduz "pra compilar". Foi exatamente o que aconteceu.
+(supabase-js remove whitespace do select → reproduzir com `tr -d '[:space:]'`. `200` ok · `42703` coluna · `42501` grant · `PGRST200` FK.)
 
 ### Antes de modificar arquivo
-1. `find apps/web/src -name "*Nome*"` (duplicatas)
-2. `grep -r "from.*Nome" apps/web/src/` (importações)
-3. Confirmar alias em `apps/web/vite.config.js`
+`find apps/web/src -name "*Nome*"` (duplicatas) → `grep -r "from.*Nome"` (quem importa) → conferir alias.
 
-### Datas/Timezone
-- **SEMPRE** `parseLocalDate()` de `@utils/dateUtils`
-- **NUNCA** `new Date('YYYY-MM-DD')` → UTC midnight = dia anterior em GMT-3
+### Datas/Timezone (R-020)
+SEMPRE `parseLocalDate()` de `@utils/dateUtils`; NUNCA `new Date('YYYY-MM-DD')` (UTC midnight = dia anterior em GMT-3).
 
-### Zod
-- Enums em português **com acento**: `['diário','semanal','quando_necessário']` — o acento É o valor;
-  o CHECK rejeita a versão sem (23514). Valores verbatim em §Schemas — enums.
-- `safeParse()` para validação não-bloqueante
-- Nullable: `.nullable().optional()` (nunca só `.optional()`)
-- Schemas sincronizados com CHECK constraints SQL — na dúvida, `pg_get_constraintdef` é a verdade, não este doc
+### Zod (R-021)
+Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em §Schemas) · `safeParse()` p/ validação não-bloqueante · nullable = `.nullable().optional()`, nunca só `.optional()` · na dúvida `pg_get_constraintdef` é a verdade.
 
 ### Dosagem
-- `quantity_taken` em comprimidos (não mg) — limite Zod 100
-- `dosage_per_intake` = cp/dose · `dosage_per_pill` = mg/cp
-- **Ordem dose:** Validar → Registrar → Decrementar estoque
-- LogForm retorna array (plan/bulk) ou objeto (protocol/single) — checar `Array.isArray()`
+`quantity_taken` em comprimidos, não mg (limite Zod 100) · `dosage_per_intake` = cp/dose · `dosage_per_pill` = mg/cp · **ordem: Validar → Registrar → Decrementar estoque** · LogForm retorna array (plan/bulk) ou objeto (protocol/single) — checar `Array.isArray()`.
 
-### Lazy Loading mobile (R-117)
-- Views (exceto Dashboard) **DEVEM** ser `React.lazy()` + `Suspense`
-- Suspense fallback **DEVE** ser `ViewSkeleton`
-- Vite manualChunks: vendor-{framer,supabase,virtuoso,pdf} + feature-{history,stock,landing} (medicines-db removido na 037 — JSON fora do build)
-- Bundle: **102.47 kB gzip** (de 989KB — 89% redução)
+### Plataforma (ponteiros obrigatórios)
+- **Mobile/lazy**: views lazy + `ViewSkeleton` (R-117); perf: `docs/standards/MOBILE_PERFORMANCE.md`.
+- **Telegram bot**: callback <64 bytes, `escapeMarkdownV2` (escapar `\` primeiro) — R-031.
+- **Migrações Supabase**: template de grants + SECURITY DEFINER **obrigatório** — `docs/standards/SUPABASE_MIGRATIONS.md` (novas tabelas NÃO ganham grants automáticos).
+- **Vercel api/** (R-090): máx 12 funções (utilitários em `api/_prefixo/`); NUNCA `process.exit()`; SEMPRE `res.status(code).json(body)` (lint barra); env fallback `process.env.X || process.env.VITE_X`. Ver `api/CLAUDE.md`.
 
-### Telegram bot
-- Callback data <64 bytes (índices, não UUIDs)
-- `escapeMarkdownV2()` sempre — escapar `\` **primeiro**
-- `shouldSendNotification()` já loga — não chamar `logNotification()` depois
-- Session: `await getSession(chatId)` para `userId` dinâmico
-
-### Migrações Supabase
-
-**Grants obrigatórios** a partir de 30/10/2026, novas tabelas no projeto não recebem grants automáticos.
-Template obrigatório após `CREATE TABLE`:
-
-```sql
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.<tabela> TO service_role;
--- anon: apenas se a tabela tiver dados verdadeiramente públicos (raro no dosiq)
-ALTER TABLE public.<tabela> ENABLE ROW LEVEL SECURITY;
-```
-
-**Funções SECURITY DEFINER** — regras obrigatórias:
-- `REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC;` antes de qualquer `GRANT` explícito
-- `REVOKE EXECUTE ON FUNCTION ... FROM anon;` sempre (usuários não autenticados não devem chamar RPCs privilegiadas)
-- `SET search_path = ''` no cabeçalho da função (previne search path injection)
-- Usar `public.<tabela>` (schema qualificado) no body quando `search_path = ''`
-
----
-
-### Vercel Serverless (R-090)
-- Hobby: **máx 12 funções**. Utilitários em `api/_prefixo/` não contam
-- Verificar budget antes de criar `.ts` em `api/` (ver `api/CLAUDE.md`)
-- api/ é transpilado arquivo-a-arquivo pela Vercel (nodenext): import relativo `.js` obrigatório mesmo entre `.ts` (R-282); evitar `Object.hasOwn` (lib do builder < es2022)
-- **NUNCA** `process.exit()` → `throw new Error()`
-- **SEMPRE** `res.status(code).json(body)` (nunca `res.json()`)
-- Env vars: fallback `process.env.X || process.env.VITE_X`
-
----
-
-## Testes (Vitest 4 — `@dosiq/web`)
-
-Rodar do root via workspace:
+## Testes
 
 | Uso | Comando |
 |-----|---------|
 | **Agente (obrigatório)** | `rtk npm run validate:agent` (kill switch 600s) |
 | Críticos | `rtk npm run test:critical` |
 | Alterados desde main | `npm run test:changed` |
-| CI completo | `rtk npm run validate:full` (lint+ci+build) |
-| Dev rápido | `rtk npm run test:fast` |
+| CI completo | `rtk npm run validate:full` |
 
-**Regras:** `afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório · `vi.mock()` antes dos imports · `waitFor()` em vez de `setTimeout` em `act()` · arquivo de teste ≤300 linhas · datas em fixture SEMPRE locais, nunca `toISOString()` p/ derivar dia (AP-270) · teste novo nasce strict-limpo; mock tipado contra o contrato atual do módulo (erro TS em teste costuma ser mock stale).
+`afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório · datas em fixture SEMPRE locais, nunca `toISOString()` p/ derivar dia (AP-270) · teste novo nasce strict-limpo · mobile: `npm test --workspace @dosiq/mobile`. Detalhe: `docs/standards/TESTING.md`.
 
-**Mobile:** Jest + jest-expo (`npm test --workspace @dosiq/mobile`).
+## DEVFLOW C5 (antes do commit) + SQP
 
----
-
-## DEVFLOW C5 (antes do commit)
-
-- Bug não-trivial → `AP-NNN` em `.agent/memory/ANTI_PATTERNS_INDEX.md` + `anti-patterns/_domain_/`
-- Padrão novo → `R-NNN` em `.agent/memory/RULES_INDEX.md` + `rules/_domain_/`
-- Decisão arquitetural → `ADR-NNN` em `.agent/memory/DECISIONS_INDEX.md` + `decisions/_domain_/`
-- Entrega significativa → `.agent/memory/journal/YYYY-WWW.jsonl` (append)
-- SQP release log → plataformas afetadas, tipo de bump, versões novas, entrada `CHANGELOG.md`, relevância para notas de loja
-- Atualizar `.agent/state.json` (`journal_entries_since_distillation`)
-
-`.memory/` aposentado (somente leitura W01-W11). Tudo novo → `.agent/memory/`.
-
-> **`plans/` é local-only** (gitignored desde 2026-06-23). Specs em `plans/specs/NNN-nome/`
-> existem apenas no disco do PO — não são versionadas. Histórico purgado do GitHub
-> (git-filter-repo + force-push). Refs em docs devem indicar "(local-only, não versionado)".
-
-## SQP (R-221) — obrigatório antes de alterar código
-
-- Seguir `R-221` como porta de entrada para qualquer alteração de código.
-- SQP inclui classificação de impacto SemVer, bump de versão quando aplicável, changelog estruturado em português e logging no DEVFLOW C5.
-- Não atualizar changelog de forma avulsa; usar `docs/standards/CHANGELOG_AND_RELEASES.md` e regras `R-242`, `R-243`, `R-244`.
-
-## Distill Policy (dosiq — pós-Fase 2.5)
-
-**Threshold automático**: `genes.memory_distillation_threshold = 15` (mantido).
-Auto-trigger quando `journal_entries_since_distillation >= 15`.
-
-**Trigger manual obrigatório**: ao encerrar QUALQUER fase de evolução
-(Fase 0/1/2/2.5/3/4/5/6), rodar `/devflow distill` imediatamente após o PR de
-RETRO + DEVFLOW C5 ser mergeado — independente do threshold.
-
-**Por quê**: fases entregam ~3-8 journal entries cada; com threshold 15, distill
-auto pode atrasar 2-3 fases. Trigger manual pós-fase mantém memória "fresh" no
-ponto de transição, evitando counter drift (AP-161) e perdendo a janela em que
-os aprendizados ainda estão vivos no contexto.
-
-**Avaliar baixar threshold pra 10 após Fase 4** se distill manual virar overhead.
-
-Distill bem-feito DEVE incluir D5 self-clean profundo (reconciliar
-`state.json` contra índices markdown — fonte de verdade).
-
----
+- Bug não-trivial → `AP-NNN` · padrão novo → `R-NNN` · decisão → `ADR-NNN` (índices + detail em `.agent/memory/`)
+- Entrega → journal (`.agent/memory/journal/YYYY-WWW.jsonl`) + `state.json` (counter)
+- **SQP (R-221) antes de alterar código**: classificar impacto SemVer, bump, changelog PT (`docs/standards/CHANGELOG_AND_RELEASES.md` — R-242/243/244)
+- `plans/` é **local-only** (gitignored) — refs em docs marcam "(local-only, não versionado)"
+- **Distill**: auto quando counter ≥15; manual obrigatório ao fechar fase/épico. D5 reconcilia state × índices.
 
 ## Git Workflow
 
 ```
-1. /devflow bootstrap
-2. branch (feature/wave-X/nome)
-3. R-221 SQP — classificar impacto, plataforma, versionamento e changelog
-4. C1-C4
-5. rtk npm run validate:agent + ./scripts/strict-island.sh (ratchet TS — R-283)
-6. RC5 self-review do próprio diff (/devflow code-review) ANTES do PR
-7. C5 — registrar lições + release log SQP
-8. commit semântico (PT)
-9. push + PR
-10. RC6 review independente (ver §Review pós-Gemini) → aplicar findings introduced
-11. AGUARDAR aprovação → USER faz merge (R-060 — agente nunca auto-merge)
-12. C5 pós-merge + distill se journal>=15
+1. /devflow bootstrap → 2. branch → 3. SQP (R-221) → 4. C1-C4
+5. validate:agent + strict-island.sh → 6. RC5 self-review (/devflow code-review) ANTES do PR
+7. C5 → 8. commit PT → 9. push + PR → 10. RC6 review independente (obrigatório Tier 1+)
+11. AGUARDAR aprovação → USER mergeia (R-060 — NUNCA auto-merge) → 12. C5 pós-merge
 ```
 
-Tipos: `feat fix docs test refactor style chore`.
+**Review (pós-Gemini, ADR-069):** L0 lint → L1 RC5 → L2 RC6 → L3 humano. Operação completa, comandos, chunking, egress guard e regras de quota: **`docs/standards/AI_REVIEW.md`** (leitura obrigatória antes de rodar RC6). Essência: `bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post` após abrir PR Tier 1+; roda UMA vez; finding `introduced` critical/high resolve antes de pedir aprovação; zero findings em diff gordo = conferir stderr; finding de schema → verificar no banco (R-295 vale contra o revisor). 📏 Até T051: appendar linha de medição em `plans/specs/034-gemini-sunset/measurement.md` no C5.
 
-### Review pós-Gemini (034 / ADR-069 — vigente desde 2026-07-17)
+**Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`; sync via `gsync`.
 
-O `gemini-code-assist[bot]` foi descontinuado. O substituto é em camadas:
+## Schemas — enums (verificados contra CHECK de prod 2026-07-16)
 
-| Camada | O quê | Quando |
-|--------|-------|--------|
-| L0 | Lint determinístico (enum não-pt-BR em `z.enum`, `res.json` sem status, `new Date`, cores…) | sempre (`rtk lint`) |
-| L1 | **RC5** self-review do diff (`/devflow code-review`) — aplica os catálogos R/AP hunk-a-hunk | antes de TODO PR Tier 1+ |
-| L2 | **RC6** revisor IA independente — processo fresco, sem contexto da sessão | após abrir PR Tier 1+ (**obrigatório**, NC3) |
-| L3 | Humano (R-060) | sempre; único que mergeia |
-
-**RC6 — como rodar** (script vive na skill devflow, repo externo):
-
-```bash
-bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>          # dry-run (default): imprime JSON, não muta nada
-bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR + events.jsonl
-```
-
-- Motores: `agy` primário (Gemini, quota extensa) · `claude` pass B em Tier 2 · Codex só exceção. Custo ~$0 (OAuth).
-- O reviewer roda **sem ferramentas** (diff é insumo não-confiável — SC-SEC1); NUNCA relaxar isso.
-- **Egress guard**: shape de e-mail/CPF/telefone no diff aborta (exit 3). Só fixture sintética sai da máquina; se for sintética, `RC6_ALLOW_SENSITIVE=1`.
-- **PR grande: chunking automático** — acima do budget (~150KB) o script fatia o diff por arquivo e roda 1 chamada agy por chunk (o merge consolida). Cap de 6 chunks: além disso a coverage fica PARCIAL com aviso — fatiar o PR é o fix, não insistir. (Causa: >160KB o agy AMOSTRA o input — 3 runs no #757 deram 3 resultados disjuntos + 1 critical fabricado.)
-- **RC6 roda UMA vez por PR.** Nunca re-rodar "pra confirmar" — acima do budget não existe consistência entre runs, e cada run queima quota (5 runs no #757 = >30% da quota 5h do claude). Resultado com aviso de budget no stderr = advisory: julgar findings no mérito.
-- **Finding de coluna/schema → verificar no banco ANTES de virar trabalho** (R-295 vale contra o revisor também — o critical falso do #757 caiu com 1 query no `information_schema`).
-- **Antes de rodar**: conferir `base=` no stderr — o script agora usa `origin/main` (fetch automático), mas offline cai pro main local (pode estar velho → revisa diff errado, caso #756).
-- O gate de CI (`ai-review-gate.yml`) é **soft**: warning se o PR não tem review RC6 ou tem `introduced` critical/high. Não bloqueia — quem bloqueia é o humano.
-- Finding `introduced:true` critical/high → corrigir ou justificar ANTES de pedir aprovação. `pre-existing` não bloqueia o PR.
-- **Zero findings em diff não-trivial = suspeita, não alívio** — confira no stderr se o contexto coube e os passes rodaram (lição do smoke T024: engine degradado retorna "clean" com exit 0).
-- **📏 Medição 034-D (temporário, até ~5 PRs):** no C5 de todo PR Tier 1+ que rodou RC6, appendar 1 linha em `plans/specs/034-gemini-sunset/measurement.md` (template e critérios no próprio arquivo; KPI = caminhos não-pretendidos, não críticos). Ao atingir ~5 linhas: consolidar → decisão T051 do PO → remover esta linha daqui.
-
-**Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`. Usar `gsync` para sync origin+bridge.
-
----
-
-## Schemas — enums
-
-> Valores **verbatim** — conferidos contra os CHECK de prod E contra os schemas em 2026-07-16.
 > Acento e caixa fazem parte do valor: `'diario'` e `'cp'` são REJEITADOS pelo banco (23514).
-> Fonte: `packages/core/src/schemas/{medicineSchema,protocolSchema}.ts`.
+> Fonte: `packages/core/src/schemas/{medicineSchema,protocolSchema}.ts` — na dúvida, o banco.
 
-| Enum | Valores | Coluna / CHECK |
-|------|---------|----------------|
-| `DOSAGE_UNITS` | `mg` `mcg` `g` `mg/ml` `ui/ml` `ui` `un` | `medicines.dosage_unit` — mg/ml e ui/ml são razões massa/volume: **líquido := `dosage_unit LIKE '%/ml'`** |
-| `MEDICINE_TYPES` | `medicamento` `suplemento` | `medicines.type` — é a NATUREZA, não a forma |
-| `PRESENTATIONS` | `comprimido` `capsula` `liquido` `injetavel` `pomada` `spray` `outro` | `medicines.presentation` — a FORMA farmacêutica mora aqui |
-| `FREQUENCIES` | `diário` `dias_alternados` `semanal` `personalizado` `quando_necessário` | `protocols.frequency` — ⚠️ **`diário` e `quando_necessário` COM acento** |
-| `INTAKE_UNITS` | `gotas` `ml` `UI` `mg` | `protocols.intake_unit` — ⚠️ **`UI` maiúsculo**; comprimido = **NULL**, não `'cp'` |
+| Enum | Valores | Coluna |
+|------|---------|--------|
+| `DOSAGE_UNITS` | `mg` `mcg` `g` `mg/ml` `ui/ml` `ui` `un` | `medicines.dosage_unit` — líquido := `LIKE '%/ml'` |
+| `MEDICINE_TYPES` | `medicamento` `suplemento` | `medicines.type` (NATUREZA, não forma) |
+| `PRESENTATIONS` | `comprimido` `capsula` `liquido` `injetavel` `pomada` `spray` `outro` | `medicines.presentation` (a FORMA) |
+| `FREQUENCIES` | `diário` `dias_alternados` `semanal` `personalizado` `quando_necessário` | `protocols.frequency` — ⚠️ COM acento |
+| `INTAKE_UNITS` | `gotas` `ml` `UI` `mg` | `protocols.intake_unit` — ⚠️ `UI` maiúsculo; comprimido = **NULL**, não `'cp'` |
 
-- Stock: CRITICAL <7d · LOW <14d · NORMAL <30d · HIGH ≥30d
-
-**Duas armadilhas que já causaram bug (AP-299, #749):**
-- `DOSAGE_UNITS` (mg/cp do medicamento) ≠ `INTAKE_UNITS` (unidade da tomada no protocol). São enums
-  DIFERENTES, com valores diferentes. `cp` não existe em nenhum dos dois — comprimido é `intake_unit NULL`.
-- `titration_steps.intake_unit` aceita `'cp'`; `protocols.intake_unit` **não**. Ao escrever de um pro
-  outro: `NULLIF(unit, 'cp')` (fronteira N2→N1 — CON-032 §5).
-
----
-
-## Serviços-chave
-
-- **adherenceService** (`apps/web/src/services/api/`): `calculateAdherence(period)`, `calculateProtocolAdherence(id,period)`, `calculateAllProtocolsAdherence(period)`, `getCurrentStreak()`, `getDailyAdherence(days)`, `getAdherenceSummary(period)`
-- **analyticsService** (`features/dashboard/services/`): `track`, `getEvents`, `getSummary` — localStorage, máx 1000 eventos/30d
-- **insightService** (`features/dashboard/services/`): prioridade `critical>high>medium>low>info`, frequency capping via localStorage
-
----
+**Armadilhas que já causaram bug (AP-299, #749):** `DOSAGE_UNITS` ≠ `INTAKE_UNITS` (enums diferentes; `cp` não existe em nenhum) · `titration_steps.intake_unit` aceita `'cp'`, `protocols.intake_unit` não → fronteira N2→N1 usa `NULLIF(unit,'cp')` (CON-032 §5).
 
 ## MCP code-review-graph
 
-Usar **antes** de Grep/Glob/Read — mais rápido, dá contexto estrutural.
-
-| Tool | Quando |
-|------|--------|
-| `semantic_search_nodes` | achar funções/classes por nome |
-| `detect_changes` | revisar mudanças com risk score |
-| `get_impact_radius` | blast radius |
-| `query_graph` | rastrear callers/callees/imports/tests |
-| `get_architecture_overview` | visão alto nível |
-
----
-
-## Lições críticas (Sprint 7)
-
-Schema drift Zod/SQL · env vars faltando em prod (validar startup + fallbacks) · auth faltando para blob privado · `res.json()` quebra no Vercel · `.optional()` rejeita null · nunca auto-merge sem review.
+Usar **antes** de Grep/Glob/Read: `semantic_search_nodes` (achar símbolo) · `get_impact_radius` (blast radius) · `query_graph` (callers/tests) · `get_architecture_overview`.
