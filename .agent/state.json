@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F4 — UI mobile (cadastro + timeline): a titulação passa a EXISTIR. T018 entrada opcional no form de tratamento → T019 TitrationFormScreen (builder medicamento+dose+duração+contínua; etapa 0 nasce status='current' COM started_at — T019a AP-301; tipo derivado por medicine_id, sem toggle T019b) → T020 TitrationTimeline no detalhe. T021 PO-3 (8 passos same-med, jest-expo), T022 PO-2 (screenshots, smoke antes do PR), T023 C5 SQP mobile minor. Branch feature/029/f4-ui-mobile. Delegação Sonnet OK p/ T018-T020 sob gate do principal. PRÉVIO: 029 F3.1 MERGEADA (PR #751 → squash `3bdbe49e`, branch deletada) + MIGRAÇÃO VIVA EM PROD. CHECK anti-zumbi ativo (INSERT e UPDATE): o estado que matou a titulação N1 por 6 meses é IRREPRESENTÁVEL. `migrated_from_protocol_id` dropada; types regenerados (R-289 auditado: diff exclusivamente a coluna). Demolição: fonte única (titration_steps), flag+legadas+advanceTitrationStage removidas, web write-freeze. Verificado na main pós-merge: grep zero (só comentários) · validate:agent 2023/2023. Review: Gemini achou 2 Medium (param morto que o lint não pega) — fix foi além (wrapper no-op deletado); ele validou. PENDENTE PO: decisão T033b (a web mantém o display da escada, repontado p/ N2, ou perde?) — é do F6. PRÓXIMO: F4 — a titulação passa a EXISTIR de verdade (T019a seta started_at; o CHECK garante que ninguém esqueça).",
+    "goal": "029 F4 MERGEADA (PR #757 -> squash 3a7fcc70). A titulacao EXISTE no app: escada nasce ativada (step0 current+started_at), timeline no detalhe, edicao do futuro com claim de status. Antes dela saiu o hotfix AP-304 (#756). PROXIMO: F5 — CTA [Iniciar etapa] chamando a RPC confirm_titration_switch (JA viva desde o F3; o F5 e so UI) + push com acoes + estados E. Depois F6 (web repontada p/ N2 + DROP das 4 colunas N1).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 749,
-    "merged_squash": "4adfa381",
+    "merged_pr": 757,
+    "merged_squash": "3a7fcc70",
     "merged_history": [
+      {
+        "pr": 757,
+        "squash": "3a7fcc70",
+        "phase": "029 F4 — a titulacao passa a EXISTIR no app (cadastro + edicao + timeline mobile). T018 entrada create-on-transition; T019 builder Gravar etapa + T019a ativacao (step0 current+started_at, AP-301) + T019b tipo derivado por medicine_id (ADR-080); T019 EDICAO (gap fechado): concluidas/vigente read-only, futuras editaveis via buildLadderEditPlan/saveLadderEdit reconciliando so o sufixo (delete->update asc->create, colisao-safe c/ indice unico position) + guard A4:247 (claim status IN upcoming|pending_confirmation: se o cron avanca sob a edicao, aborta em vez de clobberar a vigente); T020 timeline + EvolutionBadge unico derivado do N2 (getEvolutionBadge no core, azul Em evolucao / teal Estavel / neutro pausado). Ajustes de smoke do PO: WARN border dashed (AP-163) no builder+timeline, skeleton via hasLadderHint (fim do pop-in), scroll-ate-o-builder ao editar, presentation no embed (injetavel mostrava gotas), msg de erro sem vazar UUID. RC6 achou 3-4 caminhos NAO-pretendidos que o RC5 nao pegou (etapa 0 orfa, now stale na meia-noite AP-W15, daysLeft em blocos de 24h AP-240, corrida de fetch no hook) — todos corrigidos.",
+        "note": "RC6 NAO-DETERMINISTICO acima do budget: 3 runs no mesmo commit -> 3 conjuntos quase disjuntos, incluindo um CRITICAL ALUCINADO (disse que titration_steps.started_at nao existe; existe, confirmado no information_schema). Causa: diff ~2400 linhas e o grosso do contexto e o proprio diff — RC6_CTX_BUDGET so governa anexos. Regra adotada: RC6 roda UMA vez por PR; acima do engine-safe o resultado e ADVISORY (julgar no merito, nunca re-rodar buscando consistencia — 5 runs queimaram quota semanal perceptivel). R-295 vale contra o REVISOR tambem (1 query derrubou o critical falso). Armadilha operacional do #756: o script usa git merge-base HEAD <main LOCAL> — main local velho faz revisar o diff ERRADO sem avisar. Registrado em plans/specs/034-gemini-sunset/measurement.md §Achado 034-D.1 (4a linha da medicao; falta ~1 pro T051). Hotfix AP-304 (#756) saiu ANTES e isolado: update parcial injetava defaults do Zod (.partial() nao remove .default()) e zerava weekdays ao pausar tratamento semanal — bug anterior a 029, atingia web+mobile."
+      },
       {
         "pr": 749,
         "squash": "4adfa381",
@@ -210,7 +216,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 246,
     "anti_patterns_count": 297,
     "decisions_count": 80,
