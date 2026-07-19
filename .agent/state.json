@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F5 FECHADA pos-smoke (branch feature/029/f5-cta-estados). Smoke do PO rendeu 9 correcoes + 1 migracao de PROD (encerrar != pausar, 20260718_titration_switch_end_date) + RC5 com 3 achados corrigidos. PENDENTE UNICO: push real das 08:00 (escada de smoke terminou CONTINUA -> sem vencimento -> cron nao dispara; PO decidiu validar no F5.5/F6). Achados viraram F5.5 (FR-012) e draft da spec 052.",
+    "goal": "029 F5 MERGEADA (PR #758, squash 538766af). Smoke do PO rendeu 9 correcoes + 1 migracao de PROD (encerrar != pausar, 20260718_titration_switch_end_date, ja aplicada). RC5 3 achados + RC6 9 achados (5 aplicados / 3 recusados / 1 falso positivo). PENDENTE UNICO: push real das 08:00 — escada de smoke terminou CONTINUA, resolveTitrationAdvance retorna null, cron nao dispara; PO decidiu validar no F5.5/F6. Proximo: F5.5 (T033-T038, branch feature/029/f5.5-etapa-manual).",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,9 +19,15 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 757,
-    "merged_squash": "3a7fcc70",
+    "merged_pr": 758,
+    "merged_squash": "538766af",
     "merged_history": [
+      {
+        "pr": 758,
+        "squash": "538766af",
+        "phase": "029 F5 — a troca de etapa virou ACIONAVEL. Card no Hoje (CTA dia 0 + linha neutra a partir do dia 1, R-239) + timeline no detalhe do tratamento como superficie canonica de controle; push com acoes (categoria iOS + canal Expo emitindo categoryId — o payload.actions so existia no Telegram, AP-305); sheet de transparencia pos-confirmacao (Principio IX); estados de erro (etapa orfa, etapa quebrada). MUDANCA DE PROD: a RPC passou a ENCERRAR (end_date no fuso do DONO) em vez de PAUSAR — o tratamento nao pausou, terminou naquela etapa. navigateCrossTab extraido (aba presa, mesma classe da 028). usePushNotifications: listener saiu de dentro do setup async (acumulava listener orfao a cada refresh de token).",
+        "note": "RC5 e RC6 com ZERO intersecao (achado 034-D.2): RC5 ve a intencao, RC6 ve a borda. RC6 rodou UMA vez (regra do 034-D.1) — 1 falso positivo (postpone e sincrono) e 1 high SUBESTIMADO pelo proprio revisor (.catch ausente travava dismissedIds em null = card nunca aparece). T030 PARCIAL: push das 08:00 sem prova."
+      },
       {
         "pr": 757,
         "squash": "3a7fcc70",
