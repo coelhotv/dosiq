@@ -22,9 +22,17 @@
       "plans/specs/052-dose-instance-medicine-snapshot",
       "plans/specs/053-unit-label-formatter"
     ],
-    "merged_pr": 759,
-    "merged_squash": "18caf01d",
+    "merged_pr": 760,
+    "merged_squash": "db5809e1",
     "merged_history": [
+      {
+        "pr": 760,
+        "squash": "db5809e1",
+        "spec": "029 F5.5",
+        "phase": "029 F5.5 — o beco da etapa continua destravado com gatilho MANUAL: o gatilho de avanco da escada e uma DATA e numa continua nao existe data, existe um EVENTO CLINICO. Helper NOVO resolveManualNextStep (pendencia SEM PRAZO) em vez de flexionar resolvePendingSwitch (pendencia VENCIDA) — misturar devolveria o card ao Hoje. Banner teal IRMAO pela mesma razao (a copy do EvolutionPendingBanner deriva de daysWaiting, que aqui nao existe). Zero SQL novo: RPC e CON-032 inalterados. 3 achados de smoke entraram no mesmo PR — header reordenado; replace para o tratamento NOVO pos-troca (o antigo aparecia 'pausado' por 24h e o Retomar generico reativaria a etapa antiga com a nova ativa = dois executores); e AP-308: a RPC era a UNICA escrita em protocols fora do repositorio, logo a unica que escapava do syncInstancesOnWrite (protocolo novo com ZERO instancias; dose_change com expected_dose do cronograma anterior).",
+        "tier": 1,
+        "date": "2026-07-19"
+      },
       {
         "pr": 759,
         "squash": "18caf01d",
@@ -228,7 +236,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 246,
     "anti_patterns_count": 303,
     "decisions_count": 84,
@@ -240,7 +248,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-19T19:05:24.425045+00:00"
+    "index_loaded_at": "2026-07-19T20:23:13.431754+00:00"
   },
   "code_review": {
     "status": "clean",
