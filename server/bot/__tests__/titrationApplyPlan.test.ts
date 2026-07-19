@@ -17,6 +17,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const writes: { table: string; payload: any; filters: Record<string, unknown> }[] = [];
 let updateResults: { data: any[] | null; error: any }[] = [];
 let selectResult: { data: any; error: any } = { data: null, error: null };
+let protocolFetchResult: { data: any; error: any } = { data: { id: 'proto-1', user_id: 'u1' }, error: null };
+// 052 T006: captura o(s) select(s) emitido(s), para provar o EMBED (o select é string — nem tsc
+// nem lint o enxergam; AP-300).
+const selects: string[] = [];
 
 function makeBuilder(table: string) {
   const filters: Record<string, unknown> = {};
@@ -30,7 +34,8 @@ function makeBuilder(table: string) {
       writes.push({ table, payload, filters });
       return Promise.resolve({ data: null, error: null });
     },
-    select() {
+    select(cols?: string) {
+      if (typeof cols === 'string') selects.push(cols);
       if (builder._op === 'update') {
         writes.push({ table, payload: builder._payload, filters });
         const result = updateResults.shift() ?? { data: [{ id: 'x' }], error: null };
@@ -46,6 +51,10 @@ function makeBuilder(table: string) {
     maybeSingle() {
       return Promise.resolve(selectResult);
     },
+    // 052 T006: o resync pós-`dose_change` lê o protocolo executor com o embed da escada.
+    single() {
+      return Promise.resolve(protocolFetchResult);
+    },
     then(resolve: any) {
       if (builder._op === 'update') writes.push({ table, payload: builder._payload, filters });
       return Promise.resolve({ data: null, error: null }).then(resolve);
@@ -56,6 +65,17 @@ function makeBuilder(table: string) {
 
 vi.mock('../../services/supabase.js', () => ({
   supabase: { from: (table: string) => makeBuilder(table) },
+}));
+
+// 052 T006: só o resync é substituído — o resto do core segue real (o módulo importa vários
+// helpers puros dele). Espionar aqui é o ponto: o que se prova é que o cron PASSA a chamar o
+// planner, não o que o planner faz (isso já tem teste próprio no core).
+const mockResync = vi.fn();
+vi.mock('@dosiq/core', async () => ({
+  ...(await vi.importActual<Record<string, unknown>>('@dosiq/core')),
+  resyncProtocolWindow: (...args: unknown[]) => mockResync(...args),
+  createDoseInstanceRepository: vi.fn(() => ({})),
+  resolveUserTz: vi.fn(async () => 'America/Sao_Paulo'),
 }));
 
 import { _applyTitrationPlan } from '../_reminderHelpers.js';
@@ -73,8 +93,10 @@ const PLAN_DOSE_CHANGE = {
 
 beforeEach(() => {
   writes.length = 0;
+  selects.length = 0;
   updateResults = [];
   selectResult = { data: null, error: null };
+  protocolFetchResult = { data: { id: 'proto-1', user_id: 'u1' }, error: null };
 });
 
 afterEach(() => {
@@ -109,6 +131,41 @@ describe('_applyTitrationPlan — ordem das escritas (recuperabilidade)', () => 
     const eventos = writes.filter((w) => w.table === 'dose_critical_events');
     expect(eventos).toHaveLength(1);
     expect(eventos[0].payload).toMatchObject({ event: 'titration_transitioned', actor: 'system' });
+  });
+});
+
+// 052 T006 / FR-007c — a segunda instância viva do AP-308, e a que mais queimava: o `dose_change`
+// automático é o caminho NORMAL da escada. A RPC client-side foi coberta pela 029 F5.5; ESTE
+// caminho (cron) escapava, deixando toda instância futura já materializada com a `expected_dose`
+// do cronograma anterior. Tratamento dizendo uma dose, lembrete entregando outra.
+describe('_applyTitrationPlan — reprojeta as instâncias após o dose_change (052 FR-007c)', () => {
+  it('depois de escrever a dose nova no executor, reprojeta a janela daquele protocolo', async () => {
+    await _applyTitrationPlan('u1', 'tit-1', PLAN_DOSE_CHANGE, new Map(), 'c1');
+
+    expect(mockResync).toHaveBeenCalledTimes(1);
+    expect(mockResync.mock.calls[0][0]).toMatchObject({ protocol: { id: 'proto-1' } });
+  });
+
+  it('o select do resync traz o embed da escada COM medicine_id (CON-032 + 052 G1)', async () => {
+    await _applyTitrationPlan('u1', 'tit-1', PLAN_DOSE_CHANGE, new Map(), 'c1');
+
+    const embed = selects.find((s) => s.includes('titration_steps('));
+    expect(embed).toBeDefined();
+    expect(embed).toContain('medicine_id');
+  });
+
+  it('sem executor vinculado (medicine_switch) → nada a reprojetar aqui: a RPC é quem cria', async () => {
+    const semExecutor = { ...PLAN_DOSE_CHANGE, activated: { ...PLAN_DOSE_CHANGE.activated, protocolId: null } };
+    await _applyTitrationPlan('u1', 'tit-1', semExecutor, new Map(), 'c1');
+    expect(mockResync).not.toHaveBeenCalled();
+  });
+
+  it('resync falhando NÃO derruba o tick nem suprime o push (best-effort — R-245)', async () => {
+    mockResync.mockRejectedValueOnce(new Error('rede caiu'));
+    const ok = await _applyTitrationPlan('u1', 'tit-1', PLAN_DOSE_CHANGE, new Map(), 'c1');
+
+    expect(ok).toBe(true); // a transição valeu; o calendário converge no cron seguinte
+    expect(writes.filter((w) => w.table === 'dose_critical_events')).toHaveLength(1);
   });
 });
 

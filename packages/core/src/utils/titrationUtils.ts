@@ -37,6 +37,14 @@ export interface TitrationStepLike {
   duration_days?: number | null
   status?: string | null
   started_at?: string | null
+  /**
+   * 052 (G1): medicamento DA ETAPA. No banco é `uuid NOT NULL` (verificado em
+   * `information_schema` 2026-07-19) — opcional AQUI só porque um select antigo pode não trazê-lo
+   * no embed. Quando ausente, o gerador cai no `protocols.medicine_id`, que é o comportamento
+   * pré-052: degrada, não quebra. Todo embed que alimenta o gerador DEVE selecioná-lo (AP-300 —
+   * campo declarado no tipo mas fora do select vira `undefined` silencioso em runtime).
+   */
+  medicine_id?: string | null
 }
 
 /**
@@ -75,7 +83,7 @@ function getStepDurationDays(step: TitrationStepLike | null | undefined): number
 export function resolveTitrationStageAt(
   steps: TitrationStepLike[] | null | undefined,
   at: Date | string | number
-): { stageIndex: number; dosage: number } | null {
+): { stageIndex: number; dosage: number; medicine_id?: string | null } | null {
   if (!Array.isArray(steps) || steps.length === 0) return null
   const ordered = [...steps].sort((a, b) => a.position - b.position)
 
@@ -105,7 +113,10 @@ export function resolveTitrationStageAt(
 
   const dosage = Number(ordered[index]?.dose)
   if (!Number.isFinite(dosage) || dosage <= 0) return null
-  return { stageIndex: index, dosage }
+  // 052: dose e medicamento saem da MESMA etapa vigente em `at`. Separá-los reintroduziria por
+  // escrita o bug que a spec mata por leitura — instância futura com a dose da etapa nova e o
+  // medicamento do protocolo antigo.
+  return { stageIndex: index, dosage, medicine_id: ordered[index]?.medicine_id ?? null }
 }
 
 /**

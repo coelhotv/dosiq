@@ -41,6 +41,8 @@ interface GeneratorProtocol {
   active?: boolean
   weekdays?: string[] | null
   days?: string[] | null
+  /** 052: fallback do snapshot de identidade quando a escada não rege a ocorrência. */
+  medicine_id?: string | null
 }
 
 type GeneratedInstance = {
@@ -50,6 +52,8 @@ type GeneratedInstance = {
   expected_dose: number
   tolerance_minutes: number
   critical_alarm: boolean
+  /** 052: medicamento congelado na instância — irmão de `expected_dose`. */
+  medicine_id: string | null
 }
 import { resolveTitrationStageAt, TitrationStepLike } from './titrationUtils'
 
@@ -253,6 +257,14 @@ export function generateInstances(
         protocol_id: protocol.id,
         scheduled_for: scheduledForIso,
         expected_dose: titrationStage ? titrationStage.dosage : expectedDose,
+        // 052 (FR-002): a identidade do medicamento congela pela MESMA resolução temporal da
+        // dose — o step vigente em `scheduled_for`, não `protocols.medicine_id` no instante da
+        // geração. Uma instância futura gerada ANTES da troca de medicamento tem que nascer com
+        // o medicamento da etapa que vai reger aquela data; ler do protocolo congelaria o
+        // medicamento de hoje no calendário de amanhã.
+        // Fallback ao protocolo cobre os dois casos legítimos sem escada regendo a data:
+        // tratamento normal (sem titulação) e etapa contínua/manutenção.
+        medicine_id: titrationStage?.medicine_id ?? protocol.medicine_id ?? null,
         tolerance_minutes: tolerances[i],
         critical_alarm: protocol.critical_alarm ?? false,
       })

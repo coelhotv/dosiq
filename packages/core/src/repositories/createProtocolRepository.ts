@@ -22,8 +22,14 @@ import { planWindow, computeWindowEnd } from '../services/doseInstancePlanner'
 import { resolveUserTz } from '../services/resolveUserTz'
 
 // Campos cuja alteração invalida a janela futura de dose_instances → wipe + regen.
-// critical_alarm incluído: mudar o flag de criticidade deve re-materializar as pending futuras
-const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm']
+// critical_alarm incluído: mudar o flag de criticidade deve re-materializar as pending futuras.
+//
+// 052 (FR-007a): `medicine_id` entra aqui porque o congelamento INVERTE o acidente do futuro.
+// Antes da 052 o join deixava as instâncias futuras "certas de graça" quando o usuário trocava o
+// medicamento do tratamento na UI — elas não guardavam medicamento nenhum. Congelado, uma pending
+// futura já materializada guardaria o medicamento ANTIGO para sempre. O passado segue protegido
+// por construção: `wipeFuturePending` nunca toca não-pending nem o passado.
+const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm', 'medicine_id']
 
 /**
  * Sincroniza dose_instances após escrita de protocolo (ADR-048, S2.5).
@@ -95,7 +101,7 @@ async function syncInstancesOnWrite({
 // query extra. É o recorte que o gerador exige (a escada inteira vazaria a dose de outro
 // medicamento no caso cross-med). Sem o embed, `TITRATION_SOURCE=n2` degradaria a dose de
 // titulação para `dosage_per_intake` em SILÊNCIO — por isso ele vive nos selects, não num if.
-const TITRATION_STEPS_EMBED = `titration_steps(id, position, dose, duration_days, status, started_at)`
+const TITRATION_STEPS_EMBED = `titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)`
 
 const DEFAULT_SELECT = `
         *,

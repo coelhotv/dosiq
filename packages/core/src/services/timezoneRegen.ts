@@ -81,7 +81,7 @@ export async function regenActiveProtocolsForTz({
       .from(PROTOCOLS)
       // 029 F3 (T014): embed da escada N2 deste protocolo — o gerador precisa das etapas
       // filtradas por protocol_id (grátis via FK; ver createProtocolRepository).
-      .select('*, titration_steps(id, position, dose, duration_days, status, started_at)')
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
       .eq('user_id', userId)
       .eq('active', true)
       .lte('start_date', today)
