@@ -243,7 +243,17 @@ function LadderEditor({
       intake_unit: s.intakeUnit,
       duration_days: s.durationDays,
     }))
-    const plan = buildLadderEditPlan(titrationId, protocolId, protocolMedicine.id, existing, desired)
+    // F5.5: vigente contínua → a 1ª etapa criada nasce `pending_confirmation` (gatilho manual —
+    // Decisões §7.4). Com vigente FINITA nada muda: quem marca a pendência é o motor, no
+    // vencimento.
+    const plan = buildLadderEditPlan(
+      titrationId,
+      protocolId,
+      protocolMedicine.id,
+      existing,
+      desired,
+      currentIsContinua,
+    )
     if (isEmptyEditPlan(plan)) {
       navigation.goBack()
       return
@@ -257,35 +267,44 @@ function LadderEditor({
       show(err?.message ?? 'Erro ao salvar a evolução do tratamento.', { variant: 'error' })
       setSaving(false)
     }
-  }, [form, ordered, titrationId, protocolId, protocolMedicine, navigation, show])
+  }, [form, ordered, titrationId, protocolId, protocolMedicine, currentIsContinua, navigation, show])
 
   const header = (
     <>
-      <Text style={styles.intro}>
-        Você pode editar ou adicionar as próximas etapas. As etapas concluídas e a etapa em curso
-        fazem parte do histórico e não mudam.
-      </Text>
+      {/* Ordem de leitura (smoke do PO, 2026-07-19): o que a tela FAZ → a limitação → as etapas
+          congeladas → a vigência das alterações. A limitação aparecia DUAS vezes (aqui e no box do
+          cadeado, separados pelos cards), e o box explicava cards que o usuário já tinha passado.
+          Uma vez só, e ANTES do que ela descreve. */}
+      <Text style={styles.intro}>Edite ou adicione as próximas etapas da evolução.</Text>
+
+      {/* Gate = `frozen.length > 0`, não `hasCompleted`: a etapa EM CURSO também é congelada
+          (`FROZEN_STATUS`), então uma escada com a 1ª etapa rodando e nenhuma concluída ficava
+          sem explicação nenhuma para os cards read-only logo abaixo. */}
+      {frozen.length > 0 ? (
+        <View style={styles.lockNote}>
+          <Lock size={14} color={colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.lockNoteText}>
+            {hasCompleted
+              ? 'As etapas concluídas e a etapa em curso fazem parte do histórico de doses e não podem ser alteradas.'
+              : 'A etapa em curso faz parte do histórico de doses e não pode ser alterada.'}
+          </Text>
+        </View>
+      ) : null}
 
       {frozen.map((s, i) => (
         <FrozenStepCard key={s.id} step={s} n={i + 1} />
       ))}
 
-      {hasCompleted ? (
-        <View style={styles.lockNote}>
-          <Lock size={14} color={colors.text.secondary} strokeWidth={2} />
-          <Text style={styles.lockNoteText}>
-            Etapas concluídas fazem parte do histórico de doses e não podem ser alteradas.
-          </Text>
-        </View>
-      ) : null}
-
+      {/* Só a DATA de vigência. O "Nada muda na etapa vigente" saiu no smoke do PO: o box do
+          cadeado, agora logo acima, já diz que a etapa em curso não pode ser alterada — a mesma
+          conclusão em outras palavras, a duas linhas de distância. */}
       <View style={styles.editBanner}>
         <Text style={styles.editBannerText}>
           As alterações valem{' '}
           <Text style={styles.editBannerStrong}>
             {effectiveDate ? `a partir de ${fmtDay(effectiveDate)}` : 'a partir da próxima etapa'}
           </Text>
-          . Nada muda na etapa vigente.
+          .
         </Text>
       </View>
     </>
@@ -369,6 +388,11 @@ function LadderStepsEditor({
     cancelEdit,
   } = form
 
+  // F5.5 — o builder só abre NO TOQUE (`[+ Adicionar etapa]`). Deixá-lo sempre aberto sugeriria a
+  // todo paciente em manutenção que a escada está incompleta — convite a cadastrar etapa sem
+  // indicação médica (SaMD, ADR-062). Cadastrar é ato deliberado, não default da tela.
+  const [manualAddOpen, setManualAddOpen] = useState(false)
+
   // Refs/scroll (R-010: antes de effects/handlers).
   const { scrollRef, onBuilderLayout, scrollToBuilder } = useScrollToBuilder()
 
@@ -397,6 +421,12 @@ function LadderStepsEditor({
     [editStep, scrollToBuilder],
   )
 
+  const onAddManualStep = useCallback(() => {
+    lightTap()
+    setManualAddOpen(true)
+    scrollToBuilder()
+  }, [scrollToBuilder])
+
   const builderLabel =
     editingIndex !== null
       ? `Editando etapa ${editingIndex + 1 + stepOffset}`
@@ -405,7 +435,7 @@ function LadderStepsEditor({
   // Etapa contínua encerra a escada (terminal). Uma vez gravada como última, o app não oferece
   // nova etapa; para inserir algo antes dela, o usuário edita/remove a contínua.
   const lastIsContinua = steps.length > 0 && steps[steps.length - 1].durationDays === null
-  const terminalEmpty = steps.length === 0 && terminalWhenEmpty
+  const terminalEmpty = steps.length === 0 && terminalWhenEmpty && !manualAddOpen
   const showBuilder = editingIndex !== null || (!lastIsContinua && !terminalEmpty)
 
   return (
@@ -459,14 +489,26 @@ function LadderStepsEditor({
             />
             </View>
           ) : terminalEmpty ? (
-            <Text style={styles.closedNote}>
-              A etapa vigente é contínua — a evolução já chegou ao fim. Não há próximas etapas a
-              cadastrar.
-            </Text>
+            // F5.5 — a escada NÃO chegou ao fim, chegou à MANUTENÇÃO. O texto anterior ("a
+            // evolução já chegou ao fim. Não há próximas etapas a cadastrar") era um beco: o
+            // paciente em manutenção cujo médico sobe a dose não tinha porta nenhuma no app.
+            <View style={styles.terminalBlock}>
+              <Text style={styles.closedNote}>
+                A etapa contínua vale até seu médico mudar a prescrição.
+              </Text>
+              <Pressable
+                onPress={onAddManualStep}
+                style={({ pressed }) => [styles.addStepBtn, pressed && styles.addStepBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Adicionar etapa"
+              >
+                <Text style={styles.addStepText}>+ Adicionar etapa</Text>
+              </Pressable>
+            </View>
           ) : (
             <Text style={styles.closedNote}>
-              A etapa contínua encerra a evolução. Para inserir uma etapa antes dela, edite ou remova
-              a etapa contínua.
+              A etapa contínua encerra a evolução. Para inserir outra etapa, edite ou remova
+              a última etapa atual (contínua).
             </Text>
           )}
 
@@ -691,6 +733,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[2],
   },
+  // F5.5 — bloco terminal: a copy da manutenção + a porta de saída.
+  terminalBlock: { gap: spacing[1] },
+  addStepBtn: {
+    minHeight: 48,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colors.primary[600],
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+    marginTop: spacing[1],
+  },
+  addStepBtnPressed: { opacity: 0.85 },
+  addStepText: { fontSize: 14, fontWeight: '700', color: colors.primary[600] },
   cancelEditBtn: { alignItems: 'center', paddingVertical: spacing[2] },
   cancelEditText: { fontSize: 14, fontWeight: '600', color: colors.text.secondary },
 })

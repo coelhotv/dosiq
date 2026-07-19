@@ -88,12 +88,14 @@ export {
   resolveTitrationAdvance,
   getEvolutionBadge,
   resolvePendingSwitch,
+  resolveManualNextStep,
 } from './titrationUtils'
 export type {
   TitrationStepLike,
   TitrationStepEngineLike,
   TitrationStepPendingLike,
   PendingSwitchInfo,
+  ManualNextStepInfo,
   TitrationAdvancePlan,
   TitrationStepTarget,
   TitrationStepClosure,

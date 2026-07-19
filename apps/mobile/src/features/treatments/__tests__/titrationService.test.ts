@@ -191,6 +191,50 @@ describe('buildLadderEditPlan — edição toca só o futuro (T019 / guard A4:24
     expect(u2?.updates.protocol_id).toBeNull()
   })
 
+  // ── F5.5: gatilho manual de saída da etapa contínua (Decisões §7.4) ──────────
+  // Contínua nunca vence ⇒ o cron jamais marcaria a pendência sozinho. Sem isto a etapa nasceria
+  // `upcoming` inalcançável — o beco que a fatia existe para destravar.
+  describe('firstNewStepPending — vigente contínua', () => {
+    // Vigente contínua, sem nenhuma futura: o estado terminal normal da manutenção.
+    const manutencao: ExistingLadderStep[] = [
+      ex({ id: 'm0', position: 0, status: 'current', dose: 1, duration_days: null }),
+    ]
+    const nova: DesiredEditableStep = { medicine_id: 'MET', dose: 2, intake_unit: 'cp', duration_days: null }
+
+    it('a 1ª etapa criada nasce pending_confirmation', () => {
+      const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', manutencao, [nova], true)
+      expect(plan.toCreate).toHaveLength(1)
+      expect(plan.toCreate[0]).toMatchObject({ position: 1, status: 'pending_confirmation', started_at: null })
+    })
+
+    it('só a 1ª: as demais seguem upcoming (o motor reassume depois do toque)', () => {
+      const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', manutencao, [
+        { ...nova, duration_days: 28 },
+        { ...nova, dose: 3, duration_days: 28 },
+        { ...nova, dose: 4 },
+      ], true)
+      expect(plan.toCreate.map((c) => c.status)).toEqual(['pending_confirmation', 'upcoming', 'upcoming'])
+    })
+
+    it('já existe pendente preservada → a nova NÃO vira 2ª pendente', () => {
+      const comPendente: ExistingLadderStep[] = [
+        ...manutencao,
+        ex({ id: 'p1', position: 1, status: 'pending_confirmation', dose: 2, duration_days: null }),
+      ]
+      const desired: DesiredEditableStep[] = [
+        { id: 'p1', medicine_id: 'MET', dose: 2, intake_unit: 'cp', duration_days: 28 },
+        { ...nova, dose: 5 },
+      ]
+      const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', comPendente, desired, true)
+      expect(plan.toCreate.map((c) => c.status)).toEqual(['upcoming'])
+    })
+
+    it('flag desligada (vigente finita) → tudo upcoming, como antes', () => {
+      const plan = buildLadderEditPlan(TITRATION, PROTOCOL, 'MET', base, [...asDesired(base), nova])
+      expect(plan.toCreate.every((c) => c.status === 'upcoming')).toBe(true)
+    })
+  })
+
   it('etapa completed no prefixo nunca é deletada nem atualizada', () => {
     const withCompleted: ExistingLadderStep[] = [
       ex({ id: 'c0', position: 0, status: 'completed', dose: 1 }),

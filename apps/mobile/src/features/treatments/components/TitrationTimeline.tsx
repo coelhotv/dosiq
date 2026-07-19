@@ -10,10 +10,11 @@ import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
-import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch } from '@dosiq/core'
+import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch, resolveManualNextStep } from '@dosiq/core'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from '@treatments/components/EvolutionBadge'
 import EvolutionPendingBanner from '@treatments/components/EvolutionPendingBanner'
+import EvolutionManualNextBanner from '@treatments/components/EvolutionManualNextBanner'
 import EvolutionBrokenStepCard from '@treatments/components/EvolutionBrokenStepCard'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useTitrationTimeline } from '@treatments/hooks/useTitrationTimeline'
@@ -58,8 +59,12 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
 
   // Ponto de partida da projeção das futuras = fim da etapa vigente (se finita).
   let projected: Date | null = null
+  // F5.5: vigente CONTÍNUA = manutenção. Não há data de fim, logo nada é "previsto" — o que
+  // vier depois só começa por decisão clínica + toque do usuário.
+  let currentIsContinua = false
   if (currentIndex !== -1) {
     const cur = ordered[currentIndex]
+    currentIsContinua = cur.duration_days == null
     if (cur.started_at && cur.duration_days && cur.duration_days > 0) {
       projected = addDays(parseISO(cur.started_at), cur.duration_days)
     }
@@ -93,6 +98,16 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
     }
 
     // future (upcoming / pending_confirmation): data prevista acumulada.
+    //
+    // F5.5: etapa cadastrada a partir de uma vigente CONTÍNUA não tem data nem automatismo —
+    // "prevista" mentiria (sugere que o app vai virar sozinho). Ela espera o toque, e o rótulo
+    // diz exatamente isso.
+    if (currentIsContinua && s.status === 'pending_confirmation') {
+      return {
+        key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken,
+        medicineId: s.medicine?.id ?? null, statusLine: 'aguardando você iniciar',
+      }
+    }
     let statusLine = continua ? 'contínua' : 'prevista'
     if (projected !== null) {
       statusLine = `prevista para ${fmtDay(projected)}`
@@ -184,6 +199,21 @@ export default function TitrationTimeline({
       nextMedName: formatMedicineFullName(pending?.medicine),
     }
   }, [steps, todayLocal, timezone])
+  // §7.4 (F5.5): etapa cadastrada a partir de uma CONTÍNUA — pendência SEM PRAZO. Mutuamente
+  // exclusiva com `pendingSwitch` por construção: `resolvePendingSwitch` exige vigente FINITA e
+  // `resolveManualNextStep` exige vigente CONTÍNUA, então nunca há dois banners na tela.
+  const manualNext = useMemo(() => {
+    const info = resolveManualNextStep(steps)
+    if (!info) return null
+    const current = steps.find((s) => s.id === info.currentStepId)
+    const pending = steps.find((s) => s.id === info.pendingStepId)
+    return {
+      info,
+      currentMedName: formatMedicineFullName(current?.medicine, 'dose atual'),
+      nextMedName: formatMedicineFullName(pending?.medicine),
+    }
+  }, [steps])
+
   // Refresh on focus: ao voltar do cadastro/edição da escada, a timeline reflete as mudanças
   // sem recarregar o app (o hook só carregava no mount). `void` — rejeição já tratada no hook.
   useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal(timezone)); void refresh() }, [refresh, timezone]))
@@ -223,6 +253,17 @@ export default function TitrationTimeline({
           nextMedicineName={pendingSwitch.nextMedName}
           currentMedicineName={pendingSwitch.currentMedName}
           onStart={() => onStartPendingStep?.(pendingSwitch.info.pendingStepId)}
+        />
+      ) : null}
+
+      {/* §7.4 (F5.5): saída da manutenção. Teal sempre — nada está atrasado. Pausado esconde,
+          igual ao banner de vencida: a evolução acompanha o tratamento. */}
+      {manualNext != null && !paused ? (
+        <EvolutionManualNextBanner
+          stepNumber={manualNext.info.pendingPosition + 1}
+          nextMedicineName={manualNext.nextMedName}
+          currentMedicineName={manualNext.currentMedName}
+          onStart={() => onStartPendingStep?.(manualNext.info.pendingStepId)}
         />
       ) : null}
 

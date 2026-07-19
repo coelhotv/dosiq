@@ -13,6 +13,8 @@ import {
   calculateTitrationData,
   getEvolutionBadge,
   resolvePendingSwitch,
+  resolveManualNextStep,
+  resolveTitrationAdvance,
   type TitrationStepLike,
   type TitrationStepPendingLike,
 } from '../titrationUtils'
@@ -126,6 +128,80 @@ describe('resolvePendingSwitch — desde quando o switch aguarda', () => {
   it('ordena por position (escada fora de ordem não confunde a âncora)', () => {
     const fora = [...ladder()].reverse()
     expect(resolvePendingSwitch(fora, '2026-07-06')?.currentStepId).toBe('step-1')
+  })
+})
+
+// ── resolveManualNextStep (029 F5.5 / T034) ───────────────────────────────────
+// Sair da etapa CONTÍNUA (manutenção) exige gatilho MANUAL: não há data, há um evento clínico.
+// Conceito distinto de `resolvePendingSwitch` (pendência VENCIDA) — as duas são mutuamente
+// exclusivas por construção, e a regressão abaixo garante que continuam sendo.
+describe('resolveManualNextStep — pendência SEM PRAZO (vigente contínua)', () => {
+  const manual = (overrides: Partial<TitrationStepPendingLike>[] = []): TitrationStepPendingLike[] => [
+    { id: 'continua', position: 0, status: 'current', started_at: '2026-05-12T03:00:00Z', duration_days: null, ...overrides[0] },
+    { id: 'nova', position: 1, status: 'pending_confirmation', duration_days: 28, ...overrides[1] },
+  ]
+
+  it('vigente contínua + etapa pendente → devolve a pendente e a âncora contínua', () => {
+    expect(resolveManualNextStep(manual())).toEqual({
+      pendingStepId: 'nova',
+      pendingPosition: 1,
+      currentStepId: 'continua',
+    })
+  })
+
+  it('vigente FINITA → null (esse caso é do motor/resolvePendingSwitch, não daqui)', () => {
+    const finita = manual([{ duration_days: 14 }])
+    expect(resolveManualNextStep(finita)).toBeNull()
+  })
+
+  it('sem etapa pendente → null (o estado terminal normal da manutenção)', () => {
+    expect(resolveManualNextStep(manual([{}, { status: 'upcoming' }]))).toBeNull()
+  })
+
+  it('a nova etapa TAMBÉM contínua (o caso mais comum) → devolve igual', () => {
+    const continuaSobreContinua = manual([{}, { duration_days: null }])
+    expect(resolveManualNextStep(continuaSobreContinua)?.pendingStepId).toBe('nova')
+  })
+
+  it('várias etapas cadastradas: só a 1ª é pendente, o resto é upcoming', () => {
+    const varias: TitrationStepPendingLike[] = [
+      ...manual(),
+      { id: 'depois', position: 2, status: 'upcoming', duration_days: null },
+    ]
+    expect(resolveManualNextStep(varias)?.pendingStepId).toBe('nova')
+  })
+
+  it('vigente residual anterior não rouba a âncora (mesma classe do smoke do F5)', () => {
+    const corrupted: TitrationStepPendingLike[] = [
+      { id: 'residuo', position: 0, status: 'current', started_at: '2026-07-17T03:00:00Z', duration_days: 14 },
+      { id: 'continua', position: 1, status: 'current', started_at: '2026-05-12T03:00:00Z', duration_days: null },
+      { id: 'nova', position: 2, status: 'pending_confirmation', duration_days: 28 },
+    ]
+    expect(resolveManualNextStep(corrupted)?.currentStepId).toBe('continua')
+  })
+
+  it('sem etapa vigente (tratamento pausado) → null', () => {
+    expect(resolveManualNextStep(manual([{ status: 'completed' }]))).toBeNull()
+  })
+
+  it('degenerados: escada vazia/null/undefined → null', () => {
+    expect(resolveManualNextStep([])).toBeNull()
+    expect(resolveManualNextStep(null)).toBeNull()
+    expect(resolveManualNextStep(undefined)).toBeNull()
+  })
+
+  it('ordena por position (escada fora de ordem não confunde a âncora)', () => {
+    expect(resolveManualNextStep([...manual()].reverse())?.currentStepId).toBe('continua')
+  })
+
+  // 🔴 REGRESSÃO — as duas invariantes que o F5.5 não pode quebrar.
+  it('o Hoje NÃO ganha card: resolvePendingSwitch segue null com vigente contínua', () => {
+    expect(resolvePendingSwitch(manual(), '2026-07-19')).toBeNull()
+  })
+
+  it('a etapa cadastrada é INERTE: o motor não reivindica nem notifica', () => {
+    const engineSteps = manual().map((s) => ({ ...s, medicine_id: `med-${s.position}` }))
+    expect(resolveTitrationAdvance(engineSteps, '2027-01-01')).toBeNull()
   })
 })
 

@@ -11,16 +11,34 @@
 //      (Constituição IX).
 
 const mockRpc = jest.fn()
+const mockFrom = jest.fn()
+const mockResync = jest.fn()
 
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   supabase: {
     auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }) },
     rpc: (...args: unknown[]) => mockRpc(...args),
-    from: jest.fn(),
+    from: (...args: unknown[]) => mockFrom(...args),
   },
 }))
 
+// 029 F5.5: só o resync é substituído — o resto do core segue real (o service importa
+// createTitrationRepository/getNow dele).
+jest.mock('@dosiq/core', () => ({
+  ...jest.requireActual('@dosiq/core'),
+  resyncProtocolWindow: (...args: unknown[]) => mockResync(...args),
+  createDoseInstanceRepository: jest.fn(() => ({})),
+  resolveUserTz: jest.fn(async () => 'America/Sao_Paulo'),
+}))
+
 import { confirmTitrationSwitch } from '../services/titrationService'
+
+/** Cadeia `from('protocols').select(...).eq(...).single()` do _resyncAfterSwitch. @private */
+function mockProtocolFetch(result: unknown) {
+  mockFrom.mockReturnValue({
+    select: () => ({ eq: () => ({ single: async () => result }) }),
+  })
+}
 
 afterEach(() => {
   jest.clearAllMocks()
@@ -51,6 +69,52 @@ describe('confirmTitrationSwitch — tradução do contrato CON-032', () => {
       protocolActivated: 'proto-novo',
       protocolPaused: 'proto-antigo',
     })
+  })
+
+  // ── 029 F5.5: paridade com o write-path ─────────────────────────────────────
+  // A RPC é a única escrita em `protocols` que não passa pelo repositório, logo a única que
+  // escapava do `syncInstancesOnWrite`. Sem o resync o protocolo novo nasce sem NENHUMA
+  // instância (calendário vazio até o cron) e o dose_change deixa as futuras com a dose ANTIGA.
+  it('materializa a janela do protocolo que passou a executar', async () => {
+    mockRpc.mockResolvedValue({
+      data: { success: true, already_confirmed: false, transition: 'medicine_switch', protocol_activated: 'proto-novo' },
+      error: null,
+    })
+    const protocolRow = { id: 'proto-novo', user_id: 'user-1', titration_steps: [] }
+    mockProtocolFetch({ data: protocolRow, error: null })
+
+    const result = await confirmTitrationSwitch('step-1')
+
+    expect(result.ok).toBe(true)
+    expect(mockFrom).toHaveBeenCalledWith('protocols')
+    expect(mockResync).toHaveBeenCalledWith(expect.objectContaining({ protocol: protocolRow }))
+  })
+
+  it('🔴 falha do resync NÃO derruba a confirmação (R-245) — a transição já aconteceu', async () => {
+    mockRpc.mockResolvedValue({
+      data: { success: true, already_confirmed: false, transition: 'medicine_switch', protocol_activated: 'proto-novo' },
+      error: null,
+    })
+    mockProtocolFetch({ data: { id: 'proto-novo', user_id: 'user-1' }, error: null })
+    mockResync.mockRejectedValue(new Error('rede caiu'))
+
+    const result = await confirmTitrationSwitch('step-1')
+
+    // Devolver erro aqui faria o usuário tentar de novo e receber "não pendente": a etapa FOI
+    // iniciada. O cron e a rede lazy seguem como malha — o pior caso é o atraso antigo.
+    expect(result.ok).toBe(true)
+  })
+
+  it('sem protocolo ativado (dose_change sem executor) → não tenta materializar nada', async () => {
+    mockRpc.mockResolvedValue({
+      data: { success: true, already_confirmed: false, transition: 'dose_change', protocol_activated: null },
+      error: null,
+    })
+
+    const result = await confirmTitrationSwitch('step-1')
+
+    expect(result.ok).toBe(true)
+    expect(mockResync).not.toHaveBeenCalled()
   })
 
   it('🔴 already_confirmed (double-tap/retry) é SUCESSO — nunca erro (AP-221)', async () => {

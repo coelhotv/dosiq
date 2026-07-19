@@ -91,6 +91,55 @@ export async function planWindow({
 }
 
 /**
+ * Reprojeta a janela futura de um protocolo do zero: apaga as `pending` futuras e regenera.
+ *
+ * 🔴 **Por que existe (029 F5.5, smoke do PO 2026-07-19).** Toda escrita em `protocols` que passa
+ * pelo repositório dispara `syncInstancesOnWrite`, que faz exatamente isto quando um campo de
+ * agendamento muda (`dosage_per_intake` inclusive). A RPC `confirm_titration_switch` é a ÚNICA
+ * porta de escrita em `protocols` fora do repositório — ela é SQL, e o gerador é JS —, então a
+ * troca de etapa escapava da sincronização inteira:
+ *   - `medicine_switch`: o protocolo que a RPC CRIA nasce sem instância nenhuma. O calendário do
+ *     paciente que acabou de confirmar a etapa fica VAZIO até o cron das ~03:00. Numa dose
+ *     semanal isso dura quase um dia (achado do smoke).
+ *   - `dose_change`: a RPC atualiza `dosage_per_intake`, mas as instâncias futuras já
+ *     materializadas guardam a `expected_dose` congelada pelo cronograma ANTERIOR. Quando a
+ *     confirmação não cai na data prevista — que é a regra, já que ela espera o toque do usuário
+ *     — o tratamento passa a dizer uma dose e o lembrete a entregar outra. Pior que a ausência.
+ *
+ * Ausência de dose assusta; dose errada notificada é um risco clínico. Por isso a troca de etapa
+ * passa a fazer o mesmo que editar um tratamento faz: mudar o estado de execução de um tratamento
+ * é mudar o tratamento.
+ *
+ * Agnóstico de client, como o resto do planner: recebe o protocolo (COM o embed
+ * `titration_steps` — sem ele o gerador degrada a dose para `dosage_per_intake` em silêncio,
+ * CON-032) e o repo prontos. Quem busca é o chamador.
+ *
+ * @returns {Promise<number>} nº de instâncias geradas na janela nova
+ */
+export async function resyncProtocolWindow({
+  protocol,
+  doseInstanceRepo,
+  tz = 'America/Sao_Paulo',
+}: {
+  protocol: Protocol
+  doseInstanceRepo: DoseInstanceRepo
+  tz?: string
+}): Promise<number> {
+  // Apaga só as FUTURAS pending: o passado é histórico e não se reescreve, e `taken`/`missed`
+  // futuras não existem. Mesma ordem do write-path (wipe → regen), pelo mesmo motivo: o upsert
+  // é `ON CONFLICT DO NOTHING`, então sem o wipe a instância velha (dose antiga) sobreviveria.
+  await doseInstanceRepo.wipeFuturePending(protocol.id)
+  const now = parseISO(getServerTimestamp())
+  return planWindow({
+    protocol,
+    doseInstanceRepo,
+    fromTs: now.toISOString(),
+    toTs: computeWindowEnd(protocol, now, tz),
+    tz,
+  })
+}
+
+/**
  * Rede de segurança lazy: garante que o protocolo tenha instâncias geradas até `ts`.
  * Gera apenas o gap entre o high-water-mark e `ts` (capado no fim do protocolo).
  * No-op se já coberto.

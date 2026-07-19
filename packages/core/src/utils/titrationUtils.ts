@@ -275,6 +275,66 @@ export function resolvePendingSwitch(
   }
 }
 
+/**
+ * Etapa cadastrada MANUALMENTE a partir de uma etapa contínua (spec 029 F5.5 / Decisões §7.4).
+ *
+ * 🔴 **Por que NÃO é `resolvePendingSwitch`.** São dois conceitos distintos:
+ *   - `resolvePendingSwitch` = pendência **VENCIDA** — existe um prazo que passou, e o "desde"
+ *     é derivado dele. Com vigente contínua ela devolve `null`, e isso está CERTO: contínua
+ *     nunca vence, então nada poderia ter ficado pendente por vencimento. **Não alterar.**
+ *   - `resolveManualNextStep` = pendência **SEM PRAZO** — o paciente está em manutenção e o
+ *     médico mudou a prescrição. O gatilho não é uma DATA, é um EVENTO CLÍNICO. Não há "desde",
+ *     não há atraso, não há o que interromper.
+ *
+ * Consequência de desenho: esta função alimenta SÓ a tela do tratamento (pull, banner teal).
+ * O Hoje segue silencioso — sem card, sem push, sem nag (R-239). A etapa fica INERTE até o
+ * toque: `resolveTitrationAdvance` devolve `null` com vigente contínua, então o cron nunca
+ * reivindica nem notifica.
+ *
+ * PURO e clock-free (não há data envolvida — é justamente o ponto).
+ *
+ * @param steps - etapas da escada (qualquer ordem; ordenadas aqui por position)
+ * @returns null quando a vigente NÃO é contínua (aí quem manda é o motor/`resolvePendingSwitch`)
+ *          ou quando não há etapa aguardando o usuário
+ */
+export interface ManualNextStepInfo {
+  /** Etapa que aguarda o toque do usuário (a que o `[Iniciar etapa N]` inicia). */
+  pendingStepId: string
+  /** `position` da pendente. A UI rotula "Etapa N" com `position + 1`. */
+  pendingPosition: number
+  /** Etapa contínua que SEGUE regendo os lembretes até o toque. */
+  currentStepId: string
+}
+
+export function resolveManualNextStep(
+  steps: TitrationStepPendingLike[] | null | undefined
+): ManualNextStepInfo | null {
+  if (!Array.isArray(steps) || steps.length === 0) return null
+
+  const ordered = [...steps].sort((a, b) => a.position - b.position)
+  const pending = ordered.find((s) => s?.status === 'pending_confirmation')
+  if (!pending) return null
+
+  // Mesma âncora de `resolvePendingSwitch`: a vigente é a ADJACENTE anterior (maior position
+  // menor que a da pendente), nunca a primeira `current` da lista — o banco não impede duas
+  // `current` na mesma escada (só `UNIQUE (titration_id, position)`), e uma vigente residual
+  // na posição 0 faria o banner apontar para a etapa errada, em silêncio.
+  const currents = ordered.filter((s) => s?.status === 'current' && s.position < pending.position)
+  const current = currents.length > 0 ? currents[currents.length - 1] : undefined
+  if (!current) return null
+
+  // 🔴 O gate que separa as duas funções: SÓ vigente CONTÍNUA. Vigente finita significa que há
+  // prazo, logo o caso é do motor/`resolvePendingSwitch` — devolver algo aqui duplicaria a
+  // superfície (banner manual + card do Hoje para a mesma etapa).
+  if (getStepDurationDays(current) !== null) return null
+
+  return {
+    pendingStepId: pending.id,
+    pendingPosition: pending.position,
+    currentStepId: current.id,
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MOTOR DE AVANÇO (spec 029 / ADR-080 / Slice F3 — T012). PURO e clock-free.
 //

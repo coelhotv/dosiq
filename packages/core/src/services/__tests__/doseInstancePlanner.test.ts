@@ -3,6 +3,7 @@ import {
   computeWindowEnd,
   planWindow,
   ensureInstancesUpTo,
+  resyncProtocolWindow,
   renewProtocolWindow,
   WINDOW_DAYS,
   RENEWAL_THRESHOLD_DAYS,
@@ -92,6 +93,59 @@ describe('planWindow', () => {
     expect(n).toBe(0)
     expect(repo.upsertMany).not.toHaveBeenCalled()
     expect(repo.setGeneratedThrough).toHaveBeenCalledOnce()
+  })
+})
+
+// 029 F5.5 — a troca de etapa é a única escrita em `protocols` fora do repositório, logo a única
+// que escapava do `syncInstancesOnWrite`. Este helper restaura a paridade.
+describe('resyncProtocolWindow (paridade com o write-path)', () => {
+  const makeResyncRepo = () => {
+    const repo = makeRepo()
+    return Object.assign(repo, { wipeFuturePending: vi.fn(async () => {}) })
+  }
+
+  it('apaga as futuras pending ANTES de regenerar (upsert é ON CONFLICT DO NOTHING)', async () => {
+    const repo = makeResyncRepo()
+    const ordem: string[] = []
+    repo.wipeFuturePending.mockImplementation(async () => { ordem.push('wipe') })
+    repo.upsertMany.mockImplementation(async (rows: unknown[]) => { ordem.push('upsert'); return rows })
+
+    await resyncProtocolWindow({ protocol, doseInstanceRepo: repo })
+
+    expect(repo.wipeFuturePending).toHaveBeenCalledWith('p1')
+    expect(ordem).toEqual(['wipe', 'upsert'])
+  })
+
+  it('materializa a janela inteira (WINDOW_DAYS), não as 72h do alarm scheduler', async () => {
+    const repo = makeResyncRepo()
+    const n = await resyncProtocolWindow({ protocol, doseInstanceRepo: repo })
+    // diário × 30 dias — o buraco do smoke era um protocolo com ZERO instâncias.
+    expect(n).toBeGreaterThanOrEqual(WINDOW_DAYS - 1)
+  })
+
+  it('dose_change fora da data prevista: a janela nova nasce com a dose da etapa VIGENTE', async () => {
+    const repo = makeResyncRepo()
+    // Escada cuja etapa vigente (10) começou HOJE por confirmação manual — o cronograma
+    // anterior teria previsto outra data, então as instâncias velhas tinham a dose antiga.
+    const comEscada = {
+      ...protocol,
+      dosage_per_intake: 10,
+      titration_steps: [
+        { position: 0, status: 'completed', dose: 5, duration_days: 14, started_at: '2026-05-01T03:00:00Z' },
+        { position: 1, status: 'current', dose: 10, duration_days: null, started_at: '2026-05-10T03:00:00Z' },
+      ],
+    }
+    await resyncProtocolWindow({ protocol: comEscada, doseInstanceRepo: repo })
+    const rows = repo.upsertMany.mock.calls[0][0] as { expected_dose: number }[]
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((r) => r.expected_dose === 10)).toBe(true)
+  })
+
+  it('sem escada no protocolo: cai em dosage_per_intake (protocolo comum, sem titulação)', async () => {
+    const repo = makeResyncRepo()
+    await resyncProtocolWindow({ protocol: { ...protocol, dosage_per_intake: 2 }, doseInstanceRepo: repo })
+    const rows = repo.upsertMany.mock.calls[0][0] as { expected_dose: number }[]
+    expect(rows.every((r) => r.expected_dose === 2)).toBe(true)
   })
 })
 
