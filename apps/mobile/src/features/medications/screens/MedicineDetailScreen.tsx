@@ -21,6 +21,7 @@ import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import ErrorState from '@shared/components/states/ErrorState'
 import DeleteConfirmation from '@shared/components/feedback/DeleteConfirmation'
+import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { ROUTES } from '@navigation/routes'
 import { useMedicine } from '@medications/hooks/useMedicines'
 import { useMedicineDelete } from '@medications/hooks/useMedicineDelete'
@@ -349,11 +350,8 @@ function useMedicineDetailState() {
 
   const handleOpenProtocol = useCallback((protocolId) => {
     setBlockedOpen(false)
-    navigation.navigate(ROUTES.TREATMENTS, {
-      screen: ROUTES.PROTOCOL_DETAIL,
-      params: { id: protocolId },
-    })
-  }, [navigation])
+    navigateCrossTab(ROUTES.TREATMENTS, ROUTES.PROTOCOL_DETAIL, { id: protocolId })
+  }, [])
 
   const handleOpenStock = useCallback(() => {
     setBlockedOpen(false)
@@ -365,10 +363,7 @@ function useMedicineDetailState() {
       navigation.navigate(ROUTES.TODAY)
       return
     }
-    navigation.navigate(ROUTES.STOCK, {
-      screen: ROUTES.STOCK_DETAIL,
-      params: { medicineId: dataId, medicineName: name },
-    })
+    navigateCrossTab(ROUTES.STOCK, ROUTES.STOCK_DETAIL, { medicineId: dataId, medicineName: name })
   }, [navigation, dataId, name, stockTrackingEnabled])
 
   return {
@@ -496,6 +491,7 @@ export default function MedicineDetailScreen() {
         visible={state.blockedOpen}
         medicineName={state.name}
         protocols={state.preCheck.protocols}
+        titrationSteps={state.preCheck.titrationSteps}
         stockUnits={state.preCheck.stockUnits}
         stockLots={state.preCheck.stockLots}
         stockTrackingEnabled={state.stockTrackingEnabled}

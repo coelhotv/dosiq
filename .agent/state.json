@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F4 MERGEADA (PR #757 -> squash 3a7fcc70). A titulacao EXISTE no app: escada nasce ativada (step0 current+started_at), timeline no detalhe, edicao do futuro com claim de status. Antes dela saiu o hotfix AP-304 (#756). PROXIMO: F5 — CTA [Iniciar etapa] chamando a RPC confirm_titration_switch (JA viva desde o F3; o F5 e so UI) + push com acoes + estados E. Depois F6 (web repontada p/ N2 + DROP das 4 colunas N1).",
+    "goal": "029 F5 FECHADA pos-smoke (branch feature/029/f5-cta-estados). Smoke do PO rendeu 9 correcoes + 1 migracao de PROD (encerrar != pausar, 20260718_titration_switch_end_date) + RC5 com 3 achados corrigidos. PENDENTE UNICO: push real das 08:00 (escada de smoke terminou CONTINUA -> sem vencimento -> cron nao dispara; PO decidiu validar no F5.5/F6). Achados viraram F5.5 (FR-012) e draft da spec 052.",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -216,10 +216,10 @@
   },
   "memory": {
     "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 11,
     "rules_count": 246,
-    "anti_patterns_count": 297,
-    "decisions_count": 80,
+    "anti_patterns_count": 299,
+    "decisions_count": 81,
     "contracts_count": 31,
     "distillation_due": false
   },
@@ -228,11 +228,11 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-17T02:30:00Z"
+    "index_loaded_at": "2026-07-18T00:00:00Z"
   },
   "code_review": {
     "status": "issues_found",
-    "critical": 1,
+    "critical": 0,
     "auto_fixed": 3,
     "ask_items": 0
   }

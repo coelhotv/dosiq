@@ -9,7 +9,125 @@
 // `global.Date` que a versão anterior precisava. Datas locais (AP-270).
 
 import { describe, it, expect } from 'vitest'
-import { calculateTitrationData, getEvolutionBadge, type TitrationStepLike } from '../titrationUtils'
+import {
+  calculateTitrationData,
+  getEvolutionBadge,
+  resolvePendingSwitch,
+  type TitrationStepLike,
+  type TitrationStepPendingLike,
+} from '../titrationUtils'
+
+// ── resolvePendingSwitch (029 F5 / T024) ──────────────────────────────────────
+// "Aguardando desde" NÃO sai de `updated_at` (a etapa pendente é editável — bumpar o
+// updated_at zeraria o contador em silêncio). Sai do VENCIMENTO da etapa vigente:
+// started_at + duration_days, no dia local do dono. Datas locais (AP-270).
+describe('resolvePendingSwitch — desde quando o switch aguarda', () => {
+  const ladder = (overrides: Partial<TitrationStepPendingLike>[] = []): TitrationStepPendingLike[] => [
+    {
+      id: 'step-1',
+      position: 0,
+      status: 'current',
+      started_at: '2026-06-10T03:00:00Z', // 10/06 local (GMT-3)
+      duration_days: 14, // vence 24/06
+      ...overrides[0],
+    },
+    { id: 'step-2', position: 1, status: 'pending_confirmation', duration_days: 28, ...overrides[1] },
+  ]
+
+  // Regressão do smoke do F5: o banco NÃO impede duas etapas `current` na mesma escada
+  // (só UNIQUE (titration_id, position)). Com `find()` na primeira `current`, a âncora do
+  // vencimento saía da etapa errada e o "aguardando desde" ficava silenciosamente falso.
+  it('vigente RESIDUAL numa posição anterior não rouba a âncora do vencimento', () => {
+    const corrupted: TitrationStepPendingLike[] = [
+      // Resíduo: começou ontem, venceria só em 31/07 — se virar âncora, daysWaiting cai para 0.
+      { id: 'residuo', position: 0, status: 'current', started_at: '2026-07-17T03:00:00Z', duration_days: 14 },
+      // A vigente REAL, adjacente à pendente: venceu em 15/07.
+      { id: 'vigente', position: 1, status: 'current', started_at: '2026-07-01T03:00:00Z', duration_days: 14 },
+      { id: 'pendente', position: 2, status: 'pending_confirmation', duration_days: 28 },
+    ]
+    const info = resolvePendingSwitch(corrupted, '2026-07-18')
+    expect(info?.currentStepId).toBe('vigente')
+    expect(info?.dueDay).toBe('2026-07-15')
+    expect(info?.daysWaiting).toBe(3)
+  })
+
+  it('vigente posterior à pendente é ignorada (nunca é âncora)', () => {
+    const weird: TitrationStepPendingLike[] = [
+      { id: 'vigente', position: 0, status: 'current', started_at: '2026-06-10T03:00:00Z', duration_days: 14 },
+      { id: 'pendente', position: 1, status: 'pending_confirmation', duration_days: 28 },
+      { id: 'futura-current', position: 2, status: 'current', started_at: '2026-07-01T03:00:00Z', duration_days: 7 },
+    ]
+    expect(resolvePendingSwitch(weird, '2026-06-24')?.currentStepId).toBe('vigente')
+  })
+
+  it('no dia do vencimento → 0 dias de espera ("começa hoje")', () => {
+    const info = resolvePendingSwitch(ladder(), '2026-06-24')
+    expect(info).toEqual({
+      pendingStepId: 'step-2',
+      pendingPosition: 1,
+      currentStepId: 'step-1',
+      dueDay: '2026-06-24',
+      daysWaiting: 0,
+    })
+  })
+
+  it('§7.2 — vencida há 12 dias (o caso do banner amber)', () => {
+    expect(resolvePendingSwitch(ladder(), '2026-07-06')?.daysWaiting).toBe(12)
+  })
+
+  it('§3.2 — o dia 3 é alcançável (frase de contexto)', () => {
+    expect(resolvePendingSwitch(ladder(), '2026-06-27')?.daysWaiting).toBe(3)
+  })
+
+  it('editar a escada NÃO desloca o "desde" (é o que updated_at faria)', () => {
+    // A etapa pendente muda de dose/duração; a âncora é a VIGENTE → dueDay estável.
+    const editada = ladder([{}, { dose: 1, duration_days: 56 }])
+    expect(resolvePendingSwitch(editada, '2026-07-06')?.dueDay).toBe('2026-06-24')
+  })
+
+  it('[Ajustar duração] na vigente MOVE o "desde" junto (comportamento correto)', () => {
+    const esticada = ladder([{ duration_days: 21 }]) // 14 → 21 dias
+    const info = resolvePendingSwitch(esticada, '2026-07-06')
+    expect(info?.dueDay).toBe('2026-07-01')
+    expect(info?.daysWaiting).toBe(5)
+  })
+
+  it('sem etapa pendente → null (nada a exibir)', () => {
+    const semPendente = ladder([{}, { status: 'upcoming' }])
+    expect(resolvePendingSwitch(semPendente, '2026-07-06')).toBeNull()
+  })
+
+  it('tratamento pausado (sem etapa vigente) → null, não inventa data', () => {
+    const pausada = ladder([{ status: 'completed' }])
+    expect(resolvePendingSwitch(pausada, '2026-07-06')).toBeNull()
+  })
+
+  it('vigente CONTÍNUA com pendente é incoerente → null', () => {
+    const incoerente = ladder([{ duration_days: null }])
+    expect(resolvePendingSwitch(incoerente, '2026-07-06')).toBeNull()
+  })
+
+  it('vigente sem started_at (dormente) → null (sem âncora não há vencimento)', () => {
+    const dormente = ladder([{ started_at: null }])
+    expect(resolvePendingSwitch(dormente, '2026-07-06')).toBeNull()
+  })
+
+  it('pendência ANTES do vencimento → piso 0, nunca negativo', () => {
+    expect(resolvePendingSwitch(ladder(), '2026-06-20')?.daysWaiting).toBe(0)
+  })
+
+  it('degenerados: escada vazia/null/undefined e todayLocal vazio → null', () => {
+    expect(resolvePendingSwitch([], '2026-07-06')).toBeNull()
+    expect(resolvePendingSwitch(null, '2026-07-06')).toBeNull()
+    expect(resolvePendingSwitch(undefined, '2026-07-06')).toBeNull()
+    expect(resolvePendingSwitch(ladder(), '')).toBeNull()
+  })
+
+  it('ordena por position (escada fora de ordem não confunde a âncora)', () => {
+    const fora = [...ladder()].reverse()
+    expect(resolvePendingSwitch(fora, '2026-07-06')?.currentStepId).toBe('step-1')
+  })
+})
 
 describe('getEvolutionBadge — badge derivado da escada N2 (não da coluna N1)', () => {
   it('etapa vigente FINITA → Em evolução', () => {

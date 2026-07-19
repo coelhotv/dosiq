@@ -69,7 +69,7 @@ describe('ProtocolChecklistItem', () => {
 
     render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
 
-    expect(screen.getByText('📈 Titulando')).toBeInTheDocument()
+    expect(screen.getByText('📈 Em evolução')).toBeInTheDocument()
   })
 
   it('renders stable status badge when estável', () => {

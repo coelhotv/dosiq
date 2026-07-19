@@ -8,11 +8,9 @@ import {
   StyleSheet,
   LayoutAnimation,
   TouchableOpacity,
-  Pressable,
-  InteractionManager
+  Pressable
 } from 'react-native'
 import { ROUTES } from '../../../navigation/routes'
-import { navigationRef } from '@navigation/navigationRef'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Plus, CalendarClock, Pill, Ruler, ChevronRight } = LucideIcons as any
@@ -29,6 +27,7 @@ import { useTodayMeasures } from '@measures/hooks/useTodayMeasures'
 import AdherenceDayCard from '@dashboard/components/AdherenceDayCard'
 import TimeBlockSeparator from '@dashboard/components/TimeBlockSeparator'
 import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
+import EvolutionSwitchSection from '@dashboard/components/EvolutionSwitchSection'
 import HeroDoseCard from '@dashboard/components/HeroDoseCard'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
 import DoseRegisterModal from '@dose/components/DoseRegisterModal'
@@ -39,6 +38,7 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
 import StockUpsellCard from '@dashboard/components/StockUpsellCard'
 import { colors, spacing, typography, borderRadius, shadows } from '@shared/styles/tokens'
@@ -334,6 +334,8 @@ function TodayScreenContent({
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
   const { enabled: stockTrackingEnabled } = useStockTracking()
   const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell(data?.timezone)
+  // Pull-to-refresh não remonta a seção da Evolução; o contador propaga o gesto até o hook dela.
+  const [evoRefreshTick, setEvoRefreshTick] = useState(0)
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
@@ -373,12 +375,8 @@ function TodayScreenContent({
     return created
   }, [refreshTodayMeasures])
 
-  // TODO(040-strict): navigationRef.navigate não tipado p/ rotas dinâmicas (nível B)
   const openMeasuresHub = useCallback((measureType) => {
-    (navigationRef.navigate as any)(ROUTES.PROFILE)
-    InteractionManager.runAfterInteractions(() => {
-      (navigationRef.navigate as any)(ROUTES.MEASURES, { type: measureType })
-    })
+    navigateCrossTab(ROUTES.PROFILE, ROUTES.MEASURES, { type: measureType })
   }, [])
 
   return (
@@ -386,10 +384,13 @@ function TodayScreenContent({
       {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge() }} tintColor={colors.status.success} />}
+        refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge(); setEvoRefreshTick((t) => t + 1) }} tintColor={colors.status.success} />}
       >
         <TodayHeader greeting={greeting} todayFormatted={todayFormatted} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
+        {/* Evolução do tratamento (029 F5 / T024): ABAIXO da Adesão, na área do priority dose
+            card — é "ação para agora" (Decisões §2.8). Renderiza null quando não há pendência. */}
+        <EvolutionSwitchSection timezone={data?.timezone} refreshToken={evoRefreshTick} />
         {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
         {priorityDoses.length > 0 ? (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
@@ -421,7 +422,6 @@ function TodayScreenContent({
           protocols={protocols} isComplex={isComplex} timeline={timeline}
           shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
-          navigation={navigation}
         />
         <OptionalDoseSection title="Em breve" doses={lookAhead} onRegister={handleOpenRegister} keyPrefix="ahead" />
 
@@ -465,7 +465,7 @@ function TodayScreenContent({
 }
 
 // Renderiza a agenda de doses (Simple ou Complex mode)
-function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister, navigation }) {
+function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister }) {
   if (protocols.length === 0) {
     return (
       <EmptyState
@@ -474,7 +474,7 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
         message="Configure doses e horários para receber lembretes e acompanhar a adesão."
         action={{
           label: '+ Criar primeiro tratamento',
-          onPress: () => navigation?.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM }),
+          onPress: () => navigateCrossTab(ROUTES.TREATMENTS, ROUTES.PROTOCOL_FORM),
         }}
       />
     )

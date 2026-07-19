@@ -5,7 +5,7 @@
 // Delete sheet com warning soft + stats chega em Sprint T2.2 (T2.11/T2.12).
 
 import { useCallback, useMemo, useState } from 'react'
-import { ScrollView, View, Text, Pressable, Switch, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, Pressable, Switch, StyleSheet, Alert } from 'react-native'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305/TS2724
 // sob apps/mobile/tsconfig.json (Edit3/CheckCircle2 são aliases deprecated de
@@ -34,6 +34,8 @@ import { useProtocolDelete } from '@treatments/hooks/useProtocolDelete'
 import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import ProtocolDeleteSheet from '@treatments/components/ProtocolDeleteSheet'
 import TitrationTimeline from '@treatments/components/TitrationTimeline'
+import { confirmTitrationSwitch } from '@treatments/services/titrationService'
+import { logEvent } from '@platform/analytics/firebaseAnalytics'
 import { lightTap, selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
@@ -130,6 +132,37 @@ function useProtocolDetailState() {
     navigation.navigate(ROUTES.MEDICINE_DETAIL, { id: protocol.medicine.id, hideDelete: true })
   }, [navigation, protocol])
 
+  // 029 F5 (T026 / §7.2 e §7.3): as saídas da etapa vencida e da etapa órfã. Ambas levam ao
+  // form da escada — o app NUNCA estende a duração nem reescolhe o medicamento sozinho; quem
+  // decide é o usuário, no cadastro (Decisões §10 / Constituição IX).
+  const goToLadder = useCallback(() => {
+    selectionTap()
+    navigation.navigate(ROUTES.TITRATION_FORM, {
+      protocolId: id,
+      medicine: protocol?.medicine ?? null,
+      treatmentPlanId: protocol?.treatment_plan_id ?? null,
+    })
+  }, [navigation, id, protocol])
+
+  /**
+   * `[Iniciar etapa N]` do banner de vencida (§7.2). A transição é da RPC — nunca reimplementada
+   * aqui. Sem lock de "confirmando" (AP-221/R-288): o claim dentro da RPC é a exclusão mútua, e
+   * `already_confirmed` é sucesso (a UI converge, não mostra falha).
+   */
+  const handleStartPendingStep = useCallback(async (stepId) => {
+    const result = await confirmTitrationSwitch(stepId)
+    logEvent('titration_transition_confirmed', {
+      step_id: stepId,
+      surface: 'timeline_banner',
+      // R-286: `=== false` estreita a união; `!result.ok` não discrimina sob strict:false.
+      outcome:
+        result.ok === false ? result.reason : result.alreadyConfirmed ? 'already_confirmed' : 'confirmed',
+    })
+    // Princípio IX: falha diz o que NÃO aconteceu e por quê — nunca genérico, nunca sucesso falso.
+    if (result.ok === false) Alert.alert('A etapa não foi iniciada', result.message)
+    await refresh()
+  }, [refresh])
+
   const onDelete = useCallback(() => {
     if (isDeleting) return
     lightTap()
@@ -180,6 +213,8 @@ function useProtocolDetailState() {
     dailyIntakeTotal,
     inUseDays,
     toggling,
+    goToLadder,
+    handleStartPendingStep,
     goBack,
     goEdit,
     goToMedicine,
@@ -223,6 +258,8 @@ export default function ProtocolDetailScreen() {
     dailyIntakeTotal,
     inUseDays,
     toggling,
+    goToLadder,
+    handleStartPendingStep,
     goBack,
     goEdit,
     goToMedicine,
@@ -271,7 +308,13 @@ export default function ProtocolDetailScreen() {
 
         {/* Evolução do tratamento (029 F4 / T020) — só aparece se há escada; hero/Dosagem
             já refletem a etapa vigente. paused acompanha o tratamento (sem estado próprio). */}
-        <TitrationTimeline protocolId={id} paused={!effectiveActive} hasLadderHint={(protocol.titration_steps?.length ?? 0) > 0} />
+        <TitrationTimeline
+          protocolId={id}
+          paused={!effectiveActive}
+          hasLadderHint={(protocol.titration_steps?.length ?? 0) > 0}
+          onStartPendingStep={handleStartPendingStep}
+          onEditStep={goToLadder}
+        />
 
         <DosageFrequencySection
           protocol={protocol}

@@ -8,7 +8,7 @@ import { isProtocolActiveOnWeekday } from '../utils/protocolActiveHelper.js';
 // do DONO — obrigatório para o vencimento por dia local da titulação (R-253/R-254). Daí o alias.
 import {
   calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat,
-  resolveTitrationAdvance,
+  resolveTitrationAdvance, formatMedicineFullName,
   getTodayLocal as getTodayLocalInTz,
 } from '@dosiq/core';
 import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
@@ -922,7 +922,7 @@ const TITRATION_STEPS_SELECT = `
   steps:titration_steps (
     id, position, medicine_id, dose, intake_unit, duration_days, status,
     started_at, protocol_id,
-    medicine:medicine_id (name, dosage_unit)
+    medicine:medicine_id (name, dosage_unit, dosage_per_pill, concentration_volume_ml)
   )
 `;
 
@@ -1054,12 +1054,14 @@ async function _dispatchTitrationN2Alert(userId, plan, medicineName, dispatcher,
     // Sem isto o push diria "etapa 1 de N" ao atingir o alvo.
     currentStage: target ? target.position + 1 : plan.totalSteps,
     totalStages: plan.totalSteps,
-    status: plan.transition === 'target_reached' ? 'alvo_atingido' : 'titulando',
-    // Reusa o campo do N1: a UI/copy do switch trata "requer nova apresentação".
-    requiresNewMedicine: plan.transition === 'medicine_switch',
-    nextStage: target
-      ? { dosage: String(target.dose), unit: target.intakeUnit || 'mg' }
-      : undefined,
+    // 029 F5 (T025): `transition` é a fonte da copy §8 — cobre single-med e multi-med pela
+    // mesma porta. O par N1 `status`/`requiresNewMedicine` NÃO é mais escrito (segue aceito
+    // no schema só p/ payload já enfileirado no outbox — R-193).
+    transition: plan.transition,
+    // Argumento de `confirm_titration_switch(p_step_id)`: é o que a ação [Iniciar etapa] confirma.
+    stepId: target?.id,
+    dose: target?.dose,
+    intakeUnit: target?.intakeUnit ?? null,
   };
 
   await dispatcher.dispatch({
@@ -1094,9 +1096,12 @@ async function _processUserTitrationsN2(userId, tz, dispatcher, correlationId) {
       // O join só existe aqui: o motor é puro e não conhece nomes nem executores.
       const protocolIdByStepId = new Map(steps.map((s) => [s.id, s.protocol_id ?? null]));
       const target = plan.pending ?? plan.activated;
-      const medicineName = target
-        ? steps.find((s) => s.id === target.id)?.medicine?.name
+      // Nome + concentração: o push diz qual caneta/cartela pegar. Numa escada o NOME se repete
+      // em todas as etapas ("Mounjaro" em todas), então só a concentração identifica (029 F5).
+      const targetMedicine = target
+        ? steps.find((s) => s.id === target.id)?.medicine
         : undefined;
+      const medicineName = targetMedicine ? formatMedicineFullName(targetMedicine) : undefined;
 
       const claimed = await _applyTitrationPlan(userId, titration.id, plan, protocolIdByStepId, correlationId);
       if (!claimed) continue; // outro ator chegou antes → nunca notificar sobre estado obsoleto

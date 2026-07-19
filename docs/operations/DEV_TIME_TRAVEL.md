@@ -1,7 +1,7 @@
 ---
 title: "Dev Time-Travel"
 description: "Procedimento técnico e receitas para simulação de passagens de tempo (time-travel) em ambiente de desenvolvimento sem afetar o relógio do sistema."
-version: "1.0.0"
+version: "2.0.0"
 status: active
 category: operation
 audience:
@@ -12,12 +12,43 @@ tags:
   - time-travel
   - smoke-test
 created_at: "2026-06-01"
-updated_at: "2026-06-01"
+updated_at: "2026-07-18"
 ---
 
-# Dev Time-Travel — smoke de janelas cross-dia (carry-over / look-ahead)
+# Dev Time-Travel — simular passagem de tempo em smoke
+
+> ## ⚠️ Leia primeiro: escolha a técnica certa
+>
+> Existem **duas** formas de mover uma feature no tempo, e usar a errada produz **smoke falso**.
+>
+> | | **Deslocar o relógio** (§1) | **Mover a âncora** (§2) |
+> |---|---|---|
+> | Quando usar | a feature compara "agora" com **horários do dia** | a feature faz aritmética de **dia-calendário** contra uma data **gravada** |
+> | Exemplos | carry-over / look-ahead (F4.3e), tolerância de dose, Live Activity | Evolução do tratamento (029), vigência de prescrição, qualquer coisa ancorada em `started_at`/`start_date` |
+> | Mexe em | `getNow`/`getTodayLocal` **no device** | uma coluna `timestamptz` **no banco** |
+> | Alcança o servidor? | ❌ **não** | ✅ sim (a data é a mesma dos dois lados) |
+> | Código necessário | offset injetável (§1 — **NÃO existe no repo hoje**) | nenhum: um `UPDATE` |
+>
+> **Regra prática:** se o cron/servidor participa do comportamento, deslocar o relógio do device
+> é insuficiente **e enganoso** — o cliente avança sozinho e o servidor fica para trás. Se o
+> "quando" da feature está gravado numa coluna, mova a coluna.
+
+> ## 🚧 Estado do código (verificado 2026-07-18)
+>
+> A §1 abaixo é **receita, não registro**: `__setDevNowOffsetMs`, `devTimeTravel.ts` (web e mobile)
+> e os botões de offset no Dev Hub **nunca foram commitados**. O commit `3d748654` (F4.3e) tocou
+> `utils/index.js` e `doseZones.js`, mas **não** `dateUtils.js` — o identificador só aparece no
+> texto do `AP-203`. O ferramental viveu na working tree durante aquele smoke e se perdeu; não foi
+> baixa da migração 040.
+>
+> Ou seja: **para usar a §1 é preciso implementá-la antes** (~1h). A §2 funciona hoje, sem código.
 
 ---
+
+# §1 — Deslocar o relógio (janelas cross-dia: carry-over / look-ahead)
+
+> **Status: NÃO IMPLEMENTADO no repo.** Receita de como reconstruir. Use só quando a feature
+> comparar "agora" com horários **dentro do dia** e o servidor não participar da decisão.
 
 ## Por que NÃO mexer no relógio do SO
 
@@ -184,7 +215,84 @@ WHERE user_id='<UID>' AND status='taken' AND scheduled_for > now();
 DELETE FROM public.medicine_logs WHERE user_id='<UID>' AND taken_at > now();
 ```
 
+---
+
+# §2 — Mover a âncora (features ancoradas em data gravada)
+
+**Funciona hoje, sem código.** Use quando o "quando" da feature está numa coluna do banco.
+
+## Princípio
+
+Se o comportamento é decidido por `dia_local(coluna_data) + N dias`, então **a coluna É o botão de
+viagem no tempo**. Retroagi-la move servidor e cliente **juntos**, porque ambos leem a mesma data.
+Não há offset para vazar em escritas (o footgun do `AP-203` simplesmente não existe aqui), e o
+cron continua funcionando: ele avalia a mesma aritmética.
+
+Deslocar o relógio do device neste caso é **pior que não testar**: a UI mostraria "vencida há 12
+dias" enquanto o servidor ainda acha que é dia 0 e nunca disparou o push. Verde falso.
+
+## Caso: Evolução do tratamento (spec 029)
+
+Vencimento: `dia_local(titration_steps.started_at) + duration_days`, avaliado pelo motor
+(`resolveTitrationAdvance`, servidor) **e** pela UI (`resolvePendingSwitch`, cliente).
+
+### Pelo Dev Hub (recomendado)
+
+Seção **"Spec 029 F5 — Evolução do tratamento"** (`_dev/devTitrationTriggers.ts`):
+
+| Botão | O que faz |
+|---|---|
+| 📊 Vencer HOJE (dia 0) | `started_at = hoje − duration_days` + próxima etapa `pending_confirmation` → card com os 2 botões |
+| 📊 Dia 3 | idem, −3 dias a mais → linha neutra + frase de contexto |
+| 📊 Vencida há 12 dias | idem, −12 → banner âmbar + `[Ajustar duração]` |
+| 🔔 Push LOCAL com as 2 ações | notificação local com a MESMA categoria/ações do push real |
+| ↩️ Resetar escada | vigente volta a começar hoje; próxima volta a `upcoming` |
+
+Reabra a aba **Hoje** após cada botão (`useFocusEffect` refaz o fetch).
+
+### Por SQL (equivalente, quando não houver app rodando)
+
+```sql
+-- Pendura a troca como se o cron tivesse rodado. :dias = 0 | 3 | 12
+UPDATE public.titration_steps
+   SET started_at = now() - ((duration_days + :dias) || ' days')::interval, status = 'current'
+ WHERE id = :step_vigente;
+UPDATE public.titration_steps SET status = 'pending_confirmation' WHERE id = :step_seguinte;
+```
+
+### Pré-requisitos (senão o cenário não aparece — e está CORRETO não aparecer)
+
+1. **A escada precisa ter troca de MEDICAMENTO.** Escada same-med (só muda a quantidade) faz
+   `dose_change` **automático** — o CTA não existe nela por design (Decisões §0). Confira:
+   ```sql
+   SELECT titration_id, count(DISTINCT medicine_id) FROM public.titration_steps GROUP BY 1;
+   ```
+   `1` = não serve para o smoke do F5.
+2. **Conta de smoke, nunca de paciente.** Confirmar a troca **pausa um tratamento e ativa outro**
+   de verdade, e o push vai para todos os devices ativos da conta (Constituição I).
+
+## O que o Dev Hub NÃO cobre
+
+O push **local** valida categoria, botões, handler e a chamada da RPC. Ele **não** valida:
+
+- a montagem do payload no servidor (`buildTitrationAlertPayload` → `expoPushChannel`);
+- o `interruptionLevel: 'time-sensitive'` aplicado pelo serviço do Expo.
+
+Esses dois só o disparo real cobre — e o job de titulação roda **às 08:00 SP em ponto**
+(`api/notify.ts`: `currentHour === 8 && currentMinute === 0`). Procedimento: arme a pendência na
+véspera com a âncora retroagida e confira o aparelho às 08:00.
+
+## Cleanup (§2)
+
+`devResetLadder` (ou o SQL acima ao contrário) restaura a escada. **Não desfaz uma confirmação já
+executada**: se `[Iniciar etapa]` foi tocado, a RPC pausou um tratamento e ativou/criou outro —
+reverter é manual, na tela de tratamentos. É o preço de exercitar o caminho real.
+
+---
+
 ## Relacionados
-- `AP-203` (time-travel vaza p/ escritas; nunca mexer no relógio do SO)
-- `CON-024` (`splitDayTimeline` — carry-over/today/look-ahead)
+- `AP-203` (offset vaza p/ escritas; nunca mexer no relógio do SO) — vale só para a §1
+- `AP-305` (capacidade declarada em contrato sem consumidor por canal)
+- `CON-024` (`splitDayTimeline` — carry-over/today/look-ahead) — caso da §1
+- `CON-032` (motor da Evolução do tratamento) — caso da §2
 - `plans/dose_instances_refactor/EXEC_PLAN_F4.3e.md` (local-only, não versionado)

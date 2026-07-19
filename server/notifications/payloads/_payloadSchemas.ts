@@ -50,13 +50,26 @@ export const stockExpiryAlertDataSchema = z.object({
   daysLeft: z.number()
 });
 
+// 029 F5 (T025 / FR-004): a copy da Evolução do tratamento passa a ser dirigida por
+// `transition` — a MESMA derivação do motor (CON-032), que cobre single-med (`dose_change`)
+// e multi-med (`medicine_switch`) pela mesma porta, sem o par N1 `status`+`requiresNewMedicine`.
+//
+// ⚠️ Aditivo (R-193): `status`/`requiresNewMedicine` continuam aceitos e OPCIONAIS só para não
+// invalidar payload já enfileirado no outbox no momento do deploy. Código novo NÃO os escreve —
+// `transition` é a fonte. A derivação de compatibilidade vive no builder.
 export const titrationAlertDataSchema = z.object({
   medicineName: z.string(),
   currentStage: z.number(),
   totalStages: z.number(),
-  status: z.enum(['alvo_atingido', 'titulando']),
-  // 012 Fase B2 (FR-021): etapa que iniciou exige nova apresentação (GLP-1
-  // cross-força). Quando true, a copy vira CTA "hora de trocar de caneta".
+  transition: z.enum(['dose_change', 'medicine_switch', 'target_reached']).optional(),
+  // Etapa-alvo: o `[Iniciar etapa]` chama `confirm_titration_switch(p_step_id)` com ele.
+  // Sem isto a ação do push não tem o que confirmar.
+  stepId: z.string().optional(),
+  // Dose da etapa-alvo na unidade de tomada, p/ a copy do dose_change ("2 comprimidos").
+  dose: z.number().optional(),
+  intakeUnit: z.string().nullable().optional(), // gotas|ml|UI|mg|cp (CHECK de titration_steps)
+  // ⚰️ LEGADO N1 — não escrever em código novo (ver nota acima).
+  status: z.enum(['alvo_atingido', 'titulando']).optional(),
   requiresNewMedicine: z.boolean().optional(),
   nextStage: z.object({
     dosage: z.string(),
@@ -97,8 +110,10 @@ export const kindSchema = z.enum([
 ]);
 
 // Schemas para ações interativas (Gate 4 preliminar)
+// 029 F5 (T025): `start_step`/`not_yet` são as 2 ações do medicine_switch, espelhando o card do
+// Hoje (Decisões §3.1). `start_step` carrega `params.stepId` → `confirm_titration_switch`.
 export const actionSchema = z.object({
-  id: z.enum(['take', 'skip', 'take_plan', 'take_misc', 'snooze']),
+  id: z.enum(['take', 'skip', 'take_plan', 'take_misc', 'snooze', 'start_step', 'not_yet']),
   label: z.string(),
   params: z.record(z.string(), z.unknown()).optional()
 });

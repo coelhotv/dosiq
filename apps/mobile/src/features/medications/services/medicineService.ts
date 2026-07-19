@@ -28,10 +28,17 @@ export const medicineService = createMedicineRepository({
     *,
     protocols(id)
   `,
+  // 029 F5 (T026 / §7.3): `titration_steps` entra no detalhe para o PRECHECK de exclusão.
+  // Uma etapa FUTURA de medicine_switch tem `protocol_id` NULL e pode não ter estoque — o
+  // medicamento passava no precheck (que só olhava protocols+stock) e a exclusão ia bater no
+  // FK `titration_steps_medicine_id_fkey` (sem ON DELETE ⇒ RESTRICT), devolvendo 23503 cru.
+  // R-295 — gate de saída EXECUTADO (2026-07-18, service role): HTTP 200, chave `titration_steps`
+  // presente na resposta.
   detailSelect: `
     *,
     stock(*),
     purchases(*),
-    protocols(*)
+    protocols(*),
+    titration_steps(id, position, status, titration_id, protocol_id)
   `,
 })

@@ -1,6 +1,6 @@
 // DevHubScreen — hub DEV-only de validação. Links pras telas de smoke da fase atual.
 
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
@@ -20,6 +20,19 @@ import {
   devLiveActivityLate,
   devLiveActivityEnd,
 } from '../devDoseActivitySpikeIOS'
+import {
+  devArmPendingSwitch,
+  devResetLadder,
+  devPushLocalSwitch,
+} from '../devTitrationTriggers'
+
+// Os gatilhos da 029 escrevem no banco e podem falhar por motivo ÚTIL (ex.: "escada same-med não
+// produz CTA"). Engolir o erro faria o botão parecer inerte; o Alert diz o que aconteceu.
+function runTitrationTrigger(fn: () => Promise<unknown>, okMsg: string) {
+  fn()
+    .then(() => Alert.alert('Dev — Evolução', `${okMsg}.\n\nReabra a aba Hoje para ver.`))
+    .catch((err) => Alert.alert('Dev — Evolução', err?.message ?? 'Falhou.'))
+}
 
 export default function DevHubScreen({ navigation }) {
   return (
@@ -104,6 +117,65 @@ export default function DevHubScreen({ navigation }) {
           <Text style={styles.note}>
             Prova PO-0.2: notif fixa, cronômetro corre sozinho (sem update), botões Registrar/Adiar.
             Sem som (não é alarme). Registrar/Adiar = sentinela DEV.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 029 F5 — Evolução do tratamento</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              runTitrationTrigger(() => devArmPendingSwitch(0), 'Troca pendente HOJE (dia 0)')
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📊 Vencer HOJE (dia 0) — card com [Iniciar etapa] [Ainda não]</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              runTitrationTrigger(() => devArmPendingSwitch(3), 'Pendente há 3 dias')
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📊 Dia 3 — linha neutra + frase de contexto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              runTitrationTrigger(() => devArmPendingSwitch(12), 'Vencida há 12 dias')
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📊 Vencida há 12 dias — banner âmbar + [Ajustar duração]</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              runTitrationTrigger(devPushLocalSwitch, 'Notificação local disparada')
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>🔔 Push LOCAL com as 2 ações (categoria + handler + RPC)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              runTitrationTrigger(devResetLadder, 'Escada restaurada')
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>↩️ Resetar escada (vigente começa hoje, próxima volta a futura)</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            **Move a ÂNCORA, não o relógio:** cada botão retroage o `started_at` da etapa vigente, que
+            é o que define o vencimento nos DOIS lados (motor no servidor + UI). Offset de "agora" no
+            device NÃO serve aqui — moveria só o cliente e o servidor ficaria para trás (ver
+            docs/operations/DEV_TIME_TRAVEL.md). Após cada botão, **reabra a aba Hoje**.{'\n\n'}
+            Exige escada com troca de MEDICAMENTO: escada same-med só faz dose_change automático e o
+            CTA não existe nela por design.{'\n\n'}
+            O push LOCAL valida categoria + botões + handler + RPC. NÃO valida a montagem do payload
+            no servidor nem o interruption level do Expo — só o run real das 08:00 SP pega esses dois.
           </Text>
         </View>
 

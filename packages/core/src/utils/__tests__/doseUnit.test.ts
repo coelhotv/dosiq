@@ -6,7 +6,39 @@ import {
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
+  formatMedicineFullName,
 } from '../doseUnit'
+
+describe('formatMedicineFullName', () => {
+  // O caso que motivou o helper: numa escada de titulação todas as etapas têm o MESMO nome,
+  // então "A próxima etapa usa Mounjaro" é verdade para todas e não identifica nada.
+  it('distingue duas canetas do mesmo medicamento pela concentração', () => {
+    const caneta25 = { name: 'Mounjaro', dosage_unit: 'mg/ml', dosage_per_pill: 5, concentration_volume_ml: 0.5 }
+    const caneta5 = { name: 'Mounjaro', dosage_unit: 'mg/ml', dosage_per_pill: 10, concentration_volume_ml: 0.5 }
+    const a = formatMedicineFullName(caneta25)
+    const b = formatMedicineFullName(caneta5)
+    expect(a).toBe('Mounjaro 2,5 mg / 0,5ml')
+    expect(b).toBe('Mounjaro 5 mg / 0,5ml')
+    expect(a).not.toBe(b)
+  })
+
+  it('sólido usa a concentração simples', () => {
+    expect(
+      formatMedicineFullName({ name: 'Selozok', dosage_unit: 'mg', dosage_per_pill: 25 })
+    ).toBe('Selozok 25 mg')
+  })
+
+  it('sem concentração cadastrada devolve só o nome (nunca "Nome undefined")', () => {
+    expect(formatMedicineFullName({ name: 'Vitamina D' })).toBe('Vitamina D')
+    expect(formatMedicineFullName({ name: 'Vitamina D', dosage_per_pill: null })).toBe('Vitamina D')
+  })
+
+  it('medicamento ausente cai no fallback — o chamador escolhe o texto', () => {
+    expect(formatMedicineFullName(null)).toBe('Medicamento')
+    expect(formatMedicineFullName(undefined, 'dose atual')).toBe('dose atual')
+    expect(formatMedicineFullName({ name: '   ' }, 'dose atual')).toBe('dose atual')
+  })
+})
 
 describe('formatDose (unidade de tomada — líquidos 022)', () => {
   it('gotas: plural e singular', () => {

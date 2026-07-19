@@ -1,4 +1,4 @@
-import { getNow, parseISO, getUserTime, formatLocalDate, addDays, getStartOfDayISO } from './dateUtils'
+import { getNow, parseISO, getUserTime, formatLocalDate, addDays, getStartOfDayISO, daysDifference } from './dateUtils'
 
 const MS_DAY = 24 * 60 * 60 * 1000
 
@@ -181,6 +181,98 @@ export function getEvolutionBadge(
   const current = Array.isArray(steps) ? steps.find((s) => s?.status === 'current') : null
   const isFinite = current != null && getStepDurationDays(current) !== null
   return isFinite ? { key: 'em_evolucao', label: 'Em evolução' } : { key: 'estavel', label: 'Estável' }
+}
+
+/**
+ * Switch pendente de confirmação, com HÁ QUANTO TEMPO espera. PURO e clock-free (spec 029 F5).
+ *
+ * Alimenta as 3 superfícies do CTA: o card do Hoje (§3.1), a linha neutra do estado pendente
+ * (§3.2, incl. a frase de contexto do dia 3) e o banner de etapa vencida (§7.2, "aguardando
+ * desde 24 jun · 12 dias").
+ *
+ * ⚠️ **DE ONDE VEM O "DESDE" — decisão do PO no C2 gate do F5 (2026-07-18).**
+ * Não existe coluna de "pendente desde": `titration_steps` (verificado no banco) só tem
+ * `updated_at`, e ele está DESCARTADO como fonte — a etapa pendente é editável
+ * (`EDITABLE_STATUSES` do titrationService inclui `pending_confirmation`), então uma edição
+ * qualquer da escada bumparia `updated_at` e **zeraria o contador em silêncio** (o "desde"
+ * pularia para hoje e a frase do dia 3 nunca apareceria). Nenhum teste pegaria isso.
+ *
+ * A verdade é derivada: o vencimento da etapa VIGENTE (`started_at` + `duration_days`, no dia
+ * local do dono) É o instante em que a próxima ficou pendente — o cron vira o status no dia do
+ * vencimento. Imune a edição de outras etapas, sem migração, e acompanha o `[Ajustar duração]`
+ * de graça: esticar a etapa vigente move o "aguardando desde" junto, que é o correto.
+ *
+ * Mesma aritmética de vencimento do motor (`resolveTitrationAdvance`): dia LOCAL do dono
+ * (R-253/R-254), nunca horário nem UTC.
+ *
+ * @param steps - etapas da escada (qualquer ordem; ordenadas aqui por position)
+ * @param todayLocal - dia local do dono (YYYY-MM-DD), ex.: `getTodayLocal(tz)`
+ * @param tz - fuso IANA do dono
+ * @returns null quando não há switch pendente ou quando não há âncora honesta para o "desde"
+ */
+export interface PendingSwitchInfo {
+  /** Etapa que aguarda confirmação (a que o `[Iniciar etapa]` inicia). */
+  pendingStepId: string
+  /** `position` da pendente. A UI rotula "Etapa N" com `position + 1`. */
+  pendingPosition: number
+  /** Etapa que SEGUE regendo os lembretes até a confirmação (Decisões §3.2). */
+  currentStepId: string
+  /** Dia local do vencimento (YYYY-MM-DD) = "aguardando desde". */
+  dueDay: string
+  /** Dias completos de espera. 0 no próprio dia do vencimento ("começa hoje"). */
+  daysWaiting: number
+}
+
+/** Etapa como o resolvedor de pendência precisa: a leitura + o `id` (a UI age sobre ele). */
+export interface TitrationStepPendingLike extends TitrationStepLike {
+  id: string
+}
+
+export function resolvePendingSwitch(
+  steps: TitrationStepPendingLike[] | null | undefined,
+  todayLocal: string,
+  tz = 'America/Sao_Paulo'
+): PendingSwitchInfo | null {
+  if (!Array.isArray(steps) || steps.length === 0) return null
+  if (!todayLocal) return null
+
+  const ordered = [...steps].sort((a, b) => a.position - b.position)
+  const pending = ordered.find((s) => s?.status === 'pending_confirmation')
+  if (!pending) return null
+
+  // 🔴 A vigente é a que PRECEDE a pendente — a de maior `position` menor que a dela — e NÃO a
+  // primeira `current` da lista. O banco não impede duas etapas `current` na mesma escada (só há
+  // `UNIQUE (titration_id, position)`; verificado em pg_constraint 2026-07-18), então o invariante
+  // "uma vigente por escada" vive só no motor. Com `find()` simples, uma escada com vigente
+  // residual na posição 0 ancorava o vencimento na etapa ERRADA e o "aguardando desde" saía
+  // silenciosamente errado — sem erro, sem log, só uma data plausível e falsa (encontrado no
+  // smoke do F5). Ancorar na etapa adjacente é correto por definição e imune a esse resíduo.
+  const currents = ordered.filter((s) => s?.status === 'current' && s.position < pending.position)
+  const current = currents.length > 0 ? currents[currents.length - 1] : undefined
+  // Sem etapa vigente não há âncora de vencimento. Acontece se o tratamento foi pausado com um
+  // switch pendente: a evolução congela junto (§2.2) e o CTA sai de cena — não inventar data.
+  if (!current?.started_at) return null
+
+  const days = getStepDurationDays(current)
+  // Vigente CONTÍNUA com pendente é estado incoerente (contínua nunca vence, logo nada poderia
+  // ter ficado pendente por vencimento). Silenciar é melhor que exibir uma data inventada.
+  if (days === null) return null
+
+  const startDay = localDayOf(current.started_at, tz)
+  if (!startDay) return null
+  const dueDay = addLocalDays(startDay, days)
+
+  // Negativo = pendência marcada antes do vencimento (relógio do device atrasado, edição manual).
+  // Piso em 0: "aguardando há -2 dias" é pior que "começa hoje".
+  const daysWaiting = Math.max(0, daysDifference(dueDay, todayLocal))
+
+  return {
+    pendingStepId: pending.id,
+    pendingPosition: pending.position,
+    currentStepId: current.id,
+    dueDay,
+    daysWaiting,
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

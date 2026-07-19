@@ -21,6 +21,7 @@ import PurchaseMedicineSheet from '@stock/components/PurchaseMedicineSheet'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
+import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { ROUTES } from '@navigation/routes'
 
 // Mensagem contextual do empty state por filtro (evita "nenhum cadastrado"
@@ -230,7 +231,7 @@ export default function StockScreen() {
           <StockEmptyState
             filter={filter}
             onNavigationPress={() =>
-              navigation.navigate(ROUTES.TREATMENTS, { screen: ROUTES.PROTOCOL_FORM })
+              navigateCrossTab(ROUTES.TREATMENTS, ROUTES.PROTOCOL_FORM)
             }
           />
         }

@@ -59,7 +59,7 @@ function _renderTitrationSection(protocol) {
   return (
     <div className="detail-item titration">
       <span className={`titration-badge ${protocol.titration_status}`}>
-        {protocol.titration_status === 'titulando' ? '📈 Titulando' : '🎯 Alvo Atingido'}
+        {protocol.titration_status === 'titulando' ? '📈 Em evolução' : '🎯 Alvo Atingido'}
       </span>
       {/* 029 F3.1: o bloco de progresso que vivia aqui lia `protocol.titration_scheduler_data` —
           um campo que NENHUM produtor no repositório jamais escreveu (grep global). Nunca

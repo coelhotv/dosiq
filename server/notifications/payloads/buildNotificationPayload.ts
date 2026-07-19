@@ -81,7 +81,9 @@ type Metadata = z.infer<typeof metadataSchema>;
  * Centralizador de construção de payloads de notificação.
  * Garante que todas as mensagens sigam o mesmo padrão visual e de escape.
  */
-const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title: string; body: string; pushBody: string }> = {
+// `actions` é opcional: só os kinds interativos a devolvem (029 F5 — titration_alert do
+// medicine_switch). `_buildPayloadContent` espalha o retorno, então elas fluem sem caso especial.
+const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title: string; body: string; pushBody: string; actions?: Array<z.input<typeof actionSchema>> }> = {
   daily_digest: (data) => buildDailyDigestPayload(data as never),
   adherence_report: (data) => buildAdherenceReportPayload(data as never),
   weekly_adherence: (data) => buildWeeklyAdherencePayload(data as never),
