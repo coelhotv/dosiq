@@ -8,7 +8,7 @@
 //
 // Métodos:
 // - upsertMany(instances)            → INSERT ... ON CONFLICT (protocol_id, scheduled_for) DO NOTHING (idempotente)
-// - wipeFuturePending(protocolId)    → DELETE status='pending' AND scheduled_for > now() (nunca toca passado/taken/missed)
+// - wipeFuturePending(protocolId)    → DELETE status IN ('pending','skipped_paused') AND scheduled_for > now() (nunca toca passado/taken/missed)
 // - getWindow(userId, fromTs, toTs)  → instâncias do usuário na janela, ordenadas
 // - countByStatus({userId, protocolId?, fromTs, toTs}) → head-count por status (Fase 3 leitura)
 // - markMissedDueInstances({now?}) → pending vencida (scheduled_for+tol < now) → missed (writer #3, F2.5)

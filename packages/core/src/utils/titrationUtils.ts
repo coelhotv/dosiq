@@ -228,6 +228,33 @@ export interface TitrationStepPendingLike extends TitrationStepLike {
   id: string
 }
 
+/**
+ * A etapa VIGENTE de uma escada, imune a `current` residual. PURO.
+ *
+ * 🔴 **Nunca use `find(s => s.status === 'current')`.** O banco não impede duas etapas `current`
+ * na mesma escada — só existe `UNIQUE (titration_id, position)` (verificado em `pg_constraint`
+ * 2026-07-18) —, então o invariante "uma vigente por escada" vive só no motor, não no schema.
+ * Com `find()` simples, uma escada com vigente residual na posição 0 devolve a etapa ERRADA:
+ * sem erro, sem log, só um resultado plausível e falso (encontrado no smoke do F5, e de novo
+ * pelo RC6 no F5.5 — ali a escolha alimentava uma ESCRITA, não só um rótulo).
+ *
+ * A vigente real é a de MAIOR `position` entre as `current`; quando há uma etapa de referência
+ * (a pendente), a vigente é a adjacente anterior a ela — daí o `beforePosition`.
+ *
+ * @param steps - etapas da escada (qualquer ordem; ordenadas aqui por position)
+ * @param beforePosition - quando informado, só considera vigentes ANTES desta posição
+ */
+export function resolveCurrentStep<T extends TitrationStepLike>(
+  steps: T[] | null | undefined,
+  beforePosition?: number
+): T | undefined {
+  if (!Array.isArray(steps) || steps.length === 0) return undefined
+  const currents = [...steps]
+    .sort((a, b) => a.position - b.position)
+    .filter((s) => s?.status === 'current' && (beforePosition === undefined || s.position < beforePosition))
+  return currents.length > 0 ? currents[currents.length - 1] : undefined
+}
+
 export function resolvePendingSwitch(
   steps: TitrationStepPendingLike[] | null | undefined,
   todayLocal: string,
@@ -240,15 +267,7 @@ export function resolvePendingSwitch(
   const pending = ordered.find((s) => s?.status === 'pending_confirmation')
   if (!pending) return null
 
-  // 🔴 A vigente é a que PRECEDE a pendente — a de maior `position` menor que a dela — e NÃO a
-  // primeira `current` da lista. O banco não impede duas etapas `current` na mesma escada (só há
-  // `UNIQUE (titration_id, position)`; verificado em pg_constraint 2026-07-18), então o invariante
-  // "uma vigente por escada" vive só no motor. Com `find()` simples, uma escada com vigente
-  // residual na posição 0 ancorava o vencimento na etapa ERRADA e o "aguardando desde" saía
-  // silenciosamente errado — sem erro, sem log, só uma data plausível e falsa (encontrado no
-  // smoke do F5). Ancorar na etapa adjacente é correto por definição e imune a esse resíduo.
-  const currents = ordered.filter((s) => s?.status === 'current' && s.position < pending.position)
-  const current = currents.length > 0 ? currents[currents.length - 1] : undefined
+  const current = resolveCurrentStep(ordered, pending.position)
   // Sem etapa vigente não há âncora de vencimento. Acontece se o tratamento foi pausado com um
   // switch pendente: a evolução congela junto (§2.2) e o CTA sai de cena — não inventar data.
   if (!current?.started_at) return null
@@ -272,6 +291,62 @@ export function resolvePendingSwitch(
     currentStepId: current.id,
     dueDay,
     daysWaiting,
+  }
+}
+
+/**
+ * Etapa cadastrada MANUALMENTE a partir de uma etapa contínua (spec 029 F5.5 / Decisões §7.4).
+ *
+ * 🔴 **Por que NÃO é `resolvePendingSwitch`.** São dois conceitos distintos:
+ *   - `resolvePendingSwitch` = pendência **VENCIDA** — existe um prazo que passou, e o "desde"
+ *     é derivado dele. Com vigente contínua ela devolve `null`, e isso está CERTO: contínua
+ *     nunca vence, então nada poderia ter ficado pendente por vencimento. **Não alterar.**
+ *   - `resolveManualNextStep` = pendência **SEM PRAZO** — o paciente está em manutenção e o
+ *     médico mudou a prescrição. O gatilho não é uma DATA, é um EVENTO CLÍNICO. Não há "desde",
+ *     não há atraso, não há o que interromper.
+ *
+ * Consequência de desenho: esta função alimenta SÓ a tela do tratamento (pull, banner teal).
+ * O Hoje segue silencioso — sem card, sem push, sem nag (R-239). A etapa fica INERTE até o
+ * toque: `resolveTitrationAdvance` devolve `null` com vigente contínua, então o cron nunca
+ * reivindica nem notifica.
+ *
+ * PURO e clock-free (não há data envolvida — é justamente o ponto).
+ *
+ * @param steps - etapas da escada (qualquer ordem; ordenadas aqui por position)
+ * @returns null quando a vigente NÃO é contínua (aí quem manda é o motor/`resolvePendingSwitch`)
+ *          ou quando não há etapa aguardando o usuário
+ */
+export interface ManualNextStepInfo {
+  /** Etapa que aguarda o toque do usuário (a que o `[Iniciar etapa N]` inicia). */
+  pendingStepId: string
+  /** `position` da pendente. A UI rotula "Etapa N" com `position + 1`. */
+  pendingPosition: number
+  /** Etapa contínua que SEGUE regendo os lembretes até o toque. */
+  currentStepId: string
+}
+
+export function resolveManualNextStep(
+  steps: TitrationStepPendingLike[] | null | undefined
+): ManualNextStepInfo | null {
+  if (!Array.isArray(steps) || steps.length === 0) return null
+
+  const ordered = [...steps].sort((a, b) => a.position - b.position)
+  const pending = ordered.find((s) => s?.status === 'pending_confirmation')
+  if (!pending) return null
+
+  // Mesma âncora de `resolvePendingSwitch` — ver `resolveCurrentStep`.
+  const current = resolveCurrentStep(ordered, pending.position)
+  if (!current) return null
+
+  // 🔴 O gate que separa as duas funções: SÓ vigente CONTÍNUA. Vigente finita significa que há
+  // prazo, logo o caso é do motor/`resolvePendingSwitch` — devolver algo aqui duplicaria a
+  // superfície (banner manual + card do Hoje para a mesma etapa).
+  if (getStepDurationDays(current) !== null) return null
+
+  return {
+    pendingStepId: pending.id,
+    pendingPosition: pending.position,
+    currentStepId: current.id,
   }
 }
 

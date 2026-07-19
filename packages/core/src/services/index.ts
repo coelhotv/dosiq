@@ -5,6 +5,7 @@ export {
   computeWindowEnd,
   planWindow,
   ensureInstancesUpTo,
+  resyncProtocolWindow,
   renewProtocolWindow,
 } from './doseInstancePlanner'
 

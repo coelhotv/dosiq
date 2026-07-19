@@ -16,7 +16,13 @@
 // silêncio). Etapa de OUTRO medicamento (medicine_switch) fica com `protocol_id` NULL até a RPC de
 // confirmação (F5) criar o protocolo executor.
 
-import { createTitrationRepository, getNow } from '@dosiq/core'
+import {
+  createTitrationRepository,
+  getNow,
+  createDoseInstanceRepository,
+  resyncProtocolWindow,
+  resolveUserTz,
+} from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import type { TitrationStepCreate } from '@dosiq/core'
 
@@ -74,7 +80,9 @@ export interface LadderStepInput {
  */
 export type LadderRow = TitrationStepCreate & {
   titration_id: string
-  status: 'upcoming' | 'current'
+  // `pending_confirmation`: só no gatilho manual do F5.5 (etapa criada a partir de uma vigente
+  // contínua). O cadastro inicial nunca o usa — ali a etapa 0 é `current` e as demais `upcoming`.
+  status: 'upcoming' | 'current' | 'pending_confirmation'
   started_at: string | null
   protocol_id: string | null
 }
@@ -285,6 +293,14 @@ function diffEditableStep(
  * 🔴 As novas etapas nascem `upcoming` + `started_at=null` (a ativação foi da etapa 0 no cadastro —
  * a edição não mexe na vigente, então o CHECK `current⇒started_at` nunca é tocado aqui).
  *
+ * 🔴 EXCEÇÃO F5.5 (`firstNewStepPending`): quando a etapa vigente é CONTÍNUA, a PRIMEIRA etapa
+ * criada nasce `pending_confirmation` — só ela. É o gatilho manual de saída da manutenção
+ * (Decisões §7.4): contínua nunca vence, então o cron jamais marcaria essa pendência sozinho, e
+ * sem ela a etapa nasceria `upcoming` inalcançável (o beco). As DEMAIS seguem `upcoming`: ao
+ * iniciar a primeira (se tiver duração), o motor reassume e o resto volta a ser automático — o
+ * gatilho manual serve só para SAIR da contínua.
+ * A etapa fica INERTE até o toque (`resolveTitrationAdvance` → null com vigente contínua).
+ *
  * Posições: reindex do sufixo a partir de `basePos` (= última congelada + 1). Como o builder só faz
  * append/remove/edit-in-place (sem reorder nem insert no meio), o sufixo só desloca PARA BAIXO ou
  * mantém — a ordem de escrita delete → update(asc position) → create em `saveLadderEdit` não colide
@@ -296,6 +312,8 @@ export function buildLadderEditPlan(
   protocolMedicineId: string,
   existing: ExistingLadderStep[],
   desired: DesiredEditableStep[],
+  /** F5.5: vigente contínua → a 1ª etapa CRIADA nasce `pending_confirmation` (ver doc acima). */
+  firstNewStepPending = false,
 ): LadderEditPlan {
   const ordered = [...existing].sort((a, b) => a.position - b.position)
   const frozen = ordered.filter((s) => FROZEN_STATUS.has(s.status))
@@ -307,6 +325,12 @@ export function buildLadderEditPlan(
   let runOpen = frozen.every((s) => s.medicine_id === protocolMedicineId)
 
   const existingById = new Map(editableExisting.map((s) => [s.id, s]))
+  // 🔴 Uma pendência por escada. Sem este guard, a SEGUNDA edição de uma escada já em manutenção
+  // (`firstNewStepPending` segue true enquanto a vigente for contínua) criaria uma 2ª etapa
+  // `pending_confirmation`: dois candidatos ao mesmo `[Iniciar etapa N]`, e a que o usuário NÃO
+  // tocasse ficaria pendente para sempre. A pendente que sobrevive à edição já é a saída da
+  // manutenção — a nova entra `upcoming`, atrás dela, e o motor a assume depois do toque.
+  const keepsPending = desired.some((d) => d.id && existingById.get(d.id)?.status === 'pending_confirmation')
   const keptIds = new Set<string>()
   const toUpdate: StepUpdate[] = []
   const toCreate: LadderRow[] = []
@@ -330,7 +354,11 @@ export function buildLadderEditPlan(
         dose: d.dose,
         intake_unit: d.intake_unit,
         duration_days: d.duration_days,
-        status: 'upcoming',
+        // Só a PRIMEIRA criada (toCreate ainda vazio) pode nascer pendente — ver doc da função.
+        status:
+          firstNewStepPending && !keepsPending && toCreate.length === 0
+            ? 'pending_confirmation'
+            : 'upcoming',
         started_at: null,
         protocol_id,
       })
@@ -427,6 +455,41 @@ const _REASON_COPY: Record<ConfirmSwitchReason, string> = {
  * (R5-008) e o padrão "REGISTRADO LOCAL" do 039 não existe no app. Sem rede, devolve `erro_rede`
  * com a verdade — a etapa NÃO foi iniciada e nada mudou — em vez de fingir sucesso local.
  */
+/**
+ * Materializa a janela de doses do protocolo que passou a executar (029 F5.5).
+ *
+ * **BEST-EFFORT, e isso é deliberado (R-245).** A transição JÁ aconteceu no banco quando esta
+ * função roda: falhar aqui não pode transformar uma confirmação bem-sucedida em erro na cara do
+ * usuário — ele iniciaria a etapa de novo e receberia "não pendente". O cron diário e a rede
+ * lazy seguem como malha de segurança; o atraso volta a ser o comportamento antigo, que é o pior
+ * caso aceitável.
+ *
+ * O select carrega o embed `titration_steps` porque o gerador PRECISA da escada: sem ela a dose
+ * cai para `dosage_per_intake` em silêncio (CON-032 / `generateInstances`). A FK
+ * `titration_steps.protocol_id` já filtra por protocolo — é exatamente o recorte certo.
+ * @private
+ */
+async function _resyncAfterSwitch(protocolId: string | null): Promise<void> {
+  if (!protocolId) return // `dose_change` sem executor vinculado: nada a materializar.
+  try {
+    const { data: protocol, error } = await typedClient
+      .from('protocols')
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at)')
+      .eq('id', protocolId)
+      .single()
+    if (error || !protocol) return
+
+    const tz = await resolveUserTz(typedClient, protocol.user_id)
+    await resyncProtocolWindow({
+      protocol,
+      doseInstanceRepo: createDoseInstanceRepository({ client: typedClient }),
+      tz,
+    })
+  } catch {
+    // silencioso — cron + rede lazy corrigem eventualmente (mesma política do write-path)
+  }
+}
+
 export async function confirmTitrationSwitch(stepId: string): Promise<ConfirmSwitchResult> {
   if (!stepId) return { ok: false, reason: 'nao_pendente', message: _REASON_COPY.nao_pendente }
 
@@ -435,6 +498,15 @@ export async function confirmTitrationSwitch(stepId: string): Promise<ConfirmSwi
     if (error) throw error
 
     if (data?.success === true) {
+      // 🔴 PARIDADE COM O WRITE-PATH (029 F5.5, smoke do PO). A RPC é a única escrita em
+      // `protocols` que não passa pelo repositório, logo a única que escapa do
+      // `syncInstancesOnWrite`. Sem este resync o protocolo recém-criado nasce SEM instância
+      // (calendário vazio até o cron das ~03:00) e o `dose_change` deixa as futuras já
+      // materializadas com a dose ANTIGA (lembrete divergindo do tratamento).
+      //
+      // Aqui e não na tela: são 3 chamadores (detalhe do tratamento, card do Hoje e a ação do
+      // push) — atrás da RPC, todos herdam.
+      await _resyncAfterSwitch(data.protocol_activated ?? null)
       return {
         ok: true,
         // Caminho normal do double-tap/retry — convergir, nunca sinalizar erro.

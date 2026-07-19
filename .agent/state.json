@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "tier": 2,
-    "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
-    "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "compress and distill project memory",
+    "mode": "coding",
+    "status": "completed",
+    "tier": 1,
+    "plan": "plans/specs/053-unit-label-formatter/plan.md",
+    "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
+    "goal": "029 F5.5 — sair da etapa contínua com gatilho manual + paridade de sync da RPC (T033-T041)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -19,7 +19,8 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity",
       "plans/specs/051-expo-updates",
-      "plans/specs/052-dose-instance-medicine-snapshot"
+      "plans/specs/052-dose-instance-medicine-snapshot",
+      "plans/specs/053-unit-label-formatter"
     ],
     "merged_pr": 759,
     "merged_squash": "18caf01d",
@@ -196,14 +197,18 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "spec_dir": "plans/specs/052-dose-instance-medicine-snapshot",
-    "spec": "plans/specs/052-dose-instance-medicine-snapshot/spec.md",
+    "spec_dir": "plans/specs/029-treatment-level-titration",
+    "spec": "plans/specs/053-unit-label-formatter/spec.md",
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
-      "eng-review"
+      "eng-review",
+      "eng-review-053"
     ],
-    "ceremony_findings_count": 5,
+    "ceremony_findings_count": 11,
     "ceremony_scope_decisions": [
+      "053 RC3 HIGH: baseline PO-3 não reproduz (44 vs 88 occ/35 arquivos) — congelar expressão de grep + contagem no plan.md ANTES do C2",
+      "053 RC3 HIGH: fonte única = ESTENDER DOSAGE_UNIT_LABELS + criar equivalente p/ INTAKE_UNITS (nunca mapa paralelo); tradução valor→rótulo DENTRO do formatador, rótulo é terminal (nunca volta p/ lógica endsWith('/ml'))",
+      "053 RC3: slicing A (core: mapa+formatadores+testes grafia+gate → PO-1/2/4/5/6) · B (sweep web+mobile+bot → PO-3); gate entra no Slice A; testes importam mapa REAL (nunca mockar DOSAGE_UNIT_LABELS); convenção fixa número+ESPAÇO+rótulo",
       "052 RC3 HIGH: medicine_id congelado deriva do STEP vigente em scheduled_for (titrationStage.medicine_id), fallback protocols.medicine_id fora de escada — nunca só de protocols (senão instância futura pós-troca congela o medicamento errado)",
       "052 RC3: recorte em 2 slices — A (migração+gerador/writer+backfill+verificação) · B (cutover readers→helper canônico + gate FR-005 + remove fallback); gate em migração SEPARADA",
       "052 RC3 guards: PO-2/PO-5 incluem suíte mobile Jest; PO-4 evidência por fonte (log vs sem log); PO-1 prova via caminho real de geração, não INSERT manual (AP-279); fixtures .test.sql entram no inventário de writers",
@@ -219,13 +224,13 @@
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
     "pr": 759,
-    "ceremony_type": "security-review"
+    "ceremony_type": "eng-review"
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 5,
     "rules_count": 246,
-    "anti_patterns_count": 302,
+    "anti_patterns_count": 303,
     "decisions_count": 84,
     "contracts_count": 31,
     "distillation_due": false
@@ -235,12 +240,12 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-18T00:00:00Z"
+    "index_loaded_at": "2026-07-19T19:05:24.425045+00:00"
   },
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 0,
+    "auto_fixed": 1,
     "ask_items": 0
   }
 }

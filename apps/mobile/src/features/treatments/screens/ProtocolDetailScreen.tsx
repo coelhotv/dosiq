@@ -160,8 +160,32 @@ function useProtocolDetailState() {
     })
     // Princípio IX: falha diz o que NÃO aconteceu e por quê — nunca genérico, nunca sucesso falso.
     if (result.ok === false) Alert.alert('A etapa não foi iniciada', result.message)
+
+    // 🔴 F5.5 (smoke do PO, 2026-07-19): num `medicine_switch` o executor MUDA — a RPC encerra
+    // este protocolo (active=false + end_date=hoje) e ativa/cria o da etapa nova. Ficar nesta
+    // tela mostrava o tratamento que o usuário acabou de deixar para trás, rotulado "pausado":
+    // no DIA da troca `end_date === hoje` e `resolveTreatmentStatus` só finaliza com
+    // `end_date < hoje`, então ele cai em PAUSADO por 24h. "Pausado" anuncia retomável, e o
+    // botão Retomar é um toggle genérico de `active`, sem consciência de titulação — reativá-lo
+    // com a etapa nova já ativa colocaria DOIS executores da mesma escada gerando dose_instances
+    // em paralelo (lembrete das duas concentrações do mesmo medicamento).
+    //
+    // Levar o usuário ao tratamento NOVO remove o convite ao erro e é o destino que ele quer:
+    // conferir se a dose nova entrou. `replace`, não `navigate` — o detalhe do tratamento
+    // encerrado não deve sobrar no back stack como caminho de volta a esse botão.
+    //
+    // ⚠️ NÃO fecha a janela de 24h: o mesmo tratamento continua alcançável (e retomável) pela
+    // aba Pausados. A correção definitiva é da **spec 052** (decisão do PO: `end_date <= hoje`
+    // reclassificaria quem pausa no último dia por vontade própria — o toggle é genérico e não
+    // sabe de titulação). Aqui só tiramos o usuário do caminho da armadilha.
+    if (result.ok === true && result.protocolActivated && result.protocolActivated !== id) {
+      navigation.replace(ROUTES.PROTOCOL_DETAIL, { id: result.protocolActivated })
+      return
+    }
+    // `dose_change` (mesmo medicamento): o executor é ESTE protocolo, só mudou a dose por
+    // tomada. Sair da tela seria gratuito — basta recarregar.
     await refresh()
-  }, [refresh])
+  }, [refresh, navigation, id])
 
   const onDelete = useCallback(() => {
     if (isDeleting) return
