@@ -4,11 +4,11 @@
   "session": {
     "mode": "coding",
     "status": "merged",
-    "tier": 2,
+    "tier": 1,
     "plan": "plans/specs/029-treatment-level-titration/plan.md",
     "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F5 MERGEADA (PR #758, squash 538766af). Smoke do PO rendeu 9 correcoes + 1 migracao de PROD (encerrar != pausar, 20260718_titration_switch_end_date, ja aplicada). RC5 3 achados + RC6 9 achados (5 aplicados / 3 recusados / 1 falso positivo). PENDENTE UNICO: push real das 08:00 — escada de smoke terminou CONTINUA, resolveTitrationAdvance retorna null, cron nao dispara; PO decidiu validar no F5.5/F6. Proximo: F5.5 (T033-T038, branch feature/029/f5.5-etapa-manual).",
-    "goal_type": "feature",
+    "goal": "044 HOTFIX MERGEADO (PR #759, squash 18caf01d): no modo dose-only, excluir medicamento com saldo de estoque dava beco sem saida (botao [Apagar] desabilitado + 'exclua as dependencias abaixo' com a LISTA VAZIA). A 044 F3 escondeu o card de estoque do sheet mas o pre-check de useMedicineDelete seguiu bloqueando por stockUnits > 0 sem consultar stockTrackingEnabled; a web ja tinha o guard desde a F3. Hipotese do PO ('zerar estoque na delecao') refutada no banco: stock_medicine_id_fkey e CASCADE, o delete ja zera. AP-307. RC6 clean. Proximo: 029 F5.5 (T033-T038, branch feature/029/f5.5-etapa-manual) — pendencia herdada do #758: push real das 08:00 nao validado.",
+    "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -19,9 +19,16 @@
       "plans/specs/049-docs-revamp",
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 758,
-    "merged_squash": "538766af",
+    "merged_pr": 759,
+    "merged_squash": "18caf01d",
     "merged_history": [
+      {
+        "pr": 759,
+        "squash": "18caf01d",
+        "spec": "044 hotfix — delete no modo dose-only",
+        "tier": 1,
+        "date": "2026-07-19"
+      },
       {
         "pr": 758,
         "squash": "538766af",
@@ -187,14 +194,14 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "spec_dir": "plans/specs/029-treatment-level-titration",
-    "spec": "plans/specs/029-treatment-level-titration/spec.md",
+    "spec_dir": "plans/specs/044-dose-only-mode",
+    "spec": "044 — dose-only mode (hotfix pos-entrega)",
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
-      "eng-review",
-      "security-review"
+      "RC5",
+      "RC6"
     ],
-    "ceremony_findings_count": 17,
+    "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
       "046 RC3 F1: consent_log SEM grant de INSERT p/ authenticated — escrita só via RPC SECURITY DEFINER (consent_grant/consent_revoke). Trilha que o próprio auditado escreve tem valor probatório zero; append-only barra UPDATE/DELETE, não INSERT forjado (FR-015)",
       "046 RC3 F2/F3: subject_hash SEMPRE derivado no servidor; pepper precisa existir DENTRO do Postgres (env da Vercel não é legível de plpgsql) com RAISE EXCEPTION se ausente — silêncio = HMAC de string vazia = hash igual pra todos (FR-016)",
@@ -207,24 +214,21 @@
       "046 RC-SEC S4: grant de COLUNA — authenticated não lê subject_hash nem user_id (identificador da trilha do controlador; expor cria oráculo e-mail↔hash sem servir a nenhum caso de uso) (FR-020)"
     ],
     "ai_review": {
+      "ceremony": "RC6",
+      "pr": 759,
       "engine": "agy",
       "status": "clean",
-      "pr": 721,
-      "critical": 0,
-      "high": 1,
-      "introduced_critical": 0,
-      "introduced_high": 0,
-      "note": "Single-pass agy test (pre-refinement prompt). agy HIGH=DoseListItem is introduced:false (pre-existing crash; true arg was dead — verified callee). 0 introduced critical/high => merge not blocked by RC6. Benchmarked vs Gemini official; drove SKILL RC6 Extensions #6/#7/#8 + full-file ctx + introduced/causation schema + tier-scaled multi-pass."
+      "findings": 0
     },
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
-    "branch": "feature/029/f3-motor",
-    "pr": 749
+    "branch": null,
+    "pr": 759
   },
   "memory": {
     "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "rules_count": 246,
-    "anti_patterns_count": 299,
+    "anti_patterns_count": 300,
     "decisions_count": 81,
     "contracts_count": 31,
     "distillation_due": false
@@ -237,9 +241,9 @@
     "index_loaded_at": "2026-07-18T00:00:00Z"
   },
   "code_review": {
-    "status": "issues_found",
+    "status": "clean",
     "critical": 0,
-    "auto_fixed": 3,
+    "auto_fixed": 0,
     "ask_items": 0
   }
 }
