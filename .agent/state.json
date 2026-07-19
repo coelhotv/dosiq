@@ -2,13 +2,13 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "merged",
-    "tier": 1,
-    "plan": "plans/specs/029-treatment-level-titration/plan.md",
-    "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "044 HOTFIX MERGEADO (PR #759, squash 18caf01d): no modo dose-only, excluir medicamento com saldo de estoque dava beco sem saida (botao [Apagar] desabilitado + 'exclua as dependencias abaixo' com a LISTA VAZIA). A 044 F3 escondeu o card de estoque do sheet mas o pre-check de useMedicineDelete seguiu bloqueando por stockUnits > 0 sem consultar stockTrackingEnabled; a web ja tinha o guard desde a F3. Hipotese do PO ('zerar estoque na delecao') refutada no banco: stock_medicine_id_fkey e CASCADE, o delete ja zera. AP-307. RC6 clean. Proximo: 029 F5.5 (T033-T038, branch feature/029/f5.5-etapa-manual) — pendencia herdada do #758: push real das 08:00 nao validado.",
-    "goal_type": "fix",
+    "mode": "distillation",
+    "status": "distilled",
+    "tier": 2,
+    "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
+    "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
+    "goal": "compress and distill project memory",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -17,7 +17,9 @@
       "plans/specs/047-inapp-review-prompt",
       "plans/specs/048-landing-glp1",
       "plans/specs/049-docs-revamp",
-      "plans/specs/050-notification-integrity"
+      "plans/specs/050-notification-integrity",
+      "plans/specs/051-expo-updates",
+      "plans/specs/052-dose-instance-medicine-snapshot"
     ],
     "merged_pr": 759,
     "merged_squash": "18caf01d",
@@ -194,24 +196,18 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "spec_dir": "plans/specs/044-dose-only-mode",
-    "spec": "044 — dose-only mode (hotfix pos-entrega)",
+    "spec_dir": "plans/specs/052-dose-instance-medicine-snapshot",
+    "spec": "plans/specs/052-dose-instance-medicine-snapshot/spec.md",
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
-      "RC5",
-      "RC6"
+      "eng-review"
     ],
-    "ceremony_findings_count": 0,
+    "ceremony_findings_count": 5,
     "ceremony_scope_decisions": [
-      "046 RC3 F1: consent_log SEM grant de INSERT p/ authenticated — escrita só via RPC SECURITY DEFINER (consent_grant/consent_revoke). Trilha que o próprio auditado escreve tem valor probatório zero; append-only barra UPDATE/DELETE, não INSERT forjado (FR-015)",
-      "046 RC3 F2/F3: subject_hash SEMPRE derivado no servidor; pepper precisa existir DENTRO do Postgres (env da Vercel não é legível de plpgsql) com RAISE EXCEPTION se ausente — silêncio = HMAC de string vazia = hash igual pra todos (FR-016)",
-      "046 RC3 F4: pipeline ÚNICO de exclusão — delete_user_account_by_id(uuid); Admin API deleteUser PROIBIDA (dois caminhos = próxima tabela nova conserta um e esquece o outro, R6/T000 se repetindo) (FR-017)",
-      "046 RC3 F5: prune D+90 nasce freado — dry_run default + cap por run + kill-switch; PO-5 não fecha em dry-run (FR-009 revisado)",
-      "046 RC3 re-slicing: A (trilha) → B (gate/superfícies) → C (prune). Prune sai do caminho crítico: é a única peça irreversível e a revogação já suspende o tratamento sem ela",
-      "046 RC-SEC S1 (CRÍTICO): delete_user_account() RECUSA exclusão com tratamento ativo (active_treatments_block :38) — regra de UX do titular. Fica no WRAPPER; o núcleo _by_id não a tem. Herdada, o prune (cujo alvo típico É alguém com tratamento ativo) nunca apagaria a conta: lei descumprida em silêncio, job verde (FR-018)",
-      "046 RC-SEC S2: DEFINER que recebe p_user_id e apaga tudo = IDOR se o grant escorregar (default do Postgres é PUBLIC) — REVOKE FROM PUBLIC/anon/authenticated antes do GRANT + guarda interna current_user <> 'service_role' (FR-019)",
-      "046 RC-SEC S3/S5: pepper no Vault (GUC é legível e vaza em pg_settings; pepper vazado torna subject_hash reversível por dicionário — e-mail tem entropia baixíssima); HMAC qualificado extensions.hmac (pgcrypto não está em uso e search_path='' não resolve hmac()) (FR-016/FR-021)",
-      "046 RC-SEC S4: grant de COLUNA — authenticated não lê subject_hash nem user_id (identificador da trilha do controlador; expor cria oráculo e-mail↔hash sem servir a nenhum caso de uso) (FR-020)"
+      "052 RC3 HIGH: medicine_id congelado deriva do STEP vigente em scheduled_for (titrationStage.medicine_id), fallback protocols.medicine_id fora de escada — nunca só de protocols (senão instância futura pós-troca congela o medicamento errado)",
+      "052 RC3: recorte em 2 slices — A (migração+gerador/writer+backfill+verificação) · B (cutover readers→helper canônico + gate FR-005 + remove fallback); gate em migração SEPARADA",
+      "052 RC3 guards: PO-2/PO-5 incluem suíte mobile Jest; PO-4 evidência por fonte (log vs sem log); PO-1 prova via caminho real de geração, não INSERT manual (AP-279); fixtures .test.sql entram no inventário de writers",
+      "052 US5/FR-007/PO-6 (achado do PO): mudança de identidade FUTURA (medicine_id manual OU etapa futura da escada) → wipeFuturePending + regen; medicine_id entra em SCHEDULING_FIELDS; saveLadderEdit dispara wipe do protocolo dono; verificar caminho dose_change do _applyTitrationPlan; passado intocável por construção"
     ],
     "ai_review": {
       "ceremony": "RC6",
@@ -222,14 +218,15 @@
     },
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
-    "pr": 759
+    "pr": 759,
+    "ceremony_type": "security-review"
   },
   "memory": {
-    "last_distillation": "2026-07-17T00:30:00Z",
-    "journal_entries_since_distillation": 12,
+    "last_distillation": "2026-07-19T16:30:00Z",
+    "journal_entries_since_distillation": 0,
     "rules_count": 246,
-    "anti_patterns_count": 300,
-    "decisions_count": 81,
+    "anti_patterns_count": 302,
+    "decisions_count": 84,
     "contracts_count": 31,
     "distillation_due": false
   },
