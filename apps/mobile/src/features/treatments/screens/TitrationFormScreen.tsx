@@ -513,8 +513,8 @@ function LadderStepsEditor({
             </View>
           ) : (
             <Text style={styles.closedNote}>
-              A etapa contínua encerra a evolução. Para inserir outra etapa, edite ou remova
-              a última etapa atual (contínua).
+              A <Text style={styles.previstoStrong}>etapa contínua</Text> encerra a evolução. Para inserir outra etapa, edite ou remova
+              a última etapa.
             </Text>
           )}
 
