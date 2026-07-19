@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Mobile — Hotfix 044: excluir medicamento no modo dose-only
+
+- **Fix** (`patch`, mobile `0.27.3 → 0.27.4`, PR #TBD): no modo **dose-only** (controle de estoque desligado), excluir um medicamento que tivesse saldo de estoque caía num **beco sem saída** (Constituição IX): o botão `[Apagar]` vinha desabilitado e o sheet dizia "Desative ou exclua as dependências abaixo" com a **lista vazia** — o usuário lia uma acusação sem réu. Causa: a 044 F3 escondeu o card de estoque do sheet quando o controle está desligado, mas o pré-check (`useMedicineDelete`) continuou bloqueando por `stockUnits > 0` sem consultar `stockTrackingEnabled`. A web já tinha o guard desde a F3 (`Medicines.tsx`); só o mobile ficou de fora. Correção: estoque só conta como dependência com o controle **ligado** — nenhum ajuste de saldo é necessário, porque `stock_medicine_id_fkey` é `ON DELETE CASCADE` (verificado no banco), então apagar o medicamento já limpa os lotes. Bloqueios por **tratamento** e por **etapa da Evolução do tratamento** seguem valendo nos dois modos (o FK `titration_steps_medicine_id_fkey` é `NO ACTION`). O default do parâmetro é `true` (fail-safe AP-277: ausência de dado nunca desliga o estoque por omissão). Matrix de cache (R-236) atualizada: a exclusão passa a invalidar `@dosiq/stock-snapshot`, já que o CASCADE apaga lotes que podiam estar no snapshot. Hook ganhou os primeiros testes (5).
+
 ### Evolução do tratamento — CTA de troca de etapa, push com ações e estados de erro (029 F5)
 
 - **Feat** (`minor` core `0.10.1 → 0.11.0` · `patch` mobile `0.27.2 → 0.27.3` · `patch` web `4.18.0 → 4.18.1`, PR #TBD): a troca de medicamento da Evolução do tratamento passa a ser **acionável pelo paciente**, nas duas superfícies.

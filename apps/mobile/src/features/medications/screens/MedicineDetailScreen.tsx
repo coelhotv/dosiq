@@ -263,8 +263,11 @@ function useMedicineDetailState() {
   // tem dependência), então ocultamos o botão pra não exibir ação morta.
   const hideDelete = route.params?.hideDelete === true
   const { data, loading, error, refresh } = useMedicine(id)
-  const { preCheck, confirmDelete, isLoading: deleteLoading } = useMedicineDelete(data)
   const { enabled: stockTrackingEnabled } = useStockTracking()
+  const { preCheck, confirmDelete, isLoading: deleteLoading } = useMedicineDelete(
+    data,
+    stockTrackingEnabled
+  )
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [blockedOpen, setBlockedOpen] = useState(false)
 

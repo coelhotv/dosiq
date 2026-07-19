@@ -16,21 +16,23 @@ import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 import { medicineService } from '../services/medicineService'
 
 const MEDICINES_CACHE_KEY = '@dosiq/medicines-snapshot'
+const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 
 /**
  * Cache invalidation matrix (R-236) — useMedicineDelete:
  *
  * confirmDelete só dispara se preCheck.canDelete (hard block contra protocolos
- * e stock > 0). Quando passa o pre-check, garantidamente:
+ * e, com controle de estoque ligado, stock > 0). Quando passa o pre-check:
  *   - sem protocols → nada em treatments-snapshot/today-snapshot
- *   - sem stock     → nada em stock-snapshot
- * Logo invalida APENAS:
+ * MAS no modo dose-only (stockTrackingEnabled=false) o estoque deixa de bloquear:
+ * o CASCADE do FK apaga lotes que podiam estar no snapshot. Logo invalida:
  *   - @dosiq/medicines-snapshot
+ *   - @dosiq/stock-snapshot
  *
- * Se algum dia o hard block virar soft, ESTA matrix muda — adicionar
- * treatments-snapshot, today-snapshot e stock-snapshot ao Promise.all abaixo.
+ * Se algum dia o hard block de protocolos virar soft, ESTA matrix muda — adicionar
+ * treatments-snapshot e today-snapshot ao Promise.all abaixo.
  */
-export function useMedicineDelete(medicine) {
+export function useMedicineDelete(medicine, stockTrackingEnabled = true) {
   const navigation = useNavigation()
   const { show } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -51,7 +53,14 @@ export function useMedicineDelete(medicine) {
     // Etapas já `completed` também contam: apagar o medicamento apagaria o histórico da escada.
     const titrationSteps = Array.isArray(medicine?.titration_steps) ? medicine.titration_steps : []
 
-    const hasDependencies = protocols.length > 0 || stockUnits > 0 || titrationSteps.length > 0
+    // 044 F3: no modo dose-only o estoque é superfície invisível — o sheet de bloqueio
+    // esconde o card de estoque, então bloquear por `stockUnits > 0` produzia um beco sem
+    // saída (botão desabilitado, "dependências abaixo", lista vazia). O FK
+    // `stock_medicine_id_fkey` é ON DELETE CASCADE: apagar o medicamento zera o estoque
+    // no banco sem passo extra. Estoque só é dependência quando o controle está ligado.
+    const stockBlocks = stockTrackingEnabled && stockUnits > 0
+
+    const hasDependencies = protocols.length > 0 || stockBlocks || titrationSteps.length > 0
 
     return {
       canDelete: !hasDependencies,
@@ -61,14 +70,14 @@ export function useMedicineDelete(medicine) {
       stockLots,
       hasStock: stockUnits > 0,
     }
-  }, [medicine])
+  }, [medicine, stockTrackingEnabled])
 
   const confirmDelete = useCallback(async () => {
     if (!medicine?.id) return false
     setIsLoading(true)
     try {
       await medicineService.delete(medicine.id)
-      await AsyncStorage.removeItem(MEDICINES_CACHE_KEY).catch(() => {})
+      await AsyncStorage.multiRemove([MEDICINES_CACHE_KEY, STOCK_CACHE_KEY]).catch(() => {})
       successHaptic()
       show('Medicamento removido', { variant: 'success' })
       navigation.goBack()
