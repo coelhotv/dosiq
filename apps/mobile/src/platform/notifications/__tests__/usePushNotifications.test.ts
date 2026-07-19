@@ -92,6 +92,45 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     jest.clearAllMocks()
   })
 
+  // Regressão do smoke do 029 F5: listener DUPLICADO.
+  //
+  // O registro morava dentro de `setupPush()` (async), depois de vários `await`. Quando o efeito
+  // re-rodava — a identidade de `session` muda a cada refresh de token — o cleanup executava com
+  // a variável ainda `undefined`, `remove()` virava no-op, e a execução antiga seguia até
+  // registrar um listener órfão. Cada ciclo somava mais um, e um único toque em [Iniciar etapa]
+  // chamava a RPC N vezes (log real: `already_confirmed` + `confirmed` no mesmo toque).
+  //
+  // O que se trava aqui: TODO listener registrado tem que ser removido no cleanup. Se o registro
+  // voltar para dentro do async, o `remove` do 1º ciclo deixa de ser chamado e este teste quebra.
+  it('re-render com nova sessão remove o listener anterior (sem acumular)', async () => {
+    const removes = []
+    Notifications.addNotificationResponseReceivedListener.mockImplementation(() => {
+      const remove = jest.fn()
+      removes.push(remove)
+      return { remove }
+    })
+
+    const { rerender, unmount } = renderHook(
+      ({ session }) => usePushNotifications({ supabase: {}, session }),
+      { initialProps: { session: makeSession() } }
+    )
+
+    // Nova IDENTIDADE de sessão (mesmo usuário) — é o que o refresh de token produz.
+    rerender({ session: makeSession() })
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+
+    expect(removes.length).toBeGreaterThanOrEqual(2)
+    // Todos menos o vivo já foram removidos.
+    expect(removes[0]).toHaveBeenCalled()
+
+    unmount()
+    // Depois do unmount NENHUM listener segue vivo.
+    removes.forEach((r) => expect(r).toHaveBeenCalled())
+  })
+
   // Cenário 1: tap foreground com bulk-plan
   it('tap com bulk-plan navega para TODAY com params', async () => {
     const capturedHandler = { fn: null }

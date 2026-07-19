@@ -389,3 +389,173 @@ export async function saveLadderEdit(plan: LadderEditPlan): Promise<void> {
     await titrationRepo.createSteps(plan.toCreate)
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIRMAÇÃO DO SWITCH (029 F5 / T024-T025 / FR-002 · PO-1)
+//
+// A transição NÃO é reimplementada aqui: quem pausa o protocolo antigo, ativa/cria o novo e
+// escreve a trilha é a RPC `confirm_titration_switch(p_step_id)`, viva em prod desde o F3
+// (contrato em CON-032, verificado contra `docs/migrations/20260716_titration_switch_rpc.sql`).
+//
+// 🔴 IDEMPOTÊNCIA É POR ESTADO, NÃO POR TOKEN (AP-221 / R-288): o claim
+// `WHERE status='pending_confirmation'` DENTRO da RPC É a exclusão mútua. Por isso este módulo
+// NÃO tem lock, flag de "confirmando" nem fila — um segundo primitivo de concorrência no cliente
+// competiria com o do banco e reabriria a classe de bug que o claim fecha. Double-tap e retry
+// caem em `already_confirmed:true`, que é o caminho NORMAL e NÃO é erro: a UI converge para
+// "etapa iniciada", nunca mostra falha (Decisões §10 / Constituição IX).
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** Motivos de recusa da RPC (verbatim do contrato — CON-032). */
+export type ConfirmSwitchReason = 'nao_pendente' | 'step_obsoleto' | 'nao_autenticado'
+
+export type ConfirmSwitchResult =
+  | { ok: true; alreadyConfirmed: boolean; transition: string | null; protocolActivated: string | null; protocolPaused: string | null }
+  | { ok: false; reason: ConfirmSwitchReason | 'erro_rede'; message: string }
+
+/** Copy de recusa — factual, diz o que NÃO aconteceu (Constituição IX). @private */
+const _REASON_COPY: Record<ConfirmSwitchReason, string> = {
+  // A etapa mudou de estado sob o usuário (outro device confirmou, o cron avançou, edição).
+  nao_pendente: 'Esta etapa não está mais aguardando confirmação. Abra o tratamento para ver a evolução atualizada.',
+  step_obsoleto: 'Esta etapa já foi concluída. Abra o tratamento para ver a evolução atualizada.',
+  nao_autenticado: 'Sua sessão expirou. Entre de novo para iniciar a etapa.',
+}
+
+/**
+ * Inicia a etapa pendente (o que o `[Iniciar etapa]` faz, no card do Hoje e no push).
+ *
+ * ⚠️ Sem fila offline (decisão do PO no C2 gate do F5): o write-path clínico é online-first
+ * (R5-008) e o padrão "REGISTRADO LOCAL" do 039 não existe no app. Sem rede, devolve `erro_rede`
+ * com a verdade — a etapa NÃO foi iniciada e nada mudou — em vez de fingir sucesso local.
+ */
+export async function confirmTitrationSwitch(stepId: string): Promise<ConfirmSwitchResult> {
+  if (!stepId) return { ok: false, reason: 'nao_pendente', message: _REASON_COPY.nao_pendente }
+
+  try {
+    const { data, error } = await typedClient.rpc('confirm_titration_switch', { p_step_id: stepId })
+    if (error) throw error
+
+    if (data?.success === true) {
+      return {
+        ok: true,
+        // Caminho normal do double-tap/retry — convergir, nunca sinalizar erro.
+        alreadyConfirmed: data.already_confirmed === true,
+        transition: data.transition ?? null,
+        protocolActivated: data.protocol_activated ?? null,
+        protocolPaused: data.protocol_paused ?? null,
+      }
+    }
+
+    const reason: ConfirmSwitchReason = _REASON_COPY[data?.reason as ConfirmSwitchReason]
+      ? (data.reason as ConfirmSwitchReason)
+      : 'nao_pendente'
+    return { ok: false, reason, message: _REASON_COPY[reason] }
+  } catch {
+    return {
+      ok: false,
+      reason: 'erro_rede',
+      message: 'Sem conexão agora — a etapa não foi iniciada e nada mudou no seu tratamento. Tente de novo quando a internet voltar.',
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PENDÊNCIA NO HOJE (029 F5 / T024)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Só os 2 estados que o CTA precisa: a PENDENTE (o que o botão inicia) e a VIGENTE (a âncora do
+// "aguardando desde" e quem segue regendo os lembretes). Etapas passadas/futuras não entram.
+//
+// R-295 — gate de saída EXECUTADO (2026-07-18, service role): HTTP 200.
+//   curl "$SUPABASE_URL/rest/v1/titration_steps?select=<abaixo, sem whitespace>&limit=1"
+// `presentation` no embed é obrigatória (R-267): sem ela o MedicineIcon cai no legado
+// `dosage_unit LIKE '%/ml'` e injetável vira gotas.
+const PENDING_SWITCH_SELECT = `
+  id, titration_id, position, status, started_at, duration_days, dose, intake_unit, protocol_id,
+  medicine:medicines(id, name, presentation, dosage_unit, dosage_per_pill, units_per_ml, concentration_volume_ml)
+`
+
+export interface PendingSwitchStep {
+  id: string
+  titration_id: string
+  position: number
+  status: string
+  started_at: string | null
+  duration_days: number | null
+  dose: number
+  intake_unit: string | null
+  protocol_id: string | null
+  medicine: {
+    id: string
+    name: string
+    presentation: string | null
+    dosage_unit: string | null
+    dosage_per_pill: number | null
+    units_per_ml: number | null
+    // Denominador do rótulo do líquido: sem ele o Mounjaro vira "5 mg/ml" (razão normalizada) em
+    // vez de "2,5 mg / 0,5 mL" (o que está escrito na caneta) — e é justamente a concentração que
+    // distingue uma etapa da outra numa escada do mesmo medicamento.
+    concentration_volume_ml: number | null
+  } | null
+}
+
+/**
+ * Etapas vigente+pendente de TODAS as escadas do usuário (o Hoje não tem protocolo em mão).
+ * O agrupamento por escada e a decisão de exibir ficam no hook — aqui é só I/O.
+ */
+export async function getPendingSwitchSteps(): Promise<PendingSwitchStep[]> {
+  const userId = await getUserId()
+  const { data, error } = await typedClient
+    .from('titration_steps')
+    .select(PENDING_SWITCH_SELECT)
+    .eq('user_id', userId)
+    .in('status', ['current', 'pending_confirmation'])
+    .order('position', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as PendingSwitchStep[]
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRANSPARÊNCIA PÓS-CONFIRMAÇÃO (029 F5 / T024 · Decisões §3.3 · PO-1)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// R-295 — gate de saída EXECUTADO (2026-07-18, service role): HTTP 200.
+// ⚠️ A coluna de horários é `time_schedule` (jsonb), NÃO `times`: a 1ª tentativa deste select
+// levou `42703 column protocols.times does not exist` no gate — o nome "times" veio da memória,
+// não do banco. É exatamente a classe do AP-300: o select é string, tsc/lint/teste não pegam.
+const SWITCH_OUTCOME_SELECT = `
+  id, frequency, time_schedule, weekdays, dosage_per_intake, intake_unit, active,
+  medicine:medicines(id, name, dosage_unit, dosage_per_pill, units_per_ml, presentation, concentration_volume_ml)
+`
+
+export interface SwitchOutcomeProtocol {
+  id: string
+  frequency: string | null
+  time_schedule: string[] | null
+  // pt-BR por extenso ('segunda', 'quinta'), NÃO índice numérico — conferido em prod.
+  weekdays: string[] | null
+  dosage_per_intake: number | null
+  intake_unit: string | null
+  active: boolean
+
+  medicine: any
+}
+
+/**
+ * Lê os 2 protocolos que a transição mexeu, para o sheet listar o que o app fez MECANICAMENTE
+ * (o pausado e o ativado). Best-effort: se falhar, o sheet degrada para a versão sem detalhes —
+ * a transição JÁ aconteceu no servidor e não pode ser desfeita por erro de leitura (R-245).
+ */
+export async function getSwitchOutcomeProtocols(ids: string[]): Promise<SwitchOutcomeProtocol[]> {
+  const wanted = ids.filter(Boolean)
+  if (wanted.length === 0) return []
+  const userId = await getUserId()
+  const { data, error } = await typedClient
+    .from('protocols')
+    .select(SWITCH_OUTCOME_SELECT)
+    .eq('user_id', userId)
+    .in('id', wanted)
+
+  if (error) throw error
+  return (data ?? []) as SwitchOutcomeProtocol[]
+}

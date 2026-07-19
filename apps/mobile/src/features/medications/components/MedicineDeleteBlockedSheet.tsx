@@ -13,13 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
-const { AlertCircle, Layers, Package, ChevronRight, Trash2 } = LucideIcons as any
+const { AlertCircle, Layers, Package, ChevronRight, Trash2, BarChart3 } = LucideIcons as any
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export function MedicineDeleteBlockedSheet({
   visible,
   medicineName,
   protocols = [],
+  titrationSteps = [],
   stockUnits = 0,
   stockLots = 0,
   stockTrackingEnabled = true,
@@ -116,6 +117,26 @@ export function MedicineDeleteBlockedSheet({
               </View>
               <ChevronRight size={18} color={colors.text.muted} />
             </Pressable>
+          ) : null}
+
+          {/* 029 F5 (T026 / §7.3): etapas da Evolução do tratamento. Sem este bloco, um
+              medicamento usado SÓ por uma etapa futura (protocol_id NULL, sem estoque) parecia
+              excluível e a exclusão morria no FK com erro cru. Não é clicável: a etapa se edita
+              pela tela do tratamento, não daqui — um destino errado seria pior que nenhum. */}
+          {titrationSteps.length > 0 ? (
+            <View style={styles.depCard}>
+              <View style={[styles.depIconWrap, styles.depIconWrapSupplement]}>
+                <BarChart3 size={18} color={colors.supplement[700]} />
+              </View>
+              <View style={styles.depBody}>
+                <Text style={styles.depKicker}>Evolução do tratamento</Text>
+                <Text style={styles.depName}>
+                  {titrationSteps.length === 1
+                    ? '1 etapa usa este medicamento'
+                    : `${titrationSteps.length} etapas usam este medicamento`}
+                </Text>
+              </View>
+            </View>
           ) : null}
         </ScrollView>
 

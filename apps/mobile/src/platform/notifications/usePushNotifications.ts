@@ -11,6 +11,7 @@ import { getPushPermissionStatus } from './pushPermission'
 import { registerPushToken, PUSH_TOKEN_KEY } from './registerPushToken'
 import { unregisterNotificationDevice } from './unregisterNotificationDevice'
 import { ensurePushChannel } from './ensurePushChannel'
+import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrationAction } from './titrationNotificationActions'
 import { navigationRef } from '../../navigation/navigationRef'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
@@ -72,7 +73,36 @@ export function usePushNotifications({ supabase, session }) {
     if (!session || !supabase) return
 
     let isMounted = true
-    let notificationSubscription
+
+    // 🔴 REGISTRO SÍNCRONO, FORA do setup async (029 F5 — smoke do PO).
+    // Antes o listener era criado DENTRO de `setupPush()`, depois de vários `await`. Quando o
+    // efeito re-rodava (a identidade de `session` muda a cada refresh de token), o cleanup
+    // executava com a variável ainda `undefined` → `remove()` virava no-op, e a execução antiga
+    // seguia até registrar um listener que ninguém mais conseguia remover. Cada ciclo acumulava
+    // mais um: o toque em [Iniciar etapa] disparava o handler N vezes (visto no log como
+    // `already_confirmed` + `confirmed` no mesmo toque). Registrar aqui — a chamada é síncrona e
+    // nunca precisou do await — garante que o cleanup SEMPRE tenha o handle.
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    })
+    const notificationSubscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        // 029 F5: ação da Evolução do tratamento resolve em background e NÃO navega
+        // (opensAppToForeground:false). Só o toque no CORPO cai no deeplink.
+        // O guard é SÍNCRONO: a navegação das demais notificações não ganha um microtask
+        // de atraso por causa desta feature.
+        if (isTitrationAction(response)) {
+          handleTitrationNotificationAction(response).catch(() => {})
+          return
+        }
+        navigateFromPush(response.notification.request.content.data)
+      }
+    )
 
     async function setupPush() {
       try {
@@ -84,25 +114,25 @@ export function usePushNotifications({ supabase, session }) {
           coldStartProcessed.current = true
           const lastResponse = await Notifications.getLastNotificationResponseAsync()
           if (lastResponse && isMounted) {
-            navigateFromPush(lastResponse.notification.request.content.data)
+            // MESMO guard do listener (RC5 do F5): a resposta pendente pode ser uma AÇÃO da
+            // Evolução do tratamento — app morto + toque em [Iniciar etapa] chega por aqui, não
+            // pelo listener. Sem o guard o app NAVEGA em vez de confirmar e a RPC nunca é
+            // chamada: o toque some em silêncio, que é o oposto do Princípio IX.
+            if (isTitrationAction(lastResponse)) {
+              handleTitrationNotificationAction(lastResponse).catch(() => {})
+            } else {
+              navigateFromPush(lastResponse.notification.request.content.data)
+            }
           }
         }
 
-        // Handlers + tap listener SEMPRE (independem de permissão; harmless se não
-        // houver notificações). Garantem que um tap roteie certo assim que houver.
-        Notifications.setNotificationHandler({
-          handleNotification: async () => ({
-            shouldShowBanner: true,
-            shouldShowList: true,
-            shouldPlaySound: true,
-            shouldSetBadge: false,
-          }),
+        // Categoria iOS das ações da Evolução do tratamento (029 F5). Sem ela o push do
+        // medicine_switch chega SEM botões, em silêncio. No-op no Android. Idempotente.
+        // DEPOIS do listener e com catch PRÓPRIO de propósito: é um enfeite de UMA feature, e
+        // não pode derrubar o setup inteiro do push (deeplink + registro de token) se falhar.
+        ensureTitrationCategories().catch((err) => {
+          if (__DEV__) console.warn('[usePushNotifications] categoria de titulação falhou:', err?.message)
         })
-        notificationSubscription = Notifications.addNotificationResponseReceivedListener(
-          (response) => {
-            navigateFromPush(response.notification.request.content.data)
-          }
-        )
 
         // REGISTER-ONLY: registra o token só se a permissão JÁ foi concedida.
         // NUNCA pedir aqui — o prompt é dos pontos de intenção (pushPermission.js).
@@ -124,7 +154,7 @@ export function usePushNotifications({ supabase, session }) {
 
     return () => {
       isMounted = false
-      notificationSubscription?.remove()
+      notificationSubscription.remove()
     }
   }, [supabase, session])
 

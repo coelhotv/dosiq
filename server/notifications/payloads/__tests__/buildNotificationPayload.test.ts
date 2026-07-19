@@ -252,31 +252,92 @@ describe('buildNotificationPayload', () => {
   });
 
   // 012 Fase B2 (FR-021): titulação N1 — etapa cross-força vira CTA de troca.
-  describe('titration_alert', () => {
+  // 029 F5 (T025 / FR-004): copy da Evolução do tratamento, dirigida por `transition`.
+  // Substitui a copy legada do 012/FR-021, que dizia "caneta" (proibido — §0/§8) e chamava a
+  // entidade de "Titulação" (o naming é "Evolução do tratamento").
+  describe('titration_alert (Evolução do tratamento — copy §8)', () => {
     const base = {
-      medicineName: 'Ozempic',
+      medicineName: 'Semaglutida 0,5 mg',
       currentStage: 2,
       totalStages: 3,
-      status: 'titulando',
     };
 
-    it('avanço normal (sem troca) → copy informativa "conforme o cronograma"', () => {
-      const payload = buildNotificationPayload({ kind: 'titration_alert', data: base });
-      expect(payload.title).toBe('🎯 Atualização de Titulação');
-      expect(payload.pushBody).toContain('iniciada conforme o cronograma');
-      expect(payload.pushBody).not.toContain('trocar');
-    });
-
-    it('etapa requiresNewMedicine → CTA "hora de trocar de apresentação"', () => {
+    it('medicine_switch → "Etapa N começa hoje" + as 2 ações do card do Hoje', () => {
       const payload = buildNotificationPayload({
         kind: 'titration_alert',
-        data: { ...base, requiresNewMedicine: true },
+        data: { ...base, transition: 'medicine_switch', stepId: 'step-uuid', dose: 0.5, intakeUnit: 'mg' },
       });
-      expect(payload.title).toBe('🔄 Hora de trocar de apresentação');
-      expect(payload.pushBody).toContain('nova apresentação');
-      expect(payload.pushBody).toContain('estoque');
-      // Sem recomendação de dose nova (SaMD) — só aviso de troca.
-      expect(payload.pushBody).not.toContain('conforme o cronograma');
+      expect(payload.title).toBe('Etapa 2 começa hoje');
+      expect(payload.pushBody).toContain('Semaglutida 0,5 mg');
+      expect(payload.pushBody).toContain('Como prescrito pelo seu médico.');
+      expect(payload.actions).toEqual([
+        { id: 'start_step', label: 'Iniciar etapa', params: { stepId: 'step-uuid' } },
+        { id: 'not_yet', label: 'Ainda não', params: { stepId: 'step-uuid' } },
+      ]);
+    });
+
+    it('medicine_switch SEM stepId → sai sem botão (ação sem alvo falharia no toque)', () => {
+      const payload = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, transition: 'medicine_switch' },
+      });
+      expect(payload.actions).toEqual([]);
+    });
+
+    it('dose_change → informativo, SEM botões, dose em pt-BR (§3.4)', () => {
+      const payload = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, medicineName: 'Metoprolol 50 mg', transition: 'dose_change', dose: 2, intakeUnit: 'cp' },
+      });
+      expect(payload.title).toBe('Dose ajustada para 2 comprimidos');
+      expect(payload.pushBody).toContain('etapa 2 de 3 da evolução do tratamento, como prescrito.');
+      expect(payload.pushBody).toContain('Os lembretes já estão na dose nova.');
+      expect(payload.actions).toEqual([]);
+    });
+
+    it('dose_change de 1 comprimido → singular', () => {
+      const payload = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, transition: 'dose_change', dose: 1, intakeUnit: 'cp' },
+      });
+      expect(payload.title).toBe('Dose ajustada para 1 comprimido');
+    });
+
+    it('target_reached → conclusão factual, sem ações', () => {
+      const payload = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, transition: 'target_reached' },
+      });
+      expect(payload.title).toBe('Evolução do tratamento concluída');
+      expect(payload.pushBody).toContain('última etapa prescrita');
+      expect(payload.actions).toEqual([]);
+    });
+
+    it('SaMD/§8: nunca "caneta", "Titulação" nem "recomendada" em nenhuma transição', () => {
+      const proibidos = /caneta|Titula[çc]|recomendad/i;
+      for (const transition of ['medicine_switch', 'dose_change', 'target_reached'] as const) {
+        const payload = buildNotificationPayload({
+          kind: 'titration_alert',
+          data: { ...base, transition, dose: 2, intakeUnit: 'cp', stepId: 's' },
+        });
+        expect(payload.title).not.toMatch(proibidos);
+        expect(payload.pushBody).not.toMatch(proibidos);
+      }
+    });
+
+    // R-193: payload já enfileirado no outbox no momento do deploy não tem `transition`.
+    it('compat de outbox: par N1 legado ainda produz a copy nova certa', () => {
+      const legadoSwitch = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, status: 'titulando', requiresNewMedicine: true },
+      });
+      expect(legadoSwitch.title).toBe('Etapa 2 começa hoje');
+
+      const legadoAlvo = buildNotificationPayload({
+        kind: 'titration_alert',
+        data: { ...base, status: 'alvo_atingido' },
+      });
+      expect(legadoAlvo.title).toBe('Evolução do tratamento concluída');
     });
   });
 });

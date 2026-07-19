@@ -15,6 +15,7 @@ interface NotificationPayload {
   title?: string
   body: string
   pushBody?: string
+  actions?: Array<{ id: string; label: string; params?: Record<string, unknown> }>
   metadata?: { kind?: string; critical_alarm?: boolean; notificationLogId?: string; [key: string]: unknown }
 }
 
@@ -47,13 +48,38 @@ const DOSE_REMINDER_KINDS = new Set([
   'dose_reminder_misc',
 ])
 
+// 029 F5 (T025 / FR-004): kinds que saem TIME-SENSITIVE mesmo sem serem dose crítica.
+// O `medicine_switch` da Evolução do tratamento é acionável e temporal (a etapa começa hoje),
+// então precisa furar Focus/DND — mas NÃO é alarme: som e canal seguem os normais.
+// `dose_change` é informativo e cai no 'active' padrão; o gate olha as AÇÕES do payload, que só
+// existem no switch (Decisões §3.1/§3.4), evitando um segundo lugar onde a distinção é decidida.
+const TIME_SENSITIVE_KINDS = new Set(['titration_alert'])
+
+function _isTimeSensitive(payload: NotificationPayload, isCriticalDose: boolean): boolean {
+  if (isCriticalDose) return true
+  const kind = payload?.metadata?.kind ?? ''
+  return TIME_SENSITIVE_KINDS.has(kind) && (payload.actions?.length ?? 0) > 0
+}
+
+// Categoria de ações da Evolução do tratamento. DEVE casar com o id registrado no app
+// (`ensureTitrationCategories`) — `categoryId` no payload só REFERENCIA uma categoria; se ela
+// não existir no device, o iOS entrega a notificação SEM botões, em silêncio.
+export const TITRATION_CATEGORY_ID = 'dosiq-titration-v1'
+
 // Constrói a lista de mensagens formatadas para o formato do Expo Push.
 function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload, isCriticalDose: boolean) {
+  const timeSensitive = _isTimeSensitive(payload, isCriticalDose)
+  const actions = payload.actions ?? []
+  // Só anexa categoria quando há ação — categoria vazia é botão fantasma.
+  const categoryId = actions.length > 0 && payload?.metadata?.kind === 'titration_alert'
+    ? TITRATION_CATEGORY_ID
+    : null
+
   return devices.map((device) => ({
     to: device.push_token,
     sound: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav',
-    // Furo de Focus/DND no iOS (doses essenciais vão como 'time-sensitive', normais 'active').
-    interruptionLevel: isCriticalDose ? 'time-sensitive' : 'active',
+    // Furo de Focus/DND no iOS (doses essenciais e switch da evolução vão 'time-sensitive').
+    interruptionLevel: timeSensitive ? 'time-sensitive' : 'active',
     // --- v1 (configuração com objeto que exige permissão especial de Critical Alerts no iOS):
     // sound: { name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav' },
     // --- v2 (pós-aprovação do entitlement Critical Alerts pela Apple — spec 010/FR-005):
@@ -61,11 +87,15 @@ function _buildExpoMessages(devices: ExpoDevice[], payload: NotificationPayload,
     //     sound: { critical: true, name: isCriticalDose ? 'alarm_dose.wav' : 'push_chime.wav', volume: 1.0 },
     //     interruptionLevel: 'critical',
     channelId: isCriticalDose ? 'dosiq-critical-v1' : 'dosiq-default-v1',
+    ...(categoryId ? { categoryId } : {}),
     title: payload.title,
     body: payload.pushBody || payload.body,
     data: {
       ...(payload.metadata ?? {}),
       notificationLogId: payload.metadata?.notificationLogId ?? null,
+      // As ações viajam no data porque o handler do app precisa dos `params` (o `stepId` que o
+      // `confirm_titration_switch` consome) — o categoryId só desenha os botões, não carrega dado.
+      ...(actions.length > 0 ? { actions } : {}),
     },
   }))
 }

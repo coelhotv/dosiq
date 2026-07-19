@@ -10,11 +10,14 @@ import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
-import { formatIntakeDose, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate } from '@dosiq/core'
+import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch } from '@dosiq/core'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from '@treatments/components/EvolutionBadge'
+import EvolutionPendingBanner from '@treatments/components/EvolutionPendingBanner'
+import EvolutionBrokenStepCard from '@treatments/components/EvolutionBrokenStepCard'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useTitrationTimeline } from '@treatments/hooks/useTitrationTimeline'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import type { LadderStepWithMedicine } from '@treatments/services/titrationService'
 
 const { Check, ArrowDownNarrowWide, Box } = LucideIcons as any
@@ -31,10 +34,15 @@ interface TimelineStep {
   key: string
   kind: 'past' | 'current' | 'future'
   medName: string
+  /** Nome + concentração ("Mounjaro 2,5 mg / 0,5 mL"). Para textos que precisam IDENTIFICAR o
+   *  cadastro — nas linhas da timeline o nome puro basta, porque a dose aparece ao lado. */
+  medFullName: string
   doseLabel: string
   statusLine: string
   continua: boolean
   medicineId: string | null
+  /** Etapa ÓRFÃ (§7.3 / T026): o medicamento referenciado sumiu (excluído/arquivado). */
+  broken: boolean
 }
 
 // Projeta datas caminhando a partir da etapa vigente (PURO). Passadas usam started_at/ended_at
@@ -59,14 +67,17 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
 
   return ordered.map((s, index): TimelineStep => {
     const medName = s.medicine?.name ?? 'Medicamento'
+    const medFullName = formatMedicineFullName(s.medicine)
     const doseLabel = formatIntakeDose(s.dose, s.intake_unit, s.medicine)
     const continua = s.duration_days === null || s.duration_days === undefined
+    // Órfã: o embed do medicamento voltou vazio (excluído/arquivado) — §7.3.
+    const broken = s.medicine == null
 
     if (s.status === 'completed') {
       const start = s.started_at ? parseISO(s.started_at) : null
       const end = s.ended_at ? parseISO(s.ended_at) : null
       const span = start && end ? `${fmtDay(start)} – ${fmtDay(end)}` : ''
-      return { key: s.id, kind: 'past', medName, doseLabel, continua, medicineId: s.medicine?.id ?? null, statusLine: span ? `Concluída · ${span}` : 'Concluída' }
+      return { key: s.id, kind: 'past', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine: span ? `Concluída · ${span}` : 'Concluída' }
     }
 
     if (s.status === 'current') {
@@ -78,7 +89,7 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
         const daysLeft = Math.max(0, Math.round((endMs - todayMs) / MS_DAY))
         statusLine = daysLeft > 0 ? `${daysLeft} dias restantes · até ${fmtDay(end)}` : `até ${fmtDay(end)}`
       }
-      return { key: s.id, kind: 'current', medName, doseLabel, continua, medicineId: s.medicine?.id ?? null, statusLine }
+      return { key: s.id, kind: 'current', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
     }
 
     // future (upcoming / pending_confirmation): data prevista acumulada.
@@ -90,7 +101,7 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
       }
     }
     if (continua) statusLine += ' · contínua'
-    return { key: s.id, kind: 'future', medName, doseLabel, continua, medicineId: s.medicine?.id ?? null, statusLine }
+    return { key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
   })
 }
 
@@ -112,22 +123,66 @@ function StepDot({ kind }: { kind: TimelineStep['kind'] }) {
   return <View style={[styles.dot, styles.dotFuture]} />
 }
 
+/** "2026-06-24" → "24 jun". Dia local já resolvido — nunca `new Date('YYYY-MM-DD')` (R-020). */
+function fmtLocalDay(localDay: string): string {
+  return fmtDay(parseLocalDate(localDay))
+}
+
 interface Props {
   protocolId: string
   paused?: boolean
-  doseOnly?: boolean
+  /** §7.2: `[Iniciar etapa N]` do banner de vencida — recebe o id da etapa pendente. */
+  onStartPendingStep?: (stepId: string) => void
+  /** §7.3: `[Editar etapa N]` de uma etapa órfã. */
+  onEditStep?: (stepId: string) => void
   // O detalhe já sabe (pelo embed titration_steps) se há escada ANTES do fetch próprio do timeline
   // resolver. Com o hint, reservamos o espaço com skeleton em vez de a seção "pipocar" depois.
   hasLadderHint?: boolean
 }
 
-export default function TitrationTimeline({ protocolId, paused = false, doseOnly = false, hasLadderHint = false }: Props) {
+export default function TitrationTimeline({
+  protocolId,
+  paused = false,
+  hasLadderHint = false,
+  onStartPendingStep,
+  onEditStep,
+}: Props) {
   const { steps, hasLadder, loading, refresh } = useTitrationTimeline(protocolId)
+  // 🔴 A preferência vem do HOOK, não de prop. Antes era `doseOnly?: boolean` com default
+  // `false` — e NENHUM call site passava, então o usuário dose-only da 044 lia "Você ainda não
+  // tem estoque cadastrado dela" sobre um cadastro que, para ele, não existe. A copy §8 já dizia
+  // "(omitido em dose-only)": o botão estava no painel e ninguém ligou o fio. Prop opcional com
+  // default permissivo transforma esquecimento em texto errado, em silêncio — lendo a preferência
+  // aqui dentro, não há call site que possa esquecer.
+  // `ready` distingue "ainda não sei" de "sei que está ligado": sem ele o aviso pisca para quem
+  // desligou o estoque (mesma razão do gate da tab bar em useStockTracking).
+  const { enabled: stockEnabled, ready: stockReady } = useStockTracking()
   // States/Memos antes de Effects (R-010).
   // `todayLocal` re-avaliado no focus (não capturado uma vez) — cobre a tela atravessando a
   // meia-noite ao voltar da navegação, sem projetar com "hoje" velho (AP-W15).
   const [todayLocal, setTodayLocal] = useState(getTodayLocal)
   const timeline = useMemo(() => buildTimeline(steps, todayLocal), [steps, todayLocal])
+
+  // §7.2 (T026): QUALQUER dia de espera, inclusive o dia 0. Esta tela é a fonte canônica de
+  // controle do tratamento (ativar/pausar/editar) — o controle de iniciar a etapa não pode faltar
+  // aqui. O gate antigo (`>= 1`) evitava duplicar o card do Hoje no mesmo dia, mas o "Ainda não"
+  // derruba aquele card sem escrever nada no servidor: quem adiava de manhã ficava sem NENHUMA
+  // saída até o dia seguinte. Nag é interromper (push); aqui o usuário veio de propósito (pull).
+  // O "desde" vem do vencimento da etapa vigente, não de `updated_at` (ver `resolvePendingSwitch`).
+  const pendingSwitch = useMemo(() => {
+    const info = resolvePendingSwitch(steps, todayLocal)
+    if (!info) return null
+    const current = steps.find((s) => s.id === info.currentStepId)
+    const pending = steps.find((s) => s.id === info.pendingStepId)
+    // Nome + concentração nos DOIS: numa escada os dois cadastros costumam ter o mesmo nome, e
+    // dizer "os lembretes seguem no Mounjaro" quando a etapa que entra TAMBÉM é Mounjaro não
+    // informa nada. A concentração é o que distingue (achado do smoke do PO, F5).
+    return {
+      info,
+      currentMedName: formatMedicineFullName(current?.medicine, 'dose atual'),
+      nextMedName: formatMedicineFullName(pending?.medicine),
+    }
+  }, [steps, todayLocal])
   // Refresh on focus: ao voltar do cadastro/edição da escada, a timeline reflete as mudanças
   // sem recarregar o app (o hook só carregava no mount). `void` — rejeição já tratada no hook.
   useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal()); void refresh() }, [refresh]))
@@ -155,20 +210,51 @@ export default function TitrationTimeline({ protocolId, paused = false, doseOnly
         <EvolutionBadge steps={steps} paused={paused} />
       </View>
 
+      {/* §7.2 (T026): troca pendente. ANTES da timeline na ordem de leitura — é o que exige
+          decisão. O tom sai de `daysWaiting` dentro do banner (teal no dia 0, amber a partir do
+          dia 1). O app NUNCA estende a duração nos DADOS: a vigente é estendida só na execução,
+          até o usuário escolher uma das duas saídas. */}
+      {pendingSwitch != null && !paused ? (
+        <EvolutionPendingBanner
+          stepNumber={pendingSwitch.info.pendingPosition + 1}
+          sinceLabel={fmtLocalDay(pendingSwitch.info.dueDay)}
+          daysWaiting={pendingSwitch.info.daysWaiting}
+          nextMedicineName={pendingSwitch.nextMedName}
+          currentMedicineName={pendingSwitch.currentMedName}
+          onStart={() => onStartPendingStep?.(pendingSwitch.info.pendingStepId)}
+        />
+      ) : null}
+
       <View style={[styles.list, paused && styles.listPaused]}>
         {timeline.map((step, index) => {
           const next = timeline[index + 1]
           const showPrep =
-            !doseOnly &&
+            stockReady &&
+            stockEnabled &&
             step.kind === 'current' &&
             next != null &&
             next.medicineId != null &&
             step.medicineId != null &&
             next.medicineId !== step.medicineId
+
+          // §7.3 (T026): etapa órfã vira card corrigível NO LUGAR da linha normal — mostrar
+          // "Medicamento · " genérico seria esconder que a escada está quebrada. Nunca beco:
+          // o botão nomeado leva à edição da etapa (Constituição IX).
+          if (step.broken) {
+            return (
+              <EvolutionBrokenStepCard
+                key={step.key}
+                stepNumber={index + 1}
+                medicineName={step.medName}
+                onEdit={() => onEditStep?.(step.key)}
+              />
+            )
+          }
+
           return (
             <View key={step.key}>
               <StepRow step={step} index={index} total={timeline.length} />
-              {showPrep ? <PrepStockBanner medName={next!.medName} /> : null}
+              {showPrep ? <PrepStockBanner medName={next!.medFullName} /> : null}
             </View>
           )
         })}
@@ -207,6 +293,8 @@ function StepRow({ step, index, total }: { step: TimelineStep; index: number; to
   )
 }
 
+/** `medName` DEVE vir de `formatMedicineFullName` — "A próxima etapa usa Mounjaro" é verdade para
+ *  todas as etapas de uma escada de Mounjaro e não ajuda ninguém a comprar a caneta certa. */
 function PrepStockBanner({ medName }: { medName: string }) {
   return (
     <View style={styles.prep} accessibilityRole="text">

@@ -87,10 +87,13 @@ export {
   resolveTitrationStageAt,
   resolveTitrationAdvance,
   getEvolutionBadge,
+  resolvePendingSwitch,
 } from './titrationUtils'
 export type {
   TitrationStepLike,
   TitrationStepEngineLike,
+  TitrationStepPendingLike,
+  PendingSwitchInfo,
   TitrationAdvancePlan,
   TitrationStepTarget,
   TitrationStepClosure,
@@ -115,6 +118,7 @@ export {
   formatDoseHint,
   formatConcentration,
   formatMedicineConcentration,
+  formatMedicineFullName,
   formatActiveIngredientHint,
   formatActiveIngredientFormula,
   formatActiveIngredientShort,

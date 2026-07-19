@@ -70,13 +70,21 @@ function getConcentrationLabel(v: string, unit: string | null | undefined): stri
  *
  * 012 Fase B3 (FR-031): quando o líquido tem denominador de rótulo ≠ 1 mL (ex:
  * Mounjaro), reconstrói a leitura original do rótulo — `amount unidadeBase / volume mL`
- * ('2,5 mg / 0,5 mL') em vez da razão normalizada crua ('5 mg/ml'), que confunde.
+ * em vez da razão normalizada crua ('5 mg/ml'), que confunde.
  * Volume NULL/1 ou sólido → comportamento clássico inalterado.
+ *
+ * ⚠️ DIVERGÊNCIA CONHECIDA (AP-306): este bloco prometia '2,5 mg / 0,5 mL'; a saída REAL é
+ * '2,5 mg / 0,5ml' (minúsculo, sem espaço — ver `formatLiquidConcentration`). O JSDoc estava
+ * certo e a implementação divergiu em silêncio, porque nenhum teste fixava a grafia da unidade.
+ * O @returns abaixo foi corrigido para a saída real; a grafia correta (`mL`, convenção ANVISA)
+ * entra na spec de padronização de unidades — NÃO trocar aqui isolado: `doseUnit.ts` tem três
+ * grafias de mililitro e 44 call sites montam unidade à mão, então um fix pontual reintroduz a
+ * divergência no próximo componente.
  *
  * @param {number|string|null} value - dosage_per_pill (razão por unidade/ml)
  * @param {string|null} unit - dosage_unit ('mg', 'ui/ml', 'mg/ml', 'un', …)
  * @param {number|string|null} [volumeMl=null] - concentration_volume_ml (denominador do rótulo)
- * @returns {string} ex: '100 UI/ml' · '500 mg' · '2,5 mg / 0,5 mL' · '' se value vazio
+ * @returns {string} ex: '100 UI/ml' · '500 mg' · '2,5 mg / 0,5ml' · '' se value vazio
  */
 export function formatConcentration(
   value: number | string | null | undefined,
@@ -116,6 +124,31 @@ export function formatMedicineConcentration(medicine: MedicineLike | null | unde
     medicine.dosage_unit,
     medicine.concentration_volume_ml
   )
+}
+
+/**
+ * Nome IDENTIFICÁVEL do medicamento: nome + concentração ("Mounjaro 2,5 mg / 0,5 mL").
+ *
+ * 🔴 Usar em QUALQUER texto que precise distinguir um cadastro de outro — avisos, banners,
+ * confirmações. O nome sozinho não identifica nada: uma escada de titulação é justamente um
+ * conjunto de cadastros com o MESMO nome e concentrações diferentes, então "A próxima etapa usa
+ * Mounjaro" é literalmente verdade para todas as etapas e não ajuda ninguém (029 F5, smoke do PO).
+ *
+ * NÃO usar em linha que já mostra a dose ao lado (as linhas da timeline mostram
+ * `nome · dose de tomada`) — ali a concentração repetida vira ruído.
+ *
+ * A concentração sai de `formatMedicineConcentration`, então o líquido com denominador de rótulo
+ * aparece como está na caixa ('2,5 mg / 0,5 mL'), não como a razão normalizada ('5 mg/ml').
+ *
+ * @returns nome + concentração, ou só o nome quando não há concentração cadastrada.
+ */
+export function formatMedicineFullName(
+  medicine: (MedicineLike & { name?: string | null }) | null | undefined,
+  fallback = 'Medicamento'
+): string {
+  const name = medicine?.name?.trim() || fallback
+  const concentration = formatMedicineConcentration(medicine)
+  return concentration ? `${name} ${concentration}` : name
 }
 
 /**

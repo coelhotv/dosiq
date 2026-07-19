@@ -27,7 +27,7 @@ export default function ProtocolChecklistItem({ protocol, isSelected, onToggle }
                 caía SEMPRE aqui. Removidos (AP-301: código que aparenta capacidade que não
                 existe). O que a web exibe da escada N2 é decisão do F6/T033b. */}
             <span className={`titration-badge ${protocol.titration_status}`}>
-              {protocol.titration_status === 'titulando' ? '📈 Titulando' : 'Estável'}
+              {protocol.titration_status === 'titulando' ? '📈 Em evolução' : 'Estável'}
             </span>
             <span className="dosage-badge">
               {formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, protocol.medicine)}

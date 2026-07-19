@@ -237,4 +237,59 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
     expect(messages[0].interruptionLevel).toBe('active')
     expect(messages[0].channelId).toBe('dosiq-default-v1')
   })
+
+  // 029 F5 (T025): sem estas 3 peças o push do switch chega SEM botão — o schema e a copy
+  // sozinhos não desenham nada no device (o canal Expo ignorava `actions` até esta fase).
+  describe('Evolução do tratamento (029 F5)', () => {
+    const sendTitration = async (payload: {
+      title: string
+      body: string
+      metadata: { kind: string }
+      actions: Array<{ id: string; label: string; params?: Record<string, unknown> }>
+    }) => {
+      mockRepositories.devices.listActiveByUser.mockResolvedValue([
+        { push_token: 'ExponentPushToken[evo]', native_alarm_enabled: false },
+      ])
+      mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+      await sendExpoPushNotification({
+        userId: 'user-evo',
+        payload,
+        context: makeContext(),
+        repositories: mockRepositories,
+        expoClient: mockExpoClient,
+      })
+      return mockExpoClient.sendPushNotificationsAsync.mock.calls[0][0][0]
+    }
+
+    it('medicine_switch → time-sensitive + categoryId + ações no data', async () => {
+      const msg = await sendTitration({
+        title: 'Etapa 2 começa hoje',
+        body: 'Semaglutida 0,5 mg',
+        metadata: { kind: 'titration_alert' },
+        actions: [
+          { id: 'start_step', label: 'Iniciar etapa', params: { stepId: 'step-1' } },
+          { id: 'not_yet', label: 'Ainda não', params: { stepId: 'step-1' } },
+        ],
+      })
+      expect(msg.interruptionLevel).toBe('time-sensitive')
+      expect(msg.categoryId).toBe('dosiq-titration-v1')
+      // O handler precisa do stepId — o categoryId só desenha os botões.
+      expect(msg.data.actions[0].params.stepId).toBe('step-1')
+      // Time-sensitive NÃO é alarme: som e canal seguem os normais.
+      expect(msg.sound).toBe('push_chime.wav')
+      expect(msg.channelId).toBe('dosiq-default-v1')
+    })
+
+    it('dose_change (sem ações) → active e sem categoria (§3.4)', async () => {
+      const msg = await sendTitration({
+        title: 'Dose ajustada para 2 comprimidos',
+        body: 'Metoprolol 50 mg',
+        metadata: { kind: 'titration_alert' },
+        actions: [],
+      })
+      expect(msg.interruptionLevel).toBe('active')
+      expect(msg.categoryId).toBeUndefined()
+      expect(msg.data.actions).toBeUndefined()
+    })
+  })
 })

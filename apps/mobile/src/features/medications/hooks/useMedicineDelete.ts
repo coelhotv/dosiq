@@ -42,13 +42,21 @@ export function useMedicineDelete(medicine) {
     const stockUnits = stock.reduce((acc, s) => acc + (Number(s?.quantity) || 0), 0)
     const stockLots = stock.filter((s) => (Number(s?.quantity) || 0) > 0).length
 
-    // Bloqueio hard: QUALQUER dependência (protocolo ativo/pausado OU estoque > 0).
-    // Apagar medicamento com dependências deixaria órfãos no banco e na UX.
-    const hasDependencies = protocols.length > 0 || stockUnits > 0
+    // 029 F5 (T026 / §7.3): etapa da Evolução do tratamento também é dependência.
+    // Uma etapa FUTURA de medicine_switch tem `protocol_id` NULL e pode não ter estoque ainda
+    // (o usuário cadastra a escada antes de comprar) — então ela não aparecia nem em `protocols`
+    // nem em `stock`, o precheck liberava, e a exclusão morria no FK
+    // `titration_steps_medicine_id_fkey` (sem ON DELETE ⇒ RESTRICT) com `23503` cru na cara do
+    // usuário. Bloquear ANTES é o §7.3: "nunca beco sem saída" (Constituição IX).
+    // Etapas já `completed` também contam: apagar o medicamento apagaria o histórico da escada.
+    const titrationSteps = Array.isArray(medicine?.titration_steps) ? medicine.titration_steps : []
+
+    const hasDependencies = protocols.length > 0 || stockUnits > 0 || titrationSteps.length > 0
 
     return {
       canDelete: !hasDependencies,
       protocols,
+      titrationSteps,
       stockUnits,
       stockLots,
       hasStock: stockUnits > 0,

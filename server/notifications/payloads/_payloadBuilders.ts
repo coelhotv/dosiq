@@ -6,6 +6,7 @@ import {
   stockAlertDataSchema,
   stockExpiryAlertDataSchema,
   titrationAlertDataSchema,
+  actionSchema,
   prescriptionAlertDataSchema,
   dlqDigestDataSchema,
   doseReminderByPlanDataSchema,
@@ -14,7 +15,7 @@ import {
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { getGreeting, getMotivationalNudge, getTimeOfDayGreeting } from '../../bot/utils/notificationHelpers.js';
 import { getSaoPauloTime } from '../../utils/dateUtils.js';
-import { formatDoseItem } from '@dosiq/core';
+import { formatDoseItem, formatDose, formatNumberPtBR } from '@dosiq/core';
 
 interface NotificationPayload {
   title: string
@@ -194,43 +195,91 @@ export function buildStockExpiryAlertPayload(data: z.input<typeof stockExpiryAle
   return { title, body: richMsg, pushBody: plainMsg };
 }
 
-export function buildTitrationAlertPayload(data: z.input<typeof titrationAlertDataSchema>): NotificationPayload {
-  const { medicineName, currentStage, totalStages, status, nextStage, requiresNewMedicine } = titrationAlertDataSchema.parse(data);
-  // 012 Fase B2 (FR-021): etapa cross-força → CTA de troca de apresentação.
-  const title = requiresNewMedicine ? '🔄 Hora de trocar de apresentação' : '🎯 Atualização de Titulação';
+/**
+ * Dose na unidade de tomada, para a copy da Evolução do tratamento (§8).
+ *
+ * `formatDose` do core cobre gotas/ml/UI/mg, mas devolve `'2 cp'` para comprimido — e a copy
+ * decidida é "Dose ajustada para **2 comprimidos**". `cp` só existe em `titration_steps`
+ * (em `protocols` o comprimido é NULL — AP-299), por isso o plural mora aqui e não no core.
+ * @private
+ */
+function _formatStepDose(dose: number | undefined, intakeUnit: string | null | undefined): string {
+  if (dose === undefined || dose === null || !Number.isFinite(dose)) return '';
+  if (intakeUnit === 'cp' || !intakeUnit) {
+    return `${formatNumberPtBR(dose)} ${dose === 1 ? 'comprimido' : 'comprimidos'}`;
+  }
+  return formatDose(dose, intakeUnit);
+}
 
-  let richMsg = requiresNewMedicine ? `🔄 *Hora de trocar de apresentação*\n\n` : `🎯 *Atualização de Titulação*\n\n`;
-  richMsg += `Medicamento: **${escapeMarkdownV2(medicineName)}**\n`;
-  // 012 Fase B (FR-005b): disparado SÓ no evento de avanço — copy informativa,
-  // sem CTA de dose (SaMD/ADR-062). B2: etapa cross-força avisa a troca de caneta.
-  if (requiresNewMedicine) {
-    richMsg += `A etapa ${currentStage}/${totalStages} do cronograma usa uma nova apresentação \\(ex\\.: outra caneta\\)\\. Confira se você tem o medicamento certo em estoque\\.\n\n`;
-  } else {
-    richMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma\\.\n\n`;
+/**
+ * Notificação da Evolução do tratamento (029 F5 / T025 / FR-004 · copy literal das Decisões §8).
+ *
+ * Dirigida por `transition` — a mesma derivação do motor (CON-032). Cobre single-med
+ * (`dose_change`) e multi-med (`medicine_switch`) pela MESMA porta; não há copy "N1" e "N2".
+ *
+ * ⚰️ Substitui a copy legada do 012/FR-021 ("Hora de trocar de apresentação" / "Atualização de
+ * Titulação"), que violava §0/§8 em dois pontos: dizia **"caneta"** (proibido na UI — sempre o
+ * nome do medicamento) e chamava a entidade de "Titulação" (o naming é "Evolução do tratamento";
+ * "titulação" fica só em código/spec). SaMD/ADR-062: factual, "como prescrito", nunca
+ * "recomendada", sem urgência artificial.
+ *
+ * As AÇÕES saem só no `medicine_switch` (§3.1): `[Iniciar etapa]` `[Ainda não]`, espelhando o
+ * card do Hoje. `dose_change` é automático na data → informativo, SEM botões (§3.4).
+ */
+export function buildTitrationAlertPayload(data: z.input<typeof titrationAlertDataSchema>): NotificationPayload & { actions?: Array<z.input<typeof actionSchema>> } {
+  const parsed = titrationAlertDataSchema.parse(data);
+  const { medicineName, currentStage, totalStages, stepId, dose, intakeUnit, status, requiresNewMedicine } = parsed;
+
+  // Compat de outbox (R-193): payload enfileirado ANTES do deploy não tem `transition`.
+  // Deriva do par N1 para não emitir copy errada durante a janela de drenagem.
+  const transition = parsed.transition
+    ?? (requiresNewMedicine ? 'medicine_switch' : status === 'alvo_atingido' ? 'target_reached' : 'dose_change');
+
+  const safeName = escapeMarkdownV2(medicineName);
+  const doseLabel = _formatStepDose(dose, intakeUnit);
+
+  if (transition === 'medicine_switch') {
+    // §8: "Etapa 2 começa hoje" · "Semaglutida 0,5 mg" · "Como prescrito pelo seu médico."
+    const title = `Etapa ${currentStage} começa hoje`;
+    const rich = `*Etapa ${currentStage} começa hoje*\n\n${safeName}${doseLabel ? ` • ${escapeMarkdownV2(doseLabel)}` : ''}\n\nComo prescrito pelo seu médico\\.`;
+    const plain = `Etapa ${currentStage} começa hoje\n${medicineName}${doseLabel ? ` • ${doseLabel}` : ''}\nComo prescrito pelo seu médico.`;
+    return {
+      title,
+      body: rich,
+      pushBody: plain,
+      // `stepId` é o argumento de `confirm_titration_switch(p_step_id)`. Sem ele a ação não tem
+      // o que confirmar — melhor sair sem botão do que com botão que falha no toque.
+      actions: stepId
+        ? [
+            { id: 'start_step', label: 'Iniciar etapa', params: { stepId } },
+            { id: 'not_yet', label: 'Ainda não', params: { stepId } },
+          ]
+        : [],
+    };
   }
 
-  let plainMsg = requiresNewMedicine ? `🔄 Hora de trocar de apresentação\n` : `🎯 Atualização de Titulação\n`;
-  plainMsg += `Medicamento: ${medicineName}\n`;
-  if (requiresNewMedicine) {
-    plainMsg += `A etapa ${currentStage}/${totalStages} do cronograma usa uma nova apresentação (ex.: outra caneta). Confira se você tem o medicamento certo em estoque.\n\n`;
-  } else {
-    plainMsg += `Etapa ${currentStage}/${totalStages} iniciada conforme o cronograma.\n\n`;
+  if (transition === 'target_reached') {
+    // Última etapa finita esgotada: a escada deixa de reger a dose (a de manutenção vive no
+    // protocol). Factual e sóbrio — nada a confirmar, logo sem ações.
+    const title = 'Evolução do tratamento concluída';
+    const rich = `*Evolução do tratamento concluída*\n\n${safeName}\n\nVocê chegou à última etapa prescrita\\. Os lembretes seguem na dose atual\\.`;
+    const plain = `Evolução do tratamento concluída\n${medicineName}\nVocê chegou à última etapa prescrita. Os lembretes seguem na dose atual.`;
+    return { title, body: rich, pushBody: plain, actions: [] };
   }
 
-  if (status === 'alvo_atingido') {
-    const success = `✅ *Parabéns\\!* Você atingiu a dose alvo\\!\nContinue com o acompanhamento médico\\.`;
-    const plainSuccess = `✅ Parabéns! Você atingiu a dose alvo!\nContinue com o acompanhamento médico.`;
-    richMsg += success;
-    plainMsg += plainSuccess;
-  } else if (status === 'titulando' && nextStage) {
-    richMsg += `📈 Próxima etapa: ${escapeMarkdownV2(nextStage.dosage)} ${escapeMarkdownV2(nextStage.unit)}\n`;
-    richMsg += `⏰ Data prevista: ${escapeMarkdownV2(nextStage.date || 'a definir')}`;
-    
-    plainMsg += `📈 Próxima etapa: ${nextStage.dosage} ${nextStage.unit}\n`;
-    plainMsg += `⏰ Data prevista: ${nextStage.date || 'a definir'}`;
-  }
-
-  return { title, body: richMsg, pushBody: plainMsg };
+  // dose_change (§3.4 / §8): automático na data — informativo, SEM botões.
+  // "Dose ajustada para 2 comprimidos" · "Metoprolol 50 mg · etapa 2 da evolução do tratamento,
+  //  como prescrito. Os lembretes já estão na dose nova."
+  const title = doseLabel ? `Dose ajustada para ${doseLabel}` : 'Dose ajustada';
+  const rich =
+    `*${escapeMarkdownV2(title)}*\n\n` +
+    `${safeName} • etapa ${currentStage} de ${totalStages} da evolução do tratamento, como prescrito\\.\n\n` +
+    `Os lembretes já estão na dose nova\\.`;
+  const plain =
+    `${title}\n` +
+    `${medicineName} • etapa ${currentStage} de ${totalStages} da evolução do tratamento, como prescrito.\n` +
+    `Os lembretes já estão na dose nova.`;
+  return { title, body: rich, pushBody: plain, actions: [] };
 }
 
 export function buildMonthlyReportPayload(data: z.input<typeof adherenceReportDataSchema>): NotificationPayload {
