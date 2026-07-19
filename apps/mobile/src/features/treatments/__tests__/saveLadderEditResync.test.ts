@@ -24,9 +24,12 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   },
 }))
 
+const mockCreateTitration = jest.fn(async (..._a: any[]) => ({ id: 'titration-1' }))
+
 jest.mock('@dosiq/core', () => ({
   ...jest.requireActual('@dosiq/core'),
   createTitrationRepository: jest.fn(() => ({
+    create: (...a: any[]) => mockCreateTitration(...a),
     deleteStep: (...a: any[]) => mockDeleteStep(...a),
     updateStep: (...a: any[]) => mockUpdateStep(...a),
     createSteps: (...a: any[]) => mockCreateSteps(...a),
@@ -36,7 +39,7 @@ jest.mock('@dosiq/core', () => ({
   resolveUserTz: jest.fn(async () => 'America/Sao_Paulo'),
 }))
 
-import { saveLadderEdit, type LadderEditPlan } from '../services/titrationService'
+import { saveLadderEdit, createFullLadder, type LadderEditPlan } from '../services/titrationService'
 
 const PROTOCOL_ID = 'protocol-A'
 
@@ -113,5 +116,38 @@ describe('saveLadderEdit — reprojeta a janela futura após editar a escada (05
     mockProtocolFetch({ data: null, error: null })
     await saveLadderEdit(plano({ toDelete: ['step-9'] }))
     expect(mockResync).not.toHaveBeenCalled()
+  })
+})
+
+// 052 — TERCEIRO caminho, achado pelo RC6 no PR #761.
+//
+// O de maior impacto dos três, e o menos óbvio: quando a escada é CADASTRADA, o protocolo já
+// existe há tempo e sua janela (~30d) já foi materializada SEM escada nenhuma — dose chapada e
+// medicamento do protocolo em todos os dias, inclusive os que a etapa 0 nem cobre. Nada corrigia
+// essas linhas depois: `syncInstancesOnWrite` só roda em `update()` de protocolo, e cron/rede lazy
+// usam `ON CONFLICT DO NOTHING` (preenchem buraco, não consertam linha existente). É o fluxo do
+// AP-301 — "adicionei a escada depois" —, que é o fluxo REAL do usuário.
+describe('createFullLadder — reprojeta a janela já materializada ao cadastrar a escada (052/RC6)', () => {
+  const STEPS = [
+    { medicine_id: 'MED-A', dose: 0.25, intake_unit: 'mg', duration_days: 28 },
+    { medicine_id: 'MED-B', dose: 0.5, intake_unit: 'mg', duration_days: null },
+  ]
+
+  it('após gravar as etapas, dispara o resync do protocolo dono', async () => {
+    mockProtocolFetch(PROTOCOL_ROW)
+    await createFullLadder(PROTOCOL_ID, 'MED-A', STEPS)
+
+    expect(mockCreateSteps).toHaveBeenCalledTimes(1)
+    expect(mockResync).toHaveBeenCalledTimes(1)
+    expect(mockResync.mock.calls[0][0]).toMatchObject({ protocol: { id: PROTOCOL_ID } })
+  })
+
+  it('resync falhando NÃO derruba o cadastro já persistido (best-effort — R-245)', async () => {
+    mockProtocolFetch(PROTOCOL_ROW)
+    mockResync.mockRejectedValueOnce(new Error('rede caiu'))
+
+    await expect(createFullLadder(PROTOCOL_ID, 'MED-A', STEPS)).resolves.toMatchObject({
+      titration: { id: 'titration-1' },
+    })
   })
 })

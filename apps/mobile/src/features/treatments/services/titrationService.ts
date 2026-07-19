@@ -139,6 +139,19 @@ export async function createFullLadder(
   const titration = await titrationRepo.create({ treatment_plan_id: treatmentPlanId })
   const rows = buildLadderRows(titration.id, protocolId, medicineId, steps, getNow().toISOString())
   const created = await titrationRepo.createSteps(rows)
+
+  // 052 (FR-007, achado do RC6 no PR #761) — TERCEIRO caminho de escrita fora do repositório, e o
+  // de maior impacto: quando a escada é cadastrada, o protocolo JÁ existe e sua janela JÁ foi
+  // materializada (~30d, sem escada nenhuma). Todas essas instâncias carregam a dose chapada
+  // `dosage_per_intake` e o medicamento do protocolo — inclusive os dias que a etapa 0 nem cobre.
+  // Nada as corrigia depois: o `syncInstancesOnWrite` só dispara em `update()` de protocolo, e o
+  // cron/rede lazy usam `ON CONFLICT DO NOTHING` (preenchem buraco, não consertam linha existente).
+  //
+  // Antes da 052 o dano era só na dose; com o medicamento congelado, a instância errada vira
+  // permanente também na identidade — ou seja, esta spec AGRAVA o defeito se não o fechar aqui.
+  // É literalmente o fluxo do AP-301 ("adicionei a escada depois"), que é o fluxo REAL do usuário.
+  await _resyncProtocolInstances(protocolId)
+
   return { titration, steps: created }
 }
 
@@ -476,10 +489,12 @@ const _REASON_COPY: Record<ConfirmSwitchReason, string> = {
 /**
  * Materializa a janela de doses de um protocolo (029 F5.5 · ampliado na 052).
  *
- * DOIS chamadores, mesma causa: escrita que muda o cronograma FORA do `update()` do protocolo,
+ * TRÊS chamadores, mesma causa: escrita que muda o cronograma FORA do `update()` do protocolo,
  * logo sem `syncInstancesOnWrite` (classe AP-308).
  *   1. `confirmTitrationSwitch` — a transição de etapa acontece dentro da RPC (SQL);
- *   2. `saveLadderEdit` (052/FR-007b) — a edição de etapas futuras escreve em `titration_steps`.
+ *   2. `saveLadderEdit` (052/FR-007b) — a edição de etapas futuras escreve em `titration_steps`;
+ *   3. `createFullLadder` (052/RC6) — o CADASTRO da escada sobre um protocolo cuja janela já
+ *      estava materializada sem escada nenhuma.
  *
  * **BEST-EFFORT, e isso é deliberado (R-245).** A escrita JÁ aconteceu no banco quando esta
  * função roda: falhar aqui não pode transformar uma operação bem-sucedida em erro na cara do

@@ -12,9 +12,14 @@
 // é obrigatório: o defeito não mora em nenhum arquivo errado, mora no VÃO entre eles. Então o
 // guard tem que ser sobre o CONJUNTO, não sobre um arquivo — daí a varredura de fonte.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+afterEach(() => {
+  vi.clearAllMocks()
+  vi.clearAllTimers()
+})
 
 const REPO_ROOT = resolve(__dirname, '../../../../..')
 

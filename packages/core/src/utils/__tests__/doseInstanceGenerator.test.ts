@@ -386,8 +386,12 @@ describe('generateInstances — medicine_id congela o medicamento da etapa vigen
       steps,
     )
 
+  /** Dia LOCAL da ocorrência (AP-270: `slice(0,10)` lê a data em UTC e desloca em GMT-3). */
+  const diaLocal = (iso) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(iso))
+
   it('instância futura nasce com o medicamento da etapa que rege AQUELA data, não a vigente hoje', () => {
-    const byDate = Object.fromEntries(gerar(stepsCrossMed).map((i) => [i.scheduled_for.slice(0, 10), i.medicine_id]))
+    const byDate = Object.fromEntries(gerar(stepsCrossMed).map((i) => [diaLocal(i.scheduled_for), i.medicine_id]))
     expect(byDate['2026-06-07']).toBe('MED-ETAPA-1') // dentro da etapa 1
     expect(byDate['2026-06-28']).toBe('MED-ETAPA-1') // último domingo da etapa 1
     expect(byDate['2026-07-05']).toBe('MED-ETAPA-2') // já na etapa 2 (após 29/06)
@@ -411,12 +415,17 @@ describe('generateInstances — medicine_id congela o medicamento da etapa vigen
   it('step SEM medicine_id (embed antigo/legado) degrada pro protocolo, não grava lixo — AP-300', () => {
     // O modo de falha do G1: adicionar o campo ao tipo sem adicioná-lo ao select devolve
     // `undefined` em runtime. Aqui isso tem que virar o medicamento do protocolo, nunca undefined.
-    const semMedicine = stepsCrossMed.map(({ medicine_id: _omitido, ...resto }) => resto)
+    const semMedicine = stepsCrossMed.map((s) => {
+      const copia = { ...s }
+      delete copia.medicine_id
+      return copia
+    })
     expect(gerar(semMedicine).every((i) => i.medicine_id === 'MED-PROTOCOLO')).toBe(true)
   })
 
   it('protocolo sem medicine_id e sem escada → null explícito (coluna nullable no Slice A)', () => {
-    const { medicine_id: _semMed, ...semMedicine } = protocolo
+    const semMedicine = { ...protocolo }
+    delete semMedicine.medicine_id
     const out = generateInstances(
       semMedicine,
       '2026-06-01T00:00:00-03:00',
