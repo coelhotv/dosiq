@@ -89,6 +89,7 @@ export {
   getEvolutionBadge,
   resolvePendingSwitch,
   resolveManualNextStep,
+  resolveCurrentStep,
 } from './titrationUtils'
 export type {
   TitrationStepLike,

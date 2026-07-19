@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import * as LucideIcons from 'lucide-react-native'
-import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch, resolveManualNextStep } from '@dosiq/core'
+import { formatIntakeDose, formatMedicineFullName, parseISO, addDays, getTodayLocal, formatLocalDate, parseLocalDate, resolvePendingSwitch, resolveManualNextStep, resolveCurrentStep } from '@dosiq/core'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from '@treatments/components/EvolutionBadge'
 import EvolutionPendingBanner from '@treatments/components/EvolutionPendingBanner'
@@ -54,7 +54,11 @@ interface TimelineStep {
 // "N dias restantes" conta dias de CALENDÁRIO local (AP-240), não blocos absolutos de 24h.
 function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): TimelineStep[] {
   const ordered = [...steps].sort((a, b) => a.position - b.position)
-  const currentIndex = ordered.findIndex((s) => s.status === 'current')
+  // 🔴 A vigente vem de `resolveCurrentStep` (achado do RC6): `findIndex` pegaria a PRIMEIRA
+  // `current`, e o banco não impede um resíduo numa posição anterior — a projeção das futuras e
+  // o rótulo "aguardando você iniciar" sairiam ancorados na etapa errada, em silêncio.
+  const currentStep = resolveCurrentStep(ordered)
+  const currentIndex = currentStep ? ordered.findIndex((s) => s.id === currentStep.id) : -1
   const todayMs = parseLocalDate(todayLocal).getTime()
 
   // Ponto de partida da projeção das futuras = fim da etapa vigente (se finita).
@@ -114,8 +118,11 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
       if (index > currentIndex && s.duration_days && s.duration_days > 0) {
         projected = addDays(projected, s.duration_days)
       }
+      // Só sufixa quando há data: sem projeção o rótulo JÁ é "contínua", e appendar produzia
+      // "contínua · contínua" (achado do RC6). Pré-existente, mas a F5.5 tornou o caso comum —
+      // vigente contínua ⇒ `projected` null ⇒ toda futura contínua caía na duplicata.
+      if (continua) statusLine += ' · contínua'
     }
-    if (continua) statusLine += ' · contínua'
     return { key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
   })
 }

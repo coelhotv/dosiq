@@ -128,6 +128,14 @@ export async function resyncProtocolWindow({
   // Apaga só as FUTURAS pending: o passado é histórico e não se reescreve, e `taken`/`missed`
   // futuras não existem. Mesma ordem do write-path (wipe → regen), pelo mesmo motivo: o upsert
   // é `ON CONFLICT DO NOTHING`, então sem o wipe a instância velha (dose antiga) sobreviveria.
+  //
+  // ⚠️ NÃO É ATÔMICO, e isso é herdado do write-path, não introduzido aqui (achado do RC6).
+  // Se o `planWindow` falhar depois do wipe, o protocolo fica sem instância futura até o cron —
+  // que o recolhe justamente porque o `generated_through` NÃO avançou (o `setGeneratedThrough`
+  // mora no fim do planWindow). Ou seja: a falha degrada para o comportamento ANTIGO (esperar o
+  // cron), nunca para um estado que a malha não enxergue. Tornar isto atômico exige uma RPC que
+  // faça wipe+insert numa transação — endurecimento válido, mas que vale para os DOIS caminhos,
+  // não só para este; fazê-lo aqui só criaria assimetria.
   await doseInstanceRepo.wipeFuturePending(protocol.id)
   const now = parseISO(getServerTimestamp())
   return planWindow({

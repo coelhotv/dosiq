@@ -33,11 +33,30 @@ jest.mock('@dosiq/core', () => ({
 
 import { confirmTitrationSwitch } from '../services/titrationService'
 
-/** Cadeia `from('protocols').select(...).eq(...).single()` do _resyncAfterSwitch. @private */
+/**
+ * Cadeia `from('protocols').select(...).eq(...).single()` do _resyncAfterSwitch.
+ *
+ * Captura os argumentos de `select`/`eq` (AP-279: mock que ignora o filtro faz o teste validar o
+ * próprio mock). O que precisa ser provado aqui é o EMBED: sem `titration_steps(...)` no select,
+ * o gerador degrada a dose para `dosage_per_intake` em SILÊNCIO (CON-032) — bug invisível a tsc,
+ * lint e a qualquer asserção sobre o resultado.
+ * @private
+ */
 function mockProtocolFetch(result: unknown) {
+  const captured = { select: '', eqColumn: '', eqValue: '' }
   mockFrom.mockReturnValue({
-    select: () => ({ eq: () => ({ single: async () => result }) }),
+    select: (cols: string) => {
+      captured.select = cols
+      return {
+        eq: (col: string, val: string) => {
+          captured.eqColumn = col
+          captured.eqValue = val
+          return { single: async () => result }
+        },
+      }
+    },
   })
+  return captured
 }
 
 afterEach(() => {
@@ -81,12 +100,17 @@ describe('confirmTitrationSwitch — tradução do contrato CON-032', () => {
       error: null,
     })
     const protocolRow = { id: 'proto-novo', user_id: 'user-1', titration_steps: [] }
-    mockProtocolFetch({ data: protocolRow, error: null })
+    const captured = mockProtocolFetch({ data: protocolRow, error: null })
 
     const result = await confirmTitrationSwitch('step-1')
 
     expect(result.ok).toBe(true)
     expect(mockFrom).toHaveBeenCalledWith('protocols')
+    // 🔴 O embed é o ponto: sem ele o gerador materializaria `dosage_per_intake` em vez da dose
+    // da etapa vigente, sem erro nenhum (CON-032). E o filtro tem que ser pelo protocolo ATIVADO.
+    expect(captured.select).toContain('titration_steps(')
+    expect(captured.eqColumn).toBe('id')
+    expect(captured.eqValue).toBe('proto-novo')
     expect(mockResync).toHaveBeenCalledWith(expect.objectContaining({ protocol: protocolRow }))
   })
 

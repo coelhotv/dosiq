@@ -14,6 +14,7 @@ import {
   getEvolutionBadge,
   resolvePendingSwitch,
   resolveManualNextStep,
+  resolveCurrentStep,
   resolveTitrationAdvance,
   type TitrationStepLike,
   type TitrationStepPendingLike,
@@ -128,6 +129,45 @@ describe('resolvePendingSwitch — desde quando o switch aguarda', () => {
   it('ordena por position (escada fora de ordem não confunde a âncora)', () => {
     const fora = [...ladder()].reverse()
     expect(resolvePendingSwitch(fora, '2026-07-06')?.currentStepId).toBe('step-1')
+  })
+})
+
+// ── resolveCurrentStep (029 F5.5 / RC6) ───────────────────────────────────────
+// O banco não impede duas `current` na mesma escada (só UNIQUE (titration_id, position)), então
+// `find(s => s.status === 'current')` devolve a etapa ERRADA quando há resíduo — em silêncio.
+// No form essa escolha decide uma ESCRITA (o status com que a etapa nova nasce), não um rótulo.
+describe('resolveCurrentStep — vigente imune a `current` residual', () => {
+  const comResiduo: TitrationStepPendingLike[] = [
+    { id: 'residuo', position: 0, status: 'current', started_at: '2026-07-17T03:00:00Z', duration_days: 14 },
+    { id: 'vigente', position: 1, status: 'current', started_at: '2026-05-12T03:00:00Z', duration_days: null },
+    { id: 'nova', position: 2, status: 'pending_confirmation', duration_days: 28 },
+  ]
+
+  it('devolve a de MAIOR position entre as current (nunca a primeira)', () => {
+    expect(resolveCurrentStep(comResiduo)?.id).toBe('vigente')
+  })
+
+  it('🔴 o resíduo é FINITO e a vigente real é CONTÍNUA: quem decide o write é a vigente', () => {
+    // Era o bug: `find()` pegaria o resíduo (duration_days 14) → currentIsContinua false → a
+    // etapa nova nasceria `upcoming`, inalcançável atrás de uma contínua.
+    const vigente = resolveCurrentStep(comResiduo)
+    expect(vigente?.duration_days).toBeNull()
+  })
+
+  it('beforePosition limita a busca à etapa adjacente anterior', () => {
+    expect(resolveCurrentStep(comResiduo, 1)?.id).toBe('residuo')
+    expect(resolveCurrentStep(comResiduo, 2)?.id).toBe('vigente')
+  })
+
+  it('sem current → undefined; degenerados → undefined', () => {
+    expect(resolveCurrentStep([{ id: 'a', position: 0, status: 'completed' }])).toBeUndefined()
+    expect(resolveCurrentStep([])).toBeUndefined()
+    expect(resolveCurrentStep(null)).toBeUndefined()
+    expect(resolveCurrentStep(undefined)).toBeUndefined()
+  })
+
+  it('ordena por position (escada fora de ordem não confunde)', () => {
+    expect(resolveCurrentStep([...comResiduo].reverse())?.id).toBe('vigente')
   })
 })
 

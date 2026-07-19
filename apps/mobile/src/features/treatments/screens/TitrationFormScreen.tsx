@@ -16,7 +16,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Pl
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 
 import * as LucideIcons from 'lucide-react-native'
-import { formatIntakeDose, parseISO, addDays } from '@dosiq/core'
+import { formatIntakeDose, parseISO, addDays, resolveCurrentStep } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import FormActions from '@shared/components/form/FormActions'
 import LoadingState from '@shared/components/states/LoadingState'
@@ -208,7 +208,13 @@ function LadderEditor({
   const form = useTitrationForm({ seedMedicine: null, seedDose: null, initialSteps })
 
   // Data de vigência das alterações = início projetado da 1ª etapa futura (fim da vigente).
-  const currentStep = frozen.find((s) => s.status === 'current')
+  //
+  // 🔴 `resolveCurrentStep`, nunca `find(s => s.status === 'current')` (achado do RC6). O banco
+  // não impede duas etapas `current` na mesma escada, e aqui a escolha não é só cosmética:
+  // `currentIsContinua` alimenta `firstNewStepPending`, que decide se a etapa nova é PERSISTIDA
+  // como `pending_confirmation` ou `upcoming`. Com um resíduo na posição 0, a etapa nasceria com
+  // o status errado — inalcançável (`upcoming` atrás de uma contínua) ou pendente indevida.
+  const currentStep = resolveCurrentStep(frozen)
   const currentIsContinua = currentStep != null && currentStep.duration_days == null
   const effectiveDate = useMemo(() => {
     if (currentStep?.started_at && currentStep.duration_days) {

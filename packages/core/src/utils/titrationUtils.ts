@@ -228,6 +228,33 @@ export interface TitrationStepPendingLike extends TitrationStepLike {
   id: string
 }
 
+/**
+ * A etapa VIGENTE de uma escada, imune a `current` residual. PURO.
+ *
+ * 🔴 **Nunca use `find(s => s.status === 'current')`.** O banco não impede duas etapas `current`
+ * na mesma escada — só existe `UNIQUE (titration_id, position)` (verificado em `pg_constraint`
+ * 2026-07-18) —, então o invariante "uma vigente por escada" vive só no motor, não no schema.
+ * Com `find()` simples, uma escada com vigente residual na posição 0 devolve a etapa ERRADA:
+ * sem erro, sem log, só um resultado plausível e falso (encontrado no smoke do F5, e de novo
+ * pelo RC6 no F5.5 — ali a escolha alimentava uma ESCRITA, não só um rótulo).
+ *
+ * A vigente real é a de MAIOR `position` entre as `current`; quando há uma etapa de referência
+ * (a pendente), a vigente é a adjacente anterior a ela — daí o `beforePosition`.
+ *
+ * @param steps - etapas da escada (qualquer ordem; ordenadas aqui por position)
+ * @param beforePosition - quando informado, só considera vigentes ANTES desta posição
+ */
+export function resolveCurrentStep<T extends TitrationStepLike>(
+  steps: T[] | null | undefined,
+  beforePosition?: number
+): T | undefined {
+  if (!Array.isArray(steps) || steps.length === 0) return undefined
+  const currents = [...steps]
+    .sort((a, b) => a.position - b.position)
+    .filter((s) => s?.status === 'current' && (beforePosition === undefined || s.position < beforePosition))
+  return currents.length > 0 ? currents[currents.length - 1] : undefined
+}
+
 export function resolvePendingSwitch(
   steps: TitrationStepPendingLike[] | null | undefined,
   todayLocal: string,
@@ -240,15 +267,7 @@ export function resolvePendingSwitch(
   const pending = ordered.find((s) => s?.status === 'pending_confirmation')
   if (!pending) return null
 
-  // 🔴 A vigente é a que PRECEDE a pendente — a de maior `position` menor que a dela — e NÃO a
-  // primeira `current` da lista. O banco não impede duas etapas `current` na mesma escada (só há
-  // `UNIQUE (titration_id, position)`; verificado em pg_constraint 2026-07-18), então o invariante
-  // "uma vigente por escada" vive só no motor. Com `find()` simples, uma escada com vigente
-  // residual na posição 0 ancorava o vencimento na etapa ERRADA e o "aguardando desde" saía
-  // silenciosamente errado — sem erro, sem log, só uma data plausível e falsa (encontrado no
-  // smoke do F5). Ancorar na etapa adjacente é correto por definição e imune a esse resíduo.
-  const currents = ordered.filter((s) => s?.status === 'current' && s.position < pending.position)
-  const current = currents.length > 0 ? currents[currents.length - 1] : undefined
+  const current = resolveCurrentStep(ordered, pending.position)
   // Sem etapa vigente não há âncora de vencimento. Acontece se o tratamento foi pausado com um
   // switch pendente: a evolução congela junto (§2.2) e o CTA sai de cena — não inventar data.
   if (!current?.started_at) return null
@@ -315,12 +334,8 @@ export function resolveManualNextStep(
   const pending = ordered.find((s) => s?.status === 'pending_confirmation')
   if (!pending) return null
 
-  // Mesma âncora de `resolvePendingSwitch`: a vigente é a ADJACENTE anterior (maior position
-  // menor que a da pendente), nunca a primeira `current` da lista — o banco não impede duas
-  // `current` na mesma escada (só `UNIQUE (titration_id, position)`), e uma vigente residual
-  // na posição 0 faria o banner apontar para a etapa errada, em silêncio.
-  const currents = ordered.filter((s) => s?.status === 'current' && s.position < pending.position)
-  const current = currents.length > 0 ? currents[currents.length - 1] : undefined
+  // Mesma âncora de `resolvePendingSwitch` — ver `resolveCurrentStep`.
+  const current = resolveCurrentStep(ordered, pending.position)
   if (!current) return null
 
   // 🔴 O gate que separa as duas funções: SÓ vigente CONTÍNUA. Vigente finita significa que há
