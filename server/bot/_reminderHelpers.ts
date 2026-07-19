@@ -10,6 +10,7 @@ import {
   calculateDailyIntake, calculateDaysRemaining, isLiquidMedicine, doseToMl, cleanFloat,
   resolveTitrationAdvance, formatMedicineFullName,
   getTodayLocal as getTodayLocalInTz,
+  createDoseInstanceRepository, resyncProtocolWindow, resolveUserTz,
 } from '@dosiq/core';
 import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
 import { dispatchLiveActivityLifecycle } from '../notifications/apns/dispatchLiveActivityLifecycle.js';
@@ -926,6 +927,47 @@ const TITRATION_STEPS_SELECT = `
   )
 `;
 
+/**
+ * Reprojeta a janela futura do protocolo executor após o `dose_change` automático (052 T006).
+ *
+ * **BEST-EFFORT (R-245), e isso é deliberado.** A ativação da etapa JÁ está no banco quando esta
+ * função roda; falhar aqui não pode abortar o tick nem fazer o push repetir. O cron do dia
+ * seguinte e a rede lazy seguem como malha de segurança — a falha degrada para o comportamento
+ * ANTIGO (esperar o cron), nunca para um estado que a malha não enxergue.
+ *
+ * O select carrega o embed `titration_steps(...)` COM `medicine_id` porque o gerador precisa da
+ * escada inteira: sem ela a dose cai para `dosage_per_intake` em silêncio (CON-032), e sem o
+ * `medicine_id` do step a instância congelaria o medicamento do protocolo em vez do da etapa
+ * vigente na data (052 §G1).
+ * @private
+ */
+async function _resyncProtocolAfterDoseChange(protocolId, correlationId) {
+  if (!protocolId) return;
+  try {
+    const { data: protocol, error } = await supabase
+      .from('protocols')
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
+      .eq('id', protocolId)
+      .single();
+    if (error || !protocol) return;
+
+    // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4) —
+    // mesmo cast de fronteira do doseInstanceScheduler.
+    const tz = await resolveUserTz(supabase as any, protocol.user_id);
+    await resyncProtocolWindow({
+      protocol,
+      doseInstanceRepo: createDoseInstanceRepository({ client: supabase as any }),
+      tz,
+    });
+  } catch (err) {
+    logger.warn('Resync de dose_instances pós-dose_change falhou (cron/rede lazy corrigem)', {
+      protocolId,
+      correlationId,
+      error: err?.message,
+    });
+  }
+}
+
 // Aplica o plano do motor. Retorna true só se o CLAIM da transição pegou a linha —
 // é o gate da notificação (sem isto, tick repetido = push duplicado).
 // `protocolIdByStepId`: executor de cada etapa (o motor puro não faz I/O nem conhece joins).
@@ -999,6 +1041,16 @@ export async function _applyTitrationPlan(userId, titrationId, plan, protocolIdB
         .eq('id', inheritedProtocolId)
         .eq('user_id', userId);
       if (protoErr) throw protoErr;
+
+      // 052 T006 (FR-007c) — a segunda instância viva do AP-308, no caminho do CRON.
+      // O UPDATE acima é a ÚNICA outra escrita em `protocols` fora do repositório (a primeira,
+      // a RPC `confirm_titration_switch`, a 029 F5.5 já cobriu do lado do cliente). Escapar do
+      // repositório significa escapar do `syncInstancesOnWrite`: as instâncias futuras já
+      // materializadas mantêm a `expected_dose` do cronograma ANTERIOR. Como este é o caminho
+      // NORMAL da escada (`dose_change` automático na data), o efeito em prod é que TODO avanço
+      // automático deixava o tratamento dizendo uma dose e o lembrete entregando outra — pior
+      // que a ausência de dose, porque é risco clínico silencioso.
+      await _resyncProtocolAfterDoseChange(inheritedProtocolId, correlationId);
     }
   }
 

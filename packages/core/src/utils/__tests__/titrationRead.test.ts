@@ -32,6 +32,7 @@ describe('resolveTitrationStageAt — a escada rege a dose', () => {
     expect(resolveTitrationStageAt(emEvolucao, DATE_IN_CURRENT)).toEqual({
       stageIndex: 1,
       dosage: 0.5,
+      medicine_id: null,
     })
   })
 
@@ -41,6 +42,7 @@ describe('resolveTitrationStageAt — a escada rege a dose', () => {
     expect(resolveTitrationStageAt(emEvolucao, DATE_NEXT_STAGE)).toEqual({
       stageIndex: 2,
       dosage: 1.0,
+      medicine_id: null,
     })
   })
 
@@ -52,6 +54,7 @@ describe('resolveTitrationStageAt — a escada rege a dose', () => {
     expect(resolveTitrationStageAt(emEvolucao, startMs + 999 * DAY)).toEqual({
       stageIndex: 2,
       dosage: 1.0,
+      medicine_id: null,
     })
   })
 
@@ -72,8 +75,27 @@ describe('resolveTitrationStageAt — a escada rege a dose', () => {
     expect(resolveTitrationStageAt(comManutencao, DATE_NEXT_STAGE)).toEqual({
       stageIndex: 1,
       dosage: 0.5,
+      medicine_id: null,
     })
     expect(resolveTitrationStageAt(comManutencao, startMs + 999 * DAY)?.dosage).toBe(0.5)
+  })
+})
+
+describe('resolveTitrationStageAt — medicine_id da etapa (052)', () => {
+  it('devolve o medicine_id da etapa RESOLVIDA, não o da vigente hoje', () => {
+    const crossMed: TitrationStepLike[] = [
+      { position: 0, dose: 0.25, duration_days: 28, status: 'current', started_at: STAGE_START, medicine_id: 'MED-A' },
+      { position: 1, dose: 0.5, duration_days: 28, status: 'upcoming', started_at: null, medicine_id: 'MED-B' },
+    ]
+    expect(resolveTitrationStageAt(crossMed, DATE_IN_CURRENT)?.medicine_id).toBe('MED-A')
+    expect(resolveTitrationStageAt(crossMed, DATE_NEXT_STAGE)?.medicine_id).toBe('MED-B')
+  })
+
+  it('etapa sem medicine_id (embed legado) → null, nunca undefined (o chamador faz o fallback)', () => {
+    const semMedicine: TitrationStepLike[] = [
+      { position: 0, dose: 0.25, duration_days: 28, status: 'current', started_at: STAGE_START },
+    ]
+    expect(resolveTitrationStageAt(semMedicine, DATE_IN_CURRENT)?.medicine_id).toBeNull()
   })
 })
 

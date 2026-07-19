@@ -139,6 +139,19 @@ export async function createFullLadder(
   const titration = await titrationRepo.create({ treatment_plan_id: treatmentPlanId })
   const rows = buildLadderRows(titration.id, protocolId, medicineId, steps, getNow().toISOString())
   const created = await titrationRepo.createSteps(rows)
+
+  // 052 (FR-007, achado do RC6 no PR #761) — TERCEIRO caminho de escrita fora do repositório, e o
+  // de maior impacto: quando a escada é cadastrada, o protocolo JÁ existe e sua janela JÁ foi
+  // materializada (~30d, sem escada nenhuma). Todas essas instâncias carregam a dose chapada
+  // `dosage_per_intake` e o medicamento do protocolo — inclusive os dias que a etapa 0 nem cobre.
+  // Nada as corrigia depois: o `syncInstancesOnWrite` só dispara em `update()` de protocolo, e o
+  // cron/rede lazy usam `ON CONFLICT DO NOTHING` (preenchem buraco, não consertam linha existente).
+  //
+  // Antes da 052 o dano era só na dose; com o medicamento congelado, a instância errada vira
+  // permanente também na identidade — ou seja, esta spec AGRAVA o defeito se não o fechar aqui.
+  // É literalmente o fluxo do AP-301 ("adicionei a escada depois"), que é o fluxo REAL do usuário.
+  await _resyncProtocolInstances(protocolId)
+
   return { titration, steps: created }
 }
 
@@ -260,6 +273,14 @@ export interface LadderEditPlan {
   toDelete: string[]
   toUpdate: StepUpdate[]
   toCreate: LadderRow[]
+  /**
+   * 052 (FR-007b): protocolo DONO da escada, carregado no plano para que `saveLadderEdit` possa
+   * reprojetar a janela futura sem receber um segundo argumento. Editar uma etapa futura muda a
+   * dose/medicamento que vai reger dias já materializados — sem o resync, as pending futuras
+   * ficam com o cronograma antigo congelado (a escrita vai direto em `titration_steps`, fora do
+   * `update()` do protocolo, logo o `syncInstancesOnWrite` nunca dispara — classe AP-308).
+   */
+  protocolId: string
 }
 
 const FROZEN_STATUS = new Set(['current', 'completed'])
@@ -366,7 +387,7 @@ export function buildLadderEditPlan(
   })
 
   const toDelete = editableExisting.filter((s) => !keptIds.has(s.id)).map((s) => s.id)
-  return { toDelete, toUpdate, toCreate }
+  return { toDelete, toUpdate, toCreate, protocolId }
 }
 
 /** `true` se o plano não altera nada (evita I/O e toast de sucesso vazio). */
@@ -416,6 +437,16 @@ export async function saveLadderEdit(plan: LadderEditPlan): Promise<void> {
   if (plan.toCreate.length > 0) {
     await titrationRepo.createSteps(plan.toCreate)
   }
+
+  // 052 (FR-007b) — a escada nova só vale se o calendário a refletir.
+  // Reusa o `resyncProtocolWindow` da F5.5 em vez de um segundo helper: o problema é o mesmo
+  // (escrita fora do repositório do protocolo não dispara o `syncInstancesOnWrite`), então a
+  // resposta é a mesma. Best-effort (R-245): a edição JÁ está persistida quando isto roda —
+  // falhar aqui não pode virar erro na cara de quem acabou de salvar; o cron e a rede lazy
+  // convergem, que é exatamente o comportamento pré-052.
+  if (!isEmptyEditPlan(plan)) {
+    await _resyncProtocolInstances(plan.protocolId)
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -456,25 +487,34 @@ const _REASON_COPY: Record<ConfirmSwitchReason, string> = {
  * com a verdade — a etapa NÃO foi iniciada e nada mudou — em vez de fingir sucesso local.
  */
 /**
- * Materializa a janela de doses do protocolo que passou a executar (029 F5.5).
+ * Materializa a janela de doses de um protocolo (029 F5.5 · ampliado na 052).
  *
- * **BEST-EFFORT, e isso é deliberado (R-245).** A transição JÁ aconteceu no banco quando esta
- * função roda: falhar aqui não pode transformar uma confirmação bem-sucedida em erro na cara do
- * usuário — ele iniciaria a etapa de novo e receberia "não pendente". O cron diário e a rede
- * lazy seguem como malha de segurança; o atraso volta a ser o comportamento antigo, que é o pior
- * caso aceitável.
+ * TRÊS chamadores, mesma causa: escrita que muda o cronograma FORA do `update()` do protocolo,
+ * logo sem `syncInstancesOnWrite` (classe AP-308).
+ *   1. `confirmTitrationSwitch` — a transição de etapa acontece dentro da RPC (SQL);
+ *   2. `saveLadderEdit` (052/FR-007b) — a edição de etapas futuras escreve em `titration_steps`;
+ *   3. `createFullLadder` (052/RC6) — o CADASTRO da escada sobre um protocolo cuja janela já
+ *      estava materializada sem escada nenhuma.
+ *
+ * **BEST-EFFORT, e isso é deliberado (R-245).** A escrita JÁ aconteceu no banco quando esta
+ * função roda: falhar aqui não pode transformar uma operação bem-sucedida em erro na cara do
+ * usuário — ele tentaria de novo e receberia "não pendente" (ou salvaria a escada duas vezes). O
+ * cron diário e a rede lazy seguem como malha de segurança; o atraso volta a ser o comportamento
+ * antigo, que é o pior caso aceitável.
  *
  * O select carrega o embed `titration_steps` porque o gerador PRECISA da escada: sem ela a dose
- * cai para `dosage_per_intake` em silêncio (CON-032 / `generateInstances`). A FK
+ * cai para `dosage_per_intake` em silêncio (CON-032 / `generateInstances`), e sem o `medicine_id`
+ * do step a instância congela o medicamento do PROTOCOLO em vez do da etapa vigente na data
+ * (052 §G1 — o campo é invisível a tsc/lint por ser string de select, AP-300). A FK
  * `titration_steps.protocol_id` já filtra por protocolo — é exatamente o recorte certo.
  * @private
  */
-async function _resyncAfterSwitch(protocolId: string | null): Promise<void> {
+async function _resyncProtocolInstances(protocolId: string | null): Promise<void> {
   if (!protocolId) return // `dose_change` sem executor vinculado: nada a materializar.
   try {
     const { data: protocol, error } = await typedClient
       .from('protocols')
-      .select('*, titration_steps(id, position, dose, duration_days, status, started_at)')
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
       .eq('id', protocolId)
       .single()
     if (error || !protocol) return
@@ -506,7 +546,7 @@ export async function confirmTitrationSwitch(stepId: string): Promise<ConfirmSwi
       //
       // Aqui e não na tela: são 3 chamadores (detalhe do tratamento, card do Hoje e a ação do
       // push) — atrás da RPC, todos herdam.
-      await _resyncAfterSwitch(data.protocol_activated ?? null)
+      await _resyncProtocolInstances(data.protocol_activated ?? null)
       return {
         ok: true,
         // Caminho normal do double-tap/retry — convergir, nunca sinalizar erro.

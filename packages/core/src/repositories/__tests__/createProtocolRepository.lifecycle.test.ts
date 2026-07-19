@@ -123,6 +123,24 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     expect(methods).toContain('upsert') // regeneração
   })
 
+  // 052 FR-007a / PO-6 — trocar o medicamento do tratamento é mudança de AGENDAMENTO.
+  // Antes da 052 o join deixava as pending futuras certas de graça (não guardavam medicamento
+  // nenhum). Congeladas, elas ficariam presas no medicamento ANTIGO se este wipe não existisse.
+  it('update medicine_id → wipe (delete) + regen (upsert)', async () => {
+    await repo.update('p1', { medicine_id: 'f0e1d2c3-b4a5-4968-8778-9a0b1c2d3e4f' })
+    const methods = methodsFor(client, 'dose_instances')
+    expect(methods).toContain('delete') // wipeFuturePending
+    expect(methods).toContain('upsert') // regeneração com o medicamento novo congelado
+
+    // O wipe é o de sempre: só pending futuro. O passado nunca entra no filtro — se um dia
+    // entrasse, o congelamento viraria falsificação em vez de proteção (o oposto da spec).
+    const deleteOp = tableOps(client, 'dose_instances').find((b: any) =>
+      b.calls.some(([m]: any) => m === 'delete'),
+    )
+    expect(deleteOp.calls).toContainEqual(['in', ['status', ['pending', 'skipped_paused']]])
+    expect(deleteOp.calls.some(([m, a]: any) => m === 'gt' && a[0] === 'scheduled_for')).toBe(true)
+  })
+
   it('update não-estrutural (name) → não toca dose_instances', async () => {
     await repo.update('p1', { name: 'Novo Nome' })
     expect(tableOps(client, 'dose_instances').length).toBe(0)

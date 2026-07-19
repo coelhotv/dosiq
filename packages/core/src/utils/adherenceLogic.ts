@@ -23,7 +23,9 @@ import { doseToMl } from './doseUnit'
 
 export interface AdherenceProtocol {
   id?: string
-  medicine_id?: string
+  // 052: `protocols.medicine_id` é NULLABLE no banco (information_schema, 2026-07-19) — hoje 0 de
+  // 70 linhas com NULL, mas o estado é representável e o tipo tem que dizer a verdade.
+  medicine_id?: string | null
   time_schedule?: string[] | null
   frequency?: string | null
   weekdays?: string[] | null
@@ -398,7 +400,9 @@ export function calculateDosesByDate(
     schedule.forEach((time: string) => {
       expectedDoses.push({
         protocolId: protocol.id,
-        medicineId: protocol.medicine_id,
+        // null (banco) e undefined (ausente) significam a MESMA coisa para o slot: sem
+        // medicamento. Normalizar aqui evita propagar os dois vocabulários pro cálculo de adesão.
+        medicineId: protocol.medicine_id ?? undefined,
         scheduledTime: time,
         expectedQuantity: protocol.dosage_per_intake || 1,
         protocol: protocol,

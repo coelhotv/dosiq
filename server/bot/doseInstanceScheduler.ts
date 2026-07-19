@@ -54,7 +54,7 @@ export async function generateDoseInstances() {
       // 029 F3 (T014): embed da escada N2 deste protocolo. A FK titration_steps.protocol_id
       // filtra por protocolo de graça — é o recorte que o gerador exige (ver
       // createProtocolRepository). Sem ele, TITRATION_SOURCE=n2 zeraria a dose de titulação.
-      .select('*, titration_steps(id, position, dose, duration_days, status, started_at)')
+      .select('*, titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
       .eq('active', true)
       .or(`generated_through.is.null,generated_through.lt.${renewalCutoffIso}`)
       .range(from, from + BATCH_SIZE - 1)

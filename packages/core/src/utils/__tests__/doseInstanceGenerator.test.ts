@@ -338,3 +338,101 @@ describe('generateInstances — titulação congela expected_dose por etapa', ()
     expect(out.every((i) => i.expected_dose === 1)).toBe(true)
   })
 })
+
+// ── 052 (FR-002/PO-2): medicine_id congela pela MESMA resolução temporal da dose ──
+// O ponto da spec inteira: a identidade do medicamento tem que sair do step vigente em
+// `scheduled_for`, não de `protocols.medicine_id` no instante da geração. Se saísse do protocolo,
+// uma instância futura gerada ANTES do medicine_switch nasceria com o medicamento de hoje — o bug
+// que a 052 mata por leitura, recriado por escrita (pior: silencioso e permanente).
+describe('generateInstances — medicine_id congela o medicamento da etapa vigente', () => {
+  const protocolo = {
+    id: 'p-glp1',
+    user_id: 'u1',
+    medicine_id: 'MED-PROTOCOLO',
+    frequency: 'semanal',
+    weekdays: ['domingo'],
+    time_schedule: ['08:00'],
+    dosage_per_intake: 1,
+    start_date: '2026-06-01',
+    active: true,
+  }
+
+  // Escada CROSS-MED: etapa 1 (Mounjaro 2,5) vence em 29/06 → etapa 2 é outro medicamento.
+  const stepsCrossMed = [
+    {
+      position: 0,
+      dose: 0.25,
+      duration_days: 28,
+      status: 'current',
+      started_at: '2026-06-01T08:00:00.000Z',
+      medicine_id: 'MED-ETAPA-1',
+    },
+    {
+      position: 1,
+      dose: 0.5,
+      duration_days: 28,
+      status: 'upcoming',
+      started_at: null,
+      medicine_id: 'MED-ETAPA-2',
+    },
+  ]
+
+  const gerar = (steps) =>
+    generateInstances(
+      protocolo,
+      '2026-06-01T00:00:00-03:00',
+      '2026-07-05T23:59:59-03:00',
+      'America/Sao_Paulo',
+      steps,
+    )
+
+  /** Dia LOCAL da ocorrência (AP-270: `slice(0,10)` lê a data em UTC e desloca em GMT-3). */
+  const diaLocal = (iso) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date(iso))
+
+  it('instância futura nasce com o medicamento da etapa que rege AQUELA data, não a vigente hoje', () => {
+    const byDate = Object.fromEntries(gerar(stepsCrossMed).map((i) => [diaLocal(i.scheduled_for), i.medicine_id]))
+    expect(byDate['2026-06-07']).toBe('MED-ETAPA-1') // dentro da etapa 1
+    expect(byDate['2026-06-28']).toBe('MED-ETAPA-1') // último domingo da etapa 1
+    expect(byDate['2026-07-05']).toBe('MED-ETAPA-2') // já na etapa 2 (após 29/06)
+  })
+
+  it('dose e medicamento saem da MESMA etapa (nunca cronograma novo + medicamento velho)', () => {
+    const out = gerar(stepsCrossMed)
+    const parByDose = { 0.25: 'MED-ETAPA-1', 0.5: 'MED-ETAPA-2' }
+    expect(out.every((i) => i.medicine_id === parByDose[i.expected_dose])).toBe(true)
+  })
+
+  it('sem escada regendo a data → cai no medicine_id do protocolo (tratamento normal)', () => {
+    expect(gerar(undefined).every((i) => i.medicine_id === 'MED-PROTOCOLO')).toBe(true)
+  })
+
+  it('escada pausada (nenhuma current) → cai no medicine_id do protocolo', () => {
+    const pausada = stepsCrossMed.map((s) => ({ ...s, status: 'upcoming', started_at: null }))
+    expect(gerar(pausada).every((i) => i.medicine_id === 'MED-PROTOCOLO')).toBe(true)
+  })
+
+  it('step SEM medicine_id (embed antigo/legado) degrada pro protocolo, não grava lixo — AP-300', () => {
+    // O modo de falha do G1: adicionar o campo ao tipo sem adicioná-lo ao select devolve
+    // `undefined` em runtime. Aqui isso tem que virar o medicamento do protocolo, nunca undefined.
+    const semMedicine = stepsCrossMed.map((s) => {
+      const copia = { ...s }
+      delete copia.medicine_id
+      return copia
+    })
+    expect(gerar(semMedicine).every((i) => i.medicine_id === 'MED-PROTOCOLO')).toBe(true)
+  })
+
+  it('protocolo sem medicine_id e sem escada → null explícito (coluna nullable no Slice A)', () => {
+    const semMedicine = { ...protocolo }
+    delete semMedicine.medicine_id
+    const out = generateInstances(
+      semMedicine,
+      '2026-06-01T00:00:00-03:00',
+      '2026-06-14T23:59:59-03:00',
+      'America/Sao_Paulo',
+    )
+    expect(out.length).toBeGreaterThan(0)
+    expect(out.every((i) => i.medicine_id === null)).toBe(true)
+  })
+})

@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "tier": 1,
-    "plan": "plans/specs/053-unit-label-formatter/plan.md",
-    "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
-    "goal": "029 F5.5 — sair da etapa contínua com gatilho manual + paridade de sync da RPC (T033-T041)",
+    "status": "analysis",
+    "tier": 2,
+    "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
+    "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
+    "goal": "052 Slice A — dose_instances.medicine_id (T001-T010)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -205,7 +205,7 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "spec_dir": "plans/specs/029-treatment-level-titration",
+    "spec_dir": "plans/specs/052-dose-instance-medicine-snapshot",
     "spec": "plans/specs/053-unit-label-formatter/spec.md",
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
@@ -248,7 +248,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-19T20:23:13.431754+00:00"
+    "index_loaded_at": "2026-07-19T17:53:07.412578"
   },
   "code_review": {
     "status": "clean",
