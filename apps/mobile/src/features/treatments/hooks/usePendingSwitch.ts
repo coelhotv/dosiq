@@ -96,16 +96,33 @@ export function usePendingSwitch(
   )
 
   // 3. Effects
+  // 🔴 Duas falhas possíveis aqui derrubam a feature INTEIRA, e de formas diferentes (RC6):
+  //   1. JSON válido mas com forma errada (storage corrompido, schema antigo) — `as string[]` era
+  //      cego: um objeto passaria e `dismissedIds.includes(...)` estouraria em `selectPendingView`,
+  //      dentro de um `useMemo` de render, quebrando o Hoje;
+  //   2. rejeição na LEITURA (SecureStore/bridge) sem `.catch` — `dismissedIds` ficaria `null`
+  //      para sempre, e `null` é o sinal de "storage não lido": o card NUNCA apareceria. Pior que
+  //      um erro visível, porque some em silêncio.
+  // Fail-safe nos dois casos: lista vazia = "nada foi adiado", que só mostra a mais, nunca a menos.
   useEffect(() => {
     let cancelled = false
-    nativeStorageAdapter.getItem(`${DISMISS_PREFIX}list`).then((raw) => {
-      if (cancelled) return
-      try {
-        setDismissedIds(raw ? (JSON.parse(raw) as string[]) : [])
-      } catch {
-        setDismissedIds([])
-      }
-    })
+    nativeStorageAdapter
+      .getItem(`${DISMISS_PREFIX}list`)
+      .then((raw) => {
+        if (cancelled) return
+        try {
+          const parsed: unknown = raw ? JSON.parse(raw) : []
+          // Valida a FORMA, não só o parse: array de strings ou nada.
+          setDismissedIds(
+            Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [],
+          )
+        } catch {
+          setDismissedIds([])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDismissedIds([])
+      })
     return () => {
       cancelled = true
     }

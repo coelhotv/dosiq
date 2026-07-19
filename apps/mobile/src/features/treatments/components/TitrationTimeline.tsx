@@ -147,7 +147,7 @@ export default function TitrationTimeline({
   onStartPendingStep,
   onEditStep,
 }: Props) {
-  const { steps, hasLadder, loading, refresh } = useTitrationTimeline(protocolId)
+  const { steps, hasLadder, loading, refresh, timezone } = useTitrationTimeline(protocolId)
   // 🔴 A preferência vem do HOOK, não de prop. Antes era `doseOnly?: boolean` com default
   // `false` — e NENHUM call site passava, então o usuário dose-only da 044 lia "Você ainda não
   // tem estoque cadastrado dela" sobre um cadastro que, para ele, não existe. A copy §8 já dizia
@@ -160,7 +160,8 @@ export default function TitrationTimeline({
   // States/Memos antes de Effects (R-010).
   // `todayLocal` re-avaliado no focus (não capturado uma vez) — cobre a tela atravessando a
   // meia-noite ao voltar da navegação, sem projetar com "hoje" velho (AP-W15).
-  const [todayLocal, setTodayLocal] = useState(getTodayLocal)
+  // Dia local NO FUSO DO DONO — não o do device (R-253/R-254).
+  const [todayLocal, setTodayLocal] = useState(() => getTodayLocal(timezone))
   const timeline = useMemo(() => buildTimeline(steps, todayLocal), [steps, todayLocal])
 
   // §7.2 (T026): QUALQUER dia de espera, inclusive o dia 0. Esta tela é a fonte canônica de
@@ -170,7 +171,7 @@ export default function TitrationTimeline({
   // saída até o dia seguinte. Nag é interromper (push); aqui o usuário veio de propósito (pull).
   // O "desde" vem do vencimento da etapa vigente, não de `updated_at` (ver `resolvePendingSwitch`).
   const pendingSwitch = useMemo(() => {
-    const info = resolvePendingSwitch(steps, todayLocal)
+    const info = resolvePendingSwitch(steps, todayLocal, timezone)
     if (!info) return null
     const current = steps.find((s) => s.id === info.currentStepId)
     const pending = steps.find((s) => s.id === info.pendingStepId)
@@ -182,10 +183,10 @@ export default function TitrationTimeline({
       currentMedName: formatMedicineFullName(current?.medicine, 'dose atual'),
       nextMedName: formatMedicineFullName(pending?.medicine),
     }
-  }, [steps, todayLocal])
+  }, [steps, todayLocal, timezone])
   // Refresh on focus: ao voltar do cadastro/edição da escada, a timeline reflete as mudanças
   // sem recarregar o app (o hook só carregava no mount). `void` — rejeição já tratada no hook.
-  useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal()); void refresh() }, [refresh]))
+  useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal(timezone)); void refresh() }, [refresh, timezone]))
 
   // Enquanto carrega: se o detalhe já sinalizou que há escada (hint), reserva o espaço com
   // skeleton (evita o pop-in); se não há escada, nada aparece (sem convite de cadastro — §2.4).
@@ -240,7 +241,14 @@ export default function TitrationTimeline({
           // §7.3 (T026): etapa órfã vira card corrigível NO LUGAR da linha normal — mostrar
           // "Medicamento · " genérico seria esconder que a escada está quebrada. Nunca beco:
           // o botão nomeado leva à edição da etapa (Constituição IX).
-          if (step.broken) {
+          //
+          // 🔴 Só etapa FUTURA (achado do RC6). `broken` é calculado para qualquer `kind`, mas
+          // `EDITABLE_STATUSES` = upcoming + pending_confirmation, e `current`/`completed` são
+          // congeladas no form (`FROZEN_STATUS`). Oferecer "Editar etapa N" numa passada ou na
+          // vigente levaria a um form onde ela NÃO pode ser tocada — o beco que este card existe
+          // para evitar. Órfã passada/vigente cai na linha normal, que já degrada para o rótulo
+          // genérico via `medName`; não há o que consertar ali, e o histórico não se reescreve.
+          if (step.broken && step.kind === 'future') {
             return (
               <EvolutionBrokenStepCard
                 key={step.key}

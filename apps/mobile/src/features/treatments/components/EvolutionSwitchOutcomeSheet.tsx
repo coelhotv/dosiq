@@ -51,7 +51,16 @@ export default function EvolutionSwitchOutcomeSheet({
   onOpenTreatment,
 }: EvolutionSwitchOutcomeSheetProps) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      // AP-165 / R-233: sem `statusBarTranslucent` no Android o Modal só ocupa a área da screen
+      // atual — o topo fica sem overlay e a bottom tab bar CORTA os botões do sheet. Padrão de
+      // todos os sheets da casa (ProtocolDeleteSheet, MedicineSelectorSheet, …); este nasceu sem.
+      statusBarTranslucent
+    >
       <View style={styles.overlay}>
         <View style={styles.sheet} accessibilityViewIsModal accessibilityRole="summary">
           <View style={styles.grabber} />

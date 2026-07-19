@@ -559,3 +559,22 @@ export async function getSwitchOutcomeProtocols(ids: string[]): Promise<SwitchOu
   if (error) throw error
   return (data ?? []) as SwitchOutcomeProtocol[]
 }
+
+/**
+ * Fuso IANA do DONO (`user_settings.timezone`), com o mesmo fallback do `resolveUserTz` (R-254).
+ *
+ * Por que existe: o vencimento de uma etapa é dia de CALENDÁRIO LOCAL (R-253). O Hoje já usava o
+ * fuso real (vem do `useTodayData`), mas a timeline do tratamento chamava `resolvePendingSwitch`
+ * com o default — a MESMA pendência exibia "aguardando desde" e contagem de dias diferentes nas
+ * duas telas para quem não está em São Paulo (achado do RC6 do F5).
+ */
+export async function getUserTimezone(): Promise<string> {
+  const userId = await getUserId()
+  const { data, error } = await typedClient
+    .from('user_settings')
+    .select('timezone')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return (data as { timezone?: string | null } | null)?.timezone || 'America/Sao_Paulo'
+}

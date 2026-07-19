@@ -3,12 +3,17 @@
 // protocolo não traz nome nem intake_unit). Refetch on focus (a escada muda no cadastro/edição).
 
 import { useCallback, useEffect, useRef, useState, startTransition } from 'react'
-import { getLadderForProtocol, type LadderStepWithMedicine } from '../services/titrationService'
+import { getLadderForProtocol, getUserTimezone, type LadderStepWithMedicine } from '../services/titrationService'
 
 export function useTitrationTimeline(protocolId: string | null | undefined) {
   const [steps, setSteps] = useState<LadderStepWithMedicine[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Fuso do DONO, não o do device (R-253/R-254). O vencimento da etapa é dia de calendário LOCAL,
+  // e o Hoje (usePendingSwitch) já usa o fuso real — sem isto a MESMA pendência renderizaria
+  // "aguardando desde" e contagem de dias DIFERENTES nas duas telas para quem não está em SP
+  // (achado do RC6). Fallback idêntico ao resolveUserTz.
+  const [timezone, setTimezone] = useState('America/Sao_Paulo')
   // Guarda de corrida: o refresh-on-focus pode sobrepor o load do mount (ou uma troca de
   // protocolId). Sem isto, a resposta MAIS VELHA pode chegar depois e sobrescrever a mais nova —
   // a timeline mostraria escada obsoleta (dado clínico). Só a requisição corrente aplica estado.
@@ -25,9 +30,14 @@ export function useTitrationTimeline(protocolId: string | null | undefined) {
     }
     setLoading(true)
     try {
-      const data = await getLadderForProtocol(protocolId)
+      // Best-effort: fuso indisponível cai no fallback e a escada ainda carrega (R-245).
+      const [data, tz] = await Promise.all([
+        getLadderForProtocol(protocolId),
+        getUserTimezone().catch(() => 'America/Sao_Paulo'),
+      ])
       if (myReq !== reqIdRef.current) return // resposta obsoleta — descarta
       setSteps(data)
+      setTimezone(tz)
       setError(null)
     } catch (err: any) {
       if (myReq !== reqIdRef.current) return
@@ -46,5 +56,5 @@ export function useTitrationTimeline(protocolId: string | null | undefined) {
     })
   }, [load])
 
-  return { steps, loading, error, refresh: load, hasLadder: steps.length > 0 }
+  return { steps, loading, error, timezone, refresh: load, hasLadder: steps.length > 0 }
 }
