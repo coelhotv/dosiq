@@ -59,6 +59,26 @@ async function attachFullLadders(userId, protocols) {
       stepsByTitration.get(s.titration_id).push(s)
     }
 
+    // AP-311 regra 3: não achar o vínculo ≠ não existir vínculo. Uma titulação cujas etapas NÃO
+    // carregam `protocol_id` em nenhuma linha é inatribuível: o tratamento dela cai de volta no
+    // embed incompleto e o badge volta a mentir — o mesmo furo que esta função corrige, de novo em
+    // silêncio. Não dá para consertar aqui (o vínculo não existe no dado; some por construção no
+    // Slice C / ADR-085), mas tem de ser OBSERVÁVEL.
+    //
+    // ⚠️ O sinal NÃO pode ser `protocols.titration_status`: verificado no banco (2026-07-20) é
+    // `text` nullable, sem CHECK, default `'estável'` — e as 68 linhas de prod estão TODAS em
+    // `'estável'`, inclusive tratamentos com escada em curso. Coluna nunca escrita ⇒ inútil como
+    // evidência de titulação ativa.
+    const linkedTitrations = new Set(titrationByProtocol.values())
+    for (const titrationId of stepsByTitration.keys()) {
+      if (!linkedTitrations.has(titrationId)) {
+        errorLog(
+          'treatmentsService',
+          `Titulação órfã ${titrationId}: nenhuma etapa carrega protocol_id — tratamento fica sem escada na listagem e o badge pode subestimar a evolução (AP-311)`
+        )
+      }
+    }
+
     return protocols.map((p) => {
       const titrationId = titrationByProtocol.get(p.id)
       const ladder = titrationId ? stepsByTitration.get(titrationId) : null

@@ -9,8 +9,14 @@
 // O primeiro caso reproduz a escada REAL do smoke (Mounjaro, titulação b5dd99df): 6 etapas, a
 // vigente na posição 1 SEM `protocol_id`, e a única etapa com `protocol_id` é uma `upcoming`.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { getEvolutionBadge } from '../titrationUtils'
+
+// R-078: obrigatório mesmo em suíte de função pura — o executor do Vitest é compartilhado.
+afterEach(() => {
+  vi.clearAllMocks()
+  vi.clearAllTimers()
+})
 
 const PROTO = '2e5bd1ab-caaf-4172-b62c-20514403ed6a'
 
