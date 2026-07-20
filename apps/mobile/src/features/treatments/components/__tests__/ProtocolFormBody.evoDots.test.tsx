@@ -55,8 +55,8 @@ function step(id, position, status, extra = {}) {
     dose: 1,
     intake_unit: null,
     duration_days: 28,
-    started_at: status === 'current' || status === 'completed' ? '2026-07-01T08:00:00Z' : null,
-    ended_at: status === 'completed' ? '2026-07-28T08:00:00Z' : null,
+    started_at: status === 'current' || status === 'completed' ? '2026-07-01T08:00:00' : null,
+    ended_at: status === 'completed' ? '2026-07-28T08:00:00' : null,
     medicine: { id: 'm1', name: 'Mounjaro' },
     ...extra,
   }
@@ -92,7 +92,7 @@ describe('ProtocolFormBody — bolas da Evolução', () => {
     // s1 ficou com status='current' sem ser a vigente real (resíduo que o banco não impede).
     // `findIndex` diria "Etapa 1 de 3"; `resolveCurrentStep` mantém a âncora correta.
     const steps = [
-      step('s1', 0, 'current', { started_at: '2026-06-01T08:00:00Z', ended_at: '2026-06-28T08:00:00Z' }),
+      step('s1', 0, 'current', { started_at: '2026-06-01T08:00:00', ended_at: '2026-06-28T08:00:00' }),
       step('s2', 1, 'current'),
       step('s3', 2, 'upcoming'),
     ]
@@ -109,6 +109,31 @@ describe('ProtocolFormBody — bolas da Evolução', () => {
     )
     expect(getByLabelText('Etapa 1 de 11')).toBeTruthy()
     expect(getByText('+3')).toBeTruthy()
+  })
+
+  it('🔴 vigente ALÉM do teto continua marcada — a janela acompanha, não corta as 8 primeiras', () => {
+    // O bug (RC6 #763): `slice(0, 8)` pegava sempre as 8 PRIMEIRAS e `index === currentIndex`
+    // comparava índice da JANELA com índice ABSOLUTO. Com a vigente na 10ª de 11, nenhuma bola era
+    // marcada — e o accessibilityLabel seguia dizendo "Etapa 10 de 11", então um teste de label
+    // passava com o bug intacto. Por isso a asserção é sobre a BOLA, via testID.
+    const steps = Array.from({ length: 11 }, (_, i) =>
+      step(`s${i}`, i, i === 9 ? 'current' : i < 9 ? 'completed' : 'upcoming')
+    )
+    const { getByLabelText, getByTestId } = render(
+      <ProtocolFormBody {...baseProps} form={makeForm()} titrationStepCount={11} titrationSteps={steps} />
+    )
+    expect(getByLabelText('Etapa 10 de 11')).toBeTruthy()
+    expect(getByTestId('evo-dot-current-s9')).toBeTruthy()
+  })
+
+  it('vigente dentro do teto é marcada na bola certa (não na primeira `current`)', () => {
+    // Resíduo em s0: a bola cheia tem de ser a de s1, não a de s0.
+    const steps = [step('s0', 0, 'current'), step('s1', 1, 'current'), step('s2', 2, 'upcoming')]
+    const { getByTestId, queryByTestId } = render(
+      <ProtocolFormBody {...baseProps} form={makeForm()} titrationStepCount={3} titrationSteps={steps} />
+    )
+    expect(getByTestId('evo-dot-current-s1')).toBeTruthy()
+    expect(queryByTestId('evo-dot-current-s0')).toBeNull()
   })
 
   it('ordena por position, não pela ordem de chegada do array', () => {

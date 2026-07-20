@@ -1,7 +1,19 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
 import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native'
+// ⚠️ Namespace + cast NÃO é desleixo — é contorno de resolução de tipos quebrada, e trocar por
+// import nomeado QUEBRA o gate cross-program (verificado em 2026-07-20):
+//   `lucide-react-native` está hoisted em /node_modules, mas `react-native-svg` só existe em
+//   apps/mobile/node_modules. O .d.ts do lucide faz `import { SvgProps } from 'react-native-svg'`
+//   e resolve a partir da raiz ⇒ não acha ⇒ tsc trata o módulo como SEM exports. Até `ChevronRight`
+//   passa a "não existir".
+// Custo aceito: nome de ícone errado vira `undefined` e só quebra no render. Mitigação = manter a
+// lista curta e conferir cada nome contra `node_modules/lucide-react-native/dist/icons.d.ts`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
+
+// Conferidos no d.ts do pacote (1703 ícones): `CircleQuestionMark` é o nome ATUAL — `CircleHelp` e
+// `HelpCircle` NÃO existem nesta versão, apesar de serem os nomes históricos.
+const { ArrowDownNarrowWide, ChevronRight, CircleQuestionMark } = LucideIcons as any
 import {
   parseLocalDate,
   formatDoseHint,
@@ -23,8 +35,6 @@ import {
   openFullScreenIntentSettings,
   isXiaomiDevice,
 } from '@platform/alarms/alarmService'
-
-const { ArrowDownNarrowWide, ChevronRight, CircleQuestionMark } = LucideIcons as any
 
 /** Teto de bolas renderizadas — acima disso vira "+N" (escada longa não pode estourar a linha). */
 const EVO_DOTS_MAX = 8
@@ -355,8 +365,20 @@ function EvoStepDots({ steps }) {
 
   const currentStep = resolveCurrentStep(ordered)
   const currentIndex = currentStep ? ordered.findIndex((s) => s.id === currentStep.id) : -1
-  const shown = ordered.slice(0, EVO_DOTS_MAX)
-  const overflow = ordered.length - shown.length
+
+  // A janela acompanha a etapa vigente. Cortar sempre as 8 PRIMEIRAS deixava a vigente de fora em
+  // escadas longas (GLP-1 chega a 11 etapas): nenhuma bola marcada, enquanto o accessibilityLabel
+  // seguia anunciando "Etapa 9 de 11" — visual e texto discordando em silêncio (RC6 #763).
+  const windowStart =
+    currentIndex === -1
+      ? 0
+      : Math.min(
+          Math.max(0, currentIndex - Math.floor(EVO_DOTS_MAX / 2)),
+          Math.max(0, ordered.length - EVO_DOTS_MAX)
+        )
+  const shown = ordered.slice(windowStart, windowStart + EVO_DOTS_MAX)
+  const hiddenBefore = windowStart
+  const hiddenAfter = ordered.length - (windowStart + shown.length)
 
   return (
     <View
@@ -367,18 +389,21 @@ function EvoStepDots({ steps }) {
           : `${ordered.length} etapas cadastradas`
       }
     >
-      {shown.map((s, index) => {
-        if (s.status === 'completed') return <View key={s.id} style={[styles.evoDot, styles.evoDotPast]} />
-        if (index === currentIndex) {
+      {hiddenBefore > 0 ? <Text style={styles.evoDotsOverflow}>+{hiddenBefore}</Text> : null}
+      {shown.map((s) => {
+        // Comparação por `id`, não por índice: o índice é relativo à janela e a vigente é absoluta —
+        // foi exatamente esse descasamento que apagou a bola atual.
+        if (currentStep && s.id === currentStep.id) {
           return (
-            <View key={s.id} style={[styles.evoDot, styles.evoDotCurrent]}>
+            <View key={s.id} testID={`evo-dot-current-${s.id}`} style={[styles.evoDot, styles.evoDotCurrent]}>
               <View style={styles.evoDotCurrentInner} />
             </View>
           )
         }
+        if (s.status === 'completed') return <View key={s.id} style={[styles.evoDot, styles.evoDotPast]} />
         return <View key={s.id} style={[styles.evoDot, styles.evoDotFuture]} />
       })}
-      {overflow > 0 ? <Text style={styles.evoDotsOverflow}>+{overflow}</Text> : null}
+      {hiddenAfter > 0 ? <Text style={styles.evoDotsOverflow}>+{hiddenAfter}</Text> : null}
     </View>
   )
 }
