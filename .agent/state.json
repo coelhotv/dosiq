@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice A — dose_instances.medicine_id (T001-T010) — MERGEADO",
+    "goal": "052 — Slice A mergeado + backfill T011 (PO-4) FEITO; proximo: Slice B",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -236,7 +236,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 247,
     "anti_patterns_count": 304,
     "decisions_count": 84,
