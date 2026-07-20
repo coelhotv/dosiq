@@ -203,11 +203,15 @@ VALUES ((SELECT v FROM public._ids WHERE k='proto_cp'), (SELECT v FROM public._i
         '["08:00"]'::jsonb, current_date - 30, true);
 
 -- Instâncias do executor a pausar: uma FUTURA (deve virar skipped_paused) e uma PASSADA (intocada).
-INSERT INTO public.dose_instances (id, user_id, protocol_id, scheduled_for, expected_dose, status)
+-- 052 Slice B: `medicine_id` NOT NULL — congela a identidade da ÉPOCA (`med_025`), que é o que
+-- torna a passada auditável mesmo depois de o executor trocar de medicamento.
+INSERT INTO public.dose_instances (id, user_id, protocol_id, medicine_id, scheduled_for, expected_dose, status)
 VALUES ((SELECT v FROM public._ids WHERE k='di_futura'), (SELECT v FROM public._ids WHERE k='u_a'),
-        (SELECT v FROM public._ids WHERE k='proto_025'), now() + interval '2 days', 0.25, 'pending'),
+        (SELECT v FROM public._ids WHERE k='proto_025'), (SELECT v FROM public._ids WHERE k='med_025'),
+        now() + interval '2 days', 0.25, 'pending'),
        ((SELECT v FROM public._ids WHERE k='di_passada'), (SELECT v FROM public._ids WHERE k='u_a'),
-        (SELECT v FROM public._ids WHERE k='proto_025'), now() - interval '2 days', 0.25, 'taken');
+        (SELECT v FROM public._ids WHERE k='proto_025'), (SELECT v FROM public._ids WHERE k='med_025'),
+        now() - interval '2 days', 0.25, 'taken');
 
 -- Escada cross-med: etapa 0 vigente (executor proto_025), etapa 1 PENDENTE (medicamento novo).
 INSERT INTO public.titrations (id, user_id) VALUES

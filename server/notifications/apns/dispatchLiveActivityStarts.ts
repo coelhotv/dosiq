@@ -12,7 +12,7 @@
 //   → APNs raw (sendLiveActivityStart)
 //   → sucesso: marca la_push_started_at (idempotência, F-5); 410: desativa token (S-6)
 
-import { selectActiveDoseActivity, createCriticalAuditService } from '@dosiq/core'
+import { selectActiveDoseActivity, createCriticalAuditService, resolveInstanceMedicine } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityStart, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 import { buildLiveActivityStartPayload } from './buildLiveActivityPayload.js'
@@ -28,10 +28,13 @@ interface DoseInstanceRow {
   user_id: string
   scheduled_for: string
   critical_alarm?: boolean
+  // 052 Slice B: identidade CONGELADA na ocorrência (embed direto pela FK própria).
+  medicine_id?: string | null
+  medicine?: { name?: string } | null
   protocol?: {
     name?: string
     treatment_plan_id?: string | null
-    medicine?: { name?: string }
+    medicine_id?: string | null
   }
 }
 
@@ -40,11 +43,13 @@ type BuildFn = typeof buildLiveActivityStartPayload
 
 const DEFAULT_LEAD_MINUTES = 60 // = SURFACE_WINDOWS.upcomingMinutes (later→upcoming, início do countdown)
 
+// 052 Slice B: `medicine:medicines(...)` pendura na ocorrência (FK própria), não no protocolo —
+// o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.
 const SELECT_FIELDS = `
-  id, user_id, scheduled_for, critical_alarm,
+  id, user_id, scheduled_for, critical_alarm, medicine_id,
+  medicine:medicines(name, dosage_unit, dosage_per_pill),
   protocol:protocols(
     id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
-    medicine:medicines(name, dosage_unit, dosage_per_pill),
     treatment_plan:treatment_plans(id, name)
   )
 `
@@ -52,7 +57,7 @@ const SELECT_FIELDS = `
 /** Mapeia dose_instance → shape CON-029 (espelha mapInstanceToDose do reminder). @private */
 function mapInstance(inst: DoseInstanceRow) {
   const protocol = inst.protocol || {}
-  const medicine = protocol.medicine || {}
+  const medicine = resolveInstanceMedicine(inst, { protocol }).medicine || {}
   return {
     instanceId: inst.id,
     scheduledFor: inst.scheduled_for,

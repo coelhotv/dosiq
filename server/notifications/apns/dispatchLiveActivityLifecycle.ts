@@ -11,7 +11,7 @@
 // Idempotência do update: dose_instances.la_push_state guarda o último estado empurrado.
 // Fail-open total (FR-008): qualquer falha loga e segue — NUNCA propaga, NUNCA toca o alarme.
 
-import { deriveDoseActivityState, createCriticalAuditService } from '@dosiq/core'
+import { deriveDoseActivityState, createCriticalAuditService, resolveInstanceMedicine } from '@dosiq/core'
 import { getServerTimestamp, parseISO, addMinutes } from '../../utils/dateUtils.js'
 import { sendLiveActivityUpdate, sendLiveActivityEnd, getApnsConfig, type ApnsResult } from './liveActivityPush.js'
 
@@ -29,10 +29,13 @@ interface DoseInstanceRow {
   status?: string
   la_push_token?: string | null
   la_push_state?: string | null
+  // 052 Slice B: identidade CONGELADA na ocorrência (embed direto pela FK própria).
+  medicine_id?: string | null
+  medicine?: { name?: string } | null
   protocol?: {
     name?: string
     treatment_plan_id?: string | null
-    medicine?: { name?: string }
+    medicine_id?: string | null
   }
 }
 
@@ -42,18 +45,20 @@ type EndFn = UpdateFn
 // Status que encerram a LA (dose saiu de pendente).
 const RESOLVED_STATUSES = new Set(['taken', 'skipped', 'completed', 'done'])
 
+// 052 Slice B: `medicine:medicines(...)` pendura na ocorrência (FK própria), não no protocolo —
+// o join pelo protocolo exibia o medicamento ATUAL do tratamento numa dose já materializada.
 const SELECT_FIELDS = `
-  id, user_id, scheduled_for, critical_alarm, status, la_push_token, la_push_state,
+  id, user_id, scheduled_for, critical_alarm, status, la_push_token, la_push_state, medicine_id,
+  medicine:medicines(name),
   protocol:protocols(
-    id, name, treatment_plan_id, medicine_id,
-    medicine:medicines(name)
+    id, name, treatment_plan_id, medicine_id
   )
 `
 
 /** dose_instance → shape CON-029 (mínimo p/ deriveDoseActivityState). @private */
 function mapInstance(inst: DoseInstanceRow) {
   const protocol = inst.protocol || {}
-  const medicine = protocol.medicine || {}
+  const medicine = resolveInstanceMedicine(inst, { protocol }).medicine || {}
   return {
     instanceId: inst.id,
     scheduledFor: inst.scheduled_for,

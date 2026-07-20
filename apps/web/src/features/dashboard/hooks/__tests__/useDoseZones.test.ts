@@ -99,8 +99,9 @@ describe('buildDoseItemsFromInstances', () => {
   ]
 
   it('mapeia instância → DoseItem com instanceId, scheduledFor e status', () => {
+    // 052: a ocorrência carrega `medicine_id` (NOT NULL no banco desde o PO-3).
     const doses = buildDoseItemsFromInstances(
-      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2, tolerance_minutes: 90 }],
+      [{ id: 'i1', protocol_id: 'p1', medicine_id: 'm1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2, tolerance_minutes: 90 }],
       protocols
     )
     expect(doses).toHaveLength(1)

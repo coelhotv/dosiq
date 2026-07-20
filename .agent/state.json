@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "analysis",
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 — Slice A mergeado + backfill (PO-4) fechado + spec estendida (Slice C/ADR-085). Proximo: Slice B",
+    "goal": "052 — Slice B (T013-T020): helper canônico + cutover readers de instância + fixtures + gate NOT NULL",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",

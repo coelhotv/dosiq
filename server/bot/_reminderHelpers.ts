@@ -11,6 +11,7 @@ import {
   resolveTitrationAdvance, formatMedicineFullName,
   getTodayLocal as getTodayLocalInTz,
   createDoseInstanceRepository, resyncProtocolWindow, resolveUserTz,
+  resolveInstanceMedicine,
 } from '@dosiq/core';
 import { dispatchLiveActivityStarts } from '../notifications/apns/dispatchLiveActivityStarts.js';
 import { dispatchLiveActivityLifecycle } from '../notifications/apns/dispatchLiveActivityLifecycle.js';
@@ -103,11 +104,15 @@ async function _processUserReminderBlock(userId: string, currentHHMM: string, cu
 async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   if (!userIds || userIds.length === 0) return [];
 
+  // 052 Slice B: `medicine_id` + embed DIRETO da ocorrência (FK `dose_instances_medicine_id_fkey`).
+  // O embed sob `protocol` some: ele resolvia a identidade pelo medicamento ATUAL do tratamento,
+  // reescrevendo o passado a cada leitura. O protocolo segue no select pelo que é dele (nome,
+  // dose por tomada, unidade de tomada, plano) — nunca mais pela identidade do medicamento.
   const selectFields = `
-    id, user_id, protocol_id, critical_alarm, scheduled_for,
+    id, user_id, protocol_id, critical_alarm, scheduled_for, medicine_id,
+    medicine:medicines(name, dosage_unit, dosage_per_pill),
     protocol:protocols(
       id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
-      medicine:medicines(name, dosage_unit, dosage_per_pill),
       treatment_plan:treatment_plans(id, name)
     )
   `;
@@ -160,7 +165,13 @@ async function _updateNotifiedAt(instanceIds) {
  */
 function mapInstanceToDose(inst) {
   const protocol = inst.protocol || {};
-  const medicine = protocol.medicine || {};
+  // 052 Slice B: identidade pelo snapshot da ocorrência (helper canônico), nunca pelo join.
+  const { medicineId, medicine: resolvedMedicine } = resolveInstanceMedicine<{
+    name?: string;
+    dosage_unit?: string;
+    dosage_per_pill?: number | string | null;
+  }>(inst, { protocol });
+  const medicine = resolvedMedicine || {};
   const protocolName = protocol.name || '';
   const medicineName = medicine.name || protocolName;
   const dosagePerPill =
@@ -179,7 +190,7 @@ function mapInstanceToDose(inst) {
     dosageUnit: medicine.dosage_unit,
     dosagePerPill,
     intakeUnit: protocol.intake_unit ?? null,
-    medicineId: protocol.medicine_id,
+    medicineId,
     critical_alarm: inst.critical_alarm ?? false,
     // Horário ORIGINAL agendado da ocorrência (não o instante de saída do push). Sem isto, doses
     // adiadas (snooze) re-disparadas imprimiam a hora da soneca no body em vez da agendada.

@@ -25,6 +25,7 @@ import {
   getEndOfDayISO,
   getRawNow,
 } from './dateUtils'
+import { buildMedicineIndex, resolveInstanceMedicine } from './instanceMedicine'
 
 /** tz default (G1 — injeção real do tz do usuário é follow-up; default SP). */
 export const DEFAULT_TZ = 'America/Sao_Paulo'
@@ -75,6 +76,10 @@ export interface DoseZoneProtocol {
 export interface DoseZoneInstance {
   id?: string
   protocol_id?: string
+  /** 052 Slice B: identidade congelada na materialização (fonte canônica de leitura). */
+  medicine_id?: string | null
+  /** Embed direto (`medicine:medicines(...)`) quando o chamador o pediu no select. */
+  medicine?: DoseZoneMedicine | null
   scheduled_for?: string | null
   status?: string
   tolerance_minutes?: number | null
@@ -195,13 +200,21 @@ function getMedicineDetails(medicine: DoseZoneMedicine | null | undefined) {
  * Cria um DoseItem a partir de uma dose_instance e do protocolo correspondente.
  * @private
  */
-function createDoseItem(instance: DoseZoneInstance, protocol: DoseZoneProtocol, tz: string) {
-  const med = getMedicineDetails(protocol.medicine)
+function createDoseItem(
+  instance: DoseZoneInstance,
+  protocol: DoseZoneProtocol,
+  tz: string,
+  medicinesById?: ReadonlyMap<string, DoseZoneMedicine>
+) {
+  // 052 Slice B: identidade CONGELADA na ocorrência. Antes disto, uma dose já materializada
+  // renderizava com o medicamento ATUAL do tratamento — o passado mudava de nome sozinho.
+  const resolved = resolveInstanceMedicine(instance, { protocol, medicinesById })
+  const med = getMedicineDetails(resolved.medicine)
   const isRegistered = instance.status === TAKEN_STATUS
   return {
     instanceId: instance.id,
     protocolId: instance.protocol_id,
-    medicineId: protocol.medicine_id,
+    medicineId: resolved.medicineId,
     medicineName: med.name,
     medicineType: med.type,
     // 012 Fase A: forma farmacêutica p/ ícone canônico de identificação (getMedicineIconName)
@@ -247,13 +260,16 @@ export function buildDoseItemsFromInstances(
   if (!Array.isArray(instances) || instances.length === 0) return []
   const protocolsList = Array.isArray(protocols) ? protocols : []
   const byId = new Map(protocolsList.filter(Boolean).map((p) => [p.id, p]))
+  // Índice dos medicamentos já em contexto: o congelado de uma ocorrência antiga costuma ser
+  // o medicamento de OUTRO protocolo do usuário (é o que a titulação produz). Sem query nova.
+  const medicinesById = buildMedicineIndex(protocolsList)
 
   const doses = []
   for (const inst of instances) {
     if (!inst?.scheduled_for || (inst.status && SKIPPED_STATUS.has(inst.status))) continue
     const protocol = byId.get(inst.protocol_id)
     if (!protocol) continue
-    doses.push(createDoseItem(inst, protocol, tz))
+    doses.push(createDoseItem(inst, protocol, tz, medicinesById))
   }
   return doses
 }

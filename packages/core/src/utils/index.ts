@@ -204,6 +204,15 @@ export {
   daysAgoLabel,
 } from './doseZones'
 
+// Identidade do medicamento de uma ocorrência — fonte ÚNICA de leitura (spec 052 Slice B).
+// Consome o snapshot `dose_instances.medicine_id` em vez do join `protocol_id → protocols`,
+// que reescrevia o passado quando o medicamento do tratamento evoluía.
+export {
+  resolveInstanceMedicine,
+  resolveInstanceMedicineId,
+  buildMedicineIndex,
+} from './instanceMedicine'
+
 // Máquina de estados de dose — superfícies contínuas iOS/Android (Spec 039 / F1)
 // Derivador + seletor de prioridade; aditivo a CON-024, novo CON candidato
 export {

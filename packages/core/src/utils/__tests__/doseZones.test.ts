@@ -97,8 +97,9 @@ describe('buildDoseItemsFromInstances (core)', () => {
   ]
 
   it('mapeia instância → DoseItem com instanceId, scheduledFor e status', () => {
+    // 052: a ocorrência carrega `medicine_id` (NOT NULL no banco desde o PO-3).
     const doses = buildDoseItemsFromInstances(
-      [{ id: 'i1', protocol_id: 'p1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2, tolerance_minutes: 90 }],
+      [{ id: 'i1', protocol_id: 'p1', medicine_id: 'm1', scheduled_for: iso(-30), status: 'pending', expected_dose: 2, tolerance_minutes: 90 }],
       protocols
     )
     expect(doses).toHaveLength(1)
@@ -146,6 +147,45 @@ describe('buildDoseItemsFromInstances (core)', () => {
   it('lista vazia / não-array → []', () => {
     expect(buildDoseItemsFromInstances([], protocols)).toEqual([])
     expect(buildDoseItemsFromInstances(null, protocols)).toEqual([])
+  })
+
+  // 052 (US1/PO-5): a razão de existir do snapshot. O protocolo p1 evoluiu para 'm2'
+  // (medicine_switch da titulação); a dose de junho congelou 'm1' e deve continuar sendo 'm1'.
+  it('dose passada mantém o medicamento da ÉPOCA depois de o tratamento trocar', () => {
+    const protocolsPosTroca = [
+      {
+        id: 'p1',
+        medicine_id: 'm2',
+        medicine: { name: 'Mounjaro 15', type: 'medicamento' },
+        treatment_plan_id: null,
+        treatment_plan: null,
+        dosage_per_intake: 1,
+      },
+      {
+        id: 'p0',
+        medicine_id: 'm1',
+        medicine: { name: 'Mounjaro 2,5', type: 'medicamento' },
+        treatment_plan_id: null,
+        treatment_plan: null,
+        dosage_per_intake: 1,
+      },
+    ]
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', medicine_id: 'm1', scheduled_for: iso(-60), status: 'taken' }],
+      protocolsPosTroca
+    )
+    expect(doses[0].medicineId).toBe('m1')
+    expect(doses[0].medicineName).toBe('Mounjaro 2,5')
+  })
+
+  it('sem o registro do medicamento congelado, não empresta o nome do protocolo atual', () => {
+    // Preferir "sem nome" a exibir o medicamento errado: o id continua correto p/ auditoria.
+    const doses = buildDoseItemsFromInstances(
+      [{ id: 'i1', protocol_id: 'p1', medicine_id: 'm-desconhecido', scheduled_for: iso(-60), status: 'taken' }],
+      protocols
+    )
+    expect(doses[0].medicineId).toBe('m-desconhecido')
+    expect(doses[0].medicineName).not.toBe('Losartana')
   })
 
   it('missed continua visível (actionável p/ self-heal)', () => {
