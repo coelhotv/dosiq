@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "reviewing",
-    "status": "reviewing",
+    "status": "reviewed",
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice C em review (PR #764). RC6 rodando. Pós-merge: restaurar baseline do smoke + C5 dos Slices A/B",
+    "goal": "052 Slice C — PR #764 com RC6 fechado (2 findings corrigidos). Aguardando review humano + merge (R-060)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -230,11 +230,13 @@
       "052 US5/FR-007/PO-6 (achado do PO): mudança de identidade FUTURA (medicine_id manual OU etapa futura da escada) → wipeFuturePending + regen; medicine_id entra em SCHEDULING_FIELDS; saveLadderEdit dispara wipe do protocolo dono; verificar caminho dose_change do _applyTitrationPlan; passado intocável por construção"
     ],
     "ai_review": {
-      "ceremony": "RC6",
-      "pr": 759,
       "engine": "agy",
-      "status": "clean",
-      "findings": 0
+      "status": "issues_found",
+      "critical": 0,
+      "high": 1,
+      "introduced_high": 0,
+      "resolved": 2,
+      "pr": 764
     },
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
@@ -244,7 +246,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 250,
     "anti_patterns_count": 306,
     "decisions_count": 84,
