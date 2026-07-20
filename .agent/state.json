@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice B entregue (PR #762) — RC6 + merge + migracao 2 em prod pendentes",
+    "goal": "052 Slice B (PR #762) — codigo + docs prontos; falta merge, migracao 2 em prod e smoke US1",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -236,8 +236,8 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 10,
-    "rules_count": 248,
+    "journal_entries_since_distillation": 11,
+    "rules_count": 249,
     "anti_patterns_count": 305,
     "decisions_count": 84,
     "contracts_count": 31,
