@@ -3,11 +3,11 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 — Slice B (T013-T020): helper canônico + cutover readers de instância + fixtures + gate NOT NULL",
+    "goal": "052 Slice B entregue (PR #762) — RC6 + merge + migracao 2 em prod pendentes",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -236,9 +236,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 248,
-    "anti_patterns_count": 304,
+    "anti_patterns_count": 305,
     "decisions_count": 84,
     "contracts_count": 31,
     "distillation_due": false
@@ -248,7 +248,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-19T17:53:07.412578"
+    "index_loaded_at": "2026-07-19T22:30:00-03:00"
   },
   "code_review": {
     "status": "clean",

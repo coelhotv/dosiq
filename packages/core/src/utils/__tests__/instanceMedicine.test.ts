@@ -37,6 +37,11 @@ describe('resolveInstanceMedicineId', () => {
 })
 
 describe('buildMedicineIndex', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
   it('indexa os medicamentos embutidos nos protocolos já carregados', () => {
     const index = buildMedicineIndex([protocolHoje, { medicine_id: MOUNJARO_25.id, medicine: MOUNJARO_25 }])
     expect(index.get(MOUNJARO_25.id)).toEqual(MOUNJARO_25)
