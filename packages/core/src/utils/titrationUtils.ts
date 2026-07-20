@@ -177,8 +177,12 @@ export function calculateTitrationData(
  *   - etapa vigente CONTÍNUA, ou sem etapa vigente, ou SEM escada → 'estavel' ("Estável")
  * "Estável" é o mesmo badge de um tratamento sem escada (§2), por isso é o default.
  *
- * As etapas DEVEM vir filtradas por `protocol_id = protocol.id` (embed) — a etapa vigente do
- * protocolo é a que importa (CON-032 / A5).
+ * 🔴 **As etapas DEVEM ser a escada COMPLETA da titulação (`titration_id`), NUNCA o recorte por
+ * `protocol_id`.** O contrato anterior mandava justamente o contrário, e era o bug: `protocol_id`
+ * marca o executor VIGENTE e fica NULL na maioria das etapas (medido em prod 2026-07-20: 6 de 15
+ * sem, e 1 das 4 vigentes sem). Filtrando por ele, a etapa `current` some do conjunto e o badge
+ * anuncia "Estável" sobre um tratamento em plena evolução — foi o que a listagem fez até aqui,
+ * enquanto o detalhe (que lê pela `titration_id`) acertava: a MESMA escada com duas respostas.
  */
 export type EvolutionBadgeKey = 'em_evolucao' | 'estavel'
 export interface EvolutionBadge {
@@ -189,7 +193,10 @@ export interface EvolutionBadge {
 export function getEvolutionBadge(
   steps: TitrationStepLike[] | null | undefined
 ): EvolutionBadge {
-  const current = Array.isArray(steps) ? steps.find((s) => s?.status === 'current') : null
+  // `resolveCurrentStep` e não `find(status === 'current')`: o banco não impede um resíduo
+  // `current` numa posição anterior, e o `find` devolveria o resíduo — badge derivado da etapa
+  // errada, em silêncio (mesma razão da timeline e das bolas do form).
+  const current = resolveCurrentStep(steps)
   const isFinite = current != null && getStepDurationDays(current) !== null
   return isFinite ? { key: 'em_evolucao', label: 'Em evolução' } : { key: 'estavel', label: 'Estável' }
 }

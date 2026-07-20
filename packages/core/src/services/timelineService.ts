@@ -98,12 +98,23 @@ function collectConsumedLogIds(instances: DoseInstance[], logs: MedicineLog[]) {
   return consumed
 }
 
-/** Enriquecimento opcional de payload (medicine name/unit) a partir do mapa de protocolos. */
+/**
+ * Enriquecimento de payload (medicine name/unit). A forma é SEMPRE a mesma — protocolo ausente
+ * devolve os campos em `null`, não um objeto vazio: payload de forma variável obriga todo
+ * consumidor (e todo teste) a adivinhar quais chaves existem naquele evento.
+ */
+interface DoseEventEnrichment {
+  medicineId: string | null
+  medicineName: unknown
+  dosageUnit: unknown
+}
+
 function makeEnricher(protocolsById: ProtocolsById) {
-  return (protocolId: string | null | undefined) => {
+  return (protocolId: string | null | undefined): DoseEventEnrichment => {
     const p = protocolId ? protocolsById[protocolId] : undefined
-    if (!p) return {}
+    if (!p) return { medicineId: null, medicineName: null, dosageUnit: null }
     return {
+      medicineId: p.medicine_id ?? null,
       medicineName: p.medicine?.name ?? p.medicine_name ?? null,
       dosageUnit: p.dosage_unit ?? p.medicine?.dosage_unit ?? null,
     }
@@ -117,7 +128,7 @@ function makeEnricher(protocolsById: ProtocolsById) {
  */
 function makeInstanceEnricher(protocolsById: ProtocolsById) {
   const medicinesById = buildMedicineIndex<TimelineMedicine>(Object.values(protocolsById))
-  return (inst: DoseInstance) => {
+  return (inst: DoseInstance): DoseEventEnrichment => {
     const protocol = protocolsById[inst.protocol_id]
     const { medicineId, medicine } = resolveInstanceMedicine<TimelineMedicine>(inst, { protocol, medicinesById })
     const fallbackUnit = protocol?.dosage_unit ?? null
@@ -135,7 +146,7 @@ function makeInstanceEnricher(protocolsById: ProtocolsById) {
 function instanceToEvent(
   inst: DoseInstance,
   logById: Map<string, MedicineLog>,
-  enrichInstance: (inst: DoseInstance) => Record<string, unknown>,
+  enrichInstance: (inst: DoseInstance) => DoseEventEnrichment,
 ) {
   const linkedLog = inst.medicine_log_id ? logById.get(inst.medicine_log_id) : null
   const enriched = enrichInstance(inst)
@@ -165,7 +176,7 @@ function instanceToEvent(
 }
 
 /** Constrói o evento de um log avulso (PRN/freeform, sem instância representativa). */
-function logToEvent(log: MedicineLog, enrich: (id: string | null | undefined) => Record<string, unknown>) {
+function logToEvent(log: MedicineLog, enrich: (id: string | null | undefined) => DoseEventEnrichment) {
   return {
     id: `log:${log.id}`,
     type: TIMELINE_EVENT_TYPES.DOSE,
@@ -175,11 +186,14 @@ function logToEvent(log: MedicineLog, enrich: (id: string | null | undefined) =>
       logId: log.id,
       protocolId: log.protocol_id ?? null,
       status: 'taken',
-      medicineId: log.medicine_id ?? null,
       quantityTaken: log.quantity_taken ?? null,
       notes: log.notes ?? null,
       injectionSite: log.injection_site ?? null,
       ...enrich(log.protocol_id),
+      // DEPOIS do spread (AP-310): `enrich` passou a devolver `medicineId` (do protocolo ATUAL),
+      // e o log tem o seu — o medicamento que foi de fato registrado. Sem esta ordem, o spread
+      // silenciosamente trocaria o valor certo pelo do protocolo, que evolui.
+      medicineId: log.medicine_id ?? enrich(log.protocol_id).medicineId ?? null,
     },
   }
 }

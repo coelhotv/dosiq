@@ -1,11 +1,24 @@
 import { useMemo, useCallback, useState, useEffect } from 'react'
 import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native'
+// ⚠️ Namespace + cast NÃO é desleixo — é contorno de resolução de tipos quebrada, e trocar por
+// import nomeado QUEBRA o gate cross-program (verificado em 2026-07-20):
+//   `lucide-react-native` está hoisted em /node_modules, mas `react-native-svg` só existe em
+//   apps/mobile/node_modules. O .d.ts do lucide faz `import { SvgProps } from 'react-native-svg'`
+//   e resolve a partir da raiz ⇒ não acha ⇒ tsc trata o módulo como SEM exports. Até `ChevronRight`
+//   passa a "não existir".
+// Custo aceito: nome de ícone errado vira `undefined` e só quebra no render. Mitigação = manter a
+// lista curta e conferir cada nome contra `node_modules/lucide-react-native/dist/icons.d.ts`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
+
+// Conferidos no d.ts do pacote (1703 ícones): `CircleQuestionMark` é o nome ATUAL — `CircleHelp` e
+// `HelpCircle` NÃO existem nesta versão, apesar de serem os nomes históricos.
+const { ArrowDownNarrowWide, ChevronRight, CircleQuestionMark } = LucideIcons as any
 import {
   parseLocalDate,
   formatDoseHint,
   INTAKE_UNIT_LABELS,
+  resolveCurrentStep,
 } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
@@ -23,7 +36,8 @@ import {
   isXiaomiDevice,
 } from '@platform/alarms/alarmService'
 
-const { ArrowDownNarrowWide, ChevronRight } = LucideIcons as any
+/** Teto de bolas renderizadas — acima disso vira "+N" (escada longa não pode estourar a linha). */
+const EVO_DOTS_MAX = 8
 
 const XIAOMI_MSG =
   'Você precisa de uma etapa extra para o alarme funcionar na tela bloqueada. Abra as configurações abaixo e:\n\n' +
@@ -320,6 +334,80 @@ function PrescriptionSection({ startDateAsDate, endDateAsDate, onStartDateChange
   )
 }
 
+/**
+ * Bolas de progresso da escada — a metade de baixo do card da Evolução.
+ *
+ * O card era uma linha de 48px ao lado do seletor de horários, que é alto e visualmente pesado:
+ * num scan da tela a entrada da titulação simplesmente não era vista (achado de smoke do PO). As
+ * bolas dão altura e informação — quantas etapas existem e onde o tratamento está — em vez de só
+ * ocupar espaço.
+ *
+ * A classificação ESPELHA a `TitrationTimeline` de propósito: mesma escada, duas telas, um só
+ * significado. Em especial, a vigente vem de `resolveCurrentStep` e NUNCA de `findIndex(status
+ * === 'current')` — o banco não impede um resíduo `current` numa posição anterior, e o findIndex
+ * pegaria o resíduo, marcando a bola errada em silêncio (achado do RC6 na 029 F4).
+ *
+ * @private
+ */
+function EvoStepDots({ steps }) {
+  const ordered = Array.isArray(steps) ? [...steps].sort((a, b) => a.position - b.position) : []
+
+  // Empty state: nada cadastrado ainda. Duas interrogações comunicam "isto é uma pergunta que
+  // você ainda não respondeu" — em vez de bolas vazias, que sugeririam etapas já existentes.
+  if (ordered.length === 0) {
+    return (
+      <View style={styles.evoDotsRow} accessibilityLabel="Nenhuma etapa cadastrada">
+        <CircleQuestionMark size={22} color={colors.neutral[400]} strokeWidth={2} />
+        <CircleQuestionMark size={22} color={colors.neutral[400]} strokeWidth={2} />
+      </View>
+    )
+  }
+
+  const currentStep = resolveCurrentStep(ordered)
+  const currentIndex = currentStep ? ordered.findIndex((s) => s.id === currentStep.id) : -1
+
+  // A janela acompanha a etapa vigente. Cortar sempre as 8 PRIMEIRAS deixava a vigente de fora em
+  // escadas longas (GLP-1 chega a 11 etapas): nenhuma bola marcada, enquanto o accessibilityLabel
+  // seguia anunciando "Etapa 9 de 11" — visual e texto discordando em silêncio (RC6 #763).
+  const windowStart =
+    currentIndex === -1
+      ? 0
+      : Math.min(
+          Math.max(0, currentIndex - Math.floor(EVO_DOTS_MAX / 2)),
+          Math.max(0, ordered.length - EVO_DOTS_MAX)
+        )
+  const shown = ordered.slice(windowStart, windowStart + EVO_DOTS_MAX)
+  const hiddenBefore = windowStart
+  const hiddenAfter = ordered.length - (windowStart + shown.length)
+
+  return (
+    <View
+      style={styles.evoDotsRow}
+      accessibilityLabel={
+        currentIndex !== -1
+          ? `Etapa ${currentIndex + 1} de ${ordered.length}`
+          : `${ordered.length} etapas cadastradas`
+      }
+    >
+      {hiddenBefore > 0 ? <Text style={styles.evoDotsOverflow}>+{hiddenBefore}</Text> : null}
+      {shown.map((s) => {
+        // Comparação por `id`, não por índice: o índice é relativo à janela e a vigente é absoluta —
+        // foi exatamente esse descasamento que apagou a bola atual.
+        if (currentStep && s.id === currentStep.id) {
+          return (
+            <View key={s.id} testID={`evo-dot-current-${s.id}`} style={[styles.evoDot, styles.evoDotCurrent]}>
+              <View style={styles.evoDotCurrentInner} />
+            </View>
+          )
+        }
+        if (s.status === 'completed') return <View key={s.id} style={[styles.evoDot, styles.evoDotPast]} />
+        return <View key={s.id} style={[styles.evoDot, styles.evoDotFuture]} />
+      })}
+      {hiddenAfter > 0 ? <Text style={styles.evoDotsOverflow}>+{hiddenAfter}</Text> : null}
+    </View>
+  )
+}
+
 export default function ProtocolFormBody({
   form,
   medicine,
@@ -327,6 +415,7 @@ export default function ProtocolFormBody({
   onOpenTitration,
   isEditMode,
   titrationStepCount = 0,
+  titrationSteps = [],
   plans,
   planField,
   onPlanFieldChange,
@@ -425,24 +514,29 @@ export default function ProtocolFormBody({
           <View style={styles.evoBlock}>
             <Pressable
               onPress={onOpenTitration}
-              style={({ pressed }) => [styles.evoRow, pressed && styles.evoRowPressed]}
+              style={({ pressed }) => [styles.evoCard, pressed && styles.evoRowPressed]}
               accessibilityRole="button"
               accessibilityLabel="A dose muda ao longo do tempo? Cadastrar a evolução do tratamento"
             >
-              <View style={styles.evoIcon}>
-                <ArrowDownNarrowWide size={20} color={colors.primary[600]} strokeWidth={2.4} />
+              <View style={styles.evoRow}>
+                <View style={styles.evoIcon}>
+                  <ArrowDownNarrowWide size={22} color={colors.primary[600]} strokeWidth={2.4} />
+                </View>
+                <View style={styles.evoText}>
+                  <Text style={styles.evoTitle}>
+                    {titrationStepCount > 0 ? 'Evolução do tratamento' : 'A dose muda ao longo do tempo?'}
+                  </Text>
+                  <Text style={styles.evoHint}>
+                    {titrationStepCount > 0
+                      ? `${titrationStepCount} ${titrationStepCount === 1 ? 'etapa cadastrada' : 'etapas cadastradas'} · toque para ver`
+                      : 'Nenhuma etapa cadastrada · opcional'}
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={colors.text.muted} />
               </View>
-              <View style={styles.evoText}>
-                <Text style={styles.evoTitle}>
-                  {titrationStepCount > 0 ? 'Evolução do tratamento' : 'A dose muda ao longo do tempo?'}
-                </Text>
-                <Text style={styles.evoHint}>
-                  {titrationStepCount > 0
-                    ? `${titrationStepCount} ${titrationStepCount === 1 ? 'etapa cadastrada' : 'etapas cadastradas'} · toque para ver`
-                    : 'Nenhuma etapa cadastrada · opcional'}
-                </Text>
-              </View>
-              <ChevronRight size={18} color={colors.text.muted} />
+              {/* Metade de baixo: o que dá peso ao card num scan da tela. */}
+              <View style={styles.evoDivider} />
+              <EvoStepDots steps={titrationSteps} />
             </Pressable>
             {/* Só faz sentido no cadastro (na edição o tratamento já existe). */}
             {!isEditMode ? (
@@ -572,18 +666,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing[3],
   },
+  // Card com duas metades (topo = chamada, base = progresso da escada). O peso visual é
+  // deliberado: ao lado do seletor de horários — alto e denso — a versão de uma linha só
+  // desaparecia num scan da tela, e ninguém descobria a titulação (smoke do PO, 2026-07-20).
+  evoCard: {
+    gap: spacing[3],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+    backgroundColor: colors.bg.card,
+  },
   evoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[3],
     minHeight: 48,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.card,
   },
+  evoDivider: { height: 1, backgroundColor: colors.border.default, opacity: 0.6 },
+  evoDotsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2], minHeight: 26 },
+  // Espelham a rail da TitrationTimeline (mesma escada, mesmo significado) em escala menor.
+  evoDot: { width: 22, height: 22, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  evoDotPast: { backgroundColor: colors.primary[100] }, // teal soft — concluída
+  evoDotCurrent: { backgroundColor: colors.primary[600] }, // vigente
+  evoDotCurrentInner: { width: 7, height: 7, borderRadius: 999, backgroundColor: colors.bg.card },
+  evoDotFuture: { backgroundColor: colors.bg.card, borderWidth: 2, borderColor: colors.neutral[300] },
+  evoDotsOverflow: { fontSize: 12, fontWeight: '600', color: colors.text.muted, marginLeft: 2 },
   evoBlock: { gap: spacing[2] },
   evoRowPressed: { opacity: 0.85 },
   evoIcon: {

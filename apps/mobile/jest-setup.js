@@ -91,10 +91,30 @@ jest.mock('react-native-svg', () => ({
   Polyline: 'Polyline',
 }));
 
-jest.mock('lucide-react-native', () => ({
-  Check: 'Check',
-  Clock: 'Clock',
-  AlertCircle: 'AlertCircle',
-  ChevronRight: 'ChevronRight',
-  Info: 'Info',
+// Picker nativo de data/hora: sem mock, o módulo resolve `undefined` no ambiente de teste e
+// QUALQUER componente que o renderize (TimeSchedulePicker → todo form de tratamento) morre com
+// "Element type is invalid", apontando para o componente pai em vez do módulo faltante.
+jest.mock('@react-native-community/datetimepicker', () => ({
+  __esModule: true,
+  default: 'DateTimePicker',
+  DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() },
+}));
+
+// Ícones viram host components nomeados (string), resolvidos SOB DEMANDA por Proxy.
+//
+// A lista fixa anterior (5 ícones) era uma armadilha: qualquer componente que usasse um sexto
+// ícone quebrava no render com "Element type is invalid: ... got: undefined" — erro que não cita
+// o ícone nem o mock, e que na prática desencorajava escrever teste de componente. O Proxy
+// devolve o nome para QUALQUER ícone, então o mock deixa de ser uma lista a manter.
+//
+// 🔴 `__esModule: true` é OBRIGATÓRIO aqui, não decoração: com ele `false`, o interop do Babel
+// COPIA as chaves próprias do módulo para montar o namespace do `import * as LucideIcons` — e um
+// Proxy sobre `{}` não enumera nada, então o namespace chegava VAZIO e todo ícone virava
+// `undefined`. Com `__esModule: true` o interop usa o objeto direto e o trap `get` funciona.
+jest.mock('lucide-react-native', () => new Proxy({}, {
+  get: (_target, prop) => {
+    if (prop === '__esModule') return true;
+    if (typeof prop !== 'string' || prop === 'default') return undefined;
+    return prop;
+  },
 }));

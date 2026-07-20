@@ -221,6 +221,7 @@ export default function ProtocolFormScreen() {
             onOpenTitration={handleOpenTitration}
             isEditMode={isEdit}
             titrationStepCount={titrationSteps.length}
+            titrationSteps={titrationSteps}
             plans={plans}
             planField={planField}
             onPlanFieldChange={changePlanField}
