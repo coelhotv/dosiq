@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 — Slice A mergeado + backfill (PO-4) fechado + spec estendida (Slice C/ADR-085). Proximo: Slice B",
+    "goal": "052 Slice B (PR #762) — codigo + docs prontos; falta merge, migracao 2 em prod e smoke US1",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -236,9 +236,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 9,
-    "rules_count": 248,
-    "anti_patterns_count": 304,
+    "journal_entries_since_distillation": 11,
+    "rules_count": 249,
+    "anti_patterns_count": 305,
     "decisions_count": 84,
     "contracts_count": 31,
     "distillation_due": false
@@ -248,7 +248,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-19T17:53:07.412578"
+    "index_loaded_at": "2026-07-19T22:30:00-03:00"
   },
   "code_review": {
     "status": "clean",

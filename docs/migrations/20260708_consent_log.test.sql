@@ -497,8 +497,10 @@ INSERT INTO public.feedbacks (user_id, subject, comment, platform)
   VALUES ((SELECT v FROM public._ids WHERE k='u_a'), 'assunto', 'comentario', 'ios');
 INSERT INTO public.notification_outbox (user_id, kind, period_key)
   VALUES ((SELECT v FROM public._ids WHERE k='u_a'), 'daily_digest', '2026-07-14');
-INSERT INTO public.dose_instances (user_id, protocol_id, scheduled_for, expected_dose)
-  VALUES ((SELECT v FROM public._ids WHERE k='u_a'), (SELECT v FROM public._ids WHERE k='prot_a'), now(), 1);
+-- 052 Slice B: `medicine_id` NOT NULL (snapshot de identidade).
+INSERT INTO public.dose_instances (user_id, protocol_id, medicine_id, scheduled_for, expected_dose)
+  VALUES ((SELECT v FROM public._ids WHERE k='u_a'), (SELECT v FROM public._ids WHERE k='prot_a'),
+          (SELECT v FROM public._ids WHERE k='med_a'), now(), 1);
 INSERT INTO public.dose_critical_events (user_id, event, platform, actor)
   VALUES ((SELECT v FROM public._ids WHERE k='u_a'), 'alarm_fired', 'ios', 'system');
 INSERT INTO public.dose_adherence_monthly (user_id, protocol_id, month, expected, taken, missed)

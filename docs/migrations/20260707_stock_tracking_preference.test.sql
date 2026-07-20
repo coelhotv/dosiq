@@ -65,10 +65,12 @@ INSERT INTO public.stock (user_id, medicine_id, quantity, purchase_date)
 VALUES ((SELECT v FROM t_ids WHERE k='u_on'), (SELECT v FROM t_ids WHERE k='med_on'), 10, CURRENT_DATE);
 
 -- Instância agendada para a dose do usuário OFF (âncora + reversão do undo)
-INSERT INTO public.dose_instances (id, user_id, protocol_id, scheduled_for, expected_dose, status)
+-- 052 Slice B: `medicine_id` é NOT NULL (snapshot de identidade) — toda instância nasce com ele.
+INSERT INTO public.dose_instances (id, user_id, protocol_id, medicine_id, scheduled_for, expected_dose, status)
 VALUES ((SELECT v FROM t_ids WHERE k='inst_off'),
         (SELECT v FROM t_ids WHERE k='u_off'),
         (SELECT v FROM t_ids WHERE k='prot_off'),
+        (SELECT v FROM t_ids WHERE k='med_off'),
         now(), 1, 'pending');
 
 -- ─────────────────────────────────────────────────────────────────────────────

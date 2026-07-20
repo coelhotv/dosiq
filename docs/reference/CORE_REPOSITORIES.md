@@ -102,11 +102,17 @@ O core expõe 9 repositories principais. Abaixo, documentamos as responsabilidad
 Repositório que opera a máquina de estados (pending, taken, missed, skipped) do calendário de tomadas diárias (`dose_instances`).
 Este é o único repositório que não exige `getUserId` na fábrica, pois o serviço gerenciador roda frequentemente como processo assíncrono varrendo tabelas de múltiplos usuários via `service_role`. Em consultas limitadas a um indivíduo, a segurança ocorre via passagem explícita do ID (como no método `getWindow`).
 
+> **Identidade do medicamento (spec 052).** O embed vem do repositório, e não de cada chamador,
+> porque a identidade de uma dose não pode depender de o consumidor ter carregado o protocolo
+> certo: o medicamento congelado costuma pertencer a um protocolo **antigo** (é o que a titulação
+> produz), que telas de histórico não têm em contexto. Consumir sempre via
+> `resolveInstanceMedicine` (`@dosiq/core`) — nunca `instance.protocol.medicine`.
+
 | Método | Argumentos de Entrada | Retorno (Saída) | Descrição |
 |--------|-----------------------|-----------------|-----------|
 | `upsertMany` | `Array<Record>` | `Array` inserido | Insere linhas ignorando duplicações em `(protocol_id, scheduled_for)`. |
 | `wipeFuturePending` | `protocolId: string` | `void` | Remove APENAS instâncias pendentes do futuro. |
-| `getWindow` | `userId`, `fromTs`, `toTs` | `Array` instâncias | Busca e pagina ocorrências de um usuário numa janela de tempo. |
+| `getWindow` | `userId`, `fromTs`, `toTs` | `Array` instâncias (+ embed `medicine`) | Busca e pagina ocorrências de um usuário numa janela de tempo. Select **explícito** (`WINDOW_SELECT`, R-127) que inclui `medicine_id` e o embed `medicine:medicines(...)` pela FK própria da ocorrência — spec 052. |
 | `countByStatus` | `userId`, `protocolId?`, datas | `Record` por status | Conta ocorrências exatas na janela filtrada, sem tráfego de dados cruzados. |
 | `markMissedDueInstances` | `now?`, `pageSize?` | `number` alteradas | Converte instâncias pendentes vencidas para o status `missed`. |
 | `markTaken` | `instanceId`, `logId` | `boolean` sucesso | Liga uma ocorrência pendente/atrasada ao log de medicamento efetivo. |

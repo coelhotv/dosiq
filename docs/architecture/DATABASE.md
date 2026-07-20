@@ -57,6 +57,7 @@ erDiagram
     protocols ||--o{ notification_log : "notifica"
     protocols ||--o{ failed_notification_queue : "falha"
     medicine_logs ||--o| dose_instances : "ancora"
+    medicines ||--o{ dose_instances : "congela identidade"
 
     purchases ||--o{ stock : "origina"
     stock ||--o{ stock_consumptions : "baixa"
@@ -152,6 +153,16 @@ erDiagram
 | `snoozed_until` | `timestamp with time zone` | Yes | `None` |
 | `created_at` | `timestamp with time zone` | Yes | `now()` |
 | `critical_alarm` | `boolean` | No | `false` |
+| `la_push_started_at` | `timestamp with time zone` | Yes | `None` |
+| `la_push_token` | `text` | Yes | `None` |
+| `la_push_state` | `text` | Yes | `None` |
+| `medicine_id` | `uuid` | No¹ | `None` |
+
+¹ **Identidade congelada do medicamento** (spec 052). FK → `medicines(id)` `ON DELETE CASCADE`.
+Nasceu `nullable` para o backfill e vira `NOT NULL` na migração
+`20260721_dose_instance_medicine_id_not_null.sql`. **Nunca resolver o medicamento de uma dose por
+`protocol_id → protocols.medicine_id`**: o protocolo evolui e o join reescreve o passado. Leitura
+pelo helper `resolveInstanceMedicine` (`@dosiq/core`). Ver [DOSE_INSTANCES.md](DOSE_INSTANCES.md).
 
 ---
 

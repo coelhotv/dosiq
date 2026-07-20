@@ -149,6 +149,7 @@ export function addDays(date: Date | string, days: number): Date {
 | `adherenceLogic.ts`| `calculateExpectedDoses`| Processa horários para identificar a quantidade de doses planejadas. |
 | `doseUnit.ts` | `formatIntakeDose` | Transforma quantitativos técnicos em representações visuais legíveis. |
 | `timeline.ts` | `buildTimeline` | Analisa os arrays de instâncias puras para organizar em ordem cronológica. |
+| `instanceMedicine.ts` | `resolveInstanceMedicine` | **Ponto único** que responde qual medicamento é uma dose (spec 052): lê a identidade congelada em `dose_instances.medicine_id` e nunca a deduz do protocolo, que evolui e reescreveria o passado. |
 
 ### Repositórios (`src/repositories`)
 

@@ -61,6 +61,8 @@ CREATE TABLE dose_instances (
   protocol_id     uuid NOT NULL,
   scheduled_for   timestamptz NOT NULL,   -- instante absoluto (depende do tz do usuário)
   expected_dose   numeric NOT NULL,       -- dosagem congelada no momento da geração
+  medicine_id     uuid NOT NULL            -- IDENTIDADE congelada (spec 052) — ver §3.1
+                  REFERENCES medicines(id) ON DELETE CASCADE,
   status          text NOT NULL DEFAULT 'pending',
                   -- pending | taken | missed | skipped_paused | skipped_user
   medicine_log_id uuid,                   -- elo p/ medicine_logs quando tomada
@@ -83,6 +85,53 @@ CREATE TABLE dose_adherence_monthly (                          -- rollup mensal 
 ALTER TABLE protocols ADD COLUMN generated_through timestamptz; -- high-water-mark
 ALTER TABLE protocols ADD COLUMN paused_at timestamptz;
 ```
+
+### 3.1 Identidade congelada: `medicine_id` (spec 052, ADR-084)
+
+A tabela nasceu congelando a **dose** (`expected_dose`) e deixando a **identidade do medicamento**
+para o join `protocol_id → protocols.medicine_id`, resolvido na LEITURA. Isso era correto enquanto
+o medicamento de um tratamento não mudava. Deixou de ser: editar o tratamento sempre permitiu
+trocá-lo, e a titulação (spec 029) tornou a troca rotina — cada `medicine_switch` aponta o
+protocolo para outro medicamento.
+
+Consequência do join: **mudar o medicamento reescrevia o passado**. Doses de junho que foram
+Mounjaro 2,5 mg passavam a renderizar como 15 mg no histórico e no relatório do médico.
+Falsificação clínica, medida em prod: 61% das instâncias (3.085 de 5.068) dependiam 100% do join.
+
+A tabela já sabia disso pela metade. `expected_dose` existe porque alguém concluiu que a **dose**
+varia no tempo e precisa ser congelada; faltava aplicar a mesma lógica ao **medicamento**.
+
+**Regra de escrita.** O gerador congela o medicamento da **etapa vigente em `scheduled_for`**
+(`titrationStage?.medicine_id ?? protocol.medicine_id`) — a mesma resolução temporal do
+`expected_dose`, de modo que dose e medicamento saem sempre da MESMA etapa.
+
+**Regra de leitura (SC-004).** Existe **um único** ponto autorizado a responder "que medicamento é
+esta dose": `resolveInstanceMedicine` (`@dosiq/core/utils/instanceMedicine`). Ele lê a coluna e
+**nunca pergunta ao protocolo qual é a identidade** — o protocolo entra só como fonte do registro,
+e apenas quando aponta para o mesmo medicamento congelado. Sem o registro em mãos, devolve o id
+correto com nome vazio: **não exibir o nome é melhor do que exibir o errado**.
+
+```js
+// ✅ leitura correta
+const { medicineId, medicine } = resolveInstanceMedicine(instance, { protocol, medicinesById })
+
+// ❌ o bug que a 052 existe para matar — o protocolo evolui, a dose passada não
+const medicineName = instance.protocol.medicine.name
+```
+
+`createDoseInstanceRepository.getWindow` já traz o embed (`WINDOW_SELECT`), então toda ocorrência
+lida por ele carrega o próprio medicamento — a identidade não depende de o consumidor ter
+carregado o protocolo certo.
+
+**Invalidação do futuro (FR-007).** Congelar protege o passado, mas inverte um acerto acidental: o
+join deixava as doses futuras "certas de graça" quando o usuário trocava o medicamento. Por isso
+`medicine_id` entra em `SCHEDULING_FIELDS` e as escritas na escada disparam `resyncProtocolWindow`
+(wipe + regeneração das pendentes futuras). O passado é intocável por construção —
+`wipeFuturePending` nunca alcança dose passada nem `taken`/`missed`.
+
+> ⚠️ Escrever em tabela que alimenta o gerador **por embed** (ex.: `titration_steps`) é escrever no
+> dado derivado, e escapa do `syncInstancesOnWrite` — foram 4 caminhos, não 1 (AP-308). O
+> `ON CONFLICT DO NOTHING` do upsert converge **ausência**, nunca conserta linha errada.
 
 ### Semântica de status para adesão (ADR-054)
 

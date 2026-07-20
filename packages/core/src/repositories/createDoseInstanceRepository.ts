@@ -31,6 +31,24 @@ const MS_PER_MINUTE = 60 * 1000
 /** Tamanho de página p/ paginar leituras (AP-186: PostgREST trunca em ~1000 sem erro). */
 const PAGE_SIZE = 1000
 
+/**
+ * Select das leituras de janela (052 Slice B): colunas da ocorrência + embed do medicamento
+ * CONGELADO, pela FK própria `dose_instances_medicine_id_fkey`.
+ *
+ * O embed vem daqui, e não de cada chamador, porque a identidade de uma dose não pode depender
+ * de o consumidor ter carregado o protocolo certo: o medicamento congelado costuma pertencer a
+ * um protocolo ANTIGO (é o que a titulação produz), que telas de histórico não têm em contexto.
+ * Sem o embed no repositório, essas telas cairiam em nome vazio — melhor que o nome errado do
+ * regime anterior, mas ainda uma regressão evitável.
+ */
+const WINDOW_SELECT = `
+  id, user_id, protocol_id, medicine_id, scheduled_for, expected_dose, status,
+  medicine_log_id, tolerance_minutes, notified_at, snoozed_until, created_at,
+  critical_alarm, la_push_started_at, la_push_token, la_push_state,
+  medicine:medicines(id, name, type, presentation, dosage_per_pill, dosage_unit,
+                     concentration_volume_ml, units_per_ml)
+`
+
 /** Converte Date|ISO em ISO string (R-020: sem `new Date()` fora de dateUtils). */
 const toIso = (value: Date | string | number) => parseISO(value).toISOString()
 
@@ -116,7 +134,7 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
       for (;;) {
         const { data, error } = await client
           .from(TABLE)
-          .select('*')
+          .select(WINDOW_SELECT)
           .eq('user_id', userId)
           .gte('scheduled_for', fromIso)
           .lte('scheduled_for', toTsIso)

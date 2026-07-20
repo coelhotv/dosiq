@@ -19,6 +19,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 import { buildTimeline, TIMELINE_EVENT_TYPES, TIMELINE_ORDER } from '../utils/timeline'
+import { buildMedicineIndex, resolveInstanceMedicine } from '../utils/instanceMedicine'
 import { parseISO } from '../utils/dateUtils'
 
 const MS_PER_MINUTE = 60 * 1000
@@ -31,6 +32,8 @@ interface DoseInstance {
   id: string
   status: string
   protocol_id: string
+  /** 052: identidade congelada na materialização (NOT NULL no banco; opcional no tipo p/ selects parciais). */
+  medicine_id?: string | null
   scheduled_for: string
   expected_dose?: unknown
   tolerance_minutes?: number | null
@@ -62,7 +65,13 @@ interface Biomarker {
   [key: string]: unknown
 }
 
-type ProtocolsById = Record<string, { medicine?: { name?: unknown; dosage_unit?: unknown }; medicine_name?: unknown; dosage_unit?: unknown } | undefined>
+interface TimelineMedicine {
+  id?: unknown
+  name?: unknown
+  dosage_unit?: unknown
+}
+
+type ProtocolsById = Record<string, { medicine?: TimelineMedicine | null; medicine_id?: string | null; medicine_name?: unknown; dosage_unit?: unknown } | undefined>
 
 /**
  * Resolve o instante absoluto de uma instância:
@@ -101,9 +110,35 @@ function makeEnricher(protocolsById: ProtocolsById) {
   }
 }
 
+/**
+ * Enriquecedor de INSTÂNCIA (052 Slice B): resolve pela identidade CONGELADA na ocorrência,
+ * não pelo medicamento atual do protocolo. Sem isto, uma dose de junho renderiza na timeline
+ * com o nome do medicamento que a escada passou a usar em julho.
+ */
+function makeInstanceEnricher(protocolsById: ProtocolsById) {
+  const medicinesById = buildMedicineIndex<TimelineMedicine>(Object.values(protocolsById))
+  return (inst: DoseInstance) => {
+    const protocol = protocolsById[inst.protocol_id]
+    const { medicineId, medicine } = resolveInstanceMedicine<TimelineMedicine>(inst, { protocol, medicinesById })
+    const fallbackUnit = protocol?.dosage_unit ?? null
+    return {
+      medicineId: medicineId ?? null,
+      medicineName: medicine?.name ?? protocol?.medicine_name ?? null,
+      // A unidade do protocolo só vale quando a identidade NÃO divergiu — do contrário é a
+      // unidade de outro medicamento. `medicine.dosage_unit` (congelado) tem precedência.
+      dosageUnit: medicine?.dosage_unit ?? (medicine ? null : fallbackUnit),
+    }
+  }
+}
+
 /** Constrói o evento de uma instância visível (taken/missed/pending). */
-function instanceToEvent(inst: DoseInstance, logById: Map<string, MedicineLog>, enrich: (id: string | null | undefined) => Record<string, unknown>) {
+function instanceToEvent(
+  inst: DoseInstance,
+  logById: Map<string, MedicineLog>,
+  enrichInstance: (inst: DoseInstance) => Record<string, unknown>,
+) {
   const linkedLog = inst.medicine_log_id ? logById.get(inst.medicine_log_id) : null
+  const enriched = enrichInstance(inst)
   return {
     id: `inst:${inst.id}`,
     type: TIMELINE_EVENT_TYPES.DOSE,
@@ -117,11 +152,14 @@ function instanceToEvent(inst: DoseInstance, logById: Map<string, MedicineLog>, 
       expectedDose: inst.expected_dose ?? null,
       toleranceMinutes: inst.tolerance_minutes ?? null,
       logId: inst.medicine_log_id ?? null,
-      medicineId: linkedLog?.medicine_id ?? null,
       quantityTaken: linkedLog?.quantity_taken ?? null,
       notes: linkedLog?.notes ?? null,
       injectionSite: linkedLog?.injection_site ?? null,
-      ...enrich(inst.protocol_id),
+      ...enriched,
+      // DEPOIS do spread de propósito: `enriched` também traz `medicineId`, e o log ancorado é o
+      // que foi REALMENTE tomado. Sem log, vale o congelado da ocorrência (052 Slice B) — nunca
+      // o medicamento atual do protocolo.
+      medicineId: linkedLog?.medicine_id ?? enriched.medicineId ?? null,
     },
   }
 }
@@ -165,6 +203,7 @@ export function doseInstancesToEvents(
   const safeLogs = Array.isArray(logs) ? logs : []
   const logById = new Map(safeLogs.map((l) => [l.id, l]))
   const enrich = makeEnricher(protocolsById)
+  const enrichInstance = makeInstanceEnricher(protocolsById)
   const consumedLogIds = collectConsumedLogIds(safeInstances, safeLogs)
 
   // Slots representados por instância visível, indexados por protocol_id (p/ dedupe
@@ -174,7 +213,7 @@ export function doseInstancesToEvents(
   const events = []
   for (const inst of safeInstances) {
     if (!VISIBLE_INSTANCE_STATUSES.has(inst.status)) continue
-    events.push(instanceToEvent(inst, logById, enrich))
+    events.push(instanceToEvent(inst, logById, enrichInstance))
     // Slots de tolerância temporal só para pending/missed: protegem contra race-condition
     // (log sem dose_instance_id que deveria ter). Instâncias 'taken' já têm medicine_log_id
     // → collectConsumedLogIds cuida da dedupe. Construir slot para 'taken' causaria supressão
