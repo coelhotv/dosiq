@@ -4,10 +4,10 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "tier": 2,
+    "tier": 1,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slices A+B em prod (gate NOT NULL aplicado). Proximo: smoke US1 do PO -> Slice C",
+    "goal": "029/052 fechados em prod (#763). Proximo: smoke US1 do PO (SC-003) -> Slice C (T021-T031 + T029b/PO-9)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -22,9 +22,16 @@
       "plans/specs/052-dose-instance-medicine-snapshot",
       "plans/specs/053-unit-label-formatter"
     ],
-    "merged_pr": 762,
-    "merged_squash": "741b7de0",
+    "merged_pr": 763,
+    "merged_squash": "918043eb",
     "merged_history": [
+      {
+        "pr": 762,
+        "squash": "741b7de0",
+        "spec": "052 Slice B",
+        "tier": 2,
+        "date": "2026-07-19"
+      },
       {
         "pr": 760,
         "squash": "db5809e1",
@@ -232,7 +239,8 @@
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
     "pr": 759,
-    "ceremony_type": "eng-review"
+    "ceremony_type": "eng-review",
+    "journal_entries_since_distillation": 13
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
