@@ -7,7 +7,7 @@
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice B (PR #762) — codigo + docs prontos; falta merge, migracao 2 em prod e smoke US1",
+    "goal": "052 Slices A+B em prod (gate NOT NULL aplicado). Proximo: smoke US1 do PO -> Slice C",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -22,8 +22,8 @@
       "plans/specs/052-dose-instance-medicine-snapshot",
       "plans/specs/053-unit-label-formatter"
     ],
-    "merged_pr": 761,
-    "merged_squash": "ab9ae709",
+    "merged_pr": 762,
+    "merged_squash": "741b7de0",
     "merged_history": [
       {
         "pr": 760,
@@ -236,7 +236,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "rules_count": 249,
     "anti_patterns_count": 305,
     "decisions_count": 84,

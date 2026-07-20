@@ -274,7 +274,7 @@ export type Database = {
           la_push_started_at: string | null
           la_push_state: string | null
           la_push_token: string | null
-          medicine_id: string | null
+          medicine_id: string
           medicine_log_id: string | null
           notified_at: string | null
           protocol_id: string
@@ -292,7 +292,7 @@ export type Database = {
           la_push_started_at?: string | null
           la_push_state?: string | null
           la_push_token?: string | null
-          medicine_id?: string | null
+          medicine_id: string
           medicine_log_id?: string | null
           notified_at?: string | null
           protocol_id: string
@@ -310,7 +310,7 @@ export type Database = {
           la_push_started_at?: string | null
           la_push_state?: string | null
           la_push_token?: string | null
-          medicine_id?: string | null
+          medicine_id?: string
           medicine_log_id?: string | null
           notified_at?: string | null
           protocol_id?: string
