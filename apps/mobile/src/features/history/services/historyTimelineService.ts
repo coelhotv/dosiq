@@ -66,8 +66,15 @@ function _getMedicineName(p, proto, med) {
   return p.medicineName || med.name || proto.name || null
 }
 
+// 🔴 052 Slice C: a precedência estava INVERTIDA — um evento PASSADO exibia a dose ATUAL do
+// protocolo (`proto.dosage_per_intake` primeiro), então toda titulação reescrevia o histórico
+// de dose a cada etapa. Família [[AP-310]] (precedência silenciosa entre fonte congelada e
+// fonte viva). O snapshot da ocorrência (`expectedDose`) é a dose da ÉPOCA e vem primeiro; o
+// protocolo só descreve o presente e fica de fallback para evento sem ocorrência associada.
+// O executor único agrava o defeito (o mesmo protocolo atravessa doses E medicamentos), mas
+// o bug já queimava antes dele — o `dose_change` sempre mutou `dosage_per_intake` do vigente.
 function _getDosagePerIntake(p, proto) {
-  return proto.dosage_per_intake || p.expectedDose || null
+  return p.expectedDose ?? proto.dosage_per_intake ?? null
 }
 
 function _getDosageUnit(p, med) {

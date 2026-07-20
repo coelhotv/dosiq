@@ -70,11 +70,11 @@ export interface LadderStepInput {
  * - Cria a `titrations` (âncora opcional no plano terapêutico).
  * - Insere as etapas em UM INSERT. A etapa 0 nasce `status='current'` + `started_at=now` (ATIVAÇÃO
  *   — AP-301). As demais nascem `upcoming`.
- * - `protocol_id` (A5): a etapa 0 e toda etapa contígua com o MESMO `medicine_id` do protocolo
- *   recebem `protocol_id`; a primeira etapa de outro medicamento (e as seguintes) ficam NULL.
+ * - `protocol_id` (052 Slice C / FR-009): TODA etapa nasce vinculada ao executor único. O antigo
+ *   run same-med (A5/CON-032) morreu com o executor por medicamento — ver `buildLadderRows`.
  *
- * @param protocolId  o tratamento a que a escada se ancora (a etapa vigente executa por ele)
- * @param medicineId  o medicamento do protocolo (define o run same-med da etapa 0)
+ * @param protocolId  o tratamento a que a escada se ancora (o executor único de todas as etapas)
+ * @param medicineId  o medicamento do protocolo no cadastro (não participa mais do vínculo)
  * @param steps       etapas do builder, já em ordem de posição
  * @param treatmentPlanId  plano terapêutico do protocolo (opcional)
  */
@@ -92,40 +92,42 @@ export type LadderRow = TitrationStepCreate & {
  *
  * 🔴 T019a (AP-301): a etapa 0 nasce `status='current'` + `started_at=nowIso`. As demais, `upcoming`
  * + `started_at=null`.
- * 🔴 A5/CON-032: `protocol_id` = o protocolo enquanto a etapa pertence ao run same-med a partir da
- * etapa 0 (mesmo `medicine_id`, contíguo). A primeira etapa de OUTRO medicamento (e as seguintes)
- * fica NULL — a RPC de transição (F5) cria o protocolo executor e preenche o vínculo.
+ * 🔴 052 Slice C (FR-009 / ADR-085): TODA etapa nasce vinculada ao executor único — não existe
+ * mais `protocol_id` NULL. A regra do "run same-med" (vínculo só enquanto o `medicine_id` batia
+ * com o do protocolo, primeira etapa de outro medicamento nascendo NULL — A5/CON-032) existia
+ * APENAS porque o executor era por medicamento: a RPC criava um protocolo novo na troca e
+ * preenchia o vínculo depois. Com executor único a RPC muta o mesmo protocolo, então não há
+ * segundo dono a esperar.
+ *
+ * Duas coisas morrem junto com a regra:
+ *  - o estado NULL transitório de `titration_steps.protocol_id` (invariante do CON-032);
+ *  - a classe do [[AP-311]]: enquanto o vínculo vivia em UMA linha "sorteada" da escada, apagar
+ *    essa etapa orfanava o conjunto e `getLadderForProtocol` devolvia `[]` — vazio
+ *    indistinguível de "não há escada", falha SILENCIOSA medida em prod em 2026-07-20. Com N
+ *    vínculos idênticos, apagar qualquer subconjunto de etapas deixa a escada resolvível.
+ *
+ * `medicineId` deixa de participar do vínculo; segue no parâmetro porque é o medicamento do
+ * protocolo no momento do cadastro e o chamador o tem à mão (mantido para não mexer na assinatura
+ * dos 2 chamadores neste slice).
  */
 export function buildLadderRows(
   titrationId: string,
   protocolId: string,
-  medicineId: string,
+  _medicineId: string,
   steps: LadderStepInput[],
   nowIso: string,
 ): LadderRow[] {
-  let sameMedRunOpen = true
-  return steps.map((s, index): LadderRow => {
-    const matchesProtocol = sameMedRunOpen && s.medicine_id === medicineId
-    if (!matchesProtocol) sameMedRunOpen = false
-    // 🔴 A etapa 0 é a VIGENTE (âncora): SEMPRE pertence ao protocolo, mesmo que o medicamento
-    // divirja. Sem isso, uma escada cujo 1º passo não bate com o medicamento do protocolo nasceria
-    // ÓRFÃ (protocol_id NULL) — `getLadderForProtocol` (filtra por protocol_id) nunca a acharia:
-    // invisível na timeline/badge, sem executor pro motor, e o form voltaria a oferecer cadastro do
-    // zero (duplicata). Normalmente o passo 0 já é o medicamento do protocolo (seed do form); isto
-    // guarda o caso em que o usuário troca o medicamento do 1º passo (AP-301/CON-032).
-    const belongsToProtocol = index === 0 || matchesProtocol
-    return {
-      titration_id: titrationId,
-      position: index,
-      medicine_id: s.medicine_id,
-      dose: s.dose,
-      intake_unit: s.intake_unit,
-      duration_days: s.duration_days,
-      status: index === 0 ? 'current' : 'upcoming',
-      started_at: index === 0 ? nowIso : null,
-      protocol_id: belongsToProtocol ? protocolId : null,
-    }
-  })
+  return steps.map((s, index): LadderRow => ({
+    titration_id: titrationId,
+    position: index,
+    medicine_id: s.medicine_id,
+    dose: s.dose,
+    intake_unit: s.intake_unit,
+    duration_days: s.duration_days,
+    status: index === 0 ? 'current' : 'upcoming',
+    started_at: index === 0 ? nowIso : null,
+    protocol_id: protocolId,
+  }))
 }
 
 export async function createFullLadder(

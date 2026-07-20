@@ -191,9 +191,13 @@ async function normalizeLadder(
  * próxima volta a `upcoming`. Roda depois de cada cenário para não deixar a conta de smoke com
  * escada meio-transicionada.
  *
- * ⚠️ NÃO desfaz uma confirmação já executada: se você tocou `[Iniciar etapa]`, a RPC pausou um
- * tratamento e ativou/criou outro. Reverter isso é trabalho manual na tela de tratamentos —
- * é o preço de exercitar o caminho real (ver §Cleanup do doc).
+ * ⚠️ NÃO desfaz uma confirmação já executada — mas o estrago encolheu com a 052 Slice C.
+ * ANTES: a RPC pausava um tratamento e ativava/criava outro, então reverter exigia mexer em N
+ * protocolos na tela de tratamentos. AGORA (executor único, ADR-085) nenhum protocolo nasce ou
+ * é encerrado: a confirmação só muta `medicine_id`/`dosage_per_intake`/`intake_unit` do executor
+ * vigente. Reverter = devolver esses 3 campos ao valor anterior no MESMO tratamento (anote-os
+ * antes do smoke) e rodar este reset. As `dose_instances` futuras se reprojetam sozinhas pelo
+ * `resyncProtocolWindow` que roda atrás da RPC.
  */
 export async function devResetLadder(): Promise<void> {
   const userId = await getUserId()

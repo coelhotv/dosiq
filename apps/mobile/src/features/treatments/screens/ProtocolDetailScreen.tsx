@@ -161,29 +161,28 @@ function useProtocolDetailState() {
     // Princípio IX: falha diz o que NÃO aconteceu e por quê — nunca genérico, nunca sucesso falso.
     if (result.ok === false) Alert.alert('A etapa não foi iniciada', result.message)
 
-    // 🔴 F5.5 (smoke do PO, 2026-07-19): num `medicine_switch` o executor MUDA — a RPC encerra
-    // este protocolo (active=false + end_date=hoje) e ativa/cria o da etapa nova. Ficar nesta
-    // tela mostrava o tratamento que o usuário acabou de deixar para trás, rotulado "pausado":
-    // no DIA da troca `end_date === hoje` e `resolveTreatmentStatus` só finaliza com
-    // `end_date < hoje`, então ele cai em PAUSADO por 24h. "Pausado" anuncia retomável, e o
-    // botão Retomar é um toggle genérico de `active`, sem consciência de titulação — reativá-lo
-    // com a etapa nova já ativa colocaria DOIS executores da mesma escada gerando dose_instances
-    // em paralelo (lembrete das duas concentrações do mesmo medicamento).
+    // 🔴 052 Slice C (T028 / ADR-085) — a pendência herdada da 029 F5.5 morreu AQUI, por
+    // construção. Antes, um `medicine_switch` trocava o executor: a RPC encerrava este
+    // protocolo (`active=false` + `end_date=hoje`) e ativava outro, e como
+    // `resolveTreatmentStatus` só finaliza com `end_date < hoje`, o tratamento recém-encerrado
+    // caía em PAUSADO por 24h. "Pausado" anuncia retomável, e o botão Retomar é um toggle
+    // genérico de `active` sem consciência de titulação — reativá-lo com a etapa nova já ativa
+    // colocaria DOIS executores da mesma escada gerando dose_instances em paralelo. O paliativo
+    // era navegar para o tratamento novo, tirando o usuário do caminho da armadilha sem fechá-la.
     //
-    // Levar o usuário ao tratamento NOVO remove o convite ao erro e é o destino que ele quer:
-    // conferir se a dose nova entrou. `replace`, não `navigate` — o detalhe do tratamento
-    // encerrado não deve sobrar no back stack como caminho de volta a esse botão.
+    // Com executor único não existe protocolo antigo: a RPC MUTA este mesmo tratamento e não
+    // grava `end_date` nem `paused_at`. A janela de 24h deixou de ser representável, e o
+    // `navigation.replace` que a contornava saiu junto — não sobrou destino para onde fugir.
     //
-    // ⚠️ NÃO fecha a janela de 24h: o mesmo tratamento continua alcançável (e retomável) pela
-    // aba Pausados. A correção definitiva é da **spec 052** (decisão do PO: `end_date <= hoje`
-    // reclassificaria quem pausa no último dia por vontade própria — o toggle é genérico e não
-    // sabe de titulação). Aqui só tiramos o usuário do caminho da armadilha.
-    if (result.ok === true && result.protocolActivated && result.protocolActivated !== id) {
-      navigation.replace(ROUTES.PROTOCOL_DETAIL, { id: result.protocolActivated })
-      return
-    }
-    // `dose_change` (mesmo medicamento): o executor é ESTE protocolo, só mudou a dose por
-    // tomada. Sair da tela seria gratuito — basta recarregar.
+    // `resolveTreatmentStatus` segue com `end_date < hoje` (estrito) DE PROPÓSITO: `end_date` é
+    // o último dia de vigência, e `<=` mataria a última dose de todo tratamento com data de fim
+    // marcada pelo usuário. O `<` nunca foi o defeito — o defeito era a transição gravar
+    // `end_date`. Fim gravado pelo usuário e fim inventado pela titulação eram fatos diferentes
+    // com o mesmo carimbo; o Slice C para de gravar o segundo.
+    //
+    // (Escada legada sem NENHUM executor vinculado ainda cai no caminho de criação da RPC e
+    // devolve um `protocol_activated` diferente. Recarregar cobre esse caso: o tratamento desta
+    // tela não foi encerrado, então não há nada de que fugir.)
     await refresh()
   }, [refresh, navigation, id])
 

@@ -88,14 +88,45 @@ describe('adherenceService — leitura de dose_instances (Fase 3)', () => {
   })
 
   describe('calculateProtocolAdherence', () => {
+    // 052 Slice C: passou a ler OCORRÊNCIAS em vez de `countByStatus`. O agregado descartava o
+    // `medicine_id` congelado, e sem ele só restava rotular pelo join do protocolo vivo.
+    const inst = (protocolId: string, status: string, medName: string) => ({
+      protocol_id: protocolId, status, medicine_id: `med-${medName}`, medicine: { name: medName },
+    })
+
     it('escopa por protocolId e devolve nome', async () => {
       mocks.setSingle({ data: { name: 'Losartana AM', medicine: { name: 'Losartana' } }, error: null })
-      mocks.repo.countByStatus.mockResolvedValue({ taken: 9, missed: 1, pending: 0, skipped_paused: 0, skipped_user: 0 })
+      mocks.repo.getWindow.mockResolvedValue([
+        ...Array.from({ length: 9 }, () => inst('p1', 'taken', 'Losartana')),
+        inst('p1', 'missed', 'Losartana'),
+        inst('p2', 'missed', 'Outro'), // de outro protocolo: não pode entrar na conta
+      ])
       const r = await adherenceService.calculateProtocolAdherence('p1', '30d', 'u1')
       expect(r.score).toBe(90)
       expect(r.name).toBe('Losartana AM')
       expect(r.medicineName).toBe('Losartana')
-      expect(mocks.repo.countByStatus).toHaveBeenCalledWith(expect.objectContaining({ protocolId: 'p1' }))
+    })
+
+    it('🔴 janela que atravessa uma troca mostra os DOIS medicamentos, não só o vigente', async () => {
+      // O defeito que o RC6 pegou no PR #764: com executor único um protocolo atravessa 2+
+      // medicamentos, e rotular pelo join do protocolo atribuiria o período inteiro ao ATUAL —
+      // a falsificação que a spec 052 existe para matar, migrada para o agregador.
+      mocks.setSingle({ data: { name: 'GLP/GIP', medicine: { name: 'Mounjaro 7,5' } }, error: null })
+      mocks.repo.getWindow.mockResolvedValue([
+        inst('p1', 'taken', 'Mounjaro 5'),   // antes da troca
+        inst('p1', 'taken', 'Mounjaro 7,5'), // depois
+      ])
+      const r = await adherenceService.calculateProtocolAdherence('p1', '90d', 'u1')
+      expect(r.medicineNames).toEqual(['Mounjaro 5', 'Mounjaro 7,5'])
+      expect(r.medicineName).toBe('Mounjaro 5 → Mounjaro 7,5')
+    })
+
+    it('janela vazia cai no medicamento vigente — não há ocorrência para falsificar', async () => {
+      mocks.setSingle({ data: { name: 'GLP/GIP', medicine: { name: 'Mounjaro 7,5' } }, error: null })
+      mocks.repo.getWindow.mockResolvedValue([])
+      const r = await adherenceService.calculateProtocolAdherence('p1', '30d', 'u1')
+      expect(r.medicineName).toBe('Mounjaro 7,5')
+      expect(r.score).toBe(0)
     })
   })
 

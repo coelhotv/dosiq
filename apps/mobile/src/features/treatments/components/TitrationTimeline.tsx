@@ -170,6 +170,7 @@ export default function TitrationTimeline({
   onEditStep,
 }: Props) {
   const { steps, hasLadder, loading, refresh, timezone } = useTitrationTimeline(protocolId)
+
   // 🔴 A preferência vem do HOOK, não de prop. Antes era `doseOnly?: boolean` com default
   // `false` — e NENHUM call site passava, então o usuário dose-only da 044 lia "Você ainda não
   // tem estoque cadastrado dela" sobre um cadastro que, para ele, não existe. A copy §8 já dizia
@@ -225,6 +226,43 @@ export default function TitrationTimeline({
   // sem recarregar o app (o hook só carregava no mount). `void` — rejeição já tratada no hook.
   useFocusEffect(useCallback(() => { setTodayLocal(getTodayLocal(timezone)); void refresh() }, [refresh, timezone]))
 
+  // Handlers
+  /**
+   * Confirma a etapa e RECARREGA A ESCADA — nesta ordem, e aqui dentro.
+   *
+   * 🔴 052 Slice C (smoke do PO, 2026-07-20): o banner continuava na tela depois da confirmação,
+   * com o banco já correto. A escada é estado DESTE componente (`useTitrationTimeline`), que só
+   * recarrega em focus ou quando o `protocolId` muda — e o `refresh()` do `onStartPendingStep`
+   * é o do PROTOCOLO, outro estado. Nenhum dos dois gatilhos disparava: a tela não perdeu foco e
+   * o protocolo é o mesmo.
+   *
+   * Antes do Slice C isso não aparecia porque a confirmação de um `medicine_switch` navegava
+   * para o protocolo recém-criado — a troca de `protocolId` remontava a timeline e trazia a
+   * escada nova. A navegação estava fazendo DOIS trabalhos (tirar o usuário da armadilha da
+   * janela de 24h e, sem que ninguém tivesse decidido isso, invalidar esta cache). Com executor
+   * único não há para onde navegar, e o segundo trabalho ficou órfão.
+   *
+   * Recarregar aqui torna a invalidação explícita e independente de navegação: quem é dono do
+   * estado é quem o invalida depois da ação que o muta.
+   */
+  const handleStartStep = useCallback(async (stepId: string) => {
+    // `finally`, não `then`: se a confirmação lançar, a escada tem de ser relida MESMO ASSIM. A
+    // RPC pode ter aplicado parte do efeito antes de falhar, e nesse caso a tela estaria mostrando
+    // um estado que não existe mais no banco — pior que mostrar o erro. Recarregar é o que revela
+    // a verdade, seja qual for.
+    //
+    // O `catch` existe porque `void handleStartStep(...)` não tem quem espere a promessa: sem ele
+    // a rejeição vira unhandled rejection e some (achado do RC6, PR #764). Não trata o erro de UX
+    // — quem avisa o usuário é o `onStartPendingStep`, que já dá o Alert honesto (Princípio IX).
+    try {
+      await onStartPendingStep?.(stepId)
+    } catch {
+      // silenciado de propósito: já reportado a quem sabe reportar
+    } finally {
+      await refresh()
+    }
+  }, [onStartPendingStep, refresh])
+
   // Enquanto carrega: se o detalhe já sinalizou que há escada (hint), reserva o espaço com
   // skeleton (evita o pop-in); se não há escada, nada aparece (sem convite de cadastro — §2.4).
   if (loading) {
@@ -259,7 +297,7 @@ export default function TitrationTimeline({
           daysWaiting={pendingSwitch.info.daysWaiting}
           nextMedicineName={pendingSwitch.nextMedName}
           currentMedicineName={pendingSwitch.currentMedName}
-          onStart={() => onStartPendingStep?.(pendingSwitch.info.pendingStepId)}
+          onStart={() => { void handleStartStep(pendingSwitch.info.pendingStepId) }}
         />
       ) : null}
 
@@ -270,7 +308,7 @@ export default function TitrationTimeline({
           stepNumber={manualNext.info.pendingPosition + 1}
           nextMedicineName={manualNext.nextMedName}
           currentMedicineName={manualNext.currentMedName}
-          onStart={() => onStartPendingStep?.(manualNext.info.pendingStepId)}
+          onStart={() => { void handleStartStep(manualNext.info.pendingStepId) }}
         />
       ) : null}
 
