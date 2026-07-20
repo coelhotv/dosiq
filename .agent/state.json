@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "reviewing",
-    "status": "reviewed",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice C — PR #764 com RC6 fechado (2 findings corrigidos). Aguardando review humano + merge (R-060)",
+    "goal": "052 Slice C MERGEADO (#764). Épico 052 concluído (A+B+C). Pendências: T012/T020 (C5 de A/B), T032 (Slice D — não nasce), distill (user roda)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -22,9 +22,16 @@
       "plans/specs/052-dose-instance-medicine-snapshot",
       "plans/specs/053-unit-label-formatter"
     ],
-    "merged_pr": 763,
-    "merged_squash": "918043eb",
+    "merged_pr": 764,
+    "merged_squash": "2c86b4d1",
     "merged_history": [
+      {
+        "pr": 764,
+        "squash": "2c86b4d1",
+        "spec": "052 Slice C",
+        "tier": 2,
+        "date": "2026-07-20"
+      },
       {
         "pr": 762,
         "squash": "741b7de0",
@@ -246,7 +253,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "rules_count": 250,
     "anti_patterns_count": 306,
     "decisions_count": 84,
