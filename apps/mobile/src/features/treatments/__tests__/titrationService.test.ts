@@ -66,7 +66,7 @@ describe('buildLadderRows — ativação (T019a / AP-301)', () => {
   })
 })
 
-describe('buildLadderRows — vínculo protocol_id (A5 / CON-032)', () => {
+describe('buildLadderRows — vínculo protocol_id (052 Slice C / FR-009 / ADR-085)', () => {
   it('same-med (metoprolol 1→2 cp): TODAS as etapas pertencem ao protocolo', () => {
     // PO-3: o caso canônico dose_change — mesma dosagem, muda a quantidade de comprimidos.
     const steps: LadderStepInput[] = [
@@ -79,37 +79,42 @@ describe('buildLadderRows — vínculo protocol_id (A5 / CON-032)', () => {
     expect(rows.every((r) => r.protocol_id === PROTOCOL)).toBe(true)
   })
 
-  it('multi-med (semaglutida 0,25 → 0,5): a etapa de outro medicamento fica com protocol_id NULL', () => {
+  it('multi-med (semaglutida 0,25 → 0,5): a etapa de OUTRO medicamento também nasce vinculada', () => {
+    // Antes do Slice C esta etapa nascia NULL, esperando a RPC criar um protocolo executor
+    // próprio. Com executor único não há segundo dono: a RPC muta ESTE protocolo.
     const steps: LadderStepInput[] = [
       { medicine_id: 'S025', dose: 0.25, intake_unit: 'mg', duration_days: 28 },
       { medicine_id: 'S05', dose: 0.5, intake_unit: 'mg', duration_days: null },
     ]
     const rows = buildLadderRows(TITRATION, PROTOCOL, 'S025', steps, NOW)
-    expect(rows[0].protocol_id).toBe(PROTOCOL) // etapa vigente executa pelo protocolo
-    expect(rows[1].protocol_id).toBeNull() // switch: F5 cria o protocolo executor e vincula
+    expect(rows.map((r) => r.protocol_id)).toEqual([PROTOCOL, PROTOCOL])
   })
 
-  it('âncora: a etapa 0 SEMPRE pertence ao protocolo, mesmo se o medicamento divergir (anti-órfã)', () => {
-    // Edge: usuário troca o medicamento do 1º passo. Sem o guard, a etapa 0 nasceria com
-    // protocol_id NULL → getLadderForProtocol nunca acha a escada (invisível + duplica). AP-301.
+  it('etapa 0 com medicamento divergente do protocolo segue vinculada e ativada', () => {
     const steps: LadderStepInput[] = [
       { medicine_id: 'OUTRO', dose: 1, intake_unit: 'cp', duration_days: 14 },
       { medicine_id: 'OUTRO', dose: 2, intake_unit: 'cp', duration_days: null },
     ]
     const rows = buildLadderRows(TITRATION, PROTOCOL, 'MET', steps, NOW)
-    expect(rows[0].protocol_id).toBe(PROTOCOL) // âncora forçada
-    expect(rows[0].status).toBe('current') // e ativada (T019a)
-    expect(rows[1].protocol_id).toBeNull() // run fechou (medicamento ≠ protocolo) → futura órfã até F5
+    expect(rows.map((r) => r.protocol_id)).toEqual([PROTOCOL, PROTOCOL])
+    expect(rows[0].status).toBe('current') // ativação (T019a)
   })
 
-  it('escada mista: o run same-med termina na 1ª etapa de outro medicamento', () => {
+  it('🔴 AP-311: escada mista não deixa NENHUMA etapa órfã — apagar o sufixo não mata o vínculo', () => {
+    // Repro do bug de prod (2026-07-20): o fio escada↔tratamento vivia numa única linha
+    // "sorteada"; apagar as etapas futuras levava junto o vínculo e `getLadderForProtocol`
+    // devolvia [] — vazio indistinguível de "não há escada". Com N vínculos idênticos, apagar
+    // qualquer subconjunto deixa a escada resolvível.
     const steps: LadderStepInput[] = [
       { medicine_id: 'S025', dose: 0.25, intake_unit: 'mg', duration_days: 28 },
       { medicine_id: 'S05', dose: 0.5, intake_unit: 'mg', duration_days: 28 },
       { medicine_id: 'S1', dose: 1, intake_unit: 'mg', duration_days: null },
     ]
     const rows = buildLadderRows(TITRATION, PROTOCOL, 'S025', steps, NOW)
-    expect(rows.map((r) => r.protocol_id)).toEqual([PROTOCOL, null, null])
+    expect(rows.map((r) => r.protocol_id)).toEqual([PROTOCOL, PROTOCOL, PROTOCOL])
+
+    const sobreviventes = rows.slice(0, 1) // usuário apagou o sufixo editável
+    expect(sobreviventes.filter((r) => r.protocol_id === PROTOCOL).length).toBeGreaterThan(0)
   })
 })
 

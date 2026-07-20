@@ -6,6 +6,7 @@ import {
   computeAdherenceFromInstances,
   computeStreakFromInstances,
   computeLongestStreakFromInstances,
+  resolveInstanceMedicine,
 } from '@dosiq/core'
 
 // Repository de dose_instances (Fase 3 — leitura de adesão consulta ocorrências
@@ -82,18 +83,49 @@ function _dayKey(value, tz = DEFAULT_TZ) {
 }
 
 /**
+ * Nomes dos medicamentos CONGELADOS nas instâncias da janela, na ordem em que aparecem.
+ *
+ * 🔴 052 Slice C: até aqui o score de um protocolo era rotulado com `protocol.medicine.name` —
+ * o medicamento resolvido por join do protocolo VIGENTE. Enquanto "um protocolo = um
+ * medicamento" era invariante, isso era inócuo. Com executor único (ADR-085) um mesmo protocolo
+ * atravessa 2+ medicamentos, e uma janela de 30/90d passaria a atribuir o período INTEIRO ao
+ * medicamento atual — a mesma falsificação que a 052 existe para matar, apenas migrada de
+ * `dose_instances` para o agregador (RC3 Slice C, finding #1).
+ *
+ * A identidade sai do snapshot da ocorrência (`dose_instances.medicine_id`, embed do
+ * repositório), via o helper canônico — nunca do protocolo.
+ *
+ * @param {Array<Object>} instances
+ * @returns {string[]} nomes distintos, em ordem de ocorrência
+ */
+function _medicineNamesFromInstances(instances) {
+  const names = []
+  for (const inst of instances || []) {
+    const { medicine } = resolveInstanceMedicine<{ name?: string }>(inst)
+    const name = medicine?.name
+    if (name && !names.includes(name)) names.push(name)
+  }
+  return names
+}
+
+/**
  * Monta o score de um protocolo a partir de suas instâncias na janela.
- * @param {Object} protocol - { id, name, medicine }
- * @param {Array<Object>} instances - instâncias do protocolo
+ * @param {Object} protocol - { id, name }
+ * @param {Array<Object>} instances - instâncias do protocolo (com o medicamento congelado)
  * @returns {Object}
  */
 function _protocolScore(protocol, instances) {
   const agg = computeAdherenceFromInstances(instances)
   const { score, expected } = _score(agg.taken, agg.missed)
+  // Janela que atravessa uma troca de medicamento tem 2+ nomes: mostrar todos é o retrato
+  // honesto do período. Janela vazia cai no medicamento vigente do protocolo — não há
+  // ocorrência para falsificar, e um rótulo vazio seria pior que o do presente.
+  const medicineNames = _medicineNamesFromInstances(instances)
   return {
     protocolId: protocol.id,
     name: protocol.name,
-    medicineName: protocol.medicine?.name,
+    medicineName: medicineNames.length > 0 ? medicineNames.join(' → ') : protocol.medicine?.name,
+    medicineNames,
     score,
     taken: agg.taken,
     expected,

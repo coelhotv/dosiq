@@ -4,10 +4,10 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "tier": 1,
+    "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "029/052 fechados em prod (#763). Proximo: smoke US1 do PO (SC-003) -> Slice C (T021-T031 + T029b/PO-9)",
+    "goal": "052 Slice C codado e provado (PO-7/8/9 verdes). Próximo: smoke do PO -> PR -> RC6 -> merge -> aplicar RPC em prod",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -244,8 +244,8 @@
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 12,
-    "rules_count": 249,
+    "journal_entries_since_distillation": 13,
+    "rules_count": 250,
     "anti_patterns_count": 305,
     "decisions_count": 84,
     "contracts_count": 31,
@@ -256,7 +256,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-19T22:30:00-03:00"
+    "index_loaded_at": "2026-07-20T03:11:17.567844"
   },
   "code_review": {
     "status": "clean",
