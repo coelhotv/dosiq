@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { doseInstancesToEvents } from '../timelineService'
 
 describe('timelineService — precedência de identidade (052)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
   const protocolsById = {
     p1: { medicine_id: 'm2', medicine: { id: 'm2', name: 'Mounjaro 15', dosage_unit: 'mg' } },
     p0: { medicine_id: 'm1', medicine: { id: 'm1', name: 'Mounjaro 2,5', dosage_unit: 'mg' } },
