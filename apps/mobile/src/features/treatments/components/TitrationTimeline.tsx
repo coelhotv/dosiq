@@ -246,8 +246,21 @@ export default function TitrationTimeline({
    * estado é quem o invalida depois da ação que o muta.
    */
   const handleStartStep = useCallback(async (stepId: string) => {
-    await onStartPendingStep?.(stepId)
-    await refresh()
+    // `finally`, não `then`: se a confirmação lançar, a escada tem de ser relida MESMO ASSIM. A
+    // RPC pode ter aplicado parte do efeito antes de falhar, e nesse caso a tela estaria mostrando
+    // um estado que não existe mais no banco — pior que mostrar o erro. Recarregar é o que revela
+    // a verdade, seja qual for.
+    //
+    // O `catch` existe porque `void handleStartStep(...)` não tem quem espere a promessa: sem ele
+    // a rejeição vira unhandled rejection e some (achado do RC6, PR #764). Não trata o erro de UX
+    // — quem avisa o usuário é o `onStartPendingStep`, que já dá o Alert honesto (Princípio IX).
+    try {
+      await onStartPendingStep?.(stepId)
+    } catch {
+      // silenciado de propósito: já reportado a quem sabe reportar
+    } finally {
+      await refresh()
+    }
   }, [onStartPendingStep, refresh])
 
   // Enquanto carrega: se o detalhe já sinalizou que há escada (hint), reserva o espaço com

@@ -262,22 +262,23 @@ export const adherenceService = {
 
     if (protocolError) throw protocolError
 
-    const counts = await doseInstanceRepo.countByStatus({
-      userId: resolvedUserId,
-      protocolId,
-      fromTs: startDate,
-      toTs: endDate,
-    })
-    const { score, expected } = _score(counts.taken, counts.missed)
+    // 🔴 052 Slice C (achado do RC6 no PR #764): este caminho usava `countByStatus`, que devolve
+    // AGREGADO — e agregado descarta o `medicine_id` congelado de cada ocorrência. Sem ele, só
+    // sobrava rotular pelo join do protocolo VIVO, e uma janela que atravessa uma troca atribuiria
+    // o período inteiro ao medicamento atual.
+    //
+    // O RC6 classificou como `introduced:false` porque a linha é anterior a este PR. Mantida aqui
+    // a discordância: a linha só estava CORRETA enquanto "um protocolo = um medicamento" fosse
+    // invariante — e é exatamente esse invariante que o Slice C apaga. O PR não escreveu o
+    // defeito, mas é o que o torna alcançável, então é dele a responsabilidade de fechar.
+    //
+    // Agora lê as ocorrências (mesma fonte dos outros dois caminhos) e reusa `_protocolScore`,
+    // que resolve o nome pelo snapshot. Custo: uma janela de instâncias em vez de um COUNT —
+    // volume bounded (R-249), igual ao `calculateAllProtocolsAdherence` logo abaixo.
+    const instances = await doseInstanceRepo.getWindow(resolvedUserId, startDate, endDate)
+    const doProtocolo = _groupByProtocol(instances).get(protocolId) || []
 
-    return {
-      protocolId,
-      name: protocol?.name,
-      medicineName: (protocol?.medicine as any)?.name,
-      score,
-      taken: counts.taken,
-      expected,
-    }
+    return _protocolScore({ id: protocolId, name: protocol?.name, medicine: protocol?.medicine }, doProtocolo)
   },
 
   /**

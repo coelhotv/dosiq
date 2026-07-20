@@ -2,12 +2,12 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "reviewing",
+    "status": "reviewing",
     "tier": 2,
     "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
     "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice C codado e provado (PO-7/8/9 verdes). Próximo: smoke do PO -> PR -> RC6 -> merge -> aplicar RPC em prod",
+    "goal": "052 Slice C em review (PR #764). RC6 rodando. Pós-merge: restaurar baseline do smoke + C5 dos Slices A/B",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -238,15 +238,15 @@
     },
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
-    "pr": 759,
+    "pr": 764,
     "ceremony_type": "eng-review",
     "journal_entries_since_distillation": 13
   },
   "memory": {
     "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "rules_count": 250,
-    "anti_patterns_count": 305,
+    "anti_patterns_count": 306,
     "decisions_count": 84,
     "contracts_count": 31,
     "distillation_due": false

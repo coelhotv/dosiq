@@ -91,4 +91,19 @@ describe('TitrationTimeline — confirmar etapa recarrega a escada (052 Slice C)
     // A ordem É a asserção: recarregar ANTES da RPC responder releria a escada velha.
     expect(ordem).toEqual(['confirmou', 'recarregou'])
   })
+
+  it('recarrega mesmo quando a confirmação LANÇA — e não deixa a rejeição escapar', async () => {
+    // Achado do RC6 (PR #764): `void handleStartStep(...)` não tem quem espere a promessa, então
+    // uma rejeição viraria unhandled rejection. E a escada tem de ser relida assim mesmo: a RPC
+    // pode ter aplicado parte do efeito antes de falhar, e a tela estaria mostrando um estado que
+    // já não existe — pior que mostrar o erro.
+    const onStartPendingStep = jest.fn(async () => { throw new Error('RPC caiu') })
+
+    expect(() =>
+      render(<TitrationTimeline protocolId="proto-1" onStartPendingStep={onStartPendingStep} />)
+    ).not.toThrow()
+
+    await waitFor(() => expect(mockRefresh).toHaveBeenCalled())
+    expect(onStartPendingStep).toHaveBeenCalledWith('step-pendente')
+  })
 })
