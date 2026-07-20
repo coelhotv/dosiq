@@ -151,6 +151,13 @@ Consequências arquiteturais:
   geração — mata a ambiguidade do ±2h fixo entre doses adjacentes.
 - **Notificação idempotente** — lembrete aponta `dose_instance.id` (resolve acoplamento
   notificação↔dose); `expected_dose` congelado dá versionamento de schedule "de graça".
+- **Identidade do medicamento congelada (spec 052, ADR-084)** — `dose_instances.medicine_id`
+  (`NOT NULL`, FK CASCADE) estende ao **medicamento** o congelamento que `expected_dose` já dava à
+  **dose**. Antes, a identidade vinha do join `protocol_id → protocols.medicine_id` na LEITURA, e
+  como o protocolo evolui (`medicine_switch` da titulação, ou edição normal do tratamento),
+  **mudar o medicamento reescrevia o passado** — falsificação clínica no relatório do médico.
+  Leitura por ponto único: `resolveInstanceMedicine` (`@dosiq/core`); **nunca**
+  `instance.protocol.medicine`. Ver [DOSE_INSTANCES.md §3.1](./architecture/DOSE_INSTANCES.md).
 - **Motor de geração** em endpoint serverless dedicado (`api/generate-doses.js`, ADR-051),
   isolado dos reminders; lógica pura em `@dosiq/core` (`doseInstanceGenerator`/`doseInstancePlanner`),
   high-water-mark (`protocols.generated_through`) + geração JIT. Wipe/geração nunca tocam o passado

@@ -70,6 +70,14 @@ curl -s "$SUPABASE_URL/rest/v1/<tabela>?select=<SELECT>&limit=1" -H "apikey: $KE
 ```
 (supabase-js remove whitespace do select → reproduzir com `tr -d '[:space:]'`. `200` ok · `42703` coluna · `42501` grant · `PGRST200` FK.)
 
+### 🔴 Fato histórico não se resolve por join (R-299)
+
+Linha que registra um FATO datado (dose agendada, tomada, compra) carrega os atributos que a
+descrevem — **nunca** os deriva da entidade viva na leitura: a entidade evolui e o passado muda
+junto, retroativamente, sem log nem teste vermelho. Identidade do medicamento de uma dose sai de
+`dose_instances.medicine_id` via `resolveInstanceMedicine` (`@dosiq/core`); `instance.protocol.medicine`
+é o bug (spec 052 · ADR-084 · `docs/architecture/DOSE_INSTANCES.md` §3.1).
+
 ### Antes de modificar arquivo
 `find apps/web/src -name "*Nome*"` (duplicatas) → `grep -r "from.*Nome"` (quem importa) → conferir alias.
 
