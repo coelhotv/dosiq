@@ -186,9 +186,14 @@ describe('protocolService (mobile)', () => {
       const payload = supabase.__mocks.insertMock.mock.calls[0][0][0]
       expect(payload.user_id).toBe(USER_ID)
       expect(payload.name).toBe('SeloZok manhã/noite')
-      expect(payload.titration_schedule).toEqual([])
-      expect(payload.current_stage_index).toBe(0)
-      expect(payload.stage_started_at).toBeNull()
+      // 029 F6 — guarda do DROP: as 4 colunas N1 não existem mais em `protocols`. Antes este
+      // teste EXIGIA que elas fossem enviadas; agora exige o contrário. Qualquer uma delas no
+      // payload é `42703` em todo cadastro de tratamento — e `insert` aceita objeto livre, então
+      // nem tsc nem lint pegam a chave a mais (AP-300).
+      expect(payload).not.toHaveProperty('titration_schedule')
+      expect(payload).not.toHaveProperty('titration_status')
+      expect(payload).not.toHaveProperty('current_stage_index')
+      expect(payload).not.toHaveProperty('stage_started_at')
     })
 
     it('lança erro de validação para payload inválido', async () => {

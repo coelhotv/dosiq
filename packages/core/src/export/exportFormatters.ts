@@ -64,6 +64,21 @@ export interface ExportBundle {
   profile: Row | null
   medicines: Row[] | null
   protocols: Row[] | null
+  /**
+   * 029 F6 — escadas de titulação do titular (`titrations` + `steps:titration_steps`).
+   *
+   * Seção PRÓPRIA, e não campo do tratamento, por dois motivos: (1) uma escada pode
+   * atravessar mais de um protocolo (a troca de medicamento cria executor novo — 052),
+   * então pendurá-la num deles duplicaria ou perderia dado; (2) o embed que os
+   * tratamentos carregam é o recorte por `protocol_id` (fatia do executor VIGENTE, para
+   * o gerador de doses) — exportar essa fatia como se fosse a escada entregaria ao
+   * titular um histórico truncado. Aqui vai a escada COMPLETA, por `titration_id`.
+   *
+   * Substitui as 4 colunas N1 dropadas (`titration_status`/`titration_schedule`/
+   * `current_stage_index`/`stage_started_at`): sem esta seção o export perderia a
+   * titulação inteira em silêncio — dado de saúde, portabilidade incompleta (LGPD art. 18).
+   */
+  titrations: Row[] | null
   logs: Row[] | null
   /** Medicamentos com `stock`/`purchases` aninhados (mesma lista de `medicines`). */
   stock: Row[] | null
@@ -256,10 +271,9 @@ function mapProtocol(p: Row): Row {
     // Colunas do 012/029 — FR-006.
     intake_unit: p.intake_unit ?? null,
     target_dosage: p.target_dosage ?? null,
-    titration_status: p.titration_status ?? null,
-    titration_schedule: p.titration_schedule ?? null,
-    current_stage_index: p.current_stage_index ?? null,
-    stage_started_at: p.stage_started_at ?? null,
+    // 029 F6: as 4 colunas N1 de titulação saíram daqui com o DROP. A titulação do
+    // titular NÃO deixou de ser exportada — mudou de lugar: seção `titrations`
+    // (escada completa por `titration_id`). Ver ExportBundle.titrations.
     frequency: p.frequency ?? null,
     time_schedule: p.time_schedule ?? null,
     weekdays: p.weekdays ?? null,
@@ -271,6 +285,53 @@ function mapProtocol(p: Row): Row {
     notes: p.notes ?? null,
     created_at: p.created_at ?? null,
   }
+}
+
+/**
+ * 029 F6 — uma escada de titulação com as etapas em ordem (`position`).
+ *
+ * Cada etapa carrega o `medicine_id` PRÓPRIO: numa escada cross-medicamento (GLP-1: caneta
+ * 0,25 → caneta 0,5 = cadastro novo) o medicamento muda ENTRE etapas, então derivá-lo do
+ * tratamento devolveria o medicamento de hoje para a etapa de abril — o passado mudando
+ * retroativamente (R-299). O nome sai do embed da própria etapa.
+ */
+function mapTitration(t: Row): Row {
+  const steps = ((t.steps as Row[] | null) ?? [])
+    .slice()
+    .sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
+
+  return {
+    id: t.id,
+    treatment_plan_id: t.treatment_plan_id ?? null,
+    created_at: t.created_at ?? null,
+    steps: steps.map((s) => {
+      const medicine = s.medicine as Row | null | undefined
+      return {
+        id: s.id,
+        position: s.position,
+        medicine_id: s.medicine_id ?? null,
+        medicine_name: medicine?.name ?? null,
+        dose: s.dose ?? null,
+        intake_unit: s.intake_unit ?? null,
+        // NULL = etapa CONTÍNUA (manutenção/alvo): não vence, não avança sozinha.
+        duration_days: s.duration_days ?? null,
+        status: s.status ?? null,
+        // Protocolo que EXECUTOU a etapa. NULL é normal e frequente (medido em prod):
+        // marca só o executor vigente, não a filiação da etapa (029 F4).
+        protocol_id: s.protocol_id ?? null,
+        started_at: s.started_at ?? null,
+        ended_at: s.ended_at ?? null,
+      }
+    }),
+  }
+}
+
+/** Achata as etapas de todas as escadas numa tabela só (CSV não aninha). */
+function flattenTitrationSteps(titrations: Row[]): Row[] {
+  return titrations.flatMap((t) => {
+    const mapped = mapTitration(t)
+    return ((mapped.steps as Row[]) ?? []).map((s) => ({ ...s, titration_id: mapped.id }))
+  })
 }
 
 function mapLog(l: Row): Row {
@@ -370,6 +431,12 @@ export function buildExportJSON(bundle: ExportBundle, scope: ExportScope): strin
     data.protocols = bundle.protocols.map(mapProtocol)
   }
 
+  // 029 F6: a escada acompanha o tratamento (mesmo checkbox) — é a evolução da dose DELE.
+  // Sai como seção irmã, não aninhada: uma escada pode atravessar vários protocolos (052).
+  if (scope.includeProtocols && bundle.titrations) {
+    data.titrations = bundle.titrations.map(mapTitration)
+  }
+
   if (scope.includeLogs && bundle.logs) {
     data.logs = bundle.logs.map(mapLog)
   }
@@ -446,7 +513,8 @@ const PROTOCOL_HEADERS: CSVHeader[] = [
   { key: 'dosage_per_intake', label: 'Dosagem por Tomada' },
   { key: 'intake_unit', label: 'Unidade da Tomada' },
   { key: 'target_dosage', label: 'Dose Alvo' },
-  { key: 'titration_status', label: 'Titulação' },
+  // 029 F6: a coluna "Titulação" (que vinha do `titration_status` N1) saiu; a escada
+  // ganhou tabela própria — seção "ESCADAS DE TITULAÇÃO" abaixo.
   { key: 'frequency', label: 'Frequência' },
   { key: 'time_schedule', label: 'Horários', transform: listLabel },
   { key: 'weekdays', label: 'Dias da Semana', transform: listLabel },
@@ -455,6 +523,21 @@ const PROTOCOL_HEADERS: CSVHeader[] = [
   { key: 'active', label: 'Ativo', transform: boolLabel },
   { key: 'notes', label: 'Observações' },
   { key: 'created_at', label: 'Data de Criação', transform: formatDateTime },
+]
+
+// 029 F6 — uma linha por ETAPA da escada; `titration_id` reagrupa as etapas de uma mesma
+// titulação (o CSV é plano). Ordem das colunas = ordem de leitura do médico/titular.
+const TITRATION_STEP_HEADERS: CSVHeader[] = [
+  { key: 'titration_id', label: 'ID da Escada' },
+  { key: 'position', label: 'Etapa' },
+  { key: 'medicine_name', label: 'Medicamento' },
+  { key: 'dose', label: 'Dose' },
+  { key: 'intake_unit', label: 'Unidade' },
+  // Vazio = etapa contínua (manutenção/alvo), que por definição não tem duração.
+  { key: 'duration_days', label: 'Duração (dias)' },
+  { key: 'status', label: 'Situação' },
+  { key: 'started_at', label: 'Início', transform: formatDateTime },
+  { key: 'ended_at', label: 'Fim', transform: formatDateTime },
 ]
 
 const LOG_HEADERS: CSVHeader[] = [
@@ -550,6 +633,14 @@ export function buildExportCSV(bundle: ExportBundle, scope: ExportScope): string
   if (scope.includeProtocols && bundle.protocols) {
     sections.push('=== TRATAMENTOS ===')
     sections.push(arrayToCSV(bundle.protocols, PROTOCOL_HEADERS))
+    sections.push('')
+  }
+
+  // 029 F6: escadas achatadas (CSV não aninha) — uma linha por ETAPA, com a `titration_id`
+  // como chave que reagrupa. Sem esta seção o CSV perderia a titulação inteira no DROP.
+  if (scope.includeProtocols && bundle.titrations) {
+    sections.push('=== ESCADAS DE TITULAÇÃO ===')
+    sections.push(arrayToCSV(flattenTitrationSteps(bundle.titrations), TITRATION_STEP_HEADERS))
     sections.push('')
   }
 

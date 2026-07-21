@@ -31,3 +31,24 @@ export const toTitleCase = (str: string): string => {
     })
     .join(' ')
 }
+
+/**
+ * Rótulo de quantidade de dias, com plural correto.
+ *
+ * Existe para não repetir `${n} ${n === 1 ? 'dia' : 'dias'}` em cada call site. Achado no RC6
+ * do 029 F6: ao remover o `formatDaysRemaining` do `titrationService` web (que morreu com o
+ * modelo N1), a pluralização foi inlinada em 4 lugares novos — é a família do AP-306, em que
+ * o rótulo montado no call site diverge com o tempo e o JSDoc vira ficção.
+ *
+ * Não formata "restantes"/"em X" de propósito: a preposição muda com a frase ("próxima em 3
+ * dias", "há 3 dias", "3 dias"), e embutir isso aqui obrigaria uma variante por frase.
+ *
+ * @example formatDaysLabel(1)  → '1 dia'
+ * @example formatDaysLabel(3)  → '3 dias'
+ * @example formatDaysLabel(0)  → '0 dias'
+ */
+export const formatDaysLabel = (days: number | null | undefined): string => {
+  const n = Number(days)
+  if (!Number.isFinite(n)) return ''
+  return `${n} ${n === 1 ? 'dia' : 'dias'}`
+}

@@ -188,9 +188,23 @@ function buildTreatmentRows(protocols = [], medicines = []) {
         frequency: formatFrequency(protocol),
         dailyDose: formatDailyDose(protocol, medicine),
         status: 'Ativo',
-        note: protocol.titration_schedule?.length
-          ? 'Em titulacao'
-          : safeText(medicine.notes, 'Sem observacoes'),
+        // 029 F6: a nota lia `titration_schedule` (jsonb N1 dropado — e vazio em 100% das
+        // linhas de prod, então este "Em titulacao" nunca apareceu num PDF de verdade).
+        //
+        // 🔴 NÃO foi repontada para a escada N2, ao contrário das telas (RC6 #765). Os
+        // tratamentos daqui vêm do `protocolService.getAll()` (dashboard), cujo select traz
+        // `titration_steps` pelo embed da FK `protocol_id` — o RECORTE do executor vigente, que
+        // frequentemente não contém a etapa `current` (AP-311). Derivar `getEvolutionBadge`
+        // desse recorte produziria uma nota que ora aparece, ora não, sem relação com a
+        // realidade clínica. **Num documento que o paciente leva ao médico, uma afirmação
+        // instável é pior que a ausência dela** — e o recorte é deliberado no core (o gerador
+        // de doses PRECISA dele: a escada inteira vazaria a dose de outro medicamento no caso
+        // cross-medicamento), então não dá para "só trocar o embed".
+        //
+        // Comportamento idêntico ao de antes do F6 (a nota nunca apareceu). Dívida registrada:
+        // repontar exige a escada completa por `titration_id` no caminho da consulta —
+        // `consultationDataService._extractActiveTitrations` tem o MESMO problema desde o F3.1.
+        note: safeText(medicine.notes, 'Sem observacoes'),
         timesPerDay,
         dosagePerIntake,
       }

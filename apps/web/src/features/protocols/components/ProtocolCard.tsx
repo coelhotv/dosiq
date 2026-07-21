@@ -10,7 +10,7 @@ import TitrationTimeline from './TitrationTimeline'
 
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
-import { formatIntakeDose, formatConcentration } from '@dosiq/core'
+import { formatIntakeDose, formatConcentration, getEvolutionBadge } from '@dosiq/core'
 
 import './ProtocolCard.css'
 
@@ -34,11 +34,18 @@ function formatWeekdaysLabel(weekdays = []) {
   return sorted.map((d) => WEEKDAY_ABBREVIATIONS[d] || d).join(', ')
 }
 
+// 029 F6: as flags saem da escada N2 (`titration_steps`), pelo mesmo `getEvolutionBadge` do
+// mobile. Antes vinham de `titration_status`/`titration_schedule` — colunas dropadas que, em
+// prod, estavam respectivamente `'estável'` e `[]` em 100% das linhas: `canShowTimeline` era
+// sempre false e esta seção nunca apareceu para ninguém (AP-301).
 function _getProtocolFlags(protocol) {
-  const titrationStatus = protocol?.titration_status?.toLowerCase()
-  const hasTitration = titrationStatus && !['estável'].includes(titrationStatus)
-  const hasSchedule = protocol?.titration_schedule?.length > 0
-  return { hasTitration, hasSchedule, canShowTimeline: hasTitration && hasSchedule }
+  const steps = Array.isArray(protocol?.titration_steps) ? protocol.titration_steps : []
+  const hasTitration = getEvolutionBadge(steps).key === 'em_evolucao'
+  const hasSchedule = steps.length > 0
+  // A timeline vale a pena sempre que EXISTE escada — inclusive na dose de manutenção, em que
+  // o histórico das etapas percorridas é justamente o que o usuário quer rever. Exigir
+  // "em evolução" esconderia a escada concluída.
+  return { hasTitration, hasSchedule, canShowTimeline: hasSchedule }
 }
 
 function _renderProtocolStatusBadge({ active, streak }) {
@@ -54,35 +61,25 @@ function _renderProtocolStatusBadge({ active, streak }) {
   )
 }
 
+/**
+ * Badge "Em evolução" no corpo do card.
+ *
+ * 029 F6: derivado da escada N2 pelo `getEvolutionBadge` do core — fonte ÚNICA, a mesma do
+ * `EvolutionBadge` mobile (o PO decidiu em 2026-07-17 que a web mantém a leitura justamente
+ * para as duas superfícies contarem a mesma história). O preview do cronograma que vivia aqui
+ * lia o jsonb N1 e foi substituído pela `TitrationTimeline`, logo abaixo no mesmo card, que
+ * mostra a escada de verdade em vez de um resumo paralelo que podia divergir dela.
+ *
+ * "Estável" não rende badge: é o estado normal de quem não está titulando, e um selo para
+ * cada tratamento estável vira ruído (§2 da spec — mesma decisão do mobile).
+ */
 function _renderTitrationSection(protocol) {
-  if (!protocol.titration_status || protocol.titration_status === 'estável') return null
+  const steps = Array.isArray(protocol?.titration_steps) ? protocol.titration_steps : []
+  const badge = getEvolutionBadge(steps)
+  if (badge.key !== 'em_evolucao') return null
   return (
     <div className="detail-item titration">
-      <span className={`titration-badge ${protocol.titration_status}`}>
-        {protocol.titration_status === 'titulando' ? '📈 Em evolução' : '🎯 Alvo Atingido'}
-      </span>
-      {/* 029 F3.1: o bloco de progresso que vivia aqui lia `protocol.titration_scheduler_data` —
-          um campo que NENHUM produtor no repositório jamais escreveu (grep global). Nunca
-          renderizou, em nenhuma versão. Era a terceira camada morta da titulação N1, junto com
-          `advanceTitrationStage()` (sem chamador) e o `TitrationTransitionAlert` (sem montagem):
-          a UI que chamaria o avanço não aparecia porque o campo que ela guardava não existia.
-          Ver AP-301. O que a web exibe da escada N2 é decisão de produto do F6/T033b. */}
-      {protocol.titration_schedule?.length > 0 && (
-        <div className="titration-schedule-preview">
-          <h5>Cronograma Planejado:</h5>
-          <div className="stages-timeline">
-            {protocol.titration_schedule.map((stage, idx) => (
-              <div
-                key={idx}
-                className={`timeline-stage ${idx === protocol.current_stage_index ? 'current' : idx < (protocol.current_stage_index || 0) ? 'past' : 'future'}`}
-              >
-                <span className="stage-dose-mini">{stage.dosage} comp.</span>
-                <span className="stage-days-mini">{stage.days}d</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <span className="titration-badge em_evolucao">📈 {badge.label}</span>
     </div>
   )
 }

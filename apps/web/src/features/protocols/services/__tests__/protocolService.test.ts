@@ -224,36 +224,12 @@ describe('protocolService', () => {
       await expect(protocolService.create(invalidProtocol)).rejects.toThrow()
     })
 
-    it('should handle titration schedule correctly', async () => {
-      const { protocolService } = await import('@protocols/services/protocolService')
-      const protocolWithTitration = {
-        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'Protocolo com Titulação',
-        frequency: 'diário',
-        time_schedule: ['08:00'],
-        dosage_per_intake: 1,
-        titration_schedule: [
-          { dosage: 1, duration_days: 7, description: 'Etapa 1' },
-          { dosage: 2, duration_days: 7, description: 'Etapa 2' },
-        ],
-        current_stage_index: 0,
-        titration_status: 'titulando',
-        start_date: '2024-01-15',
-      }
-
-      mockSupabase.from.mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi
-              .fn()
-              .mockResolvedValue({ data: { id: '1', ...protocolWithTitration }, error: null }),
-          }),
-        }),
-      })
-
-      const result: any = await protocolService.create(protocolWithTitration)
-      expect(result.titration_schedule).toHaveLength(2)
-    })
+    // 029 F6: o teste `should handle titration schedule correctly` foi REMOVIDO. Ele montava
+    // um `titration_schedule` à mão e afirmava que o create o devolvia — mas o "devolvia" era
+    // o próprio mock ecoando a fixture, não o serviço fazendo algo. Provava o mock, não o
+    // código; e o estado que montava (escada no jsonb do tratamento) não existe mais em lugar
+    // nenhum do sistema. Fixture de um estado que nenhum caminho de escrita produz é ficção
+    // verde (R-296). A escada é `titrations`/`titration_steps` e tem cobertura própria.
   })
 
   describe('update', () => {

@@ -276,24 +276,31 @@ describe('Schemas de Validação Zod', () => {
       })
     })
 
-    it('deve validar titulação corretamente', () => {
+    // 029 F6 — guarda do DROP, no lugar do antigo `deve validar titulação corretamente`.
+    // Aquele teste validava os 4 campos N1 no schema do tratamento. Não basta apagá-lo: como
+    // `safeParse` descarta chave desconhecida em SILÊNCIO, ele seguiria verde mesmo com os
+    // campos fora do Zod. Então o teste inverte — prova que o schema DESCARTA a titulação N1
+    // em vez de deixá-la chegar ao insert, onde viraria `42703` (AP-300/AP-214).
+    it('schema descarta as colunas de titulação N1 (dropadas) em vez de persisti-las', () => {
       const protocol = {
         medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'Protocolo com Titulação',
+        name: 'Tratamento com escada legada',
         frequency: 'diário',
         time_schedule: ['08:00'],
         dosage_per_intake: 1,
         titration_status: 'titulando',
-        titration_schedule: [
-          { dosage: 25, duration_days: 7 },
-          { dosage: 50, duration_days: 7 },
-        ],
+        titration_schedule: [{ dosage: 25, duration_days: 7 }],
         current_stage_index: 0,
         stage_started_at: '2024-01-15T00:00:00Z',
         start_date: '2024-01-15',
       }
       const result = validateProtocolCreate(protocol)
+      // Continua válido: dado legado num cache antigo não pode travar o cadastro do usuário.
       expect(result.success).toBe(true)
+      expect(result.data).not.toHaveProperty('titration_status')
+      expect(result.data).not.toHaveProperty('titration_schedule')
+      expect(result.data).not.toHaveProperty('current_stage_index')
+      expect(result.data).not.toHaveProperty('stage_started_at')
     })
   })
 

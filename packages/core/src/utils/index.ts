@@ -77,11 +77,19 @@ export {
 export {
   toSentenceCase,
   toTitleCase,
+  formatDaysLabel,
 } from './stringUtils'
 
 // Titration utilities
-// Legado N1 (jsonb em protocols) + adapter N2 (titration_steps, spec 029) + motor de avanço.
-// O adapter e o motor são PUROS: quem busca as etapas é o chamador (cron/generator/UI).
+// Adapter N2 (titration_steps, spec 029) + motor de avanço. PUROS: quem busca as etapas é o
+// chamador (cron/generator/UI). O legado N1 (jsonb em `protocols`) morreu no F6 com o DROP
+// das colunas — não há mais "fonte N1" a adaptar.
+export { attachFullLadders } from './titrationLadder'
+export type {
+  LadderStepRow,
+  ProtocolWithLadder,
+  AttachFullLaddersResult,
+} from './titrationLadder'
 export {
   calculateTitrationData,
   resolveTitrationStageAt,

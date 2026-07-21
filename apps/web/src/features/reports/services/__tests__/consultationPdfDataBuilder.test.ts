@@ -48,7 +48,10 @@ describe('consultationPdfDataBuilder', () => {
       active: true,
       dosage_per_intake: 1,
       time_schedule: ['22:00'],
-      titration_schedule: [{ dosage: 1, days: 3 }],
+      // 029 F6: era `titration_schedule: [{ dosage: 1, days: 3 }]` (jsonb N1 dropado). A nota
+      // do PDF deixou de derivar da titulação — ver o comentário no builder: os tratamentos
+      // desta rota trazem só o RECORTE da escada por `protocol_id` (AP-311), e nota instável
+      // num documento clínico é pior que nota ausente.
       start_date: past,
       end_date: future,
     },

@@ -1,3 +1,4 @@
+import { calculateTitrationData } from '@dosiq/core';
 import {
   getCurrentTime as getLocalTime
 } from './dateUtils.js';
@@ -87,9 +88,17 @@ export function formatProtocol(protocol) {
   msg += `⏰ Horários: ${times}\n`;
   msg += `📏 Dose: ${dosage}${intakeLabel}\n`;
   
-  if (protocol.titration_schedule && protocol.titration_schedule.length > 0) {
-    const currentStage = protocol.current_stage_index || 0;
-    msg += `🎯 Titulação: Etapa ${currentStage + 1}/${protocol.titration_schedule.length}\n`;
+  // 029 F6: a linha de titulação vinha do jsonb N1 (`titration_schedule` + `current_stage_index`),
+  // colunas dropadas. O `select('*')` do `/status` protegia do 42703 — o bot não QUEBRARIA, só
+  // pararia de mostrar a titulação, em silêncio. Decisão do PO (2026-07-21): repontar, pelo mesmo
+  // critério que manteve a leitura na web — as três superfícies contam a mesma história.
+  // `calculateTitrationData` devolve null em etapa CONTÍNUA (manutenção/alvo) ou sem etapa
+  // vigente: nesse caso não há etapa a numerar e a linha some, o que é o correto.
+  const titration = calculateTitrationData(
+    Array.isArray(protocol.titration_steps) ? protocol.titration_steps : []
+  );
+  if (titration) {
+    msg += `📈 Em evolução: Etapa ${titration.currentStep}/${titration.totalSteps}\n`;
   }
   
   if (protocol.notes) {
