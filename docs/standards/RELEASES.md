@@ -1,7 +1,7 @@
 ---
 title: "Releases externos — Notas de loja (dosiq mobile)"
 description: "Releases para as versões dos apps Android e iOS"
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: standard
 audience:
@@ -12,7 +12,7 @@ tags:
   - changelog
   - versioning
 created_at: "2026-07-15"
-updated_at: "2026-07-15"
+updated_at: "2026-07-21"
 ---
 # Releases externos — Notas de loja (dosiq mobile)
 
@@ -34,7 +34,61 @@ updated_at: "2026-07-15"
 
 ---
 
-## v0.27.0 — a publicar — Estoque opcional + Portabilidade e Privacidade
+## v0.28.0 — a publicar — Evolução do tratamento (escada de doses)
+
+> Cobre tudo desde a `0.27.0` publicada: a Evolução do tratamento chegando ao app (0.27.2),
+> a troca de medicamento acionável pelo paciente (0.27.3), a porta para quem já está em
+> manutenção (0.28.0), a troca de concentração deixando de fatiar o tratamento (0.28.2) e o
+> fix de app inacessível offline (0.27.1). Patches 0.28.1/0.28.3 entram como estabilidade.
+>
+> **Enquadramento obrigatório (ADR-062 / SaMD):** o dosiq **registra** a escada que o médico
+> prescreveu e avisa quando a data chega — **nunca sugere, calcula ou recomenda dose**. Toda
+> frase da copy precisa deixar o médico como origem da decisão ("que seu médico prescreveu",
+> "quando seu médico indicar"). Copy que sugira automatismo clínico muda a classificação
+> regulatória do produto.
+
+### Apple App Store (pt-BR)
+
+```
+Chegou a Evolução do tratamento no dosiq — para quem não toma sempre a mesma dose.
+
+Sua escada de doses, do jeito que o médico prescreveu
+Muitos tratamentos aumentam a dose aos poucos. Agora você cadastra esse plano no app: cada etapa com a dose, a duração e o medicamento. O dosiq mostra em qual etapa você está, quanto falta para a próxima e avisa quando chega a hora — seguindo exatamente o que foi prescrito.
+
+Trocar de concentração não recomeça o tratamento
+Quando a evolução pede uma caneta ou apresentação diferente, o tratamento continua sendo o mesmo. Sua história fica toda junta, num lugar só, em vez de virar uma pilha de tratamentos encerrados.
+
+Já está na dose de manutenção?
+Se o seu médico decidir aumentar de novo, agora existe uma porta clara para registrar isso — a etapa nova só começa quando você tocar em iniciar.
+
+Acompanhe a evolução de perto
+A linha do tempo mostra as etapas concluídas, a atual e as que ainda vêm, com as datas de cada mudança. Na lista de tratamentos, um selo indica quais estão em evolução.
+
+Correção importante
+O app voltou a abrir normalmente quando você está sem internet.
+
+Além disso: melhorias de estabilidade e correções.
+
+O dosiq acompanha o plano do seu médico. Ele nunca sugere nem calcula doses por conta própria.
+```
+
+### Google Play (pt-BR — 452 chars)
+
+```
+Chegou a Evolução do tratamento no dosiq:
+
+- Cadastre a escada de doses que seu médico prescreveu e veja em qual etapa você está.
+- Trocou de concentração? Continua sendo o mesmo tratamento, com sua história toda junta.
+- Já está na dose de manutenção? Registre um novo aumento quando seu médico indicar.
+- Correção importante: o app volta a abrir normalmente sem internet.
+- Estabilidade e correções.
+
+Sua evolução, do jeito que seu médico prescreveu.
+```
+
+---
+
+## v0.27.0 — publicada — Estoque opcional + Portabilidade e Privacidade
 
 > Une as entregas 044 (estoque opcional — a mais sentida no dia a dia), 008 (exportação + hub de
 > privacidade) e 046 (consentimento LGPD). Cobre tudo desde a última publicação (`0.24.5`),
