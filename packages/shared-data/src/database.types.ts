@@ -919,7 +919,6 @@ export type Database = {
           active: boolean | null
           created_at: string | null
           critical_alarm: boolean
-          current_stage_index: number | null
           dosage_per_intake: number | null
           end_date: string | null
           frequency: string | null
@@ -932,13 +931,10 @@ export type Database = {
           name: string
           notes: string | null
           paused_at: string | null
-          stage_started_at: string | null
           start_date: string
           status_ultima_notificacao: string | null
           target_dosage: number | null
           time_schedule: Json | null
-          titration_schedule: Json | null
-          titration_status: string | null
           treatment_plan_id: string | null
           user_id: string
           weekdays: string[] | null
@@ -947,7 +943,6 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           critical_alarm?: boolean
-          current_stage_index?: number | null
           dosage_per_intake?: number | null
           end_date?: string | null
           frequency?: string | null
@@ -960,13 +955,10 @@ export type Database = {
           name: string
           notes?: string | null
           paused_at?: string | null
-          stage_started_at?: string | null
           start_date: string
           status_ultima_notificacao?: string | null
           target_dosage?: number | null
           time_schedule?: Json | null
-          titration_schedule?: Json | null
-          titration_status?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -975,7 +967,6 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           critical_alarm?: boolean
-          current_stage_index?: number | null
           dosage_per_intake?: number | null
           end_date?: string | null
           frequency?: string | null
@@ -988,13 +979,10 @@ export type Database = {
           name?: string
           notes?: string | null
           paused_at?: string | null
-          stage_started_at?: string | null
           start_date?: string
           status_ultima_notificacao?: string | null
           target_dosage?: number | null
           time_schedule?: Json | null
-          titration_schedule?: Json | null
-          titration_status?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
