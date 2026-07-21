@@ -5,10 +5,10 @@
     "mode": "coding",
     "status": "completed",
     "tier": 2,
-    "plan": "plans/specs/052-dose-instance-medicine-snapshot/plan.md",
-    "tasks": "plans/specs/052-dose-instance-medicine-snapshot/tasks.md",
-    "goal": "052 Slice C MERGEADO (#764). Épico 052 concluído (A+B+C). Pendências: T012/T020 (C5 de A/B), T032 (Slice D — não nasce), distill (user roda)",
-    "goal_type": "feature",
+    "plan": "plans/specs/029-treatment-level-titration/plan.md",
+    "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
+    "goal": "029 F6 — DROP das 4 colunas N1 de protocols + repontamento (fecho do épico)",
+    "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -252,11 +252,11 @@
     "journal_entries_since_distillation": 13
   },
   "memory": {
-    "last_distillation": "2026-07-19T16:30:00Z",
-    "journal_entries_since_distillation": 16,
-    "rules_count": 250,
-    "anti_patterns_count": 306,
-    "decisions_count": 84,
+    "last_distillation": "2026-07-21T03:11:23Z",
+    "journal_entries_since_distillation": 1,
+    "rules_count": 251,
+    "anti_patterns_count": 309,
+    "decisions_count": 85,
     "contracts_count": 31,
     "distillation_due": false
   },
@@ -265,7 +265,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-20T03:11:17.567844"
+    "index_loaded_at": "2026-07-21T04:40:00Z"
   },
   "code_review": {
     "status": "clean",
