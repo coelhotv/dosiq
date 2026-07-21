@@ -27,9 +27,6 @@ export const FREQUENCY_LABELS = {
   quando_necessário: 'Quando Necessário',
 }
 
-// Status de titulação
-const TITRATION_STATUSES = ['estável', 'titulando', 'alvo_atingido'] as const
-
 // Dias da semana
 export const WEEKDAYS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
 
@@ -44,34 +41,20 @@ export const WEEKDAY_LABELS = {
   domingo: 'Domingo',
 }
 
-/**
- * Schema para um estágio de titulação
- */
-export const titrationStageSchema = z.object({
-  dosage: z
-    .number()
-    .positive('Dosagem do estágio deve ser maior que zero')
-    .max(10000, 'Dosagem parece estar muito alta'),
-
-  duration_days: z
-    .number()
-    .int('Duração deve ser um número inteiro')
-    .min(1, 'Duração mínima é de 1 dia')
-    .max(365, 'Duração máxima é de 365 dias'),
-
-  description: z
-    .string()
-    .max(500, 'Descrição não pode ter mais de 500 caracteres')
-    .optional()
-    .nullable(),
-
-  // 012 Fase B2 (FR-021): etapa cuja escada prescrita exige TROCAR de medicamento
-  // (GLP-1 cross-força: caneta 0,25 → caneta 0,5 = novo cadastro). Quando true, o
-  // auto-avanço (FR-005b) NÃO altera expected_dose — emite notificação-CTA "hora
-  // de trocar". Registro passivo do cronograma prescrito (SaMD/ADR-062). Default
-  // false (titulação intra-medicamento clássica, ex.: metoprolol).
-  requires_new_medicine: z.boolean().optional().nullable(),
-})
+// 029 F6: `titrationStageSchema` (a etapa do jsonb N1) foi REMOVIDO junto com as colunas
+// `protocols.titration_schedule|titration_status|current_stage_index|stage_started_at`.
+// A escada agora é a entidade `titrations` + `titration_steps` (ADR-084).
+// Os dois campos do estágio N1 que NÃO têm equivalente em `titration_steps` (colunas
+// conferidas no banco 2026-07-21 — R-295) e a razão de não terem:
+//   · `description` — nota por etapa: decisão de produto, "não migra" (spec 029 F1).
+//     É o campo fantasma que o F2 declarou e o F3 pôs num select → o 42703 do #750 (AP-300).
+//   · `requires_new_medicine` — deixou de ser flag: no N2 cada etapa tem `medicine_id`
+//     próprio, então "esta etapa troca o medicamento" se LÊ da mudança de id entre
+//     etapas vizinhas, não de um booleano paralelo que podia divergir (052/ADR-084).
+// Não reintroduzir nenhum dos dois "pra compilar".
+// Ele e o `validateTitrationStage` não tinham NENHUM consumidor de produção — só o
+// próprio teste (a forma exata do `advanceTitrationStage` do AP-301: capacidade que
+// parecia existir porque o código existia).
 
 /**
  * Schema base para protocolo
@@ -123,30 +106,12 @@ export const protocolSchema = z.object({
     .positive('Dosagem por tomada deve ser maior que zero')
     .max(1000, 'Dosagem parece estar muito alta. Verifique o valor'),
 
-  titration_status: z
-    .enum(TITRATION_STATUSES, {
-      error: 'Status de titulação inválido. Opções: estável, titulando, alvo_atingido',
-    })
-    .default('estável'),
-
-  titration_schedule: z
-    .array(titrationStageSchema)
-    .max(50, 'Máximo de 50 estágios de titulação permitidos')
-    .optional()
-    .default([]),
-
-  current_stage_index: z
-    .number()
-    .int('Índice do estágio deve ser um número inteiro')
-    .min(0, 'Índice não pode ser negativo')
-    .default(0),
-
-  stage_started_at: z
-    .string()
-    .datetime('Data de início do estágio deve ser uma data válida (ISO 8601)')
-    .optional()
-    .nullable()
-    .transform((val) => val || null),
+  // 029 F6: os 4 campos de titulação N1 (`titration_status`, `titration_schedule`,
+  // `current_stage_index`, `stage_started_at`) saíram daqui porque as COLUNAS foram
+  // dropadas de `protocols`. Não é omissão a preencher: a escada é `titrations` +
+  // `titration_steps` (ADR-084). Declarar qualquer um deles de volta aqui reintroduz
+  // o payload que o repositório escrevia — e depois do DROP isso é `42703` em todo
+  // cadastro de tratamento, web e mobile (R-295 / AP-300).
 
   active: z.boolean().default(true),
 
@@ -202,33 +167,9 @@ export const protocolCreateSchema = protocolSchema
       path: ['intake_unit'],
     }
   )
-  .refine(
-    (data) => {
-      // Se tem titration_schedule, deve ter stage_started_at
-      if (data.titration_schedule && data.titration_schedule.length > 0) {
-        return data.titration_status === 'titulando' || data.titration_status === 'alvo_atingido'
-      }
-      return true
-    },
-    {
-      message:
-        'Protocolo com cronograma de titulação deve ter status "titulando" ou "alvo_atingido"',
-      path: ['titration_status'],
-    }
-  )
-  .refine(
-    (data) => {
-      // Se está titulando, current_stage_index deve ser válido
-      if (data.titration_schedule && data.titration_schedule.length > 0) {
-        return data.current_stage_index < data.titration_schedule.length
-      }
-      return true
-    },
-    {
-      message: 'Índice do estágio atual é maior que o número de estágios definidos',
-      path: ['current_stage_index'],
-    }
-  )
+  // 029 F6: os 2 refines que cruzavam `titration_schedule` × `titration_status` ×
+  // `current_stage_index` morreram com as colunas. A coerência escada↔status agora é
+  // invariante da entidade N2, garantida por CHECK no banco (`titrations`), não por Zod.
   .refine(
     (data) => {
       // Se end_date está definido, deve ser maior ou igual a start_date
@@ -308,26 +249,6 @@ export function validateProtocolCreate(data: unknown) {
  */
 export function validateProtocolUpdate(data: unknown) {
   const result = protocolUpdateSchema.safeParse(data)
-
-  if (result.success) {
-    return { success: true, data: result.data }
-  }
-
-  const errors = result.error.issues.map((err) => ({
-    field: err.path.join('.'),
-    message: err.message,
-  }))
-
-  return { success: false, errors }
-}
-
-/**
- * Valida um estágio de titulação individual
- * @param {Object} stage - Dados do estágio
- * @returns {{ success: boolean, data?: Object, errors?: Array<{field: string, message: string}> }}
- */
-export function validateTitrationStage(stage: unknown) {
-  const result = titrationStageSchema.safeParse(stage)
 
   if (result.success) {
     return { success: true, data: result.data }

@@ -4,6 +4,7 @@
 
 import { z } from 'zod'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
+import { attachFullLadders } from '@dosiq/core'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
 
 /**
@@ -34,7 +35,7 @@ import { debugLog, errorLog } from '@shared/utils/debugLog'
  *
  * @private
  */
-async function attachFullLadders(userId, protocols) {
+async function fetchAndAttachFullLadders(userId, protocols) {
   if (!Array.isArray(protocols) || protocols.length === 0) return protocols
   try {
     // R-295: colunas verificadas no banco (information_schema) e select EXECUTADO via curl.
@@ -49,42 +50,23 @@ async function attachFullLadders(userId, protocols) {
       return protocols
     }
 
-    const titrationByProtocol = new Map()
-    const stepsByTitration = new Map()
-    for (const s of steps) {
-      if (s.protocol_id && !titrationByProtocol.has(s.protocol_id)) {
-        titrationByProtocol.set(s.protocol_id, s.titration_id)
-      }
-      if (!stepsByTitration.has(s.titration_id)) stepsByTitration.set(s.titration_id, [])
-      stepsByTitration.get(s.titration_id).push(s)
+    // 029 F6: a DERIVAÇÃO mora no core (`attachFullLadders`) — a web precisou da mesma
+    // escada e duas cópias da mesma regra divergem (AP-306). Aqui fica só a I/O, que é
+    // o que de fato difere entre as plataformas (cliente nativo vs. web).
+    const { protocols: withLadders, orphanTitrationIds } = attachFullLadders(protocols, steps)
+
+    // AP-311 regra 3: titulação inatribuível não pode sumir em silêncio — ver a doc de
+    // `attachFullLadders`. O sinal NÃO pode ser `protocols.titration_status`: a coluna foi
+    // dropada no F6 e, antes disso, estava `'estável'` nas 68 linhas de prod, inclusive em
+    // tratamentos com escada em curso — nunca foi escrita.
+    for (const titrationId of orphanTitrationIds) {
+      errorLog(
+        'treatmentsService',
+        `Titulação órfã ${titrationId}: nenhuma etapa carrega protocol_id — tratamento fica sem escada na listagem e o badge pode subestimar a evolução (AP-311)`
+      )
     }
 
-    // AP-311 regra 3: não achar o vínculo ≠ não existir vínculo. Uma titulação cujas etapas NÃO
-    // carregam `protocol_id` em nenhuma linha é inatribuível: o tratamento dela cai de volta no
-    // embed incompleto e o badge volta a mentir — o mesmo furo que esta função corrige, de novo em
-    // silêncio. Não dá para consertar aqui (o vínculo não existe no dado; some por construção no
-    // Slice C / ADR-085), mas tem de ser OBSERVÁVEL.
-    //
-    // ⚠️ O sinal NÃO pode ser `protocols.titration_status`: verificado no banco (2026-07-20) é
-    // `text` nullable, sem CHECK, default `'estável'` — e as 68 linhas de prod estão TODAS em
-    // `'estável'`, inclusive tratamentos com escada em curso. Coluna nunca escrita ⇒ inútil como
-    // evidência de titulação ativa.
-    const linkedTitrations = new Set(titrationByProtocol.values())
-    for (const titrationId of stepsByTitration.keys()) {
-      if (!linkedTitrations.has(titrationId)) {
-        errorLog(
-          'treatmentsService',
-          `Titulação órfã ${titrationId}: nenhuma etapa carrega protocol_id — tratamento fica sem escada na listagem e o badge pode subestimar a evolução (AP-311)`
-        )
-      }
-    }
-
-    return protocols.map((p) => {
-      const titrationId = titrationByProtocol.get(p.id)
-      const ladder = titrationId ? stepsByTitration.get(titrationId) : null
-      // Sem escada ligada, preserva o embed (tratamento sem titulação → array vazio, badge Estável).
-      return ladder ? { ...p, titration_steps: ladder } : p
-    })
+    return withLadders
   } catch (err) {
     errorLog('treatmentsService', 'Erro ao montar escadas completas (mantém embed)', err)
     return protocols
@@ -101,6 +83,10 @@ export async function getAllTreatments(userId) {
     // R-295: o embed `titration_steps(status, duration_days)` abaixo tem status/duration_days
     // verificadas no banco; resolve via FK `titration_steps.protocol_id → protocols.id` (mesmo shape
     // do MOBILE_DETAIL_SELECT — executado contra o PostgREST: 401 auth, não 42703/PGRST200).
+    // 029 F6: `titration_status` saiu deste select (coluna N1 DROPADA). Era vestígio: o badge
+    // desta listagem já vinha de `fetchAndAttachFullLadders` acima, e não dela — ver a nota do AP-311
+    // logo acima, que diz literalmente que o sinal NÃO pode ser `protocols.titration_status`.
+    // Vestígio em `select()` não é inofensivo: pós-DROP vira `42703` (AP-300).
     const { data: rawData, error } = await nativeSupabaseClient
       .from('protocols')
       .select(`
@@ -110,7 +96,6 @@ export async function getAllTreatments(userId) {
         time_schedule,
         dosage_per_intake,
         intake_unit,
-        titration_status,
         active,
         start_date,
         end_date,
@@ -141,7 +126,7 @@ export async function getAllTreatments(userId) {
       return { success: false, error: error.message }
     }
 
-    const data = await attachFullLadders(userId, rawData || [])
+    const data = await fetchAndAttachFullLadders(userId, rawData || [])
     return { success: true, data }
   } catch (err) {
     errorLog('treatmentsService', 'Erro inesperado', err)

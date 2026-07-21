@@ -266,25 +266,12 @@ describe('Schemas de Validação Zod', () => {
       })
     })
 
-    it('deve validar titulação corretamente', () => {
-      const protocol = {
-        medicine_id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'Protocolo com Titulação',
-        frequency: 'diário',
-        time_schedule: ['08:00'],
-        dosage_per_intake: 1,
-        titration_status: 'titulando',
-        titration_schedule: [
-          { dosage: 25, duration_days: 7 },
-          { dosage: 50, duration_days: 7 },
-        ],
-        current_stage_index: 0,
-        stage_started_at: '2024-01-15T00:00:00Z',
-        start_date: '2024-01-15',
-      }
-      const result = validateProtocolCreate(protocol)
-      expect(result.success).toBe(true)
-    })
+    // 029 F6: `deve validar titulação corretamente` foi REMOVIDO. Ele validava os 4 campos N1
+    // no schema do tratamento; as colunas foram dropadas e os campos saíram do Zod. Mantê-lo
+    // seria pior que inútil: `safeParse` descarta chave desconhecida em silêncio, então ele
+    // continuaria VERDE validando um objeto do qual a titulação inteira foi jogada fora —
+    // exatamente o tipo de teste que dá confiança sem cobrir nada (AP-214).
+    // A validação da escada N2 vive nos schemas de `titrations`/`titration_steps`.
   })
 
   describe('Validation Helper', () => {

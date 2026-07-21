@@ -102,10 +102,6 @@ const BUNDLE: ExportBundle = {
       dosage_per_intake: 1,
       intake_unit: 'ml',
       target_dosage: 10,
-      titration_status: 'in_progress',
-      titration_schedule: [{ stage: 1 }],
-      current_stage_index: 0,
-      stage_started_at: '2026-07-01T10:00:00-03:00',
       frequency: 'semanal',
       time_schedule: ['08:00'],
       weekdays: ['seg'],
@@ -116,6 +112,47 @@ const BUNDLE: ExportBundle = {
       critical_alarm: false,
       notes: null,
       created_at: '2026-07-01T10:00:00-03:00',
+    },
+  ],
+  // 029 F6 — escada N2. Deliberadamente CROSS-MEDICAMENTO (as etapas 0 e 1 têm `medicine_id`
+  // diferente, como a escada real de GLP-1 em prod): é o caso em que derivar o medicamento do
+  // tratamento entregaria o remédio de hoje para a etapa de ontem (R-299). E fora de ordem,
+  // para provar que o mapper ordena por `position` em vez de confiar na ordem do banco.
+  titrations: [
+    {
+      id: 'tit-1',
+      treatment_plan_id: 'plan-1',
+      created_at: '2026-07-01T10:00:00-03:00',
+      steps: [
+        {
+          id: 'step-2',
+          position: 1,
+          medicine_id: 'med-2',
+          medicine: { name: 'Mounjaro 5mg' },
+          dose: 5,
+          intake_unit: 'mg',
+          // Etapa CONTÍNUA (manutenção): duração NULL é válida e não é dado faltando.
+          duration_days: null,
+          status: 'current',
+          protocol_id: 'prot-1',
+          started_at: '2026-07-15T10:00:00-03:00',
+          ended_at: null,
+        },
+        {
+          id: 'step-1',
+          position: 0,
+          medicine_id: 'med-1',
+          medicine: { name: 'Mounjaro 2,5mg' },
+          dose: 2.5,
+          intake_unit: 'mg',
+          duration_days: 14,
+          status: 'completed',
+          // NULL é normal: `protocol_id` só marca o executor vigente (AP-311).
+          protocol_id: null,
+          started_at: '2026-07-01T10:00:00-03:00',
+          ended_at: '2026-07-15T10:00:00-03:00',
+        },
+      ],
     },
   ],
   logs: [
@@ -178,6 +215,8 @@ describe('buildExportJSON — inventário (FR-006/FR-010)', () => {
       'profile',
       'protocols',
       'stock',
+      // 029 F6: seção nova — a escada saiu das colunas do tratamento e virou entidade.
+      'titrations',
     ])
   })
 
@@ -198,14 +237,45 @@ describe('buildExportJSON — inventário (FR-006/FR-010)', () => {
     })
   })
 
-  it('tratamentos trazem time_schedule e os campos de titulação', () => {
+  it('tratamentos trazem time_schedule e a dose alvo', () => {
     const [prot] = parseJSON(BUNDLE).data.protocols
     expect(prot).toMatchObject({
       time_schedule: ['08:00'],
       intake_unit: 'ml',
-      titration_status: 'in_progress',
       target_dosage: 10,
     })
+  })
+
+  // 029 F6 — as 4 colunas N1 saíram do tratamento e a titulação virou seção própria. Sem estes
+  // dois testes, o DROP tiraria a escada do export de portabilidade em silêncio: `select('*')`
+  // não quebra, os campos só viram `null` (LGPD art. 18 — dado de saúde do titular).
+  it('tratamento NÃO carrega mais as colunas de titulação N1 (dropadas)', () => {
+    const [prot] = parseJSON(BUNDLE).data.protocols
+    expect(prot).not.toHaveProperty('titration_status')
+    expect(prot).not.toHaveProperty('titration_schedule')
+    expect(prot).not.toHaveProperty('current_stage_index')
+    expect(prot).not.toHaveProperty('stage_started_at')
+  })
+
+  it('escada sai em seção própria, ordenada por position e com o medicamento DE CADA etapa', () => {
+    const [tit] = parseJSON(BUNDLE).data.titrations
+    expect(tit).toMatchObject({ id: 'tit-1', treatment_plan_id: 'plan-1' })
+    // Ordenado por `position`, não pela ordem em que o banco devolveu (fixture está invertida).
+    expect(tit.steps.map((s: { position: number }) => s.position)).toEqual([0, 1])
+    // 🔴 R-299: cada etapa carrega o SEU medicamento. Derivar do tratamento faria a etapa
+    // concluída em julho exibir o medicamento vigente hoje — o passado mudando sozinho.
+    expect(tit.steps[0]).toMatchObject({ medicine_id: 'med-1', medicine_name: 'Mounjaro 2,5mg', dose: 2.5 })
+    expect(tit.steps[1]).toMatchObject({ medicine_id: 'med-2', medicine_name: 'Mounjaro 5mg', dose: 5 })
+    // Etapa contínua: `duration_days` NULL preservado como null (não vira 0 nem some).
+    expect(tit.steps[1].duration_days).toBeNull()
+  })
+
+  it('CSV ganha a seção de escadas, uma linha por etapa', () => {
+    const csv = buildExportCSV(BUNDLE, FULL_SCOPE)
+    expect(csv).toContain('=== ESCADAS DE TITULAÇÃO ===')
+    expect(csv).toContain('ID da Escada')
+    expect(csv).toContain('Mounjaro 2,5mg')
+    expect(csv).toContain('Mounjaro 5mg')
   })
 
   it('perfil sai sem segredos (verification_token nunca no bundle)', () => {

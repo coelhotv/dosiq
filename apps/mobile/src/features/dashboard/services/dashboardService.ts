@@ -28,7 +28,12 @@ export async function getActiveProtocols(userId, dateStr) {
     // embed, a dose de titulação degradaria para `dosage_per_intake` em silêncio sob
     // TITRATION_SOURCE=n2 (a escada inteira, por outro lado, vazaria a dose de outro
     // medicamento no caso cross-med — por isso o recorte é por protocolo).
-    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, titration_status, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
+    // 029 F6: `titration_status` saiu deste select — a coluna N1 foi DROPADA. Ela já não
+    // tinha consumidor aqui (nenhum campo do dashboard derivava dela); ficou só porque
+    // `select()` é string e nada no pipeline confronta a string com o schema: nem tsc (não
+    // é tipada), nem os testes (o client é mockado). Mantê-la = `42703` pós-DROP, que é
+    // exatamente como web+mobile+cron caíram no #750 (AP-300 / R-295).
+    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)

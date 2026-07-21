@@ -1,7 +1,14 @@
 import { getNow } from '@utils/dateUtils'
-import { resolveTreatmentStatus, getProtocolDays, formatIntakeDose, formatConcentration, stockDoseMetrics } from '@dosiq/core'
+import {
+  resolveTreatmentStatus,
+  getProtocolDays,
+  formatIntakeDose,
+  formatConcentration,
+  stockDoseMetrics,
+  getEvolutionBadge,
+  calculateTitrationData,
+} from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
-import { getTitrationSummary, isTitrationActive } from '@protocols/services/titrationService'
 
 export const FREQUENCY_LABELS = {
   diario: 'Diário',
@@ -128,8 +135,15 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
   const groupInfo = resolveGroup(protocol)
   const tabStatus = resolveTabStatus(protocol)
   const totalStock = stockMap[protocol.medicine_id] ?? 0
-  const titSummary = getTitrationSummary(protocol)
-  const hasTitration = isTitrationActive(protocol)
+  // 029 F6 — badge e progresso saem da escada N2 (`titration_steps`), pelas MESMAS funções
+  // do core que o mobile usa. Antes vinham do `titrationService` web, que lia o jsonb N1
+  // dropado; duas implementações do mesmo badge divergem (AP-306), e aqui divergir significa
+  // o mesmo tratamento aparecer "em evolução" num app e "estável" no outro.
+  const steps = Array.isArray(protocol.titration_steps) ? protocol.titration_steps : []
+  const hasTitration = getEvolutionBadge(steps).key === 'em_evolucao'
+  // null quando a etapa vigente é CONTÍNUA (manutenção/alvo) ou não há etapa vigente: não há
+  // progresso a exibir, e é por isso que o badge some — não porque a escada sumiu.
+  const titSummary = calculateTitrationData(steps)
 
   const { daysRemaining } = predictRefill({
     medicineId: protocol.medicine_id,

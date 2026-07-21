@@ -45,9 +45,11 @@ export default function FirstProtocolStep() {
         initialValues={onboardingData.protocol}
         onCancel={() => {}}
         onSave={async (data) => {
+          // 029 F6: `titration_status: 'estável'` saiu daqui — a coluna foi dropada. Não é
+          // perda de informação: um tratamento recém-criado no onboarding não tem escada, e
+          // "sem escada" já É o estado estável (derivado de `titration_steps`, não declarado).
           const saved = await cachedProtocolService.create({
             ...data,
-            titration_status: 'estável',
             active: true,
           })
           updateOnboardingData('protocol', saved)

@@ -242,14 +242,14 @@ export function createProtocolRepository({
       // é coluna de protocols — remover antes do insert (022 Fase C).
       const { _medicineIsLiquid: _omit, ...validated } = validation.data
 
+      // 029 F6: os defaults de titulação N1 (`titration_schedule`/`current_stage_index`/
+      // `stage_started_at`) saíram daqui com o DROP das colunas. Este era o ÚNICO escritor
+      // vivo das 3 — mantê-lo daria `42703` em TODO cadastro de tratamento, web e mobile.
+      // A escada não nasce mais no insert do protocolo: é `titrations` + `titration_steps`,
+      // criada pelo fluxo próprio (ADR-084). Não reintroduzir campo de titulação aqui.
       const payload = {
         ...validated,
         user_id: userId,
-        // Defaults para titração (web usa, mobile v1 não expõe — mas factory mantém)
-        titration_schedule: validated.titration_schedule || [],
-        current_stage_index: validated.current_stage_index || 0,
-        stage_started_at:
-          validated.titration_schedule?.length > 0 ? getServerTimestamp() : null,
       }
 
       const { data, error } = await client

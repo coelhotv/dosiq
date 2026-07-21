@@ -26,9 +26,11 @@ export function buildInitialValues({ todayIso, presetPlanId }) {
     end_date: null,
     notes: '',
     active: true,
-    titration_status: 'estável',
-    titration_schedule: [],
-    current_stage_index: 0,
+    // 029 F6: os campos de titulação N1 saíram do form — as colunas foram dropadas de
+    // `protocols`. O form nunca os editou de verdade (nasciam no default e iam ao insert
+    // como `[]`/`0`/`estável`); a escada é `titrations` + `titration_steps`, criada pelo
+    // fluxo próprio de titulação. Reintroduzi-los aqui volta a alimentar o payload do
+    // repositório e quebra todo cadastro de tratamento (R-295).
     treatment_plan_id: presetPlanId || null,
     critical_alarm: false,
   }
@@ -52,9 +54,8 @@ function buildPrefill(existing, todayIso) {
     end_date: existing.end_date ?? null,
     notes: existing.notes ?? '',
     active: existing.active ?? true,
-    titration_status: existing.titration_status ?? 'estável',
-    titration_schedule: existing.titration_schedule ?? [],
-    current_stage_index: existing.current_stage_index ?? 0,
+    // 029 F6: idem `buildInitial` — sem colunas N1, sem prefill de titulação. A edição de
+    // um tratamento não toca a escada; ela tem tela própria.
     treatment_plan_id: existing.treatment_plan_id ?? null,
     critical_alarm: existing.critical_alarm ?? false,
   }

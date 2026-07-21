@@ -7,7 +7,7 @@
 import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
-import { stockDoseMetrics } from '@dosiq/core'
+import { stockDoseMetrics, getEvolutionBadge } from '@dosiq/core'
 import {
   buildSummaryCards,
   buildAttentionItems,
@@ -188,8 +188,14 @@ function buildTreatmentRows(protocols = [], medicines = []) {
         frequency: formatFrequency(protocol),
         dailyDose: formatDailyDose(protocol, medicine),
         status: 'Ativo',
-        note: protocol.titration_schedule?.length
-          ? 'Em titulacao'
+        // 029 F6: a nota lia `titration_schedule` (jsonb N1 dropado, e vazio em 100% das
+        // linhas de prod — este "Em titulacao" nunca apareceu num PDF). Agora deriva da escada
+        // N2 pelo `getEvolutionBadge` do core, a mesma fonte do badge do app: o documento que
+        // o paciente leva ao médico não pode discordar da tela em que ele viu a informação.
+        note: getEvolutionBadge(
+          Array.isArray(protocol.titration_steps) ? protocol.titration_steps : []
+        ).key === 'em_evolucao'
+          ? 'Em evolucao de dose'
           : safeText(medicine.notes, 'Sem observacoes'),
         timesPerDay,
         dosagePerIntake,

@@ -55,7 +55,10 @@ describe('ProtocolChecklistItem', () => {
     expect(onToggle).toHaveBeenCalledWith('p1')
   })
 
-  it('renders titration status badge when titulando', () => {
+  // 029 F6: o badge deriva da escada N2 (`titration_steps`), não mais de `titration_status`
+  // — coluna dropada que estava `'estável'` em 100% das linhas de prod, ou seja, este selo
+  // dizia "Estável" até para quem estava titulando (a mesma mentira corrigida no #763).
+  it('mostra "Em evolução" quando a etapa vigente é FINITA', () => {
     const protocol = {
       id: 'p1',
       name: 'Manhã',
@@ -63,7 +66,10 @@ describe('ProtocolChecklistItem', () => {
       active: true,
       medicine_id: 'm1',
       medicine: { name: 'Aspirina' },
-      titration_status: 'titulando',
+      titration_steps: [
+        { id: 's1', position: 0, status: 'completed', duration_days: 7, started_at: '2026-07-01T10:00:00-03:00' },
+        { id: 's2', position: 1, status: 'current', duration_days: 14, started_at: '2026-07-08T10:00:00-03:00' },
+      ],
     }
     const onToggle = vi.fn()
 
@@ -72,7 +78,7 @@ describe('ProtocolChecklistItem', () => {
     expect(screen.getByText('📈 Em evolução')).toBeInTheDocument()
   })
 
-  it('renders stable status badge when estável', () => {
+  it('NÃO mostra badge quando a etapa vigente é CONTÍNUA (manutenção = estável)', () => {
     const protocol = {
       id: 'p1',
       name: 'Manhã',
@@ -80,13 +86,36 @@ describe('ProtocolChecklistItem', () => {
       active: true,
       medicine_id: 'm1',
       medicine: { name: 'Aspirina' },
-      titration_status: 'estável',
+      // `duration_days: null` = etapa contínua: chegou na dose de manutenção, não evolui mais.
+      titration_steps: [
+        { id: 's1', position: 0, status: 'current', duration_days: null, started_at: '2026-07-01T10:00:00-03:00' },
+      ],
     }
     const onToggle = vi.fn()
 
     render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
 
-    expect(screen.getByText('Estável')).toBeInTheDocument()
+    expect(screen.queryByText('📈 Em evolução')).not.toBeInTheDocument()
+  })
+
+  // 🔴 O caso REAL deste componente: os tratamentos vêm de `selectedPlan.protocols`, que não
+  // carrega `titration_steps`. Antes o componente afirmava "Estável" nesse cenário — afirmação
+  // sem dado, indistinguível da verdade. Agora não afirma nada.
+  it('sem escada carregada não afirma estabilidade (ausência é visível)', () => {
+    const protocol = {
+      id: 'p1',
+      name: 'Manhã',
+      dosage_per_intake: 1,
+      active: true,
+      medicine_id: 'm1',
+      medicine: { name: 'Aspirina' },
+    }
+    const onToggle = vi.fn()
+
+    render(<ProtocolChecklistItem protocol={protocol} isSelected={false} onToggle={onToggle} />)
+
+    expect(screen.queryByText('Estável')).not.toBeInTheDocument()
+    expect(screen.queryByText('📈 Em evolução')).not.toBeInTheDocument()
   })
 
   // 029 F3.1: removido 'renders titration scheduler data when present'. Montava

@@ -51,17 +51,9 @@ const VALID_PROTOCOL = {
   start_date: '2026-01-01',
 }
 
-// Fixture com titração (2 stages — exige titration_status='titulando')
-const TITRATION_SCHEDULE = [
-  { dosage: 25, duration_days: 14 },
-  { dosage: 50, duration_days: 28 },
-]
-const VALID_PROTOCOL_TITRATION = {
-  ...VALID_PROTOCOL,
-  titration_schedule: TITRATION_SCHEDULE,
-  titration_status: 'titulando',
-  current_stage_index: 0,
-}
+// 029 F6: a fixture com escada N1 (`titration_schedule`/`titration_status`/
+// `current_stage_index`) morreu com as colunas. A escada é `titrations` + `titration_steps`,
+// criada pelo fluxo próprio — o `create()` de tratamento não a toca mais.
 
 // ---------- Suite ----------
 describe('createProtocolRepository — parity', () => {
@@ -196,7 +188,7 @@ describe('createProtocolRepository — parity', () => {
       await expect(repo.create({ name: 'Incompleto' })).rejects.toThrow(/Erro de validação/)
     })
 
-    it('validation ok → insert recebe payload com user_id e defaults de titulação', async () => {
+    it('validation ok → insert recebe payload com user_id', async () => {
       const repo = createProtocolRepository({ client, getUserId })
       await repo.create(VALID_PROTOCOL)
       const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
@@ -205,21 +197,24 @@ describe('createProtocolRepository — parity', () => {
           name: 'Atenolol 25mg',
           dosage_per_intake: 25,
           user_id: FAKE_USER,
-          titration_schedule: [],
-          current_stage_index: 0,
-          stage_started_at: null,
         }),
       ])
     })
 
-    it('titration_schedule preenchido → stage_started_at é string (getServerTimestamp)', async () => {
-      client = makeClient({ data: { id: 'new-p-2', ...VALID_PROTOCOL_TITRATION }, error: null })
+    // 🔴 029 F6 — guarda do DROP. As 4 colunas N1 não existem mais em `protocols`: qualquer
+    // uma delas no payload é `42703` em TODO cadastro de tratamento, web e mobile. Este é o
+    // teste que falha se alguém reintroduzir o default "pra manter compatibilidade" — e é a
+    // única barreira automática, porque `insert` recebe um objeto livre: nem tsc nem lint
+    // reclamam de uma chave a mais (AP-300).
+    it('insert NÃO envia nenhuma coluna de titulação N1 (dropadas — R-295)', async () => {
       const repo = createProtocolRepository({ client, getUserId })
-      await repo.create(VALID_PROTOCOL_TITRATION)
+      await repo.create(VALID_PROTOCOL)
       const insertCall = client._builder._calls.find(([m]: any) => m === 'insert')
       const payload = insertCall[1][0][0]
-      expect(typeof payload.stage_started_at).toBe('string')
-      expect(payload.stage_started_at).not.toBeNull()
+      expect(payload).not.toHaveProperty('titration_schedule')
+      expect(payload).not.toHaveProperty('titration_status')
+      expect(payload).not.toHaveProperty('current_stage_index')
+      expect(payload).not.toHaveProperty('stage_started_at')
     })
 
     it('usa writeSelect customizado se passado', async () => {
@@ -267,8 +262,11 @@ describe('createProtocolRepository — parity', () => {
       expect(payload).toEqual({ active: false })
       // Os campos que o Zod injeta como default NÃO podem ir ao banco num update parcial.
       expect(payload).not.toHaveProperty('weekdays')
-      expect(payload).not.toHaveProperty('titration_status')
       expect(payload).not.toHaveProperty('time_schedule')
+      // 029 F6: as colunas N1 saíram do schema, então já não são defaults injetáveis — mas a
+      // asserção fica: se alguém as redeclarar no Zod, o update parcial volta a arrastá-las
+      // para um banco onde elas não existem mais (42703), e este teste avisa.
+      expect(payload).not.toHaveProperty('titration_status')
       expect(payload).not.toHaveProperty('current_stage_index')
     })
   })

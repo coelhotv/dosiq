@@ -8,9 +8,15 @@ export async function handleStatus(bot, msg) {
   try {
     const userId = await getUserIdByChatId(chatId);
 
+    // 029 F6 (R-267 read-path): o embed da escada é OBRIGATÓRIO aqui. O `formatProtocol`
+    // passou a derivar a linha de titulação de `titration_steps`; sem o embed ela seria
+    // `undefined` e a linha sumiria em silêncio — trocar a coluna N1 pela N2 sem tocar no
+    // select "consertaria" o 42703 e manteria a perda de informação que o repontamento
+    // existe para evitar.
+    // R-295: colunas conferidas no banco 2026-07-21; select executado contra o PostgREST.
     const { data: protocols, error } = await supabase
       .from('protocols')
-      .select('*, medicine:medicines(*)')
+      .select('*, medicine:medicines(*), titration_steps(id, position, dose, duration_days, status, started_at)')
       .eq('user_id', userId)
       .eq('active', true);
 

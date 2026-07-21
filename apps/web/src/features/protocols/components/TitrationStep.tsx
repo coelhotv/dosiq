@@ -77,7 +77,13 @@ export default function TitrationStep({
           <span className="dose-value">{dose}</span>
           <span className="dose-unit">{unit}</span>
           <span className="dose-divider">•</span>
-          <span className="duration">{durationDays} dias</span>
+          {/* 029 F6: `duration_days` NULL = etapa CONTÍNUA (manutenção/alvo) — não vence e não
+              avança sozinha. Antes do N2 toda etapa tinha duração, então o `{durationDays} dias`
+              cru era seguro; agora renderizaria "dias" órfão sem número. A ausência de prazo é
+              informação, não campo faltando. */}
+          <span className="duration">
+            {durationDays == null ? 'sem prazo' : `${durationDays} dias`}
+          </span>
         </div>
 
         {description && <p className="step-description">{description}</p>}

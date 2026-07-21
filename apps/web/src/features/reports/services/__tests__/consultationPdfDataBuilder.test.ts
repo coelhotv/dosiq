@@ -48,7 +48,12 @@ describe('consultationPdfDataBuilder', () => {
       active: true,
       dosage_per_intake: 1,
       time_schedule: ['22:00'],
-      titration_schedule: [{ dosage: 1, days: 3 }],
+      // 029 F6: era `titration_schedule: [{ dosage: 1, days: 3 }]` (jsonb N1 dropado). A nota
+      // "em evolução" do PDF agora vem da escada N2, pelo mesmo `getEvolutionBadge` do app.
+      // Etapa vigente FINITA = em evolução.
+      titration_steps: [
+        { id: 's1', position: 0, status: 'current', duration_days: 3, started_at: past },
+      ],
       start_date: past,
       end_date: future,
     },

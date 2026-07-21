@@ -4,10 +4,9 @@ import {
   INJECTION_CONTAINERS,
   validateProtocolCreate,
   validateMedicine,
-  validateTitrationStage,
 } from '../index'
 
-// 012 Fase B2 — sincronização Zod ↔ CHECK (R-082/R-271) + flag de titulação N1.
+// 012 Fase B2 — sincronização Zod ↔ CHECK (R-082/R-271).
 describe('intake_unit mg (FR-017)', () => {
   it("INTAKE_UNITS inclui 'mg' (sincronizado com CHECK +mg)", () => {
     expect(INTAKE_UNITS).toContain('mg')
@@ -57,10 +56,12 @@ describe('injection_container — enum (FR-019)', () => {
   })
 })
 
-describe('titration stage requires_new_medicine (FR-021)', () => {
-  it('aceita flag true/false/ausente', () => {
-    expect(validateTitrationStage({ duration_days: 28, dosage: 0.5, requires_new_medicine: true }).success).toBe(true)
-    expect(validateTitrationStage({ duration_days: 28, dosage: 0.5, requires_new_medicine: false }).success).toBe(true)
-    expect(validateTitrationStage({ duration_days: 28, dosage: 0.5 }).success).toBe(true)
-  })
-})
+// 029 F6: o bloco `titration stage requires_new_medicine (FR-021)` foi REMOVIDO junto com
+// `titrationStageSchema`/`validateTitrationStage`, que morreram com as colunas N1.
+//
+// O que a FR-021 pedia continua valendo, mas mudou de forma: "esta etapa exige trocar de
+// medicamento" deixou de ser um booleano paralelo e passou a ser LEGÍVEL do dado — cada
+// `titration_steps` tem seu próprio `medicine_id`, e a troca é a mudança de id entre etapas
+// vizinhas (052/ADR-084). Um booleano que pode discordar do `medicine_id` ao lado é a classe
+// de bug que o modelo novo elimina por construção; por isso não há teste equivalente a
+// restaurar aqui. A cobertura da troca vive nos testes da entidade de titulação.

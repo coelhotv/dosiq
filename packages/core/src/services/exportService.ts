@@ -36,6 +36,26 @@ const PROTOCOL_SELECT = `
   treatment_plan:treatment_plans(id, name, emoji, color)
 `
 
+// 029 F6 — escada COMPLETA do titular, por `titration_id` (não o recorte por `protocol_id`
+// que os selects de `protocols` carregam para o gerador de doses: aquele é a fatia do
+// executor vigente e entregaria ao titular um histórico truncado).
+// R-295: colunas conferidas em `information_schema` 2026-07-21 — `titrations` tem
+// (id, user_id, treatment_plan_id, created_at, updated_at) e `titration_steps` tem
+// (id, titration_id, user_id, position, medicine_id, dose, intake_unit, duration_days,
+// status, protocol_id, started_at, ended_at, created_at, updated_at). NÃO existe
+// `description` nem `requires_new_medicine` — foi um `description` inventado num select
+// que derrubou prod no #750 (AP-300).
+const TITRATION_SELECT = `
+  id,
+  treatment_plan_id,
+  created_at,
+  steps:titration_steps(
+    id, position, medicine_id, dose, intake_unit, duration_days,
+    status, protocol_id, started_at, ended_at,
+    medicine:medicines(name)
+  )
+`
+
 const LOG_SELECT = `
   *,
   medicine:medicines(*)
@@ -124,6 +144,18 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
     return (data ?? []) as unknown as Row[]
   }
 
+  async function fetchTitrations(userId: string): Promise<Row[]> {
+    const { data, error } = await client
+      .from('titrations')
+      .select(TITRATION_SELECT)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(MAX_ROWS)
+
+    if (error) throw error
+    return (data ?? []) as unknown as Row[]
+  }
+
   async function fetchLogs(userId: string, dateRange: ExportDateRange | null): Promise<Row[]> {
     let query = client
       .from('medicine_logs')
@@ -186,10 +218,12 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
       // Estoque e compras vêm aninhados nos medicamentos — uma busca serve às duas seções.
       const needsMedicines = scope.includeMedicines || scope.includeStock
 
-      const [profile, medicines, protocols, logs, biomarkers, email] = await Promise.all([
+      const [profile, medicines, protocols, titrations, logs, biomarkers, email] = await Promise.all([
         scope.includeProfile ? profileRepo.getProfileForExport() : Promise.resolve(null),
         needsMedicines ? fetchMedicines(userId) : Promise.resolve(null),
         scope.includeProtocols ? fetchProtocols(userId) : Promise.resolve(null),
+        // A escada segue o checkbox do tratamento: é a evolução da dose DELE (029 F6).
+        scope.includeProtocols ? fetchTitrations(userId) : Promise.resolve(null),
         scope.includeLogs ? fetchLogs(userId, dateRange) : Promise.resolve(null),
         scope.includeBiomarkers ? fetchBiomarkers(userId) : Promise.resolve(null),
         fetchEmail(),
@@ -203,6 +237,7 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
         profile,
         medicines: scope.includeMedicines ? (medicines ?? []) : null,
         protocols,
+        titrations,
         logs,
         // Sempre que o titular pediu estoque, os dados vão — mesmo com o controle desligado.
         stock: scope.includeStock ? (medicines ?? []) : null,
