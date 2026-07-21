@@ -2,13 +2,13 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "merged",
+    "mode": "planning",
+    "status": "planned",
     "tier": 2,
-    "plan": "plans/specs/029-treatment-level-titration/plan.md",
-    "tasks": "plans/specs/029-treatment-level-titration/tasks.md",
-    "goal": "029 F6 — DROP das 4 colunas N1 de protocols + repontamento (épico 029 FECHADO)",
-    "goal_type": "refactor",
+    "plan": "plans/specs/054-critical-alerts/plan.md",
+    "tasks": "plans/specs/054-critical-alerts/tasks.md",
+    "goal": "054 — Critical Alerts iOS: planning (ADR política + plan/tasks F0-F1)",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -20,7 +20,8 @@
       "plans/specs/050-notification-integrity",
       "plans/specs/051-expo-updates",
       "plans/specs/052-dose-instance-medicine-snapshot",
-      "plans/specs/053-unit-label-formatter"
+      "plans/specs/053-unit-label-formatter",
+      "plans/specs/054-critical-alerts"
     ],
     "merged_pr": 765,
     "merged_squash": "acd50be2",
@@ -226,22 +227,19 @@
         "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
-    "spec_dir": "plans/specs/052-dose-instance-medicine-snapshot",
-    "spec": "plans/specs/053-unit-label-formatter/spec.md",
+    "spec_dir": "plans/specs/054-critical-alerts",
+    "spec": "plans/specs/054-critical-alerts/spec.md",
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
-      "eng-review",
-      "eng-review-053"
+      "eng-review-054"
     ],
-    "ceremony_findings_count": 11,
+    "ceremony_findings_count": 6,
     "ceremony_scope_decisions": [
-      "053 RC3 HIGH: baseline PO-3 não reproduz (44 vs 88 occ/35 arquivos) — congelar expressão de grep + contagem no plan.md ANTES do C2",
-      "053 RC3 HIGH: fonte única = ESTENDER DOSAGE_UNIT_LABELS + criar equivalente p/ INTAKE_UNITS (nunca mapa paralelo); tradução valor→rótulo DENTRO do formatador, rótulo é terminal (nunca volta p/ lógica endsWith('/ml'))",
-      "053 RC3: slicing A (core: mapa+formatadores+testes grafia+gate → PO-1/2/4/5/6) · B (sweep web+mobile+bot → PO-3); gate entra no Slice A; testes importam mapa REAL (nunca mockar DOSAGE_UNIT_LABELS); convenção fixa número+ESPAÇO+rótulo",
-      "052 RC3 HIGH: medicine_id congelado deriva do STEP vigente em scheduled_for (titrationStage.medicine_id), fallback protocols.medicine_id fora de escada — nunca só de protocols (senão instância futura pós-troca congela o medicamento errado)",
-      "052 RC3: recorte em 2 slices — A (migração+gerador/writer+backfill+verificação) · B (cutover readers→helper canônico + gate FR-005 + remove fallback); gate em migração SEPARADA",
-      "052 RC3 guards: PO-2/PO-5 incluem suíte mobile Jest; PO-4 evidência por fonte (log vs sem log); PO-1 prova via caminho real de geração, não INSERT manual (AP-279); fixtures .test.sql entram no inventário de writers",
-      "052 US5/FR-007/PO-6 (achado do PO): mudança de identidade FUTURA (medicine_id manual OU etapa futura da escada) → wipeFuturePending + regen; medicine_id entra em SCHEDULING_FIELDS; saveLadderEdit dispara wipe do protocolo dono; verificar caminho dose_change do _applyTitrationPlan; passado intocável por construção"
+      "054 RC3 HIGH: critical:true sempre derivado do status de autorização do SO (protege builds antigos por construção); ordem F0 provisioning/build (PO-5) ANTES de F1 código",
+      "054 RC3 HIGH: status de autorização = cache (AP-281/AP-284) — revalidar em foreground; Settings lê ao vivo",
+      "054 RC3 MEDIUM: resync dos triggers pendentes pós-concessão/revogação",
+      "054 RC3: nag herda isCritical por construção (alarmService.ts:419-424) — teste de contrato PO-4 fixa; guard PO-1 ↑ com unit test automatizado",
+      "054 RC3: 2 fases mesmo spec (F0 provisioning → F1 código); ADR da política no planning"
     ],
     "ai_review": {
       "engine": "agy",
@@ -260,7 +258,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-21T03:11:23Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 251,
     "anti_patterns_count": 309,
     "decisions_count": 85,
