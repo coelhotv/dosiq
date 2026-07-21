@@ -77,6 +77,7 @@ export {
 export {
   toSentenceCase,
   toTitleCase,
+  formatDaysLabel,
 } from './stringUtils'
 
 // Titration utilities

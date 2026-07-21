@@ -10,6 +10,8 @@
  * `summary === null` (etapa vigente CONTÍNUA de manutenção/alvo, ou sem etapa vigente) não é
  * erro: é o estado "Estável", e o chamador simplesmente não monta o badge.
  */
+import { formatDaysLabel } from '@dosiq/core'
+
 export default function TitrationBadge({ summary }) {
   if (!summary) return null
 
@@ -24,7 +26,7 @@ export default function TitrationBadge({ summary }) {
       </span>
       {daysRemaining > 0 && (
         <span className="titration-badge__sub">
-          · próxima em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
+          · próxima em {formatDaysLabel(daysRemaining)}
         </span>
       )}
       {/* Etapa vencida (`daysRemaining <= 0` com a etapa ainda vigente): o avanço está

@@ -49,11 +49,9 @@ describe('consultationPdfDataBuilder', () => {
       dosage_per_intake: 1,
       time_schedule: ['22:00'],
       // 029 F6: era `titration_schedule: [{ dosage: 1, days: 3 }]` (jsonb N1 dropado). A nota
-      // "em evolução" do PDF agora vem da escada N2, pelo mesmo `getEvolutionBadge` do app.
-      // Etapa vigente FINITA = em evolução.
-      titration_steps: [
-        { id: 's1', position: 0, status: 'current', duration_days: 3, started_at: past },
-      ],
+      // do PDF deixou de derivar da titulação — ver o comentário no builder: os tratamentos
+      // desta rota trazem só o RECORTE da escada por `protocol_id` (AP-311), e nota instável
+      // num documento clínico é pior que nota ausente.
       start_date: past,
       end_date: future,
     },

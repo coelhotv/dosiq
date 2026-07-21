@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import TitrationStep from './TitrationStep'
-import { calculateTitrationData, getEvolutionBadge, formatDose } from '@dosiq/core'
+import { calculateTitrationData, getEvolutionBadge, formatDose, formatDaysLabel } from '@dosiq/core'
 import './TitrationTimeline.css'
 
 /**
@@ -73,9 +73,23 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
   const progressPercent = Math.max(0, Math.min(100, Math.round(progress?.progressPercent ?? 0)))
   const isEvolving = badge.key === 'em_evolucao'
 
+  // 🔴 "Não está evoluindo" NÃO é sinônimo de "chegou na manutenção" (RC6 #765). `estavel` cobre
+  // três situações distintas, e só UMA delas merece comemoração:
+  //   · etapa vigente CONTÍNUA  → chegou de fato à dose de manutenção;
+  //   · escada ainda não iniciada (todas `upcoming`, nenhuma `current`) → não começou;
+  //   · escada sem etapa vigente (tratamento pausado/encerrado, resíduo) → parada no meio.
+  // O modelo N2 não tem chave 'pausado' — a distinção honesta que dá para fazer aqui é
+  // "existe etapa vigente contínua?". Sem ela, dizer "🎯 Dose de manutenção" + 🎉 anunciaria
+  // conclusão para quem não titulou um único dia.
+  const hasCurrentStep = ordered.some((s) => s?.status === 'current')
+  const reachedMaintenance = !isEvolving && hasCurrentStep
+  const notStarted = !isEvolving && !hasCurrentStep
+
   const statusMessage = isEvolving
     ? `📈 Em evolução • Etapa ${progress?.currentStep ?? 1} de ${progress?.totalSteps ?? viewSteps.length}`
-    : '🎯 Dose de manutenção'
+    : reachedMaintenance
+      ? '🎯 Dose de manutenção'
+      : '⏸️ Evolução não iniciada'
 
   const handleStepClick = (step) => {
     if (onStepClick) onStepClick(step)
@@ -114,7 +128,7 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
             </div>
             <span className="progress-text-mini">
               {daysRemaining > 0
-                ? `${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}`
+                ? formatDaysLabel(daysRemaining)
                 : 'avanço pendente'}
             </span>
           </div>
@@ -128,7 +142,9 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
       <div className="timeline-header">
         <div className="timeline-title">
           <h4>Evolução da dose</h4>
-          <span className={`timeline-status ${isEvolving ? 'active' : 'complete'}`}>
+          <span
+            className={`timeline-status ${isEvolving ? 'active' : reachedMaintenance ? 'complete' : 'paused'}`}
+          >
             {statusMessage}
           </span>
         </div>
@@ -143,9 +159,7 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
               <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
             </div>
             {daysRemaining > 0 && (
-              <span className="days-remaining">
-                {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
-              </span>
+              <span className="days-remaining">{formatDaysLabel(daysRemaining)}</span>
             )}
           </div>
         )}
@@ -185,17 +199,22 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
             <span className="info-icon">⏰</span>
             <span className="info-text">
               Próxima mudança de dose em{' '}
-              <strong>
-                {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
-              </strong>
+              <strong>{formatDaysLabel(daysRemaining)}</strong>
             </span>
           </div>
         )}
 
-        {!isEvolving && (
+        {reachedMaintenance && (
           <div className="completion-message">
             <span className="info-icon">🎉</span>
             <span className="info-text">Você chegou à dose de manutenção!</span>
+          </div>
+        )}
+
+        {notStarted && (
+          <div className="next-step-info">
+            <span className="info-icon">⏸️</span>
+            <span className="info-text">Nenhuma etapa em curso nesta evolução.</span>
           </div>
         )}
       </div>
