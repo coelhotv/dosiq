@@ -253,7 +253,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-21T03:11:23Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 251,
     "anti_patterns_count": 309,
     "decisions_count": 85,
@@ -272,5 +272,15 @@
     "critical": 0,
     "auto_fixed": 1,
     "ask_items": 0
+  },
+  "ai_review": {
+    "engine": "agy",
+    "status": "issues_found",
+    "critical": 1,
+    "high": 4,
+    "introduced_critical": 1,
+    "introduced_high": 4,
+    "pr": 765,
+    "resolved": "3 aplicados, 2 recusados com razão (1 FP critical)"
   }
 }
