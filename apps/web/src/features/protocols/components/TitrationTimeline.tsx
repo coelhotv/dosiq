@@ -95,7 +95,10 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
                 type={isClickable ? 'button' : undefined}
                 className={`preview-step ${step.status}`}
                 onClick={() => handleStepClick(step)}
-                title={`Etapa ${step.stepNumber}: ${formatDose(step.dose, step.unit)}`}
+                // A descrição volta ao tooltip (RC6 #765): no N2 ela só existe na etapa
+                // `pending_confirmation`, e é justamente ali que o modo compacto precisa dizer
+                // por que a bolinha está parada ("Aguardando sua confirmação").
+                title={`${step.description || `Etapa ${step.stepNumber}`}: ${formatDose(step.dose, step.unit)}`}
               >
                 <span className="preview-dose">{step.dose}</span>
                 <span className="preview-unit">{step.unit}</span>
