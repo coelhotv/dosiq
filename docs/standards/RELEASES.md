@@ -52,21 +52,20 @@ updated_at: "2026-07-21"
 ```
 Chegou a Evolução do tratamento no dosiq — para quem não toma sempre a mesma dose.
 
-Sua escada de doses, do jeito que o médico prescreveu
+- Sua escada de doses, do jeito que o médico prescreveu
 Muitos tratamentos aumentam a dose aos poucos. Agora você cadastra esse plano no app: cada etapa com a dose, a duração e o medicamento. O dosiq mostra em qual etapa você está, quanto falta para a próxima e avisa quando chega a hora — seguindo exatamente o que foi prescrito.
 
-Trocar de concentração não recomeça o tratamento
+- Trocar de concentração não recomeça o tratamento
 Quando a evolução pede uma caneta ou apresentação diferente, o tratamento continua sendo o mesmo. Sua história fica toda junta, num lugar só, em vez de virar uma pilha de tratamentos encerrados.
 
-Já está na dose de manutenção?
+- Já está na dose de manutenção?
 Se o seu médico decidir aumentar de novo, agora existe uma porta clara para registrar isso — a etapa nova só começa quando você tocar em iniciar.
 
-Acompanhe a evolução de perto
+- Acompanhe a evolução de perto
 A linha do tempo mostra as etapas concluídas, a atual e as que ainda vêm, com as datas de cada mudança. Na lista de tratamentos, um selo indica quais estão em evolução.
 
 Correção importante
 O app voltou a abrir normalmente quando você está sem internet.
-
 Além disso: melhorias de estabilidade e correções.
 
 O dosiq acompanha o plano do seu médico. Ele nunca sugere nem calcula doses por conta própria.
@@ -75,13 +74,13 @@ O dosiq acompanha o plano do seu médico. Ele nunca sugere nem calcula doses por
 ### Google Play (pt-BR — 452 chars)
 
 ```
-Chegou a Evolução do tratamento no dosiq:
-
+Chegou a 'Evolução de Tratamento' no dosiq:
 - Cadastre a escada de doses que seu médico prescreveu e veja em qual etapa você está.
 - Trocou de concentração? Continua sendo o mesmo tratamento, com sua história toda junta.
 - Já está na dose de manutenção? Registre um novo aumento quando seu médico indicar.
-- Correção importante: o app volta a abrir normalmente sem internet.
-- Estabilidade e correções.
+
+Estabilidade e correções:
+- Correção: quando sem internet, o app volta a abrir normalmente.
 
 Sua evolução, do jeito que seu médico prescreveu.
 ```
