@@ -2,8 +2,8 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 1,
     "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
     "tasks": "plans/specs/056-ai-review-tuning/tasks.md",
@@ -266,15 +266,14 @@
     "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
     "branch": null,
     "pr": 764,
-    "ceremony_type": "eng-review",
-    "journal_entries_since_distillation": 13
+    "ceremony_type": "eng-review"
   },
   "memory": {
-    "last_distillation": "2026-07-21T03:11:23Z",
-    "journal_entries_since_distillation": 5,
+    "last_distillation": "2026-07-22T17:45:00Z",
+    "journal_entries_since_distillation": 0,
     "rules_count": 252,
     "anti_patterns_count": 310,
-    "decisions_count": 86,
+    "decisions_count": 88,
     "contracts_count": 31,
     "distillation_due": false
   },
