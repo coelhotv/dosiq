@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, startTransition } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, getNow, addDays, parseISO } from '@dosiq/core'
+import { getTodayLocal, getNow, addDays, parseISO, describeLoadFailure } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { getAllTreatments } from '../services/treatmentsService'
 import { debugLog } from '@shared/utils/debugLog'
@@ -108,8 +108,10 @@ export function useTreatments() {
         } else {
           throw err
         }
-      } catch {
-        setError(err.message ?? 'Erro ao carregar tratamentos.')
+      } catch (fallbackErr) {
+        // AP-314: expõe o código quando o servidor respondeu (42703, 42501…) — o motivo real
+        // não pode ficar atrás de "Cache expirado".
+        setError(describeLoadFailure(err, fallbackErr, 'Erro ao carregar tratamentos.'))
       }
     } finally {
       setLoading(false)

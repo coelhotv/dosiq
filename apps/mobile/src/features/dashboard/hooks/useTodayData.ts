@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef, startTransition } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { 
-  getTodayLocal, 
+import {
+  getTodayLocal,
   getNow,
-  parseISO
+  parseISO,
+  describeLoadFailure
 } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import {
@@ -111,7 +112,9 @@ export function useTodayData() {
       try {
         await handleCacheFallback(err)
       } catch (fallbackErr) {
-        setError(fallbackErr.message ?? 'Erro ao carregar dados.')
+        // AP-314: erro de servidor (42703, 42501…) tem precedência sobre "Cache expirado" —
+        // sem isso, schema quebrado em produção se disfarça de app offline.
+        setError(describeLoadFailure(err, fallbackErr))
       }
     } finally {
       setLoading(false)
