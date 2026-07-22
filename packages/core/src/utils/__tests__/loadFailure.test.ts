@@ -65,6 +65,15 @@ describe('describeLoadFailure', () => {
     )
   })
 
+  // RC6 do PR #766 levantou (incorretamente) que omitir o 3º argumento devolveria `undefined` e
+  // renderizaria estado vazio. O parâmetro tem default, então não devolve — mas não havia teste
+  // fixando isso. Agora há: NUNCA retornar vazio, sob nenhuma combinação de entrada.
+  it('sem o 3º argumento, ainda devolve mensagem — nunca undefined/vazio', () => {
+    expect(describeLoadFailure({}, {})).toBe('Erro ao carregar dados.')
+    expect(describeLoadFailure(null, null)).toBe('Erro ao carregar dados.')
+    expect(describeLoadFailure(undefined, undefined)).toBe('Erro ao carregar dados.')
+  })
+
   it('erro de servidor sem mensagem ainda expõe o código', () => {
     expect(describeLoadFailure({ code: '42501' }, cacheExpired)).toContain('42501')
   })
