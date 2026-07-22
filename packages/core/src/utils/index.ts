@@ -254,3 +254,6 @@ export {
   formatBiomarkerContext,
   biomarkerCardLabel,
 } from './biomarkerDisplay'
+
+// Erro de carga: erro de servidor não pode se disfarçar de "cache expirado" (AP-314)
+export { isServerError, describeLoadFailure } from './loadFailure'

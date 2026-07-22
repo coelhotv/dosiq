@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { AppState } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getTodayLocal, getNow, parseISO, addDays, isProtocolInPeriod } from '@dosiq/core'
+import { getTodayLocal, getNow, parseISO, addDays, isProtocolInPeriod, describeLoadFailure } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { stockService } from '../services/stockService'
 import { debugLog } from '@shared/utils/debugLog'
@@ -187,8 +187,14 @@ export function useStock() {
       if (__DEV__) console.warn('[useStock] Fetch failed, checking cache:', err.message)
       try {
         await _tryLoadCache(err, setState, dataRef)
-      } catch {
-        setState(prev => ({ ...prev, loading: false, refreshing: false, error: err.message }))
+      } catch (fallbackErr) {
+        // AP-314: erro de servidor não pode se disfarçar de cache/offline.
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          refreshing: false,
+          error: describeLoadFailure(err, fallbackErr, 'Erro ao carregar estoque.'),
+        }))
       }
     }
   }, [])
