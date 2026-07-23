@@ -45,15 +45,33 @@ RC6_MEASURE=1 RC6_PACK_FILTER=1 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>
 ```
 Os packs listados DEVEM cobrir o domínio tocado (PR de bot → `notifications` tem que aparecer; se não, o mapa não casou o caminho — não confie no filtro).
 
-**Status da validação do filtro (056/PO-5 — 1 de 2 PRs limpos):**
+**Precisão do revisor (absorvido do [open-code-review](https://github.com/alibaba/open-code-review), Apache-2.0):**
+o RC6 **não** foi substituído — independência (ADR-069), vendor diverso e $0 marginal são propriedades
+que o "delegation mode" deles destruiria (o host agent revisaria com o próprio LLM **e suas tools**,
+sobre um diff não-confiável). Absorvemos as estratégias:
+- **Escopo no prompt** — comentários/JSDoc/metadata nunca são sujeito de finding (a nota de
+  proveniência do R-295 é convenção obrigatória, não ataque: era o FP `critical` do #765);
+  full files são contexto, não alvo; foco em código adicionado; preferência de arquitetura
+  sem input concreto que falhe não é defeito.
+- **Âncora por snippet** — o finding cita o trecho verbatim e a linha é re-derivada do diff.
+  Mata o *position drift* e o 422 que fazia o `--post` descartar finding (#768).
+- **Próximo (T031):** gate de reflexão determinístico — *falsificar, não verificar* (só descarta com
+  contra-prova), usando `tsc`/`information_schema` em vez de um 2º LLM. Mataria #757 e #767 sozinho.
+
+**Status da validação do filtro (056/PO-5 — contagem REINICIADA em 2026-07-23, prompt mudou):**
 - **#768** (Slice B da 053) — A/B **limpo** (mesmo commit nos dois runs): os 3 findings reais
   apareceram nos DOIS runs (**zero recall perdido**); 6 findings só no não-filtrado, **todos
   refutados** na verificação ⇒ FP descartado é ganho. Pack `notifications` confirmado.
 - **#767** (Slice A) — **metodologia contaminada** (fix aplicado entre o run filtrado e o baseline)
   ⇒ não conta como validação. Packs bateram o esperado.
-- ⚠️ **Não flipar o default ainda** — falta 1 A/B limpo. Protocolo: rodar filtrado → baseline
-  não-filtrado **no MESMO commit** → só então aplicar fixes. Severidade diverge entre runs
-  (`medium`↔`high`) — instabilidade já conhecida (#758/#765): triar no mérito, não pela severidade.
+- ⚠️ **Não flipar o default** — precisa de 2 A/B limpos **com o prompt novo**. Protocolo: rodar
+  filtrado → baseline não-filtrado **no MESMO commit** → só então aplicar fixes. Severidade diverge
+  entre runs (`medium`↔`high`) — instabilidade conhecida (#758/#765): triar no mérito, não pela
+  severidade. PR pequeno/Tier 1 **não serve** de veículo (findings ≈ 0 = A/B sem significância).
+
+> 📈 **A dívida é composta, e mensurável:** o preâmbulo saiu de **85,5K → 100,8K em um único dia**
+> (entregas de 2026-07-23 engordando os catálogos). Com o filtro ligado, só 2 dos 4 chunks ficaram
+> ≤60K. Filtrar por pack alivia; o teto real é casar regra **por arquivo** (T032).
 
 ## Regras de operação (aprendidas em produção)
 
