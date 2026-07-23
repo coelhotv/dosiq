@@ -3,7 +3,7 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/053-unit-label-formatter/plan.md",
     "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
@@ -28,9 +28,17 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 767,
-    "merged_squash": "ab311429",
+    "merged_pr": 768,
+    "merged_squash": "6ca42da9",
     "merged_history": [
+      {
+        "pr": 768,
+        "squash": "6ca42da9",
+        "spec": "053 Slice B",
+        "tier": 2,
+        "date": "2026-07-23",
+        "note": "Fecha o epico 053. Denominador do PO-3 subiu de ~6 (E1 literal) p/ 19 sites reais (12 por interpolacao pura de variavel, invisivel ao grep por desenho, + 3 copy hardcoded). isLiquidDosageUnit novo no core consolida 4 copias de isLiquidUnit. RC6 (A/B limpo, mesmo commit nos dois runs) achou 3 findings reais (densityLabel residual em ml ao lado de densityHint ja corrigido, AP-306) - corrigidos; 6 findings so no dry-run nao-filtrado todos verificados e descartados (2 refutados por leitura do guard clause, 2 especulativos, 2 critica de estilo). Achado de cobertura: InitialBalanceForm.test.tsx ja quebrado desde o Slice A, invisivel pq validate:agent nao cobre testes de componente web."
+      },
       {
         "pr": 767,
         "squash": "ab311429",
@@ -251,7 +259,7 @@
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
     "analysis": "plans/specs/053-unit-label-formatter/analysis.md",
-    "branch": "feature/053-slice-b"
+    "branch": null
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
