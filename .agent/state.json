@@ -3,17 +3,14 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged_to_integration",
     "tier": 2,
-    "pr": 770,
     "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
     "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.1: bump Expo 53→54 (T010-T017): expo install --fix, codemods, devDeps pinadas, reconciliar React 19.1 na raiz, APP_VERSION 0.28.5→0.29.0, SQP web+mobile",
+    "goal": "Coding 055 — PR 1.1: bump Expo 53→54 (T010-T017), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1)",
     "goal_type": "feature",
-    "branch": "feature/055-w1-01-bump-sdk54",
-    "branch_base": "feature/055-w1-sdk54",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -31,9 +28,18 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 769,
-    "merged_squash": "1bd51566",
+    "merged_pr": 770,
+    "merged_squash": "590d372a",
     "merged_history": [
+      {
+        "pr": 770,
+        "squash": "590d372a",
+        "spec": "055 expo-55-target-api-36 (PR 1.1)",
+        "tier": 2,
+        "date": "2026-07-23",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Bump estrutural Expo SDK 53→54 via expo install --fix (23 módulos nativos + react 19.0.0→19.1.0 + react-native 0.79.6→0.81.5). react/react-dom reconciliados na raiz do monorepo (npm ls confirma versão única em toda a árvore mobile+web, sem duplicata — duplicata de react em RN vira Invalid hook call). jest-expo pinado manualmente ~54.0.17 (SDK 54 sem dist-tag no npm). Achados de gate corrigidos no mesmo PR: expo-file-system removeu API legada do export default → import trocado p/ expo-file-system/legacy em ExportSheet.tsx (LGPD spec 008, migração real fica pro PR 1.2); override react-native-safe-area-context 5.4.0→5.6.0; @notifee/react-native excluído do reactNativeDirectoryCheck do expo-doctor. APP_VERSION mobile 0.28.5→0.29.0, web 4.20.1→4.20.2. Gates (tsc/lint/jest/expo-doctor) todos verdes — mas 🔴 ACHADO PÓS-PR (PO testou build real): npx expo run:ios local (Xcode 26.3) quebra com @react-native-firebase v21 sob RN 0.81 — (1) RCTConvert/RCTBridgeModule non-modular include, MITIGADO neste PR via config plugin novo withFirebasePodfileFix.js (post_install CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES só nos Pods); (2) macro RCT_EXPORT_METHOD vira -Wimplicit-int fatal, confirmado em analytics E crashlytics (18 erros), NÃO mitigado por decisão do PO — bump de @react-native-firebase (v21→compatível, 25.x disponível) virou item T029 OBRIGATÓRIO do PR 1.3. Android não afetado. AP-316 criado (gate mecânico tsc/lint/jest/expo-doctor não cobre xcodebuild real — lição pra todo bump de SDK nativo futuro). RC5: 0 findings (2 rodadas, diff cresceu com o fix do firebase). RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): 0 findings nas 2 rodadas."
+      },
       {
         "pr": 769,
         "squash": "1bd51566",
@@ -268,11 +274,13 @@
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": []
+    "ceremony_scope_decisions": [],
+    "analysis": "plans/specs/057-device-activity-log/analysis.md",
+    "branch": "feature/tese/057-device-activity-log"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 7,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
