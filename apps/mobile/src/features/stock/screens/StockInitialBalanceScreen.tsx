@@ -174,7 +174,7 @@ export default function StockInitialBalanceScreen({
                             keyboardType="decimal-pad"
                             maxLength={6}
                             accessibilityLabel={`Saldo atual de ${medicine.name}, em ${
-                              medicine.stockUnit === 'ml' ? 'mililitros' : 'unidades'
+                              medicine.stockUnit === 'mL' ? 'mililitros' : 'unidades'
                             }`}
                           />
                           {/* Unidade REAL do saldo — a mesma que o cadastro de compra pede

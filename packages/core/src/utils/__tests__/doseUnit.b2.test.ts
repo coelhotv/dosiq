@@ -47,8 +47,8 @@ describe('formatStockApplications (FR-020)', () => {
   })
 
   it('ml-por-aplicação 0/NULL → saldo cru em ml (não inventa contagem)', () => {
-    expect(formatStockApplications(10, 0, 'caneta')).toBe('10 ml')
-    expect(formatStockApplications(10, null, 'caneta')).toBe('10 ml')
+    expect(formatStockApplications(10, 0, 'caneta')).toBe('10 mL')
+    expect(formatStockApplications(10, null, 'caneta')).toBe('10 mL')
   })
 
   it('saldo 0 → 0 aplicações', () => {
@@ -64,12 +64,12 @@ describe('formatIntakeDose com intake_unit mg (FR-017)', () => {
   it('GLP-1: mg → ml via CONCENTRAÇÃO (dosage_per_pill), não units_per_ml', () => {
     // Mounjaro 5 mg/ml: 2,5 mg ÷ 5 = 0,5 ml. units_per_ml é ignorado p/ mg.
     const med = { dosage_unit: 'mg/ml', dosage_per_pill: 5, units_per_ml: 20 }
-    expect(formatIntakeDose(2.5, 'mg', med)).toBe('2,5 mg (≈ 0,5 ml)')
+    expect(formatIntakeDose(2.5, 'mg', med)).toBe('2,5 mg (≈ 0,5 mL)')
   })
 
   it('Ozempic 0,68 mg/ml: 0,25 mg ÷ 0,68 = 0,37 ml', () => {
     const med = { dosage_unit: 'mg/ml', dosage_per_pill: 0.68 }
-    expect(formatIntakeDose(0.25, 'mg', med)).toBe('0,25 mg (≈ 0,37 ml)')
+    expect(formatIntakeDose(0.25, 'mg', med)).toBe('0,25 mg (≈ 0,37 mL)')
   })
 
   it('sem concentração → só a dose em mg (sem ≈ml)', () => {

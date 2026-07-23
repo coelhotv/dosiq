@@ -2,15 +2,15 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "ceremony",
-    "status": "reviewing",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
-    "plan": "plans/specs/057-device-activity-log/plan.md",
-    "tasks": "plans/specs/057-device-activity-log/tasks.md",
-    "spec_dir": "plans/specs/057-device-activity-log",
-    "spec": "plans/specs/057-device-activity-log/spec.md",
-    "goal": "Planning: heartbeat de app_version/atividade independente de push (spec 057)",
-    "goal_type": "feature",
+    "plan": "plans/specs/053-unit-label-formatter/plan.md",
+    "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
+    "spec_dir": "plans/specs/053-unit-label-formatter",
+    "spec": "plans/specs/053-unit-label-formatter/spec.md",
+    "goal": "Coding 053 — Slice A (T001-T009): grafia canonica mL no formatador central do core",
+    "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -240,40 +240,15 @@
       }
     ],
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
-    "ceremonies_run": [
-      "eng-review",
-      "eng-review-054",
-      "eng-review-057"
-    ],
-    "ceremony_findings_count": 14,
-    "ceremony_scope_decisions": [
-      "054 RC3 HIGH: critical:true sempre derivado do status de autorização do SO (protege builds antigos por construção); ordem F0 provisioning/build (PO-5) ANTES de F1 código",
-      "054 RC3 HIGH: status de autorização = cache (AP-281/AP-284) — revalidar em foreground; Settings lê ao vivo",
-      "054 RC3 MEDIUM: resync dos triggers pendentes pós-concessão/revogação",
-      "054 RC3: nag herda isCritical por construção (alarmService.ts:419-424) — teste de contrato PO-4 fixa; guard PO-1 ↑ com unit test automatizado",
-      "054 RC3: 2 fases mesmo spec (F0 provisioning → F1 código); ADR da política no planning",
-      "RC3: epico reclassificado Mobile -> Mobile + Web (react hoisted na raiz)",
-      "RC3: fallback B reabilitado como paracaidas com data-gatilho (nao morto)",
-      "RC3: migracao expo-file-system em commit separado (structural vs behavioral)",
-      "057 RC3: heartbeat mobile-only de proposito (web fora do CHECK/client) — risco de DROP quebrando app instalado nao se aplica a web; RPC upsert_device_activity deve espelhar search_path/grants de upsert_notification_device"
-    ],
-    "ai_review": {
-      "engine": "agy",
-      "status": "issues_found",
-      "critical": 0,
-      "high": 1,
-      "introduced_high": 0,
-      "resolved": 2,
-      "pr": 764
-    },
-    "analysis": "plans/specs/029-treatment-level-titration/analysis.md",
-    "branch": null,
-    "pr": 764,
-    "ceremony_type": "eng-review"
+    "ceremonies_run": [],
+    "ceremony_findings_count": 0,
+    "ceremony_scope_decisions": [],
+    "analysis": "plans/specs/053-unit-label-formatter/analysis.md",
+    "branch": "feature/053-slice-a"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
@@ -288,9 +263,9 @@
     "index_loaded_at": "2026-07-22T17:19:31Z"
   },
   "code_review": {
-    "status": "clean",
+    "status": "pending",
     "critical": 0,
-    "auto_fixed": 1,
+    "auto_fixed": 0,
     "ask_items": 0
   },
   "ai_review": {

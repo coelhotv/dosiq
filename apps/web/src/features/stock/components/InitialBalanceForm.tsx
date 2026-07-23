@@ -93,7 +93,7 @@ function BalanceItem({
     const protocol = (medicine.protocols || []).find((p) => p?.active) ?? null
     const doses = formatStockDoses(value.replace(',', '.'), medicine, protocol)
     if (doses) return `Equivale a ${doses.replace('≈ ', '')}`
-    if (stockUnit === 'ml') return ''
+    if (stockUnit === 'mL') return ''
     const short = formatActiveIngredientShort(
       value.replace(',', '.'),
       medicine.dosage_per_pill,
@@ -132,7 +132,7 @@ function BalanceItem({
             <input
               type="text"
               inputMode="decimal"
-              aria-label={`Saldo inicial de ${medicine.name}, em ${stockUnit === 'ml' ? 'mililitros' : 'unidades'}`}
+              aria-label={`Saldo inicial de ${medicine.name}, em ${stockUnit === 'mL' ? 'mililitros' : 'unidades'}`}
               aria-invalid={Boolean(error)}
               className={`initial-balance-form__input${error ? ' initial-balance-form__input--error' : ''}`}
               value={value}

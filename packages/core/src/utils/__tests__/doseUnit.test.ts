@@ -17,8 +17,8 @@ describe('formatMedicineFullName', () => {
     const caneta5 = { name: 'Mounjaro', dosage_unit: 'mg/ml', dosage_per_pill: 10, concentration_volume_ml: 0.5 }
     const a = formatMedicineFullName(caneta25)
     const b = formatMedicineFullName(caneta5)
-    expect(a).toBe('Mounjaro 2,5 mg / 0,5ml')
-    expect(b).toBe('Mounjaro 5 mg / 0,5ml')
+    expect(a).toBe('Mounjaro 2,5 mg / 0,5 mL')
+    expect(b).toBe('Mounjaro 5 mg / 0,5 mL')
     expect(a).not.toBe(b)
   })
 
@@ -45,9 +45,9 @@ describe('formatDose (unidade de tomada — líquidos 022)', () => {
     expect(formatDose(15, 'gotas')).toBe('15 gotas')
     expect(formatDose(1, 'gotas')).toBe('1 gota')
   })
-  it('ml: vírgula decimal PT-BR', () => {
-    expect(formatDose(2.5, 'ml')).toBe('2,5 ml')
-    expect(formatDose(10, 'ml')).toBe('10 ml')
+  it('ml: vírgula decimal PT-BR, grafia canônica mL', () => {
+    expect(formatDose(2.5, 'ml')).toBe('2,5 mL')
+    expect(formatDose(10, 'ml')).toBe('10 mL')
   })
   it('UI: escala direta', () => {
     expect(formatDose(10, 'UI')).toBe('10 UI')
@@ -153,7 +153,7 @@ describe('formatActiveIngredientHint', () => {
   it('formata inteiros com diferentes unidades em parenteses', () => {
     expect(formatActiveIngredientHint(2, 100, 'ui')).toBe('2 un. (200 UI)')
     expect(formatActiveIngredientHint(30, 500, 'mg')).toBe('30 un. (15 g)')
-    expect(formatActiveIngredientHint(1, 10, 'ml')).toBe('1 un. (10 ml)')
+    expect(formatActiveIngredientHint(1, 10, 'ml')).toBe('1 un. (10 mL)')
     expect(formatActiveIngredientHint(3, 1, 'gotas')).toBe('3 gotas')
     expect(formatActiveIngredientHint(1, 1, 'un')).toBe('1 unidade')
   })

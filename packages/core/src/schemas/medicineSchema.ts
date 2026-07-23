@@ -11,13 +11,15 @@ import { z } from 'zod'
 // Ordem do dropdown: sólidos base → concentrações-ratio (/ml) → ui/un.
 export const DOSAGE_UNITS = ['mg', 'mcg', 'g', 'mg/ml', 'ui/ml', 'ui', 'un']
 
-// Labels de unidade para exibição (ordem espelha DOSAGE_UNITS)
+// Labels de unidade para exibição (ordem espelha DOSAGE_UNITS).
+// Grafia canônica mL (ANVISA, 053) — CHAVES são valor com CHECK do banco,
+// byte a byte intocáveis (AP-299/R-295); só o lado DIREITO (rótulo) muda.
 export const DOSAGE_UNIT_LABELS = {
   mg: 'mg',
   mcg: 'mcg',
   g: 'g',
-  'mg/ml': 'mg/ml',
-  'ui/ml': 'UI/ml',
+  'mg/ml': 'mg/mL',
+  'ui/ml': 'UI/mL',
   ui: 'UI',
   un: 'un.',
 }

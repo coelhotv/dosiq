@@ -13,6 +13,7 @@
 // US. Por isso usamos replace('.', ',') manual (confiável em V8 e Hermes).
 
 import { DOSAGE_UNIT_LABELS } from '../schemas/medicineSchema'
+import { INTAKE_UNIT_LABELS } from '../schemas/protocolSchema'
 import { cleanFloat } from './formUtils'
 
 interface MedicineLike {
@@ -50,7 +51,7 @@ function parseNumber(val: number | string | null | undefined): number {
 function formatLiquidConcentration(ratio: number, vol: number, unit: string | null | undefined): string {
   const baseUnit = (unit || 'mg/ml').split('/')[0]
   const baseLabel = DOSAGE_UNIT_LABELS[baseUnit as keyof typeof DOSAGE_UNIT_LABELS] || baseUnit
-  return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)}ml`
+  return `${formatNumberPtBR(cleanFloat(ratio * vol))} ${baseLabel} / ${formatNumberPtBR(vol)} ${INTAKE_UNIT_LABELS.ml}`
 }
 
 /**
@@ -64,7 +65,7 @@ function getConcentrationLabel(v: string, unit: string | null | undefined): stri
 
 /**
  * Formata a concentração/apresentação do medicamento (pill) com a unidade
- * normalizada via DOSAGE_UNIT_LABELS — UI em allcaps, ml em minúsculo, UI/ml etc.
+ * normalizada via DOSAGE_UNIT_LABELS — UI em allcaps, mL grafia ANVISA, UI/mL etc.
  * Centraliza o que antes era `${dosage_per_pill}${dosage_unit}` cru (mostrava
  * "ui/ml" minúsculo) espalhado por listagem, estoque, histórico e notificações.
  *
@@ -73,18 +74,14 @@ function getConcentrationLabel(v: string, unit: string | null | undefined): stri
  * em vez da razão normalizada crua ('5 mg/ml'), que confunde.
  * Volume NULL/1 ou sólido → comportamento clássico inalterado.
  *
- * ⚠️ DIVERGÊNCIA CONHECIDA (AP-306): este bloco prometia '2,5 mg / 0,5 mL'; a saída REAL é
- * '2,5 mg / 0,5ml' (minúsculo, sem espaço — ver `formatLiquidConcentration`). O JSDoc estava
- * certo e a implementação divergiu em silêncio, porque nenhum teste fixava a grafia da unidade.
- * O @returns abaixo foi corrigido para a saída real; a grafia correta (`mL`, convenção ANVISA)
- * entra na spec de padronização de unidades — NÃO trocar aqui isolado: `doseUnit.ts` tem três
- * grafias de mililitro e 44 call sites montam unidade à mão, então um fix pontual reintroduz a
- * divergência no próximo componente.
+ * Grafia canônica `mL` (convenção ANVISA, 053) — `formatLiquidConcentration` traduz o VALOR
+ * de `dosage_unit`/`concentration_volume_ml` para o rótulo via `DOSAGE_UNIT_LABELS`/
+ * `INTAKE_UNIT_LABELS`; call sites continuam passando valores, nunca rótulo pronto.
  *
  * @param {number|string|null} value - dosage_per_pill (razão por unidade/ml)
  * @param {string|null} unit - dosage_unit ('mg', 'ui/ml', 'mg/ml', 'un', …)
  * @param {number|string|null} [volumeMl=null] - concentration_volume_ml (denominador do rótulo)
- * @returns {string} ex: '100 UI/ml' · '500 mg' · '2,5 mg / 0,5ml' · '' se value vazio
+ * @returns {string} ex: '100 UI/mL' · '500 mg' · '2,5 mg / 0,5 mL' · '' se value vazio
  */
 export function formatConcentration(
   value: number | string | null | undefined,
@@ -165,24 +162,24 @@ export function isLiquidMedicine(medicine: { dosage_unit?: string | null } | nul
 
 /**
  * Sufixo curto p/ contagens de estoque (saldo, consumo/dia, comprado, custo).
- * Líquido → 'ml'; sólido → 'un.'. Usado em KPIs e custos ("R$ X / ml").
+ * Líquido → 'mL'; sólido → 'un.'. Usado em KPIs e custos ("R$ X / mL").
  *
  * @param {{dosage_unit?: string}|null} medicine
- * @returns {'ml'|'un.'}
+ * @returns {'mL'|'un.'}
  */
-export function stockUnitLabel(medicine: { dosage_unit?: string | null } | null | undefined): 'ml' | 'un.' {
-  return isLiquidMedicine(medicine) ? 'ml' : 'un.'
+export function stockUnitLabel(medicine: { dosage_unit?: string | null } | null | undefined): typeof INTAKE_UNIT_LABELS.ml | 'un.' {
+  return isLiquidMedicine(medicine) ? INTAKE_UNIT_LABELS.ml : 'un.'
 }
 
 /**
- * Contagem simples de estoque p/ "compradas/restantes": líquido "X ml",
+ * Contagem simples de estoque p/ "compradas/restantes": líquido "X mL",
  * sólido "X unidade(s)". Diferente de formatStockQuantity (que adiciona hint de
  * princípio ativo no sólido) — aqui é só a contagem crua na unidade certa.
  *
  * @param {number|string} qty
  * @param {{dosage_unit?: string}|null} medicine
  * @returns {string}
- * @example formatStockCount(30, {dosage_unit:'mg/ml'}) → '30 ml'
+ * @example formatStockCount(30, {dosage_unit:'mg/ml'}) → '30 mL'
  * @example formatStockCount(30, {dosage_unit:'mg'})    → '30 unidades'
  */
 export function formatStockCount(qty: number | string, medicine: { dosage_unit?: string | null } | null | undefined): string {
@@ -191,7 +188,7 @@ export function formatStockCount(qty: number | string, medicine: { dosage_unit?:
 }
 
 /**
- * Saldo de estoque formatado p/ display destacado. Líquido → "X ml"; sólido →
+ * Saldo de estoque formatado p/ display destacado. Líquido → "X mL"; sólido →
  * hint de princípio ativo ("30 un. (15.000 mg)") com fallback "X un.".
  *
  * @param {number|string} qty
@@ -243,7 +240,7 @@ export function formatConcentrationLabel(mgPerMl: number | string | null, volume
  * @returns {string}
  * @example formatStockApplications(10, 0.37, 'caneta') → '≈ 27 canetas'
  * @example formatStockApplications(1.5, 0.37, null)    → '≈ 4 aplicações'
- * @example formatStockApplications(10, 0, 'caneta')    → '10 ml'
+ * @example formatStockApplications(10, 0, 'caneta')    → '10 mL'
  */
 export function formatStockApplications(
   mlRemaining: number | string,
@@ -326,7 +323,7 @@ export function formatDoseUnit(qty: number | string): string {
  *
  * @example formatDose(15, 'gotas') → '15 gotas'
  * @example formatDose(1, 'gotas')  → '1 gota'
- * @example formatDose(2.5, 'ml')   → '2,5 ml'
+ * @example formatDose(2.5, 'ml')   → '2,5 mL'
  * @example formatDose(10, 'UI')    → '10 UI'
  * @example formatDose(null, 'ml')  → ''
  */
@@ -334,15 +331,15 @@ export function formatDose(value: number | string | null | undefined, unit: stri
   if (value === undefined || value === null) return ''
   const v = formatNumberPtBR(value)
   if (v === '') return ''
-  if (unit === 'ml') return `${v} ml`
   if (unit === 'gotas') {
     // Normaliza vírgula PT-BR ('1,0') antes do check de singular — senão Number('1,0')=NaN
     // exibiria '1 gotas' (review #651).
     const numVal = Number(typeof value === 'string' ? value.replace(',', '.') : value)
-    return `${v} ${numVal === 1 ? 'gota' : 'gotas'}`
+    return `${v} ${numVal === 1 ? 'gota' : INTAKE_UNIT_LABELS.gotas}`
   }
-  if (unit === 'UI') return `${v} UI`
-  return `${v} ${unit || ''}`.trim()
+  // Traduz VALOR → rótulo via mapa (fonte única, 053); unidade fora do mapa ecoa crua.
+  const label = (unit && INTAKE_UNIT_LABELS[unit as keyof typeof INTAKE_UNIT_LABELS]) || unit || ''
+  return `${v} ${label}`.trim()
 }
 
 /**
@@ -355,9 +352,9 @@ export function formatDose(value: number | string | null | undefined, unit: stri
  * @param {string|null} intakeUnit - 'gotas' | 'ml' | 'UI' | null
  * @param {Object|null} medicine - { dosage_unit, dosage_per_pill, units_per_ml }
  * @returns {string}
- * @example formatIntakeDose(40,'gotas',{dosage_unit:'mg/ml',units_per_ml:20}) → '40 gotas (≈ 2 ml)'
- * @example formatIntakeDose(100,'UI',{dosage_unit:'ui/ml',units_per_ml:100})  → '100 UI (≈ 1 ml)'
- * @example formatIntakeDose(5,'ml',{dosage_unit:'mg/ml'})                      → '5 ml'
+ * @example formatIntakeDose(40,'gotas',{dosage_unit:'mg/ml',units_per_ml:20}) → '40 gotas (≈ 2 mL)'
+ * @example formatIntakeDose(100,'UI',{dosage_unit:'ui/ml',units_per_ml:100})  → '100 UI (≈ 1 mL)'
+ * @example formatIntakeDose(5,'ml',{dosage_unit:'mg/ml'})                      → '5 mL'
  */
 /**
  * Densidade (unidades por mL) para converter gotas/UI → mL, **unit-aware** (012 Fase B3,
@@ -500,7 +497,7 @@ export function formatActiveIngredientShort(qty: number | string | null | undefi
     mcg: 'mcg',
     g: 'g',
     kg: 'kg',
-    ml: 'ml',
+    ml: INTAKE_UNIT_LABELS.ml,
     l: 'l',
     ui: 'UI',
     un: total === 1 ? 'unidade' : 'unidades',
@@ -542,7 +539,7 @@ export function formatActiveIngredientHint(qty: number | string | null | undefin
     mg: 'mg',
     mcg: 'mcg',
     g: 'g',
-    ml: 'ml',
+    ml: INTAKE_UNIT_LABELS.ml,
     ui: 'UI',
     un: qtyNum === 1 ? 'unidade' : 'unidades',
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
@@ -594,7 +591,7 @@ export function formatActiveIngredientFormula(qty: number | string | null | unde
     mg: 'mg',
     mcg: 'mcg',
     g: 'g',
-    ml: 'ml',
+    ml: INTAKE_UNIT_LABELS.ml,
     ui: 'UI',
     un: qtyNum === 1 ? 'unidade' : 'unidades',
     gotas: qtyNum === 1 ? 'gota' : 'gotas',
