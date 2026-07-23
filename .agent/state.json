@@ -278,11 +278,11 @@
   "ai_review": {
     "engine": "agy",
     "status": "issues_found",
-    "critical": 1,
+    "critical": 0,
     "high": 4,
-    "introduced_critical": 1,
-    "introduced_high": 4,
-    "pr": 765,
-    "resolved": "3 aplicados, 2 recusados com razão (1 FP critical)"
+    "introduced_critical": 0,
+    "introduced_high": 0,
+    "pr": 768,
+    "resolved": "3 medium introduced (densityLabel residual) aplicados em 993f5766; 6 findings do dry-run nao-filtrado verificados e descartados (FP/especulativo, sem acao); demais high/medium sao pre-existentes (introduced:false), triados para follow-up"
   }
 }
