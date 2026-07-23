@@ -7,6 +7,33 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Bump Expo SDK 53 → 54 (spec 055, PR 1.1)
+
+- **Chore** (`minor`, mobile `0.28.5 → 0.29.0`; `patch`, web `4.20.1 → 4.20.2`): bump estrutural do
+  Expo SDK 53→54 via `expo install --fix` — 23 módulos nativos e `react`/`react-native` sobem
+  (`react-native 0.79.6 → 0.81.5`, `react 19.0.0 → 19.1.0`). `react`/`react-dom` vivem na RAIZ do
+  monorepo (arquivo de deps de facto do web, que não os declara em separado) — o bump muda o React
+  do web também, mesmo sem tocar componentes. `npm ls react react-dom` confirma uma única versão
+  `19.1.0` resolvida em toda a árvore (mobile, web, root), sem duplicata — duplicata de `react` em
+  RN vira `Invalid hook call` em runtime, silencioso até o crash.
+- Devdep `jest-expo` sobe `~53.0.0 → ~54.0.17` (tag `sdk-54` não existe no npm; versão pinada
+  manualmente pela última `54.x.x` estável, já que o SDK 54 não tem dist-tag dedicada).
+  `react-test-renderer` alinhado a `19.1.0` (deve casar com `react` exatamente).
+- `expo install --fix` não conseguiu escrever plugins novos no config dinâmico (`app.config.js`):
+  `expo-secure-store` e `expo-web-browser` adicionados manualmente ao array `plugins`.
+- Escopo desta entrega é SOMENTE o bump estrutural (RC3/F2 — structural ≠ behavioral): migração de
+  `expo-file-system` p/ API nova, target API 36 explícito e edge-to-edge ficam para PRs seguintes
+  (1.2/1.3/1.4) da mesma spec.
+- **Achados do gate (mesmo bump):** `expo-file-system` removeu a API legada do export default no
+  SDK 54 — `ExportSheet.tsx` (LGPD, spec 008) importava `cacheDirectory`/`EncodingType` de lá;
+  corrigido trocando o import para `expo-file-system/legacy` (mesmo comportamento, só o caminho do
+  módulo muda — a migração de verdade p/ `File`/`Paths` é o PR 1.2). `react-native-safe-area-context`
+  tinha `overrides` pinando `5.4.0` sem justificativa documentada no repo; `expo install --fix` pede
+  `~5.6.0` p/ SDK 54 — override subido pra `5.6.0` (alinhamento de versão, não é o edge-to-edge do PR
+  1.4). `@notifee/react-native` sinalizado "unmaintained" pelo checker de metadata do
+  `expo-doctor` (advisory, não é problema de versão) — adicionado a
+  `expo.doctor.reactNativeDirectoryCheck.exclude` no `apps/mobile/package.json`.
+
 ### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
 
 - **Feat** (`no-user-impact` — telemetria de infra, nada muda visível pro usuário): a única fonte de

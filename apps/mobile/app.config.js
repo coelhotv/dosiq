@@ -5,7 +5,7 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.28.5' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.29.0' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -149,7 +149,11 @@ module.exports = {
       // 039/F2: escreve o vector drawable ic_dosiq_mark (smallIcon da superfície Android) no
       // prebuild — sem ele displayNotification lança e a superfície não aparece no device.
       './withDoseActivityAndroidIcon.js',
-      '@react-native-community/datetimepicker'
+      '@react-native-community/datetimepicker',
+      // SDK 54: expo install --fix aponta como plugins nativos (config dinâmico não
+      // escreve sozinho); sem uso de config custom, entram sem 2º argumento.
+      'expo-secure-store',
+      'expo-web-browser'
     ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*
