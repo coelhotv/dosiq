@@ -3,8 +3,9 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
+    "pr": 770,
     "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
@@ -267,13 +268,11 @@
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": [],
-    "analysis": "plans/specs/057-device-activity-log/analysis.md",
-    "branch": "feature/tese/057-device-activity-log"
+    "ceremony_scope_decisions": []
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
