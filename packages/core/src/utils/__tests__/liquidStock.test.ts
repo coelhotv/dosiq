@@ -10,21 +10,21 @@ import {
 } from '../doseUnit'
 
 describe('formatIntakeDose (exibição de dose — cards/detalhe 022)', () => {
-  it('líquido gotas → unidade + equivalência ml', () => {
+  it('líquido gotas → unidade + equivalência mL', () => {
     expect(formatIntakeDose(40, 'gotas', { dosage_unit: 'mg/ml', units_per_ml: 20 })).toBe(
-      '40 gotas (≈ 2 ml)'
+      '40 gotas (≈ 2 mL)'
     )
   })
-  it('líquido UI → unidade + ml', () => {
+  it('líquido UI → unidade + mL', () => {
     expect(formatIntakeDose(100, 'UI', { dosage_unit: 'ui/ml', units_per_ml: 100 })).toBe(
-      '100 UI (≈ 1 ml)'
+      '100 UI (≈ 1 mL)'
     )
   })
-  it('líquido em ml → só ml (sem equivalência redundante)', () => {
-    expect(formatIntakeDose(5, 'ml', { dosage_unit: 'mg/ml' })).toBe('5 ml')
+  it('líquido em ml → só mL (sem equivalência redundante)', () => {
+    expect(formatIntakeDose(5, 'ml', { dosage_unit: 'mg/ml' })).toBe('5 mL')
   })
   it('líquido gotas sem densidade → fallback 20', () => {
-    expect(formatIntakeDose(20, 'gotas', { dosage_unit: 'mg/ml' })).toBe('20 gotas (≈ 1 ml)')
+    expect(formatIntakeDose(20, 'gotas', { dosage_unit: 'mg/ml' })).toBe('20 gotas (≈ 1 mL)')
   })
   it('sólido → hint de princípio ativo', () => {
     expect(formatIntakeDose(2, null, { dosage_unit: 'un', dosage_per_pill: 1 })).toBe('2 unidades')
@@ -39,20 +39,20 @@ describe('helpers de estoque líquido (022 Fase C)', () => {
     expect(isLiquidMedicine(null)).toBe(false)
   })
 
-  it('stockUnitLabel: ml p/ líquido, un. p/ sólido', () => {
-    expect(stockUnitLabel({ dosage_unit: 'mg/ml' })).toBe('ml')
+  it('stockUnitLabel: mL p/ líquido, un. p/ sólido', () => {
+    expect(stockUnitLabel({ dosage_unit: 'mg/ml' })).toBe('mL')
     expect(stockUnitLabel({ dosage_unit: 'mg' })).toBe('un.')
     expect(stockUnitLabel(null)).toBe('un.')
   })
 
-  it('formatStockCount: líquido em ml, sólido em unidade(s)', () => {
-    expect(formatStockCount(30, { dosage_unit: 'mg/ml' })).toBe('30 ml')
+  it('formatStockCount: líquido em mL, sólido em unidade(s)', () => {
+    expect(formatStockCount(30, { dosage_unit: 'mg/ml' })).toBe('30 mL')
     expect(formatStockCount(30, { dosage_unit: 'mg' })).toBe('30 unidades')
     expect(formatStockCount(1, { dosage_unit: 'mg' })).toBe('1 unidade')
   })
 
-  it('formatStockQuantity: líquido ml; sólido hint princípio ativo / fallback un.', () => {
-    expect(formatStockQuantity(30, { dosage_unit: 'mg/ml' })).toBe('30 ml')
+  it('formatStockQuantity: líquido mL; sólido hint princípio ativo / fallback un.', () => {
+    expect(formatStockQuantity(30, { dosage_unit: 'mg/ml' })).toBe('30 mL')
     // 30 × 500 mg = 15.000 mg → convertMetricUnit escala p/ 15 g (>= 5000)
     expect(formatStockQuantity(30, { dosage_unit: 'mg', dosage_per_pill: 500 })).toBe(
       '30 un. (15 g)'

@@ -64,9 +64,12 @@ export const WEEKDAY_LABELS = {
 // (R-082/R-271). 'UI' maiúsculo. 'mg' = dose injetável GLP-1 sobre líquido mg/ml.
 export const INTAKE_UNITS = ['gotas', 'ml', 'UI', 'mg']
 
+// Grafia canônica mL (ANVISA, 053) — CHAVES são valor com CHECK do banco
+// (protocols_intake_unit_check), byte a byte intocáveis (AP-299/R-295); só o
+// lado DIREITO (rótulo) muda.
 export const INTAKE_UNIT_LABELS = {
   gotas: 'gotas',
-  ml: 'ml',
+  ml: 'mL',
   UI: 'UI',
   mg: 'mg',
 }

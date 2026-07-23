@@ -41,7 +41,7 @@ export interface StockInitialBalanceMedicine {
    * "un." para um Ozempic cujo saldo vive em ml — pedir a quantidade numa unidade e gravá-la em
    * outra corrompe o FIFO silenciosamente.
    */
-  stockUnit: 'ml' | 'un.'
+  stockUnit: 'mL' | 'un.'
   /** Medicamento cru — insumo dos formatadores do core (não formatar aqui). */
   raw: {
     dosage_unit?: string | null
@@ -86,7 +86,7 @@ export function balanceHint(
   const doses = formatStockDoses(rawValue.replace(',', '.'), medicine.raw, medicine.protocol)
   if (doses) return `Equivale a ${doses.replace('≈ ', '')}`
 
-  if (medicine.stockUnit === 'ml') return ''
+  if (medicine.stockUnit === 'mL') return ''
   const short = formatActiveIngredientShort(
     rawValue.replace(',', '.'),
     medicine.raw.dosage_per_pill,

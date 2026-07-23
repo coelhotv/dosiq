@@ -190,14 +190,14 @@ describe('useStockInitialBalance', () => {
   // (PurchaseFormScreen: líquido = frascos × volume, persistido em ml; sólido = unidades).
   // Pedir a quantidade numa unidade e gravá-la em outra corrompe o FIFO em silêncio.
   describe('unidade de estoque e hint de equivalência', () => {
-    it('sólido → sufixo "un."; líquido → sufixo "ml" (nunca "un.")', async () => {
+    it('sólido → sufixo "un."; líquido → sufixo "mL" (nunca "un.")', async () => {
       useStockTracking.mockReturnValue({ refresh })
       const { result } = renderHook(() => useStockInitialBalance('settings', onDone))
       await waitFor(() => expect(result.current.medicines).toHaveLength(3))
 
       const [losartana, , ozempic] = result.current.medicines
       expect(losartana.stockUnit).toBe('un.')
-      expect(ozempic.stockUnit).toBe('ml')
+      expect(ozempic.stockUnit).toBe('mL')
     })
 
     // O hint responde "quanto tempo de tratamento eu tenho na mão?" — DOSES, não princípio

@@ -345,9 +345,9 @@ describe('buildPatientContext — unidades líquidas / semanais / perfil', () =>
     const result = buildPatientContext({
       medicines: [lantus], protocols: [lantusProto], logs: [], stockSummary: lantusStock, stats: null,
     })
-    expect(result).toContain('estoque 5,2 ml')
-    expect(result).toContain('dose 10 UI (≈ 0,1 ml)')
-    expect(result).toContain('consumo ~0,1 ml/dia')
+    expect(result).toContain('estoque 5,2 mL')
+    expect(result).toContain('dose 10 UI (≈ 0,1 mL)')
+    expect(result).toContain('consumo ~0,1 mL/dia')
     expect(result).not.toContain('5,2 un.')
   })
 
