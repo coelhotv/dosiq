@@ -72,7 +72,7 @@ export const INTAKE_UNIT_LABELS = {
   ml: 'mL',
   UI: 'UI',
   mg: 'mg',
-}
+} as const
 
 export const protocolSchema = z.object({
   // Mensagem no vocabulário do usuário (Dona Maria): o único jeito de isto falhar na UI é não ter

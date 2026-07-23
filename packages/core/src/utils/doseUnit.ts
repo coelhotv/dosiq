@@ -167,8 +167,8 @@ export function isLiquidMedicine(medicine: { dosage_unit?: string | null } | nul
  * @param {{dosage_unit?: string}|null} medicine
  * @returns {'mL'|'un.'}
  */
-export function stockUnitLabel(medicine: { dosage_unit?: string | null } | null | undefined): 'mL' | 'un.' {
-  return isLiquidMedicine(medicine) ? (INTAKE_UNIT_LABELS.ml as 'mL') : 'un.'
+export function stockUnitLabel(medicine: { dosage_unit?: string | null } | null | undefined): typeof INTAKE_UNIT_LABELS.ml | 'un.' {
+  return isLiquidMedicine(medicine) ? INTAKE_UNIT_LABELS.ml : 'un.'
 }
 
 /**
