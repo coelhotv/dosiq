@@ -1,6 +1,6 @@
 # AI Review (RC5/RC6) — operação pós-Gemini
 
-> Extraído do CLAUDE.md em 2026-07-18. Arquitetura: ADR-069 (accepted). Spec: 034 (local-only).
+> Extraído do CLAUDE.md em 2026-07-18. Arquitetura: ADR-069 (accepted). Specs: 034, 056 (local-only).
 > O `gemini-code-assist[bot]` foi descontinuado em 2026-07-17; o substituto é em camadas.
 
 ## As 4 camadas
@@ -24,6 +24,26 @@ bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR
 Motores: `agy` primário (Gemini, quota OAuth extensa + diversidade de vendor) · `claude` pass B
 em Tier 2 (com `--setting-sources ""` — não carrega payload do projeto) · Codex só exceção
 (plano Go, quota baixa) · `/code-review` ultra apenas caso excepcional. Custo marginal ~$0.
+
+## Tuning de contexto e quota (spec 056)
+
+O preâmbulo (CLAUDE.md + índices R/AP + detalhes) é fixo e reenviado por chunk — dívida composta:
+todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em silêncio. Controles:
+
+| Env | Default | Efeito |
+|-----|---------|--------|
+| `RC6_IDX_LINE_MAX` | `110` | clamp por linha dos índices (era 230; -40% no preâmbulo, medido #756/#766) |
+| `RC6_PACK_FILTER` | `0` (opt-in) | `=1` envia só os packs (`data_and_schema`, `react_and_ui`, `mobile_and_platform`, `infra_and_deploy`, `process_and_testing`, `notifications`, `test_hygiene`, `tooling_and_build`) dos caminhos alterados. **Fail-safe:** caminho não-mapeado ⇒ catálogo inteiro. CLAUDE.md vai sempre inteira (regras transversais R-295/R-299/R-282). Default segue OFF até ≥2 PRs provarem recall (056/PO-5) |
+| `RC6_MEASURE` | `0` | `=1` monta preâmbulo+chunks, imprime bytes (preâmbulo, packs in/out, payload por chunk) e **PARA antes do engine** — medir sem gastar quota (o `--dry-run` AINDA chama engine) |
+| `RC6_KEEP_PREAMBLE` | `0` | `=1` (com MEASURE) dumpa o preâmbulo em `/tmp/rc6_preamble.txt` para auditar o filtro |
+| `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
+| `RC6_PASSB_TIMEOUT` | `480` | teto wall-clock (s) do claude no Pass B; um claude que HANGA (esperando quota liberar) é morto e cai no fallback agy — não wedgeia o RC6 |
+
+**Medir antes de rodar (barato):**
+```bash
+RC6_MEASURE=1 RC6_PACK_FILTER=1 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> 2>&1 | grep -iE 'preamble|payload|packs|omit'
+```
+Os packs listados DEVEM cobrir o domínio tocado (PR de bot → `notifications` tem que aparecer; se não, o mapa não casou o caminho — não confie no filtro).
 
 ## Regras de operação (aprendidas em produção)
 
