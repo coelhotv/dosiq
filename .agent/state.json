@@ -3,7 +3,7 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "plan": "plans/specs/057-device-activity-log/plan.md",
     "tasks": "plans/specs/057-device-activity-log/tasks.md",
@@ -28,9 +28,17 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 768,
-    "merged_squash": "6ca42da9",
+    "merged_pr": 769,
+    "merged_squash": "1bd51566",
     "merged_history": [
+      {
+        "pr": 769,
+        "squash": "1bd51566",
+        "spec": "057 device-activity-log",
+        "tier": 2,
+        "date": "2026-07-23",
+        "note": "Heartbeat de atividade do device independente de push (ADR-089): notification_devices só via preenchida quando o usuário aceita push (R-239) — quem nunca aceita era invisível a qualquer medição de frota/engajamento (mesmo furo do ADR-088/AP-314 'piso, não retrato'). Tabela device_activity NOVA (mobile-only, decisão RC3) + RPC upsert_device_activity (SECURITY DEFINER, user_id sempre de auth.uid(), nunca parâmetro) aplicadas em prod, testadas BEGIN..ROLLBACK (R-270, 9/9 OK) antes do apply. RECORRÊNCIA DE AP-278 pega ao vivo pós-apply: anon tinha EXECUTE na RPC nova apesar do REVOKE ALL FROM PUBLIC no texto da migração — este projeto concede EXECUTE DIRETO a anon via ALTER DEFAULT PRIVILEGES do schema public (não via PUBLIC), então REVOKE FROM PUBLIC sozinho não bloqueia; corrigido ao vivo (REVOKE FROM PUBLIC, anon) e a migração local já nasce corrigida. R-289: regen do database.types.ts revelou drift pré-existente em protocols (hotfix AP-314/#766 nunca regenerado) — reportado no diff, não engolido. Client syncDeviceActivity.ts (throttle 24h AsyncStorage, best-effort) montado em useAuthSession() (Navigation.tsx) ao lado de usePushNotifications, mesmo padrão dos demais listeners de AppState do app (cada concern com o seu, sem bus central). fleet-versions.sh estendido (união com device_activity, aditiva) — provado com linha real inserida/removida em prod (27/25→28/26→volta), não só o caso trivial de fonte vazia. Decisão de escopo levantada pelo PO durante o C-mode (não estava explícita em spec/plan): heartbeat NÃO espera o gate de consentimento LGPD (046) resolver, mesmo padrão de usePushNotifications — device_activity é metadado operacional, não dado de saúde; registrada em spec.md A3. 3/3 POs fechados com evidência REAL de device (iOS Simulator + Android emulator, zero prompt de permissão, zero escrita de domínio no intervalo). RC5 (autorevisão): 1 issue mecânico auto-fixed (fleet-versions.sh sem guarda Array.isArray contra erro do PostgREST). RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota, filtro OFF de propósito — não conta pro PO-5 da 056): 0 findings, medição prévia confirmou zero 'caminho não mapeado' mesmo com database.types.ts no diff (fix da 056/T030 segurando). Gates: lint 0, mobile 61/504, validate:agent 160/2124, strict-island ratchet OK. SQP no-user-impact."
+      },
       {
         "pr": 768,
         "squash": "6ca42da9",
@@ -263,7 +271,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
@@ -286,12 +294,12 @@
   },
   "ai_review": {
     "engine": "agy",
-    "status": "issues_found",
+    "status": "clean",
     "critical": 0,
-    "high": 4,
+    "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 768,
-    "resolved": "3 medium introduced (densityLabel residual) aplicados em 993f5766; 6 findings do dry-run nao-filtrado verificados e descartados (FP/especulativo, sem acao); demais high/medium sao pre-existentes (introduced:false), triados para follow-up"
+    "pr": 769,
+    "resolved": "0 findings (2/2 chunks) — RC6_ENGINE_CLAUDE=0 (quota), filtro OFF de proposito (nao conta pro PO-5 da 056). Medicao previa: zero 'caminho nao mapeado' mesmo com database.types.ts no diff. Unico issue real do PR (fleet-versions.sh sem guarda Array.isArray) ja tinha sido achado e corrigido pelo RC5, fora do CODE_GLOBS do RC6 por desenho"
   }
 }
