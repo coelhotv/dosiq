@@ -7,6 +7,34 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
+
+- **Feat** (`no-user-impact` — telemetria de infra, nada muda visível pro usuário): a única fonte de
+  `app_version`/`platform`/atividade real no banco (`notification_devices`) só é populada quando o
+  usuário ACEITA push (R-239 — pedido apenas em pontos de intenção, nunca no 1º load). Usuário que
+  usa o app sem nunca aceitar push era invisível a qualquer query de frota/engajamento — mesmo furo
+  que o ADR-088/AP-314 (outage de 22/07) documentou como "piso, não retrato". Tabela nova dedicada
+  `device_activity` (mobile-only, decisão RC3 — o risco que motivou a spec, DROP quebrando app
+  instalado desatualizado, não se aplica a web) + RPC `upsert_device_activity` (`SECURITY DEFINER`,
+  deriva o dono de `auth.uid()`, nunca aceita `user_id` como parâmetro) + client
+  `syncDeviceActivity.ts` (throttle local de 24h por device via AsyncStorage, best-effort — erro de
+  rede nunca lança, espírito AP-303) disparado em `AppState` → `active` (cold start + volta de
+  background) dentro de `useAuthSession()`, ao lado de `usePushNotifications`.
+- **Achado ao vivo (recorrência de AP-278):** a auditoria pós-migração (`has_function_privilege`)
+  achou `anon` com `EXECUTE` na RPC nova, apesar do `REVOKE ALL FROM PUBLIC` no texto da migração —
+  este projeto tem `ALTER DEFAULT PRIVILEGES` no schema `public` que concede `EXECUTE` DIRETO a
+  `anon`/`authenticated`/`service_role` na criação da função, e um `REVOKE` de `PUBLIC` não atinge
+  um grant direto. Corrigido ao vivo (`REVOKE ... FROM PUBLIC, anon`) e reverificado
+  (`anon.can_exec=false`). `docs/migrations/20260723_device_activity.sql` já nasce com o `REVOKE`
+  explícito de `anon` para não depender do estado do default privilege do ambiente.
+- **`scripts/fleet-versions.sh`** passa a cruzar `device_activity` além de `notification_devices`
+  (união, nunca substituição — FR-005). Provado com uma linha real inserida/removida em prod: total
+  subiu de 27→28 instalações (25→26 usuários) para um usuário sem `notification_devices`, confirmando
+  união genuína (não apenas "sem mudança porque a fonte está vazia").
+- **Débito conhecido (PO-1/PO-3):** a prova manual de "zero prompt de permissão disparado" e "sinal
+  sem escrita de domínio" depende de smoke num device real — aguardando validação do PO antes do
+  merge.
+
 ### Grafia de mililitro padronizada no formatador central — Slice B (053, fecha o épico)
 
 - **Refactor** (`patch`, web `4.20.0 → 4.20.1`; `patch`, mobile `0.28.4 → 0.28.5`; `patch`, server `4.1.0 → 4.1.1`; `minor`, core `0.17.0 → 0.18.0`): varredura de call sites que ainda montavam rótulo de unidade fora dos formatadores do core (PO-3). O inventário congelado do Slice A (expressão E1, 4 emissões reais) cobria só concatenação de TEXTO LITERAL — um segundo levantamento achou **12 sites adicionais** que interpolavam a VARIÁVEL crua (`` `${qty} ${unit}` ``, sem literal "ml"/"mg" no molde), invisíveis ao grep por desenho, mais **3 textos de copy** hardcoded com "ml" minúsculo ("Geralmente 100 UI por ml"/"20 gotas por ml"). Todos os 19 sites (web: `ConsultationSections`, `EmergencyQRCode`, `consultationPdfDataBuilder`, `DoseEventCard`, `HistoryLogCard`, `TreatmentWizardStep1/2`, `ProtocolFormDosesSection`; mobile: `PurchaseCard`, `PurchaseFormScreen`, `StockAdjustmentScreen`, `alarmService`, `DoseRegisterModal`, `DoseListItem`, `DoseHistoryList`, `DoseActionSheet`; bot/server: `notificationHelpers`, `conversational.ts`, `buildNotificationPayload`) passam a traduzir valor→rótulo via `formatConcentration`/`formatDose`/`DOSAGE_UNIT_LABELS`/`INTAKE_UNIT_LABELS` do core — call site nunca mais concatena unidade à mão. `isLiquidDosageUnit` novo no core (export aditivo) consolida 4 cópias locais de `isLiquidUnit` (a 4ª, em `TreatmentWizardStep1`, não estava catalogada no plano original).

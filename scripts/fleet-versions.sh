@@ -14,8 +14,10 @@
 # referenciam a coluna — é o passo 2 do checklist de DDL destrutiva
 # (docs/standards/SUPABASE_MIGRATIONS.md).
 #
-# LIMITAÇÃO (não ignorar): `notification_devices` só enxerga quem ATIVOU notificações. O número é
-# PISO, não retrato. Na dúvida, tratar a frota como maior do que a medição indica.
+# FONTE ADITIVA (spec 057 / ADR-089): `device_activity` cruza usuários que nunca ativaram
+# notificações (R-239 — push é contextual, nunca pedido no 1º load) e por isso eram invisíveis
+# aqui. É union, nunca substitui `notification_devices` — o dedupe por (user_id, platform) abaixo
+# já cobre o caso de um usuário aparecer nas duas fontes (mantém só a linha mais recente).
 
 set -euo pipefail
 
@@ -42,21 +44,45 @@ echo "════════════════════════�
 echo " FROTA ATIVA — instalações vistas nos últimos 30 dias"
 echo "════════════════════════════════════════════════════════════════"
 
+SINCE="$(date -u -v-30d +%Y-%m-%d 2>/dev/null || date -u -d '30 days ago' +%Y-%m-%d)"
+
 FLEET_JSON=$(curl -sS \
-  "$URL/rest/v1/notification_devices?select=app_version,platform,user_id,updated_at&updated_at=gte.$(date -u -v-30d +%Y-%m-%d 2>/dev/null || date -u -d '30 days ago' +%Y-%m-%d)" \
+  "$URL/rest/v1/notification_devices?select=app_version,platform,user_id,updated_at&updated_at=gte.$SINCE" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+
+# device_activity (spec 057 / ADR-089): fonte ADITIVA, cruza quem nunca ativou push. Falha de
+# leitura aqui não pode derrubar a medição principal (notification_devices segue valendo) —
+# best-effort, com aviso explícito (nunca silencioso).
+FLEET_JSON_ACTIVITY=$(curl -sS \
+  "$URL/rest/v1/device_activity?select=app_version,platform,user_id,last_seen_at&last_seen_at=gte.$SINCE" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || echo '[]')
 
 if [ -z "$FLEET_JSON" ] || [ "$FLEET_JSON" = "[]" ]; then
   echo "⚠️  Nenhum device ativo retornado — confira as credenciais antes de concluir 'frota vazia'."
   exit 1
 fi
 
+if [ -z "$FLEET_JSON_ACTIVITY" ]; then
+  echo "⚠️  device_activity não respondeu — frota medida só por notification_devices (piso, não retrato)."
+  FLEET_JSON_ACTIVITY='[]'
+fi
+
+export FLEET_JSON_ACTIVITY
+
 # Uma linha por (user_id, platform), mantendo o device mais recente: um usuário com 3 aparelhos
-# antigos não pode pesar como 3 votos contra o DROP.
+# antigos não pode pesar como 3 votos contra o DROP. Funde as duas fontes ANTES do dedupe — união,
+# nunca substituição (FR-005): notification_devices usa `updated_at`, device_activity usa
+# `last_seen_at`; normalizadas para o mesmo campo antes de comparar.
 echo "$FLEET_JSON" | node -e '
 const rows = JSON.parse(require("fs").readFileSync(0, "utf8"))
+const activityParsed = JSON.parse(process.env.FLEET_JSON_ACTIVITY || "[]")
+// fonte aditiva NUNCA pode derrubar a medição principal: se o PostgREST devolver um objeto de
+// erro (ex. permissão/config) em vez de array, cai pra [] em vez de estourar o .map abaixo.
+const activityRows = (Array.isArray(activityParsed) ? activityParsed : [])
+  .map(r => ({ app_version: r.app_version, platform: r.platform, user_id: r.user_id, updated_at: r.last_seen_at }))
+const merged = rows.concat(activityRows)
 const latest = new Map()
-for (const r of rows) {
+for (const r of merged) {
   if (!r.app_version) continue
   const key = `${r.user_id}|${r.platform}`
   const prev = latest.get(key)

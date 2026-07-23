@@ -182,6 +182,44 @@ export type Database = {
         }
         Relationships: []
       }
+      device_activity: {
+        Row: {
+          app_version: string
+          created_at: string
+          device_fingerprint: string
+          id: string
+          last_seen_at: string
+          platform: string
+          user_id: string
+        }
+        Insert: {
+          app_version: string
+          created_at?: string
+          device_fingerprint: string
+          id?: string
+          last_seen_at?: string
+          platform: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string
+          created_at?: string
+          device_fingerprint?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_activity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dose_adherence_monthly: {
         Row: {
           expected: number
@@ -919,6 +957,7 @@ export type Database = {
           active: boolean | null
           created_at: string | null
           critical_alarm: boolean
+          current_stage_index: number | null
           dosage_per_intake: number | null
           end_date: string | null
           frequency: string | null
@@ -931,10 +970,13 @@ export type Database = {
           name: string
           notes: string | null
           paused_at: string | null
+          stage_started_at: string | null
           start_date: string
           status_ultima_notificacao: string | null
           target_dosage: number | null
           time_schedule: Json | null
+          titration_schedule: Json | null
+          titration_status: string | null
           treatment_plan_id: string | null
           user_id: string
           weekdays: string[] | null
@@ -943,6 +985,7 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           critical_alarm?: boolean
+          current_stage_index?: number | null
           dosage_per_intake?: number | null
           end_date?: string | null
           frequency?: string | null
@@ -955,10 +998,13 @@ export type Database = {
           name: string
           notes?: string | null
           paused_at?: string | null
+          stage_started_at?: string | null
           start_date: string
           status_ultima_notificacao?: string | null
           target_dosage?: number | null
           time_schedule?: Json | null
+          titration_schedule?: Json | null
+          titration_status?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -967,6 +1013,7 @@ export type Database = {
           active?: boolean | null
           created_at?: string | null
           critical_alarm?: boolean
+          current_stage_index?: number | null
           dosage_per_intake?: number | null
           end_date?: string | null
           frequency?: string | null
@@ -979,10 +1026,13 @@ export type Database = {
           name?: string
           notes?: string | null
           paused_at?: string | null
+          stage_started_at?: string | null
           start_date?: string
           status_ultima_notificacao?: string | null
           target_dosage?: number | null
           time_schedule?: Json | null
+          titration_schedule?: Json | null
+          titration_status?: string | null
           treatment_plan_id?: string | null
           user_id?: string
           weekdays?: string[] | null
@@ -1885,6 +1935,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      upsert_device_activity: {
+        Args: {
+          p_app_version: string
+          p_device_fingerprint: string
+          p_platform: string
+        }
+        Returns: undefined
       }
       upsert_notification_device: {
         Args: {
