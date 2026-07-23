@@ -2,15 +2,15 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "tier": 1,
-    "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
-    "tasks": "plans/specs/056-ai-review-tuning/tasks.md",
-    "spec_dir": "plans/specs/056-ai-review-tuning",
-    "spec": "plans/specs/056-ai-review-tuning/spec.md",
-    "goal": "Outage pos-029 F6: restauracao das colunas N1 + erro de servidor deixa de se disfarcar de cache expirado (AP-314)",
-    "goal_type": "fix",
+    "mode": "ceremony",
+    "status": "reviewing",
+    "tier": 2,
+    "plan": "plans/specs/057-device-activity-log/plan.md",
+    "tasks": "plans/specs/057-device-activity-log/tasks.md",
+    "spec_dir": "plans/specs/057-device-activity-log",
+    "spec": "plans/specs/057-device-activity-log/spec.md",
+    "goal": "Planning: heartbeat de app_version/atividade independente de push (spec 057)",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -25,7 +25,8 @@
       "plans/specs/053-unit-label-formatter",
       "plans/specs/054-critical-alerts",
       "plans/specs/055-expo-55-target-api-36",
-      "plans/specs/056-ai-review-tuning"
+      "plans/specs/056-ai-review-tuning",
+      "plans/specs/057-device-activity-log"
     ],
     "merged_pr": 766,
     "merged_squash": "51a69a03",
@@ -241,9 +242,10 @@
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
       "eng-review",
-      "eng-review-054"
+      "eng-review-054",
+      "eng-review-057"
     ],
-    "ceremony_findings_count": 12,
+    "ceremony_findings_count": 14,
     "ceremony_scope_decisions": [
       "054 RC3 HIGH: critical:true sempre derivado do status de autorização do SO (protege builds antigos por construção); ordem F0 provisioning/build (PO-5) ANTES de F1 código",
       "054 RC3 HIGH: status de autorização = cache (AP-281/AP-284) — revalidar em foreground; Settings lê ao vivo",
@@ -252,7 +254,8 @@
       "054 RC3: 2 fases mesmo spec (F0 provisioning → F1 código); ADR da política no planning",
       "RC3: epico reclassificado Mobile -> Mobile + Web (react hoisted na raiz)",
       "RC3: fallback B reabilitado como paracaidas com data-gatilho (nao morto)",
-      "RC3: migracao expo-file-system em commit separado (structural vs behavioral)"
+      "RC3: migracao expo-file-system em commit separado (structural vs behavioral)",
+      "057 RC3: heartbeat mobile-only de proposito (web fora do CHECK/client) — risco de DROP quebrando app instalado nao se aplica a web; RPC upsert_device_activity deve espelhar search_path/grants de upsert_notification_device"
     ],
     "ai_review": {
       "engine": "agy",
