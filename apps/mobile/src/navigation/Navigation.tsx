@@ -9,7 +9,7 @@
 //   o utilizador sempre vê LOGIN mesmo com sessão válida guardada.
 
 import { useEffect, useState } from 'react'
-import { View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
+import { AppState, View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
@@ -41,6 +41,7 @@ import { isOnboardingNeeded } from '../features/profile/services/profileService'
 import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
+import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import { logScreenView } from '../platform/analytics/firebaseAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
@@ -57,6 +58,22 @@ function useAuthSession() {
   // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
   // - onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
+
+  // Heartbeat de atividade (spec 057 / ADR-089): independente de push (R-239 intocada — nunca
+  // pede permissão nenhuma), roda em cold start e em toda volta a foreground; o throttle de 24h
+  // por device fica dentro de syncDeviceActivity (best-effort, nunca lança).
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    syncDeviceActivity({ supabase })
+
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        syncDeviceActivity({ supabase })
+      }
+    })
+    return () => subscription.remove()
+  }, [session?.user?.id])
 
   useEffect(() => {
     // Restaurar sessão persistida (SecureStore chunked — R-160)

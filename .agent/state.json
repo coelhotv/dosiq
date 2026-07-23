@@ -3,14 +3,14 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged",
+    "status": "completed",
     "tier": 2,
-    "plan": "plans/specs/053-unit-label-formatter/plan.md",
-    "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
-    "spec_dir": "plans/specs/053-unit-label-formatter",
-    "spec": "plans/specs/053-unit-label-formatter/spec.md",
-    "goal": "Coding 053 — Slice B (T010-T017): sweep de 19 sites de emissao de unidade fora do core (web+mobile+bot+server/notifications) + testes grafia — fecha o epico 053",
-    "goal_type": "refactor",
+    "plan": "plans/specs/057-device-activity-log/plan.md",
+    "tasks": "plans/specs/057-device-activity-log/tasks.md",
+    "spec_dir": "plans/specs/057-device-activity-log",
+    "spec": "plans/specs/057-device-activity-log/spec.md",
+    "goal": "Coding 057 — Heartbeat de atividade do device (device_activity + upsert_device_activity RPC + client mobile + fleet-versions.sh), independente de push (ADR-089)",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -258,12 +258,12 @@
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
-    "analysis": "plans/specs/053-unit-label-formatter/analysis.md",
-    "branch": null
+    "analysis": "plans/specs/057-device-activity-log/analysis.md",
+    "branch": "feature/tese/057-device-activity-log"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
@@ -275,12 +275,13 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-23T03:33:42.427768+00:00"
+    "index_loaded_at": "2026-07-23T18:00:00.000000+00:00"
   },
   "code_review": {
-    "status": "clean",
+    "status": "issues_found",
+    "spec": "057-device-activity-log",
     "critical": 0,
-    "auto_fixed": 0,
+    "auto_fixed": 1,
     "ask_items": 0
   },
   "ai_review": {
