@@ -2,7 +2,7 @@
 // saída, não regex frouxa nem só o número. Mutar 'mL'→'ml' em qualquer
 // formatador abaixo tem que acender pelo menos um vermelho aqui.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import {
   formatDose,
   formatConcentration,
@@ -17,6 +17,11 @@ import { DOSAGE_UNIT_LABELS } from '../../schemas/medicineSchema'
 import { INTAKE_UNIT_LABELS } from '../../schemas/protocolSchema'
 
 describe('grafia canônica de unidade (mL — 053)', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
   it('DOSAGE_UNIT_LABELS: mg/ml e ui/ml emitem mL maiúsculo; chaves intocadas', () => {
     expect(DOSAGE_UNIT_LABELS['mg/ml']).toBe('mg/mL')
     expect(DOSAGE_UNIT_LABELS['ui/ml']).toBe('UI/mL')
@@ -72,6 +77,7 @@ describe('grafia canônica de unidade (mL — 053)', () => {
       formatIntakeDose(40, 'gotas', { dosage_unit: 'mg/ml', units_per_ml: 20 }),
       stockUnitLabel({ dosage_unit: 'mg/ml' }),
       formatStockCount(30, { dosage_unit: 'mg/ml' }),
+      formatStockApplications(10, 0, 'caneta'),
     ]
     for (const out of outputs) {
       expect(out).not.toMatch(/\dml\b/)
