@@ -9,7 +9,7 @@
     "tasks": "plans/specs/053-unit-label-formatter/tasks.md",
     "spec_dir": "plans/specs/053-unit-label-formatter",
     "spec": "plans/specs/053-unit-label-formatter/spec.md",
-    "goal": "Coding 053 — Slice A (T001-T009): grafia canonica mL no formatador central do core",
+    "goal": "Coding 053 — Slice B (T010-T017): sweep de 19 sites de emissao de unidade fora do core (web+mobile+bot+server/notifications) + testes grafia — fecha o epico 053",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
@@ -251,11 +251,11 @@
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
     "analysis": "plans/specs/053-unit-label-formatter/analysis.md",
-    "branch": null
+    "branch": "feature/053-slice-b"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
@@ -267,10 +267,10 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-22T17:19:31Z"
+    "index_loaded_at": "2026-07-23T03:33:42.427768+00:00"
   },
   "code_review": {
-    "status": "pending",
+    "status": "clean",
     "critical": 0,
     "auto_fixed": 0,
     "ask_items": 0

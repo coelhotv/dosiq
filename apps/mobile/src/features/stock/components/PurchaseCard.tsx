@@ -4,7 +4,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Syringe } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
-import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, formatNumberPtBR, isBiologicallyExpired, biologicalExpiryDaysLeft, INJECTION_CONTAINER_SINGULAR } from '@dosiq/core'
+import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, isBiologicallyExpired, biologicalExpiryDaysLeft, INJECTION_CONTAINER_SINGULAR, formatDose } from '@dosiq/core'
 
 /**
  * @param {{
@@ -27,14 +27,14 @@ import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, st
 // Helpers de derivação para simplificar a complexidade de PurchaseCard
 function getRemainingText(remaining, isLiquid) {
   return isLiquid
-    ? `${formatNumberPtBR(remaining)} ml`
+    ? formatDose(remaining, 'ml')
     : `${remaining}`
 }
 
 function getBoughtText(purchase, medicine, isLiquid) {
   const containerLabel = isLiquid ? INJECTION_CONTAINER_SINGULAR[purchase.injection_container] : null
   if (containerLabel) {
-    return `${formatNumberPtBR(purchase.quantity_bought)} ml (${containerLabel}) comprados`
+    return `${formatDose(purchase.quantity_bought, 'ml')} (${containerLabel}) comprados`
   }
   return `${formatStockCount(purchase.quantity_bought, medicine)} ${isLiquid ? 'comprados' : 'compradas'}`
 }

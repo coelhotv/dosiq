@@ -264,7 +264,7 @@ export default function ProtocolFormDosesSection({
     isLiquid && formData.intake_unit && formData.intake_unit !== 'ml' && formData.intake_unit !== 'mg'
   const densityLabel = formData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
   const densityHint =
-    formData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+    formData.intake_unit === 'UI' ? 'Geralmente 100 UI por mL' : 'Geralmente 20 gotas por mL'
   const defaultDensity = formData.intake_unit === 'UI' ? 100 : 20
 
   // Garante intake_unit preenchido p/ líquidos (evita null silencioso no debito).

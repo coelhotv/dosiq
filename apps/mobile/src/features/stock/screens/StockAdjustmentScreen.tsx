@@ -41,7 +41,7 @@ import { useStockMutation } from '@stock/hooks/useStockMutation'
 import { stockService } from '@stock/services/stockService'
 import { medicineService } from '@medications/services/medicineService'
 import { useAuth } from '@platform/auth/hooks/useAuth'
-import { formatConcentration, isLiquidMedicine, formatNumberPtBR, cleanFloat } from '@dosiq/core'
+import { formatConcentration, isLiquidMedicine, formatNumberPtBR, cleanFloat, formatDose } from '@dosiq/core'
 import { colors, spacing, typography, borderRadius } from '@shared/styles/tokens'
 
 // Motivos de ajuste — value enviado ao service, label exibido no dropdown.
@@ -114,7 +114,7 @@ function useStockAdjustment(route, navigation) {
   const saldoAtualText = useMemo(() => {
     if (currentBalance == null) return 'Calculando saldo…'
     return isLiquid
-      ? `Saldo atual: ${formatNumberPtBR(currentBalance)} ml`
+      ? `Saldo atual: ${formatDose(currentBalance, 'ml')}`
       : `Saldo atual: ${currentBalance} ${currentBalance === 1 ? 'unidade' : 'unidades'}`
   }, [currentBalance, isLiquid])
 

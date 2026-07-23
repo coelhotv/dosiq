@@ -24,6 +24,7 @@ import {
   INJECTION_SITES,
   getInjectionSiteAbsorption,
   getInjectionSiteLabel,
+  INTAKE_UNIT_LABELS,
 } from '@dosiq/core'
 import { registerDose, getLastInjectionSite } from '../services/doseService'
 import { AlertTriangle } from 'lucide-react-native'
@@ -121,7 +122,7 @@ export default function DoseRegisterModal({
   const injectable = isInjectable(medicine)
   const intakeUnit = protocol.intake_unit || (isLiquid ? 'ml' : null)
   const qtyLabel = isLiquid
-    ? `Quantidade (${intakeUnit})`
+    ? `Quantidade (${INTAKE_UNIT_LABELS[intakeUnit] || intakeUnit})`
     : medicine?.dosage_unit === 'gotas'
       ? 'Quantidade (gotas)'
       : 'Quantidade (unidades)'

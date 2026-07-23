@@ -34,6 +34,7 @@ function QRErrorState({ error, onRetry }) {
   )
 }
 import { getServerTimestamp, parseISO } from '@utils/dateUtils'
+import { formatConcentration } from '@dosiq/core'
 import './EmergencyQRCode.css'
 
 /**
@@ -88,7 +89,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }: 
       m:
         medications?.map((med) => ({
           n: med.name,
-          d: med.dosagePerPill ? `${med.dosagePerPill}${med.unit ? ` ${med.unit}` : ''}` : '',
+          d: med.dosagePerPill ? formatConcentration(med.dosagePerPill, med.unit) : '',
           f: med.frequency || '',
         })) || [],
       a: cardData.allergies || [],

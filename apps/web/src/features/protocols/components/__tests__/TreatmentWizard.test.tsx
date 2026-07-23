@@ -20,25 +20,30 @@ vi.mock('@shared/services', () => ({
   },
 }))
 
-vi.mock('@schemas/medicineSchema', () => ({
-  DOSAGE_UNITS: ['mg', 'mcg', 'g', 'ml', 'ui', 'gotas'],
-  DOSAGE_UNIT_LABELS: { mg: 'mg', mcg: 'mcg', g: 'g', ml: 'ml', ui: 'UI', gotas: 'gotas' },
-  PRESENTATIONS: ['comprimido', 'capsula', 'liquido', 'injetavel'],
-  PRESENTATION_LABELS: {
-    comprimido: 'Comprimido',
-    capsula: 'Cápsula',
-    liquido: 'Líquido',
-    injetavel: 'Injetável',
-  },
-  LIQUID_PRESENTATIONS: ['liquido', 'injetavel'],
-  REGULATORY_CATEGORIES: ['Genérico', 'Similar', 'Novo'],
-  REGULATORY_CATEGORY_LABELS: {
-    Genérico: 'Genérico',
-    Similar: 'Similar',
-    Novo: 'Novo',
-  },
-  normalizeRegulatoryCategory: (v) => v || null,
-}))
+// 053: DOSAGE_UNIT_LABELS NUNCA mockado — vem do módulo real (importActual) para que a grafia
+// canônica (mL) do formatador central nunca divirja silenciosamente do mock (AP-306).
+vi.mock('@schemas/medicineSchema', async () => {
+  const actual = await vi.importActual('@schemas/medicineSchema')
+  return {
+    ...actual,
+    DOSAGE_UNITS: ['mg', 'mcg', 'g', 'ml', 'ui', 'gotas'],
+    PRESENTATIONS: ['comprimido', 'capsula', 'liquido', 'injetavel'],
+    PRESENTATION_LABELS: {
+      comprimido: 'Comprimido',
+      capsula: 'Cápsula',
+      liquido: 'Líquido',
+      injetavel: 'Injetável',
+    },
+    LIQUID_PRESENTATIONS: ['liquido', 'injetavel'],
+    REGULATORY_CATEGORIES: ['Genérico', 'Similar', 'Novo'],
+    REGULATORY_CATEGORY_LABELS: {
+      Genérico: 'Genérico',
+      Similar: 'Similar',
+      Novo: 'Novo',
+    },
+    normalizeRegulatoryCategory: (v) => v || null,
+  }
+})
 
 vi.mock('@schemas/protocolSchema', () => ({
   FREQUENCIES: ['diario', 'semanal', 'quando_necessario'],

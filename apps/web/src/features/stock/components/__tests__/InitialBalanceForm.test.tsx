@@ -146,13 +146,13 @@ describe('InitialBalanceForm', () => {
 // A unidade da tela TEM que ser a mesma que o cadastro de compra pede (líquido é comprado em
 // frascos × volume e persistido em ml). Pedir numa unidade e gravar em outra corrompe o FIFO.
 describe('InitialBalanceForm — unidade de estoque e equivalência', () => {
-  it('sólido mostra "un." e líquido mostra "ml" (nunca "un.")', async () => {
+  it('sólido mostra "un." e líquido mostra "mL" (nunca "un.")', async () => {
     await renderForm()
 
     const ozempicInput = screen.getByLabelText(/Saldo inicial de Ozempic, em mililitros/i)
     expect(ozempicInput).toBeInTheDocument()
     expect(screen.getByLabelText(/Saldo inicial de Losartana, em unidades/i)).toBeInTheDocument()
-    expect(screen.getAllByText('ml').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('mL').length).toBeGreaterThan(0)
   })
 
   // O hint conta DOSES: é o que responde "quanto tempo de tratamento eu tenho?".

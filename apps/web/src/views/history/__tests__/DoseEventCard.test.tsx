@@ -32,7 +32,7 @@ describe('DoseEventCard', () => {
   it('renderiza nome, dosagem e badge de status para evento tomado', () => {
     render(<DoseEventCard event={makeEvent()} onEdit={vi.fn()} onDelete={vi.fn()} />)
     expect(screen.getByText('Losartana')).toBeInTheDocument()
-    expect(screen.getByText('50mg')).toBeInTheDocument()
+    expect(screen.getByText('50 mg')).toBeInTheDocument()
     expect(screen.getByText('Tomada')).toBeInTheDocument()
   })
 

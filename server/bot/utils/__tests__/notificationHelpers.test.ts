@@ -12,7 +12,7 @@ describe('notificationHelpers', () => {
     });
 
     it('should format name with strength and unit', () => {
-      expect(formatMedicineWithStrength('Omega 3', 1200, 'mg')).toBe('Omega 3 1200mg');
+      expect(formatMedicineWithStrength('Omega 3', 1200, 'mg')).toBe('Omega 3 1200 mg');
     });
 
     it('should format name with strength even if unit is missing', () => {
@@ -28,10 +28,10 @@ describe('notificationHelpers', () => {
       expect(formatIntakeQuantity(1, 'ui')).toBe('1 UI');
     });
 
-    it('should keep original unit for liquids and forms', () => {
+    it('should translate to canonical label for liquids and forms (053: mL/un.)', () => {
       expect(formatIntakeQuantity(20, 'gotas')).toBe('20 gotas');
-      expect(formatIntakeQuantity(5, 'ml')).toBe('5 ml');
-      expect(formatIntakeQuantity(2, 'un')).toBe('2 un');
+      expect(formatIntakeQuantity(5, 'ml')).toBe('5 mL');
+      expect(formatIntakeQuantity(2, 'un')).toBe('2 un.');
     });
 
     it('should use "dose" for unknown or missing units', () => {
@@ -41,7 +41,7 @@ describe('notificationHelpers', () => {
 
     it('should handle case insensitivity', () => {
       expect(formatIntakeQuantity(1, 'MG')).toBe('1 cp');
-      expect(formatIntakeQuantity(10, 'ML')).toBe('10 ml');
+      expect(formatIntakeQuantity(10, 'ML')).toBe('10 mL');
     });
   });
 });

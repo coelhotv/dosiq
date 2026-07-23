@@ -134,6 +134,7 @@ export {
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
   isLiquidMedicine,
+  isLiquidDosageUnit,
   stockUnitLabel,
   formatStockCount,
   formatStockQuantity,

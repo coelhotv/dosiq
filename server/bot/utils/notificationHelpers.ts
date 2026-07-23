@@ -2,6 +2,7 @@
  * Helpers compartilhados para construção de mensagens de notificação.
  * Centraliza lógica de saudação e incentivos (Nudges) para uso em Layers 1 e 2.
  */
+import { DOSAGE_UNIT_LABELS, INTAKE_UNIT_LABELS } from '@dosiq/core';
 
 /**
  * Retorna uma saudação baseada na hora do dia
@@ -53,16 +54,18 @@ export function getMotivationalNudge(percentage) {
 
 /**
  * Formata o nome do medicamento com sua dosagem (concentração)
- * Ex: "Omega 3" -> "Omega 3 1200mg"
- * 
+ * Ex: "Omega 3" -> "Omega 3 1200 mg"
+ *
  * @param {string} name - Nome do medicamento
  * @param {number} strength - Concentração (dosage_per_pill)
  * @param {string} unit - Unidade da concentração (mg, ml, etc)
  * @returns {string}
  */
-export function formatMedicineWithStrength(name, strength, unit) {
+export function formatMedicineWithStrength(name: string, strength: number | string | null | undefined, unit: string | null | undefined): string {
   if (!strength) return name;
-  return `${name} ${strength}${unit || ''}`;
+  const normalizedUnit = unit?.toLowerCase();
+  const unitLabel = (normalizedUnit && ((DOSAGE_UNIT_LABELS as Record<string, string>)[normalizedUnit] || (INTAKE_UNIT_LABELS as Record<string, string>)[normalizedUnit])) || unit || '';
+  return `${name} ${strength}${unitLabel ? ` ${unitLabel}` : ''}`;
 }
 
 /**
@@ -73,23 +76,24 @@ export function formatMedicineWithStrength(name, strength, unit) {
  * @param {string} medicineUnit - Unidade da concentração do medicamento (de DOSAGE_UNITS)
  * @returns {string}
  */
-export function formatIntakeQuantity(quantity, medicineUnit) {
-  const normalizedUnit = medicineUnit?.toLowerCase();
-  
+export function formatIntakeQuantity(quantity: number | string, medicineUnit: string | null | undefined): string {
+  const normalizedUnit = medicineUnit?.toLowerCase() ?? '';
+
   // Unidades de peso indicam que a "peça" da tomada é um comprimido/cápsula
   const weightUnits = ['mg', 'mcg', 'g'];
-  
+
   if (weightUnits.includes(normalizedUnit)) {
     return `${quantity} cp`;
   }
-  
-  // Unidades de volume ou contagem direta são mantidas
+
+  // Unidades de volume ou contagem direta são mantidas — grafia canônica via
+  // mapas do core (053), nunca casing ad-hoc local (senão diverge do formatador central).
   const keepUnits = ['ml', 'gotas', 'un', 'ui'];
   if (keepUnits.includes(normalizedUnit)) {
-    const displayUnit = normalizedUnit === 'ui' ? 'UI' : normalizedUnit;
+    const displayUnit = (DOSAGE_UNIT_LABELS as Record<string, string>)[normalizedUnit] || (INTAKE_UNIT_LABELS as Record<string, string>)[normalizedUnit] || normalizedUnit;
     return `${quantity} ${displayUnit}`;
   }
-  
+
   // Fallback para unidades desconhecidas ou genéricas
   return `${quantity} ${medicineUnit || 'dose'}`;
 }

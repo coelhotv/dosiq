@@ -112,7 +112,7 @@ function useProtocolFormDerived(form, medicine) {
     isLiquid && form.values.intake_unit && form.values.intake_unit !== 'ml' && !isMg
   const densityLabel = form.values.intake_unit === 'UI' ? '💧 Densidade: UI por ml' : '💧 Densidade: Gotas por ml'
   const densityHint =
-    form.values.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+    form.values.intake_unit === 'UI' ? 'Geralmente 100 UI por mL' : 'Geralmente 20 gotas por mL'
   const defaultDensity = form.values.intake_unit === 'UI' ? 100 : 20
   // gotas/UI herdam units_per_ml do medicamento (decisão 022).
   const inheritedDensity = Number(medicine?.units_per_ml) > 0 ? medicine.units_per_ml : null

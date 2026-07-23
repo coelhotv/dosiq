@@ -149,6 +149,19 @@ export function formatMedicineFullName(
 }
 
 /**
+ * Decisão-mãe líquido (022): VALOR de dosage_unit termina em '/ml' (mg/ml, ui/ml).
+ * Opera sobre o VALOR — nunca sobre o rótulo (grafia não entra aqui, 053). Consolida
+ * 4 cópias locais antes duplicadas em forms de web/mobile (_medicineFormUtils.ts,
+ * MedicineFormScreen.tsx, OnboardingMedicineStep.tsx, TreatmentWizardStep1.tsx).
+ *
+ * @param {string|null|undefined} dosageUnit - valor cru de dosage_unit
+ * @returns {boolean}
+ */
+export function isLiquidDosageUnit(dosageUnit: string | null | undefined): boolean {
+  return Boolean(dosageUnit?.endsWith('/ml'))
+}
+
+/**
  * Decisão-mãe líquido (022): medicamento é líquido quando dosage_unit termina
  * em '/ml' (mg/ml, ui/ml). Centraliza o predicado antes duplicado inline em
  * telas de estoque/tratamento (evita drift — ex: esquecer endsWith em uma tela).
@@ -157,7 +170,7 @@ export function formatMedicineFullName(
  * @returns {boolean}
  */
 export function isLiquidMedicine(medicine: { dosage_unit?: string | null } | null | undefined): boolean {
-  return Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  return isLiquidDosageUnit(medicine?.dosage_unit)
 }
 
 /**

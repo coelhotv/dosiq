@@ -20,24 +20,21 @@ E1_HITS=$(grep -rEn "(['\"\`][^'\"\`]*[0-9)}][ ]?m[lL]\b[^'\"\`]*['\"\`])|(\\\$\
   apps/web/src apps/mobile/src server/bot --include='*.ts' --include='*.tsx' 2>/dev/null \
   | grep -v __tests__ | grep -v '\.test\.')
 
-# Allowlist "concatenação pendente" — Slice B remove estas linhas do sweep;
-# a entrada some DAQUI quando o call site chamar o formatador do core.
-PENDING_SLICE_B=(
-  "apps/mobile/src/features/stock/components/PurchaseCard.tsx:30"
-  "apps/mobile/src/features/stock/components/PurchaseCard.tsx:37"
-  "apps/mobile/src/features/stock/screens/PurchaseFormScreen.tsx:415"
-  "apps/mobile/src/features/stock/screens/StockAdjustmentScreen.tsx:117"
-)
+# Allowlist "concatenação pendente" — vazia desde o Slice B (todas as 4 emissões
+# reais do baseline E1 passaram a chamar o formatador do core). Mantida como
+# array (não removida) para o padrão de allowlist nomeada continuar disponível
+# caso um sweep futuro precise dela.
+PENDING_SLICE_B=()
 
 # Allowlist "copy estática já correta" — grafia certa, não é concatenação de
 # unidade dinâmica (texto fixo de ajuda ao usuário).
 STATIC_COPY_OK=(
-  "apps/mobile/src/features/medications/screens/MedicineFormScreen.tsx:300"
+  "apps/mobile/src/features/medications/screens/MedicineFormScreen.tsx:301"
 )
 
 is_allowlisted() {
   local key="$1"
-  for entry in "${PENDING_SLICE_B[@]}" "${STATIC_COPY_OK[@]}"; do
+  for entry in "${PENDING_SLICE_B[@]:-}" "${STATIC_COPY_OK[@]:-}"; do
     if [[ "$key" == "$entry" ]]; then
       return 0
     fi
