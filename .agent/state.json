@@ -28,9 +28,16 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 766,
-    "merged_squash": "51a69a03",
+    "merged_pr": 767,
+    "merged_squash": "ab311429",
     "merged_history": [
+      {
+        "pr": 767,
+        "squash": "ab311429",
+        "spec": "053 Slice A",
+        "tier": 2,
+        "date": "2026-07-23"
+      },
       {
         "pr": 766,
         "squash": "51a69a03",
@@ -244,11 +251,11 @@
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
     "analysis": "plans/specs/053-unit-label-formatter/analysis.md",
-    "branch": "feature/053-slice-a"
+    "branch": null
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
