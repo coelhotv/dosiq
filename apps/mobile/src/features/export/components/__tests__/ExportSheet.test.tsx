@@ -49,7 +49,7 @@ jest.mock('@shared/hooks/useStockTracking', () => ({
 }))
 
 const mockWriteAsStringAsync = jest.fn()
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   cacheDirectory: 'file:///cache/',
   EncodingType: { UTF8: 'utf8' },
   writeAsStringAsync: (...args) => mockWriteAsStringAsync(...args),

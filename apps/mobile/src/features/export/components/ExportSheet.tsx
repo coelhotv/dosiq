@@ -10,7 +10,9 @@ import { useState, useMemo, useCallback } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import * as FileSystem from 'expo-file-system'
+// SDK 54: API legada movida p/ subpath — comportamento idêntico, só o import muda (bump
+// estrutural). Migração p/ File/Paths (API nova) é PR 1.2 desta spec (structural ≠ behavioral).
+import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
