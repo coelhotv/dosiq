@@ -110,7 +110,7 @@ function useProtocolFormDerived(form, medicine) {
   // concentração do medicamento (dosage_per_pill = mg/ml) — não pede densidade.
   const needsDensity =
     isLiquid && form.values.intake_unit && form.values.intake_unit !== 'ml' && !isMg
-  const densityLabel = form.values.intake_unit === 'UI' ? '💧 Densidade: UI por ml' : '💧 Densidade: Gotas por ml'
+  const densityLabel = form.values.intake_unit === 'UI' ? '💧 Densidade: UI por mL' : '💧 Densidade: Gotas por mL'
   const densityHint =
     form.values.intake_unit === 'UI' ? 'Geralmente 100 UI por mL' : 'Geralmente 20 gotas por mL'
   const defaultDensity = form.values.intake_unit === 'UI' ? 100 : 20

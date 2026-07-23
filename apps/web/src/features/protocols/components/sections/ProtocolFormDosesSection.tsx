@@ -262,7 +262,7 @@ export default function ProtocolFormDosesSection({
   // 2026-06-12); ml é dose direta.
   const needsDensity =
     isLiquid && formData.intake_unit && formData.intake_unit !== 'ml' && formData.intake_unit !== 'mg'
-  const densityLabel = formData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
+  const densityLabel = formData.intake_unit === 'UI' ? 'UI por mL' : 'Gotas por mL'
   const densityHint =
     formData.intake_unit === 'UI' ? 'Geralmente 100 UI por mL' : 'Geralmente 20 gotas por mL'
   const defaultDensity = formData.intake_unit === 'UI' ? 100 : 20
