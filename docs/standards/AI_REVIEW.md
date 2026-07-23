@@ -45,6 +45,16 @@ RC6_MEASURE=1 RC6_PACK_FILTER=1 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>
 ```
 Os packs listados DEVEM cobrir o domínio tocado (PR de bot → `notifications` tem que aparecer; se não, o mapa não casou o caminho — não confie no filtro).
 
+**Status da validação do filtro (056/PO-5 — 1 de 2 PRs limpos):**
+- **#768** (Slice B da 053) — A/B **limpo** (mesmo commit nos dois runs): os 3 findings reais
+  apareceram nos DOIS runs (**zero recall perdido**); 6 findings só no não-filtrado, **todos
+  refutados** na verificação ⇒ FP descartado é ganho. Pack `notifications` confirmado.
+- **#767** (Slice A) — **metodologia contaminada** (fix aplicado entre o run filtrado e o baseline)
+  ⇒ não conta como validação. Packs bateram o esperado.
+- ⚠️ **Não flipar o default ainda** — falta 1 A/B limpo. Protocolo: rodar filtrado → baseline
+  não-filtrado **no MESMO commit** → só então aplicar fixes. Severidade diverge entre runs
+  (`medium`↔`high`) — instabilidade já conhecida (#758/#765): triar no mérito, não pela severidade.
+
 ## Regras de operação (aprendidas em produção)
 
 - **RC6 roda UMA vez por PR.** Acima do budget não existe consistência entre runs — re-rodar
@@ -63,6 +73,17 @@ Os packs listados DEVEM cobrir o domínio tocado (PR de bot → `notifications` 
   pro main local — desatualizado, revisa o diff errado em silêncio (caso #756).
 - **Finding `introduced:true` critical/high** → corrigir ou justificar ANTES de pedir aprovação.
   `pre-existing` não bloqueia o PR.
+- **Alegação de "não compila" / "erro de sintaxe" é verificável em segundos — não aceitar de graça.**
+  Rodar `tsc -p <tsconfig> --noEmit` (+ `strict-island.sh` se cross-program) e conferir a linha citada.
+  O #767 alucinou um CRITICAL `introduced:true` (`typeof INTAKE_UNIT_LABELS.ml` como "TS2662") que o
+  `tsc` refutou na hora — mesma classe do crítico falso do #757. R-295 vale contra o revisor: a
+  verdade é o compilador/banco, nunca a alegação do modelo.
+- **`--post` pode bater rate limit secundário do GitHub (403).** O script agora distingue: 422
+  (linha fora do diff) descarta aquele comentário e re-tenta; **403 de rate limit preserva todos os
+  findings**, faz backoff 30/60/90s e, persistindo, salva o JSON em `$TMPDIR/rc6_review_pr<N>.json`
+  com exit 1. Publicar manualmente ou re-rodar só o `--post` depois — **NUNCA re-rodar o review**
+  (034-D.1). Caso original: #768, onde o loop antigo esvaziava os comentários um a um contra um
+  endpoint já limitado.
 
 ## Segurança (invariantes — NUNCA relaxar)
 
