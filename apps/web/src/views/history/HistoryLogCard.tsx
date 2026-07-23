@@ -3,6 +3,7 @@
 
 import { PencilLine, Trash2 } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
+import { formatConcentration } from '@dosiq/core'
 
 /**
  * Card de dose para o painel do dia no histórico.
@@ -25,12 +26,11 @@ export default function HistoryLogCard({ log, onEdit, onDelete }) {
   const medicineName = log.medicine?.name ?? 'Medicamento'
   const protocolName = log.protocol?.name ?? null
 
-  // Pílula de dosagem: "500mg" ou "10mcg" a partir dos dados do medicamento
+  // Pílula de dosagem: "500 mg" ou "10 mcg" a partir dos dados do medicamento
   const dosageLabel = (() => {
     const dpp = log.medicine?.dosage_per_pill
-    const unit = log.medicine?.dosage_unit ?? ''
     if (!dpp) return null
-    return `${dpp}${unit}`
+    return formatConcentration(dpp, log.medicine?.dosage_unit)
   })()
 
   // Quantidade tomada: "1 comprimido", "2 comprimidos", "0.5 comprimido"

@@ -13,7 +13,7 @@
 //  - cancelAll usa cancelTriggerNotifications() → cancela só triggers do Notifee,
 //       NÃO toca as notificações do expo-notifications (push remoto preservado).
 
-import { createDoseInstanceRepository, createCriticalAuditService, parseISO } from '@dosiq/core'
+import { createDoseInstanceRepository, createCriticalAuditService, parseISO, formatConcentration } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
   AndroidImportance,
@@ -190,7 +190,7 @@ export async function ensureAlarmCriticalChannel() {
 }
 
 function _getSingleDoseDesc(name, dosagePerPill, dosageUnit, quantity) {
-  const dosageInfo = dosagePerPill && dosageUnit ? ` (${dosagePerPill}${dosageUnit})` : ''
+  const dosageInfo = dosagePerPill && dosageUnit ? ` (${formatConcentration(dosagePerPill, dosageUnit)})` : ''
   const intakeInfo = ` • ${quantity ?? '1'} un.`
   return `${name}${dosageInfo}${intakeInfo}`
 }

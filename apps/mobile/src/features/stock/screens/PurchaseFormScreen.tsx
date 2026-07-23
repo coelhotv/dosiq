@@ -31,7 +31,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, Package } = LucideIcons as any
-import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS } from '@dosiq/core'
+import { stockCreateSchema, getTodayLocal, parseLocalDate, formatLocalDate, getNow, formatActiveIngredientShort, INJECTION_CONTAINERS, INJECTION_CONTAINER_LABELS, formatDose } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
 import FormSelect from '@shared/components/form/FormSelect'
@@ -394,7 +394,7 @@ function renderLiquidInputs(state) {
         <View style={styles.rowHalf}>
           <FormInput
             name="volume_per_bottle"
-            label="Volume/frasco (ml)"
+            label="Volume/frasco (mL)"
             required
             placeholder="100"
             keyboardType="decimal-pad"
@@ -412,7 +412,7 @@ function renderLiquidInputs(state) {
         maxLength={12}
         helperText={
           coerceDecimal(state.numBottles) > 0 && coerceDecimal(state.volumePerBottle) > 0
-            ? `💧 Total: ${coerceDecimal(state.numBottles) * coerceDecimal(state.volumePerBottle)} ml`
+            ? `💧 Total: ${formatDose(coerceDecimal(state.numBottles) * coerceDecimal(state.volumePerBottle), 'ml')}`
             : 'R$ — opcional'
         }
         value={state.totalPrice}

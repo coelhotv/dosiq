@@ -58,12 +58,11 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                       </span>
                     ) : med.dosagePerIntake && med.timesPerDay ? (
                       <span>
-                        {med.dosagePerIntake}
-                        {med.dosageUnit}
+                        {formatConcentration(med.dosagePerIntake, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
                           ({med.timesPerDay}x ao dia
-                          {med.dailyDosage ? `, ${med.dailyDosage}${med.dosageUnit}/dia` : ''})
+                          {med.dailyDosage ? `, ${formatConcentration(med.dailyDosage, med.dosageUnit)}/dia` : ''})
                         </span>
                       </span>
                     ) : med.dosagePerPill ? (

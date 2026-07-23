@@ -237,9 +237,9 @@ export default function TreatmentWizardStep2({
   // CONCENTRAÇÃO já cadastrada no medicamento (dosage_per_pill = mg/ml) — não pede nada.
   const needsDensity =
     isLiquid && protocolData.intake_unit && protocolData.intake_unit !== 'ml' && !isMg
-  const densityLabel = protocolData.intake_unit === 'UI' ? 'UI por ml' : 'Gotas por ml'
+  const densityLabel = protocolData.intake_unit === 'UI' ? 'UI por mL' : 'Gotas por mL'
   const densityHint =
-    protocolData.intake_unit === 'UI' ? 'Geralmente 100 UI por ml' : 'Geralmente 20 gotas por ml'
+    protocolData.intake_unit === 'UI' ? 'Geralmente 100 UI por mL' : 'Geralmente 20 gotas por mL'
   const defaultDensity = protocolData.intake_unit === 'UI' ? 100 : 20
   // Densidade (units_per_ml) já vive no medicamento (decisão 022) — gotas/UI herdam.
   const inheritedDensity = Number(medicine?.units_per_ml) > 0 ? medicine.units_per_ml : null

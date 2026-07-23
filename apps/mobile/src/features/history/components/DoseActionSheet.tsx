@@ -362,7 +362,7 @@ function DoseActionSheetHeader({ instance, medicineName, hasPill, statusMeta, on
               const unit = instance.dosage_unit?.toLowerCase()
               if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
               if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
-              return `${qty} ${instance.dosage_unit}`
+              return formatConcentration(qty, instance.dosage_unit)
             })()}
           </Text>
         )}

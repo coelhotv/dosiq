@@ -70,9 +70,8 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
   const dosageLabel = (() => {
     if (isLiquid) return formatConcentration(p.dosagePerPill, p.dosageUnit) || null
     const dose = p.expectedDose
-    const unit = p.dosageUnit ?? ''
     if (dose == null) return null
-    return `${dose}${unit}`
+    return formatConcentration(dose, p.dosageUnit)
   })()
 
   // Quantidade tomada (só faz sentido em taken). Unidade-aware (FP-4/ADR-050): não assume
@@ -90,7 +89,7 @@ export default function DoseEventCard({ event, onEdit, onDelete, timezone = 'Ame
     if (u === 'un') {
       return qty === 1 ? '1 unidade' : `${qty} unidades`
     }
-    return `${qty} ${unit}`
+    return formatConcentration(qty, unit)
   })()
 
   // Local de aplicação (031/US5) — só exibe quando presente (oral/legado = NULL = oculto).

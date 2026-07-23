@@ -2,7 +2,7 @@ import MedicineAutocomplete from '@medications/components/MedicineAutocomplete'
 import LaboratoryAutocomplete from '@medications/components/LaboratoryAutocomplete'
 import Button from '@shared/components/ui/Button'
 import { DOSAGE_UNITS, DOSAGE_UNIT_LABELS, REGULATORY_CATEGORIES, REGULATORY_CATEGORY_LABELS, PRESENTATIONS, PRESENTATION_LABELS, LIQUID_PRESENTATIONS } from '@schemas/medicineSchema'
-import { formatConcentration } from '@dosiq/core'
+import { formatConcentration, isLiquidDosageUnit } from '@dosiq/core'
 
 /** Renderiza o formulário de cadastro de novo medicamento. */
 function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, handleLaboratorySelect }: any) {
@@ -104,7 +104,7 @@ function NewMedicineForm({ medicineData, updateMedicine, handleMedicineSelect, h
           líquido-compatíveis (Líquido/Injetável), mas NÃO trava — injetável é líquido e
           dirige TTL/container (mesma regra do MedicineForm). */}
       {(() => {
-        const isLiquidUnit = medicineData.dosage_unit?.endsWith('/ml')
+        const isLiquidUnit = isLiquidDosageUnit(medicineData.dosage_unit)
         const effPresentation = isLiquidUnit
           ? (LIQUID_PRESENTATIONS.includes(medicineData.presentation) ? medicineData.presentation : 'liquido')
           : medicineData.presentation || 'comprimido'

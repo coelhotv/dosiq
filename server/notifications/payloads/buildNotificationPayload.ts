@@ -10,7 +10,7 @@ import {
 
 import { escapeMarkdownV2 } from '../../utils/formatters.js';
 
-import { DOSAGE_UNIT_LABELS } from '@dosiq/core';
+import { DOSAGE_UNIT_LABELS, INTAKE_UNIT_LABELS } from '@dosiq/core';
 
 import {
   getTimeOfDayGreeting,
@@ -143,7 +143,7 @@ export function buildNotificationPayload({ kind, data, context = {} }: { kind: s
 
 /**
  * Auxiliar para formatar a descrição clínica do medicamento com quantidade e dosagem.
- * Exemplo: "Xarope (10ml) • 1 un." ou "Dipirona (500mg) • 2 un."
+ * Exemplo: "Xarope (10 mL) • 1 un." ou "Dipirona (500 mg) • 2 un."
  */
 const formatMedicineDescription = (
   name: string,
@@ -157,12 +157,13 @@ const formatMedicineDescription = (
     // 012 Fase D (FR-015b c): case canônico do acrônimo — 'ui/ml' → 'UI/ml',
     // 'ui' → 'UI' (DOSAGE_UNIT_LABELS); 'mg'/'ml' inalterados. Sem label → unit cru.
     const unitLabel = (DOSAGE_UNIT_LABELS as Record<string, string>)?.[unit] || unit;
-    desc += ` (${dosagePerPill}${unitLabel})`;
+    desc += ` (${dosagePerPill} ${unitLabel})`;
   }
   if (qty !== undefined && qty !== null) {
     const formattedQty = String(qty).replace('.', ',');
     // Líquidos (022): unidade de tomada real (gotas/ml/UI) em vez do genérico "un.".
-    desc += intakeUnit ? ` • ${formattedQty} ${intakeUnit}` : ` • ${formattedQty} un.`;
+    const intakeUnitLabel = intakeUnit ? (INTAKE_UNIT_LABELS as Record<string, string>)?.[intakeUnit] || intakeUnit : null;
+    desc += intakeUnitLabel ? ` • ${formattedQty} ${intakeUnitLabel}` : ` • ${formattedQty} un.`;
   }
   return desc;
 };

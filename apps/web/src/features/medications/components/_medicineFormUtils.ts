@@ -1,9 +1,9 @@
 import { toTitleCase, toSentenceCase } from '@utils/stringUtils'
-import { LIQUID_PRESENTATIONS, coerceDecimal, cleanFloat } from '@dosiq/core'
+import { LIQUID_PRESENTATIONS, coerceDecimal, cleanFloat, isLiquidDosageUnit } from '@dosiq/core'
 import { normalizeRegulatoryCategory } from '@schemas/medicineSchema'
 
-// Líquido := dosage_unit termina em '/ml' (decisão-mãe 022). Único ponto de verdade na UI web.
-export const isLiquidUnit = (dosageUnit) => Boolean(dosageUnit?.endsWith('/ml'))
+// Líquido := dosage_unit termina em '/ml' (decisão-mãe 022, 053: helper único no core).
+export const isLiquidUnit = isLiquidDosageUnit
 
 // Densidade padrão (gotas/ml) sugerida quando o usuário escolhe unidade líquida (ADR-058).
 export const DEFAULT_UNITS_PER_ML = 20

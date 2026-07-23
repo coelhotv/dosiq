@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Check, Clock, AlertCircle } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
-import { getNow, parseLocalDate, getUserTime, parseISO, getTodayLocal } from '@dosiq/core'
+import { getNow, parseLocalDate, getUserTime, parseISO, getTodayLocal, formatConcentration } from '@dosiq/core'
 
 // Config de status por estado da dose (LOOKUP_TABLE)
 const _STATUS_CONFIG = {
@@ -42,8 +42,7 @@ function _isWithinTwoHours(scheduledTime) {
 function _buildDosageLabel(protocol, medicine) {
   const qty = protocol?.dosage_per_intake || 1
   const perPill = medicine?.dosage_per_pill
-  const unit = medicine?.dosage_unit || 'mg'
-  return perPill ? `${qty} un. de ${perPill}${unit}` : `${qty} un.`
+  return perPill ? `${qty} un. de ${formatConcentration(perPill, medicine?.dosage_unit || 'mg')}` : `${qty} un.`
 }
 
 function _buildDisplayName(medicine, protocol) {

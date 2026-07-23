@@ -7,7 +7,7 @@
 import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
-import { stockDoseMetrics } from '@dosiq/core'
+import { stockDoseMetrics, formatConcentration } from '@dosiq/core'
 import {
   buildSummaryCards,
   buildAttentionItems,
@@ -82,7 +82,7 @@ export function formatMedicinePresentation(medicine) {
     return 'Apresentacao nao cadastrada'
   }
 
-  return `${dosagePerPill} ${dosageUnit} por comprimido`
+  return `${formatConcentration(dosagePerPill, dosageUnit)} por comprimido`
 }
 
 /**
@@ -102,7 +102,7 @@ export function formatIntakeDose(protocol, medicine) {
   }
 
   const intakeAmount = pillsPerIntake * dosagePerPill
-  return `${pillsPerIntake} ${pillLabel} (${intakeAmount} ${dosageUnit})`
+  return `${pillsPerIntake} ${pillLabel} (${formatConcentration(intakeAmount, dosageUnit)})`
 }
 
 /**
@@ -141,7 +141,7 @@ export function formatDailyDose(protocol, medicine) {
   }
 
   const totalDosage = pillsPerIntake * timesPerDay * dosagePerPill
-  return `${totalDosage} ${dosageUnit}/dia`
+  return `${formatConcentration(totalDosage, dosageUnit)}/dia`
 }
 
 /**

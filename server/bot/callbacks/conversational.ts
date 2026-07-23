@@ -5,7 +5,7 @@ import { escapeMarkdownV2 } from '../../utils/formatters.js';
 import { createLogger } from '../logger.js';
 import { handleChatbotMessage } from '../commands/chatbot.js';
 import { getServerTimestamp, addDays } from '../../utils/dateUtils.js';
-import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
+import { createDoseInstanceRepository, computeStreakFromInstances, formatConcentration } from '@dosiq/core';
 
 const logger = createLogger('ConversationalCallbacks');
 const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any }); // TODO(040-strict): dual @supabase/supabase-js version (server 2.90.1 vs root 2.105.4)
@@ -176,6 +176,7 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
 
   const medicine = protocol?.medicine as any;
   const unit = medicine?.dosage_unit || 'x';
+  const formatQtyUnit = (qty: number) => formatConcentration(qty, unit);
   const pillsPerIntake = protocol?.dosage_per_intake || 1;
   const dosagePerPill = medicine?.dosage_per_pill || 1;
   
@@ -196,8 +197,8 @@ async function handleRegistrarMedSelected(bot, callbackQuery) {
   const keyboard = {
     inline_keyboard: [
       [
-        { text: `${defaultDosage}${unit} (Padrão)`, callback_data: `reg_qty:${defaultDosage}` },
-        { text: `${defaultDosage * 2}${unit}`, callback_data: `reg_qty:${defaultDosage * 2}` }
+        { text: `${formatQtyUnit(defaultDosage)} (Padrão)`, callback_data: `reg_qty:${defaultDosage}` },
+        { text: formatQtyUnit(defaultDosage * 2), callback_data: `reg_qty:${defaultDosage * 2}` }
       ],
       [
         { text: '0.5x (Metade)', callback_data: `reg_qty:${defaultDosage * 0.5}` },

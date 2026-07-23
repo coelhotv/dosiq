@@ -24,6 +24,7 @@ import {
   REGULATORY_CATEGORY_LABELS,
   normalizeRegulatoryCategory,
   cleanFloat,
+  isLiquidDosageUnit,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
@@ -46,7 +47,7 @@ const UNIT_OPTIONS = DOSAGE_UNITS.map((value) => ({
 }))
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
-const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
+const isLiquidUnit = isLiquidDosageUnit
 
 const PRESENTATION_OPTIONS = PRESENTATIONS.map((value) => ({
   value,
@@ -209,7 +210,7 @@ export default function MedicineFormScreen() {
     }
     // FR-031 (ADR-066): normaliza amount→razão. Líquido c/ denominador ≠ 1 → dosage_per_pill =
     // amount ÷ denominador + grava concentration_volume_ml; senão passthrough (coluna null).
-    const isLiquid = isLiquidUnit(form.values.dosage_unit)
+    const isLiquid = isLiquidUnit(form.values.dosage_unit as string | undefined)
     const rawDenom = isLiquid ? Number(String(form.values.concentration_volume_ml ?? '').replace(',', '.')) : NaN
     const denom = rawDenom > 0 ? rawDenom : 1
     // Gemini #661: dosage_per_pill vazio (permitido p/ suplemento) → Number('')=0 salvaria 0
@@ -291,7 +292,7 @@ export default function MedicineFormScreen() {
             </View>
           </View>
           {/* FR-031 (ADR-066): denominador do rótulo. Default 1 mL; muda só p/ Mounjaro etc. */}
-          {isLiquidUnit(form.values.dosage_unit) && (
+          {isLiquidUnit(form.values.dosage_unit as string | undefined) && (
             <FormInput
               name="concentration_volume_ml"
               label="Volume da concentração (mL no rótulo)"

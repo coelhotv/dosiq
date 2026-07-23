@@ -21,7 +21,7 @@ cd "$(dirname "$0")/.."
 MAX_B_PACKAGES=0          # packages/* nível-B transitivo (zerado no lote 6.5 — utils clínicos + chatbot + shared-data + storage + config tipados)
 MAX_B_WEB=37              # apps/web nível-B transitivo
 MAX_B_MOBILE=0            # apps/mobile nível-B transitivo (zerado no lote 6.4 — secureStore/asyncStorageAdapter/debugLog/haptics tipados)
-MAX_B_SERVER=36           # server/* nível-B transitivo (utils 25 + bot 10 + services 1)
+MAX_B_SERVER=31           # server/* nível-B transitivo (053 Slice B: notificationHelpers.ts tipado, -5)
 MAX_A_TESTS_CORE=0        # testes dos domínios A do core (zerado no lote 6.5 — triagem TIPA: narrow pós-expect via `!` + fixtures anvisaDatabase)
 MAX_A_TESTS_SERVER=0      # testes de server/notifications (zerado no lote 6.2)
 MAX_A_TESTS_WEB=0         # testes hooks web (já zerado — trava)

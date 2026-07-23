@@ -98,7 +98,7 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
                 const unit = item.dosage_unit?.toLowerCase()
                 if (!unit || ['mg', 'mcg', 'g'].includes(unit)) return `${qty} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
                 if (unit === 'un') return `${qty} ${qty === 1 ? 'unidade' : 'unidades'}`
-                return `${qty} ${item.dosage_unit}`
+                return formatConcentration(qty, item.dosage_unit)
               })()}
             </Text>
           )}

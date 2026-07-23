@@ -159,8 +159,8 @@ describe('buildNotificationPayload', () => {
 
       const payload = buildNotificationPayload({ kind: 'dose_reminder', data });
       expect(payload.title).toBe('💊 Remédio essencial');
-      expect(payload.pushBody).toBe('Hora de tomar Dipirona (500mg) • 2 un. — 12:00');
-      expect(payload.body).toContain('Hora de tomar *Dipirona \\(500mg\\) • 2 un\\.* — 12:00');
+      expect(payload.pushBody).toBe('Hora de tomar Dipirona (500 mg) • 2 un. — 12:00');
+      expect(payload.body).toContain('Hora de tomar *Dipirona \\(500 mg\\) • 2 un\\.* — 12:00');
     });
   });
 
@@ -206,9 +206,9 @@ describe('buildNotificationPayload', () => {
       
       expect(payload.title).toBe('📂 Plano essencial');
       expect(payload.body).toContain('Hora dos remédios de *Protocolo VIP* — 09:00\\.');
-      expect(payload.body).toContain('Med A \\(500mg\\) • 1 un\\.');
-      expect(payload.body).toContain('Med B \\(10ml\\) • 2 un\\.');
-      expect(payload.pushBody).toBe('Hora dos remédios de Protocolo VIP — 09:00.\n– Med A (500mg) • 1 un.\n– Med B (10ml) • 2 un.');
+      expect(payload.body).toContain('Med A \\(500 mg\\) • 1 un\\.');
+      expect(payload.body).toContain('Med B \\(10 ml\\) • 2 un\\.');
+      expect(payload.pushBody).toBe('Hora dos remédios de Protocolo VIP — 09:00.\n– Med A (500 mg) • 1 un.\n– Med B (10 ml) • 2 un.');
     });
   });
 
@@ -246,8 +246,8 @@ describe('buildNotificationPayload', () => {
       
       expect(payload.title).toBe('📋 Doses essenciais');
       expect(payload.body).toContain('Remédios essenciais agora — *22:00*\\.');
-      expect(payload.body).toContain('Med X \\(20mg\\) • 1,5 un\\.');
-      expect(payload.pushBody).toBe('Remédios essenciais agora — 22:00:\n– Med X (20mg) • 1,5 un.');
+      expect(payload.body).toContain('Med X \\(20 mg\\) • 1,5 un\\.');
+      expect(payload.pushBody).toBe('Remédios essenciais agora — 22:00:\n– Med X (20 mg) • 1,5 un.');
     });
   });
 

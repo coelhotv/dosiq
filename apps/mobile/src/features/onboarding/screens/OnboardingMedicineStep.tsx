@@ -14,6 +14,7 @@ import {
   DOSAGE_UNITS,
   DOSAGE_UNIT_LABELS,
   normalizeRegulatoryCategory,
+  isLiquidDosageUnit,
 } from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import { useMedicineDatabase } from '@shared/hooks/useMedicineDatabase'
@@ -39,7 +40,7 @@ const DEFAULT_INITIAL = { type: 'medicamento', dosage_unit: 'mg' }
 const VISIBLE_FIELDS = ['name', 'dosage_per_pill', 'dosage_unit']
 
 // Líquido := dosage_unit termina em '/ml' (decisão-mãe 022).
-const isLiquidUnit = (u) => Boolean(u?.endsWith('/ml'))
+const isLiquidUnit = isLiquidDosageUnit
 
 function formProps(form, name) {
   return {
