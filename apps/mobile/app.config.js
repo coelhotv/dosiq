@@ -136,6 +136,8 @@ module.exports = {
         }
       ],
       './withFirebaseFix.js',
+      // SDK 54 (RN 0.81): RCTConvert non-modular include vira erro sob use_frameworks static.
+      './withFirebasePodfileFix.js',
       './withAlarmPermissions.js',
       // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',

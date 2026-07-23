@@ -33,6 +33,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   1.4). `@notifee/react-native` sinalizado "unmaintained" pelo checker de metadata do
   `expo-doctor` (advisory, não é problema de versão) — adicionado a
   `expo.doctor.reactNativeDirectoryCheck.exclude` no `apps/mobile/package.json`.
+- 🔴 **Débito conhecido (achado ao vivo via PO, pós-abertura do PR, não estava no plano
+  original):** `npx expo run:ios` local (Xcode 26.3) quebra em DUAS classes de erro do
+  `@react-native-firebase` v21 sob o toolchain mais estrito do SDK 54 — (1) include não-modular de
+  headers React em módulos de framework (mitigado neste PR via `withFirebasePodfileFix.js`, config
+  plugin novo que injeta `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES` só nos Pods,
+  sem mudar comportamento) e (2) macro `RCT_EXPORT_METHOD` do submódulo `analytics` vira erro fatal
+  `-Wimplicit-int` (`RNFBAnalyticsModule.m` — **NÃO mitigado**; decisão do PO: não suprimir warning
+  de C às cegas, resolver na raiz). Android **não é afetado** (`npx expo run:android` local rodou
+  limpo). Bump de `@react-native-firebase` (v21→ versão compatível, medido em 25.x disponível no npm)
+  vira item **obrigatório do PR 1.3** desta spec (registrado no PLAYBOOK) — até lá, `expo run:ios`
+  local segue quebrado nesta branch de integração; nenhum dos gates automatizados (`expo-doctor`,
+  `tsc`, `lint`, `jest`) cobre `xcodebuild`, então isso não aparece em CI/gate — só em build real.
 
 ### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
 
