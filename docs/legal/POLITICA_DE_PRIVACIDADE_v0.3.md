@@ -129,7 +129,8 @@ Não vendemos dados pessoais. O compartilhamento existe só com **operadores** �
 | **Vercel** | hospedagem da versão para computador e das funções de servidor de aplicações (envio de notificações, chatbot) | hospedagem/computação na nuvem |
 | **Expo / push notifications** | token de notificação, para entregar lembretes no app do celular | serviço de push do ecossistema Expo (Android/iOS) |
 | **Push do navegador (computador)** | inscrição de notificação do navegador, para lembretes na versão para computador | padrão de push do navegador (tecnicamente "Web Push/VAPID"), sem operador terceiro adicional além do próprio navegador |
-| **Firebase Analytics** (Google) | eventos de uso do app do celular (telas vistas, ações realizadas) — não inclui conteúdo de doses/medicamentos no evento | serviço de analytics do Google, só no app do celular |
+| **PostHog** | eventos de uso do app do celular (telas vistas, ações realizadas) — não inclui conteúdo de doses/medicamentos no evento | serviço de analytics, só no app do celular |
+| **Sentry** | relatório automático de falhas/erros técnicos do app do celular, para diagnóstico e correção de bugs | serviço de monitoramento de erros, só no app do celular |
 | **Telegram** | identificador de chat, se você optar por vincular o bot | serviço de mensageria do próprio Telegram; a vinculação é sempre uma ação sua, nunca automática |
 | **Groq** | o texto da sua pergunta ao assistente + um resumo dos seus dados de tratamento, enviados como contexto para gerar a resposta | provedor de inferência de IA que processa a conversa. A Groq **não usa** o conteúdo das chamadas de API para treinar modelos, e retém logs de entrada/saída por até **30 dias**, só para resolução de falhas ou investigação de abuso — não como prática padrão de guarda. |
 
