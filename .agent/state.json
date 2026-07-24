@@ -9,7 +9,7 @@
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
     "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.2: migrar expo-file-system p/ API nova (File/Paths) no ExportSheet.tsx (T020-T024). Branch feature/055-w1-02-file-system a partir de feature/055-w1-sdk54. T024 hard stop cumprido (RC5 limpo + PO OK explícito via smoke em device real Android). Falta: commit/push/PR (--base feature/055-w1-sdk54) + RC6.",
+    "goal": "Coding 055 — PR 1.2: migrar expo-file-system p/ API nova (File/Paths) no ExportSheet.tsx (T020-T024), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1)",
     "goal_type": "feature",
     "code_review": {"status": "clean", "critical": 0, "auto_fixed": 1, "ask_items": 0},
     "spec_dirs": [
@@ -29,9 +29,18 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 770,
-    "merged_squash": "590d372a",
+    "merged_pr": 771,
+    "merged_squash": "816c14a0",
     "merged_history": [
+      {
+        "pr": 771,
+        "squash": "816c14a0",
+        "spec": "055 expo-55-target-api-36 (PR 1.2)",
+        "tier": 2,
+        "date": "2026-07-23",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Migração de expo-file-system p/ API nova (File/Paths) em ExportSheet.tsx (export LGPD, spec 008) — a API legada (/legacy) lança em runtime no SDK 55+, não é warning. create({overwrite:true}) evita colisão em re-export na mesma sessão (filename determinístico do core); write() é síncrono, dentro do try/catch existente. Forma da API verificada contra os .d.ts reais do pacote instalado (expo-file-system@19.0.23) e contra o source nativo Android (FileSystemFile.kt — write() usa Kotlin String.toByteArray() = UTF-8 por padrão), não assumida do plan.md. Testes reescritos com mock fiel (File/Paths como classes reais) + 2 testes negativos (T020a: re-export não lança; T020b: erro síncrono de write cai no catch). APP_VERSION 0.29.0→0.29.1 (patch, fase). 🛑 HARD STOP (T024, impacto UX/LGPD): RC5 rodado (1 achado mecânico auto-corrigido — comentário desatualizado), diff apresentado ao PO, aprovação explícita ANTES do push. Smoke em device real Android confirmou a API de escrita correta (export+share funcionaram) — achou 2 bugs de CONTEÚDO pré-existentes em @dosiq/core (BOM não respeitado pelo WPS Office Android + header '=== METADADOS ===' sem escape líder quebra fórmula no spreadsheet), registrados como AP-317, decisão do PO: não bloqueiam esta PR, correção em item separado. Gates: mobile 506/509 (61/62 suites), strict-island limpo (sem aumento de dívida), tsc apps/web 0 erros, lint 0 erros. RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): tier=1, 0 findings, payload 139,4K < teto 150K de amostragem silenciosa."
+      },
       {
         "pr": 770,
         "squash": "590d372a",
