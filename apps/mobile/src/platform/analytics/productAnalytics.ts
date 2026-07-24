@@ -58,10 +58,12 @@ export async function logEvent(eventName, params = {}) {
 // device vira uma "pessoa" diferente inflando a contagem de usuários.
 export async function setUserId(userId) {
   try {
-    // R-042: identify apenas com UUID interno — nunca PII
+    // R-042: identify apenas com UUID interno — nunca PII.
+    // Sentry e PostHog têm config INDEPENDENTE (sentryDsn ≠ posthogApiKey): não acoplar. Um
+    // early-return por causa do client PostHog ausente pularia o Sentry.setUser também, deixando
+    // o crash sem dono num build com Sentry ligado e PostHog não (RC6 PR #773).
     const c = getClient()
-    if (!c) return
-    c.identify(userId)
+    if (c) c.identify(userId)
     // Mesmo UUID no Sentry: crash sem dono não dá para cruzar com o relato de suporte,
     // nem para responder "quantas pessoas esse crash atingiu?".
     Sentry.setUser({ id: userId })

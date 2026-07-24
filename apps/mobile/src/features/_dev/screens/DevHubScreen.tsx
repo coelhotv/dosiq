@@ -297,6 +297,7 @@ export default function DevHubScreen({ navigation }) {
               lightTap()
               logEvent('dev_smoke_event', { source: 'devhub', platform: Platform.OS })
                 .then(() => Alert.alert('Dev — PostHog', 'Evento dev_smoke_event enviado.\n\nO envio é em lote: pode levar ~30s para aparecer no dashboard.'))
+                .catch((err) => Alert.alert('Dev — PostHog', err?.message ?? 'Erro ao enviar evento.'))
             }}
             style={styles.buttonCard}
           >
