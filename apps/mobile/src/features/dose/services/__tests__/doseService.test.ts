@@ -2,7 +2,7 @@
 // Framework: Jest (jest-expo) — rodar em apps/mobile/
 
 const mockLogEvent = jest.fn()
-jest.mock('../../../../platform/analytics/firebaseAnalytics', () => ({
+jest.mock('../../../../platform/analytics/productAnalytics', () => ({
   logEvent: (...args) => mockLogEvent(...args),
 }))
 

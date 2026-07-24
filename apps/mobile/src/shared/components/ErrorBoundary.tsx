@@ -1,10 +1,11 @@
-// ErrorBoundary.jsx — captura erros React não-tratados e reporta ao Crashlytics.
+// ErrorBoundary.tsx — captura erros React não-tratados e reporta ao Sentry.
 // Wrappa toda a árvore em AppRoot. Em prod, mostra fallback simples;
 // em dev, deixa o LogBox/RedBox padrão tomar conta (re-throw).
+// ADR-090: era Crashlytics; @react-native-firebase saiu (não compila sob Xcode 26.3/RN 0.81).
 
 import { Component } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
-import crashlytics from '@react-native-firebase/crashlytics'
+import * as Sentry from '@sentry/react-native'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
 // TODO(040-strict): props/state any — tipar melhor exige contrato children/error
@@ -19,13 +20,25 @@ export default class ErrorBoundary extends Component<any, { hasError: boolean }>
   }
 
   componentDidCatch(error: any, info: any) {
-    // Sempre reporta ao Crashlytics (mesmo em dev — útil para validar pipeline)
-    crashlytics().recordError(error, 'ErrorBoundary')
-    crashlytics().log(`ErrorBoundary caught: ${info?.componentStack ?? 'no stack'}`)
+    // Sempre reporta ao Sentry (mesmo em dev — útil para validar pipeline).
+    // Fail-silent: observabilidade nunca pode derrubar o fallback de erro.
+    try {
+      Sentry.addBreadcrumb({
+        category: 'react',
+        level: 'error',
+        message: `ErrorBoundary caught: ${info?.componentStack ?? 'no stack'}`,
+      })
+      Sentry.captureException(error, {
+        tags: { boundary: 'ErrorBoundary' },
+        contexts: { react: { componentStack: info?.componentStack ?? null } },
+      })
+    } catch {
+      // ignora — Sentry indisponível não pode quebrar o boundary
+    }
 
     if (__DEV__) {
       // Em dev, re-throw para o LogBox/RedBox aparecer
-      // (Crashlytics já gravou; queremos visibilidade local)
+      // (Sentry já gravou; queremos visibilidade local)
       console.error('[ErrorBoundary]', error, info)
     }
   }

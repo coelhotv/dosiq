@@ -18,7 +18,7 @@ export const EVENTS = {
   MEDICINE_DELETED: 'medicine_deleted',
 
   // Doses
-  DOSE_LOGGED: 'dose_logged',                  // medicine_name (sem PII clínico)
+  DOSE_LOGGED: 'dose_logged',                  // medicine_id (UUID opaco) + action opcional — nunca nome/PII clínico
   DOSE_LOGGED_BULK: 'dose_logged_bulk',         // count: número de doses registradas em batch
   DOSE_SKIPPED: 'dose_skipped',
 

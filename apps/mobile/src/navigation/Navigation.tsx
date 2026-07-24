@@ -43,7 +43,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
-import { logScreenView } from '../platform/analytics/firebaseAnalytics'
+import { logScreenView, setUserId, resetUser } from '../platform/analytics/productAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
@@ -58,6 +58,15 @@ function useAuthSession() {
   // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
   // - onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
+
+  // Identificação de usuário no PostHog/Sentry (ADR-090). AQUI, e não no LoginScreen: este efeito
+  // roda tanto no login novo quanto na sessão RESTAURADA do SecureStore — que é como o usuário
+  // entra no dia a dia. Identificar só no login explícito deixava o uso recorrente anônimo, e cada
+  // device virava uma pessoa distinta no dashboard, inflando a contagem de usuários.
+  useEffect(() => {
+    if (!session?.user?.id) return
+    setUserId(session.user.id)
+  }, [session?.user?.id])
 
   // Heartbeat de atividade (spec 057 / ADR-089): independente de push (R-239 intocada — nunca
   // pede permissão nenhuma), roda em cold start e em toda volta a foreground; o throttle de 24h
@@ -112,6 +121,9 @@ function useAuthSession() {
 
       if (event === 'SIGNED_OUT') {
         debugLog('Navigation', 'User signed out, clearing caches...')
+        // Encerra a identificação ANTES de limpar cache: a partir daqui os eventos voltam a ser
+        // anônimos. Sem isto, quem logar depois neste device herdaria a pessoa anterior.
+        resetUser()
         try {
           await AsyncStorage.multiRemove([
             '@dosiq/today-snapshot',

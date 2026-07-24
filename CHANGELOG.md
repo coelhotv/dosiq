@@ -64,6 +64,54 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   e seria 1 linha) — o smoke do fluxo de exportação era obrigatório nos dois caminhos e havia folga
   de prazo (~40 dias) para pagar a dívida agora em vez de sob pressão quando o `/legacy` sair.
 
+### Firebase sai; observabilidade vira Sentry + PostHog (spec 055, PR 1.3b, ADR-090)
+
+- **Chore** (`minor`/comportamental, mobile — `APP_VERSION` permanece `0.29.1`, já bumpada no PR 1.1;
+  não há mudança visível de tela, mas troca o provedor de crash e de analytics): removidos
+  `@react-native-firebase/{app,analytics,crashlytics}` e adicionados `@sentry/react-native` (crash) +
+  `posthog-react-native` (analytics de produto) + `expo-localization` (peer do PostHog).
+- **Por quê:** sob Xcode 26.3 / RN 0.81 (SDK 54) o `@react-native-firebase` **não compila** com
+  `useFrameworks: 'static'` — o clang recusa a declaração concorrente de `RCTBridgeModule`
+  (`must be imported from module 'RNFBApp.RNFBAppModule'`) e a macro `RCT_EXPORT_METHOD` cascateia
+  `-Wimplicit-int` fatal. Bug upstream sem fix (invertase #8988/#8827, expo #39607); o bump v21→v25
+  reproduz o MESMO erro e `useFrameworks: 'dynamic'` só troca de buraco (quebra o link do
+  `react-native-netinfo`). Era o único blocker de `npx expo run:ios` — sem isso nenhum build iOS sai.
+- O wrapper de analytics mantém a **mesma API exportada** (`logEvent`/`setUserId`/`setUserProperty`/
+  `logScreenView`), então os 8 call sites não mudaram: só o arquivo foi renomeado
+  `firebaseAnalytics.ts` → `productAnalytics.ts`. `ErrorBoundary` passou a `Sentry.captureException`
+  (+ breadcrumb com o `componentStack`); `cold_start` (loading time) virou evento PostHog.
+- Config: `useFrameworks: 'static'` volta **limpo** — os dois config plugins que só existiam por causa
+  do firebase (`withFirebaseFix.js`, `withFirebasePodfileFix.js`) foram deletados. `google-services.json`
+  e `GoogleService-Info.plist` **ficam**: o push Android usa o transporte FCM via `expo-notifications`,
+  que não depende do pacote RNFB.
+- Sem chave configurada (`EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_POSTHOG_API_KEY`) ambos viram no-op
+  silencioso e o app sobe normal — observabilidade nunca bloqueia boot. Host PostHog é o **US**
+  (US-Virginia): app é brasil-only e o backbone bra/us é maior que bra/eu.
+- **Identificação de usuário corrigida na largada (achado do smoke do PO):** o `identify` só era
+  chamado no login EXPLÍCITO (`LoginScreen`) — herança do Firebase, mesmo furo. Como o uso diário
+  entra por sessão RESTAURADA do SecureStore, todo esse tráfego ficava anônimo e cada device virava
+  uma "pessoa" distinta, inflando a contagem de usuários (visto no dashboard: 2 devices = 2 pessoas
+  com os mesmos eventos). A identificação passou para o `useAuthSession` (`Navigation.tsx`), que
+  cobre login e restauração no MESMO ponto, e o call site do `LoginScreen` saiu — a regra ganhou um
+  dono só. Adicionado `resetUser()` no `SIGNED_OUT`: sem ele, num device compartilhado os eventos do
+  próximo usuário seriam atribuídos à pessoa anterior — misturar dado de saúde entre pessoas é pior
+  que o anonimato. Os dois andam juntos. O mesmo UUID vai para o `Sentry.setUser` (crash sem dono
+  não cruza com relato de suporte). R-042 respeitada: só UUID interno, nunca PII. A consolidação dos
+  eventos anônimos pré-login é nativa do PostHog (`identify` mescla o `distinct_id` corrente) — não
+  há código de merge do nosso lado.
+- **Host do PostHog: endpoint PÚBLICO (`us.i.posthog.com`), não o privado.** A doc do PostHog separa
+  por tipo de endpoint: público (ingestão de evento com project API key, que é o nosso caso) vs
+  privado (`us.posthog.com`, API de query/sourcemap com personal API key). O
+  `eas integrations:posthog:connect` escreve o privado em `.env.local` porque scaffolda o error
+  tracking junto — que aqui está desligado (crash é Sentry). Divergência silenciosa: os dois hosts
+  respondem, então o evento não some com erro, só vai pro caminho errado.
+- 🔴 **Fronteira com a spec 051 (OTA):** PostHog entra só como analytics de produto + métrica de adoção
+  de frota. Continua **proibido** usar feature flag do PostHog como gating de conteúdo OTA (governance
+  051 §125) ou colocá-lo no caminho do kill switch `min_app_version` (boot-blocking, fail-open — AP-303).
+- Perde-se o console Firebase (histórico de crash/analytics); frota de ~25 ativos, perda baixa. Session
+  replay do PostHog fica DESLIGADO e o autocapture também (as telas já são registradas explicitamente
+  por `logScreenView`) — os dois queimariam cota do free tier à toa.
+
 ### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
 
 - **Feat** (`no-user-impact` — telemetria de infra, nada muda visível pro usuário): a única fonte de

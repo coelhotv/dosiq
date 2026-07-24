@@ -9,7 +9,7 @@
 import { View, Text, Pressable, Linking, StyleSheet } from 'react-native'
 import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
-import { logEvent } from '../../../platform/analytics/firebaseAnalytics'
+import { logEvent } from '../../../platform/analytics/productAnalytics'
 
 interface HealthConsentCheckboxProps {
   checked: boolean

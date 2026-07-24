@@ -16,7 +16,7 @@
 import * as Notifications from 'expo-notifications'
 import { confirmTitrationSwitch } from '@features/treatments/services/titrationService'
 import { triggerTitrationRefresh } from '@features/treatments/services/titrationRefreshBus'
-import { logEvent } from '@platform/analytics/firebaseAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
 
 /** DEVE casar com `TITRATION_CATEGORY_ID` do expoPushChannel — o payload referencia este id. */
