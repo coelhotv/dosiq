@@ -46,6 +46,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   local segue quebrado nesta branch de integração; nenhum dos gates automatizados (`expo-doctor`,
   `tsc`, `lint`, `jest`) cobre `xcodebuild`, então isso não aparece em CI/gate — só em build real.
 
+### `expo-file-system`: migração para API nova (spec 055, PR 1.2)
+
+- **Fix** (`patch`, mobile `0.29.0 → 0.29.1`): `ExportSheet.tsx` (exportação LGPD de dados de
+  saúde, spec 008) migrado de `expo-file-system/legacy` (`writeAsStringAsync`/`cacheDirectory`,
+  shim adotado no PR 1.1) para a API nova `File`/`Paths` do SDK 55+. A legada **lança** em runtime
+  no 55 (`legacyWarnings.ts:56`) — não é aviso de depreciação — e o teste antigo mockava o módulo
+  inteiro, mantendo a suíte verde com o recurso quebrado (mesma classe do R-295, agravada por ser
+  direito legal de portabilidade).
+- Duas armadilhas de semântica pagas: `File.create()` **lança** se o arquivo já existe — o filename
+  do core é determinístico, então um 2º export na mesma sessão colidiria sem `{ overwrite: true }`
+  (teste negativo T020a prova a re-exportação); `File.write()` é **síncrono** (retorna `void`, não
+  `Promise`) — confirmado que o erro segue caindo no `try/catch` existente (teste negativo T020b).
+- Mock de teste reescrito para a FORMA do módulo novo (`File`/`Paths` como classes/getter reais,
+  não string) — uma próxima breaking change no pacote quebra o teste, não só o runtime.
+- Decisão do PO (2026-07-21): migrar para a API nova em vez de manter o shim `/legacy` (que existe
+  e seria 1 linha) — o smoke do fluxo de exportação era obrigatório nos dois caminhos e havia folga
+  de prazo (~40 dias) para pagar a dívida agora em vez de sob pressão quando o `/legacy` sair.
+
 ### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
 
 - **Feat** (`no-user-impact` — telemetria de infra, nada muda visível pro usuário): a única fonte de

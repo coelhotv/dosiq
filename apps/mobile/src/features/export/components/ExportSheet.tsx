@@ -1,7 +1,7 @@
 // ExportSheet.jsx — sheet nativo de export LGPD (spec 008, Adendo 2026-07-13, FR-001/011).
 //
 // Imita a estrutura do ExportDialog.tsx web (toggle JSON/CSV + checkboxes de escopo),
-// mas entrega o arquivo pelo caminho nativo: FileSystem.cacheDirectory + Sharing.shareAsync.
+// mas entrega o arquivo pelo caminho nativo: File(Paths.cache) + Sharing.shareAsync.
 // SEM filtro de período (decisão desta sessão — o período fica só na web); `dateRange: null`
 // sempre. Formatadores/inventário já vivem em @dosiq/core — este componente só orquestra
 // UI + fetch + entrega, não monta conteúdo de arquivo (R-010: States → Memos → Effects → Handlers).
@@ -10,9 +10,11 @@ import { useState, useMemo, useCallback } from 'react'
 import { View, Text, Modal, Pressable, StyleSheet, Platform, StatusBar, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-// SDK 54: API legada movida p/ subpath — comportamento idêntico, só o import muda (bump
-// estrutural). Migração p/ File/Paths (API nova) é PR 1.2 desta spec (structural ≠ behavioral).
-import * as FileSystem from 'expo-file-system/legacy'
+// SDK 55+: API nova (File/Paths) — a legada (subpath /legacy) lança em runtime desde o 55
+// (legacyWarnings.ts:56). create() precisa overwrite:true (filename do core é determinístico ⇒
+// 2º export na mesma sessão colide sem isso); write() é SÍNCRONO (void, não Promise) — spec 055
+// PR 1.2.
+import { File, Paths } from 'expo-file-system'
 import * as Sharing from 'expo-sharing'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
@@ -319,7 +321,7 @@ export default function ExportSheet({ visible, onClose }) {
         return
       }
 
-      const file = await exportService.buildExport({
+      const exportResult = await exportService.buildExport({
         format,
         scope: exportScope,
         // Paridade com a web: o período filtra SÓ os registros de dose; cada borda é
@@ -328,13 +330,15 @@ export default function ExportSheet({ visible, onClose }) {
         now: getNow(),
       })
 
-      const fileUri = FileSystem.cacheDirectory + file.filename
-      await FileSystem.writeAsStringAsync(fileUri, file.content, {
-        encoding: FileSystem.EncodingType.UTF8,
-      })
+      const file = new File(Paths.cache, exportResult.filename)
+      // overwrite:true — filename do core é determinístico (T020a); sem isso, um 2º export
+      // na mesma sessão lançaria em create(). write() é síncrono (void); segue dentro do
+      // mesmo try/catch (T020b).
+      file.create({ overwrite: true })
+      file.write(exportResult.content)
 
-      await Sharing.shareAsync(fileUri, {
-        mimeType: file.mimeType,
+      await Sharing.shareAsync(file.uri, {
+        mimeType: exportResult.mimeType,
         UTI: format === 'json' ? 'public.json' : 'public.comma-separated-values-text',
       })
 
