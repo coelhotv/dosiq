@@ -48,12 +48,45 @@ jest.mock('@shared/hooks/useStockTracking', () => ({
   useStockTracking: jest.fn(),
 }))
 
-const mockWriteAsStringAsync = jest.fn()
-jest.mock('expo-file-system/legacy', () => ({
-  cacheDirectory: 'file:///cache/',
-  EncodingType: { UTF8: 'utf8' },
-  writeAsStringAsync: (...args) => mockWriteAsStringAsync(...args),
-}))
+// API nova (SDK 55+): File/Paths substituem writeAsStringAsync/cacheDirectory. O mock replica
+// as duas armadilhas medidas — create() lança em re-export do mesmo filename (salvo overwrite)
+// e write() lança de forma síncrona — pra provar que o try/catch do componente cobre as duas
+// (T020, ANTES da migração T021). Assertar a FORMA do módulo (File/Paths existem como export)
+// garante que uma próxima breaking change (rename/remoção) quebre o teste, não só o runtime.
+const mockCreateCalls = []
+const mockWriteCalls = []
+const mockExistingUris = new Set()
+let mockWriteError = null
+
+jest.mock('expo-file-system', () => {
+  class MockDirectory {
+    uri: string
+    constructor(uri) {
+      this.uri = uri
+    }
+  }
+  class MockFile {
+    uri: string
+    constructor(...uris) {
+      this.uri = uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/')
+    }
+    create(options: { overwrite?: boolean } = {}) {
+      mockCreateCalls.push({ uri: this.uri, options })
+      if (mockExistingUris.has(this.uri) && !options.overwrite) {
+        throw new Error(`File already exists: ${this.uri}`)
+      }
+      mockExistingUris.add(this.uri)
+    }
+    write(content) {
+      if (mockWriteError) throw mockWriteError
+      mockWriteCalls.push({ uri: this.uri, content })
+    }
+  }
+  return {
+    File: MockFile,
+    Paths: { cache: new MockDirectory('file:///cache') },
+  }
+})
 
 const mockIsAvailableAsync = jest.fn()
 const mockShareAsync = jest.fn()
@@ -69,6 +102,10 @@ describe('ExportSheet', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCreateCalls.length = 0
+    mockWriteCalls.length = 0
+    mockExistingUris.clear()
+    mockWriteError = null
     useStockTracking.mockReturnValue({ enabled: true, pausedAt: null, ready: true, refresh: jest.fn() })
     mockIsAvailableAsync.mockResolvedValue(true)
     mockBuildExport.mockResolvedValue({
@@ -120,23 +157,56 @@ describe('ExportSheet', () => {
     expect(mockBuildExport.mock.calls[0][0].scope.includeStock).toBe(true)
   })
 
-  it('caminho de sucesso: writeAsStringAsync + shareAsync com o filename do core', async () => {
+  it('caminho de sucesso: File.create({overwrite:true}) + write() + shareAsync com o filename do core', async () => {
     const { getByText } = render(<ExportSheet visible onClose={onClose} />)
 
     fireEvent.press(getByText('Exportar'))
 
     await waitFor(() => expect(mockShareAsync).toHaveBeenCalled())
 
-    expect(mockWriteAsStringAsync).toHaveBeenCalledWith(
-      'file:///cache/dosiq_export_20260713.json',
-      '{}',
-      expect.objectContaining({ encoding: 'utf8' }),
-    )
+    expect(mockCreateCalls).toEqual([
+      { uri: 'file:///cache/dosiq_export_20260713.json', options: { overwrite: true } },
+    ])
+    expect(mockWriteCalls).toEqual([
+      { uri: 'file:///cache/dosiq_export_20260713.json', content: '{}' },
+    ])
     expect(mockShareAsync).toHaveBeenCalledWith(
       'file:///cache/dosiq_export_20260713.json',
       expect.objectContaining({ mimeType: 'application/json;charset=utf-8' }),
     )
     expect(onClose).toHaveBeenCalled()
+  })
+
+  // T020 — testes de caminho negativo ANTES da migração (R-270/plan 055 PR 1.2): o mock antigo
+  // escondia os dois failure modes medidos da API nova. Sem overwrite:true, create() no filename
+  // determinístico do core colidiria num 2º export da mesma sessão; sem isso provado, migrar não
+  // prova nada.
+  it('T020a: re-exportar na mesma sessão (mesmo filename) NÃO lança — create() usa overwrite:true', async () => {
+    const { getByText } = render(<ExportSheet visible onClose={onClose} />)
+
+    fireEvent.press(getByText('Exportar'))
+    await waitFor(() => expect(mockShareAsync).toHaveBeenCalled())
+
+    fireEvent.press(getByText('Exportar'))
+    await waitFor(() => expect(mockShareAsync).toHaveBeenCalledTimes(2))
+
+    expect(mockCreateCalls).toHaveLength(2)
+    expect(mockCreateCalls[1]).toEqual({
+      uri: 'file:///cache/dosiq_export_20260713.json',
+      options: { overwrite: true },
+    })
+  })
+
+  it('T020b: erro síncrono de write() cai no catch e mostra mensagem ao usuário', async () => {
+    mockWriteError = new Error('disk full')
+
+    const { getByText, findByText } = render(<ExportSheet visible onClose={onClose} />)
+
+    fireEvent.press(getByText('Exportar'))
+
+    expect(await findByText('Erro ao exportar dados. Tente novamente.')).toBeTruthy()
+    expect(mockShareAsync).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   // O picker de data é imperativo no Android (DateTimePickerAndroid) e inline no iOS; o

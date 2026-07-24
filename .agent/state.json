@@ -9,8 +9,9 @@
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
     "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.1: bump Expo 53→54 (T010-T017), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1)",
+    "goal": "Coding 055 — PR 1.2: migrar expo-file-system p/ API nova (File/Paths) no ExportSheet.tsx (T020-T024). Branch feature/055-w1-02-file-system a partir de feature/055-w1-sdk54. T024 hard stop cumprido (RC5 limpo + PO OK explícito via smoke em device real Android). Falta: commit/push/PR (--base feature/055-w1-sdk54) + RC6.",
     "goal_type": "feature",
+    "code_review": {"status": "clean", "critical": 0, "auto_fixed": 1, "ask_items": 0},
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
