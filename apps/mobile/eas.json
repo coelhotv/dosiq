@@ -4,6 +4,9 @@
   },
   "build": {
     "development": {
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
       "android": {
         "buildType": "apk"
       },
@@ -12,6 +15,9 @@
       }
     },
     "production": {
+      "env": {
+        "SENTRY_ALLOW_FAILURE": "true"
+      },
       "ios": {
         "image": "latest"
       },

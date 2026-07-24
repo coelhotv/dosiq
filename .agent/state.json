@@ -3,15 +3,20 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged_to_integration",
+    "status": "completed",
     "tier": 2,
     "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
     "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.3: target36 explícito + revalidação dos 6 config plugins (T030-T036), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1). T029 (bump firebase) BLOQUEADO, virou PR 1.3b (ADR-090, Firebase→Sentry/PostHog)",
+    "goal": "Coding 055 — PR 1.3b: dropar @react-native-firebase → Sentry + PostHog (ADR-090, T037-T039) + identificação de uid; branch feature/055-w1-firebase-observability-swap sobre integração feature/055-w1-sdk54. PO-7 fechado.",
     "goal_type": "feature",
-    "code_review": {"status": "clean", "critical": 0, "auto_fixed": 0, "ask_items": 0},
+    "code_review": {
+      "status": "clean",
+      "critical": 0,
+      "auto_fixed": 0,
+      "ask_items": 0
+    },
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -299,9 +304,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 252,
-    "anti_patterns_count": 310,
+    "anti_patterns_count": 313,
     "decisions_count": 88,
     "contracts_count": 31,
     "distillation_due": false
@@ -311,7 +316,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-24T12:00:00.000000+00:00"
+    "index_loaded_at": "2026-07-24T21:40:00Z"
   },
   "code_review": {
     "status": "clean",

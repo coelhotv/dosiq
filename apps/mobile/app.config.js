@@ -106,8 +106,17 @@ module.exports = {
       ],
     },
     plugins: [
-      '@react-native-firebase/app',
-      '@react-native-firebase/crashlytics',
+      // ADR-090: @react-native-firebase saiu (não compila sob Xcode 26.3/RN 0.81 + static).
+      // Crash reporting = Sentry. org/project vêm do env (SENTRY_ORG/SENTRY_PROJECT) e o upload
+      // de sourcemap exige SENTRY_AUTH_TOKEN no build (segredo EAS, NUNCA EXPO_PUBLIC_*).
+      ['@sentry/react-native/expo', {
+        // org/project NÃO são segredo (aparecem na URL do dashboard); só o AUTH_TOKEN é.
+        organization: process.env.SENTRY_ORG || 'dosiq-d4',
+        project: process.env.SENTRY_PROJECT || 'dosiq-app',
+        url: 'https://sentry.io/',
+      }],
+      // PostHog precisa do locale do device (peer dep de posthog-react-native).
+      'expo-localization',
       // sounds: copia os .wav p/ android res/raw + iOS bundle → notifee/expo
       // resolvem por nome ('alarm_dose'/'push_chime'). Sem isso o canal cai no
       // som padrão do SO (Spec 001 — bug visto no dumpsys: mSound=default).
@@ -117,13 +126,10 @@ module.exports = {
       'expo-font',
       ['expo-build-properties', {
         ios: {
-          // T029 (spec 055) tentou 'dynamic' p/ contornar o crash de módulo do firebase v25 sob
-          // 'static' (RCTBridgeModule duplicado RNFBApp/React-Core) — resolveu ESSE bug, mas abriu
-          // outro: react-native-netinfo (e possivelmente outros pods RN da comunidade) não linka
-          // como framework dinâmico (RCTEventEmitter ausente no link do PRÓPRIO framework do pod,
-          // antes do app existir — não é flag de app, é o pod que não é dynamic-framework-safe).
-          // Mantido 'static' (config que builda hoje com v21 + withFirebasePodfileFix) até decisão
-          // do PO sobre qual bug atacar. Ver withFirebasePodfileFix.js e journal do PR 1.3.
+          // 'static' LIMPO (ADR-090): com o firebase fora, some o conflito de módulo Obj-C que
+          // exigia o withFirebasePodfileFix (CLANG_ALLOW_NON_MODULAR_INCLUDES) e some o motivo de
+          // cogitar 'dynamic' (que quebrava o link do react-native-netinfo — pod da comunidade não
+          // dynamic-framework-safe). Sentry e PostHog são pods RN puros e compilam sob static.
           useFrameworks: 'static'
         },
         android: {
@@ -146,9 +152,6 @@ module.exports = {
           "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
         }
       ],
-      './withFirebaseFix.js',
-      // SDK 54 (RN 0.81): RCTConvert non-modular include vira erro sob use_frameworks static.
-      './withFirebasePodfileFix.js',
       './withAlarmPermissions.js',
       // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',

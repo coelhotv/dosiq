@@ -1,5 +1,4 @@
 // LoginScreen.jsx — autenticação com Supabase native
-// R4-003: supabase client usa SecureStore via secureStoreAuthStorage
 // R4-007: teclado e safe area já nascendo corretos
 // Fluxo: email + senha → signInWithPassword → navega para Home
 
@@ -19,8 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native'
 import { signInWithEmail } from '../platform/auth/authService'
 import { ROUTES } from '../navigation/routes'
-import { supabase } from '../platform/supabase/nativeSupabaseClient'
-import { logEvent, setUserId } from '../platform/analytics/firebaseAnalytics'
+import { logEvent } from '../platform/analytics/productAnalytics'
 import { EVENTS } from '../platform/analytics/analyticsEvents'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 
@@ -45,10 +43,9 @@ export default function LoginScreen({ navigation }) {
       return
     }
 
-    // R-042: setUserId apenas com UUID interno — nunca PII
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user?.id) await setUserId(user.id)
-
+    // A identificação (PostHog identify + Sentry user) NÃO acontece aqui: vive no useAuthSession
+    // (Navigation.tsx), que dispara tanto neste login quanto na sessão restaurada. Duplicar aqui
+    // criaria dois donos para a mesma regra — e só um deles cobriria o uso recorrente.
     await logEvent(EVENTS.LOGIN, { method: 'email' })
   }
 

@@ -15,7 +15,7 @@ import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
 import { triggerDoseActivityRefresh } from '@platform/doseActivity/doseActivityRefreshBus'
 import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNow } from '@dosiq/core'
-import { logEvent } from '@platform/analytics/firebaseAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
 
