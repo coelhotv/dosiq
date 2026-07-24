@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 export default function FormActions({
@@ -18,9 +19,12 @@ export default function FormActions({
 }) {
   // Cor de fundo do botão primário (destruidor ou normal)
   const primaryBgColor = destructive ? colors.status.error : colors.primary[700]
+  // Footer sticky fora de SafeAreaView bottom nos callers (edges=['top']) — edge-to-edge
+  // Android 16 desenha por baixo da gesture bar sem este inset (T041, spec 055 PR 1.4).
+  const insets = useSafeAreaInsets()
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { paddingBottom: Math.max(spacing[3], insets.bottom) }]}>
       {/* Botão primário */}
       <TouchableOpacity
         style={[
