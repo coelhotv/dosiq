@@ -9,9 +9,9 @@
     "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
     "spec_dir": "plans/specs/055-expo-55-target-api-36",
     "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.2: migrar expo-file-system p/ API nova (File/Paths) no ExportSheet.tsx (T020-T024), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1)",
+    "goal": "Coding 055 — PR 1.3: target36 explícito + revalidação dos 6 config plugins (T030-T036), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1). T029 (bump firebase) BLOQUEADO, virou PR 1.3b (ADR-090, Firebase→Sentry/PostHog)",
     "goal_type": "feature",
-    "code_review": {"status": "clean", "critical": 0, "auto_fixed": 1, "ask_items": 0},
+    "code_review": {"status": "clean", "critical": 0, "auto_fixed": 0, "ask_items": 0},
     "spec_dirs": [
       "plans/specs/008-complete-data-export-lgpd",
       "plans/specs/029-treatment-level-titration",
@@ -29,9 +29,18 @@
       "plans/specs/056-ai-review-tuning",
       "plans/specs/057-device-activity-log"
     ],
-    "merged_pr": 771,
-    "merged_squash": "816c14a0",
+    "merged_pr": 772,
+    "merged_squash": "5a43f271",
     "merged_history": [
+      {
+        "pr": 772,
+        "squash": "5a43f271",
+        "spec": "055 expo-55-target-api-36 (PR 1.3)",
+        "tier": 2,
+        "date": "2026-07-24",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "compileSdkVersion/targetSdkVersion:36 EXPLÍCITOS em expo-build-properties (app.config.js) — não confiar no default do SDK 54; confirmado ponta-a-ponta pós-prebuild (android/gradle.properties). Revalidados os 6 config plugins locais (5 do task + withFirebasePodfileFix.js novo no PR 1.1): entitlements iOS idênticos pré/pós-prebuild (AP-179), manifest Android com as 3 permissões de alarme intactas, metro resolveRequest (R-282) intacto, extraMavenRepos do notifee resolvendo. 🔴🔴 T029 (débito herdado do PR 1.1 — bump @react-native-firebase v21→compatível Xcode 26) ficou BLOQUEADO, fora deste PR: bump p/ 25.1.0 (latest npm em 2026-07-23) reproduz o MESMO erro do v21 (não é bug de versão velha — RCTBridgeModule duplicado RNFBApp/React-Core sob useFrameworks static); DEFINES_MODULE=NO no React-Core + limpar DerivedData não resolveram; useFrameworks:dynamic resolveu o bug do crashlytics mas quebrou o link do react-native-netinfo como framework dinâmico (pod não é dynamic-framework-safe). Revertido pro estado que builda hoje (static + v21). Decisão do PO 2026-07-24: dropar @react-native-firebase inteiro em vez de patchar — Sentry (crash) + PostHog (analytics), pods RN puros que compilam sob static. Documentado ADR-090 + PR 1.3b novo (T037-T039) inserido ANTES do PR 1.4 no tasks.md (é o caminho crítico — sem isso nenhum build iOS sai). T029-debt-handoff.md fica como registro do beco sem saída do caminho bump/patch. Gates: mobile 506/509 (61/62 suites), strict-island ratchet OK, lint 0 erros (156 warnings pré-existentes), tsc apps/web 0 erros. RC5: 0 findings (diff mecânico). RC6 (agy-only, RC6_ENGINE_CLAUDE=0): 0 findings — RECORRÊNCIA da armadilha operacional do #756 (1º run usou RC6_MAIN default=main, que ainda não recebeu a Onda 1 → capturou diff acumulado de PR1.1+1.2+1.3, 228K/2 chunks; corrigido com RC6_MAIN=feature/055-w1-sdk54, escopo real 79K/1 chunk). Registrado measurement.md linha 772 + nota nova no PLAYBOOK §RC6 (RC6_MAIN obrigatório em W1/W2)."
+      },
       {
         "pr": 771,
         "squash": "816c14a0",
@@ -286,11 +295,11 @@
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [],
     "analysis": "plans/specs/057-device-activity-log/analysis.md",
-    "branch": "feature/tese/057-device-activity-log"
+    "branch": "feature/055-w1-sdk54"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 9,
     "rules_count": 252,
     "anti_patterns_count": 310,
     "decisions_count": 88,
@@ -302,13 +311,13 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-23T18:00:00.000000+00:00"
+    "index_loaded_at": "2026-07-24T12:00:00.000000+00:00"
   },
   "code_review": {
-    "status": "issues_found",
-    "spec": "057-device-activity-log",
+    "status": "clean",
+    "spec": "055-expo-55-target-api-36",
     "critical": 0,
-    "auto_fixed": 1,
+    "auto_fixed": 0,
     "ask_items": 0
   },
   "ai_review": {
@@ -318,7 +327,7 @@
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 769,
-    "resolved": "0 findings (2/2 chunks) — RC6_ENGINE_CLAUDE=0 (quota), filtro OFF de proposito (nao conta pro PO-5 da 056). Medicao previa: zero 'caminho nao mapeado' mesmo com database.types.ts no diff. Unico issue real do PR (fleet-versions.sh sem guarda Array.isArray) ja tinha sido achado e corrigido pelo RC5, fora do CODE_GLOBS do RC6 por desenho"
+    "pr": 772,
+    "resolved": "0 findings (1/1 chunk, escopo correto) — RC6_ENGINE_CLAUDE=0 (quota), filtro OFF de proposito (nao conta pro PO-5 da 056). 1o run usou RC6_MAIN default=main e capturou o diff acumulado de PR1.1+1.2+1.3 (armadilha #756 recorrente, ver measurement.md linha 772); corrigido com RC6_MAIN=feature/055-w1-sdk54."
   }
 }
