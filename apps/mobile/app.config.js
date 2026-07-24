@@ -117,9 +117,20 @@ module.exports = {
       'expo-font',
       ['expo-build-properties', {
         ios: {
+          // T029 (spec 055) tentou 'dynamic' p/ contornar o crash de módulo do firebase v25 sob
+          // 'static' (RCTBridgeModule duplicado RNFBApp/React-Core) — resolveu ESSE bug, mas abriu
+          // outro: react-native-netinfo (e possivelmente outros pods RN da comunidade) não linka
+          // como framework dinâmico (RCTEventEmitter ausente no link do PRÓPRIO framework do pod,
+          // antes do app existir — não é flag de app, é o pod que não é dynamic-framework-safe).
+          // Mantido 'static' (config que builda hoje com v21 + withFirebasePodfileFix) até decisão
+          // do PO sobre qual bug atacar. Ver withFirebasePodfileFix.js e journal do PR 1.3.
           useFrameworks: 'static'
         },
         android: {
+          // Play Store exige targetSdkVersion>=36 (Android 16) a partir de 30/ago/2026 —
+          // explícito porque o SDK 54 já default p/ 36, mas não confiar no default (spec 055).
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
           // Notifee (Spec 001) distribui o AAR app.notifee:core num maven repo
           // LOCAL dentro do pacote; sem registrá-lo o gradle não resolve
           // (app.notifee:core+ não encontrado). Caminho relativo ao módulo :app
