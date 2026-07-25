@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Edge-to-edge Android 16 + keyboard-avoidance corrigida em 12 telas (spec 055, PR 1.4)
+
+- **Fix** (`patch`, mobile `0.29.1 → 0.29.2`; **nota de loja relevante** — melhoria visível de UX):
+  target API 36 força edge-to-edge no Android — o rodapé de ação fixo (`FormActions`, usado em
+  12 telas de formulário) ficava sem respiro do gesture bar/home indicator. Corrigido com
+  `useSafeAreaInsets` + zero-out condicional ao teclado (`useKeyboardVisible`, hook canônico).
+- **Achado maior no smoke com o PO:** `KeyboardAvoidingView` com `behavior=undefined` no Android
+  é NO-OP sob `edgeToEdgeEnabled` — `adjustResize` do AndroidManifest vira letra morta e o
+  teclado cobria inputs/rodapé (2ª incidência do AP-288, agora promovido a **R-303**, hard rule).
+  Migradas: `MedicineFormScreen`, `FeedbackScreen`, `ProfileEditScreen`, `ChangePasswordScreen`,
+  `ProtocolFormScreen`, `TitrationFormScreen`, `StockAdjustmentScreen`, `PurchaseFormScreen`, os
+  2 steps de onboarding (medicamento/tratamento) e os 2 sheets de busca (ANVISA/medicamento) —
+  todos para `behavior='height'` no Android, sem `keyboardVerticalOffset` chutado (removido de
+  todos; o componente mede a própria posição via `onLayout` interno).
+- T040 (inventário via grep) confirmou alarme/Hoje/detalhe de tratamento já corretos de fixes
+  anteriores (`ScreenContainer`, `RootTabs` R4-H01) — sem regressão nessas telas.
+- Validado com screenshots antes/depois em Android (emulador API 36 + device físico com teclado)
+  e iOS, múltiplas rodadas com o PO até o gap residual (offset chutado, depois zero-out
+  duplicado no Android) ser eliminado nos dois SOs.
+
 ### Bump Expo SDK 53 → 54 (spec 055, PR 1.1)
 
 - **Chore** (`minor`, mobile `0.28.5 → 0.29.0`; `patch`, web `4.20.1 → 4.20.2`): bump estrutural do
