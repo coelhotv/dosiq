@@ -2,14 +2,13 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "planning",
+    "status": "planned",
     "tier": 2,
-    "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
-    "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
-    "spec_dir": "plans/specs/055-expo-55-target-api-36",
-    "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.3b: dropar @react-native-firebase → Sentry + PostHog (ADR-090, T037-T039) + identificação de uid; branch feature/055-w1-firebase-observability-swap sobre integração feature/055-w1-sdk54. PO-7 fechado.",
+    "tasks": "plans/specs/051-expo-updates/tasks.md",
+    "spec_dir": "plans/specs/051-expo-updates",
+    "spec": "plans/specs/051-expo-updates/spec.md",
+    "goal": "Planning 051-A (EAS Update + kill switch de versao minima): ADR-091, plan.md, CON-033, contracts/. Incorpora decisoes do PO 2026-07-25 (ADMIN_USER_ID vs uid autenticado; saida honesta p/ dosiq.app como constante compilada) e os 8 findings da RC-SEC-2.",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
@@ -314,18 +313,32 @@
       }
     ],
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
-    "ceremonies_run": [],
-    "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": [],
-    "analysis": "plans/specs/057-device-activity-log/analysis.md",
-    "branch": "feature/055-w1-sdk54"
+    "ceremonies_run": [
+      "security-review"
+    ],
+    "ceremony_findings_count": 8,
+    "ceremony_scope_decisions": [
+      "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
+      "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
+      "PO-SEC-4..8 emitidas na spec",
+      "PO 2026-07-25: S-6 resolvido por ADMIN_USER_ID (uid autenticado) em vez de REVOKE na coluna — proposta do PO, adotada sobre a recomendacao original",
+      "PO 2026-07-25: FR-018 ganha saida honesta p/ https://dosiq.app no overlay, com URL COMPILADA (nao vem do gate)",
+      "Todos os 8 findings aceitos; T050 fechada"
+    ],
+    "branch": "feature/055-w1-sdk54",
+    "blocked_on": [
+      "T004d ADR-091 (Planning)",
+      "T004f RC3 sobre o delta FR-021/FR-022"
+    ],
+    "ceremony_type": "security-review",
+    "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "rules_count": 254,
     "anti_patterns_count": 313,
-    "decisions_count": 88,
+    "decisions_count": 89,
     "contracts_count": 31,
     "distillation_due": false
   },
@@ -334,7 +347,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-24T21:40:00Z"
+    "index_loaded_at": "2026-07-25T10:04:34.316411"
   },
   "code_review": {
     "status": "clean",
