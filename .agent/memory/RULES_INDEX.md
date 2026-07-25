@@ -167,6 +167,7 @@
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
 - **[R-201]** Secure Token Generation: Use window.crypto.getRandomValues() for security tokens in the frontend. -> [`rules/process_and_testing/R-201.md`](./rules/process_and_testing/R-201.md)
 - **[R-218]** Sub-agentes DEVEM criar branch de feature, rodar gate, reportar resultado — jamais commitar na main ou abrir PR sem aprovação explícita do agente principal -> [`rules/process_and_testing/R-218.md`](./rules/process_and_testing/R-218.md)
+- **[R-304]** 🔴 2ª tentativa falha no mesmo sintoma (ou sintoma fora do escopo do goal do bootstrap) = STOP antes da 3ª: `grep` RULES_INDEX+ANTI_PATTERNS_INDEX por keyword do SINTOMA (não da causa assumida) antes de propor novo fix. Origem: 055 PR 1.4 — 3 rounds de tentativa-e-erro no keyboard-avoidance até achar AP-288 já documentado -> [`rules/process_and_testing/R-304.md`](./rules/process_and_testing/R-304.md)
 
 
 ## ⚛️ React & Ui (`react_and_ui`)
