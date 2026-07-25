@@ -30,6 +30,7 @@ import StockInitialBalanceScreen from '../features/stock/screens/StockInitialBal
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
+import MedicineFormScreen from '../features/medications/screens/MedicineFormScreen'
 import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
 import ConsentResolutionScreen from '../features/consent/screens/ConsentResolutionScreen'
 import ConsentPrompt from '../features/consent/components/ConsentPrompt'
@@ -395,6 +396,13 @@ function NavigationTree({
                 <Stack.Screen
                   name={ROUTES.DOSE_PRIMITIVES_DEMO}
                   component={DosePrimitivesDemoScreen}
+                />
+                {/* Spec 055 PR 1.4: MedicineFormScreen SEM tab bar (root stack) — permite
+                    validar safe-area/FormActions isolado, sem depender de onboarding novo
+                    nem de conta em consent-locked. Modo create (sem params). */}
+                <Stack.Screen
+                  name={ROUTES.DEV_FORM_NO_TABBAR}
+                  component={MedicineFormScreen}
                 />
               </>
             )}
