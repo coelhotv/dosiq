@@ -3,14 +3,14 @@
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
+    "mode": "coding",
+    "status": "analysis",
     "tier": 2,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "compress and distill project memory",
-    "goal_type": "chore",
+    "goal": "051-A PR 1.5a — app_version_gate: migração + 2 camadas de acesso + schema Zod + módulo de frota + handler admin + admin por uid (ADR-091 D10)",
+    "goal_type": "feature",
     "code_review": {
       "status": "clean",
       "critical": 0,
@@ -86,7 +86,7 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54",
+    "branch": "feature/055-w1-05a-version-gate",
     "blocked_on": [
       "T004d ADR-091 (Planning)",
       "T004f RC3 sobre o delta FR-021/FR-022"
