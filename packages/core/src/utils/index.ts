@@ -258,3 +258,20 @@ export {
 
 // Erro de carga: erro de servidor não pode se disfarçar de "cache expirado" (AP-314)
 export { isServerError, describeLoadFailure } from './loadFailure'
+
+// Frota instalada em campo — união notification_devices ∪ device_activity, dedupe por
+// (user_id, platform). Fonte ÚNICA: consumida pelo handler do kill switch E por
+// scripts/fleet-versions.sh (RC3-2 F3 — duas contagens divergentes = recusa falsa em emergência).
+export {
+  FLEET_WINDOW_DAYS,
+  dedupeFleetInstalls,
+  summarizeFleetVersions,
+  countAffectedInstalls,
+  fleetWindowStart,
+} from './fleet'
+export type {
+  FleetInstall,
+  FleetSourceRow,
+  FleetVersionBucket,
+  FleetSummary,
+} from './fleet'

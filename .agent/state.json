@@ -4,18 +4,18 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5a — app_version_gate: migração + 2 camadas de acesso + schema Zod + módulo de frota + handler admin + admin por uid (ADR-091 D10)",
+    "goal": "051-A PR 1.5a — app_version_gate: migracao + 2 camadas de acesso + schema Zod + modulo de frota + handler admin + admin por uid (ADR-091 D10)",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
       "critical": 0,
-      "auto_fixed": 0,
-      "ask_items": 0
+      "auto_fixed": 6,
+      "ask_items": 1
     },
     "spec_dirs": [
       "plans/specs/051-expo-updates",
@@ -88,17 +88,16 @@
     ],
     "branch": "feature/055-w1-05a-version-gate",
     "blocked_on": [
-      "T004d ADR-091 (Planning)",
-      "T004f RC3 sobre o delta FR-021/FR-022"
+      "HARD STOP: validacao do PO antes do PR (superficie de escrita + troca do modelo de autorizacao)"
     ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 0,
-    "rules_count": 254,
-    "anti_patterns_count": 313,
+    "journal_entries_since_distillation": 1,
+    "rules_count": 255,
+    "anti_patterns_count": 315,
     "decisions_count": 91,
     "contracts_count": 31,
     "distillation_due": false
@@ -108,7 +107,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-25T10:04:34.316411"
+    "index_loaded_at": "2026-07-25T17:04:52.255259+00:00"
   },
   "code_review": {
     "status": "clean",

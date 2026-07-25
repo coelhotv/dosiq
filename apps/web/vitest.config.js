@@ -18,6 +18,11 @@ export default mergeConfig(
         'src/**/*.test.{js,jsx,ts,tsx}',
         '../../server/**/*.test.{js,jsx,ts,tsx}',
         '../../packages/core/src/**/*.test.{js,jsx,ts,tsx}',
+        // 051 T062: `api/` não tinha NENHUM teste (`find api -name '*test*'` era vazio) e por isso
+        // não estava em nenhum include. O handler do kill switch de versão inaugura a superfície —
+        // sem esta linha o arquivo de teste existiria e nunca seria coletado (classe AP-289: gate
+        // verde que não roda o que promete proteger).
+        '../../api/**/*.test.{js,jsx,ts,tsx}',
       ],
 
       coverage: {

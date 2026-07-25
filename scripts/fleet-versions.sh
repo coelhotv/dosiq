@@ -73,49 +73,44 @@ export FLEET_JSON_ACTIVITY
 # antigos não pode pesar como 3 votos contra o DROP. Funde as duas fontes ANTES do dedupe — união,
 # nunca substituição (FR-005): notification_devices usa `updated_at`, device_activity usa
 # `last_seen_at`; normalizadas para o mesmo campo antes de comparar.
+#
+# 🔴 A LÓGICA NÃO MORA MAIS AQUI (spec 051 / RC3-2 F3): união, janela e dedupe vivem em
+# `@dosiq/core/utils` (`dedupeFleetInstalls` / `summarizeFleetVersions`), e o handler admin do kill
+# switch consome as MESMAS funções. O `acknowledge_affected_devices` compara *o número que o operador
+# viu aqui* com *o que o servidor conta* — duas implementações significariam recusa falsa em plena
+# emergência, ou confirmação sobre um conjunto diferente do que será bloqueado.
 echo "$FLEET_JSON" | node -e '
-const rows = JSON.parse(require("fs").readFileSync(0, "utf8"))
-const activityParsed = JSON.parse(process.env.FLEET_JSON_ACTIVITY || "[]")
-// fonte aditiva NUNCA pode derrubar a medição principal: se o PostgREST devolver um objeto de
-// erro (ex. permissão/config) em vez de array, cai pra [] em vez de estourar o .map abaixo.
-const activityRows = (Array.isArray(activityParsed) ? activityParsed : [])
-  .map(r => ({ app_version: r.app_version, platform: r.platform, user_id: r.user_id, updated_at: r.last_seen_at }))
-const merged = rows.concat(activityRows)
-const latest = new Map()
-for (const r of merged) {
-  if (!r.app_version) continue
-  const key = `${r.user_id}|${r.platform}`
-  const prev = latest.get(key)
-  if (!prev || new Date(r.updated_at) > new Date(prev.updated_at)) latest.set(key, r)
-}
-const installs = [...latest.values()]
-const byVersion = new Map()
-for (const r of installs) {
-  const e = byVersion.get(r.app_version) || { installs: 0, users: new Set() }
-  e.installs++; e.users.add(r.user_id)
-  byVersion.set(r.app_version, e)
-}
-const cmp = (a, b) => {
-  const pa = a.split(".").map(Number), pb = b.split(".").map(Number)
-  for (let i = 0; i < 3; i++) if ((pa[i]||0) !== (pb[i]||0)) return (pb[i]||0) - (pa[i]||0)
-  return 0
-}
-const versions = [...byVersion.keys()].sort(cmp)
-const total = installs.length
-console.log("")
-console.log("  versão      instalações   usuários   % da frota")
-console.log("  ─────────────────────────────────────────────────")
-for (const v of versions) {
-  const e = byVersion.get(v)
-  const pct = ((e.installs / total) * 100).toFixed(1)
-  console.log(`  ${v.padEnd(11)} ${String(e.installs).padStart(6)}      ${String(e.users.size).padStart(6)}   ${pct.padStart(7)}%`)
-}
-console.log("  ─────────────────────────────────────────────────")
-console.log(`  TOTAL       ${String(total).padStart(6)}      ${String(new Set(installs.map(r => r.user_id)).size).padStart(6)}`)
-console.log("")
-console.log(`  Versão mais antiga ativa: ${versions[versions.length - 1]}`)
-console.log(`  Piso de 5% (ADR-088): ${(total * 0.05).toFixed(1)} instalações`)
-require("fs").writeFileSync(process.env.FLEET_TMP, JSON.stringify(versions))
+const fs = require("fs")
+const rows = JSON.parse(fs.readFileSync(0, "utf8"))
+const activity = JSON.parse(process.env.FLEET_JSON_ACTIVITY || "[]")
+
+import("@dosiq/core/utils").then(({ dedupeFleetInstalls, summarizeFleetVersions }) => {
+  // O core faz o guard de "não-array" (PostgREST devolve objeto de erro em vez de array quando a
+  // leitura falha) e ignora linha sem app_version — não repetir aqui.
+  const installs = dedupeFleetInstalls(rows, activity)
+  const s = summarizeFleetVersions(installs)
+  const total = s.totalInstalls
+
+  console.log("")
+  console.log("  versão      instalações   usuários   % da frota")
+  console.log("  ─────────────────────────────────────────────────")
+  for (const b of s.byVersion) {
+    const pct = total > 0 ? ((b.installs / total) * 100).toFixed(1) : "0.0"
+    console.log(`  ${b.version.padEnd(11)} ${String(b.installs).padStart(6)}      ${String(b.users).padStart(6)}   ${pct.padStart(7)}%`)
+  }
+  console.log("  ─────────────────────────────────────────────────")
+  console.log(`  TOTAL       ${String(total).padStart(6)}      ${String(s.totalUsers).padStart(6)}`)
+  console.log("")
+  console.log(`  Versão mais antiga ativa: ${s.oldestVersion}`)
+  console.log(`  Piso de 5% (ADR-088): ${(total * 0.05).toFixed(1)} instalações`)
+  fs.writeFileSync(process.env.FLEET_TMP, JSON.stringify(s.byVersion.map(b => b.version)))
+}).catch(err => {
+  // Falha ALTA e com instrução: um script de frota que devolve número errado é pior que um que não
+  // roda — este número autoriza DROP e bloqueio de boot.
+  console.error("❌ Não foi possível carregar @dosiq/core/utils: " + err.message)
+  console.error("   Rode: npm run build --workspace @dosiq/core")
+  process.exit(1)
+})
 '
 
 [ -z "$COLUMN" ] && {
