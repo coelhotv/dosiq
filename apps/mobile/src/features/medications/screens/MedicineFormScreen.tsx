@@ -4,7 +4,7 @@
 // ANVISA bottom sheet preenche campos automaticamente via setValues.
 
 import { useState, useCallback, useMemo } from 'react'
-import { ScrollView, View, Text, Pressable, StyleSheet, Alert } from 'react-native'
+import { ScrollView, View, Text, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
@@ -248,7 +248,12 @@ export default function MedicineFormScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
+        style={styles.flex}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
@@ -362,6 +367,7 @@ export default function MedicineFormScreen() {
         secondaryLabel="Cancelar"
         onSecondary={() => navigation.goBack()}
       />
+      </KeyboardAvoidingView>
 
       <MedicineAnvisaSheet
         open={sheetOpen}
@@ -376,6 +382,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

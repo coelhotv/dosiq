@@ -4,8 +4,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useKeyboardVisible } from '@shared/hooks/useKeyboardVisible'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 export default function FormActions({
@@ -22,9 +24,19 @@ export default function FormActions({
   // Footer sticky fora de SafeAreaView bottom nos callers (edges=['top']) — edge-to-edge
   // Android 16 desenha por baixo da gesture bar sem este inset (T041, spec 055 PR 1.4).
   const insets = useSafeAreaInsets()
+  // iOS: com teclado aberto, o KeyboardAvoidingView do caller já empurra o footer pra cima
+  // dele — manter o inset estático (pensado pro home indicator, que fica ATRÁS do teclado)
+  // vira espaço morto entre botão e teclado. Zera só nesse caso (AP-288 regra 4).
+  // Android: só é seguro zerar em callers com `behavior='height'` (resize real sob
+  // edge-to-edge — AP-288). Nem todo consumer do FormActions foi migrado ainda (dívida
+  // AP-288); manter o inset sempre-on no Android evita regressão nos que faltam.
+  const keyboardVisible = useKeyboardVisible()
+  const bottomPad = Platform.OS === 'ios' && keyboardVisible
+    ? spacing[3]
+    : Math.max(spacing[3], insets.bottom)
 
   return (
-    <View style={[styles.row, { paddingBottom: Math.max(spacing[3], insets.bottom) }]}>
+    <View style={[styles.row, { paddingBottom: bottomPad }]}>
       {/* Botão primário */}
       <TouchableOpacity
         style={[

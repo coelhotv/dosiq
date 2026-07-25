@@ -6,7 +6,7 @@
 // Avatar = iniciais (foto = V2/backlog; tap mostra toast "em breve").
 
 import { useMemo, useCallback, useEffect, useRef } from 'react'
-import { ScrollView, View, Text, Pressable, TouchableOpacity, StyleSheet } from 'react-native'
+import { ScrollView, View, Text, Pressable, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
@@ -152,7 +152,11 @@ export default function ProfileEditScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Avatar — iniciais (foto = V2) */}
         <View style={styles.avatarSection}>
           <TouchableOpacity
@@ -244,6 +248,7 @@ export default function ProfileEditScreen() {
         secondaryLabel="Cancelar"
         onSecondary={() => navigation.goBack()}
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -252,6 +257,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

@@ -2,7 +2,7 @@
 // Tela de formulário móvel nativo para envio de feedback do usuário
 
 import React, { useMemo, useCallback } from 'react'
-import { ScrollView, View, Text, Pressable, TouchableOpacity, StyleSheet, Platform } from 'react-native'
+import { ScrollView, View, Text, Pressable, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
@@ -154,7 +154,11 @@ export default function FeedbackScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <FeedbackHeader onGoBack={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.introCard}>
           <Text style={styles.introTitle}>Sua opinião importa!</Text>
           <Text style={styles.introBody}>
@@ -203,6 +207,7 @@ export default function FeedbackScreen() {
         secondaryLabel="Cancelar"
         onSecondary={() => navigation.goBack()}
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -211,6 +216,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
