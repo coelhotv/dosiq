@@ -282,6 +282,24 @@ export default function DevHubScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 055 PR 1.4 — Edge-to-edge (Android 16)</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              navigation?.navigate(ROUTES.DEV_FORM_NO_TABBAR)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📐 MedicineFormScreen SEM tab bar (FormActions safe-area)</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            Root stack, sem RootTabs embaixo — expõe o footer sticky (FormActions) direto contra a
+            gesture bar. Telas do fluxo normal (tratamento/estoque) ficam mascaradas pela tab bar,
+            que já reserva o inset. Use pra validar antes/depois do fix T041.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Spec 055 / ADR-090 — Observabilidade</Text>
           <TouchableOpacity
             onPress={() => {

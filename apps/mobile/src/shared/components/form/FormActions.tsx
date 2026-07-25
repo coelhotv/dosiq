@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useKeyboardVisible } from '@shared/hooks/useKeyboardVisible'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 export default function FormActions({
@@ -18,9 +20,24 @@ export default function FormActions({
 }) {
   // Cor de fundo do botão primário (destruidor ou normal)
   const primaryBgColor = destructive ? colors.status.error : colors.primary[700]
+  // Footer sticky fora de SafeAreaView bottom nos callers (edges=['top']) — edge-to-edge
+  // Android 16 desenha por baixo da gesture bar sem este inset (T041, spec 055 PR 1.4).
+  const insets = useSafeAreaInsets()
+  // Com teclado aberto, o KeyboardAvoidingView do caller já empurra o footer pra cima dele —
+  // manter o inset estático (pensado pro home indicator/gesture bar, que ficam ATRÁS do
+  // teclado) vira espaço morto entre botão e teclado. Zera só nesse caso (AP-288/R-303 regra
+  // 4). Seguro nos dois SOs: TODOS os consumers do FormActions usam `behavior='height'` no
+  // Android (resize real sob edge-to-edge, R-303 regra 1) — sem isso o zero-out vazaria o
+  // footer por baixo da gesture bar (reproduzido e revertido na 055 PR 1.4 antes da migração
+  // completa). Se um novo consumer nascer com `behavior=undefined`, este componente quebra
+  // silenciosamente para ele — é o farol do R-303.
+  const keyboardVisible = useKeyboardVisible()
+  const bottomPad = keyboardVisible
+    ? spacing[3]
+    : Math.max(spacing[3], insets.bottom)
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { paddingBottom: bottomPad }]}>
       {/* Botão primário */}
       <TouchableOpacity
         style={[

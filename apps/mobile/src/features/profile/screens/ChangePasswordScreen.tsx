@@ -8,6 +8,8 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
@@ -111,7 +113,12 @@ export default function ChangePasswordScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
+        style={styles.flex}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -253,6 +260,7 @@ export default function ChangePasswordScreen() {
         onPrimary={handleSubmit}
         primaryLoading={submitting}
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
@@ -263,6 +271,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

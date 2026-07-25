@@ -193,9 +193,9 @@ export default function MedicineSelectorSheet({
     >
       <KeyboardAvoidingView
         style={styles.root}
-        // iOS: eleva o sheet acima do teclado (sem isso, ao digitar a busca o
-        // teclado cobre o input e os resultados filtrados). Android: adjustResize.
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // iOS: eleva o sheet acima do teclado. Android: 'undefined' é NO-OP sob
+        // edgeToEdgeEnabled — adjustResize vira letra morta (AP-288/R-303).
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {Platform.OS === 'android' ? (
           <View style={{ height: StatusBar.currentHeight ?? 0 }} />

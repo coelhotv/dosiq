@@ -121,6 +121,7 @@
 - **[R-261]** Canal Android é imutável pós-criação — trocar som/importance exige bumpar o channel id (`dose-alarm-v3`); re-criar com mesmo id é no-op; garantir o `.wav` em res/raw + bump -> [`rules/notifications/R-261.md`](./rules/notifications/R-261.md)
 - **[R-239]** Permissão de push CONTEXTUAL: NUNCA pedir no 1º load. Setup global é register-only (handlers + token só se já concedido). Pedir só em pontos de intenção (ligar lembrete no onboarding / criar 1º tratamento / abrir Configs de notificações). Negado no SO → seguir fluxo sem nag -> [`rules/mobile_and_platform/R-239.md`](./rules/mobile_and_platform/R-239.md)
 - **[R-240]** Evitar Supabase Realtime no Mobile e adotar Throttled Focus-Refresh -> [`rules/mobile_and_platform/R-240.md`](./rules/mobile_and_platform/R-240.md)
+- **[R-303]** 🔴 Checklist obrigatório pra tela com form+rodapé fixo (KeyboardAvoidingView): (1) `behavior='height'` no Android, nunca `undefined` — vira no-op sob edge-to-edge; (2) `keyboardVerticalOffset` NUNCA copiado de outra tela, 0 se header é AppBar próprio; (3) `ScrollView` com `style={{flex:1}}`, não só `contentContainerStyle`; (4) safe-area inferior condicional via `useKeyboardVisible()` (hook canônico), nunca `edges={['bottom']}` fixo. Promovida de [[AP-288]] na 2ª incidência (055 PR 1.4 reintroduziu o mesmo bug em 4 telas novas antes de achar o AP) -> [`rules/mobile_and_platform/R-303.md`](./rules/mobile_and_platform/R-303.md)
 
 
 
@@ -166,6 +167,7 @@
 - **[R-179]** NUNCA modificar dados de produção ou de usuários reais (@live.com) durante testes. -> [`rules/process_and_testing/R-179.md`](./rules/process_and_testing/R-179.md)
 - **[R-201]** Secure Token Generation: Use window.crypto.getRandomValues() for security tokens in the frontend. -> [`rules/process_and_testing/R-201.md`](./rules/process_and_testing/R-201.md)
 - **[R-218]** Sub-agentes DEVEM criar branch de feature, rodar gate, reportar resultado — jamais commitar na main ou abrir PR sem aprovação explícita do agente principal -> [`rules/process_and_testing/R-218.md`](./rules/process_and_testing/R-218.md)
+- **[R-304]** 🔴 2ª tentativa falha no mesmo sintoma (ou sintoma fora do escopo do goal do bootstrap) = STOP antes da 3ª: `grep` RULES_INDEX+ANTI_PATTERNS_INDEX por keyword do SINTOMA (não da causa assumida) antes de propor novo fix. Origem: 055 PR 1.4 — 3 rounds de tentativa-e-erro no keyboard-avoidance até achar AP-288 já documentado -> [`rules/process_and_testing/R-304.md`](./rules/process_and_testing/R-304.md)
 
 
 ## ⚛️ React & Ui (`react_and_ui`)

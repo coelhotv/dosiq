@@ -186,14 +186,14 @@ export default function OnboardingTreatmentStep() {
   }, [form, medicine, remind, show, setTreatment, navigation])
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <OnboardingHeader {...headerProps} />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.flex} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>E quando você toma?</Text>
           <Text style={styles.subtitle}>
             Defina a frequência, os horários e a quantidade. A gente te avisa na hora certa.
