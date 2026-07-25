@@ -21,7 +21,7 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 774,
+    "merged_pr": null,
     "merged_squash": "249616d0",
     "merged_history": [
       {
@@ -88,7 +88,7 @@
     ],
     "branch": "feature/055-w1-05a-version-gate",
     "blocked_on": [
-      "HARD STOP: validacao do PO antes do PR (superficie de escrita + troca do modelo de autorizacao)"
+      "AGUARDANDO aprovacao do PO para merge do PR #775 na integracao (R-060 — usuario mergeia, nunca auto-merge)"
     ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
@@ -117,13 +117,13 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy",
+    "engine": "agy (7 chunks, pass A + pass B)",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 774,
-    "resolved": "1 chunk, 0 findings (pass A + pass B agy fallback, ambas concordaram) — RC6_ENGINE_CLAUDE=0, RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando real (armadilha #756/#772 pega na fase de medicao). Registrado measurement.md linha 774."
+    "pr": 775,
+    "resolved": "7/7 chunks, coverage partial=false, 0 findings. RC6_ENGINE_CLAUDE=0 + RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando (sem recorrencia #756/#772/#774). 2 intervencoes de budget: RC6_PACK_FILTER=1 (sem filtro o chunk 6 dava 167157B, acima do teto de amostragem silenciosa do agy) e RC6_MAX_CHUNKS=7 (o cap 6 declarava PARTIAL COVERAGE). Regressao do mapa reportada: 'caminho nao mapeado: server/utils/auth.ts' desligou o filtro no chunk 7 e na pass B. Registrado measurement.md linha 775."
   }
 }
