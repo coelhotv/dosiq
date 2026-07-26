@@ -4,12 +4,12 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5b — kill switch de versao no cliente mobile: resolver puro (CON-033) + servico de leitura + overlay + wiring na arvore (FR-018/PO-7)",
+    "goal": "051-A PR 1.5b — MERGEADA (#776, squash de19c606). Kill switch de versao no cliente mobile: resolver puro (CON-033) + servico de leitura + overlay + wiring na arvore (FR-018/PO-7). Proximo: PR 1.5c (painel admin web, adiado por RC3-2/F5) ou proxima fatia da onda 055.",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
@@ -21,9 +21,18 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 775,
-    "merged_squash": "8d96472e",
+    "merged_pr": 776,
+    "merged_squash": "de19c606",
     "merged_history": [
+      {
+        "pr": 776,
+        "squash": "de19c606",
+        "spec": "051-A kill switch de versao minima no cliente mobile (PR 1.5b)",
+        "tier": 2,
+        "date": "2026-07-26",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Resolver puro resolveVersionGate (@dosiq/core/utils/versionGate.ts, CON-033) + servico de leitura (versionGateService.ts, timeout 3s + fail-open em qualquer indeterminacao) + hook useVersionGate (mount + AppState foreground, achado do smoke do PO — app minimizado por dias precisa reavaliar no focus) + VersionGateOverlay (full-screen, tokens de design, storeUrl allowlist RC-SEC-2, saida honesta https://dosiq.app COMPILADA nunca do gate remoto) + useAlarmScreenActive (obrigacao clinica > bloqueio de update: alarme fullscreen cede o overlay). Escopo expandido com autorizacao explicita do PO durante o smoke (achados na MESMA superficie boot/offline): AP-321 (describeLoadFailure vazava .message cru de erro de rede/JS em ingles quando fallbackErr===originalErr — corrigido por identity check, PT sempre) + AP-322 (useTreatments.ts coalescia groups??[] apagando a distincao null/vazio) + StockScreen usando mensagem hardcoded em vez do error real + AlarmSchedulerBridge sem retry de navigationRef.isReady() no cold start (bug pre-existente, nao desta PR — confirmado por git log antes de corrigir) + useAlarmScreenActive trocado de addListener('state') pra polling 250ms (o listener nunca disparava pois VersionGateOverlay monta antes do NavigationContainer existir — bug introduzido pelo proprio fix anterior, achado no 2o round de smoke com soneca do notifee). PO-7 fechado com evidencia MANUAL device real (iOS+Android, modo aviao via /etc/hosts, alarme fullscreen sobre overlay, CTA Atualizar->playstore, link web->dosiq.app). Gates verdes (vitest, tsc, lint, strict-island, validate:agent). RC5 clean. RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando): run1 achou floating promise real (AP-138, 2 CTAs Linking.openURL sem .catch) — fixado + respondido inline nas 4 threads; run2 pos-fix 0/0/0/0 (3/3 chunks, pass A+B concordantes). Registrado measurement.md linha 776."
+      },
       {
         "pr": 775,
         "squash": "8d96472e",
@@ -95,8 +104,8 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-05b-kill-switch (a criar a partir de feature/055-w1-sdk54)",
-    "blocked_on": ["T039 PO-7 device real (manual, do PO)", "T040 HARD STOP — RC5 feito, aguardando PO validar antes do PR"],
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-05b-kill-switch mergeada e deletada)",
+    "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
@@ -124,13 +133,13 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy (7 chunks, pass A + pass B)",
+    "engine": "agy (3 chunks, pass A + pass B)",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 775,
-    "resolved": "7/7 chunks, coverage partial=false, 0 findings. RC6_ENGINE_CLAUDE=0 + RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando (sem recorrencia #756/#772/#774). 2 intervencoes de budget: RC6_PACK_FILTER=1 (sem filtro o chunk 6 dava 167157B, acima do teto de amostragem silenciosa do agy) e RC6_MAX_CHUNKS=7 (o cap 6 declarava PARTIAL COVERAGE). Regressao do mapa reportada: 'caminho nao mapeado: server/utils/auth.ts' desligou o filtro no chunk 7 e na pass B. Registrado measurement.md linha 775."
+    "pr": 776,
+    "resolved": "run1 achou 2 high (AP-138 floating promise Linking.openURL) + 2 medium duplicados, todos introduced:true — fixados (.catch) e respondidos inline nas 4 threads. run2 pos-fix: 3/3 chunks, 0 findings, pass A+B concordantes. Registrado measurement.md linha 776."
   }
 }
