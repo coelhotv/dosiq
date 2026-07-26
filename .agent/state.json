@@ -21,9 +21,18 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": null,
-    "merged_squash": "249616d0",
+    "merged_pr": 775,
+    "merged_squash": "8d96472e",
     "merged_history": [
+      {
+        "pr": 775,
+        "squash": "8d96472e",
+        "spec": "051-A app_version_gate (PR 1.5a) — migracao + 2 camadas de acesso + schema Zod + modulo de frota + handler admin + admin por uid (ADR-091 D10)",
+        "tier": 2,
+        "date": "2026-07-26",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Superficie de config do kill switch de versao: migracao app_version_gate (docs/migrations/20260725_app_version_gate.sql), schema Zod (versionGateSchema.ts), utils de frota (fleet.ts + fleet-versions.sh), handler admin (api/admin/_handlers/versionGate.ts) e fix do verifyAdminAccess (server/utils/auth.ts) — admin por uid (ADMIN_USER_ID) em vez de REVOKE na coluna, decisao do PO sobre a recomendacao original (RC-SEC-2 S-6). Painel admin web fatiado para PR 1.5c (RC3-2/F5, resolvido pelo PO: 1.5a caiu de 13 para 8 arquivos, dentro do limiar RC3 de 8). PO-SEC-4..8 fecharam na spec; RC-SEC-2 teve 2 CRITICAL+2 HIGH+3 MEDIUM+1 LOW, todos os 8 aceitos. Gates verdes. RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54 desde 1o comando): 7/7 chunks, 0 findings (RC6_PACK_FILTER=1 + RC6_MAX_CHUNKS=7 por budget). Registrado measurement.md linha 775."
+      },
       {
         "pr": 774,
         "squash": "249616d0",
@@ -86,16 +95,14 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-05a-version-gate",
-    "blocked_on": [
-      "AGUARDANDO aprovacao do PO para merge do PR #775 na integracao (R-060 — usuario mergeia, nunca auto-merge)"
-    ],
+    "branch": "feature/055-w1-sdk54",
+    "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 255,
     "anti_patterns_count": 315,
     "decisions_count": 91,
