@@ -69,10 +69,14 @@ async function _fetchAndPersistStock(setState, dataRef) {
 
 async function _tryLoadCache(err, setState, dataRef) {
   const cached = await AsyncStorage.getItem(STOCK_CACHE_KEY)
-  if (!cached) throw err
+  // Sem cache pra tentar (1ª abertura, ou storage limpo) — não relançar `err` cru: em modo
+  // avião/sem rede é erro de fetch nativo (RN), sempre em inglês, e vazaria pra tela via
+  // describeLoadFailure. Mensagem própria em PT (achado no smoke 055).
+  if (!cached) throw new Error('Não identificamos conexão com a Internet, nem dados salvos neste aparelho. Conecte-se a rede para continuar.')
   const parsed = JSON.parse(cached)
   const diffHours = (getNow().getTime() - parseISO(parsed.capturedAt).getTime()) / (1000 * 60 * 60)
-  if (diffHours >= 24) throw new Error('Cache expirado')
+  // "Cache expirado" é jargão técnico — Dona Maria não sabe o que é cache (achado no smoke 055).
+  if (diffHours >= 24) throw new Error('Não identificamos conexão com a Internet e seus dados no app estão desatualizados (mais de 24h). Conecte-se à rede para atualizar.')
   dataRef.current = parsed.data
   setState({ data: parsed.data, loading: false, error: null, stale: true, refreshing: false })
 }

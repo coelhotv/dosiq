@@ -53,13 +53,17 @@ export function useTodayData() {
     setIsDaySegregated(false)
   }, [])
 
-  const handleCacheFallback = useCallback(async (originalErr) => {
+  const handleCacheFallback = useCallback(async () => {
     const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
-    if (!cached) throw originalErr
+    // Sem cache pra tentar (1ª abertura do app, ou storage limpo) — NÃO relançar `originalErr` cru:
+    // em modo avião/sem rede ele é um erro de fetch nativo (RN), sempre em inglês, e vazaria pra
+    // tela via describeLoadFailure. Mensagem própria, em PT, cobre esse caso (achado no smoke 055).
+    if (!cached) throw new Error('Não identificamos conexão com a Internet, nem dados salvos neste aparelho. Conecte-se a rede para continuar.')
     
     const parsed = JSON.parse(cached)
     const diffHours = (getNow().getTime() - parseISO(parsed.capturedAt).getTime()) / (1000 * 60 * 60)
-    if (diffHours >= 24) throw new Error('Cache expirado (> 24h)')
+    // "Cache expirado" é jargão técnico — Dona Maria não sabe o que é cache (achado no smoke 055).
+    if (diffHours >= 24) throw new Error('Não identificamos conexão com a Internet e seus dados no app estão desatualizados (mais de 24h). Conecte-se à rede para atualizar.')
 
     // F4.3f.1: virada de dia no fuso do snapshot (não SP fixo) — segregação correta p/ expat.
     const tz = parsed.timezone || 'America/Sao_Paulo'
@@ -110,7 +114,7 @@ export function useTodayData() {
       await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances)
     } catch (err) {
       try {
-        await handleCacheFallback(err)
+        await handleCacheFallback()
       } catch (fallbackErr) {
         // AP-314: erro de servidor (42703, 42501…) tem precedência sobre "Cache expirado" —
         // sem isso, schema quebrado em produção se disfarça de app offline.

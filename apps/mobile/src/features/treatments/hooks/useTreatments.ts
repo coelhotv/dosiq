@@ -56,7 +56,11 @@ export function useTreatments() {
     ativos: transformed.ativos ?? [],
     pausados: transformed.pausados ?? [],
     finalizados: transformed.finalizados ?? [],
-    groups: transformed.groups ?? [],
+    // NÃO coalescer p/ `[]`: `null` (sem dado, veio de erro sem fallback) vs `[]` (sucesso, zero
+    // tratamentos) é a distinção que TreatmentsScreen.tsx usa (`state.error && !state.groups`)
+    // pra escolher entre ErrorState e EmptyState. Coalescer aqui apagava esse sinal na fronteira
+    // hook→tela e fazia offline-sem-cache cair silenciosamente no empty state (achado no smoke 055).
+    groups: transformed.groups,
     currentItems,
   }), [transformed, loading, hasLoaded, error, stale, refresh, activeTab, currentItems])
 
@@ -103,10 +107,14 @@ export function useTreatments() {
             setStale(true)
             setError(null)
           } else {
-            throw new Error('Cache expirado')
+            // "Cache expirado" é jargão técnico — Dona Maria não sabe o que é cache (achado no smoke 055).
+            throw new Error('Não identificamos conexão com a Internet e seus dados no app estão desatualizados (mais de 24h). Conecte-se à rede para atualizar.')
           }
         } else {
-          throw err
+          // Sem cache pra tentar (1ª abertura, ou storage limpo) — não relançar `err` cru: em
+          // modo avião/sem rede é erro de fetch nativo (RN), sempre em inglês, e vazaria pra tela
+          // via describeLoadFailure. Mensagem própria em PT (achado no smoke 055).
+          throw new Error('Não identificamos conexão com a Internet, nem dados salvos neste aparelho. Conecte-se a rede para continuar.')
         }
       } catch (fallbackErr) {
         // AP-314: expõe o código quando o servidor respondeu (42703, 42501…) — o motivo real
