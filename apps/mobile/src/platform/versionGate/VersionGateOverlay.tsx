@@ -29,7 +29,7 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 // alarme. Reforça "tela oficial do app", não "alerta genérico de sistema".
 const BRAND_MARK = require('../../../assets/dosiq-full-mono-black.png')
 
-const DEFAULT_MESSAGE = 'Uma atualização é necessária para continuar usando o dosiq com segurança.'
+const DEFAULT_MESSAGE = 'É necessária uma atualização do app para continuar usando o dosiq com segurança.'
 
 // Saída honesta do kill switch (spec 051-A FR-018 / ADR-091 D7): CONSTANTE COMPILADA, nunca vem
 // da linha do gate (2º vetor do S-8 + saída removível pela config que bloqueia).
