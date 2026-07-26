@@ -9,13 +9,13 @@
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5a — app_version_gate: migracao + 2 camadas de acesso + schema Zod + modulo de frota + handler admin + admin por uid (ADR-091 D10)",
+    "goal": "051-A PR 1.5b — kill switch de versao no cliente mobile: resolver puro (CON-033) + servico de leitura + overlay + wiring na arvore (FR-018/PO-7)",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
       "critical": 0,
-      "auto_fixed": 6,
-      "ask_items": 1
+      "auto_fixed": 1,
+      "ask_items": 0
     },
     "spec_dirs": [
       "plans/specs/051-expo-updates",
@@ -95,18 +95,18 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54",
-    "blocked_on": [],
+    "branch": "feature/055-w1-05b-kill-switch (a criar a partir de feature/055-w1-sdk54)",
+    "blocked_on": ["T039 PO-7 device real (manual, do PO)", "T040 HARD STOP — RC5 feito, aguardando PO validar antes do PR"],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 4,
     "rules_count": 255,
-    "anti_patterns_count": 315,
+    "anti_patterns_count": 317,
     "decisions_count": 91,
-    "contracts_count": 31,
+    "contracts_count": 32,
     "distillation_due": false
   },
   "genes": {

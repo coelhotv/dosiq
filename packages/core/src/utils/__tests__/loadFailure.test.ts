@@ -54,9 +54,20 @@ describe('describeLoadFailure', () => {
     expect(describeLoadFailure(network, cacheExpired)).toBe('Cache expirado (> 24h)')
   })
 
-  it('cai no erro original quando o fallback não tem mensagem', () => {
+  it('🔴 NUNCA vaza o erro original cru (rede/JS/Zod é sempre em inglês) — usa o default PT', () => {
     const network = new TypeError('Network request failed')
-    expect(describeLoadFailure(network, {})).toBe('Network request failed')
+    expect(describeLoadFailure(network, {}, 'Erro ao carregar estoque.')).toBe('Erro ao carregar estoque.')
+    expect(describeLoadFailure(network, {})).not.toContain('Network request failed')
+  })
+
+  it('🔴 AP-31X: fallbackErr === originalErr (rethrow puro, sem cache pra tentar) — usa o default PT, nunca o texto cru', () => {
+    // Cenário real do bug: 1ª abertura do app (sem snapshot salvo ainda) + modo avião. O hook não
+    // tem cache pra cair, então relança o MESMO erro original (`if (!cached) throw originalErr`).
+    // Sem a checagem de identidade, o `.message` cru (rede/Zod, em inglês) escapava pra tela.
+    const network = new TypeError('Network request failed')
+    expect(describeLoadFailure(network, network, 'Sem conexão. Tente novamente.')).toBe(
+      'Sem conexão. Tente novamente.',
+    )
   })
 
   it('usa o default quando nenhum dos dois tem mensagem', () => {
