@@ -70,7 +70,7 @@ export function VersionGateOverlay() {
       <View style={styles.content}>
         <Text style={styles.title}>Atualize seu app para continuar</Text>
         <Text style={styles.message}>{message}</Text>
-        <Pressable style={styles.button} onPress={() => Linking.openURL(storeUrl)}>
+        <Pressable style={styles.button} onPress={() => { Linking.openURL(storeUrl).catch(() => {}) }}>
           <Text style={styles.buttonText}>Atualizar</Text>
         </Pressable>
       </View>
@@ -81,7 +81,7 @@ export function VersionGateOverlay() {
         <Text style={styles.webHint}>
           Enquanto isso, seus dados de saúde continuam sempre acessíveis pelo navegador:
         </Text>
-        <Pressable onPress={() => Linking.openURL(DOSIQ_WEB_URL)}>
+        <Pressable onPress={() => { Linking.openURL(DOSIQ_WEB_URL).catch(() => {}) }}>
           <Text style={styles.webLink}>{DOSIQ_WEB_URL}</Text>
         </Pressable>
       </View>
