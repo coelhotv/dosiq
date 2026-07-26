@@ -275,3 +275,7 @@ export type {
   FleetVersionBucket,
   FleetSummary,
 } from './fleet'
+
+// Kill switch de versão mínima — resolver puro (051-A / ADR-091 / CON-033).
+export { resolveVersionGate } from './versionGate'
+export type { VersionGateRow, VersionGateDecision } from './versionGate'

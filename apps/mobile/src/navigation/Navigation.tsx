@@ -43,6 +43,7 @@ import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
+import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import { logScreenView, setUserId, resetUser } from '../platform/analytics/productAnalytics'
 import { debugLog } from '@shared/utils/debugLog'
@@ -270,6 +271,12 @@ export default function Navigation() {
   return (
     <ConsentGateProvider session={auth.session}>
       <NavigationTree {...auth} />
+      {/* Kill switch de versão mínima (spec 051-A FR-018) — IRMÃO de NavigationTree, não filho:
+          cobre inclusive o spinner de carregamento (session===undefined) e o gate de consentimento,
+          porque decide sobre o BINÁRIO, não sobre o titular. NÃO replicar o padrão `consentPending`
+          (segura a render com spinner esperando o gate) — o gate de versão NUNCA segura a
+          renderização (ADR-091 D4); o overlay só monta quando o resolver puro decide bloquear. */}
+      <VersionGateOverlay />
     </ConsentGateProvider>
   )
 }

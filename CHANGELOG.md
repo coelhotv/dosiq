@@ -7,6 +7,36 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Kill switch de versão mínima — cliente mobile (spec 051-A, PR 1.5b)
+
+- **Feature** (`patch`, mobile `0.29.2 → 0.29.3`; `@dosiq/core` `0.19.0 → 0.20.0`): o app passa a
+  consultar `app_version_gate` (PR 1.5a) no boot e bloquear versões abaixo do piso configurado —
+  overlay full-screen não-dismissível ("Atualize seu app para continuar") com CTA pra loja e saída
+  honesta pra `https://dosiq.app` (dados de saúde continuam acessíveis pelo navegador, mesmo
+  bloqueado — postura LGPD art. 18, ADR-091 D7).
+- **Resolver puro** `resolveVersionGate` (novo, `@dosiq/core/utils`, CON-033 accepted): tabela-verdade
+  do FR-018 — qualquer indeterminação (offline, timeout, erro do PostgREST, linha ausente,
+  `is_active=false`, versão min/instalada inválida) **abre** o app; só bloqueia com comparação
+  semântica válida abaixo do piso. `satisfiesSemver` deliberadamente não usado (fail-closed por
+  design, inverteria a semântica no boot — AP-303).
+- **Segurança**: `store_url` validado pela allowlist do core (`isAllowedStoreUrl`, mesma do PR
+  1.5a) — fora dela cai pro fallback compilado por plataforma, nunca abre URL arbitrária; `message`
+  remoto renderizado como `<Text>` puro, com cap, nunca vira link/markup; leitura como `anon`
+  (antes de sessão existir), `error` do `supabase-js` inspecionado explicitamente, **sem cache**
+  do estado de bloqueio (bricaria o offline pra sempre); reavaliação também no foreground
+  (`AppState 'active'`), não só no mount — app minimizado por dias precisa ver o gate se ligar.
+- **Obrigação clínica > bloqueio de update**: o overlay cede (`useAlarmScreenActive`) quando a
+  tela cheia do alarme (`AlarmFullScreen`) é a rota atual — dose crítica nunca fica escondida
+  atrás do aviso de versão.
+- **Fix correlato** (achado no smoke desta PR, fora do escopo original mas mesma superfície de
+  boot/navegação — AP-321/AP-322): `describeLoadFailure` (core) parava de vazar mensagem de erro
+  crua em inglês (rede/JS) quando o fallback offline sem cache relançava o erro original;
+  `useTreatments.ts` parava de coalescer `null`↔`[]` na fronteira hook→tela (offline com dados
+  reais mostrava "sem tratamentos" em vez do aviso de conexão); `StockScreen.tsx` parava de
+  ignorar o `error` real do hook com uma mensagem hardcoded; `AlarmSchedulerBridge.tsx` ganha
+  retry (mesmo padrão de `usePushNotifications.ts`) pra `openAlarmScreen` não desistir quando o
+  `NavigationContainer` ainda não montou no tap de notificação em cold start.
+
 ### Kill switch de versão mínima — superfície de configuração e autorização de admin (spec 051-A, PR 1.5a)
 
 - **Feature** (`minor`, web `4.20.2 → 4.21.0`, `@dosiq/core` `0.18.0 → 0.19.0`; mobile **não**

@@ -8,6 +8,8 @@ import { AppRegistry } from 'react-native'
 import App from './App'
 // Handler de background do alarme (Spec 001) — registrar no top-level antes do
 // app montar, p/ processar "Tomei"/"Pular" com o app fechado (lock screen).
+// Roda FORA da árvore React — o kill switch de versão (spec 051-A FR-018, VersionGateOverlay)
+// nunca o alcança: o overlay é UI, não suspende este handler. Provado no smoke do PO-7(d).
 import { registerAlarmBackgroundHandler } from './src/platform/alarms/registerAlarmBackgroundHandler'
 
 registerAlarmBackgroundHandler()
