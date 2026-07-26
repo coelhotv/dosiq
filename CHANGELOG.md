@@ -7,6 +7,41 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Kill switch de versão mínima — superfície de configuração e autorização de admin (spec 051-A, PR 1.5a)
+
+- **Feature** (`minor`, web `4.20.2 → 4.21.0`, `@dosiq/core` `0.18.0 → 0.19.0`; mobile **não**
+  afetado — o cliente do gate é o PR 1.5b): nasce a tabela `public.app_version_gate` (uma linha por
+  plataforma, ambas semeadas **desligadas**) e o endpoint admin que a escreve
+  (`PATCH /api/admin?resource=versionGate`, dentro do router existente — sem função serverless nova).
+  A partir daqui existe política de versão mínima acionável: é o mecanismo que encerra a Era 1 do
+  ADR-088 (*"nenhum DROP, sem exceção"*), aberta pelo outage de 2026-07-22.
+- **Segurança** (`minor`): a autorização de admin deixa de derivar de `telegram_chat_id` em
+  `user_settings` e passa a comparar o `auth.users.id` autenticado com `ADMIN_USER_ID`
+  (ADR-091 D10 / RC-SEC-2 S-6, CRITICAL). O modelo anterior era auto-atribuível — a policy de UPDATE
+  de `user_settings` não restringe coluna e `authenticated` tem o privilégio nela, então qualquer
+  conta podia se promover a admin escrevendo o chat_id do admin na própria linha. Fail-closed: env
+  ausente nega todo acesso. ⚠️ **`ADMIN_USER_ID` precisa existir no ambiente** (já criada na Vercel em
+  Preview+Production) — sem ela o painel admin devolve 401 em tudo, por desenho.
+- **Segurança** (`minor`): acesso à tabela em **duas camadas independentes** — privilégio de escrita
+  revogado de `anon`/`authenticated` (o `REVOKE ... FROM PUBLIC` não bastaria: os privilégios vêm de
+  `ALTER DEFAULT PRIVILEGES` nomeando os roles) **e** RLS com uma única policy de `SELECT`, sem
+  nenhuma policy de escrita. Leitura liberada para `anon` porque o gate roda no boot, antes de haver
+  sessão. O grant de leitura é **column-scoped** nas 5 colunas do contrato: `select=*` devolve `42501`
+  de propósito, para que o uuid do admin não vá ao cliente.
+- **Guarda de raio de impacto**: ativar o gate exige `acknowledge_affected_devices` igual à contagem
+  que o **servidor** faz da frota afetada (instalações da plataforma abaixo do piso). A recusa nomeia
+  o número correto, então operar por `curl` passa pela mesma cerimônia que o painel. Desativar **não**
+  exige confirmação — destravar a base tem de ser imediato.
+- **Refactor**: a contagem de frota (união `notification_devices ∪ device_activity`, janela de 30
+  dias, dedupe por `(user_id, platform)`) sai do heredoc de `scripts/fleet-versions.sh` e passa a
+  viver em `@dosiq/core/utils`, consumida por script **e** handler — o acknowledge compara o número
+  que o operador viu com o que o servidor conta, e duas implementações divergiriam em silêncio.
+  Paridade verificada contra a implementação anterior sobre os dados reais de produção.
+- **Testes**: `api/` ganha sua primeira suíte (o handler, 4 casos do acknowledge + validação +
+  falhas de infraestrutura), e o `include` do vitest passa a cobrir `api/**` nos dois configs —
+  sem isso o arquivo existiria sem nunca ser executado.
+- Painel admin web fica no PR 1.5c; o kill switch no cliente, no PR 1.5b.
+
 ### Edge-to-edge Android 16 + keyboard-avoidance corrigida em 12 telas (spec 055, PR 1.4)
 
 - **Fix** (`patch`, mobile `0.29.1 → 0.29.2`; **nota de loja relevante** — melhoria visível de UX):

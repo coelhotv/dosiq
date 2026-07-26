@@ -18,6 +18,14 @@ export const ACTION_TYPE_LABELS = {
   dismiss_only: 'Somente info',
 }
 
+/**
+ * Formato de versão do app (MAJOR.MINOR.PATCH), usado onde uma versão é DIGITADA por um humano.
+ * Exportado porque o `versionGateSchema` (051 / ADR-091) valida o mesmo formato: duas regexes
+ * independentes divergiriam em silêncio, e a do gate governa bloqueio de boot da base instalada.
+ * Não confundir com `parseSemver` (utils/semver.ts), que é tolerante de propósito na LEITURA.
+ */
+export const APP_VERSION_REGEX = /^\d+\.\d+\.\d+$/
+
 export const PLATFORM_OPTIONS = ['ios', 'android', 'all'] as const
 export const PLATFORM_LABELS = {
   ios: 'iOS',
@@ -71,13 +79,13 @@ const nudgeBaseSchema = z.object({
 
   min_app_version: z
     .string()
-    .regex(/^\d+\.\d+\.\d+$/, 'Versão mínima do app deve ser X.Y.Z')
+    .regex(APP_VERSION_REGEX, 'Versão mínima do app deve ser X.Y.Z')
     .nullable()
     .optional(),
 
   max_app_version: z
     .string()
-    .regex(/^\d+\.\d+\.\d+$/, 'Versão máxima do app deve ser X.Y.Z')
+    .regex(APP_VERSION_REGEX, 'Versão máxima do app deve ser X.Y.Z')
     .nullable()
     .optional(),
 

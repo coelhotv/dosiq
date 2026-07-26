@@ -1,9 +1,17 @@
 // api/admin/_handlers/nudges.js
 // Nudge admin handlers — create, read, update, toggle
 
-// TODO(040-F3): dup local de packages/core/src/schemas/nudgeSchema.ts —
-// import direto quebra em Node ESM puro (arquivo .ts sem build step em api/).
-// Reconciliar via bundler/loader de F3 e remover esta cópia.
+// ⚠️ DÍVIDA CONHECIDA: este arquivo mantém uma CÓPIA de packages/core/src/schemas/nudgeSchema.ts.
+//
+// O TODO(040-F3) que justificava a cópia — "import direto quebra em Node ESM puro" — está OBSOLETO
+// e foi removido em 2026-07-25 (spec 051 / RC3-2 F1) por induzir ao erro: `packages/core/package.json`
+// expõe `./schemas` e `./utils` resolvendo para `dist/*.js` sob a condição `node`, `api/chatbot.ts`
+// importa `@dosiq/core/utils` em produção, e `api/admin/_handlers/versionGate.ts` importa
+// `@dosiq/core/schemas`. Ou seja: o impedimento não existe.
+//
+// 🔴 NÃO copie este padrão em handler novo — importe do core. Esta cópia continua aqui apenas porque
+// deduplicá-la é mudança de comportamento em superfície não relacionada (nudges), fora do escopo do
+// PR que descobriu o engano. Ao mexer nos nudges, troque pelo import.
 import { z } from 'zod'
 
 const TARGET_VIEW_OPTIONS = ['dashboard', 'profile', 'any']

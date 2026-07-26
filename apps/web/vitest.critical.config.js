@@ -42,6 +42,10 @@ export default mergeConfig(
         // dose-only dos alertas (044/PO-4) tinham teste e ficavam FORA do validate:agent.
         // Mesma classe do AP-289: um gate verde que não roda o que promete proteger.
         '../../server/**/*.test.{js,jsx,ts,tsx}',
+        // 051 T062: mesma lição, agora em `api/` — que não tinha teste algum até 2026-07-25. O
+        // handler do kill switch de versão decide se a base instalada inteira boota; ele PRECISA
+        // estar no gate do agente, não só no `npm test` completo.
+        '../../api/**/*.test.{js,jsx,ts,tsx}',
       ],
       exclude: [
         '**/*.smoke.test.*',
