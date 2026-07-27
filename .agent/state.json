@@ -4,12 +4,12 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "pr_open",
+    "status": "merged",
     "tier": 2,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5c — PR #777 ABERTO, aguardando aprovação do PO pra merge na integração (feature/055-w1-sdk54). Painel admin web do kill switch (VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts, edit-only RC3-2/F6). PO-9 e PO-SEC-8 fechados com smoke real (device Android + painel web). R-306 novo (proxy de dev pra deploy de branch/preview: branch errada atrás do EXPO_PUBLIC_API_BASE_URL + SSO de Deployment Protection, dois sintomas distintos). Após merge: reverter EXPO_PUBLIC_API_BASE_URL local pra produção (dosiq.app) — smoke usou preview da integração.",
+    "goal": "051-A PR 1.5c — MERGEADA (#777, squash d7f4bfdc). Painel admin web do kill switch: VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts (edit-only, RC3-2/F6), registro em AppViewRouter+AdminSection. PO-9/PO-SEC-8 fechados com smoke real (device Android + painel web). Onda 055/051-A: próxima fatia a definir (1.6 é o próximo candidato a droppável — ordem registrada em RC3-2/F5).",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
@@ -21,9 +21,18 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 776,
-    "merged_squash": "de19c606",
+    "merged_pr": 777,
+    "merged_squash": "d7f4bfdc",
     "merged_history": [
+      {
+        "pr": 777,
+        "squash": "d7f4bfdc",
+        "spec": "051-A painel admin web do kill switch de versão (PR 1.5c)",
+        "tier": 2,
+        "date": "2026-07-27",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts (edit-only, RC3-2/F6 — as 2 linhas ja vem semeadas pela migracao do 1.5a, sem create/delete/lista/empty state). Guarda de raio de impacto (S-7) mora inteira no handler: a tela so exibe a contagem que o servidor devolve na recusa 409, nunca calcula por conta propria. Ativar exige confirmacao explicita; desativar nao exige cerimonia (PO-9). Registro em AppViewRouter (lazy, R-117) + AdminSection. Achado de smoke bloqueante de processo (nao de codigo): EXPO_PUBLIC_API_BASE_URL local apontava pra producao (main), que nao tem o resource versionGate ainda (so existe na integracao) — sintoma identico a 'serverless nao funciona em dev' mas causa raiz era branch errada atras do proxy; segundo sintoma foi SSO/Deployment Protection em deploys de preview bloqueando o proxy por CORS, resolvido com VERCEL_AUTOMATION_BYPASS_SECRET no header. Novo R-306 documenta os dois sintomas distintos. UI ajustada durante o proprio smoke: card por-plataforma nao soma mais fleet_installs cross-OS (confundia com o total da propria plataforma) — mostra proporcao (ex. 'Sao 100% das instalacoes ativas em android nos ultimos 30 dias (13/13)'). PO-9 e PO-SEC-8 fechados com evidencia de smoke real (device Android + painel web: gate ativo bloqueando boot, painel permanece acessivel e desativa sem exigir acknowledge). Gates verdes (lint, tsc, strict-island ratchet OK, test:critical). RC5 clean (2 rodadas — antes e depois do ajuste do vite.config.js). RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando, evitando a armadilha do #756/#772 — sem ela: 6 chunks/844K; com ela: 1 chunk/136K): tier=1, 0 findings, postado no PR."
+      },
       {
         "pr": 776,
         "squash": "de19c606",
@@ -104,15 +113,15 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-05c-version-gate-panel (PR #777 aberto contra feature/055-w1-sdk54)",
-    "blocked_on": ["aprovação humana do PR #777 (R-060 — usuário mergeia)"],
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-05c-version-gate-panel mergeada e deletada)",
+    "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 4,
-    "rules_count": 255,
+    "journal_entries_since_distillation": 5,
+    "rules_count": 256,
     "anti_patterns_count": 317,
     "decisions_count": 91,
     "contracts_count": 32,
