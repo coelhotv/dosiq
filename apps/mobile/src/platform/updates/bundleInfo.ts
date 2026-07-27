@@ -62,10 +62,17 @@ export function getBundleInfo(): BundleInfo {
  */
 export function bundleTags(): Record<string, string> {
   const info = getBundleInfo()
+  // `||` e não `??`: o nativo devolve **string vazia** quando o canal falta
+  // (`requestHeaders["expo-channel-name"] ?: ""`), e `'' ?? 'none'` devolve `''` — a tag existiria
+  // com valor vazio, que é justamente o balde cego que o comentário acima diz evitar. Mesmo
+  // tratamento nos três campos: o valor só conta se tiver conteúdo. (RC6 #778.)
+  const clean = (value: string | null | undefined, fallback: string): string =>
+    value?.trim() || fallback
+
   return {
-    update_id: info.updateId ?? 'embedded',
-    channel: info.channel ?? 'none',
-    runtime_version: info.runtimeVersion ?? 'unknown',
+    update_id: clean(info.updateId, 'embedded'),
+    channel: clean(info.channel, 'none'),
+    runtime_version: clean(info.runtimeVersion, 'unknown'),
   }
 }
 

@@ -2,7 +2,7 @@
 // O foco é o caminho DEGENERADO: o estado normal em dev/Expo Go é "tudo null", e é justamente
 // esse estado que não pode virar tela quebrada nem tag vazia no Sentry.
 import * as Updates from 'expo-updates'
-import { getBundleInfo, shortUpdateId, formatBundleLabel, formatChannelLabel } from './bundleInfo'
+import { getBundleInfo, shortUpdateId, formatBundleLabel, formatChannelLabel, bundleTags } from './bundleInfo'
 
 jest.mock('expo-updates', () => ({
   updateId: null,
@@ -131,5 +131,51 @@ describe('formatChannelLabel', () => {
     expect(
       formatChannelLabel({ updateId: null, channel: null, runtimeVersion: null, isEmbedded: true })
     ).toBeNull()
+  })
+})
+
+// bundleTags alimenta Sentry (initialScope) e PostHog (super properties). Não tinha teste algum,
+// e foi por aí que passou o bug do RC6 #778: a mesma string vazia do nativo que o
+// formatChannelLabel já tratava chegava intacta à telemetria, porque `'' ?? 'none'` devolve `''`.
+describe('bundleTags', () => {
+  it('carimba os três campos quando há update aplicado', () => {
+    mockUpdates.updateId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    mockUpdates.channel = 'production'
+    mockUpdates.runtimeVersion = '0.30.0'
+    mockUpdates.isEmbeddedLaunch = false
+
+    expect(bundleTags()).toEqual({
+      update_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      channel: 'production',
+      runtime_version: '0.30.0',
+    })
+  })
+
+  // O ponto do design: tag que some cria um balde onde "rodava o embutido" e "a instrumentação
+  // falhou" viram a mesma coisa. Nenhuma chave pode faltar, nunca.
+  it('nunca omite chave — ausência total vira valor literal', () => {
+    expect(bundleTags()).toEqual({
+      update_id: 'embedded',
+      channel: 'none',
+      runtime_version: 'unknown',
+    })
+  })
+
+  // Regressão RC6 #778.
+  it('string vazia do nativo cai no fallback, não vira tag vazia', () => {
+    mockUpdates.updateId = ''
+    mockUpdates.channel = ''
+    mockUpdates.runtimeVersion = ''
+
+    expect(bundleTags()).toEqual({
+      update_id: 'embedded',
+      channel: 'none',
+      runtime_version: 'unknown',
+    })
+  })
+
+  it('canal só-de-espaços também cai no fallback', () => {
+    mockUpdates.channel = '   '
+    expect(bundleTags().channel).toBe('none')
   })
 })
