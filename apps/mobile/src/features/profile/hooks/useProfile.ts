@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { calculateAge, getInitials } from '@dosiq/core'
+import { describeError } from '@shared/utils/networkError'
 import {
   getCurrentUser,
   getUserSettings,
@@ -69,10 +70,13 @@ export function useProfile() {
       })
     } catch (err) {
       if (__DEV__) console.error('Erro no useProfile loadProfile:', err)
+      // `err.message` cru chegava à tela: em modo avião isso é "TypeError: Network request
+      // failed", em inglês (achado no smoke 055). A tela do Perfil renderiza inteira sem
+      // rede — só o e-mail falta —, então a mensagem é informativa, não bloqueante.
       setState(prev => ({
         ...prev,
         loading: false,
-        error: err.message
+        error: describeError(err)
       }))
     }
   }, [])

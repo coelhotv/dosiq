@@ -1,6 +1,17 @@
 #!/bin/bash
 # build-android.sh — Prepara credenciais e roda eas build local para Android
-# Uso: bash build-android.sh [development|production]
+# Uso: bash build-android.sh [development|preview|production]
+#
+# Perfis (spec 051-A · canais de OTA declarados em eas.json):
+#   development → .apk  · canal `development` · uso diário de desenvolvimento
+#   preview     → .apk  · canal `preview`     · alvo do smoke de OTA, INCLUSIVE o teste
+#                                               destrutivo do PO-5 (update que crasha de
+#                                               propósito). NUNCA rodar esse teste em production.
+#   production  → .aab  · canal `production`  · o que vai pra Play Store
+#
+# ⚠️ Mesmo bundle ID (com.coelhotv.dosiq) nos três: o APK local é assinado por esta máquina e o
+#    app da Play Store pelo Google — assinaturas diferentes, o Android RECUSA instalar por cima.
+#    Para instalar um build preview/development: desinstale o Dosiq da loja antes.
 
 set -euo pipefail
 
@@ -16,6 +27,20 @@ fi
 
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# R-307: procedencia do binario de loja (tag no git + arvore limpa)
+. "$SCRIPT_DIR/lib-release-tag.sh"
+
+# Falhar cedo e explícito: perfil desconhecido só apareceria lá na frente como erro do EAS,
+# depois do prebuild e do --clear-cache (minutos perdidos).
+case "$PROFILE" in
+  development|preview|production) ;;
+  *)
+    echo "❌ Perfil inválido: '$PROFILE'"
+    echo "   Use: development | preview | production"
+    exit 1
+    ;;
+esac
 
 # 1. Extrair versão do app.config.js
 APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
@@ -45,9 +70,16 @@ TEMP_OUTPUT="$SCRIPT_DIR/build-temp.$EXT"
 FINAL_NAME="dosiq-v$APP_VERSION-$PROFILE.$EXT"
 FINAL_PATH="$TARGET_DIR/$FINAL_NAME"
 
+# R-307: build de loja precisa de procedência. Checar ANTES de compilar — falhar depois de 20 min
+# de gradle é desperdício, e falhar depois do submit é tarde demais.
+if [ "$PROFILE" = "production" ]; then
+  assert_taggable_build "$APP_VERSION" || exit 1
+fi
+
 echo ""
 echo "📱 --- RESUMO DO PROCESSO ANDROID ---"
 echo "👤 Perfil:  $PROFILE"
+echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam neste build)"
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Formato: $EXT"
@@ -81,6 +113,12 @@ fi
 # 4. Mover e renomear
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+# R-307: marcar o commit que virou este binário. Só agora, com o artefato em mãos — tag de build
+# que falhou é mentira sobre o que existe.
+if [ "$PROFILE" = "production" ]; then
+  create_release_tag "$APP_VERSION"
+fi
 
 echo "✨ Processo finalizado com sucesso!"
 echo "📂 Arquivo disponível em: $FINAL_PATH"
