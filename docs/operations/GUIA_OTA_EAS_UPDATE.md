@@ -338,6 +338,40 @@ continua rodando ele por pelo menos mais um ciclo de abertura do app após o rol
 Não existe forçar aplicação imediata — comunique isso a quem estiver esperando o rollback "resolver
 na hora".
 
+### Como saber DE QUAL update veio um crash (verificado 2026-07-27)
+
+Com OTA, `release: com.coelhotv.dosiq@0.30.0+3000` deixa de identificar o código: dois aparelhos na
+mesma versão podem rodar bundles diferentes. Quem responde é a tag `update_id`, anexada por
+`bundleTags()` via `initialScope`.
+
+Verificação pela CLI do Sentry — sem abrir o dashboard:
+
+```bash
+sentry issue list --json --fields shortId,title --limit 10
+
+sentry issue view <SHORT-ID> --json | python3 -c "
+import json,sys
+for t in json.load(sys.stdin).get('event',{}).get('tags',[]):
+    print(f\"{t['key']}: {t['value']}\")
+"
+```
+
+Medido no crash proposital do PO-5 (`DOSIQ-APP-4`), o evento trouxe:
+
+```
+channel: preview
+runtime_version: 0.30.0
+update_id: 019fa58d-fcdb-7e9e-8820-24ae7fa74e31   ← o update quebrado, exato
+```
+
+**É esse dado que decide avançar ou reverter a escada de rollout (§2).** Um pico de crashes cujo
+`update_id` é o do update em rollout = reverter; espalhado por vários update_ids = problema
+preexistente, e reverter não resolveria nada.
+
+`initialScope` e não `setTag` depois: as tags precisam valer para crash de **boot**, anterior a
+qualquer effect. O PO-5 provou isso na prática — o `throw` matou o app antes de a árvore React
+montar, e o evento chegou completo mesmo assim.
+
 ### "2 launches" é o melhor caso, não o caso típico (T017, 2026-07-27)
 
 `fallbackToCacheTimeout: 0` faz o boot **nunca** esperar rede — o app abre na hora, sempre. O preço:
