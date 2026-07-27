@@ -12,7 +12,7 @@ tags:
   - ios
   - setup
 created_at: "2026-04-20"
-updated_at: "2026-04-20"
+updated_at: "2026-07-27"
 ---
 
 # Guia Pratico - Apple Developer e App Store Connect para iOS
@@ -20,7 +20,7 @@ updated_at: "2026-04-20"
 
 ## 1. O que este guia resolve
 
-Este documento foi escrito para o primeiro ciclo real de setup iOS do Dosik.
+Este documento foi escrito para o primeiro ciclo real de setup iOS do Dosiq.
 
 Ao final dele, você terá:
 
@@ -52,26 +52,28 @@ Os identificadores atuais do projeto estão em `apps/mobile/app.config.js`.
 
 ### Bundle identifiers por ambiente
 
+⚠️ **Corrigido em 2026-07-27**: este guia descrevia 3 bundle identifiers separados por perfil
+(`.dev`/`.preview`/produção). O `apps/mobile/app.config.js` real usa **um único** bundle
+identifier para todos os perfis configurados hoje — não há variantes `.dev`/`.preview`:
+
 | Perfil | Nome | Bundle Identifier |
 |---|---|---|
-| `development` | `Dosik Dev` | `com.coelhotv.dosik.dev` |
-| `preview` | `Dosik Preview` | `com.coelhotv.dosik.preview` |
-| `production` | `Dosik` | `com.coelhotv.dosik` |
+| `development` | `Dosiq dev` | `com.coelhotv.dosiq` |
+| `production` | `Dosiq` | `com.coelhotv.dosiq` |
+
+O perfil `preview` **ainda não existe** em `eas.json`/`app.config.js` (pendente do PR 1.6 da spec
+051 — ver `GUIA_OTA_EAS_UPDATE.md`). Quando for criado, confirmar no código se ele ganha
+identidade própria ou reaproveita `com.coelhotv.dosiq` antes de assumir qualquer coisa aqui.
 
 ### Regra prática
 
 No App Store Connect, o app público deve ser criado com:
 
 ```text
-com.coelhotv.dosik
+com.coelhotv.dosiq
 ```
 
-Não use:
-
-- `com.coelhotv.dosik.dev`
-- `com.coelhotv.dosik.preview`
-
-Esses devem ficar reservados para ambientes auxiliares.
+É o único bundle identifier que o projeto usa hoje — não há `.dev`/`.preview` a reservar.
 
 ---
 
@@ -79,8 +81,8 @@ Esses devem ficar reservados para ambientes auxiliares.
 
 Separe estes dados:
 
-- nome do app: `Dosik`
-- bundle id de produção: `com.coelhotv.dosik`
+- nome do app: `Dosiq`
+- bundle id de produção: `com.coelhotv.dosiq`
 - domínio público: `https://dosiq.app`
 - política de privacidade: `https://dosiq.app/politica-de-privacidade`
 - e-mail público: `contact@dosiq.app`
@@ -102,9 +104,9 @@ No Apple Developer:
 5. continue
 6. selecione `App`
 7. preencha:
-   - Description: `Dosik`
+   - Description: `Dosiq`
    - Bundle ID: `Explicit`
-   - Bundle ID value: `com.coelhotv.dosik`
+   - Bundle ID value: `com.coelhotv.dosiq`
 8. avance para a seleção de capabilities
 
 ### Regra crítica
@@ -168,7 +170,7 @@ Nada disso é necessário para:
 
 ### App Services
 
-Em `App Services`, para o Dosik:
+Em `App Services`, para o Dosiq:
 
 - `MusicKit`: não
 - `ShazamKit`: não
@@ -176,7 +178,7 @@ Em `App Services`, para o Dosik:
 
 ### Capability Requests
 
-Em `Capability Requests`, para o Dosik:
+Em `Capability Requests`, para o Dosiq:
 
 - nenhuma agora
 
@@ -237,13 +239,13 @@ Clique em `+` e escolha `New App`.
 Preencha:
 
 - Platforms: `iOS`
-- Name: `Dosik`
+- Name: `Dosiq`
 - Primary Language: preferencialmente `Portuguese (Brazil)` se disponível
-- Bundle ID: `com.coelhotv.dosik`
+- Bundle ID: `com.coelhotv.dosiq`
 - SKU: use algo estável, por exemplo:
 
 ```text
-dosik-ios
+dosiq-ios
 ```
 
 ### Regra do SKU
@@ -273,7 +275,7 @@ Preencha primeiro:
 
 ### Recomendação inicial
 
-- Name: `Dosik`
+- Name: `Dosiq`
 - Subtitle: algo curto como `Controle doses e estoque`
 - Category: `Health & Fitness`
 - Privacy Policy URL: `https://dosiq.app/politica-de-privacidade`
@@ -282,7 +284,7 @@ Preencha primeiro:
 
 O age rating é obrigatório.
 
-Para o Dosik, a tendência natural é rating baixo, desde que o app não tenha:
+Para o Dosiq, a tendência natural é rating baixo, desde que o app não tenha:
 
 - conteúdo sexual
 - violência
@@ -308,7 +310,7 @@ Você vai precisar declarar:
 - se esses dados são ligados ao usuário
 - se são usados para tracking
 
-### Leitura segura para o Dosik
+### Leitura segura para o Dosiq
 
 Hoje, a tendência do app é incluir pelo menos:
 
@@ -486,7 +488,7 @@ No iOS, o campo de palavras-chave existe e deve ser tratado com cuidado. Não us
 
 ## 14. Checklist mínimo antes do primeiro TestFlight
 
-- App ID criado com `com.coelhotv.dosik`
+- App ID criado com `com.coelhotv.dosiq`
 - capabilities definidas com critério
 - app criado no App Store Connect
 - política de privacidade publicada
@@ -511,13 +513,13 @@ No iOS, o campo de palavras-chave existe e deve ser tratado com cuidado. Não us
 
 ---
 
-## 16. Recomendações específicas para o Dosik
+## 16. Recomendações específicas para o Dosiq
 
 Se eu estivesse configurando o projeto hoje, eu faria assim:
 
 ### Apple Developer
 
-- criar App ID explícito `com.coelhotv.dosik`
+- criar App ID explícito `com.coelhotv.dosiq`
 - marcar no máximo `Push Notifications` se você quiser já preparar a fase de APNs
 - deixar todo o resto desligado
 - não habilitar App Services
@@ -525,7 +527,7 @@ Se eu estivesse configurando o projeto hoje, eu faria assim:
 
 ### App Store Connect
 
-- criar app iOS com nome `Dosik`
+- criar app iOS com nome `Dosiq`
 - categoria inicial `Health & Fitness`
 - política de privacidade apontando para `https://dosiq.app/politica-de-privacidade`
 - conta de review pronta antes de qualquer submissão

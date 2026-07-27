@@ -12,7 +12,7 @@ tags:
   - eas
   - android
 created_at: "2026-04-14"
-updated_at: "2026-04-18"
+updated_at: "2026-07-27"
 ---
 
 # Guia Pratico - Expo.dev e EAS para Android
@@ -43,21 +43,28 @@ O app mobile já possui base suficiente para subir no ecossistema Expo:
 
 - `apps/mobile/app.config.js` é o arquivo canônico de configuração
 - `apps/mobile/eas.json` já existe
-- os perfis de build atuais são `development`, `preview` e `production`
+- os perfis de build atuais são `development` e `production` — `preview` **ainda não existe**
+  (pendente do PR 1.6 da spec 051, T006b; ver `GUIA_OTA_EAS_UPDATE.md`)
 - os identificadores oficiais já estão definidos
 
 ### Identidade atual por ambiente
 
+⚠️ **Corrigido em 2026-07-27**: esta tabela descrevia 3 packages Android separados por perfil.
+`apps/mobile/app.config.js` real usa **um único** package para todos os perfis configurados hoje:
+
 | Perfil | Nome | Slug | Android package |
 |---|---|---|---|
-| `development` | `Dosik Dev` | `dosik-dev` | `com.coelhotv.dosik.dev` |
-| `preview` | `Dosik Preview` | `dosik-preview` | `com.coelhotv.dosik.preview` |
-| `production` | `Dosik` | `dosik` | `com.coelhotv.dosik` |
+| `development` | `Dosiq dev` | `dosiq-app` | `com.coelhotv.dosiq` |
+| `production` | `Dosiq` | `dosiq-app` | `com.coelhotv.dosiq` |
+
+O perfil `preview` referenciado no restante deste guia (§6.2, §8, §12.6) descreve o comportamento
+**alvo**, a ser configurado no PR 1.6 — confirmar no código se ele ganha identidade própria ou
+reaproveita `com.coelhotv.dosiq` antes de assumir qualquer nome/package específico.
 
 ### Leitura correta desses perfis
 
-- `development`: gera um **APK** para uso local/manual com dev client. Não serve para a Play Store.
-- `preview`: distribuição interna para testes reais (pode gerar APK ou AAB).
+- `development`: gera um **APK** para uso local/manual. Não serve para a Play Store.
+- `preview` (quando existir): distribuição interna para testes reais (pode gerar APK ou AAB).
 - `production`: gera obrigatoriamente um **Android App Bundle (.aab)**, formato exigido pela Google Play Console para publicação.
 
 ---
@@ -141,7 +148,7 @@ O comportamento esperado:
 npx eas-cli@latest project:info
 ```
 
-Você deve ver um projeto com nome coerente com `Dosik` e ligado ao diretório `apps/mobile`.
+Você deve ver um projeto com nome coerente com `Dosiq` e ligado ao diretório `apps/mobile`.
 
 ### Passo 6 - revisar o `app.config.js`
 
@@ -250,7 +257,7 @@ Use quando:
 
 ### O que esperar no emulador
 
-Ao final do build, a CLI pode oferecer instalar e abrir o app no emulador. Se você responder que sim, o `Dosik Preview` abre como um app Android normal.
+Ao final do build, a CLI pode oferecer instalar e abrir o app no emulador. Se você responder que sim, o `Dosiq Preview` abre como um app Android normal.
 
 Importante:
 
@@ -306,7 +313,7 @@ Se você gerou um `preview build`, abriu no emulador, fechou tudo e depois quis 
 
 1. abra o Android Emulator
 2. espere o Android iniciar
-3. procure o app `Dosik Preview`
+3. procure o app `Dosiq Preview`
 4. toque no ícone para abrir
 
 Nesse caso, você não precisa rodar novo build.
@@ -340,7 +347,7 @@ Pense assim:
 
 ## 9. Checklist de validação antes do primeiro build de produção
 
-- `app.config.js` com `android.package = com.coelhotv.dosik`
+- `app.config.js` com `android.package = com.coelhotv.dosiq`
 - `version = APP_VERSION` definido em `app.config.js` com a fórmula semântica (ver secção 6.4)
 - `android.versionCode = VERSION_CODE` derivado automaticamente — nunca editar manualmente
 - `icon.png` aceitável para loja e launcher
@@ -519,7 +526,7 @@ npx eas-cli@latest build --platform android --profile development
 Correção:
 
 1. abrir o emulador novamente
-2. procurar `Dosik Preview` ou `Dosik Dev`
+2. procurar `Dosiq Preview` ou `Dosiq Dev`
 3. abrir manualmente pelo launcher
 
 Se quiser abrir o emulador por terminal:
@@ -704,7 +711,7 @@ Antes de rodar qualquer build, garanta que os arquivos Firebase existem em `apps
 
 - ✅ `google-services-development.json` (para perfil development)
 - ✅ `google-services-preview.json` (para perfil preview)
-- ✅ `google-services.json` (para perfil production — download do Firebase Console do app `com.coelhotv.dosik`)
+- ✅ `google-services.json` (para perfil production — download do Firebase Console do app `com.coelhotv.dosiq`)
 
 **Nunca commitar esses arquivos** — eles estão corretamente no `.gitignore`.
 
