@@ -16,6 +16,14 @@ import { useNudges } from '@profile/hooks/useNudges'
 import { colors, spacing, borderRadius, shadows, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { useUnreadBadgeCount } from '@shared/hooks/useUnreadBadgeCount'
+import { getBundleInfo, formatBundleLabel, formatChannelLabel } from '@platform/updates/bundleInfo'
+
+// FR-016: a identidade do bundle é imutável durante toda a vida do processo (só muda quando um
+// OTA é APLICADO, e aplicar exige relançar o app). Calcular fora do componente evita recomputar a
+// cada render e deixa explícito que não é estado.
+const BUNDLE_INFO = getBundleInfo()
+const BUNDLE_LABEL = formatBundleLabel(BUNDLE_INFO)
+const CHANNEL_LABEL = formatChannelLabel(BUNDLE_INFO)
 
 /**
  * Hub do Perfil (Fase 4) — evolui o MVP read-only (H5.6).
@@ -272,11 +280,23 @@ export default function ProfileScreen() {
           <Text style={styles.versionText}>
             Versão {Constants.expoConfig?.version || '0.0.0'} (Build {Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || '1'})
           </Text>
+          {/* FR-016/PO-6: com OTA, "versão 0.30.0" deixa de identificar o código — dois aparelhos
+              na mesma versão podem rodar bundles diferentes. Esta linha é o que o suporte pede ao
+              usuário pra saber QUAL bundle está na mão dele. Selecionável pra caber num print/cópia. */}
+          <Text style={styles.bundleText} selectable numberOfLines={1}>
+            {BUNDLE_LABEL}
+          </Text>
+          {CHANNEL_LABEL && (
+            <Text style={styles.bundleText} selectable numberOfLines={1}>
+              {CHANNEL_LABEL}
+            </Text>
+          )}
         </View>
 
         {error && (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Erro ao carregar dados: {error}</Text>
+            {/* Sem prefixo: `error` já vem como frase completa em PT (describeError). */}
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
       </ScrollView>
@@ -293,7 +313,9 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 40,
+    // 64 e não 40: a seção de versão cresceu de 1 para 3 linhas no PR 1.6, e a última ficava
+    // rente ao limite do scroll — qualquer quebra inesperada some da tela sem deixar rastro.
+    paddingBottom: 64,
   },
   header: {
     flexDirection: 'row',
@@ -576,5 +598,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.secondary,
     fontFamily: 'Courier', // Estilo técnico
+  },
+  bundleText: {
+    // Subordinado à versão: mesma família técnica, um degrau menor — é dado de suporte,
+    // não informação que o usuário comum precise ler.
+    fontSize: 10,
+    color: colors.text.secondary,
+    fontFamily: 'Courier',
+    marginTop: spacing[1],
+    // 🔴 Largura total + centralização por TEXTO, não por layout do pai.
+    // No smoke do PR 1.6 (Android), `Canal preview` — 13 caracteres — quebrava em duas linhas
+    // dentro de um container de ~360dp, e a segunda linha ficava fora da área visível (só o
+    // pingo do "i" de `preview` vazava). A linha ACIMA, mais longa, cabia sem quebrar; e o
+    // `numberOfLines={1}` não impediu a quebra (provável interação com `selectable` no Android).
+    // Sem causa-raiz confirmada, a caixa passa a ocupar a largura inteira: com ela, não existe
+    // largura residual onde uma string curta possa quebrar. Preferir eliminar o modo de falha a
+    // explicá-lo — o dado aqui é de suporte, e suporte que lê meia linha diagnostica errado.
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
 })

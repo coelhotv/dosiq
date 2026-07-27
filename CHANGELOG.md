@@ -7,6 +7,33 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Atualizações OTA (EAS Update) no app mobile (spec 051-A, PR 1.6)
+
+- **Feature** (`minor`, mobile `0.29.3 → 0.30.0`): o app passa a embutir o cliente `expo-updates`,
+  tornando-se **a primeira versão alcançável por OTA**. A partir dela, uma correção JS-only chega à
+  base instalada em minutos/horas, sem depender de revisão de loja — o custo que o incidente #755
+  cobrou por inteiro.
+
+  O bump para `0.30.0` (e não `0.29.4`) marca deliberadamente a fronteira de capacidade da Onda 1:
+  Expo SDK 54, kill switch de versão mínima e canal OTA. Sob a política do ADR-082 o
+  `runtimeVersion` **é** o `APP_VERSION`, então esta é a versão-raiz de todos os OTAs futuros:
+  releases OTA sobre ela usam `[0.30.0+ota.N]` e **não** bumpam a versão.
+
+  Inclui:
+  - `runtimeVersion` = `APP_VERSION` como valor literal (não `{policy:'appVersion'}`, que aborta o
+    build local por causa do `expo prebuild` — ver `docs/operations/GUIA_OTA_EAS_UPDATE.md` §1.2);
+  - canal explícito nos 3 perfis de build + perfil `preview` novo, alvo do teste destrutivo
+    anti-bricking (que nunca roda em `production`);
+  - **code signing** (ADR-083): o cliente rejeita bundle não assinado pela chave do projeto;
+  - `fallbackToCacheTimeout: 0` — o boot nunca espera rede, preservando o offline-first (AP-303);
+  - identificação do bundle (`updateId` curto + canal) na tela de Perfil, porque com OTA a versão
+    deixa de identificar o código em execução;
+  - `update_id`/`channel`/`runtime_version` no Sentry e no PostHog — responde "esse crash veio de
+    qual update?", a pergunta que decide reverter ou avançar o rollout.
+
+  **Nota de loja:** o benefício não é retroativo. Esta versão precisa ir à loja uma vez; OTAs só
+  fluem para quem instalar dela em diante.
+
 ### Kill switch de versão mínima — painel admin web (spec 051-A, PR 1.5c)
 
 - **Feature** (`minor`, web `4.21.0 → 4.22.0`): painel `VersionGateAdmin` (`admin-version-gate`,
