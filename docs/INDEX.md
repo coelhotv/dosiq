@@ -116,7 +116,9 @@ Procedimentos operacionais de infraestrutura, bancos e publicação nas lojas.
 | [`operations/GUIA_EXPO_DEV_E_EAS_ANDROID.md`](operations/GUIA_EXPO_DEV_E_EAS_ANDROID.md) | Execução de builds Android, keystores e deploys via EAS CLI |
 | [`operations/GUIA_EXPO_DEV_E_EAS_IOS.md`](operations/GUIA_EXPO_DEV_E_EAS_IOS.md) | Execução de builds iOS, provisionamentos Apple e EAS CLI |
 | [`operations/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md`](operations/GUIA_GOOGLE_PLAY_CONSOLE_MVP_ANDROID.md) | Configurações iniciais e faixas de teste interno na Google Play Console |
+| [`operations/GUIA_KILL_SWITCH_VERSAO_MINIMA.md`](operations/GUIA_KILL_SWITCH_VERSAO_MINIMA.md) | Ativação, confirmação e desativação do bloqueio de boot por versão mínima |
 | [`operations/GUIA_NUDGE_BANNERS.md`](operations/GUIA_NUDGE_BANNERS.md) | Administração e publicação de banners informativos/avisos do sistema |
+| [`operations/GUIA_OTA_EAS_UPDATE.md`](operations/GUIA_OTA_EAS_UPDATE.md) | Publicação, rollout escalonado, rollback e versionamento de updates OTA via EAS Update |
 | [`operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md`](operations/GUIA_UPLOAD_ANVISA_SUPABASE_STORAGE.md) | ETL e upload dos dados da ANVISA para o Supabase Storage |
 | [`operations/supabase-email-config.md`](operations/supabase-email-config.md) | Configuração de SMTP personalizado e templates de e-mail no Supabase |
 
