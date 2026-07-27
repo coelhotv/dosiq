@@ -1,4 +1,4 @@
-import { Terminal, Database, MessageSquare, Volume2 } from 'lucide-react'
+import { Terminal, Database, MessageSquare, Volume2, ShieldAlert } from 'lucide-react'
 
 /**
  * AdminSection — Ferramentas administrativas e DLQ.
@@ -48,6 +48,17 @@ export default function AdminSection({ isAdmin, dlqCount, onNavigate }) {
           <div className="sr-admin__label">
             <Volume2 size={18} />
             <span>Nudges (In-App)</span>
+          </div>
+        </button>
+
+        <button
+          className="sr-admin__row"
+          onClick={() => onNavigate('admin-version-gate')}
+          type="button"
+        >
+          <div className="sr-admin__label">
+            <ShieldAlert size={18} />
+            <span>Kill Switch de Versão</span>
           </div>
         </button>
       </div>
