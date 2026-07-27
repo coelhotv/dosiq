@@ -126,11 +126,3 @@ registrada, não descuido** (ADR-091, "Dívidas registradas"). Quando deixar de 
 migração é para uma tabela `admin_users` gravável apenas por `service_role` — item de escala, não
 vetor de segurança aberto hoje.
 
----
-
-## 6. Docs puro — commit direto na main
-
-Este guia (e seu par `GUIA_OTA_EAS_UPDATE.md`) é documentação pura: commit + push direto na `main`,
-sem branch/PR. Se a branch de integração (`feature/055-w1-sdk54`) estiver aberta no momento deste
-commit, **rebasear a branch logo em seguida** — senão o squash-merge da integração pode apagar o
-doc (incidente conhecido, AP-234).
