@@ -12,7 +12,7 @@ tags:
   - setup
   - android
 created_at: "2026-04-14"
-updated_at: "2026-04-18"
+updated_at: "2026-07-27"
 ---
 
 # Guia Pratico - Google Play Console para o MVP Android
@@ -55,13 +55,13 @@ Para o primeiro app publicado, mantenha uma regra rígida:
 No caso deste projeto, o package de produção já está definido em `apps/mobile/app.config.js`:
 
 ```text
-com.coelhotv.dosik
+com.coelhotv.dosiq
 ```
 
 ### Não crie o app com estes packages
 
-- `com.coelhotv.dosik.dev`
-- `com.coelhotv.dosik.preview`
+- `com.coelhotv.dosiq.dev`
+- `com.coelhotv.dosiq.preview`
 
 Esses ficam para builds internas e ambientes auxiliares.
 
@@ -71,7 +71,7 @@ Esses ficam para builds internas e ambientes auxiliares.
 
 Separe estes dados:
 
-- nome do app: `Dosik`
+- nome do app: `Dosiq`
 - e-mail de suporte que ficará público
 - link da política de privacidade
 - país inicial de distribuição
@@ -125,7 +125,7 @@ Na home da Play Console:
 Use:
 
 ```text
-Dosik
+Dosiq
 ```
 
 Evite adicionar:
@@ -136,8 +136,8 @@ Evite adicionar:
 
 Exemplos a evitar:
 
-- `Dosik Controle de Medicamentos e Lembretes`
-- `Dosik Brasil Oficial`
+- `Dosiq Controle de Medicamentos e Lembretes`
+- `Dosiq Brasil Oficial`
 
 ---
 
@@ -189,7 +189,7 @@ Use primeiro para validar upload, instalação e fluxo principal.
 
 ### Status Atual (legado) ⚠️
 - **Convite (Email List):** o link anterior precisa ser substituído depois da recriação do app com o novo package.
-- **Download App:** atualizar após recriação do app com o novo package `com.coelhotv.dosik`.
+- **Download App:** atualizar após recriação do app com o novo package `com.coelhotv.dosiq`.
 
 ## 7.3. Closed testing
 
@@ -305,7 +305,7 @@ Se o posicionamento for mais clínico/institucional:
 
 - avalie `Medical`
 
-Para o MVP do Dosik, eu recomendo começar por `Health & Fitness`, porque tende a comunicar melhor uso cotidiano e reduzir expectativa de ferramenta clínica profissional.
+Para o MVP do Dosiq, eu recomendo começar por `Health & Fitness`, porque tende a comunicar melhor uso cotidiano e reduzir expectativa de ferramenta clínica profissional.
 
 ---
 
@@ -313,7 +313,7 @@ Para o MVP do Dosik, eu recomendo começar por `Health & Fitness`, porque tende 
 
 Todo app publicado no Google Play precisa tratar com seriedade a seção de Data safety. Em testes internos o impacto é menor, mas para trilhas mais amplas e produção esse preenchimento passa a ser parte real do caminho de publicação.
 
-### Como pensar no caso do Dosik
+### Como pensar no caso do Dosiq
 
 O app provavelmente envolve pelo menos:
 
@@ -423,7 +423,7 @@ Se possível, use device frames consistentes e texto em pt-BR.
 Certo:
 
 ```text
-com.coelhotv.dosik
+com.coelhotv.dosiq
 ```
 
 Errado:
@@ -463,7 +463,7 @@ Se o revisor não conseguir entrar, o processo trava.
 
 Considere a Play Console realmente pronta quando estes itens estiverem verdes:
 
-1. app criado com `com.coelhotv.dosik`
+1. app criado com `com.coelhotv.dosiq`
 2. assinatura configurada
 3. internal testing funcionando
 4. ficha principal preenchida
