@@ -9,7 +9,7 @@
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5c — MERGEADA (#777, squash d7f4bfdc). Painel admin web do kill switch: VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts (edit-only, RC3-2/F6), registro em AppViewRouter+AdminSection. PO-9/PO-SEC-8 fechados com smoke real (device Android + painel web). Onda 055/051-A: próxima fatia a definir (1.6 é o próximo candidato a droppável — ordem registrada em RC3-2/F5).",
+    "goal": "051-A PR 1.6 — MERGEADA (#778, squash 7a7765f5). Cliente expo-updates embutido no binario: runtimeVersion literal (policy aborta sob bare workflow do prebuild), canal em DOIS lugares (eas.json + app.config.js requestHeaders — sem o 2o o app nunca atualiza), perfil `preview` novo, bundleInfo.ts como fonte unica de identidade p/ tela+Sentry+PostHog. R-307 nova (procedencia do binario: tag mobile-v<versao> + guarda de hotfix OTA). ADR-083 emendado (code signing exige EAS Enterprise — premissa original falsa; PO-SEC-1 sem objeto). Smoke fechou PO-1/2/5/6 + T017 + T043 em device real. Proximas fatias: W1.6b (OTA em sessao viva) e W1.7 (preferencia de estoque offline).",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
@@ -21,9 +21,18 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 777,
-    "merged_squash": "d7f4bfdc",
+    "merged_pr": 778,
+    "merged_squash": "7a7765f5",
     "merged_history": [
+      {
+        "pr": 778,
+        "squash": "7a7765f5",
+        "spec": "051-A cliente expo-updates no binario (PR 1.6) + R-307 procedencia do binario",
+        "tier": 2,
+        "date": "2026-07-27",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Fatia BINARIA da 051-A (runbook/governanca/rollout/CI = 051-B). expo-updates 29.0.19 (dist-tag sdk-54; latest=57.x quebraria o SDK 54). DUAS armadilhas de config que so o build real expoe: (1) runtimeVersion tem de ser LITERAL, nao {policy:'appVersion'} — o expo prebuild que antecede eas build --local poe o projeto em bare workflow, onde politicas ABORTAM o build; (2) o canal precisa estar em DOIS lugares — eas.json (roteamento no servidor) e app.config.js updates.requestHeaders (o que fica GRAVADO no binario) — porque o prebuild regenera o manifesto a partir do app.config.js e apaga o que o `eas update:configure` escreveu; sem isso o app FUNCIONA e nunca atualiza, falha que so apareceria depois de publicado na loja. fallbackToCacheTimeout 0 (AP-303). Perfil `preview` novo (APK/simulador, distribuicao interna) como alvo do smoke e do teste destrutivo; build-android.sh/build-ios.sh aceitam o 3o perfil. R-307 NOVA (hot): build de loja exige arvore limpa e cria/publica tag mobile-v<APP_VERSION> (lib-release-tag.sh); publish-ota.sh recusa production quando HEAD nao descende da tag — o `eas update` empacota a WORKING TREE, nao um commit, entao publicar de uma main que andou entregaria features nao revisadas junto do fix (violacao Apple 3.3.1 + risco de chamar nativo que o binario instalado nao tem). Nasceu de duas dores do PO na mesma sessao: 'como refazer o build 2803' e 'como planejar um OTA no meio de N features'. R-221 ganhou passo 4b. ADR-083 EMENDADO: code signing exige plano EAS Enterprise — premissa original FACTUALMENTE FALSA, descoberta no 1o `eas update`. Decisao do PO: seguir sem assinatura, risco aceito; defesa do canal = 2FA + publish manual PO-only + zero EXPO_TOKEN em CI. PO-SEC-1 fica sem objeto. SMOKE em device real (moto g06 / Android 15) achou 6 defeitos que nenhum gate mecanico pegaria (AP-316 se repetindo): Updates.updateId NAO e null em bundle embutido (o label ramificava por ele -> tela AFIRMAVA 'Atualizacao 25d83045' a quem rodava o binario da loja; fix por isEmbeddedLaunch); canal ausente do binario (3 greps meus deram falso-negativo por rodarem de apps/mobile, onde node_modules nao existe — hoisted na raiz); quebra de linha invisivel; mensagem de erro CRUA em ingles no Perfil offline (novo shared/utils/networkError.ts, deteccao conservadora); preferencia de estoque ressuscitando offline (spec 044 -> slice W1.7); e QUATRO erros no runbook GUIA_OTA so visiveis na execucao (--channel com --branch, --branch inexistente no rollback, semantica INVERTIDA do GROUPID, custodia da chave). COMPORTAMENTOS MEDIDOS: PO-5 anti-bricking — update com throw no boot degrada UMA abertura (tela preta, app nao fecha) e recupera sozinho na 3a; T017 — '2 launches' e o melhor caso, checagem que falha queima o ciclo em silencio (medido: 3a abertura apos religar Wi-Fi), reforcando o W1.6b; T043 — o crash do PO-5 chegou ao Sentry com o update_id EXATO do bundle quebrado, evidencia real e nao sintetica (initialScope se pagou: o throw matou o app antes da arvore React montar). T017d por inspecao (canal verificado no APK via aapt2, decisao do PO). Gates verdes (validate:agent 2204/164, jest mobile 532, lint 0 erros, tsc apps/web 0, strict-island ratchet OK). RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): 2 chunks, 2 medium introduced, 0 critical/high. 1 verdadeiro (bundleTags usava `??` onde o nativo devolve string vazia — a MESMA string vazia que eu ja tratara em formatChannelLabel horas antes: correcao pela metade, ponto cego estrutural do RC5, e bundleTags nao tinha teste algum) + 1 falso positivo (refutado inline com os 3 testes). Registrado measurement.md 034-D.3: severity de finding de observabilidade e subestimada por natureza — o dano nao aparece no fluxo, aparece na proxima investigacao."
+      },
       {
         "pr": 777,
         "squash": "d7f4bfdc",
@@ -113,15 +122,15 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-05c-version-gate-panel mergeada e deletada)",
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-06-expo-updates mergeada e deletada)",
     "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 5,
-    "rules_count": 256,
+    "journal_entries_since_distillation": 6,
+    "rules_count": 257,
     "anti_patterns_count": 317,
     "decisions_count": 91,
     "contracts_count": 32,
@@ -142,13 +151,13 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy (RC6_ENGINE_CLAUDE=0, 1 chunk)",
-    "status": "clean",
+    "engine": "agy (RC6_ENGINE_CLAUDE=0, 2 chunks)",
+    "status": "resolved",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 777,
-    "resolved": "RC6_MAIN=feature/055-w1-sdk54 corrigido de propósito (sem ela: 6 chunks/844K, acumulando diff da integração; com ela: 1 chunk/136K). Tier 1, 0 findings, postado no PR."
+    "pr": 778,
+    "resolved": "2 medium introduced: 1 verdadeiro corrigido em 03163a1 (bundleTags `??` -> `||` nos 3 campos + 4 testes novos; a funcao nao tinha teste algum) e 1 falso positivo refutado inline (formatChannelLabel retorna string|null, 3 testes cobrem). Ambas as threads respondidas inline antes do merge."
   }
 }
