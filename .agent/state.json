@@ -4,17 +4,17 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged",
+    "status": "pr_open",
     "tier": 2,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.5b — MERGEADA (#776, squash de19c606). Kill switch de versao no cliente mobile: resolver puro (CON-033) + servico de leitura + overlay + wiring na arvore (FR-018/PO-7). Proximo: PR 1.5c (painel admin web, adiado por RC3-2/F5) ou proxima fatia da onda 055.",
+    "goal": "051-A PR 1.5c — PR #777 ABERTO, aguardando aprovação do PO pra merge na integração (feature/055-w1-sdk54). Painel admin web do kill switch (VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts, edit-only RC3-2/F6). PO-9 e PO-SEC-8 fechados com smoke real (device Android + painel web). R-306 novo (proxy de dev pra deploy de branch/preview: branch errada atrás do EXPO_PUBLIC_API_BASE_URL + SSO de Deployment Protection, dois sintomas distintos). Após merge: reverter EXPO_PUBLIC_API_BASE_URL local pra produção (dosiq.app) — smoke usou preview da integração.",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
       "critical": 0,
-      "auto_fixed": 1,
+      "auto_fixed": 0,
       "ask_items": 0
     },
     "spec_dirs": [
@@ -104,8 +104,8 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-05b-kill-switch mergeada e deletada)",
-    "blocked_on": [],
+    "branch": "feature/055-w1-05c-version-gate-panel (PR #777 aberto contra feature/055-w1-sdk54)",
+    "blocked_on": ["aprovação humana do PR #777 (R-060 — usuário mergeia)"],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
@@ -127,19 +127,19 @@
   },
   "code_review": {
     "status": "clean",
-    "spec": "055-expo-55-target-api-36",
+    "spec": "051-expo-updates",
     "critical": 0,
     "auto_fixed": 0,
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy (3 chunks, pass A + pass B)",
+    "engine": "agy (RC6_ENGINE_CLAUDE=0, 1 chunk)",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 776,
-    "resolved": "run1 achou 2 high (AP-138 floating promise Linking.openURL) + 2 medium duplicados, todos introduced:true — fixados (.catch) e respondidos inline nas 4 threads. run2 pos-fix: 3/3 chunks, 0 findings, pass A+B concordantes. Registrado measurement.md linha 776."
+    "pr": 777,
+    "resolved": "RC6_MAIN=feature/055-w1-sdk54 corrigido de propósito (sem ela: 6 chunks/844K, acumulando diff da integração; com ela: 1 chunk/136K). Tier 1, 0 findings, postado no PR."
   }
 }

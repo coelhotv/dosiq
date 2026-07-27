@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Kill switch de versão mínima — painel admin web (spec 051-A, PR 1.5c)
+
+- **Feature** (`minor`, web `4.21.0 → 4.22.0`): painel `VersionGateAdmin` (`admin-version-gate`,
+  atalho em Configurações → Administração) para editar as 2 linhas semeadas do gate (iOS/Android) —
+  **edit-only** por desenho (RC3-2/F6): sem create/delete/lista, as linhas já existem desde a
+  migração do PR 1.5a.
+- **Segurança**: a guarda de raio de impacto (`acknowledge_affected_devices`, S-7) mora inteira no
+  handler — a tela só **exibe** a contagem que o servidor devolve na recusa 4xx, nunca a calcula por
+  conta própria (evita reintroduzir a divergência histórica do F3). Ativar exige o passo de
+  confirmação explícita; desativar não exige cerimônia — destravar tem de ser imediato (PO-9).
+- **PO-SEC-8** (ADR-091 D9, invariante NC6): confirmado por smoke com device real — com o gate
+  Android ativo bloqueando o boot, o painel web (fora do escopo do gate por construção) continuou
+  acessível e desativou sem exigir acknowledge.
+- Sem mudança em `api/` (handler `versionGate` já existia desde o PR 1.5a).
+
 ### Kill switch de versão mínima — cliente mobile (spec 051-A, PR 1.5b)
 
 - **Feature** (`patch`, mobile `0.29.2 → 0.29.3`; `@dosiq/core` `0.19.0 → 0.20.0`): o app passa a

@@ -10,13 +10,34 @@ export default defineConfig(({ mode }) => {
   // (api/chatbot.js inalterado; proxy server-side evita CORS de localhost→dosiq.app).
   const env = loadEnv(mode, path.resolve(__dirname), '')
   const apiBase = (env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '')
+  // Deployments de preview (branch, não produção) exigem SSO do Vercel (Deployment Protection) —
+  // sem isso o proxy recebe redirect pra vercel.com/sso-api e o browser bloqueia por CORS. O
+  // Protection Bypass for Automation é a saída oficial: header aceito só em requisição
+  // server-to-server (o proxy do Vite roda no processo Node, nunca chega ao browser).
+  const bypassSecret = env.VERCEL_AUTOMATION_BYPASS_SECRET || ''
 
   return {
   server: {
     host: true, // expõe na rede local (0.0.0.0) — acesse pelo IP da máquina no celular
     // Proxy /api → backend remoto quando EXPO_PUBLIC_API_BASE_URL setado (dev-only).
     ...(apiBase
-      ? { proxy: { '/api': { target: apiBase, changeOrigin: true, secure: true } } }
+      ? {
+          proxy: {
+            '/api': {
+              target: apiBase,
+              changeOrigin: true,
+              secure: true,
+              ...(bypassSecret
+                ? {
+                    headers: {
+                      'x-vercel-protection-bypass': bypassSecret,
+                      'x-vercel-set-bypass-cookie': 'true',
+                    },
+                  }
+                : {}),
+            },
+          },
+        }
       : {}),
   },
   resolve: {
