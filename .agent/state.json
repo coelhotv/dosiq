@@ -4,27 +4,35 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "merged",
     "tier": 1,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "055-W1.7 — preferencia de estoque sobrevive offline (spec 044 dona, F3/F4a). useStockTracking.tsx ganha cache client-side AsyncStorage (stockTrackingCache.ts) + escada de 3 degraus no catch (remoto -> cache -> default ATIVO), emendando AP-277/AP-284 com a distincao (a) nunca soube / (b) sei que desligou. ready nao depende mais de rede quando ha cache. Invalidacao no logout (authService.signOut). 13 testes novos (3 degraus + negativo + cache module). Gates verdes (lint 0, tsc web 0, strict-island ratchet OK, jest mobile 545/548). Branch feature/055-w1-07-stock-pref-cache cortada de feature/055-w1-sdk54. Smoke MANUAL device real validado pelo PO via OTA preview (publish-ota.sh preview, sem esperar merge — gate R-307 so trava production): estoque desligado + modo aviao + matar/reabrir = aba Estoque ausente. Seguindo p/ RC5 -> RC6 -> PR.",
+    "goal": "055-W1.7 PR 1.7 — MERGEADA (#780, squash 28b6ed40). Preferencia de estoque sobrevive offline (spec 044 dona, F3/F4a): useStockTracking.tsx ganha cache client-side AsyncStorage (stockTrackingCache.ts) + escada de 3 degraus no catch (remoto -> cache -> default ATIVO), emendando AP-277/AP-284 com a distincao (a) nunca soube / (b) sei que desligou. ready nao depende mais de rede quando ha cache. Cache invalidado no listener SIGNED_OUT (Navigation.tsx), nao no signOut() isolado (RC5 achou o choke point errado antes do push). Smoke MANUAL device real validado via OTA preview. RC6 clean (0 findings). Onda W1 sem proxima fatia declarada ainda.",
     "goal_type": "fix",
     "code_review": {
-      "status": "issues_found",
-      "critical": 1,
-      "auto_fixed": 1,
-      "ask_items": 0,
-      "note": "RC5: clearStockTrackingCache() cabeado no signOut() errado (authService, nao usado pela UI real) — corrigido pro listener SIGNED_OUT em Navigation.tsx"
+      "status": "clean",
+      "critical": 0,
+      "auto_fixed": 0,
+      "ask_items": 0
     },
     "spec_dirs": [
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 779,
-    "merged_squash": "2e60fb8e",
+    "merged_pr": 780,
+    "merged_squash": "28b6ed40",
     "merged_history": [
+      {
+        "pr": 780,
+        "squash": "28b6ed40",
+        "spec": "044 F3/F4a (dona) — 055-W1.7 preferencia de estoque sobrevive offline (PR 1.7)",
+        "tier": 1,
+        "date": "2026-07-28",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "useStockTracking.tsx ganha cache client-side (AsyncStorage, stockTrackingCache.ts) + escada de 3 degraus no catch: remoto -> cache local -> default ATIVO. Emenda AP-277/AP-284 (nao violacao, estreitamento): distincao (a) nunca soube da preferencia (fail-safe original vale) vs (b) sei que o usuario desligou (falha de rede SEGUINTE nao pode reativar — cache cobre esse degrau ANTES do fail-safe). ready deixa de depender de rede quando ha cache (tab bar monta na hora, offline). Rede sempre vence o cache quando resolve (AP-284 intacto). Cache invalidado no listener SIGNED_OUT em Navigation.tsx (choke point unico que ja limpa today/treatments/stock-snapshot) — RC5 self-review achou que a primeira tentativa (cabear em authService.signOut()) estava no caminho ERRADO: a UI real de logout (ProfileScreen) chama profileService.logoutUser(), rota separada que nunca passaria pelo cache-clear; corrigido antes do push. Sem bump de APP_VERSION (JS-only). 13 testes novos (3 degraus + negativo + cache module) + suite mobile completa 545/548. Gates verdes (lint 0, tsc web 0, strict-island ratchet OK). Smoke MANUAL device real do PO via OTA preview (publish-ota.sh preview, direto da branch — R-307 so trava production): desligar estoque + modo aviao + matar/reabrir = aba Estoque ausente. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 122,7K (medido antes do run real), 0 findings, postado no PR."
+      },
       {
         "pr": 779,
         "squash": "2e60fb8e",
@@ -132,14 +140,14 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-07-stock-pref-cache (a partir de feature/055-w1-sdk54)",
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-07-stock-pref-cache mergeada e deletada)",
     "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 257,
     "anti_patterns_count": 317,
     "decisions_count": 91,
@@ -167,7 +175,7 @@
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 779,
-    "resolved": "0 findings — tier=1, payload 123K (medido via RC6_MEASURE=1 antes do run real, dentro do budget de amostragem do agy)."
+    "pr": 780,
+    "resolved": "0 findings — tier=1, payload 122,7K (medido via RC6_MEASURE=1 antes do run real, dentro do budget de amostragem do agy)."
   }
 }
