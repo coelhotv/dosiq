@@ -31,14 +31,16 @@ export default function NudgeBanner({ nudge, onAction, onDismiss }) {
           </TouchableOpacity>
         )}
       </View>
-      <TouchableOpacity
-        onPress={() => onDismiss?.(nudge)}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel="Dispensar aviso"
-      >
-        <X size={18} color={colors.text.secondary} strokeWidth={2} />
-      </TouchableOpacity>
+      {onDismiss && (
+        <TouchableOpacity
+          onPress={() => onDismiss(nudge)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Dispensar aviso"
+        >
+          <X size={18} color={colors.text.secondary} strokeWidth={2} />
+        </TouchableOpacity>
+      )}
     </View>
   )
 }

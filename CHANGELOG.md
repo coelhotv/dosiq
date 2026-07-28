@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Aplicação de OTA em sessão viva (spec 051-A, PR 1.6b)
+
+- **Feature** (release OTA sobre `0.30.0` — **sem bump de `APP_VERSION`**, ADR-082: mudança
+  JS-only, bumpar criaria `runtimeVersion` novo e tornaria o update órfão, nunca alcançando os
+  binários `0.30.0` já instalados/publicados na loja). Identidade da release: `[0.30.0+ota.N]` +
+  updateId + SHA da main, atualizado no publish real.
+
+  O app passa a checar e baixar update do EAS Update também com o processo já vivo (`AppState` →
+  `active`, throttle ~15min) — antes só o cold start (checagem nativa no launch, FR-005) acionava
+  a checagem, e o padrão de uso brasileiro de deixar o app minimizado por dias deixava a
+  alcançabilidade do ADR-088 pela metade.
+
+  A aplicação continua exclusivamente por decisão do usuário: banner fixo "Atualização pronta ·
+  Reiniciar" na aba Hoje, visível só quando a tela está ociosa (nenhum modal de registro de dose
+  aberto, nenhum alarme na tela — reusa `useAlarmScreenActive` do PR 1.5b). `Updates.reloadAsync()`
+  nunca dispara sozinho: recarregaria a árvore React inteira e apagaria formulário meio preenchido,
+  tela de alarme ou fluxo de estoque em andamento.
+
+  Banner reusa o COMPONENTE `NudgeBanner` (consistência visual, zero CSS novo), não o pipeline de
+  `useNudges` — nudge é dado remoto (`in_app_nudges`), o estado de update pronto é local do device.
+  Quem só fecha e reabre o app (cold start) continua recebendo o update sem ver banner nenhum — a
+  FR-005 não muda.
+
 ### Atualizações OTA (EAS Update) no app mobile (spec 051-A, PR 1.6)
 
 - **Feature** (`minor`, mobile `0.29.3 → 0.30.0`): o app passa a embutir o cliente `expo-updates`,
