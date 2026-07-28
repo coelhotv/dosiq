@@ -4,18 +4,19 @@
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged",
-    "tier": 2,
+    "status": "coding",
+    "tier": 1,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.6b — MERGEADA (#779, squash 2e60fb8e). OTA em sessao viva: useOtaUpdate.ts (checagem+download em AppState->active, throttle 15min, fail-silent) + banner fixo na Hoje reusando o COMPONENTE NudgeBanner (nao o pipeline useNudges) com guarda de ocioso (nenhum modal de dose aberto + useAlarmScreenActive do PR 1.5b). reloadAsync() so por toque do usuario. Sem bump de APP_VERSION (JS-only, ships como release OTA sobre 0.30.0). PO-11 fechado com smoke MANUAL device real (T054/T055/T056). Proxima fatia: W1.7 (preferencia de estoque offline).",
-    "goal_type": "feature",
+    "goal": "055-W1.7 — preferencia de estoque sobrevive offline (spec 044 dona, F3/F4a). useStockTracking.tsx ganha cache client-side AsyncStorage (stockTrackingCache.ts) + escada de 3 degraus no catch (remoto -> cache -> default ATIVO), emendando AP-277/AP-284 com a distincao (a) nunca soube / (b) sei que desligou. ready nao depende mais de rede quando ha cache. Invalidacao no logout (authService.signOut). 13 testes novos (3 degraus + negativo + cache module). Gates verdes (lint 0, tsc web 0, strict-island ratchet OK, jest mobile 545/548). Branch feature/055-w1-07-stock-pref-cache cortada de feature/055-w1-sdk54. Smoke MANUAL device real validado pelo PO via OTA preview (publish-ota.sh preview, sem esperar merge — gate R-307 so trava production): estoque desligado + modo aviao + matar/reabrir = aba Estoque ausente. Seguindo p/ RC5 -> RC6 -> PR.",
+    "goal_type": "fix",
     "code_review": {
-      "status": "clean",
-      "critical": 0,
-      "auto_fixed": 0,
-      "ask_items": 0
+      "status": "issues_found",
+      "critical": 1,
+      "auto_fixed": 1,
+      "ask_items": 0,
+      "note": "RC5: clearStockTrackingCache() cabeado no signOut() errado (authService, nao usado pela UI real) — corrigido pro listener SIGNED_OUT em Navigation.tsx"
     },
     "spec_dirs": [
       "plans/specs/051-expo-updates",
@@ -131,14 +132,14 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-06b-ota-foreground mergeada e deletada)",
+    "branch": "feature/055-w1-07-stock-pref-cache (a partir de feature/055-w1-sdk54)",
     "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 257,
     "anti_patterns_count": 317,
     "decisions_count": 91,

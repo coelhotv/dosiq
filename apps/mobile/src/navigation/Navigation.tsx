@@ -46,6 +46,7 @@ import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
 import { logScreenView, setUserId, resetUser } from '../platform/analytics/productAnalytics'
+import { clearStockTrackingCache } from '../platform/storage/stockTrackingCache'
 import { debugLog } from '@shared/utils/debugLog'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
@@ -126,6 +127,10 @@ function useAuthSession() {
         // Encerra a identificação ANTES de limpar cache: a partir daqui os eventos voltam a ser
         // anônimos. Sem isto, quem logar depois neste device herdaria a pessoa anterior.
         resetUser()
+        // Preferência de estoque (055-W1.7) é por CONTA — cache da conta A não pode vazar
+        // pra B no mesmo device. Ponto único: cobre logout via authService E via
+        // profileService.logoutUser (ambos disparam SIGNED_OUT, este listener é o choke point).
+        await clearStockTrackingCache()
         try {
           await AsyncStorage.multiRemove([
             '@dosiq/today-snapshot',
