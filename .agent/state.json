@@ -9,7 +9,7 @@
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "051-A PR 1.6 — MERGEADA (#778, squash 7a7765f5). Cliente expo-updates embutido no binario: runtimeVersion literal (policy aborta sob bare workflow do prebuild), canal em DOIS lugares (eas.json + app.config.js requestHeaders — sem o 2o o app nunca atualiza), perfil `preview` novo, bundleInfo.ts como fonte unica de identidade p/ tela+Sentry+PostHog. R-307 nova (procedencia do binario: tag mobile-v<versao> + guarda de hotfix OTA). ADR-083 emendado (code signing exige EAS Enterprise — premissa original falsa; PO-SEC-1 sem objeto). Smoke fechou PO-1/2/5/6 + T017 + T043 em device real. Proximas fatias: W1.6b (OTA em sessao viva) e W1.7 (preferencia de estoque offline).",
+    "goal": "051-A PR 1.6b — MERGEADA (#779, squash 2e60fb8e). OTA em sessao viva: useOtaUpdate.ts (checagem+download em AppState->active, throttle 15min, fail-silent) + banner fixo na Hoje reusando o COMPONENTE NudgeBanner (nao o pipeline useNudges) com guarda de ocioso (nenhum modal de dose aberto + useAlarmScreenActive do PR 1.5b). reloadAsync() so por toque do usuario. Sem bump de APP_VERSION (JS-only, ships como release OTA sobre 0.30.0). PO-11 fechado com smoke MANUAL device real (T054/T055/T056). Proxima fatia: W1.7 (preferencia de estoque offline).",
     "goal_type": "feature",
     "code_review": {
       "status": "clean",
@@ -21,9 +21,18 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 778,
-    "merged_squash": "7a7765f5",
+    "merged_pr": 779,
+    "merged_squash": "2e60fb8e",
     "merged_history": [
+      {
+        "pr": 779,
+        "squash": "2e60fb8e",
+        "spec": "051-A OTA em sessão viva (PR 1.6b) — FR-023/US10/PO-11",
+        "tier": 2,
+        "date": "2026-07-28",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "useOtaUpdate.ts (novo): checagem+download em AppState->active, throttle 15min, fail-silent, nunca aplica sozinho — só Updates.reloadAsync() por toque do usuário. TodayScreen.tsx: banner fixo 'Atualização pronta · Reiniciar' reusa o COMPONENTE NudgeBanner (não o pipeline useNudges — nudge é dado remoto in_app_nudges, update é estado local do device), precedência por render (otaBanner ?? dashboardNudge, não por priority numérico — nudgeSchema.ts:59 capa priority em 0-100). Guarda de ocioso combina modalProtocol/bulkModal/measureLogOpen/speedDialOpen + useAlarmScreenActive (PR 1.5b, reusado sem reimplementar). Achado no smoke: NudgeBanner.tsx renderizava o X de dispensar incondicionalmente — banner fixo passa onDismiss=undefined (não pode ser dispensado sem aplicar) e o X ficava visível mas inerte, enganoso; corrigido pra só renderizar quando onDismiss é passado. SEM bump de APP_VERSION (ADR-082): mudança JS-only ships como release OTA sobre 0.30.0 — bumpar criaria runtimeVersion novo e tornaria o update órfão para o binário já instalado (erro cometido e revertido na própria sessão, achado pelo PO ao tentar publicar). PO-11 fechado com evidência MANUAL device real (moto g06/Android, canal preview): T054 caminho feliz, T055 guarda negativo (modal de dose bloqueia o banner, libera na hora ao fechar), T056 cold start nunca mostra banner (FR-005 intacta). Achado de processo: throttle de 15min bloqueia checagem repetida durante smoke rápido (não é bug) — reduzido pra 30s TEMP durante o smoke via comentário explícito, revertido antes do PR. Gates verdes (lint 0, tsc web+mobile 0, strict-island ratchet OK, validate:agent 2204/164, jest mobile 532/532). RC5 clean. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 123K (medido via RC6_MEASURE=1 antes do run real), 0 findings, postado no PR."
+      },
       {
         "pr": 778,
         "squash": "7a7765f5",
@@ -122,14 +131,14 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-06-expo-updates mergeada e deletada)",
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-06b-ota-foreground mergeada e deletada)",
     "blocked_on": [],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 257,
     "anti_patterns_count": 317,
     "decisions_count": 91,
@@ -151,13 +160,13 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy (RC6_ENGINE_CLAUDE=0, 2 chunks)",
-    "status": "resolved",
+    "engine": "agy (RC6_ENGINE_CLAUDE=0, 1 chunk)",
+    "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 778,
-    "resolved": "2 medium introduced: 1 verdadeiro corrigido em 03163a1 (bundleTags `??` -> `||` nos 3 campos + 4 testes novos; a funcao nao tinha teste algum) e 1 falso positivo refutado inline (formatChannelLabel retorna string|null, 3 testes cobrem). Ambas as threads respondidas inline antes do merge."
+    "pr": 779,
+    "resolved": "0 findings — tier=1, payload 123K (medido via RC6_MEASURE=1 antes do run real, dentro do budget de amostragem do agy)."
   }
 }
