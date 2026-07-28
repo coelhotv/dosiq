@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Preferência de estoque sobrevive offline (spec 044, 055-W1.7)
+
+- **Fix** (JS-only, sem bump de `APP_VERSION` — elegível a OTA sobre o binário atual, R-221 §4).
+  Antes, se o app abrisse sem conexão (modo avião, sinal ruim), a falha de rede era tratada como
+  "nunca soube da preferência" e reativava o estoque por omissão — mesmo que o usuário tivesse
+  desligado o controle de estoque explicitamente. Agora `useStockTracking` persiste a preferência
+  (`enabled` + `pausedAt`) em cache local a cada leitura remota bem-sucedida e usa uma escada de
+  3 degraus na falha: remoto → cache local → só então o default ativo original (que continua
+  valendo na 1ª abertura, storage limpo — nunca esconde o estoque de quem nunca declarou nada).
+  A tab bar também deixa de esperar a rede pra montar quando já existe cache: some o spinner à
+  toa offline antes de cair no default. Preferência é invalidada no logout (não vaza entre
+  contas no mesmo aparelho). Saldo de estoque continua 100% servidor (FIFO decidido pelo banco,
+  AP-231) — o cache é só da política liga/desliga.
+
 ### Aplicação de OTA em sessão viva (spec 051-A, PR 1.6b)
 
 - **Feature** (release OTA sobre `0.30.0` — **sem bump de `APP_VERSION`**, ADR-082: mudança
