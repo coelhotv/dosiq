@@ -40,7 +40,10 @@ assert_taggable_build() {
   # 2. Colisão de tag = versão não bumpada. Se a tag já existe em OUTRO commit, alguém mudou
   #    código sem bumpar APP_VERSION — e duas builds diferentes passariam a se chamar igual,
   #    destruindo justamente a rastreabilidade que a tag existe para dar (R-221 §4).
-  local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag" 2>/dev/null || true)"
+  # `^{}` desreferencia a tag: sem isso, uma tag ANOTADA resolve para o objeto de tag (sha próprio,
+  # nunca igual a um commit) e toda revalidação do mesmo commit acusaria colisão falsa — bloqueando
+  # justamente o build da segunda plataforma, que é o caso idempotente que este gate deve permitir.
+  local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag^{}" 2>/dev/null || true)"
   local head_sha; head_sha="$(git rev-parse HEAD)"
 
   if [ -n "$existing" ] && [ "$existing" != "$head_sha" ]; then
@@ -64,7 +67,7 @@ create_release_tag() {
   local app_version="$1"
   local tag; tag="$(release_tag_name "$app_version")"
   local head_sha; head_sha="$(git rev-parse HEAD)"
-  local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag" 2>/dev/null || true)"
+  local existing; existing="$(git rev-parse -q --verify "refs/tags/$tag^{}" 2>/dev/null || true)"
 
   if [ "$existing" = "$head_sha" ]; then
     echo "🏷️  Tag $tag já existe neste commit (build da outra plataforma) — nada a fazer."
