@@ -57,11 +57,19 @@ export function describeLoadFailure(
     return `Erro no servidor (${String(code)}): ${detail}`
   }
 
-  const fallbackMessage = (fallbackErr as CodedError | undefined)?.message
-  if (typeof fallbackMessage === 'string' && fallbackMessage.length > 0) return fallbackMessage
-
-  const originalMessage = (originalErr as CodedError | undefined)?.message
-  if (typeof originalMessage === 'string' && originalMessage.length > 0) return originalMessage
+  // Só confia na mensagem do fallback quando ele é um erro DISTINTO do original — o fallback de
+  // cache genuinamente tentou e falhou com um motivo próprio, autoral e em PT (ex.: "Cache
+  // expirado (> 24h)", lançado deliberadamente pelo hook). Quando `fallbackErr` é o MESMO objeto
+  // que `originalErr` (o hook não tinha cache pra tentar e relançou o erro original tal-e-qual —
+  // ex.: primeira abertura do app, ainda sem nenhum snapshot salvo), não há informação nova
+  // nenhuma — e o `originalErr` cru é tipicamente um `TypeError`/`ZodError`/erro de rede do
+  // runtime, em INGLÊS, nunca traduzido para o usuário (100% da base é brasileira — zero
+  // mensagem em inglês é política do projeto, não sugestão). Preferir sempre o `defaultMessage`
+  // (PT) a vazar esse texto cru pra tela.
+  if (fallbackErr !== originalErr) {
+    const fallbackMessage = (fallbackErr as CodedError | undefined)?.message
+    if (typeof fallbackMessage === 'string' && fallbackMessage.length > 0) return fallbackMessage
+  }
 
   return defaultMessage
 }

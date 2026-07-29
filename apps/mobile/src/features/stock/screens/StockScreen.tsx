@@ -197,7 +197,7 @@ export default function StockScreen() {
     return (
       <ScreenContainer>
         <ErrorState
-          message="Não foi possível carregar seu estoque."
+          message={error}
           onRetry={refresh}
         />
       </ScreenContainer>

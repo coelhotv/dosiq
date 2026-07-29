@@ -20,7 +20,7 @@ import {
   type StockResumeAssessment,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
-import { logEvent } from '@platform/analytics/firebaseAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
 
 async function getUserId(): Promise<string> {

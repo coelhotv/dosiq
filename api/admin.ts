@@ -9,12 +9,16 @@ import { handleRetry } from './admin/_handlers/retry.js';
 import { handleDiscard } from './admin/_handlers/discard.js';
 import { handleListFeedbacks, handleResolveFeedback } from './admin/_handlers/feedbacks.js';
 import { handleListNudges, handleCreateNudge, handleUpdateNudge, handleToggleNudge } from './admin/_handlers/nudges.js';
+import { handleGetVersionGate, handleUpdateVersionGate } from './admin/_handlers/versionGate.js';
 import { DLQStatus } from '../server/services/deadLetterQueue.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-const adminChatId = process.env.ADMIN_CHAT_ID;
+// ADMIN_USER_ID (o `auth.users.id` do admin) substitui ADMIN_CHAT_ID como credencial de autorização
+// — ADR-091 D10 / RC-SEC-2 S-6. Ausente ⇒ NEGAR (fail-closed). Lida DENTRO do handler, não aqui:
+// ver a nota de ordem-de-import em server/utils/auth.ts.
+// ADMIN_CHAT_ID segue existindo para o que sempre foi, mensageria do bot.
 
 // Singleton client usando a service_role para operações de administração (inicializado com segurança)
 const supabase = (supabaseUrl && supabaseServiceKey)
@@ -143,12 +147,31 @@ async function _routeHealth(req, res, scope, supabase) {
   });
 }
 
+// Roteador auxiliar do kill switch de versão mínima (spec 051 / ADR-091). Sem função serverless
+// nova (R-090): vive como resource do admin e herda a auth. GET é o estado para o painel (1.5c);
+// PATCH é a ÚNICA superfície de escrita do gate, com a guarda de raio de impacto no handler (S-7).
+async function _routeVersionGate(req, res, supabase, adminUserId) {
+  if (req.method === 'GET') {
+    return handleGetVersionGate(req, res, supabase);
+  }
+  if (req.method === 'PATCH') {
+    return handleUpdateVersionGate(req, res, supabase, adminUserId);
+  }
+  return res.status(405).json({ error: 'Method not allowed for versionGate' });
+}
+
 /**
  * Main Router
  */
 export default async function handler(req, res) {
-  // Validate configurations
-  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey || !adminChatId) {
+  // `adminUserId` é lido NA CHAMADA, não no escopo do módulo: um `dotenv/config` transitivo injeta
+  // o `.env` durante o grafo de import, e a leitura em escopo de módulo enxergava valores diferentes
+  // dependendo da ordem dos imports (medido 2026-07-25 — ver a nota em server/utils/auth.ts).
+  const adminUserId = process.env.ADMIN_USER_ID;
+
+  // Validate configurations. `adminUserId` entra aqui de propósito: sem ele NÃO EXISTE admin, e
+  // "não existe admin" tem de negar todos em vez de liberar todos (fail-closed, ADR-091 D10).
+  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey || !adminUserId) {
     console.error('[Admin API] Missing configuration');
     return res.status(500).json({ error: 'Server configuration error' });
   }
@@ -160,9 +183,13 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: authResult.error });
   }
 
-  // resource: 'dlq' | 'feedbacks' | 'nudges' | 'health'
+  // resource: 'dlq' | 'feedbacks' | 'nudges' | 'health' | 'versionGate'
   // action: 'retry' | 'discard' | 'resolve'
   const { resource, action, scope } = req.query;
+
+  if (resource === 'versionGate') {
+    return _routeVersionGate(req, res, supabase, adminUserId);
+  }
 
   if (resource === 'health') {
     return _routeHealth(req, res, scope, supabase);

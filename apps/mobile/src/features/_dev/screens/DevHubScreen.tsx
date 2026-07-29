@@ -1,5 +1,6 @@
 // DevHubScreen — hub DEV-only de validação. Links pras telas de smoke da fase atual.
 
+import { useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
@@ -8,6 +9,7 @@ const { ChevronLeft } = LucideIcons as any
 import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 import { colors, spacing } from '@shared/styles/tokens'
+import { logEvent } from '@platform/analytics/productAnalytics'
 import { devFireAlarmNow, devScheduleAlarmIn, devClearAlarms } from '../devAlarmTriggers'
 import {
   devDoseSpikeUpcoming,
@@ -35,6 +37,14 @@ function runTitrationTrigger(fn: () => Promise<unknown>, okMsg: string) {
 }
 
 export default function DevHubScreen({ navigation }) {
+  // ADR-090: smoke do pipeline de crash. Erro em HANDLER não passa pelo ErrorBoundary (React só
+  // captura erro de render/lifecycle) — o botão arma o state e o THROW acontece no render,
+  // exercitando o caminho real ErrorBoundary → Sentry.captureException.
+  const [smokeCrash, setSmokeCrash] = useState(false)
+  if (smokeCrash) {
+    throw new Error('[smoke] crash de teste — ErrorBoundary → Sentry (ADR-090)')
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Cabeçalho */}
@@ -269,6 +279,53 @@ export default function DevHubScreen({ navigation }) {
           >
             <Text style={styles.buttonText}>💊 BulkDoseRegisterModal (Modo Simples e Complexo)</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 055 PR 1.4 — Edge-to-edge (Android 16)</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              navigation?.navigate(ROUTES.DEV_FORM_NO_TABBAR)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📐 MedicineFormScreen SEM tab bar (FormActions safe-area)</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            Root stack, sem RootTabs embaixo — expõe o footer sticky (FormActions) direto contra a
+            gesture bar. Telas do fluxo normal (tratamento/estoque) ficam mascaradas pela tab bar,
+            que já reserva o inset. Use pra validar antes/depois do fix T041.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Spec 055 / ADR-090 — Observabilidade</Text>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              setSmokeCrash(true)
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>💥 Forçar crash de teste (→ Sentry)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              lightTap()
+              logEvent('dev_smoke_event', { source: 'devhub', platform: Platform.OS })
+                .then(() => Alert.alert('Dev — PostHog', 'Evento dev_smoke_event enviado.\n\nO envio é em lote: pode levar ~30s para aparecer no dashboard.'))
+                .catch((err) => Alert.alert('Dev — PostHog', err?.message ?? 'Erro ao enviar evento.'))
+            }}
+            style={styles.buttonCard}
+          >
+            <Text style={styles.buttonText}>📊 Enviar evento de teste (→ PostHog)</Text>
+          </TouchableOpacity>
+          <Text style={styles.note}>
+            Prova PO-7: o crash cai no ErrorBoundary → Sentry.captureException; o evento vai pro
+            PostHog junto com o cold_start disparado no boot. Sem chave configurada
+            (EXPO_PUBLIC_SENTRY_DSN / EXPO_PUBLIC_POSTHOG_API_KEY) ambos viram no-op silencioso.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

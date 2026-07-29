@@ -1,6 +1,15 @@
 #!/bin/bash
 # build-ios.sh — Prepara certificados e roda eas build local
-# Uso: bash build-ios.sh [development|production]
+# Uso: bash build-ios.sh [development|preview|production]
+#
+# Perfis (spec 051-A · canais de OTA declarados em eas.json):
+#   development → .app (simulador) · canal `development` · uso diário
+#   preview     → .app (simulador) · canal `preview`     · alvo do smoke de OTA
+#   production  → .ipa             · canal `production`  · TestFlight/App Store
+#
+# ℹ️ preview no iOS sai como build de SIMULADOR (não exige Distribution Certificate). O smoke
+#    do OTA em device real roda no Android (build-android.sh preview) — o mecanismo do
+#    expo-updates é o mesmo nas duas plataformas, e um device físico basta pra provar.
 
 set -euo pipefail
 
@@ -13,6 +22,20 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# R-307: procedencia do binario de loja (tag no git + arvore limpa)
+. "$SCRIPT_DIR/lib-release-tag.sh"
+
+# Falhar cedo e explícito: perfil desconhecido só apareceria como erro do EAS depois do
+# prebuild + pod install (minutos perdidos).
+case "$PROFILE" in
+  development|preview|production) ;;
+  *)
+    echo "❌ Perfil inválido: '$PROFILE'"
+    echo "   Use: development | preview | production"
+    exit 1
+    ;;
+esac
 
 # Bundle ID e Credenciais unificados
 BUNDLE_ID="com.coelhotv.dosiq"
@@ -70,9 +93,15 @@ TEMP_OUTPUT="$SCRIPT_DIR/build-temp.$EXT"
 FINAL_NAME="dosiq-v$APP_VERSION-$PROFILE.$EXT"
 FINAL_PATH="$TARGET_DIR/$FINAL_NAME"
 
+# R-307: build de loja precisa de procedência. Checar ANTES de compilar.
+if [ "$PROFILE" = "production" ]; then
+  assert_taggable_build "$APP_VERSION" || exit 1
+fi
+
 echo ""
 echo "📱 --- RESUMO DO PROCESSO ---"
 echo "👤 Perfil:  $PROFILE"
+echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam neste build)"
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight ✈️)" || echo "NÃO (Apenas Local 💾)" )"
@@ -170,6 +199,12 @@ if [ "$PROFILE" = "production" ]; then
     echo "⚠️ Falha na submissão, mas o build foi preservado em $FINAL_PATH"
     exit 1
   fi
+fi
+
+# R-307: marcar o commit que virou este binário. Depois do submit — iOS e Android do MESMO commit
+# compartilham UMA tag, e create_release_tag é idempotente para o segundo a rodar.
+if [ "$PROFILE" = "production" ]; then
+  create_release_tag "$APP_VERSION"
 fi
 
 echo "✨ Processo finalizado com sucesso!"

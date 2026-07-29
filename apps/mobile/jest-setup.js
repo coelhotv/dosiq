@@ -1,5 +1,3 @@
-import { NativeModules } from 'react-native'
-
 // Fix para window.dispatchEvent e global events em ambiente de teste
 const mockDispatchEvent = jest.fn();
 if (typeof window !== 'undefined') {
@@ -8,24 +6,6 @@ if (typeof window !== 'undefined') {
 global.window = global.window || {};
 global.window.dispatchEvent = global.window.dispatchEvent || mockDispatchEvent;
 global.dispatchEvent = global.dispatchEvent || mockDispatchEvent;
-
-// Mock de módulos nativos do Firebase
-NativeModules.RNFBAppModule = NativeModules.RNFBAppModule || {
-  getAppConfig: jest.fn(() => ({})),
-  initializeApp: jest.fn(() => Promise.resolve({})),
-  addListener: jest.fn(),
-  removeListeners: jest.fn(),
-};
-NativeModules.RNFBAnalyticsModule = NativeModules.RNFBAnalyticsModule || {
-  logEvent: jest.fn(() => Promise.resolve()),
-  setUserId: jest.fn(() => Promise.resolve()),
-  setUserProperty: jest.fn(() => Promise.resolve()),
-  setAnalyticsCollectionEnabled: jest.fn(() => Promise.resolve()),
-};
-NativeModules.RNFBNativeEventEmitter = NativeModules.RNFBNativeEventEmitter || {
-  addListener: jest.fn(),
-  removeListeners: jest.fn(),
-};
 
 // Mock AppState - Ensuring it exists and has required methods
 const RN = require('react-native');
@@ -65,17 +45,31 @@ jest.mock('@react-navigation/native', () => {
   }
 })
 
-jest.mock('@react-native-firebase/app', () => ({
-  utils: jest.fn(),
+// ADR-090: observabilidade = Sentry (crash) + PostHog (analytics). Firebase saiu.
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  wrap: (component) => component,
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
 }))
 
-jest.mock('@react-native-firebase/analytics', () => ({
-  getAnalytics: jest.fn(() => ({})),
-  logEvent: jest.fn(),
-  setUserId: jest.fn(),
-  setUserProperty: jest.fn(),
-  logScreenView: jest.fn(),
-}))
+jest.mock('posthog-react-native', () => {
+  const client = {
+    capture: jest.fn(),
+    identify: jest.fn(),
+    register: jest.fn(),
+    screen: jest.fn(),
+    reset: jest.fn(),
+  }
+  return {
+    __esModule: true,
+    default: jest.fn(() => client),
+    PostHogProvider: ({ children }) => children,
+    usePostHog: () => client,
+  }
+})
 
 // Mock environment variables for config validation
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';

@@ -122,30 +122,52 @@ function openAlarmScreen(notification) {
     endDoseActivity(data.doseInstanceId).catch(() => {})
     return
   }
-  if (!navigationRef.isReady()) return
-  if (navigationRef.getCurrentRoute?.()?.name === ROUTES.ALARM_FULLSCREEN) return
-  navigationRef.navigate(ROUTES.ALARM_FULLSCREEN, {
-    doseInstanceId: data.doseInstanceId,
-    medicineName: data.medicineName,
-    protocolId: data.protocolId,
-    medicineId: data.medicineId,
-    quantityTaken: data.quantityTaken,
-    dosagePerPill: data.dosagePerPill,
-    dosageUnit: data.dosageUnit,
-    concentrationVolumeMl: data.concentrationVolumeMl,
-    intakeUnit: data.intakeUnit,
-    unitsPerMl: data.unitsPerMl,
-    medicineType: data.medicineType,
-    presentation: data.presentation,
-    scheduledTime: data.scheduledTime,
-    scheduledFor: data.scheduledFor,
-    toleranceMinutes: data.toleranceMinutes,
-    snoozeAttempt: data.snoozeAttempt,
-    isCritical: data.isCritical,
-    isGrouped: data.isGrouped,
-    groupedDoses: data.groupedDoses,
-    doseInstanceIds: data.doseInstanceIds,
-  })
+  const navigate = () => {
+    if (navigationRef.getCurrentRoute?.()?.name === ROUTES.ALARM_FULLSCREEN) return
+    navigationRef.navigate(ROUTES.ALARM_FULLSCREEN, {
+      doseInstanceId: data.doseInstanceId,
+      medicineName: data.medicineName,
+      protocolId: data.protocolId,
+      medicineId: data.medicineId,
+      quantityTaken: data.quantityTaken,
+      dosagePerPill: data.dosagePerPill,
+      dosageUnit: data.dosageUnit,
+      concentrationVolumeMl: data.concentrationVolumeMl,
+      intakeUnit: data.intakeUnit,
+      unitsPerMl: data.unitsPerMl,
+      medicineType: data.medicineType,
+      presentation: data.presentation,
+      scheduledTime: data.scheduledTime,
+      scheduledFor: data.scheduledFor,
+      toleranceMinutes: data.toleranceMinutes,
+      snoozeAttempt: data.snoozeAttempt,
+      isCritical: data.isCritical,
+      isGrouped: data.isGrouped,
+      groupedDoses: data.groupedDoses,
+      doseInstanceIds: data.doseInstanceIds,
+    })
+  }
+
+  if (navigationRef.isReady()) {
+    navigate()
+    return
+  }
+
+  // Cold start (app morto — inclusive pelo próprio Android em background prolongado, não só
+  // "matar de propósito"): o NavigationContainer pode ainda não ter montado no instante exato do
+  // tap. Sem retry, o toque abria o app mas NUNCA promovia a tela cheia — dose crítica avisada só
+  // pela notificação, nunca pelo takeover (achado no smoke 055 do kill switch, PO-7). Mesmo padrão
+  // de `usePushNotifications.ts:navigateFromPush` (100ms, desiste em ~5s).
+  let waited = 0
+  const interval = setInterval(() => {
+    waited += 100
+    if (navigationRef.isReady()) {
+      clearInterval(interval)
+      navigate()
+    } else if (waited >= 5000) {
+      clearInterval(interval)
+    }
+  }, 100)
 }
 
 export default function AlarmSchedulerBridge() {

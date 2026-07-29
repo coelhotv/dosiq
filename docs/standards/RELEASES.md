@@ -1,7 +1,7 @@
 ---
 title: "Releases externos — Notas de loja (dosiq mobile)"
 description: "Releases para as versões dos apps Android e iOS"
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: standard
 audience:
@@ -12,7 +12,7 @@ tags:
   - changelog
   - versioning
 created_at: "2026-07-15"
-updated_at: "2026-07-21"
+updated_at: "2026-07-28"
 ---
 # Releases externos — Notas de loja (dosiq mobile)
 
@@ -34,12 +34,61 @@ updated_at: "2026-07-21"
 
 ---
 
-## v0.28.0 — a publicar — Evolução do tratamento (escada de doses)
+## v0.30.0 — a publicar — Base renovada, correções que chegam sem esperar a loja
+
+> Cobre tudo desde a `0.28.3` publicada: bump do Expo SDK 53→54 (0.29.0), migração da exportação
+> LGPD para a API nova de arquivos (0.29.1), edge-to-edge do Android 16 e a correção de teclado
+> em 12 telas de formulário (0.29.2), o kill switch de versão mínima (0.29.3), o cliente de
+> atualização OTA (0.30.0) e a preferência de estoque sobrevivendo offline (release OTA sobre a
+> 0.30.0).
+>
+> **0.30.0 é a primeira versão alcançável por OTA** e o benefício **não é retroativo** — só quem
+> instalar desta em diante recebe correção sem passar pela loja.
+>
+> **Fora da copy, de propósito:**
+> - **Kill switch de versão mínima** — capacidade de operação, não benefício ao usuário.
+>   Anunciar "podemos bloquear seu app" é ruído negativo na ficha.
+> - **Troca de Firebase por Sentry + PostHog** — mudança de fornecedor de telemetria, invisível
+>   na tela. A revisão de privacidade correspondente é a spec 059 (pendente); se ela alterar o
+>   texto de privacidade da ficha, é entrega separada.
+> - **Edge-to-edge** é correção Android; a nota da Apple descreve o efeito em termos neutros
+>   ("área segura"), porque o `FormActions` também recebeu inset no iOS.
+
+### Apple App Store (pt-BR)
+
+```
+Esta versão renova a base técnica do dosiq e prepara o app para as próximas melhorias.
+
+O que muda para você:
+• Formulários mais confortáveis — o teclado não cobre mais os campos nem o botão de salvar, e os botões de ação respeitam a área segura da tela em todos os aparelhos.
+• Sua preferência de estoque é respeitada offline — se você desligou o controle de estoque, ele continua desligado mesmo que o app abra sem conexão. Antes, uma falha de rede podia reativá-lo sozinho.
+• Exportação de dados corrigida — o download do seu histórico completo voltou a funcionar em todos os aparelhos, com o formato de arquivo atualizado.
+• Correções mais rápidas — a partir desta versão, ajustes e correções podem chegar até você sem esperar uma nova revisão da loja. Nada é aplicado sozinho no meio do seu uso: quando uma atualização estiver pronta, o app avisa e só reinicia quando você toca no aviso. Nenhum registro de dose ou formulário em andamento é perdido.
+• Base atualizada — o app foi migrado para a versão mais recente da plataforma, mantendo compatibilidade com os sistemas operacionais novos e com os recursos de tela dos aparelhos atuais.
+```
+
+### Google Play (pt-BR — 334 chars)
+
+```
+Base do app atualizada para a versão do Android mais recente.
+Várias correções e melhorias:
+• O teclado não cobre mais os campos e o botão de salvar nos formulários
+• Botões de ação deixam de ficar colados na barra de gestos
+• Exportação dos seus dados corrigida
+• A partir desta versão, correções chegam sem esperar a revisão da loja
+```
+
+---
+
+## v0.28.0 — publicada — Evolução do tratamento (escada de doses)
 
 > Cobre tudo desde a `0.27.0` publicada: a Evolução do tratamento chegando ao app (0.27.2),
 > a troca de medicamento acionável pelo paciente (0.27.3), a porta para quem já está em
 > manutenção (0.28.0), a troca de concentração deixando de fatiar o tratamento (0.28.2) e o
 > fix de app inacessível offline (0.27.1). Patches 0.28.1/0.28.3 entram como estabilidade.
+>
+> **Publicada** — a versão que esteve em produção nas duas lojas até a `0.30.0` foi a `0.28.3`
+> (confirmado pelo PO em 2026-07-28). A nota abaixo é o texto que saiu.
 >
 > **Enquadramento obrigatório (ADR-062 / SaMD):** o dosiq **registra** a escada que o médico
 > prescreveu e avisa quando a data chega — **nunca sugere, calcula ou recomenda dose**. Toda

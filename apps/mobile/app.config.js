@@ -5,7 +5,14 @@
 
 const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 
-const APP_VERSION = '0.28.5' // R-182: versão semântica (sem prefixo 'v')
+// Canal de OTA gravado NO BINÁRIO (spec 051-A). Default deliberadamente `development` e NÃO
+// `production`: um build feito sem EAS_BUILD_PROFILE é, por definição, alguém rodando na mão
+// (`expo run:android`, experimento local) — e esse aparelho não pode acabar escutando o canal
+// que serve os usuários reais. Os scripts de build exportam EAS_BUILD_PROFILE sempre, então o
+// default só vale para os casos em que errar barato é melhor que errar caro.
+const UPDATE_CHANNEL = process.env.EAS_BUILD_PROFILE || 'development'
+
+const APP_VERSION = '0.30.0' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -38,6 +45,62 @@ module.exports = {
     version: APP_VERSION,
     cli: {
       appVersionSource: 'local',
+    },
+    // ── OTA / EAS Update (spec 051-A, FR-001/003/005/007) ────────────────────────────────
+    // ADR-082: o runtimeVersion de um build É o APP_VERSION dele.
+    // Consequência que rege a operação inteira: update publicado só alcança builds do MESMO
+    // runtime, e por isso release OTA NUNCA bumpa APP_VERSION (bump = runtime novo = update
+    // órfão, sem nenhum build instalado pra receber). Ver docs/operations/GUIA_OTA_EAS_UPDATE.md.
+    //
+    // ⚠️ VALOR LITERAL, não `{ policy: 'appVersion' }`. Os scripts de build rodam
+    // `expo prebuild` antes do `eas build --local`, e a pasta `android/`/`ios/` resultante faz o
+    // EAS classificar o projeto como bare workflow — onde política de runtimeVersion NÃO é
+    // suportada e o build ABORTA ("runtime version policies are not supported"). Declarar o
+    // literal produz exatamente o mesmo valor que a política produziria (é a mesma constante),
+    // preservando o ADR-082 sem depender da resolução automática do EAS.
+    runtimeVersion: APP_VERSION,
+    updates: {
+      // `eas update:configure` escreveria isto sozinho em app.json estático; como o config aqui é
+      // DINÂMICO (app.config.js, RE-001), o CLI não tem onde escrever e a url entra à mão.
+      // Deriva do mesmo projectId de `extra.eas` abaixo — as duas DEVEM apontar pro mesmo projeto.
+      url: 'https://u.expo.dev/7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba',
+      // 🔴 AP-303 (fail-open / offline-first): 0 = NUNCA bloquear o launch esperando download.
+      // O app sobe imediatamente com o bundle que já tem; o update baixado aplica no cold start
+      // seguinte. Valor > 0 faria o boot esperar a rede — em 4G instável (norma no BR) isso é
+      // exatamente o "não sei" virando negação que o AP-303 proíbe.
+      fallbackToCacheTimeout: 0,
+      checkAutomatically: 'ON_LOAD',
+      // 🔴 O canal PRECISA ser declarado aqui, não só no `eas.json`.
+      // O `eas update:configure` grava o canal no AndroidManifest/Expo.plist — e o
+      // `expo prebuild --clean` dos scripts de build regenera esses arquivos A PARTIR DESTE
+      // CONFIG, apagando o que o CLI tinha escrito. Sem esta linha o binário sai SEM
+      // `expo-channel-name`, não escuta canal nenhum e nenhum update jamais o alcança —
+      // falha silenciosa: o app funciona, só nunca atualiza. (Achado no smoke do PR 1.6:
+      // a tela de Perfil mostrava o canal vazio.)
+      // O `channel` do `eas.json` continua valendo para o lado do PUBLISH (roteamento
+      // branch↔channel no servidor); esta linha é o lado do CLIENTE.
+      requestHeaders: {
+        'expo-channel-name': UPDATE_CHANNEL,
+      },
+      // 🔴 CODE SIGNING DESATIVADO — não por escolha de segurança, por barreira de plano.
+      // O ADR-083 decidiu habilitá-lo neste slice; a decisão foi tomada sem saber que o EAS
+      // cobra o recurso: `eas update` responde "EAS Update code signing requires a subscription
+      // to the EAS Enterprise plan". Emenda registrada no ADR-083 (2026-07-27).
+      //
+      // ⚠️ NÃO reative estas duas linhas sem ter o plano: um binário COM certificado rejeita
+      // todo bundle NÃO assinado, e sem plano não há como assinar — o canal OTA trava dos dois
+      // lados e só um novo build de loja destrava.
+      //
+      // O par de chaves já foi gerado e está guardado (certs/certificate.pem versionado; a chave
+      // privada fora do repo, em DOSIQ_OTA_PRIVATE_KEY_PATH). Se o plano existir um dia, basta
+      // reativar aqui e rebuildar.
+      //
+      // O que protege o canal enquanto isso (ADR-083 D3, agora defesa principal e não secundária):
+      // 2FA obrigatório na conta Expo · publish manual exclusivo do PO no Mac Mini · proibição de
+      // EXPO_TOKEN persistente em CI. Risco residual aceito pelo PO: quem comprometer a conta
+      // Expo entrega código a 100% da base instalada sem passar por loja.
+      // codeSigningCertificate: './certs/certificate.pem',
+      // codeSigningMetadata: { keyid: 'main', alg: 'rsa-v1_5-sha256' },
     },
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -106,8 +169,17 @@ module.exports = {
       ],
     },
     plugins: [
-      '@react-native-firebase/app',
-      '@react-native-firebase/crashlytics',
+      // ADR-090: @react-native-firebase saiu (não compila sob Xcode 26.3/RN 0.81 + static).
+      // Crash reporting = Sentry. org/project vêm do env (SENTRY_ORG/SENTRY_PROJECT) e o upload
+      // de sourcemap exige SENTRY_AUTH_TOKEN no build (segredo EAS, NUNCA EXPO_PUBLIC_*).
+      ['@sentry/react-native/expo', {
+        // org/project NÃO são segredo (aparecem na URL do dashboard); só o AUTH_TOKEN é.
+        organization: process.env.SENTRY_ORG || 'dosiq-d4',
+        project: process.env.SENTRY_PROJECT || 'dosiq-app',
+        url: 'https://sentry.io/',
+      }],
+      // PostHog precisa do locale do device (peer dep de posthog-react-native).
+      'expo-localization',
       // sounds: copia os .wav p/ android res/raw + iOS bundle → notifee/expo
       // resolvem por nome ('alarm_dose'/'push_chime'). Sem isso o canal cai no
       // som padrão do SO (Spec 001 — bug visto no dumpsys: mSound=default).
@@ -117,9 +189,17 @@ module.exports = {
       'expo-font',
       ['expo-build-properties', {
         ios: {
+          // 'static' LIMPO (ADR-090): com o firebase fora, some o conflito de módulo Obj-C que
+          // exigia o withFirebasePodfileFix (CLANG_ALLOW_NON_MODULAR_INCLUDES) e some o motivo de
+          // cogitar 'dynamic' (que quebrava o link do react-native-netinfo — pod da comunidade não
+          // dynamic-framework-safe). Sentry e PostHog são pods RN puros e compilam sob static.
           useFrameworks: 'static'
         },
         android: {
+          // Play Store exige targetSdkVersion>=36 (Android 16) a partir de 30/ago/2026 —
+          // explícito porque o SDK 54 já default p/ 36, mas não confiar no default (spec 055).
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
           // Notifee (Spec 001) distribui o AAR app.notifee:core num maven repo
           // LOCAL dentro do pacote; sem registrá-lo o gradle não resolve
           // (app.notifee:core+ não encontrado). Caminho relativo ao módulo :app
@@ -135,7 +215,6 @@ module.exports = {
           "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
         }
       ],
-      './withFirebaseFix.js',
       './withAlarmPermissions.js',
       // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',
@@ -149,7 +228,11 @@ module.exports = {
       // 039/F2: escreve o vector drawable ic_dosiq_mark (smallIcon da superfície Android) no
       // prebuild — sem ele displayNotification lança e a superfície não aparece no device.
       './withDoseActivityAndroidIcon.js',
-      '@react-native-community/datetimepicker'
+      '@react-native-community/datetimepicker',
+      // SDK 54: expo install --fix aponta como plugins nativos (config dinâmico não
+      // escreve sozinho); sem uso de config custom, entram sem 2º argumento.
+      'expo-secure-store',
+      'expo-web-browser'
     ],
     extra: {
       // RE-004: variáveis públicas via EXPO_PUBLIC_*

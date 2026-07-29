@@ -164,12 +164,20 @@ Domínio exclusivo para ambientes de desenvolvimento (`__DEV__`). Contém labora
 
 Os módulos em `platform/` são restritos ao uso de dependências nativas (iOS/Android). Nenhuma funcionalidade de negócio interage diretamente com o hardware sem passar por um destes conectores. Isso garante que a atualização do SDK do Expo ou a substituição de uma lib nativa afete apenas este diretório.
 
+> **ADR-090 (2026-07-24):** `@react-native-firebase/{app,analytics,crashlytics}` foi **dropado** —
+> não compila sob Xcode 26.3/RN 0.81 com `useFrameworks: 'static'` (conflito de módulo
+> `RCTBridgeModule`/`RCT_EXPORT_METHOD`, sem fix nativo upstream). Analytics de produto migrou para
+> **PostHog** (host US-Virginia — backbone Brasil↔US > Brasil↔EU, app brasil-only) e crash reporting
+> para **Sentry**. `google-services.json`/`.plist` permanecem (push FCM via `expo-notifications`,
+> que não depende do RNFB).
+
 ```mermaid
 flowchart TD
     AppFeatures["Features e UI"]
     subgraph Platform Layer
         Alarms["Alarms (Notifee)"]
-        Analytics["Analytics (Firebase)"]
+        Analytics["Analytics (PostHog)"]
+        Audit["Audit (Sentry)"]
         DoseActivity["DoseActivity (Live Activities)"]
         Supabase["Supabase (Client)"]
     end
@@ -177,13 +185,14 @@ flowchart TD
     AppFeatures --> DoseActivity
     AppFeatures --> Supabase
     AppFeatures --> Analytics
+    AppFeatures --> Audit
 ```
 
 | Módulo | Dependência Nativa | Propósito | Arquivos-chave |
 |---|---|---|---|
 | **alarms** | `@notifee/react-native` | Registo de alarmes em background e notificações time-sensitive no iOS. | `AlarmSchedulerBridge.ts`, `registerAlarmBackgroundHandler.ts` |
-| **analytics** | `@react-native-firebase/analytics` | Telemetria e tracking sem capturar identificadores pessoais (PII). | `firebaseAnalytics.ts` |
-| **audit** | `@react-native-firebase/crashlytics` | Recolha automatizada de crashes nativos e exceções não tratadas no JS. | `crashlyticsSetup.ts` |
+| **analytics** | `posthog-react-native` | Telemetria e tracking (eventos de produto + adoção de frota) sem capturar identificadores pessoais (PII); host US-Virginia. | `productAnalytics.ts` |
+| **audit** | `@sentry/react-native` | Recolha automatizada de crashes nativos e exceções não tratadas no JS. | `ErrorBoundary.tsx`, init em `AppRoot.tsx` |
 | **auth** | `expo-secure-store` | Fluxos de login, recuperação de conta e validação Zod. | `authService.ts`, `secureStoreAuthStorage.ts` |
 | **config** | `expo-constants` | Resolução do ficheiro `app.config.js` e injecção de variáveis de ambiente no runtime. | `nativePublicAppConfig.ts` |
 | **doseActivity** | `@bacons/apple-targets` | Controlo dos widgets dinâmicos na Dynamic Island (iOS) e Notificações contínuas (Android). | `DoseActivityBridge.tsx`, `DoseLiveActivityBridge.tsx` |
@@ -192,22 +201,26 @@ flowchart TD
 | **supabase** | `@supabase/supabase-js` | Cliente único com storage substituído pelo `secureStoreAuthStorage` para persistência segura. | `nativeSupabaseClient.ts` |
 
 **Por que encapsular APIs nativas?**
-No exemplo prático de `firebaseAnalytics.ts`, o módulo suprime exceções ativamente para que uma falha analítica não interrompa a navegação:
+No exemplo prático de `productAnalytics.ts`, o módulo suprime exceções ativamente para que uma falha analítica não interrompa a navegação — e mantém a MESMA API exportada de antes do swap (`logEvent`/`setUserId`/`setUserProperty`/`logScreenView`), então os 8 call sites de negócio não mudam:
 
 ```typescript
-// apps/mobile/src/platform/analytics/firebaseAnalytics.ts
-import { logEvent as firebaseLogEvent } from '@react-native-firebase/analytics'
+// apps/mobile/src/platform/analytics/productAnalytics.ts
+import PostHog from 'posthog-react-native'
 
 export async function logEvent(eventName, params = {}) {
   try {
-    const a = getAnalyticsInstance()
-    if (!a) return
-    await firebaseLogEvent(a, eventName, params)
+    const c = getClient()
+    if (!c) return
+    await c.capture(eventName, params)
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logEvent error:', error.message)
   }
 }
 ```
+
+`setUserId`/`resetUser` identificam/encerram a sessão no PostHog **e** no Sentry juntos (mesmo UUID
+interno, nunca PII — R-042), chamados em todo login **e** restauração de sessão (não só no login
+explícito, senão o uso diário por sessão restaurada fica anônimo e infla a contagem de usuários).
 
 Outro ponto crítico é o `nativeSupabaseClient.ts`, que gere automaticamente o refresh de tokens com base no ciclo de vida da aplicação móvel:
 ```typescript
@@ -266,7 +279,7 @@ export default function AppRoot() {
   useEffect(() => {
     if (!fontsLoaded) return
     const launchMs = Date.now() - APP_START_TS
-    analytics().logEvent('cold_start', { duration_ms: launchMs }).catch(() => {})
+    logEvent('cold_start', { duration_ms: launchMs }) // wrapper PostHog, fail-silent (CON-021)
   }, [fontsLoaded])
   
   // ... (restante do arquivo)

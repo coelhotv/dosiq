@@ -2,8 +2,12 @@ import { useEffect } from 'react'
 import { AppState, Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'expo-tracking-transparency'
-import analytics from '@react-native-firebase/analytics'
+import * as Sentry from '@sentry/react-native'
+import { PostHogProvider } from 'posthog-react-native'
 import Navigation from './Navigation'
+import { logEvent, getPostHogClient, setUserProperty } from '@platform/analytics/productAnalytics'
+import { bundleTags } from '@platform/updates/bundleInfo'
+import { sentryDsn } from '@platform/config/nativePublicAppConfig'
 import { ToastProvider } from '@shared/components/feedback/Toast'
 import ErrorBoundary from '@shared/components/ErrorBoundary'
 import AlarmSchedulerBridge from '@platform/alarms/AlarmSchedulerBridge'
@@ -20,6 +24,30 @@ import {
 // Usado para medir cold start (time from JS load → first effect).
 const APP_START_TS = Date.now()
 
+// ADR-090: crash reporting = Sentry (substitui Crashlytics). Init no topo do módulo, antes de
+// qualquer render, para capturar erro de boot. Sem DSN configurado → não inicializa (no-op).
+// Fail-silent por design: observabilidade nunca pode impedir o app de subir.
+if (sentryDsn) {
+  try {
+    Sentry.init({
+      dsn: sentryDsn,
+      // Só o essencial: crash + erro. Sem tracing/replay (custo e cota).
+      tracesSampleRate: 0,
+      enableAutoSessionTracking: true,
+      // __DEV__ também reporta — útil p/ validar o pipeline no smoke.
+      debug: false,
+      // 051-A/FR-011: sob OTA, a versão do app não identifica mais o código em execução. Sem estas
+      // 3 tags, um pico de crash não responde "veio de qual update?" — e essa é exatamente a
+      // pergunta que decide avançar ou reverter a escada de rollout (GUIA_OTA §2).
+      // initialScope (e não setTag depois): tem de valer para crash de BOOT, que acontece antes de
+      // qualquer effect rodar — justo o crash que o rollback precisa enxergar.
+      initialScope: { tags: bundleTags() },
+    })
+  } catch {
+    // ignora — Sentry indisponível não pode quebrar o boot
+  }
+}
+
 // AppRoot — ponto de entrada da árvore de componentes
 export default function AppRoot() {
   const [fontsLoaded] = useFonts({
@@ -27,14 +55,26 @@ export default function AppRoot() {
     'Comfortaa-Bold': Comfortaa_700Bold,
   })
 
+  // 051-A/FR-011 (T010): registra update_id/channel/runtime_version como SUPER PROPERTIES do
+  // PostHog — `setUserProperty` é `register()` sob o capô, então os eventos seguintes viajam
+  // carimbados com o bundle de origem. Sem isso não dá pra medir adoção de um update nem separar
+  // métrica de quem pegou o OTA de quem não pegou.
+  useEffect(() => {
+    // setUserProperty é fail-silent por contrato (CON-021) — telemetria nunca derruba o boot.
+    Object.entries(bundleTags()).forEach(([key, value]) => { void setUserProperty(key, value) })
+  }, [])
+
   // Cold start telemetry — dispara 1x quando fontes carregam (app interativo).
   useEffect(() => {
     if (!fontsLoaded) return
     const launchMs = Date.now() - APP_START_TS
     if (__DEV__) debugLog(`[perf] cold_start: ${launchMs}ms`)
-    analytics().logEvent('cold_start', { duration_ms: launchMs }).catch(() => {
-      // silenciar — analytics não deve quebrar o app
-    })
+    // logEvent (wrapper PostHog) já é fail-silent por contrato (CON-021).
+    // Os bundleTags entram EXPLÍCITOS aqui, além das super properties do effect acima: `register()`
+    // é assíncrono e o cold_start é o PRIMEIRO evento da sessão — depender só da ordem dos dois
+    // effects deixaria justamente o evento de boot (o mais provável de existir sozinho numa sessão
+    // que crashou) sem o carimbo do bundle. Duplicar 3 campos é mais barato que um evento cego.
+    logEvent('cold_start', { duration_ms: launchMs, ...bundleTags() })
   }, [fontsLoaded])
 
   useEffect(() => {
@@ -83,7 +123,7 @@ export default function AppRoot() {
     return null
   }
 
-  return (
+  const tree = (
     <ErrorBoundary>
       <SafeAreaProvider>
         <ToastProvider>
@@ -95,5 +135,17 @@ export default function AppRoot() {
         </ToastProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
+  )
+
+  // PostHogProvider só entra quando há client (chave configurada) — sem chave, analytics é no-op
+  // e o provider não deve montar. Autocapture DESLIGADO: as telas já são registradas
+  // explicitamente por logScreenView (Navigation.tsx) e autocapture queimaria cota à toa.
+  const posthog = getPostHogClient()
+  if (!posthog) return tree
+
+  return (
+    <PostHogProvider client={posthog} autocapture={false}>
+      {tree}
+    </PostHogProvider>
   )
 }

@@ -37,6 +37,8 @@ import BulkDoseRegisterModal from '@dose/components/BulkDoseRegisterModal'
 import StaleBanner from '@shared/components/feedback/StaleBanner'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
+import { useOtaUpdate } from '@platform/updates/useOtaUpdate'
+import { useAlarmScreenActive } from '@platform/versionGate/useAlarmScreenActive'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
@@ -339,6 +341,24 @@ function TodayScreenContent({
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
+  // OTA em sessão viva (051-A PR 1.6b / FR-023 / PO-11). Banner FIXO reusa o COMPONENTE
+  // NudgeBanner (consistência visual), NÃO o pipeline de useNudges — nudge é dado remoto
+  // (in_app_nudges), update é estado local do device; ver decisão em tasks.md T052.
+  const { updateReady, applyUpdate } = useOtaUpdate()
+  const alarmScreenActive = useAlarmScreenActive()
+  // "Ocioso": nenhum modal de registro de dose aberto (individual/lote/medida/speed-dial) e
+  // nenhum alarme na tela — reusa useAlarmScreenActive (PR 1.5b), não reimplementa.
+  const isIdleForOtaBanner = modalProtocol === null && bulkModal === null
+    && !measureLogOpen && !speedDialOpen && !alarmScreenActive
+  const otaBanner = (updateReady && isIdleForOtaBanner)
+    ? {
+        title: 'Atualização no Dosiq',
+        body: 'Uma nova atualização de segurança no app foi baixada e está pronta para uso.',
+        action_type: 'apply',
+        action_payload: { label: 'Reiniciar o aplicativo' },
+      }
+    : null
+
   const priorityDoses = useMemo(() => {
     const todayUrgent = timeline.filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
     const aheadImminent = lookAhead.filter(d => d.timelineStatus === 'PROXIMA')
@@ -395,7 +415,11 @@ function TodayScreenContent({
         {priorityDoses.length > 0 ? (
           <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
         ) : (
-          <NudgeBanner nudge={dashboardNudge} onAction={handleNudgeAction} onDismiss={dismissNudge} />
+          <NudgeBanner
+            nudge={otaBanner ?? dashboardNudge}
+            onAction={otaBanner ? applyUpdate : handleNudgeAction}
+            onDismiss={otaBanner ? undefined : dismissNudge}
+          />
         )}
         <OptionalDoseSection
           title="Doses pendentes"

@@ -101,9 +101,11 @@ export function MedicineAnvisaSheet({ open, onClose, onSelect }) {
     >
       <KeyboardAvoidingView
         style={styles.root}
-        // iOS: eleva o sheet acima do teclado (sem isso o teclado cobre o input
-        // de busca). Android: adjustResize do SO já reposiciona — sem behavior.
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // iOS: eleva o sheet acima do teclado. Android: 'undefined' é NO-OP sob
+        // edgeToEdgeEnabled — adjustResize do AndroidManifest vira letra morta e o teclado
+        // cobre o input sem 'height' (AP-288/R-303; reproduzido no smoke da 055 PR 1.4 —
+        // o comentário antigo "adjustResize já reposiciona" estava errado).
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {Platform.OS === 'android' ? (
           <View style={{ height: StatusBar.currentHeight ?? 0 }} />

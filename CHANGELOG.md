@@ -7,6 +7,275 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Preferência de estoque sobrevive offline (spec 044, 055-W1.7)
+
+- **Fix** (JS-only, sem bump de `APP_VERSION` — elegível a OTA sobre o binário atual, R-221 §4).
+  Antes, se o app abrisse sem conexão (modo avião, sinal ruim), a falha de rede era tratada como
+  "nunca soube da preferência" e reativava o estoque por omissão — mesmo que o usuário tivesse
+  desligado o controle de estoque explicitamente. Agora `useStockTracking` persiste a preferência
+  (`enabled` + `pausedAt`) em cache local a cada leitura remota bem-sucedida e usa uma escada de
+  3 degraus na falha: remoto → cache local → só então o default ativo original (que continua
+  valendo na 1ª abertura, storage limpo — nunca esconde o estoque de quem nunca declarou nada).
+  A tab bar também deixa de esperar a rede pra montar quando já existe cache: some o spinner à
+  toa offline antes de cair no default. Preferência é invalidada no logout (não vaza entre
+  contas no mesmo aparelho). Saldo de estoque continua 100% servidor (FIFO decidido pelo banco,
+  AP-231) — o cache é só da política liga/desliga.
+
+### Aplicação de OTA em sessão viva (spec 051-A, PR 1.6b)
+
+- **Feature** (release OTA sobre `0.30.0` — **sem bump de `APP_VERSION`**, ADR-082: mudança
+  JS-only, bumpar criaria `runtimeVersion` novo e tornaria o update órfão, nunca alcançando os
+  binários `0.30.0` já instalados/publicados na loja). Identidade da release: `[0.30.0+ota.N]` +
+  updateId + SHA da main, atualizado no publish real.
+
+  O app passa a checar e baixar update do EAS Update também com o processo já vivo (`AppState` →
+  `active`, throttle ~15min) — antes só o cold start (checagem nativa no launch, FR-005) acionava
+  a checagem, e o padrão de uso brasileiro de deixar o app minimizado por dias deixava a
+  alcançabilidade do ADR-088 pela metade.
+
+  A aplicação continua exclusivamente por decisão do usuário: banner fixo "Atualização pronta ·
+  Reiniciar" na aba Hoje, visível só quando a tela está ociosa (nenhum modal de registro de dose
+  aberto, nenhum alarme na tela — reusa `useAlarmScreenActive` do PR 1.5b). `Updates.reloadAsync()`
+  nunca dispara sozinho: recarregaria a árvore React inteira e apagaria formulário meio preenchido,
+  tela de alarme ou fluxo de estoque em andamento.
+
+  Banner reusa o COMPONENTE `NudgeBanner` (consistência visual, zero CSS novo), não o pipeline de
+  `useNudges` — nudge é dado remoto (`in_app_nudges`), o estado de update pronto é local do device.
+  Quem só fecha e reabre o app (cold start) continua recebendo o update sem ver banner nenhum — a
+  FR-005 não muda.
+
+### Atualizações OTA (EAS Update) no app mobile (spec 051-A, PR 1.6)
+
+- **Feature** (`minor`, mobile `0.29.3 → 0.30.0`): o app passa a embutir o cliente `expo-updates`,
+  tornando-se **a primeira versão alcançável por OTA**. A partir dela, uma correção JS-only chega à
+  base instalada em minutos/horas, sem depender de revisão de loja — o custo que o incidente #755
+  cobrou por inteiro.
+
+  O bump para `0.30.0` (e não `0.29.4`) marca deliberadamente a fronteira de capacidade da Onda 1:
+  Expo SDK 54, kill switch de versão mínima e canal OTA. Sob a política do ADR-082 o
+  `runtimeVersion` **é** o `APP_VERSION`, então esta é a versão-raiz de todos os OTAs futuros:
+  releases OTA sobre ela usam `[0.30.0+ota.N]` e **não** bumpam a versão.
+
+  Inclui:
+  - `runtimeVersion` = `APP_VERSION` como valor literal (não `{policy:'appVersion'}`, que aborta o
+    build local por causa do `expo prebuild` — ver `docs/operations/GUIA_OTA_EAS_UPDATE.md` §1.2);
+  - canal explícito nos 3 perfis de build + perfil `preview` novo, alvo do teste destrutivo
+    anti-bricking (que nunca roda em `production`);
+  - **code signing** (ADR-083): o cliente rejeita bundle não assinado pela chave do projeto;
+  - `fallbackToCacheTimeout: 0` — o boot nunca espera rede, preservando o offline-first (AP-303);
+  - identificação do bundle (`updateId` curto + canal) na tela de Perfil, porque com OTA a versão
+    deixa de identificar o código em execução;
+  - `update_id`/`channel`/`runtime_version` no Sentry e no PostHog — responde "esse crash veio de
+    qual update?", a pergunta que decide reverter ou avançar o rollout.
+
+  **Nota de loja:** o benefício não é retroativo. Esta versão precisa ir à loja uma vez; OTAs só
+  fluem para quem instalar dela em diante.
+
+### Kill switch de versão mínima — painel admin web (spec 051-A, PR 1.5c)
+
+- **Feature** (`minor`, web `4.21.0 → 4.22.0`): painel `VersionGateAdmin` (`admin-version-gate`,
+  atalho em Configurações → Administração) para editar as 2 linhas semeadas do gate (iOS/Android) —
+  **edit-only** por desenho (RC3-2/F6): sem create/delete/lista, as linhas já existem desde a
+  migração do PR 1.5a.
+- **Segurança**: a guarda de raio de impacto (`acknowledge_affected_devices`, S-7) mora inteira no
+  handler — a tela só **exibe** a contagem que o servidor devolve na recusa 4xx, nunca a calcula por
+  conta própria (evita reintroduzir a divergência histórica do F3). Ativar exige o passo de
+  confirmação explícita; desativar não exige cerimônia — destravar tem de ser imediato (PO-9).
+- **PO-SEC-8** (ADR-091 D9, invariante NC6): confirmado por smoke com device real — com o gate
+  Android ativo bloqueando o boot, o painel web (fora do escopo do gate por construção) continuou
+  acessível e desativou sem exigir acknowledge.
+- Sem mudança em `api/` (handler `versionGate` já existia desde o PR 1.5a).
+
+### Kill switch de versão mínima — cliente mobile (spec 051-A, PR 1.5b)
+
+- **Feature** (`patch`, mobile `0.29.2 → 0.29.3`; `@dosiq/core` `0.19.0 → 0.20.0`): o app passa a
+  consultar `app_version_gate` (PR 1.5a) no boot e bloquear versões abaixo do piso configurado —
+  overlay full-screen não-dismissível ("Atualize seu app para continuar") com CTA pra loja e saída
+  honesta pra `https://dosiq.app` (dados de saúde continuam acessíveis pelo navegador, mesmo
+  bloqueado — postura LGPD art. 18, ADR-091 D7).
+- **Resolver puro** `resolveVersionGate` (novo, `@dosiq/core/utils`, CON-033 accepted): tabela-verdade
+  do FR-018 — qualquer indeterminação (offline, timeout, erro do PostgREST, linha ausente,
+  `is_active=false`, versão min/instalada inválida) **abre** o app; só bloqueia com comparação
+  semântica válida abaixo do piso. `satisfiesSemver` deliberadamente não usado (fail-closed por
+  design, inverteria a semântica no boot — AP-303).
+- **Segurança**: `store_url` validado pela allowlist do core (`isAllowedStoreUrl`, mesma do PR
+  1.5a) — fora dela cai pro fallback compilado por plataforma, nunca abre URL arbitrária; `message`
+  remoto renderizado como `<Text>` puro, com cap, nunca vira link/markup; leitura como `anon`
+  (antes de sessão existir), `error` do `supabase-js` inspecionado explicitamente, **sem cache**
+  do estado de bloqueio (bricaria o offline pra sempre); reavaliação também no foreground
+  (`AppState 'active'`), não só no mount — app minimizado por dias precisa ver o gate se ligar.
+- **Obrigação clínica > bloqueio de update**: o overlay cede (`useAlarmScreenActive`) quando a
+  tela cheia do alarme (`AlarmFullScreen`) é a rota atual — dose crítica nunca fica escondida
+  atrás do aviso de versão.
+- **Fix correlato** (achado no smoke desta PR, fora do escopo original mas mesma superfície de
+  boot/navegação — AP-321/AP-322): `describeLoadFailure` (core) parava de vazar mensagem de erro
+  crua em inglês (rede/JS) quando o fallback offline sem cache relançava o erro original;
+  `useTreatments.ts` parava de coalescer `null`↔`[]` na fronteira hook→tela (offline com dados
+  reais mostrava "sem tratamentos" em vez do aviso de conexão); `StockScreen.tsx` parava de
+  ignorar o `error` real do hook com uma mensagem hardcoded; `AlarmSchedulerBridge.tsx` ganha
+  retry (mesmo padrão de `usePushNotifications.ts`) pra `openAlarmScreen` não desistir quando o
+  `NavigationContainer` ainda não montou no tap de notificação em cold start.
+
+### Kill switch de versão mínima — superfície de configuração e autorização de admin (spec 051-A, PR 1.5a)
+
+- **Feature** (`minor`, web `4.20.2 → 4.21.0`, `@dosiq/core` `0.18.0 → 0.19.0`; mobile **não**
+  afetado — o cliente do gate é o PR 1.5b): nasce a tabela `public.app_version_gate` (uma linha por
+  plataforma, ambas semeadas **desligadas**) e o endpoint admin que a escreve
+  (`PATCH /api/admin?resource=versionGate`, dentro do router existente — sem função serverless nova).
+  A partir daqui existe política de versão mínima acionável: é o mecanismo que encerra a Era 1 do
+  ADR-088 (*"nenhum DROP, sem exceção"*), aberta pelo outage de 2026-07-22.
+- **Segurança** (`minor`): a autorização de admin deixa de derivar de `telegram_chat_id` em
+  `user_settings` e passa a comparar o `auth.users.id` autenticado com `ADMIN_USER_ID`
+  (ADR-091 D10 / RC-SEC-2 S-6, CRITICAL). O modelo anterior era auto-atribuível — a policy de UPDATE
+  de `user_settings` não restringe coluna e `authenticated` tem o privilégio nela, então qualquer
+  conta podia se promover a admin escrevendo o chat_id do admin na própria linha. Fail-closed: env
+  ausente nega todo acesso. ⚠️ **`ADMIN_USER_ID` precisa existir no ambiente** (já criada na Vercel em
+  Preview+Production) — sem ela o painel admin devolve 401 em tudo, por desenho.
+- **Segurança** (`minor`): acesso à tabela em **duas camadas independentes** — privilégio de escrita
+  revogado de `anon`/`authenticated` (o `REVOKE ... FROM PUBLIC` não bastaria: os privilégios vêm de
+  `ALTER DEFAULT PRIVILEGES` nomeando os roles) **e** RLS com uma única policy de `SELECT`, sem
+  nenhuma policy de escrita. Leitura liberada para `anon` porque o gate roda no boot, antes de haver
+  sessão. O grant de leitura é **column-scoped** nas 5 colunas do contrato: `select=*` devolve `42501`
+  de propósito, para que o uuid do admin não vá ao cliente.
+- **Guarda de raio de impacto**: ativar o gate exige `acknowledge_affected_devices` igual à contagem
+  que o **servidor** faz da frota afetada (instalações da plataforma abaixo do piso). A recusa nomeia
+  o número correto, então operar por `curl` passa pela mesma cerimônia que o painel. Desativar **não**
+  exige confirmação — destravar a base tem de ser imediato.
+- **Refactor**: a contagem de frota (união `notification_devices ∪ device_activity`, janela de 30
+  dias, dedupe por `(user_id, platform)`) sai do heredoc de `scripts/fleet-versions.sh` e passa a
+  viver em `@dosiq/core/utils`, consumida por script **e** handler — o acknowledge compara o número
+  que o operador viu com o que o servidor conta, e duas implementações divergiriam em silêncio.
+  Paridade verificada contra a implementação anterior sobre os dados reais de produção.
+- **Testes**: `api/` ganha sua primeira suíte (o handler, 4 casos do acknowledge + validação +
+  falhas de infraestrutura), e o `include` do vitest passa a cobrir `api/**` nos dois configs —
+  sem isso o arquivo existiria sem nunca ser executado.
+- Painel admin web fica no PR 1.5c; o kill switch no cliente, no PR 1.5b.
+
+### Edge-to-edge Android 16 + keyboard-avoidance corrigida em 12 telas (spec 055, PR 1.4)
+
+- **Fix** (`patch`, mobile `0.29.1 → 0.29.2`; **nota de loja relevante** — melhoria visível de UX):
+  target API 36 força edge-to-edge no Android — o rodapé de ação fixo (`FormActions`, usado em
+  12 telas de formulário) ficava sem respiro do gesture bar/home indicator. Corrigido com
+  `useSafeAreaInsets` + zero-out condicional ao teclado (`useKeyboardVisible`, hook canônico).
+- **Achado maior no smoke com o PO:** `KeyboardAvoidingView` com `behavior=undefined` no Android
+  é NO-OP sob `edgeToEdgeEnabled` — `adjustResize` do AndroidManifest vira letra morta e o
+  teclado cobria inputs/rodapé (2ª incidência do AP-288, agora promovido a **R-303**, hard rule).
+  Migradas: `MedicineFormScreen`, `FeedbackScreen`, `ProfileEditScreen`, `ChangePasswordScreen`,
+  `ProtocolFormScreen`, `TitrationFormScreen`, `StockAdjustmentScreen`, `PurchaseFormScreen`, os
+  2 steps de onboarding (medicamento/tratamento) e os 2 sheets de busca (ANVISA/medicamento) —
+  todos para `behavior='height'` no Android, sem `keyboardVerticalOffset` chutado (removido de
+  todos; o componente mede a própria posição via `onLayout` interno).
+- T040 (inventário via grep) confirmou alarme/Hoje/detalhe de tratamento já corretos de fixes
+  anteriores (`ScreenContainer`, `RootTabs` R4-H01) — sem regressão nessas telas.
+- Validado com screenshots antes/depois em Android (emulador API 36 + device físico com teclado)
+  e iOS, múltiplas rodadas com o PO até o gap residual (offset chutado, depois zero-out
+  duplicado no Android) ser eliminado nos dois SOs.
+
+### Bump Expo SDK 53 → 54 (spec 055, PR 1.1)
+
+- **Chore** (`minor`, mobile `0.28.5 → 0.29.0`; `patch`, web `4.20.1 → 4.20.2`): bump estrutural do
+  Expo SDK 53→54 via `expo install --fix` — 23 módulos nativos e `react`/`react-native` sobem
+  (`react-native 0.79.6 → 0.81.5`, `react 19.0.0 → 19.1.0`). `react`/`react-dom` vivem na RAIZ do
+  monorepo (arquivo de deps de facto do web, que não os declara em separado) — o bump muda o React
+  do web também, mesmo sem tocar componentes. `npm ls react react-dom` confirma uma única versão
+  `19.1.0` resolvida em toda a árvore (mobile, web, root), sem duplicata — duplicata de `react` em
+  RN vira `Invalid hook call` em runtime, silencioso até o crash.
+- Devdep `jest-expo` sobe `~53.0.0 → ~54.0.17` (tag `sdk-54` não existe no npm; versão pinada
+  manualmente pela última `54.x.x` estável, já que o SDK 54 não tem dist-tag dedicada).
+  `react-test-renderer` alinhado a `19.1.0` (deve casar com `react` exatamente).
+- `expo install --fix` não conseguiu escrever plugins novos no config dinâmico (`app.config.js`):
+  `expo-secure-store` e `expo-web-browser` adicionados manualmente ao array `plugins`.
+- Escopo desta entrega é SOMENTE o bump estrutural (RC3/F2 — structural ≠ behavioral): migração de
+  `expo-file-system` p/ API nova, target API 36 explícito e edge-to-edge ficam para PRs seguintes
+  (1.2/1.3/1.4) da mesma spec.
+- **Achados do gate (mesmo bump):** `expo-file-system` removeu a API legada do export default no
+  SDK 54 — `ExportSheet.tsx` (LGPD, spec 008) importava `cacheDirectory`/`EncodingType` de lá;
+  corrigido trocando o import para `expo-file-system/legacy` (mesmo comportamento, só o caminho do
+  módulo muda — a migração de verdade p/ `File`/`Paths` é o PR 1.2). `react-native-safe-area-context`
+  tinha `overrides` pinando `5.4.0` sem justificativa documentada no repo; `expo install --fix` pede
+  `~5.6.0` p/ SDK 54 — override subido pra `5.6.0` (alinhamento de versão, não é o edge-to-edge do PR
+  1.4). `@notifee/react-native` sinalizado "unmaintained" pelo checker de metadata do
+  `expo-doctor` (advisory, não é problema de versão) — adicionado a
+  `expo.doctor.reactNativeDirectoryCheck.exclude` no `apps/mobile/package.json`.
+- 🔴 **Débito conhecido (achado ao vivo via PO, pós-abertura do PR, não estava no plano
+  original):** `npx expo run:ios` local (Xcode 26.3) quebra em DUAS classes de erro do
+  `@react-native-firebase` v21 sob o toolchain mais estrito do SDK 54 — (1) include não-modular de
+  headers React em módulos de framework (mitigado neste PR via `withFirebasePodfileFix.js`, config
+  plugin novo que injeta `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES` só nos Pods,
+  sem mudar comportamento) e (2) macro `RCT_EXPORT_METHOD` do submódulo `analytics` vira erro fatal
+  `-Wimplicit-int` (`RNFBAnalyticsModule.m` — **NÃO mitigado**; decisão do PO: não suprimir warning
+  de C às cegas, resolver na raiz). Android **não é afetado** (`npx expo run:android` local rodou
+  limpo). Bump de `@react-native-firebase` (v21→ versão compatível, medido em 25.x disponível no npm)
+  vira item **obrigatório do PR 1.3** desta spec (registrado no PLAYBOOK) — até lá, `expo run:ios`
+  local segue quebrado nesta branch de integração; nenhum dos gates automatizados (`expo-doctor`,
+  `tsc`, `lint`, `jest`) cobre `xcodebuild`, então isso não aparece em CI/gate — só em build real.
+
+### `expo-file-system`: migração para API nova (spec 055, PR 1.2)
+
+- **Fix** (`patch`, mobile `0.29.0 → 0.29.1`): `ExportSheet.tsx` (exportação LGPD de dados de
+  saúde, spec 008) migrado de `expo-file-system/legacy` (`writeAsStringAsync`/`cacheDirectory`,
+  shim adotado no PR 1.1) para a API nova `File`/`Paths` do SDK 55+. A legada **lança** em runtime
+  no 55 (`legacyWarnings.ts:56`) — não é aviso de depreciação — e o teste antigo mockava o módulo
+  inteiro, mantendo a suíte verde com o recurso quebrado (mesma classe do R-295, agravada por ser
+  direito legal de portabilidade).
+- Duas armadilhas de semântica pagas: `File.create()` **lança** se o arquivo já existe — o filename
+  do core é determinístico, então um 2º export na mesma sessão colidiria sem `{ overwrite: true }`
+  (teste negativo T020a prova a re-exportação); `File.write()` é **síncrono** (retorna `void`, não
+  `Promise`) — confirmado que o erro segue caindo no `try/catch` existente (teste negativo T020b).
+- Mock de teste reescrito para a FORMA do módulo novo (`File`/`Paths` como classes/getter reais,
+  não string) — uma próxima breaking change no pacote quebra o teste, não só o runtime.
+- Decisão do PO (2026-07-21): migrar para a API nova em vez de manter o shim `/legacy` (que existe
+  e seria 1 linha) — o smoke do fluxo de exportação era obrigatório nos dois caminhos e havia folga
+  de prazo (~40 dias) para pagar a dívida agora em vez de sob pressão quando o `/legacy` sair.
+
+### Firebase sai; observabilidade vira Sentry + PostHog (spec 055, PR 1.3b, ADR-090)
+
+- **Chore** (`minor`/comportamental, mobile — `APP_VERSION` permanece `0.29.1`, já bumpada no PR 1.1;
+  não há mudança visível de tela, mas troca o provedor de crash e de analytics): removidos
+  `@react-native-firebase/{app,analytics,crashlytics}` e adicionados `@sentry/react-native` (crash) +
+  `posthog-react-native` (analytics de produto) + `expo-localization` (peer do PostHog).
+- **Por quê:** sob Xcode 26.3 / RN 0.81 (SDK 54) o `@react-native-firebase` **não compila** com
+  `useFrameworks: 'static'` — o clang recusa a declaração concorrente de `RCTBridgeModule`
+  (`must be imported from module 'RNFBApp.RNFBAppModule'`) e a macro `RCT_EXPORT_METHOD` cascateia
+  `-Wimplicit-int` fatal. Bug upstream sem fix (invertase #8988/#8827, expo #39607); o bump v21→v25
+  reproduz o MESMO erro e `useFrameworks: 'dynamic'` só troca de buraco (quebra o link do
+  `react-native-netinfo`). Era o único blocker de `npx expo run:ios` — sem isso nenhum build iOS sai.
+- O wrapper de analytics mantém a **mesma API exportada** (`logEvent`/`setUserId`/`setUserProperty`/
+  `logScreenView`), então os 8 call sites não mudaram: só o arquivo foi renomeado
+  `firebaseAnalytics.ts` → `productAnalytics.ts`. `ErrorBoundary` passou a `Sentry.captureException`
+  (+ breadcrumb com o `componentStack`); `cold_start` (loading time) virou evento PostHog.
+- Config: `useFrameworks: 'static'` volta **limpo** — os dois config plugins que só existiam por causa
+  do firebase (`withFirebaseFix.js`, `withFirebasePodfileFix.js`) foram deletados. `google-services.json`
+  e `GoogleService-Info.plist` **ficam**: o push Android usa o transporte FCM via `expo-notifications`,
+  que não depende do pacote RNFB.
+- Sem chave configurada (`EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_POSTHOG_API_KEY`) ambos viram no-op
+  silencioso e o app sobe normal — observabilidade nunca bloqueia boot. Host PostHog é o **US**
+  (US-Virginia): app é brasil-only e o backbone bra/us é maior que bra/eu.
+- **Identificação de usuário corrigida na largada (achado do smoke do PO):** o `identify` só era
+  chamado no login EXPLÍCITO (`LoginScreen`) — herança do Firebase, mesmo furo. Como o uso diário
+  entra por sessão RESTAURADA do SecureStore, todo esse tráfego ficava anônimo e cada device virava
+  uma "pessoa" distinta, inflando a contagem de usuários (visto no dashboard: 2 devices = 2 pessoas
+  com os mesmos eventos). A identificação passou para o `useAuthSession` (`Navigation.tsx`), que
+  cobre login e restauração no MESMO ponto, e o call site do `LoginScreen` saiu — a regra ganhou um
+  dono só. Adicionado `resetUser()` no `SIGNED_OUT`: sem ele, num device compartilhado os eventos do
+  próximo usuário seriam atribuídos à pessoa anterior — misturar dado de saúde entre pessoas é pior
+  que o anonimato. Os dois andam juntos. O mesmo UUID vai para o `Sentry.setUser` (crash sem dono
+  não cruza com relato de suporte). R-042 respeitada: só UUID interno, nunca PII. A consolidação dos
+  eventos anônimos pré-login é nativa do PostHog (`identify` mescla o `distinct_id` corrente) — não
+  há código de merge do nosso lado.
+- **Host do PostHog: endpoint PÚBLICO (`us.i.posthog.com`), não o privado.** A doc do PostHog separa
+  por tipo de endpoint: público (ingestão de evento com project API key, que é o nosso caso) vs
+  privado (`us.posthog.com`, API de query/sourcemap com personal API key). O
+  `eas integrations:posthog:connect` escreve o privado em `.env.local` porque scaffolda o error
+  tracking junto — que aqui está desligado (crash é Sentry). Divergência silenciosa: os dois hosts
+  respondem, então o evento não some com erro, só vai pro caminho errado.
+- 🔴 **Fronteira com a spec 051 (OTA):** PostHog entra só como analytics de produto + métrica de adoção
+  de frota. Continua **proibido** usar feature flag do PostHog como gating de conteúdo OTA (governance
+  051 §125) ou colocá-lo no caminho do kill switch `min_app_version` (boot-blocking, fail-open — AP-303).
+- Perde-se o console Firebase (histórico de crash/analytics); frota de ~25 ativos, perda baixa. Session
+  replay do PostHog fica DESLIGADO e o autocapture também (as telas já são registradas explicitamente
+  por `logScreenView`) — os dois queimariam cota do free tier à toa.
+
 ### Heartbeat de atividade do device, independente de push (spec 057, ADR-089)
 
 - **Feat** (`no-user-impact` — telemetria de infra, nada muda visível pro usuário): a única fonte de

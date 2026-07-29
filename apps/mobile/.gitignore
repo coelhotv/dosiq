@@ -28,3 +28,13 @@ google-services*.json
 GoogleService-Info*.plist
 credentials.json
 *.jks
+
+# 🔴 Code signing do expo-updates (ADR-083 / spec 051-A, PO-SEC-1)
+# A chave PRIVADA assina todo `eas update` e NUNCA entra no git — comprometê-la = poder
+# entregar código arbitrário a 100% da base instalada, sem passar por loja.
+# Mora só no Mac Mini + backup em gestor de senhas (ver §1.4 do GUIA_OTA_EAS_UPDATE.md).
+# O certificado PÚBLICO (certs/certificate.pem) É versionado de propósito: precisa ser
+# embutido no binário pelo build pra que o cliente valide a assinatura.
+certs/private-key.pem
+certs/*private*
+

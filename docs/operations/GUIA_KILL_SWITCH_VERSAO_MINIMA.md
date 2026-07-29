@@ -36,8 +36,9 @@ produção. Acione apenas quando:
 
 - a mudança necessária é nativa (SDK do Expo, `ios/`, `android/`) — OTA não entrega isso;
 - o runtime afetado está órfão e ninguém vai publicar update para ele;
-- o binário instalado não embute `expo-updates` (builds anteriores à v0.29.0) — para esses, nem OTA
-  nem kill switch alcançam; a única saída é o usuário atualizar pela loja.
+- o binário instalado não embute `expo-updates` (builds **anteriores à v0.30.0**, a primeira que
+  carrega o cliente de OTA) — para esses, nem OTA nem kill switch alcançam; a única saída é o
+  usuário atualizar pela loja.
 
 Bloquear o boot de um app de medicação é uma ação com custo real para quem depende dele — trate como
 last resort, não como reflexo.

@@ -224,3 +224,21 @@ export type {
   TitrationIntakeUnit,
   TitrationStepStatus,
 } from './titrationSchema'
+
+// Kill switch de versão mínima — schema de ESCRITA + allowlist de store_url (051 / ADR-091 / CON-033).
+// A allowlist é CONTROLE DE SEGURANÇA (S-8) e vive só aqui: handler admin e cliente mobile consomem
+// esta definição, nunca uma cópia.
+export {
+  default as versionGateUpdateSchema,
+  versionGateUpdateSchema as versionGateSchema,
+  validateVersionGateUpdate,
+  isAllowedStoreUrl,
+  VERSION_GATE_PLATFORMS,
+  STORE_URL_ALLOWLIST,
+  GATE_MESSAGE_MAX_LENGTH,
+  VERSION_GATE_CLIENT_COLUMNS,
+} from './versionGateSchema'
+export type {
+  VersionGatePlatform,
+  VersionGateUpdateInput,
+} from './versionGateSchema'

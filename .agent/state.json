@@ -1,36 +1,119 @@
 {
+  "_comment": "REGRA DE RETENÇÃO: spec_dirs e merged_history DEVEM conter APENAS specs e PRs do épico/onda ATIVO na branch de integração atual. É ESTRITAMENTE PROIBIDO acumular histórico de épicos passados neste JSON. Ao concluir o épico, limpe os itens antigos — o local definitivo do histórico são os journals em .agent/memory/journal/.",
   "project": "dosiq",
   "sprint": "2026-W29",
   "session": {
     "mode": "coding",
-    "status": "merged_to_integration",
-    "tier": 2,
-    "plan": "plans/specs/055-expo-55-target-api-36/plan.md",
-    "tasks": "plans/specs/055-expo-55-target-api-36/tasks.md",
-    "spec_dir": "plans/specs/055-expo-55-target-api-36",
-    "spec": "plans/specs/055-expo-55-target-api-36/spec.md",
-    "goal": "Coding 055 — PR 1.1: bump Expo 53→54 (T010-T017), mergeado na branch de integração feature/055-w1-sdk54 (main NÃO tocada — só no fechamento da Onda 1)",
-    "goal_type": "feature",
+    "status": "merged",
+    "tier": 1,
+    "tasks": "plans/specs/051-expo-updates/tasks.md",
+    "spec_dir": "plans/specs/051-expo-updates",
+    "spec": "plans/specs/051-expo-updates/spec.md",
+    "goal": "055-W1.7 PR 1.7 — MERGEADA (#780, squash 28b6ed40). Preferencia de estoque sobrevive offline (spec 044 dona, F3/F4a): useStockTracking.tsx ganha cache client-side AsyncStorage (stockTrackingCache.ts) + escada de 3 degraus no catch (remoto -> cache -> default ATIVO), emendando AP-277/AP-284 com a distincao (a) nunca soube / (b) sei que desligou. ready nao depende mais de rede quando ha cache. Cache invalidado no listener SIGNED_OUT (Navigation.tsx), nao no signOut() isolado (RC5 achou o choke point errado antes do push). Smoke MANUAL device real validado via OTA preview. RC6 clean (0 findings). Onda W1 sem proxima fatia declarada ainda.",
+    "goal_type": "fix",
+    "code_review": {
+      "status": "clean",
+      "critical": 0,
+      "auto_fixed": 0,
+      "ask_items": 0
+    },
     "spec_dirs": [
-      "plans/specs/008-complete-data-export-lgpd",
-      "plans/specs/029-treatment-level-titration",
-      "plans/specs/044-dose-only-mode",
-      "plans/specs/046-lgpd-consent",
-      "plans/specs/047-inapp-review-prompt",
-      "plans/specs/048-landing-glp1",
-      "plans/specs/049-docs-revamp",
-      "plans/specs/050-notification-integrity",
       "plans/specs/051-expo-updates",
-      "plans/specs/052-dose-instance-medicine-snapshot",
-      "plans/specs/053-unit-label-formatter",
-      "plans/specs/054-critical-alerts",
-      "plans/specs/055-expo-55-target-api-36",
-      "plans/specs/056-ai-review-tuning",
-      "plans/specs/057-device-activity-log"
+      "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 770,
-    "merged_squash": "590d372a",
+    "merged_pr": 780,
+    "merged_squash": "28b6ed40",
     "merged_history": [
+      {
+        "pr": 780,
+        "squash": "28b6ed40",
+        "spec": "044 F3/F4a (dona) — 055-W1.7 preferencia de estoque sobrevive offline (PR 1.7)",
+        "tier": 1,
+        "date": "2026-07-28",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "useStockTracking.tsx ganha cache client-side (AsyncStorage, stockTrackingCache.ts) + escada de 3 degraus no catch: remoto -> cache local -> default ATIVO. Emenda AP-277/AP-284 (nao violacao, estreitamento): distincao (a) nunca soube da preferencia (fail-safe original vale) vs (b) sei que o usuario desligou (falha de rede SEGUINTE nao pode reativar — cache cobre esse degrau ANTES do fail-safe). ready deixa de depender de rede quando ha cache (tab bar monta na hora, offline). Rede sempre vence o cache quando resolve (AP-284 intacto). Cache invalidado no listener SIGNED_OUT em Navigation.tsx (choke point unico que ja limpa today/treatments/stock-snapshot) — RC5 self-review achou que a primeira tentativa (cabear em authService.signOut()) estava no caminho ERRADO: a UI real de logout (ProfileScreen) chama profileService.logoutUser(), rota separada que nunca passaria pelo cache-clear; corrigido antes do push. Sem bump de APP_VERSION (JS-only). 13 testes novos (3 degraus + negativo + cache module) + suite mobile completa 545/548. Gates verdes (lint 0, tsc web 0, strict-island ratchet OK). Smoke MANUAL device real do PO via OTA preview (publish-ota.sh preview, direto da branch — R-307 so trava production): desligar estoque + modo aviao + matar/reabrir = aba Estoque ausente. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 122,7K (medido antes do run real), 0 findings, postado no PR."
+      },
+      {
+        "pr": 779,
+        "squash": "2e60fb8e",
+        "spec": "051-A OTA em sessão viva (PR 1.6b) — FR-023/US10/PO-11",
+        "tier": 2,
+        "date": "2026-07-28",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "useOtaUpdate.ts (novo): checagem+download em AppState->active, throttle 15min, fail-silent, nunca aplica sozinho — só Updates.reloadAsync() por toque do usuário. TodayScreen.tsx: banner fixo 'Atualização pronta · Reiniciar' reusa o COMPONENTE NudgeBanner (não o pipeline useNudges — nudge é dado remoto in_app_nudges, update é estado local do device), precedência por render (otaBanner ?? dashboardNudge, não por priority numérico — nudgeSchema.ts:59 capa priority em 0-100). Guarda de ocioso combina modalProtocol/bulkModal/measureLogOpen/speedDialOpen + useAlarmScreenActive (PR 1.5b, reusado sem reimplementar). Achado no smoke: NudgeBanner.tsx renderizava o X de dispensar incondicionalmente — banner fixo passa onDismiss=undefined (não pode ser dispensado sem aplicar) e o X ficava visível mas inerte, enganoso; corrigido pra só renderizar quando onDismiss é passado. SEM bump de APP_VERSION (ADR-082): mudança JS-only ships como release OTA sobre 0.30.0 — bumpar criaria runtimeVersion novo e tornaria o update órfão para o binário já instalado (erro cometido e revertido na própria sessão, achado pelo PO ao tentar publicar). PO-11 fechado com evidência MANUAL device real (moto g06/Android, canal preview): T054 caminho feliz, T055 guarda negativo (modal de dose bloqueia o banner, libera na hora ao fechar), T056 cold start nunca mostra banner (FR-005 intacta). Achado de processo: throttle de 15min bloqueia checagem repetida durante smoke rápido (não é bug) — reduzido pra 30s TEMP durante o smoke via comentário explícito, revertido antes do PR. Gates verdes (lint 0, tsc web+mobile 0, strict-island ratchet OK, validate:agent 2204/164, jest mobile 532/532). RC5 clean. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 123K (medido via RC6_MEASURE=1 antes do run real), 0 findings, postado no PR."
+      },
+      {
+        "pr": 778,
+        "squash": "7a7765f5",
+        "spec": "051-A cliente expo-updates no binario (PR 1.6) + R-307 procedencia do binario",
+        "tier": 2,
+        "date": "2026-07-27",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Fatia BINARIA da 051-A (runbook/governanca/rollout/CI = 051-B). expo-updates 29.0.19 (dist-tag sdk-54; latest=57.x quebraria o SDK 54). DUAS armadilhas de config que so o build real expoe: (1) runtimeVersion tem de ser LITERAL, nao {policy:'appVersion'} — o expo prebuild que antecede eas build --local poe o projeto em bare workflow, onde politicas ABORTAM o build; (2) o canal precisa estar em DOIS lugares — eas.json (roteamento no servidor) e app.config.js updates.requestHeaders (o que fica GRAVADO no binario) — porque o prebuild regenera o manifesto a partir do app.config.js e apaga o que o `eas update:configure` escreveu; sem isso o app FUNCIONA e nunca atualiza, falha que so apareceria depois de publicado na loja. fallbackToCacheTimeout 0 (AP-303). Perfil `preview` novo (APK/simulador, distribuicao interna) como alvo do smoke e do teste destrutivo; build-android.sh/build-ios.sh aceitam o 3o perfil. R-307 NOVA (hot): build de loja exige arvore limpa e cria/publica tag mobile-v<APP_VERSION> (lib-release-tag.sh); publish-ota.sh recusa production quando HEAD nao descende da tag — o `eas update` empacota a WORKING TREE, nao um commit, entao publicar de uma main que andou entregaria features nao revisadas junto do fix (violacao Apple 3.3.1 + risco de chamar nativo que o binario instalado nao tem). Nasceu de duas dores do PO na mesma sessao: 'como refazer o build 2803' e 'como planejar um OTA no meio de N features'. R-221 ganhou passo 4b. ADR-083 EMENDADO: code signing exige plano EAS Enterprise — premissa original FACTUALMENTE FALSA, descoberta no 1o `eas update`. Decisao do PO: seguir sem assinatura, risco aceito; defesa do canal = 2FA + publish manual PO-only + zero EXPO_TOKEN em CI. PO-SEC-1 fica sem objeto. SMOKE em device real (moto g06 / Android 15) achou 6 defeitos que nenhum gate mecanico pegaria (AP-316 se repetindo): Updates.updateId NAO e null em bundle embutido (o label ramificava por ele -> tela AFIRMAVA 'Atualizacao 25d83045' a quem rodava o binario da loja; fix por isEmbeddedLaunch); canal ausente do binario (3 greps meus deram falso-negativo por rodarem de apps/mobile, onde node_modules nao existe — hoisted na raiz); quebra de linha invisivel; mensagem de erro CRUA em ingles no Perfil offline (novo shared/utils/networkError.ts, deteccao conservadora); preferencia de estoque ressuscitando offline (spec 044 -> slice W1.7); e QUATRO erros no runbook GUIA_OTA so visiveis na execucao (--channel com --branch, --branch inexistente no rollback, semantica INVERTIDA do GROUPID, custodia da chave). COMPORTAMENTOS MEDIDOS: PO-5 anti-bricking — update com throw no boot degrada UMA abertura (tela preta, app nao fecha) e recupera sozinho na 3a; T017 — '2 launches' e o melhor caso, checagem que falha queima o ciclo em silencio (medido: 3a abertura apos religar Wi-Fi), reforcando o W1.6b; T043 — o crash do PO-5 chegou ao Sentry com o update_id EXATO do bundle quebrado, evidencia real e nao sintetica (initialScope se pagou: o throw matou o app antes da arvore React montar). T017d por inspecao (canal verificado no APK via aapt2, decisao do PO). Gates verdes (validate:agent 2204/164, jest mobile 532, lint 0 erros, tsc apps/web 0, strict-island ratchet OK). RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): 2 chunks, 2 medium introduced, 0 critical/high. 1 verdadeiro (bundleTags usava `??` onde o nativo devolve string vazia — a MESMA string vazia que eu ja tratara em formatChannelLabel horas antes: correcao pela metade, ponto cego estrutural do RC5, e bundleTags nao tinha teste algum) + 1 falso positivo (refutado inline com os 3 testes). Registrado measurement.md 034-D.3: severity de finding de observabilidade e subestimada por natureza — o dano nao aparece no fluxo, aparece na proxima investigacao."
+      },
+      {
+        "pr": 777,
+        "squash": "d7f4bfdc",
+        "spec": "051-A painel admin web do kill switch de versão (PR 1.5c)",
+        "tier": 2,
+        "date": "2026-07-27",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts (edit-only, RC3-2/F6 — as 2 linhas ja vem semeadas pela migracao do 1.5a, sem create/delete/lista/empty state). Guarda de raio de impacto (S-7) mora inteira no handler: a tela so exibe a contagem que o servidor devolve na recusa 409, nunca calcula por conta propria. Ativar exige confirmacao explicita; desativar nao exige cerimonia (PO-9). Registro em AppViewRouter (lazy, R-117) + AdminSection. Achado de smoke bloqueante de processo (nao de codigo): EXPO_PUBLIC_API_BASE_URL local apontava pra producao (main), que nao tem o resource versionGate ainda (so existe na integracao) — sintoma identico a 'serverless nao funciona em dev' mas causa raiz era branch errada atras do proxy; segundo sintoma foi SSO/Deployment Protection em deploys de preview bloqueando o proxy por CORS, resolvido com VERCEL_AUTOMATION_BYPASS_SECRET no header. Novo R-306 documenta os dois sintomas distintos. UI ajustada durante o proprio smoke: card por-plataforma nao soma mais fleet_installs cross-OS (confundia com o total da propria plataforma) — mostra proporcao (ex. 'Sao 100% das instalacoes ativas em android nos ultimos 30 dias (13/13)'). PO-9 e PO-SEC-8 fechados com evidencia de smoke real (device Android + painel web: gate ativo bloqueando boot, painel permanece acessivel e desativa sem exigir acknowledge). Gates verdes (lint, tsc, strict-island ratchet OK, test:critical). RC5 clean (2 rodadas — antes e depois do ajuste do vite.config.js). RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando, evitando a armadilha do #756/#772 — sem ela: 6 chunks/844K; com ela: 1 chunk/136K): tier=1, 0 findings, postado no PR."
+      },
+      {
+        "pr": 776,
+        "squash": "de19c606",
+        "spec": "051-A kill switch de versao minima no cliente mobile (PR 1.5b)",
+        "tier": 2,
+        "date": "2026-07-26",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Resolver puro resolveVersionGate (@dosiq/core/utils/versionGate.ts, CON-033) + servico de leitura (versionGateService.ts, timeout 3s + fail-open em qualquer indeterminacao) + hook useVersionGate (mount + AppState foreground, achado do smoke do PO — app minimizado por dias precisa reavaliar no focus) + VersionGateOverlay (full-screen, tokens de design, storeUrl allowlist RC-SEC-2, saida honesta https://dosiq.app COMPILADA nunca do gate remoto) + useAlarmScreenActive (obrigacao clinica > bloqueio de update: alarme fullscreen cede o overlay). Escopo expandido com autorizacao explicita do PO durante o smoke (achados na MESMA superficie boot/offline): AP-321 (describeLoadFailure vazava .message cru de erro de rede/JS em ingles quando fallbackErr===originalErr — corrigido por identity check, PT sempre) + AP-322 (useTreatments.ts coalescia groups??[] apagando a distincao null/vazio) + StockScreen usando mensagem hardcoded em vez do error real + AlarmSchedulerBridge sem retry de navigationRef.isReady() no cold start (bug pre-existente, nao desta PR — confirmado por git log antes de corrigir) + useAlarmScreenActive trocado de addListener('state') pra polling 250ms (o listener nunca disparava pois VersionGateOverlay monta antes do NavigationContainer existir — bug introduzido pelo proprio fix anterior, achado no 2o round de smoke com soneca do notifee). PO-7 fechado com evidencia MANUAL device real (iOS+Android, modo aviao via /etc/hosts, alarme fullscreen sobre overlay, CTA Atualizar->playstore, link web->dosiq.app). Gates verdes (vitest, tsc, lint, strict-island, validate:agent). RC5 clean. RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando): run1 achou floating promise real (AP-138, 2 CTAs Linking.openURL sem .catch) — fixado + respondido inline nas 4 threads; run2 pos-fix 0/0/0/0 (3/3 chunks, pass A+B concordantes). Registrado measurement.md linha 776."
+      },
+      {
+        "pr": 775,
+        "squash": "8d96472e",
+        "spec": "051-A app_version_gate (PR 1.5a) — migracao + 2 camadas de acesso + schema Zod + modulo de frota + handler admin + admin por uid (ADR-091 D10)",
+        "tier": 2,
+        "date": "2026-07-26",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Superficie de config do kill switch de versao: migracao app_version_gate (docs/migrations/20260725_app_version_gate.sql), schema Zod (versionGateSchema.ts), utils de frota (fleet.ts + fleet-versions.sh), handler admin (api/admin/_handlers/versionGate.ts) e fix do verifyAdminAccess (server/utils/auth.ts) — admin por uid (ADMIN_USER_ID) em vez de REVOKE na coluna, decisao do PO sobre a recomendacao original (RC-SEC-2 S-6). Painel admin web fatiado para PR 1.5c (RC3-2/F5, resolvido pelo PO: 1.5a caiu de 13 para 8 arquivos, dentro do limiar RC3 de 8). PO-SEC-4..8 fecharam na spec; RC-SEC-2 teve 2 CRITICAL+2 HIGH+3 MEDIUM+1 LOW, todos os 8 aceitos. Gates verdes. RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54 desde 1o comando): 7/7 chunks, 0 findings (RC6_PACK_FILTER=1 + RC6_MAX_CHUNKS=7 por budget). Registrado measurement.md linha 775."
+      },
+      {
+        "pr": 774,
+        "squash": "249616d0",
+        "spec": "055 expo-55-target-api-36 (PR 1.4, edge-to-edge)",
+        "tier": 2,
+        "date": "2026-07-25",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Resolve T040-T043 (edge-to-edge Android 16). T040 inventário via grep confirmou alarme/Hoje/tratamento e RootTabs já corretos (fix anterior R4-H01); achado real do fix foi FormActions (footer sticky, 12 telas) sem inset de safe-area sob edge-to-edge forçado (target API 36). Smoke com o PO revelou bug correlato maior: KeyboardAvoidingView com behavior=undefined no Android é NO-OP sob edgeToEdgeEnabled (AP-288, incidência 2), reproduzido em 12 telas + 2 bottom sheets de busca (ANVISA/medicamento) — migradas pro checklist completo (behavior=height, sem keyboardVerticalOffset chutado, ScrollView style flex:1, useKeyboardVisible canônico). AP-288 promovido a R-303 (hard rule, hot). Processo: nova R-304 (hot) — busca obrigatória em memória na 2ª tentativa falha no mesmo sintoma, criada após 3 rounds de screenshot com o PO até achar o AP-288 já documentado. Gates: validate:agent 160/160, strict-island ratchet OK, tsc apps/web 0 erros. RC5 self-review 0 críticos. RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1º comando real — quase recorrência do #756/#772 pega na fase de medição, sem custo/ruído no PR): 1 chunk, 0 findings, ambas passes (agy A+B) citaram nominalmente R-303/AP-288 — sinal de leitura real. Registrado measurement.md linha 774."
+      },
+      {
+        "pr": 773,
+        "squash": "431015fd",
+        "spec": "055 expo-55-target-api-36 (PR 1.3b, ADR-090)",
+        "tier": 2,
+        "date": "2026-07-24",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Resolve T029 (débito herdado do PR 1.1): dropou @react-native-firebase/{app,analytics,crashlytics} inteiro — não compila sob Xcode 26.3/RN 0.81 com useFrameworks static (RCTBridgeModule + RCT_EXPORT_METHOD → -Wimplicit-int fatal), bump v21→v25 reproduz o mesmo erro, dynamic quebra o link do react-native-netinfo, sem fix nativo upstream. Crash reporting → @sentry/react-native (ErrorBoundary → captureException+breadcrumb); analytics de produto → posthog-react-native (cold_start + eventos) + expo-localization. firebaseAnalytics.ts → productAnalytics.ts mantendo a MESMA API exportada (8 call sites inalterados). app.config.js: removidos os 2 plugins firebase + withFirebaseFix.js + withFirebasePodfileFix.js; useFrameworks 'static' LIMPO. google-services.json/.plist preservados (push FCM via expo-notifications). Achado do smoke do PO: identify só rodava no login explícito (herança firebase) — sessão restaurada ficava anônima, inflando contagem de usuários; movido para useAuthSession (cobre login E restore) + resetUser() no SIGNED_OUT (device compartilhado não herda pessoa anterior), R-042 respeitado. Fronteira 051 (ADR-090) respeitada: PostHog só analytics/adoção de frota, fora do path do kill switch e sem gating de OTA. APP_VERSION 0.29.1 NÃO re-bumpada (já veio do PR 1.1). Gates: jest mobile 506/509 (61 suites), lint 0 erros, strict-island ratchet OK, tsc apps/web 0, npx expo run:ios EXIT=0 (gate que o T029 travava), expo-doctor 18/18. PO-7 fechado com evidência MANUAL (device real iOS+Android: Sentry recebeu crash-teste, PostHog recebeu cold_start+navegação). RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o início, sem recorrência da armadilha do #772): 5 chunks, 0 critical/high, 1 medium + 1 low sem introduced bloqueante — registrado measurement.md linha 773. Follow-up fora deste PR: draft spec 059 (privacidade do analytics — scrubbing de dado clínico + consentimento LGPD, risco subiu ao identificar uid) + SENTRY_AUTH_TOKEN pendente (secret EAS p/ símbolos de produção)."
+      },
+      {
+        "pr": 772,
+        "squash": "5a43f271",
+        "spec": "055 expo-55-target-api-36 (PR 1.3)",
+        "tier": 2,
+        "date": "2026-07-24",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "compileSdkVersion/targetSdkVersion:36 EXPLÍCITOS em expo-build-properties (app.config.js) — não confiar no default do SDK 54; confirmado ponta-a-ponta pós-prebuild (android/gradle.properties). Revalidados os 6 config plugins locais (5 do task + withFirebasePodfileFix.js novo no PR 1.1): entitlements iOS idênticos pré/pós-prebuild (AP-179), manifest Android com as 3 permissões de alarme intactas, metro resolveRequest (R-282) intacto, extraMavenRepos do notifee resolvendo. 🔴🔴 T029 (débito herdado do PR 1.1 — bump @react-native-firebase v21→compatível Xcode 26) ficou BLOQUEADO, fora deste PR: bump p/ 25.1.0 (latest npm em 2026-07-23) reproduz o MESMO erro do v21 (não é bug de versão velha — RCTBridgeModule duplicado RNFBApp/React-Core sob useFrameworks static); DEFINES_MODULE=NO no React-Core + limpar DerivedData não resolveram; useFrameworks:dynamic resolveu o bug do crashlytics mas quebrou o link do react-native-netinfo como framework dinâmico (pod não é dynamic-framework-safe). Revertido pro estado que builda hoje (static + v21). Decisão do PO 2026-07-24: dropar @react-native-firebase inteiro em vez de patchar — Sentry (crash) + PostHog (analytics), pods RN puros que compilam sob static. Documentado ADR-090 + PR 1.3b novo (T037-T039) inserido ANTES do PR 1.4 no tasks.md (é o caminho crítico — sem isso nenhum build iOS sai). T029-debt-handoff.md fica como registro do beco sem saída do caminho bump/patch. Gates: mobile 506/509 (61/62 suites), strict-island ratchet OK, lint 0 erros (156 warnings pré-existentes), tsc apps/web 0 erros. RC5: 0 findings (diff mecânico). RC6 (agy-only, RC6_ENGINE_CLAUDE=0): 0 findings — RECORRÊNCIA da armadilha operacional do #756 (1º run usou RC6_MAIN default=main, que ainda não recebeu a Onda 1 → capturou diff acumulado de PR1.1+1.2+1.3, 228K/2 chunks; corrigido com RC6_MAIN=feature/055-w1-sdk54, escopo real 79K/1 chunk). Registrado measurement.md linha 772 + nota nova no PLAYBOOK §RC6 (RC6_MAIN obrigatório em W1/W2)."
+      },
+      {
+        "pr": 771,
+        "squash": "816c14a0",
+        "spec": "055 expo-55-target-api-36 (PR 1.2)",
+        "tier": 2,
+        "date": "2026-07-23",
+        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
+        "note": "Migração de expo-file-system p/ API nova (File/Paths) em ExportSheet.tsx (export LGPD, spec 008) — a API legada (/legacy) lança em runtime no SDK 55+, não é warning. create({overwrite:true}) evita colisão em re-export na mesma sessão (filename determinístico do core); write() é síncrono, dentro do try/catch existente. Forma da API verificada contra os .d.ts reais do pacote instalado (expo-file-system@19.0.23) e contra o source nativo Android (FileSystemFile.kt — write() usa Kotlin String.toByteArray() = UTF-8 por padrão), não assumida do plan.md. Testes reescritos com mock fiel (File/Paths como classes reais) + 2 testes negativos (T020a: re-export não lança; T020b: erro síncrono de write cai no catch). APP_VERSION 0.29.0→0.29.1 (patch, fase). 🛑 HARD STOP (T024, impacto UX/LGPD): RC5 rodado (1 achado mecânico auto-corrigido — comentário desatualizado), diff apresentado ao PO, aprovação explícita ANTES do push. Smoke em device real Android confirmou a API de escrita correta (export+share funcionaram) — achou 2 bugs de CONTEÚDO pré-existentes em @dosiq/core (BOM não respeitado pelo WPS Office Android + header '=== METADADOS ===' sem escape líder quebra fórmula no spreadsheet), registrados como AP-317, decisão do PO: não bloqueiam esta PR, correção em item separado. Gates: mobile 506/509 (61/62 suites), strict-island limpo (sem aumento de dívida), tsc apps/web 0 erros, lint 0 erros. RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): tier=1, 0 findings, payload 139,4K < teto 150K de amostragem silenciosa."
+      },
       {
         "pr": 770,
         "squash": "590d372a",
@@ -39,252 +122,36 @@
         "date": "2026-07-23",
         "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
         "note": "Bump estrutural Expo SDK 53→54 via expo install --fix (23 módulos nativos + react 19.0.0→19.1.0 + react-native 0.79.6→0.81.5). react/react-dom reconciliados na raiz do monorepo (npm ls confirma versão única em toda a árvore mobile+web, sem duplicata — duplicata de react em RN vira Invalid hook call). jest-expo pinado manualmente ~54.0.17 (SDK 54 sem dist-tag no npm). Achados de gate corrigidos no mesmo PR: expo-file-system removeu API legada do export default → import trocado p/ expo-file-system/legacy em ExportSheet.tsx (LGPD spec 008, migração real fica pro PR 1.2); override react-native-safe-area-context 5.4.0→5.6.0; @notifee/react-native excluído do reactNativeDirectoryCheck do expo-doctor. APP_VERSION mobile 0.28.5→0.29.0, web 4.20.1→4.20.2. Gates (tsc/lint/jest/expo-doctor) todos verdes — mas 🔴 ACHADO PÓS-PR (PO testou build real): npx expo run:ios local (Xcode 26.3) quebra com @react-native-firebase v21 sob RN 0.81 — (1) RCTConvert/RCTBridgeModule non-modular include, MITIGADO neste PR via config plugin novo withFirebasePodfileFix.js (post_install CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES só nos Pods); (2) macro RCT_EXPORT_METHOD vira -Wimplicit-int fatal, confirmado em analytics E crashlytics (18 erros), NÃO mitigado por decisão do PO — bump de @react-native-firebase (v21→compatível, 25.x disponível) virou item T029 OBRIGATÓRIO do PR 1.3. Android não afetado. AP-316 criado (gate mecânico tsc/lint/jest/expo-doctor não cobre xcodebuild real — lição pra todo bump de SDK nativo futuro). RC5: 0 findings (2 rodadas, diff cresceu com o fix do firebase). RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): 0 findings nas 2 rodadas."
-      },
-      {
-        "pr": 769,
-        "squash": "1bd51566",
-        "spec": "057 device-activity-log",
-        "tier": 2,
-        "date": "2026-07-23",
-        "note": "Heartbeat de atividade do device independente de push (ADR-089): notification_devices só via preenchida quando o usuário aceita push (R-239) — quem nunca aceita era invisível a qualquer medição de frota/engajamento (mesmo furo do ADR-088/AP-314 'piso, não retrato'). Tabela device_activity NOVA (mobile-only, decisão RC3) + RPC upsert_device_activity (SECURITY DEFINER, user_id sempre de auth.uid(), nunca parâmetro) aplicadas em prod, testadas BEGIN..ROLLBACK (R-270, 9/9 OK) antes do apply. RECORRÊNCIA DE AP-278 pega ao vivo pós-apply: anon tinha EXECUTE na RPC nova apesar do REVOKE ALL FROM PUBLIC no texto da migração — este projeto concede EXECUTE DIRETO a anon via ALTER DEFAULT PRIVILEGES do schema public (não via PUBLIC), então REVOKE FROM PUBLIC sozinho não bloqueia; corrigido ao vivo (REVOKE FROM PUBLIC, anon) e a migração local já nasce corrigida. R-289: regen do database.types.ts revelou drift pré-existente em protocols (hotfix AP-314/#766 nunca regenerado) — reportado no diff, não engolido. Client syncDeviceActivity.ts (throttle 24h AsyncStorage, best-effort) montado em useAuthSession() (Navigation.tsx) ao lado de usePushNotifications, mesmo padrão dos demais listeners de AppState do app (cada concern com o seu, sem bus central). fleet-versions.sh estendido (união com device_activity, aditiva) — provado com linha real inserida/removida em prod (27/25→28/26→volta), não só o caso trivial de fonte vazia. Decisão de escopo levantada pelo PO durante o C-mode (não estava explícita em spec/plan): heartbeat NÃO espera o gate de consentimento LGPD (046) resolver, mesmo padrão de usePushNotifications — device_activity é metadado operacional, não dado de saúde; registrada em spec.md A3. 3/3 POs fechados com evidência REAL de device (iOS Simulator + Android emulator, zero prompt de permissão, zero escrita de domínio no intervalo). RC5 (autorevisão): 1 issue mecânico auto-fixed (fleet-versions.sh sem guarda Array.isArray contra erro do PostgREST). RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota, filtro OFF de propósito — não conta pro PO-5 da 056): 0 findings, medição prévia confirmou zero 'caminho não mapeado' mesmo com database.types.ts no diff (fix da 056/T030 segurando). Gates: lint 0, mobile 61/504, validate:agent 160/2124, strict-island ratchet OK. SQP no-user-impact."
-      },
-      {
-        "pr": 768,
-        "squash": "6ca42da9",
-        "spec": "053 Slice B",
-        "tier": 2,
-        "date": "2026-07-23",
-        "note": "Fecha o epico 053. Denominador do PO-3 subiu de ~6 (E1 literal) p/ 19 sites reais (12 por interpolacao pura de variavel, invisivel ao grep por desenho, + 3 copy hardcoded). isLiquidDosageUnit novo no core consolida 4 copias de isLiquidUnit. RC6 (A/B limpo, mesmo commit nos dois runs) achou 3 findings reais (densityLabel residual em ml ao lado de densityHint ja corrigido, AP-306) - corrigidos; 6 findings so no dry-run nao-filtrado todos verificados e descartados (2 refutados por leitura do guard clause, 2 especulativos, 2 critica de estilo). Achado de cobertura: InitialBalanceForm.test.tsx ja quebrado desde o Slice A, invisivel pq validate:agent nao cobre testes de componente web."
-      },
-      {
-        "pr": 767,
-        "squash": "ab311429",
-        "spec": "053 Slice A",
-        "tier": 2,
-        "date": "2026-07-23"
-      },
-      {
-        "pr": 766,
-        "squash": "51a69a03",
-        "spec": "hotfix AP-314 / ADR-088",
-        "tier": 1,
-        "date": "2026-07-22"
-      },
-      {
-        "pr": 765,
-        "squash": "acd50be2",
-        "spec": "029 F6",
-        "tier": 2,
-        "date": "2026-07-21"
-      },
-      {
-        "pr": 764,
-        "squash": "2c86b4d1",
-        "spec": "052 Slice C",
-        "tier": 2,
-        "date": "2026-07-20"
-      },
-      {
-        "pr": 762,
-        "squash": "741b7de0",
-        "spec": "052 Slice B",
-        "tier": 2,
-        "date": "2026-07-19"
-      },
-      {
-        "pr": 760,
-        "squash": "db5809e1",
-        "spec": "029 F5.5",
-        "phase": "029 F5.5 — o beco da etapa continua destravado com gatilho MANUAL: o gatilho de avanco da escada e uma DATA e numa continua nao existe data, existe um EVENTO CLINICO. Helper NOVO resolveManualNextStep (pendencia SEM PRAZO) em vez de flexionar resolvePendingSwitch (pendencia VENCIDA) — misturar devolveria o card ao Hoje. Banner teal IRMAO pela mesma razao (a copy do EvolutionPendingBanner deriva de daysWaiting, que aqui nao existe). Zero SQL novo: RPC e CON-032 inalterados. 3 achados de smoke entraram no mesmo PR — header reordenado; replace para o tratamento NOVO pos-troca (o antigo aparecia 'pausado' por 24h e o Retomar generico reativaria a etapa antiga com a nova ativa = dois executores); e AP-308: a RPC era a UNICA escrita em protocols fora do repositorio, logo a unica que escapava do syncInstancesOnWrite (protocolo novo com ZERO instancias; dose_change com expected_dose do cronograma anterior).",
-        "tier": 1,
-        "date": "2026-07-19"
-      },
-      {
-        "pr": 759,
-        "squash": "18caf01d",
-        "spec": "044 hotfix — delete no modo dose-only",
-        "tier": 1,
-        "date": "2026-07-19"
-      },
-      {
-        "pr": 758,
-        "squash": "538766af",
-        "phase": "029 F5 — a troca de etapa virou ACIONAVEL. Card no Hoje (CTA dia 0 + linha neutra a partir do dia 1, R-239) + timeline no detalhe do tratamento como superficie canonica de controle; push com acoes (categoria iOS + canal Expo emitindo categoryId — o payload.actions so existia no Telegram, AP-305); sheet de transparencia pos-confirmacao (Principio IX); estados de erro (etapa orfa, etapa quebrada). MUDANCA DE PROD: a RPC passou a ENCERRAR (end_date no fuso do DONO) em vez de PAUSAR — o tratamento nao pausou, terminou naquela etapa. navigateCrossTab extraido (aba presa, mesma classe da 028). usePushNotifications: listener saiu de dentro do setup async (acumulava listener orfao a cada refresh de token).",
-        "note": "RC5 e RC6 com ZERO intersecao (achado 034-D.2): RC5 ve a intencao, RC6 ve a borda. RC6 rodou UMA vez (regra do 034-D.1) — 1 falso positivo (postpone e sincrono) e 1 high SUBESTIMADO pelo proprio revisor (.catch ausente travava dismissedIds em null = card nunca aparece). T030 PARCIAL: push das 08:00 sem prova."
-      },
-      {
-        "pr": 757,
-        "squash": "3a7fcc70",
-        "phase": "029 F4 — a titulacao passa a EXISTIR no app (cadastro + edicao + timeline mobile). T018 entrada create-on-transition; T019 builder Gravar etapa + T019a ativacao (step0 current+started_at, AP-301) + T019b tipo derivado por medicine_id (ADR-080); T019 EDICAO (gap fechado): concluidas/vigente read-only, futuras editaveis via buildLadderEditPlan/saveLadderEdit reconciliando so o sufixo (delete->update asc->create, colisao-safe c/ indice unico position) + guard A4:247 (claim status IN upcoming|pending_confirmation: se o cron avanca sob a edicao, aborta em vez de clobberar a vigente); T020 timeline + EvolutionBadge unico derivado do N2 (getEvolutionBadge no core, azul Em evolucao / teal Estavel / neutro pausado). Ajustes de smoke do PO: WARN border dashed (AP-163) no builder+timeline, skeleton via hasLadderHint (fim do pop-in), scroll-ate-o-builder ao editar, presentation no embed (injetavel mostrava gotas), msg de erro sem vazar UUID. RC6 achou 3-4 caminhos NAO-pretendidos que o RC5 nao pegou (etapa 0 orfa, now stale na meia-noite AP-W15, daysLeft em blocos de 24h AP-240, corrida de fetch no hook) — todos corrigidos.",
-        "note": "RC6 NAO-DETERMINISTICO acima do budget: 3 runs no mesmo commit -> 3 conjuntos quase disjuntos, incluindo um CRITICAL ALUCINADO (disse que titration_steps.started_at nao existe; existe, confirmado no information_schema). Causa: diff ~2400 linhas e o grosso do contexto e o proprio diff — RC6_CTX_BUDGET so governa anexos. Regra adotada: RC6 roda UMA vez por PR; acima do engine-safe o resultado e ADVISORY (julgar no merito, nunca re-rodar buscando consistencia — 5 runs queimaram quota semanal perceptivel). R-295 vale contra o REVISOR tambem (1 query derrubou o critical falso). Armadilha operacional do #756: o script usa git merge-base HEAD <main LOCAL> — main local velho faz revisar o diff ERRADO sem avisar. Registrado em plans/specs/034-gemini-sunset/measurement.md §Achado 034-D.1 (4a linha da medicao; falta ~1 pro T051). Hotfix AP-304 (#756) saiu ANTES e isolado: update parcial injetava defaults do Zod (.partial() nao remove .default()) e zerava weekdays ao pausar tratamento semanal — bug anterior a 029, atingia web+mobile."
-      },
-      {
-        "pr": 749,
-        "squash": "4adfa381",
-        "phase": "029 F3 — o coração do épico. Motor puro resolveTitrationAdvanceFromSteps (core, nível A) + orquestração no cron (_processUserTitrationsN2/_applyTitrationPlan) + RPC confirm_titration_switch (SECURITY DEFINER, user_id DA ROW, claim atômico) + cutover via embed titration_steps(...) nos 4 chamadores. dose_change automático por dia LOCAL do dono (R-253/254); medicine_switch NUNCA automático (pendura pending_confirmation; a vigente segue regendo a dose). DOIS BUGS DE PRODUÇÃO ACHADOS: AP-298 — auto-avanço de titulação NUNCA rodou em prod desde #526 (2026-05-06, ~2.5 meses): filtro .eq('status','ativo') numa coluna inexistente (é 'active') + error descartado = varredura morta em silêncio; invisível porque a dose exibida vem do gerador puro, só a linha não avançava. AP-299 — protocols_intake_unit_check rejeita 'cp' (steps materializam 'cp', protocols usam NULL): toda titulação de comprimido abortaria com 23514; pego no preflight R-270, corrigido com NULLIF. RC5 (AP-297) achou 3, 1 crítico NO MEU PRÓPRIO CÓDIGO NOVO: _applyTitrationPlan faz 3+ escritas PostgREST sem txn; crash entre 'encerra anterior' e 'ativa próxima' deixaria a escada SEM etapa vigente -> resolver null p/ sempre -> titulação morre em silêncio (pior que AP-276: efeito PERDIDO, não duplicado). Corrigido por ORDEM convergente (ativa antes de encerrar: estado intermediário = 2 current, transitório e auto-corrigível). O trace do T011 AFIRMAVA atomicidade do dose_change — verdade no legado, FALSO no N2; corrigido no plan.md. Review Gemini: 1 CRITICAL falso positivo (exceção por v_prev NULL — improcedente, %ROWTYPE não é record; refutado com prova live em prod) + 1 MEDIUM procedente (cobertura do caminho v_prev NULL) -> PARTE 9, suíte 18/18 -> 21/21 live. SQP: core 0.8.0 -> 0.9.0. Gates: validate:agent 2068/2068, SQL live 21/21 sem mockar o primitivo (R-288), lint 0 erros, strict ratchet OK. CON-032 novo (motor) + CON-031 estendido (titration_transitioned).",
-        "note": "TITRATION_SOURCE=n2 é passo SEPARADO e reversível — decidir quando ligar. F6 conta do cutover. F5/T025 herdou actionSchema + payload builder + política de modo discreto (ADR-076 S-3). Drift CLAUDE.md<->banco corrigido neste C5: frequency é 'diário' COM acento; medicines.type é ('medicamento','suplemento') e a forma farmacêutica mora em 'presentation' (o que o doc chamava de MEDICINE_TYPES). #749 foi provavelmente o ÚLTIMO PR revisado pelo Gemini (cessa 2026-07-17)."
-      },
-      {
-        "pr": 747,
-        "squash": "d4caf8ad",
-        "phase": "029 F2: repository + adapter strangler-fig dual-read + migração dados N1→N2. createTitrationRepository (nível A strict, user_id do dono AP-293). resolveTitrationStageAtFromSteps/calculateTitrationDataFromSteps puras (flag TITRATION_SOURCE, default n1, assinaturas legadas intactas, consumers NÃO tocados = cutover é F3). Migração APLICADA EM PROD após aprovação PO: 1 escada + 3 steps (user smoke doktorr/GLP, titulando/stage_started_at NULL → step0 current sem started_at = paridade perfeita N1↔N2, ambos dormentes/null); jsonb read-only intacto. POs: PO-SEC-4 (BEGIN..ROLLBACK live 9/9, RAISE força rollback) + PO-5 (paridade 52 testes). Review Gemini: 1 High (calculateTitrationDataFromSteps null p/ etapa contínua) + Mediums (getById ordena steps no banco, afterEach nos testes, guard CASE jsonb_typeof→length passos 1/2, .test.sql TEMP) aplicados; Math.abs declinado (paridade legado). core 0.7.0→0.8.0. Gates: 23 core tests, strict ratchet OK, lint 0, validate:agent 2045/2045.",
-        "note": "META-LIÇÃO (pedido do PO): volume alto de revisões nos últimos PRs = RC5 (self-review pré-PR) sendo pulado → Gemini vira o 1º revisor. Documentado AP-297 + R-270 estendido (gotcha AND-order Postgres). A PARTIR DO F3: rodar /devflow code-review ANTES de gh pr create."
-      },
-      {
-        "pr": 746,
-        "squash": "139808b6",
-        "phase": "029 F1: modelo titrations+titration_steps (ADR-080). PO-SEC-1 (16/16 ROLLBACK). Review Gemini 3/3 aplicados (FK composta IDOR/AP-293, indice redundante, CHECK temporal). core 0.7.0"
-      },
-      {
-        "pr": 745,
-        "squash": "eed05724",
-        "phase": "046 ÉPICO FECHADO — Slice B (gate de consentimento na UI) + T019a/T019b (publicação política v0.3). O gate ficou em DRAFT de propósito para estrear já sobre a política completa: a base consente UMA vez, sobre a v0.3, sem aceite intermediário em v0.2 virar stale. policy_version 0.2->0.3 sincronizado nos TRÊS lugares que são contrato (CURRENT_POLICY_VERSION @dosiq/core, os 2 HTMLs em public/, a linha de consent_policy que os RPCs carimbam) — migração 20260715_consent_policy_v03.sql em prod; grep provou zero '0.2' hardcoded. Auto-declaração de idade 16+ embutida no MESMO label do opt-in (art. 14): mesmo clique, mesmo evento granted, prova correlacionada ao ato, sem UI nova — política cita verbatim. Ajustes de UX da fase final (pedido do PO): (1) nudge de política nova (web+mobile) não pede novo aceite sem dar como ler — link + Aceitar TRAVADO até abrir a política (mobile: fecha a webview; web: abre em aba nova); (2) hub mobile Transparência mostra a versão PUBLICADA vigente (CURRENT_POLICY_VERSION) em vez de 'Aceito em...vX' (info já na seção Consentimento); (3) landing web ganhou link p/ a política + suavizou overclaim 'inacessível incluindo nossa equipe' (RLS não é E2E). AP-296 (re-review Gemini): feature espelhada web<->mobile com trava presente só de um lado — signUp guard + gate.refresh existiam no mobile e faltavam no web, ambos VERDES porque o gate de UI mascarava a falta e o teste web codificava o comportamento incompleto; diff superfície-a-superfície entre plataformas, trava de um lado = checklist do outro. Declínios com prova: guard consentSuppressed no AlarmBridge (flushCriticalAudit já recebe o flag; RLS não bloqueia o dono após revoke; guardar quebraria self-healing no re-consent) e rethrow nos hooks (setState(null)=indeterminado é contrato do Slice A; FAIL-OPEN do useConsentSuppressed é decisão de segurança). SQP: web 4.18.0 · mobile 0.27.0 · core 0.6.0 · consent_policy prod 0.3 · CHANGELOG + RELEASES.md novo. Gates: strict-island ratchet OK · lint 0 · validate:agent 2014/2014 · mobile 434. Aprovado PO -> squash+delete.",
-        "note": "ÉPICO 046 COMPLETO (Slice A #744 + Slice B/publicação #745). Gate ativo em prod sobre v0.3. Docs: separação CHANGELOG interno vs RELEASES.md externo (notas de loja) — 0.27.0 pronta para submissão quando publicar o build mobile. Avaliar /devflow distill no fechamento de fase (counter=7, threshold 15 — não obrigatório por threshold, mas é fim de épico)."
-      },
-      {
-        "pr": 744,
-        "squash": "ff0f67bc",
-        "phase": "Trilha de consentimento que o próprio auditado não consegue forjar + recibo de exclusão. Só DB + core, zero UI. `authenticated` tem SELECT e nada mais em consent_log: escrita só por RPC SECURITY DEFINER (consent_grant/consent_revoke), que deriva o titular de auth.uid() e carimba policy_version e subject_hash NO SERVIDOR. Append-only protege contra UPDATE/DELETE, NÃO contra INSERT forjado — dar INSERT ao dono anularia a US2. A trilha SOBREVIVE ao titular (user_id ON DELETE SET NULL, nunca cascade): o dado clínico cascateia (T000), a prova da base legal não. Recibo `account_deleted` gravado DENTRO da txn de exclusão, antes do DELETE FROM auth.users — última chance de ler o e-mail p/ derivar o hash, e emitir depois abriria a janela 'apagou e morreu antes de registrar'. TRÊS ACHADOS, todos passariam VERDES em produção: (1) AP-292 — guarda de current_user dentro de SECURITY DEFINER é INERTE (ali current_user é sempre o OWNER, nunca o chamador; jamais dispararia nem para um authenticated com EXECUTE indevido). Trocada por auth.role(). Isso colidiu com AP-227 (o wrapper do titular não podia passar por guarda de service_role) → topologia final com núcleo PRIVADO _delete_user_account_core + duas entradas guardadas; pipeline segue único. CORRIGE o candidato a R do eng-review, que pedia guarda de current_user. (2) AP-293 — pepper em GUC é PÚBLICO: o ataque leu a chave em claro como authenticated (GUC não tem ACL). Como FALLBACK do Vault era pior ainda — só entraria em cena na falha do cofre, degradando EM SILÊNCIO de segredo p/ público, e o pepper vazado torna todo subject_hash reversível por dicionário, reidentificando os titulares JÁ EXCLUÍDOS. Fallback REMOVIDO: Vault-only, RAISE se ausente → exclusão ABORTA (melhor não apagar do que apagar deixando recibo reidentificável). (3) Review Gemini 2 HIGH — getStatus engolia erro de leitura e devolvia `missing`; como materializeSignupIntent AGE sobre esse valor, uma oscilação de rede RESSUSCITARIA um consentimento REVOGADO (família AP-290: erro de DB tratado como estado do domínio). Agora lança. Os 2 declínios do review (bloquear anon nas DEFINER) foram recusados COM PROVA — auth.uid() do anon é NULL, o RAISE existente já barra, testado COM GRANT FORÇADO; Gemini concordou. Prova: 26/26 asserts BEGIN..ROLLBACK contra o banco real; varredura do PO-6 DINÂMICA (information_schema), não lista à mão. PO-SEC-1/2/4 + PO-6 fechados. Migrações em prod; pepper no Vault (não roda). SQP: core 0.5.0 + backend/infra, sem bump web/mobile. Gates: 34 testes, test:changed 884/884, lint 0, ratchet OK. Aprovado PO → squash+delete",
-        "note": "PRÓXIMO: Slice B (gate no signup + guards + superfícies; dep 008 ✅ mergeado). ⚠️ CONTRATO NOVO: getStatus LANÇA em falha de leitura — o guard TEM que tratar estado indeterminado como falha de carregamento, NUNCA como \"não consentiu\" (senão reintroduz o furo do review). C5 completo (AP-292/AP-293 + ADR da trilha que sobrevive ao titular) fica no T020, no fechamento do épico, conforme playbook."
-      },
-      {
-        "pr": 743,
-        "squash": "fa8132c6",
-        "phase": "008: exportação completa de dados (LGPD). O achado central não estava na spec: o export web tinha 3 buracos SILENCIOSOS, não 1 (AP-291). (1) biomarkers_log — glicemia/peso/PA, DADO SENSÍVEL, em prod desde o 012 — NUNCA saiu no bundle; (2) seção perfil inteira ausente; (3) COLUNAS FANTASMA: o inventário pedia medicines.dosage_mg, pill_count e protocols.times, que NÃO EXISTEM no schema — o CSV entregava a coluna 'Dosagem (mg)' vazia em TODAS as linhas. Nada falhava: tsc (era any), lint, teste (só checava que não estourou), runtime (propriedade inexistente é undefined, não erro). DECISÃO DE ARQUITETURA além do pedido: hoistei não só os formatadores mas o COLETOR (createExportService no core) — web e mobile buscam E formatam pelo MESMO código, então a paridade do inventário (PO-1) é POR CONSTRUÇÃO, não duas listas de colunas que alguém promete manter iguais. Perfil por ALLOWLIST explícita: verification_token não é nem SELECIONADO (a proteção fica no read-path, não no formatador — select('*') levaria o segredo pra dentro de um arquivo que o usuário compartilha por WhatsApp). FR-010/PO-4: 22 tabelas com user_id auditadas contra o information_schema de prod (8 exportam / 14 não, cada uma com justificativa). Hub 'Privacidade e dados' nativo: export + política + exclusão (que SAIU de Configurações); banner da exclusão deixou de ser texto morto. Smoke do PO (iOS+Android) rendeu 4 ajustes que teste nenhum pegaria: picker inline empurrava o sheet pra fora da tela (virou overlay do SO — o BulkDoseRegisterModal já documentava que Modal-sobre-Modal no iOS engole gestos); o sheet mantinha o escopo da exportação ANTERIOR (reset por montagem condicional, AP-285 — um checkbox velho silenciaria uma seção inteira do bundle); ordem dos domínios; e o banner passou a abrir o hub JÁ com o sheet aberto (param consumido na chegada, senão qualquer volta futura o reabriria sozinho). Review Gemini 4 threads: 3 aplicadas (HIGH real — ExportOptions.dateRange exigia as 2 bordas, mas o dialog sempre permitiu preencher uma só: o tipo MENTIA sobre o chamador, invisível porque apps/web é non-strict; decimal do preço saía '300.00' ao lado do fallback '0,00'; escopo do CSV com chave de código), 1 declinada com evidência (themeVariant='light': a premissa exigia token dinâmico, mas colors.text.primary é literal estático e o mobile é light-only). SQP: web 4.17.0 · mobile 0.26.0 · core 0.4.0 · CHANGELOG + store-note. Gates: 1937 web/core/server · 405 mobile · tsc 0 · lint 0 · ratchet OK. Aprovado PO → squash+delete",
-        "note": "046 AMPLIADA nesta sessão (spec/plan/tasks/PLAYBOOK atualizados): a exclusão de conta apaga 100% dos dados (17 tabelas por cascade — verificado em prod via MCP) mas NÃO deixa recibo. FR-011..FR-014 + PO-6: consent_log com user_id ON DELETE SET NULL (nunca cascade) + subject_hash HMAC-SHA256 com pepper server-side + evento account_deleted emitido DENTRO da txn de delete_user_account() (emitir depois abre a janela \"apagou e morreu antes de registrar\"). Hash não é reversível DE PROPÓSITO: o fluxo jurídico é VERIFICAR (requerimento nomeia o titular → recalcula o HMAC → acha as linhas), não listar excluídos (isso exigiria guardar o e-mail = não excluir). Retenção: mínimo probatório (trilha + recibo), 5 anos, base \"exercício regular de direitos\" — NUNCA cópia do dado clínico."
-      },
-      {
-        "pr": 742,
-        "squash": "2d5ef14c",
-        "phase": "043 T023b: cutover do daily_digest p/ a outbox + AP-290 (gate cego pro server). daily_digest MIGRADO: elegibilidade por JANELA [digest_time, +10min) em MINUTOS DESDE A MEIA-NOITE no tz do usuário (o legado exigia HH:MM exato — família AP-259); idempotência pela UNIQUE; conteúdo construído no envio (SEC-1) revalidando digest_morning no DB; builder ÚNICO (_buildDigestPayload) consumido pelo legado E pela outbox (sem duas implementações do mesmo texto p/ divergir na transição); atrás de OUTBOX_KINDS (deploy neutro). stock_alert NÃO migrado (decisão do PO): é FAN-OUT (1 alerta por MEDICAMENTO + stock_expiry_alert por LOTE) e a UNIQUE (user_id,kind,period_key) só expressa 1 linha por usuário/dia — o 2º medicamento seria RECUSADO PELA CONSTRAINT e o alerta sumiria em silêncio (bug de omissão). Exige subject_id no modelo → spec própria. AP-290: o validate:agent NÃO EXECUTAVA NENHUM teste de server/ (globs do vitest.critical.config.js cobriam src/** e packages/core/**, nada cobria server/) — a suíte da outbox (043) e o teste do filtro dose-only (044/PO-4, EVIDÊNCIA COLADA DE UM PROOF OBLIGATION) passavam e nunca rodavam no gate. Sintoma: escrevi 10 testes e o total continuou EXATAMENTE 1609 — número que não se move quando deveria é sinal. Corrigido: 114→142 suites, 1609→1901 testes. Review Gemini 3/3 aplicados, 2 HIGH reais: (1) a janela presa à mesma hora local truncava horário quebrado (08:55→5min, 08:59→1min) reabrindo a perda por tick pulado que a janela existe p/ evitar — meu comentário justificava com 'virada de data', mas a data local só vira à MEIA-NOITE: não havia nada a proteger; (2) buildDailyDigestData ignorava o error do select → falha momentânea do DB virava 'deixou de ser elegível' → digest do dia descartado em SILÊNCIO sem retry (agora lança; PGRST116 segue como inelegibilidade real). CI vermelho pós-glob: titrationAutoAdvance importava função PURA de um módulo que instancia o client no topo (supabase.ts LANÇA sem env) → morria na CARGA; mock do client; reproduzido sem .env (142/1901 verdes). Aprovado PO → squash+delete",
-        "note": "PRÓXIMO: spec do modelo da outbox — subject_id (fan-out: stock_alert por medicamento, stock_expiry_alert por lote) + claim atômico dos lembretes de dose (hoje notified_at é CHECK-THEN-SET: seleciona → dispara → carimba DEPOIS; mesma classe do AP-276/R-288) + audit de entrega (channel_results). Recorte decidido com o PO: NÃO é 'migrar tudo pra outbox' — dose_instances JÁ é uma fila durável melhor (a linha existe porque a dose existe; não dá p/ esquecer de enfileirar). O objetivo é fechar as 2 lacunas de confiabilidade ONDE ELAS ESTÃO, e usar a outbox só onde ela é o mecanismo certo (notificações derivadas, sem linha própria no domínio)."
-      },
-      {
-        "pr": 741,
-        "squash": "97ba5f54",
-        "phase": "044 F5: fechamento do épico Dose-Only (T021-T024). POs 5/5 fechados com evidência COLADA no spec.md (SC-001=100%): PO-1 (11/11 asserts BEGIN..ROLLBACK contra o banco real — modo off não toca uma linha de stock/purchases), PO-2 (MANUAL, smoke do PO; 18 superfícies, não as 7 do design), PO-3 (noRetroConsumption 3/3 — garantido POR CONSTRUÇÃO: o service de ativação só recebe profileRepo+stockRepo, não alcança log/dose_instance; o teste é só o cinto), PO-4 (alertas pulam dose-only, 5/5), PO-5 (stockResumeService 17/17 — os 3 caminhos + append-only R-226, zero delete). SQP R-221: web 4.15.4→4.16.0 · mobile 0.24.7→0.25.0 (APP_VERSION canônico) · core 0.2.3→0.3.0 (API aditiva: stockActivation/stockResume/stockPreference); CHANGELOG [Unreleased] em PT + store-note SIM (dose-only é a resposta ao feedback dos beta testers Android que abandonavam no passo de estoque). T024 (dívida herdada, era DECISÃO) resolvido pela opção (a): apliquei o fix e MEDI antes de decidir — o custo da informação era baixo e desarmou o medo. 8 suites do Jest mobile não CARREGAVAM (Cannot find module './contracts.js'); não é teste vermelho, é falha de CARGA — o Jest não conta uma suite que não importa, então ela some do total em SILÊNCIO. 325 'passando, 0 falhando' escondiam TodayScreen (a tela que a F4b acabou de tocar), StockScreen, alarmService, buildConfirmLogs, buildBulkOutcome, useMedicineDatabase e supabase.smoke com cobertura ZERO. Causa: moduleNameMapper não resolvia a extensão .js que o R-282 EXIGE em packages/ (Node ESM puro aponta pro .ts em compile; Vite/Metro resolvem, Jest não) — mesma classe do AP-263. Fix de 1 linha: 325→384 testes, 46 suites, ZERO vermelho novo. AP-289. Gates: web 1609 · mobile 384 · core 1020 · tsc 0 · ratchet OK · lint 0 errors. Distill feito (D5 sem órfãos: R 240/240 · AP 285/285 · ADR 80/80 · CON 30/30; contador 20→0). Aprovado PO → squash+delete",
-        "note": "ÉPICO 044 COMPLETO (6 fases: #735 F1 · #736 F2 · #738 F3 · #739 F4a · #740 F4b · #741 F5). Lição transversal do épico: os bugs caros NÃO foram de lógica — foram de CICLO DE VIDA e TOPOLOGIA (AP-281 cache do provider contradizendo a escrita · AP-283/AP-286 passo novo reabrindo a janela de duplicação · AP-287 carimbo afirmando um estado FALSO no dado · rota no stack errado · AP-289 suite que não carrega). Cada peça isolada estava correta; nenhum foi pego por lint ou teste unitário. O que pegou: RC5 caçando ciclo de vida DE PROPÓSITO no próprio diff, o inventário C1.5 por GREP e o smoke do PO em device real. FOLLOW-UP EM ABERTO: 043 T023b (cutover de digest+stock_alert pra outbox) depende do filtro stock_tracking_enabled — agora em prod."
-      },
-      {
-        "pr": 740,
-        "squash": "75c61859",
-        "phase": "044 F4b: UI de opt-in (T017-T020) — PO-3 fechado, smoke do PO validado. O CAMINHO DE VOLTA do dose-only. PO-3 (\"liga o FIFO DAQUI PRA FRENTE, sem retro-consumo\") garantido POR CONSTRUÇÃO, não por promessa: stockActivationService recebe SÓ profileRepo + stockRepo, então não existe superfície por onde alcançar um medicine_log ou uma dose_instance; guard mede contagem antes == depois. T019 não tem como furar: gravar a preferência e emitir o evento viraram a MESMA chamada (stockPreferenceService é a origem comum dos 4 escritores) — nenhum caminho pode perder o evento. T017 saldo inicial com skip por item (AUSÊNCIA no array, não flag persistida), 3 entradas (settings, onboarding opção-2, upsell) + a dívida da F3 (mobile não encadeava a tela). T018 upsell NÃO-modal (R-239), gatilho 20 doses OU 14 dias, dismiss local persistente, sem cron novo. QUATRO achados no smoke, nenhum pego por lint ou teste — todos de ciclo de vida/topologia/plataforma, não de lógica: AP-287 (o mais sutil — setStockTracking(false) carimbava stock_paused_at SEMPRE, inclusive no onboarding dose-only. O carimbo AFIRMA \"existe saldo congelado desde T\"; sem saldo, era afirmação FALSA no dado. A conta nascia parecendo congelada, o toggle acreditava e ia pro fluxo de RETOMADA, e a tela de saldo inicial nunca aparecia: o fluxo ERRADO executou COM SUCESSO. Fix na raiz — setStockTracking(enabled, {freeze}) + hasFrozenBalance como cinto. Prod: 1 conta com carimbo, com saldo real → SEM backfill), AP-286 (a tela nova entrou ENTRE as escritas do onboarding e o finish(), reabrindo a janela de duplicação do AP-283 — guards de idempotência são estado de componente e morrem no restart; markCompleted() antes de navegar), AP-288 (sob edgeToEdgeEnabled o Android NÃO redimensiona a janela → adjustResize do manifest é letra morta → KeyboardAvoidingView sem behavior é NO-OP; teclado cobria lista e rodapé), rota no stack RAIZ (a tela estava no ProfileStack e o upsell dispara da aba Hoje; navigate só sobe pela cadeia de PAIS — mesma classe que a spec 028 contorna). R-290 (a regra recorta a PRÓPRIA janela no core: web passava ~1 ano de logs e mobile 30d → a mesma regra fazia PERGUNTAS DIFERENTES por plataforma). UX pedida pelo PO no smoke: unidade REAL por medicamento (stockUnitLabel — líquido pede ml, sólido un.; o literal \"un.\" faria os GLP-1 gravarem ml sob outro rótulo, corrompendo o FIFO em silêncio) + hint conta DOSES/aplicações, não princípio ativo (que no líquido só repetia a concentração já exibida). Review Gemini: 8 threads, todas medium, 6 aplicadas / 2 recusadas. Os 2 achados que valeram: sanitizeDecimal (regex removia UMA vírgula; 4+ → NaN → item caía fora de entries SEM erro e o medicamento entrava no FIFO sem o saldo digitado) e ciclo de import doseUnit↔adherenceLogic REAL (invisível ao tsc; sob Hermes resolveria undefined em runtime). Recusados: useCallback (conflita com R-010, lint error) e isMounted ref (React 18 tornou setState pós-unmount no-op). Gates: core 1020, web 1609, mobile 335, tsc 0, ratchet OK, lint 0. Aprovado PO → squash+delete",
-        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO e ÚLTIMO: F5 (T021-T024) — fechar POs com evidência colada, SQP R-221 (minor web + minor mobile + CHANGELOG + store-note), C5 do épico. ⚠️ T024 é DECISÃO, não task: 8 suites do Jest mobile não CARREGAM (contracts.js / moduleNameMapper vs R-282) e a cobertura delas é silenciosamente ZERO — TodayScreen é uma delas. Ligar pode acender vermelhos apagados há tempo. ⚠️ DISTILL ADIADO POR DECISÃO DO PO para o FIM do 044 (F5) — contador em 19, acima do threshold 15."
-      },
-      {
-        "pr": 739,
-        "squash": "cd4839b7",
-        "phase": "044 F4a: ciclo de opt-out (T013-T016) — PO-5 na UI. Toggle 'Controle de estoque' na seção ESTOQUE do Settings (mobile + espelho web), sheet de congelamento (cadeado, NÃO danger), retomada <30d silenciosa com anúncio TEXTUAL, sheet de reconciliação >=30d (default 'começar do zero'; fechar sem decidir NÃO ativa). Hook useStockToggle espelhado consome o stockResumeService da F2 — gap não reimplementado na UI. 'Nunca teve estoque' vs 'congelado' derivado de stock_paused_at (null vs carimbo), sem query extra. Invariante honrada: opt-out congela, zero mutação; único caminho que muta saldo é 'começar do zero' (append-only R-226), por escolha explícita. TRÊS achados fora do plano: AP-284 (SMOKE multi-device do PO — o refresh() do AP-281 só reconcilia a escrita LOCAL; desligar na web deixava o mobile minimizado mostrando estoque até reabrir, e pull-to-refresh não cobre porque refaz DADOS, não a preferência. Providers passam a revalidar no ponto de retomada: AppState 'active' / focus+visibilitychange. Sem polling, sem realtime; fail-safe AP-277 vale NA revalidação — rede caiu → estoque ATIVO). AP-285 (review Gemini HIGH — na web, clicar em 'Começar do zero' ZERAVA o saldo no próprio clique: ação destrutiva sem confirmação E divergente do mobile, que já era rádio + confirmar. Virou radiogroup completo (roving tabindex, setas, foco acompanhando a seleção) + botão 'Ativar estoque'; escolha reseta por MONTAGEM CONDICIONAL do modal, nunca via effect — senão a opção destrutiva volta pré-marcada). Adendo AP-171 (toLocaleDateString('pt-BR') cai em formato US no Hermes E a data alimenta a DECISÃO: 'Retomar o saldo de {data}', 12/jun viraria 06/12/2026 → formatDatePtBR). Bônus de UX pedido no smoke: ToastProvider mobile deriva a duração da contagem de palavras (2s + 450ms/palavra, [3s,9s]) — os 3s fixos cortavam a leitura das confirmações longas; vale p/ TODOS os toasts (nenhuma chamada passava duration). RC5 do próprio diff pegou 1 furo (choice do sheet sobrevivia ao fechamento). Review: 12 threads, 12 aplicados, 0 declinados. Gates: 1556 testes, tsc 0, ratchet OK, lint 0. Aprovado PO → squash+delete",
-        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO: F4b (T017-T020 — saldo inicial + upsell + analytics; fecha PO-3), INCLUINDO a dívida da F3: o onboarding MOBILE opção-2 ainda não encadeia a tela de saldo inicial (a web já encadeia). ⚠️ o opt-in é MAIS UM escritor da preferência: grava → refresh() (AP-281) e instrumenta o evento na ORIGEM COMUM (T019), não em cada tela."
-      },
-      {
-        "pr": 738,
-        "squash": "226c5614",
-        "phase": "044 F3: UI do modo dose-only (T008-T012) — PO-2 fechado, smoke do PO validado. Contrato novo useStockTracking() (provider web+mobile; fail-safe AP-277 + flag `ready` p/ não piscar superfície de estoque antes de saber o modo). T009 inventário C1.5 por GREP desmentiu o design: 7 superfícies mapeadas vs 18 reais — achados extras incluem /repor do bot (porta lateral p/ o FIFO), onboarding web (tinha passo de estoque próprio, fora da spec), badge da agenda, insights, hasStock, export, consulta e guard de deep-link. T008 onboarding mobile 4/4 (copy §9, radiogroup a11y, ícones do mock). T010/T011 delegados a sub-agentes Sonnet: entregaram, mas o principal achou 4 furos que passaram — PDF de consulta lia dashboardData.stockTrackingEnabled sem NINGUÉM alimentar o campo (allowlist explícita, mesma classe do furo do ChatWindow na F2); resolveStock do wizard protegido só por stockData.quantity vazio (proteção por acidente); DoseActionSheet prometia 'estoque será restaurado' (falso em dose-only). T012 guard do bot com convite de ativação. QUATRO bugs apareceram SÓ NO SMOKE, nenhum pego por teste/lint (todos de ciclo de vida, não de lógica — cada peça isolada estava correta): AP-281 (provider cacheia a preferência 1x/sessão; onboarding gravava sem refresh() → app abria com a aba Estoque CONTRADIZENDO a escolha; reload consertava = dado certo, cache errado), AP-282 (auto-fill ANVISA gravava regulatory_category cru contra enum acentuado → erro em campo que a tela NÃO renderiza → 'verifique os campos destacados' sem nenhum destaque; passo 2 travado. normalizeRegulatoryCategory já existia e era usada no cadastro e na web — só o onboarding ficou de fora), AP-283 (o 4º passo transformou o passo que GRAVAVA em intermediário → voltar duplicaria medicamento+tratamento; gravação movida p/ o FIM do wizard, o que também parou de deixar lixo em conta abandonada e de queimar permissão de push antes da gravação), + stepper do signup com 3 dots. Review Gemini 2/2 aplicados: HIGH (as 3 escritas remotas em sequência do passo 4 — falha parcial deixava o medicamento persistido e o retry duplicava; ESTENDI ao tratamento, que o reviewer não cobriu) e MEDIUM (roving tabindex no radiogroup web). Aprovado PO → squash+delete",
-        "note": "SQP do 044 segue na F5 (T022). PRÓXIMO: F4a (T013-T016 — toggle Settings + freeze sheet + reconciliação ≥30d). ⚠️ o toggle de Settings tem a MESMA classe do AP-281: gravar + refresh() do provider, senão a UI contradiz a escolha até o reload."
-      },
-      {
-        "pr": 736,
-        "squash": "83bd49af",
-        "phase": "044 F2: core + server dose-only (T003-T007) + dívida SQL (T007b/T007c). Core: createProfileRepository get/setStockTracking (opt-out CONGELA — carimba stock_paused_at, zero mutação de saldo) + stockTrackingSchema (fail-safe true); stockResumeService (STOCK_RESUME_RECONCILE_DAYS=30, gap LAZY sem cron, 3 caminhos: <30d as-is · >=30d retomar as-is · >=30d zerar via adjustToBalance(0,'legacy_unrecoverable') POR MEDICAMENTO, append-only R-226; falha no meio → preferência fica OFF). Server: checkStockAlertsViaDispatcher lê a preferência no MESMO select e tira o dose-only do .in('user_id') (PO-4 fechado). Chatbot CON-028: flag aditivo propagado até buildPatientContext — zerar só o stockSummary NÃO bastava (fallback de lotes embedded imprimiria 'SEM ESTOQUE'). PDF/export: 'Estoque: não controlado'. Migração 20260711_stock_fn_hardening APLICADA EM PROD (MCP, 2026-07-11): restore_stock_for_log +p_user_id (DROP da assinatura antiga — AP-227) + search_path='' + guard IDOR; update/delete_dose_log_atomic repassam p_user_id (senão o fix ficava pela metade); medicines.type DEFAULT 'medicamento' (o default 'medicine' violava o próprio CHECK). Live verificado: 1 assinatura por fn, search_path='', anon EXECUTE=false, auth/service=true, default medicamento; smoke BEGIN..ROLLBACK server-side FIFO 10→7→6→10 verde. 3 bugs pegos DEPOIS do 1º push: AP-280 (getNow() = relógio deslocado usado em DURAÇÃO contra timestamptz → 29d viravam 28d em runner UTC; CI vermelho, local verde), ChatWindow allowlist (payload explícito descartava o flag → chat web ainda diria 'SEM ESTOQUE' p/ dose-only), review Gemini 1 MEDIUM (guard `>0` pulava saldo NEGATIVO acidental → FIFO religaria sobre saldo inconsistente; agora `!==0` + Number.isFinite). AP-279 (mock que ignora .in() mede o mock, não o código). Aprovado PO → squash+delete",
-        "note": "database.types.ts REGENERADO e mergeado (#737, squash 449b796a): o hand-edit batia exatamente com o gerador; o regen trouxe drift que faltava desde 043/046 (notification_outbox + FKs user_id→auth.users). PRÓXIMO: F3 (UI modo-off, T008-T012). SQP do 044 na F5."
-      },
-      {
-        "pr": 735,
-        "squash": "7f6c9882",
-        "phase": "044 F1: fundação SQL dose-only (T001+T002) — user_settings +stock_tracking_enabled (NOT NULL DEFAULT true = FR-009, zero backfill) +stock_paused_at; CREATE OR REPLACE das 3 RPCs atômicas (CON-026) lendo a preferência DENTRO da txn e curto-circuitando estoque, ASSINATURAS INALTERADAS (base = dump pg_get_functiondef de prod; sem overload AP-227, sem caller tocado AP-221). AP-277 (SELECT INTO sem linha atribui NULL → fail-OPEN; pego pelo teste do failure mode, o preflight do agente afirmava a premissa errada). Review Gemini 3 CRITICAL (guard não cobria anon): auditoria de grants antes de aceitar → não explorável nas 3 RPCs (anon sem EXECUTE), aplicado como defesa em profundidade; mas a auditoria achou o furo REAL: restore_stock_for_log (SECURITY DEFINER que muta estoque) TINHA EXECUTE p/ anon, protegida por acidente — e a T007b da F2 abriria bypass real. Grant fechado (AP-278). Migração APLICADA EM PROD 2026-07-11 (MCP): colunas OK, 1 assinatura por RPC, anon EXECUTE=false nas 4, COALESCE+guard live. 11/11 asserts BEGIN..ROLLBACK. PO-1 [x]. Aprovado PO → squash+delete",
-        "note": "SQP adiado p/ F5. Próximo: F2 (T003-T007 + T007b/T007c)"
-      },
-      {
-        "pr": 734,
-        "squash": "b5a832a7",
-        "phase": "043 Slice A: notification_outbox (ADR-078 accepted) — tabela referências-só (SEC-1) + UNIQUE idempotência + claim RPC FOR UPDATE SKIP LOCKED com estado 'processing'+claimed_at (exclusão mútua) + recuperação stuck>15min + prune 90d pg_cron + drenador (pool allSettled R-281, deadline por-lote+revert em massa, batch fetch AP-186, channel_results sem tokens SEC-3) + periodKey tz-safe + enqueue por range 09:00-09:09 local + cutover kind-a-kind atrás de OUTBOX_KINDS (daily/weekly/monthly adherence migrados; digest/stock=T023b vinculado 044) + reminders-primeiro isolado por job (PO-1) + health resource api/admin.ts (/api/health/notifications, zero função nova R-090). Server 4.1.0. Migrações 20260707+20260710 aplicadas prod (MCP): PO-SEC-2/3/4 live OK. 3 ciclos review Gemini: c1 8 sugestões (robustez/nits), c2 FURO DE ARQUITETURA concorrência (claim sem status→re-claim pós-commit→dup; fix 'processing') → AP-276+R-288, c3 deadline por-lote. AP-274 (island A importa B arrasta strict), AP-275 (default privileges legados→REVOKE explícito). Lição: agente principal não pode depender de revisor externo p/ furo de concorrência (trace de interleaving). Aprovado PO → squash+delete",
-        "note": "T023b (cutover digest+stock) = follow-up vinculado a 044 em prod (filtro stock_tracking_enabled)"
-      },
-      {
-        "pr": 733,
-        "squash": "ebb13351",
-        "phase": "043 Slice B: higiene notification_devices — função deactivate_stale_notification_devices(ttl 30d) SECURITY DEFINER+search_path=''+pg_cron '30 3 * * *'+one-shot (nunca DELETE); appVersion fora do device_fingerprint mobile (FR-006, raiz AP-208). Migração 20260706 aplicada prod (MCP): one-shot desativou 11 rows (reviewer 1bfec269 24→19); guard recent_wrongly_deactivated=0; 66 preservados. TTL=30d decisão operador (prod: farm todo <32d, 60d desativaria 0; ≤3 é gradual SC-002). Mobile 0.24.6→0.24.7. AP-273 (calibrar threshold vs distribuição real de prod). Review Gemini 1/1 aplicado (v_now clareza). Aprovado PO → squash+delete. Slice A (outbox) = próximo PR"
-      },
-      {
-        "pr": 732,
-        "squash": "637210a0",
-        "phase": "046 T000: FK ON DELETE CASCADE user_id->auth.users em dose_instances/dose_critical_events/dose_adherence_monthly (LGPD art.16; furo latente fora do delete_user_account). Testado BEGIN..ROLLBACK pre[1,1,1]->post[0,0,0]; aplicado prod via MCP. AP-272, R-287. PR carregou tb docs(049) bc90c212 (main local ahead) — 6 correções gramaticais Gemini aplicadas. Aprovado PO -> squash+delete"
-      },
-      {
-        "pr": 696,
-        "squash": "2aa98862",
-        "phase": "Fase 1 push-to-start"
-      },
-      {
-        "pr": 697,
-        "squash": "1c7d0c1f",
-        "phase": "Fase 2 fix-up push update+end"
-      },
-      {
-        "pr": 698,
-        "phase": "041 fix-up: P0001 gracioso + sweep superfícies velhas (Android+iOS) + payload iOS explícito + staleDate→late"
-      },
-      {
-        "pr": 699,
-        "squash": "ae4e1397",
-        "phase": "042 Slice A: audit trail dose crítica (migração dose_critical_events RLS append-only + criticalAuditService @dosiq/core + emits mobile/server) + R-281 Promise.all"
-      },
-      {
-        "pr": 700,
-        "squash": "466298ba",
-        "phase": "042 Slice B: beacon device (criticalAuditBeacon Android + deriveIosAlarmOutcome + fila offline criticalAuditQueue + token_captured) — épico 042 COMPLETO. Review #700: mutex race AsyncStorage (AP-258) + dedupe iOS"
-      },
-      {
-        "pr": 701,
-        "squash": "6e3f330b",
-        "phase": "041 fix-up + fecho e2e do trail: janela push-to-start [now,now+lead] (AP-259) + push_failed no lifecycle (deactivate/BadDeviceToken visível) + dedupe token_captured mobile com cap FIFO 200. v0.24.5. Confirmado e2e no device real (surface_transitioned later→upcoming + push_sent)"
-      },
-      {
-        "pr": 702,
-        "squash": "5d592ed5",
-        "phase": "040 F1: infra TypeScript (tsconfig base+strict islands+9 workspaces, eslint TS, lint-staged, migrate-domain.sh). Review: baseUrl TS6 + expo/tsconfig.base FR-009; Gemini 4/5 aplicados"
-      },
-      {
-        "pr": 703,
-        "squash": "be75d2d5",
-        "phase": "040 F2: packages/ 100% TS (7 sessões Sonnet + gate Fable) + ratchet strict-island.sh + fixes Node ESM/exports órfãos. Core 0.2.1. AP-260/261, R-282/283"
-      },
-      {
-        "pr": 704,
-        "squash": "419b6272",
-        "phase": "040 F3: backend 100% TS (api/+server/) — gate F3 corrigiu contratos inline api/, erro latente F2 (biomarker non-strict), 20 imports extensionless (AP-263), deps workspace no CI (AP-264); ratchet cross-program (R-284). Server 4.0.1"
-      },
-      {
-        "pr": 715,
-        "squash": "2c1348c5",
-        "phase": "040 F4: apps/web 100% TS (10 lotes #705-714 + gate Fable). AP-265 (globs vitest pós-rename). Web 4.15.3. Review Gemini 5/5 aplicados"
-      },
-      {
-        "pr": 725,
-        "squash": "2b8e2ed8",
-        "phase": "040 F5: apps/mobile 100% TS (8 lotes #716-724 + gate Fable). AP-268/269, R-285. Mobile 0.24.6. Review Gemini 4 aplicados/2 declinados com evidência. F6 = modelo 3 blocos no playbook"
-      },
-      {
-        "pr": 731,
-        "squash": "c0f29fb2",
-        "phase": "040 F6: fechamento da migração TS — queima dívida strict (lotes #726-730, catraca 535+483→73 congelados) + D1/D2/D3 + gates finais + T038c. Web 4.15.4, core 0.2.3. AP-270/271, R-286, adendo R-282. ÉPICO 040 COMPLETO"
       }
     ],
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
-    "ceremonies_run": [],
-    "ceremony_findings_count": 0,
-    "ceremony_scope_decisions": [],
-    "analysis": "plans/specs/057-device-activity-log/analysis.md",
-    "branch": "feature/tese/057-device-activity-log"
+    "ceremonies_run": [
+      "security-review",
+      "eng-review-2 (delta FR-021/FR-022)"
+    ],
+    "ceremony_findings_count": 15,
+    "ceremony_scope_decisions": [
+      "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
+      "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
+      "PO-SEC-4..8 emitidas na spec",
+      "PO 2026-07-25: S-6 resolvido por ADMIN_USER_ID (uid autenticado) em vez de REVOKE na coluna — proposta do PO, adotada sobre a recomendacao original",
+      "PO 2026-07-25: FR-018 ganha saida honesta p/ https://dosiq.app no overlay, com URL COMPILADA (nao vem do gate)",
+      "Todos os 8 findings aceitos; T050 fechada",
+      "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
+      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
+    ],
+    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-07-stock-pref-cache mergeada e deletada)",
+    "blocked_on": [],
+    "ceremony_type": "eng-review",
+    "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
-    "last_distillation": "2026-07-22T17:45:00Z",
-    "journal_entries_since_distillation": 7,
-    "rules_count": 252,
-    "anti_patterns_count": 310,
-    "decisions_count": 88,
-    "contracts_count": 31,
+    "last_distillation": "2026-07-25T14:17:40Z",
+    "journal_entries_since_distillation": 9,
+    "rules_count": 257,
+    "anti_patterns_count": 317,
+    "decisions_count": 91,
+    "contracts_count": 32,
     "distillation_due": false
   },
   "genes": {
@@ -292,23 +159,23 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-23T18:00:00.000000+00:00"
+    "index_loaded_at": "2026-07-25T17:04:52.255259+00:00"
   },
   "code_review": {
-    "status": "issues_found",
-    "spec": "057-device-activity-log",
+    "status": "clean",
+    "spec": "051-expo-updates",
     "critical": 0,
-    "auto_fixed": 1,
+    "auto_fixed": 0,
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy",
+    "engine": "agy (RC6_ENGINE_CLAUDE=0, 1 chunk)",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 769,
-    "resolved": "0 findings (2/2 chunks) — RC6_ENGINE_CLAUDE=0 (quota), filtro OFF de proposito (nao conta pro PO-5 da 056). Medicao previa: zero 'caminho nao mapeado' mesmo com database.types.ts no diff. Unico issue real do PR (fleet-versions.sh sem guarda Array.isArray) ja tinha sido achado e corrigido pelo RC5, fora do CODE_GLOBS do RC6 por desenho"
+    "pr": 780,
+    "resolved": "0 findings — tier=1, payload 122,7K (medido via RC6_MEASURE=1 antes do run real, dentro do budget de amostragem do agy)."
   }
 }

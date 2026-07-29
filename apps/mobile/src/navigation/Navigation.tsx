@@ -30,6 +30,7 @@ import StockInitialBalanceScreen from '../features/stock/screens/StockInitialBal
 import DevHubScreen from '../features/_dev/screens/DevHubScreen'
 import StockPrimitivesDemoScreen from '../features/_dev/screens/StockPrimitivesDemoScreen'
 import DosePrimitivesDemoScreen from '../features/_dev/screens/DosePrimitivesDemoScreen'
+import MedicineFormScreen from '../features/medications/screens/MedicineFormScreen'
 import OnboardingNavigator from '../features/onboarding/OnboardingNavigator'
 import ConsentResolutionScreen from '../features/consent/screens/ConsentResolutionScreen'
 import ConsentPrompt from '../features/consent/components/ConsentPrompt'
@@ -42,8 +43,10 @@ import { supabase } from '../platform/supabase/nativeSupabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { usePushNotifications } from '../platform/notifications/usePushNotifications'
 import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
+import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
-import { logScreenView } from '../platform/analytics/firebaseAnalytics'
+import { logScreenView, setUserId, resetUser } from '../platform/analytics/productAnalytics'
+import { clearStockTrackingCache } from '../platform/storage/stockTrackingCache'
 import { debugLog } from '@shared/utils/debugLog'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
@@ -58,6 +61,15 @@ function useAuthSession() {
   // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
   // - onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
+
+  // Identificação de usuário no PostHog/Sentry (ADR-090). AQUI, e não no LoginScreen: este efeito
+  // roda tanto no login novo quanto na sessão RESTAURADA do SecureStore — que é como o usuário
+  // entra no dia a dia. Identificar só no login explícito deixava o uso recorrente anônimo, e cada
+  // device virava uma pessoa distinta no dashboard, inflando a contagem de usuários.
+  useEffect(() => {
+    if (!session?.user?.id) return
+    setUserId(session.user.id)
+  }, [session?.user?.id])
 
   // Heartbeat de atividade (spec 057 / ADR-089): independente de push (R-239 intocada — nunca
   // pede permissão nenhuma), roda em cold start e em toda volta a foreground; o throttle de 24h
@@ -112,6 +124,13 @@ function useAuthSession() {
 
       if (event === 'SIGNED_OUT') {
         debugLog('Navigation', 'User signed out, clearing caches...')
+        // Encerra a identificação ANTES de limpar cache: a partir daqui os eventos voltam a ser
+        // anônimos. Sem isto, quem logar depois neste device herdaria a pessoa anterior.
+        resetUser()
+        // Preferência de estoque (055-W1.7) é por CONTA — cache da conta A não pode vazar
+        // pra B no mesmo device. Ponto único: cobre logout via authService E via
+        // profileService.logoutUser (ambos disparam SIGNED_OUT, este listener é o choke point).
+        await clearStockTrackingCache()
         try {
           await AsyncStorage.multiRemove([
             '@dosiq/today-snapshot',
@@ -257,6 +276,12 @@ export default function Navigation() {
   return (
     <ConsentGateProvider session={auth.session}>
       <NavigationTree {...auth} />
+      {/* Kill switch de versão mínima (spec 051-A FR-018) — IRMÃO de NavigationTree, não filho:
+          cobre inclusive o spinner de carregamento (session===undefined) e o gate de consentimento,
+          porque decide sobre o BINÁRIO, não sobre o titular. NÃO replicar o padrão `consentPending`
+          (segura a render com spinner esperando o gate) — o gate de versão NUNCA segura a
+          renderização (ADR-091 D4); o overlay só monta quando o resolver puro decide bloquear. */}
+      <VersionGateOverlay />
     </ConsentGateProvider>
   )
 }
@@ -383,6 +408,13 @@ function NavigationTree({
                 <Stack.Screen
                   name={ROUTES.DOSE_PRIMITIVES_DEMO}
                   component={DosePrimitivesDemoScreen}
+                />
+                {/* Spec 055 PR 1.4: MedicineFormScreen SEM tab bar (root stack) — permite
+                    validar safe-area/FormActions isolado, sem depender de onboarding novo
+                    nem de conta em consent-locked. Modo create (sem params). */}
+                <Stack.Screen
+                  name={ROUTES.DEV_FORM_NO_TABBAR}
+                  component={MedicineFormScreen}
                 />
               </>
             )}

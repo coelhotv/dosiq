@@ -1,15 +1,22 @@
-// useStockTracking — preferência GLOBAL de controle de estoque (spec 044, F3).
+// useStockTracking — preferência GLOBAL de controle de estoque (spec 044, F3; cache 055-W1.7).
 //
 // A preferência mora no backend (user_settings.stock_tracking_enabled) e é lida DENTRO
 // das RPCs atômicas. Este provider é só a leitura para a UI: as superfícies de estoque
 // somem quando `enabled === false`. Nunca é a fonte de verdade do consumo FIFO — quem
-// decide isso é o banco (evita divergência multi-device, AP-231).
+// decide isso é o banco (evita divergência multi-device, AP-231). O cache local (AsyncStorage)
+// é só da PREFERÊNCIA, nunca do saldo.
 //
-// Fail-safe (AP-277): erro de leitura ou linha ausente → estoque ATIVO (comportamento de
-// hoje, FR-009). A ausência de dado nunca desliga o estoque por omissão.
+// Escada de 3 degraus (emenda a AP-277 — ver .agent/memory/anti-patterns 044 F1 pós-055):
+//   1. remoto OK       → usa e cacheia
+//   2. remoto falha, HÁ cache → usa o cache (preserva uma decisão explícita do usuário)
+//   3. remoto falha, SEM cache → default ATIVO (fail-safe original do AP-277 — 1ª abertura,
+//      storage limpo; "nunca soube da preferência" ainda é diferente de "sei que desligou")
+// Rede sempre vence o cache quando disponível (AP-284 — multi-device continua revalidando
+// em AppState 'active'; o cache nunca é fonte de verdade, só fallback de falha).
 //
-// `ready` distingue "ainda não sei" de "sei que está ligado": a tab bar só monta depois de
-// `ready`, senão o usuário dose-only veria a aba Estoque piscar e sumir.
+// `ready` não depende mais de rede: com cache presente, a tab bar monta na hora (evita
+// spinner à toa offline antes de cair no default). Sem cache, `ready` só fecha após a
+// tentativa remota resolver (sucesso ou falha) — aí sim aplica o degrau 3.
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
@@ -17,6 +24,7 @@ import { AppState } from 'react-native'
 import type { AppStateStatus } from 'react-native'
 import { createProfileRepository } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { readStockTrackingCache, writeStockTrackingCache } from '@platform/storage/stockTrackingCache'
 
 // Consome o repositório do core DIRETO (não via profileService): importar a casca de
 // serviço arrastaria um módulo nível B para dentro do programa strict desta ilha (AP-274).
@@ -61,13 +69,30 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
       setReady(true)
       return
     }
+
+    // Degrau 2 tentado PRIMEIRO e otimisticamente: se há cache, a UI já pode montar com ele
+    // (ready=true) sem esperar a rede — a rede, quando resolver, sempre sobrescreve (AP-284).
+    const cached = await readStockTrackingCache()
+    if (cached) {
+      setEnabled(cached.enabled)
+      setPausedAt(cached.pausedAt)
+      setReady(true)
+    }
+
     try {
       const pref = await profileRepo.getStockTracking()
-      setEnabled(pref.stock_tracking_enabled !== false)
-      setPausedAt(pref.stock_paused_at ?? null)
+      const nextEnabled = pref.stock_tracking_enabled !== false
+      const nextPausedAt = pref.stock_paused_at ?? null
+      setEnabled(nextEnabled)
+      setPausedAt(nextPausedAt)
+      await writeStockTrackingCache({ enabled: nextEnabled, pausedAt: nextPausedAt })
     } catch {
-      setEnabled(true)
-      setPausedAt(null)
+      // Degrau 3: sem cache, o fail-safe original do AP-277 vale — nunca soube da
+      // preferência, então ativa. COM cache, o valor já setado acima (degrau 2) fica.
+      if (!cached) {
+        setEnabled(true)
+        setPausedAt(null)
+      }
     } finally {
       setReady(true)
     }

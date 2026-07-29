@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_version_gate: {
+        Row: {
+          is_active: boolean
+          message: string | null
+          min_supported_version: string | null
+          platform: string
+          store_url: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          is_active?: boolean
+          message?: string | null
+          min_supported_version?: string | null
+          platform: string
+          store_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          is_active?: boolean
+          message?: string | null
+          min_supported_version?: string | null
+          platform?: string
+          store_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_version_gate_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_signups: {
         Row: {
           created_at: string

@@ -12,7 +12,7 @@ import {
   getSwitchOutcomeProtocols,
   type SwitchOutcomeProtocol,
 } from '@treatments/services/titrationService'
-import { logEvent } from '@platform/analytics/firebaseAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
 import { ROUTES } from '../../../navigation/routes'
 import { navigateCrossTab } from '@navigation/navigateCrossTab'
 
