@@ -1,7 +1,7 @@
 {
   "_comment": "REGRA DE RETENÇÃO: spec_dirs e merged_history DEVEM conter APENAS specs e PRs do épico/onda ATIVO na branch de integração atual. É ESTRITAMENTE PROIBIDO acumular histórico de épicos passados neste JSON. Ao concluir o épico, limpe os itens antigos — o local definitivo do histórico são os journals em .agent/memory/journal/.",
   "project": "dosiq",
-  "sprint": "2026-W29",
+  "sprint": "2026-W31",
   "session": {
     "mode": "coding",
     "status": "merged",
@@ -9,8 +9,8 @@
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/051-expo-updates",
     "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "055-W1.7 PR 1.7 — MERGEADA (#780, squash 28b6ed40). Preferencia de estoque sobrevive offline (spec 044 dona, F3/F4a): useStockTracking.tsx ganha cache client-side AsyncStorage (stockTrackingCache.ts) + escada de 3 degraus no catch (remoto -> cache -> default ATIVO), emendando AP-277/AP-284 com a distincao (a) nunca soube / (b) sei que desligou. ready nao depende mais de rede quando ha cache. Cache invalidado no listener SIGNED_OUT (Navigation.tsx), nao no signOut() isolado (RC5 achou o choke point errado antes do push). Smoke MANUAL device real validado via OTA preview. RC6 clean (0 findings). Onda W1 sem proxima fatia declarada ainda.",
-    "goal_type": "fix",
+    "goal": "ONDA 1 INTEGRADA NA MAIN — PR #781 mergeada (merge commit c6971e2c, NAO squash: squash deixaria o commit taggeado mobile-v0.30.0 fora da main e travaria publish-ota production pelo gate R-307). 35 commits, 144 arquivos, +10461/-3239, consolidando as 11 fatias #770-#780 (055 SDK54/target36/edge-to-edge + 051-A OTA/kill switch + 044 F3/F4a). mobile 0.30.0 (primeira versao alcancavel por OTA), web 4.22.0. Notas de loja escritas em RELEASES.md v1.2.0. Binarios Android (preview+production) prontos; iOS pendente. Proximo: build iOS, PO-1 (aapt2 target 36), MARCO 1 de smoke.",
+    "goal_type": "chore",
     "code_review": {
       "status": "clean",
       "critical": 0,
@@ -21,107 +21,17 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 780,
-    "merged_squash": "28b6ed40",
+    "merged_pr": 781,
+    "merged_squash": "c6971e2c (merge commit)",
     "merged_history": [
       {
-        "pr": 780,
-        "squash": "28b6ed40",
-        "spec": "044 F3/F4a (dona) — 055-W1.7 preferencia de estoque sobrevive offline (PR 1.7)",
+        "pr": 781,
+        "squash": "c6971e2c (merge commit)",
+        "spec": "ONDA 1 — integracao 055 + 051-A na main",
         "tier": 1,
-        "date": "2026-07-28",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "useStockTracking.tsx ganha cache client-side (AsyncStorage, stockTrackingCache.ts) + escada de 3 degraus no catch: remoto -> cache local -> default ATIVO. Emenda AP-277/AP-284 (nao violacao, estreitamento): distincao (a) nunca soube da preferencia (fail-safe original vale) vs (b) sei que o usuario desligou (falha de rede SEGUINTE nao pode reativar — cache cobre esse degrau ANTES do fail-safe). ready deixa de depender de rede quando ha cache (tab bar monta na hora, offline). Rede sempre vence o cache quando resolve (AP-284 intacto). Cache invalidado no listener SIGNED_OUT em Navigation.tsx (choke point unico que ja limpa today/treatments/stock-snapshot) — RC5 self-review achou que a primeira tentativa (cabear em authService.signOut()) estava no caminho ERRADO: a UI real de logout (ProfileScreen) chama profileService.logoutUser(), rota separada que nunca passaria pelo cache-clear; corrigido antes do push. Sem bump de APP_VERSION (JS-only). 13 testes novos (3 degraus + negativo + cache module) + suite mobile completa 545/548. Gates verdes (lint 0, tsc web 0, strict-island ratchet OK). Smoke MANUAL device real do PO via OTA preview (publish-ota.sh preview, direto da branch — R-307 so trava production): desligar estoque + modo aviao + matar/reabrir = aba Estoque ausente. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 122,7K (medido antes do run real), 0 findings, postado no PR."
-      },
-      {
-        "pr": 779,
-        "squash": "2e60fb8e",
-        "spec": "051-A OTA em sessão viva (PR 1.6b) — FR-023/US10/PO-11",
-        "tier": 2,
-        "date": "2026-07-28",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "useOtaUpdate.ts (novo): checagem+download em AppState->active, throttle 15min, fail-silent, nunca aplica sozinho — só Updates.reloadAsync() por toque do usuário. TodayScreen.tsx: banner fixo 'Atualização pronta · Reiniciar' reusa o COMPONENTE NudgeBanner (não o pipeline useNudges — nudge é dado remoto in_app_nudges, update é estado local do device), precedência por render (otaBanner ?? dashboardNudge, não por priority numérico — nudgeSchema.ts:59 capa priority em 0-100). Guarda de ocioso combina modalProtocol/bulkModal/measureLogOpen/speedDialOpen + useAlarmScreenActive (PR 1.5b, reusado sem reimplementar). Achado no smoke: NudgeBanner.tsx renderizava o X de dispensar incondicionalmente — banner fixo passa onDismiss=undefined (não pode ser dispensado sem aplicar) e o X ficava visível mas inerte, enganoso; corrigido pra só renderizar quando onDismiss é passado. SEM bump de APP_VERSION (ADR-082): mudança JS-only ships como release OTA sobre 0.30.0 — bumpar criaria runtimeVersion novo e tornaria o update órfão para o binário já instalado (erro cometido e revertido na própria sessão, achado pelo PO ao tentar publicar). PO-11 fechado com evidência MANUAL device real (moto g06/Android, canal preview): T054 caminho feliz, T055 guarda negativo (modal de dose bloqueia o banner, libera na hora ao fechar), T056 cold start nunca mostra banner (FR-005 intacta). Achado de processo: throttle de 15min bloqueia checagem repetida durante smoke rápido (não é bug) — reduzido pra 30s TEMP durante o smoke via comentário explícito, revertido antes do PR. Gates verdes (lint 0, tsc web+mobile 0, strict-island ratchet OK, validate:agent 2204/164, jest mobile 532/532). RC5 clean. RC6 (agy-only, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): tier=1, 1 chunk, payload 123K (medido via RC6_MEASURE=1 antes do run real), 0 findings, postado no PR."
-      },
-      {
-        "pr": 778,
-        "squash": "7a7765f5",
-        "spec": "051-A cliente expo-updates no binario (PR 1.6) + R-307 procedencia do binario",
-        "tier": 2,
-        "date": "2026-07-27",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Fatia BINARIA da 051-A (runbook/governanca/rollout/CI = 051-B). expo-updates 29.0.19 (dist-tag sdk-54; latest=57.x quebraria o SDK 54). DUAS armadilhas de config que so o build real expoe: (1) runtimeVersion tem de ser LITERAL, nao {policy:'appVersion'} — o expo prebuild que antecede eas build --local poe o projeto em bare workflow, onde politicas ABORTAM o build; (2) o canal precisa estar em DOIS lugares — eas.json (roteamento no servidor) e app.config.js updates.requestHeaders (o que fica GRAVADO no binario) — porque o prebuild regenera o manifesto a partir do app.config.js e apaga o que o `eas update:configure` escreveu; sem isso o app FUNCIONA e nunca atualiza, falha que so apareceria depois de publicado na loja. fallbackToCacheTimeout 0 (AP-303). Perfil `preview` novo (APK/simulador, distribuicao interna) como alvo do smoke e do teste destrutivo; build-android.sh/build-ios.sh aceitam o 3o perfil. R-307 NOVA (hot): build de loja exige arvore limpa e cria/publica tag mobile-v<APP_VERSION> (lib-release-tag.sh); publish-ota.sh recusa production quando HEAD nao descende da tag — o `eas update` empacota a WORKING TREE, nao um commit, entao publicar de uma main que andou entregaria features nao revisadas junto do fix (violacao Apple 3.3.1 + risco de chamar nativo que o binario instalado nao tem). Nasceu de duas dores do PO na mesma sessao: 'como refazer o build 2803' e 'como planejar um OTA no meio de N features'. R-221 ganhou passo 4b. ADR-083 EMENDADO: code signing exige plano EAS Enterprise — premissa original FACTUALMENTE FALSA, descoberta no 1o `eas update`. Decisao do PO: seguir sem assinatura, risco aceito; defesa do canal = 2FA + publish manual PO-only + zero EXPO_TOKEN em CI. PO-SEC-1 fica sem objeto. SMOKE em device real (moto g06 / Android 15) achou 6 defeitos que nenhum gate mecanico pegaria (AP-316 se repetindo): Updates.updateId NAO e null em bundle embutido (o label ramificava por ele -> tela AFIRMAVA 'Atualizacao 25d83045' a quem rodava o binario da loja; fix por isEmbeddedLaunch); canal ausente do binario (3 greps meus deram falso-negativo por rodarem de apps/mobile, onde node_modules nao existe — hoisted na raiz); quebra de linha invisivel; mensagem de erro CRUA em ingles no Perfil offline (novo shared/utils/networkError.ts, deteccao conservadora); preferencia de estoque ressuscitando offline (spec 044 -> slice W1.7); e QUATRO erros no runbook GUIA_OTA so visiveis na execucao (--channel com --branch, --branch inexistente no rollback, semantica INVERTIDA do GROUPID, custodia da chave). COMPORTAMENTOS MEDIDOS: PO-5 anti-bricking — update com throw no boot degrada UMA abertura (tela preta, app nao fecha) e recupera sozinho na 3a; T017 — '2 launches' e o melhor caso, checagem que falha queima o ciclo em silencio (medido: 3a abertura apos religar Wi-Fi), reforcando o W1.6b; T043 — o crash do PO-5 chegou ao Sentry com o update_id EXATO do bundle quebrado, evidencia real e nao sintetica (initialScope se pagou: o throw matou o app antes da arvore React montar). T017d por inspecao (canal verificado no APK via aapt2, decisao do PO). Gates verdes (validate:agent 2204/164, jest mobile 532, lint 0 erros, tsc apps/web 0, strict-island ratchet OK). RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54, RC6_ENGINE_CLAUDE=0): 2 chunks, 2 medium introduced, 0 critical/high. 1 verdadeiro (bundleTags usava `??` onde o nativo devolve string vazia — a MESMA string vazia que eu ja tratara em formatChannelLabel horas antes: correcao pela metade, ponto cego estrutural do RC5, e bundleTags nao tinha teste algum) + 1 falso positivo (refutado inline com os 3 testes). Registrado measurement.md 034-D.3: severity de finding de observabilidade e subestimada por natureza — o dano nao aparece no fluxo, aparece na proxima investigacao."
-      },
-      {
-        "pr": 777,
-        "squash": "d7f4bfdc",
-        "spec": "051-A painel admin web do kill switch de versão (PR 1.5c)",
-        "tier": 2,
-        "date": "2026-07-27",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "VersionGateAdmin.tsx + useVersionGateAdminState.ts + versionGateAdminService.ts (edit-only, RC3-2/F6 — as 2 linhas ja vem semeadas pela migracao do 1.5a, sem create/delete/lista/empty state). Guarda de raio de impacto (S-7) mora inteira no handler: a tela so exibe a contagem que o servidor devolve na recusa 409, nunca calcula por conta propria. Ativar exige confirmacao explicita; desativar nao exige cerimonia (PO-9). Registro em AppViewRouter (lazy, R-117) + AdminSection. Achado de smoke bloqueante de processo (nao de codigo): EXPO_PUBLIC_API_BASE_URL local apontava pra producao (main), que nao tem o resource versionGate ainda (so existe na integracao) — sintoma identico a 'serverless nao funciona em dev' mas causa raiz era branch errada atras do proxy; segundo sintoma foi SSO/Deployment Protection em deploys de preview bloqueando o proxy por CORS, resolvido com VERCEL_AUTOMATION_BYPASS_SECRET no header. Novo R-306 documenta os dois sintomas distintos. UI ajustada durante o proprio smoke: card por-plataforma nao soma mais fleet_installs cross-OS (confundia com o total da propria plataforma) — mostra proporcao (ex. 'Sao 100% das instalacoes ativas em android nos ultimos 30 dias (13/13)'). PO-9 e PO-SEC-8 fechados com evidencia de smoke real (device Android + painel web: gate ativo bloqueando boot, painel permanece acessivel e desativa sem exigir acknowledge). Gates verdes (lint, tsc, strict-island ratchet OK, test:critical). RC5 clean (2 rodadas — antes e depois do ajuste do vite.config.js). RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando, evitando a armadilha do #756/#772 — sem ela: 6 chunks/844K; com ela: 1 chunk/136K): tier=1, 0 findings, postado no PR."
-      },
-      {
-        "pr": 776,
-        "squash": "de19c606",
-        "spec": "051-A kill switch de versao minima no cliente mobile (PR 1.5b)",
-        "tier": 2,
-        "date": "2026-07-26",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Resolver puro resolveVersionGate (@dosiq/core/utils/versionGate.ts, CON-033) + servico de leitura (versionGateService.ts, timeout 3s + fail-open em qualquer indeterminacao) + hook useVersionGate (mount + AppState foreground, achado do smoke do PO — app minimizado por dias precisa reavaliar no focus) + VersionGateOverlay (full-screen, tokens de design, storeUrl allowlist RC-SEC-2, saida honesta https://dosiq.app COMPILADA nunca do gate remoto) + useAlarmScreenActive (obrigacao clinica > bloqueio de update: alarme fullscreen cede o overlay). Escopo expandido com autorizacao explicita do PO durante o smoke (achados na MESMA superficie boot/offline): AP-321 (describeLoadFailure vazava .message cru de erro de rede/JS em ingles quando fallbackErr===originalErr — corrigido por identity check, PT sempre) + AP-322 (useTreatments.ts coalescia groups??[] apagando a distincao null/vazio) + StockScreen usando mensagem hardcoded em vez do error real + AlarmSchedulerBridge sem retry de navigationRef.isReady() no cold start (bug pre-existente, nao desta PR — confirmado por git log antes de corrigir) + useAlarmScreenActive trocado de addListener('state') pra polling 250ms (o listener nunca disparava pois VersionGateOverlay monta antes do NavigationContainer existir — bug introduzido pelo proprio fix anterior, achado no 2o round de smoke com soneca do notifee). PO-7 fechado com evidencia MANUAL device real (iOS+Android, modo aviao via /etc/hosts, alarme fullscreen sobre overlay, CTA Atualizar->playstore, link web->dosiq.app). Gates verdes (vitest, tsc, lint, strict-island, validate:agent). RC5 clean. RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1o comando): run1 achou floating promise real (AP-138, 2 CTAs Linking.openURL sem .catch) — fixado + respondido inline nas 4 threads; run2 pos-fix 0/0/0/0 (3/3 chunks, pass A+B concordantes). Registrado measurement.md linha 776."
-      },
-      {
-        "pr": 775,
-        "squash": "8d96472e",
-        "spec": "051-A app_version_gate (PR 1.5a) — migracao + 2 camadas de acesso + schema Zod + modulo de frota + handler admin + admin por uid (ADR-091 D10)",
-        "tier": 2,
-        "date": "2026-07-26",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Superficie de config do kill switch de versao: migracao app_version_gate (docs/migrations/20260725_app_version_gate.sql), schema Zod (versionGateSchema.ts), utils de frota (fleet.ts + fleet-versions.sh), handler admin (api/admin/_handlers/versionGate.ts) e fix do verifyAdminAccess (server/utils/auth.ts) — admin por uid (ADMIN_USER_ID) em vez de REVOKE na coluna, decisao do PO sobre a recomendacao original (RC-SEC-2 S-6). Painel admin web fatiado para PR 1.5c (RC3-2/F5, resolvido pelo PO: 1.5a caiu de 13 para 8 arquivos, dentro do limiar RC3 de 8). PO-SEC-4..8 fecharam na spec; RC-SEC-2 teve 2 CRITICAL+2 HIGH+3 MEDIUM+1 LOW, todos os 8 aceitos. Gates verdes. RC5 clean. RC6 (agy, RC6_MAIN=feature/055-w1-sdk54 desde 1o comando): 7/7 chunks, 0 findings (RC6_PACK_FILTER=1 + RC6_MAX_CHUNKS=7 por budget). Registrado measurement.md linha 775."
-      },
-      {
-        "pr": 774,
-        "squash": "249616d0",
-        "spec": "055 expo-55-target-api-36 (PR 1.4, edge-to-edge)",
-        "tier": 2,
-        "date": "2026-07-25",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Resolve T040-T043 (edge-to-edge Android 16). T040 inventário via grep confirmou alarme/Hoje/tratamento e RootTabs já corretos (fix anterior R4-H01); achado real do fix foi FormActions (footer sticky, 12 telas) sem inset de safe-area sob edge-to-edge forçado (target API 36). Smoke com o PO revelou bug correlato maior: KeyboardAvoidingView com behavior=undefined no Android é NO-OP sob edgeToEdgeEnabled (AP-288, incidência 2), reproduzido em 12 telas + 2 bottom sheets de busca (ANVISA/medicamento) — migradas pro checklist completo (behavior=height, sem keyboardVerticalOffset chutado, ScrollView style flex:1, useKeyboardVisible canônico). AP-288 promovido a R-303 (hard rule, hot). Processo: nova R-304 (hot) — busca obrigatória em memória na 2ª tentativa falha no mesmo sintoma, criada após 3 rounds de screenshot com o PO até achar o AP-288 já documentado. Gates: validate:agent 160/160, strict-island ratchet OK, tsc apps/web 0 erros. RC5 self-review 0 críticos. RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o 1º comando real — quase recorrência do #756/#772 pega na fase de medição, sem custo/ruído no PR): 1 chunk, 0 findings, ambas passes (agy A+B) citaram nominalmente R-303/AP-288 — sinal de leitura real. Registrado measurement.md linha 774."
-      },
-      {
-        "pr": 773,
-        "squash": "431015fd",
-        "spec": "055 expo-55-target-api-36 (PR 1.3b, ADR-090)",
-        "tier": 2,
-        "date": "2026-07-24",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Resolve T029 (débito herdado do PR 1.1): dropou @react-native-firebase/{app,analytics,crashlytics} inteiro — não compila sob Xcode 26.3/RN 0.81 com useFrameworks static (RCTBridgeModule + RCT_EXPORT_METHOD → -Wimplicit-int fatal), bump v21→v25 reproduz o mesmo erro, dynamic quebra o link do react-native-netinfo, sem fix nativo upstream. Crash reporting → @sentry/react-native (ErrorBoundary → captureException+breadcrumb); analytics de produto → posthog-react-native (cold_start + eventos) + expo-localization. firebaseAnalytics.ts → productAnalytics.ts mantendo a MESMA API exportada (8 call sites inalterados). app.config.js: removidos os 2 plugins firebase + withFirebaseFix.js + withFirebasePodfileFix.js; useFrameworks 'static' LIMPO. google-services.json/.plist preservados (push FCM via expo-notifications). Achado do smoke do PO: identify só rodava no login explícito (herança firebase) — sessão restaurada ficava anônima, inflando contagem de usuários; movido para useAuthSession (cobre login E restore) + resetUser() no SIGNED_OUT (device compartilhado não herda pessoa anterior), R-042 respeitado. Fronteira 051 (ADR-090) respeitada: PostHog só analytics/adoção de frota, fora do path do kill switch e sem gating de OTA. APP_VERSION 0.29.1 NÃO re-bumpada (já veio do PR 1.1). Gates: jest mobile 506/509 (61 suites), lint 0 erros, strict-island ratchet OK, tsc apps/web 0, npx expo run:ios EXIT=0 (gate que o T029 travava), expo-doctor 18/18. PO-7 fechado com evidência MANUAL (device real iOS+Android: Sentry recebeu crash-teste, PostHog recebeu cold_start+navegação). RC6 (RC6_MAIN=feature/055-w1-sdk54 desde o início, sem recorrência da armadilha do #772): 5 chunks, 0 critical/high, 1 medium + 1 low sem introduced bloqueante — registrado measurement.md linha 773. Follow-up fora deste PR: draft spec 059 (privacidade do analytics — scrubbing de dado clínico + consentimento LGPD, risco subiu ao identificar uid) + SENTRY_AUTH_TOKEN pendente (secret EAS p/ símbolos de produção)."
-      },
-      {
-        "pr": 772,
-        "squash": "5a43f271",
-        "spec": "055 expo-55-target-api-36 (PR 1.3)",
-        "tier": 2,
-        "date": "2026-07-24",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "compileSdkVersion/targetSdkVersion:36 EXPLÍCITOS em expo-build-properties (app.config.js) — não confiar no default do SDK 54; confirmado ponta-a-ponta pós-prebuild (android/gradle.properties). Revalidados os 6 config plugins locais (5 do task + withFirebasePodfileFix.js novo no PR 1.1): entitlements iOS idênticos pré/pós-prebuild (AP-179), manifest Android com as 3 permissões de alarme intactas, metro resolveRequest (R-282) intacto, extraMavenRepos do notifee resolvendo. 🔴🔴 T029 (débito herdado do PR 1.1 — bump @react-native-firebase v21→compatível Xcode 26) ficou BLOQUEADO, fora deste PR: bump p/ 25.1.0 (latest npm em 2026-07-23) reproduz o MESMO erro do v21 (não é bug de versão velha — RCTBridgeModule duplicado RNFBApp/React-Core sob useFrameworks static); DEFINES_MODULE=NO no React-Core + limpar DerivedData não resolveram; useFrameworks:dynamic resolveu o bug do crashlytics mas quebrou o link do react-native-netinfo como framework dinâmico (pod não é dynamic-framework-safe). Revertido pro estado que builda hoje (static + v21). Decisão do PO 2026-07-24: dropar @react-native-firebase inteiro em vez de patchar — Sentry (crash) + PostHog (analytics), pods RN puros que compilam sob static. Documentado ADR-090 + PR 1.3b novo (T037-T039) inserido ANTES do PR 1.4 no tasks.md (é o caminho crítico — sem isso nenhum build iOS sai). T029-debt-handoff.md fica como registro do beco sem saída do caminho bump/patch. Gates: mobile 506/509 (61/62 suites), strict-island ratchet OK, lint 0 erros (156 warnings pré-existentes), tsc apps/web 0 erros. RC5: 0 findings (diff mecânico). RC6 (agy-only, RC6_ENGINE_CLAUDE=0): 0 findings — RECORRÊNCIA da armadilha operacional do #756 (1º run usou RC6_MAIN default=main, que ainda não recebeu a Onda 1 → capturou diff acumulado de PR1.1+1.2+1.3, 228K/2 chunks; corrigido com RC6_MAIN=feature/055-w1-sdk54, escopo real 79K/1 chunk). Registrado measurement.md linha 772 + nota nova no PLAYBOOK §RC6 (RC6_MAIN obrigatório em W1/W2)."
-      },
-      {
-        "pr": 771,
-        "squash": "816c14a0",
-        "spec": "055 expo-55-target-api-36 (PR 1.2)",
-        "tier": 2,
-        "date": "2026-07-23",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Migração de expo-file-system p/ API nova (File/Paths) em ExportSheet.tsx (export LGPD, spec 008) — a API legada (/legacy) lança em runtime no SDK 55+, não é warning. create({overwrite:true}) evita colisão em re-export na mesma sessão (filename determinístico do core); write() é síncrono, dentro do try/catch existente. Forma da API verificada contra os .d.ts reais do pacote instalado (expo-file-system@19.0.23) e contra o source nativo Android (FileSystemFile.kt — write() usa Kotlin String.toByteArray() = UTF-8 por padrão), não assumida do plan.md. Testes reescritos com mock fiel (File/Paths como classes reais) + 2 testes negativos (T020a: re-export não lança; T020b: erro síncrono de write cai no catch). APP_VERSION 0.29.0→0.29.1 (patch, fase). 🛑 HARD STOP (T024, impacto UX/LGPD): RC5 rodado (1 achado mecânico auto-corrigido — comentário desatualizado), diff apresentado ao PO, aprovação explícita ANTES do push. Smoke em device real Android confirmou a API de escrita correta (export+share funcionaram) — achou 2 bugs de CONTEÚDO pré-existentes em @dosiq/core (BOM não respeitado pelo WPS Office Android + header '=== METADADOS ===' sem escape líder quebra fórmula no spreadsheet), registrados como AP-317, decisão do PO: não bloqueiam esta PR, correção em item separado. Gates: mobile 506/509 (61/62 suites), strict-island limpo (sem aumento de dívida), tsc apps/web 0 erros, lint 0 erros. RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): tier=1, 0 findings, payload 139,4K < teto 150K de amostragem silenciosa."
-      },
-      {
-        "pr": 770,
-        "squash": "590d372a",
-        "spec": "055 expo-55-target-api-36 (PR 1.1)",
-        "tier": 2,
-        "date": "2026-07-23",
-        "base_branch": "feature/055-w1-sdk54 (integração, NÃO main)",
-        "note": "Bump estrutural Expo SDK 53→54 via expo install --fix (23 módulos nativos + react 19.0.0→19.1.0 + react-native 0.79.6→0.81.5). react/react-dom reconciliados na raiz do monorepo (npm ls confirma versão única em toda a árvore mobile+web, sem duplicata — duplicata de react em RN vira Invalid hook call). jest-expo pinado manualmente ~54.0.17 (SDK 54 sem dist-tag no npm). Achados de gate corrigidos no mesmo PR: expo-file-system removeu API legada do export default → import trocado p/ expo-file-system/legacy em ExportSheet.tsx (LGPD spec 008, migração real fica pro PR 1.2); override react-native-safe-area-context 5.4.0→5.6.0; @notifee/react-native excluído do reactNativeDirectoryCheck do expo-doctor. APP_VERSION mobile 0.28.5→0.29.0, web 4.20.1→4.20.2. Gates (tsc/lint/jest/expo-doctor) todos verdes — mas 🔴 ACHADO PÓS-PR (PO testou build real): npx expo run:ios local (Xcode 26.3) quebra com @react-native-firebase v21 sob RN 0.81 — (1) RCTConvert/RCTBridgeModule non-modular include, MITIGADO neste PR via config plugin novo withFirebasePodfileFix.js (post_install CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES só nos Pods); (2) macro RCT_EXPORT_METHOD vira -Wimplicit-int fatal, confirmado em analytics E crashlytics (18 erros), NÃO mitigado por decisão do PO — bump de @react-native-firebase (v21→compatível, 25.x disponível) virou item T029 OBRIGATÓRIO do PR 1.3. Android não afetado. AP-316 criado (gate mecânico tsc/lint/jest/expo-doctor não cobre xcodebuild real — lição pra todo bump de SDK nativo futuro). RC5: 0 findings (2 rodadas, diff cresceu com o fix do firebase). RC6 (agy-only, RC6_ENGINE_CLAUDE=0 por quota da onda 056, filtro OFF por design — não conta pro PO-5): 0 findings nas 2 rodadas."
+        "date": "2026-07-29",
+        "base_branch": "main",
+        "note": "Integracao da onda 1. Consolida PRs #770-#780 (detalhe de cada fatia nos journals 2026-W29/W30). Merge commit obrigatorio: preserva os 11 squashes E mantem mobile-v0.30.0 como ancestral da main, sem o que o gate do R-307 travaria todo OTA de producao desta versao. Achados da sessao de integracao: (1) bug real no lib-release-tag.sh — leitura de refs/tags/<tag> em tag ANOTADA devolve o objeto de tag, nunca um commit, o que abortaria o build da segunda plataforma com colisao falsa e mataria create_release_tag sob set -e depois do submit; corrigido com ^{} (cefcfb7d); (2) AP-234 reincidente — docs de operacao commitados direto na main colidiram com as versoes evoluidas da branch, 3 conflitos resolvidos em 1e8658e4; (3) build-ios.sh production submete ao TestFlight automaticamente, PO decidiu manter. Tag mobile-v0.30.0 reposicionada 3x por commits de tooling/doc — delta vs o commit que gerou o .aab e de 3 arquivos, nenhum em bundle/nativo, mas contraria a letra do R-307 secao 3 (decisao pendente)."
       }
     ],
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
@@ -140,14 +50,19 @@
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
     ],
-    "branch": "feature/055-w1-sdk54 (integração — feature/055-w1-07-stock-pref-cache mergeada e deletada)",
-    "blocked_on": [],
+    "branch": "main (branch de integracao feature/055-w1-sdk54 mergeada e deletada)",
+    "blocked_on": [
+      "PO: decidir se R-307 secao 3 ganha excecao explicita para delta comprovadamente fora do bundle (tag movida 3x nesta sessao)",
+      "PO: build iOS (preview + production -> TestFlight interno automatico)",
+      "PO: MARCO 1 — smoke em device real (055 PO-2/3/5 + 051-A PO-7/PO-SEC-6/PO-SEC-8/PO-1/2/5)",
+      "PO: eas submit Android internal testing + confirmar Play Console sem aviso de target API (PO-1 final)"
+    ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 257,
     "anti_patterns_count": 317,
     "decisions_count": 91,
