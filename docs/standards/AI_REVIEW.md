@@ -38,6 +38,18 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | `RC6_KEEP_PREAMBLE` | `0` | `=1` (com MEASURE) dumpa o preâmbulo em `/tmp/rc6_preamble.txt` para auditar o filtro |
 | `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
 | `RC6_PASSB_TIMEOUT` | `480` | teto wall-clock (s) do claude no Pass B; um claude que HANGA (esperando quota liberar) é morto e cai no fallback agy — não wedgeia o RC6 |
+| `RC6_MAIN` | **auto** (`baseRefName` do PR) | branch-base do diff. **Desde 2026-07-29 é derivada do próprio PR** (`gh pr view --json baseRefName`), não mais `main` fixo. Só defina à mão para revisar contra outra base |
+
+**🔴 Base do diff — a armadilha que custou 3 runs errados:** até 2026-07-29 o default era `main` fixo.
+Numa onda com **branch de integração** (055: `feature/055-w1-sdk54`), isso fazia o RC6 revisar o diff
+ACUMULADO da onda inteira em vez do PR — **sem avisar**. Medido 3×: #756 (revisou o hotfix anterior),
+#772 (228K/2 chunks em vez de 79K/1), #777 (844K/6 chunks em vez de 136K/1). Hoje a base sai do PR e
+vai pro stderr; **confira as duas primeiras linhas antes de ler qualquer finding**:
+```
+[rc6] base-branch=feature/055-w1-sdk54 (via PR #778 baseRefName) ref=origin/feature/055-w1-sdk54
+[rc6] base=1e8658e4 head=c9ceb83f pr=778 post=0
+```
+Se aparecer `(via fallback default)` com um PR conhecido, o `gh` não respondeu — rode de novo com `RC6_MAIN=<branch>` explícito.
 
 **Medir antes de rodar (barato):**
 ```bash
