@@ -33,7 +33,8 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | Env | Default | Efeito |
 |-----|---------|--------|
 | `RC6_IDX_LINE_MAX` | `110` | clamp por linha dos índices (era 230; -40% no preâmbulo, medido #756/#766) |
-| `RC6_PACK_FILTER` | `0` (opt-in) | `=1` envia só os packs (`data_and_schema`, `react_and_ui`, `mobile_and_platform`, `infra_and_deploy`, `process_and_testing`, `notifications`, `test_hygiene`, `tooling_and_build`) dos caminhos alterados. **Fail-safe:** caminho não-mapeado ⇒ catálogo inteiro. CLAUDE.md vai sempre inteira (regras transversais R-295/R-299/R-282). Default segue OFF até ≥2 PRs provarem recall (056/PO-5) |
+| `RC6_PACK_FILTER` | **`auto`** | Envia só os packs (`data_and_schema`, `react_and_ui`, `mobile_and_platform`, `infra_and_deploy`, `process_and_testing`, `notifications`, `test_hygiene`, `tooling_and_build`) dos caminhos alterados. **`auto`** = filtra **só o chunk** cujo payload não-filtrado passaria de `RC6_AUTO_FILTER_ABOVE`; abaixo disso não corta nada. `1` = sempre; `0` = nunca (**é a baseline do A/B do PO-5**). **Fail-safe:** caminho não-mapeado ⇒ catálogo inteiro. CLAUDE.md vai sempre inteira (regras transversais R-295/R-299/R-282) |
+| `RC6_AUTO_FILTER_ABOVE` | `150000` | limiar (bytes de payload do chunk) que dispara o `auto`. Empírico: o agy amostra em silêncio acima de ~160K |
 | `RC6_MEASURE` | `0` | `=1` monta preâmbulo+chunks, imprime bytes (preâmbulo, packs in/out, payload por chunk) e **PARA antes do engine** — medir sem gastar quota (o `--dry-run` AINDA chama engine) |
 | `RC6_KEEP_PREAMBLE` | `0` | `=1` (com MEASURE) dumpa o preâmbulo em `/tmp/rc6_preamble.txt` para auditar o filtro |
 | `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
@@ -56,6 +57,13 @@ Se aparecer `(via fallback default)` com um PR conhecido, o `gh` não respondeu 
 RC6_MEASURE=1 RC6_PACK_FILTER=1 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> 2>&1 | grep -iE 'preamble|payload|packs|omit'
 ```
 Os packs listados DEVEM cobrir o domínio tocado (PR de bot → `notifications` tem que aparecer; se não, o mapa não casou o caminho — não confie no filtro).
+
+**Por que o default é `auto` e não `0`** (P4, 2026-07-29): esperar o A/B do PO-5 para ligar o filtro
+custou a Onda 1 inteira, enquanto o #775 provou que o filtro **já é** o que segura PR grande sob budget
+(chunk6 `167.157B` sem filtro → `129.507B` com). O `auto` recusa a falsa escolha: **abaixo** do limiar
+nada é cortado (recall intocado, nenhuma afirmação não provada); **acima** dele a alternativa não é
+"catálogo inteiro", é um catálogo inteiro que o motor **amostra em silêncio** — que perde muito mais
+recall do que qualquer pack. O PO-5 continua sendo o gate do modo `1` (filtrar sempre).
 
 **Precisão do revisor (absorvido do [open-code-review](https://github.com/alibaba/open-code-review), Apache-2.0):**
 o RC6 **não** foi substituído — independência (ADR-069), vendor diverso e $0 marginal são propriedades
