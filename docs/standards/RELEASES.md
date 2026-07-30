@@ -5,7 +5,7 @@ version: "1.2.0"
 status: active
 category: standard
 audience:
-  - po
+  - product
   - agent
 tags:
   - release

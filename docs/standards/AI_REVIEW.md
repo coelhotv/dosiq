@@ -1,3 +1,22 @@
+---
+title: "AI Review (RC5/RC6) — operação pós-Gemini"
+description: "Protocolo de revisão de código por IA em 4 camadas após descontinuação do Gemini bot, incluindo RC5 (self-review) e RC6 (review independente)."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - code-review
+  - ai-review
+  - rc5
+  - rc6
+created_at: "2026-07-18"
+updated_at: "2026-07-30"
+epic: "056"
+---
+
 # AI Review (RC5/RC6) — operação pós-Gemini
 
 > Extraído do CLAUDE.md em 2026-07-18. Arquitetura: ADR-069 (accepted). Specs: 034, 056 (local-only).

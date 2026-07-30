@@ -1,3 +1,21 @@
+---
+title: "Migrações Supabase — template e regras obrigatórias"
+description: "Template SQL obrigatório, grants, regras de DDL destrutiva e procedimento de aplicação de migrações no Supabase."
+version: "1.0.0"
+status: active
+category: standard
+audience:
+  - dev
+  - agent
+tags:
+  - supabase
+  - migrations
+  - sql
+  - database
+created_at: "2026-07-18"
+updated_at: "2026-07-30"
+---
+
 # Migrações Supabase — template e regras obrigatórias
 
 > Extraído do CLAUDE.md em 2026-07-18 (redução do arquivo). Fonte de verdade para

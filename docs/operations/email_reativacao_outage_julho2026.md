@@ -6,7 +6,7 @@ status: active
 category: operation
 audience:
   - ops
-  - growth
+  - product
 tags:
   - email
   - reativacao
