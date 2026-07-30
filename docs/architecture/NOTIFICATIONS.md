@@ -1,7 +1,7 @@
 ---
-title: "Sistema de Notificações & Bot Telegram"
-description: "Documentação central do motor de notificações do Dosiq, abrangendo a arquitetura multicanal (Telegram, Push, Web), o sistema de agrupamento inteligente e a lógica de engajamento comportamental."
-version: "6.0.0"
+title: "Visão Geral do Ecossistema de Notificações"
+description: "Documentação de alto nível e hub de navegação da arquitetura de notificações cross-platform do Dosiq (Backend Engine, Mobile Push, Alarmes Locais, Live Activities e Telegram)."
+version: "6.1.0"
 status: active
 category: architecture
 audience:
@@ -9,427 +9,263 @@ audience:
   - agent
 tags:
   - notifications
-  - telegram-bot
-  - push
+  - architecture
+  - cross-platform
+  - hub
 created_at: "2026-02-01"
-updated_at: "2026-05-13"
+updated_at: "2026-07-30"
+epic: "049"
 ---
 
-# 🔔 Sistema de Notificações & Bot Telegram
+# 🔔 Visão Geral do Ecossistema de Notificações
 
-Documentação central do motor de notificações do Dosiq, abrangendo a arquitetura multicanal (Telegram, Push, Web), o sistema de agrupamento inteligente e a lógica de engajamento comportamental.
+O ecossistema de notificações do Dosiq orquestra a entrega de lembretes de dose, alertas de estoque e relatórios de adesão em múltiplas plataformas. O sistema combina processamento no servidor com motores de execução local nos dispositivos.
 
----
-
-## 📋 Visão Geral
-
-O Dosiq utiliza um **Motor de Notificações Unificado** baseado no princípio **Inbox-First**. Toda e qualquer comunicação com o usuário nasce como um registro no banco de dados e é distribuída por múltiplos canais de acordo com as preferências e a disponibilidade técnica de cada dispositivo.
-
-### Propósitos do Sistema
-
-- **Lembretes de Doses**: Notificações agrupadas por plano de tratamento.
-- **Relatórios de Adesão**: Storytelling e nudges comportamentais dinâmicos.
-- **Gestão de Estoque**: Alertas preditivos (estoque < 7 dias).
-- **Titulação**: Avisos de transição de etapa em protocolos.
-- **Interatividade**: Comandos e botões inline no Telegram e App.
+Este documento funciona como ponto de entrada unificado para a arquitetura de notificações. Ele apresenta os conceitos macro, os canais disponíveis e o mapa de navegação para a documentação especializada de cada subsistema.
 
 ---
 
-## 🏗️ Arquitetura do Motor — 3 Camadas
+## 🏗️ Visão Geral da Arquitetura
 
-O sistema opera através de um motor desacoplado em **3 Camadas**, garantindo que lógica de negócio, formatação visual e entrega técnica sejam completamente independentes.
+O Dosiq adota um modelo descentralizado de notificações. As notificações que dependem de agendamento preciso ou funcionam sem internet são executadas diretamente no aplicativo móvel. As comunicações agrupadas, relatórios periódicos e mensagens do Telegram são processadas pela engine do servidor.
 
-```
-server/bot/tasks.ts (L1)
-         │  { kind, data: { raw_domain_fields } }
-         ▼
-server/notifications/payloads/buildNotificationPayload.ts (L2)
-         │  { title, body, pushBody, deeplink, actions[], metadata{} }
-         ▼
-server/notifications/dispatcher/dispatchNotification.ts (L3)
-         │
-         ├── telegramChannel.ts     → Telegram Bot API
-         ├── expoPushChannel.ts     → Expo Push (iOS/Android)
-         └── webPushChannel.ts      → Web Push (Browser)
-```
+O diagrama a seguir ilustra a distribuição de responsabilidades entre o servidor Vercel, o aplicativo móvel React Native e o bot do Telegram:
 
-### Camada 1 — Business Logic (L1)
+```mermaid
+flowchart TD
+    subgraph Server["Servidor Backend (Vercel Serverless / Cron)"]
+        Cron[Vercel Cron / api/notify.ts] --> Outbox[Outbox Engine & Tasks]
+        Outbox --> Dispatcher[Server Dispatcher]
+        Dispatcher --> GatePolicy{Quiet Hours / Gate Policy}
+        GatePolicy -->|Permitido| Channels[Channels Pool]
+    end
 
-**Localização:** `server/bot/tasks.ts`, `server/bot/_reminderHelpers.ts`, `server/bot/_adherenceHelpers.ts`
+    subgraph Transport["Canais de Transporte"]
+        Channels -->|Expo Push API| ExpoPush[APNs / FCM]
+        Channels -->|Telegram Bot API| TelegramAPI[Telegram Chat]
+        Channels -->|Web Push Protocol| WebPushAPI[Browser Service Worker]
+        Channels -->|Direct HTTP/2 APNs| AppleAPNs[Apple APNs Gateway]
+    end
 
-**Responsabilidade:** Decidir *quem* notificar e *o quê* (dados brutos de domínio).
+    subgraph MobileDevice["Dispositivo Móvel (iOS / Android)"]
+        ExpoPush -->|Push Remoto| MobileApp[Dosiq Mobile App]
+        AppleAPNs -->|Push-to-Start / Updates| LiveActivity[iOS Live Activity / Widget]
+        MobileApp -->|Agendamento Offline| NotifeeEngine[Notifee Alarm Engine]
+        NotifeeEngine -->|Alarme Nativo| LocalAlarms[Tela de Bloqueio / Alarmes]
+    end
 
-**Regras:**
-- ❌ **Zero formatting**: Nenhum emoji, Markdown, ou string formatada
-- ❌ **Zero presentation logic**: Nenhuma decisão de canal ou visual
-- ✅ **Dados brutos**: Envia objetos de domínio (`medicineName`, `dosage`, `time`, etc.)
-- ✅ **kind + data**: Sempre usa o contrato `{ kind, data }` para o dispatcher
-
-**Exemplo correto:**
-```js
-await dispatchNotification({
-  userId,
-  kind: 'dose_reminder',
-  data: { medicineName: 'Losartana', dosage: '50mg', time: '08:00', protocolId: 'proto-123' },
-  context: { correlationId: 'uuid-...' }
-})
+    subgraph UserInteraction["Superfícies de Interação"]
+        TelegramAPI -->|Botões Inline| TelegramUser[Chat Telegram]
+        LocalAlarms -->|Quick Actions| UserResponse[Ações: Tomei / Adiar / Pular]
+        LiveActivity -->|App Intents| UserResponse
+    end
 ```
 
-### Camada 2 — Presentation Layer (L2)
+### Navegação Rápida do Ecossistema
 
-**Localização:** `server/notifications/payloads/buildNotificationPayload.ts`, `server/notifications/payloads/_payloadSchemas.ts`, `server/notifications/payloads/_payloadBuilders.ts`
-
-**Responsabilidade:** Transformar dados brutos em experiência visual rica e validada.
-
-**Regras:**
-- ✅ **Centralização**: Mesma "voz" para todos os canais (Telegram, Push, Inbox)
-- ✅ **Markdown**: Centraliza escape via `escapeMarkdownV2` para `body`
-- ✅ **pushBody**: Sempre produz texto puro sem escapes para Push/Alerts (R-205)
-- ✅ **Validação Zod**: Todo payload é validado antes de sair (via `notificationPayloadSchema`)
-- ✅ **actions[]**: Botões interativos definidos aqui (take, snooze, skip, details)
-- ✅ **metadata whitelist**: Apenas campos em `metadataSchema` são permitidos
-
-**Contrato de saída (notificationPayloadSchema):**
-```js
-{
-  title: string,          // Texto puro — ex: "💊 Losartana (50mg)"
-  body: string,           // MarkdownV2 para Telegram / HTML Inbox
-  pushBody: string,       // Texto puro para Expo Push / alertas nativos (R-205)
-  deeplink: string|null,  // "dosiq://today?protocolId=..." ou null
-  actions: ActionItem[],  // Botões interativos: [{ id, label, params }]
-  metadata: {
-    kind: KindEnum,             // "dose_reminder" | "stock_alert" | ...
-    builtAt: string,            // ISO timestamp
-    correlationId?: string,     // UUID de rastreabilidade
-    details?: Record<string, unknown>,
-    navigation?: { screen: string, params: Record<string, unknown> },
-    protocolId?: string,
-    protocolIds?: string[],
-    medicineName?: string,
-    planId?: string,
-    planName?: string,
-    percentage?: number,
-    nudge?: string,
-  }
-}
-```
-
-### Camada 3 — Delivery Layer (L3)
-
-**Localização:** `server/notifications/dispatcher/dispatchNotification.ts`, `server/notifications/channels/`
-
-**Responsabilidade:** Adaptar o payload canônico para os canais nativos de entrega.
-
-**Regras:**
-- ❌ **Zero business logic**: Não decide conteúdo
-- ❌ **Zero formatting**: Não aplica Markdown (exceto adapter Telegram para `title` — ver nota)
-- ✅ **Multi-canal**: Telegram, Push, Inbox em paralelo
-- ✅ **Gate de supressão**: Quiet Hours e Notification Modes
-- ✅ **DLQ automático**: Se todos os canais falharem → auto-enfileira
-
-> **Nota (desvio aceito):** O `telegramChannel.ts` aplica `escapeMarkdownV2(payload.title)` antes do wrapping `*bold*`. Isso é necessário porque o `title` em L2 é construído com emojis + texto puro (não escapado). Documentado como exceção pragmática do Gate 4; a refatoração para que L2 entregue o title já escapado está planejada para uma wave futura.
+| Domínio | Responsabilidade Principal | Mecanismo Principal | Documentação de Referência |
+|---|---|---|---|
+| **Engine do Servidor** | Orquestração backend, payloads e retentativas. | Vercel Cron, Outbox Pattern e DLQ. | [`SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md) |
+| **Notificações Mobile** | Push remoto e alarmes críticos locais. | Expo Push SDK e Notifee Engine. | [`MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md) |
+| **Live Activities** | Estado contínuo da dose em tempo real. | iOS ActivityKit e Android Ongoing. | [`DOSE_LIVE_ACTIVITY.md`](DOSE_LIVE_ACTIVITY.md) |
+| **Bot Telegram** | Lembretes e gestão por chat. | Telegram Bot API e Callbacks. | [`TELEGRAM_BOT.md`](TELEGRAM_BOT.md) |
 
 ---
 
-## 📦 Payload por Kind
+## 📦 Tipos de Notificação
 
-| Kind | L1 (dados brutos) | L2 (resultado) |
-|:-----|:-----------------|:--------------|
-| `dose_reminder` | `medicineName, time, dosage, protocolId` | title + body formatado + action `take/snooze/skip` |
-| `dose_reminder_by_plan` | `planName, planId, doses[], hour` | título do plano + lista de doses + action `take_plan` |
-| `dose_reminder_misc` | `doses[], hour, protocolIds[]` | "Suas doses agora" + lista + action `take_misc` |
-| `stock_alert` | `medicineName, remaining, daysRemaining` | alerta de estoque + deeplink `dosiq://stock` |
-| `daily_digest` | `firstName, pendingCount, medicines[]` | resumo rico do dia |
-| `adherence_report` | `firstName, percentage, comparison{}` | storytelling + emoji de tendência |
-| `monthly_report` | — | fechamento mensal |
-| `titration_alert` | `medicineName, currentStage, nextStage` | aviso de titulação |
-| `prescription_alert` | `medicineName, endDate, daysRemaining` | alerta de prescrição |
-| `dlq_digest` | `failedCount, failures[]` | resumo admin de falhas |
+Cada evento de comunicação no Dosiq é identificado por um `kind` estrito. O esquema Zod em `@dosiq/core` e no servidor valida os dados de entrada de cada notificação antes do envio.
 
----
-
-## 🧩 Como Adicionar um Novo Kind
-
-Siga estes 6 passos para adicionar um novo tipo de notificação:
-
-### 1. Schema de dados (L1 → L2)
-
-Em `server/notifications/payloads/_payloadSchemas.ts`:
-```ts
-// Adicione o schema dos dados brutos que L1 enviará
-export const myNewKindDataSchema = z.object({
-  field1: z.string(),
-  field2: z.number().optional(),
-});
-
-// Adicione ao kindSchema
+```typescript
+// server/notifications/payloads/_payloadSchemas.ts
 export const kindSchema = z.enum([
-  // ... existing kinds ...
-  'my_new_kind', // ← aqui
+  'dose_reminder',
+  'dose_reminder_by_plan',
+  'dose_reminder_misc',
+  'stock_alert',
+  'stock_expiry_alert',
+  'daily_digest',
+  'adherence_report',
+  'weekly_adherence',
+  'monthly_report',
+  'titration_alert',
+  'prescription_alert',
+  'dlq_digest'
 ]);
 ```
 
-### 2. Builder de apresentação (L2)
+### Catálogo de Notificações
 
-Em `server/notifications/payloads/_payloadBuilders.ts` (ou direto no switch do `buildNotificationPayload.ts`):
-```ts
-export function buildMyNewKindPayload(data, context) {
-  const parsed = myNewKindDataSchema.safeParse(data);
-  if (!parsed.success) throw new Error(`[L2] my_new_kind data inválido`);
-  const d = parsed.data;
-
-  return {
-    title: `Título limpo sem escapes`,
-    body: `*Bold* e _itálico_ para o Telegram`,
-    pushBody: `Texto puro para push notifications`,
-    deeplink: `dosiq://minha-rota`,
-    actions: [{ id: 'details', label: '📋 Ver detalhes', params: { field1: d.field1 } }],
-  };
-}
-```
-
-### 3. Registrar no switch
-
-Em `server/notifications/payloads/buildNotificationPayload.ts`, dentro do `switch(kind)`:
-```ts
-case 'my_new_kind':
-  specific = buildMyNewKindPayload(data, context);
-  break;
-```
-
-### 4. Metadados de navegação
-
-Em `buildMetadata()` (mesmo arquivo), adicionar ao mapeamento de navegação se necessário:
-```ts
-} else if (kind === 'my_new_kind') {
-  navigation.screen = 'minha-tela';
-  navigation.params = { field1: data.field1 };
-}
-```
-
-### 5. Labels no frontend
-
-Em `apps/web/src/services/api/dlqService.ts`, adicionar ao `formatNotificationType`:
-```ts
-my_new_kind: 'Meu Novo Tipo',
-```
-
-### 6. Teste unitário
-
-Em `server/notifications/payloads/__tests__/buildNotificationPayload.test.ts`:
-```ts
-it('my_new_kind — gera payload correto', () => {
-  const payload = buildNotificationPayload({
-    kind: 'my_new_kind',
-    data: { field1: 'test', field2: 42 },
-    context: { correlationId: 'test-id' }
-  });
-  expect(payload.title).toBeDefined();
-  expect(payload.pushBody).not.toMatch(/[*_]/); // Sem Markdown no pushBody
-  expect(payload.metadata.kind).toBe('my_new_kind');
-});
-```
-
----
-
-## 🔌 Como Adicionar um Novo Canal
-
-Siga estes 5 passos para adicionar um novo canal de entrega (ex: WhatsApp, Email):
-
-### 1. Criar o channel adapter
-
-Em `server/notifications/channels/whatsappChannel.ts`:
-```ts
-/**
- * Canal WhatsApp — Adapter L3
- * Recebe payload canônico (L2) e adapta para a API do WhatsApp.
- * Nunca formata conteúdo — apenas mapeia campos.
- */
-export async function sendWhatsappNotification({ userId, payload, context, repositories }) {
-  const correlationId = context?.correlationId || 'unknown';
-
-  // Adapter: mapeia payload canônico → formato WhatsApp
-  const message = {
-    to: await getWhatsappContact(userId),
-    text: payload.pushBody,  // ← usa pushBody (texto puro), não body (Markdown)
-    // payload.actions → botões rápidos do WhatsApp (se suportado)
-  };
-
-  // ... enviar e retornar resultado padronizado
-  return {
-    channel: 'whatsapp',
-    success: true,
-    // ...
-  };
-}
-```
-
-### 2. Registrar no dispatcher
-
-Em `server/notifications/policies/resolveChannelsForUser.ts`:
-```ts
-// Adicionar à lista de canais disponíveis
-if (settings.channel_whatsapp_enabled && user.whatsapp_number) {
-  channels.push({ type: 'whatsapp', adapter: sendWhatsappNotification });
-}
-```
-
-### 3. Preferência do usuário
-
-Na tabela `user_settings` (Supabase), adicionar:
-```sql
-ALTER TABLE user_settings ADD COLUMN channel_whatsapp_enabled boolean DEFAULT false;
-```
-
-### 4. Testar o adapter
-
-Criar `server/notifications/channels/whatsappChannel.test.ts` com mocks do client e repositório.
-
-### 5. Documentar
-
-Adicionar o canal às tabelas desta documentação (Adaptadores na seção L3, e Canais Explícitos em Preferências).
-
----
-
-## 🔄 Retry & DLQ
-
-### Fluxo de Retry (`context.isRetry`)
-
-Quando uma notificação falha em todos os canais, ela é enfileirada na `failed_notification_queue` (DLQ). Ao ser re-despachada:
-
-```js
-// api/admin/_handlers/retry.ts
-await dispatchNotification({
-  userId,
-  kind: entry.notification_type,
-  data: entry.payload,
-  context: {
-    correlationId: entry.id,
-    isRetry: true,           // ← sinaliza ao L2 que é um reenvio
-    originalNotificationId: entry.id,
-  }
-});
-```
-
-O builder L2 usa `context.isRetry` para:
-- Adicionar prefixo `🔄 Reenvio:` ao título
-- Registrar nos metadados que é um retry
-
-> **Regra:** `context.isRetry` é o ÚNICO mecanismo de retry. `data.isRetry` foi removido no Gate 3 (AP-135).
-
----
-
-## 📨 Tipos de Tarefas Agendadas (`server/bot/tasks.ts`)
-
-As tarefas são disparadas por um cron central (`/api/notify`) e processadas com consciência de **Timezone** e **Preferências do Usuário**.
-
-| Tarefa | Gatilho | Descrição |
-|--------|---------|-----------| 
-| **Dose Reminders** | A cada minuto | Verifica doses agendadas, aplica agrupamento e quiet hours. |
-| **Stock Alerts** | 09:00 (Local) | Verifica predição de estoque e alerta se < 7 dias. |
-| **Daily Digest** | `digest_time` | Resumo completo do dia para usuários em `digest_morning` mode. |
-| **Adherence Report** | Domingos | Relatório semanal com storytelling de engajamento. |
-| **Monthly Report** | Dia 1º (Local) | Fechamento mensal de adesão e economia gerada. |
-| **Titration Alert** | 08:00 (Local) | Alerta quando um protocolo atinge o dia de troca de dose. |
-| **Prescription Alert**| Eventual | Notifica quando uma receita está próxima de vencer. |
-
----
-
-## ⚙️ Controle e Preferências (Wave N2)
-
-O usuário tem controle granular sobre a experiência de notificações em `user_settings`:
-
-### Modos de Notificação
-- **Realtime**: Envio imediato (com agrupamento N1).
-- **Digest Morning**: Suprime individuais e envia um único resumo matinal.
-- **Silent**: Apenas Inbox (sem push/Telegram).
-
-### Quiet Hours (Não Me Incomode)
-Define uma janela (ex: 22:00 às 07:00) onde as notificações externas são suspensas, sendo apenas registradas na Inbox.
-
-### Canais Explícitos
-- `channel_mobile_push_enabled`
-- `channel_web_push_enabled`
-- `channel_telegram_enabled`
-
----
-
-## 🤖 Bot Telegram: Interface Conversacional
-
-O Telegram funciona como um canal de entrega (Push) e uma interface de ação (Bot).
-
-### Comandos Principais
-- `/start <token>`: Vincula a conta do app ao chat do Telegram.
-- `/status`: Resumo do tratamento atual.
-- `/hoje`: Cronograma de doses para o dia.
-- `/estoque`: Status detalhado do armário de medicamentos.
-- `/registrar`: Fluxo guiado para log manual de doses.
-
-### Interação por Callbacks
-As notificações de dose no Telegram incluem botões interativos:
-- **✅ Tomar**: Registra o plano/dose instantaneamente (usa RPCs atômicos).
-- **⏭️ Pular**: Ignora a dose com registro de motivo.
-- **⏰ Adiar**: Re-agenda o lembrete para 30 minutos depois.
-
----
-
-## 🛠️ Confiabilidade e Observabilidade
-
-### Resiliência & DLQ
-O sistema possui uma camada de proteção contra perda de notificações críticas:
-
-- **Captura Automática (Auto-DLQ)**: O Dispatcher (L3) monitora o sucesso de cada canal. Se todos os canais físicos falharem, a notificação é automaticamente enfileirada na `failed_notification_queue`.
-- **Manual Retry Proxy**: O Admin Panel permite o reenvio manual de falhas. Esse reenvio utiliza o Dispatcher, garantindo que o payload seja re-processado pela L2, mantendo consistência visual.
-- **Roteamento de Sistema**: Notificações para administradores utilizam o `SYSTEM_USER_ID`, sendo roteadas automaticamente para o chat de administração.
-
-### Rastreabilidade
-- **Correlation ID**: Todo dispatch gera um UUID rastreável nos logs da Vercel e Supabase.
-- **Status Tracking**: `notification_log` registra `status` (sent, failed, delivered, opened).
-
-### Agrupamento Inteligente (Wave N1)
-Para evitar spam de notificações (múltiplos medicamentos no mesmo horário), o sistema aplica **Partição por Plano**:
-- **Plano de Tratamento**: ≥2 doses de um plano → 1 notificação nomeada ("Plano Cardio (4 meds)").
-- **Sobra Consolidada**: Doses avulsas ou de planos com 1 dose → 1 notificação "Suas doses agora".
-- **Dose Individual**: Apenas se for a única dose no minuto.
-
----
-
-## 📱 Superfícies on-device (mobile / Notifee)
-
-Independente do motor server-side acima: o app mobile renderiza notificações **locais** via Notifee
-(alarmes + superfície de estado contínuo). São canais Android **no device**, não entregas do dispatcher.
-
-### Canais Android (Notifee)
-
-| Canal | Uso | Som | Observação |
+| Kind | Disparador (Trigger) | Escopo e Conteúdo | Canais Suportados |
 |---|---|---|---|
-| `dose-alarm-v3` | Alarme de dose (padrão) | sim | imutável ([[R-261]]); bumpar id ao trocar som |
-| `dose-alarm-critical-v2` | Alarme de dose **crítica** | sim | full-screen / loop |
-| `dose-activity-v1` | **Superfície de estado contínuo** (épico 039) | **não** (DEFAULT) | ongoing, sem som — extensão visual do alarme crítico |
-
-> **iOS não tem channels** (conceito Android). Usa *notification categories* (`ensureAlarmCategories`,
-> R-257) p/ os botões de ação.
->
-> **Legados/órfãos** (bumps antigos — limpeza na F5 do 039 via `deleteChannel`): `dose-alarm`,
-> `dose-alarm-v1`, `dose-alarm-v2`, `dose-alarm-critical-v1`, `dose-activity-spike` (dev).
-
-### Superfície de estado contínuo da dose (épico 039)
-
-A dose aparece como **uma notificação persistente que transiciona de estado** (later→upcoming→now→
-late→done), consumindo a máquina de estados do core (`@dosiq/core` — CON-029). A camada mobile
-(`apps/mobile/src/platform/doseActivity/`) só APRESENTA (CON-030). Server-free.
-
-- **Sem toggle** — é extensão do alarme crítico (aparece p/ doses de tratamentos com `critical_alarm`).
-- **Cor↔rótulo por estado**, countdown contínuo (upcoming+now), card `done` verde com auto-dismiss.
-- **Registrar** abre a modal bulk (sítio do injetável); **Adiar** = soneca canônica.
-- Contrato completo: `.agent/memory/contracts/mobile_and_platform/CON-029.md` + `CON-030.md`;
-  spec `plans/specs/039-dose-state-machine/` (local-only, não versionado).
+| `dose_reminder` | Horário agendado da dose. | Alerta individual de dose para um medicamento. | Mobile Push, Telegram, Alarme Local. |
+| `dose_reminder_by_plan` | Horário agendado do plano. | Lembrete consolidado de doses de um plano de tratamento. | Mobile Push, Telegram. |
+| `dose_reminder_misc` | Horário agendado avulso. | Agrupamento de doses individuais no mesmo minuto. | Mobile Push, Telegram. |
+| `stock_alert` | Verificação diária (09:00). | Alerta de estoque baixo (restante < 7 dias de uso). | Mobile Push, Telegram, Web Push. |
+| `stock_expiry_alert` | Verificação diária (09:00). | Alerta de validade pós-abertura (ex: colírios, insulinas). | Mobile Push, Telegram, Web Push. |
+| `daily_digest` | Horário do resumo diário. | Resumo matinal consolidando todas as doses do dia. | Mobile Push, Telegram, Web Push. |
+| `adherence_report` | Fechamento semanal (Domingo). | Percentual de adesão da semana e tendência. | Mobile Push, Telegram. |
+| `monthly_report` | 1º dia do mês (09:00). | Relatório mensal completo de tratamento e economia. | Mobile Push, Telegram. |
+| `titration_alert` | Troca de etapa do protocolo. | Instrução de transição de dose ou novo medicamento. | Mobile Push, Telegram. |
+| `prescription_alert` | Vencimento de receita. | Aviso de vencimento próximo da receita médica. | Mobile Push, Telegram, Web Push. |
+| `dlq_digest` | Evento administrativo (10:00). | Resumo de falhas na fila DLQ para administradores. | Telegram. |
 
 ---
 
-## 🔗 Documentação Relacionada
+## 📡 Canais de Entrega
 
-- `plans/backlog-notifications/NOTIFICATIONS_ARCHITECTURE_CONSOLIDATION.md` (local-only, não versionado) — Spec do projeto de consolidação
-- [`docs/architecture/DATABASE.md`](DATABASE.md) - Tabelas `notification_log` e `user_settings`
-- [`server/BOT README.md`](../../server/BOT%20README.md) - Guia de desenvolvimento local do bot
-- Épico 039 (superfície de estado contínuo): contratos CON-029/CON-030 em `.agent/memory/contracts/mobile_and_platform/`
+O sistema suporta cinco canais de transporte com características operacionais distintas:
+
+```mermaid
+flowchart LR
+    Dispatcher[Server Dispatcher / Notifee Scheduler] --> ChannelSelect{Seleção de Canal}
+
+    ChannelSelect -->|Mobile Push| ExpoChannel[Expo Push Service]
+    ChannelSelect -->|Local Alarm| NotifeeChannel[Notifee Native Alarm]
+    ChannelSelect -->|Web Push| WebPushChannel[Web Push VAPID Protocol]
+    ChannelSelect -->|Telegram| TelegramChannel[Telegram Bot API]
+    ChannelSelect -->|Live Activity| APNsChannel[APNs Direct HTTP/2]
+
+    ExpoChannel --> iOSPush[iOS APNs] & AndroidPush[Android FCM]
+    NotifeeChannel --> DeviceSO[SO Android / iOS Offline]
+    WebPushChannel --> BrowserSW[Service Worker Browser]
+    TelegramChannel --> TelegramApp[App Telegram]
+    APNsChannel --> ActivityKit[Lock Screen Dynamic Island]
+```
+
+### Matriz de Canais de Transporte
+
+| Canal | Plataforma Alvo | Provedor / API | Funciona Offline? | Documento Detalhado |
+|---|---|---|---|---|
+| **Mobile Push** | iOS / Android | Expo Push SDK (APNs / FCM) | Não | [`MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md) |
+| **Alarmes Locais** | iOS / Android | Notifee Engine (Nativo) | **Sim** | [`MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md) |
+| **Web Push** | PWA / Navegadores | Web Push API (VAPID Keys) | Não | [`SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md) |
+| **Telegram** | Cross-platform | Telegram Bot API | Não | [`TELEGRAM_BOT.md`](TELEGRAM_BOT.md) |
+| **Live Activities** | iOS 16.2+ / Android | APNs Direct / Notifee Surface | Parcial (APNs / Trigger) | [`DOSE_LIVE_ACTIVITY.md`](DOSE_LIVE_ACTIVITY.md) |
+
+---
+
+## 🔄 Fluxo Geral de Notificação
+
+O fluxo de notificação inicia no evento de domínio ou na rotina de agendamento e termina na confirmação da ação pelo usuário.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Event as Domain Event / Cron
+    participant Dispatcher as Server Dispatcher
+    participant Gate as Consent & Quiet Hours Gate
+    participant Channel as Channel Adapter
+    participant Device as Target Device
+    participant User as Paciente / Usuário
+
+    Event->>Dispatcher: dispatchNotification({ userId, kind, data })
+    Dispatcher->>Gate: Avalia consentimento LGPD e Quiet Hours
+    alt Notificação Bloqueada
+        Gate-->>Dispatcher: Retorna suprimido (registra em log)
+    else Notificação Permitida
+        Gate-->>Dispatcher: Retorna canais válidos
+        Dispatcher->>Channel: Executa envios em paralelo (Promise.allSettled)
+        Channel->>Device: Entrega mensagem ou alarme local
+        Device->>User: Exibe alerta visual / sonoro
+        User->>Device: Toca em botão de ação (Tomei / Adiar / Pular)
+        Device->>Dispatcher: Registra confirmação e atualiza estoque
+    end
+```
+
+### Exemplo de Entrada no Dispatcher
+
+O envio de qualquer notificação pelo backend utiliza o ponto de entrada único `dispatchNotification`:
+
+```typescript
+// server/notifications/dispatcher/dispatchNotification.ts
+export async function dispatchNotification({
+  userId,
+  kind,
+  data,
+  channels,
+  context,
+  repositories
+}: DispatchNotificationParams) {
+  // 1. Validação de esquema
+  const parsed = dispatchInputSchema.safeParse({ userId, kind, channels: channels ?? [] })
+  if (!parsed.success) {
+    throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
+  }
+
+  // 2. Verificação de consentimento e Quiet Hours
+  const settings = await repositories.preferences.getSettingsByUserId(userId)
+  if (isConsentSuppressed(settings)) {
+    return normalizeChannelResults([])
+  }
+
+  // 3. Constrói o payload padronizado e dispara nos canais ativos
+  const finalPayload = buildNotificationPayload({ kind, data, context })
+  // ... (envio em paralelo e registro em log/DLQ)
+}
+```
+
+---
+
+## ⚙️ Preferências e Janelas do Usuário
+
+O Dosiq respeita as configurações de privacidade e momento do usuário armazenadas na tabela `user_settings`. As regras são avaliadas antes da entrega de mensagens em tempo real.
+
+```typescript
+// server/notifications/utils/notificationGate.ts
+export function shouldSendNow({ mode, quietHoursStart, quietHoursEnd, currentHHMM }: ShouldSendNowParams): boolean {
+  if (mode === 'silent') return false
+  if (mode === 'digest_morning') return false
+  if (isInQuietHours(currentHHMM, quietHoursStart, quietHoursEnd)) return false
+  return true
+}
+```
+
+### Configurações de Notificação
+
+| Configuração | Descrição | Comportamento no Sistema |
+|---|---|---|
+| **Modo Realtime** | Envio imediato das notificações. | Entrega contínua respeitando Quiet Hours. |
+| **Modo Digest Morning** | Resumo único matinal. | Suprime notificações individuais e envia um digest às 08:00. |
+| **Modo Silent** | Apenas registro na Inbox. | Desativa pushes remotos e mantém apenas o histórico no app. |
+| **Quiet Hours** | Janela de silêncio (ex: 22:00 às 07:00). | Bloqueia alertas externos; trata janelas que cruzam a meia-noite. |
+| **Flags por Canal** | Ativação individual por canal. | Permite ligar/desligar `mobile_push`, `web_push` ou `telegram`. |
+
+---
+
+## 🛡️ Garantias Globais do Ecossistema
+
+O ecossistema de notificações do Dosiq garante a proteção de dados, a rastreabilidade das operações e a adaptação temporal em todas as plataformas.
+
+### 🔒 Privacidade e Modo Discreto (`discreet: true`)
+A saúde do paciente é tratada com sigilo por padrão. Quando o usuário ativa a opção de privacidade ou para tratamentos marcados como discretos, o sistema aplica regras de ofuscação:
+- **Telas de Bloqueio:** O nome exato do medicamento é substituído por termos neutros (ex: `"💊 Lembrete de Dose"`).
+- **Canais Nativos:** No Android (Notifee), o alarme utiliza `AndroidVisibility.PRIVATE`. No iOS, as Live Activities utilizam o atributo `discreet: true` em `DoseActivityAttributes`.
+
+### 🔍 Rastreabilidade Fim a Fim (`correlationId`)
+Toda requisição de notificação gera ou propaga um identificador único de correlação (`correlationId` em formato UUID):
+- **Ciclo de Vida:** O ID nasce na chamada do dispatcher e navega pelos adaptadores de canais, logs de auditoria no Supabase (`notification_log`) e eventos da DLQ (`failed_notification_queue`).
+- **Diagnóstico:** Permite que engenheiros e administradores rastreiem o percurso exato de uma notificação através dos logs da Vercel e da plataforma Supabase.
+
+### 🌐 Consciência de Fuso Horário (Timezone Awareness)
+O agendamento e o disparo consideram o fuso horário do usuário (`user_settings.timezone`), com padrão para `America/Sao_Paulo`:
+- **Cálculo de Janelas:** Funções como `isInQuietHours` convertem os horários locais para minutos do dia, suportando janelas noturnas que cruzam a meia-noite (ex: `22:00` às `07:00`).
+- **Outbox Determinístico:** A geração de chaves temporais no Outbox Pattern (`periodKey`) garante que resumos diários (`YYYY-MM-DD`) e semanais (`YYYY-Www`) sejam entregues no horário local correto.
+
+---
+
+## 🔗 Central de Documentação (Deep-Dives)
+
+Para entender os detalhes técnicos de implementação de cada componente, acesse os guias especializados:
+
+- 🖥️ **Backend & Server Engine:** [`docs/architecture/SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md)  
+  *Cobre a engine de 3 camadas, Vercel Cron, Outbox Pattern, Dead Letter Queue (DLQ), deduplicação e conexão HTTP/2 direta com APNs.*
+
+- 📱 **Mobile Push & Alarmes Locais:** [`docs/architecture/MOBILE_NOTIFICATIONS.md`](MOBILE_NOTIFICATIONS.md)  
+  *Cobre o registro de tokens via Expo SDK, permissões contextuais, canais Android e o agendamento offline de alarmes com Notifee.*
+
+- 🏝️ **Live Activities & Ongoing Surface:** [`docs/architecture/DOSE_LIVE_ACTIVITY.md`](DOSE_LIVE_ACTIVITY.md)  
+  *Cobre a renderização de widgets em SwiftUI (iOS ActivityKit), App Intents, Push-to-Start via APNs e a notificação persistente no Android.*
+
+- 🤖 **Bot Telegram:** [`TELEGRAM_BOT.md`](TELEGRAM_BOT.md)  
+  *Cobre a integração com o Telegram, comandos conversacionais, registro rápido de doses e respostas a callbacks inline.*

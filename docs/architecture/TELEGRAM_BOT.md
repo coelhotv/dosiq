@@ -1,7 +1,7 @@
 ---
 title: "Bot Telegram"
-description: "Documentação de arquitetura, fluxos conversacionais, comandos e integração de estoque do bot Telegram do Dosiq."
-version: "4.0.0"
+description: "Arquitetura técnica, pipeline de middleware, catálogo de comandos, fluxos conversacionais, callbacks interativos e integração com a engine de servidor do bot Telegram no Dosiq."
+version: "4.1.0"
 status: active
 category: architecture
 audience:
@@ -9,515 +9,963 @@ audience:
   - agent
 tags:
   - telegram-bot
+  - node-telegram-bot-api
+  - server-engine
   - stock-control
-  - conversation
+  - chatbot-ai
 created_at: "2026-02-01"
-updated_at: "2026-04-02"
+updated_at: "2026-07-30"
+epic: "049"
 ---
 
-# 🤖 Bot Telegram - Dosiq
+# 🤖 Bot Telegram — Dosiq Engine
 
-Documentação consolidada do bot Telegram do Dosiq, incluindo arquitetura, comandos, sistema de notificações e desenvolvimentos recentes.
+Documentação de arquitetura técnica do bot Telegram do Dosiq. Cobre a estrutura 100% TypeScript pós-épico 040, o pipeline de middleware, o ciclo de vida dos comandos, a gestão interativa de doses e a integração com os serviços de servidor.
 
 ---
 
 ## 📋 Visão Geral
 
-O bot Telegram do Dosiq é uma interface de comunicação que permite aos usuários gerenciar seus medicamentos, receber lembretes de doses e monitorar estoque diretamente pelo Telegram.
+O bot Telegram do Dosiq oferece uma interface conversacional e reativa para a gestão diária de tratamentos de saúde. O bot permite ao paciente registrar doses, visualizar o cronograma do dia, receber lembretes automáticos e monitorar o nível de estoque sem abrir a aplicação web.
 
-> Em `v4.0.0`, os fluxos de compra e consumo de estoque do bot passaram a usar os mesmos RPCs transacionais da aplicação web (`create_purchase_with_stock` e `consume_stock_fifo`), eliminando a mutação manual de `stock` no cliente do bot.
+Desde o épico 040, a base de código do servidor e do bot foi totalmente migrada para **TypeScript 5.9**. O bot opera em dois modos distintos: **Polling Mode** (para desenvolvimento local via `server/index.ts`) e **Webhook Mode** (em produção serverless na Vercel via `api/telegram.ts`).
 
-### Propósito
+### Propósitos Principais
 
-- **Lembretes de doses**: Notificações automáticas nos horários agendados
-- **Gerenciamento de estoque**: Alertas de estoque baixo ou zerado
-- **Registro de doses**: Interface conversacional para registrar doses tomadas
-- **Relatórios de adesão**: Acompanhamento semanal e mensal do tratamento
-- **Titulação**: Alertas para transição de etapas de titulação
+- **Lembretes Ativos**: Notificações diretas com botões inline para confirmação rápida.
+- **Registro Interativo**: Baixa automática de estoque com consumo via RPC PostgreSQL (`consume_stock_fifo`).
+- **Ancoragem de Doses**: Registro acoplado ao motor de `dose_instances` para calculadoras de adesão e streaks.
+- **Monitoramento de Estoque**: Alertas preditivos baseados em consumo diário calculados pela biblioteca `@dosiq/core`.
+- **Assistente Clínico IA**: Integração nativa com LLM via Groq SDK (`meta-llama/llama-4-scout-17b-16e-instruct`) com isolamento de contexto do paciente.
 
-### Componentes Principais
+### Visão Geral da Arquitetura
 
-| Componente | Descrição |
-|------------|-----------|
-| **Commands** | Handlers para comandos de usuário (`/start`, `/status`, etc.) |
-| **Callbacks** | Handlers para botões inline interativos |
-| **Tasks** | Tarefas agendadas (lembretes, alertas, relatórios) |
-| **Formatters** | Utilitários de formatação de mensagens |
-| **DLQ** | Dead Letter Queue para notificações falhadas |
+O diagrama abaixo ilustra o fluxo de dados desde o recebimento de uma mensagem do Telegram até a execução nos handlers e persistência no banco de dados.
+
+```mermaid
+flowchart TD
+    subgraph Clients["📱 Telegram API & Clients"]
+        TGUser["Usuário Telegram"]
+        TGServer["Servidores Telegram"]
+    end
+
+    subgraph Entrypoints["🚀 Pontos de Entrada"]
+        Polling["server/index.ts (Polling Local)"]
+        Webhook["api/telegram.ts (Serverless Webhook)"]
+    end
+
+    subgraph CoreEngine["⚙️ Bot Engine Core"]
+        Factory["BotFactory (server/bot/bot-factory.ts)"]
+        Adapter["BotAdapter (api/telegram.ts)"]
+        
+        subgraph Pipeline["🛡️ Pipeline de Middleware"]
+            UR["userResolver (withUser / withUserCallback)"]
+            CW["commandWrapper / callbackWrapper"]
+        end
+
+        subgraph Handlers["💬 Handlers de Execução"]
+            Cmds["Commands (/hoje, /estoque, /status, ...)\nserver/bot/commands/*.ts"]
+            DoseActions["Callbacks de Dose (Tomar/Adiar/Pular)\nserver/bot/callbacks/doseActions.ts"]
+            ConvCallbacks["Callbacks Conversacionais\nserver/bot/callbacks/conversational.ts"]
+            ChatbotService["Chatbot Server Service (Groq IA)\nserver/bot/services/chatbotServerService.ts"]
+        end
+    end
+
+    subgraph DataLayer["💾 Camada de Dados e Serviços"]
+        CoreLib["@dosiq/core\n(Cálculo de Consumo / Dose Instances)"]
+        Supabase["Supabase PostgreSQL\n(user_settings / protocols / medicine_logs)"]
+        Dispatcher["NotificationDispatcher\n(server/bot/utils/dispatcherFactory.ts)"]
+    end
+
+    TGUser -->|Envia mensagem / clica em botão| TGServer
+    TGServer -->|Long Polling| Polling
+    TGServer -->|HTTP POST Webhook| Webhook
+
+    Polling --> Factory
+    Webhook --> Adapter
+
+    Factory --> Pipeline
+    Adapter --> Pipeline
+
+    UR --> CW
+    CW --> Cmds
+    CW --> DoseActions
+    CW --> ConvCallbacks
+    CW --> ChatbotService
+
+    Cmds --> CoreLib
+    Cmds --> Supabase
+    DoseActions --> Supabase
+    DoseActions --> CoreLib
+    ChatbotService --> CoreLib
+    ChatbotService --> Supabase
+    
+    Polling --> Dispatcher
+    Dispatcher --> Supabase
+```
 
 ---
 
-## 📁 Arquitetura de Arquivos
+## 📁 Árvore de Arquivos (Atualizada)
+
+A estrutura abaixo reflete a organização interna dos módulos do bot no diretório `server/bot/`. Todos os arquivos são implementados nativamente em TypeScript (`.ts`).
 
 ```
-server/
-├── index.ts                    # Entry point (desenvolvimento local)
-├── bot/
-│   ├── commands/               # Handlers de comandos
-│   │   ├── start.ts           # /start - Vincular conta
-│   │   ├── status.ts          # /status - Protocolos ativos
-│   │   ├── estoque.ts         # /estoque - Níveis de estoque
-│   │   ├── hoje.ts            # /hoje - Cronograma do dia
-│   │   ├── proxima.ts         # /proxima - Próxima dose
-│   │   ├── historico.ts       # /historico - Histórico de doses
-│   │   ├── ajuda.ts           # /ajuda - Ajuda
-│   │   ├── registrar.ts       # /registrar - Registrar dose
-│   │   ├── adicionar_estoque.ts # /adicionar_estoque
-│   │   └── protocols.ts       # /pausar, /retomar
-│   ├── callbacks/
-│   │   ├── conversational.ts  # Fluxos conversacionais
-│   │   └── doseActions.ts     # Botões de dose (Tomar/Pular)
-│   ├── bot-factory.ts         # Factory do bot
-│   ├── correlationLogger.ts   # UUID tracing
-│   ├── health-check.ts        # Health check
-│   ├── inlineQuery.ts         # Busca inline
-│   ├── logger.ts              # Logger estruturado
-│   ├── scheduler.ts           # Agendador de tarefas
-│   ├── state.ts               # Gerenciamento de sessão
-│   └── tasks.ts               # Tarefas do cron
-├── services/
-│   ├── supabase.ts            # Cliente Supabase
-│   ├── deadLetterQueue.ts     # DLQ PostgreSQL
-│   ├── notificationMetrics.ts # Métricas em memória
-│   ├── notificationDeduplicator.ts # Controle de duplicados
-│   ├── protocolCache.ts       # Cache de protocolos
-│   └── sessionManager.ts      # Gerenciador de sessões
-└── utils/
-    ├── formatters.ts          # Formatação de mensagens
-    ├── retryManager.ts        # Retry helpers
-    └── timezone.ts            # Utilitários de timezone
-
-api/
-├── telegram.ts                # Webhook handler
-├── notify.ts                  # Cron job endpoint
-├── admin.ts                   # Painel admin principal (DLQ/feedbacks/nudges)
-└── admin/
-    └── _handlers/
-        ├── retry.ts           # Retry endpoint do DLQ
-        └── discard.ts         # Discard endpoint do DLQ
-
-apps/web/src/
-└── views/
-    └── admin/
-        └── DLQAdmin.tsx       # Interface admin DLQ
+server/bot/
+├── __tests__/                   # Suíte de testes automatizados do bot
+├── _adherenceHelpers.ts         # Processamento de dados e relatórios de adesão
+├── _reminderHelpers.ts          # Disparo de lembretes e agendamentos de doses
+├── alerts.ts                    # Agendadores de alertas (estoque, titulação, relatórios)
+├── bot-factory.ts               # Factory para instanciação e validação do bot Telegram
+├── callbacks/                   # Handlers de botões inline interativos
+│   ├── __tests__/              # Testes unitários de callbacks
+│   ├── conversational.ts       # Fluxos conversacionais multi-etapas (/registrar)
+│   └── doseActions.ts          # Ações diretas em lembretes (Tomar, Adiar, Pular)
+├── commands/                    # Handlers dos 11 comandos de texto do bot
+│   ├── adicionar_estoque.ts    # /adicionar_estoque e atalho /repor
+│   ├── ajuda.ts                # /ajuda - Menu de instrução
+│   ├── chatbot.ts              # /chatbot - Consulta com assistente clínico IA
+│   ├── estoque.ts              # /estoque - Saldo e previsões de término
+│   ├── historico.ts            # /historico - Registros recentes de doses
+│   ├── hoje.ts                 # /hoje - Cronograma de doses do dia
+│   ├── protocols.ts            # /protocols, /pausar e /retomar tratamentos
+│   ├── proxima.ts              # /proxima - Detalhes do próximo horário
+│   ├── registrar.ts            # /registrar - Ativação do fluxo conversacional
+│   ├── start.ts                # /start - Vinculação de conta via token
+│   └── status.ts               # /status - Listagem de protocolos ativos
+├── correlationLogger.ts         # Logger com suporte a UUIDs de correlação (AsyncLocalStorage)
+├── doseInstanceScheduler.ts     # Engine de geração diária da tabela dose_instances
+├── health-check.ts              # Verificação de integridade do bot e dependências
+├── inlineQuery.ts               # Suporte a buscas inline no chat do Telegram
+├── logger.ts                    # Logger estruturado baseado em níveis (INFO/DEBUG/ERROR)
+├── middleware/                  # Camada de interceptação e autenticação
+│   ├── commandWrapper.ts       # Tratamento de exceções e padronização de respostas
+│   └── userResolver.ts         # Mapeamento do Telegram Chat ID para Supabase User UUID
+├── scheduler.ts                 # Configuração de cron jobs do servidor em background
+├── services/                    # Serviços especializados do bot
+│   ├── chatbotServerService.ts # Engine de integração com Groq SDK e contexto do paciente
+│   └── stockTrackingGuard.ts   # Guard de proteção para modo de uso "dose-only"
+├── state.ts                     # Interface de persistência de sessões de usuário
+├── tasks.ts                     # Tarefas executadas periodicamente pelo scheduler
+└── utils/                       # Utilitários de apoio do bot
+    ├── __tests__/              # Testes de utilitários
+    ├── commandWrapper.ts       # Utilitário legado de suporte a comandos
+    ├── dispatcherFactory.ts    # Factory do NotificationDispatcher unificado
+    ├── notificationHelpers.ts  # Formatadores de saudações e mensagens motivacionais
+    └── partitionDoses.ts       # Agrupamento de doses por horário
 ```
 
 ---
 
-## 📨 Sistema de Notificações
+## ⚙️ Inicialização e Bot Factory
 
-### Arquitetura de 3 Fases
+A inicialização do bot depende do ambiente de execução. Em desenvolvimento local, `server/index.ts` inicializa um processo em modo polling contínuo.
 
-O sistema de notificações implementa uma arquitetura resiliente em 3 fases:
+### BotFactory (`server/bot/bot-factory.ts`)
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    SISTEMA DE NOTIFICAÇÕES v4.0.0                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐               │
-│  │   FASE P0     │  │   FASE P1     │  │   FASE P2     │               │
-│  │ Fundamentos   │  │ Confiabilidade│  │Observabilidade│               │
-│  ├───────────────┤  ├───────────────┤  ├───────────────┤               │
-│  │ • Result obj  │  │ • Retry       │  │ • Metrics     │               │
-│  │ • DB tracking │  │ • Correlation │  │ • Health API  │               │
-│  │ • Log pattern │  │ • DLQ         │  │ • Dashboard   │               │
-│  └───────────────┘  └───────────────┘  └───────────────┘               │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+A classe `BotFactory` é responsável por instanciar a biblioteca `node-telegram-bot-api`, configurar ouvintes de erro e gerenciar reconexões automáticas em falhas de rede.
 
-### Fluxo de Notificação
+```typescript
+// server/bot/bot-factory.ts
+import TelegramBot from 'node-telegram-bot-api';
+import { createLogger } from './logger.js';
 
-```
-Cron Trigger (/api/notify)
-        ↓
-notificationDeduplicator (evita duplicados)
-        ↓
-sendWithRetry (2 tentativas)
-        ↓
-├─ Tentativa 1 → Sucesso → recordSuccess
-├─ Tentativa 1 → Falha → Delay 1s → Tentativa 2
-└─ Tentativa 2 → Falha → enqueue(DLQ)
-        ↓
-logSuccessfulNotification
-```
+const logger = createLogger('BotFactory');
 
-### Tipos de Notificação
+export class BotFactory {
+  static createPollingBot(token: string) {
+    logger.info('Creating polling bot...');
+    
+    const bot = new TelegramBot(token, { 
+      polling: {
+        interval: 300,
+        autoStart: true,
+        params: {
+          timeout: 10
+        }
+      }
+    });
 
-| Tipo | Horário | Descrição |
-|------|---------|-----------|
-| **Dose Reminder** | A cada minuto | Lembretes de doses agendadas |
-| **Soft Reminder** | 30 min após dose | Lembrete secundário se não registrou |
-| **Stock Alert** | 09:00 diário | Alerta de estoque baixo/zerado |
-| **DLQ Digest** | 09:00 diário | Resumo de falhas para admin |
-| **Titration Alert** | 08:00 diário | Alerta de transição de titulação |
-| **Daily Digest** | 23:00 diário | Resumo do dia |
-| **Adherence Report** | Domingo 23:00 | Relatório semanal de adesão |
-| **Monthly Report** | Dia 1, 10:00 | Relatório mensal |
+    // Tratamento de erros no polling com reconexão automática
+    bot.on('polling_error', (error: any) => {
+      logger.error('Polling error', error, { code: error.code });
+      
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') {
+        logger.info('Attempting to restart polling...');
+        setTimeout(() => {
+          bot.stopPolling().then(() => {
+            bot.startPolling();
+            logger.info('Polling restarted');
+          });
+        }, 5000);
+      }
+    });
 
----
+    bot.on('error', (error) => {
+      logger.error('Bot error', error);
+    });
 
-## 📦 Estoque no Bot (v4.0.0)
+    logger.info('Polling bot created successfully');
+    return bot;
+  }
 
-### Escritas
-
-- `/adicionar_estoque` usa `create_purchase_with_stock`
-- registro de dose nos callbacks usa `consume_stock_fifo`
-- o bot não faz mais decremento FIFO manual em `stock`
-
-### Leituras
-
-- o bot continua lendo saldo agregado a partir de `stock.quantity`
-- histórico de compras deixa de depender de convenções em `stock.notes`
-
-### Benefícios
-
-- consistência entre app web e Telegram
-- FIFO centralizado no banco
-- restauração de lotes preparada para exclusão/edição de logs
-
----
-
-## ✨ Formatação MarkdownV2 (v2.9.0)
-
-### Função `escapeMarkdownV2()`
-
-A API do Telegram exige que caracteres especiais sejam escapados no formato MarkdownV2. A função [`escapeMarkdownV2()`](../../server/utils/formatters.ts:130) implementa essa formatação.
-
-#### Caracteres Reservados (18 caracteres)
-
-```
-_ * [ ] ( ) ~ ` > # + - = | { } . !
-```
-
-#### Implementação
-
-```javascript
-/**
- * Escapa caracteres especiais para Telegram MarkdownV2 format
- * @param {string} text - Texto a ser escapado
- * @returns {string} Texto escapado seguro para MarkdownV2
- */
-export function escapeMarkdownV2(text) {
-  if (!text || typeof text !== 'string') return '';
-  
-  // Ordem importa: escapar backslash PRIMEIRO para evitar double-escaping
-  return text
-    .replace(/\\/g, '\\\\')  // Deve ser primeiro!
-    .replace(/_/g, '\\_')
-    .replace(/\*/g, '\\*')
-    .replace(/\[/g, '\\[')
-    .replace(/\]/g, '\\]')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-    .replace(/~/g, '\\~')
-    .replace(/`/g, '\\`')
-    .replace(/>/g, '\\>')
-    .replace(/#/g, '\\#')
-    .replace(/\+/g, '\\+')
-    .replace(/-/g, '\\-')
-    .replace(/=/g, '\\=')
-    .replace(/\|/g, '\\|')
-    .replace(/{/g, '\\{')
-    .replace(/}/g, '\\}')
-    .replace(/\./g, '\\.')
-    .replace(/!/g, '\\!');
-}
-```
-
-#### Exemplos de Uso
-
-```javascript
-// Entrada: "Omega 3!"
-// Saída:   "Omega 3\!"
-
-// Entrada: "Vitamina D (1000UI)"
-// Saída:   "Vitamina D \(1000UI\)"
-
-// Entrada: "Medicamento #1 - 10mg"
-// Saída:   "Medicamento \#1 \- 10mg"
-```
-
-#### Arquivos que Utilizam
-
-- [`server/utils/formatters.ts`](../../server/utils/formatters.ts) - Funções de formatação
-- [`server/bot/tasks.ts`](../../server/bot/tasks.ts) - Mensagens de notificação
-- [`server/bot/commands/*.ts`](../../server/bot/commands/) - Respostas de comandos
-- [`server/bot/callbacks/*.ts`](../../server/bot/callbacks/) - Mensagens de callback
-
----
-
-## 🔄 Sistema de Retry e DLQ
-
-### Retry Simples (v3.1.0)
-
-O sistema implementa retry simples com 2 tentativas:
-
-```javascript
-// api/notify.ts
-const maxAttempts = 2;
-
-for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-  try {
-    const result = await telegramFetch('sendMessage', { ... });
-    return { success: true, messageId: result.message_id };
-  } catch (err) {
-    if (!isRetryableError(err) || attempt === maxAttempts) {
-      break;
+  static async validateToken(token: string) {
+    try {
+      const testBot = new TelegramBot(token, { polling: false });
+      const me = await testBot.getMe();
+      logger.info('Token validated', { username: me.username });
+      return { valid: true, botInfo: me };
+    } catch (error: any) {
+      logger.error('Token validation failed', error);
+      return { valid: false, error: error.message };
     }
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1s
   }
 }
 ```
 
-### Erros Recuperáveis
+### Inicialização do Servidor (`server/index.ts`)
 
-| Tipo | Códigos | Retry? |
-|------|---------|--------|
-| **Network** | ETIMEDOUT, ECONNRESET, ENOTFOUND | ✅ Sim |
-| **Rate Limit** | 429 Too Many Requests | ✅ Sim |
-| **Server Error** | 500, 502, 503, 504 | ✅ Sim |
-| **Client Error** | 400, 401, 403, 404 | ❌ Não |
+O arquivo principal de execução realiza a validação do token, conecta o `NotificationDispatcher`, registra a checagem de saúde e inicia o agendador de tarefas.
 
-### Dead Letter Queue (DLQ)
+```typescript
+// server/index.ts
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-Notificações que falharam após todas as tentativas são armazenadas na DLQ.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-#### Schema da Tabela
+import { BotFactory } from './bot/bot-factory.js';
+import { createLogger } from './bot/logger.js';
+import { healthCheck, registerDefaultChecks } from './bot/health-check.js';
+import { supabase } from './services/supabase.js';
+import { getNotificationDispatcher } from './bot/utils/dispatcherFactory.js';
 
-```sql
-CREATE TABLE failed_notification_queue (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id),
-  notification_type text NOT NULL,
-  payload jsonb NOT NULL,
-  error_category text NOT NULL,
-  error_message text,
-  retry_count integer DEFAULT 0,
-  status text DEFAULT 'failed',
-  correlation_id text,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  resolved_at timestamptz
-);
-```
+const logger = createLogger('BotApp');
+const token = process.env.TELEGRAM_BOT_TOKEN;
 
-#### Status da DLQ
-
-| Status | Descrição |
-|--------|-----------|
-| `failed` | Falhou, aguardando ação |
-| `retrying` | Em processo de retry |
-| `resolved` | Resolvido com sucesso |
-| `discarded` | Descartado manualmente |
-
-### DLQ Admin Interface
-
-Interface web para gerenciar notificações falhadas.
-
-#### Endpoints da API
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `GET` | `/api/dlq` | Lista notificações falhadas |
-| `POST` | `/api/dlq/[id]/retry` | Re-tenta notificação |
-| `POST` | `/api/dlq/[id]/discard` | Descarta notificação |
-
-#### Parâmetros de Query (GET /api/dlq)
-
-| Parâmetro | Tipo | Padrão | Descrição |
-|-----------|------|--------|-----------|
-| `limit` | number | 20 | Itens por página (max: 100) |
-| `offset` | number | 0 | Offset para paginação |
-| `status` | string | null | Filtrar por status |
-
-#### Exemplo de Resposta
-
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "user_id": "uuid",
-      "notification_type": "dose_reminder",
-      "payload": { "medicineName": "Omega 3" },
-      "error_category": "network_error",
-      "error_message": "ETIMEDOUT",
-      "retry_count": 2,
-      "status": "failed",
-      "created_at": "2026-02-17T10:00:00Z"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "pageSize": 20,
-  "totalPages": 1
+if (!token) {
+  throw new Error('TELEGRAM_BOT_TOKEN não definido no .env');
 }
-```
 
-### Daily Digest
+// Validação prévia do token no Telegram
+const validation = await BotFactory.validateToken(token);
+if (!validation.valid) {
+  throw new Error(`Token validation failed: ${validation.error}`);
+}
 
-Resumo diário de falhas enviado ao admin às 09:00.
+const bot = BotFactory.createPollingBot(token);
+const notificationDispatcher = getNotificationDispatcher(bot);
 
-```javascript
-// Configurar ADMIN_CHAT_ID na Vercel
-ADMIN_CHAT_ID=123456789  // Obter via @userinfobot
+registerDefaultChecks(bot, supabase);
+await healthCheck.runAll();
+
+logger.info('Bot de Remédios iniciado com sucesso!');
 ```
 
 ---
 
-## 📱 Comandos Disponíveis
+## 🛡️ Middleware Pipeline
 
-### Comandos de Usuário
+O pipeline de middleware garante isolamento, autorização e tratamento padronizado de exceções em todas as interações com o bot.
 
-| Comando | Descrição | Exemplo |
-|---------|-----------|---------|
-| `/start <TOKEN>` | Vincula conta Telegram | `/start abc123` |
-| `/status` | Protocolos ativos | `/status` |
-| `/estoque` | Níveis de estoque | `/estoque` |
-| `/hoje` | Cronograma do dia | `/hoje` |
-| `/proxima` | Próxima dose agendada | `/proxima` |
-| `/historico` | Histórico de doses | `/historico` |
-| `/ajuda` | Mensagem de ajuda | `/ajuda` |
-| `/registrar` | Registrar dose interativo | `/registrar` |
-| `/adicionar_estoque` | Adicionar estoque | `/adicionar_estoque` |
-| `/pausar [medicamento]` | Pausar protocolo | `/pausar Omega 3` |
-| `/retomar [medicamento]` | Retomar protocolo | `/retomar Omega 3` |
-| `/health` | Status do bot | `/health` |
+### Fluxo do Pipeline de Middleware
 
-### Botões Inline
+```mermaid
+sequenceDiagram
+    autonumber
+    participant TG as Telegram / User
+    participant MW as userResolver (withUser)
+    participant DB as Supabase DB
+    participant CW as commandWrapper
+    participant Handler as Command Handler
 
-| Botão | Ação |
-|-------|------|
-| ✅ Tomar | Registra dose como tomada |
-| ⏰ Adiar | Adia lembrete em 30 min |
-| ⏭️ Pular | Pula a dose |
-
-### Fluxo Conversacional
-
-O comando `/registrar` utiliza fluxo conversacional:
-
+    TG->>MW: Envia /comando
+    MW->>DB: getUserIdByChatId(chatId)
+    alt Conta não vinculada
+        DB-->>MW: Usuário não encontrado
+        MW-->>TG: Mensagem "Conta não vinculada. Use /start TOKEN"
+    else Conta vinculada
+        DB-->>MW: Retorna userId (UUID)
+        MW->>CW: Executa wrapper com userId
+        CW->>Handler: Executa lógica do comando
+        alt Erro durante execução
+            Handler-->>CW: Lança exceção (ex: Invalid Input)
+            CW-->>TG: Envia mensagem de erro amigável
+        else Sucesso
+            Handler-->>TG: Envia resposta formatada (MarkdownV2)
+        end
+    end
 ```
-1. /registrar
-   ↓
-2. Selecione o medicamento (inline keyboard)
-   ↓
-3. Selecione a dosagem (inline keyboard)
-   ↓
-4. Confirmação → Dose registrada
+
+### Resolução de Usuário (`server/bot/middleware/userResolver.ts`)
+
+O módulo `userResolver` mapeia o `chat.id` do Telegram para o UUID do usuário cadastrado na tabela `user_settings` do Supabase.
+
+```typescript
+// server/bot/middleware/userResolver.ts
+import { getUserIdByChatId } from '../../services/userService.js';
+
+export async function resolveUser(chatId: number | string): Promise<string> {
+  const userId = await getUserIdByChatId(chatId);
+  return userId;
+}
+
+export function withUser(
+  handler: (...args: any[]) => any, 
+  options: { requiresAuth?: boolean } = {}
+) {
+  const { requiresAuth = true } = options;
+  
+  return async (bot: any, msg: any, ...args: any[]) => {
+    const chatId = msg.chat?.id;
+    
+    if (!chatId) {
+      console.error('No chat ID found in message');
+      return;
+    }
+    
+    try {
+      let userId: string | null = null;
+      
+      if (requiresAuth) {
+        userId = await resolveUser(chatId);
+      }
+      
+      return await handler(bot, msg, userId, ...args);
+      
+    } catch (err: any) {
+      if (err.message === 'User not linked') {
+        return bot.sendMessage(chatId, 
+          '❌ Conta não vinculada. Use /start TOKEN para vincular sua conta.\n\n' +
+          'Você pode gerar um token no aplicativo web em Configurações.'
+        );
+      }
+      
+      throw err;
+    }
+  };
+}
+```
+
+### Wrapper de Comando (`server/bot/middleware/commandWrapper.ts`)
+
+O `commandWrapper` intercepta erros não tratados e fornece mensagens de retorno ao paciente sem derrubar o processo do servidor.
+
+```typescript
+// server/bot/middleware/commandWrapper.ts
+import { createLogger } from '../logger.js';
+
+const logger = createLogger('commandWrapper');
+
+export const ERROR_MESSAGES = {
+  USER_NOT_LINKED: '❌ Conta não vinculada. Use /start TOKEN para vincular sua conta.\n\nVocê pode gerar um token no aplicativo web em Configurações.',
+  GENERIC_ERROR: '❌ Ocorreu um erro ao processar seu comando. Por favor, tente novamente.',
+  NO_PROTOCOLS: 'Você não possui protocolos ativos no momento. Use o app web para cadastrar.',
+  NO_MEDICINES: 'Você não possui medicamentos cadastrados. Use o app web para cadastrar.',
+  INVALID_INPUT: '❌ Entrada inválida. Por favor, verifique e tente novamente.',
+};
+
+export function commandWrapper(
+  commandName: string, 
+  handler: (...args: any[]) => any, 
+  options: { logUsage?: boolean } = {}
+) {
+  const { logUsage = true } = options;
+  
+  return async (bot: any, msg: any, ...args: any[]) => {
+    const chatId = msg.chat?.id;
+    const userId = msg.from?.id;
+    const username = msg.from?.username || 'unknown';
+    
+    if (!chatId) {
+      logger.error(`[${commandName}] No chat ID in message`);
+      return;
+    }
+    
+    try {
+      if (logUsage) {
+        logger.info(`[${commandName}] Command invoked by user ${userId} (@${username})`);
+      }
+      
+      await handler(bot, msg, ...args);
+      
+    } catch (err: any) {
+      logger.error(`[${commandName}] Error:`, err);
+      
+      if (err.message === 'User not linked') {
+        return bot.sendMessage(chatId, ERROR_MESSAGES.USER_NOT_LINKED);
+      }
+      
+      try {
+        await bot.sendMessage(chatId, ERROR_MESSAGES.GENERIC_ERROR);
+      } catch (sendErr) {
+        logger.error(`[${commandName}] Failed to send error message:`, sendErr);
+      }
+    }
+  };
+}
 ```
 
 ---
 
-## ⚙️ Configuração e Deploy
+## 💬 Catálogo de Comandos
 
-### Variáveis de Ambiente
+O bot suporta 11 comandos principais de texto e atalhos parametrizados. Todos os comandos exigem autenticação do paciente, exceto a primeira execução do `/start`.
 
-```bash
-# Telegram
-TELEGRAM_BOT_TOKEN=seu_token_aqui
+| Comando | Arquivo Fonte | Descrição | Exige Auth? |
+| :--- | :--- | :--- | :--- |
+| `/start` | `server/bot/commands/start.ts` | Vincula a conta do Telegram usando o token gerado no web app | ❌ Não |
+| `/ajuda` | `server/bot/commands/ajuda.ts` | Exibe o guia de comandos e instruções de suporte | ❌ Não |
+| `/hoje` | `server/bot/commands/hoje.ts` | Exibe a agenda detalhada de doses para a data atual no fuso de SP | ✅ Sim |
+| `/proxima` | `server/bot/commands/proxima.ts` | Exibe o próximo medicamento agendado no dia | ✅ Sim |
+| `/registrar` | `server/bot/commands/registrar.ts` | Inicia o fluxo conversacional para registrar dose avulsa | ✅ Sim |
+| `/estoque` | `server/bot/commands/estoque.ts` | Apresenta o saldo e a estimativa de dias até o fim do estoque | ✅ Sim |
+| `/adicionar_estoque` | `server/bot/commands/adicionar_estoque.ts` | Adiciona unidades de um medicamento ao estoque via wizard | ✅ Sim |
+| `/repor` | `server/bot/commands/adicionar_estoque.ts` | Atalho rápido para repor estoque: `/repor Nome Quantidade` | ✅ Sim |
+| `/historico` | `server/bot/commands/historico.ts` | Exibe os últimos registros de tomadas de dose | ✅ Sim |
+| `/protocols` | `server/bot/commands/protocols.ts` | Gerencia os protocolos (suporta os subcomandos `/pausar` e `/retomar`) | ✅ Sim |
+| `/chatbot` | `server/bot/commands/chatbot.ts` | Inicia consulta com a inteligência artificial clínica Groq | ✅ Sim |
+| `/status` | `server/bot/commands/status.ts` | Lista os protocolos ativos com dosagem e horários | ✅ Sim |
 
-# Supabase
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=sua_chave_service_role
+### Exemplo 1: Comando `/hoje` (`server/bot/commands/hoje.ts`)
 
-# Cron
-CRON_SECRET=chave_secreta_forte
+O comando `/hoje` busca os protocolos ativos do paciente, ajusta a janela do fuso horário de São Paulo (GMT-3) e avalia o status das tomadas recentes.
 
-# Admin (para DLQ digest)
-ADMIN_CHAT_ID=123456789
+```typescript
+// server/bot/commands/hoje.ts
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
+import { 
+  getTodayLocal, 
+  getCurrentTime, 
+  parseLocalDate,
+  getSaoPauloTime,
+  addDays
+} from '../../utils/dateUtils.js';
+import { isProtocolActiveOnWeekday } from '../../utils/protocolActiveHelper.js';
 
-# Logging
-LOG_LEVEL=INFO  # ERROR | WARN | INFO | DEBUG | TRACE
-```
-
-### Configuração Vercel (`vercel.json`)
-
-```json
-{
-  "functions": {
-    "api/notify.ts": {
-      "maxDuration": 60
+export async function handleHoje(bot: any, msg: any) {
+  const chatId = msg.chat.id;
+  
+  try {
+    let userId: string;
+    try {
+      userId = await getUserIdByChatId(chatId);
+    } catch {
+      return await bot.sendMessage(chatId, '⚠️ Você precisa vincular sua conta primeiro\\. Use /start para instruções\\.');
     }
-  },
-  "crons": [
-    {
-      "path": "/api/notify",
-      "schedule": "* * * * *"
+
+    const { data: protocols, error } = await supabase
+      .from('protocols')
+      .select('*, medicine:medicines(*)')
+      .eq('user_id', userId)
+      .eq('active', true);
+
+    if (error) throw error;
+
+    if (!protocols || protocols.length === 0) {
+      return await bot.sendMessage(chatId, 'Você não possui protocolos ativos\\.');
     }
-  ]
+
+    const todayStr = getTodayLocal();
+    const startOfDay = parseLocalDate(todayStr);
+
+    // Consulta logs nas últimas 36 horas para cobrir o deslocamento de timezone
+    const { data: allLogs } = await supabase
+      .from('medicine_logs')
+      .select('protocol_id, taken_at')
+      .eq('user_id', userId)
+      .gte('taken_at', addDays(startOfDay, -1).toISOString());
+
+    const todayLogs = allLogs?.filter(log => {
+      return getTodayLocal(getSaoPauloTime(log.taken_at)) === todayStr;
+    }) || [];
+
+    const schedule: Array<{ time: string; medicine: string; dosage: any; taken: boolean }> = [];
+    const todayDateSP = getSaoPauloTime();
+    const todayWeekdayIndex = todayDateSP.getDay();
+
+    protocols.forEach(protocol => {
+      if (!isProtocolActiveOnWeekday(protocol, todayWeekdayIndex, todayStr)) return;
+
+      const protocolLogs = todayLogs.filter(l => l.protocol_id === protocol.id);
+      
+      (protocol.time_schedule as any[] || []).forEach(time => {
+        const wasTaken = protocolLogs.some(log => {
+          const logDate = getSaoPauloTime(log.taken_at);
+          const logTime = logDate.getHours().toString().padStart(2, '0') + ':' + 
+                          logDate.getMinutes().toString().padStart(2, '0');
+          return logTime === time;
+        });
+
+        schedule.push({
+          time,
+          medicine: protocol.medicine?.name || protocol.name,
+          dosage: protocol.dosage_per_intake,
+          taken: wasTaken
+        });
+      });
+    });
+
+    schedule.sort((a, b) => a.time.localeCompare(b.time));
+
+    const todayFormatted = todayStr.split('-').reverse().join('/');
+    let message = `📅 *Doses de Hoje* \\(${escapeMarkdownV2(todayFormatted)}\\)\n\n`;
+
+    schedule.forEach(item => {
+      const status = item.taken ? '✅' : '⏱️';
+      const medicineName = escapeMarkdownV2(item.medicine || 'Medicamento');
+      const time = escapeMarkdownV2(item.time);
+      const dosage = escapeMarkdownV2(String(item.dosage ?? 1));
+      message += `${status} ${time} \\- ${medicineName} \\(${dosage}x\\)\n`;
+    });
+
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+  } catch (err) {
+    console.error('Erro ao buscar agenda:', err);
+    await bot.sendMessage(chatId, 'Erro ao buscar agenda de hoje\\.');
+  }
 }
 ```
 
-### Desenvolvimento Local
+### Exemplo 2: Comando `/estoque` (`server/bot/commands/estoque.ts`)
 
-```bash
-# Executar bot localmente
-npm run bot
+O comando de estoque consulta o saldo de medicamentos e utiliza o calculador de consumo da biblioteca compartilhada `@dosiq/core`.
 
-# Com debug logging
-LOG_LEVEL=DEBUG npm run bot
+```typescript
+// server/bot/commands/estoque.ts
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
+import { calculateDaysRemaining, formatStockStatus } from '../../utils/formatters.js';
+import { calculateDailyIntake, stockDoseMetrics } from '@dosiq/core';
+import { replyIfStockDisabled } from '../services/stockTrackingGuard.js';
+
+export async function handleEstoque(bot: any, msg: any) {
+  const chatId = msg.chat.id;
+
+  try {
+    const userId = await getUserIdByChatId(chatId);
+
+    // Guard para usuários em modo dose-only
+    if (await replyIfStockDisabled(bot, chatId, userId)) return;
+
+    const { data: medicines, error: medError } = await supabase
+      .from('medicines')
+      .select(`
+        *,
+        stock(*),
+        protocols!protocols_medicine_id_fkey(*)
+      `)
+      .eq('user_id', userId)
+      .order('name');
+
+    if (medError) throw medError;
+
+    if (!medicines || medicines.length === 0) {
+      return await bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados\\.');
+    }
+
+    let message = '📦 *Estoque de Medicamentos:*\n\n';
+
+    for (const medicine of medicines) {
+      const activeProtocols = (medicine.protocols || []).filter((p: any) => p.active);
+      if (activeProtocols.length === 0) continue;
+
+      const totalQuantity = (medicine.stock || []).reduce((sum: number, s: any) => sum + s.quantity, 0);
+
+      // Consumo diário calculado via core (suporta formas líquidas e conversão em ml)
+      const dailyUsage = calculateDailyIntake(medicine.id, activeProtocols, medicine);
+      const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
+      const doseMetrics = stockDoseMetrics(totalQuantity, activeProtocols, medicine);
+
+      message += formatStockStatus(medicine, totalQuantity, daysRemaining, doseMetrics) + '\n';
+    }
+
+    await bot.sendMessage(chatId, message, { parse_mode: 'MarkdownV2' });
+  } catch (err) {
+    console.error('Erro ao buscar estoque:', err);
+    await bot.sendMessage(chatId, 'Erro ao buscar estoque\\.');
+  }
+}
 ```
 
-### Monitoramento
+---
 
-```bash
-# Health check
-curl https://seu-app.vercel.app/api/health/notifications
+## 🔘 Callbacks e Fluxos Interativos
 
-# Logs da Vercel
-vercel logs --follow
+O bot responde a interações de botões embutidos (inline keyboards) enviados com lembretes ou menus.
 
-# Logs filtrados por função
-vercel logs --filter="api/notify"
+### Mapeamento de Callbacks
+
+| Callback Pattern | Handler Responsável | Função e Impacto |
+| :--- | :--- | :--- |
+| `take_:{protocolId}:{quantity}` | `doseActions.ts` | Registra a dose tomada, executa a RPC `consume_stock_fifo` e ancora na `dose_instance` |
+| `snooze_:{protocolId}` | `doseActions.ts` | Adia a notificação do lembrete por 30 minutos |
+| `skip_:{protocolId}` | `doseActions.ts` | Solicita confirmação para pular a dose agendada |
+| `confirm_skip_:{protocolId}` | `doseActions.ts` | Marca a dose como pulada na tabela `dose_instances` |
+| `reg_med_:{index}` | `conversational.ts` | Seleciona o medicamento no fluxo conversacional de registro |
+| `reg_qty_:{quantity}` | `conversational.ts` | Seleciona a quantidade no fluxo conversacional |
+| `pause_prot_:{index}` | `protocols.ts` | Alterna o status do protocolo selecionado para inativo (`active = false`) |
+| `resume_prot_:{index}` | `protocols.ts` | Alterna o status do protocolo selecionado para ativo (`active = true`) |
+
+### Registro de Dose em Callback (`server/bot/callbacks/doseActions.ts`)
+
+Quando o paciente clica no botão "Tomar", o bot executa a gravação da dose, realiza a baixa em lote no estoque e ancora o registro à instância correspondente.
+
+```typescript
+// server/bot/callbacks/doseActions.ts (Trecho principal)
+import { supabase } from '../../services/supabase.js';
+import { getUserIdByChatId } from '../../services/userService.js';
+import { escapeMarkdownV2 } from '../../utils/formatters.js';
+import { getServerTimestamp } from '../../utils/dateUtils.js';
+import { createDoseInstanceRepository } from '@dosiq/core';
+
+const doseInstanceRepo = createDoseInstanceRepository({ client: supabase as any });
+
+async function createLogAndConsumeStock(
+  userId: string, 
+  protocolId: string, 
+  medicineId: string, 
+  quantity: number
+) {
+  const takenAt = getServerTimestamp();
+  
+  // 1. Inserção do log de tomada
+  const { data: createdLogs, error: logError } = await supabase
+    .from('medicine_logs')
+    .insert([{
+      user_id: userId,
+      protocol_id: protocolId,
+      medicine_id: medicineId,
+      quantity_taken: quantity,
+      taken_at: takenAt
+    }])
+    .select('id')
+    .single();
+
+  if (logError) throw logError;
+
+  // 2. Consumo de estoque transacional via RPC (FIFO)
+  const { error: consumeError } = await supabase.rpc('consume_stock_fifo', {
+    p_user_id: userId,
+    p_medicine_id: medicineId,
+    p_quantity: quantity,
+    p_medicine_log_id: createdLogs.id
+  });
+
+  if (consumeError) {
+    // Reversão do log caso o estoque falhe
+    await supabase.from('medicine_logs').delete().eq('id', createdLogs.id).eq('user_id', userId);
+    throw consumeError;
+  }
+
+  // 3. Ancoragem assíncrona do log à dose_instance
+  await anchorLogToInstance(userId, protocolId, createdLogs.id, takenAt);
+}
+
+async function anchorLogToInstance(
+  userId: string, 
+  protocolId: string, 
+  logId: string, 
+  takenAt: string
+) {
+  try {
+    const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt });
+    if (!instance) return;
+
+    const marked = await doseInstanceRepo.markTaken(instance.id, logId);
+    if (!marked) return;
+
+    await supabase
+      .from('medicine_logs')
+      .update({ dose_instance_id: instance.id })
+      .eq('id', logId)
+      .eq('user_id', userId);
+  } catch (anchorError) {
+    console.warn('Falha ao ancorar log à instância:', anchorError);
+  }
+}
 ```
+
+---
+
+## ⏱️ Tasks, Formatação e Scheduler
+
+O módulo de agendamento gerencia cron jobs periódicos no ambiente em modo polling e auxilia a execução em segundo plano.
+
+### Agendador Principal (`server/bot/scheduler.ts`)
+
+```typescript
+// server/bot/scheduler.ts
+import cron from 'node-cron';
+import { createLogger } from './logger.js';
+import { checkReminders, runDailyDigest, checkPrescriptionAlerts } from './tasks.js';
+import { generateDoseInstances, cleanupPausedProtocols } from './doseInstanceScheduler.js';
+
+const logger = createLogger('Scheduler');
+
+function scheduleTask(name: string, schedule: string, task: () => Promise<any>) {
+  cron.schedule(schedule, async () => {
+    try {
+      logger.debug(`Starting scheduled task: ${name}`);
+      await task();
+      logger.debug(`Completed scheduled task: ${name}`);
+    } catch (error) {
+      logger.error(`Scheduled task failed: ${name}`, error);
+    }
+  });
+  logger.info(`Scheduled task registered: ${name}`, { schedule });
+}
+
+export function startScheduler(bot: any, options: { notificationDispatcher?: any } = {}) {
+  // Lembretes executados a cada minuto
+  scheduleTask('checkReminders', '* * * * *', () => checkReminders(bot, options));
+}
+
+export function startDoseInstanceGeneration() {
+  // Execução diária às 03:15 para manutenção de instâncias
+  scheduleTask('generateDoseInstances', '15 3 * * *', async () => {
+    await generateDoseInstances();
+    await cleanupPausedProtocols();
+  });
+}
+```
+
+### Formatação de Texto e MarkdownV2 (`server/utils/formatters.ts`)
+
+A API do Telegram exige a sanitização de 18 caracteres especiais no formato `MarkdownV2`. A função `escapeMarkdownV2` realiza essa conversão.
+
+```typescript
+// server/utils/formatters.ts
+export function escapeMarkdownV2(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  
+  return text.replace(/([\\*()`>#+\-=|{}.!_[\]~])/g, (match) => {
+    const escapeMap: Record<string, string> = {
+      '\\': '\\\\',
+      '_': '\\_',
+      '*': '\\*',
+      '[': '\\[',
+      ']': '\\]',
+      '(': '\\(',
+      ')': '\\)',
+      '~': '\\~',
+      '`': '\\`',
+      '>': '\\>',
+      '#': '\\#',
+      '+': '\\+',
+      '-': '\\-',
+      '=': '\\=',
+      '|': '\\|',
+      '{': '\\{',
+      '}': '\\}',
+      '.': '\\.',
+      '!': '\\!'
+    };
+    return escapeMap[match] || `\\${match}`;
+  });
+}
+```
+
+---
+
+## 🤖 Serviços Internos do Bot
+
+### Chatbot Clínico IA (`server/bot/services/chatbotServerService.ts`)
+
+O serviço de chatbot fornece respostas contextualizadas utilizando o modelo LLM Groq SDK (`meta-llama/llama-4-scout-17b-16e-instruct`). O contexto é montado pela biblioteca `@dosiq/core`.
+
+```typescript
+// server/bot/services/chatbotServerService.ts (Trecho principal)
+import Groq from 'groq-sdk';
+import { supabase } from '../../services/supabase.js';
+import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core';
+
+type CoreSupabaseClient = Parameters<typeof fetchChatbotContextData>[0]['supabase'];
+
+export async function buildPatientContextForUser(userId: string) {
+  try {
+    const data = await fetchChatbotContextData({
+      supabase: supabase as unknown as CoreSupabaseClient,
+      getUserId: async () => userId,
+    });
+    const context = buildPatientContext(data);
+    return { context, error: null };
+  } catch (error) {
+    return { context: null, error: 'Erro ao carregar contexto.' };
+  }
+}
+
+export function buildStaticSystemRules(): string {
+  return [
+    'Você é o assistente de saúde do app Dosiq no Telegram.',
+    'Missão: orientar sobre o cronograma de doses, adesão e estoque do paciente.',
+    'REGRAS ABSOLUTAS:',
+    '- NUNCA recomende ou altere dosagens.',
+    '- NUNCA sugira diagnósticos ou substituição de medicamentos.',
+    '- Responda em português simples e sem formatação complexa.'
+  ].join('\n');
+}
+```
+
+### Guard de Controle de Estoque (`server/bot/services/stockTrackingGuard.ts`)
+
+Garante que usuários com a opção "dose-only" não recebam mensagens incorretas sobre estoque zerado.
+
+```typescript
+// server/bot/services/stockTrackingGuard.ts
+import { supabase } from '../../services/supabase.js';
+
+export const STOCK_DISABLED_INVITE =
+  'Você ainda não acompanha o estoque por aqui, então não tenho saldo para te mostrar. ' +
+  'Quer que eu avise quando um remédio estiver acabando? ' +
+  'É só ativar o controle de estoque no app, em Configurações.';
+
+export async function isStockTrackingEnabled(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('stock_tracking_enabled')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return true;
+  return data?.stock_tracking_enabled !== false;
+}
+
+export async function replyIfStockDisabled(bot: any, chatId: number | string, userId: string): Promise<boolean> {
+  const enabled = await isStockTrackingEnabled(userId);
+  if (enabled) return false;
+  await bot.sendMessage(chatId, STOCK_DISABLED_INVITE);
+  return true;
+}
+```
+
+---
+
+## 🔌 Integração com Server Services
+
+O bot utiliza a camada compartilhada de serviços localizada em `server/services/` para persistência, métricas e controle de falhas.
+
+```mermaid
+flowchart LR
+    subgraph BotLayer["🤖 Bot Telegram Layer"]
+        Tasks["tasks.ts / scheduler.ts"]
+        Callbacks["doseActions.ts"]
+    end
+
+    subgraph ServerServices["📦 Server Services Layer"]
+        SessionMgr["sessionManager.ts\n(Gerenciamento de Sessão)"]
+        Deduplicator["notificationDeduplicator.ts\n(Desduplicação de Envios)"]
+        Metrics["notificationMetrics.ts\n(Métricas de Desempenho)"]
+        DLQ["deadLetterQueue.ts\n(Fila de Notificações Falhadas)"]
+    end
+
+    Tasks --> Deduplicator
+    Tasks --> Dispatcher
+    Callbacks --> SessionMgr
+    Deduplicator --> DLQ
+    Tasks --> Metrics
+```
+
+---
+
+## ⚡ Webhook e Deployment Vercel
+
+Em ambiente de produção na Vercel, o bot é acionado por meio do endpoint serverless `api/telegram.ts`.
+
+### Adaptador Serverless (`api/telegram.ts`)
+
+O arquivo cria um adaptador leve (`createBotAdapter`) que converte chamadas da API do `node-telegram-bot-api` em requisições `fetch` para a Telegram Bot API.
+
+```typescript
+// api/telegram.ts (Trecho principal)
+import { handleStart } from '../server/bot/commands/start.js';
+import { handleHoje } from '../server/bot/commands/hoje.js';
+import { handleEstoque } from '../server/bot/commands/estoque.js';
+import { createLogger } from '../server/bot/logger.js';
+
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const logger = createLogger('TelegramWebhook');
+
+function createBotAdapter(token: string) {
+  const telegramFetch = async (method: string, body: any) => {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    return data.result;
+  };
+
+  return {
+    sendMessage: async (chatId: any, text: string, options = {}) => {
+      return telegramFetch('sendMessage', { chat_id: chatId, text, ...options });
+    },
+    editMessageText: async (text: string, options = {}) => {
+      return telegramFetch('editMessageText', { text, ...options });
+    },
+    answerCallbackQuery: async (id: string, options = {}) => {
+      return telegramFetch('answerCallbackQuery', { callback_query_id: id, ...options });
+    }
+  };
+}
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const bot = createBotAdapter(token!);
+  const update = req.body;
+
+  try {
+    if (update.message?.text) {
+      if (update.message.text.startsWith('/hoje')) {
+        await handleHoje(bot, update.message);
+      } else if (update.message.text.startsWith('/estoque')) {
+        await handleEstoque(bot, update.message);
+      }
+    }
+    res.status(200).json({ success: true });
+  } catch (error: any) {
+    logger.error('Erro no webhook:', error);
+    res.status(200).json({ error: 'Internal Error', details: error.message });
+  }
+}
+```
+
+---
+
+## 🚨 Troubleshooting e Manutenção
+
+### 1. Erro de Parse no Telegram (`400 Bad Request: can't parse entities`)
+
+- **Sintoma**: O bot falha ao enviar mensagens e registra erro 400 no log.
+- **Causa**: Caracteres especiais do formato `MarkdownV2` (como `-`, `.`, `!`, `(`, `)`) não foram escapados.
+- **Solução**: Passe todas as variáveis dinâmicas inseridas na mensagem pela função `escapeMarkdownV2()` de `server/utils/formatters.ts`.
+
+### 2. Mensagens Duplicadas em Ambiente Local
+
+- **Sintoma**: O bot responde duas vezes ao mesmo comando durante o desenvolvimento.
+- **Causa**: O webhook de produção na Vercel e o processo de polling local (`npm run bot`) estão ativos simultaneamente para o mesmo token.
+- **Solução**: Remova o webhook na API do Telegram ou utilize um token de testes exclusivo para desenvolvimento local.
+
+### 3. Falha de Conexão com o Supabase no Polling
+
+- **Sintoma**: O log exibe erros `ECONNRESET` ou falhas de consulta no Supabase.
+- **Causa**: As variáveis de ambiente `VITE_SUPABASE_URL` ou `SUPABASE_SERVICE_ROLE_KEY` não estão presentes no `.env` da raiz.
+- **Solução**: Verifique se o arquivo `.env` está configurado corretamente e carregado pela biblioteca `dotenv`.
 
 ---
 
 ## 🔗 Documentação Relacionada
 
-- [`docs/architecture/DATABASE.md`](DATABASE.md) - Schema do banco de dados
-- [`docs/reference/SERVICES.md`](../reference/SERVICES.md) - API de serviços
-- [`docs/archive/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md`](../archive/TELEGRAM_BOT_NOTIFICATION_SYSTEM.md) - Documentação detalhada do sistema de notificações
-- [`server/BOT README.md`](../../server/BOT%20README.md) - README do bot
-
----
-
-## 📜 Histórico de Versões
-
-| Versão | Data | Mudanças |
-|--------|------|----------|
-| **3.1.0** | 2026-02-17 | DLQ Admin Interface, Daily Digest, Retry simplificado |
-| **3.0.0** | 2026-02-15 | Sistema de notificações resiliente (3 fases) |
-| **2.9.0** | 2026-02-17 | MarkdownV2 escape em todas as mensagens |
-| **2.8.0** | 2026-02-10 | Multi-user auth, timezone handling |
-
----
-
-## 🚨 Troubleshooting
-
-### Notificações não chegam
-
-1. Verificar se usuário vinculou Telegram (`user_settings.telegram_chat_id`)
-2. Verificar se bot não foi bloqueado pelo usuário (erro 403)
-3. Verificar health check: `curl /api/health/notifications`
-4. Verificar DLQ: `SELECT * FROM failed_notification_queue WHERE status = 'failed'`
-
-### Erro de MarkdownV2
-
-**Sintoma**: Mensagens não são enviadas, erro 400 Bad Request
-
-**Causa**: Caracteres especiais não escapados
-
-**Solução**: Usar `escapeMarkdownV2()` em todas as strings dinâmicas
-
-### DLQ crescendo
-
-1. Verificar categorias de erro predominantes
-2. Verificar status da API do Telegram
-3. Retry manual via interface admin
-
----
-
-*Última atualização: 2026-02-17*
+- [`docs/architecture/NOTIFICATIONS.md`](NOTIFICATIONS.md) — Visão geral do ecossistema de notificações.
+- [`docs/architecture/SERVER_NOTIFICATIONS.md`](SERVER_NOTIFICATIONS.md) — Engine de notificações do servidor.
+- [`docs/architecture/DATABASE.md`](DATABASE.md) — Schema do banco de dados PostgreSQL.
+- [`server/BOT README.md`](../../server/BOT%20README.md) — Guia do desenvolvedor para a pasta `server/`.
