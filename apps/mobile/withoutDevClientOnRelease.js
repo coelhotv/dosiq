@@ -66,7 +66,19 @@ const withoutDevSchemeOnRelease = (config) =>
       (a) => a.$?.['android:name'] === '.MainActivity'
     )
 
-    if (!activity?.['intent-filter']) {
+    // Falha ruidosa em vez de no-op silencioso: se o template do Expo renomear a Activity, o
+    // scheme de dev voltaria ao manifest de produção sem que nada acusasse (Constituição §IX —
+    // omissão não é neutra). O exclude do gradle continuaria valendo, mas quem lê o build
+    // acreditaria que o manifest também foi limpo.
+    if (!activity) {
+      throw new Error(
+        '[withoutDevClientOnRelease] `.MainActivity` não encontrada no AndroidManifest — o ' +
+          'template do prebuild mudou. Revalidar o plugin: sem isto o scheme `exp+<slug>` de dev ' +
+          'volta ao manifest de produção em silêncio.'
+      )
+    }
+
+    if (!activity['intent-filter']) {
       return cfg
     }
 
