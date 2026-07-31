@@ -66,6 +66,16 @@
           "@notifee/react-native"
         ]
       }
+    },
+    "autolinking": {
+      "android": {
+        "exclude": [
+          "expo-dev-client",
+          "expo-dev-launcher",
+          "expo-dev-menu",
+          "expo-dev-menu-interface"
+        ]
+      }
     }
   }
 }

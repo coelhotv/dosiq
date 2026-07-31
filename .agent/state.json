@@ -53,6 +53,7 @@
     ],
     "branch": "fix/android-release-slimming",
     "blocked_on": [
+      "PO: REBUILD do preview necessario — o APK 0.30.1 de 01:23 ainda tem o dev-client (fix corrigido depois dele). O smoke de R8 nele continua valido",
       "PO: token Sentry RESOLVIDO no codigo (lib-sentry-token.sh le do .env); para build na NUVEM ainda precisa de eas secret:create",
       "PO: build EAS preview -> smoke completo (alarme+som, notificacao, deep link, OTA, export LGPD) — R8 quebra reflexao so em runtime",
       "PO: inspecionar o AAB de producao (sem expo.modules.devlauncher, sem com.google.mlkit, sem scheme exp+dosiq-app) + delta de tamanho",
@@ -63,7 +64,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 258,
     "anti_patterns_count": 319,
     "decisions_count": 91,

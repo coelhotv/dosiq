@@ -21,10 +21,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   `GmsBarcodeScanningDelegateActivity` — uma Activity de leitor de código de barras que **o dosiq não
   tem**, vinda do ML Kit que só o dev-launcher usa (para o QR do menu de desenvolvimento). Junto
   vinham Compose, Koin, Apollo, okhttp e gson como peso morto, e o manifest de produção anunciava o
-  deep link de dev `exp+dosiq-app`. Agora um config plugin exclui os módulos de dev do autolinking e
-  remove esse scheme quando o build é `production` ou `preview` — `expo run:android` local continua
-  com dev menu e tudo mais, porque não define o perfil. `preview` entra junto de propósito: sem isso
-  o APK usado no smoke não reproduziria o binário que vai à loja.
+  deep link de dev `exp+dosiq-app`. Os módulos de desenvolvimento passam a ser excluídos do
+  autolinking Android, e o scheme de dev sai do manifest nos builds de release. Efeito medido: o
+  build deixa de incluir 4 projetos nativos, e o APK de teste caiu de 62 MB para 48 MB.
+
+  Um efeito colateral no desenvolvimento, aceito conscientemente: a exclusão vale para todo build
+  Android, então `expo run:android` perde o menu de desenvolvimento do Expo. O menu do próprio
+  React Native (recarregar, inspecionar) continua, e nada no projeto usava o outro.
 
   **2. R8 ligado (minificação + remoção de recursos não usados).** Estava desligado por default do
   template Expo. Vale registrar o que **não** muda: o bundle JS (Hermes) não é tocado — a otimização

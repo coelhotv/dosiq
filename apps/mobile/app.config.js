@@ -247,11 +247,12 @@ module.exports = {
           "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
         }
       ],
-      // Tira expo-dev-client/-launcher/-menu do autolinking em builds de release (production e
-      // preview). No iOS o pacote já é debugOnly; no Android não existe esse campo e o AAR ia
-      // inteiro pro AAB — arrastando ML Kit (o GmsBarcodeScanningDelegateActivity que o Play
-      // apontou), Compose/Koin/Apollo e o scheme exp+dosiq-app. Detalhe e reversão no arquivo.
-      './withoutDevClientOnRelease.js',
+      // Tira o deep link de dev (`exp+dosiq-app`) do manifest de release. A exclusão dos MÓDULOS
+      // de dev-client mora em package.json → expo.autolinking.android.exclude, não aqui: a
+      // propriedade equivalente do settings.gradle é quebrada upstream (a lista é achatada em um
+      // argumento só). O scheme não vem do autolinking, então precisa deste tratamento à parte.
+      // Detalhe, evidência e reversão no arquivo do plugin + AP-324.
+      './withoutDevSchemeOnRelease.js',
       './withAlarmPermissions.js',
       // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',
