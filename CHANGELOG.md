@@ -7,6 +7,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Documentação técnica reorganizada e expandida (spec 049, épico completo)
+
+- **Docs** (`no-user-impact` — docs-only, sem alteração de código). Épico 049 (docs-revamp pós-040 TypeScript) concluído em 5 fases: F1 schema YAML + validador, F2 frontmatter em 54 docs, F3 atualização JS→TS em 58 docs, F4 limpeza estrutural (merge getting-started/setup, remoção guides/reports/releases), F5 criação de 14 docs novos + 2 rewrites cobrindo gaps de mobile, monorepo, TypeScript, server notifications, API endpoints, core schemas/repositories e Live Activities. INDEX.md regenerado com catálogo de 73 docs ativos. 73/73 docs validados pelo frontmatter validator.
+
 ### Preferência de estoque sobrevive offline (spec 044, 055-W1.7)
 
 - **Fix** (JS-only, sem bump de `APP_VERSION` — elegível a OTA sobre o binário atual, R-221 §4).
