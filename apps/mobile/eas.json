@@ -32,7 +32,7 @@
     "production": {
       "channel": "production",
       "env": {
-        "SENTRY_ALLOW_FAILURE": "true"
+        "_comment_sentry": "SENTRY_ALLOW_FAILURE REMOVIDO ao ligar o R8 (fix/android-release-slimming). Com minificação, o mapping.txt é o que torna o stack trace Android legível — sem upload, todo crash de produção chega ofuscado. Tolerar falha de upload em silêncio significaria descobrir isso só no dia do incidente. Exige SENTRY_AUTH_TOKEN como segredo EAS: eas secret:create --scope project --name SENTRY_AUTH_TOKEN --type string --value <token>"
       },
       "ios": {
         "image": "latest"

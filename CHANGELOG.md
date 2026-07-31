@@ -7,6 +7,42 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Binário Android de release mais enxuto e otimizado (avisos do Play Console sobre a v0.30.0)
+
+- **Chore** (`patch`, mobile `0.30.0 → 0.30.1`; web não afetado). O Play Console apontou três
+  melhorias no bundle da v0.30.0. Duas delas tinham a **mesma causa**: o `expo-dev-client` estava
+  indo parar no binário de produção.
+
+  **1. `expo-dev-client` fora dos builds de release.** No iOS o pacote se declara `debugOnly` e some
+  sozinho; no Android esse campo não existe e o módulo era autolinkado em toda variante — o gradle
+  plugin do dev-launcher só deixava de *instrumentar* classes fora de debug, mas o código ia inteiro
+  para o AAB. Consequências que o painel da loja mostrou: o aviso de APIs de edge-to-edge depreciadas
+  citava `DevLauncherExpoActivityConfigurator`, e o aviso de restrição de orientação citava
+  `GmsBarcodeScanningDelegateActivity` — uma Activity de leitor de código de barras que **o dosiq não
+  tem**, vinda do ML Kit que só o dev-launcher usa (para o QR do menu de desenvolvimento). Junto
+  vinham Compose, Koin, Apollo, okhttp e gson como peso morto, e o manifest de produção anunciava o
+  deep link de dev `exp+dosiq-app`. Agora um config plugin exclui os módulos de dev do autolinking e
+  remove esse scheme quando o build é `production` ou `preview` — `expo run:android` local continua
+  com dev menu e tudo mais, porque não define o perfil. `preview` entra junto de propósito: sem isso
+  o APK usado no smoke não reproduziria o binário que vai à loja.
+
+  **2. R8 ligado (minificação + remoção de recursos não usados).** Estava desligado por default do
+  template Expo. Vale registrar o que **não** muda: o bundle JS (Hermes) não é tocado — a otimização
+  é do código nativo. As regras de preservação adicionadas protegem o que é resolvido por reflexão e
+  que o R8 não tem como enxergar: models do notifee (o alarme de dose depende deles), a descoberta
+  de módulos Expo no boot, e o código nativo do app.
+
+  **3. Crash Android continua legível.** Com minificação, o `mapping.txt` é o que traduz o stack
+  trace ofuscado. O perfil de produção deixou de tolerar falha silenciosa no upload para o Sentry —
+  se o mapping não subir, o build falha em vez de esconder o problema até o dia de um incidente.
+
+  ⚠️ O bump de `0.30.0` para `0.30.1` cria um `runtimeVersion` novo (ADR-082): updates OTA
+  publicados para `0.30.0` não alcançam este binário, e passam a ser republicados sobre `0.30.1`.
+  Isso é inerente a qualquer mudança nativa — ela não teria como viajar por OTA de todo jeito.
+
+  A terceira restrição do aviso de orientação (o lock de retrato do próprio app) é escopo da
+  **spec 061**, e as APIs de janela depreciadas do RN são escopo da **spec 055 / Onda 2**.
+
 ### Documentação técnica reorganizada e expandida (spec 049, épico completo)
 
 - **Docs** (`no-user-impact` — docs-only, sem alteração de código). Épico 049 (docs-revamp pós-040 TypeScript) concluído em 5 fases: F1 schema YAML + validador, F2 frontmatter em 54 docs, F3 atualização JS→TS em 58 docs, F4 limpeza estrutural (merge getting-started/setup, remoção guides/reports/releases), F5 criação de 14 docs novos + 2 rewrites cobrindo gaps de mobile, monorepo, TypeScript, server notifications, API endpoints, core schemas/repositories e Live Activities. INDEX.md regenerado com catálogo de 73 docs ativos. 73/73 docs validados pelo frontmatter validator.
