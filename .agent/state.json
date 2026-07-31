@@ -48,22 +48,22 @@
       "PO 2026-07-25: FR-018 ganha saida honesta p/ https://dosiq.app no overlay, com URL COMPILADA (nao vem do gate)",
       "Todos os 8 findings aceitos; T050 fechada",
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
-      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
+      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca.",
+      "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida."
     ],
     "branch": "fix/android-release-slimming",
     "blocked_on": [
       "PO: token Sentry RESOLVIDO no codigo (lib-sentry-token.sh le do .env); para build na NUVEM ainda precisa de eas secret:create",
       "PO: build EAS preview -> smoke completo (alarme+som, notificacao, deep link, OTA, export LGPD) — R8 quebra reflexao so em runtime",
       "PO: inspecionar o AAB de producao (sem expo.modules.devlauncher, sem com.google.mlkit, sem scheme exp+dosiq-app) + delta de tamanho",
-      "PO: publicar no internal testing e conferir se os avisos do Play sumiram",
-      "PO: decidir se R-307 secao 3 ganha excecao explicita para delta comprovadamente fora do bundle (pendencia herdada)"
+      "PO: publicar no internal testing e conferir se os avisos do Play sumiram"
     ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "rules_count": 258,
     "anti_patterns_count": 319,
     "decisions_count": 91,
