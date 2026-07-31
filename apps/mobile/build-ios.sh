@@ -74,6 +74,15 @@ echo "🔐 Exportando credencial Firebase: $PLIST_FILE"
 export GOOGLE_SERVICES_PLIST_PATH="$PLIST_FILE"
 export EAS_BUILD_PROFILE="$PROFILE"
 
+# SENTRY_AUTH_TOKEN: os .env não chegam ao build (o .easignore corta dotfiles; o env do prebuild
+# morre antes do xcodebuild). Detalhe e evidência em lib-sentry-token.sh.
+# No iOS o que sobe é o dSYM — sem ele o crash nativo também chega sem símbolo. O perfil de
+# produção deixou de tolerar falha de upload, então a checagem vale para as duas plataformas.
+# shellcheck source=lib-sentry-token.sh
+. "$SCRIPT_DIR/lib-sentry-token.sh"
+load_sentry_auth_token "$SCRIPT_DIR" || true
+require_sentry_auth_token_for_production "$PROFILE"
+
 # 1. Extrair versão do app.config.js
 APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
 echo "📦 Versão detectada: v$APP_VERSION"

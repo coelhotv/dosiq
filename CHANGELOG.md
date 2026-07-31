@@ -32,9 +32,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   que o R8 não tem como enxergar: models do notifee (o alarme de dose depende deles), a descoberta
   de módulos Expo no boot, e o código nativo do app.
 
-  **3. Crash Android continua legível.** Com minificação, o `mapping.txt` é o que traduz o stack
-  trace ofuscado. O perfil de produção deixou de tolerar falha silenciosa no upload para o Sentry —
-  se o mapping não subir, o build falha em vez de esconder o problema até o dia de um incidente.
+  **3. Crash Android continua legível — e aqui apareceu um problema mais antigo.** Com minificação,
+  o `mapping.txt` é o que traduz o stack trace ofuscado. Ao checar se o upload para o Sentry estava
+  funcionando, a resposta foi que **ele nunca funcionou**: o projeto tem zero arquivos de
+  simbolização, em nenhuma versão. O token existe e é válido, mas não chegava ao build — os
+  arquivos `.env` são excluídos do pacote enviado ao builder, e o ambiente carregado durante a
+  preparação não sobrevive até a compilação. O `SENTRY_ALLOW_FAILURE` do perfil de produção
+  transformava essa ausência total em silêncio: o build reportava sucesso para algo que não
+  acontecia. A flag saiu, o token passa a ser carregado explicitamente pelos scripts de build
+  (Android e iOS), e um build de produção sem ele **aborta em segundos** em vez de gastar vinte
+  minutos e entregar um binário cujos crashes ninguém consegue ler.
 
   ⚠️ O bump de `0.30.0` para `0.30.1` cria um `runtimeVersion` novo (ADR-082): updates OTA
   publicados para `0.30.0` não alcançam este binário, e passam a ser republicados sobre `0.30.1`.

@@ -52,7 +52,7 @@
     ],
     "branch": "fix/android-release-slimming",
     "blocked_on": [
-      "PO: criar o segredo SENTRY_AUTH_TOKEN no EAS antes do proximo build de producao (o perfil deixou de tolerar falha de upload de mapping)",
+      "PO: token Sentry RESOLVIDO no codigo (lib-sentry-token.sh le do .env); para build na NUVEM ainda precisa de eas secret:create",
       "PO: build EAS preview -> smoke completo (alarme+som, notificacao, deep link, OTA, export LGPD) — R8 quebra reflexao so em runtime",
       "PO: inspecionar o AAB de producao (sem expo.modules.devlauncher, sem com.google.mlkit, sem scheme exp+dosiq-app) + delta de tamanho",
       "PO: publicar no internal testing e conferir se os avisos do Play sumiram",
@@ -63,9 +63,9 @@
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "rules_count": 258,
-    "anti_patterns_count": 318,
+    "anti_patterns_count": 319,
     "decisions_count": 91,
     "contracts_count": 32,
     "distillation_due": false
