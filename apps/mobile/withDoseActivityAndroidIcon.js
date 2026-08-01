@@ -13,9 +13,40 @@
 // `apps/web/public/dosiq-logo-mono.svg` (viewBox 130 103 600 600) — mesma fonte do widget iOS
 // (AP-249). O group translate(-130,-103) compensa o offset do viewBox.
 
+// 🔴 EMENDA 2026-08-01 (R8/shrinkResources — AP-251 REINCIDENTE, achado pelo RC6 do PR #782):
+// escrever o drawable não basta desde que `enableShrinkResourcesInReleaseBuilds` foi ligado.
+// O resource shrinker decide o que é "não usado" por análise ESTÁTICA de código nativo e XML;
+// ele não enxerga `smallIcon: 'ic_dosiq_mark'`, que é uma string JS que só existe do outro lado
+// da ponte RN. Resultado medido no APK de release: o drawable era gerado no prebuild
+// (`android/app/src/main/res/drawable/ic_dosiq_mark.xml` existia) e **sumia do artefato final**
+// — `aapt2 dump resources` não achava `dosiq_mark`, enquanto `raw/alarm_dose` e `raw/push_chime`
+// sobreviviam. Fim da linha: `displayNotification` volta a lançar
+// `IllegalArgumentException: no valid small icon` e a superfície de dose não aparece — o mesmo
+// bug de produção do 039/F2 que este plugin nasceu para matar, ressuscitado por uma flag de build.
+//
+// ⚠️ Regras de ProGuard NÃO cobrem isto: `-keep class ...` protege CÓDIGO; recurso é outro
+// mecanismo e exige `tools:keep` num `res/raw/keep.xml`. Os dois convivem no mesmo build e é
+// fácil supor que um cobre o outro.
+//
+// Os sons entram na lista mesmo tendo sobrevivido nesta medição: eles também são resolvidos por
+// nome (notifee/expo-notifications), e depender de o shrinker "não ter achado ruim" é confiar em
+// heurística de terceiro num caminho clínico (Constituição §II).
+
 const { withDangerousMod } = require('@expo/config-plugins')
 const fs = require('fs')
 const path = require('path')
+
+/**
+ * Recursos que NENHUMA referência estática menciona — só strings que cruzam a ponte RN.
+ * Todo item aqui é caminho de notificação de dose: perder um é perder o alarme, não um pixel.
+ */
+const KEEP_XML = `<?xml version="1.0" encoding="utf-8"?>
+<!-- GERADO por withDoseActivityAndroidIcon.js — não editar à mão (android/ é efêmero).
+     Protege do resource shrinker o que só é referenciado por string do lado JS. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_dosiq_mark,@raw/alarm_dose,@raw/push_chime"
+    tools:shrinkMode="safe" />
+`
 
 const ICON_XML = `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -38,9 +69,18 @@ module.exports = function withDoseActivityAndroidIcon(config) {
   return withDangerousMod(config, [
     'android',
     (cfg) => {
-      const resDir = path.join(cfg.modRequest.platformProjectRoot, 'app/src/main/res/drawable')
-      fs.mkdirSync(resDir, { recursive: true })
-      fs.writeFileSync(path.join(resDir, 'ic_dosiq_mark.xml'), ICON_XML)
+      const resRoot = path.join(cfg.modRequest.platformProjectRoot, 'app/src/main/res')
+
+      const drawableDir = path.join(resRoot, 'drawable')
+      fs.mkdirSync(drawableDir, { recursive: true })
+      fs.writeFileSync(path.join(drawableDir, 'ic_dosiq_mark.xml'), ICON_XML)
+
+      // O keep viaja junto do drawable: são duas metades do mesmo fato ("este ícone existe e é
+      // alcançável"), e separá-las é como o AP-251 voltou.
+      const rawDir = path.join(resRoot, 'raw')
+      fs.mkdirSync(rawDir, { recursive: true })
+      fs.writeFileSync(path.join(rawDir, 'keep.xml'), KEEP_XML)
+
       return cfg
     },
   ])
