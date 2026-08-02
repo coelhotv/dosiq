@@ -63,7 +63,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 259,
     "anti_patterns_count": 322,
     "decisions_count": 91,
