@@ -23,7 +23,6 @@ export default function BottomNav({ currentView, setCurrentView, unreadCount = 0
       aria-label="Navegação principal"
     >
       <nav className="bottom-nav-redesign">
-        {/* eslint-disable-next-line no-unused-vars */}
         {navItems.map(({ id, label, Icon }) => (
           <button
             key={id}

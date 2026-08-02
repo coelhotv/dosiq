@@ -45,13 +45,13 @@ Erradicar 100% das advertências (warnings), erros de linter e violações de sc
 
 ---
 
-## 📊 4. Métricas de Sucesso (Baseline Ajustado)
+## 📊 4. Métricas de Sucesso (Baseline Atualizado)
 
-| Métrica | Baseline Recalibrado (2026-08-02) | Valor Alvo |
-|---------|──────────────────────────────────|────────────|
-| Erros / Avisos ESLint (`rtk proxy npm run lint`) | **140 warnings (0 erros)** | **0 warnings, 0 erros** |
-| Farol de Unidades (`rtk npm run lint:unit-label`) | **0 erros (APROVADO)** | **0 erros** |
-| Auto-fixáveis (`npx eslint --fix`) | **54 warnings** | **0** |
-| Testes Críticos (`rtk npm run test:critical`) | **100% Passando** | **100% Passando** |
-| Validation Safety Suite (`rtk npm run validate:agent`) | **Exit 0** | **Exit 0** |
-| TS Ratchet (`./scripts/strict-island.sh`) | **Verde** | **Verde** |
+| Métrica | Baseline Recalibrado | Pós-Etapa 2 (2026-08-02) | Valor Alvo |
+|---------|──────────────────────|──────────────────────────|────────────|
+| Erros / Avisos ESLint (`rtk proxy npm run lint`) | 140 warnings | **131 warnings (-9)** | **0 warnings, 0 erros** |
+| Farol de Unidades (`rtk npm run lint:unit-label`) | 0 erros | **0 erros (APROVADO)** | **0 erros** |
+| Auto-fixáveis (`npx eslint --fix`) | 54 warnings | **50 warnings** | **0** |
+| Testes Críticos (`rtk npm run test:critical`) | 100% Passando | **100% Passando** | **100% Passando** |
+| Validation Safety Suite (`rtk npm run validate:agent`) | Exit 0 | **Exit 0** | **Exit 0** |
+| TS Ratchet (`./scripts/strict-island.sh`) | Verde | **Verde** | **Verde** |

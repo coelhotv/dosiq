@@ -5,6 +5,19 @@
 
 ---
 
+## 🌿 0. Estratégia de Git Branching
+
+- **Branch Mãe de Integração**: `feat/063-zero-lint-regressions` (originada da `main`).
+- **Branches Secundárias de Fase**:
+  - `feat/063-phase-1-core-and-gates` ➔ PR ➔ `feat/063-zero-lint-regressions`
+  - `feat/063-phase-2-shared-ui-and-hooks` ➔ PR ➔ `feat/063-zero-lint-regressions`
+  - `feat/063-phase-3a-mobile-color-tokens` ➔ PR ➔ `feat/063-zero-lint-regressions`
+  - `feat/063-phase-3b-mobile-complexity` ➔ PR ➔ `feat/063-zero-lint-regressions`
+  - `feat/063-phase-4-server-and-api` ➔ PR ➔ `feat/063-zero-lint-regressions`
+- **PR Final de Consolidação**: `feat/063-zero-lint-regressions` ➔ PR ➔ `main` (Aprovação Humana R-060).
+
+---
+
 ## 🏗️ 1. Fatiamento do Projeto em Etapas (Phased Slicing)
 
 Para evitar conflitos de merge e garantir isolamento, a limpeza de lint é dividida em 4 Etapas sequenciais:

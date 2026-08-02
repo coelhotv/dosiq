@@ -2,29 +2,52 @@ import { View, Text, TextInput, Animated, StyleSheet } from 'react-native'
 import { useEffect, useState } from 'react'
 import { colors, borderRadius } from '@shared/styles/tokens'
 
+export interface FormInputProps {
+  name: string
+  label?: any
+  value?: any
+  error?: any
+  onChange?: (name: string, value: any) => void
+  onBlur?: (name: string) => void
+  disabled?: boolean
+  placeholder?: string
+  helperText?: string
+  required?: boolean
+  showCharacterCount?: boolean
+  keyboardType?: any
+  autoCapitalize?: any
+  autoComplete?: any
+  secureTextEntry?: boolean
+  multiline?: boolean
+  numberOfLines?: number
+  maxLength?: number
+  returnKeyType?: any
+  onSubmitEditing?: any
+}
+
 export default function FormInput({
   name,
   label,
   value,
-  error = undefined,
+  error,
   onChange,
-  onBlur = undefined,
+  onBlur,
   disabled = false,
-  placeholder = undefined,
-  helperText = undefined,
+  placeholder,
+  helperText,
   required = false,
   showCharacterCount = false,
   // Pass-through para TextInput
-  keyboardType = undefined,
-  autoCapitalize = undefined,
-  autoComplete = undefined,
-  secureTextEntry = undefined,
-  multiline = undefined,
-  numberOfLines = undefined,
-  maxLength = undefined,
-  returnKeyType = undefined,
-  onSubmitEditing = undefined,
-}) {
+  keyboardType,
+  autoCapitalize,
+  autoComplete,
+  secureTextEntry,
+  multiline,
+  numberOfLines,
+  maxLength,
+  returnKeyType,
+  onSubmitEditing,
+}: FormInputProps) {
   const [focused, setFocused] = useState(false)
   // Animated.Value criado uma única vez (lazy init via useState)
   const [borderColorAnim] = useState(() => new Animated.Value(0))

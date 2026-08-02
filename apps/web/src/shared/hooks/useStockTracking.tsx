@@ -80,7 +80,6 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
   useEffect(() => {
     const revalidate = () => {
       if (document.visibilityState !== 'visible') return
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       refresh()
     }
     window.addEventListener('focus', revalidate)
