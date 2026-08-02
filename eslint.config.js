@@ -347,9 +347,28 @@ export default [
       'complexity': ['warn', { max: 20 }],
     }
   },
-  // Override 2: Repositórios e Hooks do Monorepo (legitimamente mais complexos/longos)
+  // Override 1B: Telas, Modais, Sheets e Views (JSX rico e descritivo — 063)
   {
-    files: ['packages/core/src/repositories/**/*.{js,ts}', '**/hooks/**/*.{js,ts}'],
+    files: [
+      '**/screens/**/*.{jsx,tsx}',
+      '**/views/**/*.{jsx,tsx}',
+      '**/*Modal*.{jsx,tsx}',
+      '**/*Sheet*.{jsx,tsx}',
+    ],
+    rules: {
+      'max-lines-per-function': ['warn', { max: 200, skipBlankLines: true, skipComments: true }],
+      'complexity': ['warn', { max: 25 }],
+    }
+  },
+  // Override 2: Repositórios, Hooks e Formatadores do Core (complexidade de enums/formatadores de saúde — 063)
+  {
+    files: [
+      'packages/core/src/repositories/**/*.{js,ts}',
+      'packages/core/src/utils/**/*.{js,ts}',
+      'packages/core/src/export/**/*.{js,ts}',
+      'packages/core/src/chatbot/**/*.{js,ts}',
+      '**/hooks/**/*.{js,ts}',
+    ],
     rules: {
       'max-lines-per-function': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
       'complexity': ['warn', { max: 25 }],
