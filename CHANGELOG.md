@@ -7,6 +7,32 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O alarme de dose crítica volta a abrir em tela cheia no Android
+
+- **Fix** (`patch`, mobile `0.30.1`; iOS não afetado). O alarme tocava, a tela acendia e o app vinha
+  à frente — **mostrando a agenda do dia em vez da tela do alarme**. Quem estava dormindo via o
+  celular aceso com um som tocando e nenhuma indicação de qual dose era, nem os botões de registrar.
+  Estava assim em produção, e não foi introduzido pelas mudanças desta versão.
+
+  **Duas causas distintas, ambas encontradas medindo o aparelho** — nenhuma aparece em teste
+  automatizado, porque as duas dependem de decisões que o sistema operacional toma sozinho.
+
+  A primeira: quando o app tem várias notificações ao mesmo tempo, o Android cria por conta própria
+  uma notificação de **resumo** para agrupá-las. Esse resumo se apresenta como sendo do mesmo tipo
+  das notificações que agrupa, então o app o confundia com o alarme de verdade — e, ao perceber que
+  ele não descrevia dose nenhuma, desistia, sem olhar o alarme real que estava logo atrás na fila.
+  Isso explica por que o problema **surgiu sem que ninguém tocasse no alarme**: bastou o
+  acompanhamento da dose passar a conviver com o alarme e os avisos para o agrupamento começar.
+
+  A segunda: com o app **encerrado**, o sistema abre a tela do alarme sem que o usuário toque em
+  nada — e o app não tinha como saber que havia um alarme esperando, porque só reagia a um toque
+  que nunca aconteceu. Este é o cenário mais comum de todos: a dose da madrugada, com o celular
+  parado há horas.
+
+  Corrigido: o app agora **pergunta ao sistema** se existe um alarme ativo, ao abrir e ao voltar do
+  segundo plano, em vez de esperar ser avisado. Verificado no aparelho nas três situações — app
+  aberto, app em segundo plano e app encerrado.
+
 ### Binário Android de release mais enxuto e otimizado (avisos do Play Console sobre a v0.30.0)
 
 - **Chore** (`patch`, mobile `0.30.0 → 0.30.1`; web não afetado). O Play Console apontou três
