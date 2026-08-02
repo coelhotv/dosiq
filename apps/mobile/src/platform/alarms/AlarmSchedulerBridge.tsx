@@ -31,7 +31,12 @@ import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
 import { cancelAlarm } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
-import { isAlarmNotification, isDoseNotificationStale, reconcileStaleDoseNotifications } from './staleDoseNotifications'
+import {
+  isAlarmNotification,
+  isDoseNotificationStale,
+  pickPromotableAlarm,
+  reconcileStaleDoseNotifications,
+} from './staleDoseNotifications'
 
 // Auditoria de dose crítica (042 Slice B): no foreground, deriva o desfecho iOS (ENG-1 — iOS não
 // roda JS no disparo) e DRENA a fila offline (Android enfileira no headless). Fail-open total.
@@ -107,6 +112,29 @@ async function flushCriticalAudit(userId, consentSuppressed = false) {
 }
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
+
+
+/**
+ * Pergunta ao SO se existe alarme ativo na tela e, havendo, promove ao takeover (FR-002).
+ *
+ * Ordem importa: PRIMEIRO varre e cancela notificações de dose já vencidas (missed) presas na tela;
+ * SÓ então promove — nunca reabrir uma dose velha (tocar "Tomei" nela bate em P0001).
+ *
+ * Chamada em DOIS momentos, e os dois são necessários:
+ *  - montagem → cobre o app lançado MORTO pelo full-screen intent (não há transição `active`, e o
+ *    `getInitialNotification` volta vazio porque não houve press);
+ *  - `AppState 'active'` → cobre o app vivo em background cuja Activity o SO reusa (singleTask).
+ *
+ * Idempotente por dois motivos: `openAlarmScreen` não re-navega se a rota já é o takeover, e
+ * `pickPromotableAlarm` ignora vencidas. Falha em silêncio de propósito — não descobrir que há
+ * alarme na tela nunca pode derrubar o agendamento.
+ */
+function promoteActiveAlarm() {
+  reconcileStaleDoseNotifications()
+    .then(() => notifee.getDisplayedNotifications())
+    .then((list) => openAlarmScreen(pickPromotableAlarm(list)))
+    .catch(() => {})
+}
 
 // Navega ao takeover de tela cheia quando uma notificação do canal de alarme abre/está ativa no app
 // (FR-002). Idempotente: não re-navega se já está lá. (isAlarmNotification + staleness + sweep vivem
@@ -272,21 +300,17 @@ export default function AlarmSchedulerBridge() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
     flushCriticalAudit(userId, consentSuppressed) // drena a fila de auditoria na montagem (foreground inicial)
+    // 🔴 TAMBÉM na montagem, não só na transição de estado. Quando o full-screen intent lança o app
+    // MORTO, não há transição `active` (o app já nasce ativo) e o `getInitialNotification` volta
+    // vazio — não houve press, quem abriu foi o SO. Sem esta chamada, ninguém pergunta se existe
+    // alarme na tela e o app abre na última aba com o alarme tocando (medido 2026-08-02: cold start
+    // `result code=0` + `WARM`, `Running "main"` 1,4s após o headless; takeover não abria).
+    promoteActiveAlarm()
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active') return
       load()
       flushCriticalAudit(userId, consentSuppressed) // 042 Slice B: deriva iOS + drena fila offline no foreground
-
-      // App veio a foreground (inclui launch pelo full-screen intent c/ app minimizado): PRIMEIRO
-      // varre e cancela notificações de dose já vencidas (missed) que ficaram presas na tela; SÓ
-      // então promove um alarme AINDA ativo ao takeover (nunca reabre uma dose velha → P0001).
-      reconcileStaleDoseNotifications()
-        .then(() => notifee.getDisplayedNotifications())
-        .then((list) => {
-          const alarm = list.find((n) => isAlarmNotification(n.notification))
-          openAlarmScreen(alarm?.notification)
-        })
-        .catch(() => {})
+      promoteActiveAlarm()
     })
     return () => sub.remove()
   }, [userId, load, consentSuppressed])

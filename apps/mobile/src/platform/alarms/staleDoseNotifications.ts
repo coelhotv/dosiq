@@ -75,3 +75,33 @@ export async function reconcileStaleDoseNotifications(now = getRawNow()) {
   }
   if (promises.length > 0) await Promise.all(promises)
 }
+
+/**
+ * Escolhe, entre as notificações EXIBIDAS, a que pode virar takeover.
+ *
+ * 🔴 Não trocar por `find(isAlarmNotification)`. O Android cria sozinho uma notificação de RESUMO
+ * (`GROUP_SUMMARY` do auto-grupo, id 2147483647) que herda o canal das notificações agrupadas —
+ * então ela **passa** no `isAlarmNotification` e, por vir primeiro na lista, o `find` devolvia o
+ * resumo em vez do alarme. Resumo não tem `data.doseInstanceId`: `openAlarmScreen` barrava no guard
+ * seguinte e o takeover NUNCA abria, com o alarme tocando ao lado (medido no device 2026-08-02:
+ * `displayed {total:3, canais:[critical,critical,activity], achouAlarme:true}` → `saiu: sem-doseInstanceId`).
+ *
+ * Por que isso passou a acontecer sem ninguém mexer no alarme: o resumo só nasce quando há
+ * notificações simultâneas suficientes. Quando a superfície de dose (039) passou a coexistir com o
+ * alarme e o push, o auto-grupo apareceu — e o `find` começou a pegar ele. Qualquer feature que
+ * poste mais uma notificação reintroduz a condição.
+ *
+ * Critério: precisa carregar `doseInstanceId` (é o que distingue um alarme REAL de um agregado do
+ * SO) e não pode estar vencida (dose velha vira P0001 ao tocar "Tomei" — ver `openAlarmScreen`).
+ */
+export function pickPromotableAlarm(displayed, now = getRawNow()) {
+  if (!Array.isArray(displayed)) return undefined
+  return displayed
+    .map((n) => n?.notification)
+    .find(
+      (n) =>
+        isAlarmNotification(n) &&
+        Boolean(n?.data?.doseInstanceId) &&
+        !isDoseNotificationStale(n.data, now)
+    )
+}

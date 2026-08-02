@@ -4,15 +4,15 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "merged",
+    "status": "completed",
     "tier": 1,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
-    "spec_dir": "plans/specs/051-expo-updates",
-    "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "ONDA 1 INTEGRADA NA MAIN — PR #781 mergeada (merge commit c6971e2c, NAO squash: squash deixaria o commit taggeado mobile-v0.30.0 fora da main e travaria publish-ota production pelo gate R-307). 35 commits, 144 arquivos, +10461/-3239, consolidando as 11 fatias #770-#780 (055 SDK54/target36/edge-to-edge + 051-A OTA/kill switch + 044 F3/F4a). mobile 0.30.0 (primeira versao alcancavel por OTA), web 4.22.0. Notas de loja escritas em RELEASES.md v1.2.0. Binarios Android (preview+production) prontos; iOS pendente. Proximo: build iOS, PO-1 (aapt2 target 36), MARCO 1 de smoke.",
-    "goal_type": "chore",
+    "spec_dir": "plans/specs/061-large-screen-support",
+    "spec": "plans/specs/061-large-screen-support/spec.md",
+    "goal": "F1+F2 — enxugar o binario Android de release: excluir expo-dev-client do autolinking em production/preview + habilitar R8/shrinkResources. Origem: avisos do Play Console sobre a v0.30.0",
+    "goal_type": "fix",
     "code_review": {
-      "status": "clean",
+      "status": "pending_rc5",
       "critical": 0,
       "auto_fixed": 0,
       "ask_items": 0
@@ -48,23 +48,24 @@
       "PO 2026-07-25: FR-018 ganha saida honesta p/ https://dosiq.app no overlay, com URL COMPILADA (nao vem do gate)",
       "Todos os 8 findings aceitos; T050 fechada",
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
-      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca."
+      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca.",
+      "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida."
     ],
-    "branch": "main (branch de integracao feature/055-w1-sdk54 mergeada e deletada)",
+    "branch": "fix/android-release-slimming",
     "blocked_on": [
-      "PO: decidir se R-307 secao 3 ganha excecao explicita para delta comprovadamente fora do bundle (tag movida 3x nesta sessao)",
-      "PO: build iOS (preview + production -> TestFlight interno automatico)",
-      "PO: MARCO 1 — smoke em device real (055 PO-2/3/5 + 051-A PO-7/PO-SEC-6/PO-SEC-8/PO-1/2/5)",
-      "PO: eas submit Android internal testing + confirmar Play Console sem aviso de target API (PO-1 final)"
+      "PO: token Sentry RESOLVIDO no codigo (lib-sentry-token.sh le do .env); para build na NUVEM ainda precisa de eas secret:create",
+      "PO: build EAS preview -> smoke completo (alarme+som, notificacao, deep link, OTA, export LGPD) — R8 quebra reflexao so em runtime",
+      "PO: inspecionar o AAB de producao (sem expo.modules.devlauncher, sem com.google.mlkit, sem scheme exp+dosiq-app) + delta de tamanho",
+      "PO: publicar no internal testing e conferir se os avisos do Play sumiram"
     ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 10,
-    "rules_count": 257,
-    "anti_patterns_count": 317,
+    "journal_entries_since_distillation": 21,
+    "rules_count": 258,
+    "anti_patterns_count": 319,
     "decisions_count": 91,
     "contracts_count": 32,
     "distillation_due": false
@@ -74,7 +75,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-25T17:04:52.255259+00:00"
+    "index_loaded_at": "2026-07-31T03:53:14.125104+00:00"
   },
   "code_review": {
     "status": "clean",
@@ -84,13 +85,13 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy (RC6_ENGINE_CLAUDE=0, 1 chunk)",
-    "status": "clean",
+    "engine": "claude (pass B, agy indisponivel)",
+    "status": "issues_found",
     "critical": 0,
-    "high": 0,
+    "high": 1,
     "introduced_critical": 0,
-    "introduced_high": 0,
-    "pr": 780,
-    "resolved": "0 findings — tier=1, payload 122,7K (medido via RC6_MEASURE=1 antes do run real, dentro do budget de amostragem do agy)."
+    "introduced_high": 1,
+    "pr": 782,
+    "resolved": "1 HIGH introduced CONFIRMADO no artefato e corrigido (keep.xml p/ ic_dosiq_mark + sons)"
   }
 }

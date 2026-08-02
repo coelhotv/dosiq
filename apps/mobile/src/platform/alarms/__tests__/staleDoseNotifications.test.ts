@@ -22,6 +22,7 @@ jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
 import {
   isDoseNotificationStale,
   isAlarmNotification,
+  pickPromotableAlarm,
   reconcileStaleDoseNotifications,
 } from '../staleDoseNotifications'
 
@@ -88,5 +89,47 @@ describe('reconcileStaleDoseNotifications', () => {
   it('getDisplayedNotifications lança → best-effort, não propaga', async () => {
     mockGetDisplayed.mockRejectedValueOnce(new Error('boom'))
     await expect(reconcileStaleDoseNotifications(NOW)).resolves.toBeUndefined()
+  })
+})
+
+describe('pickPromotableAlarm', () => {
+  // O `data` do alarme é sempre string (notifee serializa) — fixtures espelham o device.
+  const alarme = (id, min = -5) => ({
+    notification: {
+      android: { channelId: 'dose-alarm-critical-v2' },
+      data: { doseInstanceId: id, scheduledFor: iso(min), toleranceMinutes: '120' },
+    },
+  })
+  // O RESUMO do auto-grupo do Android: mesmo canal, SEM data. É o bug de 2026-08-02 — vinha
+  // primeiro na lista e o `find(isAlarmNotification)` o devolvia no lugar do alarme real.
+  const resumoDoAutoGrupo = () => ({
+    notification: { android: { channelId: 'dose-alarm-critical-v2' }, data: {} },
+  })
+  const superficie = () => ({
+    notification: {
+      android: { channelId: 'dose-activity-v2' },
+      data: { doseInstanceId: 'dose-sup', __surface: 'true' },
+    },
+  })
+
+  it('🔴 ignora o resumo do auto-grupo e devolve o alarme real (regressão takeover)', () => {
+    const escolhido = pickPromotableAlarm([resumoDoAutoGrupo(), alarme('dose-1'), superficie()], NOW)
+    expect(escolhido?.data?.doseInstanceId).toBe('dose-1')
+  })
+
+  it('não promove a superfície (canal diferente) nem alarme vencido', () => {
+    expect(pickPromotableAlarm([superficie()], NOW)).toBeUndefined()
+    expect(pickPromotableAlarm([alarme('dose-velha', -200)], NOW)).toBeUndefined()
+  })
+
+  it('entre um vencido e um válido, devolve o válido', () => {
+    const escolhido = pickPromotableAlarm([alarme('dose-velha', -200), alarme('dose-viva', -5)], NOW)
+    expect(escolhido?.data?.doseInstanceId).toBe('dose-viva')
+  })
+
+  it('lista vazia ou entrada inválida → undefined (nunca lança)', () => {
+    expect(pickPromotableAlarm([], NOW)).toBeUndefined()
+    expect(pickPromotableAlarm(null, NOW)).toBeUndefined()
+    expect(pickPromotableAlarm([{}, { notification: null }], NOW)).toBeUndefined()
   })
 })

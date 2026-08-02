@@ -12,7 +12,7 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 // default só vale para os casos em que errar barato é melhor que errar caro.
 const UPDATE_CHANNEL = process.env.EAS_BUILD_PROFILE || 'development'
 
-const APP_VERSION = '0.30.0' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.30.1' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -207,6 +207,49 @@ module.exports = {
           // repo-root node_modules (monorepo hoisted), portável.
           extraMavenRepos: ['../../../../node_modules/@notifee/react-native/android/libs'],
           useLegacyPackaging: true,
+          // R8 (minify + shrink de recursos) nos builds de RELEASE. Ficava desligado por default
+          // do template Expo (`android.enableMinifyInReleaseBuilds` = false) — o Play Console
+          // apontou isso como "Your app is not optimized" no AAB da v0.30.0.
+          // 🔴 O que isto NÃO afeta: o bundle JS (Hermes). Minificação é de Java/Kotlin — stack
+          // trace de erro JS continua igual. O que muda é o código nativo: some o que ninguém
+          // chama, e o que sobra vira nome curto.
+          // ⚠️ Por isso o smoke pós-build é obrigatório: R8 quebra o que é resolvido por REFLEXÃO
+          // (nome de classe em string), e nada disso aparece em lint/tsc/teste — só em runtime.
+          enableProguardInReleaseBuilds: true,
+          // 🔴 shrinkResources DESLIGADO (2026-08-01, 2ª medição do APK v0.30.1).
+          // Não é preferência: o `res/raw/keep.xml` gerado por withDoseActivityAndroidIcon.js
+          // NÃO foi respeitado. Medido no artefato — `raw/keep` estava empacotado (prova de que
+          // o arquivo chegou ao build) e `drawable/ic_dosiq_mark` continuava removido: some do
+          // dump da tabela exatamente no ID que ocuparia por ordem alfabética (0x7f0800af, entre
+          // ic_clock_black_24dp e ic_keyboard_black_24dp) — foi compilado e depois descartado.
+          // Sem entender POR QUE o keep é ignorado, ligar isto significa apostar o smallIcon da
+          // notificação de dose numa heurística de terceiro (AP-251, duas reincidências). O aviso
+          // do Play Console pedia R8/minify de CÓDIGO, que continua ligado; shrink de recursos
+          // não fazia parte do pedido e vale ~2 MB. Constituição §II: caminho clínico não paga
+          // esse tipo de aposta. Reabrir só com prova no artefato, não com raciocínio.
+          enableShrinkResourcesInReleaseBuilds: false,
+          // Regras adicionais. A maioria das libs já traz consumer rules dentro do próprio pacote
+          // (verificado: @notifee/react-native, expo-updates e expo-modules-core têm
+          // `android/proguard-rules.pro`; Sentry e React Native entregam as suas dentro do AAR).
+          // O que fica aqui é só o que NENHUMA delas cobre:
+          extraProguardRules: [
+            // Sentry: sem estes atributos o stack trace nativo perde arquivo/linha e o mapping
+            // não tem o que remapear — o crash chega ao dashboard como ruído ofuscado.
+            '-keepattributes SourceFile,LineNumberTable',
+            '-keepattributes *Annotation*',
+            // Notifee resolve classes de evento por nome ao entregar a notificação. O consumer
+            // rules do pacote cobre o núcleo; este keep protege os models que atravessam a ponte
+            // — perder um deles quebra o ALARME DE DOSE, que é o produto (Constituição §II).
+            '-keep class app.notifee.core.** { *; }',
+            // Módulos Expo são descobertos por lista gerada + reflexão no boot. Um módulo
+            // renomeado pelo R8 não é "erro de compilação": é um módulo que simplesmente não
+            // existe em runtime, e o app sobe sem ele.
+            '-keep class expo.modules.** { *; }',
+            '-keep class * extends expo.modules.core.interfaces.Package { *; }',
+            // Nosso código nativo: bridge da Live Activity/alarme + Application/Activity citados
+            // por nome no manifest.
+            '-keep class com.coelhotv.dosiq.** { *; }',
+          ].join('\n'),
         },
       }],
       [
@@ -215,6 +258,12 @@ module.exports = {
           "userTrackingPermission": "Seus dados nos ajudam a manter o Dosiq gratuito por meio de anúncios personalizados e melhorias no app."
         }
       ],
+      // Tira o deep link de dev (`exp+dosiq-app`) do manifest de release. A exclusão dos MÓDULOS
+      // de dev-client mora em package.json → expo.autolinking.android.exclude, não aqui: a
+      // propriedade equivalente do settings.gradle é quebrada upstream (a lista é achatada em um
+      // argumento só). O scheme não vem do autolinking, então precisa deste tratamento à parte.
+      // Detalhe, evidência e reversão no arquivo do plugin + AP-324.
+      './withoutDevSchemeOnRelease.js',
       './withAlarmPermissions.js',
       // 039/F3: NSSupportsLiveActivities no Info.plist (habilita ActivityKit).
       './withDoseLiveActivity.js',

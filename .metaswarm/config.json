@@ -1,0 +1,41 @@
+{
+  "project": {
+    "name": "dosiq",
+    "type": "monorepo",
+    "language": "typescript",
+    "typescriptVersion": "5.9.2",
+    "framework": "react-19",
+    "bundler": "vite-7",
+    "packageManager": "npm"
+  },
+  "testing": {
+    "runner": "vitest",
+    "coverageProvider": "v8",
+    "commands": {
+      "test": "rtk npm test",
+      "critical": "rtk npm run test:critical",
+      "coverage": "rtk npm run test:coverage",
+      "agentValidation": "rtk npm run validate:agent"
+    },
+    "coverageThresholds": {
+      "lines": 40,
+      "functions": 40,
+      "branches": 40,
+      "statements": 40
+    }
+  },
+  "linting": {
+    "linter": "eslint-9",
+    "command": "rtk npm run lint"
+  },
+  "ci": {
+    "system": "github-actions",
+    "workflow": ".github/workflows/test.yml"
+  },
+  "metaswarm": {
+    "version": "1.0.0",
+    "rtkEnabled": true,
+    "noSelfMerge": true,
+    "shimsDir": ".metaswarm/shims"
+  }
+}

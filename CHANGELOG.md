@@ -7,6 +7,85 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O alarme de dose crítica volta a abrir em tela cheia no Android
+
+- **Fix** (`patch`, mobile `0.30.1`; iOS não afetado). O alarme tocava, a tela acendia e o app vinha
+  à frente — **mostrando a agenda do dia em vez da tela do alarme**. Quem estava dormindo via o
+  celular aceso com um som tocando e nenhuma indicação de qual dose era, nem os botões de registrar.
+  Estava assim em produção, e não foi introduzido pelas mudanças desta versão.
+
+  **Duas causas distintas, ambas encontradas medindo o aparelho** — nenhuma aparece em teste
+  automatizado, porque as duas dependem de decisões que o sistema operacional toma sozinho.
+
+  A primeira: quando o app tem várias notificações ao mesmo tempo, o Android cria por conta própria
+  uma notificação de **resumo** para agrupá-las. Esse resumo se apresenta como sendo do mesmo tipo
+  das notificações que agrupa, então o app o confundia com o alarme de verdade — e, ao perceber que
+  ele não descrevia dose nenhuma, desistia, sem olhar o alarme real que estava logo atrás na fila.
+  Isso explica por que o problema **surgiu sem que ninguém tocasse no alarme**: bastou o
+  acompanhamento da dose passar a conviver com o alarme e os avisos para o agrupamento começar.
+
+  A segunda: com o app **encerrado**, o sistema abre a tela do alarme sem que o usuário toque em
+  nada — e o app não tinha como saber que havia um alarme esperando, porque só reagia a um toque
+  que nunca aconteceu. Este é o cenário mais comum de todos: a dose da madrugada, com o celular
+  parado há horas.
+
+  Corrigido: o app agora **pergunta ao sistema** se existe um alarme ativo, ao abrir e ao voltar do
+  segundo plano, em vez de esperar ser avisado. Verificado no aparelho nas três situações — app
+  aberto, app em segundo plano e app encerrado.
+
+### Binário Android de release mais enxuto e otimizado (avisos do Play Console sobre a v0.30.0)
+
+- **Chore** (`patch`, mobile `0.30.0 → 0.30.1`; web não afetado). O Play Console apontou três
+  melhorias no bundle da v0.30.0. Duas delas tinham a **mesma causa**: o `expo-dev-client` estava
+  indo parar no binário de produção.
+
+  **1. `expo-dev-client` fora dos builds de release.** No iOS o pacote se declara `debugOnly` e some
+  sozinho; no Android esse campo não existe e o módulo era autolinkado em toda variante — o gradle
+  plugin do dev-launcher só deixava de *instrumentar* classes fora de debug, mas o código ia inteiro
+  para o AAB. Consequências que o painel da loja mostrou: o aviso de APIs de edge-to-edge depreciadas
+  citava `DevLauncherExpoActivityConfigurator`, e o aviso de restrição de orientação citava
+  `GmsBarcodeScanningDelegateActivity` — uma Activity de leitor de código de barras que **o dosiq não
+  tem**, vinda do ML Kit que só o dev-launcher usa (para o QR do menu de desenvolvimento). Junto
+  vinham Compose, Koin, Apollo, okhttp e gson como peso morto, e o manifest de produção anunciava o
+  deep link de dev `exp+dosiq-app`. Os módulos de desenvolvimento passam a ser excluídos do
+  autolinking Android, e o scheme de dev sai do manifest nos builds de release. Efeito medido: o
+  build deixa de incluir 4 projetos nativos, e o APK de teste caiu de 62 MB para 48 MB.
+
+  Um efeito colateral no desenvolvimento, aceito conscientemente: a exclusão vale para todo build
+  Android, então `expo run:android` perde o menu de desenvolvimento do Expo. O menu do próprio
+  React Native (recarregar, inspecionar) continua, e nada no projeto usava o outro.
+
+  **2. R8 ligado (minificação de código nativo).** Estava desligado por default do template Expo.
+  Vale registrar o que **não** muda: o bundle JS (Hermes) não é tocado — a otimização é do código
+  nativo. As regras de preservação adicionadas protegem o que é resolvido por reflexão e que o R8
+  não tem como enxergar: models do notifee (o alarme de dose depende deles), a descoberta de
+  módulos Expo no boot, e o código nativo do app.
+
+  A **remoção de recursos não usados** (uma otimização separada, que o pedido da loja não incluía)
+  chegou a ser ligada junto e foi desligada depois de duas medições no APK: ela apagava o ícone da
+  notificação de dose. O ícone só é citado por uma string do lado JavaScript, então a análise
+  estática o classifica como órfão; a lista explícita de exceções que deveria protegê-lo chegou ao
+  build e mesmo assim foi ignorada. Sem entender por quê, manter isso ligado seria apostar a
+  notificação de dose — a razão de existir do app — em ~2 MB de economia.
+
+  **3. Crash Android continua legível — e aqui apareceu um problema mais antigo.** Com minificação,
+  o `mapping.txt` é o que traduz o stack trace ofuscado. Ao checar se o upload para o Sentry estava
+  funcionando, a resposta foi que **ele nunca funcionou**: o projeto tem zero arquivos de
+  simbolização, em nenhuma versão. O token existe e é válido, mas não chegava ao build — os
+  arquivos `.env` são excluídos do pacote enviado ao builder, e o ambiente carregado durante a
+  preparação não sobrevive até a compilação. O `SENTRY_ALLOW_FAILURE` do perfil de produção
+  transformava essa ausência total em silêncio: o build reportava sucesso para algo que não
+  acontecia. A flag saiu, o token passa a ser carregado explicitamente pelos scripts de build
+  (Android e iOS), e um build de produção sem ele **aborta em segundos** em vez de gastar vinte
+  minutos e entregar um binário cujos crashes ninguém consegue ler.
+
+  ⚠️ O bump de `0.30.0` para `0.30.1` cria um `runtimeVersion` novo (ADR-082): updates OTA
+  publicados para `0.30.0` não alcançam este binário, e passam a ser republicados sobre `0.30.1`.
+  Isso é inerente a qualquer mudança nativa — ela não teria como viajar por OTA de todo jeito.
+
+  A terceira restrição do aviso de orientação (o lock de retrato do próprio app) é escopo da
+  **spec 061**, e as APIs de janela depreciadas do RN são escopo da **spec 055 / Onda 2**.
+
 ### Documentação técnica reorganizada e expandida (spec 049, épico completo)
 
 - **Docs** (`no-user-impact` — docs-only, sem alteração de código). Épico 049 (docs-revamp pós-040 TypeScript) concluído em 5 fases: F1 schema YAML + validador, F2 frontmatter em 54 docs, F3 atualização JS→TS em 58 docs, F4 limpeza estrutural (merge getting-started/setup, remoção guides/reports/releases), F5 criação de 14 docs novos + 2 rewrites cobrindo gaps de mobile, monorepo, TypeScript, server notifications, API endpoints, core schemas/repositories e Live Activities. INDEX.md regenerado com catálogo de 73 docs ativos. 73/73 docs validados pelo frontmatter validator.

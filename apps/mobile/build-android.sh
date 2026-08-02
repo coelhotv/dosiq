@@ -90,6 +90,13 @@ echo "🔐 Exportando credencial Firebase: $CREDS_FILE"
 export GOOGLE_SERVICES_JSON_PATH="$CREDS_FILE"
 export EAS_BUILD_PROFILE="$PROFILE"
 
+# SENTRY_AUTH_TOKEN: os .env não chegam ao build (o .easignore corta dotfiles; o env do prebuild
+# morre antes do gradle). Detalhe e evidência em lib-sentry-token.sh.
+# shellcheck source=lib-sentry-token.sh
+. "$SCRIPT_DIR/lib-sentry-token.sh"
+load_sentry_auth_token "$SCRIPT_DIR" || true
+require_sentry_auth_token_for_production "$PROFILE"
+
 # echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
 # Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
 rm -rf "$SCRIPT_DIR/android"

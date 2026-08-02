@@ -31,9 +31,7 @@
     },
     "production": {
       "channel": "production",
-      "env": {
-        "SENTRY_ALLOW_FAILURE": "true"
-      },
+      "env": {},
       "ios": {
         "image": "latest"
       },

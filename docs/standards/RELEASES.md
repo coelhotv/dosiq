@@ -34,16 +34,27 @@ updated_at: "2026-07-28"
 
 ---
 
-## v0.30.0 — a publicar — Base renovada, correções que chegam sem esperar a loja
+## v0.30.1 — a publicar — Base renovada, alarme de dose crítica corrigido, correções que chegam sem esperar a loja
 
-> Cobre tudo desde a `0.28.3` publicada: bump do Expo SDK 53→54 (0.29.0), migração da exportação
-> LGPD para a API nova de arquivos (0.29.1), edge-to-edge do Android 16 e a correção de teclado
-> em 12 telas de formulário (0.29.2), o kill switch de versão mínima (0.29.3), o cliente de
-> atualização OTA (0.30.0) e a preferência de estoque sobrevivendo offline (release OTA sobre a
-> 0.30.0).
+> Cobre tudo desde a `0.28.3` publicada (última que esteve em produção): bump do Expo SDK 53→54
+> (0.29.0), migração da exportação LGPD para a API nova de arquivos (0.29.1), edge-to-edge do
+> Android 16 e a correção de teclado em 12 telas de formulário (0.29.2), o kill switch de versão
+> mínima (0.29.3), o cliente de atualização OTA (0.30.0), a preferência de estoque sobrevivendo
+> offline (OTA sobre a 0.30.0) e, na `0.30.1`, o enxugamento do binário Android + **a correção do
+> alarme de dose crítica** (PR #782).
+>
+> ⚠️ **A nota foi reenquadrada de `0.30.0` para `0.30.1`** porque a 0.30.0 nunca chegou à loja: o
+> PO segurou a publicação ao encontrar, no smoke, falha justamente em dose crítica — a superfície
+> de maior responsabilidade clínica do produto (ver `AP-327`).
 >
 > **0.30.0 é a primeira versão alcançável por OTA** e o benefício **não é retroativo** — só quem
 > instalar desta em diante recebe correção sem passar pela loja.
+>
+> **Assimetria de plataforma nesta versão:** os dois ganhos novos da `0.30.1` são **Android-only** —
+> o alarme em tela cheia já funcionava no iOS (lá o takeover depende de um toque do usuário, que
+> sempre acontece; no Android quem abre é o sistema, sem toque), e o enxugamento do binário veio de
+> uma dependência de desenvolvimento que só vazava no Android. Por isso **nenhum dos dois entra na
+> nota da Apple**: descrever como novidade um problema que o usuário de iPhone nunca teve é ruído.
 >
 > **Fora da copy, de propósito:**
 > - **Kill switch de versão mínima** — capacidade de operação, não benefício ao usuário.
@@ -53,6 +64,10 @@ updated_at: "2026-07-28"
 >   texto de privacidade da ficha, é entrega separada.
 > - **Edge-to-edge** é correção Android; a nota da Apple descreve o efeito em termos neutros
 >   ("área segura"), porque o `FormActions` também recebeu inset no iOS.
+> - **A causa técnica do bug do alarme** (notificação de resumo criada pelo próprio Android,
+>   ciclo de vida do processo). A copy diz o que voltou a funcionar, não por que quebrou.
+> - **Redução de tamanho do APK** (59 → 38 MB, -36%): benefício real, mas a Google Play já exibe o
+>   tamanho na ficha. Citar número na nota envelhece mal a cada release.
 
 ### Apple App Store (pt-BR)
 
@@ -67,14 +82,16 @@ O que muda para você:
 • Base atualizada — o app foi migrado para a versão mais recente da plataforma, mantendo compatibilidade com os sistemas operacionais novos e com os recursos de tela dos aparelhos atuais.
 ```
 
-### Google Play (pt-BR — 334 chars)
+### Google Play (pt-BR — 496 chars)
 
 ```
 Base do app atualizada para a versão do Android mais recente.
-Várias correções e melhorias:
+Correções e melhorias:
+• O alarme de dose crítica volta a abrir em tela cheia, com a dose e os botões para registrar — inclusive com o celular bloqueado
 • O teclado não cobre mais os campos e o botão de salvar nos formulários
 • Botões de ação deixam de ficar colados na barra de gestos
 • Exportação dos seus dados corrigida
+• O app ocupa menos espaço no aparelho
 • A partir desta versão, correções chegam sem esperar a revisão da loja
 ```
 
