@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     backgroundColor: colors.supplement[50],
     borderWidth: 1,
-    borderColor: colors.supplement[50],
+    borderColor: colors.supplement[500],
     marginTop: spacing[2],
   },
   warningText: {

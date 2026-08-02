@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
-    backgroundColor: colors.doseDelayed.borderNone,
+    backgroundColor: colors.bg.card,
   },
   container: {
     borderRadius: borderRadius.xl,
