@@ -55,7 +55,7 @@ jobs:
       - name: Get changed files
         id: changed-files
         run: |
-          FILES=$(git diff --name-only --diff-filter=ACMRT origin/${{ github.event.pull_request.base.ref || 'main' }}...HEAD -- '*.js' '*.jsx' | tr '\n' ' ')
+          FILES=$(git diff --name-only --diff-filter=ACMRT origin/${{ github.event.pull_request.base.ref || 'main' }}...HEAD -- '*.js' '*.jsx' '*.ts' '*.tsx' | tr '\n' ' ')
           echo "all_changed_files=$FILES" >> $GITHUB_OUTPUT
           if [ -n "$FILES" ]; then
             echo "any_changed=true" >> $GITHUB_OUTPUT
@@ -66,6 +66,15 @@ jobs:
       - name: Run ESLint (Incremental on PR)
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
         run: npx eslint ${{ steps.changed-files.outputs.all_changed_files }}
+
+      # Gates acoplados ao `npm run lint` (hoje: unit-label-gate) precisam rodar
+      # em PR — antes eram exclusivos do push na main, ou seja, só acusavam com o
+      # problema JÁ mergeado. Foi assim que a main ficou vermelha de 2026-07-29
+      # (#781) a 2026-08-02 sem ninguém ver. São gates de repo inteiro, não de
+      # diff: rodar completo é barato e é o único jeito de barrar antes do merge.
+      - name: Run repo gates (PR)
+        if: github.event_name == 'pull_request'
+        run: npm run lint:unit-label
 
       - name: Run ESLint (Full on Main/Develop)
         if: github.event_name == 'push'
