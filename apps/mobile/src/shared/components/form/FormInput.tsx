@@ -2,6 +2,29 @@ import { View, Text, TextInput, Animated, StyleSheet } from 'react-native'
 import { useEffect, useState } from 'react'
 import { colors, borderRadius } from '@shared/styles/tokens'
 
+export interface FormInputProps {
+  name: string
+  label?: any
+  value?: any
+  error?: any
+  onChange?: (name: string, value: any) => void
+  onBlur?: (name: string) => void
+  disabled?: boolean
+  placeholder?: string
+  helperText?: string
+  required?: boolean
+  showCharacterCount?: boolean
+  keyboardType?: any
+  autoCapitalize?: any
+  autoComplete?: any
+  secureTextEntry?: boolean
+  multiline?: boolean
+  numberOfLines?: number
+  maxLength?: number
+  returnKeyType?: any
+  onSubmitEditing?: any
+}
+
 export default function FormInput({
   name,
   label,
@@ -24,7 +47,7 @@ export default function FormInput({
   maxLength,
   returnKeyType,
   onSubmitEditing,
-}) {
+}: FormInputProps) {
   const [focused, setFocused] = useState(false)
   // Animated.Value criado uma única vez (lazy init via useState)
   const [borderColorAnim] = useState(() => new Animated.Value(0))
