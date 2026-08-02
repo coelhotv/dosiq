@@ -58,7 +58,7 @@ export default function LandingScreen({ navigation }) {
           {/* Next Dose Card */}
           <View style={[styles.card, styles.doseCard]}>
             <View style={styles.doseIconContainer}>
-              <Sun size={32} color="#f9a825" />
+              <Sun size={32} color={colors.status.warningBright} />
             </View>
             <View style={styles.doseInfo}>
               <Text style={styles.doseLabel}>PRÓXIMA DOSE</Text>
@@ -132,7 +132,7 @@ export default function LandingScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Criar conta"
         >
-          <UserPlus size={20} color="#fff" />
+          <UserPlus size={20} color={colors.text.inverse} />
           <Text style={styles.createAccountText}>Criar conta</Text>
         </Pressable>
         
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1.5,
   },
   heroContainer: {
-    backgroundColor: '#f1f3f4',
+    backgroundColor: colors.neutral[100],
     marginHorizontal: spacing[6],
     borderRadius: 32,
     padding: spacing[6],
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF', // white
+    backgroundColor: colors.bg.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing[4],
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
     paddingHorizontal: spacing[6],
     paddingTop: spacing[4],
     borderTopWidth: 1,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   createAccountText: {
-    color: '#fff',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: 'bold',
   },

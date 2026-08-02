@@ -416,7 +416,7 @@ function BulkDoseActions({ loading, selectedCount, onCancel, onConfirm }) {
         disabled={loading || selectedCount === 0}
       >
         {loading
-          ? <ActivityIndicator color="#fff" size="small" />
+          ? <ActivityIndicator color={colors.text.inverse} size="small" />
           : <Text style={styles.confirmText}>
               Registrar {selectedCount} {selectedCount === 1 ? 'dose' : 'doses'}
             </Text>

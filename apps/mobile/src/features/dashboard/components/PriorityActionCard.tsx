@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import * as LucideIcons from 'lucide-react-native'
 const { BellRing, Check } = LucideIcons as any
 import { LinearGradient } from 'expo-linear-gradient'
-import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
+import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 /**
  * PriorityActionCard - Card de alta urgência para doses na janela de agora (Now/Late)
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 8,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.doseDelayed.borderNone,
   },
   container: {
     borderRadius: borderRadius.xl,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   timeInfo: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colors.brand.light,
     marginBottom: spacing[6],
   },
   actionButton: {
