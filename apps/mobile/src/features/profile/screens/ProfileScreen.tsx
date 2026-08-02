@@ -171,7 +171,7 @@ export default function ProfileScreen() {
         {/* Ordem (PO feedback #6): FERRAMENTAS → AVISOS → OUTROS → MINHA CONTA → Sair → versão */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>FERRAMENTAS</Text>
-          <View style={[styles.card, { paddingVertical: 0 }]}>
+          <View style={styles.cardNoPadding}>
             <TouchableOpacity
               style={styles.otherRow}
               onPress={() => (navigation.navigate as any)(ROUTES.DOSE_HISTORY)}
@@ -183,7 +183,7 @@ export default function ProfileScreen() {
               <ChevronRight size={18} color={colors.text.secondary} strokeWidth={1.5} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.otherRow, { borderTopWidth: 1, borderTopColor: colors.border.light }]}
+              style={styles.otherRowBorderTop}
               onPress={() => (navigation.navigate as any)(ROUTES.MEASURES)}
               activeOpacity={0.7}
             >
@@ -223,7 +223,7 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>SOBRE O DOSIQ</Text>
-          <View style={[styles.card, { paddingVertical: 0 }]}>
+          <View style={styles.cardNoPadding}>
             <TouchableOpacity
               style={styles.otherRow}
               onPress={handlePrivacyData}
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
                 {user?.email || '...'}
               </Text>
             </View>
-            <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.infoRowLast}>
               <Text style={styles.label}>Status</Text>
               <Text style={[styles.value, { color: colors.status.success }]}>Ativo</Text>
             </View>
@@ -467,6 +467,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     ...shadows.sm,
   },
+  cardNoPadding: {
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing[4],
+    paddingVertical: 0,
+    marginHorizontal: 16,
+    ...shadows.sm,
+  },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -474,6 +482,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,
+  },
+  infoRowLast: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing[3],
+    borderBottomWidth: 0,
   },
   label: {
     fontSize: 14,
@@ -540,6 +555,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing[4],
   },
+  otherRowBorderTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[4],
+    borderTopWidth: 1,
+    borderTopColor: colors.border.light,
+  },
   otherLabel: {
     fontSize: 16,
     color: colors.text.primary,
@@ -587,7 +610,7 @@ const styles = StyleSheet.create({
   inboxBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ffffff',
+    color: colors.text.inverse,
   },
   versionSection: {
     paddingVertical: spacing[4],

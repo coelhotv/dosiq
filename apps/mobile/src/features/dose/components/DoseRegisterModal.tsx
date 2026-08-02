@@ -249,7 +249,7 @@ export default function DoseRegisterModal({
               disabled={loading}
             >
               {loading
-                ? <ActivityIndicator color="#fff" size="small" />
+                ? <ActivityIndicator color={colors.text.inverse} size="small" />
                 : <Text style={styles.confirmText}>Confirmar</Text>
               }
             </Pressable>
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.bg.overlay,
   },
   sheet: {
     backgroundColor: colors.bg.card,
@@ -431,6 +431,6 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text.inverse,
   },
 })

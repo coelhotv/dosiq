@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.bg.overlay,
     justifyContent: 'center',
     paddingHorizontal: spacing[5],
   },

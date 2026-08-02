@@ -431,14 +431,14 @@ const styles = StyleSheet.create({
   warningBox: {
     padding: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: '#fffbeb',
+    backgroundColor: colors.supplement[50],
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: colors.supplement[500],
     marginTop: spacing[2],
   },
   warningText: {
     fontSize: 13,
-    color: '#d97706',
+    color: colors.supplement[500],
     lineHeight: 18,
   },
 })
