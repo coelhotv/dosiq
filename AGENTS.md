@@ -53,6 +53,7 @@
 - Skill completa: `/devflow` | Memória: `.agent/memory/` | Estado: `.agent/state.json`
 - **SQP obrigatório:** antes de alterar código, carregar `R-221` e seguir `docs/standards/CHANGELOG_AND_RELEASES.md`
 - **Validação obrigatória:** `npm run validate:agent` (10min timeout, bail-fast)
+- **MetaSwarm Orquestração:** Em entregas multi-agente em paralelo, siga `METASWARM.md` e `.metaswarm/config.json`. Swarms devem rodar `rtk bash .metaswarm/shims/run-swarm-check.sh` e registrar a memória C5 do DEVFLOW ao concluir.
 
 ### Review Routine (post-Gemini sunset — ADR-069, since 2026-07-17)
 
