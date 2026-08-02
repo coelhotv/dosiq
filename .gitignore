@@ -135,6 +135,7 @@ apps/web/public/*old*
 # qualquer dir homônimo em qualquer nível.
 /data/
 /plans/
+!/plans/specs/
 
 # Estado local do Supabase CLI (gerado por `npm run supabase:types`) — nunca versionar
 supabase/.temp/
