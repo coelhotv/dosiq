@@ -216,7 +216,18 @@ module.exports = {
           // ⚠️ Por isso o smoke pós-build é obrigatório: R8 quebra o que é resolvido por REFLEXÃO
           // (nome de classe em string), e nada disso aparece em lint/tsc/teste — só em runtime.
           enableProguardInReleaseBuilds: true,
-          enableShrinkResourcesInReleaseBuilds: true,
+          // 🔴 shrinkResources DESLIGADO (2026-08-01, 2ª medição do APK v0.30.1).
+          // Não é preferência: o `res/raw/keep.xml` gerado por withDoseActivityAndroidIcon.js
+          // NÃO foi respeitado. Medido no artefato — `raw/keep` estava empacotado (prova de que
+          // o arquivo chegou ao build) e `drawable/ic_dosiq_mark` continuava removido: some do
+          // dump da tabela exatamente no ID que ocuparia por ordem alfabética (0x7f0800af, entre
+          // ic_clock_black_24dp e ic_keyboard_black_24dp) — foi compilado e depois descartado.
+          // Sem entender POR QUE o keep é ignorado, ligar isto significa apostar o smallIcon da
+          // notificação de dose numa heurística de terceiro (AP-251, duas reincidências). O aviso
+          // do Play Console pedia R8/minify de CÓDIGO, que continua ligado; shrink de recursos
+          // não fazia parte do pedido e vale ~2 MB. Constituição §II: caminho clínico não paga
+          // esse tipo de aposta. Reabrir só com prova no artefato, não com raciocínio.
+          enableShrinkResourcesInReleaseBuilds: false,
           // Regras adicionais. A maioria das libs já traz consumer rules dentro do próprio pacote
           // (verificado: @notifee/react-native, expo-updates e expo-modules-core têm
           // `android/proguard-rules.pro`; Sentry e React Native entregam as suas dentro do AAR).

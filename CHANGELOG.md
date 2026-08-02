@@ -29,11 +29,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   Android, então `expo run:android` perde o menu de desenvolvimento do Expo. O menu do próprio
   React Native (recarregar, inspecionar) continua, e nada no projeto usava o outro.
 
-  **2. R8 ligado (minificação + remoção de recursos não usados).** Estava desligado por default do
-  template Expo. Vale registrar o que **não** muda: o bundle JS (Hermes) não é tocado — a otimização
-  é do código nativo. As regras de preservação adicionadas protegem o que é resolvido por reflexão e
-  que o R8 não tem como enxergar: models do notifee (o alarme de dose depende deles), a descoberta
-  de módulos Expo no boot, e o código nativo do app.
+  **2. R8 ligado (minificação de código nativo).** Estava desligado por default do template Expo.
+  Vale registrar o que **não** muda: o bundle JS (Hermes) não é tocado — a otimização é do código
+  nativo. As regras de preservação adicionadas protegem o que é resolvido por reflexão e que o R8
+  não tem como enxergar: models do notifee (o alarme de dose depende deles), a descoberta de
+  módulos Expo no boot, e o código nativo do app.
+
+  A **remoção de recursos não usados** (uma otimização separada, que o pedido da loja não incluía)
+  chegou a ser ligada junto e foi desligada depois de duas medições no APK: ela apagava o ícone da
+  notificação de dose. O ícone só é citado por uma string do lado JavaScript, então a análise
+  estática o classifica como órfão; a lista explícita de exceções que deveria protegê-lo chegou ao
+  build e mesmo assim foi ignorada. Sem entender por quê, manter isso ligado seria apostar a
+  notificação de dose — a razão de existir do app — em ~2 MB de economia.
 
   **3. Crash Android continua legível — e aqui apareceu um problema mais antigo.** Com minificação,
   o `mapping.txt` é o que traduz o stack trace ofuscado. Ao checar se o upload para o Sentry estava

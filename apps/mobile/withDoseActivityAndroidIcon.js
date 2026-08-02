@@ -31,6 +31,14 @@
 // Os sons entram na lista mesmo tendo sobrevivido nesta medição: eles também são resolvidos por
 // nome (notifee/expo-notifications), e depender de o shrinker "não ter achado ruim" é confiar em
 // heurística de terceiro num caminho clínico (Constituição §II).
+//
+// 🔴 SEGUNDA MEDIÇÃO (mesmo dia): o keep.xml NÃO BASTOU. O APK seguinte trazia `raw/keep`
+// empacotado (o arquivo chegou ao build) e AINDA ASSIM sem `drawable/ic_dosiq_mark` — ausente do
+// dump no ID que ocuparia por ordem alfabética (0x7f0800af). Ou seja: compilado e descartado, com
+// o keep presente e ignorado. Causa não identificada; o resource shrinker foi DESLIGADO em
+// `app.config.js` (`enableShrinkResourcesInReleaseBuilds: false`) e o R8 de código permanece.
+// Este keep.xml fica como cinto de segurança caso alguém religue a flag — mas ele já falhou uma
+// vez, então religar exige prova no artefato, não confiança nesta lista.
 
 const { withDangerousMod } = require('@expo/config-plugins')
 const fs = require('fs')
