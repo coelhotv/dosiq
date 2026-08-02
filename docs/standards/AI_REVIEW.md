@@ -59,6 +59,9 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | `RC6_ENGINE_CLAUDE` | `1` | `=0` tira o claude do RC6; Pass B cai p/ agy chunked (cobertura tier2 intacta). **Use quando a quota do claude estiver baixa** — o claude do Pass B é o MESMO motor dos agentes coders |
 | `RC6_PASSB_TIMEOUT` | `480` | teto wall-clock (s) do claude no Pass B; um claude que HANGA (esperando quota liberar) é morto e cai no fallback agy — não wedgeia o RC6 |
 | `RC6_MAIN` | **auto** (`baseRefName` do PR) | branch-base do diff. **Desde 2026-07-29 é derivada do próprio PR** (`gh pr view --json baseRefName`), não mais `main` fixo. Só defina à mão para revisar contra outra base |
+| `RC6_PROBE_TIMEOUT` | `30s` | teto do probe de liveness do agy (roda uma vez por run, antes do Pass A). Um agy que não responde é tratado como ausente em ≤30s em vez de custar 8min × nº de chunks |
+| `RC6_SKIP_PROBE` | `0` | `=1` pula o probe. Só use se souber que o agy está saudável e quiser poupar ~6s + uma chamada barata |
+| `RC6_AGY_TIMEOUT` | `8m` | `--print-timeout` do agy por chunk. Baixe em PR pequeno se quiser falha rápida |
 
 **🔴 Base do diff — a armadilha que custou 3 runs errados:** até 2026-07-29 o default era `main` fixo.
 Numa onda com **branch de integração** (055: `feature/055-w1-sdk54`), isso fazia o RC6 revisar o diff
@@ -70,6 +73,42 @@ vai pro stderr; **confira as duas primeiras linhas antes de ler qualquer finding
 [rc6] base=1e8658e4 head=c9ceb83f pr=778 post=0
 ```
 Se aparecer `(via fallback default)` com um PR conhecido, o `gh` não respondeu — rode de novo com `RC6_MAIN=<branch>` explícito.
+
+**🔴 Motor que não responde (probe de liveness, desde 2026-08-02):** o RC6 checa que o agy **responde**,
+não só que o binário existe, antes de mandar o 1º chunk. Saída esperada:
+```
+[rc6] agy liveness ok (probe 30s)
+[rc6]   agy usage: input=46471 output=3119 cache_read=61539
+[rc6] pass A chunk 1/1 (agy,    85557B) ok
+```
+Reprovou, o run segue sem o agy (fail-open) e diz por quê:
+```
+[rc6] ⚠️ agy no PATH mas NÃO responde (probe 30s) — tratando como ausente; <1ª linha do stderr>
+[rc6]    se o log do agy disser 'server(s) still connecting', é MCP travado: remova a entry do mcp_config.json (disabled:true não basta)
+```
+
+**Runbook de MCP travado.** Foi o que quebrou o RC6 em 2026-08-02 e custou uma sessão de diagnóstico:
+todo `agy -p` bloqueava até o `--print-timeout`, 8min por chunk, todos falhando, e o log só dizia
+`(agy) FAILED`. Causa: um MCP server que nunca conecta. Em headless o agy **bloqueia de propósito**
+esperando o toolset (changelog 1.1.9), e ele **ignora `"disabled": true`** no config, além de nunca
+abortar conexão pendurada ([antigravity-cli#657](https://github.com/google-antigravity/antigravity-cli/issues/657)).
+
+```bash
+# 1. confirmar — o log nomeia o server culpado
+agy -p "ok" --print-timeout 60s --output-format json --log-file /tmp/agy.log; grep 'still connecting' /tmp/agy.log
+# 2. corrigir — REMOVER a entry (desabilitar não adianta), nos DOIS configs que o CLI lê
+#    ~/.gemini/config/mcp_config.json  e  ~/.gemini/antigravity/mcp_config.json
+# 3. validar
+agy -p "ok" --output-format json     # deve voltar status SUCCESS em segundos
+```
+Regra prática: **não deixe MCP remoto no config global do agy** enquanto a #657 estiver aberta — qualquer
+server que pendure derruba todo `-p`, e portanto todo RC6. Precisa de MCP? Use config workspace-local.
+
+**Contabilidade de tokens no stderr.** Cada chamada loga `usage:` (input/output/cache_read, e `cost=` no
+claude). Copie para a coluna *Nota* do `measurement.md` no formato do protocolo v2:
+`· cov=<chunks_reviewed>/<chunks_planned>[ PARCIAL] · tok=<input_tokens>`. O `cov` vem do JSON de saída
+(`coverage`) e **só é confiável desde 2026-08-02**: antes, chunk cujo JSON não parseava contava como
+revisado. `PARCIAL` invalida a linha para o A/B do PO-5.
 
 **Medir antes de rodar (barato):**
 ```bash
@@ -145,7 +184,12 @@ sobre um diff não-confiável). Absorvemos as estratégias:
 ## Segurança (invariantes — NUNCA relaxar)
 
 - O reviewer roda **sem ferramentas** (`claude --tools "" --strict-mcp-config` · `agy --sandbox
-  --mode plan`): diff é insumo não-confiável; tool-access + prompt-injection = execução (SC-SEC1).
+  --mode plan --disable-slash-commands`): diff é insumo não-confiável; tool-access +
+  prompt-injection = execução (SC-SEC1). O `--disable-slash-commands` entrou em 2026-08-02: a 1.1.9
+  fez o print mode do agy **expandir slash commands e skills**, e o payload do RC6 é diff hostil.
+- ⚠️ **Não confunda com guard quebrado:** `--json-schema` faz o claude listar uma tool
+  `StructuredOutput` no evento `init`, apesar do `--tools ""`. É o mecanismo de entrega da resposta
+  estruturada — sem alcance a shell, arquivo ou MCP. SC-SEC1 se mantém.
 - **Egress guard**: shape de e-mail/CPF/telefone em linha adicionada aborta (exit 3) antes de
   qualquer chamada. Só fixture sintética sai da máquina (app de saúde — SC-SEC5); se for
   sintética, `RC6_ALLOW_SENSITIVE=1`.
@@ -162,3 +206,6 @@ bloqueia — quem bloqueia é o humano (R-060). Sem LLM no CI (custo $0).
 Até ~5 PRs Tier 1+ com RC6: appendar 1 linha em `plans/specs/034-gemini-sunset/measurement.md`
 no C5 (template no arquivo; KPI = caminhos não-pretendidos apontados, não críticos). Ao completar:
 consolidar → decisão T051 do PO.
+
+**Protocolo v2 (2026-08-02):** a linha passa a terminar com `· cov=<revisados>/<planejados>[ PARCIAL]
+· tok=<input_tokens>` — ambos saem do run (o `cov` do JSON, o `tok` do stderr). Ver §Tuning.
