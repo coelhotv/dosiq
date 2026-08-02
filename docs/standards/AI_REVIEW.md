@@ -62,6 +62,9 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 | `RC6_PROBE_TIMEOUT` | `30s` | teto do probe de liveness do agy (roda uma vez por run, antes do Pass A). Um agy que não responde é tratado como ausente em ≤30s em vez de custar 8min × nº de chunks |
 | `RC6_SKIP_PROBE` | `0` | `=1` pula o probe. Só use se souber que o agy está saudável e quiser poupar ~6s + uma chamada barata |
 | `RC6_AGY_TIMEOUT` | `8m` | `--print-timeout` do agy por chunk. Baixe em PR pequeno se quiser falha rápida |
+| `RC6_AB` | **`auto`** | captura do par A/B do PO-5 (spec 056). `auto` = arma sozinho quando o PR qualifica; `0` desliga; `1` força (ignora os desarmes). Ver o bloco 🔬 abaixo |
+| `RC6_AB_MIN_PACKS` | `3` | mínimo de packs no diff para o par valer a pena — abaixo disso o filtro omite pouco e o A/B não tem contraste |
+| `RC6_AB_LOG` | `plans/specs/034-gemini-sunset/measurement.md` | onde a linha do par é appendada. Se o arquivo não existir, o A/B não arma (mantém o script utilizável fora do dosiq) |
 
 **🔴 Base do diff — a armadilha que custou 3 runs errados:** até 2026-07-29 o default era `main` fixo.
 Numa onda com **branch de integração** (055: `feature/055-w1-sdk54`), isso fazia o RC6 revisar o diff
@@ -103,6 +106,43 @@ agy -p "ok" --output-format json     # deve voltar status SUCCESS em segundos
 ```
 Regra prática: **não deixe MCP remoto no config global do agy** enquanto a #657 estiver aberta — qualquer
 server que pendure derruba todo `-p`, e portanto todo RC6. Precisa de MCP? Use config workspace-local.
+
+**🔬 Captura automática do par A/B (spec 056 / PO-5) — desde 2026-08-02.** Você não precisa lembrar de
+nada: o script decide, roda e registra sozinho. **Só um passo é seu, e ele é de julgamento.**
+
+Por que virou código: o protocolo do 034-D mandava o agente appendar a linha de medição no C5, e isso
+**falhou em 5 PRs seguidos** (#777–#781, backfillados com bytes e tempo perdidos), enquanto o A/B do PO-5
+não aconteceu em 11 PRs de onda. Obrigação que depende de alguém lembrar é a mesma degradação silenciosa
+que a 056 existe para matar. O que é mecânico (medir, qualificar, rodar o par, appendar) desceu pro
+`ai-review.sh`; o que é irredutivelmente humano (triar) sobe pra você marcado como `PENDENTE`.
+
+Como ele decide — **tudo antes de qualquer chamada de engine, então PR que não qualifica custa zero**:
+
+| Condição | Efeito |
+|---|---|
+| `≥3` packs no diff (`RC6_AB_MIN_PACKS`) | menos que isso, o filtro omite pouco e o A/B não teria contraste |
+| pior chunk não-filtrado `≤ RC6_AUTO_FILTER_ABOVE` | acima do limiar o baseline seria **amostrado em silêncio** — não é baseline, é ruído. E esse regime já é o do `auto`; o que o PO-5 ainda deve é o modo `1` |
+| nenhum par aguardando triagem | capturar um 3º par com dois sem triar só queima quota |
+| `<2` pares já triados | atingiu 2, o PO-5 fecha e a captura se desarma sozinha |
+| baseline voltou `≥1` finding | **checado DEPOIS do 1º run.** Zero findings ⇒ aborta e **não gasta o segundo** (foi o que invalidou a 057) |
+
+O par roda no **mesmo commit congelado**, sem janela para alguém mexer na árvore entre os dois lados —
+mata por construção o modo de falha do #767 (fix entre os passos contaminou a medição). O run filtrado é
+capturado em arquivo e **nunca entra no que vai pro PR**: o que se comenta é a review normal, não a união
+de um experimento.
+
+Quando capturar, você vê no stderr:
+```
+[rc6] 🔬 A/B armado (056/PO-5): packs [...] · pior chunk não-filtrado 81612B · pass A vira baseline (filtro OFF)
+[rc6] 🔬 A/B: baseline 0/1/1/0 — qualificou; rodando o par filtrado no mesmo commit
+[rc6] 🔬 A/B capturado: off 0/1/1/0 (87632B) vs on 0/1/1/0 (65987B)
+[rc6] ⚠️ TRIAGEM PENDENTE — linha appendada em .../measurement.md (última linha da tabela).
+```
+**Seu passo (C5):** abra os dois JSON preservados (`$TMPDIR/rc6_ab_pr<N>.{off,on}.json` — sobrevivem ao
+`trap rm -rf`), compare os conjuntos **triados** e classifique cada divergência como `{real perdido | FP
+descartado | novo}`. Troque os `PENDENTE` da linha pelos valores. **`real perdido` = 0 é o que fecha o
+SC-003**; qualquer perda ⇒ o filtro fica opt-in e o mapa caminho→pack é revisto (guard do PO-5).
+Enquanto a linha disser `triagem: PENDENTE`, **o par não conta** e a captura fica desarmada.
 
 **Contabilidade de tokens no stderr.** Cada chamada loga `usage:` (input/output/cache_read, e `cost=` no
 claude). Copie para a coluna *Nota* do `measurement.md` no formato do protocolo v2:
