@@ -100,7 +100,7 @@ export default function ChatWindow({ isOpen, onClose }) {
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats, doseInstances])
+  }, [input, isLoading, messages, addMessage, medicines, protocols, logs, stockSummary, stats, doseInstances, stockTrackingEnabled])
 
   const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }
 

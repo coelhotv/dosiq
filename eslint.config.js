@@ -368,6 +368,7 @@ export default [
       'packages/core/src/export/**/*.{js,ts}',
       'packages/core/src/chatbot/**/*.{js,ts}',
       '**/hooks/**/*.{js,ts}',
+      '**/_use*.{js,ts}',
     ],
     rules: {
       'max-lines-per-function': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
