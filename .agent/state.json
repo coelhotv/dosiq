@@ -9,10 +9,10 @@
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/061-large-screen-support",
     "spec": "plans/specs/061-large-screen-support/spec.md",
-    "goal": "F1+F2 — enxugar o binario Android de release: excluir expo-dev-client do autolinking em production/preview + habilitar R8/shrinkResources. Origem: avisos do Play Console sobre a v0.30.0",
+    "goal": "PR #782 MERGEADO (merge commit b2ed0544, nao squash — R-307). F1+F2 do enxugamento do binario Android + 2 bugs de dose critica achados no smoke e corrigidos: icone da notificacao (shrinkResources) e takeover do alarme (resumo do auto-grupo + cold start).",
     "goal_type": "fix",
     "code_review": {
-      "status": "pending_rc5",
+      "status": "merged",
       "critical": 0,
       "auto_fixed": 0,
       "ask_items": 0
@@ -63,7 +63,7 @@
   },
   "memory": {
     "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 21,
+    "journal_entries_since_distillation": 22,
     "rules_count": 258,
     "anti_patterns_count": 319,
     "decisions_count": 91,
