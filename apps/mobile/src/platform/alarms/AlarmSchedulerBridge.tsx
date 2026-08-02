@@ -31,7 +31,12 @@ import { handleAlarmAction } from './quickDoseRegistration'
 import { onAlarmResync } from './alarmResyncBus'
 import { cancelAlarm } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
-import { isAlarmNotification, isDoseNotificationStale, reconcileStaleDoseNotifications } from './staleDoseNotifications'
+import {
+  isAlarmNotification,
+  isDoseNotificationStale,
+  pickPromotableAlarm,
+  reconcileStaleDoseNotifications,
+} from './staleDoseNotifications'
 
 // Auditoria de dose crítica (042 Slice B): no foreground, deriva o desfecho iOS (ENG-1 — iOS não
 // roda JS no disparo) e DRENA a fila offline (Android enfileira no headless). Fail-open total.
@@ -107,6 +112,7 @@ async function flushCriticalAudit(userId, consentSuppressed = false) {
 }
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
+
 
 // Navega ao takeover de tela cheia quando uma notificação do canal de alarme abre/está ativa no app
 // (FR-002). Idempotente: não re-navega se já está lá. (isAlarmNotification + staleness + sweep vivem
@@ -283,8 +289,7 @@ export default function AlarmSchedulerBridge() {
       reconcileStaleDoseNotifications()
         .then(() => notifee.getDisplayedNotifications())
         .then((list) => {
-          const alarm = list.find((n) => isAlarmNotification(n.notification))
-          openAlarmScreen(alarm?.notification)
+          openAlarmScreen(pickPromotableAlarm(list))
         })
         .catch(() => {})
     })
