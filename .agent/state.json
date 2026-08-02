@@ -3,8 +3,8 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 1,
     "tasks": "plans/specs/051-expo-updates/tasks.md",
     "spec_dir": "plans/specs/061-large-screen-support",
@@ -62,10 +62,10 @@
     "plan": "plans/specs/051-expo-updates/plan.md"
   },
   "memory": {
-    "last_distillation": "2026-07-25T14:17:40Z",
-    "journal_entries_since_distillation": 23,
-    "rules_count": 258,
-    "anti_patterns_count": 319,
+    "last_distillation": "2026-08-02T19:35:00Z",
+    "journal_entries_since_distillation": 1,
+    "rules_count": 259,
+    "anti_patterns_count": 322,
     "decisions_count": 91,
     "contracts_count": 32,
     "distillation_due": false
