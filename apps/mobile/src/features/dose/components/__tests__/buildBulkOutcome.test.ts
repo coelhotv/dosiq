@@ -1,7 +1,7 @@
 // buildBulkOutcome — Constituição IX (Transparência Radical): mensagem do registro
 // em batch nunca silencia falhas/falhas parciais; sempre informa motivo.
 import { describe, it, expect } from '@jest/globals'
-import { buildBulkOutcome } from '../BulkDoseRegisterModal'
+import { buildBulkOutcome } from '../../utils/bulkDoseHelpers'
 
 describe('buildBulkOutcome (transparência radical — Constituição IX)', () => {
   it('sucesso pleno (1) → success', () => {

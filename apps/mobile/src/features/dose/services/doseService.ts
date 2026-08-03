@@ -51,43 +51,37 @@ const doseLogCore = createDoseLogService({
 // não há nada atrelado → no-op. NUNCA lança. A superfície usa id=instanceId (cancelAlarm já a
 // encerraria por coincidência de id); endDoseActivity torna a intenção explícita e robusta a
 // uma futura divergência de id.
-async function _cancelAlarmBestEffort(instanceId) {
-  if (!instanceId) return
-  // Superfície de dose (CON-030) é POR PLATAFORMA. Android: ongoing notification (notifee) — captura
-  // o rótulo ANTES de cancelar (auto-gate), encerra, e posta o card `done`. SÓ no Android: no iOS o
-  // showDoseDone postava uma notificação local "Dose registrada" (parecia push de alarme), bug F3.
-  // iOS: a Live Activity é dirigida pelo DoseLiveActivityBridge; o card `done` vem do re-derive,
-  // acionado pelo triggerDoseActivityRefresh no fim (registrando in-app não muda o AppState).
-  const isAndroid = Platform.OS === 'android'
-  let doneLabel = null
-  if (isAndroid) {
+async function _handleAndroidSurfaceBestEffort(instanceId: string) {
+  let doneLabel: string | null = null
+  try {
+    doneLabel = await readSurfaceLabel(instanceId)
+  } catch (err: any) {
+    if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
+  }
+  try {
+    await endDoseActivity(instanceId)
+  } catch (err: any) {
+    if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
+  }
+  if (doneLabel != null) {
     try {
-      doneLabel = await readSurfaceLabel(instanceId)
-    } catch (err) {
-      if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
+      await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
+    } catch (err: any) {
+      if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
     }
+  }
+}
+
+async function _cancelAlarmBestEffort(instanceId: string | null) {
+  if (!instanceId) return
+  if (Platform.OS === 'android') {
+    await _handleAndroidSurfaceBestEffort(instanceId)
   }
   try {
     await cancelAlarm(instanceId)
-  } catch (err) {
+  } catch (err: any) {
     if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
   }
-  if (isAndroid) {
-    try {
-      await endDoseActivity(instanceId)
-    } catch (err) {
-      if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
-    }
-    if (doneLabel != null) {
-      try {
-        await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
-      } catch (err) {
-        if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
-      }
-    }
-  }
-  // iOS: re-deriva → card `done` na LA, com o HORÁRIO REAL da tomada (getRawNow AGORA — dose_instances
-  // não persiste horário de tomada). Android: no-op (ninguém assina; o done já foi acima via notifee).
   triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })
 }
 
