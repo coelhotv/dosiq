@@ -29,7 +29,6 @@ export function createNotificationLogRepository({
   // instantiations de plataformas (web/mobile) dependendo da versão resolvida de
   // @supabase/supabase-js — tipagem estrutural equivalente causa "type instantiation
   // excessively deep" no consumidor (hooks nível A). Mantido como injeção duck-typed.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any
 }) {
   if (!supabase) throw new Error('createNotificationLogRepository: supabase client is required')

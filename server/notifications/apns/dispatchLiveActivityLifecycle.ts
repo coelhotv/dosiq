@@ -84,6 +84,44 @@ async function _clearToken(supabase: any, logger: Logger | undefined, instanceId
   if (error) logger?.error?.('Falha ao limpar la_push_token (fail-open)', error, { instanceId })
 }
 
+/**
+ * Aplica o resultado de um `endFn` (encerramento de LA): ok → limpa token + audita transição;
+ * token morto (deactivate) → limpa token + audita falha, mas ainda conta como 'ended' (o backstop
+ * de dismissal do device cobre o encerramento visual); qualquer outra falha → audita e conta 'failed'.
+ * Extraído de _driveInstance (usado nos ramos "resolvida" e "missed pendente") p/ reduzir complexity (R-122).
+ */
+async function _handleEndOutcome(
+  res: ApnsResult,
+  ctx: {
+    supabase: any
+    logger?: Logger
+    inst: DoseInstanceRow
+    toState: string
+    emitTransition: (to: string) => Promise<unknown>
+    emitFailed: (phase: string, res: ApnsResult) => Promise<unknown>
+    onSuccessLog?: () => void
+    onFailLog?: () => void
+  },
+): Promise<'ended' | 'failed'> {
+  const { supabase, logger, inst, toState, emitTransition, emitFailed, onSuccessLog, onFailLog } = ctx
+  if (res.ok) {
+    await _clearToken(supabase, logger, inst.id)
+    await emitTransition(toState)
+    onSuccessLog?.()
+    return 'ended'
+  }
+  // Token morto (BadDeviceToken/410): a LA já não existe → limpa o token, MAS audita como falha
+  // (não foi um `end` bem-sucedido).
+  if (res.deactivate) {
+    await _clearToken(supabase, logger, inst.id)
+    await emitFailed('end', res)
+    return 'ended'
+  }
+  onFailLog?.()
+  await emitFailed('end', res)
+  return 'failed'
+}
+
 interface DriveInstanceParams {
   supabase: any
   logger?: Logger
@@ -127,22 +165,12 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: finalState, scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok) {
-      await _clearToken(supabase, logger, inst.id)
-      await emitTransition(finalState)
-      logger?.info?.('LA encerrada por push (end)', { instanceId: inst.id, status: inst.status, apns: res.status })
-      return 'ended'
-    }
-    // Token morto (BadDeviceToken/410): a LA já não existe → limpa o token, MAS audita como falha
-    // (não foi um `end` bem-sucedido). O backstop de dismissal do device cobre o encerramento visual.
-    if (res.deactivate) {
-      await _clearToken(supabase, logger, inst.id)
-      await emitFailed('end', res)
-      return 'ended'
-    }
-    logger?.warn?.('push end falhou (fail-open; backstop dismissal cobre)', { instanceId: inst.id, reason: res.reason })
-    await emitFailed('end', res)
-    return 'failed'
+    return _handleEndOutcome(res, {
+      supabase, logger, inst, toState: finalState, emitTransition, emitFailed,
+      onSuccessLog: () => logger?.info?.('LA encerrada por push (end)', { instanceId: inst.id, status: inst.status, apns: res.status }),
+      // O backstop de dismissal do device cobre o encerramento visual mesmo na falha.
+      onFailLog: () => logger?.warn?.('push end falhou (fail-open; backstop dismissal cobre)', { instanceId: inst.id, reason: res.reason }),
+    })
   }
 
   // Pendente → estado derivado no instante (dose pode ter sido editada). Idempotência por la_push_state.
@@ -156,32 +184,42 @@ async function _driveInstance({ supabase, logger, inst, now, updateFn, endFn, au
       pushToken: inst.la_push_token,
       contentState: { state: 'missed', scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
     })
-    if (res.ok) {
-      await _clearToken(supabase, logger, inst.id)
-      await emitTransition('missed')
-      return 'ended'
-    }
-    if (res.deactivate) {
-      await _clearToken(supabase, logger, inst.id)
-      await emitFailed('end', res)
-      return 'ended'
-    }
-    await emitFailed('end', res)
-    return 'failed'
+    return _handleEndOutcome(res, { supabase, logger, inst, toState: 'missed', emitTransition, emitFailed })
   }
 
   const res = await updateFn({
     pushToken: inst.la_push_token,
     contentState: { state: derived.state, scheduledAt: scheduledEpochSec(inst, now), doneAtLabel: '' },
   })
+  return _handleUpdateOutcome(res, { supabase, logger, inst, derivedState: derived.state, emitTransition, emitFailed })
+}
+
+/**
+ * Aplica o resultado de um `updateFn` (transição de estado da LA): ok → grava `la_push_state` +
+ * audita; token morto (deactivate) → limpa token + audita falha (conta 'skipped', não 'failed' —
+ * a LA já não existe no device); qualquer outra falha → audita e conta 'failed'.
+ * Extraído de _driveInstance p/ reduzir complexity (R-122).
+ */
+async function _handleUpdateOutcome(
+  res: ApnsResult,
+  ctx: {
+    supabase: any
+    logger?: Logger
+    inst: DoseInstanceRow
+    derivedState: string
+    emitTransition: (to: string) => Promise<unknown>
+    emitFailed: (phase: string, res: ApnsResult) => Promise<unknown>
+  },
+): Promise<'updated' | 'skipped' | 'failed'> {
+  const { supabase, logger, inst, derivedState, emitTransition, emitFailed } = ctx
   if (res.ok) {
     const { error } = await supabase
       .from('dose_instances')
-      .update({ la_push_state: derived.state })
+      .update({ la_push_state: derivedState })
       .eq('id', inst.id)
     if (error) logger?.error?.('Falha ao marcar la_push_state (fail-open)', error, { instanceId: inst.id })
-    await emitTransition(derived.state)
-    logger?.info?.('LA atualizada por push (update)', { instanceId: inst.id, state: derived.state })
+    await emitTransition(derivedState)
+    logger?.info?.('LA atualizada por push (update)', { instanceId: inst.id, state: derivedState })
     return 'updated'
   }
   // Token morto (BadDeviceToken/Unregistered/410) — a causa MAIS comum de "a LA não atualiza".

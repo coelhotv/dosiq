@@ -98,28 +98,8 @@ export const FULL_EXPORT_SCOPE: ExportScope = Object.freeze({
   includeBiomarkers: true,
 })
 
-export function createExportService({ client, getUserId }: CreateExportServiceDeps) {
-  if (!client) throw new Error('createExportService: client é obrigatório')
-  if (typeof getUserId !== 'function') {
-    throw new Error('createExportService: getUserId deve ser uma função async')
-  }
-
-  const profileRepo = createProfileRepository({ client, getUserId })
-
-  /**
-   * Preferência de controle de estoque (044). Fail-safe: falha de leitura → `true`
-   * (exportar estoque a mais é inócuo; omitir por engano esconderia dado real do titular).
-   */
-  async function isStockTracked(): Promise<boolean> {
-    try {
-      const { stock_tracking_enabled: enabled } = await profileRepo.getStockTracking()
-      return enabled !== false
-    } catch (err) {
-      console.error('Erro ao ler preferência de estoque (assumindo controlado):', err)
-      return true
-    }
-  }
-
+/** Fetchers de export isolados do client — extraídos pra manter createExportService enxuta. */
+function _createExportFetchers(client: CreateExportServiceDeps['client']) {
   async function fetchMedicines(userId: string): Promise<Row[]> {
     const { data, error } = await client
       .from('medicines')
@@ -199,6 +179,33 @@ export function createExportService({ client, getUserId }: CreateExportServiceDe
     } catch (err) {
       console.error('Erro ao ler e-mail do titular (export segue sem ele):', err)
       return null
+    }
+  }
+
+  return { fetchMedicines, fetchProtocols, fetchTitrations, fetchLogs, fetchBiomarkers, fetchEmail }
+}
+
+export function createExportService({ client, getUserId }: CreateExportServiceDeps) {
+  if (!client) throw new Error('createExportService: client é obrigatório')
+  if (typeof getUserId !== 'function') {
+    throw new Error('createExportService: getUserId deve ser uma função async')
+  }
+
+  const profileRepo = createProfileRepository({ client, getUserId })
+  const { fetchMedicines, fetchProtocols, fetchTitrations, fetchLogs, fetchBiomarkers, fetchEmail } =
+    _createExportFetchers(client)
+
+  /**
+   * Preferência de controle de estoque (044). Fail-safe: falha de leitura → `true`
+   * (exportar estoque a mais é inócuo; omitir por engano esconderia dado real do titular).
+   */
+  async function isStockTracked(): Promise<boolean> {
+    try {
+      const { stock_tracking_enabled: enabled } = await profileRepo.getStockTracking()
+      return enabled !== false
+    } catch (err) {
+      console.error('Erro ao ler preferência de estoque (assumindo controlado):', err)
+      return true
     }
   }
 
