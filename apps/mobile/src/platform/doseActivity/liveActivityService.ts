@@ -28,22 +28,35 @@ function clockLabel(d) {
  * SEPARADOS (mock: nome 22pt + subtítulo "dose · HH:mm"). discreet = isCritical (PO-SEC-1 — lock
  * screen oculta o nome; superfície é critical-only). @private
  */
-function toParams(activity, doseItem, medicineName) {
-  const scheduledAtMs = doseItem?.scheduledFor ? parseISO(doseItem.scheduledFor).getTime() : getRawNow().getTime()
-  // staleDate = próximo boundary de estado > agora → o sistema re-renderiza a LA em background nesse
-  // instante (ex.: now→late) SEM push (server-free). Re-armado a cada update (foreground/alarme).
-  const tol = doseItem?.toleranceMinutes ?? doseItem?.tolerance_minutes ?? null
+function _getTolerance(doseItem: any): number | null {
+  if (!doseItem) return null
+  return doseItem.toleranceMinutes ?? doseItem.tolerance_minutes ?? null
+}
+
+function _resolveMedicineName(activity: any, doseItem: any, medicineName?: string): string {
+  if (medicineName) return medicineName
+  if (activity?.medicineLabel) return activity.medicineLabel
+  if (doseItem?.medicineName) return doseItem.medicineName
+  return 'Dose'
+}
+
+function _getStaleDateMs(scheduledFor: string | undefined, tol: number | null, nowMs: number): number | null {
+  if (!scheduledFor) return null
+  const boundaries = doseActivityBoundaryTimes(scheduledFor, tol)
+  return boundaries.find((b) => b > nowMs) ?? null
+}
+
+function toParams(activity: any, doseItem: any, medicineName?: string) {
   const nowMs = getRawNow().getTime()
-  const boundaries = doseItem?.scheduledFor ? doseActivityBoundaryTimes(doseItem.scheduledFor, tol) : []
-  const staleDateMs = boundaries.find((b) => b > nowMs) ?? null
-  const name = medicineName || activity.medicineLabel || doseItem?.medicineName || 'Dose'
+  const scheduledAtMs = doseItem?.scheduledFor ? parseISO(doseItem.scheduledFor).getTime() : nowMs
+  const tol = _getTolerance(doseItem)
+  const staleDateMs = _getStaleDateMs(doseItem?.scheduledFor, tol, nowMs)
+  const name = _resolveMedicineName(activity, doseItem, medicineName)
+
   return {
     medicineName: name,
     doseLabel: doseItem ? formatDoseItem(doseItem) : '',
     scheduledTime: doseItem?.scheduledTime || '',
-    // Default = mostrar nome na lock screen (decisão PO 2026-06-29 — garante utilidade do DI e do
-    // card). iOS não defere à config de privacidade do SO (Live Activity não é redigida pelo sistema),
-    // então o "ocultar nome" vira toggle próprio do dosiq → BACKLOG "adequação LGPD" (ver CON-030).
     discreet: false,
     instanceId: String(activity.instanceId),
     treatmentId: doseItem?.treatmentPlanId || '',

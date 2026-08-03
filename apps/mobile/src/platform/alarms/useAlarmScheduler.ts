@@ -123,48 +123,19 @@ function buildGroupedDose(it) {
  * re-agenda; ids === doseInstanceId). Best-effort — nunca lança.
  * @param {{ userId: string, protocols: Array, tz: string }} ctx
  */
-export async function syncAlarms({ userId, protocols, tz }) {
-  if (!userId) return
-  const repo = createDoseInstanceRepository({ client: supabase as any })
-  const now = getRawNow() // instante absoluto (UTC real), sem date-string parse
-  const end = addDays(now, LOOK_AHEAD_DAYS)
-  // Lookback: inclui doses recém-vencidas (scheduled_for ≤ now). Sem isto, uma dose snoozed no
-  // T0/late some da janela → no resync (cancelAll mata o trigger de soneca) não há o que re-armar →
-  // soneca perdida. Doses passadas NÃO-snoozed não geram alarme (guard timestamp ≤ now em scheduleAlarm).
-  const from = addDays(now, -LOOK_BACK_DAYS)
-
-  // C: garante instâncias materializadas até o horizonte (por protocolo ativo).
-  const active = (Array.isArray(protocols) ? protocols : []).filter((p) => p?.active !== false)
-  for (const protocol of active) {
-    try {
-      await ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: end, tz })
-    } catch (err) {
-      if (__DEV__) console.warn('[useAlarmScheduler] ensureInstancesUpTo falhou', protocol?.id, err?.message)
-    }
-  }
-
-  const instances = await repo.getWindow(userId, from, end)
-  // snoozeFireAt anexado ao item: soneca ativa (snoozed_until futuro). cancelAll abaixo mata o
-  // trigger de soneca → re-armamos AQUI no snoozed_until (fireAt), senão a soneca some no resync.
-  const items = buildDoseItemsFromInstances(instances, protocols, tz)
-    .filter((it) => {
-      if (it.status !== 'pending') return false
-      if (!it.critical) return false // agenda somente alarmes críticos (Spec 010)
-      return true
-    })
+function _filterCriticalAlarmItems(items: any[], nowMs: number) {
+  return items
+    .filter((it) => it.status === 'pending' && Boolean(it.critical))
     .map((it) => {
       if (it.snoozedUntil == null) return it
       const snoozedTs = typeof it.snoozedUntil === 'number'
         ? it.snoozedUntil
-        : Date.parse(it.snoozedUntil) // ISO timestamptz → epoch (sem new Date — R-020)
-      return !Number.isNaN(snoozedTs) && snoozedTs > now.getTime() ? { ...it, snoozeFireAt: snoozedTs } : it
+        : Date.parse(it.snoozedUntil)
+      return !Number.isNaN(snoozedTs) && snoozedTs > nowMs ? { ...it, snoozeFireAt: snoozedTs } : it
     })
+}
 
-  await alarmService.cancelAll()
-
-  // Soneca ativa → re-armada individualmente no snoozed_until (fireAt), fora do agrupamento por
-  // minuto (horário deslocado). Mantém scheduledFor original p/ tolerância/labels.
-  const snoozed = items.filter((it) => it.snoozeFireAt != null)
+async function _scheduleSnoozedAlarms(snoozed: any[]) {
   for (const it of snoozed) {
     await alarmService.scheduleAlarm({
       doseInstanceId: it.instanceId,
@@ -176,16 +147,46 @@ export async function syncAlarms({ userId, protocols, tz }) {
       fireAt: it.snoozeFireAt,
     })
   }
+}
 
-  // Agrupa alarmes do mesmo minuto pelo epoch timestamp absoluto (exclui os já re-armados como soneca)
-  const groups = new Map()
+function _groupItemsByTimestamp(items: any[]) {
+  const groups = new Map<number, any[]>()
   for (const it of items.filter((x) => x.snoozeFireAt == null)) {
     const ts = parseISO(it.scheduledFor).getTime()
     if (!groups.has(ts)) {
       groups.set(ts, [])
     }
-    groups.get(ts).push(it)
+    groups.get(ts)!.push(it)
   }
+  return groups
+}
+
+export async function syncAlarms({ userId, protocols, tz }: any) {
+  if (!userId) return
+  const repo = createDoseInstanceRepository({ client: supabase as any })
+  const now = getRawNow()
+  const end = addDays(now, LOOK_AHEAD_DAYS)
+  const from = addDays(now, -LOOK_BACK_DAYS)
+
+  const active = (Array.isArray(protocols) ? protocols : []).filter((p) => p?.active !== false)
+  for (const protocol of active) {
+    try {
+      await ensureInstancesUpTo({ protocol, doseInstanceRepo: repo, ts: end, tz })
+    } catch (err: any) {
+      if (__DEV__) console.warn('[useAlarmScheduler] ensureInstancesUpTo falhou', protocol?.id, err?.message)
+    }
+  }
+
+  const instances = await repo.getWindow(userId, from, end)
+  const rawItems = buildDoseItemsFromInstances(instances, protocols, tz)
+  const items = _filterCriticalAlarmItems(rawItems, now.getTime())
+
+  await alarmService.cancelAll()
+
+  const snoozed = items.filter((it) => it.snoozeFireAt != null)
+  await _scheduleSnoozedAlarms(snoozed)
+
+  const groups = _groupItemsByTimestamp(items)
 
   for (const [ts, groupItems] of groups.entries()) {
     if (groupItems.length === 1) {

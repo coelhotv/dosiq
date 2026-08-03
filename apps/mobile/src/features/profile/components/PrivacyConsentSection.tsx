@@ -138,6 +138,20 @@ function ConsentRevokeFlow({
   )
 }
 
+const STATUS_META = {
+  loading: { label: 'Carregando...', Icon: ShieldQuestion, color: colors.text.muted },
+  error: { label: 'Não foi possível carregar', Icon: ShieldQuestion, color: colors.text.muted },
+  missing: { label: 'Não informado', Icon: ShieldQuestion, color: colors.text.muted },
+  granted: { label: 'Ativo', Icon: ShieldCheck, color: colors.status.success },
+  revoked: { label: 'Retirado', Icon: ShieldOff, color: colors.status.error },
+} as const
+
+function _getConsentResolved(loading: boolean, loadError: boolean, stateStatus?: string): 'loading' | 'error' | 'missing' | 'granted' | 'revoked' {
+  if (loading) return 'loading'
+  if (loadError) return 'error'
+  return (stateStatus as any) ?? 'missing'
+}
+
 export default function PrivacyConsentSection() {
   const navigation = useNavigation()
   const gate = useConsentGate()
@@ -183,20 +197,7 @@ export default function PrivacyConsentSection() {
     }
   }
 
-  const resolved: 'loading' | 'error' | 'missing' | 'granted' | 'revoked' = loading
-    ? 'loading'
-    : loadError
-      ? 'error'
-      : (state?.status ?? 'missing')
-
-  const STATUS_META = {
-    loading: { label: 'Carregando...', Icon: ShieldQuestion, color: colors.text.muted },
-    error: { label: 'Não foi possível carregar', Icon: ShieldQuestion, color: colors.text.muted },
-    missing: { label: 'Não informado', Icon: ShieldQuestion, color: colors.text.muted },
-    granted: { label: 'Ativo', Icon: ShieldCheck, color: colors.status.success },
-    revoked: { label: 'Retirado', Icon: ShieldOff, color: colors.status.error },
-  } as const
-
+  const resolved = _getConsentResolved(loading, loadError, state?.status)
   const { label: statusLabel, Icon: StatusIcon, color: statusColor } = STATUS_META[resolved]
 
   return (
