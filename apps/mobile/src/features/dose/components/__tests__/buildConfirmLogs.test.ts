@@ -1,5 +1,4 @@
-// buildConfirmLogs.test.js — sítio de injeção per-item no registro em batch (031-B)
-import { _buildConfirmLogs } from '../BulkDoseRegisterModal'
+import { _buildConfirmLogs } from '../../utils/bulkDoseHelpers'
 
 const TAKEN_AT = '2026-06-21T12:00:00.000Z'
 
