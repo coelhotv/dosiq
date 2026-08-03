@@ -149,7 +149,7 @@ const STATUS_META = {
 function _getConsentResolved(loading: boolean, loadError: boolean, stateStatus?: string): 'loading' | 'error' | 'missing' | 'granted' | 'revoked' {
   if (loading) return 'loading'
   if (loadError) return 'error'
-  if (stateStatus && stateStatus in STATUS_META) {
+  if (stateStatus && Object.hasOwn(STATUS_META, stateStatus)) {
     return stateStatus as keyof typeof STATUS_META
   }
   return 'missing'
