@@ -74,13 +74,13 @@ async function _handleAndroidSurfaceBestEffort(instanceId: string) {
 
 async function _cancelAlarmBestEffort(instanceId: string | null) {
   if (!instanceId) return
-  if (Platform.OS === 'android') {
-    await _handleAndroidSurfaceBestEffort(instanceId)
-  }
   try {
     await cancelAlarm(instanceId)
   } catch (err: any) {
     if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
+  }
+  if (Platform.OS === 'android') {
+    await _handleAndroidSurfaceBestEffort(instanceId)
   }
   triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })
 }
