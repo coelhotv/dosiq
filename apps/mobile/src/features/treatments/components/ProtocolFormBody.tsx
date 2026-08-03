@@ -8,7 +8,6 @@ import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity
 //   passa a "não existir".
 // Custo aceito: nome de ícone errado vira `undefined` e só quebra no render. Mitigação = manter a
 // lista curta e conferir cada nome contra `node_modules/lucide-react-native/dist/icons.d.ts`.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 
 // Conferidos no d.ts do pacote (1703 ícones): `CircleQuestionMark` é o nome ATUAL — `CircleHelp` e

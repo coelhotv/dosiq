@@ -46,7 +46,6 @@ async function resolveInlinePlan(planField, show) {
     color: planField.inline.color,
     emoji: planField.inline.emoji,
   })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { ok: true, planId: (created as any)?.id ?? null, useInline: true }
 }
 
