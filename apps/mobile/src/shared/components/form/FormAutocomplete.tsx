@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -123,6 +123,121 @@ function AutocompleteOverlay({
   )
 }
 
+function useAutocompleteSearch({
+  value,
+  focused,
+  minChars,
+  maxResults,
+  debounceMs,
+  search,
+}: {
+  value: string
+  focused: boolean
+  minChars: number
+  maxResults: number
+  debounceMs: number
+  search?: (q: string, max: number) => any[]
+}) {
+  const [results, setResults] = useState<any[]>([])
+  const [searching, setSearching] = useState(false)
+  const debounceRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (!focused) return undefined
+    const trimmed = value?.trim() ?? ''
+    if (trimmed.length < minChars) {
+      const t = setTimeout(() => {
+        setResults([])
+        setSearching(false)
+      }, 0)
+      return () => clearTimeout(t)
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const startTimer = setTimeout(() => setSearching(true), 0)
+    debounceRef.current = setTimeout(() => {
+      try {
+        const out = search?.(value, maxResults) ?? []
+        setResults(Array.isArray(out) ? out : [])
+      } catch {
+        setResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, debounceMs)
+
+    return () => {
+      clearTimeout(startTimer)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [value, focused, minChars, maxResults, debounceMs, search])
+
+  return { results, setResults, searching }
+}
+
+function useAutocompleteHandlers({
+  name,
+  onChange,
+  onSelect,
+  onBlur,
+  getItemValue,
+  setResults,
+  setFocused,
+  inputRef,
+}: any) {
+  const handleChangeText = useCallback((text: string) => {
+    onChange?.(name, text)
+  }, [name, onChange])
+
+  const handleClear = useCallback(() => {
+    onChange?.(name, '')
+    setResults([])
+  }, [name, onChange, setResults])
+
+  const handleFocus = useCallback(() => {
+    setFocused(true)
+  }, [setFocused])
+
+  const handleBlur = useCallback(() => {
+    setTimeout(() => {
+      setFocused(false)
+      onBlur?.(name)
+    }, 150)
+  }, [name, onBlur, setFocused])
+
+  const handleSelect = useCallback((item: any) => {
+    const v = getItemValue(item)
+    onChange?.(name, v)
+    onSelect?.(item)
+    setResults([])
+    setFocused(false)
+    inputRef.current?.blur()
+  }, [name, getItemValue, onChange, onSelect, setResults, setFocused, inputRef])
+
+  return { handleChangeText, handleClear, handleFocus, handleBlur, handleSelect }
+}
+
+function _renderLabelRow(label?: string, required?: boolean) {
+  if (!label) return null
+  return (
+    <View style={styles.labelRow}>
+      <Text style={styles.label}>{label}</Text>
+      {required && <Text style={styles.asterisk}> *</Text>}
+    </View>
+  )
+}
+
+function _getBorderColor(error: any, focused: boolean) {
+  if (error) return colors.status.error
+  if (focused) return colors.primary[700]
+  return colors.border.default
+}
+
+function _renderFooterText(error?: string, helperText?: string) {
+  if (error) return <Text style={styles.errorText}>{error}</Text>
+  if (helperText) return <Text style={styles.helperText}>{helperText}</Text>
+  return null
+}
+
 export default function FormAutocomplete({
   name,
   label,
@@ -142,97 +257,37 @@ export default function FormAutocomplete({
   minChars = DEFAULT_MIN_CHARS,
   maxResults = DEFAULT_MAX_RESULTS,
   debounceMs = DEFAULT_DEBOUNCE_MS,
-}) {
+}: any) {
   const [focused, setFocused] = useState(false)
-  const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
-  const debounceRef = useRef(null)
-  const inputRef = useRef(null)
+  const inputRef = useRef<any>(null)
 
-  // Roda busca debounced quando value muda + foco está no campo
-  useEffect(() => {
-    if (!focused) return undefined
-    const trimmed = value?.trim() ?? ''
-    if (trimmed.length < minChars) {
-      // Limpa via timeout (evita setState síncrono no effect)
-      const t = setTimeout(() => {
-        setResults([])
-        setSearching(false)
-      }, 0)
-      return () => clearTimeout(t)
-    }
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    // Marca "buscando" no próximo tick + roda busca após debounce
-    const startTimer = setTimeout(() => setSearching(true), 0)
-    debounceRef.current = setTimeout(() => {
-      try {
-        const out = search?.(value, maxResults) ?? []
-        setResults(Array.isArray(out) ? out : [])
-      } catch {
-        setResults([])
-      } finally {
-        setSearching(false)
-      }
-    }, debounceMs)
+  const { results, setResults, searching } = useAutocompleteSearch({
+    value,
+    focused,
+    minChars,
+    maxResults,
+    debounceMs,
+    search,
+  })
 
-    return () => {
-      clearTimeout(startTimer)
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [value, focused, minChars, maxResults, debounceMs, search])
+  const { handleChangeText, handleClear, handleFocus, handleBlur, handleSelect } = useAutocompleteHandlers({
+    name,
+    onChange,
+    onSelect,
+    onBlur,
+    getItemValue,
+    setResults,
+    setFocused,
+    inputRef,
+  })
 
-  const showOverlay = focused && value && value.trim().length >= minChars
-
-  const borderColor = error
-    ? colors.status.error
-    : focused
-    ? colors.primary[700]
-    : colors.border.default
-
-  function handleChangeText(text) {
-    onChange?.(name, text)
-  }
-
-  function handleClear() {
-    onChange?.(name, '')
-    setResults([])
-  }
-
-  function handleFocus() {
-    setFocused(true)
-  }
-
-  function handleBlur() {
-    // Delay para permitir tap na sugestão antes de fechar overlay
-    setTimeout(() => {
-      setFocused(false)
-      onBlur?.(name)
-    }, 150)
-  }
-
-  function handleSelect(item) {
-    const v = getItemValue(item)
-    onChange?.(name, v)
-    onSelect?.(item)
-    setResults([])
-    setFocused(false)
-    // Solta foco nativo — sem isto o input segue focado (keyboardShouldPersistTaps),
-    // o estado `focused` fica dessincronizado e a 2ª busca não dispara (effect aborta
-    // em `if (!focused)`). Blur garante que o próximo tap re-dispare onFocus.
-    inputRef.current?.blur()
-  }
+  const showOverlay = Boolean(focused && value && value.trim().length >= minChars)
+  const borderColor = _getBorderColor(error, focused)
 
   return (
     <View style={[styles.wrapper, disabled && styles.wrapperDisabled]}>
-      {label ? (
-        <View style={styles.labelRow}>
-          <Text style={styles.label}>{label}</Text>
-          {required && <Text style={styles.asterisk}> *</Text>}
-        </View>
-      ) : null}
+      {_renderLabelRow(label, required)}
 
-      {/* Wrapper relativo isolando input+overlay — overlay ancora via
-          top: '100%' do inputContainer, independente da altura do label. */}
       <View style={styles.inputBlock}>
         <View style={[styles.inputContainer, { borderColor }]}>
           <Search size={18} color={colors.text.muted} strokeWidth={2} />
@@ -278,11 +333,7 @@ export default function FormAutocomplete({
         />
       </View>
 
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : helperText ? (
-        <Text style={styles.helperText}>{helperText}</Text>
-      ) : null}
+      {_renderFooterText(error, helperText)}
     </View>
   )
 }
