@@ -21,7 +21,6 @@ import MedicineFormDosageInfo from '@features/medications/components/sections/Me
  * @property {string} [title] - Título customizado do formulário
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export default function MedicineForm({
   medicine,
   onSave,
