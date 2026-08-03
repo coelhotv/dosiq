@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
     borderColor: colors.status.error,
   },
   ttlRowWarning: {
-    backgroundColor: colors.status.errorLight,
-    borderColor: colors.status.error,
+    backgroundColor: colors.status.warningLight,
+    borderColor: colors.status.warning,
   },
   ttlText: {
     fontSize: 11,
