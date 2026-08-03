@@ -67,6 +67,112 @@ function mapInstance(inst: DoseInstanceRow) {
   }
 }
 
+/** Dispositivos push-to-start ativos do usuário (por-provider). RLS bypassada — guard explícito no caller. */
+async function _fetchLiveActivityDevices(supabase: any, userId: string) {
+  return supabase
+    .from('notification_devices')
+    .select('id, user_id, push_token, is_active')
+    .eq('user_id', userId)
+    .eq('provider', 'apns_liveactivity')
+    .eq('is_active', true)
+}
+
+/**
+ * Envia o push-to-start p/ cada device do usuário (IDOR guard S-1 + desativação de token morto).
+ * Extraído de _dispatchForUser p/ reduzir complexity (R-122). Retorna true se ALGUM device recebeu.
+ */
+interface StartDeviceCtx {
+  supabase: any
+  logger?: Logger
+  userId: string
+  instanceId: string
+  payload: NonNullable<Awaited<ReturnType<BuildFn>>>
+  sendFn: SendFn
+}
+
+/** Envia (ou desativa token morto) p/ UM device. Retorna true se o push chegou. */
+async function _sendToOneDevice(ctx: StartDeviceCtx, device: { id: string; user_id: string; push_token: string }): Promise<boolean> {
+  const { supabase, logger, userId, instanceId, payload, sendFn } = ctx
+  // S-1 IDOR: o token DEVE pertencer ao dono da dose. Query já escopa por userId; reconfirma.
+  if (device.user_id !== userId) {
+    logger?.warn?.('push-to-start owner mismatch — pulado', { userId, deviceUser: device.user_id })
+    return false
+  }
+  const res = await sendFn({
+    pushToStartToken: device.push_token,
+    attributes: payload.attributes,
+    contentState: payload.contentState,
+    staleEpochSec: payload.staleEpochSec,
+  })
+  if (res.ok) {
+    logger?.info?.('push_start enviado', { userId, instanceId, status: res.status })
+    return true
+  }
+  if (res.deactivate) {
+    const { error: updErr } = await supabase.from('notification_devices').update({ is_active: false }).eq('id', device.id)
+    if (updErr) {
+      // Se a desativação falhar silenciosamente, o token morto seguiria recebendo pushes nas
+      // próximas janelas. Loga p/ observabilidade (fail-open: não propaga).
+      logger?.error?.('Falha ao desativar token apns_liveactivity', updErr, { userId, deviceId: device.id })
+    } else {
+      logger?.warn?.('token apns_liveactivity desativado (410/bad token)', { userId, deviceId: device.id })
+    }
+    return false
+  }
+  logger?.warn?.('push_start falhou (fail-open)', { userId, reason: res.reason, status: res.status })
+  return false
+}
+
+/**
+ * Envia o push-to-start p/ cada device do usuário (IDOR guard S-1 + desativação de token morto).
+ * Extraído de _dispatchForUser p/ reduzir complexity (R-122). Retorna true se ALGUM device recebeu.
+ */
+async function _sendStartToDevices(
+  ctx: StartDeviceCtx & { devices: Array<{ id: string; user_id: string; push_token: string }> },
+): Promise<boolean> {
+  let anySent = false
+  for (const device of ctx.devices) {
+    const sent = await _sendToOneDevice(ctx, device)
+    if (sent) anySent = true
+  }
+  return anySent
+}
+
+/**
+ * Idempotência: marca a ocorrência ativa (não re-dispara nas próximas janelas da `upcoming`).
+ * UPDATE condicional (.is null) + .select('id'): trava otimista contra corrida (2 crons no mesmo
+ * minuto). PostgREST não erra em no-op (0 linhas) — validar o retorno confirma que a trava foi
+ * adquirida por ESTE disparo (AP: elos órfãos / dupla marcação sob corrida).
+ * Extraído de _dispatchForUser p/ reduzir complexity (R-122).
+ */
+async function _lockInstanceStarted({
+  supabase,
+  logger,
+  instanceId,
+  now,
+}: {
+  supabase: any
+  logger?: Logger
+  instanceId: string
+  now: Date
+}): Promise<'sent' | 'skipped' | 'failed'> {
+  const { data: locked, error: updErr } = await supabase
+    .from('dose_instances')
+    .update({ la_push_started_at: now.toISOString() })
+    .eq('id', instanceId)
+    .is('la_push_started_at', null)
+    .select('id')
+  if (updErr) {
+    logger?.error?.('Falha ao marcar la_push_started_at (fail-open)', updErr, { instanceId })
+    return 'failed'
+  }
+  if (!locked || locked.length === 0) {
+    logger?.warn?.('Trava de idempotência já ativa (push iniciado por outro processo)', { instanceId })
+    return 'skipped'
+  }
+  return 'sent'
+}
+
 interface DispatchForUserParams {
   supabase: any
   logger?: Logger
@@ -89,12 +195,7 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     audit?.emit({ userId, doseInstanceId: active.instanceId, event, platform: 'server', actor: 'server', detail })
 
   // Token push-to-start do device (por-provider). RLS bypassada (service_role) → guard explícito.
-  const { data: devices, error: devErr } = await supabase
-    .from('notification_devices')
-    .select('id, user_id, push_token, is_active')
-    .eq('user_id', userId)
-    .eq('provider', 'apns_liveactivity')
-    .eq('is_active', true)
+  const { data: devices, error: devErr } = await _fetchLiveActivityDevices(supabase, userId)
   if (devErr) {
     logger?.error?.('Falha ao buscar dispositivos apns_liveactivity (fail-open)', devErr, { userId })
     return 'skipped'
@@ -110,60 +211,47 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   const payload = buildFn(sourceItem, { discreet: false, now })
   if (!payload) return 'skipped'
 
-  let anySent = false
-  for (const device of devices) {
-    // S-1 IDOR: o token DEVE pertencer ao dono da dose. Query já escopa por userId; reconfirma.
-    if (device.user_id !== userId) {
-      logger?.warn?.('push-to-start owner mismatch — pulado', { userId, deviceUser: device.user_id })
-      continue
-    }
-    const res = await sendFn({
-      pushToStartToken: device.push_token,
-      attributes: payload.attributes,
-      contentState: payload.contentState,
-      staleEpochSec: payload.staleEpochSec,
-    })
-    if (res.ok) {
-      anySent = true
-      logger?.info?.('push_start enviado', { userId, instanceId: active.instanceId, status: res.status })
-    } else if (res.deactivate) {
-      const { error: updErr } = await supabase.from('notification_devices').update({ is_active: false }).eq('id', device.id)
-      if (updErr) {
-        // Se a desativação falhar silenciosamente, o token morto seguiria recebendo pushes nas
-        // próximas janelas. Loga p/ observabilidade (fail-open: não propaga).
-        logger?.error?.('Falha ao desativar token apns_liveactivity', updErr, { userId, deviceId: device.id })
-      } else {
-        logger?.warn?.('token apns_liveactivity desativado (410/bad token)', { userId, deviceId: device.id })
-      }
-    } else {
-      logger?.warn?.('push_start falhou (fail-open)', { userId, reason: res.reason, status: res.status })
-    }
-  }
+  const anySent = await _sendStartToDevices({ supabase, logger, userId, instanceId: active.instanceId, devices, payload, sendFn })
 
   if (!anySent) {
     await emitAudit('push_failed')
     return 'failed'
   }
   await emitAudit('push_sent')
-  // Idempotência: marca a ocorrência ativa (não re-dispara nas próximas janelas da `upcoming`).
-  // UPDATE condicional (.is null) + .select('id'): trava otimista contra corrida (2 crons no mesmo
-  // minuto). PostgREST não erra em no-op (0 linhas) — validar o retorno confirma que a trava foi
-  // adquirida por ESTE disparo (AP: elos órfãos / dupla marcação sob corrida).
-  const { data: locked, error: updErr } = await supabase
-    .from('dose_instances')
-    .update({ la_push_started_at: now.toISOString() })
-    .eq('id', active.instanceId)
-    .is('la_push_started_at', null)
-    .select('id')
-  if (updErr) {
-    logger?.error?.('Falha ao marcar la_push_started_at (fail-open)', updErr, { instanceId: active.instanceId })
-    return 'failed'
+  return _lockInstanceStarted({ supabase, logger, instanceId: active.instanceId, now })
+}
+
+/** Busca instâncias pendentes críticas na janela [windowStart, windowEnd] sem start disparado. */
+async function _fetchPendingCriticalInstances(
+  supabase: any,
+  logger: Logger | undefined,
+  windowStart: string,
+  windowEnd: string,
+): Promise<DoseInstanceRow[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('dose_instances')
+      .select(SELECT_FIELDS)
+      .eq('status', 'pending')
+      .eq('critical_alarm', true)
+      .is('la_push_started_at', null)
+      .gte('scheduled_for', windowStart)
+      .lte('scheduled_for', windowEnd)
+    if (error) throw error
+    return data || []
+  } catch (err) {
+    logger?.error?.('Falha ao buscar instâncias p/ push-to-start (fail-open)', err)
+    return null // fail-open: nunca propaga
   }
-  if (!locked || locked.length === 0) {
-    logger?.warn?.('Trava de idempotência já ativa (push iniciado por outro processo)', { instanceId: active.instanceId })
-    return 'skipped'
+}
+
+/** Agrupa instâncias por usuário — dose ativa única por paciente (CON-029). */
+function _groupByUser(instances: DoseInstanceRow[]): Record<string, DoseInstanceRow[]> {
+  const byUser: Record<string, DoseInstanceRow[]> = {}
+  for (const inst of instances) {
+    ;(byUser[inst.user_id] ||= []).push(inst)
   }
-  return 'sent'
+  return byUser
 }
 
 interface DispatchLiveActivityStartsParams {
@@ -200,30 +288,11 @@ export async function dispatchLiveActivityStarts({ supabase, logger, now = parse
   const windowStart = now.toISOString()
   const windowEnd = addMinutes(lead, now).toISOString()
 
-  let instances: DoseInstanceRow[]
-  try {
-    const { data, error } = await supabase
-      .from('dose_instances')
-      .select(SELECT_FIELDS)
-      .eq('status', 'pending')
-      .eq('critical_alarm', true)
-      .is('la_push_started_at', null)
-      .gte('scheduled_for', windowStart)
-      .lte('scheduled_for', windowEnd)
-    if (error) throw error
-    instances = data || []
-  } catch (err) {
-    logger?.error?.('Falha ao buscar instâncias p/ push-to-start (fail-open)', err)
-    return result // fail-open: nunca propaga
-  }
-
+  const instances = await _fetchPendingCriticalInstances(supabase, logger, windowStart, windowEnd)
+  if (instances === null) return result // fail-open: busca falhou
   if (instances.length === 0) return result
 
-  // Agrupa por usuário → dose ativa única (CON-029)
-  const byUser: Record<string, DoseInstanceRow[]> = {}
-  for (const inst of instances) {
-    ;(byUser[inst.user_id] ||= []).push(inst)
-  }
+  const byUser = _groupByUser(instances)
 
   // Auditoria de dose crítica (spec 042). Server: sem sessão → cada emit passa userId explícito.
   const audit = createCriticalAuditService({ client: supabase })
