@@ -27,7 +27,7 @@ function _getHeroTimeLabel(isCarryOver: boolean, scheduledLocal: Date | null, di
 function _getHeroCardTheme(isDelayed: boolean) {
   return {
     displayTitle: isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA',
-    alertColor: isDelayed ? '#904d00' : colors.brand.light,
+    alertColor: isDelayed ? colors.status.warning : colors.brand.light,
     buttonBgColor: isDelayed ? '#f9a825' : colors.bg.card,
     buttonTextColor: isDelayed ? colors.neutral[800] : colors.brand.primary,
     textColor: isDelayed ? colors.neutral[800] : colors.text.inverse,

@@ -2,6 +2,9 @@ import { View, Text, StyleSheet } from 'react-native'
 import { colors, spacing } from '../../styles/tokens'
 import { AlertCircle } from 'lucide-react-native'
 
+const WARNING_BG_ALPHA = 'rgba(144, 77, 0, 0.08)' // colors.status.warning com alpha
+const WARNING_BORDER_ALPHA = 'rgba(144, 77, 0, 0.12)' // colors.status.warning com alpha
+
 /**
  * Banner informativo para indicar que o app está em modo offline
  * e exibindo dados em cache (stale).
@@ -28,14 +31,14 @@ export default function StaleBanner({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(144, 77, 0, 0.08)', // colors.status.warning com alpha
+    backgroundColor: WARNING_BG_ALPHA,
     paddingVertical: spacing[2],
     paddingHorizontal: spacing[4],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(144, 77, 0, 0.12)',
+    borderBottomColor: WARNING_BORDER_ALPHA,
   },
   icon: {
     marginRight: spacing[2],

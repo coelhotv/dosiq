@@ -366,8 +366,8 @@ const styles = StyleSheet.create({
   },
 
   ttlChipWarning: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
+    backgroundColor: colors.status.warningLight,
+    borderColor: colors.status.warning,
   },
 
   ttlText: {
