@@ -51,34 +51,26 @@ const doseLogCore = createDoseLogService({
 // não há nada atrelado → no-op. NUNCA lança. A superfície usa id=instanceId (cancelAlarm já a
 // encerraria por coincidência de id); endDoseActivity torna a intenção explícita e robusta a
 // uma futura divergência de id.
+async function _safeRun(fn: () => Promise<any>, actionName: string, instanceId: string) {
+  try {
+    return await fn()
+  } catch (err: any) {
+    if (__DEV__) console.warn(`[doseService] ${actionName} best-effort falhou:`, instanceId, err?.message)
+    return null
+  }
+}
+
 async function _cancelAlarmBestEffort(instanceId: string | null) {
   if (!instanceId) return
   const isAndroid = Platform.OS === 'android'
-  let doneLabel: string | null = null
+  const doneLabel = isAndroid ? await _safeRun(() => readSurfaceLabel(instanceId), 'readSurfaceLabel', instanceId) : null
+
+  await _safeRun(() => cancelAlarm(instanceId), 'cancelAlarm', instanceId)
+
   if (isAndroid) {
-    try {
-      doneLabel = await readSurfaceLabel(instanceId)
-    } catch (err: any) {
-      if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
-    }
-  }
-  try {
-    await cancelAlarm(instanceId)
-  } catch (err: any) {
-    if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
-  }
-  if (isAndroid) {
-    try {
-      await endDoseActivity(instanceId)
-    } catch (err: any) {
-      if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
-    }
+    await _safeRun(() => endDoseActivity(instanceId), 'endDoseActivity', instanceId)
     if (doneLabel != null) {
-      try {
-        await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
-      } catch (err: any) {
-        if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
-      }
+      await _safeRun(() => showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() }), 'showDoseDone', instanceId)
     }
   }
   triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })

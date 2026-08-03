@@ -271,6 +271,30 @@ export default function Navigation() {
   )
 }
 
+function _resolveNavigationState(
+  session: any,
+  isPasswordRecovery: boolean,
+  onboardingNeeded: boolean | null,
+  consent: any,
+  regularizationDismissed: boolean
+) {
+  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
+  const isLoading = session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending
+  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
+  const showDismissiblePrompt =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.mode === 'prompt_dismissible' &&
+    !consent.dismissed
+  const showRegularization =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.needsRegularization &&
+    !regularizationDismissed
+
+  return { isLoading, consentLocked, showDismissiblePrompt, showRegularization }
+}
+
 function NavigationTree({
   session,
   isPasswordRecovery,
@@ -279,57 +303,30 @@ function NavigationTree({
   setOnboardingNeeded,
 }: ReturnType<typeof useAuthSession>) {
   const consent = useConsentGate()
-  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
   const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
-  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
-    // TODO(040-strict): navigationRef sem ParamList tipada — never no generic ref
     const routeName = (navigationRef.current as any)?.getCurrentRoute?.()?.name
     if (routeName) {
       logScreenView(routeName)
     }
   }
 
-  // Aguarda verificação inicial — evita flash de ecrã errado.
-  // Também aguarda o gate de onboarding e o de consentimento resolverem quando há sessão.
-  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
-  if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending) {
+  const { isLoading, consentLocked, showDismissiblePrompt, showRegularization } = _resolveNavigationState(
+    session,
+    isPasswordRecovery,
+    onboardingNeeded,
+    consent,
+    regularizationDismissed
+  )
+
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     )
   }
-
-  // INDETERMINADO — não conseguimos LER a trilha de consentimento (ex.: offline, contrato do Slice A).
-  // NÃO libera NEM bloqueia por si só (`locked: false`): é falha de carregamento, não um fato sobre a
-  // vontade do titular. O dosiq é offline-first — navegar doses/estoque sem rede é valor de produto
-  // prometido nas landings —, então sob indeterminação o app RENDERIZA normalmente e NÃO trava numa
-  // tela de erro. A trava real (revogado → blocked) é reaplicada quando a rede volta: o listener de
-  // `AppState 'active'` chama `refresh()` e reavalia o gate.
-  //
-  // Segurança preservada: indeterminação NÃO escreve nada e NÃO conta sessão de prompt — tratá-la como
-  // `missing` é que ressuscitaria, na materialização, um consentimento REVOGADO numa oscilação de rede
-  // (furo HIGH do review do Slice A). Essa proteção mora na LEITURA (hook → `state: null`), não em
-  // barrar a renderização. Renderizar offline não materializa consentimento algum.
-
-  // O gate do consentimento vem ANTES do onboarding: quem nunca consentiu não pode ser levado ao
-  // wizard, que existe justamente para começar a gerar dado de saúde.
-  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
-  const showDismissiblePrompt =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.mode === 'prompt_dismissible' &&
-    !consent.dismissed
-
-  // Nudge de regularização: consentiu numa política ANTIGA (`stale`, mode 'allow' → não trava).
-  // Overlay dispensável por cima do app, como o prompt dispensável.
-  const showRegularization =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.needsRegularization &&
-    !regularizationDismissed
 
   // Um único NavigationContainer (ref compartilhada). O filho alterna entre o
   // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a

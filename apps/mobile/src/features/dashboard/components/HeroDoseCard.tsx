@@ -14,7 +14,28 @@ import { colors, spacing, borderRadius } from '../../../shared/styles/tokens'
  */
 const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
 
-export default function HeroDoseCard({ doses = [], onPress }) {
+function _getHeroTimeLabel(isCarryOver: boolean, scheduledLocal: Date | null, diffMin: number, nextTime: string) {
+  if (isCarryOver && scheduledLocal) {
+    const weekday = WEEKDAYS[scheduledLocal.getDay()]
+    return `${weekday} às ${nextTime}`
+  }
+  if (diffMin <= 0) return 'Agora'
+  if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
+  return `Às ${nextTime}`
+}
+
+function _getHeroCardTheme(isDelayed: boolean) {
+  return {
+    displayTitle: isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA',
+    alertColor: isDelayed ? '#904d00' : colors.brand.light,
+    buttonBgColor: isDelayed ? '#f9a825' : colors.bg.card,
+    buttonTextColor: isDelayed ? colors.neutral[800] : colors.brand.primary,
+    textColor: isDelayed ? colors.neutral[800] : colors.text.inverse,
+    timeColor: isDelayed ? colors.neutral[600] : 'rgba(255, 255, 255, 0.7)',
+  }
+}
+
+export default function HeroDoseCard({ doses = [], onPress }: any) {
   if (!doses || doses.length === 0) return null
 
   const firstDose = doses[0]
@@ -24,8 +45,6 @@ export default function HeroDoseCard({ doses = [], onPress }) {
   const nextTime = firstDose.scheduledTime || ''
   const scheduledFor = firstDose.scheduledFor
   const now = getNow()
-  // scheduledFor é o timestamp absoluto correto da dose — usar direto evita
-  // discrepância de fuso (dispositivo vs. usuário) e datas erradas em carry-over/look-ahead.
   const scheduledDate = scheduledFor ? parseISO(scheduledFor) : null
   const diffMin = scheduledDate ? Math.round((scheduledDate.getTime() - now.getTime()) / 60000) : 0
 
@@ -37,52 +56,38 @@ export default function HeroDoseCard({ doses = [], onPress }) {
       scheduledLocal.getMonth() !== now.getMonth() ||
       scheduledLocal.getDate() !== now.getDate())
 
-  const timeLabel = (() => {
-    if (isCarryOver && scheduledLocal) {
-      const weekday = WEEKDAYS[scheduledLocal.getDay()]
-      return `${weekday} às ${nextTime}`
-    }
-    if (diffMin <= 0) return 'Agora'
-    if (diffMin < 60) return `Em ${diffMin} minuto${diffMin !== 1 ? 's' : ''}`
-    return `Às ${nextTime}`
-  })()
-
+  const timeLabel = _getHeroTimeLabel(isCarryOver, scheduledLocal, diffMin, nextTime)
+  const theme = _getHeroCardTheme(isDelayed)
   const medicineName = firstDose.medicine?.name || 'Medicamento'
-  const displayTitle = isDelayed ? 'AINDA DÁ TEMPO' : 'TOMAR AGORA'
-  const alertColor = isDelayed ? '#904d00' : colors.brand.light
-  const buttonBgColor = isDelayed ? '#f9a825' : colors.bg.card
-  const buttonTextColor = isDelayed ? colors.neutral[800] : colors.brand.primary
-  const textColor = isDelayed ? colors.neutral[800] : colors.text.inverse
-  const timeColor = isDelayed ? colors.neutral[600] : 'rgba(255, 255, 255, 0.7)'
 
   return (
     <View style={[styles.container, isDelayed && styles.containerDelayed]}>
       <View style={styles.content}>
         <View style={styles.header}>
           {isDelayed ? (
-            <AlertCircle size={20} color={alertColor} style={styles.icon} />
+            <AlertCircle size={20} color={theme.alertColor} style={styles.icon} />
           ) : (
-            <BellRing size={20} color={alertColor} style={styles.icon} />
+            <BellRing size={20} color={theme.alertColor} style={styles.icon} />
           )}
-          <Text style={[styles.alertText, { color: alertColor }]}>
-            {isMultiple ? `${doses.length} PENDÊNCIAS` : displayTitle}
-          </Text> 
+          <Text style={[styles.alertText, { color: theme.alertColor }]}>
+            {isMultiple ? `${doses.length} PENDÊNCIAS` : theme.displayTitle}
+          </Text>
         </View>
-        
-        <Text style={[styles.medicineName, { color: textColor }]} numberOfLines={2}>
+
+        <Text style={[styles.medicineName, { color: theme.textColor }]} numberOfLines={2}>
           {isMultiple ? `${medicineName} e mais ${doses.length - 1}` : medicineName}
         </Text>
-        <Text style={[styles.timeInfo, { color: timeColor }]}>
+        <Text style={[styles.timeInfo, { color: theme.timeColor }]}>
           {timeLabel}
         </Text>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: buttonBgColor }]} 
+
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: theme.buttonBgColor }]}
           onPress={() => onPress && onPress(firstDose)}
           activeOpacity={0.8}
         >
-          <Check size={20} color={buttonTextColor} />
-          <Text style={[styles.buttonText, { color: buttonTextColor }]}>
+          <Check size={20} color={theme.buttonTextColor} />
+          <Text style={[styles.buttonText, { color: theme.buttonTextColor }]}>
             Confirmar agora
           </Text>
         </TouchableOpacity>

@@ -321,6 +321,34 @@ function TodaySpeedDial({ protocols, speedDialOpen, setSpeedDialOpen, setMeasure
   )
 }
 
+function TodayBannersSection({
+  stockTrackingEnabled,
+  stockAlerts,
+  priorityDoses,
+  heroItems,
+  setBulkModal,
+  otaBanner,
+  dashboardNudge,
+  applyUpdate,
+  handleNudgeAction,
+  dismissNudge,
+}: any) {
+  return (
+    <>
+      {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
+      {priorityDoses.length > 0 ? (
+        <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
+      ) : (
+        <NudgeBanner
+          nudge={otaBanner ?? dashboardNudge}
+          onAction={otaBanner ? applyUpdate : handleNudgeAction}
+          onDismiss={otaBanner ? undefined : dismissNudge}
+        />
+      )}
+    </>
+  )
+}
+
 function TodayScreenContent({
   data, stale, isDaySegregated, loading, refresh,
   timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
@@ -332,22 +360,16 @@ function TodayScreenContent({
   refreshTodayMeasures,
   todayMeasures,
   navigation,
-}) {
+}: any) {
   const { nudge: dashboardNudge, dismiss: dismissNudge, handleAction: handleNudgeAction, refresh: refreshNudge } = useNudges('dashboard')
   const { enabled: stockTrackingEnabled } = useStockTracking()
   const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell(data?.timezone)
-  // Pull-to-refresh não remonta a seção da Evolução; o contador propaga o gesto até o hook dela.
   const [evoRefreshTick, setEvoRefreshTick] = useState(0)
   const [speedDialOpen, setSpeedDialOpen] = useState(false)
   const [measureLogOpen, setMeasureLogOpen] = useState(false)
 
-  // OTA em sessão viva (051-A PR 1.6b / FR-023 / PO-11). Banner FIXO reusa o COMPONENTE
-  // NudgeBanner (consistência visual), NÃO o pipeline de useNudges — nudge é dado remoto
-  // (in_app_nudges), update é estado local do device; ver decisão em tasks.md T052.
   const { updateReady, applyUpdate } = useOtaUpdate()
   const alarmScreenActive = useAlarmScreenActive()
-  // "Ocioso": nenhum modal de registro de dose aberto (individual/lote/medida/speed-dial) e
-  // nenhum alarme na tela — reusa useAlarmScreenActive (PR 1.5b), não reimplementa.
   const isIdleForOtaBanner = modalProtocol === null && bulkModal === null
     && !measureLogOpen && !speedDialOpen && !alarmScreenActive
   const otaBanner = (updateReady && isIdleForOtaBanner)
@@ -360,20 +382,20 @@ function TodayScreenContent({
     : null
 
   const priorityDoses = useMemo(() => {
-    const todayUrgent = timeline.filter(d => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
-    const aheadImminent = lookAhead.filter(d => d.timelineStatus === 'PROXIMA')
+    const todayUrgent = timeline.filter((d: any) => d.timelineStatus === 'PROXIMA' || d.timelineStatus === 'ATRASADA')
+    const aheadImminent = lookAhead.filter((d: any) => d.timelineStatus === 'PROXIMA')
     return [...carryOver, ...todayUrgent, ...aheadImminent]
-      .sort((a, b) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
+      .sort((a: any, b: any) => (a.scheduledFor || '').localeCompare(b.scheduledFor || ''))
   }, [carryOver, timeline, lookAhead])
 
-  const instancesByKey = useMemo(() => timeline.reduce((map, d) => {
+  const instancesByKey = useMemo(() => timeline.reduce((map: any, d: any) => {
     if (d.instanceId && d.protocol?.id && d.scheduledTime) {
       map[`${d.protocol.id}|${d.scheduledTime}`] = d.instanceId
     }
     return map
   }, {}), [timeline])
 
-  const heroItems = useMemo(() => priorityDoses.map(d => ({
+  const heroItems = useMemo(() => priorityDoses.map((d: any) => ({
     id: d.instanceId,
     protocol: d.protocol,
     scheduledTime: d.scheduledTime,
@@ -389,13 +411,13 @@ function TodayScreenContent({
   const userId = data?.user?.id ?? ''
   const lastTodayMeasure = todayMeasures?.[0] ?? null
 
-  const handleSaveMeasure = useCallback(async (payload) => {
+  const handleSaveMeasure = useCallback(async (payload: any) => {
     const created = await measuresRepo.create(payload)
     refreshTodayMeasures?.()
     return created
   }, [refreshTodayMeasures])
 
-  const openMeasuresHub = useCallback((measureType) => {
+  const openMeasuresHub = useCallback((measureType: any) => {
     navigateCrossTab(ROUTES.PROFILE, ROUTES.MEASURES, { type: measureType })
   }, [])
 
@@ -408,19 +430,19 @@ function TodayScreenContent({
       >
         <TodayHeader greeting={greeting} todayFormatted={todayFormatted} />
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
-        {/* Evolução do tratamento (029 F5 / T024): ABAIXO da Adesão, na área do priority dose
-            card — é "ação para agora" (Decisões §2.8). Renderiza null quando não há pendência. */}
         <EvolutionSwitchSection timezone={data?.timezone} refreshToken={evoRefreshTick} />
-        {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
-        {priorityDoses.length > 0 ? (
-          <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
-        ) : (
-          <NudgeBanner
-            nudge={otaBanner ?? dashboardNudge}
-            onAction={otaBanner ? applyUpdate : handleNudgeAction}
-            onDismiss={otaBanner ? undefined : dismissNudge}
-          />
-        )}
+        <TodayBannersSection
+          stockTrackingEnabled={stockTrackingEnabled}
+          stockAlerts={stockAlerts}
+          priorityDoses={priorityDoses}
+          heroItems={heroItems}
+          setBulkModal={setBulkModal}
+          otaBanner={otaBanner}
+          dashboardNudge={dashboardNudge}
+          applyUpdate={applyUpdate}
+          handleNudgeAction={handleNudgeAction}
+          dismissNudge={dismissNudge}
+        />
         <OptionalDoseSection
           title="Doses pendentes"
           subtitle="Doses anteriores ainda no prazo de registro"
