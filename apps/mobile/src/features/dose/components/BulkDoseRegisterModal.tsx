@@ -722,9 +722,9 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text.inverse,
   },
-  
+
   // Sítio de injeção por item (031-B)
   siteSection: {
     paddingHorizontal: spacing[2],

@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: '600',
   },

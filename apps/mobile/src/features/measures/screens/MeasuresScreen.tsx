@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute', right: spacing[5], bottom: spacing[6], width: 56, height: 56,
     borderRadius: 28, backgroundColor: colors.status.info, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    shadowColor: colors.neutral[900], shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
   },
   fabPressed: { opacity: 0.85 },
 })
