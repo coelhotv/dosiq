@@ -20,7 +20,6 @@ export async function syncDeviceActivity({
   supabase,
   now = () => Date.now(),
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: any
   now?: () => number
 }): Promise<void> {

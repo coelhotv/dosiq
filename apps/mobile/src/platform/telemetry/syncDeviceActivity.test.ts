@@ -24,7 +24,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }))
 
 import AsyncStorageImport from '@react-native-async-storage/async-storage'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AsyncStorage = AsyncStorageImport as any
 
 import { syncDeviceActivity } from './syncDeviceActivity'
