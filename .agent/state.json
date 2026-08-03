@@ -3,14 +3,14 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "tier": 1,
-    "tasks": "plans/specs/051-expo-updates/tasks.md",
-    "spec_dir": "plans/specs/061-large-screen-support",
-    "spec": "plans/specs/061-large-screen-support/spec.md",
-    "goal": "PR #782 MERGEADO (merge commit b2ed0544, nao squash — R-307). F1+F2 do enxugamento do binario Android + 2 bugs de dose critica achados no smoke e corrigidos: icone da notificacao (shrinkResources) e takeover do alarme (resumo do auto-grupo + cold start).",
-    "goal_type": "fix",
+    "mode": "planning",
+    "status": "planned",
+    "tier": 2,
+    "tasks": "plans/specs/050-notification-integrity/tasks.md",
+    "spec_dir": "plans/specs/050-notification-integrity",
+    "spec": "plans/specs/050-notification-integrity/spec.md",
+    "goal": "050 notification-integrity — plano revisado pos-RC3 (5 PRs: 0/1a/1b/2/3)",
+    "goal_type": "feature",
     "code_review": {
       "status": "merged",
       "critical": 0,
@@ -37,9 +37,10 @@
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
       "security-review",
-      "eng-review-2 (delta FR-021/FR-022)"
+      "eng-review-2 (delta FR-021/FR-022)",
+      "eng-review (050, 2026-08-02)"
     ],
-    "ceremony_findings_count": 15,
+    "ceremony_findings_count": 22,
     "ceremony_scope_decisions": [
       "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
       "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
@@ -49,7 +50,10 @@
       "Todos os 8 findings aceitos; T050 fechada",
       "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
       "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca.",
-      "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida."
+      "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida.",
+      "PO 2026-08-02 (050): US4 adicionada — alerta de estoque de tratamento ENCERRADO/pausado (bug ativo em prod: 4 protocolos active com end_date vencida, 2 com saldo 0 alertando ha ~1 semana). Recorte: corrigir SO o caminho de notificacao (scan compartilhado, PR 1); a raiz (calculateDailyIntake, 7 superficies) vai p/ spec 064. PO tambem decidiu excluir protocolo pausado. NC2 (channel_results x notification_log) resolvida: outbox_id em notification_log ANTES de dropar channel_results — TODO no ADR-078.",
+      "RC3 050 (2026-08-02): complexity check ESTOUROU — PR 1 com ~12 arquivos vs limiar 8. Proposta minima (F1, AGUARDA PO): fatiar em PR 0 (US4, bug ativo em prod, 2 arquivos) + PR 1a (infra da fila, sem consumidor) + PR 1b (fan-out). Motivo alem do tamanho: fix de prod nao deve ficar preso atras de refactor de infra. Outros findings: F2 ALTO (select de stock sem `id` -> subject_id do expiry undefined -> reintroduz o Gap 1), F3 ALTO (cadencia do enqueue indefinida; legado e minute===0, familia AP-259), F4 ALTO (armadilha viva pre-existente: por stock_alert em OUTBOX_KINDS hoje desliga o legado e nada enfileira -> zero alerta em silencio), F5 MEDIO (enqueuers[] e complexidade acidental, T005 sai), F6 MEDIO (scan sem paginacao, AP-186), F7 BAIXO (tz — 42 usuarios, todos UTC-3). Guards ELEVADOS: PO-8 exige fronteira end_date=hoje/ontem; PO-3 exige ramo snoozed_until.",
+      "PO 2026-08-02: F1 APROVADO — PR 1 fatiado em PR 0 (US4, bug ativo, vai sozinho) / PR 1a (infra da fila, sem consumidor) / PR 1b (fan-out). Todos os 7 findings da RC3 absorvidos em plan.md + tasks.md. Droppabilidade: 3 -> 2 -> 1b -> 1a -> PR 0 NUNCA."
     ],
     "branch": "fix/android-release-slimming",
     "blocked_on": [
@@ -59,7 +63,7 @@
       "PO: publicar no internal testing e conferir se os avisos do Play sumiram"
     ],
     "ceremony_type": "eng-review",
-    "plan": "plans/specs/051-expo-updates/plan.md"
+    "plan": "plans/specs/050-notification-integrity/plan.md"
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
