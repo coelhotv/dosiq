@@ -97,7 +97,7 @@ export default function OnboardingWelcomeStep() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.bg.screen || '#f8fafc',
+    backgroundColor: colors.bg.screen,
   },
   scroll: {
     flexGrow: 1,
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 40,
     lineHeight: 40,
-    fontFamily: typography.fontFamily.brand || 'System',
-    color: colors.text.brand || colors.brand.primary,
+    fontFamily: typography.fontFamily.brand,
+    color: colors.text.brand,
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: typography.fontFamily.bold || 'System',
+    fontFamily: typography.fontFamily.bold,
     fontWeight: '800',
     color: colors.text.primary,
     textAlign: 'center',
@@ -137,26 +137,25 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    fontFamily: typography.fontFamily.regular || 'System',
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: spacing[2],
   },
   card: {
-    backgroundColor: colors.bg.card || '#ffffff',
-    borderRadius: borderRadius.lg || 16,
+    backgroundColor: colors.bg.card,
+    borderRadius: borderRadius.lg,
     paddingVertical: spacing[5],
     paddingHorizontal: spacing[4],
     marginBottom: spacing[8],
-    // Sombras premium do design system
-    shadowColor: '#000',
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
     borderWidth: 1,
-    borderColor: colors.border.default || '#e2e8f0',
+    borderColor: colors.border.default,
   },
   pilarRow: {
     flexDirection: 'row',
@@ -167,8 +166,8 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.md || 8,
-    backgroundColor: colors.brand.light || '#e6f7f4',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.brand.light,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -178,28 +177,28 @@ const styles = StyleSheet.create({
   },
   pilarTitle: {
     fontSize: 15,
-    fontFamily: typography.fontFamily.medium || 'System',
+    fontFamily: typography.fontFamily.medium,
     fontWeight: '700',
     color: colors.text.primary,
     marginBottom: 4,
   },
   pilarDescription: {
     fontSize: 13,
-    fontFamily: typography.fontFamily.regular || 'System',
+    fontFamily: typography.fontFamily.regular,
     color: colors.text.secondary,
     lineHeight: 18,
   },
   button: {
-    backgroundColor: colors.brand.primary || '#006a5e',
+    backgroundColor: colors.brand.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    color: '#ffffff',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: typography.fontFamily.bold || 'System',
+    fontFamily: typography.fontFamily.bold,
   },
 })

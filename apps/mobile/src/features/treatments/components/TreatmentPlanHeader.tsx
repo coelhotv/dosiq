@@ -58,11 +58,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing[4],
     marginTop: spacing[2],
     marginBottom: spacing[1],
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
     borderRadius: 12,
     padding: spacing[3],
-    // Sombras leves padrão Dosiq
-    shadowColor: '#000',
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,

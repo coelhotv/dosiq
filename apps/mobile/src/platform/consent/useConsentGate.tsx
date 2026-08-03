@@ -172,7 +172,7 @@ export function ConsentGateProvider({
   return <ConsentGateContext.Provider value={value}>{children}</ConsentGateContext.Provider>
 }
 
-/** Estado do gate, compartilhado por todas as superfícies (guard raiz + card do hub). */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useConsentGate(): ConsentGateValue {
   return useContext(ConsentGateContext)
 }
