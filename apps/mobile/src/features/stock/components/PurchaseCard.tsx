@@ -4,6 +4,9 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Syringe } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+
+// colors.status.warning ('#904d00') com alpha — tint claro p/ borda sutil (RC6 #789: full-sat quebrou contraste)
+const WARNING_BORDER_ALPHA = 'rgba(144, 77, 0, 0.35)'
 import { formatDateShortPtBR, computeExpiryDays, formatBRL, formatStockCount, stockUnitLabel, isLiquidMedicine, isBiologicallyExpired, biologicalExpiryDaysLeft, INJECTION_CONTAINER_SINGULAR, formatDose } from '@dosiq/core'
 
 /**
@@ -367,7 +370,7 @@ const styles = StyleSheet.create({
 
   ttlChipWarning: {
     backgroundColor: colors.status.warningLight,
-    borderColor: colors.status.warning,
+    borderColor: WARNING_BORDER_ALPHA,
   },
 
   ttlText: {
