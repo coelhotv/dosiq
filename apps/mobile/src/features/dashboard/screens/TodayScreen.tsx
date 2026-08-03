@@ -322,8 +322,6 @@ function TodaySpeedDial({ protocols, speedDialOpen, setSpeedDialOpen, setMeasure
 }
 
 function TodayBannersSection({
-  stale,
-  isDaySegregated,
   stockTrackingEnabled,
   stockAlerts,
   priorityDoses,
@@ -337,7 +335,6 @@ function TodayBannersSection({
 }: any) {
   return (
     <>
-      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
       {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
       {priorityDoses.length > 0 ? (
         <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
@@ -426,6 +423,7 @@ function TodayScreenContent({
 
   return (
     <ScreenContainer>
+      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge(); setEvoRefreshTick((t) => t + 1) }} tintColor={colors.status.success} />}
@@ -434,8 +432,6 @@ function TodayScreenContent({
         <AdherenceDayCard score={stats.score} trend={adherenceTrend} />
         <EvolutionSwitchSection timezone={data?.timezone} refreshToken={evoRefreshTick} />
         <TodayBannersSection
-          stale={stale}
-          isDaySegregated={isDaySegregated}
           stockTrackingEnabled={stockTrackingEnabled}
           stockAlerts={stockAlerts}
           priorityDoses={priorityDoses}
