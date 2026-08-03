@@ -76,7 +76,7 @@ async function _resolveValidChannels({
     }
   }
 
-  return { validChannels, isCritical }
+  return { validChannels }
 }
 
 export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }: DispatchNotificationParams) {

@@ -324,7 +324,7 @@ function TodaySpeedDial({ protocols, speedDialOpen, setSpeedDialOpen, setMeasure
 function TodayBannersSection({
   stockTrackingEnabled,
   stockAlerts,
-  priorityDoses,
+  priorityDoses = [],
   heroItems,
   setBulkModal,
   otaBanner,
