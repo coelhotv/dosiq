@@ -183,8 +183,8 @@ const styles = StyleSheet.create({
     borderColor: colors.status.error,
   },
   ttlRowWarning: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
+    backgroundColor: colors.status.errorLight,
+    borderColor: colors.status.error,
   },
   ttlText: {
     fontSize: 11,

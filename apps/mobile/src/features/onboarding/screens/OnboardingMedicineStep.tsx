@@ -281,22 +281,22 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontSize: 20,
-    fontFamily: typography.fontFamily.brand || 'System',
-    color: colors.text.brand || colors.brand.primary,
+    fontFamily: typography.fontFamily.brand,
+    color: colors.text.brand,
     marginLeft: spacing[1],
     fontWeight: '700',
   },
   warningBox: {
     padding: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: '#fffbeb',
+    backgroundColor: colors.status.warningLight,
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: colors.supplement[50],
     marginTop: spacing[1],
   },
   warningText: {
     fontSize: 13,
-    color: '#d97706',
+    color: colors.supplement[500],
     lineHeight: 18,
   },
 })

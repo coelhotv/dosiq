@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import { AppState, View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
+import { colors } from '@shared/styles/tokens'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
 // SIGNED_OUT. RootTabs/ProfileStack já são JS; o root era o último outlier.
@@ -458,6 +459,6 @@ const styles = StyleSheet.create({
   },
   promptOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
   },
 })

@@ -97,6 +97,7 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStockTracking(): StockTrackingValue {
   return useContext(StockTrackingContext)
 }
