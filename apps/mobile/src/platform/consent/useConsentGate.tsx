@@ -176,5 +176,3 @@ export function ConsentGateProvider({
 export function useConsentGate(): ConsentGateValue {
   return useContext(ConsentGateContext)
 }
-
-export default useConsentGate

@@ -163,6 +163,7 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
   return <ConsentGateContext.Provider value={value}>{children}</ConsentGateContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useConsentGate(): ConsentGateValue {
   return useContext(ConsentGateContext)
 }
