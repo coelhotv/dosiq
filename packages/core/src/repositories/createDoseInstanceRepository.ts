@@ -56,6 +56,90 @@ interface CreateDoseInstanceRepositoryDeps {
   client: SupabaseClient<Database>
 }
 
+interface AnchorCandidate {
+  id: string
+  scheduled_for: string
+  tolerance_minutes: number | null
+}
+
+/**
+ * Filtro fino de findAnchorInstance: dentro da tolerância da própria linha, pega a mais
+ * próxima de `takenMs`. Extraído como função pura — testável sem client/rede.
+ */
+function _pickClosestAnchor(candidates: AnchorCandidate[], takenMs: number): AnchorCandidate | null {
+  let best: AnchorCandidate | null = null
+  let bestDiff = Infinity
+  for (const inst of candidates) {
+    const diff = Math.abs(parseISO(inst.scheduled_for).getTime() - takenMs)
+    const tol = (inst.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
+    if (diff <= tol && diff < bestDiff) {
+      best = inst
+      bestDiff = diff
+    }
+  }
+  return best
+}
+
+/**
+ * markMissedDueInstances passo 1: lê TODAS as `pending` vencidas via cursor por `id`
+ * (AP-186/Gemini #613 — offset pularia linha sob escrita concorrente). Sem side-effect.
+ */
+async function _scanDueMissedIds(
+  client: SupabaseClient<Database>,
+  nowIso: string,
+  nowMs: number,
+  pageSize: number,
+): Promise<string[]> {
+  const dueIds: string[] = []
+  let lastId: string | null = null
+  for (;;) {
+    let query = client
+      .from(TABLE)
+      .select('id, scheduled_for, tolerance_minutes')
+      .eq('status', 'pending')
+      .lt('scheduled_for', nowIso)
+      .order('id', { ascending: true })
+      .limit(pageSize)
+
+    if (lastId) query = query.gt('id', lastId)
+
+    const { data, error } = await query
+    if (error) throw error
+    if (!data || data.length === 0) break
+
+    for (const row of data) {
+      const tol = (row.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
+      if (parseISO(row.scheduled_for).getTime() + tol < nowMs) dueIds.push(row.id)
+    }
+
+    if (data.length < pageSize) break
+    lastId = data[data.length - 1].id
+  }
+  return dueIds
+}
+
+/**
+ * markMissedDueInstances passo 2: UPDATE em lotes reafirmando `status='pending'`
+ * (guard de corrida — AP-185). Retorna total efetivamente atualizado.
+ */
+async function _applyMissedUpdates(client: SupabaseClient<Database>, dueIds: string[]): Promise<number> {
+  let updated = 0
+  const CHUNK = 500
+  for (let i = 0; i < dueIds.length; i += CHUNK) {
+    const chunk = dueIds.slice(i, i + CHUNK)
+    const { data, error } = await client
+      .from(TABLE)
+      .update({ status: 'missed' })
+      .in('id', chunk)
+      .eq('status', 'pending')
+      .select('id')
+
+    if (error) throw error
+    updated += data?.length ?? 0
+  }
+  return updated
+}
+
 export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepositoryDeps) {
   if (!client) throw new Error('createDoseInstanceRepository: client é obrigatório')
 
@@ -285,18 +369,7 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
       if (error) throw error
       if (!data || data.length === 0) return null
 
-      // Filtro fino: dentro da tolerância da própria linha; pega a mais próxima.
-      let best = null
-      let bestDiff = Infinity
-      for (const inst of data) {
-        const diff = Math.abs(parseISO(inst.scheduled_for).getTime() - takenMs)
-        const tol = (inst.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
-        if (diff <= tol && diff < bestDiff) {
-          best = inst
-          bestDiff = diff
-        }
-      }
-      return best
+      return _pickClosestAnchor(data, takenMs)
     },
 
     /**
@@ -372,56 +445,12 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
       const nowMs = nowObj.getTime()
       const nowIso = nowObj.toISOString()
 
-      // 1. Ler todas as pending já no passado (scheduled_for < now), SEM escrever.
-      // Paginação por CURSOR (keyset em `id`), não offset: durante o sweep um writer
-      // concorrente (markTaken via mobile/web) pode tirar uma linha do conjunto pending
-      // → com offset (.range) isso desloca a janela e PULA linhas. O cursor por id é
-      // imune a esse drift — nenhuma linha é pulada nem lida 2x (Gemini #613).
-      const dueIds = []
-      let lastId = null
-      for (;;) {
-        let query = client
-          .from(TABLE)
-          .select('id, scheduled_for, tolerance_minutes')
-          .eq('status', 'pending')
-          .lt('scheduled_for', nowIso)
-          .order('id', { ascending: true })
-          .limit(pageSize)
-
-        if (lastId) query = query.gt('id', lastId)
-
-        const { data, error } = await query
-
-        if (error) throw error
-        if (!data || data.length === 0) break
-
-        for (const row of data) {
-          const tol = (row.tolerance_minutes ?? MAX_TOLERANCE_MINUTES) * MS_PER_MINUTE
-          if (parseISO(row.scheduled_for).getTime() + tol < nowMs) dueIds.push(row.id)
-        }
-
-        if (data.length < pageSize) break
-        lastId = data[data.length - 1].id
-      }
-
+      // 1. Ler todas as pending já no passado, SEM escrever (AP-186/Gemini #613).
+      const dueIds = await _scanDueMissedIds(client, nowIso, nowMs, pageSize)
       if (dueIds.length === 0) return 0
 
-      // 2. UPDATE em lotes por id, reafirmando pending (guard de corrida).
-      let updated = 0
-      const CHUNK = 500
-      for (let i = 0; i < dueIds.length; i += CHUNK) {
-        const chunk = dueIds.slice(i, i + CHUNK)
-        const { data, error } = await client
-          .from(TABLE)
-          .update({ status: 'missed' })
-          .in('id', chunk)
-          .eq('status', 'pending')
-          .select('id')
-
-        if (error) throw error
-        updated += data?.length ?? 0
-      }
-      return updated
+      // 2. UPDATE em lotes por id, reafirmando pending (guard de corrida — AP-185).
+      return _applyMissedUpdates(client, dueIds)
     },
 
     /**
