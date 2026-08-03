@@ -27,116 +27,75 @@ const STEP_STATUS_MAP = {
   upcoming: 'future',
 }
 
-export default function TitrationTimeline({ protocol, compact = false, onStepClick = undefined }) {
-  const steps = useMemo(
-    () => (Array.isArray(protocol?.titration_steps) ? protocol.titration_steps : []),
-    [protocol]
-  )
-
-  const ordered = useMemo(
-    () => [...steps].sort((a, b) => Number(a?.position ?? 0) - Number(b?.position ?? 0)),
-    [steps]
-  )
-
-  // Progresso da etapa vigente. `null` = etapa CONTÍNUA (manutenção/alvo) ou sem etapa
-  // vigente: a escada existe e é exibida, só não há contagem regressiva.
-  const progress = useMemo(() => calculateTitrationData(steps), [steps])
-  const badge = useMemo(() => getEvolutionBadge(steps), [steps])
-
-  const viewSteps = useMemo(
-    () =>
-      ordered.map((s, idx) => ({
-        key: s.id ?? `${s.position}-${idx}`,
-        stepNumber: idx + 1,
-        dose: s.dose,
-        unit: s.intake_unit,
-        // NULL = etapa CONTÍNUA: não vence e não avança sozinha. Exibir "0 dias" seria falso —
-        // a ausência de prazo É a informação.
-        durationDays: s.duration_days,
-        status: STEP_STATUS_MAP[s.status] ?? 'future',
-        startDate: s.started_at ?? null,
-        endDate: s.ended_at ?? null,
-        description: s.status === 'pending_confirmation' ? 'Aguardando sua confirmação' : null,
-      })),
-    [ordered]
-  )
-
-  if (viewSteps.length === 0) {
-    return (
-      <div className="titration-timeline empty">
-        <p className="empty-message">Nenhuma evolução de dose definida para este tratamento</p>
+function CompactTitrationTimeline({
+  viewSteps,
+  progress,
+  progressPercent,
+  daysRemaining,
+  onStepClick,
+}: {
+  viewSteps: any[]
+  progress: any
+  progressPercent: number
+  daysRemaining: number
+  onStepClick?: (step: any) => void
+}) {
+  return (
+    <div className="titration-timeline compact">
+      <div className="timeline-preview">
+        {viewSteps.map((step) => {
+          const isClickable = Boolean(onStepClick)
+          const Tag = isClickable ? 'button' : 'div'
+          return (
+            <Tag
+              key={step.key}
+              type={isClickable ? 'button' : undefined}
+              className={`preview-step ${step.status}`}
+              onClick={() => onStepClick?.(step)}
+              title={`${step.description || `Etapa ${step.stepNumber}`}: ${formatDose(step.dose, step.unit)}`}
+            >
+              <span className="preview-dose">{step.dose}</span>
+              <span className="preview-unit">{step.unit}</span>
+            </Tag>
+          )
+        })}
       </div>
-    )
-  }
 
-  const daysRemaining = progress?.daysRemaining ?? 0
-  const progressPercent = Math.max(0, Math.min(100, Math.round(progress?.progressPercent ?? 0)))
-  const isEvolving = badge.key === 'em_evolucao'
-
-  // 🔴 "Não está evoluindo" NÃO é sinônimo de "chegou na manutenção" (RC6 #765). `estavel` cobre
-  // três situações distintas, e só UMA delas merece comemoração:
-  //   · etapa vigente CONTÍNUA  → chegou de fato à dose de manutenção;
-  //   · escada ainda não iniciada (todas `upcoming`, nenhuma `current`) → não começou;
-  //   · escada sem etapa vigente (tratamento pausado/encerrado, resíduo) → parada no meio.
-  // O modelo N2 não tem chave 'pausado' — a distinção honesta que dá para fazer aqui é
-  // "existe etapa vigente contínua?". Sem ela, dizer "🎯 Dose de manutenção" + 🎉 anunciaria
-  // conclusão para quem não titulou um único dia.
-  const hasCurrentStep = ordered.some((s) => s?.status === 'current')
-  const reachedMaintenance = !isEvolving && hasCurrentStep
-  const notStarted = !isEvolving && !hasCurrentStep
-
-  const statusMessage = isEvolving
-    ? `📈 Em evolução • Etapa ${progress?.currentStep ?? 1} de ${progress?.totalSteps ?? viewSteps.length}`
-    : reachedMaintenance
-      ? '🎯 Dose de manutenção'
-      : '⏸️ Evolução não iniciada'
-
-  const handleStepClick = (step) => {
-    if (onStepClick) onStepClick(step)
-  }
-
-  // Modo compacto: apenas preview das etapas
-  if (compact) {
-    return (
-      <div className="titration-timeline compact">
-        <div className="timeline-preview">
-          {viewSteps.map((step) => {
-            const isClickable = Boolean(onStepClick)
-            const Tag = isClickable ? 'button' : 'div'
-            return (
-              <Tag
-                key={step.key}
-                type={isClickable ? 'button' : undefined}
-                className={`preview-step ${step.status}`}
-                onClick={() => handleStepClick(step)}
-                // A descrição volta ao tooltip (RC6 #765): no N2 ela só existe na etapa
-                // `pending_confirmation`, e é justamente ali que o modo compacto precisa dizer
-                // por que a bolinha está parada ("Aguardando sua confirmação").
-                title={`${step.description || `Etapa ${step.stepNumber}`}: ${formatDose(step.dose, step.unit)}`}
-              >
-                <span className="preview-dose">{step.dose}</span>
-                <span className="preview-unit">{step.unit}</span>
-              </Tag>
-            )
-          })}
-        </div>
-
-        {progress && (
-          <div className="timeline-progress-mini">
-            <div className="progress-bar-mini">
-              <div className="progress-fill-mini" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <span className="progress-text-mini">
-              {daysRemaining > 0
-                ? formatDaysLabel(daysRemaining)
-                : 'avanço pendente'}
-            </span>
+      {progress && (
+        <div className="timeline-progress-mini">
+          <div className="progress-bar-mini">
+            <div className="progress-fill-mini" style={{ width: `${progressPercent}%` }} />
           </div>
-        )}
-      </div>
-    )
-  }
+          <span className="progress-text-mini">
+            {daysRemaining > 0 ? formatDaysLabel(daysRemaining) : 'avanço pendente'}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
 
+function FullTitrationTimeline({
+  viewSteps,
+  progress,
+  progressPercent,
+  daysRemaining,
+  isEvolving,
+  reachedMaintenance,
+  notStarted,
+  statusMessage,
+  onStepClick,
+}: {
+  viewSteps: any[]
+  progress: any
+  progressPercent: number
+  daysRemaining: number
+  isEvolving: boolean
+  reachedMaintenance: boolean
+  notStarted: boolean
+  statusMessage: string
+  onStepClick?: (step: any) => void
+}) {
   return (
     <div className="titration-timeline">
       <div className="timeline-header">
@@ -174,7 +133,7 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
               key={step.key}
               type={isClickable ? 'button' : undefined}
               className="timeline-step-wrapper"
-              onClick={() => handleStepClick(step)}
+              onClick={() => onStepClick?.(step)}
             >
               <TitrationStep
                 stepNumber={step.stepNumber}
@@ -219,5 +178,83 @@ export default function TitrationTimeline({ protocol, compact = false, onStepCli
         )}
       </div>
     </div>
+  )
+}
+
+export default function TitrationTimeline({ protocol, compact = false, onStepClick = undefined }: any) {
+  const steps = useMemo(
+    () => (Array.isArray(protocol?.titration_steps) ? protocol.titration_steps : []),
+    [protocol]
+  )
+
+  const ordered = useMemo(
+    () => [...steps].sort((a, b) => Number(a?.position ?? 0) - Number(b?.position ?? 0)),
+    [steps]
+  )
+
+  const progress = useMemo(() => calculateTitrationData(steps), [steps])
+  const badge = useMemo(() => getEvolutionBadge(steps), [steps])
+
+  const viewSteps = useMemo(
+    () =>
+      ordered.map((s, idx) => ({
+        key: s.id ?? `${s.position}-${idx}`,
+        stepNumber: idx + 1,
+        dose: s.dose,
+        unit: s.intake_unit,
+        durationDays: s.duration_days,
+        status: STEP_STATUS_MAP[s.status] ?? 'future',
+        startDate: s.started_at ?? null,
+        endDate: s.ended_at ?? null,
+        description: s.status === 'pending_confirmation' ? 'Aguardando sua confirmação' : null,
+      })),
+    [ordered]
+  )
+
+  if (viewSteps.length === 0) {
+    return (
+      <div className="titration-timeline empty">
+        <p className="empty-message">Nenhuma evolução de dose definida para este tratamento</p>
+      </div>
+    )
+  }
+
+  const daysRemaining = progress?.daysRemaining ?? 0
+  const progressPercent = Math.max(0, Math.min(100, Math.round(progress?.progressPercent ?? 0)))
+  const isEvolving = badge.key === 'em_evolucao'
+  const hasCurrentStep = ordered.some((s) => s?.status === 'current')
+  const reachedMaintenance = !isEvolving && hasCurrentStep
+  const notStarted = !isEvolving && !hasCurrentStep
+
+  const statusMessage = isEvolving
+    ? `📈 Em evolução • Etapa ${progress?.currentStep ?? 1} de ${progress?.totalSteps ?? viewSteps.length}`
+    : reachedMaintenance
+      ? '🎯 Dose de manutenção'
+      : '⏸️ Evolução não iniciada'
+
+  if (compact) {
+    return (
+      <CompactTitrationTimeline
+        viewSteps={viewSteps}
+        progress={progress}
+        progressPercent={progressPercent}
+        daysRemaining={daysRemaining}
+        onStepClick={onStepClick}
+      />
+    )
+  }
+
+  return (
+    <FullTitrationTimeline
+      viewSteps={viewSteps}
+      progress={progress}
+      progressPercent={progressPercent}
+      daysRemaining={daysRemaining}
+      isEvolving={isEvolving}
+      reachedMaintenance={reachedMaintenance}
+      notStarted={notStarted}
+      statusMessage={statusMessage}
+      onStepClick={onStepClick}
+    />
   )
 }

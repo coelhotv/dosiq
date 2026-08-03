@@ -12,7 +12,6 @@ export function useMedicineFormState({
   onSuccess,
   autoAdvance,
   showSuccessMessage,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 }: any) {
   const [formData, setFormData] = useState(() => getInitialFormData(medicine))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -20,7 +19,6 @@ export function useMedicineFormState({
   const [shakeFields, setShakeFields] = useState<Record<string, boolean>>({})
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
   const handleChange = (e: any) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
@@ -32,7 +30,6 @@ export function useMedicineFormState({
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
   const handleMedicineSelect = (selectedMedicine: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -41,7 +38,6 @@ export function useMedicineFormState({
     if (saveSuccess) setSaveSuccess(false)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
   const handleLaboratorySelect = (laboratory: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -63,7 +59,6 @@ export function useMedicineFormState({
     return Object.keys(newErrors).length === 0
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
   const handleSubmit = async (e: any) => {
     e.preventDefault()
     if (!validate()) return

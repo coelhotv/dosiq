@@ -6,7 +6,6 @@ import MedicineAutocomplete from '@features/medications/components/MedicineAutoc
 // Ordem dos campos espelha o form mobile (012 Fase B3): Identificação no topo
 // (nome + princípio ativo), prioritários primeiro. Tipo/Classe migraram p/ a
 // seção "Classificação" (MedicineFormDosageInfo).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export default function MedicineFormBasicInfo({
   formData,
   errors,

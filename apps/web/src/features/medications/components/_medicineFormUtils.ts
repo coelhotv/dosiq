@@ -8,7 +8,6 @@ export const isLiquidUnit = isLiquidDosageUnit
 // Densidade padrão (gotas/ml) sugerida quando o usuário escolhe unidade líquida (ADR-058).
 export const DEFAULT_UNITS_PER_ML = 20
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 function _getAmountDisplay(dosage_per_pill: any, concentration_volume_ml: any) {
   const denom = coerceDecimal(concentration_volume_ml)
   const amount = coerceDecimal(dosage_per_pill)
@@ -18,7 +17,6 @@ function _getAmountDisplay(dosage_per_pill: any, concentration_volume_ml: any) {
   return dosage_per_pill
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export const getInitialFormData = (medicine: any) => {
   const m = medicine || {}
   return {
@@ -37,7 +35,6 @@ export const getInitialFormData = (medicine: any) => {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar
 export const validateMedicineForm = (formData: any) => {
   const newErrors: Record<string, string> = {}
 
