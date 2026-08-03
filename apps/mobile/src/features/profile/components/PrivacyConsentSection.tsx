@@ -149,7 +149,10 @@ const STATUS_META = {
 function _getConsentResolved(loading: boolean, loadError: boolean, stateStatus?: string): 'loading' | 'error' | 'missing' | 'granted' | 'revoked' {
   if (loading) return 'loading'
   if (loadError) return 'error'
-  return (stateStatus as any) ?? 'missing'
+  if (stateStatus && stateStatus in STATUS_META) {
+    return stateStatus as keyof typeof STATUS_META
+  }
+  return 'missing'
 }
 
 export default function PrivacyConsentSection() {
