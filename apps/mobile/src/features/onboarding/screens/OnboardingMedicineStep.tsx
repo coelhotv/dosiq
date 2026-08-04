@@ -216,6 +216,11 @@ export default function OnboardingMedicineStep() {
   )
 }
 
+// Tons suaves originais do caixa de aviso do onboarding (preserva tom pastel suave)
+const ONBOARDING_WARNING_BG = '#fffbeb'
+const ONBOARDING_WARNING_BORDER = '#fef3c7'
+const ONBOARDING_WARNING_TEXT = '#b45309'
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -289,14 +294,14 @@ const styles = StyleSheet.create({
   warningBox: {
     padding: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: colors.status.warningLight,
+    backgroundColor: ONBOARDING_WARNING_BG,
     borderWidth: 1,
-    borderColor: colors.supplement[50],
+    borderColor: ONBOARDING_WARNING_BORDER,
     marginTop: spacing[1],
   },
   warningText: {
     fontSize: 13,
-    color: colors.supplement[500],
+    color: ONBOARDING_WARNING_TEXT,
     lineHeight: 18,
   },
 })

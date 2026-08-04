@@ -490,6 +490,11 @@ export default function NotificationInboxScreen({ navigation, route }) {
   )
 }
 
+// Tons translúcidos exatos do banner offline (preserva suavidade e opacidade visual original)
+const OFFLINE_BANNER_BG = 'rgba(251, 191, 36, 0.15)'
+const OFFLINE_BANNER_BORDER = 'rgba(217, 119, 6, 0.20)'
+const OFFLINE_TEXT_COLOR = '#d97706'
+
 const styles = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: colors.bg.screen },
 
@@ -501,8 +506,8 @@ const styles = StyleSheet.create({
   subtitle:         { fontSize: 13, fontWeight: '500', marginTop: 1 },
 
   // Banner offline
-  offlineBanner:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: colors.status.warningLight, borderBottomWidth: 1, borderBottomColor: colors.status.warning },
-  offlineText:      { fontSize: 13, fontWeight: '500', color: colors.status.warning },
+  offlineBanner:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: OFFLINE_BANNER_BG, borderBottomWidth: 1, borderBottomColor: OFFLINE_BANNER_BORDER },
+  offlineText:      { fontSize: 13, fontWeight: '500', color: OFFLINE_TEXT_COLOR },
 
   // Chips de filtro
   filtersScroll:    { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border.light },

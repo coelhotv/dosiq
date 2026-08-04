@@ -377,6 +377,11 @@ export default function MedicineFormScreen() {
   )
 }
 
+// Tons suaves originais do caixa de aviso do formulário (preserva tom pastel suave)
+const FORM_WARNING_BG = '#fffbeb'
+const FORM_WARNING_BORDER = '#fef3c7'
+const FORM_WARNING_TEXT = '#b45309'
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -430,14 +435,14 @@ const styles = StyleSheet.create({
   warningBox: {
     padding: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: colors.supplement[50],
+    backgroundColor: FORM_WARNING_BG,
     borderWidth: 1,
-    borderColor: colors.supplement[500],
+    borderColor: FORM_WARNING_BORDER,
     marginTop: spacing[2],
   },
   warningText: {
     fontSize: 13,
-    color: colors.supplement[500],
+    color: FORM_WARNING_TEXT,
     lineHeight: 18,
   },
 })

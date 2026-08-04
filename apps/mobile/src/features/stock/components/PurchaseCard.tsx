@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   },
 
   ttlChipWarning: {
-    backgroundColor: colors.status.warningLight,
+    backgroundColor: '#fffbeb',
     borderColor: WARNING_BORDER_ALPHA,
   },
 

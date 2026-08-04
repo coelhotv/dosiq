@@ -101,6 +101,10 @@ export default function StockItem({ medicine }) {
   )
 }
 
+// Tons suaves originais do chip de aviso de estoque (preserva suave tom pastel e opacidade)
+const STOCK_WARNING_BG = '#fffbeb'
+const STOCK_WARNING_BORDER = 'rgba(144, 77, 0, 0.35)'
+
 const styles = StyleSheet.create({
   titleWrapper: {
     flexDirection: 'row',
@@ -182,8 +186,8 @@ const styles = StyleSheet.create({
     borderColor: colors.status.error,
   },
   ttlRowWarning: {
-    backgroundColor: colors.status.warningLight,
-    borderColor: colors.status.warning,
+    backgroundColor: STOCK_WARNING_BG,
+    borderColor: STOCK_WARNING_BORDER,
   },
   ttlText: {
     fontSize: 11,
