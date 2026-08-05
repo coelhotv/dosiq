@@ -24,7 +24,6 @@ const db = createAnvisaDatabase({
  * Carrega a base sob demanda (Storage + cache). Nunca lança: offline sem cache ⇒ [].
  * @returns {Promise<Array>}
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO(040-strict) tipar createAnvisaDatabase
 async function loadDatabase(): Promise<any[]> {
   return db.load()
 }

@@ -52,19 +52,84 @@ interface TimelineStep {
 // `todayLocal` = dia local do dono (YYYY-MM-DD), computado FRESCO a cada render (não capturado em
 // useState) — senão a tela aberta atravessando a meia-noite usaria "hoje" velho (AP-W15). O
 // "N dias restantes" conta dias de CALENDÁRIO local (AP-240), não blocos absolutos de 24h.
+function _buildCompletedStep(s: LadderStepWithMedicine, medName: string, medFullName: string, doseLabel: string, continua: boolean, broken: boolean): TimelineStep {
+  const start = s.started_at ? parseISO(s.started_at) : null
+  const end = s.ended_at ? parseISO(s.ended_at) : null
+  const span = start && end ? `${fmtDay(start)} – ${fmtDay(end)}` : ''
+  return { key: s.id, kind: 'past', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine: span ? `Concluída · ${span}` : 'Concluída' }
+}
+
+function _buildCurrentStep(s: LadderStepWithMedicine, medName: string, medFullName: string, doseLabel: string, continua: boolean, broken: boolean, todayMs: number): TimelineStep {
+  let statusLine = 'em curso'
+  if (!continua && s.started_at && s.duration_days) {
+    const end = addDays(parseISO(s.started_at), s.duration_days)
+    const endMs = parseLocalDate(formatLocalDate(end)).getTime()
+    const daysLeft = Math.max(0, Math.round((endMs - todayMs) / MS_DAY))
+    statusLine = daysLeft > 0 ? `${daysLeft} dias restantes · até ${fmtDay(end)}` : `até ${fmtDay(end)}`
+  }
+  return { key: s.id, kind: 'current', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
+}
+
+function _buildFutureStep(
+  s: LadderStepWithMedicine,
+  index: number,
+  currentIndex: number,
+  medName: string,
+  medFullName: string,
+  doseLabel: string,
+  continua: boolean,
+  broken: boolean,
+  currentIsContinua: boolean,
+  projected: Date | null,
+  updateProjected: (next: Date | null) => void
+): TimelineStep {
+  if (currentIsContinua && s.status === 'pending_confirmation') {
+    return { key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine: 'aguardando você iniciar' }
+  }
+
+  let statusLine = continua ? 'contínua' : 'prevista'
+  if (projected !== null) {
+    statusLine = `prevista para ${fmtDay(projected)}`
+    if (index > currentIndex && s.duration_days && s.duration_days > 0) {
+      updateProjected(addDays(projected, s.duration_days))
+    }
+    if (continua) statusLine += ' · contínua'
+  }
+
+  return { key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
+}
+
+function _buildTimelineItem(
+  s: LadderStepWithMedicine,
+  index: number,
+  currentIndex: number,
+  todayMs: number,
+  currentIsContinua: boolean,
+  projected: Date | null,
+  updateProjected: (next: Date | null) => void
+): TimelineStep {
+  const medName = s.medicine?.name ?? 'Medicamento'
+  const medFullName = formatMedicineFullName(s.medicine)
+  const doseLabel = formatIntakeDose(s.dose, s.intake_unit, s.medicine)
+  const continua = s.duration_days === null || s.duration_days === undefined
+  const broken = s.medicine == null
+
+  if (s.status === 'completed') {
+    return _buildCompletedStep(s, medName, medFullName, doseLabel, continua, broken)
+  }
+  if (s.status === 'current') {
+    return _buildCurrentStep(s, medName, medFullName, doseLabel, continua, broken, todayMs)
+  }
+  return _buildFutureStep(s, index, currentIndex, medName, medFullName, doseLabel, continua, broken, currentIsContinua, projected, updateProjected)
+}
+
 function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): TimelineStep[] {
   const ordered = [...steps].sort((a, b) => a.position - b.position)
-  // 🔴 A vigente vem de `resolveCurrentStep` (achado do RC6): `findIndex` pegaria a PRIMEIRA
-  // `current`, e o banco não impede um resíduo numa posição anterior — a projeção das futuras e
-  // o rótulo "aguardando você iniciar" sairiam ancorados na etapa errada, em silêncio.
   const currentStep = resolveCurrentStep(ordered)
   const currentIndex = currentStep ? ordered.findIndex((s) => s.id === currentStep.id) : -1
   const todayMs = parseLocalDate(todayLocal).getTime()
 
-  // Ponto de partida da projeção das futuras = fim da etapa vigente (se finita).
   let projected: Date | null = null
-  // F5.5: vigente CONTÍNUA = manutenção. Não há data de fim, logo nada é "previsto" — o que
-  // vier depois só começa por decisão clínica + toque do usuário.
   let currentIsContinua = false
   if (currentIndex !== -1) {
     const cur = ordered[currentIndex]
@@ -75,55 +140,7 @@ function buildTimeline(steps: LadderStepWithMedicine[], todayLocal: string): Tim
   }
 
   return ordered.map((s, index): TimelineStep => {
-    const medName = s.medicine?.name ?? 'Medicamento'
-    const medFullName = formatMedicineFullName(s.medicine)
-    const doseLabel = formatIntakeDose(s.dose, s.intake_unit, s.medicine)
-    const continua = s.duration_days === null || s.duration_days === undefined
-    // Órfã: o embed do medicamento voltou vazio (excluído/arquivado) — §7.3.
-    const broken = s.medicine == null
-
-    if (s.status === 'completed') {
-      const start = s.started_at ? parseISO(s.started_at) : null
-      const end = s.ended_at ? parseISO(s.ended_at) : null
-      const span = start && end ? `${fmtDay(start)} – ${fmtDay(end)}` : ''
-      return { key: s.id, kind: 'past', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine: span ? `Concluída · ${span}` : 'Concluída' }
-    }
-
-    if (s.status === 'current') {
-      let statusLine = 'em curso'
-      if (!continua && s.started_at && s.duration_days) {
-        const end = addDays(parseISO(s.started_at), s.duration_days)
-        // Dias de calendário local até o dia do fim (ambos ancorados na meia-noite local — AP-240).
-        const endMs = parseLocalDate(formatLocalDate(end)).getTime()
-        const daysLeft = Math.max(0, Math.round((endMs - todayMs) / MS_DAY))
-        statusLine = daysLeft > 0 ? `${daysLeft} dias restantes · até ${fmtDay(end)}` : `até ${fmtDay(end)}`
-      }
-      return { key: s.id, kind: 'current', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
-    }
-
-    // future (upcoming / pending_confirmation): data prevista acumulada.
-    //
-    // F5.5: etapa cadastrada a partir de uma vigente CONTÍNUA não tem data nem automatismo —
-    // "prevista" mentiria (sugere que o app vai virar sozinho). Ela espera o toque, e o rótulo
-    // diz exatamente isso.
-    if (currentIsContinua && s.status === 'pending_confirmation') {
-      return {
-        key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken,
-        medicineId: s.medicine?.id ?? null, statusLine: 'aguardando você iniciar',
-      }
-    }
-    let statusLine = continua ? 'contínua' : 'prevista'
-    if (projected !== null) {
-      statusLine = `prevista para ${fmtDay(projected)}`
-      if (index > currentIndex && s.duration_days && s.duration_days > 0) {
-        projected = addDays(projected, s.duration_days)
-      }
-      // Só sufixa quando há data: sem projeção o rótulo JÁ é "contínua", e appendar produzia
-      // "contínua · contínua" (achado do RC6). Pré-existente, mas a F5.5 tornou o caso comum —
-      // vigente contínua ⇒ `projected` null ⇒ toda futura contínua caía na duplicata.
-      if (continua) statusLine += ' · contínua'
-    }
-    return { key: s.id, kind: 'future', medName, medFullName, doseLabel, continua, broken, medicineId: s.medicine?.id ?? null, statusLine }
+    return _buildTimelineItem(s, index, currentIndex, todayMs, currentIsContinua, projected, (next) => { projected = next })
   })
 }
 

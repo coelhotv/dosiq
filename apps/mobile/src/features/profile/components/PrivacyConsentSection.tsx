@@ -31,6 +31,130 @@ function formatConsentDate(iso: string): string {
   return `${dd}/${mm}/${d.getFullYear()}`
 }
 
+function ConsentMissingState({ onGrant }: { onGrant: () => void }) {
+  return (
+    <>
+      <Text style={styles.metaText}>
+        Você ainda não autorizou o tratamento dos dados de saúde. Sem isso, o app não envia
+        lembretes nem registra seu histórico.
+      </Text>
+      <Pressable
+        style={styles.grantButton}
+        onPress={onGrant}
+        accessibilityRole="button"
+        accessibilityLabel="Autorizar tratamento de dados de saúde"
+      >
+        <Text style={styles.grantButtonText}>Autorizar agora</Text>
+      </Pressable>
+    </>
+  )
+}
+
+function ConsentRevokeFlow({
+  confirmStep,
+  revoking,
+  onStart,
+  onCancel,
+  onStepTwo,
+  onConfirm,
+}: {
+  confirmStep: 0 | 1 | 2
+  revoking: boolean
+  onStart: () => void
+  onCancel: () => void
+  onStepTwo: () => void
+  onConfirm: () => void
+}) {
+  if (confirmStep === 0) {
+    return (
+      <Pressable
+        style={styles.revokeButton}
+        onPress={onStart}
+        accessibilityRole="button"
+        accessibilityLabel="Retirar consentimento"
+      >
+        <Text style={styles.revokeButtonText}>Retirar consentimento</Text>
+      </Pressable>
+    )
+  }
+
+  if (confirmStep === 1) {
+    return (
+      <View style={styles.confirmBox}>
+        <Text style={styles.confirmWarning}>{HEALTH_CONSENT_COPY.revokeWarning}</Text>
+        <View style={styles.confirmActions}>
+          <Pressable
+            style={styles.confirmCancel}
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar"
+          >
+            <Text style={styles.confirmCancelText}>Cancelar</Text>
+          </Pressable>
+          <Pressable
+            style={styles.confirmProceed}
+            onPress={onStepTwo}
+            accessibilityRole="button"
+            accessibilityLabel="Continuar retirada"
+          >
+            <Text style={styles.confirmProceedText}>Continuar</Text>
+          </Pressable>
+        </View>
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.confirmBox}>
+      <Text style={styles.confirmWarning}>
+        Tem certeza? O app ficará bloqueado até você exportar, excluir a conta ou
+        consentir novamente.
+      </Text>
+      <View style={styles.confirmActions}>
+        <Pressable
+          style={styles.confirmCancel}
+          onPress={onCancel}
+          disabled={revoking}
+          accessibilityRole="button"
+          accessibilityLabel="Cancelar"
+        >
+          <Text style={styles.confirmCancelText}>Cancelar</Text>
+        </Pressable>
+        <Pressable
+          style={styles.confirmDanger}
+          onPress={onConfirm}
+          disabled={revoking}
+          accessibilityRole="button"
+          accessibilityLabel="Confirmar retirada de consentimento"
+        >
+          {revoking ? (
+            <ActivityIndicator size="small" color={colors.text.inverse} />
+          ) : (
+            <Text style={styles.confirmDangerText}>Retirar consentimento</Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+const STATUS_META = {
+  loading: { label: 'Carregando...', Icon: ShieldQuestion, color: colors.text.muted },
+  error: { label: 'Não foi possível carregar', Icon: ShieldQuestion, color: colors.text.muted },
+  missing: { label: 'Não informado', Icon: ShieldQuestion, color: colors.text.muted },
+  granted: { label: 'Ativo', Icon: ShieldCheck, color: colors.status.success },
+  revoked: { label: 'Retirado', Icon: ShieldOff, color: colors.status.error },
+} as const
+
+function _getConsentResolved(loading: boolean, loadError: boolean, stateStatus?: string): 'loading' | 'error' | 'missing' | 'granted' | 'revoked' {
+  if (loading) return 'loading'
+  if (loadError) return 'error'
+  if (stateStatus && Object.hasOwn(STATUS_META, stateStatus)) {
+    return stateStatus as keyof typeof STATUS_META
+  }
+  return 'missing'
+}
+
 export default function PrivacyConsentSection() {
   const navigation = useNavigation()
   const gate = useConsentGate()
@@ -47,7 +171,6 @@ export default function PrivacyConsentSection() {
       const current = await consentService.getStatus('health_data')
       setState(current)
     } catch {
-      // Indeterminado: NÃO é "não informado". Estado de erro explícito.
       setState(null)
       setLoadError(true)
     } finally {
@@ -55,8 +178,6 @@ export default function PrivacyConsentSection() {
     }
   }, [])
 
-  // useFocusEffect (não useEffect): ao voltar da tela de opt-in voluntário, o card precisa reler o
-  // estado — senão continuaria "Não informado" logo depois de o titular autorizar.
   useFocusEffect(
     useCallback(() => {
       load()
@@ -69,9 +190,6 @@ export default function PrivacyConsentSection() {
       const res = await consentService.revoke('health_data', 'mobile')
       if (res.ok) {
         await load()
-        // Reavalia o GUARD RAIZ na hora — sem isto, revogar aqui atualizaria só este card e o app
-        // seguiria navegável até o próximo foreground (o bug pego no smoke). O gate é compartilhado
-        // (Provider): este refresh trava o app na tela de resolução imediatamente.
         await gate.refresh()
       }
     } catch {
@@ -82,22 +200,7 @@ export default function PrivacyConsentSection() {
     }
   }
 
-  // Resolvido UMA vez — evita repetir o mesmo encadeamento loading/erro/status em 3 lugares
-  // (label, ícone, cor), que é o que inflava a complexidade ciclomática do componente.
-  const resolved: 'loading' | 'error' | 'missing' | 'granted' | 'revoked' = loading
-    ? 'loading'
-    : loadError
-      ? 'error'
-      : (state?.status ?? 'missing')
-
-  const STATUS_META = {
-    loading: { label: 'Carregando...', Icon: ShieldQuestion, color: colors.text.muted },
-    error: { label: 'Não foi possível carregar', Icon: ShieldQuestion, color: colors.text.muted },
-    missing: { label: 'Não informado', Icon: ShieldQuestion, color: colors.text.muted },
-    granted: { label: 'Ativo', Icon: ShieldCheck, color: colors.status.success },
-    revoked: { label: 'Retirado', Icon: ShieldOff, color: colors.status.error },
-  } as const
-
+  const resolved = _getConsentResolved(loading, loadError, state?.status)
   const { label: statusLabel, Icon: StatusIcon, color: statusColor } = STATUS_META[resolved]
 
   return (
@@ -126,89 +229,19 @@ export default function PrivacyConsentSection() {
           </Pressable>
         ) : null}
 
-        {/* Estado "não informado" (quem deu "Agora não" no prompt): oferece o caminho de opt-in.
-            Leva à tela COMPLETA — o consentimento tem que ser informado (art. 11), não um clique. */}
         {!loading && !loadError && state?.status === 'missing' ? (
-          <>
-            <Text style={styles.metaText}>
-              Você ainda não autorizou o tratamento dos dados de saúde. Sem isso, o app não envia
-              lembretes nem registra seu histórico.
-            </Text>
-            <Pressable
-              style={styles.grantButton}
-              onPress={() => navigation.navigate(ROUTES.CONSENT_PROMPT as never)}
-              accessibilityRole="button"
-              accessibilityLabel="Autorizar tratamento de dados de saúde"
-            >
-              <Text style={styles.grantButtonText}>Autorizar agora</Text>
-            </Pressable>
-          </>
+          <ConsentMissingState onGrant={() => navigation.navigate(ROUTES.CONSENT_PROMPT as never)} />
         ) : null}
 
         {!loading && !loadError && state?.status === 'granted' ? (
-          confirmStep === 0 ? (
-            <Pressable
-              style={styles.revokeButton}
-              onPress={() => setConfirmStep(1)}
-              accessibilityRole="button"
-              accessibilityLabel="Retirar consentimento"
-            >
-              <Text style={styles.revokeButtonText}>Retirar consentimento</Text>
-            </Pressable>
-          ) : confirmStep === 1 ? (
-            <View style={styles.confirmBox}>
-              <Text style={styles.confirmWarning}>{HEALTH_CONSENT_COPY.revokeWarning}</Text>
-              <View style={styles.confirmActions}>
-                <Pressable
-                  style={styles.confirmCancel}
-                  onPress={() => setConfirmStep(0)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancelar"
-                >
-                  <Text style={styles.confirmCancelText}>Cancelar</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.confirmProceed}
-                  onPress={() => setConfirmStep(2)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Continuar retirada"
-                >
-                  <Text style={styles.confirmProceedText}>Continuar</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.confirmBox}>
-              <Text style={styles.confirmWarning}>
-                Tem certeza? O app ficará bloqueado até você exportar, excluir a conta ou
-                consentir novamente.
-              </Text>
-              <View style={styles.confirmActions}>
-                <Pressable
-                  style={styles.confirmCancel}
-                  onPress={() => setConfirmStep(0)}
-                  disabled={revoking}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancelar"
-                >
-                  <Text style={styles.confirmCancelText}>Cancelar</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.confirmDanger}
-                  onPress={handleRevoke}
-                  disabled={revoking}
-                  accessibilityRole="button"
-                  accessibilityLabel="Confirmar retirada de consentimento"
-                >
-                  {revoking ? (
-                    <ActivityIndicator size="small" color={colors.text.inverse} />
-                  ) : (
-                    <Text style={styles.confirmDangerText}>Retirar consentimento</Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
-          )
+          <ConsentRevokeFlow
+            confirmStep={confirmStep}
+            revoking={revoking}
+            onStart={() => setConfirmStep(1)}
+            onCancel={() => setConfirmStep(0)}
+            onStepTwo={() => setConfirmStep(2)}
+            onConfirm={handleRevoke}
+          />
         ) : null}
       </View>
     </>

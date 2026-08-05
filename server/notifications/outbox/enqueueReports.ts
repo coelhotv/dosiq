@@ -41,6 +41,27 @@ function localParts(now: Date, tz: string): { hour: number; minute: number; week
 // Elegibilidade por RANGE por kind — mesma âncora dos jobs legados (09:00 tz do usuário),
 // mas por JANELA de hora local em vez de minuto exato. Supressão hierárquica mensal>semanal>
 // diário preservada (dia 1 cede ao mensal; domingo cede ao semanal).
+/**
+ * Elegibilidade do daily_digest (043 T023b) — extraída de isEligible p/ reduzir complexidade
+ * (R-122). Duas diferenças em relação aos relatórios: 1. só quem escolheu o modo digest (o
+ * resto recebe lembrete por dose); 2. a âncora é o `digest_time` DO USUÁRIO, não 09:00.
+ * O legado comparava `HH:MM` exato (família AP-259: tick que pula o minuto perde o dia
+ * inteiro). Aqui a janela é [digest_time, +10min) e a UNIQUE dá a idempotência.
+ */
+function _isDailyDigestEligible(u: EnqueueUserRow, p: { hour: number; minute: number }): boolean {
+  if (u.notification_mode !== 'digest_morning') return false;
+  const [dh, dm] = String(u.digest_time || '07:00').slice(0, 5).split(':').map(Number);
+  if (!Number.isFinite(dh) || !Number.isFinite(dm)) return false;
+  // Janela em MINUTOS DESDE A MEIA-NOITE local — cruza a fronteira de hora de propósito
+  // (review #742): prender a janela na mesma hora truncaria o horário quebrado (08:55 teria
+  // 5min, 08:59 teria 1min) e reabriria exatamente a perda que a janela existe p/ evitar.
+  // A data local só vira à MEIA-NOITE, então cruzar 09:59→10:00 não muda o period_key.
+  // Sem wrap por design: digest às 23:5x não "vaza" p/ o dia seguinte (o period_key já seria
+  // outro dia — enfileiraria o digest errado).
+  const diff = (p.hour * 60 + p.minute) - (dh * 60 + dm);
+  return diff >= 0 && diff < 10;
+}
+
 function isEligible(
   kind: OutboxKind,
   p: { hour: number; minute: number; weekday: number; dayOfMonth: number },
@@ -59,24 +80,8 @@ function isEligible(
     case 'monthly_report':
       // Dia 1, 09:00–09:09 local.
       return p.dayOfMonth === 1 && p.hour === 9 && p.minute < 10;
-    case 'daily_digest': {
-      // 043 T023b. Duas diferenças em relação aos relatórios:
-      //   1. só quem escolheu o modo digest (o resto recebe lembrete por dose);
-      //   2. a âncora é o `digest_time` DO USUÁRIO, não 09:00.
-      // O legado comparava `HH:MM` exato (família AP-259: tick que pula o minuto perde o dia
-      // inteiro). Aqui a janela é [digest_time, +10min) e a UNIQUE dá a idempotência.
-      if (u.notification_mode !== 'digest_morning') return false;
-      const [dh, dm] = String(u.digest_time || '07:00').slice(0, 5).split(':').map(Number);
-      if (!Number.isFinite(dh) || !Number.isFinite(dm)) return false;
-      // Janela em MINUTOS DESDE A MEIA-NOITE local — cruza a fronteira de hora de propósito
-      // (review #742): prender a janela na mesma hora truncaria o horário quebrado (08:55 teria
-      // 5min, 08:59 teria 1min) e reabriria exatamente a perda que a janela existe p/ evitar.
-      // A data local só vira à MEIA-NOITE, então cruzar 09:59→10:00 não muda o period_key.
-      // Sem wrap por design: digest às 23:5x não "vaza" p/ o dia seguinte (o period_key já seria
-      // outro dia — enfileiraria o digest errado).
-      const diff = (p.hour * 60 + p.minute) - (dh * 60 + dm);
-      return diff >= 0 && diff < 10;
-    }
+    case 'daily_digest':
+      return _isDailyDigestEligible(u, p);
     default:
       // stock_alert: NÃO migra aqui. É fan-out (1 alerta por MEDICAMENTO, + stock_expiry_alert
       // por LOTE) e a UNIQUE (user_id, kind, period_key) só expressa 1 linha por usuário/dia —

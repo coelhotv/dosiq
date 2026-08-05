@@ -184,7 +184,7 @@ function useProtocolDetailState() {
     // devolve um `protocol_activated` diferente. Recarregar cobre esse caso: o tratamento desta
     // tela não foi encerrado, então não há nada de que fugir.)
     await refresh()
-  }, [refresh, navigation, id])
+  }, [refresh])
 
   const onDelete = useCallback(() => {
     if (isDeleting) return

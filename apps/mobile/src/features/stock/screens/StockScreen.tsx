@@ -7,7 +7,6 @@ import { SectionList, RefreshControl, StyleSheet, Text, View, Pressable } from '
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { Plus, PackageOpen } = LucideIcons as any
 import { useStock } from '@stock/hooks/useStock'

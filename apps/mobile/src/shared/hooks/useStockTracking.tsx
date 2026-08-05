@@ -120,7 +120,6 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
   // realtime vivo para um valor que muda uma vez por mês).
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (next === 'active') refresh()
     })
     return () => sub.remove()
@@ -133,6 +132,7 @@ export function StockTrackingProvider({ children, session = undefined }: Provide
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStockTracking(): StockTrackingValue {
   return useContext(StockTrackingContext)
 }

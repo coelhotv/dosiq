@@ -226,7 +226,7 @@ function NotificationInboxHeader({ navigation, unreadCount, loading }) {
         accessibilityLabel="Voltar"
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <ArrowLeft size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
+        <ArrowLeft size={22} color={colors.text.primary} strokeWidth={2} />
       </TouchableOpacity>
       <View style={styles.titleBlock}>
         <Text style={styles.title}>Avisos</Text>
@@ -243,7 +243,7 @@ function NotificationInboxHeader({ navigation, unreadCount, loading }) {
         accessibilityLabel="Preferências de notificação"
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
-        <Settings size={22} color={colors.text?.primary ?? '#111827'} strokeWidth={2} />
+        <Settings size={22} color={colors.text.primary} strokeWidth={2} />
       </TouchableOpacity>
     </View>
   )
@@ -422,7 +422,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
     if (loading) return null
     return (
       <View style={styles.emptyState}>
-        <BellOff size={40} color={colors.text?.muted ?? '#9ca3af'} strokeWidth={1.5} />
+        <BellOff size={40} color={colors.text.muted} strokeWidth={1.5} />
         <Text style={styles.emptyTitle}>Tudo em dia por aqui</Text>
         <Text style={styles.emptyBody}>
           {effectiveFilter !== 'all'
@@ -444,7 +444,7 @@ export default function NotificationInboxScreen({ navigation, route }) {
       {/* ── Banner offline ── */}
       {stale && (
         <View style={styles.offlineBanner}>
-          <WifiOff size={14} color={colors.status?.warning ?? '#d97706'} strokeWidth={2} />
+          <WifiOff size={14} color={colors.status.warning} strokeWidth={2} />
           <Text style={styles.offlineText}>Exibindo dados salvos localmente</Text>
         </View>
       )}
@@ -490,45 +490,48 @@ export default function NotificationInboxScreen({ navigation, route }) {
   )
 }
 
-const PRIMARY = colors.primary?.[600] ?? '#006a5e'
+// Tons translúcidos exatos do banner offline (preserva suavidade e opacidade visual original)
+const OFFLINE_BANNER_BG = 'rgba(251, 191, 36, 0.15)'
+const OFFLINE_BANNER_BORDER = 'rgba(217, 119, 6, 0.20)'
+const OFFLINE_TEXT_COLOR = '#d97706'
 
 const styles = StyleSheet.create({
-  safe:             { flex: 1, backgroundColor: (colors.bg as any)?.default ?? '#f9fafb' },
+  safe:             { flex: 1, backgroundColor: colors.bg.screen },
 
   // Header
-  header:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
-  iconButton:       { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bg?.card ?? '#f3f4f6', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  header:           { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border.light },
+  iconButton:       { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bg.card, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   titleBlock:       { flex: 1 },
-  title:            { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colors.text?.primary ?? '#111827' },
+  title:            { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, color: colors.text.primary },
   subtitle:         { fontSize: 13, fontWeight: '500', marginTop: 1 },
 
   // Banner offline
-  offlineBanner:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(251, 191, 36, 0.15)', borderBottomWidth: 1, borderBottomColor: 'rgba(217, 119, 6, 0.20)' },
-  offlineText:      { fontSize: 13, fontWeight: '500', color: colors.status?.warning ?? '#d97706' },
+  offlineBanner:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: OFFLINE_BANNER_BG, borderBottomWidth: 1, borderBottomColor: OFFLINE_BANNER_BORDER },
+  offlineText:      { fontSize: 13, fontWeight: '500', color: OFFLINE_TEXT_COLOR },
 
   // Chips de filtro
-  filtersScroll:    { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border?.light ?? '#e5e7eb' },
+  filtersScroll:    { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border.light },
   filtersContent:   { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   chip:             { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, minHeight: 34, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  chipInactive:     { backgroundColor: colors.bg?.card ?? '#ffffff', borderColor: (colors.border as any)?.medium ?? '#d1d5db' },
+  chipInactive:     { backgroundColor: colors.bg.card, borderColor: colors.border.default },
   chipText:         { fontSize: 14, fontWeight: '600', lineHeight: 18 },
-  chipTextActive:   { color: '#ffffff' },
-  chipTextInactive: { color: colors.text?.secondary ?? '#374151' },
+  chipTextActive:   { color: colors.text.inverse },
+  chipTextInactive: { color: colors.text.secondary },
 
   // Loading / error
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  errorContainer:   { margin: 20, padding: 16, borderRadius: 12, backgroundColor: 'rgba(220, 38, 38, 0.06)' },
-  errorText:        { fontSize: 14, color: colors.status?.error ?? '#dc2626' },
+  errorContainer:   { margin: 20, padding: 16, borderRadius: 12, backgroundColor: colors.status.errorLight },
+  errorText:        { fontSize: 14, color: colors.status.error },
 
   // Lista
   sectionHeader:    { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 6 },
-  sectionTitle:     { fontSize: 12, fontWeight: '600', color: colors.text?.muted ?? '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8 },
-  separator:        { height: 1, marginHorizontal: 20, backgroundColor: colors.border?.light ?? '#e5e7eb' },
+  sectionTitle:     { fontSize: 12, fontWeight: '600', color: colors.text.muted, textTransform: 'uppercase', letterSpacing: 0.8 },
+  separator:        { height: 1, marginHorizontal: 20, backgroundColor: colors.border.light },
   listContent:      { paddingBottom: 40 },
   emptyList:        { flex: 1 },
 
   // Zero state
   emptyState:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle:       { fontSize: 18, fontWeight: '600', color: '#1a1a1a', marginBottom: 8, textAlign: 'center', marginTop: 16 },
-  emptyBody:        { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 20 },
+  emptyTitle:       { fontSize: 18, fontWeight: '600', color: colors.text.primary, marginBottom: 8, textAlign: 'center', marginTop: 16 },
+  emptyBody:        { fontSize: 14, color: colors.text.secondary, textAlign: 'center', lineHeight: 20 },
 })

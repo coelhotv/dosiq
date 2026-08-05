@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   label: {
-    color: '#fff',
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },

@@ -34,21 +34,68 @@ export interface FlushResult {
 // Persistência via AsyncStorage; drenada no foreground. NÃO importa supabase —
 // o inserter é injetado no flush() para manter o cold-start do background handler
 // leve (AP-205).
+async function _readQueueState(storage: AuditQueueStorage, key: string): Promise<AuditQueueState> {
+  try {
+    const raw = await storage.getItem(key)
+    if (!raw) return { items: [], overflowDropped: 0 }
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.items)) {
+      return { items: [], overflowDropped: 0 }
+    }
+    return {
+      items: parsed.items,
+      overflowDropped: Number.isInteger(parsed.overflowDropped) ? parsed.overflowDropped : 0,
+    }
+  } catch {
+    return { items: [], overflowDropped: 0 }
+  }
+}
+
+async function _writeQueueState(storage: AuditQueueStorage, key: string, state: AuditQueueState): Promise<void> {
+  try {
+    await storage.setItem(key, JSON.stringify(state))
+  } catch {
+    // Fail-open
+  }
+}
+
+async function _processFlushItems(items: AuditQueueItem[], insertOne: FlushInsertOne) {
+  const remainingItems: AuditQueueItem[] = []
+  let inserted = 0
+  for (const item of items) {
+    let ok = false
+    try {
+      const result = await insertOne(item)
+      if (result === true) {
+        ok = true
+      } else if (result && typeof result === 'object') {
+        ok = Boolean(result.ok)
+      } else {
+        ok = Boolean(result)
+      }
+    } catch {
+      ok = false
+    }
+
+    if (ok) {
+      inserted += 1
+    } else {
+      remainingItems.push(item)
+    }
+  }
+  return { inserted, remainingItems }
+}
+
 export function createCriticalAuditQueue({
   storage = AsyncStorage,
   key = AUDIT_QUEUE_KEY,
   cap = AUDIT_QUEUE_CAP,
 }: CreateCriticalAuditQueueOptions = {}) {
-  // Flag em memória para pular flush concorrente (reentrância — retorna skipped).
   let flushInFlight = false
-
-  // Mutex: serializa TODA operação de read-modify-write no AsyncStorage. Sem isto, um enqueue(B)
-  // que roda enquanto o flush(A) está entre o read e o write-back grava [A,B]; o flush então grava
-  // os "remaining" (calculados sobre [A]) e clobbera B → perda de evento (race crítica, review #700).
   let lockChain: Promise<unknown> = Promise.resolve()
+
   function withLock<T>(op: () => Promise<T>): Promise<T> {
-    const run = lockChain.then(op, op) // encadeia mesmo se o anterior rejeitou (não deve — ops são fail-open)
-    // Mantém a corrente viva sem propagar rejeição/valor pro próximo elo.
+    const run = lockChain.then(op, op)
     lockChain = run.then(
       () => undefined,
       () => undefined,
@@ -56,31 +103,8 @@ export function createCriticalAuditQueue({
     return run
   }
 
-  async function readState(): Promise<AuditQueueState> {
-    try {
-      const raw = await storage.getItem(key)
-      if (!raw) return { items: [], overflowDropped: 0 }
-      const parsed = JSON.parse(raw)
-      if (!parsed || !Array.isArray(parsed.items)) {
-        return { items: [], overflowDropped: 0 }
-      }
-      return {
-        items: parsed.items,
-        overflowDropped: Number.isInteger(parsed.overflowDropped) ? parsed.overflowDropped : 0,
-      }
-    } catch {
-      // JSON corrompido ou storage indisponível → trata como vazio (fail-open).
-      return { items: [], overflowDropped: 0 }
-    }
-  }
-
-  async function writeState(state: AuditQueueState): Promise<void> {
-    try {
-      await storage.setItem(key, JSON.stringify(state))
-    } catch {
-      // Fail-open: nunca lança em erro de storage.
-    }
-  }
+  const readState = () => _readQueueState(storage, key)
+  const writeState = (s: AuditQueueState) => _writeQueueState(storage, key, s)
 
   function enqueue(payload: AuditQueueItem): Promise<void> {
     return withLock(async () => {
@@ -93,52 +117,25 @@ export function createCriticalAuditQueue({
         }
         await writeState(state)
       } catch {
-        // Fail-open: enqueue nunca lança.
+        // Fail-open
       }
     })
   }
 
   async function flush(insertOne: FlushInsertOne): Promise<FlushResult> {
-    // Skip imediato (sem tomar o lock) se um flush já roda — evita empilhar drenagens.
     if (flushInFlight) {
       const state = await readState()
       return { inserted: 0, remaining: state.items.length, skipped: true }
     }
     flushInFlight = true
     try {
-      // O read→process→write inteiro roda sob o lock: um enqueue concorrente espera e anexa
-      // ao estado JÁ drenado (não é clobberado).
       return await withLock(async (): Promise<FlushResult> => {
         const state = await readState()
         if (state.items.length === 0) {
           return { inserted: 0, remaining: 0 }
         }
 
-        const remainingItems: AuditQueueItem[] = []
-        let inserted = 0
-
-        // Loop sequencial (não Promise.all): a ordem importa para retry.
-        for (const item of state.items) {
-          let ok = false
-          try {
-            const result = await insertOne(item)
-            if (result === true) {
-              ok = true
-            } else if (result && typeof result === 'object') {
-              ok = Boolean(result.ok)
-            } else {
-              ok = Boolean(result)
-            }
-          } catch {
-            ok = false
-          }
-
-          if (ok) {
-            inserted += 1
-          } else {
-            remainingItems.push(item)
-          }
-        }
+        const { inserted, remainingItems } = await _processFlushItems(state.items, insertOne)
 
         await writeState({ items: remainingItems, overflowDropped: state.overflowDropped })
         return { inserted, remaining: remainingItems.length }

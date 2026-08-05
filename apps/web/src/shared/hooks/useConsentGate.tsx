@@ -163,11 +163,12 @@ export function ConsentGateProvider({ children, session = null }: ProviderProps)
   return <ConsentGateContext.Provider value={value}>{children}</ConsentGateContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useConsentGate(): ConsentGateValue {
   return useContext(ConsentGateContext)
 }
 
-/** A view está liberada durante a trava? Allowlist (R2/F8) — default é BLOQUEAR. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function isConsentAllowedView(view: string | null | undefined): boolean {
   return isConsentAllowedRoute(view, CONSENT_ALLOWED_WEB_VIEWS)
 }

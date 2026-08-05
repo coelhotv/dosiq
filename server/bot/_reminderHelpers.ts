@@ -979,95 +979,97 @@ async function _resyncProtocolAfterDoseChange(protocolId, correlationId) {
   }
 }
 
-// Aplica o plano do motor. Retorna true só se o CLAIM da transição pegou a linha —
-// é o gate da notificação (sem isto, tick repetido = push duplicado).
-// `protocolIdByStepId`: executor de cada etapa (o motor puro não faz I/O nem conhece joins).
-export async function _applyTitrationPlan(userId, titrationId, plan, protocolIdByStepId, correlationId) {
-  // `notify` fica false quando o estado só está CONVERGINDO (um tick anterior já fez a parte
-  // visível e morreu antes de terminar): o trabalho é concluído, mas sem notificar de novo.
+// medicine_switch: PENDURA a próxima etapa. A vigente segue 'current' de propósito — os
+// lembretes continuam na dose antiga até o usuário confirmar (Decisões §3.2). O app NUNCA
+// troca de medicamento sozinho (§10). Escrita única: sem falha parcial possível.
+// Retorna false para ABORTAR o plano inteiro (claim perdido); true para seguir (inclui "sem pending").
+async function _claimPendingConfirmation(userId, pending) {
+  if (!pending) return true;
+  const { data: rows, error } = await supabase
+    .from('titration_steps')
+    .update({ status: 'pending_confirmation', updated_at: getServerTimestamp() })
+    .eq('id', pending.id)
+    .eq('user_id', userId)
+    .eq('status', 'upcoming') // claim: 0 linhas = já pendente/confirmada → sem push
+    .select('id');
+  if (error) throw error;
+  return !!(rows && rows.length > 0);
+}
+
+// dose_change: a próxima etapa vigora automaticamente na data (comportamento N1). ANTES de
+// encerrar a anterior — ver a nota de FALHA PARCIAL no cabeçalho do arquivo.
+// Retorna null p/ ABORTAR (mudança real de outro ator); senão { notify } — notify=false quando
+// o estado só está CONVERGINDO (tick anterior já ativou e morreu antes de terminar).
+async function _applyActivatedStep(userId, activated, completed, protocolIdByStepId, correlationId) {
+  if (!activated) return { notify: true };
+
+  // Escada migrada do N1: toda etapa já aponta pro mesmo protocol (backfill do T013).
+  // Escada nova (F4): a etapa futura nasce sem executor → herda o da etapa que encerrou.
+  const lastClosed = completed[completed.length - 1];
+  const inheritedProtocolId =
+    activated.protocolId ?? (lastClosed ? protocolIdByStepId.get(lastClosed.id) ?? null : null);
+
+  const { data: rows, error } = await supabase
+    .from('titration_steps')
+    .update({
+      status: 'current',
+      started_at: activated.startedAtIso,
+      protocol_id: inheritedProtocolId,
+      updated_at: getServerTimestamp(),
+    })
+    .eq('id', activated.id)
+    .eq('user_id', userId)
+    .eq('status', 'upcoming') // claim
+    .select('id');
+  if (error) throw error;
+
   let notify = true;
-
-  // 1) medicine_switch: PENDURA a próxima etapa. A vigente segue 'current' de propósito —
-  //    os lembretes continuam na dose antiga até o usuário confirmar (Decisões §3.2).
-  //    O app NUNCA troca de medicamento sozinho (§10). Escrita única: sem falha parcial possível.
-  if (plan.pending) {
-    const { data: rows, error } = await supabase
+  if (!rows || rows.length === 0) {
+    // Claim vazio: ou outro ator mexeu de verdade, ou um tick anterior já ativou esta etapa e
+    // morreu antes de encerrar a anterior. Distinguir os dois é o que evita a escada travada.
+    const { data: atual, error: readErr } = await supabase
       .from('titration_steps')
-      .update({ status: 'pending_confirmation', updated_at: getServerTimestamp() })
-      .eq('id', plan.pending.id)
+      .select('status')
+      .eq('id', activated.id)
       .eq('user_id', userId)
-      .eq('status', 'upcoming') // claim: 0 linhas = já pendente/confirmada → sem push
-      .select('id');
-    if (error) throw error;
-    if (!rows || rows.length === 0) return false;
+      .maybeSingle();
+    if (readErr) throw readErr;
+    if (atual?.status !== 'current') return null; // mudou de verdade → aborta sem notificar
+    notify = false; // já ativada: converge o resto do estado, mas não repete o push
   }
 
-  // 2) dose_change: a próxima etapa vigora automaticamente na data (comportamento N1).
-  //    ANTES de encerrar a anterior — ver a nota de FALHA PARCIAL no cabeçalho.
-  if (plan.activated) {
-    // Escada migrada do N1: toda etapa já aponta pro mesmo protocol (backfill do T013).
-    // Escada nova (F4): a etapa futura nasce sem executor → herda o da etapa que encerrou.
-    const lastClosed = plan.completed[plan.completed.length - 1];
-    const inheritedProtocolId =
-      plan.activated.protocolId ??
-      (lastClosed ? protocolIdByStepId.get(lastClosed.id) ?? null : null);
-
-    const { data: rows, error } = await supabase
-      .from('titration_steps')
+  // Dose do executor vigente. `cp` NÃO existe no CHECK de protocols.intake_unit — em
+  // protocols o comprimido é NULL (fronteira N2→N1, idêntica à da RPC do T013 — AP-299).
+  if (inheritedProtocolId) {
+    const { error: protoErr } = await supabase
+      .from('protocols')
       .update({
-        status: 'current',
-        started_at: plan.activated.startedAtIso,
-        protocol_id: inheritedProtocolId,
-        updated_at: getServerTimestamp(),
+        dosage_per_intake: activated.dose,
+        intake_unit: activated.intakeUnit === 'cp' ? null : activated.intakeUnit,
       })
-      .eq('id', plan.activated.id)
-      .eq('user_id', userId)
-      .eq('status', 'upcoming') // claim
-      .select('id');
-    if (error) throw error;
+      .eq('id', inheritedProtocolId)
+      .eq('user_id', userId);
+    if (protoErr) throw protoErr;
 
-    if (!rows || rows.length === 0) {
-      // Claim vazio: ou outro ator mexeu de verdade, ou um tick anterior já ativou esta etapa e
-      // morreu antes de encerrar a anterior. Distinguir os dois é o que evita a escada travada.
-      const { data: atual, error: readErr } = await supabase
-        .from('titration_steps')
-        .select('status')
-        .eq('id', plan.activated.id)
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (readErr) throw readErr;
-      if (atual?.status !== 'current') return false; // mudou de verdade → aborta sem notificar
-      notify = false; // já ativada: converge o resto do estado, mas não repete o push
-    }
-
-    // Dose do executor vigente. `cp` NÃO existe no CHECK de protocols.intake_unit — em
-    // protocols o comprimido é NULL (fronteira N2→N1, idêntica à da RPC do T013 — AP-299).
-    if (inheritedProtocolId) {
-      const { error: protoErr } = await supabase
-        .from('protocols')
-        .update({
-          dosage_per_intake: plan.activated.dose,
-          intake_unit: plan.activated.intakeUnit === 'cp' ? null : plan.activated.intakeUnit,
-        })
-        .eq('id', inheritedProtocolId)
-        .eq('user_id', userId);
-      if (protoErr) throw protoErr;
-
-      // 052 T006 (FR-007c) — a segunda instância viva do AP-308, no caminho do CRON.
-      // O UPDATE acima é a ÚNICA outra escrita em `protocols` fora do repositório (a primeira,
-      // a RPC `confirm_titration_switch`, a 029 F5.5 já cobriu do lado do cliente). Escapar do
-      // repositório significa escapar do `syncInstancesOnWrite`: as instâncias futuras já
-      // materializadas mantêm a `expected_dose` do cronograma ANTERIOR. Como este é o caminho
-      // NORMAL da escada (`dose_change` automático na data), o efeito em prod é que TODO avanço
-      // automático deixava o tratamento dizendo uma dose e o lembrete entregando outra — pior
-      // que a ausência de dose, porque é risco clínico silencioso.
-      await _resyncProtocolAfterDoseChange(inheritedProtocolId, correlationId);
-    }
+    // 052 T006 (FR-007c) — a segunda instância viva do AP-308, no caminho do CRON.
+    // O UPDATE acima é a ÚNICA outra escrita em `protocols` fora do repositório (a primeira,
+    // a RPC `confirm_titration_switch`, a 029 F5.5 já cobriu do lado do cliente). Escapar do
+    // repositório significa escapar do `syncInstancesOnWrite`: as instâncias futuras já
+    // materializadas mantêm a `expected_dose` do cronograma ANTERIOR. Como este é o caminho
+    // NORMAL da escada (`dose_change` automático na data), o efeito em prod é que TODO avanço
+    // automático deixava o tratamento dizendo uma dose e o lembrete entregando outra — pior
+    // que a ausência de dose, porque é risco clínico silencioso.
+    await _resyncProtocolAfterDoseChange(inheritedProtocolId, correlationId);
   }
 
-  // 3) Etapas encerradas (as intermediárias de uma cadeia de dose_change + a vigente).
-  //    0 linhas aqui NÃO aborta: significa que um tick anterior já encerrou (convergência).
-  for (const closure of plan.completed) {
+  return { notify };
+}
+
+// Etapas encerradas (as intermediárias de uma cadeia de dose_change + a vigente).
+// 0 linhas aqui NÃO aborta: significa que um tick anterior já encerrou (convergência) — EXCETO
+// quando não há activated/pending: aí o encerramento É o claim do push (target_reached).
+async function _closeCompletedSteps(userId, completed, hasActivatedOrPending) {
+  for (const closure of completed) {
     const { data: rows, error } = await supabase
       .from('titration_steps')
       .update({ status: 'completed', ended_at: closure.endedAtIso, updated_at: getServerTimestamp() })
@@ -1076,15 +1078,14 @@ export async function _applyTitrationPlan(userId, titrationId, plan, protocolIdB
       .eq('status', 'current') // trava otimista (AP-221)
       .select('id');
     if (error) throw error;
-    // target_reached não tem `activated`: aqui o encerramento É o claim do push.
-    if ((!rows || rows.length === 0) && !plan.activated && !plan.pending) return false;
+    if ((!rows || rows.length === 0) && !hasActivatedOrPending) return false;
   }
+  return true;
+}
 
-  // 4) Trilha auditável (CON-031 aditivo). actor 'system': foi o cron, não o usuário.
-  //    Best-effort: a auditoria não pode desfazer uma transição já aplicada (R-245).
-  //    Só na transição de fato — convergência de estado não é evento novo (não duplica trilha).
-  if (!notify) return false;
-
+// Trilha auditável (CON-031 aditivo). actor 'system': foi o cron, não o usuário. Best-effort: a
+// auditoria não pode desfazer uma transição já aplicada (R-245).
+async function _auditTitrationTransition(userId, titrationId, plan, correlationId) {
   const { error: auditErr } = await supabase.from('dose_critical_events').insert({
     user_id: userId,
     dose_instance_id: null, // a transição é do TRATAMENTO, não de uma ocorrência
@@ -1100,6 +1101,28 @@ export async function _applyTitrationPlan(userId, titrationId, plan, protocolIdB
     },
   });
   if (auditErr) logger.error('Falha ao auditar transição de titulação', auditErr, { userId, titrationId, correlationId });
+}
+
+// Aplica o plano do motor. Retorna true só se o CLAIM da transição pegou a linha —
+// é o gate da notificação (sem isto, tick repetido = push duplicado).
+// `protocolIdByStepId`: executor de cada etapa (o motor puro não faz I/O nem conhece joins).
+export async function _applyTitrationPlan(userId, titrationId, plan, protocolIdByStepId, correlationId) {
+  // 1) medicine_switch
+  const pendingOk = await _claimPendingConfirmation(userId, plan.pending);
+  if (!pendingOk) return false;
+
+  // 2) dose_change — `notify` fica false quando o estado só está CONVERGINDO.
+  const activatedResult = await _applyActivatedStep(userId, plan.activated, plan.completed, protocolIdByStepId, correlationId);
+  if (activatedResult === null) return false;
+
+  // 3) Etapas encerradas
+  const hasActivatedOrPending = !!plan.activated || !!plan.pending;
+  const closedOk = await _closeCompletedSteps(userId, plan.completed, hasActivatedOrPending);
+  if (!closedOk) return false;
+
+  // 4) Trilha auditável — só na transição de fato (convergência de estado não é evento novo).
+  if (!activatedResult.notify) return false;
+  await _auditTitrationTransition(userId, titrationId, plan, correlationId);
 
   return true;
 }

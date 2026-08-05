@@ -10,6 +10,137 @@
 import { useState, useEffect, useCallback, startTransition } from 'react'
 import { versionGateAdminService } from '@services/api/versionGateAdminService'
 
+function useSubmitAction({ editState, setPendingConfirmation, setRows, setActionLoading, setActionMessage }: any) {
+  return useCallback(
+    async (platform: string) => {
+      setActionLoading(platform)
+      setActionMessage(null)
+      try {
+        const edit = editState[platform] || {}
+        const payload = {
+          platform,
+          is_active: edit.is_active,
+          min_supported_version: edit.min_supported_version || null,
+          message: edit.message || null,
+          store_url: edit.store_url || null,
+        }
+        const result = await versionGateAdminService.update(payload)
+
+        if (result.confirmationRequired) {
+          setPendingConfirmation((prev: any) => ({
+            ...prev,
+            [platform]: {
+              affected_devices: result.affected_devices,
+              platform_installs: result.platform_installs,
+              fleet_installs: result.fleet_installs,
+            },
+          }))
+          return
+        }
+
+        setPendingConfirmation((prev: any) => {
+          const next = { ...prev }
+          delete next[platform]
+          return next
+        })
+        setRows((prev: any[]) => prev.map((r) => (r.platform === platform ? result.data : r)))
+        setActionMessage({ type: 'success', text: `Gate de ${platform} atualizado.` })
+      } catch (err: any) {
+        setActionMessage({ type: 'error', text: err.message })
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [editState, setActionLoading, setActionMessage, setPendingConfirmation, setRows]
+  )
+}
+
+function useConfirmAction({ editState, pendingConfirmation, setPendingConfirmation, setRows, setActionLoading, setActionMessage }: any) {
+  return useCallback(
+    async (platform: string) => {
+      const pending = pendingConfirmation[platform]
+      if (!pending) return
+
+      setActionLoading(platform)
+      setActionMessage(null)
+      try {
+        const edit = editState[platform] || {}
+        const payload = {
+          platform,
+          is_active: edit.is_active,
+          min_supported_version: edit.min_supported_version || null,
+          message: edit.message || null,
+          store_url: edit.store_url || null,
+          acknowledge_affected_devices: pending.affected_devices,
+        }
+        const result = await versionGateAdminService.update(payload)
+
+        if (result.confirmationRequired) {
+          setPendingConfirmation((prev: any) => ({
+            ...prev,
+            [platform]: {
+              affected_devices: result.affected_devices,
+              platform_installs: result.platform_installs,
+              fleet_installs: result.fleet_installs,
+            },
+          }))
+          setActionMessage({
+            type: 'error',
+            text: 'A contagem de devices mudou desde a última confirmação. Confirme novamente.',
+          })
+          return
+        }
+
+        setPendingConfirmation((prev: any) => {
+          const next = { ...prev }
+          delete next[platform]
+          return next
+        })
+        setRows((prev: any[]) => prev.map((r) => (r.platform === platform ? result.data : r)))
+        setActionMessage({ type: 'success', text: `Gate de ${platform} ativado.` })
+      } catch (err: any) {
+        setActionMessage({ type: 'error', text: err.message })
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [editState, pendingConfirmation, setActionLoading, setActionMessage, setPendingConfirmation, setRows]
+  )
+}
+
+function useDeactivateAction({ editState, setRows, setEditState, setPendingConfirmation, setActionLoading, setActionMessage }: any) {
+  return useCallback(
+    async (platform: string) => {
+      setActionLoading(platform)
+      setActionMessage(null)
+      try {
+        const edit = editState[platform] || {}
+        const payload = {
+          platform,
+          is_active: false,
+          min_supported_version: edit.min_supported_version || null,
+          message: edit.message || null,
+          store_url: edit.store_url || null,
+        }
+        const result = await versionGateAdminService.update(payload)
+        setRows((prev: any[]) => prev.map((r) => (r.platform === platform ? result.data : r)))
+        setEditState((prev: any) => ({ ...prev, [platform]: { ...prev[platform], is_active: false } }))
+        setPendingConfirmation((prev: any) => {
+          const next = { ...prev }
+          delete next[platform]
+          return next
+        })
+        setActionMessage({ type: 'success', text: `Gate de ${platform} desativado.` })
+      } catch (err: any) {
+        setActionMessage({ type: 'error', text: err.message })
+      } finally {
+        setActionLoading(null)
+      }
+    },
+    [editState, setActionLoading, setActionMessage, setEditState, setPendingConfirmation, setRows]
+  )
+}
+
 export function useVersionGateAdminState() {
   const [rows, setRows] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -39,7 +170,7 @@ export function useVersionGateAdminState() {
         }
         return next
       })
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -52,14 +183,12 @@ export function useVersionGateAdminState() {
     })
   }, [loadGate])
 
-  const updateField = useCallback((platform, field, value) => {
-    setEditState((prev) => ({
+  const updateField = useCallback((platform: string, field: string, value: any) => {
+    setEditState((prev: any) => ({
       ...prev,
       [platform]: { ...prev[platform], [field]: value },
     }))
-    // Editar qualquer campo invalida uma confirmação pendente anterior — a contagem valia para o
-    // payload antigo, não para o novo.
-    setPendingConfirmation((prev) => {
+    setPendingConfirmation((prev: any) => {
       if (!prev[platform]) return prev
       const next = { ...prev }
       delete next[platform]
@@ -67,134 +196,39 @@ export function useVersionGateAdminState() {
     })
   }, [])
 
-  const buildPayload = useCallback(
-    (platform, overrides = {}) => {
-      const edit = editState[platform] || {}
-      return {
-        platform,
-        is_active: edit.is_active,
-        min_supported_version: edit.min_supported_version || null,
-        message: edit.message || null,
-        store_url: edit.store_url || null,
-        ...overrides,
-      }
-    },
-    [editState]
-  )
+  const submit = useSubmitAction({
+    editState,
+    setPendingConfirmation,
+    setRows,
+    setActionLoading,
+    setActionMessage,
+  })
 
-  const submit = useCallback(
-    async (platform) => {
-      setActionLoading(platform)
-      setActionMessage(null)
-      try {
-        const payload = buildPayload(platform)
-        const result = await versionGateAdminService.update(payload)
+  const confirm = useConfirmAction({
+    editState,
+    pendingConfirmation,
+    setPendingConfirmation,
+    setRows,
+    setActionLoading,
+    setActionMessage,
+  })
 
-        if (result.confirmationRequired) {
-          setPendingConfirmation((prev) => ({
-            ...prev,
-            [platform]: {
-              affected_devices: result.affected_devices,
-              platform_installs: result.platform_installs,
-              fleet_installs: result.fleet_installs,
-            },
-          }))
-          return
-        }
+  const deactivate = useDeactivateAction({
+    editState,
+    setRows,
+    setEditState,
+    setPendingConfirmation,
+    setActionLoading,
+    setActionMessage,
+  })
 
-        setPendingConfirmation((prev) => {
-          const next = { ...prev }
-          delete next[platform]
-          return next
-        })
-        setRows((prev) => prev.map((r) => (r.platform === platform ? result.data : r)))
-        setActionMessage({ type: 'success', text: `Gate de ${platform} atualizado.` })
-      } catch (err) {
-        setActionMessage({ type: 'error', text: err.message })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [buildPayload]
-  )
-
-  const confirm = useCallback(
-    async (platform) => {
-      const pending = pendingConfirmation[platform]
-      if (!pending) return
-
-      setActionLoading(platform)
-      setActionMessage(null)
-      try {
-        const payload = buildPayload(platform, {
-          acknowledge_affected_devices: pending.affected_devices,
-        })
-        const result = await versionGateAdminService.update(payload)
-
-        if (result.confirmationRequired) {
-          // Frota mudou entre a 1ª recusa e a confirmação (TOCTOU) — atualiza a contagem, não assume.
-          setPendingConfirmation((prev) => ({
-            ...prev,
-            [platform]: {
-              affected_devices: result.affected_devices,
-              platform_installs: result.platform_installs,
-              fleet_installs: result.fleet_installs,
-            },
-          }))
-          setActionMessage({
-            type: 'error',
-            text: 'A contagem de devices mudou desde a última confirmação. Confirme novamente.',
-          })
-          return
-        }
-
-        setPendingConfirmation((prev) => {
-          const next = { ...prev }
-          delete next[platform]
-          return next
-        })
-        setRows((prev) => prev.map((r) => (r.platform === platform ? result.data : r)))
-        setActionMessage({ type: 'success', text: `Gate de ${platform} ativado.` })
-      } catch (err) {
-        setActionMessage({ type: 'error', text: err.message })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [pendingConfirmation, buildPayload]
-  )
-
-  const cancelConfirmation = useCallback((platform) => {
-    setPendingConfirmation((prev) => {
+  const cancelConfirmation = useCallback((platform: string) => {
+    setPendingConfirmation((prev: any) => {
       const next = { ...prev }
       delete next[platform]
       return next
     })
   }, [])
-
-  const deactivate = useCallback(
-    async (platform) => {
-      setActionLoading(platform)
-      setActionMessage(null)
-      try {
-        const payload = buildPayload(platform, { is_active: false })
-        const result = await versionGateAdminService.update(payload)
-        setRows((prev) => prev.map((r) => (r.platform === platform ? result.data : r)))
-        setEditState((prev) => ({ ...prev, [platform]: { ...prev[platform], is_active: false } }))
-        setPendingConfirmation((prev) => {
-          const next = { ...prev }
-          delete next[platform]
-          return next
-        })
-        setActionMessage({ type: 'success', text: `Gate de ${platform} desativado.` })
-      } catch (err) {
-        setActionMessage({ type: 'error', text: err.message })
-      } finally {
-        setActionLoading(null)
-      }
-    },
-    [buildPayload]
-  )
 
   return {
     rows,

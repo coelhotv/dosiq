@@ -8,7 +8,6 @@ import { View, Text, Switch, Alert, Linking, StyleSheet, Modal, TouchableOpacity
 //   passa a "não existir".
 // Custo aceito: nome de ícone errado vira `undefined` e só quebra no render. Mitigação = manter a
 // lista curta e conferir cada nome contra `node_modules/lucide-react-native/dist/icons.d.ts`.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 
 // Conferidos no d.ts do pacote (1703 ícones): `CircleQuestionMark` é o nome ATUAL — `CircleHelp` e
@@ -408,6 +407,82 @@ function EvoStepDots({ steps }) {
   )
 }
 
+function TitrationSection({
+  onOpenTitration,
+  titrationStepCount,
+  titrationSteps,
+  isEditMode,
+}: {
+  onOpenTitration: () => void
+  titrationStepCount: number
+  titrationSteps: any[]
+  isEditMode: boolean
+}) {
+  return (
+    <Section title="Evolução do tratamento">
+      <View style={styles.evoBlock}>
+        <Pressable
+          onPress={onOpenTitration}
+          style={({ pressed }) => [styles.evoCard, pressed && styles.evoRowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="A dose muda ao longo do tempo? Cadastrar a evolução do tratamento"
+        >
+          <View style={styles.evoRow}>
+            <View style={styles.evoIcon}>
+              <ArrowDownNarrowWide size={22} color={colors.primary[600]} strokeWidth={2.4} />
+            </View>
+            <View style={styles.evoText}>
+              <Text style={styles.evoTitle}>
+                {titrationStepCount > 0 ? 'Evolução do tratamento' : 'A dose muda ao longo do tempo?'}
+              </Text>
+              <Text style={styles.evoHint}>
+                {titrationStepCount > 0
+                  ? `${titrationStepCount} ${titrationStepCount === 1 ? 'etapa cadastrada' : 'etapas cadastradas'} · toque para ver`
+                  : 'Nenhuma etapa cadastrada · opcional'}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={colors.text.muted} />
+          </View>
+          <View style={styles.evoDivider} />
+          <EvoStepDots steps={titrationSteps} />
+        </Pressable>
+        {!isEditMode ? (
+          <Text style={styles.evoFootnote}>
+            Você pode cadastrar as etapas agora ou depois, editando o tratamento.
+          </Text>
+        ) : null}
+      </View>
+    </Section>
+  )
+}
+
+function CriticalAlarmSection({
+  criticalAlarm,
+  onToggle,
+}: {
+  criticalAlarm: boolean
+  onToggle: (value: boolean) => void
+}) {
+  return (
+    <Section title="Alertas Críticos">
+      <View style={styles.toggleRow}>
+        <View style={styles.toggleText}>
+          <Text style={styles.toggleHint}>
+            O alarme tocará mesmo no silencioso. Use para doses que não podem ser esquecidas.
+          </Text>
+        </View>
+        <Switch
+          value={criticalAlarm}
+          onValueChange={onToggle}
+          trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
+          thumbColor={criticalAlarm ? colors.bg.card : colors.text?.secondary}
+          accessibilityLabel="Alerta crítico"
+        />
+      </View>
+    </Section>
+  )
+}
+
 export default function ProtocolFormBody({
   form,
   medicine,
@@ -507,64 +582,19 @@ export default function ProtocolFormBody({
 
       <FrequencySection form={form} showWeekdays={showWeekdays} />
 
-      {/* T018 — entrada opcional da Evolução do tratamento. Toca → salva o tratamento e abre o
-          cadastro da escada (create-on-transition). Quem ignora salva igual (US3.2). */}
       {onOpenTitration ? (
-        <Section title="Evolução do tratamento">
-          <View style={styles.evoBlock}>
-            <Pressable
-              onPress={onOpenTitration}
-              style={({ pressed }) => [styles.evoCard, pressed && styles.evoRowPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="A dose muda ao longo do tempo? Cadastrar a evolução do tratamento"
-            >
-              <View style={styles.evoRow}>
-                <View style={styles.evoIcon}>
-                  <ArrowDownNarrowWide size={22} color={colors.primary[600]} strokeWidth={2.4} />
-                </View>
-                <View style={styles.evoText}>
-                  <Text style={styles.evoTitle}>
-                    {titrationStepCount > 0 ? 'Evolução do tratamento' : 'A dose muda ao longo do tempo?'}
-                  </Text>
-                  <Text style={styles.evoHint}>
-                    {titrationStepCount > 0
-                      ? `${titrationStepCount} ${titrationStepCount === 1 ? 'etapa cadastrada' : 'etapas cadastradas'} · toque para ver`
-                      : 'Nenhuma etapa cadastrada · opcional'}
-                  </Text>
-                </View>
-                <ChevronRight size={18} color={colors.text.muted} />
-              </View>
-              {/* Metade de baixo: o que dá peso ao card num scan da tela. */}
-              <View style={styles.evoDivider} />
-              <EvoStepDots steps={titrationSteps} />
-            </Pressable>
-            {/* Só faz sentido no cadastro (na edição o tratamento já existe). */}
-            {!isEditMode ? (
-              <Text style={styles.evoFootnote}>
-                Você pode cadastrar as etapas agora ou depois, editando o tratamento.
-              </Text>
-            ) : null}
-          </View>
-        </Section>
+        <TitrationSection
+          onOpenTitration={onOpenTitration}
+          titrationStepCount={titrationStepCount}
+          titrationSteps={titrationSteps}
+          isEditMode={isEditMode}
+        />
       ) : null}
 
-      <Section title="Alertas Críticos">
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleText}>
-            {/* <Text style={styles.toggleLabel}>Alerta crítico</Text> */}
-            <Text style={styles.toggleHint}>
-              O alarme tocará mesmo no silencioso. Use para doses que não podem ser esquecidas.
-            </Text>
-          </View>
-          <Switch
-            value={!!form.values.critical_alarm}
-            onValueChange={handleCriticalAlarmToggle}
-            trackColor={{ false: colors.border?.default, true: colors.brand.primary }}
-            thumbColor={form.values.critical_alarm ? colors.bg.card : colors.text?.secondary}
-            accessibilityLabel="Alerta crítico"
-          />
-        </View>
-      </Section>
+      <CriticalAlarmSection
+        criticalAlarm={!!form.values.critical_alarm}
+        onToggle={handleCriticalAlarmToggle}
+      />
 
       <PrescriptionSection
         startDateAsDate={startDateAsDate}
@@ -723,7 +753,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.bg.overlay,
     justifyContent: 'center',
     paddingHorizontal: spacing[5],
   },

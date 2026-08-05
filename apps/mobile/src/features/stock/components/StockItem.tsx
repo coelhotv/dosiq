@@ -2,7 +2,6 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { Plus, Syringe } = LucideIcons as any
 import SectionCard from '../../../shared/components/ui/SectionCard'
@@ -102,6 +101,10 @@ export default function StockItem({ medicine }) {
   )
 }
 
+// Tons suaves originais do chip de aviso de estoque (preserva suave tom pastel e opacidade)
+const STOCK_WARNING_BG = '#fffbeb'
+const STOCK_WARNING_BORDER = 'rgba(144, 77, 0, 0.35)'
+
 const styles = StyleSheet.create({
   titleWrapper: {
     flexDirection: 'row',
@@ -183,8 +186,8 @@ const styles = StyleSheet.create({
     borderColor: colors.status.error,
   },
   ttlRowWarning: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fecaca',
+    backgroundColor: STOCK_WARNING_BG,
+    borderColor: STOCK_WARNING_BORDER,
   },
   ttlText: {
     fontSize: 11,

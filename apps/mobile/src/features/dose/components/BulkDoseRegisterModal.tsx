@@ -2,7 +2,7 @@
 // Usado após tap em push notification ou FAB da tela de hoje (modo 'active')
 // R-010: estados → effects → handlers
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Modal,
   View,
@@ -17,78 +17,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx (features/treatments)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, AlertTriangle } = LucideIcons as any
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
-import { registerDoseMany, getLastInjectionSite } from '../services/doseService'
+import { registerDoseMany } from '../services/doseService'
 import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable, INJECTION_SITES, getInjectionSiteAbsorption, getInjectionSiteLabel } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+import { formatDateTime, buildBulkOutcome, useBulkLastSite, _buildConfirmLogs, _expandDoseItems } from '../utils/bulkDoseHelpers'
 
-// Formata data e hora para exibição amigável
-function formatDateTime(d) {
-  if (!d) return ''
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${dd}/${mm} às ${hh}:${min}`
-}
-
-// Motivos distintos de falha (por log) p/ orientar o paciente.
-function distinctReasons(results, onlyFailed = false) {
-  const rows = onlyFailed ? results.filter(r => !r.success) : results
-  return [...new Set(rows.map(r => r.error).filter(Boolean))]
-}
-
-/**
- * Monta a mensagem de resultado do registro em batch (Constituição IX —
- * Transparência Radical: NUNCA silenciar falhas/falhas parciais; sempre informar
- * quantas entraram, quantas falharam e por quê). Helper puro = testável.
- *
- * @param {{success: boolean, error?: string, results: Array<{success: boolean, error?: string}>}} result
- * @returns {{variant: 'success'|'warning'|'error', msg: string, duration?: number, successCount: number}}
- */
-export function buildBulkOutcome(result) {
-  const results = result.results ?? []
-  // Falha total sem nenhum log processado (rede/insert/validação).
-  if (!result.success && results.length === 0) {
-    return { variant: 'error', msg: result.error ?? 'Erro ao registrar doses.', duration: 7000, successCount: 0 }
-  }
-
-  const successCount = results.filter(r => r.success).length
-  const failCount = results.length - successCount
-
-  // Sucesso pleno.
-  if (failCount === 0 && successCount > 0) {
-    const msg = successCount === 1
-      ? 'Dose registrada com sucesso.'
-      : `${successCount} doses registradas com sucesso.`
-    return { variant: 'success', msg, successCount }
-  }
-
-  // Sucesso parcial — informa quais falharam e por quê.
-  if (successCount > 0) {
-    const reasons = distinctReasons(results, true)
-    const detalhe = reasons.length ? ` Motivo${reasons.length > 1 ? 's' : ''}: ${reasons.join(' · ')}` : ''
-    const verbo = failCount > 1 ? 'falharam' : 'falhou'
-    const msg = `${successCount} de ${results.length} doses registradas. ${failCount} ${verbo}.${detalhe}`
-    return { variant: 'warning', msg, duration: 7000, successCount }
-  }
-
-  // Todas falharam — agrega os motivos reais por log.
-  const reasons = distinctReasons(results)
-  const msg =
-    result.error ??
-    (reasons.length === 1
-      ? `Nenhuma dose registrada: ${reasons[0]}`
-      : reasons.length > 1
-        ? `Nenhuma dose registrada. Motivos: ${reasons.join(' · ')}`
-        : 'Nenhuma dose foi registrada.')
-  return { variant: 'error', msg, duration: 7000, successCount: 0 }
-}
 
 /**
  * Seletor de sítio por item injetável (031-B/US1). Canetas não podem partilhar o
@@ -292,47 +230,6 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
   )
 }
 
-export /**
- * Último sítio GLOBAL (US2) p/ o bulk. Hook isolado: mantém R-010 (states antes de
- * memos no componente) e enxuga BulkDoseRegisterModal. Best-effort (null em erro).
- */
-function useBulkLastSite(visible, items) {
-  const hasInjectable = items.some((i) => isInjectable(i.protocol?.medicine))
-  const [lastInjectionSite, setLastInjectionSite] = useState(null)
-  useEffect(() => {
-    let alive = true
-    if (visible && hasInjectable) {
-      getLastInjectionSite().then((s) => { if (alive) setLastInjectionSite(s) })
-    }
-    return () => { alive = false }
-  }, [visible, hasInjectable])
-  return lastInjectionSite
-}
-
-export function _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites = {}) {
-  return selectedIds
-    .map(id => {
-      const item = expandedDoseItems.find(i => i.id === id)
-      if (!item) return null
-      const p = item.protocol
-      const instanceId = isBackdated
-        ? null
-        : (item.instanceId
-          ?? (item.scheduledTime ? (instancesByKey?.[`${p.id}|${item.scheduledTime}`] ?? null) : null))
-      // Sítio só p/ injetável; não-injetável sempre null (evita lixo no log).
-      const injection_site = isInjectable(p?.medicine) ? (injectionSites[id] ?? null) : null
-      return {
-        protocol_id: p.id,
-        medicine_id: p.medicine?.id ?? p.medicine_id,
-        taken_at: finalTakenAt,
-        quantity_taken: p.dosage_per_intake ?? 1,
-        injection_site,
-        instance_id: instanceId,
-      }
-    })
-    .filter(Boolean)
-}
-
 function BulkDoseRetroactivePicker({ takenAtDate, handleOpenRetroactivePicker }) {
   return (
     <Pressable 
@@ -416,7 +313,7 @@ function BulkDoseActions({ loading, selectedCount, onCancel, onConfirm }) {
         disabled={loading || selectedCount === 0}
       >
         {loading
-          ? <ActivityIndicator color="#fff" size="small" />
+          ? <ActivityIndicator color={colors.text.inverse} size="small" />
           : <Text style={styles.confirmText}>
               Registrar {selectedCount} {selectedCount === 1 ? 'dose' : 'doses'}
             </Text>
@@ -473,33 +370,6 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
     showDatePicker, setShowDatePicker,
     tempDate, setTempDate,
   }
-}
-
-function _expandDoseItems(protocols, instancedItems) {
-  if (instancedItems) return instancedItems
-  const items = []
-  protocols.forEach(p => {
-    const schedules = p.time_schedule && p.time_schedule.length > 0
-      ? p.time_schedule
-      : [null]
-      
-    schedules.forEach(time => {
-      items.push({
-        id: `${p.id}-${time ?? 'adhoc'}`,
-        protocol: p,
-        scheduledTime: time,
-        plan: p.treatment_plan,
-      })
-    })
-  })
-
-  items.sort((a, b) => {
-    if (!a.scheduledTime) return 1
-    if (!b.scheduledTime) return -1
-    return a.scheduledTime.localeCompare(b.scheduledTime)
-  })
-  
-  return items
 }
 
 function openAndroidDateTimePicker(base, onSelect) {
@@ -851,9 +721,9 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text.inverse,
   },
-  
+
   // Sítio de injeção por item (031-B)
   siteSection: {
     paddingHorizontal: spacing[2],

@@ -51,18 +51,19 @@ interface DispatchNotificationParams {
   expoClient: { sendPushNotificationsAsync(messages: unknown[]): Promise<Array<{ status: string; message?: string; id?: string; details?: { error?: string } }>> }
 }
 
-export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }: DispatchNotificationParams) {
-  const parsed = dispatchInputSchema.safeParse({ userId, kind, channels: channels ?? [] })
-  if (!parsed.success) {
-    throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
-  }
-
-  const correlationId = context?.correlationId || `dispatch_${getNow().getTime()}`
-  const ctx = { ...context, correlationId }
-  
-  // Resolve channels if not provided
-  let validChannels = parsed.data.channels
+/**
+ * Resolve canais físicos válidos e a flag isCritical. Extraído para reduzir a
+ * complexidade de dispatchNotification (R-122) — mesma lógica, sem efeito colateral extra.
+ */
+async function _resolveValidChannels({
+  userId,
+  kind,
+  data,
+  channels,
+  repositories,
+}: Pick<DispatchNotificationParams, 'userId' | 'kind' | 'data' | 'channels' | 'repositories'>) {
   const isCritical = ['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'].includes(kind) && data?.critical_alarm === true
+  let validChannels = channels ?? []
 
   if (validChannels.length === 0) {
     validChannels = await resolveChannelsForUser({ userId, repositories, isCritical })
@@ -74,6 +75,21 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
       validChannels = [...validChannels, 'mobile_push']
     }
   }
+
+  return { validChannels }
+}
+
+export async function dispatchNotification({ userId, kind, data, channels, context, repositories, bot, expoClient }: DispatchNotificationParams) {
+  const parsed = dispatchInputSchema.safeParse({ userId, kind, channels: channels ?? [] })
+  if (!parsed.success) {
+    throw new Error(`[dispatchNotification] Entrada inválida: ${parsed.error.message}`)
+  }
+
+  const correlationId = context?.correlationId || `dispatch_${getNow().getTime()}`
+  const ctx = { ...context, correlationId }
+
+  // Resolve channels if not provided
+  const { validChannels } = await _resolveValidChannels({ userId, kind, data, channels: parsed.data.channels, repositories })
 
   // dispatcher sempre chama o builder internamente. Callers passam apenas { kind, data, context }.
   const finalPayload = buildNotificationPayload({ kind, data, context: ctx })

@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
+import { colors } from '@shared/styles/tokens'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { PackageSearch, AlertTriangle } = LucideIcons as any
@@ -23,9 +24,9 @@ export default function StockAlertInline({ alerts = [] }) {
     ]}>
       <View style={styles.iconContainer}>
         {isCritical ? (
-          <AlertTriangle size={20} color="#ba1a1a" />
+          <AlertTriangle size={20} color={colors.status.error} />
         ) : (
-          <PackageSearch size={20} color="#904d00" />
+          <PackageSearch size={20} color={colors.status.warning} />
         )}
       </View>
       
@@ -52,12 +53,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   warning: {
-    backgroundColor: '#ffdec1', // Warning container
-    borderColor: '#904d00',
+    backgroundColor: colors.status.warningLight,
+    borderColor: colors.status.warning,
   },
   critical: {
-    backgroundColor: '#ffdad6', // Error container
-    borderColor: '#ba1a1a',
+    backgroundColor: colors.status.errorLight,
+    borderColor: colors.status.error,
   },
   iconContainer: {
     marginRight: 12,
@@ -70,14 +71,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleWarning: {
-    color: '#904d00',
+    color: colors.status.warning,
   },
   titleCritical: {
-    color: '#ba1a1a',
+    color: colors.status.error,
   },
   description: {
     fontSize: 13,
-    color: '#44474e',
+    color: colors.text.secondary,
     marginTop: 2,
   },
 })

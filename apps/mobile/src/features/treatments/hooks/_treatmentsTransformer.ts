@@ -14,7 +14,6 @@ export function groupTreatmentsByPlanOrClass(data) {
       return timeA.localeCompare(timeB)
     })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const groupsMap: Record<string, any> = {}
 
   validProtocols.forEach(p => {

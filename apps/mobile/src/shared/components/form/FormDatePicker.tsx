@@ -15,21 +15,37 @@ const defaultFormat = (d) => {
   return `${dd}/${mm}/${yyyy}`
 }
 
+export interface FormDatePickerProps {
+  name: string
+  label?: any
+  value?: any
+  error?: any
+  onChange?: (name: string, value: any) => void
+  onBlur?: (name: string, valueOverride?: unknown) => void
+  disabled?: boolean
+  placeholder?: string
+  helperText?: string
+  required?: boolean
+  minimumDate?: Date
+  maximumDate?: Date
+  format?: (d: Date) => string
+}
+
 export default function FormDatePicker({
   name,
   label,
   value,
   error,
   onChange,
-  onBlur = undefined,
+  onBlur,
   disabled = false,
-  placeholder = undefined,
-  helperText = undefined,
+  placeholder,
+  helperText,
   required = false,
-  minimumDate = undefined,
-  maximumDate = undefined,
-  format = undefined,
-}) {
+  minimumDate,
+  maximumDate,
+  format,
+}: FormDatePickerProps) {
   const [open, setOpen] = useState(false)
   // Valor temporário usado no picker iOS antes de confirmar
   const [tempValue, setTempValue] = useState(() => value ?? getNow())

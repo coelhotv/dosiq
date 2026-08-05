@@ -83,9 +83,9 @@ export default function ScatterTrend({ items, unit, typeLabel = 'Medida', isPa =
     return arr
   }, [items, weekStart, isPa])
 
-  const sysValues = days.flatMap((d) => d.values)
-  const diaValues = days.flatMap((d) => d.valuesSec)
-  const allValues = [...sysValues, ...diaValues] // escala unifica as 2 séries (PA)
+  const sysValues = useMemo(() => days.flatMap((d) => d.values), [days])
+  const diaValues = useMemo(() => days.flatMap((d) => d.valuesSec), [days])
+  const allValues = useMemo(() => days.flatMap((d) => [...d.values, ...d.valuesSec]), [days])
   const hasData = allValues.length > 0
   const avg = mean(sysValues)
   const avgDia = mean(diaValues)

@@ -3,6 +3,7 @@
 
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { colors } from '@shared/styles/tokens'
 import AdherenceRing from './AdherenceRing'
 
 /**
@@ -46,13 +47,13 @@ export default function TodaySummaryCard({ totalExpected, totalTaken, score }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
     borderRadius: 24,
     padding: 24,
     marginHorizontal: 16,
     marginBottom: 16,
     // Sanctuary Ambient Shadow (lg)
-    shadowColor: '#000',
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
     shadowRadius: 24,
@@ -73,24 +74,24 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 32, // Maior para destaque premium
     fontWeight: '800',
-    color: '#1a1c1e', // neutral.800
+    color: colors.text.primary,
     letterSpacing: -1,
   },
   statLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#44474e', // neutral.600
+    color: colors.text.secondary,
     marginTop: -2,
   },
   footer: {
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f1f4f9', // neutral.100
+    borderTopColor: colors.border.light,
   },
   footerText: {
     fontSize: 14,
-    color: '#44474e',
+    color: colors.text.secondary,
     textAlign: 'center',
     fontStyle: 'italic',
     fontWeight: '500',

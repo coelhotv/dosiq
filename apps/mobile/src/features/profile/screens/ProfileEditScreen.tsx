@@ -51,7 +51,6 @@ function formProps(form, name) {
   }
 }
 
-// eslint-disable-next-line max-lines-per-function
 export default function ProfileEditScreen() {
   // States (R-010 — States → Memos → Effects → Handlers)
   const navigation = useNavigation()

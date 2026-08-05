@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import { AppState, View, ActivityIndicator, Linking, StyleSheet } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
+import { colors } from '@shared/styles/tokens'
 // ADR-036: JS stack (não native-stack) — native-stack crasha na API 24
 // (rnscreens 4.11.1 IndexOutOfBoundsException) ao desmontar a árvore no
 // SIGNED_OUT. RootTabs/ProfileStack já são JS; o root era o último outlier.
@@ -52,28 +53,66 @@ import { debugLog } from '@shared/utils/debugLog'
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
 const Stack = createStackNavigator<any>()
 
+async function handleDeepLinkUrl(url: string, setIsPasswordRecovery: (val: boolean) => void) {
+  if (!url) return
+
+  // PKCE flow: dosiq://auth/callback?code=xxxxx
+  const queryString = url.split('?')[1]?.split('#')[0]
+  if (queryString) {
+    const sp = new URLSearchParams(queryString)
+    const code = sp.get('code')
+    const type = sp.get('type')
+    if (code) {
+      try {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
+        } else if (type === 'recovery') {
+          setIsPasswordRecovery(true)
+        }
+      } catch (e: any) {
+        debugLog('Navigation', 'Exceção em exchangeCodeForSession', e?.message)
+      }
+      return
+    }
+  }
+
+  // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery|signup
+  const hash = url.split('#')[1]
+  if (!hash) return
+  const sp = new URLSearchParams(hash)
+  const tokenType = sp.get('type')
+  const accessToken = sp.get('access_token')
+  const refreshToken = sp.get('refresh_token')
+  if (accessToken && refreshToken && (tokenType === 'recovery' || tokenType === 'signup')) {
+    try {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      })
+      if (error) {
+        debugLog('Navigation', `setSession ${tokenType} falhou`, error.message)
+      } else if (tokenType === 'recovery') {
+        setIsPasswordRecovery(true)
+      }
+    } catch (e: any) {
+      debugLog('Navigation', `Exceção em setSession ${tokenType}`, e?.message)
+    }
+  }
+}
+
 function useAuthSession() {
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
 
-  // Setup push notifications pós-login (H6.3)
-  // Setup push register-only: nunca pede permissão (isso é dos pontos de intenção
-  // - onboarding/criação de tratamento/configs). Só registra token se já concedido.
   usePushNotifications({ supabase, session })
 
-  // Identificação de usuário no PostHog/Sentry (ADR-090). AQUI, e não no LoginScreen: este efeito
-  // roda tanto no login novo quanto na sessão RESTAURADA do SecureStore — que é como o usuário
-  // entra no dia a dia. Identificar só no login explícito deixava o uso recorrente anônimo, e cada
-  // device virava uma pessoa distinta no dashboard, inflando a contagem de usuários.
   useEffect(() => {
     if (!session?.user?.id) return
     setUserId(session.user.id)
   }, [session?.user?.id])
 
-  // Heartbeat de atividade (spec 057 / ADR-089): independente de push (R-239 intocada — nunca
-  // pede permissão nenhuma), roda em cold start e em toda volta a foreground; o throttle de 24h
-  // por device fica dentro de syncDeviceActivity (best-effort, nunca lança).
   useEffect(() => {
     if (!session?.user?.id) return
 
@@ -88,17 +127,15 @@ function useAuthSession() {
   }, [session?.user?.id])
 
   useEffect(() => {
-    // Restaurar sessão persistida (SecureStore chunked — R-160)
     supabase.auth.getSession()
       .then(({ data: { session: s } }) => {
         setSession(s ?? null)
       })
       .catch((error) => {
         console.error('Erro ao restaurar sessão:', error)
-        setSession(null) // null = sem sessão → redirige para LOGIN
+        setSession(null)
       })
 
-    // Actualizar em tempo real quando auth muda (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       const isRecoveryFlow = await AsyncStorage.getItem('@dosiq/recovery-flow')
       if (event === 'PASSWORD_RECOVERY' || isRecoveryFlow === 'true') {
@@ -124,12 +161,7 @@ function useAuthSession() {
 
       if (event === 'SIGNED_OUT') {
         debugLog('Navigation', 'User signed out, clearing caches...')
-        // Encerra a identificação ANTES de limpar cache: a partir daqui os eventos voltam a ser
-        // anônimos. Sem isto, quem logar depois neste device herdaria a pessoa anterior.
         resetUser()
-        // Preferência de estoque (055-W1.7) é por CONTA — cache da conta A não pode vazar
-        // pra B no mesmo device. Ponto único: cobre logout via authService E via
-        // profileService.logoutUser (ambos disparam SIGNED_OUT, este listener é o choke point).
         await clearStockTrackingCache()
         try {
           await AsyncStorage.multiRemove([
@@ -149,13 +181,11 @@ function useAuthSession() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Gate de primeiro acesso: ao ganhar sessão, decide wizard vs app. Os
-  // setState síncronos aqui são intencionais (estado de verificação do gate).
   useEffect(() => {
     let active = true
     if (session?.user?.id) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOnboardingNeeded(null) // verificando → spinner
+      setOnboardingNeeded(null)
       isOnboardingNeeded().then(({ data }) => {
         if (active) setOnboardingNeeded(Boolean(data))
       })
@@ -166,59 +196,14 @@ function useAuthSession() {
   }, [session?.user?.id])
 
   useEffect(() => {
-    async function handleDeepLink({ url }) {
-      if (!url) return
-
-      // PKCE flow: dosiq://auth/callback?code=xxxxx
-      // AP-139: Object.fromEntries(URLSearchParams) quebra no Hermes — usar .get()
-      const queryString = url.split('?')[1]?.split('#')[0]
-      if (queryString) {
-        const sp = new URLSearchParams(queryString)
-        const code = sp.get('code')
-        const type = sp.get('type')
-        if (code) {
-          try {
-            const { error } = await supabase.auth.exchangeCodeForSession(code)
-            if (error) {
-              debugLog('Navigation', 'exchangeCodeForSession falhou', error.message)
-            } else if (type === 'recovery') {
-              setIsPasswordRecovery(true) // Apenas desvia para redefinir senha se o tipo for recovery
-            }
-          } catch (e) {
-            debugLog('Navigation', 'Exceção em exchangeCodeForSession', e?.message)
-          }
-          return
-        }
-      }
-
-      // Implicit flow: dosiq://auth/callback#access_token=...&refresh_token=...&type=recovery|signup
-      const hash = url.split('#')[1]
-      if (!hash) return
-      const sp = new URLSearchParams(hash)
-      const tokenType = sp.get('type')
-      const accessToken = sp.get('access_token')
-      const refreshToken = sp.get('refresh_token')
-      if (accessToken && refreshToken && (tokenType === 'recovery' || tokenType === 'signup')) {
-        try {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-          if (error) {
-            debugLog('Navigation', `setSession ${tokenType} falhou`, error.message)
-          } else if (tokenType === 'recovery') {
-            setIsPasswordRecovery(true) // recovery → tela de redefinir senha
-          }
-          // signup: setSession dispara SIGNED_IN → app abre logado (gate de onboarding)
-        } catch (e) {
-          debugLog('Navigation', `Exceção em setSession ${tokenType}`, e?.message)
-        }
-      }
+    function onUrlChange({ url }: { url: string }) {
+      handleDeepLinkUrl(url, setIsPasswordRecovery)
     }
+
     Linking.getInitialURL()
-      .then((url) => { if (url) handleDeepLink({ url }) })
+      .then((url) => { if (url) handleDeepLinkUrl(url, setIsPasswordRecovery) })
       .catch((err) => debugLog('Navigation', 'getInitialURL falhou', err?.message))
-    const sub = Linking.addEventListener('url', handleDeepLink)
+    const sub = Linking.addEventListener('url', onUrlChange)
     return () => sub.remove()
   }, [])
 
@@ -286,6 +271,30 @@ export default function Navigation() {
   )
 }
 
+function _resolveNavigationState(
+  session: any,
+  isPasswordRecovery: boolean,
+  onboardingNeeded: boolean | null,
+  consent: any,
+  regularizationDismissed: boolean
+) {
+  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
+  const isLoading = session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending
+  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
+  const showDismissiblePrompt =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.mode === 'prompt_dismissible' &&
+    !consent.dismissed
+  const showRegularization =
+    Boolean(session) &&
+    !isPasswordRecovery &&
+    consent.needsRegularization &&
+    !regularizationDismissed
+
+  return { isLoading, consentLocked, showDismissiblePrompt, showRegularization }
+}
+
 function NavigationTree({
   session,
   isPasswordRecovery,
@@ -294,57 +303,30 @@ function NavigationTree({
   setOnboardingNeeded,
 }: ReturnType<typeof useAuthSession>) {
   const consent = useConsentGate()
-  // Nudge de política nova (`stale`) dispensável por sessão — fechar não escreve nada (T011).
   const [regularizationDismissed, setRegularizationDismissed] = useState(false)
 
-  // Handler para rastrear mudanças de tela — getCurrentRoute é mais robusto com nested navigators
   const handleNavigationStateChange = () => {
-    // TODO(040-strict): navigationRef sem ParamList tipada — never no generic ref
     const routeName = (navigationRef.current as any)?.getCurrentRoute?.()?.name
     if (routeName) {
       logScreenView(routeName)
     }
   }
 
-  // Aguarda verificação inicial — evita flash de ecrã errado.
-  // Também aguarda o gate de onboarding e o de consentimento resolverem quando há sessão.
-  const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
-  if (session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending) {
+  const { isLoading, consentLocked, showDismissiblePrompt, showRegularization } = _resolveNavigationState(
+    session,
+    isPasswordRecovery,
+    onboardingNeeded,
+    consent,
+    regularizationDismissed
+  )
+
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     )
   }
-
-  // INDETERMINADO — não conseguimos LER a trilha de consentimento (ex.: offline, contrato do Slice A).
-  // NÃO libera NEM bloqueia por si só (`locked: false`): é falha de carregamento, não um fato sobre a
-  // vontade do titular. O dosiq é offline-first — navegar doses/estoque sem rede é valor de produto
-  // prometido nas landings —, então sob indeterminação o app RENDERIZA normalmente e NÃO trava numa
-  // tela de erro. A trava real (revogado → blocked) é reaplicada quando a rede volta: o listener de
-  // `AppState 'active'` chama `refresh()` e reavalia o gate.
-  //
-  // Segurança preservada: indeterminação NÃO escreve nada e NÃO conta sessão de prompt — tratá-la como
-  // `missing` é que ressuscitaria, na materialização, um consentimento REVOGADO numa oscilação de rede
-  // (furo HIGH do review do Slice A). Essa proteção mora na LEITURA (hook → `state: null`), não em
-  // barrar a renderização. Renderizar offline não materializa consentimento algum.
-
-  // O gate do consentimento vem ANTES do onboarding: quem nunca consentiu não pode ser levado ao
-  // wizard, que existe justamente para começar a gerar dado de saúde.
-  const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
-  const showDismissiblePrompt =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.mode === 'prompt_dismissible' &&
-    !consent.dismissed
-
-  // Nudge de regularização: consentiu numa política ANTIGA (`stale`, mode 'allow' → não trava).
-  // Overlay dispensável por cima do app, como o prompt dispensável.
-  const showRegularization =
-    Boolean(session) &&
-    !isPasswordRecovery &&
-    consent.needsRegularization &&
-    !regularizationDismissed
 
   // Um único NavigationContainer (ref compartilhada). O filho alterna entre o
   // wizard de onboarding (1º acesso sem dados) e o app — dois containers com a
@@ -474,6 +456,6 @@ const styles = StyleSheet.create({
   },
   promptOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
   },
 })

@@ -2,7 +2,6 @@ import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronRight, ChevronUp } = LucideIcons as any
 import { colors, spacing, typography } from '../../../shared/styles/tokens'
@@ -58,11 +57,10 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing[4],
     marginTop: spacing[2],
     marginBottom: spacing[1],
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg.card,
     borderRadius: 12,
     padding: spacing[3],
-    // Sombras leves padrão Dosiq
-    shadowColor: '#000',
+    shadowColor: colors.neutral[900],
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,

@@ -9,7 +9,6 @@ import { supabase as supabaseImport } from '@platform/supabase/nativeSupabaseCli
 // TODO(040-strict): apps/mobile pina @supabase/supabase-js 2.91.0 vs ^2.90.1 na
 // root — duplicata de instalação quebra nominal typing do client (protected member
 // 'supabaseUrl' não bate estruturalmente). Fix real = alinhar versão (fora do lote).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const supabase = supabaseImport as any
 import { cancelAlarm } from '@platform/alarms/alarmService'
 import { endDoseActivity, showDoseDone, readSurfaceLabel } from '@platform/doseActivity/doseActivitySurfaceService'
@@ -51,43 +50,28 @@ const doseLogCore = createDoseLogService({
 // não há nada atrelado → no-op. NUNCA lança. A superfície usa id=instanceId (cancelAlarm já a
 // encerraria por coincidência de id); endDoseActivity torna a intenção explícita e robusta a
 // uma futura divergência de id.
-async function _cancelAlarmBestEffort(instanceId) {
-  if (!instanceId) return
-  // Superfície de dose (CON-030) é POR PLATAFORMA. Android: ongoing notification (notifee) — captura
-  // o rótulo ANTES de cancelar (auto-gate), encerra, e posta o card `done`. SÓ no Android: no iOS o
-  // showDoseDone postava uma notificação local "Dose registrada" (parecia push de alarme), bug F3.
-  // iOS: a Live Activity é dirigida pelo DoseLiveActivityBridge; o card `done` vem do re-derive,
-  // acionado pelo triggerDoseActivityRefresh no fim (registrando in-app não muda o AppState).
-  const isAndroid = Platform.OS === 'android'
-  let doneLabel = null
-  if (isAndroid) {
-    try {
-      doneLabel = await readSurfaceLabel(instanceId)
-    } catch (err) {
-      if (__DEV__) console.warn('[doseService] readSurfaceLabel falhou:', instanceId, err?.message)
-    }
-  }
+async function _safeRun(fn: () => Promise<any>, actionName: string, instanceId: string) {
   try {
-    await cancelAlarm(instanceId)
-  } catch (err) {
-    if (__DEV__) console.warn('[doseService] cancelAlarm best-effort falhou:', instanceId, err?.message)
+    return await fn()
+  } catch (err: any) {
+    if (__DEV__) console.warn(`[doseService] ${actionName} best-effort falhou:`, instanceId, err?.message)
+    return null
   }
+}
+
+async function _cancelAlarmBestEffort(instanceId: string | null) {
+  if (!instanceId) return
+  const isAndroid = Platform.OS === 'android'
+  const doneLabel = isAndroid ? await _safeRun(() => readSurfaceLabel(instanceId), 'readSurfaceLabel', instanceId) : null
+
+  await _safeRun(() => cancelAlarm(instanceId), 'cancelAlarm', instanceId)
+
   if (isAndroid) {
-    try {
-      await endDoseActivity(instanceId)
-    } catch (err) {
-      if (__DEV__) console.warn('[doseService] endDoseActivity best-effort falhou:', instanceId, err?.message)
-    }
+    await _safeRun(() => endDoseActivity(instanceId), 'endDoseActivity', instanceId)
     if (doneLabel != null) {
-      try {
-        await showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() })
-      } catch (err) {
-        if (__DEV__) console.warn('[doseService] showDoseDone best-effort falhou:', instanceId, err?.message)
-      }
+      await _safeRun(() => showDoseDone({ instanceId, medicineLabel: doneLabel, takenAt: getRawNow() }), 'showDoseDone', instanceId)
     }
   }
-  // iOS: re-deriva → card `done` na LA, com o HORÁRIO REAL da tomada (getRawNow AGORA — dose_instances
-  // não persiste horário de tomada). Android: no-op (ninguém assina; o done já foi acima via notifee).
   triggerDoseActivityRefresh({ instanceId, takenAt: getRawNow() })
 }
 
@@ -171,7 +155,6 @@ export async function undoDose(instanceId) {
 
     await doseLogCore.undoDose(instanceId)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: (instance as any).medicine_id })
     return { success: true }
   } catch (err) {
@@ -191,7 +174,6 @@ export async function undoDose(instanceId) {
 export async function updateOrphanLog(logId, updates) {
   try {
     const logEntry = await doseLogCore.updateOrphanLog(logId, updates)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await logEvent(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id })
     return { success: true }
   } catch (err) {

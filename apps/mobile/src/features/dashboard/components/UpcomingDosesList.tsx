@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { colors } from '@shared/styles/tokens'
 import DoseListItem from './DoseListItem'
 
 /**
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#8e9199', // Variant
+    color: colors.text.muted, // Variant
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginBottom: 12,

@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft } = LucideIcons as any
 import {
@@ -378,6 +377,11 @@ export default function MedicineFormScreen() {
   )
 }
 
+// Tons suaves originais do caixa de aviso do formulário (preserva tom pastel suave)
+const FORM_WARNING_BG = '#fffbeb'
+const FORM_WARNING_BORDER = '#fef3c7'
+const FORM_WARNING_TEXT = '#b45309'
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -431,14 +435,14 @@ const styles = StyleSheet.create({
   warningBox: {
     padding: spacing[3],
     borderRadius: borderRadius.md,
-    backgroundColor: '#fffbeb',
+    backgroundColor: FORM_WARNING_BG,
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: FORM_WARNING_BORDER,
     marginTop: spacing[2],
   },
   warningText: {
     fontSize: 13,
-    color: '#d97706',
+    color: FORM_WARNING_TEXT,
     lineHeight: 18,
   },
 })
