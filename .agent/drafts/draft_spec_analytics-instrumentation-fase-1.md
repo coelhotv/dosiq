@@ -36,9 +36,10 @@ consentimento vigente (TRACKING_PLAN §6.1). Não toca UI, não muda schema de b
 |---|---|
 | Todos os eventos na superfície **mobile** | Web + bot (Fase 2 — gated pela Política v0.4) |
 | `surface`, `treatment_id`, super property `mode` | Qualquer mecânica de recompensa nova |
-| 15 órfãos cabeados + 5 literais migrados | Religar session replay (ADR-090) |
-| Ciclo de vida do tratamento, biomarcador, IA, perfil | Feature flags do PostHog |
-| Verificação de cada evento via `posthog-cli` | Extração do catálogo p/ `packages/core` (ver [NEEDS CLARIFICATION 3]) |
+| 15 órfãos cabeados + 5 literais migrados | `adherence_milestone_reached` (Fase 2 — sem gatilho no mobile, Decisão 2) |
+| Ciclo de vida do tratamento, biomarcador, IA, perfil | Desmame / `weaning_terminal_date` (fase futura — Decisão 1) |
+| `treatment_planned_end` (encerramento passivo `prescription_end`) | Religar session replay · feature flags · extração p/ `packages/core` (Decisão 3) |
+| Verificação de cada evento via query direta PostHog | |
 
 ---
 
@@ -164,10 +165,11 @@ status: [ ] open
 - **FR-5** — Migrar os 5 literais (`titration_transition_*`, `cold_start`, `consent_health_declined`,
   `dev_smoke_event`) para `EVENTS` (`dev_smoke_event` pode ficar literal se marcado não-produção).
 - **FR-6** — Emitir o ciclo de vida do tratamento: `treatment_created`/`edited`/`paused`/`resumed`/
-  `ended` (com `reason`), respeitando pausa≠encerramento e o derivado passivo por propriedade (§5.3).
+  `ended` (com `reason`), respeitando pausa≠encerramento. Encerramento passivo cobre **só**
+  `prescription_end` via `treatment_planned_end` (Decisão 1); `weaning_*` fica diferido.
 - **FR-7** — Emitir as famílias novas mobile: `biomarker_logged` (com `biomarker_type` legível —
-  decisão PO 2026-08-08), `ai_assistant_*` (só meta), `profile_updated`/`mode_changed`,
-  `adherence_milestone_reached` (ver [NEEDS CLARIFICATION 2]).
+  decisão PO 2026-08-08), `ai_assistant_*` (só meta), `profile_updated`/`mode_changed`.
+  (`adherence_milestone_reached` **não** entra — Decisão 2, sem gatilho no mobile.)
 - **FR-8** — Garantir a política de PII (R-042 + Política §6): nenhum evento carrega nome de
   medicamento, valor de biomarcador, texto de chatbot ou PII de perfil.
 - **FR-9** — Preservar as garantias do wrapper: `logEvent` nunca lança, no-op sem chave, Sentry ⊥
@@ -199,8 +201,8 @@ status: [ ] open
   `dose_logged` vs `dose_logged_bulk` (convenção do CLAUDE.md).
 - **Ações de dose não-registro** (`undo`/`update_orphan`/`delete_orphan`): já emitem `dose_logged`
   com `action`; adicionar `surface`/`treatment_id` sem quebrar o shape existente.
-- **`weaning_terminal_date` sem titulação**: a propriedade só existe quando o predicado de desmame é
-  verdadeiro (§5.3.1); ausência não é erro.
+- **Encerramento passivo só por `prescription_end`**: `treatment_planned_end` é emitido; o desmame
+  (`weaning_*`) está **diferido** (Decisão 1) — nenhum código de Fase 1 tenta derivá-lo.
 - **Device compartilhado**: `resetUser` no logout deve limpar PostHog **e** Sentry juntos (§6).
 
 ## Key Entities
@@ -226,19 +228,20 @@ status: [ ] open
   jurídico bloqueia o mobile (TRACKING_PLAN §6.1).
 - **Assumption** — a verificação usa `posthog-cli api` num ambiente **não-produção** (Princípio I —
   proibido mutar dado de usuário real em teste); eventos de smoke ficam fora de dashboards.
-- **[NEEDS CLARIFICATION 1]** *(arquitetural — escopo do derivado passivo)*: `treatment_planned_end`
-  é barato de emitir na escrita do tratamento, mas `weaning_terminal_date` exige o **predicado de
-  desmame** sobre `titration_steps` (análise de monotonia decrescente + guardas `dose>0` /
-  `duration_days NULL`). Incluir a `weaning_terminal_date` na Fase 1 ou deferir para um follow-up,
-  emitindo só `treatment_planned_end` agora?
-- **[NEEDS CLARIFICATION 2]** *(arquitetural/escopo — `adherence_milestone_reached`)*: os marcos de
-  celebração hoje existem na **UI web** (`BadgeDisplay`/`MilestoneCelebration`). Existe gatilho de
-  marco no **mobile** para o evento disparar, ou `adherence_milestone_reached` é exclusivamente
-  Fase 2 (web) e sai do escopo mobile da Fase 1?
-- **[NEEDS CLARIFICATION 3]** *(arquitetural — localização do catálogo)*: manter `EVENTS` em
-  `apps/mobile` na Fase 1 (e mover para `packages/core`/`config` só na Fase 2, quando web/bot
-  compartilharem), ou extrair já agora para evitar re-trabalho? Trade-off: churn agora vs. migração
-  depois.
+- **Decisão 1 (era NC-1) — desmame diferido.** Fase 1 emite **apenas** `treatment_planned_end` na
+  escrita do tratamento. A detecção de desmame (`weaning_complete` / `weaning_terminal_date`) fica
+  **diferida para fase futura**: pode exigir alterar o engine de titulação para representar **dose 0
+  na etapa terminal** (hoje `dose > 0` é CHECK; §5.3.1 do TRACKING_PLAN). Enquanto isso, o
+  encerramento passivo por `prescription_end` (via `treatment_planned_end`) cobre a alta esperada.
+- **Decisão 2 (era NC-2) — `adherence_milestone_reached` sai da Fase 1.** Verificado no código
+  (2026-08-09): **não há gatilho de marco/celebração no mobile** — só KPIs passivos de display
+  (`adherence30d`/`streak` em `useHistoryData`/`DoseHistoryKpis`, sem cruzamento de limiar). A
+  celebração é **web-only** (`MilestoneCelebration`/`BadgeDisplay`). Logo o evento é **Fase 2 (web)**;
+  criar um gatilho no mobile seria **mecânica de recompensa nova → fora de escopo** (regra do handoff).
+- **Decisão 3 (era NC-3) — catálogo permanece em `apps/mobile`.** `EVENTS` fica em
+  `apps/mobile/src/platform/analytics/analyticsEvents.ts` enquanto só o mobile é servido. A
+  **primeira fase que expandir** para outra superfície (Fase 2, web/bot) porta o catálogo para
+  `packages/core`.
 
 ---
 

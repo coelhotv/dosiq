@@ -257,10 +257,10 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 > evento próprio (§5.3.1). `change_kind` de `treatment_edited` ∈ `dose`·`schedule`·`frequency`·
 > `dates`, **sem o valor** da dose (§6).
 >
-> **`treatment_planned_end`** e **`weaning_terminal_date`** viajam em `treatment_created`/
-> `treatment_edited` (re-emitidas na edição) — as propriedades que tornam o encerramento passivo
-> derivável sem scan (§5.3.1). São datas de agenda (dado relacionado à saúde sob consentimento
-> existente), nunca conteúdo clínico.
+> **`treatment_planned_end`** viaja em `treatment_created`/`treatment_edited` (re-emitida na edição)
+> — a propriedade que torna o encerramento passivo `prescription_end` derivável sem scan (§5.3.1).
+> **`weaning_terminal_date` está diferida** (§5.3.1) — não é emitida na Fase 1. São datas de agenda
+> (dado relacionado à saúde sob consentimento existente), nunca conteúdo clínico.
 
 #### 5.3.1 `treatment_ended` — o que torna a retenção legível
 
@@ -297,14 +297,20 @@ propriedade com a atividade — sem scan, sem `surface: system`, sem evento fabr
 > (cohort/scheduled), não com código de scan nosso. `surface: system` fica reservado para esse
 > caminho.
 
-**Ponto de design em aberto (não trava o contrato) — detecção do desmame (`weaning_complete`).**
-A direção **não é campo armazenado**: em N2 o tipo é derivado (ADR-080, `titrationSchema.ts`). Um
-desmame é inferido da sequência de `titration_steps.dose` ordenada por `position` que **decresce**
-rumo à etapa terminal. Dois guardas contra falso positivo, verificados no schema: (a) `dose > 0` é
-CHECK → nunca há passo "dose 0"; o desmame termina na última etapa decrescente + cessação; (b)
-`duration_days: NULL` = **manutenção contínua sem fim previsto** — escada que termina em manutenção
-**não encerra**, e marcar `weaning_complete` ali é bug. A `weaning_terminal_date` só existe quando
-esse predicado é verdadeiro.
+**🕓 Desmame DIFERIDO para fase futura (decisão PO, 2026-08-09).** `weaning_complete` /
+`weaning_terminal_date` **não** entram na Fase 1: representar a cessação pode exigir alterar o
+engine de titulação para aceitar **dose 0 na etapa terminal** (hoje `dose > 0` é CHECK). A Fase 1
+emite só `treatment_planned_end` (cobre `prescription_end`); nenhum código desta fase tenta derivar
+o desmame. O desenho abaixo fica registrado para quando a fase futura o retomar.
+
+**Detecção do desmame (`weaning_complete`) — desenho para a fase futura.** A direção **não é campo
+armazenado**: em N2 o tipo é derivado (ADR-080, `titrationSchema.ts`). Um desmame é inferido da
+sequência de `titration_steps.dose` ordenada por `position` que **decresce** rumo à etapa terminal.
+Dois guardas contra falso positivo, verificados no schema: (a) `dose > 0` é CHECK → hoje nunca há
+passo "dose 0" (é justamente o que a fase futura pode precisar mudar); o desmame termina na última
+etapa decrescente + cessação; (b) `duration_days: NULL` = **manutenção contínua sem fim previsto** —
+escada que termina em manutenção **não encerra**, e marcar `weaning_complete` ali é bug. A
+`weaning_terminal_date` só existe quando esse predicado é verdadeiro.
 
 ### 5.4 Doses e adesão (métrica central)
 
@@ -313,7 +319,7 @@ esse predicado é verdadeiro.
 | `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, **`surface` (a adicionar)** | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
 | `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, **`surface` (a adicionar)** | catch-up de doses atrasadas |
 | `dose_skipped` | 🔌 | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
-| `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). Mede a gamificação hoje **não medida**; no mobile é Fase 1, a UI web (`BadgeDisplay`/`MilestoneCelebration`) é Fase 2 |
+| `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). **Fase 2 (web)** — verificado 2026-08-09: **sem gatilho no mobile** (só KPI passivo `adherence30d`/`streak`); a celebração é web (`MilestoneCelebration`/`BadgeDisplay`). Gatilho no mobile = mecânica nova, fora de escopo |
 
 > **O score de adesão em si NÃO é evento.** É **derivado** de `dose_logged`/`dose_skipped` (que
 > carregam `treatment_id`) — emitir "score mudou" é contínuo, alto-cardinalidade e queima cota.
@@ -404,18 +410,22 @@ superfície.
 
 - **Fase 1 — mobile completo.** **Todos** os eventos emitidos no mobile, não só "cabear os órfãos":
   inclui `surface` + `treatment_id` (§5.0) + super property `mode`, a migração dos 5 literais
-  (§2.2), o ciclo de vida do tratamento (§5.3), `adherence_milestone_reached`, `biomarker_logged`,
+  (§2.2), o ciclo de vida do tratamento (§5.3, `treatment_planned_end` inclusive), `biomarker_logged`,
   `ai_assistant_*`, `profile_updated`/`mode_changed`. **Independe** da 059/v0.4 — já coberta pelo
-  consentimento vigente (§6.1).
+  consentimento vigente (§6.1). **Fora da Fase 1:** `adherence_milestone_reached` (sem gatilho no
+  mobile → Fase 2) e o desmame `weaning_*` (diferido, §5.3.1).
 - **Fase 2 — web + bot.** As mesmas famílias de evento nas superfícies web e bot. **Gated** pela
-  Política v0.4 (§6.1/§6.2). Inclui a UI de gamificação web (`BadgeDisplay`/`MilestoneCelebration`)
-  e os eventos server-side do bot.
+  Política v0.4 (§6.1/§6.2). Inclui `adherence_milestone_reached` + a UI de gamificação web
+  (`BadgeDisplay`/`MilestoneCelebration`) e os eventos server-side do bot.
+- **Fase futura.** Desmame (`weaning_complete`/`weaning_terminal_date`) — pode exigir mudança no
+  engine de titulação (dose 0 terminal), §5.3.1.
 
 | Grupo | Eventos | Fase (mobile) |
 |---|---|---|
 | Já emitidos | `login`, `dose_logged(_bulk)`, `stock_*` (044), `cold_start`, `consent_health_declined`, `titration_transition_*` | Fase 1 (+ `surface`/`treatment_id` a adicionar) |
 | Órfãos a cabear | `logout`, `sign_up`, `onboarding_*`, `medicine_*`, `dose_skipped`, `notification_*`, `push_notification_tapped`, `stock_added`, `stock_low_viewed` | Fase 1 |
-| Novos deste plano | `treatment_created`/`edited`/`paused`/`resumed`/`ended`, `adherence_milestone_reached`, `biomarker_logged`, `ai_assistant_*`, `profile_updated`, `mode_changed` | Fase 1 |
+| Novos deste plano | `treatment_created`/`edited`/`paused`/`resumed`/`ended` (com `treatment_planned_end`), `biomarker_logged`, `ai_assistant_*`, `profile_updated`, `mode_changed` | Fase 1 |
+| Fora da Fase 1 | `adherence_milestone_reached` (sem gatilho mobile → Fase 2) · desmame `weaning_*` (diferido, engine) | Fase 2 / futura |
 | Decisão pendente do DPO | mecanismo do opt-in web — bloqueante vs. aviso (§6.2) | — |
 
 ---
