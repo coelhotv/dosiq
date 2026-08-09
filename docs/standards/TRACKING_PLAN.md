@@ -164,6 +164,23 @@ escritos de uma vez e nunca cabeados. Adicionar evento ⇒ adicionar linha na §
 Status: **✅ emitido** · **🔌 órfão** (declarado, 0 call sites) · **🔤 literal** (emitido fora do
 catálogo) · **🆕 novo** (proposto aqui, ainda sem declaração no catálogo).
 
+> **Baseline verificado no PostHog — `posthog-cli`/HogQL, 2026-08-09** (janela real de dados:
+> **2026-07-24 → 2026-08-09, ~16 dias**; 30 `person_id` distintos; 2824 eventos). "Cabeado no
+> código" (✅/🔤) **≠** "observado chegando" — são eixos diferentes:
+>
+> - **Observados chegando** (com volume): `cold_start`, `dose_logged_bulk`, `dose_logged`, `login`,
+>   `consent_health_declined`, `stock_upsell_shown`, `stock_upsell_dismissed` (+ `dev_smoke_event` de teste).
+> - **Cabeados mas com ZERO chegada na janela**: `titration_transition_confirmed`/`postponed`,
+>   `stock_onboarding_choice`, `stock_opt_in`, `stock_opt_out`, `stock_upsell_conversion`. **Não é
+>   prova de emit quebrado** — a janela de 16 dias + baixa frequência (titulação, onboarding de
+>   usuário novo raro nesta base madura) explica a ausência. Mas **refuta** o "9 eventos chegam" do
+>   handoff: só **7** de produto chegam de fato. Disambiguar quebra vs. no-uso exige janela maior ou
+>   gatilho manual (parte da verificação da Fase 1, §7).
+> - **PII: LIMPO.** As únicas props customizadas enviadas são `channel`/`update_id`/`runtime_version`/
+>   `duration_ms`/`count`/`method`/`medicine_id`(UUID)/`action`/`platform`/`source`. Zero nome, e-mail,
+>   valor clínico. `$geoip_*` (cidade/região por IP) vem por default do PostHog, não do app.
+> - **`surface` e `treatment_id`: ausentes** em 100% dos eventos — o gap central deste plano é real.
+
 ### 5.0 Princípio da espinha: tudo é sobre o tratamento
 
 No fundo, **todo comportamento no Dosiq é sobre um tratamento** — dose, adesão, titulação, consumo

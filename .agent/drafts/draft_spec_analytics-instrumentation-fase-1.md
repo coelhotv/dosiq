@@ -215,6 +215,13 @@ status: [ ] open
 
 ## Assumptions / Open Questions
 
+- **Baseline verificado no PostHog (posthog-cli/HogQL, 2026-08-09)** — janela real de dados
+  **~16 dias** (2026-07-24→08-09), **30** `person_id` distintos (não 42 — ajustar denominador),
+  2824 eventos. **PII limpo** hoje (só UUIDs/enums/contagens; `medicine_id` é UUID) → Fase 1 é
+  **aditiva**, sem vazamento pré-existente a remediar. `surface`/`treatment_id` **ausentes** em 100%
+  (gap confirmado). O "9 eventos chegam" do handoff é **falso**: só **7** de produto chegam;
+  `titration_transition_*` e 4 eventos de estoque estão cabeados mas com **zero** chegada na janela
+  (provável baixa-frequência/no-uso, não quebra — disambiguar é tarefa de verificação, ver PO-5/§7).
 - **Assumption** — Fase 1 roda sob o consentimento vigente (Política v0.3 §5/§6); nenhum gate
   jurídico bloqueia o mobile (TRACKING_PLAN §6.1).
 - **Assumption** — a verificação usa `posthog-cli api` num ambiente **não-produção** (Princípio I —
