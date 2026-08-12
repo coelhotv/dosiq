@@ -21,17 +21,17 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36"
     ],
-    "merged_pr": 781,
-    "merged_squash": "c6971e2c (merge commit)",
+    "merged_pr": 794,
+    "merged_squash": "2a051b57 (squash merge into main)",
     "merged_history": [
       {
-        "pr": 781,
-        "squash": "c6971e2c (merge commit)",
-        "spec": "ONDA 1 — integracao 055 + 051-A na main",
-        "tier": 1,
-        "date": "2026-07-29",
+        "pr": 794,
+        "squash": "2a051b57",
+        "spec": "063 zero-lint-regressions — CONSOLIDAÇÃO FINAL ZERO LINT",
+        "tier": 2,
+        "date": "2026-08-04",
         "base_branch": "main",
-        "note": "Integracao da onda 1. Consolida PRs #770-#780 (detalhe de cada fatia nos journals 2026-W29/W30). Merge commit obrigatorio: preserva os 11 squashes E mantem mobile-v0.30.0 como ancestral da main, sem o que o gate do R-307 travaria todo OTA de producao desta versao. Achados da sessao de integracao: (1) bug real no lib-release-tag.sh — leitura de refs/tags/<tag> em tag ANOTADA devolve o objeto de tag, nunca um commit, o que abortaria o build da segunda plataforma com colisao falsa e mataria create_release_tag sob set -e depois do submit; corrigido com ^{} (cefcfb7d); (2) AP-234 reincidente — docs de operacao commitados direto na main colidiram com as versoes evoluidas da branch, 3 conflitos resolvidos em 1e8658e4; (3) build-ios.sh production submete ao TestFlight automaticamente, PO decidiu manter. Tag mobile-v0.30.0 reposicionada 3x por commits de tooling/doc — delta vs o commit que gerou o .aab e de 3 arquivos, nenhum em bundle/nativo, mas contraria a letra do R-307 secao 3 (decisao pendente)."
+        "note": "Consolidação final do Épico 063 na main. Monorepo 100% Zero Lint (0 errors, 0 warnings), 164/164 arquivos de teste passando (2204 testes), TS Ratchet verde. Todos os 13 PRs de fase integrados com sucesso. Passada de restauração visual (commit 608c63c) garante fidelidade e neutralidade de tons em componentes mobile."
       }
     ],
     "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
