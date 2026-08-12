@@ -139,3 +139,4 @@ apps/web/public/*old*
 
 # Estado local do Supabase CLI (gerado por `npm run supabase:types`) — nunca versionar
 supabase/.temp/
+.claude/settings.local.json
