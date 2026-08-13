@@ -6,10 +6,9 @@
     "mode": "planning",
     "status": "planned",
     "tier": 2,
-    "tasks": "plans/specs/050-notification-integrity/tasks.md",
-    "spec_dir": "plans/specs/050-notification-integrity",
-    "spec": "plans/specs/050-notification-integrity/spec.md",
-    "goal": "050 notification-integrity — plano revisado pos-RC3 (5 PRs: 0/1a/1b/2/3)",
+    "spec_dir": "plans/specs/065-analytics-instrumentation-mobile",
+    "spec": "plans/specs/065-analytics-instrumentation-mobile/spec.md",
+    "goal": "065 analytics-instrumentation Fase 1 (mobile) — plano pos-RC3 (PR A/B/C/D)",
     "goal_type": "feature",
     "code_review": {
       "status": "merged",
@@ -19,7 +18,8 @@
     },
     "spec_dirs": [
       "plans/specs/051-expo-updates",
-      "plans/specs/055-expo-55-target-api-36"
+      "plans/specs/055-expo-55-target-api-36",
+      "plans/specs/065-analytics-instrumentation-mobile"
     ],
     "merged_pr": 794,
     "merged_squash": "2a051b57 (squash merge into main)",
@@ -38,9 +38,10 @@
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
-      "eng-review (050, 2026-08-02)"
+      "eng-review (050, 2026-08-02)",
+      "eng-review (065, 2026-08-13)"
     ],
-    "ceremony_findings_count": 22,
+    "ceremony_findings_count": 28,
     "ceremony_scope_decisions": [
       "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
       "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
@@ -53,17 +54,16 @@
       "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida.",
       "PO 2026-08-02 (050): US4 adicionada — alerta de estoque de tratamento ENCERRADO/pausado (bug ativo em prod: 4 protocolos active com end_date vencida, 2 com saldo 0 alertando ha ~1 semana). Recorte: corrigir SO o caminho de notificacao (scan compartilhado, PR 1); a raiz (calculateDailyIntake, 7 superficies) vai p/ spec 064. PO tambem decidiu excluir protocolo pausado. NC2 (channel_results x notification_log) resolvida: outbox_id em notification_log ANTES de dropar channel_results — TODO no ADR-078.",
       "RC3 050 (2026-08-02): complexity check ESTOUROU — PR 1 com ~12 arquivos vs limiar 8. Proposta minima (F1, AGUARDA PO): fatiar em PR 0 (US4, bug ativo em prod, 2 arquivos) + PR 1a (infra da fila, sem consumidor) + PR 1b (fan-out). Motivo alem do tamanho: fix de prod nao deve ficar preso atras de refactor de infra. Outros findings: F2 ALTO (select de stock sem `id` -> subject_id do expiry undefined -> reintroduz o Gap 1), F3 ALTO (cadencia do enqueue indefinida; legado e minute===0, familia AP-259), F4 ALTO (armadilha viva pre-existente: por stock_alert em OUTBOX_KINDS hoje desliga o legado e nada enfileira -> zero alerta em silencio), F5 MEDIO (enqueuers[] e complexidade acidental, T005 sai), F6 MEDIO (scan sem paginacao, AP-186), F7 BAIXO (tz — 42 usuarios, todos UTC-3). Guards ELEVADOS: PO-8 exige fronteira end_date=hoje/ontem; PO-3 exige ramo snoozed_until.",
-      "PO 2026-08-02: F1 APROVADO — PR 1 fatiado em PR 0 (US4, bug ativo, vai sozinho) / PR 1a (infra da fila, sem consumidor) / PR 1b (fan-out). Todos os 7 findings da RC3 absorvidos em plan.md + tasks.md. Droppabilidade: 3 -> 2 -> 1b -> 1a -> PR 0 NUNCA."
+      "PO 2026-08-02: F1 APROVADO — PR 1 fatiado em PR 0 (US4, bug ativo, vai sozinho) / PR 1a (infra da fila, sem consumidor) / PR 1b (fan-out). Todos os 7 findings da RC3 absorvidos em plan.md + tasks.md. Droppabilidade: 3 -> 2 -> 1b -> 1a -> PR 0 NUNCA.",
+      "PO 2026-08-13 (065): NC-A/B/C fechados. D4 — PostHog unico (sem dev/staging): segregar por super property app_env + is_internal, dashboards filtram production; escape hatch = trocar secret EXPO_PUBLIC_POSTHOG_API_KEY; baseline pre-corte fica bucket 'env desconhecido'. D5 — flush() explicito no background, SEM fila propria: SDK posthog-react-native 4.60 ja persiste fila em arquivo (default persistence:'file') + flush() publico, entao o risco e ATRASO e nao perda; fila espelhando criticalAuditBeacon seria complexidade acidental e nem resolveria o atraso; rede ja esta no caminho (dose grava no Supabase no headless). Verificar em C1: persistence file no headless + timeout do flush. D6 — stock_* carrega medicine_id, nao treatment_id (PO: houve 'forcada' no draft; estoque e do medicamento, N tratamentos possiveis; fabricar vinculo violaria R-299).",
+      "PO 2026-08-13 (065, 2a rodada): D5 REVISTA — Fase 1 NAO adiciona mecanismo no caminho headless. Racional do PO: flush() compra so pontualidade contra problema AINDA NAO MEDIDO, e paga com codigo no caminho mais fragil do app (headless/cold start/lazy-require AP-205), onde AP-316/AP-318 mostram que gate mecanico nao pega nada. Ordem correta: instrumentar -> medir -> decidir. FR-11 vira obrigacao de MEDIR; PO-8/SC-8 exigem latencia por plataforma (consulta antes e depois de abrir o app); mitigacao vira follow-up gatilhado pelo numero. Risco residual aceito e declarado: backfill de janela recente, cauda que demora a abrir, desinstalacao antes de reabrir.",
+      "PO 2026-08-13 (065 RC3): D7 surface = parametro explicito na assinatura de registerDose (9 importadores), default 'mobile' PROIBIDO — sem surface o evento sai sem o campo; guards PO-1/PO-2 elevados a full. D8 fatiamento A(fundacao+dose)/B(ciclo tratamento)/C(orfaos+literais)/D(familias novas) aprovado, droppabilidade D->C->B->A nunca, PR A sozinho responde a tese. D9 delete_orphan opcao (a): le o log antes de apagar e emite medicine_id, no mobile (core devolve so {success:true}, doseLogService.ts:183-192). F2->FR-13 (evento nasce no service, padrao do spec 044 ja no catalogo). F4->FR-10 (query agregada, nao 24 consultas). F6 aceito."
     ],
     "branch": "fix/android-release-slimming",
-    "blocked_on": [
-      "PO: token Sentry RESOLVIDO no codigo (lib-sentry-token.sh le do .env); para build na NUVEM ainda precisa de eas secret:create",
-      "PO: build EAS preview -> smoke completo (alarme+som, notificacao, deep link, OTA, export LGPD) — R8 quebra reflexao so em runtime",
-      "PO: inspecionar o AAB de producao (sem expo.modules.devlauncher, sem com.google.mlkit, sem scheme exp+dosiq-app) + delta de tamanho",
-      "PO: publicar no internal testing e conferir se os avisos do Play sumiram"
-    ],
+    "blocked_on": [],
     "ceremony_type": "eng-review",
-    "plan": "plans/specs/050-notification-integrity/plan.md"
+    "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
+    "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md"
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",

@@ -245,10 +245,9 @@ status: [ ] open
 
 ---
 
-## Promoção a spec formal (não feito neste draft)
+## ✅ PROMOVIDO (2026-08-12) — este draft está SUPERSEDED
 
-Este é um **draft** em `.agent/drafts/` por decisão do operador — **fora** do fluxo
-`plans/specs/NNN`. Portanto **não** foram executadas as etapas de estado do protocolo Specifying:
-S0 (transição `mode=specifying`), S2 (numeração), S5 (`state.json.spec_dir/spec`), S6
-(`events.jsonl` + journal + índice de specs). Promover a spec numerado é uma invocação separada
-(`/devflow specifying`) que resolve os 3 markers acima antes do Planning.
+Fonte de verdade agora: **`plans/specs/065-analytics-instrumentation-mobile/spec.md`**
+(Tier 2, status `specified`). S0/S2/S5/S6 executados; linha registrada em `plans/specs/README.md`.
+
+Não editar este arquivo — qualquer mudança vai na spec 065.
