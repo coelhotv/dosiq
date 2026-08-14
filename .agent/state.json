@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "specifying",
+    "status": "specified",
     "tier": 2,
-    "spec_dir": "plans/specs/065-analytics-instrumentation-mobile",
-    "spec": "plans/specs/065-analytics-instrumentation-mobile/spec.md",
-    "goal": "065 analytics-instrumentation Fase 1 (mobile) — plano pos-RC3 (PR A/B/C/D)",
+    "spec_dir": "plans/specs/066-camera-medicine-scan",
+    "spec": "plans/specs/066-camera-medicine-scan/spec.md",
+    "goal": "066 camera-medicine-scan — epico multifases (Fase 0 dado CMED + Fase 1 scan EAN-13)",
     "goal_type": "feature",
     "code_review": {
       "status": "merged",
@@ -19,7 +19,8 @@
     "spec_dirs": [
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36",
-      "plans/specs/065-analytics-instrumentation-mobile"
+      "plans/specs/065-analytics-instrumentation-mobile",
+      "plans/specs/066-camera-medicine-scan"
     ],
     "merged_pr": 794,
     "merged_squash": "2a051b57 (squash merge into main)",
@@ -34,7 +35,7 @@
         "note": "Consolidação final do Épico 063 na main. Monorepo 100% Zero Lint (0 errors, 0 warnings), 164/164 arquivos de teste passando (2204 testes), TS Ratchet verde. Todos os 13 PRs de fase integrados com sucesso. Passada de restauração visual (commit 608c63c) garante fidelidade e neutralidade de tons em componentes mobile."
       }
     ],
-    "previous_session_note": "029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
+    "previous_session_note": "065 analytics-instrumentation PARQUEADA em 'planned' (plan.md+tasks.md, 30 tasks/4 PRs; bloqueada em T001 por posthog-cli ausente). Retomar por /devflow coding apos destravar o canal de prova. 029 F1 entregue e mergeado (#746, squash 139808b6). Modelo N2 (ADR-080) em prod: titrations (orquestrador) + titration_steps (etapas). PO-SEC-1 fechado (BEGIN..ROLLBACK 16/16). Review Gemini: 3 findings aplicados via delta em prod — FK COMPOSTA (titration_id,user_id)->titrations(id,user_id)+UNIQUE(id,user_id) fecha IDOR cross-user (RLS sozinha nao barra parent_id alheio; motor F3=service_role bypassa RLS; AP-293 novo), indice redundante removido, CHECK ended_at>=started_at. core 0.7.0. F2: repository deriva user_id do dono (FK composta rejeita mismatch). session-prompts.md ESTADO REAL POS-F1 preenchido.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -60,10 +61,7 @@
       "PO 2026-08-13 (065 RC3): D7 surface = parametro explicito na assinatura de registerDose (9 importadores), default 'mobile' PROIBIDO — sem surface o evento sai sem o campo; guards PO-1/PO-2 elevados a full. D8 fatiamento A(fundacao+dose)/B(ciclo tratamento)/C(orfaos+literais)/D(familias novas) aprovado, droppabilidade D->C->B->A nunca, PR A sozinho responde a tese. D9 delete_orphan opcao (a): le o log antes de apagar e emite medicine_id, no mobile (core devolve so {success:true}, doseLogService.ts:183-192). F2->FR-13 (evento nasce no service, padrao do spec 044 ja no catalogo). F4->FR-10 (query agregada, nao 24 consultas). F6 aceito."
     ],
     "branch": "fix/android-release-slimming",
-    "blocked_on": [],
-    "ceremony_type": "eng-review",
-    "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
-    "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md"
+    "blocked_on": []
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
@@ -79,7 +77,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-07-31T03:53:14.125104+00:00"
+    "index_loaded_at": "2026-08-14T02:25:57.173242+00:00"
   },
   "code_review": {
     "status": "clean",
