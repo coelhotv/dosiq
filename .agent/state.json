@@ -6,10 +6,10 @@
     "mode": "specifying",
     "status": "specified",
     "tier": 2,
-    "spec_dir": "plans/specs/066-camera-medicine-scan",
-    "spec": "plans/specs/066-camera-medicine-scan/spec.md",
-    "goal": "066 camera-medicine-scan — epico multifases (Fase 0 dado CMED + Fase 1 scan EAN-13)",
-    "goal_type": "feature",
+    "spec_dir": "plans/specs/067-critical-alarm-window-guard",
+    "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
+    "goal": "067 critical-alarm-window-guard — guarda de janela de dose crítica (piso+teto) + semântica do audit trail",
+    "goal_type": "fix",
     "code_review": {
       "status": "merged",
       "critical": 0,
@@ -20,7 +20,8 @@
       "plans/specs/051-expo-updates",
       "plans/specs/055-expo-55-target-api-36",
       "plans/specs/065-analytics-instrumentation-mobile",
-      "plans/specs/066-camera-medicine-scan"
+      "plans/specs/066-camera-medicine-scan",
+      "plans/specs/067-critical-alarm-window-guard"
     ],
     "merged_pr": 794,
     "merged_squash": "2a051b57 (squash merge into main)",
@@ -40,9 +41,10 @@
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
       "eng-review (050, 2026-08-02)",
-      "eng-review (065, 2026-08-13)"
+      "eng-review (065, 2026-08-13)",
+      "eng-review (067, 2026-08-14)"
     ],
-    "ceremony_findings_count": 28,
+    "ceremony_findings_count": 36,
     "ceremony_scope_decisions": [
       "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
       "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
@@ -58,10 +60,15 @@
       "PO 2026-08-02: F1 APROVADO — PR 1 fatiado em PR 0 (US4, bug ativo, vai sozinho) / PR 1a (infra da fila, sem consumidor) / PR 1b (fan-out). Todos os 7 findings da RC3 absorvidos em plan.md + tasks.md. Droppabilidade: 3 -> 2 -> 1b -> 1a -> PR 0 NUNCA.",
       "PO 2026-08-13 (065): NC-A/B/C fechados. D4 — PostHog unico (sem dev/staging): segregar por super property app_env + is_internal, dashboards filtram production; escape hatch = trocar secret EXPO_PUBLIC_POSTHOG_API_KEY; baseline pre-corte fica bucket 'env desconhecido'. D5 — flush() explicito no background, SEM fila propria: SDK posthog-react-native 4.60 ja persiste fila em arquivo (default persistence:'file') + flush() publico, entao o risco e ATRASO e nao perda; fila espelhando criticalAuditBeacon seria complexidade acidental e nem resolveria o atraso; rede ja esta no caminho (dose grava no Supabase no headless). Verificar em C1: persistence file no headless + timeout do flush. D6 — stock_* carrega medicine_id, nao treatment_id (PO: houve 'forcada' no draft; estoque e do medicamento, N tratamentos possiveis; fabricar vinculo violaria R-299).",
       "PO 2026-08-13 (065, 2a rodada): D5 REVISTA — Fase 1 NAO adiciona mecanismo no caminho headless. Racional do PO: flush() compra so pontualidade contra problema AINDA NAO MEDIDO, e paga com codigo no caminho mais fragil do app (headless/cold start/lazy-require AP-205), onde AP-316/AP-318 mostram que gate mecanico nao pega nada. Ordem correta: instrumentar -> medir -> decidir. FR-11 vira obrigacao de MEDIR; PO-8/SC-8 exigem latencia por plataforma (consulta antes e depois de abrir o app); mitigacao vira follow-up gatilhado pelo numero. Risco residual aceito e declarado: backfill de janela recente, cauda que demora a abrir, desinstalacao antes de reabrir.",
-      "PO 2026-08-13 (065 RC3): D7 surface = parametro explicito na assinatura de registerDose (9 importadores), default 'mobile' PROIBIDO — sem surface o evento sai sem o campo; guards PO-1/PO-2 elevados a full. D8 fatiamento A(fundacao+dose)/B(ciclo tratamento)/C(orfaos+literais)/D(familias novas) aprovado, droppabilidade D->C->B->A nunca, PR A sozinho responde a tese. D9 delete_orphan opcao (a): le o log antes de apagar e emite medicine_id, no mobile (core devolve so {success:true}, doseLogService.ts:183-192). F2->FR-13 (evento nasce no service, padrao do spec 044 ja no catalogo). F4->FR-10 (query agregada, nao 24 consultas). F6 aceito."
+      "PO 2026-08-13 (065 RC3): D7 surface = parametro explicito na assinatura de registerDose (9 importadores), default 'mobile' PROIBIDO — sem surface o evento sai sem o campo; guards PO-1/PO-2 elevados a full. D8 fatiamento A(fundacao+dose)/B(ciclo tratamento)/C(orfaos+literais)/D(familias novas) aprovado, droppabilidade D->C->B->A nunca, PR A sozinho responde a tese. D9 delete_orphan opcao (a): le o log antes de apagar e emite medicine_id, no mobile (core devolve so {success:true}, doseLogService.ts:183-192). F2->FR-13 (evento nasce no service, padrao do spec 044 ja no catalogo). F4->FR-10 (query agregada, nao 24 consultas). F6 aceito.",
+      "PO 2026-08-14 (067): 4 decisoes. D1 piso = fracao do intervalo do protocolo (lacunas: quando_necessario/personalizado sem intervalo; dose unica diaria exige teto absoluto). D2 guarda incide sobre o instante DECLARADO, nao sobre now() — edicao de historico e acao ativa do usuario e NAO deve ser limitada; taken ja viaja com taken_at do medicine_log, skip e a unica transicao sem instante => skip passa a ir por RPC; dispensa trigger com passagem de intencao. D3 alarme barrado emite notificacao informativa (b) — (a) silencioso viola Principio IX, (c) takeover gasta a autoridade da tela cheia num evento que nao e a dose. D4 escopo novo (US6): skipped_user visivel no historico, skipped_paused oculto (estado do tratamento, nao da dose); causa era VISIBLE_INSTANCE_STATUSES no core, afeta web+mobile e toda dose. Aderencia inalterada.",
+      "PO 2026-08-14 (067 D5): piso = min(fracao x intervalo, 120min), fallback 120 se intervalo nao derivavel. Correcao: PRN nunca gera instancias => fora de escopo, lacuna (a) da D1 nao existe. Teto faz a fracao decidir so abaixo de 8/8h (4/4h=60, 6/6h=90); 12/12h+ = 120 constante. Limite declarado: teto e tolerancia, nao garantia clinica (-105min em 8/8h ainda passa); aperto futuro baixa a FRACAO, nunca o teto, e so com dado da telemetria. Assimetria -120/+30 com tolerancia curta aceita de proposito.",
+      "RC3 067 (2026-08-14): 8 findings, 1 CRITICAL. F1 USER CHALLENGE a D5 — computeTolerances (doseInstanceGenerator.ts:107-151) JA deriva janela por slot do time_schedule com wrap-around, semanal sem teto (ADR-061), personalizado 120, PRN nao materializa; tolerance_minutes E 'metade do intervalo com teto 120'. D5 reimplementa a MESMA matematica com outra fracao, e o intervalo NAO existe no instante do alarme (payload leva toleranceMinutes, nao time_schedule) => APPROACH A recomendado: coluna irma early_window_minutes calculada no MESMO computeTolerances. B (client re-deriva) descartado por duplicar regra no caminho headless; C (min(tolerance,120)) descartado porque 4/4h receberia piso 120 = metade do intervalo. F2 complexity check ESTOUROU (~12 arquivos vs 8) => fatiar Slice A em A1 (visibilidade do skip, 3 arq, maior valor/risco) e A2 (guarda+telemetria); ordem A1->A2->B->C, A1 nunca dropavel. F3 backfill da coluna nova ausente nos cenarios de migracao. F4 guarda do client usa relogio do device — se a causa for drift, A nao alcanca; B vira cobertura de classe de causa raiz, nao so de writers. F5 funil unico confirmado (AlarmFullScreen.tsx:17 importa registerTaken/registerSkip). F6 FR-019 deve REUSAR canal existente (R-261 canal imutavel, AP-251). F7 declarar que a timeline NAO passa a respeitar o piso (piso e regra de registro, nao de exibicao). F8 assimetria da D5 perde objeto com A. Guards elevados a full: PO-10 e PO-12. PENDENTE PO: F1 (approach) e F2 (fatiamento).",
+      "PO 2026-08-14 (067 RC3): F1 e F2 APROVADOS. F1 -> Approach A: early_window_minutes vira coluna persistida, calculada no MESMO computeTolerances (fracao x menor gap adjacente, teto 120 valendo p/ TODA frequencia — inclusive semanal, que hoje nao tem teto na tolerancia); client so le, proibido recalcular. Decisao 6 na spec; FR-024 reescrita, FR-025 (herdar ramos PRN/personalizado), PO-12 reescrita, PO-13 nova (backfill obrigatorio — coluna nasce NULL em toda instancia ja materializada, incl. janela futura com alarme armado). F2 -> fatiamento A1(US6 visibilidade, 3 arq)/A2(guarda+telemetria, ~9)/B(~5)/C(~4), ordem A1->A2->B->C, droppabilidade C->B->A2->A1 nunca. Absorvidos tambem: F4 (B cobre drift de relogio, classe que A2 nao alcanca — nao e reforco redundante), F6->FR-026 (reusar canal existente, R-261/AP-251), F7->FR-027 (timeline NAO respeita o piso; piso e regra de registro), F8 (emenda na D5). Guards full: PO-10, PO-12."
     ],
     "branch": "fix/android-release-slimming",
-    "blocked_on": []
+    "blocked_on": [],
+    "ceremony_type": "eng-review"
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
