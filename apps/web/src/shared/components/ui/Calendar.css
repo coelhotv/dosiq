@@ -127,7 +127,7 @@
   bottom: 6px;
 }
 
-/* Dots acumulados por dia: um por status presente (🟢 tomada · ⚪ pendente · 🔴 perdida). */
+/* Dots acumulados por dia: um por status presente (🟢 tomada · ⚪ pendente · 🔴 perdida · ⚫ pulada). */
 .log-dots {
   position: absolute;
   bottom: 5px;
@@ -152,6 +152,12 @@
 .log-dot[data-status='missed'] {
   background: var(--color-error);
   box-shadow: 0 0 10px var(--color-error);
+}
+/* 067: dose pulada pela paciente — neutro escuro, distinto do pendente (neutro claro).
+   Sem esta regra o dot cairia no verde default do `.log-dot` e mentiria sobre o dia. */
+.log-dot[data-status='skipped_user'] {
+  background: var(--color-on-surface-variant, #616161);
+  box-shadow: 0 0 10px var(--color-on-surface-variant, #616161);
 }
 
 .calendar-day:not(.empty):hover {

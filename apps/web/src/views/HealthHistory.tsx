@@ -15,8 +15,10 @@ import { formatLocalDate, getTodayLocal, getNow } from '@utils/dateUtils'
 import HealthHistoryView from './history/HealthHistoryView'
 import './history/History.css'
 
-/** Ordem fixa dos dots acumulados no dia: 🟢 tomada · ⚪ pendente · 🔴 perdida. */
-const STATUS_DOT_ORDER = ['taken', 'pending', 'missed']
+/** Ordem fixa dos dots acumulados no dia: 🟢 tomada · ⚪ pendente · 🔴 perdida · ⚫ pulada.
+ *  067/FR-037: `skipped_user` entra APÓS `missed` — status ausente aqui não pinta dot,
+ *  e o dia com dose pulada ficaria sem marca no calendário. */
+const STATUS_DOT_ORDER = ['taken', 'pending', 'missed', 'skipped_user']
 
 /** Piso de navegação do calendário: dados de `dose_instances` começam em 2026
  *  (pré-backfill não materializado) — não navegar para meses vazios anteriores. */

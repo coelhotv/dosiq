@@ -234,11 +234,15 @@
   gap: 0.5rem;
 }
 
-/* ── Estado do evento (taken/missed/pending) ─────────────────── */
+/* ── Estado do evento (taken/missed/pending/skipped_user) ────── */
 /* Barra lateral colorida por status — reforça o estado além do badge (idoso-friendly). */
+/* Hierarquia (067/RC2-D2): taken = marca · missed = erro (vermelho) · skipped_user = NEUTRO
+   (decisão da paciente, não falha) · pending = neutro CLARO. Pulada é mais escura que
+   pendente de propósito: é fato consumado, não espera. */
 .hlc-card--taken { border-left: 3px solid var(--color-success, #2e7d32); }
 .hlc-card--missed { border-left: 3px solid var(--color-error, #c62828); }
 .hlc-card--pending { border-left: 3px solid var(--color-outline, #9e9e9e); }
+.hlc-card--skipped { border-left: 3px solid var(--color-on-surface-variant, #616161); }
 
 .hlc-card__status {
   display: inline-flex;
@@ -265,6 +269,11 @@
 .hlc-card__status[data-status='pending'] {
   color: var(--color-on-surface);
   background: color-mix(in srgb, var(--color-on-surface) 10%, transparent);
+}
+
+.hlc-card__status[data-status='skipped_user'] {
+  color: var(--color-on-surface-variant, #616161);
+  background: color-mix(in srgb, var(--color-on-surface-variant, #616161) 18%, transparent);
 }
 
 .hlc-card__info {

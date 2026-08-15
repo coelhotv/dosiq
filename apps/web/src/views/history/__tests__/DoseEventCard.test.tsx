@@ -50,6 +50,19 @@ describe('DoseEventCard', () => {
     expect(screen.queryByLabelText('Excluir registro')).not.toBeInTheDocument()
   })
 
+  it('067/FR-037: dose pulada exibe "Pulada" — nunca o fallback "Pendente"', () => {
+    const skipped = makeEvent({ payload: { status: 'skipped_user', logId: null, medicineName: 'Amoxicilina' } })
+    render(<DoseEventCard event={skipped} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    expect(screen.getByText('Pulada')).toBeInTheDocument()
+    expect(screen.queryByText('Pendente')).not.toBeInTheDocument()
+  })
+
+  it('067: payload SEM status (ausência real) mantém o fallback "Pendente"', () => {
+    const noStatus = makeEvent({ payload: { status: undefined, logId: null, medicineName: 'Losartana' } })
+    render(<DoseEventCard event={noStatus} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    expect(screen.getByText('Pendente')).toBeInTheDocument()
+  })
+
   it('reconstrói o log do payload e o entrega ao onEdit', async () => {
     const onEdit = vi.fn()
     render(<DoseEventCard event={makeEvent()} onEdit={onEdit} onDelete={vi.fn()} />)
