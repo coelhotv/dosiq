@@ -102,13 +102,12 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "claude (pass B, agy indisponivel)",
-    "status": "issues_found",
+    "engine": "agy",
+    "status": "clean",
     "critical": 0,
-    "high": 1,
+    "high": 0,
     "introduced_critical": 0,
-    "introduced_high": 1,
-    "pr": 782,
-    "resolved": "1 HIGH introduced CONFIRMADO no artefato e corrigido (keep.xml p/ ic_dosiq_mark + sons)"
+    "introduced_high": 0,
+    "pr": 795
   }
 }
