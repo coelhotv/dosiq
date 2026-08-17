@@ -110,6 +110,36 @@ describe('handleAlarmAction — ignorado', () => {
     expect((res as { action: string }).action).toBe('nag')
   })
 
+  // FR-006 pelo caminho PASSIVO (RC6 #796): o cutoff do nag é `scheduledFor + tolerance`, e num
+  // disparo ADIANTADO `now` está MUITO antes dele — sem esta guarda o alarme torto se reagendava
+  // em loop até a hora real da dose. As guardas de ação/takeover barram a escrita, não o incômodo.
+  it('disparo ADIANTADO ignorado → NÃO reagenda nag (senão incomoda em loop até a hora da dose)', async () => {
+    const res = await handleAlarmAction(
+      evt(undefined, {
+        ...BASE,
+        nagAttempt: '0',
+        // dose daqui a 3h37 (o delta do incidente de 2026-08-14), piso de 90min
+        scheduledFor: new Date(Date.now() + 217 * 60000).toISOString(),
+        earlyWindowMinutes: '90',
+      })
+    )
+    expect(notifee.createTriggerNotification).not.toHaveBeenCalled()
+    expect((res as { refused?: string }).refused).toBe('out_of_window')
+  })
+
+  it('dose ADIANTADA mas DENTRO do piso → nag segue normal', async () => {
+    const res = await handleAlarmAction(
+      evt(undefined, {
+        ...BASE,
+        nagAttempt: '0',
+        scheduledFor: new Date(Date.now() + 30 * 60000).toISOString(), // 30min < piso 90
+        earlyWindowMinutes: '90',
+      })
+    )
+    expect(notifee.createTriggerNotification).toHaveBeenCalled()
+    expect((res as { action: string }).action).toBe('nag')
+  })
+
   it('sem doseInstanceId → não trata', async () => {
     const res = await handleAlarmAction(evt('dose-taken', {}))
     expect(res).toEqual({ handled: false })

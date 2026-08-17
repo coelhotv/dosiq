@@ -21,6 +21,7 @@ import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
+import { triggerAlarmResync } from './alarmResyncBus'
 
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
@@ -271,6 +272,17 @@ async function dispatchCanonicalAction(pressActionId, data) {
     }
 
     default: {
+      // 🔴 FR-006 pelo caminho PASSIVO. O nag para no cutoff `scheduledFor + tolerance`; num disparo
+      // ADIANTADO `now` está muito antes desse cutoff, então ignorar a notificação torta reagendava
+      // nag após nag — o alarme errado voltava a incomodar em loop ATÉ a hora real da dose. As guardas
+      // de ação e de takeover barram a escrita, mas não o incômodo: para a paciente, o defeito
+      // continuava acontecendo. Aqui o disparo torto morre em vez de se reagendar, e o resync
+      // reconstrói a agenda a partir do banco.
+      const early = await refuseIfOutOfWindow(data, 'nag')
+      if (early.outOfWindow) {
+        triggerAlarmResync()
+        return { handled: true, action: 'nag', refused: 'out_of_window' }
+      }
       // Sem ação explícita (descartada/ignorada) → nag reativo dentro da tolerância.
       await alarmService.scheduleNag({
         ...rescheduleBase(data),
