@@ -4,7 +4,7 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "idle",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
@@ -12,15 +12,15 @@
     "goal_type": "fix",
     "code_review": {
       "status": "issues_found_and_fixed",
-      "critical": 2,
-      "auto_fixed": 0,
+      "critical": 0,
+      "auto_fixed": 1,
       "ask_items": 0
     },
     "spec_dirs": [
       "plans/specs/067-critical-alarm-window-guard"
     ],
-    "merged_pr": 795,
-    "merged_squash": "ca673de6 (squash merge into main)",
+    "merged_pr": 796,
+    "merged_squash": "72653942 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -30,9 +30,18 @@
         "date": "2026-08-17",
         "base_branch": "main",
         "note": "Onda 0 item 0.1. skipped_user entra em VISIBLE_INSTANCE_STATUSES (core); web ganha STATUS_META.skipped_user + STATUS_DOT_ORDER + CSS do card e do dot; mobile já tinha render (era código morto). skipped_paused segue oculto. Aderência intocada (R-248). 6 arquivos, não 5: Calendar.css fora da spec. RC5 0 issues, RC6 (agy) 0 findings. PO-10/11/14 fechadas com smoke do PO nas 2 plataformas. AP-328 registrada. Follow-up declarado: dots do dia SELECIONADO perdem cor (.calendar-day.selected .log-dot) — pré-existente."
+      },
+      {
+        "pr": 796,
+        "squash": "72653942",
+        "spec": "067 A2 — guarda de janela bilateral + telemetria alarm_out_of_window + aviso informativo",
+        "tier": 2,
+        "date": "2026-08-17",
+        "base_branch": "main",
+        "note": "Piso early_window_minutes persistido (min(floor(0.25*menor gap),120), default 120) derivado no gerador; guarda bilateral em doseWindow.ts (modulo puro, quebra ciclo ESM alarmService<->staleDoseNotifications) aplicada em takeover, acoes, soneca e nag. SO o lado ADIANTADO recusa (RC5: recusar atrasado seria regressao — register_dose_atomic aceita missed). Evento novo alarm_out_of_window (CHECK 12->13 + Zod verbatim) com detail em allowlist FECHADA de 5 campos; REVOKE ALL FROM anon. Aviso informativo sem som/CTA, marcado por CONTEUDO (__outOfWindowNotice, AP-327), coalescido por dose. 3 migracoes aplicadas em prod antes do PR (preflight R-270). Backfill so de pendings FUTURAS (77 de 1308) — derivar piso de fato passado falsificaria fato datado (R-299). Smoke em moto g06/Android 15: PO-2/3/15/16 fechadas com evidencia colada. AP-329 (regen com > trunca arquivo versionado) e AP-330 (caminho fail-open transforma falha de persistencia em smoke verde) registradas. RC6 rodada 2x: a 1a cobriu 6/10 chunks e nao revisou outOfWindowNotice.ts; com RC6_MAX_CHUNKS=10 achou o furo REAL do scheduleNag (disparo adiantado ignorado reagendava nag em loop ate a hora da dose — guardas barravam a escrita, nao o incomodo). Corrigido + 2 testes. 2 findings refutados nas duas rodadas: parseISO->NaN (aceita string|number|Date e ha guarda Number.isNaN) e CHECK sem migracao (migracao esta no diff e aplicada; evento gravado no smoke prova a sincronia)."
       }
     ],
-    "previous_session_note": "067 A2 IMPLEMENTADO na branch fix/067-a2-guarda-janela-bilateral (commits f6a95a35 + a525fb92 RC5), NAO pushado — workflow: commits locais, push unico apos smoke aprovado. 3 migracoes JA APLICADAS em prod (early_window_minutes NOT NULL DEFAULT 120 + CHECK 0..120; alarm_out_of_window no CHECK + REVOKE anon; backfill de 77 pending futuras). POs fechadas: PO-1/4/5/12/13/SEC-3/SEC-4/SEC-5(parcial). PENDENTE: smoke em device (PO-2 caminho feliz, PO-3 evento com delta, PO-15 copy do aviso, PO-16 coalescencia) — exige REBUILD, nao reload de JS. Depois: gh pr create + RC6 (agy). Decisoes novas do PO: 10 (canal dose-activity-v1 + marcador por conteudo) e 11 (backfill so em pending futuras). RC5 achou 2 criticos meus: recusa no lado atrasado era regressao e telemetria de atrasado afogaria a US2 — os dois restritos a early. Proximo slice depois do A2: B (skip por RPC + REVOKE UPDATE(status)), ADR-092 ja accepted.",
+    "previous_session_note": "067 A2 MERGEADO (PR #796, squash 72653942). Slice seguinte: B (skip por RPC + REVOKE UPDATE(status)), ADR-092 accepted. Follow-ups declarados e NAO autorizados: (1) instancia orfa de agenda revogada — wipe de futuras pendings e best-effort silencioso, um alarme ja agendado no SO pode sobreviver (mesmo tratamento do clock drift RC3/F4); (2) protocols nao tem updated_at — sem trilha de quando a agenda foi editada; (3) dots do dia SELECIONADO perdem cor (herdado do A1). APRENDIZADO DE PROCESSO: RC6 com o cap default de 6 chunks gastou analise em _dev/testes e deixou o arquivo da allowlist de dado de saude sem revisao; RC6_MAX_CHUNKS=10 achou o defeito real. Considerar cap maior quando o diff revisavel for pequeno mas espalhado.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -77,7 +86,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 260,
     "anti_patterns_count": 324,
     "decisions_count": 92,
