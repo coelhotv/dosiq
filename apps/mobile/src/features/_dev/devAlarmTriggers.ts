@@ -119,6 +119,13 @@ const DEV_EARLY_WINDOW_MINUTES = 90
  * Usar a instância real também é o único jeito de exercer o `isDoseResolved` (FR-039), que com id
  * inexistente sempre caía no default "avisar" sem consultar coisa alguma.
  */
+/** Shape exato do SELECT abaixo — nomeado para o boundary do Supabase não entrar como `any`. */
+type PendingInstanceRow = {
+  id: string
+  scheduled_for: string
+  early_window_minutes: number | null
+}
+
 async function fetchRealPendingInstances(count: number): Promise<
   { id: string; scheduledFor: string; earlyWindowMinutes: number }[]
 > {
@@ -137,7 +144,7 @@ async function fetchRealPendingInstances(count: number): Promise<
         `Crie um tratamento crítico antes de rodar o smoke.`,
     )
   }
-  return data.map((row: any) => ({
+  return (data as PendingInstanceRow[]).map((row) => ({
     id: row.id,
     scheduledFor: row.scheduled_for,
     earlyWindowMinutes: row.early_window_minutes ?? DEV_EARLY_WINDOW_MINUTES,
