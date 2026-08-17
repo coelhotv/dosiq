@@ -10,13 +10,17 @@
 // categoria; a superfície iOS = Live Activity é encerrada à parte pelo DoseLiveActivityBridge/041).
 
 import notifee from '@notifee/react-native'
-import { parseISO, getRawNow } from '@dosiq/core'
+import { getRawNow } from '@dosiq/core'
 import { ALARM_CHANNEL_ID, ALARM_CRITICAL_CHANNEL_ID, cancelAlarm } from './alarmService'
 import { endDoseActivity, DOSE_ACTIVITY_CHANNEL_ID } from '@platform/doseActivity/doseActivitySurfaceService'
+// 067 A2: a regra da janela vive em `doseWindow` (módulo puro, sem dependência de app). Este arquivo
+// importa `alarmService` p/ cancelar, e o `alarmService` também precisa da guarda (FR-006) — manter a
+// regra aqui criaria um ciclo que em ESM resolve p/ `undefined` no caminho do alarme.
+import { evaluateDoseWindow, isDoseNotificationOutOfWindow, isOutOfWindowNotice } from './doseWindow'
 
-// Tolerância default da tomada (CON-026 — DEFAULT_TOLERANCE_MINUTES). Local p/ não acoplar ao service
-// do core; a janela real por-dose vem em data.toleranceMinutes quando presente.
-const DEFAULT_TOLERANCE_MINUTES = 120
+// Re-export: os consumidores históricos (e os testes) continuam importando daqui.
+export { evaluateDoseWindow, isDoseNotificationOutOfWindow, isOutOfWindowNotice }
+export { OUT_OF_WINDOW_NOTICE_FLAG } from './doseWindow'
 
 /** Notificação do canal/categoria de alarme (Android por canal; iOS por categoria). */
 export function isAlarmNotification(notification) {
@@ -36,20 +40,9 @@ export function isSurfaceNotification(notification) {
 }
 
 /**
- * Dose VELHA = janela de tomada já passou (scheduled + tolerância) → virou missed. Deriva do próprio
- * `data` (self-contained, sem fetch). Sem scheduledFor → não afirma (não mexe).
- */
-export function isDoseNotificationStale(data, now = getRawNow()) {
-  if (!data?.scheduledFor) return false
-  const scheduledMs = parseISO(data.scheduledFor).getTime()
-  if (Number.isNaN(scheduledMs)) return false
-  const raw = data.toleranceMinutes
-  const tol = raw != null && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : DEFAULT_TOLERANCE_MINUTES
-  return now.getTime() > scheduledMs + tol * 60000
-}
-
-/**
- * Varre as notificações exibidas e cancela toda notif de dose (alarme/nag/superfície) já vencida.
+ * Varre as notificações exibidas e cancela toda notif de dose (alarme/nag/superfície) FORA DA
+ * JANELA — vencida (comportamento original) **ou adiantada** (067 A2 / FR-004). Uma notificação
+ * adiantada presa na gaveta é um convite permanente a registrar a dose errada.
  * Roda no foreground/launch. Best-effort — nunca lança.
  */
 export async function reconcileStaleDoseNotifications(now = getRawNow()) {
@@ -66,8 +59,11 @@ export async function reconcileStaleDoseNotifications(now = getRawNow()) {
     const notification = item?.notification || item
     const data = notification?.data || {}
     if (!data.doseInstanceId) continue
+    // 067 A2: o aviso informativo vive no canal da superfície e carrega doseInstanceId — sem esta
+    // linha, ele cancelaria a si mesmo (é fora da janela por definição). Decisão 10 / AP-327.
+    if (isOutOfWindowNotice(notification)) continue
     if (!isAlarmNotification(notification) && !isSurfaceNotification(notification)) continue
-    if (!isDoseNotificationStale(data, now)) continue
+    if (!isDoseNotificationOutOfWindow(data, now)) continue
     promises.push(
       Promise.resolve(cancelAlarm(data.doseInstanceId)).catch(() => {}),
       Promise.resolve(endDoseActivity(data.doseInstanceId)).catch(() => {}),
@@ -92,7 +88,9 @@ export async function reconcileStaleDoseNotifications(now = getRawNow()) {
  * poste mais uma notificação reintroduz a condição.
  *
  * Critério: precisa carregar `doseInstanceId` (é o que distingue um alarme REAL de um agregado do
- * SO) e não pode estar vencida (dose velha vira P0001 ao tocar "Tomei" — ver `openAlarmScreen`).
+ * SO) e tem de estar DENTRO DA JANELA — 067 A2 (FR-003): antes bastava "não vencida", então um
+ * disparo adiantado era promovido a takeover e a paciente recebia a tela cheia de uma dose que só
+ * aconteceria horas depois. Agora vale o piso também, herdado de graça do ponto canônico.
  */
 export function pickPromotableAlarm(displayed, now = getRawNow()) {
   if (!Array.isArray(displayed)) return undefined
@@ -101,7 +99,9 @@ export function pickPromotableAlarm(displayed, now = getRawNow()) {
     .find(
       (n) =>
         isAlarmNotification(n) &&
+        // O aviso informativo não é alarme: nunca vira takeover (Decisão 10).
+        !isOutOfWindowNotice(n) &&
         Boolean(n?.data?.doseInstanceId) &&
-        !isDoseNotificationStale(n.data, now)
+        !isDoseNotificationOutOfWindow(n.data, now)
     )
 }

@@ -33,10 +33,11 @@ import { cancelAlarm } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
 import {
   isAlarmNotification,
-  isDoseNotificationStale,
   pickPromotableAlarm,
   reconcileStaleDoseNotifications,
 } from './staleDoseNotifications'
+import { evaluateDoseWindow } from './doseWindow'
+import { reportOutOfWindowAlarm, shouldDropOnRevokedConsent } from './outOfWindowNotice'
 
 // Auditoria de dose crítica (042 Slice B): no foreground, deriva o desfecho iOS (ENG-1 — iOS não
 // roda JS no disparo) e DRENA a fila offline (Android enfileira no headless). Fail-open total.
@@ -105,7 +106,24 @@ async function flushCriticalAudit(userId, consentSuppressed = false) {
       }
     }
     // Drena a fila: insere cada evento via o helper único (CON-031). Item só sai após insert OK.
-    await auditQueue.flush((evt) => auditEmitter.emit(evt as unknown as CriticalAuditEvent))
+    //
+    // 067 A2 (FR-035 / Decisão 8): a ANOMALIA de janela é a única classe que o consentimento
+    // revogado DESCARTA em vez de gravar. Ela coleta fabricante/modelo numa trilha de saúde (R-293),
+    // e o fail-open da FR-008 vale para falha de rede — nunca para ausência de base legal. O
+    // descarte mora AQUI, no flush, porque é onde o consentimento é legível: no headless a leitura é
+    // de rede e foreground-only, e não se coloca mecanismo novo no caminho mais frágil do app
+    // (precedente 065/D5). O evento fica horas no AsyncStorage e some sem virar linha.
+    //
+    // Os demais eventos seguem drenando pelo motivo já documentado acima (:79-82): JÁ ocorreram.
+    // O cancelamento do alarme é idêntico nos dois regimes — consentimento nunca deixa a paciente
+    // com um alarme errado tocando.
+    await auditQueue.flush((evt) => {
+      if (shouldDropOnRevokedConsent(evt, consentSuppressed)) {
+        // `true` = item consumido: sai da fila sem insert (descarte, não retry infinito).
+        return Promise.resolve(true)
+      }
+      return auditEmitter.emit(evt as unknown as CriticalAuditEvent)
+    })
   } catch (err) {
     if (__DEV__) console.warn('[AlarmSchedulerBridge] flush audit falhou', err?.message)
   }
@@ -143,11 +161,24 @@ function openAlarmScreen(notification) {
   if (!isAlarmNotification(notification)) return
   const data = notification.data || {}
   if (!data.doseInstanceId) return
-  // Alarme VELHO (dose fora da janela) NÃO deve promover a fullscreen — limpa e sai. Evita o takeover
-  // de uma dose missed que, ao tocar "Tomei", batia em P0001 ('já registrada ou indisponível').
-  if (isDoseNotificationStale(data, getRawNow())) {
+  // Dose FORA DA JANELA não promove a fullscreen — limpa e sai.
+  //  - atrasada (regime original): takeover de dose missed batia em P0001 ao tocar "Tomei";
+  //  - adiantada (067 A2 / FR-003): takeover de um disparo torto do SO, que foi como uma dose de
+  //    13:30 virou `skipped_user` às 09:47.
+  // O cancelamento vem PRIMEIRO e nunca depende do resto (FR-008): a telemetria e o aviso são
+  // best-effort, silenciar o alarme errado não é.
+  const verdict = evaluateDoseWindow(data, getRawNow())
+  if (verdict.outOfWindow) {
     cancelAlarm(data.doseInstanceId).catch(() => {})
     endDoseActivity(data.doseInstanceId).catch(() => {})
+    // Trilha (US2) + aviso à paciente (FR-019/Princípio IX): nunca silencioso. Fail-open total.
+    //
+    // 🔴 Só o lado ADIANTADO é ANOMALIA. Esta função roda na PROMOÇÃO (foreground), não no disparo:
+    // uma notificação atrasada aqui é o caso banal de "ficou na gaveta e o app abriu horas depois",
+    // que a reconciliação sempre cancelou em silêncio. Reportá-la encheria a trilha de expiração
+    // normal e afogaria o sinal que a US2 quer medir (disparo torto do SO), além de avisar
+    // "o alarme tocou fora de hora" sobre algo que não foi disparo nenhum.
+    if (verdict.direction === 'early') reportOutOfWindowAlarm({ data, ...verdict }).catch(() => {})
     return
   }
   const navigate = () => {
@@ -168,6 +199,7 @@ function openAlarmScreen(notification) {
       scheduledTime: data.scheduledTime,
       scheduledFor: data.scheduledFor,
       toleranceMinutes: data.toleranceMinutes,
+      earlyWindowMinutes: data.earlyWindowMinutes, // 067 A2: o takeover herda a janela completa
       snoozeAttempt: data.snoozeAttempt,
       isCritical: data.isCritical,
       isGrouped: data.isGrouped,
@@ -249,7 +281,7 @@ export default function AlarmSchedulerBridge() {
   }, [])
 
   // Cold launch pela notificação (app estava morto). Ação "Registrar" da superfície (canal
-  // dose-activity-v1) NÃO é alarme → openAlarmScreen a ignora; precisa ir pra handleAlarmAction
+  // dose-activity-v2) NÃO é alarme → openAlarmScreen a ignora; precisa ir pra handleAlarmAction
   // (abre a modal bulk). Tap no corpo / alarme → tela cheia. Guard p/ rodar 1x por ciclo de vida.
   useEffect(() => {
     if (coldStartHandled.current) return

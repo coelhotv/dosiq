@@ -10,7 +10,15 @@ import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 import { colors, spacing } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { devFireAlarmNow, devScheduleAlarmIn, devClearAlarms } from '../devAlarmTriggers'
+import {
+  devFireAlarmNow,
+  devScheduleAlarmIn,
+  devClearAlarms,
+  devFireEarlyAlarm,
+  devFireEarlyAlarmBurst,
+  devFireEarlyAlarmTwoDoses,
+  devClearEarlyAlarms,
+} from '../devAlarmTriggers'
 import {
   devDoseSpikeUpcoming,
   devDoseSpikeLate,
@@ -34,6 +42,15 @@ function runTitrationTrigger(fn: () => Promise<unknown>, okMsg: string) {
   fn()
     .then(() => Alert.alert('Dev — Evolução', `${okMsg}.\n\nReabra a aba Hoje para ver.`))
     .catch((err) => Alert.alert('Dev — Evolução', err?.message ?? 'Falhou.'))
+}
+
+/**
+ * Gatilhos da 067 A2 falham por PRÉ-CONDIÇÃO (sem dose pending crítica, dose perto demais pra estar
+ * fora da janela). Engolir isso numa promise solta faria o smoke parecer "nada aconteceu" quando na
+ * verdade nem chegou a disparar — o mesmo silêncio que a spec está corrigindo.
+ */
+function runEarly(fn: () => Promise<unknown>) {
+  fn().catch((err) => Alert.alert('Dev — Guarda 067', err?.message ?? 'Falhou.'))
 }
 
 function DevAlarmSection() {
@@ -69,6 +86,53 @@ function DevAlarmSection() {
       </TouchableOpacity>
       <Text style={styles.note}>
         Tomei/Pular usam id sentinela → o registro falha de propósito. Foco: apresentação.
+      </Text>
+
+      <Text style={styles.sectionTitle}>Spec 067 A2 — Guarda de janela</Text>
+      <Text style={styles.note}>
+        Usa uma dose pending crítica REAL do banco: a trilha grava `uuid`, e id sentinela faria o
+        insert falhar em silêncio (fail-open da FR-008) com o smoke parecendo verde.
+      </Text>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          runEarly(devFireEarlyAlarm)
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>🚨 Disparo ADIANTADO 3h37 (PO-3/PO-15)</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          runEarly(() => devFireEarlyAlarmBurst(3))
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>🔁 3 disparos na MESMA dose (PO-16 → 1 aviso)</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          runEarly(devFireEarlyAlarmTwoDoses)
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>👯 2 doses distintas (guard PO-16 → 2 avisos)</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          runEarly(devClearEarlyAlarms)
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>🧹 Limpar disparos adiantados + avisos</Text>
+      </TouchableOpacity>
+      <Text style={styles.note}>
+        Estes NÃO mandam `__dev`: a guarda roda de verdade. Esperado — takeover não abre, alarme é
+        cancelado, evento `alarm_out_of_window` na trilha e aviso "Alarme fora de hora" sem som.
+        Tocar "Tomei"/"Pular" deve ser RECUSADO.
       </Text>
     </View>
   )

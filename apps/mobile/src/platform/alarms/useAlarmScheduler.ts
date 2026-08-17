@@ -115,6 +115,8 @@ function buildGroupedDose(it) {
     treatmentPlanName: it.treatmentPlanName,
     scheduledTime: it.scheduledTime,
     toleranceMinutes: it.toleranceMinutes,
+    // 067 A2: piso da janela viaja no payload agrupado também (a guarda vale p/ o lote).
+    earlyWindowMinutes: it.earlyWindowMinutes,
   }
 }
 
@@ -142,6 +144,7 @@ async function _scheduleSnoozedAlarms(snoozed: any[]) {
       medicineName: it.medicineName,
       scheduledFor: it.scheduledFor,
       toleranceMinutes: it.toleranceMinutes,
+      earlyWindowMinutes: it.earlyWindowMinutes, // 067 A2 (FR-024): o client lê, nunca recalcula
       isCritical: it.critical,
       data: buildSingleAlarmData(it),
       fireAt: it.snoozeFireAt,
@@ -196,6 +199,7 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
         medicineName: it.medicineName,
         scheduledFor: it.scheduledFor, // F: instante absoluto
         toleranceMinutes: it.toleranceMinutes, // D: cutoff dinâmico
+        earlyWindowMinutes: it.earlyWindowMinutes, // 067 A2 (FR-024): piso da janela
         isCritical: it.critical,
         data: buildSingleAlarmData(it),
       })
@@ -205,12 +209,17 @@ export async function syncAlarms({ userId, protocols, tz }: any) {
       const doseInstanceIds = groupItems.map((it) => it.instanceId).join(',')
       const groupedDoses = groupItems.map(buildGroupedDose)
       const maxTolerance = Math.max(...groupItems.map((it) => it.toleranceMinutes ?? 120))
+      // 067 A2: no grupo, o piso é o MAIOR dos pisos — espelha o `maxTolerance` acima e mantém a
+      // janela do grupo como UNIÃO das janelas individuais. Usar o MENOR barraria um disparo que é
+      // legítimo para a dose mais folgada do lote, e a recusa é por lote (FR-005 emendada).
+      const maxEarlyWindow = Math.max(...groupItems.map((it) => it.earlyWindowMinutes ?? 120))
 
       await alarmService.scheduleAlarm({
         doseInstanceId: String(ts),
         medicineName: '', // Nome vazio sinaliza agrupamento no alarme local
         scheduledFor: first.scheduledFor,
         toleranceMinutes: maxTolerance,
+        earlyWindowMinutes: maxEarlyWindow,
         isCritical: groupItems.some((it) => it.critical),
         data: {
           isGrouped: 'true',

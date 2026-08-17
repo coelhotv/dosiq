@@ -43,7 +43,7 @@ const PAGE_SIZE = 1000
  */
 const WINDOW_SELECT = `
   id, user_id, protocol_id, medicine_id, scheduled_for, expected_dose, status,
-  medicine_log_id, tolerance_minutes, notified_at, snoozed_until, created_at,
+  medicine_log_id, tolerance_minutes, early_window_minutes, notified_at, snoozed_until, created_at,
   critical_alarm, la_push_started_at, la_push_token, la_push_state,
   medicine:medicines(id, name, type, presentation, dosage_per_pill, dosage_unit,
                      concentration_volume_ml, units_per_ml)

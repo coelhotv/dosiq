@@ -32,6 +32,13 @@ jest.mock('@navigation/navigationRef', () => ({
 }))
 jest.mock('@navigation/routes', () => ({ ROUTES: { TODAY: 'Hoje' } }))
 
+// 067 A2: a trilha/aviso da anomalia é efeito colateral fail-open — mockada p/ asserir que foi
+// chamada sem arrastar notifee/expo-device/supabase reais para dentro deste teste.
+const mockReportOutOfWindow = jest.fn((..._a: any[]) => Promise.resolve({ tracked: true, notified: true }))
+jest.mock('../outOfWindowNotice', () => ({
+  reportOutOfWindowAlarm: (...a: any[]) => mockReportOutOfWindow(...a),
+}))
+
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
@@ -165,5 +172,99 @@ describe('cancela o alarme ANTES de registrar (silencia já)', () => {
     expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
     expect(mockFrom).not.toHaveBeenCalled()
     expect(res).toEqual({ success: true, dev: true })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 067 A2 (FR-005 / PO-1) — o funil de registro RECUSA fora da janela.
+//
+// É a última barreira antes da escrita clínica: as ações da NOTIFICAÇÃO não passam pelo
+// `openAlarmScreen`, então sem esta guarda um disparo torto continua virando dose registrada —
+// exatamente o caminho que destruiu a dose de 13:30 do incidente de 2026-08-14.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('067 A2 — recusa de registro fora da janela', () => {
+  const iso = (min: number) => new Date(Date.now() + min * 60000).toISOString()
+  // Dose 3h37 no futuro, piso de 90min (protocolo 6/6h): o alarme não é desta dose.
+  const ADIANTADA = { ...BASE, scheduledFor: iso(217), earlyWindowMinutes: '90' }
+  const DENTRO = { ...BASE, scheduledFor: iso(-5), earlyWindowMinutes: '90' }
+
+  it('🔴 "Pular" fora da janela NÃO grava skipped_user (a transição do incidente)', async () => {
+    const res = await registerSkip(ADIANTADA)
+    expect(mockFrom).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(res).toMatchObject({ success: false, refused: 'out_of_window', direction: 'early' })
+    // Princípio IX: motivo legível, nunca "nada aconteceu".
+    expect(String((res as { message?: string }).message)).toMatch(/fora do horário/i)
+  })
+
+  it('🔴 "Tomei" fora da janela NÃO chama registerDose', async () => {
+    const res = await registerTaken(ADIANTADA)
+    expect(mockRegisterDose).not.toHaveBeenCalled()
+    expect(res).toMatchObject({ success: false, refused: 'out_of_window' })
+  })
+
+  it('recusa AINDA silencia o alarme — a paciente agiu, o som tem de parar', async () => {
+    await registerSkip(ADIANTADA)
+    expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
+  })
+
+  it('recusa emite trilha + aviso (fail-open, nunca silenciosa)', async () => {
+    await registerSkip(ADIANTADA)
+    expect(mockReportOutOfWindow).toHaveBeenCalledTimes(1)
+    const [arg] = mockReportOutOfWindow.mock.calls[0] as unknown as [any]
+    expect(arg.direction).toBe('early')
+    expect(arg.deltaSeconds).toBeLessThan(0) // negativo = adiantado
+  })
+
+  it('LOTE agrupado é recusado INTEIRO — meio registro é pior que nenhum', async () => {
+    const grouped = {
+      ...ADIANTADA,
+      isGrouped: 'true',
+      groupedDoses: JSON.stringify([
+        { instanceId: 'i1', medicineId: 'm1', dosagePerIntake: 1 },
+        { instanceId: 'i2', medicineId: 'm2', dosagePerIntake: 2 },
+      ]),
+    }
+    const res = await registerSkip(grouped)
+    expect(mockFrom).not.toHaveBeenCalled()
+    expect(res).toMatchObject({ refused: 'out_of_window' })
+    await registerTaken(grouped)
+    expect(mockRegisterDose).not.toHaveBeenCalled()
+  })
+
+  it('DENTRO da janela o fluxo segue idêntico (não-regressão do caminho feliz)', async () => {
+    const res = await registerSkip(DENTRO)
+    expect(mockFrom).toHaveBeenCalledWith('dose_instances')
+    expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped_user' })
+    expect(res).toEqual({ success: true })
+    expect(mockReportOutOfWindow).not.toHaveBeenCalled()
+  })
+
+  it('payload SEM scheduledFor não afirma nada — registro segue funcionando', async () => {
+    // Notificação legada/sem horário: a guarda não pode inventar recusa (ficaria impossível
+    // registrar dose em payload antigo).
+    const res = await registerTaken(BASE)
+    expect(mockRegisterDose).toHaveBeenCalledTimes(1)
+    expect(res).toEqual({ success: true })
+  })
+
+  it('🔴 dose ATRASADA (missed) continua registrável — recusar seria regressão, não guarda', async () => {
+    // `register_dose_atomic` aceita ancorar instância `missed` de propósito
+    // (`status IN ('pending','missed','skipped_user')`). Quem vê o alarme 3h depois e toca "Tomei"
+    // REALMENTE tomou a dose: bloquear deixaria uma dose tomada fora do registro clínico — o oposto
+    // do objetivo da spec. O lado atrasado é tratado pelo cancelamento da notificação vencida e,
+    // no Slice B, pela regra do instante DECLARADO no banco.
+    const ATRASADA = { ...BASE, scheduledFor: iso(-300), toleranceMinutes: '120', earlyWindowMinutes: '90' }
+    const res = await registerTaken(ATRASADA)
+    expect(mockRegisterDose).toHaveBeenCalledTimes(1)
+    expect(res).toEqual({ success: true })
+    // E não gera telemetria de anomalia: expiração normal não é disparo torto.
+    expect(mockReportOutOfWindow).not.toHaveBeenCalled()
+  })
+
+  it('smoke do DevHub (__dev) continua curto-circuitando antes da guarda', async () => {
+    const res = await registerSkip({ ...ADIANTADA, __dev: true })
+    expect(res).toEqual({ success: true, dev: true })
+    expect(mockReportOutOfWindow).not.toHaveBeenCalled()
   })
 })
