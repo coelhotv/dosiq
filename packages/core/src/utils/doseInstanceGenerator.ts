@@ -51,6 +51,12 @@ type GeneratedInstance = {
   scheduled_for: string
   expected_dose: number
   tolerance_minutes: number
+  /**
+   * 067 A2 (FR-024): PISO da janela — quantos minutos ANTES de `scheduled_for` a dose já pode ser
+   * registrada. Irmão de `tolerance_minutes` (que é o teto), derivado no MESMO lugar e na mesma
+   * materialização. O client só LÊ; recalcular no device é proibido (Decisão 6).
+   */
+  early_window_minutes: number
   critical_alarm: boolean
   /** 052: medicamento congelado na instância — irmão de `expected_dose`. */
   medicine_id: string | null
@@ -76,6 +82,19 @@ const PRN_FREQUENCIES = new Set(['quando_necessário', 'when_needed', 'prn'])
 const DAILY_FREQUENCIES = new Set(['diário', 'diariamente', 'daily'])
 
 const MAX_TOLERANCE_MINUTES = 120
+
+/**
+ * 067 A2 (FR-024 / Decisão 5): fração do intervalo entre doses que define o PISO da janela —
+ * quanto ANTES do horário previsto um alarme/registro ainda é considerado legítimo.
+ *
+ * 🔴 Constante em UM lugar só, de propósito. Apertar a guarda no futuro significa BAIXAR esta
+ * fração (com dado da telemetria da US2 na mão), **nunca** mexer no teto de 120: o teto é o que
+ * garante que 12/12h e semanal não ganhem janelas de dias.
+ *
+ * Assimetria com o teto é deliberada: −piso é "adiantado demais para ser esta dose" (defeito do
+ * sistema), +tolerância é "atrasado, mas ainda é esta dose" (vida real da paciente).
+ */
+const EARLY_WINDOW_FRACTION = 0.25
 
 /**
  * Período (minutos) entre ocorrências por frequência — base da tolerância
@@ -119,18 +138,45 @@ function timeToMinutes(time: string): number | null {
  *   3,5 dias). Diário mantém cap 120 (semântica de adesão do público 1×/dia).
  * - Frequência sem período mapeado (personalizado etc.): 120 fixo (§6 MASTER_PLAN).
  *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 067 A2 (FR-024): a MESMA passagem passa a derivar o PISO da janela
+ * (`earlyWindow`), porque é aqui que o intervalo entre doses existe. No instante do alarme o
+ * device tem só o payload da notificação — não tem o `time_schedule` — então recalcular lá
+ * exigiria uma segunda cópia desta matemática no caminho mais frágil do app (headless/cold
+ * start). O piso é persistido em `dose_instances.early_window_minutes` e o client só lê.
+ *
+ * `earlyWindow = min(EARLY_WINDOW_FRACTION × menor gap adjacente, 120)`, com o teto valendo para
+ * TODA frequência — inclusive semanal, cuja *tolerância* segue sem teto (ADR-061). Não é
+ * contradição: um piso de 3,5 dias transformaria "adiantado" em qualquer coisa, enquanto uma
+ * tolerância de 3,5 dias é perdão clínico real de GLP-1.
+ *
+ * ⚠️ `tolerance` sai BYTE-IDÊNTICA ao comportamento anterior — a mudança é puramente aditiva
+ * (PO-12 assere isso caso a caso).
+ *
  * @param {number[]} sortedMinutes - minutos dos slots, ordenados ascendente
  * @param {string} frequency - frequência normalizada (lowercase) do protocolo
- * @returns {number[]} tolerância por slot (mesma ordem de sortedMinutes)
+ * @returns {{tolerance: number, earlyWindow: number}[]} janela por slot (ordem de sortedMinutes)
  */
-function computeTolerances(sortedMinutes: number[], frequency: string): number[] {
+function computeTolerances(
+  sortedMinutes: number[],
+  frequency: string
+): { tolerance: number; earlyWindow: number }[] {
   const isDaily = DAILY_FREQUENCIES.has(frequency)
   const periodMinutes = isDaily ? 1440 : FREQUENCY_PERIOD_MINUTES[frequency]
-  // Sem período conhecido (personalizado etc.): comportamento legado, 120 fixo.
-  if (!periodMinutes) return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
+  // Sem período conhecido (personalizado, PRN materializado por edição de frequência — ver
+  // FR-025 emendada): comportamento legado, 120 fixo nos DOIS lados da janela.
+  if (!periodMinutes) {
+    return sortedMinutes.map(() => ({
+      tolerance: MAX_TOLERANCE_MINUTES,
+      earlyWindow: MAX_TOLERANCE_MINUTES,
+    }))
+  }
   // Diário de dose única: legado (120) — só multi-dose tem gap intra-dia.
   if (isDaily && sortedMinutes.length < 2) {
-    return sortedMinutes.map(() => MAX_TOLERANCE_MINUTES)
+    return sortedMinutes.map(() => ({
+      tolerance: MAX_TOLERANCE_MINUTES,
+      earlyWindow: MAX_TOLERANCE_MINUTES,
+    }))
   }
   const len = sortedMinutes.length
   return sortedMinutes.map((minute: number, i: number) => {
@@ -144,8 +190,15 @@ function computeTolerances(sortedMinutes: number[], frequency: string): number[]
       : (periodMinutes - minute) + sortedMinutes[0]
     const smallestAdjacent = Math.min(prevGap, nextGap)
     const half = Math.floor(smallestAdjacent / 2)
-    // Teto de 120 SÓ no diário (ADR-061: não-diário sem cap).
-    return isDaily ? Math.min(half, MAX_TOLERANCE_MINUTES) : half
+    return {
+      // Teto de 120 SÓ no diário (ADR-061: não-diário sem cap).
+      tolerance: isDaily ? Math.min(half, MAX_TOLERANCE_MINUTES) : half,
+      // Piso: teto de 120 em TODA frequência (Decisão 6 / RC3-F1).
+      earlyWindow: Math.min(
+        Math.floor(EARLY_WINDOW_FRACTION * smallestAdjacent),
+        MAX_TOLERANCE_MINUTES
+      ),
+    }
   })
 }
 
@@ -236,7 +289,8 @@ export function generateInstances(
     .sort((a, b) => a.minutes - b.minutes)
   if (slots.length === 0) return []
 
-  const tolerances = computeTolerances(slots.map((s) => s.minutes), frequency)
+  // 067 A2: `windows[i]` = { tolerance (teto), earlyWindow (piso) } do slot i.
+  const windows = computeTolerances(slots.map((s) => s.minutes), frequency)
 
   const instances: GeneratedInstance[] = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {
@@ -265,7 +319,9 @@ export function generateInstances(
         // Fallback ao protocolo cobre os dois casos legítimos sem escada regendo a data:
         // tratamento normal (sem titulação) e etapa contínua/manutenção.
         medicine_id: titrationStage?.medicine_id ?? protocol.medicine_id ?? null,
-        tolerance_minutes: tolerances[i],
+        tolerance_minutes: windows[i].tolerance,
+        // 067 A2 (FR-024): piso persistido ao lado do teto, pela MESMA derivação.
+        early_window_minutes: windows[i].earlyWindow,
         critical_alarm: protocol.critical_alarm ?? false,
       })
     })

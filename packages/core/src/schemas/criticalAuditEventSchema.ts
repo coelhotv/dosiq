@@ -29,6 +29,14 @@ export const CRITICAL_AUDIT_EVENTS = [
   // a transição é do TRATAMENTO, não de uma ocorrência de dose. Emitido pela RPC
   // `confirm_titration_switch` (actor 'user') e pelo motor do cron (actor 'system').
   'titration_transitioned',
+  // 067 A2 (FR-007): a guarda bilateral de janela barrou um disparo — `detail` é ALLOWLIST FECHADA
+  // (`delta_seconds`, `direction`, `manufacturer`, `model`, `os_version` — FR-036), nunca o payload
+  // da notificação, que carrega nome e dosagem do medicamento. Emitido pelo device
+  // (`outOfWindowNotice.reportOutOfWindowAlarm`) e DESCARTADO no flush quando o consentimento está
+  // revogado (FR-035): trilha de saúde não se coleta sem base legal, e o fail-open da FR-008 vale
+  // só p/ falha de rede. Enquanto o Slice C não fecha, a métrica é confiável só em Android (FR-009 —
+  // iOS deriva o instante no foreground, AP-257).
+  'alarm_out_of_window',
 ]
 
 export const CRITICAL_AUDIT_PLATFORMS = ['ios', 'android', 'server']

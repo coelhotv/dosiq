@@ -4,15 +4,15 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "coding",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 A1 entregue; próximo slice A2 (guarda early_window_minutes + telemetria) aguardando instrução",
+    "goal": "067 A2 — guarda de janela bilateral (piso early_window_minutes + teto) + telemetria alarm_out_of_window + notificação informativa",
     "goal_type": "fix",
     "code_review": {
-      "status": "merged",
-      "critical": 0,
+      "status": "issues_found_and_fixed",
+      "critical": 2,
       "auto_fixed": 0,
       "ask_items": 0
     },
@@ -32,7 +32,7 @@
         "note": "Onda 0 item 0.1. skipped_user entra em VISIBLE_INSTANCE_STATUSES (core); web ganha STATUS_META.skipped_user + STATUS_DOT_ORDER + CSS do card e do dot; mobile já tinha render (era código morto). skipped_paused segue oculto. Aderência intocada (R-248). 6 arquivos, não 5: Calendar.css fora da spec. RC5 0 issues, RC6 (agy) 0 findings. PO-10/11/14 fechadas com smoke do PO nas 2 plataformas. AP-328 registrada. Follow-up declarado: dots do dia SELECIONADO perdem cor (.calendar-day.selected .log-dot) — pré-existente."
       }
     ],
-    "previous_session_note": "067 A1 MERGEADO (#795, squash ca673de6, 2026-08-17). Próximo da Onda 0 = 0.2 = 067 A2 (coluna early_window_minutes NOT NULL DEFAULT 120 no MESMO computeTolerances, guarda bilateral em isDoseNotificationOutOfWindow, telemetria alarm_out_of_window com gate de consentimento no FLUSH, notificação informativa em canal EXISTENTE — R-261). ADR-092 accepted desbloqueia o Slice B. 065 analytics segue parqueada em 'planned'.",
+    "previous_session_note": "067 A2 IMPLEMENTADO na branch fix/067-a2-guarda-janela-bilateral (commits f6a95a35 + a525fb92 RC5), NAO pushado — workflow: commits locais, push unico apos smoke aprovado. 3 migracoes JA APLICADAS em prod (early_window_minutes NOT NULL DEFAULT 120 + CHECK 0..120; alarm_out_of_window no CHECK + REVOKE anon; backfill de 77 pending futuras). POs fechadas: PO-1/4/5/12/13/SEC-3/SEC-4/SEC-5(parcial). PENDENTE: smoke em device (PO-2 caminho feliz, PO-3 evento com delta, PO-15 copy do aviso, PO-16 coalescencia) — exige REBUILD, nao reload de JS. Depois: gh pr create + RC6 (agy). Decisoes novas do PO: 10 (canal dose-activity-v1 + marcador por conteudo) e 11 (backfill so em pending futuras). RC5 achou 2 criticos meus: recusa no lado atrasado era regressao e telemetria de atrasado afogaria a US2 — os dois restritos a early. Proximo slice depois do A2: B (skip por RPC + REVOKE UPDATE(status)), ADR-092 ja accepted.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -68,16 +68,18 @@
       "PO 2026-08-14 (067 RC-SEC/RC2): 3 decisoes. D7 (S-2) — a guarda vira PRIVILEGIO: REVOKE UPDATE(status) de authenticated (por COLUNA, la_push_* seguem) E markSkippedPaused/reactivateFuturePaused (pausar/retomar tratamento, createProtocolRepository.ts:57,73) MIGRAM PRA RPC NO MESMO PR; sem isso pausa/retomada quebra em prod. Slice B ~5->~8 arquivos; se estourar no C1, fatiar B1(RPC skip+posse+janela) -> B2(REVOKE+migracao), nessa ordem. D8 (S-3) — SEM CONSENTIMENTO NAO GRAVA: emissao da anomalia passa pelo gate R-293, fail-open vale so p/ falha de rede; detail vira allowlist fechada (delta_seconds/direction/manufacturer/model/os_version); alarme cancelado igual nos dois regimes; custo aceito = cegueira na medicao p/ quem revogou (~17% da amostra de 6 usuarios). D9 (D-3) — copy aprovado SEM o horario do disparo torto: 'O alarme de {Med} tocou fora do horario e nada foi registrado. Sua dose e as {HH:mm} — vamos avisar de novo no horario certo.'; delta fica so na telemetria. Absorvidos: FR-028..FR-039 novas, SC-008 emendada, SC-009 nova, A1 3->5 arquivos (FR-037 web: DoseEventCard/HealthHistory, senao dose pulada aparece como 'Pendente').",
       "PLANNING 067 (2026-08-14): plan.md + tasks.md (64 tasks, 4 PRs). Clarification P1.5 respondida pelo PO: gate de consentimento da anomalia incide no FLUSH (AlarmSchedulerBridge.tsx:75 ja recebe consentSuppressed) e nao no headless — beacon enfileira normal, flush descarta alarm_out_of_window quando revogado; zero mecanismo novo no caminho headless (precedente 065/D5). Reforco ja existente: consentimento revogado faz isAlarmEnabled=false (AlarmSchedulerBridge.tsx:325), entao anomalia so vem de trigger zumbi. DECISAO DE FORMA DA COLUNA: early_window_minutes nasce INTEGER NOT NULL DEFAULT 120 (espelha tolerance_minutes, verificado no banco) => nao existe estado com piso nulo, fast default preenche toda linha materializada, backfill vira REFINO (120 -> valor calculado abaixo de 8/8h) em vez de preenchimento de NULL; resolve S-5 por construcao (FR-032 fica so no client, onde payload antigo pode chegar sem o campo). ADR-092 PROPOSED (escrita de dose_instances.status so por RPC; guarda e privilegio, nao convencao) — exige OK do PO antes do C3 do Slice B. CON-026 e CON-031 estendidas (aditivo); CON-024 declarada INTOCADA (FR-027). Renomear isDoseNotificationStale -> isDoseNotificationOutOfWindow (stale='vencida' e o call site de openAlarmScreen:146 se apoia nessa semantica). Fracao 0.25 confirmada pela tabela da PO-12."
     ],
-    "branch": "main",
-    "blocked_on": [],
+    "branch": "fix/067-a2-guarda-janela-bilateral",
+    "blocked_on": [
+      "smoke do PO em device Android (COM REBUILD — AP-318) p/ fechar PO-2, PO-3, PO-15, PO-16 antes do gh pr create"
+    ],
     "plan": "plans/specs/067-critical-alarm-window-guard/plan.md",
     "tasks": "plans/specs/067-critical-alarm-window-guard/tasks.md"
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 6,
     "rules_count": 260,
-    "anti_patterns_count": 323,
+    "anti_patterns_count": 324,
     "decisions_count": 92,
     "contracts_count": 32,
     "distillation_due": false
@@ -87,7 +89,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-15T21:35:00Z"
+    "index_loaded_at": "2026-08-17T16:00:00Z"
   },
   "code_review": {
     "status": "clean",

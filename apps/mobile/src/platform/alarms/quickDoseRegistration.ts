@@ -19,6 +19,9 @@ import { alarmService, ALARM_ACTION } from './alarmService'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
+import { evaluateDoseWindow } from './doseWindow'
+import { reportOutOfWindowAlarm } from './outOfWindowNotice'
+import { triggerAlarmResync } from './alarmResyncBus'
 
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
@@ -33,6 +36,55 @@ async function invalidate(keys) {
 }
 
 /**
+ * 067 A2 (FR-005) — última barreira antes da escrita clínica.
+ *
+ * A guarda de `openAlarmScreen`/`pickPromotableAlarm` impede a tela cheia de abrir, mas as ações da
+ * NOTIFICAÇÃO ("Tomei"/"Pular") não passam por lá: o handler do Notifee chama direto. Foi por esse
+ * caminho que a dose de 13:30 virou `skipped_user` às 09:47. Recusar aqui cobre também o
+ * `AlarmFullScreen`, que importa estas mesmas funções (RC3/F5 — funil único), sem guard duplicado.
+ *
+ * Vale para o LOTE inteiro no caso agrupado: meio registro é pior que nenhum, porque a paciente
+ * acredita que o conjunto foi tratado.
+ *
+ * Cancela o alarme mesmo recusando (o som tem de parar — a paciente agiu) e nunca fica silencioso:
+ * trilha + aviso informativo dizem o que aconteceu (Constituição §IX).
+ *
+ * @returns {{outOfWindow: boolean, result?: object}} `result` presente ⇒ o caller deve retorná-lo
+ * @private
+ */
+async function refuseIfOutOfWindow(data, action) {
+  const verdict = evaluateDoseWindow(data, getRawNow())
+  // 🔴 SÓ o lado ADIANTADO recusa. Recusar o atrasado seria REGRESSÃO, não guarda:
+  // `register_dose_atomic` aceita ancorar instância `missed` de propósito
+  // (`status IN ('pending','missed','skipped_user')`), então tocar "Tomei" num alarme visto 3h
+  // depois registra a dose hoje — e a paciente REALMENTE tomou. Bloquear isso deixaria uma dose
+  // tomada fora do registro, que é o oposto do objetivo clínico desta spec.
+  // O lado atrasado é tratado onde sempre foi: cancelamento da notificação vencida
+  // (`reconcileStaleDoseNotifications`) e, no Slice B, pela regra do INSTANTE DECLARADO no banco
+  // (FR-010/Decisão 2) — que distingue "editei o histórico" de "o alarme mentiu".
+  if (!verdict.outOfWindow || verdict.direction !== 'early') return { outOfWindow: false }
+  reportOutOfWindowAlarm({ data, ...verdict }).catch(() => {})
+  if (__DEV__) {
+    console.warn(
+      `[quickDoseRegistration] ${action} recusado: dose fora da janela`,
+      verdict.direction,
+      verdict.deltaSeconds
+    )
+  }
+  return {
+    outOfWindow: true,
+    result: {
+      success: false,
+      refused: 'out_of_window',
+      direction: verdict.direction,
+      // Motivo legível p/ quem exibe (AlarmFullScreen) — nunca "nada aconteceu" (Princípio IX).
+      message:
+        'Este alarme tocou fora do horário da dose. Nada foi registrado — vamos avisar de novo no horário certo.',
+    },
+  }
+}
+
+/**
  * Registra a tomada pela via canônica (medicine_log → consume_stock_fifo → âncora).
  * Reutilizado pelo handler de notificação E pela tela AlarmFullScreen.
  * @param {object} data - { doseInstanceId, protocolId, medicineId, quantityTaken }
@@ -43,6 +95,10 @@ export async function registerTaken(data) {
   // Silenciar PRIMEIRO: o usuário agiu — para o som/notif na hora.
   await alarmService.cancelAlarm(doseInstanceId)
   if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
+
+  // 067 A2 (FR-005): fora da janela não vira registro clínico — vale p/ o lote no agrupado.
+  const guard = await refuseIfOutOfWindow(data, 'registerTaken')
+  if (guard.outOfWindow) return guard.result
 
   if (isGrouped === 'true' && groupedDoses) {
     let doses = []
@@ -98,6 +154,12 @@ export async function registerSkip(data) {
   await alarmService.cancelAlarm(doseInstanceId) // silencia primeiro
   if (data.__dev) return { success: true, dev: true } // smoke do DevHub: sem DB
 
+  // 067 A2 (FR-005): o skip é a transição que destruiu a dose do incidente — grava fato clínico sem
+  // declarar a que instante se refere (a fronteira que o Slice B fecha no banco). Aqui, no client, a
+  // recusa fora da janela é o que impede um disparo torto de virar `skipped_user`.
+  const guard = await refuseIfOutOfWindow(data, 'registerSkip')
+  if (guard.outOfWindow) return guard.result
+
   if (isGrouped === 'true' && groupedDoses) {
     let doses = []
     try {
@@ -129,13 +191,15 @@ export async function registerSkip(data) {
 // tolerância dinâmica, mesmo payload de re-registro. Extraído pra manter
 // handleAlarmAction abaixo do teto de complexidade (R-? lint).
 function rescheduleBase(data) {
-  const { doseInstanceId, toleranceMinutes, isCritical } = data
+  const { doseInstanceId, toleranceMinutes, earlyWindowMinutes, isCritical } = data
   const isCrit = isCritical === 'true' || isCritical === true
   return {
     doseInstanceId,
     medicineName: data.medicineName || '',
     scheduledFor: data.scheduledFor,
     toleranceMinutes: toleranceMinutes != null ? Number(toleranceMinutes) : null,
+    // 067 A2: soneca e nag herdam o piso — sem isto o re-agendamento perderia a guarda (FR-006).
+    earlyWindowMinutes: earlyWindowMinutes != null ? Number(earlyWindowMinutes) : null,
     isCritical: isCrit,
     data: { ...data },
   }
@@ -208,6 +272,17 @@ async function dispatchCanonicalAction(pressActionId, data) {
     }
 
     default: {
+      // 🔴 FR-006 pelo caminho PASSIVO. O nag para no cutoff `scheduledFor + tolerance`; num disparo
+      // ADIANTADO `now` está muito antes desse cutoff, então ignorar a notificação torta reagendava
+      // nag após nag — o alarme errado voltava a incomodar em loop ATÉ a hora real da dose. As guardas
+      // de ação e de takeover barram a escrita, mas não o incômodo: para a paciente, o defeito
+      // continuava acontecendo. Aqui o disparo torto morre em vez de se reagendar, e o resync
+      // reconstrói a agenda a partir do banco.
+      const early = await refuseIfOutOfWindow(data, 'nag')
+      if (early.outOfWindow) {
+        triggerAlarmResync()
+        return { handled: true, action: 'nag', refused: 'out_of_window' }
+      }
       // Sem ação explícita (descartada/ignorada) → nag reativo dentro da tolerância.
       await alarmService.scheduleNag({
         ...rescheduleBase(data),

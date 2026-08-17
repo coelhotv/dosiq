@@ -13,7 +13,12 @@
 //  - cancelAll usa cancelTriggerNotifications() → cancela só triggers do Notifee,
 //       NÃO toca as notificações do expo-notifications (push remoto preservado).
 
-import { createDoseInstanceRepository, createCriticalAuditService, parseISO, formatConcentration } from '@dosiq/core'
+import { createDoseInstanceRepository, createCriticalAuditService, parseISO, formatConcentration, getRawNow } from '@dosiq/core'
+// 067 A2: guarda bilateral de janela + trilha/aviso da anomalia. O `triggerAlarmResync` corrige o
+// agendamento a partir do banco quando a soneca recai sobre um disparo torto (FR-006).
+import { evaluateDoseWindow } from './doseWindow'
+import { reportOutOfWindowAlarm } from './outOfWindowNotice'
+import { triggerAlarmResync } from './alarmResyncBus'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import notifee, {
   AndroidImportance,
@@ -316,13 +321,20 @@ function buildNotification({ doseInstanceId, medicineName, data, notificationId,
  * tolerância/labels — usado p/ re-armar soneca após resync (snoozed_until), já que
  * `cancelAll` mata o trigger de soneca e o item snoozed sairia sem re-agendamento.
  * @param {{ doseInstanceId: string, medicineName?: string, scheduledFor: string|number|Date,
- *           toleranceMinutes?: number|null, isCritical?: boolean, data?: object, fireAt?: number|null }} params
+ *           toleranceMinutes?: number|null, earlyWindowMinutes?: number|null, isCritical?: boolean,
+ *           data?: object, fireAt?: number|null }} params
  */
 interface ScheduleAlarmParams {
   doseInstanceId: string
   medicineName?: string
   scheduledFor: string | number | Date
   toleranceMinutes?: number | null
+  /**
+   * 067 A2 (FR-024): PISO da janela, lido de `dose_instances.early_window_minutes` e carregado no
+   * payload para a guarda poder decidir NO DISPARO, sem rede e sem re-derivar o intervalo.
+   * `null` ⇒ o client aplica 120 fail-closed (FR-032).
+   */
+  earlyWindowMinutes?: number | null
   isCritical?: boolean
   data?: Record<string, unknown>
   fireAt?: number | null
@@ -333,6 +345,7 @@ export async function scheduleAlarm({
   medicineName,
   scheduledFor,
   toleranceMinutes = null,
+  earlyWindowMinutes = null,
   isCritical = false,
   data = {},
   fireAt = null,
@@ -353,7 +366,7 @@ export async function scheduleAlarm({
     medicineName,
     notificationId: doseInstanceId,
     isCritical,
-    data: { ...data, medicineName, scheduledFor, toleranceMinutes, isCritical, nagAttempt: '0', snoozeAttempt: '0' },
+    data: { ...data, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, isCritical, nagAttempt: '0', snoozeAttempt: '0' },
   })
 
   await notifee.createTriggerNotification(notification, {
@@ -433,6 +446,49 @@ export async function scheduleNag({
 }
 
 /**
+ * Ids afetados pela soneca: o alarme agrupado carrega N ocorrências num payload só, e a soneca vale
+ * para o grupo inteiro (o usuário adiou "as doses das 08:00", não uma delas).
+ * Extraído p/ manter `scheduleSnooze` sob o teto de complexidade do lint. @private
+ */
+function _resolveSnoozedIds(doseInstanceId, data) {
+  if (data?.isGrouped === 'true' && data?.doseInstanceIds) return data.doseInstanceIds.split(',')
+  return [doseInstanceId]
+}
+
+/**
+ * 067 A2 (FR-006 / US3) — a soneca não pode PROPAGAR um disparo torto.
+ *
+ * No incidente, `snoozed` às 09:47 foi seguido de `alarm_fired` às 09:52: a soneca reagenda +5min a
+ * partir do DISPARO, não do horário real da dose, então repetia o erro em vez de corrigi-lo. Pior:
+ * persistia `snoozed_until`, e com isso o próximo `syncAlarms` respeitava a soneca errada e não
+ * re-armava o alarme das 13:30.
+ *
+ * Fora da janela: o alarme já foi cancelado pelo caller, aqui só NÃO persistimos `snoozed_until`,
+ * registramos a anomalia (fail-open) e pedimos resync a partir do banco — a fonte da verdade.
+ *
+ * Soneca legítima nunca cai neste ramo: com `snoozeAttempt > 0` o disparo é DEPOIS de
+ * `scheduled_for` por construção, e o piso só olha o lado adiantado.
+ *
+ * Extraído de `scheduleSnooze` p/ manter a função sob o teto de complexidade do lint. @private
+ */
+function _refuseSnoozeOutOfWindow({ doseInstanceId, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, data }) {
+  const verdict = evaluateDoseWindow(
+    { scheduledFor, toleranceMinutes, earlyWindowMinutes, ...data },
+    getRawNow()
+  )
+  // Só o lado ADIANTADO: soneca de dose já vencida é inútil mas PRÉ-EXISTENTE, e o nag já para
+  // sozinho além da tolerância. A anomalia que a US3 corrige é a soneca que PROPAGA um disparo
+  // adiantado (09:47 → +5min, com a dose real às 13:30).
+  if (!verdict.outOfWindow || verdict.direction !== 'early') return false
+  reportOutOfWindowAlarm({
+    data: { ...data, doseInstanceId, medicineName, scheduledFor },
+    ...verdict,
+  }).catch(() => {})
+  triggerAlarmResync()
+  return true
+}
+
+/**
  * Soneca manual (FR-003 v2): o usuário toca "Soneca" → re-agenda a MESMA dose pra
  * +5min, máx 3 vezes. Reusa o id da instância (substitui a notif atual e PARA o
  * loop do som). Diferente do nag (automático ao ignorar); aqui é ação consciente.
@@ -443,12 +499,19 @@ export async function scheduleSnooze({
   medicineName,
   scheduledFor,
   toleranceMinutes = null,
+  earlyWindowMinutes = null,
   currentSnoozeAttempt = 0,
   isCritical = false,
   data = {} as Record<string, any>,
 }) {
   // Cancela primeiro: mata o loop do som da notif atual.
   await cancelAlarm(doseInstanceId)
+
+  // 067 A2 (FR-006 / US3): soneca sobre alarme FORA DA JANELA não reagenda — CORRIGE.
+  if (_refuseSnoozeOutOfWindow({ doseInstanceId, medicineName, scheduledFor, toleranceMinutes, earlyWindowMinutes, data })) {
+    return false
+  }
+
   const next = currentSnoozeAttempt + 1
   if (next > MAX_SNOOZE_ATTEMPTS) return false
 
@@ -477,10 +540,7 @@ export async function scheduleSnooze({
   })
 
   // Persiste snoozed_until no DB para que syncAlarms não re-agende no próximo sync.
-  const snoozedIds =
-    data?.isGrouped === 'true' && data?.doseInstanceIds
-      ? data.doseInstanceIds.split(',')
-      : [doseInstanceId]
+  const snoozedIds = _resolveSnoozedIds(doseInstanceId, data)
   try {
     const repo = createDoseInstanceRepository({ client: supabase as any })
     await Promise.all(snoozedIds.map((id) => repo.setSnoozedUntil(id, nextTs)))

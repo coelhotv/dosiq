@@ -222,6 +222,98 @@ describe('generateInstances — tolerância dinâmica (§6)', () => {
   })
 })
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 067 A2 (FR-024 / PO-12) — PISO da janela: min(0,25 × menor gap adjacente, 120)
+//
+// A tabela da PO-12 é a referência de aceite. Cada caso assere TAMBÉM que
+// `tolerance_minutes` ficou INALTERADA: a mudança é aditiva, e um piso certo com teto
+// mexido seria uma regressão clínica silenciosa (a tolerância é o que decide missed).
+// ─────────────────────────────────────────────────────────────────────────────
+describe('generateInstances — piso da janela (early_window_minutes, 067 A2)', () => {
+  const gen = (protocol) =>
+    generateInstances(
+      protocol,
+      '2026-05-10T00:00:00-03:00',
+      '2026-05-10T23:59:59-03:00',
+      'America/Sao_Paulo'
+    )
+
+  it('PO-12 · 4/4h (gap 240) → piso 60; teto intocado em 120', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'] })
+    expect(out.every((i) => i.early_window_minutes === 60)).toBe(true)
+    expect(out.every((i) => i.tolerance_minutes === 120)).toBe(true)
+  })
+
+  it('PO-12 · 6/6h (gap 360) → piso 90 — o protocolo da Dipirona do incidente', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['01:00', '07:00', '13:00', '19:00'] })
+    expect(out.every((i) => i.early_window_minutes === 90)).toBe(true)
+    expect(out.every((i) => i.tolerance_minutes === 120)).toBe(true)
+  })
+
+  it('PO-12 · 8/8h (gap 480) → piso 120 (o teto encosta exatamente aqui)', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['05:30', '13:30', '21:30'] })
+    expect(out.every((i) => i.early_window_minutes === 120)).toBe(true)
+  })
+
+  it('PO-12 · 12/12h (gap 720) → piso 120 pelo TETO (0,25×720 = 180 seria demais)', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['08:00', '20:00'] })
+    expect(out.every((i) => i.early_window_minutes === 120)).toBe(true)
+    expect(out.every((i) => i.tolerance_minutes === 120)).toBe(true)
+  })
+
+  it('PO-12 · diário de dose única → piso 120 (fallback do ramo legado)', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['08:00'] })
+    expect(out[0].early_window_minutes).toBe(120)
+    expect(out[0].tolerance_minutes).toBe(120)
+  })
+
+  it('🔴 PO-12 · semanal → piso 120 (teto NOVO), com a tolerância SEM cap preservada', () => {
+    // É o único lugar onde piso e teto divergem de propósito: a tolerância semanal segue 5040
+    // (perdão clínico de dias — ADR-061), mas um PISO de 3,5 dias tornaria "adiantado" vazio.
+    const out = gen({
+      ...baseProtocol,
+      frequency: 'semanal',
+      weekdays: ['domingo'],
+      time_schedule: ['08:00'],
+    })
+    expect(out[0].early_window_minutes).toBe(120)
+    expect(out[0].tolerance_minutes).toBe(5040)
+  })
+
+  it('PO-12 · frequência sem período mapeado (legado 120) → piso 120', () => {
+    const out = gen({ ...baseProtocol, frequency: 'mensal', time_schedule: ['08:00'] })
+    expect(out[0].early_window_minutes).toBe(120)
+    expect(out[0].tolerance_minutes).toBe(120)
+  })
+
+  it('wrap-around da meia-noite vale p/ o piso também (00:30/23:30 → gap 60 → piso 15)', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['00:30', '23:30'] })
+    expect(out.map((i) => i.early_window_minutes)).toEqual([15, 15])
+    expect(out.map((i) => i.tolerance_minutes)).toEqual([30, 30])
+  })
+
+  it('slots colados: piso pode chegar a 0 — limite conhecido do range 0..120 (FR-032)', () => {
+    // gap 3min → floor(0,25×3) = 0. Nenhum protocolo de prod chega perto (menor gap medido: 285min),
+    // mas o CHECK aceita 0 de propósito e o comportamento tem de ser DEFINIDO, não acidental.
+    const out = gen({ ...baseProtocol, time_schedule: ['08:00', '08:03'] })
+    expect(out.map((i) => i.early_window_minutes)).toEqual([0, 0])
+  })
+
+  it('🔴 toda instância nasce COM o piso — nenhuma linha sai sem a coluna (fail-closed)', () => {
+    const out = gen({ ...baseProtocol, time_schedule: ['08:00', '14:00', '20:00'] })
+    expect(out.length).toBeGreaterThan(0)
+    expect(out.every((i) => typeof i.early_window_minutes === 'number')).toBe(true)
+    expect(out.every((i) => i.early_window_minutes >= 0 && i.early_window_minutes <= 120)).toBe(true)
+  })
+
+  it('PRN não materializa — e por isso não existe piso a derivar (FR-025)', () => {
+    // A instância PRN que EXISTE em prod (Dipirona) nasceu diária e teve a frequência editada
+    // depois; o gerador nunca a produziria. O ramo defensivo do fallback 120 está coberto pelo
+    // caso "sem período mapeado" acima — aqui o contrato é: PRN gera lista vazia.
+    expect(gen({ ...baseProtocol, frequency: 'quando_necessário', time_schedule: ['08:00'] })).toEqual([])
+  })
+})
+
 describe('generateInstances — casos de borda', () => {
   it('PRN (quando_necessário) não gera instâncias', () => {
     const out = generateInstances(

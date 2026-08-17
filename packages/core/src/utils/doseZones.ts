@@ -83,6 +83,12 @@ export interface DoseZoneInstance {
   scheduled_for?: string | null
   status?: string
   tolerance_minutes?: number | null
+  /**
+   * 067 A2: PISO da janela (lado adiantado). Só ATRAVESSA daqui até o payload do alarme —
+   * `classifyDose`/`SURFACE_WINDOWS` seguem consumindo apenas `tolerance_minutes` (FR-027: piso é
+   * regra de REGISTRO, não de EXIBIÇÃO; esconder dose futura da timeline seria regressão).
+   */
+  early_window_minutes?: number | null
   expected_dose?: number | null
   critical_alarm?: boolean
   snoozed_until?: string | null
@@ -230,6 +236,9 @@ function createDoseItem(
     scheduledTime: toLocalHHMM(instance.scheduled_for ?? '', tz),
     scheduledFor: instance.scheduled_for,
     toleranceMinutes: instance.tolerance_minutes ?? null,
+    // 067 A2 (FR-024): o piso viaja junto do teto até o alarme. `null` aqui vira 120 fail-closed no
+    // client (FR-032) — nunca 0, que desligaria a guarda do lado adiantado.
+    earlyWindowMinutes: instance.early_window_minutes ?? null,
     status: instance.status,
     dosagePerIntake: instance.expected_dose ?? protocol.dosage_per_intake ?? 1,
     treatmentPlanId: protocol.treatment_plan_id || null,

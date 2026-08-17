@@ -7,6 +7,36 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alarme fora de hora não registra mais dose nenhuma
+
+- **Fix** (`minor` mobile `0.31.0`, `patch` web `4.22.2`, core `0.20.2`). Um alarme pode tocar na
+  hora errada — o sistema do celular às vezes adianta o disparo, e já vimos isso acontecer com
+  **3h37 de antecedência**. Até agora o app aceitava aquele toque como se fosse a dose de verdade:
+  abria a tela cheia, e um toque em "Tomei" ou "Pular" gravava a dose no horário errado. Foi assim
+  que uma dose das 13:30 acabou marcada como pulada às 09:47 — e a dose real nunca foi tomada.
+
+  Agora o app **confere a janela da dose nos dois sentidos** antes de aceitar qualquer registro.
+  Cada dose passa a ter um limite de quanto tempo *antes* do horário ela pode ser registrada,
+  calculado a partir do intervalo entre as suas doses: quem toma de 6 em 6 horas tem uma janela mais
+  estreita do que quem toma uma vez por dia. Fora dessa janela:
+
+  - a tela cheia **não abre** e o alarme errado é silenciado;
+  - "Tomei" e "Pular" **recusam** o registro — inclusive quando várias doses tocam juntas, e aí o
+    grupo inteiro é recusado (registrar metade seria pior);
+  - a **soneca corrige** em vez de repetir: antes ela reagendava +5 min a partir do toque errado,
+    empurrando o problema para frente;
+  - você recebe um **aviso claro** — sem som, sem botão — dizendo que o alarme tocou fora de hora,
+    que **nada foi registrado** e qual é o horário certo da sua dose. Um aviso por dose, não um
+    para cada toque errado.
+
+  **Nada muda quando o alarme toca na hora certa.** O caminho normal — alarme, tela cheia, "Tomei" —
+  continua idêntico, e a soneca legítima também.
+
+  Também passamos a registrar essas anomalias internamente (com o desvio de tempo e o modelo do
+  aparelho, nunca o nome do seu medicamento) para descobrir em quais aparelhos o problema acontece.
+  Se você revogou o consentimento de dados, **esse registro não é feito** — e o alarme errado é
+  silenciado do mesmo jeito.
+
 ### A dose que você pulou volta a aparecer no histórico
 
 - **Fix** (`patch`, web `4.22.1`, mobile `0.30.2`, core `0.20.1`). Quando você tocava em "Pular" no

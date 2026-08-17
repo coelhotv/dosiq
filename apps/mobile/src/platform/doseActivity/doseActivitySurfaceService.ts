@@ -5,7 +5,8 @@
 // `selectActiveDoseActivity` (CON-029). A máquina de estados vive no core; aqui só APRESENTA.
 //
 // Invariantes:
-//  - Canal DEFAULT separado e imutável (R-261): `dose-activity-v1`. NUNCA tocar nos canais
+//  - Canal DEFAULT separado e imutável (R-261): `dose-activity-v2` (v1 foi aposentado; o id é
+//    versionado porque canal Android não muda após criado). NUNCA tocar nos canais
 //    de alarme (dose-alarm-v3/-critical-v2) — superfície ≠ alarme.
 //  - Sem som / sem loop / sem full-screen (não é alarme). ongoing+autoCancel:false = persistente.
 //  - Sem pressAction de corpo (sem launchActivity): tocar a notif NÃO abre o app — evita o
