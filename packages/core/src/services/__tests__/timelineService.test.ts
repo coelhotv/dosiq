@@ -99,11 +99,17 @@ describe('doseInstancesToEvents — dedupe e cobertura', () => {
     expect(events.map(e => e.id)).toEqual(['inst:i1'])
   })
 
-  it('skipped_* são ocultos da timeline', () => {
+  it('067/FR-020: skipped_user é VISÍVEL; skipped_paused segue oculto', () => {
     const events = doseInstancesToEvents(
       [inst('i1', 'skipped_paused', '2026-05-20T13:00:00Z'), inst('i2', 'skipped_user', '2026-05-21T13:00:00Z')],
       [],
     )
+    expect(events.map(e => e.id)).toEqual(['inst:i2'])
+    expect(events[0].payload.status).toBe('skipped_user')
+  })
+
+  it('067: status desconhecido continua fora da timeline (allowlist, não denylist)', () => {
+    const events = doseInstancesToEvents([inst('i9', 'foo_novo', '2026-05-20T13:00:00Z')], [])
     expect(events).toHaveLength(0)
   })
 

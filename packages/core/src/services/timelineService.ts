@@ -25,8 +25,18 @@ import { parseISO } from '../utils/dateUtils'
 const MS_PER_MINUTE = 60 * 1000
 const DEFAULT_TOLERANCE_MINUTES = 120
 
-/** Status de instância que aparecem na timeline (skipped_* são neutros → ocultos). */
-const VISIBLE_INSTANCE_STATUSES = new Set(['taken', 'missed', 'pending'])
+/**
+ * Status de instância que aparecem na timeline (067/FR-020).
+ *
+ * `skipped_user` é ATO DA PACIENTE — fato clínico datado, visível como qualquer outro
+ * (era invisível: uma dose destruída por alarme torto sumia do histórico sem deixar rastro).
+ * `skipped_paused` fica FORA: é estado do TRATAMENTO (pausa), não da dose — nunca houve
+ * decisão sobre aquela ocorrência.
+ *
+ * ⚠️ Neutro na ADESÃO ≠ oculto no HISTÓRICO: `skipped_*` seguem fora do numerador e do
+ * denominador (R-248 / `doseZones.SKIPPED_STATUS`) — a taxa NÃO muda com esta visibilidade.
+ */
+const VISIBLE_INSTANCE_STATUSES = new Set(['taken', 'missed', 'pending', 'skipped_user'])
 
 interface DoseInstance {
   id: string

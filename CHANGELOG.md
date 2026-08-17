@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A dose que você pulou volta a aparecer no histórico
+
+- **Fix** (`patch`, web `4.22.1`, mobile `0.30.2`, core `0.20.1`). Quando você tocava em "Pular" no
+  alarme, a dose **sumia do histórico** — não aparecia como pulada, não aparecia como perdida, não
+  aparecia de jeito nenhum. Nem no celular, nem no navegador. Na prática, uma dose que existiu e foi
+  decidida por você desaparecia do registro do tratamento, e nenhuma tela contava que ela existiu.
+
+  Agora ela aparece nas duas telas, com o rótulo **"Pulada"** e uma marca neutra — cinza, não
+  vermelha: pular uma dose é uma decisão sua, não uma falha. O dia também ganha a marca dela no
+  calendário.
+
+  **Sua taxa de adesão não muda.** Dose pulada continua neutra no cálculo, exatamente como antes:
+  ela não conta como tomada nem como perdida. O que mudou foi só a visibilidade do registro.
+
+  Doses que ficaram pendentes porque o **tratamento estava pausado** seguem ocultas — essas não são
+  decisão sua sobre uma dose, são consequência do estado do tratamento.
+
 ### O alarme de dose crítica volta a abrir em tela cheia no Android
 
 - **Fix** (`patch`, mobile `0.30.1`; iOS não afetado). O alarme tocava, a tela acendia e o app vinha

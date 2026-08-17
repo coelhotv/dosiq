@@ -3,15 +3,19 @@
 // Substitui o HistoryLogCard (log-only) no painel do dia: agora reflete o ESTADO real
 // materializado em dose_instances — taken / missed / pending — não só doses tomadas.
 
-import { PencilLine, Trash2, Check, X, Clock, LocateFixed } from 'lucide-react'
+import { PencilLine, Trash2, Check, X, Clock, RedoDot, LocateFixed } from 'lucide-react'
 import { parseISO } from '@utils/dateUtils'
 import { isLiquidMedicine, formatDose, formatConcentration, getInjectionSiteLabel } from '@dosiq/core'
 
 /** Metadados visuais por status (ícone + label + classe). Idoso-friendly: ícone + texto (R-137/R-138). */
+/* 067/FR-037: `skipped_user` herda do mobile (DoseActionSheet/DoseHistoryList) — "Pulada",
+   RedoDot, tom NEUTRO. Sem esta entrada o fallback da linha ~50 exibiria a dose pulada como
+   "Pendente": mentira sobre ato clínico, pior que o invisível de antes (RC2/D-1). */
 const STATUS_META = {
   taken: { label: 'Tomada', Icon: Check, cls: 'taken' },
   missed: { label: 'Perdida', Icon: X, cls: 'missed' },
   pending: { label: 'Pendente', Icon: Clock, cls: 'pending' },
+  skipped_user: { label: 'Pulada', Icon: RedoDot, cls: 'skipped' },
 }
 
 /**
