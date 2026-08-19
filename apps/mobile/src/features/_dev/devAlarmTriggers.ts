@@ -22,7 +22,10 @@ import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { resetOutOfWindowNotices } from '@platform/alarms/outOfWindowNotice'
 
 const DEV_INSTANCE_ID = 'dev-test-alarm'
-const DEV_MEDICINE = 'Lantus'
+// Rótulo deliberadamente FALSO: o gatilho dispara contra uma dose REAL do banco, mas o nome
+// exibido é de teste. Usar um nome real (era 'Lantus') fez o smoke de 2026-08-19 ser lido como
+// "o gatilho pegou a dose errada" — o nome na tela não é a dose por trás.
+const DEV_MEDICINE = '⚠️ DOSE DE TESTE'
 
 // Espelha o bloco produzido por buildNotification (alarmService), simplificado.
 // TODO(040-strict): payload notifee (Notification) não tipado (nível B)
