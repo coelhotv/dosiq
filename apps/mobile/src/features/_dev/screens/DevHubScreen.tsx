@@ -137,6 +137,9 @@ function DevAlarmSection() {
         passaria num aparelho com relógio adiantado — e a RPC recusa lendo o horário da própria
         linha. Toque em &quot;Pular&quot; no alarme: nada deve ser gravado, a dose segue pendente e a
         mensagem da recusa aparece (Alert na tela cheia · notificação se você agir pelo shade).
+        {'\n\n'}⚠️ Usa uma dose crítica a MAIS de 4h daqui, de propósito: rodar contra a dose do dia
+        sequestraria o alarme real dela. E aqui só se toca em &quot;Pular&quot; — &quot;Tomei&quot;
+        registraria a dose de verdade (o registro não tem guarda de janela, por decisão clínica).
       </Text>
       <TouchableOpacity
         onPress={() => {

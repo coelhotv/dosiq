@@ -126,7 +126,7 @@ type PendingInstanceRow = {
   early_window_minutes: number | null
 }
 
-async function fetchRealPendingInstances(count: number): Promise<
+async function fetchRealPendingInstances(count: number, limit = count): Promise<
   { id: string; scheduledFor: string; earlyWindowMinutes: number }[]
 > {
   const { data, error } = await supabase
@@ -136,7 +136,7 @@ async function fetchRealPendingInstances(count: number): Promise<
     .eq('critical_alarm', true)
     .gt('scheduled_for', getRawNow().toISOString())
     .order('scheduled_for', { ascending: true })
-    .limit(count)
+    .limit(Math.max(count, limit))
   if (error) throw new Error(`[devEarlyAlarm] falha ao buscar dose real: ${error.message}`)
   if (!data || data.length < count) {
     throw new Error(
@@ -238,6 +238,38 @@ async function fireEarlyFor(dose: { id: string; scheduledFor: string; earlyWindo
   )
 }
 
+/** Margem mínima até a dose escolhida pelo smoke da recusa do servidor. @private */
+const DEV_SAFE_DISTANCE_MINUTES = 240
+
+/**
+ * Escolhe uma dose pending crítica **DISTANTE** (≥4h) para o smoke da recusa do servidor.
+ *
+ * Por que não a mais próxima (como fazem os gatilhos da A2): o smoke da recusa exibe a notificação
+ * com o `id` da dose REAL e deixa esse id na lista da limpeza. Se a escolhida for a dose do dia que
+ * está para tocar, três coisas ruins acontecem — a notificação de teste ocupa o lugar da real, o
+ * botão "Limpar" cancela o TRIGGER agendado dela (a dose real não tocaria), e um toque em "Tomei"
+ * registraria a dose de verdade (o `register_dose_atomic` não tem guarda de janela, Decisão 12).
+ * Escolher uma dose distante remove os três de uma vez.
+ * @private
+ */
+async function pickDistantPendingInstance(): Promise<{
+  id: string
+  scheduledFor: string
+  earlyWindowMinutes: number
+}> {
+  const candidates = await fetchRealPendingInstances(1, 12)
+  const cutoff = getRawNow().getTime() + DEV_SAFE_DISTANCE_MINUTES * 60000
+  const distant = candidates.find((d) => parseISO(d.scheduledFor).getTime() >= cutoff)
+  if (!distant) {
+    throw new Error(
+      `[devServerRefused] nenhuma dose pending crítica a mais de ${DEV_SAFE_DISTANCE_MINUTES / 60}h ` +
+        `daqui. Rodar contra uma dose iminente sequestraria o alarme real dela — crie uma dose ` +
+        `crítica futura (ou rode o smoke depois que a dose de hoje for resolvida).`,
+    )
+  }
+  return distant
+}
+
 /**
  * 067 B1 / PO-7 — RECUSA DO SERVIDOR, não do client.
  *
@@ -257,14 +289,14 @@ async function fireEarlyFor(dose: { id: string; scheduledFor: string; earlyWindo
  * mentir no payload exercita EXATAMENTE o mesmo caminho de código, sem efeito colateral no sistema.
  */
 export async function devFireServerRefusedAlarm() {
-  const [dose] = await fetchRealPendingInstances(1)
+  const dose = await pickDistantPendingInstance()
   const aheadMinutes = Math.round(
     (parseISO(dose.scheduledFor).getTime() - getRawNow().getTime()) / 60000,
   )
   // A recusa do servidor precisa que a dose esteja FORA da janela real (piso da linha).
   if (aheadMinutes <= dose.earlyWindowMinutes) {
     throw new Error(
-      `[devServerRefused] a dose mais próxima está a ${aheadMinutes}min, DENTRO do piso de ` +
+      `[devServerRefused] a dose escolhida está a ${aheadMinutes}min, DENTRO do piso de ` +
         `${dose.earlyWindowMinutes}min — o servidor aceitaria o skip e o smoke ficaria verde por ` +
         `engano. Use uma dose mais distante.`,
     )
@@ -314,5 +346,6 @@ export async function devClearEarlyAlarms() {
     await notifee.cancelNotification(id)
     await notifee.cancelTriggerNotification(id)
     await notifee.cancelNotification(`oow-${id}`) // aviso informativo (namespace `oow-`)
+    await notifee.cancelNotification(`${id}:refusal`) // aviso da recusa do servidor (067 B1)
   }
 }
