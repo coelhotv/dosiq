@@ -29,7 +29,10 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
 
 // 067/B: o skip saiu do UPDATE cru e virou RPC canônica no core (ADR-092). O mock é do
 // SERVIÇO, não do primitivo de rede — a guarda real mora no banco e é provada no .test.sql.
-const mockSkipDose = jest.fn((..._a: any[]) => Promise.resolve({ skipped: 1, skippedAt: 'x' }))
+// `skippedAt` é o instante do SERVIDOR devolvido pela RPC — a trilha do FR-043 carimba com ELE,
+// não com o relógio do device (RC6 #798). ISO real para o teste poder asserir o valor.
+const SERVER_SKIPPED_AT = '2026-08-19T23:50:00.000Z'
+const mockSkipDose = jest.fn((..._a: any[]) => Promise.resolve({ skipped: 1, skippedAt: SERVER_SKIPPED_AT }))
 // 067 C.2 (FR-043): a trilha do skip. Emissor mockado p/ asserir o evento sem tocar o banco —
 // o guard `mockFrom não chamado` deste arquivo prova que nenhum UPDATE cru sobrevive no caminho.
 const mockAuditEmit = jest.fn().mockResolvedValue({ ok: true })
@@ -202,8 +205,15 @@ describe('handleAlarmAction — Pular', () => {
         event: 'resolved',
         actor: 'user',
       })
-      expect(typeof evtPayload.occurredAt).toBe('string')
-      expect(Number.isNaN(Date.parse(evtPayload.occurredAt))).toBe(false)
+      // 🔴 O instante é o do SERVIDOR (retorno da RPC), não `getRawNow()` do aparelho: num device
+      // adiantado — o cenário do incidente — o relógio local gravaria uma hora que nunca existiu.
+      expect(evtPayload.occurredAt).toBe(SERVER_SKIPPED_AT)
+    })
+
+    it('RPC sem instante no retorno → occurredAt null (desconhecido), nunca o relógio do device', async () => {
+      mockSkipDose.mockImplementationOnce(() => Promise.resolve({ skipped: 1, skippedAt: '' }) as any)
+      await registerSkip(BASE)
+      expect(mockAuditEmit.mock.calls[0][0].occurredAt).toBeNull()
     })
 
     it('skip RECUSADO pelo banco NÃO emite resolved (não houve resolução)', async () => {

@@ -104,11 +104,22 @@ async function _isAppleCandidate(supabase: any, logger: Logger | undefined, user
 }
 
 /**
- * O sinal já foi registrado p/ ESTA ocorrência? (067 C.1 / FR-040 — trava de idempotência)
+ * O sinal já foi registrado p/ ESTA ocorrência? (067 C.1 / FR-040)
  *
- * O ramo "sem token" não tinha trava: o loop de minuto repetia a linha pelos 60 min da janela.
- * A trava é a própria trilha (nenhuma coluna nova) — o evento é diagnóstico de ESTADO, e um estado
+ * O ramo "sem token" repetia a linha a cada minuto pelos 60 min da janela. Aqui a própria trilha
+ * serve de referência (nenhuma coluna nova): o evento é diagnóstico de ESTADO, e um estado
  * registrado uma vez já diz tudo o que a linha número 60 diria.
+ *
+ * ⚠️ **De-duplicação BEST-EFFORT, não trava de idempotência** (RC6 do PR #798). É um
+ * read-check-write sem constraint por trás: dois crons sobrepostos no mesmo minuto podem passar
+ * pela checagem antes de qualquer um inserir, e sair 2 linhas. O limite superior é 2 por ocorrência,
+ * contra as ~60 de hoje — o objetivo da FR-040 é atingido, mas o nome honesto é este.
+ *
+ * Por que não há constraint: o índice único parcial que tornaria isto uma trava de verdade
+ * (`UNIQUE (dose_instance_id) WHERE event='push_skipped_no_token'`) **não pode ser criado** — a
+ * tabela já tem 190 ocorrências com duplicata (pior caso 60 linhas), e limpá-las é reescrever
+ * trilha clínica, o que o PO recusou por decisão explícita. Se um dia o histórico expirar pelo
+ * prune de 90 dias, o índice passa a ser viável e esta função vira redundante.
  *
  * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ emite (mesmo racional de `_isAppleCandidate`).
  * @private
@@ -267,7 +278,8 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
   }
   if (!devices || devices.length === 0) {
     // FR-040 (Decisão 23): só emite p/ quem é CANDIDATO ao recurso (tem device iOS, mesmo inativo)
-    // e só UMA vez por ocorrência — antes eram ~60 linhas/dose, para sempre, em usuário Android-only.
+    // e uma vez por ocorrência (best-effort — ver `_alreadySignaledNoToken`); antes eram ~60
+    // linhas/dose, para sempre, em usuário Android-only.
     const candidate = await _isAppleCandidate(supabase, logger, userId)
     if (candidate && !(await _alreadySignaledNoToken(supabase, logger, active.instanceId))) {
       await emitAudit('push_skipped_no_token')

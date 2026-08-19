@@ -212,12 +212,14 @@ export async function registerSkip(data) {
   // 067/B (FR-011/ADR-092): via RPC. O `UPDATE` cru daqui era a escrita que gravava fato
   // clínico sem declarar instante — agora `skippedAt` viaja e o banco recusa fora da janela,
   // mesmo que a guarda de client acima seja contornada (relógio adiantado).
+  let skippedAt = null
   try {
     const userId = await resolveUserId()
-    // 🔴 SEM `skippedAt`: o instante fica em branco de propósito para a RPC usar o `now()` do
-    // SERVIDOR. Mandar o relógio do aparelho seria mandar exatamente o relógio que o incidente
-    // provou não ser confiável — a guarda do banco existe justamente para não depender dele.
-    await skipDose(supabase, { userId, instanceIds: ids })
+    // 🔴 SEM `skippedAt` na ENTRADA: o instante fica em branco de propósito para a RPC usar o
+    // `now()` do SERVIDOR. Mandar o relógio do aparelho seria mandar exatamente o relógio que o
+    // incidente provou não ser confiável — a guarda do banco existe justamente para não depender
+    // dele. O retorno traz esse instante do servidor, e é ELE que vai para a trilha (FR-042).
+    ;({ skippedAt } = await skipDose(supabase, { userId, instanceIds: ids }))
   } catch (error) {
     // R-305/FR-013: recusa é BARULHENTA e chega legível à paciente — nunca "nada aconteceu".
     return {
@@ -241,7 +243,12 @@ export async function registerSkip(data) {
   // EM PARALELO e DEPOIS do invalidate: a auditoria é best-effort e não pode atrasar a resposta a
   // uma ação da paciente. Sequencial, um lote de 5 doses segurava a tela cheia do alarme por 5
   // round-trips — o alarme continua na frente dela enquanto o trail conversa com o servidor.
-  const resolvedAt = getRawNow().toISOString()
+  //
+  // 🔴 O instante vem do SERVIDOR (retorno da RPC), nunca de `getRawNow()`. Carimbar a trilha com o
+  // relógio do aparelho contradiria a própria razão de o skip ter descido para o banco, e num
+  // aparelho adiantado — o cenário do incidente — gravaria uma hora que nunca existiu. Se a RPC não
+  // devolver o instante, vai `null`: "hora desconhecida" é honesto, um palpite não é.
+  const resolvedAt = skippedAt || null
   await Promise.all(
     ids.map((id) =>
       skipAudit.emit({
