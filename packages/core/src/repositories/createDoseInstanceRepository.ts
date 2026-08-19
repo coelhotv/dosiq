@@ -14,7 +14,11 @@
 // - markMissedDueInstances({now?}) → pending vencida (scheduled_for+tol < now) → missed (writer #3, F2.5)
 // - getGeneratedThrough(protocolId)  → high-water-mark (protocols.generated_through)
 // - setGeneratedThrough(protocolId, ts)
-// - markSkippedPaused(protocolId, untilTs) → pendentes futuras até untilTs viram skipped_paused
+// - markSkippedPaused(userId, protocolId, untilTs) → pendentes futuras até untilTs viram
+//   skipped_paused. 067/B: via RPC (`set_protocol_dose_state_atomic`, mode `pause_until`).
+//   ⚠️ SEM caller de produção hoje — quem pausa tratamento é `markAllFutureSkippedPaused`
+//   (`createProtocolRepository.ts:63`). Mantida por ser a variante "pausa até data" da mesma
+//   família; se ganhar caller, ele nasce já com a assinatura de 3 args.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
@@ -327,6 +331,10 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
     /**
      * Marca instâncias pendentes futuras até `untilTs` como skipped_paused (pausa não penaliza).
      * 067/B (FR-030): via RPC (ver `reactivateFuturePaused`).
+     *
+     * ⚠️ **Sem caller de produção** (verificado no C1.5 e reconfirmado no RC6 do PR #797): a pausa
+     * de tratamento usa `markAllFutureSkippedPaused`. A cobertura desta função é só de teste — não
+     * confundir "testada" com "exercitada em produção".
      * @param {string} userId - dono do protocolo (a RPC valida posse)
      * @param {string} protocolId
      * @param {Date|string} untilTs
