@@ -46,6 +46,7 @@ Código EN · comentários/JSDoc/UI/erros PT · commits PT semântico (`feat(sco
 Componentes `PascalCase.tsx` · hooks `usePascal` · constantes `SCREAMING_SNAKE` · schemas `{name}Schema.ts` · tipos via `z.infer<>`.
 **Ordem React (TDZ):** States → Memos → Effects → Handlers.
 **Imports:** React/libs → componentes → hooks/utils → services/schemas → CSS.
+Migrations documentadas em: `./docs/migrations/`
 
 ## TypeScript — regime e gate
 
