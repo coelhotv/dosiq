@@ -1,7 +1,7 @@
 ---
 title: "AI Review (RC5/RC6) — operação pós-Gemini"
 description: "Protocolo de revisão de código por IA em 4 camadas após descontinuação do Gemini bot, incluindo RC5 (self-review) e RC6 (review independente)."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: standard
 audience:
@@ -13,7 +13,7 @@ tags:
   - rc5
   - rc6
 created_at: "2026-07-18"
-updated_at: "2026-07-30"
+updated_at: "2026-08-19"
 epic: "056"
 ---
 
@@ -43,6 +43,11 @@ bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post   # publica review no PR
 Motores: `agy` primário (Gemini, quota OAuth extensa + diversidade de vendor) · `claude` pass B
 em Tier 2 (com `--setting-sources ""` — não carrega payload do projeto) · Codex só exceção
 (plano Go, quota baixa) · `/code-review` ultra apenas caso excepcional. Custo marginal ~$0.
+
+⚠️ **Quando o agy cai e o claude cobre, a review acontece mas a propriedade do ADR-069 não.** O
+fallback preserva *cobertura*, não *diversidade de vendor* — e o claude do Pass B é o **mesmo modelo**
+que escreveu o código. Ler `pass A ... FAILED` no stderr é sinal de investigar, não de seguir em
+frente: foi assim que um payload malformado passou despercebido (ver runbook UTF-8 abaixo).
 
 ## Tuning de contexto e quota (spec 056)
 
@@ -106,6 +111,35 @@ agy -p "ok" --output-format json     # deve voltar status SUCCESS em segundos
 ```
 Regra prática: **não deixe MCP remoto no config global do agy** enquanto a #657 estiver aberta — qualquer
 server que pendure derruba todo `-p`, e portanto todo RC6. Precisa de MCP? Use config workspace-local.
+
+**🔴 `agy` morre em 0s com stderr VAZIO → payload UTF-8 inválido (2026-08-19, PR #798).** O sintoma
+é o pior possível: `status: ERROR`, `duration_seconds: 0`, `num_turns: 1`, **nenhuma linha de
+stderr**, em 100% dos chunks. Parece motor quebrado, quota estourada ou sandbox — e não é nenhum dos
+três. É o **nosso** preâmbulo saindo malformado.
+
+Causa: o clamp dos índices usava `cut -c` (e `awk substr`), que cortam **BYTE**, não caractere. Os
+catálogos R/AP são escritos em português, então o corte caía no meio de um multibyte e deixava um
+`\xc3` órfão (`"transação"` → `"transa\xc3"`). O `agy` **rejeita a entrada inteira** antes de
+qualquer processamento; o `claude` **tolera** — por isso o Pass B cobria e o defeito ficou invisível
+enquanto o agy esteve saudável. Corrigido no `ai-review.sh` (truncagem por caractere via `python3`,
+`errors="replace"`).
+
+Diagnóstico, se voltar a acontecer — **valide os artefatos LOCAIS antes de gastar chamada**:
+```bash
+RC6_MEASURE=1 RC6_KEEP_PREAMBLE=1 bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#>
+python3 -c "b=open('<caminho do dump>','rb').read(); b.decode('utf-8'); print(len(b),'B — UTF-8 válido')"
+```
+Estourou `UnicodeDecodeError`, é isto — e o byte do erro aponta a linha culpada. A verificação é
+gratuita e instantânea; foi ela que fechou o caso depois de ~15 chamadas gastas investigando motor,
+tamanho e quota. **Regra geral: payload malformado se apresenta como "o motor está quebrado".**
+
+**🔴 O agy usa FERRAMENTAS se você não proibir (2026-08-19).** Com payload válido mas sem instrução
+explícita, o agy tenta `find`/`grep` para "investigar" o código do prompt, estoura o timeout num repo
+grande e **aborta o run** (`Find command timed out...`). Não há flag de no-tools no CLI, e o
+`--mode plan` **não serve**: ele é anulado pelo `--disable-slash-commands` (o próprio agy avisa
+`--mode plan has no effect while slash command expansion is disabled`) e, mesmo valendo, barraria
+edição — não leitura. A defesa é o **prompt**: o `RC6_INSTRUCTION` declara `NO TOOLS` e explica que
+não existe repositório acessível. Medido com chunk isolado: ERROR → SUCCESS só com a instrução.
 
 **🔬 Captura automática do par A/B (spec 056 / PO-5) — desde 2026-08-02.** Você não precisa lembrar de
 nada: o script decide, roda e registra sozinho. **Só um passo é seu, e ele é de julgamento.**
@@ -200,6 +234,14 @@ sobre um diff não-confiável). Absorvemos as estratégias:
   1 chamada agy por chunk (merge consolida; label `agy (N chunks)`). Cap de 6 chunks — além disso
   a coverage fica PARCIAL com aviso; o fix é fatiar o PR. Causa: >160KB o agy AMOSTRA o input
   em silêncio (bisect 2026-07-17: 160K ok, 200K degrada com exit 0).
+- **Motor "quebrado" em 100% dos chunks → desconfie do PAYLOAD antes do motor.** Falha uniforme não
+  é característica de quota (que degrada), nem de rede (que varia): é característica de entrada
+  inválida. Sequência barata, nesta ordem: (1) validar UTF-8 do preâmbulo com `RC6_MEASURE=1
+  RC6_KEEP_PREAMBLE=1`; (2) `agy -p "ok"` para separar motor de payload; (3) só então investigar
+  flags/quota. Inverter essa ordem custou ~15 chamadas no #798.
+- **Motor tolerante MASCARA defeito de payload.** O `claude` aceitava a sequência UTF-8 inválida que
+  derrubava o `agy`, então o fallback cobria e a métrica dizia "cobertura 4/4". Quando os dois
+  motores discordam sobre um mesmo payload, o **mais estrito** costuma estar certo.
 - **Zero findings em diff não-trivial = suspeita, não alívio.** Conferir no stderr se o contexto
   coube e os passes rodaram (lição do smoke T024: engine degradado retorna "clean" com exit 0).
 - **Finding de coluna/schema → verificar no banco ANTES de virar trabalho.** R-295 vale contra o
@@ -224,9 +266,16 @@ sobre um diff não-confiável). Absorvemos as estratégias:
 ## Segurança (invariantes — NUNCA relaxar)
 
 - O reviewer roda **sem ferramentas** (`claude --tools "" --strict-mcp-config` · `agy --sandbox
-  --mode plan --disable-slash-commands`): diff é insumo não-confiável; tool-access +
-  prompt-injection = execução (SC-SEC1). O `--disable-slash-commands` entrou em 2026-08-02: a 1.1.9
-  fez o print mode do agy **expandir slash commands e skills**, e o payload do RC6 é diff hostil.
+  --disable-slash-commands` **+ declaração `NO TOOLS` no prompt**): diff é insumo não-confiável;
+  tool-access + prompt-injection = execução (SC-SEC1). O `--disable-slash-commands` entrou em
+  2026-08-02: a 1.1.9 fez o print mode do agy **expandir slash commands e skills**, e o payload do
+  RC6 é diff hostil.
+- ⚠️ **`--mode plan` foi REMOVIDO (2026-08-19) — não reintroduzir.** Ele é anulado pelo
+  `--disable-slash-commands` (o agy avisa `--mode plan has no effect while slash command expansion is
+  disabled`) e, mesmo ativo, restringe **edição**, não leitura — não impede o `find`/`grep` que é o
+  problema real. Pior: o aviso dele polui o stderr e já mandou uma sessão inteira de diagnóstico
+  investigar o lado errado. O que sustenta a propriedade no agy é o **prompt** (`NO TOOLS`), somado
+  ao `--sandbox`.
 - ⚠️ **Não confunda com guard quebrado:** `--json-schema` faz o claude listar uma tool
   `StructuredOutput` no evento `init`, apesar do `--tools ""`. É o mecanismo de entrega da resposta
   estruturada — sem alcance a shell, arquivo ou MCP. SC-SEC1 se mantém.
