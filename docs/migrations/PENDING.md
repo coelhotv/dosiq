@@ -6,7 +6,7 @@
 
 | migração | parte | desde | gatilho para aplicar | gate |
 |---|---|---|---|---|
-| `20260818_skip_dose_atomic_and_status_privilege.sql` | **§3 apenas** (`REVOKE UPDATE (status) ON dose_instances FROM authenticated` + os 16 `GRANT UPDATE` por coluna). §1 e §2 (as duas RPCs) **já aplicadas**. | 2026-08-18 | Adoção da `APP_VERSION 0.31.1` nas lojas acima do limiar (a definir com o PO no check), **com** a web nova já em produção | `PO-SEC-2` da spec 067 |
+| `20260818_skip_dose_atomic_and_status_privilege.sql` | **§3 apenas** (`REVOKE UPDATE (status) ON dose_instances FROM authenticated` + os 16 `GRANT UPDATE` por coluna). §1 e §2 (as duas RPCs) **já aplicadas**. | 2026-08-18<br>(PR #797, `65931d11`) | Adoção da `APP_VERSION 0.31.1` nas lojas acima do limiar (a definir com o PO no check), **com** a web nova já em produção | `PO-SEC-2` da spec 067 |
 
 ## Por que a §3 está segurada (spec 067 Slice B, Decisões 15/16 do PO)
 

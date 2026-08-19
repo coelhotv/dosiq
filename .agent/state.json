@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 B1 — skip + pausa/retomada por RPC (REVOKE segurado p/ B2)",
+    "goal": "067 B1 — skip + pausa/retomada por RPC (mergeado #797); B2 (REVOKE) segurado",
     "goal_type": "feature",
     "code_review": {
       "status": "issues_found_and_fixed",
@@ -19,8 +19,8 @@
     "spec_dirs": [
       "plans/specs/067-critical-alarm-window-guard"
     ],
-    "merged_pr": 796,
-    "merged_squash": "72653942 (squash merge into main)",
+    "merged_pr": 797,
+    "merged_squash": "65931d11 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -39,6 +39,15 @@
         "date": "2026-08-17",
         "base_branch": "main",
         "note": "Piso early_window_minutes persistido (min(floor(0.25*menor gap),120), default 120) derivado no gerador; guarda bilateral em doseWindow.ts (modulo puro, quebra ciclo ESM alarmService<->staleDoseNotifications) aplicada em takeover, acoes, soneca e nag. SO o lado ADIANTADO recusa (RC5: recusar atrasado seria regressao — register_dose_atomic aceita missed). Evento novo alarm_out_of_window (CHECK 12->13 + Zod verbatim) com detail em allowlist FECHADA de 5 campos; REVOKE ALL FROM anon. Aviso informativo sem som/CTA, marcado por CONTEUDO (__outOfWindowNotice, AP-327), coalescido por dose. 3 migracoes aplicadas em prod antes do PR (preflight R-270). Backfill so de pendings FUTURAS (77 de 1308) — derivar piso de fato passado falsificaria fato datado (R-299). Smoke em moto g06/Android 15: PO-2/3/15/16 fechadas com evidencia colada. AP-329 (regen com > trunca arquivo versionado) e AP-330 (caminho fail-open transforma falha de persistencia em smoke verde) registradas. RC6 rodada 2x: a 1a cobriu 6/10 chunks e nao revisou outOfWindowNotice.ts; com RC6_MAX_CHUNKS=10 achou o furo REAL do scheduleNag (disparo adiantado ignorado reagendava nag em loop ate a hora da dose — guardas barravam a escrita, nao o incomodo). Corrigido + 2 testes. 2 findings refutados nas duas rodadas: parseISO->NaN (aceita string|number|Date e ha guarda Number.isNaN) e CHECK sem migracao (migracao esta no diff e aplicada; evento gravado no smoke prova a sincronia)."
+      },
+      {
+        "pr": 797,
+        "squash": "65931d11",
+        "spec": "067 B1 — skip e pausa/retomada por RPC transacional",
+        "tier": 2,
+        "date": "2026-08-19",
+        "base_branch": "main",
+        "note": "Onda 1 item 1.1. `skip_dose_atomic` (lote uuid[], janela lida da própria linha, now() do servidor) + `set_protocol_dose_state_atomic` (pause_all/pause_until/resume). 3 writers migrados: mobile `registerSkip`, bot `handleConfirmSkipDose` (p_user_id do binding telegram_chat_id → fecha IDOR pré-existente) e core (3 fns de pausa, não 2 — C1.5/F-B1: o writer real é markAllFutureSkippedPaused). ⚠️ REVOKE UPDATE(status) NÃO aplicado (Decisões 15/16): espera adoção da 0.31.1 nas lojas; docs/migrations/PENDING.md + R-310 + emenda no ADR-092; gate = PO-SEC-2 (aberta de propósito). Achados: PO-SEC-6 pegou anon=X por ALTER DEFAULT PRIVILEGES (AP-275); recusa era muda no caminho da notificação (refusalNotice criado); mensagem não nomeava o horário previsto (hora vem da RPC, não do payload). RC5 1 auto-fix (relógio do device vazando como skippedAt); RC6 0 critical/high, 1 low (cabeçalho do repo mentia sobre markSkippedPaused). POs fechadas: 6b, 7, SEC-1, SEC-6. Smoke do PO em device nas 2 rotas de recusa."
       }
     ],
     "previous_session_note": "067 A2 MERGEADO (PR #796, squash 72653942). Slice seguinte: B (skip por RPC + REVOKE UPDATE(status)), ADR-092 accepted. Follow-ups declarados e NAO autorizados: (1) instancia orfa de agenda revogada — wipe de futuras pendings e best-effort silencioso, um alarme ja agendado no SO pode sobreviver (mesmo tratamento do clock drift RC3/F4); (2) protocols nao tem updated_at — sem trilha de quando a agenda foi editada; (3) dots do dia SELECIONADO perdem cor (herdado do A1). APRENDIZADO DE PROCESSO: RC6 com o cap default de 6 chunks gastou analise em _dev/testes e deixou o arquivo da allowlist de dado de saude sem revisao; RC6_MAX_CHUNKS=10 achou o defeito real. Considerar cap maior quando o diff revisavel for pequeno mas espalhado.",
@@ -97,7 +106,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 261,
     "anti_patterns_count": 324,
     "decisions_count": 92,
@@ -109,7 +118,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-18T22:35:30.110120"
+    "index_loaded_at": "2026-08-19T13:44:07.187015"
   },
   "code_review": {
     "status": "clean",
