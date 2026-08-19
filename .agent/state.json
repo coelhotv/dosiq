@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 Slice C — higiene do trail (FR-040/041) + occurred_at na origem (FR-042/043)",
+    "goal": "067 Slice C — trilha diz o que aconteceu (occurred_at + higiene) — pronta p/ PR",
     "goal_type": "feature",
     "code_review": {
       "status": "issues_found_and_fixed",
@@ -50,7 +50,7 @@
         "note": "Onda 1 item 1.1. `skip_dose_atomic` (lote uuid[], janela lida da própria linha, now() do servidor) + `set_protocol_dose_state_atomic` (pause_all/pause_until/resume). 3 writers migrados: mobile `registerSkip`, bot `handleConfirmSkipDose` (p_user_id do binding telegram_chat_id → fecha IDOR pré-existente) e core (3 fns de pausa, não 2 — C1.5/F-B1: o writer real é markAllFutureSkippedPaused). ⚠️ REVOKE UPDATE(status) NÃO aplicado (Decisões 15/16): espera adoção da 0.31.1 nas lojas; docs/migrations/PENDING.md + R-310 + emenda no ADR-092; gate = PO-SEC-2 (aberta de propósito). Achados: PO-SEC-6 pegou anon=X por ALTER DEFAULT PRIVILEGES (AP-275); recusa era muda no caminho da notificação (refusalNotice criado); mensagem não nomeava o horário previsto (hora vem da RPC, não do payload). RC5 1 auto-fix (relógio do device vazando como skippedAt); RC6 0 critical/high, 1 low (cabeçalho do repo mentia sobre markSkippedPaused). POs fechadas: 6b, 7, SEC-1, SEC-6. Smoke do PO em device nas 2 rotas de recusa."
       }
     ],
-    "previous_session_note": "067 A2 MERGEADO (PR #796, squash 72653942). Slice seguinte: B (skip por RPC + REVOKE UPDATE(status)), ADR-092 accepted. Follow-ups declarados e NAO autorizados: (1) instancia orfa de agenda revogada — wipe de futuras pendings e best-effort silencioso, um alarme ja agendado no SO pode sobreviver (mesmo tratamento do clock drift RC3/F4); (2) protocols nao tem updated_at — sem trilha de quando a agenda foi editada; (3) dots do dia SELECIONADO perdem cor (herdado do A1). APRENDIZADO DE PROCESSO: RC6 com o cap default de 6 chunks gastou analise em _dev/testes e deixou o arquivo da allowlist de dado de saude sem revisao; RC6_MAX_CHUNKS=10 achou o defeito real. Considerar cap maior quando o diff revisavel for pequeno mas espalhado.",
+    "previous_session_note": "067 C IMPLEMENTADA (branch feat/067-c-trilha-occurred-at, commits locais, SEM push). 2 emendas do C1.5 aprovadas pelo PO: Decisão 22 (FR-041 reescrita — 400 BadDeviceToken JÁ era tratado em liveActivityPush.ts:126; causa real era o device REPOR o token que o servidor limpou; e as 129 push_failed de 7d eram 127 do simulador da conta de teste + 2 de build dev = ZERO em produção) e Decisão 23 (candidatura da FR-040 inclui device iOS INATIVO, senão zeraria o caso-alvo 'iPhone cujo push parou'). Migração occurred_at APLICADA em prod antes do PR (aditiva, nullable, 13.138 linhas intactas). PO-9/17/18/19/20 fechadas; PO-8 aberta (query de pontualidade pós-deploy). SMOKE fechou o furo com Δ 961s e produziu AP-331: takeover deixa o app `top-sleeping` com a tela apagada, AppState nunca vira 'active' e a fila não drena — a condição do erro grande é a COMUM (silenciar e voltar a dormir), não a rara (app morto). RC5: 0 critical, 1 auto-fix. FALTA: RC6 após abrir o PR, e a query da PO-8 no C5 pós-merge.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -104,9 +104,9 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 261,
-    "anti_patterns_count": 324,
+    "anti_patterns_count": 325,
     "decisions_count": 92,
     "contracts_count": 32,
     "distillation_due": false
@@ -116,7 +116,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-19T13:44:07.187015"
+    "index_loaded_at": "2026-08-19T18:06:21.111709-03:00"
   },
   "code_review": {
     "status": "clean",

@@ -231,22 +231,29 @@ export async function registerSkip(data) {
     }
   }
 
+  await invalidate(SNAPSHOTS_SKIP)
+
   // FR-043: só APÓS a RPC confirmar. Skip RECUSADO (fora da janela / erro) retorna acima e NÃO
   // emite — não houve resolução, e uma trilha que diz "resolvido" sobre uma recusa mente.
-  // `occurredAt` = instante da ação da paciente, carimbado na origem (FR-042). Emite por
-  // instância do lote: no grupo, cada dose é um fato clínico próprio.
+  // `occurredAt` = instante da ação da paciente, carimbado na origem (FR-042). Uma linha por
+  // instância: no lote agrupado, cada dose é um fato clínico próprio.
+  //
+  // EM PARALELO e DEPOIS do invalidate: a auditoria é best-effort e não pode atrasar a resposta a
+  // uma ação da paciente. Sequencial, um lote de 5 doses segurava a tela cheia do alarme por 5
+  // round-trips — o alarme continua na frente dela enquanto o trail conversa com o servidor.
   const resolvedAt = getRawNow().toISOString()
-  for (const id of ids) {
-    await skipAudit.emit({
-      doseInstanceId: id,
-      event: 'resolved',
-      platform: Platform.OS,
-      actor: 'user',
-      occurredAt: resolvedAt,
-    })
-  }
+  await Promise.all(
+    ids.map((id) =>
+      skipAudit.emit({
+        doseInstanceId: id,
+        event: 'resolved',
+        platform: Platform.OS,
+        actor: 'user',
+        occurredAt: resolvedAt,
+      }),
+    ),
+  )
 
-  await invalidate(SNAPSHOTS_SKIP)
   return { success: true }
 }
 
