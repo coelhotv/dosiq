@@ -4,7 +4,12 @@
 // e a recusa do banco NUNCA vira sucesso mudo no client (R-305).
 
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { skipDose, isOutOfWindowError, OUT_OF_WINDOW_MESSAGE_PREFIX } from '../skipDoseService'
+import {
+  skipDose,
+  isOutOfWindowError,
+  extractOutOfWindowScheduledAt,
+  OUT_OF_WINDOW_MESSAGE_PREFIX,
+} from '../skipDoseService'
 
 function makeClient(result: any) {
   return {
@@ -81,6 +86,23 @@ describe('skipDose', () => {
       error: { message: `${OUT_OF_WINDOW_MESSAGE_PREFIX} (horário previsto: 2026-08-18T16:30:00Z)` },
     })
     await expect(skipDose(client, { userId: 'u1', instanceIds: ['a'] })).rejects.toThrow(/Fora da janela/)
+  })
+})
+
+describe('extractOutOfWindowScheduledAt', () => {
+  it('extrai o horário previsto que a RPC carimba na mensagem (FR-013)', () => {
+    const err = new Error(`${OUT_OF_WINDOW_MESSAGE_PREFIX} (horário previsto: 2026-08-19T23:45:00Z)`)
+    expect(extractOutOfWindowScheduledAt(err)).toBe('2026-08-19T23:45:00Z')
+  })
+
+  it('devolve null quando a recusa não foi por janela (posse/estado)', () => {
+    expect(extractOutOfWindowScheduledAt(new Error('Acesso não autorizado'))).toBeNull()
+    expect(extractOutOfWindowScheduledAt(new Error('Dose indisponível para pular'))).toBeNull()
+  })
+
+  it('não quebra com entrada não-Error', () => {
+    expect(extractOutOfWindowScheduledAt(null)).toBeNull()
+    expect(extractOutOfWindowScheduledAt(undefined)).toBeNull()
   })
 })
 

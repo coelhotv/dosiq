@@ -38,6 +38,9 @@ jest.mock('@dosiq/core', () => {
   }
 })
 
+/** Horário previsto que a RPC carimba — a mensagem TEM de nomeá-lo (FR-013). */
+const SCHED_ISO = '2026-08-19T23:45:00Z'
+
 const mockNavigate = jest.fn()
 jest.mock('@navigation/navigationRef', () => ({
   navigationRef: {
@@ -122,11 +125,15 @@ describe('handleAlarmAction — Pular', () => {
 
   it('recusa do banco vira mensagem legível, nunca sucesso mudo (R-305/FR-013)', async () => {
     mockSkipDose.mockImplementationOnce(() =>
-      Promise.reject(new Error('Fora da janela da dose (horário previsto: 2026-08-18T16:30:00Z)')),
+      Promise.reject(new Error(`Fora da janela da dose (horário previsto: ${SCHED_ISO})`)),
     )
     const res = await registerSkip(BASE)
     expect(res).toMatchObject({ success: false, refused: 'server_out_of_window' })
-    expect(String((res as any).message)).toMatch(/fora do horário da dose/i)
+    // FR-013: motivo + HORÁRIO PREVISTO (fonte = mensagem da RPC; o payload pode estar mentindo).
+    expect(String((res as any).message)).toMatch(/fora da janela de registro/i)
+    const d = new Date(SCHED_ISO)
+    const clock = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    expect(String((res as any).message)).toContain(clock)
     // Snapshot NÃO é invalidado: nada mudou no banco.
     expect(AsyncStorage.multiRemove).not.toHaveBeenCalled()
   })
@@ -140,13 +147,13 @@ describe('handleAlarmAction — Pular', () => {
 
   it('recusa do BANCO vira notificação quando a ação veio do shade (FR-013 — sem tela para Alert)', async () => {
     mockSkipDose.mockImplementationOnce(() =>
-      Promise.reject(new Error('Fora da janela da dose (horário previsto: 2026-08-18T16:30:00Z)')),
+      Promise.reject(new Error(`Fora da janela da dose (horário previsto: ${SCHED_ISO})`)),
     )
     await handleAlarmAction(evt('dose-skip', BASE))
     expect(mockShowRefusalNotice).toHaveBeenCalledTimes(1)
     const [args] = mockShowRefusalNotice.mock.calls[0] as any[]
     expect(args.doseInstanceId).toBe('inst-1')
-    expect(String(args.message)).toMatch(/fora do horário da dose/i)
+    expect(String(args.message)).toMatch(/fora da janela de registro/i)
   })
 
   it('recusa do CLIENT (A2) NÃO duplica aviso — já tem o da FR-019', async () => {

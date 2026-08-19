@@ -5,8 +5,23 @@ import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
 import { getServerTimestamp, addDays, addMinutes, parseISO } from '../../utils/dateUtils.js';
-import { createDoseInstanceRepository, computeStreakFromInstances, skipDose, isOutOfWindowError } from '@dosiq/core';
+import { createDoseInstanceRepository, computeStreakFromInstances, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt, resolveUserTz } from '@dosiq/core';
 import { createLogger } from '../logger.js';
+
+/**
+ * Texto da recusa por janela para o Telegram (FR-013): motivo + horário previsto no fuso do dono.
+ * Sem SQLSTATE, sem nome de função, sem stack (RC-SEC/S-8).
+ */
+function outOfWindowText(error: unknown, timezone: string): string {
+  const iso = extractOutOfWindowScheduledAt(error);
+  if (!iso) return 'Esta dose está fora da janela de registro. Nada foi alterado.';
+  const clock = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: timezone || 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(parseISO(iso)); // R-020: nunca `new Date(iso)` na fronteira de timezone
+  return `Esta dose está fora da janela de registro. Nada foi alterado — sua dose é às ${clock}.`;
+}
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
 
@@ -329,8 +344,10 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
         await skipDose(supabase, { userId, instanceIds: [instance.id], skippedAt: nowIso });
       } catch (skipError) {
         // FR-013: a recusa do banco chega ao paciente com o motivo, nunca como "nada aconteceu".
+        // FR-013: motivo + HORÁRIO PREVISTO. O horário vem da mensagem da RPC (que leu
+        // `scheduled_for` da própria linha) e é formatado no fuso do dono, não no do servidor.
         const text = isOutOfWindowError(skipError)
-          ? 'Esta dose está fora da janela de registro. Nada foi alterado.'
+          ? outOfWindowText(skipError, await resolveUserTz(supabase as any, userId))
           : 'Esta dose já foi registrada ou pulada.';
         logger.warn('Skip recusado pelo banco no Telegram', { protocolId, message: (skipError as Error)?.message });
         await bot.answerCallbackQuery(id, { text, show_alert: true });

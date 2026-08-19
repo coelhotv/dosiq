@@ -74,3 +74,19 @@ export function isOutOfWindowError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? '')
   return message.includes(OUT_OF_WINDOW_MESSAGE_PREFIX)
 }
+
+/**
+ * Extrai o horário previsto (ISO UTC) que a RPC carimba na mensagem de recusa.
+ *
+ * A FR-013 exige que a paciente leia o MOTIVO **e o horário previsto** — e esse horário só é
+ * confiável vindo do banco: num aparelho com o relógio adiantado (o cenário do incidente) o
+ * `scheduledFor` do payload da notificação também está contaminado. Por isso a fonte é a mensagem
+ * da RPC, que lê `scheduled_for` da própria linha.
+ *
+ * @returns ISO UTC (`2026-08-19T23:45:00Z`) ou `null` quando a recusa não foi por janela.
+ */
+export function extractOutOfWindowScheduledAt(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  const match = message.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/)
+  return match ? match[1] : null
+}

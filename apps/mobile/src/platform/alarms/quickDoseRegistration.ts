@@ -12,7 +12,7 @@
 // treatments-snapshot.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRawNow, skipDose, isOutOfWindowError } from '@dosiq/core'
+import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
@@ -26,6 +26,22 @@ import { triggerAlarmResync } from './alarmResyncBus'
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
 const SNAPSHOTS_SKIP = ['@dosiq/today-snapshot', '@dosiq/treatments-snapshot']
+
+/**
+ * Mensagem da recusa do BANCO (FR-013): nomeia o motivo E o horário previsto.
+ *
+ * O horário vem da MENSAGEM DA RPC, não do payload da notificação: num aparelho com o relógio
+ * adiantado — o cenário do incidente — o `scheduledFor` do payload também está mentindo. Só o
+ * banco sabe o horário real da dose.
+ * @private
+ */
+function outOfWindowMessage(error) {
+  const iso = extractOutOfWindowScheduledAt(error)
+  if (!iso) return 'Esta dose está fora da janela de registro. Nada foi registrado.'
+  const d = parseISO(iso) // R-020: nunca `new Date(iso)` na fronteira de timezone
+  const clock = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `Esta dose está fora da janela de registro. Nada foi registrado — sua dose é às ${clock}.`
+}
 
 /** Dono da sessão — a RPC de skip exige `p_user_id` e valida a posse dentro dela (FR-028). */
 async function resolveUserId() {
@@ -198,7 +214,7 @@ export async function registerSkip(data) {
       // avisar duas vezes — a recusa do client já emite o aviso próprio da FR-019.
       refused: isOutOfWindowError(error) ? 'server_out_of_window' : 'rejected',
       message: isOutOfWindowError(error)
-        ? 'Este alarme tocou fora do horário da dose. Nada foi registrado — vamos avisar de novo no horário certo.'
+        ? outOfWindowMessage(error)
         : String(error?.message || 'Não foi possível pular esta dose.'),
     }
   }

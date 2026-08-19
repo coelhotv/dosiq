@@ -28,6 +28,7 @@ export { createDoseLogService } from './doseLogService'
 export {
   skipDose,
   isOutOfWindowError,
+  extractOutOfWindowScheduledAt,
   OUT_OF_WINDOW_MESSAGE_PREFIX,
 } from './skipDoseService'
 
