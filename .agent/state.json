@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "planned",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 B1 — skip + pausa/retomada por RPC (mergeado #797); B2 (REVOKE) segurado",
+    "goal": "067 C — trilha (higiene + occurred_at); T058 decidida, pronta para C1.5",
     "goal_type": "feature",
     "code_review": {
       "status": "issues_found_and_fixed",
