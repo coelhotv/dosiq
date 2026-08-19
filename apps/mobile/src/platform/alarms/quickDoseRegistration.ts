@@ -12,7 +12,7 @@
 // treatments-snapshot.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRawNow } from '@dosiq/core'
+import { getRawNow, skipDose, isOutOfWindowError } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
@@ -26,6 +26,14 @@ import { triggerAlarmResync } from './alarmResyncBus'
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
 const SNAPSHOTS_SKIP = ['@dosiq/today-snapshot', '@dosiq/treatments-snapshot']
+
+/** Dono da sessão — a RPC de skip exige `p_user_id` e valida a posse dentro dela (FR-028). */
+async function resolveUserId() {
+  const { data, error } = await supabase.auth.getUser()
+  // AP-216: `{ data, error }` do supabase-js pode vir com `data.user` nulo sem `error`.
+  if (error || !data?.user?.id) throw new Error('Sessão expirada. Entre novamente para pular a dose.')
+  return data.user.id
+}
 
 async function invalidate(keys) {
   try {
@@ -160,24 +168,39 @@ export async function registerSkip(data) {
   const guard = await refuseIfOutOfWindow(data, 'registerSkip')
   if (guard.outOfWindow) return guard.result
 
+  let ids = [doseInstanceId]
   if (isGrouped === 'true' && groupedDoses) {
     let doses = []
     try {
       doses = JSON.parse(groupedDoses)
     } catch {
-      // fallback
+      // fallback: dose única (o id do grupo já está em `ids`)
     }
+    // Lote all-or-nothing numa transação só — o `UPDATE ... .in(ids)` de antes já era atômico
+    // e a RPC preserva isso (Decisão 14); um loop de N chamadas deixaria o grupo meio pulado.
+    if (doses.length > 0) ids = doses.map((d) => d.instanceId).filter(Boolean)
+  }
 
-    if (doses.length > 0) {
-      const ids = doses.map((d) => d.instanceId)
-      await supabase.from('dose_instances').update({ status: 'skipped_user' }).in('id', ids)
-      await invalidate(SNAPSHOTS_SKIP)
-      return { success: true }
+  // 067/B (FR-011/ADR-092): via RPC. O `UPDATE` cru daqui era a escrita que gravava fato
+  // clínico sem declarar instante — agora `skippedAt` viaja e o banco recusa fora da janela,
+  // mesmo que a guarda de client acima seja contornada (relógio adiantado).
+  try {
+    const userId = await resolveUserId()
+    // 🔴 SEM `skippedAt`: o instante fica em branco de propósito para a RPC usar o `now()` do
+    // SERVIDOR. Mandar o relógio do aparelho seria mandar exatamente o relógio que o incidente
+    // provou não ser confiável — a guarda do banco existe justamente para não depender dele.
+    await skipDose(supabase, { userId, instanceIds: ids })
+  } catch (error) {
+    // R-305/FR-013: recusa é BARULHENTA e chega legível à paciente — nunca "nada aconteceu".
+    return {
+      success: false,
+      refused: isOutOfWindowError(error) ? 'out_of_window' : 'rejected',
+      message: isOutOfWindowError(error)
+        ? 'Este alarme tocou fora do horário da dose. Nada foi registrado — vamos avisar de novo no horário certo.'
+        : String(error?.message || 'Não foi possível pular esta dose.'),
     }
   }
 
-  // Fallback para dose única
-  await supabase.from('dose_instances').update({ status: 'skipped_user' }).eq('id', doseInstanceId)
   await invalidate(SNAPSHOTS_SKIP)
   return { success: true }
 }

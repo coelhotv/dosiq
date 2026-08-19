@@ -6,7 +6,7 @@
 // (R-137 peso ≥700 / R-138 nunca ícone solo), hit-targets ≥ 64px.
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Check, X, Pill, Clock } from 'lucide-react-native'
 import { formatMedicineConcentration, formatDoseItem } from '@dosiq/core'
@@ -156,15 +156,23 @@ export default function AlarmFullScreen({ navigation, route }) {
     onClose: close,
   })
 
+  // 067/B (FR-013, Princípio IX): recusa — do client (A2) ou do banco (RPC) — é MOSTRADA.
+  // Fechar a tela em silêncio é o "nada aconteceu" que a spec existe para eliminar: a paciente
+  // sai acreditando que registrou.
+  const reportRefusal = useCallback((result) => {
+    if (!result || result.success !== false || !result.message) return
+    Alert.alert('Dose não registrada', String(result.message))
+  }, [])
+
   const onTaken = useCallback(async () => {
     if (busy) return
     setBusy(true)
     try {
-      await registerTaken(data)
+      reportRefusal(await registerTaken(data))
     } finally {
       close()
     }
-  }, [busy, data, close])
+  }, [busy, data, close, reportRefusal])
 
   const onSnooze = useCallback(async () => {
     if (busy) return
@@ -190,11 +198,11 @@ export default function AlarmFullScreen({ navigation, route }) {
     if (busy) return
     setBusy(true)
     try {
-      await registerSkip(data)
+      reportRefusal(await registerSkip(data))
     } finally {
       close()
     }
-  }, [busy, data, close])
+  }, [busy, data, close, reportRefusal])
 
   return (
     <View style={styles.root}>

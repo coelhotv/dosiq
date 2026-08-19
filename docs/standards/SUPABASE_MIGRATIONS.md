@@ -16,6 +16,12 @@ created_at: "2026-07-18"
 updated_at: "2026-07-30"
 ---
 
+> 🔴 **Migração escrita ≠ migração aplicada.** Quando uma migração (ou uma PARTE dela) fica no repo
+> sem ser aplicada — rollout escalonado, espera de adoção de app, janela de manutenção — ela **DEVE**
+> ganhar uma linha em [`docs/migrations/PENDING.md`](../migrations/PENDING.md) com o gatilho que
+> libera a aplicação e o PO/gate que a fecha. Sem isso a pendência vira dívida invisível: o código
+> assume um privilégio que o banco ainda concede, e ninguém lembra de fechar o ciclo.
+
 # Migrações Supabase — template e regras obrigatórias
 
 > Extraído do CLAUDE.md em 2026-07-18 (redução do arquivo). Fonte de verdade para

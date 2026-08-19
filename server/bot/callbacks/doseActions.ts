@@ -5,7 +5,7 @@ import { calculateDaysRemaining, escapeMarkdownV2 } from '../../utils/formatters
 import { setState, getState, clearState } from '../state.js';
 import { partitionDoses } from '../utils/partitionDoses.js';
 import { getServerTimestamp, addDays, addMinutes, parseISO } from '../../utils/dateUtils.js';
-import { createDoseInstanceRepository, computeStreakFromInstances } from '@dosiq/core';
+import { createDoseInstanceRepository, computeStreakFromInstances, skipDose, isOutOfWindowError } from '@dosiq/core';
 import { createLogger } from '../logger.js';
 
 const SKIP_CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds
@@ -316,22 +316,24 @@ async function handleConfirmSkipDose(bot, callbackQuery) {
     
     const medicineName = state.medicineName || 'Medicamento';
     
-    // Wire skip to database dose_instances: status = 'skipped_user'
+    // 067/B (FR-011/FR-028/ADR-092): skip por RPC. O `p_user_id` vem do binding
+    // `telegram_chat_id → user_id` NO SERVIDOR — nunca do `callback_data`, que é entrada do
+    // cliente. O bot roda `service_role` (RLS bypassada, `auth.uid()` NULL), então a posse é
+    // provada dentro da RPC pelo filtro `user_id = p_user_id`: fecha o IDOR do UPDATE cru
+    // anterior, que filtrava só por `protocol_id` vindo do payload.
     const nowIso = getServerTimestamp();
+    const userId = await getUserIdByChatId(chatId);
     const instance = await doseInstanceRepo.findAnchorInstance({ protocolId, takenAt: nowIso });
     if (instance) {
-      const { data: updatedRows, error: updateError } = await supabase
-        .from('dose_instances')
-        .update({ status: 'skipped_user' })
-        .eq('id', instance.id)
-        .in('status', ['pending', 'missed'])
-        .select('id');
-      if (updateError) {
-        logger.error('Erro ao marcar dose_instance como skipped_user no Telegram:', updateError);
-        throw updateError;
-      }
-      if (!updatedRows || updatedRows.length === 0) {
-        await bot.answerCallbackQuery(id, { text: 'Esta dose já foi registrada ou pulada.', show_alert: true });
+      try {
+        await skipDose(supabase, { userId, instanceIds: [instance.id], skippedAt: nowIso });
+      } catch (skipError) {
+        // FR-013: a recusa do banco chega ao paciente com o motivo, nunca como "nada aconteceu".
+        const text = isOutOfWindowError(skipError)
+          ? 'Esta dose está fora da janela de registro. Nada foi alterado.'
+          : 'Esta dose já foi registrada ou pulada.';
+        logger.warn('Skip recusado pelo banco no Telegram', { protocolId, message: (skipError as Error)?.message });
+        await bot.answerCallbackQuery(id, { text, show_alert: true });
         return;
       }
     } else {

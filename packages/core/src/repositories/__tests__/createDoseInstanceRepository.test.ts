@@ -39,6 +39,8 @@ function makeClient(result: any) {
     _builder: builder,
     _from: null as string | null,
     from: vi.fn((table: string) => { client._from = table; return builder }),
+    // 067/B: pausa/retomada saíram do UPDATE cru e viraram RPC (ADR-092).
+    rpc: vi.fn(async () => ({ data: { affected: 0 }, error: null })),
   }
   return client as any
 }
@@ -104,17 +106,45 @@ describe('createDoseInstanceRepository', () => {
   })
 
   describe('markSkippedPaused', () => {
-    it('marca pendentes futuras até untilTs como skipped_paused', async () => {
+    it('vai por RPC com mode pause_until e o limite declarado (067/B, FR-030)', async () => {
       const client = makeClient({ data: null, error: null })
       const repo = createDoseInstanceRepository({ client })
       const until = '2026-05-11T00:00:00Z'
-      await repo.markSkippedPaused('p1', until)
+      await repo.markSkippedPaused('u1', 'p1', until)
 
-      const b = client._builder
-      expect(b.update).toHaveBeenCalledWith({ status: 'skipped_paused' })
-      expect(b.eq).toHaveBeenCalledWith('status', 'pending')
-      const lteCall = b._calls.find(([n]: [string]) => n === 'lte')
-      expect(new Date(lteCall[1][1]).toISOString()).toBe(new Date(until).toISOString())
+      expect(client.rpc).toHaveBeenCalledWith('set_protocol_dose_state_atomic', {
+        p_user_id: 'u1',
+        p_protocol_id: 'p1',
+        p_mode: 'pause_until',
+        p_until: new Date(until).toISOString(),
+      })
+      // Nenhum UPDATE cru sobrevive — é o ponto do REVOKE (SC-008).
+      expect(client.from).not.toHaveBeenCalled()
+    })
+
+    it('propaga erro da RPC (recusa nunca vira sucesso mudo — R-305)', async () => {
+      const client = makeClient({ data: null, error: null })
+      client.rpc = vi.fn(async () => ({ data: null, error: { message: 'Acesso não autorizado' } }))
+      const repo = createDoseInstanceRepository({ client })
+      await expect(repo.markSkippedPaused('u1', 'p1', '2026-05-11T00:00:00Z')).rejects.toMatchObject({
+        message: 'Acesso não autorizado',
+      })
+    })
+  })
+
+  describe('markAllFutureSkippedPaused', () => {
+    it('vai por RPC com mode pause_all (writer REAL da pausa — C1.5/F-B1)', async () => {
+      const client = makeClient({ data: null, error: null })
+      const repo = createDoseInstanceRepository({ client })
+      await repo.markAllFutureSkippedPaused('u1', 'p1')
+
+      expect(client.rpc).toHaveBeenCalledWith('set_protocol_dose_state_atomic', {
+        p_user_id: 'u1',
+        p_protocol_id: 'p1',
+        p_mode: 'pause_all',
+        p_until: null,
+      })
+      expect(client.from).not.toHaveBeenCalled()
     })
   })
 
@@ -144,19 +174,18 @@ describe('createDoseInstanceRepository', () => {
   })
 
   describe('reactivateFuturePaused', () => {
-    it('reverte skipped_paused → pending apenas no futuro', async () => {
+    it('vai por RPC com mode resume (067/B, FR-030)', async () => {
       const client = makeClient({ data: null, error: null })
       const repo = createDoseInstanceRepository({ client })
-      const before = Date.now()
-      await repo.reactivateFuturePaused('p1')
+      await repo.reactivateFuturePaused('u1', 'p1')
 
-      const b = client._builder
-      expect(b.update).toHaveBeenCalledWith({ status: 'pending' })
-      expect(b.eq).toHaveBeenCalledWith('protocol_id', 'p1')
-      expect(b.eq).toHaveBeenCalledWith('status', 'skipped_paused')
-      const gtCall = b._calls.find(([n]: [string]) => n === 'gt')
-      expect(gtCall[1][0]).toBe('scheduled_for')
-      expect(new Date(gtCall[1][1]).getTime()).toBeGreaterThanOrEqual(before)
+      expect(client.rpc).toHaveBeenCalledWith('set_protocol_dose_state_atomic', {
+        p_user_id: 'u1',
+        p_protocol_id: 'p1',
+        p_mode: 'resume',
+        p_until: null,
+      })
+      expect(client.from).not.toHaveBeenCalled()
     })
   })
 

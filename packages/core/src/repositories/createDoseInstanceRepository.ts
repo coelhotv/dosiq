@@ -284,16 +284,23 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
      * Reativa instâncias futuras que estavam pausadas (skipped_paused → pending).
      * Usado ao religar um protocolo: o upsert idempotente (ON CONFLICT DO NOTHING) não
      * reverteria essas linhas, então a reativação é explícita. Nunca toca o passado.
+     *
+     * 067/B (FR-030): passa por RPC porque `authenticated` VAI perder `UPDATE (status)`
+     * (ADR-092). O `REVOKE` está segurado até a versão nova ser majoritária nas lojas
+     * ([[R-310]] · `docs/migrations/PENDING.md`) — este caminho existe ANTES dele, de
+     * propósito. Estado do TRATAMENTO, não fato clínico da paciente ⇒ NÃO passa pela
+     * guarda de janela (Decisão 4).
+     * @param {string} userId - dono do protocolo (a RPC valida posse)
      * @param {string} protocolId
      * @returns {Promise<void>}
      */
-    async reactivateFuturePaused(protocolId: string) {
-      const { error } = await client
-        .from(TABLE)
-        .update({ status: 'pending' })
-        .eq('protocol_id', protocolId)
-        .eq('status', 'skipped_paused')
-        .gt('scheduled_for', getServerTimestamp())
+    async reactivateFuturePaused(userId: string, protocolId: string) {
+      const { error } = await client.rpc('set_protocol_dose_state_atomic', {
+        p_user_id: userId,
+        p_protocol_id: protocolId,
+        p_mode: 'resume',
+        p_until: null,
+      } as never)
 
       if (error) throw error
     },
@@ -301,34 +308,37 @@ export function createDoseInstanceRepository({ client }: CreateDoseInstanceRepos
     /**
      * Marca TODAS as instâncias pendentes futuras do protocolo como skipped_paused.
      * Usado na pausa imediata — elimina dependência do cron para limpar o restante.
+     * 067/B (FR-030): via RPC (ver `reactivateFuturePaused`).
+     * @param {string} userId - dono do protocolo (a RPC valida posse)
      * @param {string} protocolId
      * @returns {Promise<void>}
      */
-    async markAllFutureSkippedPaused(protocolId: string) {
-      const { error } = await client
-        .from(TABLE)
-        .update({ status: 'skipped_paused' })
-        .eq('protocol_id', protocolId)
-        .eq('status', 'pending')
-        .gt('scheduled_for', getServerTimestamp())
+    async markAllFutureSkippedPaused(userId: string, protocolId: string) {
+      const { error } = await client.rpc('set_protocol_dose_state_atomic', {
+        p_user_id: userId,
+        p_protocol_id: protocolId,
+        p_mode: 'pause_all',
+        p_until: null,
+      } as never)
 
       if (error) throw error
     },
 
     /**
      * Marca instâncias pendentes futuras até `untilTs` como skipped_paused (pausa não penaliza).
+     * 067/B (FR-030): via RPC (ver `reactivateFuturePaused`).
+     * @param {string} userId - dono do protocolo (a RPC valida posse)
      * @param {string} protocolId
      * @param {Date|string} untilTs
      * @returns {Promise<void>}
      */
-    async markSkippedPaused(protocolId: string, untilTs: Date | string) {
-      const { error } = await client
-        .from(TABLE)
-        .update({ status: 'skipped_paused' })
-        .eq('protocol_id', protocolId)
-        .eq('status', 'pending')
-        .gt('scheduled_for', getServerTimestamp())
-        .lte('scheduled_for', toIso(untilTs))
+    async markSkippedPaused(userId: string, protocolId: string, untilTs: Date | string) {
+      const { error } = await client.rpc('set_protocol_dose_state_atomic', {
+        p_user_id: userId,
+        p_protocol_id: protocolId,
+        p_mode: 'pause_until',
+        p_until: toIso(untilTs),
+      } as never)
 
       if (error) throw error
     },

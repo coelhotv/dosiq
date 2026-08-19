@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 B — guarda vira privilégio: skip_dose_atomic + RPCs de pausa/retomada + REVOKE UPDATE(status)",
+    "goal": "067 B1 — skip + pausa/retomada por RPC (REVOKE segurado p/ B2)",
     "goal_type": "feature",
     "code_review": {
       "status": "issues_found_and_fixed",
@@ -82,12 +82,23 @@
       "smoke do PO em device Android (COM REBUILD — AP-318) p/ fechar PO-2, PO-3, PO-15, PO-16 antes do gh pr create"
     ],
     "plan": "plans/specs/067-critical-alarm-window-guard/plan.md",
-    "tasks": "plans/specs/067-critical-alarm-window-guard/tasks.md"
+    "tasks": "plans/specs/067-critical-alarm-window-guard/tasks.md",
+    "pending_migrations": [
+      {
+        "file": "docs/migrations/20260818_skip_dose_atomic_and_status_privilege.sql",
+        "part": "§3 — REVOKE UPDATE (status) ON dose_instances FROM authenticated",
+        "held_since": "2026-08-18",
+        "trigger": "adoção da APP_VERSION 0.31.1 nas lojas acima do limiar + web nova em prod",
+        "gate": "PO-SEC-2 (spec 067)",
+        "why": "Decisões 15/16 do PO: aplicar antes penaliza quem não atualizou (42501 sem saída). R-310.",
+        "index": "docs/migrations/PENDING.md"
+      }
+    ]
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 7,
-    "rules_count": 260,
+    "journal_entries_since_distillation": 8,
+    "rules_count": 261,
     "anti_patterns_count": 324,
     "decisions_count": 92,
     "contracts_count": 32,
@@ -98,7 +109,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-17T16:00:00Z"
+    "index_loaded_at": "2026-08-18T22:35:30.110120"
   },
   "code_review": {
     "status": "clean",

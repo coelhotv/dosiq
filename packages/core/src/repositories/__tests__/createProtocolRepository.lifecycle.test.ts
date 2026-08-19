@@ -56,7 +56,18 @@ function makeClient() {
     ops.push(b)
     return b
   }
-  const client = { _ops: ops, from: vi.fn((t: any) => builder(t)) }
+  // 067/B: pausa e retomada saíram do UPDATE cru e viraram RPC (ADR-092) — o mock registra as
+  // chamadas p/ que os testes de ciclo de vida asseram o novo caminho, não o antigo.
+  const rpcCalls: any[] = []
+  const client = {
+    _ops: ops,
+    _rpcCalls: rpcCalls,
+    from: vi.fn((t: any) => builder(t)),
+    rpc: vi.fn((fn: any, params: any) => {
+      rpcCalls.push([fn, params])
+      return Promise.resolve({ data: { affected: 0 }, error: null })
+    }),
+  }
   return client as any
 }
 
@@ -92,28 +103,27 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     expect(protocolUpdates.length).toBeGreaterThan(0)
   })
 
-  it('update active:false (pausa) → marca skipped_paused, NÃO regenera', async () => {
+  it('update active:false (pausa) → marca skipped_paused via RPC, NÃO regenera', async () => {
     await repo.update('p1', { active: false })
-    const diOps = tableOps(client, 'dose_instances')
-    const methods = diOps.flatMap((b: any) => b.calls.map(([m]: any) => m))
-    // marcou skipped_paused (update em dose_instances) mas não fez upsert (sem regen)
-    expect(methods).toContain('update')
-    expect(methods).not.toContain('upsert')
+    // 067/B: a pausa vai por `set_protocol_dose_state_atomic` (mode pause_all), com o dono
+    // do protocolo — nenhum UPDATE cru de status sobrevive (SC-008).
+    expect(client._rpcCalls).toContainEqual([
+      'set_protocol_dose_state_atomic',
+      { p_user_id: 'u1', p_protocol_id: 'p1', p_mode: 'pause_all', p_until: null },
+    ])
+    const methods = tableOps(client, 'dose_instances').flatMap((b: any) => b.calls.map(([m]: any) => m))
+    expect(methods).not.toContain('update')
+    expect(methods).not.toContain('upsert') // sem regen na pausa
   })
 
-  it('update active:true (resume) → reativa skipped_paused (update status) + regen (upsert)', async () => {
+  it('update active:true (resume) → reativa skipped_paused via RPC + regen (upsert)', async () => {
     await repo.update('p1', { active: true })
-    const diOps = tableOps(client, 'dose_instances')
-    const methods = diOps.flatMap((b: any) => b.calls.map(([m]: any) => m))
-    // reactivateFuturePaused = update em dose_instances filtrando status=skipped_paused
-    expect(methods).toContain('update')
-    const updatedToPending = diOps.some((b: any) =>
-      b.calls.some(([m, a]: any) => m === 'update' && a[0]?.status === 'pending') &&
-      b.calls.some(([m, a]: any) => m === 'eq' && a[0] === 'status' && a[1] === 'skipped_paused')
-    )
-    expect(updatedToPending).toBe(true)
-    // e regenera a janela
-    expect(methods).toContain('upsert')
+    expect(client._rpcCalls).toContainEqual([
+      'set_protocol_dose_state_atomic',
+      { p_user_id: 'u1', p_protocol_id: 'p1', p_mode: 'resume', p_until: null },
+    ])
+    // e regenera a janela (esta parte não mudou)
+    expect(methodsFor(client, 'dose_instances')).toContain('upsert')
   })
 
   it('update time_schedule → wipe (delete) + regen (upsert)', async () => {

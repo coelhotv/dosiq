@@ -60,7 +60,7 @@ async function syncInstancesOnWrite({
     // antes do cron e converte pending→missed indevidamente (AP-221).
     if (updates && updates.active === false) {
       await repo.setPausedAt(protocol.id, getServerTimestamp())
-      await repo.markAllFutureSkippedPaused(protocol.id)
+      await repo.markAllFutureSkippedPaused(protocol.user_id, protocol.id)
       return
     }
 
@@ -70,7 +70,7 @@ async function syncInstancesOnWrite({
       // Reverte as instâncias marcadas na pausa (skipped_paused → pending). O regen via
       // upsert (ON CONFLICT DO NOTHING) não reverteria — sem isto, toggle rápido
       // (pausa <1d + religa) deixaria as próximas 24h mortas. (S2.5 DoD)
-      await repo.reactivateFuturePaused(protocol.id)
+      await repo.reactivateFuturePaused(protocol.user_id, protocol.id)
     }
 
     const schedulingChanged = updates && SCHEDULING_FIELDS.some((f) => f in updates)
