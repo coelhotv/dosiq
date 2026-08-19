@@ -22,6 +22,9 @@ export interface CriticalAuditEvent {
   actor: string
   detail?: Record<string, unknown> | null
   userId?: string | null
+  /** 067 C.2 (FR-042) — instante do FATO (ISO 8601 com offset), carimbado na ORIGEM. Omitir/`null`
+   *  quando a hora é desconhecida (derivação iOS no foreground): `created_at` NÃO é substituto. */
+  occurredAt?: string | null
 }
 
 interface CreateCriticalAuditServiceDeps {
@@ -63,6 +66,7 @@ export function createCriticalAuditService({ client, getUserId }: CreateCritical
         platform: evt.platform,
         actor: evt.actor,
         detail: evt.detail ?? null,
+        occurredAt: evt.occurredAt ?? null,
       }
 
       const validation = criticalAuditEventSchema.safeParse(payload)
@@ -78,6 +82,7 @@ export function createCriticalAuditService({ client, getUserId }: CreateCritical
         platform: d.platform,
         actor: d.actor,
         detail: (d.detail ?? null) as never,
+        occurred_at: d.occurredAt ?? null,
       })
 
       if (error) return { ok: false }

@@ -39,6 +39,7 @@ function makeSupabase(selectQueue: QueryResult[]) {
       gte() { return b; },
       lt() { return b; }, lte() { return b; },
       not() { return b; },
+      limit() { return b; },
       update(payload: Record<string, unknown>) { b._update = payload; return b; },
       insert(payload: AuditPayload) {
         captured.push(payload);
@@ -105,14 +106,23 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
     expect(payload).toEqual({
       user_id: USER_A, dose_instance_id: INST_1, event: 'push_sent',
       platform: 'server', actor: 'server', detail: null,
+      // 067 C.2 (FR-042): o server emite no INSTANTE do evento (não há fila), então `created_at`
+      // já é o instante do fato e a coluna nasce NULL — atualizado explicitamente, não por
+      // conveniência: nenhum emissor server carimba occurred_at nesta fatia.
+      occurred_at: null,
     });
     assertNoPii(payload);
   });
 
-  it('starts: push_skipped_no_token — sem device (query retorna [])', async () => {
+  // 067 C.1 / FR-040 — o sinal passa a ter CANDIDATURA (device iOS, mesmo inativo) e trava de
+  // idempotência (uma linha por ocorrência). A ordem das queries no ramo "sem token" é:
+  // [instâncias] → [devices apns_liveactivity] → [devices platform=ios] → [eventos já emitidos].
+  it('starts: push_skipped_no_token — usuário com device iOS e sem token de LA (o sinal legítimo do 041)', async () => {
     const supabase = makeSupabase([
       { data: [doseRow()], error: null },
-      { data: [], error: null },
+      { data: [], error: null },                    // sem device apns_liveactivity
+      { data: [{ id: 'dev-ios' }], error: null },   // MAS tem device platform=ios → candidato
+      { data: [], error: null },                    // ainda não sinalizado p/ esta ocorrência
     ]);
     const sendFn = vi.fn();
     await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
@@ -124,6 +134,50 @@ describe('criticalAuditService — emissão server (dispatchLiveActivityStarts/L
       user_id: USER_A, dose_instance_id: INST_1,
     });
     assertNoPii(payload);
+  });
+
+  it('starts: usuário SEM nenhum device iOS (Android-only) NÃO gera push_skipped_no_token', async () => {
+    // O caso que enchia a trilha: ~60 linhas/dose, para sempre, sobre um recurso que não existe
+    // no aparelho. Medido em prod: 1079 linhas em 7 dias de um único usuário.
+    const supabase = makeSupabase([
+      { data: [doseRow()], error: null },
+      { data: [], error: null }, // sem apns_liveactivity
+      { data: [], error: null }, // sem NENHUM device platform=ios → não é candidato
+    ]);
+    const sendFn = vi.fn();
+    const r = await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+
+    expect(supabase._captured).toHaveLength(0);
+    expect(r.skipped).toBe(1); // o start segue degradando p/ o foreground (039) — só a linha some
+  });
+
+  it('starts: candidato iOS já sinalizado nesta ocorrência NÃO repete o evento (trava de idempotência)', async () => {
+    const supabase = makeSupabase([
+      { data: [doseRow()], error: null },
+      { data: [], error: null },
+      { data: [{ id: 'dev-ios' }], error: null },        // candidato
+      { data: [{ id: 'evt-anterior' }], error: null },   // já existe a linha desta ocorrência
+    ]);
+    const sendFn = vi.fn();
+    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+
+    expect(supabase._captured).toHaveLength(0);
+  });
+
+  it('starts: erro ao checar candidatura → EMITE (fail-open preserva o sinal, não o silêncio)', async () => {
+    // Fail-open aqui é deliberado e assimétrico: ruído é bounded e reversível; perder o
+    // diagnóstico de um iPhone real, não.
+    const supabase = makeSupabase([
+      { data: [doseRow()], error: null },
+      { data: [], error: null },
+      { data: null, error: { message: 'boom' } }, // candidatura indeterminada
+      { data: [], error: null },
+    ]);
+    const sendFn = vi.fn();
+    await dispatchLiveActivityStarts({ supabase, logger, now: NOW, sendFn });
+
+    expect(supabase._captured).toHaveLength(1);
+    expect(supabase._captured[0]).toMatchObject({ event: 'push_skipped_no_token' });
   });
 
   it('starts: push_failed — sendFn 410 (anySent=false)', async () => {

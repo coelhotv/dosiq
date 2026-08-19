@@ -39,6 +39,56 @@ describe('createCriticalAuditService — emit', () => {
     )
   })
 
+  // 067 C.2 (FR-042) — o instante vem da ORIGEM. `created_at` é default do banco (hora do INSERT);
+  // com a fila offline drenando no foreground, os dois ficam a dezenas de minutos de distância.
+  it('occurredAt viaja até a coluna occurred_at', async () => {
+    const { client, insert } = makeClient()
+    const service = createCriticalAuditService({ client, getUserId: async () => USER_ID })
+    const FIRED_AT = '2026-08-19T12:00:00.000Z'
+
+    const result = await service.emit({
+      doseInstanceId: DOSE_INSTANCE_ID,
+      event: 'alarm_fired',
+      platform: 'android',
+      actor: 'system',
+      occurredAt: FIRED_AT,
+    })
+
+    expect(result).toEqual({ ok: true })
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ occurred_at: FIRED_AT }))
+  })
+
+  it('sem occurredAt → grava NULL (hora desconhecida), nunca a hora do insert', async () => {
+    // Caso do iOS derivado no foreground (AP-257) e de todo emissor que não sabe o instante.
+    const { client, insert } = makeClient()
+    const service = createCriticalAuditService({ client, getUserId: async () => USER_ID })
+
+    await service.emit({
+      doseInstanceId: DOSE_INSTANCE_ID,
+      event: 'alarm_fired',
+      platform: 'ios',
+      actor: 'system',
+    })
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ occurred_at: null }))
+  })
+
+  it('occurredAt malformado invalida o evento (safeParse) — não insere linha com instante lixo', async () => {
+    const { client, insert } = makeClient()
+    const service = createCriticalAuditService({ client, getUserId: async () => USER_ID })
+
+    const result = await service.emit({
+      doseInstanceId: DOSE_INSTANCE_ID,
+      event: 'alarm_fired',
+      platform: 'android',
+      actor: 'system',
+      occurredAt: '19/08/2026 12:00',
+    })
+
+    expect(result).toEqual({ ok: false })
+    expect(insert).not.toHaveBeenCalled()
+  })
+
   it('server sem getUserId, com evt.userId presente (SEC-2) → insere com esse userId', async () => {
     const { client, insert } = makeClient()
     const service = createCriticalAuditService({ client }) // sem getUserId — cenário server

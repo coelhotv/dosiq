@@ -43,6 +43,9 @@ describe('deriveIosAlarmOutcome', () => {
         platform: 'ios',
         actor: 'system',
         detail: { captured_at_foreground: true },
+        // 067 C.2 (FR-015/FR-016): atualizado EXPLICITAMENTE — o payload iOS declara a hora do
+        // fato como desconhecida em vez de deixar o `created_at` fingir que a sabe.
+        occurredAt: null,
       },
     ])
   })
@@ -79,6 +82,34 @@ describe('deriveIosAlarmOutcome', () => {
       const detailKeys = Object.keys(payload.detail).sort()
       expect(detailKeys.every((k) => ['captured_at_foreground', 'reason'].includes(k))).toBe(true)
     }
+  })
+
+  // 067 C.2 / FR-015/FR-016 (PO-9) — iOS não roda JS no disparo (AP-257): este payload nasce no
+  // FOREGROUND, então a hora do fato é desconhecida. NULL é a resposta honesta; gravar a hora da
+  // derivação era o que produzia a mediana de +143 min contra +21 min do Android.
+  describe('occurredAt — iOS declara desconhecido, não inventa', () => {
+    it('TODO payload derivado sai com occurredAt null (nunca a hora do foreground)', () => {
+      const alarms = [
+        { doseInstanceId: 'd1', isCritical: true, nagAttempt: 0, doseStatus: 'pending' },
+        { doseInstanceId: 'd2', isCritical: true, nagAttempt: 2, doseStatus: 'pending' },
+      ]
+      const result = deriveIosAlarmOutcome({ alarms, permissionGranted: true, userId: 'u1' })
+
+      expect(result).toHaveLength(2)
+      for (const payload of result) {
+        expect(payload.occurredAt).toBeNull()
+        // captured_at_foreground é o que EXPLICA o null — os dois andam juntos.
+        expect(payload.detail.captured_at_foreground).toBe(true)
+      }
+    })
+
+    it('o ramo suppressed também sai com occurredAt null', () => {
+      const alarms = [{ doseInstanceId: 'd1', isCritical: true, nagAttempt: 0, doseStatus: 'pending' }]
+      const result = deriveIosAlarmOutcome({ alarms, permissionGranted: false, userId: 'u1' })
+
+      expect(result[0].event).toBe('alarm_suppressed')
+      expect(result[0].occurredAt).toBeNull()
+    })
   })
 
   it('mix de alarmes: só o crítico+pending gera payload', () => {

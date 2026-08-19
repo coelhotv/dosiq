@@ -7,6 +7,30 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O registro de alarme passa a guardar a hora em que a coisa aconteceu
+
+- **Fix** (`minor` core `0.22.0`, `patch` mobile `0.31.2`, `patch` server `4.1.2`). Nada muda na
+  tela — isto é sobre o registro interno que usamos para saber se o alarme está tocando na hora
+  certa, e que é a base das correções das versões anteriores.
+
+  Até agora esse registro guardava só **quando a linha foi gravada**. Quando o alarme toca com o app
+  fechado, a gravação só acontece quando você abre o app de novo — então um alarme das 12:00 podia
+  ficar registrado como 12:19. No iPhone a distância era maior ainda, porque lá o registro só é
+  montado quando o app abre. Ou seja: a medida que deveria dizer "o alarme atrasou" estava, em boa
+  parte, medindo "a pessoa demorou a abrir o app".
+
+  Agora o instante é carimbado **na hora do disparo** e viaja junto com o registro. Quando a hora
+  do fato é genuinamente desconhecida (o caso do iPhone), ela fica **em branco** em vez de fingir um
+  valor — registro antigo nenhum foi reescrito.
+
+  Duas limpezas entram junto:
+
+  - a dose **pulada** passa a constar como resolvida no registro; antes ela terminava igual a "o
+    alarme tocou e ninguém fez nada";
+  - o app parava de anotar um aviso técnico repetido a cada minuto para quem **não tem iPhone** —
+    sobre um recurso que nem existe no aparelho dessas pessoas. O aviso continua para quem tem
+    iPhone (ali ele é diagnóstico de verdade), mas **uma vez por dose**, não sessenta.
+
 ### Pular uma dose passa a ser conferido pelo servidor, não só pelo celular
 
 - **Fix** (`minor` core `0.21.0`, `patch` mobile `0.31.1`, `patch` web `4.22.3`). A conferência de
