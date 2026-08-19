@@ -50,6 +50,12 @@ export function deriveIosAlarmOutcome({ alarms, permissionGranted, userId }) {
       platform: 'ios',
       actor: 'system',
       detail,
+      // 067 C.2 (FR-015/FR-016) — iOS não roda JS no disparo (AP-257): este payload é derivado
+      // no FOREGROUND, então a hora do fato é genuinamente desconhecida. `occurredAt: null` é a
+      // resposta honesta; gravar o instante da derivação (o que `created_at` faz por default)
+      // produzia a mediana de +143 min que a US5 investigou. O `captured_at_foreground: true` no
+      // detail continua marcando POR QUE está nulo.
+      occurredAt: null,
     })
   }
 

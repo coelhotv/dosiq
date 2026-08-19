@@ -27,19 +27,9 @@ import {
   getRawNow,
   addDays,
   getTodayLocal,
-  createCriticalAuditService,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
-// Auditoria (042 Slice B): token_captured emitido no foreground (online) — NUNCA grava o token no
-// detail (SEC-3), só marca que a captura ocorreu. Fail-open: emit nunca lança.
-const tokenAudit = createCriticalAuditService({
-  client: supabase as any,
-  getUserId: async () => {
-    const { data } = await supabase.auth.getUser()
-    return data?.user?.id ?? null
-  },
-})
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
@@ -55,72 +45,20 @@ import {
   showDoneLiveActivity,
   drainPendingActions,
   getPushToStartToken,
-  getActivityPushToken,
   liveActivitySupported,
 } from './liveActivityService'
 import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
-
-// Dedupe do token_captured: _syncActivityToken roda a cada foreground/derive e quase sempre re-lê o
-// MESMO token → sem isto o trail enche de token_captured idênticos (rajada observada: 4× em 40s).
-// Emite só quando o token MUDA de fato (nova Activity / rotação). In-memory (sem storage/bloat);
-// no restart re-emite no máx 1×/dose/sessão. Não guarda o valor do token no trail (SEC-3).
-// Cap com evicção FIFO (Map preserva ordem de inserção) — evita crescimento sem limite em sessões
-// longas (review #700/#701). Chave = instanceId (escopo por dose; app é single-user por sessão).
-const LAST_TOKEN_CAP = 200
-const lastSyncedToken = new Map()
-
-/** Registra o token da instância com dedupe e cap FIFO. Retorna true se o token MUDOU (deve emitir). */
-function markTokenSynced(instanceId, token) {
-  if (lastSyncedToken.get(instanceId) === token) return false
-  lastSyncedToken.set(instanceId, token)
-  while (lastSyncedToken.size > LAST_TOKEN_CAP) {
-    lastSyncedToken.delete(lastSyncedToken.keys().next().value) // remove a entrada mais antiga
-  }
-  return true
-}
+import { syncActivityToken, forgetSyncedToken } from './syncActivityToken'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
 const LOOK_BACK_DAYS = 3
 const RESYNC_INTERVAL_MS = 15 * 60 * 1000
 
-/**
- * Spec 041 fix-up — sincroniza o token push per-Activity da LA ativa em dose_instances.la_push_token,
- * p/ o backend empurrar update/end com app fechado. Best-effort; token vazio (SO ainda não emitiu /
- * iOS < 17.2) → no-op, tenta de novo no próximo derive. RLS escopa ao dono (auth.uid()=user_id). @private
- */
-async function _syncActivityToken(instanceId) {
-  if (!instanceId) return
-  // O token per-Activity é emitido de forma ASSÍNCRONA pelo iOS após Activity.request — logo após o
-  // start quase sempre ainda está vazio. Retry curto com backoff linear aguarda a emissão; se falhar,
-  // o próximo derive (foreground/interval) tenta de novo. Best-effort: nunca derruba o derive.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      const token = await getActivityPushToken(instanceId)
-      if (token) {
-        await supabase.from('dose_instances').update({ la_push_token: token }).eq('id', instanceId)
-        // token_captured só quando o token muda (dedupe da rajada de re-sync). Marca a captura SEM
-        // gravar o valor do token (SEC-3).
-        if (markTokenSynced(instanceId, token)) {
-          await tokenAudit.emit({
-            doseInstanceId: instanceId,
-            event: 'token_captured',
-            platform: 'ios',
-            actor: 'system',
-          })
-        }
-        return
-      }
-    } catch {
-      // best-effort
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
-  }
-}
-
 /** Limpa o token per-Activity ao encerrar localmente a LA (paridade com o end-push do backend). @private */
 async function _clearActivityToken(instanceId) {
   if (!instanceId) return
+  forgetSyncedToken(instanceId) // FR-041: LA encerrada solta o dedupe (ver syncActivityToken.ts)
   try {
     await supabase.from('dose_instances').update({ la_push_token: null, la_push_state: null }).eq('id', instanceId)
   } catch {
@@ -170,7 +108,7 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
     await startLiveActivity(active, doseItem)
   }
   // Fase 2: sincroniza o token per-Activity da LA ativa (idempotente; backend usa p/ update/end).
-  await _syncActivityToken(active.instanceId)
+  await syncActivityToken(active.instanceId)
   return active.instanceId
 }
 

@@ -11,8 +11,9 @@
 // existem (multiRemove delas = no-op silencioso, AP-168). Adesão vive em
 // treatments-snapshot.
 
+import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt } from '@dosiq/core'
+import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt, createCriticalAuditService } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
@@ -22,6 +23,17 @@ import { ROUTES } from '@navigation/routes'
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
+
+// 067 C.2 (FR-043): trilha do SKIP. Só o registrar emitia `resolved` (doseLogService.ts:311), então
+// a trilha de uma dose pulada terminava em `alarm_fired` — indistinguível de "tocou e ninguém fez
+// nada", que é exatamente a leitura que a US5 precisa fazer. Fail-open (o service nunca lança).
+const skipAudit = createCriticalAuditService({
+  client: supabase as any,
+  getUserId: async () => {
+    const { data } = await supabase.auth.getUser()
+    return data?.user?.id ?? null
+  },
+})
 
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
@@ -217,6 +229,21 @@ export async function registerSkip(data) {
         ? outOfWindowMessage(error)
         : String(error?.message || 'Não foi possível pular esta dose.'),
     }
+  }
+
+  // FR-043: só APÓS a RPC confirmar. Skip RECUSADO (fora da janela / erro) retorna acima e NÃO
+  // emite — não houve resolução, e uma trilha que diz "resolvido" sobre uma recusa mente.
+  // `occurredAt` = instante da ação da paciente, carimbado na origem (FR-042). Emite por
+  // instância do lote: no grupo, cada dose é um fato clínico próprio.
+  const resolvedAt = getRawNow().toISOString()
+  for (const id of ids) {
+    await skipAudit.emit({
+      doseInstanceId: id,
+      event: 'resolved',
+      platform: Platform.OS,
+      actor: 'user',
+      occurredAt: resolvedAt,
+    })
   }
 
   await invalidate(SNAPSHOTS_SKIP)

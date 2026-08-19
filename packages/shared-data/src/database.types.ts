@@ -308,6 +308,7 @@ export type Database = {
           dose_instance_id: string | null
           event: string
           id: string
+          occurred_at: string | null
           platform: string
           user_id: string
         }
@@ -318,6 +319,7 @@ export type Database = {
           dose_instance_id?: string | null
           event: string
           id?: string
+          occurred_at?: string | null
           platform: string
           user_id: string
         }
@@ -328,6 +330,7 @@ export type Database = {
           dose_instance_id?: string | null
           event?: string
           id?: string
+          occurred_at?: string | null
           platform?: string
           user_id?: string
         }

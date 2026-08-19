@@ -100,4 +100,38 @@ describe('criticalAuditBeacon — beaconAlarmDelivered', () => {
     expect(evt.event).toBe('alarm_fired')
     expect(evt.detail.permission_snapshot).toBeNull()
   })
+
+  // 067 C.2 / FR-042 (PO-19) — o instante viaja COM o item da fila. Sem isto, `created_at` (hora do
+  // INSERT) é a hora do flush: medido em prod, alarme 12:00:00 → linha 12:19:58.
+  describe('occurredAt — instante carimbado na ORIGEM', () => {
+    it('enfileira occurredAt com a hora do DISPARO, não a do flush', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+      await beaconAlarmDelivered({ doseInstanceId: INST, isCritical: 'true', nagAttempt: '0' })
+      expect(mockEnqueue.mock.calls[0][0].occurredAt).toBe('2026-08-19T12:00:00.000Z')
+      jest.useRealTimers()
+    })
+
+    it('o carimbo é do disparo mesmo quando a montagem do beacon demora (awaits internos)', async () => {
+      // Guard do failure mode real: carimbar DEPOIS dos awaits (permissão/sessão) já embutiria o
+      // atraso da própria coleta no instante do fato.
+      jest.useFakeTimers().setSystemTime(new Date('2026-08-19T12:00:00.000Z'))
+      mockGetSettings.mockImplementation(async () => {
+        jest.setSystemTime(new Date('2026-08-19T12:00:07.000Z'))
+        return { authorizationStatus: 1 }
+      })
+      await beaconAlarmDelivered({ doseInstanceId: INST, isCritical: 'true', nagAttempt: '0' })
+      expect(mockEnqueue.mock.calls[0][0].occurredAt).toBe('2026-08-19T12:00:00.000Z')
+      jest.useRealTimers()
+    })
+
+    it('alarm_suppressed também carrega occurredAt', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-08-19T03:30:00.000Z'))
+      mockGetSettings.mockResolvedValue({ authorizationStatus: 0 })
+      await beaconAlarmDelivered({ doseInstanceId: INST, isCritical: 'true', nagAttempt: '0' })
+      const evt = mockEnqueue.mock.calls[0][0]
+      expect(evt.event).toBe('alarm_suppressed')
+      expect(evt.occurredAt).toBe('2026-08-19T03:30:00.000Z')
+      jest.useRealTimers()
+    })
+  })
 })

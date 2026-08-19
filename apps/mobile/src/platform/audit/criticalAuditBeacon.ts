@@ -13,6 +13,7 @@ import { Platform } from 'react-native'
 import notifee, { AuthorizationStatus, AndroidImportance } from '@notifee/react-native'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { ALARM_CRITICAL_CHANNEL_ID } from '@platform/alarms/alarmService'
+import { getRawNow } from '@dosiq/core'
 import { createCriticalAuditQueue } from './criticalAuditQueue'
 
 /** Snapshot mínimo de permissão (sem PII) — usado para diagnosticar "o alarme não tocou". */
@@ -58,6 +59,13 @@ async function resolveUserId() {
  */
 export async function beaconAlarmDelivered(data) {
   try {
+    // 067 C.2 (FR-042) — carimba o instante do DISPARO aqui, na ORIGEM, ANTES de qualquer await.
+    // A linha só entra no banco no flush (foreground), então `created_at` é a hora do FLUSH: medido
+    // no smoke do B1, alarme às 12:00:00 virou linha às 12:19:58. Ler `created_at` como hora de
+    // disparo errava 20 min na plataforma tida como confiável — e o erro cresce com o tempo que o
+    // app fica fechado, que é justamente o cenário da dose da madrugada.
+    const occurredAt = getRawNow().toISOString()
+
     const doseInstanceId = data?.doseInstanceId
     if (!doseInstanceId) return
     // Só dose crítica gera trail (FR-004). Agrupados/normais não-críticos ficam de fora.
@@ -89,6 +97,7 @@ export async function beaconAlarmDelivered(data) {
       platform: Platform.OS,
       actor: 'system',
       detail,
+      occurredAt,
     })
   } catch {
     // Fail-open: beacon jamais quebra o handler de alarme.

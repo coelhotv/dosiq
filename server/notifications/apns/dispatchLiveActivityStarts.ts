@@ -67,6 +67,71 @@ function mapInstance(inst: DoseInstanceRow) {
   }
 }
 
+/**
+ * O usuário é CANDIDATO ao sinal `push_skipped_no_token`? (067 C.1 / FR-040, Decisão 23)
+ *
+ * Candidato := tem device `platform='ios'` — de QUALQUER provider e INCLUSIVE `is_active=false`.
+ * O teste NÃO é "tem apns_liveactivity ativo": iPhone com token expo inativo e sem linha de LA é
+ * exatamente o caso que o evento existe p/ diagnosticar (usuário iOS cujo push parou de funcionar).
+ * Usuário sem NENHUM device iOS não tem o recurso no aparelho — ausência de recurso inexistente não
+ * é evento clínico, e emiti-la custava ~60 linhas por dose, para sempre (medido: 1079 linhas/7d de
+ * um único usuário Android-only).
+ *
+ * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ trata como candidato (emite). O ruído é
+ * bounded (60 linhas/dose) e reversível; perder o diagnóstico de um iPhone real, não.
+ * @private
+ */
+async function _isAppleCandidate(supabase: any, logger: Logger | undefined, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('notification_devices')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('platform', 'ios')
+      .limit(1)
+    if (error) {
+      logger?.warn?.('Falha ao checar candidatura iOS (fail-open: emite o sinal)', error, { userId })
+      return true
+    }
+    return Boolean(data && data.length > 0)
+  } catch (err) {
+    // A auditoria é BEST-EFFORT e não pode alterar o desfecho do dispatch: um throw aqui subiria
+    // até o catch do loop e transformaria um `skipped` legítimo em `failed` — falseando a métrica
+    // do próprio dispatcher por causa de um evento de diagnóstico.
+    logger?.warn?.('Erro ao checar candidatura iOS (fail-open: emite o sinal)', err, { userId })
+    return true
+  }
+}
+
+/**
+ * O sinal já foi registrado p/ ESTA ocorrência? (067 C.1 / FR-040 — trava de idempotência)
+ *
+ * O ramo "sem token" não tinha trava: o loop de minuto repetia a linha pelos 60 min da janela.
+ * A trava é a própria trilha (nenhuma coluna nova) — o evento é diagnóstico de ESTADO, e um estado
+ * registrado uma vez já diz tudo o que a linha número 60 diria.
+ *
+ * Fail-open PRESERVANDO O SINAL: erro de consulta ⇒ emite (mesmo racional de `_isAppleCandidate`).
+ * @private
+ */
+async function _alreadySignaledNoToken(supabase: any, logger: Logger | undefined, instanceId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('dose_critical_events')
+      .select('id')
+      .eq('dose_instance_id', instanceId)
+      .eq('event', 'push_skipped_no_token')
+      .limit(1)
+    if (error) {
+      logger?.warn?.('Falha ao checar idempotência do sinal (fail-open: emite)', error, { instanceId })
+      return false
+    }
+    return Boolean(data && data.length > 0)
+  } catch (err) {
+    logger?.warn?.('Erro ao checar idempotência do sinal (fail-open: emite)', err, { instanceId })
+    return false
+  }
+}
+
 /** Dispositivos push-to-start ativos do usuário (por-provider). RLS bypassada — guard explícito no caller. */
 async function _fetchLiveActivityDevices(supabase: any, userId: string) {
   return supabase
@@ -201,7 +266,12 @@ async function _dispatchForUser({ supabase, logger, userId, instances, now, buil
     return 'skipped'
   }
   if (!devices || devices.length === 0) {
-    await emitAudit('push_skipped_no_token')
+    // FR-040 (Decisão 23): só emite p/ quem é CANDIDATO ao recurso (tem device iOS, mesmo inativo)
+    // e só UMA vez por ocorrência — antes eram ~60 linhas/dose, para sempre, em usuário Android-only.
+    const candidate = await _isAppleCandidate(supabase, logger, userId)
+    if (candidate && !(await _alreadySignaledNoToken(supabase, logger, active.instanceId))) {
+      await emitAudit('push_skipped_no_token')
+    }
     return 'skipped'
   }
 

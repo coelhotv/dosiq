@@ -30,11 +30,15 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
 // 067/B: o skip saiu do UPDATE cru e virou RPC canônica no core (ADR-092). O mock é do
 // SERVIÇO, não do primitivo de rede — a guarda real mora no banco e é provada no .test.sql.
 const mockSkipDose = jest.fn((..._a: any[]) => Promise.resolve({ skipped: 1, skippedAt: 'x' }))
+// 067 C.2 (FR-043): a trilha do skip. Emissor mockado p/ asserir o evento sem tocar o banco —
+// o guard `mockFrom não chamado` deste arquivo prova que nenhum UPDATE cru sobrevive no caminho.
+const mockAuditEmit = jest.fn().mockResolvedValue({ ok: true })
 jest.mock('@dosiq/core', () => {
   const actual = jest.requireActual('@dosiq/core')
   return {
     ...actual,
     skipDose: (...a: any[]) => mockSkipDose(...a),
+    createCriticalAuditService: () => ({ emit: (...a: any[]) => mockAuditEmit(...a) }),
   }
 })
 
@@ -184,6 +188,52 @@ describe('handleAlarmAction — Pular', () => {
       '@dosiq/today-snapshot',
       '@dosiq/treatments-snapshot',
     ])
+  })
+
+  // 067 C.2 / FR-043 (PO-20) — sem isto a trilha de uma dose pulada termina em `alarm_fired`,
+  // indistinguível de "tocou e ninguém fez nada" — a leitura que a US5 precisa fazer.
+  describe('FR-043 — skip emite resolved', () => {
+    it('skip bem-sucedido emite resolved com actor user e occurredAt', async () => {
+      await registerSkip(BASE)
+      expect(mockAuditEmit).toHaveBeenCalledTimes(1)
+      const evtPayload = mockAuditEmit.mock.calls[0][0]
+      expect(evtPayload).toMatchObject({
+        doseInstanceId: 'inst-1',
+        event: 'resolved',
+        actor: 'user',
+      })
+      expect(typeof evtPayload.occurredAt).toBe('string')
+      expect(Number.isNaN(Date.parse(evtPayload.occurredAt))).toBe(false)
+    })
+
+    it('skip RECUSADO pelo banco NÃO emite resolved (não houve resolução)', async () => {
+      mockSkipDose.mockImplementationOnce(() =>
+        Promise.reject(new Error(`Fora da janela da dose (horário previsto: ${SCHED_ISO})`)),
+      )
+      await registerSkip(BASE)
+      expect(mockAuditEmit).not.toHaveBeenCalled()
+    })
+
+    it('skip recusado pela guarda de CLIENT também não emite resolved', async () => {
+      const FORA = { ...BASE, scheduledFor: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString() }
+      await registerSkip(FORA)
+      expect(mockAuditEmit).not.toHaveBeenCalled()
+    })
+
+    it('lote agrupado emite uma linha POR dose (cada uma é fato clínico próprio)', async () => {
+      await registerSkip({
+        ...BASE,
+        isGrouped: 'true',
+        groupedDoses: JSON.stringify([{ instanceId: 'a' }, { instanceId: 'b' }]),
+      })
+      expect(mockAuditEmit).toHaveBeenCalledTimes(2)
+      expect(mockAuditEmit.mock.calls.map((c: any[]) => c[0].doseInstanceId)).toEqual(['a', 'b'])
+    })
+
+    it('smoke do DevHub (__dev) não emite nada', async () => {
+      await registerSkip({ doseInstanceId: 'inst-1', __dev: 'true' })
+      expect(mockAuditEmit).not.toHaveBeenCalled()
+    })
   })
 })
 

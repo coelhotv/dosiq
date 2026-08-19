@@ -56,6 +56,14 @@ export const criticalAuditEventSchema = z.object({
 
   // jsonb livre — payload de contexto (ex.: motivo da supressão, delta de snooze).
   detail: z.record(z.string(), z.unknown()).nullable().optional(),
+
+  // 067 C.2 (FR-042) — instante em que o FATO ocorreu, carimbado na ORIGEM. Distinto de
+  // `created_at` (default now() no DB), que é quando a LINHA entrou: com a fila offline drenando
+  // só no foreground, os dois podem estar a dezenas de minutos de distância (medido: 20 min).
+  // NULLABLE de propósito — NULL significa "hora do fato desconhecida", que é o estado honesto do
+  // evento iOS derivado no foreground (AP-257) e de toda linha legada. NUNCA default now() aqui:
+  // carimbar a hora do insert reintroduziria o erro com aparência de dado bom.
+  occurredAt: z.string().datetime({ offset: true }).nullable().optional(),
 })
 
 export default criticalAuditEventSchema

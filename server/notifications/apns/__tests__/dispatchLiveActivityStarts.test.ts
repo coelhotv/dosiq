@@ -139,6 +139,8 @@ describe('dispatchLiveActivityStarts', () => {
   });
 
   it('sem device apns_liveactivity → skip (degrada p/ 039 foreground)', async () => {
+    // O mock NÃO expõe `.limit()` de propósito: prova que uma exceção no caminho da auditoria
+    // (067 C.1) não contamina o desfecho do dispatch — continua `skipped`, nunca `failed`.
     const supabase = makeSupabase([
       { data: [doseRow()], error: null },
       { data: [], error: null }, // sem token
