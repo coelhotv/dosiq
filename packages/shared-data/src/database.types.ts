@@ -1961,6 +1961,23 @@ export type Database = {
         }
         Returns: Json
       }
+      set_protocol_dose_state_atomic: {
+        Args: {
+          p_mode: string
+          p_protocol_id: string
+          p_until?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      skip_dose_atomic: {
+        Args: {
+          p_dose_instance_ids: string[]
+          p_skipped_at?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       update_dose_log_atomic: {
         Args: {
           p_has_injection_site?: boolean

@@ -17,6 +17,7 @@ import {
   devFireEarlyAlarm,
   devFireEarlyAlarmBurst,
   devFireEarlyAlarmTwoDoses,
+  devFireServerRefusedAlarm,
   devClearEarlyAlarms,
 } from '../devAlarmTriggers'
 import {
@@ -128,6 +129,26 @@ function DevAlarmSection() {
         style={styles.buttonCard}
       >
         <Text style={styles.buttonText}>🧹 Limpar disparos adiantados + avisos</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.sectionTitle}>Spec 067 B1 — Recusa do SERVIDOR</Text>
+      <Text style={styles.note}>
+        O payload mente (&quot;a dose é agora&quot;) e o banco não: a guarda de client passa — como
+        passaria num aparelho com relógio adiantado — e a RPC recusa lendo o horário da própria
+        linha. Toque em &quot;Pular&quot; no alarme: nada deve ser gravado, a dose segue pendente e a
+        mensagem da recusa aparece (Alert na tela cheia · notificação se você agir pelo shade).
+        {'\n\n'}⚠️ Usa uma dose crítica a MAIS de 4h daqui, de propósito: rodar contra a dose do dia
+        sequestraria o alarme real dela. E aqui só se toca em &quot;Pular&quot; — &quot;Tomei&quot;
+        registraria a dose de verdade (o registro não tem guarda de janela, por decisão clínica).
+      </Text>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          runEarly(devFireServerRefusedAlarm)
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>🛡️ Alarme que só o BANCO recusa (PO-7)</Text>
       </TouchableOpacity>
       <Text style={styles.note}>
         Estes NÃO mandam `__dev`: a guarda roda de verdade. Esperado — takeover não abre, alarme é

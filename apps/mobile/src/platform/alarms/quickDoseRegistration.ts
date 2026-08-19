@@ -12,7 +12,7 @@
 // treatments-snapshot.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getRawNow } from '@dosiq/core'
+import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
@@ -26,6 +26,30 @@ import { triggerAlarmResync } from './alarmResyncBus'
 // Chaves reais verificadas no repo (mobile). Adesão = treatments-snapshot.
 const SNAPSHOTS_TAKEN = ['@dosiq/today-snapshot', '@dosiq/stock-snapshot', '@dosiq/treatments-snapshot']
 const SNAPSHOTS_SKIP = ['@dosiq/today-snapshot', '@dosiq/treatments-snapshot']
+
+/**
+ * Mensagem da recusa do BANCO (FR-013): nomeia o motivo E o horário previsto.
+ *
+ * O horário vem da MENSAGEM DA RPC, não do payload da notificação: num aparelho com o relógio
+ * adiantado — o cenário do incidente — o `scheduledFor` do payload também está mentindo. Só o
+ * banco sabe o horário real da dose.
+ * @private
+ */
+function outOfWindowMessage(error) {
+  const iso = extractOutOfWindowScheduledAt(error)
+  if (!iso) return 'Esta dose está fora da janela de registro. Nada foi registrado.'
+  const d = parseISO(iso) // R-020: nunca `new Date(iso)` na fronteira de timezone
+  const clock = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `Esta dose está fora da janela de registro. Nada foi registrado — sua dose é às ${clock}.`
+}
+
+/** Dono da sessão — a RPC de skip exige `p_user_id` e valida a posse dentro dela (FR-028). */
+async function resolveUserId() {
+  const { data, error } = await supabase.auth.getUser()
+  // AP-216: `{ data, error }` do supabase-js pode vir com `data.user` nulo sem `error`.
+  if (error || !data?.user?.id) throw new Error('Sessão expirada. Entre novamente para pular a dose.')
+  return data.user.id
+}
 
 async function invalidate(keys) {
   try {
@@ -160,24 +184,41 @@ export async function registerSkip(data) {
   const guard = await refuseIfOutOfWindow(data, 'registerSkip')
   if (guard.outOfWindow) return guard.result
 
+  let ids = [doseInstanceId]
   if (isGrouped === 'true' && groupedDoses) {
     let doses = []
     try {
       doses = JSON.parse(groupedDoses)
     } catch {
-      // fallback
+      // fallback: dose única (o id do grupo já está em `ids`)
     }
+    // Lote all-or-nothing numa transação só — o `UPDATE ... .in(ids)` de antes já era atômico
+    // e a RPC preserva isso (Decisão 14); um loop de N chamadas deixaria o grupo meio pulado.
+    if (doses.length > 0) ids = doses.map((d) => d.instanceId).filter(Boolean)
+  }
 
-    if (doses.length > 0) {
-      const ids = doses.map((d) => d.instanceId)
-      await supabase.from('dose_instances').update({ status: 'skipped_user' }).in('id', ids)
-      await invalidate(SNAPSHOTS_SKIP)
-      return { success: true }
+  // 067/B (FR-011/ADR-092): via RPC. O `UPDATE` cru daqui era a escrita que gravava fato
+  // clínico sem declarar instante — agora `skippedAt` viaja e o banco recusa fora da janela,
+  // mesmo que a guarda de client acima seja contornada (relógio adiantado).
+  try {
+    const userId = await resolveUserId()
+    // 🔴 SEM `skippedAt`: o instante fica em branco de propósito para a RPC usar o `now()` do
+    // SERVIDOR. Mandar o relógio do aparelho seria mandar exatamente o relógio que o incidente
+    // provou não ser confiável — a guarda do banco existe justamente para não depender dele.
+    await skipDose(supabase, { userId, instanceIds: ids })
+  } catch (error) {
+    // R-305/FR-013: recusa é BARULHENTA e chega legível à paciente — nunca "nada aconteceu".
+    return {
+      success: false,
+      // `server_out_of_window` ≠ `out_of_window` (guarda de client, A2): distinguir é o que evita
+      // avisar duas vezes — a recusa do client já emite o aviso próprio da FR-019.
+      refused: isOutOfWindowError(error) ? 'server_out_of_window' : 'rejected',
+      message: isOutOfWindowError(error)
+        ? outOfWindowMessage(error)
+        : String(error?.message || 'Não foi possível pular esta dose.'),
     }
   }
 
-  // Fallback para dose única
-  await supabase.from('dose_instances').update({ status: 'skipped_user' }).eq('id', doseInstanceId)
   await invalidate(SNAPSHOTS_SKIP)
   return { success: true }
 }
@@ -249,17 +290,39 @@ function navigateSurfaceRegister(data) {
   }, 100)
 }
 
+/**
+ * 067/B (FR-013 · Princípio IX): a recusa também tem de FALAR pelo caminho da NOTIFICAÇÃO.
+ *
+ * O handler do Notifee roda headless — não há tela para `Alert`, então o retorno de
+ * `registerSkip`/`registerTaken` morria aqui em silêncio: o alarme sumia, nada era gravado, e a
+ * paciente ficava achando que registrou. A recusa do A2 (client) já tinha voz pelo aviso da
+ * FR-019; a recusa do BANCO (Slice B) não tinha nenhuma.
+ *
+ * Fail-open: não avisar é ruim, derrubar o handler é pior. @private
+ */
+async function reportRefusal(data, result) {
+  if (!result || result.success !== false || !result.message) return
+  // A recusa do CLIENT (A2) já emite o aviso próprio da FR-019 — não duplicar.
+  if (result.refused === 'out_of_window') return
+  try {
+    const { showRefusalNotice } = require('./refusalNotice')
+    await showRefusalNotice({ doseInstanceId: data?.doseInstanceId, message: String(result.message) })
+  } catch {
+    // best-effort
+  }
+}
+
 // Despacha a ação canônica do alarme (Tomei/Pular/Soneca/nag). Extraído de handleAlarmAction
 // p/ manter ambas sob o teto de complexidade. @private
 async function dispatchCanonicalAction(pressActionId, data) {
   switch (pressActionId) {
     case ALARM_ACTION.TAKEN: {
-      await registerTaken(data)
+      await reportRefusal(data, await registerTaken(data))
       return { handled: true, action: ALARM_ACTION.TAKEN }
     }
 
     case ALARM_ACTION.SKIP: {
-      await registerSkip(data)
+      await reportRefusal(data, await registerSkip(data))
       return { handled: true, action: ALARM_ACTION.SKIP }
     }
 

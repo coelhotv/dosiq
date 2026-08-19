@@ -19,9 +19,27 @@ jest.mock('@dose/services/doseService', () => ({
 const mockEq = jest.fn(() => Promise.resolve({ error: null }))
 const mockUpdate = jest.fn(() => ({ eq: mockEq }))
 const mockFrom = jest.fn((_table?: string) => ({ update: mockUpdate }))
+const mockGetUser = jest.fn(() => Promise.resolve({ data: { user: { id: 'user-1' } }, error: null }))
 jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
-  supabase: { from: (table?: string) => mockFrom(table) },
+  supabase: {
+    from: (table?: string) => mockFrom(table),
+    auth: { getUser: () => mockGetUser() },
+  },
 }))
+
+// 067/B: o skip saiu do UPDATE cru e virou RPC canônica no core (ADR-092). O mock é do
+// SERVIÇO, não do primitivo de rede — a guarda real mora no banco e é provada no .test.sql.
+const mockSkipDose = jest.fn((..._a: any[]) => Promise.resolve({ skipped: 1, skippedAt: 'x' }))
+jest.mock('@dosiq/core', () => {
+  const actual = jest.requireActual('@dosiq/core')
+  return {
+    ...actual,
+    skipDose: (...a: any[]) => mockSkipDose(...a),
+  }
+})
+
+/** Horário previsto que a RPC carimba — a mensagem TEM de nomeá-lo (FR-013). */
+const SCHED_ISO = '2026-08-19T23:45:00Z'
 
 const mockNavigate = jest.fn()
 jest.mock('@navigation/navigationRef', () => ({
@@ -37,6 +55,12 @@ jest.mock('@navigation/routes', () => ({ ROUTES: { TODAY: 'Hoje' } }))
 const mockReportOutOfWindow = jest.fn((..._a: any[]) => Promise.resolve({ tracked: true, notified: true }))
 jest.mock('../outOfWindowNotice', () => ({
   reportOutOfWindowAlarm: (...a: any[]) => mockReportOutOfWindow(...a),
+}))
+
+// 067/B FR-013: recusa do BANCO pelo caminho da notificação (headless, sem tela para Alert).
+const mockShowRefusalNotice = jest.fn((..._a: any[]) => Promise.resolve({ notified: true }))
+jest.mock('../refusalNotice', () => ({
+  showRefusalNotice: (...a: any[]) => mockShowRefusalNotice(...a),
 }))
 
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
@@ -85,13 +109,73 @@ describe('handleAlarmAction — Tomei', () => {
 })
 
 describe('handleAlarmAction — Pular', () => {
-  it('seta status=skipped_user sem log nem registerDose', async () => {
+  it('pula pela RPC canônica declarando o instante, sem log nem registerDose (067/B)', async () => {
     const res = await handleAlarmAction(evt('dose-skip', BASE))
     expect(mockRegisterDose).not.toHaveBeenCalled()
-    expect(mockFrom).toHaveBeenCalledWith('dose_instances')
-    expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped_user' })
-    expect(mockEq).toHaveBeenCalledWith('id', 'inst-1')
+    // SC-008: nenhum UPDATE cru de status sobrevive no caminho do skip.
+    expect(mockFrom).not.toHaveBeenCalled()
+    const [, params] = mockSkipDose.mock.calls[0] as any[]
+    expect(params.userId).toBe('user-1')
+    expect(params.instanceIds).toEqual(['inst-1'])
+    // 🔴 NÃO manda instante: quem decide é o `now()` do servidor. Mandar o relógio do aparelho
+    // devolveria a decisão ao relógio que causou o incidente.
+    expect(params.skippedAt).toBeUndefined()
     expect((res as { action: string }).action).toBe('dose-skip')
+  })
+
+  it('recusa do banco vira mensagem legível, nunca sucesso mudo (R-305/FR-013)', async () => {
+    mockSkipDose.mockImplementationOnce(() =>
+      Promise.reject(new Error(`Fora da janela da dose (horário previsto: ${SCHED_ISO})`)),
+    )
+    const res = await registerSkip(BASE)
+    expect(res).toMatchObject({ success: false, refused: 'server_out_of_window' })
+    // FR-013: motivo + HORÁRIO PREVISTO (fonte = mensagem da RPC; o payload pode estar mentindo).
+    expect(String((res as any).message)).toMatch(/fora da janela de registro/i)
+    const d = new Date(SCHED_ISO)
+    const clock = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    expect(String((res as any).message)).toContain(clock)
+    // Snapshot NÃO é invalidado: nada mudou no banco.
+    expect(AsyncStorage.multiRemove).not.toHaveBeenCalled()
+  })
+
+  it('sessão ausente recusa antes de tocar o banco (AP-216)', async () => {
+    mockGetUser.mockImplementationOnce(() => Promise.resolve({ data: { user: null }, error: null } as any))
+    const res = await registerSkip(BASE)
+    expect(res).toMatchObject({ success: false, refused: 'rejected' })
+    expect(mockSkipDose).not.toHaveBeenCalled()
+  })
+
+  it('recusa do BANCO vira notificação quando a ação veio do shade (FR-013 — sem tela para Alert)', async () => {
+    mockSkipDose.mockImplementationOnce(() =>
+      Promise.reject(new Error(`Fora da janela da dose (horário previsto: ${SCHED_ISO})`)),
+    )
+    await handleAlarmAction(evt('dose-skip', BASE))
+    expect(mockShowRefusalNotice).toHaveBeenCalledTimes(1)
+    const [args] = mockShowRefusalNotice.mock.calls[0] as any[]
+    expect(args.doseInstanceId).toBe('inst-1')
+    expect(String(args.message)).toMatch(/fora da janela de registro/i)
+  })
+
+  it('recusa do CLIENT (A2) NÃO duplica aviso — já tem o da FR-019', async () => {
+    const FORA = { ...BASE, scheduledFor: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString() }
+    await handleAlarmAction(evt('dose-skip', FORA))
+    expect(mockReportOutOfWindow).toHaveBeenCalled()
+    expect(mockShowRefusalNotice).not.toHaveBeenCalled()
+  })
+
+  it('sucesso não gera aviso nenhum', async () => {
+    await handleAlarmAction(evt('dose-skip', BASE))
+    expect(mockShowRefusalNotice).not.toHaveBeenCalled()
+  })
+
+  it('dose agrupada vai numa chamada só (lote all-or-nothing — Decisão 14)', async () => {
+    await registerSkip({
+      ...BASE,
+      isGrouped: 'true',
+      groupedDoses: JSON.stringify([{ instanceId: 'a' }, { instanceId: 'b' }]),
+    })
+    expect(mockSkipDose).toHaveBeenCalledTimes(1)
+    expect((mockSkipDose.mock.calls[0] as any[])[1].instanceIds).toEqual(['a', 'b'])
   })
 
   it('invalida today + treatments (sem stock, não consome)', async () => {
@@ -264,8 +348,7 @@ describe('067 A2 — recusa de registro fora da janela', () => {
 
   it('DENTRO da janela o fluxo segue idêntico (não-regressão do caminho feliz)', async () => {
     const res = await registerSkip(DENTRO)
-    expect(mockFrom).toHaveBeenCalledWith('dose_instances')
-    expect(mockUpdate).toHaveBeenCalledWith({ status: 'skipped_user' })
+    expect(mockSkipDose).toHaveBeenCalledTimes(1)
     expect(res).toEqual({ success: true })
     expect(mockReportOutOfWindow).not.toHaveBeenCalled()
   })

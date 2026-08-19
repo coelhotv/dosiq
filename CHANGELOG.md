@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Pular uma dose passa a ser conferido pelo servidor, não só pelo celular
+
+- **Fix** (`minor` core `0.21.0`, `patch` mobile `0.31.1`, `patch` web `4.22.3`). A conferência de
+  janela que chegou na versão anterior morava **no seu aparelho**. Se o relógio do celular estivesse
+  adiantado, a conferência acreditava nele — e o alarme errado voltava a poder marcar a dose.
+
+  Agora **pular uma dose passa pelo servidor**, que usa o relógio dele e a janela da própria dose
+  para decidir. Se o instante não bate, o registro é recusado e você vê o motivo com o horário certo
+  da dose — no app e no Telegram. Nada de "aconteceu alguma coisa" em silêncio.
+
+  Junto disso, corrigimos uma brecha no bot do Telegram: o comando de pular identificava a dose por
+  um dado que vinha da própria mensagem. Agora o dono da dose é resolvido no servidor, pela sua
+  conta vinculada — ninguém consegue mexer na dose de outra pessoa.
+
+  **Pausar e retomar tratamento continuam idênticos** para você: mudaram de caminho por dentro, com
+  o mesmo comportamento (nunca mexem no passado nem em dose já registrada).
+
 ### Alarme fora de hora não registra mais dose nenhuma
 
 - **Fix** (`minor` mobile `0.31.0`, `patch` web `4.22.2`, core `0.20.2`). Um alarme pode tocar na

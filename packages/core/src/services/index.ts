@@ -24,6 +24,14 @@ export {
 
 export { createDoseLogService } from './doseLogService'
 
+// Caminho canônico do skip (spec 067 Slice B / ADR-092) — a guarda de janela vive na RPC
+export {
+  skipDose,
+  isOutOfWindowError,
+  extractOutOfWindowScheduledAt,
+  OUT_OF_WINDOW_MESSAGE_PREFIX,
+} from './skipDoseService'
+
 // Núcleo on-demand da base ANVISA (CON-027) — web (Cache Storage) + mobile (AsyncStorage)
 export {
   createAnvisaDatabase,
