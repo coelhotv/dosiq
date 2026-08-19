@@ -194,7 +194,9 @@ export async function registerSkip(data) {
     // R-305/FR-013: recusa é BARULHENTA e chega legível à paciente — nunca "nada aconteceu".
     return {
       success: false,
-      refused: isOutOfWindowError(error) ? 'out_of_window' : 'rejected',
+      // `server_out_of_window` ≠ `out_of_window` (guarda de client, A2): distinguir é o que evita
+      // avisar duas vezes — a recusa do client já emite o aviso próprio da FR-019.
+      refused: isOutOfWindowError(error) ? 'server_out_of_window' : 'rejected',
       message: isOutOfWindowError(error)
         ? 'Este alarme tocou fora do horário da dose. Nada foi registrado — vamos avisar de novo no horário certo.'
         : String(error?.message || 'Não foi possível pular esta dose.'),
@@ -272,17 +274,39 @@ function navigateSurfaceRegister(data) {
   }, 100)
 }
 
+/**
+ * 067/B (FR-013 · Princípio IX): a recusa também tem de FALAR pelo caminho da NOTIFICAÇÃO.
+ *
+ * O handler do Notifee roda headless — não há tela para `Alert`, então o retorno de
+ * `registerSkip`/`registerTaken` morria aqui em silêncio: o alarme sumia, nada era gravado, e a
+ * paciente ficava achando que registrou. A recusa do A2 (client) já tinha voz pelo aviso da
+ * FR-019; a recusa do BANCO (Slice B) não tinha nenhuma.
+ *
+ * Fail-open: não avisar é ruim, derrubar o handler é pior. @private
+ */
+async function reportRefusal(data, result) {
+  if (!result || result.success !== false || !result.message) return
+  // A recusa do CLIENT (A2) já emite o aviso próprio da FR-019 — não duplicar.
+  if (result.refused === 'out_of_window') return
+  try {
+    const { showRefusalNotice } = require('./refusalNotice')
+    await showRefusalNotice({ doseInstanceId: data?.doseInstanceId, message: String(result.message) })
+  } catch {
+    // best-effort
+  }
+}
+
 // Despacha a ação canônica do alarme (Tomei/Pular/Soneca/nag). Extraído de handleAlarmAction
 // p/ manter ambas sob o teto de complexidade. @private
 async function dispatchCanonicalAction(pressActionId, data) {
   switch (pressActionId) {
     case ALARM_ACTION.TAKEN: {
-      await registerTaken(data)
+      await reportRefusal(data, await registerTaken(data))
       return { handled: true, action: ALARM_ACTION.TAKEN }
     }
 
     case ALARM_ACTION.SKIP: {
-      await registerSkip(data)
+      await reportRefusal(data, await registerSkip(data))
       return { handled: true, action: ALARM_ACTION.SKIP }
     }
 

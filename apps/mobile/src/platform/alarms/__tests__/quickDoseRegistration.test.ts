@@ -54,6 +54,12 @@ jest.mock('../outOfWindowNotice', () => ({
   reportOutOfWindowAlarm: (...a: any[]) => mockReportOutOfWindow(...a),
 }))
 
+// 067/B FR-013: recusa do BANCO pelo caminho da notificação (headless, sem tela para Alert).
+const mockShowRefusalNotice = jest.fn((..._a: any[]) => Promise.resolve({ notified: true }))
+jest.mock('../refusalNotice', () => ({
+  showRefusalNotice: (...a: any[]) => mockShowRefusalNotice(...a),
+}))
+
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
@@ -119,7 +125,7 @@ describe('handleAlarmAction — Pular', () => {
       Promise.reject(new Error('Fora da janela da dose (horário previsto: 2026-08-18T16:30:00Z)')),
     )
     const res = await registerSkip(BASE)
-    expect(res).toMatchObject({ success: false, refused: 'out_of_window' })
+    expect(res).toMatchObject({ success: false, refused: 'server_out_of_window' })
     expect(String((res as any).message)).toMatch(/fora do horário da dose/i)
     // Snapshot NÃO é invalidado: nada mudou no banco.
     expect(AsyncStorage.multiRemove).not.toHaveBeenCalled()
@@ -130,6 +136,29 @@ describe('handleAlarmAction — Pular', () => {
     const res = await registerSkip(BASE)
     expect(res).toMatchObject({ success: false, refused: 'rejected' })
     expect(mockSkipDose).not.toHaveBeenCalled()
+  })
+
+  it('recusa do BANCO vira notificação quando a ação veio do shade (FR-013 — sem tela para Alert)', async () => {
+    mockSkipDose.mockImplementationOnce(() =>
+      Promise.reject(new Error('Fora da janela da dose (horário previsto: 2026-08-18T16:30:00Z)')),
+    )
+    await handleAlarmAction(evt('dose-skip', BASE))
+    expect(mockShowRefusalNotice).toHaveBeenCalledTimes(1)
+    const [args] = mockShowRefusalNotice.mock.calls[0] as any[]
+    expect(args.doseInstanceId).toBe('inst-1')
+    expect(String(args.message)).toMatch(/fora do horário da dose/i)
+  })
+
+  it('recusa do CLIENT (A2) NÃO duplica aviso — já tem o da FR-019', async () => {
+    const FORA = { ...BASE, scheduledFor: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString() }
+    await handleAlarmAction(evt('dose-skip', FORA))
+    expect(mockReportOutOfWindow).toHaveBeenCalled()
+    expect(mockShowRefusalNotice).not.toHaveBeenCalled()
+  })
+
+  it('sucesso não gera aviso nenhum', async () => {
+    await handleAlarmAction(evt('dose-skip', BASE))
+    expect(mockShowRefusalNotice).not.toHaveBeenCalled()
   })
 
   it('dose agrupada vai numa chamada só (lote all-or-nothing — Decisão 14)', async () => {

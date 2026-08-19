@@ -239,6 +239,46 @@ async function fireEarlyFor(dose: { id: string; scheduledFor: string; earlyWindo
 }
 
 /**
+ * 067 B1 / PO-7 — RECUSA DO SERVIDOR, não do client.
+ *
+ * Como forçar o caminho que só o Slice B fecha: o payload da notificação **MENTE** dizendo que a
+ * dose é agora (`scheduledFor = now`), enquanto a linha no banco continua com o horário real, longe
+ * daqui. Resultado:
+ *   • a guarda de client (A2) olha o payload, vê delta 0 e DEIXA PASSAR — como passaria num
+ *     aparelho com o relógio adiantado, que é precisamente o furo que o Slice B existe para tapar;
+ *   • a RPC `skip_dose_atomic` lê `scheduled_for` DA PRÓPRIA LINHA e compara com o `now()` do
+ *     SERVIDOR ⇒ recusa com "Fora da janela da dose (horário previsto: …)".
+ *
+ * Esperado no smoke: tocar em "Pular" (na notificação OU na tela cheia) não grava nada, a dose
+ * continua `pending`, e a mensagem da recusa aparece — Alert na tela cheia, notificação
+ * "Dose não registrada" quando a ação veio do shade.
+ *
+ * ⚠️ Um relógio mentiroso de verdade não é reproduzível no smoke sem mexer no relógio do aparelho;
+ * mentir no payload exercita EXATAMENTE o mesmo caminho de código, sem efeito colateral no sistema.
+ */
+export async function devFireServerRefusedAlarm() {
+  const [dose] = await fetchRealPendingInstances(1)
+  const aheadMinutes = Math.round(
+    (parseISO(dose.scheduledFor).getTime() - getRawNow().getTime()) / 60000,
+  )
+  // A recusa do servidor precisa que a dose esteja FORA da janela real (piso da linha).
+  if (aheadMinutes <= dose.earlyWindowMinutes) {
+    throw new Error(
+      `[devServerRefused] a dose mais próxima está a ${aheadMinutes}min, DENTRO do piso de ` +
+        `${dose.earlyWindowMinutes}min — o servidor aceitaria o skip e o smoke ficaria verde por ` +
+        `engano. Use uma dose mais distante.`,
+    )
+  }
+  await ensureAlarmSetup()
+  firedEarlyIds.add(dose.id)
+  // A MENTIRA: `scheduledFor = agora` no payload; o banco segue com o horário real.
+  const nowIso = getRawNow().toISOString()
+  await notifee.displayNotification(
+    buildEarlyAlarmNotification(dose.id, nowIso, dose.earlyWindowMinutes),
+  )
+}
+
+/**
  * Dispara 3x o MESMO alarme adiantado (PO-16): esperado 1 aviso informativo, não 3.
  * A trilha, ao contrário, registra os 3 — a recorrência é o que a US2 quer medir.
  */
