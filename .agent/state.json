@@ -4,12 +4,12 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "idle",
+    "status": "analysis",
     "tier": 2,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 A2 — guarda de janela bilateral (piso early_window_minutes + teto) + telemetria alarm_out_of_window + notificação informativa",
-    "goal_type": "fix",
+    "goal": "067 B — guarda vira privilégio: skip_dose_atomic + RPCs de pausa/retomada + REVOKE UPDATE(status)",
+    "goal_type": "feature",
     "code_review": {
       "status": "issues_found_and_fixed",
       "critical": 0,
