@@ -78,10 +78,14 @@ function setupSupabaseMock(supabase, { users = [BASE_USER], protocols = [], stoc
       }
     }
     if (table === 'protocols') {
+      // 050 US4: o select ganhou o predicado de vigência (.is(paused_at) + .or(end_date)) —
+      // a resolução do thenable desceu para o último elo da cadeia.
       return {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        in: vi.fn().mockResolvedValue({ data: protocols, error: null }),
+        in: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        or: vi.fn().mockResolvedValue({ data: protocols, error: null }),
       }
     }
     if (table === 'stock') {
@@ -95,6 +99,8 @@ function setupSupabaseMock(supabase, { users = [BASE_USER], protocols = [], stoc
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       in: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      or: vi.fn().mockResolvedValue({ data: [], error: null }),
       gte: vi.fn().mockResolvedValue({ data: [], error: null }),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     }

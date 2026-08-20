@@ -39,6 +39,8 @@ const { mockSupabase } = vi.hoisted(() => {
     gte: vi.fn().mockReturnThis(),
     lte: vi.fn().mockReturnThis(),
     lt: vi.fn().mockReturnThis(),
+    // 050 US4: predicado de vigência do select de protocols (.is(paused_at, null)).
+    is: vi.fn().mockReturnThis(),
     single: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
