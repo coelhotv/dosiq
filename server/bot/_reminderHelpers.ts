@@ -876,7 +876,14 @@ async function _fetchAllPages(table, columns, applyFilters = (q) => q, orderColu
   return out;
 }
 
-/** Mesma paginação, restrita a uma lista de usuários. */
+/**
+ * Mesma paginação, restrita a uma lista de usuários.
+ *
+ * Ordena por `id` — chave primária de `protocols` e de `stock`, ambas verificadas no banco
+ * (R-295: `curl .../protocols?select=id&order=id&limit=1` e `.../stock?select=id&order=id&limit=1`,
+ * 200 nas duas). `stock.id` não aparece no `select()` desta varredura porque o volume agrega por
+ * medicamento, mas existe e é o `subject_id` do alerta de validade (por LOTE).
+ */
 async function _fetchAllPagesByUsers(table, columns, userIds, applyFilters = (q) => q) {
   return _fetchAllPages(table, columns, (q) => applyFilters(q.in('user_id', userIds)), 'id');
 }
