@@ -110,6 +110,7 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   // dose por tomada, unidade de tomada, plano) — nunca mais pela identidade do medicamento.
   const selectFields = `
     id, user_id, protocol_id, critical_alarm, scheduled_for, medicine_id,
+    notified_at, snoozed_until,
     medicine:medicines(name, dosage_unit, dosage_per_pill),
     protocol:protocols(
       id, name, dosage_per_intake, intake_unit, treatment_plan_id, medicine_id,
@@ -145,14 +146,108 @@ async function _fetchDueInstancesForReminder(userIds, windowStart, windowEnd) {
   return [...(nonSnoozed || []), ...(snoozedDue || [])];
 }
 
+/**
+ * Reivindica (claim) as instâncias ANTES do envio. O claim é o PREDICADO do próprio UPDATE
+ * (AP-221/R-288): o Postgres toma row lock e o reavalia sobre a versão nova, então dois ciclos
+ * concorrentes nunca reivindicam a mesma dose — o segundo recebe zero linhas no RETURNING.
+ *
+ * São DOIS predicados porque são duas populações, vindas das duas queries do fetch:
+ *  - dose no horário previsto → `notified_at IS NULL` (e o update carimba `notified_at`);
+ *  - dose ADIADA → `snoozed_until IS NOT NULL` (e o update zera `snoozed_until`).
+ * Usar só `notified_at IS NULL` perderia a soneca vinda do mobile: `setSnoozedUntil`
+ * (`createDoseInstanceRepository`) grava `snoozed_until` SEM zerar `notified_at` — ao contrário do
+ * caminho do Telegram (`doseActions.ts`) — então a dose adiada chega ao claim já carimbada e um
+ * predicado só a descartaria em silêncio. Ambos os predicados se auto-negam no mesmo UPDATE, logo
+ * ambos são claims válidos.
+ *
+ * @private
+ * @param {Array<{instanceId: string, snoozedUntil: string|null}>} doses
+ * @returns ids reivindicados, o carimbo usado e `claimError` (erro de banco ≠ corrida perdida).
+ */
+async function _claimInstances(doses) {
+  const targets = (doses || []).filter(d => d.instanceId);
+  if (targets.length === 0) return { claimedIds: [], claimedAt: null, claimError: false };
+
+  const claimedAt = getServerTimestamp();
+  const snoozedIds = targets.filter(d => d.snoozedUntil).map(d => d.instanceId);
+  const dueIds = targets.filter(d => !d.snoozedUntil).map(d => d.instanceId);
+
+  const claimedIds = [];
+  let claimError = false;
+
+  if (dueIds.length > 0) {
+    const { data, error } = await supabase
+      .from('dose_instances')
+      .update({ notified_at: claimedAt, snoozed_until: null })
+      .in('id', dueIds)
+      .is('notified_at', null)
+      .select('id');
+    if (error) {
+      logger.error('Erro ao reivindicar dose_instances devidas (claim)', error, { dueIds });
+      claimError = true;
+    } else {
+      claimedIds.push(...(data || []).map(r => r.id));
+    }
+  }
+
+  if (snoozedIds.length > 0) {
+    const { data, error } = await supabase
+      .from('dose_instances')
+      .update({ notified_at: claimedAt, snoozed_until: null })
+      .in('id', snoozedIds)
+      .not('snoozed_until', 'is', null)
+      .select('id');
+    if (error) {
+      logger.error('Erro ao reivindicar dose_instances adiadas (claim)', error, { snoozedIds });
+      claimError = true;
+    } else {
+      claimedIds.push(...(data || []).map(r => r.id));
+    }
+  }
+
+  return { claimedIds, claimedAt, claimError };
+}
+
+/**
+ * Devolve as instâncias ao estado PRÉ-claim quando o dispatch falha depois de reivindicar
+ * (FR-006a) — uma falha transitória de push não pode consumir a dose.
+ *
+ * Restaura `notified_at` E `snoozed_until` aos valores originais: o claim zera a soneca, e
+ * devolver só o `notified_at` deixaria a dose adiada sem marcador de soneca — invisível para as
+ * DUAS queries do fetch (o `scheduled_for` dela já passou).
+ *
+ * O `.eq('notified_at', claimedAt)` é obrigatório: sem ele um release atrasado apagaria o carimbo
+ * de OUTRO worker e reintroduziria o envio duplo pela própria correção.
+ * @private
+ */
+async function _releaseInstances(doses, claimedIds, claimedAt) {
+  if (!claimedAt || !claimedIds || claimedIds.length === 0) return;
+  const claimed = new Set(claimedIds);
+  for (const dose of (doses || [])) {
+    if (!claimed.has(dose.instanceId)) continue;
+    const { error } = await supabase
+      .from('dose_instances')
+      .update({ notified_at: dose.notifiedAt ?? null, snoozed_until: dose.snoozedUntil ?? null })
+      .eq('id', dose.instanceId)
+      .eq('notified_at', claimedAt);
+    if (error) {
+      logger.error('Erro ao liberar dose_instance após falha de dispatch', error, {
+        instanceId: dose.instanceId,
+      });
+    }
+  }
+}
+
+/**
+ * Carimba `notified_at` DEPOIS do envio. Usado só no fallback de erro de banco no claim — o
+ * caminho normal carimba antes (ver `_claimInstances`).
+ * @private
+ */
 async function _updateNotifiedAt(instanceIds) {
   if (!instanceIds || instanceIds.length === 0) return;
   const { error } = await supabase
     .from('dose_instances')
-    .update({
-      notified_at: getServerTimestamp(),
-      snoozed_until: null
-    })
+    .update({ notified_at: getServerTimestamp(), snoozed_until: null })
     .in('id', instanceIds);
   if (error) {
     logger.error('Erro ao atualizar notified_at em dose_instances', error, { instanceIds });
@@ -195,6 +290,19 @@ function mapInstanceToDose(inst) {
     // Horário ORIGINAL agendado da ocorrência (não o instante de saída do push). Sem isto, doses
     // adiadas (snooze) re-disparadas imprimiam a hora da soneca no body em vez da agendada.
     scheduledFor: inst.scheduled_for ?? null,
+    // Estado PRÉ-claim: define qual predicado reivindica esta dose e o que o release restaura.
+    ..._claimStateOf(inst),
+  };
+}
+
+/**
+ * Estado pré-claim da ocorrência. Fora de `mapInstanceToDose` de propósito (limite de complexidade).
+ * @private
+ */
+function _claimStateOf(inst) {
+  return {
+    notifiedAt: inst.notified_at ?? null,
+    snoozedUntil: inst.snoozed_until ?? null,
   };
 }
 
@@ -224,36 +332,60 @@ function _formatScheduledLabel(scheduledFor, userTz, fallback) {
  */
 async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz) {
   const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
-  const isBlockCritical = block.doses.some(d => d.critical_alarm === true);
+
+  // Claim ANTES do dispatch: só é enviado o que este ciclo conseguiu reivindicar.
+  const { claimedIds, claimedAt, claimError } = await _claimInstances(block.doses);
+  let claimedBlock = block;
+  if (instanceIdsInBlock.length > 0 && !claimError) {
+    if (claimedIds.length === 0) {
+      // Corrida perdida: outro ciclo já reivindicou o bloco. Não é erro.
+      logger.debug('Bloco de doses já reivindicado por outro ciclo — nada a enviar', {
+        userId, correlationId,
+      });
+      return;
+    }
+    // Claim parcial: manter no bloco só as doses desta reivindicação.
+    const claimedSet = new Set(claimedIds);
+    claimedBlock = { ...block, doses: block.doses.filter(d => claimedSet.has(d.instanceId)) };
+  } else if (claimError) {
+    // Erro de BANCO no claim ≠ corrida perdida. Tratar como corrida perdida transformaria uma
+    // instabilidade do Postgres em lembrete não entregue. Degrada para o comportamento antigo
+    // (envia e carimba depois): o risco reintroduzido é o duplo teórico, só durante a falha.
+    logger.error('Claim indisponível — enviando sem reivindicar (fail-open na entrega)', null, {
+      userId, correlationId, instanceIdsInBlock,
+    });
+  }
+
+  const isBlockCritical = claimedBlock.doses.some(d => d.critical_alarm === true);
 
   // Horário do body = instante ORIGINAL agendado da dose (não o de saída do push). Doses do mesmo
   // bloco compartilham o minuto (partitionDoses). Fallback p/ currentHHMM se scheduled_for ausente.
-  const scheduledLabel = _formatScheduledLabel(block.doses[0]?.scheduledFor, userTz, currentHHMM);
+  const scheduledLabel = _formatScheduledLabel(claimedBlock.doses[0]?.scheduledFor, userTz, currentHHMM);
 
   let kind, data;
 
-  if (block.kind === 'by_plan') {
+  if (claimedBlock.kind === 'by_plan') {
     kind = 'dose_reminder_by_plan';
     data = {
-      planId: block.planId,
-      planName: block.planName,
+      planId: claimedBlock.planId,
+      planName: claimedBlock.planName,
       scheduledTime: scheduledLabel,
       hour: currentHour,
-      doses: block.doses,
-      protocolIds: block.doses.map(d => d.protocolId),
+      doses: claimedBlock.doses,
+      protocolIds: claimedBlock.doses.map(d => d.protocolId),
       critical_alarm: isBlockCritical,
     };
-  } else if (block.kind === 'misc') {
+  } else if (claimedBlock.kind === 'misc') {
     kind = 'dose_reminder_misc';
     data = {
       scheduledTime: scheduledLabel,
       hour: currentHour,
-      doses: block.doses,
-      protocolIds: block.doses.map(d => d.protocolId),
+      doses: claimedBlock.doses,
+      protocolIds: claimedBlock.doses.map(d => d.protocolId),
       critical_alarm: isBlockCritical,
     };
   } else {
-    const dose = block.doses[0];
+    const dose = claimedBlock.doses[0];
     kind = 'dose_reminder';
     data = {
       medicineName: dose.medicineName,
@@ -276,15 +408,17 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
     context: { correlationId, jobType: 'dose_reminder_instances' },
   });
 
-  if (result.success) {
-    await _updateNotifiedAt(instanceIdsInBlock);
-  } else {
+  if (!result.success) {
     logger.error('Falha no dispatch (instances)', null, {
       userId,
       kind,
       errors: result.errors,
       correlationId,
     });
+    // Devolve a dose ao estado pré-claim — falha de push não pode consumir a dose em silêncio.
+    await _releaseInstances(claimedBlock.doses, claimedIds, claimedAt);
+  } else if (claimError) {
+    await _updateNotifiedAt(instanceIdsInBlock);
   }
 }
 

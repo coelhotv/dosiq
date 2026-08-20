@@ -3,8 +3,8 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 1,
     "spec_dir": "plans/specs/050-notification-integrity",
     "spec": "plans/specs/050-notification-integrity/spec.md",
@@ -141,13 +141,13 @@
     ]
   },
   "memory": {
-    "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 19,
+    "last_distillation": "2026-08-20T13:56:00-03:00",
+    "journal_entries_since_distillation": 1,
     "rules_count": 261,
-    "anti_patterns_count": 325,
+    "anti_patterns_count": 327,
     "decisions_count": 92,
-    "contracts_count": 33,
-    "distillation_due": true
+    "contracts_count": 34,
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
@@ -160,7 +160,7 @@
     "status": "clean_after_fixes",
     "spec": "050-notification-integrity",
     "critical": 0,
-    "auto_fixed": 3,
+    "auto_fixed": 5,
     "ask_items": 0
   },
   "ai_review": {
