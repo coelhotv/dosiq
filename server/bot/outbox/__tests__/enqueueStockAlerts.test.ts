@@ -66,6 +66,8 @@ const protocolFor = (medicineId: string, userId = USER) => ({
 
 /** Saldo 2 e consumo diário 1 → 2 dias restantes (< 7 = alerta). */
 const stockFor = (medicineId: string, quantity = 2, userId = USER) => ({
+  // 050 PR 2: o lote tem `id` — é o subject_id do eixo VALIDADE.
+  id: `lot-${medicineId}`,
   user_id: userId,
   medicine_id: medicineId,
   quantity,
@@ -108,7 +110,9 @@ function makeRepo() {
   };
 }
 
-const KINDS_ON = new Set(['daily_adherence', 'stock_alert']);
+// Os dois kinds de estoque entram e saem do env JUNTOS: o job legado produz volume e validade na
+// mesma chamada, então o gate do enqueue é tudo-ou-nada (espelha o guard do api/notify.ts).
+const KINDS_ON = new Set(['daily_adherence', 'stock_alert', 'stock_expiry_alert']);
 const KINDS_OFF = new Set(['daily_adherence', 'weekly_adherence', 'monthly_report', 'daily_digest']);
 
 describe('enqueueStockAlerts — fan-out do stock_alert (050 PR 1b)', () => {
@@ -223,6 +227,128 @@ describe('enqueueStockAlerts — fan-out do stock_alert (050 PR 1b)', () => {
       const { result, repo } = await run(10, 10);
       expect(result.attempted).toBe(0);
       expect(repo.enqueue).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── 050 PR 2 — eixo VALIDADE (stock_expiry_alert), 1 linha por LOTE ────────────────────────
+  describe('eixo validade: stock_expiry_alert por LOTE (050 PR 2 / T031)', () => {
+    const KINDS_BOTH = new Set(['stock_alert', 'stock_expiry_alert']);
+    const NOW = spTime(10, 0); // 2026-08-20 10:00 em America/Sao_Paulo
+
+    const MS_DAY = 24 * 60 * 60 * 1000;
+    const SHELF = 30;
+
+    /**
+     * Lote aberto de forma que `opened_at + 30 dias` caia a `daysLeft` dias de hoje.
+     * Saldo 90 (consumo diário 1 → 90 dias restantes) para NÃO disparar o eixo de volume:
+     * é o que prova que as linhas de validade são independentes da linha de volume.
+     */
+    const lotFor = (id: string, medicineId: string, daysLeft: number, quantity = 90) => ({
+      id,
+      user_id: USER,
+      medicine_id: medicineId,
+      quantity,
+      opened_at: new Date(NOW.getTime() - (SHELF - daysLeft) * MS_DAY).toISOString(),
+      medicine: {
+        name: `Med ${medicineId}`, shelf_life_days: SHELF,
+        units_per_ml: null, dosage_unit: 'mg', dosage_per_pill: 1,
+      },
+    });
+
+    beforeEach(() => {
+      // `_biologicalExpiryDaysLeft` lê `Date.now()` (não recebe `now`): sem congelar o relógio
+      // a cadência D-3/D-0 dependeria do dia em que a suíte roda.
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('1 lote D-3 + 1 lote D-0 do mesmo usuário → 2 linhas de validade DISTINTAS entre si e da de volume', async () => {
+      // MEDS[0] com saldo baixo (2) → gera a linha de VOLUME; os dois lotes de MEDS[1] têm saldo
+      // alto e só disparam validade.
+      queueFetches(
+        [userRow()],
+        [protocolFor(MEDS[0]), protocolFor(MEDS[1])],
+        [
+          stockFor(MEDS[0], 2),
+          lotFor('lote-d3', MEDS[1], 3),
+          lotFor('lote-d0', MEDS[1], 0),
+        ],
+      );
+      const repo = makeRepo();
+
+      const result = await enqueueStockAlerts({ repo, kinds: KINDS_BOTH, now: NOW });
+
+      expect(result.attempted).toBe(1);       // volume: só MEDS[0]
+      expect(result.attemptedExpiry).toBe(2); // validade: os dois lotes
+
+      const expiry = repo.inserted.filter((e: any) => e.kind === 'stock_expiry_alert');
+      expect(expiry.map((e: any) => e.subjectId).sort()).toEqual(['lote-d0', 'lote-d3']);
+      // Distintas da linha de volume: kind e assunto diferentes → chaves de UNIQUE diferentes.
+      const volume = repo.inserted.filter((e: any) => e.kind === 'stock_alert');
+      expect(volume).toHaveLength(1);
+      expect(volume[0].subjectId).toBe(MEDS[0]);
+      expect(new Set(repo.inserted.map((e: any) => `${e.kind}|${e.periodKey}|${e.subjectId}`)).size)
+        .toBe(3);
+    });
+
+    it('mesmo lote no mesmo dia → 1 linha (reexecução não duplica)', async () => {
+      const repo = makeRepo();
+
+      queueFetches([userRow()], [protocolFor(MEDS[0])], [lotFor('lote-d3', MEDS[0], 3)]);
+      await enqueueStockAlerts({ repo, kinds: KINDS_BOTH, now: NOW });
+      expect(repo.inserted).toHaveLength(1);
+
+      queueFetches([userRow()], [protocolFor(MEDS[0])], [lotFor('lote-d3', MEDS[0], 3)]);
+      await enqueueStockAlerts({ repo, kinds: KINDS_BOTH, now: spTime(10, 5) });
+
+      expect(repo.inserted).toHaveLength(1); // nenhuma nova — UNIQUE (user, kind, dia, lote)
+    });
+
+    it('fora da cadência (D-5, D-1, vencido há dias) e lote consumido → 0 linhas', async () => {
+      queueFetches(
+        [userRow()],
+        [protocolFor(MEDS[0])],
+        [
+          lotFor('lote-d5', MEDS[0], 5),
+          lotFor('lote-d1', MEDS[0], 1),
+          lotFor('lote-vencido', MEDS[0], -4),
+          lotFor('lote-vazio', MEDS[0], 3, 0), // D-3 mas quantity = 0
+        ],
+      );
+      const repo = makeRepo();
+
+      const result = await enqueueStockAlerts({ repo, kinds: KINDS_BOTH, now: NOW });
+
+      expect(result.attemptedExpiry).toBe(0);
+      expect(repo.enqueue).not.toHaveBeenCalled();
+    });
+
+    // 🔴 O gate é TUDO-OU-NADA e isso é uma exigência de segurança, não estilo: o job legado
+    // (`checkStockAlerts`) produz VOLUME e VALIDADE na mesma chamada e só é desligado quando os
+    // DOIS kinds estão no env. Um kind sozinho na fila = legado ligado + outbox ligada para o
+    // mesmo alerta = envio EM DOBRO, todo dia, sem dedup no dispatcher.
+    it.each([
+      ['só stock_alert no env', new Set(['stock_alert'])],
+      ['só stock_expiry_alert no env', new Set(['stock_expiry_alert'])],
+    ])('🔴 GATE TUDO-OU-NADA: %s → 0 linhas e NENHUMA query', async (_label, kinds) => {
+      queueFetches(
+        [userRow()],
+        [protocolFor(MEDS[0])],
+        [stockFor(MEDS[0], 2), lotFor('lote-d3', MEDS[0], 3)],
+      );
+      const repo = makeRepo();
+      mockSupabase._tables.length = 0;
+
+      const result = await enqueueStockAlerts({ repo, kinds: kinds as Set<string>, now: NOW });
+
+      expect(result.attempted).toBe(0);
+      expect(result.attemptedExpiry).toBe(0);
+      expect(repo.enqueue).not.toHaveBeenCalled();
+      expect(mockSupabase._tables).toHaveLength(0);
     });
   });
 });

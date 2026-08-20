@@ -15,6 +15,7 @@ import { dispatchNotification } from '../server/notifications/dispatcher/dispatc
 import { runOutboxCycle } from '../server/notifications/outbox/runOutboxCycle.js';
 import { createOutboxRepository } from '../server/notifications/outbox/outboxRepository.js';
 import { enqueueStockAlerts } from '../server/bot/outbox/enqueueStockAlerts.js';
+import { buildStockExpiryContent } from '../server/bot/outbox/stockExpiryContent.js';
 import { buildStockAlertContent } from '../server/bot/outbox/stockAlertContent.js';
 import {
   buildDailyAdherenceData,
@@ -47,7 +48,10 @@ const OUTBOX_CONTENT_BUILDERS = {
   // 050 PR 1b: fan-out por MEDICAMENTO — o assunto vem em subject_id e o conteúdo (nome/saldo/
   // dias) é recalculado no envio (SEC-1). Registrar o builder é inofensivo enquanto o enqueue
   // estiver atrás do gate OUTBOX_KINDS: sem linhas na fila, nada é drenado.
-  stock_alert: ({ userId, subjectId }) => buildStockAlertContent({ userId, subjectId })
+  stock_alert: ({ userId, subjectId }) => buildStockAlertContent({ userId, subjectId }),
+  // 050 PR 2: eixo VALIDADE — fan-out por LOTE (subject_id = stock.id). `daysLeft` é recalculado
+  // no envio; lote consumido ou apagado devolve null e a linha é fechada sem envio.
+  stock_expiry_alert: ({ userId, subjectId }) => buildStockExpiryContent({ userId, subjectId })
 };
 // outbox kind → kind de dispatch quando divergem (payload legado usa 'adherence_report').
 const OUTBOX_DISPATCH_KIND = { daily_adherence: 'adherence_report' };
@@ -379,7 +383,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
   // 2. Ciclo da outbox (ADR-078): enqueue por range + drain dos kinds migrados. Isolado.
   //    No-op quando OUTBOX_KINDS vazio (deploy neutro). Falha aqui não afeta reminders/legado.
   await runJob('outbox_cycle', 'outbox_cycle', async () => {
-    // 050 PR 1b: enqueue do stock_alert ANTES do ciclo — fan-out (1 linha por medicamento) que o
+    // 050 PR 1b/2: enqueue dos alertas de estoque ANTES do ciclo — fan-out (1 linha por medicamento) que o
     // enqueue por range de relatórios não expressa. 🔴 `kinds: OUTBOX_KINDS` NÃO é decorativo: o
     // claim não filtra kind e o guard do legado (abaixo) segue ligado até o cutover (PR 2), então
     // enfileirar sem esse gate faria legado + outbox entregarem o MESMO alerta.
@@ -395,7 +399,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
         logger,
       });
     } catch (err) {
-      logger.error('[outbox] enqueue de stock_alert falhou (isolado — ciclo segue)', err, { correlationId });
+      logger.error('[outbox] enqueue dos alertas de estoque falhou (isolado — ciclo segue)', err, { correlationId });
     }
 
     const outcome = await runOutboxCycle({
@@ -426,7 +430,10 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
 
   // Tasks at 10:00
   if (currentHour === 10 && currentMinute === 0) {
-    if (!OUTBOX_KINDS.has('stock_alert')) {
+    // 050 PR 2: `checkStockAlerts` faz VOLUME e VALIDADE na mesma chamada, então o guard tem de
+    // nomear OS DOIS kinds — desligar o legado com só um deles migrado mataria o outro eixo em
+    // silêncio. O legado só sai de cena quando a outbox serve ambos.
+    if (!OUTBOX_KINDS.has('stock_alert') || !OUTBOX_KINDS.has('stock_expiry_alert')) {
       await runJob('stock_alerts', 'stock_alerts',
         (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }));
     }
