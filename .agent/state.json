@@ -19,8 +19,8 @@
     "spec_dirs": [
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 798,
-    "merged_squash": "d9e76761 (squash merge into main)",
+    "merged_pr": 800,
+    "merged_squash": "116ef578 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -57,6 +57,15 @@
         "date": "2026-08-19",
         "base_branch": "main",
         "note": "Coluna `occurred_at` (nullable, SEM default) separa QUANDO O FATO ACONTECEU de QUANDO A LINHA ENTROU; instante carimbado na origem e transportado pela fila; iOS declara NULL; skip passa a emitir `resolved` (FR-043). Higiene: `push_skipped_no_token` exige CANDIDATURA (device platform='ios', INCLUSIVE inativo — senão zeraria o caso-alvo 'iPhone cujo push parou') + de-duplicação best-effort por ocorrência; device deixa de repor token que o servidor limpou (dedupe governa o UPDATE). ⚠️ 2 EMENDAS DE ESCOPO no C1.5: (Decisão 22) a FR-041 original mandava tratar 400 BadDeviceToken, que JÁ era tratado (liveActivityPush.ts:126) — seria no-op com teste verde sobre bug vivo; e as 129 push_failed que a justificavam eram 127 do simulador da conta de teste + 2 de build dev = ZERO em produção. (Decisão 23) candidatura inclui device iOS inativo. SMOKE fechou PO-19 com Δ 961s e gerou AP-331: o takeover deixa o app `top-sleeping` com a tela apagada, AppState nunca vira 'active' e a fila não drena — a condição do erro grande é a COMUM (silenciar e voltar a dormir), não a rara (app morto). Fila lida via `run-as ... cat RKStorage` ANTES do flush: o ISO bateu byte a byte com a coluna depois. RC5 1 auto-fix. RC6 rodada 2x: a 1a (claude) achou 2 medium REAIS — o `occurredAt` do skip vinha do relógio do device em vez do `skippedAt` que a RPC devolve (reintrodução da classe que o RC5 do B1 já corrigira), e 'trava de idempotência' era nome errado p/ um read-check-write. A 2a (agy) rodou 5/5 chunks com 0 findings sobre o código já corrigido. 🔧 EFEITO COLATERAL NO FERRAMENTAL: o agy falhava em 100% dos chunks porque `cut -c` clampa BYTE e partia um multibyte do catálogo em português — payload UTF-8 inválido, ERROR em 0s, stderr vazio; o claude tolerava e mascarava. Corrigido no devflow (commit 1249ecd): clamp por caractere + NO TOOLS no RC6_INSTRUCTION. PO-8 fica PARCIAL: guard fechado, corte do ruído pendente da 1a janela pós-deploy."
+      },
+      {
+        "pr": 800,
+        "squash": "116ef578",
+        "spec": "050 PR 1a — notification_outbox ganha subject_id (infra do fan-out)",
+        "tier": 1,
+        "date": "2026-08-19",
+        "base_branch": "main",
+        "note": "Infra pura, zero consumidor: nenhum kind usa subject_id, runtime inalterado. Coluna subject_id uuid + UNIQUE (user_id,kind,period_key,subject_id) NULLS NOT DISTINCT aplicada em prod via MCP (indnullsnotdistinct: true verificado). ZERO backfill — a cláusula preserva a idempotência dos 4 kinds migrados (duas linhas NULL ainda colidem); sem ela o backfill seria obrigatório e a idempotência sumiria em silêncio. claim_notification_outbox NÃO recriada (RETURNS SETOF). ContentBuilder ganhou subjectId aditivo (CON-035) — os 4 builders de api/notify.ts não mudaram. 8 arquivos (estimava ~5: entraram CHANGELOG+package.json do SQP e o CON-035.md). ADR-078 emendado preservando o TODO da NC2. PO-6 fechado com curl real do PostgREST (2x 201 + UMA linha, sem 42P10; guard sem subject_id idem; fan-out = 2 linhas), linhas de teste inseridas com status=sent (não claimáveis) e deletadas. RC5 0 issues · RC6 (agy) 0 findings. 🔬 A/B armado e ABORTADO pelo script (baseline 0 findings, sem significância) — nenhum PENDENTE criado, captura segue liberada; limite estrutural do PO-5 registrado na measurement.md. Próximo: PR 1b (T014-T024), destravado."
       }
     ],
     "previous_session_note": "067 C MERGEADA (#798, squash d9e76761). Slices A1/A2/B1/C entregues; B2 SEGURADO (REVOKE UPDATE(status) espera adoção nas lojas — docs/migrations/PENDING.md + R-310 + PO-SEC-2). PRÓXIMA AÇÃO: rodar a query da PO-8 quando a próxima janela de dose passar com o server novo em prod — kcarolinne@ (Android-only) deve emitir ZERO push_skipped_no_token e coelhoconsult@/liart.junior@ (iPhone com device inativo) devem cair de ~60 para 1 por instância. doktorr@ NÃO serve de controle (tem simulador iOS registrado, é candidata). Journal em 11/15 p/ distill.",
