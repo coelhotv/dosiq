@@ -86,7 +86,7 @@
         "note": "Segundo eixo do alerta de estoque (validade biologica pos-abertura, 012 Fase A/ADR-059) na outbox com subject_id = stock.id (o LOTE, nao o medicamento). Em prod e INERTE — os dois kinds de estoque seguem fora de OUTBOX_KINDS. CAUSA RAIZ FECHADA: o select de stock da varredura nao trazia `id`; sem ele o subject_id viria undefined e todas as linhas de validade do dia colidiriam na UNIQUE como (user,kind,dia,NULL) = 1 alerta em vez de N, o Gap 1 da propria spec reintroduzido. Gate R-295 (curl 200) nesse select e no select novo do builder. Migracao outbox_expiry_kind.sql aplicada em prod via MCP antes do merge; types regenerados SEM delta (kind e text). _biologicalExpiryDaysLeft exportada: legado, enqueue e builder no MESMO calculo (senao o SC-003 compararia contas, nao caminhos). RC5 3 findings, o principal mudando o desenho: o gate do enqueue era POR EIXO enquanto o guard do legado e tudo-ou-nada (checkStockAlerts faz volume E validade na mesma chamada) — um kind sozinho no env = legado + outbox despachando o mesmo alerta, todo dia, sem dedup. Virou tudo-ou-nada + 2 testes. Os outros 2: CHANGELOG afirmava colapso de lotes que o legado nunca teve (o colapso era risco da FILA), e rollback por env nao esvazia a fila (linhas pendentes seguem drenando enquanto o legado volta) — procedimento completo no codigo. Complexidade 22 resolvida extraindo buildVolumeEntries/buildExpiryEntries. RC6 (agy, 2 chunks, cov 2/2) 0 findings, sem repetir nenhum do RC5. A/B armado e ABORTADO (baseline vazio, 2o seguido) — a 050 fecha sem entregar par; gargalo do PO-5 rediagnosticado como oferta de PR com achado, nao captura."
       }
     ],
-    "previous_session_note": "050: PR 3 MERGEADO (#803, squash 6b31bea3) — claim atomico do lembrete de dose. TODO O CODIGO DA SPEC ESTA EM PROD. O que falta NAO E CODIGO: (1) T033 — 🖥️ PO liga OUTBOX_KINDS += stock_alert,stock_expiry_alert no Vercel, OS DOIS JUNTOS (guard do legado e unico; o enqueue ja recusa um kind sozinho por construcao). Rollback = remover do env, mas linhas pendentes do dia seguem drenando. (2) T034 — SC-003 uma semana depois. ENFILEIRADO ATRAS DO CUTOVER: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801 e #803. Mapa do corte, 7 sites de import e prompt prontos na Sessao 6 do PLAYBOOK. Aprendizado do PR 3: AP-332 — claim com predicado unico sobre estado que dois caminhos gravam diferente (Telegram zera notified_at ao adiar, mobile nao) descarta a soneca do mobile em silencio.",
+    "previous_session_note": "050: TODO O CODIGO EM PROD + CUTOVER T033 APLICADO 2026-08-20 (verificado por vercel env pull: OUTBOX_KINDS com os 6 kinds, deploy posterior a mudanca). Caiu DEPOIS da janela das 10:00 SP, entao o legado serviu 20/08 (15 stock_alert as 13:00 UTC) e a fila assume em 21/08 as 10:00 local — nenhum dia com os dois caminhos ativos. PENDENTE: T034 (SC-003) — comparar notification_log pos 21-27/08 vs pre 14-20/08, POR TIPO e SEM SOMAR (stock_expiry_alert ja existe como notification_type desde 02/07; baseline 60d: stock_alert 448, stock_expiry_alert 2). Sinal de saude a olhar em 21/08: linhas dos dois kinds em notification_outbox (ate 20/08 a fila so tinha daily_adherence). PROXIMA ENTREGA DE CODIGO: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY; liberar a partir de 23/08 (~48h de fila saudavel), NAO precisa esperar o T034 fechar porque rollback do cutover e remover o env, nao mexer no codigo. Mapa do corte + 7 sites de import + prompt na Sessao 6 do PLAYBOOK. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801, #803.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -138,7 +138,15 @@
         "why": "Decisões 15/16 do PO: aplicar antes penaliza quem não atualizou (42501 sem saída). R-310.",
         "index": "docs/migrations/PENDING.md"
       }
-    ]
+    ],
+    "cutover_050": {
+      "task": "T033",
+      "applied": "2026-08-20",
+      "verified_by": "vercel env pull --environment=production",
+      "value": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert",
+      "first_queue_cycle": "2026-08-21 10:00 local",
+      "rollback": "remover os 2 kinds do env; linhas pending do dia seguem drenando"
+    }
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
