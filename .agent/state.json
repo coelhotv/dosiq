@@ -19,7 +19,7 @@
     "spec_dirs": [
       "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 802,
+    "merged_pr": 803,
     "merged_squash": "f16bdb0d (squash merge into main)",
     "merged_history": [
       {
@@ -86,7 +86,7 @@
         "note": "Segundo eixo do alerta de estoque (validade biologica pos-abertura, 012 Fase A/ADR-059) na outbox com subject_id = stock.id (o LOTE, nao o medicamento). Em prod e INERTE — os dois kinds de estoque seguem fora de OUTBOX_KINDS. CAUSA RAIZ FECHADA: o select de stock da varredura nao trazia `id`; sem ele o subject_id viria undefined e todas as linhas de validade do dia colidiriam na UNIQUE como (user,kind,dia,NULL) = 1 alerta em vez de N, o Gap 1 da propria spec reintroduzido. Gate R-295 (curl 200) nesse select e no select novo do builder. Migracao outbox_expiry_kind.sql aplicada em prod via MCP antes do merge; types regenerados SEM delta (kind e text). _biologicalExpiryDaysLeft exportada: legado, enqueue e builder no MESMO calculo (senao o SC-003 compararia contas, nao caminhos). RC5 3 findings, o principal mudando o desenho: o gate do enqueue era POR EIXO enquanto o guard do legado e tudo-ou-nada (checkStockAlerts faz volume E validade na mesma chamada) — um kind sozinho no env = legado + outbox despachando o mesmo alerta, todo dia, sem dedup. Virou tudo-ou-nada + 2 testes. Os outros 2: CHANGELOG afirmava colapso de lotes que o legado nunca teve (o colapso era risco da FILA), e rollback por env nao esvazia a fila (linhas pendentes seguem drenando enquanto o legado volta) — procedimento completo no codigo. Complexidade 22 resolvida extraindo buildVolumeEntries/buildExpiryEntries. RC6 (agy, 2 chunks, cov 2/2) 0 findings, sem repetir nenhum do RC5. A/B armado e ABORTADO (baseline vazio, 2o seguido) — a 050 fecha sem entregar par; gargalo do PO-5 rediagnosticado como oferta de PR com achado, nao captura."
       }
     ],
-    "previous_session_note": "050 com TODO O CODIGO EM PROD e INERTE (PRs #799, #800, #801, #802). O que falta da spec NAO E CODIGO: (1) T033 — 🖥️ PO liga OUTBOX_KINDS += stock_alert,stock_expiry_alert no Vercel, OS DOIS JUNTOS (guard do legado e unico; o enqueue ja recusa um kind sozinho por construcao). Rollback = remover do env E apagar as linhas pendentes do dia (delete from notification_outbox where kind in ('stock_alert','stock_expiry_alert') and status='pending'). (2) T034 — SC-003 uma semana pos-cutover: contagem de stock_alert/stock_expiry_alert em notification_log na semana pos vs a anterior, nenhum alerta a menos. Sobra o PR 3 (T036-T044, claim atomico do lembrete, P3 dropavel — PO-5 mediu 1.256 lembretes/30d com ZERO duplicatas). Journal em 19/15 -> DISTILL DEVIDA ha varias sessoes.",
+    "previous_session_note": "050: PR 3 MERGEADO (#803, squash 6b31bea3) — claim atomico do lembrete de dose. TODO O CODIGO DA SPEC ESTA EM PROD. O que falta NAO E CODIGO: (1) T033 — 🖥️ PO liga OUTBOX_KINDS += stock_alert,stock_expiry_alert no Vercel, OS DOIS JUNTOS (guard do legado e unico; o enqueue ja recusa um kind sozinho por construcao). Rollback = remover do env, mas linhas pendentes do dia seguem drenando. (2) T034 — SC-003 uma semana depois. ENFILEIRADO ATRAS DO CUTOVER: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801 e #803. Mapa do corte, 7 sites de import e prompt prontos na Sessao 6 do PLAYBOOK. Aprendizado do PR 3: AP-332 — claim com predicado unico sobre estado que dois caminhos gravam diferente (Telegram zera notified_at ao adiar, mobile nao) descarta a soneca do mobile em silencio.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -164,12 +164,16 @@
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy",
+    "engine": "agy (2 chunks)",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 802
+    "pr": 803,
+    "coverage": "2/2",
+    "findings": "0/0/0/0",
+    "ab_pair": "nao armou (2 packs < 3)",
+    "note": "chunk 2 ADVISORY — _reminderHelpers.ts excede sozinho o budget de chunk (3o PR seguido)"
   }
 }
