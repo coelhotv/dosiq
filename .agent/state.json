@@ -125,12 +125,12 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 261,
     "anti_patterns_count": 325,
     "decisions_count": 92,
     "contracts_count": 33,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
