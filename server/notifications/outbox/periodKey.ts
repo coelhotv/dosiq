@@ -18,15 +18,19 @@ export type OutboxKind =
   | 'weekly_adherence'
   | 'monthly_report'
   | 'daily_digest'
-  | 'stock_alert';
+  | 'stock_alert'
+  | 'stock_expiry_alert';
 
 type Granularity = 'daily' | 'weekly' | 'monthly';
 
-// Granularidade do período por kind. daily_digest e stock_alert reiniciam a cada dia local.
+// Granularidade do período por kind. daily_digest, stock_alert e stock_expiry_alert reiniciam a
+// cada dia local.
 const KIND_GRANULARITY: Record<OutboxKind, Granularity> = {
   daily_adherence: 'daily',
   daily_digest: 'daily',
   stock_alert: 'daily',
+  // 050 PR 2: validade biológica — a chave é o DIA local; o assunto (o lote) mora em subject_id.
+  stock_expiry_alert: 'daily',
   weekly_adherence: 'weekly',
   monthly_report: 'monthly',
 };

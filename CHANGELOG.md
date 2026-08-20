@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Aviso de validade do frasco também passa a ser preparado pela fila, um por frasco
+
+- **Chore** (`patch` server `4.1.6`). Mudança interna, desligada por padrão: em produção os avisos
+  de estoque continuam saindo pelo caminho antigo, no mesmo horário e com o mesmo texto. Nada muda
+  para quem usa o aplicativo nesta versão.
+
+  O aviso de "este frasco está perto de perder a validade depois de aberto" ganhou o mesmo caminho
+  pela fila que o aviso de estoque baixo recebeu na versão anterior, preservando o que o caminho
+  antigo já fazia: **um aviso por frasco**, e não um por remédio — quem tem dois frascos do mesmo
+  remédio vencendo em dias diferentes continua recebendo um aviso para cada.
+
+  Junto vai a correção que tornava isso possível na fila: a varredura do estoque não trazia a
+  identidade do frasco, e sem ela a fila teria juntado todos os avisos do dia em um só ao assumir
+  o caminho novo. Como os dois avisos de estoque (pouco saldo e validade do frasco) são produzidos
+  pela mesma rotina, eles trocam de caminho juntos — o caminho antigo só é desligado quando a fila
+  atende os dois.
+
+  O texto do aviso continua sendo calculado na hora do envio: um frasco consumido ou apagado entre
+  a preparação e o envio cancela o aviso em vez de mandar informação velha.
+
 ### Aviso de estoque baixo passa a ser preparado pela fila, um por remédio
 
 - **Chore** (`patch` server `4.1.5`). Mudança interna, desligada por padrão: em produção o aviso de

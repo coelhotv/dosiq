@@ -800,7 +800,9 @@ export function _buildProtocolsAndStockMaps(allProtocols, allStock) {
 // 012 Fase A (ADR-059): dias restantes até a expiração biológica do lote.
 // Espelha biologicalExpiryDaysLeft do @dosiq/core (server não importa o core).
 // null = eixo inativo (lote fechado, sem TTL, data inválida ou clock skew).
-function _biologicalExpiryDaysLeft(stockRow) {
+// Exportada desde o 050 PR 2: o enqueue e o content builder da outbox usam o MESMO cálculo do
+// legado — duas implementações fariam o SC-003 comparar contas diferentes, não caminhos.
+export function _biologicalExpiryDaysLeft(stockRow) {
   const openedAt = stockRow?.opened_at;
   const shelfDays = Number(stockRow?.medicine?.shelf_life_days);
   if (!openedAt || !Number.isFinite(shelfDays) || shelfDays <= 0) return null;
@@ -881,8 +883,8 @@ async function _fetchAllPages(table, columns, applyFilters = (q) => q, orderColu
  *
  * Ordena por `id` — chave primária de `protocols` e de `stock`, ambas verificadas no banco
  * (R-295: `curl .../protocols?select=id&order=id&limit=1` e `.../stock?select=id&order=id&limit=1`,
- * 200 nas duas). `stock.id` não aparece no `select()` desta varredura porque o volume agrega por
- * medicamento, mas existe e é o `subject_id` do alerta de validade (por LOTE).
+ * 200 nas duas). `stock.id` também vai no `select()` da varredura desde o 050 PR 2 — é o
+ * `subject_id` do alerta de validade (por LOTE).
  */
 async function _fetchAllPagesByUsers(table, columns, userIds, applyFilters = (q) => q) {
   return _fetchAllPages(table, columns, (q) => applyFilters(q.in('user_id', userIds)), 'id');
@@ -969,9 +971,13 @@ export async function _scanStockAlertCandidates(users, correlationId) {
       .or(`end_date.is.null,end_date.gte.${todayLocal}`)
   );
 
+  // 🔴 050 PR 2: o `id` do LOTE é OBRIGATÓRIO no select. Ele é o `subject_id` do alerta de
+  // validade (1 alerta por lote). Sem ele o `subject_id` viria `undefined`, todas as linhas do
+  // dia colidiriam na UNIQUE como `(user, kind, dia, NULL)` e o usuário receberia UM alerta de
+  // validade em vez de N — exatamente o Gap 1 que a spec 050 existe para fechar.
   const allStock = await _fetchAllPagesByUsers(
     'stock',
-    'user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)',
+    'id, user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)',
     userIds
   );
 
