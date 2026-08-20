@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Tratamento encerrado ou pausado deixa de mandar aviso de estoque baixo
+
+- **Fix** (`patch` server `4.1.3`). Quem terminou ou pausou um tratamento continuava recebendo, todo
+  dia, o aviso de "está acabando o remédio" daquele tratamento — inclusive com o estoque zerado, o
+  que é o esperado para quem parou de tomar. Em produção eram 4 tratamentos de 3 pessoas, alertando
+  diariamente desde o fim de julho.
+
+  Agora o aviso de estoque só olha para tratamento **em vigência**: encerrado (data de fim já
+  passada) e pausado ficam de fora. A data de corte é a data local brasileira, não a do relógio
+  interno do servidor — senão o tratamento seria dado como encerrado umas horas antes da meia-noite.
+
+  Tratamento sem data de fim e com data de fim futura continuam avisando normalmente, e o dia da
+  data de fim ainda conta como vigente.
+
 ### O registro de alarme passa a guardar a hora em que a coisa aconteceu
 
 - **Fix** (`minor` core `0.22.0`, `patch` mobile `0.31.2`, `patch` server `4.1.2`). Nada muda na

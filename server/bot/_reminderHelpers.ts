@@ -870,11 +870,27 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
     // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
     // converte por intake_unit); units_per_ml/dosage_unit/dosage_per_pill p/ a conversão
     // líquida (ADR-065/ADR-067 — antes o cron contava UI cru contra ml).
+    // 050 US4 (FR-009): tratamento ENCERRADO ou PAUSADO não gera alerta de estoque.
+    // `active = true` não basta — `end_date` vencida e `paused_at` preenchido convivem com ele
+    // (4 protocolos em prod alertavam diariamente desde ~25/07).
+    // Data local via Intl (R-020/R-254): `end_date` é `date`; usar `new Date()`/UTC do servidor
+    // faria a data virar o dia seguinte às 21h em GMT−3 e encerraria o tratamento cedo demais.
+    // ⚠️ UMA data para todos: este select é uma única query com `.in('user_id', ...)`, então não
+    // dá para embutir a tz de cada usuário. Hoje é exato — os 42 usuários são UTC−3 sem DST. Se
+    // um dia houver usuário fora do BR, a borda é de ≤24h e a correção é filtrar por usuário
+    // DEPOIS da query, não trocar a data desta cláusula.
+    const todayLocal = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
+      .format(Date.now());
+
     const { data: allProtocols } = await supabase
       .from('protocols')
-      .select('user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active')
+      .select('user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active, end_date, paused_at')
       .eq('active', true)
-      .in('user_id', userIds);
+      .in('user_id', userIds)
+      .is('paused_at', null)
+      // O `.or` é obrigatório: `end_date IS NULL` é a MAIORIA dos protocolos — um `.gte` sozinho
+      // excluiria todos eles e a correção viraria omissão TOTAL dos alertas.
+      .or(`end_date.is.null,end_date.gte.${todayLocal}`);
 
     const { data: allStock } = await supabase
       .from('stock')

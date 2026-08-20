@@ -24,6 +24,10 @@ const { mockSupabase } = vi.hoisted(() => {
     }),
     gte: vi.fn().mockReturnThis(),
     lt: vi.fn().mockReturnThis(),
+    // 050 US4: predicado de vigência do select de protocols — os fixtures daqui não têm
+    // end_date/paused_at, então passam pelo filtro; a semântica é coberta em stockAlertsVigency.
+    is: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
     then: vi.fn((onFulfilled: any) => {
       const result = mockDataQueue.shift() || { data: [], error: null };
       // O mock HONRA o `.in(user_id, [...])`: sem isso o teste mediria o mock (devolvendo

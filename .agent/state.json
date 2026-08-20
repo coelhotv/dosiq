@@ -5,11 +5,11 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "tier": 2,
+    "tier": 1,
     "spec_dir": "plans/specs/067-critical-alarm-window-guard",
     "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "067 Slice C mergeada (#798) — falta medir o corte da FR-040 pós-deploy",
-    "goal_type": "feature",
+    "goal": "050 PR 0 (US4) — vigência do tratamento no alerta de estoque",
+    "goal_type": "fix",
     "code_review": {
       "status": "issues_found_and_fixed",
       "critical": 0,
@@ -115,7 +115,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "rules_count": 261,
     "anti_patterns_count": 325,
     "decisions_count": 92,
