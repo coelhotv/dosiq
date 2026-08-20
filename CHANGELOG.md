@@ -24,10 +24,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   celular. Sair da fila é simples: basta abrir o aplicativo e autorizar novamente. Também continua
   possível exportar os dados ou excluir a conta na hora.
 
-  Três travas independentes protegem o caminho da exclusão: o modo desarmado por padrão, um teto
-  de contas por execução (acima dele a execução inteira é abortada, nunca "apaga as primeiras") e
-  um desligamento de emergência por variável de ambiente, sem precisar de nova publicação. Falha
-  de leitura em qualquer ponto significa **pular** a conta, jamais excluí-la.
+  Quatro travas independentes protegem o caminho da exclusão: o modo desarmado por padrão, um teto
+  de contas por execução (acima dele a execução inteira é abortada, nunca "apaga as primeiras"),
+  um teto separado para os avisos e um desligamento de emergência por variável de ambiente, sem
+  precisar de nova publicação. Falha de leitura em qualquer ponto significa **pular** a conta,
+  jamais excluí-la — e uma exclusão só ocorre depois que o registro do motivo foi gravado com
+  sucesso: sem o registro, a conta não é apagada.
 
 ### Lembrete de dose fica imune a envio em dobro por execuções simultâneas
 

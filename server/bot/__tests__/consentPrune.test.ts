@@ -3,8 +3,10 @@ import {
   runConsentPrune,
   resolvePruneMode,
   isPruneEnabled,
+  resolveCap,
   daysSince,
   PRUNE_DELETE_DAYS,
+  PRUNE_DEFAULT_CAP,
 } from '../consentPrune.js'
 
 /**
@@ -29,7 +31,7 @@ interface Row { [k: string]: any }
 function criarSupabase(estado: {
   userSettings: Row[]
   consentLog: Row[]
-  falhas?: { trilha?: boolean; candidatos?: boolean; exclusao?: boolean }
+  falhas?: { trilha?: boolean; candidatos?: boolean; exclusao?: boolean; rpcTrilha?: boolean }
 }) {
   const rpcCalls: Array<{ fn: string; args: any }> = []
   const falhas = estado.falhas ?? {}
@@ -74,6 +76,7 @@ function criarSupabase(estado: {
         return { data: null, error: { message: 'boom' } }
       }
       if (fn === 'consent_controller_event') {
+        if (falhas.rpcTrilha) return { data: null, error: { message: 'boom' } }
         estado.consentLog.push({
           user_id: args.p_user_id, consent_type: args.p_consent_type,
           action: args.p_action, created_at: AGORA.toISOString(), seq: estado.consentLog.length + 100,
@@ -334,5 +337,60 @@ describe('daysSince', () => {
     expect(daysSince(hÁDias(90), AGORA)).toBe(PRUNE_DELETE_DAYS)
     expect(daysSince(hÁDias(0), AGORA)).toBe(0)
     expect(Number.isNaN(daysSince('xx', AGORA))).toBe(true)
+  })
+})
+
+describe('achados da RC5 — os dois freios que estavam furados', () => {
+  it('🔴 cap ilegível no env NÃO desarma o freio (Number("abc") = NaN, e NaN > x é sempre false)', () => {
+    // Sem isto, `due > cap` nunca dispararia com um typo no ambiente: o freio existiria no código
+    // e não no comportamento, exatamente no run em que ele precisaria agir.
+    expect(resolveCap('abc', PRUNE_DEFAULT_CAP)).toBe(PRUNE_DEFAULT_CAP)
+    expect(resolveCap(undefined, PRUNE_DEFAULT_CAP)).toBe(PRUNE_DEFAULT_CAP)
+    expect(resolveCap('-1', PRUNE_DEFAULT_CAP)).toBe(PRUNE_DEFAULT_CAP)
+    expect(resolveCap('', PRUNE_DEFAULT_CAP)).toBe(0) // '' vira 0 — teto zero é fail-safe, não lixo
+    expect(resolveCap('2', PRUNE_DEFAULT_CAP)).toBe(2)
+  })
+
+  it('🔴 cap vindo de env com typo continua abortando o run', async () => {
+    const userSettings = Array.from({ length: 8 }, (_, i) => ({ user_id: `u${i}`, consent_revoked_at: hÁDias(95) }))
+    const consentLog = userSettings.flatMap(u => trilhaRevogada(u.user_id, hÁDias(95)))
+    const { supabase, rpcCalls } = criarSupabase({ userSettings, consentLog })
+    const { dispatcher } = criarDispatcher()
+    const r = await runConsentPrune({
+      supabase, dispatcher, now: AGORA,
+      env: { ...ARMADO, CONSENT_PRUNE_CAP: 'cinco' },
+    })
+    expect(r.aborted).toBe(true)
+    expect(r.reason).toBe('cap_exceeded')
+    expect(rpcCalls).toHaveLength(0)
+  })
+
+  it('🔴 trilha que não grava `pruned` CANCELA a exclusão — nunca apagar sem poder provar por quê', async () => {
+    // Depois da exclusão o e-mail some, e com ele a única forma de derivar o subject_hash: o
+    // registro não é recuperável "depois". Ou grava antes, ou não apaga.
+    const uid = 'u-sem-trilha'
+    const { supabase, rpcCalls } = criarSupabase({
+      userSettings: [{ user_id: uid, consent_revoked_at: hÁDias(95) }],
+      consentLog: trilhaRevogada(uid, hÁDias(95)),
+      falhas: { rpcTrilha: true },
+    })
+    const { dispatcher } = criarDispatcher()
+    const r = await runConsentPrune({ supabase, dispatcher, now: AGORA, env: ARMADO })
+
+    expect(r.aborted).toBe(true)
+    expect(r.reason).toBe('trail_write_failed')
+    expect(r.pruned).toBe(0)
+    expect(rpcCalls.map(c => c.fn)).not.toContain('delete_user_account_by_id')
+  })
+
+  it('teto de AVISOS aborta a avalanche (flag corrompido em massa não vira chuva de push)', async () => {
+    const userSettings = Array.from({ length: 12 }, (_, i) => ({ user_id: `n${i}`, consent_revoked_at: hÁDias(61) }))
+    const consentLog = userSettings.flatMap(u => trilhaRevogada(u.user_id, hÁDias(61)))
+    const { supabase } = criarSupabase({ userSettings, consentLog })
+    const { dispatcher, enviados } = criarDispatcher()
+    const r = await runConsentPrune({ supabase, dispatcher, now: AGORA, env: ARMADO, noticeCap: 10 })
+    expect(r.aborted).toBe(true)
+    expect(r.reason).toBe('notice_cap_exceeded')
+    expect(enviados).toHaveLength(0)
   })
 })

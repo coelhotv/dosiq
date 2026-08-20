@@ -34,9 +34,10 @@ import { createLogger } from './logger.js'
 import { getRawNow } from '../utils/dateUtils.js'
 
 /**
- * Contrato mínimo do client (subset do ConsentPruneClient), no mesmo espírito do `OutboxConsentPruneClient`.
- * Tipar por `ConsentPruneClient` aqui quebraria o cross-program: `api/` e `server/` resolvem o pacote
- * em `node_modules` diferentes, e os dois tipos não são atribuíveis entre si.
+ * Contrato mínimo do client (subset do `SupabaseClient`), no mesmo espírito do
+ * `OutboxSupabaseClient`. Tipar por `SupabaseClient` aqui quebraria o cross-program: `api/` e
+ * `server/` resolvem o pacote em `node_modules` diferentes, e os dois tipos não são atribuíveis
+ * entre si.
  */
 export interface ConsentPruneClient {
   from(table: string): any
@@ -51,6 +52,23 @@ export const PRUNE_DELETE_DAYS = 90
 
 /** Teto de exclusões por run. Acima disso o run aborta — ver freio 2 no cabeçalho. */
 export const PRUNE_DEFAULT_CAP = 5
+
+/**
+ * Teto de AVISOS por run. O cap de exclusões não protege deste caso: um `consent_revoked_at`
+ * corrompido em massa não apagaria ninguém (só passa dos 90 dias quem revogou mesmo), mas
+ * dispararia um push para cada linha. É reversível, e ainda assim é um incidente.
+ */
+export const PRUNE_DEFAULT_NOTICE_CAP = 50
+
+/**
+ * Lê um teto do env recusando lixo. `Number('abc')` é `NaN`, e **toda comparação com NaN é false**:
+ * um typo no env faria `due > cap` nunca disparar, desarmando o freio EXATAMENTE no cenário em que
+ * ele existe para agir. Valor ausente, não-numérico ou negativo ⇒ default.
+ */
+export function resolveCap(raw: string | undefined, fallback: number): number {
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? n : fallback
+}
 
 export type ConsentPruneMode = 'dry_run' | 'armed'
 
@@ -78,6 +96,7 @@ export interface ConsentPruneDeps {
   now?: Date
   correlationId?: string
   cap?: number
+  noticeCap?: number
 }
 
 /**
@@ -204,7 +223,20 @@ async function fetchCandidates(
   return { rows: (data ?? []) as ConsentPruneCandidate[], error: null }
 }
 
-type CandidateOutcome = 'pruned' | 'noticed' | 'skipped' | 'silent' | 'aborted'
+type CandidateOutcome = 'pruned' | 'noticed' | 'skipped' | 'silent' | 'aborted' | 'trail_failed'
+
+/** Desfechos que param o run inteiro, e o motivo que vai para o resumo. */
+const ABORT_REASONS: Partial<Record<CandidateOutcome, string>> = {
+  aborted: 'delete_failed',
+  trail_failed: 'trail_write_failed',
+}
+
+/** Desfechos que apenas contam. `silent` não aparece aqui de propósito: não é pulo por erro. */
+const COUNTERS: Partial<Record<CandidateOutcome, 'pruned' | 'noticed' | 'skipped'>> = {
+  pruned: 'pruned',
+  noticed: 'noticed',
+  skipped: 'skipped',
+}
 
 /**
  * Decide e executa o ato do dia para UM candidato.
@@ -244,7 +276,18 @@ async function processCandidate({
     // `pruned` ANTES da exclusão: depois dela não existe mais e-mail em auth.users para derivar o
     // `subject_hash`, e o evento nasceria sem prova de quem era. O `account_deleted` sai de dentro
     // da própria transação de `_delete_user_account_core`.
-    await writeControllerEvent(supabase, row.user_id, 'pruned')
+    //
+    // 🔴 E se a trilha NÃO gravar, a exclusão não acontece. A ordem sozinha não bastava: ignorando
+    // o retorno, uma RPC fora do ar produziria conta apagada SEM registro de por quê — e o registro
+    // é irrecuperável depois (o e-mail que deriva o hash morre com a conta). Excluir sem poder
+    // provar a base legal é o oposto do que esta spec existe para entregar. Aborta o run: se a RPC
+    // da trilha caiu, ela caiu para todos os candidatos.
+    if (!(await writeControllerEvent(supabase, row.user_id, 'pruned'))) {
+      logger.error('Trilha não registrou o `pruned` — exclusão CANCELADA e run abortado', null, {
+        correlationId, userId: row.user_id,
+      })
+      return 'trail_failed'
+    }
 
     const { error } = await supabase.rpc('delete_user_account_by_id', { p_user_id: row.user_id })
     if (error) {
@@ -298,7 +341,8 @@ export async function runConsentPrune(deps: ConsentPruneDeps): Promise<ConsentPr
   const env = deps.env ?? process.env
   const now = deps.now ?? getRawNow()
   const correlationId = deps.correlationId
-  const cap = deps.cap ?? Number(env.CONSENT_PRUNE_CAP ?? PRUNE_DEFAULT_CAP)
+  const cap = deps.cap ?? resolveCap(env.CONSENT_PRUNE_CAP, PRUNE_DEFAULT_CAP)
+  const noticeCap = deps.noticeCap ?? resolveCap(env.CONSENT_PRUNE_NOTICE_CAP, PRUNE_DEFAULT_NOTICE_CAP)
   const mode = resolvePruneMode(env)
   const enabled = isPruneEnabled(env)
 
@@ -333,15 +377,23 @@ export async function runConsentPrune(deps: ConsentPruneDeps): Promise<ConsentPr
     return { ...result, aborted: true, reason: 'cap_exceeded' }
   }
 
+  if (rows.length > noticeCap) {
+    logger.error('Prune ABORTADO — candidatos acima do teto de avisos (nada foi enviado nem apagado)', null, {
+      correlationId, noticeCap, candidatos: rows.length,
+    })
+    return { ...result, aborted: true, reason: 'notice_cap_exceeded' }
+  }
+
   for (const row of rows) {
     const outcome = await processCandidate({ row, now, mode, supabase, dispatcher, correlationId })
-    if (outcome === 'aborted') {
-      return { ...result, aborted: true, reason: 'delete_failed' }
-    }
-    if (outcome === 'pruned') result.pruned += 1
-    else if (outcome === 'noticed') result.noticed += 1
-    else if (outcome === 'skipped') result.skipped += 1
+    // Os dois abortos param o run: seguir depois de uma falha destas seria repetir, candidato a
+    // candidato, um erro cuja causa já se sabe compartilhada (RPC/privilégio fora do ar).
+    const abortReason = ABORT_REASONS[outcome]
+    if (abortReason) return { ...result, aborted: true, reason: abortReason }
+
     // 'silent' = já avisado nesta etapa; não é pulo por erro e não entra em nenhum contador.
+    const counter = COUNTERS[outcome]
+    if (counter) result[counter] += 1
   }
 
   logger.info('Prune concluído', { correlationId, ...result })
