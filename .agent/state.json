@@ -6,18 +6,18 @@
     "mode": "coding",
     "status": "completed",
     "tier": 1,
-    "spec_dir": "plans/specs/067-critical-alarm-window-guard",
-    "spec": "plans/specs/067-critical-alarm-window-guard/spec.md",
-    "goal": "050 PR 0 (US4) — vigência do tratamento no alerta de estoque",
-    "goal_type": "fix",
+    "spec_dir": "plans/specs/050-notification-integrity",
+    "spec": "plans/specs/050-notification-integrity/spec.md",
+    "goal": "050 PR 1a — notification_outbox ganha subject_id (infra do fan-out)",
+    "goal_type": "chore",
     "code_review": {
-      "status": "issues_found_and_fixed",
+      "status": "clean",
       "critical": 0,
-      "auto_fixed": 1,
+      "auto_fixed": 0,
       "ask_items": 0
     },
     "spec_dirs": [
-      "plans/specs/067-critical-alarm-window-guard"
+      "plans/specs/050-notification-integrity"
     ],
     "merged_pr": 798,
     "merged_squash": "d9e76761 (squash merge into main)",
@@ -115,11 +115,11 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 12,
+    "journal_entries_since_distillation": 13,
     "rules_count": 261,
     "anti_patterns_count": 325,
     "decisions_count": 92,
-    "contracts_count": 32,
+    "contracts_count": 33,
     "distillation_due": false
   },
   "genes": {
@@ -127,7 +127,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-19T20:22:29.676727-03:00"
+    "index_loaded_at": "2026-08-19T23:15:00-03:00"
   },
   "code_review": {
     "status": "clean",

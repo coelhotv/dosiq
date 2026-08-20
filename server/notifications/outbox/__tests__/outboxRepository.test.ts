@@ -20,7 +20,7 @@ function makeClient(overrides: Partial<{ upsertError: any; rpcError: any; update
 
 describe('createOutboxRepository', () => {
   describe('enqueue', () => {
-    it('monta rows e chama upsert com onConflict user_id,kind,period_key e ignoreDuplicates', async () => {
+    it('monta rows e chama upsert com onConflict de 4 colunas e ignoreDuplicates', async () => {
       const { client, from, upsert } = makeClient()
       const repo = createOutboxRepository({ client })
 
@@ -30,10 +30,51 @@ describe('createOutboxRepository', () => {
 
       expect(from).toHaveBeenCalledWith('notification_outbox')
       expect(upsert).toHaveBeenCalledWith(
-        [{ user_id: 'u1', kind: 'daily_adherence', period_key: '2026-07-10' }],
-        { onConflict: 'user_id,kind,period_key', ignoreDuplicates: true }
+        [{ user_id: 'u1', kind: 'daily_adherence', period_key: '2026-07-10', subject_id: null }],
+        { onConflict: 'user_id,kind,period_key,subject_id', ignoreDuplicates: true }
       )
       expect(count).toBe(1)
+    })
+
+    // Não-regressão dos 4 kinds migrados (spec 050 T010/SC-002): quem enfileira sem assunto
+    // continua gravando subject_id NULL, e a UNIQUE é NULLS NOT DISTINCT — logo duas linhas
+    // iguais seguem colidindo e a idempotência antiga é preservada bit a bit.
+    it('os 4 kinds originais enfileiram com subject_id NULL (sem passar subjectId)', async () => {
+      const { client, upsert } = makeClient()
+      const repo = createOutboxRepository({ client })
+
+      const kinds = ['daily_adherence', 'weekly_adherence', 'monthly_report', 'daily_digest'] as const
+      const count = await repo.enqueue(
+        kinds.map((kind) => ({ userId: 'u1', kind, periodKey: '2026-07-10' }))
+      )
+
+      expect(count).toBe(4)
+      const rows = upsert.mock.calls[0][0]
+      expect(rows).toHaveLength(4)
+      for (const row of rows) {
+        expect(row.subject_id).toBeNull()
+      }
+      expect(upsert.mock.calls[0][1]).toEqual({
+        onConflict: 'user_id,kind,period_key,subject_id',
+        ignoreDuplicates: true,
+      })
+    })
+
+    it('subjectId explícito vai para subject_id; null explícito equivale a ausente', async () => {
+      const { client, upsert } = makeClient()
+      const repo = createOutboxRepository({ client })
+
+      await repo.enqueue([
+        { userId: 'u1', kind: 'stock_alert', periodKey: '2026-07-10', subjectId: 'med-1' },
+        { userId: 'u1', kind: 'stock_alert', periodKey: '2026-07-10', subjectId: 'med-2' },
+        { userId: 'u1', kind: 'daily_digest', periodKey: '2026-07-10', subjectId: null },
+      ])
+
+      expect(upsert.mock.calls[0][0]).toEqual([
+        { user_id: 'u1', kind: 'stock_alert', period_key: '2026-07-10', subject_id: 'med-1' },
+        { user_id: 'u1', kind: 'stock_alert', period_key: '2026-07-10', subject_id: 'med-2' },
+        { user_id: 'u1', kind: 'daily_digest', period_key: '2026-07-10', subject_id: null },
+      ])
     })
 
     it('enqueue([]) retorna 0 sem chamar o client', async () => {

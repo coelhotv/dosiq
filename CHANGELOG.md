@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A fila de notificações passa a saber falar de um item específico
+
+- **Chore** (`patch` server `4.1.4`). Mudança interna, sem efeito visível: nada no aplicativo muda
+  de comportamento com esta versão.
+
+  A fila que despacha as notificações só sabia dizer "esta pessoa tem um aviso deste tipo hoje" —
+  um por pessoa, por tipo, por dia. Isso basta para um relatório diário, mas impede que a fila
+  expresse "está acabando **este** remédio" quando são três remédios acabando ao mesmo tempo: os
+  três disputariam a mesma vaga e dois desapareceriam em silêncio.
+
+  A fila agora guarda também **de qual item** o aviso fala, e a regra de "não avisar duas vezes a
+  mesma coisa" passa a considerar esse item. Os quatro tipos de aviso que já usavam a fila não têm
+  item associado e continuam funcionando exatamente como antes — mesma regra, mesma contagem de
+  envios, nenhuma linha existente foi alterada.
+
+  Quem passa a usar isso de fato é o aviso de estoque, numa versão seguinte.
+
 ### Tratamento encerrado ou pausado deixa de mandar aviso de estoque baixo
 
 - **Fix** (`patch` server `4.1.3`). Quem terminou ou pausou um tratamento continuava recebendo, todo

@@ -960,6 +960,7 @@ export type Database = {
           period_key: string
           sent_at: string | null
           status: string
+          subject_id: string | null
           user_id: string
         }
         Insert: {
@@ -972,6 +973,7 @@ export type Database = {
           period_key: string
           sent_at?: string | null
           status?: string
+          subject_id?: string | null
           user_id: string
         }
         Update: {
@@ -984,6 +986,7 @@ export type Database = {
           period_key?: string
           sent_at?: string | null
           status?: string
+          subject_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1851,6 +1854,7 @@ export type Database = {
           period_key: string
           sent_at: string | null
           status: string
+          subject_id: string | null
           user_id: string
         }[]
         SetofOptions: {

@@ -25,9 +25,13 @@ export interface UserSettings {
 
 // Constrói o payload de um kind a partir de dados FRESCOS. Retorna null quando o usuário
 // deixou de ser elegível no momento do envio (ex.: 0 doses no período) → nada a enviar.
+// subjectId é ADITIVO (spec 050): identifica o assunto da linha quando o kind faz fan-out
+// (medicine_id, stock.id...). Os 4 kinds originais enfileiram sem assunto e recebem null aqui —
+// seus builders simplesmente ignoram o campo.
 export type ContentBuilder = (args: {
   userId: string;
   periodKey: string;
+  subjectId: string | null;
   settings: UserSettings | undefined;
 }) => Promise<Record<string, unknown> | null>;
 
@@ -113,7 +117,12 @@ export async function drainOutbox(deps: DrainDeps): Promise<DrainSummary> {
         return;
       }
       const settings = settingsMap.get(row.user_id);
-      const data = await builder({ userId: row.user_id, periodKey: row.period_key, settings });
+      const data = await builder({
+        userId: row.user_id,
+        periodKey: row.period_key,
+        subjectId: row.subject_id ?? null,
+        settings,
+      });
       if (data === null) {
         // Deixou de ser elegível no envio → marca como enviado (nada a fazer), sem reciclar.
         await repo.markSent(row.id, []);
