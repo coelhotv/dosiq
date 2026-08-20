@@ -363,6 +363,14 @@ describe('consent_prune_notice — copy neutra (046 T013d / S8)', () => {
     expect(p.deeplink).toBe('dosiq://settings/privacy')
   })
 
+  it('leva ao hub de privacidade, não ao "today" — o revogado tem o app bloqueado', () => {
+    // Achado do RC6 (pass B): kind novo registrado em kindSchema/PAYLOAD_BUILDERS/resolveDeeplink
+    // mas ausente da tabela de navegação cairia no default 'today'. O aviso pede uma ação e o
+    // toque não levaria a lugar nenhum.
+    const p = build({ stage: 'd60', daysLeft: 30 })
+    expect(p.metadata.navigation).toEqual({ screen: 'privacy-data', params: {} })
+  })
+
   it('singulariza o último dia', () => {
     expect(build({ stage: 'd83', daysLeft: 1 }).pushBody).toContain('em 1 dia.')
   })

@@ -383,6 +383,10 @@ function getNavigationMetadata(kind: Kind, data: NotificationEventData, protocol
     monthly_report: { screen: 'history', params: {} },
     daily_digest: { screen: 'history', params: {} },
     dlq_digest: { screen: 'admin/dlq', params: {} },
+    // 046 Slice C: leva ao hub onde ele resolve (reconsentir/exportar/excluir). Cair no default
+    // 'today' seria jogar um titular REVOGADO na tela que o gate mantém bloqueada — o aviso pede
+    // uma ação e o toque não levaria a lugar nenhum.
+    consent_prune_notice: { screen: 'privacy-data', params: {} },
   }
 
   return routes[kind] || { screen: 'today', params: {} }
