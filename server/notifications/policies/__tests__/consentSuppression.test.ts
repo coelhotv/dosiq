@@ -44,4 +44,26 @@ describe('isConsentSuppressed', () => {
     expect(isConsentSuppressed(usuarioComErroDeLeitura)).toBe(true)
     expect(isConsentSuppressed(outroPacienteSaudavel)).toBe(false)
   })
+
+  describe('046 Slice C — aviso de prune atravessa a supressão (T013d)', () => {
+    it('o aviso chega a quem revogou — é a única mensagem que a política promete a ele', () => {
+      expect(isConsentSuppressed({ consent_revoked_at: '2026-07-10T10:00:00Z' }, 'consent_prune_notice')).toBe(false)
+    })
+
+    it('atravessa até quando as settings não puderam ser lidas', () => {
+      // A exceção não depende de saber o estado de consentimento: o aviso é dirigido a quem
+      // revogou e não trata dado de saúde. Fail-closed aqui só produziria conta apagada sem aviso.
+      expect(isConsentSuppressed({ _read_failed: true }, 'consent_prune_notice')).toBe(false)
+      expect(isConsentSuppressed(null, 'consent_prune_notice')).toBe(false)
+    })
+
+    it('🔴 a exceção é SÓ desse kind — lembrete de dose segue suprimido para o revogado', () => {
+      const revogado = { consent_revoked_at: '2026-07-10T10:00:00Z' }
+      expect(isConsentSuppressed(revogado, 'dose_reminder')).toBe(true)
+      expect(isConsentSuppressed(revogado, 'stock_alert')).toBe(true)
+      expect(isConsentSuppressed(revogado, 'daily_digest')).toBe(true)
+      // sem kind = comportamento antigo, intocado
+      expect(isConsentSuppressed(revogado)).toBe(true)
+    })
+  })
 })

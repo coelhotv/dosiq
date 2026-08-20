@@ -7,6 +7,28 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Conta com autorização retirada passa a ser avisada e, sem resposta, excluída
+
+- **Feat** (`minor` server `4.2.0`). Nasce **desarmado**: sem a variável `CONSENT_PRUNE_MODE=armed`
+  no ambiente, o serviço apenas identifica quem estaria na fila e registra no log — não envia nada
+  irreversível e não exclui ninguém. Em produção hoje não há nenhuma conta nessa situação.
+
+  Quem retira a autorização de uso dos dados de saúde pede que o dosiq pare de tratá-los. Manter
+  esses dados guardados para sempre não é uma opção legal. A partir desta versão, quem retirou a
+  autorização e não resolveu a situação recebe **dois avisos** — 60 e 83 dias depois — e, no 90º
+  dia, tem conta e dados excluídos automaticamente.
+
+  O aviso é a única mensagem que ainda chega a quem retirou a autorização (todo o resto já era
+  suspenso), e seu texto é deliberadamente neutro: fala em "sua conta precisa de uma ação", sem
+  citar medicamento, dose ou tratamento — nada que revele condição de saúde na tela de bloqueio do
+  celular. Sair da fila é simples: basta abrir o aplicativo e autorizar novamente. Também continua
+  possível exportar os dados ou excluir a conta na hora.
+
+  Três travas independentes protegem o caminho da exclusão: o modo desarmado por padrão, um teto
+  de contas por execução (acima dele a execução inteira é abortada, nunca "apaga as primeiras") e
+  um desligamento de emergência por variável de ambiente, sem precisar de nova publicação. Falha
+  de leitura em qualquer ponto significa **pular** a conta, jamais excluí-la.
+
 ### Lembrete de dose fica imune a envio em dobro por execuções simultâneas
 
 - **Fix** (`patch` server `4.1.7`). Sem mudança visível: o lembrete continua chegando no mesmo

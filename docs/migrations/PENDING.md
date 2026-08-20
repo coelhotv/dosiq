@@ -6,6 +6,7 @@
 
 | migração | parte | desde | gatilho para aplicar | gate |
 |---|---|---|---|---|
+| `20260820_consent_seq_and_controller_event.sql` | **inteira** (coluna `consent_log.seq` + `GRANT SELECT (seq)` a `service_role` + `consent_write` reordenada + RPC nova `consent_controller_event`) | 2026-08-20<br>(046 Slice C) | Aprovação do PO — é **aditiva e não destrutiva** (nenhum cliente publicado lê `seq`; `consent_write` mantém assinatura e comportamento). Aplicar ANTES de o deploy do job ir a prod: sem a coluna, a reconferência da trilha erra e o job pula todo candidato. | `PO-5` / `PO-SEC-3` da spec 046 |
 | `20260818_skip_dose_atomic_and_status_privilege.sql` | **§3 apenas** (`REVOKE UPDATE (status) ON dose_instances FROM authenticated` + os 16 `GRANT UPDATE` por coluna). §1 e §2 (as duas RPCs) **já aplicadas**. | 2026-08-18<br>(PR #797, `65931d11`) | Adoção da `APP_VERSION 0.31.1` nas lojas acima do limiar (a definir com o PO no check), **com** a web nova já em produção | `PO-SEC-2` da spec 067 |
 
 ## Por que a §3 está segurada (spec 067 Slice B, Decisões 15/16 do PO)
@@ -34,3 +35,28 @@ sendo **convenção, não privilégio** — escrita direta de `status` fora da R
    `plans/specs/README.md` (local-only).
 
 **Rollback:** `GRANT UPDATE ON public.dose_instances TO authenticated;`
+
+## Por que a `20260820_consent_seq_and_controller_event.sql` ainda não foi aplicada
+
+Só falta a aprovação do PO — não há gatilho de frota aqui. A migração é **aditiva**: adiciona uma
+coluna `IDENTITY`, um índice, um `GRANT` de coluna e uma função nova; a única função REESCRITA
+(`consent_write`) mantém assinatura e comportamento, trocando `ORDER BY created_at DESC` por
+`ORDER BY seq DESC` (desempate — T013e). Nenhum cliente publicado lê `seq`.
+
+**Custo declarado enquanto pendente:** o job `runConsentPrune` já está no ciclo diário, mas em
+`dry_run` (default) — não apaga nada. Sem a coluna, `confirmStillRevoked` recebe erro do PostgREST
+e trata todo candidato como "não sei" ⇒ **pula**. Isso é o failure mode correto, e hoje é inócuo:
+verificado em prod em 2026-08-20, não existe **nenhum** titular com o último evento igual a
+`revoked` — o job não tem sequer um candidato para varrer.
+
+## Como aplicar
+
+1. `apply_migration` com o conteúdo de `docs/migrations/20260820_consent_seq_and_controller_event.sql`.
+2. Rodar `docs/migrations/20260820_consent_seq_and_controller_event.test.sql` bloco a bloco e colar
+   o output (guarda de chamador, hash derivado no banco, grants).
+3. Regerar `packages/shared-data/src/database.types.ts` (R-289) — a RPC nova entra no tipo.
+4. `PO-5` e `PO-SEC-3` **continuam abertos**: eles só fecham no modo ARMADO
+   (`CONSENT_PRUNE_MODE=armed`), depois de um dry-run limpo em produção.
+
+**Rollback:** `DROP FUNCTION public.consent_controller_event(uuid, text, text);` e reverter
+`consent_write` para `ORDER BY created_at DESC`. A coluna `seq` pode ficar (é inerte se nada a lê).

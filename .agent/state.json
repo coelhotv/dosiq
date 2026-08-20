@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "tier": 1,
-    "spec_dir": "plans/specs/050-notification-integrity",
-    "spec": "plans/specs/050-notification-integrity/spec.md",
-    "goal": "050 PR 2 — stock_expiry_alert na outbox (MERGEADA); resta o cutover operacional",
-    "goal_type": "chore",
+    "mode": "coding",
+    "status": "analysis",
+    "tier": 2,
+    "spec_dir": "plans/specs/046-lgpd-consent",
+    "spec": "plans/specs/046-lgpd-consent/spec.md",
+    "goal": "046 Slice C — prune pós-revogação (D+60/D+83/D+90) armado em dry_run",
+    "goal_type": "feature",
     "code_review": {
       "status": "clean_after_fixes",
       "critical": 0,
@@ -17,7 +17,7 @@
       "ask_items": 0
     },
     "spec_dirs": [
-      "plans/specs/050-notification-integrity"
+      "plans/specs/046-lgpd-consent"
     ],
     "merged_pr": 803,
     "merged_squash": "f16bdb0d (squash merge into main)",

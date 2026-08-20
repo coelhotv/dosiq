@@ -23,6 +23,7 @@ import {
   buildMonthlyReportData
 } from '../server/bot/_adherenceHelpers.js';
 import { buildDailyDigestData } from '../server/bot/_reminderHelpers.js';
+import { runConsentPrune } from '../server/bot/consentPrune.js';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
@@ -437,6 +438,17 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       await runJob('stock_alerts', 'stock_alerts',
         (context) => checkStockAlerts(bot, { ...context, notificationDispatcher }));
     }
+    // 046 Slice C — prune pós-revogação. 1×/dia (às 10h, junto dos demais). Nasce em `dry_run`:
+    // sem CONSENT_PRUNE_MODE=armed no env ele identifica candidatos e NÃO apaga nada.
+    await runJob('consent_prune', 'consent_prune', async (context) => {
+      const outcome = await runConsentPrune({
+        supabase,
+        dispatcher: notificationDispatcher,
+        correlationId: context?.correlationId || correlationId,
+      });
+      logger.info('[consent_prune] ciclo concluído', { correlationId, ...outcome });
+    });
+
     await runJob('dlq_auto_retry', 'dlq_auto_retry',
       (context) => retryPendingDlq(notificationDispatcher, context.correlationId));
     await runJob('dlq_digest', 'dlq_digest',

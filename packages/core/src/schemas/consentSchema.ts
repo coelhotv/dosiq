@@ -95,6 +95,12 @@ export const consentEventSchema = z.object({
   policy_version: z.string().nullable().optional(),
   platform: z.enum(CONSENT_PLATFORMS),
   created_at: z.string(),
+  /**
+   * Ordem de inserção (T013e). Opcional DE PROPÓSITO: `authenticated` não tem GRANT de coluna
+   * sobre `seq` — é um contador global e diria ao titular quantos eventos de consentimento
+   * existem no sistema inteiro. Quem lê com `service_role` (o prune) recebe; o client não.
+   */
+  seq: z.number().nullable().optional(),
 })
 
 export type ConsentEvent = z.infer<typeof consentEventSchema>
@@ -125,7 +131,20 @@ export function deriveConsentState(events: ConsentEvent[]): ConsentState {
 
   // `Date.parse` em vez de `new Date(...)` (R-020). Aqui não há o risco de meia-noite UTC que a
   // regra persegue — `created_at` é timestamptz ISO completo, com hora e offset, não 'YYYY-MM-DD'.
-  const sorted = [...list].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+  //
+  // T013e — o desempate não é preciosismo: dois eventos gravados na MESMA transação empatam em
+  // `created_at` (`now()` é constante dentro dela), e um sort sem desempate deixa a eleição do
+  // "último ato" ao critério do algoritmo. `seq` (ordem real de inserção) resolve quando vem;
+  // sem ele, `id` garante ao menos ESTABILIDADE — a mesma entrada sempre produz a mesma saída.
+  // Estabilidade basta aqui: quem decide exclusão de conta é o prune, que lê `seq` no servidor.
+  const sorted = [...list].sort((a, b) => {
+    const byTime = Date.parse(b.created_at) - Date.parse(a.created_at)
+    if (byTime !== 0) return byTime
+    const seqA = typeof a.seq === 'number' ? a.seq : null
+    const seqB = typeof b.seq === 'number' ? b.seq : null
+    if (seqA !== null && seqB !== null && seqA !== seqB) return seqB - seqA
+    return b.id.localeCompare(a.id)
+  })
   // Só granted/revoked definem o estado do titular. account_deleted/notice_sent/pruned são atos
   // do controlador e não dizem nada sobre a vontade dele.
   const last = sorted.find((e) => e.action === 'granted' || e.action === 'revoked')
