@@ -7,6 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Aviso de estoque baixo passa a ser preparado pela fila, um por remédio
+
+- **Chore** (`patch` server `4.1.5`). Mudança interna, desligada por padrão: em produção o aviso de
+  estoque continua saindo pelo caminho antigo, no mesmo horário e com o mesmo texto. Nada muda para
+  quem usa o aplicativo nesta versão.
+
+  O aviso de "está acabando o remédio" passou a ter também um caminho pela fila de notificações,
+  com **um aviso por remédio** — o que a fila só passou a saber expressar na versão anterior. A
+  varredura que decide quem precisa ser avisado é agora uma função só, usada pelos dois caminhos:
+  assim a troca de um pelo outro, numa versão seguinte, não pode mudar quem recebe aviso.
+
+  Três correções de robustez vieram junto: a leitura do estoque e dos tratamentos passa a ser feita
+  em páginas (acima de mil registros o banco devolvia só os primeiros mil, sem erro); a janela do
+  aviso deixou de ser o minuto exato das 10h e virou os dez primeiros minutos, no fuso de cada
+  pessoa (um atraso do relógio interno fazia o aviso perder o dia inteiro); e o texto do aviso —
+  nome do remédio, saldo e dias restantes — passa a ser calculado na hora do envio, então repor o
+  estoque entre a preparação e o envio cancela o aviso em vez de mandar um número velho.
+
 ### A fila de notificações passa a saber falar de um item específico
 
 - **Chore** (`patch` server `4.1.4`). Mudança interna, sem efeito visível: nada no aplicativo muda

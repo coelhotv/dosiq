@@ -27,6 +27,9 @@ const { mockSupabase } = vi.hoisted(() => {
     // 050 US4: predicado de vigência do select de protocols — os fixtures daqui não têm
     // end_date/paused_at, então passam pelo filtro; a semântica é coberta em stockAlertsVigency.
     is: vi.fn().mockReturnThis(),
+    // 050 PR 1b: o scan passou a paginar (AP-186) — a cadeia ganhou .order('id')/.range().
+    order: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     then: vi.fn((onFulfilled: any) => {
       const result = mockDataQueue.shift() || { data: [], error: null };

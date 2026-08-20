@@ -4,16 +4,16 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "awaiting_review",
     "tier": 1,
     "spec_dir": "plans/specs/050-notification-integrity",
     "spec": "plans/specs/050-notification-integrity/spec.md",
-    "goal": "050 PR 1a — notification_outbox ganha subject_id (infra do fan-out)",
+    "goal": "050 PR 1b — fan-out do stock_alert na outbox (atrás de OUTBOX_KINDS)",
     "goal_type": "chore",
     "code_review": {
-      "status": "clean",
+      "status": "clean_after_fixes",
       "critical": 0,
-      "auto_fixed": 0,
+      "auto_fixed": 5,
       "ask_items": 0
     },
     "spec_dirs": [
@@ -68,7 +68,7 @@
         "note": "Infra pura, zero consumidor: nenhum kind usa subject_id, runtime inalterado. Coluna subject_id uuid + UNIQUE (user_id,kind,period_key,subject_id) NULLS NOT DISTINCT aplicada em prod via MCP (indnullsnotdistinct: true verificado). ZERO backfill — a cláusula preserva a idempotência dos 4 kinds migrados (duas linhas NULL ainda colidem); sem ela o backfill seria obrigatório e a idempotência sumiria em silêncio. claim_notification_outbox NÃO recriada (RETURNS SETOF). ContentBuilder ganhou subjectId aditivo (CON-035) — os 4 builders de api/notify.ts não mudaram. 8 arquivos (estimava ~5: entraram CHANGELOG+package.json do SQP e o CON-035.md). ADR-078 emendado preservando o TODO da NC2. PO-6 fechado com curl real do PostgREST (2x 201 + UMA linha, sem 42P10; guard sem subject_id idem; fan-out = 2 linhas), linhas de teste inseridas com status=sent (não claimáveis) e deletadas. RC5 0 issues · RC6 (agy) 0 findings. 🔬 A/B armado e ABORTADO pelo script (baseline 0 findings, sem significância) — nenhum PENDENTE criado, captura segue liberada; limite estrutural do PO-5 registrado na measurement.md. Próximo: PR 1b (T014-T024), destravado."
       }
     ],
-    "previous_session_note": "067 C MERGEADA (#798, squash d9e76761). Slices A1/A2/B1/C entregues; B2 SEGURADO (REVOKE UPDATE(status) espera adoção nas lojas — docs/migrations/PENDING.md + R-310 + PO-SEC-2). PRÓXIMA AÇÃO: rodar a query da PO-8 quando a próxima janela de dose passar com o server novo em prod — kcarolinne@ (Android-only) deve emitir ZERO push_skipped_no_token e coelhoconsult@/liart.junior@ (iPhone com device inativo) devem cair de ~60 para 1 por instância. doktorr@ NÃO serve de controle (tem simulador iOS registrado, é candidata). Journal em 11/15 p/ distill.",
+    "previous_session_note": "050 PR 1a MERGEADA (#800). PR 1b entregue em #801 (aguardando review/merge do PO — R-060). Sem cutover: stock_alert continua FORA de OUTBOX_KINDS em prod. PRÓXIMA AÇÃO após merge: PR 2 (T025-T035) — stock_expiry_alert + cutover; ele precisa (a) adicionar `id` ao select de stock, (b) nomear OS DOIS kinds no guard do legado, (c) só ligar OUTBOX_KINDS += stock_alert,stock_expiry_alert com o 1b JÁ em prod.",
     "ceremonies_run": [
       "security-review",
       "eng-review-2 (delta FR-021/FR-022)",
@@ -104,9 +104,10 @@
       "PO 2026-08-14 (067 RC-SEC/RC2): 3 decisoes. D7 (S-2) — a guarda vira PRIVILEGIO: REVOKE UPDATE(status) de authenticated (por COLUNA, la_push_* seguem) E markSkippedPaused/reactivateFuturePaused (pausar/retomar tratamento, createProtocolRepository.ts:57,73) MIGRAM PRA RPC NO MESMO PR; sem isso pausa/retomada quebra em prod. Slice B ~5->~8 arquivos; se estourar no C1, fatiar B1(RPC skip+posse+janela) -> B2(REVOKE+migracao), nessa ordem. D8 (S-3) — SEM CONSENTIMENTO NAO GRAVA: emissao da anomalia passa pelo gate R-293, fail-open vale so p/ falha de rede; detail vira allowlist fechada (delta_seconds/direction/manufacturer/model/os_version); alarme cancelado igual nos dois regimes; custo aceito = cegueira na medicao p/ quem revogou (~17% da amostra de 6 usuarios). D9 (D-3) — copy aprovado SEM o horario do disparo torto: 'O alarme de {Med} tocou fora do horario e nada foi registrado. Sua dose e as {HH:mm} — vamos avisar de novo no horario certo.'; delta fica so na telemetria. Absorvidos: FR-028..FR-039 novas, SC-008 emendada, SC-009 nova, A1 3->5 arquivos (FR-037 web: DoseEventCard/HealthHistory, senao dose pulada aparece como 'Pendente').",
       "PLANNING 067 (2026-08-14): plan.md + tasks.md (64 tasks, 4 PRs). Clarification P1.5 respondida pelo PO: gate de consentimento da anomalia incide no FLUSH (AlarmSchedulerBridge.tsx:75 ja recebe consentSuppressed) e nao no headless — beacon enfileira normal, flush descarta alarm_out_of_window quando revogado; zero mecanismo novo no caminho headless (precedente 065/D5). Reforco ja existente: consentimento revogado faz isAlarmEnabled=false (AlarmSchedulerBridge.tsx:325), entao anomalia so vem de trigger zumbi. DECISAO DE FORMA DA COLUNA: early_window_minutes nasce INTEGER NOT NULL DEFAULT 120 (espelha tolerance_minutes, verificado no banco) => nao existe estado com piso nulo, fast default preenche toda linha materializada, backfill vira REFINO (120 -> valor calculado abaixo de 8/8h) em vez de preenchimento de NULL; resolve S-5 por construcao (FR-032 fica so no client, onde payload antigo pode chegar sem o campo). ADR-092 PROPOSED (escrita de dose_instances.status so por RPC; guarda e privilegio, nao convencao) — exige OK do PO antes do C3 do Slice B. CON-026 e CON-031 estendidas (aditivo); CON-024 declarada INTOCADA (FR-027). Renomear isDoseNotificationStale -> isDoseNotificationOutOfWindow (stale='vencida' e o call site de openAlarmScreen:146 se apoia nessa semantica). Fracao 0.25 confirmada pela tabela da PO-12."
     ],
-    "branch": "main",
+    "branch": "feat/050-stock-alert-fanout",
     "blocked_on": [
-      "PO-8: medir o corte da FR-040 na 1a janela de dose pós-deploy (kcarolinne@ deve ir a ZERO)"
+      "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
+      "050 PR 1b (#801): aguardando aprovação/merge do PO"
     ],
     "plan": "plans/specs/067-critical-alarm-window-guard/plan.md",
     "tasks": "plans/specs/067-critical-alarm-window-guard/tasks.md",
@@ -124,12 +125,12 @@
   },
   "memory": {
     "last_distillation": "2026-08-02T19:35:00Z",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 15,
     "rules_count": 261,
     "anti_patterns_count": 325,
     "decisions_count": 92,
     "contracts_count": 33,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
@@ -139,19 +140,19 @@
     "index_loaded_at": "2026-08-19T23:15:00-03:00"
   },
   "code_review": {
-    "status": "clean",
-    "spec": "051-expo-updates",
+    "status": "clean_after_fixes",
+    "spec": "050-notification-integrity",
     "critical": 0,
-    "auto_fixed": 0,
+    "auto_fixed": 5,
     "ask_items": 0
   },
   "ai_review": {
-    "engine": "agy",
+    "engine": "agy+claude",
     "status": "clean",
     "critical": 0,
     "high": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 795
+    "pr": 801
   }
 }

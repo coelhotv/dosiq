@@ -708,7 +708,15 @@ export async function runDailyDigestViaDispatcher(dispatcher, correlationId) {
   }
 }
 
-async function _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId) {
+/**
+ * Payload do alerta de estoque baixo de UM medicamento — ou `null` quando não há o que alertar
+ * (sem consumo diário, saldo ainda suficiente ou dias não-finitos).
+ *
+ * Implementação ÚNICA (050 PR 1b): o legado (`_processUserStockAlert`), o enqueue da outbox e o
+ * builder do drain chamam esta mesma função. Sem isso o SC-003 compararia duas implementações do
+ * alerta em vez de dois caminhos de entrega do MESMO alerta.
+ */
+export function _computeStockAlertPayload(medicineId, stock, protocols) {
   // 012 B4 / ADR-067: consumo diário via core (líquido → ml + cadência da frequência).
   // Antes somava a dose na unidade de tomada CRUA (UI/gotas) contra o saldo em ml →
   // `floor(ml ÷ UI)` = "0 dias" falso p/ insulina/GLP-1 (FR-013c). `calculateDailyIntake`
@@ -720,10 +728,10 @@ async function _processUserStockAlert(userId, medicineId, stock, protocols, disp
   };
 
   const dailyIntake = calculateDailyIntake(medicineId, protocols, medicine);
-  if (dailyIntake <= 0) return;
+  if (dailyIntake <= 0) return null;
 
   const daysRemaining = calculateDaysRemaining(stock.qty, dailyIntake);
-  if (!Number.isFinite(daysRemaining) || daysRemaining >= 7) return;
+  if (!Number.isFinite(daysRemaining) || daysRemaining >= 7) return null;
 
   // Dose-primário (ADR-067): exibir DOSES restantes (saldo ÷ tamanho de uma tomada),
   // não o saldo cru em ml rotulado "doses". Líquido converte a dose p/ ml (mesma
@@ -740,22 +748,27 @@ async function _processUserStockAlert(userId, medicineId, stock, protocols, disp
     ? Math.floor(cleanFloat(stock.qty / doseSize))
     : Math.floor(stock.qty);
 
-  logger.info(`Disparando alerta de estoque baixo: ${stock.name} (${daysRemaining} dias / ${dosesRemaining} doses)`, {
-    userId, medicineId, correlationId
-  });
-
-  const data = {
+  return {
     medicineName: stock.name,
     remaining: dosesRemaining,
     daysRemaining
   };
+}
+
+async function _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId) {
+  const data = _computeStockAlertPayload(medicineId, stock, protocols);
+  if (!data) return;
+
+  logger.info(`Disparando alerta de estoque baixo: ${data.medicineName} (${data.daysRemaining} dias / ${data.remaining} doses)`, {
+    userId, medicineId, correlationId
+  });
 
   await dispatcher.dispatch({
     userId, kind: 'stock_alert', data, context: { correlationId, jobType: 'stock_alert_dispatcher' }
   });
 }
 
-function _buildProtocolsAndStockMaps(allProtocols, allStock) {
+export function _buildProtocolsAndStockMaps(allProtocols, allStock) {
   const protocolsByMedicine = {};
   for (const p of allProtocols || []) {
     const key = `${p.user_id}_${p.medicine_id}`;
@@ -837,67 +850,145 @@ async function _processBiologicalExpiryAlerts(allStock, dispatcher, correlationI
   }
 }
 
-export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
+// Página de leitura do PostgREST. AP-186: sem `.range()` a resposta é TRUNCADA em ~1000 linhas
+// SEM erro — a varredura simplesmente deixaria de ver o estoque de parte dos usuários, em silêncio.
+const STOCK_SCAN_PAGE_SIZE = 1000;
+
+/**
+ * Lê uma tabela inteira para uma lista de usuários, paginando (AP-186). Mesmo padrão de
+ * `fetchAllUserSettings` (`server/notifications/outbox/enqueueReports.ts`) — não inventar outro.
+ * A `.order('id')` é obrigatória: sem ordenação estável o `.range()` é não-determinístico
+ * (pula/duplica linhas entre páginas).
+ */
+async function _fetchAllPages(table, columns, applyFilters = (q) => q, orderColumn = 'user_id') {
+  const out: any[] = [];
+  for (let page = 0; ; page++) {
+    const from = page * STOCK_SCAN_PAGE_SIZE;
+    const query = applyFilters(
+      supabase.from(table).select(columns).order(orderColumn)
+    ).range(from, from + STOCK_SCAN_PAGE_SIZE - 1);
+    const { data, error } = await query;
+    if (error) throw new Error(`_fetchAllPages(${table}): ${error.message}`);
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < STOCK_SCAN_PAGE_SIZE) break;
+  }
+  return out;
+}
+
+/**
+ * Mesma paginação, restrita a uma lista de usuários.
+ *
+ * Ordena por `id` — chave primária de `protocols` e de `stock`, ambas verificadas no banco
+ * (R-295: `curl .../protocols?select=id&order=id&limit=1` e `.../stock?select=id&order=id&limit=1`,
+ * 200 nas duas). `stock.id` não aparece no `select()` desta varredura porque o volume agrega por
+ * medicamento, mas existe e é o `subject_id` do alerta de validade (por LOTE).
+ */
+async function _fetchAllPagesByUsers(table, columns, userIds, applyFilters = (q) => q) {
+  return _fetchAllPages(table, columns, (q) => applyFilters(q.in('user_id', userIds)), 'id');
+}
+
+/**
+ * Usuários elegíveis a alerta de estoque (volume e validade).
+ *
+ * 044 (FR-006 / PO-4): a preferência vem no MESMO fetch de settings — nenhuma query extra.
+ * Usuário em modo dose-only não recebe NENHUM alerta de estoque. Fail-safe (AP-277): coluna
+ * ausente/NULL → tratado como TRACKING LIGADO (paridade com o COALESCE das RPCs atômicas).
+ * A ausência de dado nunca silencia alerta por omissão.
+ */
+export async function _fetchStockTrackingUsers(correlationId) {
+  // Paginado (AP-186): acima de ~1000 linhas o PostgREST TRUNCA sem erro e os usuários do fim da
+  // lista perderiam alerta de estoque em silêncio — a falha mais cara possível aqui.
+  let users: any[] = [];
+  let usersErr: any = null;
   try {
-    // 044 (FR-006 / PO-4): a preferência vem no MESMO fetch de settings — nenhuma query extra.
-    const { data: users, error: usersErr } = await supabase
-      .from('user_settings')
-      .select('user_id, timezone, notification_mode, stock_tracking_enabled');
-
-    if (usersErr || !users || users.length === 0) {
-      logger.info('Nenhum usuário encontrado em user_settings para alertas de estoque', { correlationId });
-      return;
-    }
-
-    // Usuário em modo dose-only não recebe NENHUM alerta de estoque (volume ou validade).
-    // Fail-safe (AP-277): coluna ausente/NULL → tratado como TRACKING LIGADO (paridade com o
-    // COALESCE das RPCs atômicas). A ausência de dado nunca silencia alerta por omissão.
-    const stockTrackingOff = new Set(
-      users.filter(u => u.stock_tracking_enabled === false).map(u => u.user_id)
+    users = await _fetchAllPages(
+      'user_settings',
+      'user_id, timezone, notification_mode, stock_tracking_enabled'
     );
-    const trackingUsers = users.filter(u => !stockTrackingOff.has(u.user_id));
+  } catch (err) {
+    usersErr = err;
+  }
 
-    if (trackingUsers.length === 0) {
-      logger.info('Nenhum usuário com controle de estoque ativo — alertas de estoque pulados', { correlationId });
-      return;
-    }
+  if (usersErr || !users || users.length === 0) {
+    logger.info('Nenhum usuário encontrado em user_settings para alertas de estoque', { correlationId });
+    return [];
+  }
 
-    const userIds = trackingUsers.map(u => u.user_id);
-    logger.info(`Verificando alertas de estoque para ${userIds.length} usuários`, {
-      correlationId, doseOnlySkipped: stockTrackingOff.size
-    });
+  const trackingUsers = users.filter((u: any) => u.stock_tracking_enabled !== false);
+  const doseOnlySkipped = users.length - trackingUsers.length;
 
-    // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
-    // converte por intake_unit); units_per_ml/dosage_unit/dosage_per_pill p/ a conversão
-    // líquida (ADR-065/ADR-067 — antes o cron contava UI cru contra ml).
-    // 050 US4 (FR-009): tratamento ENCERRADO ou PAUSADO não gera alerta de estoque.
-    // `active = true` não basta — `end_date` vencida e `paused_at` preenchido convivem com ele
-    // (4 protocolos em prod alertavam diariamente desde ~25/07).
-    // Data local via Intl (R-020/R-254): `end_date` é `date`; usar `new Date()`/UTC do servidor
-    // faria a data virar o dia seguinte às 21h em GMT−3 e encerraria o tratamento cedo demais.
-    // ⚠️ UMA data para todos: este select é uma única query com `.in('user_id', ...)`, então não
-    // dá para embutir a tz de cada usuário. Hoje é exato — os 42 usuários são UTC−3 sem DST. Se
-    // um dia houver usuário fora do BR, a borda é de ≤24h e a correção é filtrar por usuário
-    // DEPOIS da query, não trocar a data desta cláusula.
-    const todayLocal = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
-      .format(Date.now());
+  if (trackingUsers.length === 0) {
+    logger.info('Nenhum usuário com controle de estoque ativo — alertas de estoque pulados', { correlationId });
+    return [];
+  }
 
-    const { data: allProtocols } = await supabase
-      .from('protocols')
-      .select('user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active, end_date, paused_at')
+  logger.info(`Verificando alertas de estoque para ${trackingUsers.length} usuários`, {
+    correlationId, doseOnlySkipped
+  });
+  return trackingUsers;
+}
+
+/**
+ * Varredura de candidatos a alerta de estoque para um conjunto de usuários já filtrado.
+ *
+ * 050 PR 1b: extraída de `checkStockAlertsViaDispatcher` para que o LEGADO e o ENQUEUE da outbox
+ * chamem a MESMA função — sem isso o SC-003 (nenhum alerta a menos pós-cutover) compararia duas
+ * implementações de varredura em vez de dois caminhos de entrega.
+ */
+export async function _scanStockAlertCandidates(users, correlationId) {
+  const userIds = (users || []).map(u => u.user_id);
+  if (userIds.length === 0) {
+    return { protocolsByMedicine: {}, stockByMedicine: {}, allStock: [], allProtocols: [] };
+  }
+
+  // R-267 read-path: intake_unit + active (calculateDailyIntake filtra p.active e
+  // converte por intake_unit); units_per_ml/dosage_unit/dosage_per_pill p/ a conversão
+  // líquida (ADR-065/ADR-067 — antes o cron contava UI cru contra ml).
+  // 050 US4 (FR-009): tratamento ENCERRADO ou PAUSADO não gera alerta de estoque.
+  // `active = true` não basta — `end_date` vencida e `paused_at` preenchido convivem com ele
+  // (4 protocolos em prod alertavam diariamente desde ~25/07).
+  // Data local via Intl (R-020/R-254): `end_date` é `date`; usar `new Date()`/UTC do servidor
+  // faria a data virar o dia seguinte às 21h em GMT−3 e encerraria o tratamento cedo demais.
+  // ⚠️ UMA data para todos: este select é uma única query com `.in('user_id', ...)`, então não
+  // dá para embutir a tz de cada usuário. Hoje é exato — os 42 usuários são UTC−3 sem DST. Se
+  // um dia houver usuário fora do BR, a borda é de ≤24h e a correção é filtrar por usuário
+  // DEPOIS da query, não trocar a data desta cláusula.
+  const todayLocal = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' })
+    .format(Date.now());
+
+  const allProtocols = await _fetchAllPagesByUsers(
+    'protocols',
+    'id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active, end_date, paused_at',
+    userIds,
+    (q) => q
       .eq('active', true)
-      .in('user_id', userIds)
       .is('paused_at', null)
       // O `.or` é obrigatório: `end_date IS NULL` é a MAIORIA dos protocolos — um `.gte` sozinho
       // excluiria todos eles e a correção viraria omissão TOTAL dos alertas.
-      .or(`end_date.is.null,end_date.gte.${todayLocal}`);
+      .or(`end_date.is.null,end_date.gte.${todayLocal}`)
+  );
 
-    const { data: allStock } = await supabase
-      .from('stock')
-      .select('user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)')
-      .in('user_id', userIds);
+  const allStock = await _fetchAllPagesByUsers(
+    'stock',
+    'user_id, medicine_id, quantity, opened_at, medicine:medicines(name, shelf_life_days, units_per_ml, dosage_unit, dosage_per_pill)',
+    userIds
+  );
 
-    const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);
+  const { protocolsByMedicine, stockByMedicine } = _buildProtocolsAndStockMaps(allProtocols, allStock);
+  logger.info('Varredura de candidatos a alerta de estoque concluída', {
+    correlationId, users: userIds.length, protocols: allProtocols.length, stockRows: allStock.length
+  });
+  return { protocolsByMedicine, stockByMedicine, allStock, allProtocols };
+}
+
+export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
+  try {
+    const trackingUsers = await _fetchStockTrackingUsers(correlationId);
+    if (trackingUsers.length === 0) return;
+
+    const { protocolsByMedicine, stockByMedicine, allStock } =
+      await _scanStockAlertCandidates(trackingUsers, correlationId);
 
     for (const key in stockByMedicine) {
       const [userId, medicineId] = key.split('_');
