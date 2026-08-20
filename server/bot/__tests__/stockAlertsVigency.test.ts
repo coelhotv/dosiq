@@ -27,6 +27,9 @@ const { mockSupabase } = vi.hoisted(() => {
       m._pendingIs.push([col, val]);
       return this;
     }),
+    // 050 PR 1b: o scan passou a paginar (AP-186) — a cadeia ganhou .order('id')/.range().
+    order: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     or: vi.fn(function (this: any, expr: string) {
       m._ors.push(expr);
       m._pendingOr = expr;

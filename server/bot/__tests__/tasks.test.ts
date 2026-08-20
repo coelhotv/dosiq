@@ -44,6 +44,8 @@ const { mockSupabase } = vi.hoisted(() => {
     single: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
+    // 050 PR 1b: a varredura de estoque passou a paginar (AP-186) — a cadeia ganhou .range().
+    range: vi.fn().mockReturnThis(),
     contains: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     // Supabase queries are thenables
