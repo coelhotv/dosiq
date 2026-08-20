@@ -7,6 +7,30 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Lembrete de dose fica imune a envio em dobro por execuções simultâneas
+
+- **Fix** (`patch` server `4.1.7`). Sem mudança visível: o lembrete continua chegando no mesmo
+  horário, com o mesmo texto. O que muda é a garantia.
+
+  Antes, o lembrete era marcado como "já avisado" **depois** que o envio dava certo. Se duas
+  execuções do robô caíssem no mesmo minuto, as duas encontravam a dose ainda sem marca e as duas
+  mandavam — a mesma dose chegaria duas vezes. A marca agora é colocada **antes** do envio, e só
+  envia quem conseguiu marcar: a segunda execução encontra a dose já tomada por outra e não manda
+  nada.
+
+  Para que essa antecipação não crie o problema oposto, uma falha de envio **desfaz** a marca
+  daquela execução e devolve a dose ao estado exato de antes (inclusive o adiamento, quando era
+  uma dose adiada): a dose não é consumida por uma falha de envio. A remoção da marca só alcança a
+  marca da própria execução, nunca a de outra. Isso **não** cria reenvio automático de lembrete
+  atrasado — quem perdeu o minuto continua dependendo dos caminhos que já existiam; a mudança
+  garante que a dose não fique marcada como avisada sem ter sido.
+
+  Se o banco ficar indisponível na hora de marcar, o lembrete é enviado assim mesmo e marcado
+  depois — instabilidade de banco não vira lembrete não entregue.
+
+  Medição em produção (30 dias, 1.239 lembretes) não encontrou nenhum envio duplicado: esta
+  mudança fecha a janela por construção, em vez de corrigir um problema observado.
+
 ### Aviso de validade do frasco também passa a ser preparado pela fila, um por frasco
 
 - **Chore** (`patch` server `4.1.6`). Mudança interna, desligada por padrão: em produção os avisos

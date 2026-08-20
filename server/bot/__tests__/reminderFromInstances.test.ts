@@ -92,7 +92,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
     expect(mockDispatcher.dispatch).not.toHaveBeenCalled();
   });
 
-  it('novo caminho: instância devida → dispatcher.dispatch chamado + notified_at atualizado', async () => {
+  it('novo caminho: instância devida → claim ANTES do dispatch + dispatcher.dispatch chamado', async () => {
     process.env.REMINDER_SOURCE = 'instances';
 
     const userSettings = [
@@ -119,7 +119,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
     setMockData(doseInstances); // query 1: não-snoozed
     setMockData([]);            // query 2: snoozed (Promise.all)
 
-    setMockData({ data: null, error: null }); // update notified_at
+    setMockData([{ id: 'inst-1' }]); // claim: UPDATE ... IS NULL RETURNING id
 
     await checkRemindersViaDispatcher(mockDispatcher, 'corr-123');
 
@@ -161,7 +161,7 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
       },
     ]);
     setMockData([]);
-    setMockData({ data: null, error: null });
+    setMockData([{ id: 'inst-1' }]); // claim
 
     await checkRemindersViaDispatcher(mockDispatcher, 'corr-time');
 
