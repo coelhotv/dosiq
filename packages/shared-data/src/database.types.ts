@@ -169,6 +169,7 @@ export type Database = {
           id: string
           platform: string
           policy_version: string | null
+          seq: number
           subject_hash: string
           user_id: string | null
         }
@@ -179,6 +180,7 @@ export type Database = {
           id?: string
           platform: string
           policy_version?: string | null
+          seq?: never
           subject_hash: string
           user_id?: string | null
         }
@@ -189,6 +191,7 @@ export type Database = {
           id?: string
           platform?: string
           policy_version?: string | null
+          seq?: never
           subject_hash?: string
           user_id?: string | null
         }
@@ -1866,6 +1869,10 @@ export type Database = {
       }
       cleanup_expired_bot_sessions: { Args: never; Returns: number }
       confirm_titration_switch: { Args: { p_step_id: string }; Returns: Json }
+      consent_controller_event: {
+        Args: { p_action: string; p_consent_type: string; p_user_id: string }
+        Returns: string
+      }
       consent_grant: {
         Args: { p_consent_type: string; p_platform: string }
         Returns: string

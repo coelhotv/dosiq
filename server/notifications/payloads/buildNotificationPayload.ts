@@ -38,7 +38,8 @@ import {
   buildTitrationAlertPayload,
   buildMonthlyReportPayload,
   buildPrescriptionAlertPayload,
-  buildDlqDigestPayload
+  buildDlqDigestPayload,
+  buildConsentPruneNoticePayload
 } from './_payloadBuilders.js';
 
 type Kind = z.infer<typeof kindSchema>;
@@ -93,6 +94,7 @@ const PAYLOAD_BUILDERS: Record<string, (data: NotificationEventData) => { title:
   monthly_report: (data) => buildMonthlyReportPayload(data as never),
   prescription_alert: (data) => buildPrescriptionAlertPayload(data as never),
   dlq_digest: (data) => buildDlqDigestPayload(data as never),
+  consent_prune_notice: (data) => buildConsentPruneNoticePayload(data as never),
 };
 
 // Auxiliar para direcionar a construção do payload conforme o kind.
@@ -381,6 +383,10 @@ function getNavigationMetadata(kind: Kind, data: NotificationEventData, protocol
     monthly_report: { screen: 'history', params: {} },
     daily_digest: { screen: 'history', params: {} },
     dlq_digest: { screen: 'admin/dlq', params: {} },
+    // 046 Slice C: leva ao hub onde ele resolve (reconsentir/exportar/excluir). Cair no default
+    // 'today' seria jogar um titular REVOGADO na tela que o gate mantém bloqueada — o aviso pede
+    // uma ação e o toque não levaria a lugar nenhum.
+    consent_prune_notice: { screen: 'privacy-data', params: {} },
   }
 
   return routes[kind] || { screen: 'today', params: {} }
@@ -435,7 +441,9 @@ function resolveDeeplink(kind: Kind, data: NotificationEventData): string {
     stock_alert: 'stock',
     stock_expiry_alert: 'stock',
     prescription_alert: 'stock',
-    dlq_digest: 'admin/dlq'
+    dlq_digest: 'admin/dlq',
+    // Leva direto ao hub onde ele resolve: reconsentir, exportar ou excluir (008/§Privacidade).
+    consent_prune_notice: 'settings/privacy'
   };
 
   if (staticRoutes[kind]) {

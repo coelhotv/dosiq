@@ -106,7 +106,9 @@ export async function dispatchNotification({ userId, kind, data, channels, conte
   // O estado vem do MESMO fetch de settings logo acima (`consent_revoked_at`) — sem query nova e sem
   // leitura global. É o que garante o isolamento: um erro ao ler a linha DESTE usuário suprime só
   // ele (fail-closed por usuário), e nunca a necessidade clínica dos outros pacientes.
-  if (isConsentSuppressed(settings)) {
+  // O `kind` entra aqui por causa do aviso de prune (T013d): ele é dirigido a quem revogou e não
+  // trata dado de saúde — ver CONSENT_LIFECYCLE_KINDS. Todo o resto segue suprimido.
+  if (isConsentSuppressed(settings, kind)) {
     logger.info('Notificação suprimida — consentimento de dado de saúde revogado (ou estado ilegível)', {
       correlationId, userId, kind
     })

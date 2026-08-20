@@ -128,3 +128,40 @@ describe('deriveConsentState', () => {
     expect(deriveConsentState(undefined as unknown as ConsentEvent[]).status).toBe('missing')
   })
 })
+
+describe('deriveConsentState — desempate de created_at (046 T013e)', () => {
+  const evento = (over: Record<string, unknown>) => ({
+    id: '11111111-1111-4111-8111-111111111111',
+    consent_type: 'health_data' as const,
+    action: 'granted' as const,
+    policy_version: '0.3',
+    platform: 'web' as const,
+    created_at: '2026-08-20T10:00:00.000Z',
+    ...over,
+  })
+
+  it('`seq` decide quando os timestamps empatam (dois atos na MESMA transação)', () => {
+    const empatados = [
+      evento({ id: '22222222-2222-4222-8222-222222222222', action: 'revoked', seq: 10 }),
+      evento({ id: '33333333-3333-4333-8333-333333333333', action: 'granted', seq: 11 }),
+    ]
+    expect(deriveConsentState(empatados as never).status).toBe('granted')
+    // A ordem de entrada não pode mudar a resposta — é o ponto do desempate.
+    expect(deriveConsentState([...empatados].reverse() as never).status).toBe('granted')
+  })
+
+  it('sem `seq` (client, que não tem GRANT na coluna) a saída ainda é ESTÁVEL', () => {
+    const a = evento({ id: '44444444-4444-4444-8444-444444444444', action: 'revoked' })
+    const b = evento({ id: '55555555-5555-4555-8555-555555555555', action: 'granted' })
+    const um = deriveConsentState([a, b] as never).status
+    const outro = deriveConsentState([b, a] as never).status
+    expect(um).toBe(outro)
+  })
+
+  it('timestamp diferente continua mandando — `seq` é só desempate', () => {
+    const antigo = evento({ action: 'granted', created_at: '2026-08-19T10:00:00.000Z', seq: 99 })
+    const recente = evento({ id: '66666666-6666-4666-8666-666666666666', action: 'revoked', created_at: '2026-08-20T10:00:00.000Z', seq: 1 })
+    expect(deriveConsentState([antigo, recente] as never).status).toBe('revoked')
+  })
+})
+

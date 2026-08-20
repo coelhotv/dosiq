@@ -9,6 +9,7 @@ import {
   actionSchema,
   prescriptionAlertDataSchema,
   dlqDigestDataSchema,
+  consentPruneNoticeDataSchema,
   doseReminderByPlanDataSchema,
   doseReminderMiscDataSchema
 } from './_payloadSchemas.js';
@@ -367,4 +368,25 @@ export function buildDlqDigestPayload(data: z.input<typeof dlqDigestDataSchema>)
   plainMsg += items.map(i => i.plain).join('\n');
   
   return { title, body: richMsg, pushBody: plainMsg };
+}
+
+/**
+ * Aviso de exclusão automática por consentimento revogado (046 Slice C / T013d).
+ *
+ * ⚠️ A copy é o CONTROLE de privacidade, não decoração. Este é o único aviso que chega à tela de
+ * bloqueio de alguém que revogou o consentimento: uma palavra clínica aqui — "medicamento",
+ * "dose", "tratamento" — vazaria condição de saúde para quem estiver olhando o celular por cima do
+ * ombro dele, exatamente no momento em que ele pediu para o app parar. Nada disso entra.
+ */
+export function buildConsentPruneNoticePayload(
+  data: z.input<typeof consentPruneNoticeDataSchema>
+): NotificationPayload {
+  const { daysLeft } = consentPruneNoticeDataSchema.parse(data);
+  const title = 'Sua conta precisa de uma ação';
+  const prazo = daysLeft === 1 ? '1 dia' : `${daysLeft} dias`;
+  const plain =
+    `Você retirou sua autorização de uso de dados no dosiq. Se nada for feito, sua conta e seus ` +
+    `dados serão excluídos automaticamente em ${prazo}. Para manter a conta, abra o app e ` +
+    `autorize novamente. Você também pode exportar seus dados ou excluir a conta agora.`;
+  return { title, body: escapeMarkdownV2(plain), pushBody: plain };
 }

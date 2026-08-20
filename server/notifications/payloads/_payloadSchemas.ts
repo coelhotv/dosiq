@@ -106,8 +106,22 @@ export const kindSchema = z.enum([
   'monthly_report',
   'titration_alert',
   'prescription_alert',
-  'dlq_digest'
+  'dlq_digest',
+  // 046 Slice C/T013d — aviso de exclusão por consentimento revogado. Copy NEUTRA: atravessa a
+  // supressão por consentimento (CONSENT_LIFECYCLE_KINDS) justamente por não tratar dado de saúde.
+  'consent_prune_notice'
 ]);
+
+/**
+ * Aviso D+60/D+83 de prune. Note o que NÃO existe aqui: medicamento, dose, tratamento, adesão.
+ * O schema é o contrato que impede o vazamento por metadado (S8) — não há campo onde um dado
+ * clínico caiba, então nenhum chamador consegue introduzir um por engano na tela de bloqueio.
+ */
+export const consentPruneNoticeDataSchema = z.object({
+  stage: z.enum(['d60', 'd83']),
+  /** Dias restantes até a exclusão automática. Inteiro positivo. */
+  daysLeft: z.number().int().positive()
+});
 
 // Schemas para ações interativas (Gate 4 preliminar)
 // 029 F5 (T025): `start_step`/`not_yet` são as 2 ações do medicine_switch, espelhando o card do

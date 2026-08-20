@@ -22,6 +22,9 @@ const SCREEN_TO_ROUTE = {
   'bulk-misc': ROUTES.TODAY,
   'dose-individual': ROUTES.TODAY,
   'history': ROUTES.DOSE_HISTORY,
+  // 046 Slice C — aviso de exclusão por consentimento revogado. Só passa a valer em build novo;
+  // nos binários já publicados o tap segue caindo em TODAY (o mesmo de antes, não uma regressão).
+  'privacy-data': ROUTES.PRIVACY_DATA,
 }
 
 // Navega para a tela correta a partir de um tap em push notification.

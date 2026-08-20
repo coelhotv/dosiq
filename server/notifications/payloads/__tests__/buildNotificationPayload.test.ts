@@ -341,3 +341,44 @@ describe('buildNotificationPayload', () => {
     });
   });
 });
+
+describe('consent_prune_notice — copy neutra (046 T013d / S8)', () => {
+  const build = (data: any) => buildNotificationPayload({ kind: 'consent_prune_notice', data })
+
+  it('não vaza saúde por metadado: nem título, nem preview, nem corpo', () => {
+    const p = build({ stage: 'd60', daysLeft: 30 })
+    const superficiesVisiveis = `${p.title} ${p.pushBody} ${p.body}`.toLowerCase()
+    // A tela de bloqueio mostra título + pushBody a quem estiver olhando o celular por cima do
+    // ombro. Nenhuma dessas palavras pode aparecer ali — nem "medicamento" sozinha.
+    for (const termo of ['medicament', 'dose', 'remédio', 'tratamento', 'adesão', 'mg', 'comprimido']) {
+      expect(superficiesVisiveis).not.toContain(termo)
+    }
+  })
+
+  it('diz o prazo e o que fazer', () => {
+    const p = build({ stage: 'd83', daysLeft: 7 })
+    expect(p.title).toBe('Sua conta precisa de uma ação')
+    expect(p.pushBody).toContain('7 dias')
+    expect(p.pushBody).toContain('autorize novamente')
+    expect(p.deeplink).toBe('dosiq://settings/privacy')
+  })
+
+  it('leva ao hub de privacidade, não ao "today" — o revogado tem o app bloqueado', () => {
+    // Achado do RC6 (pass B): kind novo registrado em kindSchema/PAYLOAD_BUILDERS/resolveDeeplink
+    // mas ausente da tabela de navegação cairia no default 'today'. O aviso pede uma ação e o
+    // toque não levaria a lugar nenhum.
+    const p = build({ stage: 'd60', daysLeft: 30 })
+    expect(p.metadata.navigation).toEqual({ screen: 'privacy-data', params: {} })
+  })
+
+  it('singulariza o último dia', () => {
+    expect(build({ stage: 'd83', daysLeft: 1 }).pushBody).toContain('em 1 dia.')
+  })
+
+  it('rejeita payload degenerado em vez de enviar um aviso sem prazo', () => {
+    expect(() => build({ stage: 'd60', daysLeft: 0 })).toThrow()
+    expect(() => build({ stage: 'd60' })).toThrow()
+    expect(() => build({ stage: 'qualquer', daysLeft: 5 })).toThrow()
+  })
+})
+
