@@ -1,6 +1,7 @@
 # DEVFLOW Contracts Index
 
 ## 🚀 Infra & Deploy (`infra_and_deploy`)
+- **[CON-035]** *(accepted — spec 050 PR 1a, ADR-078)* `ContentBuilder` da outbox ganha `subjectId: string | null` (aditivo): identifica o ITEM quando o kind faz fan-out; NULL nos 4 kinds de usuário/período -> [`contracts/infra_and_deploy/CON-035.md`](./contracts/infra_and_deploy/CON-035.md)
 - **[CON-022]** `getUserTime` + dateUtils tz-aware API (param tz opcional default SP; non-breaking; ADR-049) -> [`contracts/infra_and_deploy/CON-022.md`](./contracts/infra_and_deploy/CON-022.md)
 - **[CON-001]** medicineService.getAll() -> [`contracts/infra_and_deploy/CON-001.md`](./contracts/infra_and_deploy/CON-001.md)
 - **[CON-002]** medicineService.create(medicine) -> [`contracts/infra_and_deploy/CON-002.md`](./contracts/infra_and_deploy/CON-002.md)

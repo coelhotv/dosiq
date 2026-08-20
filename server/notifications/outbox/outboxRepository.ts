@@ -1,7 +1,7 @@
 // Spec 043 (Slice A) — repositório da notification_outbox (ADR-078).
 //
 // Factory (injeta client → testável com mock). Quatro operações:
-//   enqueue   → INSERT ON CONFLICT (user_id,kind,period_key) DO NOTHING (idempotência por constraint)
+//   enqueue   → INSERT ON CONFLICT (user_id,kind,period_key,subject_id) DO NOTHING (idempotência por constraint)
 //   claim     → RPC claim_notification_outbox (FOR UPDATE SKIP LOCKED + attempts++, atômico)
 //   markSent  → status='sent' + channel_results (SEM tokens — SEC-3)
 //   markFailed→ 'failed' ao atingir cap de tentativas (ENG-5), senão volta a 'pending' p/ retry
@@ -19,6 +19,10 @@ export interface OutboxRow {
   user_id: string;
   kind: OutboxKind;
   period_key: string;
+  // Assunto da notificação (medicine_id, stock.id...). NULL = notificação do usuário/período
+  // inteiro — é o caso dos 4 kinds originais. Faz parte da UNIQUE, que é NULLS NOT DISTINCT:
+  // duas linhas NULL ainda colidem, então a idempotência antiga segue idêntica (spec 050).
+  subject_id: string | null;
   status: 'pending' | 'processing' | 'sent' | 'failed';
   attempts: number;
   channel_results: ChannelResult[] | null;
@@ -40,6 +44,9 @@ export interface EnqueueEntry {
   userId: string;
   kind: OutboxKind;
   periodKey: string;
+  // Omitir (ou passar null) = uma notificação por usuário/kind/período, comportamento original.
+  // Preencher = fan-out: N notificações do mesmo kind no mesmo período, uma por assunto.
+  subjectId?: string | null;
 }
 
 // Contrato mínimo do client (subset do SupabaseClient) — mantém o mock de teste enxuto.
@@ -65,17 +72,18 @@ export function createOutboxRepository(
 ): OutboxRepository {
   return {
     // Enfileira em lote. ON CONFLICT DO NOTHING (ignoreDuplicates) → re-enfileirar o mesmo
-    // (user,kind,período) é no-op: a idempotência vive na UNIQUE, não na aplicação.
+    // (user,kind,período,assunto) é no-op: a idempotência vive na UNIQUE, não na aplicação.
     async enqueue(entries) {
       if (!entries.length) return 0;
       const rows = entries.map((e) => ({
         user_id: e.userId,
         kind: e.kind,
         period_key: e.periodKey,
+        subject_id: e.subjectId ?? null,
       }));
       const { error } = await client
         .from('notification_outbox')
-        .upsert(rows, { onConflict: 'user_id,kind,period_key', ignoreDuplicates: true });
+        .upsert(rows, { onConflict: 'user_id,kind,period_key,subject_id', ignoreDuplicates: true });
       if (error) throw new Error(`outbox.enqueue: ${error.message}`);
       // Não retornamos "quantas de fato inseriram" (ignoreDuplicates não expõe isso de forma
       // confiável); retornamos o total tentado — o log agregado (FR-007) usa o count do drain.

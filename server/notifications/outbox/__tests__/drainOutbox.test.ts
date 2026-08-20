@@ -14,6 +14,7 @@ function makeRow(id: string, kind: OutboxRow['kind'] = 'daily_adherence', overri
     user_id: `user-${id}`,
     kind,
     period_key: '2026-07-10',
+    subject_id: null,
     status: 'pending',
     attempts: 1,
     channel_results: null,
@@ -36,6 +37,50 @@ function makeRepo(rows: OutboxRow[]) {
 const passthroughBuilder = vi.fn(async ({ userId, periodKey }: any) => ({ userId, periodKey }))
 
 describe('drainOutbox', () => {
+  // Não-regressão dos 4 kinds migrados (spec 050 T010/SC-002): eles são enfileirados sem assunto,
+  // então o builder recebe subjectId null e ignora o campo — nenhuma mudança de comportamento.
+  it('kinds sem assunto: builder recebe subjectId null e o envio segue igual', async () => {
+    const rows = [makeRow('1'), makeRow('2', 'daily_digest')]
+    const repo = makeRepo(rows)
+    const dispatcher = { dispatch: vi.fn().mockResolvedValue({ channels: [] }) }
+    const fetchSettings = vi.fn().mockResolvedValue(new Map())
+    const builder = vi.fn().mockResolvedValue({ ok: true })
+
+    const summary = await drainOutbox({
+      repo, dispatcher, fetchSettings,
+      contentBuilders: { daily_adherence: builder, daily_digest: builder },
+    })
+
+    expect(summary.sent).toBe(2)
+    expect(builder).toHaveBeenCalledTimes(2)
+    for (const call of builder.mock.calls) {
+      expect(call[0].subjectId).toBeNull()
+    }
+  })
+
+  // Fan-out: duas linhas do mesmo usuário/kind/período, distintas só pelo assunto, viram dois
+  // envios e cada builder recebe o SEU subjectId (é o que o PR 1b vai consumir).
+  it('linhas com assunto: cada builder recebe o seu subject_id', async () => {
+    const rows = [
+      makeRow('1', 'stock_alert', { user_id: 'u1', subject_id: 'med-1' }),
+      makeRow('2', 'stock_alert', { user_id: 'u1', subject_id: 'med-2' }),
+    ]
+    const repo = makeRepo(rows)
+    const dispatcher = { dispatch: vi.fn().mockResolvedValue({ channels: [] }) }
+    const fetchSettings = vi.fn().mockResolvedValue(new Map())
+    const builder = vi.fn().mockResolvedValue({ ok: true })
+
+    const summary = await drainOutbox({
+      repo, dispatcher, fetchSettings,
+      contentBuilders: { stock_alert: builder },
+    })
+
+    expect(summary.sent).toBe(2)
+    expect(dispatcher.dispatch).toHaveBeenCalledTimes(2)
+    const subjects = builder.mock.calls.map((c: any[]) => c[0].subjectId)
+    expect(subjects.sort()).toEqual(['med-1', 'med-2'])
+  })
+
   it('claim vazio → summary.claimed=0, nada disparado', async () => {
     const repo = makeRepo([])
     const dispatcher = { dispatch: vi.fn() }
