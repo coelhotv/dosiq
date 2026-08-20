@@ -1,5 +1,7 @@
 -- 20260820_consent_seq_and_controller_event.test.sql — 046 Slice C / T013e + T013a
 --
+-- ✅ EXECUTADO CONTRA PRODUÇÃO EM 2026-08-20, bloco a bloco (evidência no PR).
+--
 -- Validação por FAILURE MODE em BEGIN..ROLLBACK (R-270). Cada bloco roda ISOLADO (o RAISE aborta
 -- a transação): rodar bloco a bloco e colar o output no C4.
 --
@@ -34,18 +36,21 @@ BEGIN;
 ROLLBACK;
 
 -- ═══ Bloco 2 — guarda de chamador (AP-292) ════════════════════════════════════
+-- ⚠️ Use uuid LITERAL nestes dois: `authenticated`/`anon` não têm SELECT em `auth.users`, então um
+-- subselect falharia com 42501 ANTES da chamada — e o teste pareceria passar sem exercitar nada.
+--
 -- 2a. authenticated ⇒ permission denied no EXECUTE (o GRANT nunca foi dado)
 BEGIN;
   SET LOCAL ROLE authenticated;
   SELECT public.consent_controller_event(
-    (SELECT id FROM auth.users LIMIT 1), 'notice_sent', 'health_data');  -- esperado: 42501
+    '11111111-1111-4111-8111-111111111111'::uuid, 'notice_sent', 'health_data');  -- esperado: 42501
 ROLLBACK;
 
 -- 2b. anon ⇒ permission denied
 BEGIN;
   SET LOCAL ROLE anon;
   SELECT public.consent_controller_event(
-    (SELECT id FROM auth.users LIMIT 1), 'notice_sent', 'health_data');  -- esperado: 42501
+    '11111111-1111-4111-8111-111111111111'::uuid, 'notice_sent', 'health_data');  -- esperado: 42501
 ROLLBACK;
 
 -- 2c. postgres (owner, sem auth.role() = service_role) ⇒ a guarda INTERNA barra.
@@ -57,15 +62,17 @@ BEGIN;
 ROLLBACK;
 
 -- ═══ Bloco 3 — caminho feliz (service_role) ═══════════════════════════════════
+-- 🔴 `auth.role()` lê o CLAIM DO JWT, não o ROLE do Postgres: `SET LOCAL ROLE service_role` NÃO
+-- satisfaz a guarda (a função responde 'forbidden'). É o mesmo caminho do job real, que chega pelo
+-- PostgREST com a service_role key. Simular o claim é a única forma honesta de testar isto aqui.
 BEGIN;
-  SET LOCAL ROLE service_role;
   CREATE TEMP TABLE t3 ON COMMIT DROP AS SELECT id AS uid, email FROM auth.users LIMIT 1;
+  SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
 
   SELECT public.consent_controller_event((SELECT uid FROM t3), 'notice_sent', 'health_data') AS id_novo;
 
-  RESET ROLE;
   -- esperado: hash IDÊNTICO ao derivado do e-mail (o pepper nunca saiu do banco), platform 'server'
-  SELECT c.action, c.platform,
+  SELECT c.action, c.platform, c.policy_version, c.seq,
          (c.subject_hash = public.consent_subject_hash((SELECT email FROM t3))) AS esperado_true_hash_bate
     FROM public.consent_log c
    WHERE c.user_id = (SELECT uid FROM t3)
@@ -75,28 +82,30 @@ ROLLBACK;
 -- ═══ Bloco 4 — degenerados ════════════════════════════════════════════════════
 -- 4a. user_id NULL ⇒ 'consent_subject_missing' (nunca uma linha órfã)
 BEGIN;
-  SET LOCAL ROLE service_role;
+  SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
   SELECT public.consent_controller_event(NULL, 'notice_sent', 'health_data');
 ROLLBACK;
 
 -- 4b. ação do TITULAR pelo controlador ⇒ 'consent_action_not_allowed'
 --     (o controlador não fabrica a vontade do titular — é o que torna a trilha prova)
 BEGIN;
-  SET LOCAL ROLE service_role;
+  SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
   SELECT public.consent_controller_event(
     (SELECT id FROM auth.users LIMIT 1), 'granted', 'health_data');
 ROLLBACK;
 
 -- 4c. conta inexistente (já excluída) ⇒ 'consent_subject_email_missing'
+-- ⚠️ NÃO use o uuid all-zeros como "inexistente": ele EXISTE em produção
+-- (`gemini-system@example.com`, usuário de sistema) e o caso passaria com um evento GRAVADO.
 BEGIN;
-  SET LOCAL ROLE service_role;
+  SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
   SELECT public.consent_controller_event(
-    '00000000-0000-0000-0000-000000000000'::uuid, 'pruned', 'health_data');
+    '9f3c1d7e-4b2a-4c8f-9a1e-7d6b5c4a3210'::uuid, 'pruned', 'health_data');
 ROLLBACK;
 
 -- 4d. consent_type inválido ⇒ 'consent_type_invalid'
 BEGIN;
-  SET LOCAL ROLE service_role;
+  SELECT set_config('request.jwt.claims', '{"role":"service_role"}', true);
   SELECT public.consent_controller_event(
     (SELECT id FROM auth.users LIMIT 1), 'pruned', 'marketing');
 ROLLBACK;

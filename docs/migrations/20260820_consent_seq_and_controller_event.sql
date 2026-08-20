@@ -1,5 +1,8 @@
 -- 20260820_consent_seq_and_controller_event.sql — 046 Slice C / T013e + T013a
 --
+-- ✅ APLICADA EM PRODUÇÃO em 2026-08-20 (MCP `apply_migration`), com o `.test.sql` rodado bloco a
+--    bloco em seguida. `database.types.ts` regenerado no mesmo movimento (R-289).
+--
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 1. T013e — POR QUE `created_at` NÃO BASTA PARA DIZER QUAL FOI O ÚLTIMO ATO
 -- ─────────────────────────────────────────────────────────────────────────────
