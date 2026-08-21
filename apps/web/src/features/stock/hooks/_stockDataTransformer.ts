@@ -1,5 +1,5 @@
 import { parseLocalDate } from '@utils/dateUtils'
-import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, parseISO, stockDoseMetrics } from '@dosiq/core'
+import { calculateDailyIntake, isBiologicallyExpired, biologicalExpiryDaysLeft, parseISO, stockDoseMetrics, isProtocolVigentOn, getTodayLocal } from '@dosiq/core'
 
 /**
  * Transforma dados brutos de medicamentos, protocolos e estoque em itens processados.
@@ -79,14 +79,17 @@ function _getTtlAlert(entries, medicine) {
 export function transformStockItems(medicines, protocols, stockMap, purchaseHistoryMap, getStockStatus, getBarPercentage) {
   if (medicines.length === 0) return []
 
+  // 064/SC-004: um predicado só. Esta lista vem de `getActive()` (que já filtra vigência
+  // no SQL), então aqui não há mudança de número — é convergência dos filtros divergentes.
+  const today = getTodayLocal()
   const activeMedicineIds = new Set(
-    protocols.filter((p) => p.active !== false).map((p) => p.medicine_id)
+    protocols.filter((p) => isProtocolVigentOn(p, today)).map((p) => p.medicine_id)
   )
 
-  // Mapa: medicineId → protocolo primário (primeiro ativo)
+  // Mapa: medicineId → protocolo primário (primeiro vigente)
   const primaryProtocolMap = {}
   protocols
-    .filter((p) => p.active !== false)
+    .filter((p) => isProtocolVigentOn(p, today))
     .forEach((p) => {
       if (!primaryProtocolMap[p.medicine_id]) {
         primaryProtocolMap[p.medicine_id] = {
@@ -105,15 +108,15 @@ export function transformStockItems(medicines, protocols, stockMap, purchaseHist
     const purchases = purchaseHistoryMap[medicine.id] || []
     // Líquidos (022): consumo convertido p/ ml (gotas/UI ÷ units_per_ml) para
     // bater com o estoque (em ml). calculateDailyIntake é liquid-aware no core.
-    const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
+    const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine, today)
     const daysRemaining = dailyIntake > 0 ? stock.total / dailyIntake : Infinity
     const stockStatus = getStockStatus(stock.total, daysRemaining)
     const barPercentage = getBarPercentage(stock.total, daysRemaining)
 
     // 012 B4 / ADR-067: doses físicas restantes (número exibido p/ freq ≠ diário).
     // Cor/barra seguem runway (daysRemaining); diário mantém "N dias" (sem regressão).
-    const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && p.active !== false)
-    const { dosesRemaining, isDaily } = stockDoseMetrics(stock.total, medProtocols, medicine)
+    const medProtocols = protocols.filter((p) => p.medicine_id === medicine.id && isProtocolVigentOn(p, today))
+    const { dosesRemaining, isDaily } = stockDoseMetrics(stock.total, medProtocols, medicine, today)
 
     const lotContainer = _getLotContainer(stock.entries)
     const { purchaseEntries, lastPurchase } = _getLastPurchase(purchases)

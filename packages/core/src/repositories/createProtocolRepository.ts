@@ -193,6 +193,13 @@ export function createProtocolRepository({
       return listTransform(data ?? [])
     },
 
+    /**
+     * 064/SC-004 — este filtro SQL (`active` + `start_date` + `end_date`) é REDUNDANTE, por
+     * performance: evita trazer linha morta do banco. A FONTE DA VERDADE da vigência é
+     * `isProtocolVigentOn` (`utils/adherenceLogic.ts`), aplicada no read-path. Não consolidar
+     * na direção contrária: uma query não é predicado reusável, e duplicar a semântica aqui
+     * transformaria este SELECT no 7º sítio de vigência do repo.
+     */
     async getActive(date: string = getTodayLocal()) {
       const userId = await getUserId()
       const { data, error } = await client

@@ -53,6 +53,7 @@ export function useComplexityMode() {
   // Medicamentos com ao menos 1 protocolo ativo
   const activeMedicines = useMemo(
     () =>
+      // vigency-gate: ok — contagem de complexidade da UI (listagem), não consumo de estoque.
       medicines.filter((m) => protocols.some((p) => p.medicine_id === m.id && p.active !== false)),
     [medicines, protocols]
   )

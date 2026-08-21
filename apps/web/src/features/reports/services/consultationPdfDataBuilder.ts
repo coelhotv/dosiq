@@ -4,10 +4,10 @@
  * @module features/reports/services/consultationPdfDataBuilder
  */
 
-import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow } from '@utils/dateUtils'
+import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow, getTodayLocal } from '@utils/dateUtils'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
-import { stockDoseMetrics, formatConcentration } from '@dosiq/core'
+import { stockDoseMetrics, formatConcentration, isProtocolVigentOn } from '@dosiq/core'
 import {
   buildSummaryCards,
   buildAttentionItems,
@@ -168,6 +168,7 @@ function getStockSeverity(stockItem) {
  */
 function buildTreatmentRows(protocols = [], medicines = []) {
   return protocols
+    // vigency-gate: ok — rows de TRATAMENTOS do PDF (listagem clínica), não consumo de estoque.
     .filter((protocol) => protocol?.active !== false)
     .map((protocol) => {
       const medicine =
@@ -218,6 +219,7 @@ function _resolveStockMedicine(stockItem, medicines) {
 }
 
 function _resolveStockProtocol(medicine, protocols) {
+  // vigency-gate: ok — resolve o protocolo só para o RÓTULO da linha de estoque.
   return protocols.find((item) => item.medicine_id === medicine.id && item.active !== false)
 }
 
@@ -239,19 +241,27 @@ function _resolveStockMessage(stockItem) {
  * @param {Array} medicines - Medicamentos
  * @returns {Object}
  */
-function _mapStockItem(stockItem, protocols, medicines) {
+function _mapStockItem(stockItem, protocols, medicines, asOf = getTodayLocal()) {
   const medicine = _resolveStockMedicine(stockItem, medicines)
   const protocol = _resolveStockProtocol(medicine, protocols)
-  const dailyIntake = stockItem?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols, medicine)
+  // 064/US2 (F-14, opção (a)): `stockItem.dailyIntake` vem PRÉ-CALCULADO pelo dashboard,
+  // sempre para HOJE. Num relatório cujo período não termina hoje, esse número é de outra
+  // data de referência (R-299) — então ignoramos o pré-calculado e recalculamos com `asOf`.
+  // No período corrente mantemos o pré-calculado (perf + consistência com a tela), que já
+  // nasce filtrado por vigência desde `_useDashboardDerived`.
+  const isCurrentPeriod = asOf === getTodayLocal()
+  const preComputed = isCurrentPeriod ? stockItem : null
+  const dailyIntake =
+    preComputed?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols, medicine, asOf)
   const totalQuantity = stockItem?.total ?? 0
-  const daysRemaining = _resolveStockDays(stockItem, dailyIntake, totalQuantity)
+  const daysRemaining = _resolveStockDays(preComputed, dailyIntake, totalQuantity)
   const severity = getStockSeverity({ ...stockItem, daysRemaining })
   const id = medicine.id || stockItem?.medicine?.id || stockItem?.medicine_id || crypto.randomUUID()
 
   // 012 B4 / ADR-067: doses físicas restantes (número-base p/ freq ≠ diário); a
   // severidade/runway seguem daysRemaining (cronológico).
-  const medProtocols = protocols.filter((p) => p.medicine_id === medicine?.id && p.active !== false)
-  const { dosesRemaining, isDaily } = stockDoseMetrics(totalQuantity, medProtocols, medicine)
+  const medProtocols = protocols.filter((p) => p.medicine_id === medicine?.id && isProtocolVigentOn(p, asOf))
+  const { dosesRemaining, isDaily } = stockDoseMetrics(totalQuantity, medProtocols, medicine, asOf)
 
   return {
     id,
@@ -272,11 +282,12 @@ function _mapStockItem(stockItem, protocols, medicines) {
  * @param {Array<Object>} stockSummary - Sumario de estoque vindo do dashboard.
  * @param {Array<Object>} protocols - Protocolos ativos.
  * @param {Array<Object>} medicines - Medicamentos cadastrados.
+ * @param {string} [asOf] - Data local de referência (fim do período do relatório).
  * @returns {Array<Object>} Rows do estoque.
  */
-function buildStockRows(stockSummary = [], protocols = [], medicines = []) {
+function buildStockRows(stockSummary = [], protocols = [], medicines = [], asOf = getTodayLocal()) {
   return stockSummary
-    .map((stockItem) => _mapStockItem(stockItem, protocols, medicines))
+    .map((stockItem) => _mapStockItem(stockItem, protocols, medicines, asOf))
     .sort((a, b) => {
       const severityOrder = { critical: 0, warning: 1, stable: 2 }
       const severityDiff = severityOrder[a.severity] - severityOrder[b.severity]
@@ -388,6 +399,7 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
     })
   }
 
+  // vigency-gate: ok — série de adesão do PDF: usa o predicado do GERADOR de dose adiante.
   const activeProtocols = protocols.filter((protocol) => protocol?.active !== false)
   const trend = []
 
@@ -475,6 +487,21 @@ function _calculatePeriodDays(period, dailyAdherenceLength) {
   return Math.max(parseInt(period, 10) || 7, 1)
 }
 
+/**
+ * Normaliza a data de geração do relatório para um Date LOCAL (R-020).
+ * `YYYY-MM-DD` puro vai por `parseLocalDate` — `new Date('YYYY-MM-DD')` seria UTC
+ * midnight e viraria o dia anterior em GMT-3.
+ * @param {Date|string|number|null|undefined} value
+ * @returns {Date}
+ */
+function _toLocalDate(value) {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? getNow() : value
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return parseLocalDate(value)
+  if (value == null) return getNow()
+  const parsed = parseISO(value)
+  return Number.isNaN(parsed.getTime()) ? getNow() : parsed
+}
+
 export function buildConsultationPdfData({
   consultationData,
   dashboardData = {},
@@ -489,8 +516,11 @@ export function buildConsultationPdfData({
   const activeTreatments = buildTreatmentRows(inp.protocols, inp.medicines)
   // 044/US3 (dose-only): NENHUMA row de estoque — nem tabela vazia, nem "0 dias" fantasma.
   // Some também dos summary cards e dos itens de atenção (que derivam de stockRows).
+  // 064/US2: o relatório termina na data de geração — é ela que define a vigência dos
+  // tratamentos considerados (R-299: fato datado não se lê pelo estado de hoje).
+  const asOf = formatLocalDate(_toLocalDate(generatedAt))
   const stockRows = inp.stockTrackingEnabled
-    ? buildStockRows(inp.stockSummary, inp.protocols, inp.medicines)
+    ? buildStockRows(inp.stockSummary, inp.protocols, inp.medicines, asOf)
     : []
   const prescriptionRows = buildPrescriptionRows(inp.prescriptionStatus, inp.protocols, inp.medicines)
   const titrationRows = buildTitrationRows(inp.activeTitrations, inp.protocols, inp.medicines)

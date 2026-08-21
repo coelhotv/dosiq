@@ -1,7 +1,7 @@
 import { supabase } from '../../services/supabase.js';
 import { getUserIdByChatId } from '../../services/userService.js';
 import { calculateDaysRemaining, formatStockStatus } from '../../utils/formatters.js';
-import { calculateDailyIntake, stockDoseMetrics } from '@dosiq/core';
+import { calculateDailyIntake, stockDoseMetrics, isProtocolVigentOn, getTodayLocal } from '@dosiq/core';
 import { replyIfStockDisabled } from '../services/stockTrackingGuard.js';
 
 export async function handleEstoque(bot, msg) {
@@ -35,7 +35,9 @@ export async function handleEstoque(bot, msg) {
     let hasMedicinesToShow = false;
 
     for (const medicine of medicines) {
-      const activeProtocols = (medicine.protocols || []).filter(p => p.active);
+      // 064: vigência (active + start/end_date). Tratamento encerrado não conta consumo
+      // nem mantém o medicamento listado no /estoque.
+      const activeProtocols = (medicine.protocols || []).filter(p => isProtocolVigentOn(p, getTodayLocal()));
 
       // Only show medicines with active protocols
       if (activeProtocols.length === 0) {

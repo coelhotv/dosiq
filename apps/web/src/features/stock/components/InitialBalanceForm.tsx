@@ -90,6 +90,7 @@ function BalanceItem({
   // do nome) e pouco acionável no sólido. Fallback: sem protocolo ativo o sólido cai no ativo.
   const hint = useMemo(() => {
     if (!value) return ''
+    // vigency-gate: ok — escolha de protocolo para RÓTULO/sugestão de saldo inicial, não consumo.
     const protocol = (medicine.protocols || []).find((p) => p?.active) ?? null
     const doses = formatStockDoses(value.replace(',', '.'), medicine, protocol)
     if (doses) return `Equivale a ${doses.replace('≈ ', '')}`
