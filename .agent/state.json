@@ -6,18 +6,12 @@
     "mode": "coding",
     "status": "completed",
     "tier": 2,
-    "spec_dir": "plans/specs/046-lgpd-consent",
-    "spec": "plans/specs/046-lgpd-consent/spec.md",
-    "goal": "046 ENCERRADA — prune ARMADO em produção 2026-08-21; 7 POs fechados",
-    "goal_type": "feature",
-    "code_review": {
-      "status": "clean_after_fixes",
-      "critical": 0,
-      "auto_fixed": 3,
-      "ask_items": 0
-    },
+    "spec_dir": "plans/specs/064-stock-forecast-vigency",
+    "spec": "plans/specs/064-stock-forecast-vigency/spec.md",
+    "goal": "064 PR 1 — predicado canônico de vigência + limpeza (zero mudança de comportamento)",
+    "goal_type": "refactor",
     "spec_dirs": [
-      "plans/specs/046-lgpd-consent"
+      "plans/specs/064-stock-forecast-vigency"
     ],
     "merged_pr": 805,
     "merged_squash": "2030f461 (squash merge into main)",
@@ -106,46 +100,24 @@
     ],
     "previous_session_note": "050: TODO O CODIGO EM PROD + CUTOVER T033 APLICADO 2026-08-20 (verificado por vercel env pull: OUTBOX_KINDS com os 6 kinds, deploy posterior a mudanca). Caiu DEPOIS da janela das 10:00 SP, entao o legado serviu 20/08 (15 stock_alert as 13:00 UTC) e a fila assume em 21/08 as 10:00 local — nenhum dia com os dois caminhos ativos. PENDENTE: T034 (SC-003) — comparar notification_log pos 21-27/08 vs pre 14-20/08, POR TIPO e SEM SOMAR (stock_expiry_alert ja existe como notification_type desde 02/07; baseline 60d: stock_alert 448, stock_expiry_alert 2). Sinal de saude a olhar em 21/08: linhas dos dois kinds em notification_outbox (ate 20/08 a fila so tinha daily_adherence). PROXIMA ENTREGA DE CODIGO: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY; liberar a partir de 23/08 (~48h de fila saudavel), NAO precisa esperar o T034 fechar porque rollback do cutover e remover o env, nao mexer no codigo. Mapa do corte + 7 sites de import + prompt na Sessao 6 do PLAYBOOK. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801, #803.",
     "ceremonies_run": [
-      "security-review",
-      "eng-review-2 (delta FR-021/FR-022)",
-      "eng-review (050, 2026-08-02)",
-      "eng-review (065, 2026-08-13)",
-      "eng-review (067, 2026-08-14)",
-      "security-review (067, 2026-08-14)",
-      "design-review (067, 2026-08-14)"
+      "eng-review"
     ],
-    "ceremony_findings_count": 50,
+    "ceremony_findings_count": 8,
     "ceremony_scope_decisions": [
-      "RC-SEC-2 2026-07-25 (FR-018+FR-021): 2 CRITICAL, 2 HIGH, 3 MEDIUM, 1 LOW fora de escopo",
-      "S-6 CRITICAL exige DECISAO DO PO (T050) — bloqueia PR 1.5a",
-      "PO-SEC-4..8 emitidas na spec",
-      "PO 2026-07-25: S-6 resolvido por ADMIN_USER_ID (uid autenticado) em vez de REVOKE na coluna — proposta do PO, adotada sobre a recomendacao original",
-      "PO 2026-07-25: FR-018 ganha saida honesta p/ https://dosiq.app no overlay, com URL COMPILADA (nao vem do gate)",
-      "Todos os 8 findings aceitos; T050 fechada",
-      "RC3-2 (2026-07-25): complexity check CRUZADO — 21 arquivos na 051-A vs limiar 8. Proposta minima (F5, USER CHALLENGE, AGUARDA PO): fatiar o painel admin web para PR 1.5c, deixando o 1.5a com migracao+schema+handler+fix do verifyAdminAccess (~6-8 arquivos). O painel e ~7 dos 13 arquivos do 1.5a e nao carrega garantia nenhuma: a guarda do S-7 mora no handler e a contagem volta na recusa 4xx. Custo declarado: PO-9 adia junto. Contradiz decisao do PO de 2026-07-25 (painel web sobre script) — por isso nao auto-resolvida.",
-      "RC3-2/F5 RESOLVIDO pelo PO (2026-07-25): painel admin web fatiado para PR 1.5c. PR 1.5a cai de 13 para 8 arquivos, dentro do limiar da RC3. PO-9 e PO-SEC-8 acompanham o painel (adiamento declarado, nao silenciado). Operacao por curl entre 1.5b e 1.5c documentada em tasks.md. Ordem de droppabilidade: 1.6 primeiro, 1.5c depois; 1.5a/1.5b nunca.",
-      "PO 2026-07-30 (R-307 §3b): a tag de release marca o commit COMPILADO; commits posteriores ficam fora por definicao, inclusive os que nao afetam o binario. NAO ha excecao para 'delta fora do bundle' — provar isso manualmente a cada release e julgamento sob pressao, e mover a tag a faz apontar p/ commit nunca compilado. Fecha a pendencia aberta na Onda 1 (tag mobile-v0.30.0 reposicionada 3x). Tag atras do HEAD da main e normal, nao divida.",
-      "PO 2026-08-02 (050): US4 adicionada — alerta de estoque de tratamento ENCERRADO/pausado (bug ativo em prod: 4 protocolos active com end_date vencida, 2 com saldo 0 alertando ha ~1 semana). Recorte: corrigir SO o caminho de notificacao (scan compartilhado, PR 1); a raiz (calculateDailyIntake, 7 superficies) vai p/ spec 064. PO tambem decidiu excluir protocolo pausado. NC2 (channel_results x notification_log) resolvida: outbox_id em notification_log ANTES de dropar channel_results — TODO no ADR-078.",
-      "RC3 050 (2026-08-02): complexity check ESTOUROU — PR 1 com ~12 arquivos vs limiar 8. Proposta minima (F1, AGUARDA PO): fatiar em PR 0 (US4, bug ativo em prod, 2 arquivos) + PR 1a (infra da fila, sem consumidor) + PR 1b (fan-out). Motivo alem do tamanho: fix de prod nao deve ficar preso atras de refactor de infra. Outros findings: F2 ALTO (select de stock sem `id` -> subject_id do expiry undefined -> reintroduz o Gap 1), F3 ALTO (cadencia do enqueue indefinida; legado e minute===0, familia AP-259), F4 ALTO (armadilha viva pre-existente: por stock_alert em OUTBOX_KINDS hoje desliga o legado e nada enfileira -> zero alerta em silencio), F5 MEDIO (enqueuers[] e complexidade acidental, T005 sai), F6 MEDIO (scan sem paginacao, AP-186), F7 BAIXO (tz — 42 usuarios, todos UTC-3). Guards ELEVADOS: PO-8 exige fronteira end_date=hoje/ontem; PO-3 exige ramo snoozed_until.",
-      "PO 2026-08-02: F1 APROVADO — PR 1 fatiado em PR 0 (US4, bug ativo, vai sozinho) / PR 1a (infra da fila, sem consumidor) / PR 1b (fan-out). Todos os 7 findings da RC3 absorvidos em plan.md + tasks.md. Droppabilidade: 3 -> 2 -> 1b -> 1a -> PR 0 NUNCA.",
-      "PO 2026-08-13 (065): NC-A/B/C fechados. D4 — PostHog unico (sem dev/staging): segregar por super property app_env + is_internal, dashboards filtram production; escape hatch = trocar secret EXPO_PUBLIC_POSTHOG_API_KEY; baseline pre-corte fica bucket 'env desconhecido'. D5 — flush() explicito no background, SEM fila propria: SDK posthog-react-native 4.60 ja persiste fila em arquivo (default persistence:'file') + flush() publico, entao o risco e ATRASO e nao perda; fila espelhando criticalAuditBeacon seria complexidade acidental e nem resolveria o atraso; rede ja esta no caminho (dose grava no Supabase no headless). Verificar em C1: persistence file no headless + timeout do flush. D6 — stock_* carrega medicine_id, nao treatment_id (PO: houve 'forcada' no draft; estoque e do medicamento, N tratamentos possiveis; fabricar vinculo violaria R-299).",
-      "PO 2026-08-13 (065, 2a rodada): D5 REVISTA — Fase 1 NAO adiciona mecanismo no caminho headless. Racional do PO: flush() compra so pontualidade contra problema AINDA NAO MEDIDO, e paga com codigo no caminho mais fragil do app (headless/cold start/lazy-require AP-205), onde AP-316/AP-318 mostram que gate mecanico nao pega nada. Ordem correta: instrumentar -> medir -> decidir. FR-11 vira obrigacao de MEDIR; PO-8/SC-8 exigem latencia por plataforma (consulta antes e depois de abrir o app); mitigacao vira follow-up gatilhado pelo numero. Risco residual aceito e declarado: backfill de janela recente, cauda que demora a abrir, desinstalacao antes de reabrir.",
-      "PO 2026-08-13 (065 RC3): D7 surface = parametro explicito na assinatura de registerDose (9 importadores), default 'mobile' PROIBIDO — sem surface o evento sai sem o campo; guards PO-1/PO-2 elevados a full. D8 fatiamento A(fundacao+dose)/B(ciclo tratamento)/C(orfaos+literais)/D(familias novas) aprovado, droppabilidade D->C->B->A nunca, PR A sozinho responde a tese. D9 delete_orphan opcao (a): le o log antes de apagar e emite medicine_id, no mobile (core devolve so {success:true}, doseLogService.ts:183-192). F2->FR-13 (evento nasce no service, padrao do spec 044 ja no catalogo). F4->FR-10 (query agregada, nao 24 consultas). F6 aceito.",
-      "PO 2026-08-14 (067): 4 decisoes. D1 piso = fracao do intervalo do protocolo (lacunas: quando_necessario/personalizado sem intervalo; dose unica diaria exige teto absoluto). D2 guarda incide sobre o instante DECLARADO, nao sobre now() — edicao de historico e acao ativa do usuario e NAO deve ser limitada; taken ja viaja com taken_at do medicine_log, skip e a unica transicao sem instante => skip passa a ir por RPC; dispensa trigger com passagem de intencao. D3 alarme barrado emite notificacao informativa (b) — (a) silencioso viola Principio IX, (c) takeover gasta a autoridade da tela cheia num evento que nao e a dose. D4 escopo novo (US6): skipped_user visivel no historico, skipped_paused oculto (estado do tratamento, nao da dose); causa era VISIBLE_INSTANCE_STATUSES no core, afeta web+mobile e toda dose. Aderencia inalterada.",
-      "PO 2026-08-14 (067 D5): piso = min(fracao x intervalo, 120min), fallback 120 se intervalo nao derivavel. Correcao: PRN nunca gera instancias => fora de escopo, lacuna (a) da D1 nao existe. Teto faz a fracao decidir so abaixo de 8/8h (4/4h=60, 6/6h=90); 12/12h+ = 120 constante. Limite declarado: teto e tolerancia, nao garantia clinica (-105min em 8/8h ainda passa); aperto futuro baixa a FRACAO, nunca o teto, e so com dado da telemetria. Assimetria -120/+30 com tolerancia curta aceita de proposito.",
-      "RC3 067 (2026-08-14): 8 findings, 1 CRITICAL. F1 USER CHALLENGE a D5 — computeTolerances (doseInstanceGenerator.ts:107-151) JA deriva janela por slot do time_schedule com wrap-around, semanal sem teto (ADR-061), personalizado 120, PRN nao materializa; tolerance_minutes E 'metade do intervalo com teto 120'. D5 reimplementa a MESMA matematica com outra fracao, e o intervalo NAO existe no instante do alarme (payload leva toleranceMinutes, nao time_schedule) => APPROACH A recomendado: coluna irma early_window_minutes calculada no MESMO computeTolerances. B (client re-deriva) descartado por duplicar regra no caminho headless; C (min(tolerance,120)) descartado porque 4/4h receberia piso 120 = metade do intervalo. F2 complexity check ESTOUROU (~12 arquivos vs 8) => fatiar Slice A em A1 (visibilidade do skip, 3 arq, maior valor/risco) e A2 (guarda+telemetria); ordem A1->A2->B->C, A1 nunca dropavel. F3 backfill da coluna nova ausente nos cenarios de migracao. F4 guarda do client usa relogio do device — se a causa for drift, A nao alcanca; B vira cobertura de classe de causa raiz, nao so de writers. F5 funil unico confirmado (AlarmFullScreen.tsx:17 importa registerTaken/registerSkip). F6 FR-019 deve REUSAR canal existente (R-261 canal imutavel, AP-251). F7 declarar que a timeline NAO passa a respeitar o piso (piso e regra de registro, nao de exibicao). F8 assimetria da D5 perde objeto com A. Guards elevados a full: PO-10 e PO-12. PENDENTE PO: F1 (approach) e F2 (fatiamento).",
-      "PO 2026-08-14 (067 RC3): F1 e F2 APROVADOS. F1 -> Approach A: early_window_minutes vira coluna persistida, calculada no MESMO computeTolerances (fracao x menor gap adjacente, teto 120 valendo p/ TODA frequencia — inclusive semanal, que hoje nao tem teto na tolerancia); client so le, proibido recalcular. Decisao 6 na spec; FR-024 reescrita, FR-025 (herdar ramos PRN/personalizado), PO-12 reescrita, PO-13 nova (backfill obrigatorio — coluna nasce NULL em toda instancia ja materializada, incl. janela futura com alarme armado). F2 -> fatiamento A1(US6 visibilidade, 3 arq)/A2(guarda+telemetria, ~9)/B(~5)/C(~4), ordem A1->A2->B->C, droppabilidade C->B->A2->A1 nunca. Absorvidos tambem: F4 (B cobre drift de relogio, classe que A2 nao alcanca — nao e reforco redundante), F6->FR-026 (reusar canal existente, R-261/AP-251), F7->FR-027 (timeline NAO respeita o piso; piso e regra de registro), F8 (emenda na D5). Guards full: PO-10, PO-12.",
-      "RC-SEC 067 (2026-08-14): 8 findings (3 HIGH, 4 MEDIUM, 1 LOW), 6 PO-SEC emitidas. S-1 skip por RPC nasce em caminho sem checagem de dono (bot usa service_role => RLS bypassada; protocolId vem do callback_data, UPDATE sem filtro user_id) => RPC verifica posse internamente e p_user_id deriva do binding telegram_chat_id, nunca do payload. S-2 authenticated mantem UPDATE em dose_instances => guarda da RPC e contornavel por UPDATE direto; controle = REVOKE UPDATE(status) por COLUNA (la_push_token/state seguem), obriga markSkippedPaused/reactivateFuturePaused a migrar ou virar excecao declarada — MUDA O DESENHO DO SLICE B, PENDENTE PO. S-3 telemetria coleta fabricante/modelo em trilha de saude => passa pelo gate de consentimento (R-293); fail-open vale p/ erro de rede, NAO p/ consentimento revogado; detail vira allowlist; PENDENTE PO (reduz cobertura da medicao). S-4 anon tem DELETE/UPDATE/TRUNCATE em dose_critical_events (append-only segurado so por ausencia de policy) => REVOKE. S-5 early_window_minutes NULL nao pode desligar guarda => CHECK 0..120 + COALESCE(...,120) fail-closed. S-6 delta/device/now do client sao telemetria, nunca insumo de autorizacao; RPC nao aceita p_tolerance/p_now. S-7 funcao nova nasce com EXECUTE p/ PUBLIC => REVOKE FROM PUBLIC + search_path=''. S-8 mensagem de recusa sem SQLSTATE/interno.",
-      "RC2 067 (2026-08-14): 6 findings (1 CRITICAL, 2 HIGH, 2 MEDIUM, 1 LOW), PO-14/15/16 emitidas. D-1 CRITICAL: na WEB, DoseEventCard.tsx:50 faz STATUS_META[status] || STATUS_META.pending e STATUS_META nao tem skipped_user => com FR-020 a dose pulada passa a ser exibida como 'Pendente' (mentira sobre ato clinico, pior que o invisivel de hoje); STATUS_DOT_ORDER tambem omite. Correcao ENTRA NO A1 => A1 vai de 3 p/ ~5 arquivos (ainda sob o limiar 8). D-2 hierarquia: taken=marca, missed=erro(vermelho), skipped_user=NEUTRO, pending=neutro claro — web herda a relacao do mobile, nao inventa paleta. D-3 copy da notificacao informativa definida ('Alarme fora de hora' / tocou as HH:mm mas a dose e as HH:mm / nada foi registrado / avisamos de novo no horario certo), sem CTA, nomeia medicamento herdando a politica de lockscreen ja existente — PENDENTE OK DO PO. D-4 coalescer 1 informativa por dose_instance; nao emitir se dose ja taken/missed. D-5 spec nao reclassifica o passado (skip legitimo x induzido ficam identicos no historico). D-6 DoseActionSheet fica alcancavel pos-A1; 'registrar como tomada' sobre skipped_user JA funciona no banco (RPC aceita a transicao) = saida da paciente p/ desfazer skip indevido.",
-      "PO 2026-08-14 (067 RC-SEC/RC2): 3 decisoes. D7 (S-2) — a guarda vira PRIVILEGIO: REVOKE UPDATE(status) de authenticated (por COLUNA, la_push_* seguem) E markSkippedPaused/reactivateFuturePaused (pausar/retomar tratamento, createProtocolRepository.ts:57,73) MIGRAM PRA RPC NO MESMO PR; sem isso pausa/retomada quebra em prod. Slice B ~5->~8 arquivos; se estourar no C1, fatiar B1(RPC skip+posse+janela) -> B2(REVOKE+migracao), nessa ordem. D8 (S-3) — SEM CONSENTIMENTO NAO GRAVA: emissao da anomalia passa pelo gate R-293, fail-open vale so p/ falha de rede; detail vira allowlist fechada (delta_seconds/direction/manufacturer/model/os_version); alarme cancelado igual nos dois regimes; custo aceito = cegueira na medicao p/ quem revogou (~17% da amostra de 6 usuarios). D9 (D-3) — copy aprovado SEM o horario do disparo torto: 'O alarme de {Med} tocou fora do horario e nada foi registrado. Sua dose e as {HH:mm} — vamos avisar de novo no horario certo.'; delta fica so na telemetria. Absorvidos: FR-028..FR-039 novas, SC-008 emendada, SC-009 nova, A1 3->5 arquivos (FR-037 web: DoseEventCard/HealthHistory, senao dose pulada aparece como 'Pendente').",
-      "PLANNING 067 (2026-08-14): plan.md + tasks.md (64 tasks, 4 PRs). Clarification P1.5 respondida pelo PO: gate de consentimento da anomalia incide no FLUSH (AlarmSchedulerBridge.tsx:75 ja recebe consentSuppressed) e nao no headless — beacon enfileira normal, flush descarta alarm_out_of_window quando revogado; zero mecanismo novo no caminho headless (precedente 065/D5). Reforco ja existente: consentimento revogado faz isAlarmEnabled=false (AlarmSchedulerBridge.tsx:325), entao anomalia so vem de trigger zumbi. DECISAO DE FORMA DA COLUNA: early_window_minutes nasce INTEGER NOT NULL DEFAULT 120 (espelha tolerance_minutes, verificado no banco) => nao existe estado com piso nulo, fast default preenche toda linha materializada, backfill vira REFINO (120 -> valor calculado abaixo de 8/8h) em vez de preenchimento de NULL; resolve S-5 por construcao (FR-032 fica so no client, onde payload antigo pode chegar sem o campo). ADR-092 PROPOSED (escrita de dose_instances.status so por RPC; guarda e privilegio, nao convencao) — exige OK do PO antes do C3 do Slice B. CON-026 e CON-031 estendidas (aditivo); CON-024 declarada INTOCADA (FR-027). Renomear isDoseNotificationStale -> isDoseNotificationOutOfWindow (stale='vencida' e o call site de openAlarmScreen:146 se apoia nessa semantica). Fracao 0.25 confirmada pela tabela da PO-12."
+      "D1: analysis F-6 rebaixado HIGH->LOW (sombra e codigo morto, zero chamadores) e F-9 corrigido (dashboard usa getAll, sem filtro de data)",
+      "D2: fatiar em 3 PRs — PR1 estrutura (sem mudanca de comportamento), PR2 comportamento (6 superficies), PR3 PDF; droppabilidade PR3->PR2->PR1",
+      "D3: guard do PO-2 elevado — diff de snapshot mecanico em vez de comparacao visual",
+      "D4: comentario obrigatorio no getActive declarando o filtro SQL como redundante",
+      "D5 (2026-08-21, pos-RC3): eixo paused_at REMOVIDO do predicado — a pausa grava active=false (createProtocolRepository.ts:61) e prod tem 0 protocolos active=true com paused_at; a 064 passa a ter UM eixo (end_date). FR-008 cancelado, T002 cancelada, PO-2 perde o sintoma de pausa e a LISTA da tela de estoque sai do smoke (getActive ja filtra vigencia completa)",
+      "D6 (2026-08-21, PO): fatiamento vai de 3 PRs para 2 — o PDF volta para dentro do PR de comportamento. Motivos do PO: (1) custo de cerimonia se mede em TOKENS (RC5+RC6 3 chunks+C5+indices), nao em minutos, e um PR de 2 arquivos nao paga; (2) o PDF clinico ja sai HOJE com consumo inflado para o medico — defeito VIVO, nao historico; adiar era ranking errado. Efeito aceito: PR2 vai a ~12 arqs/~139KB e o par A/B do RC6 pode ser desqualificado pelo teto de 150K",
+      "F-14 (CRITICAL, 2026-08-21): o asOf em consultationPdfDataBuilder:245 corrigiria SO o fallback — o valor real vem pre-calculado do dashboard (_useDashboardDerived:48, sempre hoje) via dashboardData.stockSummary -> getConsultationData -> _extractStockAlerts:241. Classe AP-333. PO-3 ganhou exigencia de teste com stockItem presente; decisao (a) recomendada"
     ],
     "branch": "main",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy"
     ],
-    "plan": "plans/specs/067-critical-alarm-window-guard/plan.md",
-    "tasks": "plans/specs/067-critical-alarm-window-guard/tasks.md",
+    "plan": "plans/specs/064-stock-forecast-vigency/plan.md",
+    "tasks": "plans/specs/064-stock-forecast-vigency/tasks.md",
     "pending_migrations": [
       {
         "file": "docs/migrations/20260818_skip_dose_atomic_and_status_privilege.sql",
@@ -164,11 +136,22 @@
       "value": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert",
       "first_queue_cycle": "2026-08-21 10:00 local",
       "rollback": "remover os 2 kinds do env; linhas pending do dia seguem drenando"
-    }
+    },
+    "acceptance_criteria": [
+      "AC-1 → spec 064 PO-1",
+      "AC-1b → spec 064 PO-1b",
+      "AC-2 → spec 064 PO-2",
+      "AC-3 → spec 064 PO-3",
+      "AC-4 → spec 064 PO-4",
+      "AC-5 → spec 064 PO-5"
+    ],
+    "ceremony_type": "eng-review",
+    "ab_pair_strategy": "(a) mantida, mas com risco assumido: PR2 a ~12 arqs pode estourar 150K no chunk nao-filtrado (modo #801). Nenhum arquivo estoura o budget sozinho (maior adherenceLogic.ts 35210B) => passes nao devem sair ADVISORY",
+    "playbook": "plans/specs/064-stock-forecast-vigency/PLAYBOOK.md"
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 4,
+    "journal_entries_since_distillation": 5,
     "rules_count": 263,
     "anti_patterns_count": 329,
     "decisions_count": 93,
@@ -180,14 +163,15 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-21T01:30:00Z"
+    "index_loaded_at": "2026-08-21T21:00:00Z"
   },
   "code_review": {
-    "status": "clean_after_fixes",
-    "spec": "050-notification-integrity",
+    "status": "clean",
+    "spec": "064-stock-forecast-vigency (PR 1)",
     "critical": 0,
-    "auto_fixed": 5,
-    "ask_items": 0
+    "auto_fixed": 0,
+    "ask_items": 1,
+    "note": "ASK: CalculateDailyIntakeInputSchema virou export sem consumidor após a deleção da sombra (T015); remoção fica fora do escopo declarado do PR 1"
   },
   "ai_review": {
     "engine": "agy (2 chunks)",

@@ -1,6 +1,5 @@
 import {
   CalculateMonthlyCostsInputSchema,
-  CalculateDailyIntakeInputSchema,
   CalculateAvgUnitPriceInputSchema,
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
@@ -74,42 +73,6 @@ export function calculateAvgUnitPrice(stockEntries = []) {
   const totalQty = activeEntries.reduce((sum, s) => sum + s.quantityBase, 0)
 
   return totalQty > 0 ? totalValue / totalQty : 0
-}
-
-/**
- * Calcula o consumo diário de um medicamento em comprimidos.
- *
- * Fórmula: dailyIntake = SUM(dosage_per_intake × time_schedule.length)
- * para todos os protocolos ATIVOS daquele medicamento.
- *
- * @param {string} medicineId - ID do medicamento
- * @param {Array} protocols - Array de protocolos com {medicine_id, active, dosage_per_intake, time_schedule}
- * @returns {number} Comprimidos por dia (ou 0 se sem protocolo ativo)
- */
-export function calculateDailyIntake(medicineId, protocols = []) {
-  // Validar entrada
-  // Filtrar protocolos com time_schedule inválido antes do Zod para evitar noise de validação (R-087)
-  const sanitizedProtocols = (protocols || []).filter(p => p && p.time_schedule != null)
-  
-  const validation = CalculateDailyIntakeInputSchema.safeParse({ 
-    medicineId, 
-    protocols: sanitizedProtocols 
-  })
-  if (!validation.success) {
-    console.error('Erro de validação em calculateDailyIntake:', validation.error.format())
-    return 0
-  }
-
-  const { medicineId: validatedId, protocols: validatedProtocols } = validation.data
-
-  return validatedProtocols
-    .filter((p) => p.medicine_id === validatedId && p.active)
-    .reduce((sum, protocol) => {
-      const intakesPerDay = protocol.time_schedule?.length || 0
-      const dosagePerIntake = protocol.dosage_per_intake || 0
-      const protocolDailyIntake = dosagePerIntake * intakesPerDay
-      return sum + protocolDailyIntake
-    }, 0)
 }
 
 /**

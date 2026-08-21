@@ -329,6 +329,35 @@ export function frequencyDailyFactor(p: AdherenceProtocol | null | undefined): n
 }
 
 /**
+ * Predicado CANÔNICO de vigência de um tratamento numa data (064 / FR-001).
+ *
+ * Vigente = dois eixos, nesta ordem:
+ *   1. `active !== false` — a coluna `protocols.active` é NULLABLE no banco (verificado por
+ *      MCP em 2026-08-21). Testar `p.active` puro descartaria `null` como não-vigente, o que
+ *      seria OMISSÃO de alerta (a falha cara — AP-289/AP-290).
+ *   2. `isProtocolInPeriod` — só `start_date`/`end_date`. `end_date` é INCLUSIVO: um
+ *      tratamento que vence HOJE ainda é vigente hoje (AP-240).
+ *
+ * 🔴 NÃO reusar `isProtocolActiveOnDate` (deste módulo, o predicado do GERADOR de dose) aqui
+ * nem compor com ele: ele casa a FREQUÊNCIA, e `calculateDailyIntake` já aplica a cadência via
+ * `frequencyDailyFactor`. Compor os dois faria um protocolo semanal contribuir 0 em 6 dias e
+ * 1/7 no 7º, em vez de 1/7 todo dia — o consumo médio desabaria e o runway explodiria.
+ *
+ * 🔴 NÃO adicionar um eixo `paused_at`: pausar grava `active = false` na MESMA operação
+ * (`createProtocolRepository.ts`), e `paused_at` é carimbo derivado. `active !== false` já
+ * barra 100% dos pausados ⇒ `&& !paused_at` seria cláusula inerte (família AP-290).
+ *
+ * @param {Object|null} protocol - protocolo (null/undefined ⇒ não vigente)
+ * @param {string} dateStr - data local YYYY-MM-DD
+ * @returns {boolean}
+ */
+export function isProtocolVigentOn(protocol: AdherenceProtocol | null | undefined, dateStr: string): boolean {
+  if (!protocol) return false
+  if (protocol.active === false) return false
+  return isProtocolInPeriod(protocol, dateStr)
+}
+
+/**
  * Calcula consumo diário do medicamento somando todos os protocolos ativos.
  * Para líquidos (medicine.dosage_unit termina em '/ml'), converte a dose de cada
  * protocolo para ml — alinhando a unidade ao saldo de estoque (que é em ml).
