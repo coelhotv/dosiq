@@ -46,6 +46,8 @@ export {
   isInToleranceWindow,
   calculateDailyIntake,
   calculateDaysRemaining,
+  // 064: predicado canônico de vigência (active !== false + start/end_date)
+  isProtocolVigentOn,
   frequencyDailyFactor,
   calculateDosesByDate,
   evaluateDoseTimelineState,

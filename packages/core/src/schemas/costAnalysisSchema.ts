@@ -40,6 +40,12 @@ export const ProtocolSchema = z.object({
     .default(0),
   // Líquidos (022): unidade de tomada (gotas/ml/UI) p/ conversão de consumo.
   intake_unit: z.string().nullable().optional(),
+  // 064 / FR-006: vigência do tratamento (start_date NOT NULL, end_date NULL no banco —
+  // R-295, verificado em 2026-08-21). Sem declarar aqui, o safeParse ESTRIPA os dois campos
+  // em silêncio e o filtro de vigência do core enxerga `undefined` ⇒ trataria todo tratamento
+  // encerrado como vivo, com teste verde sobre bug vivo (classe AP-214/AP-333).
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
   // 012 B4 / ADR-067: cadência p/ frequencyDailyFactor no custo/dose (AP-214 — sem
   // estes campos o safeParse stripa e dose semanal/alternada vira diária no custo).
   frequency: z.string().nullable().optional(),

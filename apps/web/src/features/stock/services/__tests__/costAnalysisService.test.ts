@@ -4,7 +4,6 @@ import {
   calculateRealCosts,
   calculateProjection,
   formatBRL,
-  calculateDailyIntake,
   calculateAvgUnitPrice,
 } from '@/features/stock/services/costAnalysisService'
 
@@ -75,116 +74,6 @@ describe('costAnalysisService', () => {
     it('calcula com entrada unica', () => {
       const stockEntries = [{ quantity: 30, unit_price: 1.5 }]
       expect(calculateAvgUnitPrice(stockEntries)).toBe(1.5)
-    })
-  })
-
-  // ============================================================
-  // calculateDailyIntake
-  // ============================================================
-
-  describe('calculateDailyIntake', () => {
-    it('calcula consumo diario para medicamento com um protocolo', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00', '20:00'],
-        },
-      ]
-      const dailyIntake = calculateDailyIntake('med-1', protocols)
-      // 1 (dosage) × 2 (times) = 2 pills/day
-      expect(dailyIntake).toBe(2)
-    })
-
-    it('calcula consumo diario para medicamento com multiplos protocolos', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00', '20:00'],
-        },
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['12:00'],
-        },
-      ]
-      const dailyIntake = calculateDailyIntake('med-1', protocols)
-      // (1 × 2) + (1 × 1) = 3 pills/day
-      expect(dailyIntake).toBe(3)
-    })
-
-    it('retorna 0 para medicamento sem protocolo', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-2',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00'],
-        },
-      ]
-      expect(calculateDailyIntake('med-1', protocols)).toBe(0)
-    })
-
-    it('retorna 0 para medicamento com protocolo inativo', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: false,
-          dosage_per_intake: 1,
-          time_schedule: ['08:00'],
-        },
-      ]
-      expect(calculateDailyIntake('med-1', protocols)).toBe(0)
-    })
-
-    it('retorna 0 para array vazio de protocolos', () => {
-      expect(calculateDailyIntake('med-1', [])).toBe(0)
-    })
-
-    it('ignora protocols undefined/null em time_schedule', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 1,
-          time_schedule: null,
-        },
-      ]
-      const dailyIntake = calculateDailyIntake('med-1', protocols)
-      // 1 × 0 (null treated as 0) = 0
-      expect(dailyIntake).toBe(0)
-    })
-
-    it('calcula com dosage_per_intake = 2', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: 2,
-          time_schedule: ['08:00', '20:00'],
-        },
-      ]
-      const dailyIntake = calculateDailyIntake('med-1', protocols)
-      // 2 × 2 = 4 pills/day
-      expect(dailyIntake).toBe(4)
-    })
-
-    it('ignora protocolos com dosage_per_intake undefined', () => {
-      const protocols = [
-        {
-          medicine_id: 'med-1',
-          active: true,
-          dosage_per_intake: undefined,
-          time_schedule: ['08:00', '20:00'],
-        },
-      ]
-      const dailyIntake = calculateDailyIntake('med-1', protocols)
-      // undefined treated as 0: 0 × 2 = 0
-      expect(dailyIntake).toBe(0)
     })
   })
 

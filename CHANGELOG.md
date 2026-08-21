@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Preparação da correção de vigência do tratamento (sem efeito visível)
+
+- **Refactor** (`patch` web `4.22.4` · `patch` core `0.22.1`). Mudança de estrutura, sem nenhuma
+  alteração no que o usuário vê: nasce o teste único de "este tratamento está vigente nesta data?"
+  (ativo **e** dentro do período de início/fim), ainda sem nenhum chamador. A correção que faz a
+  previsão de estoque, o custo mensal e o relatório do médico pararem de contar tratamento já
+  encerrado vem na entrega seguinte, que passa a usar esse teste.
+
+  Junto, duas limpezas que fazem essa correção funcionar de fato quando chegar: a validação de
+  entrada do cálculo de custos deixa de descartar em silêncio as datas de início e fim do
+  tratamento (sem isso a correção nasceria inerte no custo), e uma cópia antiga e não usada do
+  cálculo de consumo diário — que ignorava líquidos e frequência — foi removida.
+
 ### Quem retira a autorização deixa de receber notificações — de verdade
 
 - **Fix** (`patch` server `4.2.1`). Correção de um defeito silencioso: desde 15/07 a suspensão de
