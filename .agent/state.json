@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/046-lgpd-consent",
     "spec": "plans/specs/046-lgpd-consent/spec.md",
-    "goal": "046 Slice C — prune pós-revogação (D+60/D+83/D+90) armado em dry_run",
+    "goal": "046 Slice C — prune pós-revogação entregue e PROVADO em produção (PO-5/PO-SEC-3 fechados)",
     "goal_type": "feature",
     "code_review": {
       "status": "clean_after_fixes",
@@ -19,8 +19,8 @@
     "spec_dirs": [
       "plans/specs/046-lgpd-consent"
     ],
-    "merged_pr": 803,
-    "merged_squash": "f16bdb0d (squash merge into main)",
+    "merged_pr": 805,
+    "merged_squash": "2030f461 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -84,6 +84,24 @@
         "date": "2026-08-20",
         "base_branch": "main",
         "note": "Segundo eixo do alerta de estoque (validade biologica pos-abertura, 012 Fase A/ADR-059) na outbox com subject_id = stock.id (o LOTE, nao o medicamento). Em prod e INERTE — os dois kinds de estoque seguem fora de OUTBOX_KINDS. CAUSA RAIZ FECHADA: o select de stock da varredura nao trazia `id`; sem ele o subject_id viria undefined e todas as linhas de validade do dia colidiriam na UNIQUE como (user,kind,dia,NULL) = 1 alerta em vez de N, o Gap 1 da propria spec reintroduzido. Gate R-295 (curl 200) nesse select e no select novo do builder. Migracao outbox_expiry_kind.sql aplicada em prod via MCP antes do merge; types regenerados SEM delta (kind e text). _biologicalExpiryDaysLeft exportada: legado, enqueue e builder no MESMO calculo (senao o SC-003 compararia contas, nao caminhos). RC5 3 findings, o principal mudando o desenho: o gate do enqueue era POR EIXO enquanto o guard do legado e tudo-ou-nada (checkStockAlerts faz volume E validade na mesma chamada) — um kind sozinho no env = legado + outbox despachando o mesmo alerta, todo dia, sem dedup. Virou tudo-ou-nada + 2 testes. Os outros 2: CHANGELOG afirmava colapso de lotes que o legado nunca teve (o colapso era risco da FILA), e rollback por env nao esvazia a fila (linhas pendentes seguem drenando enquanto o legado volta) — procedimento completo no codigo. Complexidade 22 resolvida extraindo buildVolumeEntries/buildExpiryEntries. RC6 (agy, 2 chunks, cov 2/2) 0 findings, sem repetir nenhum do RC5. A/B armado e ABORTADO (baseline vazio, 2o seguido) — a 050 fecha sem entregar par; gargalo do PO-5 rediagnosticado como oferta de PR com achado, nao captura."
+      },
+      {
+        "pr": 804,
+        "squash": "5efc2848",
+        "spec": "046 Slice C — prune pós-revogação (D+60/D+83/D+90)",
+        "tier": 2,
+        "date": "2026-08-21",
+        "base_branch": "main",
+        "note": "Job nasce em dry_run. Migração seq + RPC consent_controller_event APLICADAS em prod (test.sql bloco a bloco; guarda barra até o OWNER). Achado fora da spec: o aviso seria engolido pela supressão do T014 → CONSENT_LIFECYCLE_KINDS (AP-334). RC5 achou 2 freios furados: cap desarmado por NaN (R-312) e exclusão prosseguindo com a trilha falhando. RC6 0 findings; o pass B apontou o kind ausente da tabela de navegação (corrigido, mobile 0.31.3)."
+      },
+      {
+        "pr": 805,
+        "squash": "2030f461",
+        "spec": "046 T014 — supressão inerte no cron",
+        "tier": 1,
+        "date": "2026-08-21",
+        "base_branch": "main",
+        "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
     "previous_session_note": "050: TODO O CODIGO EM PROD + CUTOVER T033 APLICADO 2026-08-20 (verificado por vercel env pull: OUTBOX_KINDS com os 6 kinds, deploy posterior a mudanca). Caiu DEPOIS da janela das 10:00 SP, entao o legado serviu 20/08 (15 stock_alert as 13:00 UTC) e a fila assume em 21/08 as 10:00 local — nenhum dia com os dois caminhos ativos. PENDENTE: T034 (SC-003) — comparar notification_log pos 21-27/08 vs pre 14-20/08, POR TIPO e SEM SOMAR (stock_expiry_alert ja existe como notification_type desde 02/07; baseline 60d: stock_alert 448, stock_expiry_alert 2). Sinal de saude a olhar em 21/08: linhas dos dois kinds em notification_outbox (ate 20/08 a fila so tinha daily_adherence). PROXIMA ENTREGA DE CODIGO: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY; liberar a partir de 23/08 (~48h de fila saudavel), NAO precisa esperar o T034 fechar porque rollback do cutover e remover o env, nao mexer no codigo. Mapa do corte + 7 sites de import + prompt na Sessao 6 do PLAYBOOK. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801, #803.",
@@ -150,10 +168,10 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 1,
-    "rules_count": 261,
-    "anti_patterns_count": 327,
-    "decisions_count": 92,
+    "journal_entries_since_distillation": 4,
+    "rules_count": 263,
+    "anti_patterns_count": 329,
+    "decisions_count": 93,
     "contracts_count": 34,
     "distillation_due": false
   },
@@ -162,7 +180,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-19T23:15:00-03:00"
+    "index_loaded_at": "2026-08-21T01:30:00Z"
   },
   "code_review": {
     "status": "clean_after_fixes",
