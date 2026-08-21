@@ -65,6 +65,7 @@ run/
 
 # DEVFLOW runtime files (not versioned)
 .agent/sessions/
+.agent/drafts/
 
 # DEVFLOW skill (symlink to master — not versioned)
 .agent/DEVFLOW.md
