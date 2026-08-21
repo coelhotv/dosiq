@@ -1,0 +1,1523 @@
+{
+  "metadata": {
+    "total_reviews": 1892,
+    "negative_reviews": 598,
+    "neutral_reviews": 163,
+    "positive_reviews": 1131
+  },
+  "star_distribution": {
+    "5": 942,
+    "4": 189,
+    "1": 486,
+    "2": 112,
+    "3": 163
+  },
+  "app_names": {
+    "eu.smartpatient.mytherapy": "Lembrete de Medicamentos",
+    "com.medisafe.android.client": "Lembrete de Remedios e Pilula",
+    "com.pillreminder.app": "Lembrete de Remédios",
+    "xyz.rtrvr.pillo": "Pillo:  Lembrete de Remédio",
+    "app.phamcham.mewdicate": "Remédios lembretes - Mewdicate",
+    "br.com.caiocrol.alarmandpillreminder": "Allminder - Alarme e lembrete",
+    "br.gov.datasus.cnsdigital": "Meu SUS Digital",
+    "br.com.duosystem.remedioagora": "Remedio Agora",
+    "br.com.insix.aquitemremedio": "Aqui tem remedio",
+    "com.devsoldiers.calendar.pills.limit": "Dr. Pills: Lembrete de remédio",
+    "br.com.drcuco": "CUCO - Lembrete de medicamento",
+    "es.medcontrol": "MedControl: Remédios e Saúde",
+    "com.baviux.pillreminder": "Lady Pill Reminder",
+    "com.bestfuncoolapps.TakeYourPills": "TakeYourPills Pill Reminder",
+    "ch.innovation6.tom.android": "TOM Medication & Pill Reminder"
+  },
+  "app_star_distribution": {
+    "eu.smartpatient.mytherapy": {
+      "5": 137,
+      "4": 22,
+      "1": 6,
+      "2": 13,
+      "3": 6
+    },
+    "com.medisafe.android.client": {
+      "3": 15,
+      "5": 85,
+      "1": 52,
+      "4": 19,
+      "2": 7
+    },
+    "com.pillreminder.app": {
+      "5": 1,
+      "1": 1,
+      "2": 1
+    },
+    "xyz.rtrvr.pillo": {
+      "5": 95,
+      "4": 9,
+      "3": 3,
+      "1": 5,
+      "2": 1
+    },
+    "app.phamcham.mewdicate": {
+      "5": 9,
+      "2": 1,
+      "3": 1
+    },
+    "br.com.caiocrol.alarmandpillreminder": {
+      "5": 130,
+      "4": 29,
+      "3": 12,
+      "1": 10,
+      "2": 3
+    },
+    "br.gov.datasus.cnsdigital": {
+      "5": 48,
+      "1": 94,
+      "2": 23,
+      "4": 13,
+      "3": 20
+    },
+    "br.com.duosystem.remedioagora": {
+      "5": 92,
+      "1": 48,
+      "3": 25,
+      "2": 8,
+      "4": 22
+    },
+    "br.com.insix.aquitemremedio": {
+      "1": 154,
+      "2": 14,
+      "5": 8,
+      "3": 11,
+      "4": 5
+    },
+    "com.devsoldiers.calendar.pills.limit": {
+      "5": 106,
+      "4": 29,
+      "1": 30,
+      "3": 16,
+      "2": 9
+    },
+    "br.com.drcuco": {
+      "2": 18,
+      "5": 43,
+      "1": 54,
+      "3": 28,
+      "4": 23
+    },
+    "es.medcontrol": {
+      "5": 31,
+      "3": 10,
+      "4": 8,
+      "1": 7,
+      "2": 2
+    },
+    "com.baviux.pillreminder": {
+      "5": 122,
+      "4": 7,
+      "1": 22,
+      "3": 12,
+      "2": 10
+    },
+    "com.bestfuncoolapps.TakeYourPills": {
+      "5": 31,
+      "2": 2,
+      "3": 3,
+      "1": 1,
+      "4": 2
+    },
+    "ch.innovation6.tom.android": {
+      "5": 4,
+      "1": 2,
+      "4": 1,
+      "3": 1
+    }
+  },
+  "pain_points": {
+    "oem_background_alarms": {
+      "title": "1. OEM Background Process, Bateria & Falhas de Alarme / Não Toca",
+      "count": 260,
+      "percentage": 13.74,
+      "stars": {
+        "5": 45,
+        "2": 27,
+        "3": 22,
+        "4": 14,
+        "1": 152
+      },
+      "top_apps": {
+        "Aqui tem remedio": 58,
+        "CUCO - Lembrete de medicamento": 39,
+        "Meu SUS Digital": 33,
+        "Remedio Agora": 27,
+        "Lady Pill Reminder": 24,
+        "Lembrete de Remedios e Pilula": 20,
+        "Dr. Pills: Lembrete de remédio": 19,
+        "Lembrete de Medicamentos": 17,
+        "Allminder - Alarme e lembrete": 15,
+        "Pillo:  Lembrete de Remédio": 4
+      },
+      "sample_quotes": [
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Daniel Lisboa",
+          "score": 5,
+          "date": "2021-10-26T01:42:31",
+          "content": "A ideia do aplicativo é ótima, mas precisa ser aprimorada para dispositivos menos robustos. Os próprios usuários do SUS, no geral, não costumam ter o mais smartphone mais atualizado. Por isso é importante que ele funcione em celulares mais antigos (ou que ao menos exista uma versão que seja compatível com estes dispositivos). Eu uso um Galaxy Note 9 e ele funcionava perfeitamente bem, mas como ele está em manutenção, precisei logar por um celular mais antigo e ele simplesmente não funciona.",
+          "thumbsUp": 3257,
+          "version": "70.4.2"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Denilson Rocha",
+          "score": 1,
+          "date": "2024-06-29T08:38:37",
+          "content": "Lamentável. Por que raios esse app não consegue (NUNCA) sustentar o login para além da sessão atual? Já dei todas as permissões, muito além da conta, mas não adianta. A cada interação, tem que logar novamente, sempre, sem exceção. E como, invariavelmente, o login falha (ou demora minutos), quando vc mais precisa do app ele te deixa não mão.",
+          "thumbsUp": 1340,
+          "version": "73.14.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Patrícia Caldas",
+          "score": 1,
+          "date": "2026-01-08T18:32:57",
+          "content": "Uma pena que não dá pra colocar 0 estrelas. Como sempre mais um app do governo que não cumpre o papel devido, carregamento lento, não dá pra fazer nada no aplicativo, lastimável. Qualquer opção que seleciono não carrega, além das múltiplas funções que eles dizem ter mas que não funcionam nem a metade. É só pra dizer que há um aplicativo, mas quanto funcionalidade, efetividade e auxílio para a necessidade do usuário é totalmente ineficaz.",
+          "thumbsUp": 465,
+          "version": "73.25.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Edson Calson",
+          "score": 1,
+          "date": "2021-07-06T07:24:11",
+          "content": "App atualmente não funciona, há cerca de 8 meses que somente apresenta mensagem de serviço indisponível, nesse período já foram feitas diversas atualizações e o problema não é resolvido, já relatei ao suporte o problema (que por alguns comentários também acontece com outros usuários), mas sem resposta alguma. O seu propósito está nulo.",
+          "thumbsUp": 406,
+          "version": "70.2.7"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Mero Mortal",
+          "score": 1,
+          "date": "2020-08-30T21:36:25",
+          "content": "Funcionava bem até um dia desses, agora ao inserir o nome do medicamento fica travado numa eterna procura(loop infinito), e não acontece mais nada, só é possível fechá-lo forçadamente. Está assim no IOS também, não sei se é o aplicativo ou o sistema da prefeitura que está fora do ar, enfim. Manter um app que não funciona não é nada inteligente viu ô Insix Soluções \"inteligentes''.",
+          "thumbsUp": 238,
+          "version": "2.0.14"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Rodrigo Lemos de Souza",
+          "score": 5,
+          "date": "2020-10-28T00:11:45",
+          "content": "Passei por outros app. Mas este foi aquele que eu mais gostei. Funcional, prático e completo quando necessário. Notificações funcionam perfeitamente, caso deixe o celular no silencioso, pode optar por ignorar este app que ele vai soar o alarme de notificação corretamente. Tem a opção de personalizar a imagem dos comprimidos. O que e perfeito para pessoas que tem dificuldade de leitura ou são preguiçosas, pois é possível identificar o remédio pela cor, forma e tamanho do comprimido.",
+          "thumbsUp": 167,
+          "version": "8.92.09877"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Helio Gomes",
+          "score": 3,
+          "date": "2023-06-12T21:49:30",
+          "content": "App funciona muito bem, agendamento adianta muito o processo de retirada, grande problema é que não funciona em celulares com Android mais atual, então só funciona em celulares mais antigos, poderia atualizar a versão para que todos possam ter acesso. No meu caso, tirei um celular da gaveta que não estava usando para instalar, pois, no meu Samsung A12, não está disponível.",
+          "thumbsUp": 155,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Flavio Soares",
+          "score": 1,
+          "date": "2021-11-17T06:57:45",
+          "content": "Desde ontem, dia 16/11, não consigo fazer o login em celulares Samsung. Sou direcionado a uma página em branco onde , após alguns minutos, surge a mensagem de endereço inválido. Já tentei em vários celulares e sempre o mesmo problema. Além disso, é extremamente contraproducente ter que refazer o login basicamente todo dia por \"sessão expirada\". A execução do app está péssima, tive que voltar a andar com o comprovante de vacinação em papel no bolso.",
+          "thumbsUp": 120,
+          "version": "70.4.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "José Laercio Faccini",
+          "score": 1,
+          "date": "2026-08-19T14:27:38",
+          "content": "Bem, fui abrir o aplicativo hoje e simplesmente não abre, digita os dados, senha e ai fica rodando, rodando..... Lamentável um aplicativo tão importante e que não funciona, em tempos de tanta tecnologia conseguem ser péssimos, fiz essa avaliação há mais de um ano e agora em 2026 o aplicativo continua ruim e quando você mais precisa ele trava do nada, querem colocar tudo no sistema digital mas não tem capacidade de prestar um bom serviço! Melhor voltar aos tempos das fichas e arquivos de papel!",
+          "thumbsUp": 94,
+          "version": "73.30.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Alexandra FCH",
+          "score": 1,
+          "date": "2021-07-07T22:22:15",
+          "content": "Este aplicativo é uma vergonha. Estou tentando recuperar a senha e simplesmente o email com o código não é enviado, o email está correto verifiquei via web. Se existe caixa de seleção para os itens, estas são invisíveis, tem que ficar tocando aleatoriamente até acertar. A descrição das opções está em branco da mesma cor do fundo, impossível ler qualquer coisa. Tudo que tentei fazer no aplicativo não funciona, vou desinstalar. Agora entendo o motivo da nota baixa. Lamentável!",
+          "thumbsUp": 90,
+          "version": "70.2.7"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Um usuário do Google",
+          "score": 3,
+          "date": "2020-01-21T11:19:15",
+          "content": "O aplicativo é muito bom para ter controle dos remédios tomados, dá pra ver as pílulas tomadas e quantas tem que tomar até a data definida (ótimo pra quem precisa tomar controlado) tem uma interface agradável e é super fácil de mexer. O único ponto NEGATIVO são as Notificações. O APP tem uma opção chamada \"As notificações não funcionam\" e mesmo seguindo todos os passos dessa opção, ainda tenho problema com as mesmas. Muitas vezes eu recebo as notificações com atraso, as vezes recebo na hora certa, e as vezes nem recebo. Já me aconteceu de receber notificação de alguma pílula que eu já tenha tomado, marquei ela no app, e o mesmo me dá a notificação dizendo para tomar. De resto, tudo ok.",
+          "thumbsUp": 71,
+          "version": "1.2.9"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Orlando Silva",
+          "score": 5,
+          "date": "2024-08-15T12:41:04",
+          "content": "App perfeito!!! Com um design intuitivo, é simples de usar e ao mesmo tempo muito completo em suas funções. Li uma review aqui, falando que ele não tinha alarme, que não despertava. Creio que a pessoa não soube usar corretamente, pois tem alarme SIM e com direito a personalização do som. Tem uma função ótima q é o \"controle de estoque\". Isso é mto útil pra quem toma remédios de uso contínuo. Parabéns!!!",
+          "thumbsUp": 69,
+          "version": "3.181.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Matheus Hagler",
+          "score": 1,
+          "date": "2022-07-30T19:57:17",
+          "content": "O aplicativo é bom para algumas coisas, como consultar seu status de vacinação contra a Covid-19, mas as demais vacinas não são apresentadas. As doações de sangue que realizei também não constam no aplicativo. Além disso, os registros de saúde que eu tento adicionar na seção \"Minha Saúde\" acabam desaparecendo misteriosamente e o cálculo de IMC simplesmente não funciona. Basicamente, é um aplicativo que aparenta ter diversas funções, mas quando você tenta usá-las, elas não funcionam efetivamente.",
+          "thumbsUp": 67,
+          "version": "70.5.6"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Rebeca Maria",
+          "score": 1,
+          "date": "2026-02-19T12:38:35",
+          "content": "Aplicativo péssimo!!! Tiraram o agendamento de consultas presencial na ubs perto da minha casa para usar somente o aplicativo, mas esse app não funciona de forma alguma. Se você consegue marcar a consulta, ela simplesmente some do histórico e parece que você não marcou nada. E isso é quando consegue porque tive que remarcar e agora simplesmente nem a ubs que eu vou aparece no mapa. Simplesmente lamentável porque tecnicamente era algo que deveria vir para ajudar e está atrapalhando.",
+          "thumbsUp": 57,
+          "version": "73.25.00"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Um usuário do Google",
+          "score": 1,
+          "date": "2019-12-16T22:19:01",
+          "content": "App está bugado. Ao inserir o endereço, o mesmo some. O site está igual, assim não consigo dar continuidade na busca. Arrumem, muitas pessoas dependem disso pra saber onde achar os remédios! Isso é sério. Não é entretenimento, portanto, trabalhem com responsabilidade, corrigindo as falhas.",
+          "thumbsUp": 45,
+          "version": "2.0.9"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Karina Moreira",
+          "score": 1,
+          "date": "2024-11-07T12:25:46",
+          "content": "Aplicativo não funciona já instalei várias vezes e nada. Pra quem precisa de remédios e não tem como ficar indo de UBS em UBS é excelente, mas precisa funcionar pra atender a população da mentira correta. Fui a 5 postos e nada. O aplicativo é essencial ainda mais quando se tem criança com deficiência, onde os horários são restritos demais.",
+          "thumbsUp": 36,
+          "version": "3.1.4"
+        },
+        {
+          "app_id": "com.baviux.pillreminder",
+          "app_name": "Lady Pill Reminder",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2019-07-12T10:07:32",
+          "content": "Já havia utilizado anteriormente, por ter trocado de celular acabei baixando outro, achando que todos eram iguais, mas esse outro app o lembrete (que pra mim que sou esquecida é essencial) não funcionava. Voltei pra esse e estou muito satisfeita, não atraso mais na tomada da pílula 😄",
+          "thumbsUp": 35,
+          "version": "2.8.0"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Dayana Galvan",
+          "score": 4,
+          "date": "2020-11-12T16:17:14",
+          "content": "Parabéns pelo aplicativo,!! ,... No primeiro agendamento que fiz deu tudo certo! Este mês... Houve uma falha pois Pego duas medições de principal ativo diferente. O aplicativo avisou a falta de um dos medicamento. Mas a atendente da farmácia falou que é necessário ligar pra confirmar a data da medicação que está em falta, e pegar a fila.. Pois o aplicativo não avisa quando o remédio está disponível e não faz novo agendamento. Precisa de aperfeiçoar o APP pra que não precise pegar filas.",
+          "thumbsUp": 33,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Yure Moreira",
+          "score": 4,
+          "date": "2022-04-06T10:28:03",
+          "content": "O aplicativo ajuda bastante a organizar a medicação mas tive um problema que não sei se acontece apenas comigo.. que é a falta de notificação. Aqui a notificação só aparece quando abro o app, mesmo se colocar som na notificação para ser como alarme. Simplesmente não parece funcionar em segundo plano e para ele lembrar da hora do remédio você tem que lembrar primeiro pra abrir o aplicativo e só então ser notificado.",
+          "thumbsUp": 30,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Fabio L. C.",
+          "score": 1,
+          "date": "2023-09-23T08:43:56",
+          "content": "Instalei o aplicativo, porém não funciona. Você preenche o campo de endereço ele acha normalmente, agora o campo de remédios não traz nada, tentei até os mais populares como dipirona, omeprazol, mas o sistema não acha nada é como se esse campo estivesse inativo, colocando o nome do remédio completo ele ao clicar em consultar não acontece nada.",
+          "thumbsUp": 28,
+          "version": "3.1.2"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Gabriel Santos",
+          "score": 1,
+          "date": "2024-07-24T20:52:52",
+          "content": "Sempre utilizei esse aplicativo sendo muito útil para o que se propõe. Entretanto, de uma semana pra cá, parou de aparecer pop-ups, mesmo com todas as configurações do celular estarem com as permissões ativas, assim como otimização de bateria desativada. Já desinstalei e instalei várias vezes, mas sem sucesso, permanece sem aparecer pop-up.",
+          "thumbsUp": 25,
+          "version": "9.42.2"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Eduardo Ferrari",
+          "score": 1,
+          "date": "2023-10-31T07:30:32",
+          "content": "A gente digita o endereço e medicamento, tudo certo e o aplicativo pede pra preencher de novo, não aparece nada. Não está funcionando, assim fica impossível de localizar a medicação que está em falta em vários postos,como vou saber se o app não funciona! Absurdo",
+          "thumbsUp": 25,
+          "version": "3.1.2"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Maris Mayumi",
+          "score": 1,
+          "date": "2020-08-03T15:38:52",
+          "content": "Vê que tem muitas pessoas falando que esse app é bom, mas para mim não foi nada bom. Ele não funciona, só fica rodando um comprimido tipo para mostrar que está carregando, e nunca termina de carregar a minha busca.",
+          "thumbsUp": 25,
+          "version": "2.0.14"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Leon Oliveira",
+          "score": 5,
+          "date": "2023-09-16T06:37:25",
+          "content": "Demorei alguns minutos pra entender algumas coisas, mas já estava na hora de meu aviso de medicamento deixar de ser apenas um alarme do telefone agora que os intervalos estão ficando maiores. Tive que diminuir a nota, pois não importa o quanto eu tente configurar, não toca nenhum alarme... Edit: voltando a usar anos depois, o app funciona perfeitamente. Eu devo ter feito algo errado na época.",
+          "thumbsUp": 21,
+          "version": "9.36.13560"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Marco Duarte",
+          "score": 4,
+          "date": "2023-02-17T11:59:06",
+          "content": "Algumas vezes o sistema interno não funciona, além do tempo de espera para retirada é muito longo sendo que após a retirada da senha com horário correto sempre no mínimo 50 (cinquenta ) pessoas a frente com horários anteriores e assim sucessivamente, lamento a disposição da minha avaliação, porém quando está funciona eu sou o primeiro a elogiar e repassar para os demais, de qualquer forma o sistema é muito bom e simples de usar, grato Marco Antonio",
+          "thumbsUp": 19,
+          "version": "1.1.9"
+        }
+      ]
+    },
+    "ad_fatigue_monetization": {
+      "title": "2. Fadiga de Anúncios, Vídeos Invasivos & Paywalls Abusivos",
+      "count": 174,
+      "percentage": 9.2,
+      "stars": {
+        "5": 72,
+        "4": 15,
+        "2": 10,
+        "3": 18,
+        "1": 59
+      },
+      "top_apps": {
+        "Lembrete de Remedios e Pilula": 50,
+        "Allminder - Alarme e lembrete": 25,
+        "Lembrete de Medicamentos": 23,
+        "Dr. Pills: Lembrete de remédio": 22,
+        "Lady Pill Reminder": 18,
+        "CUCO - Lembrete de medicamento": 9,
+        "MedControl: Remédios e Saúde": 8,
+        "Pillo:  Lembrete de Remédio": 7,
+        "Meu SUS Digital": 5,
+        "Aqui tem remedio": 5
+      },
+      "sample_quotes": [
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Eduardo Bertolini",
+          "score": 1,
+          "date": "2024-12-20T09:51:02",
+          "content": "O app sempre foi gratuito mas agora inventaram de cobrar mensalidade, caríssima, tornando a versão gratuita limitada a somente dois medicamentos. Ridículo! Eu pagaria de bom grado se fosse um valor único, inclusive se não me engano eu já tinha pago a versão pro no passado! Vou desinstalar o app, assim como muitos usuários farão, com certeza. Parabéns aos desenvolvedores, vcs acabaram que matar um app que era muito bom!",
+          "thumbsUp": 185,
+          "version": "9.34.13296"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Sergio Tomaz",
+          "score": 2,
+          "date": "2021-01-18T07:29:35",
+          "content": "Antes de instalar, li as resenhas, em sua maioria desfavoráveis. Ainda assim, instalei. E, ao contrário da propaganda(ouvi sobre o aplicativo pelo rádio), não tenho histórico de tratamentos, consultas e afins. Nem as vacinas que fiz, constam. Detalhe, o app já tem cinco anos, ou seja, parece disputa de governo sobre gerenciar ou não, deixando a efetividade em 3o plano. Aguardando uma atualização antes de desinstalar.",
+          "thumbsUp": 95,
+          "version": "70.0.4"
+        },
+        {
+          "app_id": "com.baviux.pillreminder",
+          "app_name": "Lady Pill Reminder",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2019-01-17T21:03:41",
+          "content": "Perfeito. O app tem uma opção de lembretes em forma de notificação que funciona, ainda que não dá mesma forma que um alarme (para isso uso a função de despertador do celular junto ao app) . Não tem anúncios e atende a quem não quer se perder na cartela.",
+          "thumbsUp": 62,
+          "version": "2.7.09"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "José Cleber Lopes de Lima Filho",
+          "score": 1,
+          "date": "2025-01-31T16:46:18",
+          "content": "O aplicativo sempre foi muito útil pra mim, apesar de algumas melhorias que já poderiam terem implementado, como acesso por biometria e visualização de um histórico mais antigo, mas agora que passou a ser pago e por um valor exorbitante, ficou inviável. Se fosse um valor acessível ou tivesse até uma versão com alguns anúncios e algumas poucas limitações de uso, já atenderia a muita gente. Agora é desinstalar e procurar outro, mesmo que seja pago, mas que não seja um absurdo de valor como esse.",
+          "thumbsUp": 53,
+          "version": "9.44.4"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "Um usuário do Google",
+          "score": 2,
+          "date": "2020-04-15T16:40:12",
+          "content": "Me indicaram o App, é gostei muito, achei fantastico o fado dele falar o compromisso, utilizando-o diariamente, porém, de vários fias pra cá, estão restringindo a possibilidade de despertar com fala, com o objetivo de se adquirir um plano pago, o que pra mim, sem a possibilidade de despertar com a fala, faz com que o mesmo que era tão bom, viesse a perder o sentido. Muito provavelmente estarei procurando outro App semelhante, e dedinstalando este. Lamentável as mudanças introduzidas.",
+          "thumbsUp": 45,
+          "version": "1.9.27"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "Altamiro Augusto",
+          "score": 5,
+          "date": "2023-03-08T07:33:10",
+          "content": "O aplicativo é muito bom, como ainda não havia encontrado as configurações acreditei que faltasse uma opção de soneca ou parar o período por um tempo. Mas estaba errado ele possui sim a opção o que o torna perfeito para as tarefas de que tem diversos remédios a tomar ou medicar ou mesmo alimentar em diversos horários é muito mais, fácil e prático. Funciona muito em, gostei! Vou comprar a ver sem propagandas que ira melhor ainda mais, pois alem de falar os títulos dos alarmes nao tem comercial.",
+          "thumbsUp": 39,
+          "version": "1.159"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Chayene Bernstein",
+          "score": 5,
+          "date": "2024-12-16T09:49:27",
+          "content": "Aplicativo excelente. A funcionalidade que eu mais uso é o controle de medicação, ela permite adicionar vários medicamentos simultaneamente mesmo na versão grátis, e tem a possibilidade de ajuste dos horários e intervalo de tempo. Os únicos pontos a melhorar, na minha opinião, seria recalcular os horários automaticamente quando um remédio for várias vezes ao dia e também colocar a mesma dose em todas as vezes de forma automática. Além disso, ele também serve também como symptom Tracker.",
+          "thumbsUp": 37,
+          "version": "3.199.0"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Bruno Ferreira Guimarães",
+          "score": 1,
+          "date": "2024-11-22T22:03:59",
+          "content": "Agora vão cobrar pra colocarmos mais que 2 medicamentos. Não poderiam tentar manter com anúncios? Eu preferia que aumentasse um pouco os anúncios mas mantivesse a gratuidade do limite de medicamentos. Nem todo brasileiro tem condições de pagar. Vou desinstalar agora e procurar outro que já sugeriram aí. Uma pena. Acho que a pontuação de vcs vai cair muito. Pra mim foi um tiro no pé.",
+          "thumbsUp": 34,
+          "version": "9.44.0"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Cássio Andrade",
+          "score": 5,
+          "date": "2020-07-01T11:31:27",
+          "content": "Excelente aplicativo, faz exatamente o que promete, e gostaria de indicar colocar um alerta para quem toma remédio interruptor para comprar outra caixa ou uma contagem de quantos comprimidos falta para acabar",
+          "thumbsUp": 33,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Belah Lacerda",
+          "score": 1,
+          "date": "2025-02-12T20:09:00",
+          "content": "Uso o app há quase 10 anos, sempre foi maravilhoso e me ajudou muito. Eu era premium e simplesmente sumiu a assinatura, aí fui informada que vcs querem cobrar e que a versão gratuita só permite dois medicamentos! Não consigo nem descrever tamanha decepção. Estarei desinstalado por conta desse deserviço péssimo!",
+          "thumbsUp": 32,
+          "version": "9.45.1"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Luciano da Costa",
+          "score": 1,
+          "date": "2026-01-01T11:40:11",
+          "content": "Uso o Medisafe há mais de 6 anos, diariamente, e sempre foi um aplicativo essencial para minha saúde. Fiquei extremamente decepcionado ao descobrir que agora todas as funções passaram a ser pagas, sem oferecer uma alternativa justa para usuários antigos. Entendo que apps precisam se sustentar, mas transformar algo que sempre foi acessível em pago integralmente, sem considerar quem confiou no aplicativo por tantos anos, é desrespeitoso.",
+          "thumbsUp": 30,
+          "version": "9.50.0"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Yure Moreira",
+          "score": 4,
+          "date": "2022-04-06T10:28:03",
+          "content": "O aplicativo ajuda bastante a organizar a medicação mas tive um problema que não sei se acontece apenas comigo.. que é a falta de notificação. Aqui a notificação só aparece quando abro o app, mesmo se colocar som na notificação para ser como alarme. Simplesmente não parece funcionar em segundo plano e para ele lembrar da hora do remédio você tem que lembrar primeiro pra abrir o aplicativo e só então ser notificado.",
+          "thumbsUp": 30,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Iraci Spinelly",
+          "score": 1,
+          "date": "2020-08-17T10:37:38",
+          "content": "Instalei o app no meu celular e ele virou( minhas pílulas) com 3 dias grátis e depois tendo q começar a pagar quase 80,00 reais, isso é um absurdo!!!! Só coloquei uma estrela pq tem q colocar pq se não eu não tinha colocado nem uma, instalei, mas já desinstalei😡",
+          "thumbsUp": 27,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Keyla Ferro",
+          "score": 5,
+          "date": "2021-11-19T08:38:27",
+          "content": "Muito bom. Mas deveriam aumentar o tempo para mídia externa. As propagandas vem toda hora em intervalos curtos demais. O chato é que os intervalos entre uma coisa e outra sao curtos demais e toda vez que que mexe em duas datas e tals vem propaganda de 5 segundos. Fora isso ta de boa. Sobre os APPs PRO, Tenho saudade de quando você comprava os APP. Agora eles alugam. Ao invés de pagar tanto e pronto, agora você paga todo mes, ou seja: ALUGUEL!",
+          "thumbsUp": 24,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Polly",
+          "score": 1,
+          "date": "2026-01-04T17:42:20",
+          "content": "Aplicativo era ótimo quando gratuito, o melhor da categoria, porém considerando apps gratuitos. Não há nada nele que justifique ser um app pago, principalmente por assinatura de 30 reais por mês, francamente quem tem esse dinheiro sobrando pra simplesmente ter lembretes? Quero pelo menos meu histórico de dados, que não consegui exportar até agora, mas imagino que com essa mudança vão lentamente perder todos os usuários.",
+          "thumbsUp": 21,
+          "version": "9.50.0"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Islavic Carvalho",
+          "score": 3,
+          "date": "2021-01-25T07:22:32",
+          "content": "Muito bom o aplicativo. Alarme funciona bem.. Dei 03 estrelas.. Uma dica adiciona a opção de estoque de comprimidos... Assim quando acabar fica de lembrete pra comprar remédio novamente. Pra quem toma por tempo indeterminado é ótimo....",
+          "thumbsUp": 21,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Airisu AMVs",
+          "score": 5,
+          "date": "2026-07-13T23:26:56",
+          "content": "Aplicativo maravilhoso, sem anúncios/propagandas e gratuíto. Ótimo como rastreador de sintomas e controle de medicamentos, com diversas opções de frequência e hora/intervalo para os remédios e inclui opção de \"pessoas\" onde você monitora medicamentos não apenas seus mas de terceiros. Função de lembrete de medicamentos muito consistente e útil. Uso já devem fazer 2 anos, nunca tive problemas.",
+          "thumbsUp": 19,
+          "version": "3.272.0"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Karen Assìs",
+          "score": 1,
+          "date": "2021-10-01T13:06:27",
+          "content": "O app ta ficando péssimo, não tem opção de agendar medicações com datas diferentes, perde tempo e prazo. Fora que cancelam/(marcam como retirado), o agendando da medicação que não foi retirado. Configuração LIXO desse sistema. Funcionários das farmácias não sabem de nada, não explicam direito e fica tudo uma bagunça. Fui dia 27 (sem agendar) pegar uma e hoje estou indo novamente pq não liberaram e o app não agenda datas diferentes. Só perda de tempo e dinheiro de transporte.",
+          "thumbsUp": 18,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "Odinélia Pereira",
+          "score": 4,
+          "date": "2020-07-24T07:44:19",
+          "content": "Simples, intuitivo. Possibilita cadasrrar os remedios, suas repetições diárias, período de uso. O alarme pode ser através de sons diversos ou até mesmo falar o nome do remédio digitado (limitado a dois remedios, os outros da lista tem que ser por musicas mesmo). As propagandas são um problema sumples diante dos benefícios do app.",
+          "thumbsUp": 18,
+          "version": "1.9.37"
+        },
+        {
+          "app_id": "com.baviux.pillreminder",
+          "app_name": "Lady Pill Reminder",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2018-10-05T09:03:43",
+          "content": "Excelente.. os lembretes são pontuais e não falham e o app ainda lembra de comprar a cartela um dia antes de voltar a tomar.",
+          "thumbsUp": 18,
+          "version": "2.7.09"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Benneti Coimbra Perboni",
+          "score": 5,
+          "date": "2024-02-18T21:07:16",
+          "content": "Desde quando eu comecei a tomar remédio controlado eu uso esse app. É muito bom para organizar os horários e ter um lembrete de comprimidos certinho. Uso para fazer controle de sintomas também! Faço consultas médicas de rotina de tempos em tempos e, graças a esse app, sempre tenho anotações completas, além da garantia de ter tomado todos os remédios certinho. É bom para fazer controle de estoque também. Sempre configuro para me notificar antes de acabar os comprimidos para eu poder comprar.",
+          "thumbsUp": 16,
+          "version": "3.156.0"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Mauricio Oliva",
+          "score": 5,
+          "date": "2020-07-12T10:32:44",
+          "content": "Excelente programa, prático, com uma interface bem feita e um processo simples de utilização. As únicas ressalvas são: é focado para uso de medicação por isso tem todas suas nomenclaturas voltadas para isso, no meu caso uso para ayurveda. E a segunda questão é assinatura, acredito que para o tipo de app a compra seria mais apropriada. Contudo, apesar das ressalvas, recebe 5 estrelas porque a versão gratuita é bem completa, apenas limitando algumas funções. Parabéns.",
+          "thumbsUp": 15,
+          "version": "8.86.09425"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "JOSEPMROCHA",
+          "score": 5,
+          "date": "2021-11-08T07:32:06",
+          "content": "atende perfeitamente minhas necessidades de lembrar algo. Inclusive permite descrever melhor o que preciso lembrar, tipo Lista do que comprar. Fácil de programar. Super recomendo. Testei, gostei, comprei. Assim me vejo livre das propagandas.",
+          "thumbsUp": 15,
+          "version": "1.138"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Sólon",
+          "score": 5,
+          "date": "2024-01-08T20:28:09",
+          "content": "Aplicativo muito útil. É gratuito e não tem propagandas. Uso para lembrar de tomar medicamentos e suplementos diários. Além dos alertas (alarmes) nos horários dos remédios, ainda controla o estoque me avisando que tá na hora de comprar mais medicamento ou suplemento. Não uso outras funcionalidades. Não tenho outras necessidades. Recomendo à todos que usam medicamentos. É excelente.",
+          "thumbsUp": 12,
+          "version": "3.147.1"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "Marlos Lira",
+          "score": 3,
+          "date": "2022-07-03T10:54:29",
+          "content": "Para o que eu preciso, tem sido excelente, todavia, acho pouco intuitivo na hora de fechar ou interromper alarme. Às vezes a propaganda toma de conta e dificulta ainda mais. Se a pessoa não for muito paciente ou estiver com pressa, vai acabar se irritando. Mas para mim, está servindo bem. Obrigado aos desenvolvedores.",
+          "thumbsUp": 12,
+          "version": "1.148"
+        }
+      ]
+    },
+    "usability_accessibility_elderly": {
+      "title": "3. Usabilidade, Acessibilidade, Complexidade, Idosos & Cuidadores",
+      "count": 552,
+      "percentage": 29.18,
+      "stars": {
+        "5": 275,
+        "4": 59,
+        "1": 125,
+        "2": 36,
+        "3": 57
+      },
+      "top_apps": {
+        "Lembrete de Medicamentos": 78,
+        "Dr. Pills: Lembrete de remédio": 61,
+        "CUCO - Lembrete de medicamento": 60,
+        "Lembrete de Remedios e Pilula": 56,
+        "Lady Pill Reminder": 53,
+        "Remedio Agora": 52,
+        "Allminder - Alarme e lembrete": 48,
+        "Meu SUS Digital": 43,
+        "Aqui tem remedio": 43,
+        "Pillo:  Lembrete de Remédio": 27
+      },
+      "sample_quotes": [
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Daniel Lisboa",
+          "score": 5,
+          "date": "2021-10-26T01:42:31",
+          "content": "A ideia do aplicativo é ótima, mas precisa ser aprimorada para dispositivos menos robustos. Os próprios usuários do SUS, no geral, não costumam ter o mais smartphone mais atualizado. Por isso é importante que ele funcione em celulares mais antigos (ou que ao menos exista uma versão que seja compatível com estes dispositivos). Eu uso um Galaxy Note 9 e ele funcionava perfeitamente bem, mas como ele está em manutenção, precisei logar por um celular mais antigo e ele simplesmente não funciona.",
+          "thumbsUp": 3257,
+          "version": "70.4.2"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Nathalia Bomfim",
+          "score": 1,
+          "date": "2021-09-01T11:49:00",
+          "content": "Já que vão nos obrigar a mostrar o comprovante de vacina, pelo menos façam um App que funcione bem. Você tenta se conectar e ele dá erro e pede para fazer mais tarde. Não conecta automaticamente as vezes e o layout é horrível para ver os ícones, além da opção de lupa ficar muito próximo do botão \"Concluir\". Sinceramente, espero que esteja ainda em fase de testes, se não vou tentar só usar uma foto do comprovante mesmo pros locais que precisar.",
+          "thumbsUp": 2337,
+          "version": "70.3.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Verena Araújo",
+          "score": 4,
+          "date": "2023-04-18T11:34:54",
+          "content": "A iniciativa é muito boa e fundamental, porém tem que melhorar em relação a login. Por que expirar o login em um aplicativo? Outro ponto a ser melhorado é que não dá pra dar zoom na tela e isso é péssimo pra quem precisa desse recurso pra enxergar melhor algumas informações no app. Eu mesma tenho dificuldade. No mais, estou muito feliz com essa digitalização do SUS. Acreditem, muito país \"chique\" não tem o que temos.",
+          "thumbsUp": 1346,
+          "version": "72.2.01"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "João Fernando Lima",
+          "score": 3,
+          "date": "2021-06-04T09:44:15",
+          "content": "Precisa melhorar muito quanto à sincronização de dados vacinais, médicos e medicamentosos. Mas quanto à dados cadastrais já é muito útil. Sugestão: o botão de exibir o cartão virtual poderia dar a opção de exportá-lo para um arquivo PDF (frente e verso). Existem eventualidades em que o documento físico pode ser mais interessante. Parabéns a equipe de programação do app!",
+          "thumbsUp": 1144,
+          "version": "70.2.3"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Jose Luis Dutra",
+          "score": 3,
+          "date": "2021-07-08T14:51:57",
+          "content": "App até funciona bem, porém não traz ainda muitas informações. Mas solicito um ajuste: mesmo sem logar aparece na tela o número do CPF, nesses momentos que os bandidos estão nos atacando a toda hora pra roubar os celulares, isso chega a ser um presente pra eles. Pesquisei todos os apps que uso e todos escondem o CPF ou só aparece depois de logar. Mas aqui no \"Conecte SUS\" não. Já aparece direto. Vcs poderiam consertar isso? Fora isso até que funciona bem o app. Grato.",
+          "thumbsUp": 354,
+          "version": "70.2.7"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Felipe de Andrade",
+          "score": 5,
+          "date": "2020-06-20T14:43:34",
+          "content": "Vou editar o comentário, pois agora o app está excelente, funcionando perfeitamente, sem bugs, porém gostaria de deixar uma dica. Ter a possibilidade de poder associar nomes de pessoas diferentes para cada remédio, um exemplo, seria marcador. Outra dica é poder compartilhar com outros usuários o alarme, ou seja, eu defino no meu celular as configs e a partir do momento que adc essa pessoa ao meu círculo, que ela tenha a opção de escolher se quer ou não ser notificada na hora de tomar o remédio.",
+          "thumbsUp": 327,
+          "version": "3.59.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Elza Cardoso",
+          "score": 1,
+          "date": "2021-03-20T11:40:45",
+          "content": "Cadastro de senha do gov.br é desnecessariamente confuso e exige acesso simultâneo a dois dispositivos. Na prática, inviabiliza o acesso de quem tem poucos recursos e/ou pouca habilidade com dispositivos eletrônicos, especialmente idosos e pessoas de baixa renda, que são justamente o público alvo deste app! Além disso, o excesso de regras de senhas impossibilita a memorização e facilita acessos espúrios via força bruta. É o cúmulo da incompetência!!!",
+          "thumbsUp": 237,
+          "version": "70.1.5"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Felipe Carvalho",
+          "score": 2,
+          "date": "2021-12-03T21:19:28",
+          "content": "Fazer login, sem deixar a opção \"salvar\" não é ser funcional, eficaz ou dar o que o usuário precisa: Agilidade e resposta instantânea para os momentos mais imprevisíveis. Exemplo: Apresentação e/ou baixar a carteira ou comprovante de vacinação. Algo que deveria ser simples, mas não é. E não, não é internet, pois fiz o teste até mesmo via wi-fi de todas as velocidades e nada deu jeito...Ficou só \" rodando\"...",
+          "thumbsUp": 184,
+          "version": "70.4.4"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Rodrigo Lemos de Souza",
+          "score": 5,
+          "date": "2020-10-28T00:11:45",
+          "content": "Passei por outros app. Mas este foi aquele que eu mais gostei. Funcional, prático e completo quando necessário. Notificações funcionam perfeitamente, caso deixe o celular no silencioso, pode optar por ignorar este app que ele vai soar o alarme de notificação corretamente. Tem a opção de personalizar a imagem dos comprimidos. O que e perfeito para pessoas que tem dificuldade de leitura ou são preguiçosas, pois é possível identificar o remédio pela cor, forma e tamanho do comprimido.",
+          "thumbsUp": 167,
+          "version": "8.92.09877"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Amanda Nascimento",
+          "score": 1,
+          "date": "2024-06-13T20:06:29",
+          "content": "o que aconteceu com o aplicativo? a localização simplesmente não aparece, nem quando eu escrevo aparece opções, conclusão, não consigo usar o aplicativo porque ele só aceita se você selecionar uma opção, mas não aparece nada. Já até tentei desinstalar algumas vezes pra ser se era apenas um bug, mas continua do mesmo jeito, não sei se foi atualização, mas está horrível, não consigo sair da primeira parte, porque os medicamentos eu consigo selecionar, já o endereço, não.",
+          "thumbsUp": 147,
+          "version": "3.1.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Evandro Alves",
+          "score": 1,
+          "date": "2026-08-19T18:43:01",
+          "content": "Simplesmente um péssimo aplicativo,eu ativei por segurança a verificação em duas etapas, porém não consigo gerar o código nesse aplicativo, no meugov.br funciona normalmente.",
+          "thumbsUp": 113,
+          "version": "73.32.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Janaina Mota",
+          "score": 3,
+          "date": "2024-10-02T13:12:54",
+          "content": "Como já sinalizado por outros usuários, o acesso a novas telas pode ser muito demorado. Estou tentando atualizar minhas informações e os botões de confirmação no final da tela ficam quase invisíveis, inacessíveis, e dessa forma não se consegue dar prosseguimento às atualizações. ** Reduzi a fonte do meu celular ao mínimo e assim consegui ter acesso aos botões, porém o sistema dá sempre indisponível e a atualização não é feita.",
+          "thumbsUp": 104,
+          "version": "73.17.02"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Sergio Tomaz",
+          "score": 2,
+          "date": "2021-01-18T07:29:35",
+          "content": "Antes de instalar, li as resenhas, em sua maioria desfavoráveis. Ainda assim, instalei. E, ao contrário da propaganda(ouvi sobre o aplicativo pelo rádio), não tenho histórico de tratamentos, consultas e afins. Nem as vacinas que fiz, constam. Detalhe, o app já tem cinco anos, ou seja, parece disputa de governo sobre gerenciar ou não, deixando a efetividade em 3o plano. Aguardando uma atualização antes de desinstalar.",
+          "thumbsUp": 95,
+          "version": "70.0.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "José Laercio Faccini",
+          "score": 1,
+          "date": "2026-08-19T14:27:38",
+          "content": "Bem, fui abrir o aplicativo hoje e simplesmente não abre, digita os dados, senha e ai fica rodando, rodando..... Lamentável um aplicativo tão importante e que não funciona, em tempos de tanta tecnologia conseguem ser péssimos, fiz essa avaliação há mais de um ano e agora em 2026 o aplicativo continua ruim e quando você mais precisa ele trava do nada, querem colocar tudo no sistema digital mas não tem capacidade de prestar um bom serviço! Melhor voltar aos tempos das fichas e arquivos de papel!",
+          "thumbsUp": 94,
+          "version": "73.30.00"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2019-10-04T00:24:21",
+          "content": "Simples e bom!!! Instalei vários mas todos muito complicados e não intuitivos, cheio de opções, quando queria somente um app para me lembrar os horários de tomar os remédios, com horário de início e o intervalo de tempo para os próximos, este é um perfeito exemplo de que menos e mais!!!! Top sucinto e objetivo!!!!!",
+          "thumbsUp": 91,
+          "version": "8.67.08431"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Alexandra FCH",
+          "score": 1,
+          "date": "2021-07-07T22:22:15",
+          "content": "Este aplicativo é uma vergonha. Estou tentando recuperar a senha e simplesmente o email com o código não é enviado, o email está correto verifiquei via web. Se existe caixa de seleção para os itens, estas são invisíveis, tem que ficar tocando aleatoriamente até acertar. A descrição das opções está em branco da mesma cor do fundo, impossível ler qualquer coisa. Tudo que tentei fazer no aplicativo não funciona, vou desinstalar. Agora entendo o motivo da nota baixa. Lamentável!",
+          "thumbsUp": 90,
+          "version": "70.2.7"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Um usuário do Google",
+          "score": 3,
+          "date": "2020-01-21T11:19:15",
+          "content": "O aplicativo é muito bom para ter controle dos remédios tomados, dá pra ver as pílulas tomadas e quantas tem que tomar até a data definida (ótimo pra quem precisa tomar controlado) tem uma interface agradável e é super fácil de mexer. O único ponto NEGATIVO são as Notificações. O APP tem uma opção chamada \"As notificações não funcionam\" e mesmo seguindo todos os passos dessa opção, ainda tenho problema com as mesmas. Muitas vezes eu recebo as notificações com atraso, as vezes recebo na hora certa, e as vezes nem recebo. Já me aconteceu de receber notificação de alguma pílula que eu já tenha tomado, marquei ela no app, e o mesmo me dá a notificação dizendo para tomar. De resto, tudo ok.",
+          "thumbsUp": 71,
+          "version": "1.2.9"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Orlando Silva",
+          "score": 5,
+          "date": "2024-08-15T12:41:04",
+          "content": "App perfeito!!! Com um design intuitivo, é simples de usar e ao mesmo tempo muito completo em suas funções. Li uma review aqui, falando que ele não tinha alarme, que não despertava. Creio que a pessoa não soube usar corretamente, pois tem alarme SIM e com direito a personalização do som. Tem uma função ótima q é o \"controle de estoque\". Isso é mto útil pra quem toma remédios de uso contínuo. Parabéns!!!",
+          "thumbsUp": 69,
+          "version": "3.181.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Matheus Hagler",
+          "score": 1,
+          "date": "2022-07-30T19:57:17",
+          "content": "O aplicativo é bom para algumas coisas, como consultar seu status de vacinação contra a Covid-19, mas as demais vacinas não são apresentadas. As doações de sangue que realizei também não constam no aplicativo. Além disso, os registros de saúde que eu tento adicionar na seção \"Minha Saúde\" acabam desaparecendo misteriosamente e o cálculo de IMC simplesmente não funciona. Basicamente, é um aplicativo que aparenta ter diversas funções, mas quando você tenta usá-las, elas não funcionam efetivamente.",
+          "thumbsUp": 67,
+          "version": "70.5.6"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Manu",
+          "score": 1,
+          "date": "2021-10-28T19:15:40",
+          "content": "O app está horrível. Primeiro aparece um erro dizendo que a opção que eu selecionei está indisponível por conter caracteres não permitidos (que nem existem em nenhuma das alternativas). Depois de clicar várias vezes no horário desejado aparece \"aguarde\" na tela e trava, fica girando sem parar. No final aparece que não tem vagas disponíveis e não consigo fazer o agendamento.",
+          "thumbsUp": 61,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Rebeca Maria",
+          "score": 1,
+          "date": "2026-02-19T12:38:35",
+          "content": "Aplicativo péssimo!!! Tiraram o agendamento de consultas presencial na ubs perto da minha casa para usar somente o aplicativo, mas esse app não funciona de forma alguma. Se você consegue marcar a consulta, ela simplesmente some do histórico e parece que você não marcou nada. E isso é quando consegue porque tive que remarcar e agora simplesmente nem a ubs que eu vou aparece no mapa. Simplesmente lamentável porque tecnicamente era algo que deveria vir para ajudar e está atrapalhando.",
+          "thumbsUp": 57,
+          "version": "73.25.00"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2019-05-12T23:36:29",
+          "content": "Muito bom! ótima interface e muito intuitivo, com a possibilidade de identificar cada medicação com sua aparência real e com um lembrete/alarme discreto e com uma função soneca que funciona muito bem. além disso, a versão graduita dele fornece todas as ferramentas necessárias, com pouquíssimas restrições. impossível esquecer da medicação com ele, melhor aplicativo que já utilizei dessa categoria ❤",
+          "thumbsUp": 54,
+          "version": "8.50.07693"
+        },
+        {
+          "app_id": "com.devsoldiers.calendar.pills.limit",
+          "app_name": "Dr. Pills: Lembrete de remédio",
+          "userName": "Keilla Caroline",
+          "score": 5,
+          "date": "2021-08-10T19:51:06",
+          "content": "Simples, bem organizado e te permite fazer o controle todo bonitinho. Perfeito pra quem faz uso de mais de uma medição por um período um pouco maior de tempo ou faz tratamento com remédios diários. Não chega a ser uma reclamação, mas sim uma sugestão: um alarme indicando a hora de tomar o remédio seria bem mais eficaz do que apenas uma notificação.",
+          "thumbsUp": 53,
+          "version": "1.4.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Silvana Alves de Araujo",
+          "score": 1,
+          "date": "2024-10-14T22:16:19",
+          "content": "Quero fazer uma reclamação, o APP não mostra mais nossas consultas e exames de especialidades, sempre gosto de acompanhar os serviços regulados em agendamentos, porque sempre tenho alguma coisa a ser marcado e as vezes na nossa correria,não atendemos o telefone que vem de nossa unidade básica, sendo assim podemos perder nossa consulta ou exame, corrijam esse problema por favor, que volte a aparecer serviços regulados em agendamentos.",
+          "thumbsUp": 52,
+          "version": "73.17.03"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Caroline Flores",
+          "score": 2,
+          "date": "2024-06-12T07:30:42",
+          "content": "O app funcionava perfeitamente, mas desde algumas semanas atrás, o campo de endereço não está preenchendo automaticamente e quando vou digitar de forma manual simplesmente não é aceito. Por favor, resolvam logo pois preciso desse aplicativo pra buscar medicamentos.",
+          "thumbsUp": 52,
+          "version": "3.1.4"
+        }
+      ]
+    },
+    "offline_data_failure": {
+      "title": "4. Falhas de Conexão, Dependência de Internet & Falha Offline",
+      "count": 61,
+      "percentage": 3.22,
+      "stars": {
+        "4": 10,
+        "3": 11,
+        "5": 7,
+        "1": 27,
+        "2": 6
+      },
+      "top_apps": {
+        "Meu SUS Digital": 26,
+        "CUCO - Lembrete de medicamento": 8,
+        "Aqui tem remedio": 6,
+        "Lembrete de Medicamentos": 5,
+        "Remedio Agora": 5,
+        "Allminder - Alarme e lembrete": 4,
+        "MedControl: Remédios e Saúde": 4,
+        "Lembrete de Remedios e Pilula": 1,
+        "Dr. Pills: Lembrete de remédio": 1,
+        "TOM Medication & Pill Reminder": 1
+      },
+      "sample_quotes": [
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Kelps Leite de Sousa",
+          "score": 3,
+          "date": "2023-12-13T18:58:11",
+          "content": "Funciona quase sempre, mas ter que fazer login em TODOS os acessos é péssimo. Deveria manter a autenticação no dispositivo, protegida pela digital/pin, por exemplo. O app pede cpf e senha em TODOS os acessos. Isso é muito ruim. Alem disso, em algum update recente, deixou de ser possível instalar/atualizar o certificado de vacinação de COVID que fica na carteira digital do Android.",
+          "thumbsUp": 1950,
+          "version": "73.04.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Verena Araújo",
+          "score": 4,
+          "date": "2023-04-18T11:34:54",
+          "content": "A iniciativa é muito boa e fundamental, porém tem que melhorar em relação a login. Por que expirar o login em um aplicativo? Outro ponto a ser melhorado é que não dá pra dar zoom na tela e isso é péssimo pra quem precisa desse recurso pra enxergar melhor algumas informações no app. Eu mesma tenho dificuldade. No mais, estou muito feliz com essa digitalização do SUS. Acreditem, muito país \"chique\" não tem o que temos.",
+          "thumbsUp": 1346,
+          "version": "72.2.01"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Denilson Rocha",
+          "score": 1,
+          "date": "2024-06-29T08:38:37",
+          "content": "Lamentável. Por que raios esse app não consegue (NUNCA) sustentar o login para além da sessão atual? Já dei todas as permissões, muito além da conta, mas não adianta. A cada interação, tem que logar novamente, sempre, sem exceção. E como, invariavelmente, o login falha (ou demora minutos), quando vc mais precisa do app ele te deixa não mão.",
+          "thumbsUp": 1340,
+          "version": "73.14.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "João Fernando Lima",
+          "score": 3,
+          "date": "2021-06-04T09:44:15",
+          "content": "Precisa melhorar muito quanto à sincronização de dados vacinais, médicos e medicamentosos. Mas quanto à dados cadastrais já é muito útil. Sugestão: o botão de exibir o cartão virtual poderia dar a opção de exportá-lo para um arquivo PDF (frente e verso). Existem eventualidades em que o documento físico pode ser mais interessante. Parabéns a equipe de programação do app!",
+          "thumbsUp": 1144,
+          "version": "70.2.3"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Mero Mortal",
+          "score": 1,
+          "date": "2020-08-30T21:36:25",
+          "content": "Funcionava bem até um dia desses, agora ao inserir o nome do medicamento fica travado numa eterna procura(loop infinito), e não acontece mais nada, só é possível fechá-lo forçadamente. Está assim no IOS também, não sei se é o aplicativo ou o sistema da prefeitura que está fora do ar, enfim. Manter um app que não funciona não é nada inteligente viu ô Insix Soluções \"inteligentes''.",
+          "thumbsUp": 238,
+          "version": "2.0.14"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Um usuário do Google",
+          "score": 2,
+          "date": "2019-02-02T08:48:55",
+          "content": "O intuito do aplicativo é bom, porém o mesmo apresenta diversos problemas, entre um deles que para mim é o pior, é a enorme dificuldade de fazer login, mesmo com os dados estando corretos. Algumas vezes o app diz que a senha está incorreta, porém depois de algumas tentativas ele faz login com sucesso utilizando a mesma senha. Não podemos contar 100% com o app, é questão de sorte conseguir utilizar o mesmo.",
+          "thumbsUp": 212,
+          "version": "40.9.0.0.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Felipe Carvalho",
+          "score": 2,
+          "date": "2021-12-03T21:19:28",
+          "content": "Fazer login, sem deixar a opção \"salvar\" não é ser funcional, eficaz ou dar o que o usuário precisa: Agilidade e resposta instantânea para os momentos mais imprevisíveis. Exemplo: Apresentação e/ou baixar a carteira ou comprovante de vacinação. Algo que deveria ser simples, mas não é. E não, não é internet, pois fiz o teste até mesmo via wi-fi de todas as velocidades e nada deu jeito...Ficou só \" rodando\"...",
+          "thumbsUp": 184,
+          "version": "70.4.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Creuza Alves",
+          "score": 4,
+          "date": "2025-07-12T20:46:50",
+          "content": "Estava usando o app sem problemas, tinha acesso as vacinas, informações sobre várias coisas, avaliar atendimentos. De repente, de umas semanas para cá, não consigo acessá-lo mais. Faço o login do Gov correto, mas quando pede as duas etapas, o código não é enviado e aparece uma mensagem de erro aparece. diz que a página, não está disponível. desinstalei e instalei de novo, revisei as configurações, permissões, limpei caches, reiniciei, revi o wi-fi e nada.",
+          "thumbsUp": 167,
+          "version": "73.23.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Flavio Soares",
+          "score": 1,
+          "date": "2021-11-17T06:57:45",
+          "content": "Desde ontem, dia 16/11, não consigo fazer o login em celulares Samsung. Sou direcionado a uma página em branco onde , após alguns minutos, surge a mensagem de endereço inválido. Já tentei em vários celulares e sempre o mesmo problema. Além disso, é extremamente contraproducente ter que refazer o login basicamente todo dia por \"sessão expirada\". A execução do app está péssima, tive que voltar a andar com o comprovante de vacinação em papel no bolso.",
+          "thumbsUp": 120,
+          "version": "70.4.4"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "A. Carlos Monteiro",
+          "score": 3,
+          "date": "2024-12-04T12:13:48",
+          "content": "O app tem boa funcionalidade mas o inconveniente maior é que precisa fazer o login toda vez que é acessado, o que deve dificultar o acesso para a maioria dos usuários. Deveria ter a opção de uma vez feito o acesso, manter o usuário e pedir apenas a senha e/ou identificação biométrica. Toda vez tem que acessar o \"Gov.br\", logar, lembrar a senha e tudo mais. Deveria ser mais prático para facilitar o uso.",
+          "thumbsUp": 58,
+          "version": "73.18.00"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Luis Bravo",
+          "score": 5,
+          "date": "2024-12-08T08:43:50",
+          "content": "Gostei bastante. Usava outro app para registrar medicamentos, mas experimentei o MyTherapy e achei mais simples e eficaz. O recurso symptom tracker (registro de sintomas) e interessante. Responde bem aquela pergunta do médico: \"Com que frequência você sente isso?\". Atende muito bem como está, mas uma sugestão seria sincronismo em nuvem para quem usa mais de um dispositivo.",
+          "thumbsUp": 33,
+          "version": "3.198.0"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Maris Mayumi",
+          "score": 1,
+          "date": "2020-08-03T15:38:52",
+          "content": "Vê que tem muitas pessoas falando que esse app é bom, mas para mim não foi nada bom. Ele não funciona, só fica rodando um comprimido tipo para mostrar que está carregando, e nunca termina de carregar a minha busca.",
+          "thumbsUp": 25,
+          "version": "2.0.14"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Marjorie Iglesias",
+          "score": 1,
+          "date": "2026-07-19T22:21:16",
+          "content": "O app não funciona depois da última atualização!! Fiz o login normalmente, inseri o código de acesso pelo gov.br e ele volta pra página inicial que pede os dados para o login. Com isso, não consigo acesso! Atualização: voltou a funcionar depois que desinstalei e reinstalei após 1 semana. Porém continua com falhas dentro do app e alguns recursos não funcionam.",
+          "thumbsUp": 14,
+          "version": "73.30.00"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "FABIO FERNANDES",
+          "score": 2,
+          "date": "2020-10-15T10:33:45",
+          "content": "O aplicativo é muito bom, porém apresentou uma falha gravíssima para mim: precisei formatar meu aparelho, e agora não consigo recadastrar! Aparece os dados ( nome e cartão SUS, eu confirmo, porém aparece uma barra escura apenas escrito \" fechar\" e nada acontece! Deviam disponibilizar um Login permanente que pudesse ser recuperado. E agora??????? Não poderei mais utilizar os agendamentos pelo aplicativo?????",
+          "thumbsUp": 9,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.com.drcuco",
+          "app_name": "CUCO - Lembrete de medicamento",
+          "userName": "Um usuário do Google",
+          "score": 3,
+          "date": "2019-08-06T09:38:31",
+          "content": "Faz tempo que uso o app. Era nota 5. Agora, após recentes atualizações ele não deixa marcar a medicação tomada se você estiver offline. E as vezes não soa mais o alarme de lembrere. Espero que volte ao que era antes.",
+          "thumbsUp": 7,
+          "version": "5.0.9"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Carlos Colognese",
+          "score": 2,
+          "date": "2020-08-06T12:23:14",
+          "content": "A idéia é muito boa, mas infelizmente não funfa. Não consegui instalar por falta de espaço no smartphone (que convenhamos não é tão smart=inteligente assim). Lg100 é simples sim, a maioria não tem $ para smartphone TOP falta espaço p/ qualquer App. E tenho nuvem atm. dados... Sou digitalmente inserido no contexto. O site, verificador robot, não funfa. muito lento, perdendo-se muito tempo e não conclui. Talvez um dia venha a ser util a todos. P.s. desenvolvam app p/ dispositivos < capcidade.",
+          "thumbsUp": 5,
+          "version": null
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Um usuário do Google",
+          "score": 1,
+          "date": "2019-12-20T10:35:46",
+          "content": "O aplicativo raramente funciona direito. Não consigo colocar o endereço. E dígito um medicamento e só fica carregando, nunca aparecendo se tem e onde tem.",
+          "thumbsUp": 5,
+          "version": "2.0.9"
+        },
+        {
+          "app_id": "br.com.drcuco",
+          "app_name": "CUCO - Lembrete de medicamento",
+          "userName": "Yonara S. Maltas",
+          "score": 3,
+          "date": "2025-04-02T10:05:02",
+          "content": "O aplicativo é muito bom, ms precisa de ajustes: Para quem faz uso contínuo é importante ter salvo o relatório de uso/medicamentos, mas não encontrei nenhuma opção de exportar esse histórico, seja por email ou salvar na nuvem. Outro ponto que precisa de ajuste é a edição dos tratamentos, o app exclui do histórico, ao invés de apenas adicionar a mudança, por exemplo, se vc usava 2x/dia e passar a usar 1x/dia, o app excluirá o uso anterior e considerará apenas o uso atual (isso não faz sentido).",
+          "thumbsUp": 4,
+          "version": "6.13.03"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Gabriella Risoleta",
+          "score": 3,
+          "date": "2024-03-02T09:46:49",
+          "content": "Uso o aplicativo desde o início de 2023 e sempre amei a praticidade dele. Acontece que, tive que trocar de celular e no novo dispositivo eu esqueci de fazer o login com meu e-mail. Daí quando percebi, fiz o login para não perder meus dados desde a troca de dispositivo... era melhor não ter feito o login, pois todo o registro do meu tratamento foi por água abaixo. Enfim, uma pena. Perdi até vontade de continuar usando o aplicativo.",
+          "thumbsUp": 4,
+          "version": "3.156.0"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Guilherme Gonçalves",
+          "score": 1,
+          "date": "2026-06-23T09:49:55",
+          "content": "Praticamente ou você paga ou fica limitado a dois medicamentos. Sabendo disso se você toma mais de dois medicamentos e não quer pagar uma mensalidade caríssima nem instale ou instale se decepcione e avalie mal. E mais, se quer um app bom que tem anúncios, mas aceitas muitos medicamentos, tem o MyTherapi, ou seja, uma versão gratuita realmente funcional. A versão paga sem anúncios desse app é apenas 9,90 muito mais barato que o medisafe. Ainda melhor o Mytherapi tem conexão com o samsung health.",
+          "thumbsUp": 3,
+          "version": "9.50.3"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Fabiola",
+          "score": 1,
+          "date": "2026-07-12T10:08:53",
+          "content": "Ineficiente. De que adianta ter um app instalado no celular que te obriga a fazer login com gov.br toda vez que vc acessa? A pessoa tem que ficar digitando senha o tempo todo, um atraso de vida. App de celular precisa oferecer agilidade, praticidade de acesso. Além disso, não aparecem todas as vacinas tomadas, datas sem atualização. O que tem é um monte de propagandas institucionais. Informa endereços de postos de saúde, menos o mais próximo da minha casa, onde tomo vacina. É uma bagunça.",
+          "thumbsUp": 3,
+          "version": "73.30.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Frisan GF",
+          "score": 1,
+          "date": "2026-06-08T11:42:11",
+          "content": "Em relação ao seu efetivo funcionamento é um péssimo aplicativo, pois o seu login dependendo do Gov.br o que não acontece com facilidade, podendo até ocorrer o bloqueio do Gov.br devido as tentativas de login. O ideal seria a partir do acesso ao Gov.br, existir links para os demais serviços (SUS, MEC, etc).",
+          "thumbsUp": 3,
+          "version": "73.26.00"
+        },
+        {
+          "app_id": "br.com.caiocrol.alarmandpillreminder",
+          "app_name": "Allminder - Alarme e lembrete",
+          "userName": "Geraldo Candal",
+          "score": 1,
+          "date": "2024-04-23T18:26:02",
+          "content": "Muito bom, fácil de configurar e muito eficiente, mas, para receber 5 estrelas e ficar ótimo, está faltando a sincronização com o aplicativo instalado em outros dispositivos. Hoje, 23/04/2024, parou de funcionar, provavelmente alguma atualização está causando este problema. Já desinstalei, instalei, limpei o cache e nada. Meu celular é antigo, Asus ZenFone 5, com Android 9.",
+          "thumbsUp": 2,
+          "version": "1.32.1"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Flavia Cristina Rengel",
+          "score": 1,
+          "date": "2026-07-29T08:44:35",
+          "content": "Seria ótimo se estivesse funcionando, há meses tento entrar, consegui uma vez logo após baixar o app, depois, nunca mais, coloco as informações de login, e fica carregando eternamente, sem nunca abrir, já tentei desinstalar e reinstalar, mexer nas permissões, nada funcionou, precisa do acesso e não consigo de forma alguma.",
+          "thumbsUp": 2,
+          "version": "73.30.00"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Orlando Silva",
+          "score": 3,
+          "date": "2021-02-03T22:36:33",
+          "content": "O método de sincronização dos estoques precisa ser reavaliado. Hoje, fui buscar um medicamento na UBS de Sapopemba, e não tinha, embora o APP indicasse que havia disponível o medicamento. Notei que o atendente digita o nome do produto - um leitor de código de barras seria mais eficiente.",
+          "thumbsUp": 2,
+          "version": "2.0.14"
+        }
+      ]
+    },
+    "sus_prescription_gaps": {
+      "title": "5. Lacunas de SUS, Farmácia Popular, Receitas Médicas & Posto de Saúde",
+      "count": 230,
+      "percentage": 12.16,
+      "stars": {
+        "5": 78,
+        "4": 29,
+        "2": 21,
+        "1": 75,
+        "3": 27
+      },
+      "top_apps": {
+        "Lembrete de Medicamentos": 48,
+        "Meu SUS Digital": 43,
+        "Remedio Agora": 39,
+        "Aqui tem remedio": 39,
+        "Lembrete de Remedios e Pilula": 29,
+        "Dr. Pills: Lembrete de remédio": 7,
+        "MedControl: Remédios e Saúde": 7,
+        "Allminder - Alarme e lembrete": 6,
+        "CUCO - Lembrete de medicamento": 5,
+        "Pillo:  Lembrete de Remédio": 3
+      },
+      "sample_quotes": [
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Daniel Lisboa",
+          "score": 5,
+          "date": "2021-10-26T01:42:31",
+          "content": "A ideia do aplicativo é ótima, mas precisa ser aprimorada para dispositivos menos robustos. Os próprios usuários do SUS, no geral, não costumam ter o mais smartphone mais atualizado. Por isso é importante que ele funcione em celulares mais antigos (ou que ao menos exista uma versão que seja compatível com estes dispositivos). Eu uso um Galaxy Note 9 e ele funcionava perfeitamente bem, mas como ele está em manutenção, precisei logar por um celular mais antigo e ele simplesmente não funciona.",
+          "thumbsUp": 3257,
+          "version": "70.4.2"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Verena Araújo",
+          "score": 4,
+          "date": "2023-04-18T11:34:54",
+          "content": "A iniciativa é muito boa e fundamental, porém tem que melhorar em relação a login. Por que expirar o login em um aplicativo? Outro ponto a ser melhorado é que não dá pra dar zoom na tela e isso é péssimo pra quem precisa desse recurso pra enxergar melhor algumas informações no app. Eu mesma tenho dificuldade. No mais, estou muito feliz com essa digitalização do SUS. Acreditem, muito país \"chique\" não tem o que temos.",
+          "thumbsUp": 1346,
+          "version": "72.2.01"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Denilson Rocha",
+          "score": 1,
+          "date": "2024-06-29T08:38:37",
+          "content": "Lamentável. Por que raios esse app não consegue (NUNCA) sustentar o login para além da sessão atual? Já dei todas as permissões, muito além da conta, mas não adianta. A cada interação, tem que logar novamente, sempre, sem exceção. E como, invariavelmente, o login falha (ou demora minutos), quando vc mais precisa do app ele te deixa não mão.",
+          "thumbsUp": 1340,
+          "version": "73.14.00"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "João Fernando Lima",
+          "score": 3,
+          "date": "2021-06-04T09:44:15",
+          "content": "Precisa melhorar muito quanto à sincronização de dados vacinais, médicos e medicamentosos. Mas quanto à dados cadastrais já é muito útil. Sugestão: o botão de exibir o cartão virtual poderia dar a opção de exportá-lo para um arquivo PDF (frente e verso). Existem eventualidades em que o documento físico pode ser mais interessante. Parabéns a equipe de programação do app!",
+          "thumbsUp": 1144,
+          "version": "70.2.3"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Jose Luis Dutra",
+          "score": 3,
+          "date": "2021-07-08T14:51:57",
+          "content": "App até funciona bem, porém não traz ainda muitas informações. Mas solicito um ajuste: mesmo sem logar aparece na tela o número do CPF, nesses momentos que os bandidos estão nos atacando a toda hora pra roubar os celulares, isso chega a ser um presente pra eles. Pesquisei todos os apps que uso e todos escondem o CPF ou só aparece depois de logar. Mas aqui no \"Conecte SUS\" não. Já aparece direto. Vcs poderiam consertar isso? Fora isso até que funciona bem o app. Grato.",
+          "thumbsUp": 354,
+          "version": "70.2.7"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Eduardo Bertolini",
+          "score": 1,
+          "date": "2024-12-20T09:51:02",
+          "content": "O app sempre foi gratuito mas agora inventaram de cobrar mensalidade, caríssima, tornando a versão gratuita limitada a somente dois medicamentos. Ridículo! Eu pagaria de bom grado se fosse um valor único, inclusive se não me engano eu já tinha pago a versão pro no passado! Vou desinstalar o app, assim como muitos usuários farão, com certeza. Parabéns aos desenvolvedores, vcs acabaram que matar um app que era muito bom!",
+          "thumbsUp": 185,
+          "version": "9.34.13296"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Helio Gomes",
+          "score": 3,
+          "date": "2023-06-12T21:49:30",
+          "content": "App funciona muito bem, agendamento adianta muito o processo de retirada, grande problema é que não funciona em celulares com Android mais atual, então só funciona em celulares mais antigos, poderia atualizar a versão para que todos possam ter acesso. No meu caso, tirei um celular da gaveta que não estava usando para instalar, pois, no meu Samsung A12, não está disponível.",
+          "thumbsUp": 155,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Orlando Silva",
+          "score": 5,
+          "date": "2024-08-15T12:41:04",
+          "content": "App perfeito!!! Com um design intuitivo, é simples de usar e ao mesmo tempo muito completo em suas funções. Li uma review aqui, falando que ele não tinha alarme, que não despertava. Creio que a pessoa não soube usar corretamente, pois tem alarme SIM e com direito a personalização do som. Tem uma função ótima q é o \"controle de estoque\". Isso é mto útil pra quem toma remédios de uso contínuo. Parabéns!!!",
+          "thumbsUp": 69,
+          "version": "3.181.0"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Rebeca Maria",
+          "score": 1,
+          "date": "2026-02-19T12:38:35",
+          "content": "Aplicativo péssimo!!! Tiraram o agendamento de consultas presencial na ubs perto da minha casa para usar somente o aplicativo, mas esse app não funciona de forma alguma. Se você consegue marcar a consulta, ela simplesmente some do histórico e parece que você não marcou nada. E isso é quando consegue porque tive que remarcar e agora simplesmente nem a ubs que eu vou aparece no mapa. Simplesmente lamentável porque tecnicamente era algo que deveria vir para ajudar e está atrapalhando.",
+          "thumbsUp": 57,
+          "version": "73.25.00"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Um usuário do Google",
+          "score": 5,
+          "date": "2019-06-07T13:22:41",
+          "content": "Funcionou perfeitamente! Minha sugestão é que o APP tenha localização de GPS automático para facilitar, evitando que a gente digite manualmente nossa localização. Outra sugestão é ter uma opção para saber o estoque do remédio procurado nos locais (UBS, AMA etc.), visando evitar que a pessoa vá até o local e não encontre o remédio por falta de estoque. Fora isso, EXCELENTE TRABALHO DA PREFEITURA!!! Continuem assim!!!",
+          "thumbsUp": 55,
+          "version": null
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Silvana Alves de Araujo",
+          "score": 1,
+          "date": "2024-10-14T22:16:19",
+          "content": "Quero fazer uma reclamação, o APP não mostra mais nossas consultas e exames de especialidades, sempre gosto de acompanhar os serviços regulados em agendamentos, porque sempre tenho alguma coisa a ser marcado e as vezes na nossa correria,não atendemos o telefone que vem de nossa unidade básica, sendo assim podemos perder nossa consulta ou exame, corrijam esse problema por favor, que volte a aparecer serviços regulados em agendamentos.",
+          "thumbsUp": 52,
+          "version": "73.17.03"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Flávio Moraes",
+          "score": 5,
+          "date": "2024-03-20T13:00:24",
+          "content": "Uso o app desde o início. Sempre atendeu muito bem as minhas necessidades. Sempre facilitou, independente se tem ou não o medicamento para a retirada. Hoje, 20/03, compareci na Farmácia de Auto Custo do Glicério como faço todos os meses, mas o agendamento que eu fiz nessa mesma semana não aparece como agendado. Inclusive, sempre tiro um print da tela quando faço o agendamento todos os meses, mas este agendamento não existe. Fui obrigado a pegar uma senha de atendimento normal o que vai demorar",
+          "thumbsUp": 47,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Alberto Luiz Celeste de Souza Peto",
+          "score": 3,
+          "date": "2022-06-17T10:01:49",
+          "content": "Muito Prático. Facilita muito a retirada do medicamento, mas ultimamente está praticamente sem utilidade, já que eles cancelam frequentemente o agendamento um dia antes da retirada, forçando a entrar novamente na fila quilométrica. Isso sem falar que não atendem telefone e não temos como saber se tem estoque sem ir presencialmente.",
+          "thumbsUp": 41,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Jefferson Leite",
+          "score": 4,
+          "date": "2025-01-11T17:14:09",
+          "content": "Aplicativo é relativamente leve e bem útil, mas exige muitos cliques pra ver informações de vacinação e a carteira e tem alguns bugs chatinhos, por exemplo, não consigo ver todas as minhas vacinas nem adicionar a carteira de vacinação à carteira do google porque não consigo dar scroll na lista, aparecendo cortada e incompleta. Fora isso, é legal a possibilidade de adicionar o cartão do SUS na carteira do Google.",
+          "thumbsUp": 40,
+          "version": "73.20.01"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Loyane Ferreira",
+          "score": 5,
+          "date": "2024-05-13T09:28:26",
+          "content": "Excelente alarme para remédios Completo, fácil de usar, funcional. Tem diversos nomes de remédios configurados para colocar o lembrete e a gente pode inserir o nome que preferir tbm. O lembrete de estoque é especialmente útil assim como o ajuste por dias de uso do remédio, a flexibilidade de horários etc. recomendo para todos que estejam doentes ou que tenham tratamento para questões crônicas. O alarme pode ser configurado para vários ao msm tempo. Nunca tem bugs. Altamente recomendável",
+          "thumbsUp": 38,
+          "version": "3.167.0"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Karina Moreira",
+          "score": 1,
+          "date": "2024-11-07T12:25:46",
+          "content": "Aplicativo não funciona já instalei várias vezes e nada. Pra quem precisa de remédios e não tem como ficar indo de UBS em UBS é excelente, mas precisa funcionar pra atender a população da mentira correta. Fui a 5 postos e nada. O aplicativo é essencial ainda mais quando se tem criança com deficiência, onde os horários são restritos demais.",
+          "thumbsUp": 36,
+          "version": "3.1.4"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "KAIBORDERLINE",
+          "score": 1,
+          "date": "2024-08-14T11:42:12",
+          "content": "todos que conheço que usam esse aplicativo falaram bem, mas na minha vez de usar tive um problema no campo do endereço onde não aparece automaticamente e por isso se torna impossível fazer a busca pelos postos da região porque o aplicativo não reconhece meu endereço mesmo sendo escrito manualmente exatamente da forma como pede o exemplo, infelizmente tive que desinstalar porque ele se tornou ineficaz para mim",
+          "thumbsUp": 34,
+          "version": null
+        },
+        {
+          "app_id": "br.gov.datasus.cnsdigital",
+          "app_name": "Meu SUS Digital",
+          "userName": "Meri Penas",
+          "score": 1,
+          "date": "2026-05-10T06:31:36",
+          "content": "Seria lindo se funcionasse, não apareceram as consultas, os exames marcados, botões que levam nada para lugar nenhum (mais especialistas, por exemplo). A configuração para dispositivo móvel é toda zoada, os botões na parte inferior da tela aparecem pela metade tem que adivinhar a que se refere. Lamentável que foi um investimento que não surtiu retorno. O app da minha cidade não é perfeito, mas mesmo com todos os defeitos não se compara ao *meu sus*. Lastimável!",
+          "thumbsUp": 33,
+          "version": "73.26.00"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Luis Bravo",
+          "score": 5,
+          "date": "2024-12-08T08:43:50",
+          "content": "Gostei bastante. Usava outro app para registrar medicamentos, mas experimentei o MyTherapy e achei mais simples e eficaz. O recurso symptom tracker (registro de sintomas) e interessante. Responde bem aquela pergunta do médico: \"Com que frequência você sente isso?\". Atende muito bem como está, mas uma sugestão seria sincronismo em nuvem para quem usa mais de um dispositivo.",
+          "thumbsUp": 33,
+          "version": "3.198.0"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Maria Fernanda Giorgi dos S. Lima",
+          "score": 3,
+          "date": "2022-02-21T14:58:13",
+          "content": "O agendamento agilizou a entrega. Porém ultimamente o app está cancelando a data agendada precipitadamente, quando ainda há estoque do medicamento. Com isso, precisamos ir sem agendamento e aguardar horas na espera para a retirada. Sugestão de melhoria: melhorar a atualização do estoque através de inventários periódicos.",
+          "thumbsUp": 33,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "eu.smartpatient.mytherapy",
+          "app_name": "Lembrete de Medicamentos",
+          "userName": "Márcia Alves",
+          "score": 5,
+          "date": "2024-11-04T18:07:38",
+          "content": "App excelente! Muito útil: vc pode ajustar os lembretes para tomar os medicamentos, tem como controlar o estoque de medicamentos e avisa quando está perto do fim, vc ajusta a forma como quer ser avisado. Tem lembretes para aferir a pressão e outras rotinas, com uma variedade de ajustes e vc pode inserir quando quer ser avisado e a frequência. Como meu pai toma mais de 10 medicamentos por dia, esse app ajudou bastante na nossa rotina. Recomendo!",
+          "thumbsUp": 32,
+          "version": "3.193.0"
+        },
+        {
+          "app_id": "br.com.duosystem.remedioagora",
+          "app_name": "Remedio Agora",
+          "userName": "Robson Cunha",
+          "score": 4,
+          "date": "2020-10-03T10:28:07",
+          "content": "O agendamento pelo aplicativo facilitou e aprimorou o excelente serviço oferecido pela Farmácia de Alto Custo. O aplicativo é simples e eficiente. Tenho visto diversas pessoas, inclusive idosos, fazendo o uso dele. Em média, gasta-se cerca de 10 minutos para a retirada dos medicamentos. No processo antigo já cheguei a esperar 2 horas no Glicério, sendo que na grande maioria das vezes o atraso era causado em excesso de pessoas, falta de documentação, detalhamento dos requerimentos, etc.",
+          "thumbsUp": 31,
+          "version": "1.1.9"
+        },
+        {
+          "app_id": "br.com.insix.aquitemremedio",
+          "app_name": "Aqui tem remedio",
+          "userName": "Izabel Pinheiro",
+          "score": 3,
+          "date": "2022-04-05T14:47:21",
+          "content": "Boa tarde, o App se estiver sempre atualizado ajuda muito os pacientes, seria importante as pessoas poderem colocar os seus medicamentos e ficarem salvo, assim não precisaria digitar toda vez... Tinha isso no Agenda Fácil, mas tiraram. Era muito bom, marcavamos o nome do médico e os medicamentos indicados ao paciente. Pensem numa nova atualização nesse sentido.",
+          "thumbsUp": 31,
+          "version": "3.0.11"
+        },
+        {
+          "app_id": "com.medisafe.android.client",
+          "app_name": "Lembrete de Remedios e Pilula",
+          "userName": "Luciano da Costa",
+          "score": 1,
+          "date": "2026-01-01T11:40:11",
+          "content": "Uso o Medisafe há mais de 6 anos, diariamente, e sempre foi um aplicativo essencial para minha saúde. Fiquei extremamente decepcionado ao descobrir que agora todas as funções passaram a ser pagas, sem oferecer uma alternativa justa para usuários antigos. Entendo que apps precisam se sustentar, mas transformar algo que sempre foi acessível em pago integralmente, sem considerar quem confiou no aplicativo por tantos anos, é desrespeitoso.",
+          "thumbsUp": 30,
+          "version": "9.50.0"
+        },
+        {
+          "app_id": "br.com.drcuco",
+          "app_name": "CUCO - Lembrete de medicamento",
+          "userName": "Um usuário do Google",
+          "score": 4,
+          "date": "2019-03-16T08:37:50",
+          "content": "De todos os quais testei, este foi o mais completo, honesto e pontual. Quando o sistema do bulário estiver ativo, o aplicativo será ainda melhor. Sobre os outros serviços (o controle do peso, por exemplo), agregou muito ao programa. Sugiro a adição de um\"pedômetro\", pois caminhadas são\"receitadas\"\"em alguns tratame. A possibilidade de músicas suaves e sons da natureza para coadjuvante em alguns tratamentos. Uma\"A.I.\" ajudará muito na sugestão desses relaxamentos.Ótimo app, ainda não é perfeito.",
+          "thumbsUp": 28,
+          "version": "4.3.4"
+        }
+      ]
+    }
+  },
+  "oem_mentions": {
+    "Realme": 31,
+    "Otimização de Bateria / Segundo Plano": 22,
+    "Samsung (One UI / Galaxy)": 9,
+    "Motorola (Moto G / Edge)": 2,
+    "Xiaomi / Redmi / POCO (MIUI / HyperOS)": 3
+  }
+}
