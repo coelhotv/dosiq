@@ -78,7 +78,7 @@
 | 043 | notify-improvements | **delivered** | Slice B PR #733 (AP-273) · Slice A PRs #734 (outbox+drenador, ADR-078) e #742 (cutover do daily_digest). Prod 2026-08-15: outbox viva, 1.268 linhas `sent`. `stock_alert` não migrou por decisão de modelagem (fan-out precisa de `subject_id`) → spec 050 |
 | 044 | dose-only-mode | **delivered** | Épico completo 6 fases, PRs #735-740. Modo sem controle de estoque. AP-277/281-289, R-290 |
 | 045 | fix-android-soloader-crash | **delivered** | Tier 1 — crash SoLoader Android 13 |
-| 046 | lgpd-consent | **delivered** | Slices A #744 · B #745/#755 · D · C #804 · fix #805. Todos os POs fechados 2026-08-21 (PO-5/PO-SEC-3 com provas armadas em prod; PO-1/2/3 com trilha + smoke). ⚠️ Prune em `dry_run`: armar é decisão do PO. AP-333, AP-334, R-311, R-312, ADR-093 |
+| 046 | lgpd-consent | **delivered** | Slices A #744 · B #745/#755 · D · C #804 · fix #805. 7 POs fechados 2026-08-21. ⚡ Prune **ARMADO** em prod desde 2026-08-21, zero candidatos na base. AP-333, AP-334, R-311, R-312, ADR-093 |
 | 047 | inapp-review-prompt | **specified** | Tier 1 — expo-store-review, gatilho streak≥7d. Aguarda coding |
 | 048 | landing-glp1 | **specified** | Tier 1 — landing estática AEO/GEO/LLM-SEO. Aguarda coding |
 | 049 | docs-revamp | **delivered** | Épico completo 5 fases (F1 schema, F2 frontmatter 54 docs, F3 JS→TS 58 docs, F4 limpeza estrutural, F5 14 docs novos + 2 rewrites). Commits finais: 339620b (sprint 5.3 part 2), 3e59fee (frontmatter fixes), a164a93 (INDEX.md regeneração). 73/73 docs validados |

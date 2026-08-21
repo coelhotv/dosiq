@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/046-lgpd-consent",
     "spec": "plans/specs/046-lgpd-consent/spec.md",
-    "goal": "046 encerrada — todos os POs fechados (PO-1/2/3 com trilha + smoke; PO-5/PO-SEC-3 armados em prod)",
+    "goal": "046 ENCERRADA — prune ARMADO em produção 2026-08-21; 7 POs fechados",
     "goal_type": "feature",
     "code_review": {
       "status": "clean_after_fixes",
