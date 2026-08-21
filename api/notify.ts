@@ -12,6 +12,7 @@ import {
   sendDLQDigest
 } from '../server/bot/tasks.js';
 import { dispatchNotification } from '../server/notifications/dispatcher/dispatchNotification.js';
+import { notificationPreferenceRepository } from '../server/notifications/repositories/notificationPreferenceRepository.js';
 import { runOutboxCycle } from '../server/notifications/outbox/runOutboxCycle.js';
 import { createOutboxRepository } from '../server/notifications/outbox/outboxRepository.js';
 import { enqueueStockAlerts } from '../server/bot/outbox/enqueueStockAlerts.js';
@@ -67,31 +68,19 @@ const expoClient = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
 // === HELPERS: Repository factories ===
 
-const preferencesRepo = {
-  async getByUserId(userId) {
-    const { data } = await supabase.from('user_settings').select('notification_preference').eq('user_id', userId).single();
-    return data?.notification_preference || 'telegram';
-  },
-  async hasTelegramChat(userId) {
-    const { data } = await supabase.from('user_settings').select('telegram_chat_id').eq('user_id', userId).single();
-    return !!data?.telegram_chat_id;
-  },
-  async getSettingsByUserId(userId) {
-    const { data } = await supabase
-      .from('user_settings')
-      .select('notification_mode, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, digest_time, timezone, channel_mobile_push_enabled, channel_web_push_enabled, channel_telegram_enabled')
-      .eq('user_id', userId)
-      .single();
-    return data ?? {
-      notification_mode: 'realtime',
-      quiet_hours_enabled: false,
-      quiet_hours_start: null,
-      quiet_hours_end: null,
-      digest_time: '08:00',
-      timezone: 'America/Sao_Paulo'
-    };
-  }
-};
+// 🔴 046 T014 — o repo de preferências É o canônico, não uma cópia local.
+//
+// Até 2026-08-21 este arquivo montava o seu próprio `preferencesRepo`, e o `select` dele não
+// trazia `consent_revoked_at`. Como `isConsentSuppressed` decide por esse campo, ele chegava
+// `undefined` e a supressão do consentimento revogado ficava INERTE exatamente no caminho que
+// dispara lembrete de dose — o cron. Nada quebrava: o campo ausente num `select` não falha em
+// tsc, lint ou teste (a suíte do dispatcher recebe as settings já montadas, então prova a
+// política, não a query). É a classe da R-295, e o preço de duas implementações do mesmo
+// contrato: a que tinha o campo era usada só pelo `server/index.ts`.
+//
+// Descoberto ao executar as provas do PO-5 em produção. A correção não é "adicionar a coluna
+// aqui" — é não ter duas fontes: um contrato, um escritor.
+const preferencesRepo = notificationPreferenceRepository;
 
 const devicesRepo = {
   async listActiveByUser(userId, provider) {

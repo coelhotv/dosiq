@@ -369,12 +369,22 @@ export async function runConsentPrune(deps: ConsentPruneDeps): Promise<ConsentPr
   // Freio 2 — o cap conta quem seria APAGADO hoje, não quem receberia aviso: é o ato irreversível
   // que precisa de teto. Acima dele, aborta o run inteiro; apagar "os primeiros do cap" seria
   // executar metade de uma decisão que já se sabe suspeita.
+  //
+  // ⚠️ Mas NÃO em `dry_run`: o dry-run existe para descobrir quantos candidatos existem, e abortar
+  // nele fazia a ferramenta recusar justamente a pergunta que a pessoa foi fazer — e no cenário em
+  // que a resposta mais importa (população acima do teto). Como o dry-run não apaga nada, o cap
+  // vira aviso. Achado ao rodar a 1ª prova do PO-5 em produção.
   const dueForDelete = rows.filter((r) => daysSince(r.consent_revoked_at, now) >= PRUNE_DELETE_DAYS)
   if (dueForDelete.length > cap) {
-    logger.error('Prune ABORTADO — candidatos a exclusão acima do cap (nada foi apagado)', null, {
+    if (mode === 'armed') {
+      logger.error('Prune ABORTADO — candidatos a exclusão acima do cap (nada foi apagado)', null, {
+        correlationId, cap, due: dueForDelete.length,
+      })
+      return { ...result, aborted: true, reason: 'cap_exceeded' }
+    }
+    logger.warn('[dry-run] candidatos a exclusão ACIMA do cap — no modo armado este run abortaria', {
       correlationId, cap, due: dueForDelete.length,
     })
-    return { ...result, aborted: true, reason: 'cap_exceeded' }
   }
 
   if (rows.length > noticeCap) {

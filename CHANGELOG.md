@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Quem retira a autorização deixa de receber notificações — de verdade
+
+- **Fix** (`patch` server `4.2.1`). Correção de um defeito silencioso: desde 15/07 a suspensão de
+  notificações para quem retirou a autorização de uso de dados **não funcionava** nas notificações
+  diárias (lembrete de dose, resumo, alertas de estoque). A trava existia e estava correta; o que
+  falhava era a leitura — a rotina diária consultava as configurações do usuário **sem** trazer o
+  campo que marca a retirada, então lia todo mundo como "não retirou".
+
+  Ninguém foi afetado na prática: hoje não há nenhuma conta com a autorização retirada, e as quatro
+  retiradas de julho duraram de 4 minutos a 2 horas, sem nenhuma dose no intervalo. Mas o defeito
+  teria aparecido no primeiro caso real, na forma mais visível possível — um lembrete de
+  medicamento na tela de quem pediu para o aplicativo parar.
+
+  A causa foi haver **duas** implementações da mesma leitura: a completa, usada pelo robô, e uma
+  cópia local na rotina diária, que ficou para trás. A cópia foi eliminada — passa a existir uma
+  fonte só. Um teste novo trava isso: se uma segunda implementação voltar a aparecer, ele falha.
+
 ### Conta com autorização retirada passa a ser avisada e, sem resposta, excluída
 
 - **Feat** (`minor` server `4.2.0` · `patch` mobile `0.31.3`). Nasce **desarmado**: sem a variável `CONSENT_PRUNE_MODE=armed`
