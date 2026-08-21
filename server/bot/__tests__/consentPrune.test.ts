@@ -394,3 +394,34 @@ describe('achados da RC5 — os dois freios que estavam furados', () => {
     expect(enviados).toHaveLength(0)
   })
 })
+
+describe('dry-run levanta mesmo acima do cap (achado ao executar o PO-5)', () => {
+  it('cap excedido em dry_run NÃO aborta — é o modo que existe para contar candidatos', async () => {
+    // O primeiro run das provas em produção abortou com `cap_exceeded` em dry-run: a ferramenta
+    // recusava justamente a pergunta que se foi fazer, e no cenário em que a resposta mais importa.
+    const userSettings = Array.from({ length: 5 }, (_, i) => ({ user_id: `d${i}`, consent_revoked_at: hÁDias(95) }))
+    const consentLog = userSettings.flatMap(u => trilhaRevogada(u.user_id, hÁDias(95)))
+    const { supabase, rpcCalls } = criarSupabase({ userSettings, consentLog })
+    const { dispatcher } = criarDispatcher()
+
+    const r = await runConsentPrune({ supabase, dispatcher, now: AGORA, env: {}, cap: 1 })
+
+    expect(r.aborted).toBe(false)
+    expect(r.candidates).toBe(5)
+    expect(r.pruned).toBe(0)
+    expect(rpcCalls).toHaveLength(0)
+  })
+
+  it('no modo armado o mesmo cenário segue abortando', async () => {
+    const userSettings = Array.from({ length: 5 }, (_, i) => ({ user_id: `a${i}`, consent_revoked_at: hÁDias(95) }))
+    const consentLog = userSettings.flatMap(u => trilhaRevogada(u.user_id, hÁDias(95)))
+    const { supabase } = criarSupabase({ userSettings, consentLog })
+    const { dispatcher } = criarDispatcher()
+
+    const r = await runConsentPrune({ supabase, dispatcher, now: AGORA, env: ARMADO, cap: 1 })
+
+    expect(r.aborted).toBe(true)
+    expect(r.reason).toBe('cap_exceeded')
+  })
+})
+
