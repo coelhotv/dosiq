@@ -84,6 +84,16 @@ describe('consultationPdfDataBuilder — vigência por período (064/US2)', () =
     expect(row.dosesRemaining).toBe(0)
   })
 
+  it('severidade/mensagem do período passado NÃO herdam o isZero/isLow de HOJE (RC6, R-299)', () => {
+    // `stockItem` de hoje diz saldo 40 (isZero false). Num relatório de 01/07–31/07 o
+    // tratamento já estava encerrado ⇒ sem consumo ⇒ `daysRemaining` null: a linha é
+    // "monitorada", nunca "esgotada" por um sinal de outra data de referência.
+    const row = buildStockRow(parseLocalDate('2026-07-31'))
+    expect(row.daysRemaining).toBeNull()
+    expect(row.severity).toBe('stable')
+    expect(row.message).toBe('Estoque monitorado')
+  })
+
   it('(c) período CORRENTE com tratamento encerrado NÃO conta — era o número errado que chegava ao médico', () => {
     // Caminho de produção: `stockItem` PRESENTE (dailyIntake = 4 pré-calculado).
     // O período é o corrente, então o builder mantém o pré-calculado — que desde o 064

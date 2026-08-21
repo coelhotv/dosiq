@@ -255,7 +255,14 @@ function _mapStockItem(stockItem, protocols, medicines, asOf = getTodayLocal()) 
     preComputed?.dailyIntake ?? calculateDailyIntake(medicine.id, protocols, medicine, asOf)
   const totalQuantity = stockItem?.total ?? 0
   const daysRemaining = _resolveStockDays(preComputed, dailyIntake, totalQuantity)
-  const severity = getStockSeverity({ ...stockItem, daysRemaining })
+  // RC6/064: `isZero`/`isLow` do `stockItem` também são de HOJE. Espalhá-los aqui misturaria
+  // um `daysRemaining` do período com sinais de outra data de referência — exatamente o R-299
+  // que este builder passou a respeitar. Fora do período corrente, derivar do próprio saldo.
+  const healthSignals = preComputed ?? {
+    isZero: totalQuantity <= 0,
+    isLow: daysRemaining !== null && daysRemaining < 7,
+  }
+  const severity = getStockSeverity({ ...healthSignals, daysRemaining })
   const id = medicine.id || stockItem?.medicine?.id || stockItem?.medicine_id || crypto.randomUUID()
 
   // 012 B4 / ADR-067: doses físicas restantes (número-base p/ freq ≠ diário); a
@@ -273,7 +280,7 @@ function _mapStockItem(stockItem, protocols, medicines, asOf = getTodayLocal()) 
     dosesRemaining,
     isDailyStock: isDaily,
     severity,
-    message: _resolveStockMessage(stockItem),
+    message: _resolveStockMessage(healthSignals),
   }
 }
 
