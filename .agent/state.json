@@ -173,16 +173,14 @@
     "note": "AUTO-FIX: getTodayLocal() içado para fora do filter por medicamento em costAnalysisService. ASK: divergência do PO-3 caso (a) — asOf = fim do período (playbook) vs 'vigente em qualquer dia do período' (spec); decisão do PO."
   },
   "ai_review": {
-    "engine": "agy (2 chunks)",
-    "status": "clean",
+    "engine": "agy+claude (6 de 7 chunks — COBERTURA PARCIAL)",
+    "status": "issues_found",
     "critical": 0,
-    "high": 0,
+    "high": 1,
     "introduced_critical": 0,
-    "introduced_high": 0,
-    "pr": 803,
-    "coverage": "2/2",
-    "findings": "0/0/0/0",
-    "ab_pair": "nao armou (2 packs < 3)",
-    "note": "chunk 2 ADVISORY — _reminderHelpers.ts excede sozinho o budget de chunk (3o PR seguido)"
+    "introduced_high": 1,
+    "pr": 808,
+    "coverage": "6/7",
+    "note": "pass B (claude, full-context) achou o único finding: severity/message do PDF ainda herdavam isZero/isLow de HOJE em relatório de período passado (R-299). Corrigido em 58325d3b + teste. A/B abortou por baseline 0 findings (5ª vez). Fora da cobertura: _useDashboardDerived.ts, useComplexityMode.ts, consultationPdfVigency.test.ts"
   }
 }
