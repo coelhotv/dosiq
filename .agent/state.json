@@ -8,13 +8,13 @@
     "tier": 2,
     "spec_dir": "plans/specs/064-stock-forecast-vigency",
     "spec": "plans/specs/064-stock-forecast-vigency/spec.md",
-    "goal": "064 PR 1 — predicado canônico de vigência + limpeza (zero mudança de comportamento)",
+    "goal": "064 PR 1 MERGEADO (#807) — predicado canônico de vigência; PR 2 (comportamento: asOf + 6 superfícies + PDF clínico) é a próxima entrega",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
     ],
-    "merged_pr": 805,
-    "merged_squash": "2030f461 (squash merge into main)",
+    "merged_pr": 807,
+    "merged_squash": "72d5e322 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "050: TODO O CODIGO EM PROD + CUTOVER T033 APLICADO 2026-08-20 (verificado por vercel env pull: OUTBOX_KINDS com os 6 kinds, deploy posterior a mudanca). Caiu DEPOIS da janela das 10:00 SP, entao o legado serviu 20/08 (15 stock_alert as 13:00 UTC) e a fila assume em 21/08 as 10:00 local — nenhum dia com os dois caminhos ativos. PENDENTE: T034 (SC-003) — comparar notification_log pos 21-27/08 vs pre 14-20/08, POR TIPO e SEM SOMAR (stock_expiry_alert ja existe como notification_type desde 02/07; baseline 60d: stock_alert 448, stock_expiry_alert 2). Sinal de saude a olhar em 21/08: linhas dos dois kinds em notification_outbox (ate 20/08 a fila so tinha daily_adherence). PROXIMA ENTREGA DE CODIGO: PR 4 (T045-T048) — fatiar server/bot/_reminderHelpers.ts (1538 linhas) em 6 arquivos sob server/bot/reminders/, MOVE-ONLY; liberar a partir de 23/08 (~48h de fila saudavel), NAO precisa esperar o T034 fechar porque rollback do cutover e remover o env, nao mexer no codigo. Mapa do corte + 7 sites de import + prompt na Sessao 6 do PLAYBOOK. Motivo medido: o arquivo excede sozinho o budget de chunk do RC6 (74779B > 56614B) e degradou o pass para ADVISORY em #799, #801, #803.",
+    "previous_session_note": "064 PR 1 mergeado 2026-08-21 (#807, squash 72d5e322): isProtocolVigentOn no core, ProtocolSchema conserva start_date/end_date, sombra calculateDailyIntake do costAnalysisService deletada. ZERO mudanca de comportamento por construcao — o numero errado AINDA esta na tela. PROXIMA ENTREGA: PR 2 (branch fix/064-stock-forecast-vigency, T007-T020), sessao fresh, prompt pronto na Sessao 2 do PLAYBOOK. PO-4 segue [ ] open de proposito (parte B = custo/dia=0 depende do filtro do PR 2). PENDENCIA HERDADA da 050: T034 (SC-003, semana 21-27/08) e PR 4 (fatiar _reminderHelpers.ts). ACHADO RC6 do #807: adherenceLogic.ts (38903B) excede sozinho o chunk budget (38279B) => pass ADVISORY, mesmo modo de falha do _reminderHelpers.ts em #799/#801/#803, agora num 2o arquivo do core. A/B abortado por baseline 0 findings pela 5a vez consecutiva (insumo T051).",
     "ceremonies_run": [
       "eng-review"
     ],
