@@ -8,13 +8,13 @@
     "tier": 2,
     "spec_dir": "plans/specs/064-stock-forecast-vigency",
     "spec": "plans/specs/064-stock-forecast-vigency/spec.md",
-    "goal": "064 PR 2 — vigência no read-path de consumo (estoque, custo, bot, chatbot, PDF clínico) + gate de fonte única",
+    "goal": "064 ENTREGUE (PR 1 #807 + PR 2 #808, squash c454dcc5) — vigência no read-path de consumo; C5 pós-merge fechado",
     "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
     ],
-    "merged_pr": 807,
-    "merged_squash": "72d5e322 (squash merge into main)",
+    "merged_pr": 808,
+    "merged_squash": "c454dcc5 (squash merge into main)",
     "merged_history": [
       {
         "pr": 795,
@@ -151,10 +151,10 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 7,
-    "rules_count": 263,
-    "anti_patterns_count": 329,
-    "decisions_count": 93,
+    "journal_entries_since_distillation": 8,
+    "rules_count": 264,
+    "anti_patterns_count": 332,
+    "decisions_count": 94,
     "contracts_count": 34,
     "distillation_due": false
   },
