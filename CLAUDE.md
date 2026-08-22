@@ -113,6 +113,7 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 - Bug não-trivial → `AP-NNN` · padrão novo → `R-NNN` · decisão → `ADR-NNN` (índices + detail em `.agent/memory/`)
 - Entrega → journal (`.agent/memory/journal/YYYY-WWW.jsonl`) + `state.json` (counter)
 - **SQP (R-221) antes de alterar código**: classificar impacto SemVer, bump, changelog PT (`docs/standards/CHANGELOG_AND_RELEASES.md` — R-242/243/244)
+  - **Mobile: declarar o CANAL junto do bump (R-314)** — OTA · build de loja · kill switch. Nativo/SDK/`ios/`/`android/`/permissão **e** feature nova ou mudança de propósito (mesmo 100% JS) ⇒ **loja** (Apple 3.3.1); embarcar código inativo p/ ligar por flag depois é proibido em qualquer canal. OTA **não bumpa** `APP_VERSION` (bump = runtime novo = update órfão) e loga `[X.Y.Z+ota.N]`. Checklist: `docs/operations/GUIA_OTA_EAS_UPDATE.md` §5.1
 - `plans/` é **local-only** (gitignored) — refs em docs marcam "(local-only, não versionado)"
 - **Distill**: auto quando counter ≥15; manual obrigatório ao fechar fase/épico. D5 reconcilia state × índices.
 
