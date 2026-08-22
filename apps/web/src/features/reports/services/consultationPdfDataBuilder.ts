@@ -7,7 +7,14 @@
 import { addDays, formatLocalDate, parseLocalDate, parseISO, getNow, getTodayLocal } from '@utils/dateUtils'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogic'
-import { stockDoseMetrics, formatConcentration, isProtocolVigentOn } from '@dosiq/core'
+import {
+  stockDoseMetrics,
+  isProtocolVigentOn,
+  frequencyDailyFactor,
+  FREQUENCY_LABELS,
+  formatIntakeDose,
+  formatMedicineConcentration,
+} from '@dosiq/core'
 import {
   buildSummaryCards,
   buildAttentionItems,
@@ -70,78 +77,85 @@ export function formatTreatmentLabel(protocol, medicine) {
 }
 
 /**
- * Formata a apresentacao do medicamento.
+ * Apresentação do medicamento (concentração cadastrada).
+ *
+ * 073/F-1: era um formatador LOCAL que colava " por comprimido" em qualquer coisa — inclusive
+ * em caneta injetável e frasco de líquido. A concentração agora sai do formatador canônico do
+ * core (o MESMO que a página de estoque deste PDF já usava), que respeita a forma real.
+ *
  * @param {Object} medicine - Medicamento cadastrado.
  * @returns {string} Texto de apresentacao.
  */
-export function formatMedicinePresentation(medicine) {
-  const dosagePerPill = medicine?.dosage_per_pill
-  const dosageUnit = medicine?.dosage_unit || 'mg'
-
-  if (dosagePerPill === null || dosagePerPill === undefined) {
-    return 'Apresentacao nao cadastrada'
-  }
-
-  return `${formatConcentration(dosagePerPill, dosageUnit)} por comprimido`
+function _formatPresentation(medicine) {
+  return formatMedicineConcentration(medicine) || 'Apresentação não cadastrada'
 }
 
 /**
- * Formata a dose por tomada.
- * @param {Object} protocol - Protocolo ativo.
+ * Dose por tomada, na unidade REAL da tomada.
+ *
+ * 🔴 073/F-17 (o achado mais grave da spec): o formatador local multiplicava
+ * `dosage_per_intake × dosage_per_pill` SEMPRE, ignorando `intake_unit`. Quando a tomada já
+ * está em massa (`mg`/`UI`), isso multiplica a dose pela CONCENTRAÇÃO e imprime a
+ * concentração como se fosse a dose — "Lantus 10 UI" saía "1.000 UI" no documento que o
+ * paciente leva ao médico (2 ordens de grandeza).
+ *
+ * @param {Object} protocol - Protocolo.
  * @param {Object} medicine - Medicamento cadastrado.
- * @returns {string} Texto da dose por tomada.
+ * @returns {string}
  */
-export function formatIntakeDose(protocol, medicine) {
-  const pillsPerIntake = protocol?.dosage_per_intake ?? 1
-  const dosagePerPill = medicine?.dosage_per_pill
-  const dosageUnit = medicine?.dosage_unit || 'mg'
-  const pillLabel = pillsPerIntake === 1 ? 'comprimido' : 'comprimidos'
-
-  if (dosagePerPill === null || dosagePerPill === undefined) {
-    return `${pillsPerIntake} ${pillLabel}`
-  }
-
-  const intakeAmount = pillsPerIntake * dosagePerPill
-  return `${pillsPerIntake} ${pillLabel} (${formatConcentration(intakeAmount, dosageUnit)})`
+function _formatDosePerIntake(protocol, medicine) {
+  return formatIntakeDose(protocol?.dosage_per_intake ?? 1, protocol?.intake_unit, medicine)
 }
 
-/**
- * Formata a frequencia em linguagem clinica curta.
- * @param {Object} protocol - Protocolo ativo.
- * @returns {string} Texto da frequencia.
- */
-export function formatFrequency(protocol) {
+/** Tomadas por dia declaradas no `time_schedule` (mínimo 1). */
+function _timesPerDay(protocol) {
   const schedule = Array.isArray(protocol?.time_schedule) ? protocol.time_schedule : []
-  if (schedule.length === 0) return '1x/dia'
-
-  const schedulePreview = schedule.slice(0, 3).join(', ')
-  const suffix = schedule.length > 3 ? '...' : ''
-  return `${schedule.length}x/dia${schedulePreview ? ` • ${schedulePreview}${suffix}` : ''}`
+  return schedule.length > 0 ? schedule.length : 1
 }
 
 /**
- * Formata a dose diaria total.
- * @param {Object} protocol - Protocolo ativo.
- * @param {Object} medicine - Medicamento cadastrado.
- * @returns {string} Texto da dose diaria.
+ * Cadência clínica: a FREQUÊNCIA declarada + as tomadas do dia em que há dose.
+ *
+ * 073/F-2: o texto anterior derivava tudo do tamanho do `time_schedule` e imprimia "1x/dia"
+ * para um GLP-1 SEMANAL — a cadência do tratamento simplesmente não entrava na conta.
+ *
+ * @param {Object} protocol - Protocolo.
+ * @returns {string}
  */
-export function formatDailyDose(protocol, medicine) {
-  const pillsPerIntake = protocol?.dosage_per_intake ?? 1
-  const timesPerDay =
-    Array.isArray(protocol?.time_schedule) && protocol.time_schedule.length > 0
-      ? protocol.time_schedule.length
-      : 1
-  const dosagePerPill = medicine?.dosage_per_pill
-  const dosageUnit = medicine?.dosage_unit || 'mg'
+function _formatCadence(protocol) {
+  const schedule = Array.isArray(protocol?.time_schedule) ? protocol.time_schedule : []
+  const times = _timesPerDay(protocol)
+  const frequencyLabel = FREQUENCY_LABELS[protocol?.frequency] || FREQUENCY_LABELS['diário']
+  const timesLabel = times === 1 ? '1 tomada' : `${times} tomadas`
+  const preview = schedule.slice(0, 3).join(', ')
+  const suffix = schedule.length > 3 ? '...' : ''
+  const scheduleLabel = preview ? ` • ${preview}${suffix}` : ''
+  return `${frequencyLabel} • ${timesLabel}${scheduleLabel}`
+}
 
-  if (dosagePerPill === null || dosagePerPill === undefined) {
-    const pillsPerDay = pillsPerIntake * timesPerDay
-    const pillLabel = pillsPerDay === 1 ? 'comprimido/dia' : 'comprimidos/dia'
-    return `${pillsPerDay} ${pillLabel}`
-  }
-
-  const totalDosage = pillsPerIntake * timesPerDay * dosagePerPill
-  return `${formatConcentration(totalDosage, dosageUnit)}/dia`
+/**
+ * Dose diária MÉDIA, na unidade real da tomada.
+ *
+ * 073/E-1: o formatador local acumulava as duas doenças — multiplicava pela concentração
+ * (F-17) e tratava `time_schedule.length` como cadência (F-2), tratando semanal como diário.
+ * A média por dia usa `frequencyDailyFactor` (o mesmo fator que a página de ESTOQUE deste
+ * documento já aplicava via `calculateDailyIntake` — ADR-094: cadência sobre a dose, nunca
+ * sobre a vigência).
+ *
+ * @param {Object} protocol - Protocolo.
+ * @param {Object} medicine - Medicamento cadastrado.
+ * @returns {string}
+ */
+function _formatDailyDose(protocol, medicine) {
+  const perIntake = Number(protocol?.dosage_per_intake ?? 1)
+  if (!Number.isFinite(perIntake)) return '-'
+  const perDay = perIntake * _timesPerDay(protocol) * frequencyDailyFactor(protocol)
+  // Arredonda em 3 casas: o fator 1/7 (semanal) produz dízima e o formatador do core não
+  // arredonda (R-277 — o artefato de float vazaria para o documento).
+  const rounded = Math.round(perDay * 1000) / 1000
+  const label = formatIntakeDose(rounded, protocol?.intake_unit, medicine)
+  // "10 UI (≈ 0,1 mL) por dia" lê melhor que colar "/dia" depois do parêntese.
+  return label ? `${label} por dia` : '-'
 }
 
 /**
@@ -166,10 +180,12 @@ function getStockSeverity(stockItem) {
  * @param {Array<Object>} medicines - Medicamentos do paciente.
  * @returns {Array<Object>} Rows prontos para renderizacao.
  */
-function buildTreatmentRows(protocols = [], medicines = []) {
+function buildTreatmentRows(protocols = [], medicines = [], asOf = getTodayLocal()) {
   return protocols
-    // vigency-gate: ok — rows de TRATAMENTOS do PDF (listagem clínica), não consumo de estoque.
-    .filter((protocol) => protocol?.active !== false)
+    // 073/F-18: a listagem filtrava só por `active !== false` e ainda carimbava 'Ativo'
+    // literal — a Dipirona vencida em 18/08 saía "Ativo" na pág. 2 e "Vencida" na pág. 5 do
+    // MESMO documento. Filtro e status agora derivam do MESMO predicado canônico.
+    .filter((protocol) => isProtocolVigentOn(protocol, asOf))
     .map((protocol) => {
       const medicine =
         medicines.find((item) => item.id === protocol.medicine_id) || protocol.medicine || {}
@@ -184,11 +200,13 @@ function buildTreatmentRows(protocols = [], medicines = []) {
       return {
         id: protocol.id,
         label: formatTreatmentLabel(protocol, medicine),
-        presentation: formatMedicinePresentation(medicine),
-        dosePerIntake: formatIntakeDose(protocol, medicine),
-        frequency: formatFrequency(protocol),
-        dailyDose: formatDailyDose(protocol, medicine),
-        status: 'Ativo',
+        presentation: _formatPresentation(medicine),
+        dosePerIntake: _formatDosePerIntake(protocol, medicine),
+        frequency: _formatCadence(protocol),
+        dailyDose: _formatDailyDose(protocol, medicine),
+        // Só chega aqui o que o predicado já declarou vigente em `asOf`; o rótulo diz isso,
+        // não um literal (073/F-18).
+        status: 'Vigente',
         // 029 F6: a nota lia `titration_schedule` (jsonb N1 dropado — e vazio em 100% das
         // linhas de prod, então este "Em titulacao" nunca apareceu num PDF de verdade).
         //
@@ -218,9 +236,19 @@ function _resolveStockMedicine(stockItem, medicines) {
     || stockItem?.medicine || {}
 }
 
-function _resolveStockProtocol(medicine, protocols) {
-  // vigency-gate: ok — resolve o protocolo só para o RÓTULO da linha de estoque.
-  return protocols.find((item) => item.medicine_id === medicine.id && item.active !== false)
+function _resolveStockProtocol(medicine, protocols, asOf = getTodayLocal()) {
+  // vigency-gate: ok — resolve o protocolo só para o RÓTULO da linha de estoque (o CONSUMO
+  // é calculado por `calculateDailyIntake`/`stockDoseMetrics`, que já filtram vigência).
+  // 073/E-3: era `find` sobre `active !== false`, que devolvia um tratamento ENCERRADO como
+  // rótulo e, com dois vigentes, devolvia um arbitrário. Agora: vigente em `asOf` e, no
+  // empate, o de `start_date` mais recente (determinístico).
+  const candidates = protocols.filter(
+    (item) => item.medicine_id === medicine.id && isProtocolVigentOn(item, asOf)
+  )
+  if (candidates.length <= 1) return candidates[0]
+  return [...candidates].sort((a, b) =>
+    String(b.start_date ?? '').localeCompare(String(a.start_date ?? ''))
+  )[0]
 }
 
 function _resolveStockDays(stockItem, dailyIntake, totalQuantity) {
@@ -243,7 +271,7 @@ function _resolveStockMessage(stockItem) {
  */
 function _mapStockItem(stockItem, protocols, medicines, asOf = getTodayLocal()) {
   const medicine = _resolveStockMedicine(stockItem, medicines)
-  const protocol = _resolveStockProtocol(medicine, protocols)
+  const protocol = _resolveStockProtocol(medicine, protocols, asOf)
   // 064/US2 (F-14, opção (a)): `stockItem.dailyIntake` vem PRÉ-CALCULADO pelo dashboard,
   // sempre para HOJE. Num relatório cujo período não termina hoje, esse número é de outra
   // data de referência (R-299) — então ignoramos o pré-calculado e recalculamos com `asOf`.
@@ -406,14 +434,19 @@ function buildAdherenceTrend(dailyAdherence = [], logs = [], protocols = [], day
     })
   }
 
-  // vigency-gate: ok — série de adesão do PDF: usa o predicado do GERADOR de dose adiante.
-  const activeProtocols = protocols.filter((protocol) => protocol?.active !== false)
+  // 073/E-3 (decisão D25 do PO): a vigência é avaliada POR DIA, dentro do loop — filtrar por
+  // "vigente HOJE" e aplicar isso aos N dias fazia o tratamento encerrado no meio da janela
+  // sumir do PRÓPRIO PASSADO (R-299: fato datado não se lê pelo estado de hoje).
+  // Não é a composição vetada pelo ADR-094: a vigência responde "este tratamento valia neste
+  // dia" e `calculateDosesByDate` responde "havia dose neste dia" — papéis distintos.
   const trend = []
 
   for (let offset = days - 1; offset >= 0; offset -= 1) {
     const date = addDays(getNow(), -offset)
     const dateStr = formatLocalDate(date)
-    const result = calculateDosesByDate(dateStr, logs, activeProtocols)
+    // vigency-gate: ok — vigência por DIA (ADR-094); a cadência quem aplica é o gerador.
+    const protocolsOfDay = protocols.filter((protocol) => isProtocolVigentOn(protocol, dateStr))
+    const result = calculateDosesByDate(dateStr, logs, protocolsOfDay)
     const taken = result.takenDoses.length
     const missed = result.missedDoses.length
     const expected = taken + missed
@@ -520,12 +553,11 @@ export function buildConsultationPdfData({
   const inp = _extractInputs(consultationData, dashboardData)
   const periodDays = _calculatePeriodDays(period, inp.dailyAdherence.length)
 
-  const activeTreatments = buildTreatmentRows(inp.protocols, inp.medicines)
+  // 064/US2: o relatório termina na data de geração — é ela que define a vigência (R-299).
+  const asOf = formatLocalDate(_toLocalDate(generatedAt))
+  const activeTreatments = buildTreatmentRows(inp.protocols, inp.medicines, asOf)
   // 044/US3 (dose-only): NENHUMA row de estoque — nem tabela vazia, nem "0 dias" fantasma.
   // Some também dos summary cards e dos itens de atenção (que derivam de stockRows).
-  // 064/US2: o relatório termina na data de geração — é ela que define a vigência dos
-  // tratamentos considerados (R-299: fato datado não se lê pelo estado de hoje).
-  const asOf = formatLocalDate(_toLocalDate(generatedAt))
   const stockRows = inp.stockTrackingEnabled
     ? buildStockRows(inp.stockSummary, inp.protocols, inp.medicines, asOf)
     : []
@@ -564,8 +596,4 @@ export function buildConsultationPdfData({
 export default {
   buildConsultationPdfData,
   formatTreatmentLabel,
-  formatMedicinePresentation,
-  formatIntakeDose,
-  formatFrequency,
-  formatDailyDose,
 }

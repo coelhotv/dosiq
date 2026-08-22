@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "coding",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 fix-clinical-data — planejada em 3 PRs (T001..T047)",
+    "goal": "073 PR 1 — \"o documento\" (Slices A+F+G, T001..T024)",
     "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
@@ -131,7 +131,7 @@
       "D25 (2026-08-22, PO no planning): isenção :410 resolvida — série de adesão filtra vigência POR DIA (isProtocolVigentOn(p, dia)) dentro do loop existente; passado para de mudar quando tratamento encerra (R-299); muda o número de adesão exibido, declarado no CHANGELOG. Isenção :223 reescrita com desempate por start_date mais recente, não removida",
       "D26 (2026-08-22, planning): ADR-095 a criar como 'proposed' no PR 3 — fonte única de status de receita (um enum, janela 14d, ordem das guardas com finalizada antes de vencendo)"
     ],
-    "branch": "main",
+    "branch": "fix/073-pr1-documento",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"

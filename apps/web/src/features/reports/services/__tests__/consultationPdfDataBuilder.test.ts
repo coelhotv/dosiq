@@ -3,10 +3,6 @@ import { addDays, formatLocalDate } from '@utils/dateUtils'
 import {
   buildConsultationPdfData,
   formatTreatmentLabel,
-  formatMedicinePresentation,
-  formatIntakeDose,
-  formatFrequency,
-  formatDailyDose,
 } from '@/features/reports/services/consultationPdfDataBuilder'
 
 describe('consultationPdfDataBuilder', () => {
@@ -37,6 +33,8 @@ describe('consultationPdfDataBuilder', () => {
       medicine_id: 'med-1',
       active: true,
       dosage_per_intake: 2,
+      intake_unit: null,
+      frequency: 'diário',
       time_schedule: ['08:00', '20:00'],
       start_date: past,
       end_date: future,
@@ -47,6 +45,8 @@ describe('consultationPdfDataBuilder', () => {
       medicine_id: 'med-2',
       active: true,
       dosage_per_intake: 1,
+      intake_unit: null,
+      frequency: 'diário',
       time_schedule: ['22:00'],
       // 029 F6: era `titration_schedule: [{ dosage: 1, days: 3 }]` (jsonb N1 dropado). A nota
       // do PDF deixou de derivar da titulação — ver o comentário no builder: os tratamentos
@@ -122,15 +122,87 @@ describe('consultationPdfDataBuilder', () => {
     ],
   }
 
-  it('formata labels e doses clinicas corretamente', () => {
-    const protocol = protocols[0]
-    const medicine = medicines[0]
+  it('formata dose, cadencia e status pelos formatadores do core (073 F-1/F-2/F-17/F-18)', () => {
+    // 🔴 073/E-6: este teste TRAVAVA o bug — afirmava '2 comprimidos (100 mg)' para uma dose
+    // que já vinha em massa e '1x/dia' para tratamento semanal. As asserções foram invertidas:
+    // agora ele falha se alguém reintroduzir um formatador local.
+    const generatedAt = new Date(`${formatLocalDate(now)}T10:30:00`)
+    const clinicalMedicines = [
+      { id: 'm-lantus', name: 'Lantus', dosage_per_pill: 100, dosage_unit: 'ui/ml' },
+      { id: 'm-ozem', name: 'Ozempic', dosage_per_pill: 2.68, dosage_unit: 'mg/ml' },
+      { id: 'm-dip', name: 'Dipirona', dosage_per_pill: 500, dosage_unit: 'mg/ml' },
+      { id: 'm-selo', name: 'Selozok', dosage_per_pill: 25, dosage_unit: 'mg' },
+    ]
+    const clinicalProtocols = [
+      {
+        id: 'p-lantus', name: 'Diabetes', medicine_id: 'm-lantus', active: true,
+        dosage_per_intake: 10, intake_unit: 'UI', frequency: 'diário',
+        time_schedule: ['22:00'], start_date: past, end_date: future,
+      },
+      {
+        id: 'p-ozem', name: 'GLP-1', medicine_id: 'm-ozem', active: true,
+        dosage_per_intake: 2.4, intake_unit: 'mg', frequency: 'semanal',
+        time_schedule: ['09:00'], start_date: past, end_date: future,
+      },
+      {
+        // Par de NÃO-OMISSÃO invertido: encerrado antes da geração ⇒ fora da listagem.
+        id: 'p-dip', name: 'Dor', medicine_id: 'm-dip', active: true,
+        dosage_per_intake: 15, intake_unit: 'gotas', frequency: 'diário',
+        time_schedule: ['08:00'], start_date: past,
+        end_date: formatLocalDate(addDays(now, -4)),
+      },
+      {
+        id: 'p-selo', name: 'Pressao', medicine_id: 'm-selo', active: true,
+        dosage_per_intake: 1, intake_unit: null, frequency: 'diário',
+        time_schedule: ['08:00', '20:00'], start_date: past, end_date: future,
+      },
+    ]
 
-    expect(formatTreatmentLabel(protocol, medicine)).toBe('Hipertensao - Losartana')
-    expect(formatMedicinePresentation(medicine)).toBe('50 mg por comprimido')
-    expect(formatIntakeDose(protocol, medicine)).toBe('2 comprimidos (100 mg)')
-    expect(formatFrequency(protocol)).toBe('2x/dia • 08:00, 20:00')
-    expect(formatDailyDose(protocol, medicine)).toBe('200 mg/dia')
+    const pdfData = buildConsultationPdfData({
+      consultationData: {},
+      dashboardData: { medicines: clinicalMedicines, protocols: clinicalProtocols },
+      generatedAt,
+    })
+    const byLabel = Object.fromEntries(pdfData.activeTreatments.map((row) => [row.label, row]))
+
+    expect(formatTreatmentLabel(clinicalProtocols[0], clinicalMedicines[0])).toBe('Diabetes - Lantus')
+
+    // F-17: a dose de tomada NÃO é multiplicada pela concentração quando já vem em massa.
+    expect(byLabel['Diabetes - Lantus']).toMatchObject({
+      presentation: '100 UI/mL',
+      dosePerIntake: '10 UI (≈ 0,1 mL)',
+      frequency: 'Diário • 1 tomada • 22:00',
+      dailyDose: '10 UI (≈ 0,1 mL) por dia',
+      status: 'Vigente',
+    })
+    expect(byLabel['Diabetes - Lantus'].dosePerIntake).not.toContain('1.000')
+
+    // F-2/E-1: semanal deixa de ser tratado como diário — a média do dia usa o fator 1/7,
+    // o MESMO que a página de estoque deste documento já aplicava (2,4 ÷ 7 ≈ 0,343 mg).
+    expect(byLabel['GLP-1 - Ozempic']).toMatchObject({
+      dosePerIntake: '2,4 mg (≈ 0,9 mL)',
+      frequency: 'Semanal • 1 tomada • 09:00',
+      dailyDose: '0,343 mg (≈ 0,13 mL) por dia',
+    })
+
+    // F-1: nada de " por comprimido" colado em caneta/frasco.
+    expect(byLabel['GLP-1 - Ozempic'].presentation).toBe('2,68 mg/mL')
+
+    // F-18: o encerrado some da listagem (e não sai "Ativo" na pág. 2 e "Vencida" na pág. 5).
+    expect(byLabel['Dor - Dipirona']).toBeUndefined()
+
+    // Par de não-omissão: o sólido vigente continua presente e correto.
+    expect(byLabel['Pressao - Selozok']).toMatchObject({
+      presentation: '25 mg',
+      dosePerIntake: '1 un. (25 mg)',
+      dailyDose: '2 un. (50 mg) por dia',
+      status: 'Vigente',
+    })
+
+    // F-22 (parte numérica): o card da pág. 1 conta o MESMO conjunto da tabela da pág. 2.
+    const treatmentsCard = pdfData.summaryCards.find((c) => c.label === 'Tratamentos ativos')
+    expect(treatmentsCard.value).toBe(String(pdfData.activeTreatments.length))
+    expect(treatmentsCard.value).toBe('3')
   })
 
   it('monta o modelo editorial do PDF com resumo, tratamentos e alertas', () => {
@@ -138,7 +210,10 @@ describe('consultationPdfDataBuilder', () => {
       consultationData,
       dashboardData,
       period: '30d',
-      generatedAt: new Date('2026-03-24T10:30:00'),
+      // 073: a vigência é avaliada em `generatedAt` (R-299). O fixture é relativo a hoje,
+      // então a data de geração tem de ser hoje — com a data fixa antiga o teste passaria a
+      // afirmar "nenhum tratamento vigente", que é o oposto do que ele quer provar.
+      generatedAt: new Date(`${formatLocalDate(now)}T10:30:00`),
       title: 'Consulta Medica',
     })
 
@@ -150,11 +225,11 @@ describe('consultationPdfDataBuilder', () => {
     expect(pdfData.activeTreatments).toHaveLength(2)
     expect(pdfData.activeTreatments[0]).toMatchObject({
       label: 'Ansiedade - Ansitec',
-      presentation: '10 mg por comprimido',
-      dosePerIntake: '1 comprimido (10 mg)',
-      frequency: '1x/dia • 22:00',
-      dailyDose: '10 mg/dia',
-      status: 'Ativo',
+      presentation: '10 mg',
+      dosePerIntake: '1 un. (10 mg)',
+      frequency: 'Diário • 1 tomada • 22:00',
+      dailyDose: '1 un. (10 mg) por dia',
+      status: 'Vigente',
     })
     expect(pdfData.stockRows[0].severity).toBe('critical')
     expect(pdfData.prescriptionRows[0]).toMatchObject({
@@ -192,7 +267,7 @@ describe('consultationPdfDataBuilder', () => {
         dailyAdherence,
       },
       period: '7d',
-      generatedAt: new Date('2026-03-24T10:30:00'),
+      generatedAt: new Date(`${formatLocalDate(now)}T10:30:00`),
       title: 'Consulta Medica',
     })
 
@@ -259,7 +334,7 @@ describe('consultationPdfDataBuilder', () => {
         ],
       },
       period: '7d',
-      generatedAt: new Date('2026-03-24T10:30:00'),
+      generatedAt: new Date(`${formatLocalDate(now)}T10:30:00`),
       title: 'Consulta Medica',
     })
 
