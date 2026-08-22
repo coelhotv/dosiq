@@ -373,6 +373,34 @@ function _stepStatusLabel(step) {
 }
 
 /**
+ * AC-37: a escada COMPLETA — dose, duração, período e situação de cada degrau, na ordem de
+ * `position`. Um contador "4/4" diz que o paciente chegou ao fim; não diz de quanto para quanto
+ * ele subiu, nem em quanto tempo, que é o que decide manter, subir ou recuar.
+ *
+ * 🔴 R-299: cada degrau é um FATO DATADO e carrega o próprio medicamento — uma escada
+ * cross-medicamento troca de cadastro no meio (e a concentração muda junto). Converter a dose de
+ * um degrau antigo pela concentração do cadastro de HOJE reescreveria o passado do paciente.
+ *
+ * @private
+ */
+function _buildLadder(ordered, protocol, medicine, medicines) {
+  return ordered.map((step, index) => {
+    const stepMedicine = medicines?.find((m) => m.id === step.medicine_id) || medicine
+    const doseLabel = _stepDoseLabel(step, protocol, stepMedicine) || '-'
+    const crossMedicine = stepMedicine?.name && stepMedicine.name !== medicine?.name
+    return {
+      position: index + 1,
+      doseLabel: crossMedicine ? `${stepMedicine.name} · ${doseLabel}` : doseLabel,
+      durationLabel: _stepDurationLabel(step),
+      startLabel: _stepDateLabel(step.started_at) || '-',
+      periodLabel: _stepPeriodLabel(step),
+      statusLabel: _stepStatusLabel(step),
+      isCurrent: step.status === 'current',
+    }
+  })
+}
+
+/**
  * Extrai as titulações do paciente para o modo consulta e para o PDF.
  *
  * 🔴 073/F-24 — POR QUE ISTO MUDOU: a seção de titulação SUMIA para quem terminou de titular.
@@ -394,88 +422,83 @@ function _stepStatusLabel(step) {
  */
 function _extractActiveTitrations(protocols, medicines) {
   if (!protocols) return []
+  return protocols.map((protocol) => _buildTitrationRow(protocol, medicines)).filter(Boolean)
+}
 
-  return protocols
-    .map((protocol) => {
-      const steps = protocol.titration_steps
-      if (!Array.isArray(steps) || steps.length === 0) return null
+/**
+ * Linha de um tratamento em EVOLUÇÃO (etapa vigente com duração — há progresso a exibir).
+ *
+ * 🔴 RC6/R-299: `currentDoseLabel` vem da PRÓPRIA linha da escada, que já resolveu o medicamento
+ * do degrau. Recalcular com o medicamento do protocolo imprimiria a massa da concentração errada
+ * numa escada cross-medicamento — e faria a nota discordar da tabela logo abaixo, no mesmo
+ * documento.
+ * @private
+ */
+function _progressRow(base, ordered, ladder, titrationData) {
+  // `currentStep` é 1-based (rótulo de exibição); a escada está ordenada por position.
+  const index = titrationData.currentStep - 1
+  return {
+    ...base,
+    isMaintenance: false,
+    currentStep: titrationData.currentStep,
+    currentDay: titrationData.day,
+    totalDays: titrationData.totalDays,
+    progressPercent: Math.round(titrationData.progressPercent),
+    isTransitionDue: titrationData.isTransitionDue,
+    daysRemaining: titrationData.daysRemaining,
+    currentDosage: ordered[index]?.dose ?? null,
+    currentDoseLabel: ladder[index]?.doseLabel ?? null,
+    maintenanceSince: null,
+  }
+}
 
-      const ordered = [...steps].sort((a, b) => a.position - b.position)
-      const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
-      // AC-37: a escada COMPLETA — dose, duração, início e situação de cada degrau, na ordem
-      // de `position`. Um contador "4/4" diz que o paciente chegou ao fim; não diz de quanto
-      // para quanto ele subiu, nem em quanto tempo, que é o que decide manter, subir ou recuar.
-      const ladder = ordered.map((step, index) => {
-        // 🔴 R-299: o degrau é um FATO DATADO e carrega o próprio medicamento — uma escada
-        // cross-medicamento troca de cadastro no meio (e a concentração muda junto). Converter
-        // a dose de um degrau antigo pela concentração do cadastro de HOJE reescreveria o
-        // passado do paciente. `medicine_id` do degrau primeiro; o do tratamento é o fallback.
-        const stepMedicine = medicines?.find((m) => m.id === step.medicine_id) || medicine
-        const doseLabel = _stepDoseLabel(step, protocol, stepMedicine) || '-'
-        const crossMedicine = stepMedicine?.name && stepMedicine.name !== medicine?.name
-        return {
-          position: index + 1,
-          doseLabel: crossMedicine ? `${stepMedicine.name} · ${doseLabel}` : doseLabel,
-          durationLabel: _stepDurationLabel(step),
-          startLabel: _stepDateLabel(step.started_at) || '-',
-          periodLabel: _stepPeriodLabel(step),
-          statusLabel: _stepStatusLabel(step),
-          isCurrent: step.status === 'current',
-        }
-      })
+/**
+ * Uma linha de titulação (ou `null` quando não há o que declarar).
+ * @private
+ */
+function _buildTitrationRow(protocol, medicines) {
+  const steps = protocol.titration_steps
+  if (!Array.isArray(steps) || steps.length === 0) return null
 
-      const base = {
-        protocolId: protocol.id,
-        ladder,
-        medicineId: protocol.medicine_id,
-        medicineName: medicine?.name || protocol.medicine_name || 'Desconhecido',
-        totalSteps: ordered.length,
-        // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou (decisão de
-        // PRODUTO — `titration_steps` não tem `description`, R-295 conferido no banco).
-        stageNote: null,
-      }
+  const ordered = [...steps].sort((a, b) => a.position - b.position)
+  const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
+  const ladder = _buildLadder(ordered, protocol, medicine, medicines)
 
-      const titrationData = calculateTitrationData(ordered)
+  const base = {
+    protocolId: protocol.id,
+    ladder,
+    medicineId: protocol.medicine_id,
+    medicineName: medicine?.name || protocol.medicine_name || 'Desconhecido',
+    totalSteps: ordered.length,
+    // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou (decisão de
+    // PRODUTO — `titration_steps` não tem `description`, R-295 conferido no banco).
+    stageNote: null,
+  }
 
-      if (titrationData) {
-        // `currentStep` é 1-based (rótulo de exibição); a escada está ordenada por position.
-        const currentStep = ordered[titrationData.currentStep - 1]
-        return {
-          ...base,
-          isMaintenance: false,
-          currentStep: titrationData.currentStep,
-          currentDay: titrationData.day,
-          totalDays: titrationData.totalDays,
-          progressPercent: Math.round(titrationData.progressPercent),
-          isTransitionDue: titrationData.isTransitionDue,
-          daysRemaining: titrationData.daysRemaining,
-          currentDosage: currentStep?.dose ?? null,
-          currentDoseLabel: _stepDoseLabel(currentStep, protocol, medicine),
-          maintenanceSince: null,
-        }
-      }
+  const titrationData = calculateTitrationData(ordered)
+  if (titrationData) return _progressRow(base, ordered, ladder, titrationData)
 
-      // Sem progresso a exibir. Só vira linha se houver etapa vigente CONTÍNUA — ou seja,
-      // manutenção (dose alvo atingida). Escada sem etapa vigente é escada não iniciada ou
-      // encerrada: nada a declarar num documento clínico.
-      const currentStep = resolveCurrentStep(ordered)
-      if (!currentStep) return null
+  // Sem progresso a exibir. Só vira linha se houver etapa vigente CONTÍNUA — ou seja, manutenção
+  // (dose alvo atingida). Escada sem etapa vigente é escada não iniciada ou encerrada: nada a
+  // declarar num documento clínico.
+  const currentStep = resolveCurrentStep(ordered)
+  if (!currentStep) return null
 
-      return {
-        ...base,
-        isMaintenance: true,
-        currentStep: ordered.indexOf(currentStep) + 1,
-        currentDay: null,
-        totalDays: null,
-        progressPercent: null,
-        isTransitionDue: false,
-        daysRemaining: null,
-        currentDosage: currentStep.dose ?? null,
-        currentDoseLabel: _stepDoseLabel(currentStep, protocol, medicine),
-        maintenanceSince: _stepDateLabel(currentStep.started_at),
-      }
-    })
-    .filter(Boolean) // Remove nulls
+  const currentIndex = ordered.indexOf(currentStep)
+  return {
+    ...base,
+    isMaintenance: true,
+    currentStep: currentIndex + 1,
+    currentDay: null,
+    totalDays: null,
+    progressPercent: null,
+    isTransitionDue: false,
+    daysRemaining: null,
+    currentDosage: currentStep.dose ?? null,
+    // RC6/R-299: idem — a nota "Dose alvo" sai da linha da escada, nunca de um recálculo.
+    currentDoseLabel: ladder[currentIndex]?.doseLabel ?? null,
+    maintenanceSince: _stepDateLabel(currentStep.started_at),
+  }
 }
 
 export default {

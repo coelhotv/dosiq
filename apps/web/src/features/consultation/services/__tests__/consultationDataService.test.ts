@@ -431,6 +431,43 @@ describe('consultationDataService', () => {
       })
     })
 
+    it('escada cross-medicamento: a nota da dose alvo usa a concentração do PRÓPRIO degrau (R-299)', () => {
+      // Achado do RC6 do PR #809: `currentDoseLabel` recalculava a massa com o medicamento do
+      // TRATAMENTO. Num medicine_switch, a nota "Dose alvo" sairia da concentração do
+      // medicamento errado — e discordaria da tabela da escada no MESMO documento.
+      mocks.mockTitrationData = null
+
+      const dashboardData = createMockDashboardData({
+        medicines: [
+          { id: 'med-antigo', name: 'Selozok 25', dosage_per_pill: 25, dosage_unit: 'mg' },
+          { id: 'med-novo', name: 'Selozok 100', dosage_per_pill: 100, dosage_unit: 'mg' },
+        ],
+        protocols: [
+          {
+            id: 'p-switch',
+            medicine_id: 'med-antigo', // o tratamento ainda aponta o cadastro ANTIGO
+            active: true,
+            start_date: '2026-01-01',
+            end_date: '2026-12-31',
+            titration_steps: [
+              { position: 0, dose: 1, intake_unit: 'cp', duration_days: 7, status: 'completed', started_at: '2026-01-01T00:00:00', medicine_id: 'med-antigo' },
+              { position: 1, dose: 1, intake_unit: 'cp', duration_days: null, status: 'current', started_at: '2026-02-01T00:00:00', medicine_id: 'med-novo' },
+            ],
+          },
+        ],
+      })
+
+      const [titration] = getConsultationData(dashboardData).activeTitrations
+
+      // 1 comprimido do cadastro NOVO = 100 mg — não os 25 mg do cadastro do tratamento.
+      expect(titration.currentDoseLabel).toContain('100 mg')
+      expect(titration.currentDoseLabel).not.toContain('25 mg')
+      // A nota e a linha da escada não podem divergir: são o mesmo rótulo.
+      expect(titration.currentDoseLabel).toBe(titration.ladder[1].doseLabel)
+      // Degrau de outro medicamento se identifica.
+      expect(titration.ladder[1].doseLabel).toContain('Selozok 100')
+    })
+
     it('não inventa titulação: sem escada e sem etapa vigente, a secao fica vazia (073 F-24)', () => {
       mocks.mockTitrationData = null
 
