@@ -105,7 +105,7 @@
       "D1 (2026-08-22, PO): janela canônica de vigência de prescrição = 14 dias (a do core). O literal 30 e o parâmetro thresholdDays da web somem",
       "D2 (2026-08-22, PO): a seção 'Prescrições' do PDF É de alertas — corrigir o título e deletar o rótulo inalcançável 'Vigente'; o filtro fica",
       "D3 (2026-08-22, PO): achados novos F-6/F-7/F-8 entram na 073 (Slice C de higiene), em vez de virarem spec separada",
-      "D4 (2026-08-22, PO): modelo de receita (tabela prescriptions, validade legal, CRM, receituário 344) fica registrado como gap na §8 — spec própria só depois de evidência de demanda",
+      "D4 (2026-08-22, PO): modelo de receita NÃO é achado novo — é o item 5.7 do BACKLOG_ORDER_2026H2 (2º pilar do dossiê Android, 230 menções), com gate próprio: só especificar depois que a 048 medir tráfego. A 073 só acrescenta a verificação de banco (ausência da tabela confirmada, não presumida) e respeita o gate",
       "D5 (2026-08-22, investigação): F-7 rebaixado de 'imprime errado p/ todos' para 'código morto' — pdfGeneratorService.ts tem ZERO importadores em src; vira DELEÇÃO, não correção"
     ],
     "branch": "main",
