@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "tier": 0,
-    "spec_dir": "plans/specs/051-expo-updates",
-    "spec": "plans/specs/051-expo-updates/spec.md",
-    "goal": "Onda 0 (backlog H2 2026) ENCERRADA — T011 da 051 entregue: R-314 (elegibilidade OTA x build de loja) + hook no SQP (R-221 §4c). PO-4/FR-009/SC-006 fechados. Docs-only, direto na main.",
-    "goal_type": "process",
+    "mode": "specifying",
+    "status": "specified",
+    "tier": 2,
+    "spec_dir": "plans/specs/073-fix-clinical-data",
+    "spec": "plans/specs/073-fix-clinical-data/spec.md",
+    "goal": "073 fix-clinical-data — specifying completo (S1-S6): 8 achados F-1..F-8 verificados, 3 slices, 2 clarificações resolvidas pelo PO, gap estrutural de receita e mapa de superfícies só-web registrados",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
     ],
@@ -98,25 +98,21 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "Onda 0 fechada 2026-08-21 (0.1 ja verificado em prod 20/08 + 0.3/T011 agora). O gap do T011 era HOOK, nao conteudo: GUIA_OTA §5/§8 ja tinha a prosa; faltava regra citavel e o SQP nunca perguntava o canal de entrega. R-314 + R-221 §4c + passo 3b no CHANGELOG_AND_RELEASES + linha \"Canal de entrega\" no PR template + GUIA_OTA §5.1/§5.2. Sem gate automatico por decisao (nenhuma ferramenta le intencao de produto) — declarado na regra. PROXIMO: Onda 1 — item 1.5 (fatiar _reminderHelpers.ts, 1.538 linhas, move-only; liberado a partir de 23/08) e T034/SC-003 da 050 (relogio, 27/08). Pendencias herdadas inalteradas: PO-8 da 067 e o REVOKE UPDATE(status) do 067 B2.",
+    "previous_session_note": "073 specificada em 2026-08-22. Origem: smoke da 064 expôs que superfícies SÓ-WEB (reports/PDF, prescriptions, consultation) ficaram fora dos sweeps de líquidos (022/023/024), cadência (012) e rótulo (053) — porque os sweeps seguiram mobile+core. Verificado no banco: protocols NÃO tem dosage/dosage_unit (F-7) e NÃO existe tabela prescriptions (§8 — 'validade de receita' do benchmark ASO não tem modelo). PRÓXIMO: /devflow eng-review (RC3) ou planning do Slice A. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (fatiar _reminderHelpers.ts, liberado 23/08) e T034/SC-003 da 050 (27/08).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
-      "D1: analysis F-6 rebaixado HIGH->LOW (sombra e codigo morto, zero chamadores) e F-9 corrigido (dashboard usa getAll, sem filtro de data)",
-      "D2: fatiar em 3 PRs — PR1 estrutura (sem mudanca de comportamento), PR2 comportamento (6 superficies), PR3 PDF; droppabilidade PR3->PR2->PR1",
-      "D3: guard do PO-2 elevado — diff de snapshot mecanico em vez de comparacao visual",
-      "D4: comentario obrigatorio no getActive declarando o filtro SQL como redundante",
-      "D5 (2026-08-21, pos-RC3): eixo paused_at REMOVIDO do predicado — a pausa grava active=false (createProtocolRepository.ts:61) e prod tem 0 protocolos active=true com paused_at; a 064 passa a ter UM eixo (end_date). FR-008 cancelado, T002 cancelada, PO-2 perde o sintoma de pausa e a LISTA da tela de estoque sai do smoke (getActive ja filtra vigencia completa)",
-      "D6 (2026-08-21, PO): fatiamento vai de 3 PRs para 2 — o PDF volta para dentro do PR de comportamento. Motivos do PO: (1) custo de cerimonia se mede em TOKENS (RC5+RC6 3 chunks+C5+indices), nao em minutos, e um PR de 2 arquivos nao paga; (2) o PDF clinico ja sai HOJE com consumo inflado para o medico — defeito VIVO, nao historico; adiar era ranking errado. Efeito aceito: PR2 vai a ~12 arqs/~139KB e o par A/B do RC6 pode ser desqualificado pelo teto de 150K",
-      "F-14 (CRITICAL, 2026-08-21): o asOf em consultationPdfDataBuilder:245 corrigiria SO o fallback — o valor real vem pre-calculado do dashboard (_useDashboardDerived:48, sempre hoje) via dashboardData.stockSummary -> getConsultationData -> _extractStockAlerts:241. Classe AP-333. PO-3 ganhou exigencia de teste com stockItem presente; decisao (a) recomendada"
+      "D1 (2026-08-22, PO): janela canônica de vigência de prescrição = 14 dias (a do core). O literal 30 e o parâmetro thresholdDays da web somem",
+      "D2 (2026-08-22, PO): a seção 'Prescrições' do PDF É de alertas — corrigir o título e deletar o rótulo inalcançável 'Vigente'; o filtro fica",
+      "D3 (2026-08-22, PO): achados novos F-6/F-7/F-8 entram na 073 (Slice C de higiene), em vez de virarem spec separada",
+      "D4 (2026-08-22, PO): modelo de receita (tabela prescriptions, validade legal, CRM, receituário 344) fica registrado como gap na §8 — spec própria só depois de evidência de demanda",
+      "D5 (2026-08-22, investigação): F-7 rebaixado de 'imprime errado p/ todos' para 'código morto' — pdfGeneratorService.ts tem ZERO importadores em src; vira DELEÇÃO, não correção"
     ],
     "branch": "main",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
     ],
-    "plan": "plans/specs/064-stock-forecast-vigency/plan.md",
-    "tasks": "plans/specs/064-stock-forecast-vigency/tasks.md",
     "pending_migrations": [
       {
         "file": "docs/migrations/20260818_skip_dose_atomic_and_status_privilege.sql",
@@ -137,20 +133,27 @@
       "rollback": "remover os 2 kinds do env; linhas pending do dia seguem drenando"
     },
     "acceptance_criteria": [
-      "AC-1 → spec 064 PO-1",
-      "AC-1b → spec 064 PO-1b",
-      "AC-2 → spec 064 PO-2",
-      "AC-3 → spec 064 PO-3",
-      "AC-4 → spec 064 PO-4",
-      "AC-5 → spec 064 PO-5"
+      "AC-1 → spec 073 PO-1",
+      "AC-2 → spec 073 PO-1",
+      "AC-3 → spec 073 PO-1",
+      "AC-4 → spec 073 PO-2",
+      "AC-5 → spec 073 PO-2",
+      "AC-6 → spec 073 PO-2",
+      "AC-7 → spec 073 PO-3",
+      "AC-8 → spec 073 PO-3",
+      "AC-9 → spec 073 PO-3",
+      "AC-10 → spec 073 PO-3",
+      "AC-11 → spec 073 PO-4",
+      "AC-12 → spec 073 PO-4",
+      "AC-13 → spec 073 PO-5",
+      "AC-14 → spec 073 PO-5",
+      "AC-15 → spec 073 PO-5"
     ],
-    "ceremony_type": "eng-review",
-    "ab_pair_strategy": "(a) mantida, mas com risco assumido: PR2 a ~12 arqs pode estourar 150K no chunk nao-filtrado (modo #801). Nenhum arquivo estoura o budget sozinho (maior adherenceLogic.ts 35210B) => passes nao devem sair ADVISORY",
-    "playbook": "plans/specs/064-stock-forecast-vigency/PLAYBOOK.md"
+    "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 265,
     "anti_patterns_count": 332,
     "decisions_count": 94,
@@ -162,14 +165,14 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-21T21:00:00Z"
+    "index_loaded_at": "2026-08-22T03:10:42Z"
   },
   "code_review": {
     "status": "not_applicable",
-    "note": "T011 docs/process-only — sem código, sem PR (R-060 não se aplica a doc puro)"
+    "note": "specifying — sem código"
   },
   "ai_review": {
     "status": "not_applicable",
-    "note": "T011 docs/process-only — sem código, sem PR (R-060 não se aplica a doc puro)"
+    "note": "specifying — sem código"
   }
 }

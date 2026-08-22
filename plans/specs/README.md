@@ -29,7 +29,7 @@
 | `delivered` | 100% mergeado em prod (anotar PRs) |
 | `superseded` | substituída/absorvida por outra spec (apontar qual) |
 
-## Tabela de status (atualizada 2026-08-21)
+## Tabela de status (atualizada 2026-08-22)
 
 | # | Spec | Status | Evidência / Nota |
 |---|------|--------|------------------|
@@ -105,4 +105,4 @@
 | 070 | symptom-side-effect-log | **draft** | Diário de efeitos colaterais × degrau de titulação (conjunto fixo + escala 0–5, nunca texto livre). Não existe sintoma no monorepo hoje. Tabela nova ⇒ grants/RLS obrigatórios. Alimenta a 007 |
 | 071 | injection-bodymap | **draft** | Silhueta SVG de sítio de injeção (web hoje é `<select>`; mobile já é chips). Zero migração. 🔴 8 sítios reais incluem **glúteo** e não têm quadrante abdominal — o dossiê ASO errou o enum (R-295) |
 | 072 | stock-derivation-single-source | **draft** | Tier 2 provável, **bloqueada pela 064**. Eixos B (fonte: `getAll` × `getActive` × embed cru × `select('*')`) e C (5 derivações de resumo de estoque) que a 064 mapeou e deliberadamente não tocou. Prova de que morde: [[AP-333]] no PDF, que empresta o valor derivado pelo dashboard em vez de calcular. A unificação já está declarada num docstring do core e não foi entregue (função privada, sem `export`). Entrar só após a 064 validada em prod |
-| 073 | fix-clinical-data | **draft** | Guarda-chuva dos furos do documento clínico, achados no smoke da 064: o PDF chama injetável/gotas de "comprimido" (ignora `intake_unit`/`presentation`) e imprime dose semanal como "1x/dia" (ignora `frequency`). Status de prescrição tem duas implementações divergentes — core (14d) no widget de estoque, web (30d) no PDF —, e pausado sai como "vencendo". Fatiamento provável: A = unidade/cadência no PDF · B = fonte única de prescrição. Não é regressão da 064; é dívida da era pré-líquidos. Fronteira com a `072`: aqui é o que se EXIBE, lá é de onde os dados VÊM |
+| 073 | fix-clinical-data | **specified** | Guarda-chuva dos furos do documento clínico (F-1..F-8, todos com `file:line`). PDF chama injetável/gotas de "comprimido" e imprime semanal como "1x/dia"; status de prescrição tem 2 implementações (core 14d × web 30d) e pausado sai como "vencendo". 3 slices: A = unidade/cadência no PDF · B = fonte única de prescrição (janela 14d, seção vira "alertas") · C = higiene (enum trocado, `pdfGeneratorService` morto com campo fantasma, rótulos). PO decidiu as 2 clarificações em 2026-08-22. §8 registra que **não existe tabela `prescriptions`** (receita é proxy do `end_date`) e §9 mapeia as superfícies só-web. Bloqueia a `007`. Fronteira com a `072`: aqui é o que se EXIBE |
