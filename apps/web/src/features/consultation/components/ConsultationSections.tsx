@@ -52,8 +52,10 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerPill, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.timesPerDay}x ao dia
-                          {med.dailyDosage ? `, ${formatDose(med.dailyDosage, med.intakeUnit || 'ml')}/dia` : ''})
+                          ({med.cadenceLabel || `${med.timesPerDay}x`}
+                          {med.dailyDosage
+                            ? `, ${formatDose(med.dailyDosage, med.intakeUnit)}/dia`
+                            : ''})
                         </span>
                       </span>
                     ) : med.dosagePerIntake && med.timesPerDay ? (
@@ -61,8 +63,10 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerIntake, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.timesPerDay}x ao dia
-                          {med.dailyDosage ? `, ${formatConcentration(med.dailyDosage, med.dosageUnit)}/dia` : ''})
+                          ({med.cadenceLabel || `${med.timesPerDay}x`}
+                          {med.dailyDosage
+                            ? `, ${formatConcentration(med.dailyDosage, med.dosageUnit)}/dia`
+                            : ''})
                         </span>
                       </span>
                     ) : med.dosagePerPill ? (

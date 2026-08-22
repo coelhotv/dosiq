@@ -81,6 +81,19 @@ vi.mock('@utils/dateUtils', () => ({
 }))
 
 import { getConsultationData } from '@/features/consultation/services/consultationDataService'
+import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionService'
+import { frequencyDailyFactor, PRESCRIPTION_EXPIRY_WARNING_DAYS } from '@dosiq/core'
+import {
+  CLINICAL_MEDICINES,
+  CLINICAL_PROTOCOLS,
+  MEDICINE_SOLID,
+  MEDICINE_LIQUID,
+  MEDICINE_EXPIRED,
+  PROTOCOL_SOLID_MORNING,
+  PROTOCOL_SOLID_EXTRA,
+  PROTOCOL_LIQUID_WEEKLY,
+  dateOffset,
+} from '@/test/fixtures/clinicalSurfaces'
 
 describe('consultationDataService', () => {
   beforeEach(() => {
@@ -141,8 +154,10 @@ describe('consultationDataService', () => {
       frequency: 'diário',
       time_schedule: ['08:00', '20:00'],
       dosage_per_intake: 1,
-      start_date: '2026-01-01',
-      end_date: '2026-12-31',
+      // 073: vigência agora é predicado do core com relógio REAL — datas relativas
+      // evitam a bomba-relógio de um fixture ancorado em 2026.
+      start_date: dateOffset(-60),
+      end_date: dateOffset(120),
       // Sem escada: nenhum `titration_steps` no embed.
     },
     {
@@ -153,8 +168,8 @@ describe('consultationDataService', () => {
       frequency: 'semanal',
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
-      start_date: '2026-01-15',
-      end_date: '2026-06-30',
+      start_date: dateOffset(-45),
+      end_date: dateOffset(90),
       // 029 F3.1 (T017d): a escada vem do embed `titration_steps(...)`, não do jsonb N1.
       titration_steps: [
         { position: 0, dose: 1, duration_days: 3, status: 'current', started_at: '2026-02-21T00:00:00' },
@@ -269,8 +284,8 @@ describe('consultationDataService', () => {
         frequency: 'diário',
         time_schedule: ['14:00'], // +1 horário
         dosage_per_intake: 2, // 2 comprimidos
-        start_date: '2026-01-01',
-        end_date: '2026-12-31',
+        start_date: dateOffset(-60),
+        end_date: dateOffset(120),
       }
 
       const dashboardData = createMockDashboardData({
@@ -282,7 +297,9 @@ describe('consultationDataService', () => {
       expect(paracetamol).toMatchObject({
         dosagePerIntake: 1500, // 500mg × (1 + 2) = 1500
         timesPerDay: 3, // 2 + 1 = 3 horários
-        dailyDosage: 4500, // 1500 × 3 = 4500
+        // 073/F-13: soma POR PROTOCOLO — (500×2) + (1.000×1) = 2.000. O valor antigo
+        // (4.500) era o produto cruzado Σ(dose) × Σ(tomadas), que inflava a posologia.
+        dailyDosage: 2000,
       })
     })
 
@@ -739,4 +756,140 @@ describe('consultationDataService', () => {
       })
     })
   })
+  // ==========================================================================
+  // 073 PR 2 (Slice E) — "a conta": posologia, vigência, cadência e unidade
+  // ==========================================================================
+  describe('073 — a conta do modo consulta', () => {
+    const clinicalDashboard = () => ({
+      medicines: [...CLINICAL_MEDICINES],
+      protocols: [...CLINICAL_PROTOCOLS],
+      logs: [],
+      stockSummary: [],
+      stats: {},
+    })
+
+    it('AC-20/AC-21: 2 tratamentos vigentes do mesmo medicamento somam POR PROTOCOLO (1.500 mg, não 3.000)', () => {
+      const result = getConsultationData(clinicalDashboard())
+      const paracetamol = result.activeMedicines.find((m) => m.id === MEDICINE_SOLID.id)
+
+      // (500 × 2 tomadas) + (500 × 1 tomada) = 1.500 mg/dia.
+      // O produto cruzado antigo dava Σ(1.000) × Σ(3) = 3.000 mg — o DOBRO.
+      expect(paracetamol.dailyDosage).toBe(1500)
+      expect(paracetamol.timesPerDay).toBe(3)
+    })
+
+    it('AC-22 (não-omissão): medicamento com 1 tratamento mantém o número de hoje', () => {
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        protocols: [PROTOCOL_SOLID_MORNING],
+      })
+      const paracetamol = result.activeMedicines.find((m) => m.id === MEDICINE_SOLID.id)
+
+      expect(paracetamol.dailyDosage).toBe(1000) // 500 × 2 — inalterado
+      expect(paracetamol.cadenceLabel).toBe('2x ao dia')
+    })
+
+    it('AC-23: cadência semanal não vira "x ao dia" e aplica o fator do core', () => {
+      const result = getConsultationData(clinicalDashboard())
+      const ozempic = result.activeMedicines.find((m) => m.id === MEDICINE_LIQUID.id)
+
+      expect(ozempic.cadenceLabel).toBe('1x — Semanal')
+      // 0,9 mL 1×/semana = 0,9/7 por dia (frequencyDailyFactor), não 0,9/dia.
+      expect(ozempic.dailyDosage).toBeCloseTo(0.9 / 7, 6)
+      expect(ozempic.intakeUnit).toBe('ml')
+    })
+
+    it('AC-23 (guard): o dailyDosage bate com o consumo diário que o core calcula', () => {
+      const result = getConsultationData(clinicalDashboard())
+      const ozempic = result.activeMedicines.find((m) => m.id === MEDICINE_LIQUID.id)
+
+      expect(ozempic.dailyDosage).toBeCloseTo(
+        PROTOCOL_LIQUID_WEEKLY.dosage_per_intake *
+          PROTOCOL_LIQUID_WEEKLY.time_schedule.length *
+          frequencyDailyFactor(PROTOCOL_LIQUID_WEEKLY),
+        6
+      )
+    })
+
+    it('AC-24: tratamento com end_date no passado NÃO é "medicamento em uso"', () => {
+      const result = getConsultationData(clinicalDashboard())
+
+      expect(result.activeMedicines.map((m) => m.id)).not.toContain(MEDICINE_EXPIRED.id)
+      expect(result.activeMedicines).toHaveLength(2)
+    })
+
+    it('AC-24: tratamento com start_date no futuro também fica fora', () => {
+      const future = { ...PROTOCOL_SOLID_MORNING, id: 'prot-future', start_date: dateOffset(5), end_date: dateOffset(60) }
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        protocols: [future],
+      })
+
+      expect(result.activeMedicines).toEqual([])
+    })
+
+    it('AC-24: a janela de prescrição é a canônica do core (14 dias), não o literal 30', () => {
+      getConsultationData(clinicalDashboard())
+
+      expect(getExpiringPrescriptions).toHaveBeenCalledWith(
+        expect.anything(),
+        PRESCRIPTION_EXPIRY_WARNING_DAYS
+      )
+      expect(PRESCRIPTION_EXPIRY_WARNING_DAYS).toBe(14)
+    })
+
+    it('AC-25: alerta de estoque de líquido sai em mL, não "unidades"', () => {
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        stockSummary: [
+          { medicine: { id: MEDICINE_LIQUID.id, name: MEDICINE_LIQUID.name }, total: 1.5, isLow: true, isZero: false, daysRemaining: 3, dailyIntake: 0.13 },
+        ],
+      })
+
+      expect(result.stockAlerts[0].message).toContain('mL')
+      expect(result.stockAlerts[0].message).not.toContain('unidades')
+      expect(result.stockAlerts[0].unitLabel).toBe('mL')
+    })
+
+    it('AC-25: sólido mantém a contagem em unidades e o medicamento ausente não inventa mL', () => {
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        stockSummary: [
+          { medicine: { id: MEDICINE_SOLID.id, name: MEDICINE_SOLID.name }, total: 4, isLow: true, isZero: false, daysRemaining: 2, dailyIntake: 3 },
+          { medicine: { id: 'nao-cadastrado', name: 'Fantasma' }, total: 2, isLow: true, isZero: false, daysRemaining: 1, dailyIntake: 2 },
+        ],
+      })
+
+      expect(result.stockAlerts.find((a) => a.medicineId === MEDICINE_SOLID.id).unitLabel).toBe('un.')
+      expect(result.stockAlerts.find((a) => a.medicineId === 'nao-cadastrado').unitLabel).toBe('un.')
+    })
+
+    it('degenerado: sem dosage_per_pill não inventa dose diária', () => {
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        medicines: [{ ...MEDICINE_SOLID, dosage_per_pill: null }],
+        protocols: [PROTOCOL_SOLID_MORNING, PROTOCOL_SOLID_EXTRA],
+      })
+
+      expect(result.activeMedicines[0]).toMatchObject({
+        dosagePerIntake: null,
+        dailyDosage: null,
+        timesPerDay: 3,
+      })
+    })
+
+    it('degenerado: cadências divergentes no mesmo medicamento não viram um rótulo só', () => {
+      const weeklySolid = { ...PROTOCOL_SOLID_EXTRA, frequency: 'semanal' }
+      const result = getConsultationData({
+        ...clinicalDashboard(),
+        medicines: [MEDICINE_SOLID],
+        protocols: [PROTOCOL_SOLID_MORNING, weeklySolid],
+      })
+
+      expect(result.activeMedicines[0].cadenceLabel).toBeNull()
+      // 500×2 (diário) + 500×1×(1/7) (semanal)
+      expect(result.activeMedicines[0].dailyDosage).toBeCloseTo(1000 + 500 / 7, 6)
+    })
+  })
 })
+

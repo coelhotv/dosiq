@@ -7,6 +7,37 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Cartão de emergência e modo consulta: a conta da dose
+
+- **Fix** (`minor` web `4.24.0`). O **cartão de emergência** mostrava apenas UM tratamento por
+  medicamento. Quem toma o mesmo remédio em dois tratamentos diferentes (por exemplo 500 mg de
+  manhã e 500 mg à noite, prescritos em momentos distintos) via só metade da posologia — num
+  documento que é lido justamente quando o paciente não pode explicar nada. Agora cada tratamento
+  vigente aparece na própria linha, com dose e horários próprios, e o QR code carrega exatamente a
+  mesma lista da tela.
+- **Fix** (mesmo release). O cartão listava tratamento **encerrado** e tratamento que ainda **não
+  começou**: o filtro só olhava se o tratamento estava ativo, e ignorava o período de vigência.
+  Passa a usar a mesma regra de vigência do resto do app.
+- **Fix** (mesmo release). No cartão, a contagem de tomadas aparecia só em tratamento diário — um
+  semanal com duas aplicações mostrava apenas "Semanal". Agora as duas informações aparecem juntas
+  ("2x — Semanal").
+- **Fix** (mesmo release). No **modo consulta**, a dose diária de um medicamento com dois
+  tratamentos vigentes vinha **dobrada**: o total somava todas as doses e multiplicava pelo total
+  de horários dos dois tratamentos juntos. Agora cada tratamento é somado por si (500 mg 2×/dia +
+  500 mg 1×/dia = 1.500 mg/dia, não 3.000).
+- **Change** (mesmo release). Ainda no modo consulta, a dose diária passa a respeitar a **cadência**
+  (semanal, dias alternados, personalizado) em vez de tratar todo tratamento como diário, e a
+  cadência real é impressa no lugar do fixo "x ao dia". ⚠️ Isso **muda o número exibido** para
+  tratamentos não-diários — ele passa a ser a exposição média por dia.
+- **Change** (mesmo release). A lista de receitas do modo consulta passa a usar a janela oficial de
+  **14 dias** (a mesma do resto do app) no lugar dos 30 dias que só ela usava. ⚠️ Receita vencendo
+  em mais de 14 dias deixa de aparecer nessa lista.
+- **Fix** (mesmo release). O alerta de estoque do modo consulta dizia "unidades" para líquido; agora
+  usa a unidade certa do medicamento ("1,5 mL").
+- **Change** (mesmo release). O **PDF de consulta** lê essas mesmas listas: o contador de
+  medicamentos da primeira página deixa de somar tratamento encerrado, e a seção de receitas passa a
+  seguir a janela de 14 dias. É a mesma regra que a tela — as duas superfícies pararam de divergir.
+
 ### O PDF de consulta volta a dizer a verdade sobre a dose
 
 - **Fix** (`minor` web `4.23.0`). O relatório que o paciente leva ao médico imprimia a dose errada
