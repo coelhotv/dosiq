@@ -727,12 +727,13 @@ function renderTitrationPage(doc, autoTable, pdfData) {
 
   renderTable(autoTable, doc, {
     startY: 28,
-    head: [['Tratamento', 'Progresso', 'Etapa', 'Transicao', 'Nota']],
+    head: [['Tratamento', 'Progresso', 'Etapa', 'Transição', 'Nota']],
     body: pdfData.titrationRows.map((row) => [
       row.label,
-      `${row.progressPercent}%`,
-      `${row.currentStep}/${row.totalSteps}`,
-      row.isTransitionDue ? 'Pendente' : 'Não',
+      // 073/F-24: em manutenção não há percentual — "dose alvo" é a informação honesta.
+      row.progressLabel ?? `${row.progressPercent ?? 0}%`,
+      row.stageLabel ?? `${row.currentStep}/${row.totalSteps}`,
+      row.isTransitionDue ? 'Pendente' : '—',
       row.stageNote,
     ]),
     columnStyles: {
@@ -809,6 +810,10 @@ export async function generateConsultationPDF(options: any = {}) {
     }
   }
 
+  // 073/F-24: este gate é de EXISTÊNCIA de escada, não de progresso. Ele sempre foi escrito
+  // assim, mas o extrator a montante descartava quem estava em manutenção — então, na prática,
+  // ele barrava justamente o paciente que TERMINOU de titular. A correção mora no extrator
+  // (`consultationDataService._extractActiveTitrations`); aqui só o comentário muda.
   if (pdfData.titrationRows.length > 0) {
     doc.addPage()
     renderTitrationPage(doc, autoTable, pdfData)

@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
-import { getCurrentUser } from '@shared/utils/supabase'
+import { getCurrentUser, getUserId, supabase } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
 import ConsultationView from '@features/consultation/components/ConsultationView'
@@ -15,6 +15,7 @@ import Loading from '@shared/components/ui/Loading'
 import { analyticsService } from '@dashboard/services/analyticsService'
 import { generateConsultationPDF } from '@features/reports/services/consultationPdfService'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { attachFullLadders } from '@dosiq/core'
 import './Consultation.css'
 
 /**
@@ -34,10 +35,52 @@ async function fetchAdherenceSummaries() {
   }
 }
 
+/**
+ * Escada COMPLETA de titulação dos tratamentos (029 F6 / AP-311).
+ *
+ * 🔴 O embed `titration_steps(...)` que vem no select de `protocols` resolve pela FK
+ * `protocol_id`, que só marca o executor VIGENTE e fica NULL na maioria das etapas — a etapa
+ * `current` costuma ficar de fora. Num documento clínico isso vira uma escada mutilada (ou
+ * ausente). A identidade da escada é a `titration_id`; a derivação é a do core, a mesma da
+ * listagem de tratamentos e do mobile.
+ *
+ * R-295: colunas conferidas em `information_schema` (2026-08-22) e select byte-idêntico ao já
+ * executado em produção por `useTreatmentList` (a tabela não é legível por `anon` — o curl de
+ * saída ali é o mesmo contrato).
+ *
+ * Best-effort (R-245): sem escada a consulta segue útil; o erro é logado, nunca silenciado.
+ */
+async function fetchProtocolsWithLadders(protocols) {
+  if (!Array.isArray(protocols) || protocols.length === 0) return protocols
+  try {
+    const userId = await getUserId()
+    const { data: steps, error } = await supabase
+      .from('titration_steps')
+      .select('id, titration_id, protocol_id, position, dose, intake_unit, duration_days, status, started_at, medicine_id')
+      .eq('user_id', userId)
+      .order('position', { ascending: true })
+    if (error) throw error
+
+    const { protocols: withLadders, orphanTitrationIds } = attachFullLadders(protocols, steps)
+    for (const titrationId of orphanTitrationIds) {
+      console.error(
+        `Titulação órfã ${titrationId}: nenhuma etapa carrega protocol_id — o tratamento fica sem escada na consulta e no PDF (AP-311)`
+      )
+    }
+    return withLadders
+  } catch (err) {
+    console.error('Escada de titulação indisponível (consulta segue com o embed recortado):', err)
+    return protocols
+  }
+}
+
 export default function Consultation({ onBack }) {
   const [isLoading, setIsLoading] = useState(true)
   const [consultationData, setConsultationData] = useState(null)
   const [error, setError] = useState(null)
+  // 073/F-24: os tratamentos com a escada COMPLETA (não o recorte do embed) alimentam a
+  // consulta E o PDF — os dois têm de contar a mesma história sobre a mesma escada.
+  const [protocolsWithLadders, setProtocolsWithLadders] = useState(null)
 
   const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
   const { enabled: stockTrackingEnabled } = useStockTracking()
@@ -74,7 +117,13 @@ export default function Consultation({ onBack }) {
         // Sumários instance-based (ADR-054, Opção A) — helper faz swallow em falha.
         const adherenceSummaries = await fetchAdherenceSummaries()
         if (!isMounted) return
-        const data = getConsultationData(dashboardData, resolvedName, null, resolvedEmail, user?.id, adherenceSummaries)
+        const ladderProtocols = await fetchProtocolsWithLadders(dashboardData.protocols)
+        if (!isMounted) return
+        setProtocolsWithLadders(ladderProtocols)
+        const data = getConsultationData(
+          { ...dashboardData, protocols: ladderProtocols },
+          resolvedName, null, resolvedEmail, user?.id, adherenceSummaries
+        )
         setConsultationData(data)
       } catch {
         if (!isMounted) return
@@ -96,7 +145,11 @@ export default function Consultation({ onBack }) {
       const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
       const pdfBlob = await generateConsultationPDF({
         consultationData,
-        dashboardData: { ...dashboardData, dailyAdherence: resolvedDailyAdherence },
+        dashboardData: {
+          ...dashboardData,
+          protocols: protocolsWithLadders ?? dashboardData.protocols,
+          dailyAdherence: resolvedDailyAdherence,
+        },
         period: '30d',
       })
       const url = URL.createObjectURL(pdfBlob)
@@ -111,7 +164,7 @@ export default function Consultation({ onBack }) {
       console.error('Erro ao gerar PDF:', error)
       alert('Erro ao gerar PDF. Tente novamente.')
     }
-  }, [consultationData, dashboardData, now])
+  }, [consultationData, dashboardData, protocolsWithLadders, now])
 
   const handleShare = useCallback(async () => {
     try {
@@ -119,7 +172,11 @@ export default function Consultation({ onBack }) {
       const resolvedDailyAdherence = await cachedAdherenceService.getDailyAdherenceFromView(30)
       const pdfBlob = await generateConsultationPDF({
         consultationData,
-        dashboardData: { ...dashboardData, dailyAdherence: resolvedDailyAdherence },
+        dashboardData: {
+          ...dashboardData,
+          protocols: protocolsWithLadders ?? dashboardData.protocols,
+          dailyAdherence: resolvedDailyAdherence,
+        },
         period: '30d',
       })
       const fileName = `consulta-medica-${formatLocalDate(now)}.pdf`
@@ -165,7 +222,7 @@ export default function Consultation({ onBack }) {
         alert('Erro ao compartilhar. Tente novamente.')
       }
     }
-  }, [consultationData, dashboardData, now])
+  }, [consultationData, dashboardData, protocolsWithLadders, now])
 
   const handleBack = useCallback(() => {
     analyticsService.track('consultation_mode_closed', { timestamp: getNow().getTime() })

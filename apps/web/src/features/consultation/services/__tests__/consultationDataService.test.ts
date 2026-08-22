@@ -367,6 +367,74 @@ describe('consultationDataService', () => {
       })
     })
 
+    it('mantém a titulação em MANUTENÇÃO na consulta (073 F-24)', () => {
+      // `calculateTitrationData` devolve null quando a etapa vigente é CONTÍNUA (dose alvo,
+      // sem duração). O extrator descartava esse tratamento — e a seção de titulação SUMIA
+      // exatamente para quem terminou de titular.
+      mocks.mockTitrationData = null
+
+      const dashboardData = createMockDashboardData({
+        protocols: [
+          {
+            id: 'prot-maint',
+            medicine_id: 'med-2',
+            medicine_name: 'Ibuprofeno',
+            active: true,
+            frequency: 'semanal',
+            time_schedule: ['08:00'],
+            dosage_per_intake: 1,
+            start_date: '2026-01-15',
+            end_date: '2026-12-31',
+            titration_steps: [
+              { position: 0, dose: 0.25, intake_unit: 'mg', duration_days: 28, status: 'completed', started_at: '2026-01-15T00:00:00' },
+              { position: 1, dose: 0.5, intake_unit: 'mg', duration_days: 28, status: 'completed', started_at: '2026-02-12T00:00:00' },
+              // Etapa vigente CONTÍNUA (sem duração) = manutenção.
+              { position: 2, dose: 1, intake_unit: 'mg', duration_days: null, status: 'current', started_at: '2026-03-11T00:00:00' },
+            ],
+          },
+        ],
+      })
+
+      const result = getConsultationData(dashboardData)
+
+      expect(result.activeTitrations).toHaveLength(1)
+      expect(result.activeTitrations[0]).toMatchObject({
+        protocolId: 'prot-maint',
+        isMaintenance: true,
+        currentStep: 3,
+        totalSteps: 3,
+        progressPercent: null,
+        isTransitionDue: false,
+        currentDosage: 1,
+      })
+      expect(result.activeTitrations[0].maintenanceSince).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
+    })
+
+    it('não inventa titulação: sem escada e sem etapa vigente, a secao fica vazia (073 F-24)', () => {
+      mocks.mockTitrationData = null
+
+      const semEscada = createMockDashboardData({
+        protocols: [
+          { id: 'p-vazio', medicine_id: 'med-2', active: true, start_date: '2026-01-01', end_date: '2026-12-31' },
+        ],
+      })
+      expect(getConsultationData(semEscada).activeTitrations).toHaveLength(0)
+
+      const escadaSemVigente = createMockDashboardData({
+        protocols: [
+          {
+            id: 'p-sem-current', medicine_id: 'med-2', active: true,
+            start_date: '2026-01-01', end_date: '2026-12-31',
+            titration_steps: [
+              { position: 0, dose: 1, duration_days: 7, status: 'completed', started_at: '2026-01-01T00:00:00' },
+              { position: 1, dose: 2, duration_days: 7, status: 'upcoming', started_at: null },
+            ],
+          },
+        ],
+      })
+      expect(getConsultationData(escadaSemVigente).activeTitrations).toHaveLength(0)
+    })
+
     it('deve extrair alertas de estoque corretamente', () => {
       const dashboardData = createMockDashboardData()
       const result = getConsultationData(dashboardData)
@@ -389,7 +457,11 @@ describe('consultationDataService', () => {
         medicineId: 'med-2',
         medicineName: 'Ibuprofeno',
         currentStep: 1,
-        totalSteps: 3,
+        // 073: `totalSteps` passa a ser o tamanho REAL da escada recebida (2 etapas no
+        // fixture), não o número que o mock de `calculateTitrationData` devolve — é o mesmo
+        // valor na prática e é o único que existe na linha de MANUTENÇÃO, onde o cálculo de
+        // progresso devolve null por contrato.
+        totalSteps: 2,
         currentDay: 5,
         totalDays: 7,
         progressPercent: 71,

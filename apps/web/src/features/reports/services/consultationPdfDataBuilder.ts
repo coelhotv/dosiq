@@ -438,7 +438,20 @@ function buildTitrationRows(activeTitrations = [], protocols = [], medicines = [
       progressPercent: titration.progressPercent,
       daysRemaining: titration.daysRemaining,
       isTransitionDue: titration.isTransitionDue,
-      stageNote: safeText(titration.stageNote, 'Sem observacoes'),
+      isMaintenance: Boolean(titration.isMaintenance),
+      // 073/F-24: manutenção não tem progresso a exibir — tem um FATO a declarar.
+      progressLabel: titration.isMaintenance
+        ? 'dose alvo'
+        : `${titration.progressPercent ?? 0}%`,
+      stageLabel: `${titration.currentStep}/${titration.totalSteps}`,
+      stageNote: titration.isMaintenance
+        ? [
+            titration.currentDoseLabel ? `Dose alvo: ${titration.currentDoseLabel}` : 'Dose alvo',
+            titration.maintenanceSince ? `desde ${titration.maintenanceSince}` : null,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        : safeText(titration.stageNote, titration.currentDoseLabel || 'Sem observações'),
     }
   })
 }

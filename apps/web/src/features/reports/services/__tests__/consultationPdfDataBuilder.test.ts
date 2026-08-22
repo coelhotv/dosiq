@@ -300,6 +300,42 @@ describe('consultationPdfDataBuilder', () => {
     expect(pdfData.prescriptionRows[1].daysLabel).toBe('1 dia')
   })
 
+  it('declara a titulacao em manutencao no PDF (073 F-24)', () => {
+    const pdfData = buildConsultationPdfData({
+      consultationData: {
+        activeTitrations: [
+          {
+            protocolId: 'prot-2',
+            medicineId: 'med-2',
+            medicineName: 'Ansitec',
+            isMaintenance: true,
+            currentStep: 4,
+            totalSteps: 4,
+            progressPercent: null,
+            isTransitionDue: false,
+            daysRemaining: null,
+            currentDosage: 2.4,
+            currentDoseLabel: '2,4 mg',
+            maintenanceSince: '11/03/2026',
+            stageNote: null,
+          },
+        ],
+      },
+      dashboardData,
+      generatedAt: new Date(`${formatLocalDate(now)}T10:30:00`),
+    })
+
+    // O gate do PDF é `titrationRows.length > 0`: a linha PRECISA existir, senão o documento
+    // não menciona a escada que o paciente subiu.
+    expect(pdfData.titrationRows).toHaveLength(1)
+    expect(pdfData.titrationRows[0]).toMatchObject({
+      progressLabel: 'dose alvo',
+      stageLabel: '4/4',
+      isMaintenance: true,
+    })
+    expect(pdfData.titrationRows[0].stageNote).toBe('Dose alvo: 2,4 mg desde 11/03/2026')
+  })
+
   it('prefere a serie diaria consolidada do dashboard quando disponivel', () => {
     const dailyAdherence = [
       { date: past, taken: 8, expected: 10, adherence: 80 },

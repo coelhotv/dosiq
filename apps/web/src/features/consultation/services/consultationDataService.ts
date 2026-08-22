@@ -11,7 +11,8 @@ import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionSe
 import { emergencyCardService } from '@emergency/services/emergencyCardService'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateTitrationData } from '@utils/titrationUtils'
-import { getServerTimestamp } from '@utils/dateUtils'
+import { formatDose, resolveCurrentStep } from '@dosiq/core'
+import { getServerTimestamp, parseISO } from '@utils/dateUtils'
 
 /**
  * Agrega todos os dados clínicos para o Modo Consulta Médica
@@ -275,7 +276,52 @@ function _extractPrescriptionStatus(protocols) {
 }
 
 /**
- * Extrai titulações ativas
+ * Data local (dd/mm/aaaa) de um timestamp de etapa. R-020: nada de `new Date('YYYY-MM-DD')`.
+ * @private
+ */
+function _stepDateLabel(value) {
+  if (!value) return null
+  const parsed = parseISO(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo',
+  })
+}
+
+/**
+ * Dose de uma etapa no rótulo clínico. `titration_steps.intake_unit` aceita `'cp'` (que
+ * `protocols.intake_unit` NÃO aceita — CON-032 §5): aqui ele vira "comprimido" para leitura
+ * humana e **nunca** é propagado para o protocolo.
+ * @private
+ */
+function _stepDoseLabel(step) {
+  if (!step || step.dose == null) return null
+  if (!step.intake_unit || step.intake_unit === 'cp') {
+    const qty = Number(step.dose)
+    const unit = qty === 1 ? 'comprimido' : 'comprimidos'
+    return `${String(step.dose).replace('.', ',')} ${unit}`
+  }
+  return formatDose(step.dose, step.intake_unit)
+}
+
+/**
+ * Extrai as titulações do paciente para o modo consulta e para o PDF.
+ *
+ * 🔴 073/F-24 — POR QUE ISTO MUDOU: a seção de titulação SUMIA para quem terminou de titular.
+ * O extrator descartava (`return null`) todo tratamento cujo `calculateTitrationData` fosse
+ * `null`, e essa função retorna `null` de propósito quando a etapa vigente é CONTÍNUA (dose
+ * de manutenção, sem duração) — o contrato dela é PROGRESSO, e manutenção não tem progresso.
+ * Resultado: o gate `titrationRows.length > 0` do PDF virou um gate de "tem progresso" quando
+ * deveria ser de "tem escada", e a conta do PO — 4 tratamentos em manutenção, 12 degraus no
+ * banco — gerava um documento com ZERO menção à titulação. O médico não via a escada que o
+ * paciente subiu.
+ *
+ * `calculateTitrationData` NÃO é alterada (o contrato dela está certo): quem passa a
+ * distinguir "sem escada" de "escada concluída" é este extrator.
+ *
+ * ⚠️ As etapas devem ser a escada COMPLETA (por `titration_id`, via `attachFullLadders` do
+ * core), nunca o recorte por `protocol_id` do embed — AP-311.
+ *
  * @private
  */
 function _extractActiveTitrations(protocols, medicines) {
@@ -283,39 +329,59 @@ function _extractActiveTitrations(protocols, medicines) {
 
   return protocols
     .map((protocol) => {
-      // 029 F3.1 (T017d): a escada vem de `titration_steps` — embed do select de
-      // `createProtocolRepository` (CON-032 §invariante 1: já filtrado por este protocol via FK).
-      // O jsonb N1 (`titration_schedule`) morreu com o AP-301.
       const steps = protocol.titration_steps
       if (!Array.isArray(steps) || steps.length === 0) return null
 
-      const titrationData = calculateTitrationData(steps)
-      if (!titrationData) return null
-
+      const ordered = [...steps].sort((a, b) => a.position - b.position)
       const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
-      // `currentStep` é 1-based (é rótulo de exibição); a escada é ordenada por position.
-      const currentStep = [...steps].sort((a, b) => a.position - b.position)[
-        titrationData.currentStep - 1
-      ]
-
-      return {
+      const base = {
         protocolId: protocol.id,
         medicineId: protocol.medicine_id,
         medicineName: medicine?.name || protocol.medicine_name || 'Desconhecido',
-        currentStep: titrationData.currentStep,
-        totalSteps: titrationData.totalSteps,
-        currentDay: titrationData.day,
-        totalDays: titrationData.totalDays,
-        progressPercent: Math.round(titrationData.progressPercent),
-        isTransitionDue: titrationData.isTransitionDue,
-        // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou — a etapa se
-        // descreve por medicamento+dose (Decisões §2). É decisão de PRODUTO, não coluna
-        // faltando: `titration_steps` não tem `description` (R-295 — conferido no banco).
-        // Não "resolver" isso somando o campo a um select: foi assim que o #749 derrubou prod.
-        // Consumers degradam sozinhos (PDF → 'Sem observacoes'; ConsultationSections não renderiza).
+        totalSteps: ordered.length,
+        // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou (decisão de
+        // PRODUTO — `titration_steps` não tem `description`, R-295 conferido no banco).
         stageNote: null,
-        daysRemaining: titrationData.daysRemaining,
-        currentDosage: currentStep?.dose ?? null,
+      }
+
+      const titrationData = calculateTitrationData(ordered)
+
+      if (titrationData) {
+        // `currentStep` é 1-based (rótulo de exibição); a escada está ordenada por position.
+        const currentStep = ordered[titrationData.currentStep - 1]
+        return {
+          ...base,
+          isMaintenance: false,
+          currentStep: titrationData.currentStep,
+          currentDay: titrationData.day,
+          totalDays: titrationData.totalDays,
+          progressPercent: Math.round(titrationData.progressPercent),
+          isTransitionDue: titrationData.isTransitionDue,
+          daysRemaining: titrationData.daysRemaining,
+          currentDosage: currentStep?.dose ?? null,
+          currentDoseLabel: _stepDoseLabel(currentStep),
+          maintenanceSince: null,
+        }
+      }
+
+      // Sem progresso a exibir. Só vira linha se houver etapa vigente CONTÍNUA — ou seja,
+      // manutenção (dose alvo atingida). Escada sem etapa vigente é escada não iniciada ou
+      // encerrada: nada a declarar num documento clínico.
+      const currentStep = resolveCurrentStep(ordered)
+      if (!currentStep) return null
+
+      return {
+        ...base,
+        isMaintenance: true,
+        currentStep: ordered.indexOf(currentStep) + 1,
+        currentDay: null,
+        totalDays: null,
+        progressPercent: null,
+        isTransitionDue: false,
+        daysRemaining: null,
+        currentDosage: currentStep.dose ?? null,
+        currentDoseLabel: _stepDoseLabel(currentStep),
+        maintenanceSince: _stepDateLabel(currentStep.started_at),
       }
     })
     .filter(Boolean) // Remove nulls
