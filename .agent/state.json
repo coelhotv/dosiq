@@ -3,15 +3,15 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "awaiting_human_review",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 fix-clinical-data — planejada em 3 PRs (T001..T047)",
+    "goal": "073 PR 1 — \"o documento\" (Slices A+F+G, T001..T024)",
     "goal_type": "fix",
     "spec_dirs": [
-      "plans/specs/064-stock-forecast-vigency"
+      "plans/specs/073-fix-clinical-data"
     ],
     "merged_pr": 808,
     "merged_squash": "c454dcc5 (squash merge into main)",
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 PLANEJADA em 2026-08-22: plan.md + tasks.md (T001..T047) para 3 PRs. PR1 'o documento' (A+F+G, 24 tasks, fecha PO-1/2/8/9/10/11, guard = o PDF regerado contra a tabela-verdade da §2.4). PR2 'a conta' (D+E, fecha PO-6/7, primeira task é o FIXTURE de 2 protocolos vigentes — sem ele o F-13 é invisível; estender o SCOPE do vigency-single-source.sh é entregável). PR3 'fonte única' (B+C, fecha PO-3/4/5, guard = grep de deleção + delta de linhas negativo, ADR-095 proposed). 3 decisões do PO no P1.5: cartão com DUAS linhas, título 'Receitas a renovar', adesão com vigência POR DIA. Conflito conhecido: consultationDataService.ts é tocado no PR1 (só titulação) e no PR2 (o resto) — PR2 rebasa depois do merge do PR1. PRÓXIMO: /devflow coding do PR 1 (C0-C5). Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "073 PR 1 ENTREGUE (PR #809, aguardando aprovação humana — R-060). 7 commits. Slices A+F+G: formatadores locais do PDF deletados -> core; vigência única (isenção :171 do farol revogada); escada de titulação COMPLETA por tratamento (não contador); pdfSafe cp1252; SQP web 4.23.0. POs 1/2/8/9/10/11 fechadas com o PDF real da conta doktorr. RC6 7/7 chunks, 1 high (R-299 no currentDoseLabel) corrigido e respondido. APRENDIZADOS: R-315 (PDF é fronteira cp1252 — fonte UTF-8 era desnecessária; gate = gerar com dado real + pdftotext) e AP-338 (gate de existência alimentado por cálculo de progresso some p/ quem concluiu). SMOKE do PO em 2 rodadas: a 2ª trouxe AC-37 (escada, não contador) e AC-39 — a 1ª entrega tinha só o contador. PRÓXIMO: aguardar merge do PR #809; depois PR 2 (T025-T036), que REBASA em main (conflito em consultationDataService.ts). Pendências herdadas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050.",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -129,9 +129,11 @@
       "D23 (2026-08-22, PO no planning): AC-17 = DUAS LINHAS separadas no cartão de emergência (uma por tratamento vigente, com dose e horários próprios) — não colapsar nem somar",
       "D24 (2026-08-22, PO no planning): AC-11 = título 'Receitas a renovar'",
       "D25 (2026-08-22, PO no planning): isenção :410 resolvida — série de adesão filtra vigência POR DIA (isProtocolVigentOn(p, dia)) dentro do loop existente; passado para de mudar quando tratamento encerra (R-299); muda o número de adesão exibido, declarado no CHANGELOG. Isenção :223 reescrita com desempate por start_date mais recente, não removida",
-      "D26 (2026-08-22, planning): ADR-095 a criar como 'proposed' no PR 3 — fonte única de status de receita (um enum, janela 14d, ordem das guardas com finalizada antes de vencendo)"
+      "D26 (2026-08-22, planning): ADR-095 a criar como 'proposed' no PR 3 — fonte única de status de receita (um enum, janela 14d, ordem das guardas com finalizada antes de vencendo)",
+      "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
+      "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "main",
+    "branch": "fix/073-pr1-documento",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
@@ -203,9 +205,9 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 13,
-    "rules_count": 265,
-    "anti_patterns_count": 332,
+    "journal_entries_since_distillation": 14,
+    "rules_count": 266,
+    "anti_patterns_count": 333,
     "decisions_count": 94,
     "contracts_count": 34,
     "distillation_due": false
@@ -215,14 +217,23 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T04:02:57Z"
+    "index_loaded_at": "2026-08-22T04:24:40.441459-03:00"
   },
   "code_review": {
-    "status": "not_applicable",
-    "note": "specifying — sem código"
+    "status": "clean",
+    "critical": 0,
+    "auto_fixed": 3,
+    "ask_items": 0,
+    "note": "RC5 do PR1: 3 auto-fixes"
   },
   "ai_review": {
-    "status": "not_applicable",
-    "note": "specifying — sem código"
+    "engine": "agy+claude",
+    "status": "issues_found",
+    "critical": 0,
+    "high": 1,
+    "introduced_critical": 0,
+    "introduced_high": 1,
+    "pr": 809,
+    "note": "R-299 no currentDoseLabel — corrigido em 7270d0b, respondido no PR"
   }
 }

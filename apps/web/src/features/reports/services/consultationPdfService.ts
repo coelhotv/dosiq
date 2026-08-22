@@ -128,10 +128,10 @@ function getScoreTone(score) {
  */
 function getPeriodLabel(period) {
   const labels = {
-    '7d': 'ultimos 7 dias',
-    '30d': 'ultimos 30 dias',
-    '90d': 'ultimos 90 dias',
-    all: 'todo o periodo disponivel',
+    '7d': 'últimos 7 dias',
+    '30d': 'últimos 30 dias',
+    '90d': 'últimos 90 dias',
+    all: 'todo o período disponível',
   }
 
   return labels[period] || 'consulta atual'
@@ -181,12 +181,12 @@ function drawPageChrome(doc, pdfData, pageNumber, totalPages) {
   doc.setFontSize(8)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text(
-    `Gerado em ${pdfData.generatedAtLabel} | Periodo: ${getPeriodLabel(pdfData.period)}`,
+    `Gerado em ${pdfData.generatedAtLabel} | Período: ${getPeriodLabel(pdfData.period)}`,
     PAGE.margin,
     PAGE.height - CHROME_LAYOUT.footerTextOffsetY
   )
   doc.text(
-    `Pagina ${pageNumber}/${totalPages}`,
+    `Página ${pageNumber}/${totalPages}`,
     PAGE.width - PAGE.margin,
     PAGE.height - CHROME_LAYOUT.footerTextOffsetY,
     {
@@ -221,15 +221,15 @@ function drawKpiCard(doc, card, x, y, width, height) {
 
   doc.setFontSize(KPI_LAYOUT.fontSizeValue)
   doc.setTextColor(...rgb(accentColor))
-  doc.text(card.value, x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.valueOffsetY)
+  doc.text(pdfSafe(card.value), x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.valueOffsetY)
 
   doc.setFontSize(KPI_LAYOUT.fontSizeLabel)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text(card.label, x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.labelOffsetY)
+  doc.text(pdfSafe(card.label), x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.labelOffsetY)
 
   doc.setFontSize(KPI_LAYOUT.fontSizeMeta)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(card.meta || '', x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.metaOffsetY)
+  doc.text(pdfSafe(card.meta), x + KPI_LAYOUT.paddingX, y + KPI_LAYOUT.metaOffsetY)
 }
 
 /**
@@ -306,7 +306,7 @@ function drawHeroGauge(doc, pdfData) {
   doc.setFontSize(7)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.setFont('helvetica', 'normal')
-  doc.text(`Adesao ${periodLabel}`, centerX, centerY + 9, { align: 'center' })
+  doc.text(`Adesão ${periodLabel}`, centerX, centerY + 9, { align: 'center' })
 
   doc.setFontSize(7)
   doc.setTextColor(...rgb(COLORS.primary))
@@ -316,7 +316,7 @@ function drawHeroGauge(doc, pdfData) {
 
   doc.setFontSize(7)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(`${streak} dias de sequencia`, centerX, HERO_LAYOUT.y + HERO_LAYOUT.size + 5, {
+  doc.text(`${streak} dias de sequência`, centerX, HERO_LAYOUT.y + HERO_LAYOUT.size + 5, {
     align: 'center',
   })
 
@@ -334,7 +334,7 @@ function drawHeroGauge(doc, pdfData) {
 function drawAttentionList(doc, items, x, y, width) {
   doc.setFontSize(10)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Atencao nesta consulta', x, y)
+  doc.text('Atenção nesta consulta', x, y)
 
   let offsetY = y + 6
   const visibleItems = items.slice(0, 6)
@@ -342,7 +342,7 @@ function drawAttentionList(doc, items, x, y, width) {
   if (visibleItems.length === 0) {
     doc.setFontSize(8)
     doc.setTextColor(...rgb(COLORS.muted))
-    doc.text('Nenhum alerta clinico relevante no momento.', x, offsetY)
+    doc.text('Nenhum alerta clínico relevante no momento.', x, offsetY)
     return
   }
 
@@ -366,9 +366,9 @@ function drawAttentionList(doc, items, x, y, width) {
     doc.roundedRect(x, offsetY, width, 14, 2, 2, 'FD')
     doc.setFontSize(8)
     doc.setTextColor(...rgb(toneColor))
-    doc.text(item.label, x + 3, offsetY + 5)
+    doc.text(pdfSafe(item.label), x + 3, offsetY + 5)
     doc.setTextColor(...rgb(COLORS.muted))
-    doc.text(item.detail, x + 3, offsetY + 10)
+    doc.text(pdfSafe(item.detail), x + 3, offsetY + 10)
     offsetY += 16
   })
 }
@@ -417,7 +417,7 @@ function _drawEditorialSection(doc, pdfData, notesX, editorialHeight, executiveT
 
   doc.setFontSize(10)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Notas clinicas', notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop)
+  doc.text('Notas clínicas', notesX + SUMMARY_TEXT_LAYOUT.cardPaddingX, SUMMARY_TEXT_LAYOUT.topY + SUMMARY_TEXT_LAYOUT.cardPaddingTop)
   doc.setFontSize(8)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.setFont('helvetica', 'normal')
@@ -435,11 +435,11 @@ function renderSummaryPage(doc, pdfData) {
 
   doc.setFontSize(18)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Resumo Clinico de Consulta', PAGE.margin, 26)
+  doc.text('Resumo clínico de consulta', PAGE.margin, 26)
 
   doc.setFontSize(10)
   doc.setTextColor(...rgb(COLORS.muted))
-  doc.text(`Periodo: ${getPeriodLabel(pdfData.period)}`, PAGE.margin, 33)
+  doc.text(`Período: ${getPeriodLabel(pdfData.period)}`, PAGE.margin, 33)
   doc.text(`Gerado em: ${pdfData.generatedAtLabel}`, PAGE.margin, 38)
 
   const patientLine = pdfData.patient.age != null
@@ -452,11 +452,13 @@ function renderSummaryPage(doc, pdfData) {
   _drawKpiCardRow(doc, pdfData.summaryCards.slice(3, 6), SUMMARY_CARD_LAYOUT.startY + SUMMARY_CARD_LAYOUT.rowGap)
 
   const executiveText = doc.splitTextToSize(
-    'Resumo pensado para decisao rapida em consulta: tratamentos ativos, adesao recente, alertas de estoque, prescricoes e titulacoes.',
+    'Resumo para decisão rápida em consulta: tratamentos vigentes, adesão recente, alertas de estoque, receitas a renovar e titulações.',
     SUMMARY_TEXT_LAYOUT.leftColumnWidth - SUMMARY_TEXT_LAYOUT.cardPaddingX * 2 - 4
   )
+  // pdfSafe ANTES do split: `splitTextToSize` devolve ARRAY, e sanitizar o array o
+  // transformaria numa string com vírgulas.
   const clinicalNotes = doc.splitTextToSize(
-    pdfData.clinicalNotes.map((note) => `- ${note}`).join('\n'),
+    pdfSafe(pdfData.clinicalNotes.map((note) => `- ${note}`).join('\n')),
     SUMMARY_TEXT_LAYOUT.rightColumnWidth - SUMMARY_TEXT_LAYOUT.cardPaddingX * 2 - 4
   )
   const notesX = PAGE.margin + SUMMARY_TEXT_LAYOUT.leftColumnWidth + SUMMARY_TEXT_LAYOUT.columnGap
@@ -476,7 +478,38 @@ function renderSummaryPage(doc, pdfData) {
  * @param {Object} doc - Instancia do jsPDF.
  * @param {Object} options - Opcoes da tabela.
  */
+/**
+ * Texto seguro para as fontes padrão do jsPDF.
+ *
+ * 🔴 Smoke do PO (2026-08-22): as fontes padrão (Helvetica) codificam em **WinAnsi/cp1252**,
+ * que cobre TODO o acento do português — mas NÃO cobre sinais tipográficos fora dele. O "≈"
+ * (U+2248) que o formatador de dose do core usa saía no PDF como `("H`: sujeira no meio da
+ * dose, exatamente na informação mais crítica do documento.
+ *
+ * Em vez de embutir uma fonte UTF-8 (~300KB de bundle para um caractere), o texto é traduzido
+ * na fronteira do PDF: "≈" vira "~" (mesma leitura, dentro do cp1252) e qualquer outro
+ * caractere fora do conjunto é descartado — melhor a ausência que a sujeira (decisão do PO).
+ *
+ * ⚠️ O core NÃO muda: na tela o "≈" renderiza certo. Quem tem a limitação é o PDF.
+ *
+ * @param {*} value
+ * @returns {string}
+ */
+function pdfSafe(value) {
+  if (value === null || value === undefined) return ''
+  return String(value)
+    .replace(/[≈∼]/g, '~')
+    .replace(/[–—]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    // Latin-1 imprimível + os poucos extras do cp1252 que já saem corretos (bullet,
+    // reticências), mais os controles que o layout usa (\n, \t).
+    .replace(/[^\u0020-\u007E\u00A0-\u00FF\n\t•…]/g, '')
+}
+
 function renderTable(autoTable, doc, options) {
+  const safeRows = (rows) =>
+    Array.isArray(rows) ? rows.map((row) => row.map((cell) => pdfSafe(cell))) : rows
   autoTable(doc, {
     startY: options.startY ?? 28,
     margin: { left: PAGE.margin, right: PAGE.margin },
@@ -496,6 +529,8 @@ function renderTable(autoTable, doc, options) {
       fillColor: [250, 252, 255],
     },
     ...options,
+    head: safeRows(options.head),
+    body: safeRows(options.body),
   })
 }
 
@@ -508,12 +543,12 @@ function renderTable(autoTable, doc, options) {
 function renderTreatmentsPage(doc, autoTable, pdfData) {
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Tratamentos ativos', PAGE.margin, 18)
+  doc.text('Tratamentos vigentes', PAGE.margin, 18)
 
   renderTable(autoTable, doc, {
     startY: 28,
     head: [
-      ['Tratamento', 'Apresentacao', 'Dose por tomada', 'Frequencia', 'Dose diaria', 'Status'],
+      ['Tratamento', 'Apresentação', 'Dose por tomada', 'Frequência', 'Dose diária', 'Status'],
     ],
     body: pdfData.activeTreatments.map((row) => [
       row.label,
@@ -523,13 +558,15 @@ function renderTreatmentsPage(doc, autoTable, pdfData) {
       row.dailyDose,
       row.status,
     ]),
+    // Larguras revistas no smoke do PO: a coluna de dose estourava e o jsPDF esticava o texto
+    // caractere a caractere ("2 , 4  m g"). Soma = 186mm = contentWidth.
     columnStyles: {
-      0: { cellWidth: 55 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 36 },
-      3: { cellWidth: 26 },
-      4: { cellWidth: 24 },
-      5: { cellWidth: 15 },
+      0: { cellWidth: 46 },
+      1: { cellWidth: 24 },
+      2: { cellWidth: 35 },
+      3: { cellWidth: 31 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 17 },
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body' && hookData.column.index === 5) {
@@ -549,20 +586,20 @@ function renderTreatmentsPage(doc, autoTable, pdfData) {
 function renderAdherencePage(doc, autoTable, pdfData) {
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Adesao recente', PAGE.margin, 18)
+  doc.text('Adesão recente', PAGE.margin, 18)
 
   doc.setFontSize(9)
   doc.setTextColor(...rgb(COLORS.muted))
   const summary = pdfData.adherence.selectedPeriod || pdfData.adherence.last30d
   doc.text(
-    `${pdfData.adherence.trendLabel}: ${summary.score ?? 0}% | ${summary.taken ?? 0}/${summary.expected ?? 0} doses | Pontualidade ${summary.punctuality ?? 0}% | Sequencia ${summary.currentStreak ?? 0}d`,
+    `${pdfData.adherence.trendLabel}: ${summary.score ?? 0}% | ${summary.taken ?? 0}/${summary.expected ?? 0} doses | Pontualidade ${summary.punctuality ?? 0}% | Sequência ${summary.currentStreak ?? 0}d`,
     PAGE.margin,
     24
   )
 
   renderTable(autoTable, doc, {
     startY: 30,
-    head: [['Data', 'Tomadas', 'Esperadas', 'Adesao', 'Leitura']],
+    head: [['Data', 'Tomadas', 'Esperadas', 'Adesão', 'Leitura']],
     body: pdfData.adherence.trend.map((row) => [
       row.label,
       String(row.taken),
@@ -611,14 +648,14 @@ function renderStockPage(doc, autoTable, pdfData) {
   if (pdfData.stockTrackingEnabled === false) {
     doc.setFontSize(9)
     doc.setTextColor(...rgb(COLORS.muted))
-    doc.text('Estoque: nao controlado pelo paciente.', PAGE.margin, 26)
+    doc.text('Estoque: não controlado pelo paciente.', PAGE.margin, 26)
     return
   }
 
   doc.setFontSize(9)
   doc.setTextColor(...rgb(COLORS.muted))
   doc.text(
-    'Ordens por urgencia primeiro, para facilitar a decisao durante a consulta.',
+    'Ordenado por urgência, para facilitar a decisão durante a consulta.',
     PAGE.margin,
     24
   )
@@ -635,19 +672,20 @@ function renderStockPage(doc, autoTable, pdfData) {
     head: [['Tratamento', 'Qtd atual', 'Consumo/dia', 'Dias restantes', 'Status']],
     body: pdfData.stockRows.map((row) => [
       row.label,
-      String(row.totalQuantity),
-      String(row.dailyIntake),
+      // 073/F-19: quantidade e consumo já vêm formatados COM unidade do builder.
+      row.totalQuantityLabel ?? String(row.totalQuantity),
+      row.dailyIntakeLabel ?? String(row.dailyIntake),
       row.daysRemaining === null || row.daysRemaining === undefined
         ? '-'
         : String(row.daysRemaining),
       row.message,
     ]),
     columnStyles: {
-      0: { cellWidth: 70 },
+      0: { cellWidth: 66 },
       1: { cellWidth: 20, halign: 'center' },
       2: { cellWidth: 22, halign: 'center' },
-      3: { cellWidth: 22, halign: 'center' },
-      4: { cellWidth: 52 },
+      3: { cellWidth: 20, halign: 'center' },
+      4: { cellWidth: 48 },
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body' && hookData.column.index === 4) {
@@ -673,12 +711,12 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
   doc.addPage()
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Prescricoes', PAGE.margin, 18)
+  doc.text('Prescrições', PAGE.margin, 18)
 
   if (pdfData.prescriptionRows.length === 0) {
     doc.setFontSize(9)
     doc.setTextColor(...rgb(COLORS.muted))
-    doc.text('Nenhuma prescricao com vencimento ativo no periodo.', PAGE.margin, 28)
+    doc.text('Nenhuma receita com vencimento no período.', PAGE.margin, 28)
     return
   }
 
@@ -688,16 +726,15 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
     body: pdfData.prescriptionRows.map((row) => [
       row.label,
       row.statusLabel,
-      row.daysRemaining === null || row.daysRemaining === undefined
-        ? '-'
-        : String(row.daysRemaining),
-      row.endDate || '-',
+      // 073/F-21: "vencida há 3 dias" no lugar de "-3"; data em dd/mm/aaaa.
+      row.daysLabel ?? '-',
+      row.endDateLabel ?? '-',
     ]),
     columnStyles: {
-      0: { cellWidth: 92 },
-      1: { cellWidth: 32, halign: 'center' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 40, halign: 'center' },
+      0: { cellWidth: 86 },
+      1: { cellWidth: 28, halign: 'center' },
+      2: { cellWidth: 36, halign: 'center' },
+      3: { cellWidth: 28, halign: 'center' },
     },
     didParseCell: (hookData) => {
       if (hookData.section === 'body' && hookData.column.index === 1) {
@@ -723,33 +760,70 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
 function renderTitrationPage(doc, autoTable, pdfData) {
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Titulacao e contexto clinico', PAGE.margin, 18)
+  doc.text('Titulação e contexto clínico', PAGE.margin, 18)
 
-  renderTable(autoTable, doc, {
-    startY: 28,
-    head: [['Tratamento', 'Progresso', 'Etapa', 'Transicao', 'Nota']],
-    body: pdfData.titrationRows.map((row) => [
-      row.label,
-      `${row.progressPercent}%`,
-      `${row.currentStep}/${row.totalSteps}`,
-      row.isTransitionDue ? 'Pendente' : 'Nao',
-      row.stageNote,
-    ]),
-    columnStyles: {
-      0: { cellWidth: 66 },
-      1: { cellWidth: 24, halign: 'center' },
-      2: { cellWidth: 18, halign: 'center' },
-      3: { cellWidth: 20, halign: 'center' },
-      4: { cellWidth: 58 },
-    },
-    didParseCell: (hookData) => {
-      if (hookData.section === 'body' && hookData.column.index === 3) {
-        const row = pdfData.titrationRows[hookData.row.index]
-        hookData.cell.styles.textColor = row.isTransitionDue ? COLORS.warning : COLORS.primary
-        hookData.cell.styles.fontStyle = 'bold'
-      }
-    },
-  })
+  doc.setFontSize(9)
+  doc.setTextColor(...rgb(COLORS.muted))
+  doc.text(
+    'Escada percorrida por tratamento: de quanto para quanto, em quantos degraus e em quanto tempo.',
+    PAGE.margin,
+    24
+  )
+
+  let cursorY = 32
+
+  for (const row of pdfData.titrationRows) {
+    // Cabeçalho do bloco + pelo menos duas linhas de tabela precisam caber; senão, página nova.
+    if (cursorY > PAGE.height - 60) {
+      doc.addPage()
+      cursorY = 20
+    }
+
+    doc.setFontSize(10)
+    doc.setTextColor(...rgb(COLORS.text))
+    doc.text(pdfSafe(row.label), PAGE.margin, cursorY)
+
+    doc.setFontSize(8)
+    doc.setTextColor(...rgb(COLORS.muted))
+    doc.text(pdfSafe(row.stageNote), PAGE.margin, cursorY + 5)
+
+    const ladder = Array.isArray(row.ladder) ? row.ladder : []
+    if (ladder.length === 0) {
+      cursorY += 14
+      continue
+    }
+
+    renderTable(autoTable, doc, {
+      startY: cursorY + 9,
+      head: [['Degrau', 'Dose', 'Duração', 'Período', 'Situação']],
+      body: ladder.map((step) => [
+        `Etapa ${step.position}`,
+        step.doseLabel,
+        step.durationLabel,
+        step.periodLabel,
+        step.statusLabel,
+      ]),
+      // Soma 152mm (contentWidth é 186): a escada não precisa da largura toda, e folga evita
+      // o autoTable encolher texto (foi o que produziu "2 , 4  m g" na tabela da página 2).
+      columnStyles: {
+        0: { cellWidth: 18 },
+        1: { cellWidth: 44 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 44, halign: 'center' },
+        4: { cellWidth: 26 },
+      },
+      didParseCell: (hookData) => {
+        if (hookData.section !== 'body') return
+        // O degrau vigente é o que decide a conduta: ele vem destacado, como na timeline do app.
+        if (ladder[hookData.row.index]?.isCurrent) {
+          hookData.cell.styles.fontStyle = 'bold'
+          hookData.cell.styles.textColor = COLORS.primary
+        }
+      },
+    })
+
+    cursorY = (doc.lastAutoTable?.finalY ?? cursorY + 20) + 12
+  }
 }
 
 /**
@@ -791,7 +865,7 @@ export async function generateConsultationPDF(options: any = {}) {
 
   doc.setProperties({
     title: pdfData.title,
-    subject: 'Consulta medica',
+    subject: 'Consulta médica',
     author: 'Dosiq',
     creator: 'Dosiq',
   })
@@ -809,6 +883,10 @@ export async function generateConsultationPDF(options: any = {}) {
     }
   }
 
+  // 073/F-24: este gate é de EXISTÊNCIA de escada, não de progresso. Ele sempre foi escrito
+  // assim, mas o extrator a montante descartava quem estava em manutenção — então, na prática,
+  // ele barrava justamente o paciente que TERMINOU de titular. A correção mora no extrator
+  // (`consultationDataService._extractActiveTitrations`); aqui só o comentário muda.
   if (pdfData.titrationRows.length > 0) {
     doc.addPage()
     renderTitrationPage(doc, autoTable, pdfData)

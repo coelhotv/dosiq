@@ -192,7 +192,7 @@ describe('consultationPdfService', () => {
     expect(doc.setProperties).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Consulta Medica',
-        subject: 'Consulta medica',
+        subject: 'Consulta médica',
       })
     )
     expect(doc.circle).toHaveBeenCalled()

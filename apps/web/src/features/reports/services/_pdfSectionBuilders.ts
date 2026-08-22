@@ -41,41 +41,58 @@ export function buildSummaryCards(
   const expiredPrescriptionCount = prescriptionRows.filter((item) => item.status === 'vencida').length
   const activeTitrationCount = titrationRows.length
 
-  return [
+  const cards = [
     {
-      label: `Adesao ${selectedPeriodLabel}`,
+      label: `Adesão ${selectedPeriodLabel}`,
       value: `${selectedPeriodSummary.score ?? 0}%`,
       meta: `${selectedPeriodSummary.taken ?? 0}/${selectedPeriodSummary.expected ?? 0} doses`,
       tone: scoreTone(selectedPeriodSummary.score),
     },
-    {
-      label: 'Adesao 30d',
-      value: `${adherence30d.score ?? 0}%`,
-      meta: `${adherence30d.taken ?? 0}/${adherence30d.expected ?? 0} doses`,
-      tone: scoreTone(adherence30d.score),
-    },
-    {
-      label: 'Adesao 90d',
-      value: `${adherence90d.score ?? 0}%`,
-      meta: `${adherence90d.taken ?? 0}/${adherence90d.expected ?? 0} doses`,
-      tone: scoreTone(adherence90d.score),
-    },
-    {
+  ]
+
+  // 073/F-22: a página 1 gastava 4 das 7 caixas repetindo a MESMA métrica — quando o período
+  // selecionado É 30d, "Adesão 30 dias" e "Adesão 30d" são a mesma coisa impressa duas vezes.
+  // Card de adesão só entra se o número for DISTINTO do que já está na página.
+  const shownScores = new Set([selectedPeriodSummary.score ?? 0])
+  const addAdherenceCard = (label, summary) => {
+    const score = summary.score ?? 0
+    if (shownScores.has(score)) return
+    shownScores.add(score)
+    cards.push({
+      label,
+      value: `${score}%`,
+      meta: `${summary.taken ?? 0}/${summary.expected ?? 0} doses`,
+      tone: scoreTone(score),
+    })
+  }
+  if (selectedPeriodLabel !== '30 dias') addAdherenceCard('Adesão 30d', adherence30d)
+  if (selectedPeriodLabel !== '90 dias') addAdherenceCard('Adesão 90d', adherence90d)
+
+  // Pontualidade só aparece quando diz algo diferente da adesão (hoje as duas derivam do mesmo
+  // número quando não há janela medida — duas caixas para o mesmo dado).
+  const punctuality = selectedPeriodSummary.punctuality ?? 0
+  if (punctuality !== (selectedPeriodSummary.score ?? 0)) {
+    cards.push({
       label: 'Pontualidade',
-      value: `${selectedPeriodSummary.punctuality ?? 0}%`,
-      meta: `Janela de tolerancia | ${selectedPeriodLabel}`,
-      tone: scoreTone(selectedPeriodSummary.punctuality),
-    },
+      value: `${punctuality}%`,
+      meta: `Janela de tolerância | ${selectedPeriodLabel}`,
+      tone: scoreTone(punctuality),
+    })
+  }
+
+  const treatmentCount = activeTreatments.length
+  const medicineCount = activeMedicines.length
+  cards.push(
     {
-      label: 'Tratamentos ativos',
-      value: String(activeTreatments.length),
-      meta: `${activeMedicines.length} medicamentos`,
+      label: 'Tratamentos vigentes',
+      value: String(treatmentCount),
+      meta: `${medicineCount} ${medicineCount === 1 ? 'medicamento' : 'medicamentos'}`,
       tone: 'info',
     },
     {
-      label: 'Alertas criticos',
+      label: 'Alertas críticos',
       value: String(criticalStockCount + expiredPrescriptionCount),
-      meta: `${warningStockCount + expiringPrescriptionCount} em atencao`,
+      meta: `${warningStockCount + expiringPrescriptionCount} em atenção`,
       tone: criticalStockCount + expiredPrescriptionCount > 0 ? 'danger' : 'success',
     },
     {
@@ -83,8 +100,10 @@ export function buildSummaryCards(
       value: String(activeTitrationCount),
       meta: `${titrationRows.filter((item) => item.isTransitionDue).length} pendentes`,
       tone: activeTitrationCount > 0 ? 'warning' : 'success',
-    },
-  ]
+    }
+  )
+
+  return cards
 }
 
 /**
@@ -127,17 +146,23 @@ export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) 
         label: item.label,
         detail:
           item.status === 'vencida'
-            ? 'Prescricao vencida'
+            ? 'Receita vencida'
             : `${item.daysRemaining ?? '-'} dias para vencer`,
         tone: item.status === 'vencida' ? 'danger' : 'warning',
       })),
-    ...titrationRows.slice(0, 3).map((item) => ({
-      label: item.label,
-      detail: item.isTransitionDue
-        ? 'Transicao pendente'
-        : `Etapa ${item.currentStep}/${item.totalSteps}`,
-      tone: item.isTransitionDue ? 'warning' : 'info',
-    })),
+    // 073/RC5: manutenção NÃO é item de atenção — a escada concluída passa a existir no
+    // documento (F-24), mas "Etapa 4/4, dose alvo" não é algo que o médico precise decidir
+    // nesta consulta. Ela aparece na seção de titulação, não na lista de pendências.
+    ...titrationRows
+      .filter((item) => !item.isMaintenance)
+      .slice(0, 3)
+      .map((item) => ({
+        label: item.label,
+        detail: item.isTransitionDue
+          ? 'Transição pendente'
+          : `Etapa ${item.currentStep}/${item.totalSteps}`,
+        tone: item.isTransitionDue ? 'warning' : 'info',
+      })),
   ]
 }
 
@@ -167,9 +192,9 @@ export function buildClinicalNotes(patientInfo) {
   return [
     patientInfo.emergencyCard?.allergies?.length
       ? `Alergias registradas: ${patientInfo.emergencyCard.allergies.join(', ')}`
-      : 'Sem alergias registradas no cartao de emergencia',
+      : 'Sem alergias registradas no cartão de emergência',
     patientInfo.emergencyCard?.blood_type
-      ? `Tipo sanguineo: ${patientInfo.emergencyCard.blood_type}`
-      : 'Tipo sanguineo nao informado',
+      ? `Tipo sanguíneo: ${patientInfo.emergencyCard.blood_type}`
+      : 'Tipo sanguíneo não informado',
   ]
 }

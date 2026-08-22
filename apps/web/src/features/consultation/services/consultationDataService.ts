@@ -11,7 +11,13 @@ import { getExpiringPrescriptions } from '@prescriptions/services/prescriptionSe
 import { emergencyCardService } from '@emergency/services/emergencyCardService'
 import { extractEmailHandle, formatPatientDisplayName } from '@shared/utils/patientUtils'
 import { calculateTitrationData } from '@utils/titrationUtils'
-import { getServerTimestamp } from '@utils/dateUtils'
+import {
+  formatIntakeDose,
+  formatActiveIngredientShort,
+  formatNumberPtBR,
+  resolveCurrentStep,
+} from '@dosiq/core'
+import { addDays, getServerTimestamp, parseISO } from '@utils/dateUtils'
 
 /**
  * Agrega todos os dados clínicos para o Modo Consulta Médica
@@ -275,50 +281,224 @@ function _extractPrescriptionStatus(protocols) {
 }
 
 /**
- * Extrai titulações ativas
+ * Data local (dd/mm/aaaa) de um timestamp de etapa. R-020: nada de `new Date('YYYY-MM-DD')`.
+ * @private
+ */
+function _stepDateLabel(value) {
+  if (!value) return null
+  const parsed = parseISO(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo',
+  })
+}
+
+/**
+ * Dose de um degrau da escada, no rótulo clínico.
+ *
+ * 🔴 Smoke do PO (2026-08-22): a nota saía "Dose alvo: 7,5 comprimidos" para o Mounjaro —
+ * uma CANETA. A unidade não pode vir do degrau: `titration_steps.intake_unit` aceita `'cp'`
+ * (que `protocols.intake_unit` NÃO aceita — CON-032 §5) e o embed de `protocols` sequer traz
+ * a coluna, então o degrau chega sem unidade em parte dos caminhos. A unidade da tomada é um
+ * fato do TRATAMENTO; o degrau só carrega o número.
+ *
+ * `'cp'` nunca é propagado para `protocols` — vira `null` aqui e o formatador do core resolve
+ * o sólido pela concentração ("4 un. (100 mg)").
+ *
+ * @private
+ */
+function _stepDoseLabel(step, protocol, medicine) {
+  if (!step || step.dose == null) return null
+  const qty = Number(step.dose)
+  const stepUnit = step.intake_unit || null
+
+  // AC-39: `'cp'` é a unidade de COMPRIMIDO na escada. Ele é exibido por extenso, com a massa
+  // equivalente ao lado, e NUNCA é propagado para `protocols` (que rejeita o valor — CON-032
+  // §5). O rótulo é do degrau; a coluna do protocolo não é tocada.
+  if (stepUnit === 'cp') {
+    const label = `${formatNumberPtBR(qty)} ${qty === 1 ? 'comprimido' : 'comprimidos'}`
+    const mass = formatActiveIngredientShort(qty, medicine?.dosage_per_pill, medicine?.dosage_unit)
+    return mass ? `${label} (${mass})` : label
+  }
+
+  // Sem unidade no degrau, a unidade da tomada é um fato do TRATAMENTO (o degrau só carrega o
+  // número, e o embed de `protocols` nem traz a coluna).
+  const unit = stepUnit ?? protocol?.intake_unit ?? null
+  return formatIntakeDose(step.dose, unit, medicine) || null
+}
+
+/**
+ * Duração de um degrau em linguagem clínica. Degrau sem duração é o de MANUTENÇÃO (dose alvo):
+ * ele não "dura", ele permanece.
+ * @private
+ */
+function _stepDurationLabel(step) {
+  const days = Number(step?.duration_days)
+  if (!Number.isFinite(days) || days <= 0) return 'contínua'
+  return `${days} ${days === 1 ? 'dia' : 'dias'}`
+}
+
+/**
+ * Período do degrau: "18/07/2026 - 25/07/2026" quando ele tem início e duração; "desde
+ * dd/mm/aaaa" para o degrau vigente contínuo (a dose alvo não termina). Espelha a leitura da
+ * timeline do app (Etapa N · Concluída · 18 jul - 25 jul).
+ * @private
+ */
+function _stepPeriodLabel(step) {
+  const start = _stepDateLabel(step?.started_at)
+  if (!start) return '-'
+  const days = Number(step?.duration_days)
+  if (!Number.isFinite(days) || days <= 0) return `desde ${start}`
+  const parsed = parseISO(step.started_at)
+  if (Number.isNaN(parsed.getTime())) return `desde ${start}`
+  // R-020: aritmética sobre o Date local já parseado — nunca `new Date('YYYY-MM-DD')`.
+  const end = addDays(parsed, days).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo',
+  })
+  return `${start} - ${end}`
+}
+
+/**
+ * Situação do degrau, na linguagem do documento (o CHECK de `titration_steps.status` é
+ * `completed | current | upcoming | pending_confirmation` — R-295, conferido no banco).
+ * @private
+ */
+function _stepStatusLabel(step) {
+  switch (step?.status) {
+    case 'current': return 'atual'
+    case 'completed': return 'concluído'
+    case 'pending_confirmation': return 'aguardando confirmação'
+    default: return 'a seguir'
+  }
+}
+
+/**
+ * AC-37: a escada COMPLETA — dose, duração, período e situação de cada degrau, na ordem de
+ * `position`. Um contador "4/4" diz que o paciente chegou ao fim; não diz de quanto para quanto
+ * ele subiu, nem em quanto tempo, que é o que decide manter, subir ou recuar.
+ *
+ * 🔴 R-299: cada degrau é um FATO DATADO e carrega o próprio medicamento — uma escada
+ * cross-medicamento troca de cadastro no meio (e a concentração muda junto). Converter a dose de
+ * um degrau antigo pela concentração do cadastro de HOJE reescreveria o passado do paciente.
+ *
+ * @private
+ */
+function _buildLadder(ordered, protocol, medicine, medicines) {
+  return ordered.map((step, index) => {
+    const stepMedicine = medicines?.find((m) => m.id === step.medicine_id) || medicine
+    const doseLabel = _stepDoseLabel(step, protocol, stepMedicine) || '-'
+    const crossMedicine = stepMedicine?.name && stepMedicine.name !== medicine?.name
+    return {
+      position: index + 1,
+      doseLabel: crossMedicine ? `${stepMedicine.name} · ${doseLabel}` : doseLabel,
+      durationLabel: _stepDurationLabel(step),
+      startLabel: _stepDateLabel(step.started_at) || '-',
+      periodLabel: _stepPeriodLabel(step),
+      statusLabel: _stepStatusLabel(step),
+      isCurrent: step.status === 'current',
+    }
+  })
+}
+
+/**
+ * Extrai as titulações do paciente para o modo consulta e para o PDF.
+ *
+ * 🔴 073/F-24 — POR QUE ISTO MUDOU: a seção de titulação SUMIA para quem terminou de titular.
+ * O extrator descartava (`return null`) todo tratamento cujo `calculateTitrationData` fosse
+ * `null`, e essa função retorna `null` de propósito quando a etapa vigente é CONTÍNUA (dose
+ * de manutenção, sem duração) — o contrato dela é PROGRESSO, e manutenção não tem progresso.
+ * Resultado: o gate `titrationRows.length > 0` do PDF virou um gate de "tem progresso" quando
+ * deveria ser de "tem escada", e a conta do PO — 4 tratamentos em manutenção, 12 degraus no
+ * banco — gerava um documento com ZERO menção à titulação. O médico não via a escada que o
+ * paciente subiu.
+ *
+ * `calculateTitrationData` NÃO é alterada (o contrato dela está certo): quem passa a
+ * distinguir "sem escada" de "escada concluída" é este extrator.
+ *
+ * ⚠️ As etapas devem ser a escada COMPLETA (por `titration_id`, via `attachFullLadders` do
+ * core), nunca o recorte por `protocol_id` do embed — AP-311.
+ *
  * @private
  */
 function _extractActiveTitrations(protocols, medicines) {
   if (!protocols) return []
+  return protocols.map((protocol) => _buildTitrationRow(protocol, medicines)).filter(Boolean)
+}
 
-  return protocols
-    .map((protocol) => {
-      // 029 F3.1 (T017d): a escada vem de `titration_steps` — embed do select de
-      // `createProtocolRepository` (CON-032 §invariante 1: já filtrado por este protocol via FK).
-      // O jsonb N1 (`titration_schedule`) morreu com o AP-301.
-      const steps = protocol.titration_steps
-      if (!Array.isArray(steps) || steps.length === 0) return null
+/**
+ * Linha de um tratamento em EVOLUÇÃO (etapa vigente com duração — há progresso a exibir).
+ *
+ * 🔴 RC6/R-299: `currentDoseLabel` vem da PRÓPRIA linha da escada, que já resolveu o medicamento
+ * do degrau. Recalcular com o medicamento do protocolo imprimiria a massa da concentração errada
+ * numa escada cross-medicamento — e faria a nota discordar da tabela logo abaixo, no mesmo
+ * documento.
+ * @private
+ */
+function _progressRow(base, ordered, ladder, titrationData) {
+  // `currentStep` é 1-based (rótulo de exibição); a escada está ordenada por position.
+  const index = titrationData.currentStep - 1
+  return {
+    ...base,
+    isMaintenance: false,
+    currentStep: titrationData.currentStep,
+    currentDay: titrationData.day,
+    totalDays: titrationData.totalDays,
+    progressPercent: Math.round(titrationData.progressPercent),
+    isTransitionDue: titrationData.isTransitionDue,
+    daysRemaining: titrationData.daysRemaining,
+    currentDosage: ordered[index]?.dose ?? null,
+    currentDoseLabel: ladder[index]?.doseLabel ?? null,
+    maintenanceSince: null,
+  }
+}
 
-      const titrationData = calculateTitrationData(steps)
-      if (!titrationData) return null
+/**
+ * Uma linha de titulação (ou `null` quando não há o que declarar).
+ * @private
+ */
+function _buildTitrationRow(protocol, medicines) {
+  const steps = protocol.titration_steps
+  if (!Array.isArray(steps) || steps.length === 0) return null
 
-      const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
-      // `currentStep` é 1-based (é rótulo de exibição); a escada é ordenada por position.
-      const currentStep = [...steps].sort((a, b) => a.position - b.position)[
-        titrationData.currentStep - 1
-      ]
+  const ordered = [...steps].sort((a, b) => a.position - b.position)
+  const medicine = medicines?.find((m) => m.id === protocol.medicine_id)
+  const ladder = _buildLadder(ordered, protocol, medicine, medicines)
 
-      return {
-        protocolId: protocol.id,
-        medicineId: protocol.medicine_id,
-        medicineName: medicine?.name || protocol.medicine_name || 'Desconhecido',
-        currentStep: titrationData.currentStep,
-        totalSteps: titrationData.totalSteps,
-        currentDay: titrationData.day,
-        totalDays: titrationData.totalDays,
-        progressPercent: Math.round(titrationData.progressPercent),
-        isTransitionDue: titrationData.isTransitionDue,
-        // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou — a etapa se
-        // descreve por medicamento+dose (Decisões §2). É decisão de PRODUTO, não coluna
-        // faltando: `titration_steps` não tem `description` (R-295 — conferido no banco).
-        // Não "resolver" isso somando o campo a um select: foi assim que o #749 derrubou prod.
-        // Consumers degradam sozinhos (PDF → 'Sem observacoes'; ConsultationSections não renderiza).
-        stageNote: null,
-        daysRemaining: titrationData.daysRemaining,
-        currentDosage: currentStep?.dose ?? null,
-      }
-    })
-    .filter(Boolean) // Remove nulls
+  const base = {
+    protocolId: protocol.id,
+    ladder,
+    medicineId: protocol.medicine_id,
+    medicineName: medicine?.name || protocol.medicine_name || 'Desconhecido',
+    totalSteps: ordered.length,
+    // SEMPRE null: a nota/objetivo por etapa era campo do N1 e NÃO migrou (decisão de
+    // PRODUTO — `titration_steps` não tem `description`, R-295 conferido no banco).
+    stageNote: null,
+  }
+
+  const titrationData = calculateTitrationData(ordered)
+  if (titrationData) return _progressRow(base, ordered, ladder, titrationData)
+
+  // Sem progresso a exibir. Só vira linha se houver etapa vigente CONTÍNUA — ou seja, manutenção
+  // (dose alvo atingida). Escada sem etapa vigente é escada não iniciada ou encerrada: nada a
+  // declarar num documento clínico.
+  const currentStep = resolveCurrentStep(ordered)
+  if (!currentStep) return null
+
+  const currentIndex = ordered.indexOf(currentStep)
+  return {
+    ...base,
+    isMaintenance: true,
+    currentStep: currentIndex + 1,
+    currentDay: null,
+    totalDays: null,
+    progressPercent: null,
+    isTransitionDue: false,
+    daysRemaining: null,
+    currentDosage: currentStep.dose ?? null,
+    // RC6/R-299: idem — a nota "Dose alvo" sai da linha da escada, nunca de um recálculo.
+    currentDoseLabel: ladder[currentIndex]?.doseLabel ?? null,
+    maintenanceSince: _stepDateLabel(currentStep.started_at),
+  }
 }
 
 export default {

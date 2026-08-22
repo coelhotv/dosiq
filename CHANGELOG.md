@@ -7,6 +7,38 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O PDF de consulta volta a dizer a verdade sobre a dose
+
+- **Fix** (`minor` web `4.23.0`). O relatório que o paciente leva ao médico imprimia a dose errada
+  na maioria dos tratamentos. A página de tratamentos tinha a própria conta de dose, unidade e
+  cadência — e ela estava errada de três formas:
+  - A dose de cada tomada era multiplicada pela concentração do medicamento **sempre**, mesmo
+    quando a dose já é declarada em massa. "10 UI de Lantus" saía impresso como **"1.000 UI"** —
+    duas ordens de grandeza acima. Agora a dose sai do mesmo formatador que o app inteiro usa.
+  - Um tratamento **semanal** aparecia como "1x/dia", e a dose diária ignorava a cadência. Agora a
+    frequência declarada no tratamento é impressa, e a média por dia respeita a cadência (a mesma
+    conta que a página de estoque deste mesmo documento já fazia).
+  - A apresentação colava "por comprimido" em caneta injetável e frasco de líquido.
+- **Fix** (mesmo release). Um tratamento **encerrado** saía como "Ativo" na página de tratamentos e
+  como "Vencida" na página de receitas — no mesmo documento. Listagem, status e contadores passam a
+  usar a mesma regra de vigência, avaliada na data em que o relatório foi gerado.
+- **Change** (mesmo release). A curva de adesão do relatório passa a considerar a vigência **dia a
+  dia**: um tratamento encerrado no meio do período deixa de sumir do próprio passado. ⚠️ Isso
+  **muda o número de adesão exibido** no relatório — ele passa a refletir o que estava valendo em
+  cada dia, e não o que está valendo hoje.
+- **Add** (mesmo release). O relatório voltou a ter a seção de **titulação** para quem já chegou à
+  dose alvo — e agora ela mostra a **escada inteira**, um degrau por linha: dose, duração, período
+  e situação, com o degrau vigente destacado, como a tela de evolução do app. Antes a seção sumia
+  justamente de quem terminou de subir a escada (só aparecia enquanto houvesse "progresso" em
+  andamento). A dose de cada degrau é convertida pela concentração **daquele** degrau, não pela do
+  cadastro de hoje: uma escada que troca de medicamento no meio deixa de reescrever o passado.
+- **Fix** (mesmo release). Legibilidade: o estoque mostra a unidade e no máximo duas casas decimais
+  ("0,13 mL", não "0.1278656716417910"); a receita vencida diz "vencida há 3 dias" no lugar de
+  "-3", com a data em dd/mm/aaaa; a primeira página parou de repetir a mesma adesão em quatro
+  caixas; e os acentos voltaram ao documento inteiro. A coluna "Dose diária" passa a mostrar a
+  exposição do dia ("100 mg/dia") em vez de repetir a dose por tomada. O símbolo "≈" saía como
+  `("H` no PDF — as fontes padrão não o cobrem — e virou "~".
+
 ### Governança de release: toda mudança mobile declara o canal de entrega
 
 - **Process** (`no-user-impact`). Passou a existir regra escrita (**R-314**) sobre o que pode ser

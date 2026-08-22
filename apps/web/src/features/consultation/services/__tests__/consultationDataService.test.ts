@@ -367,6 +367,132 @@ describe('consultationDataService', () => {
       })
     })
 
+    it('mantém a titulação em MANUTENÇÃO na consulta (073 F-24)', () => {
+      // `calculateTitrationData` devolve null quando a etapa vigente é CONTÍNUA (dose alvo,
+      // sem duração). O extrator descartava esse tratamento — e a seção de titulação SUMIA
+      // exatamente para quem terminou de titular.
+      mocks.mockTitrationData = null
+
+      const dashboardData = createMockDashboardData({
+        protocols: [
+          {
+            id: 'prot-maint',
+            medicine_id: 'med-2',
+            medicine_name: 'Ibuprofeno',
+            active: true,
+            frequency: 'semanal',
+            time_schedule: ['08:00'],
+            dosage_per_intake: 1,
+            start_date: '2026-01-15',
+            end_date: '2026-12-31',
+            titration_steps: [
+              // Degrau em 'cp' no MEIO da escada: prova o AC-39 sem tirar o caso líquido.
+              { position: 0, dose: 2, intake_unit: 'cp', duration_days: 28, status: 'completed', started_at: '2026-01-15T00:00:00' },
+              { position: 1, dose: 0.5, intake_unit: 'mg', duration_days: 28, status: 'completed', started_at: '2026-02-12T00:00:00' },
+              // Etapa vigente CONTÍNUA (sem duração) = manutenção.
+              { position: 2, dose: 1, intake_unit: 'mg', duration_days: null, status: 'current', started_at: '2026-03-11T00:00:00' },
+            ],
+          },
+        ],
+      })
+
+      const result = getConsultationData(dashboardData)
+
+      expect(result.activeTitrations).toHaveLength(1)
+      expect(result.activeTitrations[0]).toMatchObject({
+        protocolId: 'prot-maint',
+        isMaintenance: true,
+        currentStep: 3,
+        totalSteps: 3,
+        progressPercent: null,
+        isTransitionDue: false,
+        currentDosage: 1,
+      })
+      expect(result.activeTitrations[0].maintenanceSince).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
+
+      // AC-37: escada completa (dose, duração, período e situação de cada degrau).
+      // AC-39: `intake_unit = 'cp'` sai por extenso — e não vira `un.` nem vaza p/ protocols.
+      expect(result.activeTitrations[0].ladder).toHaveLength(3)
+      expect(result.activeTitrations[0].ladder[0]).toMatchObject({
+        position: 1,
+        durationLabel: '28 dias',
+        statusLabel: 'concluído',
+        isCurrent: false,
+      })
+      expect(result.activeTitrations[0].ladder[0].doseLabel).toMatch(/^2 comprimidos/)
+      expect(result.activeTitrations[0].ladder[0].doseLabel).not.toContain('un.')
+      expect(result.activeTitrations[0].ladder[0].periodLabel).toMatch(
+        /^\d{2}\/\d{2}\/\d{4} - \d{2}\/\d{2}\/\d{4}$/
+      )
+      expect(result.activeTitrations[0].ladder[2]).toMatchObject({
+        durationLabel: 'contínua',
+        statusLabel: 'atual',
+        isCurrent: true,
+      })
+    })
+
+    it('escada cross-medicamento: a nota da dose alvo usa a concentração do PRÓPRIO degrau (R-299)', () => {
+      // Achado do RC6 do PR #809: `currentDoseLabel` recalculava a massa com o medicamento do
+      // TRATAMENTO. Num medicine_switch, a nota "Dose alvo" sairia da concentração do
+      // medicamento errado — e discordaria da tabela da escada no MESMO documento.
+      mocks.mockTitrationData = null
+
+      const dashboardData = createMockDashboardData({
+        medicines: [
+          { id: 'med-antigo', name: 'Selozok 25', dosage_per_pill: 25, dosage_unit: 'mg' },
+          { id: 'med-novo', name: 'Selozok 100', dosage_per_pill: 100, dosage_unit: 'mg' },
+        ],
+        protocols: [
+          {
+            id: 'p-switch',
+            medicine_id: 'med-antigo', // o tratamento ainda aponta o cadastro ANTIGO
+            active: true,
+            start_date: '2026-01-01',
+            end_date: '2026-12-31',
+            titration_steps: [
+              { position: 0, dose: 1, intake_unit: 'cp', duration_days: 7, status: 'completed', started_at: '2026-01-01T00:00:00', medicine_id: 'med-antigo' },
+              { position: 1, dose: 1, intake_unit: 'cp', duration_days: null, status: 'current', started_at: '2026-02-01T00:00:00', medicine_id: 'med-novo' },
+            ],
+          },
+        ],
+      })
+
+      const [titration] = getConsultationData(dashboardData).activeTitrations
+
+      // 1 comprimido do cadastro NOVO = 100 mg — não os 25 mg do cadastro do tratamento.
+      expect(titration.currentDoseLabel).toContain('100 mg')
+      expect(titration.currentDoseLabel).not.toContain('25 mg')
+      // A nota e a linha da escada não podem divergir: são o mesmo rótulo.
+      expect(titration.currentDoseLabel).toBe(titration.ladder[1].doseLabel)
+      // Degrau de outro medicamento se identifica.
+      expect(titration.ladder[1].doseLabel).toContain('Selozok 100')
+    })
+
+    it('não inventa titulação: sem escada e sem etapa vigente, a secao fica vazia (073 F-24)', () => {
+      mocks.mockTitrationData = null
+
+      const semEscada = createMockDashboardData({
+        protocols: [
+          { id: 'p-vazio', medicine_id: 'med-2', active: true, start_date: '2026-01-01', end_date: '2026-12-31' },
+        ],
+      })
+      expect(getConsultationData(semEscada).activeTitrations).toHaveLength(0)
+
+      const escadaSemVigente = createMockDashboardData({
+        protocols: [
+          {
+            id: 'p-sem-current', medicine_id: 'med-2', active: true,
+            start_date: '2026-01-01', end_date: '2026-12-31',
+            titration_steps: [
+              { position: 0, dose: 1, duration_days: 7, status: 'completed', started_at: '2026-01-01T00:00:00' },
+              { position: 1, dose: 2, duration_days: 7, status: 'upcoming', started_at: null },
+            ],
+          },
+        ],
+      })
+      expect(getConsultationData(escadaSemVigente).activeTitrations).toHaveLength(0)
+    })
+
     it('deve extrair alertas de estoque corretamente', () => {
       const dashboardData = createMockDashboardData()
       const result = getConsultationData(dashboardData)
@@ -389,7 +515,11 @@ describe('consultationDataService', () => {
         medicineId: 'med-2',
         medicineName: 'Ibuprofeno',
         currentStep: 1,
-        totalSteps: 3,
+        // 073: `totalSteps` passa a ser o tamanho REAL da escada recebida (2 etapas no
+        // fixture), não o número que o mock de `calculateTitrationData` devolve — é o mesmo
+        // valor na prática e é o único que existe na linha de MANUTENÇÃO, onde o cálculo de
+        // progresso devolve null por contrato.
+        totalSteps: 2,
         currentDay: 5,
         totalDays: 7,
         progressPercent: 71,
