@@ -3,8 +3,8 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "specifying",
-    "status": "specified",
+    "mode": "ceremony",
+    "status": "reviewing",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
@@ -99,8 +99,10 @@
       }
     ],
     "previous_session_note": "073 ampliada 3x em 2026-08-22: specifying (F-1..F-8), pente fino de emergency/consultation (F-9..F-16) e análise do PDF REAL da conta doktorr conferido linha a linha contra o banco (F-17..F-23). O achado de maior severidade é o F-17: formatIntakeDose multiplica dose por concentração sempre, então Lantus 10 UI é impressa como '1.000 UI/mL/dia' e Ozempic 2,4mg semanal como '6,432 mg/mL/dia' — só o sólido (Selozok) sai certo. F-18: status 'Ativo' é string literal, e o PDF se contradiz entre pág 2 e pág 5. F-20 é a alavanca: a página de estoque do MESMO PDF já calcula a cadência semanal corretamente via core. Baseline de regressão = o PDF anexado de 21/08/2026 20:45 (SC-008). Divergência da Dipirona ENCERRADA: o PO editou 15->10 depois de gerar o PDF. F-24 (novo): a seção de titulação some para quem terminou de titular — gate calculateTitrationData!=null retorna null em manutenção; conta de teste tem 12 degraus e nenhuma seção. Slice G adiciona a escada histórica (dados já existem em titration_steps). PRÓXIMO: RC3 ou planning do Slice A. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
-    "ceremonies_run": [],
-    "ceremony_findings_count": 0,
+    "ceremonies_run": [
+      "eng-review"
+    ],
+    "ceremony_findings_count": 8,
     "ceremony_scope_decisions": [
       "D1 (2026-08-22, PO): janela canônica de vigência de prescrição = 14 dias (a do core). O literal 30 e o parâmetro thresholdDays da web somem",
       "D2 (2026-08-22, PO): a seção 'Prescrições' do PDF É de alertas — corrigir o título e deletar o rótulo inalcançável 'Vigente'; o filtro fica",
@@ -116,7 +118,11 @@
       "D12 (2026-08-22): prioridade revista para A → E → D → F → B → C. O anexo prova erro de dose em 4/5 tratamentos, o que supera o F-13 (exige 2 protocolos p/ se manifestar)",
       "D13 (2026-08-22, PO): divergência da Dipirona (15 no PDF x 10 no banco) ENCERRADA — o PO editou a dose depois de gerar o PDF. Não há segundo caminho de leitura; baseline do SC-008 usa 15",
       "D14 (2026-08-22, PO): ausência de titulação no PDF entra como F-24/Slice G. Causa raiz: renderTitrationPage tem gate length>0 e _extractActiveTitrations descarta todo protocolo cujo calculateTitrationData é null — e essa fn retorna null quando a etapa current não tem duração (manutenção). Os 4 tratamentos da conta estão em manutenção ⇒ zero seção com 12 degraus no banco",
-      "D15 (2026-08-22): G é o único slice que ADICIONA valor clínico em vez de tirar erro; sobe para 2º na prioridade (A → G → E → D → F → B → C)"
+      "D15 (2026-08-22): G é o único slice que ADICIONA valor clínico em vez de tirar erro; sobe para 2º na prioridade (A → G → E → D → F → B → C)",
+      "D16 (2026-08-22, RC3/E-1): formatDailyDose:128 é o terceiro formatador doente do builder (multiplica pela concentração E sufixa /dia usando time_schedule.length) — é a 'conta maluca da dose diária' da pág 2. Entra nominalmente nos target files do Slice A",
+      "D17 (2026-08-22, RC3/E-3+E-4): o farol scripts/vigency-single-source.sh já cobre o builder do PDF com 3 isenções inline (:171 = F-18, revogar no A; :223 e :410 sem achado, reavaliar). O SCOPE do script NÃO alcança emergency/ nem consultation/ — estendê-lo é ENTREGÁVEL dos slices D e E, senão a correção não tem trava de regressão",
+      "D18 (2026-08-22, RC3/E-7+E-8): proposta de 7 slices -> 5 PRs — fundir F em A (mesmos 2 arquivos, evita 2 baselines de PDF) e C em B (ambos deletam código no mesmo arquivo). Aguarda decisão do PO",
+      "D19 (2026-08-22, RC3 guard): guard calibrado por slice acima do piso Tier 2 — A fecha pelo DOCUMENTO (SC-008 + 2 gates de grep), B por grep de deleção do 2º símbolo, D/E pelo SCOPE estendido do farol, E exige fixture com 2 protocolos vigentes do mesmo medicamento (sem ele o F-13 é invisível), G exige caso vazio"
     ],
     "branch": "main",
     "blocked_on": [
@@ -184,7 +190,7 @@
       "AC-39 → spec 073 PO-11",
       "AC-40 → spec 073 PO-11"
     ],
-    "ceremony_type": null
+    "ceremony_type": "eng-review"
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
