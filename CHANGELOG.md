@@ -7,6 +7,14 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Governança de release: toda mudança mobile declara o canal de entrega
+
+- **Process** (`no-user-impact`). Passou a existir regra escrita (**R-314**) sobre o que pode ser
+  entregue por atualização remota (OTA) e o que obriga um novo envio às lojas — código nativo, SDK,
+  permissão nova, feature nova ou mudança de propósito do app. O protocolo de qualidade de cada PR
+  (R-221) agora pergunta isso **antes** do código ser escrito, e o modelo de PR ganhou a linha
+  "Canal de entrega". Sem impacto para quem usa o app.
+
 ### Estoque, custo e relatório do médico param de contar tratamento já encerrado
 
 - **Fix** (`patch` web `4.22.5` · `patch` core `0.22.2` · `patch` server `4.2.2`). Um tratamento com

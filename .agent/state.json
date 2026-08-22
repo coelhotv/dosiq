@@ -5,11 +5,11 @@
   "session": {
     "mode": "coding",
     "status": "completed",
-    "tier": 2,
-    "spec_dir": "plans/specs/064-stock-forecast-vigency",
-    "spec": "plans/specs/064-stock-forecast-vigency/spec.md",
-    "goal": "064 ENTREGUE (PR 1 #807 + PR 2 #808, squash c454dcc5) — vigência no read-path de consumo; C5 pós-merge fechado",
-    "goal_type": "fix",
+    "tier": 0,
+    "spec_dir": "plans/specs/051-expo-updates",
+    "spec": "plans/specs/051-expo-updates/spec.md",
+    "goal": "Onda 0 (backlog H2 2026) ENCERRADA — T011 da 051 entregue: R-314 (elegibilidade OTA x build de loja) + hook no SQP (R-221 §4c). PO-4/FR-009/SC-006 fechados. Docs-only, direto na main.",
+    "goal_type": "process",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
     ],
@@ -98,11 +98,9 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "064 PR 1 mergeado 2026-08-21 (#807, squash 72d5e322): isProtocolVigentOn no core, ProtocolSchema conserva start_date/end_date, sombra calculateDailyIntake do costAnalysisService deletada. ZERO mudanca de comportamento por construcao — o numero errado AINDA esta na tela. PROXIMA ENTREGA: PR 2 (branch fix/064-stock-forecast-vigency, T007-T020), sessao fresh, prompt pronto na Sessao 2 do PLAYBOOK. PO-4 segue [ ] open de proposito (parte B = custo/dia=0 depende do filtro do PR 2). PENDENCIA HERDADA da 050: T034 (SC-003, semana 21-27/08) e PR 4 (fatiar _reminderHelpers.ts). ACHADO RC6 do #807: adherenceLogic.ts (38903B) excede sozinho o chunk budget (38279B) => pass ADVISORY, mesmo modo de falha do _reminderHelpers.ts em #799/#801/#803, agora num 2o arquivo do core. A/B abortado por baseline 0 findings pela 5a vez consecutiva (insumo T051).",
-    "ceremonies_run": [
-      "eng-review"
-    ],
-    "ceremony_findings_count": 8,
+    "previous_session_note": "Onda 0 fechada 2026-08-21 (0.1 ja verificado em prod 20/08 + 0.3/T011 agora). O gap do T011 era HOOK, nao conteudo: GUIA_OTA §5/§8 ja tinha a prosa; faltava regra citavel e o SQP nunca perguntava o canal de entrega. R-314 + R-221 §4c + passo 3b no CHANGELOG_AND_RELEASES + linha \"Canal de entrega\" no PR template + GUIA_OTA §5.1/§5.2. Sem gate automatico por decisao (nenhuma ferramenta le intencao de produto) — declarado na regra. PROXIMO: Onda 1 — item 1.5 (fatiar _reminderHelpers.ts, 1.538 linhas, move-only; liberado a partir de 23/08) e T034/SC-003 da 050 (relogio, 27/08). Pendencias herdadas inalteradas: PO-8 da 067 e o REVOKE UPDATE(status) do 067 B2.",
+    "ceremonies_run": [],
+    "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
       "D1: analysis F-6 rebaixado HIGH->LOW (sombra e codigo morto, zero chamadores) e F-9 corrigido (dashboard usa getAll, sem filtro de data)",
       "D2: fatiar em 3 PRs — PR1 estrutura (sem mudanca de comportamento), PR2 comportamento (6 superficies), PR3 PDF; droppabilidade PR3->PR2->PR1",
@@ -114,7 +112,8 @@
     ],
     "branch": "main",
     "blocked_on": [
-      "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy"
+      "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
+      "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
     ],
     "plan": "plans/specs/064-stock-forecast-vigency/plan.md",
     "tasks": "plans/specs/064-stock-forecast-vigency/tasks.md",
@@ -151,8 +150,8 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 8,
-    "rules_count": 264,
+    "journal_entries_since_distillation": 9,
+    "rules_count": 265,
     "anti_patterns_count": 332,
     "decisions_count": 94,
     "contracts_count": 34,
@@ -166,21 +165,11 @@
     "index_loaded_at": "2026-08-21T21:00:00Z"
   },
   "code_review": {
-    "status": "issues_found",
-    "critical": 0,
-    "auto_fixed": 1,
-    "ask_items": 1,
-    "note": "AUTO-FIX: getTodayLocal() içado para fora do filter por medicamento em costAnalysisService. ASK: divergência do PO-3 caso (a) — asOf = fim do período (playbook) vs 'vigente em qualquer dia do período' (spec); decisão do PO."
+    "status": "not_applicable",
+    "note": "T011 docs/process-only — sem código, sem PR (R-060 não se aplica a doc puro)"
   },
   "ai_review": {
-    "engine": "agy+claude (6 de 7 chunks — COBERTURA PARCIAL)",
-    "status": "issues_found",
-    "critical": 0,
-    "high": 1,
-    "introduced_critical": 0,
-    "introduced_high": 1,
-    "pr": 808,
-    "coverage": "6/7",
-    "note": "pass B (claude, full-context) achou o único finding: severity/message do PDF ainda herdavam isZero/isLow de HOJE em relatório de período passado (R-299). Corrigido em 58325d3b + teste. A/B abortou por baseline 0 findings (5ª vez). Fora da cobertura: _useDashboardDerived.ts, useComplexityMode.ts, consultationPdfVigency.test.ts"
+    "status": "not_applicable",
+    "note": "T011 docs/process-only — sem código, sem PR (R-060 não se aplica a doc puro)"
   }
 }

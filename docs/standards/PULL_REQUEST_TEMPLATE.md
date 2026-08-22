@@ -212,6 +212,7 @@ updated_at: "2026-07-08"
 **Plataformas afetadas:** [Web/PWA / Mobile / Shared/Core / Backend/Infra]
 **Versão anterior:** [web x.y.z / mobile a.b.c]
 **Versão sugerida:** [web x.y.z / mobile a.b.c]
+**Canal de entrega (mobile, R-314):** [OTA / build de loja / kill switch / n/a]
 **Changelog:** [CHANGELOG.md [Unreleased] atualizado / no-user-impact justificado]
 
 ---

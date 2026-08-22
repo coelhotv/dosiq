@@ -416,7 +416,33 @@ Três coisas para levar disso:
 
 ---
 
-## 5. Checklist pré-publish (FR-015)
+## 5. Checklists
+
+### 5.1. Elegibilidade — isto pode ir por OTA? (R-314)
+
+Esta é a **primeira** pergunta, e ela se responde no SQP (R-221 §4c), antes de escrever o código —
+não aqui, com o publish pronto e a pressão de entregar. O `eas update` empacota qualquer JS que
+compile: ele não distingue correção de feature nova. A pergunta não é *"cabe no bundle?"*, é
+***"a loja já revisou este propósito?"***.
+
+- [ ] O diff toca `ios/`, `android/`, SDK do Expo, plugin de build, permissão nova ou dependência
+      com parte nativa? → **build de loja**, e para por aqui. (JS novo chamando nativo que o binário
+      instalado não tem é **crash** no usuário, não erro de build.)
+- [ ] É feature nova ou muda o propósito do app perante a loja, ainda que 100% JS? → **build de
+      loja** (Apple **Guideline 3.3.1**).
+- [ ] Existe código embarcado **inativo** que alguém pretende ligar depois por flag? → **reprovado
+      em qualquer canal.** A flag *é* o mecanismo que a 3.3.1 descreve. Rollout gradual legítimo é
+      `--rollout-percentage` do EAS (§2), que gradua *quem recebe o bundle*, não *o que o bundle liga*.
+      🔴 App de saúde no Google Play tem escrutínio extra — código interpretado carregado em runtime
+      não pode habilitar violação de política, e a liability é da empresa.
+- [ ] Se é OTA: `APP_VERSION` fica **intacto** (bump = runtime novo = update órfão, §7) e a entrada
+      de CHANGELOG é `[X.Y.Z+ota.N]` com `updateId` + SHA.
+- [ ] Se é OTA de **produção**: sai da tag `mobile-v<APP_VERSION>` ou de `hotfix/ota-*` cortado dela
+      (R-307, §6) — **nunca** da `main` que já andou.
+- [ ] O parque-alvo embute o cliente `expo-updates` (≥ **v0.30.0**)? Abaixo disso nenhum publish
+      alcança (§8) — o instrumento é build de loja + kill switch, não OTA.
+
+### 5.2. Pré-publish (FR-015)
 
 Antes de publicar, confirmar todos. Os três primeiros o `publish-ota.sh` **já verifica e bloqueia**
 sozinho — os demais dependem de você:
@@ -534,6 +560,10 @@ versão referencia as entradas `+ota.N` anteriores (não duplica o conteúdo).
   carrega esse cliente — os installs abaixo dela (21 de 25 medidos no outage do AP-314/ADR-088)
   seguem inalcançáveis por OTA até migrarem para um build que o embuta. Não há atalho: quem não
   atualiza o binário não é alcançado por nada publicado neste canal.
+- Não entrega **feature nova** nem mudança de propósito, mesmo sendo 100% JS, e não legitima
+  embarcar código inativo para ligar depois — Apple 3.3.1 / Google Play (saúde). A regra e o
+  checklist de roteamento estão em **R-314** (§5.1); o hook que força a decisão está no SQP
+  (R-221 §4c).
 
 ---
 

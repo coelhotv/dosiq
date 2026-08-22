@@ -64,6 +64,11 @@ Every code-changing PR must follow R-221 SQP:
 1. Load DEVFLOW and R-221 before writing code.
 2. Identify affected platform(s): Web/PWA, Mobile, Shared/Core, Backend/Infra.
 3. Classify SemVer impact: `patch`, `minor`, `major`, or `no-user-impact`.
+3b. **Mobile only — route the delivery channel (R-314)**: OTA (`eas update`), store build, or kill
+   switch. Native code / Expo SDK / `ios/` / `android/` / build plugins / new permissions and any new
+   feature or purpose change **require a store build** (Apple 3.3.1); shipping inactive code behind a
+   flag to enable later is forbidden on either channel. Decide this **before** writing code, and fill
+   it into the PR version section.
 4. Update affected version source(s) unless impact is `no-user-impact`.
 5. Add a Portuguese entry under `CHANGELOG.md` `[Unreleased]`.
 6. For mobile changes, ensure App Store / Play Store notes can be derived from the changelog entry.
@@ -110,6 +115,24 @@ Allowed categories:
 - `Removed`
 - `Process`
 
+## OTA Releases (`[X.Y.Z+ota.N]`)
+
+An OTA release **never bumps `APP_VERSION`**. Under `runtimeVersion: appVersion` (ADR-082) a bump
+creates a new runtime, and an update published on it reaches no installed build — the "patch" ships
+orphaned, with no error. Log OTA releases as:
+
+```markdown
+## [X.Y.Z+ota.N]
+```
+
+- `X.Y.Z` = current `APP_VERSION` (the target runtime — unchanged).
+- `N` = sequence of the OTA over that runtime (restarts at each `APP_VERSION` bump).
+- Also record the `updateId` returned by `eas update` and the published commit SHA.
+
+The next store build (a real `APP_VERSION` bump) absorbs the accumulated OTAs: its changelog block
+references the `+ota.N` entries instead of duplicating them. Eligibility rules and the pre-publish
+checklist: R-314 and `docs/operations/GUIA_OTA_EAS_UPDATE.md`.
+
 ## Store Notes
 
 Store notes live in **`docs/standards/RELEASES.md`** (the external source of truth), derived from
@@ -135,5 +158,6 @@ Fill `docs/standards/PULL_REQUEST_TEMPLATE.md` with actual values:
 **Plataformas afetadas:** Web/PWA / Mobile / Shared/Core / Backend/Infra
 **Versão anterior:** web x.y.z / mobile a.b.c
 **Versão sugerida:** web x.y.z / mobile a.b.c
+**Canal de entrega (mobile, R-314):** OTA / build de loja / kill switch / n/a
 **Changelog:** `CHANGELOG.md` [Unreleased] atualizado
 ```
