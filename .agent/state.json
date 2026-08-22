@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 fix-clinical-data — specifying completo (S1-S6): 8 achados F-1..F-8 verificados, 3 slices, 2 clarificações resolvidas pelo PO, gap estrutural de receita e mapa de superfícies só-web registrados",
+    "goal": "073 fix-clinical-data — specifying + pente fino de cartão de emergência e modo consulta: 16 achados, 5 slices, contagens medidas em produção",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 specificada em 2026-08-22. Origem: smoke da 064 expôs que superfícies SÓ-WEB (reports/PDF, prescriptions, consultation) ficaram fora dos sweeps de líquidos (022/023/024), cadência (012) e rótulo (053) — porque os sweeps seguiram mobile+core. Verificado no banco: protocols NÃO tem dosage/dosage_unit (F-7) e NÃO existe tabela prescriptions (§8 — 'validade de receita' do benchmark ASO não tem modelo). PRÓXIMO: /devflow eng-review (RC3) ou planning do Slice A. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (fatiar _reminderHelpers.ts, liberado 23/08) e T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "073 specificada 2026-08-22 e ampliada no mesmo dia com pente fino de emergency/ e consultation/ pedido pelo PO. 16 achados. Os 2 mais graves NÃO são o PDF: F-13 (modo consulta dobra a dose diária com 2+ tratamentos — produto cruzado em _calculateDosageInfo) e F-9/F-10 (cartão de emergência lista tratamento encerrado e some com o 2º tratamento do mesmo medicamento). Medido em prod: 9 protocolos active=true com end_date passado, 2 medicamentos com 2 protocolos vigentes, 15 vigentes não-diários, 6 com intake_unit. Padrão: o sweep da 053 corrigiu RÓTULO em N superfícies e não tocou em SELEÇÃO/AGREGAÇÃO — o cartão passou no 1º e falhou no 2º. calendar/ segue não auditado. PRÓXIMO: RC3 eng-review (fatiamento e prioridade E>D>A) ou planning do Slice E. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
@@ -106,7 +106,10 @@
       "D2 (2026-08-22, PO): a seção 'Prescrições' do PDF É de alertas — corrigir o título e deletar o rótulo inalcançável 'Vigente'; o filtro fica",
       "D3 (2026-08-22, PO): achados novos F-6/F-7/F-8 entram na 073 (Slice C de higiene), em vez de virarem spec separada",
       "D4 (2026-08-22, PO): modelo de receita NÃO é achado novo — é o item 5.7 do BACKLOG_ORDER_2026H2 (2º pilar do dossiê Android, 230 menções), com gate próprio: só especificar depois que a 048 medir tráfego. A 073 só acrescenta a verificação de banco (ausência da tabela confirmada, não presumida) e respeita o gate",
-      "D5 (2026-08-22, investigação): F-7 rebaixado de 'imprime errado p/ todos' para 'código morto' — pdfGeneratorService.ts tem ZERO importadores em src; vira DELEÇÃO, não correção"
+      "D5 (2026-08-22, investigação): F-7 rebaixado de 'imprime errado p/ todos' para 'código morto' — pdfGeneratorService.ts tem ZERO importadores em src; vira DELEÇÃO, não correção",
+      "D6 (2026-08-22, PO): pente fino em cartão de emergência e modo consulta — as duas superfícies entram na MESMA spec (F-9..F-16, slices D e E), não em spec separada",
+      "D7 (2026-08-22, achado): F-13 é o mais grave da spec — _calculateDosageInfo multiplica SOMA(doses) por SOMA(tomadas); com 2 protocolos a posologia impressa DOBRA. Ramo líquido está correto (soma por protocolo); só o sólido tem o bug",
+      "D8 (2026-08-22, achado): o cartão de emergência PASSOU no sweep de formatação (importa formatIntakeDose/formatConcentration do core) e FALHOU no de seleção/agregação (vigência ignorada, colapso por medicine_id). Sweep de rótulo não é sweep de dado — candidata a R-NNN"
     ],
     "branch": "main",
     "blocked_on": [
@@ -147,13 +150,23 @@
       "AC-12 → spec 073 PO-4",
       "AC-13 → spec 073 PO-5",
       "AC-14 → spec 073 PO-5",
-      "AC-15 → spec 073 PO-5"
+      "AC-15 → spec 073 PO-5",
+      "AC-16 → spec 073 PO-6",
+      "AC-17 → spec 073 PO-6",
+      "AC-18 → spec 073 PO-6",
+      "AC-19 → spec 073 PO-6",
+      "AC-20 → spec 073 PO-7",
+      "AC-21 → spec 073 PO-7",
+      "AC-22 → spec 073 PO-7",
+      "AC-23 → spec 073 PO-7",
+      "AC-24 → spec 073 PO-7",
+      "AC-25 → spec 073 PO-7"
     ],
     "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "rules_count": 265,
     "anti_patterns_count": 332,
     "decisions_count": 94,
@@ -165,7 +178,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T03:10:42Z"
+    "index_loaded_at": "2026-08-22T03:39:10Z"
   },
   "code_review": {
     "status": "not_applicable",
