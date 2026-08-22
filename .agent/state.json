@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 fix-clinical-data — specifying + pente fino de cartão de emergência e modo consulta: 16 achados, 5 slices, contagens medidas em produção",
+    "goal": "073 fix-clinical-data — 23 achados, 6 slices; PDF real da conta de teste conferido contra o banco expôs erro de dose em 4 dos 5 tratamentos",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 specificada 2026-08-22 e ampliada no mesmo dia com pente fino de emergency/ e consultation/ pedido pelo PO. 16 achados. Os 2 mais graves NÃO são o PDF: F-13 (modo consulta dobra a dose diária com 2+ tratamentos — produto cruzado em _calculateDosageInfo) e F-9/F-10 (cartão de emergência lista tratamento encerrado e some com o 2º tratamento do mesmo medicamento). Medido em prod: 9 protocolos active=true com end_date passado, 2 medicamentos com 2 protocolos vigentes, 15 vigentes não-diários, 6 com intake_unit. Padrão: o sweep da 053 corrigiu RÓTULO em N superfícies e não tocou em SELEÇÃO/AGREGAÇÃO — o cartão passou no 1º e falhou no 2º. calendar/ segue não auditado. PRÓXIMO: RC3 eng-review (fatiamento e prioridade E>D>A) ou planning do Slice E. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "073 ampliada 3x em 2026-08-22: specifying (F-1..F-8), pente fino de emergency/consultation (F-9..F-16) e análise do PDF REAL da conta doktorr conferido linha a linha contra o banco (F-17..F-23). O achado de maior severidade é o F-17: formatIntakeDose multiplica dose por concentração sempre, então Lantus 10 UI é impressa como '1.000 UI/mL/dia' e Ozempic 2,4mg semanal como '6,432 mg/mL/dia' — só o sólido (Selozok) sai certo. F-18: status 'Ativo' é string literal, e o PDF se contradiz entre pág 2 e pág 5. F-20 é a alavanca: a página de estoque do MESMO PDF já calcula a cadência semanal corretamente via core. Baseline de regressão = o PDF anexado de 21/08/2026 20:45 (SC-008). Divergência aberta: PDF imprimiu 15 p/ a Dipirona onde o banco tem 10 — causa NÃO determinada, investigar no C1. PRÓXIMO: RC3 ou planning do Slice A. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
@@ -109,7 +109,11 @@
       "D5 (2026-08-22, investigação): F-7 rebaixado de 'imprime errado p/ todos' para 'código morto' — pdfGeneratorService.ts tem ZERO importadores em src; vira DELEÇÃO, não correção",
       "D6 (2026-08-22, PO): pente fino em cartão de emergência e modo consulta — as duas superfícies entram na MESMA spec (F-9..F-16, slices D e E), não em spec separada",
       "D7 (2026-08-22, achado): F-13 é o mais grave da spec — _calculateDosageInfo multiplica SOMA(doses) por SOMA(tomadas); com 2 protocolos a posologia impressa DOBRA. Ramo líquido está correto (soma por protocolo); só o sólido tem o bug",
-      "D8 (2026-08-22, achado): o cartão de emergência PASSOU no sweep de formatação (importa formatIntakeDose/formatConcentration do core) e FALHOU no de seleção/agregação (vigência ignorada, colapso por medicine_id). Sweep de rótulo não é sweep de dado — candidata a R-NNN"
+      "D8 (2026-08-22, achado): o cartão de emergência PASSOU no sweep de formatação (importa formatIntakeDose/formatConcentration do core) e FALHOU no de seleção/agregação (vigência ignorada, colapso por medicine_id). Sweep de rótulo não é sweep de dado — candidata a R-NNN",
+      "D9 (2026-08-22, PDF real): F-17 é o achado de maior severidade — formatIntakeDose multiplica dosage_per_intake por dosage_per_pill SEMPRE, mesmo quando intake_unit já é mg/UI. Lantus 10 UI vira '1.000 UI/mL' (2 ordens de grandeza); a unidade impressa é a CONCENTRAÇÃO usada como massa. Só o caso sólido (Selozok) está correto",
+      "D10 (2026-08-22, PDF real): F-18 — status: 'Ativo' é literal hardcoded em buildTreatmentRows:189; a Dipirona vencida em 18/08 sai 'Ativo' na pág 2 e 'Vencida' na pág 5 do MESMO documento. O comentário 'vigency-gate: ok' concedeu isenção errada",
+      "D11 (2026-08-22, PDF real): F-20 fecha o argumento do Slice A — a página de ESTOQUE do mesmo PDF calcula 0,1279 ml/dia p/ o Ozempic (2,4mg ÷ 2,68 ÷ 7, exato, via calculateDailyIntake do core) enquanto a pág 2 imprime 6,432/dia. O cálculo certo já roda no mesmo documento; a pág 2 só precisa parar de fazer o seu",
+      "D12 (2026-08-22): prioridade revista para A → E → D → F → B → C. O anexo prova erro de dose em 4/5 tratamentos, o que supera o F-13 (exige 2 protocolos p/ se manifestar)"
     ],
     "branch": "main",
     "blocked_on": [
@@ -160,13 +164,23 @@
       "AC-22 → spec 073 PO-7",
       "AC-23 → spec 073 PO-7",
       "AC-24 → spec 073 PO-7",
-      "AC-25 → spec 073 PO-7"
+      "AC-25 → spec 073 PO-7",
+      "AC-26 → spec 073 PO-8",
+      "AC-27 → spec 073 PO-8",
+      "AC-28 → spec 073 PO-8",
+      "AC-29 → spec 073 PO-8",
+      "AC-30 → spec 073 PO-9",
+      "AC-31 → spec 073 PO-9",
+      "AC-32 → spec 073 PO-10",
+      "AC-33 → spec 073 PO-10",
+      "AC-34 → spec 073 PO-10",
+      "AC-35 → spec 073 PO-10"
     ],
     "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "rules_count": 265,
     "anti_patterns_count": 332,
     "decisions_count": 94,
@@ -178,7 +192,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T03:39:10Z"
+    "index_loaded_at": "2026-08-22T03:57:24Z"
   },
   "code_review": {
     "status": "not_applicable",
