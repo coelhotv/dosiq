@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "ceremony",
-    "status": "reviewing",
+    "status": "reviewed",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 fix-clinical-data — 23 achados, 6 slices; PDF real da conta de teste conferido contra o banco expôs erro de dose em 4 dos 5 tratamentos",
+    "goal": "073 fix-clinical-data — 24 achados + 8 do RC3; fatiamento fechado em 3 PRs por artefato de prova",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 ampliada 3x em 2026-08-22: specifying (F-1..F-8), pente fino de emergency/consultation (F-9..F-16) e análise do PDF REAL da conta doktorr conferido linha a linha contra o banco (F-17..F-23). O achado de maior severidade é o F-17: formatIntakeDose multiplica dose por concentração sempre, então Lantus 10 UI é impressa como '1.000 UI/mL/dia' e Ozempic 2,4mg semanal como '6,432 mg/mL/dia' — só o sólido (Selozok) sai certo. F-18: status 'Ativo' é string literal, e o PDF se contradiz entre pág 2 e pág 5. F-20 é a alavanca: a página de estoque do MESMO PDF já calcula a cadência semanal corretamente via core. Baseline de regressão = o PDF anexado de 21/08/2026 20:45 (SC-008). Divergência da Dipirona ENCERRADA: o PO editou 15->10 depois de gerar o PDF. F-24 (novo): a seção de titulação some para quem terminou de titular — gate calculateTitrationData!=null retorna null em manutenção; conta de teste tem 12 degraus e nenhuma seção. Slice G adiciona a escada histórica (dados já existem em titration_steps). PRÓXIMO: RC3 ou planning do Slice A. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "073 fechou o RC3 em 2026-08-22. 8 achados de engenharia (E-1..E-8): E-1 formatDailyDose:128 é o 3o formatador doente (multiplica pela concentração E sufixa /dia por time_schedule.length) e não estava em achado nenhum — é a 'conta maluca da dose diária' da pág 2; E-2 formatMedicinePresentation:77 tem 'por comprimido' literal e o SC-001 mede isso por grep; E-3/E-4 o farol scripts/vigency-single-source.sh JÁ cobre o builder do PDF com 3 isenções inline (:171=F-18 revogar, :223 e :410 sem achado) mas o SCOPE não alcança emergency/ nem consultation/ — estender vira ENTREGÁVEL do PR 2; E-6 os 3 testes do PDF travam a saída errada (asserção verde sobre bug), inverter é tarefa explícita. Alavancagem: o builder JÁ importa isProtocolVigentOn (linha 10, usado na 270) — o Slice A REMOVE lógica duplicada. FATIAMENTO FINAL (aprovado pelo PO): 3 PRs por artefato de prova, ordem obrigatória PR1 → PR2 → PR3; dentro do PR1 a ordem de commit é A → F → G com UM PDF regerado ao final. §11 da spec traz as instruções de planning, a tabela de alvos já verificados (não redescobrir) e os guards por PR. PRÓXIMO: /devflow planning do PR 1. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -122,7 +122,10 @@
       "D16 (2026-08-22, RC3/E-1): formatDailyDose:128 é o terceiro formatador doente do builder (multiplica pela concentração E sufixa /dia usando time_schedule.length) — é a 'conta maluca da dose diária' da pág 2. Entra nominalmente nos target files do Slice A",
       "D17 (2026-08-22, RC3/E-3+E-4): o farol scripts/vigency-single-source.sh já cobre o builder do PDF com 3 isenções inline (:171 = F-18, revogar no A; :223 e :410 sem achado, reavaliar). O SCOPE do script NÃO alcança emergency/ nem consultation/ — estendê-lo é ENTREGÁVEL dos slices D e E, senão a correção não tem trava de regressão",
       "D18 (2026-08-22, RC3/E-7+E-8): proposta de 7 slices -> 5 PRs — fundir F em A (mesmos 2 arquivos, evita 2 baselines de PDF) e C em B (ambos deletam código no mesmo arquivo). Aguarda decisão do PO",
-      "D19 (2026-08-22, RC3 guard): guard calibrado por slice acima do piso Tier 2 — A fecha pelo DOCUMENTO (SC-008 + 2 gates de grep), B por grep de deleção do 2º símbolo, D/E pelo SCOPE estendido do farol, E exige fixture com 2 protocolos vigentes do mesmo medicamento (sem ele o F-13 é invisível), G exige caso vazio"
+      "D19 (2026-08-22, RC3 guard): guard calibrado por slice acima do piso Tier 2 — A fecha pelo DOCUMENTO (SC-008 + 2 gates de grep), B por grep de deleção do 2º símbolo, D/E pelo SCOPE estendido do farol, E exige fixture com 2 protocolos vigentes do mesmo medicamento (sem ele o F-13 é invisível), G exige caso vazio",
+      "D20 (2026-08-22, PO): fusões E-7 (F em A) e E-8 (C em B) APROVADAS, e redução adicional para 3 PRs agrupados por ARTEFATO DE PROVA — PR1 o documento (A+F+G, um PDF regerado fecha os três), PR2 a conta (D+E, mesmo fixture e mesma extensão do farol), PR3 fonte única (B+C). Motivo declarado pelo PO: overhead por PR é fixo (tokens do plano Pro + tempo de smoke) e domina o custo; só o RC6 escala, por chunk de 150KB",
+      "D21 (2026-08-22, RC3): NÃO fundir para 2 — o Slice B muda assinatura pública do core e misturar API compartilhada com lógica de seleção de UI no mesmo diff faz o RC6 caçar 2 classes por chunk (foi assim que o scheduleNag escapou na 1a rodada do 067 C). Se houver nova pressão, funde 3 em 2, nunca 1 em 2",
+      "D22 (2026-08-22, PO): E-5 resolvido — refillPredictionService fica FORA da 073, segue como dívida da 064 no PENDING_064. E-3 (isenções :223 e :410 do farol) fica para o planning do PR 1"
     ],
     "branch": "main",
     "blocked_on": [
