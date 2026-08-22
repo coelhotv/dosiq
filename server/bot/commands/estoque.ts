@@ -30,6 +30,10 @@ export async function handleEstoque(bot, msg) {
       return await bot.sendMessage(chatId, 'Você não possui medicamentos cadastrados\\.');
     }
 
+    // Uma única data de referência para o comando inteiro (evita duas datas se o
+    // comando cruzar a meia-noite no meio do laço).
+    const today = getTodayLocal();
+
     let message = '📦 *Estoque de Medicamentos:*\n\n';
     let hasLowStock = false;
     let hasMedicinesToShow = false;
@@ -37,7 +41,7 @@ export async function handleEstoque(bot, msg) {
     for (const medicine of medicines) {
       // 064: vigência (active + start/end_date). Tratamento encerrado não conta consumo
       // nem mantém o medicamento listado no /estoque.
-      const activeProtocols = (medicine.protocols || []).filter(p => isProtocolVigentOn(p, getTodayLocal()));
+      const activeProtocols = (medicine.protocols || []).filter(p => isProtocolVigentOn(p, today));
 
       // Only show medicines with active protocols
       if (activeProtocols.length === 0) {
@@ -53,9 +57,9 @@ export async function handleEstoque(bot, msg) {
       // 012 B4 / ADR-067 + FR-013c: consumo diário via core (converte líquido p/ ml +
       // aplica frequencyDailyFactor). Antes somava a dose crua (UI/gotas) contra o saldo
       // em ml → "0 dias" falso p/ insulina/GLP-1, igual ao cron (slice 1).
-      const dailyUsage = calculateDailyIntake(medicine.id, activeProtocols, medicine);
+      const dailyUsage = calculateDailyIntake(medicine.id, activeProtocols, medicine, today);
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyUsage);
-      const doseMetrics = stockDoseMetrics(totalQuantity, activeProtocols, medicine);
+      const doseMetrics = stockDoseMetrics(totalQuantity, activeProtocols, medicine, today);
 
       message += formatStockStatus(medicine, totalQuantity, daysRemaining, doseMetrics) + '\n';
 
