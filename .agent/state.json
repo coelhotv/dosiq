@@ -4,14 +4,14 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "pr_open",
+    "status": "awaiting_human_review",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
     "goal": "073 PR 1 — \"o documento\" (Slices A+F+G, T001..T024)",
     "goal_type": "fix",
     "spec_dirs": [
-      "plans/specs/064-stock-forecast-vigency"
+      "plans/specs/073-fix-clinical-data"
     ],
     "merged_pr": 808,
     "merged_squash": "c454dcc5 (squash merge into main)",
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 PR 1 CODADO em 2026-08-22 (branch fix/073-pr1-documento, 4 commits locais, SEM push). Commit A (T001-T009): 4 formatadores locais do builder deletados -> core; status/filtro/série por isProtocolVigentOn; isenção :171 do farol revogada. Commit F (T010-T013): unidade+2 casas no estoque, 'vencida há N dias' + dd/mm/aaaa, página 1 sem métrica repetida, acentos. ACHADO: fonte UTF-8 NÃO foi necessária — jsPDF padrão cobre Latin-1 (provado com pdftotext); risco R2 do plan não existe, zero delta de bundle. Commit G (T014-T019): _extractActiveTitrations deixa de descartar manutenção (calculateTitrationData intocada, CON-032); Consultation.tsx monta escada completa via attachFullLadders (AP-311). Commit RC5: manutenção fora da lista de atenção; PRN sem dose diária inventada. Gates verdes: tsc 0, lint 0 erros, strict-island ratchet OK, validate:agent 178 arquivos/2356 testes, unit-label-gate, vigency-single-source (sem a isenção :171). SQP: web 4.22.5 -> 4.23.0 (minor) + CHANGELOG. POs FECHADAS: PO-1, PO-2, PO-11. ABERTAS até o smoke do PO: PO-8, PO-9, PO-10 (o guard é o DOCUMENTO — T021). PRÓXIMO: PO regera o PDF da conta doktorr e confere contra a tabela-verdade da §2.4; depois push + PR + RC6 (2 passes, RC6_MAX_CHUNKS explícito) + T024 (APs).",
+    "previous_session_note": "073 PR 1 ENTREGUE (PR #809, aguardando aprovação humana — R-060). 7 commits. Slices A+F+G: formatadores locais do PDF deletados -> core; vigência única (isenção :171 do farol revogada); escada de titulação COMPLETA por tratamento (não contador); pdfSafe cp1252; SQP web 4.23.0. POs 1/2/8/9/10/11 fechadas com o PDF real da conta doktorr. RC6 7/7 chunks, 1 high (R-299 no currentDoseLabel) corrigido e respondido. APRENDIZADOS: R-315 (PDF é fronteira cp1252 — fonte UTF-8 era desnecessária; gate = gerar com dado real + pdftotext) e AP-338 (gate de existência alimentado por cálculo de progresso some p/ quem concluiu). SMOKE do PO em 2 rodadas: a 2ª trouxe AC-37 (escada, não contador) e AC-39 — a 1ª entrega tinha só o contador. PRÓXIMO: aguardar merge do PR #809; depois PR 2 (T025-T036), que REBASA em main (conflito em consultationDataService.ts). Pendências herdadas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050.",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -205,9 +205,9 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 13,
-    "rules_count": 265,
-    "anti_patterns_count": 332,
+    "journal_entries_since_distillation": 14,
+    "rules_count": 266,
+    "anti_patterns_count": 333,
     "decisions_count": 94,
     "contracts_count": 34,
     "distillation_due": false
@@ -217,17 +217,23 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T04:02:57Z"
+    "index_loaded_at": "2026-08-22T04:24:40.441459-03:00"
   },
   "code_review": {
-    "status": "issues_found",
+    "status": "clean",
     "critical": 0,
     "auto_fixed": 3,
     "ask_items": 0,
-    "note": "RC5 do PR1: 3 auto-fixes (manutenção na lista de atenção, PRN com dose diária, 2 literais sem acento)"
+    "note": "RC5 do PR1: 3 auto-fixes"
   },
   "ai_review": {
-    "status": "not_applicable",
-    "note": "specifying — sem código"
+    "engine": "agy+claude",
+    "status": "issues_found",
+    "critical": 0,
+    "high": 1,
+    "introduced_critical": 0,
+    "introduced_high": 1,
+    "pr": 809,
+    "note": "R-299 no currentDoseLabel — corrigido em 7270d0b, respondido no PR"
   }
 }
