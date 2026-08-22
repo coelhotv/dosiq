@@ -10,6 +10,8 @@ import { calculateDailyIntake, calculateDosesByDate } from '@utils/adherenceLogi
 import {
   stockDoseMetrics,
   isProtocolVigentOn,
+  stockUnitLabel,
+  formatNumberPtBR,
   frequencyDailyFactor,
   FREQUENCY_LABELS,
   formatIntakeDose,
@@ -231,6 +233,20 @@ function buildTreatmentRows(protocols = [], medicines = [], asOf = getTodayLocal
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 }
 
+/**
+ * Quantidade de estoque legível: no máximo 2 casas, vírgula pt-BR e a unidade do medicamento
+ * (mL para líquido, "un." para sólido). 073/F-19.
+ * @param {number|string|null|undefined} qty
+ * @param {Object} medicine
+ * @returns {string}
+ */
+function _formatStockAmount(qty, medicine) {
+  const num = Number(qty)
+  if (!Number.isFinite(num)) return '-'
+  const rounded = Math.round(num * 100) / 100
+  return `${formatNumberPtBR(rounded)} ${stockUnitLabel(medicine)}`
+}
+
 function _resolveStockMedicine(stockItem, medicines) {
   return medicines.find((item) => item.id === stockItem?.medicine?.id)
     || stockItem?.medicine || {}
@@ -303,7 +319,11 @@ function _mapStockItem(stockItem, protocols, medicines, asOf = getTodayLocal()) 
     label: formatTreatmentLabel(protocol, medicine),
     medicineName: safeText(medicine.name, 'Desconhecido'),
     totalQuantity,
+    // 073/F-19: a tabela imprimia o número CRU e sem unidade ("0.1279" de quê?). O rótulo
+    // nasce aqui, onde o `medicine` existe — o renderer não tem como saber a unidade.
+    totalQuantityLabel: _formatStockAmount(totalQuantity, medicine),
     dailyIntake,
+    dailyIntakeLabel: _formatStockAmount(dailyIntake, medicine),
     daysRemaining,
     dosesRemaining,
     isDailyStock: isDaily,
@@ -334,6 +354,37 @@ function buildStockRows(stockSummary = [], protocols = [], medicines = [], asOf 
 }
 
 /**
+ * Dias de prescrição em linguagem clínica: negativo vira "vencida há N dias". 073/F-21.
+ * @param {number|null|undefined} days
+ * @returns {string}
+ */
+function _formatPrescriptionDays(days) {
+  const num = Number(days)
+  if (!Number.isFinite(num)) return '-'
+  if (num < 0) {
+    const overdue = Math.abs(num)
+    return `vencida há ${overdue} ${overdue === 1 ? 'dia' : 'dias'}`
+  }
+  if (num === 0) return 'vence hoje'
+  return `${num} ${num === 1 ? 'dia' : 'dias'}`
+}
+
+/**
+ * Data de vencimento em dd/mm/aaaa (R-020: `parseLocalDate`, nunca `new Date('YYYY-MM-DD')`).
+ * @param {string|null|undefined} dateStr
+ * @returns {string}
+ */
+function _formatPrescriptionDate(dateStr) {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateStr))) return '-'
+  return parseLocalDate(String(dateStr)).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'America/Sao_Paulo',
+  })
+}
+
+/**
  * Gera rows de prescricao.
  * @param {Array<Object>} prescriptionStatus - Status das prescricoes.
  * @param {Array<Object>} protocols - Protocolos.
@@ -357,7 +408,10 @@ function buildPrescriptionRows(prescriptionStatus = [], protocols = [], medicine
             ? 'Vencendo'
             : 'Vigente',
       daysRemaining: prescription.daysRemaining,
+      // 073/F-21: "-3" não é informação — a linha dizia "Vencida | -3 | 2026-08-18".
+      daysLabel: _formatPrescriptionDays(prescription.daysRemaining),
       endDate: prescription.endDate || protocol?.end_date || null,
+      endDateLabel: _formatPrescriptionDate(prescription.endDate || protocol?.end_date),
     }
   })
 }

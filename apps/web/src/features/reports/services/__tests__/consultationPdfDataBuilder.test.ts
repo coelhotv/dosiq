@@ -200,7 +200,7 @@ describe('consultationPdfDataBuilder', () => {
     })
 
     // F-22 (parte numérica): o card da pág. 1 conta o MESMO conjunto da tabela da pág. 2.
-    const treatmentsCard = pdfData.summaryCards.find((c) => c.label === 'Tratamentos ativos')
+    const treatmentsCard = pdfData.summaryCards.find((c) => c.label === 'Tratamentos vigentes')
     expect(treatmentsCard.value).toBe(String(pdfData.activeTreatments.length))
     expect(treatmentsCard.value).toBe('3')
   })
@@ -221,7 +221,10 @@ describe('consultationPdfDataBuilder', () => {
     expect(pdfData.period).toBe('30d')
     expect(pdfData.patient.name).toBe('Joao Silva')
     expect(pdfData.patient.handle).toBeNull()
-    expect(pdfData.summaryCards).toHaveLength(7)
+    // 073/F-22: 6, não 7 — o card "Adesão 30d" some quando o período selecionado JÁ é 30 dias
+    // (era a mesma métrica impressa duas vezes) e "Pontualidade" só entra se for distinta.
+    expect(pdfData.summaryCards).toHaveLength(6)
+    expect(pdfData.summaryCards.map((card) => card.label)).not.toContain('Adesão 30d')
     expect(pdfData.activeTreatments).toHaveLength(2)
     expect(pdfData.activeTreatments[0]).toMatchObject({
       label: 'Ansiedade - Ansitec',
@@ -247,11 +250,54 @@ describe('consultationPdfDataBuilder', () => {
       expected: 30,
     })
     expect(pdfData.summaryCards[0]).toMatchObject({
-      label: 'Adesao 30 dias',
+      label: 'Adesão 30 dias',
       value: '82%',
       meta: '24/30 doses',
     })
     expect(pdfData.clinicalNotes[0]).toContain('Penicilina')
+  })
+
+  it('imprime estoque e receitas em linguagem legivel (073 F-19/F-21)', () => {
+    const generatedAt = new Date(`${formatLocalDate(now)}T10:30:00`)
+    const overdue = formatLocalDate(addDays(now, -3))
+    const pdfData = buildConsultationPdfData({
+      consultationData: {
+        prescriptionStatus: [
+          { protocolId: 'prot-1', status: 'vencida', daysRemaining: -3, endDate: overdue },
+          { protocolId: 'prot-2', status: 'vencendo', daysRemaining: 1, endDate: future },
+        ],
+      },
+      dashboardData: {
+        medicines: [
+          { id: 'med-liq', name: 'Ozempic', dosage_per_pill: 2.68, dosage_unit: 'mg/ml' },
+        ],
+        protocols: [
+          {
+            id: 'p-liq', name: 'GLP-1', medicine_id: 'med-liq', active: true,
+            dosage_per_intake: 2.4, intake_unit: 'mg', frequency: 'semanal',
+            time_schedule: ['09:00'], start_date: past, end_date: future,
+          },
+        ],
+        stockSummary: [
+          {
+            medicine: { id: 'med-liq', name: 'Ozempic' },
+            total: 3, dailyIntake: 0.12786, daysRemaining: 23, isZero: false, isLow: false,
+          },
+        ],
+      },
+      generatedAt,
+    })
+
+    // F-19: número pt-BR com no máximo 2 casas E a unidade — não "0.1278656716417910".
+    expect(pdfData.stockRows[0]).toMatchObject({
+      totalQuantityLabel: '3 mL',
+      dailyIntakeLabel: '0,13 mL',
+    })
+
+    // F-21: nada de "-3"; data em dd/mm/aaaa (R-020 — parseLocalDate, não UTC midnight).
+    expect(pdfData.prescriptionRows[0].daysLabel).toBe('vencida há 3 dias')
+    expect(pdfData.prescriptionRows[0].endDateLabel).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
+    expect(pdfData.prescriptionRows[1].daysLabel).toBe('1 dia')
   })
 
   it('prefere a serie diaria consolidada do dashboard quando disponivel', () => {
