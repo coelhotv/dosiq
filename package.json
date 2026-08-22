@@ -13,8 +13,9 @@
   "scripts": {
     "dev": "npm run dev --workspace @dosiq/web",
     "build": "npm run build --workspace @dosiq/core && npm run build --workspace @dosiq/web",
-    "lint": "eslint . && npm run lint:unit-label",
+    "lint": "eslint . && npm run lint:unit-label && npm run lint:vigency",
     "lint:unit-label": "bash scripts/unit-label-gate.sh",
+    "lint:vigency": "bash scripts/vigency-single-source.sh",
     "preview": "npm run preview --workspace @dosiq/web",
     "dev:web": "npm run dev --workspace @dosiq/web",
     "build:web": "npm run build --workspace @dosiq/web",

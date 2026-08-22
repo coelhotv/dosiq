@@ -9,6 +9,7 @@ import {
   parseLocalDate,
   formatLocalDate,
   isProtocolActiveOnDate as isProtocolInPeriod,
+  getTodayLocal,
   getNow,
   parseISO,
   daysDifference,
@@ -32,7 +33,9 @@ export interface AdherenceProtocol {
   days?: string[] | null
   start_date?: string | null
   end_date?: string | null
-  active?: boolean
+  // 064: `protocols.active` é NULLABLE no banco (verificado por MCP em 2026-08-21). O tipo
+  // tem que dizer a verdade — `isProtocolVigentOn` testa `=== false`, nunca a truthiness.
+  active?: boolean | null
   dosage_per_intake?: number | null
   intake_unit?: string | null
   medicine?: {
@@ -365,9 +368,12 @@ export function isProtocolVigentOn(protocol: AdherenceProtocol | null | undefine
  * @param {string} medicineId
  * @param {Array} protocols
  * @param {Object|null} [medicine] - quando informado e líquido, converte doses p/ ml
+ * @param {string} [asOf] - data local YYYY-MM-DD de referência da vigência (default: hoje).
+ *   Só conta o protocolo que estava VIGENTE nessa data (064/FR-002) — tratamento encerrado
+ *   (`end_date` no passado) ou inativo não infla mais o consumo.
  * @returns {number} consumo diário (em unidades de tomada, ou em ml se líquido)
  */
-export function calculateDailyIntake(medicineId: string | null | undefined, protocols: AdherenceProtocol[] | null | undefined, medicine: AdherenceProtocol['medicine'] = null): number {
+export function calculateDailyIntake(medicineId: string | null | undefined, protocols: AdherenceProtocol[] | null | undefined, medicine: AdherenceProtocol['medicine'] = null, asOf: string = getTodayLocal()): number {
   if (!protocols) return 0
 
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
@@ -375,7 +381,7 @@ export function calculateDailyIntake(medicineId: string | null | undefined, prot
   const mgConcentration = medicine?.dosage_per_pill
 
   return protocols
-    .filter((p) => p.medicine_id === medicineId && p.active)
+    .filter((p) => p.medicine_id === medicineId && isProtocolVigentOn(p, asOf))
     .reduce((total, p) => {
       const dosesPerSlotDay = p.time_schedule?.length || 1
       const dosage = p.dosage_per_intake || 1

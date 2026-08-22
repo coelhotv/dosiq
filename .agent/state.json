@@ -8,8 +8,8 @@
     "tier": 2,
     "spec_dir": "plans/specs/064-stock-forecast-vigency",
     "spec": "plans/specs/064-stock-forecast-vigency/spec.md",
-    "goal": "064 PR 1 MERGEADO (#807) — predicado canônico de vigência; PR 2 (comportamento: asOf + 6 superfícies + PDF clínico) é a próxima entrega",
-    "goal_type": "refactor",
+    "goal": "064 PR 2 — vigência no read-path de consumo (estoque, custo, bot, chatbot, PDF clínico) + gate de fonte única",
+    "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/064-stock-forecast-vigency"
     ],
@@ -151,7 +151,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 5,
+    "journal_entries_since_distillation": 7,
     "rules_count": 263,
     "anti_patterns_count": 329,
     "decisions_count": 93,
@@ -166,24 +166,21 @@
     "index_loaded_at": "2026-08-21T21:00:00Z"
   },
   "code_review": {
-    "status": "clean",
-    "spec": "064-stock-forecast-vigency (PR 1)",
+    "status": "issues_found",
     "critical": 0,
-    "auto_fixed": 0,
+    "auto_fixed": 1,
     "ask_items": 1,
-    "note": "ASK: CalculateDailyIntakeInputSchema virou export sem consumidor após a deleção da sombra (T015); remoção fica fora do escopo declarado do PR 1"
+    "note": "AUTO-FIX: getTodayLocal() içado para fora do filter por medicamento em costAnalysisService. ASK: divergência do PO-3 caso (a) — asOf = fim do período (playbook) vs 'vigente em qualquer dia do período' (spec); decisão do PO."
   },
   "ai_review": {
-    "engine": "agy (2 chunks)",
-    "status": "clean",
+    "engine": "agy+claude (6 de 7 chunks — COBERTURA PARCIAL)",
+    "status": "issues_found",
     "critical": 0,
-    "high": 0,
+    "high": 1,
     "introduced_critical": 0,
-    "introduced_high": 0,
-    "pr": 803,
-    "coverage": "2/2",
-    "findings": "0/0/0/0",
-    "ab_pair": "nao armou (2 packs < 3)",
-    "note": "chunk 2 ADVISORY — _reminderHelpers.ts excede sozinho o budget de chunk (3o PR seguido)"
+    "introduced_high": 1,
+    "pr": 808,
+    "coverage": "6/7",
+    "note": "pass B (claude, full-context) achou o único finding: severity/message do PDF ainda herdavam isZero/isLow de HOJE em relatório de período passado (R-299). Corrigido em 58325d3b + teste. A/B abortou por baseline 0 findings (5ª vez). Fora da cobertura: _useDashboardDerived.ts, useComplexityMode.ts, consultationPdfVigency.test.ts"
   }
 }

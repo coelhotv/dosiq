@@ -10,7 +10,7 @@ import EmptyState from '@shared/components/ui/EmptyState'
 import Modal from '@shared/components/ui/Modal'
 import StockForm from '@stock/components/StockForm'
 import { calculateMonthlyCosts } from '@stock/services/costAnalysisService'
-import { derivePrescriptionStatus } from '@dosiq/core'
+import { derivePrescriptionStatus, isProtocolVigentOn, getTodayLocal } from '@dosiq/core'
 import { stockService } from '@shared/services'
 import StockHeader from './StockHeader'
 import StockInventory from './StockInventory'
@@ -54,7 +54,10 @@ export default function Stock({ initialParams, onClearParams }) {
       purchases: allPurchases?.filter((p) => p.medicine_id === med.id) || [],
     }))
     try {
-      const activeProtocols = protocols?.filter((p) => p.active) || []
+      // 064: o widget de custo mensal lia `getAll()` filtrado só por `active` e somava
+      // o consumo de tratamento já encerrado. Vigência é o predicado canônico.
+      const today = getTodayLocal()
+      const activeProtocols = protocols?.filter((p) => isProtocolVigentOn(p, today)) || []
       return calculateMonthlyCosts(medicinesWithStock, activeProtocols)
     } catch (err) {
       console.error('[Stock] Erro ao calcular custos:', err)
@@ -65,6 +68,8 @@ export default function Stock({ initialParams, onClearParams }) {
   const prescriptionTimelineData = useMemo(() => {
     if (!protocols?.length) return []
     return protocols
+      // vigency-gate: ok — widget de PRESCRIÇÕES: precisa listar a vencida para mostrar o status
+      // (derivePrescriptionStatus já lê end_date). Filtrar por vigência aqui esconderia o alerta.
       .filter((p) => p.active && p.start_date && p.end_date)
       .map((p) => ({
         id: p.id,

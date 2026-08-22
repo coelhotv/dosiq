@@ -14,10 +14,10 @@
 // - Manter o contexto compacto (<2000 tokens) p/ não estourar o free tier do LLM.
 // - dateUtils SEMPRE do core (R-020); zero `new Date()` direto.
 
-import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate, isProtocolActiveOnDate as isProtocolInPeriod } from '../utils/dateUtils'
+import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate } from '../utils/dateUtils'
 import { splitDayTimeline, type DoseZoneInstance, type DoseZoneProtocol } from '../utils/doseZones'
 import { formatDoseItem, formatStockCount, formatIntakeDose, stockUnitLabel, formatNumberPtBR } from '../utils/doseUnit'
-import { getProtocolDays } from '../utils/adherenceLogic'
+import { getProtocolDays, isProtocolVigentOn } from '../utils/adherenceLogic'
 import { calculateAge } from '../utils/profile'
 
 /** Nomes dos dias da semana em PT (índice = Date.getDay(): 0=domingo). */
@@ -254,7 +254,7 @@ function _resolveDoseQueues(doseInstances: DoseZoneInstance[] | undefined, valid
  * Monta contexto compacto do paciente para enviar ao LLM.
  *
  * ESCOPO (decisão de produto, R-278): considera SOMENTE tratamentos ATIVOS com prescrição
- * vigente no PERÍODO da data da interação (`p.active && isProtocolInPeriod(p, hoje)`).
+ * vigente no PERÍODO da data da interação (`isProtocolVigentOn(p, hoje)` — 064/SC-004).
  * Finalizados, pausados e não-iniciados NÃO entram — evita o bot sugerir repor estoque de
  * cursos encerrados. NÃO filtra por frequência cair hoje (senão tratamentos semanais/PRN/
  * personalizados sumiriam do contexto fora do dia exato da dose); doses pendentes de HOJE
@@ -295,7 +295,7 @@ export function buildPatientContext({
   // não resolve o nome/unidade da dose ("Desconhecido", "un." cego).
   const medsById = new Map((medicines || []).map((m) => [m.id, m]))
   const validProtocols = (protocols || [])
-    .filter((p) => p.active && isProtocolInPeriod(p, today))
+    .filter((p) => isProtocolVigentOn(p, today))
     .map((p) => ({ ...p, medicine: p.medicine ?? medsById.get(p.medicine_id) ?? null }))
   const validMedicineIds = new Set(validProtocols.map((p) => p.medicine_id))
   const stockByMedId = new Map((stockSummary || []).map((s) => [s.medicine?.id, s]))

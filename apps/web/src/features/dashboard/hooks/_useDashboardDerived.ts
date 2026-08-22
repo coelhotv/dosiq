@@ -6,6 +6,7 @@ import {
   getNextDoseWindowEnd,
   isInToleranceWindow,
   isProtocolActiveOnDate,
+  isProtocolVigentOn,
 } from '@utils/adherenceLogic'
 import {
   formatLocalDate,
@@ -13,6 +14,7 @@ import {
   getSaoPauloTime,
   getNow,
   parseISO,
+  getTodayLocal,
 } from '@utils/dateUtils'
 
 /**
@@ -38,14 +40,19 @@ function _deriveRawStats(adherenceSummary) {
 }
 
 function _deriveStockSummary(medicines, protocols) {
-  const activeMedicineIds = new Set(protocols.filter((p) => p.active).map((p) => p.medicine_id))
+  // 064: vigência (active + start/end_date), não só `active` — tratamento encerrado
+  // não aparece mais no card de estoque nem infla o consumo diário.
+  const today = getTodayLocal()
+  const activeMedicineIds = new Set(
+    protocols.filter((p) => isProtocolVigentOn(p, today)).map((p) => p.medicine_id)
+  )
   return medicines
     .filter((m) => activeMedicineIds.has(m.id))
     .map((medicine) => {
       const activeStockEntries = (medicine.stock || []).filter((s) => s.quantity > 0)
       const totalQuantity = activeStockEntries.reduce((sum, s) => sum + s.quantity, 0)
       // Líquidos (022): consumo convertido p/ ml (alinha ao saldo em ml).
-      const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine)
+      const dailyIntake = calculateDailyIntake(medicine.id, protocols, medicine, today)
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyIntake)
       const threshold = medicine.min_stock_threshold || 0
       const isZero = totalQuantity === 0

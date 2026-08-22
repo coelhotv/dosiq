@@ -10,8 +10,8 @@
  * adherenceLogic.js — REUSAR (nao duplicar). Ver index.js barrel.
  */
 
-import { getNow, formatLocalDate, parseLocalDate, parseISO, daysDifference, getLastDayOfMonth } from './dateUtils'
-import { frequencyDailyFactor, calculateDailyIntake } from './adherenceLogic'
+import { getNow, formatLocalDate, parseLocalDate, parseISO, daysDifference, getLastDayOfMonth, getTodayLocal } from './dateUtils'
+import { frequencyDailyFactor, calculateDailyIntake, isProtocolVigentOn } from './adherenceLogic'
 import { doseToMl, isLiquidMedicine } from './doseUnit'
 import { cleanFloat } from './formUtils'
 
@@ -31,7 +31,11 @@ export const STOCK_THRESHOLDS = Object.freeze({
 })
 
 interface StockProtocol {
-  active?: boolean
+  // `active` é NULLABLE no banco e a vigência tem eixo de data: declarar os três campos
+  // é o que impede o predicado de nascer inerte aqui (armadilha 3 do playbook 064).
+  active?: boolean | null
+  start_date?: string | null
+  end_date?: string | null
   dosage_per_intake?: number | null
   intake_unit?: string | null
   medicine_id?: string
@@ -115,9 +119,13 @@ export function resolveStockStatus(
 export function stockDoseMetrics(
   qty: number,
   protocols: StockProtocol[] = [],
-  medicine: StockMedicine | null = null
+  medicine: StockMedicine | null = null,
+  asOf: string = getTodayLocal()
 ) {
-  const active = (protocols || []).filter((p) => p && p.active !== false)
+  // Vigência na data de referência (064/FR-005): tratamento encerrado não entra.
+  // `rep`, `dosesPorDia` e `isDaily` DERIVAM desta lista — filtrar só o dailyIntake
+  // deixaria doseSize/dosesRemaining vindo de um tratamento morto (analysis F-4).
+  const active = (protocols || []).filter((p) => isProtocolVigentOn(p, asOf))
   if (active.length === 0 || !(qty > 0)) {
     return { dosesRemaining: 0, runwayDias: 0, dosesPorDia: 0, isDaily: true }
   }
@@ -134,7 +142,7 @@ export function stockDoseMetrics(
 
   // runway = dias corridos = saldo / consumo-diario (mesma unidade do saldo).
   // Reusa calculateDailyIntake (converte liquido + aplica frequencyDailyFactor).
-  const dailyIntake = calculateDailyIntake(rep.medicine_id, active, medicine)
+  const dailyIntake = calculateDailyIntake(rep.medicine_id, active, medicine, asOf)
   const runwayDias = dailyIntake > 0 ? cleanFloat(qty / dailyIntake) : Infinity
 
   // doses/dia = tomadas/dia x cadencia (p/ custo/dia derivado dos consumidores).

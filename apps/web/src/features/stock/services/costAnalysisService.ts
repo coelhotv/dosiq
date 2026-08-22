@@ -4,7 +4,7 @@ import {
   CalculateRealCostsInputSchema,
 } from '@schemas/costAnalysisSchema'
 import { formatLocalDate, getNow, addDays, parseISO } from '@utils/dateUtils'
-import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine, frequencyDailyFactor, cleanFloat } from '@dosiq/core'
+import { calculateDailyIntake as coreDailyIntake, doseToMl, isLiquidMedicine, frequencyDailyFactor, cleanFloat, isProtocolVigentOn, getTodayLocal } from '@dosiq/core'
 
 /**
  * doses por dia de um medicamento = Σ (tomadas/dia × cadência da frequência).
@@ -110,6 +110,7 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
 
   const { medicines: validatedMedicines, protocols: validatedProtocols } = validation.data
 
+  const today = getTodayLocal()
   const items = validatedMedicines
     .map((medicine) => {
       // Líquidos (022): consumo em ml (UI/gotas ÷ densidade) p/ bater com avgUnitPrice
@@ -124,8 +125,10 @@ export function calculateMonthlyCosts(medicines = [], protocols = []) {
       // 012 B4 / ADR-067: custo por DOSE (métrica primária) — preço de uma tomada,
       // não o custo/dia ilegível (R$0,071…). dailyIntake ÷ dosesPorDia = consumo de
       // uma tomada (ml ou unidades); × preço = custo/dose.
+      // 064: divisor do custo/dose usa vigência (o `dailyIntake` acima já herda o
+      // predicado pelo core) — senão tratamento encerrado dilui o custo por tomada.
       const dosesPorDia = dosesPerDayFor(
-        validatedProtocols.filter((p) => p.medicine_id === medicine.id && p.active)
+        validatedProtocols.filter((p) => p.medicine_id === medicine.id && isProtocolVigentOn(p, today))
       )
       const custoPorDose = dosesPorDia > 0 ? cleanFloat((dailyIntake / dosesPorDia) * avgUnitPrice) : 0
       const custoPorDia = cleanFloat(dailyIntake * avgUnitPrice)
@@ -202,8 +205,10 @@ export function calculateRealCosts({ medicines = [], protocols = [], logs = [] }
   // Mapa de protocolos ativos por medicamento
   const activeMedicineIds = new Set()
   const protocolsByMedicine = {}
+  const today = getTodayLocal()
   validatedProtocols.forEach((p) => {
-    if (p.active && p.medicine_id) {
+    // 064: vigência, não só `active` — este mapa alimenta o divisor do custo/dose.
+    if (p.medicine_id && isProtocolVigentOn(p, today)) {
       activeMedicineIds.add(p.medicine_id)
       if (!protocolsByMedicine[p.medicine_id]) {
         protocolsByMedicine[p.medicine_id] = []

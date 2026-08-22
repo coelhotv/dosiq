@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Estoque, custo e relatório do médico param de contar tratamento já encerrado
+
+- **Fix** (`patch` web `4.22.5` · `patch` core `0.22.2` · `patch` server `4.2.2`). Um tratamento com
+  data de término no passado continuava sendo contado como consumo vivo. O efeito era um número
+  errado **para baixo** em toda parte que projeta estoque: dias restantes e doses restantes no card
+  do painel, custo mensal e custo por dose na tela de estoque, o `/estoque` do robô do Telegram, a
+  resposta do assistente ("quantos dias de X eu tenho") e — o mais grave — o **relatório de consulta
+  em PDF** que vai para o médico.
+
+  Agora todas essas superfícies usam o mesmo teste de vigência: o tratamento conta se estiver ativo
+  **e** dentro do período de início/fim. O dia do término continua contando (quem termina hoje ainda
+  é vigente hoje), e tratamento sem data de fim — a maioria — segue valendo exatamente como antes.
+
+  No relatório em PDF há ainda uma correção de leitura histórica: um relatório de um período passado
+  passa a considerar quais tratamentos estavam vigentes **naquele período**, em vez de aplicar a
+  situação de hoje ao passado.
+
+  Um verificador automático passa a rodar no `lint` para impedir que esse filtro volte a ser escrito
+  à mão em outro lugar do código.
+
 ### Preparação da correção de vigência do tratamento (sem efeito visível)
 
 - **Refactor** (`patch` web `4.22.4` · `patch` core `0.22.1`). Mudança de estrutura, sem nenhuma

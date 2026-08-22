@@ -12,7 +12,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@dosiq/shared-data'
 import { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
-import { calculateDailyIntake, calculateDaysRemaining, type AdherenceProtocol } from '../utils/adherenceLogic'
+import { calculateDailyIntake, calculateDaysRemaining, isProtocolVigentOn, type AdherenceProtocol } from '../utils/adherenceLogic'
 import { getNow, getTodayLocal, parseLocalDate, addDays } from '../utils/dateUtils'
 import { validateChatbotContextData } from './chatbotContextSchema'
 
@@ -44,7 +44,12 @@ interface ProtocolRow {
  * @returns Array<{medicine,total,daysRemaining,isZero,isLow,dailyIntake}>
  */
 function deriveStockSummary(medicines: MedicineRow[] | null | undefined, protocols: ProtocolRow[] | null | undefined) {
-  const activeMedicineIds = new Set((protocols || []).filter((p) => p.active).map((p) => p.medicine_id))
+  // 064: vigência, não só `active` — tratamento encerrado saía como consumo vivo na
+  // resposta do chatbot ("quantos dias de X eu tenho").
+  const today = getTodayLocal()
+  const activeMedicineIds = new Set(
+    (protocols || []).filter((p) => isProtocolVigentOn(p as AdherenceProtocol, today)).map((p) => p.medicine_id)
+  )
   return (medicines || [])
     .filter((m) => activeMedicineIds.has(m.id))
     .map((medicine) => {
@@ -56,7 +61,8 @@ function deriveStockSummary(medicines: MedicineRow[] | null | undefined, protoco
       const dailyIntake = calculateDailyIntake(
         medicine.id,
         protocols as AdherenceProtocol[] | null | undefined,
-        medicine as AdherenceProtocol['medicine']
+        medicine as AdherenceProtocol['medicine'],
+        today
       )
       const daysRemaining = calculateDaysRemaining(totalQuantity, dailyIntake)
       const threshold = medicine.min_stock_threshold || 0
