@@ -34,6 +34,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   em mais de 14 dias deixa de aparecer nessa lista.
 - **Fix** (mesmo release). O alerta de estoque do modo consulta dizia "unidades" para líquido; agora
   usa a unidade certa do medicamento ("1,5 mL").
+- **Fix** (mesmo release, achado no smoke). Na tela do modo consulta a média diária derivada de
+  divisão imprimia a dízima inteira ("0,3428571428571428 mg/dia" no Ozempic semanal); passa a
+  mostrar no máximo duas casas ("0,34 mg/dia"). O arredondamento de exibição virou helper único do
+  core, reusado também pelo PDF.
+- **Fix** (mesmo release, achado no smoke). Uma receita **vencida há 4 dias** aparecia como "Hoje"
+  na lista de prescrições: a contagem negativa era lida como zero. Agora diz "Há 4 dias", e a que
+  termina hoje diz "Vence hoje".
+- **Fix** (mesmo release, achado no smoke). O cartão de titulação sufixava "mg" fixo na dose: 10 UI
+  de Lantus saía "10mg" e 4 comprimidos de Selozok saíam "4mg". A dose passa a vir do próprio
+  degrau, com a unidade certa. Quem já chegou à dose alvo lê "Dose alvo — Etapa 4/4 · desde
+  08/08/2026" no lugar de um "% — Etapa 4/4" com o número faltando.
 - **Change** (mesmo release). O **PDF de consulta** lê essas mesmas listas: o contador de
   medicamentos da primeira página deixa de somar tratamento encerrado, e a seção de receitas passa a
   seguir a janela de 14 dias. É a mesma regra que a tela — as duas superfícies pararam de divergir.

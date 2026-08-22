@@ -126,6 +126,7 @@ export {
   formatDoseUnit,
   formatDose,
   formatNumberPtBR,
+  roundForDisplay,
   formatIntakeDose,
   formatDoseItem,
   formatDoseHint,
