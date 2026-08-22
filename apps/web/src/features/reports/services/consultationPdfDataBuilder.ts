@@ -126,6 +126,9 @@ function _timesPerDay(protocol) {
  */
 function _formatCadence(protocol) {
   const schedule = Array.isArray(protocol?.time_schedule) ? protocol.time_schedule : []
+  // 073/RC5: PRN não tem cadência — anunciar "1 tomada • 08:00" para dose sob demanda inventa
+  // uma exposição regular que o paciente não tem.
+  if (protocol?.frequency === 'quando_necessário') return FREQUENCY_LABELS['quando_necessário']
   const times = _timesPerDay(protocol)
   const frequencyLabel = FREQUENCY_LABELS[protocol?.frequency] || FREQUENCY_LABELS['diário']
   const timesLabel = times === 1 ? '1 tomada' : `${times} tomadas`
@@ -149,6 +152,8 @@ function _formatCadence(protocol) {
  * @returns {string}
  */
 function _formatDailyDose(protocol, medicine) {
+  // 073/RC5: mesma razão — para PRN a "dose diária" seria ficção.
+  if (protocol?.frequency === 'quando_necessário') return 'sob demanda'
   const perIntake = Number(protocol?.dosage_per_intake ?? 1)
   if (!Number.isFinite(perIntake)) return '-'
   const perDay = perIntake * _timesPerDay(protocol) * frequencyDailyFactor(protocol)

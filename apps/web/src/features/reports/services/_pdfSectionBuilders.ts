@@ -150,13 +150,19 @@ export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) 
             : `${item.daysRemaining ?? '-'} dias para vencer`,
         tone: item.status === 'vencida' ? 'danger' : 'warning',
       })),
-    ...titrationRows.slice(0, 3).map((item) => ({
-      label: item.label,
-      detail: item.isTransitionDue
-        ? 'Transicao pendente'
-        : `Etapa ${item.currentStep}/${item.totalSteps}`,
-      tone: item.isTransitionDue ? 'warning' : 'info',
-    })),
+    // 073/RC5: manutenção NÃO é item de atenção — a escada concluída passa a existir no
+    // documento (F-24), mas "Etapa 4/4, dose alvo" não é algo que o médico precise decidir
+    // nesta consulta. Ela aparece na seção de titulação, não na lista de pendências.
+    ...titrationRows
+      .filter((item) => !item.isMaintenance)
+      .slice(0, 3)
+      .map((item) => ({
+        label: item.label,
+        detail: item.isTransitionDue
+          ? 'Transição pendente'
+          : `Etapa ${item.currentStep}/${item.totalSteps}`,
+        tone: item.isTransitionDue ? 'warning' : 'info',
+      })),
   ]
 }
 

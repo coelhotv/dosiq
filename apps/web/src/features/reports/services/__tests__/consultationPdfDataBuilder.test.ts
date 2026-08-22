@@ -191,6 +191,24 @@ describe('consultationPdfDataBuilder', () => {
     // F-18: o encerrado some da listagem (e não sai "Ativo" na pág. 2 e "Vencida" na pág. 5).
     expect(byLabel['Dor - Dipirona']).toBeUndefined()
 
+    // RC5: PRN não ganha cadência nem "dose diária" inventadas.
+    const prn = buildConsultationPdfData({
+      consultationData: {},
+      dashboardData: {
+        medicines: [{ id: 'm-prn', name: 'Dipirona', dosage_per_pill: 500, dosage_unit: 'mg' }],
+        protocols: [{
+          id: 'p-prn', name: 'Dor', medicine_id: 'm-prn', active: true,
+          dosage_per_intake: 1, intake_unit: null, frequency: 'quando_necessário',
+          time_schedule: ['08:00'], start_date: past, end_date: future,
+        }],
+      },
+      generatedAt,
+    })
+    expect(prn.activeTreatments[0]).toMatchObject({
+      frequency: 'Quando Necessário',
+      dailyDose: 'sob demanda',
+    })
+
     // Par de não-omissão: o sólido vigente continua presente e correto.
     expect(byLabel['Pressao - Selozok']).toMatchObject({
       presentation: '25 mg',
