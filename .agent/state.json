@@ -4,7 +4,7 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "pr_open",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
@@ -98,7 +98,7 @@
         "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
       }
     ],
-    "previous_session_note": "073 PLANEJADA em 2026-08-22: plan.md + tasks.md (T001..T047) para 3 PRs. PR1 'o documento' (A+F+G, 24 tasks, fecha PO-1/2/8/9/10/11, guard = o PDF regerado contra a tabela-verdade da §2.4). PR2 'a conta' (D+E, fecha PO-6/7, primeira task é o FIXTURE de 2 protocolos vigentes — sem ele o F-13 é invisível; estender o SCOPE do vigency-single-source.sh é entregável). PR3 'fonte única' (B+C, fecha PO-3/4/5, guard = grep de deleção + delta de linhas negativo, ADR-095 proposed). 3 decisões do PO no P1.5: cartão com DUAS linhas, título 'Receitas a renovar', adesão com vigência POR DIA. Conflito conhecido: consultationDataService.ts é tocado no PR1 (só titulação) e no PR2 (o resto) — PR2 rebasa depois do merge do PR1. PRÓXIMO: /devflow coding do PR 1 (C0-C5). Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, item 1.5 (23/08), T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "073 PR 1 CODADO em 2026-08-22 (branch fix/073-pr1-documento, 4 commits locais, SEM push). Commit A (T001-T009): 4 formatadores locais do builder deletados -> core; status/filtro/série por isProtocolVigentOn; isenção :171 do farol revogada. Commit F (T010-T013): unidade+2 casas no estoque, 'vencida há N dias' + dd/mm/aaaa, página 1 sem métrica repetida, acentos. ACHADO: fonte UTF-8 NÃO foi necessária — jsPDF padrão cobre Latin-1 (provado com pdftotext); risco R2 do plan não existe, zero delta de bundle. Commit G (T014-T019): _extractActiveTitrations deixa de descartar manutenção (calculateTitrationData intocada, CON-032); Consultation.tsx monta escada completa via attachFullLadders (AP-311). Commit RC5: manutenção fora da lista de atenção; PRN sem dose diária inventada. Gates verdes: tsc 0, lint 0 erros, strict-island ratchet OK, validate:agent 178 arquivos/2356 testes, unit-label-gate, vigency-single-source (sem a isenção :171). SQP: web 4.22.5 -> 4.23.0 (minor) + CHANGELOG. POs FECHADAS: PO-1, PO-2, PO-11. ABERTAS até o smoke do PO: PO-8, PO-9, PO-10 (o guard é o DOCUMENTO — T021). PRÓXIMO: PO regera o PDF da conta doktorr e confere contra a tabela-verdade da §2.4; depois push + PR + RC6 (2 passes, RC6_MAX_CHUNKS explícito) + T024 (APs).",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -129,7 +129,9 @@
       "D23 (2026-08-22, PO no planning): AC-17 = DUAS LINHAS separadas no cartão de emergência (uma por tratamento vigente, com dose e horários próprios) — não colapsar nem somar",
       "D24 (2026-08-22, PO no planning): AC-11 = título 'Receitas a renovar'",
       "D25 (2026-08-22, PO no planning): isenção :410 resolvida — série de adesão filtra vigência POR DIA (isProtocolVigentOn(p, dia)) dentro do loop existente; passado para de mudar quando tratamento encerra (R-299); muda o número de adesão exibido, declarado no CHANGELOG. Isenção :223 reescrita com desempate por start_date mais recente, não removida",
-      "D26 (2026-08-22, planning): ADR-095 a criar como 'proposed' no PR 3 — fonte única de status de receita (um enum, janela 14d, ordem das guardas com finalizada antes de vencendo)"
+      "D26 (2026-08-22, planning): ADR-095 a criar como 'proposed' no PR 3 — fonte única de status de receita (um enum, janela 14d, ordem das guardas com finalizada antes de vencendo)",
+      "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
+      "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
     "branch": "fix/073-pr1-documento",
     "blocked_on": [
@@ -218,8 +220,11 @@
     "index_loaded_at": "2026-08-22T04:02:57Z"
   },
   "code_review": {
-    "status": "not_applicable",
-    "note": "specifying — sem código"
+    "status": "issues_found",
+    "critical": 0,
+    "auto_fixed": 3,
+    "ask_items": 0,
+    "note": "RC5 do PR1: 3 auto-fixes (manutenção na lista de atenção, PRN com dose diária, 2 literais sem acento)"
   },
   "ai_review": {
     "status": "not_applicable",
