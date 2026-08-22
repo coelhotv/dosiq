@@ -4,7 +4,7 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "awaiting_human_review",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
@@ -13,92 +13,20 @@
     "spec_dirs": [
       "plans/specs/073-fix-clinical-data"
     ],
-    "merged_pr": 808,
-    "merged_squash": "c454dcc5 (squash merge into main)",
+    "merged_pr": 809,
+    "merged_squash": "e628a446 (squash merge into main)",
     "merged_history": [
       {
-        "pr": 795,
-        "squash": "ca673de6",
-        "spec": "067 A1 — dose pulada (skipped_user) visível no histórico",
+        "pr": 809,
+        "squash": "e628a446",
+        "spec": "073 PR 1 — o documento (Slices A+F+G)",
         "tier": 2,
-        "date": "2026-08-17",
+        "date": "2026-08-22",
         "base_branch": "main",
-        "note": "Onda 0 item 0.1. skipped_user entra em VISIBLE_INSTANCE_STATUSES (core); web ganha STATUS_META.skipped_user + STATUS_DOT_ORDER + CSS do card e do dot; mobile já tinha render (era código morto). skipped_paused segue oculto. Aderência intocada (R-248). 6 arquivos, não 5: Calendar.css fora da spec. RC5 0 issues, RC6 (agy) 0 findings. PO-10/11/14 fechadas com smoke do PO nas 2 plataformas. AP-328 registrada. Follow-up declarado: dots do dia SELECIONADO perdem cor (.calendar-day.selected .log-dot) — pré-existente."
-      },
-      {
-        "pr": 796,
-        "squash": "72653942",
-        "spec": "067 A2 — guarda de janela bilateral + telemetria alarm_out_of_window + aviso informativo",
-        "tier": 2,
-        "date": "2026-08-17",
-        "base_branch": "main",
-        "note": "Piso early_window_minutes persistido (min(floor(0.25*menor gap),120), default 120) derivado no gerador; guarda bilateral em doseWindow.ts (modulo puro, quebra ciclo ESM alarmService<->staleDoseNotifications) aplicada em takeover, acoes, soneca e nag. SO o lado ADIANTADO recusa (RC5: recusar atrasado seria regressao — register_dose_atomic aceita missed). Evento novo alarm_out_of_window (CHECK 12->13 + Zod verbatim) com detail em allowlist FECHADA de 5 campos; REVOKE ALL FROM anon. Aviso informativo sem som/CTA, marcado por CONTEUDO (__outOfWindowNotice, AP-327), coalescido por dose. 3 migracoes aplicadas em prod antes do PR (preflight R-270). Backfill so de pendings FUTURAS (77 de 1308) — derivar piso de fato passado falsificaria fato datado (R-299). Smoke em moto g06/Android 15: PO-2/3/15/16 fechadas com evidencia colada. AP-329 (regen com > trunca arquivo versionado) e AP-330 (caminho fail-open transforma falha de persistencia em smoke verde) registradas. RC6 rodada 2x: a 1a cobriu 6/10 chunks e nao revisou outOfWindowNotice.ts; com RC6_MAX_CHUNKS=10 achou o furo REAL do scheduleNag (disparo adiantado ignorado reagendava nag em loop ate a hora da dose — guardas barravam a escrita, nao o incomodo). Corrigido + 2 testes. 2 findings refutados nas duas rodadas: parseISO->NaN (aceita string|number|Date e ha guarda Number.isNaN) e CHECK sem migracao (migracao esta no diff e aplicada; evento gravado no smoke prova a sincronia)."
-      },
-      {
-        "pr": 797,
-        "squash": "65931d11",
-        "spec": "067 B1 — skip e pausa/retomada por RPC transacional",
-        "tier": 2,
-        "date": "2026-08-19",
-        "base_branch": "main",
-        "note": "Onda 1 item 1.1. `skip_dose_atomic` (lote uuid[], janela lida da própria linha, now() do servidor) + `set_protocol_dose_state_atomic` (pause_all/pause_until/resume). 3 writers migrados: mobile `registerSkip`, bot `handleConfirmSkipDose` (p_user_id do binding telegram_chat_id → fecha IDOR pré-existente) e core (3 fns de pausa, não 2 — C1.5/F-B1: o writer real é markAllFutureSkippedPaused). ⚠️ REVOKE UPDATE(status) NÃO aplicado (Decisões 15/16): espera adoção da 0.31.1 nas lojas; docs/migrations/PENDING.md + R-310 + emenda no ADR-092; gate = PO-SEC-2 (aberta de propósito). Achados: PO-SEC-6 pegou anon=X por ALTER DEFAULT PRIVILEGES (AP-275); recusa era muda no caminho da notificação (refusalNotice criado); mensagem não nomeava o horário previsto (hora vem da RPC, não do payload). RC5 1 auto-fix (relógio do device vazando como skippedAt); RC6 0 critical/high, 1 low (cabeçalho do repo mentia sobre markSkippedPaused). POs fechadas: 6b, 7, SEC-1, SEC-6. Smoke do PO em device nas 2 rotas de recusa."
-      },
-      {
-        "pr": 798,
-        "squash": "d9e76761",
-        "spec": "067 C — trilha diz o que aconteceu (occurred_at + higiene do trail)",
-        "tier": 2,
-        "date": "2026-08-19",
-        "base_branch": "main",
-        "note": "Coluna `occurred_at` (nullable, SEM default) separa QUANDO O FATO ACONTECEU de QUANDO A LINHA ENTROU; instante carimbado na origem e transportado pela fila; iOS declara NULL; skip passa a emitir `resolved` (FR-043). Higiene: `push_skipped_no_token` exige CANDIDATURA (device platform='ios', INCLUSIVE inativo — senão zeraria o caso-alvo 'iPhone cujo push parou') + de-duplicação best-effort por ocorrência; device deixa de repor token que o servidor limpou (dedupe governa o UPDATE). ⚠️ 2 EMENDAS DE ESCOPO no C1.5: (Decisão 22) a FR-041 original mandava tratar 400 BadDeviceToken, que JÁ era tratado (liveActivityPush.ts:126) — seria no-op com teste verde sobre bug vivo; e as 129 push_failed que a justificavam eram 127 do simulador da conta de teste + 2 de build dev = ZERO em produção. (Decisão 23) candidatura inclui device iOS inativo. SMOKE fechou PO-19 com Δ 961s e gerou AP-331: o takeover deixa o app `top-sleeping` com a tela apagada, AppState nunca vira 'active' e a fila não drena — a condição do erro grande é a COMUM (silenciar e voltar a dormir), não a rara (app morto). Fila lida via `run-as ... cat RKStorage` ANTES do flush: o ISO bateu byte a byte com a coluna depois. RC5 1 auto-fix. RC6 rodada 2x: a 1a (claude) achou 2 medium REAIS — o `occurredAt` do skip vinha do relógio do device em vez do `skippedAt` que a RPC devolve (reintrodução da classe que o RC5 do B1 já corrigira), e 'trava de idempotência' era nome errado p/ um read-check-write. A 2a (agy) rodou 5/5 chunks com 0 findings sobre o código já corrigido. 🔧 EFEITO COLATERAL NO FERRAMENTAL: o agy falhava em 100% dos chunks porque `cut -c` clampa BYTE e partia um multibyte do catálogo em português — payload UTF-8 inválido, ERROR em 0s, stderr vazio; o claude tolerava e mascarava. Corrigido no devflow (commit 1249ecd): clamp por caractere + NO TOOLS no RC6_INSTRUCTION. PO-8 fica PARCIAL: guard fechado, corte do ruído pendente da 1a janela pós-deploy."
-      },
-      {
-        "pr": 800,
-        "squash": "116ef578",
-        "spec": "050 PR 1a — notification_outbox ganha subject_id (infra do fan-out)",
-        "tier": 1,
-        "date": "2026-08-19",
-        "base_branch": "main",
-        "note": "Infra pura, zero consumidor: nenhum kind usa subject_id, runtime inalterado. Coluna subject_id uuid + UNIQUE (user_id,kind,period_key,subject_id) NULLS NOT DISTINCT aplicada em prod via MCP (indnullsnotdistinct: true verificado). ZERO backfill — a cláusula preserva a idempotência dos 4 kinds migrados (duas linhas NULL ainda colidem); sem ela o backfill seria obrigatório e a idempotência sumiria em silêncio. claim_notification_outbox NÃO recriada (RETURNS SETOF). ContentBuilder ganhou subjectId aditivo (CON-035) — os 4 builders de api/notify.ts não mudaram. 8 arquivos (estimava ~5: entraram CHANGELOG+package.json do SQP e o CON-035.md). ADR-078 emendado preservando o TODO da NC2. PO-6 fechado com curl real do PostgREST (2x 201 + UMA linha, sem 42P10; guard sem subject_id idem; fan-out = 2 linhas), linhas de teste inseridas com status=sent (não claimáveis) e deletadas. RC5 0 issues · RC6 (agy) 0 findings. 🔬 A/B armado e ABORTADO pelo script (baseline 0 findings, sem significância) — nenhum PENDENTE criado, captura segue liberada; limite estrutural do PO-5 registrado na measurement.md. Próximo: PR 1b (T014-T024), destravado."
-      },
-      {
-        "pr": 801,
-        "squash": "65900d0f",
-        "spec": "050 PR 1b — fan-out do stock_alert na outbox, atrás da flag",
-        "tier": 1,
-        "date": "2026-08-20",
-        "base_branch": "main",
-        "note": "Fan-out por MEDICAMENTO (subject_id=medicine_id) usando a coluna do PR 1a. SEM cutover: stock_alert fora de OUTBOX_KINDS, legado serve, runtime inalterado — o gate kinds.has('stock_alert') é a peça crítica (o claim não filtra kind e o drain envia toda linha com builder registrado; sem gate seria alerta EM DOBRO no próprio deploy). Varredura extraída em _fetchStockTrackingUsers + _scanStockAlertCandidates e cálculo em _computeStockAlertPayload: legado, enqueue e builder usam as MESMAS funções (senão o SC-003 compararia duas implementações). Janela 10:00-10:09 na tz do usuário (legado é minute===0, família AP-259). Builder recalcula no envio (SEC-1) e devolve null se repôs/encerrou/desligou (AP-277). Paginação AP-186 em user_settings+protocols+stock. 14 arquivos (estimava ~6: 4 mocks precisaram de .order/.range). RC5 7 findings, 5 corrigidos (paginação de user_settings, enqueue sem try/catch podia matar o drain do tick, assinatura do logger, enqueued->attempted, opt-out revalidado no envio) e 2 declarados p/ o PR 2. RC6 0 critical/high + 1 low FP de classe NOVA (inferência a partir da ausência no diff: alegou .order('id') em stock sem verificação porque 'id' não aparece no select; refutado por curl 200). A/B não capturado (pior chunk 172321B > 150K, auto-disarm correto) — captura segue liberada p/ o PR 2."
-      },
-      {
-        "pr": 802,
-        "squash": "f16bdb0d",
-        "spec": "050 PR 2 — stock_expiry_alert na outbox, fan-out por LOTE",
-        "tier": 1,
-        "date": "2026-08-20",
-        "base_branch": "main",
-        "note": "Segundo eixo do alerta de estoque (validade biologica pos-abertura, 012 Fase A/ADR-059) na outbox com subject_id = stock.id (o LOTE, nao o medicamento). Em prod e INERTE — os dois kinds de estoque seguem fora de OUTBOX_KINDS. CAUSA RAIZ FECHADA: o select de stock da varredura nao trazia `id`; sem ele o subject_id viria undefined e todas as linhas de validade do dia colidiriam na UNIQUE como (user,kind,dia,NULL) = 1 alerta em vez de N, o Gap 1 da propria spec reintroduzido. Gate R-295 (curl 200) nesse select e no select novo do builder. Migracao outbox_expiry_kind.sql aplicada em prod via MCP antes do merge; types regenerados SEM delta (kind e text). _biologicalExpiryDaysLeft exportada: legado, enqueue e builder no MESMO calculo (senao o SC-003 compararia contas, nao caminhos). RC5 3 findings, o principal mudando o desenho: o gate do enqueue era POR EIXO enquanto o guard do legado e tudo-ou-nada (checkStockAlerts faz volume E validade na mesma chamada) — um kind sozinho no env = legado + outbox despachando o mesmo alerta, todo dia, sem dedup. Virou tudo-ou-nada + 2 testes. Os outros 2: CHANGELOG afirmava colapso de lotes que o legado nunca teve (o colapso era risco da FILA), e rollback por env nao esvazia a fila (linhas pendentes seguem drenando enquanto o legado volta) — procedimento completo no codigo. Complexidade 22 resolvida extraindo buildVolumeEntries/buildExpiryEntries. RC6 (agy, 2 chunks, cov 2/2) 0 findings, sem repetir nenhum do RC5. A/B armado e ABORTADO (baseline vazio, 2o seguido) — a 050 fecha sem entregar par; gargalo do PO-5 rediagnosticado como oferta de PR com achado, nao captura."
-      },
-      {
-        "pr": 804,
-        "squash": "5efc2848",
-        "spec": "046 Slice C — prune pós-revogação (D+60/D+83/D+90)",
-        "tier": 2,
-        "date": "2026-08-21",
-        "base_branch": "main",
-        "note": "Job nasce em dry_run. Migração seq + RPC consent_controller_event APLICADAS em prod (test.sql bloco a bloco; guarda barra até o OWNER). Achado fora da spec: o aviso seria engolido pela supressão do T014 → CONSENT_LIFECYCLE_KINDS (AP-334). RC5 achou 2 freios furados: cap desarmado por NaN (R-312) e exclusão prosseguindo com a trilha falhando. RC6 0 findings; o pass B apontou o kind ausente da tabela de navegação (corrigido, mobile 0.31.3)."
-      },
-      {
-        "pr": 805,
-        "squash": "2030f461",
-        "spec": "046 T014 — supressão inerte no cron",
-        "tier": 1,
-        "date": "2026-08-21",
-        "base_branch": "main",
-        "note": "api/notify.ts tinha repo de preferências próprio SEM consent_revoked_at no select → supressão inerte em prod desde 15/07 (AP-333). Impacto real zero. Fix = eliminar a duplicata + guarda estrutural que falha se um 2º getSettingsByUserId reaparecer. Junto: cap deixa de abortar o dry-run."
+        "note": "PDF de consulta parava de mentir sobre a dose. 4 formatadores locais do builder deletados -> core (Lantus 10 UI saía '1.000 UI'; GLP-1 semanal saía '1x/dia'). Vigência única via isProtocolVigentOn avaliada em generatedAt, e POR DIA na série de adesão (muda o número exibido, declarado no CHANGELOG); isenção :171 do vigency-single-source.sh REVOGADA. F-24: calculateTitrationData NÃO foi alterada (CON-032, o contrato dela é progresso) — quem passou a distinguir 'sem escada' de 'escada concluída' é o extrator. ⚠️ A 1ª entrega do slice G passou nos gates com um CONTADOR '4/4' em vez da escada; quem pegou foi o PO no smoke do PDF (AC-37) — o guard ser o DOCUMENTO não foi formalidade. 2ª rodada trouxe também AC-39 e a tabela esticando caractere a caractere. ACHADO que matou o risco R2 do plan: fonte UTF-8 era desnecessária (jsPDF padrão é cp1252 e cobre todo acento PT); o que NÃO cobre é o '≈', que saía como '(\"H' no meio da dose -> pdfSafe na fronteira, zero delta de bundle. RC5 3 auto-fixes; RC6 7/7 chunks (RC6_MAX_CHUNKS=7 — o default 6 dropava um chunk), 0 critical, 1 high REAL: currentDoseLabel recalculava com o medicamento do PROTOCOLO enquanto a escada já resolvia por degrau (R-299) — corrigido reusando o doseLabel da escada, não recomputando. SQP web 4.22.5->4.23.0. Nasceram R-315 e AP-338. Decisões D27 (AC-39 não bloqueia) e D28 (datas do Mounjaro = resíduo dos smokes da 029)."
       }
     ],
-    "previous_session_note": "073 PR 1 ENTREGUE (PR #809, aguardando aprovação humana — R-060). 7 commits. Slices A+F+G: formatadores locais do PDF deletados -> core; vigência única (isenção :171 do farol revogada); escada de titulação COMPLETA por tratamento (não contador); pdfSafe cp1252; SQP web 4.23.0. POs 1/2/8/9/10/11 fechadas com o PDF real da conta doktorr. RC6 7/7 chunks, 1 high (R-299 no currentDoseLabel) corrigido e respondido. APRENDIZADOS: R-315 (PDF é fronteira cp1252 — fonte UTF-8 era desnecessária; gate = gerar com dado real + pdftotext) e AP-338 (gate de existência alimentado por cálculo de progresso some p/ quem concluiu). SMOKE do PO em 2 rodadas: a 2ª trouxe AC-37 (escada, não contador) e AC-39 — a 1ª entrega tinha só o contador. PRÓXIMO: aguardar merge do PR #809; depois PR 2 (T025-T036), que REBASA em main (conflito em consultationDataService.ts). Pendências herdadas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050.",
+    "previous_session_note": "073 PR 1 MERGEADO em 2026-08-22 (#809, squash e628a446, branch deletada). Spec 073 in-progress: 1 de 3 PRs. PRÓXIMO: PR 2 'a conta' (T025-T036, slices D+E — cartão de emergência e modo consulta), que parte de main JÁ COM o PR 1 (ambos tocam consultationDataService.ts). PRIMEIRA task do PR 2 é o FIXTURE de 2 protocolos vigentes do mesmo medicamento — sem ele o F-13 (produto cruzado que DOBRA a posologia) é invisível; e estender o SCOPE do vigency-single-source.sh para features/emergency e features/consultation é ENTREGÁVEL (E-4). Depois PR 3 (B+C). Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050 (27/08).",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -133,7 +61,7 @@
       "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
       "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "fix/073-pr1-documento",
+    "branch": "main",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
@@ -217,7 +145,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T04:24:40.441459-03:00"
+    "index_loaded_at": "2026-08-22T13:37:23.183509-03:00"
   },
   "code_review": {
     "status": "clean",
