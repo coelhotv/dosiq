@@ -172,7 +172,8 @@ describe('consultationPdfDataBuilder', () => {
       presentation: '100 UI/mL',
       dosePerIntake: '10 UI (≈ 0,1 mL)',
       frequency: 'Diário • 1 tomada • 22:00',
-      dailyDose: '10 UI (≈ 0,1 mL) por dia',
+      // Smoke do PO: a coluna diária NÃO repete a equivalência da coluna de tomada.
+      dailyDose: '10 UI/dia',
       status: 'Vigente',
     })
     expect(byLabel['Diabetes - Lantus'].dosePerIntake).not.toContain('1.000')
@@ -182,7 +183,7 @@ describe('consultationPdfDataBuilder', () => {
     expect(byLabel['GLP-1 - Ozempic']).toMatchObject({
       dosePerIntake: '2,4 mg (≈ 0,9 mL)',
       frequency: 'Semanal • 1 tomada • 09:00',
-      dailyDose: '0,343 mg (≈ 0,13 mL) por dia',
+      dailyDose: '0,343 mg/dia',
     })
 
     // F-1: nada de " por comprimido" colado em caneta/frasco.
@@ -213,7 +214,7 @@ describe('consultationPdfDataBuilder', () => {
     expect(byLabel['Pressao - Selozok']).toMatchObject({
       presentation: '25 mg',
       dosePerIntake: '1 un. (25 mg)',
-      dailyDose: '2 un. (50 mg) por dia',
+      dailyDose: '50 mg/dia',
       status: 'Vigente',
     })
 
@@ -249,7 +250,7 @@ describe('consultationPdfDataBuilder', () => {
       presentation: '10 mg',
       dosePerIntake: '1 un. (10 mg)',
       frequency: 'Diário • 1 tomada • 22:00',
-      dailyDose: '1 un. (10 mg) por dia',
+      dailyDose: '10 mg/dia',
       status: 'Vigente',
     })
     expect(pdfData.stockRows[0].severity).toBe('critical')
@@ -334,6 +335,10 @@ describe('consultationPdfDataBuilder', () => {
             daysRemaining: null,
             currentDosage: 2.4,
             currentDoseLabel: '2,4 mg',
+            ladder: [
+              { position: 1, doseLabel: '0,25 mg', durationLabel: '7 dias', periodLabel: '13/06/2026 - 20/06/2026', statusLabel: 'concluído', isCurrent: false },
+              { position: 2, doseLabel: '2,4 mg', durationLabel: 'contínua', periodLabel: 'desde 17/08/2026', statusLabel: 'atual', isCurrent: true },
+            ],
             maintenanceSince: '11/03/2026',
             stageNote: null,
           },
@@ -350,6 +355,14 @@ describe('consultationPdfDataBuilder', () => {
       progressLabel: 'dose alvo',
       stageLabel: '4/4',
       isMaintenance: true,
+    })
+    // AC-37: a escada COMPLETA viaja para o PDF — não só o contador de degraus.
+    expect(pdfData.titrationRows[0].ladder).toHaveLength(2)
+    expect(pdfData.titrationRows[0].ladder[1]).toMatchObject({
+      doseLabel: '2,4 mg',
+      durationLabel: 'contínua',
+      periodLabel: 'desde 17/08/2026',
+      isCurrent: true,
     })
     expect(pdfData.titrationRows[0].stageNote).toBe('Dose alvo: 2,4 mg desde 11/03/2026')
   })

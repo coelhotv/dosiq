@@ -146,7 +146,7 @@ export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) 
         label: item.label,
         detail:
           item.status === 'vencida'
-            ? 'Prescricao vencida'
+            ? 'Receita vencida'
             : `${item.daysRemaining ?? '-'} dias para vencer`,
         tone: item.status === 'vencida' ? 'danger' : 'warning',
       })),

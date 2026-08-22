@@ -27,13 +27,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   **muda o número de adesão exibido** no relatório — ele passa a refletir o que estava valendo em
   cada dia, e não o que está valendo hoje.
 - **Add** (mesmo release). O relatório voltou a ter a seção de **titulação** para quem já chegou à
-  dose alvo. Ela sumia justamente de quem terminou de subir a escada: a seção só aparecia enquanto
-  houvesse "progresso" em andamento. Agora a escada aparece com a dose alvo e desde quando ela é
-  mantida.
+  dose alvo — e agora ela mostra a **escada inteira**, um degrau por linha: dose, duração, período
+  e situação, com o degrau vigente destacado, como a tela de evolução do app. Antes a seção sumia
+  justamente de quem terminou de subir a escada (só aparecia enquanto houvesse "progresso" em
+  andamento). A dose de cada degrau é convertida pela concentração **daquele** degrau, não pela do
+  cadastro de hoje: uma escada que troca de medicamento no meio deixa de reescrever o passado.
 - **Fix** (mesmo release). Legibilidade: o estoque mostra a unidade e no máximo duas casas decimais
   ("0,13 mL", não "0.1278656716417910"); a receita vencida diz "vencida há 3 dias" no lugar de
   "-3", com a data em dd/mm/aaaa; a primeira página parou de repetir a mesma adesão em quatro
-  caixas; e os acentos voltaram ao documento inteiro.
+  caixas; e os acentos voltaram ao documento inteiro. A coluna "Dose diária" passa a mostrar a
+  exposição do dia ("100 mg/dia") em vez de repetir a dose por tomada. O símbolo "≈" saía como
+  `("H` no PDF — as fontes padrão não o cobrem — e virou "~".
 
 ### Governança de release: toda mudança mobile declara o canal de entrega
 

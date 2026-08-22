@@ -12,6 +12,9 @@ import {
   isProtocolVigentOn,
   stockUnitLabel,
   formatNumberPtBR,
+  formatDose,
+  formatActiveIngredientShort,
+  isLiquidMedicine,
   frequencyDailyFactor,
   FREQUENCY_LABELS,
   formatIntakeDose,
@@ -139,20 +142,24 @@ function _formatCadence(protocol) {
 }
 
 /**
- * Dose diária MÉDIA, na unidade real da tomada.
+ * Dose diária MÉDIA — a EXPOSIÇÃO por dia, não a repetição da coluna anterior.
  *
- * 073/E-1: o formatador local acumulava as duas doenças — multiplicava pela concentração
- * (F-17) e tratava `time_schedule.length` como cadência (F-2), tratando semanal como diário.
- * A média por dia usa `frequencyDailyFactor` (o mesmo fator que a página de ESTOQUE deste
- * documento já aplicava via `calculateDailyIntake` — ADR-094: cadência sobre a dose, nunca
- * sobre a vigência).
+ * 073/E-1: o formatador local acumulava duas doenças — multiplicava pela concentração (F-17)
+ * e tratava `time_schedule.length` como cadência (F-2), lendo semanal como diário. A média por
+ * dia usa `frequencyDailyFactor` (o mesmo fator que a página de ESTOQUE deste documento já
+ * aplica via `calculateDailyIntake` — ADR-094: cadência sobre a dose, nunca sobre a vigência).
+ *
+ * 🔴 Smoke do PO (2026-08-22): esta coluna NÃO repete a equivalência da coluna "Dose por
+ * tomada". Num tratamento de 1 tomada/dia as duas células saíam idênticas ("4 un. (100 mg)" ×2)
+ * e o texto longo estourava a largura da coluna. Aqui vai só o total do dia: massa para sólido
+ * ("100 mg/dia"), unidade de tomada para líquido ("10 UI/dia").
  *
  * @param {Object} protocol - Protocolo.
  * @param {Object} medicine - Medicamento cadastrado.
  * @returns {string}
  */
 function _formatDailyDose(protocol, medicine) {
-  // 073/RC5: mesma razão — para PRN a "dose diária" seria ficção.
+  // 073/RC5: para PRN a "dose diária" seria ficção.
   if (protocol?.frequency === 'quando_necessário') return 'sob demanda'
   const perIntake = Number(protocol?.dosage_per_intake ?? 1)
   if (!Number.isFinite(perIntake)) return '-'
@@ -160,9 +167,16 @@ function _formatDailyDose(protocol, medicine) {
   // Arredonda em 3 casas: o fator 1/7 (semanal) produz dízima e o formatador do core não
   // arredonda (R-277 — o artefato de float vazaria para o documento).
   const rounded = Math.round(perDay * 1000) / 1000
-  const label = formatIntakeDose(rounded, protocol?.intake_unit, medicine)
-  // "10 UI (≈ 0,1 mL) por dia" lê melhor que colar "/dia" depois do parêntese.
-  return label ? `${label} por dia` : '-'
+
+  if (isLiquidMedicine(medicine)) {
+    const label = formatDose(rounded, protocol?.intake_unit || 'ml')
+    return label ? `${label}/dia` : '-'
+  }
+
+  // Sólido: o médico lê a massa do dia (4 comprimidos de 25 mg ⇒ "100 mg/dia").
+  const mass = formatActiveIngredientShort(rounded, medicine?.dosage_per_pill, medicine?.dosage_unit)
+  if (mass) return `${mass}/dia`
+  return `${formatNumberPtBR(rounded)} un./dia`
 }
 
 /**
@@ -230,7 +244,7 @@ function buildTreatmentRows(protocols = [], medicines = [], asOf = getTodayLocal
         // Comportamento idêntico ao de antes do F6 (a nota nunca apareceu). Dívida registrada:
         // repontar exige a escada completa por `titration_id` no caminho da consulta —
         // `consultationDataService._extractActiveTitrations` tem o MESMO problema desde o F3.1.
-        note: safeText(medicine.notes, 'Sem observacoes'),
+        note: safeText(medicine.notes, 'Sem observações'),
         timesPerDay,
         dosagePerIntake,
       }
@@ -444,6 +458,10 @@ function buildTitrationRows(activeTitrations = [], protocols = [], medicines = [
       daysRemaining: titration.daysRemaining,
       isTransitionDue: titration.isTransitionDue,
       isMaintenance: Boolean(titration.isMaintenance),
+      // AC-37: a escada COMPLETA viaja para o PDF (dose, duração, período e situação de cada
+      // degrau). O contador "4/4" continua existindo para o card da página 1, mas quem conta a
+      // história clínica é a escada.
+      ladder: Array.isArray(titration.ladder) ? titration.ladder : [],
       // 073/F-24: manutenção não tem progresso a exibir — tem um FATO a declarar.
       progressLabel: titration.isMaintenance
         ? 'dose alvo'
@@ -471,7 +489,7 @@ function _adherenceRowStatus(score, expected) {
   if (expected === 0) return 'Sem doses'
   if (score >= 90) return 'Excelente'
   if (score >= 70) return 'Atenção'
-  return 'Critico'
+  return 'Crítico'
 }
 
 /**

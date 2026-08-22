@@ -386,7 +386,8 @@ describe('consultationDataService', () => {
             start_date: '2026-01-15',
             end_date: '2026-12-31',
             titration_steps: [
-              { position: 0, dose: 0.25, intake_unit: 'mg', duration_days: 28, status: 'completed', started_at: '2026-01-15T00:00:00' },
+              // Degrau em 'cp' no MEIO da escada: prova o AC-39 sem tirar o caso líquido.
+              { position: 0, dose: 2, intake_unit: 'cp', duration_days: 28, status: 'completed', started_at: '2026-01-15T00:00:00' },
               { position: 1, dose: 0.5, intake_unit: 'mg', duration_days: 28, status: 'completed', started_at: '2026-02-12T00:00:00' },
               // Etapa vigente CONTÍNUA (sem duração) = manutenção.
               { position: 2, dose: 1, intake_unit: 'mg', duration_days: null, status: 'current', started_at: '2026-03-11T00:00:00' },
@@ -408,6 +409,26 @@ describe('consultationDataService', () => {
         currentDosage: 1,
       })
       expect(result.activeTitrations[0].maintenanceSince).toMatch(/^\d{2}\/\d{2}\/\d{4}$/)
+
+      // AC-37: escada completa (dose, duração, período e situação de cada degrau).
+      // AC-39: `intake_unit = 'cp'` sai por extenso — e não vira `un.` nem vaza p/ protocols.
+      expect(result.activeTitrations[0].ladder).toHaveLength(3)
+      expect(result.activeTitrations[0].ladder[0]).toMatchObject({
+        position: 1,
+        durationLabel: '28 dias',
+        statusLabel: 'concluído',
+        isCurrent: false,
+      })
+      expect(result.activeTitrations[0].ladder[0].doseLabel).toMatch(/^2 comprimidos/)
+      expect(result.activeTitrations[0].ladder[0].doseLabel).not.toContain('un.')
+      expect(result.activeTitrations[0].ladder[0].periodLabel).toMatch(
+        /^\d{2}\/\d{2}\/\d{4} - \d{2}\/\d{2}\/\d{4}$/
+      )
+      expect(result.activeTitrations[0].ladder[2]).toMatchObject({
+        durationLabel: 'contínua',
+        statusLabel: 'atual',
+        isCurrent: true,
+      })
     })
 
     it('não inventa titulação: sem escada e sem etapa vigente, a secao fica vazia (073 F-24)', () => {
