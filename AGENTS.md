@@ -199,14 +199,15 @@ grep -r "from.*ServiceName" src/
 
 ---
 
-## MCP Tools: code-review-graph
+# Graftroom Context & Token Optimization Rules
 
-**Use graph tools BEFORE Grep/Glob/Read** — faster, fewer tokens, structural context.
+1. **Pre-turn AST Graph Navigation:**
+   - Prefer querying `graftroom_graph` before running broad, token-expensive `grep` or multiple file reads.
+   - Use `graftroom_graph(action="skeleton")` to check signatures before inspecting full bodies.
 
-| Tool | When |
-|------|------|
-| `semantic_search_nodes` | Find functions/classes by name |
-| `detect_changes` | Review changes with risk score |
-| `get_impact_radius` | Blast radius of a change |
-| `query_graph` | Callers/callees/imports/tests |
-| `get_architecture_overview` | High-level structure |
+2. **Output Compression & CCR Retrieval:**
+   - When generating or processing large tool outputs (> 100 lines), compress them with `graftroom_compress`.
+   - Resolve `[CCR:<hash>]` markers using `graftroom_retrieve`.
+
+3. **Shared Cross-Agent Memory:**
+   - Check `.graftroom/memory.db` or `graftroom_learn` for known repository patterns and error loops.

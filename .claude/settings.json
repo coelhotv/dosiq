@@ -24,7 +24,11 @@
       "Bash(mkdir *)",
       "Bash(mv *)",
       "Bash(cp *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(graftroom:*)",
+      "Bash(npx graftroom:*)",
+      "Bash(graftroom-dev:*)",
+      "Bash(node dist/cli.js:*)"
     ]
   },
   "hooks": {
@@ -36,6 +40,26 @@
             "type": "command",
             "command": "code-review-graph update --skip-flows",
             "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-hooks.cjs\" post-edit",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|mcp__graftroom__",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-hooks.cjs\" tool-savings",
+            "timeout": 8000
           }
         ]
       }
@@ -50,7 +74,46 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-hooks.cjs\" session-start",
+            "timeout": 8000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-hooks.cjs\" prompt",
+            "timeout": 15000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-hooks.cjs\" stop",
+            "timeout": 8000
+          }
+        ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-statusline.cjs\""
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/helpers/graftroom-statusline.cjs\""
   }
 }

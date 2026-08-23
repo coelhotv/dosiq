@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "graftroom": {
+      "command": "graftroom",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
