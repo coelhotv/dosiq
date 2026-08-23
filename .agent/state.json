@@ -138,7 +138,32 @@
     ],
     "ceremony_type": "eng-review",
     "plan": "plans/specs/073-fix-clinical-data/plan.md",
-    "tasks": "plans/specs/073-fix-clinical-data/tasks.md"
+    "tasks": "plans/specs/073-fix-clinical-data/tasks.md",
+    "next_pr_handoff": {
+      "pr": "073 PR 3 — fonte única (slices B+C, T037..T047)",
+      "read_first": "plans/specs/073-fix-clinical-data/plan.md §'Handoff para o PR 3' (local-only, não versionado) + o aviso no topo de tasks.md",
+      "why": "plan.md e tasks.md são de 22/08, ANTES dos merges dos PRs 1 (#809) e 2 (#810). Vários file:line se moveram e 3 alvos mudaram de natureza.",
+      "armadilhas": [
+        "DOIS 'Vigente' em consultationPdfDataBuilder.ts. Deletar SÓ o :430 (ternário de statusLabel na seção de PRESCRIÇÕES, inalcançável). NÃO tocar no status:'Vigente' de :231 — é da tabela de TRATAMENTOS, colocado pelo PR 1 DEPOIS do filtro de vigência; apagar reintroduz o F-18.",
+        "T037 derruba DE PROPÓSITO o teste 'prioritizes VENCIDA/VENCENDO over active === false' (packages/core/src/utils/__tests__/prescriptionStatus.test.ts:55). Reescrever o TESTE, não o código — 'consertar' o código desfaz o AC-8.",
+        "ADR-095 precisa decidir o par que a D26 não cobre: active===false E end_date no passado ⇒ 'finalizada' ou 'vencida'? Levar ao PO, não escolher sozinho.",
+        "T038: consumidor em produção do prescriptionService é 1 (consultationDataService.ts:10), não 2 — o PR 2 já trocou o literal 30 por PRESCRIPTION_EXPIRY_WARNING_DAYS. E PRESCRIPTION_STATUS_LABELS é código morto (zero consumidores), não listado no planning.",
+        "T041: o fallback 'comprimido' andou de :117 para :130. Localizar por símbolo, nunca por número de linha.",
+        "T039: Stock.tsx tem isenção inline 'vigency-gate: ok' nas linhas 71-72 — REESCREVER, não remover (o widget precisa listar a vencida). Se usar getTodayLocal() em useMemo, usar o hook useLocalToday."
+      ],
+      "reusar": [
+        "roundForDisplay (@dosiq/core) — formatNumberPtBR não limita casas",
+        "useLocalToday (apps/web/src/shared/hooks) — dia congelado em useMemo foi o finding do RC6 no PR 2",
+        "apps/web/src/test/fixtures/clinicalSurfaces.ts — fixture com datas RELATIVAS (data fixa vira bomba-relógio agora que a vigência usa o relógio real)",
+        "AP-339 e R-316"
+      ],
+      "operacional": [
+        "RC6: conferir 'pass A chunk N/N' no stderr — o PR 1 perdeu um chunk no default 6",
+        "Egress guard: nunca e-mail/telefone/CPF reais em comentário ou fixture; a saída é REMOVER o dado, não RC6_ALLOW_SENSITIVE=1 (essa flag é p/ fixture sintética)",
+        "SQP: minor core + patch web sobre 4.24.0; declarar no CHANGELOG a mudança de badge no estoque"
+      ],
+      "prova": "grep de DELEÇÃO (getPrescriptionStatus|thresholdDays|pdfGeneratorService|PRESCRIPTION_STATUS_LABELS ⇒ zero fora do core) + delta de linhas do PR NEGATIVO (SC-005)"
+    }
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
