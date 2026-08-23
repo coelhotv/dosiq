@@ -16,6 +16,14 @@ import {
   formatActiveIngredientShort,
   formatNumberPtBR,
   resolveCurrentStep,
+  isProtocolVigentOn,
+  isLiquidMedicine,
+  frequencyDailyFactor,
+  stockUnitLabel,
+  formatStockQuantity,
+  FREQUENCY_LABELS,
+  PRESCRIPTION_EXPIRY_WARNING_DAYS,
+  getTodayLocal,
 } from '@dosiq/core'
 import { addDays, getServerTimestamp, parseISO } from '@utils/dateUtils'
 
@@ -95,19 +103,18 @@ export function getConsultationData(
 function _extractActiveMedicines(medicines, protocols) {
   if (!medicines || !protocols) return []
 
-  const activeProtocolMedicineIds = new Set(
-    protocols
-      .filter((p) => p.active !== false) // Considera undefined como ativo
-      .map((p) => p.medicine_id)
-  )
+  // 073/F-15: vigência é o predicado canônico do core (`active !== false` E hoje dentro
+  // de [start_date, end_date]), não `active` solto — tratamento encerrado ontem não é
+  // "medicamento em uso" numa consulta médica (AP-247/R-299).
+  const today = getTodayLocal()
+  const vigentProtocols = protocols.filter((p) => isProtocolVigentOn(p, today))
+  const activeProtocolMedicineIds = new Set(vigentProtocols.map((p) => p.medicine_id))
 
   return medicines
     .filter((m) => activeProtocolMedicineIds.has(m.id))
     .map((medicine) => {
-      // Busca protocolos ativos deste medicamento
-      const medicineProtocols = protocols.filter(
-        (p) => p.medicine_id === medicine.id && p.active !== false
-      )
+      // Busca protocolos VIGENTES deste medicamento
+      const medicineProtocols = vigentProtocols.filter((p) => p.medicine_id === medicine.id)
 
       // Dosagem por comprimido em mg (do cadastro do medicamento)
       // NÃO tentamos inferir do protocolo - lá temos apenas quantidade de comprimidos
@@ -135,31 +142,50 @@ function _extractActiveMedicines(medicines, protocols) {
  */
 function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
   if (!protocols || protocols.length === 0) {
-    return { dosagePerIntake: null, timesPerDay: null, dailyDosage: null, isLiquid: false, intakeUnit: null }
+    return {
+      dosagePerIntake: null,
+      timesPerDay: null,
+      dailyDosage: null,
+      isLiquid: false,
+      intakeUnit: null,
+      cadenceLabel: null,
+    }
   }
 
   // Líquidos (022): a dose já está na unidade de tomada (gotas/ml/UI). NÃO multiplicar
   // por dosagePerPill (concentração) — isso gerava "10000 mg/ml" absurdos. O total
   // diário fica na própria unidade de tomada; a concentração é exibida à parte.
-  const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
+  // 073/F-16: o predicado é o do core, não um `endsWith('/ml')` local.
+  const isLiquid = isLiquidMedicine(medicine)
 
   let totalTimesPerDay = 0
-  let liquidDailyDose = 0 // soma dose×vezes na unidade de tomada (líquidos)
+  let liquidDailyDose = 0 // soma dose×vezes×fator na unidade de tomada (líquidos)
   let totalDosagePerIntake = 0 // soma em mg (sólidos)
+  let solidDailyDosage = 0 // soma dose×conc×vezes×fator em mg (sólidos)
   let intakeUnit = null
+  const frequencies = new Set()
 
+  // 073/F-13: acumular POR PROTOCOLO. O produto cruzado Σ(dose) × Σ(tomadas) DOBRAVA a
+  // posologia impressa quando o mesmo medicamento tinha 2 tratamentos vigentes. O ramo
+  // líquido já somava assim — aqui os dois passam a somar igual, e ambos aplicam a
+  // cadência via `frequencyDailyFactor` (semanal contava como diário).
   protocols.forEach((protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
     const dosePerIntake = protocol.dosage_per_intake || 1
+    const dailyFactor = frequencyDailyFactor(protocol)
     totalTimesPerDay += timesPerDay
+    if (protocol.frequency) frequencies.add(protocol.frequency)
 
     if (isLiquid) {
-      intakeUnit = intakeUnit || protocol.intake_unit || 'ml'
-      liquidDailyDose += dosePerIntake * timesPerDay
+      intakeUnit = intakeUnit || protocol.intake_unit || null
+      liquidDailyDose += dosePerIntake * timesPerDay * dailyFactor
     } else if (dosagePerPill) {
       totalDosagePerIntake += dosePerIntake * dosagePerPill
+      solidDailyDosage += dosePerIntake * dosagePerPill * timesPerDay * dailyFactor
     }
   })
+
+  const cadenceLabel = _buildCadenceLabel(totalTimesPerDay, frequencies)
 
   if (isLiquid) {
     return {
@@ -167,7 +193,10 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
       timesPerDay: totalTimesPerDay,
       dailyDosage: liquidDailyDose,
       isLiquid: true,
-      intakeUnit,
+      // 073/F-16: sem fallback cego para 'ml'. Faltando `intake_unit`, o rótulo canônico
+      // de estoque do core responde pela unidade — não se inventa "ml" para gotas/UI.
+      intakeUnit: intakeUnit || stockUnitLabel(medicine),
+      cadenceLabel,
     }
   }
 
@@ -178,19 +207,40 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
       dailyDosage: null,
       isLiquid: false,
       intakeUnit: null,
+      cadenceLabel,
     }
   }
-
-  // Dosagem diária total = dosagem por tomada × vezes ao dia (sólidos)
-  const dailyDosage = totalDosagePerIntake * totalTimesPerDay
 
   return {
     dosagePerIntake: totalDosagePerIntake,
     timesPerDay: totalTimesPerDay,
-    dailyDosage,
+    dailyDosage: solidDailyDosage,
     isLiquid: false,
     intakeUnit: null,
+    cadenceLabel,
   }
+}
+
+/**
+ * Rótulo de cadência do medicamento (073/F-14). "3x ao dia" só vale para tratamento
+ * DIÁRIO; semanal/dias alternados/personalizado usam o rótulo do enum, senão o documento
+ * afirma cadência que o paciente não tem. Cadências divergentes entre tratamentos do
+ * mesmo medicamento não se fundem num rótulo só — devolve null e a UI omite.
+ *
+ * @private
+ * @param {number} totalTimesPerDay
+ * @param {Set<string>} frequencies
+ * @returns {string|null}
+ */
+function _buildCadenceLabel(totalTimesPerDay, frequencies) {
+  if (!totalTimesPerDay || totalTimesPerDay <= 0) return null
+  if (frequencies.size > 1) return null
+
+  const [frequency] = [...frequencies]
+  if (!frequency || frequency === 'diário') return `${totalTimesPerDay}x ao dia`
+
+  const label = FREQUENCY_LABELS[frequency] || frequency
+  return `${totalTimesPerDay}x — ${label}`
 }
 
 /**
@@ -247,9 +297,12 @@ function _extractStockAlerts(stockSummary, medicines) {
         dailyIntake: item.dailyIntake || 0,
         severity: item.isZero ? 'critical' : 'warning',
         threshold,
+        unitLabel: stockUnitLabel(medicine),
+        // 073/AC-25: "unidades" é rótulo de comprimido. Líquido tem saldo em mL e o
+        // formatador canônico do core ainda acrescenta o hint de princípio ativo no sólido.
         message: item.isZero
           ? 'Estoque esgotado'
-          : `Estoque baixo (${item.total} ${item.total === 1 ? 'unidade' : 'unidades'})`,
+          : `Estoque baixo (${formatStockQuantity(item.total || 0, medicine)})`,
       }
     })
     .sort((a, b) => {
@@ -267,7 +320,9 @@ function _extractStockAlerts(stockSummary, medicines) {
 function _extractPrescriptionStatus(protocols) {
   if (!protocols) return []
 
-  const expiring = getExpiringPrescriptions(protocols, 30)
+  // 073/AC-24 (decisão D1): a janela canônica de vigência é a do core (14 dias). O
+  // literal 30 da web sai daqui; a função e o parâmetro morrem no PR 3 (AC-10).
+  const expiring = getExpiringPrescriptions(protocols, PRESCRIPTION_EXPIRY_WARNING_DAYS)
 
   return expiring.map((item) => ({
     protocolId: item.protocol.id,

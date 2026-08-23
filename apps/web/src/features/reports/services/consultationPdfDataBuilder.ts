@@ -19,6 +19,7 @@ import {
   FREQUENCY_LABELS,
   formatIntakeDose,
   formatMedicineConcentration,
+  roundForDisplay,
 } from '@dosiq/core'
 import {
   buildSummaryCards,
@@ -260,9 +261,10 @@ function buildTreatmentRows(protocols = [], medicines = [], asOf = getTodayLocal
  * @returns {string}
  */
 function _formatStockAmount(qty, medicine) {
-  const num = Number(qty)
-  if (!Number.isFinite(num)) return '-'
-  const rounded = Math.round(num * 100) / 100
+  // 073 PR 2: o arredondamento de exibição virou helper do core (`roundForDisplay`) — era
+  // cópia local nascida no PR 1, e a mesma dízima reapareceu na TELA do modo consulta.
+  const rounded = roundForDisplay(qty)
+  if (rounded === null) return '-'
   return `${formatNumberPtBR(rounded)} ${stockUnitLabel(medicine)}`
 }
 

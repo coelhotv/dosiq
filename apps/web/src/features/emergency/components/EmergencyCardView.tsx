@@ -41,15 +41,21 @@ function MedicationsSection({ activeMedications }) {
                 ? formatIntakeDose(med.dosagePerIntake, med.intakeUnit, medicineLike)
                 : null
             const pillDosageStr = formatConcentration(med.dosagePerPill, med.dosageUnit) || null
+            // 073/F-12: a contagem de tomadas some hoje em toda cadência não-diária —
+            // um semanal de 2 aplicações imprimia só "Semanal". Tomadas e cadência são
+            // informações independentes: quem toma 2x num dia de aplicação precisa ler isso
+            // no cartão de emergência.
+            const cadenceStr = med.frequency
+              ? FREQUENCY_LABELS[med.frequency] || med.frequency
+              : null
+            const dosesStr = med.dosesPerDay != null ? `${med.dosesPerDay}x` : null
             const frequencyStr =
-              med.dosesPerDay != null && med.frequency === 'diário'
-                ? `${med.dosesPerDay}x ao dia`
-                : med.frequency
-                  ? FREQUENCY_LABELS[med.frequency] || med.frequency
-                  : null
+              med.frequency === 'diário' && dosesStr
+                ? `${dosesStr} ao dia`
+                : [dosesStr, cadenceStr].filter(Boolean).join(' — ') || null
 
             return (
-              <li key={index} className="medication-item">
+              <li key={med.protocolId || index} className="medication-item">
                 <span className="med-name">
                   {med.name}
                   {pillDosageStr && <span className="med-dosage"> — {pillDosageStr}</span>}
@@ -99,7 +105,8 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
-import { formatIntakeDose, formatConcentration } from '@dosiq/core'
+import { formatIntakeDose, formatConcentration, isProtocolVigentOn } from '@dosiq/core'
+import { useLocalToday } from '@shared/hooks/useLocalToday'
 import { parseISO } from '@utils/dateUtils'
 import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
@@ -124,6 +131,9 @@ export default function EmergencyCardView({ data, onEdit }) {
 
   // ===== CONTEXT (R-010: Hook Order) =====
   const { medicines, protocols, isLoading: isDashboardLoading } = useDashboard()
+  // 073/RC6: o dia se revalida quando o cartão volta à tela — sem isto a vigência ficaria
+  // congelada na montagem e o cartão voltaria a listar tratamento vencido à meia-noite.
+  const today = useLocalToday()
 
   // ===== MEMOS (R-010: Hook Order) =====
 
@@ -133,23 +143,25 @@ export default function EmergencyCardView({ data, onEdit }) {
   const activeMedications = useMemo(() => {
     if (isDashboardLoading || !medicines || !protocols) return []
 
-    // IDs dos protocolos ativos
-    const activeProtocolMedicineIds = new Set(
-      protocols.filter((p) => p.active).map((p) => p.medicine_id)
-    )
+    // 073/F-9: `p.active` sozinho vazava tratamento encerrado (`end_date` no passado) e
+    // futuro para um cartão que é lido numa emergência. O predicado canônico do core
+    // (`active !== false` E hoje dentro do período) é a única fonte de vigência (AP-247).
+    const medicineById = new Map(medicines.map((med) => [med.id, med]))
 
-    // Filtra medicamentos que têm protocolos ativos
-    const protocolByMedicineId = new Map(
-      protocols.filter((p) => p.active).map((p) => [p.medicine_id, p])
-    )
-
-    return medicines
-      .filter((med) => activeProtocolMedicineIds.has(med.id))
-      .map((med) => {
-        const protocol: any = protocolByMedicineId.get(med.id)
+    // 073/F-10: UMA LINHA POR TRATAMENTO VIGENTE (decisão do PO). O `Map` por
+    // `medicine_id` descartava em silêncio o 2º tratamento do mesmo medicamento — quem
+    // toma 500 mg de manhã e 1.000 mg à noite aparecia com metade da posologia.
+    return protocols
+      .filter((p: any) => isProtocolVigentOn(p, today) && (medicineById.has(p.medicine_id) || p.medicine_name))
+      .map((protocol: any) => {
+        // Medicamento fora da lista carregada não SOME do cartão: numa emergência a omissão
+        // é a falha cara (constituição IX). Sem o cadastro, imprime-se o nome que o próprio
+        // tratamento carrega e nada de concentração — ausência visível, nunca valor inventado.
+        const med: any = medicineById.get(protocol.medicine_id) || {}
         return {
-          name: med.name,
-          dosagePerPill: med.dosage_per_pill,
+          protocolId: protocol.id,
+          name: med.name || protocol.medicine_name,
+          dosagePerPill: med.dosage_per_pill ?? null,
           unit: med.dosage_unit || '',
           dosageUnit: med.dosage_unit || null,
           unitsPerMl: med.units_per_ml ?? null,
@@ -159,7 +171,7 @@ export default function EmergencyCardView({ data, onEdit }) {
           frequency: protocol?.frequency ?? null,
         }
       })
-  }, [medicines, protocols, isDashboardLoading])
+  }, [medicines, protocols, isDashboardLoading, today])
 
   /**
    * Formata a data de última atualização.

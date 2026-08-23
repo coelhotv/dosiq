@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   Bell,
 } from 'lucide-react'
-import { formatConcentration, formatDose } from '@dosiq/core'
+import { formatConcentration, formatDose, formatNumberPtBR, roundForDisplay } from '@dosiq/core'
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -52,8 +52,10 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerPill, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.timesPerDay}x ao dia
-                          {med.dailyDosage ? `, ${formatDose(med.dailyDosage, med.intakeUnit || 'ml')}/dia` : ''})
+                          ({med.cadenceLabel || `${med.timesPerDay}x`}
+                          {med.dailyDosage
+                            ? `, ${formatDose(roundForDisplay(med.dailyDosage), med.intakeUnit)}/dia`
+                            : ''})
                         </span>
                       </span>
                     ) : med.dosagePerIntake && med.timesPerDay ? (
@@ -61,8 +63,10 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerIntake, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.timesPerDay}x ao dia
-                          {med.dailyDosage ? `, ${formatConcentration(med.dailyDosage, med.dosageUnit)}/dia` : ''})
+                          ({med.cadenceLabel || `${med.timesPerDay}x`}
+                          {med.dailyDosage
+                            ? `, ${formatConcentration(roundForDisplay(med.dailyDosage), med.dosageUnit)}/dia`
+                            : ''})
                         </span>
                       </span>
                     ) : med.dosagePerPill ? (
@@ -158,9 +162,16 @@ export function ConsultationPrescriptionsSection({ prescriptionStatus }) {
                   {currentStatus.label}
                 </span>
                 <span className="sr-prescription__name">{rx.medicineName}</span>
-                {rx.daysRemaining !== undefined && (
+                {rx.daysRemaining != null && (
                   <span className="sr-prescription__days">
-                    {rx.daysRemaining > 0 ? `${rx.daysRemaining} dias` : 'Hoje'}
+                    {/* 073: `daysRemaining` é NEGATIVO na vencida. O ternário antigo lia
+                        qualquer não-positivo como "Hoje" — uma receita vencida há 4 dias
+                        aparecia como vencendo hoje, no documento que decide a renovação. */}
+                    {rx.daysRemaining > 0
+                      ? `${rx.daysRemaining} dias`
+                      : rx.daysRemaining === 0
+                        ? 'Vence hoje'
+                        : `Há ${Math.abs(rx.daysRemaining)} ${Math.abs(rx.daysRemaining) === 1 ? 'dia' : 'dias'}`}
                   </span>
                 )}
               </div>
@@ -192,18 +203,27 @@ export function ConsultationTitrationsSection({ activeTitrations }) {
             <div key={t.protocolId} className="sr-titration-card">
               <div className="sr-titration-card__header">
                 <strong className="sr-titration-card__name">{t.medicineName}</strong>
-                <span className="sr-titration-card__dosage">{t.currentDosage}mg</span>
+                {/* 073: 'mg' era literal — 10 UI de Lantus saíam "10mg" e 4 comprimidos de
+                    Selozok saíam "4mg". A dose com unidade vem do DEGRAU (currentDoseLabel,
+                    resolvido pela concentração daquele degrau — R-299), não de um recálculo. */}
+                <span className="sr-titration-card__dosage">
+                  {t.currentDoseLabel || (t.currentDosage != null ? formatNumberPtBR(t.currentDosage) : '—')}
+                </span>
               </div>
               <div className="sr-titration-card__progress-bar">
                 <motion.div
                   className="sr-titration-card__progress-fill"
                   initial={{ width: 0 }}
-                  animate={{ width: `${t.progressPercent}%` }}
+                  animate={{ width: `${t.isMaintenance ? 100 : (t.progressPercent ?? 0)}%` }}
                   transition={{ duration: 1, ease: 'easeOut' }}
                 />
               </div>
               <span className="sr-titration-card__progress-text">
-                {t.progressPercent}% — Etapa {t.currentStep}/{t.totalSteps}
+                {/* Manutenção não tem progresso a exibir — tem um FATO a declarar (AP-338).
+                    Sem isto a etapa concluída imprimia "% — Etapa 4/4", com o número faltando. */}
+                {t.isMaintenance ? 'Dose alvo' : `${t.progressPercent ?? 0}%`} — Etapa{' '}
+                {t.currentStep}/{t.totalSteps}
+                {t.isMaintenance && t.maintenanceSince ? ` · desde ${t.maintenanceSince}` : ''}
               </span>
               {t.stageNote && <p className="sr-titration-card__note">{t.stageNote}</p>}
               {t.isTransitionDue && (

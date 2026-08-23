@@ -317,6 +317,31 @@ export function formatNumberPtBR(num: number | string | null | undefined): strin
 }
 
 /**
+ * Arredonda um número para EXIBIÇÃO (padrão: 2 casas).
+ *
+ * `formatNumberPtBR` traduz o separador decimal, não limita casas: todo número DERIVADO de
+ * uma divisão (dose semanal ÷ 7, consumo diário, custo por mL) vaza a dízima do float inteira
+ * na tela — "0,3428571428571428 mg/dia" num documento clínico. Arredondar é decisão de
+ * FRONTEIRA de exibição: o dado guardado continua cru.
+ *
+ * @param value - número (ou string numérica pt-BR/en)
+ * @param decimals - casas decimais máximas (default 2)
+ * @returns número arredondado, ou null quando não é número finito
+ * @example roundForDisplay(2.4 / 7)        → 0.34
+ * @example roundForDisplay(0.1278656, 3)   → 0.128
+ * @example roundForDisplay('abc')          → null
+ */
+export function roundForDisplay(value: number | string | null | undefined, decimals = 2): number | null {
+  // Ausência não é zero (R-104): `Number(null)` e `Number('')` valem 0 e imprimiriam "0 mg/dia"
+  // onde o certo é não imprimir nada.
+  if (value == null || value === '') return null
+  const num = Number(typeof value === 'string' ? value.replace(',', '.') : value)
+  if (!Number.isFinite(num)) return null
+  const factor = 10 ** decimals
+  return Math.round(num * factor) / factor
+}
+
+/**
  * Formata quantidade + "unidade(s)" para exibição. Vírgula decimal PT-BR.
  *
  * @example formatDoseUnit(1)    → '1 unidade'

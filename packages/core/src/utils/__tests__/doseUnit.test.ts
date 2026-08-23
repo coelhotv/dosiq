@@ -7,6 +7,7 @@ import {
   formatActiveIngredientFormula,
   formatActiveIngredientShort,
   formatMedicineFullName,
+  roundForDisplay,
 } from '../doseUnit'
 
 describe('formatMedicineFullName', () => {
@@ -197,3 +198,35 @@ describe('formatActiveIngredientFormula', () => {
 })
 
 
+
+describe('roundForDisplay (073 PR 2)', () => {
+  it('arredonda para 2 casas por padrão', () => {
+    expect(roundForDisplay(2.4 / 7)).toBe(0.34)
+    expect(roundForDisplay(7.5 / 7)).toBe(1.07)
+    expect(roundForDisplay(0.1278656716417910)).toBe(0.13)
+  })
+
+  it('respeita a precisão pedida', () => {
+    expect(roundForDisplay(0.1278656716417910, 3)).toBe(0.128)
+    expect(roundForDisplay(2.5, 0)).toBe(3)
+  })
+
+  it('não mexe em número que já cabe', () => {
+    expect(roundForDisplay(100)).toBe(100)
+    expect(roundForDisplay(2.4)).toBe(2.4)
+  })
+
+  it('aceita string pt-BR e devolve null no que não é número', () => {
+    expect(roundForDisplay('1,239')).toBe(1.24)
+    expect(roundForDisplay(null)).toBeNull()
+    expect(roundForDisplay(undefined)).toBeNull()
+    expect(roundForDisplay('abc')).toBeNull()
+    expect(roundForDisplay('')).toBeNull()
+    expect(roundForDisplay(Infinity)).toBeNull()
+  })
+
+  it('zero é valor, não ausência', () => {
+    expect(roundForDisplay(0)).toBe(0)
+    expect(roundForDisplay(0.001)).toBe(0)
+  })
+})

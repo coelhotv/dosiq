@@ -22,12 +22,14 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-# ESCOPO: o read-path de CONSUMO/ESTOQUE (o que o 064 corrigiu). Filtros de LISTAGEM e de
-# rótulo fora destes módulos (log form, emergência, histórico) têm semântica própria e não
-# entram — ampliar o escopo aqui é decisão de spec, não deste gate.
+# ESCOPO: o read-path de CONSUMO/ESTOQUE (o que o 064 corrigiu) + as superfícies CLÍNICAS
+# que a spec 073 corrigiu (PR 2): cartão de emergência e modo consulta. Ampliar o escopo é
+# decisão de spec — a da 073 é o E-4/T034: sem o farol, a correção do F-9/F-15 não tem trava
+# de regressão e o `p.active` solto volta no próximo PR que tocar a tela.
 HITS=$(grep -rEn "\.(filter|find|some|every)\((\([^)]*\)|[A-Za-z_]+) =>[^)]*\b[A-Za-z_]+\??\.active\b" \
   packages/core/src/utils packages/core/src/chatbot packages/core/src/services \
   apps/web/src/features/stock apps/web/src/features/dashboard \
+  apps/web/src/features/emergency apps/web/src/features/consultation \
   apps/web/src/views/Stock.tsx \
   apps/web/src/features/reports/services/consultationPdfDataBuilder.ts \
   server/bot/commands \
