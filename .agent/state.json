@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W31",
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "tier": 2,
-    "spec_dir": "plans/specs/073-fix-clinical-data",
-    "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 PR 1 — \"o documento\" (Slices A+F+G, T001..T024)",
-    "goal_type": "fix",
+    "mode": "specifying",
+    "status": "specified",
+    "tier": 1,
+    "spec_dir": "plans/specs/074-emergency-card-qr-web",
+    "spec": "plans/specs/074-emergency-card-qr-web/spec.md",
+    "goal": "Cartão de emergência da web/PWA: QR legível e fonte única",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/073-fix-clinical-data"
     ],
@@ -26,7 +26,7 @@
         "note": "PDF de consulta parava de mentir sobre a dose. 4 formatadores locais do builder deletados -> core (Lantus 10 UI saía '1.000 UI'; GLP-1 semanal saía '1x/dia'). Vigência única via isProtocolVigentOn avaliada em generatedAt, e POR DIA na série de adesão (muda o número exibido, declarado no CHANGELOG); isenção :171 do vigency-single-source.sh REVOGADA. F-24: calculateTitrationData NÃO foi alterada (CON-032, o contrato dela é progresso) — quem passou a distinguir 'sem escada' de 'escada concluída' é o extrator. ⚠️ A 1ª entrega do slice G passou nos gates com um CONTADOR '4/4' em vez da escada; quem pegou foi o PO no smoke do PDF (AC-37) — o guard ser o DOCUMENTO não foi formalidade. 2ª rodada trouxe também AC-39 e a tabela esticando caractere a caractere. ACHADO que matou o risco R2 do plan: fonte UTF-8 era desnecessária (jsPDF padrão é cp1252 e cobre todo acento PT); o que NÃO cobre é o '≈', que saía como '(\"H' no meio da dose -> pdfSafe na fronteira, zero delta de bundle. RC5 3 auto-fixes; RC6 7/7 chunks (RC6_MAX_CHUNKS=7 — o default 6 dropava um chunk), 0 critical, 1 high REAL: currentDoseLabel recalculava com o medicamento do PROTOCOLO enquanto a escada já resolvia por degrau (R-299) — corrigido reusando o doseLabel da escada, não recomputando. SQP web 4.22.5->4.23.0. Nasceram R-315 e AP-338. Decisões D27 (AC-39 não bloqueia) e D28 (datas do Mounjaro = resíduo dos smokes da 029)."
       }
     ],
-    "previous_session_note": "073 PR 1 MERGEADO em 2026-08-22 (#809, squash e628a446, branch deletada). Spec 073 in-progress: 1 de 3 PRs. PRÓXIMO: PR 2 'a conta' (T025-T036, slices D+E — cartão de emergência e modo consulta), que parte de main JÁ COM o PR 1 (ambos tocam consultationDataService.ts). PRIMEIRA task do PR 2 é o FIXTURE de 2 protocolos vigentes do mesmo medicamento — sem ele o F-13 (produto cruzado que DOBRA a posologia) é invisível; e estender o SCOPE do vigency-single-source.sh para features/emergency e features/consultation é ENTREGÁVEL (E-4). Depois PR 3 (B+C). Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050 (27/08).",
+    "previous_session_note": "⚠️ 073 PR 2 PRONTO E PUSHADO em feature/073-pr2-a-conta (2 commits: 06468d80 + 98b31a09), gates verdes, smoke do PO OK (inclui os 3 achados do modo consulta: dízima, receita vencida 'Hoje', dose da titulação com 'mg' fixo). PO-6 pode ser fechada — o guard MANUAL foi cumprido. FALTA: `gh pr create` + RC6 + aprovação humana (R-060). Depois PR 3 (B+C, ADR-095 proposed). 073 PR 2 CODADO na branch feature/073-pr2-a-conta (T025..T034), gates verdes, NÃO commitado em main e SEM PR ainda. BLOQUEIO: T035 é smoke do PO no cartão de emergência (antes/depois) — é o guard MANUAL do PO-6, que segue [ ] open de propósito. Só depois abrir o PR (R-060) e rodar RC6. SQP: web 4.23.0 -> 4.24.0, 3 mudanças de número visível declaradas no CHANGELOG (cadência em tratamento não-diário, janela de receita 30->14, e o PDF que herda as duas via consultationData). Nasceram AP-339 (Σ(a)×Σ(b) e o fixture de 1 filho que esconde) e R-316 (escopo do farol é entregável + prova de sonda). DEPOIS: PR 3 (B+C) com ADR-095 proposed. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050.",
     "ceremonies_run": [
       "eng-review"
     ],
@@ -132,27 +132,27 @@
     "tasks": "plans/specs/073-fix-clinical-data/tasks.md"
   },
   "memory": {
-    "last_distillation": "2026-08-20T13:56:00-03:00",
-    "journal_entries_since_distillation": 15,
+    "last_distillation": "2026-08-22T14:10:00-03:00",
+    "journal_entries_since_distillation": 1,
     "rules_count": 266,
     "anti_patterns_count": 333,
     "decisions_count": 94,
     "contracts_count": 34,
-    "distillation_due": true
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-22T13:37:23.183509-03:00"
+    "index_loaded_at": "2026-08-22T19:35:00-03:00"
   },
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 3,
+    "auto_fixed": 1,
     "ask_items": 0,
-    "note": "RC5 do PR1: 3 auto-fixes"
+    "note": "RC5 do PR2: 1 auto-fix (cartão não omite medicamento sem cadastro — constituição IX)"
   },
   "ai_review": {
     "engine": "agy+claude",
