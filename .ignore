@@ -1,0 +1,4 @@
+# graftroom search re-admittance
+!.graftroom/
+.graftroom/.cache/
+.graftroom/.graph/

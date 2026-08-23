@@ -1,16 +1,10 @@
 {
   "mcpServers": {
-    "code-review-graph": {
-      "command": "uvx",
+    "graftroom": {
+      "command": "graftroom",
       "args": [
-        "code-review-graph",
-        "serve"
-      ],
-      "type": "stdio"
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp"
+        "mcp"
+      ]
     }
   }
 }
