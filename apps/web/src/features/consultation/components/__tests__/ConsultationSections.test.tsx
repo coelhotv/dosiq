@@ -1,7 +1,7 @@
 /**
  * @fileoverview Testes das seções do Modo Consulta — spec 073 PR 2, achados do smoke do PO.
  *
- * Os três defeitos vistos na tela real (conta doktorr@gmail.com, 2026-08-22):
+ * Os três defeitos vistos na tela real (conta de teste do PO, 2026-08-22):
  *  1. dose diária derivada de divisão imprimia a dízima inteira ("0,3428571428571428 mg/dia");
  *  2. receita vencida há 4 dias aparecia como "Hoje" (`daysRemaining` negativo lido como zero);
  *  3. o chip de titulação sufixava "mg" fixo — 10 UI de Lantus saía "10mg".
