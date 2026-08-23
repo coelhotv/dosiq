@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
   dashboard: {
@@ -39,6 +39,7 @@ vi.mock('@/features/emergency/components/EmergencyQRCode', () => ({
   },
 }))
 
+import * as core from '@dosiq/core'
 import EmergencyCardView from '@/features/emergency/components/EmergencyCardView'
 import {
   CLINICAL_MEDICINES,
@@ -144,6 +145,26 @@ describe('EmergencyCardView — 073 (cartão de emergência)', () => {
     // Nome vem do próprio tratamento; sem cadastro não há concentração inventada.
     expect(screen.getByText(/Paracetamol/)).toBeInTheDocument()
     expect(screen.queryByText(/500 mg/)).not.toBeInTheDocument()
+  })
+
+  it('RC6: cartão montado atravessa a meia-noite e revalida o dia ao voltar à tela', async () => {
+    // O tratamento vence HOJE (end_date inclusiva): agora ele aparece.
+    mocks.dashboard.protocols = [{ ...PROTOCOL_SOLID_MORNING, end_date: dateOffset(0) }]
+    renderCard()
+    expect(screen.getAllByText(/Paracetamol/)).toHaveLength(1)
+
+    // Simula a virada: o relógio do core passa a devolver amanhã, e o app volta ao primeiro plano.
+    const amanha = dateOffset(1)
+    const spy = vi.spyOn(core, 'getTodayLocal').mockReturnValue(amanha)
+    try {
+      await act(async () => {
+        window.dispatchEvent(new Event('focus'))
+      })
+      // Sem a revalidação, o dia ficaria congelado na montagem e o vencido seguiria listado.
+      expect(screen.queryByText(/Paracetamol/)).not.toBeInTheDocument()
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it('degenerado: tratamento vigente sem medicamento e sem nome fica fora (nada a imprimir)', () => {

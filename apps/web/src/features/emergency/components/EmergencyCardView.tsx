@@ -105,7 +105,8 @@ import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
 import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
-import { formatIntakeDose, formatConcentration, isProtocolVigentOn, getTodayLocal } from '@dosiq/core'
+import { formatIntakeDose, formatConcentration, isProtocolVigentOn } from '@dosiq/core'
+import { useLocalToday } from '@shared/hooks/useLocalToday'
 import { parseISO } from '@utils/dateUtils'
 import EmergencyQRCode from './EmergencyQRCode'
 import './EmergencyCard.css'
@@ -130,6 +131,9 @@ export default function EmergencyCardView({ data, onEdit }) {
 
   // ===== CONTEXT (R-010: Hook Order) =====
   const { medicines, protocols, isLoading: isDashboardLoading } = useDashboard()
+  // 073/RC6: o dia se revalida quando o cartão volta à tela — sem isto a vigência ficaria
+  // congelada na montagem e o cartão voltaria a listar tratamento vencido à meia-noite.
+  const today = useLocalToday()
 
   // ===== MEMOS (R-010: Hook Order) =====
 
@@ -142,7 +146,6 @@ export default function EmergencyCardView({ data, onEdit }) {
     // 073/F-9: `p.active` sozinho vazava tratamento encerrado (`end_date` no passado) e
     // futuro para um cartão que é lido numa emergência. O predicado canônico do core
     // (`active !== false` E hoje dentro do período) é a única fonte de vigência (AP-247).
-    const today = getTodayLocal()
     const medicineById = new Map(medicines.map((med) => [med.id, med]))
 
     // 073/F-10: UMA LINHA POR TRATAMENTO VIGENTE (decisão do PO). O `Map` por
@@ -168,7 +171,7 @@ export default function EmergencyCardView({ data, onEdit }) {
           frequency: protocol?.frequency ?? null,
         }
       })
-  }, [medicines, protocols, isDashboardLoading])
+  }, [medicines, protocols, isDashboardLoading, today])
 
   /**
    * Formata a data de última atualização.
