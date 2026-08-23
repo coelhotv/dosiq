@@ -128,6 +128,8 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 
 **Review (pós-Gemini, ADR-069):** L0 lint → L1 RC5 → L2 RC6 → L3 humano. Operação completa, comandos, chunking, egress guard e regras de quota: **`docs/standards/AI_REVIEW.md`** (leitura obrigatória antes de rodar RC6). Essência: `bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post` após abrir PR Tier 1+; roda UMA vez; finding `introduced` critical/high resolve antes de pedir aprovação; zero findings em diff gordo = conferir stderr; finding de schema → verificar no banco (R-295 vale contra o revisor). 📏 Até T051: appendar linha de medição em `plans/specs/034-gemini-sunset/measurement.md` no C5.
 
+📏 **Graftroom (experimental, não-gate):** se C4 gerar log/test output grande ou RC6 anexar payload full-file, rodar `graftroom compress` manualmente (CLI, fora de hook) e appendar linha em `plans/specs/075-graftroom-benchmark/measurement.md` (local-only). Nunca usar compress/graph do graftroom como gate de decisão — só medição paralela até fechar o experimento.
+
 **Gitdir externo (Mac Mini):** `docs/getting-started/GIT_ARCHITECTURE.md`; sync via `gsync`.
 
 ## Schemas — enums (verificados contra CHECK de prod 2026-07-16)
