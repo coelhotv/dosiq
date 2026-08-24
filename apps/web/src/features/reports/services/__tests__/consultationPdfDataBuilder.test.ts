@@ -76,7 +76,9 @@ describe('consultationPdfDataBuilder', () => {
       { medicineId: 'med-2', medicineName: 'Ansitec', severity: 'critical', daysRemaining: 0 },
     ],
     prescriptionStatus: [
-      { protocolId: 'prot-1', status: 'vigente', daysRemaining: 20, endDate: future },
+      // 073/AC-12: só vencida/vencendo chegam ao builder — 'vigente' não é status
+      // possível na seção de alertas (getExpiringPrescriptions filtra).
+      { protocolId: 'prot-1', status: 'vencendo', daysRemaining: 12, endDate: future },
       { protocolId: 'prot-2', status: 'vencendo', daysRemaining: 4, endDate: future },
     ],
     activeTitrations: [
@@ -256,7 +258,7 @@ describe('consultationPdfDataBuilder', () => {
     expect(pdfData.stockRows[0].severity).toBe('critical')
     expect(pdfData.prescriptionRows[0]).toMatchObject({
       label: 'Hipertensao - Losartana',
-      statusLabel: 'Vigente',
+      statusLabel: 'Vencendo',
     })
     expect(pdfData.titrationRows).toHaveLength(1)
     expect(pdfData.attentionItems.length).toBeGreaterThan(0)

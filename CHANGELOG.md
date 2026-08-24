@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Status de receita: uma fonte só
+
+- **Change** (`minor` core `0.23.0` + `patch` web `4.24.1`). O app e o PDF de consulta usavam
+  **duas contas diferentes** para dizer se uma receita estava válida — inclusive prazos diferentes
+  (30 dias no PDF, 14 no app). Agora existe uma só, com a janela canônica de **14 dias**.
+  ⚠️ Isso **muda o que aparece na tela**: uma receita que vence entre 15 e 30 dias deixa de ser
+  anunciada como "vencendo" — ela volta a aparecer quando faltarem 14 dias.
+- **Fix** (mesmo release). Tratamento **encerrado ou pausado** era anunciado como "vencendo" e
+  pedia renovação de uma receita que ninguém ia renovar. Agora aparece como **finalizado**, e sai
+  da lista de renovação e da seção de alertas do PDF.
+- **Change** (mesmo release). A seção de prescrições do PDF passa a se chamar
+  **"Receitas a renovar"** — ela sempre listou só os alertas, e o título antigo fazia a ausência de
+  linhas parecer ausência de receitas.
+- **Fix** (mesmo release). O histórico de doses exibia qualquer registro em "comprimidos" — 1,5 mL
+  de um injetável saía como "1,5 comprimidos". A unidade agora vem do medicamento, no histórico e
+  no cadastro de estoque do onboarding.
+- **Fix** (mesmo release). No modo consulta, medicamento sem tipo cadastrado era exibido como
+  "comprimido" (um valor que nem existe nesse campo, que guarda "medicamento" ou "suplemento").
+  Agora aparece "Não informado".
+
 ### Cartão de emergência e modo consulta: a conta da dose
 
 - **Fix** (`minor` web `4.24.0`). O **cartão de emergência** mostrava apenas UM tratamento por

@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "coding",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 PR 2 — \"a conta\" (Slices D+E) — MERGEADO",
+    "goal": "073 PR 3 — fonte única (slices B+C, T037-T047)",
     "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/073-fix-clinical-data"
@@ -70,7 +70,7 @@
       "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
       "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "main",
+    "branch": "fix/073-pr3-fonte-unica-prescricao",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"

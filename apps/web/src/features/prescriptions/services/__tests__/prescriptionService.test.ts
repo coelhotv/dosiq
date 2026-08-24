@@ -1,144 +1,32 @@
 /**
  * Testes do Prescription Service
  *
- * Testa as funções de cálculo de status de validade de receitas médicas.
+ * Após a spec 073 PR 3 (ADR-095) este serviço só FILTRA e ORDENA — quem
+ * classifica é `derivePrescriptionStatus` do core, com janela de 14 dias.
+ * Por isso as datas aqui são RELATIVAS (`dateOffset`): a vigência passou a ser
+ * lida contra o relógio real, e data fixa vira bomba-relógio.
  *
  * @module prescriptionService.test
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import {
-  getPrescriptionStatus,
-  getExpiringPrescriptions,
-  PRESCRIPTION_STATUS,
-} from '@/features/prescriptions/services/prescriptionService'
-
-// Mock da data atual para testes determinísticos
-// Fixamos a data em 2026-02-25 para todos os testes
-const MOCK_TODAY = '2026-02-25'
-
-vi.mock('@utils/dateUtils', () => ({
-  parseLocalDate: (dateStr) => new Date(dateStr + 'T00:00:00'),
-  getTodayLocal: () => MOCK_TODAY,
-  daysDifference: (date1, date2) => {
-    const d1 = typeof date1 === 'string' ? new Date(date1 + 'T00:00:00') : date1
-    const d2 = typeof date2 === 'string' ? new Date(date2 + 'T00:00:00') : date2
-    const diffTime = d2.getTime() - d1.getTime()
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  },
-}))
+import { PRESCRIPTION_STATUS } from '@dosiq/core'
+import { getExpiringPrescriptions } from '@/features/prescriptions/services/prescriptionService'
+import { dateOffset } from '@/test/fixtures/clinicalSurfaces'
 
 describe('prescriptionService', () => {
   afterEach(() => {
     vi.clearAllMocks()
-  })
-
-  describe('getPrescriptionStatus', () => {
-    describe('quando end_date é null', () => {
-      it('retorna status vigente com daysRemaining null', () => {
-        const protocol = { id: 1, end_date: null }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VIGENTE)
-        expect(result.daysRemaining).toBeNull()
-      })
-    })
-
-    describe('quando a receita está vigente (mais de 30 dias)', () => {
-      it('retorna status vigente com dias restantes corretos', () => {
-        // 2026-04-01 está a 35 dias de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-04-01' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VIGENTE)
-        expect(result.daysRemaining).toBe(35)
-      })
-
-      it('retorna vigente quando exatamente 31 dias restantes', () => {
-        // 2026-03-28 está a 31 dias de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-03-28' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VIGENTE)
-        expect(result.daysRemaining).toBe(31)
-      })
-    })
-
-    describe('quando a receita está vencendo (30 dias ou menos)', () => {
-      it('retorna status vencendo quando exatamente 30 dias restantes', () => {
-        // 2026-03-27 está a 30 dias de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-03-27' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCENDO)
-        expect(result.daysRemaining).toBe(30)
-      })
-
-      it('retorna status vencendo quando 7 dias restantes', () => {
-        // 2026-03-04 está a 7 dias de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-03-04' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCENDO)
-        expect(result.daysRemaining).toBe(7)
-      })
-
-      it('retorna status vencendo quando 1 dia restante', () => {
-        // 2026-02-26 está a 1 dia de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-02-26' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCENDO)
-        expect(result.daysRemaining).toBe(1)
-      })
-
-      it('retorna status vencendo quando 0 dias restantes (vence hoje)', () => {
-        // 2026-02-25 é hoje
-        const protocol = { id: 1, end_date: '2026-02-25' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCENDO)
-        expect(result.daysRemaining).toBe(0)
-      })
-    })
-
-    describe('quando a receita está vencida', () => {
-      it('retorna status vencida com dias negativos', () => {
-        // 2026-01-01 está -55 dias de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-01-01' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCIDA)
-        expect(result.daysRemaining).toBe(-55)
-      })
-
-      it('retorna status vencida quando venceu ontem', () => {
-        // 2026-02-24 está -1 dia de 2026-02-25
-        const protocol = { id: 1, end_date: '2026-02-24' }
-
-        const result = getPrescriptionStatus(protocol)
-
-        expect(result.status).toBe(PRESCRIPTION_STATUS.VENCIDA)
-        expect(result.daysRemaining).toBe(-1)
-      })
-    })
+    vi.clearAllTimers()
   })
 
   describe('getExpiringPrescriptions', () => {
     it('retorna apenas receitas vencendo ou vencidas', () => {
       const protocols = [
-        { id: 1, end_date: '2026-06-01' }, // vigente (96 dias)
-        { id: 2, end_date: '2026-03-05' }, // vencendo (8 dias)
+        { id: 1, end_date: dateOffset(96) }, // ativa
+        { id: 2, end_date: dateOffset(8) }, // vencendo
         { id: 3, end_date: null }, // sem expiração
-        { id: 4, end_date: '2026-01-15' }, // vencida (-41 dias)
+        { id: 4, end_date: dateOffset(-41) }, // vencida
       ]
 
       const result = getExpiringPrescriptions(protocols)
@@ -152,19 +40,16 @@ describe('prescriptionService', () => {
 
     it('ordena por urgência: vencidas primeiro, depois por dias restantes', () => {
       const protocols = [
-        { id: 1, end_date: '2026-03-01' }, // vencendo (4 dias)
-        { id: 2, end_date: '2026-02-28' }, // vencendo (3 dias)
-        { id: 3, end_date: '2026-01-01' }, // vencida (-55 dias)
-        { id: 4, end_date: '2026-02-26' }, // vencendo (1 dia)
+        { id: 1, end_date: dateOffset(4) },
+        { id: 2, end_date: dateOffset(3) },
+        { id: 3, end_date: dateOffset(-55) },
+        { id: 4, end_date: dateOffset(1) },
       ]
 
       const result = getExpiringPrescriptions(protocols)
 
       expect(result).toHaveLength(4)
-      // Vencida vem primeiro
-      expect(result[0].protocol.id).toBe(3)
-      expect(result[0].status).toBe(PRESCRIPTION_STATUS.VENCIDA)
-      // Depois ordenado por dias restantes (menor = mais urgente)
+      expect(result[0].protocol.id).toBe(3) // vencida
       expect(result[1].protocol.id).toBe(4) // 1 dia
       expect(result[2].protocol.id).toBe(2) // 3 dias
       expect(result[3].protocol.id).toBe(1) // 4 dias
@@ -172,54 +57,65 @@ describe('prescriptionService', () => {
 
     it('retorna array vazio quando não há receitas vencendo ou vencidas', () => {
       const protocols = [
-        { id: 1, end_date: '2026-06-01' }, // vigente
-        { id: 2, end_date: null }, // sem expiração
-        { id: 3, end_date: '2026-12-01' }, // vigente
+        { id: 1, end_date: dateOffset(96) },
+        { id: 2, end_date: null },
+        { id: 3, end_date: dateOffset(280) },
       ]
 
-      const result = getExpiringPrescriptions(protocols)
-
-      expect(result).toHaveLength(0)
+      expect(getExpiringPrescriptions(protocols)).toHaveLength(0)
     })
 
-    it('respeita o threshold customizado de dias', () => {
-      const protocols = [
-        { id: 1, end_date: '2026-03-15' }, // 18 dias (fora do threshold de 10)
-        { id: 2, end_date: '2026-03-02' }, // 5 dias (dentro do threshold de 10)
-        { id: 3, end_date: '2026-01-01' }, // vencida
-      ]
+    // AC-9: a janela é a canônica do core (14 dias). O parâmetro `thresholdDays`
+    // e o literal 30 da web foram DELETADOS — 18 dias não alerta mais.
+    it('AC-9: a janela é 14 dias — 15 dias não alerta, 14 alerta', () => {
+      const result = getExpiringPrescriptions([
+        { id: 1, end_date: dateOffset(15) },
+        { id: 2, end_date: dateOffset(14) },
+      ])
 
-      const result = getExpiringPrescriptions(protocols, 10)
-
-      expect(result).toHaveLength(2)
-      expect(result[0].protocol.id).toBe(3) // vencida
-      expect(result[1].protocol.id).toBe(2) // 5 dias
+      expect(result).toHaveLength(1)
+      expect(result[0].protocol.id).toBe(2)
+      expect(result[0].status).toBe(PRESCRIPTION_STATUS.VENCENDO)
     })
 
-    it('inclui todas as vencidas independente do threshold', () => {
-      const protocols = [
-        { id: 1, end_date: '2026-01-01' }, // vencida (-55 dias)
-        { id: 2, end_date: '2026-01-15' }, // vencida (-41 dias)
-      ]
-
-      const result = getExpiringPrescriptions(protocols, 7)
+    it('inclui todas as vencidas, sem limite de antiguidade', () => {
+      const result = getExpiringPrescriptions([
+        { id: 1, end_date: dateOffset(-55) },
+        { id: 2, end_date: dateOffset(-41) },
+      ])
 
       expect(result).toHaveLength(2)
       expect(result[0].status).toBe(PRESCRIPTION_STATUS.VENCIDA)
       expect(result[1].status).toBe(PRESCRIPTION_STATUS.VENCIDA)
     })
 
-    it('retorna objeto com protocol, status e daysRemaining', () => {
-      const protocols = [{ id: 1, end_date: '2026-03-01' }]
+    // AC-8 · ADR-095: tratamento encerrado é 'finalizada' no core, não 'vencendo'.
+    // Antes do PR 3 ele aparecia na lista de renovação (073/F-4).
+    it('AC-8: tratamento com active === false NÃO entra na lista', () => {
+      const result = getExpiringPrescriptions([
+        { id: 1, end_date: dateOffset(3), active: false },
+        { id: 2, end_date: dateOffset(-3), active: false },
+        { id: 3, end_date: dateOffset(3), active: true },
+      ])
 
-      const result = getExpiringPrescriptions(protocols)
+      expect(result).toHaveLength(1)
+      expect(result[0].protocol.id).toBe(3)
+    })
+
+    it('retorna objeto com protocol, status e daysRemaining', () => {
+      const result = getExpiringPrescriptions([{ id: 1, end_date: dateOffset(4) }])
 
       expect(result[0]).toHaveProperty('protocol')
       expect(result[0]).toHaveProperty('status')
-      expect(result[0]).toHaveProperty('daysRemaining')
       expect(result[0].protocol.id).toBe(1)
       expect(result[0].status).toBe(PRESCRIPTION_STATUS.VENCENDO)
       expect(result[0].daysRemaining).toBe(4)
+    })
+
+    it('daysRemaining é negativo para vencida e null sem end_date', () => {
+      const [vencida] = getExpiringPrescriptions([{ id: 1, end_date: dateOffset(-4) }])
+      expect(vencida.daysRemaining).toBe(-4)
+      expect(getExpiringPrescriptions([{ id: 2, end_date: null }])).toHaveLength(0)
     })
   })
 })

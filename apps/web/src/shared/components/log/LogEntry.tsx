@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { parseISO } from '@utils/dateUtils'
+import { formatStockCount } from '@dosiq/core'
 import './LogEntry.css'
 
 function LogEntry({ log, onEdit, onDelete }) {
@@ -51,7 +52,9 @@ function LogEntry({ log, onEdit, onDelete }) {
 
         <div className="log-details">
           <span className="log-quantity">
-            {log.quantity_taken} {log.quantity_taken === 1 ? 'comprimido' : 'comprimidos'}
+            {/* 073/AC-15 (F-8): resíduo da era "tudo é comprimido" — 1,5 mL de Ozempic
+                era exibido como "1,5 comprimidos". Unidade vem do core. */}
+            {formatStockCount(log.quantity_taken, log.medicine)}
           </span>
         </div>
 

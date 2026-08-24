@@ -22,7 +22,6 @@ import {
   stockUnitLabel,
   formatStockQuantity,
   FREQUENCY_LABELS,
-  PRESCRIPTION_EXPIRY_WARNING_DAYS,
   getTodayLocal,
 } from '@dosiq/core'
 import { addDays, getServerTimestamp, parseISO } from '@utils/dateUtils'
@@ -127,7 +126,10 @@ function _extractActiveMedicines(medicines, protocols) {
       return {
         id: medicine.id,
         name: medicine.name,
-        type: medicine.type || 'comprimido',
+        // 073/AC-13 (F-6): `medicines.type` é a NATUREZA ('medicamento'|'suplemento'),
+        // não a forma. O fallback 'comprimido' era resíduo da era pré-líquidos e
+        // injetava um valor fora do enum — ausência agora é ausência.
+        type: medicine.type || null,
         dosagePerPill,
         dosageUnit,
         ...dosageInfo,
@@ -320,14 +322,15 @@ function _extractStockAlerts(stockSummary, medicines) {
 function _extractPrescriptionStatus(protocols) {
   if (!protocols) return []
 
-  // 073/AC-24 (decisão D1): a janela canônica de vigência é a do core (14 dias). O
-  // literal 30 da web sai daqui; a função e o parâmetro morrem no PR 3 (AC-10).
-  const expiring = getExpiringPrescriptions(protocols, PRESCRIPTION_EXPIRY_WARNING_DAYS)
+  // 073/AC-9 (decisão D1): janela canônica de vigência = a do core (14 dias),
+  // aplicada DENTRO de getExpiringPrescriptions. O parâmetro `thresholdDays` foi
+  // deletado no PR 3 junto da cópia local de status (AC-10 · ADR-095).
+  const expiring = getExpiringPrescriptions(protocols)
 
   return expiring.map((item) => ({
     protocolId: item.protocol.id,
     medicineName: item.protocol.medicine?.name || item.protocol.medicine_name || 'Desconhecido',
-    status: item.status, // 'vencida' | 'vencendo' | 'vigente'
+    status: item.status, // 'vencida' | 'vencendo' (enum do core — ADR-095)
     daysRemaining: item.daysRemaining,
     endDate: item.protocol.end_date,
     isExpiring: item.status === 'vencendo',

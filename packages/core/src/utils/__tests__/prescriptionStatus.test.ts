@@ -52,12 +52,35 @@ describe('derivePrescriptionStatus', () => {
     ).toBe(PRESCRIPTION_STATUS.FINALIZADA)
   })
 
-  it('prioritizes VENCIDA/VENCENDO over active === false', () => {
+  // 073/AC-8 · ADR-095: a ordem foi INVERTIDA em 2026-08-23. Encerramento
+  // deliberado (`active === false`) vence o fato temporal — antes disso um
+  // tratamento pausado/finalizado era anunciado como "vencendo" e pedia
+  // renovação de uma receita que ninguém ia renovar (F-4).
+  it('prioritizes active === false over VENCIDA/VENCENDO (ADR-095)', () => {
     expect(
       derivePrescriptionStatus({ end_date: '2026-06-20', active: false }, NOW)
-    ).toBe(PRESCRIPTION_STATUS.VENCIDA)
+    ).toBe(PRESCRIPTION_STATUS.FINALIZADA)
     expect(
       derivePrescriptionStatus({ end_date: '2026-07-01', active: false }, NOW)
+    ).toBe(PRESCRIPTION_STATUS.FINALIZADA)
+  })
+
+  it('keeps VENCIDA/VENCENDO when active is true or absent', () => {
+    expect(
+      derivePrescriptionStatus({ end_date: '2026-06-20', active: true }, NOW)
+    ).toBe(PRESCRIPTION_STATUS.VENCIDA)
+    expect(
+      derivePrescriptionStatus({ end_date: '2026-07-01' }, NOW)
     ).toBe(PRESCRIPTION_STATUS.VENCENDO)
+  })
+
+  // Limite declarado no ADR-095: sem `end_date` não há vigência a resolver,
+  // então `active === false` NÃO vira FINALIZADA aqui (comportamento antigo
+  // preservado de propósito — quem responde por tratamento encerrado sem
+  // prazo é `resolveTreatmentStatus`, não este helper de VIGÊNCIA).
+  it('returns ATIVA when active === false but end_date is absent', () => {
+    expect(
+      derivePrescriptionStatus({ end_date: null, active: false }, NOW)
+    ).toBe(PRESCRIPTION_STATUS.ATIVA)
   })
 })

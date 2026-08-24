@@ -422,12 +422,9 @@ function buildPrescriptionRows(prescriptionStatus = [], protocols = [], medicine
       id: prescription.protocolId,
       label: formatTreatmentLabel(protocol, medicine),
       status: prescription.status,
-      statusLabel:
-        prescription.status === 'vencida'
-          ? 'Vencida'
-          : prescription.status === 'vencendo'
-            ? 'Vencendo'
-            : 'Vigente',
+      // 073/AC-12: só 'vencida' e 'vencendo' chegam aqui (getExpiringPrescriptions
+      // filtra), então o antigo galho `: 'Vigente'` era inalcançável.
+      statusLabel: prescription.status === 'vencida' ? 'Vencida' : 'Vencendo',
       daysRemaining: prescription.daysRemaining,
       // 073/F-21: "-3" não é informação — a linha dizia "Vencida | -3 | 2026-08-18".
       daysLabel: _formatPrescriptionDays(prescription.daysRemaining),

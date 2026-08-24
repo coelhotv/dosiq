@@ -139,8 +139,9 @@ export function buildAttentionItems(stockRows, prescriptionRows, titrationRows) 
             : _stockShortageDetail(item),
         tone: item.severity,
       })),
+    // 073/AC-12: `prescriptionRows` só contém vencida/vencendo (getExpiringPrescriptions
+    // filtra na origem), então o antigo `.filter(status !== 'vigente')` era inerte.
     ...prescriptionRows
-      .filter((item) => item.status !== 'vigente')
       .slice(0, 4)
       .map((item) => ({
         label: item.label,
