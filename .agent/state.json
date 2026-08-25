@@ -8,42 +8,24 @@
     "tier": 1,
     "spec_dir": "plans/specs/050-notification-integrity",
     "spec": "plans/specs/050-notification-integrity/spec.md",
-    "goal": "050 PR 4 — fatiar _reminderHelpers.ts (move-only) — PR #812 ABERTO, aguardando aprovação do PO",
+    "goal": "050 PR 4 — fatiar _reminderHelpers.ts (move-only) — MERGEADO",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/050-notification-integrity"
     ],
-    "merged_squash": "1c189e5c (squash merge into main)",
+    "merged_squash": "d3c83ff2 (squash merge into main)",
     "merged_history": [
       {
-        "pr": 809,
-        "squash": "e628a446",
-        "spec": "073 PR 1 — o documento (Slices A+F+G)",
-        "tier": 2,
-        "date": "2026-08-22",
+        "pr": 812,
+        "squash": "d3c83ff2",
+        "spec": "050 PR 4 — fatiar _reminderHelpers.ts (move-only)",
+        "tier": 1,
+        "date": "2026-08-25",
         "base_branch": "main",
-        "note": "PDF de consulta parava de mentir sobre a dose. 4 formatadores locais do builder deletados -> core (Lantus 10 UI saía '1.000 UI'; GLP-1 semanal saía '1x/dia'). Vigência única via isProtocolVigentOn avaliada em generatedAt, e POR DIA na série de adesão (muda o número exibido, declarado no CHANGELOG); isenção :171 do vigency-single-source.sh REVOGADA. F-24: calculateTitrationData NÃO foi alterada (CON-032, o contrato dela é progresso) — quem passou a distinguir 'sem escada' de 'escada concluída' é o extrator. ⚠️ A 1ª entrega do slice G passou nos gates com um CONTADOR '4/4' em vez da escada; quem pegou foi o PO no smoke do PDF (AC-37) — o guard ser o DOCUMENTO não foi formalidade. 2ª rodada trouxe também AC-39 e a tabela esticando caractere a caractere. ACHADO que matou o risco R2 do plan: fonte UTF-8 era desnecessária (jsPDF padrão é cp1252 e cobre todo acento PT); o que NÃO cobre é o '≈', que saía como '(\"H' no meio da dose -> pdfSafe na fronteira, zero delta de bundle. RC5 3 auto-fixes; RC6 7/7 chunks (RC6_MAX_CHUNKS=7 — o default 6 dropava um chunk), 0 critical, 1 high REAL: currentDoseLabel recalculava com o medicamento do PROTOCOLO enquanto a escada já resolvia por degrau (R-299) — corrigido reusando o doseLabel da escada, não recomputando. SQP web 4.22.5->4.23.0. Nasceram R-315 e AP-338. Decisões D27 (AC-39 não bloqueia) e D28 (datas do Mounjaro = resíduo dos smokes da 029)."
-      },
-      {
-        "pr": 810,
-        "squash": "7be9c90d",
-        "spec": "073 PR 2 — a conta (Slices D+E)",
-        "tier": 2,
-        "date": "2026-08-23",
-        "base_branch": "main",
-        "note": "Cartão de emergência e modo consulta pararam de errar a posologia. F-13 era Σ(dose)×Σ(tomadas): com 2 tratamentos vigentes do mesmo medicamento a dose diária DOBRAVA — invisível com fixture de 1 protocolo, porque aí as duas fórmulas coincidem (AP-339). O fixture de 2 protocolos veio PRIMEIRO, por isso. Cadência entrou nos DOIS ramos (não só no sólido — o líquido também tratava semanal como diário) e a janela de receita caiu de 30 p/ os 14 canônicos do core. Cartão: vigência do core + uma linha por tratamento (Map por medicine_id engolia o 2º) + QR da mesma lista. Farol vigency-single-source.sh estendido a emergency/ e consultation/ COM prova de sonda — o gate existia, estava verde, e não olhava para lá (R-316). ⚠️ O smoke do PO pegou 3 defeitos que os gates não veem, todos de FRONTEIRA DE EXIBIÇÃO: dízima da média diária (formatNumberPtBR não limita casas → roundForDisplay no core, e o _formatStockAmount do PDF, cópia nascida no PR 1, passou a reusar), receita vencida há 4 dias exibida como 'Hoje' (daysRemaining negativo lido como zero) e 'mg' literal no chip de titulação (10 UI de Lantus virava '10mg'). RC6 6/6 chunks + pass B: 1 medium REAL — getTodayLocal() congelado dentro do useMemo faria o cartão montado por cima da meia-noite voltar a listar o vencido; virou o hook useLocalToday (visibilitychange/focus, sem timer), com prova de MUTAÇÃO. A 1ª execução do RC6 foi barrada pelo egress guard por um e-mail real num comentário meu — removido, não liberado. SQP web 4.23.0->4.24.0 com 3 mudanças de número exibido declaradas."
-      },
-      {
-        "pr": 811,
-        "squash": "1c189e5c",
-        "spec": "073 PR 3 — fonte única (Slices B+C)",
-        "tier": 2,
-        "date": "2026-08-24",
-        "base_branch": "main",
-        "note": "Fecha a spec 073 (3/3). A web tinha um SEGUNDO resolvedor de status de receita, com enum e janela próprios (30d contra os 14 do core) — o app e o PDF discordavam sobre a MESMA receita. Deletado, junto de PRESCRIPTION_STATUS_LABELS (morta) e do parâmetro thresholdDays. ADR-095 (accepted) fixa a ordem com active===false ANTES de vencida/vencendo (D29: encerrado + prazo vencido ⇒ finalizada) e DECLARA COM TESTE o limite 'sem end_date ⇒ ativa' — é o tipo de default que a próxima sessão 'conserta' sem querer. ⚠️ O teste do core que codificava a ordem antiga caiu DE PROPÓSITO e foi REESCRITO; consertar o código seria desfazer o AC-8. Dos DOIS 'Vigente' do builder só o inalcançável morreu (o da tabela de tratamentos é fato pós-filtro — F-18); apareceu um TERCEIRO caso da mesma classe no caminho (.filter(status !== 'vigente') inerte em _pdfSectionBuilders). pdfGeneratorService.ts e LogEntry.tsx deletados: zero importadores, o F-7 duas vezes — o LogEntry levou o CSS e uma regra órfã do HealthHistory (as DUAS classes morreram no redesign). Stock.tsx congelava o dia no memo de CUSTOS também, não só no de prescrições. RC6 0/0/0 + 1 low REAL (ternário colapsado assumia 'Vencendo' como default — corrigido ecoando o status cru); o A/B foi abortado pelo próprio script por baseline sem significância, segundo run não gasto. Prova por DELEÇÃO: -1044 linhas líquidas. SQP core 0.22.2->0.23.0 + web 4.24.0->4.24.1, com 2 mudanças de exibição declaradas. Nasceu R-317 (sweep de rótulo ≠ sweep de dado). ⚠️ Processo: rodei validate:agent 4x por reexecutar comando caro só para recortar a saída — regra nova é redirecionar p/ log e grepar o arquivo."
+        "note": "Arquivo de 1.538 linhas que estourava SOZINHO o budget de chunk do RC6 (74.779B > 56.614B) e deixou 3 PRs seguidos (#799/#801/#803) com pass ADVISORY — fatiado em 6 arquivos por domínio sob server/bot/reminders/, SEM barrel (re-export manteria o hub falso e o payload gigante voltaria). ⚠️ A prova de move-only NÃO foi o `git diff -M`: quando 1 arquivo vira 6 a heurística de cópia não casa (`renames=0`, medido com --find-copies-harder). A prova que valeu foi comparar cada faixa do original com o corpo novo byte a byte: 6/6 VERBATIM, 1.511/1.538 linhas (o resto é header de imports/logger, reescrito por design). Virou R-318. 11 sites de referência, sendo o 11o o que grep de import e tsc NÃO pegam: a STRING de caminho em titrationEmbedContract.test.ts:34. Medição do objetivo (T048): maior arquivo 74.779B->24.687B, 3 de 4 chunks deixaram de ser ADVISORY. Objetivo PARCIAL — e a medição reaponta o gargalo: o PREÂMBULO (índices de regras/APs injetados) sozinho come 104.086B contra chunk budget de 37.914B. Pós-corte quem estoura o orçamento é a MEMÓRIA, não o código; próxima alavanca é RC6_IDX_LINE_MAX e é manutenção recorrente (os índices crescem a cada C5). RC6 (agy 4 chunks + claude full-context): 5 findings, ZERO introduzidos. 3 vieram marcados introduced:true — CLASSE NOVA DE FP: em refatoração move-only o arquivo original é deletado e os novos entram como file-added, então o revisor lê código movido como código novo. Conteúdo certo, atribuição errada, no campo exato em que o gate de merge chaveia. Refutados por linha no original (1505/1519/977). DÍVIDA PRÉ-EXISTENTE catalogada e NÃO corrigida de propósito (regra do move-only): AP-186 — o alerta de RECEITA varre user_settings SEM paginar (trunca em ~1000 usuários, some em silêncio; é o mesmo furo que a 050 já corrigiu no estoque no PR 1b); AP-298 em 3 pontos; AP-336 no expiry LEGADO sem lot.id (TRIAR: pode ser código a deletar pós-cutover). Registrada nos 3 arquivos de AP + índice + item 1.6 do BACKLOG_ORDER_2026H2. SQP server 4.2.2->4.2.3 (patch): sem mudança de comportamento, mas o PREFIXO DOS LOGS EM PROD MUDA (ReminderHelpers -> um logger por domínio) — declarado no CHANGELOG."
       }
     ],
-    "previous_session_note": "050 PR 4 entregue em PR #812 (aguarda review/merge do PO — R-060). _reminderHelpers.ts (1538 linhas) fatiado em 6 arquivos sob server/bot/reminders/, move-only provado por igualdade byte a byte (1511 linhas). Gates verdes: 2368 testes, tsc, lint, strict-island, vigency. SQP server 4.2.2->4.2.3 (patch; prefixo de log em prod muda). Nasceu R-318. T045-T048 fechadas; linha de medição do 812 appendada em 034-gemini-sunset/measurement.md. RC6: 5 findings, ZERO introduzidos — 3 vinham marcados introduced:true por atribuição falsa (move lido como file-added), refutados por linha do arquivo original. DÍVIDA NOVA CATALOGADA (não corrigida de propósito): AP-186 no alerta de receita (varre user_settings SEM paginar — trunca em ~1000 usuários e some em silêncio, é o mesmo furo que a 050 já corrigiu no estoque), AP-298 em 3 pontos, AP-336 no expiry legado (conferir se o caminho ainda vive pós-cutover). Medição: maior arquivo 74779B->24687B, 3/4 chunks deixaram de ser ADVISORY; novo gargalo é o PREÂMBULO (104086B contra budget 37914B) — próxima alavanca é RC6_IDX_LINE_MAX, não fatiar arquivo. Pendências herdadas inalteradas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2, T034/SC-003 da 050. Próximo na fila: spec 074 (cartão de emergência web, Tier 1, specified, aguarda planning).",
+    "previous_session_note": "050 PR 4 MERGEADO em 2026-08-25 (#812, squash d3c83ff2) — _reminderHelpers.ts deletado, 6 arquivos em server/bot/reminders/. Nasceu R-318. T045-T048 fechadas; linha de medição do 812 em 034-gemini-sunset/measurement.md. ⚠️ DÍVIDA ABERTA EM PROD, achada pelo RC6 e NÃO corrigida (o PR era move-only): (1) AP-186 — checkPrescriptionAlertsViaDispatcher varre user_settings SEM paginar: acima de ~1000 usuários o aviso de receita some em silêncio. É o item 1.6 da Onda 1 e o mais grave dos três; (2) AP-298 — error descartado em 3 pontos (prescriptionAlerts x2, stockAlerts x1); (3) AP-336 — expiry LEGADO despacha sem lot.id, TRIAR antes (pode ser código a deletar pós-cutover). Detalhe nos arquivos dos APs e em session.open_debt_050_pr4. Da 050 falta só T034/SC-003 (janela 21-27/08 vs 14-20/08). Pendências herdadas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2. Próximo na fila: item 1.6 (dívida acima, PR pequeno) ou spec 074 (cartão de emergência web, Tier 1, specified, aguarda planning).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
@@ -76,7 +58,7 @@
       "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
       "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "refactor/050-split-reminder-helpers",
+    "branch": "main",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
@@ -178,7 +160,8 @@
         "fix": "TRIAR PRIMEIRO: o eixo validade migrou p/ a fila no PR 2 (#802). Se o legado estiver morto pós-cutover, é código a DELETAR, não a corrigir",
         "detail": ".agent/memory/anti-patterns/data_and_schema/AP-336.md"
       }
-    ]
+    ],
+    "merged_pr": 812
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
