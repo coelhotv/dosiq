@@ -152,7 +152,33 @@
       "auto_fixed": 0,
       "ask_items": 0,
       "note": "RC5 num diff move-only: a revisão é a prova de igualdade byte a byte, não caça de bug. 1 import órfão (createDoseInstanceRepository, comentário) pego pelo lint e removido."
-    }
+    },
+    "open_debt_050_pr4": [
+      {
+        "ap": "AP-186",
+        "severity": "high",
+        "file": "server/bot/reminders/prescriptionAlerts.ts",
+        "what": "checkPrescriptionAlertsViaDispatcher varre user_settings SEM paginar — PostgREST trunca em ~1000 linhas sem erro e o alerta de receita some em silêncio p/ o fim da lista",
+        "fix": "trocar por _fetchAllPages('user_settings', ...) de reminders/_pagination.ts (padrão já usado pelo alerta de estoque, 050 PR 1b)",
+        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-186.md"
+      },
+      {
+        "ap": "AP-298",
+        "severity": "high",
+        "file": "server/bot/reminders/prescriptionAlerts.ts (2x) + reminders/stockAlerts.ts (1x)",
+        "what": "error descartado: falha de RLS/schema/rede vira 'sem dado', sem log; em stockAlerts o usersErr é capturado e logado como info 'nenhum usuário'",
+        "fix": "destruturar error, logar com correlationId, separar branch de falha do branch de lista vazia",
+        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-298.md"
+      },
+      {
+        "ap": "AP-336",
+        "severity": "medium",
+        "file": "server/bot/reminders/stockAlerts.ts",
+        "what": "stock_expiry_alert LEGADO despacha sem lot.id — 2 lotes no mesmo dia colapsam em 1 alerta",
+        "fix": "TRIAR PRIMEIRO: o eixo validade migrou p/ a fila no PR 2 (#802). Se o legado estiver morto pós-cutover, é código a DELETAR, não a corrigir",
+        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-336.md"
+      }
+    ]
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
