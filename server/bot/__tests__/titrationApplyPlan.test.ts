@@ -78,7 +78,7 @@ vi.mock('@dosiq/core', async () => ({
   resolveUserTz: vi.fn(async () => 'America/Sao_Paulo'),
 }));
 
-import { _applyTitrationPlan } from '../_reminderHelpers.js';
+import { _applyTitrationPlan } from '../reminders/titrationAlerts.js';
 
 const PLAN_DOSE_CHANGE = {
   transition: 'dose_change',

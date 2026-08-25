@@ -13,7 +13,7 @@
 # FORA DE ESCOPO por construção (não são predicado JS reusável):
 #   - QUERIES Supabase (`.eq('active', true)`, `.or('end_date.is.null…')`, `.is('paused_at', null)`)
 #     — filtro SQL redundante por performance; ver o comentário em createProtocolRepository.getActive
-#     e `server/bot/_reminderHelpers.ts` (predicado no SELECT, entregue pela spec 050).
+#     e `server/bot/reminders/` (predicado no SELECT, entregue pela spec 050).
 #   - `stock_paused_at` / `paused_at` de PERFIL ou de dose_instance: outro domínio.
 #
 # LIBERAÇÃO pontual: marcador inline `vigency-gate: ok — <motivo>` na própria linha ou na

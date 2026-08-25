@@ -2,13 +2,11 @@ import { supabase } from '../services/supabase.js';
 import { createLogger } from '../bot/logger.js';
 import { getCurrentCorrelationId } from './correlationLogger.js';
 
-import { 
-  checkRemindersViaDispatcher, 
-  runDailyDigestViaDispatcher, 
-  checkStockAlertsViaDispatcher, 
-  checkTitrationAlertsViaDispatcher, 
-  checkPrescriptionAlertsViaDispatcher 
-} from './_reminderHelpers.js';
+import { checkRemindersViaDispatcher } from './reminders/doseReminders.js';
+import { runDailyDigestViaDispatcher } from './reminders/dailyDigest.js';
+import { checkStockAlertsViaDispatcher } from './reminders/stockAlerts.js';
+import { checkTitrationAlertsViaDispatcher } from './reminders/titrationAlerts.js';
+import { checkPrescriptionAlertsViaDispatcher } from './reminders/prescriptionAlerts.js';
 
 import { 
   runDailyAdherenceReportViaDispatcher, 

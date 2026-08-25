@@ -23,7 +23,7 @@ import {
   buildWeeklyAdherenceData,
   buildMonthlyReportData
 } from '../server/bot/_adherenceHelpers.js';
-import { buildDailyDigestData } from '../server/bot/_reminderHelpers.js';
+import { buildDailyDigestData } from '../server/bot/reminders/dailyDigest.js';
 import { runConsentPrune } from '../server/bot/consentPrune.js';
 import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';

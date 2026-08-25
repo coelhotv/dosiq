@@ -5,7 +5,7 @@
 // inalterada. Fail-safe (AP-277): coluna NULL/ausente → tratado como ON.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkStockAlertsViaDispatcher } from '../_reminderHelpers.js';
+import { checkStockAlertsViaDispatcher } from '../reminders/stockAlerts.js';
 
 const mockDataQueue: any[] = [];
 

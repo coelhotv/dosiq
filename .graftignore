@@ -1,0 +1,15 @@
+# .graftignore — excluídos completamente do grafo AST
+# (não indexados, invisíveis para todos os comandos)
+
+# Diretórios não-código que o git tracka mas não são fonte
+/bug-logs/
+/scratch/
+/screenshots/
+/plans/
+/data/
+
+# Mocks de planejamento (não são código real do projeto)
+/plans/mocks_app_mobile/
+
+# Scripts utilitários avulsos (análise, backfill, debug)
+/scripts/

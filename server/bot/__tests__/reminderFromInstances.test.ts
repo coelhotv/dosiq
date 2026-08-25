@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkRemindersViaDispatcher } from '../_reminderHelpers.js';
+import { checkRemindersViaDispatcher } from '../reminders/doseReminders.js';
 
 const mockDataQueue = [];
 

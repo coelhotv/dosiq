@@ -24,7 +24,7 @@ import {
   _scanStockAlertCandidates,
   _computeStockAlertPayload,
   _biologicalExpiryDaysLeft,
-} from '../_reminderHelpers.js';
+} from '../reminders/stockAlerts.js';
 
 // Âncora do alerta de volume: 10:00–10:09 na TZ DO USUÁRIO.
 // - `minute < 10` em vez de `minute === 0` (o do legado): família AP-259 — um tick que pule o

@@ -6,7 +6,7 @@
 // teste mediria o mock em vez do filtro real do código sob teste.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkStockAlertsViaDispatcher } from '../_reminderHelpers.js';
+import { checkStockAlertsViaDispatcher } from '../reminders/stockAlerts.js';
 
 const mockDataQueue: any[] = [];
 

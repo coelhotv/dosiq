@@ -15,7 +15,7 @@ server/bot/
   alerts.ts            # Orquestrador de alertas inteligentes
   inlineQuery.ts       # Handlers de busca inline
   _adherenceHelpers.ts # Helpers internos de adesão
-  _reminderHelpers.ts  # Helpers internos de lembretes
+  reminders/           # Lembretes por domínio (dose, digest, estoque, titulação, receita)
   callbacks/           # Handlers de callback (botões inline)
   commands/            # Handlers de comandos (/start, /status, etc.)
   middleware/          # Processamento de requests e sessões

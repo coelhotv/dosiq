@@ -1,0 +1,19 @@
+# .graftignore-deep — indexados no grafo AST, excluídos do LLM (--deep)
+# (visíveis em blast, callers, ask, grep — mas sem crux/summary/synthesis)
+
+# Testes unitários e de integração
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Diretórios de testes
+**/__tests__/
+
+# Mocks e fixtures
+**/__mocks__/
+**/fixtures/
+
+# Arquivos de configuração de testes
+**/vitest.*.config.*
+**/jest.config.*

@@ -11,7 +11,7 @@
 
 import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
-import { _biologicalExpiryDaysLeft } from '../_reminderHelpers.js';
+import { _biologicalExpiryDaysLeft } from '../reminders/stockAlerts.js';
 
 const logger = createLogger('StockExpiryContent');
 
