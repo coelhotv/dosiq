@@ -31,7 +31,7 @@ const EMBEDS_QUE_ALIMENTAM_O_GERADOR = [
   'packages/core/src/repositories/createProtocolRepository.ts',
   'packages/core/src/services/timezoneRegen.ts',
   'server/bot/doseInstanceScheduler.ts',
-  'server/bot/_reminderHelpers.ts',
+  'server/bot/reminders/titrationAlerts.ts',
   'apps/mobile/src/features/treatments/services/titrationService.ts',
   'apps/mobile/src/features/dashboard/services/dashboardService.ts',
 ]

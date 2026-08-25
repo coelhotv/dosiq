@@ -8,7 +8,7 @@
 
 import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
-import { _buildProtocolsAndStockMaps, _computeStockAlertPayload } from '../_reminderHelpers.js';
+import { _buildProtocolsAndStockMaps, _computeStockAlertPayload } from '../reminders/stockAlerts.js';
 
 const logger = createLogger('StockAlertContent');
 

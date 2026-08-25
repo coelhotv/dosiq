@@ -7,6 +7,16 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Lembretes do bot: um arquivo virou cinco
+
+- **Chore** (`patch` server `4.2.3`). Refatoração interna sem nenhuma mudança de comportamento: o
+  arquivo de helpers de lembretes (1.538 linhas) foi dividido por domínio — dose, resumo diário,
+  estoque, titulação e receita. Motivo de processo, não estético: sozinho ele estourava o
+  orçamento de leitura do revisor de IA, que revisou três PRs seguidos em modo degradado.
+  ⚠️ O **prefixo dos logs de produção muda**: as linhas que saíam como `ReminderHelpers` passam a
+  sair como `DoseReminders`, `DailyDigest`, `StockAlerts`, `TitrationAlerts` e
+  `PrescriptionAlerts` — quem tiver filtro ou alerta preso ao nome antigo precisa atualizar.
+
 ### Status de receita: uma fonte só
 
 - **Change** (`minor` core `0.23.0` + `patch` web `4.24.1`). O app e o PDF de consulta usavam

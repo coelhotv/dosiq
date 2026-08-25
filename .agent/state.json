@@ -4,16 +4,15 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "tier": 2,
-    "spec_dir": "plans/specs/073-fix-clinical-data",
-    "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 PR 3 — \"fonte única\" (Slices B+C) — MERGEADO · spec 073 COMPLETA",
-    "goal_type": "fix",
+    "status": "analysis",
+    "tier": 1,
+    "spec_dir": "plans/specs/050-notification-integrity",
+    "spec": "plans/specs/050-notification-integrity/spec.md",
+    "goal": "050 PR 4 — fatiar server/bot/_reminderHelpers.ts em server/bot/reminders/ (move-only, T045-T048)",
+    "goal_type": "refactor",
     "spec_dirs": [
-      "plans/specs/073-fix-clinical-data"
+      "plans/specs/050-notification-integrity"
     ],
-    "merged_pr": 811,
     "merged_squash": "1c189e5c (squash merge into main)",
     "merged_history": [
       {
@@ -77,7 +76,7 @@
       "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
       "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "main",
+    "branch": "refactor/050-split-reminder-helpers",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
@@ -144,9 +143,8 @@
       "AC-40 → spec 073 PO-11"
     ],
     "ceremony_type": "eng-review",
-    "plan": "plans/specs/073-fix-clinical-data/plan.md",
-    "tasks": "plans/specs/073-fix-clinical-data/tasks.md",
-    "pr": 811
+    "plan": "plans/specs/050-notification-integrity/plan.md",
+    "tasks": "plans/specs/050-notification-integrity/tasks.md"
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
@@ -162,7 +160,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-24T00:00:00-03:00"
+    "index_loaded_at": "2026-08-25T00:00:00-03:00"
   },
   "code_review": {
     "status": "issues_found",
