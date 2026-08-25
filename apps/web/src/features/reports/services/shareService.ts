@@ -124,7 +124,7 @@ async function getAuthToken() {
  * @throws {Error} Se o upload falhar ou usuário não estiver autenticado
  *
  * @example
- * const pdfBlob = await generatePDF()
+ * const pdfBlob = await generateConsultationPDF({ dashboardData })
  * const { url, expiresAt } = await shareReport(pdfBlob, {
  *   filename: 'relatorio-medicamentos.pdf',
  *   expiresInHours: 48

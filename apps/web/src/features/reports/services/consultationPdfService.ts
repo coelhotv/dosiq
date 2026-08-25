@@ -711,7 +711,10 @@ function renderPrescriptionPage(doc, autoTable, pdfData) {
   doc.addPage()
   doc.setFontSize(12)
   doc.setTextColor(...rgb(COLORS.text))
-  doc.text('Prescrições', PAGE.margin, 18)
+  // 073/AC-11 (decisão D24): a seção lista ALERTAS (vencidas e vencendo), não o
+  // conjunto das receitas — o título antigo fazia ausência de linha parecer
+  // ausência de prescrição.
+  doc.text('Receitas a renovar', PAGE.margin, 18)
 
   if (pdfData.prescriptionRows.length === 0) {
     doc.setFontSize(9)

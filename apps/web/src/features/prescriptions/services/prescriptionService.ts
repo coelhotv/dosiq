@@ -1,146 +1,61 @@
 /**
  * Prescription Service - Serviço para rastreamento de validade de receitas
  *
- * Este módulo contém funções puras para calcular o status de validade
- * de receitas médicas baseado na data de término do protocolo.
+ * Fonte ÚNICA de status: `derivePrescriptionStatus` do `@dosiq/core` (ADR-095).
+ * A cópia local (`getPrescriptionStatus`, `PRESCRIPTION_STATUS`, janela de 30 dias)
+ * foi deletada no PR 3 da spec 073 — o app e o PDF divergiam sobre a mesma receita.
  *
  * @module prescriptionService
  */
 
 import { parseLocalDate, getTodayLocal, daysDifference } from '@utils/dateUtils'
+import { derivePrescriptionStatus, PRESCRIPTION_STATUS } from '@dosiq/core'
 
 /**
- * Status possíveis para uma receita médica.
- * @readonly
- * @enum {string}
+ * Dias restantes até o fim da vigência (negativo = vencida há N dias).
+ * `null` quando não há `end_date` — não existe prazo a contar.
+ * @private
  */
-export const PRESCRIPTION_STATUS = {
-  VIGENTE: 'vigente',
-  VENCENDO: 'vencendo',
-  VENCIDA: 'vencida',
+function _daysRemaining(protocol) {
+  if (!protocol?.end_date) return null
+  return daysDifference(parseLocalDate(getTodayLocal()), parseLocalDate(protocol.end_date))
 }
 
 /**
- * Labels de status para exibição na interface.
- */
-export const PRESCRIPTION_STATUS_LABELS = {
-  [PRESCRIPTION_STATUS.VIGENTE]: 'Vigente',
-  [PRESCRIPTION_STATUS.VENCENDO]: 'Vencendo',
-  [PRESCRIPTION_STATUS.VENCIDA]: 'Vencida',
-}
-
-/**
- * Calcula o status de validade de uma receita médica baseado no protocolo.
+ * Filtra protocolos cuja receita exige atenção: vencidas e vencendo dentro da
+ * janela canônica do core (`PRESCRIPTION_EXPIRY_WARNING_DAYS` = 14 dias).
  *
- * A lógica de status é:
- * - Se end_date for null: status = 'vigente', daysRemaining = null (sem expiração)
- * - Se hoje > end_date: status = 'vencida', daysRemaining = número negativo
- * - Se daysRemaining <= 30: status = 'vencendo', daysRemaining = calculado
- * - Caso contrário: status = 'vigente', daysRemaining = calculado
+ * Ordenados por urgência (vencidas primeiro, depois menos dias restantes).
  *
- * @param {Object} protocol - Protocolo com campo end_date (string YYYY-MM-DD ou null)
- * @returns {{ status: string, daysRemaining: number|null }} Status da receita e dias restantes
+ * Tratamento encerrado (`active === false`) NÃO entra: o core o classifica como
+ * 'finalizada' (ADR-095) e pedir renovação dele é ruído clínico (073/F-4).
+ *
+ * @param {Array<Object>} protocols - Lista de protocolos com `end_date` e `active`
+ * @returns {Array<{ protocol: Object, status: string, daysRemaining: number|null }>}
  *
  * @example
- * // Receita sem data de término (ativa indefinidamente)
- * getPrescriptionStatus({ end_date: null })
- * // => { status: 'vigente', daysRemaining: null }
- *
- * @example
- * // Receita vencida
- * getPrescriptionStatus({ end_date: '2026-01-01' }) // hoje é 2026-02-25
- * // => { status: 'vencida', daysRemaining: -55 }
- *
- * @example
- * // Receita vencendo em 15 dias
- * getPrescriptionStatus({ end_date: '2026-03-12' }) // hoje é 2026-02-25
- * // => { status: 'vencendo', daysRemaining: 15 }
- *
- * @example
- * // Receita vigente com mais de 30 dias
- * getPrescriptionStatus({ end_date: '2026-06-01' }) // hoje é 2026-02-25
- * // => { status: 'vigente', daysRemaining: 96 }
- */
-export function getPrescriptionStatus(protocol) {
-  // Se não há data de término, a receita está sempre vigente
-  if (!protocol.end_date) {
-    return {
-      status: PRESCRIPTION_STATUS.VIGENTE,
-      daysRemaining: null,
-    }
-  }
-
-  const today = parseLocalDate(getTodayLocal())
-  const endDate = parseLocalDate(protocol.end_date)
-  const remaining = daysDifference(today, endDate)
-
-  // Se a data de término já passou
-  if (remaining < 0) {
-    return {
-      status: PRESCRIPTION_STATUS.VENCIDA,
-      daysRemaining: remaining,
-    }
-  }
-
-  // Se está vencendo (30 dias ou menos)
-  if (remaining <= 30) {
-    return {
-      status: PRESCRIPTION_STATUS.VENCENDO,
-      daysRemaining: remaining,
-    }
-  }
-
-  // Receita vigente com mais de 30 dias
-  return {
-    status: PRESCRIPTION_STATUS.VIGENTE,
-    daysRemaining: remaining,
-  }
-}
-
-/**
- * Filtra protocolos que estão com receita vencendo dentro do limite especificado.
- *
- * Retorna apenas protocolos com status 'vencendo' ou 'vencida', ordenados por
- * dias restantes (mais urgentes primeiro).
- *
- * @param {Array<Object>} protocols - Lista de protocolos com campo end_date
- * @param {number} [thresholdDays=30] - Limite de dias para considerar "vencendo"
- * @returns {Array<{ protocol: Object, status: string, daysRemaining: number|null }>} Protocolos filtrados com status
- *
- * @example
- * const protocols = [
+ * getExpiringPrescriptions([
  *   { id: 1, end_date: '2026-03-01' },  // vencendo em 4 dias
- *   { id: 2, end_date: '2026-06-01' },  // vigente
+ *   { id: 2, end_date: '2026-06-01' },  // ativa
  *   { id: 3, end_date: null },          // sem expiração
  *   { id: 4, end_date: '2026-01-01' },  // vencida
- * ]
- *
- * getExpiringPrescriptions(protocols)
+ * ])
  * // => [
  * //   { protocol: { id: 4, ... }, status: 'vencida', daysRemaining: -55 },
  * //   { protocol: { id: 1, ... }, status: 'vencendo', daysRemaining: 4 },
  * // ]
  */
-export function getExpiringPrescriptions(protocols, thresholdDays = 30) {
-  const results = protocols
+export function getExpiringPrescriptions(protocols) {
+  return protocols
     .map((protocol) => ({
       protocol,
-      ...getPrescriptionStatus(protocol),
+      status: derivePrescriptionStatus(protocol),
+      daysRemaining: _daysRemaining(protocol),
     }))
-    // Filtro unificado: inclui vencidas e vencendo dentro do threshold
-    .filter((item) => {
-      // Vencidas sempre incluídas
-      if (item.status === PRESCRIPTION_STATUS.VENCIDA) {
-        return true
-      }
-      // Vencendo: verifica se está dentro do threshold
-      if (item.status === PRESCRIPTION_STATUS.VENCENDO) {
-        return item.daysRemaining !== null && item.daysRemaining <= thresholdDays
-      }
-      // Outros status não são incluídos
-      return false
-    })
-    // Ordena por urgência: vencidas primeiro, depois por dias restantes
+    .filter(
+      (item) =>
+        item.status === PRESCRIPTION_STATUS.VENCIDA || item.status === PRESCRIPTION_STATUS.VENCENDO
+    )
     .sort((a, b) => {
       // Vencidas vêm primeiro
       if (a.status === PRESCRIPTION_STATUS.VENCIDA && b.status !== PRESCRIPTION_STATUS.VENCIDA) {
@@ -152,13 +67,8 @@ export function getExpiringPrescriptions(protocols, thresholdDays = 30) {
       // Depois ordena por dias restantes (menos dias = mais urgente)
       return (a.daysRemaining ?? Infinity) - (b.daysRemaining ?? Infinity)
     })
-
-  return results
 }
 
 export default {
-  getPrescriptionStatus,
   getExpiringPrescriptions,
-  PRESCRIPTION_STATUS,
-  PRESCRIPTION_STATUS_LABELS,
 }

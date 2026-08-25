@@ -422,12 +422,18 @@ function buildPrescriptionRows(prescriptionStatus = [], protocols = [], medicine
       id: prescription.protocolId,
       label: formatTreatmentLabel(protocol, medicine),
       status: prescription.status,
+      // 073/AC-12: só 'vencida' e 'vencendo' chegam aqui (getExpiringPrescriptions
+      // filtra), então o antigo galho `: 'Vigente'` era inalcançável — ele rotulava
+      // de VIGENTE justamente a linha de uma seção de alertas.
+      // O default agora ecoa o status cru em vez de assumir 'Vencendo': se um dia
+      // chegar 'ativa'/'finalizada' aqui, o documento mostra o valor estranho em vez
+      // de anunciar urgência que não existe (RC6 #811, fail-safe).
       statusLabel:
         prescription.status === 'vencida'
           ? 'Vencida'
           : prescription.status === 'vencendo'
             ? 'Vencendo'
-            : 'Vigente',
+            : prescription.status,
       daysRemaining: prescription.daysRemaining,
       // 073/F-21: "-3" não é informação — a linha dizia "Vencida | -3 | 2026-08-18".
       daysLabel: _formatPrescriptionDays(prescription.daysRemaining),

@@ -77,7 +77,7 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                       <span className="sr-consultation__dosage-unknown">Não informado</span>
                     )}
                   </td>
-                  <td>{med.type}</td>
+                  <td>{med.type || 'Não informado'}</td>
                 </tr>
               ))}
             </tbody>

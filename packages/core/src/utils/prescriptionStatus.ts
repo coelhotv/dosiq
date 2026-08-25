@@ -27,12 +27,17 @@ const MS_PER_DAY = 86400000
 /**
  * Resolve o status de vigência de uma prescrição/protocolo.
  *
- * Ordem de precedência (igual à web em Stock.jsx::deriveProtocolStatus):
+ * Ordem de precedência (073/AC-8 · ADR-095 — INVERTIDA em 2026-08-23):
  *   1. sem end_date              → ATIVA (vigência indeterminada)
- *   2. end_date no passado       → VENCIDA
- *   3. end_date hoje ou em ≤14d  → VENCENDO (válida até o fim do dia de término)
- *   4. active === false          → FINALIZADA
+ *   2. active === false          → FINALIZADA
+ *   3. end_date no passado       → VENCIDA
+ *   4. end_date hoje ou em ≤14d  → VENCENDO (válida até o fim do dia de término)
  *   5. caso contrário            → ATIVA
+ *
+ * `active === false` vem ANTES de VENCIDA/VENCENDO porque encerramento deliberado
+ * é decisão do usuário sobre o tratamento, e alertar renovação de receita que
+ * ninguém vai renovar é ruído clínico. A ordem antiga classificava tratamento
+ * pausado/finalizado como 'vencendo' (073/F-4).
  *
  * Compara DATAS DE CALENDÁRIO (normaliza `now` para meia-noite local + `Math.round`),
  * não diferença de milissegundos em tempo real — senão uma prescrição que vence HOJE
@@ -49,12 +54,12 @@ interface PrescriptionStatusProtocol {
 
 export function derivePrescriptionStatus(protocol: PrescriptionStatusProtocol | null | undefined, now = getNow()): string {
   if (!protocol?.end_date) return PRESCRIPTION_STATUS.ATIVA
+  if (protocol.active === false) return PRESCRIPTION_STATUS.FINALIZADA
   const end = parseLocalDate(protocol.end_date)
   // Meia-noite local de hoje, sem `new Date()` (R-020): formata→reparse.
   const today = parseLocalDate(formatLocalDate(now))
   const daysLeft = Math.round((end.getTime() - today.getTime()) / MS_PER_DAY)
   if (daysLeft < 0) return PRESCRIPTION_STATUS.VENCIDA
   if (daysLeft <= PRESCRIPTION_EXPIRY_WARNING_DAYS) return PRESCRIPTION_STATUS.VENCENDO
-  if (protocol.active === false) return PRESCRIPTION_STATUS.FINALIZADA
   return PRESCRIPTION_STATUS.ATIVA
 }

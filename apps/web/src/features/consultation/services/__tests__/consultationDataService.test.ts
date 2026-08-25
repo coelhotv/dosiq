@@ -43,7 +43,6 @@ vi.mock('@emergency/services/emergencyCardService', () => ({
 
 // Mock do prescriptionService
 vi.mock('@prescriptions/services/prescriptionService', () => ({
-  getPrescriptionStatus: vi.fn(() => ({ status: 'vigente', daysRemaining: 30 })),
   getExpiringPrescriptions: vi.fn(() => mocks.mockPrescriptions),
 }))
 
@@ -828,13 +827,12 @@ describe('consultationDataService', () => {
       expect(result.activeMedicines).toEqual([])
     })
 
-    it('AC-24: a janela de prescrição é a canônica do core (14 dias), não o literal 30', () => {
+    it('AC-24/AC-9: a janela de prescrição é a canônica do core (14 dias), aplicada dentro do serviço', () => {
       getConsultationData(clinicalDashboard())
 
-      expect(getExpiringPrescriptions).toHaveBeenCalledWith(
-        expect.anything(),
-        PRESCRIPTION_EXPIRY_WARNING_DAYS
-      )
+      // ADR-095: `thresholdDays` foi deletado — a janela não é mais argumento,
+      // é a constante do core lida por getExpiringPrescriptions.
+      expect(getExpiringPrescriptions).toHaveBeenCalledWith(expect.anything())
       expect(PRESCRIPTION_EXPIRY_WARNING_DAYS).toBe(14)
     })
 

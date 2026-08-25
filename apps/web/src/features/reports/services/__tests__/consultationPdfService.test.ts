@@ -93,8 +93,8 @@ const mocks = vi.hoisted(() => {
       prescriptionRows: [
         {
           label: 'Hipertensao - Losartana',
-          status: 'vigente',
-          statusLabel: 'Vigente',
+          status: 'vencendo',
+          statusLabel: 'Vencendo',
           daysRemaining: 20,
           endDate: '2026-04-13',
         },

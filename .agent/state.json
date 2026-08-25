@@ -4,11 +4,11 @@
   "sprint": "2026-W31",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "reviewed",
     "tier": 2,
     "spec_dir": "plans/specs/073-fix-clinical-data",
     "spec": "plans/specs/073-fix-clinical-data/spec.md",
-    "goal": "073 PR 2 — \"a conta\" (Slices D+E) — MERGEADO",
+    "goal": "073 PR 3 — fonte única (slices B+C, T037-T047)",
     "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/073-fix-clinical-data"
@@ -70,7 +70,7 @@
       "D27 (2026-08-22, PO no smoke do PR 1): AC-39 não bloqueia — os degraus chegam pelo embed (sem `intake_unit`), o 'cp' vira 'un.' no PDF e o PO aceitou; o código trata 'cp' e tem teste, mas a demonstração no documento fica pendente de a escada completa chegar pelo fetch",
       "D28 (2026-08-22, PO): períodos fora de ordem na escada do Mounjaro são resíduo dos smokes da 029, não defeito — o PDF imprime started_at+duration na ordem de position e NÃO reordena por data (reordenar esconderia dado inconsistente num documento clínico)"
     ],
-    "branch": "main",
+    "branch": "fix/073-pr3-fonte-unica-prescricao",
     "blocked_on": [
       "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
       "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
@@ -163,7 +163,8 @@
         "SQP: minor core + patch web sobre 4.24.0; declarar no CHANGELOG a mudança de badge no estoque"
       ],
       "prova": "grep de DELEÇÃO (getPrescriptionStatus|thresholdDays|pdfGeneratorService|PRESCRIPTION_STATUS_LABELS ⇒ zero fora do core) + delta de linhas do PR NEGATIVO (SC-005)"
-    }
+    },
+    "pr": 811
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
@@ -182,21 +183,22 @@
     "index_loaded_at": "2026-08-22T19:35:00-03:00"
   },
   "code_review": {
-    "status": "clean",
+    "status": "issues_found",
     "critical": 0,
     "auto_fixed": 1,
-    "ask_items": 0,
-    "note": "RC5 do PR2: 1 auto-fix (cartão não omite medicamento sem cadastro — constituição IX)"
+    "ask_items": 1,
+    "note": "RC5 do PR3: 1 auto-fix (filter '.status !== vigente' inerte em _pdfSectionBuilders) + 1 ASK levado ao PO (LogEntry.tsx com zero importadores — corrigido, não deletado; decisão adiada)."
   },
   "ai_review": {
     "engine": "agy+claude",
     "status": "issues_found",
     "critical": 0,
     "high": 0,
+    "medium": 0,
+    "low": 1,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "medium": 1,
-    "pr": 810,
-    "note": "1 medium introduced: getTodayLocal() congelado dentro do useMemo do cartão. Corrigido com o hook useLocalToday (visibilitychange/focus) + prova de mutação. 1ª execução barrada pelo egress guard (e-mail real da conta de teste num comentário) — removido, não liberado."
+    "pr": 811,
+    "note": "pass A 3/3 chunks (agy) + pass B full-context (claude). 1 low introduced: ternário do statusLabel perdeu o default fail-safe e passava a assumir 'Vencendo'. Corrigido em 8f84ae0e ecoando o status cru — o galho morto ': Vigente' da AC-12 NÃO voltou. A/B abortado pelo próprio script (baseline 0 findings, sem significância — segundo run não gasto)."
   }
 }

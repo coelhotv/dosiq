@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useOnboarding } from './useOnboarding'
 import { cachedStockService } from '@shared/services/cachedServices'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { formatStockCount, stockUnitLabel } from '@dosiq/core'
 import Button from '@shared/components/ui/Button'
 import './StockStep.css'
 
@@ -13,7 +14,7 @@ const stockFormSchema = z.object({
   unitPrice: z.coerce.number().nonnegative('Preço não pode ser negativo.').optional().nullable(),
 })
 
-// Referência para o cálculo de duração do estoque (ex: 2 meses se 1 comprimido/dia)
+// Referência para o cálculo de duração do estoque (ex: 2 meses a 1 unidade/dia)
 const PREVIEW_MAX_QUANTITY = 60
 
 export default function StockStep() {
@@ -84,10 +85,11 @@ export default function StockStep() {
             min="1"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Ex: 30 comprimidos"
+            placeholder={`Ex: 30 ${stockUnitLabel(medicine)}`}
             disabled={isLoading}
           />
-          <small>Unidade: comprimidos</small>
+          {/* 073/AC-15 (F-8): a unidade vem do medicamento, não da era pré-líquidos. */}
+          <small>Unidade: {stockUnitLabel(medicine)}</small>
         </div>
 
         <div className="form-group">
@@ -102,7 +104,7 @@ export default function StockStep() {
             placeholder="Ex: 2.50"
             disabled={isLoading}
           />
-          <small>Preço por comprimido em R$</small>
+          <small>Preço por {stockUnitLabel(medicine)} em R$</small>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -121,7 +123,7 @@ export default function StockStep() {
           />
         </div>
         <div className="preview-text">
-          {quantity ? `${quantity} comprimidos` : 'Digite a quantidade'}
+          {quantity ? formatStockCount(quantity, medicine) : 'Digite a quantidade'}
         </div>
       </div>
 
