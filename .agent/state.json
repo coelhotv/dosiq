@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "coding",
+    "mode": "specifying",
     "status": "completed",
     "tier": 1,
     "spec_dir": "plans/specs/050-notification-integrity",
     "spec": "plans/specs/050-notification-integrity/spec.md",
-    "goal": "050 PR 4 — fatiar _reminderHelpers.ts (move-only) — MERGEADO",
+    "goal": "Avaliação dos cutovers pendentes (backlog H2) — PO-8 e SC-003 encerrados; AP-340 + spec 076 abertas",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/050-notification-integrity"
@@ -25,7 +25,7 @@
         "note": "Arquivo de 1.538 linhas que estourava SOZINHO o budget de chunk do RC6 (74.779B > 56.614B) e deixou 3 PRs seguidos (#799/#801/#803) com pass ADVISORY — fatiado em 6 arquivos por domínio sob server/bot/reminders/, SEM barrel (re-export manteria o hub falso e o payload gigante voltaria). ⚠️ A prova de move-only NÃO foi o `git diff -M`: quando 1 arquivo vira 6 a heurística de cópia não casa (`renames=0`, medido com --find-copies-harder). A prova que valeu foi comparar cada faixa do original com o corpo novo byte a byte: 6/6 VERBATIM, 1.511/1.538 linhas (o resto é header de imports/logger, reescrito por design). Virou R-318. 11 sites de referência, sendo o 11o o que grep de import e tsc NÃO pegam: a STRING de caminho em titrationEmbedContract.test.ts:34. Medição do objetivo (T048): maior arquivo 74.779B->24.687B, 3 de 4 chunks deixaram de ser ADVISORY. Objetivo PARCIAL — e a medição reaponta o gargalo: o PREÂMBULO (índices de regras/APs injetados) sozinho come 104.086B contra chunk budget de 37.914B. Pós-corte quem estoura o orçamento é a MEMÓRIA, não o código; próxima alavanca é RC6_IDX_LINE_MAX e é manutenção recorrente (os índices crescem a cada C5). RC6 (agy 4 chunks + claude full-context): 5 findings, ZERO introduzidos. 3 vieram marcados introduced:true — CLASSE NOVA DE FP: em refatoração move-only o arquivo original é deletado e os novos entram como file-added, então o revisor lê código movido como código novo. Conteúdo certo, atribuição errada, no campo exato em que o gate de merge chaveia. Refutados por linha no original (1505/1519/977). DÍVIDA PRÉ-EXISTENTE catalogada e NÃO corrigida de propósito (regra do move-only): AP-186 — o alerta de RECEITA varre user_settings SEM paginar (trunca em ~1000 usuários, some em silêncio; é o mesmo furo que a 050 já corrigiu no estoque no PR 1b); AP-298 em 3 pontos; AP-336 no expiry LEGADO sem lot.id (TRIAR: pode ser código a deletar pós-cutover). Registrada nos 3 arquivos de AP + índice + item 1.6 do BACKLOG_ORDER_2026H2. SQP server 4.2.2->4.2.3 (patch): sem mudança de comportamento, mas o PREFIXO DOS LOGS EM PROD MUDA (ReminderHelpers -> um logger por domínio) — declarado no CHANGELOG."
       }
     ],
-    "previous_session_note": "050 PR 4 MERGEADO em 2026-08-25 (#812, squash d3c83ff2) — _reminderHelpers.ts deletado, 6 arquivos em server/bot/reminders/. Nasceu R-318. T045-T048 fechadas; linha de medição do 812 em 034-gemini-sunset/measurement.md. ⚠️ DÍVIDA ABERTA EM PROD, achada pelo RC6 e NÃO corrigida (o PR era move-only): (1) AP-186 — checkPrescriptionAlertsViaDispatcher varre user_settings SEM paginar: acima de ~1000 usuários o aviso de receita some em silêncio. É o item 1.6 da Onda 1 e o mais grave dos três; (2) AP-298 — error descartado em 3 pontos (prescriptionAlerts x2, stockAlerts x1); (3) AP-336 — expiry LEGADO despacha sem lot.id, TRIAR antes (pode ser código a deletar pós-cutover). Detalhe nos arquivos dos APs e em session.open_debt_050_pr4. Da 050 falta só T034/SC-003 (janela 21-27/08 vs 14-20/08). Pendências herdadas: PO-8 da 067, REVOKE UPDATE(status) do 067 B2. Próximo na fila: item 1.6 (dívida acima, PR pequeno) ou spec 074 (cartão de emergência web, Tier 1, specified, aguarda planning).",
+    "previous_session_note": "2026-08-25 (sessão de avaliação, sem código): rodados os 4 gates do §3 do BACKLOG_ORDER_2026H2 contra o banco de produção. FECHADOS: (a) 067 PO-8 — corte de ruído da FR-040 provado, push_skipped_no_token = 15 linhas desde 19/08 com linhas==doses nos 3 usuários e kcarolinne@ a ZERO; (b) 050 SC-003 — encerrado por decisão do PO sem esperar 27/08: stock_alert migrou sem degrau no cutover (outbox abre 21/08 13:00, 31 sends, 0 failed/pending), e os outros 2 kinds não têm amostra de nenhum lado. SEGUEM BLOQUEADOS: 067 B2 (REVOKE UPDATE(status)) — device_activity não tem NENHUM device acima de 0.30.2 contra o limiar >=0.31.1, aplicar hoje = 42501 em 100% da frota; gatilho 4 do B2 está limpo (os únicos UPDATE crus em dose_instances tocam la_push_token/la_push_state). 046 — consent_revoked_at = 0 linhas, CONSENT_PRUNE_MODE=armed confirmado. 🔴 ACHADO PRINCIPAL: o alerta de RECEITA nunca rodou em produção. checkPrescriptionAlertsViaDispatcher filtra .eq('notifications_enabled', true) sobre user_settings — coluna INEXISTENTE (as reais são notification_preference + channel_*_enabled) ⇒ 42703 ⇒ throw ⇒ catch de topo loga e retorna ⇒ aborta antes do primeiro usuário, em todo run, desde sempre. Prova: prescription_alert tem ZERO linhas em toda a história do notification_log. Nasceu AP-340 e a spec 076 (prescription-alert-revival, specified, Tier 1, server-only, zero schema). O item 1.6 do backlog foi reescrito: mirava a paginação (AP-186) de uma função que morre antes do loop, e a base tem 46 usuários contra o teto de ~1.000. Triagem do AP-336 RESOLVIDA por vercel env pull: stock_expiry_alert ESTÁ em OUTBOX_KINDS ⇒ _processBiologicalExpiryAlerts é código morto a DELETAR (FR-007/AC-5 da 076). Próximo na fila: spec 076 (planning) ou 074 (cartão de emergência web).",
     "ceremonies_run": [],
     "ceremony_findings_count": 0,
     "ceremony_scope_decisions": [
@@ -60,8 +60,7 @@
     ],
     "branch": "main",
     "blocked_on": [
-      "PO-8 (067): medir o corte da FR-040 na 1a janela de dose pós-deploy",
-      "T034/SC-003 (050): comparar notification_log 21-27/08 vs 14-20/08"
+      "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
     "pending_migrations": [
       {
@@ -75,12 +74,8 @@
       }
     ],
     "cutover_050": {
-      "task": "T033",
-      "applied": "2026-08-20",
-      "verified_by": "vercel env pull --environment=production",
-      "value": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert",
-      "first_queue_cycle": "2026-08-21 10:00 local",
-      "rollback": "remover os 2 kinds do env; linhas pending do dia seguem drenando"
+      "sc_003": "ENCERRADO 2026-08-25 — stock_alert provado; expiry e prescription sem amostra (ver spec.md §SC-003)",
+      "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
       "AC-1 → spec 073 PO-1",
@@ -135,32 +130,7 @@
       "ask_items": 0,
       "note": "RC5 num diff move-only: a revisão é a prova de igualdade byte a byte, não caça de bug. 1 import órfão (createDoseInstanceRepository, comentário) pego pelo lint e removido."
     },
-    "open_debt_050_pr4": [
-      {
-        "ap": "AP-186",
-        "severity": "high",
-        "file": "server/bot/reminders/prescriptionAlerts.ts",
-        "what": "checkPrescriptionAlertsViaDispatcher varre user_settings SEM paginar — PostgREST trunca em ~1000 linhas sem erro e o alerta de receita some em silêncio p/ o fim da lista",
-        "fix": "trocar por _fetchAllPages('user_settings', ...) de reminders/_pagination.ts (padrão já usado pelo alerta de estoque, 050 PR 1b)",
-        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-186.md"
-      },
-      {
-        "ap": "AP-298",
-        "severity": "high",
-        "file": "server/bot/reminders/prescriptionAlerts.ts (2x) + reminders/stockAlerts.ts (1x)",
-        "what": "error descartado: falha de RLS/schema/rede vira 'sem dado', sem log; em stockAlerts o usersErr é capturado e logado como info 'nenhum usuário'",
-        "fix": "destruturar error, logar com correlationId, separar branch de falha do branch de lista vazia",
-        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-298.md"
-      },
-      {
-        "ap": "AP-336",
-        "severity": "medium",
-        "file": "server/bot/reminders/stockAlerts.ts",
-        "what": "stock_expiry_alert LEGADO despacha sem lot.id — 2 lotes no mesmo dia colapsam em 1 alerta",
-        "fix": "TRIAR PRIMEIRO: o eixo validade migrou p/ a fila no PR 2 (#802). Se o legado estiver morto pós-cutover, é código a DELETAR, não a corrigir",
-        "detail": ".agent/memory/anti-patterns/data_and_schema/AP-336.md"
-      }
-    ],
+    "open_debt_050_pr4": "MIGRADA para plans/specs/076-prescription-alert-revival (AP-340 é a causa real; AP-186/AP-298 entram como FR-005/FR-002; AP-336 triado = deleção)",
     "merged_pr": 812
   },
   "memory": {
