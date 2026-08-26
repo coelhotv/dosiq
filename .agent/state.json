@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
-    "tier": 2,
+    "mode": "coding",
+    "status": "completed",
+    "tier": 1,
     "spec_dir": "plans/specs/071-injection-bodymap",
     "spec": "plans/specs/071-injection-bodymap/spec.md",
-    "goal": "Spec 071 — BodyMapSelector (mapa anatômico de sítio de injeção)",
-    "goal_type": "feature",
+    "goal": "fix(mobile): sítio de injeção não aparece no bulk — embed sem presentation",
+    "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
       "plans/specs/071-injection-bodymap"
@@ -94,9 +94,9 @@
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 269,
-    "anti_patterns_count": 335,
+    "anti_patterns_count": 336,
     "decisions_count": 95,
     "contracts_count": 34,
     "distillation_due": false
@@ -106,7 +106,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-25T00:00:00-03:00"
+    "index_loaded_at": "2026-08-26T14:35:33.283419-03:00"
   },
   "code_review": {
     "status": "issues_found",

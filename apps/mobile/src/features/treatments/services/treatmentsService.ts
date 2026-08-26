@@ -111,6 +111,7 @@ export async function getAllTreatments(userId) {
           id,
           name,
           type,
+          presentation,
           dosage_per_pill,
           dosage_unit,
           concentration_volume_ml,

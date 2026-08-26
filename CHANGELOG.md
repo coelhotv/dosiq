@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Sítio de injeção sumia no registro em lote — mobile `0.31.3`→**`0.31.4`** (patch)
+
+- **Correção.** Ao registrar várias doses de uma vez, os injetáveis não mostravam os botões de
+  **local de aplicação** — e, se mostrassem, o local escolhido seria descartado ao salvar. Causa: a
+  consulta que carrega os tratamentos da tela em lote não pedia a coluna `presentation` do
+  medicamento, então a verificação "isto é injetável?" respondia sempre *não*.
+  Atingia o lote aberto por **bloco de horário, plano ou notificação**; o lote aberto pelo card de
+  prioridade e o registro de dose única nunca foram afetados (carregam o medicamento por outro
+  caminho, que já pedia a coluna).
+- **Canal: build de loja.** O bump de versão troca o *runtime* do app ([[R-314]]/ADR-082), então esta
+  correção não alcança ninguém por OTA — precisa de binário novo.
+- Nasce com trava: teste de **contrato do select** (o `select` é string, e nem `tsc` nem lint nem
+  teste com client mockado enxergam campo faltando — AP-341/R-267).
+
 ### Lembretes do bot: um arquivo virou cinco
 
 - **Chore** (`patch` server `4.2.3`). Refatoração interna sem nenhuma mudança de comportamento: o
