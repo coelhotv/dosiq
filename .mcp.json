@@ -2,9 +2,11 @@
   "mcpServers": {
     "graftroom": {
       "command": "graftroom",
-      "args": [
-        "mcp"
-      ]
+      "args": ["mcp"]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp"
     }
   }
 }
