@@ -3,13 +3,15 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
-    "tier": 2,
-    "spec_dir": "plans/specs/071-injection-bodymap",
-    "spec": "plans/specs/071-injection-bodymap/spec.md",
-    "goal": "Spec 071 — BodyMapSelector (mapa anatômico de sítio de injeção)",
-    "goal_type": "feature",
+    "mode": "coding",
+    "status": "completed",
+    "tier": 1,
+    "spec_dir": "plans/specs/076-prescription-alert-revival",
+    "spec": "plans/specs/076-prescription-alert-revival/spec.md",
+    "plan": "plans/specs/076-prescription-alert-revival/plan.md",
+    "tasks": "plans/specs/076-prescription-alert-revival/tasks.md",
+    "goal": "fix: ressuscitar o job de alerta de receita (076) — job sem caminho de prod + coluna fantasma no filtro",
+    "goal_type": "fix",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
       "plans/specs/071-injection-bodymap"
@@ -62,39 +64,29 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1 → spec 071 PO-1",
-      "AC-3 → spec 071 PO-1",
-      "AC-2 → spec 071 PO-2",
-      "AC-4 → spec 071 PO-3",
-      "AC-5 → spec 071 PO-3",
-      "AC-6 → spec 071 PO-3",
-      "AC-7 → spec 071 PO-3",
-      "AC-8 → spec 071 PO-4",
-      "AC-9 → spec 071 PO-4",
-      "AC-10 → spec 071 PO-5",
-      "AC-11 → spec 071 PO-5",
-      "AC-12 → spec 071 PO-6",
-      "AC-13 → spec 071 PO-6",
-      "AC-14 → spec 071 PO-8",
-      "AC-15 → spec 071 PO-8"
+      "AC-1 → spec 076 PO-1",
+      "AC-2 → spec 076 PO-2",
+      "AC-3 → spec 076 PO-3",
+      "AC-4 → spec 076 PO-4",
+      "AC-5 → spec 076 PO-5",
+      "AC-6 → spec 076 PO-6",
+      "prod-path (Planning) → spec 076 PO-7"
     ],
     "ceremony_type": "eng-review",
-    "plan": "plans/specs/071-injection-bodymap/plan.md",
-    "tasks": "plans/specs/071-injection-bodymap/tasks.md",
     "pr": 812,
     "code_review": {
       "status": "clean",
       "critical": 0,
       "auto_fixed": 0,
       "ask_items": 0,
-      "note": "RC5 num diff move-only: a revisão é a prova de igualdade byte a byte, não caça de bug. 1 import órfão (createDoseInstanceRepository, comentário) pego pelo lint e removido."
+      "note": "RC5 076: 0 findings. PO-4 open by design (MANUAL pos-merge)."
     },
     "open_debt_050_pr4": "MIGRADA para plans/specs/076-prescription-alert-revival (AP-340 é a causa real; AP-186/AP-298 entram como FR-005/FR-002; AP-336 triado = deleção)",
     "merged_pr": 812
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 10,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
@@ -106,7 +98,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-25T00:00:00-03:00"
+    "index_loaded_at": "2026-08-28T00:00:00-03:00"
   },
   "code_review": {
     "status": "issues_found",

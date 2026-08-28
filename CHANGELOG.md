@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alerta de renovação de receita: passou a existir
+
+- **Fix** (`patch` server `4.2.3` → `4.2.4`). O aviso de que a receita vence em 30/7/1 dias **nunca
+  disparou em produção** desde que foi escrito. Duas causas: (1) o job só era agendado pelo cron
+  em processo (`node-cron`), que não roda no ambiente serverless — agora é chamado pelo cron das
+  08:00 junto dos alertas de titulação; (2) filtrava usuários por uma coluna que não existe
+  (`user_settings.notifications_enabled`), o que abortava a execução inteira em silêncio a cada
+  run. A varredura agora parte de `protocols` numa única consulta paginada (antes era uma consulta
+  por usuário), a preferência de canal fica com o despachante, e o disparo passou de "dia exato"
+  para "faltam ≤ N dias" com deduplicação — um run perdido não perde mais o aviso do ciclo. Cada
+  envio é registrado em `notification_log`. Removido também o produtor legado do alerta de validade
+  biológica de estoque (`stock_expiry_alert`), que já é servido pela fila de saída.
+
 ### Lembretes do bot: um arquivo virou cinco
 
 - **Chore** (`patch` server `4.2.3`). Refatoração interna sem nenhuma mudança de comportamento: o
