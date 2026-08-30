@@ -116,12 +116,12 @@
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
     "contracts_count": 34,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
@@ -131,11 +131,11 @@
     "index_loaded_at": "2026-08-28T00:00:00-03:00"
   },
   "code_review": {
-    "status": "issues_found",
+    "status": "clean",
     "critical": 0,
-    "auto_fixed": 1,
-    "ask_items": 1,
-    "note": "RC5 do PR3: 1 auto-fix (filter '.status !== vigente' inerte em _pdfSectionBuilders) + 1 ASK levado ao PO (LogEntry.tsx com zero importadores — corrigido, não deletado; decisão adiada)."
+    "auto_fixed": 4,
+    "ask_items": 0,
+    "note": "RC5 do #815: 4 defeitos corrigidos antes do commit — (1) teto por domínio DURO limitava a seleção a 2x(nº de domínios), derrubando o FR-024 do próprio autor; (2) --limit não-numérico => parseInt NaN => limite sumia e o prompt receberia o catálogo inteiro; (3) main() no escopo do módulo nos 3 CLIs => import rodava a CLI; (4) --json truncava em PIPE por process.exit() antes do flush, e o PO-5 consome '| jq'."
   },
   "ai_review": {
     "engine": "agy (3 chunks)",
@@ -146,7 +146,7 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 813,
-    "note": "RC6 no PR #813. 076 tinha ido pra main sem PR/review (push direto 01c4436d); main revertida em 670bb14e, PR #813 reaplica (3b6220df) + correcoes RC6 (aa106228). agy 3 chunks: 0 findings. claude pass B previo (retroativo): aritmetica band+dedup correta todos os casos. Findings RC6 #1 (purge coupling) e #2 (log return) corrigidos; #3 documentado; #4 aceito (fail-open)."
+    "pr": 815,
+    "note": "Cobertura 3/3, partial=false. Os achados do run são sobre o RC6 em si: .mjs/.cjs fora do CODE_GLOBS (33 arquivos cegos no dosiq, incl. .github/scripts/*.cjs) — corrigido no devflow 6579133; e preâmbulo 95.790B contra budget de 46.210B = 74% do payload é memória repetida por chunk. A/B do PO-5 abortou sozinho por baseline sem significância, sem gastar o 2º run."
   }
 }
