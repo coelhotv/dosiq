@@ -1,7 +1,7 @@
 ---
 title: "AI Review (RC5/RC6) — operação pós-Gemini"
 description: "Protocolo de revisão de código por IA em 4 camadas após descontinuação do Gemini bot, incluindo RC5 (self-review) e RC6 (review independente)."
-version: "1.1.0"
+version: "1.2.0"
 status: active
 category: standard
 audience:
@@ -13,7 +13,7 @@ tags:
   - rc5
   - rc6
 created_at: "2026-07-18"
-updated_at: "2026-08-19"
+updated_at: "2026-08-30"
 epic: "056"
 ---
 
@@ -56,7 +56,8 @@ todo AP novo engorda TODO review futuro, e acima de ~160KB o agy amostra em sil�
 
 | Env | Default | Efeito |
 |-----|---------|--------|
-| `RC6_IDX_LINE_MAX` | `110` | clamp por linha dos índices (era 230; -40% no preâmbulo, medido #756/#766) |
+| `RC6_IDX_LINE_MAX` | `110` | ⚠️ **LEGADO** — clamp por linha dos índices (era 230; -40% no preâmbulo, medido #756/#766). Corta por **caractere** desde o fix do #798; some quando `RC6_RULE_SELECTOR` virar default (spec 060/FR-015) |
+| `RC6_RULE_SELECTOR` | `0` | **(spec 060, em construção)** `=1` troca o clamp+pack filter pelo seletor cirúrgico sobre `compiled_rules_index.json`: manda 3–5 regras **inteiras** em vez de ~605 linhas truncadas. Fail-safe: índice ausente/corrompido ⇒ cai no pack filter da 056 |
 | `RC6_PACK_FILTER` | **`auto`** | Envia só os packs (`data_and_schema`, `react_and_ui`, `mobile_and_platform`, `infra_and_deploy`, `process_and_testing`, `notifications`, `test_hygiene`, `tooling_and_build`) dos caminhos alterados. **`auto`** = filtra **só o chunk** cujo payload não-filtrado passaria de `RC6_AUTO_FILTER_ABOVE`; abaixo disso não corta nada. `1` = sempre; `0` = nunca (**é a baseline do A/B do PO-5**). **Fail-safe:** caminho não-mapeado ⇒ catálogo inteiro. CLAUDE.md vai sempre inteira (regras transversais R-295/R-299/R-282) |
 | `RC6_AUTO_FILTER_ABOVE` | `150000` | limiar (bytes de payload do chunk) que dispara o `auto`. Empírico: o agy amostra em silêncio acima de ~160K |
 | `RC6_MEASURE` | `0` | `=1` monta preâmbulo+chunks, imprime bytes (preâmbulo, packs in/out, payload por chunk) e **PARA antes do engine** — medir sem gastar quota (o `--dry-run` AINDA chama engine) |
@@ -224,6 +225,17 @@ sobre um diff não-confiável). Absorvemos as estratégias:
 > 📈 **A dívida é composta, e mensurável:** o preâmbulo saiu de **85,5K → 100,8K em um único dia**
 > (entregas de 2026-07-23 engordando os catálogos). Com o filtro ligado, só 2 dos 4 chunks ficaram
 > ≤60K. Filtrar por pack alivia; o teto real é casar regra **por arquivo** (T032).
+>
+> **Onde isso está sendo resolvido (2026-08-30):** o clamp e o pack filter atacam o sintoma — o
+> preâmbulo cresce **O(catálogo)** porque o índice é ao mesmo tempo tabela de roteamento e armazém de
+> conhecimento (cada linha é um parágrafo de 500–2000 chars, e a única alavanca é truncar). Acervo
+> medido: **894 arquivos / 5,0MB**, 331KB só de índices; pós-#812 o preâmbulo sozinho ocupava
+> **104.086B** contra budget de chunk de **37.914B** (R-318). A **spec 060** separa os dois trabalhos
+> (frontmatter estruturado + `compiled_rules_index.json` + `select-rules.ts`), o que torna o preâmbulo
+> **O(1)** no acervo e aposenta o clamp — junto com a classe de bug do #798, que é consequência
+> direta de truncar. RAG/embedding foi avaliado e descartado por ora (resolve ranking, não orçamento;
+> perde a auditabilidade de *por que* uma regra entrou); `graftroom_learn` foi descartado como
+> substrato. Racional completo na 060 §Alternativas.
 
 ## Regras de operação (aprendidas em produção)
 
