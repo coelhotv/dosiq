@@ -90,13 +90,13 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "pr": 812,
+    "pr": 813,
     "code_review": {
       "status": "clean",
       "critical": 0,
       "auto_fixed": 0,
       "ask_items": 0,
-      "note": "RC5 076: 0 findings. PO-4 open by design (MANUAL pos-merge)."
+      "note": "RC5 076 (core + RC6 fixes): 0 findings."
     },
     "open_debt_050_pr4": "MIGRADA para plans/specs/076-prescription-alert-revival (AP-340 é a causa real; AP-186/AP-298 entram como FR-005/FR-002; AP-336 triado = deleção)",
     "merged_pr": 812,
@@ -128,15 +128,15 @@
     "note": "RC5 do PR3: 1 auto-fix (filter '.status !== vigente' inerte em _pdfSectionBuilders) + 1 ASK levado ao PO (LogEntry.tsx com zero importadores — corrigido, não deletado; decisão adiada)."
   },
   "ai_review": {
-    "engine": "agy+claude (4 chunks)",
-    "status": "issues_found",
+    "engine": "agy (3 chunks)",
+    "status": "clean",
     "critical": 0,
-    "high": 4,
-    "medium": 1,
+    "high": 0,
+    "medium": 0,
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 812,
-    "note": "3 findings vieram do motor como introduced:true e foram REBAIXADOS a pré-existentes com prova por linha no arquivo original (1505/1519/977). Classe nova de FP nesta série: atribuição em refatoração move-only — conteúdo certo, atribuição errada, no campo exato em que o gate de merge chaveia. Nenhum corrigido neste PR (regra do move-only); todos reportados como dívida."
+    "pr": 813,
+    "note": "RC6 no PR #813. 076 tinha ido pra main sem PR/review (push direto 01c4436d); main revertida em 670bb14e, PR #813 reaplica (3b6220df) + correcoes RC6 (aa106228). agy 3 chunks: 0 findings. claude pass B previo (retroativo): aritmetica band+dedup correta todos os casos. Findings RC6 #1 (purge coupling) e #2 (log return) corrigidos; #3 documentado; #4 aceito (fail-open)."
   }
 }
