@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alerta de renovação de receita: acabamento
+
+- **Fix** (`patch` server `4.2.4` → `4.2.5`). Três ajustes sobre o alerta revivido acima.
+  (1) **Texto errado no último dia**: com a janela "faltam ≤ N dias", a receita que vence *hoje*
+  passou a ser alcançável e a mensagem saía como "vencendo em 0 dias" — agora diz "vence hoje".
+  De quebra, um escape de formatação errado fazia o Telegram mostrar "vence amanhã.!" e
+  "Atenção.!". (2) **Um registro por aviso**: o envio gravava duas linhas em `notification_log`
+  (uma do despachante, outra do próprio job) e a segunda saía sempre como "enviada", mesmo quando
+  o aviso tinha sido suprimido por horário de silêncio — o que fazia o usuário perder o aviso
+  daquele degrau. Agora vale o registro do despachante, com o resultado real; aviso silenciado
+  volta a ser elegível no dia seguinte. (3) **Menos trabalho por execução**: a varredura filtra no
+  banco os tratamentos que vencem nos próximos 30 dias (antes trazia todos os ativos com data de
+  término) e a checagem de duplicidade virou uma consulta única para todos os candidatos, no lugar
+  de uma por tratamento.
+
 ### Alerta de renovação de receita: passou a existir
 
 - **Fix** (`patch` server `4.2.3` → `4.2.4`). O aviso de que a receita vence em 30/7/1 dias **nunca
@@ -19,8 +34,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   para "faltam ≤ N dias" com deduplicação — um run perdido não perde mais o aviso do ciclo. Cada
   envio é registrado em `notification_log`. Removido também o produtor legado do alerta de validade
   biológica de estoque (`stock_expiry_alert`), que já é servido pela fila de saída.
-  Endurecimento pós-revisão: falha ao gravar o log de envio agora é registrada como erro
-  (evita o alerta repetir), e a limpeza de logs antigos passa a preservar `prescription_alert`
+  Endurecimento pós-revisão: a limpeza de logs antigos passa a preservar `prescription_alert`
   (a deduplicação do degrau de 30 dias depende do log sobreviver ~3 semanas).
 
 ### Lembretes do bot: um arquivo virou cinco

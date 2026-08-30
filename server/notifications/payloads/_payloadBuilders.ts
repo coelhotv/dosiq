@@ -316,8 +316,14 @@ export function buildPrescriptionAlertPayload(data: z.input<typeof prescriptionA
 
   let richMsg = '';
   let plainMsg = '';
-  if (daysRemaining === 1) {
-    richMsg = `⚠️ *Sua prescrição vence amanhã\\.!*\n\n`;
+  // 076: a janela virou `daysRemaining <= band` (era igualdade exata em [30, 7, 1]), então o
+  // degrau 1 também alcança `daysRemaining === 0` — receita que vence HOJE (run de ontem
+  // perdido, ou protocolo criado hoje). Sem este ramo a mensagem sairia "vencendo em 0 dias".
+  if (daysRemaining <= 0) {
+    richMsg = `⚠️ *Sua prescrição vence hoje\\!*\n\n`;
+    plainMsg = `⚠️ Sua prescrição vence hoje!\n`;
+  } else if (daysRemaining === 1) {
+    richMsg = `⚠️ *Sua prescrição vence amanhã\\!*\n\n`;
     plainMsg = `⚠️ Sua prescrição vence amanhã!\n`;
   } else if (daysRemaining <= 7) {
     richMsg = `⚠️ *Prescrição vencendo em ${daysRemaining} dias*\n\n`;
@@ -334,7 +340,7 @@ export function buildPrescriptionAlertPayload(data: z.input<typeof prescriptionA
   let footer = '';
   let plainFooter = '';
   if (daysRemaining <= 7) {
-    footer = `🚨 *Atenção\\.!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
+    footer = `🚨 *Atenção\\!* Renove sua prescrição o quanto antes para evitar interrupção no tratamento\\.`;
     plainFooter = `🚨 Atenção! Renove sua prescrição o quanto antes para evitar interrupção no tratamento.`;
   } else {
     footer = `💡 É um bom momento para agendar sua consulta de acompanhamento para renovação\\.`;
