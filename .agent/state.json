@@ -26,6 +26,15 @@
         "date": "2026-08-25",
         "base_branch": "main",
         "note": "Arquivo de 1.538 linhas que estourava SOZINHO o budget de chunk do RC6 (74.779B > 56.614B) e deixou 3 PRs seguidos (#799/#801/#803) com pass ADVISORY — fatiado em 6 arquivos por domínio sob server/bot/reminders/, SEM barrel (re-export manteria o hub falso e o payload gigante voltaria). ⚠️ A prova de move-only NÃO foi o `git diff -M`: quando 1 arquivo vira 6 a heurística de cópia não casa (`renames=0`, medido com --find-copies-harder). A prova que valeu foi comparar cada faixa do original com o corpo novo byte a byte: 6/6 VERBATIM, 1.511/1.538 linhas (o resto é header de imports/logger, reescrito por design). Virou R-318. 11 sites de referência, sendo o 11o o que grep de import e tsc NÃO pegam: a STRING de caminho em titrationEmbedContract.test.ts:34. Medição do objetivo (T048): maior arquivo 74.779B->24.687B, 3 de 4 chunks deixaram de ser ADVISORY. Objetivo PARCIAL — e a medição reaponta o gargalo: o PREÂMBULO (índices de regras/APs injetados) sozinho come 104.086B contra chunk budget de 37.914B. Pós-corte quem estoura o orçamento é a MEMÓRIA, não o código; próxima alavanca é RC6_IDX_LINE_MAX e é manutenção recorrente (os índices crescem a cada C5). RC6 (agy 4 chunks + claude full-context): 5 findings, ZERO introduzidos. 3 vieram marcados introduced:true — CLASSE NOVA DE FP: em refatoração move-only o arquivo original é deletado e os novos entram como file-added, então o revisor lê código movido como código novo. Conteúdo certo, atribuição errada, no campo exato em que o gate de merge chaveia. Refutados por linha no original (1505/1519/977). DÍVIDA PRÉ-EXISTENTE catalogada e NÃO corrigida de propósito (regra do move-only): AP-186 — o alerta de RECEITA varre user_settings SEM paginar (trunca em ~1000 usuários, some em silêncio; é o mesmo furo que a 050 já corrigiu no estoque no PR 1b); AP-298 em 3 pontos; AP-336 no expiry LEGADO sem lot.id (TRIAR: pode ser código a deletar pós-cutover). Registrada nos 3 arquivos de AP + índice + item 1.6 do BACKLOG_ORDER_2026H2. SQP server 4.2.2->4.2.3 (patch): sem mudança de comportamento, mas o PREFIXO DOS LOGS EM PROD MUDA (ReminderHelpers -> um logger por domínio) — declarado no CHANGELOG."
+      },
+      {
+        "pr": 813,
+        "squash": "923d2956",
+        "spec": "076 prescription-alert-revival — ressuscitar alerta de renovação de receita (30/7/1 dias)",
+        "tier": 1,
+        "date": "2026-08-30",
+        "base_branch": "main",
+        "note": "O job NUNCA emitiu uma linha em prod. Causa #1 (não a do backlog): não havia wiring no path de prod — só node-cron dev-only (AP-182); api/notify.ts nunca chamava checkPrescriptionAlerts. Causa #2: filtro por user_settings.notifications_enabled, coluna inexistente => 42703 => catch de topo engolia (AP-340). Fix: (a) runJob('prescription_alerts') no bloco 8h de api/notify.ts; (b) reescrita de checkPrescriptionAlertsViaDispatcher — varredura dirigida por protocols em 1 query paginada (_fetchAllPages, AP-186), dispatcher resolve canal/quiet-hours/consent, catch de topo faz logger.error + throw (era return — AP-298); (c) igualdade exata alertDays.includes() virou _bandFor com <= [1,7,30] + dedup por notification_log (âncora absoluta end_date-band) => run perdido não perde mais o ciclo, sem coluna nova; (d) AP-336 triado = DELEÇÃO de _processBiologicalExpiryAlerts (stock_expiry_alert já em OUTBOX_KINDS em prod, produtor legado é código morto); _biologicalExpiryDaysLeft MANTIDO (outbox usa). 7 testes Vitest novos. SQP server 4.2.3->4.2.4 (patch). ⚠️ INCIDENTE DE PROCESSO: 076 foi pra main via push direto (01c4436d por coelhotv, fora da sessão) sem PR/review; main revertida em 670bb14e e o trabalho reaplicado via PR #813 (RC5 0 findings, RC6 agy 3 chunks 0 findings). RC6 #1 (cleanupOldNotificationLogs purgava o log que a dedup band-30 precisa por ~23 dias => .neq('notification_type','prescription_alert') no delete + docstring exigindo retenção >=31d; função hoje inerte) e #2 (retorno de logSuccessfulNotification descartado => insert falho re-dispara diário => checa + logger.error) corrigidos; #3 (âncora tz-do-runtime vs SP wall) documentado na linha; #4 (read-then-write sem constraint) aceito, fail-open deliberado. PENDENTE PO-4: no dia seguinte ao 1o daysRemaining em {30,7,1} conferir a 1a linha prescription_alert em notification_log (esperado: 1, user b0c9746c, end_date 2026-09-27) — fecha item 1.6 do BACKLOG_ORDER_2026H2."
       }
     ],
     "previous_session_note": "2026-08-30 specifying da 068: draft -> spec completa. Tier 1 (mobile-only, zero schema). 3 OQs do draft RESOLVIDAS por evidencia no repo: notifee expoe isBatteryOptimizationEnabled (Module.d.ts:488) e getPowerManagerInfo().activity (:514) => DETECTAR e possivel e o deep link e por-OEM nativo do notifee, matando o \"instrucao cega\". isXiaomiDevice ja existe (alarmService.ts:127) e GuideModal ja discrimina Xiaomi (ProtocolFormBody.tsx:237/252) => reuso, nao criacao. useNudges e server-driven => card local (padrao useStockUpsell/StockUpsellCard). 3 OQs NOVAS abertas (OQ-4 fora do motor de nudges, OQ-5 sem metrica de adocao, OQ-6 falso-negativo do Doze em MIUI). 8 POs, 12 ACs, 6 user stories. R-314: build de loja, OTA proibido.",
@@ -90,23 +99,15 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "pr": 813,
-    "code_review": {
-      "status": "clean",
-      "critical": 0,
-      "auto_fixed": 0,
-      "ask_items": 0,
-      "note": "RC5 076 (core + RC6 fixes): 0 findings."
-    },
-    "open_debt_050_pr4": "MIGRADA para plans/specs/076-prescription-alert-revival (AP-340 é a causa real; AP-186/AP-298 entram como FR-005/FR-002; AP-336 triado = deleção)",
-    "merged_pr": 812,
+    "merged_pr": 813,
+    "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "design-review",
     "tasks": "plans/specs/068-android-oem-battery-assistant/tasks.md",
     "plan": "plans/specs/068-android-oem-battery-assistant/plan.md"
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
