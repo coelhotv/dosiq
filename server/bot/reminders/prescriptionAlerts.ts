@@ -65,6 +65,11 @@ async function _processPrescriptionProtocol(
   const band = _bandFor(daysRemaining);
   if (band === null) return 'skipped';
 
+  // Âncora ABSOLUTA da janela de dedup: a data em que `daysRemaining` valia exatamente `band`.
+  // RC6 #3: `endDate` é meia-noite no TZ do runtime; no Vercel (TZ=UTC) isso é 00:00Z, e o cron
+  // grava os logs ~8h depois (11:00Z), então há folga de sobra. Se o TZ do runtime algum dia
+  // virar America/Sao_Paulo a âncora vira 03:00Z do dia — ainda dentro da folga, mas é
+  // dependência implícita: revisar esta linha se o TZ do serverless mudar.
   const sinceIso = addDays(endDate, -band).toISOString();
   if (await _alreadyAlerted(protocol.user_id, protocol.id, sinceIso)) return 'deduped';
 
@@ -82,7 +87,17 @@ async function _processPrescriptionProtocol(
   // Só registra em `notification_log` quando o envio de fato saiu — senão a dedup passa a
   // mentir (suprimiria o retry legítimo de um dispatch que falhou).
   if (result?.success) {
-    await logSuccessfulNotification(protocol.user_id, protocol.id, 'prescription_alert');
+    // RC6 #2: `logSuccessfulNotification` NÃO lança — engole o erro do insert e devolve false.
+    // Sem esta checagem, um insert falho deixaria o alerta re-disparando TODO dia até o fim da
+    // band (até ~22 duplicados no band 30), porque a dedup nunca acharia a linha.
+    const logged = await logSuccessfulNotification(protocol.user_id, protocol.id, 'prescription_alert');
+    if (!logged) {
+      logger.error(
+        'prescription_alert despachado mas NÃO registrado em notification_log — a dedup vai falhar e o alerta pode repetir',
+        null,
+        { userId: protocol.user_id, protocolId: protocol.id, correlationId },
+      );
+    }
     return 'dispatched';
   }
 

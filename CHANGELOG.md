@@ -19,6 +19,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   para "faltam ≤ N dias" com deduplicação — um run perdido não perde mais o aviso do ciclo. Cada
   envio é registrado em `notification_log`. Removido também o produtor legado do alerta de validade
   biológica de estoque (`stock_expiry_alert`), que já é servido pela fila de saída.
+  Endurecimento pós-revisão: falha ao gravar o log de envio agora é registrada como erro
+  (evita o alerta repetir), e a limpeza de logs antigos passa a preservar `prescription_alert`
+  (a deduplicação do degrau de 30 dias depende do log sobreviver ~3 semanas).
 
 ### Lembretes do bot: um arquivo virou cinco
 
