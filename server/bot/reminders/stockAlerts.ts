@@ -126,6 +126,35 @@ export function _biologicalExpiryDaysLeft(stockRow) {
   return Math.round((dayKey(expiresAtMs) - dayKey(nowMs)) / MS_DAY);
 }
 
+async function _processBiologicalExpiryAlerts(allStock, dispatcher, correlationId) {
+  for (const lot of allStock || []) {
+    try {
+      if (Number(lot.quantity || 0) <= 0) continue;
+      const daysLeft = _biologicalExpiryDaysLeft(lot);
+      if (daysLeft === null) continue;
+      // Cadência D-3 + vencimento (FR-004b): cada condição ocorre 1 dia só.
+      if (daysLeft !== 3 && daysLeft !== 0) continue;
+
+      const medicineName = lot.medicine?.name || 'Medicamento';
+      logger.info(`Disparando alerta de validade biológica: ${medicineName} (daysLeft=${daysLeft})`, {
+        userId: lot.user_id, medicineId: lot.medicine_id, correlationId
+      });
+
+      await dispatcher.dispatch({
+        userId: lot.user_id,
+        kind: 'stock_expiry_alert',
+        data: { medicineName, daysLeft },
+        context: { correlationId, jobType: 'stock_expiry_alert_dispatcher' }
+      });
+    } catch (err) {
+      // Best-effort por lote (R-245): um lote com erro não derruba a varredura.
+      logger.error('Erro ao processar alerta de validade biológica', err, {
+        userId: lot?.user_id, medicineId: lot?.medicine_id, correlationId
+      });
+    }
+  }
+}
+
 // Página de leitura do PostgREST. AP-186: sem `.range()` a resposta é TRUNCADA em ~1000 linhas
 // SEM erro — a varredura simplesmente deixaria de ver o estoque de parte dos usuários, em silêncio.
 /**
@@ -231,7 +260,7 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
     const trackingUsers = await _fetchStockTrackingUsers(correlationId);
     if (trackingUsers.length === 0) return;
 
-    const { protocolsByMedicine, stockByMedicine } =
+    const { protocolsByMedicine, stockByMedicine, allStock } =
       await _scanStockAlertCandidates(trackingUsers, correlationId);
 
     for (const key in stockByMedicine) {
@@ -244,11 +273,12 @@ export async function checkStockAlertsViaDispatcher(dispatcher, correlationId) {
       await _processUserStockAlert(userId, medicineId, stock, protocols, dispatcher, correlationId);
     }
 
-    // 012 Fase A / eixo de validade biológica (ADR-059): o produtor legado
-    // `_processBiologicalExpiryAlerts` foi REMOVIDO na spec 076. `stock_expiry_alert` está em
-    // `OUTBOX_KINDS` em produção ⇒ o eixo é servido pela fila (fan-out por LOTE, `subject_id =
-    // stock.id`, 050 PR 2), e o produtor legado despachava sem `lot.id` (colapsava 2 lotes do
-    // mesmo dia num alerta). `_biologicalExpiryDaysLeft` FICA — a outbox usa o mesmo cálculo.
+    // 012 Fase A (ADR-059): validade biológica (TTL pós-abertura) — eixo POR LOTE,
+    // paralelo ao alerta de volume acima. Cadência sem estado extra: o cron é
+    // diário, então daysLeft === 3 (D-3) e daysLeft === 0 (vence hoje) ocorrem em
+    // exatamente 1 execução cada. Lote já vencido há dias (daysLeft < 0) não
+    // re-alerta (sem spam retroativo). Lote vazio (quantity <= 0) não interessa.
+    await _processBiologicalExpiryAlerts(allStock, dispatcher, correlationId);
 
     logger.info('Verificação de alertas de estoque concluída', { correlationId });
   } catch (err) {
