@@ -382,3 +382,36 @@ describe('consent_prune_notice — copy neutra (046 T013d / S8)', () => {
   })
 })
 
+
+describe('prescription_alert (076 — janela <= band)', () => {
+  const build = (daysRemaining: number, endDate = '2026-09-27') =>
+    buildNotificationPayload({
+      kind: 'prescription_alert',
+      data: { protocolId: 'p-1', medicineName: 'Pregabalina', endDate, daysRemaining },
+    });
+
+  it('daysRemaining = 0 diz "vence hoje" — nunca "vencendo em 0 dias"', () => {
+    const payload = build(0);
+    expect(payload.pushBody).toContain('vence hoje');
+    expect(payload.body).toContain('vence hoje');
+    expect(payload.pushBody).not.toContain('0 dias');
+    expect(payload.body).not.toContain('0 dias');
+  });
+
+  it('daysRemaining = 1 diz "vence amanhã", sem o ponto solto do escape antigo', () => {
+    const payload = build(1);
+    expect(payload.pushBody).toContain('vence amanhã!');
+    // MarkdownV2: `!` escapa como `\!`. O legado escrevia `\.!`, que renderiza "amanhã.!".
+    expect(payload.body).toContain('amanhã\\!');
+    expect(payload.body).not.toContain('amanhã\\.!');
+  });
+
+  it('degraus 7 e 30 mantêm o copy de sempre', () => {
+    expect(build(7).pushBody).toContain('vencendo em 7 dias');
+    expect(build(30).pushBody).toContain('Renovação de Prescrição');
+  });
+
+  it('protocolId viaja para metadata — é dele que sai notification_log.protocol_id (dedup 076)', () => {
+    expect(build(7).metadata?.protocolId).toBe('p-1');
+  });
+})

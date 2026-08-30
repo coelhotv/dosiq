@@ -131,8 +131,8 @@ export async function logSuccessfulNotification(userId: string, protocolId: stri
  * Limpa logs de notificação antigos (mais de 7 dias).
  *
  * ⚠️ (spec 076) `prescription_alert` é EXCLUÍDO desta limpeza: a dedup do alerta de receita
- * (`_alreadyAlerted` em `prescriptionAlerts.ts`) precisa que o log do degrau 30 sobreviva ~23
- * dias para não re-disparar quando o degrau 7 chega. Reduzir a retenção destes logs abaixo de
+ * (`_fetchLastAlertByProtocol` em `prescriptionAlerts.ts`) precisa que o log do degrau 30
+ * sobreviva ~23 dias para não re-disparar quando o degrau 7 chega. Reduzir a retenção destes logs abaixo de
  * 31 dias reintroduz o disparo diário. (Nota: esta função hoje está INERTE — `addDays(-7)` passa
  * `-7` como `date` ⇒ corte em 1969 ⇒ nada é apagado — e não é chamada por nenhum cron. O guard
  * abaixo é defensivo para o dia em que ela for corrigida/religada.)

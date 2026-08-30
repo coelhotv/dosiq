@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alerta de renovação de receita: acabamento
+
+- **Fix** (`patch` server `4.2.4` → `4.2.5`). Três ajustes sobre o alerta revivido acima.
+  (1) **Texto errado no último dia**: com a janela "faltam ≤ N dias", a receita que vence *hoje*
+  passou a ser alcançável e a mensagem saía como "vencendo em 0 dias" — agora diz "vence hoje".
+  De quebra, um escape de formatação errado fazia o Telegram mostrar "vence amanhã.!" e
+  "Atenção.!". (2) **Registro de envio identificável**: a linha que o despachante grava para
+  este aviso saía sem o vínculo com o tratamento, o que a deixava sem uso para consulta e para o
+  histórico do usuário — agora o vínculo vai junto. (3) **Menos trabalho por execução**: a varredura filtra no
+  banco os tratamentos que vencem nos próximos 30 dias (antes trazia todos os ativos com data de
+  término) e a checagem de duplicidade virou uma consulta única para todos os candidatos, no lugar
+  de uma por tratamento.
+
 ### Alerta de renovação de receita: passou a existir
 
 - **Fix** (`patch` server `4.2.3` → `4.2.4`). O aviso de que a receita vence em 30/7/1 dias **nunca

@@ -1,10 +1,13 @@
+# Gate real: os testes críticos rodam e ABORTAM o push se falharem.
+# Histórico: este hook já ficou com o comando e o `exit 1` comentados, imprimindo
+# "✅ Testes críticos passaram" sem rodar nada — sucesso reportado de operação que não
+# ocorreu (AP-325). Se precisar desligar, APAGUE também a mensagem de sucesso:
+# hook silencioso é melhor que hook mentiroso.
 echo "🧪 Executando testes críticos antes do push..."
 
-#npm run test:critical
-
-if [ $? -ne 0 ]; then
+if ! npm run test:critical; then
   echo "❌ Testes críticos falharam. Push abortado."
-#  exit 1
+  exit 1
 fi
 
-echo "✅ Testes críticos passaram. Continuando push..."
+echo "✅ Testes críticos passaram (execução real). Continuando push..."
