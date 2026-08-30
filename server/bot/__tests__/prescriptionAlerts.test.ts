@@ -6,8 +6,10 @@
 //      de topo transformava o erro em `return` silencioso (AP-340 / AP-298).
 //
 // Estes testes provam: (a) 42703 agora FALHA de forma observável (não silêncio); (b) a janela
-// `<= band` + dedup por `notification_log` dispara nos degraus 30/7/1 e não redispara na mesma
-// band; (c) a dedup é UMA query para todos os candidatos e só conta log `status = 'enviada'`.
+// `<= band` + dedup por `notification_log` dispara nos degraus 30/7/1/0 e não redispara na mesma
+// band; (c) a dedup é UMA query em lote (paginada) e só conta log `status = 'enviada'`; (d) a
+// âncora é gravada pelo PRÓPRIO job — a linha do dispatcher sai de IIFE não aguardada e nem
+// existe quando o consentimento está revogado.
 // O mock HONRA os filtros que o código aplica (AP-279) e roteia por tabela.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -184,6 +186,9 @@ describe('checkPrescriptionAlertsViaDispatcher — 076', () => {
 
     expect(state.dedupQueries).toBe(1);
     expect(state.calls.in).toContainEqual(['protocol_id', ['a', 'b', 'c']]);
+    // paginado: `_fetchAllPages` ordena e fatia — resposta truncada em ~1000 sem erro é AP-186
+    expect(mockSupabase.order).toHaveBeenCalledWith('id');
+    expect(mockSupabase.range).toHaveBeenCalled();
     expect(state.calls.eq).toContainEqual(['notification_type', 'prescription_alert']);
     expect(state.calls.eq).toContainEqual(['status', 'enviada']);
   });
@@ -207,15 +212,31 @@ describe('checkPrescriptionAlertsViaDispatcher — 076', () => {
     expect(state.calls.lte).toContainEqual(['end_date', localDay(30)]);
   });
 
-  it('o job NÃO grava notification_log por conta própria — quem loga é o dispatcher', async () => {
+  it('grava a âncora de dedup por conta própria — a linha do dispatcher não serve (IIFE não aguardada)', async () => {
     state.protocolsPages = [{ data: [protocol('b7', 7)], error: null }];
     const dispatcher = makeDispatcher();
 
-    await checkPrescriptionAlertsViaDispatcher(dispatcher, 'corr-sem-insert');
+    await checkPrescriptionAlertsViaDispatcher(dispatcher, 'corr-ancora');
 
-    expect(state.inserts).toHaveLength(0);
-    // e o protocolId vai no data, senão o log do dispatcher sai com protocol_id null
+    const logs = state.inserts.filter((i: any) => i.table === 'notification_log');
+    expect(logs).toHaveLength(1);
+    expect(logs[0].row).toMatchObject({
+      protocol_id: 'b7', notification_type: 'prescription_alert', status: 'enviada',
+    });
+    // e o protocolId também vai no data: é dele que sai o protocol_id da linha do dispatcher,
+    // que antes saía nula
     expect(alertCalls(dispatcher)[0][0].data.protocolId).toBe('b7');
+  });
+
+  it('consentimento revogado (dispatch success sem canal nenhum) ainda ancora — não repete todo dia', async () => {
+    state.protocolsPages = [{ data: [protocol('b30', 30)], error: null }];
+    // shape real de dispatchNotification quando o consentimento está revogado: retorna ANTES do
+    // bloco de log, com success true e zero canal ⇒ nenhuma linha vem do dispatcher
+    const dispatcher = { dispatch: vi.fn(() => Promise.resolve({ success: true, channels: [], totalDelivered: 0, totalFailed: 0 })) };
+
+    await checkPrescriptionAlertsViaDispatcher(dispatcher, 'corr-consent');
+
+    expect(state.inserts.filter((i: any) => i.table === 'notification_log')).toHaveLength(1);
   });
 
   it('FR-002: dispatch sem sucesso confirmado não interrompe a varredura e segue elegível', async () => {

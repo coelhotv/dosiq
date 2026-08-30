@@ -1,7 +1,7 @@
-import { supabase } from '../../services/supabase.js';
 import { createLogger } from '../logger.js';
-import { parseLocalDate, getTodayLocal, addDays, parseISO } from '../../utils/dateUtils.js';
+import { parseLocalDate, getTodayLocal, getNow, addDays, parseISO } from '../../utils/dateUtils.js';
 import { _fetchAllPages } from './_pagination.js';
+import { logSuccessfulNotification } from '../../services/notificationDeduplicator.js';
 
 const logger = createLogger('PrescriptionAlerts');
 
@@ -12,9 +12,9 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const ALERT_BANDS = [1, 7, 30];
 const MAX_BAND = ALERT_BANDS[ALERT_BANDS.length - 1];
 
-// Lote do `.in('protocol_id', …)` da dedup. PostgREST manda a lista na URL: sem teto, uma base
-// grande estoura o limite de tamanho da querystring.
-const DEDUP_CHUNK_SIZE = 500;
+// Lote do `.in('protocol_id', …)` da dedup. PostgREST manda a lista na URL: 500 UUIDs são ~18 KB
+// de querystring, acima do buffer típico de proxy (~8 KB). 100 é o tamanho já usado no repo.
+const DEDUP_CHUNK_SIZE = 100;
 
 // Menor band tal que `daysRemaining <= band` (076/FR-006). `daysRemaining < 0` (receita já
 // vencida) e `> 30` (ainda longe) ⇒ null (nada a disparar). Substitui o `includes()` de
@@ -38,37 +38,45 @@ interface Candidate {
 }
 
 /**
- * Envio mais recente de `prescription_alert` por protocolo, em UMA query (antes: uma por
- * protocolo elegível).
+ * Envio mais recente de `prescription_alert` por protocolo, em UMA query por lote (antes: uma
+ * query por protocolo elegível).
  *
- * Só conta log com `status = 'enviada'`. `silenciada` (quiet hours) e `falhou` NÃO suprimem —
- * o usuário não recebeu nada, então o aviso segue elegível no run seguinte.
+ * Lê as linhas que ESTE job grava (`logSuccessfulNotification`), `status = 'enviada'`. A linha que
+ * o `dispatchNotification` grava por conta própria pode casar também — mesmo significado — mas NÃO
+ * pode ser a âncora: ela sai de uma IIFE **não aguardada** (`dispatchNotification.ts:154`), então em
+ * serverless o runtime pode congelar antes do insert. Ver a Emenda 2 do AP-340.
  *
- * Fail-open (paridade com `shouldSendNotification`): erro na consulta ⇒ mapa vazio ⇒ nada é
- * suprimido. Duplicar um aviso é melhor que silenciá-lo — o oposto do bug que a 076 conserta
- * (AP-340).
+ * Fail-open (paridade com `shouldSendNotification`): erro na consulta ⇒ lote sem supressão.
+ * Duplicar um aviso é melhor que silenciá-lo — o oposto do bug que a 076 conserta (AP-340).
  */
 async function _fetchLastAlertByProtocol(protocolIds: string[], earliestIso: string): Promise<Map<string, number>> {
   const lastSentAt = new Map<string, number>();
 
   for (let i = 0; i < protocolIds.length; i += DEDUP_CHUNK_SIZE) {
     const chunk = protocolIds.slice(i, i + DEDUP_CHUNK_SIZE);
-    const { data, error } = await supabase
-      .from('notification_log')
-      .select('protocol_id, sent_at')
-      .in('protocol_id', chunk)
-      .eq('notification_type', 'prescription_alert')
-      .eq('status', 'enviada')
-      .gte('sent_at', earliestIso);
-
-    if (error) {
-      logger.error('Falha ao consultar notification_log para dedup de prescription_alert', error, {
+    let rows: any[];
+    try {
+      // `_fetchAllPages` porque a resposta do PostgREST é TRUNCADA em ~1000 linhas SEM erro
+      // (AP-186): um lote com histórico longo perderia linhas em silêncio, e perder linha aqui
+      // é re-disparar o alerta.
+      rows = await _fetchAllPages(
+        'notification_log',
+        'id, protocol_id, sent_at',
+        (q) => q
+          .in('protocol_id', chunk)
+          .eq('notification_type', 'prescription_alert')
+          .eq('status', 'enviada')
+          .gte('sent_at', earliestIso),
+        'id',
+      );
+    } catch (err) {
+      logger.error('Falha ao consultar notification_log para dedup de prescription_alert', err, {
         protocolos: chunk.length,
       });
       continue; // fail-open: este lote não suprime nada
     }
 
-    for (const row of data || []) {
+    for (const row of rows) {
       const ts = parseISO(row.sent_at).getTime();
       const known = lastSentAt.get(row.protocol_id);
       if (known === undefined || ts > known) lastSentAt.set(row.protocol_id, ts);
@@ -102,11 +110,24 @@ async function _dispatchPrescriptionAlert(
     context: { correlationId, jobType: 'prescription_alert' },
   });
 
-  // O próprio `dispatchNotification` grava a linha de `notification_log` (com `status` real:
-  // enviada/silenciada/falhou). A 076 chegou a gravar uma SEGUNDA linha aqui via
-  // `logSuccessfulNotification` — removido: duplicava o log, saía sempre como 'enviada' mesmo
-  // com o envio suprimido por quiet hours, e criava duas fontes de verdade para a mesma dedup.
-  if (result?.success) return 'dispatched';
+  // A dedup PRECISA de uma linha gravada de forma síncrona e verificada. A do
+  // `dispatchNotification` não serve: sai de uma IIFE não aguardada e, no caso de consentimento
+  // revogado, nem chega a existir (a função retorna `success: true` ANTES do bloco de log). Sem
+  // esta escrita o alerta re-dispararia todo dia até o fim da band. O `protocolId` que vai no
+  // `data` acima serve a outro fim: dar `protocol_id` à linha do dispatcher, que antes saía nula.
+  if (result?.success) {
+    // `logSuccessfulNotification` NÃO lança — engole o erro do insert e devolve false. Sem esta
+    // checagem, um insert falho vira repetição diária silenciosa (até ~22 avisos na band 30).
+    const logged = await logSuccessfulNotification(protocol.user_id, protocol.id, 'prescription_alert');
+    if (!logged) {
+      logger.error(
+        'prescription_alert despachado mas NÃO registrado em notification_log — a dedup vai falhar e o alerta pode repetir',
+        null,
+        { userId: protocol.user_id, protocolId: protocol.id, correlationId },
+      );
+    }
+    return 'dispatched';
+  }
 
   logger.warn('Dispatch de prescription_alert não confirmou sucesso — seguirá elegível no próximo run', {
     userId: protocol.user_id, protocolId: protocol.id, correlationId,
@@ -121,7 +142,11 @@ export async function checkPrescriptionAlertsViaDispatcher(dispatcher: any, corr
     // Janela de interesse: só protocolo que vence de hoje até hoje+30. Receita já vencida não
     // recebe aviso retroativo e vencimento distante não tem o que disparar — filtrar no banco
     // evita arrastar o histórico inteiro de `protocols` para dentro do runtime a cada run.
-    const horizonLocal = getTodayLocal(addDays(todayDate, MAX_BAND));
+    // O horizonte sai de `getNow()` (já deslocado para SP), não de `todayDate` (meia-noite no TZ
+    // do runtime): `getTodayLocal` faz `toISOString()` e num runtime de offset POSITIVO a
+    // meia-noite local cai no dia anterior em UTC — o horizonte encolheria um dia e o protocolo
+    // exatamente a 30 dias ficaria de fora.
+    const horizonLocal = getTodayLocal(addDays(getNow(), MAX_BAND));
 
     // 076/FR-001+FR-004: varredura dirigida por `protocols`, UMA query paginada (AP-186).
     // O legado filtrava `user_settings.notifications_enabled` — coluna INEXISTENTE ⇒ 42703 ⇒ o
