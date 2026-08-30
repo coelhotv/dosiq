@@ -106,14 +106,28 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 | Alterados desde main | `npm run test:changed` |
 | CI completo | `rtk npm run validate:full` |
 
+> ⚠️ **Os hooks do git não são evidência.** `.husky/pre-commit` e `pre-push` já imprimiram
+> "✅ Testes críticos passaram" com o comando comentado (e o `exit 1` junto) — sucesso reportado de
+> operação que não ocorreu (AP-325). Rodar os gates à mão e citar a saída, sempre; se um hook
+> falar, conferir que ele de fato executou algo.
+
 `afterEach(() => { vi.clearAllMocks(); vi.clearAllTimers(); })` obrigatório · datas em fixture SEMPRE locais, nunca `toISOString()` p/ derivar dia (AP-270) · teste novo nasce strict-limpo · mobile: `npm test --workspace @dosiq/mobile`. Detalhe: `docs/standards/TESTING.md`.
 
-## DEVFLOW C5 (antes do commit) + SQP
+## SQP (R-221) — ANTES da primeira linha de código
+
+> ⚠️ Ler o `R-221` inteiro (`.agent/memory/rules/process_and_testing/R-221.md`), não esta síntese.
+> O resumo cobre o miolo e **omite** o bootstrap (§1), a seção de versão do PR preenchida a partir
+> dos arquivos (§9), o registro C5 nomeado (§10) e a Gate-Based Extension (hard stop antes de
+> commit). Agir pela síntese é o AP-315 aplicado às próprias instruções.
+
+- Classificar plataforma afetada → impacto SemVer **com justificativa** → bump no *version source* → changelog PT em `[Unreleased]` (`docs/standards/CHANGELOG_AND_RELEASES.md` — R-242/243/244)
+- **Saída verificável:** bump sem entrada no `[Unreleased]` é SQP incompleto. Entrada de changelog que descreve comportamento que o código **não tem** é pior que nenhuma — se o C4 mudar o desenho, a entrada volta atrás junto, no mesmo commit.
+  - **Mobile: declarar o CANAL junto do bump (R-314)** — OTA · build de loja · kill switch. Nativo/SDK/`ios/`/`android/`/permissão **e** feature nova ou mudança de propósito (mesmo 100% JS) ⇒ **loja** (Apple 3.3.1); embarcar código inativo p/ ligar por flag depois é proibido em qualquer canal. OTA **não bumpa** `APP_VERSION` (bump = runtime novo = update órfão) e loga `[X.Y.Z+ota.N]`. Checklist: `docs/operations/GUIA_OTA_EAS_UPDATE.md` §5.1
+
+## DEVFLOW C5 — antes do commit
 
 - Bug não-trivial → `AP-NNN` · padrão novo → `R-NNN` · decisão → `ADR-NNN` (índices + detail em `.agent/memory/`)
 - Entrega → journal (`.agent/memory/journal/YYYY-WWW.jsonl`) + `state.json` (counter)
-- **SQP (R-221) antes de alterar código**: classificar impacto SemVer, bump, changelog PT (`docs/standards/CHANGELOG_AND_RELEASES.md` — R-242/243/244)
-  - **Mobile: declarar o CANAL junto do bump (R-314)** — OTA · build de loja · kill switch. Nativo/SDK/`ios/`/`android/`/permissão **e** feature nova ou mudança de propósito (mesmo 100% JS) ⇒ **loja** (Apple 3.3.1); embarcar código inativo p/ ligar por flag depois é proibido em qualquer canal. OTA **não bumpa** `APP_VERSION` (bump = runtime novo = update órfão) e loga `[X.Y.Z+ota.N]`. Checklist: `docs/operations/GUIA_OTA_EAS_UPDATE.md` §5.1
 - `plans/` é **local-only** (gitignored) — refs em docs marcam "(local-only, não versionado)"
 - **Distill**: auto quando counter ≥15; manual obrigatório ao fechar fase/épico. D5 reconcilia state × índices.
 
@@ -125,6 +139,8 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 7. C5 → 8. commit PT → 9. push + PR → 10. RC6 review independente (obrigatório Tier 1+)
 11. AGUARDAR aprovação → USER mergeia (R-060 — NUNCA auto-merge) → 12. C5 pós-merge
 ```
+
+**Isto são GATES, não uma lista de sugestões.** Cada passo produz **evidência citável** — comando + saída, número do PR, hash. Passo sem evidência = **não rodou**, por mais convicto que o agente esteja. Pular um gate exige **pedido explícito do usuário** e vai **declarado no corpo do PR**. Em particular: "já revisei enquanto escrevia" **não** substitui o RC5 — o RC5 existe para a premissa que o autor não enxerga (RC5 do #814 derrubou a conclusão central do próprio autor do PR).
 
 **Review (pós-Gemini, ADR-069):** L0 lint → L1 RC5 → L2 RC6 → L3 humano. Operação completa, comandos, chunking, egress guard e regras de quota: **`docs/standards/AI_REVIEW.md`** (leitura obrigatória antes de rodar RC6). Essência: `bash ~/SKILLS/devflow/scripts/ai-review.sh <PR#> --post` após abrir PR Tier 1+; roda UMA vez; finding `introduced` critical/high resolve antes de pedir aprovação; zero findings em diff gordo = conferir stderr; finding de schema → verificar no banco (R-295 vale contra o revisor). 📏 Até T051: appendar linha de medição em `plans/specs/034-gemini-sunset/measurement.md` no C5.
 

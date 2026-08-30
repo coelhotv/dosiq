@@ -1,4 +1,1 @@
-#echo "🧪 Executando lint-staged..."
-#npx lint-staged
-
-echo "✅ Pre-commit concluído!"
+npx lint-staged
