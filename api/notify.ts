@@ -8,6 +8,7 @@ import {
   checkStockAlerts,
   checkAdherenceReports,
   checkTitrationAlerts,
+  checkPrescriptionAlerts,
   checkMonthlyReport,
   sendDLQDigest
 } from '../server/bot/tasks.js';
@@ -444,10 +445,15 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       (context) => sendDLQDigest(notificationDispatcher, context));
   }
 
-  // Titration Alerts: Daily at 08:00 (não migra para outbox)
+  // Titration + Prescription Alerts: Daily at 08:00 (não migram para outbox)
   if (currentHour === 8 && currentMinute === 0) {
     await runJob('titration_alerts', 'titration_alerts',
       (context) => checkTitrationAlerts(bot, { ...context, notificationDispatcher }));
+    // 076: até esta spec `checkPrescriptionAlerts` só era chamado pelo node-cron de
+    // `server/bot/scheduler.ts` — que NÃO roda no serverless (AP-182). O alerta de renovação
+    // de receita nunca executou em produção.
+    await runJob('prescription_alerts', 'prescription_alerts',
+      (context) => checkPrescriptionAlerts(bot, { ...context, notificationDispatcher }));
   }
 
   // Adherence Reports: Sunday 09:00-12:00 SP
