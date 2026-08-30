@@ -1,0 +1,14 @@
+diff --git a/apps/mobile/src/hooks/useDoseReminder.ts b/apps/mobile/src/hooks/useDoseReminder.ts
+index 6666666..7777777 100644
+--- a/apps/mobile/src/hooks/useDoseReminder.ts
++++ b/apps/mobile/src/hooks/useDoseReminder.ts
+@@ -1,5 +1,10 @@
+ import { useEffect } from 'react';
+
+ export function useDoseReminder(doseId) {
++  useEffect(() => {
++    scheduleLocalNotification(doseId);
++  });
++
+   return null;
+ }

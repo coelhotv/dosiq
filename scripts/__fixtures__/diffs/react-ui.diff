@@ -1,0 +1,14 @@
+diff --git a/apps/web/src/features/dashboard/components/MedicineCard.tsx b/apps/web/src/features/dashboard/components/MedicineCard.tsx
+index 4444444..5555555 100644
+--- a/apps/web/src/features/dashboard/components/MedicineCard.tsx
++++ b/apps/web/src/features/dashboard/components/MedicineCard.tsx
+@@ -1,6 +1,9 @@
+ import React from 'react';
++import { useState } from 'react';
+
+ export function MedicineCard({ items }) {
++  const [expanded, setExpanded] = useState(false);
++
+   return (
+     <ul>
+       {items.map((item) => (

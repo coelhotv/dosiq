@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "in_progress",
     "tier": 1,
-    "spec_dir": "plans/specs/068-android-oem-battery-assistant",
-    "spec": "plans/specs/068-android-oem-battery-assistant/spec.md",
-    "goal": "068 — assistente anti-Doze por fabricante (Android), planning pos RC3+RC2",
-    "goal_type": "feature",
+    "spec_dir": "plans/specs/060-memory-yaml-enrich",
+    "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
+    "goal": "060 Fase 1 — schema/validador/compilador/seletor de memoria (US1-US3)",
+    "goal_type": "tooling",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
       "plans/specs/062-android-notification-fidelity",
@@ -116,7 +116,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
