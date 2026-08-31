@@ -1,6 +1,6 @@
 ---
 id: AP-P16
-title: Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``
+title: "Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``"
 summary: Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc
 applies_to:
   - all

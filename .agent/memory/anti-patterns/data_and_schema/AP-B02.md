@@ -1,6 +1,6 @@
 ---
 id: AP-B02
-title: Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`)
+title: "Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`)"
 summary: HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afetada. UI mostra "Erro
 applies_to:
   - all

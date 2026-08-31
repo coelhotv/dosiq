@@ -1,7 +1,7 @@
 ---
 id: AP-B03
 title: Import estático de componente pesado que internamente importa services/vendors grandes
-summary: Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGenera
+summary: "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGenera"
 applies_to:
   - all
 tags:

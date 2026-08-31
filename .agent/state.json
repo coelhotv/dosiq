@@ -8,7 +8,7 @@
     "tier": 1,
     "spec_dir": "plans/specs/060-memory-yaml-enrich",
     "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
-    "goal": "060 Fase 1 — schema/validador/compilador/seletor de memoria (US1-US3)",
+    "goal": "060 — T028/T029/piloto: consertar corpus, rebaixar hot legado, provar pipeline",
     "goal_type": "tooling",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
@@ -116,7 +116,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,

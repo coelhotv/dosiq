@@ -1,7 +1,7 @@
 ---
 id: AP-H17
 title: Attempt to use whatwg-url-without-unicode directly on Hermes (WebIDL crash)
-summary: whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') which is never initialized on Hermes. Crash: 'Cannot read property get of undefined' at URL.js line 54 (globalObject[ctorRegistry]['URL']). The custom polyfill in polyfills.js is the only working solution. Spike branch: spike/whatwg-url-polyfill.
+summary: "whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') which is never initialized on Hermes. Crash: 'Cannot read property get of undefined' at URL.js line 54 (globalObject[ctorRegistry]['URL']). The custom polyfill in polyfills.js is the only working solution. Spike branch: spike/whatwg-url-polyfill."
 applies_to:
   - apps/mobile/polyfills.js
 tags:

@@ -1,7 +1,7 @@
 ---
 id: AP-P12
 title: Mesma query Supabase chamada N vezes em sub-funções paralelas
-summary: `getAdherenceSummary` chamava 3 sub-funções que cada uma buscava `protocols` independentemente = 3 q
+summary: "`getAdherenceSummary` chamava 3 sub-funções que cada uma buscava `protocols` independentemente = 3 q"
 applies_to:
   - all
 tags:

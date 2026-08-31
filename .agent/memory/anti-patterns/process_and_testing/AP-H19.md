@@ -14,7 +14,7 @@ last_triggered: 2026-04-15
 expiry_date: 2027-04-15
 status: active
 related_rule: None
-layer: hot
+layer: warm
 bootstrap_default: True
 pack: mobile-ux
 ---

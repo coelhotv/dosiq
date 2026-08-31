@@ -254,24 +254,43 @@ function reasonToText(reason) {
   return JSON.stringify(reason);
 }
 
-function formatHotBlock(id, rule) {
-  return [
-    `## [HOT] ${id} — ${rule.title}`,
-    rule.summary,
-    `domain: ${rule.domain}`
-  ].join('\n');
+function formatHotBlock(id, rule, root) {
+  const body = ruleBody(root, id, rule.domain);
+  return [`## [HOT] ${id} — ${rule.title}`, '', body || rule.summary].join('\n');
 }
 
-function formatFullBlock(item, rule) {
+// Caminho no disco a partir do id + domínio. R-* mora em rules/, AP-* em anti-patterns/.
+function ruleFilePath(root, id, domain) {
+  const bucket = id.startsWith('AP-') ? 'anti-patterns' : 'rules';
+  return path.join(root, bucket, domain, `${id}.md`);
+}
+
+// Corpo da memória sem o frontmatter (o frontmatter é metadado de roteamento, não conteúdo).
+function ruleBody(root, id, domain) {
+  try {
+    const t = fs.readFileSync(ruleFilePath(root, id, domain), 'utf-8');
+    if (!t.startsWith('---\n')) return t.trim();
+    const end = t.indexOf('\n---', 4);
+    return end === -1 ? t.trim() : t.slice(end + 4).replace(/^\n+/, '').trim();
+  } catch {
+    return null;
+  }
+}
+
+// FR-015: o formato default injeta a regra INTEIRA. Mandar o `summary` aqui repetiria o defeito
+// que esta spec existe para corrigir — texto curto demais para agir, só que por outro caminho.
+// O resumo serve para DECIDIR se vale abrir (--format brief), não para substituir a regra.
+function formatFullBlock(item, rule, root) {
+  const body = ruleBody(root, item.id, rule.domain);
   return [
     `## ${item.id} — ${rule.title} (score=${item.score})`,
-    rule.summary,
-    `domain: ${rule.domain}`,
-    `motivo: ${item.reasons.map(reasonToText).join('; ')}`
+    `motivo: ${item.reasons.map(reasonToText).join('; ')}`,
+    '',
+    body || rule.summary
   ].join('\n');
 }
 
-function printResults({ index, hotIds, selected, format, json, changedDomains }) {
+function printResults({ index, hotIds, selected, format, json, changedDomains, memoryRoot }) {
   if (json) {
     const out = {
       hot: hotIds.map((id) => ({ id, ...index.rules[id] })),
@@ -304,10 +323,10 @@ function printResults({ index, hotIds, selected, format, json, changedDomains })
   // format === 'full' (default)
   const blocks = [];
   for (const id of hotIds) {
-    blocks.push(formatHotBlock(id, index.rules[id]));
+    blocks.push(formatHotBlock(id, index.rules[id], memoryRoot));
   }
   for (const item of selected) {
-    blocks.push(formatFullBlock(item, index.rules[item.id]));
+    blocks.push(formatFullBlock(item, index.rules[item.id], memoryRoot));
   }
   console.log(blocks.join('\n\n'));
 }
@@ -384,7 +403,7 @@ function main() {
   const hotIds = (index.hot || []).slice().sort();
   const selected = selectRules(index, ctx, args.limit);
 
-  printResults({ index, hotIds, selected, format: args.format, json: args.json, changedDomains });
+  printResults({ index, hotIds, selected, format: args.format, json: args.json, changedDomains, memoryRoot: root });
   process.exitCode = 0;
 }
 

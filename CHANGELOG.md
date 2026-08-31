@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Memórias do DEVFLOW: frontmatter consertado, `hot` rebaixado e lote-piloto
+
+- **Process** (`no-user-impact`). Três correções no acervo de memórias em `.agent/memory/`, todas
+  verificadas pelo validador do PR anterior. (1) **58 arquivos tinham frontmatter YAML
+  sintaticamente inválido** — dois-pontos não citado em escalar — e ninguém sabia, porque nada no
+  repositório parseava esse metadado; consertados por script determinístico, com prova de que o
+  diff só acrescenta aspas. (2) **64 memórias marcadas como sempre-presentes (`hot`) foram
+  rebaixadas para `warm`**: eram quase todas das primeiras regras do catálogo, marcadas por
+  antiguidade e não por evidência, e 6 delas já eram injetadas inteiras pelo `CLAUDE.md`. Voltar a
+  ser sempre-presente agora exige justificativa escrita. (3) **12 memórias enriquecidas** com o
+  metadado novo, o suficiente para o índice compilado e o seletor rodarem contra dado real.
+  Também consertados dois defeitos do ferramental que só apareceram com dado real: o índice
+  carregava a lista de arquivos não migrados (99.657B → 8.351B) e o seletor devolvia o resumo em
+  vez da regra inteira.
+
 ### Ferramental de memória do DEVFLOW: schema, índice compilado e seletor
 
 - **Process** (`no-user-impact`). Três CLIs novos em `scripts/` que preparam a substituição do

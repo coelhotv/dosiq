@@ -1,7 +1,7 @@
 ---
 id: AP-B04
 title: Barrel exports (`index.js`) que re-exportam todos os services incluindo os de features lazy
-summary: `@shared/services/index.js` exporta `stockService`, `adherenceService`, etc. Qualquer `import { x } 
+summary: "`@shared/services/index.js` exporta `stockService`, `adherenceService`, etc. Qualquer `import { x }"
 applies_to:
   - all
 tags:

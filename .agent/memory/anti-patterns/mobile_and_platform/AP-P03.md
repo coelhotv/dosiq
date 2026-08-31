@@ -1,7 +1,7 @@
 ---
 id: AP-P03
 title: O(n) synchronous computation in useMemo with n>100
-summary: `analyzeAdherencePatterns` + Zod validation on 500 objects in useMemo = Main Thread freeze, UI unres
+summary: "`analyzeAdherencePatterns` + Zod validation on 500 objects in useMemo = Main Thread freeze, UI unres"
 applies_to:
   - all
 tags:

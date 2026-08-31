@@ -1,6 +1,6 @@
 ---
 id: AP-P09
-title: N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`
+title: "N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`"
 summary: N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100
 applies_to:
   - all

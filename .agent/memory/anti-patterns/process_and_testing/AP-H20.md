@@ -13,7 +13,7 @@ tags:
 trigger_count: 1
 last_triggered: 2026-04-15
 expiry_date: 2027-04-15
-status: obsolete
+status: archived
 resolved_on: 2026-05-24
 resolution: "gsync-native e worktree-bridge aposentados (projeto fora do iCloud). Sem iCloud sync delay, sem sync de .git entre worktrees."
 related_rule: R-170

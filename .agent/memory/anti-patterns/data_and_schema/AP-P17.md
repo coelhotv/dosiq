@@ -1,7 +1,7 @@
 ---
 id: AP-P17
-title: `select('coluna_inexistente')` em query Supabase
-summary: HTTP 400 Bad Request silencioso. UI mostra "Erro ao carregar dados" sem mensagem clara. Ex: `status`
+title: "`select('coluna_inexistente')` em query Supabase"
+summary: "HTTP 400 Bad Request silencioso. UI mostra \"Erro ao carregar dados\" sem mensagem clara. Ex: `status`"
 applies_to:
   - all
 tags:

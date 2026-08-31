@@ -1,7 +1,7 @@
 ---
 id: AP-P01
 title: IntersectionObserver sentinel positioned before fold + rootMargin high
-summary: `rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becom
+summary: "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becom"
 applies_to:
   - all
 tags:
