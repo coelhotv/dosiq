@@ -3,8 +3,8 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "implementing",
+    "status": "in-progress",
     "tier": 1,
     "spec_dir": "plans/specs/058-rc6-reflection-gate",
     "spec": "plans/specs/058-rc6-reflection-gate/spec.md",
@@ -76,7 +76,7 @@
       "PLANNING: rota no STACK RAIZ (Navigation.tsx ao lado de STOCK_INITIAL_BALANCE :377) pelo motivo ja documentado em :371-375 — no PR 2 a entrada tambem vem da aba Perfil e stacks irmaos nao se enxergam",
       "PLANNING (risco registrado, NAO escondido): 14 arquivos de codigo, acima do smell de 8 do RC3. 6 sao teste ou edicao de 1-3 linhas; o corpo real sao 6 arquivos. Nao reduzir mais sem tirar D-2/D-3, que sao o que fecha o fluxo"
     ],
-    "branch": "main",
+    "branch": "feat/058-reflect-gate",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
@@ -111,9 +111,9 @@
     "merged_pr": 813,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "design-review",
-    "tasks": "plans/specs/068-android-oem-battery-assistant/tasks.md",
-    "plan": "plans/specs/068-android-oem-battery-assistant/plan.md",
-    "next_action": "T001/T002 — extrair os 6 fixtures do measurement.md p/ ~/SKILLS/devflow/fixtures/rc6/ e escrever reflect-test.sh. CORPUS ANTES DO GATE: o risco central é refutar achado REAL, e isso é indetectável sem corpus."
+    "tasks": "plans/specs/058-rc6-reflection-gate/tasks.md",
+    "plan": "plans/specs/058-rc6-reflection-gate/plan.md",
+    "next_action": "T004 — núcleo assimétrico (refuted só com contra-prova positiva), ANTES dos verificadores; testar os 5 caminhos de degradação. T001/T002 feitos: corpus de 7 fixtures + reflect-test.sh (exit 69 sem gate)."
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
@@ -176,7 +176,9 @@
     "gaps_declarados": {
       "T023": "O gate de frescor (`compile-memory-index.mjs --check`) existe e funciona, mas NÃO está ligado a hook nenhum. Até ligar, o compiled_rules_index.json commitado pode envelhecer em silêncio (classe do R-289).",
       "T007": "O seletor NÃO emite o CLAUDE.md; o FR-005 exige CLAUDE.md + hot e só a metade `hot` está feita. Decidir no T012 se a integração satisfaz a outra metade (o ai-review.sh já injeta o CLAUDE.md inteiro hoje — duplicar seria pagar duas vezes).",
-      "T013": "PO-1/2/3/6 exercitados na prática mas NÃO executados e colados formalmente."
+      "T013": "PO-1/2/3/6 exercitados na prática mas NÃO executados e colados formalmente.",
+      "058_corpus_compile": "Não existe fixture `real-*` de classe `compile` — a série de 8 PRs não produziu achado verdadeiro dessa classe. O verificador de tsc (T005) entra sem contraprova de que não derruba achado real. Fechar no primeiro achado real de compile em PR (T014/T015).",
+      "058_sqp_a_posteriori": "O SQP da 058 foi escrito DEPOIS de T001/T002, não antes (R-221 violado, sem pedido do PO). Declarado na spec §SQP. Classificação: no-user-impact, sem bump — código vive no repo externo devflow."
     },
     "prs_desta_sessao": {
       "815": "31e8531c — ferramental (mergeado)",
