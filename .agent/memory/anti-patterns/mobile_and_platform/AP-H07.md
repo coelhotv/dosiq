@@ -1,6 +1,6 @@
 ---
 id: AP-H07
-title: Mobile Expo dev: iCloud Cloud Documents path causes Watchman permission errors
+title: "Mobile Expo dev: iCloud Cloud Documents path causes Watchman permission errors"
 summary: npx expo start fails with Watchman 'Operation not permitted' when repo in iCloud (~/Library/Mobile Documents/)
 applies_to:
   - mobile

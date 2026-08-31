@@ -1,6 +1,6 @@
 ---
 id: AP-H04
-title: Monorepo workspace: peer dependency mismatch on new subpackage
+title: "Monorepo workspace: peer dependency mismatch on new subpackage"
 summary: npm ERESOLVE conflict when adding new workspace package with incompatible peer deps
 applies_to:
   - monorepo

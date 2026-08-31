@@ -1,7 +1,7 @@
 ---
 id: AP-H13
 title: Read this.href inside URL.prototype.toString override on Hermes
-summary: No Hermes, o getter nativo href chama toString() internamente. Substituir toString() e ler this.href dentro cria recursão infinita → RangeError: Maximum call stack size exceeded.
+summary: "No Hermes, o getter nativo href chama toString() internamente. Substituir toString() e ler this.href dentro cria recursão infinita → RangeError: Maximum call stack size exceeded."
 applies_to:
   - apps/mobile/polyfills.js
 tags:

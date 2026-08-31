@@ -1,7 +1,7 @@
 ---
 id: AP-W03
 title: Use `screen.getByText('X%')` when the same text appears in multiple elements
-summary: `"Found multiple elements with text…"` test failure
+summary: "`\"Found multiple elements with text…\"` test failure"
 applies_to:
   - all
 tags:

@@ -1,7 +1,7 @@
 ---
 id: AP-H09
 title: registerRootComponent do Expo SDK 53 activa expo-router quando src/app/ existe
-summary: registerRootComponent detecta transform.routerRoot=app no URL do bundle (Expo Go) e tenta inicializar expo-router. Fix: usar AppRegistry.registerComponent('main', () => App) directamente do react-native.
+summary: "registerRootComponent detecta transform.routerRoot=app no URL do bundle (Expo Go) e tenta inicializar expo-router. Fix: usar AppRegistry.registerComponent('main', () => App) directamente do react-native."
 applies_to:
   - mobile
   - expo

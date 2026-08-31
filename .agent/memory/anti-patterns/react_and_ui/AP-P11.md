@@ -1,6 +1,6 @@
 ---
 id: AP-P11
-title: `useCallback` with state in deps of a ref callback
+title: "`useCallback` with state in deps of a ref callback"
 summary: Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` wi
 applies_to:
   - all

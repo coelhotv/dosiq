@@ -1,7 +1,7 @@
 ---
 id: AP-W12
 title: Use `||` fallback for numeric props that can legitimately be `0`
-summary: `dosage_per_intake = 0` becomes `1`; incorrect dose recorded
+summary: "`dosage_per_intake = 0` becomes `1`; incorrect dose recorded"
 applies_to:
   - all
 tags:

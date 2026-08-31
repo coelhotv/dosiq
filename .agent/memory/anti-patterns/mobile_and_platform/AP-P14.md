@@ -1,6 +1,6 @@
 ---
 id: AP-P14
-title: `supabase.auth.getUser()` chamado em cada `getUserId()` sem cache
+title: "`supabase.auth.getUser()` chamado em cada `getUserId()` sem cache"
 summary: 13 HTTP roundtrips no primeiro load do Dashboard (~8s em 4G). Cada service que chama `getUserId()` d
 applies_to:
   - all

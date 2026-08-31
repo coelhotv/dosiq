@@ -1,7 +1,7 @@
 ---
 id: AP-W14
 title: Use `new Date('YYYY-MM-DDTHH:MM:00.000Z')` as reference in tests involving `setHours`
-summary: Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local hours
+summary: "Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local hours"
 applies_to:
   - all
 tags:

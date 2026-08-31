@@ -1,7 +1,7 @@
 ---
 id: AP-W07
 title: Write test expecting UTC timestamp as "tomorrow" when timezone is BRT (UTC-3)
-summary: Test fails: `2026-03-06T02:00:00Z` = 23:00 BRT = still "today"
+summary: "Test fails: `2026-03-06T02:00:00Z` = 23:00 BRT = still \"today\""
 applies_to:
   - all
 tags:

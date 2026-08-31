@@ -304,6 +304,13 @@ function main() {
 
   const { fatalErrors, skipped, rules, byPath, byTrigger, hot, counts } = buildIndex(root);
 
+  // --report <arquivo>: despeja a lista de pulados fora do índice, para triagem da migração.
+  const reportIdx = process.argv.indexOf('--report');
+  if (reportIdx !== -1 && process.argv[reportIdx + 1]) {
+    fs.writeFileSync(process.argv[reportIdx + 1], JSON.stringify(skipped, null, 2), 'utf-8');
+    console.log(`relatório de pulados: ${skipped.length} entrada(s) -> ${process.argv[reportIdx + 1]}`);
+  }
+
   if (fatalErrors.length > 0) {
     console.error('Falha ao compilar índice — diretório(s) de domínio inválido(s):');
     for (const err of fatalErrors) {
@@ -349,7 +356,12 @@ function main() {
       generatedAt: new Date().toISOString(),
       sourceHash,
       counts,
-      skipped
+      // Só a CONTAGEM. A lista dos pulados é diagnóstico, e diagnóstico não mora no artefato de
+      // caminho quente: com 12 regras válidas ela sozinha era 90.829B de um índice de 98.820B —
+      // 92% do arquivo, contra 6.183B de payload real. Pior, encolhia conforme o acervo migrasse,
+      // então o tamanho do índice media o progresso da migração em vez do próprio conteúdo.
+      // A lista completa sai por --report.
+      skippedCount: skipped.length
     }
   };
 

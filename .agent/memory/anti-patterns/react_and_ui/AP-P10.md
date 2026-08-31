@@ -1,6 +1,6 @@
 ---
 id: AP-P10
-title: `select('*')` when only need count
+title: "`select('*')` when only need count"
 summary: All columns transferred unnecessarily. 90 days logs × 10 protocols = ~2700 rows × ~500 bytes/row = 1
 applies_to:
   - all

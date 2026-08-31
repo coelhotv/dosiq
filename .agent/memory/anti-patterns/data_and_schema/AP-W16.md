@@ -1,6 +1,6 @@
 ---
 id: AP-W16
-title: `bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo
+title: "`bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo"
 summary: CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo fi
 applies_to:
   - all

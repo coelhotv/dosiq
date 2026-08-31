@@ -12,7 +12,7 @@ last_triggered: None
 expiry_date: 2027-04-08
 status: active
 related_rule: R-020
-layer: hot
+layer: warm
 bootstrap_default: True
 pack: date-time
 ---

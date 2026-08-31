@@ -1,7 +1,7 @@
 ---
 id: AP-W18
 title: Copy component usage from existing code without inspecting the actual prop interface (e.g., LogForm usage from Dashboard.jsx)
-summary: TypeError at runtime: "Cannot read properties of undefined" when component tries to access props wit
+summary: "TypeError at runtime: \"Cannot read properties of undefined\" when component tries to access props wit"
 applies_to:
   - all
 tags:

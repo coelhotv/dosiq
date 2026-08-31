@@ -1,7 +1,7 @@
 ---
 id: AP-P15
-title: `new Date()` construction em hot loop (>100 iterações)
-summary: `calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `pa
+title: "`new Date()` construction em hot loop (>100 iterações)"
+summary: "`calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `pa"
 applies_to:
   - all
 tags:

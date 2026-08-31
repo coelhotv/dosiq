@@ -1,7 +1,7 @@
 ---
 id: AP-P13
 title: Disparar queries de background imediatamente após `setIsLoading(false)`
-summary: `setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack fram
+summary: "`setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack fram"
 applies_to:
   - all
 tags:

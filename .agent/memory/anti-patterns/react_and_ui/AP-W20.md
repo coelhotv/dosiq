@@ -1,7 +1,7 @@
 ---
 id: AP-W20
 title: Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components
-summary: Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registratio
+summary: "Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registratio"
 applies_to:
   - all
 tags:
