@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "coding",
-    "status": "in_progress",
+    "mode": "planning",
+    "status": "planned",
     "tier": 1,
-    "spec_dir": "plans/specs/060-memory-yaml-enrich",
-    "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
-    "goal": "060 — T028/T029/piloto: consertar corpus, rebaixar hot legado, provar pipeline",
+    "spec_dir": "plans/specs/058-rc6-reflection-gate",
+    "spec": "plans/specs/058-rc6-reflection-gate/spec.md",
+    "goal": "058 — gate de reflexão determinístico do RC6 (falsificar, não verificar)",
     "goal_type": "tooling",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
@@ -112,7 +112,8 @@
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "design-review",
     "tasks": "plans/specs/068-android-oem-battery-assistant/tasks.md",
-    "plan": "plans/specs/068-android-oem-battery-assistant/plan.md"
+    "plan": "plans/specs/068-android-oem-battery-assistant/plan.md",
+    "next_action": "T001/T002 — extrair os 6 fixtures do measurement.md p/ ~/SKILLS/devflow/fixtures/rc6/ e escrever reflect-test.sh. CORPUS ANTES DO GATE: o risco central é refutar achado REAL, e isso é indetectável sem corpus."
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
@@ -148,5 +149,39 @@
     "introduced_high": 0,
     "pr": 816,
     "note": "Cobertura 1/1. A/B não armou (1 pack). Preâmbulo 88.056B — variação por composição de PR, não efeito do trabalho."
+  },
+  "handoff": {
+    "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
+    "projeto_em_curso": "Estratégia de memória de longo prazo do DEVFLOW: specs 060 (camada de acesso à memória) + 058 (gate de precisão do RC6). Origem: o preâmbulo do RC6 cresce O(catálogo) e já consumia 95.790B contra um budget de código de 46.210B.",
+    "ordem_acordada_com_o_PO": [
+      "1. 058 completa (plan.md pronto; próximo é T001/T002 — corpus)",
+      "2. Volume da 060: T030 (applies_to.paths, 258 arquivos) · T031 (descartar pack) · T032 (~413 summary — lote do agy)",
+      "3. Retenção: T020-T023 + T033 (conflito de ciclo de vida)",
+      "4. T012 (flip do RC6_RULE_SELECTOR) — só depois do baseline annotate da 058",
+      "5. Distill de fechamento, em sessão própria"
+    ],
+    "decisoes_do_PO_nesta_sessao": {
+      "merge": "O PO REVISA e aprova; o MERGE mecânico (squash + delete branch) foi delegado ao agente, com autorização explícita por PR. NÃO é auto-merge: sem o 'aprovado' do PO, a R-060 vale integralmente. Ocorreu assim nos #815 e #816.",
+      "distill": "ADIADO DELIBERADAMENTE para sessão própria, ao fim de todo o projeto. O distillation_due=true é esperado, não é pendência esquecida. NÃO rodar distill no meio das entregas.",
+      "delegacao": "Aprovada a economia de quota: script (zero LLM) para o derivável · agy -p para sumarização em volume · Sonnet para arquivo novo bem-spec'ado e para applies_to.paths · principal para governança, score, RC5 e gates. Ver spec 060 §Delegação.",
+      "escopo_060": "Ampliado de pré-processador do RC6 para camada de acesso única à memória (3 públicos: RC6, sessão, distill)."
+    },
+    "fatos_verificados_caros_de_redescobrir": {
+      "rc6_nao_le_layer": "O ai-review.sh NÃO lê o campo `layer` das memórias — só os índices .md. Quem lê hot/warm/cold é o bootstrap do SKILL.md. Por isso o enriquecimento do corpus NÃO contamina a medição da 058; só o T012 (flip) espera de verdade.",
+      "eslint_ignora_scripts": "`scripts/**` é globalmente ignorado no eslint.config.js:24 — os .mjs da 060 NÃO têm cobertura de lint. A rede ali são os testes (node --test). Política pré-existente, não introduzida por nós.",
+      "rc6_code_globs": "CODE_GLOBS não tinha .mjs/.cjs — 33 arquivos versionados eram ponto cego total do revisor, inclusive .github/scripts/*.cjs. Corrigido no devflow (6579133). Um PR só de .mjs fechava CLEAN sem uma linha revisada.",
+      "hot_hoje": "layer:hot está em 0 de 15 após o T029. Não é lacuna: o CLAUDE.md já carrega o conjunto sempre-presente, e o resto se entrega por seleção de caminho.",
+      "sc002_depende_do_fr013": "O índice custa ~650B/entrada; o teto de 60KB do SC-002 comporta ~85-100 entradas, não 605. A retenção do FR-013 é PRÉ-REQUISITO do SC-002, não polimento."
+    },
+    "gaps_declarados": {
+      "T023": "O gate de frescor (`compile-memory-index.mjs --check`) existe e funciona, mas NÃO está ligado a hook nenhum. Até ligar, o compiled_rules_index.json commitado pode envelhecer em silêncio (classe do R-289).",
+      "T007": "O seletor NÃO emite o CLAUDE.md; o FR-005 exige CLAUDE.md + hot e só a metade `hot` está feita. Decidir no T012 se a integração satisfaz a outra metade (o ai-review.sh já injeta o CLAUDE.md inteiro hoje — duplicar seria pagar duas vezes).",
+      "T013": "PO-1/2/3/6 exercitados na prática mas NÃO executados e colados formalmente."
+    },
+    "prs_desta_sessao": {
+      "815": "31e8531c — ferramental (mergeado)",
+      "816": "67baebe9 — corpus + piloto (mergeado)",
+      "devflow": "6579133 — .mjs/.cjs no CODE_GLOBS do RC6 (pushed)"
+    }
   }
 }
