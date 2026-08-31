@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Ferramental de memória do DEVFLOW: schema, índice compilado e seletor
+
+- **Process** (`no-user-impact`). Três CLIs novos em `scripts/` que preparam a substituição do
+  preâmbulo do revisor de IA (RC6) por seleção cirúrgica de regras — **nada muda no produto nem no
+  review** enquanto a integração não for ligada (`RC6_RULE_SELECTOR`). `validate-memory-schema.mjs`
+  valida o frontmatter das memórias em `.agent/memory/`; `compile-memory-index.mjs` gera o índice
+  compilado, com teto de entradas sempre-injetadas e gate de frescor por hash das fontes;
+  `select-rules.mjs` escolhe as regras a partir dos caminhos alterados e do diff, de forma
+  determinística e registrando o motivo de cada escolha. O levantamento inicial do acervo (605
+  arquivos) encontrou **58 memórias com frontmatter YAML sintaticamente inválido**, nunca detectadas
+  porque nada no repositório parseava esse metadado.
+
 ### Alerta de renovação de receita: acabamento
 
 - **Fix** (`patch` server `4.2.4` → `4.2.5`). Três ajustes sobre o alerta revivido acima.
