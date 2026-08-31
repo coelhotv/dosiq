@@ -116,7 +116,7 @@
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 16,
+    "journal_entries_since_distillation": 17,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
@@ -133,12 +133,12 @@
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 4,
+    "auto_fixed": 2,
     "ask_items": 0,
-    "note": "RC5 do #815: 4 defeitos corrigidos antes do commit — (1) teto por domínio DURO limitava a seleção a 2x(nº de domínios), derrubando o FR-024 do próprio autor; (2) --limit não-numérico => parseInt NaN => limite sumia e o prompt receberia o catálogo inteiro; (3) main() no escopo do módulo nos 3 CLIs => import rodava a CLI; (4) --json truncava em PIPE por process.exit() antes do flush, e o PO-5 consome '| jq'."
+    "note": "RC5 do #816 contra dado real: meta.skipped inchando o índice (99.657B->8.351B) e formato default mandando summary em vez da regra inteira (FR-015). Nenhum dos dois aparecia contra fixture."
   },
   "ai_review": {
-    "engine": "agy (3 chunks)",
+    "engine": "agy (1 chunk)",
     "status": "clean",
     "critical": 0,
     "high": 0,
@@ -146,7 +146,7 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 815,
-    "note": "Cobertura 3/3, partial=false. Os achados do run são sobre o RC6 em si: .mjs/.cjs fora do CODE_GLOBS (33 arquivos cegos no dosiq, incl. .github/scripts/*.cjs) — corrigido no devflow 6579133; e preâmbulo 95.790B contra budget de 46.210B = 74% do payload é memória repetida por chunk. A/B do PO-5 abortou sozinho por baseline sem significância, sem gastar o 2º run."
+    "pr": 816,
+    "note": "Cobertura 1/1. A/B não armou (1 pack). Preâmbulo 88.056B — variação por composição de PR, não efeito do trabalho."
   }
 }
