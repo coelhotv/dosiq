@@ -113,7 +113,7 @@
     "ceremony_type": "design-review",
     "tasks": "plans/specs/058-rc6-reflection-gate/tasks.md",
     "plan": "plans/specs/058-rc6-reflection-gate/plan.md",
-    "next_action": "T004 — núcleo assimétrico (refuted só com contra-prova positiva), ANTES dos verificadores; testar os 5 caminhos de degradação. T001/T002 feitos: corpus de 7 fixtures + reflect-test.sh (exit 69 sem gate)."
+    "next_action": "T014 — rodar o gate em >=2 PRs reais no modo annotate (SC-006); operador confere cada refuted antes de qualquer flip para drop. Depois T015-T018 (medicao + registro). Etapas 1 e 2 fechadas, corpus 7/7 verde."
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
