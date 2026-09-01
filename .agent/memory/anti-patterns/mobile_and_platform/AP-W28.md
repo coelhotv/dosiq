@@ -1,3 +1,22 @@
+---
+title: Cálculo de Meia-Noite Frágil via setHours(24)
+summary: Cálculo de meia-noite frágil usando .setHours(24) em vez de .setDate(+1).
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - useTodayData.js
+  keywords:
+    - cálculo
+    - meia
+    - noite
+    - frágil
+    - via
+    - sethours
+---
+
 # [AP-W28] Cálculo de Meia-Noite Frágil via setHours(24)
 
 ## Problema

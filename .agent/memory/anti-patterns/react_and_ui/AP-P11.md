@@ -1,21 +1,35 @@
 ---
-id: AP-P11
 title: "`useCallback` with state in deps of a ref callback"
-summary: Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)` wi
+summary: >-
+  Ref callbacks recreated on state change. React calls `old(null)` without cleanup → `new(element)`
+  wi
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - useCallback
+  keywords:
+    - usecallback
+    - with
+    - state
+    - deps
+    - ref
+    - callback
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P11
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-120
 tags:
   - performance
   - state
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-120
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-P11 — `useCallback` with state in deps of a ref callback

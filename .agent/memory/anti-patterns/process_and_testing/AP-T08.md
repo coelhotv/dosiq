@@ -1,20 +1,32 @@
 ---
-id: AP-T08
 title: Run full test suite on every commit locally
 summary: Blocks development, 6.5 min wait time discourages testing
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - run
+    - full
+    - test
+    - suite
+    - every
+    - commit
+    - locally
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-T08
+last_triggered: None
+legacy_pack: review-validation
+related_rule: R-051
 tags:
   - testing
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-051
-layer: cold
-bootstrap_default: False
-pack: review-validation
 ---
 
 # AP-T08 — Run full test suite on every commit locally

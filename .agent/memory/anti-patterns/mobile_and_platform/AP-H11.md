@@ -1,9 +1,35 @@
 ---
-id: AP-H11
 title: Use detection probe to detect Hermes URLSearchParams bugs
-summary: Hermes não lança 'not implemented' em testes sintéticos — só lança em uso real pelo Supabase. Detection probe passa mas prod falha.
+summary: >-
+  Hermes não lança 'not implemented' em testes sintéticos — só lança em uso real pelo Supabase.
+  Detection probe passa mas prod falha.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - URLSearchParams
+    - URLSearchParams.set
+    - global.URLSearchParams
+    - MyImpl
+    - needsPatch
+  keywords:
+    - use
+    - detection
+    - probe
+    - detect
+    - hermes
+    - urlsearchparams
+    - bugs
+legacy_tags:
   - apps/mobile/polyfills.js
+bootstrap_default: false
+expiry_date: "2027-04-13"
+id: AP-H11
+last_triggered: "2026-04-13"
+legacy_pack: adherence-reporting-mobile
+related_rule: R-165
 tags:
   - mobile
   - expo
@@ -11,13 +37,6 @@ tags:
   - polyfill
   - supabase
 trigger_count: 1
-last_triggered: 2026-04-13
-expiry_date: 2027-04-13
-status: active
-related_rule: R-165
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-H11: Use detection probe to detect Hermes URLSearchParams bugs

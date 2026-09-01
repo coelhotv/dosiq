@@ -1,19 +1,32 @@
 ---
-id: AP-T01
 title: Use parallel threads (>1) without testing for race conditions
 summary: Tests pass locally, fail in CI; unpredictable hangs
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - use
+    - parallel
+    - threads
+    - without
+    - testing
+    - for
+    - race
+    - conditions
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-T01
+last_triggered: None
+legacy_pack: test-hygiene
+related_rule: R-081
 tags:
   - testing
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-081
-layer: warm
-bootstrap_default: False
-pack: test-hygiene
 ---
 
 # AP-T01 — Use parallel threads (>1) without testing for race conditions

@@ -1,21 +1,35 @@
 ---
-id: AP-P16
 title: "Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``"
-summary: Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior loc
+summary: >-
+  Ignora fuso horário local. Em GMT-3 (Brasil), `2026-03-01T00:00:00.000Z` = 21:00 do dia anterior
+  loc
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  keywords:
+    - template
+    - utc
+    - hardcoded
+    - queries
+    - supabase
+    - date
+    - t00
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P16
+last_triggered: None
+legacy_pack: date-time
+related_rule: R-131
 tags:
   - performance
   - database
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-131
-layer: warm
-bootstrap_default: False
-pack: date-time
 ---
 
 # AP-P16 — Template UTC hardcoded em queries Supabase: `` `${date}T00:00:00.000Z` ``

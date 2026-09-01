@@ -1,21 +1,36 @@
 ---
-id: AP-P13
 title: Disparar queries de background imediatamente após `setIsLoading(false)`
-summary: "`setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack fram"
+summary: >-
+  `setIsLoading(false)` permite ao React agendar um render, mas queries disparadas na mesma stack
+  fram
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - requestIdleCallback
+  keywords:
+    - disparar
+    - queries
+    - background
+    - imediatamente
+    - após
+    - setisloading
+    - "false"
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P13
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-126
 tags:
   - performance
   - api
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-126
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-P13 — Disparar queries de background imediatamente após `setIsLoading(false)`

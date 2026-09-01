@@ -1,12 +1,42 @@
 ---
-id: AP-H08
 title: react-native-url-polyfill incompatível com Hermes/Expo Go SDK 53
-summary: Todas as versões (v2, v3) causam 'Cannot read property get of undefined' no Hermes. Usar patch inline em polyfills.js em vez de qualquer pacote externo.
+summary: >-
+  Todas as versões (v2, v3) causam 'Cannot read property get of undefined' no Hermes. Usar patch
+  inline em polyfills.js em vez de qualquer pacote externo.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - polyfills.js
+    - index.js
+    - url.protocol
+    - NativeModules.RNCNetInfo
+    - RealtimeClient
+    - SupabaseClient
+    - needsPatch
+    - parseHref
+  keywords:
+    - react
+    - native
+    - url
+    - polyfill
+    - incompatível
+    - hermes
+    - expo
+    - sdk
+legacy_tags:
   - mobile
   - expo
   - hermes
   - react-native
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H08
+last_triggered: "2026-04-12"
+legacy_pack: adherence-reporting-mobile
+related_rule: R-162
 tags:
   - mobile
   - expo
@@ -14,13 +44,6 @@ tags:
   - url
   - polyfill
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: active
-related_rule: R-162
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-H08: react-native-url-polyfill incompatível com Hermes/Expo Go SDK 53

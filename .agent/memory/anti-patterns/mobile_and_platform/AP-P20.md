@@ -1,19 +1,33 @@
 ---
-id: AP-P20
 title: Show `"Paciente"` even when the user email already provides a safe local-part fallback
-summary: The consultation PDF loses clinical usefulness and makes it harder to distinguish which patient was 
+summary: >-
+  The consultation PDF loses clinical usefulness and makes it harder to distinguish which patient
+  was
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  keywords:
+    - show
+    - paciente
+    - even
+    - when
+    - user
+    - email
+    - already
+    - provides
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P20
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-148
 tags:
   - performance
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-148
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-P20 — Show `"Paciente"` even when the user email already provides a safe local-part fallback

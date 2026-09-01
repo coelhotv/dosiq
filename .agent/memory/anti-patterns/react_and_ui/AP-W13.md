@@ -1,22 +1,34 @@
 ---
-id: AP-W13
 title: Leave dead code (old states, memos, handlers) after replacing a JSX section
 summary: CI lint failure; confuses future agents about what is active
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - leave
+    - dead
+    - code
+    - old
+    - states
+    - memos
+    - handlers
+    - after
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W13
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-105
 tags:
   - safety
   - ui
   - state
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-105
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W13 — Leave dead code (old states, memos, handlers) after replacing a JSX section

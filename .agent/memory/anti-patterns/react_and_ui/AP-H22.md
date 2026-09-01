@@ -1,3 +1,21 @@
+---
+title: Global Brand Leak
+summary: >-
+  Global Brand Leak: Applying brand-specific aesthetic tokens (Comfortaa, mint backgrounds) to
+  global UI keys causes UX fatigue and readability issues in the main app product.
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - bg.screen
+  keywords:
+    - global
+    - brand
+    - leak
+---
+
 # [AP-H22] Global Brand Leak
 
 ## Symptom

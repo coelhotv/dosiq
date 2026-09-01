@@ -1,19 +1,39 @@
 ---
-id: AP-D03
-title: Using `COUNT(*)` to count expected dose opportunities in heatmap when `COUNT(DISTINCT protocol_id)` is semantically needed
-summary: After CROSS JOIN LATERAL jsonb_array_elements_text (expands doses), `COUNT(*)` correctly counts all 
+title: >-
+  Using `COUNT(*)` to count expected dose opportunities in heatmap when `COUNT(DISTINCT
+  protocol_id)` is semantically needed
+summary: >-
+  After CROSS JOIN LATERAL jsonb_array_elements_text (expands doses), `COUNT(*)` correctly counts
+  all
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - isComplex
+    - gridClass
+  keywords:
+    - using
+    - count
+    - expected
+    - dose
+    - opportunities
+    - heatmap
+    - when
+    - distinct
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-D03
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-121
 tags:
   - design
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-121
-layer: warm
-bootstrap_default: False
-pack: schema-data
 ---
 
 # AP-D03 — Using `COUNT(*)` to count expected dose opportunities in heatmap when `COUNT(DISTINCT protocol_id)` is semantically needed

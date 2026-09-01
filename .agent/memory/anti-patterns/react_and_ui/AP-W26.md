@@ -1,3 +1,23 @@
+---
+title: Flicker ou Animação Dupla no Mount de Telas
+summary: Flicker de interface no mount causado por animações concorrentes com LoadingState.
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - LoadingState
+    - LayoutAnimation
+    - ProfileScreen
+  keywords:
+    - flicker
+    - animação
+    - dupla
+    - mount
+    - telas
+---
+
 # [AP-W26] Flicker ou Animação Dupla no Mount de Telas
 
 ## Problema

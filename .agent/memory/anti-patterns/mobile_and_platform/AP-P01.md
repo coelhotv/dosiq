@@ -1,20 +1,35 @@
 ---
-id: AP-P01
 title: IntersectionObserver sentinel positioned before fold + rootMargin high
-summary: "`rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load becom"
+summary: >-
+  `rootMargin: '200px'` + sentinel mid-JSX = observer fires immediately on view open → lazy load
+  becom
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - rootMargin
+  keywords:
+    - intersectionobserver
+    - sentinel
+    - positioned
+    - before
+    - fold
+    - rootmargin
+    - high
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P01
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-115
 tags:
   - performance
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-115
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-P01 — IntersectionObserver sentinel positioned before fold + rootMargin high

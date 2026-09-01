@@ -139,9 +139,14 @@ function specificity(glob) {
 function buildIndex(root) {
   const fatalErrors = [];
   const skipped = [];
-  const rules = {};
-  const byPath = {};
-  const byTrigger = {};
+  const rules = Object.create(null);
+  // 🔴 Object.create(null), não `{}`: `diff_triggers` vem do corpo das memórias e contém
+  // identificadores reais como `toString` e `toLocaleString` (de `date.toLocaleString`).
+  // Num objeto literal, `byTrigger['toString']` resolve pelo Object.prototype e devolve
+  // uma FUNÇÃO — `.push` estoura. Só apareceu com o acervo completo; com as 12 memórias
+  // do piloto o índice compilava limpo.
+  const byPath = Object.create(null);
+  const byTrigger = Object.create(null);
   const hot = [];
   const counts = { total: 0, byDomain: {}, byLayer: { hot: 0, warm: 0, cold: 0 } };
 

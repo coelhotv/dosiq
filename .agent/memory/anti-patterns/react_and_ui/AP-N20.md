@@ -1,3 +1,31 @@
+---
+title: useEffect de hidratação sem sincronizar todos os estados derivados
+summary: >-
+  useEffect de hidratação sem sincronizar todos os estados locais derivados de settings — campo
+  ausente mantém valor inicial do useState;
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - useEffect
+    - useState
+    - setNotificationMode
+    - settings.notification_mode
+    - useCachedQuery
+    - useProfile
+    - setDigestTime
+    - setQuietHoursEnd
+  keywords:
+    - useeffect
+    - hidratação
+    - sincronizar
+    - todos
+    - estados
+    - derivados
+---
+
 # AP-N20 — useEffect de hidratação sem sincronizar todos os estados derivados
 
 **Categoria:** react_and_ui  

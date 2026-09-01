@@ -1,20 +1,37 @@
 ---
-id: AP-D01
-title: Count DISTINCT protocols when you need to count doses (`COUNT(DISTINCT protocol_id)` instead of `SUM(jsonb_array_length(time_schedule))`)
-summary: Protocol A with ["08:00", "20:00"] = 2 doses expected. `COUNT(DISTINCT)` returns 1 (protocol), not 2
+title: >-
+  Count DISTINCT protocols when you need to count doses (`COUNT(DISTINCT protocol_id)` instead of
+  `SUM(jsonb_array_length(time_schedule))`)
+summary: >-
+  Protocol A with ["08:00", "20:00"] = 2 doses expected. `COUNT(DISTINCT)` returns 1 (protocol), not
+  2
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  keywords:
+    - count
+    - distinct
+    - protocols
+    - when
+    - you
+    - need
+    - doses
+    - protocol_id
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-D01
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-121
 tags:
   - datetime
   - design
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-121
-layer: warm
-bootstrap_default: False
-pack: schema-data
 ---
 
 # AP-D01 — Count DISTINCT protocols when you need to count doses (`COUNT(DISTINCT protocol_id)` instead of `SUM(jsonb_array_length(time_schedule))`)

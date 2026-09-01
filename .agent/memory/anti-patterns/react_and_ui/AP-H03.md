@@ -1,19 +1,34 @@
 ---
-id: AP-H03
 title: Estado isDoseModalOpen fora do DashboardProvider sem lazy load
 summary: Estado isDoseModalOpen fora do DashboardProvider sem lazy load
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - GlobalDoseModal
+    - DashboardProvider
+    - AppInner
+    - isDoseModalOpen
+  keywords:
+    - estado
+    - isdosemodalopen
+    - fora
+    - dashboardprovider
+    - lazy
+    - load
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-H03
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-095
 tags:
   - history
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-095
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-H03 — Estado isDoseModalOpen fora do DashboardProvider sem lazy load

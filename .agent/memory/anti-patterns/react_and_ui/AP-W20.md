@@ -1,20 +1,36 @@
 ---
-id: AP-W20
-title: Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components
-summary: "Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct registratio"
+title: >-
+  Copy modal-based registration flow from original Dashboard without considering lighter 1-click
+  gesture patterns in other components
+summary: >-
+  Worse UX: 4 clicks (button → modal open → form fill → confirm) instead of 1-click direct
+  registratio
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - copy
+    - modal
+    - based
+    - registration
+    - flow
+    - from
+    - original
+    - dashboard
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W20
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-135
 tags:
   - ui
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-135
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W20 — Copy modal-based registration flow from original Dashboard without considering lighter 1-click gesture patterns in other components

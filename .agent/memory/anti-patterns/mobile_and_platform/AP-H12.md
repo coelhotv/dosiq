@@ -1,9 +1,38 @@
 ---
-id: AP-H12
 title: Use url.searchParams getter as a mutable accessor in Hermes/RN
-summary: url.searchParams cria um HermesURLSearchParams desvinculado a cada acesso. Mutações (.set/.append/.delete) são descartadas; URL chega ao PostgREST sem params → PGRST125.
+summary: >-
+  url.searchParams cria um HermesURLSearchParams desvinculado a cada acesso. Mutações
+  (.set/.append/.delete) são descartadas; URL chega ao PostgREST sem params → PGRST125.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - url.href
+    - URLSearchParams
+    - LiveURLSearchParams
+    - patchURLSearchParams
+    - url.pathname
+    - URL.prototype.searchParams
+    - url.search
+    - url.searchParams
+  keywords:
+    - use
+    - url
+    - searchparams
+    - getter
+    - mutable
+    - accessor
+    - hermes
+legacy_tags:
   - apps/mobile/polyfills.js
+bootstrap_default: false
+expiry_date: "2027-04-13"
+id: AP-H12
+last_triggered: "2026-04-13"
+legacy_pack: adherence-reporting-mobile
+related_rule: R-165
 tags:
   - mobile
   - expo
@@ -12,13 +41,6 @@ tags:
   - supabase
   - postgrest
 trigger_count: 1
-last_triggered: 2026-04-13
-expiry_date: 2027-04-13
-status: active
-related_rule: R-165
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-H12: url.searchParams como accessor mutável no Hermes/RN

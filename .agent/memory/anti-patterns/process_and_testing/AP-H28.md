@@ -1,16 +1,28 @@
 ---
-id: AP-H28
 title: Modificar Dados Reais em Produção
-summary: Alterar vigência, estoque ou horários de medicamentos em uma sessão ativa de usuário real para fins de teste de UI ou lógica.
+summary: >-
+  Alterar vigência, estoque ou horários de medicamentos em uma sessão ativa de usuário real para
+  fins de teste de UI ou lógica.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - modificar
+    - dados
+    - reais
+    - produção
+legacy_tags:
   - all
+id: AP-H28
+incident_count: 1
+last_occurred: "2026-04-20"
 tags:
   - process
   - testing
   - security
-incident_count: 1
-last_occurred: 2026-04-20
-status: active
 ---
 
 # AP-H28 — Modificar Dados Reais em Produção

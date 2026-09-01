@@ -1,22 +1,38 @@
 ---
-id: AP-B02
 title: "Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`)"
-summary: HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afetada. UI mostra "Erro
+summary: >-
+  HTTP 400 Bad Request + `[QueryCache] Fetch falhou` em toda abertura da view afetada. UI mostra
+  "Erro
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - medicine_logs
+  keywords:
+    - selecionar
+    - coluna
+    - inexistente
+    - query
+    - supabase
+    - status
+    - medicine_logs
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-B02
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-089
 tags:
   - perf
   - database
   - build
   - api
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-089
-layer: cold
-bootstrap_default: False
-pack: schema-data
 ---
 
 # AP-B02 — Selecionar coluna inexistente em query Supabase (ex: `status` em `medicine_logs`)

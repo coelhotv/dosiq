@@ -1,21 +1,36 @@
 ---
-id: AP-W14
 title: Use `new Date('YYYY-MM-DDTHH:MM:00.000Z')` as reference in tests involving `setHours`
 summary: "Test passes in BRT but fails in CI (UTC): same UTC timestamp = different local hours"
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - setHours
+  keywords:
+    - use
+    - new
+    - date
+    - yyyy
+    - ddthh
+    - reference
+    - tests
+    - involving
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W14
+last_triggered: None
+legacy_pack: date-time
+related_rule: R-106
 tags:
   - safety
   - ui
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-106
-layer: warm
-bootstrap_default: False
-pack: date-time
 ---
 
 # AP-W14 — Use `new Date('YYYY-MM-DDTHH:MM:00.000Z')` as reference in tests involving `setHours`

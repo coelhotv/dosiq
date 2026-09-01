@@ -1,19 +1,35 @@
 ---
-id: AP-D06
 title: Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria
 summary: Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - AdherenceBar7d
+    - AdherenceLabel
+    - EntradaHistorico
+  keywords:
+    - exibir
+    - dados
+    - carlos
+    - bar
+    - pct
+    - quantidade
+    - histórico
+    - global
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-D06
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-153
 tags:
   - design
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-153
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-D06 — Exibir dados de Carlos (bar-pct, quantidade, histórico global) no modo Dona Maria

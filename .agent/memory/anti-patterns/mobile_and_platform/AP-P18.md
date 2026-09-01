@@ -1,21 +1,33 @@
 ---
-id: AP-P18
 title: Hardcode PDF header/card geometry and render long labels with fixed single-line `text()` calls
 summary: Title/patient overlap, clipped headers, and layout churn every time content length changes
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  keywords:
+    - hardcode
+    - pdf
+    - header
+    - card
+    - geometry
+    - render
+    - long
+    - labels
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P18
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-146
 tags:
   - performance
   - styling
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-146
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-P18 — Hardcode PDF header/card geometry and render long labels with fixed single-line `text()` calls

@@ -1,13 +1,34 @@
 ---
-id: AP-H04
 title: "Monorepo workspace: peer dependency mismatch on new subpackage"
 summary: npm ERESOLVE conflict when adding new workspace package with incompatible peer deps
+layer: warm
+status: active
 applies_to:
+  paths:
+    - api/**
+  diff_triggers:
+    - package.json
+    - peerDependencies
+  keywords:
+    - monorepo
+    - workspace
+    - peer
+    - dependency
+    - mismatch
+    - new
+    - subpackage
+legacy_tags:
   - monorepo
   - npm
   - workspace
   - mobile
   - build
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H04
+last_triggered: "2026-04-12"
+legacy_pack: infra-api
+related_rule: R-158
 tags:
   - dependency
   - monorepo
@@ -15,13 +36,6 @@ tags:
   - build
   - safety
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: active
-related_rule: R-158
-layer: warm
-bootstrap_default: False
-pack: infra-api
 ---
 
 # AP-H04 — Monorepo workspace: peer dependency mismatch on new subpackage

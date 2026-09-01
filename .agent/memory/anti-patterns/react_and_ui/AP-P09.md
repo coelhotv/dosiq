@@ -1,21 +1,35 @@
 ---
-id: AP-P09
 title: "N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`"
-summary: N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread. 100
+summary: >-
+  N queries Supabase simultaneous. With 10 items → 10 round-trips HTTP, each blocking Main Thread.
+  100
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - query
+    - pattern
+    - promise
+    - all
+    - items
+    - map
+    - async
+    - item
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P09
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-118
 tags:
   - performance
   - database
   - api
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-118
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-P09 — N+1 Query Pattern: `Promise.all(items.map(async item => supabase.from('table').select()))`

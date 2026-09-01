@@ -1,20 +1,34 @@
 ---
-id: AP-W25
 title: Usar componente Button com className custom causa conflito de estilos no mobile
 summary: Usar componente Button com className custom causa conflito de estilos no mobile
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - className
+  keywords:
+    - usar
+    - componente
+    - button
+    - classname
+    - custom
+    - causa
+    - conflito
+    - estilos
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W25
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-119
 tags:
   - ui
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-119
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W25 — Usar componente Button com className custom causa conflito de estilos no mobile

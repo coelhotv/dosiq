@@ -1,14 +1,38 @@
 ---
-id: AP-H23
 title: "@react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+)"
-category: mobile_and_platform
+summary: >-
+  @react-native-firebase v19 incompatível com Swift AppDelegate (Expo 53+) — Firebase não
+  inicializa;
 layer: warm
 status: active
-severity: high
-tags: [firebase, ios, expo, swift, appdelegate, native-build]
+applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - AppDelegate.swift
+    - package.json
+  keywords:
+    - react
+    - native
+    - firebase
+    - v19
+    - incompatível
+    - swift
+    - appdelegate
+    - expo
+category: mobile_and_platform
 created_at: "2026-04-18"
-trigger_count: 1
+id: AP-H23
 last_triggered: "2026-04-18"
+severity: high
+tags:
+  - firebase
+  - ios
+  - expo
+  - swift
+  - appdelegate
+  - native-build
+trigger_count: 1
 ---
 
 ## Problema

@@ -1,18 +1,37 @@
 ---
-id: AP-D07
 title: Core-Mobile Adherence Parity Gap
-summary: Assumir que flags calculadas no frontend Web (via props/hooks) estarão disponíveis no Mobile sem injeção explícita no Core.
+summary: >-
+  Assumir que flags calculadas no frontend Web (via props/hooks) estarão disponíveis no Mobile sem
+  injeção explícita no Core.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - isRegistered
+    - dose_id
+    - evaluateDoseTimelineState
+    - adherenceLogic.js
+    - logResult
+  keywords:
+    - core
+    - mobile
+    - adherence
+    - parity
+    - gap
+legacy_tags:
   - logic
   - core
   - mobile
+id: AP-D07
+incident_count: 1
+last_referenced: "2026-04-24"
 tags:
   - data
   - regression
   - adherence
-incident_count: 1
-last_referenced: 2026-04-24
-status: active
 ---
 
 # AP-D07 — Core-Mobile Adherence Parity Gap

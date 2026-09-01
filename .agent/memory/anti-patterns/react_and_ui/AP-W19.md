@@ -1,21 +1,40 @@
 ---
-id: AP-W19
-title: Assume stats object properties match component expectations without reading the context/hook that provides the data
-summary: Component displays wrong values (e.g., ring gauge shows 0% adherence). useDashboard returns `score`,
+title: >-
+  Assume stats object properties match component expectations without reading the context/hook that
+  provides the data
+summary: >-
+  Component displays wrong values (e.g., ring gauge shows 0% adherence). useDashboard returns
+  `score`,
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - adherenceScore
+    - currentStreak
+  keywords:
+    - assume
+    - stats
+    - object
+    - properties
+    - match
+    - component
+    - expectations
+    - without
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W19
+last_triggered: None
+legacy_pack: react-hooks
+related_rule: R-134
 tags:
   - ui
   - react
   - interface
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-134
-layer: warm
-bootstrap_default: False
-pack: react-hooks
 ---
 
 # AP-W19 — Assume stats object properties match component expectations without reading the context/hook that provides the data

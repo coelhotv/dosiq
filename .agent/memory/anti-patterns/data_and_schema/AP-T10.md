@@ -1,20 +1,32 @@
 ---
-id: AP-T10
 title: Use `new Date()` in tests without timezone awareness
 summary: Tests pass in GMT but fail in GMT-3 (local); date off by 1 day
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  keywords:
+    - use
+    - new
+    - date
+    - tests
+    - without
+    - timezone
+    - awareness
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-T10
+last_triggered: None
+legacy_pack: date-time
+related_rule: R-020
 tags:
   - testing
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-020
-layer: warm
-bootstrap_default: True
-pack: date-time
 ---
 
 # AP-T10 — Use `new Date()` in tests without timezone awareness

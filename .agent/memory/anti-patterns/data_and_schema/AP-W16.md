@@ -1,20 +1,35 @@
 ---
-id: AP-W16
 title: "`bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo"
-summary: CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo fi
+summary: >-
+  CI reporta apenas o PRIMEIRO teste que falha; outros testes timezone-dependentes no mesmo arquivo
+  fi
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  keywords:
+    - bail
+    - vitest
+    - critical
+    - config
+    - mascara
+    - múltiplas
+    - falhas
+    - timezone
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W16
+last_triggered: None
+legacy_pack: date-time
+related_rule: R-106
 tags:
   - ui
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-106
-layer: warm
-bootstrap_default: False
-pack: date-time
 ---
 
 # AP-W16 — `bail: 1` em vitest.critical.config.js mascara múltiplas falhas timezone no mesmo arquivo

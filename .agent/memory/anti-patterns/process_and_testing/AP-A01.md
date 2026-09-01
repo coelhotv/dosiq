@@ -1,19 +1,34 @@
 ---
-id: AP-A01
 title: Make ANY code change without creating a feature branch FIRST
-summary: Code ends up on `main` without review, history/audit trail lost, violates deliver-sprint workflow St
+summary: >-
+  Code ends up on `main` without review, history/audit trail lost, violates deliver-sprint workflow
+  St
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - make
+    - any
+    - code
+    - change
+    - without
+    - creating
+    - feature
+    - branch
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-A01
+last_triggered: None
+legacy_pack: review-validation
+related_rule: R-065
 tags:
   - adherence
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-065
-layer: warm
-bootstrap_default: False
-pack: review-validation
 ---
 
 # AP-A01 — Make ANY code change without creating a feature branch FIRST

@@ -1,20 +1,33 @@
 ---
-id: AP-W04
 title: Import context (`useDashboardContext`, `DashboardProvider`) in a Wave 1 component
 summary: Violates Wave 1 purity guardrail; couples component to context, breaking reuse
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - DashboardProvider
+    - useDashboardContext
+  keywords:
+    - import
+    - context
+    - usedashboardcontext
+    - dashboardprovider
+    - wave
+    - component
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W04
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-095
 tags:
   - ui
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-095
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W04 — Import context (`useDashboardContext`, `DashboardProvider`) in a Wave 1 component

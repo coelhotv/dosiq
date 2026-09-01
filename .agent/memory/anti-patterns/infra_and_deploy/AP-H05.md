@@ -1,13 +1,36 @@
 ---
-id: AP-H05
 title: "Monorepo workspace: lock file out of sync with package.json"
 summary: GitHub Actions npm ci fails when new workspace added but lock file not committed
+layer: warm
+status: active
 applies_to:
+  paths:
+    - api/**
+  diff_triggers:
+    - package.json
+    - lock.json
+    - shrinkwrap.json
+  keywords:
+    - monorepo
+    - workspace
+    - lock
+    - file
+    - out
+    - sync
+    - with
+    - package
+legacy_tags:
   - monorepo
   - npm
   - workspace
   - ci-cd
   - github-actions
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H05
+last_triggered: "2026-04-12"
+legacy_pack: infra-api
+related_rule: R-159
 tags:
   - dependency
   - monorepo
@@ -15,13 +38,6 @@ tags:
   - ci-cd
   - lock-file
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: active
-related_rule: R-159
-layer: warm
-bootstrap_default: False
-pack: infra-api
 ---
 
 # AP-H05 — Monorepo workspace: lock file out of sync with package.json
