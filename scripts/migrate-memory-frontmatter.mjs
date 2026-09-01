@@ -264,7 +264,19 @@ function main() {
         // serializado como `2026-04-26T00:00:00.000Z`. São campos LEGADOS que o modelo
         // de ciclo de vida do SKILL.md lê (expiry_date, review_due) — reescrever o
         // formato deles seria mudar dado que este script não tem mandato para tocar.
-        if (rawFm !== null) { try { existing = yaml.load(rawFm, { schema: yaml.CORE_SCHEMA }) || {}; } catch { existing = {}; } }
+        if (rawFm !== null) {
+          try {
+            existing = yaml.load(rawFm, { schema: yaml.CORE_SCHEMA }) || {};
+          } catch (e) {
+            // 🔴 NÃO cair para `{}`. Frontmatter ilegível com fallback silencioso significa
+            // reescrever o arquivo SEM os campos legados — perda de dado que o diff de 593
+            // arquivos esconderia. Hoje isto não dispara (auditado: 0 casos), e é justamente
+            // por isso que precisa falhar alto se um dia disparar.
+            stats.failed++;
+            failures.push(`${path.relative(REPO, fpath)} :: frontmatter ilegível (${e.message.slice(0, 60)}) — PULADO para não perder campos`);
+            continue;
+          }
+        }
 
         const indexLine = summaries.get(id);
         if (!indexLine) stats.noIndexLine++;
