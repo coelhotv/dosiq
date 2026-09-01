@@ -113,11 +113,11 @@
     "ceremony_type": "design-review",
     "tasks": "plans/specs/058-rc6-reflection-gate/tasks.md",
     "plan": "plans/specs/058-rc6-reflection-gate/plan.md",
-    "next_action": "T014 — rodar o gate em >=2 PRs reais no modo annotate (SC-006); operador confere cada refuted antes de qualquer flip para drop. Depois T015-T018 (medicao + registro). Etapas 1 e 2 fechadas, corpus 7/7 verde."
+    "next_action": "058 fechada no que é fechável. Pendentes de campo: T014 (≥2 PRs reais) e T018 — instruções em docs/standards/AI_REVIEW.md §Gate de reflexão. Próximo trabalho: volume da 060 (T030/T031/T032)."
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 17,
+    "journal_entries_since_distillation": 18,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
@@ -170,7 +170,7 @@
       "rc6_nao_le_layer": "O ai-review.sh NÃO lê o campo `layer` das memórias — só os índices .md. Quem lê hot/warm/cold é o bootstrap do SKILL.md. Por isso o enriquecimento do corpus NÃO contamina a medição da 058; só o T012 (flip) espera de verdade.",
       "eslint_ignora_scripts": "`scripts/**` é globalmente ignorado no eslint.config.js:24 — os .mjs da 060 NÃO têm cobertura de lint. A rede ali são os testes (node --test). Política pré-existente, não introduzida por nós.",
       "rc6_code_globs": "CODE_GLOBS não tinha .mjs/.cjs — 33 arquivos versionados eram ponto cego total do revisor, inclusive .github/scripts/*.cjs. Corrigido no devflow (6579133). Um PR só de .mjs fechava CLEAN sem uma linha revisada.",
-      "hot_hoje": "layer:hot está em 0 de 15 após o T029. Não é lacuna: o CLAUDE.md já carrega o conjunto sempre-presente, e o resto se entrega por seleção de caminho.",
+      "hot_hoje": "layer:hot está em 0 — e isso é INERTE para o bootstrap. RULES_INDEX.md não tem marcador de layer nenhum, então o passo 2 do SKILL.md ('Load all hot rules') não filtra: o agente lê os 289+358 linhas dos índices inteiras. Ninguém começa 'zerado'. O teto de hot (060 FR-010/011/012) só passa a valer quando o índice compilado for ligado (060/T024/T012).",
       "sc002_depende_do_fr013": "O índice custa ~650B/entrada; o teto de 60KB do SC-002 comporta ~85-100 entradas, não 605. A retenção do FR-013 é PRÉ-REQUISITO do SC-002, não polimento."
     },
     "gaps_declarados": {

@@ -1,7 +1,7 @@
 ---
 title: "AI Review (RC5/RC6) — operação pós-Gemini"
 description: "Protocolo de revisão de código por IA em 4 camadas após descontinuação do Gemini bot, incluindo RC5 (self-review) e RC6 (review independente)."
-version: "1.2.0"
+version: "1.3.0"
 status: active
 category: standard
 audience:
@@ -48,6 +48,57 @@ em Tier 2 (com `--setting-sources ""` — não carrega payload do projeto) · Co
 fallback preserva *cobertura*, não *diversidade de vendor* — e o claude do Pass B é o **mesmo modelo**
 que escreveu o código. Ler `pass A ... FAILED` no stderr é sinal de investigar, não de seguir em
 frente: foi assim que um payload malformado passou despercebido (ver runbook UTF-8 abaixo).
+
+## Gate de reflexão (spec 058)
+
+Pós-processador **determinístico** entre o merge dos outputs e a publicação. Classifica a claim de
+cada finding, roda um verificador por classe e marca `refuted` **só com contra-prova positiva**.
+Zero LLM, zero quota. Inspirado no `open-code-review` (Apache-2.0), com uma divergência deliberada:
+lá a refutação é feita por um segundo modelo; aqui os nossos falsos positivos não são falsificáveis
+por leitura, e sim por **execução** (`tsc`, `curl` no PostgREST).
+
+```bash
+RC6_REFLECT=annotate  # default — marca refuted, mantém o finding
+RC6_REFLECT=drop      # remove o refutado (NÃO usar antes do SC-006)
+RC6_REFLECT=0         # desliga (passthrough puro)
+RC6_REFLECT_TIMEOUT=120
+```
+
+**O invariante, e a razão de ele existir.** `refuted:true` exige que o verificador tenha rodado,
+respondido, e a resposta contradiga o finding. Classe não reconhecida, verificador ausente, erro,
+timeout, credencial faltando ou alvo ambíguo ⇒ **o finding passa**. Deixar passar um falso positivo
+custa atenção; refutar um achado verdadeiro custa o bug em produção **com o carimbo do gate por
+cima**. A assimetria é o produto, não um detalhe de implementação.
+
+Refutado é **rebaixado, não escondido**: continua publicado, some só de
+`introduced_critical`/`introduced_high` (o que sinaliza STOP ao operador) e ganha `counts.refuted`.
+O campo `refutation` traz a saída literal que justificou — refutação sem evidência citável é tratada
+como bug do gate e o finding é preservado.
+
+**Cobertura hoje: 2 classes** (`compile` via `tsc`, `schema` via curl no PostgREST). As classes de FP
+que mais recorreram na série — atribuição em move-only, security-framing, inferência por ausência —
+**não são verificáveis por ferramenta** e continuam fora, por desenho.
+
+### 🔻 Pendências que só fecham em PR real — instruções para quem rodar o RC6
+
+Estas tarefas da 058 **não podem ser fechadas em sessão de ferramental**: dependem de um PR cujo RC6
+produza claim de *existência* (de coluna ou de erro de compilação). Elas moram aqui, e não na
+`tasks.md` da spec, porque `plans/` é local-only — instrução escrita lá é invisível para um agente
+novo ou em outra máquina.
+
+- **T014 (SC-006) — confirmar antes de qualquer flip.** Ao rodar o RC6 num PR Tier 1+, se o JSON
+  trouxer `counts.refuted > 0`: **abrir cada finding refutado e conferir o campo `refutation` à
+  mão**. O modo `drop` só pode ser considerado depois de **≥2 PRs reais** com toda refutação
+  confirmada correta pelo operador. Até lá o default `annotate` é obrigatório.
+- **T018 — se o gate refutar um achado VERDADEIRO, pare e abra um `AP-NNN`.** É a falha que esta
+  spec existe para não cometer, e a única que justifica desligar o gate (`RC6_REFLECT=0`) na hora.
+  Registrar: o finding, a evidência do `refutation`, e por que a contra-prova era enganosa.
+- **T015 — registrar sempre.** A linha do `measurement.md` ganha `· refutados=<n> · refutação
+  correta?=<S/N/n-a>` no fim (ver §Medição 034-D). `n-a` quando `counts.refuted` for 0 — que é o
+  caso esperado na maioria dos PRs.
+- **Fase 2 é condicional, não pendente.** Verificador de símbolo (T019) e de assinatura (T020) só se
+  entram se a medição acima mostrar a classe **recorrendo**. Sem linhas no `measurement.md`, não
+  construir.
 
 ## Tuning de contexto e quota (spec 056)
 
@@ -310,3 +361,9 @@ consolidar → decisão T051 do PO.
 
 **Protocolo v2 (2026-08-02):** a linha passa a terminar com `· cov=<revisados>/<planejados>[ PARCIAL]
 · tok=<input_tokens>` — ambos saem do run (o `cov` do JSON, o `tok` do stderr). Ver §Tuning.
+
+**Protocolo v3 (2026-09-01, spec 058):** a linha termina com `· refutados=<n> · refutação
+correta?=<S/N/n-a>`. `refutados` sai de `counts.refuted` no JSON; a segunda coluna é **julgamento do
+operador**, não do script — é ela que mede o SC-002 em campo, e é o único dado que autoriza o flip
+para `RC6_REFLECT=drop`. Use `n-a` quando não houve refutação. **Um `N` é incidente:** pare, não
+faça o flip, e abra o AP (T018).

@@ -7,17 +7,24 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Gate de reflexão do RC6: corpus de regressão
+### Gate de reflexão do RC6: falsos positivos refutados por ferramenta
 
-- **Process** (`no-user-impact`). Primeiro passo da spec 058, que vai filtrar falsos positivos do
-  revisor de IA por verificação determinística (sem um segundo modelo). Entregue **só o corpus e o
-  runner** — o gate ainda não existe e nada muda no review hoje. São 7 casos extraídos da medição
-  de 8 PRs reais: 3 falsos positivos e 4 achados verdadeiros. O par que dá sentido à medição é
+- **Process** (`no-user-impact`). O revisor de IA passou a ter um filtro determinístico entre o que
+  ele produz e o que chega ao PR: cada achado é classificado e, quando a alegação é verificável, uma
+  ferramenta confere. Alegou que uma coluna não existe? Uma consulta ao banco responde. Alegou que o
+  código não compila? O compilador responde. **Sem um segundo modelo de IA e sem custo** — os falsos
+  positivos desta série não se refutam por leitura, se refutam por execução.
+  A regra que governa tudo: **derrubar um achado exige prova positiva de que ele está errado**. Se o
+  verificador não existe, falha, demora ou fica em dúvida, o achado passa. Deixar passar um falso
+  positivo custa atenção de quem revisa; derrubar um achado verdadeiro custa o bug em produção com um
+  carimbo de "verificado" por cima. Achado refutado continua publicado — apenas deixa de contar como
+  motivo para travar o merge, e carrega a evidência que o derrubou.
+  Corpus de regressão com 7 casos reais, todos passando. O par que dá sentido à medição é
   adversarial e vive na mesma tabela do banco: um falso positivo alegou que
-  `titration_steps.started_at` não existe (existe), e o incidente que derrubou produção em julho
-  foi `titration_steps.description`, que de fato nunca existiu. Os dois foram reconfirmados contra
-  o banco. O critério que manda não é quantos falsos positivos o gate derruba, é **nenhum achado
-  verdadeiro derrubado** — e sem esses casos essa promessa não seria mensurável.
+  `titration_steps.started_at` não existe (existe), e o incidente que derrubou produção em julho foi
+  `titration_steps.description`, que de fato nunca existiu — o filtro separa os dois.
+  Hoje ele alcança duas classes de alegação. As que mais recorreram na medição de 8 PRs não são
+  verificáveis por ferramenta e seguem fora, declaradas.
 
 ### Memórias do DEVFLOW: frontmatter consertado, `hot` rebaixado e lote-piloto
 
