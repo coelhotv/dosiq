@@ -1,20 +1,31 @@
 ---
-id: AP-T06
 title: Hardcode `setTimeout()` for timing in `act()` blocks
 summary: Timing-dependent, flaky in CI; can timeout unexpectedly
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - hardcode
+    - settimeout
+    - for
+    - timing
+    - act
+    - blocks
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-T06
+last_triggered: None
+legacy_pack: test-hygiene
+related_rule: R-073
 tags:
   - testing
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-073
-layer: warm
-bootstrap_default: True
-pack: test-hygiene
 ---
 
 # AP-T06 — Hardcode `setTimeout()` for timing in `act()` blocks

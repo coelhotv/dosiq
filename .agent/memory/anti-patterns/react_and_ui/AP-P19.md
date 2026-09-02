@@ -1,19 +1,35 @@
 ---
-id: AP-P19
-title: Reuse monthly totals in each daily PDF row or mix pill-quantity math into a table labeled as daily dose adherence
-summary: Daily rows show inflated totals like `360/360` or mismatch the clinical meaning of `Tomadas` vs `Esp
+title: >-
+  Reuse monthly totals in each daily PDF row or mix pill-quantity math into a table labeled as daily
+  dose adherence
+summary: >-
+  Daily rows show inflated totals like `360/360` or mismatch the clinical meaning of `Tomadas` vs
+  `Esp
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - reuse
+    - monthly
+    - totals
+    - each
+    - daily
+    - pdf
+    - row
+    - mix
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P19
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-147
 tags:
   - performance
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-147
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-P19 — Reuse monthly totals in each daily PDF row or mix pill-quantity math into a table labeled as daily dose adherence

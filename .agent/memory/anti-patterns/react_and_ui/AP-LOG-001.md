@@ -1,21 +1,33 @@
 ---
-id: AP-LOG-001
 title: Unfiltered `console.log()` statements in production UI code
-summary: 50+ debug logs on Dashboard load polluteDevTools, confuse users, create noise that hides real errors
+summary: >-
+  50+ debug logs on Dashboard load polluteDevTools, confuse users, create noise that hides real
+  errors
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - unfiltered
+    - console
+    - log
+    - statements
+    - production
+    - code
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-LOG-001
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-116
 tags:
   - safety
   - state
   - logging
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-116
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-LOG-001 — Unfiltered `console.log()` statements in production UI code

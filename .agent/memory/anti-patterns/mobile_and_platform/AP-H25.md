@@ -1,14 +1,44 @@
 ---
-id: AP-H25
-title: "googleServicesFile iOS ausente no app.config.js causa falha no prebuild"
-category: mobile_and_platform
+title: googleServicesFile iOS ausente no app.config.js causa falha no prebuild
+summary: >-
+  googleServicesFile iOS ausente no app.config.js — sempre configurar ios.googleServicesFile além do
+  Android
 layer: warm
 status: active
-severity: medium
-tags: [firebase, ios, app-config, googleservices, plist, native-build]
+applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - app.config.js
+    - ios.googleServicesFile
+    - android.googleServicesFile
+    - googleServicesFile
+    - useModularHeaders
+    - BUILD_PROFILE
+    - GoogleService
+    - Info.plist
+  keywords:
+    - googleservicesfile
+    - ios
+    - ausente
+    - app
+    - config
+    - causa
+    - falha
+    - prebuild
+category: mobile_and_platform
 created_at: "2026-04-18"
-trigger_count: 1
+id: AP-H25
 last_triggered: "2026-04-18"
+severity: medium
+tags:
+  - firebase
+  - ios
+  - app-config
+  - googleservices
+  - plist
+  - native-build
+trigger_count: 1
 ---
 
 ## Problema

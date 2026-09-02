@@ -7,6 +7,26 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Memórias do DEVFLOW: acervo inteiro migrado para o formato estruturado
+
+- **Process** (`no-user-impact`). As 605 memórias de regras e anti-padrões passaram a ter metadado
+  estruturado — antes eram 12. Feito por script, **sem nenhum modelo de linguagem**: os resumos não
+  foram gerados, foram extraídos das linhas dos próprios índices, que já eram descrições escritas à
+  mão e cobriam o acervo inteiro. Pedir a um modelo que reescrevesse o que uma pessoa já escreveu
+  seria pagar para perder informação. **Nada muda no produto nem na revisão de PRs** — a seleção
+  automática de regras continua desligada.
+  Rodar contra o acervo completo revelou três defeitos que as 12 memórias-piloto escondiam: uma
+  colisão que derrubava a compilação do índice quando uma regra citava `toString`; uma conversão
+  silenciosa de datas que reescrevia os campos de validade usados pelo processo de manutenção da
+  memória; e um erro de calibração no qual "a interface web inteira" contava como caminho tão
+  específico quanto uma pasta única.
+  A medição que fecha o passo diz para **não ligar a seleção ainda**: contra três PRs reais, as
+  regras que o revisor de fato citou aparecem entre as 60 mais bem colocadas, mas só 2 de 6 entram
+  nas 5 primeiras. A causa está medida — o critério de localização pesa até cinco vezes mais que a
+  evidência de que a regra é sobre o que o código faz. Ficou registrado o que corrigir e em que
+  ordem.
+
+
 ### Gate de reflexão do RC6: falsos positivos refutados por ferramenta
 
 - **Process** (`no-user-impact`). O revisor de IA passou a ter um filtro determinístico entre o que

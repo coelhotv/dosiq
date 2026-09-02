@@ -1,19 +1,33 @@
 ---
-id: AP-W24
 title: FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido
 summary: FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - App.jsx
+  keywords:
+    - fabs
+    - chatbot
+    - trigger
+    - aparecem
+    - sobre
+    - modal
+    - mesmo
+    - index
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W24
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-151
 tags:
   - ui
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-151
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W24 — FABs e chatbot trigger aparecem sobre Modal mesmo com z-index corrigido

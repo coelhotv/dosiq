@@ -1,20 +1,33 @@
 ---
-id: AP-W03
 title: Use `screen.getByText('X%')` when the same text appears in multiple elements
 summary: "`\"Found multiple elements with text…\"` test failure"
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - use
+    - screen
+    - getbytext
+    - when
+    - same
+    - text
+    - appears
+    - multiple
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W03
+last_triggered: None
+legacy_pack: test-hygiene
+related_rule: R-094
 tags:
   - safety
   - ui
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-094
-layer: warm
-bootstrap_default: False
-pack: test-hygiene
 ---
 
 # AP-W03 — Use `screen.getByText('X%')` when the same text appears in multiple elements

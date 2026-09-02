@@ -1,12 +1,43 @@
 ---
-id: AP-H10
 title: Sessão Supabase não persiste em React Native sem auth-aware navigation
-summary: SecureStore chunked é condição necessária mas não suficiente. Navigation.jsx DEVE chamar getSession() no mount e definir initialRouteName dinamicamente. Sem isso, app sempre recomeça no SmokeScreen mesmo com sessão guardada.
+summary: >-
+  SecureStore chunked é condição necessária mas não suficiente. Navigation.jsx DEVE chamar
+  getSession() no mount e definir initialRouteName dinamicamente. Sem isso, app sempre recomeça no
+  SmokeScreen mesmo com sessão guardada.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - initialRouteName
+    - Navigation.jsx
+    - onAuthStateChange
+    - setSession
+    - SecureStore
+    - NavigationContainer
+    - useState
+    - Stack.Navigator
+  keywords:
+    - sessão
+    - supabase
+    - persiste
+    - react
+    - native
+    - auth
+    - aware
+    - navigation
+legacy_tags:
   - mobile
   - expo
   - supabase
   - auth
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H10
+last_triggered: "2026-04-12"
+legacy_pack: adherence-reporting-mobile
+related_rule: R-164
 tags:
   - mobile
   - expo
@@ -15,13 +46,6 @@ tags:
   - session
   - navigation
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: active
-related_rule: R-164
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-H10: Sessão Supabase não persiste em React Native sem auth-aware navigation

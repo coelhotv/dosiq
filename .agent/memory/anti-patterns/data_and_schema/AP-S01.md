@@ -1,21 +1,43 @@
 ---
-id: AP-S01
 title: Zod enum values don't match database CHECK constraint
 summary: 500 error on INSERT, data rejected by database
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - dosage_per_intake
+    - dailyConsumption
+    - activeProtocols
+    - calculateExpectedDoses
+    - currentStock
+    - daysRemaining
+    - dosagePerIntake
+    - expectedDaily
+  keywords:
+    - zod
+    - enum
+    - values
+    - don
+    - match
+    - database
+    - check
+    - constraint
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-S01
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-082
 tags:
   - safety
   - database
   - schema
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-082
-layer: warm
-bootstrap_default: True
-pack: schema-data
 ---
 
 # AP-S01 — Zod enum values don't match database CHECK constraint

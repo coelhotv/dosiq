@@ -1,20 +1,32 @@
 ---
-id: AP-T07
 title: Resolve Promise only after assertion without `finally`
 summary: If assertion fails, Promise stays pending → Vitest hangs indefinitely
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - resolve
+    - promise
+    - only
+    - after
+    - assertion
+    - without
+    - finally
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-T07
+last_triggered: None
+legacy_pack: test-hygiene
+related_rule: R-072
 tags:
   - safety
   - testing
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-072
-layer: warm
-bootstrap_default: True
-pack: test-hygiene
 ---
 
 # AP-T07 — Resolve Promise only after assertion without `finally`

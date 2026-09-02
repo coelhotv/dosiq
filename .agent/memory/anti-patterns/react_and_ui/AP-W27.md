@@ -1,3 +1,22 @@
+---
+title: Hardcoded Typography e FontWeights
+summary: Typography e FontWeights fixos (hardcoded) em vez de usar tokens compartilhados.
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - StyleSheet
+    - tokens.js
+    - typography.fontFamily.bold
+    - typography.fontWeight.bold
+  keywords:
+    - hardcoded
+    - typography
+    - fontweights
+---
+
 # [AP-W27] Hardcoded Typography e FontWeights
 
 ## Problema

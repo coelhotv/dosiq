@@ -1,20 +1,35 @@
 ---
-id: AP-P02
 title: Synchronous import of component >200 lines in mobile-critical view
-summary: Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g., `SparklineAdesao` 5
+summary: >-
+  Safari blocks Main Thread 200-400ms for parse/compile before first render (e.g., `SparklineAdesao`
+  5
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - SparklineAdesao
+  keywords:
+    - synchronous
+    - import
+    - component
+    - lines
+    - mobile
+    - critical
+    - view
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P02
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-116
 tags:
   - performance
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-116
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-P02 — Synchronous import of component >200 lines in mobile-critical view

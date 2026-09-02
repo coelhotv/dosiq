@@ -1,14 +1,43 @@
 ---
-id: AP-H26
-title: "Falha de Regex do plugin Firebase v21+ no AppDelegate.swift do Expo 53"
-category: mobile_and_platform
+title: Falha de Regex do plugin Firebase v21+ no AppDelegate.swift do Expo 53
+summary: Falha de Regex do plugin Firebase v21+ no AppDelegate.swift do Expo 53
 layer: warm
 status: active
-severity: high
-tags: [firebase, ios, expo-53, swift, appdelegate, config-plugin, regex-failure]
+applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - withFirebaseFix.js
+    - app.config.js
+    - AppDelegate.swift
+    - configureLine
+    - self.moduleName
+    - withX.js
+    - config.modResults.contents
+    - contents.includes
+  keywords:
+    - falha
+    - regex
+    - plugin
+    - firebase
+    - v21
+    - appdelegate
+    - swift
+    - expo
+category: mobile_and_platform
 created_at: "2026-04-18"
-trigger_count: 1
+id: AP-H26
 last_triggered: "2026-04-18"
+severity: high
+tags:
+  - firebase
+  - ios
+  - expo-53
+  - swift
+  - appdelegate
+  - config-plugin
+  - regex-failure
+trigger_count: 1
 ---
 
 ## Problema

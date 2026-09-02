@@ -1,20 +1,32 @@
 ---
-id: AP-W22
 title: Responsive Layout Using Inline Styles Instead of CSS Classes
 summary: Responsive Layout Using Inline Styles Instead of CSS Classes
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - responsive
+    - layout
+    - using
+    - inline
+    - styles
+    - instead
+    - css
+    - classes
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W22
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-120
 tags:
   - ui
   - styling
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-120
-layer: cold
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W22 — Responsive Layout Using Inline Styles Instead of CSS Classes

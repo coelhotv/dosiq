@@ -1,12 +1,44 @@
 ---
-id: AP-H07
 title: "Mobile Expo dev: iCloud Cloud Documents path causes Watchman permission errors"
-summary: npx expo start fails with Watchman 'Operation not permitted' when repo in iCloud (~/Library/Mobile Documents/)
+summary: >-
+  npx expo start fails with Watchman 'Operation not permitted' when repo in iCloud (~/Library/Mobile
+  Documents/)
+layer: warm
+status: archived
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - node_modules
+    - system_error
+    - iCloud
+    - CloudDocs
+    - dosiq.git
+    - github.com
+    - watchmanResponse
+  keywords:
+    - mobile
+    - expo
+    - dev
+    - icloud
+    - cloud
+    - documents
+    - path
+    - causes
+legacy_tags:
   - mobile
   - expo
   - macos
   - development
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H07
+last_triggered: "2026-04-12"
+legacy_pack: adherence-reporting-mobile
+legacy_status: resolved
+related_rule: R-161
+resolution: Projeto movido para fora do iCloud (~/git/dosiq/) — erro de permissão do Watchman não ocorre mais.
+resolved_on: "2026-05-24"
 tags:
   - mobile
   - expo
@@ -15,15 +47,6 @@ tags:
   - macos
   - permissions
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: resolved
-resolved_on: 2026-05-24
-resolution: "Projeto movido para fora do iCloud (~/git/dosiq/) — erro de permissão do Watchman não ocorre mais."
-related_rule: R-161
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 > **RESOLVIDO (2026-05-24):** projeto fora do iCloud (`~/git/dosiq/`). O erro `Watchman 'Operation not permitted'` não ocorre mais. Mantido só como histórico. Ver R-161 / R-177.

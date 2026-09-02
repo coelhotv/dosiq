@@ -1,21 +1,32 @@
 ---
-id: AP-S08
 title: INSERT into columns that don't exist
 summary: Database error, failed writes
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  keywords:
+    - insert
+    - into
+    - columns
+    - that
+    - don
+    - exist
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-S08
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-089
 tags:
   - safety
   - database
   - schema
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-089
-layer: warm
-bootstrap_default: True
-pack: schema-data
 ---
 
 # AP-S08 — INSERT into columns that don't exist

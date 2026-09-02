@@ -1,19 +1,43 @@
 ---
-id: AP-D02
 title: Cartesian product in LEFT JOIN logs ⨝ expected_doses without pre-aggregation
-summary: 12 logs × 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums duplicates
+summary: >-
+  12 logs × 10 protocols = 120 rows in intermediate result. `SUM(expected_count)` then sums
+  duplicates
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  diff_triggers:
+    - activeItems
+    - useMemo
+    - computeGroups
+    - i.tabStatus
+    - items.filter
+    - finishedItems
+    - pausedItems
+    - activeGroups
+  keywords:
+    - cartesian
+    - product
+    - left
+    - join
+    - logs
+    - expected_doses
+    - without
+    - pre
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-D02
+last_triggered: None
+legacy_pack: process-hygiene
+related_rule: R-122
 tags:
   - design
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-122
-layer: warm
-bootstrap_default: False
-pack: process-hygiene
 ---
 
 # AP-D02 — Cartesian product in LEFT JOIN logs ⨝ expected_doses without pre-aggregation

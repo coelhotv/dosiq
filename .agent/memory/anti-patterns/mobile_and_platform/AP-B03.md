@@ -1,20 +1,38 @@
 ---
-id: AP-B03
 title: Import estático de componente pesado que internamente importa services/vendors grandes
-summary: "Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` → `pdfGenera"
+summary: >-
+  Cadeia transitiva puxa chunks inteiros para o main bundle. Ex: `import ReportGenerator` →
+  `pdfGenera
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - manualChunks
+    - pdfGeneratorService
+    - stockService
+  keywords:
+    - import
+    - estático
+    - componente
+    - pesado
+    - internamente
+    - importa
+    - services
+    - vendors
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-B03
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-117
 tags:
   - build
   - react
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-117
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-B03 — Import estático de componente pesado que internamente importa services/vendors grandes

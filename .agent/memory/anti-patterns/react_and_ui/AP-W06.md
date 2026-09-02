@@ -1,21 +1,32 @@
 ---
-id: AP-W06
 title: Use `color-mix()` CSS without `@supports` fallback
 summary: Silent failure on Safari < 16.2; no background color applied
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  keywords:
+    - use
+    - color
+    - mix
+    - css
+    - without
+    - supports
+    - fallback
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W06
+last_triggered: None
+legacy_pack: design-ui
+related_rule: R-097
 tags:
   - safety
   - ui
   - styling
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-097
-layer: warm
-bootstrap_default: False
-pack: design-ui
 ---
 
 # AP-W06 — Use `color-mix()` CSS without `@supports` fallback

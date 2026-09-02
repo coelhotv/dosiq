@@ -1,20 +1,35 @@
 ---
-id: AP-P21
 title: Using `takenAnytime` as the numerator for clinical adherence summaries
-summary: A protocol with multiple time slots per day counts the same day several times, inflating `taken/expe
+summary: >-
+  A protocol with multiple time slots per day counts the same day several times, inflating
+  `taken/expe
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - takenAnytime
+  keywords:
+    - using
+    - takenanytime
+    - numerator
+    - for
+    - clinical
+    - adherence
+    - summaries
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P21
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-026
 tags:
   - performance
   - datetime
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-026
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-P21 — Using `takenAnytime` as the numerator for clinical adherence summaries

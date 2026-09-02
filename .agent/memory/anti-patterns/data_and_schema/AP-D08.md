@@ -1,18 +1,40 @@
 ---
-id: AP-D08
 title: Fragile date parsing via toLocaleString default
-summary: Relying on toLocaleString() output for the Date() constructor without forcing a stable 24h/ISO format.
+summary: >-
+  Relying on toLocaleString() output for the Date() constructor without forcing a stable 24h/ISO
+  format.
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - getSaoPauloTime
+    - d.toLocaleString
+    - timeZone
+    - date.toISOString
+    - isNaN
+    - RangeError
+    - shifted.getTime
+  keywords:
+    - fragile
+    - date
+    - parsing
+    - via
+    - tolocalestring
+    - default
+legacy_tags:
   - server
   - utils
+id: AP-D08
+incident_count: 1
+last_referenced: "2026-05-02"
+related_rule: R-020
 tags:
   - date
   - crash
   - timezone
-incident_count: 1
-last_referenced: 2026-05-02
-status: active
-related_rule: R-020
 ---
 
 # AP-D08 — Fragile date parsing via toLocaleString default

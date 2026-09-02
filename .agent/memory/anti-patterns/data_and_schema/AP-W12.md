@@ -1,19 +1,34 @@
 ---
-id: AP-W12
 title: Use `||` fallback for numeric props that can legitimately be `0`
 summary: "`dosage_per_intake = 0` becomes `1`; incorrect dose recorded"
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - dosagePerIntake
+  keywords:
+    - use
+    - fallback
+    - for
+    - numeric
+    - props
+    - that
+    - can
+    - legitimately
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W12
+last_triggered: None
+legacy_pack: schema-data
+related_rule: R-104
 tags:
   - ui
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-104
-layer: warm
-bootstrap_default: False
-pack: schema-data
 ---
 
 # AP-W12 — Use `||` fallback for numeric props that can legitimately be `0`

@@ -1,3 +1,24 @@
+---
+title: Heurística de Expansão Estática em Mudança de Dia
+summary: Heurística de expansão de UI não re-avaliada na virada de dia local.
+layer: warm
+status: active
+applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - lastHeuristicDay
+    - localDay
+    - TodayScreen.jsx
+    - useEffect
+  keywords:
+    - heurística
+    - expansão
+    - estática
+    - mudança
+    - dia
+---
+
 # [AP-W29] Heurística de Expansão Estática em Mudança de Dia
 
 ## Problema

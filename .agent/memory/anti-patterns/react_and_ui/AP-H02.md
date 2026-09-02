@@ -1,19 +1,31 @@
 ---
-id: AP-H02
 title: Passar IDs ao invés de objetos para treatmentPlanService no LogForm
 summary: Passar IDs ao invés de objetos para treatmentPlanService no LogForm
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - treatmentPlans
+  keywords:
+    - passar
+    - ids
+    - invés
+    - objetos
+    - treatmentplanservice
+    - logform
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-H02
+last_triggered: None
+legacy_pack: react-hooks
+related_rule: R-133
 tags:
   - history
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-133
-layer: cold
-bootstrap_default: False
-pack: react-hooks
 ---
 
 # AP-H02 — Passar IDs ao invés de objetos para treatmentPlanService no LogForm

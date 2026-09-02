@@ -1,14 +1,40 @@
 ---
-id: AP-H24
-title: "FirebaseCoreInternal / GoogleUtilities quebra pod install sem useModularHeaders"
-category: mobile_and_platform
+title: FirebaseCoreInternal / GoogleUtilities quebra pod install sem useModularHeaders
+summary: >-
+  FirebaseCoreInternal/GoogleUtilities quebra pod install sem useModularHeaders — instalar
+  expo-build-properties com ios.useModularHeaders: true
 layer: warm
 status: active
-severity: high
-tags: [firebase, ios, cocoapods, swift, expo-build-properties, native-build]
+applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - app.config.js
+    - FirebaseCoreInternal
+    - GoogleUtilities
+    - modular_headers
+    - use_modular_headers
+    - useModularHeaders
+  keywords:
+    - firebasecoreinternal
+    - googleutilities
+    - quebra
+    - pod
+    - install
+    - usemodularheaders
+category: mobile_and_platform
 created_at: "2026-04-18"
-trigger_count: 1
+id: AP-H24
 last_triggered: "2026-04-18"
+severity: high
+tags:
+  - firebase
+  - ios
+  - cocoapods
+  - swift
+  - expo-build-properties
+  - native-build
+trigger_count: 1
 ---
 
 ## Problema

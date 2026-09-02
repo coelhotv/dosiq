@@ -1,16 +1,33 @@
 ---
-id: AP-H27
 title: Import relativo cross-boundary quebra após git mv em monorepo
-status: active
+summary: >-
+  Import relativo cross-boundary quebra após git mv em monorepo — tests em src/ com
+  ../../../../server/ falham
 layer: warm
-trigger_count: 1
-last_triggered: 2026-04-19
+status: active
+applies_to:
+  paths:
+    - api/**
+  diff_triggers:
+    - test.js
+  keywords:
+    - import
+    - relativo
+    - cross
+    - boundary
+    - quebra
+    - após
+    - git
+    - monorepo
+id: AP-H27
+last_triggered: "2026-04-19"
 tags:
   - monorepo
   - git-mv
   - tests
   - import
   - migration
+trigger_count: 1
 ---
 
 # AP-H27 — Import Relativo Cross-Boundary Quebra Após git mv

@@ -1,9 +1,37 @@
 ---
-id: AP-H17
 title: Attempt to use whatwg-url-without-unicode directly on Hermes (WebIDL crash)
-summary: "whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') which is never initialized on Hermes. Crash: 'Cannot read property get of undefined' at URL.js line 54 (globalObject[ctorRegistry]['URL']). The custom polyfill in polyfills.js is the only working solution. Spike branch: spike/whatwg-url-polyfill."
+summary: whatwg-url-without-unicode uses Symbol.for('[webidl2js] constructor registry') w...
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - NativeModules.BlobModule
+    - ARCHITECTURE_REVIEW_H5.md
+    - globalThis
+    - ctorRegistry
+    - globalObject
+    - ctorRegistrySymbol
+    - Symbol.for
+    - URL.js
+  keywords:
+    - attempt
+    - use
+    - whatwg
+    - url
+    - without
+    - unicode
+    - directly
+    - hermes
+legacy_tags:
   - apps/mobile/polyfills.js
+bootstrap_default: false
+expiry_date: "2027-04-14"
+id: AP-H17
+last_triggered: "2026-04-14"
+legacy_pack: adherence-reporting-mobile
+related_rule: R-168
 tags:
   - mobile
   - hermes
@@ -11,13 +39,6 @@ tags:
   - url
   - webidl
 trigger_count: 1
-last_triggered: 2026-04-14
-expiry_date: 2027-04-14
-status: active
-related_rule: R-168
-layer: warm
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-H17: whatwg-url-without-unicode crashes on Hermes (WebIDL ctorRegistry)

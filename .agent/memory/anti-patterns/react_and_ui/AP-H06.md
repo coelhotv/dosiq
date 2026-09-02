@@ -1,25 +1,41 @@
 ---
-id: AP-H06
 title: React and React-DOM version mismatch (range vs exact)
 summary: Runtime error when React/React-DOM pair doesn't have exact same version (19.2.5 vs 19.2.3)
+layer: warm
+status: active
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - package.json
+    - node_modules
+    - client.development.js
+    - lock.json
+    - useCachedQuery.smoke.test.jsx
+  keywords:
+    - react
+    - dom
+    - version
+    - mismatch
+    - range
+    - exact
+legacy_tags:
   - react
   - dependency
   - npm
   - test
+bootstrap_default: false
+expiry_date: "2027-04-12"
+id: AP-H06
+last_triggered: "2026-04-12"
+legacy_pack: react-hooks
+related_rule: R-160
 tags:
   - dependency
   - react
   - version-mismatch
   - test-failure
 trigger_count: 1
-last_triggered: 2026-04-12
-expiry_date: 2027-04-12
-status: active
-related_rule: R-160
-layer: warm
-bootstrap_default: False
-pack: react-hooks
 ---
 
 # AP-H06 — React and React-DOM version mismatch (range vs exact)

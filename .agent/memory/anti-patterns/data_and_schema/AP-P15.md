@@ -1,21 +1,36 @@
 ---
-id: AP-P15
 title: "`new Date()` construction em hot loop (>100 iterações)"
-summary: "`calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace: `pa"
+summary: >-
+  `calculateStreaks()` criava ~2700 Date objects (90 dias × N protocolos × 3 calls). Chrome trace:
+  `pa
+layer: warm
+status: active
 applies_to:
+  paths:
+    - packages/**
+    - "**/schemas/**"
+  diff_triggers:
+    - parseLocalDate
+  keywords:
+    - new
+    - date
+    - construction
+    - hot
+    - loop
+    - iterações
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-P15
+last_triggered: None
+legacy_pack: date-time
+related_rule: R-129
 tags:
   - performance
   - datetime
   - perf
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-129
-layer: warm
-bootstrap_default: False
-pack: date-time
 ---
 
 # AP-P15 — `new Date()` construction em hot loop (>100 iterações)

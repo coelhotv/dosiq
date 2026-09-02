@@ -1,22 +1,33 @@
 ---
-id: AP-T02
 title: Skip test cleanup (cache, mocks, timers)
 summary: Memory accumulation, OOM on 8GB machines, state leaks between tests
+layer: warm
+status: active
 applies_to:
+  paths:
+    - scripts/**
+    - docs/**
+  keywords:
+    - skip
+    - test
+    - cleanup
+    - cache
+    - mocks
+    - timers
+legacy_tags:
   - all
+bootstrap_default: true
+expiry_date: "2027-04-08"
+id: AP-T02
+last_triggered: None
+legacy_pack: test-hygiene
+related_rule: R-078
 tags:
   - testing
   - state
   - datetime
   - perf
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: active
-related_rule: R-078
-layer: warm
-bootstrap_default: True
-pack: test-hygiene
 ---
 
 # AP-T02 — Skip test cleanup (cache, mocks, timers)

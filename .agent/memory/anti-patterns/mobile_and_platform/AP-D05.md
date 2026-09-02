@@ -1,20 +1,34 @@
 ---
-id: AP-D05
 title: Slice no prop de doses do PriorityDoseCard
 summary: Slice no prop de doses do PriorityDoseCard
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/mobile/**
+  diff_triggers:
+    - PriorityDoseCard
+    - handleRegisterDosesAll
+    - onRegisterAll
+    - urgentDoses
+    - urgentDoses.slice
+  keywords:
+    - slice
+    - prop
+    - doses
+    - prioritydosecard
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-D05
+last_triggered: None
+legacy_pack: adherence-reporting-mobile
+related_rule: R-155
 tags:
   - interface
   - design
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-155
-layer: cold
-bootstrap_default: False
-pack: adherence-reporting-mobile
 ---
 
 # AP-D05 — Slice no prop de doses do PriorityDoseCard

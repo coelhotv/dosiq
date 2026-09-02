@@ -1,21 +1,42 @@
 ---
-id: AP-W23
 title: Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)
 summary: Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)
+layer: cold
+status: archived
 applies_to:
+  paths:
+    - apps/web/**
+  diff_triggers:
+    - isComplex
+    - useComplexityMode
+    - showComplex
+    - TreatmentsComplex
+    - TreatmentsSimple
+    - defaultViewMode
+    - medicineCount
+    - overrideMode
+  keywords:
+    - destructuring
+    - wrong
+    - property
+    - name
+    - from
+    - hook
+    - wave
+    - treatments
+legacy_tags:
   - all
+bootstrap_default: false
+expiry_date: "2027-04-08"
+id: AP-W23
+last_triggered: None
+legacy_pack: react-hooks
+related_rule: R-134
 tags:
   - ui
   - react
   - interface
 trigger_count: 0
-last_triggered: None
-expiry_date: 2027-04-08
-status: archived
-related_rule: R-134
-layer: cold
-bootstrap_default: False
-pack: react-hooks
 ---
 
 # AP-W23 — Destructuring Wrong Property Name from Hook (Wave 7 Treatments — 2026-03-25)
