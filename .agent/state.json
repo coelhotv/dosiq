@@ -3,8 +3,8 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "implementing",
-    "status": "merged",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 1,
     "spec_dir": "plans/specs/060-memory-yaml-enrich",
     "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
@@ -125,13 +125,13 @@
     "next_action": "T035 — applies_to.paths e diff_triggers escritos à mão nas regras de maior tráfego. É o que destrava o flip: recall@5 está em 2/6 e a causa medida é que as 12 regras do piloto têm glob fundo e dominam as 555 com piso raso. NÃO flipar o RC6_RULE_SELECTOR antes disso."
   },
   "memory": {
-    "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 19,
+    "last_distillation": "2026-09-01T21:47:00-03:00",
+    "journal_entries_since_distillation": 0,
     "rules_count": 269,
-    "anti_patterns_count": 335,
-    "decisions_count": 95,
+    "anti_patterns_count": 338,
+    "decisions_count": 96,
     "contracts_count": 34,
-    "distillation_due": true
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
