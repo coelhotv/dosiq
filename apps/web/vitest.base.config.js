@@ -45,6 +45,15 @@ export const baseConfig = defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // 🔴 TZ fixo em UTC — a suíte tem de rodar no MESMO fuso da produção (Vercel = UTC).
+    // Sem isto, `getTodayLocal()` (server/utils/dateUtils.ts) devolve o dia SEGUINTE em
+    // qualquer runtime de offset negativo entre 21h e meia-noite: ele faz `toISOString()`
+    // sobre uma Date que carrega a hora de PAREDE de São Paulo, e só num runtime UTC essa
+    // conversão coincide com o dia certo. Resultado: a suíte crítica ficava vermelha por
+    // 3 horas toda noite, numa máquina de dev no Brasil, sem nenhum commit relacionado.
+    // Fixar o fuso alinha teste e produção; NÃO conserta o helper — ver [[AP-342]] e a
+    // spec 077, que trata os 176 consumidores.
+    env: { TZ: 'UTC' },
     setupFiles: ['./src/test/setup.js'],
     css: false,
     testTimeout: 10000,

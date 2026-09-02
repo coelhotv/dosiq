@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Testes rodam no mesmo fuso da produção
+
+- **Fix** (`no-user-impact`). A suíte crítica passou a rodar com `TZ=UTC`, que é o fuso em que a
+  aplicação roda de verdade. Sem isso, uma função de data devolvia o dia seguinte em qualquer
+  máquina de desenvolvimento no Brasil entre 21h e meia-noite, e a suíte ficava vermelha por três
+  horas toda noite sem nenhuma alteração relacionada — foi assim que o problema apareceu, barrando
+  um commit que só mexia em documentação.
+  **Produção nunca foi afetada** e continua correta. O que existia era uma premissa não declarada:
+  a função só acerta quando o relógio do servidor está em UTC. Fixar o fuso dos testes alinha o
+  teste com a produção; corrigir a função para acertar em qualquer relógio é trabalho à parte, com
+  176 pontos de uso no caminho de notificação a validar, registrado como spec 077.
+
+
 ### Memórias do DEVFLOW: acervo inteiro migrado para o formato estruturado
 
 - **Process** (`no-user-impact`). As 605 memórias de regras e anti-padrões passaram a ter metadado
