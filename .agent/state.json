@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
-    "tier": 1,
-    "spec_dir": "plans/specs/060-memory-yaml-enrich",
-    "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
-    "goal": "060 — camada de acesso única à memória do DEVFLOW",
-    "goal_type": "tooling",
+    "mode": "planning",
+    "status": "planned",
+    "tier": 2,
+    "spec_dir": "plans/specs/078-devflow-memory-revamp",
+    "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
+    "goal": "078 — revamp estrutural da memória DEVFLOW: do acervo que acumula à camada que entrega",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
       "plans/specs/062-android-notification-fidelity",
@@ -55,35 +55,17 @@
         "note": "605/605 memórias schema-válidas (eram 12), 567 no índice compilado, 338KB. ZERO LLM: o `summary` não foi gerado, foi EXTRAÍDO das linhas de RULES_INDEX.md/ANTI_PATTERNS_INDEX.md, que já eram resumos escritos à mão e cobrem 605/605 — o lote do `agy` orçado no T032 custou zero. TRÊS DEFEITOS que as 12 memórias do piloto escondiam: (1) byTrigger['toString'] resolvia pelo Object.prototype e .push estourava — toString/toLocaleString são diff_triggers legítimos de `date.toLocaleString`; (2) o schema default do js-yaml tem tipo timestamp e transformava 'created_at: 2026-04-26' em ISO, reescrevendo expiry_date/review_due, que são os campos que o modelo de ciclo de vida do SKILL.md lê (T033) — CORE_SCHEMA; (3) piso de caminho profundo demais (meu): apps/web/src/features/** é a UI web INTEIRA e valia os mesmos 40 pontos de um glob específico, porque o score é 10x(segmentos do glob) — piso virou raso e AP-306 subiu de rank 19 para 1. FASE B DECIDIU CONTRA O FLIP: recall@5 = 2/6 (recall@60 = 5/6) contra 3 PRs reais, procurando as regras que o RC6 citou nominalmente. A causa NÃO é metadado faltando — AP-186 tem 7 dos 8 triggers nas linhas ADICIONADAS do #812 e pontua 20, enquanto AP-306 tem ZERO trigger casando e pontua 42 só pela profundidade do glob. T034 (contar triggers) foi aprovado pelo PO a partir de uma SIMULAÇÃO MINHA que previa 3/6, implementado, medido no código real (2/6 no melhor caso, 1/6 na maioria, IDF incluída) e REVERTIDO — a simulação media um seletor parecido, não o seletor. RC5 auditou o diff de 594 arquivos: 0 campos perdidos, 0 corpos alterados, 1 finding (catch do yaml.load caía para {} e zeraria campos legados) corrigido em 75ca1c6a. RC6 agy 1 chunk, 0 findings, cov=1/1. 2 erros de operação meus registrados no measurement: RC6_MEASURE=1 é modo medição-E-SAI (nenhum motor chamado, 'roda uma vez' intacto) e o gate de reflexão poluía o stdout com 'refuted=0' antes do JSON (corrigido no devflow 2038c04). ⚠️ O PREÂMBULO CONTINUA EM 92.981B contra budget de 49.019B — este PR entrega o DADO, não o ganho; o ganho depende do flip."
       }
     ],
-    "previous_session_note": "2026-08-30 specifying da 068: draft -> spec completa. Tier 1 (mobile-only, zero schema). 3 OQs do draft RESOLVIDAS por evidencia no repo: notifee expoe isBatteryOptimizationEnabled (Module.d.ts:488) e getPowerManagerInfo().activity (:514) => DETECTAR e possivel e o deep link e por-OEM nativo do notifee, matando o \"instrucao cega\". isXiaomiDevice ja existe (alarmService.ts:127) e GuideModal ja discrimina Xiaomi (ProtocolFormBody.tsx:237/252) => reuso, nao criacao. useNudges e server-driven => card local (padrao useStockUpsell/StockUpsellCard). 3 OQs NOVAS abertas (OQ-4 fora do motor de nudges, OQ-5 sem metrica de adocao, OQ-6 falso-negativo do Doze em MIUI). 8 POs, 12 ACs, 6 user stories. R-314: build de loja, OTA proibido.",
+    "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
     "ceremonies_run": [
-      "eng-review",
-      "design-review"
+      "eng-review"
     ],
-    "ceremony_findings_count": 13,
+    "ceremony_findings_count": 7,
     "ceremony_scope_decisions": [
-      "E-1 (RC3 2026-08-30, CRITICO): isBatteryOptimizationEnabled e a negacao de isIgnoringBatteryOptimizations — app esta otimizado por PADRAO e o dosiq nao declara REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (withAlarmPermissions.js lista 5 permissoes, nenhuma delas). Logo o predicado da AC-1 e verdadeiro para ~100% da base Android: e condicao NECESSARIA, nao sinal de RISCO. FR-001 vira conjuncao (otimizacao ligada E familia de OEM de risco)",
-      "E-2 (RC3): o mapa de activities do notifee e um AAR pre-compilado de 2021 (core-202108261754.aar). Strings do classes.jar: com.miui.permcenter.autostart.AutoStartManagementActivity, samsung, huawei, oppo — SEM motorola. Motorola => activity null garantido; Xiaomi => activity de 2021, HyperOS pode ter movido e openPowerManagerSettings pode LANCAR. O caminho escrito e principal, nao fallback raro",
-      "E-3 (RC3): complexity check estourado (9 arquivos novos + 3 montagens vs limite 8). PR 1 = US1-US4; US5 (entrada em Preferencias) e US6 (step de onboarding) diferidas. US6 cortada primeiro: nao alcanca a base instalada, roda antes de existir tratamento com alarme, e e a unica cujo smoke exige instalacao limpa",
-      "E-4 (RC3): XIAOMI_MSG/GENERIC_MSG ja existem em ProtocolFormBody.tsx:41/49 (escolhidos por isXiaomiDevice em :538). oemBatteryGuides.ts nasceria como 2a copia do mesmo texto, divergencia invisivel. T001 vira dono unico e ProtocolFormBody migra na MESMA PR (extrair, nao duplicar)",
-      "E-5 (RC3): expo-device e a UNICA fonte da familia de OEM; getPowerManagerInfo entra so pelo campo activity. Duas fontes p/ o mesmo fato = dois resultados na mesma tela",
-      "E-6 (RC3): guards SUBIDOS — PO-3 exige ProtocolFormBody.evoDots.test.tsx + alarmService.test.ts verdes (o predicado tem consumidor em producao); PO-5 cobre 4 caminhos incluindo openPowerManagerSettings REJEITANDO. Nenhum guard rebaixado",
-      "E-7 (RC3): se o card aparecer p/ toda a base (E-1 nao corrigido) ele compete com o guia de full-screen intent que JA dispara em ProtocolFormBody.tsx:537-539. O acionado por intencao do usuario tem precedencia; o passivo cede",
-      "RC3: Tier 1 MANTIDO (nenhum achado introduz schema/migracao/contrato/nativo). RC-SEC dispensada (permissao do SO p/ nao matar processo, nao controle de acesso a dado). RC2 so se o PO quiser fechar o estado 'sem CTA' antes de codar",
-      "D-1 (RC2 2026-08-30): XIAOMI_MSG usa '*Sempre permitir*' e GENERIC_MSG usa '<Abrir configuracoes>' (ProtocolFormBody.tsx:41-49) — RN <Text> nao renderiza markdown, o usuario le os asteriscos/colchetes LITERAIS. Defeito JA EM PRODUCAO. A extracao do E-4 conserta (enfase vira estrutura), nao copia verbatim. AC-13/PO-9",
-      "D-2 (RC2, CRITICO): GuideModal e <Modal transparent> e o fluxo do 068 EXIGE sair para as Configuracoes do SO e voltar — o modal morre na viagem, e o app pode ser descarregado pelo proprio OEM que a tela esta tentando consertar. A tela de passos vira ROTA no stack, nao modal",
-      "D-3 (RC2, CRITICO): nao existe estado 'voltei das Configuracoes'. Quem ajustou continua vendo o aviso (mina a confianca em todos os avisos do app); quem nao ajustou nao recebe reforco. useFocusEffect (padrao da casa, NotificationPreferencesScreen.tsx:5) + desfecho sucesso/pendencia. AC-14/PO-10",
-      "D-4 (RC2): AC-10 declara dismiss DEFINITIVO mas o rotulo copiado do StockUpsellCard:49 e 'Agora nao', que promete depois. Rotulos honestos: 'Ja ajustei' e 'Nao mostrar de novo' (mesma chave, verdades diferentes; de graca separa as 2 populacoes se houver metrica)",
-      "D-5 (RC2): TodayScreen ja monta dashboardNudge (:345) e StockUpsellCard (:457); o 068 seria o 3o card acima da agenda. Maximo UM card promocional por render, precedencia nudge > estoque > assistente (o passivo cede, alinhado ao E-7). AC-15/PO-11",
-      "D-6 (RC2): passos como nos separados (1 <Text> por passo), nunca um blob com \\n — leitor de tela le paragrafo unico. Copiar o padrao de acao do StockUpsellCard (role+label nas 2 acoes) como esta",
-      "RC2: D-2/D-3 AUMENTAM o PR 1 (uma rota + re-check de foco) exatamente onde o E-3 mandou cortar. Compativel: o corte de US5/US6 libera o orcamento; sem D-2/D-3 sobra uma tela bonita que nao termina o trabalho",
-      "PLANNING P1.5 (PO 2026-08-30) E-1/OQ-6: gate HIBRIDO por fabricante — Xiaomi/Redmi/POCO SEMPRE (autostart do MIUI e invisivel ao Doze, o booleano nao sabe dele); Samsung/Motorola so se isBatteryOptimizationEnabled()===true; demais nunca; excecao do SO => oculto. FR-001/AC-1/AC-2/PO-1 reescritas na spec",
-      "PLANNING (PO) E-3/RC2: PR 1 = US1-US4 + rota (D-2) + re-check de foco (D-3). US5/US6 -> PR 2",
-      "PLANNING (PO) OQ-5: metrica REUSA a trilha critica (dose_critical_events). Consequencia aceita: evento novo = CHECK novo => PR 3 e TIER 2 com RC-SEC OBRIGATORIA + migracao do CHECK (R-271) + verificacao no banco (R-295); e trilha de SAUDE com manufacturer/model, aplicar o precedente de consentimento revogado da FR-035",
-      "PLANNING D-1 (decorrencia): oemBatteryGuides entrega passos como ARRAY de itens, nunca string com \\n, e sem marcacao crua — enfase e responsabilidade do componente. Corrige defeito que ja esta em producao",
-      "PLANNING: inversao de dependencia — resolveOemFamily desce para platform/device/oemFamily.ts e alarmService.isXiaomiDevice (:127) vira wrapper de assinatura preservada; a COPY sobe para features/oemAssistant. Uma regex de fabricante, uma fonte de copy",
-      "PLANNING: rota no STACK RAIZ (Navigation.tsx ao lado de STOCK_INITIAL_BALANCE :377) pelo motivo ja documentado em :371-375 — no PR 2 a entrada tambem vem da aba Perfil e stacks irmaos nao se enxergam",
-      "PLANNING (risco registrado, NAO escondido): 14 arquivos de codigo, acima do smell de 8 do RC3. 6 sao teste ou edicao de 1-3 linhas; o corpo real sao 6 arquivos. Nao reduzir mais sem tirar D-2/D-3, que sao o que fecha o fluxo"
+      "HOLD SCOPE",
+      "Slice 2 estende migrate-memory-frontmatter.mjs (F2, DRY)",
+      "Slice 1 read-only sem codigo de escrita (F5)",
+      "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
+      "Slice 1 regenera post_birth.json (F1)"
     ],
     "branch": "main",
     "blocked_on": [
@@ -119,10 +101,13 @@
     ],
     "merged_pr": 817,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
-    "ceremony_type": "design-review",
-    "tasks": "plans/specs/060-memory-yaml-enrich/tasks.md",
-    "plan": "plans/specs/058-rc6-reflection-gate/plan.md",
-    "next_action": "T035 — applies_to.paths e diff_triggers escritos à mão nas regras de maior tráfego. É o que destrava o flip: recall@5 está em 2/6 e a causa medida é que as 12 regras do piloto têm glob fundo e dominam as 555 com piso raso. NÃO flipar o RC6_RULE_SELECTOR antes disso."
+    "ceremony_type": "eng-review",
+    "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
+    "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
+    "next_action": "078 T0.0 — SQP (R-221) do PR 1 e entao o Slice 0 (scripts/mine-rule-corpus.mjs). E o unico slice que desbloqueia os outros; T0.10 decide a OQ-5 (se recall@k vira gate de promocao ou se o Slice 3 nao abre). Antes de codar: C1.5 obrigatorio (Tier 2) com evidence table + tabela de failure modes do minerador. O flip do RC6_RULE_SELECTOR da 060 (T012) continua BLOQUEADO pela 078.",
+    "linked_adrs": [
+      "ADR-097"
+    ]
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
