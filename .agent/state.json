@@ -4,11 +4,11 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "implementing",
-    "status": "in-progress",
+    "status": "merged",
     "tier": 1,
-    "spec_dir": "plans/specs/058-rc6-reflection-gate",
-    "spec": "plans/specs/058-rc6-reflection-gate/spec.md",
-    "goal": "058 — gate de reflexão determinístico do RC6 (falsificar, não verificar)",
+    "spec_dir": "plans/specs/060-memory-yaml-enrich",
+    "spec": "plans/specs/060-memory-yaml-enrich/spec.md",
+    "goal": "060 — camada de acesso única à memória do DEVFLOW",
     "goal_type": "tooling",
     "spec_dirs": [
       "plans/specs/050-notification-integrity",
@@ -16,7 +16,7 @@
       "plans/specs/071-injection-bodymap",
       "plans/specs/068-android-oem-battery-assistant"
     ],
-    "merged_squash": "3e7af988 (squash merge into main)",
+    "merged_squash": "696183a9 (squash merge into main)",
     "merged_history": [
       {
         "pr": 812,
@@ -44,6 +44,15 @@
         "date": "2026-08-30",
         "base_branch": "main",
         "note": "Revisão da entrega do #813 (feita por agente Sonnet). 3 correções + endurecimento de processo. (1) AP-341 NOVO: alargar o predicado de disparo (includes([30,7,1]) -> <= band) alcanca ramos de MENSAGEM escritos contra o dominio antigo — daysRemaining=0 virou alcancavel e o copy saia 'vencendo em 0 dias'; nenhum gate ve (tsc ok pois e number, lint nao le copy, teste do job conta dispatches sem olhar conteudo). Bonus: escape MarkdownV2 errado (\\.! em vez de \\!) rendia 'amanha.!' e 'Atencao.!' — copy de caminho morto e codigo nao revisado. (2) Emenda 2 do AP-340, com a conclusao CORRIGIDA pelo RC5: eu tinha removido o log proprio do job argumentando que o dispatcher ja grava; ERRADO — o log do dispatcher sai de IIFE NAO aguardada (dispatchNotification.ts:154) e, com consentimento revogado, nem existe (retorna normalizeChannelResults([]) => success true ANTES do bloco de log) => deduplicar por ali = re-disparo diario a band inteira para quem revogou. Regra: so ancora dedup a escrita que o proprio chamador aguarda e confere. (3) Perf/robustez: janela de end_date filtrada no banco (horizonte derivado de getNow(), nao da meia-noite do TZ do runtime), dedup em lote chunk 100 e paginada via _fetchAllPages (AP-186). PROCESSO: CLAUDE.md — SQP virou secao propria 'ANTES da primeira linha de codigo' (estava sob o heading de C5, que o arrastava pro momento do commit) com aviso de ler o R-221 inteiro; Git Workflow declara que sao GATES com evidencia citavel e que pular exige pedido explicito do usuario. HOOKS: .husky/pre-commit e pre-push estavam com os comandos E o exit 1 comentados, imprimindo sucesso — AP-325 vivo no repo; reativados, e o primeiro commit com o hook ligado FALHOU porque .lintstagedrc.js usava module.exports num root ESM (nunca carregou; renomeado .mjs). prettier restrito a CSS: o --write sobre **/*.md refluiria CLAUDE.md e os APs, provavel motivo do desligamento original. RC5: 5 findings, todos endereçados. RC6: agy 4/4 chunks, 0 findings, A/B do PO-5 abortou sozinho no baseline sem gastar o 2o run."
+      },
+      {
+        "pr": 817,
+        "squash": "696183a9",
+        "spec": "060 Fase A+B — migração do acervo de memórias",
+        "tier": 1,
+        "date": "2026-09-01",
+        "base_branch": "main",
+        "note": "605/605 memórias schema-válidas (eram 12), 567 no índice compilado, 338KB. ZERO LLM: o `summary` não foi gerado, foi EXTRAÍDO das linhas de RULES_INDEX.md/ANTI_PATTERNS_INDEX.md, que já eram resumos escritos à mão e cobrem 605/605 — o lote do `agy` orçado no T032 custou zero. TRÊS DEFEITOS que as 12 memórias do piloto escondiam: (1) byTrigger['toString'] resolvia pelo Object.prototype e .push estourava — toString/toLocaleString são diff_triggers legítimos de `date.toLocaleString`; (2) o schema default do js-yaml tem tipo timestamp e transformava 'created_at: 2026-04-26' em ISO, reescrevendo expiry_date/review_due, que são os campos que o modelo de ciclo de vida do SKILL.md lê (T033) — CORE_SCHEMA; (3) piso de caminho profundo demais (meu): apps/web/src/features/** é a UI web INTEIRA e valia os mesmos 40 pontos de um glob específico, porque o score é 10x(segmentos do glob) — piso virou raso e AP-306 subiu de rank 19 para 1. FASE B DECIDIU CONTRA O FLIP: recall@5 = 2/6 (recall@60 = 5/6) contra 3 PRs reais, procurando as regras que o RC6 citou nominalmente. A causa NÃO é metadado faltando — AP-186 tem 7 dos 8 triggers nas linhas ADICIONADAS do #812 e pontua 20, enquanto AP-306 tem ZERO trigger casando e pontua 42 só pela profundidade do glob. T034 (contar triggers) foi aprovado pelo PO a partir de uma SIMULAÇÃO MINHA que previa 3/6, implementado, medido no código real (2/6 no melhor caso, 1/6 na maioria, IDF incluída) e REVERTIDO — a simulação media um seletor parecido, não o seletor. RC5 auditou o diff de 594 arquivos: 0 campos perdidos, 0 corpos alterados, 1 finding (catch do yaml.load caía para {} e zeraria campos legados) corrigido em 75ca1c6a. RC6 agy 1 chunk, 0 findings, cov=1/1. 2 erros de operação meus registrados no measurement: RC6_MEASURE=1 é modo medição-E-SAI (nenhum motor chamado, 'roda uma vez' intacto) e o gate de reflexão poluía o stdout com 'refuted=0' antes do JSON (corrigido no devflow 2038c04). ⚠️ O PREÂMBULO CONTINUA EM 92.981B contra budget de 49.019B — este PR entrega o DADO, não o ganho; o ganho depende do flip."
       }
     ],
     "previous_session_note": "2026-08-30 specifying da 068: draft -> spec completa. Tier 1 (mobile-only, zero schema). 3 OQs do draft RESOLVIDAS por evidencia no repo: notifee expoe isBatteryOptimizationEnabled (Module.d.ts:488) e getPowerManagerInfo().activity (:514) => DETECTAR e possivel e o deep link e por-OEM nativo do notifee, matando o \"instrucao cega\". isXiaomiDevice ja existe (alarmService.ts:127) e GuideModal ja discrimina Xiaomi (ProtocolFormBody.tsx:237/252) => reuso, nao criacao. useNudges e server-driven => card local (padrao useStockUpsell/StockUpsellCard). 3 OQs NOVAS abertas (OQ-4 fora do motor de nudges, OQ-5 sem metrica de adocao, OQ-6 falso-negativo do Doze em MIUI). 8 POs, 12 ACs, 6 user stories. R-314: build de loja, OTA proibido.",
@@ -76,7 +85,7 @@
       "PLANNING: rota no STACK RAIZ (Navigation.tsx ao lado de STOCK_INITIAL_BALANCE :377) pelo motivo ja documentado em :371-375 — no PR 2 a entrada tambem vem da aba Perfil e stacks irmaos nao se enxergam",
       "PLANNING (risco registrado, NAO escondido): 14 arquivos de codigo, acima do smell de 8 do RC3. 6 sao teste ou edicao de 1-3 linhas; o corpo real sao 6 arquivos. Nao reduzir mais sem tirar D-2/D-3, que sao o que fecha o fluxo"
     ],
-    "branch": "feat/058-reflect-gate",
+    "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
@@ -108,16 +117,16 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "merged_pr": 813,
+    "merged_pr": 817,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "design-review",
-    "tasks": "plans/specs/058-rc6-reflection-gate/tasks.md",
+    "tasks": "plans/specs/060-memory-yaml-enrich/tasks.md",
     "plan": "plans/specs/058-rc6-reflection-gate/plan.md",
-    "next_action": "058 fechada no que é fechável. Pendentes de campo: T014 (≥2 PRs reais) e T018 — instruções em docs/standards/AI_REVIEW.md §Gate de reflexão. Próximo trabalho: volume da 060 (T030/T031/T032)."
+    "next_action": "T035 — applies_to.paths e diff_triggers escritos à mão nas regras de maior tráfego. É o que destrava o flip: recall@5 está em 2/6 e a causa medida é que as 12 regras do piloto têm glob fundo e dominam as 555 com piso raso. NÃO flipar o RC6_RULE_SELECTOR antes disso."
   },
   "memory": {
     "last_distillation": "2026-08-22T14:10:00-03:00",
-    "journal_entries_since_distillation": 18,
+    "journal_entries_since_distillation": 19,
     "rules_count": 269,
     "anti_patterns_count": 335,
     "decisions_count": 95,
@@ -134,9 +143,9 @@
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 2,
+    "auto_fixed": 1,
     "ask_items": 0,
-    "note": "RC5 do #816 contra dado real: meta.skipped inchando o índice (99.657B->8.351B) e formato default mandando summary em vez da regra inteira (FR-015). Nenhum dos dois aparecia contra fixture."
+    "note": "RC5 do #817 contra dado real: auditoria do diff de 594 arquivos (0 campos perdidos, 0 corpos alterados) e 1 finding — o catch do yaml.load caía para {} e um frontmatter ilegível zeraria os campos legados sem aparecer no diff."
   },
   "ai_review": {
     "engine": "agy (1 chunk)",
@@ -147,8 +156,8 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 816,
-    "note": "Cobertura 1/1. A/B não armou (1 pack). Preâmbulo 88.056B — variação por composição de PR, não efeito do trabalho."
+    "pr": 817,
+    "note": "cov=1/1 não-parcial, tok=115080. Primeiro run do gate de reflexão (058) em PR real: counts.refuted=0, nada a conferir. Preâmbulo 92.981B > 60% do budget — o número que a 060 existe para derrubar e que este PR não move."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
