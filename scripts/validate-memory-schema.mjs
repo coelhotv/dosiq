@@ -28,6 +28,7 @@ const ERROR_CLASSES = [
   'o4',
   'filtro_zero',
   'status_invalido',
+  'id_duplicado',
   'outros'
 ];
 
@@ -307,8 +308,33 @@ function main() {
 
   const report = makeReport();
 
+  // Colisão de ID entre arquivos. É cross-file, então NÃO cabe no validateOneFile:
+  // dois arquivos com o mesmo basename são individualmente válidos e o índice
+  // compilado é keyed por id, de modo que o segundo SOBRESCREVE o primeiro em
+  // silêncio — a regra perdida some do seletor sem erro nenhum (AP-343, 2 ocorrências
+  // em 2 sessões). Só roda no conjunto COMPLETO: sob --batch o subconjunto não prova
+  // ausência de colisão e um "ok" ali seria pior que não checar.
+  const duplicateIds = new Map();
+  if (args.batch === null || Number.isNaN(args.batch)) {
+    const byId = new Map();
+    for (const filePath of files) {
+      const id = path.basename(filePath, '.md');
+      if (!byId.has(id)) byId.set(id, []);
+      byId.get(id).push(filePath);
+    }
+    for (const [id, paths] of byId) {
+      if (paths.length > 1) duplicateIds.set(id, paths);
+    }
+  }
+
   for (const filePath of files) {
     const fileReport = validateOneFile(filePath, { strict: args.strict, claudeMdContent });
+    const dupPaths = duplicateIds.get(path.basename(filePath, '.md'));
+    if (dupPaths) {
+      addError(fileReport, 'id_duplicado',
+        `ID duplicado: o mesmo id existe em ${dupPaths.length} arquivos (${dupPaths.join(', ')}). ` +
+        'O índice compilado é keyed por id — um deles fica invisível ao seletor. Renumerar um dos dois.');
+    }
     report.checked++;
     report.files.push(fileReport);
     if (fileReport.errors.length > 0) {
