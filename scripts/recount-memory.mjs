@@ -19,8 +19,16 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { selectRules } from './select-rules.mjs';
 
-const RULE_ID_RE = /\b(?:R|AP)-(?:\d{3}|[A-Z]{1,3}\d{2,3})\b/g;
+/**
+ * Casa TODAS as formas de ID que o acervo usa, inclusive as legadas — `R-025-1`, `AP-97`,
+ * `AP-LOG-001`, `AP-SL01`, `AP-H04`. Um padrão de citação mais estreito que o de arquivo
+ * (`MEMORY_FILE_RE`) deixa a memória legada presa em 0 para sempre E credita as citações de
+ * `R-025-1` ao `R-025`, porque o `\b` casa antes do `-1`: contagem errada num contador.
+ * Achado do RC6 no PR #819.
+ */
+const RULE_ID_RE = /\b(?:R|AP)-(?:[A-Z]{1,3}-?)?\d{2,3}(?:-\d+)?\b/g;
 /** Nome de arquivo de memória: permissivo de propósito — o acervo tem IDs legados fora do padrão
  *  (`R-025-1`, `AP-SL01`, `AP-LOG-001`, `AP-97`) e ignorá-los subconta o acervo em silêncio. */
 const MEMORY_FILE_RE = /^(?:R|AP)-[A-Za-z0-9-]+$/;
@@ -56,6 +64,7 @@ function parseArgs(argv) {
     k: 12,
     json: false,
     excludeTraces: [],
+    findSimilar: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -64,6 +73,7 @@ function parseArgs(argv) {
     else if (arg === '--promote-candidates') opts.promoteCandidates = true;
     else if (arg === '--post-birth-json') opts.postBirthJson = true;
     else if (arg === '--json') opts.json = true;
+    else if (arg === '--find-similar') opts.findSimilar = argv[++i];
     else if (arg === '--exclude-trace') {
       // Permite reproduzir a visão de 4 traços da spec (o `sessions/events.jsonl` entrou no
       // Slice 1, C1.5 Gap-5) e medir o efeito da inclusão em vez de afirmá-lo.
@@ -294,6 +304,44 @@ export function recount(opts) {
   return { memories_on_disk: memories.size, rows: all, problems };
 }
 
+
+/**
+ * Busca por CLASSE de padrão, para o C5 cumprir a PO-8 sem depender de boa vontade: antes de
+ * cunhar AP novo, `--find-similar "<descrição do bug>"` devolve os candidatos mais próximos.
+ *
+ * Reusa o índice compilado da 060 e o `selectRules` do seletor — nada de terceiro matcher (F2).
+ * O seletor pontua diff (path/trigger/keyword) e a keyword é BINÁRIA, então sozinho devolve
+ * pouco para texto livre; a sobreposição de termos sobre título+resumo entra como desempate,
+ * não como índice novo.
+ */
+function findSimilar(repo, query, limit) {
+  const indexPath = path.join(repo, '.agent', 'memory', 'compiled_rules_index.json');
+  if (!fs.existsSync(indexPath)) {
+    throw new Error(`índice compilado ausente (${indexPath}) — rode compile-memory-index.mjs`);
+  }
+  const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+  const terms = [...new Set(query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 4))];
+  if (terms.length === 0) throw new Error('--find-similar exige ao menos um termo com 4+ caracteres');
+
+  const bySelector = new Map(
+    selectRules(index, { changedPaths: [], addedLines: [query], changedDomains: new Set() }, 1000).map(
+      (r) => [r.id, r.score],
+    ),
+  );
+
+  const scored = [];
+  for (const [id, rule] of Object.entries(index.rules)) {
+    const haystack = `${rule.title ?? ''} ${rule.summary ?? ''} ${(rule.keywords ?? []).join(' ')}`.toLowerCase();
+    const hits = terms.filter((t) => haystack.includes(t));
+    const overlap = hits.length;
+    const selector = bySelector.get(id) ?? 0;
+    const score = overlap * 10 + selector;
+    if (score > 0) scored.push({ id, score, overlap, selector, hits, title: rule.title, domain: rule.domain });
+  }
+  scored.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  return scored.slice(0, limit);
+}
+
 function claudeMdIds(repo) {
   const abs = path.join(repo, 'CLAUDE.md');
   const byId = fs.existsSync(abs) ? idsIn(fs.readFileSync(abs, 'utf-8')) : new Set();
@@ -313,6 +361,33 @@ function main() {
       'uso: node scripts/recount-memory.mjs [--report] [--id <ID>] [--promote-candidates] [--post-birth-json] [--k N] [--json] [--repo <dir>]\n' +
         'LEITURA APENAS — nada é escrito em .agent/memory. Saída vai para stdout.',
     );
+    return;
+  }
+
+  if (opts.findSimilar) {
+    let hits;
+    try {
+      hits = findSimilar(opts.repo, opts.findSimilar, 5);
+    } catch (e) {
+      console.error(`erro: ${e.message}`);
+      process.exit(1);
+    }
+    if (hits.length === 0) {
+      console.log(
+        'nenhum candidato PELOS TERMOS usados — varie os termos antes de concluir. Ausência aqui NÃO prova classe nova (a busca é por termo, não semântica).',
+      );
+      return;
+    }
+    console.log(`candidatos para "${opts.findSimilar}" (incrementar > cunhar):`);
+    for (const h of hits) {
+      console.log(`  ${h.id.padEnd(9)} score=${String(h.score).padStart(3)} (termos: ${h.hits.join(', ') || '-'}${h.selector ? `, seletor=${h.selector}` : ''})  ${h.domain} — ${h.title ?? ''}`);
+    }
+    console.log(
+      '\n⚠️ A busca é por TERMO sobre título/resumo/keywords, não semântica: casa sinônimo literal, não paráfrase.' +
+        '\n   Medido: "gate reporta sucesso sem executar comando" NÃO devolve AP-325/AP-261, que são dessa classe.' +
+        '\n   Logo NÃO CASAR AQUI NÃO PROVA CLASSE NOVA — é primeira passada, não veredicto. Varie os termos antes de cunhar.',
+    );
+    console.log('registre no journal a classe consultada, os termos usados e o resultado (casou <ID> / não casou) — PO-8');
     return;
   }
 

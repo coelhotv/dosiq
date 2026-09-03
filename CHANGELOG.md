@@ -23,6 +23,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   mesmo que um compacto — antes o mesmo trabalho pontuava diferente conforme o formatador. Dois
   registros corrompidos no acervo, que antes engoliriam em silêncio todo o resto do arquivo, agora
   são contados e reportados.
+  Junto vai uma busca de apoio (`--find-similar`) para o momento em que um padrão novo seria
+  registrado: ela procura, entre os 609 registros existentes, os mais próximos da descrição do
+  problema, para que o padrão recorrente seja **incrementado** em vez de ganhar um registro novo a
+  cada vez. A busca é por termo, não por sentido, e a própria saída diz isso: não encontrar nada
+  **não** prova que o padrão é inédito.
   A lista de candidatas a subir traz duas ressalvas escritas na própria saída, porque nenhuma das
   duas é detectável por código: o corte por posição cai **dentro de um empate**, e a cobertura é
   medida por identificador — o documento de regras críticas carrega o conteúdo de pelo menos duas

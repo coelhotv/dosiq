@@ -67,6 +67,17 @@ before(() => {
   commit('chore: memória sem evidência', {
     '.agent/memory/rules/process_and_testing/R-101.md': '# R-101\n',
   });
+  // IDs legados: padrão de citação mais estreito que o de arquivo prendia estes em 0 para sempre
+  // e creditava as citações de R-025-1 ao R-025 (achado do RC6 no #819).
+  commit('feat(z): cunha legados', {
+    '.agent/memory/rules/mobile_and_platform/R-025.md': '# R-025\n',
+    '.agent/memory/rules/mobile_and_platform/R-025-1.md': '# R-025-1\n',
+    '.agent/memory/anti-patterns/test_hygiene/AP-97.md': '# AP-97\n',
+    '.agent/memory/anti-patterns/test_hygiene/AP-LOG-001.md': '# AP-LOG-001\n',
+    'src/e.js': 'e\n',
+  });
+  commit('fix(z): aplica R-025-1, AP-97 e AP-LOG-001', { 'src/f.js': 'f\n' });
+
   // R-010 existe e é usada, mas o CLAUDE.md do fixture NÃO cita o ID dela — cobertura em prosa.
   commit('feat(y): aplica R-010', {
     '.agent/memory/rules/react_and_ui/R-010.md': '# R-010\n',
@@ -159,6 +170,14 @@ test('ID citado em traço sem arquivo em disco é órfão, e não derruba o run'
   assert.equal(ap.file, null);
 });
 
+test('IDs legados são contados, e R-025-1 não é creditado ao R-025', () => {
+  assert.equal(rowOf('R-025-1').count, 1);
+  assert.equal(rowOf('AP-97').count, 1);
+  assert.equal(rowOf('AP-LOG-001').count, 1);
+  // o único commit cita R-025-1, nunca R-025 sozinho
+  assert.equal(rowOf('R-025').count, 0);
+});
+
 test('--id inexistente sai com erro, não com relatório vazio', () => {
   const r = run(['--id', 'R-999']);
   assert.equal(r.status, 1);
@@ -183,6 +202,36 @@ test('cobertura em prosa conta como coberta e vem com a linha que a comprova', (
   // R-010 não é citada por ID em lugar nenhum do fixture; entra por PROSE_COVERED.
   const out = run(['--promote-candidates', '--k', '40']).stdout;
   assert.match(out, /R-010.*\[em prosa: CLAUDE\.md:47/);
+});
+
+test('--find-similar devolve candidatos do índice compilado e avisa que não é veredicto', () => {
+  const index = {
+    rules: {
+      'AP-900': {
+        title: 'Gate que reporta sucesso de operação que não ocorreu',
+        summary: 'hook imprimiu sucesso com o comando comentado',
+        domain: 'process_and_testing',
+        layer: 'warm',
+        paths: [],
+        diff_triggers: [],
+        keywords: ['gate', 'sucesso'],
+      },
+      'R-900': { title: 'Outra coisa', summary: 'nada a ver', domain: 'react_and_ui', layer: 'warm', paths: [], diff_triggers: [], keywords: [] },
+    },
+    byPath: {},
+    byTrigger: {},
+  };
+  write('.agent/memory/compiled_rules_index.json', JSON.stringify(index));
+  git(['add', '--', '.agent/memory/compiled_rules_index.json']);
+  git(['commit', '-m', 'chore: índice compilado do fixture']);
+  const out = run(['--find-similar', 'gate reporta sucesso que não ocorreu']).stdout;
+  assert.match(out, /AP-900/);
+  assert.doesNotMatch(out, /R-900/);
+  assert.match(out, /NÃO PROVA CLASSE NOVA/);
+});
+
+test('--find-similar sem termo utilizável sai com erro', () => {
+  assert.equal(run(['--find-similar', 'a b c']).status, 1);
 });
 
 test('--k inválido sai com erro', () => {
