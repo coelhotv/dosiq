@@ -8,12 +8,12 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 0 — corpus de avaliação (mine-rule-corpus.mjs + measure.sh)",
+    "goal": "078 Slice 1 — contador de recorrência de memória, em modo leitura",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "91c17706 (squash merge into main)",
+    "merged_squash": "d365257c (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -32,6 +32,15 @@
         "date": "2026-09-03",
         "base_branch": "main",
         "note": "747 pares (commit, regra) sobre 297 regras, minerados das citacoes R-NNN/AP-NNN nas MENSAGENS de commit. Filtros contra o corpus medir a si mesmo: rule-birth 171 (o commit que ADICIONA o arquivo da regra e autocitacao) e memory-only-diff 105 (diff 100% .agent/memory/** casa com o proprio texto); cada um tem modo que o desliga — --no-exclude-birth rende 918 > 747, prova que o filtro nao e inerte. ⚠️ ACHADO DE OPERACAO QUE VALE PARA TODA A SPEC: o proxy rtk TRUNCA git log em 50 linhas (2276 reais) — o minerador chama git por execFileSync, nunca pela shell, senao o corpus nasceria 20x menor SEM ERRO NENHUM. DUAS EMENDAS NA SPEC vindas do C1.5: (1) measure.sh ganhou set -euo + assertion de VALOR e REPROVOU na 1a execucao — o baseline ja era 4/6, nao 2/6 (subiu em ff19a7bd, 060/T035a); EXPECT_RECALL5=2/6 da exit 1, entao a assertion falseia nos dois sentidos. (2) A clausula do PO-3 ('o par (#812, AP-277) nao aparece') era VACUA: os 7 commits que citam AP-277 nao pertencem ao PR #812 e nenhum e memory-only — o rotulo veio do fixture do measure.sh (citacao do RC6), nao da mensagem de commit; virou observacao e a PO fecha pelo guard falsificavel. Corrigido junto o SP resolvido DEPOIS do cd, que despejava pr-*.diff/sel-*.json na raiz do repo. 11 testes node --test. RC5: 2 auto-fixes (--min-pairs NaN passava pela comparacao final = piso inerte, familia do AP-325; invokedDirectly usava URL.pathname). RC6 agy 1/1, 0 findings. SQP Backend/Infra tooling, no-user-impact, sem bump. LIMITACAO REGISTRADA: rule-birth nao detecta cunhagem das regras versionadas em massa pelo unignore 173b92f8."
+      },
+      {
+        "pr": 819,
+        "squash": "d365257c",
+        "spec": "078 Slice 1 — contador de recorrencia read-only",
+        "tier": 2,
+        "date": "2026-09-03",
+        "base_branch": "main",
+        "note": "recount-memory.mjs deriva incident_count/last_referenced de 5 tracos (git log, journal, .agent/memory/events.jsonl, .agent/sessions/events.jsonl e o measurement da 034). R-221 = 141 evidencias; o frontmatter dela diz 0. NAO ESCREVE por restricao ESTRUTURAL: o arquivo nao contem chamada de escrita, entao a propriedade e verificavel por grep e nao por confianca numa flag (F5 do RC3). 3 correcoes mudam o numero em relacao ao produtor antigo: (1) o commit que CRIA a regra nao conta como uso, (2) dedupe por (traco, ancora) tira a dupla contagem git-log x journal do C5, (3) registro de journal pretty-printed vale o mesmo que um compacto — o acervo tem os dois formatos e ancorar por linha fazia o mesmo trabalho pontuar diferente conforme o FORMATADOR. Dois registros corrompidos do acervo, que engoliriam todo o resto do arquivo num bloco so, agora sao recuperados e reportados. 5o traco (sessions/events.jsonl, 162 IDs) entrou DECLARADO com --exclude-trace para medir o efeito em vez de afirma-lo. ⚠️ REGRESSAO MINHA pega pelo RC6 #1 (HIGH introduced, procedente): alarguei o padrao de NOME DE ARQUIVO para os IDs legados e deixei o de CITACAO estreito — AP-97/AP-LOG-001/AP-SL01..03/R-025-1 presos em 0 e as mencoes de R-025-1 creditadas ao R-025 (o \\b casa antes do -1). Classe: alargar um lado de um par de padroes que precisam concordar. Decisao do PO (A+C) na PO-6: AP-306 sai dos 3 buracos previstos com causa medida (29->27 pelas proprias correcoes, num limiar com EMPATE nas posicoes 11-13) e a cobertura passa a somar a coberta EM PROSA (o CLAUDE.md carrega R-010 :47 e R-001 :82 sem citar o ID) — as '9 ja cobertas' = 6 por ID + 3 em prosa; lista final 8 cobertas, 4 buracos (R-270, AP-186, R-231, R-267). Revisao externa: 2 propostas rejeitadas com medicao, 1 virou OQ-8 no ADR-097, 1 adotada (--find-similar, com a limitacao MEDIDA impressa na saida: busca por termo nao acha AP-325/AP-261 por parafrase, entao nao casar nao prova classe nova), 1 ja existia e virou clausula §9.3. RC6: 3 runs — #1 o HIGH, #2 morto pelo restart do IDE (nada postado), #3 clean cov=1/1. ACHADO: RC6_IDX_LINE_MAX 110->55 leva o preambulo de 111.818B a 77.544B e o chunk budget do piso de 30.182B a 64.456B, tirando 2 chunks do ADVISORY. O gargalo do RC6 e o PREAMBULO, nao o arquivo grande. SQP Backend/Infra tooling, no-user-impact, sem bump."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -78,21 +87,21 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "merged_pr": 818,
+    "merged_pr": 819,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 1 (PR 2) — scripts/recount-memory.mjs, read-only. Restricao estrutural F5: o arquivo NAO contem fs.writeFileSync (o 'nao escreve' e verificavel por grep, nao por flag). T1.0 SQP antes da 1a linha; C1.5 focado se surgir risco. Fecha PO-4/5/6.",
+    "next_action": "078 Slice 2 (PR 3) — T2.1 tipar incident_count/last_referenced em scripts/schemas/memory-frontmatter.schema.mjs:65-78 ANTES de qualquer escrita (sem isso o .passthrough() deixa --strict verde com lixo nos 609 arquivos), depois T2.2 estender migrate-memory-frontmatter.mjs com --lifecycle consumindo o JSON do recount-memory. Fecha PO-7/9/10/12/13. PR 4 (devflow: C5/D2/D4 do SKILL.md) vem depois e responde a OQ-8 do ADR-097.",
     "linked_adrs": [
       "ADR-097"
     ]
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 269,
-    "anti_patterns_count": 339,
+    "anti_patterns_count": 340,
     "decisions_count": 96,
     "contracts_count": 34,
     "distillation_due": false
@@ -102,7 +111,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-03T10:08:42.437278-03:00"
+    "index_loaded_at": "2026-09-03T17:12:59.180479-03:00"
   },
   "code_review": {
     "status": "clean",
@@ -120,8 +129,8 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 818,
-    "note": "cov=1/1 não-parcial, refuted=0. Preâmbulo 103.896B contra chunk budget de 38.104B — o número cresceu desde o #817 (92.981B) e continua sendo o alvo do Slice 3."
+    "pr": 819,
+    "note": "3 runs. #1: 1 HIGH introduced PROCEDENTE (RULE_ID_RE mais estreito que MEMORY_FILE_RE: 6 IDs legados presos em 0 e R-025-1 creditado ao R-025) — corrigido em 54f2f844. #2: MORTO pelo restart do IDE no chunk 2, nada postado. #3 com RC6_IDX_LINE_MAX=55: cov=1/1 nao-parcial, 0 findings, refuted=0. ⚠️ ACHADO DE OPERACAO: com o default 110 o preambulo era 111.818B, o chunk budget caia ao piso de 30.182B, recount-memory.mjs SOZINHO (41.486B) estourava e os 2 chunks saiam ADVISORY; com 55 o preambulo cai para 77.544B, o budget sobe para 64.456B e o diff cabe em 1 chunk limpo. O gargalo do RC6 hoje e o PREAMBULO, nao o codigo."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
