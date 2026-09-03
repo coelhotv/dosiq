@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corpus de avaliação da memória: as citações de regra viram evidência medível
+
+- **Process** (`no-user-impact`). Ferramenta de processo (`scripts/mine-rule-corpus.mjs`): as
+  citações de regra e anti-padrão nas mensagens de commit passam a formar um corpus de avaliação —
+  **747 pares (commit, regra) sobre 297 regras distintas**, com o critério de inclusão escrito
+  dentro do próprio arquivo de saída e o `HEAD` gravado para reprodutibilidade. **Nada muda no
+  produto**: nenhum código de aplicação é tocado e a seleção automática de regras segue desligada.
+  Dois filtros existem para que o corpus não meça a si mesmo: o commit que **cria** a regra é
+  autocitação, não evidência de uso (171 pares descartados), e o commit cujo diff é 100% arquivo de
+  memória casa com o próprio texto da regra (105 descartados). Cada filtro tem um modo que o
+  desliga, justamente para provar que ele não está inerte.
+  Junto vai a correção do harness de medição, que **não podia reprovar**: rodava sem `set -e`, com
+  um laço morto, e imprimia o resultado sem compará-lo com nada. Agora asserta o valor e sai com
+  erro quando diverge — na primeira execução ele reprovou de verdade, mostrando que o número de
+  referência já não era o mesmo.
+
 ### Testes rodam no mesmo fuso da produção
 
 - **Fix** (`no-user-impact`). A suíte crítica passou a rodar com `TZ=UTC`, que é o fuso em que a
