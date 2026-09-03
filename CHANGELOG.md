@@ -7,6 +7,27 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Recorrência de memória deixa de ser adivinhação: contador em modo leitura
+
+- **Process** (`no-user-impact`). `scripts/recount-memory.mjs` deriva de cinco traços que o
+  repositório já produz (histórico de commits, journal, dois arquivos de eventos e a medição da
+  spec 034) quantas vezes cada regra foi de fato usada, e quando pela última vez. Até agora esse
+  número vivia escrito à mão no cabeçalho de cada arquivo e estava errado: a regra de protocolo de
+  qualidade aparece **140 vezes** nos traços e o cabeçalho dela dizia **zero**. **Nada muda no
+  produto** e nada é escrito: o arquivo não contém uma única chamada de escrita — a propriedade
+  "não escreve" é estrutural, verificável por busca no código, e não uma opção de execução em que
+  se precise confiar.
+  Três correções mudam o número em relação ao produtor anterior: o commit que **cria** a regra não
+  conta como uso dela; a mesma entrega deixa de contar duas vezes quando aparece no histórico e no
+  registro que a descreve; e um registro de journal escrito em formato indentado passa a valer o
+  mesmo que um compacto — antes o mesmo trabalho pontuava diferente conforme o formatador. Dois
+  registros corrompidos no acervo, que antes engoliriam em silêncio todo o resto do arquivo, agora
+  são contados e reportados.
+  A lista de candidatas a subir traz duas ressalvas escritas na própria saída, porque nenhuma das
+  duas é detectável por código: o corte por posição cai **dentro de um empate**, e a cobertura é
+  medida por identificador — o documento de regras críticas carrega o conteúdo de pelo menos duas
+  regras sem citar o código delas, então elas aparecem como "faltando" sem estar.
+
 ### Corpus de avaliação da memória: as citações de regra viram evidência medível
 
 - **Process** (`no-user-impact`). Ferramenta de processo (`scripts/mine-rule-corpus.mjs`): as
