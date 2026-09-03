@@ -3,48 +3,18 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 — revamp estrutural da memória DEVFLOW: do acervo que acumula à camada que entrega",
+    "goal": "078 Slice 0 — corpus de avaliação (mine-rule-corpus.mjs + measure.sh)",
     "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/050-notification-integrity",
-      "plans/specs/062-android-notification-fidelity",
-      "plans/specs/071-injection-bodymap",
-      "plans/specs/068-android-oem-battery-assistant"
+      "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "696183a9 (squash merge into main)",
+    "merged_squash": "91c17706 (squash merge into main)",
     "merged_history": [
-      {
-        "pr": 812,
-        "squash": "d3c83ff2",
-        "spec": "050 PR 4 — fatiar _reminderHelpers.ts (move-only)",
-        "tier": 1,
-        "date": "2026-08-25",
-        "base_branch": "main",
-        "note": "Arquivo de 1.538 linhas que estourava SOZINHO o budget de chunk do RC6 (74.779B > 56.614B) e deixou 3 PRs seguidos (#799/#801/#803) com pass ADVISORY — fatiado em 6 arquivos por domínio sob server/bot/reminders/, SEM barrel (re-export manteria o hub falso e o payload gigante voltaria). ⚠️ A prova de move-only NÃO foi o `git diff -M`: quando 1 arquivo vira 6 a heurística de cópia não casa (`renames=0`, medido com --find-copies-harder). A prova que valeu foi comparar cada faixa do original com o corpo novo byte a byte: 6/6 VERBATIM, 1.511/1.538 linhas (o resto é header de imports/logger, reescrito por design). Virou R-318. 11 sites de referência, sendo o 11o o que grep de import e tsc NÃO pegam: a STRING de caminho em titrationEmbedContract.test.ts:34. Medição do objetivo (T048): maior arquivo 74.779B->24.687B, 3 de 4 chunks deixaram de ser ADVISORY. Objetivo PARCIAL — e a medição reaponta o gargalo: o PREÂMBULO (índices de regras/APs injetados) sozinho come 104.086B contra chunk budget de 37.914B. Pós-corte quem estoura o orçamento é a MEMÓRIA, não o código; próxima alavanca é RC6_IDX_LINE_MAX e é manutenção recorrente (os índices crescem a cada C5). RC6 (agy 4 chunks + claude full-context): 5 findings, ZERO introduzidos. 3 vieram marcados introduced:true — CLASSE NOVA DE FP: em refatoração move-only o arquivo original é deletado e os novos entram como file-added, então o revisor lê código movido como código novo. Conteúdo certo, atribuição errada, no campo exato em que o gate de merge chaveia. Refutados por linha no original (1505/1519/977). DÍVIDA PRÉ-EXISTENTE catalogada e NÃO corrigida de propósito (regra do move-only): AP-186 — o alerta de RECEITA varre user_settings SEM paginar (trunca em ~1000 usuários, some em silêncio; é o mesmo furo que a 050 já corrigiu no estoque no PR 1b); AP-298 em 3 pontos; AP-336 no expiry LEGADO sem lot.id (TRIAR: pode ser código a deletar pós-cutover). Registrada nos 3 arquivos de AP + índice + item 1.6 do BACKLOG_ORDER_2026H2. SQP server 4.2.2->4.2.3 (patch): sem mudança de comportamento, mas o PREFIXO DOS LOGS EM PROD MUDA (ReminderHelpers -> um logger por domínio) — declarado no CHANGELOG."
-      },
-      {
-        "pr": 813,
-        "squash": "923d2956",
-        "spec": "076 prescription-alert-revival — ressuscitar alerta de renovação de receita (30/7/1 dias)",
-        "tier": 1,
-        "date": "2026-08-30",
-        "base_branch": "main",
-        "note": "O job NUNCA emitiu uma linha em prod. Causa #1 (não a do backlog): não havia wiring no path de prod — só node-cron dev-only (AP-182); api/notify.ts nunca chamava checkPrescriptionAlerts. Causa #2: filtro por user_settings.notifications_enabled, coluna inexistente => 42703 => catch de topo engolia (AP-340). Fix: (a) runJob('prescription_alerts') no bloco 8h de api/notify.ts; (b) reescrita de checkPrescriptionAlertsViaDispatcher — varredura dirigida por protocols em 1 query paginada (_fetchAllPages, AP-186), dispatcher resolve canal/quiet-hours/consent, catch de topo faz logger.error + throw (era return — AP-298); (c) igualdade exata alertDays.includes() virou _bandFor com <= [1,7,30] + dedup por notification_log (âncora absoluta end_date-band) => run perdido não perde mais o ciclo, sem coluna nova; (d) AP-336 triado = DELEÇÃO de _processBiologicalExpiryAlerts (stock_expiry_alert já em OUTBOX_KINDS em prod, produtor legado é código morto); _biologicalExpiryDaysLeft MANTIDO (outbox usa). 7 testes Vitest novos. SQP server 4.2.3->4.2.4 (patch). ⚠️ INCIDENTE DE PROCESSO: 076 foi pra main via push direto (01c4436d por coelhotv, fora da sessão) sem PR/review; main revertida em 670bb14e e o trabalho reaplicado via PR #813 (RC5 0 findings, RC6 agy 3 chunks 0 findings). RC6 #1 (cleanupOldNotificationLogs purgava o log que a dedup band-30 precisa por ~23 dias => .neq('notification_type','prescription_alert') no delete + docstring exigindo retenção >=31d; função hoje inerte) e #2 (retorno de logSuccessfulNotification descartado => insert falho re-dispara diário => checa + logger.error) corrigidos; #3 (âncora tz-do-runtime vs SP wall) documentado na linha; #4 (read-then-write sem constraint) aceito, fail-open deliberado. PENDENTE PO-4: no dia seguinte ao 1o daysRemaining em {30,7,1} conferir a 1a linha prescription_alert em notification_log (esperado: 1, user b0c9746c, end_date 2026-09-27) — fecha item 1.6 do BACKLOG_ORDER_2026H2."
-      },
-      {
-        "pr": 814,
-        "squash": "3e7af988",
-        "spec": "076 acabamento — revisão de qualidade da entrega do #813",
-        "tier": 1,
-        "date": "2026-08-30",
-        "base_branch": "main",
-        "note": "Revisão da entrega do #813 (feita por agente Sonnet). 3 correções + endurecimento de processo. (1) AP-341 NOVO: alargar o predicado de disparo (includes([30,7,1]) -> <= band) alcanca ramos de MENSAGEM escritos contra o dominio antigo — daysRemaining=0 virou alcancavel e o copy saia 'vencendo em 0 dias'; nenhum gate ve (tsc ok pois e number, lint nao le copy, teste do job conta dispatches sem olhar conteudo). Bonus: escape MarkdownV2 errado (\\.! em vez de \\!) rendia 'amanha.!' e 'Atencao.!' — copy de caminho morto e codigo nao revisado. (2) Emenda 2 do AP-340, com a conclusao CORRIGIDA pelo RC5: eu tinha removido o log proprio do job argumentando que o dispatcher ja grava; ERRADO — o log do dispatcher sai de IIFE NAO aguardada (dispatchNotification.ts:154) e, com consentimento revogado, nem existe (retorna normalizeChannelResults([]) => success true ANTES do bloco de log) => deduplicar por ali = re-disparo diario a band inteira para quem revogou. Regra: so ancora dedup a escrita que o proprio chamador aguarda e confere. (3) Perf/robustez: janela de end_date filtrada no banco (horizonte derivado de getNow(), nao da meia-noite do TZ do runtime), dedup em lote chunk 100 e paginada via _fetchAllPages (AP-186). PROCESSO: CLAUDE.md — SQP virou secao propria 'ANTES da primeira linha de codigo' (estava sob o heading de C5, que o arrastava pro momento do commit) com aviso de ler o R-221 inteiro; Git Workflow declara que sao GATES com evidencia citavel e que pular exige pedido explicito do usuario. HOOKS: .husky/pre-commit e pre-push estavam com os comandos E o exit 1 comentados, imprimindo sucesso — AP-325 vivo no repo; reativados, e o primeiro commit com o hook ligado FALHOU porque .lintstagedrc.js usava module.exports num root ESM (nunca carregou; renomeado .mjs). prettier restrito a CSS: o --write sobre **/*.md refluiria CLAUDE.md e os APs, provavel motivo do desligamento original. RC5: 5 findings, todos endereçados. RC6: agy 4/4 chunks, 0 findings, A/B do PO-5 abortou sozinho no baseline sem gastar o 2o run."
-      },
       {
         "pr": 817,
         "squash": "696183a9",
@@ -53,6 +23,15 @@
         "date": "2026-09-01",
         "base_branch": "main",
         "note": "605/605 memórias schema-válidas (eram 12), 567 no índice compilado, 338KB. ZERO LLM: o `summary` não foi gerado, foi EXTRAÍDO das linhas de RULES_INDEX.md/ANTI_PATTERNS_INDEX.md, que já eram resumos escritos à mão e cobrem 605/605 — o lote do `agy` orçado no T032 custou zero. TRÊS DEFEITOS que as 12 memórias do piloto escondiam: (1) byTrigger['toString'] resolvia pelo Object.prototype e .push estourava — toString/toLocaleString são diff_triggers legítimos de `date.toLocaleString`; (2) o schema default do js-yaml tem tipo timestamp e transformava 'created_at: 2026-04-26' em ISO, reescrevendo expiry_date/review_due, que são os campos que o modelo de ciclo de vida do SKILL.md lê (T033) — CORE_SCHEMA; (3) piso de caminho profundo demais (meu): apps/web/src/features/** é a UI web INTEIRA e valia os mesmos 40 pontos de um glob específico, porque o score é 10x(segmentos do glob) — piso virou raso e AP-306 subiu de rank 19 para 1. FASE B DECIDIU CONTRA O FLIP: recall@5 = 2/6 (recall@60 = 5/6) contra 3 PRs reais, procurando as regras que o RC6 citou nominalmente. A causa NÃO é metadado faltando — AP-186 tem 7 dos 8 triggers nas linhas ADICIONADAS do #812 e pontua 20, enquanto AP-306 tem ZERO trigger casando e pontua 42 só pela profundidade do glob. T034 (contar triggers) foi aprovado pelo PO a partir de uma SIMULAÇÃO MINHA que previa 3/6, implementado, medido no código real (2/6 no melhor caso, 1/6 na maioria, IDF incluída) e REVERTIDO — a simulação media um seletor parecido, não o seletor. RC5 auditou o diff de 594 arquivos: 0 campos perdidos, 0 corpos alterados, 1 finding (catch do yaml.load caía para {} e zeraria campos legados) corrigido em 75ca1c6a. RC6 agy 1 chunk, 0 findings, cov=1/1. 2 erros de operação meus registrados no measurement: RC6_MEASURE=1 é modo medição-E-SAI (nenhum motor chamado, 'roda uma vez' intacto) e o gate de reflexão poluía o stdout com 'refuted=0' antes do JSON (corrigido no devflow 2038c04). ⚠️ O PREÂMBULO CONTINUA EM 92.981B contra budget de 49.019B — este PR entrega o DADO, não o ganho; o ganho depende do flip."
+      },
+      {
+        "pr": 818,
+        "squash": "91c17706",
+        "spec": "078 Slice 0 — corpus de avaliacao",
+        "tier": 2,
+        "date": "2026-09-03",
+        "base_branch": "main",
+        "note": "747 pares (commit, regra) sobre 297 regras, minerados das citacoes R-NNN/AP-NNN nas MENSAGENS de commit. Filtros contra o corpus medir a si mesmo: rule-birth 171 (o commit que ADICIONA o arquivo da regra e autocitacao) e memory-only-diff 105 (diff 100% .agent/memory/** casa com o proprio texto); cada um tem modo que o desliga — --no-exclude-birth rende 918 > 747, prova que o filtro nao e inerte. ⚠️ ACHADO DE OPERACAO QUE VALE PARA TODA A SPEC: o proxy rtk TRUNCA git log em 50 linhas (2276 reais) — o minerador chama git por execFileSync, nunca pela shell, senao o corpus nasceria 20x menor SEM ERRO NENHUM. DUAS EMENDAS NA SPEC vindas do C1.5: (1) measure.sh ganhou set -euo + assertion de VALOR e REPROVOU na 1a execucao — o baseline ja era 4/6, nao 2/6 (subiu em ff19a7bd, 060/T035a); EXPECT_RECALL5=2/6 da exit 1, entao a assertion falseia nos dois sentidos. (2) A clausula do PO-3 ('o par (#812, AP-277) nao aparece') era VACUA: os 7 commits que citam AP-277 nao pertencem ao PR #812 e nenhum e memory-only — o rotulo veio do fixture do measure.sh (citacao do RC6), nao da mensagem de commit; virou observacao e a PO fecha pelo guard falsificavel. Corrigido junto o SP resolvido DEPOIS do cd, que despejava pr-*.diff/sel-*.json na raiz do repo. 11 testes node --test. RC5: 2 auto-fixes (--min-pairs NaN passava pela comparacao final = piso inerte, familia do AP-325; invokedDirectly usava URL.pathname). RC6 agy 1/1, 0 findings. SQP Backend/Infra tooling, no-user-impact, sem bump. LIMITACAO REGISTRADA: rule-birth nao detecta cunhagem das regras versionadas em massa pelo unignore 173b92f8."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -99,21 +78,21 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "merged_pr": 817,
+    "merged_pr": 818,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 T0.0 — SQP (R-221) do PR 1 e entao o Slice 0 (scripts/mine-rule-corpus.mjs). E o unico slice que desbloqueia os outros; T0.10 decide a OQ-5 (se recall@k vira gate de promocao ou se o Slice 3 nao abre). Antes de codar: C1.5 obrigatorio (Tier 2) com evidence table + tabela de failure modes do minerador. O flip do RC6_RULE_SELECTOR da 060 (T012) continua BLOQUEADO pela 078.",
+    "next_action": "078 Slice 1 (PR 2) — scripts/recount-memory.mjs, read-only. Restricao estrutural F5: o arquivo NAO contem fs.writeFileSync (o 'nao escreve' e verificavel por grep, nao por flag). T1.0 SQP antes da 1a linha; C1.5 focado se surgir risco. Fecha PO-4/5/6.",
     "linked_adrs": [
       "ADR-097"
     ]
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 2,
     "rules_count": 269,
-    "anti_patterns_count": 338,
+    "anti_patterns_count": 339,
     "decisions_count": 96,
     "contracts_count": 34,
     "distillation_due": false
@@ -123,14 +102,14 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-08-28T00:00:00-03:00"
+    "index_loaded_at": "2026-09-03T10:08:42.437278-03:00"
   },
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 1,
+    "auto_fixed": 2,
     "ask_items": 0,
-    "note": "RC5 do #817 contra dado real: auditoria do diff de 594 arquivos (0 campos perdidos, 0 corpos alterados) e 1 finding — o catch do yaml.load caía para {} e um frontmatter ilegível zeraria os campos legados sem aparecer no diff."
+    "note": "RC5 do #818: 2 auto-fixes — --min-pairs NaN passaria pela comparação final (piso inerte, AP-325) e invokedDirectly usava URL.pathname (quebra em caminho com espaço/percent-encoding)."
   },
   "ai_review": {
     "engine": "agy (1 chunk)",
@@ -141,8 +120,8 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 817,
-    "note": "cov=1/1 não-parcial, tok=115080. Primeiro run do gate de reflexão (058) em PR real: counts.refuted=0, nada a conferir. Preâmbulo 92.981B > 60% do budget — o número que a 060 existe para derrubar e que este PR não move."
+    "pr": 818,
+    "note": "cov=1/1 não-parcial, refuted=0. Preâmbulo 103.896B contra chunk budget de 38.104B — o número cresceu desde o #817 (92.981B) e continua sendo o alvo do Slice 3."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
