@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -36,15 +36,10 @@ function commit(subject, files = {}) {
 }
 
 function run(args) {
-  try {
-    const stdout = execFileSync('node', [script, '--repo', repo, ...args], {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return { stdout, stderr: '', status: 0 };
-  } catch (e) {
-    return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', status: e.status ?? 1 };
-  }
+  // spawnSync (e não execFileSync): o stderr do caminho de SUCESSO também é resultado — é onde
+  // sai a observação do limiar do `--skills-layer`, que o stdout não pode conter.
+  const r = spawnSync('node', [script, '--repo', repo, ...args], { encoding: 'utf-8' });
+  return { stdout: r.stdout ?? '', stderr: r.stderr ?? '', status: r.status ?? 1 };
 }
 
 const json = (args = []) => JSON.parse(run(['--json', ...args]).stdout);
@@ -249,4 +244,108 @@ test('ordem é determinística: contagem desc, depois ID', () => {
   const a = json().rows.map((r) => r.id);
   const b = json().rows.map((r) => r.id);
   assert.deepEqual(a, b);
+});
+
+// --- 078 Slice 2 ------------------------------------------------------------
+
+test('--skills-layer emite a lista PURA de K IDs em stdout (o limiar vai para stderr)', () => {
+  const { stdout, stderr } = run(['--skills-layer', '--k', '2']);
+  const ids = stdout.trim().split('\n').filter(Boolean);
+  assert.equal(ids.length, 2);
+  for (const id of ids) assert.match(id, /^(R|AP)-/);
+  // O limiar é OBSERVAÇÃO com HEAD+data — nunca critério, e nunca poluindo o stdout que outro
+  // comando vai consumir (R-320).
+  assert.match(stderr, /limiar IMPLICADO pelo corte = \d+ evidencias/);
+  assert.match(stderr, /HEAD [0-9a-f]{7}/);
+});
+
+test('--k N-1 move exatamente um ID para fora da Skills Layer (a lista tem tamanho fixo)', () => {
+  const a = run(['--skills-layer', '--k', '3']).stdout.trim().split('\n');
+  const b = run(['--skills-layer', '--k', '2']).stdout.trim().split('\n');
+  assert.equal(a.length - b.length, 1);
+  assert.deepEqual(a.slice(0, 2), b);
+});
+
+test('--threshold é REJEITADO com o custo MEDIDO na hora, não citado de memória', () => {
+  const { stdout, stderr, status } = run(['--threshold', '1']);
+  assert.equal(status, 2);
+  assert.match(stderr, /REJEITADO por construção/);
+  // O número do custo tem de vir do acervo do fixture, não de uma constante no código.
+  assert.match(stderr, /promoveria \d+ de \d+ memórias/);
+  assert.equal(stdout.trim(), '');
+});
+
+test('--threshold sem inteiro sai com erro (o caminho existe para reprovar, não para ser ignorado)', () => {
+  const { status, stderr } = run(['--threshold', 'muitas']);
+  assert.equal(status, 2);
+  assert.match(stderr, /--threshold exige um inteiro/);
+});
+
+test('--diff-against não modifica o arquivo alvo', () => {
+  const before = fs.readFileSync(path.join(repo, 'CLAUDE.md'), 'utf-8');
+  const { stdout } = run(['--diff-against', 'CLAUDE.md', '--k', '2']);
+  assert.match(stdout, /LEITURA — o arquivo não é modificado/);
+  assert.match(stdout, /soma SUBIR\(\d+\) \+ JÁ COBERTAS\(\d+\) = 2 = K/);
+  assert.equal(fs.readFileSync(path.join(repo, 'CLAUDE.md'), 'utf-8'), before);
+});
+
+test('--diff-against arquivo inexistente sai com erro, não com relatório vazio', () => {
+  const { status, stderr } = run(['--diff-against', 'NAO_EXISTE.md']);
+  assert.equal(status, 1);
+  assert.match(stderr, /não existe/);
+});
+
+test('--severity-candidates só lista com a LINHA casada do próprio registro', () => {
+  // Registro que casa os 3 critérios objetivos — inclusive o gate escrito como TABELA com ✅,
+  // que é a forma do AP-300 e a que o primeiro padrão deixava de fora.
+  write(
+    '.agent/memory/anti-patterns/data_and_schema/AP-950.md',
+    '---\ntitle: t\n---\n\nO campo fantasma caiu em produção no read-path de web, mobile e cron.\n\n| `tsc` | ✅ | select é string |\n',
+  );
+  const { stdout } = run(['--severity-candidates', '--k', '1']);
+  assert.match(stdout, /AP-950\s+severity=high/);
+  assert.match(stdout, /producao\s+:: em produção/);
+  assert.match(stdout, /cross_plataforma\s+:: plataformas citadas: cron\+mobile\+web/);
+  assert.match(stdout, /gates_passaram\s+:: .*✅/);
+  fs.rmSync(path.join(repo, '.agent/memory/anti-patterns/data_and_schema/AP-950.md'));
+});
+
+test('memória sem nenhum critério objetivo NÃO entra por severidade', () => {
+  write('.agent/memory/rules/react_and_ui/R-951.md', '---\ntitle: t\n---\n\nRegra de estilo de componente.\n');
+  const { stdout } = run(['--severity-candidates', '--k', '1']);
+  assert.equal(/R-951/.test(stdout), false);
+  fs.rmSync(path.join(repo, '.agent/memory/rules/react_and_ui/R-951.md'));
+});
+
+test('--estimate-bytes sem --pr nem --measure-log falha explicando o que falta', () => {
+  const { status, stderr } = run(['--estimate-bytes']);
+  assert.equal(status, 1);
+  assert.match(stderr, /exige --pr <N>.*ou --measure-log/s);
+});
+
+test('--estimate-bytes lê o budget do log do ai-review.sh, nunca de constante local', () => {
+  const log = path.join(repo, 'measure.log');
+  fs.writeFileSync(log, 'preamble 77544B · chunk budget 64456B · diff split into 1 chunk(s)\n');
+  const { stdout, status } = run(['--estimate-bytes', '--measure-log', log, '--k', '2']);
+  assert.equal(status, 0);
+  assert.match(stdout, /preambulo=\s*77544B/);
+  assert.match(stdout, /chunk budget=\s*64456B/);
+  // Nenhum número de budget hardcoded no fonte: se o clamp mudar, a projeção muda junto.
+  assert.equal(/49019|30182|64456/.test(fs.readFileSync(script, 'utf-8')), false);
+});
+
+test('--measure-log sem a linha de contabilidade falha alto, não assume', () => {
+  const log = path.join(repo, 'vazio.log');
+  fs.writeFileSync(log, 'nada aqui\n');
+  const { status, stderr } = run(['--estimate-bytes', '--measure-log', log]);
+  assert.equal(status, 1);
+  assert.match(stderr, /sem a linha "preamble/);
+});
+
+test('flag de valor sem valor reclama pelo NOME da flag, não estoura adiante', () => {
+  for (const flag of ['--diff-against', '--measure-log', '--pr']) {
+    const { status, stderr } = run([flag]);
+    assert.equal(status, 2, flag);
+    assert.match(stderr, new RegExp(`${flag} exige um valor`));
+  }
 });

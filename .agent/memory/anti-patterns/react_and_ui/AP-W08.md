@@ -22,6 +22,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-W08
+incident_count: 1
+last_referenced: "2026-03-05"
 last_triggered: None
 legacy_pack: design-ui
 related_rule: R-102

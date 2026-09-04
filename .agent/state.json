@@ -4,11 +4,11 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "analysis",
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 1 — contador de recorrência de memória, em modo leitura",
+    "goal": "078 Slice 2 — laço de escrita-de-volta + promoção (PR 3)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"

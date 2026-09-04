@@ -23,6 +23,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-W14
+incident_count: 3
+last_referenced: "2026-05-27"
 last_triggered: None
 legacy_pack: date-time
 related_rule: R-106

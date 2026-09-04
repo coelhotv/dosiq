@@ -26,8 +26,7 @@ legacy_tags:
   - core
   - mobile
 id: AP-D07
-incident_count: 1
-last_referenced: "2026-04-24"
+incident_count: 0
 tags:
   - data
   - regression

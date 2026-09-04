@@ -73,7 +73,13 @@ const baseFields = {
   legacy_tags: z.array(z.string()).optional(),
   related: relatedSchema.optional(),
   origin: z.string().optional(),
-  last_updated: dateStringSchema.optional()
+  last_updated: dateStringSchema.optional(),
+  // Ciclo de vida (078 Slice 2). Derivados dos traços pelo `recount-memory.mjs` e escritos de
+  // volta pelo `migrate-memory-frontmatter.mjs --lifecycle`. Tipados de PROPÓSITO antes de existir
+  // a escrita: sob `.passthrough()` o `--strict` aceitaria `incident_count: "muitos"` ou
+  // `last_referenced: None` (o valor legado literal) e ficaria verde com lixo nos 611 arquivos.
+  incident_count: z.number().int().min(0).optional(),
+  last_referenced: dateStringSchema.optional()
 };
 
 const hotSchema = z

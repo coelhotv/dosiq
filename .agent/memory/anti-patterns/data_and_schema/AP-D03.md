@@ -28,6 +28,7 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-D03
+incident_count: 0
 last_triggered: None
 legacy_pack: schema-data
 related_rule: R-121

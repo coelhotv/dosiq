@@ -15,6 +15,8 @@ applies_to:
     - frágil
     - via
     - sethours
+incident_count: 1
+last_referenced: "2026-04-22"
 ---
 
 # [AP-W28] Cálculo de Meia-Noite Frágil via setHours(24)

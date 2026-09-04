@@ -15,6 +15,8 @@ applies_to:
     - hardcoded
     - typography
     - fontweights
+incident_count: 1
+last_referenced: "2026-04-22"
 ---
 
 # [AP-W27] Hardcoded Typography e FontWeights

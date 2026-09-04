@@ -23,6 +23,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-A01
+incident_count: 3
+last_referenced: "2026-04-17"
 last_triggered: None
 legacy_pack: review-validation
 related_rule: R-065

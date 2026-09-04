@@ -29,7 +29,7 @@ legacy_tags:
   - utils
 id: AP-D08
 incident_count: 1
-last_referenced: "2026-05-02"
+last_referenced: "2026-05-03"
 related_rule: R-020
 tags:
   - date

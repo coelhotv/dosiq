@@ -25,6 +25,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-15"
 id: AP-H20
+incident_count: 1
+last_referenced: "2026-05-24"
 last_triggered: "2026-04-15"
 legacy_pack: process-hygiene
 related_rule: R-170
