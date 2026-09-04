@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 3 PR 6 — seletor integrado ao RC6 (PO-15/PO-16 fechadas)",
+    "goal": "078 Slice 3 PR 7 — A/B do corte: NAO cortar; ADR-097 de volta a proposed",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -111,17 +111,17 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 3 PR 7 (T3.10-T3.12, PO-17/PO-18): A/B do corte dos indices com PACK_FILTER=0 no baseline, clamp IDENTICO e DECLARADO nos dois bracos, SHA do ai-review.sh registrado, reporte por fatia de commit_prefix. Agora o substituto EXISTE (PR 6) — e o A/B tem de responder se os indices podem sair, sabendo que o bloco do seletor ja custa 10.029B. Canario do guard: AP-186. Se nao houver ganho, ADR-097 volta a proposed no mesmo PR.",
+    "next_action": "SLICE 3 FECHADO (PRs 5/6/7). Frentes abertas, o PO escolhe: (A) Slice 5 PR 8 — conhecimento negativo, exige antes resolver o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git); (B) T3.13 — divida de GATE, o devflow nao tem revisor independente (.sh/.md fora do CODE_GLOBS; os 3 PRs deste slice declararam RC6 nao-aplicavel); (C) Slice 4 (modularizar SKILL.md) segue BLOQUEADO pelo T4.0. NAO reabrir o corte sem corpus de USO — o de alcance ja respondeu.",
     "linked_adrs": [
-      "ADR-097 (accepted 2026-09-04)"
+      "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
-    "devflow_sha": "14439b0 (base c9fe801)",
+    "devflow_sha": "9a8267e (base 14439b0)",
     "code_review": {
-      "status": "issues_found",
+      "status": "clean",
       "critical": 0,
-      "auto_fixed": 2,
+      "auto_fixed": 0,
       "ask_items": 0,
-      "note": "Auto-fixes proprios no diff do devflow: (1) dedupe lia a lista PRETENDIDA de DETAIL e o cap age sobre a EMITIDA — AP-345 sumia das duas pontas; (2) contagem de memorias por grep '^## ' contava subtitulos do corpo (5 virava 25)."
+      "note": "Diff do devflow: guarda de 5 linhas em emit_preamble + comentario. Os dois bracos foram executados de verdade (RC6_INDEXES=1 e =0), nao inferidos."
     },
     "ai_review": {
       "engine": "n/a",
@@ -132,7 +132,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 10,
+    "journal_entries_since_distillation": 11,
     "rules_count": 270,
     "anti_patterns_count": 340,
     "decisions_count": 96,
@@ -144,7 +144,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-04T17:11:27.807787-03:00"
+    "index_loaded_at": "2026-09-04T18:45:47.808860-03:00"
   },
   "code_review": {
     "status": "clean",
