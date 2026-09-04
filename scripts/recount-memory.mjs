@@ -441,7 +441,10 @@ function severityCandidates(rows, k, repo) {
  */
 function measureBudget({ pr, clamps, measureLog, repo }) {
   const parse = (log) => {
-    const m = log.match(/preamble (\d+)B · chunk budget (\d+)B/);
+    // \s+ e não ' ': o ai-review.sh ALINHA os números (`preamble   110798B`). Com espaço único o
+    // parse falha em TODO log real e só passa no fixture — o fixture herda a premissa de quem o
+    // escreveu (é a família do AP-346). Reproduzido aqui com o padding do log de verdade.
+    const m = log.match(/preamble\s+(\d+)B · chunk budget\s+(\d+)B/);
     if (!m) return null;
     return { preamble: Number(m[1]), budget: Number(m[2]) };
   };

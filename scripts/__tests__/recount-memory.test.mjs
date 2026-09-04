@@ -325,7 +325,8 @@ test('--estimate-bytes sem --pr nem --measure-log falha explicando o que falta',
 
 test('--estimate-bytes lê o budget do log do ai-review.sh, nunca de constante local', () => {
   const log = path.join(repo, 'measure.log');
-  fs.writeFileSync(log, 'preamble 77544B · chunk budget 64456B · diff split into 1 chunk(s)\n');
+  // Formato REAL do ai-review.sh, com o alinhamento por espaços — não a versão idealizada.
+  fs.writeFileSync(log, '\u001b[2m[rc6]\u001b[0m preamble    77544B · chunk budget  64456B · diff split into 1 chunk(s)\n');
   const { stdout, status } = run(['--estimate-bytes', '--measure-log', log, '--k', '2']);
   assert.equal(status, 0);
   assert.match(stdout, /preambulo=\s*77544B/);
