@@ -92,14 +92,14 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 2 (PR 3) — T2.1 tipar incident_count/last_referenced em scripts/schemas/memory-frontmatter.schema.mjs:65-78 ANTES de qualquer escrita (sem isso o .passthrough() deixa --strict verde com lixo nos 609 arquivos), depois T2.2 estender migrate-memory-frontmatter.mjs com --lifecycle consumindo o JSON do recount-memory. Fecha PO-7/9/10/12/13. PR 4 (devflow: C5/D2/D4 do SKILL.md) vem depois e responde a OQ-8 do ADR-097.",
+    "next_action": "078 Slice 2 (PR 3) — ordem: T2.1 tipar os 2 campos no schema (baseFields :65-77; conferir linha) ANTES de qualquer escrita -> T2.2 --lifecycle estendendo migrate-memory-frontmatter (preservar CORE_SCHEMA) -> T2.3 aplicar nos 610 -> T2.4 --skills-layer reusando o calculo do --promote-candidates + criar --threshold so para rejeita-lo -> T2.4b investigar mobile_and_platform com 0 no top-12 -> T2.5 --estimate-bytes executando a conta do budget (nao 49.019 fixo). PR 4 ganha T2.10c: ligar o gate de frescor do indice compilado ao C5 (pre-requisito da PO-8). Slice 3 ganha T3.0c: medir a curva do clamp antes de cortar.",
     "linked_adrs": [
       "ADR-097"
     ]
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 3,
+    "journal_entries_since_distillation": 4,
     "rules_count": 269,
     "anti_patterns_count": 340,
     "decisions_count": 96,
