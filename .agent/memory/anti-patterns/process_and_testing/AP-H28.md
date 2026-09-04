@@ -17,7 +17,7 @@ applies_to:
 legacy_tags:
   - all
 id: AP-H28
-incident_count: 1
+incident_count: 0
 last_occurred: "2026-04-20"
 tags:
   - process

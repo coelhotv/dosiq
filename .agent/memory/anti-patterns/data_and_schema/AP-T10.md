@@ -20,6 +20,8 @@ legacy_tags:
 bootstrap_default: true
 expiry_date: "2027-04-08"
 id: AP-T10
+incident_count: 2
+last_referenced: "2026-02-23"
 last_triggered: None
 legacy_pack: date-time
 related_rule: R-020

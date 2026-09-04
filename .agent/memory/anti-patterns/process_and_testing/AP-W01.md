@@ -21,6 +21,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-W01
+incident_count: 2
+last_referenced: "2026-04-17"
 last_triggered: None
 legacy_pack: file-integrity
 related_rule: R-092

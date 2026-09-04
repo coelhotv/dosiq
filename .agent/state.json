@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 1 — contador de recorrência de memória, em modo leitura",
+    "goal": "078 Slice 2 PR 3 — escrita-de-volta do ciclo de vida + promoção derivada",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -55,7 +55,7 @@
       "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
       "Slice 1 regenera post_birth.json (F1)"
     ],
-    "branch": "main",
+    "branch": "feat/078-slice2-writeback",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
@@ -92,14 +92,15 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 2 (PR 3) — ordem: T2.1 tipar os 2 campos no schema (baseFields :65-77; conferir linha) ANTES de qualquer escrita -> T2.2 --lifecycle estendendo migrate-memory-frontmatter (preservar CORE_SCHEMA) -> T2.3 aplicar nos 610 -> T2.4 --skills-layer reusando o calculo do --promote-candidates + criar --threshold so para rejeita-lo -> T2.4b investigar mobile_and_platform com 0 no top-12 -> T2.5 --estimate-bytes executando a conta do budget (nao 49.019 fixo). PR 4 ganha T2.10c: ligar o gate de frescor do indice compilado ao C5 (pre-requisito da PO-8). Slice 3 ganha T3.0c: medir a curva do clamp antes de cortar.",
+    "next_action": "078 Slice 2 PR 4 (protocolo, repo devflow, SHA base 2038c04): T2.9 SQP -> T2.10 C5 exige busca por CLASSE + registra TERMOS no journal -> T2.10c ligar o gate de frescor (compile-memory-index.mjs --check JA sai !=0; falta hook) -> T2.11 D2 volta a ler/escrever os 2 campos -> T2.12 decidir global_base -> T2.14 ADR-097 proposed->accepted. POs MANUAL: PO-8, PO-11.",
     "linked_adrs": [
       "ADR-097"
-    ]
+    ],
+    "open_pr": 820
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 270,
     "anti_patterns_count": 340,
     "decisions_count": 96,
@@ -111,17 +112,17 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-03T17:12:59.180479-03:00"
+    "index_loaded_at": "2026-09-04T01:32:42.177Z"
   },
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 2,
+    "auto_fixed": 3,
     "ask_items": 0,
-    "note": "RC5 do #818: 2 auto-fixes — --min-pairs NaN passaria pela comparação final (piso inerte, AP-325) e invokedDirectly usava URL.pathname (quebra em caminho com espaço/percent-encoding)."
+    "note": "RC5 do #820: 3 auto-fixes — execFileSync nao devolve stderr e a projecao do budget lia vazio; flags de valor (--diff-against/--measure-log/--pr) sem valor estouravam adiante; atribuicoes mortas no escritor do --lifecycle."
   },
   "ai_review": {
-    "engine": "agy (1 chunk)",
+    "engine": "agy (2 chunks)",
     "status": "clean",
     "critical": 0,
     "high": 0,
@@ -129,8 +130,8 @@
     "low": 0,
     "introduced_critical": 0,
     "introduced_high": 0,
-    "pr": 819,
-    "note": "3 runs. #1: 1 HIGH introduced PROCEDENTE (RULE_ID_RE mais estreito que MEMORY_FILE_RE: 6 IDs legados presos em 0 e R-025-1 creditado ao R-025) — corrigido em 54f2f844. #2: MORTO pelo restart do IDE no chunk 2, nada postado. #3 com RC6_IDX_LINE_MAX=55: cov=1/1 nao-parcial, 0 findings, refuted=0. ⚠️ ACHADO DE OPERACAO: com o default 110 o preambulo era 111.818B, o chunk budget caia ao piso de 30.182B, recount-memory.mjs SOZINHO (41.486B) estourava e os 2 chunks saiam ADVISORY; com 55 o preambulo cai para 77.544B, o budget sobe para 64.456B e o diff cabe em 1 chunk limpo. O gargalo do RC6 hoje e o PREAMBULO, nao o codigo."
+    "pr": 820,
+    "note": "RC6_IDX_LINE_MAX=55 (joelho medido no T3.0c): preambulo 76.409B, budget 65.591B, 2 chunks, nenhum ADVISORY. cov=2/2, refuted=0, 0 findings. A/B do 056 abortou sozinho por baseline 0 findings — segundo run nao gasto."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",

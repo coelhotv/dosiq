@@ -23,6 +23,8 @@ applies_to:
 category: mobile_and_platform
 created_at: "2026-04-18"
 id: AP-H23
+incident_count: 4
+last_referenced: "2026-04-21"
 last_triggered: "2026-04-18"
 severity: high
 tags:

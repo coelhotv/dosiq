@@ -20,6 +20,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-LOG-001
+incident_count: 5
+last_referenced: "2026-09-03"
 last_triggered: None
 legacy_pack: design-ui
 related_rule: R-116

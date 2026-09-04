@@ -28,6 +28,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-12"
 id: AP-H05
+incident_count: 4
+last_referenced: "2026-04-13"
 last_triggered: "2026-04-12"
 legacy_pack: infra-api
 related_rule: R-159

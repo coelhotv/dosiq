@@ -23,6 +23,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-14"
 id: AP-H15
+incident_count: 1
+last_referenced: "2026-04-13"
 last_triggered: "2026-04-14"
 legacy_pack: react-hooks
 related_rule: None

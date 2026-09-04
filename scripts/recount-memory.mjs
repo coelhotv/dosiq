@@ -15,7 +15,7 @@
  * ⚠️ `git` é chamado por `execFileSync`, nunca pela shell: o wrapper `rtk` do ambiente TRUNCA
  * `git log` em 50 linhas e a contagem sairia de uma amostra, sem erro nenhum (AP-345).
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,10 +65,31 @@ function parseArgs(argv) {
     json: false,
     excludeTraces: [],
     findSimilar: null,
+    threshold: null,
+    skillsLayer: false,
+    diffAgainst: null,
+    estimateBytes: false,
+    severityCandidates: false,
+    measureLog: null,
+    pr: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--report') opts.report = true;
+    else if (arg === '--skills-layer') opts.skillsLayer = true;
+    else if (arg === '--diff-against') opts.diffAgainst = argv[++i];
+    else if (arg === '--estimate-bytes') opts.estimateBytes = true;
+    else if (arg === '--severity-candidates') opts.severityCandidates = true;
+    else if (arg === '--measure-log') opts.measureLog = argv[++i];
+    else if (arg === '--pr') opts.pr = argv[++i];
+    else if (arg === '--threshold') {
+      // FR-008: este caminho existe SÓ para ser REJEITADO. Sem ele não há o que reprovar e o guard
+      // da PO-9 não pode falhar — guard que não pode reprovar é AP-325. A rejeição é resolvida no
+      // `main`, DEPOIS do recount, para que o custo do limiar seja MEDIDO na hora e não citado de
+      // memória (medido 2026-09-04: 311/611; a spec dizia 334/55% — o número anda, R-320).
+      opts.threshold = Number(argv[++i]);
+      if (!Number.isInteger(opts.threshold)) throw new Error('--threshold exige um inteiro');
+    }
     else if (arg === '--id') opts.id = argv[++i];
     else if (arg === '--promote-candidates') opts.promoteCandidates = true;
     else if (arg === '--post-birth-json') opts.postBirthJson = true;
@@ -87,6 +108,11 @@ function parseArgs(argv) {
     else throw new Error(`flag desconhecida: ${arg}`);
   }
   if (opts.id !== null && !opts.id) throw new Error('--id exige um ID (ex.: R-221)');
+  // Toda flag que consome o próximo argumento precisa reclamar quando ele não vem: sem isto o
+  // `undefined` só explode lá adiante, num `path.join`, com mensagem que não diz o que faltou.
+  for (const [flag, val] of [['--diff-against', opts.diffAgainst], ['--measure-log', opts.measureLog], ['--pr', opts.pr]]) {
+    if (val !== null && !val) throw new Error(`${flag} exige um valor`);
+  }
   return opts;
 }
 
@@ -342,6 +368,110 @@ function findSimilar(repo, query, limit) {
   return scored.slice(0, limit);
 }
 
+/**
+ * O CÁLCULO da Skills Layer, num lugar só. O `--promote-candidates` (PR #819), o `--skills-layer`
+ * e o `--diff-against` são três SAÍDAS deste mesmo resultado — não três rankings (F2 do RC3).
+ */
+function skillsLayer(rows, k, repo) {
+  const { byId: coveredById, byProse } = claudeMdIds(repo);
+  const covered = new Set([...coveredById, ...byProse]);
+  const ranked = rows.filter((r) => !r.orphan);
+  const topK = ranked.slice(0, k);
+  const threshold = topK.length ? topK[topK.length - 1].count : 0;
+  const subir = topK.filter((r) => !covered.has(r.id));
+  const descer = ranked.filter((r) => covered.has(r.id) && !topK.some((t) => t.id === r.id));
+  const tied = ranked.filter((r) => r.count === threshold).length;
+  return { topK, subir, descer, threshold, tied, covered, coveredById, byProse };
+}
+
+/**
+ * Critérios OBJETIVOS de severidade (PO-10) — a 2ª porta de entrada, para o bug que aconteceu
+ * UMA vez e ainda assim tem de ser sabido. São casados contra o TEXTO do registro, e a
+ * justificativa é a linha casada: candidato sem linha citável não entra (o script reprova).
+ * Julgamento ("isso é grave") não é critério — é o que esta lista existe para substituir.
+ */
+const SEVERITY_CRITERIA = [
+  { id: 'producao', re: /\b(em prod(?:u[çc][ãa]o)?|outage|incidente em prod|P0)\b/i },
+  { id: 'cross_plataforma', re: null }, // computado abaixo (exige 2+ plataformas distintas)
+  // ⚠️ O acervo escreve "passou pelos gates" de PELO MENOS três formas: prosa no passado
+  // ("atravessou tsc, lint, 2068 testes"), prosa no presente ("tsc, lint e teste passam todos") e
+  // TABELA com ✅ (`| tsc / strict islands | ✅ |`). Reconhecer só a primeira deixava o AP-300 —
+  // o caso canônico desta PO — fora do `high` por FORMATAÇÃO do registro, não por mérito.
+  {
+    id: 'gates_passaram',
+    re: /(tsc|lint|testes?|jest|vitest|RC5|RC6|revis[ãa]o)[^.\n]{0,80}(passou|passaram|passam|passa\b|verde|aprov|atravessou|✅)|atravessou[^.\n]{0,80}(tsc|testes?|gates?)|nenhum gate[^.\n]{0,20}(pegou|pega|existia)/i,
+  },
+];
+const PLATFORM_RE = /\b(web|pwa|mobile|android|ios|cron|bot|telegram|api|serverless)\b/gi;
+
+function severityCandidates(rows, k, repo) {
+  const topIds = new Set(rows.filter((r) => !r.orphan).slice(0, k).map((r) => r.id));
+  const out = [];
+  for (const r of rows) {
+    if (r.orphan || !r.file) continue;
+    const abs = path.join(repo, r.file);
+    if (!fs.existsSync(abs)) continue;
+    const text = fs.readFileSync(abs, 'utf-8');
+    const matched = [];
+    for (const c of SEVERITY_CRITERIA) {
+      if (c.id === 'cross_plataforma') {
+        const plats = new Set([...text.matchAll(PLATFORM_RE)].map((m) => m[0].toLowerCase()));
+        if (plats.size >= 2) matched.push({ id: c.id, evidence: `plataformas citadas: ${[...plats].sort().join('+')}` });
+        continue;
+      }
+      const m = text.match(c.re);
+      if (m) matched.push({ id: c.id, evidence: m[0].replace(/\s+/g, ' ').slice(0, 90) });
+    }
+    if (matched.length === 0) continue;
+    const severity = matched.length === 3 ? 'high' : matched.length === 2 ? 'medium' : 'low';
+    out.push({ id: r.id, count: r.count, in_top_k: topIds.has(r.id), severity, matched });
+  }
+  const rank = { high: 0, medium: 1, low: 2 };
+  out.sort((a, b) => rank[a.severity] - rank[b.severity] || a.count - b.count || a.id.localeCompare(b.id));
+  return out;
+}
+
+/**
+ * Projeção de bytes (PO-13). O budget do RC6 NÃO é constante: `CHUNK_BUDGET = CTX_TOTAL_MAX -
+ * preâmbulo - 8000`, com piso de 30.000 (`ai-review.sh:428-429`), e o preâmbulo depende do
+ * `RC6_IDX_LINE_MAX`. Por isso a conta NÃO é reimplementada aqui: o `ai-review.sh` é EXECUTADO em
+ * `RC6_MEASURE=1` (modo que monta tudo, imprime a contabilidade e SAI antes de chamar motor) e a
+ * projeção lê o número que ele mesmo calculou. Número copiado à mão é o que esta função existe
+ * para não fazer.
+ */
+function measureBudget({ pr, clamps, measureLog, repo }) {
+  const parse = (log) => {
+    // \s+ e não ' ': o ai-review.sh ALINHA os números (`preamble   110798B`). Com espaço único o
+    // parse falha em TODO log real e só passa no fixture — o fixture herda a premissa de quem o
+    // escreveu (é a família do AP-346). Reproduzido aqui com o padding do log de verdade.
+    const m = log.match(/preamble\s+(\d+)B · chunk budget\s+(\d+)B/);
+    if (!m) return null;
+    return { preamble: Number(m[1]), budget: Number(m[2]) };
+  };
+  if (measureLog) {
+    const parsed = parse(fs.readFileSync(measureLog, 'utf-8'));
+    if (!parsed) throw new Error(`--measure-log sem a linha "preamble …B · chunk budget …B": ${measureLog}`);
+    return [{ clamp: 'log', ...parsed, source: measureLog }];
+  }
+  if (!pr) throw new Error('--estimate-bytes exige --pr <N> (roda o ai-review.sh em RC6_MEASURE=1) ou --measure-log <arquivo>');
+  const script = path.join(process.env.HOME ?? '', 'SKILLS', 'devflow', 'scripts', 'ai-review.sh');
+  if (!fs.existsSync(script)) throw new Error(`ai-review.sh não encontrado em ${script}`);
+  return clamps.map((clamp) => {
+    // spawnSync e stdout+stderr CONCATENADOS: o `log()` do ai-review.sh escreve em STDERR, e a
+    // contabilidade do MEASURE sai por lá. Ler só o stdout devolveria vazio e a projeção morreria
+    // com "não imprimiu a contabilidade" — falha barulhenta, mas pelo motivo errado.
+    const r = spawnSync('bash', [script, String(pr)], {
+      cwd: repo,
+      encoding: 'utf-8',
+      env: { ...process.env, RC6_MEASURE: '1', RC6_IDX_LINE_MAX: String(clamp) },
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    const parsed = parse(`${r.stdout ?? ''}\n${r.stderr ?? ''}`);
+    if (!parsed) throw new Error(`RC6_MEASURE não imprimiu a contabilidade para clamp=${clamp}`);
+    return { clamp, ...parsed, source: `ai-review.sh RC6_MEASURE=1 RC6_IDX_LINE_MAX=${clamp} PR ${pr}` };
+  });
+}
+
 function claudeMdIds(repo) {
   const abs = path.join(repo, 'CLAUDE.md');
   const byId = fs.existsSync(abs) ? idsIn(fs.readFileSync(abs, 'utf-8')) : new Set();
@@ -421,14 +551,95 @@ function main() {
     return;
   }
 
-  if (opts.promoteCandidates) {
-    const { byId: coveredById, byProse } = claudeMdIds(opts.repo);
-    const covered = new Set([...coveredById, ...byProse]);
-    const topK = rows.filter((r) => !r.orphan).slice(0, opts.k);
-    const threshold = topK.length ? topK[topK.length - 1].count : 0;
-    const subir = topK.filter((r) => !covered.has(r.id));
-    const descer = rows.filter((r) => covered.has(r.id) && !topK.some((t) => t.id === r.id));
-    console.log(`top-K = ${opts.k} · limiar implicado = ${threshold} evidências`);
+  if (opts.threshold !== null) {
+    const ranked = rows.filter((r) => !r.orphan);
+    const promovidas = ranked.filter((r) => r.count >= opts.threshold).length;
+    console.error(
+      `erro: --threshold ${opts.threshold} REJEITADO por construção (FR-008). Limiar absoluto é PISO e o ` +
+        `acervo cresce por baixo dele: medido AGORA, >=${opts.threshold} promoveria ${promovidas} de ${ranked.length} memórias ` +
+        `(${((100 * promovidas) / ranked.length).toFixed(0)}% do acervo), e o CLAUDE.md volta a crescer monotonicamente — que é o problema.\n` +
+        '       A Skills Layer tem TETO DURO: use --skills-layer --k N. O limiar sai como OBSERVAÇÃO do corte, nunca como critério.',
+    );
+    process.exit(2);
+  }
+
+  if (opts.severityCandidates) {
+    const cands = severityCandidates(rows, opts.k, opts.repo);
+    const high = cands.filter((c) => c.severity === 'high');
+    console.log(`candidatos por SEVERIDADE (2a porta) — ${cands.length} com ao menos 1 criterio objetivo; ${high.length} high`);
+    console.log('criterios: producao · cross_plataforma (2+) · gates_passaram — a justificativa e a LINHA casada no proprio registro\n');
+    for (const c of high) {
+      console.log(`  ${c.id.padEnd(8)} severity=${c.severity} contador=${String(c.count).padStart(4)} ${c.in_top_k ? '(ja no top-K)' : 'FORA do top-K'}`);
+      for (const m of c.matched) console.log(`      ${m.id.padEnd(17)} :: ${m.evidence}`);
+    }
+    const semJustificativa = cands.filter((c) => c.matched.some((m) => !m.evidence || !m.evidence.trim()));
+    if (semJustificativa.length) {
+      console.error(`\nerro: ${semJustificativa.length} candidato(s) com criterio casado e justificativa VAZIA — severidade sem linha citavel e julgamento, nao criterio`);
+      process.exit(3);
+    }
+    console.log(`\n⚠️ severidade ENTRA memoria, nao REORDENA o ranking: ${high.length} high, dos quais ${high.filter((c) => !c.in_top_k).length} estao fora do top-${opts.k} por recorrencia.`);
+    return;
+  }
+
+  if (opts.estimateBytes) {
+    const claudeMd = path.join(opts.repo, 'CLAUDE.md');
+    const atual = fs.statSync(claudeMd).size;
+    const { subir } = skillsLayer(rows, opts.k, opts.repo);
+    // Custo de cada regra promovida = a linha do indice que a descreve (e o que entra no CLAUDE.md).
+    const { byId: memories } = mapMemories(opts.repo);
+    let novos = 0;
+    for (const r of subir) {
+      const abs = memories.get(r.id) ? path.join(opts.repo, memories.get(r.id)) : null;
+      if (!abs || !fs.existsSync(abs)) continue;
+      const fm = fs.readFileSync(abs, 'utf-8').split('\n---')[0];
+      const sm = fm.match(/^summary: *(?:>-|\|-)?\s*([\s\S]*?)(?=\n[a-z_]+:)/m);
+      novos += Buffer.byteLength(`- **[${r.id}]** ${(sm?.[1] ?? r.id).replace(/\s+/g, ' ').trim()}\n`, 'utf-8');
+    }
+    let medidas;
+    try {
+      medidas = measureBudget({ pr: opts.pr, clamps: [110, 55], measureLog: opts.measureLog, repo: opts.repo });
+    } catch (e) {
+      console.error(`erro: ${e.message}`);
+      process.exit(1);
+    }
+    console.log(`CLAUDE.md atual = ${atual}B · projecao com ${subir.length} regra(s) promovida(s) = ${atual + novos}B (+${novos}B)`);
+    console.log('budget MEDIDO pelo proprio ai-review.sh (RC6_MEASURE=1), nao copiado a mao:\n');
+    for (const m of medidas) {
+      const folga = ((1 - (atual + novos) / m.budget) * 100).toFixed(1);
+      console.log(
+        `  clamp=${String(m.clamp).padStart(4)}  preambulo=${String(m.preamble).padStart(7)}B  chunk budget=${String(m.budget).padStart(7)}B  ` +
+          `projecao/budget=${(((atual + novos) / m.budget) * 100).toFixed(1)}%  folga=${folga}%  ${m.budget === 30000 ? '⚠️ budget NO PISO' : ''}`,
+      );
+    }
+    console.log('\n⚠️ O alvo varia por CONFIGURACAO DO REVISOR (RC6_IDX_LINE_MAX), nao por constante: o mesmo CLAUDE.md cabe ou nao conforme o clamp.');
+    return;
+  }
+
+  if (opts.promoteCandidates || opts.skillsLayer || opts.diffAgainst) {
+    const { topK, subir, descer, threshold, tied, covered, coveredById, byProse } = skillsLayer(rows, opts.k, opts.repo);
+    if (opts.skillsLayer && !opts.diffAgainst) {
+      // Saida PURA: os K IDs. O limiar sai como OBSERVACAO com HEAD+data — travar o valor faz a
+      // PO falhar por passagem de tempo, nao por defeito (R-320).
+      const head = git(opts.repo, ['rev-parse', '--short', 'HEAD']).trim();
+      for (const r of topK) console.log(r.id);
+      console.error(
+        `# skills layer = top-${opts.k} por recorrencia · limiar IMPLICADO pelo corte = ${threshold} evidencias ` +
+          `(observacao em ${new Date().toISOString().slice(0, 10)}, HEAD ${head}) — MOVEL por construcao, nunca criterio de aceite`,
+      );
+      return;
+    }
+    if (opts.diffAgainst) {
+      // O arquivo é LIDO, nunca escrito: promoção e demoção saem do mesmo relatório e quem edita
+      // o CLAUDE.md é gente (guard da PO-12 = `git status --porcelain CLAUDE.md` vazio).
+      const target = path.join(opts.repo, opts.diffAgainst);
+      if (!fs.existsSync(target)) {
+        console.error(`erro: --diff-against ${opts.diffAgainst} não existe`);
+        process.exit(1);
+      }
+      console.log(`diff contra ${opts.diffAgainst} (LEITURA — o arquivo não é modificado)`);
+    }
+    console.log(`top-K = ${opts.k} · limiar implicado = ${threshold} evidências (OBSERVAÇÃO do corte, não critério — móvel por construção)`);
+    console.log(`soma SUBIR(${subir.length}) + JÁ COBERTAS(${topK.length - subir.length}) = ${topK.length} = K (a lista tem tamanho fixo: promover exige demover)`);
     console.log(`\nSUBIR (no top-${opts.k}, ausente do CLAUDE.md) — ${subir.length}:`);
     for (const r of subir) console.log(`  ${r.id.padEnd(8)} ${String(r.count).padStart(4)}  ${JSON.stringify(r.by_trace)}`);
     console.log(`\nJÁ COBERTAS (no top-${opts.k} e no CLAUDE.md) — ${topK.length - subir.length}:`);
@@ -439,7 +650,6 @@ function main() {
     console.log(`\nDESCER (no CLAUDE.md, fora do top-${opts.k}) — ${descer.length}:`);
     for (const r of descer) console.log(`  ${r.id.padEnd(8)} ${String(r.count).padStart(4)}`);
     // Duas ressalvas que mudam a leitura da lista e não são detectáveis por código:
-    const tied = rows.filter((r) => !r.orphan && r.count === threshold).length;
     if (tied > 1) {
       console.log(
         `\n⚠️ EMPATE NO CORTE: ${tied} memórias com exatamente ${threshold} evidências — o K=${opts.k} corta DENTRO do empate, então quem entra é decidido pelo desempate por ID, não pela recorrência.`,

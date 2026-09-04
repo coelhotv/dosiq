@@ -19,6 +19,7 @@ legacy_tags:
 bootstrap_default: true
 expiry_date: "2027-04-08"
 id: AP-T02
+incident_count: 0
 last_triggered: None
 legacy_pack: test-hygiene
 related_rule: R-078

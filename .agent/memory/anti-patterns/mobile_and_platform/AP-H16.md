@@ -17,6 +17,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-14"
 id: AP-H16
+incident_count: 2
+last_referenced: "2026-04-17"
 last_triggered: "2026-04-14"
 legacy_pack: mobile-ux
 related_rule: R-166

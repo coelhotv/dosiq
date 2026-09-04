@@ -31,6 +31,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import yaml from 'js-yaml';
+import { recount } from './recount-memory.mjs';
 import { memoryFrontmatterSchema, parseFrontmatter } from './schemas/memory-frontmatter.schema.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -234,10 +235,168 @@ function serialize(fm) {
   return yaml.dump(ordered, { lineWidth: 100, noRefs: true, quotingType: '"' });
 }
 
+
+/**
+ * Carrega o frontmatter cru preservando os campos legados. CORE_SCHEMA, não o default: o tipo
+ * `timestamp` do js-yaml converte `review_due: 2026-12-31` num Date e o reescreve como ISO — são
+ * exatamente os campos de ciclo de vida que esta spec ressuscita.
+ */
+function loadRawFrontmatter(fpath) {
+  const content = fs.readFileSync(fpath, 'utf-8');
+  const { fm: rawFm, body } = splitFrontmatter(content);
+  if (rawFm === null) return { existing: null, body, content, error: 'sem frontmatter' };
+  try {
+    return { existing: yaml.load(rawFm, { schema: yaml.CORE_SCHEMA }) || {}, body, content, error: null };
+  } catch (e) {
+    // Mesmo motivo do modo de migração: fallback para {} reescreveria o arquivo SEM os campos
+    // legados. Perder dado em silêncio num lote de 611 é pior que parar neste arquivo.
+    return { existing: null, body, content, error: `frontmatter ilegível (${e.message.slice(0, 60)})` };
+  }
+}
+
+/** Linhas do frontmatter que ESTE modo tem mandato para mudar. Qualquer outra linha que se mexa
+ *  é colateral do serializador, não intenção — por isso é contada e reportada. */
+const LIFECYCLE_KEYS = ['incident_count', 'last_referenced'];
+function nonLifecycleLines(fmText) {
+  return fmText
+    .split('\n')
+    .filter((l) => !LIFECYCLE_KEYS.some((k) => l.startsWith(`${k}:`)))
+    .join('\n');
+}
+
+/**
+ * Reescreve APENAS as linhas de ciclo de vida no TEXTO do frontmatter, sem reserializar o YAML.
+ *
+ * Por que não usar o `serialize()`: reserializar é o caminho DRY e foi o primeiro implementado,
+ * mas medido nos 611 ele mexe em 18 arquivos fora do mandato — o `js-yaml` reembrulha um `summary`
+ * longo de escalar aspeado para bloco dobrado (`>-`). Diff cosmético, e mesmo assim colateral:
+ * entre PULAR o R-295/AP-300 (as memórias de maior tráfego ficariam sem contador) e reformatá-las
+ * de brinde num PR de 611 arquivos, a saída certa é não fazer nenhum dos dois.
+ *
+ * Chave existente: substituída no LUGAR (zero movimento de linha). Chave ausente: inserida na
+ * posição alfabética entre as chaves fora do `KEY_ORDER` — exatamente onde o `serialize()` a
+ * colocaria, para que os dois caminhos não produzam formatos divergentes.
+ */
+export function patchLifecycleLines(fmText, { incident_count, last_referenced }) {
+  const lines = fmText.split('\n');
+  const isTopKey = (l) => /^[A-Za-z_][A-Za-z0-9_]*:/.test(l);
+  const keyOf = (l) => l.slice(0, l.indexOf(':'));
+  const desired = new Map([
+    ['incident_count', `incident_count: ${incident_count}`],
+    // Sem data, a chave SAI. `last_referenced: None` (104 arquivos do acervo, herança de um
+    // produtor Python) é pior que ausente: é um valor que atravessa qualquer `.optional()`.
+    ['last_referenced', last_referenced ? `last_referenced: "${last_referenced}"` : null],
+  ]);
+
+  for (const [key, line] of desired) {
+    const at = lines.findIndex((l) => isTopKey(l) && keyOf(l) === key);
+    if (at !== -1) {
+      // Chave escalar de uma linha só: o valor legado (`None`, número) nunca tem continuação.
+      if (line === null) lines.splice(at, 1);
+      else lines[at] = line;
+      continue;
+    }
+    if (line === null) continue;
+    const extras = lines
+      .map((l, i) => ({ l, i }))
+      .filter(({ l }) => isTopKey(l) && !KEY_ORDER.includes(keyOf(l)));
+    const after = extras.find(({ l }) => keyOf(l) > key);
+    lines.splice(after ? after.i : lines.length, 0, line);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Modo `--lifecycle`: escreve de volta `incident_count`/`last_referenced` a partir do contador
+ * derivado do Slice 1. NÃO é um escritor novo — reusa `splitFrontmatter`/`serialize`/CORE_SCHEMA
+ * deste arquivo (F2 do RC3) e o `recount()` do Slice 1 como ÚNICA fonte do número (nada de
+ * segundo produtor: era esse o defeito que a regeneração do `post_birth.json` expôs).
+ *
+ * `last_referenced` sem data NÃO vira a string `None` (104 arquivos do acervo têm esse literal,
+ * herança de um produtor Python): a chave é REMOVIDA. Ausente é ausente; `None` é um valor que
+ * passa por qualquer `.optional()` e mente para quem lê.
+ */
+function lifecycleMain(args) {
+  const apply = args.includes('--apply');
+  const repo = REPO;
+  const rows = recount({ repo }).rows;
+  const byId = new Map(rows.filter((r) => !r.orphan).map((r) => [r.id, r]));
+
+  const stats = { total: 0, changed: 0, unchanged: 0, failed: 0, sem_row: 0, none_limpo: 0, colateral: 0 };
+  const failures = [];
+  const collateral = [];
+
+  for (const { dir } of CATALOGS) {
+    for (const domain of fs.readdirSync(dir)) {
+      const dpath = path.join(dir, domain);
+      if (!fs.statSync(dpath).isDirectory()) continue;
+      for (const file of fs.readdirSync(dpath).sort()) {
+        if (!file.endsWith('.md')) continue;
+        const fpath = path.join(dpath, file);
+        const id = file.replace(/\.md$/, '');
+        stats.total++;
+
+        const { existing, body, content, error } = loadRawFrontmatter(fpath);
+        if (error) { stats.failed++; failures.push(`${path.relative(REPO, fpath)} :: ${error}`); continue; }
+
+        const row = byId.get(id);
+        if (!row) { stats.sem_row++; failures.push(`${path.relative(REPO, fpath)} :: sem linha no contador`); continue; }
+
+        // O YAML parseado serve só para CONTAR o literal legado; quem escreve é o patch de TEXTO.
+        if (existing.last_referenced === 'None' || existing.last_referenced === null) stats.none_limpo++;
+
+        const beforeFm = splitFrontmatter(content).fm ?? '';
+        const afterFm = patchLifecycleLines(beforeFm, {
+          incident_count: row.count,
+          last_referenced: row.last_referenced,
+        });
+        const out = `---\n${afterFm}\n---\n${content.slice(content.indexOf('\n---', 3) + 5)}`;
+        if (out === content) { stats.unchanged++; continue; }
+
+        // Guard do PO-7 embutido, verificado no PRÓPRIO ESCRITOR e não só no `git diff`: o
+        // frontmatter antes e depois, sem as 2 linhas de ciclo de vida, tem de ser IDÊNTICO.
+        // Se divergir, o arquivo é PULADO — este modo não tem mandato para tocar outra linha.
+        if (nonLifecycleLines(beforeFm) !== nonLifecycleLines(afterFm)) {
+          stats.colateral++;
+          collateral.push(path.relative(REPO, fpath));
+          continue;
+        }
+        // Corpo intocado por construção (é fatia literal do conteúdo original), não por promessa.
+        if (out.slice(out.indexOf('\n---', 3)) !== content.slice(content.indexOf('\n---', 3))) {
+          stats.colateral++;
+          collateral.push(`${path.relative(REPO, fpath)} (corpo)`);
+          continue;
+        }
+        stats.changed++;
+        if (apply) fs.writeFileSync(fpath, out, 'utf-8');
+      }
+    }
+  }
+
+  console.log(
+    `\n[--lifecycle] total=${stats.total} a-escrever=${stats.changed} sem-mudanca=${stats.unchanged} ` +
+      `colateral-PULADO=${stats.colateral} sem-linha-no-contador=${stats.sem_row} ILEGIVEL=${stats.failed} ` +
+      `(limpou last_referenced: None em ${stats.none_limpo})`,
+  );
+  if (collateral.length) {
+    console.log('\ncolateral do serializador (PULADOS — mexeriam em linha fora do mandato):');
+    for (const f of collateral.slice(0, 20)) console.log('  ' + f);
+    if (collateral.length > 20) console.log(`  … +${collateral.length - 20}`);
+  }
+  if (failures.length) {
+    console.log('\nnao escritos:');
+    for (const f of failures.slice(0, 20)) console.log('  ' + f);
+    if (failures.length > 20) console.log(`  … +${failures.length - 20}`);
+  }
+  if (!apply) console.log('\n(dry-run — nada escrito; use --lifecycle --apply)');
+  process.exitCode = stats.failed > 0 ? 1 : 0;
+}
+
 function main() {
   const args = process.argv.slice(2);
   const apply = args.includes('--apply');
   const report = args.includes('--report');
+  if (args.includes('--lifecycle')) return lifecycleMain(args);
 
   const stats = { total: 0, skipped: 0, migrated: 0, failed: 0, noIndexLine: 0 };
   const failures = [];

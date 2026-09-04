@@ -19,6 +19,7 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-08"
 id: AP-SL03
+incident_count: 0
 last_triggered: None
 legacy_pack: infra-api
 related_rule: R-132

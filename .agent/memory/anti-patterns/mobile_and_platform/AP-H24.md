@@ -25,6 +25,8 @@ applies_to:
 category: mobile_and_platform
 created_at: "2026-04-18"
 id: AP-H24
+incident_count: 3
+last_referenced: "2026-04-19"
 last_triggered: "2026-04-18"
 severity: high
 tags:

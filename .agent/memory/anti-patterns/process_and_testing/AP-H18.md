@@ -13,6 +13,8 @@ anti_pattern: >-
   Linting entire monorepo packages from root ('npx eslint apps/mobile/...') often fails due to
   global ignore patterns.
 id: AP-H18
+incident_count: 1
+last_referenced: "2026-04-16"
 legacy_pack: process-hygiene
 solution: Lint specific feature directories or files directly, or check package-specific lint scripts.
 ---

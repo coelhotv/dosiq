@@ -34,6 +34,8 @@ legacy_tags:
 bootstrap_default: false
 expiry_date: "2027-04-12"
 id: AP-H09
+incident_count: 4
+last_referenced: "2026-04-14"
 last_triggered: "2026-04-12"
 legacy_pack: adherence-reporting-mobile
 related_rule: R-163

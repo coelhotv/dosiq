@@ -14,6 +14,8 @@ applies_to:
     - global
     - brand
     - leak
+incident_count: 3
+last_referenced: "2026-05-31"
 ---
 
 # [AP-H22] Global Brand Leak

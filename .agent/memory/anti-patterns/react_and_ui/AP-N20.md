@@ -24,6 +24,8 @@ applies_to:
     - todos
     - estados
     - derivados
+incident_count: 2
+last_referenced: "2026-05-25"
 ---
 
 # AP-N20 — useEffect de hidratação sem sincronizar todos os estados derivados

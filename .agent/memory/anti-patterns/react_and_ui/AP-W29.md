@@ -17,6 +17,8 @@ applies_to:
     - estática
     - mudança
     - dia
+incident_count: 1
+last_referenced: "2026-04-22"
 ---
 
 # [AP-W29] Heurística de Expansão Estática em Mudança de Dia

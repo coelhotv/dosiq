@@ -20,6 +20,8 @@ applies_to:
     - git
     - monorepo
 id: AP-H27
+incident_count: 3
+last_referenced: "2026-04-19"
 last_triggered: "2026-04-19"
 tags:
   - monorepo

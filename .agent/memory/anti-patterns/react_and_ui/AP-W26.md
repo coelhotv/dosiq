@@ -16,6 +16,8 @@ applies_to:
     - dupla
     - mount
     - telas
+incident_count: 1
+last_referenced: "2026-04-22"
 ---
 
 # [AP-W26] Flicker ou Animação Dupla no Mount de Telas
