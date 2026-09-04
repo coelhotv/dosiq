@@ -8,8 +8,8 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 2 PR 3 — escrita-de-volta do ciclo de vida + promoção derivada",
-    "goal_type": "feature",
+    "goal": "078 Slice 2 PR 4 — protocolo do laço no devflow + ADR-097 accepted",
+    "goal_type": "docs",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
@@ -64,7 +64,7 @@
       "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
       "Slice 1 regenera post_birth.json (F1)"
     ],
-    "branch": "main",
+    "branch": "feat/078-slice2-protocolo",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
@@ -101,14 +101,16 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 2 PR 4 (protocolo, repo devflow, fixar SHA base 2038c04 ANTES de medir): T2.9 SQP -> T2.10 C5 exige busca por CLASSE (nao \"semantica\": o --find-similar casa TERMO) e registra os TERMOS no journal -> T2.10c ligar o gate de frescor ao C5 (compile-memory-index.mjs --check ja sai !=0; falta hook — corrigir tambem a premissa do 570x610, que sao 38 archived por desenho) -> T2.11 D2 volta a ler/escrever os 2 campos -> T2.12 decidir global_base (616KB/137 arquivos/ultima escrita 4a627f3 em 2026-04-08/zero leitor) -> T2.14 ADR-097 proposed->accepted. POs MANUAL: PO-8 e PO-11 — evidencia colada, nao afirmacao (familia do AP-344).",
+    "next_action": "Slice 2 FECHADO apos o merge do #821. Slice 3 NAO abre no automatico — a curva do clamp (T3.0c) enfraqueceu a premissa do corte: 110->55 dobra o chunk budget SEM remover nada. Ordem sugerida ao PO: (1) T3.0b, BLOQUEANTE — o seletor da 060 NAO esta integrado ao ai-review.sh (grep de select-rules = zero); sem o flip, cortar o indice tira o unico caminho ate a regra de nicho; (2) decidir se o corte ainda se justifica ou se basta fixar RC6_IDX_LINE_MAX=55 como default; (3) se cortar, o A/B do T3.2 roda com o clamp FIXO nos dois bracos. LACUNA: mudanca de protocolo no devflow nao tem revisor independente (o setup.sh e shell e entrou sem revisao) — decidir se .sh/.md entram no CODE_GLOBS.",
     "linked_adrs": [
-      "ADR-097"
-    ]
+      "ADR-097 (accepted 2026-09-04)"
+    ],
+    "open_pr": 821,
+    "devflow_sha": "ab93dd2 (base 0fdb08a — a spec fixava 2038c04, que já não era o HEAD)"
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 7,
+    "journal_entries_since_distillation": 8,
     "rules_count": 270,
     "anti_patterns_count": 340,
     "decisions_count": 96,
@@ -120,26 +122,22 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-04T01:32:42.177Z"
+    "index_loaded_at": "2026-09-04T14:02:12.886Z"
   },
   "code_review": {
     "status": "clean",
     "critical": 0,
-    "auto_fixed": 3,
+    "auto_fixed": 0,
     "ask_items": 0,
-    "note": "RC5 do #820: 3 auto-fixes — execFileSync nao devolve stderr e a projecao do budget lia vazio; flags de valor (--diff-against/--measure-log/--pr) sem valor estouravam adiante; atribuicoes mortas no escritor do --lifecycle."
+    "note": "RC5 sobre o diff do devflow: sem finding. O guard da PO-11 (varredura de referencias orfas) achou 6 mencoes estruturais fora do inventario da spec e todas sairam no mesmo commit."
   },
   "ai_review": {
-    "engine": "agy (2 chunks)",
-    "status": "clean",
+    "engine": "n/a",
+    "status": "nao-aplicavel",
     "critical": 0,
     "high": 0,
-    "medium": 0,
-    "low": 0,
-    "introduced_critical": 0,
-    "introduced_high": 0,
-    "pr": 820,
-    "note": "RC6_IDX_LINE_MAX=55 (joelho medido no T3.0c): preambulo 76.409B, budget 65.591B, 2 chunks, nenhum ADVISORY. cov=2/2, refuted=0, 0 findings. A/B do 056 abortou sozinho por baseline 0 findings — segundo run nao gasto."
+    "pr": 821,
+    "note": "Diff do dosiq e 100% .md/JSON; o conteudo revisavel (.md/.sh) vive no devflow ab93dd2, fora do CODE_GLOBS e sem fluxo de PR. Declarado como gate NAO-APLICAVEL, nunca como clean: zero finding sobre zero arquivo revisado nao e evidencia (AP-325)."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
