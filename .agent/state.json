@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "specifying",
-    "status": "specified",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 — Slice 5 especificado (conhecimento negativo, US7)",
-    "goal_type": "feature",
+    "goal": "078 Slice 3 PR 5 — clamp 110->80 (PO-14 fechada)",
+    "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
@@ -111,15 +111,28 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "DUAS FRENTES INDEPENDENTES, o PO escolhe a ordem: (A) Slice 3 PR 5 — RC6_IDX_LINE_MAX default 110->55 + responder por escrito ao custo do clamp (T3.1-T3.5); (B) Slice 5 PR 8 — conhecimento negativo, mas ANTES resolver o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git). NAO rodar a mudanca de cobertura do indice (T5.3) entre os bracos do A/B do PO-17.",
+    "next_action": "Slice 3 PR 6 — integrar o seletor da 060 ao ai-review.sh (T3.6-T3.9, PO-15/PO-16). O clamp tirou o revisor do piso mas NAO resolve o crescimento do acervo (aviso >60% ainda dispara em 80) — o preambulo O(1) e o PR 6. Alternativa independente: Slice 5 PR 8 (conhecimento negativo), que exige antes resolver o [NEEDS CLARIFICATION] da forma do registro.",
     "linked_adrs": [
       "ADR-097 (accepted 2026-09-04)"
     ],
-    "devflow_sha": "ab93dd2 (base 0fdb08a — a spec fixava 2038c04, que já não era o HEAD)"
+    "devflow_sha": "c9fe801 (base ab93dd2)",
+    "code_review": {
+      "status": "clean",
+      "critical": 0,
+      "auto_fixed": 0,
+      "ask_items": 0,
+      "note": "Diff do devflow: 1 linha de default + comentario. bash -n ok; default reconfirmado por execucao apos a edicao do comentario (AP-325)."
+    },
+    "ai_review": {
+      "engine": "n/a",
+      "status": "nao-aplicavel",
+      "pr": null,
+      "note": "Codigo e .sh em ~/SKILLS/devflow, fora do CODE_GLOBS. Declarado NAO-APLICAVEL, nunca clean."
+    }
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 270,
     "anti_patterns_count": 340,
     "decisions_count": 96,
@@ -131,7 +144,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-04T14:02:12.886Z"
+    "index_loaded_at": "2026-09-04T16:58:49.387323-03:00"
   },
   "code_review": {
     "status": "clean",
