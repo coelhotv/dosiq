@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 3 — emendar AC/PO do US5 (corte do wiki do executor) com o medido nos Slices 0-2",
+    "goal": "078 — Slice 5 especificado (conhecimento negativo, US7)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -111,7 +111,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 3 PR 5 (T3.1-T3.5, alvo ~/SKILLS/devflow): SQP + fixar SHA base do devflow NO DIA -> RC6_IDX_LINE_MAX default 110->55 em ai-review.sh:264 (1 linha) -> T3.3 responder por ESCRITO ao custo do clamp (amostrar 10 linhas de indice cortadas em 55 e dizer se o MECANISMO sobreviveu; se nao, o numero certo pode ser 80) -> fechar PO-14 medindo SEM a env var + RC6_KEEP_PREAMBLE=1 provando CLAUDE.md integro -> PR citando o SHA, RC6 declarado NAO-APLICAVEL (.sh fora do CODE_GLOBS).",
+    "next_action": "DUAS FRENTES INDEPENDENTES, o PO escolhe a ordem: (A) Slice 3 PR 5 — RC6_IDX_LINE_MAX default 110->55 + responder por escrito ao custo do clamp (T3.1-T3.5); (B) Slice 5 PR 8 — conhecimento negativo, mas ANTES resolver o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git). NAO rodar a mudanca de cobertura do indice (T5.3) entre os bracos do A/B do PO-17.",
     "linked_adrs": [
       "ADR-097 (accepted 2026-09-04)"
     ],
