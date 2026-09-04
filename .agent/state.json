@@ -3,13 +3,13 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "coding",
-    "status": "completed",
+    "mode": "specifying",
+    "status": "specified",
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 2 PR 4 — protocolo do laço no devflow + ADR-097 accepted",
-    "goal_type": "docs",
+    "goal": "078 Slice 3 — emendar AC/PO do US5 (corte do wiki do executor) com o medido nos Slices 0-2",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
@@ -111,7 +111,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 2 FECHADO apos o merge do #821. Slice 3 NAO abre no automatico — a curva do clamp (T3.0c) enfraqueceu a premissa do corte: 110->55 dobra o chunk budget SEM remover nada. Ordem sugerida ao PO: (1) T3.0b, BLOQUEANTE — o seletor da 060 NAO esta integrado ao ai-review.sh (grep de select-rules = zero); sem o flip, cortar o indice tira o unico caminho ate a regra de nicho; (2) decidir se o corte ainda se justifica ou se basta fixar RC6_IDX_LINE_MAX=55 como default; (3) se cortar, o A/B do T3.2 roda com o clamp FIXO nos dois bracos. LACUNA: mudanca de protocolo no devflow nao tem revisor independente (o setup.sh e shell e entrou sem revisao) — decidir se .sh/.md entram no CODE_GLOBS.",
+    "next_action": "078 Slice 3 PR 5 (T3.1-T3.5, alvo ~/SKILLS/devflow): SQP + fixar SHA base do devflow NO DIA -> RC6_IDX_LINE_MAX default 110->55 em ai-review.sh:264 (1 linha) -> T3.3 responder por ESCRITO ao custo do clamp (amostrar 10 linhas de indice cortadas em 55 e dizer se o MECANISMO sobreviveu; se nao, o numero certo pode ser 80) -> fechar PO-14 medindo SEM a env var + RC6_KEEP_PREAMBLE=1 provando CLAUDE.md integro -> PR citando o SHA, RC6 declarado NAO-APLICAVEL (.sh fora do CODE_GLOBS).",
     "linked_adrs": [
       "ADR-097 (accepted 2026-09-04)"
     ],
