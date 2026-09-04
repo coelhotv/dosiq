@@ -13,7 +13,7 @@
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "d365257c (squash merge into main)",
+    "merged_squash": "13df8ba3 (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -41,6 +41,15 @@
         "date": "2026-09-03",
         "base_branch": "main",
         "note": "recount-memory.mjs deriva incident_count/last_referenced de 5 tracos (git log, journal, .agent/memory/events.jsonl, .agent/sessions/events.jsonl e o measurement da 034). R-221 = 141 evidencias; o frontmatter dela diz 0. NAO ESCREVE por restricao ESTRUTURAL: o arquivo nao contem chamada de escrita, entao a propriedade e verificavel por grep e nao por confianca numa flag (F5 do RC3). 3 correcoes mudam o numero em relacao ao produtor antigo: (1) o commit que CRIA a regra nao conta como uso, (2) dedupe por (traco, ancora) tira a dupla contagem git-log x journal do C5, (3) registro de journal pretty-printed vale o mesmo que um compacto — o acervo tem os dois formatos e ancorar por linha fazia o mesmo trabalho pontuar diferente conforme o FORMATADOR. Dois registros corrompidos do acervo, que engoliriam todo o resto do arquivo num bloco so, agora sao recuperados e reportados. 5o traco (sessions/events.jsonl, 162 IDs) entrou DECLARADO com --exclude-trace para medir o efeito em vez de afirma-lo. ⚠️ REGRESSAO MINHA pega pelo RC6 #1 (HIGH introduced, procedente): alarguei o padrao de NOME DE ARQUIVO para os IDs legados e deixei o de CITACAO estreito — AP-97/AP-LOG-001/AP-SL01..03/R-025-1 presos em 0 e as mencoes de R-025-1 creditadas ao R-025 (o \\b casa antes do -1). Classe: alargar um lado de um par de padroes que precisam concordar. Decisao do PO (A+C) na PO-6: AP-306 sai dos 3 buracos previstos com causa medida (29->27 pelas proprias correcoes, num limiar com EMPATE nas posicoes 11-13) e a cobertura passa a somar a coberta EM PROSA (o CLAUDE.md carrega R-010 :47 e R-001 :82 sem citar o ID) — as '9 ja cobertas' = 6 por ID + 3 em prosa; lista final 8 cobertas, 4 buracos (R-270, AP-186, R-231, R-267). Revisao externa: 2 propostas rejeitadas com medicao, 1 virou OQ-8 no ADR-097, 1 adotada (--find-similar, com a limitacao MEDIDA impressa na saida: busca por termo nao acha AP-325/AP-261 por parafrase, entao nao casar nao prova classe nova), 1 ja existia e virou clausula §9.3. RC6: 3 runs — #1 o HIGH, #2 morto pelo restart do IDE (nada postado), #3 clean cov=1/1. ACHADO: RC6_IDX_LINE_MAX 110->55 leva o preambulo de 111.818B a 77.544B e o chunk budget do piso de 30.182B a 64.456B, tirando 2 chunks do ADVISORY. O gargalo do RC6 e o PREAMBULO, nao o arquivo grande. SQP Backend/Infra tooling, no-user-impact, sem bump."
+      },
+      {
+        "pr": 820,
+        "squash": "13df8ba3",
+        "spec": "078 Slice 2 PR 3 — escrita-de-volta do ciclo de vida + promocao derivada",
+        "tier": 2,
+        "date": "2026-09-04",
+        "base_branch": "main",
+        "note": "611 frontmatters passam a carregar incident_count/last_referenced derivados dos tracos; a Skills Layer vira o top-K do mesmo numero. TIPAR ANTES DE ESCREVER nao foi acabamento: assim que os 2 campos entraram no schema o --strict reprovou 104 arquivos com o literal 'last_referenced: None' que o .passthrough() aceitava calado (chave REMOVIDA, nunca reescrita como None). A ESCRITA PATCHA O TEXTO, nao reserializa: o caminho DRY foi implementado primeiro e MEDIDO — js-yaml reformatava 18 dos 611 (summary longo aspeado -> bloco >- em R-295/AP-300/AP-345/AP-346), diff cosmetico que ninguem leria num PR de 611 arquivos; o guard do PO-7 passou a viver DENTRO do escritor (antes/depois sem as linhas do mandato tem de ser identicos, divergente e PULADO) => 611/611 escritos, 0 linhas fora do mandato, idempotente. 2a instancia do AP-260, com emenda la: git diff pos-script chega tarde num lote grande. --threshold existe SO para ser rejeitado e MEDE o custo na hora (311 de 611 = 51%; a spec dizia 334/55% — numero em mensagem de erro envelhece igual a numero em PO, R-320); pelo mesmo motivo o limiar implicado (34) sai em stderr como observacao com HEAD+data. --severity-candidates: o 1o padrao de gates_passaram deixava o AP-300 (caso canonico da PO-10) fora do high por FORMATACAO — o acervo escreve isso em prosa no passado, no presente e em TABELA com ✅. T2.4b respondido e FECHADO SEM ACAO: mobile_and_platform esta fora do top-12 por DENSIDADE (3,32 evidencias/memoria contra 10,32 de data_and_schema), nao por idade (mediana 99d contra 95 e 93 das classes que dominam o topo) — maior classe por fragmentacao, nao por trafego; termo de recencia promoveria memoria por SER NOVA, o oposto do criterio. T3.0c ANTECIPADA a pedido do PO: curva do clamp 110/80/55/40 = preambulo 110.798/92.105/76.409/67.027B, budget 31.202(piso)/49.895/65.591/74.973B, 4/3/2/2 chunks, ADVISORY 1/0/0/0 — joelho em 55, o budget DOBRA e sai do piso SEM REMOVER NADA e reversivel por env var; enfraquece a premissa do Slice 3 (o corte pode ser desnecessario) e obriga o A/B do T3.2 a fixar o clamp nos dois bracos. PO-13 fechada executando o proprio ai-review.sh em RC6_MEASURE: CLAUDE.md 12.602B, projecao 13.422B, 43,0% do budget em clamp 110 e 20,5% em 55. ⚠️ BUG PEGO PELO PROPRIO FECHAMENTO DA PO-13: o parser exigia o padrao 'preamble (\\\\d+)B' com espaco unico e o ai-review.sh ALINHA os numeros; falhava em TODO log real e o teste era verde porque o autor do parser escreveu o fixture — emenda no AP-346 (a clausula do fixture vale sozinha e reincidiu no mesmo dia). RC5: 3 auto-fixes (execFileSync nao devolve stderr; flags de valor sem valor; atribuicoes mortas). RC6 clamp 55: 2 chunks, cov=2/2, 0 findings, refuted=0; A/B do 056 abortou sozinho por baseline 0 findings. ACHADO PARA O PR 4: 573 no indice compilado contra 611 em disco NAO e so defasagem — 38 sao archived/superseded, excluidos por desenho (o T2.10c misturava as causas); e compile-memory-index.mjs --check JA sai !=0, falta so o hook. SQP Backend/Infra tooling+memoria versionada, no-user-impact, sem bump."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -55,7 +64,7 @@
       "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
       "Slice 1 regenera post_birth.json (F1)"
     ],
-    "branch": "feat/078-slice2-writeback",
+    "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
     ],
@@ -87,16 +96,15 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "merged_pr": 819,
+    "merged_pr": 820,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 Slice 2 PR 4 (protocolo, repo devflow, SHA base 2038c04): T2.9 SQP -> T2.10 C5 exige busca por CLASSE + registra TERMOS no journal -> T2.10c ligar o gate de frescor (compile-memory-index.mjs --check JA sai !=0; falta hook) -> T2.11 D2 volta a ler/escrever os 2 campos -> T2.12 decidir global_base -> T2.14 ADR-097 proposed->accepted. POs MANUAL: PO-8, PO-11.",
+    "next_action": "078 Slice 2 PR 4 (protocolo, repo devflow, fixar SHA base 2038c04 ANTES de medir): T2.9 SQP -> T2.10 C5 exige busca por CLASSE (nao \"semantica\": o --find-similar casa TERMO) e registra os TERMOS no journal -> T2.10c ligar o gate de frescor ao C5 (compile-memory-index.mjs --check ja sai !=0; falta hook — corrigir tambem a premissa do 570x610, que sao 38 archived por desenho) -> T2.11 D2 volta a ler/escrever os 2 campos -> T2.12 decidir global_base (616KB/137 arquivos/ultima escrita 4a627f3 em 2026-04-08/zero leitor) -> T2.14 ADR-097 proposed->accepted. POs MANUAL: PO-8 e PO-11 — evidencia colada, nao afirmacao (familia do AP-344).",
     "linked_adrs": [
       "ADR-097"
-    ],
-    "open_pr": 820
+    ]
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
