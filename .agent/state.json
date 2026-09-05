@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 3 FECHADO (PRs #822/#823/#824) — C5 pos-merge + status sincronizado nos artefatos",
+    "goal": "078 T4.0a — obediencia a ponteiro medida por arqueologia (75 transcripts)",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -141,7 +141,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 5 PR 8 (conhecimento negativo) — resolver antes o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git). Ou T3.13 (divida de GATE: o devflow nao tem revisor independente — os 3 PRs do Slice 3 declararam RC6 nao-aplicavel). Slice 4 bloqueado pelo T4.0. NAO reabrir o corte sem corpus de USO.",
+    "next_action": "Slice 4: formato EM ABERTO — o PO pediu o quadro de opcoes antes do veredicto. T4.0a fechou so a forma \"leitura adicional\" (reprovada, 17-29% de obediencia); sub-skill injetada pelo harness nao foi medida. Nao emendar AC/PO da US6 antes da decisao de formato.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
@@ -162,7 +162,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 11,
+    "journal_entries_since_distillation": 12,
     "rules_count": 270,
     "anti_patterns_count": 340,
     "decisions_count": 96,
@@ -174,7 +174,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-04T22:53:18.164371-03:00"
+    "index_loaded_at": "2026-09-05T01:43:06.661262-03:00"
   },
   "code_review": {
     "status": "clean",
