@@ -117,7 +117,6 @@
     "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
-      "078 Slice 5: [NEEDS CLARIFICATION forma do registro] — decisão do PO (recomendação: ledger (c) + fonte direta na busca + obrigação derivada do git + append-only conferido contra origin/main). Enquanto aberto, PO-24 e PO-26 têm placeholder no lugar do comando.",
       "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05)."
     ],
     "pending_migrations": [
@@ -148,9 +147,10 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "T4.9 — ESTA e a observacao da PROXIMA sessao, nao entrega pendente: a 1a sessao a rodar sob as 7 skills reporta no C5 se algum gate do C1-C5 se comportou diferente. Se quebrar, vira PR de correcao. Depois: Slice 5 (PR 8), que ainda tem o [NEEDS CLARIFICATION] da forma do registro (recomendacao da spec: ledger append-only conferido por script). ⚠️ distill: journal_entries=14, limiar 15 — o PO decidiu adiar para sessao propria ao fim do projeto.",
+    "next_action": "Slice 5 (PR 8) PRONTO PARA EXECUÇÃO — forma decidida (ADR-098), PO-24/26/27 executáveis, T5.6/T5.7 corrigidas, T5.7a criada. Ordem: SQP → T5.1 (attempts.mjs) → T5.2 (backfill T034/T035b, LER o merged_history ANTES de qualquer limpeza) → T5.3 (zero já medido) → T5.4 (gate, exit code sem pipe) → T5.5 → T5.7a (decidir o verify-split.sh) ANTES do T5.7. ⚠️ T4.9 continua pendente e é da PRÓXIMA sessão: reportar no C5 se algum gate do C1–C5 se comportou diferente sob as 7 skills.",
     "linked_adrs": [
-      "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
+      "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
+      "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
     ],
     "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e) — pushed, origin/main sincronizado",
     "code_review": {
@@ -174,7 +174,7 @@
     "journal_entries_since_distillation": 14,
     "rules_count": 270,
     "anti_patterns_count": 341,
-    "decisions_count": 96,
+    "decisions_count": 97,
     "contracts_count": 34,
     "distillation_due": false
   },
