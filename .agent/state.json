@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "specifying",
-    "status": "specified",
+    "mode": "coding",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 4 (US6) especificado — 7 skills, AC-U6-1..6 + PO-19..23",
+    "goal": "078 Slice 4 (PR 9) — quebrar SKILL.md em 7 skills",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -124,47 +124,44 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1/AC-2 (gate hibrido) → spec 068 PO-1",
-      "FR-005 fail-safe → spec 068 PO-2",
-      "AC-3..AC-6 (roteiro por OEM) → spec 068 PO-3",
-      "FR-010 copy R-UI → spec 068 PO-4",
-      "AC-7/AC-8 (CTA/degrada) → spec 068 PO-5",
-      "AC-9/AC-10 (dismiss persiste) → spec 068 PO-6",
-      "AC-11 (Preferencias) → spec 068 PO-7 — FORA do PR 1 (US5)",
-      "AC-12 (onboarding) → spec 068 PO-8 — FORA do PR 1 (US6)",
-      "AC-13 (sem marcacao crua) → spec 068 PO-9",
-      "AC-14 (estado voltei) → spec 068 PO-10",
-      "AC-15 (1 card promocional) → spec 068 PO-11"
+      "AC-U6-1 (união reproduz a SKILL.md) → spec 078 PO-19",
+      "AC-U6-2 (custo por sessão medido) → spec 078 PO-20",
+      "AC-U6-3+4 (despacho só no núcleo; transição via state.json) → spec 078 PO-21",
+      "AC-U6-5 (par Coding↔Reviewing íntegro) → spec 078 PO-22",
+      "AC-U6-6+7 (válidas no padrão oficial, sem auto-invocação) → spec 078 PO-23",
+      "AC-U6-8 (repo único + instalação de clone limpo) → spec 078 PO-28"
     ],
     "merged_pr": 824,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 4 = PR 9 (T4.1-T4.8), UNICO PR do slice — a numeracao e sequencial por spec (o Slice 5 levou o PR 8 por ter sido especificado antes). EXECUTAR EM SESSAO NOVA: esta sessao entregou o Slice 3 inteiro e o slice reescreve o arquivo que define o processo com o qual seria executado. ORDEM INEGOCIAVEL — o verify-split.sh (T4.2) nasce ANTES de mover qualquer linha e nasce VERMELHO; a quebra e MECANICA (mover blocos, nunca reescrever) e a PO-19 exige diff VAZIO: diff nao vazio => parar, alguem reescreveu enquanto movia. Risco de bootstrap e o principal (o slice reescreve o arquivo que define o processo com o qual ele e executado). Alternativa: Slice 5 PR 8 (conhecimento negativo), que ainda tem o [NEEDS CLARIFICATION] da forma do registro.",
+    "next_action": "Slice 4 entregue no devflow; falta o PR no dosiq (ADR-097 + AP-347 + journal/state/README). T4.9: a PRÓXIMA sessão roda sob as 7 skills e reporta no C5 se algum gate do C1–C5 se comportou diferente — não é entrega pendente, é observação. Depois: Slice 5 (PR 8), que ainda tem o [NEEDS CLARIFICATION] da forma do registro.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
-    "devflow_sha": "9a8267e (base 14439b0)",
+    "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e) — pushed, origin/main sincronizado",
     "code_review": {
-      "status": "clean",
+      "status": "issues_found",
       "critical": 0,
-      "auto_fixed": 0,
+      "auto_fixed": 1,
       "ask_items": 0,
-      "note": "Diff do devflow: guarda de 5 linhas em emit_preamble + comentario. Os dois bracos foram executados de verdade (RC6_INDEXES=1 e =0), nao inferidos."
+      "note": "RC5 sobre o diff: 1 achado auto-corrigido (4 skills exibiam o título 'Quick Reference' sobre um recorte, lendo como tabela inteira). Correção aditiva; verify-split seguiu verde."
     },
     "ai_review": {
       "engine": "n/a",
       "status": "nao-aplicavel",
+      "critical": 0,
+      "high": 0,
       "pr": null,
-      "note": "Codigo e .sh em ~/SKILLS/devflow, fora do CODE_GLOBS. Declarado NAO-APLICAVEL, nunca clean."
+      "note": "Diff 100% .md/.sh no repo devflow, fora do CODE_GLOBS. Declarado NÃO-APLICÁVEL, nunca clean (AP-325)."
     }
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 13,
+    "journal_entries_since_distillation": 14,
     "rules_count": 270,
-    "anti_patterns_count": 340,
+    "anti_patterns_count": 341,
     "decisions_count": 96,
     "contracts_count": 34,
     "distillation_due": false
@@ -174,7 +171,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-05T11:34:22.953671-03:00"
+    "index_loaded_at": "2026-09-05T12:25:05.038579-03:00"
   },
   "code_review": {
     "status": "clean",
