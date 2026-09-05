@@ -8,12 +8,12 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 3 PR 7 — A/B do corte: NAO cortar; ADR-097 de volta a proposed",
+    "goal": "078 Slice 3 FECHADO (PRs #822/#823/#824) — C5 pos-merge + status sincronizado nos artefatos",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "c739062a (squash merge into main)",
+    "merged_squash": "67e787c0 (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -60,6 +60,36 @@
         "base_branch": "main",
         "devflow_sha": "ab93dd2 (base 0fdb08a)",
         "note": "SLICE 2 FECHADO. Protocolo no devflow: C5 §1 exige busca por CLASSE antes de cunhar AP (incrementar com emenda datada se casar) e REGISTRAR OS TERMOS no journal — AP novo sem essa linha e violacao de gate, porque sem os termos \"busquei e nao achei\" e indistinguivel de \"nao busquei\"; o gate de frescor do indice roda ANTES da busca (a memoria cunhada na propria sessao e a mais provavel de casar com o proximo bug e e o que um indice velho nao ve). D2 recomputa incident_count/last_referenced antes de julgar ciclo de vida. D3 promove DENTRO do projeto por top-K. D4/global_base APOSENTADO. ADR-097 proposed->accepted. ⚠️ ACHADO DA PO-8, o mais importante do PR: a busca por classe NAO devolveu o AP-346 — parente exato, cunhado NO DIA ANTERIOR, mesmo acervo, mesmo autor (o titulo dele diz \"par de padroes\", nao \"fixture\"). A ferramenta falhou no caso mais facil que existe e o protocolo so nao falhou junto porque havia memoria de contexto. PO-11: global_base 616KB/133 .md, todo conteudo com mtime 2026-04-08, ZERO leitor; e duas correcoes da propria spec — o global_base NAO e repo git (o SHA 4a627f3 do expect nao e dele; a evidencia boa e o mtime) e as mencoes do D4 eram 10, nao 4, sendo as 6 faltantes ESTRUTURAIS (README dir tree/tabela/versionados, DEVFLOW-REFERENCE tree+fluxo, e o setup.sh, que seguiria criando .agent/synthesis em TODO projeto novo) — AP-315. RC6 NAO-APLICAVEL declarado (nao clean): diff do dosiq 100% .md, conteudo revisavel no devflow fora do CODE_GLOBS e sem fluxo de PR. LACUNA ABERTA: mudanca de protocolo no devflow nao tem revisor independente — o setup.sh e shell executavel e entrou sem revisao automatica nenhuma. SQP Backend/Infra, no-user-impact, sem bump."
+      },
+      {
+        "pr": 822,
+        "squash": "3e8cc845",
+        "spec": "078 Slice 3 PR 5 — clamp do RC6 110->80",
+        "tier": 2,
+        "date": "2026-09-04",
+        "base_branch": "main",
+        "devflow_sha": "c9fe801 (base ab93dd2)",
+        "note": "Clamp escolhido pelo CUSTO, nao pelo ganho: 80 e nao os 55 da spec. Medido em d365257c via worktree (head branch do #820 apagado, RC6_MAIN=d365257c^): 110 => preambulo 111.818B, budget 30.182B no piso, 1 ADVISORY e 1 chunk OVER-BUDGET (153.703B); 80 => 93.188B, budget 48.812B, zero dos dois; 55 => 77.544B, 64.456B. DEFAULT mediu identico a 80 — e assim que se prova que o DEFAULT mudou e nao a env var. T3.3: conteudo util pos-prefixo cai a 95/65/40 chars em 110/80/55 e em 55 oito de dez linhas amostradas param no meio da clausula (R-113 perde o valor da regra, AP-115 o gatilho); os 15.644B extras do 55 sao budget que nada consome. Emendou o expect da PO-14, que hardcodava 55 — autorizado pela clausula de custo da propria PO. DECLARADO: o aviso '>60% of the engine budget' AINDA dispara em 80; o clamp tira do piso e nao resolve o crescimento do acervo (o 110 subiu de 110.798 para 111.818B entre spec e execucao, R-320)."
+      },
+      {
+        "pr": 823,
+        "squash": "36f9871f",
+        "spec": "078 Slice 3 PR 6 — seletor da 060 integrado ao RC6",
+        "tier": 2,
+        "date": "2026-09-04",
+        "base_branch": "main",
+        "devflow_sha": "14439b0 (base c9fe801)",
+        "note": "Fim do 060/T012, parado desde a 060: o grep de select-rules nos scripts do devflow sai de 0 para 1. Bloco SELECTED MEMORIES com as top-5 memorias INTEIRAS escolhidas pelo score do diff contra o indice compilado. ADICIONA, nao substitui. CUSTO DECLARADO: +10.029B no preambulo (92.776->102.805) e chunk budget de 49.224 para 39.195B — come 20% do que o PR 5 acabara de recuperar; e o preco de construir o substituto antes de remover o substituido. PO-15 guard: acervo inteiro (573 regras, 326.407B) => bloco 14.062B; TRES amostras ALEATORIAS de metade => 12.584/16.464/13.432B, uma delas MAIOR que o acervo inteiro — o tamanho depende de QUAIS memorias entram, nao de QUANTAS existem; termo honesto e O(limit x tamanho medio), nao byte-constante. Cortar por ordem de ID daria 13.042B, enviesado pela ordenacao. PO-16: recall@5 4/6, 2x mesmo HEAD — prova que nao custou alcance, NAO prova ganho. Fail-open PROVADO nos 3 caminhos (RC6_SELECTOR=0, script ausente, indice ilegivel). DEFEITO MEU pego pela propria medicao: o dedupe contra os DETAIL lia a lista PRETENDIDA e o cap RC6_DETAIL_MAX age sobre a EMITIDA — a memoria cortada pelo cap tambem saia do seletor e sumia das DUAS pontas sem log (AP-345 estava nesse buraco: 4 memorias no bloco, 5 apos a correcao). Virou EMENDA no AP-346 (3a instancia, 1a sem regex nenhuma), nao AP novo. ⚠️ A busca por classe NAO devolveu o AP-346: 2a confirmacao da limitacao registrada na PO-8 do PR 4 — o match veio de memoria de contexto."
+      },
+      {
+        "pr": 824,
+        "squash": "67e787c0",
+        "spec": "078 Slice 3 PR 7 — A/B do corte; ADR-097 de volta a proposed",
+        "tier": 2,
+        "date": "2026-09-04",
+        "base_branch": "main",
+        "devflow_sha": "9a8267e (base 14439b0)",
+        "note": "SLICE 3 FECHADO. O A/B do corte rodou e disse NAO. RC6_INDEXES=0 (default 1) poe o corte atras de env var. Clamp 80 IDENTICO e DECLARADO nos dois bracos (PO-17), PACK_FILTER=0 no baseline, SHA 14439b0, harness deterministico data/ab_corte.py: braco A = preambulo 102.805B/budget 39.195B/4 chunks/alcance 339/339 (100%); braco B = 51.431B/90.569B/2 chunks/232 de 339 (68%). O corte devolve 51KB e 131% de budget e custa 32% do alcance. O DETALHE QUE DECIDE, escondido no total: das 232 que o B alcanca, 152 (65%) chegam pela porta `detail` — o diff JA citava o ID, regra que o autor ja conhecia; o seletor entrega 38 (16%). Cortar remove justamente a porta do caso que importa. Canario AP-186: 6/8 commits com codigo, mas 4 dessas 6 por detail — sobreviveria pelo motivo errado. Dos 762 pares, 233 sao de commits SEM arquivo de codigo (o RC6 nem os revisa), reportados a parte e nao diluidos no total. ADR-097 revertido accepted->proposed NO MESMO PR, com secao de reversao no arquivo e linha do DECISIONS_INDEX atualizada: a clausula de falsificacao foi ACIONADA, nao contornada. Sobrevive a tese das duas camadas (Slices 1-2); cai a premissa de que o wiki deve sair do executor. LIMITE (OQ-10): mede ALCANCE, nao USO — a tese do paper nao foi testada nem refutada."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -106,12 +136,12 @@
       "AC-14 (estado voltei) → spec 068 PO-10",
       "AC-15 (1 card promocional) → spec 068 PO-11"
     ],
-    "merged_pr": 821,
+    "merged_pr": 824,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "SLICE 3 FECHADO (PRs 5/6/7). Frentes abertas, o PO escolhe: (A) Slice 5 PR 8 — conhecimento negativo, exige antes resolver o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git); (B) T3.13 — divida de GATE, o devflow nao tem revisor independente (.sh/.md fora do CODE_GLOBS; os 3 PRs deste slice declararam RC6 nao-aplicavel); (C) Slice 4 (modularizar SKILL.md) segue BLOQUEADO pelo T4.0. NAO reabrir o corte sem corpus de USO — o de alcance ja respondeu.",
+    "next_action": "Slice 5 PR 8 (conhecimento negativo) — resolver antes o [NEEDS CLARIFICATION] da forma do registro (recomendacao: ledger append-only conferido contra os reverts do git). Ou T3.13 (divida de GATE: o devflow nao tem revisor independente — os 3 PRs do Slice 3 declararam RC6 nao-aplicavel). Slice 4 bloqueado pelo T4.0. NAO reabrir o corte sem corpus de USO.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
@@ -144,7 +174,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-04T18:45:47.808860-03:00"
+    "index_loaded_at": "2026-09-04T22:53:18.164371-03:00"
   },
   "code_review": {
     "status": "clean",
