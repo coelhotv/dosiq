@@ -13,7 +13,7 @@
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "67e787c0 (squash merge into main)",
+    "merged_squash": "035a66cc (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -90,6 +90,16 @@
         "base_branch": "main",
         "devflow_sha": "9a8267e (base 14439b0)",
         "note": "SLICE 3 FECHADO. O A/B do corte rodou e disse NAO. RC6_INDEXES=0 (default 1) poe o corte atras de env var. Clamp 80 IDENTICO e DECLARADO nos dois bracos (PO-17), PACK_FILTER=0 no baseline, SHA 14439b0, harness deterministico data/ab_corte.py: braco A = preambulo 102.805B/budget 39.195B/4 chunks/alcance 339/339 (100%); braco B = 51.431B/90.569B/2 chunks/232 de 339 (68%). O corte devolve 51KB e 131% de budget e custa 32% do alcance. O DETALHE QUE DECIDE, escondido no total: das 232 que o B alcanca, 152 (65%) chegam pela porta `detail` — o diff JA citava o ID, regra que o autor ja conhecia; o seletor entrega 38 (16%). Cortar remove justamente a porta do caso que importa. Canario AP-186: 6/8 commits com codigo, mas 4 dessas 6 por detail — sobreviveria pelo motivo errado. Dos 762 pares, 233 sao de commits SEM arquivo de codigo (o RC6 nem os revisa), reportados a parte e nao diluidos no total. ADR-097 revertido accepted->proposed NO MESMO PR, com secao de reversao no arquivo e linha do DECISIONS_INDEX atualizada: a clausula de falsificacao foi ACIONADA, nao contornada. Sobrevive a tese das duas camadas (Slices 1-2); cai a premissa de que o wiki deve sair do executor. LIMITE (OQ-10): mede ALCANCE, nao USO — a tese do paper nao foi testada nem refutada."
+      },
+      {
+        "pr": 825,
+        "squash": "035a66cc",
+        "spec": "078 Slice 4 PR 9 — SKILL.md quebrada em 7 skills do padrao oficial",
+        "tier": 2,
+        "date": "2026-09-05",
+        "base_branch": "main",
+        "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e)",
+        "note": "SLICE 4 FECHADO. A skill tinha a doenca que diagnostica: 2.135 linhas monoliticas, das quais uma sessao de entrega usava ~180 comuns + 795 do modo e carregava ~1.160 de modos que nunca ia usar. A FORMA NAO E modes/*.md: o T4.0a mediu obediencia a ponteiro em 75 transcripts REAIS contando ABERTURA de arquivo (rodape 3-5%, 'OBRIGATORIO' do CLAUDE.md 17-29%, dois deles ZERO, controle state.json 64%) — regra dura por Read discricionario vira sugestao em ~3 de 4 sessoes. Skill do padrao agentskills.io e INJETADA pelo harness, e o R-065 fica satisfeito pelo motivo certo: quem invoca e o operador. MEDIDO: entrega 30.060->17.446 tok (-42%), spec+cerimonia 12.836, planning 6.643, distill 7.835; validador oficial 7/7. ⚠️ A PO-20 REPROVOU no expect original (<=16.000) e foi EMENDADA PELO NUMERO com a causa achada: o nucleo projetado em 3.800 mede 5.198 porque a projecao nao contava tabela de despacho (309), frontmatter e guard das 6 sub-skills, nem o rodape — fechar o numero exigiria cortar Locking/Goal Alignment/POs, que e o que TODO modo usa. O total das 7 sobe 6,6%, preco declarado do frontmatter+guard: as linhas de conteudo sao BIT A BIT as mesmas, e e o verify-split.sh que prova. O VERIFICADOR NASCEU ANTES E VERMELHO (6 skills ausentes): diff ORDENADO do corpo 13-2096, diff do rodape 2124-2135 e MULTISET das 22 linhas do Quick Reference, que e DISTRIBUIDO e nunca casaria numa concatenacao ordenada — contagem sozinha deixaria passar 22 linhas trocadas por outras 22. ACHADO ESTRUTURAL: ~/SKILLS/devflow e ~/.claude/skills/devflow sao o MESMO inode e a descoberta e de UM nivel, entao sub-skill aninhada NAO e descoberta — sem install-skills.sh um clone limpo entrega 1 skill em vez de 7, em silencio (PO-28 prova a partir de clone em /tmp, nao da maquina que fez a quebra). QUATRO DEFEITOS MEUS, todos pegos pelos proprios gates: (1) verify-split REPROVAVA SEM MENSAGEM (grep sob set -e) => AP-347, espelho do AP-325 e dispara no caso LEGITIMO (3 das 7 skills nao tem linha de QuickRef); (2) instalador criava links antes de falhar (estado parcial) => pre-flight confere TODOS os destinos antes de escrever; (3) description quebrada pelo textwrap dentro do backtick (/devflow- distill) e depois YAML invalido por ':' em escalar sem aspas; (4) medicao do caso [3] da PO-28 mascarada por `| tail` — li o exit do tail, nao o do script. EMENDAS DE SPEC: PO-19..22 estavam DUPLICADAS entre Slice 4 e Slice 5 (o Pass 0 do RC5 audita por ID) => US7 renumerado para PO-24..27; NENHUM FR cobria o Slice 4 => FR-019..021 + SC-009..011; AC-U6-7/8 + PO-23 executavel (skills-ref validate) + PO-28; 3 numeros da spec errados contra o disco (R-320). DOIS DESVIOS DO PADRAO DECLARADOS: devflow-code 795 linhas contra <500 recomendadas (a saida canonica, references/, e Read discricionario — medido e reprovado pelo proprio T4.0a) e description como comando do operador contra a recomendacao de keywords (R-065). RC5: 1 auto-fix (4 skills exibiam o titulo 'Quick Reference' sobre um recorte). RC6 NAO-APLICAVEL declarado, nunca clean — diff 100% .md/.sh fora do CODE_GLOBS; a divida T3.13 esta agora no caminho critico porque o install-skills.sh roda em projeto novo sem revisor independente. LIMITE (T4.9): mede ENTREGA, nao OBEDIENCIA — a 1a sessao a rodar sob as 7 skills e a primeira observacao e NAO pode ser a que fez a quebra. SQP Backend/Infra tooling, no-user-impact, sem bump."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -131,12 +141,12 @@
       "AC-U6-6+7 (válidas no padrão oficial, sem auto-invocação) → spec 078 PO-23",
       "AC-U6-8 (repo único + instalação de clone limpo) → spec 078 PO-28"
     ],
-    "merged_pr": 824,
+    "merged_pr": 825,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 4 entregue no devflow; falta o PR no dosiq (ADR-097 + AP-347 + journal/state/README). T4.9: a PRÓXIMA sessão roda sob as 7 skills e reporta no C5 se algum gate do C1–C5 se comportou diferente — não é entrega pendente, é observação. Depois: Slice 5 (PR 8), que ainda tem o [NEEDS CLARIFICATION] da forma do registro.",
+    "next_action": "T4.9 — ESTA e a observacao da PROXIMA sessao, nao entrega pendente: a 1a sessao a rodar sob as 7 skills reporta no C5 se algum gate do C1-C5 se comportou diferente. Se quebrar, vira PR de correcao. Depois: Slice 5 (PR 8), que ainda tem o [NEEDS CLARIFICATION] da forma do registro (recomendacao da spec: ledger append-only conferido por script). ⚠️ distill: journal_entries=14, limiar 15 — o PO decidiu adiar para sessao propria ao fim do projeto.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
