@@ -116,7 +116,9 @@
     ],
     "branch": "main",
     "blocked_on": [
-      "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)"
+      "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
+      "078 Slice 5: [NEEDS CLARIFICATION forma do registro] — decisão do PO (recomendação: ledger (c) + fonte direta na busca + obrigação derivada do git + append-only conferido contra origin/main). Enquanto aberto, PO-24 e PO-26 têm placeholder no lugar do comando.",
+      "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05)."
     ],
     "pending_migrations": [
       {
