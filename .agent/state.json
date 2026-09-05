@@ -141,7 +141,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 4 PR 9 (T4.1-T4.8): a quebra. ORDEM INEGOCIAVEL — o verify-split.sh (T4.2) nasce ANTES de mover qualquer linha e nasce VERMELHO; a quebra e MECANICA (mover blocos, nunca reescrever) e a PO-19 exige diff VAZIO: diff nao vazio => parar, alguem reescreveu enquanto movia. Risco de bootstrap e o principal (o slice reescreve o arquivo que define o processo com o qual ele e executado). Alternativa: Slice 5 PR 8 (conhecimento negativo), que ainda tem o [NEEDS CLARIFICATION] da forma do registro.",
+    "next_action": "Slice 4 = PR 9 (T4.1-T4.8), UNICO PR do slice — a numeracao e sequencial por spec (o Slice 5 levou o PR 8 por ter sido especificado antes). EXECUTAR EM SESSAO NOVA: esta sessao entregou o Slice 3 inteiro e o slice reescreve o arquivo que define o processo com o qual seria executado. ORDEM INEGOCIAVEL — o verify-split.sh (T4.2) nasce ANTES de mover qualquer linha e nasce VERMELHO; a quebra e MECANICA (mover blocos, nunca reescrever) e a PO-19 exige diff VAZIO: diff nao vazio => parar, alguem reescreveu enquanto movia. Risco de bootstrap e o principal (o slice reescreve o arquivo que define o processo com o qual ele e executado). Alternativa: Slice 5 PR 8 (conhecimento negativo), que ainda tem o [NEEDS CLARIFICATION] da forma do registro.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)"
     ],
