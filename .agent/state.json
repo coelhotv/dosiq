@@ -13,7 +13,7 @@
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
     ],
-    "merged_squash": "035a66cc (squash merge into main)",
+    "merged_squash": "96eb79f5 (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -100,6 +100,16 @@
         "base_branch": "main",
         "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e)",
         "note": "SLICE 4 FECHADO. A skill tinha a doenca que diagnostica: 2.135 linhas monoliticas, das quais uma sessao de entrega usava ~180 comuns + 795 do modo e carregava ~1.160 de modos que nunca ia usar. A FORMA NAO E modes/*.md: o T4.0a mediu obediencia a ponteiro em 75 transcripts REAIS contando ABERTURA de arquivo (rodape 3-5%, 'OBRIGATORIO' do CLAUDE.md 17-29%, dois deles ZERO, controle state.json 64%) — regra dura por Read discricionario vira sugestao em ~3 de 4 sessoes. Skill do padrao agentskills.io e INJETADA pelo harness, e o R-065 fica satisfeito pelo motivo certo: quem invoca e o operador. MEDIDO: entrega 30.060->17.446 tok (-42%), spec+cerimonia 12.836, planning 6.643, distill 7.835; validador oficial 7/7. ⚠️ A PO-20 REPROVOU no expect original (<=16.000) e foi EMENDADA PELO NUMERO com a causa achada: o nucleo projetado em 3.800 mede 5.198 porque a projecao nao contava tabela de despacho (309), frontmatter e guard das 6 sub-skills, nem o rodape — fechar o numero exigiria cortar Locking/Goal Alignment/POs, que e o que TODO modo usa. O total das 7 sobe 6,6%, preco declarado do frontmatter+guard: as linhas de conteudo sao BIT A BIT as mesmas, e e o verify-split.sh que prova. O VERIFICADOR NASCEU ANTES E VERMELHO (6 skills ausentes): diff ORDENADO do corpo 13-2096, diff do rodape 2124-2135 e MULTISET das 22 linhas do Quick Reference, que e DISTRIBUIDO e nunca casaria numa concatenacao ordenada — contagem sozinha deixaria passar 22 linhas trocadas por outras 22. ACHADO ESTRUTURAL: ~/SKILLS/devflow e ~/.claude/skills/devflow sao o MESMO inode e a descoberta e de UM nivel, entao sub-skill aninhada NAO e descoberta — sem install-skills.sh um clone limpo entrega 1 skill em vez de 7, em silencio (PO-28 prova a partir de clone em /tmp, nao da maquina que fez a quebra). QUATRO DEFEITOS MEUS, todos pegos pelos proprios gates: (1) verify-split REPROVAVA SEM MENSAGEM (grep sob set -e) => AP-347, espelho do AP-325 e dispara no caso LEGITIMO (3 das 7 skills nao tem linha de QuickRef); (2) instalador criava links antes de falhar (estado parcial) => pre-flight confere TODOS os destinos antes de escrever; (3) description quebrada pelo textwrap dentro do backtick (/devflow- distill) e depois YAML invalido por ':' em escalar sem aspas; (4) medicao do caso [3] da PO-28 mascarada por `| tail` — li o exit do tail, nao o do script. EMENDAS DE SPEC: PO-19..22 estavam DUPLICADAS entre Slice 4 e Slice 5 (o Pass 0 do RC5 audita por ID) => US7 renumerado para PO-24..27; NENHUM FR cobria o Slice 4 => FR-019..021 + SC-009..011; AC-U6-7/8 + PO-23 executavel (skills-ref validate) + PO-28; 3 numeros da spec errados contra o disco (R-320). DOIS DESVIOS DO PADRAO DECLARADOS: devflow-code 795 linhas contra <500 recomendadas (a saida canonica, references/, e Read discricionario — medido e reprovado pelo proprio T4.0a) e description como comando do operador contra a recomendacao de keywords (R-065). RC5: 1 auto-fix (4 skills exibiam o titulo 'Quick Reference' sobre um recorte). RC6 NAO-APLICAVEL declarado, nunca clean — diff 100% .md/.sh fora do CODE_GLOBS; a divida T3.13 esta agora no caminho critico porque o install-skills.sh roda em projeto novo sem revisor independente. LIMITE (T4.9): mede ENTREGA, nao OBEDIENCIA — a 1a sessao a rodar sob as 7 skills e a primeira observacao e NAO pode ser a que fez a quebra. SQP Backend/Infra tooling, no-user-impact, sem bump."
+      },
+      {
+        "pr": 826,
+        "squash": "96eb79f5",
+        "spec": "078 Slice 5 — conhecimento negativo vira ledger cobrado pelo git",
+        "tier": 2,
+        "date": "2026-09-06",
+        "base_branch": "main",
+        "devflow_sha": "7054a47",
+        "note": "O DEVFLOW ganhou o caminho que so tinha para o sucesso. attempts.jsonl + attempts.mjs (--list/--check/--add): o gate cruza os reverts do git log e confere monotonicidade contra origin/main. ALCANCE POR FONTE DIRETA: o --find-similar do C5 le o ledger do arquivo e o compiled_rules_index.json NAO foi tocado — alcance no C5 com custo ZERO no preambulo do RC6 (emenda 1 do ADR-098). 3 entradas de backfill, incluindo T035a ACEITA como denominador. TRES LIMITES DECLARADOS, nao contornados: (1) reversao feita na ARVORE nao deixa traco em git log — o gate impede reverter POR COMMIT sem registrar, nao impede esquecer; (2) o repo mergeia por SQUASH, entao entrada e intervencao colapsam num commit — quem segura e a monotonicidade, nao a separacao de commits; (3) os 2 casos rejeitados nao tem SHA porque nunca viraram commit, e sha.trace declara a procedencia ausente em vez de inventa-la (R-307). DOIS APs CUNHADOS, ambos de defeito MEU pego por gate: AP-348 (REPO_ROOT do __dirname fazia o gate ler um ledger e cobrar reverts de OUTRO repo — e DOIS testes passavam pelo MOTIVO ERRADO, fechando por 2 reverts antigos do dosiq; mais 2 instancias da mesma classe no mesmo arquivo) e AP-349 (o proprio --check do indice compilado usa hash de MTIME e gritou 'desatualizado' com arvore limpa logo apos o squash, com diff so em generatedAt — falso VERMELHO rotineiro erode o gate; parente de sinal invertido do AP-337). ACHADO COLATERAL: AP-347, cunhada no dia anterior, estava FORA do indice compilado por falta de summary — memoria cunhada e INALCANCAVEL pela busca que o C5 obriga, que e a doenca que esta spec ataca; corrigida junto. RC5 2 auto-fix / 0 ASK; RC6 CLEAN de verdade (agy, 3/3 chunks, partial=false, refuted=0) — e desta vez APLICAVEL, porque o diff e .mjs, dentro do CODE_GLOBS desde 6579133. T4.9 RESPONDIDA: primeira sessao sob as 7 skills, nenhum gate do C1-C5 se comportou diferente. SQP Backend/Infra tooling, no-user-impact, sem bump."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -114,7 +124,7 @@
       "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
       "Slice 1 regenera post_birth.json (F1)"
     ],
-    "branch": "feat/078-slice5-attempts-ledger",
+    "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
       "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05)."
@@ -140,12 +150,12 @@
       "AC-U7-3 (conferido contra o git) → spec 078 PO-26",
       "AC-U7-4 (sobrevive ao rollback do codigo) → spec 078 PO-27"
     ],
-    "merged_pr": 825,
+    "merged_pr": 826,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "AGUARDANDO aprovacao do PO no #826 (R-060). Depois: merge + C5 pos-merge. Pendencias herdadas: POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec apesar do #825 mergeado; validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar o AP-348). Distill em 15/15, adiado por decisao do PO.",
+    "next_action": "078 DELIVERED (5 slices, 6 PRs). Pendencias declaradas, nenhuma bloqueante: (1) POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec — codigo mergeado, evidencia formal nao colada; (2) validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar AP-348); (3) AP-349: o --check do indice usa hash de mtime e da falso vermelho apos merge/checkout — corrigir para hash de conteudo. DISTILL em 16/15, adiado por decisao do PO para sessao propria ao fim do projeto: e a proxima acao natural.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
       "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
@@ -156,7 +166,7 @@
       "critical": 0,
       "auto_fixed": 2,
       "ask_items": 0,
-      "note": "RC5 sobre o diff: 2 achados auto-corrigidos, ambos da classe do AP-348 (monotonicidade conferindo caminho constante em vez do arquivo lido com --file; realpath do /tmp degradando a checagem para skip silencioso). Um terceiro da mesma classe (REPO_ROOT do __dirname) foi pego antes, pelos proprios testes."
+      "note": "RC5: 2 auto-fix, ambos da classe do AP-348. Um terceiro da mesma classe foi pego antes, pelos proprios testes."
     },
     "ai_review": {
       "engine": "agy (3 chunks)",
@@ -171,19 +181,19 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 15,
+    "journal_entries_since_distillation": 16,
     "rules_count": 270,
-    "anti_patterns_count": 342,
+    "anti_patterns_count": 343,
     "decisions_count": 97,
     "contracts_count": 34,
-    "distillation_due": false
+    "distillation_due": true
   },
   "genes": {
     "memory_distillation_threshold": 15,
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-05T21:17:44.436121-03:00"
+    "index_loaded_at": "2026-09-05T21:54:41.240648-03:00"
   },
   "code_review": {
     "status": "clean",
