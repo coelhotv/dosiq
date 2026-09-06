@@ -8,7 +8,7 @@
     "tier": 2,
     "spec_dir": "plans/specs/078-devflow-memory-revamp",
     "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 4 (PR 9) — quebrar SKILL.md em 7 skills",
+    "goal": "078 Slice 5 (PR 8) — ledger de conhecimento negativo (attempts.jsonl)",
     "goal_type": "refactor",
     "spec_dirs": [
       "plans/specs/078-devflow-memory-revamp"
@@ -114,7 +114,7 @@
       "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
       "Slice 1 regenera post_birth.json (F1)"
     ],
-    "branch": "main",
+    "branch": "feat/078-slice5-attempts-ledger",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
       "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05)."
@@ -135,19 +135,17 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-U6-1 (união reproduz a SKILL.md) → spec 078 PO-19",
-      "AC-U6-2 (custo por sessão medido) → spec 078 PO-20",
-      "AC-U6-3+4 (despacho só no núcleo; transição via state.json) → spec 078 PO-21",
-      "AC-U6-5 (par Coding↔Reviewing íntegro) → spec 078 PO-22",
-      "AC-U6-6+7 (válidas no padrão oficial, sem auto-invocação) → spec 078 PO-23",
-      "AC-U6-8 (repo único + instalação de clone limpo) → spec 078 PO-28"
+      "AC-U7-1 (registro duravel fora do state.json) → spec 078 PO-24",
+      "AC-U7-2 (alcancavel pela busca do C5) → spec 078 PO-25",
+      "AC-U7-3 (conferido contra o git) → spec 078 PO-26",
+      "AC-U7-4 (sobrevive ao rollback do codigo) → spec 078 PO-27"
     ],
     "merged_pr": 825,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "Slice 5 (PR 8) PRONTO PARA EXECUÇÃO — forma decidida (ADR-098), PO-24/26/27 executáveis, T5.6/T5.7 corrigidas, T5.7a criada. Ordem: SQP → T5.1 (attempts.mjs) → T5.2 (backfill T034/T035b, LER o merged_history ANTES de qualquer limpeza) → T5.3 (zero já medido) → T5.4 (gate, exit code sem pipe) → T5.5 → T5.7a (decidir o verify-split.sh) ANTES do T5.7. ⚠️ T4.9 continua pendente e é da PRÓXIMA sessão: reportar no C5 se algum gate do C1–C5 se comportou diferente sob as 7 skills.",
+    "next_action": "RC6 apos abrir o PR (diff .mjs esta no CODE_GLOBS) → aprovacao do PO → merge → C5 pos-merge. Pendencias herdadas: POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec apesar do #825 mergeado; e o validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar o AP-348).",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
       "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
@@ -156,24 +154,24 @@
     "code_review": {
       "status": "issues_found",
       "critical": 0,
-      "auto_fixed": 1,
+      "auto_fixed": 2,
       "ask_items": 0,
-      "note": "RC5 sobre o diff: 1 achado auto-corrigido (4 skills exibiam o título 'Quick Reference' sobre um recorte, lendo como tabela inteira). Correção aditiva; verify-split seguiu verde."
+      "note": "RC5 sobre o diff: 2 achados auto-corrigidos, ambos da classe do AP-348 (monotonicidade conferindo caminho constante em vez do arquivo lido com --file; realpath do /tmp degradando a checagem para skip silencioso). Um terceiro da mesma classe (REPO_ROOT do __dirname) foi pego antes, pelos proprios testes."
     },
     "ai_review": {
       "engine": "n/a",
-      "status": "nao-aplicavel",
+      "status": "pendente",
       "critical": 0,
       "high": 0,
       "pr": null,
-      "note": "Diff 100% .md/.sh no repo devflow, fora do CODE_GLOBS. Declarado NÃO-APLICÁVEL, nunca clean (AP-325)."
+      "note": "Diff do dosiq e .mjs — DENTRO do CODE_GLOBS desde 6579133, entao RC6 SE APLICA e roda apos abrir o PR. A parte no devflow (.md/.sh) segue fora, como no Slice 4."
     }
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 14,
+    "journal_entries_since_distillation": 15,
     "rules_count": 270,
-    "anti_patterns_count": 341,
+    "anti_patterns_count": 342,
     "decisions_count": 97,
     "contracts_count": 34,
     "distillation_due": false
@@ -183,7 +181,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-05T12:25:05.038579-03:00"
+    "index_loaded_at": "2026-09-05T21:17:44.436121-03:00"
   },
   "code_review": {
     "status": "clean",
