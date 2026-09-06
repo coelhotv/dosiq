@@ -3,15 +3,15 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "coding",
-    "status": "completed",
-    "tier": 2,
-    "spec_dir": "plans/specs/078-devflow-memory-revamp",
-    "spec": "plans/specs/078-devflow-memory-revamp/spec.md",
-    "goal": "078 Slice 5 (PR 8) — ledger de conhecimento negativo (attempts.jsonl)",
-    "goal_type": "refactor",
+    "mode": "specifying",
+    "status": "specified",
+    "tier": 1,
+    "spec_dir": "plans/specs/079-memory-gate-hygiene",
+    "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
+    "goal": "079 — higiene dos gates de memória (AP-349 + dívida T023 + validador que acumula erros)",
+    "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/078-devflow-memory-revamp"
+      "plans/specs/079-memory-gate-hygiene"
     ],
     "merged_squash": "96eb79f5 (squash merge into main)",
     "merged_history": [
@@ -113,9 +113,7 @@
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
-    "ceremonies_run": [
-      "eng-review"
-    ],
+    "ceremonies_run": [],
     "ceremony_findings_count": 7,
     "ceremony_scope_decisions": [
       "HOLD SCOPE",
@@ -145,21 +143,19 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-U7-1 (registro duravel fora do state.json) → spec 078 PO-24",
-      "AC-U7-2 (alcancavel pela busca do C5) → spec 078 PO-25",
-      "AC-U7-3 (conferido contra o git) → spec 078 PO-26",
-      "AC-U7-4 (sobrevive ao rollback do codigo) → spec 078 PO-27"
+      "AC-1 (mtime nao reprova mais) → spec 079 PO-1",
+      "AC-2 (memoria alterada AINDA reprova) → spec 079 PO-2",
+      "AC-3 (hook aborta com indice velho) → spec 079 PO-3",
+      "AC-4 (commit sem memoria nao paga custo) → spec 079 PO-4",
+      "AC-5 (validador devolve os 3 defeitos) → spec 079 PO-5"
     ],
     "merged_pr": 826,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 DELIVERED, 28/28 POs fechadas (as do Slice 4 tinham evidencia no corpo do #825; so o checkbox do spec.md ficou para tras — corrigido em 2026-09-06, R-319 emendada). Pendencias: (1) correcao REAL do R-319 — estado auditavel do lado versionado, ou Pass 0 lendo PR/journal em vez do arquivo local; (2) AP-349: hash de frescor por mtime da falso vermelho apos merge; (3) validador de frontmatter reporta UM campo por vez. DISTILL em 17/15, adiado por decisao do PO.",
-    "linked_adrs": [
-      "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
-      "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
-    ],
+    "next_action": "Planning da 079 (/devflow-plan) — e a OQ-1 (pre-commit x pre-push) e decisao do PO ali. Tier 1: tasks.md no Planning, plan.md so se algum desenho precisar registro.",
+    "linked_adrs": [],
     "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e) — pushed, origin/main sincronizado",
     "code_review": {
       "status": "issues_found",
@@ -181,7 +177,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 17,
+    "journal_entries_since_distillation": 18,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
