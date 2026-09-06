@@ -340,13 +340,17 @@ export function recount(opts) {
  * pouco para texto livre; a sobreposição de termos sobre título+resumo entra como desempate,
  * não como índice novo.
  */
+function tokenize(query) {
+  return [...new Set(query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 4))];
+}
+
 function findSimilar(repo, query, limit) {
   const indexPath = path.join(repo, '.agent', 'memory', 'compiled_rules_index.json');
   if (!fs.existsSync(indexPath)) {
     throw new Error(`índice compilado ausente (${indexPath}) — rode compile-memory-index.mjs`);
   }
   const index = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
-  const terms = [...new Set(query.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 4))];
+  const terms = tokenize(query);
   if (terms.length === 0) throw new Error('--find-similar exige ao menos um termo com 4+ caracteres');
 
   const bySelector = new Map(
@@ -363,6 +367,50 @@ function findSimilar(repo, query, limit) {
     const selector = bySelector.get(id) ?? 0;
     const score = overlap * 10 + selector;
     if (score > 0) scored.push({ id, score, overlap, selector, hits, title: rule.title, domain: rule.domain });
+  }
+  scored.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  return scored.slice(0, limit);
+}
+
+/**
+ * SEGUNDA FONTE da busca do C5: o ledger de conhecimento negativo (`attempts.jsonl`, ADR-098).
+ *
+ * Lido DIRETO do arquivo, de propósito. Estender o `compiled_rules_index.json` para cobri-lo
+ * alcançaria esta busca ao preço de inflar o preâmbulo do RC6 — `select-rules.mjs:345` lê o MESMO
+ * índice —, que é exatamente o custo que a spec 078 existe para atacar. Aqui o alcance custa zero
+ * no revisor: quem lê o ledger é só o C5.
+ *
+ * Sem isto a busca é cega para o que NÃO deu certo por construção, e a próxima sessão reimplementa
+ * a intervenção rejeitada com outro nome (spec 078 §US7, buraco 3).
+ */
+function findSimilarAttempts(repo, terms, limit) {
+  const file = path.join(repo, '.agent', 'memory', 'attempts.jsonl');
+  if (!fs.existsSync(file)) return [];
+  const scored = [];
+  for (const line of fs.readFileSync(file, 'utf-8').split('\n')) {
+    if (!line.trim()) continue;
+    let e;
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue; // integridade é assunto do `attempts.mjs --check`; a busca não é o lugar de falhar
+    }
+    // `terms` entra junto com what/cause porque é o campo escrito DE PROPÓSITO para ser achado.
+    const haystack = `${e.what ?? ''} ${e.cause ?? ''} ${(e.terms ?? []).join(' ')}`.toLowerCase();
+    const hits = terms.filter((t) => haystack.includes(t));
+    // Um termo genérico sozinho ("regras") casa com quase toda entrada e transforma o aviso em
+    // ruído — e aviso ruidoso é aviso ignorado. Com consulta de 3+ termos, exige 2 casamentos.
+    const minHits = terms.length >= 3 ? 2 : 1;
+    if (hits.length < minHits) continue;
+    scored.push({
+      id: e.id,
+      score: hits.length * 10,
+      hits,
+      verdict: e.verdict,
+      what: e.what,
+      origin: `${e.spec ?? '?'}${e.task ? `/${e.task}` : ''}`,
+      measured: e.measured,
+    });
   }
   scored.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
   return scored.slice(0, limit);
@@ -496,11 +544,24 @@ function main() {
 
   if (opts.findSimilar) {
     let hits;
+    let attempts;
     try {
       hits = findSimilar(opts.repo, opts.findSimilar, 5);
+      // 2ª fonte, lida DIRETO do ledger (ADR-098 emenda 1): alcance no C5, custo zero no RC6.
+      attempts = findSimilarAttempts(opts.repo, tokenize(opts.findSimilar), 5);
     } catch (e) {
       console.error(`erro: ${e.message}`);
       process.exit(1);
+    }
+    if (attempts.length > 0) {
+      // Vem PRIMEIRO de propósito: reimplementar algo já medido e revertido é mais caro que
+      // duplicar um AP — o custo é a medição inteira de novo (spec 078 §US7).
+      console.log(`⛔ JÁ TENTADO E MEDIDO — ${attempts.length} intervenção(ões) no ledger:`);
+      for (const a of attempts) {
+        console.log(`  ${a.id}  [${a.verdict}]  ${a.origin} — ${a.what}`);
+        console.log(`     medido: ${a.measured}   (termos: ${a.hits.join(', ')})`);
+      }
+      console.log('  → leia a causa com: node scripts/attempts.mjs --list\n');
     }
     if (hits.length === 0) {
       console.log(
