@@ -155,7 +155,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "078 DELIVERED (5 slices, 6 PRs). Pendencias declaradas, nenhuma bloqueante: (1) POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec — codigo mergeado, evidencia formal nao colada; (2) validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar AP-348); (3) AP-349: o --check do indice usa hash de mtime e da falso vermelho apos merge/checkout — corrigir para hash de conteudo. DISTILL em 16/15, adiado por decisao do PO para sessao propria ao fim do projeto: e a proxima acao natural.",
+    "next_action": "078 DELIVERED, 28/28 POs fechadas (as do Slice 4 tinham evidencia no corpo do #825; so o checkbox do spec.md ficou para tras — corrigido em 2026-09-06, R-319 emendada). Pendencias: (1) correcao REAL do R-319 — estado auditavel do lado versionado, ou Pass 0 lendo PR/journal em vez do arquivo local; (2) AP-349: hash de frescor por mtime da falso vermelho apos merge; (3) validador de frontmatter reporta UM campo por vez. DISTILL em 17/15, adiado por decisao do PO.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
       "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
@@ -181,7 +181,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 16,
+    "journal_entries_since_distillation": 17,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
