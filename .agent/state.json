@@ -145,7 +145,7 @@
     "ceremony_type": "eng-review",
     "tasks": "plans/specs/078-devflow-memory-revamp/tasks.md",
     "plan": "plans/specs/078-devflow-memory-revamp/plan.md",
-    "next_action": "RC6 apos abrir o PR (diff .mjs esta no CODE_GLOBS) → aprovacao do PO → merge → C5 pos-merge. Pendencias herdadas: POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec apesar do #825 mergeado; e o validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar o AP-348).",
+    "next_action": "AGUARDANDO aprovacao do PO no #826 (R-060). Depois: merge + C5 pos-merge. Pendencias herdadas: POs do Slice 4 (PO-19..23, PO-28) seguem [ ] open na spec apesar do #825 mergeado; validador de frontmatter reporta UM campo por vez (4 rodadas para cunhar o AP-348). Distill em 15/15, adiado por decisao do PO.",
     "linked_adrs": [
       "ADR-097 (proposed — revertido de accepted em 2026-09-04 pelo A/B do Slice 3)",
       "ADR-098 (accepted 2026-09-05 — ledger de conhecimento negativo cobrado pelo git; spec 078 §US7)"
@@ -159,12 +159,14 @@
       "note": "RC5 sobre o diff: 2 achados auto-corrigidos, ambos da classe do AP-348 (monotonicidade conferindo caminho constante em vez do arquivo lido com --file; realpath do /tmp degradando a checagem para skip silencioso). Um terceiro da mesma classe (REPO_ROOT do __dirname) foi pego antes, pelos proprios testes."
     },
     "ai_review": {
-      "engine": "n/a",
-      "status": "pendente",
+      "engine": "agy (3 chunks)",
+      "status": "clean",
       "critical": 0,
       "high": 0,
-      "pr": null,
-      "note": "Diff do dosiq e .mjs — DENTRO do CODE_GLOBS desde 6579133, entao RC6 SE APLICA e roda apos abrir o PR. A parte no devflow (.md/.sh) segue fora, como no Slice 4."
+      "introduced_critical": 0,
+      "introduced_high": 0,
+      "pr": 826,
+      "note": "3/3 chunks revisados (406KB, partial=false), com usage por chunk — nao e clean por falha silenciosa. Gate de reflexao: refuted=0, nada a conferir a mao."
     }
   },
   "memory": {
