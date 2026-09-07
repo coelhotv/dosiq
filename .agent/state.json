@@ -3,7 +3,7 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "coding",
+    "mode": "idle",
     "status": "completed",
     "tier": 1,
     "spec_dir": "plans/specs/079-memory-gate-hygiene",
@@ -219,11 +219,12 @@
         "depende_de": "merge do PR A na main"
       }
     ],
-    "active_slice": null
+    "active_slice": null,
+    "next_session": "Sessao FRESH para /devflow-spec das 080 e 081 (draft, dossies prontos em plans/specs/). A 080 tem uma pergunta que pode dissolver o proprio impasse antes de qualquer desenho: o A/B que mediu alcance 100%->68% foi rodado ANTES do seletor entrar? Se sim, o numero e de um mundo anterior — o seletor injeta memorias que o corte tiraria, e a perda real seria menor. Verificar isso PRIMEIRO. Distill tambem pendente (counter 25, adiado de proposito pelo PO para sessao propria)."
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 25,
+    "journal_entries_since_distillation": 26,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
