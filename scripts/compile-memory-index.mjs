@@ -70,9 +70,19 @@ function listDomainDirs(dir) {
 }
 
 /**
- * Computa o sourceHash: sha256 sobre a lista ORDENADA de "caminho relativo:mtimeMs:tamanho"
+ * Computa o sourceHash: sha256 sobre a lista ORDENADA de "caminho relativo:sha256(conteúdo)"
  * de TODOS os .md em rules/ e anti-patterns/, válidos ou não — é o gate de frescor (FR-014),
  * não depende de terem passado o validador.
+ *
+ * O sinal é o CONTEÚDO, nunca metadado de sistema de arquivos. Até a 079 isto era
+ * `caminho:mtimeMs:tamanho`, e o git reescreve mtime em merge/checkout/clone/stash sem tocar um
+ * byte — o gate acusava "desatualizado" com a árvore limpa (AP-349). Um verificador cronicamente
+ * vermelho ensina a recompilar no reflexo, e a próxima reprovação (a legítima) recebe o mesmo
+ * reflexo. O `tamanho` saiu junto: não acrescenta nada sobre um sha256 do mesmo byte-stream.
+ *
+ * Custo medido em 2026-09-06: 44 ms de hash sobre 1,42 MB / 614 arquivos, dentro de uma
+ * compilação de 158 ms. O mtime economizava esses 44 ms e pagava com falso vermelho.
+ * O caminho continua na entrada: rename com conteúdo idêntico ainda invalida o índice.
  */
 function computeSourceHash(root) {
   const entries = [];
@@ -80,8 +90,8 @@ function computeSourceHash(root) {
     const files = walkMd(path.join(root, sub));
     for (const filePath of files) {
       const rel = path.relative(root, filePath);
-      const stat = fs.statSync(filePath);
-      entries.push(`${rel}:${stat.mtimeMs}:${stat.size}`);
+      const contentHash = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+      entries.push(`${rel}:${contentHash}`);
     }
   }
   entries.sort();
@@ -179,14 +189,19 @@ function buildIndex(root) {
         const validated = validateFile(filePath, domain);
 
         if (!validated.ok) {
-          skipped.push({ id, path: relPath, reason: validated.reason });
+          skipped.push({ id, path: relPath, kind: 'invalido', reason: validated.reason });
           continue;
         }
 
         const data = validated.data;
 
         if (data.status === 'archived' || data.status === 'superseded') {
-          skipped.push({ id, path: relPath, reason: `status: ${data.status} — excluído do índice` });
+          skipped.push({
+            id,
+            path: relPath,
+            kind: 'por_desenho',
+            reason: `status: ${data.status} — excluído do índice`
+          });
           continue;
         }
 
@@ -287,6 +302,22 @@ function checkHotBudget(rawHotCandidates) {
   return { details, totalBytes, overEntries, overBytes };
 }
 
+/**
+ * Reprova o `--check` dizendo O QUE FAZER. Este é o erro que aborta um `git commit` (o hook do
+ * .lintstagedrc.mjs), então ele sai onde o operador não tem contexto nenhum — diferente da
+ * invocação manual. Segue o padrão que este mesmo arquivo já usava no erro de teto do layer "hot":
+ * dizer o número e a ação, nunca só o veredito (AP-347: gate que reprova sem dizer por quê).
+ * O escape hatch vai declarado de propósito: gate sem saída conhecida ensina a desligar o hook
+ * inteiro, que é pior do que o commit que ele deixaria passar.
+ */
+function failCheck(motivo) {
+  console.error(`Índice de memória desatualizado: ${motivo}`);
+  console.error('  Recompile com: node scripts/compile-memory-index.mjs');
+  console.error('  E inclua o índice recompilado no commit (ele é versionado).');
+  console.error('  Em emergência, `git commit --no-verify` pula o hook — o índice fica velho.');
+  process.exitCode = 1;
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const root = args.root ? path.resolve(args.root) : path.join(repoRoot, '.agent/memory');
@@ -299,13 +330,11 @@ function main() {
     try {
       existing = JSON.parse(fs.readFileSync(outPath, 'utf-8'));
     } catch (e) {
-      console.error(`índice desatualizado: recompile (não foi possível ler "${outPath}": ${e.message})`);
-      process.exitCode = 1;
+      failCheck(`não foi possível ler o índice em "${outPath}": ${e.message}`);
       return;
     }
     if (existing?.meta?.sourceHash !== sourceHash) {
-      console.error('índice desatualizado: recompile');
-      process.exitCode = 1;
+      failCheck('o conteúdo das memórias divergiu do índice compilado.');
       return;
     }
     console.log(`índice em dia (sourceHash ${sourceHash.slice(0, 12)}…)`);
@@ -378,6 +407,24 @@ function main() {
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(index));
+
+  // FR-009: o pulado por VALIDAÇÃO tem de aparecer. Antes só saía a contagem, e o motivo morria
+  // dentro de `skipped[]` — quem cunhava memória via o arquivo sumir do total e ia atrás do
+  // `--report <arquivo>` para abrir um JSON. Os `archived`/`superseded` seguem só na contagem:
+  // são exclusão POR DESENHO, e imprimi-los faria o ruído esconder justamente estes aqui.
+  // Filtra pelo MOTIVO estrutural, não pelo prefixo do texto: a mensagem é para humano e muda
+  // sem aviso; `kind` é o dado.
+  const invalidos = skipped.filter((entry) => entry.kind === 'invalido');
+  if (invalidos.length > 0) {
+    console.log(`${invalidos.length} memória(s) fora do índice por frontmatter inválido:`);
+    for (const entry of invalidos) {
+      console.log(`  - ${entry.path}`);
+      for (const linha of entry.reason.split('\n')) {
+        console.log(`      ${linha}`);
+      }
+    }
+    console.log('  Detalhe completo (com classes de erro): node scripts/validate-memory-schema.mjs');
+  }
 
   console.log(
     `Índice compilado: ${counts.total} regra(s) válida(s), ${skipped.length} pulada(s), ${hot.length} hot. -> ${outPath}`

@@ -4,12 +4,12 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "coding",
     "tier": 1,
     "spec_dir": "plans/specs/079-memory-gate-hygiene",
     "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
-    "goal": "079 PR A — estrutural: golden master + extracao do nucleo puro do validador de frontmatter",
-    "goal_type": "refactor",
+    "goal": "079 PR B — comportamental: hash de conteudo + hook pre-commit + DX",
+    "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/079-memory-gate-hygiene"
     ],
@@ -210,7 +210,7 @@
         "depende_de": "merge do PR A na main"
       }
     ],
-    "active_slice": "B (pendente — sai da main ja com o #827 dentro)"
+    "active_slice": "B"
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
