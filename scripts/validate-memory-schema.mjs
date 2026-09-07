@@ -5,9 +5,9 @@ import {
   DOMAINS,
   DOMAIN_PATH_MARKERS,
   ID_PATTERN,
-  memoryFrontmatterSchema,
   parseFrontmatter
 } from './schemas/memory-frontmatter.schema.mjs';
+import { validateFrontmatter } from './_memory/validateFrontmatter.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -153,50 +153,19 @@ function validateOneFile(filePath, { strict, claudeMdContent }) {
 
   const data = parsed.data;
 
-  // FR-020 (crítico): applies_to legado como array de tags.
-  let skipZod = false;
-  if (Array.isArray(data.applies_to)) {
-    addError(
-      fileReport,
-      'applies_to_legado',
-      'applies_to legado (array de tags) é incompatível com applies_to.paths (objeto de globs) — mover para legacy_tags'
-    );
-    skipZod = true;
-  }
-
-  // FR-022: layer vazado em status / status obsoleto.
-  let statusHandledExplicitly = false;
-  if (['hot', 'warm', 'cold'].includes(data.status)) {
-    addError(
-      fileReport,
-      'status_invalido',
-      `status "${data.status}" é layer vazado em status — status deve ser active/archived/superseded, layer é campo separado`
-    );
-    statusHandledExplicitly = true;
-  } else if (data.status === 'obsolete') {
-    addError(
-      fileReport,
-      'status_invalido',
-      'status "obsolete" deve ser normalizado para "archived"'
-    );
-    statusHandledExplicitly = true;
-  }
-
-  if (!skipZod) {
-    const result = memoryFrontmatterSchema.safeParse(data);
-    if (!result.success) {
-      for (const issue of result.error.issues) {
-        const fieldPath = issue.path.join('.');
-        if (statusHandledExplicitly && issue.path[0] === 'status') {
-          // já reportado com mensagem dedicada acima — evita duplicar o mesmo defeito.
-          continue;
-        }
-        if (issue.path[0] === 'hot_reason') {
-          addError(fileReport, 'hot_sem_hot_reason', `Campo "${fieldPath}": ${issue.message}`);
-        } else {
-          addError(fileReport, 'outros', `Campo "${fieldPath || '(raiz)'}": ${issue.message}`);
-        }
-      }
+  // Checagem de frontmatter COMPARTILHADA com compile-memory-index.mjs (079/Slice A). Antes eram
+  // duas implementações e elas divergiram: a de lá parava no primeiro erro do Zod. O que continua
+  // aqui é o que depende de contexto global — domain, O4 e o filtro zero — e a CLASSIFICAÇÃO do
+  // erro, que só este consumidor tem.
+  for (const issue of validateFrontmatter(data)) {
+    if (issue.kind === 'applies_to_legado') {
+      addError(fileReport, 'applies_to_legado', issue.message);
+    } else if (issue.kind === 'status_invalido') {
+      addError(fileReport, 'status_invalido', issue.message);
+    } else if (issue.pathSegments[0] === 'hot_reason') {
+      addError(fileReport, 'hot_sem_hot_reason', `Campo "${issue.path}": ${issue.message}`);
+    } else {
+      addError(fileReport, 'outros', `Campo "${issue.path}": ${issue.message}`);
     }
   }
 
@@ -366,3 +335,8 @@ function main() {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
+
+// Exportado para caracterização em teste (079/Slice A). A guarda acima já impede que o import
+// dispare a CLI; sem este export, `validateOneFile` só era alcançável rodando o binário inteiro
+// sobre o acervo real — que ignora `--root` e não aceita fixture.
+export { validateOneFile };
