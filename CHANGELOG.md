@@ -7,6 +7,29 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O gate de frescor da memória volta a significar alguma coisa — e passa a rodar sozinho
+
+- **Process** (`no-user-impact`). A verificação que diz se o índice de memória está em dia
+  comparava **carimbo de horário de arquivo**, não conteúdo. O git reescreve esse carimbo em
+  `merge`, `checkout`, `clone` e `stash` sem alterar um byte, então a verificação acusava
+  "desatualizado" com a árvore limpa. O dano não é a reprovação: é a **erosão** — um verificador
+  cronicamente vermelho ensina a recompilar no reflexo, e a próxima reprovação, a legítima, recebe
+  o mesmo reflexo. O sinal passa a ser o **conteúdo** das memórias.
+  Medido no mesmo roteiro, com os dois sinais lado a lado: depois de tocar os 614 arquivos sem
+  mudar nada, o sinal antigo reprova e o novo passa; alterando **um byte**, o novo reprova e volta
+  a passar quando o byte é restaurado. A correção não pode virar cegueira, e essa contraprova é o
+  que garante.
+- **Process** (`no-user-impact`). A mesma verificação agora **roda sozinha** antes de cada commit
+  que altere memória — antes ela existia e dependia de alguém lembrar. Commit que não toca memória
+  não paga nada: o filtro é o próprio glob de arquivos preparados (medido: 389 ms sem memória no
+  diff, 689 ms com). Quando reprova, a mensagem diz **o comando** de recompilação e o escape hatch,
+  em vez de só o veredito — ela agora aparece abortando um commit, onde quem lê não tem contexto.
+- **Process** (`no-user-impact`). Memória recusada por cabeçalho inválido passa a **aparecer na
+  saída**, com o caminho e todos os problemas de uma vez. Antes só saía a contagem e o motivo ficava
+  num relatório à parte, o que custava uma rodada de tentativa e erro por defeito. As excluídas por
+  desenho (`archived`/`superseded`) seguem só na contagem, para não afogar justamente estas.
+  Novo atalho de descoberta: `npm run validate:memory`.
+
 ### Uma só checagem de frontmatter de memória, em vez de duas que divergiram
 
 - **Process** (`no-user-impact`). As duas ferramentas que validam o cabeçalho das memórias do

@@ -35,6 +35,7 @@
     "test:fast": "npm run test:fast --workspace @dosiq/web",
     "test:lowram": "npm run test:lowram --workspace @dosiq/web",
     "// --- Validation Scripts (with timeout protection) ---": "",
+    "validate:memory": "node scripts/validate-memory-schema.mjs",
     "validate:quick": "npm run lint && npm run validate:quick --workspace @dosiq/web",
     "validate:agent": "npm run validate:agent --workspace @dosiq/web",
     "validate:full": "npm run lint && npm run validate:full --workspace @dosiq/web",
