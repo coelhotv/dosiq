@@ -280,5 +280,8 @@
       "816": "67baebe9 — corpus + piloto (mergeado)",
       "devflow": "6579133 — .mjs/.cjs no CODE_GLOBS do RC6 (pushed)"
     }
+  },
+  "gaps_declarados": {
+    "journal_fora_do_git": "079/C5 do Slice A, achado nao previsto: `.gitignore:78` ignora `.agent/memory/journal/` INTEIRO. Os journals W33/W34/W35/W36 (304KB, as 4 semanas mais recentes) estao FORA do git; W25/W30/W31 sao tracked (entraram antes do ignore). Importa por tres motivos: (1) a constituicao VIII diz que a memoria de filesystem e canonica e o journal e onde o C5 registra a entrega; (2) `recount-memory.mjs:51` usa o journal como UM DOS 5 TRACOS de onde deriva incident_count/last_referenced — traco nao versionado = numero que muda conforme a maquina; (3) e a MESMA CLASSE do R-319 (o estado que um gate le mora em local ignorado pelo git), que a spec 079 §6.2 declarou fora de escopo. NAO CORRIGIDO nesta sessao: mudar .gitignore e decisao do PO, nao acabamento de fatia."
   }
 }
