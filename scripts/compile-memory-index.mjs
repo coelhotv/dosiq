@@ -17,6 +17,7 @@ import {
   memoryFrontmatterSchema,
   parseFrontmatter
 } from './schemas/memory-frontmatter.schema.mjs';
+import { validateFrontmatter, formatIssues } from './_memory/validateFrontmatter.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,8 +91,11 @@ function computeSourceHash(root) {
 }
 
 /**
- * Valida um arquivo de memória (mesma lógica de scripts/validate-memory-schema.mjs, reimplementada
- * aqui em forma de função pura porque aquele script não exporta a checagem de arquivo único).
+ * Valida um arquivo de memória. A checagem de frontmatter vive em _memory/validateFrontmatter.mjs
+ * e é COMPARTILHADA com scripts/validate-memory-schema.mjs — antes havia duas implementações, e
+ * elas divergiram: esta parava no primeiro erro do Zod enquanto a de lá já acumulava todos (079).
+ * O que muda aqui é só a FORMA de reportar: este consumidor precisa de uma `reason` em string
+ * porque o arquivo inválido é PULADO e o índice segue sendo montado.
  * @returns {{ ok: true, data: object } | { ok: false, reason: string }}
  */
 function validateFile(filePath, domain) {
@@ -115,21 +119,23 @@ function validateFile(filePath, domain) {
 
   const data = parsed.data;
 
-  if (Array.isArray(data.applies_to)) {
-    return {
-      ok: false,
-      reason: 'applies_to legado (array de tags) — incompatível com applies_to.paths'
-    };
+  const issues = validateFrontmatter(data);
+  if (issues.length > 0) {
+    return { ok: false, reason: formatIssues(issues) };
   }
 
-  const result = memoryFrontmatterSchema.safeParse(data);
-  if (!result.success) {
-    const first = result.error.issues[0];
-    const fieldPath = first.path.join('.');
-    return { ok: false, reason: `Campo "${fieldPath || '(raiz)'}": ${first.message}` };
+  // Revalida para obter o objeto já com os defaults do schema aplicados. `validateFrontmatter`
+  // devolve issues, não dados: manter a fronteira pura custa este segundo parse (~ms sobre o
+  // acervo inteiro) e evita que o núcleo passe a carregar responsabilidade de transformação.
+  // `safeParse` e não `parse`: se um dia o núcleo filtrar uma issue e devolver lista vazia sobre
+  // dado inválido, o comportamento aqui tem de seguir sendo PULAR o arquivo — nunca derrubar a
+  // compilação inteira com uma exceção.
+  const parsedData = memoryFrontmatterSchema.safeParse(data);
+  if (!parsedData.success) {
+    return { ok: false, reason: 'frontmatter inválido após a checagem compartilhada (divergência)' };
   }
 
-  return { ok: true, data: result.data };
+  return { ok: true, data: parsedData.data };
 }
 
 function specificity(glob) {

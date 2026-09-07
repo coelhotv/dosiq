@@ -7,6 +7,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Uma só checagem de frontmatter de memória, em vez de duas que divergiram
+
+- **Process** (`no-user-impact`). As duas ferramentas que validam o cabeçalho das memórias do
+  projeto mantinham **cópias separadas** da mesma checagem, e elas divergiram em silêncio: uma
+  parava no primeiro campo errado enquanto a outra já listava todos. Quem registrava uma memória
+  nova alcançava a cega primeiro e descobria os problemas **um por rodada** — quatro tentativas
+  para um arquivo com três defeitos. A checagem passa a viver em um lugar só, compartilhado pelas
+  duas, e devolve tudo de uma vez.
+  A fronteira é estreita de propósito: o trecho compartilhado recebe o cabeçalho já lido e devolve
+  a lista de problemas — não lê arquivo, não lê o `CLAUDE.md` e não conhece modo estrito. O que
+  depende de contexto global (cobertura de domínios, redundância com o `CLAUDE.md`, validade do
+  diretório) continua onde estava.
+  **Nada muda no produto e nada muda no índice compilado**: a asserção desta entrega é que o
+  artefato sai idêntico byte a byte fora do carimbo de geração — 576 regras válidas e 38 puladas
+  antes e depois, sendo as puladas 37 `archived` e 1 `superseded`, exclusão por desenho.
+  Limite declarado: quando o campo `layer` está ausente ou inválido, o validador ainda devolve
+  **um** problema só. Não é defeito do acumulador — o esquema é uma união discriminada por esse
+  campo, e sem ele não há como saber quais outras regras aplicar.
+
 ### Recorrência de memória deixa de ser adivinhação: contador em modo leitura
 
 - **Process** (`no-user-impact`). `scripts/recount-memory.mjs` deriva de cinco traços que o
