@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "idle",
-    "status": "completed",
+    "mode": "distillation",
+    "status": "distilled",
     "tier": 1,
     "spec_dir": "plans/specs/079-memory-gate-hygiene",
     "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
-    "goal": "079 — higiene dos gates de memoria (ENTREGUE: #827 + #828)",
+    "goal": "compress and distill project memory",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/079-memory-gate-hygiene"
@@ -154,7 +154,8 @@
     "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
-      "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05)."
+      "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05).",
+      "CLAUDE.md: avaliar SUBIR R-231/R-267/R-270/AP-186 (zero citacao, D3 do distill 2026-09-07) -- adiado pro proximo distill"
     ],
     "pending_migrations": [
       {
@@ -223,13 +224,13 @@
     "next_session": "Sessao FRESH para /devflow-spec das 080 e 081 (draft, dossies prontos em plans/specs/). A 080 tem uma pergunta que pode dissolver o proprio impasse antes de qualquer desenho: o A/B que mediu alcance 100%->68% foi rodado ANTES do seletor entrar? Se sim, o numero e de um mundo anterior — o seletor injeta memorias que o corte tiraria, e a perda real seria menor. Verificar isso PRIMEIRO. Distill tambem pendente (counter 25, adiado de proposito pelo PO para sessao propria)."
   },
   "memory": {
-    "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 26,
+    "last_distillation": "2026-09-07T00:00:00-03:00",
+    "journal_entries_since_distillation": 0,
     "rules_count": 270,
-    "anti_patterns_count": 343,
-    "decisions_count": 97,
+    "anti_patterns_count": 344,
+    "decisions_count": 98,
     "contracts_count": 34,
-    "distillation_due": true
+    "distillation_due": false
   },
   "genes": {
     "memory_distillation_threshold": 15,
