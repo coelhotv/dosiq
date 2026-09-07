@@ -223,7 +223,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 24,
+    "journal_entries_since_distillation": 25,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
@@ -291,6 +291,7 @@
     }
   },
   "gaps_declarados": {
-    "journal_fora_do_git": "079/C5 do Slice A, achado nao previsto: `.gitignore:78` ignora `.agent/memory/journal/` INTEIRO. Os journals W33/W34/W35/W36 (304KB, as 4 semanas mais recentes) estao FORA do git; W25/W30/W31 sao tracked (entraram antes do ignore). Importa por tres motivos: (1) a constituicao VIII diz que a memoria de filesystem e canonica e o journal e onde o C5 registra a entrega; (2) `recount-memory.mjs:51` usa o journal como UM DOS 5 TRACOS de onde deriva incident_count/last_referenced — traco nao versionado = numero que muda conforme a maquina; (3) e a MESMA CLASSE do R-319 (o estado que um gate le mora em local ignorado pelo git), que a spec 079 §6.2 declarou fora de escopo. NAO CORRIGIDO nesta sessao: mudar .gitignore e decisao do PO, nao acabamento de fatia."
+    "journal_fora_do_git": "079/C5 do Slice A, achado nao previsto: `.gitignore:78` ignora `.agent/memory/journal/` INTEIRO. Os journals W33/W34/W35/W36 (304KB, as 4 semanas mais recentes) estao FORA do git; W25/W30/W31 sao tracked (entraram antes do ignore). Importa por tres motivos: (1) a constituicao VIII diz que a memoria de filesystem e canonica e o journal e onde o C5 registra a entrega; (2) `recount-memory.mjs:51` usa o journal como UM DOS 5 TRACOS de onde deriva incident_count/last_referenced — traco nao versionado = numero que muda conforme a maquina; (3) e a MESMA CLASSE do R-319 (o estado que um gate le mora em local ignorado pelo git), que a spec 079 §6.2 declarou fora de escopo. NAO CORRIGIDO nesta sessao: mudar .gitignore e decisao do PO, nao acabamento de fatia.",
+    "079_auditoria_056_060": "Auditoria 2026-09-07 apos as entregas da 078/079. (1) DRIFT DE REGISTRO CORRIGIDO: 8 tarefas ja entregues estavam marcadas abertas — 060 T012 (o seletor entrou por DEFAULT com fail-open, ai-review.sh:417-468, e nao pela env var RC6_RULE_SELECTOR que a spec previa), T024, T027, T033, T035 e 056 T021/T022; cada uma anotada com a evidencia. (2) CONTRADICAO INTERNA na 056: o T016 cobra confirmar o SC-001 (<=60KB) que o proprio T027 FALSIFICOU — enquanto existir assim, a 056 nao fecha por construcao; reescopado para SC-002+SC-006. (3) GAP CENTRAL, SEM DONO: o seletor da 060 entrou mas os indices crus NAO sairam (RC6_INDEXES default=1, clamp_lines vivo) — o preambulo carrega os DOIS mecanismos e voltou a 97.727B no #828 contra 93.188B no #822, +4,5KB em 3 dias no mesmo clamp. A premissa que abriu a 060 ('o preambulo cresce O(catalogo)') CONTINUA DE PE. O ADR-097 esta proposed porque o A/B do corte mediu alcance 100%->68%. PO decidiu: SPEC PROPRIA para essa decisao, com o ADR-097 e a serie de medicoes como insumo. (4) 060 realmente aberto: T017 (decaimento 90d), T020 (fundir AP cuja licao ja vive numa R), T021 (arquivamento 180d => layer archival — o D2 do devflow decide por JULGAMENTO e usa layer=cold, nao archival), T022 (delta de bytes no distill), T026 (remover clamp). (5) 056 realmente aberto: T014 bloqueada por ESTRUTURA e nao por esquecimento (o A/B precisa de contraste e os PRs recentes nao dao — medido 3x), T017 e T041 dependem dela, T032/T038 sao Fase 2."
   }
 }
