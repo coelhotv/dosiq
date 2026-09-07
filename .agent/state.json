@@ -4,16 +4,16 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "tier": 1,
     "spec_dir": "plans/specs/079-memory-gate-hygiene",
     "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
-    "goal": "079 PR B — comportamental: hash de conteudo + hook pre-commit + DX",
+    "goal": "079 — higiene dos gates de memoria (ENTREGUE: #827 + #828)",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/079-memory-gate-hygiene"
     ],
-    "merged_squash": "3f4c8bcd (squash merge into main)",
+    "merged_squash": "88b72b7a (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -119,6 +119,15 @@
         "date": "2026-09-07",
         "base_branch": "main",
         "note": "UMA checagem de frontmatter no lugar de duas que divergiram. O acumulativo JA EXISTIA em validate-memory-schema.mjs:188 e o compile reimplementou cego com issues[0] — o comentario :92-93 confessava a duplicacao. Achado do RC4, nao da spec: o defeito #3 estava MAL NOMEADO ('o validador reporta um campo por vez' era, na verdade, 'existem dois validadores, o bom nao e descobrivel, e a sessao alcanca primeiro o pior'). Fronteira decidida no RC3/F7 = NUCLEO PURO: recebe o frontmatter parseado, devolve issues[], nao le arquivo, nao le CLAUDE.md, nao conhece strict; domain/O4/filtro zero FICAM no standalone porque puxa-los poria a leitura do CLAUDE.md no caminho critico de todo commit de memoria (que e onde o --check roda no Slice B). GUARD FULL cumprido com GOLDEN MASTER DE GRACA: o indice e funcao pura das 614 memorias reais, entao antes/depois saiu identico fora de meta, sourceHash igual, 38 puladas iguais (37 archived + 1 superseded) — e o insumo nao foi escrito por quem escreveu o codigo (imune ao AP-346). DECLARADO E ACEITO PELO PO: o compile AMPLIOU o que valida (status layer-vazado e obsolete, que so o standalone checava) — comportamento novo numa fatia declarada estrutural, com efeito medido ZERO (status_invalido: 0 nas 614); preservar a cegueira exigiria passar opcao ao nucleo, poluindo a fronteira recem-fechada. LIMITE ESTRUTURAL FIXADO EM TESTE: memoryFrontmatterSchema e z.discriminatedUnion('layer') — sem layer valido o Zod devolve UMA issue no discriminante e nao avalia o resto; 'todos os problemas de uma vez' vale para o arquivo cujo layer esta certo. RC5: 2 auto-fixes (import morto; parse() -> safeParse(), senao o compile trocaria PULAR o arquivo invalido por DERRUBAR a compilacao inteira se o nucleo um dia filtrasse uma issue) + 1 ASK levado ao PO. RC6 agy clean, cov 2/2, refuted=0. ACHADO DE AMBIENTE: `node --test scripts/__tests__/` QUEBRA no Node 22.22.3 (MODULE_NOT_FOUND, trata o diretorio como modulo) — precisa do glob *.mjs; o comando estava errado no plan.md e foi emendado. ACHADO PARA O SLICE B: o commit imprimiu 'lint-staged could not find any staged files matching configured tasks', confirmando na pratica que scripts/** e .agent/memory/** estao fora de todo glob hoje. SEGUNDO ACHADO PARA O SLICE B: o `--check` passou exit=0 logo apos o merge — o pull nao tocou os arquivos de memoria, entao o falso vermelho do AP-349 e INTERMITENTE (depende de o git reescrever mtime), nao constante. SQP Backend/Infra, no-user-impact, sem bump. 79/79 testes, validate:agent 2384/2384, strict-island ratchet OK."
+      },
+      {
+        "pr": 828,
+        "squash": "88b72b7a",
+        "spec": "079 Slice B — hash de conteudo + hook pre-commit + DX",
+        "tier": 1,
+        "date": "2026-09-07",
+        "base_branch": "main",
+        "note": "SPEC 079 FECHADA, 6/6 POs. sourceHash passou de caminho:mtimeMs:tamanho para caminho:sha256(conteudo); tamanho saiu junto (nao acrescenta nada sobre um sha256 do mesmo byte-stream), caminho ficou (rename com conteudo identico deve invalidar). Custo real 44ms sobre 1,42MB/614 arquivos numa compilacao de 158ms — o metadado poupava isso e pagava com falso vermelho. ⚠️ O ROTEIRO DA PROPRIA SPEC NAO REPRODUZIA O DEFEITO: `git checkout HEAD~1 -- path && git checkout HEAD -- path` NAO reescreve mtime quando o conteudo e identico, entao a PO-1 como escrita dava exit=0 com o sinal ANTIGO — provava a ausencia do bug que existia. Fechada com `touch` (o mecanismo real) e rodando OS DOIS SINAIS LADO A LADO: antigo 0->1, novo 0->0. Emendado no AP-349, que carregava esse mesmo roteiro na secao Deteccao. SEGUNDA EMENDA no AP-349: o falso vermelho era INTERMITENTE (o --check passou exit=0 apos o merge do #827 porque aquele pull nao tocou memoria), o que torna o defeito PIOR — vermelho constante seria investigado no primeiro dia, intermitente ensina o reflexo e sobrevive meses. HOOK: glob .agent/memory/**/*.md no .lintstagedrc.mjs, em FORMA DE FUNCAO (o lint-staged anexa os arquivos staged e o --check opera sobre o acervo; depender do parseArgs ignorar seria acoplamento silencioso). O FILTRO POR DIFF E O PROPRIO GLOB — zero linha de `git diff | grep` a mao. Sem mensagem de sucesso propria: a unica saida positiva e a do script (AP-325 neutralizado por construcao). Medido: 389ms sem memoria no diff x 689ms com. LIMITE MEDIDO E DECLARADO AO LADO DO GLOB: o --check compara o DISCO com o indice EM DISCO, nao o que esta sendo commitado — recompilar sem `git add` do indice passa com o artefato versionado velho (verificado em branch descartavel, exit=0). NAO corrigido de proposito: fechar exigiria `git diff --cached` no hook, a logica a mao que este desenho evita. Isso virou EMENDA NO AP-348 (busca por classe casou: 'o gate valida um alvo e confere outro') com a licao nova: o GATILHO tambem e um redirecionador — pergunte qual universo o gate confere contra qual o disparou; em hook de git sao universos diferentes por natureza (staged x working tree) e coincidem na maior parte do tempo. DX (RC4 EXPANSION): FR-008 mensagem com comando e --no-verify no padrao que o arquivo ja usava no erro de teto hot (AP-347); FR-009 pulado por validacao no stdout com archived/superseded fora para nao afogar; FR-010 npm run validate:memory. RC5: 1 auto-fix — o filtro dos pulados reconhecia PREFIXO DE TEXTO ('status: ') e virou campo estrutural `kind` (mensagem e para humano e muda sem aviso). RC6: 1a execucao FALHOU por stream interrompido e o script emitiu fail-open; registrado como NAO-EXECUTADO e nao como clean (AP-325), rerodado uma vez, 2a completa e clean. 84/84 testes, validate:agent 2384/2384, strict-island OK. SQP Backend/Infra, no-user-impact, sem bump."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -210,11 +219,11 @@
         "depende_de": "merge do PR A na main"
       }
     ],
-    "active_slice": "B"
+    "active_slice": null
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 23,
+    "journal_entries_since_distillation": 24,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
@@ -226,7 +235,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-07T15:22:56.409525-03:00"
+    "index_loaded_at": "2026-09-07T15:54:51.573932-03:00"
   },
   "code_review": {
     "status": "clean",
