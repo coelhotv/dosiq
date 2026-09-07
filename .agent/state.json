@@ -4,7 +4,7 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "coding",
+    "status": "completed",
     "tier": 1,
     "spec_dir": "plans/specs/079-memory-gate-hygiene",
     "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
@@ -13,7 +13,7 @@
     "spec_dirs": [
       "plans/specs/079-memory-gate-hygiene"
     ],
-    "merged_squash": "96eb79f5 (squash merge into main)",
+    "merged_squash": "3f4c8bcd (squash merge into main)",
     "merged_history": [
       {
         "pr": 817,
@@ -110,6 +110,15 @@
         "base_branch": "main",
         "devflow_sha": "7054a47",
         "note": "O DEVFLOW ganhou o caminho que so tinha para o sucesso. attempts.jsonl + attempts.mjs (--list/--check/--add): o gate cruza os reverts do git log e confere monotonicidade contra origin/main. ALCANCE POR FONTE DIRETA: o --find-similar do C5 le o ledger do arquivo e o compiled_rules_index.json NAO foi tocado — alcance no C5 com custo ZERO no preambulo do RC6 (emenda 1 do ADR-098). 3 entradas de backfill, incluindo T035a ACEITA como denominador. TRES LIMITES DECLARADOS, nao contornados: (1) reversao feita na ARVORE nao deixa traco em git log — o gate impede reverter POR COMMIT sem registrar, nao impede esquecer; (2) o repo mergeia por SQUASH, entao entrada e intervencao colapsam num commit — quem segura e a monotonicidade, nao a separacao de commits; (3) os 2 casos rejeitados nao tem SHA porque nunca viraram commit, e sha.trace declara a procedencia ausente em vez de inventa-la (R-307). DOIS APs CUNHADOS, ambos de defeito MEU pego por gate: AP-348 (REPO_ROOT do __dirname fazia o gate ler um ledger e cobrar reverts de OUTRO repo — e DOIS testes passavam pelo MOTIVO ERRADO, fechando por 2 reverts antigos do dosiq; mais 2 instancias da mesma classe no mesmo arquivo) e AP-349 (o proprio --check do indice compilado usa hash de MTIME e gritou 'desatualizado' com arvore limpa logo apos o squash, com diff so em generatedAt — falso VERMELHO rotineiro erode o gate; parente de sinal invertido do AP-337). ACHADO COLATERAL: AP-347, cunhada no dia anterior, estava FORA do indice compilado por falta de summary — memoria cunhada e INALCANCAVEL pela busca que o C5 obriga, que e a doenca que esta spec ataca; corrigida junto. RC5 2 auto-fix / 0 ASK; RC6 CLEAN de verdade (agy, 3/3 chunks, partial=false, refuted=0) — e desta vez APLICAVEL, porque o diff e .mjs, dentro do CODE_GLOBS desde 6579133. T4.9 RESPONDIDA: primeira sessao sob as 7 skills, nenhum gate do C1-C5 se comportou diferente. SQP Backend/Infra tooling, no-user-impact, sem bump."
+      },
+      {
+        "pr": 827,
+        "squash": "3f4c8bcd",
+        "spec": "079 Slice A — nucleo puro do validador de frontmatter",
+        "tier": 1,
+        "date": "2026-09-07",
+        "base_branch": "main",
+        "note": "UMA checagem de frontmatter no lugar de duas que divergiram. O acumulativo JA EXISTIA em validate-memory-schema.mjs:188 e o compile reimplementou cego com issues[0] — o comentario :92-93 confessava a duplicacao. Achado do RC4, nao da spec: o defeito #3 estava MAL NOMEADO ('o validador reporta um campo por vez' era, na verdade, 'existem dois validadores, o bom nao e descobrivel, e a sessao alcanca primeiro o pior'). Fronteira decidida no RC3/F7 = NUCLEO PURO: recebe o frontmatter parseado, devolve issues[], nao le arquivo, nao le CLAUDE.md, nao conhece strict; domain/O4/filtro zero FICAM no standalone porque puxa-los poria a leitura do CLAUDE.md no caminho critico de todo commit de memoria (que e onde o --check roda no Slice B). GUARD FULL cumprido com GOLDEN MASTER DE GRACA: o indice e funcao pura das 614 memorias reais, entao antes/depois saiu identico fora de meta, sourceHash igual, 38 puladas iguais (37 archived + 1 superseded) — e o insumo nao foi escrito por quem escreveu o codigo (imune ao AP-346). DECLARADO E ACEITO PELO PO: o compile AMPLIOU o que valida (status layer-vazado e obsolete, que so o standalone checava) — comportamento novo numa fatia declarada estrutural, com efeito medido ZERO (status_invalido: 0 nas 614); preservar a cegueira exigiria passar opcao ao nucleo, poluindo a fronteira recem-fechada. LIMITE ESTRUTURAL FIXADO EM TESTE: memoryFrontmatterSchema e z.discriminatedUnion('layer') — sem layer valido o Zod devolve UMA issue no discriminante e nao avalia o resto; 'todos os problemas de uma vez' vale para o arquivo cujo layer esta certo. RC5: 2 auto-fixes (import morto; parse() -> safeParse(), senao o compile trocaria PULAR o arquivo invalido por DERRUBAR a compilacao inteira se o nucleo um dia filtrasse uma issue) + 1 ASK levado ao PO. RC6 agy clean, cov 2/2, refuted=0. ACHADO DE AMBIENTE: `node --test scripts/__tests__/` QUEBRA no Node 22.22.3 (MODULE_NOT_FOUND, trata o diretorio como modulo) — precisa do glob *.mjs; o comando estava errado no plan.md e foi emendado. ACHADO PARA O SLICE B: o commit imprimiu 'lint-staged could not find any staged files matching configured tasks', confirmando na pratica que scripts/** e .agent/memory/** estao fora de todo glob hoje. SEGUNDO ACHADO PARA O SLICE B: o `--check` passou exit=0 logo apos o merge — o pull nao tocou os arquivos de memoria, entao o falso vermelho do AP-349 e INTERMITENTE (depende de o git reescrever mtime), nao constante. SQP Backend/Infra, no-user-impact, sem bump. 79/79 testes, validate:agent 2384/2384, strict-island ratchet OK."
       }
     ],
     "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
@@ -201,11 +210,11 @@
         "depende_de": "merge do PR A na main"
       }
     ],
-    "active_slice": "A"
+    "active_slice": "B (pendente — sai da main ja com o #827 dentro)"
   },
   "memory": {
     "last_distillation": "2026-09-01T21:47:00-03:00",
-    "journal_entries_since_distillation": 22,
+    "journal_entries_since_distillation": 23,
     "rules_count": 270,
     "anti_patterns_count": 343,
     "decisions_count": 97,
@@ -217,7 +226,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-06T15:48:15-03:00"
+    "index_loaded_at": "2026-09-07T15:22:56.409525-03:00"
   },
   "code_review": {
     "status": "clean",
@@ -227,12 +236,14 @@
     "note": "RC5 do PR A. 2 auto-fixes: import morto de memoryFrontmatterSchema no standalone; parse() -> safeParse() no compile (parse lancaria excecao e trocaria PULAR o arquivo por DERRUBAR a compilacao, se o nucleo um dia filtrar uma issue). 1 ASK: o compile passou a reprovar status layer-vazado/obsolete, que ele NAO checava — comportamento ampliado numa fatia declarada estrutural; efeito medido ZERO no acervo (indice identico fora de meta, 576/38). DECISAO DO PO: aceitar a convergencia e DECLARAR no corpo do PR — preservar a cegueira exigiria passar opcao ao nucleo, poluindo a fronteira pura que o RC3/F7 acabou de fechar."
   },
   "ai_review": {
-    "engine": "n/a",
-    "status": "nao-aplicavel",
+    "engine": "agy (2 chunks)",
+    "status": "clean",
     "critical": 0,
     "high": 0,
-    "pr": 821,
-    "note": "Diff do dosiq e 100% .md/JSON; o conteudo revisavel (.md/.sh) vive no devflow ab93dd2, fora do CODE_GLOBS e sem fluxo de PR. Declarado como gate NAO-APLICAVEL, nunca como clean: zero finding sobre zero arquivo revisado nao e evidencia (AP-325)."
+    "introduced_critical": 0,
+    "introduced_high": 0,
+    "pr": 827,
+    "note": "cov 2/2, partial=false, refuted=0, 0 findings. Diff de ~350 linhas em 4 arquivos, nao e diff gordo — cobertura integral declarada pelo proprio relatorio."
   },
   "handoff": {
     "_comment": "Contexto de sessão que NÃO está em nenhum outro arquivo. Escrito antes de um /compact manual em 2026-08-31.",
