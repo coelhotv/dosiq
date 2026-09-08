@@ -3,15 +3,16 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "distillation",
-    "status": "distilled",
+    "mode": "planning",
+    "status": "planned",
     "tier": 1,
-    "spec_dir": "plans/specs/079-memory-gate-hygiene",
-    "spec": "plans/specs/079-memory-gate-hygiene/spec.md",
-    "goal": "compress and distill project memory",
+    "spec_dir": "plans/specs/081-rc6-surface-scope",
+    "spec": "plans/specs/081-rc6-surface-scope/spec.md",
+    "goal": "081 — RC6 por superficie: reconciliar a regra do CI com a regra escrita",
     "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/079-memory-gate-hygiene"
+      "plans/specs/080-rc6-preamble-budget",
+      "plans/specs/081-rc6-surface-scope"
     ],
     "merged_squash": "88b72b7a (squash merge into main)",
     "merged_history": [
@@ -130,26 +131,28 @@
         "note": "SPEC 079 FECHADA, 6/6 POs. sourceHash passou de caminho:mtimeMs:tamanho para caminho:sha256(conteudo); tamanho saiu junto (nao acrescenta nada sobre um sha256 do mesmo byte-stream), caminho ficou (rename com conteudo identico deve invalidar). Custo real 44ms sobre 1,42MB/614 arquivos numa compilacao de 158ms — o metadado poupava isso e pagava com falso vermelho. ⚠️ O ROTEIRO DA PROPRIA SPEC NAO REPRODUZIA O DEFEITO: `git checkout HEAD~1 -- path && git checkout HEAD -- path` NAO reescreve mtime quando o conteudo e identico, entao a PO-1 como escrita dava exit=0 com o sinal ANTIGO — provava a ausencia do bug que existia. Fechada com `touch` (o mecanismo real) e rodando OS DOIS SINAIS LADO A LADO: antigo 0->1, novo 0->0. Emendado no AP-349, que carregava esse mesmo roteiro na secao Deteccao. SEGUNDA EMENDA no AP-349: o falso vermelho era INTERMITENTE (o --check passou exit=0 apos o merge do #827 porque aquele pull nao tocou memoria), o que torna o defeito PIOR — vermelho constante seria investigado no primeiro dia, intermitente ensina o reflexo e sobrevive meses. HOOK: glob .agent/memory/**/*.md no .lintstagedrc.mjs, em FORMA DE FUNCAO (o lint-staged anexa os arquivos staged e o --check opera sobre o acervo; depender do parseArgs ignorar seria acoplamento silencioso). O FILTRO POR DIFF E O PROPRIO GLOB — zero linha de `git diff | grep` a mao. Sem mensagem de sucesso propria: a unica saida positiva e a do script (AP-325 neutralizado por construcao). Medido: 389ms sem memoria no diff x 689ms com. LIMITE MEDIDO E DECLARADO AO LADO DO GLOB: o --check compara o DISCO com o indice EM DISCO, nao o que esta sendo commitado — recompilar sem `git add` do indice passa com o artefato versionado velho (verificado em branch descartavel, exit=0). NAO corrigido de proposito: fechar exigiria `git diff --cached` no hook, a logica a mao que este desenho evita. Isso virou EMENDA NO AP-348 (busca por classe casou: 'o gate valida um alvo e confere outro') com a licao nova: o GATILHO tambem e um redirecionador — pergunte qual universo o gate confere contra qual o disparou; em hook de git sao universos diferentes por natureza (staged x working tree) e coincidem na maior parte do tempo. DX (RC4 EXPANSION): FR-008 mensagem com comando e --no-verify no padrao que o arquivo ja usava no erro de teto hot (AP-347); FR-009 pulado por validacao no stdout com archived/superseded fora para nao afogar; FR-010 npm run validate:memory. RC5: 1 auto-fix — o filtro dos pulados reconhecia PREFIXO DE TEXTO ('status: ') e virou campo estrutural `kind` (mensagem e para humano e muda sem aviso). RC6: 1a execucao FALHOU por stream interrompido e o script emitiu fail-open; registrado como NAO-EXECUTADO e nao como clean (AP-325), rerodado uma vez, 2a completa e clean. 84/84 testes, validate:agent 2384/2384, strict-island OK. SQP Backend/Infra, no-user-impact, sem bump."
       }
     ],
-    "previous_session_note": "2026-09-02 specifying da 078: draft -> spec Tier 2 (5 slices, 1 PR/slice, alvo ~/SKILLS/devflow). 13 POs, 14 FR, 7 SC. 5 das 7 OQs do draft resolvidas por medicao (top-K=12; teto = chunk budget 49019B e nao a faixa do paper; democao pelo mesmo evento; severidade objetiva; global_base = 616KB write-only congelado desde 2026-04-08). Falta plan.md/tasks.md/analysis.md (Planning + C1.5) e o ADR-097 da separacao wiki<->skill, que por R-319 nasce em .agent/memory/decisions/, nunca em plans/.",
+    "previous_session_note": "2026-09-07 specifying da 081. O dossie tratava a regra por superficie como tese a implementar; ela ja esta implementada no CI (paths-ignore do ai-review-gate.yml) e o agente obedece o texto (Tier). 5 POs, 8 FR, 4 SC, 3 NEEDS CLARIFICATION.",
     "ceremonies_run": [
-      "devex-review",
       "eng-review"
     ],
-    "ceremony_findings_count": 17,
+    "ceremony_findings_count": 6,
     "ceremony_scope_decisions": [
-      "HOLD SCOPE",
-      "Slice 2 estende migrate-memory-frontmatter.mjs (F2, DRY)",
-      "Slice 1 read-only sem codigo de escrita (F5)",
-      "tipar incident_count/last_referenced no schema = pre-requisito do Slice 2 (F3)",
-      "Slice 1 regenera post_birth.json (F1)",
-      "F1: extrair scripts/_memory/validateFrontmatter.mjs compartilhado pelos dois validadores (o acumulativo JA existia em validate-memory-schema.mjs:188; o compile reimplementou cego, duplicacao confessada em compile-memory-index.mjs:92-93). FR-006 reescrito.",
-      "Modo DX EXPANSION: F2-F6 todos aceitos. FR-008 (mensagem cita comando + escape hatch), FR-009 (pulado por validacao visivel no stdout), FR-010 (npm script validate:memory).",
-      "Tier permanece 1, agora no TETO (~7 arquivos de 8), por decisao explicita do PO.",
-      "plan.md e tasks.md DEFASADOS: escritos contra o FR-006 antigo. Reconciliar em /devflow-plan antes do C-mode.",
-      "F7: modulo extraido e o NUCLEO PURO (frontmatter -> issues[]): parse, Zod acumulativo, applies_to legado, status. NAO le arquivo, NAO le CLAUDE.md, NAO conhece strict. O4 e filtro zero ficam no standalone.",
-      "Complexity check DISPARADO (8 arquivos, 2 scripts sem teste): dividir em 2 PRs por natureza de diff. PR A estrutural (golden master + testes + extracao, indice byte-identico fora de meta). PR B comportamental (hash + hook + DX).",
-      "Guard override UP: PO-5 vira full (diff do indice vazio sobre as 614 memorias + paridade skipZod/obsolete/classes de erro); PO-3 ganha --no-verify demonstrado.",
-      "Tier permanece 1 POR FATIA; o multi-PR aqui e disciplina de revisao, nao blast radius de epico. Tensao com a tabela de Tiers declarada."
+      "081 D1 (PO): advisory = RODAR SEM BLOQUEAR, nao \"nao rodar\". Consequencia declarada: a economia e de ATENCAO, nao de quota — metade do custo que motivou a spec permanece. Em troca preserva o braco de controle e a coleta passiva de uso da 080.",
+      "081 D2 (PO): a spec NAO decide a aposentadoria do L2. Entrega a regra + obrigacao de medir 5 PRs de PRODUTO com amostra limpa.",
+      "081 Tier: delegado ao RC3 (mesmo caminho da 080).",
+      "081 ACHADO: a regra por superficie JA EXISTE no ai-review-gate.yml (paths-ignore: docs/**, .agent/**, *.md, scripts/**, scratches/**). O CLAUDE.md:139 e o AI_REVIEW.md:31 mandam rodar por TIER. A spec e RECONCILIACAO de duas regras divergentes, nao invencao — e explica por que 6 dos 8 zeros limpos sao tooling.",
+      "RC3/081 F1 (critical): a FR-002 e ALLOWLIST; o que existe hoje e DENYLIST (paths-ignore). Nao sao equivalentes — vercel.json, package.json, turbo.json, eslint.config.js, tsconfig*, .github/**, .husky/** hoje COBRAM e passariam a advisory. Direcao do fail-safe e a decisao real.",
+      "RC3/081 F2 (critical): a lista unica da FR-001 e IMPOSSIVEL com paths-ignore — o GitHub o avalia antes do job existir. Recomendacao: remover o paths-ignore e decidir DENTRO do job (nao roda LLM, $0).",
+      "RC3/081 F3 (high): o gate ja e SOFT (sempre verde). obrigatorio x advisory nao tem efeito mecanico hoje; a PO-2 deve asserir sobre mensagem/registro, nao sobre bloqueio.",
+      "RC3/081 F4 (high): a contagem da PO-4 aponta para measurement.md em plans/ (gitignored). O que sobreviveu na serie foi o PONTEIRO no CLAUDE.md, nao o destino. Contagem vai para superficie versionada.",
+      "RC3/081 F5/F6 (medium): nao reusar map_path_to_packs (pack e DOMINIO, nao superficie — packages/design-tokens vira tooling_and_build mas e produto); e a regra precisa dizer algo sobre repo sem gate (a 080 abre PRs na skill, que implementa o proprio RC6 — blast radius maximo).",
+      "RC3/081 Guard: FULL para PO-1/PO-2 (tocam workflow que roda em todo PR) — exige PR de controle provando job verde + warning correto nos dois regimes.",
+      "RC3/081 Tier: 1. A emenda ao ADR-069 (gatilho do L2) e entregavel OBRIGATORIO, nao opcional.",
+      "Planning/081 F1: DENYLIST explicita corrigida (docs/**, .agent/**, plans/**, scripts/**, scratches/**, **/*.md). .github/** e .husky/** FORA da denylist de proposito (gate e deploy, AP-325). Fail-safe: na duvida, obrigatorio.",
+      "Planning/081 F2: paths-ignore REMOVIDO; o job roda em todo PR e decide dentro. Custo $0 — repo e PUBLICO (gh repo view: isPrivate=false).",
+      "Planning/081: lista unica em .agent/review-surfaces.json — tem de ser DADO, porque o ai-review.sh nao esta no dosiq (git ls-files so devolve o workflow); o CI nao pode reusar a funcao.",
+      "Planning/081 F4: contagem dos 5 PRs em .agent/memory/ (versionado) com ponteiro no CLAUDE.md — inverte o arranjo atual (dado no gitignored, lembrete duravel).",
+      "Planning/081 CORRECAO DE PREMISSA: o §1 da spec estava errado. Medido, os 6 runs recentes do gate sao todos de PRs de tooling e TODOS rodaram — o paths-ignore quase nao filtra (package.json, .lintstagedrc.mjs, plans/specs/README.md; e `*.md` so casa a raiz porque em Actions o * nao cruza /). A divergencia e \"o CI tenta nao cobrar e falha\"."
     ],
     "branch": "main",
     "blocked_on": [
@@ -173,18 +176,21 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1 (mtime nao reprova mais) → spec 079 PO-1",
-      "AC-2 (memoria alterada AINDA reprova) → spec 079 PO-2",
-      "AC-3 (hook aborta com indice velho) → spec 079 PO-3",
-      "AC-4 (commit sem memoria nao paga custo) → spec 079 PO-4",
-      "AC-5 (validador devolve os 3 defeitos) → spec 079 PO-5"
+      "AC-1 → spec 081 PO-1 (secao Revisao pos-RC3)",
+      "AC-2 → spec 081 PO-2 (secao Revisao pos-RC3)",
+      "AC-3 → spec 081 PO-3 (secao Revisao pos-RC3)",
+      "AC-4 → spec 081 PO-4 (secao Revisao pos-RC3)",
+      "AC-5 → spec 081 PO-5 (secao Revisao pos-RC3)",
+      "AC-6 → spec 081 PO-6 (secao Revisao pos-RC3)"
     ],
     "merged_pr": 826,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
-    "tasks": "plans/specs/079-memory-gate-hygiene/tasks.md",
-    "plan": "plans/specs/079-memory-gate-hygiene/plan.md",
-    "next_action": "Planning da 079 (/devflow-plan) — e a OQ-1 (pre-commit x pre-push) e decisao do PO ali. Tier 1: tasks.md no Planning, plan.md so se algum desenho precisar registro.",
-    "linked_adrs": [],
+    "tasks": "plans/specs/081-rc6-surface-scope/tasks.md",
+    "plan": "plans/specs/081-rc6-surface-scope/plan.md",
+    "next_action": "C-mode da 081 (/devflow-code): T001 captura a linha de base do gate ANTES de editar o workflow; o T008 (PR de controle) e checkpoint e vem ANTES de mexer nos docs. OU C-mode da 080, que tambem esta planned.",
+    "linked_adrs": [
+      "ADR-069"
+    ],
     "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e) — pushed, origin/main sincronizado",
     "code_review": {
       "status": "issues_found",
@@ -204,31 +210,25 @@
       "note": "3/3 chunks revisados (406KB, partial=false), com usage por chunk — nao e clean por falha silenciosa. Gate de reflexao: refuted=0, nada a conferir a mao."
     },
     "plan_stale": false,
-    "plan_revision": 2,
-    "slices": [
-      {
-        "pr": "A",
-        "natureza": "estrutural",
-        "asercao": "indice byte-identico fora de meta",
-        "arquivos": 4
-      },
-      {
-        "pr": "B",
-        "natureza": "comportamental",
-        "asercao": "meta.sourceHash muda uma vez",
-        "arquivos": 5,
-        "depende_de": "merge do PR A na main"
-      }
-    ],
+    "plan_revision": 1,
+    "slices": [],
     "active_slice": null,
-    "next_session": "Sessao FRESH para /devflow-spec das 080 e 081 (draft, dossies prontos em plans/specs/). A 080 tem uma pergunta que pode dissolver o proprio impasse antes de qualquer desenho: o A/B que mediu alcance 100%->68% foi rodado ANTES do seletor entrar? Se sim, o numero e de um mundo anterior — o seletor injeta memorias que o corte tiraria, e a perda real seria menor. Verificar isso PRIMEIRO. Distill tambem pendente (counter 25, adiado de proposito pelo PO para sessao propria)."
+    "next_session": "DUAS specs planned e paradas: 080 (24 tasks, 2 PRs, ADR-099 proposed) e 081 (15 tasks, emenda ao ADR-069). A 080 vem primeiro: a D1 da 081 (advisory = rodar) se justifica pela coleta de uso da 080.",
+    "ceremony_type": null,
+    "_080_parked": {
+      "status": "planned",
+      "spec": "plans/specs/080-rc6-preamble-budget/spec.md",
+      "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
+      "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
+      "next": "C-mode do PR A (T001 antes de editar)"
+    }
   },
   "memory": {
     "last_distillation": "2026-09-07T00:00:00-03:00",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 6,
     "rules_count": 270,
     "anti_patterns_count": 344,
-    "decisions_count": 98,
+    "decisions_count": 99,
     "contracts_count": 34,
     "distillation_due": false
   },
@@ -237,7 +237,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-07T15:54:51.573932-03:00"
+    "index_loaded_at": "2026-09-08T00:00:00-03:00"
   },
   "code_review": {
     "status": "clean",
