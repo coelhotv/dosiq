@@ -11,8 +11,7 @@
     "goal": "080 PR B — orcamento por taxa: breakdown por parcela, CLAUDE.md como piso, gate e degradacao declarada",
     "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/080-rc6-preamble-budget",
-      "plans/specs/081-rc6-surface-scope"
+      "plans/specs/080-rc6-preamble-budget"
     ],
     "merged_squash": "88b72b7a (squash merge into main)",
     "merged_history": [
@@ -188,7 +187,7 @@
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
     "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
-    "next_action": "Nenhum trabalho de ferramental em aberto. As 5 specs in-progress (034/056/058/060/080) estao todas bloqueadas no MESMO insumo: observacoes de PR de PRODUTO. Proximo passo e escolher veiculo de produto — ou marcar data para decidir 034/T051 e ADR-097 sem ele.",
+    "next_action": "Nenhum trabalho de ferramental em aberto e nenhuma spec de ferramental na fila. As 4 specs travadas (034/056/058/080) destravam por PR de PRODUTO. Candidatos medidos: 2.3b (007 porte mobile, Tier 2 — o unico que fecha o par A/B da 056) e 2.1 (065 PR A, muda assinatura de registerDose). A 060 e a excecao: T017/T020/T021/T022/T026 sao trabalho de verdade.",
     "linked_adrs": [
       "ADR-069",
       "ADR-097",
@@ -216,19 +215,12 @@
     "plan_revision": 1,
     "slices": [],
     "active_slice": null,
-    "next_session": "DUAS frentes. (1) 081 planned, 15 tasks — reconcilia paths-ignore x CODE_GLOBS x Tier, que e exatamente o que impediu a PO-3 da 080 de fechar. (2) DIVIDA MEDIDA E SEM DONO: a parcela CLAUDE.md do preambulo tem 6.279 B de duplicacao (hoist com awk f=1 que nao reseta) — devolve 6,4% do preambulo SEM custar alcance, contra os 31% que o corte do wiki custa. Corte mais barato da serie; nao cabia na 080 por assertiva byte-identica.",
-    "ceremony_type": null,
-    "_081_parked": {
-      "status": "planned",
-      "spec": "plans/specs/081-rc6-surface-scope/spec.md",
-      "plan": "plans/specs/081-rc6-surface-scope/plan.md",
-      "tasks": "plans/specs/081-rc6-surface-scope/tasks.md",
-      "next": "C-mode da 081 (T001 captura a linha de base do gate ANTES de editar o workflow; T008 e checkpoint e vem ANTES dos docs)"
-    }
+    "next_session": "081 ENCERRADA (superseded) em 2026-09-08, entregue como Tier 0 — gatilho do ai-review-gate.yml virou allowlist espelhando o CODE_GLOBS. INVARIANTE NOVA: `paths:` do workflow e CODE_GLOBS do ai-review.sh sao um par que precisa concordar (AP-346); mexeu num, mexa no outro no mesmo PR — esta escrito no proprio workflow. Repriorizacao sugerida ao PO: subir 2.3b e 2.1 no backlog H2; quatro specs saem do limbo como efeito colateral de trabalho que ja se queria fazer, em vez de custar sessao propria.",
+    "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-09-07T00:00:00-03:00",
-    "journal_entries_since_distillation": 9,
+    "journal_entries_since_distillation": 10,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
@@ -297,6 +289,7 @@
   },
   "gaps_declarados": {
     "journal_fora_do_git": "079/C5 do Slice A, achado nao previsto: `.gitignore:78` ignora `.agent/memory/journal/` INTEIRO. Os journals W33/W34/W35/W36 (304KB, as 4 semanas mais recentes) estao FORA do git; W25/W30/W31 sao tracked (entraram antes do ignore). Importa por tres motivos: (1) a constituicao VIII diz que a memoria de filesystem e canonica e o journal e onde o C5 registra a entrega; (2) `recount-memory.mjs:51` usa o journal como UM DOS 5 TRACOS de onde deriva incident_count/last_referenced — traco nao versionado = numero que muda conforme a maquina; (3) e a MESMA CLASSE do R-319 (o estado que um gate le mora em local ignorado pelo git), que a spec 079 §6.2 declarou fora de escopo. NAO CORRIGIDO nesta sessao: mudar .gitignore e decisao do PO, nao acabamento de fatia.",
-    "079_auditoria_056_060": "Auditoria 2026-09-07 apos as entregas da 078/079. (1) DRIFT DE REGISTRO CORRIGIDO: 8 tarefas ja entregues estavam marcadas abertas — 060 T012 (o seletor entrou por DEFAULT com fail-open, ai-review.sh:417-468, e nao pela env var RC6_RULE_SELECTOR que a spec previa), T024, T027, T033, T035 e 056 T021/T022; cada uma anotada com a evidencia. (2) CONTRADICAO INTERNA na 056: o T016 cobra confirmar o SC-001 (<=60KB) que o proprio T027 FALSIFICOU — enquanto existir assim, a 056 nao fecha por construcao; reescopado para SC-002+SC-006. (3) GAP CENTRAL, SEM DONO: o seletor da 060 entrou mas os indices crus NAO sairam (RC6_INDEXES default=1, clamp_lines vivo) — o preambulo carrega os DOIS mecanismos e voltou a 97.727B no #828 contra 93.188B no #822, +4,5KB em 3 dias no mesmo clamp. A premissa que abriu a 060 ('o preambulo cresce O(catalogo)') CONTINUA DE PE. O ADR-097 esta proposed porque o A/B do corte mediu alcance 100%->68%. PO decidiu: SPEC PROPRIA para essa decisao, com o ADR-097 e a serie de medicoes como insumo. (4) 060 realmente aberto: T017 (decaimento 90d), T020 (fundir AP cuja licao ja vive numa R), T021 (arquivamento 180d => layer archival — o D2 do devflow decide por JULGAMENTO e usa layer=cold, nao archival), T022 (delta de bytes no distill), T026 (remover clamp). (5) 056 realmente aberto: T014 bloqueada por ESTRUTURA e nao por esquecimento (o A/B precisa de contraste e os PRs recentes nao dao — medido 3x), T017 e T041 dependem dela, T032/T038 sao Fase 2."
+    "079_auditoria_056_060": "Auditoria 2026-09-07 apos as entregas da 078/079. (1) DRIFT DE REGISTRO CORRIGIDO: 8 tarefas ja entregues estavam marcadas abertas — 060 T012 (o seletor entrou por DEFAULT com fail-open, ai-review.sh:417-468, e nao pela env var RC6_RULE_SELECTOR que a spec previa), T024, T027, T033, T035 e 056 T021/T022; cada uma anotada com a evidencia. (2) CONTRADICAO INTERNA na 056: o T016 cobra confirmar o SC-001 (<=60KB) que o proprio T027 FALSIFICOU — enquanto existir assim, a 056 nao fecha por construcao; reescopado para SC-002+SC-006. (3) GAP CENTRAL, SEM DONO: o seletor da 060 entrou mas os indices crus NAO sairam (RC6_INDEXES default=1, clamp_lines vivo) — o preambulo carrega os DOIS mecanismos e voltou a 97.727B no #828 contra 93.188B no #822, +4,5KB em 3 dias no mesmo clamp. A premissa que abriu a 060 ('o preambulo cresce O(catalogo)') CONTINUA DE PE. O ADR-097 esta proposed porque o A/B do corte mediu alcance 100%->68%. PO decidiu: SPEC PROPRIA para essa decisao, com o ADR-097 e a serie de medicoes como insumo. (4) 060 realmente aberto: T017 (decaimento 90d), T020 (fundir AP cuja licao ja vive numa R), T021 (arquivamento 180d => layer archival — o D2 do devflow decide por JULGAMENTO e usa layer=cold, nao archival), T022 (delta de bytes no distill), T026 (remover clamp). (5) 056 realmente aberto: T014 bloqueada por ESTRUTURA e nao por esquecimento (o A/B precisa de contraste e os PRs recentes nao dao — medido 3x), T017 e T041 dependem dela, T032/T038 sao Fase 2.",
+    "specs_bloqueadas_no_mesmo_insumo": "AUDITORIA 2026-09-08. CINCO specs estao in-progress (034, 056, 058, 060, 080) e QUATRO delas estao travadas no MESMO insumo, nao em trabalho: observacao vinda de PR de PRODUTO. 034-D precisa de caminhos nao-pretendidos apontados pelo RC6; 056/T014 precisa de um par A/B que so se forma em Tier 2 (diagnostico ja escrito no item 2.7 do backlog H2 desde 25/08); 058/T014 precisa de findings refutaveis por ferramenta (tipo/schema/coluna); 080/PO-3 precisa de um --post real num PR com codigo. A 060 e a excecao: o que resta nela (T017/T020/T021/T022/T026) e trabalho de verdade, e o T026 depende do ADR-097. ⚠️ O PONTO QUE IMPORTA: as 12 PRs do epico ativo (078/079/080) NAO PODIAM servir de insumo — sao ferramental mecanico escrito pelo mesmo agente que escreveu o revisor, e a propria linha da 081 registra que '6 dos 8 zeros limpos da serie sao tooling'. O laco se auto-esfomeia: o trabalho feito para fechar essas specs e exatamente o tipo de trabalho que nao consegue fecha-las. NENHUMA delas destrava por mais ferramental; todas destravam por um PR de produto, ou por decisao do PO de fechar sem o dado. Candidatos medidos em 2026-09-08 (ver secao (c) da analise): 2.3b (007 porte mobile, Tier 2, extracao p/ core com conflito R-249 x R-090) e 2.1 (065 PR A, muda assinatura de registerDose)."
   }
 }

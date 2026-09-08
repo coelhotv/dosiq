@@ -16,12 +16,24 @@ name: RC6 AI Review Gate
 on:
   pull_request:
     branches: [main, develop, "feat/**"]
-    paths-ignore:
-      - 'docs/**'
-      - '.agent/**'
-      - '*.md'
-      - 'scripts/**'
-      - 'scratches/**'
+    # O GATILHO ESPELHA O `CODE_GLOBS` DO ai-review.sh — nao uma lista propria.
+    # Antes era `paths-ignore` (denylist) e os dois universos divergiam nos DOIS sentidos:
+    #   · silencio: PR so de `scripts/*.mjs` era pulado, e `.mjs` ESTA no CODE_GLOBS
+    #     (34 arquivos). Os #827/#828 so rodaram porque tambem tocaram `.lintstagedrc.mjs`
+    #     na raiz — acidente, nao cobertura.
+    #   · ruido: PR de `vercel.json`/`package.json`/`.github/**` disparava o gate cobrando
+    #     uma review que o RC6 NAO CONSEGUE produzir (o script sai em "No code changes"),
+    #     isto e, exigencia impossivel de satisfazer — falso vermelho, nao cobertura.
+    # Classe do AP-348: pergunte qual universo o gate confere contra qual o disparou.
+    # ⚠️ INVARIANTE: esta lista e o CODE_GLOBS de `ai-review.sh` sao um PAR QUE PRECISA
+    # CONCORDAR (AP-346). Mexeu num, mexa no outro no mesmo PR.
+    paths:
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.mjs'
+      - '**/*.cjs'
+      - '**/*.ts'
+      - '**/*.tsx'
   # Re-avalia quando a review RC6 é publicada DEPOIS do último push (T041:
   # no #753 o gate rodou no push e ficou em warning stale — o --post veio depois
   # e nada re-disparava). pull_request_review NÃO suporta paths-ignore; o guard
