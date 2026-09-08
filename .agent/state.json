@@ -188,13 +188,13 @@
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
     "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
-    "next_action": "080 fica in-progress ate a PO-3: falta um --post real do RC6 num PR de dosiq COM CODIGO. Candidato natural: a spec 081, que reconcilia a regra por superficie e faria o gate cobrir esses PRs.",
+    "next_action": "Nenhum trabalho de ferramental em aberto. As 5 specs in-progress (034/056/058/060/080) estao todas bloqueadas no MESMO insumo: observacoes de PR de PRODUTO. Proximo passo e escolher veiculo de produto — ou marcar data para decidir 034/T051 e ADR-097 sem ele.",
     "linked_adrs": [
       "ADR-069",
       "ADR-097",
       "ADR-099"
     ],
-    "devflow_sha": "1c6582f (PR B, base 266c228) + 266c228 (PR A, base 7054a47) — pushed, origin/main sincronizado",
+    "devflow_sha": "99683e5 (Tier 0 hoist) + 1c6582f (080 PR B) + 266c228 (080 PR A) — pushed",
     "code_review": {
       "status": "issues_found",
       "critical": 0,
@@ -228,7 +228,7 @@
   },
   "memory": {
     "last_distillation": "2026-09-07T00:00:00-03:00",
-    "journal_entries_since_distillation": 8,
+    "journal_entries_since_distillation": 9,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
