@@ -4,14 +4,14 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "completed",
-    "tier": 1,
-    "spec_dir": "plans/specs/080-rc6-preamble-budget",
-    "spec": "plans/specs/080-rc6-preamble-budget/spec.md",
-    "goal": "080 PR B — orcamento por taxa: breakdown por parcela, CLAUDE.md como piso, gate e degradacao declarada",
+    "status": "analysis",
+    "tier": 2,
+    "spec_dir": "plans/specs/065-analytics-instrumentation-mobile",
+    "spec": "plans/specs/065-analytics-instrumentation-mobile/spec.md",
+    "goal": "065 PR A — surface/treatment_id/super properties + medicao insumo (034-D/056/058/080)",
     "goal_type": "feature",
     "spec_dirs": [
-      "plans/specs/080-rc6-preamble-budget"
+      "plans/specs/065-analytics-instrumentation-mobile"
     ],
     "merged_squash": "88b72b7a (squash merge into main)",
     "merged_history": [
@@ -185,8 +185,8 @@
     ],
     "merged_pr": 826,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
-    "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
-    "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
+    "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md",
+    "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
     "next_action": "Nenhum trabalho de ferramental em aberto e nenhuma spec de ferramental na fila. As 4 specs travadas (034/056/058/080) destravam por PR de PRODUTO. Candidatos medidos: 2.3b (007 porte mobile, Tier 2 — o unico que fecha o par A/B da 056) e 2.1 (065 PR A, muda assinatura de registerDose). A 060 e a excecao: T017/T020/T021/T022/T026 sao trabalho de verdade.",
     "linked_adrs": [
       "ADR-069",
@@ -219,8 +219,8 @@
     "ceremony_type": null
   },
   "memory": {
-    "last_distillation": "2026-09-07T00:00:00-03:00",
-    "journal_entries_since_distillation": 11,
+    "last_distillation": "2026-09-08T00:00:00-03:00",
+    "journal_entries_since_distillation": 0,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
