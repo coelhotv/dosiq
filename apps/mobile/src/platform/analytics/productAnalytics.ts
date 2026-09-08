@@ -13,6 +13,7 @@
 
 import PostHog from 'posthog-react-native'
 import * as Sentry from '@sentry/react-native'
+import Constants from 'expo-constants'
 import { posthogApiKey, posthogHost } from '@platform/config/nativePublicAppConfig'
 
 let client = null
@@ -105,4 +106,36 @@ export async function logScreenView(screenName, screenClass = screenName) {
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] logScreenView error:', error.message)
   }
+}
+
+/**
+ * Ambiente do build como super properties (065 FR-12): `app_env` cru + `is_internal` derivado.
+ *
+ * 🔴 A fonte é `Constants.expoConfig.extra.appEnv` (`app.config.js:289`), NÃO
+ * `nativePublicAppConfig.appEnv`: os dois têm fallback em direções OPOSTAS quando
+ * `EXPO_PUBLIC_APP_ENV` não está no ambiente do build (e `eas.json` não a define em perfil nenhum).
+ * O `extra` cai para `EAS_BUILD_PROFILE || 'production'` — desconhecido vira EXTERNO, que é o lado
+ * seguro; o `nativePublicAppConfig` cai para `'development'` — desconhecido viraria INTERNO e um
+ * build de loja marcaria TODO usuário real como interno, tirando-o das métricas filtradas:
+ * subcontagem silenciosa com cara de dado limpo (plan.md TC-8).
+ *
+ * `app_env` viaja cru de propósito: se o valor vier errado, ele é VISÍVEL e a métrica é
+ * recomponível no PostHog — `is_internal` sozinho esconderia o erro.
+ */
+export function envTags() {
+  const appEnv = Constants.expoConfig?.extra?.appEnv || 'production'
+  return { app_env: String(appEnv), is_internal: String(appEnv !== 'production') }
+}
+
+/**
+ * Modo da interface como super property (065 FR-12/US4), registrado depois que o perfil carrega.
+ *
+ * 🔴 Registra o valor DECLARADO (`'simple' | 'complex' | 'auto'`), não o resolvido. `null` (auto)
+ * é resolvido por heurística de contagem e cada tela usa uma base DIFERENTE — `TodayScreen:619`
+ * conta medicamentos (`> 3`), `TreatmentsScreen:49` conta protocolos (`> 3`). Escolher uma delas
+ * aqui inventaria um terceiro número, que não é o de nenhuma tela. `auto` é o fato: "a pessoa não
+ * escolheu". Quem quiser o efeito visual cruza com a contagem, que já viaja em outros eventos.
+ */
+export async function setMode(complexityOverride) {
+  await setUserProperty('mode', complexityOverride || 'auto')
 }

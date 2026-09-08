@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { calculateAge, getInitials } from '@dosiq/core'
 import { describeError } from '@shared/utils/networkError'
+import { setMode } from '@platform/analytics/productAnalytics'
 import {
   getCurrentUser,
   getUserSettings,
@@ -68,6 +69,11 @@ export function useProfile() {
         loading: false,
         error: null
       })
+
+      // 065/US4: super property `mode` só existe depois que o perfil chega — eventos anteriores
+      // saem sem ela, aceito e declarado na spec. Fail-silent por contrato (CON-021): telemetria
+      // não pode alterar o estado da tela de Perfil, que acabou de ser montado acima.
+      void setMode(profileRes.data?.complexity_override)
     } catch (err) {
       if (__DEV__) console.error('Erro no useProfile loadProfile:', err)
       // `err.message` cru chegava à tela: em modo avião isso é "TypeError: Network request

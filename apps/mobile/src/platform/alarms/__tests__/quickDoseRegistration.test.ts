@@ -95,7 +95,8 @@ describe('handleAlarmAction — Tomei', () => {
     const res = await handleAlarmAction(evt('dose-taken', BASE))
     expect(mockRegisterDose).toHaveBeenCalledTimes(1)
     const [logData, opts] = mockRegisterDose.mock.calls[0]
-    expect(opts).toEqual({ instanceId: 'inst-1' })
+    // 065/US1: o botão da notificação é `push` — é ele que separa "sucesso silencioso" de churn.
+    expect(opts).toEqual({ instanceId: 'inst-1', surface: 'push' })
     expect(logData.medicine_id).toBe('med-1')
     expect(logData.protocol_id).toBe('proto-1')
     expect(logData.quantity_taken).toBe(2)

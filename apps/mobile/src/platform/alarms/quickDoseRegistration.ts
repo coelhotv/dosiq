@@ -15,6 +15,8 @@ import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt, createCriticalAuditService } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
@@ -125,7 +127,7 @@ async function refuseIfOutOfWindow(data, action) {
  * Reutilizado pelo handler de notificação E pela tela AlarmFullScreen.
  * @param {object} data - { doseInstanceId, protocolId, medicineId, quantityTaken }
  */
-export async function registerTaken(data) {
+export async function registerTaken(data, { surface = null } = {}) {
   const { doseInstanceId, isGrouped, groupedDoses } = data || {}
   if (!doseInstanceId) return { success: false }
   // Silenciar PRIMEIRO: o usuário agiu — para o som/notif na hora.
@@ -154,7 +156,7 @@ export async function registerTaken(data) {
             taken_at: getRawNow().toISOString(),
             quantity_taken: quantity,
           },
-          { instanceId: d.instanceId }
+          { instanceId: d.instanceId, surface }
         )
       }
       await invalidate(SNAPSHOTS_TAKEN)
@@ -172,7 +174,7 @@ export async function registerTaken(data) {
       taken_at: getRawNow().toISOString(),
       quantity_taken: quantity,
     },
-    { instanceId: doseInstanceId }
+    { instanceId: doseInstanceId, surface }
   )
   await invalidate(SNAPSHOTS_TAKEN)
   // O card `done` (039) já é exibido por _cancelAlarmBestEffort dentro de registerDose (auto-gate
@@ -181,10 +183,37 @@ export async function registerTaken(data) {
 }
 
 /**
+ * 065 US2 (T013): emite `dose_skipped` — uma linha por instância, como a trilha de auditoria.
+ *
+ * 🔴 O `protocol_id` vem do PAYLOAD da notificação, e isso NÃO é o join proibido pelo [[R-299]]: o
+ * payload foi copiado da LINHA de `dose_instances` quando o alarme foi criado, e essa coluna é
+ * imutável — é a chave geradora da instância (índice único `protocol_id,scheduled_for`), e a
+ * varredura do `pg_proc` confirma que nenhuma função a ESCREVE (`confirm_titration_switch` e
+ * `set_protocol_dose_state_atomic` só a usam em `WHERE`). Reler a linha aqui custaria round-trip no
+ * caminho headless para reconfirmar um valor que não muda — e a leitura crua ainda enfraqueceria o
+ * guard do SC-008 (067/B), que assere que nenhum acesso direto a `dose_instances` sobrevive aqui.
+ *
+ * Best-effort e chamado DEPOIS da RPC: analytics nunca altera o resultado de uma ação clínica da
+ * paciente (Constituição IX). @private
+ */
+async function _emitDoseSkipped(skipInstances, surface) {
+  try {
+    const base = surface ? { surface } : {}
+    await Promise.all(
+      skipInstances.map(({ protocolId }) =>
+        logEvent(EVENTS.DOSE_SKIPPED, protocolId ? { ...base, treatment_id: protocolId } : base),
+      ),
+    )
+  } catch (error) {
+    if (__DEV__) console.warn('[quickDoseRegistration] dose_skipped analytics:', error?.message)
+  }
+}
+
+/**
  * Pula a dose: status='skipped_user' (sem log, sem consumo).
  * @param {object} data - { doseInstanceId }
  */
-export async function registerSkip(data) {
+export async function registerSkip(data, { surface = null } = {}) {
   const { doseInstanceId, isGrouped, groupedDoses } = data || {}
   if (!doseInstanceId) return { success: false }
   await alarmService.cancelAlarm(doseInstanceId) // silencia primeiro
@@ -197,6 +226,9 @@ export async function registerSkip(data) {
   if (guard.outOfWindow) return guard.result
 
   let ids = [doseInstanceId]
+  // 065: par (instância, tratamento) preservado para o `dose_skipped` — o mesmo payload de onde
+  // saem os ids já traz o protocolo de cada dose.
+  let skipInstances = [{ instanceId: doseInstanceId, protocolId: data?.protocolId || null }]
   if (isGrouped === 'true' && groupedDoses) {
     let doses = []
     try {
@@ -206,7 +238,12 @@ export async function registerSkip(data) {
     }
     // Lote all-or-nothing numa transação só — o `UPDATE ... .in(ids)` de antes já era atômico
     // e a RPC preserva isso (Decisão 14); um loop de N chamadas deixaria o grupo meio pulado.
-    if (doses.length > 0) ids = doses.map((d) => d.instanceId).filter(Boolean)
+    if (doses.length > 0) {
+      ids = doses.map((d) => d.instanceId).filter(Boolean)
+      skipInstances = doses
+        .filter((d) => d.instanceId)
+        .map((d) => ({ instanceId: d.instanceId, protocolId: d.protocolId || null }))
+    }
   }
 
   // 067/B (FR-011/ADR-092): via RPC. O `UPDATE` cru daqui era a escrita que gravava fato
@@ -248,6 +285,8 @@ export async function registerSkip(data) {
   // relógio do aparelho contradiria a própria razão de o skip ter descido para o banco, e num
   // aparelho adiantado — o cenário do incidente — gravaria uma hora que nunca existiu. Se a RPC não
   // devolver o instante, vai `null`: "hora desconhecida" é honesto, um palpite não é.
+  await _emitDoseSkipped(skipInstances, surface)
+
   const resolvedAt = skippedAt || null
   await Promise.all(
     ids.map((id) =>
@@ -358,12 +397,14 @@ async function reportRefusal(data, result) {
 async function dispatchCanonicalAction(pressActionId, data) {
   switch (pressActionId) {
     case ALARM_ACTION.TAKEN: {
-      await reportRefusal(data, await registerTaken(data))
+      // Botão da NOTIFICAÇÃO: handler headless, app pode nem estar aberto — é exatamente o
+      // "sucesso silencioso" que a US1 precisa distinguir de app-aberto (065).
+      await reportRefusal(data, await registerTaken(data, { surface: SURFACES.PUSH }))
       return { handled: true, action: ALARM_ACTION.TAKEN }
     }
 
     case ALARM_ACTION.SKIP: {
-      await reportRefusal(data, await registerSkip(data))
+      await reportRefusal(data, await registerSkip(data, { surface: SURFACES.PUSH }))
       return { handled: true, action: ALARM_ACTION.SKIP }
     }
 

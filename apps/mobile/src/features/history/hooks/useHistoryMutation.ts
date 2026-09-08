@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { registerDose, undoDose, updateOrphanLog, deleteOrphanLog } from '../../dose/services/doseService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -26,7 +27,7 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
         setLoading(true)
         setError(null)
 
-        const result = await registerDose(logData, { instanceId })
+        const result = await registerDose(logData, { instanceId, surface: SURFACES.MOBILE })
 
         if (result.success) {
           // Invalidar cache de snapshot do dia
@@ -56,7 +57,7 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
         setLoading(true)
         setError(null)
 
-        const result = await undoDose(instanceId)
+        const result = await undoDose(instanceId, { surface: SURFACES.MOBILE })
 
         if (result.success) {
           // Invalidar cache de snapshot do dia
@@ -87,7 +88,7 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
         setError(null)
         // Mutação stock-aware no service (restaura/reconsome estoque FIFO) — não tocar
         // medicine_logs direto, senão o estoque dessincroniza (furos silenciosos).
-        const result = await updateOrphanLog(logId, logData)
+        const result = await updateOrphanLog(logId, logData, { surface: SURFACES.MOBILE })
         if (!result.success) {
           setError(result.error || 'Erro ao atualizar registro')
           console.error('[useHistoryMutation] updateLog failed:', result.error)
@@ -112,7 +113,7 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
         setLoading(true)
         setError(null)
         // Mutação stock-aware no service (devolve estoque ao inventário antes de deletar).
-        const result = await deleteOrphanLog(logId)
+        const result = await deleteOrphanLog(logId, { surface: SURFACES.MOBILE })
         if (!result.success) {
           setError(result.error || 'Erro ao excluir registro')
           console.error('[useHistoryMutation] deleteLog failed:', result.error)

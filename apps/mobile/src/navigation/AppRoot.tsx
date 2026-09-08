@@ -5,7 +5,7 @@ import { requestTrackingPermissionsAsync, getTrackingPermissionsAsync } from 'ex
 import * as Sentry from '@sentry/react-native'
 import { PostHogProvider } from 'posthog-react-native'
 import Navigation from './Navigation'
-import { logEvent, getPostHogClient, setUserProperty } from '@platform/analytics/productAnalytics'
+import { logEvent, getPostHogClient, setUserProperty, envTags } from '@platform/analytics/productAnalytics'
 import { bundleTags } from '@platform/updates/bundleInfo'
 import { sentryDsn } from '@platform/config/nativePublicAppConfig'
 import { ToastProvider } from '@shared/components/feedback/Toast'
@@ -62,6 +62,10 @@ export default function AppRoot() {
   useEffect(() => {
     // setUserProperty é fail-silent por contrato (CON-021) — telemetria nunca derruba o boot.
     Object.entries(bundleTags()).forEach(([key, value]) => { void setUserProperty(key, value) })
+    // 065/FR-12: ambiente do build no MESMO effect — não depende de sessão nem de perfil, então
+    // nasce no boot junto do bundle. Sem isso, todo número de produto mistura dogfooding com
+    // usuário real (Constituição I, mitigação da ausência de projeto PostHog segregado).
+    Object.entries(envTags()).forEach(([key, value]) => { void setUserProperty(key, value) })
   }, [])
 
   // Cold start telemetry — dispara 1x quando fontes carregam (app interativo).
@@ -74,7 +78,10 @@ export default function AppRoot() {
     // é assíncrono e o cold_start é o PRIMEIRO evento da sessão — depender só da ordem dos dois
     // effects deixaria justamente o evento de boot (o mais provável de existir sozinho numa sessão
     // que crashou) sem o carimbo do bundle. Duplicar 3 campos é mais barato que um evento cego.
-    logEvent('cold_start', { duration_ms: launchMs, ...bundleTags() })
+    // `envTags` explícito pelo mesmo motivo dos bundleTags: `register()` é assíncrono e o
+    // cold_start é o PRIMEIRO evento da sessão — sem isso o evento de boot sai sem saber se veio
+    // de um build interno, justo o evento que mais existe sozinho numa sessão que crashou.
+    logEvent('cold_start', { duration_ms: launchMs, ...bundleTags(), ...envTags() })
   }, [fontsLoaded])
 
   useEffect(() => {

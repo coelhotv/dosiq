@@ -1,6 +1,7 @@
 // authService.js — serviço de autenticação com validação Zod
 import { z } from 'zod'
 import { CURRENT_POLICY_VERSION } from '@dosiq/core'
+import { resetUser } from '@platform/analytics/productAnalytics'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 const loginCredentialsSchema = z.object({
@@ -246,6 +247,11 @@ export async function signOut() {
       console.error('Erro ao fazer logout:', error.message)
       return { success: false }
     }
+    // 065/US4 (TC-4): `resetUser()` nos DOIS caminhos de logout. Cabear só um deixa, num device
+    // compartilhado, os eventos do PRÓXIMO usuário com a identidade e as super properties do
+    // anterior — mistura dado de saúde entre pessoas, que é justo o que `resetUser` existe para
+    // impedir. Fail-silent por contrato (CON-021): nunca altera o resultado do logout.
+    await resetUser()
     return { success: true }
   } catch (err) {
     console.error('Erro inesperado ao fazer logout:', err)

@@ -10,7 +10,9 @@ jest.mock('../../../../platform/analytics/analyticsEvents', () => ({
   EVENTS: {
     DOSE_LOGGED: 'dose_logged',
     DOSE_LOGGED_BULK: 'dose_logged_bulk',
+    DOSE_SKIPPED: 'dose_skipped',
   },
+  SURFACES: { MOBILE: 'mobile', PUSH: 'push', ALARM: 'alarm' },
 }))
 
 jest.mock('@shared/utils/debugLog', () => ({
@@ -88,7 +90,11 @@ describe('doseService adapter tests', () => {
         { instanceId: 'inst-1' }
       )
       expect(mockCancelAlarm).toHaveBeenCalledWith('inst-1')
-      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { medicine_id: MID })
+      // 065/US2: `treatment_id` vem do FATO devolvido pela RPC (`LOG.protocol_id`), não do input.
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+        medicine_id: MID,
+        treatment_id: PID,
+      })
     })
 
     it('falha de validação Zod → retorna erro e não chama core', async () => {
@@ -200,7 +206,12 @@ describe('doseService adapter tests', () => {
 
       expect(res).toEqual({ success: true })
       expect(mockUpdateOrphanLog).toHaveBeenCalledWith('log-1', { quantity_taken: 2 })
-      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: MID })
+      // 065/US2: o log avulso atualizado devolve o protocolo do FATO — vai como treatment_id.
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+        action: 'update_orphan',
+        medicine_id: MID,
+        treatment_id: PID,
+      })
     })
 
     it('erro de rede → retorna offline error', async () => {
@@ -278,6 +289,121 @@ describe('doseService adapter tests', () => {
       const res = await registerDoseMany([{ ...INPUT }])
       expect(res.success).toBe(false)
       expect(res.error).toContain('Sem ligação à internet')
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 065 PR A — origem (`surface`) e tratamento (`treatment_id`) nos eventos de dose
+// ─────────────────────────────────────────────────────────────────────────────
+describe('065 — surface e treatment_id', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
+    mockCancelAlarm.mockResolvedValue(undefined)
+  })
+
+  // T016 — a única barreira contra o modo de falha silencioso da US1: com um default `'mobile'`
+  // no service, TODO registro por notificação passaria a parecer app-aberto e a tese ficaria
+  // impossível de medir, com aparência de estar medida.
+  it('AUSÊNCIA DE DEFAULT: emissor sem origem informada NÃO carrega surface', async () => {
+    mockRegisterDose.mockResolvedValueOnce(LOG)
+
+    await registerDose(INPUT, { instanceId: 'inst-1' })
+
+    const [, props] = mockLogEvent.mock.calls[0]
+    expect(props).not.toHaveProperty('surface')
+    expect(Object.keys(props)).toEqual(expect.not.arrayContaining(['surface']))
+  })
+
+  it('AUSÊNCIA DE DEFAULT no batch: registerDoseMany sem opções não carrega surface', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([{ success: true, instanceId: 'inst-1' }])
+
+    await registerDoseMany([INPUT])
+
+    const [event, props] = mockLogEvent.mock.calls[0]
+    expect(event).toBe(EVENTS.DOSE_LOGGED_BULK)
+    expect(props).not.toHaveProperty('surface')
+    expect(props).toEqual({ count: 1 })
+  })
+
+  it.each([
+    ['push', 'registro pelo botão da notificação'],
+    ['alarm', 'registro pela tela cheia do alarme'],
+    ['mobile', 'registro com o app aberto'],
+  ])('surface "%s" (%s) viaja no payload', async (surface) => {
+    mockRegisterDose.mockResolvedValueOnce(LOG)
+
+    await registerDose(INPUT, { instanceId: 'inst-1', surface })
+
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+      medicine_id: MID,
+      surface,
+      treatment_id: PID,
+    })
+  })
+
+  it('batch propaga surface e NÃO inventa treatment_id (o lote atravessa tratamentos)', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'inst-1' },
+      { success: true, instanceId: 'inst-2' },
+    ])
+
+    await registerDoseMany([INPUT, INPUT], { surface: 'mobile' })
+
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, {
+      count: 2,
+      surface: 'mobile',
+    })
+  })
+
+  // T017 — R-299: o evento descreve o FATO. O id sai do retorno da RPC (o valor gravado em
+  // `medicine_logs` na transação), nunca da entidade viva que o call-site tinha em mãos.
+  it('treatment_id vem do FATO devolvido pela RPC, não do protocolo vivo do call-site', async () => {
+    const PID_VIVO = '33333333-3333-4333-8333-333333333333'
+    mockRegisterDose.mockResolvedValueOnce(LOG) // RPC devolve PID (o fato)
+
+    // O call-site manda o protocolo VIVO, que já mudou (medicine_switch/edição).
+    await registerDose({ ...INPUT, protocol_id: PID_VIVO }, { instanceId: 'inst-1', surface: 'mobile' })
+
+    const [, props] = mockLogEvent.mock.calls[0]
+    expect(props.treatment_id).toBe(PID)
+    expect(props.treatment_id).not.toBe(PID_VIVO)
+  })
+
+  it('dose sem protocolo (avulsa/órfã) sai SEM treatment_id — ausência > valor errado', async () => {
+    mockRegisterDose.mockResolvedValueOnce({ ...LOG, protocol_id: null })
+
+    await registerDose({ medicine_id: MID, taken_at: INPUT.taken_at, quantity_taken: 1 }, { surface: 'mobile' })
+
+    const [, props] = mockLogEvent.mock.calls[0]
+    expect(props).not.toHaveProperty('treatment_id')
+    expect(props.surface).toBe('mobile')
+  })
+
+  it('undoDose tira o treatment_id da INSTÂNCIA (fato agendado) e propaga surface', async () => {
+    mockGetById.mockResolvedValueOnce({ id: 'inst-1', medicine_id: MID, protocol_id: PID })
+    mockUndoDose.mockResolvedValueOnce(undefined)
+
+    await undoDose('inst-1', { surface: 'mobile' })
+
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+      action: 'undo',
+      medicine_id: MID,
+      surface: 'mobile',
+      treatment_id: PID,
+    })
+  })
+
+  it('deleteOrphanLog propaga surface e não inventa medicine/treatment', async () => {
+    mockDeleteOrphanLog.mockResolvedValueOnce(undefined)
+
+    await deleteOrphanLog('log-1', { surface: 'mobile' })
+
+    expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+      action: 'delete_orphan',
+      surface: 'mobile',
     })
   })
 })

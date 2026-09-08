@@ -22,6 +22,7 @@ const { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, A
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable, INJECTION_SITES, getInjectionSiteAbsorption, getInjectionSiteLabel } from '@dosiq/core'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
@@ -484,7 +485,7 @@ export default function BulkDoseRegisterModal({
 
     const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites)
 
-    const result = await registerDoseMany(logsData)
+    const result = await registerDoseMany(logsData, { surface: SURFACES.MOBILE })
     setLoading(false)
 
     const outcome = buildBulkOutcome(result)

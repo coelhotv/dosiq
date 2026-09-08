@@ -21,6 +21,26 @@ import { debugLog } from '@shared/utils/debugLog'
 // Repo de instâncias para a âncora de log e leituras locais
 const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
 
+/**
+ * Monta as props de origem/tratamento de um evento de dose (065 US1/US2).
+ *
+ * 🔴 SEM DEFAULT (plan.md A-1): chave ausente sai FORA do payload. `surface` implícito faria
+ * registro por notificação parecer app-aberto — a US1 morre em silêncio parecendo medida.
+ *
+ * 🔴 `treatmentId` vem SEMPRE do FATO persistido — `logEntry.protocol_id` (o valor que a RPC
+ * `register_dose_atomic` gravou em `medicine_logs` na própria transação) ou
+ * `dose_instances.protocol_id`. NUNCA de `protocol.id` / `d.protocolId` da variável do call-site:
+ * hoje são iguais (medido em prod: 2.799 logs ancorados, 0 divergentes), mas só o primeiro
+ * continua sendo o fato quando o protocolo é editado ou trocado depois (R-299).
+ * Ausência é resultado válido: id certo com nome vazio > nome errado (R-299 §4).
+ */
+function _doseEventProps(base, { surface = null, treatmentId = null } = {}) {
+  const props = { ...base }
+  if (surface) props.surface = surface
+  if (treatmentId) props.treatment_id = treatmentId
+  return props
+}
+
 // Obtém usuário autenticado ou retorna erro de sessão
 async function _getAuthUser() {
   const { data, error } = await supabase.auth.getUser()
@@ -102,7 +122,7 @@ function _isAlreadyResolved(err) {
  * @param {Object} [options]
  * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
  */
-export async function registerDose(logData, { instanceId = null } = {}) {
+export async function registerDose(logData, { instanceId = null, surface = null } = {}) {
   debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
   if (!parsed.success) {
@@ -116,7 +136,13 @@ export async function registerDose(logData, { instanceId = null } = {}) {
 
     // Side-effects locais de plataforma
     await _cancelAlarmBestEffort(instanceId)
-    await logEvent(EVENTS.DOSE_LOGGED, { medicine_id: logEntry.medicine_id })
+    await logEvent(
+      EVENTS.DOSE_LOGGED,
+      _doseEventProps(
+        { medicine_id: logEntry.medicine_id },
+        { surface, treatmentId: (logEntry as any)?.protocol_id },
+      ),
+    )
 
     return { success: true, data: logEntry }
   } catch (err) {
@@ -145,7 +171,7 @@ export async function registerDose(logData, { instanceId = null } = {}) {
  * @param {string} instanceId
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function undoDose(instanceId) {
+export async function undoDose(instanceId, { surface = null } = {}) {
   try {
     const { sessionError } = await _getAuthUser()
     if (sessionError) return { success: false, error: sessionError }
@@ -155,7 +181,13 @@ export async function undoDose(instanceId) {
 
     await doseLogCore.undoDose(instanceId)
 
-    await logEvent(EVENTS.DOSE_LOGGED, { action: 'undo', medicine_id: (instance as any).medicine_id })
+    await logEvent(
+      EVENTS.DOSE_LOGGED,
+      _doseEventProps(
+        { action: 'undo', medicine_id: (instance as any).medicine_id },
+        { surface, treatmentId: (instance as any).protocol_id },
+      ),
+    )
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -171,10 +203,16 @@ export async function undoDose(instanceId) {
  * @param {Object} updates
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function updateOrphanLog(logId, updates) {
+export async function updateOrphanLog(logId, updates, { surface = null } = {}) {
   try {
     const logEntry = await doseLogCore.updateOrphanLog(logId, updates)
-    await logEvent(EVENTS.DOSE_LOGGED, { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id })
+    await logEvent(
+      EVENTS.DOSE_LOGGED,
+      _doseEventProps(
+        { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id },
+        { surface, treatmentId: (logEntry as any)?.protocol_id },
+      ),
+    )
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -205,10 +243,10 @@ export async function getLastInjectionSite() {
  * @param {string} logId
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function deleteOrphanLog(logId) {
+export async function deleteOrphanLog(logId, { surface = null } = {}) {
   try {
     await doseLogCore.deleteOrphanLog(logId)
-    await logEvent(EVENTS.DOSE_LOGGED, { action: 'delete_orphan' })
+    await logEvent(EVENTS.DOSE_LOGGED, _doseEventProps({ action: 'delete_orphan' }, { surface }))
     return { success: true }
   } catch (err) {
     if (_isNetworkError(err)) return _ERR_OFFLINE
@@ -238,7 +276,7 @@ function _validateManyLogs(logsData) {
  * @param {Array<Object>} logsData
  * @returns {Promise<{ success: boolean, results: Array<Object>, error?: string }>}
  */
-export async function registerDoseMany(logsData) {
+export async function registerDoseMany(logsData, { surface = null } = {}) {
   if (!logsData || logsData.length === 0) {
     return { success: false, results: [], error: 'Nenhuma dose selecionada.' }
   }
@@ -271,7 +309,10 @@ export async function registerDoseMany(logsData) {
 
     const successCount = results.filter((r) => r.success).length
     if (successCount > 0) {
-      await logEvent(EVENTS.DOSE_LOGGED_BULK, { count: successCount })
+      // Sem `treatment_id`: o lote atravessa tratamentos diferentes por natureza — um id só
+      // seria escolha arbitrária entre fatos distintos. O recorte por tratamento vem dos
+      // `dose_logged` individuais (065 US2).
+      await logEvent(EVENTS.DOSE_LOGGED_BULK, _doseEventProps({ count: successCount }, { surface }))
     }
 
     return { success: successCount > 0, results }

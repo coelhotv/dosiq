@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Dá para saber quem registra a dose sem abrir o app (mobile)
+
+- **Mobile** (`minor`, `0.31.3` → `0.32.0`, sem store note — nada nativo, nada visível na ficha).
+  Todo evento de dose passa a carregar **de onde a ação veio** (`surface`: app aberto, botão da
+  notificação, tela do alarme) e **de qual tratamento ela é** (`treatment_id`). Sem isso, quem
+  registra pela notificação e nunca abre o app era lido como usuário sumindo — que é o **oposto**
+  do que está acontecendo: é o melhor caso do produto, e ele era invisível.
+  O `treatment_id` sai do **fato gravado** no registro, nunca do tratamento como ele está hoje —
+  editar ou trocar um medicamento não reescreve o que foi medido no passado.
+  Junto: `dose_skipped` passa a ser registrado (o evento existia no catálogo e nunca disparava);
+  eventos passam a dizer se vieram de um build interno (`app_env`/`is_internal`), para que teste do
+  time não entre nos números de uso real; e o **logout limpa a identificação nos dois caminhos** de
+  saída do app — num aparelho compartilhado, os eventos da próxima pessoa iam com a identidade da
+  anterior.
+
 ### O gate de frescor da memória volta a significar alguma coisa — e passa a rodar sozinho
 
 - **Process** (`no-user-impact`). A verificação que diz se o índice de memória está em dia
