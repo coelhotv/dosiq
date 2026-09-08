@@ -3,12 +3,12 @@
   "project": "dosiq",
   "sprint": "2026-W35",
   "session": {
-    "mode": "planning",
-    "status": "planned",
+    "mode": "coding",
+    "status": "completed",
     "tier": 1,
-    "spec_dir": "plans/specs/081-rc6-surface-scope",
-    "spec": "plans/specs/081-rc6-surface-scope/spec.md",
-    "goal": "081 — RC6 por superficie: reconciliar a regra do CI com a regra escrita",
+    "spec_dir": "plans/specs/080-rc6-preamble-budget",
+    "spec": "plans/specs/080-rc6-preamble-budget/spec.md",
+    "goal": "080 PR A — instrumentacao passiva: RC6 persiste os `rule` dos findings; corpus revalidado e versionado",
     "goal_type": "feature",
     "spec_dirs": [
       "plans/specs/080-rc6-preamble-budget",
@@ -176,56 +176,57 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1 → spec 081 PO-1 (secao Revisao pos-RC3)",
-      "AC-2 → spec 081 PO-2 (secao Revisao pos-RC3)",
-      "AC-3 → spec 081 PO-3 (secao Revisao pos-RC3)",
-      "AC-4 → spec 081 PO-4 (secao Revisao pos-RC3)",
-      "AC-5 → spec 081 PO-5 (secao Revisao pos-RC3)",
-      "AC-6 → spec 081 PO-6 (secao Revisao pos-RC3)"
+      "AC-1 -> spec 080 PO-1 (fechada)",
+      "AC-2 -> spec 080 PO-2 (fechada)",
+      "AC-3 -> spec 080 PO-3 (PARCIAL: guard estrutural fechado por grep; proof aberta)",
+      "AC-4 -> spec 080 PO-4 (fechada)",
+      "AC-5 -> spec 080 PO-5 (PR B)",
+      "AC-6 -> spec 080 PO-6 (PR B)",
+      "AC-7 -> spec 080 PO-7 (PR B)"
     ],
     "merged_pr": 826,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
-    "tasks": "plans/specs/081-rc6-surface-scope/tasks.md",
-    "plan": "plans/specs/081-rc6-surface-scope/plan.md",
-    "next_action": "C-mode da 081 (/devflow-code): T001 captura a linha de base do gate ANTES de editar o workflow; o T008 (PR de controle) e checkpoint e vem ANTES de mexer nos docs. OU C-mode da 080, que tambem esta planned.",
+    "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
+    "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
+    "next_action": "080 PR B (T011-T019): breakdown por parcela com o overhead dos cabecalhos (RC3/F5), CLAUDE.md como piso protegido, gate por TAXA de crescimento e degradacao declarada. CHECKPOINT T012 (soma fecha em 0 B) vem ANTES do gate. Antes disso, decidir como pagar a PO-3.",
     "linked_adrs": [
       "ADR-069"
     ],
-    "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e) — pushed, origin/main sincronizado",
+    "devflow_sha": "266c228 (base 7054a47) — pushed, origin/main sincronizado",
     "code_review": {
       "status": "issues_found",
       "critical": 0,
-      "auto_fixed": 2,
+      "auto_fixed": 1,
       "ask_items": 0,
-      "note": "RC5: 2 auto-fix, ambos da classe do AP-348. Um terceiro da mesma classe foi pego antes, pelos proprios testes."
+      "note": "RC5 do 080/PR A. 1 auto-fix: a mensagem do bloco fail-open enumerava os destinos em string LITERAL e declarava ausente o que havia sido gravado quando a falha e PARCIAL (events.jsonl grava, journal nao) — Constituicao IX. Corrigida com inventario do que chegou ao disco. O T007 (byte-identico) foi RE-EXECUTADO depois do fix: a prova anterior valia para um script que ja nao existia."
     },
     "ai_review": {
-      "engine": "agy (3 chunks)",
-      "status": "clean",
+      "engine": null,
+      "status": "nao-aplicavel",
       "critical": 0,
       "high": 0,
       "introduced_critical": 0,
       "introduced_high": 0,
-      "pr": 826,
-      "note": "3/3 chunks revisados (406KB, partial=false), com usage por chunk — nao e clean por falha silenciosa. Gate de reflexao: refuted=0, nada a conferir a mao."
+      "pr": null,
+      "note": "NAO-APLICAVEL por DOIS mecanismos independentes, nunca 'clean': o codigo vive em ~/SKILLS/devflow (repo externo, sem fluxo de PR, .sh fora do CODE_GLOBS) e a parcela dosiq e .json sob .agent/, que esta no paths-ignore do ai-review-gate.yml E fora do CODE_GLOBS — o ai-review.sh sairia em :143-146 com 'No code changes' antes do bloco de persistencia. Classe do AP-348; e a divergencia que a spec 081 reconcilia."
     },
     "plan_stale": false,
     "plan_revision": 1,
     "slices": [],
     "active_slice": null,
-    "next_session": "DUAS specs planned e paradas: 080 (24 tasks, 2 PRs, ADR-099 proposed) e 081 (15 tasks, emenda ao ADR-069). A 080 vem primeiro: a D1 da 081 (advisory = rodar) se justifica pela coleta de uso da 080.",
+    "next_session": "PO-3 do 080 ABERTA com gatilho nomeado: exige um --post real do RC6 num PR de dosiq COM CODIGO (.js/.jsx/.mjs/.cjs/.ts/.tsx). O PR A nao serve — .agent/**.json nao dispara o gate nem entra no CODE_GLOBS. Pagar no primeiro PR de produto/tooling .mjs que aparecer, OU antecipar a 081, que reconcilia exatamente essa regra.",
     "ceremony_type": null,
-    "_080_parked": {
+    "_081_parked": {
       "status": "planned",
-      "spec": "plans/specs/080-rc6-preamble-budget/spec.md",
-      "plan": "plans/specs/080-rc6-preamble-budget/plan.md",
-      "tasks": "plans/specs/080-rc6-preamble-budget/tasks.md",
-      "next": "C-mode do PR A (T001 antes de editar)"
+      "spec": "plans/specs/081-rc6-surface-scope/spec.md",
+      "plan": "plans/specs/081-rc6-surface-scope/plan.md",
+      "tasks": "plans/specs/081-rc6-surface-scope/tasks.md",
+      "next": "C-mode da 081 (T001 captura a linha de base do gate ANTES de editar o workflow; T008 e checkpoint e vem ANTES dos docs)"
     }
   },
   "memory": {
     "last_distillation": "2026-09-07T00:00:00-03:00",
-    "journal_entries_since_distillation": 6,
+    "journal_entries_since_distillation": 7,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
