@@ -15,6 +15,24 @@
 
 set -euo pipefail
 
+# Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
+# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts` — o npm >= 11.17 recusa esse
+# config vindo por ENV como se fosse flag de CLI em install de projeto ("--allow-scripts is not
+# allowed in project-scoped installs"). A variável não vem do repo: o `npx` converte o `~/.npmrc`
+# do operador em `npm_config_*` e as exporta ao processo filho.
+#
+# 🔴 `export npm_config_allow_scripts=` NÃO resolve (foi a primeira tentativa, e ela falha): o npx
+# relê o `~/.npmrc` e sobrescreve o valor vazio. Medido:
+#   export vazio + npx  → npm_config_allow_scripts=esbuild   (o arquivo vence)
+#   userconfig alternativo + npx → npm_config_allow_scripts= (vazio atravessa)
+# Por isso a neutralização é do ARQUIVO de config, não da variável: um userconfig vazio próprio do
+# build. O `npm ci` passa a avisar que não rodou o postinstall de esbuild — é warning, não erro
+# (exit 0 verificado), e o build do EAS não depende desse script.
+BUILD_NPMRC="$(mktemp -t dosiq-build-npmrc)"
+: > "$BUILD_NPMRC"
+export npm_config_userconfig="$BUILD_NPMRC"
+trap 'rm -f "$BUILD_NPMRC"' EXIT
+
 # Garantir que o Android SDK é encontrado pelo Gradle
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"

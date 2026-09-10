@@ -41,3 +41,16 @@ export const EVENTS = {
   STOCK_UPSELL_CONVERSION: 'stock_upsell_conversion',
   STOCK_UPSELL_DISMISSED: 'stock_upsell_dismissed',
 }
+
+// Superfície de ORIGEM da ação (spec 065 / US1). Responde a pergunta da tese: o usuário que
+// registra a dose pela notificação e nunca abre o app está no estado IDEAL, não em churn — sem
+// esta propriedade os dois casos são indistinguíveis no PostHog.
+//
+// 🔴 NÃO existe default: emissor que não informa a origem manda o evento SEM a chave. Um
+// `surface = 'mobile'` implícito faria todo registro por push parecer app-aberto — a US1 morta em
+// silêncio, com aparência de medida (plan.md A-1).
+export const SURFACES = {
+  MOBILE: 'mobile',   // app em primeiro plano
+  PUSH: 'push',       // botão da notificação (sem abrir o app)
+  ALARM: 'alarm',     // tela cheia do alarme de dose crítica
+}

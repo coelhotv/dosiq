@@ -11,6 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY } from '@platform/alarms/alarmEnabledStore'
+import { resetUser } from '@platform/analytics/productAnalytics'
 
 /**
  * Mapeia erros técnicos da API para mensagens amigáveis em Português (R-170)
@@ -82,6 +83,11 @@ export async function logoutUser() {
       '@dosiq/treatments-snapshot',
       '@dosiq/recovery-flow',
     ]).catch(() => {})
+    // 065/US4 (TC-4): `resetUser()` nos DOIS caminhos de logout. Cabear só um deixa, num device
+    // compartilhado, os eventos do PRÓXIMO usuário com a identidade e as super properties do
+    // anterior — mistura dado de saúde entre pessoas, que é justo o que `resetUser` existe para
+    // impedir. Fail-silent por contrato (CON-021): nunca altera o resultado do logout.
+    await resetUser()
     return { success: true, error: null }
   } catch (err) {
     console.error('[profileService] erro ao fazer logout:', err)

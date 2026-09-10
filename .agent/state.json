@@ -4,7 +4,7 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "analysis",
+    "status": "completed",
     "tier": 2,
     "spec_dir": "plans/specs/065-analytics-instrumentation-mobile",
     "spec": "plans/specs/065-analytics-instrumentation-mobile/spec.md",
@@ -153,7 +153,7 @@
       "Planning/081 F4: contagem dos 5 PRs em .agent/memory/ (versionado) com ponteiro no CLAUDE.md — inverte o arranjo atual (dado no gitignored, lembrete duravel).",
       "Planning/081 CORRECAO DE PREMISSA: o §1 da spec estava errado. Medido, os 6 runs recentes do gate sao todos de PRs de tooling e TODOS rodaram — o paths-ignore quase nao filtra (package.json, .lintstagedrc.mjs, plans/specs/README.md; e `*.md` so casa a raiz porque em Actions o * nao cruza /). A divergencia e \"o CI tenta nao cobrar e falha\"."
     ],
-    "branch": "main",
+    "branch": "feat/065-pr-a-analytics-surface",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
       "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05).",
@@ -175,19 +175,17 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1 -> 080 PO-1 (fechada)",
-      "AC-2 -> 080 PO-2 (fechada)",
-      "AC-3 -> 080 PO-3 (ABERTA — exige --post real num PR com codigo)",
-      "AC-4 -> 080 PO-4 (fechada)",
-      "AC-5 -> 080 PO-5 (fechada)",
-      "AC-6 -> 080 PO-6 (fechada)",
-      "AC-7 -> 080 PO-7 (fechada)"
+      "AC-1 -> 065 PO-1 (fechada, 2 plataformas)",
+      "AC-2 -> 065 PO-2 (fechada)",
+      "AC-4 -> 065 PO-4 (fechada)",
+      "AC-7 -> 065 PO-7 (fechada)",
+      "AC-8 -> 065 PO-8 (fechada — Android 10,8s / iOS 7s)"
     ],
-    "merged_pr": 826,
+    "merged_pr": null,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md",
     "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
-    "next_action": "Nenhum trabalho de ferramental em aberto e nenhuma spec de ferramental na fila. As 4 specs travadas (034/056/058/080) destravam por PR de PRODUTO. Candidatos medidos: 2.3b (007 porte mobile, Tier 2 — o unico que fecha o par A/B da 056) e 2.1 (065 PR A, muda assinatura de registerDose). A 060 e a excecao: T017/T020/T021/T022/T026 sao trabalho de verdade.",
+    "next_action": "PR #829 pronto para revisão humana e merge (R-060). Depois do merge: build de loja exige árvore limpa + tag mobile-v0.32.0 no commit da main (R-307). PR B (T030) segue bloqueado até verificar treatmentPlanService vs protocolService.",
     "linked_adrs": [
       "ADR-069",
       "ADR-097",
@@ -197,30 +195,35 @@
     "code_review": {
       "status": "issues_found",
       "critical": 0,
-      "auto_fixed": 3,
+      "auto_fixed": 2,
       "ask_items": 0,
-      "note": "RC5 do 080/PR B. 3 auto-fixes, o mais serio: a substituicao do python3 sem `|| true` sob set -euo pipefail faria o gate de ORCAMENTO derrubar o review — um gate de custo virando causa de morte do revisor, o oposto do fail-open do ADR-069."
+      "note": "RC5 do 065 PR A. O mais sério: o select cru em dose_instances que eu havia escrito para o dose_skipped derrubava o guard do SC-008 (067/B) — trocado pelo protocolId do payload, com a imutabilidade da coluna verificada no pg_proc."
     },
     "ai_review": {
-      "engine": null,
-      "status": "nao-aplicavel",
+      "engine": "agy+claude (3 chunks)",
+      "status": "issues_found",
       "critical": 0,
       "high": 0,
       "introduced_critical": 0,
       "introduced_high": 0,
-      "pr": null,
-      "note": "PR B: diff 100% .sh no repo externo, fora do CODE_GLOBS. Nunca 'clean'."
+      "pr": 829,
+      "rules_cited": [
+        "AP-115"
+      ],
+      "refuted": 0,
+      "cov": "3/3",
+      "note": "2 findings, ambos respondidos inline. Medium (EVENTS.DOSE_SKIPPED inexistente) é FALSO — existe em analyticsEvents.ts:23 desde #725; ponto cego declarado do RC6 (leu só a hunk). Low (gate mobile poderia rodar zero teste) não era defeito e sim exigência de prova: paga nas 2 direções."
     },
     "plan_stale": false,
     "plan_revision": 1,
     "slices": [],
     "active_slice": null,
-    "next_session": "081 ENCERRADA (superseded) em 2026-09-08, entregue como Tier 0 — gatilho do ai-review-gate.yml virou allowlist espelhando o CODE_GLOBS. INVARIANTE NOVA: `paths:` do workflow e CODE_GLOBS do ai-review.sh sao um par que precisa concordar (AP-346); mexeu num, mexa no outro no mesmo PR — esta escrito no proprio workflow. Repriorizacao sugerida ao PO: subir 2.3b e 2.1 no backlog H2; quatro specs saem do limbo como efeito colateral de trabalho que ja se queria fazer, em vez de custar sessao propria.",
+    "next_session": "065 PR A completo: 5 POs fechadas com evidência de campo nas 2 plataformas. FR-14 nasceu do smoke (hero card usa o caminho do lote). INCIDENTE ABERTO fora do 065: dose crítica não notifica — 80,6% de falha silenciosa, documentado em bug-logs/2026-09-10-dose-critica-nao-notifica.md, escopo já estreitado para o dispatcher do servidor (o alarme local foi provado íntegro nas 2 plataformas). Infra nova: perfil EAS `device` para build ad hoc iOS.",
     "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-09-08T00:00:00-03:00",
-    "journal_entries_since_distillation": 0,
+    "journal_entries_since_distillation": 2,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
@@ -232,7 +235,7 @@
     "auto_promote_rule_after_incidents": 3
   },
   "quality_gates": {
-    "index_loaded_at": "2026-09-08T00:00:00-03:00"
+    "index_loaded_at": "2026-09-08T05:40:00-03:00"
   },
   "code_review": {
     "status": "clean",

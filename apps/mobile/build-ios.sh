@@ -5,9 +5,13 @@
 # Perfis (spec 051-A · canais de OTA declarados em eas.json):
 #   development → .app (simulador) · canal `development` · uso diário
 #   preview     → .app (simulador) · canal `preview`     · alvo do smoke de OTA
+#   device      → .ipa (ad hoc)    · canal `device`      · APARELHO FÍSICO registrado (065/PO-8)
 #   production  → .ipa             · canal `production`  · TestFlight/App Store
 #
-# ℹ️ preview no iOS sai como build de SIMULADOR (não exige Distribution Certificate). O smoke
+# ℹ️ development/preview no iOS saem como build de SIMULADOR (não exigem Distribution
+#    Certificate) — e simulador NÃO recebe push. Para qualquer smoke que dependa de
+#    notificação no iPhone, o perfil é `device`: ad hoc assinado para os UDIDs de
+#    `eas device:list`, sem passar pela Apple. O smoke
 #    do OTA em device real roda no Android (build-android.sh preview) — o mecanismo do
 #    expo-updates é o mesmo nas duas plataformas, e um device físico basta pra provar.
 
@@ -20,6 +24,24 @@ set -euo pipefail
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
+# Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
+# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts` — o npm >= 11.17 recusa esse
+# config vindo por ENV como se fosse flag de CLI em install de projeto ("--allow-scripts is not
+# allowed in project-scoped installs"). A variável não vem do repo: o `npx` converte o `~/.npmrc`
+# do operador em `npm_config_*` e as exporta ao processo filho.
+#
+# 🔴 `export npm_config_allow_scripts=` NÃO resolve (foi a primeira tentativa, e ela falha): o npx
+# relê o `~/.npmrc` e sobrescreve o valor vazio. Medido:
+#   export vazio + npx  → npm_config_allow_scripts=esbuild   (o arquivo vence)
+#   userconfig alternativo + npx → npm_config_allow_scripts= (vazio atravessa)
+# Por isso a neutralização é do ARQUIVO de config, não da variável: um userconfig vazio próprio do
+# build. O `npm ci` passa a avisar que não rodou o postinstall de esbuild — é warning, não erro
+# (exit 0 verificado), e o build do EAS não depende desse script.
+BUILD_NPMRC="$(mktemp -t dosiq-build-npmrc)"
+: > "$BUILD_NPMRC"
+export npm_config_userconfig="$BUILD_NPMRC"
+trap 'rm -f "$BUILD_NPMRC"' EXIT
+
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -29,10 +51,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Falhar cedo e explícito: perfil desconhecido só apareceria como erro do EAS depois do
 # prebuild + pod install (minutos perdidos).
 case "$PROFILE" in
-  development|preview|production) ;;
+  development|preview|device|production) ;;
   *)
     echo "❌ Perfil inválido: '$PROFILE'"
-    echo "   Use: development | preview | production"
+    echo "   Use: development | preview | device | production"
     exit 1
     ;;
 esac
@@ -41,7 +63,10 @@ esac
 BUNDLE_ID="com.coelhotv.dosiq"
 PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
-if [ "$PROFILE" = "production" ]; then
+# `device` (ad hoc) assina com o MESMO Apple Distribution certificate do production — só o
+# provisioning profile difere (lista de UDIDs em vez de App Store). Pular a verificação aqui
+# devolveria o erro no FIM do build, depois do prebuild + pod install.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   echo "🔍 Verificando Distribution Certificate no keychain..."
   CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "Antonio Coelho" | head -1)
 
@@ -58,7 +83,7 @@ if [ "$PROFILE" = "production" ]; then
   fi
   echo "   ✅ Certificado encontrado: $CERT"
 else
-  echo "ℹ️  Simulador detectado (perfil $PROFILE): Pulando verificação de certificado de distribuição."
+  echo "ℹ️  Simulador (perfil $PROFILE): Pulando verificação de certificado de distribuição."
 fi
 
 echo "🔐 Desbloqueando keychain..."
@@ -92,7 +117,9 @@ TARGET_DIR="$HOME/local/dev-builds"
 mkdir -p "$TARGET_DIR"
 
 # 3. Definir nome e extensão do arquivo
-if [ "$PROFILE" = "production" ]; then
+# `.ipa` para tudo que instala em aparelho FÍSICO (production via TestFlight, device via ad hoc);
+# `.app` só para os perfis de simulador.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   EXT="ipa"
 else
   EXT="app"
@@ -114,6 +141,10 @@ echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam n
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight ✈️)" || echo "NÃO (Apenas Local 💾)" )"
+if [ "$PROFILE" = "device" ]; then
+  echo "📲 Ad hoc:  instala em APARELHO FÍSICO registrado (eas device:list) — substitui o app da"
+  echo "            App Store no aparelho, mesmos dados. Para voltar ao real, reinstalar pela loja."
+fi
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
@@ -166,7 +197,9 @@ echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
 
 # 4.1 Extração automática para Simulador
-if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
+# Só os perfis de SIMULADOR saem como tar.gz a extrair. `device` é .ipa assinado — extrair
+# quebraria a assinatura, e antes esta condição era "tudo que não é production".
+if { [ "$PROFILE" = "development" ] || [ "$PROFILE" = "preview" ]; } && [ -f "$FINAL_PATH" ]; then
   # Verifica se é um arquivo comprimido (tar.gz)
   if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
     echo "📦 Detectado pacote comprimido. Iniciando extração para simulador..."

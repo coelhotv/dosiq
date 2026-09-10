@@ -15,6 +15,7 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { registerTaken, registerSkip } from '@platform/alarms/quickDoseRegistration'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { scheduleSnooze, cancelAlarm } from '@platform/alarms/alarmService'
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
@@ -168,7 +169,8 @@ export default function AlarmFullScreen({ navigation, route }) {
     if (busy) return
     setBusy(true)
     try {
-      reportRefusal(await registerTaken(data))
+      // Tela cheia do alarme de dose crítica: nem app-aberto comum, nem botão da notificação (065).
+      reportRefusal(await registerTaken(data, { surface: SURFACES.ALARM }))
     } finally {
       close()
     }
@@ -198,7 +200,7 @@ export default function AlarmFullScreen({ navigation, route }) {
     if (busy) return
     setBusy(true)
     try {
-      reportRefusal(await registerSkip(data))
+      reportRefusal(await registerSkip(data, { surface: SURFACES.ALARM }))
     } finally {
       close()
     }

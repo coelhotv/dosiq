@@ -1,9 +1,24 @@
 // Root é ESM (`"type": "module"`): este arquivo era `.js` com `module.exports` e NUNCA
 // carregou — só apareceu quando o hook voltou a rodar de verdade.
 export default {
-  // Testes apenas dos arquivos em staged - suporte a monorepo
-  "{apps/*/src,server,api}/**/*.{js,jsx,ts,tsx}": [
+  // Testes apenas dos arquivos em staged - suporte a monorepo.
+  //
+  // 🔴 `apps/mobile` fica FORA deste glob: o workspace roda **jest** (jest-expo), e o `vitest
+  // related` não apenas deixa de cobri-lo — ele FALHA a suíte inteira ao tentar parsear o
+  // `react-native/index.js` (sintaxe Flow: `import typeof`). O glob antigo `apps/*/src` pegava os
+  // dois workspaces, então TODO commit que tocasse a superfície mobile era barrado por um erro que
+  // não tem nada a ver com o diff. Não apareceu antes porque o hook só voltou a rodar de verdade
+  // depois do último commit de produto mobile — gate novo sobre superfície que ninguém exercitou
+  // desde a reativação (065 PR A).
+  "{apps/web/src,server,api}/**/*.{js,jsx,ts,tsx}": [
     "vitest related --run --passWithNoTests"
+  ],
+
+  // Mobile: mesmo princípio (só o que está staged), com o runner do workspace.
+  // `--findRelatedTests` é o equivalente jest do `vitest related`; `--passWithNoTests` mantém o
+  // commit de arquivo sem teste associado passando, como no lado web.
+  "apps/mobile/src/**/*.{js,jsx,ts,tsx}": (files) => [
+    `npm test --workspace @dosiq/mobile -- --findRelatedTests ${files.map((f) => JSON.stringify(f)).join(' ')} --passWithNoTests`
   ],
 
   // Lint em todos os arquivos staged JS/JSX/TS/TSX (incluindo apps, server e api)

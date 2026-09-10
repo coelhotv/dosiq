@@ -27,6 +27,7 @@ import {
   INTAKE_UNIT_LABELS,
 } from '@dosiq/core'
 import { registerDose, getLastInjectionSite } from '../services/doseService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { AlertTriangle } from 'lucide-react-native'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
@@ -155,7 +156,7 @@ export default function DoseRegisterModal({
         injection_site: injectable ? injectionSite : null,
       },
       // F4.3c: âncora direta na ocorrência da timeline (determinística); null → snap.
-      { instanceId }
+      { instanceId, surface: SURFACES.MOBILE }
     )
 
     setLoading(false)

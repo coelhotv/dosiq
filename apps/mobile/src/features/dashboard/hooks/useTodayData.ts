@@ -16,6 +16,7 @@ import {
   getDoseInstancesForPeriod,
 } from '../services/dashboardService'
 import { useTodayDerived } from './_useTodayDerived'
+import { setMode } from '@platform/analytics/productAnalytics'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -106,6 +107,14 @@ export function useTodayData() {
         getUserSettings(user.id),
         getDoseInstancesForPeriod(user.id, 14)
       ])
+
+      // 065/US4: `mode` como super property nasce AQUI, e não só no `useProfile`. Medido no
+      // PostHog com o app de dev rodando: `mode` saía `(null)` em todo evento, porque o
+      // `useProfile` só monta nas telas de Perfil/Tratamentos — uma sessão que fica no Dashboard
+      // (o caso comum) nunca registrava a propriedade, e a segmentação da US4 nasceria quase vazia.
+      // O Dashboard é a tela inicial e já carrega `user_settings`: é o primeiro ponto do app em que
+      // o valor existe. Fail-silent por contrato (CON-021).
+      void setMode(userSettings?.complexity_override)
 
       // F4.3f.1: localDay no fuso do perfil (segregação de cache cross-dia correta p/ expat).
       const tz = userSettings?.timezone || 'America/Sao_Paulo'

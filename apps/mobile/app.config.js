@@ -12,7 +12,7 @@ const BUILD_PROFILE = process.env.EAS_BUILD_PROFILE || 'production'
 // default só vale para os casos em que errar barato é melhor que errar caro.
 const UPDATE_CHANNEL = process.env.EAS_BUILD_PROFILE || 'development'
 
-const APP_VERSION = '0.31.3' // R-182: versão semântica (sem prefixo 'v')
+const APP_VERSION = '0.32.0' // R-182: versão semântica (sem prefixo 'v')
 const [major, minor, patch] = APP_VERSION.split('.').map(Number)
 // buildNumber/versionCode derivado da versão semântica: major*10000 + minor*100 + patch
 // 0.2.4 → 204 | 0.3.0 → 300 | 1.0.0 → 10000
@@ -21,6 +21,17 @@ const BUILD_NUMBER = String(major * 10000 + minor * 100 + patch)
 const variants = {
   development: {
     name: 'Dosiq dev',
+    slug: 'dosiq-app',
+    iosBundleIdentifier: 'com.coelhotv.dosiq',
+    androidPackage: 'com.coelhotv.dosiq',
+  },
+  // Ad hoc para smoke em aparelho FÍSICO (065/PO-8). Mesmo bundle id dos demais — é ele que tem o
+  // App Group `group.com.coelhotv.dosiq` registrado no portal, e a Live Activity não funciona sem.
+  // Consequência declarada: instalar este build SUBSTITUI o app da App Store no aparelho (mesmos
+  // dados, canal de OTA `device`). Para voltar ao app real, reinstalar pela loja.
+  // O `name` difere de propósito: é a única pista visível de qual binário está no aparelho.
+  device: {
+    name: 'Dosiq device',
     slug: 'dosiq-app',
     iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq',

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { calculateAge, getInitials } from '@dosiq/core'
 import { describeError } from '@shared/utils/networkError'
+import { setMode } from '@platform/analytics/productAnalytics'
 import {
   getCurrentUser,
   getUserSettings,
@@ -68,6 +69,16 @@ export function useProfile() {
         loading: false,
         error: null
       })
+
+      // 065/US4: super property `mode` só existe depois que os dados chegam — eventos anteriores
+      // saem sem ela, aceito e declarado na spec. Fail-silent por contrato (CON-021): telemetria
+      // não pode alterar o estado da tela de Perfil, que acabou de ser montado acima.
+      //
+      // 🔴 A fonte é `settingsRes` (user_settings), NÃO `profileRes` (profiles): verificado no
+      // banco, `complexity_override` existe SOMENTE em `user_settings` (R-295). Ler do objeto de
+      // perfil devolvia `undefined` sempre, e o evento saía com `mode: 'auto'` em 100% dos casos —
+      // parecendo funcionar, porque `auto` é também o valor legítimo de quem não escolheu.
+      void setMode(settingsRes.data?.complexity_override)
     } catch (err) {
       if (__DEV__) console.error('Erro no useProfile loadProfile:', err)
       // `err.message` cru chegava à tela: em modo avião isso é "TypeError: Network request
