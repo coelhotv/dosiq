@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@babel/generator": "^7.28.6",
+    "@sentry/node-core": "^10.74.0",
     "@supabase/supabase-js": "^2.90.1",
     "dotenv": "^17.2.3",
     "expo-server-sdk": "^6.1.0",

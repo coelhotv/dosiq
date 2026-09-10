@@ -11,6 +11,7 @@ import { handlePausar, handleRetomar } from '../server/bot/commands/protocols.js
 import { handleCallbacks } from '../server/bot/callbacks/doseActions.js';
 import { handleConversationalCallbacks } from '../server/bot/callbacks/conversational.js';
 import { createLogger } from '../server/bot/logger.js';
+import { initSentry, captureServerException, flushSentry, withServerIsolation } from '../server/observability/sentry.js';
 
 // --- Configuration ---
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -166,6 +167,7 @@ async function _handleCallbackQuery(bot, callbackQuery) {
 }
 
 export default async function handler(req, res) {
+  initSentry();
   logger.info('📨 Webhook recebido', {
     method: req.method,
     updateType: req.body?.message ? 'message' : req.body?.callback_query ? 'callback_query' : 'unknown'
@@ -190,15 +192,18 @@ export default async function handler(req, res) {
   handleConversationalCallbacks(bot);
 
   try {
-    if (update.message?.text) {
-      await _handleTextMessage(bot, update.message);
-    } else if (update.callback_query) {
-      await _handleCallbackQuery(bot, update.callback_query);
-    } else {
-      logger.warn('⚠️ Update sem tipo identificado', { updateKeys: Object.keys(update) });
-    }
+    await withServerIsolation(async () => {
+      if (update.message?.text) {
+        await _handleTextMessage(bot, update.message);
+      } else if (update.callback_query) {
+        await _handleCallbackQuery(bot, update.callback_query);
+      } else {
+        logger.warn('⚠️ Update sem tipo identificado', { updateKeys: Object.keys(update) });
+      }
+    });
 
     logger.info('✅ Webhook processado com sucesso');
+    await flushSentry();
     res.status(200).json({ success: true });
   } catch (error) {
     logger.error('❌ Erro no webhook', error, {
@@ -206,6 +211,9 @@ export default async function handler(req, res) {
       errorName: error.name,
       chatId: update.message?.chat?.id || update.callback_query?.message?.chat?.id
     });
+    // Sem userId: o id do Telegram é identificador de paciente e não sai do perímetro (ADR-101).
+    captureServerException(error, { job: 'telegram_webhook' });
+    await flushSentry();
     res.status(200).json({ error: 'Internal Error', details: error.message });
   }
 }

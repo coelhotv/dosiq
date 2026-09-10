@@ -7,7 +7,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-### Dá para saber quem registra a dose sem abrir o app (mobile)
+### O servidor deixa de ser ponto cego — falha no backend agora chega a alguém
+
+- **Infra** (`no-user-impact`). Até agora o Sentry só cobria o app; `server/` e `api/` — o
+  dispatcher de notificações, os crons de lembrete, o webhook do bot — não emitiam nada. O
+  resultado: um mês inteiro de dose crítica falhando em silêncio enquanto o painel mostrava "tudo
+  ok", porque não havia o que mostrar. Passa a existir captura de exceção nos crons e no webhook,
+  num projeto Sentry próprio do backend (`dosiq-server`).
+  **Nada de dado clínico sai daqui:** nome de medicamento, dose, horário e identificador de
+  paciente (Telegram, e-mail, telefone) são removidos do evento antes do envio — ele carrega só o
+  nosso id interno de usuário e o `correlationId` para cruzar com os logs. É pré-requisito da
+  observabilidade da dose crítica (spec 082), não um fim em si.
 
 - **Mobile** (`minor`, `0.31.3` → `0.32.0`, sem store note — nada nativo, nada visível na ficha).
   Todo evento de dose passa a carregar **de onde a ação veio** (`surface`: app aberto, botão da
