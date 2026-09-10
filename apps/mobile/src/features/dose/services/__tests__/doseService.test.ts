@@ -322,10 +322,14 @@ describe('065 — surface e treatment_id', () => {
 
     await registerDoseMany([INPUT])
 
-    const [event, props] = mockLogEvent.mock.calls[0]
-    expect(event).toBe(EVENTS.DOSE_LOGGED_BULK)
-    expect(props).not.toHaveProperty('surface')
-    expect(props).toEqual({ count: 1 })
+    // FR-14: o lote emite os individuais ANTES do agregado — pegar o bulk pelo nome, não por
+    // posição. Nenhum dos dois pode inventar `surface`.
+    const bulk = mockLogEvent.mock.calls.find(([e]) => e === EVENTS.DOSE_LOGGED_BULK)
+    expect(bulk).toBeDefined()
+    expect(bulk[1]).toEqual({ count: 1 })
+    for (const [, props] of mockLogEvent.mock.calls) {
+      expect(props).not.toHaveProperty('surface')
+    }
   })
 
   it.each([
@@ -405,5 +409,81 @@ describe('065 — surface e treatment_id', () => {
       action: 'delete_orphan',
       surface: 'mobile',
     })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FR-14 (065) — um `dose_logged` por dose do lote, com o tratamento de CADA fato
+// ─────────────────────────────────────────────────────────────────────────────
+describe('065 FR-14 — dose_logged por item do lote', () => {
+  const PID_2 = '44444444-4444-4444-8444-444444444444'
+  const MID_2 = '55555555-5555-4555-8555-555555555555'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
+    mockCancelAlarm.mockResolvedValue(undefined)
+  })
+
+  it('lote com 2 TRATAMENTOS distintos → 2 dose_logged com treatment_id próprio + 1 bulk sem ele', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'inst-1', data: { ...LOG } },
+      { success: true, instanceId: 'inst-2', data: { ...LOG, protocol_id: PID_2, medicine_id: MID_2 } },
+    ])
+
+    await registerDoseMany([INPUT, INPUT], { surface: 'mobile' })
+
+    const individuais = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED)
+    expect(individuais).toHaveLength(2)
+    expect(individuais[0][1]).toEqual({ medicine_id: MID, surface: 'mobile', treatment_id: PID })
+    expect(individuais[1][1]).toEqual({ medicine_id: MID_2, surface: 'mobile', treatment_id: PID_2 })
+
+    // O agregado permanece — e continua SEM treatment_id (um id só seria arbitrário no lote).
+    const bulk = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED_BULK)
+    expect(bulk).toHaveLength(1)
+    expect(bulk[0][1]).toEqual({ count: 2, surface: 'mobile' })
+  })
+
+  it('item que FALHA no lote não emite dose_logged e não entra na contagem do bulk', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'inst-1', data: { ...LOG } },
+      { success: false, instanceId: 'inst-2', error: 'Estoque insuficiente' },
+    ])
+
+    await registerDoseMany([INPUT, INPUT], { surface: 'mobile' })
+
+    const individuais = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED)
+    expect(individuais).toHaveLength(1)
+    expect(individuais[0][1].treatment_id).toBe(PID)
+
+    const bulk = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED_BULK)
+    expect(bulk[0][1]).toEqual({ count: 1, surface: 'mobile' })
+  })
+
+  // O caminho do hero card: UMA dose, mas passa por registerDoseMany. Antes do FR-14 este
+  // registro — o mais comum do app — saía sem tratamento nenhum.
+  it('dose ÚNICA pelo caminho do lote (hero card) carrega treatment_id', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'inst-1', data: { ...LOG } },
+    ])
+
+    await registerDoseMany([INPUT], { surface: 'mobile' })
+
+    const individuais = mockLogEvent.mock.calls.filter(([e]) => e === EVENTS.DOSE_LOGGED)
+    expect(individuais).toHaveLength(1)
+    expect(individuais[0][1]).toEqual({ medicine_id: MID, surface: 'mobile', treatment_id: PID })
+  })
+
+  it('lote sem surface: nem os individuais nem o bulk inventam origem', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([
+      { success: true, instanceId: 'inst-1', data: { ...LOG } },
+    ])
+
+    await registerDoseMany([INPUT])
+
+    for (const [, props] of mockLogEvent.mock.calls) {
+      expect(props).not.toHaveProperty('surface')
+    }
   })
 })

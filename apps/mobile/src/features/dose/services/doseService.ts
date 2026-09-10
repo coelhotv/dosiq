@@ -307,15 +307,40 @@ export async function registerDoseMany(logsData, { surface = null } = {}) {
       }
     }
 
-    const successCount = results.filter((r) => r.success).length
-    if (successCount > 0) {
-      // Sem `treatment_id`: o lote atravessa tratamentos diferentes por natureza — um id só
-      // seria escolha arbitrária entre fatos distintos. O recorte por tratamento vem dos
-      // `dose_logged` individuais (065 US2).
-      await logEvent(EVENTS.DOSE_LOGGED_BULK, _doseEventProps({ count: successCount }, { surface }))
+    const succeeded = results.filter((r) => r.success)
+
+    // FR-14 (065): UM `dose_logged` por dose do lote, com o `treatment_id` e o `medicine_id` do
+    // SEU fato — `res.data` é o retorno da RPC `register_dose_atomic`, o mesmo objeto de onde o
+    // `registerDose` individual tira esses campos (mesma disciplina do R-299, zero leitura extra).
+    //
+    // Por que o lote precisa disto: medido em 30 dias, `dose_logged_bulk` = 212 contra 53 de
+    // `dose_logged` — e o hero card do dashboard, caminho mais usado do app, passa por AQUI mesmo
+    // para UMA dose (registro do smoke saiu como bulk `count: 1`). Sem o evento por item, ~80% dos
+    // registros ficariam sem tratamento e a segmentação da US2 nasceria cobrindo um quinto do uso.
+    //
+    // DEPOIS do laço de cancelamento de alarme, nunca antes: analytics não atrasa o cancelamento do
+    // alarme de uma dose já registrada.
+    for (const res of succeeded) {
+      await logEvent(
+        EVENTS.DOSE_LOGGED,
+        _doseEventProps(
+          { medicine_id: (res as any).data?.medicine_id },
+          { surface, treatmentId: (res as any).data?.protocol_id },
+        ),
+      )
     }
 
-    return { success: successCount > 0, results }
+    if (succeeded.length > 0) {
+      // O agregado PERMANECE, e continua sem `treatment_id`: o lote atravessa tratamentos por
+      // natureza, e um id só seria escolha arbitrária entre fatos distintos. Quem quer recorte por
+      // tratamento usa os `dose_logged` acima; quem quer "quantas doses de uma vez" usa este.
+      await logEvent(
+        EVENTS.DOSE_LOGGED_BULK,
+        _doseEventProps({ count: succeeded.length }, { surface }),
+      )
+    }
+
+    return { success: succeeded.length > 0, results }
   } catch (err) {
     if (_isNetworkError(err)) {
       return { success: false, results: [], error: _ERR_OFFLINE.error }
