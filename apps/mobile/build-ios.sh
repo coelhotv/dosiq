@@ -25,13 +25,22 @@ export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
 # Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
-# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts`. A variável não vem do repo —
-# o `npx` converte o `~/.npmrc` do operador em `npm_config_*` e as exporta para o processo filho,
-# e o npm >= 11.17 recusa esse config como se fosse flag de CLI em install de projeto
-# ("--allow-scripts is not allowed in project-scoped installs"). Medido: pelo ARQUIVO `.npmrc`
-# passa; pela ENV quebra — então limpar a var no shell não basta, o npx a reexporta.
-# Neutralizar aqui (valor vazio é aceito) mantém o build imune ao `.npmrc` de quem o roda.
-export npm_config_allow_scripts=
+# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts` — o npm >= 11.17 recusa esse
+# config vindo por ENV como se fosse flag de CLI em install de projeto ("--allow-scripts is not
+# allowed in project-scoped installs"). A variável não vem do repo: o `npx` converte o `~/.npmrc`
+# do operador em `npm_config_*` e as exporta ao processo filho.
+#
+# 🔴 `export npm_config_allow_scripts=` NÃO resolve (foi a primeira tentativa, e ela falha): o npx
+# relê o `~/.npmrc` e sobrescreve o valor vazio. Medido:
+#   export vazio + npx  → npm_config_allow_scripts=esbuild   (o arquivo vence)
+#   userconfig alternativo + npx → npm_config_allow_scripts= (vazio atravessa)
+# Por isso a neutralização é do ARQUIVO de config, não da variável: um userconfig vazio próprio do
+# build. O `npm ci` passa a avisar que não rodou o postinstall de esbuild — é warning, não erro
+# (exit 0 verificado), e o build do EAS não depende desse script.
+BUILD_NPMRC="$(mktemp -t dosiq-build-npmrc)"
+: > "$BUILD_NPMRC"
+export npm_config_userconfig="$BUILD_NPMRC"
+trap 'rm -f "$BUILD_NPMRC"' EXIT
 
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
