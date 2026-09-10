@@ -25,6 +25,17 @@ const variants = {
     iosBundleIdentifier: 'com.coelhotv.dosiq',
     androidPackage: 'com.coelhotv.dosiq',
   },
+  // Ad hoc para smoke em aparelho FÍSICO (065/PO-8). Mesmo bundle id dos demais — é ele que tem o
+  // App Group `group.com.coelhotv.dosiq` registrado no portal, e a Live Activity não funciona sem.
+  // Consequência declarada: instalar este build SUBSTITUI o app da App Store no aparelho (mesmos
+  // dados, canal de OTA `device`). Para voltar ao app real, reinstalar pela loja.
+  // O `name` difere de propósito: é a única pista visível de qual binário está no aparelho.
+  device: {
+    name: 'Dosiq device',
+    slug: 'dosiq-app',
+    iosBundleIdentifier: 'com.coelhotv.dosiq',
+    androidPackage: 'com.coelhotv.dosiq',
+  },
   production: {
     name: 'Dosiq',
     slug: 'dosiq-app',

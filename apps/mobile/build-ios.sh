@@ -5,9 +5,13 @@
 # Perfis (spec 051-A · canais de OTA declarados em eas.json):
 #   development → .app (simulador) · canal `development` · uso diário
 #   preview     → .app (simulador) · canal `preview`     · alvo do smoke de OTA
+#   device      → .ipa (ad hoc)    · canal `device`      · APARELHO FÍSICO registrado (065/PO-8)
 #   production  → .ipa             · canal `production`  · TestFlight/App Store
 #
-# ℹ️ preview no iOS sai como build de SIMULADOR (não exige Distribution Certificate). O smoke
+# ℹ️ development/preview no iOS saem como build de SIMULADOR (não exigem Distribution
+#    Certificate) — e simulador NÃO recebe push. Para qualquer smoke que dependa de
+#    notificação no iPhone, o perfil é `device`: ad hoc assinado para os UDIDs de
+#    `eas device:list`, sem passar pela Apple. O smoke
 #    do OTA em device real roda no Android (build-android.sh preview) — o mecanismo do
 #    expo-updates é o mesmo nas duas plataformas, e um device físico basta pra provar.
 
@@ -38,10 +42,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Falhar cedo e explícito: perfil desconhecido só apareceria como erro do EAS depois do
 # prebuild + pod install (minutos perdidos).
 case "$PROFILE" in
-  development|preview|production) ;;
+  development|preview|device|production) ;;
   *)
     echo "❌ Perfil inválido: '$PROFILE'"
-    echo "   Use: development | preview | production"
+    echo "   Use: development | preview | device | production"
     exit 1
     ;;
 esac
@@ -50,7 +54,10 @@ esac
 BUNDLE_ID="com.coelhotv.dosiq"
 PLIST_FILE="$SCRIPT_DIR/GoogleService-Info.plist"
 
-if [ "$PROFILE" = "production" ]; then
+# `device` (ad hoc) assina com o MESMO Apple Distribution certificate do production — só o
+# provisioning profile difere (lista de UDIDs em vez de App Store). Pular a verificação aqui
+# devolveria o erro no FIM do build, depois do prebuild + pod install.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   echo "🔍 Verificando Distribution Certificate no keychain..."
   CERT=$(security find-identity -v -p codesigning | grep -E "Apple Distribution" | grep "Antonio Coelho" | head -1)
 
@@ -67,7 +74,7 @@ if [ "$PROFILE" = "production" ]; then
   fi
   echo "   ✅ Certificado encontrado: $CERT"
 else
-  echo "ℹ️  Simulador detectado (perfil $PROFILE): Pulando verificação de certificado de distribuição."
+  echo "ℹ️  Simulador (perfil $PROFILE): Pulando verificação de certificado de distribuição."
 fi
 
 echo "🔐 Desbloqueando keychain..."
@@ -101,7 +108,9 @@ TARGET_DIR="$HOME/local/dev-builds"
 mkdir -p "$TARGET_DIR"
 
 # 3. Definir nome e extensão do arquivo
-if [ "$PROFILE" = "production" ]; then
+# `.ipa` para tudo que instala em aparelho FÍSICO (production via TestFlight, device via ad hoc);
+# `.app` só para os perfis de simulador.
+if [ "$PROFILE" = "production" ] || [ "$PROFILE" = "device" ]; then
   EXT="ipa"
 else
   EXT="app"
@@ -123,6 +132,10 @@ echo "📡 Canal OTA: $PROFILE  (updates publicados em outro canal NÃO chegam n
 echo "📦 Versão:  v$APP_VERSION"
 echo "📂 Destino: $FINAL_PATH"
 echo "🚀 Submit:  $( [ "$PROFILE" = "production" ] && echo "SIM (TestFlight ✈️)" || echo "NÃO (Apenas Local 💾)" )"
+if [ "$PROFILE" = "device" ]; then
+  echo "📲 Ad hoc:  instala em APARELHO FÍSICO registrado (eas device:list) — substitui o app da"
+  echo "            App Store no aparelho, mesmos dados. Para voltar ao real, reinstalar pela loja."
+fi
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
@@ -175,7 +188,9 @@ echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
 
 # 4.1 Extração automática para Simulador
-if [ "$PROFILE" != "production" ] && [ -f "$FINAL_PATH" ]; then
+# Só os perfis de SIMULADOR saem como tar.gz a extrair. `device` é .ipa assinado — extrair
+# quebraria a assinatura, e antes esta condição era "tudo que não é production".
+if { [ "$PROFILE" = "development" ] || [ "$PROFILE" = "preview" ]; } && [ -f "$FINAL_PATH" ]; then
   # Verifica se é um arquivo comprimido (tar.gz)
   if file "$FINAL_PATH" | grep -q "gzip compressed data"; then
     echo "📦 Detectado pacote comprimido. Iniciando extração para simulador..."

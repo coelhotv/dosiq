@@ -29,6 +29,19 @@
         "simulator": true
       }
     },
+    "device": {
+      "channel": "device",
+      "distribution": "internal",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
     "production": {
       "channel": "production",
       "env": {},
