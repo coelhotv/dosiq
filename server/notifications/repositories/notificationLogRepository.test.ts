@@ -32,11 +32,13 @@ describe('notificationLogRepository', () => {
 
   describe('create', () => {
     it('deve inserir um novo log com sucesso', async () => {
+      // `as const` no status: o create passou a exigir o vocabulário fechado do ADR-100 e um
+      // `string` largo não é atribuível ao enum (082/T014).
       const mockData = {
         user_id: mockUserId,
         protocol_id: mockProtocolId,
         notification_type: 'dose_reminder',
-        status: 'enviada',
+        status: 'enviada' as const,
         provider_metadata: { telegram_message_id: 123 }
       };
 

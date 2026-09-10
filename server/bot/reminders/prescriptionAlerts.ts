@@ -16,6 +16,10 @@ const MAX_BAND = ALERT_BANDS[ALERT_BANDS.length - 1];
 // de querystring, acima do buffer típico de proxy (~8 KB). 100 é o tamanho já usado no repo.
 const DEDUP_CHUNK_SIZE = 100;
 
+// Status que contam como "este protocolo já foi avisado nesta band" (ADR-100). Ver o bloco de
+// documentação de `_fetchLastAlertByProtocol` para o porquê de `sem_canal` entrar e `falhou` não.
+const PRESCRIPTION_ALERT_ANCHOR_STATUSES: string[] = ['enviada', 'sem_canal'];
+
 // Menor band tal que `daysRemaining <= band` (076/FR-006). `daysRemaining < 0` (receita já
 // vencida) e `> 30` (ainda longe) ⇒ null (nada a disparar). Substitui o `includes()` de
 // igualdade EXATA do legado: um run perdido não perde mais o aviso do ciclo — a dedup por
@@ -41,10 +45,20 @@ interface Candidate {
  * Envio mais recente de `prescription_alert` por protocolo, em UMA query por lote (antes: uma
  * query por protocolo elegível).
  *
- * Lê as linhas que ESTE job grava (`logSuccessfulNotification`), `status = 'enviada'`. A linha que
- * o `dispatchNotification` grava por conta própria pode casar também — mesmo significado — mas NÃO
+ * Lê as linhas que ESTE job grava (`logSuccessfulNotification`). A linha que o
+ * `dispatchNotification` grava por conta própria pode casar também — mesmo significado — mas NÃO
  * pode ser a âncora: ela sai de uma IIFE **não aguardada** (`dispatchNotification.ts:154`), então em
  * serverless o runtime pode congelar antes do insert. Ver a Emenda 2 do AP-340.
+ *
+ * ⚠️ Por que um CONJUNTO de status e não `.eq('status','enviada')` (spec 082 / ADR-100): o status
+ * deixou de ser binário. Duas correções em direções opostas, ambas necessárias:
+ *   - `sem_canal` ENTRA na âncora. É o achado RC3/F1: o alerta do paciente sem canal era gravado
+ *     como `enviada` e por isso não repetia; deixá-lo fora faria o aviso ressurgir todo dia para
+ *     exatamente o paciente mais frágil, sem nada a mais chegar até ele (a inbox já tem a linha,
+ *     ADR-047).
+ *   - `falhou` FICA DE FORA, de propósito. Falha real de canal deve ser re-tentada no próximo run
+ *     — é o comportamento de hoje e o lado seguro do AP-340 (duplicar é melhor que silenciar).
+ * Ou seja: âncora = "já foi tratado", não "o insert existe".
  *
  * Fail-open (paridade com `shouldSendNotification`): erro na consulta ⇒ lote sem supressão.
  * Duplicar um aviso é melhor que silenciá-lo — o oposto do bug que a 076 conserta (AP-340).
@@ -65,7 +79,7 @@ async function _fetchLastAlertByProtocol(protocolIds: string[], earliestIso: str
         (q) => q
           .in('protocol_id', chunk)
           .eq('notification_type', 'prescription_alert')
-          .eq('status', 'enviada')
+          .in('status', PRESCRIPTION_ALERT_ANCHOR_STATUSES)
           .gte('sent_at', earliestIso),
         'id',
       );

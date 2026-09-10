@@ -345,3 +345,136 @@ describe('dispatchNotification', () => {
     expect(result.totalDelivered).toBe(1)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 082 Slice A (ADR-100) — o status descreve a ENTREGA.
+//
+// Antes destes testes o dispatcher só sabia dizer `enviada` ou `falhou`, e errava nos dois
+// sentidos: supressão deliberada saía como `falhou` (145 registros em 30 dias) e paciente SEM
+// canal algum saía como `enviada` (930 registros, 27 pacientes). O que fecha o buraco não é o
+// valor novo no CHECK — é o dispatcher receber `results` INTEIRO, com o motivo que o canal
+// relatou, em vez do array já filtrado por `attempted > 0`.
+//
+// Os testes asseveram o que foi GRAVADO (`notificationLogRepository.create`), não o retorno do
+// dispatch: o retorno já era verde no dia do incidente.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('dispatchNotification — status da entrega (082/ADR-100)', () => {
+  // `logNotificationEvent` sai de uma IIFE NÃO aguardada (dispatchNotification.ts:152). Sem
+  // ceder o event loop, a asserção corre antes do insert e passa por vacuidade.
+  const flushLog = () => new Promise((resolve) => setImmediate(resolve))
+
+  const loggedStatus = async () => {
+    await flushLog()
+    const { notificationLogRepository } = await import('../repositories/notificationLogRepository.js')
+    const calls = vi.mocked(notificationLogRepository.create).mock.calls
+    expect(calls.length).toBeGreaterThan(0)
+    return calls[calls.length - 1][0] as unknown as { status: string; channels: Array<{ channel: string; status: string; reason: string | null }> }
+  }
+
+  const dispatchCritical = (userId: string) =>
+    dispatchNotification({
+      userId,
+      kind: 'dose_reminder',
+      data: { ...mockData, critical_alarm: true },
+      channels: [],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+
+  it('🔴 sem NENHUM canal físico ativo ⇒ sem_canal (era `enviada` — as 930 linhas)', async () => {
+    mockRepositories.preferences.hasTelegramChat.mockResolvedValueOnce(false)
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([])
+
+    await dispatchCritical('user-sem-canal')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('sem_canal')
+    expect(logged.status).not.toBe('enviada')
+  })
+
+  it('🔴 push suprimido porque o alarme nativo cobre a dose ⇒ suprimida_alarme (era `falhou`)', async () => {
+    // Aparelho ativo COM alarme armado: entra em validChannels e é filtrado dentro do canal.
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[alarme]', native_alarm_enabled: true },
+    ])
+
+    await dispatchCritical('user-alarme')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('suprimida_alarme')
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+    // O motivo precisa sobreviver ao Zod do repositório — se for removido no parse, ninguém vê.
+    expect(logged.channels.find((c) => c.channel === 'mobile_push')?.reason).toBe('native_alarm')
+  })
+
+  it('canal tentou e errou ⇒ falhou', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[ruim]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([
+      { status: 'error', message: 'DeviceNotRegistered', details: { error: 'DeviceNotRegistered' } },
+    ])
+
+    await dispatchCritical('user-falha')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('falhou')
+  })
+
+  it('canal entregou ⇒ enviada (regra vigente preservada)', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[ok]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    await dispatchCritical('user-ok')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('enviada')
+  })
+
+  it('supressão por política tem precedência sobre tudo ⇒ silenciada', async () => {
+    // DUAS vezes: `resolveChannelsForUser` lê as settings antes do dispatcher checar o
+    // consentimento. Um único `mockResolvedValueOnce` é consumido pela resolução de canais e a
+    // checagem de consentimento cai no mock padrão — o teste passaria a medir outra coisa.
+    // Quiet hours, não consentimento revogado: a revogação retorna ANTES do log (não existe linha
+    // a inspecionar), enquanto a supressão por política grava a linha — que é o que este teste mede.
+    // `getCurrentTime` está mockado em 12:00 no topo do arquivo.
+    const settingsQuiet = {
+      notification_mode: 'realtime',
+      quiet_hours_enabled: true,
+      quiet_hours_start: '08:00',
+      quiet_hours_end: '22:00',
+      channel_mobile_push_enabled: true,
+      channel_telegram_enabled: true,
+      consent_revoked_at: null,
+    }
+    mockRepositories.preferences.getSettingsByUserId
+      .mockResolvedValueOnce(settingsQuiet)
+      .mockResolvedValueOnce(settingsQuiet)
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[ok]', native_alarm_enabled: false },
+    ])
+
+    await dispatchCritical('user-silenciado')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('silenciada')
+  })
+
+  it('🔴 motivo que este código NÃO conhece nunca vira sucesso ⇒ falhou', async () => {
+    // Canal que rejeita a promise: chega em `results` com `attempted: 0` e SEM `reason`. É o caso
+    // degenerado que a versão antiga transformava em `enviada` quando não havia canal válido.
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[boom]', native_alarm_enabled: false },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockRejectedValue(new Error('kaboom'))
+
+    await dispatchCritical('user-desconhecido')
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('falhou')
+  })
+})

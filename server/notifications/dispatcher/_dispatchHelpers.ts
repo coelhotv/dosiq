@@ -4,7 +4,7 @@ import { createLogger } from '../../bot/logger.js'
 import { sendTelegramNotification } from '../channels/telegramChannel.js'
 import { sendExpoPushNotification } from '../channels/expoPushChannel.js'
 import { sendWebPushNotification } from '../channels/webPushChannel.js'
-import type { ChannelResult } from '../utils/normalizeChannelResults.js'
+import type { ChannelResult, ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
 const logger = createLogger('DispatchHelpers')
 
@@ -122,22 +122,61 @@ export function checkGatePolicy({ userId, kind, settings, currentHHMM, correlati
 interface LogChannel {
   channel: string
   status: string
+  reason: ChannelResultReason | null
   message_id: string | null
   tickets: Array<{ id?: string; status: string }> | null
 }
 
-function buildLogChannels(activeResults: ChannelResult[]): LogChannel[] {
-  return activeResults.map((res) => ({
+/** Um canal só entregou se de fato TENTOU. `success` sem tentativa é ausência, não sucesso. */
+function hasDelivered(res: ChannelResult): boolean {
+  return res.success && (res.attempted ?? 0) > 0
+}
+
+function hasAttempted(res: ChannelResult): boolean {
+  return (res.attempted ?? 0) > 0
+}
+
+/**
+ * Status POR CANAL. Recebe todos os resultados (inclusive os sem tentativa — T019/ADR-100), então
+ * `res.success` deixou de bastar: um canal sem aparelho volta com `success: true` e nada entregue.
+ */
+/** Vocabulário do status POR CANAL: entregou · tentou e errou · não chegou a tentar (o `reason` diz por quê). */
+function buildLogChannels(results: ChannelResult[]): LogChannel[] {
+  return results.map((res) => ({
     channel:    res.channel,
-    status:     res.success ? 'enviada' : 'falhou',
+    status:     hasDelivered(res) ? 'enviada' : hasAttempted(res) ? 'falhou' : 'nao_enviada',
+    reason:     res.reason ?? null,
     message_id: res.channel === 'telegram' ? (res.messageId ?? null) : null,
     tickets:    res.channel === 'mobile_push' ? (res.tickets ?? null) : null,
   }))
 }
 
-function determineOverallStatus(isSuppressed: boolean, activeResults: ChannelResult[], validChannels: string[]): string {
+/**
+ * Converte o que os canais RELATARAM no desfecho da entrega (ADR-100). É aqui — e só aqui — que
+ * motivo vira status: o canal informa, o dispatcher decide (R-200).
+ *
+ * O que havia antes: `results.some(r => r.success) || validChannels.length === 0` ⇒ `'enviada'`.
+ * Os dois ramos mentiam. Canal sem aparelho volta `success: true` sem ter tentado nada, e a
+ * segunda cláusula transformava "nenhum canal configurado" literalmente em sucesso — as 930
+ * linhas `enviada` de 27 pacientes que nada receberam, medidas em 30 dias até 2026-09-10.
+ *
+ * Precedência quando nada foi tentado:
+ *   1. alarme nativo cobre a dose ⇒ `suprimida_alarme`. Vence `sem_canal` de propósito: a
+ *      paciente É avisada, pelo alarme do aparelho — o canal ausente ao lado não muda o fato.
+ *   2. algum canal sem destinatário (ou nenhum canal válido) ⇒ `sem_canal`.
+ *   3. qualquer outra coisa (canal inoperante, motivo desconhecido) ⇒ `falhou`. Motivo que este
+ *      código não conhece NUNCA vira sucesso.
+ */
+function determineOverallStatus(isSuppressed: boolean, results: ChannelResult[], validChannels: string[]): string {
   if (isSuppressed) return 'silenciada'
-  if (activeResults.some((r) => r.success) || (validChannels.length === 0 && !isSuppressed)) return 'enviada'
+
+  if (results.some(hasDelivered)) return 'enviada'
+  if (results.some(hasAttempted)) return 'falhou'
+
+  if (results.some((r) => r.reason === 'native_alarm')) return 'suprimida_alarme'
+  if (validChannels.length === 0) return 'sem_canal'
+  if (results.some((r) => r.reason === 'no_devices' || r.reason === 'no_chat')) return 'sem_canal'
+
   return 'falhou'
 }
 
@@ -215,10 +254,18 @@ export async function logNotificationEvent({
 
     const protocolId = finalPayload?.metadata?.protocolId ?? null
 
-    const activeResults = results.filter((r) => (r.attempted ?? 0) > 0 || (r.errors?.length ?? 0) > 0)
-    const logChannels = buildLogChannels(activeResults)
-    const overallStatus = determineOverallStatus(isSuppressed, activeResults, validChannels)
-    const firstError = activeResults.find((r) => !r.success)?.errors?.[0]?.message ?? null
+    // T019/ADR-100: o filtro que vivia aqui — `attempted > 0 || errors.length > 0` — descartava
+    // justamente o resultado que carrega a informação nova. Um canal que não tentou porque o
+    // alarme cobre a dose, e um canal que não tentou porque o paciente não tem aparelho, saíam
+    // os dois como "nada a relatar" e o status era composto sem eles. Agora `results` chega
+    // inteiro ao status e ao log.
+    const logChannels = buildLogChannels(results)
+    const overallStatus = determineOverallStatus(isSuppressed, results, validChannels)
+    // Continua ancorado em `!success`, não em "tem erro": o web push devolve `success: true` COM
+    // um erro de configuração (VAPID ausente) e antes ficava de fora do `mensagem_erro`. Agora
+    // que `results` chega inteiro, casar por `errors.length > 0` faria uma entrega bem-sucedida
+    // pelo Telegram passar a carregar "VAPID keys not configured" — ruído novo, não verdade nova.
+    const firstError = results.find((r) => !r.success)?.errors?.[0]?.message ?? null
 
     try {
       const logPayload = buildNotificationLogPayload({ userId, kind, finalPayload, logChannels, overallStatus, firstError, protocolId, results, context })

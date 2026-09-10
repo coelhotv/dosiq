@@ -7,6 +7,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O registro de notificação para de mentir sobre a entrega
+
+- **Web/PWA** (`patch`, `4.24.1` → `4.24.2`) · **Backend**. O sistema guardava só dois desfechos
+  para cada aviso: "enviada" ou "falhou". Os dois estavam errados, em direções opostas.
+  Um push que o sistema decidiu **não** mandar de propósito — porque o alarme do próprio celular
+  já ia tocar naquela dose — ficava gravado como falha: 145 registros em 30 dias assustando quem
+  abre a lista de notificações sem ter havido problema nenhum.
+  Pior: quem **não tem nenhum meio de aviso configurado** (sem push autorizado, sem Telegram
+  vinculado) ficava gravado como "enviada". Nada saiu para lugar nenhum e o registro dizia que
+  tinha dado certo — 930 vezes, para 27 pessoas, sem ninguém perceber.
+  Agora cada desfecho tem nome próprio: entregue, falha de verdade (com o erro junto), suprimida
+  porque o alarme cobre a dose, e **sem canal de aviso** — este último é o que permite ir atrás de
+  quem está sem nenhuma forma de ser avisada de uma dose crítica.
+  Na sua lista de notificações isso aparece assim: as supressões deliberadas deixam de exibir o
+  aviso vermelho de falha. Nada é escondido — toda notificação continua listada, como sempre.
+  O histórico anterior **não** foi reescrito: o que já estava gravado fica como está, e a série
+  passa a ter um antes e um depois nesta data.
+
+
 ### O servidor deixa de ser ponto cego — falha no backend agora chega a alguém
 
 - **Infra** (`no-user-impact`). Até agora o Sentry só cobria o app; `server/` e `api/` — o

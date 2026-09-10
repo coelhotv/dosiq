@@ -108,7 +108,10 @@ export {
 export {
   notificationLogSchema,
   notificationLogCreateSchema,
+  NOTIFICATION_DELIVERY_STATUSES,
+  NOTIFICATION_LOG_STATUSES,
 } from './notificationLogSchema'
+export type { NotificationDeliveryStatus } from './notificationLogSchema'
 
 export {
   NOTIFICATION_TYPES,

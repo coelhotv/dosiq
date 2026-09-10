@@ -1,5 +1,6 @@
 import { supabase } from '../../services/supabase.js'
 import { escapeMarkdownV2 } from '../../utils/formatters.js'
+import type { ChannelResult, ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
 interface NotificationAction {
   id: string
@@ -27,7 +28,14 @@ interface TelegramChannelParams {
 }
 
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
-const EMPTY_RESULT = { channel: 'telegram', success: true, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [] }
+// ADR-100: sem `chat_id` o Telegram não foi tentado — e isso não é sucesso, é ausência de canal.
+// `reason` viaja no resultado para o dispatcher decidir o status (R-200); `success` permanece
+// `true` de propósito (ver a nota em `ChannelResultReason`).
+// Função, não constante: um objeto módulo-level compartilhado seria a MESMA referência em toda
+// notificação do processo — qualquer enriquecimento posterior vazaria entre despachos.
+const emptyResult = (reason: ChannelResultReason): ChannelResult => ({
+  channel: 'telegram', success: true, reason, attempted: 0, delivered: 0, failed: 0, deactivatedTokens: [], errors: [],
+})
 const TELEGRAM_CALLBACK_LIMIT = 64
 
 async function getTelegramChatId(userId: string): Promise<string | null> {
@@ -60,7 +68,7 @@ export async function sendTelegramNotification({ userId, payload, context, bot }
 
   if (!chatId) {
     console.info('[telegramChannel] sem telegram_chat_id', { correlationId, userId })
-    return EMPTY_RESULT
+    return emptyResult('no_chat')
   }
 
   const options: { parse_mode: string; reply_markup?: { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> } } = { parse_mode: 'MarkdownV2' }
