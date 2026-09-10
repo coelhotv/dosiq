@@ -4,7 +4,7 @@
   "sprint": "2026-W35",
   "session": {
     "mode": "coding",
-    "status": "completed",
+    "status": "merged",
     "tier": 2,
     "spec_dir": "plans/specs/065-analytics-instrumentation-mobile",
     "spec": "plans/specs/065-analytics-instrumentation-mobile/spec.md",
@@ -13,121 +13,16 @@
     "spec_dirs": [
       "plans/specs/065-analytics-instrumentation-mobile"
     ],
-    "merged_squash": "88b72b7a (squash merge into main)",
+    "merged_squash": "7e46e842 (squash merge into main)",
     "merged_history": [
       {
-        "pr": 817,
-        "squash": "696183a9",
-        "spec": "060 Fase A+B — migração do acervo de memórias",
-        "tier": 1,
-        "date": "2026-09-01",
-        "base_branch": "main",
-        "note": "605/605 memórias schema-válidas (eram 12), 567 no índice compilado, 338KB. ZERO LLM: o `summary` não foi gerado, foi EXTRAÍDO das linhas de RULES_INDEX.md/ANTI_PATTERNS_INDEX.md, que já eram resumos escritos à mão e cobrem 605/605 — o lote do `agy` orçado no T032 custou zero. TRÊS DEFEITOS que as 12 memórias do piloto escondiam: (1) byTrigger['toString'] resolvia pelo Object.prototype e .push estourava — toString/toLocaleString são diff_triggers legítimos de `date.toLocaleString`; (2) o schema default do js-yaml tem tipo timestamp e transformava 'created_at: 2026-04-26' em ISO, reescrevendo expiry_date/review_due, que são os campos que o modelo de ciclo de vida do SKILL.md lê (T033) — CORE_SCHEMA; (3) piso de caminho profundo demais (meu): apps/web/src/features/** é a UI web INTEIRA e valia os mesmos 40 pontos de um glob específico, porque o score é 10x(segmentos do glob) — piso virou raso e AP-306 subiu de rank 19 para 1. FASE B DECIDIU CONTRA O FLIP: recall@5 = 2/6 (recall@60 = 5/6) contra 3 PRs reais, procurando as regras que o RC6 citou nominalmente. A causa NÃO é metadado faltando — AP-186 tem 7 dos 8 triggers nas linhas ADICIONADAS do #812 e pontua 20, enquanto AP-306 tem ZERO trigger casando e pontua 42 só pela profundidade do glob. T034 (contar triggers) foi aprovado pelo PO a partir de uma SIMULAÇÃO MINHA que previa 3/6, implementado, medido no código real (2/6 no melhor caso, 1/6 na maioria, IDF incluída) e REVERTIDO — a simulação media um seletor parecido, não o seletor. RC5 auditou o diff de 594 arquivos: 0 campos perdidos, 0 corpos alterados, 1 finding (catch do yaml.load caía para {} e zeraria campos legados) corrigido em 75ca1c6a. RC6 agy 1 chunk, 0 findings, cov=1/1. 2 erros de operação meus registrados no measurement: RC6_MEASURE=1 é modo medição-E-SAI (nenhum motor chamado, 'roda uma vez' intacto) e o gate de reflexão poluía o stdout com 'refuted=0' antes do JSON (corrigido no devflow 2038c04). ⚠️ O PREÂMBULO CONTINUA EM 92.981B contra budget de 49.019B — este PR entrega o DADO, não o ganho; o ganho depende do flip."
-      },
-      {
-        "pr": 818,
-        "squash": "91c17706",
-        "spec": "078 Slice 0 — corpus de avaliacao",
+        "pr": 829,
+        "squash": "7e46e842",
+        "spec": "065 PR A — analytics mobile: surface + treatment_id",
         "tier": 2,
-        "date": "2026-09-03",
+        "date": "2026-09-10",
         "base_branch": "main",
-        "note": "747 pares (commit, regra) sobre 297 regras, minerados das citacoes R-NNN/AP-NNN nas MENSAGENS de commit. Filtros contra o corpus medir a si mesmo: rule-birth 171 (o commit que ADICIONA o arquivo da regra e autocitacao) e memory-only-diff 105 (diff 100% .agent/memory/** casa com o proprio texto); cada um tem modo que o desliga — --no-exclude-birth rende 918 > 747, prova que o filtro nao e inerte. ⚠️ ACHADO DE OPERACAO QUE VALE PARA TODA A SPEC: o proxy rtk TRUNCA git log em 50 linhas (2276 reais) — o minerador chama git por execFileSync, nunca pela shell, senao o corpus nasceria 20x menor SEM ERRO NENHUM. DUAS EMENDAS NA SPEC vindas do C1.5: (1) measure.sh ganhou set -euo + assertion de VALOR e REPROVOU na 1a execucao — o baseline ja era 4/6, nao 2/6 (subiu em ff19a7bd, 060/T035a); EXPECT_RECALL5=2/6 da exit 1, entao a assertion falseia nos dois sentidos. (2) A clausula do PO-3 ('o par (#812, AP-277) nao aparece') era VACUA: os 7 commits que citam AP-277 nao pertencem ao PR #812 e nenhum e memory-only — o rotulo veio do fixture do measure.sh (citacao do RC6), nao da mensagem de commit; virou observacao e a PO fecha pelo guard falsificavel. Corrigido junto o SP resolvido DEPOIS do cd, que despejava pr-*.diff/sel-*.json na raiz do repo. 11 testes node --test. RC5: 2 auto-fixes (--min-pairs NaN passava pela comparacao final = piso inerte, familia do AP-325; invokedDirectly usava URL.pathname). RC6 agy 1/1, 0 findings. SQP Backend/Infra tooling, no-user-impact, sem bump. LIMITACAO REGISTRADA: rule-birth nao detecta cunhagem das regras versionadas em massa pelo unignore 173b92f8."
-      },
-      {
-        "pr": 819,
-        "squash": "d365257c",
-        "spec": "078 Slice 1 — contador de recorrencia read-only",
-        "tier": 2,
-        "date": "2026-09-03",
-        "base_branch": "main",
-        "note": "recount-memory.mjs deriva incident_count/last_referenced de 5 tracos (git log, journal, .agent/memory/events.jsonl, .agent/sessions/events.jsonl e o measurement da 034). R-221 = 141 evidencias; o frontmatter dela diz 0. NAO ESCREVE por restricao ESTRUTURAL: o arquivo nao contem chamada de escrita, entao a propriedade e verificavel por grep e nao por confianca numa flag (F5 do RC3). 3 correcoes mudam o numero em relacao ao produtor antigo: (1) o commit que CRIA a regra nao conta como uso, (2) dedupe por (traco, ancora) tira a dupla contagem git-log x journal do C5, (3) registro de journal pretty-printed vale o mesmo que um compacto — o acervo tem os dois formatos e ancorar por linha fazia o mesmo trabalho pontuar diferente conforme o FORMATADOR. Dois registros corrompidos do acervo, que engoliriam todo o resto do arquivo num bloco so, agora sao recuperados e reportados. 5o traco (sessions/events.jsonl, 162 IDs) entrou DECLARADO com --exclude-trace para medir o efeito em vez de afirma-lo. ⚠️ REGRESSAO MINHA pega pelo RC6 #1 (HIGH introduced, procedente): alarguei o padrao de NOME DE ARQUIVO para os IDs legados e deixei o de CITACAO estreito — AP-97/AP-LOG-001/AP-SL01..03/R-025-1 presos em 0 e as mencoes de R-025-1 creditadas ao R-025 (o \\b casa antes do -1). Classe: alargar um lado de um par de padroes que precisam concordar. Decisao do PO (A+C) na PO-6: AP-306 sai dos 3 buracos previstos com causa medida (29->27 pelas proprias correcoes, num limiar com EMPATE nas posicoes 11-13) e a cobertura passa a somar a coberta EM PROSA (o CLAUDE.md carrega R-010 :47 e R-001 :82 sem citar o ID) — as '9 ja cobertas' = 6 por ID + 3 em prosa; lista final 8 cobertas, 4 buracos (R-270, AP-186, R-231, R-267). Revisao externa: 2 propostas rejeitadas com medicao, 1 virou OQ-8 no ADR-097, 1 adotada (--find-similar, com a limitacao MEDIDA impressa na saida: busca por termo nao acha AP-325/AP-261 por parafrase, entao nao casar nao prova classe nova), 1 ja existia e virou clausula §9.3. RC6: 3 runs — #1 o HIGH, #2 morto pelo restart do IDE (nada postado), #3 clean cov=1/1. ACHADO: RC6_IDX_LINE_MAX 110->55 leva o preambulo de 111.818B a 77.544B e o chunk budget do piso de 30.182B a 64.456B, tirando 2 chunks do ADVISORY. O gargalo do RC6 e o PREAMBULO, nao o arquivo grande. SQP Backend/Infra tooling, no-user-impact, sem bump."
-      },
-      {
-        "pr": 820,
-        "squash": "13df8ba3",
-        "spec": "078 Slice 2 PR 3 — escrita-de-volta do ciclo de vida + promocao derivada",
-        "tier": 2,
-        "date": "2026-09-04",
-        "base_branch": "main",
-        "note": "611 frontmatters passam a carregar incident_count/last_referenced derivados dos tracos; a Skills Layer vira o top-K do mesmo numero. TIPAR ANTES DE ESCREVER nao foi acabamento: assim que os 2 campos entraram no schema o --strict reprovou 104 arquivos com o literal 'last_referenced: None' que o .passthrough() aceitava calado (chave REMOVIDA, nunca reescrita como None). A ESCRITA PATCHA O TEXTO, nao reserializa: o caminho DRY foi implementado primeiro e MEDIDO — js-yaml reformatava 18 dos 611 (summary longo aspeado -> bloco >- em R-295/AP-300/AP-345/AP-346), diff cosmetico que ninguem leria num PR de 611 arquivos; o guard do PO-7 passou a viver DENTRO do escritor (antes/depois sem as linhas do mandato tem de ser identicos, divergente e PULADO) => 611/611 escritos, 0 linhas fora do mandato, idempotente. 2a instancia do AP-260, com emenda la: git diff pos-script chega tarde num lote grande. --threshold existe SO para ser rejeitado e MEDE o custo na hora (311 de 611 = 51%; a spec dizia 334/55% — numero em mensagem de erro envelhece igual a numero em PO, R-320); pelo mesmo motivo o limiar implicado (34) sai em stderr como observacao com HEAD+data. --severity-candidates: o 1o padrao de gates_passaram deixava o AP-300 (caso canonico da PO-10) fora do high por FORMATACAO — o acervo escreve isso em prosa no passado, no presente e em TABELA com ✅. T2.4b respondido e FECHADO SEM ACAO: mobile_and_platform esta fora do top-12 por DENSIDADE (3,32 evidencias/memoria contra 10,32 de data_and_schema), nao por idade (mediana 99d contra 95 e 93 das classes que dominam o topo) — maior classe por fragmentacao, nao por trafego; termo de recencia promoveria memoria por SER NOVA, o oposto do criterio. T3.0c ANTECIPADA a pedido do PO: curva do clamp 110/80/55/40 = preambulo 110.798/92.105/76.409/67.027B, budget 31.202(piso)/49.895/65.591/74.973B, 4/3/2/2 chunks, ADVISORY 1/0/0/0 — joelho em 55, o budget DOBRA e sai do piso SEM REMOVER NADA e reversivel por env var; enfraquece a premissa do Slice 3 (o corte pode ser desnecessario) e obriga o A/B do T3.2 a fixar o clamp nos dois bracos. PO-13 fechada executando o proprio ai-review.sh em RC6_MEASURE: CLAUDE.md 12.602B, projecao 13.422B, 43,0% do budget em clamp 110 e 20,5% em 55. ⚠️ BUG PEGO PELO PROPRIO FECHAMENTO DA PO-13: o parser exigia o padrao 'preamble (\\\\d+)B' com espaco unico e o ai-review.sh ALINHA os numeros; falhava em TODO log real e o teste era verde porque o autor do parser escreveu o fixture — emenda no AP-346 (a clausula do fixture vale sozinha e reincidiu no mesmo dia). RC5: 3 auto-fixes (execFileSync nao devolve stderr; flags de valor sem valor; atribuicoes mortas). RC6 clamp 55: 2 chunks, cov=2/2, 0 findings, refuted=0; A/B do 056 abortou sozinho por baseline 0 findings. ACHADO PARA O PR 4: 573 no indice compilado contra 611 em disco NAO e so defasagem — 38 sao archived/superseded, excluidos por desenho (o T2.10c misturava as causas); e compile-memory-index.mjs --check JA sai !=0, falta so o hook. SQP Backend/Infra tooling+memoria versionada, no-user-impact, sem bump."
-      },
-      {
-        "pr": 821,
-        "squash": "c739062a",
-        "spec": "078 Slice 2 PR 4 — protocolo do laco + ADR-097 accepted",
-        "tier": 2,
-        "date": "2026-09-04",
-        "base_branch": "main",
-        "devflow_sha": "ab93dd2 (base 0fdb08a)",
-        "note": "SLICE 2 FECHADO. Protocolo no devflow: C5 §1 exige busca por CLASSE antes de cunhar AP (incrementar com emenda datada se casar) e REGISTRAR OS TERMOS no journal — AP novo sem essa linha e violacao de gate, porque sem os termos \"busquei e nao achei\" e indistinguivel de \"nao busquei\"; o gate de frescor do indice roda ANTES da busca (a memoria cunhada na propria sessao e a mais provavel de casar com o proximo bug e e o que um indice velho nao ve). D2 recomputa incident_count/last_referenced antes de julgar ciclo de vida. D3 promove DENTRO do projeto por top-K. D4/global_base APOSENTADO. ADR-097 proposed->accepted. ⚠️ ACHADO DA PO-8, o mais importante do PR: a busca por classe NAO devolveu o AP-346 — parente exato, cunhado NO DIA ANTERIOR, mesmo acervo, mesmo autor (o titulo dele diz \"par de padroes\", nao \"fixture\"). A ferramenta falhou no caso mais facil que existe e o protocolo so nao falhou junto porque havia memoria de contexto. PO-11: global_base 616KB/133 .md, todo conteudo com mtime 2026-04-08, ZERO leitor; e duas correcoes da propria spec — o global_base NAO e repo git (o SHA 4a627f3 do expect nao e dele; a evidencia boa e o mtime) e as mencoes do D4 eram 10, nao 4, sendo as 6 faltantes ESTRUTURAIS (README dir tree/tabela/versionados, DEVFLOW-REFERENCE tree+fluxo, e o setup.sh, que seguiria criando .agent/synthesis em TODO projeto novo) — AP-315. RC6 NAO-APLICAVEL declarado (nao clean): diff do dosiq 100% .md, conteudo revisavel no devflow fora do CODE_GLOBS e sem fluxo de PR. LACUNA ABERTA: mudanca de protocolo no devflow nao tem revisor independente — o setup.sh e shell executavel e entrou sem revisao automatica nenhuma. SQP Backend/Infra, no-user-impact, sem bump."
-      },
-      {
-        "pr": 822,
-        "squash": "3e8cc845",
-        "spec": "078 Slice 3 PR 5 — clamp do RC6 110->80",
-        "tier": 2,
-        "date": "2026-09-04",
-        "base_branch": "main",
-        "devflow_sha": "c9fe801 (base ab93dd2)",
-        "note": "Clamp escolhido pelo CUSTO, nao pelo ganho: 80 e nao os 55 da spec. Medido em d365257c via worktree (head branch do #820 apagado, RC6_MAIN=d365257c^): 110 => preambulo 111.818B, budget 30.182B no piso, 1 ADVISORY e 1 chunk OVER-BUDGET (153.703B); 80 => 93.188B, budget 48.812B, zero dos dois; 55 => 77.544B, 64.456B. DEFAULT mediu identico a 80 — e assim que se prova que o DEFAULT mudou e nao a env var. T3.3: conteudo util pos-prefixo cai a 95/65/40 chars em 110/80/55 e em 55 oito de dez linhas amostradas param no meio da clausula (R-113 perde o valor da regra, AP-115 o gatilho); os 15.644B extras do 55 sao budget que nada consome. Emendou o expect da PO-14, que hardcodava 55 — autorizado pela clausula de custo da propria PO. DECLARADO: o aviso '>60% of the engine budget' AINDA dispara em 80; o clamp tira do piso e nao resolve o crescimento do acervo (o 110 subiu de 110.798 para 111.818B entre spec e execucao, R-320)."
-      },
-      {
-        "pr": 823,
-        "squash": "36f9871f",
-        "spec": "078 Slice 3 PR 6 — seletor da 060 integrado ao RC6",
-        "tier": 2,
-        "date": "2026-09-04",
-        "base_branch": "main",
-        "devflow_sha": "14439b0 (base c9fe801)",
-        "note": "Fim do 060/T012, parado desde a 060: o grep de select-rules nos scripts do devflow sai de 0 para 1. Bloco SELECTED MEMORIES com as top-5 memorias INTEIRAS escolhidas pelo score do diff contra o indice compilado. ADICIONA, nao substitui. CUSTO DECLARADO: +10.029B no preambulo (92.776->102.805) e chunk budget de 49.224 para 39.195B — come 20% do que o PR 5 acabara de recuperar; e o preco de construir o substituto antes de remover o substituido. PO-15 guard: acervo inteiro (573 regras, 326.407B) => bloco 14.062B; TRES amostras ALEATORIAS de metade => 12.584/16.464/13.432B, uma delas MAIOR que o acervo inteiro — o tamanho depende de QUAIS memorias entram, nao de QUANTAS existem; termo honesto e O(limit x tamanho medio), nao byte-constante. Cortar por ordem de ID daria 13.042B, enviesado pela ordenacao. PO-16: recall@5 4/6, 2x mesmo HEAD — prova que nao custou alcance, NAO prova ganho. Fail-open PROVADO nos 3 caminhos (RC6_SELECTOR=0, script ausente, indice ilegivel). DEFEITO MEU pego pela propria medicao: o dedupe contra os DETAIL lia a lista PRETENDIDA e o cap RC6_DETAIL_MAX age sobre a EMITIDA — a memoria cortada pelo cap tambem saia do seletor e sumia das DUAS pontas sem log (AP-345 estava nesse buraco: 4 memorias no bloco, 5 apos a correcao). Virou EMENDA no AP-346 (3a instancia, 1a sem regex nenhuma), nao AP novo. ⚠️ A busca por classe NAO devolveu o AP-346: 2a confirmacao da limitacao registrada na PO-8 do PR 4 — o match veio de memoria de contexto."
-      },
-      {
-        "pr": 824,
-        "squash": "67e787c0",
-        "spec": "078 Slice 3 PR 7 — A/B do corte; ADR-097 de volta a proposed",
-        "tier": 2,
-        "date": "2026-09-04",
-        "base_branch": "main",
-        "devflow_sha": "9a8267e (base 14439b0)",
-        "note": "SLICE 3 FECHADO. O A/B do corte rodou e disse NAO. RC6_INDEXES=0 (default 1) poe o corte atras de env var. Clamp 80 IDENTICO e DECLARADO nos dois bracos (PO-17), PACK_FILTER=0 no baseline, SHA 14439b0, harness deterministico data/ab_corte.py: braco A = preambulo 102.805B/budget 39.195B/4 chunks/alcance 339/339 (100%); braco B = 51.431B/90.569B/2 chunks/232 de 339 (68%). O corte devolve 51KB e 131% de budget e custa 32% do alcance. O DETALHE QUE DECIDE, escondido no total: das 232 que o B alcanca, 152 (65%) chegam pela porta `detail` — o diff JA citava o ID, regra que o autor ja conhecia; o seletor entrega 38 (16%). Cortar remove justamente a porta do caso que importa. Canario AP-186: 6/8 commits com codigo, mas 4 dessas 6 por detail — sobreviveria pelo motivo errado. Dos 762 pares, 233 sao de commits SEM arquivo de codigo (o RC6 nem os revisa), reportados a parte e nao diluidos no total. ADR-097 revertido accepted->proposed NO MESMO PR, com secao de reversao no arquivo e linha do DECISIONS_INDEX atualizada: a clausula de falsificacao foi ACIONADA, nao contornada. Sobrevive a tese das duas camadas (Slices 1-2); cai a premissa de que o wiki deve sair do executor. LIMITE (OQ-10): mede ALCANCE, nao USO — a tese do paper nao foi testada nem refutada."
-      },
-      {
-        "pr": 825,
-        "squash": "035a66cc",
-        "spec": "078 Slice 4 PR 9 — SKILL.md quebrada em 7 skills do padrao oficial",
-        "tier": 2,
-        "date": "2026-09-05",
-        "base_branch": "main",
-        "devflow_sha": "cb40ce6 + 7d32dbb (base 9a8267e)",
-        "note": "SLICE 4 FECHADO. A skill tinha a doenca que diagnostica: 2.135 linhas monoliticas, das quais uma sessao de entrega usava ~180 comuns + 795 do modo e carregava ~1.160 de modos que nunca ia usar. A FORMA NAO E modes/*.md: o T4.0a mediu obediencia a ponteiro em 75 transcripts REAIS contando ABERTURA de arquivo (rodape 3-5%, 'OBRIGATORIO' do CLAUDE.md 17-29%, dois deles ZERO, controle state.json 64%) — regra dura por Read discricionario vira sugestao em ~3 de 4 sessoes. Skill do padrao agentskills.io e INJETADA pelo harness, e o R-065 fica satisfeito pelo motivo certo: quem invoca e o operador. MEDIDO: entrega 30.060->17.446 tok (-42%), spec+cerimonia 12.836, planning 6.643, distill 7.835; validador oficial 7/7. ⚠️ A PO-20 REPROVOU no expect original (<=16.000) e foi EMENDADA PELO NUMERO com a causa achada: o nucleo projetado em 3.800 mede 5.198 porque a projecao nao contava tabela de despacho (309), frontmatter e guard das 6 sub-skills, nem o rodape — fechar o numero exigiria cortar Locking/Goal Alignment/POs, que e o que TODO modo usa. O total das 7 sobe 6,6%, preco declarado do frontmatter+guard: as linhas de conteudo sao BIT A BIT as mesmas, e e o verify-split.sh que prova. O VERIFICADOR NASCEU ANTES E VERMELHO (6 skills ausentes): diff ORDENADO do corpo 13-2096, diff do rodape 2124-2135 e MULTISET das 22 linhas do Quick Reference, que e DISTRIBUIDO e nunca casaria numa concatenacao ordenada — contagem sozinha deixaria passar 22 linhas trocadas por outras 22. ACHADO ESTRUTURAL: ~/SKILLS/devflow e ~/.claude/skills/devflow sao o MESMO inode e a descoberta e de UM nivel, entao sub-skill aninhada NAO e descoberta — sem install-skills.sh um clone limpo entrega 1 skill em vez de 7, em silencio (PO-28 prova a partir de clone em /tmp, nao da maquina que fez a quebra). QUATRO DEFEITOS MEUS, todos pegos pelos proprios gates: (1) verify-split REPROVAVA SEM MENSAGEM (grep sob set -e) => AP-347, espelho do AP-325 e dispara no caso LEGITIMO (3 das 7 skills nao tem linha de QuickRef); (2) instalador criava links antes de falhar (estado parcial) => pre-flight confere TODOS os destinos antes de escrever; (3) description quebrada pelo textwrap dentro do backtick (/devflow- distill) e depois YAML invalido por ':' em escalar sem aspas; (4) medicao do caso [3] da PO-28 mascarada por `| tail` — li o exit do tail, nao o do script. EMENDAS DE SPEC: PO-19..22 estavam DUPLICADAS entre Slice 4 e Slice 5 (o Pass 0 do RC5 audita por ID) => US7 renumerado para PO-24..27; NENHUM FR cobria o Slice 4 => FR-019..021 + SC-009..011; AC-U6-7/8 + PO-23 executavel (skills-ref validate) + PO-28; 3 numeros da spec errados contra o disco (R-320). DOIS DESVIOS DO PADRAO DECLARADOS: devflow-code 795 linhas contra <500 recomendadas (a saida canonica, references/, e Read discricionario — medido e reprovado pelo proprio T4.0a) e description como comando do operador contra a recomendacao de keywords (R-065). RC5: 1 auto-fix (4 skills exibiam o titulo 'Quick Reference' sobre um recorte). RC6 NAO-APLICAVEL declarado, nunca clean — diff 100% .md/.sh fora do CODE_GLOBS; a divida T3.13 esta agora no caminho critico porque o install-skills.sh roda em projeto novo sem revisor independente. LIMITE (T4.9): mede ENTREGA, nao OBEDIENCIA — a 1a sessao a rodar sob as 7 skills e a primeira observacao e NAO pode ser a que fez a quebra. SQP Backend/Infra tooling, no-user-impact, sem bump."
-      },
-      {
-        "pr": 826,
-        "squash": "96eb79f5",
-        "spec": "078 Slice 5 — conhecimento negativo vira ledger cobrado pelo git",
-        "tier": 2,
-        "date": "2026-09-06",
-        "base_branch": "main",
-        "devflow_sha": "7054a47",
-        "note": "O DEVFLOW ganhou o caminho que so tinha para o sucesso. attempts.jsonl + attempts.mjs (--list/--check/--add): o gate cruza os reverts do git log e confere monotonicidade contra origin/main. ALCANCE POR FONTE DIRETA: o --find-similar do C5 le o ledger do arquivo e o compiled_rules_index.json NAO foi tocado — alcance no C5 com custo ZERO no preambulo do RC6 (emenda 1 do ADR-098). 3 entradas de backfill, incluindo T035a ACEITA como denominador. TRES LIMITES DECLARADOS, nao contornados: (1) reversao feita na ARVORE nao deixa traco em git log — o gate impede reverter POR COMMIT sem registrar, nao impede esquecer; (2) o repo mergeia por SQUASH, entao entrada e intervencao colapsam num commit — quem segura e a monotonicidade, nao a separacao de commits; (3) os 2 casos rejeitados nao tem SHA porque nunca viraram commit, e sha.trace declara a procedencia ausente em vez de inventa-la (R-307). DOIS APs CUNHADOS, ambos de defeito MEU pego por gate: AP-348 (REPO_ROOT do __dirname fazia o gate ler um ledger e cobrar reverts de OUTRO repo — e DOIS testes passavam pelo MOTIVO ERRADO, fechando por 2 reverts antigos do dosiq; mais 2 instancias da mesma classe no mesmo arquivo) e AP-349 (o proprio --check do indice compilado usa hash de MTIME e gritou 'desatualizado' com arvore limpa logo apos o squash, com diff so em generatedAt — falso VERMELHO rotineiro erode o gate; parente de sinal invertido do AP-337). ACHADO COLATERAL: AP-347, cunhada no dia anterior, estava FORA do indice compilado por falta de summary — memoria cunhada e INALCANCAVEL pela busca que o C5 obriga, que e a doenca que esta spec ataca; corrigida junto. RC5 2 auto-fix / 0 ASK; RC6 CLEAN de verdade (agy, 3/3 chunks, partial=false, refuted=0) — e desta vez APLICAVEL, porque o diff e .mjs, dentro do CODE_GLOBS desde 6579133. T4.9 RESPONDIDA: primeira sessao sob as 7 skills, nenhum gate do C1-C5 se comportou diferente. SQP Backend/Infra tooling, no-user-impact, sem bump."
-      },
-      {
-        "pr": 827,
-        "squash": "3f4c8bcd",
-        "spec": "079 Slice A — nucleo puro do validador de frontmatter",
-        "tier": 1,
-        "date": "2026-09-07",
-        "base_branch": "main",
-        "note": "UMA checagem de frontmatter no lugar de duas que divergiram. O acumulativo JA EXISTIA em validate-memory-schema.mjs:188 e o compile reimplementou cego com issues[0] — o comentario :92-93 confessava a duplicacao. Achado do RC4, nao da spec: o defeito #3 estava MAL NOMEADO ('o validador reporta um campo por vez' era, na verdade, 'existem dois validadores, o bom nao e descobrivel, e a sessao alcanca primeiro o pior'). Fronteira decidida no RC3/F7 = NUCLEO PURO: recebe o frontmatter parseado, devolve issues[], nao le arquivo, nao le CLAUDE.md, nao conhece strict; domain/O4/filtro zero FICAM no standalone porque puxa-los poria a leitura do CLAUDE.md no caminho critico de todo commit de memoria (que e onde o --check roda no Slice B). GUARD FULL cumprido com GOLDEN MASTER DE GRACA: o indice e funcao pura das 614 memorias reais, entao antes/depois saiu identico fora de meta, sourceHash igual, 38 puladas iguais (37 archived + 1 superseded) — e o insumo nao foi escrito por quem escreveu o codigo (imune ao AP-346). DECLARADO E ACEITO PELO PO: o compile AMPLIOU o que valida (status layer-vazado e obsolete, que so o standalone checava) — comportamento novo numa fatia declarada estrutural, com efeito medido ZERO (status_invalido: 0 nas 614); preservar a cegueira exigiria passar opcao ao nucleo, poluindo a fronteira recem-fechada. LIMITE ESTRUTURAL FIXADO EM TESTE: memoryFrontmatterSchema e z.discriminatedUnion('layer') — sem layer valido o Zod devolve UMA issue no discriminante e nao avalia o resto; 'todos os problemas de uma vez' vale para o arquivo cujo layer esta certo. RC5: 2 auto-fixes (import morto; parse() -> safeParse(), senao o compile trocaria PULAR o arquivo invalido por DERRUBAR a compilacao inteira se o nucleo um dia filtrasse uma issue) + 1 ASK levado ao PO. RC6 agy clean, cov 2/2, refuted=0. ACHADO DE AMBIENTE: `node --test scripts/__tests__/` QUEBRA no Node 22.22.3 (MODULE_NOT_FOUND, trata o diretorio como modulo) — precisa do glob *.mjs; o comando estava errado no plan.md e foi emendado. ACHADO PARA O SLICE B: o commit imprimiu 'lint-staged could not find any staged files matching configured tasks', confirmando na pratica que scripts/** e .agent/memory/** estao fora de todo glob hoje. SEGUNDO ACHADO PARA O SLICE B: o `--check` passou exit=0 logo apos o merge — o pull nao tocou os arquivos de memoria, entao o falso vermelho do AP-349 e INTERMITENTE (depende de o git reescrever mtime), nao constante. SQP Backend/Infra, no-user-impact, sem bump. 79/79 testes, validate:agent 2384/2384, strict-island ratchet OK."
-      },
-      {
-        "pr": 828,
-        "squash": "88b72b7a",
-        "spec": "079 Slice B — hash de conteudo + hook pre-commit + DX",
-        "tier": 1,
-        "date": "2026-09-07",
-        "base_branch": "main",
-        "note": "SPEC 079 FECHADA, 6/6 POs. sourceHash passou de caminho:mtimeMs:tamanho para caminho:sha256(conteudo); tamanho saiu junto (nao acrescenta nada sobre um sha256 do mesmo byte-stream), caminho ficou (rename com conteudo identico deve invalidar). Custo real 44ms sobre 1,42MB/614 arquivos numa compilacao de 158ms — o metadado poupava isso e pagava com falso vermelho. ⚠️ O ROTEIRO DA PROPRIA SPEC NAO REPRODUZIA O DEFEITO: `git checkout HEAD~1 -- path && git checkout HEAD -- path` NAO reescreve mtime quando o conteudo e identico, entao a PO-1 como escrita dava exit=0 com o sinal ANTIGO — provava a ausencia do bug que existia. Fechada com `touch` (o mecanismo real) e rodando OS DOIS SINAIS LADO A LADO: antigo 0->1, novo 0->0. Emendado no AP-349, que carregava esse mesmo roteiro na secao Deteccao. SEGUNDA EMENDA no AP-349: o falso vermelho era INTERMITENTE (o --check passou exit=0 apos o merge do #827 porque aquele pull nao tocou memoria), o que torna o defeito PIOR — vermelho constante seria investigado no primeiro dia, intermitente ensina o reflexo e sobrevive meses. HOOK: glob .agent/memory/**/*.md no .lintstagedrc.mjs, em FORMA DE FUNCAO (o lint-staged anexa os arquivos staged e o --check opera sobre o acervo; depender do parseArgs ignorar seria acoplamento silencioso). O FILTRO POR DIFF E O PROPRIO GLOB — zero linha de `git diff | grep` a mao. Sem mensagem de sucesso propria: a unica saida positiva e a do script (AP-325 neutralizado por construcao). Medido: 389ms sem memoria no diff x 689ms com. LIMITE MEDIDO E DECLARADO AO LADO DO GLOB: o --check compara o DISCO com o indice EM DISCO, nao o que esta sendo commitado — recompilar sem `git add` do indice passa com o artefato versionado velho (verificado em branch descartavel, exit=0). NAO corrigido de proposito: fechar exigiria `git diff --cached` no hook, a logica a mao que este desenho evita. Isso virou EMENDA NO AP-348 (busca por classe casou: 'o gate valida um alvo e confere outro') com a licao nova: o GATILHO tambem e um redirecionador — pergunte qual universo o gate confere contra qual o disparou; em hook de git sao universos diferentes por natureza (staged x working tree) e coincidem na maior parte do tempo. DX (RC4 EXPANSION): FR-008 mensagem com comando e --no-verify no padrao que o arquivo ja usava no erro de teto hot (AP-347); FR-009 pulado por validacao no stdout com archived/superseded fora para nao afogar; FR-010 npm run validate:memory. RC5: 1 auto-fix — o filtro dos pulados reconhecia PREFIXO DE TEXTO ('status: ') e virou campo estrutural `kind` (mensagem e para humano e muda sem aviso). RC6: 1a execucao FALHOU por stream interrompido e o script emitiu fail-open; registrado como NAO-EXECUTADO e nao como clean (AP-325), rerodado uma vez, 2a completa e clean. 84/84 testes, validate:agent 2384/2384, strict-island OK. SQP Backend/Infra, no-user-impact, sem bump."
+        "note": "Primeiro PR de PRODUTO depois de 5 semanas de ferramental. 5 POs fechadas com evidência de CAMPO nas duas plataformas (Android surface=push lag 10,8s · iOS surface=push lag 7s, ambos com o app MORTO) ⇒ Decisão 5 respondida pelo número: nenhum flush() necessário. FR-14 nasceu do smoke: o hero card passa por registerDoseMany mesmo para 1 dose, e com bulk 212 x dose_logged 53 em 30 dias ~80% dos registros ficariam sem treatment_id. RC6 rodou DUAS vezes (a 2a autorizada pelo PO porque o diff mudou em ponto de lógica, o que a regra 'roda uma vez' não cobre — ela veta re-rodar o MESMO diff): run 1 KPI 0, run 2 KPI 2, ambos defeitos reais do autor. O mais instrutivo: complexity_override lido de `profiles` quando a coluna existe SÓ em `user_settings` (R-295) fazia mode='auto' em 100% dos casos — sobreviveu ao RC5, a 651 testes E AO SMOKE EM APARELHO, porque 'auto' é tanto o valor do bug quanto o valor legítimo de quem não escolheu: evidência de produção coincidente NÃO distingue implementação certa de errada. Infra: perfil EAS `device` (build ad hoc iOS não existia), EALLOWSCRIPTS nos scripts de build (1o fix era inútil — o npx relê o ~/.npmrc), AP-350 (lint-staged mandava mobile para o vitest e barrava TODO commit da superfície). Incidente descoberto e fora do escopo: dose crítica não notifica (80,6% de falha silenciosa) — bug-logs/2026-09-10-dose-critica-nao-notifica.md."
       }
     ],
     "previous_session_note": "2026-09-07 specifying da 081. O dossie tratava a regra por superficie como tese a implementar; ela ja esta implementada no CI (paths-ignore do ai-review-gate.yml) e o agente obedece o texto (Tier). 5 POs, 8 FR, 4 SC, 3 NEEDS CLARIFICATION.",
@@ -153,7 +48,7 @@
       "Planning/081 F4: contagem dos 5 PRs em .agent/memory/ (versionado) com ponteiro no CLAUDE.md — inverte o arranjo atual (dado no gitignored, lembrete duravel).",
       "Planning/081 CORRECAO DE PREMISSA: o §1 da spec estava errado. Medido, os 6 runs recentes do gate sao todos de PRs de tooling e TODOS rodaram — o paths-ignore quase nao filtra (package.json, .lintstagedrc.mjs, plans/specs/README.md; e `*.md` so casa a raiz porque em Actions o * nao cruza /). A divergencia e \"o CI tenta nao cobrar e falha\"."
     ],
-    "branch": "feat/065-pr-a-analytics-surface",
+    "branch": "main",
     "blocked_on": [
       "067 B2: adoção da v0.31.1+ na frota (device_activity max = 0.30.2 em 25/08)",
       "devflow: destino do verify-split.sh (T5.7a) — prova de UM commit, não gate permanente; toda edição legítima no devflow o deixa vermelho (medido 2026-09-05).",
@@ -181,11 +76,11 @@
       "AC-7 -> 065 PO-7 (fechada)",
       "AC-8 -> 065 PO-8 (fechada — Android 10,8s / iOS 7s)"
     ],
-    "merged_pr": null,
+    "merged_pr": 829,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md",
     "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
-    "next_action": "PR #829 pronto para revisão humana e merge (R-060). Depois do merge: build de loja exige árvore limpa + tag mobile-v0.32.0 no commit da main (R-307). PR B (T030) segue bloqueado até verificar treatmentPlanService vs protocolService.",
+    "next_action": "R-307: build de loja da 0.32.0 exige árvore limpa + tag `mobile-v0.32.0` no commit 7e46e842 da main, criada NO MOMENTO do build e empurrada pro origin. Não bumpar de novo. Antes disso: o incidente da dose crítica (bug-logs/) deve ser decidido — ele afeta a mesma superfície que a 0.32.0 vai publicar.",
     "linked_adrs": [
       "ADR-069",
       "ADR-097",
@@ -218,12 +113,12 @@
     "plan_revision": 1,
     "slices": [],
     "active_slice": null,
-    "next_session": "065 PR A completo: 5 POs fechadas com evidência de campo nas 2 plataformas. FR-14 nasceu do smoke (hero card usa o caminho do lote). INCIDENTE ABERTO fora do 065: dose crítica não notifica — 80,6% de falha silenciosa, documentado em bug-logs/2026-09-10-dose-critica-nao-notifica.md, escopo já estreitado para o dispatcher do servidor (o alarme local foi provado íntegro nas 2 plataformas). Infra nova: perfil EAS `device` para build ad hoc iOS.",
+    "next_session": "065 PR A MERGEADO (#829, squash 7e46e842). PRs B/C/D da 065 seguem: o B começa pela T030 (verificar treatmentPlanService vs protocolService — UNVERIFICADO no plan). As emendas E-1..E-6 da spec valem para os três: super properties já cobrem todos os eventos (não re-emitir), a lista de 15 órfãos está confirmada por medição, e o protocolo de smoke que dá resultado válido está escrito. PENDENTE de decisão do PO: o incidente da dose crítica, documentado em bug-logs/2026-09-10-dose-critica-nao-notifica.md, com escopo já estreitado para o dispatcher do servidor.",
     "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-09-08T00:00:00-03:00",
-    "journal_entries_since_distillation": 2,
+    "journal_entries_since_distillation": 3,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
