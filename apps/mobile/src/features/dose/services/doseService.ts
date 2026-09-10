@@ -35,7 +35,10 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
  * Ausência é resultado válido: id certo com nome vazio > nome errado (R-299 §4).
  */
 function _doseEventProps(base, { surface = null, treatmentId = null } = {}) {
-  const props = { ...base }
+  // Chave com valor ausente NÃO entra no payload — mesmo princípio do `surface`. Um
+  // `medicine_id: undefined` viaja como propriedade existente e vazia, que no PostHog é pior que
+  // ausência: aparece na lista de propriedades e polui qualquer contagem por medicamento.
+  const props = Object.fromEntries(Object.entries(base).filter(([, v]) => v != null))
   if (surface) props.surface = surface
   if (treatmentId) props.treatment_id = treatmentId
   return props

@@ -487,3 +487,26 @@ describe('065 FR-14 — dose_logged por item do lote', () => {
     }
   })
 })
+
+// Regressão do finding LOW do RC6 (run 2, PR #829): item de lote sem `data` emitia
+// `medicine_id: undefined` — chave existente e vazia, que no PostHog polui contagem por
+// medicamento e é pior que ausência.
+describe('065 — payload nunca carrega chave vazia', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null })
+    mockCancelAlarm.mockResolvedValue(undefined)
+  })
+
+  it('item de lote SEM data não emite medicine_id nem treatment_id vazios', async () => {
+    mockRegisterDoseMany.mockResolvedValueOnce([{ success: true, instanceId: 'inst-1' }])
+
+    await registerDoseMany([INPUT], { surface: 'mobile' })
+
+    const [, props] = mockLogEvent.mock.calls.find(([e]) => e === EVENTS.DOSE_LOGGED)
+    expect(props).toEqual({ surface: 'mobile' })
+    expect(Object.keys(props)).not.toContain('medicine_id')
+    expect(Object.keys(props)).not.toContain('treatment_id')
+  })
+})
