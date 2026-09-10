@@ -1,4 +1,5 @@
 import webpush from 'web-push'
+import type { ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
 interface WebPushDevice {
   push_token: string
@@ -121,6 +122,10 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
     return {
       channel: 'web_push',
       success: true, // Fail graceful
+      // Canal inoperante no ambiente — não é ausência de canal do PACIENTE (ADR-100). O `errors`
+      // preenchido já mantinha este resultado fora do descarte; o `reason` é o que o distingue
+      // de um usuário sem aparelho quando o dispatcher compõe o status.
+      reason: 'not_configured' as ChannelResultReason,
       attempted: 0,
       delivered: 0,
       failed: 0,
@@ -136,6 +141,7 @@ export async function sendWebPushNotification({ userId, payload, context, reposi
     return {
       channel: 'web_push',
       success: true,
+      reason: 'no_devices' as ChannelResultReason,
       attempted: 0,
       delivered: 0,
       failed: 0,

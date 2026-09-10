@@ -7,7 +7,7 @@
 //
 // Estes testes provam: (a) 42703 agora FALHA de forma observável (não silêncio); (b) a janela
 // `<= band` + dedup por `notification_log` dispara nos degraus 30/7/1/0 e não redispara na mesma
-// band; (c) a dedup é UMA query em lote (paginada) e só conta log `status = 'enviada'`; (d) a
+// band; (c) a dedup é UMA query em lote (paginada) e conta só os status-âncora (082/ADR-100); (d) a
 // âncora é gravada pelo PRÓPRIO job — a linha do dispatcher sai de IIFE não aguardada e nem
 // existe quando o consentimento está revogado.
 // O mock HONRA os filtros que o código aplica (AP-279) e roteia por tabela.
@@ -20,6 +20,7 @@ const { mockSupabase, state } = vi.hoisted(() => {
     protocolsPages: [] as any[],   // respostas sucessivas de _fetchAllPages('protocols')
     dedupResponse: { data: [], error: null } as any, // [] = nunca avisou
     dedupQueries: 0,               // quantas vezes notification_log foi consultado
+    statusFilter: null as string[] | null, // conjunto de status-âncora que o código pediu (082)
     inserts: [] as any[],          // nenhum insert é esperado: quem loga é o dispatcher
     calls: { eq: [] as any[], gte: [] as any[], lte: [] as any[], in: [] as any[], selectCols: [] as any[] },
     _table: null as string | null,
@@ -33,7 +34,13 @@ const { mockSupabase, state } = vi.hoisted(() => {
       return Promise.resolve({ data: null, error: null });
     }),
     eq: vi.fn(function (this: any, col: any, val: any) { state.calls.eq.push([col, val]); return this; }),
-    in: vi.fn(function (this: any, col: any, vals: any) { state.calls.in.push([col, vals]); return this; }),
+    in: vi.fn(function (this: any, col: any, vals: any) {
+      state.calls.in.push([col, vals]);
+      // 082: o mock precisa HONRAR o filtro de status (AP-279), senão o teste da dedup mede a
+      // resposta que o próprio teste montou e passa com qualquer implementação.
+      if (col === 'status') state.statusFilter = vals;
+      return this;
+    }),
     not: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),
@@ -46,7 +53,16 @@ const { mockSupabase, state } = vi.hoisted(() => {
         result = state.protocolsPages.shift() ?? { data: [], error: null };
       } else if (state._table === 'notification_log') {
         state.dedupQueries++;
-        result = state.dedupResponse;
+        const rows = state.dedupResponse?.data ?? [];
+        const allowed = state.statusFilter;
+        result = state.dedupResponse?.error
+          ? state.dedupResponse
+          : {
+              data: allowed
+                ? rows.filter((r: any) => r.status === undefined || allowed.includes(r.status))
+                : rows,
+              error: null,
+            };
       } else {
         result = { data: [], error: null };
       }
@@ -96,6 +112,7 @@ beforeEach(() => {
   state.calls.lte.length = 0;
   state.calls.in.length = 0;
   state.calls.selectCols.length = 0;
+  state.statusFilter = null;
 });
 
 afterEach(() => {
@@ -177,7 +194,7 @@ describe('checkPrescriptionAlertsViaDispatcher — 076', () => {
     expect(dispatchCount(dispatcher)).toBe(1);
   });
 
-  it('dedup é UMA query para N candidatos (sem N+1) e só conta status enviada', async () => {
+  it('dedup é UMA query para N candidatos (sem N+1) e conta só os status-âncora', async () => {
     state.protocolsPages = [{
       data: [protocol('a', 1), protocol('b', 7), protocol('c', 30)],
       error: null,
@@ -190,7 +207,11 @@ describe('checkPrescriptionAlertsViaDispatcher — 076', () => {
     expect(mockSupabase.order).toHaveBeenCalledWith('id');
     expect(mockSupabase.range).toHaveBeenCalled();
     expect(state.calls.eq).toContainEqual(['notification_type', 'prescription_alert']);
-    expect(state.calls.eq).toContainEqual(['status', 'enviada']);
+    // 082/ADR-100: o status deixou de ser binário. A âncora vira um CONJUNTO — `sem_canal` entra
+    // (senão o aviso repete todo dia para o paciente sem canal, RC3/F1) e `falhou` fica de fora
+    // (falha real merece nova tentativa amanhã — AP-340).
+    expect(state.calls.in).toContainEqual(['status', ['enviada', 'sem_canal']]);
+    expect(state.calls.eq).not.toContainEqual(['status', 'enviada']);
   });
 
   it('sem candidato na janela: nem consulta notification_log', async () => {
@@ -249,3 +270,52 @@ describe('checkPrescriptionAlertsViaDispatcher — 076', () => {
     expect(state.inserts).toHaveLength(0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Spec 082 Slice A — RC3/F1: o conserto do status não pode ressuscitar o alerta diário.
+//
+// O achado: hoje o alerta de receita de um paciente SEM canal é gravado como `enviada` e por isso
+// não repete. Com o ADR-100 essa mesma entrega passa a ser `sem_canal` — se a dedup continuasse
+// presa ao literal `'enviada'`, o aviso voltaria a sair TODO DIA para exatamente o paciente mais
+// frágil, e nada a mais chegaria até ele (a linha na inbox já existe, ADR-047).
+//
+// Guard subido pelo RC3: dois ciclos seguidos, não um.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('checkPrescriptionAlertsViaDispatcher — dedup sobrevive ao vocabulário novo (082/RC3-F1)', () => {
+  it('🔴 paciente SEM canal não recebe o alerta duplicado no ciclo seguinte', async () => {
+    // Ciclo 1: nenhum log ainda ⇒ dispara.
+    state.protocolsPages = [{ data: [protocol('sem-canal', 7)], error: null }];
+    const ciclo1 = makeDispatcher();
+    await checkPrescriptionAlertsViaDispatcher(ciclo1, 'corr-ciclo-1');
+    expect(dispatchCount(ciclo1)).toBe(1);
+
+    // Ciclo 2 (dia seguinte, mesma band): a entrega do ciclo 1 ficou registrada como `sem_canal`,
+    // porque o paciente não tem canal físico algum. É o valor que o ADR-100 introduz.
+    state.protocolsPages = [{ data: [protocol('sem-canal', 6)], error: null }];
+    state.dedupResponse = {
+      data: [{ ...logRow('sem-canal', 6, 0), id: 'log-1', status: 'sem_canal' }],
+      error: null,
+    };
+    const ciclo2 = makeDispatcher();
+    await checkPrescriptionAlertsViaDispatcher(ciclo2, 'corr-ciclo-2');
+
+    expect(dispatchCount(ciclo2)).toBe(0);
+  });
+
+  it('falha real de canal SEGUE elegível no ciclo seguinte (não vira silêncio — AP-340)', async () => {
+    // Contraprova do teste acima: `falhou` de propósito NÃO é âncora. Se entrasse no conjunto, um
+    // erro transitório de canal silenciaria o alerta pelo resto da band.
+    state.protocolsPages = [{ data: [protocol('falhou', 6)], error: null }];
+    state.dedupResponse = {
+      data: [{ ...logRow('falhou', 6, 0), id: 'log-2', status: 'falhou' }],
+      error: null,
+    };
+    const dispatcher = makeDispatcher();
+    await checkPrescriptionAlertsViaDispatcher(dispatcher, 'corr-falhou');
+
+    // O mock aplica o mesmo `.in` que o código manda ao PostgREST: a linha `falhou` não volta,
+    // não há âncora, e o alerta sai de novo. É o comportamento de hoje, preservado de propósito.
+    expect(dispatchCount(dispatcher)).toBe(1);
+  });
+});
+

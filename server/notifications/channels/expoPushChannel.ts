@@ -4,6 +4,7 @@
 // Desativa tokens com erros permanentes via shouldDeactivateDevice (R-042)
 
 import { shouldDeactivateDevice } from '../utils/shouldDeactivateDevice.js'
+import type { ChannelResultReason } from '../utils/normalizeChannelResults.js'
 
 interface ExpoDevice {
   push_token: string
@@ -131,6 +132,15 @@ async function _sendPushNotifications(expoClient: ExpoClient, messages: ReturnTy
   }
 }
 
+/**
+ * Por que o canal não tem ninguém para quem enviar (ADR-100). Extraído da função de envio de
+ * propósito: inline, o ternário empurrava `sendExpoPushNotification` de 15 para 16 de
+ * complexidade ciclomática — o limite do lint.
+ */
+function _resolveEmptyReason(gatedCount: number): ChannelResultReason {
+  return gatedCount > 0 ? 'native_alarm' : 'no_devices'
+}
+
 interface SendExpoPushParams {
   userId: string
   payload: NotificationPayload
@@ -169,10 +179,16 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
   }
 
   if (devices.length === 0) {
-    console.info('[expoPushChannel] sem devices ativos', { correlationId, userId })
+    // Dois desfechos MUITO diferentes que antes saíam idênticos daqui (ADR-100): o gate zerou a
+    // lista (o alarme local cobre a dose — supressão deliberada) ou o usuário não tem aparelho
+    // algum (ninguém foi avisado). O canal só informa qual dos dois; quem vira status é o
+    // dispatcher (R-200).
+    const reason = _resolveEmptyReason(gatedCount)
+    console.info('[expoPushChannel] nada a enviar', { correlationId, userId, reason })
     return {
       channel: 'mobile_push',
       success: true,
+      reason,
       attempted: 0,
       delivered: 0,
       failed: 0,
