@@ -16,6 +16,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   do que está acontecendo: é o melhor caso do produto, e ele era invisível.
   O `treatment_id` sai do **fato gravado** no registro, nunca do tratamento como ele está hoje —
   editar ou trocar um medicamento não reescreve o que foi medido no passado.
+  Registro em lote — que é o caminho do card de hoje, e responde por 80% das doses registradas —
+  passa a gerar um evento por dose, cada um com o seu tratamento; antes o lote inteiro virava um
+  número só, sem dizer de qual tratamento era.
   Junto: `dose_skipped` passa a ser registrado (o evento existia no catálogo e nunca disparava);
   eventos passam a dizer se vieram de um build interno (`app_env`/`is_internal`), para que teste do
   time não entre nos números de uso real; e o **logout limpa a identificação nos dois caminhos** de
