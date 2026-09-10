@@ -20,6 +20,15 @@ set -euo pipefail
 export LANG="${LANG:-en_US.UTF-8}"
 export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 
+# Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
+# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts`. A variável não vem do repo —
+# o `npx` converte o `~/.npmrc` do operador em `npm_config_*` e as exporta para o processo filho,
+# e o npm >= 11.17 recusa esse config como se fosse flag de CLI em install de projeto
+# ("--allow-scripts is not allowed in project-scoped installs"). Medido: pelo ARQUIVO `.npmrc`
+# passa; pela ENV quebra — então limpar a var no shell não basta, o npx a reexporta.
+# Neutralizar aqui (valor vazio é aceito) mantém o build imune ao `.npmrc` de quem o roda.
+export npm_config_allow_scripts=
+
 PROFILE="${1:-development}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

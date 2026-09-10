@@ -15,6 +15,15 @@
 
 set -euo pipefail
 
+# Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
+# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts`. A variável não vem do repo —
+# o `npx` converte o `~/.npmrc` do operador em `npm_config_*` e as exporta para o processo filho,
+# e o npm >= 11.17 recusa esse config como se fosse flag de CLI em install de projeto
+# ("--allow-scripts is not allowed in project-scoped installs"). Medido: pelo ARQUIVO `.npmrc`
+# passa; pela ENV quebra — então limpar a var no shell não basta, o npx a reexporta.
+# Neutralizar aqui (valor vazio é aceito) mantém o build imune ao `.npmrc` de quem o roda.
+export npm_config_allow_scripts=
+
 # Garantir que o Android SDK é encontrado pelo Gradle
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
