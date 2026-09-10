@@ -30,6 +30,7 @@ import { createClient } from '@supabase/supabase-js';
 import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
 import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
+import { initSentry, captureServerException, flushSentry, withServerIsolation } from '../server/observability/sentry.js';
 
 const logger = createLogger('CronNotify');
 
@@ -363,6 +364,9 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       results.push(name);
     } catch (err) {
       logger.error(`Job '${name}' falhou (isolado — não propaga)`, err, { correlationId, jobType });
+      // A falha do job é engolida de propósito (isolamento), mas não pode ficar invisível:
+      // é exatamente a classe do incidente que originou a spec 082 (AP-325).
+      captureServerException(err, { correlationId, job: name });
       results.push(`${name}:failed`);
     }
   };
@@ -472,6 +476,7 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
 }
 
 export default async function handler(req, res) {
+  initSentry();
   const correlationId = generateCorrelationId();
 
   logger.info('Ambiente de execução', {
@@ -534,7 +539,9 @@ export default async function handler(req, res) {
   });
 
   try {
-    const results = await _executeCronJobs(notificationDispatcher, bot, correlationId, spDate);
+    const results = await withServerIsolation(() =>
+      _executeCronJobs(notificationDispatcher, bot, correlationId, spDate)
+    );
 
     logger.info('Cron jobs completed', {
       correlationId,
@@ -542,6 +549,7 @@ export default async function handler(req, res) {
       duration: Date.now() - now.getTime()
     });
 
+    await flushSentry();
     res.status(200).json({
       status: 'ok',
       executed: results,
@@ -558,6 +566,8 @@ export default async function handler(req, res) {
       code: error.code
     });
     logger.error('Cron job failed', error, { correlationId });
+    captureServerException(error, { correlationId, job: 'cron_notify' });
+    await flushSentry();
     res.status(500).json({
       error: error.message,
       correlationId,
