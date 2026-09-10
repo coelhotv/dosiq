@@ -175,17 +175,17 @@
       "outbox_kinds_prod": "daily_adherence,weekly_adherence,monthly_report,daily_digest,stock_alert,stock_expiry_alert"
     },
     "acceptance_criteria": [
-      "AC-1 -> 065 PO-1 (ABERTA — guard cumprido; proof exige amostra real, fecha com PO-8)",
+      "AC-1 -> 065 PO-1 (fechada, 2 plataformas)",
       "AC-2 -> 065 PO-2 (fechada)",
-      "AC-4 -> 065 PO-4 (ABERTA — guard cumprido; idem PO-1)",
+      "AC-4 -> 065 PO-4 (fechada)",
       "AC-7 -> 065 PO-7 (fechada)",
-      "AC-8 -> 065 PO-8 (ABERTA — smoke em aparelho físico, iOS+Android; simulador não recebe push)"
+      "AC-8 -> 065 PO-8 (fechada — Android 10,8s / iOS 7s)"
     ],
     "merged_pr": null,
     "closed_debt_050_pr4": "ENTREGUE via 076 (PR #813, 923d2956): AP-340 era a causa; AP-186/AP-298 viraram FR-005/FR-002; AP-336 triado = deleção. Item 1.6 do backlog fecha após PO-4 em prod.",
     "tasks": "plans/specs/065-analytics-instrumentation-mobile/tasks.md",
     "plan": "plans/specs/065-analytics-instrumentation-mobile/plan.md",
-    "next_action": "PO-8: smoke em APARELHO FÍSICO (iOS e Android) — build novo, não OTA (o bump de APP_VERSION muda o runtimeVersion). App FECHADO → registrar pelo botão da notificação → consultar o PostHog SEM abrir o app → abrir e consultar de novo. Fecha PO-8 e, com a amostra, PO-1 e PO-4. Só então o merge do #829.",
+    "next_action": "PR #829 pronto para revisão humana e merge (R-060). Depois do merge: build de loja exige árvore limpa + tag mobile-v0.32.0 no commit da main (R-307). PR B (T030) segue bloqueado até verificar treatmentPlanService vs protocolService.",
     "linked_adrs": [
       "ADR-069",
       "ADR-097",
@@ -218,12 +218,12 @@
     "plan_revision": 1,
     "slices": [],
     "active_slice": null,
-    "next_session": "065 PR A no ar como PR #829, aguardando smoke do PO. PR B (ciclo de vida do tratamento) tem a T030 bloqueada: verificar quais transições passam por treatmentPlanService vs protocolService — marcado UNVERIFICADO no plan.md. Achado de processo do PR A: AP-350 (gate de monorepo com runner único no glob) — todo commit mobile estava barrado pelo pre-commit e ninguém sabia, porque nenhum PR de produto mobile aconteceu desde a reativação do hook.",
+    "next_session": "065 PR A completo: 5 POs fechadas com evidência de campo nas 2 plataformas. FR-14 nasceu do smoke (hero card usa o caminho do lote). INCIDENTE ABERTO fora do 065: dose crítica não notifica — 80,6% de falha silenciosa, documentado em bug-logs/2026-09-10-dose-critica-nao-notifica.md, escopo já estreitado para o dispatcher do servidor (o alarme local foi provado íntegro nas 2 plataformas). Infra nova: perfil EAS `device` para build ad hoc iOS.",
     "ceremony_type": null
   },
   "memory": {
     "last_distillation": "2026-09-08T00:00:00-03:00",
-    "journal_entries_since_distillation": 1,
+    "journal_entries_since_distillation": 2,
     "rules_count": 270,
     "anti_patterns_count": 344,
     "decisions_count": 99,
