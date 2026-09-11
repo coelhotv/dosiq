@@ -9,6 +9,10 @@ import { dispatchLiveActivityLifecycle } from '../../notifications/apns/dispatch
 import {
   resolveInstanceMedicine,
 } from '@dosiq/core';
+import {
+  findInstancesWithAlarmEvidence,
+  isUserAlarmCapable,
+} from '../../notifications/repositories/criticalEventsRepository.js';
 
 const logger = createLogger('DoseReminders');
 
@@ -323,7 +327,7 @@ function _formatScheduledLabel(scheduledFor, userTz, fallback) {
  * Executa o dispatch de um bloco individual de doses da dose_instance.
  * @private
  */
-async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz) {
+async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz, suppressPushReason = null) {
   const instanceIdsInBlock = block.doses.map(d => d.instanceId).filter(Boolean);
 
   // Claim ANTES do dispatch: só é enviado o que este ciclo conseguiu reivindicar.
@@ -357,9 +361,16 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
 
   let kind, data;
 
+  // 082 Slice C (FR-013a): a supressão do push viaja NO DESPACHO — nunca deixando de despachar.
+  // Suprimir é decidir não entregar, não é decidir não registrar: o bloco continua produzindo
+  // linha em `notification_log` (e na inbox, ADR-047), com o status que diz QUAL supressão foi.
+  // Sem isto a dose sumiria do registro e cairia no anti-join do Slice B como não-entrega.
+  const suppression = suppressPushReason ? { suppress_push_reason: suppressPushReason } : {};
+
   if (claimedBlock.kind === 'by_plan') {
     kind = 'dose_reminder_by_plan';
     data = {
+      ...suppression,
       planId: claimedBlock.planId,
       planName: claimedBlock.planName,
       scheduledTime: scheduledLabel,
@@ -371,6 +382,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
   } else if (claimedBlock.kind === 'misc') {
     kind = 'dose_reminder_misc';
     data = {
+      ...suppression,
       scheduledTime: scheduledLabel,
       hour: currentHour,
       doses: claimedBlock.doses,
@@ -381,6 +393,7 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
     const dose = claimedBlock.doses[0];
     kind = 'dose_reminder';
     data = {
+      ...suppression,
       medicineName: dose.medicineName,
       protocolId: dose.protocolId,
       medicineId: dose.medicineId,
@@ -413,6 +426,67 @@ async function _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dis
   } else if (claimError) {
     await _updateNotifiedAt(instanceIdsInBlock);
   }
+}
+
+/**
+ * Decide, POR BLOCO, se o push crítico deve ser suprimido (082 Slice C · FR-011/012/013).
+ *
+ * Três eixos que NÃO coincidem (spec §6): a evidência é por OCORRÊNCIA, a capacidade é por
+ * USUÁRIO e o envio é por APARELHO. Aqui só os dois primeiros — o terceiro é do canal.
+ *
+ * Regra do bloco (RC3/F5): o R-191 manda UM push por bloco de N doses, mas a evidência é por dose.
+ * Suprime só se TODAS as doses do bloco têm prova; qualquer uma sem prova ⇒ o push sai. O lado
+ * conservador aqui é enviar: um aviso a mais incomoda, um a menos é a dose que ninguém lembrou.
+ *
+ * @returns motivo da supressão (`native_alarm` | `no_alarm_evidence`) ou `null` para enviar.
+ * @private
+ */
+function _resolveBlockSuppression(block, evidenceByInstance, isCapable) {
+  const criticalDoses = block.doses.filter(d => d.critical_alarm === true);
+  if (criticalDoses.length === 0) return null;  // FR-014: dose não-crítica, caminho intacto
+
+  // Dose sem `instanceId` não tem como ter prova — conta como sem prova (lado que envia).
+  //
+  // 🔴 Dose ADIADA também conta como sem prova (spec §6, caso de borda do snooze). A prova que
+  // existe para ela descreve o alarme do horário ORIGINAL, que já passou — e o app, medido em
+  // prod, NÃO re-emite `alarm_scheduled` ao adiar: em 11 de 12 doses adiadas nos últimos 60 dias
+  // o último `alarm_scheduled` é ANTERIOR ao `snoozed`. Aceitar essa prova velha suprimiria
+  // justamente a dose que a paciente pediu para ser lembrada de novo.
+  const allHaveEvidence = criticalDoses.every(
+    d => Boolean(d.instanceId) && !d.snoozedUntil && evidenceByInstance.has(d.instanceId)
+  );
+  if (allHaveEvidence) return 'native_alarm';        // dose COBERTA pelo alarme local
+
+  // Sem prova: o que ela significa depende de o usuário SABER produzi-la.
+  //   capaz   → a ausência é informativa (o aparelho registra e não registrou) ⇒ envia
+  //   incapaz → a ausência é ambígua (D1) ⇒ suprime, e o silêncio vai CONTADO (SC-002a)
+  return isCapable ? null : 'no_alarm_evidence';
+}
+
+/**
+ * Lê, UMA vez por ciclo do usuário, a evidência de alarme das doses críticas e a capacidade dele.
+ * Fail-open em bloco (FR-013): qualquer erro de leitura devolve "sem prova + capaz", que é a
+ * combinação que ENVIA o push. Indisponibilidade de banco não pode virar dose não avisada.
+ * @private
+ */
+async function _loadCriticalEvidence(userId, criticalDoses) {
+  if (criticalDoses.length === 0) return { evidenceByInstance: new Set(), isCapable: true };
+
+  const instanceIds = criticalDoses.map(d => d.instanceId).filter(Boolean);
+  const evidenceByInstance = await findInstancesWithAlarmEvidence(supabase, instanceIds);
+
+  // A capacidade só muda o desfecho quando falta prova a alguma dose — não pagar a consulta quando
+  // todas já têm prova.
+  const someWithoutEvidence = criticalDoses.some(
+    d => !d.instanceId || d.snoozedUntil || !evidenceByInstance.has(d.instanceId)
+  );
+  const isCapable = someWithoutEvidence ? await isUserAlarmCapable(supabase, userId) : true;
+
+  logger.debug('Evidência de alarme lida para o ciclo', {
+    userId, criticas: criticalDoses.length, comProva: evidenceByInstance.size, isCapable,
+  });
+
+  return { evidenceByInstance, isCapable };
 }
 
 /**
@@ -451,8 +525,15 @@ async function _dispatchUserReminderBlocks(
     hour12: false,
   }).format(parseISO(windowStart));
 
+  // A decisão é calculada sobre o bloco PRÉ-claim. Num claim parcial (outro ciclo levou parte do
+  // bloco), ela pode ter sido tomada olhando uma dose que não será notificada aqui — e o desvio só
+  // acontece para o lado de ENVIAR, porque suprimir exige que TODAS tenham prova e todo subconjunto
+  // de um bloco com prova completa também tem. O pior caso é um push a mais, nunca um a menos.
+  const { evidenceByInstance, isCapable } = await _loadCriticalEvidence(userId, criticalDoses);
+
   for (const block of blocks) {
-    await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz);
+    const suppressPushReason = _resolveBlockSuppression(block, evidenceByInstance, isCapable);
+    await _dispatchSingleBlock(userId, block, currentHHMM, currentHour, dispatcher, correlationId, userTz, suppressPushReason);
   }
 }
 

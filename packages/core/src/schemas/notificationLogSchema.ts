@@ -5,8 +5,9 @@ import { z } from 'zod';
 //
 // ⚠️ R-271: os arrays abaixo espelham o CHECK `notification_log_status_check`. Valor novo aqui SEM
 // migração do CHECK = insert que falha só em runtime (23514). Andam sempre juntos.
-// CHECK conferido em prod em 2026-09-10 (R-295), após a migração
-// `docs/migrations/20260910_notification_log_status_vocab.sql`.
+// CHECK conferido em prod em 2026-09-11 (R-295), após as migrações
+// `docs/migrations/20260910_notification_log_status_vocab.sql` e
+// `docs/migrations/20260911_notification_log_suprimida_sem_prova.sql`.
 
 // O que o código NOVO escreve — vocabulário fechado do ADR-100.
 export const NOTIFICATION_DELIVERY_STATUSES = [
@@ -15,6 +16,11 @@ export const NOTIFICATION_DELIVERY_STATUSES = [
   'silenciada',        // suprimida por política (quiet hours / consentimento revogado)
   'suprimida_alarme',  // push omitido de propósito: o alarme local cobre a dose
   'sem_canal',         // nenhum canal físico ativo — NADA foi entregue
+  // Slice C (FR-012b): push omitido SEM prova de alarme e com usuário incapaz de produzi-la.
+  // Oposto de `suprimida_alarme` em risco: lá a dose está COBERTA pelo alarme do aparelho, aqui
+  // ninguém avisou a paciente. Colapsar os dois faz a apuração do Slice B carimbar a dose não
+  // avisada como `coberta` — que não alerta.
+  'suprimida_sem_prova',
 ] as const;
 
 // O que o banco ACEITA. É superconjunto do de cima: `pendente`/`sucesso`/`falha`/`entregue` são

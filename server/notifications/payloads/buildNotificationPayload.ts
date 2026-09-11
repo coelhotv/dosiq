@@ -72,6 +72,8 @@ interface NotificationEventData {
   percentage?: number;
   nudge?: string;
   critical_alarm?: boolean;
+  /** 082 Slice C (FR-013b) — ver `metadataSchema.suppress_push_reason`. */
+  suppress_push_reason?: 'native_alarm' | 'no_alarm_evidence';
   doses?: Array<{ protocolId?: string; [key: string]: unknown }>;
   [key: string]: unknown;
 }
@@ -420,6 +422,8 @@ function buildMetadata(kind: Kind, context: NotificationContext, data: Notificat
     percentage: data.percentage,
     nudge: data.nudge,
     critical_alarm: data.critical_alarm,
+    // FR-013b — viaja do reminder (quem tem o `instanceId` de cada dose) até o canal.
+    suppress_push_reason: data.suppress_push_reason,
   }
 
   // Remove chaves com valor undefined

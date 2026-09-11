@@ -153,6 +153,15 @@ export const metadataSchema = z.object({
   percentage: z.number().optional(),
   nudge: z.string().optional(),
   critical_alarm: z.boolean().optional(),
+  /**
+   * 082 Slice C (FR-013b) — decisão de supressão do push crítico, tomada no reminder (RC3/F2, onde
+   * o `instanceId` de cada dose existe) e lida pelo canal. Precisa estar declarada AQUI: o
+   * `metadataSchema` é whitelist estrita e campo não declarado é removido em silêncio no parse,
+   * sem erro e sem teste vermelho (AP-214) — o canal nunca veria a decisão e o gate não teria efeito.
+   *   native_alarm      → todas as doses do bloco têm prova de alarme ⇒ dose COBERTA
+   *   no_alarm_evidence → sem prova e usuário incapaz de produzi-la ⇒ dose NÃO avisada (D1)
+   */
+  suppress_push_reason: z.enum(['native_alarm', 'no_alarm_evidence']).optional(),
 });
 
 

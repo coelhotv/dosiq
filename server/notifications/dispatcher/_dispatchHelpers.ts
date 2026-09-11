@@ -163,8 +163,11 @@ function buildLogChannels(results: ChannelResult[]): LogChannel[] {
  * Precedência quando nada foi tentado:
  *   1. alarme nativo cobre a dose ⇒ `suprimida_alarme`. Vence `sem_canal` de propósito: a
  *      paciente É avisada, pelo alarme do aparelho — o canal ausente ao lado não muda o fato.
- *   2. algum canal sem destinatário (ou nenhum canal válido) ⇒ `sem_canal`.
- *   3. qualquer outra coisa (canal inoperante, motivo desconhecido) ⇒ `falhou`. Motivo que este
+ *   2. supressão SEM prova de alarme (FR-012b) ⇒ `suprimida_sem_prova`. Também vence `sem_canal`,
+ *      pelo motivo inverso: aqui ninguém avisou a paciente, e essa é a informação que o relatório
+ *      diário precisa ver. Nunca colapsar com o caso 1 — lá a dose está coberta, aqui não está.
+ *   3. algum canal sem destinatário (ou nenhum canal válido) ⇒ `sem_canal`.
+ *   4. qualquer outra coisa (canal inoperante, motivo desconhecido) ⇒ `falhou`. Motivo que este
  *      código não conhece NUNCA vira sucesso.
  */
 function determineOverallStatus(isSuppressed: boolean, results: ChannelResult[], validChannels: string[]): string {
@@ -174,6 +177,7 @@ function determineOverallStatus(isSuppressed: boolean, results: ChannelResult[],
   if (results.some(hasAttempted)) return 'falhou'
 
   if (results.some((r) => r.reason === 'native_alarm')) return 'suprimida_alarme'
+  if (results.some((r) => r.reason === 'no_alarm_evidence')) return 'suprimida_sem_prova'
   if (validChannels.length === 0) return 'sem_canal'
   if (results.some((r) => r.reason === 'no_devices' || r.reason === 'no_chat')) return 'sem_canal'
 

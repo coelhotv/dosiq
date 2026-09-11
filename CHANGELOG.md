@@ -7,6 +7,25 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A dose crítica só deixa de receber push quando existe prova de que o alarme foi armado
+
+- **Backend** · **Web/PWA** (`patch`, `4.24.2` → `4.24.3` — a lista de notificações passa a aceitar
+  um desfecho novo; sem esse acerto, a lista inteira quebraria ao encontrá-lo).
+  Até aqui o servidor decidia não mandar o push de uma dose crítica olhando uma marca no aparelho
+  que dizia apenas "este celular já abriu o app uma vez" — hoje ela está ligada em **9 de 9**
+  aparelhos, inclusive nos que não sabem armar alarme nenhum. O resultado é o buraco que abriu esta
+  investigação: quem ficava dias sem abrir o app não tinha alarme armado, e mesmo assim o push era
+  suprimido. Ninguém avisava.
+  Agora a supressão exige **prova daquela dose**: o alarme precisa ter sido registrado como armado
+  para aquele horário. Sem prova, e quando o celular sabe registrá-la, o push sai. Quando o celular
+  é antigo demais para registrar prova, a dúvida é real e o push continua suprimido — decisão
+  deliberada, porque aviso duplicado a cada dose é o tipo de coisa que faz desinstalar o app — mas
+  essas doses passam a ser **contadas e reportadas** todo dia, com nome próprio (`suprimida_sem_prova`),
+  separadas das que o alarme de fato cobriu. É a diferença entre "ela foi avisada pelo celular" e
+  "ninguém a avisou": as duas eram gravadas igual, e a segunda sumia do relatório carimbada como
+  cobertura.
+  Falha ao consultar a prova nunca cala o lembrete: na dúvida, avisa.
+
 ### O sistema passa a avisar quando uma dose crítica não foi entregue
 
 - **Backend** (`no-user-impact` — nenhuma mudança de comportamento para quem usa o app; é
