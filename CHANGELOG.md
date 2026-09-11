@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O sistema passa a avisar quando uma dose crítica não foi entregue
+
+- **Backend** (`no-user-impact` — nenhuma mudança de comportamento para quem usa o app; é
+  instrumento de operação). Até aqui, descobrir que uma dose crítica passou sem aviso dependia de
+  alguém tropeçar no problema: foi assim que um mês inteiro de silêncio passou despercebido.
+  Agora, uma vez por dia, o servidor confere as doses críticas das últimas 24 horas contra o
+  registro de entrega e avisa a operação quando alguma não chegou a lugar nenhum — dizendo de quem
+  é, de qual tratamento e em que horário. Junto vai a lista de pacientes com dose crítica e nenhum
+  meio de aviso ativo, separada por motivo (sem aparelho × só Telegram).
+  Dose coberta pelo alarme do próprio celular não conta como falha, dia sem problema não gera
+  alerta nenhum, e quem revogou o consentimento fica de fora da conta — os três seriam alarme
+  falso diário, e alarme que toca à toa é alarme que ninguém lê.
+
 ### O registro de notificação para de mentir sobre a entrega
 
 - **Web/PWA** (`patch`, `4.24.1` → `4.24.2`) · **Backend**. O sistema guardava só dois desfechos
