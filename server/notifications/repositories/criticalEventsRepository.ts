@@ -30,9 +30,16 @@ export const ALARM_CAPABILITY_WINDOW_DAYS = 7
 /**
  * Teto explícito por leitura. O PostgREST trunca em 1000 sem avisar (AP-186), e aqui o truncamento
  * seria pior que um número errado: uma dose cuja prova ficou de fora do pedaço lido é uma dose que
- * o gate manda push à toa — ou, no bloco, que deixa de suprimir. Lemos em lotes menores que o teto.
+ * o gate manda push à toa — ou, no bloco, que deixa de suprimir.
+ *
+ * 🔴 A relação é 1:N, não 1:1 — o app re-emite `alarm_scheduled` a cada reagendamento. Medido em
+ * prod 2026-09-11: **até 7 linhas** para a mesma `dose_instance` (média 1,45 sobre 587 instâncias).
+ * Um teto igual ao tamanho do lote seria consumido pelas instâncias "gordas" e mataria em silêncio
+ * a prova das vizinhas do mesmo lote (achado do RC6 no PR #833). Por isso o teto de LINHAS é
+ * independente do de IDs e folgado: 100 ids × 7 = 700 < 1000.
  */
-const ID_CHUNK_SIZE = 200
+const ID_CHUNK_SIZE = 100
+const ROW_LIMIT = 1000
 
 interface SupabaseLike {
   from(table: string): any
@@ -60,7 +67,7 @@ export async function findInstancesWithAlarmEvidence(
       .select('dose_instance_id')
       .eq('event', EVENT_ALARM_SCHEDULED)
       .in('dose_instance_id', chunk)
-      .limit(ID_CHUNK_SIZE)
+      .limit(ROW_LIMIT)
 
     if (error) {
       // Fail-open: devolve VAZIO (ninguém tem prova ⇒ todo mundo recebe push), e não o que já
@@ -71,7 +78,21 @@ export async function findInstancesWithAlarmEvidence(
       return new Set<string>()
     }
 
-    for (const row of (data ?? []) as Array<{ dose_instance_id: string | null }>) {
+    const rows = (data ?? []) as Array<{ dose_instance_id: string | null }>
+
+    // Teto batido = leitura possivelmente truncada. Não dá para saber QUAIS instâncias ficaram de
+    // fora, e uma prova perdida vira push em dose já coberta. Fail-open pelo lado do aviso: trata o
+    // lote inteiro como sem prova (envia) em vez de suprimir com informação incompleta.
+    if (rows.length >= ROW_LIMIT) {
+      logger.error('Leitura de evidência possivelmente truncada (AP-186) — fail-open (envia)', null, {
+        chunkSize: chunk.length,
+        rows: rows.length,
+        rowLimit: ROW_LIMIT,
+      })
+      return new Set<string>()
+    }
+
+    for (const row of rows) {
       if (row.dose_instance_id) withEvidence.add(row.dose_instance_id)
     }
   }

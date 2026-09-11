@@ -262,6 +262,29 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
       expect(motivoDespachado()).not.toBe('native_alarm');
     });
 
+    it('🔴 a supressão da crítica NÃO cala a não-crítica do mesmo ciclo (R-191 + spec §6)', async () => {
+      // A não-crítica não tem alarme local para cobri-la. A proteção que existe HOJE é a partição
+      // por criticidade (ADR-056 etapa 1): saem DOIS blocos, e só o crítico leva motivo.
+      // (O guard de bloco misto dentro de `_resolveBlockSuppression` é defesa para um chamador
+      // futuro — por este caminho ele é inalcançável, e é isso que este teste demonstra.)
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({
+        instancias: [
+          instanciaCritica('inst-1'),
+          { ...instanciaCritica('inst-2'), critical_alarm: false },
+        ],
+        evidencia: ['inst-1', 'inst-2'],
+      });
+      setMockData([{ id: 'inst-2' }]);  // claim do 2º bloco
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-bloco-misto');
+
+      const motivos = mockDispatcher.dispatch.mock.calls.map(c => c[0]?.data?.suppress_push_reason);
+      expect(motivos).toHaveLength(2);
+      expect(motivos.filter(m => m === 'native_alarm')).toHaveLength(1);
+      expect(motivos.filter(m => m === undefined)).toHaveLength(1);
+    });
+
     it('🔴 dose ADIADA não é coberta por prova ANTERIOR ao snooze (spec §6)', async () => {
       // O app não re-emite `alarm_scheduled` ao adiar (medido: 11 de 12 doses adiadas em 60 dias).
       // A prova existente descreve o alarme do horário original, que já passou — suprimir por ela

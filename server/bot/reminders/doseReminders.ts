@@ -445,6 +445,13 @@ function _resolveBlockSuppression(block, evidenceByInstance, isCapable) {
   const criticalDoses = block.doses.filter(d => d.critical_alarm === true);
   if (criticalDoses.length === 0) return null;  // FR-014: dose não-crítica, caminho intacto
 
+  // Bloco MISTO nunca suprime. Hoje ele não existe — `_dispatchUserReminderBlocks` particiona
+  // crítica e não-crítica separadamente (ADR-056, etapa 1) —, mas essa garantia mora 80 linhas
+  // acima e vale só para ESTE chamador. Suprimir um bloco misto calaria as doses não-críticas
+  // junto, que não têm alarme local para cobri-las (R-191 + spec §6: o gate opera por ocorrência
+  // e não pode re-misturar). A invariante fica aqui, onde a decisão é tomada. Achado do RC6 (#833).
+  if (criticalDoses.length !== block.doses.length) return null;
+
   // Dose sem `instanceId` não tem como ter prova — conta como sem prova (lado que envia).
   //
   // 🔴 Dose ADIADA também conta como sem prova (spec §6, caso de borda do snooze). A prova que

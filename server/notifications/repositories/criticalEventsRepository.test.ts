@@ -68,9 +68,30 @@ describe('findInstancesWithAlarmEvidence', () => {
 
     await findInstancesWithAlarmEvidence(client, ids)
 
-    // 450 ids / 200 por lote = 3 leituras. Uma só significaria confiar no truncamento silencioso:
+    // 450 ids / 100 por lote = 5 leituras. Uma só significaria confiar no truncamento silencioso:
     // a dose cuja prova ficasse de fora receberia push à toa — ou deixaria de suprimir.
-    expect(client.from).toHaveBeenCalledTimes(3)
+    expect(client.from).toHaveBeenCalledTimes(5)
+  })
+
+  it('🔴 o teto de LINHAS é independente do de IDs (a relação é 1:N — até 7 linhas por instância)', async () => {
+    const client = makeClient({ data: [] })
+
+    await findInstancesWithAlarmEvidence(client, ['i1'])
+
+    // Teto igual ao tamanho do lote seria consumido pelas instâncias com muitos reagendamentos e
+    // mataria em silêncio a prova das vizinhas do MESMO lote (achado do RC6 no PR #833).
+    const limitCall = client._spy.mock.calls.find((c: unknown[]) => c[0] === 'limit')
+    expect(limitCall?.[1]).toBe(1000)
+  })
+
+  it('🔴 teto de linhas BATIDO ⇒ fail-open (envia), não supressão com dado incompleto', async () => {
+    // Não há como saber QUAIS instâncias ficaram de fora; suprimir com leitura truncada é push que
+    // não sai em dose que talvez não esteja coberta.
+    const client = makeClient({ data: Array.from({ length: 1000 }, () => ({ dose_instance_id: 'i1' })) })
+
+    const set = await findInstancesWithAlarmEvidence(client, ['i1', 'i2'])
+
+    expect(set.size).toBe(0)
   })
 })
 
