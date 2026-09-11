@@ -31,6 +31,7 @@ import ws from 'ws';
 import { Expo } from 'expo-server-sdk';
 import { getServerTimestamp, getSaoPauloTime, getRawNow } from '../server/utils/dateUtils.js';
 import { initSentry, captureServerException, flushSentry, withServerIsolation } from '../server/observability/sentry.js';
+import { runCriticalDeliveryAudit } from '../server/observability/criticalDeliveryAudit.js';
 
 const logger = createLogger('CronNotify');
 
@@ -447,6 +448,24 @@ async function _executeCronJobs(notificationDispatcher, bot, correlationId, spDa
       (context) => retryPendingDlq(notificationDispatcher, context.correlationId));
     await runJob('dlq_digest', 'dlq_digest',
       (context) => sendDLQDigest(notificationDispatcher, context));
+  }
+
+  // 082 Slice B — apuração diária da entrega de dose crítica. 1×/dia, junto dos jobs das 08:00,
+  // olhando as 24 h anteriores. Não envia nada ao paciente: emite UM evento ao Sentry do backend
+  // quando há não-entrega ou paciente sem canal (FR-009/FR-010).
+  if (currentHour === 8 && currentMinute === 0) {
+    await runJob('critical_delivery_audit', 'critical_delivery_audit', async (context) => {
+      const report = await runCriticalDeliveryAudit({
+        supabase,
+        logger,
+        correlationId: context?.correlationId || correlationId,
+      });
+      logger.info('[critical_delivery_audit] ciclo concluído', {
+        correlationId,
+        semEntrega: report.criticalNoDelivery.total,
+        semCanal: report.noChannelPatients.total,
+      });
+    });
   }
 
   // Titration + Prescription Alerts: Daily at 08:00 (não migram para outbox)

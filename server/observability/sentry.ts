@@ -30,6 +30,16 @@ const EXTRA_ALLOWLIST = new Set([
   'reason',
   'count',
   'environment',
+  // 082 Slice B — apuração diária de entrega crítica. Só CONTAGENS e IDs opacos (`user_id`,
+  // `protocol_id`, instante agendado): nome de medicamento, de protocolo e de plano NUNCA entram,
+  // por Constituição I. Quem recebe o alerta resolve os nomes no banco, com o id em mãos.
+  'window',
+  'criticalNoDelivery',
+  'noChannelPatients',
+  'residualSilence',
+  'noChannelAllTypes',
+  'items',
+  'logRate',
 ])
 
 /** Contextos padrão do SDK que são seguros; qualquer contexto custom é removido. */
@@ -184,6 +194,34 @@ export function captureServerException(error: unknown, context: CaptureContext =
     if (context.kind) extra.kind = context.kind
     scope.setExtras(extra)
     Sentry.captureException(error)
+  })
+}
+
+type ServerEventLevel = 'info' | 'warning' | 'error'
+
+interface CaptureEventContext extends CaptureContext {
+  level?: ServerEventLevel
+  /** Só chaves da `EXTRA_ALLOWLIST` sobrevivem ao scrub — o resto é descartado em silêncio. */
+  extras?: Record<string, unknown>
+}
+
+/**
+ * Captura um evento de MENSAGEM (não-excepcional). No-op sem DSN.
+ *
+ * Alerta operacional não é exceção: `captureException(new Error(...))` produziria um stacktrace
+ * do próprio emissor — ruído — e agruparia os eventos pela linha que os criou, não pelo assunto.
+ * `captureMessage` agrupa pela mensagem, que é o que o operador lê.
+ */
+export function captureServerEvent(message: string, context: CaptureEventContext = {}): void {
+  if (!process.env.SENTRY_SERVER_DSN) return
+  Sentry.withScope((scope) => {
+    if (context.userId) scope.setUser({ id: String(context.userId) })
+    const extra: Record<string, unknown> = { ...(context.extras ?? {}) }
+    if (context.correlationId) extra.correlationId = context.correlationId
+    if (context.job) extra.job = context.job
+    if (context.kind) extra.kind = context.kind
+    scope.setExtras(extra)
+    Sentry.captureMessage(message, context.level ?? 'warning')
   })
 }
 
