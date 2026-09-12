@@ -371,11 +371,11 @@ describe('dispatchNotification — status da entrega (082/ADR-100)', () => {
     return calls[calls.length - 1][0] as unknown as { status: string; channels: Array<{ channel: string; status: string; reason: string | null }> }
   }
 
-  const dispatchCritical = (userId: string) =>
+  const dispatchCritical = (userId: string, extraData: Record<string, unknown> = {}) =>
     dispatchNotification({
       userId,
       kind: 'dose_reminder',
-      data: { ...mockData, critical_alarm: true },
+      data: { ...mockData, critical_alarm: true, ...extraData },
       channels: [],
       context: makeContext(),
       repositories: mockRepositories,
@@ -395,18 +395,89 @@ describe('dispatchNotification — status da entrega (082/ADR-100)', () => {
   })
 
   it('🔴 push suprimido porque o alarme nativo cobre a dose ⇒ suprimida_alarme (era `falhou`)', async () => {
-    // Aparelho ativo COM alarme armado: entra em validChannels e é filtrado dentro do canal.
+    // 082 Slice C: a supressão NÃO nasce mais do `native_alarm_enabled` do aparelho — ela chega
+    // do reminder, que é quem tem o `instanceId` e checou a prova daquela ocorrência (RC3/F2).
     mockRepositories.devices.listActiveByUser.mockResolvedValue([
       { push_token: 'ExponentPushToken[alarme]', native_alarm_enabled: true },
     ])
 
-    await dispatchCritical('user-alarme')
+    await dispatchCritical('user-alarme', { suppress_push_reason: 'native_alarm' })
     const logged = await loggedStatus()
 
     expect(logged.status).toBe('suprimida_alarme')
     expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
     // O motivo precisa sobreviver ao Zod do repositório — se for removido no parse, ninguém vê.
     expect(logged.channels.find((c) => c.channel === 'mobile_push')?.reason).toBe('native_alarm')
+  })
+
+  it('🔴 suprimida SEM prova de alarme ⇒ suprimida_sem_prova, NUNCA suprimida_alarme (FR-012b)', async () => {
+    // O desfecho oposto em risco: ninguém avisou a paciente. Se gravar `suprimida_alarme`, a
+    // apuração diária do Slice B o classifica como `coberta` e NÃO alerta — a dose some do
+    // relatório com carimbo de cobertura, que é a família do defeito que abriu esta spec.
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[sem-prova]', native_alarm_enabled: true },
+    ])
+
+    await dispatchCritical('user-sem-prova', { suppress_push_reason: 'no_alarm_evidence' })
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('suprimida_sem_prova')
+    expect(logged.status).not.toBe('suprimida_alarme')
+    expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
+    expect(logged.channels.find((c) => c.channel === 'mobile_push')?.reason).toBe('no_alarm_evidence')
+  })
+
+  it('🔴 RC3/F3: dose crítica SEM decisão de supressão recebe push mesmo com native_alarm_enabled', async () => {
+    // Este é o efeito do slice. Antes, a flag do aparelho (hoje `true` em 9 de 9 devices, e que
+    // significa apenas "o app abriu uma vez") suprimia o push sozinha — inclusive de quem estava
+    // dias sem abrir o app e, portanto, sem alarme armado. Sem esta asserção, o slice inteiro
+    // poderia entregar comportamento IDÊNTICO ao anterior e ninguém veria.
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[sem-alarme-armado]', native_alarm_enabled: true },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    await dispatchCritical('user-capaz-sem-prova')
+    const logged = await loggedStatus()
+
+    expect(mockExpoClient.sendPushNotificationsAsync).toHaveBeenCalled()
+    expect(logged.status).toBe('enviada')
+  })
+
+  it('🔴 D-C1: supressão pedida SEM nenhum aparelho ativo ⇒ sem_canal (não é silêncio do gate)', async () => {
+    // Sem aparelho não havia push a suprimir: o desfecho honesto é ausência de canal, que é o que
+    // o Slice B persegue. Carimbar `suprimida_sem_prova` aqui atribuiria ao gate um silêncio que é
+    // falta de canal e inflaria o SC-002a com população que ele não descreve.
+    mockRepositories.preferences.hasTelegramChat.mockResolvedValueOnce(false)
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([])
+
+    await dispatchCritical('user-sem-aparelho', { suppress_push_reason: 'no_alarm_evidence' })
+    const logged = await loggedStatus()
+
+    expect(logged.status).toBe('sem_canal')
+    expect(logged.status).not.toBe('suprimida_sem_prova')
+  })
+
+  it('FR-014: dose NÃO-crítica ignora a decisão de supressão e segue recebendo push', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[normal]', native_alarm_enabled: true },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    await dispatchNotification({
+      userId: 'user-nao-critico',
+      kind: 'dose_reminder',
+      data: { ...mockData, critical_alarm: false, suppress_push_reason: 'native_alarm' },
+      channels: [],
+      context: makeContext(),
+      repositories: mockRepositories,
+      bot: mockBot,
+      expoClient: mockExpoClient,
+    })
+    const logged = await loggedStatus()
+
+    expect(mockExpoClient.sendPushNotificationsAsync).toHaveBeenCalled()
+    expect(logged.status).toBe('enviada')
   })
 
   it('canal tentou e errou ⇒ falhou', async () => {

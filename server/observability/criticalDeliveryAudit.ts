@@ -38,6 +38,12 @@ export const ROW_LIMIT = 1000
 const STATUS_ENTREGUE = 'enviada'
 const STATUS_COBERTA = 'suprimida_alarme'
 const STATUS_SILENCIADA = 'silenciada'
+/**
+ * FR-012b — supressão por AMBIGUIDADE. Escrito pelo gate do Slice C quando não há prova de alarme
+ * para a dose E o usuário não é capaz de produzi-la. Ninguém avisou a paciente: é não-entrega, e
+ * jamais `coberta`. Mapeá-lo junto de `suprimida_alarme` devolveria a spec ao defeito que a abriu.
+ */
+const STATUS_SEM_PROVA = 'suprimida_sem_prova'
 
 export type DoseOutcome =
   | 'entregue'
@@ -46,9 +52,11 @@ export type DoseOutcome =
   | 'sem_canal'
   | 'falhou'
   | 'sem_registro'
+  /** Silêncio residual do D1 (FR-012a/SC-002a): suprimida sem prova de alarme. */
+  | 'nao_avisada'
 
 /** Desfechos que entram na lista de não-entrega (FR-007). */
-const OUTCOMES_NAO_ENTREGA: DoseOutcome[] = ['sem_canal', 'falhou', 'sem_registro']
+const OUTCOMES_NAO_ENTREGA: DoseOutcome[] = ['sem_canal', 'falhou', 'sem_registro', 'nao_avisada']
 
 export interface CriticalDose {
   id: string
@@ -105,6 +113,7 @@ export function logInWindow(row: DeliveryLogRow, scheduledForMs: number): boolea
 function statusToOutcome(status: string | null): DoseOutcome {
   if (status === STATUS_ENTREGUE || status === 'sucesso' || status === 'entregue') return 'entregue'
   if (status === STATUS_COBERTA) return 'coberta'
+  if (status === STATUS_SEM_PROVA) return 'nao_avisada'
   if (status === STATUS_SILENCIADA) return 'silenciada'
   if (status === 'sem_canal') return 'sem_canal'
   if (status === 'pendente' || status === null) return 'sem_registro'
@@ -134,6 +143,9 @@ export function classifyDose(dose: CriticalDose, logs: DeliveryLogRow[]): DoseOu
   if (outcomes.includes('silenciada')) return 'silenciada'
   if (outcomes.includes('sem_canal')) return 'sem_canal'
   if (outcomes.includes('falhou')) return 'falhou'
+  // Pior que `falhou` na ordem de preferência de LEITURA porque é o desfecho mais silencioso:
+  // nem tentativa houve. Só vence `sem_registro`, que é ausência de linha.
+  if (outcomes.includes('nao_avisada')) return 'nao_avisada'
   // Só sobram linhas `pendente`/sem status: entrega em curso, não desfecho. Fica em bucket próprio.
   return 'sem_registro'
 }
@@ -163,8 +175,14 @@ export interface CriticalDeliveryReport {
   /** Leituras truncadas pelo teto do PostgREST — não-vazio invalida os números deste run. */
   truncatedReads: string[]
   /**
-   * FR-010a/SC-002a — silêncio residual do D1. **Zero por construção até o Slice C subir**: a
-   * supressão que ele conta nasce no FR-012. Entra como baseline declarado, não métrica viva.
+   * FR-010a/FR-012c/SC-002a — silêncio residual do D1: doses críticas suprimidas por AMBIGUIDADE
+   * (sem prova de alarme, usuário incapaz de produzi-la). Derivado de
+   * `status = 'suprimida_sem_prova'` na janela — NUNCA inferido por ausência de linha (FR-010b),
+   * nunca misturado com `suprimida_alarme`, que é dose COBERTA.
+   *
+   * Nasceu literal `0` no Slice B, como baseline declarado, porque a supressão que ele conta só
+   * passou a existir no Slice C. Religado aqui (T039c): um número que nasce constante e nunca é
+   * religado é gate que reporta sucesso sem executar (AP-325).
    */
   residualSilence: number
 }
@@ -186,6 +204,7 @@ export function buildReport(params: {
     sem_canal: 0,
     falhou: 0,
     sem_registro: 0,
+    nao_avisada: 0,
   }
   const items: NoDeliveryItem[] = []
   let consentRevokedSkipped = 0
@@ -221,7 +240,7 @@ export function buildReport(params: {
     },
     noChannelAllTypes: params.noChannelAllTypes,
     truncatedReads: params.truncatedReads ?? [],
-    residualSilence: 0,
+    residualSilence: totals.nao_avisada,
   }
 }
 

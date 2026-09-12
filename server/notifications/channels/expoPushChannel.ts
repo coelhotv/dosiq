@@ -17,7 +17,15 @@ interface NotificationPayload {
   body: string
   pushBody?: string
   actions?: Array<{ id: string; label: string; params?: Record<string, unknown> }>
-  metadata?: { kind?: string; critical_alarm?: boolean; notificationLogId?: string; [key: string]: unknown }
+  metadata?: {
+    kind?: string
+    critical_alarm?: boolean
+    notificationLogId?: string
+    /** 082 Slice C — decisão de supressão tomada no reminder (FR-013b). Declarada aqui porque o
+     *  `[key: string]: unknown` abaixo a entregaria como `unknown` e o motivo viraria `any`. */
+    suppress_push_reason?: ChannelResultReason
+    [key: string]: unknown
+  }
 }
 
 interface ExpoTicket {
@@ -136,9 +144,55 @@ async function _sendPushNotifications(expoClient: ExpoClient, messages: ReturnTy
  * Por que o canal não tem ninguém para quem enviar (ADR-100). Extraído da função de envio de
  * propósito: inline, o ternário empurrava `sendExpoPushNotification` de 15 para 16 de
  * complexidade ciclomática — o limite do lint.
+ *
+ * 082 Slice C: a supressão deixou de nascer aqui (o `native_alarm_enabled` do aparelho, que hoje
+ * é `true` em 9 de 9 devices e significa apenas "o app abriu uma vez"). Quem decide é o reminder,
+ * por OCORRÊNCIA, e manda o motivo em `suppress_push_reason`.
+ *
+ * ⚠️ `no_devices` tem PRECEDÊNCIA sobre a supressão (decisão D-C1 do C1.5): sem nenhum aparelho
+ * ativo não havia push a suprimir, e o desfecho honesto é ausência de canal — o `sem_canal` que o
+ * Slice B persegue. Sem esta ordem, pacientes sem aparelho algum entrariam no silêncio residual do
+ * D1, atribuindo ao gate um silêncio que é falta de canal e inflando o SC-002a com população que
+ * ele não descreve (medido: 8 das 47 doses críticas de 7 dias).
  */
-function _resolveEmptyReason(gatedCount: number): ChannelResultReason {
-  return gatedCount > 0 ? 'native_alarm' : 'no_devices'
+function _resolveEmptyReason(hadDevices: boolean, suppressReason?: ChannelResultReason): ChannelResultReason {
+  if (!hadDevices) return 'no_devices'
+  return suppressReason ?? 'no_devices'
+}
+
+/**
+ * A decisão de supressão que o reminder mandou, se ela se aplica a este payload (082 Slice C).
+ * Extraída da função de envio pelo mesmo motivo de `_resolveEmptyReason`: inline, os dois ramos
+ * estouram o limite de complexidade ciclomática do lint.
+ */
+function _resolveSuppressReason(
+  payload: NotificationPayload,
+  isDoseReminder: boolean,
+  isCriticalDose: boolean
+): ChannelResultReason | undefined {
+  if (!isDoseReminder || !isCriticalDose) return undefined
+  return payload?.metadata?.suppress_push_reason
+}
+
+interface LogSuppressionParams {
+  suppressReason?: ChannelResultReason
+  deviceCount: number
+  correlationId: string
+  userId: string
+  payload: NotificationPayload
+  isCriticalDose: boolean
+}
+
+function _logSuppression({ suppressReason, deviceCount, correlationId, userId, payload, isCriticalDose }: LogSuppressionParams): void {
+  if (!suppressReason || deviceCount === 0) return
+  console.info('[expoPushChannel] push de dose crítica suprimido por decisão do reminder', {
+    correlationId,
+    userId,
+    gated: deviceCount,
+    reason: suppressReason,
+    kind: payload?.metadata?.kind,
+    critical_alarm: isCriticalDose,
+  })
 }
 
 interface SendExpoPushParams {
@@ -154,36 +208,29 @@ export async function sendExpoPushNotification({ userId, payload, context, repos
 
   const allDevices = await repositories.devices.listActiveByUser(userId, 'expo')
 
-  // Gate per-dose-criticality (Spec 010 / ADR-056):
-  // - Dose crítica (critical_alarm=true): push só para devices SEM alarme nativo (fallback).
-  //   Devices com native_alarm_enabled recebem o alarme local diretamente.
-  // - Dose normal (critical_alarm=false/ausente): push para TODOS os devices
-  //   (alarme não suprime doses não-críticas — elas não têm alarme local).
+  // Gate per-dose-criticality (Spec 010 / ADR-056 · 082 Slice C):
+  // - Dose crítica (critical_alarm=true): o push é suprimido SÓ quando o reminder mandou
+  //   `suppress_push_reason` — ou seja, quando existe PROVA de alarme para aquela ocorrência, ou
+  //   quando a ausência de prova é ambígua (usuário incapaz de produzi-la, D1).
+  //   O filtro por `native_alarm_enabled` NÃO se aplica mais aqui (RC3/F3): a flag nasce `true` por
+  //   omissão no registro do device e está `true` em 9 de 9 aparelhos ativos — ela significa "o app
+  //   abriu uma vez", não "o alarme desta dose está armado". Era ela que suprimia o push de quem
+  //   ficava dias sem abrir o app, exatamente quem não tinha alarme armado.
+  // - Dose normal (critical_alarm=false/ausente): push para TODOS os devices (FR-014, R-191 intacto).
   // - Outros kinds (não dose_reminder): todos os devices recebem normalmente.
   const isDoseReminder = DOSE_REMINDER_KINDS.has(payload?.metadata?.kind ?? '')
   const isCriticalDose = payload?.metadata?.critical_alarm === true
+  const suppressReason = _resolveSuppressReason(payload, isDoseReminder, isCriticalDose)
 
-  const devices = isDoseReminder && isCriticalDose
-    ? allDevices.filter((d) => !d.native_alarm_enabled)  // crítica: só devices sem alarme (fallback)
-    : allDevices  // normal ou não-dose: todos os devices recebem push
-
-  const gatedCount = allDevices.length - devices.length
-  if (gatedCount > 0) {
-    console.info('[expoPushChannel] push de dose crítica suprimido (alarme nativo)', {
-      correlationId,
-      userId,
-      gated: gatedCount,
-      kind: payload?.metadata?.kind,
-      critical_alarm: isCriticalDose,
-    })
-  }
+  const devices = suppressReason ? [] : allDevices
+  _logSuppression({ suppressReason, deviceCount: allDevices.length, correlationId, userId, payload, isCriticalDose })
 
   if (devices.length === 0) {
     // Dois desfechos MUITO diferentes que antes saíam idênticos daqui (ADR-100): o gate zerou a
     // lista (o alarme local cobre a dose — supressão deliberada) ou o usuário não tem aparelho
     // algum (ninguém foi avisado). O canal só informa qual dos dois; quem vira status é o
     // dispatcher (R-200).
-    const reason = _resolveEmptyReason(gatedCount)
+    const reason = _resolveEmptyReason(allDevices.length > 0, suppressReason)
     console.info('[expoPushChannel] nada a enviar', { correlationId, userId, reason })
     return {
       channel: 'mobile_push',

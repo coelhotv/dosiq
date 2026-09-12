@@ -114,24 +114,42 @@ describe('expoPushChannel', () => {
   })
 })
 
-// Gate de duplicata do alarme nativo (Spec 001 A2): devices com
-// native_alarm_enabled NÃO recebem push de lembrete de DOSE (alarme local cobre).
-// Outros kinds e devices sem o flag seguem normais.
+// Gate de duplicata do alarme nativo. Era da Spec 001 A2 (o canal filtrava devices com
+// `native_alarm_enabled`) e mudou de lugar na 082 Slice C: a decisão passou a nascer no reminder,
+// por OCORRÊNCIA, e chega aqui pronta em `metadata.suppress_push_reason`.
+// O motivo da mudança está medido: `native_alarm_enabled` está `true` em 9 de 9 devices ativos —
+// ela nasce `true` no registro e significa "o app abriu uma vez", não "o alarme desta dose está
+// armado". Era ela que suprimia o push de quem passava dias sem abrir o app (RC3/F3).
 describe('expoPushChannel — gate alarme nativo (dose)', () => {
+  // `type`, não `interface`: só aliases ganham index signature implícita, e o `metadata` do canal
+  // declara `[key: string]: unknown`. Com `interface` o payload inteiro fica inatribuível.
+  type DoseReminderMetadata = {
+    kind: string
+    critical_alarm: boolean
+    builtAt: string
+    /** 082 Slice C — decisão de supressão que o reminder manda ao canal (FR-013b). */
+    suppress_push_reason?: 'native_alarm' | 'no_alarm_evidence'
+  }
+
   const doseReminder = (kind = 'dose_reminder') => ({
     title: '💊 Hora da dose',
     body: 'Está na hora de tomar Losartana (08:00)',
     pushBody: 'Está na hora de tomar Losartana (08:00)',
-    metadata: { kind, critical_alarm: true, builtAt: '2026-01-01T00:00:00Z' },
+    metadata: { kind, critical_alarm: true, builtAt: '2026-01-01T00:00:00Z' } as DoseReminderMetadata,
     actions: [],
   })
 
-  it('dose_reminder: device com alarme ON é filtrado, device OFF recebe', async () => {
+  /** O `reason` só existe no retorno sem tentativa — a união do canal não o expõe direto. */
+  const motivoDe = (result: unknown) => (result as { reason?: string }).reason
+
+  it('🔴 082/RC3-F3: SEM decisão do reminder, TODOS os devices recebem — inclusive com alarme ON', async () => {
+    // Era este o comportamento que a flag do aparelho suprimia sozinha. Se este caso voltar a
+    // entregar 1 em vez de 2, o slice está entregando comportamento idêntico ao anterior.
     mockRepositories.devices.listActiveByUser.mockResolvedValue([
       { push_token: 'ExponentPushToken[alarm]', native_alarm_enabled: true },
       { push_token: 'ExponentPushToken[plain]', native_alarm_enabled: false },
     ])
-    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }, { status: 'ok' }])
 
     const result = await sendExpoPushNotification({
       userId: 'user-gate-1',
@@ -141,24 +159,28 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
       expoClient: mockExpoClient,
     })
 
-    expect(result.attempted).toBe(1)
-    expect(result.delivered).toBe(1)
+    expect(result.attempted).toBe(2)
     const [messages] = mockExpoClient.sendPushNotificationsAsync.mock.calls[0]
-    expect(messages).toHaveLength(1)
-    expect(messages[0].to).toBe('ExponentPushToken[plain]')
+    expect(messages.map((m: { to: string }) => m.to)).toEqual([
+      'ExponentPushToken[alarm]',
+      'ExponentPushToken[plain]',
+    ])
   })
 
   it.each(['dose_reminder', 'dose_reminder_by_plan', 'dose_reminder_misc'])(
-    'kind %s: todos os devices com alarme ON → noop (nada enviado)',
+    'kind %s: decisão `native_alarm` do reminder ⇒ noop e motivo devolvido ao dispatcher',
     async (kind) => {
       mockRepositories.devices.listActiveByUser.mockResolvedValue([
         { push_token: 'ExponentPushToken[a]', native_alarm_enabled: true },
-        { push_token: 'ExponentPushToken[b]', native_alarm_enabled: true },
+        { push_token: 'ExponentPushToken[b]', native_alarm_enabled: false },
       ])
+
+      const payload = doseReminder(kind)
+      payload.metadata.suppress_push_reason = 'native_alarm'
 
       const result = await sendExpoPushNotification({
         userId: 'user-gate-2',
-        payload: doseReminder(kind),
+        payload,
         context: makeContext(),
         repositories: mockRepositories,
         expoClient: mockExpoClient,
@@ -166,9 +188,71 @@ describe('expoPushChannel — gate alarme nativo (dose)', () => {
 
       expect(result.success).toBe(true)
       expect(result.attempted).toBe(0)
+      // O canal INFORMA o motivo; quem o converte em status é o dispatcher (R-200/ADR-100).
+      expect(motivoDe(result)).toBe('native_alarm')
       expect(mockExpoClient.sendPushNotificationsAsync).not.toHaveBeenCalled()
     }
   )
+
+  it('🔴 decisão `no_alarm_evidence` devolve o motivo próprio (vira suprimida_sem_prova)', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[a]', native_alarm_enabled: true },
+    ])
+
+    const payload = doseReminder()
+    payload.metadata.suppress_push_reason = 'no_alarm_evidence'
+
+    const result = await sendExpoPushNotification({
+      userId: 'user-gate-sem-prova',
+      payload,
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.attempted).toBe(0)
+    expect(motivoDe(result)).toBe('no_alarm_evidence')
+  })
+
+  it('🔴 D-C1: supressão SEM nenhum device ⇒ motivo é `no_devices`, não a supressão', async () => {
+    // Sem aparelho não havia push a suprimir. Carimbar a supressão aqui atribuiria ao gate um
+    // silêncio que é falta de canal — e inflaria o silêncio residual do D1 (SC-002a).
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([])
+
+    const payload = doseReminder()
+    payload.metadata.suppress_push_reason = 'no_alarm_evidence'
+
+    const result = await sendExpoPushNotification({
+      userId: 'user-gate-sem-device',
+      payload,
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    expect(motivoDe(result)).toBe('no_devices')
+  })
+
+  it('FR-014: dose NÃO-crítica ignora `suppress_push_reason` e recebe push', async () => {
+    mockRepositories.devices.listActiveByUser.mockResolvedValue([
+      { push_token: 'ExponentPushToken[normal]', native_alarm_enabled: true },
+    ])
+    mockExpoClient.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }])
+
+    const payload = doseReminder()
+    payload.metadata.critical_alarm = false
+    payload.metadata.suppress_push_reason = 'native_alarm'
+
+    const result = await sendExpoPushNotification({
+      userId: 'user-gate-normal',
+      payload,
+      context: makeContext(),
+      repositories: mockRepositories,
+      expoClient: mockExpoClient,
+    })
+
+    expect(result.attempted).toBe(1)
+  })
 
   it('kind não-dose (stock_alert): device com alarme ON AINDA recebe', async () => {
     mockRepositories.devices.listActiveByUser.mockResolvedValue([

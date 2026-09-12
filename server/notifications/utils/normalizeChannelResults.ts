@@ -21,6 +21,7 @@ export type ChannelResultReason =
   | 'no_devices'      // o usuário não tem nenhum aparelho ativo neste canal
   | 'no_chat'         // o usuário não vinculou o Telegram
   | 'not_configured'  // o canal não está operacional no ambiente (ex.: VAPID ausente)
+  | 'no_alarm_evidence' // dose crítica SEM prova de alarme e usuário incapaz de produzi-la (FR-012)
 
 export interface ChannelResult {
   channel: string

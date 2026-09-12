@@ -48,6 +48,20 @@ describe('notificationLogRepository', () => {
       expect(result).toEqual({ id: 'log-123' });
     });
 
+    it('🔴 082 Slice C: `suprimida_sem_prova` sobrevive ao safeParse e chega ao insert', async () => {
+      // O `create` valida com o vocabulário FECHADO do ADR-100. Valor novo que não esteja no enum
+      // é rejeitado aqui — antes de chegar ao banco — e a supressão viraria exceção no cron em vez
+      // de linha gravada. Este teste é o par do CHECK: enum e constraint andam juntos (R-271).
+      const result = await notificationLogRepository.create({
+        user_id: mockUserId,
+        protocol_id: mockProtocolId,
+        notification_type: 'dose_reminder',
+        status: 'suprimida_sem_prova' as const,
+      });
+
+      expect(result).toEqual({ id: 'log-123' });
+    });
+
     it('deve lançar erro se a validação Zod falhar', async () => {
       const invalidData = {
         user_id: 'not-a-uuid',

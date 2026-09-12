@@ -1,6 +1,6 @@
 {
   "name": "@dosiq/web",
-  "version": "4.24.2",
+  "version": "4.24.3",
   "private": true,
   "type": "module",
   "scripts": {

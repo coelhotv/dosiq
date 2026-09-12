@@ -173,9 +173,58 @@ describe('relatório', () => {
     expect(r.noChannelAllTypes).toBe(28)
   })
 
-  it('silêncio residual do D1 nasce ZERO por construção (FR-010a — baseline, não métrica viva)', () => {
+  it('sem supressão por ambiguidade na janela, o silêncio residual é zero', () => {
     const r = buildReport({ ...base, doses: [], logs: [], revokedUserIds: new Set() })
     expect(r.residualSilence).toBe(0)
+  })
+
+  it('🔴 FR-012c: residualSilence CONTA as `suprimida_sem_prova` — não é mais literal', () => {
+    // Nasceu `0` no Slice B (baseline declarado) porque a supressão que ele conta só passou a
+    // existir no Slice C. Um número que nasce constante e nunca é religado é gate que reporta
+    // sucesso sem executar (AP-325): o SC-002a estaria "medindo" um literal para sempre.
+    // MUTAÇÃO DE CONTROLE: trocar `totals.nao_avisada` de volta por `0` em `buildReport` faz
+    // este caso falhar.
+    const r = buildReport({
+      ...base,
+      doses: [dose({ id: 'd1' }), dose({ id: 'd2', scheduled_for: new Date(2026, 8, 10, 20, 0, 0).toISOString() })],
+      logs: [
+        log({ status: 'suprimida_sem_prova' }),
+        log({ status: 'suprimida_sem_prova', created_at: new Date(2026, 8, 10, 20, 0, 0).toISOString() }),
+      ],
+      revokedUserIds: new Set(),
+    })
+
+    expect(r.residualSilence).toBe(2)
+    expect(r.totals.nao_avisada).toBe(2)
+  })
+
+  it('🔴 FR-012b: `suprimida_sem_prova` é NÃO-ENTREGA, nunca `coberta`', () => {
+    // Se cair em `coberta`, a dose que ninguém avisou sai do relatório com carimbo de cobertura e
+    // o dia não alerta — a família exata do defeito que abriu esta spec.
+    const r = buildReport({
+      ...base,
+      doses: [dose()],
+      logs: [log({ status: 'suprimida_sem_prova' })],
+      revokedUserIds: new Set(),
+    })
+
+    expect(r.totals.coberta).toBe(0)
+    expect(r.criticalNoDelivery.total).toBe(1)
+    expect(r.criticalNoDelivery.items[0].outcome).toBe('nao_avisada')
+    expect(shouldAlert(r)).toBe(true)
+  })
+
+  it('`suprimida_alarme` continua sendo dose COBERTA e não alerta (guard do Slice B)', () => {
+    const r = buildReport({
+      ...base,
+      doses: [dose()],
+      logs: [log({ status: 'suprimida_alarme' })],
+      revokedUserIds: new Set(),
+    })
+
+    expect(r.totals.coberta).toBe(1)
+    expect(r.residualSilence).toBe(0)
+    expect(shouldAlert(r)).toBe(false)
   })
 
   it('🔴 caminho saudável NÃO alerta (FR-010, anti-ruído)', () => {

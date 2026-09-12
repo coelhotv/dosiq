@@ -14,6 +14,10 @@ const { mockSupabase } = vi.hoisted(() => {
     or: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
+    // 082 Slice C: o leitor de evidência fecha a cadeia com `.limit()` (teto explícito, AP-186).
+    // Sem este método o builder estoura TypeError, o try/catch por usuário engole, e o teste que
+    // afere "nenhum motivo de supressão" passa por VACUIDADE — dispatch nunca chamado.
+    limit: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     then: vi.fn((onFulfilled) => {
       const result = mockDataQueue.shift() || { data: [], error: null };
@@ -186,6 +190,154 @@ describe('checkRemindersViaDispatcher — dose_instances path', () => {
     await checkRemindersViaDispatcher(mockDispatcher, 'corr-123');
 
     expect(mockDispatcher.dispatch).not.toHaveBeenCalled();
+  });
+
+  // ---------------------------------------------------------------------------------------------
+  // 082 Slice C — gate por evidência (FR-011/012/013). A decisão mora AQUI, no reminder, porque é
+  // aqui que existe o `instanceId` de cada dose (RC3/F2). O canal só obedece o motivo recebido.
+  // ---------------------------------------------------------------------------------------------
+  describe('gate por evidência de alarme (082 Slice C)', () => {
+    /** Monta a fila do caminho crítico: settings → instâncias → snoozed → [evidência] → [capacidade] → claim. */
+    const armarCiclo = ({ instancias, evidencia, capaz = undefined, erroEvidencia = false }) => {
+      setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
+      setMockData(instancias);
+      setMockData([]);                       // snoozed
+      if (erroEvidencia) {
+        mockDataQueue.push({ data: null, error: { message: 'connection reset' } });
+      } else {
+        setMockData(evidencia.map(id => ({ dose_instance_id: id })));
+      }
+      if (capaz !== undefined) setMockData(capaz ? [{ id: 'ev-1' }] : []);
+      setMockData(instancias.map(i => ({ id: i.id })));  // claim
+    };
+
+    const instanciaCritica = (id) => ({
+      id,
+      user_id: 'user1',
+      protocol_id: 'proto-1',
+      critical_alarm: true,
+      scheduled_for: '2026-06-30T15:15:00.000Z',
+      protocol: {
+        id: 'proto-1', name: 'Losartana', dosage_per_intake: 1,
+        treatment_plan_id: null, medicine_id: 'med-1',
+        medicine: { name: 'Losartana', dosage_unit: 'mg' }, treatment_plan: null,
+      },
+    });
+
+    const motivoDespachado = () =>
+      mockDispatcher.dispatch.mock.calls[0]?.[0]?.data?.suppress_push_reason;
+
+    it('🔴 TODAS as doses do bloco com prova ⇒ suprime como `native_alarm` (dose coberta) [PO-1]', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: ['inst-1'] });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-prova');
+
+      // Continua DESPACHANDO (FR-013a): suprimir é não entregar, não é não registrar. Se o
+      // reminder simplesmente não chamasse o dispatch, a dose sumiria do notification_log e
+      // cairia no anti-join do Slice B como não-entrega.
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBe('native_alarm');
+    });
+
+    it('🔴 sem prova + usuário CAPAZ ⇒ push SAI (nenhum motivo de supressão) [PO-2]', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: true });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-capaz');
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBeUndefined();
+    });
+
+    it('🔴 sem prova + usuário INCAPAZ ⇒ suprime como `no_alarm_evidence` (silêncio residual do D1) [PO-2]', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: false });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-incapaz');
+
+      expect(motivoDespachado()).toBe('no_alarm_evidence');
+      // O motivo NÃO pode ser o da dose coberta: são opostos em risco e o relatório do Slice B
+      // trata `suprimida_alarme` como cobertura, que não alerta.
+      expect(motivoDespachado()).not.toBe('native_alarm');
+    });
+
+    it('🔴 a supressão da crítica NÃO cala a não-crítica do mesmo ciclo (R-191 + spec §6)', async () => {
+      // A não-crítica não tem alarme local para cobri-la. A proteção que existe HOJE é a partição
+      // por criticidade (ADR-056 etapa 1): saem DOIS blocos, e só o crítico leva motivo.
+      // (O guard de bloco misto dentro de `_resolveBlockSuppression` é defesa para um chamador
+      // futuro — por este caminho ele é inalcançável, e é isso que este teste demonstra.)
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({
+        instancias: [
+          instanciaCritica('inst-1'),
+          { ...instanciaCritica('inst-2'), critical_alarm: false },
+        ],
+        evidencia: ['inst-1', 'inst-2'],
+      });
+      setMockData([{ id: 'inst-2' }]);  // claim do 2º bloco
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-bloco-misto');
+
+      const motivos = mockDispatcher.dispatch.mock.calls.map(c => c[0]?.data?.suppress_push_reason);
+      expect(motivos).toHaveLength(2);
+      expect(motivos.filter(m => m === 'native_alarm')).toHaveLength(1);
+      expect(motivos.filter(m => m === undefined)).toHaveLength(1);
+    });
+
+    it('🔴 dose ADIADA não é coberta por prova ANTERIOR ao snooze (spec §6)', async () => {
+      // O app não re-emite `alarm_scheduled` ao adiar (medido: 11 de 12 doses adiadas em 60 dias).
+      // A prova existente descreve o alarme do horário original, que já passou — suprimir por ela
+      // silencia a dose que a paciente pediu para ser lembrada de novo.
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({
+        instancias: [{ ...instanciaCritica('inst-1'), snoozed_until: '2026-06-30T15:45:00.000Z' }],
+        evidencia: ['inst-1'],
+        capaz: true,
+      });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-snooze');
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBeUndefined();
+    });
+
+    it('🔴 bloco MISTO (uma dose sem prova) ⇒ envia (RC3/F5 — o R-191 manda 1 push por bloco)', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({
+        instancias: [instanciaCritica('inst-1'), instanciaCritica('inst-2')],
+        evidencia: ['inst-1'],
+        capaz: true,
+      });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-misto');
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBeUndefined();
+    });
+
+    it('🔴 fail-open: erro ao ler a evidência não suprime nem derruba o lembrete (FR-013)', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      armarCiclo({ instancias: [instanciaCritica('inst-1')], evidencia: [], capaz: true, erroEvidencia: true });
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-falha');
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBeUndefined();
+    });
+
+    it('FR-014: dose NÃO-crítica não paga consulta de evidência nem recebe motivo', async () => {
+      process.env.REMINDER_SOURCE = 'instances';
+      setMockData([{ user_id: 'user1', notification_mode: 'realtime', timezone: 'America/Sao_Paulo' }]);
+      setMockData([{ ...instanciaCritica('inst-1'), critical_alarm: false }]);
+      setMockData([]);                    // snoozed
+      setMockData([{ id: 'inst-1' }]);    // claim — SEM consulta de evidência no meio
+
+      await checkRemindersViaDispatcher(mockDispatcher, 'corr-normal');
+
+      expect(mockDispatcher.dispatch).toHaveBeenCalledTimes(1);
+      expect(motivoDespachado()).toBeUndefined();
+    });
   });
 
   it('legado: REMINDER_SOURCE não definido → usa protocols (não chama dose_instances)', async () => {
