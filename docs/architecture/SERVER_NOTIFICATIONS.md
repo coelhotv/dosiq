@@ -21,6 +21,11 @@ epic: "049"
 
 # 🔔 Arquitetura da Engine de Notificações do Servidor
 
+> 📬 **Desfecho da entrega, gate por evidência do push crítico e a série de `notification_log`:**
+> [`NOTIFICATION_DELIVERY.md`](./NOTIFICATION_DELIVERY.md). Quem for ler `status` para saber se
+> algo foi entregue **precisa** passar por lá primeiro — a série tem um corte em 2026-09-10 e
+> `enviada` significa coisas diferentes antes e depois dele.
+
 ## Visão Geral
 
 A engine de notificações em background do Dosiq é responsável por processar, formatar, filtrar e entregar alertas de saúde no ambiente servidor. O sistema garante o envio de lembretes de dose, alertas de estoque, notificações da evolução do tratamento e relatórios de adesão com alta confiabilidade e baixa latência.

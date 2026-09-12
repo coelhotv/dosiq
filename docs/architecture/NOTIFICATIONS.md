@@ -19,6 +19,11 @@ epic: "049"
 
 # 🔔 Visão Geral do Ecossistema de Notificações
 
+> 📬 **Desfecho da entrega, gate por evidência do push crítico e a série de `notification_log`:**
+> [`NOTIFICATION_DELIVERY.md`](./NOTIFICATION_DELIVERY.md). Quem for ler `status` para saber se
+> algo foi entregue **precisa** passar por lá primeiro — a série tem um corte em 2026-09-10 e
+> `enviada` significa coisas diferentes antes e depois dele.
+
 O ecossistema de notificações do Dosiq orquestra a entrega de lembretes de dose, alertas de estoque e relatórios de adesão em múltiplas plataformas. O sistema combina processamento no servidor com motores de execução local nos dispositivos.
 
 Este documento funciona como ponto de entrada unificado para a arquitetura de notificações. Ele apresenta os conceitos macro, os canais disponíveis e o mapa de navegação para a documentação especializada de cada subsistema.

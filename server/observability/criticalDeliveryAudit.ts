@@ -436,8 +436,20 @@ export async function runCriticalDeliveryAudit(params: {
       noChannelPatients: {
         total: report.noChannelPatients.total,
         soTelegram: report.noChannelPatients.soTelegram,
-        items: report.noChannelPatients.items,
       },
+      // 🔴 A lista sobe para o TOPO do `extra` de propósito (T060a). Aninhada sob
+      // `noChannelPatients` ela ficava no 4º nível e o `normalizeDepth` do SDK — 3 por padrão — a
+      // entregava como `["[Object]","[Object]"]`: o operador via QUANTOS pacientes estão sem canal
+      // e não QUAIS, que é o encaminhamento prometido pelo FR-008. Descoberto no evento REAL
+      // `DOSIQ-SERVER-4` (2026-09-11), não em teste: o objeto é montado certo e a perda acontece na
+      // serialização, depois do ponto que o teste com `captureServerEvent` mockado afere.
+      //
+      // Por que não subir o `normalizeDepth`: ele vale para TODO evento de TODO emissor, e o scrub
+      // (allowlist de topo + R-321) teria de ser revalidado para todos. Profundidade nunca foi
+      // controle de segurança aqui, mas mexer nela tem alcance global — subir esta lista um nível
+      // custa uma entrada de allowlist e conserta só o que está quebrado. O `items` de não-entrega,
+      // que já nascia no topo, é a prova de que array de objetos RASOS no topo atravessa inteiro.
+      noChannelItems: report.noChannelPatients.items,
       noChannelAllTypes: report.noChannelAllTypes,
       residualSilence: report.residualSilence,
       logRate: { doses: doses.length, linhas: logs.length, truncado: report.truncatedReads },

@@ -39,6 +39,11 @@ const EXTRA_ALLOWLIST = new Set([
   'residualSilence',
   'noChannelAllTypes',
   'items',
+  // 082 T060a — lista de pacientes sem canal, içada para o topo do `extra` porque aninhada ela era
+  // achatada em `"[Object]"` pelo `normalizeDepth` do SDK. Mesmo conteúdo de sempre: `user_id`
+  // opaco + o motivo (`sem_aparelho_sem_telegram` × `so_telegram_sem_aparelho`). Sem nome de
+  // medicamento, protocolo ou plano — quem recebe resolve no banco, com o id em mãos.
+  'noChannelItems',
   'logRate',
 ])
 
