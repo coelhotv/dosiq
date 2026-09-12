@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O alerta diário passa a dizer QUAIS pacientes estão sem meio de aviso
+
+- **Backend** (`no-user-impact` — nada muda para quem usa o app; é o alerta que a operação lê).
+  O aviso diário já contava quantos pacientes estão sem nenhum canal de notificação, mas a lista
+  com **quem** são chegava ilegível: o SDK do Sentry achata estruturas a partir de certa
+  profundidade, e justamente essa lista estava um nível abaixo do limite. Quem recebia o alerta via
+  "3 pacientes sem canal" e não tinha como agir. A lista subiu um nível e agora chega inteira.
+  Descoberto conferindo um alerta real, não em teste — o objeto era montado corretamente e a perda
+  acontecia só no envio.
+  Junto, a documentação de arquitetura da entrega de notificação: o que cada desfecho significa,
+  quando o aviso de dose crítica deixa de ser enviado e por que o histórico tem um antes e um
+  depois de 10/09.
+
 ### A dose crítica só deixa de receber push quando existe prova de que o alarme foi armado
 
 - **Backend** · **Web/PWA** (`patch`, `4.24.2` → `4.24.3` — a lista de notificações passa a aceitar

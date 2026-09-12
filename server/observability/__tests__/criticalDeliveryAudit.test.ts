@@ -381,7 +381,44 @@ describe('emissão ao Sentry (FR-009/FR-010)', () => {
     // O payload inteiro não pode conter texto de domínio clínico — só ids, contagens e instantes.
     expect(JSON.stringify(ctx?.extras ?? {})).not.toMatch(/medicine|medicamento|protocolName|planName/i)
   })
+
+  it('🔴 T060a: a lista de pacientes sem canal viaja no TOPO do extra, a 3 níveis do evento', async () => {
+    // Aninhada sob `noChannelPatients` ela caía no 4º nível e o `normalizeDepth` do SDK (3 por
+    // padrão) a entregava como `["[Object]"]` — o operador via quantos pacientes estavam sem canal,
+    // nunca quais, que é o encaminhamento do FR-008. Achado no evento REAL `DOSIQ-SERVER-4`.
+    const supabase = makeSupabase({
+      dose_instances: [],
+      notification_log: [],
+      protocols: [{ user_id: U, critical_alarm: true, active: true }],
+      user_settings: [{ user_id: U, telegram_chat_id: null, consent_revoked_at: null }],
+      notification_devices: [],
+    })
+    await runCriticalDeliveryAudit({ supabase, logger: loggerStub, now: NOW })
+
+    const [, ctx] = vi.mocked(captureServerEvent).mock.calls[0]
+    const extras = (ctx?.extras ?? {}) as Record<string, unknown>
+
+    // Chave de topo (nível 1) → array (2) → objeto do paciente (3). Cabe no normalizeDepth padrão.
+    expect(Array.isArray(extras.noChannelItems)).toBe(true)
+    expect(extras.noChannelItems).toHaveLength(1)
+    expect(extras.noChannelItems[0]).toMatchObject({ userId: U, reason: expect.any(String) })
+
+    // As CONTAGENS continuam onde estavam; o que subiu foi só a lista.
+    expect(extras.noChannelPatients).toMatchObject({ total: 1 })
+    expect((extras.noChannelPatients as Record<string, unknown>).items).toBeUndefined()
+
+    // MUTAÇÃO DE CONTROLE: devolver a lista para dentro de `noChannelPatients` derruba este caso.
+    expect(profundidadeMaxima(extras)).toBeLessThanOrEqual(3)
+  })
 })
+
+/** Profundidade máxima de um objeto — 1 para as chaves de topo, +1 por nível aninhado. */
+function profundidadeMaxima(valor: unknown, nivel = 1): number {
+  if (valor === null || typeof valor !== 'object') return nivel - 1
+  const filhos = Array.isArray(valor) ? valor : Object.values(valor)
+  if (filhos.length === 0) return nivel
+  return Math.max(...filhos.map((f) => profundidadeMaxima(f, nivel + 1)))
+}
 
 describe('truncamento do PostgREST (AP-186)', () => {
   it('🔴 leitura que bate no teto vira alerta — nunca número parcial reportado como total', async () => {
