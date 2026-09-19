@@ -17,6 +17,9 @@ import {
   parseLocalDate,
   formatDoseHint,
   INTAKE_UNIT_LABELS,
+  frequencyOptionsFor,
+  FREQUENCY_LABELS,
+  frequencyRequiresWeekdays,
   resolveCurrentStep,
 } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
@@ -49,15 +52,16 @@ const XIAOMI_MSG =
 const GENERIC_MSG =
   'Para o alarme funcionar na tela bloqueada, toque em <Abrir configurações> abaixo e ligue "Notificações em tela cheia".'
 
-const FREQUENCY_OPTIONS = [
-  { value: 'diário', label: 'Diário' },
-  { value: 'dias_alternados', label: 'Dias alternados' },
-  { value: 'semanal', label: 'Semanal' },
-  { value: 'personalizado', label: 'Personalizado' },
-  { value: 'quando_necessário', label: 'Quando necessário' },
-]
-
-const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
+// 085 (F-2): a lista de oferta vem do core. Antes era hardcoded aqui e o mobile não
+// enxergava mudança nenhuma de vocabulário — só o smoke perceberia.
+// Depende da frequência ATUAL do form: um tratamento legado precisa continuar exibindo a
+// sua própria frequência, mesmo depreciada (FR-004) — ver `frequencyOptionsFor`.
+function buildFrequencyOptions(currentFrequency) {
+  return frequencyOptionsFor(currentFrequency).map((value) => ({
+    value,
+    label: FREQUENCY_LABELS[value] || value,
+  }))
+}
 
 function useProtocolFormDerived(form, medicine) {
   const startDateAsDate = useMemo(
@@ -276,7 +280,7 @@ function FrequencySection({ form, showWeekdays }) {
         name="frequency"
         label="Periodicidade"
         value={form.values.frequency}
-        options={FREQUENCY_OPTIONS}
+        options={buildFrequencyOptions(form.values.frequency)}
         onChange={form.handleChange}
         onBlur={form.handleBlur}
         error={form.touched.frequency ? form.errors.frequency : null}
@@ -541,7 +545,7 @@ export default function ProtocolFormBody({
     }
     form.handleChange('critical_alarm', next)
   }, [form])
-  const showWeekdays = REQUIRES_WEEKDAYS.has(form.values.frequency)
+  const showWeekdays = frequencyRequiresWeekdays(form.values.frequency)
 
   return (
     <>

@@ -78,7 +78,7 @@ export function LandingFuncionalidades() {
           <div className="lp-feature"><div className="lp-feature__icon"><ShieldCheckIcon size={20} /></div><h4>Cartão de Emergência</h4><p>Acesso offline aos seus medicamentos ativos para situações de urgência.</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><ActivityIcon size={20} /></div><h4>Score de Adesão</h4><p>Acompanhe sua evolução com streaks e metas semanais de tomada.</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><SmartphoneIcon size={20} /></div><h4>Use em Qualquer Lugar</h4><p>Baixe o app nativo nas lojas ou acesse direto pelo navegador do seu computador.</p></div>
-          <div className="lp-feature"><div className="lp-feature__icon"><ClockIcon size={20} /></div><h4>Protocolos Flexíveis</h4><p>Diário, semanal, personalizado ou desmame progressivo (titulação).</p></div>
+          <div className="lp-feature"><div className="lp-feature__icon"><ClockIcon size={20} /></div><h4>Protocolos Flexíveis</h4><p>Diário, semanal, dias alternados ou desmame progressivo (titulação).</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><DownloadIcon size={20} /></div><h4>Portabilidade Total</h4><p>Exporte seus dados em CSV ou JSON a qualquer momento (lei LGPD).</p></div>
           <div className="lp-feature"><div className="lp-feature__icon"><LockIcon size={20} /></div><h4>Privacidade Total</h4><p>Seus dados são criptografados. Sem anúncios de terceiros ou venda de dados.</p></div>
         </div>

@@ -8,7 +8,7 @@ const StreakBadgeAny: any = StreakBadge
 import Modal from '@shared/components/ui/Modal'
 import TitrationTimeline from './TitrationTimeline'
 
-import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { FREQUENCY_LABELS, frequencyRequiresWeekdays } from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
 import { formatIntakeDose, formatConcentration, getEvolutionBadge } from '@dosiq/core'
 
@@ -109,7 +109,7 @@ export default function ProtocolCard({ protocol, onEdit, onToggleActive, onDelet
           <span className="detail-label">📅 Frequência:</span>
           <span className="detail-value">
             {FREQUENCY_LABELS[protocol.frequency] || protocol.frequency}
-            {(protocol.frequency === 'semanal' || protocol.frequency === 'personalizado') && (
+            {frequencyRequiresWeekdays(protocol.frequency) && (
               (() => {
                 const daysSource = getProtocolDays(protocol)
                 return daysSource.length > 0 ? ` (${formatWeekdaysLabel(daysSource)})` : ''

@@ -1,4 +1,4 @@
-import { getTodayDateString } from '@schemas/protocolSchema'
+import { getTodayDateString, frequencyRequiresWeekdays } from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
 import { coerceDecimal } from '@dosiq/core'
 
@@ -123,7 +123,7 @@ export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
   _validateDosagePerIntake(formData.dosage_per_intake, newErrors)
   _validateTargetDosage(formData.target_dosage, newErrors)
 
-  if (formData.frequency === 'semanal' || formData.frequency === 'personalizado') {
+  if (frequencyRequiresWeekdays(formData.frequency)) {
     if (!formData.weekdays || !Array.isArray(formData.weekdays) || formData.weekdays.length === 0) {
       newErrors.weekdays = 'Selecione pelo menos um dia da semana'
     }
@@ -153,7 +153,7 @@ export const prepareDataToSave = (formData) => {
     active: formData.active,
     start_date: formData.start_date || null,
     end_date: formData.end_date || null,
-    weekdays: (formData.frequency === 'semanal' || formData.frequency === 'personalizado') ? formData.weekdays : [],
+    weekdays: frequencyRequiresWeekdays(formData.frequency) ? formData.weekdays : [],
   }
 }
 

@@ -18,7 +18,56 @@ export const FREQUENCIES = [
   'quando_necessário',
 ] as const
 
+/**
+ * Frequências DEPRECIADAS: continuam válidas no banco e no Zod, mas não são mais oferecidas
+ * no cadastro. Aposentar um valor é tirá-lo da OFERTA, nunca do vocabulário aceito (R-310):
+ * cliente publicado que ainda escreva o valor antigo receberia 23514, e protocolo legado
+ * precisa continuar validando e sendo editável (085 FR-003/FR-004).
+ *
+ * `personalizado` entra aqui porque o motor de recorrência nunca o implementou — o matcher
+ * é `() => false` e o protocolo fica sem NENHUMA ocorrência materializada (085 §1).
+ */
+export const DEPRECATED_FREQUENCIES = ['personalizado'] as const
+
+/**
+ * Frequências OFERECIDAS na UI (web e mobile). É o que o formulário lista — não o que o
+ * banco aceita. `FREQUENCIES` segue sendo a base do `z.enum` e espelha o CHECK; esta é a
+ * lista de oferta (085 FR-001a / RC3 F-1).
+ */
+export const SELECTABLE_FREQUENCIES = FREQUENCIES.filter(
+  (f) => !(DEPRECATED_FREQUENCIES as readonly string[]).includes(f)
+)
+
+/**
+ * Opções de frequência a oferecer num formulário que edita `currentFrequency`.
+ *
+ * É `SELECTABLE_FREQUENCIES` mais o valor ATUAL quando ele já não é oferecido. Sem esta
+ * ressalva o FR-004 quebra em silêncio: um `<select>` controlado cujo `value` não casa
+ * nenhuma `<option>` renderiza VAZIO — o formulário de um tratamento legado diria
+ * "Selecione a frequência" sobre um tratamento que tem frequência, e a primeira edição
+ * de qualquer outro campo arrastaria junto uma troca de frequência que ninguém pediu.
+ * Aposentar o valor é tirá-lo de quem CRIA, não esconder o que já existe (085 FR-004).
+ */
+export function frequencyOptionsFor(currentFrequency: string | null | undefined): string[] {
+  const options: string[] = [...SELECTABLE_FREQUENCIES]
+  if (currentFrequency && !options.includes(currentFrequency)) options.push(currentFrequency)
+  return options
+}
+
+/**
+ * Esta frequência é definida por dias da semana? Fonte única do predicado que vivia
+ * copiado em 9 lugares entre web, mobile e o refine do Zod (085 FR-001c / RC3 F-3).
+ *
+ * `personalizado` responde `true` de propósito: é depreciado, mas o protocolo legado que
+ * ainda o carregue continua exigindo (e exibindo) os dias. Trocar o predicado por
+ * "está em SELECTABLE_FREQUENCIES" quebraria a edição do legado.
+ */
+export function frequencyRequiresWeekdays(frequency: string | null | undefined): boolean {
+  return frequency === 'semanal' || frequency === 'personalizado'
+}
+
 // Labels de frequência para exibição
+// NÃO remover `personalizado`: legado precisa de rótulo para ser lido (FR-004).
 export const FREQUENCY_LABELS = {
   diário: 'Diário',
   dias_alternados: 'Dias Alternados',
@@ -190,7 +239,7 @@ export const protocolCreateSchema = protocolSchema
   .refine(
     (data) => {
       // Se a frequência for semanal ou personalizada, deve selecionar pelo menos um dia
-      if (data.frequency === 'semanal' || data.frequency === 'personalizado') {
+      if (frequencyRequiresWeekdays(data.frequency)) {
         return Array.isArray(data.weekdays) && data.weekdays.length > 0
       }
       return true
