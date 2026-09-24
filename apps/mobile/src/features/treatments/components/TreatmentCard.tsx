@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from './EvolutionBadge'
 import { colors, spacing } from '@shared/styles/tokens'
-import { formatDatePtBR, getProtocolDays, formatIntakeDose, formatConcentration } from '@dosiq/core'
+import { formatDatePtBR, getProtocolDays, formatIntakeDose, formatConcentration, frequencyRequiresWeekdays } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -33,7 +33,7 @@ function getFrequencyLabel(freq, treatment) {
     'personalizado': 'Personalizado'
   }
   const label = map[freq] || freq
-  if (freq === 'semanal' || freq === 'personalizado') {
+  if (frequencyRequiresWeekdays(freq)) {
     const daysSource = getProtocolDays(treatment)
     if (daysSource.length > 0) {
       const WEEKDAY_ABBREVIATIONS = {

@@ -24,6 +24,7 @@ import {
   getProtocolDays,
   formatIntakeDose,
   formatConcentration,
+  frequencyRequiresWeekdays,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -47,8 +48,6 @@ const FREQUENCY_LABEL = {
   'quando_necessário': 'Quando necessário',
   'personalizado': 'Personalizado',
 }
-
-const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
 const VISUAL_ORDER = [
   { key: 'domingo', label: 'D' },
@@ -494,7 +493,7 @@ function DosageFrequencySection({ protocol, medicine, frequencyLabel, dailyIntak
         value={formatIntakeDose(protocol.dosage_per_intake, protocol.intake_unit, medicine)}
       />
       <DetailRow label="Frequência" value={frequencyLabel} />
-      {REQUIRES_WEEKDAYS.has(protocol.frequency) && (
+      {frequencyRequiresWeekdays(protocol.frequency) && (
         <View style={styles.weekdaysBlock}>
           <Text style={styles.detailLabel}>Dias da semana</Text>
           <View style={styles.weekdaysGrid}>

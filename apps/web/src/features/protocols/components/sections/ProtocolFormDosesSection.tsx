@@ -2,15 +2,14 @@ import { useEffect } from 'react'
 import ShakeEffect from '@shared/components/ui/animations/ShakeEffect'
 import Button from '@shared/components/ui/Button'
 import {
-  FREQUENCIES,
+  frequencyOptionsFor,
   FREQUENCY_LABELS,
+  frequencyRequiresWeekdays,
   INTAKE_UNITS,
   INTAKE_UNIT_LABELS,
 } from '@schemas/protocolSchema'
 import { getFieldDescribedBy } from '@utils/formUtils'
 import { formatDoseHint } from '@dosiq/core'
-
-const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
 const VISUAL_ORDER = [
   { key: 'domingo', label: 'D' },
@@ -39,7 +38,7 @@ function FrequencySelector({ formData, handleChange, shakeFields, errors }) {
           aria-invalid={Boolean(errors.frequency)}
         >
           <option value="">Selecione a frequência</option>
-          {FREQUENCIES.map((freq) => (
+          {frequencyOptionsFor(formData.frequency).map((freq) => (
             <option key={freq} value={freq}>
               {FREQUENCY_LABELS[freq]}
             </option>
@@ -155,7 +154,7 @@ function WeekdaySelector({ formData, handleChange, shakeFields, errors }) {
     })
   }
 
-  if (!REQUIRES_WEEKDAYS.has(formData.frequency)) return null
+  if (!frequencyRequiresWeekdays(formData.frequency)) return null
 
   return (
     <div className="form-group">

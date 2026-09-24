@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
 import Button from '@shared/components/ui/Button'
-import { FREQUENCIES, FREQUENCY_LABELS, INTAKE_UNIT_LABELS } from '@schemas/protocolSchema'
+import {
+  frequencyOptionsFor,
+  FREQUENCY_LABELS,
+  INTAKE_UNIT_LABELS,
+  frequencyRequiresWeekdays,
+} from '@schemas/protocolSchema'
 import { formatDoseHint } from '@dosiq/core'
-
-const REQUIRES_WEEKDAYS = new Set(['semanal', 'personalizado'])
 
 const VISUAL_ORDER = [
   { key: 'domingo', label: 'D' },
@@ -80,7 +83,7 @@ function StepFrequencySelector({
           value={protocolData.frequency}
           onChange={(e) => updateProtocol('frequency', e.target.value)}
         >
-          {FREQUENCIES.map((f) => (
+          {frequencyOptionsFor(protocolData.frequency).map((f) => (
             <option key={f} value={f}>
               {FREQUENCY_LABELS[f] || f}
             </option>
@@ -88,7 +91,7 @@ function StepFrequencySelector({
         </select>
       </label>
 
-      {REQUIRES_WEEKDAYS.has(protocolData.frequency) && (
+      {frequencyRequiresWeekdays(protocolData.frequency) && (
         <div className="wizard__label">
           Dias da Semana *
           <div className="weekday-selector-pwa">

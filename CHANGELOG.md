@@ -7,6 +7,22 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### A frequência "personalizado" sai do cadastro — ela nunca gerou lembrete nenhum
+
+- **Web/PWA** (`minor`, `4.24.3` → `4.25.0`) · **Mobile** (`minor`, `0.32.0` → `0.33.0`, **build de
+  loja**) · **Shared/Core**.
+  O formulário de tratamento oferecia a frequência "personalizado", mas o motor que decide em que
+  dias existe uma tomada nunca a implementou: quem a escolhesse ficava sem **nenhum** lembrete, em
+  silêncio, por tempo indeterminado. Havia um tratamento assim em uso — ativo desde 28/05 e sem uma
+  única ocorrência gerada em 3,5 meses. Ele foi migrado para "diário" (os 7 dias da semana estavam
+  selecionados, o que **é** diário), preservando horários, dose, medicamento, plano e datas, e
+  voltou a gerar lembretes na mesma hora.
+  A opção deixa de ser oferecida no cadastro e na edição, na web e no celular, e a página inicial
+  deixa de anunciá-la. Tratamento antigo que ainda a carregue continua abrindo, validando e
+  mostrando os dias da semana normalmente — o valor segue aceito pelo sistema; o que sai é a
+  oferta. A regra "esta frequência é definida por dias da semana" vivia copiada em nove lugares
+  entre web e celular e passou a ter uma origem só.
+
 ### O alerta diário passa a dizer QUAIS pacientes estão sem meio de aviso
 
 - **Backend** (`no-user-impact` — nada muda para quem usa o app; é o alerta que a operação lê).

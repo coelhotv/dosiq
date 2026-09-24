@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
+import { frequencyRequiresWeekdays } from '@schemas/protocolSchema'
 import { coerceDecimal } from '@dosiq/core'
 import { submitTreatmentWizard } from './_treatmentWizardSubmit'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
@@ -94,7 +95,7 @@ export function useTreatmentWizardState({
     dosePerIntake > 0 &&
     dosePerIntake <= 100 &&
     !mgNeedsConcentration &&
-    (!['semanal', 'personalizado'].includes(prot.protocolData.frequency) ||
+    (!frequencyRequiresWeekdays(prot.protocolData.frequency) ||
       (Array.isArray(prot.protocolData.weekdays) && prot.protocolData.weekdays.length > 0))
 
   const resetWizard = useCallback(() => {
