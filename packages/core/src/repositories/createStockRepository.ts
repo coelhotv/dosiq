@@ -111,7 +111,7 @@ export function createStockRepository({ client, getUserId }: CreateStockReposito
           dosage_per_intake,
           intake_unit,
           time_schedule,
-          frequency,
+          frequency, interval_days,
           active,
           start_date,
           end_date

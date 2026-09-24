@@ -44,7 +44,7 @@ export async function buildStockAlertContent(
 
   const { data: protocols, error: protocolsErr } = await supabase
     .from('protocols')
-    .select('id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active, end_date, paused_at')
+    .select('id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, interval_days, weekdays, active, end_date, paused_at')
     .eq('user_id', userId)
     .eq('medicine_id', subjectId)
     .eq('active', true)

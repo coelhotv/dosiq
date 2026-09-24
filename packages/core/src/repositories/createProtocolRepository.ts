@@ -29,7 +29,9 @@ import { resolveUserTz } from '../services/resolveUserTz'
 // medicamento do tratamento na UI — elas não guardavam medicamento nenhum. Congelado, uma pending
 // futura já materializada guardaria o medicamento ANTIGO para sempre. O passado segue protegido
 // por construção: `wipeFuturePending` nunca toca não-pending nem o passado.
-const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm', 'medicine_id']
+// 085 (F-5): `interval_days` — editar N sem invalidar a janela deixaria o tratamento dizendo uma
+// cadência e o lembrete entregando outra (família AP-308).
+const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'interval_days', 'weekdays', 'start_date', 'end_date', 'critical_alarm', 'medicine_id']
 
 /**
  * Sincroniza dose_instances após escrita de protocolo (ADR-048, S2.5).

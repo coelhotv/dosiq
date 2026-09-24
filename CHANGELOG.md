@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### O motor passa a entender a cadência "a cada N dias" — ainda sem opção no cadastro
+
+- **Web/PWA** (`patch`, `4.25.1` → `4.25.2`) · **Mobile** (`patch`, `0.33.1` → `0.33.2`, **build de
+  loja**, no mesmo release train das duas entregas abaixo) · **Shared/Core** · **Backend/Infra**.
+  Preparação para tratamentos como injetável mensal ou trimestral. O banco e o motor que decide em que
+  dias existe uma tomada passam a aceitar uma cadência de 2 a 180 dias, contada a partir do início do
+  tratamento. Para essa cadência, a janela de atraso aceita é de 10% do intervalo, limitada a 7 dias
+  (3 dias num mensal), em vez de metade do intervalo; a próxima dose aparece já no cadastro, mesmo
+  quando está a meses de distância; e estoque e adesão contam uma dose a cada N dias, não uma por dia.
+  **Nada muda para quem usa hoje**: nenhum tratamento existente muda de dias, horários ou tolerância,
+  e a opção ainda não aparece no formulário. Ela chega na próxima entrega, liberada por pessoa só
+  quando todos os celulares dela estiverem nesta versão ou acima — um app antigo trataria a cadência
+  como diária e lembraria todo dia.
+
 ### "Dias alternados" passa a lembrar só nos dias de tomada — e retomar um tratamento diz quando é a próxima dose
 
 - **Web/PWA** (`patch`, `4.25.0` → `4.25.1`) · **Mobile** (`patch`, `0.33.0` → `0.33.1`, **build de

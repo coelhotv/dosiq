@@ -199,7 +199,7 @@ export async function _scanStockAlertCandidates(users, correlationId) {
 
   const allProtocols = await _fetchAllPagesByUsers(
     'protocols',
-    'id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, weekdays, active, end_date, paused_at',
+    'id, user_id, medicine_id, time_schedule, dosage_per_intake, intake_unit, frequency, interval_days, weekdays, active, end_date, paused_at',
     userIds,
     (q) => q
       .eq('active', true)

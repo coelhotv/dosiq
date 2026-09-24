@@ -14,7 +14,9 @@
  */
 
 import { generateInstances } from '../utils/doseInstanceGenerator'
-import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO } from '../utils/dateUtils'
+import { parseISO, parseTimestamp, getServerTimestamp, getEndOfDayISO, getUserTime, formatLocalDate } from '../utils/dateUtils'
+import { isProtocolActiveOnDate } from '../utils/adherenceLogic'
+import { INTERVAL_DAYS_MAX } from '../schemas/protocolSchema'
 import type { TitrationStepLike } from '../utils/titrationUtils'
 import type { createDoseInstanceRepository } from '../repositories/createDoseInstanceRepository'
 
@@ -41,15 +43,49 @@ export const RENEWAL_THRESHOLD_DAYS = 7
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 /**
+ * 085 (F-4 / ADR-103): quantas ocorrências FUTURAS a janela garante, além dos `WINDOW_DAYS`.
+ * Diário/semanal têm muito mais que 2 em 30 dias ⇒ nada muda para eles. Cadência longa (N=90)
+ * ficaria ~69 dias sem instância nenhuma — o silêncio do `personalizado` em forma nova.
+ */
+export const OCCURRENCES_AHEAD = 2
+/** Horizonte de busca: cobre 2 ocorrências do maior N aceito pelo CHECK. */
+const OCCURRENCE_SEARCH_DAYS = OCCURRENCES_AHEAD * INTERVAL_DAYS_MAX + 1
+
+/**
+ * Data local (YYYY-MM-DD, no `tz`) da `OCCURRENCES_AHEAD`-ésima ocorrência a partir do dia de
+ * `baseDate` (inclusive), pelo MESMO motor do gerador. `null` se não houver no horizonte (PRN,
+ * depreciado, inativo) — aí vale só a janela em dias.
+ */
+function nthOccurrenceDate(protocol: Protocol, baseDate: Date, tz: string): string | null {
+  // Itera em UTC como o `localDateRange` do gerador: imune a DST e ao fuso do ambiente.
+  const cursor = parseISO(formatLocalDate(getUserTime(baseDate, tz)) + 'T00:00:00Z')
+  let found = 0
+  for (let i = 0; i < OCCURRENCE_SEARCH_DAYS; i++) {
+    const dateStr = cursor.toISOString().slice(0, 10)
+    if (isProtocolActiveOnDate(protocol as Parameters<typeof isProtocolActiveOnDate>[0], dateStr)) {
+      found += 1
+      if (found === OCCURRENCES_AHEAD) return dateStr
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  }
+  return null
+}
+
+/**
  * Fim-alvo da janela de geração de um protocolo, em ISO.
  * - com `end_date`: o fim do dia de end_date (não passa disso);
- * - contínuo: `baseTs + WINDOW_DAYS` dias.
+ * - contínuo: `baseTs + WINDOW_DAYS` dias, OU o fim do dia da 2ª ocorrência se for depois (085 F-4).
  * @param {Object} protocol
  * @param {Date} baseDate - âncora (normalmente agora)
  * @returns {string} ISO UTC
  */
 export function computeWindowEnd(protocol: Protocol, baseDate: Date, tz = 'America/Sao_Paulo'): string {
-  const continuousEnd = parseTimestamp(baseDate.getTime() + WINDOW_DAYS * MS_PER_DAY).toISOString()
+  const daysEnd = parseTimestamp(baseDate.getTime() + WINDOW_DAYS * MS_PER_DAY).toISOString()
+  // 085 (F-4): fim = max(base + WINDOW_DAYS, fim do dia da 2ª ocorrência). O `max` nunca encolhe
+  // a janela de quem já existe — é o guard do PO-8a.
+  const nth = nthOccurrenceDate(protocol, baseDate, tz)
+  const nthEnd = nth ? getEndOfDayISO(nth, tz) : null
+  const continuousEnd = nthEnd && parseISO(nthEnd).getTime() > parseISO(daysEnd).getTime() ? nthEnd : daysEnd
   if (!protocol.end_date) return continuousEnd
   const endOfEndDate = getEndOfDayISO(protocol.end_date, tz) // ISO do fim do dia de end_date no tz do dono
   // o menor entre (fim do protocolo) e (janela contínua)

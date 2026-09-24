@@ -20,6 +20,7 @@ import {
 // `doseToMl` mora em doseUnit.ts (junto de `densityFor`, de quem depende): manter os dois
 // separados criava um ciclo doseUnit → adherenceLogic → doseUnit.
 import { doseToMl } from './doseUnit'
+import { INTERVAL_DAYS_MIN, INTERVAL_DAYS_MAX } from '../schemas/protocolSchema'
 
 export interface AdherenceProtocol {
   id?: string
@@ -37,6 +38,8 @@ export interface AdherenceProtocol {
   active?: boolean | null
   dosage_per_intake?: number | null
   intake_unit?: string | null
+  /** 085 (D-2): intervalo da cadência `intervalo_dias` (2–180); NULL nas demais. */
+  interval_days?: number | null
   medicine?: {
     dosage_unit?: string | null
     units_per_ml?: number | null
@@ -107,6 +110,11 @@ const FREQUENCY_RATE_STRATEGIES: Record<string, (timesPerDay: number, protocol: 
   'dia sim, dia não': (timesPerDay) => timesPerDay / 2,
   dias_alternados: (timesPerDay) => timesPerDay / 2,
   quando_necessário: () => 0,
+  // 085 (FR-012/M-1): sem esta entrada o intervalo caía no default diário — esperadas N× maiores.
+  intervalo_dias: (timesPerDay, protocol) => {
+    const n = getIntervalDays(protocol)
+    return n ? timesPerDay / n : timesPerDay
+  },
 }
 
 /**
@@ -324,6 +332,11 @@ export function frequencyDailyFactor(p: AdherenceProtocol | null | undefined): n
       return 1 / 2
     case 'personalizado':
       return (Array.isArray(p?.weekdays) && p.weekdays.length > 0 ? p.weekdays.length : 7) / 7
+    case 'intervalo_dias': {
+      // 085 (PO-10): 1/N. N ausente/inválido (select sem a coluna) ⇒ 1, o default de hoje (FM-9).
+      const n = getIntervalDays(p)
+      return n ? 1 / n : 1
+    }
     default:
       // diário e quando_necessário mantêm 1 (PRN sem cadência previsível).
       return 1
@@ -650,6 +663,30 @@ function _isAlternatingMatch(protocol: AdherenceProtocol, targetDate: Date): boo
   return days >= 0 && days % 2 === 0
 }
 
+/**
+ * 085 (D-2): `interval_days` utilizável — inteiro na faixa do CHECK — ou `null`.
+ * `null` só acontece com select que não trouxe a coluna (o banco impede o estado): quem chama
+ * decide o degenerado, e o motor erra para o lado AUDÍVEL (FM-2, mesma regra do FR-007).
+ */
+export function getIntervalDays(protocol: AdherenceProtocol | null | undefined): number | null {
+  const n = protocol?.interval_days
+  if (typeof n !== 'number' || !Number.isInteger(n)) return null
+  return n >= INTERVAL_DAYS_MIN && n <= INTERVAL_DAYS_MAX ? n : null
+}
+
+/**
+ * 085 (D-2): cadência "a cada N dias", ancorada no `start_date` como a alternância (D-1).
+ * `N=7` e `semanal` produzem o mesmo calendário por caminhos diferentes: este conta a partir do
+ * início, o semanal casa dia da semana. Não é conflito — é declarado (ADR-102).
+ */
+function _isIntervalMatch(protocol: AdherenceProtocol, targetDate: Date): boolean {
+  const n = getIntervalDays(protocol)
+  if (!n) return true // FM-2: N ausente ⇒ audível, nunca silêncio
+  if (!protocol.start_date) return true // FM-3: paridade com a alternância
+  const days = _calendarDaysBetween(parseLocalDate(protocol.start_date), targetDate)
+  return days >= 0 && days % n === 0
+}
+
 /** Diferença em dias de calendário local entre duas datas (independe de DST). */
 function _calendarDaysBetween(from: Date, to: Date): number {
   const a = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate())
@@ -709,6 +746,7 @@ const FREQUENCY_MATCHERS = new Map<string, (protocol: AdherenceProtocol, dayOfWe
   ['dia sim, dia não', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
   ['every_other_day', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
   ['alternating', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
+  ['intervalo_dias', (protocol, _dow, targetDate) => _isIntervalMatch(protocol, targetDate)],
   ['personalizado', () => false],
   ['custom', () => false],
   ['quando_necessário', () => false],

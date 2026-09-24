@@ -638,13 +638,15 @@ export async function getPendingSwitchSteps(): Promise<PendingSwitchStep[]> {
 // levou `42703 column protocols.times does not exist` no gate — o nome "times" veio da memória,
 // não do banco. É exatamente a classe do AP-300: o select é string, tsc/lint/teste não pegam.
 const SWITCH_OUTCOME_SELECT = `
-  id, frequency, time_schedule, weekdays, dosage_per_intake, intake_unit, active,
+  id, frequency, interval_days, time_schedule, weekdays, dosage_per_intake, intake_unit, active,
   medicine:medicines(id, name, dosage_unit, dosage_per_pill, units_per_ml, presentation, concentration_volume_ml)
 `
 
 export interface SwitchOutcomeProtocol {
   id: string
   frequency: string | null
+  // 085 C1 (H-3): N da cadência `intervalo_dias`; sem a coluna o motor recebe N indefinido.
+  interval_days: number | null
   time_schedule: string[] | null
   // pt-BR por extenso ('segunda', 'quinta'), NÃO índice numérico — conferido em prod.
   weekdays: string[] | null

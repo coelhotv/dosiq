@@ -33,7 +33,7 @@ export async function getActiveProtocols(userId, dateStr) {
     // `select()` é string e nada no pipeline confronta a string com o schema: nem tsc (não
     // é tipada), nem os testes (o client é mockado). Mantê-la = `42703` pós-DROP, que é
     // exatamente como web+mobile+cron caíram no #750 (AP-300 / R-295).
-    .select('id, name, medicine_id, active, frequency, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
+    .select('id, name, medicine_id, active, frequency, interval_days, time_schedule, dosage_per_intake, intake_unit, start_date, end_date, weekdays, critical_alarm, treatment_plan_id, treatment_plan:treatment_plans(id, name, emoji, color), titration_steps(id, position, dose, duration_days, status, started_at, medicine_id)')
     .eq('user_id', userId)
     .eq('active', true)
     .lte('start_date', dateStr)

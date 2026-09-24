@@ -16,7 +16,15 @@ export const FREQUENCIES = [
   'semanal',
   'personalizado',
   'quando_necessário',
+  'intervalo_dias',
 ] as const
+
+/**
+ * 085 (D-2): faixa de `interval_days` da cadência `intervalo_dias`. Espelha
+ * `protocols_interval_days_range_check` (N=1 é `diário`; 180 cobre o trimestral com folga).
+ */
+export const INTERVAL_DAYS_MIN = 2
+export const INTERVAL_DAYS_MAX = 180
 
 /**
  * Frequências DEPRECIADAS: continuam válidas no banco e no Zod, mas não são mais oferecidas
@@ -34,8 +42,20 @@ export const DEPRECATED_FREQUENCIES = ['personalizado'] as const
  * banco aceita. `FREQUENCIES` segue sendo a base do `z.enum` e espelha o CHECK; esta é a
  * lista de oferta (085 FR-001a / RC3 F-1).
  */
+/**
+ * Frequências ACEITAS pelo banco mas ainda NÃO oferecidas a ninguém por padrão (085 C1.5/H-1).
+ *
+ * `intervalo_dias` entra no vocabulário no Slice C1 (motor) e só é oferecida no C2 (formulário com
+ * N), e mesmo lá POR USUÁRIA via `isIntervalCadenceAvailable`: app antigo trata valor desconhecido
+ * como diário e materializaria instâncias diárias. Oferecê-la aqui seria oferecer cadência que o
+ * formulário não sabe preencher.
+ */
+export const UNRELEASED_FREQUENCIES = ['intervalo_dias'] as const
+
 export const SELECTABLE_FREQUENCIES = FREQUENCIES.filter(
-  (f) => !(DEPRECATED_FREQUENCIES as readonly string[]).includes(f)
+  (f) =>
+    !(DEPRECATED_FREQUENCIES as readonly string[]).includes(f) &&
+    !(UNRELEASED_FREQUENCIES as readonly string[]).includes(f)
 )
 
 /**
@@ -74,6 +94,8 @@ export const FREQUENCY_LABELS = {
   semanal: 'Semanal',
   personalizado: 'Personalizado',
   quando_necessário: 'Quando Necessário',
+  // 085 C1: rótulo genérico; o "a cada N dias" dinâmico é do Slice C2.
+  intervalo_dias: 'A cada N dias',
 }
 
 // Dias da semana
@@ -143,8 +165,18 @@ export const protocolSchema = z.object({
 
   frequency: z.enum(FREQUENCIES, {
     error:
-      'Frequência inválida. Opções: diário, dias_alternados, semanal, personalizado, quando_necessário',
+      'Frequência inválida. Opções: diário, dias_alternados, semanal, personalizado, quando_necessário, intervalo_dias',
   }),
+
+  // 085 (D-2): intervalo em dias da cadência `intervalo_dias`; NULL nas demais. A coerência
+  // (intervalo_dias ⇔ preenchido) é refine no create e CHECK no banco nos dois sentidos.
+  interval_days: z
+    .number()
+    .int('Intervalo deve ser um número inteiro de dias')
+    .min(INTERVAL_DAYS_MIN, `Intervalo mínimo é de ${INTERVAL_DAYS_MIN} dias (1 dia é diário)`)
+    .max(INTERVAL_DAYS_MAX, `Intervalo máximo é de ${INTERVAL_DAYS_MAX} dias`)
+    .nullable()
+    .optional(),
 
   time_schedule: z
     .array(
@@ -247,6 +279,15 @@ export const protocolCreateSchema = protocolSchema
     {
       message: 'Selecione pelo menos um dia da semana para esta frequência',
       path: ['weekdays'],
+    }
+  )
+
+  .refine(
+    // 085: espelha protocols_interval_days_coherence_check — sem isto o erro chegaria como 23514.
+    (data) => (data.frequency === 'intervalo_dias') === (data.interval_days != null),
+    {
+      message: 'Informe de quantos em quantos dias (apenas para a frequência "a cada N dias")',
+      path: ['interval_days'],
     }
   )
 

@@ -151,6 +151,15 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     expect(deleteOp.calls.some(([m, a]: any) => m === 'gt' && a[0] === 'scheduled_for')).toBe(true)
   })
 
+  // 085 C1 (F-5 / AP-308): editar N é mudança de AGENDAMENTO — sem o wipe as pending futuras
+  // seguiriam na cadência antiga e o lembrete contradiria o tratamento.
+  it('update interval_days → wipe (delete) + regen (upsert)', async () => {
+    await repo.update('p1', { interval_days: 45 })
+    const methods = methodsFor(client, 'dose_instances')
+    expect(methods).toContain('delete') // wipeFuturePending
+    expect(methods).toContain('upsert') // regeneração na cadência nova
+  })
+
   it('update não-estrutural (name) → não toca dose_instances', async () => {
     await repo.update('p1', { name: 'Novo Nome' })
     expect(tableOps(client, 'dose_instances').length).toBe(0)
