@@ -160,6 +160,21 @@ describe('createProtocolRepository — lifecycle dose_instances', () => {
     expect(methods).toContain('upsert') // regeneração na cadência nova
   })
 
+  // 085 RC6 (#837): o CHECK de coerência é bidirecional — sair de intervalo_dias leva o N junto.
+  it('update frequency para fora de intervalo_dias → grava interval_days NULL junto', async () => {
+    await repo.update('p1', { frequency: 'diário' })
+    const upd = tableOps(client, 'protocols').find((b: any) => b.calls.some(([m]: any) => m === 'update'))
+    const payload = upd.calls.find(([m]: any) => m === 'update')[1][0]
+    expect(payload).toMatchObject({ frequency: 'diário', interval_days: null })
+  })
+
+  it('update sem frequency não toca interval_days', async () => {
+    await repo.update('p1', { name: 'Novo Nome' })
+    const upd = tableOps(client, 'protocols').find((b: any) => b.calls.some(([m]: any) => m === 'update'))
+    const payload = upd.calls.find(([m]: any) => m === 'update')[1][0]
+    expect('interval_days' in payload).toBe(false)
+  })
+
   it('update não-estrutural (name) → não toca dose_instances', async () => {
     await repo.update('p1', { name: 'Novo Nome' })
     expect(tableOps(client, 'dose_instances').length).toBe(0)

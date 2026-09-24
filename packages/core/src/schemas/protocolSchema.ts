@@ -294,7 +294,20 @@ export const protocolCreateSchema = protocolSchema
 /**
  * Schema para atualização de protocolo (campos opcionais)
  */
-export const protocolUpdateSchema = protocolSchema.partial()
+export const protocolUpdateSchema = protocolSchema.partial().refine(
+  // 085 (RC6 #837): coerência frequency ⇔ interval_days também no update, quando a frequência é
+  // ENVIADA. Update que não mexe na frequência não tem o que conferir aqui (o banco guarda o par).
+  // Trocar PARA outra frequência sem mandar interval_days é resolvido no repositório, que zera N.
+  (data) =>
+    data.frequency === undefined ||
+    (data.frequency === 'intervalo_dias'
+      ? data.interval_days != null
+      : data.interval_days === undefined || data.interval_days === null),
+  {
+    message: 'Informe de quantos em quantos dias (apenas para a frequência "a cada N dias")',
+    path: ['interval_days'],
+  }
+)
 
 /**
  * Schema completo com ID

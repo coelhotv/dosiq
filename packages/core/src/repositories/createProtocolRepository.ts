@@ -291,6 +291,11 @@ export function createProtocolRepository({
       const cleanUpdates = Object.fromEntries(
         Object.entries(validated).filter(([key]) => sentKeys.has(key)),
       ) as typeof validated
+      // 085 (RC6 #837): trocar a frequência PARA fora de `intervalo_dias` leva o N junto — o CHECK de
+      // coerência é bidirecional e um N remanescente viraria 23514 cru na edição.
+      if (cleanUpdates.frequency !== undefined && cleanUpdates.frequency !== 'intervalo_dias' && !('interval_days' in cleanUpdates)) {
+        cleanUpdates.interval_days = null
+      }
       const { data, error } = await client
         .from('protocols')
         .update(cleanUpdates)

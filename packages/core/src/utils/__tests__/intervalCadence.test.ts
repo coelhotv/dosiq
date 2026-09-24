@@ -18,6 +18,7 @@ import {
   FREQUENCY_LABELS,
   frequencyOptionsFor,
   validateProtocolCreate,
+  validateProtocolUpdate,
 } from '../../schemas/protocolSchema'
 
 afterEach(() => {
@@ -238,6 +239,15 @@ describe('085 schema — vocabulário aceito, oferta desligada (H-1)', () => {
     expect(validateProtocolCreate({ ...valid, interval_days: null }).success).toBe(false)
     expect(validateProtocolCreate({ ...valid, frequency: 'diário' }).success).toBe(false)
     expect(validateProtocolCreate({ ...valid, frequency: 'diário', interval_days: null }).success).toBe(true)
+  })
+
+  it('update: coerência conferida quando a frequência é enviada (RC6 #837)', () => {
+    expect(validateProtocolUpdate({ frequency: 'intervalo_dias', interval_days: 30 }).success).toBe(true)
+    expect(validateProtocolUpdate({ frequency: 'intervalo_dias' }).success).toBe(false)
+    expect(validateProtocolUpdate({ frequency: 'diário', interval_days: 30 }).success).toBe(false)
+    expect(validateProtocolUpdate({ frequency: 'diário' }).success).toBe(true)
+    expect(validateProtocolUpdate({ interval_days: 45 }).success).toBe(true) // só N: o banco guarda o par
+    expect(validateProtocolUpdate({ name: 'x y' }).success).toBe(true)
   })
 
   it('não é oferecida no C1 — mas o protocolo que já a carrega exibe o próprio valor (FR-004)', () => {
