@@ -45,14 +45,9 @@ vi.mock('@schemas/medicineSchema', async () => {
   }
 })
 
-vi.mock('@schemas/protocolSchema', () => ({
-  FREQUENCIES: ['diario', 'semanal', 'quando_necessario'],
-  FREQUENCY_LABELS: {
-    diario: 'Diário',
-    semanal: 'Semanal',
-    quando_necessario: 'Quando necessário',
-  },
-}))
+// 085: o mock à mão (FREQUENCIES sem acento, sem os helpers) quebrou com o Slice A — o componente
+// passou a importar `frequencyRequiresWeekdays`/`frequencyOptionsFor` e o mock não os tinha. O
+// módulo é puro (constantes + Zod): usar o real mantém o teste acoplado ao vocabulário verdadeiro.
 
 vi.mock('framer-motion', () => ({
   motion: {

@@ -10,8 +10,18 @@ export default {
   // não tem nada a ver com o diff. Não apareceu antes porque o hook só voltou a rodar de verdade
   // depois do último commit de produto mobile — gate novo sobre superfície que ninguém exercitou
   // desde a reativação (065 PR A).
-  "{apps/web/src,server,api}/**/*.{js,jsx,ts,tsx}": [
-    "vitest related --run --passWithNoTests"
+  //
+  // 🔴 085 Slice B (emenda ao AP-350): `vitest related` rodava da RAIZ e SEM config — sem jsdom e
+  // sem os aliases da web, todo teste de componente falhava por ambiente (`document is not
+  // defined`, `Cannot find package '@shared/…'`). E o ingênuo `--config apps/web/vitest.config.js`
+  // sem mudar o cwd é PIOR: os includes relativos resolvem a partir da raiz e o vitest sai com
+  // "No test files found, exit 0" — verde sem rodar nada. Rodar DENTRO do workspace resolve os
+  // dois. A config é a completa (`vitest.config.js`), não a `critical`: esta não coleta testes de
+  // componente, e foi assim que um mock quebrado pelo Slice A (TreatmentWizard, 11/11 vermelhos)
+  // passou por todos os gates. `packages/core/src` entra no glob: a config já coleta os testes do
+  // core, e mudança no core não disparava teste nenhum no commit.
+  "{apps/web/src,server,api,packages/core/src}/**/*.{js,jsx,ts,tsx}": (files) => [
+    `npm exec --workspace @dosiq/web -- vitest related --run --passWithNoTests --config vitest.config.js ${files.map((f) => JSON.stringify(f)).join(' ')}`
   ],
 
   // Mobile: mesmo princípio (só o que está staged), com o runner do workspace.

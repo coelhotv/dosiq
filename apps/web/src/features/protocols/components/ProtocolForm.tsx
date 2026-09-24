@@ -185,6 +185,7 @@ export default function ProtocolForm({
         handleChange={handleChange}
         isSimpleMode={isSimpleMode}
         showTitration={showTitration}
+        wasPaused={protocol?.active === false}
       />
 
       {showBottomSuccess && <SuccessMessage isSimpleMode={true} />}

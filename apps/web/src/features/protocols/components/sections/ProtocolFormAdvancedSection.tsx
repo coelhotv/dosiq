@@ -1,9 +1,21 @@
+import { getNextOccurrence, describeNextOccurrence } from '@dosiq/core'
+
+// 085 (FR-008a): ao religar um tratamento pausado, dizer QUANDO é a próxima dose — em dias
+// alternados a âncora é o início (D-1) e a retomada pode cair num dia sem dose. Calculado sobre o
+// formulário (reflete edição de horário/frequência antes de salvar), pelo mesmo motor do gerador.
+function _resumeHint(formData) {
+  const next = getNextOccurrence(formData)
+  return next ? `Próxima dose: ${describeNextOccurrence(next)}.` : null
+}
+
 export default function ProtocolFormAdvancedSection({
   formData,
   handleChange,
   isSimpleMode,
   showTitration,
+  wasPaused = false,
 }) {
+  const resumeHint = wasPaused && formData.active ? _resumeHint(formData) : null
   return (
     <>
       {/* 029 F3.1 (T017i) — WEB WRITE-FREEZE. A evolução do tratamento passou a ser criada e
@@ -67,6 +79,9 @@ export default function ProtocolFormAdvancedSection({
             />
             <span>Tratamento ativo</span>
           </label>
+          {resumeHint && (
+            <span className="helper-text" role="status">{resumeHint}</span>
+          )}
         </div>
       )}
     </>

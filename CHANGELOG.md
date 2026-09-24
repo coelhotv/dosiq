@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "Dias alternados" passa a lembrar só nos dias de tomada — e retomar um tratamento diz quando é a próxima dose
+
+- **Web/PWA** (`patch`, `4.25.0` → `4.25.1`) · **Mobile** (`patch`, `0.33.0` → `0.33.1`, **build de
+  loja**, junto com a entrega anterior no mesmo release train) · **Shared/Core**.
+  Um tratamento em "dias alternados" se comportava como diário: o motor que decide em que dias
+  existe uma tomada reconhecia apelidos da frequência, mas não o valor que o próprio cadastro grava.
+  Ninguém usa essa frequência hoje, então nenhum tratamento muda — a correção vale para quem a
+  escolher daqui em diante. A alternância conta a partir do início do tratamento e não muda com
+  pausas: retomar depois de uma pausa de duração ímpar cai num dia sem dose. Por isso, ao reativar
+  um tratamento, o celular passa a dizer quando é a próxima dose ("Tratamento ativo · próxima dose
+  amanhã às 08:00"), e na web o aviso aparece sob a opção "Tratamento ativo" antes de salvar.
+  Frequência desconhecida continua gerando tomadas (em vez de silenciar), agora de forma declarada
+  e testada, e cada frequência do cadastro ganhou teste de quantos dias ela gera.
+
 ### A frequência "personalizado" sai do cadastro — ela nunca gerou lembrete nenhum
 
 - **Web/PWA** (`minor`, `4.24.3` → `4.25.0`) · **Mobile** (`minor`, `0.32.0` → `0.33.0`, **build de

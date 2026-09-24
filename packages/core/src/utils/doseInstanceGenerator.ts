@@ -7,11 +7,10 @@
  * Princípios:
  * - REUSA `isProtocolActiveOnDate` (adherenceLogic) como fonte única de recorrência.
  *   Não reimplementa frequência → gerador e adesão enxergam os mesmos dias.
- *   ⚠️ Gap conhecido (AP futuro): o matcher de `isProtocolActiveOnDate` ainda não
- *   cobre `dias_alternados`/`personalizado` corretamente (vide adherenceLogic
- *   FREQUENCY_MATCHERS). Como nenhum protocolo em prod usa essas frequências hoje
- *   e o fix muda comportamento de adesão (fora do escopo F2.1), o gerador herda o
- *   comportamento atual — consistente com o que o dashboard mostra. Corrigir na Fase 3.
+ *   085: o gap declarado aqui desde a Fase 2 foi pago — `personalizado` saiu da oferta e o
+ *   órfão migrou (Slice A); `dias_alternados` ganhou matcher e o fallback de desconhecida
+ *   ficou declarado (Slice B). Cada valor de FREQUENCIES tem teste de recorrência em
+ *   `__tests__/recurrence.test.ts`.
  * - `scheduled_for` é instante absoluto (ISO/UTC). O `tz` só governa o wall-clock de
  *   origem (que horas o relógio do usuário marcava). Leitura/ordenação é tz-agnóstica
  *   por ser timestamptz. Brasil não tem DST → offset constante dentro do dia.

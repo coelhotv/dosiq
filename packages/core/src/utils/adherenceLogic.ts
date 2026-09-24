@@ -12,7 +12,6 @@ import {
   getTodayLocal,
   getNow,
   parseISO,
-  daysDifference,
   getSaoPauloTime,
   getUserTime,
   cloneDate,
@@ -644,7 +643,18 @@ function _isWeeklyMatch(protocol: AdherenceProtocol, dayOfWeek: number): boolean
 function _isAlternatingMatch(protocol: AdherenceProtocol, targetDate: Date): boolean {
   if (!protocol.start_date) return true // Sem data de início, assume início hoje
   const startDate = parseLocalDate(protocol.start_date)
-  return daysDifference(startDate, targetDate) % 2 === 0
+  // 085 (D-1): âncora é SEMPRE o start_date — pausar/retomar não reancora (reancorar repintaria
+  // dias passados, R-299). Conta dias de CALENDÁRIO, não ms: `daysDifference` usa Math.ceil e numa
+  // virada de DST (fuso fora do Brasil) 24h+1h viraria N+1 e inverteria a paridade.
+  const days = _calendarDaysBetween(startDate, targetDate)
+  return days >= 0 && days % 2 === 0
+}
+
+/** Diferença em dias de calendário local entre duas datas (independe de DST). */
+function _calendarDaysBetween(from: Date, to: Date): number {
+  const a = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate())
+  const b = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate())
+  return Math.round((b - a) / 86_400_000)
 }
 
 /**
@@ -692,6 +702,9 @@ const FREQUENCY_MATCHERS = new Map<string, (protocol: AdherenceProtocol, dayOfWe
   ['semanal', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
   ['semanalmente', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
   ['weekly', (protocol, dayOfWeek) => _isWeeklyMatch(protocol, dayOfWeek)],
+  // 085 Slice B: `dias_alternados` é o valor que o CHECK aceita — até aqui só os apelidos casavam
+  // e o valor real caía no fallback, comportando-se como diário.
+  ['dias_alternados', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
   ['dia_sim_dia_nao', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
   ['dia sim, dia não', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
   ['every_other_day', (protocol, _dow, targetDate) => _isAlternatingMatch(protocol, targetDate)],
@@ -715,7 +728,70 @@ const FREQUENCY_MATCHERS = new Map<string, (protocol: AdherenceProtocol, dayOfWe
 function _matchesFrequency(frequency: string, protocol: AdherenceProtocol, dayOfWeek: number, targetDate: Date): boolean {
   const matcher = FREQUENCY_MATCHERS.get(frequency)
   if (matcher) return matcher(protocol, dayOfWeek, targetDate)
-  return true // default: assume ativo
+  // 085 (FR-007): fallback DECLARADO — frequência desconhecida é tratada como ativa. Dos dois
+  // erros possíveis, `false` transformaria um valor inesperado em silêncio total (o defeito do
+  // `personalizado`: tratamento ativo sem lembrete por meses); `true` erra para o lado audível.
+  // Nenhum valor de FREQUENCIES chega aqui (SC-003) — `isKnownFrequency` torna isso verificável.
+  return true
+}
+
+/**
+ * 085 (FR-007/SC-003): a frequência tem matcher próprio? `false` = cairia no fallback.
+ * @param {string|null|undefined} frequency
+ * @returns {boolean}
+ */
+export function isKnownFrequency(frequency: string | null | undefined): boolean {
+  return typeof frequency === 'string' && FREQUENCY_MATCHERS.has(frequency.toLowerCase())
+}
+
+/** Próxima ocorrência de dose: data local (YYYY-MM-DD) + horário HH:mm. */
+export interface NextOccurrence {
+  date: string
+  time: string
+}
+
+const NEXT_OCCURRENCE_HORIZON_DAYS = 400
+const WEEKDAY_SHORT_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
+/**
+ * 085 (FR-008a): próxima ocorrência a partir de `now`, pelo MESMO motor do gerador
+ * (`isProtocolActiveOnDate`). Ignora `active` — é chamada justamente para quem está retomando.
+ * Hoje só conta horário ainda por vir (>= minuto atual).
+ * @returns {NextOccurrence|null} null para PRN, depreciado, sem horários ou fim antes da próxima
+ */
+export function getNextOccurrence(protocol: AdherenceProtocol | null | undefined, now: Date = getNow()): NextOccurrence | null {
+  if (!protocol) return null
+  const slots = (protocol.time_schedule ?? [])
+    .filter((t): t is string => typeof t === 'string' && /^\d{2}:\d{2}$/.test(t))
+    .sort()
+  if (slots.length === 0) return null
+
+  const resumed = { ...protocol, active: true }
+  const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const cursor = parseLocalDate(formatLocalDate(now)) // meia-noite local de hoje
+  for (let i = 0; i < NEXT_OCCURRENCE_HORIZON_DAYS; i++) {
+    const dateStr = formatLocalDate(cursor)
+    if (isProtocolActiveOnDate(resumed, dateStr)) {
+      const time = i === 0 ? slots.find((s) => s >= nowHHMM) : slots[0]
+      if (time) return { date: dateStr, time }
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return null
+}
+
+/**
+ * 085 (FR-008a): frase curta pt-BR — "hoje às 20:00", "amanhã às 08:00", "qua, 13/05 às 08:00".
+ */
+export function describeNextOccurrence(occurrence: NextOccurrence, now: Date = getNow()): string {
+  const target = parseLocalDate(occurrence.date)
+  const today = parseLocalDate(formatLocalDate(now))
+  const diff = _calendarDaysBetween(today, target)
+  if (diff === 0) return `hoje às ${occurrence.time}`
+  if (diff === 1) return `amanhã às ${occurrence.time}`
+  const dd = String(target.getDate()).padStart(2, '0')
+  const mm = String(target.getMonth() + 1).padStart(2, '0')
+  return `${WEEKDAY_SHORT_PT[target.getDay()]}, ${dd}/${mm} às ${occurrence.time}`
 }
 
 // ============================================================================
