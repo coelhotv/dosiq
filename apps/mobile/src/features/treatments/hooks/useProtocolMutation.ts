@@ -15,6 +15,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { useCallback } from 'react'
+import { getNextOccurrence, describeNextOccurrence } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { useMutation } from '@shared/hooks/useMutation'
@@ -26,6 +27,13 @@ const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
 const TREATMENTS_CACHE_KEY = '@dosiq/treatments-snapshot'
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
+
+// 085 (FR-008a): retomar diz QUANDO é a próxima dose. Em dias alternados a âncora é o início do
+// tratamento (D-1), então retomar num dia sem dose deixaria o app calado — a cópia paga esse custo.
+function resumeMessage(protocol) {
+  const next = getNextOccurrence(protocol)
+  return next ? `Tratamento ativo · próxima dose ${describeNextOccurrence(next)}` : 'Tratamento ativo'
+}
 
 export function useProtocolMutation() {
   // States (R-010 — States → Memos → Effects → Handlers)
@@ -119,7 +127,7 @@ export function useProtocolMutation() {
           STOCK_CACHE_KEY,
         ]).catch(() => {})
         triggerAlarmResync() // FR-006: pausar/retomar muda os alarmes futuros
-        show(nextValue ? 'Tratamento ativo' : 'Tratamento pausado', { variant: 'success' })
+        show(nextValue ? resumeMessage(result) : 'Tratamento pausado', { variant: 'success' })
         return result
       } catch (err) {
         show(err?.message ?? 'Erro ao alterar status do tratamento', { variant: 'error' })

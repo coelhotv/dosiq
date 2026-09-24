@@ -186,8 +186,10 @@ describe('generateInstances — tolerância dinâmica (§6)', () => {
   it('dias_alternados dose única: metade de 48h (1440min), sem cap', () => {
     const out = generateInstances(
       { ...baseProtocol, frequency: 'dias_alternados', time_schedule: ['08:00'] },
-      '2026-05-10T00:00:00-03:00',
-      '2026-05-10T23:59:59-03:00',
+      // 085 Slice B: 11/05 é dia de dose (130 dias após o start_date 01/01). O fixture usava 10/05
+      // (dia 129, sem dose) e só gerava instância porque dias_alternados caía no fallback diário.
+      '2026-05-11T00:00:00-03:00',
+      '2026-05-11T23:59:59-03:00',
       'America/Sao_Paulo'
     )
     expect(out[0].tolerance_minutes).toBe(1440)

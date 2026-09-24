@@ -52,6 +52,9 @@ export {
   calculateDosesByDate,
   evaluateDoseTimelineState,
   isProtocolActiveOnDate,
+  isKnownFrequency,
+  getNextOccurrence,
+  describeNextOccurrence,
   getProtocolDays,
   getDailyDoseRate,
   // Leitura de adesão a partir de dose_instances (Fase 3 — ADR-048/050/052)
@@ -61,7 +64,7 @@ export {
   ADHERENCE_MODE,
   INSTANCE_STATUS,
 } from './adherenceLogic'
-export type { AdherenceProtocol } from './adherenceLogic'
+export type { AdherenceProtocol, NextOccurrence } from './adherenceLogic'
 
 // Dose instance generation engine (ADR-048, Fase 2)
 export {
