@@ -26,7 +26,9 @@ export default function TreatmentModals({
 
   return (
     <>
-      <Modal isOpen={wizardOpen} onClose={() => { setWizardOpen(false); setWizardMedicine(null); }}>
+      {/* 085 C2: fechar pelo X/Esc/fundo também recarrega a lista — depois de um cadastro concluído
+          o tratamento novo não aparecia até um reload. Refetch é barato e idempotente. */}
+      <Modal isOpen={wizardOpen} onClose={() => { setWizardOpen(false); setWizardMedicine(null); refetch(); }}>
         <TreatmentWizard
           preselectedMedicine={wizardMedicine || undefined}
           onComplete={() => { setWizardOpen(false); setWizardMedicine(null); refetch(); }}

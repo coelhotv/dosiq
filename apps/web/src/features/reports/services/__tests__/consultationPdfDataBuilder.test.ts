@@ -175,17 +175,17 @@ describe('consultationPdfDataBuilder', () => {
       dosePerIntake: '10 UI (≈ 0,1 mL)',
       frequency: 'Diário • 1 tomada • 22:00',
       // Smoke do PO: a coluna diária NÃO repete a equivalência da coluna de tomada.
-      dailyDose: '10 UI/dia',
+      cycleDose: '10 UI/dia',
       status: 'Vigente',
     })
     expect(byLabel['Diabetes - Lantus'].dosePerIntake).not.toContain('1.000')
 
-    // F-2/E-1: semanal deixa de ser tratado como diário — a média do dia usa o fator 1/7,
-    // o MESMO que a página de estoque deste documento já aplicava (2,4 ÷ 7 ≈ 0,343 mg).
+    // F-2/E-1: semanal deixa de ser tratado como diário. 085 C2 (smoke): a coluna mostra a dose
+    // no CICLO ("2,4 mg/semana"), não a média diária "0,343 mg/dia" que o médico não prescreve.
     expect(byLabel['GLP-1 - Ozempic']).toMatchObject({
       dosePerIntake: '2,4 mg (≈ 0,9 mL)',
       frequency: 'Semanal • 1 tomada • 09:00',
-      dailyDose: '0,343 mg/dia',
+      cycleDose: '2,4 mg/semana',
     })
 
     // F-1: nada de " por comprimido" colado em caneta/frasco.
@@ -209,14 +209,46 @@ describe('consultationPdfDataBuilder', () => {
     })
     expect(prn.activeTreatments[0]).toMatchObject({
       frequency: 'Quando Necessário',
-      dailyDose: 'sob demanda',
+      cycleDose: 'sob demanda',
     })
+
+    // 085 C2: a cadência por intervalo sai com o N, não com o genérico "A cada N dias".
+    const depo = buildConsultationPdfData({
+      consultationData: {},
+      dashboardData: {
+        medicines: [{ id: 'm-depo', name: 'Depo', dosage_per_pill: 150, dosage_unit: 'mg' }],
+        protocols: [{
+          id: 'p-depo', name: 'Contracepção', medicine_id: 'm-depo', active: true,
+          dosage_per_intake: 1, intake_unit: null, frequency: 'intervalo_dias', interval_days: 90,
+          time_schedule: ['09:00'], start_date: past, end_date: future,
+        }],
+      },
+      generatedAt,
+    })
+    expect(depo.activeTreatments[0].frequency).toBe('A cada 90 dias • 1 tomada • 09:00')
+    // 085 C2 (smoke): dose total do ciclo, com a massa do sólido — "150 mg a cada 90 dias".
+    expect(depo.activeTreatments[0].cycleDose).toBe('150 mg a cada 90 dias')
+
+    // Líquido: unidade de tomada, SEM virar massa (associação tipo Mesigyna) — "1 mL a cada 30 dias".
+    const liquid = buildConsultationPdfData({
+      consultationData: {},
+      dashboardData: {
+        medicines: [{ id: 'm-mes', name: 'Mesigyna', dosage_per_pill: 50, dosage_unit: 'mg/ml', presentation: 'injetavel' }],
+        protocols: [{
+          id: 'p-mes', name: 'Mensal', medicine_id: 'm-mes', active: true,
+          dosage_per_intake: 1, intake_unit: 'ml', frequency: 'intervalo_dias', interval_days: 30,
+          time_schedule: ['20:00'], start_date: past, end_date: future,
+        }],
+      },
+      generatedAt,
+    })
+    expect(liquid.activeTreatments[0].cycleDose).toBe('1 mL a cada 30 dias')
 
     // Par de não-omissão: o sólido vigente continua presente e correto.
     expect(byLabel['Pressao - Selozok']).toMatchObject({
       presentation: '25 mg',
       dosePerIntake: '1 un. (25 mg)',
-      dailyDose: '50 mg/dia',
+      cycleDose: '50 mg/dia',
       status: 'Vigente',
     })
 
@@ -252,7 +284,7 @@ describe('consultationPdfDataBuilder', () => {
       presentation: '10 mg',
       dosePerIntake: '1 un. (10 mg)',
       frequency: 'Diário • 1 tomada • 22:00',
-      dailyDose: '10 mg/dia',
+      cycleDose: '10 mg/dia',
       status: 'Vigente',
     })
     expect(pdfData.stockRows[0].severity).toBe('critical')

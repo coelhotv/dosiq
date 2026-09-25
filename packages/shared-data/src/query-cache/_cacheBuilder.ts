@@ -52,6 +52,12 @@ interface CacheState extends CacheDeps {
 interface CachedQueryOptions {
   dedupe?: boolean
   staleTime?: number
+  /**
+   * Chamado com o dado NOVO quando uma entrada stale termina de revalidar em background.
+   * Sem isto o SWR entrega o dado velho e o fresco só aparece na PRÓXIMA chamada — um consumidor
+   * montado uma vez (ex.: DashboardProvider) ficava preso no snapshot do localStorage (085 C2).
+   */
+  onRevalidated?: (data: unknown) => void
 }
 
 // --- helpers puros (sem estado) ---
@@ -195,7 +201,7 @@ async function _cachedQuery(
   options: CachedQueryOptions,
   state: CacheState
 ) {
-  const { dedupe = true, staleTime: customStaleTime } = options
+  const { dedupe = true, staleTime: customStaleTime, onRevalidated } = options
   const { cache, pendingRequests, logger, staleTime } = state
   const cached = cache.get(key)
 
@@ -213,7 +219,7 @@ async function _cachedQuery(
     _log(logger, 'log', `HIT (stale): ${key} — revalidando em background`)
     const revalPromise = _revalidateStale(key, fetcher, cached, state)
     cached.isRevalidating = true
-    revalPromise.catch(() => {})
+    revalPromise.then((data) => onRevalidated?.(data)).catch(() => {})
     state.accessCounter++
     state.accessCount.set(key, state.accessCounter)
     return cached.data

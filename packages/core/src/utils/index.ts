@@ -291,5 +291,8 @@ export type { VersionGateRow, VersionGateDecision } from './versionGate'
 export {
   INTERVAL_CADENCE_MIN_MOBILE_VERSION,
   isIntervalCadenceAvailable,
+  fetchIntervalCadenceAvailability,
 } from './cadenceRollout'
 export type { CadenceInstallRow } from './cadenceRollout'
+export { getDoseCycle, cycleDoseAmount, scheduleTimesPerDay } from './doseCycle'
+export type { DoseCycle } from './doseCycle'

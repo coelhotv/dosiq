@@ -18,10 +18,12 @@ import {
   resolveCurrentStep,
   isProtocolVigentOn,
   isLiquidMedicine,
-  frequencyDailyFactor,
+  getDoseCycle,
+  cycleDoseAmount,
   stockUnitLabel,
   formatStockQuantity,
   FREQUENCY_LABELS,
+  formatFrequencyLabel,
   getTodayLocal,
 } from '@dosiq/core'
 import { addDays, getServerTimestamp, parseISO } from '@utils/dateUtils'
@@ -147,7 +149,8 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
     return {
       dosagePerIntake: null,
       timesPerDay: null,
-      dailyDosage: null,
+      cycleDosage: null,
+      cycleSuffix: null,
       isLiquid: false,
       intakeUnit: null,
       cadenceLabel: null,
@@ -161,39 +164,56 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
   const isLiquid = isLiquidMedicine(medicine)
 
   let totalTimesPerDay = 0
-  let liquidDailyDose = 0 // soma dose×vezes×fator na unidade de tomada (líquidos)
+  // 085 C2 (smoke do PO): total no CICLO da frequência ("2,4 mg/semana", "1 mL a cada 90 dias"),
+  // não a média diária. Só soma tratamentos do MESMO ciclo; ciclos diferentes (diário + semanal)
+  // ou sem ciclo (PRN) ⇒ total omitido — somar doses de períodos diferentes não é posologia.
+  let liquidCycleDose = 0 // na unidade de tomada (líquidos)
   let totalDosagePerIntake = 0 // soma em mg (sólidos)
-  let solidDailyDosage = 0 // soma dose×conc×vezes×fator em mg (sólidos)
+  let solidCycleDosage = 0 // em mg (sólidos)
+  const cycleSuffixes = new Set()
   let intakeUnit = null
   const frequencies = new Set()
 
   // 073/F-13: acumular POR PROTOCOLO. O produto cruzado Σ(dose) × Σ(tomadas) DOBRAVA a
   // posologia impressa quando o mesmo medicamento tinha 2 tratamentos vigentes. O ramo
   // líquido já somava assim — aqui os dois passam a somar igual, e ambos aplicam a
-  // cadência via `frequencyDailyFactor` (semanal contava como diário).
+  // cadência via o ciclo do core (`getDoseCycle`/`cycleDoseAmount` — 085 C2; semanal contava como diário).
   protocols.forEach((protocol) => {
     const timesPerDay = protocol.time_schedule?.length || 1
     const dosePerIntake = protocol.dosage_per_intake || 1
-    const dailyFactor = frequencyDailyFactor(protocol)
+    const cycle = getDoseCycle(protocol)
+    const cycleAmount = cycleDoseAmount(protocol, dosePerIntake)
+    cycleSuffixes.add(cycle && cycleAmount !== null ? cycle.suffix : null)
     totalTimesPerDay += timesPerDay
-    if (protocol.frequency) frequencies.add(protocol.frequency)
+    // 085 C2: `intervalo_dias` entra pelo rótulo com N — dois tratamentos com N diferentes não
+    // podem se fundir num "A cada 30 dias" (o Set os separa e o rótulo é omitido, como hoje).
+    if (protocol.frequency) {
+      frequencies.add(
+        protocol.frequency === 'intervalo_dias'
+          ? formatFrequencyLabel(protocol.frequency, protocol.interval_days)
+          : protocol.frequency
+      )
+    }
 
     if (isLiquid) {
       intakeUnit = intakeUnit || protocol.intake_unit || null
-      liquidDailyDose += dosePerIntake * timesPerDay * dailyFactor
+      liquidCycleDose += cycleAmount ?? 0
     } else if (dosagePerPill) {
       totalDosagePerIntake += dosePerIntake * dosagePerPill
-      solidDailyDosage += dosePerIntake * dosagePerPill * timesPerDay * dailyFactor
+      solidCycleDosage += (cycleAmount ?? 0) * dosagePerPill
     }
   })
 
   const cadenceLabel = _buildCadenceLabel(totalTimesPerDay, frequencies)
+  const [onlySuffix] = cycleSuffixes
+  const cycleSuffix = cycleSuffixes.size === 1 && onlySuffix ? onlySuffix : null
 
   if (isLiquid) {
     return {
       dosagePerIntake: null,
       timesPerDay: totalTimesPerDay,
-      dailyDosage: liquidDailyDose,
+      cycleDosage: cycleSuffix ? liquidCycleDose : null,
+      cycleSuffix,
       isLiquid: true,
       // 073/F-16: sem fallback cego para 'ml'. Faltando `intake_unit`, o rótulo canônico
       // de estoque do core responde pela unidade — não se inventa "ml" para gotas/UI.
@@ -206,7 +226,8 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
     return {
       dosagePerIntake: null,
       timesPerDay: totalTimesPerDay > 0 ? totalTimesPerDay : null,
-      dailyDosage: null,
+      cycleDosage: null,
+      cycleSuffix: null,
       isLiquid: false,
       intakeUnit: null,
       cadenceLabel,
@@ -216,7 +237,8 @@ function _calculateDosageInfo(protocols, dosagePerPill, medicine = null) {
   return {
     dosagePerIntake: totalDosagePerIntake,
     timesPerDay: totalTimesPerDay,
-    dailyDosage: solidDailyDosage,
+    cycleDosage: cycleSuffix ? solidCycleDosage : null,
+    cycleSuffix,
     isLiquid: false,
     intakeUnit: null,
     cadenceLabel,

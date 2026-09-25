@@ -12,8 +12,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const THROTTLE_MS = 24 * 60 * 60 * 1000 // 24h — plan.md Clarifications (FR-003)
 
-function heartbeatStorageKey(deviceFingerprint: string) {
-  return `@dosiq/device-activity-last-heartbeat:${deviceFingerprint}`
+// 085 C2 (smoke do PO): a versão do app entra na CHAVE DO THROTTLE — não no fingerprint, que segue
+// identificando o aparelho (AP-208). Sem isso, atualizar o app até 24h depois do último heartbeat
+// deixava o row dizendo a versão ANTIGA por até 24h: a trava por usuária da cadência
+// (`isIntervalCadenceAvailable`) e o relatório de frota do version gate liam o aparelho como
+// desatualizado justamente logo depois de cada release.
+function heartbeatStorageKey(deviceFingerprint: string, appVersion: string) {
+  return `@dosiq/device-activity-last-heartbeat:${deviceFingerprint}:${appVersion}`
 }
 
 export async function syncDeviceActivity({
@@ -34,7 +39,8 @@ export async function syncDeviceActivity({
       deviceModel: Device.modelName,
     })
 
-    const storageKey = heartbeatStorageKey(deviceFingerprint)
+    const appVersion = Application.nativeApplicationVersion ?? ''
+    const storageKey = heartbeatStorageKey(deviceFingerprint, appVersion)
     const lastRaw = await AsyncStorage.getItem(storageKey)
     const last = lastRaw ? Number(lastRaw) : 0
     const nowMs = now()
@@ -46,7 +52,7 @@ export async function syncDeviceActivity({
     const { error } = await supabase.rpc('upsert_device_activity', {
       p_device_fingerprint: deviceFingerprint,
       p_platform:           Platform.OS,
-      p_app_version:        Application.nativeApplicationVersion ?? '',
+      p_app_version:        appVersion,
     })
 
     if (error) return // best-effort — nunca lança (FR-002/AP-303)

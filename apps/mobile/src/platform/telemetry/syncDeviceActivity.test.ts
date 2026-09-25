@@ -97,6 +97,20 @@ describe('syncDeviceActivity', () => {
     await expect(syncDeviceActivity({ supabase: mockSupabase, now: () => 1000 })).resolves.toBeUndefined()
   })
 
+  it('085 C2: atualizar o app fura o throttle — a versão nova grava na hora', async () => {
+    // heartbeat recente, mas da versão ANTERIOR (4.19.0); o app agora é 4.20.0
+    AsyncStorage.getItem.mockImplementation(async (key: string) =>
+      key.endsWith(':4.19.0') ? '999' : null
+    )
+    const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }
+
+    await syncDeviceActivity({ supabase: mockSupabase, now: () => 1000 })
+
+    expect(mockSupabase.rpc).toHaveBeenCalledTimes(1)
+    expect(AsyncStorage.getItem).toHaveBeenCalledWith(expect.stringMatching(/:4\.20\.0$/))
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(expect.stringMatching(/:4\.20\.0$/), '1000')
+  })
+
   it('não inclui app_version no fingerprint (mesma estratégia da 043 — AP-208)', async () => {
     AsyncStorage.getItem.mockResolvedValue(null)
     const mockSupabase = { rpc: jest.fn().mockResolvedValue({ error: null }) }

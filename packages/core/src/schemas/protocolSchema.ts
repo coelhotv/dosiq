@@ -27,6 +27,31 @@ export const INTERVAL_DAYS_MIN = 2
 export const INTERVAL_DAYS_MAX = 180
 
 /**
+ * Lê o N digitado no formulário (085 C2). `''`/nulo ⇒ `null` (campo limpo não vira 0 — R-270);
+ * vírgula decimal normalizada antes do `Number()`. Não arredonda: "30,5" volta 30.5 e o validador
+ * recusa, em vez de gravar um N que a usuária não digitou.
+ */
+export function parseIntervalDaysInput(raw: unknown): number | null {
+  if (raw === null || raw === undefined) return null
+  const text = String(raw).trim().replace(',', '.')
+  if (text === '') return null
+  const n = Number(text)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Mensagem de erro do campo N em PT, ou `null` se válido — antes do submit, nunca como 23514. */
+export function getIntervalDaysError(raw: unknown): string | null {
+  const n = parseIntervalDaysInput(raw)
+  if (n === null) return 'Informe a cada quantos dias'
+  // Smoke C2 (PO): linguagem de consumidor — nada de "número inteiro" para a dona Maria.
+  if (!Number.isInteger(n)) return 'Use dias completos, sem vírgula'
+  if (n < INTERVAL_DAYS_MIN || n > INTERVAL_DAYS_MAX) {
+    return `Escolha de ${INTERVAL_DAYS_MIN} a ${INTERVAL_DAYS_MAX} dias`
+  }
+  return null
+}
+
+/**
  * Frequências DEPRECIADAS: continuam válidas no banco e no Zod, mas não são mais oferecidas
  * no cadastro. Aposentar um valor é tirá-lo da OFERTA, nunca do vocabulário aceito (R-310):
  * cliente publicado que ainda escreva o valor antigo receberia 23514, e protocolo legado
@@ -68,8 +93,15 @@ export const SELECTABLE_FREQUENCIES = FREQUENCIES.filter(
  * de qualquer outro campo arrastaria junto uma troca de frequência que ninguém pediu.
  * Aposentar o valor é tirá-lo de quem CRIA, não esconder o que já existe (085 FR-004).
  */
-export function frequencyOptionsFor(currentFrequency: string | null | undefined): string[] {
+export function frequencyOptionsFor(
+  currentFrequency: string | null | undefined,
+  { intervalAvailable = false }: { intervalAvailable?: boolean } = {}
+): string[] {
   const options: string[] = [...SELECTABLE_FREQUENCIES]
+  // 085 C2: `intervalo_dias` só é oferecida a quem a trava por usuária libera
+  // (`isIntervalCadenceAvailable`). A constante UNRELEASED continua valendo como "fora da oferta
+  // por padrão" — esvaziá-la ligaria a opção para todas, inclusive quem tem app antigo.
+  if (intervalAvailable) options.splice(options.indexOf('semanal') + 1, 0, 'intervalo_dias')
   if (currentFrequency && !options.includes(currentFrequency)) options.push(currentFrequency)
   return options
 }
@@ -94,8 +126,38 @@ export const FREQUENCY_LABELS = {
   semanal: 'Semanal',
   personalizado: 'Personalizado',
   quando_necessário: 'Quando Necessário',
-  // 085 C1: rótulo genérico; o "a cada N dias" dinâmico é do Slice C2.
-  intervalo_dias: 'A cada N dias',
+  // 085: rótulo da OPÇÃO no formulário e fallback quando N não é legível; exibição de tratamento
+  // usa `formatFrequencyLabel`, que troca o N pelo número.
+  // Smoke C2 (PO): "X" é como o brasileiro lê a variável oculta; o N real entra via formatFrequencyLabel.
+  intervalo_dias: 'A cada X dias',
+}
+
+/**
+ * Rótulo de exibição da cadência de um tratamento (085 C2).
+ *
+ * `intervalo_dias` com N legível ⇒ "A cada 30 dias" (N ≥ 2, sempre plural). Qualquer outra
+ * frequência delega ao mapa `labels` da superfície — cada tela mantém seu texto ("Diário" na web,
+ * "Todos os dias" no mobile) e só o ramo novo muda. N ausente/fora da faixa (select sem a coluna;
+ * o banco impede o estado) cai no rótulo genérico do mapa, nunca em "A cada null dias".
+ */
+export function formatFrequencyLabel(
+  frequency: string | null | undefined,
+  intervalDays?: number | null,
+  labels: Record<string, string> = FREQUENCY_LABELS
+): string {
+  if (!frequency) return ''
+  if (
+    frequency === 'intervalo_dias' &&
+    typeof intervalDays === 'number' &&
+    Number.isInteger(intervalDays) &&
+    intervalDays >= INTERVAL_DAYS_MIN &&
+    intervalDays <= INTERVAL_DAYS_MAX
+  ) {
+    return `A cada ${intervalDays} dias`
+  }
+  // RC6 #838: mapa de tela sem a chave (ex.: mapas locais do mobile sem `intervalo_dias`) cai no
+  // rótulo canônico antes da chave crua — N inválido nunca vaza "intervalo_dias" para a tela.
+  return labels[frequency] || (FREQUENCY_LABELS as Record<string, string>)[frequency] || frequency
 }
 
 // Dias da semana
@@ -172,9 +234,9 @@ export const protocolSchema = z.object({
   // (intervalo_dias ⇔ preenchido) é refine no create e CHECK no banco nos dois sentidos.
   interval_days: z
     .number()
-    .int('Intervalo deve ser um número inteiro de dias')
-    .min(INTERVAL_DAYS_MIN, `Intervalo mínimo é de ${INTERVAL_DAYS_MIN} dias (1 dia é diário)`)
-    .max(INTERVAL_DAYS_MAX, `Intervalo máximo é de ${INTERVAL_DAYS_MAX} dias`)
+    .int('Use dias completos, sem vírgula')
+    .min(INTERVAL_DAYS_MIN, `O mínimo é ${INTERVAL_DAYS_MIN} dias (para todo dia, escolha Diário)`)
+    .max(INTERVAL_DAYS_MAX, `O máximo é ${INTERVAL_DAYS_MAX} dias`)
     .nullable()
     .optional(),
 
@@ -286,7 +348,7 @@ export const protocolCreateSchema = protocolSchema
     // 085: espelha protocols_interval_days_coherence_check — sem isto o erro chegaria como 23514.
     (data) => (data.frequency === 'intervalo_dias') === (data.interval_days != null),
     {
-      message: 'Informe de quantos em quantos dias (apenas para a frequência "a cada N dias")',
+      message: 'Informe a cada quantos dias',
       path: ['interval_days'],
     }
   )
@@ -304,7 +366,7 @@ export const protocolUpdateSchema = protocolSchema.partial().refine(
       ? data.interval_days != null
       : data.interval_days === undefined || data.interval_days === null),
   {
-    message: 'Informe de quantos em quantos dias (apenas para a frequência "a cada N dias")',
+    message: 'Informe a cada quantos dias',
     path: ['interval_days'],
   }
 )

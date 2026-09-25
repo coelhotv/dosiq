@@ -20,6 +20,8 @@ export function buildInitialValues({ todayIso, presetPlanId }) {
     name: '',
     dosage_per_intake: '',
     frequency: 'diário',
+    // 085 C2: N da cadência `intervalo_dias`; null nas demais (CHECK de coerência).
+    interval_days: null,
     weekdays: [],
     time_schedule: [],
     start_date: todayIso,
@@ -48,6 +50,7 @@ function buildPrefill(existing, todayIso) {
     intake_unit: existing.intake_unit ?? null,
     units_per_ml: existing.medicine?.units_per_ml ?? '',
     frequency: existing.frequency ?? 'diário',
+    interval_days: existing.interval_days ?? null,
     weekdays: Array.isArray(existing.weekdays) ? existing.weekdays : [],
     time_schedule: Array.isArray(existing.time_schedule) ? existing.time_schedule : [],
     start_date: existing.start_date ?? todayIso,

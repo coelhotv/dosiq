@@ -5,8 +5,12 @@ import {
   FREQUENCY_LABELS,
   INTAKE_UNIT_LABELS,
   frequencyRequiresWeekdays,
+  getIntervalDaysError,
+  INTERVAL_DAYS_MIN,
+  INTERVAL_DAYS_MAX,
 } from '@schemas/protocolSchema'
 import { formatDoseHint } from '@dosiq/core'
+import { useIntervalCadenceAvailability } from '@protocols/hooks/useIntervalCadenceAvailability'
 
 const VISUAL_ORDER = [
   { key: 'domingo', label: 'D' },
@@ -74,6 +78,10 @@ function StepFrequencySelector({
   updateProtocol,
   handleWeekdayToggle,
 }) {
+  const intervalAvailable = useIntervalCadenceAvailability()
+  // Erro só depois de digitar: campo recém-aberto mostra a dica, não uma bronca.
+  const rawInterval = protocolData.interval_days ?? ''
+  const intervalError = rawInterval === '' ? null : getIntervalDaysError(rawInterval)
   return (
     <>
       <label className="wizard__label">
@@ -83,13 +91,33 @@ function StepFrequencySelector({
           value={protocolData.frequency}
           onChange={(e) => updateProtocol('frequency', e.target.value)}
         >
-          {frequencyOptionsFor(protocolData.frequency).map((f) => (
+          {frequencyOptionsFor(protocolData.frequency, { intervalAvailable }).map((f) => (
             <option key={f} value={f}>
               {FREQUENCY_LABELS[f] || f}
             </option>
           ))}
         </select>
       </label>
+
+      {/* 085 C2: N da cadência "a cada N dias" — informa a previsão, nunca afirma proteção (FR-011a). */}
+      {protocolData.frequency === 'intervalo_dias' && (
+        <label className="wizard__label">
+          A cada quantos dias? *
+          <input
+            type="text"
+            inputMode="numeric"
+            className="wizard__input"
+            value={rawInterval}
+            onChange={(e) => updateProtocol('interval_days', e.target.value)}
+            placeholder="Ex.: 30"
+            aria-invalid={Boolean(intervalError)}
+          />
+          <small className="field-hint" style={{ display: 'block' }} role={intervalError ? 'alert' : undefined}>
+            {intervalError ||
+              `De ${INTERVAL_DAYS_MIN} a ${INTERVAL_DAYS_MAX} dias, contados a partir da data de início.`}
+          </small>
+        </label>
+      )}
 
       {frequencyRequiresWeekdays(protocolData.frequency) && (
         <div className="wizard__label">

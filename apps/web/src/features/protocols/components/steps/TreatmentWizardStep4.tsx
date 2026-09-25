@@ -1,5 +1,5 @@
 import Button from '@shared/components/ui/Button'
-import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatFrequencyLabel } from '@schemas/protocolSchema'
 import { formatActiveIngredientHint } from '@dosiq/core'
 
 export default function TreatmentWizardStep4({
@@ -19,14 +19,16 @@ export default function TreatmentWizardStep4({
       <h3 className="wizard__title">Pronto!</h3>
       <p className="wizard__complete-summary">
         <strong>{result.medicine?.name || medicineData.name}</strong> cadastrado
-        {result.protocol && ` com tratamento ${FREQUENCY_LABELS[protocolData.frequency]}`}
+        {result.protocol && ` com tratamento ${formatFrequencyLabel(protocolData.frequency, result.protocol?.interval_days).toLowerCase()}`}
         {/* Spec 044 F3: com estoque desligado, stockData nunca chega preenchido aqui
             (skipStock no submit) — gate explícito por robustez. */}
         {stockTrackingEnabled && stockData.quantity && ` e ${formatActiveIngredientHint(stockData.quantity, result.medicine?.dosage_per_pill, result.medicine?.dosage_unit) || `${stockData.quantity} un.`} em estoque`}.
       </p>
       <div className="wizard__actions wizard__actions--center">
+        {/* 085 C2 (smoke do PO): dizia "Ir para Hoje", mas o único host (aba Tratamentos) só fecha
+            o modal e recarrega a lista — o rótulo prometia uma navegação que não acontecia. */}
         <Button variant="primary" onClick={() => onComplete(result)}>
-          Ir para Hoje
+          Ver tratamentos
         </Button>
         <Button variant="ghost" onClick={resetWizard}>
           Cadastrar outro

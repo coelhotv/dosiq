@@ -548,14 +548,14 @@ function renderTreatmentsPage(doc, autoTable, pdfData) {
   renderTable(autoTable, doc, {
     startY: 28,
     head: [
-      ['Tratamento', 'Apresentação', 'Dose por tomada', 'Frequência', 'Dose diária', 'Status'],
+      ['Tratamento', 'Apresentação', 'Dose por tomada', 'Frequência', 'Dose total', 'Status'],
     ],
     body: pdfData.activeTreatments.map((row) => [
       row.label,
       row.presentation,
       row.dosePerIntake,
       row.frequency,
-      row.dailyDose,
+      row.cycleDose,
       row.status,
     ]),
     // Larguras revistas no smoke do PO: a coluna de dose estourava e o jsPDF esticava o texto

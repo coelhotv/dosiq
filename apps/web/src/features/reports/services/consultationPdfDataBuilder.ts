@@ -15,8 +15,11 @@ import {
   formatDose,
   formatActiveIngredientShort,
   isLiquidMedicine,
-  frequencyDailyFactor,
+  getDoseCycle,
+  cycleDoseAmount,
+  scheduleTimesPerDay,
   FREQUENCY_LABELS,
+  formatFrequencyLabel,
   formatIntakeDose,
   formatMedicineConcentration,
   roundForDisplay,
@@ -113,11 +116,6 @@ function _formatDosePerIntake(protocol, medicine) {
   return formatIntakeDose(protocol?.dosage_per_intake ?? 1, protocol?.intake_unit, medicine)
 }
 
-/** Tomadas por dia declaradas no `time_schedule` (mínimo 1). */
-function _timesPerDay(protocol) {
-  const schedule = Array.isArray(protocol?.time_schedule) ? protocol.time_schedule : []
-  return schedule.length > 0 ? schedule.length : 1
-}
 
 /**
  * Cadência clínica: a FREQUÊNCIA declarada + as tomadas do dia em que há dose.
@@ -133,8 +131,10 @@ function _formatCadence(protocol) {
   // 073/RC5: PRN não tem cadência — anunciar "1 tomada • 08:00" para dose sob demanda inventa
   // uma exposição regular que o paciente não tem.
   if (protocol?.frequency === 'quando_necessário') return FREQUENCY_LABELS['quando_necessário']
-  const times = _timesPerDay(protocol)
-  const frequencyLabel = FREQUENCY_LABELS[protocol?.frequency] || FREQUENCY_LABELS['diário']
+  const times = scheduleTimesPerDay(protocol)
+  const frequencyLabel = protocol?.frequency
+    ? formatFrequencyLabel(protocol.frequency, protocol.interval_days)
+    : FREQUENCY_LABELS['diário']
   const timesLabel = times === 1 ? '1 tomada' : `${times} tomadas`
   const preview = schedule.slice(0, 3).join(', ')
   const suffix = schedule.length > 3 ? '...' : ''
@@ -143,41 +143,38 @@ function _formatCadence(protocol) {
 }
 
 /**
- * Dose diária MÉDIA — a EXPOSIÇÃO por dia, não a repetição da coluna anterior.
+ * Dose TOTAL no ciclo natural da frequência (085 C2, smoke do PO 2026-09-25).
  *
- * 073/E-1: o formatador local acumulava duas doenças — multiplicava pela concentração (F-17)
- * e tratava `time_schedule.length` como cadência (F-2), lendo semanal como diário. A média por
- * dia usa `frequencyDailyFactor` (o mesmo fator que a página de ESTOQUE deste documento já
- * aplica via `calculateDailyIntake` — ADR-094: cadência sobre a dose, nunca sobre a vigência).
+ * O médico lê posologia — "100 mg/dia", "2,4 mg/semana", "1 mL a cada 90 dias" —, não a média
+ * diária que a 073/E-1 imprimia ("0,011 mL/dia" num trimestral não informa nada). Ciclo e
+ * quantidade vêm do core (`getDoseCycle`/`cycleDoseAmount`, amarrados ao `frequencyDailyFactor`
+ * do estoque por teste); a unidade continua sendo desta superfície.
  *
- * 🔴 Smoke do PO (2026-08-22): esta coluna NÃO repete a equivalência da coluna "Dose por
- * tomada". Num tratamento de 1 tomada/dia as duas células saíam idênticas ("4 un. (100 mg)" ×2)
- * e o texto longo estourava a largura da coluna. Aqui vai só o total do dia: massa para sólido
- * ("100 mg/dia"), unidade de tomada para líquido ("10 UI/dia").
+ * Mantido do 073: sem repetir a equivalência da coluna "Dose por tomada" (smoke 2026-08-22) —
+ * massa para sólido ("100 mg/dia"), unidade de tomada para líquido ("10 UI/dia"). Líquido NÃO
+ * vira massa: em associação (Mesigyna) a concentração cadastrada não é a dose de cada ativo.
  *
  * @param {Object} protocol - Protocolo.
  * @param {Object} medicine - Medicamento cadastrado.
  * @returns {string}
  */
-function _formatDailyDose(protocol, medicine) {
-  // 073/RC5: para PRN a "dose diária" seria ficção.
+function _formatCycleDose(protocol, medicine) {
+  // 073/RC5: para PRN a "dose total" seria ficção.
   if (protocol?.frequency === 'quando_necessário') return 'sob demanda'
-  const perIntake = Number(protocol?.dosage_per_intake ?? 1)
-  if (!Number.isFinite(perIntake)) return '-'
-  const perDay = perIntake * _timesPerDay(protocol) * frequencyDailyFactor(protocol)
-  // Arredonda em 3 casas: o fator 1/7 (semanal) produz dízima e o formatador do core não
-  // arredonda (R-277 — o artefato de float vazaria para o documento).
-  const rounded = Math.round(perDay * 1000) / 1000
+  const cycle = getDoseCycle(protocol)
+  const amount = cycleDoseAmount(protocol, Number(protocol?.dosage_per_intake ?? 1))
+  if (!cycle || amount === null) return '-'
+  // Arredonda em 3 casas: o formatador do core não arredonda (R-277).
+  const rounded = Math.round(amount * 1000) / 1000
 
   if (isLiquidMedicine(medicine)) {
     const label = formatDose(rounded, protocol?.intake_unit || 'ml')
-    return label ? `${label}/dia` : '-'
+    return label ? `${label}${cycle.suffix}` : '-'
   }
 
-  // Sólido: o médico lê a massa do dia (4 comprimidos de 25 mg ⇒ "100 mg/dia").
   const mass = formatActiveIngredientShort(rounded, medicine?.dosage_per_pill, medicine?.dosage_unit)
-  if (mass) return `${mass}/dia`
-  return `${formatNumberPtBR(rounded)} un./dia`
+  if (mass) return `${mass}${cycle.suffix}`
+  return `${formatNumberPtBR(rounded)} un.${cycle.suffix}`
 }
 
 /**
@@ -225,7 +222,7 @@ function buildTreatmentRows(protocols = [], medicines = [], asOf = getTodayLocal
         presentation: _formatPresentation(medicine),
         dosePerIntake: _formatDosePerIntake(protocol, medicine),
         frequency: _formatCadence(protocol),
-        dailyDose: _formatDailyDose(protocol, medicine),
+        cycleDose: _formatCycleDose(protocol, medicine),
         // Só chega aqui o que o predicado já declarou vigente em `asOf`; o rótulo diz isso,
         // não um literal (073/F-18).
         status: 'Vigente',

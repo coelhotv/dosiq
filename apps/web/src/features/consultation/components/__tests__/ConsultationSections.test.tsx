@@ -17,8 +17,8 @@ import {
   ConsultationTitrationsSection,
 } from '@/features/consultation/components/ConsultationSections'
 
-describe('ConsultationMedicinesSection — dose diária derivada', () => {
-  it('arredonda a média diária para 2 casas (Ozempic 2,4 mg semanal)', () => {
+describe('ConsultationMedicinesSection — dose total no ciclo (085 C2)', () => {
+  it('semanal sai por semana, não como média diária (Ozempic 2,4 mg/semana)', () => {
     render(
       <ConsultationMedicinesSection
         activeMedicines={[
@@ -31,18 +31,21 @@ describe('ConsultationMedicinesSection — dose diária derivada', () => {
             isLiquid: true,
             timesPerDay: 1,
             intakeUnit: 'mg',
-            dailyDosage: 2.4 / 7,
+            cycleDosage: 2.4,
+            cycleSuffix: '/semana',
             cadenceLabel: '1x — Semanal',
           },
         ]}
       />
     )
 
-    expect(screen.getByText(/0,34 mg\/dia/)).toBeInTheDocument()
-    expect(screen.queryByText(/0,3428/)).not.toBeInTheDocument()
+    expect(screen.getByText(/\(2,4 mg\/semana\)/)).toBeInTheDocument()
+    // smoke C2: a cadência não se repete ao lado do total ("1x — Semanal, 2,4 mg/semana").
+    expect(screen.queryByText(/Semanal/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/\/dia/)).not.toBeInTheDocument()
   })
 
-  it('sólido também arredonda e mantém a cadência real', () => {
+  it('sólido arredonda para 2 casas e usa o sufixo do ciclo (a cada N dias)', () => {
     render(
       <ConsultationMedicinesSection
         activeMedicines={[
@@ -55,15 +58,50 @@ describe('ConsultationMedicinesSection — dose diária derivada', () => {
             dosageUnit: 'mg',
             isLiquid: false,
             timesPerDay: 1,
-            dailyDosage: 7.5 / 7,
-            cadenceLabel: '1x — Semanal',
+            cycleDosage: 10 / 3,
+            cycleSuffix: ' a cada 90 dias',
+            cadenceLabel: '1x — A cada 90 dias',
           },
         ]}
       />
     )
 
-    expect(screen.getByText(/1x — Semanal/)).toBeInTheDocument()
-    expect(screen.getByText(/1,07 mg\/dia/)).toBeInTheDocument()
+    expect(screen.getByText(/\(3,33 mg a cada 90 dias\)/)).toBeInTheDocument()
+    expect(screen.queryByText(/1x — A cada 90 dias/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/3,3333/)).not.toBeInTheDocument()
+  })
+})
+
+describe('ConsultationMedicinesSection — frase de posologia sem repetição (085 C2, smoke do PO)', () => {
+  const detailOf = (med) => {
+    const { container, unmount } = render(<ConsultationMedicinesSection activeMedicines={[{ id: 'x', name: 'X', type: 'medicamento', ...med }]} />)
+    const text = container.querySelector('.sr-consultation__dosage-detail')?.textContent?.trim()
+    unmount()
+    return text
+  }
+
+  it('líquido com 1 tomada: só o total no ciclo (Mesigyna / Lantus)', () => {
+    expect(detailOf({ isLiquid: true, dosagePerPill: 50, dosageUnit: 'mg/ml', timesPerDay: 1, intakeUnit: 'ml',
+      cycleDosage: 1, cycleSuffix: ' a cada 30 dias', cadenceLabel: '1x — A cada 30 dias' })).toBe('(1 mL a cada 30 dias)')
+    expect(detailOf({ isLiquid: true, dosagePerPill: 100, dosageUnit: 'ui/ml', timesPerDay: 1, intakeUnit: 'UI',
+      cycleDosage: 10, cycleSuffix: '/dia', cadenceLabel: '1x ao dia' })).toBe('(10 UI/dia)')
+  })
+
+  it('sólido cujo total repete a dose da frente: só a cadência (Selozok 100 mg, 1x ao dia)', () => {
+    expect(detailOf({ isLiquid: false, dosagePerIntake: 100, dosageUnit: 'mg', timesPerDay: 1,
+      cycleDosage: 100, cycleSuffix: '/dia', cadenceLabel: '1x ao dia' })).toBe('(1x ao dia)')
+  })
+
+  it('2+ tomadas no dia: vezes + total, que dizem coisas diferentes', () => {
+    expect(detailOf({ isLiquid: false, dosagePerIntake: 850, dosageUnit: 'mg', timesPerDay: 2,
+      cycleDosage: 1700, cycleSuffix: '/dia', cadenceLabel: '2x ao dia' })).toBe('(2x ao dia, 1.700 mg/dia)')
+    expect(detailOf({ isLiquid: true, dosagePerPill: 2.68, dosageUnit: 'mg/ml', timesPerDay: 2, intakeUnit: 'mg',
+      cycleDosage: 4.8, cycleSuffix: '/semana', cadenceLabel: '2x — Semanal' })).toBe('(2x no dia da dose, 4,8 mg/semana)')
+  })
+
+  it('sem total (ciclos divergentes/PRN): mantém o rótulo de cadência', () => {
+    expect(detailOf({ isLiquid: false, dosagePerIntake: 500, dosageUnit: 'mg', timesPerDay: 3,
+      cycleDosage: null, cycleSuffix: null, cadenceLabel: null })).toBe('(3x)')
   })
 })
 

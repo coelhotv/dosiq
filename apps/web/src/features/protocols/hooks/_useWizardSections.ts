@@ -82,6 +82,7 @@ export function useWizardMedicine(preselectedMedicine) {
 export function useWizardProtocol() {
   const [protocolData, setProtocolData] = useState({
     frequency: 'diário',
+    interval_days: '', // 085 C2: N digitado (texto); só vale com `intervalo_dias`
     time_schedule: ['08:00'],
     dosage_per_intake: 1,
     intake_unit: '', // 022: unidade de tomada (líquidos); preenchida no passo 2
