@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { formatLocalDate, getNow } from '@utils/dateUtils'
-import { frequencyRequiresWeekdays } from '@schemas/protocolSchema'
+import { frequencyRequiresWeekdays, getIntervalDaysError } from '@schemas/protocolSchema'
 import { coerceDecimal } from '@dosiq/core'
 import { submitTreatmentWizard } from './_treatmentWizardSubmit'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
@@ -95,6 +95,9 @@ export function useTreatmentWizardState({
     dosePerIntake > 0 &&
     dosePerIntake <= 100 &&
     !mgNeedsConcentration &&
+    // 085 C2: `intervalo_dias` só avança com N válido (inteiro 2–180).
+    (prot.protocolData.frequency !== 'intervalo_dias' ||
+      getIntervalDaysError(prot.protocolData.interval_days) === null) &&
     (!frequencyRequiresWeekdays(prot.protocolData.frequency) ||
       (Array.isArray(prot.protocolData.weekdays) && prot.protocolData.weekdays.length > 0))
 
@@ -116,6 +119,7 @@ export function useTreatmentWizardState({
     })
     prot.setProtocolData({
       frequency: 'diário',
+      interval_days: '', // 085 C2: N digitado (texto); só vale com `intervalo_dias`
       time_schedule: ['08:00'],
       dosage_per_intake: 1,
       intake_unit: '',

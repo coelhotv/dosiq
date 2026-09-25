@@ -361,6 +361,17 @@ describe('buildPatientContext — unidades líquidas / semanais / perfil', () =>
     expect(result).toContain('semanal (sábado)')
   })
 
+  it('085 C2: intervalo_dias diz ao modelo QUAL intervalo (não a chave crua)', () => {
+    const depo = { id: 'inj-1', name: 'Depo', dosage_per_pill: 150, dosage_unit: 'mg', stock: [{ quantity: 1 }] }
+    const result = buildPatientContext({
+      medicines: [depo],
+      protocols: [{ medicine_id: 'inj-1', active: true, frequency: 'intervalo_dias', interval_days: 90, time_schedule: ['09:00'] }],
+      logs: [], stockSummary: [{ medicine: { id: 'inj-1' }, total: 1, daysRemaining: 90, dailyIntake: 0.01, isZero: false, isLow: false }], stats: null,
+    })
+    expect(result).toContain('a cada 90 dias, horarios 09:00')
+    expect(result).not.toContain('intervalo_dias')
+  })
+
   it('semanal entra no contexto MESMO quando a dose não cai hoje (filtro por período, não por frequência)', () => {
     // start no passado, sem end_date → vigente; weekdays vazio não exclui da listagem
     const result = buildPatientContext({

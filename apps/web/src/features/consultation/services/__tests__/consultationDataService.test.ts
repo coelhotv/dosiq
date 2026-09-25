@@ -268,7 +268,8 @@ describe('consultationDataService', () => {
         dosageUnit: 'mg',
         dosagePerIntake: 500, // 500mg × 1 comprimido
         timesPerDay: 2, // 2 horários
-        dailyDosage: 1000, // 500mg × 2 vezes
+        cycleDosage: 1000, // 500mg × 2 vezes
+        cycleSuffix: '/dia',
         notes: 'Tomar após refeições',
       })
     })
@@ -298,8 +299,27 @@ describe('consultationDataService', () => {
         timesPerDay: 3, // 2 + 1 = 3 horários
         // 073/F-13: soma POR PROTOCOLO — (500×2) + (1.000×1) = 2.000. O valor antigo
         // (4.500) era o produto cruzado Σ(dose) × Σ(tomadas), que inflava a posologia.
-        dailyDosage: 2000,
+        cycleDosage: 2000,
+        cycleSuffix: '/dia',
       })
+    })
+
+    it('085 C2: intervalo_dias sai com o N no rótulo; N diferentes no mesmo remédio não se fundem', () => {
+      const med = [{ id: 'med-9', name: 'Depo', type: 'injetavel', dosage_per_pill: 150, dosage_unit: 'mg' }]
+      const base = {
+        medicine_id: 'med-9', medicine_name: 'Depo', active: true, frequency: 'intervalo_dias',
+        time_schedule: ['09:00'], dosage_per_intake: 1, start_date: '2026-01-01', end_date: '2026-12-31',
+      }
+      const one = getConsultationData(createMockDashboardData({
+        medicines: med, protocols: [{ ...base, id: 'p9', interval_days: 90 }],
+      }))
+      expect(one.activeMedicines[0].cadenceLabel).toBe('1x — A cada 90 dias')
+
+      const two = getConsultationData(createMockDashboardData({
+        medicines: med,
+        protocols: [{ ...base, id: 'p9', interval_days: 90 }, { ...base, id: 'p10', interval_days: 30 }],
+      }))
+      expect(two.activeMedicines[0].cadenceLabel).toBeNull()
     })
 
     it('deve retornar nulls para dosagens quando medicine não tem dosage_per_pill', () => {
@@ -340,7 +360,7 @@ describe('consultationDataService', () => {
         dosagePerPill: null,
         dosagePerIntake: null,
         timesPerDay: 1,
-        dailyDosage: null,
+        cycleDosage: null,
       })
     })
 
@@ -379,7 +399,7 @@ describe('consultationDataService', () => {
         dosagePerPill: null,
         dosagePerIntake: null,
         timesPerDay: 1,
-        dailyDosage: null,
+        cycleDosage: null,
       })
     })
 
@@ -773,7 +793,8 @@ describe('consultationDataService', () => {
 
       // (500 × 2 tomadas) + (500 × 1 tomada) = 1.500 mg/dia.
       // O produto cruzado antigo dava Σ(1.000) × Σ(3) = 3.000 mg — o DOBRO.
-      expect(paracetamol.dailyDosage).toBe(1500)
+      expect(paracetamol.cycleDosage).toBe(1500)
+      expect(paracetamol.cycleSuffix).toBe('/dia')
       expect(paracetamol.timesPerDay).toBe(3)
     })
 
@@ -784,7 +805,7 @@ describe('consultationDataService', () => {
       })
       const paracetamol = result.activeMedicines.find((m) => m.id === MEDICINE_SOLID.id)
 
-      expect(paracetamol.dailyDosage).toBe(1000) // 500 × 2 — inalterado
+      expect(paracetamol.cycleDosage).toBe(1000) // 500 × 2 — inalterado
       expect(paracetamol.cadenceLabel).toBe('2x ao dia')
     })
 
@@ -793,16 +814,17 @@ describe('consultationDataService', () => {
       const ozempic = result.activeMedicines.find((m) => m.id === MEDICINE_LIQUID.id)
 
       expect(ozempic.cadenceLabel).toBe('1x — Semanal')
-      // 0,9 mL 1×/semana = 0,9/7 por dia (frequencyDailyFactor), não 0,9/dia.
-      expect(ozempic.dailyDosage).toBeCloseTo(0.9 / 7, 6)
+      // 085 C2 (smoke): a dose sai no ciclo — 0,9 mL/semana —, não a média 0,9/7 por dia.
+      expect(ozempic.cycleDosage).toBeCloseTo(0.9, 6)
+      expect(ozempic.cycleSuffix).toBe('/semana')
       expect(ozempic.intakeUnit).toBe('ml')
     })
 
-    it('AC-23 (guard): o dailyDosage bate com o consumo diário que o core calcula', () => {
+    it('AC-23 (guard): a dose do ciclo ÷ 7 bate com o consumo diário que o core calcula', () => {
       const result = getConsultationData(clinicalDashboard())
       const ozempic = result.activeMedicines.find((m) => m.id === MEDICINE_LIQUID.id)
 
-      expect(ozempic.dailyDosage).toBeCloseTo(
+      expect(ozempic.cycleDosage / 7).toBeCloseTo(
         PROTOCOL_LIQUID_WEEKLY.dosage_per_intake *
           PROTOCOL_LIQUID_WEEKLY.time_schedule.length *
           frequencyDailyFactor(PROTOCOL_LIQUID_WEEKLY),
@@ -871,7 +893,7 @@ describe('consultationDataService', () => {
 
       expect(result.activeMedicines[0]).toMatchObject({
         dosagePerIntake: null,
-        dailyDosage: null,
+        cycleDosage: null,
         timesPerDay: 3,
       })
     })
@@ -885,8 +907,19 @@ describe('consultationDataService', () => {
       })
 
       expect(result.activeMedicines[0].cadenceLabel).toBeNull()
-      // 500×2 (diário) + 500×1×(1/7) (semanal)
-      expect(result.activeMedicines[0].dailyDosage).toBeCloseTo(1000 + 500 / 7, 6)
+      // 085 C2: diário + semanal não se somam em ciclo nenhum — total omitido, não inventado.
+      expect(result.activeMedicines[0].cycleDosage).toBeNull()
+      expect(result.activeMedicines[0].cycleSuffix).toBeNull()
+    })
+
+    it('085 C2: intervalo_dias mostra a dose do ciclo; PRN no mesmo medicamento omite o total', () => {
+      const quarterly = { ...PROTOCOL_SOLID_MORNING, frequency: 'intervalo_dias', interval_days: 90, time_schedule: ['09:00'] }
+      const alone = getConsultationData({ ...clinicalDashboard(), medicines: [MEDICINE_SOLID], protocols: [quarterly] })
+      expect(alone.activeMedicines[0]).toMatchObject({ cycleDosage: 500, cycleSuffix: ' a cada 90 dias' })
+
+      const prn = { ...PROTOCOL_SOLID_EXTRA, frequency: 'quando_necessário' }
+      const mixed = getConsultationData({ ...clinicalDashboard(), medicines: [MEDICINE_SOLID], protocols: [quarterly, prn] })
+      expect(mixed.activeMedicines[0]).toMatchObject({ cycleDosage: null, cycleSuffix: null })
     })
   })
 })

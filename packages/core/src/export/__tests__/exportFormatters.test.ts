@@ -434,3 +434,27 @@ describe('generateExportFilename', () => {
     )
   })
 })
+
+describe('085 C2 — intervalo_dias no export', () => {
+  const withInterval: ExportBundle = {
+    ...BUNDLE,
+    protocols: [
+      ...BUNDLE.protocols,
+      { ...BUNDLE.protocols[0], id: 'prot-90', name: 'Trimestral', frequency: 'intervalo_dias', interval_days: 90, weekdays: [] },
+    ],
+  }
+
+  it('JSON leva interval_days (null para quem não é intervalo_dias)', () => {
+    const json = JSON.parse(buildExportJSON(withInterval, FULL_SCOPE))
+    const byId = Object.fromEntries(json.data.protocols.map((p: { id: string }) => [p.id, p]))
+    expect(byId['prot-90'].interval_days).toBe(90)
+    expect(byId['prot-1'].interval_days).toBeNull()
+  })
+
+  it('CSV tem a coluna "A Cada (dias)" com o N ao lado da frequência', () => {
+    const csv = buildExportCSV(withInterval, FULL_SCOPE)
+    expect(csv).toContain(';Frequência;A Cada (dias);Horários;')
+    expect(csv).toMatch(/;intervalo_dias;90;08:00;/)
+    expect(csv).toMatch(/;semanal;;08:00;/)
+  })
+})

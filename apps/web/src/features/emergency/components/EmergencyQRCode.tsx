@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import QRCode from 'qrcode'
+import { formatFrequencyLabel } from '@schemas/protocolSchema'
 import { TriangleAlert, ScanQrCode, ImageDown, Share } from 'lucide-react'
 
 /** Renderiza estado de carregamento do QR code. */
@@ -74,7 +75,7 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }: 
    * {
    *   v: "1",           // Versão do formato
    *   n: "Nome",        // Nome do paciente
-   *   m: [...],         // Medicamentos (n: nome, d: dose, f: frequência)
+   *   m: [...],         // Medicamentos (n: nome, d: dose, f: rótulo legível da frequência)
    *   a: [...],         // Alergias
    *   bt: "A+",         // Tipo sanguíneo (opcional)
    *   dt: "2026-03-05"  // Data de atualização
@@ -90,7 +91,9 @@ export default function EmergencyQRCode({ cardData, medications, lastUpdated }: 
         medications?.map((med) => ({
           n: med.name,
           d: med.dosagePerPill ? formatConcentration(med.dosagePerPill, med.unit) : '',
-          f: med.frequency || '',
+          // 085 C2 (decisão do PO): quem decodifica o payload precisa ler a cadência — vai o
+          // RÓTULO legível ("Diário", "A cada 30 dias"), não a chave do banco ("quando_necessário").
+          f: formatFrequencyLabel(med.frequency, med.intervalDays),
         })) || [],
       a: cardData.allergies || [],
       dt: lastUpdated

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } 
 import { renderHook, act, waitFor } from '@testing-library/react'
 import {
   useCachedQueries,
+  useCachedQuery,
+  prefetchCache,
   clearCache,
   cancelGarbageCollection,
   restartGarbageCollection,
@@ -29,6 +31,24 @@ describe('useCachedQueries', () => {
     vi.resetAllMocks()
     vi.clearAllTimers()
     if (global.gc) global.gc()
+  })
+
+  it('085 C2: dado stale é entregue e o REVALIDADO chega sem nova chamada', async () => {
+    // Snapshot antigo (ex.: localStorage) sem o protocolo criado em outro aparelho.
+    prefetchCache('protocols', ['velho'])
+    const fetcher = vi.fn().mockResolvedValue(['velho', 'novo'])
+    const { result } = renderHook(() =>
+      useCachedQueries([{ key: 'protocols', fetcher, options: { staleTime: -1 } }])
+    )
+    await waitFor(() => expect(result.current.results[0].data).toEqual(['velho', 'novo']))
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('085 C2: useCachedQuery também recebe o revalidado', async () => {
+    prefetchCache('single', 'velho')
+    const fetcher = vi.fn().mockResolvedValue('novo')
+    const { result } = renderHook(() => useCachedQuery('single', fetcher, { staleTime: -1 }))
+    await waitFor(() => expect(result.current.data).toBe('novo'))
   })
 
   it('should fetch multiple queries in parallel', async () => {

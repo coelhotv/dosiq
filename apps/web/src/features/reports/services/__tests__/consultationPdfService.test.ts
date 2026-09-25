@@ -58,7 +58,7 @@ const mocks = vi.hoisted(() => {
           presentation: '50 mg por comprimido',
           dosePerIntake: '2 comprimidos (100 mg)',
           frequency: '2x/dia',
-          dailyDose: '200 mg/dia',
+          cycleDose: '200 mg/dia',
           status: 'Ativo',
         },
       ],

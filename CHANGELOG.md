@@ -7,6 +7,47 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "A cada X dias" chega ao cadastro — para injetável mensal, trimestral e afins
+
+- **Web/PWA** (`minor`, `4.25.2` → `4.26.0`) · **Mobile** (`patch`, `0.33.2` → `0.33.3`, **build de
+  loja**, fecha o épico no mesmo release train das três entregas abaixo) · **Shared/Core**.
+  O cadastro e a edição de tratamento, na web e no celular, ganham a frequência "A cada X dias": a
+  pessoa informa o intervalo (de 2 a 180 dias, contados a partir da data de início) e o app lembra só
+  nesses dias. A opção aparece **por pessoa**, apenas quando todos os celulares dela estão na versão
+  que entende essa cadência — um app antigo a trataria como diária e lembraria todo dia. Quem usa só a
+  web vê a opção depois de instalar o app atualizado em algum aparelho.
+  A cadência aparece com o número em todo lugar onde o tratamento é descrito: lista e cartão de
+  tratamentos, detalhe no celular, PDF e tela de consulta, cartão de emergência, QR de emergência e o
+  assistente de conversa ("A cada 30 dias", nunca "A cada X dias"). O nome gerado para o tratamento
+  no assistente de cadastro também nasce com o número.
+  O QR de emergência passa a levar a frequência escrita por extenso ("Diário", "Quando Necessário")
+  em vez do código interno. E a tela que explica por que um medicamento não pode ser excluído, no
+  celular, deixa de mostrar "diário" e "quando_necessário" crus — ela procurava as palavras sem acento.
+  **Correções achadas no teste desta entrega (valem para qualquer tratamento):**
+  - Na web, a tela Hoje podia não mostrar a dose de um tratamento criado **em outro aparelho** até a
+    aba perder e ganhar o foco: ela exibia a lista de tratamentos guardada no navegador e descartava,
+    sem aviso, a dose cujo tratamento não estava nessa lista. Agora a lista atualizada chega à tela
+    assim que é buscada, e uma dose de tratamento desconhecido força uma nova busca.
+  - Na web, fechar o assistente de cadastro pelo X deixava a lista de tratamentos sem o tratamento
+    recém-criado até recarregar a página. O botão final dizia "Ir para Hoje", mas não levava para lá;
+    agora diz "Ver tratamentos", que é o que faz.
+  - No celular, depois de atualizar o app, o registro de atividade do aparelho continuava com a
+    versão antiga por até 24 horas — o que atrasava a liberação da opção "A cada X dias" e deixava o
+    painel de versões desatualizado justamente depois de cada lançamento.
+  - Na web, o assistente de cadastro mostrava a unidade de tomada de um líquido (mL, gotas, UI) mas
+    não a gravava: o tratamento nascia sem unidade e a dose aparecia sem ela no resto do app.
+  - O PDF de consulta e o modo consulta trocam a "Dose diária" pela **dose total no ciclo** da
+    frequência — "100 mg/dia", "2,4 mg/semana", "1 mL a cada 90 dias" —, a forma como o médico lê
+    uma posologia. A média por dia ("0,011 mL/dia") continua só no estoque, onde é a conta certa.
+    Tratamentos do mesmo medicamento com ciclos diferentes não são somados.
+  - A exportação (CSV e JSON) passa a trazer a cada quantos dias vai o tratamento "A cada X dias",
+    na coluna nova "A Cada (dias)".
+  - Na web, o PDF de consulta gerado pelo Perfil ainda imprimia estoque (alertas na primeira página
+    e a página de estoque inteira) para quem desligou o controle de estoque; o modo consulta já
+    escondia. Agora os dois caminhos respeitam a escolha.
+  - As mensagens do campo "a cada quantos dias" falam a língua de quem usa o app: "Escolha de 2 a
+    180 dias" e "Use dias completos, sem vírgula", no lugar de "número inteiro".
+
 ### O motor passa a entender a cadência "a cada N dias" — ainda sem opção no cadastro
 
 - **Web/PWA** (`patch`, `4.25.1` → `4.25.2`) · **Mobile** (`patch`, `0.33.1` → `0.33.2`, **build de

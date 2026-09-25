@@ -9,7 +9,7 @@ import {
   calculateTitrationData,
 } from '@dosiq/core'
 import { predictRefill } from '@stock/services/refillPredictionService'
-import { frequencyRequiresWeekdays } from '@schemas/protocolSchema'
+import { frequencyRequiresWeekdays, formatFrequencyLabel } from '@schemas/protocolSchema'
 
 export const FREQUENCY_LABELS = {
   diario: 'Diário',
@@ -166,7 +166,8 @@ export function transformProtocolToItem(protocol, adherenceMap, stockMap) {
   const medicineInfo = _computeMedicineInfo(protocol)
   const times = Array.isArray(protocol.time_schedule) ? protocol.time_schedule : []
 
-  let frequencyLabel = FREQUENCY_LABELS[protocol.frequency] || protocol.frequency
+  // 085 C2: `intervalo_dias` vira "A cada 30 dias"; demais seguem o mapa desta tela.
+  let frequencyLabel = formatFrequencyLabel(protocol.frequency, protocol.interval_days, FREQUENCY_LABELS)
   if (frequencyRequiresWeekdays(protocol.frequency)) {
     const daysSource = getProtocolDays(protocol)
     if (daysSource.length > 0) {

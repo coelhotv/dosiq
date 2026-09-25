@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx
 import * as LucideIcons from 'lucide-react-native'
 const { AlertCircle, Layers, Package, ChevronRight, Trash2, BarChart3 } = LucideIcons as any
+import { formatFrequencyLabel } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
 export function MedicineDeleteBlockedSheet({
@@ -165,27 +166,23 @@ export function MedicineDeleteBlockedSheet({
 
 function buildProtocolSubtitle(p) {
   const parts = []
-  if (p?.frequency) parts.push(humanFrequency(p.frequency))
+  if (p?.frequency) parts.push(formatFrequencyLabel(p.frequency, p.interval_days, HUMAN_FREQUENCY))
   const times = Array.isArray(p?.time_schedule) ? p.time_schedule.length : 0
   if (times > 0) parts.push(`${times} horário${times === 1 ? '' : 's'}`)
   return parts.join(' · ')
 }
 
-function humanFrequency(freq) {
-  switch (freq) {
-    case 'diario':
-      return 'Diário'
-    case 'dias_alternados':
-      return 'Dias alternados'
-    case 'semanal':
-      return 'Semanal'
-    case 'personalizado':
-      return 'Personalizado'
-    case 'quando_necessario':
-      return 'Quando necessário'
-    default:
-      return freq
-  }
+// 085 C2: as chaves eram SEM acento ('diario', 'quando_necessario') e o banco grava COM acento —
+// `diário` e `quando_necessário` caíam no default e a folha mostrava a chave crua. As variantes sem
+// acento ficam por robustez.
+const HUMAN_FREQUENCY = {
+  diário: 'Diário',
+  diario: 'Diário',
+  dias_alternados: 'Dias alternados',
+  semanal: 'Semanal',
+  personalizado: 'Personalizado',
+  quando_necessário: 'Quando necessário',
+  quando_necessario: 'Quando necessário',
 }
 
 const styles = StyleSheet.create({

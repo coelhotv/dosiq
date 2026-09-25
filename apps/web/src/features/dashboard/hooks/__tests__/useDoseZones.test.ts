@@ -337,3 +337,36 @@ describe('useDoseZones — carry-over (F4.3e)', () => {
     expect(result.current.carryOver).toHaveLength(0)
   })
 })
+
+// ─────────────────────────────────────────────
+// 085 C2 — ocorrência de protocolo que a lista em memória não conhece
+// ─────────────────────────────────────────────
+describe('useDoseZones — protocolo órfão dispara refetch (085 C2)', () => {
+  const instance = (protocolId) => ({
+    id: `i-${protocolId}`, protocol_id: protocolId, scheduled_for: iso(60), status: 'pending', tolerance_minutes: 120,
+  })
+
+  it('instância cujo protocolo falta na lista ⇒ refresh UMA vez por conjunto de ids', () => {
+    const refresh = vi.fn()
+    const ctx = { protocols: [], doseInstances: [instance('p-novo')], timezone: 'America/Sao_Paulo', isLoading: false, refresh }
+    mockUseDashboard.mockImplementation(() => ctx)
+    const { rerender } = renderHook(() => useDoseZones())
+    expect(refresh).toHaveBeenCalledTimes(1)
+    rerender()
+    expect(refresh).toHaveBeenCalledTimes(1) // mesmo conjunto: não entra em loop
+  })
+
+  it('lista completa ou carregando ⇒ nenhum refresh', () => {
+    const refresh = vi.fn()
+    mockUseDashboard.mockReturnValue({
+      protocols: [{ id: 'p1', medicine: { name: 'A' } }], doseInstances: [instance('p1')],
+      timezone: 'America/Sao_Paulo', isLoading: false, refresh,
+    })
+    renderHook(() => useDoseZones())
+    mockUseDashboard.mockReturnValue({
+      protocols: [], doseInstances: [instance('p2')], timezone: 'America/Sao_Paulo', isLoading: true, refresh,
+    })
+    renderHook(() => useDoseZones())
+    expect(refresh).not.toHaveBeenCalled()
+  })
+})

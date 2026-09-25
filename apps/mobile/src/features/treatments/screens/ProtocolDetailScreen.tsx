@@ -25,6 +25,7 @@ import {
   formatIntakeDose,
   formatConcentration,
   frequencyRequiresWeekdays,
+  formatFrequencyLabel,
 } from '@dosiq/core'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import SectionCard from '@shared/components/ui/SectionCard'
@@ -82,7 +83,8 @@ function useProtocolDetailState() {
 
   // Memos
   const frequencyLabel = useMemo(
-    () => (protocol ? FREQUENCY_LABEL[protocol.frequency] ?? protocol.frequency : ''),
+    () =>
+      protocol ? formatFrequencyLabel(protocol.frequency, protocol.interval_days, FREQUENCY_LABEL) : '',
     [protocol]
   )
 

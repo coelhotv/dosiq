@@ -1,4 +1,9 @@
-import { getTodayDateString, frequencyRequiresWeekdays } from '@schemas/protocolSchema'
+import {
+  getTodayDateString,
+  frequencyRequiresWeekdays,
+  getIntervalDaysError,
+  parseIntervalDaysInput,
+} from '@schemas/protocolSchema'
 import { getProtocolDays } from '@utils/adherenceLogic'
 import { coerceDecimal } from '@dosiq/core'
 
@@ -58,6 +63,8 @@ export function getInitialFormData(protocol, initialValues, preselectedMedicine,
     treatment_plan_id: _getTreatmentPlanId(protocol, initialValues),
     name: _getName(protocol, initialValues, preselectedMedicine, isSimpleMode),
     frequency: _getFrequency(protocol, initialValues),
+    // 085 C2: N da cadência `intervalo_dias`, como texto do input ('' = vazio).
+    interval_days: String(protocol?.interval_days ?? initialValues?.interval_days ?? ''),
     time_schedule: _getTimeSchedule(protocol, initialValues),
     dosage_per_intake: _getDosagePerIntake(protocol, initialValues),
     intake_unit: protocol?.intake_unit ?? initialValues?.intake_unit ?? null,
@@ -123,6 +130,11 @@ export const validateProtocolForm = (formData, setErrors, setShakeFields) => {
   _validateDosagePerIntake(formData.dosage_per_intake, newErrors)
   _validateTargetDosage(formData.target_dosage, newErrors)
 
+  if (formData.frequency === 'intervalo_dias') {
+    const intervalError = getIntervalDaysError(formData.interval_days)
+    if (intervalError) newErrors.interval_days = intervalError
+  }
+
   if (frequencyRequiresWeekdays(formData.frequency)) {
     if (!formData.weekdays || !Array.isArray(formData.weekdays) || formData.weekdays.length === 0) {
       newErrors.weekdays = 'Selecione pelo menos um dia da semana'
@@ -141,6 +153,10 @@ export const prepareDataToSave = (formData) => {
     treatment_plan_id: formData.treatment_plan_id || null,
     name: formData.name.trim(),
     frequency: formData.frequency.trim(),
+    // 085 C2: N só acompanha `intervalo_dias`; nas demais vai null (o CHECK exige, e o repositório
+    // também zera ao trocar de frequência — FM-8).
+    interval_days:
+      formData.frequency === 'intervalo_dias' ? parseIntervalDaysInput(formData.interval_days) : null,
     time_schedule: formData.time_schedule,
     dosage_per_intake: coerceDecimal(formData.dosage_per_intake),
     intake_unit: formData.intake_unit || null,

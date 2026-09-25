@@ -20,6 +20,8 @@ import {
   frequencyOptionsFor,
   FREQUENCY_LABELS,
   frequencyRequiresWeekdays,
+  INTERVAL_DAYS_MIN,
+  INTERVAL_DAYS_MAX,
   resolveCurrentStep,
 } from '@dosiq/core'
 import FormInput from '@shared/components/form/FormInput'
@@ -29,6 +31,7 @@ import MedicineSelectorRow from '@treatments/components/MedicineSelectorRow'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
 import PlanSelectField from '@treatments/components/PlanSelectField'
+import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { colors, spacing } from '@shared/styles/tokens'
 import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
@@ -56,8 +59,8 @@ const GENERIC_MSG =
 // enxergava mudança nenhuma de vocabulário — só o smoke perceberia.
 // Depende da frequência ATUAL do form: um tratamento legado precisa continuar exibindo a
 // sua própria frequência, mesmo depreciada (FR-004) — ver `frequencyOptionsFor`.
-function buildFrequencyOptions(currentFrequency) {
-  return frequencyOptionsFor(currentFrequency).map((value) => ({
+function buildFrequencyOptions(currentFrequency, intervalAvailable = false) {
+  return frequencyOptionsFor(currentFrequency, { intervalAvailable }).map((value) => ({
     value,
     label: FREQUENCY_LABELS[value] || value,
   }))
@@ -273,19 +276,54 @@ function GuideModal({ visible, guideMsg, onClose }) {
   )
 }
 
+/**
+ * 085 C2: texto → N. Só dígitos (teclado numérico); vazio ⇒ null, e o refine do schema pede o
+ * valor. A faixa 2–180 é do Zod, com mensagem em PT — nunca 23514 do banco.
+ */
+function toIntervalDays(raw) {
+  const digits = String(raw ?? '').replace(/\D/g, '')
+  return digits === '' ? null : Number(digits)
+}
+
 function FrequencySection({ form, showWeekdays }) {
+  const intervalAvailable = useIntervalCadenceAvailability()
+  const handleFrequencyChange = useCallback(
+    (name, value) => {
+      form.handleChange(name, value)
+      // FM-8: sair de `intervalo_dias` leva o N junto (CHECK de coerência).
+      if (value !== 'intervalo_dias' && form.values.interval_days != null) {
+        form.handleChange('interval_days', null)
+      }
+    },
+    [form]
+  )
   return (
     <Section title="Frequência">
       <FormSelect
         name="frequency"
         label="Periodicidade"
         value={form.values.frequency}
-        options={buildFrequencyOptions(form.values.frequency)}
-        onChange={form.handleChange}
+        options={buildFrequencyOptions(form.values.frequency, intervalAvailable)}
+        onChange={handleFrequencyChange}
         onBlur={form.handleBlur}
         error={form.touched.frequency ? form.errors.frequency : null}
         required
       />
+      {form.values.frequency === 'intervalo_dias' ? (
+        <FormInput
+          name="interval_days"
+          label="A cada quantos dias?"
+          value={form.values.interval_days == null ? '' : String(form.values.interval_days)}
+          onChange={(name, raw) => form.handleChange(name, toIntervalDays(raw))}
+          onBlur={form.handleBlur}
+          error={form.touched.interval_days ? form.errors.interval_days : null}
+          helperText={`De ${INTERVAL_DAYS_MIN} a ${INTERVAL_DAYS_MAX} dias, contados a partir da data de início.`}
+          placeholder="Ex.: 30"
+          keyboardType="number-pad"
+          maxLength={3}
+          required
+        />
+      ) : null}
       {showWeekdays ? (
         <View style={styles.fieldBlock}>
           <Text style={styles.fieldLabel}>Dias da semana</Text>

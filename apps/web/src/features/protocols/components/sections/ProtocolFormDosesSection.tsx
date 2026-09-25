@@ -5,11 +5,14 @@ import {
   frequencyOptionsFor,
   FREQUENCY_LABELS,
   frequencyRequiresWeekdays,
+  INTERVAL_DAYS_MIN,
+  INTERVAL_DAYS_MAX,
   INTAKE_UNITS,
   INTAKE_UNIT_LABELS,
 } from '@schemas/protocolSchema'
 import { getFieldDescribedBy } from '@utils/formUtils'
 import { formatDoseHint } from '@dosiq/core'
+import { useIntervalCadenceAvailability } from '@protocols/hooks/useIntervalCadenceAvailability'
 
 const VISUAL_ORDER = [
   { key: 'domingo', label: 'D' },
@@ -21,7 +24,7 @@ const VISUAL_ORDER = [
   { key: 'sábado', label: 'S' },
 ]
 
-function FrequencySelector({ formData, handleChange, shakeFields, errors }) {
+function FrequencySelector({ formData, handleChange, shakeFields, errors, intervalAvailable }) {
   return (
     <div className="form-group">
       <label htmlFor="frequency">
@@ -38,7 +41,7 @@ function FrequencySelector({ formData, handleChange, shakeFields, errors }) {
           aria-invalid={Boolean(errors.frequency)}
         >
           <option value="">Selecione a frequência</option>
-          {frequencyOptionsFor(formData.frequency).map((freq) => (
+          {frequencyOptionsFor(formData.frequency, { intervalAvailable }).map((freq) => (
             <option key={freq} value={freq}>
               {FREQUENCY_LABELS[freq]}
             </option>
@@ -49,6 +52,46 @@ function FrequencySelector({ formData, handleChange, shakeFields, errors }) {
         <span id="frequency-error" className="error-message">
           {errors.frequency}
         </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * 085 C2: N da cadência "a cada N dias". Só existe quando a frequência é `intervalo_dias`.
+ * type=text + inputMode=numeric pelo mesmo motivo do campo de dose; a validação (inteiro 2–180)
+ * é do `getIntervalDaysError`, antes do submit. A cópia informa a previsão — nunca afirma
+ * proteção ou eficácia (FR-011a).
+ */
+export function IntervalDaysInput({ formData, handleChange, shakeFields, errors }) {
+  if (formData.frequency !== 'intervalo_dias') return null
+  return (
+    <div className="form-group">
+      <label htmlFor="interval_days">
+        A cada quantos dias? <span className="required">*</span>
+      </label>
+      <ShakeEffect trigger={shakeFields.interval_days}>
+        <input
+          type="text"
+          inputMode="numeric"
+          id="interval_days"
+          name="interval_days"
+          value={formData.interval_days ?? ''}
+          onChange={handleChange}
+          placeholder="Ex.: 30"
+          className={errors.interval_days ? 'error' : ''}
+          aria-describedby={errors.interval_days ? 'interval_days-error' : 'interval_days-hint'}
+          aria-invalid={Boolean(errors.interval_days)}
+        />
+      </ShakeEffect>
+      {errors.interval_days ? (
+        <span id="interval_days-error" className="error-message">
+          {errors.interval_days}
+        </span>
+      ) : (
+        <small id="interval_days-hint" className="field-hint" style={{ display: 'block' }}>
+          De {INTERVAL_DAYS_MIN} a {INTERVAL_DAYS_MAX} dias, contados a partir da data de início.
+        </small>
       )}
     </div>
   )
@@ -252,6 +295,7 @@ export default function ProtocolFormDosesSection({
   removeTime,
   medicine,
 }) {
+  const intervalAvailable = useIntervalCadenceAvailability()
   // Líquido := dosage_unit do medicamento termina em '/ml' (decisão-mãe 022).
   const isLiquid = Boolean(medicine?.dosage_unit?.endsWith('/ml'))
   // ui/ml (insulina) → UI; demais líquidos (mg/ml xarope) → ml por padrão.
@@ -288,6 +332,7 @@ export default function ProtocolFormDosesSection({
           handleChange={handleChange}
           shakeFields={shakeFields}
           errors={errors}
+          intervalAvailable={intervalAvailable}
         />
 
         <DosagePerIntakeInput
@@ -304,6 +349,13 @@ export default function ProtocolFormDosesSection({
           defaultDensity={defaultDensity}
         />
       </div>
+
+      <IntervalDaysInput
+        formData={formData}
+        handleChange={handleChange}
+        shakeFields={shakeFields}
+        errors={errors}
+      />
 
       <WeekdaySelector
         formData={formData}

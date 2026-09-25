@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import QRCode from 'qrcode'
 import EmergencyQRCode from '@/features/emergency/components/EmergencyQRCode'
 
 // Mock da biblioteca qrcode
@@ -105,5 +106,18 @@ describe('EmergencyQRCode', () => {
         screen.getByText(/Escaneie para ver informações médicas em emergências/i)
       ).toBeInTheDocument()
     })
+  })
+
+  it('085 C2: o campo f leva o RÓTULO legível, com o N na cadência por intervalo', async () => {
+    const meds = [
+      { name: 'Losartana', dosagePerPill: 50, unit: 'mg', frequency: 'diário', intervalDays: null },
+      { name: 'Dipirona', dosagePerPill: 500, unit: 'mg', frequency: 'quando_necessário', intervalDays: null },
+      { name: 'Depo', dosagePerPill: 150, unit: 'mg', frequency: 'intervalo_dias', intervalDays: 90 },
+    ]
+    render(<EmergencyQRCode cardData={mockCardData} medications={meds} lastUpdated={mockLastUpdated} />)
+    await waitFor(() => expect(QRCode.toDataURL).toHaveBeenCalled())
+    const calls = (QRCode.toDataURL as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    const payload = JSON.parse(decodeURIComponent(escape(atob(String(calls[calls.length - 1][0])))))
+    expect(payload.m.map((m: { f: string }) => m.f)).toEqual(['Diário', 'Quando Necessário', 'A cada 90 dias'])
   })
 })

@@ -8,6 +8,12 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   })),
 }))
 
+// 085 C2: trava por usuária da cadência "a cada N dias" — controlada por teste, sem rede.
+const cadence = vi.hoisted(() => ({ available: false }))
+vi.mock('@/features/protocols/hooks/useIntervalCadenceAvailability', () => ({
+  useIntervalCadenceAvailability: () => cadence.available,
+}))
+
 vi.mock('@shared/services', () => ({
   medicineService: {
     create: vi.fn(() => Promise.resolve({ id: 'm1', name: 'Losartana' })),
@@ -66,6 +72,7 @@ vi.mock('framer-motion', () => ({
 
 import TreatmentWizard from '@/features/protocols/components/TreatmentWizard'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
+import { protocolService } from '@shared/services'
 
 describe('TreatmentWizard', () => {
   beforeEach(() => {
@@ -214,5 +221,68 @@ describe('TreatmentWizard', () => {
     await waitFor(() => {
       expect(screen.getByText('Pronto!')).toBeInTheDocument()
     })
+  })
+
+  it('085 C2: cadência por intervalo grava N e nasce com o nome certo', async () => {
+    cadence.available = true
+    vi.mocked(protocolService.create).mockResolvedValueOnce({ id: 'p1', interval_days: 30 } as never)
+    const med = { id: 'm1', name: 'Depo', type: 'medicamento', dosage_per_pill: 150, dosage_unit: 'mg' }
+    render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
+
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'intervalo_dias' } })
+    const next = () => screen.getByText('Próximo →').closest('button')
+    // N vazio: não avança
+    expect(next()).toBeDisabled()
+    fireEvent.change(screen.getByLabelText(/A cada quantos dias/i), { target: { value: '181' } })
+    expect(screen.getByRole('alert')).toHaveTextContent(/2 a 180/)
+    expect(next()).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText(/A cada quantos dias/i), { target: { value: '30' } })
+    expect(next()).not.toBeDisabled()
+    fireEvent.click(next())
+    // passo 3 (estoque): pular cria o tratamento sem estoque
+    fireEvent.click(screen.getByText('Pular'))
+
+    await waitFor(() => expect(screen.getByText('Pronto!')).toBeInTheDocument())
+    expect(protocolService.create).toHaveBeenCalledWith(
+      expect.objectContaining({ frequency: 'intervalo_dias', interval_days: 30, name: 'Depo - A cada 30 dias' })
+    )
+    expect(screen.getByText(/com tratamento a cada 30 dias/)).toBeInTheDocument()
+    cadence.available = false
+  })
+
+  it('smoke C2: líquido criado pelo assistente grava a unidade de tomada que a tela mostra', async () => {
+    vi.mocked(protocolService.create).mockResolvedValueOnce({ id: 'p2' } as never)
+    const med = { id: 'm2', name: 'Mesigyna', type: 'medicamento', dosage_per_pill: 50, dosage_unit: 'mg/ml' }
+    render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
+    fireEvent.change(screen.getByLabelText(/Unidade de tomada/i), { target: { value: 'ml' } })
+    fireEvent.click(screen.getByText('Próximo →').closest('button'))
+    fireEvent.click(screen.getByText('Pular'))
+    await waitFor(() => expect(screen.getByText('Pronto!')).toBeInTheDocument())
+    expect(protocolService.create).toHaveBeenCalledWith(expect.objectContaining({ intake_unit: 'ml' }))
+  })
+
+  it('smoke C2: sem tocar no seletor, grava o padrão exibido; sólido grava NULL', async () => {
+    vi.mocked(protocolService.create).mockResolvedValueOnce({ id: 'p3' } as never)
+    const med = { id: 'm3', name: 'Lantus', type: 'medicamento', dosage_per_pill: 100, dosage_unit: 'ui/ml' }
+    const { unmount } = render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={med} />)
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
+    fireEvent.change(screen.getByLabelText(/Unidade de tomada/i), { target: { value: 'UI' } })
+    fireEvent.click(screen.getByText('Próximo →').closest('button'))
+    fireEvent.click(screen.getByText('Pular'))
+    await waitFor(() => expect(screen.getByText('Pronto!')).toBeInTheDocument())
+    expect(protocolService.create).toHaveBeenLastCalledWith(expect.objectContaining({ intake_unit: 'UI' }))
+    unmount()
+
+    vi.mocked(protocolService.create).mockResolvedValueOnce({ id: 'p4' } as never)
+    const pill = { id: 'm4', name: 'Losartana', type: 'medicamento', dosage_per_pill: 50, dosage_unit: 'mg' }
+    render(<TreatmentWizard onComplete={vi.fn()} onCancel={vi.fn()} preselectedMedicine={pill} />)
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent.includes('Próximo')))
+    fireEvent.click(screen.getByText('Próximo →').closest('button'))
+    fireEvent.click(screen.getByText('Pular'))
+    await waitFor(() => expect(screen.getByText('Pronto!')).toBeInTheDocument())
+    expect(protocolService.create).toHaveBeenLastCalledWith(expect.objectContaining({ intake_unit: null }))
   })
 })

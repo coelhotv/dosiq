@@ -275,6 +275,8 @@ function mapProtocol(p: Row): Row {
     // titular NÃO deixou de ser exportada — mudou de lugar: seção `titrations`
     // (escada completa por `titration_id`). Ver ExportBundle.titrations.
     frequency: p.frequency ?? null,
+    // 085 C2: N de `intervalo_dias` — sem ele "intervalo_dias" no export não diz a cada quantos dias.
+    interval_days: p.interval_days ?? null,
     time_schedule: p.time_schedule ?? null,
     weekdays: p.weekdays ?? null,
     start_date: p.start_date ?? null,
@@ -516,6 +518,7 @@ const PROTOCOL_HEADERS: CSVHeader[] = [
   // 029 F6: a coluna "Titulação" (que vinha do `titration_status` N1) saiu; a escada
   // ganhou tabela própria — seção "ESCADAS DE TITULAÇÃO" abaixo.
   { key: 'frequency', label: 'Frequência' },
+  { key: 'interval_days', label: 'A Cada (dias)' },
   { key: 'time_schedule', label: 'Horários', transform: listLabel },
   { key: 'weekdays', label: 'Dias da Semana', transform: listLabel },
   { key: 'start_date', label: 'Data de Início', transform: formatDateOnly },

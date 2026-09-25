@@ -21,6 +21,28 @@ const itemVariants = {
 }
 
 /**
+ * Frase de posologia entre parênteses — sem repetir o que a linha já diz (085 C2, smoke do PO).
+ *
+ * - sem total no ciclo (ciclos divergentes, PRN): rótulo de cadência, como antes;
+ * - 1 tomada no dia de dose: só o total no ciclo ("1 mL a cada 30 dias") — o "1x" está implícito;
+ * - 2+ tomadas no dia: "2x ao dia, 1.700 mg/dia" — as duas partes informam coisas diferentes;
+ * - sólido cujo total repete a dose da frente (100 mg, 1x ao dia): só a cadência.
+ */
+function _posologyDetail(med, totalLabel) {
+  const cadence = med.cadenceLabel || `${med.timesPerDay}x`
+  if (!med.cycleDosage) return cadence
+  if (!med.isLiquid && roundForDisplay(med.cycleDosage) === roundForDisplay(med.dosagePerIntake)) {
+    return cadence
+  }
+  const total = `${totalLabel}${med.cycleSuffix}`
+  if (med.timesPerDay > 1) {
+    const perDay = med.cycleSuffix === '/dia' ? 'ao dia' : 'no dia da dose'
+    return `${med.timesPerDay}x ${perDay}, ${total}`
+  }
+  return total
+}
+
+/**
  * Tabela de medicamentos ativos.
  */
 export function ConsultationMedicinesSection({ activeMedicines }) {
@@ -52,10 +74,7 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerPill, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.cadenceLabel || `${med.timesPerDay}x`}
-                          {med.dailyDosage
-                            ? `, ${formatDose(roundForDisplay(med.dailyDosage), med.intakeUnit)}/dia`
-                            : ''})
+                          ({_posologyDetail(med, formatDose(roundForDisplay(med.cycleDosage), med.intakeUnit))})
                         </span>
                       </span>
                     ) : med.dosagePerIntake && med.timesPerDay ? (
@@ -63,10 +82,7 @@ export function ConsultationMedicinesSection({ activeMedicines }) {
                         {formatConcentration(med.dosagePerIntake, med.dosageUnit)}
                         <span className="sr-consultation__dosage-detail">
                           {' '}
-                          ({med.cadenceLabel || `${med.timesPerDay}x`}
-                          {med.dailyDosage
-                            ? `, ${formatConcentration(roundForDisplay(med.dailyDosage), med.dosageUnit)}/dia`
-                            : ''})
+                          ({_posologyDetail(med, formatConcentration(roundForDisplay(med.cycleDosage), med.dosageUnit))})
                         </span>
                       </span>
                     ) : med.dosagePerPill ? (

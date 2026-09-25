@@ -18,6 +18,7 @@ import { getTodayLocal, getSaoPauloTime, parseISO, getNow, parseLocalDate } from
 import { splitDayTimeline, type DoseZoneInstance, type DoseZoneProtocol } from '../utils/doseZones'
 import { formatDoseItem, formatStockCount, formatIntakeDose, stockUnitLabel, formatNumberPtBR } from '../utils/doseUnit'
 import { getProtocolDays, isProtocolVigentOn } from '../utils/adherenceLogic'
+import { formatFrequencyLabel } from '../schemas/protocolSchema'
 import { calculateAge } from '../utils/profile'
 
 /** Nomes dos dias da semana em PT (índice = Date.getDay(): 0=domingo). */
@@ -43,6 +44,8 @@ interface ProtocolLike {
   start_date?: string | null
   end_date?: string | null
   frequency?: string
+  /** 085: N da cadência `intervalo_dias`. */
+  interval_days?: number | null
   time_schedule?: string[]
   dosage_per_intake?: number | null
   intake_unit?: string | null
@@ -83,6 +86,7 @@ interface MedContext {
   semEstoque: boolean
   medLike: { dosage_unit: string | null; dosage_per_pill: number | null; units_per_ml: number | null }
   frequencia: string
+  intervalDays?: number | null
   horarios: string[]
   weekdays?: string[]
   dosePerIntake: number | null
@@ -100,6 +104,7 @@ function _formatDaysRemaining(daysRemaining: number | null | undefined) {
 function _protocolFields(protocol: ProtocolLike | null | undefined) {
   return {
     frequencia: protocol?.frequency ?? 'sem protocolo',
+    intervalDays: protocol?.interval_days ?? null,
     horarios: protocol?.time_schedule ?? [],
     // Dias da semana agendados (semanal) — sem isso o LLM só via o horário (dose
     // semanal sem dia parece diária). getProtocolDays cobre weekdays[]/days[].
@@ -177,6 +182,11 @@ function _formatSchedule(mc: MedContext) {
   const freq = (mc.frequencia || '').toLowerCase()
   if ((freq === 'semanal' || freq === 'weekly') && mc.weekdays?.length) {
     return `semanal (${mc.weekdays.join(', ')}), horarios ${horarios}`
+  }
+  // 085 C2: a chave crua `intervalo_dias` não diz ao modelo QUAL intervalo — sem o N ele
+  // tenderia a tratar a dose como diária.
+  if (freq === 'intervalo_dias') {
+    return `${formatFrequencyLabel(mc.frequencia, mc.intervalDays).toLowerCase()}, horarios ${horarios}`
   }
   return `${mc.frequencia}, horarios ${horarios}`
 }

@@ -14,7 +14,7 @@
  * @module useDoseZones
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { getRawNow, getUserTime } from '@utils/dateUtils'
 // F4.3a (CON-024): lógica pura de zonas extraída para o core (R-231, sem duplicata).
@@ -41,6 +41,8 @@ export function useDoseZones({
   // F4.3f.1: fuso do perfil governa a derivação de "hoje"/HH:MM e a partição
   // cross-dia. Fallback SP quando ausente (G2 — mesmo fallback do write-path).
   const tz = timezone || DEFAULT_TZ
+
+  const lastOrphanRefresh = useRef('')
 
   // Estado de "agora" — usa Date bruto para o timer (diff absoluto em classifyDose)
   const [nowRaw, setNowRaw] = useState(() => getRawNow())
@@ -82,6 +84,18 @@ export function useDoseZones({
     return result
   }, [allDoses, nowRaw, lateWindowMinutes, nowWindowMinutes, upcomingWindowMinutes])
 
+  // 085 C2 (smoke do PO): ocorrência cujo protocolo não está na lista em memória é descartada
+  // pelo `buildDoseItemsFromInstances` — tratamento criado em OUTRO aparelho sumia do "Hoje"
+  // sem aviso até um evento de auth. Assinatura dos ids órfãos: dispara UM refetch por conjunto.
+  const orphanProtocolIds = useMemo(() => {
+    if (isLoading || !Array.isArray(doseInstances) || doseInstances.length === 0) return ''
+    const known = new Set((protocols || []).map((p) => p?.id))
+    const missing = new Set(
+      doseInstances.map((i) => i?.protocol_id).filter((id) => id && !known.has(id))
+    )
+    return [...missing].sort().join(',')
+  }, [doseInstances, protocols, isLoading])
+
   // Totais
   const totals = useMemo(() => {
     const taken = zones.done.length
@@ -121,6 +135,12 @@ export function useDoseZones({
       stopInterval()
     }
   }, [])
+
+  useEffect(() => {
+    if (!orphanProtocolIds || orphanProtocolIds === lastOrphanRefresh.current) return
+    lastOrphanRefresh.current = orphanProtocolIds
+    refresh?.()
+  }, [orphanProtocolIds, refresh])
 
   // `now` shiftado (wall-clock SP) p/ exibição/agrupamento por hora; `nowRaw` absoluto
   // p/ classificação por instante (classifyDose vs scheduled_for absoluto).

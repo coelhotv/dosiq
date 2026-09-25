@@ -1,6 +1,6 @@
 import { medicineService, protocolService, stockService } from '@shared/services'
 import { treatmentPlanService } from '@protocols/services/treatmentPlanService'
-import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatFrequencyLabel, parseIntervalDaysInput } from '@schemas/protocolSchema'
 import { coerceDecimal, LIQUID_PRESENTATIONS } from '@dosiq/core'
 
 async function resolveMedicine(existing, data) {
@@ -45,12 +45,19 @@ async function resolvePlan(mode, selectedId, newName, newEmoji) {
 
 async function resolveProtocol(step, skipStock, medicine, data, planId) {
   if (step >= 3 || (step === 2 && !skipStock)) {
+    const intervalDays =
+      data.frequency === 'intervalo_dias' ? parseIntervalDaysInput(data.interval_days) : null
     return protocolService.create({
       medicine_id: medicine.id,
-      name: `${medicine.name} - ${FREQUENCY_LABELS[data.frequency]}`,
+      // 085 C2: o nome é GRAVADO — nasce com o N ("… - A cada 30 dias"), não com o genérico.
+      name: `${medicine.name} - ${formatFrequencyLabel(data.frequency, intervalDays)}`,
       frequency: data.frequency,
+      interval_days: intervalDays,
       time_schedule: data.time_schedule,
       dosage_per_intake: coerceDecimal(data.dosage_per_intake),
+      // A Step2 mostra (e o effect preenche) a unidade de tomada do líquido; sem este campo o
+      // tratamento nascia com intake_unit NULL e a dose "1" ficava sem unidade. Sólido = NULL (CHECK).
+      intake_unit: medicine?.dosage_unit?.endsWith('/ml') ? data.intake_unit || null : null,
       start_date: data.start_date,
       treatment_plan_id: planId,
       weekdays: data.weekdays || [],

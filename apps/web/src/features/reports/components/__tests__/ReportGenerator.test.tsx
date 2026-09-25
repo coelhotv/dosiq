@@ -10,10 +10,15 @@ const mocks = vi.hoisted(() => ({
   copyToClipboard: vi.fn(),
   track: vi.fn(),
   getUser: vi.fn(),
+  stockTracking: { enabled: true },
 }))
 
 vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   useDashboard: mocks.useDashboard,
+}))
+
+vi.mock('@shared/hooks/useStockTracking', () => ({
+  useStockTracking: () => mocks.stockTracking,
 }))
 
 vi.mock('@shared/utils/supabase', () => ({
@@ -73,6 +78,7 @@ import ReportGenerator from '@/features/reports/components/ReportGenerator'
 describe('ReportGenerator', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.stockTracking.enabled = true
 
     mocks.useDashboard.mockReturnValue({
       medicines: [{ id: 'med-1', name: 'Ansitec' }],
@@ -151,6 +157,18 @@ describe('ReportGenerator', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/resumo clínico gerado com sucesso/i)).toBeInTheDocument()
+    })
+  })
+
+  it('044 (smoke 085 C2): usuário dose-only ⇒ o PDF recebe stockTrackingEnabled=false', async () => {
+    mocks.stockTracking.enabled = false
+    render(<ReportGenerator onClose={vi.fn()} />)
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled())
+    fireEvent.click(screen.getByRole('button', { name: /gerar pdf clínico/i }))
+    await waitFor(() => {
+      expect(mocks.generateConsultationPDF).toHaveBeenCalledWith(
+        expect.objectContaining({ dashboardData: expect.objectContaining({ stockTrackingEnabled: false }) })
+      )
     })
   })
 })

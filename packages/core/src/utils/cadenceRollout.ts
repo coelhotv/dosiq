@@ -13,8 +13,10 @@
 // ⚠️ NÃO usa `dedupeFleetInstalls`: ele guarda UMA instalação por (usuária, plataforma), a mais
 // recente — um iPhone antigo ao lado de um iPhone novo sumiria, e é justamente o antigo que importa.
 
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@dosiq/shared-data'
 import { compareSemver } from './semver'
-import { parseISOOrNull } from './dateUtils'
+import { getRawNow, parseISOOrNull } from './dateUtils'
 import { FLEET_WINDOW_DAYS } from './fleet'
 
 /**
@@ -76,4 +78,44 @@ export function isIntervalCadenceAvailable(
     const cmp = compareSemver(r.app_version, minVersion)
     return cmp !== null && cmp >= 0
   })
+}
+
+/** Teto de linhas por tabela; o máximo medido em prod foi 40 (2026-09-24). Resposta cheia = truncada. */
+const CADENCE_ROWS_LIMIT = 200
+
+/**
+ * Busca os aparelhos DA PRÓPRIA usuária (RLS `auth.uid() = user_id`) e aplica a trava.
+ *
+ * Qualquer falha ⇒ `false`: não oferecer é o lado seguro, e nada que a usuária tentou se perde.
+ * Resposta do tamanho do teto é tratada como truncada (AP-186): um aparelho antigo fora do recorte
+ * liberaria justamente o caso perigoso.
+ * R-295: colunas conferidas em `information_schema` 2026-09-24.
+ */
+export async function fetchIntervalCadenceAvailability(
+  client: SupabaseClient<Database>,
+  userId: string | null | undefined,
+  now: Date = getRawNow(), // instante real: compara com timestamps do banco (getNow desloca o relógio)
+): Promise<boolean> {
+  if (!userId) return false
+  try {
+    const [devices, activity] = await Promise.all([
+      client
+        .from('notification_devices')
+        .select('platform,app_version,is_active,last_seen_at,updated_at')
+        .eq('user_id', userId)
+        .limit(CADENCE_ROWS_LIMIT),
+      client
+        .from('device_activity')
+        .select('platform,app_version,last_seen_at')
+        .eq('user_id', userId)
+        .limit(CADENCE_ROWS_LIMIT),
+    ])
+    if (devices.error || activity.error) return false
+    const d = asRows(devices.data)
+    const a = asRows(activity.data)
+    if (d.length >= CADENCE_ROWS_LIMIT || a.length >= CADENCE_ROWS_LIMIT) return false
+    return isIntervalCadenceAvailable(d, a, now)
+  } catch {
+    return false
+  }
 }

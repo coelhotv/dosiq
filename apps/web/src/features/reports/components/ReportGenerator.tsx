@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
+import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { supabase } from '@shared/utils/supabase'
 import { cachedAdherenceService } from '@shared/services/cachedServices'
 import { getConsultationData } from '@features/consultation/services/consultationDataService'
@@ -241,7 +242,11 @@ export default function ReportGenerator(props: any = {}) {
   const [copied, setCopied] = useState(false)
 
   const { medicines, protocols, logs, stockSummary, stats, dailyAdherence } = useDashboard()
+  const { enabled: stockTrackingEnabled } = useStockTracking()
 
+  // 044 (smoke 085 C2): `stockTrackingEnabled` é ALLOWLIST do payload do PDF — sem ele o builder
+  // assume estoque ligado e o PDF do usuário dose-only imprimia alertas (pág. 1) e a pág. de
+  // estoque. O caminho do modo consulta (views/Consultation.tsx) já passava; este não.
   const dashboardData = useMemo(
     () => ({
       medicines,
@@ -250,8 +255,9 @@ export default function ReportGenerator(props: any = {}) {
       stockSummary,
       stats,
       dailyAdherence,
+      stockTrackingEnabled,
     }),
-    [medicines, protocols, logs, stockSummary, stats, dailyAdherence]
+    [medicines, protocols, logs, stockSummary, stats, dailyAdherence, stockTrackingEnabled]
   )
 
   const consultationData = useMemo(

@@ -17,7 +17,12 @@ import { debugLog } from '@shared/utils/logger'
 type Fetcher<T> = () => Promise<T>
 
 // Aliases locais para a engine — mantem chamadas internas compactas
-const cachedQuery = <T,>(key: string, fetcher: Fetcher<T>, opts: { staleTime?: number }) =>
+// `onRevalidated`: com dado stale, o cache devolve o valor velho e revalida em background; sem
+// este callback o valor novo só chegava na PRÓXIMA chamada — um consumidor montado uma vez (o
+// DashboardProvider) ficava preso no snapshot do localStorage e descartava a dose de tratamento
+// criado em outro aparelho (085 C2, smoke do PO).
+type CachedQueryOpts = { staleTime?: number; onRevalidated?: (data: unknown) => void }
+const cachedQuery = <T,>(key: string, fetcher: Fetcher<T>, opts: CachedQueryOpts) =>
   webQueryCache.cachedQuery(key, fetcher, opts) as Promise<T>
 const invalidateCache = (pattern: string) => webQueryCache.invalidate(pattern)
 
@@ -89,8 +94,16 @@ export function useCachedQuery<T>(
 
         if (force) invalidateCache(key)
 
-        const result = await cachedQuery(key, fetcher, { staleTime })
-        handleFetchSuccess(result, currentFetch)
+        // O revalidado pode chegar antes do valor stale ser assentado — nesse caso ele vence.
+        let fresh: { value: T } | null = null
+        const result = await cachedQuery(key, fetcher, {
+          staleTime,
+          onRevalidated: (value) => {
+            fresh = { value: value as T }
+            handleFetchSuccess(value as T, currentFetch)
+          },
+        })
+        if (!fresh) handleFetchSuccess(result, currentFetch)
         return result
       } catch (err) {
         handleFetchError(err, currentFetch)
@@ -170,7 +183,8 @@ export interface UseCachedQueriesResult<T> {
  * Extraído para evitar duplicação entre fetchAll e refetchAll
  */
 async function executeParallelQueries<T>(
-  queries: CachedQueryDescriptor<T>[]
+  queries: CachedQueryDescriptor<T>[],
+  onRevalidated?: (index: number, data: T) => void
 ): Promise<SettledQuery<T>[]> {
   const promises = queries.map(async (query, index) => {
     const { key, fetcher, options = {} } = query
@@ -181,7 +195,10 @@ async function executeParallelQueries<T>(
     }
 
     try {
-      const data = await cachedQuery(key, fetcher, { staleTime })
+      const data = await cachedQuery(key, fetcher, {
+        staleTime,
+        onRevalidated: (fresh) => onRevalidated?.(index, fresh as T),
+      })
       return { index, data, error: null }
     } catch (error) {
       return { index, data: undefined, error }
@@ -212,6 +229,12 @@ export function useCachedQueries<T>(queries: CachedQueryDescriptor<T>[]): UseCac
   const queriesRef = useRef(queries)
 
   const isMounted = useRef(true)
+  // Geração das queries: um revalidado que chega depois de as keys mudarem não pode cair no
+  // índice de outra query.
+  const generation = useRef(0)
+  // O revalidado pode chegar ANTES do `updateResults` do valor stale (rede rápida): guardado
+  // aqui, ele vence o stale na hora de assentar — senão o velho sobrescreveria o novo.
+  const revalidated = useRef<Map<number, T>>(new Map())
 
   const isLoading = useMemo(() => results.some((r) => r.isLoading), [results])
   const isFetching = useMemo(() => results.some((r) => r.isFetching), [results])
@@ -239,14 +262,33 @@ export function useCachedQueries<T>(queries: CachedQueryDescriptor<T>[]): UseCac
     }
   }, [])
 
+  const pushRevalidated = useCallback((gen: number, index: number, data: T) => {
+    if (!isMounted.current || gen !== generation.current) return
+    revalidated.current.set(index, data)
+    setResults((prev) => {
+      const next = [...prev]
+      next[index] = { ...next[index], data, error: null }
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     isMounted.current = true
     queriesRef.current = queries
+    const gen = ++generation.current
+    revalidated.current = new Map()
 
     const fetchAll = async () => {
       setResults((prev) => prev.map((r) => ({ ...r, isLoading: true })))
-      const settled = await executeParallelQueries(queriesRef.current)
-      updateResults(settled)
+      const settled = await executeParallelQueries(queriesRef.current, (index, data) =>
+        pushRevalidated(gen, index, data)
+      )
+      if (gen !== generation.current) return
+      updateResults(
+        settled.map((s) =>
+          revalidated.current.has(s.index) ? { ...s, data: revalidated.current.get(s.index), error: null } : s
+        )
+      )
     }
 
     startTransition(() => {
@@ -257,7 +299,7 @@ export function useCachedQueries<T>(queries: CachedQueryDescriptor<T>[]): UseCac
       isMounted.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queriesKey, updateResults])
+  }, [queriesKey, updateResults, pushRevalidated])
 
   const refetchAll = useCallback(async () => {
     const currentQueries = queriesRef.current

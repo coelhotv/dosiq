@@ -46,7 +46,7 @@ function MedicationsSection({ activeMedications }) {
             // informações independentes: quem toma 2x num dia de aplicação precisa ler isso
             // no cartão de emergência.
             const cadenceStr = med.frequency
-              ? FREQUENCY_LABELS[med.frequency] || med.frequency
+              ? formatFrequencyLabel(med.frequency, med.intervalDays)
               : null
             const dosesStr = med.dosesPerDay != null ? `${med.dosesPerDay}x` : null
             const frequencyStr =
@@ -104,7 +104,7 @@ function ContactsSection({ contacts }) {
 import { useDashboard } from '@dashboard/hooks/useDashboardContext'
 import { emergencyCardService } from '@features/emergency/services/emergencyCardService'
 import { BLOOD_TYPE_LABELS } from '@schemas/emergencyCardSchema'
-import { FREQUENCY_LABELS } from '@schemas/protocolSchema'
+import { formatFrequencyLabel } from '@schemas/protocolSchema'
 import { formatIntakeDose, formatConcentration, isProtocolVigentOn } from '@dosiq/core'
 import { useLocalToday } from '@shared/hooks/useLocalToday'
 import { parseISO } from '@utils/dateUtils'
@@ -169,6 +169,7 @@ export default function EmergencyCardView({ data, onEdit }) {
           dosagePerIntake: protocol?.dosage_per_intake ?? null,
           dosesPerDay: protocol?.time_schedule?.length ?? null,
           frequency: protocol?.frequency ?? null,
+          intervalDays: protocol?.interval_days ?? null,
         }
       })
   }, [medicines, protocols, isDashboardLoading, today])

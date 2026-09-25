@@ -1,6 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ProtocolForm from './ProtocolForm'
+
+// 085 C2: trava por usuária da cadência "a cada N dias" — controlada por teste, sem rede.
+const cadence = vi.hoisted(() => ({ available: false }))
+vi.mock('../hooks/useIntervalCadenceAvailability', () => ({
+  useIntervalCadenceAvailability: () => cadence.available,
+}))
 
 // Mock Button since it's used in component
 vi.mock('../ui/Button', () => ({
@@ -136,6 +142,7 @@ describe('ProtocolForm', () => {
         start_date: expect.any(String),
         end_date: null,
         intake_unit: null,
+        interval_days: null,
         weekdays: [],
       })
     })
@@ -338,5 +345,90 @@ describe('ProtocolForm', () => {
       },
       { timeout: 1000 }
     )
+  })
+})
+
+describe('ProtocolForm — cadência "a cada N dias" (085 C2)', () => {
+  const medicines = [{ id: '1', name: 'Medicine A', dosage_per_pill: 50, dosage_unit: 'mg' }]
+  const onSave = vi.fn()
+
+  afterEach(() => {
+    cadence.available = false
+    vi.clearAllMocks()
+    vi.clearAllTimers()
+  })
+
+  function optionValues() {
+    return Array.from((screen.getByLabelText(/Frequência/i) as HTMLSelectElement).options).map((o) => o.value)
+  }
+
+  function fillBase() {
+    fireEvent.change(screen.getByLabelText(/Medicamento/i), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(/Nome do Tratamento/i), { target: { value: 'Injetável' } })
+    fireEvent.change(screen.getByLabelText(/Dose por Horário/i), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(/Horários/i), { target: { value: '09:00' } })
+    fireEvent.click(screen.getByText('➕ Adicionar'))
+  }
+
+  it('trava fechada ⇒ a opção não aparece', () => {
+    render(<ProtocolForm medicines={medicines} onSave={onSave} onCancel={vi.fn()} />)
+    expect(optionValues()).not.toContain('intervalo_dias')
+  })
+
+  it('trava aberta ⇒ opção aparece, campo N surge e N=30 vai no payload', async () => {
+    cadence.available = true
+    onSave.mockResolvedValue({})
+    render(<ProtocolForm medicines={medicines} onSave={onSave} onCancel={vi.fn()} />)
+    expect(optionValues()).toContain('intervalo_dias')
+    expect(screen.queryByLabelText(/A cada quantos dias/i)).toBeNull()
+
+    fillBase()
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'intervalo_dias' } })
+    fireEvent.change(screen.getByLabelText(/A cada quantos dias/i), { target: { value: '30' } })
+    fireEvent.click(screen.getByText('Criar Tratamento'))
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ frequency: 'intervalo_dias', interval_days: 30, weekdays: [] })
+      )
+    })
+  })
+
+  it('FM-9/FM-7: N vazio ou fora da faixa bloqueia com mensagem em PT', async () => {
+    cadence.available = true
+    render(<ProtocolForm medicines={medicines} onSave={onSave} onCancel={vi.fn()} />)
+    fillBase()
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'intervalo_dias' } })
+    fireEvent.click(screen.getByText('Criar Tratamento'))
+    expect(await screen.findByText(/Informe a cada quantos dias/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/A cada quantos dias/i), { target: { value: '181' } })
+    fireEvent.click(screen.getByText('Criar Tratamento'))
+    expect(await screen.findByText(/Escolha de 2 a 180 dias/i)).toBeInTheDocument()
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('FM-8: trocar de intervalo_dias para diário não leva o N', async () => {
+    cadence.available = true
+    onSave.mockResolvedValue({})
+    render(<ProtocolForm medicines={medicines} onSave={onSave} onCancel={vi.fn()} />)
+    fillBase()
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'intervalo_dias' } })
+    fireEvent.change(screen.getByLabelText(/A cada quantos dias/i), { target: { value: '30' } })
+    fireEvent.change(screen.getByLabelText(/Frequência/i), { target: { value: 'diário' } })
+    fireEvent.click(screen.getByText('Criar Tratamento'))
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ frequency: 'diário', interval_days: null }))
+    })
+  })
+
+  it('FM-4: edição de tratamento intervalo_dias com trava fechada mantém opção e N', () => {
+    const protocol = {
+      id: 'p1', medicine_id: '1', name: 'Depo', frequency: 'intervalo_dias', interval_days: 90,
+      time_schedule: ['09:00'], dosage_per_intake: 1, active: true, start_date: '2026-09-01', weekdays: [],
+    }
+    render(<ProtocolForm medicines={medicines} protocol={protocol} onSave={onSave} onCancel={vi.fn()} />)
+    expect((screen.getByLabelText(/Frequência/i) as HTMLSelectElement).value).toBe('intervalo_dias')
+    expect((screen.getByLabelText(/A cada quantos dias/i) as HTMLInputElement).value).toBe('90')
   })
 })
