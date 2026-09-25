@@ -66,6 +66,7 @@ export async function getStockData(userId) {
           dosage_per_intake,
           time_schedule,
           frequency,
+          interval_days,
           active,
           start_date,
           end_date

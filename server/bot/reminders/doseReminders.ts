@@ -25,7 +25,7 @@ async function _fetchProtocolsForUsers(userIdsByHHMM: Record<string, string[]>, 
       const { data, error } = await supabase
         .from('protocols')
         .select(`
-          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, weekdays, start_date,
+          id, user_id, name, time_schedule, medicine_id, dosage_per_intake, intake_unit, treatment_plan_id, frequency, interval_days, weekdays, start_date,
           medicine:medicines(name, dosage_unit, dosage_per_pill),
           treatment_plan:treatment_plans(id, name)
         `)

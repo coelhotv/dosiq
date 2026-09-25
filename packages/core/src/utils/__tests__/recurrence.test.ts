@@ -34,7 +34,8 @@ const baseProtocol = {
 /** Dias locais (YYYY-MM-DD) das instâncias geradas numa janela de 14 dias a partir do start_date. */
 function fourteenDayDates(frequency: string): string[] {
   const out = generateInstances(
-    { ...baseProtocol, frequency },
+    // 085 C1: `intervalo_dias` exige N (coerência do CHECK); as demais levam NULL.
+    { ...baseProtocol, frequency, interval_days: frequency === 'intervalo_dias' ? 3 : null },
     '2026-05-01T00:00:00-03:00',
     '2026-05-14T23:59:59-03:00',
     TZ
@@ -68,6 +69,7 @@ describe('085 PO-5 — recorrência por valor de FREQUENCIES (janela fixa de 14 
     semanal: 4, // seg 04, qua 06, seg 11, qua 13
     personalizado: 0, // depreciado (Slice A); matcher constante `false`, declarado
     quando_necessário: 0, // PRN nunca gera
+    intervalo_dias: 5, // 085 C1, N=3: 01, 04, 07, 10, 13
   }
 
   it('todo valor de FREQUENCIES tem contagem esperada declarada', () => {

@@ -1014,6 +1014,7 @@ export type Database = {
           generated_through: string | null
           id: string
           intake_unit: string | null
+          interval_days: number | null
           last_notified_at: string | null
           last_soft_reminder_at: string | null
           medicine_id: string | null
@@ -1042,6 +1043,7 @@ export type Database = {
           generated_through?: string | null
           id?: string
           intake_unit?: string | null
+          interval_days?: number | null
           last_notified_at?: string | null
           last_soft_reminder_at?: string | null
           medicine_id?: string | null
@@ -1070,6 +1072,7 @@ export type Database = {
           generated_through?: string | null
           id?: string
           intake_unit?: string | null
+          interval_days?: number | null
           last_notified_at?: string | null
           last_soft_reminder_at?: string | null
           medicine_id?: string | null

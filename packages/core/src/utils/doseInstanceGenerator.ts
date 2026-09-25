@@ -24,7 +24,7 @@ import {
   parseISO,
   parseTimestamp,
 } from './dateUtils'
-import { isProtocolActiveOnDate } from './adherenceLogic'
+import { isProtocolActiveOnDate, getIntervalDays } from './adherenceLogic'
 
 // 029 F3.1 (T017c): não estende mais `TitrationProtocol` (o jsonb N1, deletado com o AP-301).
 // A escada chega pelo parâmetro `titrationSteps`, não pelo protocol.
@@ -40,6 +40,8 @@ interface GeneratorProtocol {
   active?: boolean
   weekdays?: string[] | null
   days?: string[] | null
+  /** 085 (D-2): N da cadência `intervalo_dias`. */
+  interval_days?: number | null
   /** 052: fallback do snapshot de identidade quando a escada não rege a ocorrência. */
   medicine_id?: string | null
 }
@@ -111,6 +113,32 @@ const FREQUENCY_PERIOD_MINUTES: Record<string, number> = {
 }
 
 /**
+ * 085 (D-3): cadência longa (N >= 14) ganha TETO de tolerância — `min(10% do intervalo, 7 dias)`.
+ * A regra "metade do período" (ADR-061) daria 15 dias em N=30; nenhuma janela clínica pesquisada
+ * passa de ~20%. Piso de 1 dia é declarado mas nunca dispara (10% de 14 = 1,4 d). Tolerância curta
+ * erra para o lado seguro: o app nunca diz "no horário" para dose fora da janela (Constituição §IX).
+ */
+const LONG_INTERVAL_MIN_DAYS = 14
+const LONG_INTERVAL_TOLERANCE_FRACTION = 0.1
+const LONG_INTERVAL_TOLERANCE_MAX_MINUTES = 7 * 1440
+const LONG_INTERVAL_TOLERANCE_MIN_MINUTES = 1440
+
+/** Período (min) da cadência do protocolo — `intervalo_dias` é por protocolo, não por frequência. */
+function resolvePeriodMinutes(frequency: string, intervalDays: number | null): number | undefined {
+  if (frequency === 'intervalo_dias') return intervalDays ? intervalDays * 1440 : undefined
+  return FREQUENCY_PERIOD_MINUTES[frequency]
+}
+
+/** Teto de tolerância da D-3 para o período, ou `null` quando a cadência não é longa. */
+function longIntervalToleranceCap(periodMinutes: number): number | null {
+  if (periodMinutes < LONG_INTERVAL_MIN_DAYS * 1440) return null
+  return Math.max(
+    LONG_INTERVAL_TOLERANCE_MIN_MINUTES,
+    Math.min(Math.floor(LONG_INTERVAL_TOLERANCE_FRACTION * periodMinutes), LONG_INTERVAL_TOLERANCE_MAX_MINUTES)
+  )
+}
+
+/**
  * Converte "HH:MM" em minutos desde a meia-noite. Retorna null se inválido.
  * @param {string} time
  * @returns {number|null}
@@ -158,10 +186,11 @@ function timeToMinutes(time: string): number | null {
  */
 function computeTolerances(
   sortedMinutes: number[],
-  frequency: string
+  frequency: string,
+  intervalDays: number | null = null
 ): { tolerance: number; earlyWindow: number }[] {
   const isDaily = DAILY_FREQUENCIES.has(frequency)
-  const periodMinutes = isDaily ? 1440 : FREQUENCY_PERIOD_MINUTES[frequency]
+  const periodMinutes = isDaily ? 1440 : resolvePeriodMinutes(frequency, intervalDays)
   // Sem período conhecido (personalizado, PRN materializado por edição de frequência — ver
   // FR-025 emendada): comportamento legado, 120 fixo nos DOIS lados da janela.
   if (!periodMinutes) {
@@ -178,6 +207,7 @@ function computeTolerances(
     }))
   }
   const len = sortedMinutes.length
+  const longCap = isDaily ? null : longIntervalToleranceCap(periodMinutes)
   return sortedMinutes.map((minute: number, i: number) => {
     // Para o 1º/último slot, o intervalo adjacente cruza o período (wrap-around):
     // diário = meia-noite; semanal/alternados = próxima ocorrência do ciclo.
@@ -191,7 +221,10 @@ function computeTolerances(
     const half = Math.floor(smallestAdjacent / 2)
     return {
       // Teto de 120 SÓ no diário (ADR-061: não-diário sem cap).
-      tolerance: isDaily ? Math.min(half, MAX_TOLERANCE_MINUTES) : half,
+      // 085 (D-3): cadência longa tem teto próprio; N<14, semanal e alternados seguem sem teto.
+      tolerance: isDaily
+        ? Math.min(half, MAX_TOLERANCE_MINUTES)
+        : longCap !== null ? Math.min(half, longCap) : half,
       // Piso: teto de 120 em TODA frequência (Decisão 6 / RC3-F1).
       earlyWindow: Math.min(
         Math.floor(EARLY_WINDOW_FRACTION * smallestAdjacent),
@@ -289,7 +322,7 @@ export function generateInstances(
   if (slots.length === 0) return []
 
   // 067 A2: `windows[i]` = { tolerance (teto), earlyWindow (piso) } do slot i.
-  const windows = computeTolerances(slots.map((s) => s.minutes), frequency)
+  const windows = computeTolerances(slots.map((s) => s.minutes), frequency, getIntervalDays(protocol))
 
   const instances: GeneratedInstance[] = []
   for (const dateStr of localDateRange(fromDate, toDate, tz)) {

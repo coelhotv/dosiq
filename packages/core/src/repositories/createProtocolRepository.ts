@@ -29,7 +29,9 @@ import { resolveUserTz } from '../services/resolveUserTz'
 // medicamento do tratamento na UI — elas não guardavam medicamento nenhum. Congelado, uma pending
 // futura já materializada guardaria o medicamento ANTIGO para sempre. O passado segue protegido
 // por construção: `wipeFuturePending` nunca toca não-pending nem o passado.
-const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'weekdays', 'start_date', 'end_date', 'critical_alarm', 'medicine_id']
+// 085 (F-5): `interval_days` — editar N sem invalidar a janela deixaria o tratamento dizendo uma
+// cadência e o lembrete entregando outra (família AP-308).
+const SCHEDULING_FIELDS = ['time_schedule', 'dosage_per_intake', 'frequency', 'interval_days', 'weekdays', 'start_date', 'end_date', 'critical_alarm', 'medicine_id']
 
 /**
  * Sincroniza dose_instances após escrita de protocolo (ADR-048, S2.5).
@@ -289,6 +291,11 @@ export function createProtocolRepository({
       const cleanUpdates = Object.fromEntries(
         Object.entries(validated).filter(([key]) => sentKeys.has(key)),
       ) as typeof validated
+      // 085 (RC6 #837): trocar a frequência PARA fora de `intervalo_dias` leva o N junto — o CHECK de
+      // coerência é bidirecional e um N remanescente viraria 23514 cru na edição.
+      if (cleanUpdates.frequency !== undefined && cleanUpdates.frequency !== 'intervalo_dias' && !('interval_days' in cleanUpdates)) {
+        cleanUpdates.interval_days = null
+      }
       const { data, error } = await client
         .from('protocols')
         .update(cleanUpdates)

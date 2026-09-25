@@ -53,6 +53,7 @@ export {
   evaluateDoseTimelineState,
   isProtocolActiveOnDate,
   isKnownFrequency,
+  getIntervalDays,
   getNextOccurrence,
   describeNextOccurrence,
   getProtocolDays,
@@ -285,3 +286,10 @@ export type {
 // Kill switch de versão mínima — resolver puro (051-A / ADR-091 / CON-033).
 export { resolveVersionGate } from './versionGate'
 export type { VersionGateRow, VersionGateDecision } from './versionGate'
+
+// 085 C1 (H-1): trava de rollout POR USUÁRIA da cadência `intervalo_dias`.
+export {
+  INTERVAL_CADENCE_MIN_MOBILE_VERSION,
+  isIntervalCadenceAvailable,
+} from './cadenceRollout'
+export type { CadenceInstallRow } from './cadenceRollout'

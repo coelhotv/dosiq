@@ -93,6 +93,7 @@ export async function getAllTreatments(userId) {
         id,
         name,
         frequency,
+        interval_days,
         time_schedule,
         dosage_per_intake,
         intake_unit,

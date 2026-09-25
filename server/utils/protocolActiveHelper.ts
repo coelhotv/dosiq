@@ -67,6 +67,30 @@ export function isProtocolActiveOnWeekday(protocol, weekdayIndex, dateStr = getT
     }
   }
 
+  // 4. A cada N dias (085 C1 / H-2) — ver `isIntervalActive`.
+  if (frequency === 'intervalo_dias') return isIntervalActive(protocol, dateStr);
+
   // Personalizado, quando necessário, etc. não geram tomadas automáticas agendadas
   return false;
+}
+
+/**
+ * 085 C1 (H-2): cadência "a cada N dias" — mesma âncora e mesma aritmética de calendário da
+ * alternância. Sem este ramo o valor caía no `return false` do chamador: tratamento ativo
+ * SILENCIOSO no caminho legado de lembrete, no /hoje e no digest (o defeito do `personalizado`).
+ * Paridade com o core travada em protocolActiveParity.test.ts; consolidar os dois motores é a 088.
+ */
+function isIntervalActive(protocol, dateStr) {
+  const n = protocol.interval_days;
+  // N ausente/inválido (select sem a coluna): audível, como o core (FM-2) — nunca silêncio.
+  if (!Number.isInteger(n) || n < 2 || n > 180) return true;
+  if (!protocol.start_date) return true;
+  try {
+    const start = parseLocalDate(protocol.start_date);
+    const target = parseLocalDate(dateStr);
+    const diffDays = Math.floor((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays % n === 0;
+  } catch {
+    return true;
+  }
 }
