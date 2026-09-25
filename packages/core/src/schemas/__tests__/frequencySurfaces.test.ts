@@ -66,6 +66,9 @@ describe('formatFrequencyLabel (085 C2)', () => {
     }
     const mobile = { diário: 'Todos os dias' }
     expect(formatFrequencyLabel('diário', null, mobile)).toBe('Todos os dias')
+    // RC6 #838: mapa de tela sem `intervalo_dias` + N inválido ⇒ rótulo canônico, nunca a chave crua.
+    expect(formatFrequencyLabel('intervalo_dias', null, mobile)).toBe('A cada X dias')
+    expect(formatFrequencyLabel('quinzenal', null, mobile)).toBe('quinzenal')
   })
 })
 

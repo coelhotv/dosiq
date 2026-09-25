@@ -155,7 +155,9 @@ export function formatFrequencyLabel(
   ) {
     return `A cada ${intervalDays} dias`
   }
-  return labels[frequency] || frequency
+  // RC6 #838: mapa de tela sem a chave (ex.: mapas locais do mobile sem `intervalo_dias`) cai no
+  // rótulo canônico antes da chave crua — N inválido nunca vaza "intervalo_dias" para a tela.
+  return labels[frequency] || (FREQUENCY_LABELS as Record<string, string>)[frequency] || frequency
 }
 
 // Dias da semana
