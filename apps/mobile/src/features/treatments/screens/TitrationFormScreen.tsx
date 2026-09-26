@@ -269,7 +269,7 @@ function LadderEditor({
     }
     setSaving(true)
     try {
-      await saveLadderEdit(plan, { surface: SURFACES.MOBILE })
+      await saveLadderEdit(plan, { surface: SURFACES.MOBILE, medicineId: protocolMedicine?.id ?? null })
       show('Evolução do tratamento atualizada.', { variant: 'success' })
       navigation.goBack()
     } catch (err: any) {

@@ -430,7 +430,7 @@ const EDITABLE_STATUSES: ('upcoming' | 'pending_confirmation')[] = ['upcoming', 
  */
 export async function saveLadderEdit(
   plan: LadderEditPlan,
-  { surface = null }: { surface?: string | null } = {},
+  { surface = null, medicineId = null }: { surface?: string | null; medicineId?: string | null } = {},
 ): Promise<void> {
   for (const id of plan.toDelete) {
     const deleted = await titrationRepo.deleteStep(id, EDITABLE_STATUSES)
@@ -455,7 +455,8 @@ export async function saveLadderEdit(
   // convergem, que é exatamente o comportamento pré-052.
   if (!isEmptyEditPlan(plan)) {
     await _resyncProtocolInstances(plan.protocolId)
-    await emitTitrationEdited({ treatmentId: plan.protocolId, surface })
+    // RC6 #839: mesmo shape do cadastro (createFullLadder) — medicine_id nos dois caminhos.
+    await emitTitrationEdited({ treatmentId: plan.protocolId, medicineId, surface })
   }
 }
 
