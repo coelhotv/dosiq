@@ -7,6 +7,20 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Notificações, conta e evolução do tratamento medidas
+
+- **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de loja).
+  Nada muda na tela. O analytics passa a registrar: a resposta ao pedido de permissão de
+  notificação (só quando o aviso do sistema aparece de fato), o toque no corpo de uma notificação
+  (com o tipo dela), a troca do canal de notificação nas preferências (só o canal, e só quando muda),
+  a saída da conta e o cadastro (contado quando o código do e-mail é confirmado, e não no envio do
+  formulário, que responde sucesso até para e-mail já cadastrado). A confirmação e o adiamento de
+  uma etapa da evolução do tratamento passam a dizer por onde a pessoa agiu (app ou notificação) e em
+  que ponto do app, e levam o tratamento só quando o servidor informa qual foi. Todos os nomes de
+  evento agora vêm do catálogo. Nenhum evento leva nome de medicamento, dose ou dado pessoal.
+  **Correção achada no teste:** depois de sair e entrar de novo na conta, os eventos perdiam a
+  marca de versão e de ambiente do app até ele ser reaberto; agora ela se mantém.
+
 ### Uso do tratamento medido: criar, editar, pausar, retomar e excluir
 
 - **Mobile** (`minor`, **sem bump neste PR**: o pacote de loja do H2 sai com um bump único para

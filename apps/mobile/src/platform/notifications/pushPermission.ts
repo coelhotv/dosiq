@@ -16,6 +16,8 @@
 import * as Notifications from 'expo-notifications'
 import { registerPushToken } from './registerPushToken'
 import { debugLog } from '@shared/utils/debugLog'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 // Status puro — sem efeitos colaterais. 'granted' | 'undetermined' | 'denied'.
 export async function getPushPermissionStatus() {
@@ -32,6 +34,12 @@ export async function ensurePushPermission() {
   if (canAskAgain) {
     const res = await Notifications.requestPermissionsAsync()
     const granted = res.status === 'granted'
+    // 065 US5: só aqui o prompt do SO de fato apareceu — é a DECISÃO da pessoa. Já concedido ou
+    // negado sem poder repedir não é decisão nova e não emite. O prompt só existe com o app aberto.
+    await logEvent(
+      granted ? EVENTS.NOTIFICATION_PERMISSION_GRANTED : EVENTS.NOTIFICATION_PERMISSION_DENIED,
+      { surface: SURFACES.MOBILE }
+    )
     return { granted, blocked: !granted && res.canAskAgain === false }
   }
   // negado + não pode repedir → só via Configurações do SO

@@ -21,6 +21,11 @@ jest.mock('../../../navigation/navigationRef', () => ({
   },
 }))
 
+const mockLogEvent = jest.fn()
+jest.mock('@platform/analytics/productAnalytics', () => ({
+  logEvent: (...args) => mockLogEvent(...args),
+}))
+
 jest.mock('expo-notifications', () => ({
   getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
@@ -221,13 +226,37 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       await new Promise((r) => setTimeout(r, 10))
     })
 
+    // Push do SERVIDOR sem screen (kind presente, navigation sem screen) → fallback TODAY.
     act(() => {
       capturedHandler.fn({
-        notification: { request: { content: { data: {} } } },
+        notification: { request: { content: { data: { kind: 'daily_digest', navigation: {} } } } },
       })
     })
 
     expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, {})
+    unmount()
+  })
+
+  // 065 C1 — provado no emulador Android (logcat 13:42/13:52, 26/09): o toque em "Registrar" da
+  // notificação de dose ativa do Notifee chega ao listener do expo com `data` SEM `doseInstanceId`
+  // e sem `navigation`/`kind`. Não é push do servidor: não navega (a modal é do handler do Notifee).
+  it('toque vindo do Notifee (data sem navigation nem kind) não navega nem mede', async () => {
+    const capturedHandler = { fn: null }
+    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
+      capturedHandler.fn = fn
+      return { remove: jest.fn() }
+    })
+    const { unmount } = renderHook(() =>
+      usePushNotifications({ supabase: {}, session: makeSession() })
+    )
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    act(() => {
+      capturedHandler.fn({ notification: { request: { content: { data: {} } } } })
+    })
+    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    expect(mockLogEvent).not.toHaveBeenCalledWith('push_notification_tapped', expect.anything())
     unmount()
   })
 
@@ -325,5 +354,51 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     // Cold start NÃO deve navegar novamente
     expect(navigationRef.navigate).not.toHaveBeenCalled()
     unmount()
+  })
+})
+
+// 065 PR C1 (US5): toque no corpo do push → push_notification_tapped{kind do servidor}.
+describe('usePushNotifications — push_notification_tapped (065)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    Notifications.addNotificationResponseReceivedListener.mockReturnValue({ remove: jest.fn() })
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  const tapped = () => mockLogEvent.mock.calls.filter(([n]) => n === 'push_notification_tapped').map(([, p]) => p)
+
+  it('cold start com kind → 1 evento com kind verbatim e surface push', async () => {
+    const res = makeResponse('history')
+    ;(res.notification.request.content.data as any).kind = 'weekly_adherence'
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(res)
+    renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(tapped()).toEqual([{ surface: 'push', kind: 'weekly_adherence' }])
+  })
+
+  it('sem kind no payload → evento sem a chave', async () => {
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(makeResponse('history'))
+    renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(tapped()).toEqual([{ surface: 'push' }])
+  })
+
+  it('alarme nativo (doseInstanceId) → nenhum evento', async () => {
+    const res = makeResponse('history')
+    ;(res.notification.request.content.data as any).doseInstanceId = 'di-1'
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(res)
+    renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(tapped()).toEqual([])
   })
 })

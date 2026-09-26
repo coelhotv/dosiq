@@ -1,4 +1,4 @@
-import { getCurrentUser, logoutUser, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone, updateTimezone, hasFuturePendingDoses } from '../profileService'
+import { getCurrentUser, logoutUser, updateNotificationSettings, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone, updateTimezone, hasFuturePendingDoses } from '../profileService'
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
 import { regenActiveProtocolsForTz, hasFuturePendingDoses as hasFuturePendingDosesCore } from '@dosiq/core'
 
@@ -31,6 +31,13 @@ jest.mock('../../../../platform/supabase/nativeSupabaseClient', () => {
     }
   }
 })
+
+// 065 PR C1: eventos de logout/preferência.
+const mockLogEvent = jest.fn()
+jest.mock('@platform/analytics/productAnalytics', () => ({
+  logEvent: (...args) => mockLogEvent(...args),
+  resetUser: jest.fn(),
+}))
 
 // F4.3f.2: regen/checker são do core — mantém o resto real (TIMEZONES_BR, resolveSupportedTz…).
 jest.mock('@dosiq/core', () => ({
@@ -70,6 +77,45 @@ describe('profileService', () => {
       mockedSupabase.auth.signOut.mockResolvedValue({ error: null })
       const res = await logoutUser()
       expect(res.success).toBe(true)
+    })
+  })
+
+  describe('logoutUser — analytics (065 PR C1)', () => {
+    it('emite logout em sucesso', async () => {
+      mockedSupabase.auth.signOut.mockResolvedValue({ error: null })
+      await logoutUser()
+      expect(mockLogEvent).toHaveBeenCalledWith('logout', { surface: 'mobile' })
+    })
+
+    it('logout sai ANTES do signOut (SIGNED_OUT reseta a identidade de dentro dele)', async () => {
+      mockedSupabase.auth.signOut.mockResolvedValue({ error: null })
+      await logoutUser()
+      expect(mockLogEvent.mock.invocationCallOrder[0]).toBeLessThan(mockedSupabase.auth.signOut.mock.invocationCallOrder[0])
+    })
+  })
+
+  describe('updateNotificationSettings — notification_preference_changed (065 PR C1)', () => {
+    const prefEvents = () => mockLogEvent.mock.calls.filter(([n]) => n === 'notification_preference_changed')
+
+    it('canal mudou → emite só o enum novo', async () => {
+      await updateNotificationSettings(VALID_USER_ID, { notification_preference: 'none' }, { previous: { notification_preference: 'mobile_push' } })
+      expect(prefEvents()).toEqual([['notification_preference_changed', { new_preference: 'none', surface: 'mobile' }]])
+    })
+
+    it('canal igual ao gravado → sem evento', async () => {
+      await updateNotificationSettings(VALID_USER_ID, { notification_preference: 'both' }, { previous: { notification_preference: 'both' } })
+      expect(prefEvents()).toEqual([])
+    })
+
+    it('payload sem notification_preference → sem evento', async () => {
+      await updateNotificationSettings(VALID_USER_ID, { quiet_hours_start: '22:00' }, { previous: { notification_preference: 'both' } })
+      expect(prefEvents()).toEqual([])
+    })
+
+    it('upsert falha → sem evento', async () => {
+      mockedSupabase.from().upsert.mockResolvedValueOnce({ error: { message: 'x' } })
+      await updateNotificationSettings(VALID_USER_ID, { notification_preference: 'none' }, { previous: null })
+      expect(prefEvents()).toEqual([])
     })
   })
 

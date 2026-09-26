@@ -9,10 +9,12 @@ import { usePendingSwitch } from '@treatments/hooks/usePendingSwitch'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import {
   confirmTitrationSwitch,
+  titrationConfirmedProps,
   getSwitchOutcomeProtocols,
   type SwitchOutcomeProtocol,
 } from '@treatments/services/titrationService'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES, PLACEMENTS } from '@platform/analytics/analyticsEvents'
 import { ROUTES } from '../../../navigation/routes'
 import { navigateCrossTab } from '@navigation/navigateCrossTab'
 
@@ -84,10 +86,11 @@ export default function EvolutionSwitchSection({
     // (o mobile herda da base) e o erro apareceria longe da causa.
     if (result.ok === false) {
       // SEC-6: só IDs e tipos — nunca nome de medicamento ou dose em telemetria.
-      logEvent('titration_transition_confirmed', {
+      logEvent(EVENTS.TITRATION_TRANSITION_CONFIRMED, {
         step_id: info.pendingStepId,
-        surface: 'today_card',
-        outcome: result.reason,
+        surface: SURFACES.MOBILE,
+        placement: PLACEMENTS.TODAY_CARD,
+        ...titrationConfirmedProps(result),
       })
       // Princípio IX: dizer o que NÃO aconteceu e por quê — nunca sucesso falso, nunca genérico.
       Alert.alert('A etapa não foi iniciada', result.message)
@@ -95,12 +98,13 @@ export default function EvolutionSwitchSection({
       return
     }
 
-    logEvent('titration_transition_confirmed', {
+    logEvent(EVENTS.TITRATION_TRANSITION_CONFIRMED, {
       step_id: info.pendingStepId,
-      surface: 'today_card',
+      surface: SURFACES.MOBILE,
+      placement: PLACEMENTS.TODAY_CARD,
       // `already_confirmed` é sucesso (double-tap/retry), não falha — medir separado evita ler
-      // convergência como erro no funil.
-      outcome: result.alreadyConfirmed ? 'already_confirmed' : 'confirmed',
+      // convergência como erro no funil. `treatment_id` só da RPC (R-299).
+      ...titrationConfirmedProps(result),
     })
 
     // Best-effort (R-245): a transição JÁ aconteceu no servidor. Se a leitura de detalhe falhar,
@@ -140,9 +144,11 @@ export default function EvolutionSwitchSection({
 
   const handlePostpone = useCallback(() => {
     if (!view) return
-    logEvent('titration_transition_postponed', {
+    // Sem RPC ⇒ sem fato que carregue o protocolo: `treatment_id` fica fora (R-299 §4).
+    logEvent(EVENTS.TITRATION_TRANSITION_POSTPONED, {
       step_id: view.info.pendingStepId,
-      surface: 'today_card',
+      surface: SURFACES.MOBILE,
+      placement: PLACEMENTS.TODAY_CARD,
     })
     postpone()
   }, [view, postpone])
