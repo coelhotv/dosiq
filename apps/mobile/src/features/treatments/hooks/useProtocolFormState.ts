@@ -144,6 +144,8 @@ export function useProtocolFormState({ editId, todayIso, presetPlanId }) {
     plans,
     planField,
     changePlanField,
+    // 065 PR B: linha salva antes da edição — base do diff de `change_kind` (treatment_edited).
+    existing: editId ? existing ?? null : null,
     existingLoading: !!editId && existingLoading && !prefilled,
     existingError: !!editId && !!existingError ? existingError : null,
   }

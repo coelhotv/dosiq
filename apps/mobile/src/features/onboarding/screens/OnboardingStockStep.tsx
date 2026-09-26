@@ -21,6 +21,7 @@ import { protocolService } from '@treatments/services/protocolService'
 import { medicineService } from '@medications/services/medicineService'
 import { enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { ROUTES } from '@navigation/routes'
 import { useOnboarding } from '../OnboardingContext'
@@ -86,10 +87,10 @@ export default function OnboardingStockStep() {
 
       const { _remind, ...protocolData } = treatment
       if (!protocolCreated) {
-        await protocolService.create({
-          ...protocolData,
-          medicine_id: medicineId,
-        })
+        await protocolService.create(
+          { ...protocolData, medicine_id: medicineId },
+          { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.ONBOARDING }
+        )
         setProtocolCreated(true)
       }
 

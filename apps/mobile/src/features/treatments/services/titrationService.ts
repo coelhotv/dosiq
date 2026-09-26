@@ -24,6 +24,7 @@ import {
   resolveUserTz,
 } from '@dosiq/core'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
+import { emitTitrationEdited } from './protocolService'
 import type { TitrationStepCreate } from '@dosiq/core'
 
 // TODO(040-strict): mesma duplicata de @supabase/supabase-js do protocolService — cast de fronteira.
@@ -135,6 +136,7 @@ export async function createFullLadder(
   medicineId: string,
   steps: LadderStepInput[],
   treatmentPlanId: string | null = null,
+  { surface = null }: { surface?: string | null } = {},
 ) {
   if (steps.length === 0) throw new Error('A escada precisa de ao menos uma etapa.')
 
@@ -154,6 +156,8 @@ export async function createFullLadder(
   // É literalmente o fluxo do AP-301 ("adicionei a escada depois"), que é o fluxo REAL do usuário.
   await _resyncProtocolInstances(protocolId)
 
+  // 065 PR B: só após o sucesso da escrita (o resync acima é best-effort e não lança).
+  await emitTitrationEdited({ treatmentId: protocolId, medicineId, surface })
   return { titration, steps: created }
 }
 
@@ -424,7 +428,10 @@ const EDITABLE_STATUSES: ('upcoming' | 'pending_confirmation')[] = ['upcoming', 
  * aplicada antes do abort; o estado permanece consistente (nada toca `current`) e o reload mostra a
  * verdade. Uma RPC atômica de edição é o endurecimento futuro se a corrida provar ser frequente.
  */
-export async function saveLadderEdit(plan: LadderEditPlan): Promise<void> {
+export async function saveLadderEdit(
+  plan: LadderEditPlan,
+  { surface = null }: { surface?: string | null } = {},
+): Promise<void> {
   for (const id of plan.toDelete) {
     const deleted = await titrationRepo.deleteStep(id, EDITABLE_STATUSES)
     if (!deleted) throw new LadderStepAdvancedError()
@@ -448,6 +455,7 @@ export async function saveLadderEdit(plan: LadderEditPlan): Promise<void> {
   // convergem, que é exatamente o comportamento pré-052.
   if (!isEmptyEditPlan(plan)) {
     await _resyncProtocolInstances(plan.protocolId)
+    await emitTitrationEdited({ treatmentId: plan.protocolId, surface })
   }
 }
 

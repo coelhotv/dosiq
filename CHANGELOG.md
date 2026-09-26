@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Uso do tratamento medido: criar, editar, pausar, retomar e excluir
+
+- **Mobile** (`minor`, **sem bump neste PR**: o pacote de loja do H2 sai com um bump único para
+  `0.34.0` quando fechar). Nada muda na tela. O app passa a registrar no analytics cada mudança de
+  estado de um tratamento: criado (pelo formulário ou pelo primeiro cadastro), editado (dizendo só
+  **o que** mudou: dose ou unidade, horários, frequência, datas, alerta crítico, plano de tratamento,
+  nome ou observações, ou a evolução da titulação; nunca o valor), pausado, retomado e
+  excluído. Pausar continua separado de encerrar, então quem pausa não conta como quem desistiu. O
+  fim previsto do tratamento vai junto do cadastro e da edição, o que permite separar quem terminou
+  porque a receita acabou de quem abandonou, sem nenhuma varredura nova. O plano de tratamento
+  (identificador, nunca o nome) também vai junto, para comparar quem organiza tratamentos em planos. Nenhum evento leva nome de
+  medicamento nem dose.
+
 ### "A cada X dias" chega ao cadastro — para injetável mensal, trimestral e afins
 
 - **Web/PWA** (`minor`, `4.25.2` → `4.26.0`) · **Mobile** (`patch`, `0.33.2` → `0.33.3`, **build de

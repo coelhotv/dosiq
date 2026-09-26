@@ -49,7 +49,7 @@ const current = variants[BUILD_PROFILE] || variants.production
 module.exports = {
   expo: {
     name: current.name,
-    owner: 'coelhotv',
+    owner: 'dosiq',
     slug: current.slug,
     // DL-001: scheme canônico do projeto
     scheme: 'dosiq',
@@ -303,7 +303,7 @@ module.exports = {
       eas: {
         projectId: '7d1f6cb7-2fdd-4a5e-9ad3-e3ec56417bba',
       },
-      owner: "coelhotv"
+      owner: "dosiq"
     },
   },
 }

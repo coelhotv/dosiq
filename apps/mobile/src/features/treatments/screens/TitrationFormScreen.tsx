@@ -37,6 +37,7 @@ import {
   type ExistingLadderStep,
   type DesiredEditableStep,
 } from '@treatments/services/titrationService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { ROUTES } from '@navigation/routes'
 
 const { ArrowLeft, Edit3, Trash2, Clock, Lock } = LucideIcons as any
@@ -142,7 +143,9 @@ function LadderCreator({
     }))
     setSaving(true)
     try {
-      await createFullLadder(protocolId, protocolMedicine.id, payload, treatmentPlanId)
+      await createFullLadder(protocolId, protocolMedicine.id, payload, treatmentPlanId, {
+        surface: SURFACES.MOBILE,
+      })
       show('Evolução do tratamento salva.', { variant: 'success' })
       navigation.goBack()
     } catch (err: any) {
@@ -266,7 +269,7 @@ function LadderEditor({
     }
     setSaving(true)
     try {
-      await saveLadderEdit(plan)
+      await saveLadderEdit(plan, { surface: SURFACES.MOBILE })
       show('Evolução do tratamento atualizada.', { variant: 'success' })
       navigation.goBack()
     } catch (err: any) {

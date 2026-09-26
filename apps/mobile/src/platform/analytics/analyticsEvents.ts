@@ -12,6 +12,15 @@ export const EVENTS = {
   ONBOARDING_COMPLETE: 'onboarding_complete',
   ONBOARDING_SKIP: 'onboarding_skip',
 
+  // Ciclo de vida do tratamento (spec 065 US3 / CON-034). Pausa ≠ encerramento: `active` true→false
+  // é `treatment_paused` (reversível), nunca `treatment_ended`. Emitidos SÓ pela casca do
+  // protocolService (+ `emitTitrationEdited`, chamado pelo titrationService) — tela nenhuma emite.
+  TREATMENT_CREATED: 'treatment_created',   // entry_point, frequency, interval_days, treatment_plan_id?, is_titration, treatment_planned_end?
+  TREATMENT_EDITED: 'treatment_edited',     // change_kind: string[] (dose|schedule|frequency|dates|alarm|plan|details|titration) — nunca o valor
+  TREATMENT_PAUSED: 'treatment_paused',
+  TREATMENT_RESUMED: 'treatment_resumed',
+  TREATMENT_ENDED: 'treatment_ended',       // reason: 'deleted' (único ativo; prescription_end é derivado)
+
   // Medicamentos
   MEDICINE_ADDED: 'medicine_added',
   MEDICINE_EDITED: 'medicine_edited',
@@ -53,4 +62,11 @@ export const SURFACES = {
   MOBILE: 'mobile',   // app em primeiro plano
   PUSH: 'push',       // botão da notificação (sem abrir o app)
   ALARM: 'alarm',     // tela cheia do alarme de dose crítica
+}
+
+// Fluxo de ORIGEM da criação de tratamento (065 AD-1). Eixo diferente de `surface`: onboarding é
+// fluxo dentro do app (surface continua 'mobile'), não canal.
+export const ENTRY_POINTS = {
+  ONBOARDING: 'onboarding',
+  TREATMENT_FORM: 'treatment_form',
 }
