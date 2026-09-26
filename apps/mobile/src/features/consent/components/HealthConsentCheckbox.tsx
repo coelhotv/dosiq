@@ -10,6 +10,7 @@ import { View, Text, Pressable, Linking, StyleSheet } from 'react-native'
 import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
+import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 interface HealthConsentCheckboxProps {
   checked: boolean
@@ -30,7 +31,7 @@ export default function HealthConsentCheckbox({
     if (disabled) return
     const next = !checked
     if (!next) {
-      logEvent('consent_health_declined', {})
+      logEvent(EVENTS.CONSENT_HEALTH_DECLINED, {})
     }
     onChange(next)
   }

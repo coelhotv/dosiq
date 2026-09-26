@@ -453,7 +453,8 @@ export default function NotificationPreferencesScreen({ navigation }) {
     }
     try {
       const payload = _buildNotificationSettingsPayload(patch, state)
-      const result = await updateNotificationSettings(user.id, payload)
+      // `previous` = o que está gravado: o service só emite quando o CANAL muda (065 US5).
+      const result = await updateNotificationSettings(user.id, payload, { previous: settings })
       if (result.success) {
         debugLog('NotificationPreferencesScreen', 'Configurações salvas')
         await refresh()
@@ -464,7 +465,7 @@ export default function NotificationPreferencesScreen({ navigation }) {
       errorLog('NotificationPreferencesScreen', 'Erro ao salvar', err)
       Alert.alert('Erro', 'Não foi possível salvar as preferências: ' + err.message)
     }
-  }, [user, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
+  }, [user, settings, mobilePushEnabled, isTelegramConnected, webPushEnabled, notificationMode,
       quietHoursEnabled, quietHoursStart, quietHoursEnd, digestTime, refresh])
 
   const checkPermission = useCallback(async () => {

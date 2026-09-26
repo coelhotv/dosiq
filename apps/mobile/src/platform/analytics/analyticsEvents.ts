@@ -5,7 +5,7 @@ export const EVENTS = {
   // Autenticação
   LOGIN: 'login',                              // method: 'email' | 'google'
   LOGOUT: 'logout',
-  SIGNUP: 'sign_up',                           // Firebase reserved — mapeia para funil de conversão
+  SIGNUP: 'sign_up',                           // method: 'email' — emitido na verificação do OTP (conta real), nunca no signUp
 
   // Onboarding
   ONBOARDING_START: 'onboarding_start',
@@ -21,6 +21,11 @@ export const EVENTS = {
   TREATMENT_RESUMED: 'treatment_resumed',
   TREATMENT_ENDED: 'treatment_ended',       // reason: 'deleted' (único ativo; prescription_end é derivado)
 
+  // Evolução do tratamento (titulação) — 065 T046a. `surface` é CANAL (SURFACES); o ponto de toque
+  // vai em `placement` (PLACEMENTS). `treatment_id` só quando a RPC devolve o protocolo (R-299 §4).
+  TITRATION_TRANSITION_CONFIRMED: 'titration_transition_confirmed', // step_id, outcome, surface, placement?, treatment_id?
+  TITRATION_TRANSITION_POSTPONED: 'titration_transition_postponed', // step_id, surface, placement?
+
   // Medicamentos
   MEDICINE_ADDED: 'medicine_added',
   MEDICINE_EDITED: 'medicine_edited',
@@ -35,7 +40,11 @@ export const EVENTS = {
   NOTIFICATION_PERMISSION_GRANTED: 'notification_permission_granted',
   NOTIFICATION_PERMISSION_DENIED: 'notification_permission_denied',
   NOTIFICATION_PREFERENCE_CHANGED: 'notification_preference_changed', // new_preference
-  PUSH_NOTIFICATION_TAPPED: 'push_notification_tapped',               // kind: dose_reminder | stock_alert
+  PUSH_NOTIFICATION_TAPPED: 'push_notification_tapped',               // kind: kind do servidor, verbatim (enum fechado)
+
+  // App / consentimento
+  COLD_START: 'cold_start',                        // duration_ms + bundle tags + env tags
+  CONSENT_HEALTH_DECLINED: 'consent_health_declined', // {} — sem PII (FR-008)
 
   // Estoque
   STOCK_ADDED: 'stock_added',
@@ -69,4 +78,11 @@ export const SURFACES = {
 export const ENTRY_POINTS = {
   ONBOARDING: 'onboarding',
   TREATMENT_FORM: 'treatment_form',
+}
+
+// Ponto de TOQUE dentro do app (065 T046a). Eixo diferente de `surface` (canal): mesmo raciocínio do
+// `entry_point` (AD-1). Só existe para emissões com surface 'mobile'.
+export const PLACEMENTS = {
+  TIMELINE_BANNER: 'timeline_banner',
+  TODAY_CARD: 'today_card',
 }

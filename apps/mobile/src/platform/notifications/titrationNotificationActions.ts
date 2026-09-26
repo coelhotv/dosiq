@@ -14,9 +14,10 @@
 // seria um segundo primitivo de concorrência competindo com o do banco.
 
 import * as Notifications from 'expo-notifications'
-import { confirmTitrationSwitch } from '@features/treatments/services/titrationService'
+import { confirmTitrationSwitch, titrationConfirmedProps } from '@features/treatments/services/titrationService'
 import { triggerTitrationRefresh } from '@features/treatments/services/titrationRefreshBus'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
 
 /** DEVE casar com `TITRATION_CATEGORY_ID` do expoPushChannel — o payload referencia este id. */
@@ -114,7 +115,7 @@ export async function handleTitrationNotificationAction(
   // push é responsabilidade do motor (que só notifica quando o claim pega), não daqui.
   if (actionId === TITRATION_ACTION.NOT_YET) {
     // SEC-6: só IDs e tipos — nunca nome de medicamento ou dose.
-    logEvent('titration_transition_postponed', { step_id: stepId ?? '', surface: 'push' })
+    logEvent(EVENTS.TITRATION_TRANSITION_POSTPONED, { step_id: stepId ?? '', surface: SURFACES.PUSH })
     return true
   }
 
@@ -131,9 +132,8 @@ export async function handleTitrationNotificationAction(
   // R-286: `=== false` estreita a união; `!result.ok` não discrimina sob `strict:false`.
   // `already_confirmed` é sucesso (double-tap/retry), não falha — medir separado evita ler
   // convergência como erro no funil.
-  const outcome =
-    result.ok === false ? result.reason : result.alreadyConfirmed ? 'already_confirmed' : 'confirmed'
-  logEvent('titration_transition_confirmed', { step_id: stepId, surface: 'push', outcome })
-  debugLog('[titrationActions] start_step →', outcome)
+  const props = titrationConfirmedProps(result)
+  logEvent(EVENTS.TITRATION_TRANSITION_CONFIRMED, { step_id: stepId, surface: SURFACES.PUSH, ...props })
+  debugLog('[titrationActions] start_step →', props.outcome)
   return true
 }

@@ -11,7 +11,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY } from '@platform/alarms/alarmEnabledStore'
-import { resetUser } from '@platform/analytics/productAnalytics'
+import { logEvent, resetUser } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 /**
  * Mapeia erros técnicos da API para mensagens amigáveis em Português (R-170)
@@ -60,6 +61,11 @@ export async function logoutUser() {
     // scope 'local': limpa a sessão local imediatamente e dispara SIGNED_OUT sem
     // depender de chamada de rede (global revoga no servidor e pode pendurar/
     // falhar silenciosamente no simulador iOS → tela não trocava).
+    // 065 US5: `logout` ANTES do `signOut` — o `signOut` dispara SIGNED_OUT de dentro dele, e o
+    // listener do Navigation roda `resetUser()` na hora. Emitir depois fazia o evento sair ANÔNIMO
+    // (visto no PostHog no smoke de 26/09: distinct_id novo, sem super properties). A intenção
+    // explícita é o fato; `scope:'local'` quase não falha.
+    await logEvent(EVENTS.LOGOUT, { surface: SURFACES.MOBILE })
     const { error } = await supabase.auth.signOut({ scope: 'local' })
 
     if (error) {
@@ -149,9 +155,11 @@ export async function getUserSettings() {
  * Atualizar configurações de notificação do utilizador (Sprint N2.6)
  * @param {string} userId
  * @param {Object} settings
+ * @param {{previous?: Object|null}} [options] — settings já carregados; sem eles não há como saber
+ *   se o canal MUDOU (a tela salva o payload inteiro a cada toque).
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
-export async function updateNotificationSettings(userId, settings) {
+export async function updateNotificationSettings(userId, settings, { previous = null } = {}) {
   try {
     z.string().uuid().parse(userId)
 
@@ -168,6 +176,11 @@ export async function updateNotificationSettings(userId, settings) {
       }, { onConflict: 'user_id' })
 
     if (error) throw error
+    // 065 US5: só o CANAL (enum telegram|mobile_push|both|none), só quando muda e só após gravar.
+    const next = parsed.data.notification_preference
+    if (next !== undefined && next !== (previous?.notification_preference ?? undefined)) {
+      await logEvent(EVENTS.NOTIFICATION_PREFERENCE_CHANGED, { new_preference: next, surface: SURFACES.MOBILE })
+    }
     return { success: true, error: null }
   } catch (err) {
     if (__DEV__) console.error('[profileService] erro ao salvar notificações:', err)

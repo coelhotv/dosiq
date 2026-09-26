@@ -206,9 +206,9 @@ de plataforma.
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
 | `login` | ✅ | login efetivo | `method: email\|google`, `surface` | quantas sessões vivas / por método |
-| `logout` | 🔌 | logout explícito | `surface` | troca de conta em device compartilhado |
-| `sign_up` | 🔌 | cadastro novo | `method`, `surface` | topo do funil de ativação |
-| `cold_start` | 🔤 | boot do app | `duration_ms`, bundle tags | perf de inicialização / adoção de frota |
+| `logout` | ✅ mobile | logout explícito (os 2 caminhos; antes do `resetUser`) | `surface` | troca de conta em device compartilhado |
+| `sign_up` | ✅ mobile | OTP de cadastro verificado (nunca o `signUp`, que responde sucesso até p/ e-mail existente) | `method`, `surface` | topo do funil de ativação |
+| `cold_start` | ✅ | boot do app | `duration_ms`, bundle tags | perf de inicialização / adoção de frota |
 
 ### 5.2 Onboarding (funil de ativação — hoje inexistente)
 
@@ -235,8 +235,8 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 | `treatment_paused` | ✅ mobile | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
 | `treatment_resumed` | ✅ mobile | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
 | `treatment_ended` | ✅ mobile | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
-| `titration_transition_confirmed` | 🔤 | confirma etapa de titulação (evolução do tratamento) | `treatment_id`, `step_id`, `surface`, `outcome` | avanço de titulação |
-| `titration_transition_postponed` | 🔤 | adia etapa | `treatment_id`, `step_id`, `surface` | fricção na titulação |
+| `titration_transition_confirmed` | ✅ mobile | confirma etapa de titulação (evolução do tratamento) | `step_id`, `surface` (canal), `placement: timeline_banner\|today_card` (só em `mobile`), `outcome`, `treatment_id` (**só** quando a RPC devolve `protocol_activated`; ausente em `already_confirmed`/recusa — R-299) | avanço de titulação |
+| `titration_transition_postponed` | ✅ mobile | adia etapa | `step_id`, `surface`, `placement?` — **sem** `treatment_id` (adiar não passa pela RPC, não há fato que o carregue) | fricção na titulação |
 
 **Setup do medicamento (passo anterior, secundário):**
 
@@ -331,10 +331,12 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `notification_permission_granted` | 🔌 | permissão do OS concedida | `surface` | cobertura do canal de cue |
-| `notification_permission_denied` | 🔌 | permissão negada | `surface` | usuários sem cue externo |
-| `notification_preference_changed` | 🔌 | muda preferência de notificação | `new_preference`, `surface` | **push desligado + uso mantido = gostar alto** (sinal mais forte) |
-| `push_notification_tapped` | 🔌 | abriu por push | `kind: dose_reminder\|stock_alert`, `surface: push` | **abertura espontânea ÷ pós-push = razão gostar/querer** |
+| `notification_permission_granted` | ✅ mobile | prompt do SO respondido com concessão (já concedido não emite) | `surface` | cobertura do canal de cue |
+| `notification_permission_denied` | ✅ mobile | prompt do SO respondido com negação | `surface` | usuários sem cue externo |
+| `notification_preference_changed` | ✅ mobile | canal (`notification_preference`) muda — só quando difere do gravado | `new_preference: telegram\|mobile_push\|both\|none`, `surface` | **push desligado + uso mantido = gostar alto** (sinal mais forte) |
+| `push_notification_tapped` | ✅ mobile | toque no corpo do push **do servidor** (aviso local do Notifee não conta — 065 AD-8) | `kind` (kind do servidor, verbatim — enum fechado de `buildNotificationPayload`), `surface: push` | **abertura espontânea ÷ pós-push = razão gostar/querer** |
+| `reminder_opened` | 📋 065 C2 | lembrete de dose abriu o app, **qualquer canal** | `source: server_push\|alarm\|dose_activity`, `surface` | **o lembrete funcionou?** — leitura principal ignora `source` (para a pessoa é o mesmo aviso) |
+| `dose_snoozed` | 📋 065 C2 | Adiar/Soneca num lembrete | `source`, `surface` | lembrete em hora ruim |
 
 ### 5.6 Estoque (spec 044 — série viva, não mexer nos nomes)
 
@@ -343,13 +345,14 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | `stock_onboarding_choice` | ✅ | `mode: dose_only\|stock` | escolha de modo no onboarding |
 | `stock_opt_in` / `stock_opt_out` | ✅ | `source: onboarding\|settings\|upsell` | adoção do controle de estoque |
 | `stock_upsell_shown` / `stock_upsell_conversion` / `stock_upsell_dismissed` | ✅ | — | eficácia do upsell (SC-004) |
-| `stock_added` | 🔌 | **`treatment_id`**, `medicine_id`, `surface` | reposição de estoque **deste tratamento** (consumo é sobre o tratamento — §5.0) |
-| `stock_low_viewed` | 🔌 | **`treatment_id`**, `surface`, `kind` | atenção ao alerta de estoque baixo por tratamento |
+| `stock_added` | 🔌 | `medicine_id`, `surface` — **sem** `treatment_id` (spec 065 Decisão 6: `stock` é por medicamento) | reposição de estoque do medicamento |
+| `stock_low_viewed` | 🔌 | `surface`, `kind` — **sem** `treatment_id` (Decisão 6) | atenção ao alerta de estoque baixo |
 
 > **Escopo da série de estoque:** os 6 eventos de opt-in/upsell da spec 044 (`stock_*` acima) são
 > escolhas de **configuração do recurso**, não comportamento clínico — por isso **não** carregam
-> `treatment_id`. Já `stock_added`/`stock_low_viewed` são consumo/reposição de um tratamento
-> concreto → carregam a espinha (§5.0).
+> `treatment_id`. `stock_added`/`stock_low_viewed` também não: o estoque é por **medicamento** no
+> schema (`stock.medicine_id`), então não há fato que carregue o tratamento (spec 065 Decisão 6;
+> corrigido 2026-09-26 — a versão anterior deste parágrafo prometia a espinha e o dado não a tem).
 
 ### 5.7 Biomarcadores
 

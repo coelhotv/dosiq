@@ -36,8 +36,9 @@ import { useProtocolDelete } from '@treatments/hooks/useProtocolDelete'
 import { useProtocolMutation } from '@treatments/hooks/useProtocolMutation'
 import ProtocolDeleteSheet from '@treatments/components/ProtocolDeleteSheet'
 import TitrationTimeline from '@treatments/components/TitrationTimeline'
-import { confirmTitrationSwitch } from '@treatments/services/titrationService'
+import { confirmTitrationSwitch, titrationConfirmedProps } from '@treatments/services/titrationService'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES, PLACEMENTS } from '@platform/analytics/analyticsEvents'
 import { lightTap, selectionTap } from '@shared/utils/haptics'
 import { colors, spacing, typography } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
@@ -152,12 +153,12 @@ function useProtocolDetailState() {
    */
   const handleStartPendingStep = useCallback(async (stepId) => {
     const result = await confirmTitrationSwitch(stepId)
-    logEvent('titration_transition_confirmed', {
+    // `treatment_id` do RESULTADO da RPC, nunca o `id` desta tela (R-299 · 065 T046a).
+    logEvent(EVENTS.TITRATION_TRANSITION_CONFIRMED, {
       step_id: stepId,
-      surface: 'timeline_banner',
-      // R-286: `=== false` estreita a união; `!result.ok` não discrimina sob strict:false.
-      outcome:
-        result.ok === false ? result.reason : result.alreadyConfirmed ? 'already_confirmed' : 'confirmed',
+      surface: SURFACES.MOBILE,
+      placement: PLACEMENTS.TIMELINE_BANNER,
+      ...titrationConfirmedProps(result),
     })
     // Princípio IX: falha diz o que NÃO aconteceu e por quê — nunca genérico, nunca sucesso falso.
     if (result.ok === false) Alert.alert('A etapa não foi iniciada', result.message)

@@ -15,6 +15,8 @@ import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrati
 import { navigationRef } from '../../navigation/navigationRef'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 // Mapa de screen names do payload para rotas do navigator
 const SCREEN_TO_ROUTE = {
@@ -39,6 +41,20 @@ function navigateFromPush(data) {
   // (sistema de notif compartilhado) SEM `navigation` → o fallback antigo forçava
   // navigate('Hoje') no root e quebrava ("'Hoje' not handled" — aninhado em TABS).
   if (!data || data.doseInstanceId) return
+  // 🔴 065 C1 (provado no emulador Android, 26/09, logcat): o toque numa notificação do NOTIFEE
+  // chega ao listener do expo com o ENVELOPE do Notifee como `data`
+  // (`notifee_event_type, pressAction, notification, notification_id`) — o `doseInstanceId` fica
+  // aninhado em `data.notification.data`, fora do alcance da guarda acima (AP-207). O app navegava
+  // para o Hoje em paralelo e o toque contava como push. Critério POSITIVO: push do nosso servidor
+  // sempre traz `navigation` e `kind` (buildNotificationPayload → expoPushChannel). Sem eles, não
+  // é push remoto: não navega nem mede (o handler do Notifee cuida do toque).
+  if (data.navigation == null && typeof data.kind !== 'string') return
+  // 065 US5: gargalo ÚNICO do toque no corpo do push (listener + cold start passam aqui; ação de
+  // titulação e alarme nativo saem antes). `kind` é o do servidor, verbatim — enum fechado, zero PII.
+  logEvent(EVENTS.PUSH_NOTIFICATION_TAPPED, {
+    surface: SURFACES.PUSH,
+    ...(typeof data.kind === 'string' ? { kind: data.kind } : {}),
+  })
   const navigationData = data.navigation
   const screen = navigationData?.screen
   const params = navigationData?.params ?? {}

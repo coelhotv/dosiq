@@ -703,3 +703,19 @@ export async function getUserTimezone(): Promise<string> {
   if (error) throw error
   return (data as { timezone?: string | null } | null)?.timezone || 'America/Sao_Paulo'
 }
+
+/**
+ * Props de telemetria do `titration_transition_confirmed` derivadas do RESULTADO da RPC (065 T046a).
+ *
+ * 🔴 R-299 §4 — id certo ou ausente: `treatment_id` só sai quando a RPC devolve o protocolo que ela
+ * de fato ativou (`protocol_activated`, confirmação nova). `already_confirmed` devolve só `step_id`
+ * e as recusas só `reason` (definição lida no banco, 26/09) — nesses casos a chave fica FORA, e
+ * nunca é preenchida com o `protocol.id` da tela.
+ */
+export function titrationConfirmedProps(result: ConfirmSwitchResult): { outcome: string; treatment_id?: string } {
+  if (result.ok === false) return { outcome: result.reason }
+  if (result.alreadyConfirmed) return { outcome: 'already_confirmed' }
+  return result.protocolActivated
+    ? { outcome: 'confirmed', treatment_id: result.protocolActivated }
+    : { outcome: 'confirmed' }
+}

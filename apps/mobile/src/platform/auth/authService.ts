@@ -1,7 +1,8 @@
 // authService.js — serviço de autenticação com validação Zod
 import { z } from 'zod'
 import { CURRENT_POLICY_VERSION } from '@dosiq/core'
-import { resetUser } from '@platform/analytics/productAnalytics'
+import { logEvent, resetUser } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
 const loginCredentialsSchema = z.object({
@@ -242,6 +243,11 @@ export async function signOut() {
   try {
     // scope 'local': limpa sessão local na hora, dispara SIGNED_OUT sem rede
     // (global pode pendurar no simulador iOS — ver logoutUser).
+    // 065 US5: `logout` ANTES do `signOut` — o `signOut` dispara SIGNED_OUT de dentro dele, e o
+    // listener do Navigation roda `resetUser()` na hora. Emitir depois fazia o evento sair ANÔNIMO
+    // (visto no PostHog no smoke de 26/09: distinct_id novo, sem super properties). A intenção
+    // explícita é o fato; `scope:'local'` quase não falha.
+    await logEvent(EVENTS.LOGOUT, { surface: SURFACES.MOBILE })
     const { error } = await supabase.auth.signOut({ scope: 'local' })
     if (error) {
       console.error('Erro ao fazer logout:', error.message)
@@ -278,6 +284,11 @@ export async function verifyOtpWithEmail(email, token, type: any = 'signup') {
     if (authError) {
       return { success: false, error: translateAuthError(authError, 'verify_otp') }
     }
+
+    // 065 US5: a conta só EXISTE aqui. O `signUp` responde sucesso até para e-mail já cadastrado
+    // (o Supabase não revela), então emitir lá contaria cadastro que não aconteceu. `recovery`
+    // também passa por esta função e não é cadastro.
+    if (type === 'signup') await logEvent(EVENTS.SIGNUP, { method: 'email', surface: SURFACES.MOBILE })
 
     return { success: true, data }
   } catch {

@@ -15,6 +15,7 @@ import PostHog from 'posthog-react-native'
 import * as Sentry from '@sentry/react-native'
 import Constants from 'expo-constants'
 import { posthogApiKey, posthogHost } from '@platform/config/nativePublicAppConfig'
+import { bundleTags } from '@platform/updates/bundleInfo'
 
 let client = null
 
@@ -79,7 +80,15 @@ export async function setUserId(userId) {
 export async function resetUser() {
   try {
     const c = getClient()
-    if (c) c.reset()
+    if (c) {
+      c.reset()
+      // `reset()` apaga TODAS as super properties, inclusive as do APARELHO, que não são da
+      // pessoa: sem isto, depois de sair e entrar de novo, todo evento até o próximo cold start
+      // saía sem `app_env`/`is_internal`/bundle (visto no PostHog no smoke do 065 C1, 26/09) —
+      // dogfooding misturado a usuário real, o que o FR-12 existe para impedir. `mode` é da
+      // pessoa e volta sozinho quando o perfil carrega (useTodayData/useProfile).
+      await c.register({ ...bundleTags(), ...envTags() })
+    }
     Sentry.setUser(null)
   } catch (error) {
     if (__DEV__) console.warn('[Analytics] resetUser error:', error.message)
