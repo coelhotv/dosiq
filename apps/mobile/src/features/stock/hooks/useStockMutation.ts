@@ -21,6 +21,7 @@ import { useMutation } from '@shared/hooks/useMutation'
 import { useToast } from '@shared/components/feedback/Toast'
 import { useAuth } from '@platform/auth/hooks/useAuth'
 import { stockService } from '../services/stockService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
 const PURCHASES_CACHE_KEY = '@dosiq/purchases-snapshot'
@@ -77,7 +78,7 @@ export function useStockMutation() {
       // Optional chaining no service call defende contra user null adicional.
       if (!user?.id) throw new Error('Usuário não autenticado')
       const result = await mutationCreate.mutate(() =>
-        stockService.createPurchase(input),
+        stockService.createPurchase(input, { surface: SURFACES.MOBILE }),
       )
       if (result && goBack) navigation.goBack()
       return result
@@ -91,7 +92,7 @@ export function useStockMutation() {
     async (input, { goBack = false } = {}) => {
       if (!user?.id) throw new Error('Usuário não autenticado')
       const result = await mutationCreate.mutate(() =>
-        stockService.createLiquidPurchase(input),
+        stockService.createLiquidPurchase(input, { surface: SURFACES.MOBILE }),
       )
       if (result && goBack) navigation.goBack()
       return result

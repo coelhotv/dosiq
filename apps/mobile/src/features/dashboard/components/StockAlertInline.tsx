@@ -1,6 +1,9 @@
-import React from 'react'
+import React, { useCallback } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import { View, Text, StyleSheet } from 'react-native'
 import { colors } from '@shared/styles/tokens'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { PackageSearch, AlertTriangle } = LucideIcons as any
@@ -11,11 +14,25 @@ const { PackageSearch, AlertTriangle } = LucideIcons as any
  * @param {Array} props.alerts - Lista de alertas de estoque
  */
 export default function StockAlertInline({ alerts = [] }) {
-  if (!alerts || alerts.length === 0) return null
+  const count = alerts?.length ?? 0
+  // Pegamos o alerta mais crítico (menor quantidade restante). Cópia antes do sort: ordenar a
+  // prop in-place mutava o array do pai a cada render.
+  const criticalItem = count > 0 ? [...alerts].sort((a, b) => a.daysRemaining - b.daysRemaining)[0] : null
+  const isCritical = criticalItem != null && criticalItem.daysRemaining <= 2
+  const kind = criticalItem == null ? null : isCritical ? 'critical' : 'low'
 
-  // Pegamos o alerta mais crítico (menor quantidade restante)
-  const criticalItem = alerts.sort((a, b) => a.daysRemaining - b.daysRemaining)[0]
-  const isCritical = criticalItem.daysRemaining <= 2
+  // 065 C2 — `stock_low_viewed` nasce NA TELA: é evento de visualização (exceção declarada do
+  // FR-13). Uma vez por foco do Hoje com o banner visível; re-emite só se o nível ou a contagem
+  // mudar enquanto focado (dados que chegam depois do foco). Sem `treatment_id` nem nome (Decisão 6,
+  // R-042): nível do banner + quantos itens.
+  useFocusEffect(
+    useCallback(() => {
+      if (!kind) return
+      logEvent(EVENTS.STOCK_LOW_VIEWED, { surface: SURFACES.MOBILE, kind, count })
+    }, [kind, count])
+  )
+
+  if (!criticalItem) return null
 
   return (
     <View style={[

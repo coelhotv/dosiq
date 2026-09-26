@@ -9,6 +9,7 @@
 import { useCallback, useState } from 'react'
 import { treatmentPlanService } from '../services/treatmentPlanService'
 import { medicineService } from '@medications/services/medicineService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { getPushPermissionStatus, enablePushAtIntent } from '@platform/notifications/pushPermission'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
@@ -18,7 +19,7 @@ async function persistDensity(form) {
   const { medicine_id, intake_unit, units_per_ml } = form.values
   if (!medicine_id || !intake_unit || intake_unit === 'ml' || !units_per_ml) return
   try {
-    await medicineService.update(medicine_id, { units_per_ml: Number(String(units_per_ml).replace(',', '.')) })
+    await medicineService.update(medicine_id, { units_per_ml: Number(String(units_per_ml).replace(',', '.')) }, { surface: SURFACES.MOBILE })
   } catch {
     // Não bloqueia o tratamento; RPC usa fallback 20 se densidade não gravar.
   }

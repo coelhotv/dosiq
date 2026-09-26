@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useMutation } from '@shared/hooks/useMutation'
 import { useToast } from '@shared/components/feedback/Toast'
 import { medicineService } from '../services/medicineService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 
 const MEDICINES_CACHE_KEY = '@dosiq/medicines-snapshot'
 const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
@@ -90,7 +91,7 @@ export function useMedicineMutation() {
 
   const create = useCallback(
     async (payload, { goBack = false } = {}) => {
-      const result = await mutationCreate.mutate(() => medicineService.create(payload))
+      const result = await mutationCreate.mutate(() => medicineService.create(payload, { surface: SURFACES.MOBILE }))
       if (result && goBack) navigation.goBack()
       return result
     },
@@ -99,7 +100,7 @@ export function useMedicineMutation() {
 
   const update = useCallback(
     async (id, payload, { goBack = false } = {}) => {
-      const result = await mutationUpdate.mutate(() => medicineService.update(id, payload))
+      const result = await mutationUpdate.mutate(() => medicineService.update(id, payload, { surface: SURFACES.MOBILE }))
       if (result && goBack) navigation.goBack()
       return result
     },
@@ -108,7 +109,7 @@ export function useMedicineMutation() {
 
   const remove = useCallback(
     async (id, { goBack = false } = {}) => {
-      const result = await mutationDelete.mutate(() => medicineService.delete(id))
+      const result = await mutationDelete.mutate(() => medicineService.delete(id, { surface: SURFACES.MOBILE }))
       if (result !== undefined && goBack) navigation.goBack()
       return result
     },

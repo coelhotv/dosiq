@@ -54,7 +54,7 @@ function formProps(form, name) {
 export default function OnboardingMedicineStep() {
   // States (R-010)
   const navigation = useNavigation()
-  const { medicine, setMedicine, finish } = useOnboarding()
+  const { medicine, setMedicine, skip } = useOnboarding()
   const { show } = useToast()
   const { search } = useMedicineDatabase()
 
@@ -63,7 +63,7 @@ export default function OnboardingMedicineStep() {
   // Memos (R-010)
   // Passo 2 de 3 (passo 1 = criar conta, no signup). Sem voltar (é a 1ª tela
   // pós-login do wizard).
-  const headerProps = useMemo(() => ({ step: 1, totalSteps: 4, onSkip: finish }), [finish])
+  const headerProps = useMemo(() => ({ step: 1, totalSteps: 4, onSkip: () => skip(1) }), [skip])
 
   // Handlers
   // Auto-fill ao escolher uma sugestão ANVISA (mesmo mapeamento do cadastro F1).
