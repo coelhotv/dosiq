@@ -163,6 +163,6 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 
 **Armadilhas que já causaram bug (AP-299, #749):** `DOSAGE_UNITS` ≠ `INTAKE_UNITS` (enums diferentes; `cp` não existe em nenhum) · `titration_steps.intake_unit` aceita `'cp'`, `protocols.intake_unit` não → fronteira N2→N1 usa `NULLIF(unit,'cp')` (CON-032 §5).
 
-## MCP code-review-graph
+## MCP graftroom
 
-Usar **antes** de Grep/Glob/Read: `semantic_search_nodes` (achar símbolo) · `get_impact_radius` (blast radius) · `query_graph` (callers/tests) · `get_architecture_overview`.
+Usar **antes** de Grep/Glob/Read: `graftroom_graph(action: 'search')` (achar símbolo) · `graftroom_graph(action: 'blast')` (blast radius de diff) · `graftroom_graph(action: 'callers'|'callees')` (dependências) · `graftroom_compress` (compactação de logs/diffs).

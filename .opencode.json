@@ -1,13 +1,11 @@
 {
   "mcpServers": {
-    "code-review-graph": {
-      "command": "uvx",
+    "graftroom": {
+      "command": "graftroom",
       "args": [
-        "code-review-graph",
-        "serve"
+        "mcp"
       ],
-      "type": "stdio",
-      "env": []
+      "type": "stdio"
     }
   }
 }
