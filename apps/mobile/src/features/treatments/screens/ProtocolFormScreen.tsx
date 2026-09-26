@@ -62,6 +62,7 @@ export default function ProtocolFormScreen() {
     plans,
     planField,
     changePlanField,
+    existing,
     existingLoading,
     existingError,
   } = useProtocolFormState({ editId, todayIso, presetPlanId })
@@ -85,6 +86,7 @@ export default function ProtocolFormScreen() {
 
   const { submit, submitting } = useProtocolFormSubmit({
     editId,
+    existing,
     form,
     planField,
     mutation,

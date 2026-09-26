@@ -230,11 +230,11 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `treatment_created` | 🆕 | tratamento definido e ativado (`active=true`) | `surface`, `treatment_id`, `medicine_id`, `is_titration`, `treatment_planned_end?` | **ativação real** (time to first value) |
-| `treatment_edited` | 🆕 | dose/agenda/frequência/datas alteradas (**não** o toggle de pausa) | `surface`, `treatment_id`, `medicine_id`, `change_kind`, `treatment_planned_end?` (re-emite) | manutenção vs. instabilidade do plano |
-| `treatment_paused` | 🆕 | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
-| `treatment_resumed` | 🆕 | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
-| `treatment_ended` | 🆕 | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
+| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?` | **ativação real** (time to first value) |
+| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?` (re-emite) | manutenção vs. instabilidade do plano |
+| `treatment_paused` | ✅ mobile | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
+| `treatment_resumed` | ✅ mobile | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
+| `treatment_ended` | ✅ mobile | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
 | `titration_transition_confirmed` | 🔤 | confirma etapa de titulação (evolução do tratamento) | `treatment_id`, `step_id`, `surface`, `outcome` | avanço de titulação |
 | `titration_transition_postponed` | 🔤 | adia etapa | `treatment_id`, `step_id`, `surface` | fricção na titulação |
 
@@ -254,8 +254,9 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 > `treatment_edited`. (O comentário *"paused acompanha o tratamento (sem estado próprio)"* em
 > `ProtocolDetailScreen` é sobre o **badge de UI**, que apenas segue `active` — não sobre o
 > tratamento.) O único status **derivado** é "finalizado" (`end_date` vencida) — esse não tem
-> evento próprio (§5.3.1). `change_kind` de `treatment_edited` ∈ `dose`·`schedule`·`frequency`·
-> `dates`, **sem o valor** da dose (§6).
+> evento próprio (§5.3.1). `change_kind` de `treatment_edited` é **lista** ⊂ `dose`·`schedule`·`frequency`·
+> `dates`·`alarm`·`plan`·`details`·`titration`, **sem o valor** (§6). Toda chave editável do form cai
+> num grupo (teste de completude, 065 PR B).
 >
 > **`treatment_planned_end`** viaja em `treatment_created`/`treatment_edited` (re-emitida na edição)
 > — a propriedade que torna o encerramento passivo `prescription_end` derivável sem scan (§5.3.1).

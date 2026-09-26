@@ -49,7 +49,7 @@ async function resolveInlinePlan(planField, show) {
   return { ok: true, planId: (created as any)?.id ?? null, useInline: true }
 }
 
-export function useProtocolFormSubmit({ editId, form, planField, mutation, show, onValidateFail }) {
+export function useProtocolFormSubmit({ editId, existing = null, form, planField, mutation, show, onValidateFail }) {
   // States
   const [submitting, setSubmitting] = useState(false)
 
@@ -97,7 +97,7 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
       await persistDensity(form)
 
       const result = editId
-        ? await mutation.update(editId, payload, { goBack: !onSaved })
+        ? await mutation.update(editId, payload, { goBack: !onSaved, previous: existing })
         : await mutation.create(payload, { goBack: !onSaved })
 
       // Ponto de intenção #2: ao criar tratamento manualmente, se NUNCA pedimos
@@ -123,7 +123,7 @@ export function useProtocolFormSubmit({ editId, form, planField, mutation, show,
       const verb = editId ? 'atualizar' : 'criar'
       show(err?.message ?? `Erro ao ${verb} tratamento`, { variant: 'error' })
     }
-  }, [editId, form, planField, mutation, show, submitting, onValidateFail])
+  }, [editId, existing, form, planField, mutation, show, submitting, onValidateFail])
 
   return { submit, submitting }
 }

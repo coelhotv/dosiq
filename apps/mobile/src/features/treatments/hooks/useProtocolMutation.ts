@@ -19,6 +19,7 @@ import { getNextOccurrence, describeNextOccurrence } from '@dosiq/core'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from '@react-navigation/native'
 import { useMutation } from '@shared/hooks/useMutation'
+import { SURFACES, ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import { useToast } from '@shared/components/feedback/Toast'
 import { triggerAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { protocolService } from '../services/protocolService'
@@ -88,7 +89,9 @@ export function useProtocolMutation() {
 
   const create = useCallback(
     async (payload, { goBack = false } = {}) => {
-      const result = await mutationCreate.mutate(() => protocolService.create(payload))
+      const result = await mutationCreate.mutate(() =>
+        protocolService.create(payload, { surface: SURFACES.MOBILE, entryPoint: ENTRY_POINTS.TREATMENT_FORM })
+      )
       if (result && goBack) navigation.goBack()
       return result
     },
@@ -96,8 +99,10 @@ export function useProtocolMutation() {
   )
 
   const update = useCallback(
-    async (id, payload, { goBack = false } = {}) => {
-      const result = await mutationUpdate.mutate(() => protocolService.update(id, payload))
+    async (id, payload, { goBack = false, previous = null } = {}) => {
+      const result = await mutationUpdate.mutate(() =>
+        protocolService.update(id, payload, { surface: SURFACES.MOBILE, previous })
+      )
       if (result && goBack) navigation.goBack()
       return result
     },
@@ -118,7 +123,7 @@ export function useProtocolMutation() {
   const toggleActive = useCallback(
     async (id, nextValue) => {
       try {
-        const result = await protocolService.update(id, { active: nextValue })
+        const result = await protocolService.update(id, { active: nextValue }, { surface: SURFACES.MOBILE })
         // multiRemove = 1 chamada à ponte nativa (vs N concorrentes) — atômico.
         await AsyncStorage.multiRemove([
           PROTOCOLS_CACHE_KEY,

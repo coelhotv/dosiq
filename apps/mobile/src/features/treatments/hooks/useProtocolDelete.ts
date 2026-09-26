@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useToast } from '@shared/components/feedback/Toast'
 import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 import { triggerAlarmResync } from '@platform/alarms/alarmResyncBus'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 import { protocolService } from '../services/protocolService'
 
 const PROTOCOLS_CACHE_KEY = '@dosiq/protocols-snapshot'
@@ -35,7 +36,7 @@ export function useProtocolDelete(protocol) {
     if (!protocol?.id) return false
     setIsLoading(true)
     try {
-      await protocolService.delete(protocol.id)
+      await protocolService.delete(protocol.id, { surface: SURFACES.MOBILE, medicineId: protocol.medicine_id })
       // multiRemove = 1 chamada à ponte nativa (vs N concorrentes) — atômico.
       await AsyncStorage.multiRemove([
         PROTOCOLS_CACHE_KEY,
