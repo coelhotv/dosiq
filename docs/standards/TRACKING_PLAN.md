@@ -214,9 +214,9 @@ de plataforma.
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `onboarding_start` | 🔌 | início do onboarding | `surface` | time to first value: entrou |
-| `onboarding_complete` | 🔌 | conclusão | `surface` | ativação: chegou ao valor |
-| `onboarding_skip` | 🔌 | pulou | `surface` | fricção / abandono precoce |
+| `onboarding_start` | ✅ mobile | montagem do wizard (reabrir o app no meio conta nova tentativa — **ler por pessoa única**; contagem de eventos = recomeços) | `surface` | time to first value: entrou |
+| `onboarding_complete` | ✅ mobile | setup gravado — **1×** mesmo quando o saldo inicial vem depois; nunca após `skip` | `surface` | ativação: chegou ao valor |
+| `onboarding_skip` | ✅ mobile | "Pular" (antes era a mesma função do concluir — 065 C2) | `surface`, `step` (1·2·3 — onde desistiu) | fricção / abandono precoce |
 
 ### 5.3 Tratamento (entidade central) e medicamento (setup)
 
@@ -242,9 +242,9 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `medicine_added` | 🔌 | medicamento cadastrado | `surface`, `medicine_id` (**UUID, nunca nome**) | passou pela fricção de setup? (passo do funil, **não** ativação) |
-| `medicine_edited` | 🔌 | medicamento editado | `surface`, `medicine_id` | manutenção do cadastro |
-| `medicine_deleted` | 🔌 | medicamento removido | `surface`, `medicine_id` | limpeza de cadastro (≠ fim de tratamento) |
+| `medicine_added` | ✅ mobile | medicamento cadastrado (form ou onboarding) | `surface`, `medicine_id` (**UUID, nunca nome**) | passou pela fricção de setup? (passo do funil, **não** ativação) |
+| `medicine_edited` | ✅ mobile | medicamento editado (inclui a densidade `units_per_ml` gravada pelo form de tratamento) | `surface`, `medicine_id` | manutenção do cadastro |
+| `medicine_deleted` | ✅ mobile | medicamento removido | `surface`, `medicine_id` | limpeza de cadastro (≠ fim de tratamento) |
 
 > **Pausa é estado real, não derivado.** `protocols.active` (bool, default `true`) **é** o estado
 > de pausa, definido ativamente pelo usuário: `true` = ativo (gera instâncias de dose agendadas,
@@ -317,7 +317,7 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, **`surface` (a adicionar)** | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
+| `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, `surface`, `entry_point: reminder` (**só** na modal aberta por um lembrete — 065 AD-8; ausente = abriu o app por conta própria) | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
 | `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, **`surface` (a adicionar)** | catch-up de doses atrasadas |
 | `dose_skipped` | 🔌 | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
 | `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). **Fase 2 (web)** — verificado 2026-08-09: **sem gatilho no mobile** (só KPI passivo `adherence30d`/`streak`); a celebração é web (`MilestoneCelebration`/`BadgeDisplay`). Gatilho no mobile = mecânica nova, fora de escopo |
@@ -335,8 +335,8 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | `notification_permission_denied` | ✅ mobile | prompt do SO respondido com negação | `surface` | usuários sem cue externo |
 | `notification_preference_changed` | ✅ mobile | canal (`notification_preference`) muda — só quando difere do gravado | `new_preference: telegram\|mobile_push\|both\|none`, `surface` | **push desligado + uso mantido = gostar alto** (sinal mais forte) |
 | `push_notification_tapped` | ✅ mobile | toque no corpo do push **do servidor** (aviso local do Notifee não conta — 065 AD-8) | `kind` (kind do servidor, verbatim — enum fechado de `buildNotificationPayload`), `surface: push` | **abertura espontânea ÷ pós-push = razão gostar/querer** |
-| `reminder_opened` | 📋 065 C2 | lembrete de dose abriu o app, **qualquer canal** | `source: server_push\|alarm\|dose_activity`, `surface` | **o lembrete funcionou?** — leitura principal ignora `source` (para a pessoa é o mesmo aviso) |
-| `dose_snoozed` | 📋 065 C2 | Adiar/Soneca num lembrete | `source`, `surface` | lembrete em hora ruim |
+| `reminder_opened` | ✅ mobile | **toque** num lembrete de dose abriu o app, qualquer canal (push de dose do servidor; alarme; "Registrar" da dose ativa no Android e "Registrar"/"Abrir" da Live Activity no iOS). Chegada com o app aberto **não** conta; o mesmo toque por 2 caminhos conta 1× | `source: server_push\|alarm\|dose_activity`, `surface: push` | **o lembrete funcionou?** — leitura principal ignora `source` (para a pessoa é o mesmo aviso) |
+| `dose_snoozed` | ✅ mobile | Adiar/Soneca **agendado** (recusa fora da janela e teto estourado não emitem) | `source`, `surface` (`push` no botão da notificação, `alarm` na tela cheia) | lembrete em hora ruim |
 
 ### 5.6 Estoque (spec 044 — série viva, não mexer nos nomes)
 
@@ -345,8 +345,8 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | `stock_onboarding_choice` | ✅ | `mode: dose_only\|stock` | escolha de modo no onboarding |
 | `stock_opt_in` / `stock_opt_out` | ✅ | `source: onboarding\|settings\|upsell` | adoção do controle de estoque |
 | `stock_upsell_shown` / `stock_upsell_conversion` / `stock_upsell_dismissed` | ✅ | — | eficácia do upsell (SC-004) |
-| `stock_added` | 🔌 | `medicine_id`, `surface` — **sem** `treatment_id` (spec 065 Decisão 6: `stock` é por medicamento) | reposição de estoque do medicamento |
-| `stock_low_viewed` | 🔌 | `surface`, `kind` — **sem** `treatment_id` (Decisão 6) | atenção ao alerta de estoque baixo |
+| `stock_added` | ✅ mobile | `medicine_id`, `surface` — **sem** `treatment_id` (spec 065 Decisão 6). **Só compra** (1 por compra, também no líquido de N frascos); saldo inicial é `stock_opt_in`, ajuste e edição de compra não emitem | reposição de estoque do medicamento |
+| `stock_low_viewed` | ✅ mobile | `surface`, `kind: low\|critical` (≤2 dias = critical), `count` — **sem** `treatment_id` (Decisão 6). 1× por foco do Hoje com o banner visível. ⚠️ **Sem amostra:** o banner hoje não renderiza (spec 090 D-5) | atenção ao alerta de estoque baixo |
 
 > **Escopo da série de estoque:** os 6 eventos de opt-in/upsell da spec 044 (`stock_*` acima) são
 > escolhas de **configuração do recurso**, não comportamento clínico — por isso **não** carregam

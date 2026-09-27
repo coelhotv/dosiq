@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import TodayScreen from '../TodayScreen';
 import { useTodayData } from '@dashboard/hooks/useTodayData';
 
@@ -104,6 +104,44 @@ describe('TodayScreen', () => {
     const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
     expect(getByTestId('empty-state')).toBeTruthy();
   });
+
+  // 065 AD-8: modal aberta por DEEPLINK (lembrete) → entryPoint 'reminder'; aberta pelo card → null.
+  describe('entry_point reminder (065 AD-8)', () => {
+    const withProtocol = () => jest.mocked(useTodayData).mockReturnValue({
+      data: {
+        ...baseMockData,
+        protocols: [{ id: 'p1', medicine_id: 'm1' }],
+        medicines: { m1: { name: 'Med' } },
+        timeline: [{ id: 'd1', scheduledTime: '08:00', timelineStatus: 'PROXIMA' }],
+      },
+      loading: false, error: null, refresh: mockRefresh,
+    } as any)
+    const nav = { setParams: jest.fn() } as any
+
+    it('deeplink bulk-plan → BulkDoseRegisterModal recebe entryPoint reminder', async () => {
+      withProtocol()
+      const { getByTestId } = render(
+        <TodayScreen route={{ params: { screen: 'bulk-plan', planId: 'plan-1', at: '08:00' } } as any} navigation={nav} />
+      )
+      await waitFor(() => expect(getByTestId('bulk-dose-modal').props.entryPoint).toBe('reminder'))
+    })
+
+    it('deeplink dose-individual → reminder; depois, aberta pelo card → entryPoint zerado', async () => {
+      withProtocol()
+      const { getByTestId, getAllByTestId } = render(
+        <TodayScreen route={{ params: { screen: 'dose-individual', protocolId: 'p1', at: '08:00' } } as any} navigation={nav} />
+      )
+      await waitFor(() => expect(getByTestId('dose-modal').props.entryPoint).toBe('reminder'))
+      act(() => { getAllByTestId('dose-card')[0].props.onRegister({ id: 'p1', medicine_id: 'm1' }, '08:00') })
+      expect(getByTestId('dose-modal').props.entryPoint).toBeNull()
+    })
+
+    it('sem deeplink → nenhuma modal com reminder', () => {
+      withProtocol()
+      const { getByTestId } = render(<TodayScreen route={{} as any} navigation={nav} />)
+      expect(getByTestId('bulk-dose-modal').props.entryPoint).toBeNull()
+    })
+  })
 
   it('renders stale banner when data is stale', () => {
     jest.mocked(useTodayData).mockReturnValue({

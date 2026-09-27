@@ -88,6 +88,8 @@ export default function DoseRegisterModal({
   protocol,
   scheduledTime,
   instanceId = null,
+  // 065 AD-8: 'reminder' quando a modal foi aberta por um lembrete (deeplink). Sem default.
+  entryPoint = null,
   medicineName,
   onClose,
   onSuccess
@@ -156,7 +158,7 @@ export default function DoseRegisterModal({
         injection_site: injectable ? injectionSite : null,
       },
       // F4.3c: âncora direta na ocorrência da timeline (determinística); null → snap.
-      { instanceId, surface: SURFACES.MOBILE }
+      { instanceId, surface: SURFACES.MOBILE, entryPoint }
     )
 
     setLoading(false)

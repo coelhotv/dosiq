@@ -97,6 +97,17 @@ describe('doseService adapter tests', () => {
       })
     })
 
+    // 065 AD-8: modal aberta por lembrete → entry_point; sem a opção, a chave NÃO aparece (A-1).
+    it('entryPoint reminder → entry_point no dose_logged; ausente → sem a chave', async () => {
+      mockRegisterDose.mockResolvedValue(LOG)
+      await registerDose(INPUT, { surface: 'mobile', entryPoint: 'reminder' })
+      expect(mockLogEvent).toHaveBeenLastCalledWith(EVENTS.DOSE_LOGGED, {
+        medicine_id: MID, treatment_id: PID, surface: 'mobile', entry_point: 'reminder',
+      })
+      await registerDose(INPUT, { surface: 'mobile' })
+      expect(mockLogEvent.mock.calls[1][1]).not.toHaveProperty('entry_point')
+    })
+
     it('falha de validação Zod → retorna erro e não chama core', async () => {
       const invalidInput = { ...INPUT, quantity_taken: -1 }
 
@@ -267,6 +278,17 @@ describe('doseService adapter tests', () => {
       expect(mockCancelAlarm).toHaveBeenCalledWith('inst-a')
       expect(mockCancelAlarm).toHaveBeenCalledWith('inst-b')
       expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, { count: 2 })
+    })
+
+    it('065 AD-8: entryPoint vai em CADA dose_logged do lote e no agregado', async () => {
+      mockRegisterDoseMany.mockResolvedValueOnce([
+        { success: true, instanceId: 'inst-a', data: { id: 'log-a', medicine_id: MID, protocol_id: PID } },
+      ])
+      await registerDoseMany([{ ...INPUT, instance_id: 'inst-a' }], { surface: 'mobile', entryPoint: 'reminder' })
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED, {
+        medicine_id: MID, treatment_id: PID, surface: 'mobile', entry_point: 'reminder',
+      })
+      expect(mockLogEvent).toHaveBeenCalledWith(EVENTS.DOSE_LOGGED_BULK, { count: 1, surface: 'mobile', entry_point: 'reminder' })
     })
 
     it('lista vazia → retorna erro', async () => {

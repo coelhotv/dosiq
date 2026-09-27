@@ -83,7 +83,7 @@ function OnboardingReminderCard({ remind, setRemind }) {
 export default function OnboardingTreatmentStep() {
   // States (R-010)
   const navigation = useNavigation()
-  const { medicine, treatment, setTreatment, finish } = useOnboarding()
+  const { medicine, treatment, setTreatment, skip } = useOnboarding()
   const { show } = useToast()
   // Preserva a escolha do lembrete quando o usuário volta do passo 4 (o wizard só grava no fim).
   const [remind, setRemind] = useState(treatment?._remind ?? true)
@@ -123,8 +123,8 @@ export default function OnboardingTreatmentStep() {
   const timeCount = Array.isArray(form.values.time_schedule) ? form.values.time_schedule.length : 0
   // Passo 3 de 3.
   const headerProps = useMemo(
-    () => ({ step: 2, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: finish }),
-    [navigation, finish],
+    () => ({ step: 2, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: () => skip(2) }),
+    [navigation, skip],
   )
 
   // Effects (R-010)

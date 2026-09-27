@@ -47,7 +47,7 @@ const OPTIONS = [
 
 export default function OnboardingStockStep() {
   const navigation = useNavigation<any>()
-  const { medicine, treatment, finish, markCompleted } = useOnboarding()
+  const { medicine, treatment, finish, skip, markCompleted } = useOnboarding()
   const { refresh: refreshStockTracking } = useStockTracking()
   const { show } = useToast()
 
@@ -63,8 +63,8 @@ export default function OnboardingStockStep() {
   const [protocolCreated, setProtocolCreated] = useState(false)
 
   const headerProps = useMemo(
-    () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: finish }),
-    [navigation, finish],
+    () => ({ step: 3, totalSteps: 4, onBack: () => navigation.goBack(), onSkip: () => skip(3) }),
+    [navigation, skip],
   )
 
   // Este é o passo que GRAVA o onboarding inteiro: medicamento, tratamento, permissão de push
@@ -80,7 +80,7 @@ export default function OnboardingStockStep() {
 
       let medicineId = createdMedicineId
       if (!medicineId) {
-        const createdMedicine = await medicineService.create(medicine)
+        const createdMedicine = await medicineService.create(medicine, { surface: SURFACES.MOBILE })
         medicineId = createdMedicine.id
         setCreatedMedicineId(medicineId)
       }

@@ -21,6 +21,8 @@ import {
 import type { AdherenceProtocol } from '@dosiq/core'
 import { supabase as nativeSupabaseClient } from '../../../platform/supabase/nativeSupabaseClient'
 import { debugLog, errorLog } from '@shared/utils/debugLog'
+import { logEvent } from '../../../platform/analytics/productAnalytics'
+import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 async function getUserId() {
   const { data, error } = await nativeSupabaseClient.auth.getUser()
@@ -106,4 +108,35 @@ const typedClient = nativeSupabaseClient as any
 const stockRepo = createStockRepository({ client: typedClient, getUserId })
 const purchaseRepo = createPurchaseRepository({ client: typedClient, getUserId })
 
-export const stockService = { ...stockRepo, ...purchaseRepo }
+// ── Casca de analytics (spec 065 PR C2 / TC-3) ─────────────────────────────────────────────────
+// `stock_added` = COMPRA (decisão PO 26/09, analysis-prC2 G-2). Saldo inicial já é `stock_opt_in`
+// (stockPreferenceService), ajuste de saldo é correção e edição de compra não repõe nada: nenhum
+// dos três emite. Sem `treatment_id` (spec 065 Decisão 6: `stock` é por medicamento).
+//
+// `createLiquidPurchase` do core chama o `createPurchase` do PRÓPRIO core (closure), não este:
+// uma compra de N frascos emite UM evento, não N.
+// 🔴 SEM DEFAULT de `surface` (plan.md A-1). `medicine_id` = o do input validado, que é o valor que
+// a RPC gravou (o fato), nunca releitura da entidade.
+function emitStockAdded(medicineId, surface) {
+  const props: Record<string, string> = {}
+  if (surface) props.surface = surface
+  if (medicineId) props.medicine_id = medicineId
+  return logEvent(EVENTS.STOCK_ADDED, props)
+}
+
+export const stockService = {
+  ...stockRepo,
+  ...purchaseRepo,
+
+  async createPurchase(input, { surface = null } = {}) {
+    const data = await purchaseRepo.createPurchase(input)
+    await emitStockAdded(input?.medicine_id, surface)
+    return data
+  },
+
+  async createLiquidPurchase(input, { surface = null } = {}) {
+    const results = await purchaseRepo.createLiquidPurchase(input)
+    await emitStockAdded(input?.medicineId, surface)
+    return results
+  },
+}

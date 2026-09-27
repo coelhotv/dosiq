@@ -7,6 +7,8 @@
 
 import { createMedicineRepository } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { logEvent } from '../../../platform/analytics/productAnalytics'
+import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 // TODO(040-strict): apps/mobile pina @supabase/supabase-js 2.91.0 vs ^2.90.1 na
 // factory do core — tipos nominais do client divergem entre versões (private
@@ -20,7 +22,7 @@ async function getUserId() {
   return user.id
 }
 
-export const medicineService = createMedicineRepository({
+const repo = createMedicineRepository({
   client: typedClient,
   getUserId,
   listSelect: `
@@ -41,3 +43,39 @@ export const medicineService = createMedicineRepository({
     titration_steps(id, position, status, titration_id, protocol_id)
   `,
 })
+
+// ── Casca de analytics (spec 065 PR C2 / TC-3 · mesma forma do protocolService) ─────────────────
+// O repositório do core fica intocado: a casca delega e, SÓ depois do sucesso, emite. Todo escritor
+// de `medicines` no mobile passa por aqui (C1.5 do C2: form, exclusão, onboarding e o `units_per_ml`
+// do form de tratamento) — tela nenhuma emite evento de medicamento.
+//
+// 🔴 SEM DEFAULT de `surface` (plan.md A-1): chamador que não informa manda o evento sem a chave.
+// 🔴 Nunca o nome do medicamento (R-042): só o UUID.
+
+// Chave com valor ausente fica FORA do payload (mesmo princípio do `_doseEventProps`).
+function compact(props) {
+  return Object.fromEntries(Object.entries(props).filter(([, v]) => v != null))
+}
+
+export const medicineService = {
+  ...repo,
+
+  async create(medicine, { surface = null } = {}) {
+    const row = await repo.create(medicine)
+    await logEvent(EVENTS.MEDICINE_ADDED, compact({ surface, medicine_id: row?.id }))
+    return row
+  },
+
+  async update(id, updates, { surface = null } = {}) {
+    const row = await repo.update(id, updates)
+    await logEvent(EVENTS.MEDICINE_EDITED, compact({ surface, medicine_id: row?.id ?? id }))
+    return row
+  },
+
+  // A linha deixa de existir: o id é o do argumento (o que foi apagado).
+  async delete(id, { surface = null } = {}) {
+    const result = await repo.delete(id)
+    await logEvent(EVENTS.MEDICINE_DELETED, compact({ surface, medicine_id: id }))
+    return result
+  },
+}

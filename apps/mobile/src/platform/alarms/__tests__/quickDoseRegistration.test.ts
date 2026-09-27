@@ -49,6 +49,11 @@ jest.mock('@dosiq/core', () => {
 const SCHED_ISO = '2026-08-19T23:45:00Z'
 
 const mockNavigate = jest.fn()
+// 065 AD-8: asserir reminder_opened / dose_snoozed sem PostHog (o real é no-op sem chave).
+const mockLogEvent = jest.fn()
+jest.mock('@platform/analytics/productAnalytics', () => ({
+  logEvent: (...args: any[]) => mockLogEvent(...args),
+}))
 jest.mock('@navigation/navigationRef', () => ({
   navigationRef: {
     isReady: () => true,
@@ -440,5 +445,47 @@ describe('067 A2 — recusa de registro fora da janela', () => {
     const res = await registerSkip({ ...ADIANTADA, __dev: true })
     expect(res).toEqual({ success: true, dev: true })
     expect(mockReportOutOfWindow).not.toHaveBeenCalled()
+  })
+})
+
+// 065 AD-8 — "abriu pelo lembrete" e soneca, qualquer canal.
+describe('handleAlarmAction — eventos de lembrete (065 AD-8)', () => {
+  const { __resetReminderDedupe } = require('@platform/analytics/reminderEvents')
+  const eventsOf = (name: string) => mockLogEvent.mock.calls.filter(([n]) => n === name).map(([, p]) => p)
+
+  // O dedupe é estado de módulo: os describes anteriores (mesma dose inst-1) o deixam preenchido.
+  beforeEach(() => __resetReminderDedupe())
+
+  afterEach(() => {
+    __resetReminderDedupe()
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  it('"Registrar" da dose ativa → reminder_opened{dose_activity}; mesmo toque por 2 caminhos conta 1×', async () => {
+    const data = { ...BASE, treatmentId: 'plan-9', scheduledTime: '17:00' }
+    await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
+    await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data)) // headless + cold do mesmo toque
+    expect(eventsOf('reminder_opened')).toEqual([{ source: 'dose_activity', surface: 'push' }])
+  })
+
+  it('Soneca no botão do alarme → dose_snoozed{alarm, push}', async () => {
+    await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '0' }))
+    expect(eventsOf('dose_snoozed')).toEqual([{ source: 'alarm', surface: 'push' }])
+  })
+
+  it('Adiar na superfície de dose ativa → dose_snoozed{dose_activity}', async () => {
+    await handleAlarmAction(evt(SURFACE_ACTION.SNOOZE, { ...BASE, __surface: 'true', snoozeAttempt: '0' }))
+    expect(eventsOf('dose_snoozed')).toEqual([{ source: 'dose_activity', surface: 'push' }])
+  })
+
+  it('teto de soneca estourado → nenhum dose_snoozed (não reagendou)', async () => {
+    await handleAlarmAction(evt('dose-snooze', { ...BASE, snoozeAttempt: '3' }))
+    expect(eventsOf('dose_snoozed')).toEqual([])
+  })
+
+  it('Tomei/Pular não contam como abertura', async () => {
+    await handleAlarmAction(evt('dose-taken', BASE))
+    expect(eventsOf('reminder_opened')).toEqual([])
   })
 })

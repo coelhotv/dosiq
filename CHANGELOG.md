@@ -7,6 +7,18 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Cadastro, estoque, primeiro acesso e lembretes medidos
+
+- **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de loja).
+  Nada muda na tela. O analytics passa a registrar: o cadastro, a edição e a exclusão de
+  medicamento; cada compra lançada no estoque (uma por compra, mesmo quando é um líquido de vários
+  frascos); a visualização do aviso de estoque baixo; e a entrada no primeiro acesso, separando
+  quem concluiu de quem pulou e em que passo pulou. Antes, pular e concluir contavam igual. Também
+  passa a medir se o lembrete de dose funciona, seja qual for o aviso (notificação do servidor,
+  alarme ou dose ativa no Android e no iOS): quando o toque no lembrete abre o app, quando a dose é
+  registrada na tela que o lembrete abriu e quando a pessoa adia o lembrete. Nenhum evento leva nome
+  de medicamento, dose ou dado pessoal.
+
 ### Notificações, conta e evolução do tratamento medidas
 
 - **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de loja).

@@ -391,6 +391,33 @@ describe('usePushNotifications — push_notification_tapped (065)', () => {
     expect(tapped()).toEqual([{ surface: 'push' }])
   })
 
+  // 065 AD-8: push de LEMBRETE de dose também é "o lembrete abriu o app".
+  const opened = () => mockLogEvent.mock.calls.filter(([n]) => n === 'reminder_opened').map(([, p]) => p)
+
+  it('push de lembrete de dose → reminder_opened{server_push} além do tapped', async () => {
+    require('@platform/analytics/reminderEvents').__resetReminderDedupe()
+    const res = makeResponse('history')
+    ;(res.notification.request.content.data as any).kind = 'dose_reminder_by_plan'
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(res)
+    renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(opened()).toEqual([{ source: 'server_push', surface: 'push' }])
+  })
+
+  it('push que NÃO é lembrete (stock_alert) → tapped sim, reminder_opened não', async () => {
+    const res = makeResponse('history')
+    ;(res.notification.request.content.data as any).kind = 'stock_alert'
+    Notifications.getLastNotificationResponseAsync.mockResolvedValue(res)
+    renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(tapped()).toEqual([{ surface: 'push', kind: 'stock_alert' }])
+    expect(opened()).toEqual([])
+  })
+
   it('alarme nativo (doseInstanceId) → nenhum evento', async () => {
     const res = makeResponse('history')
     ;(res.notification.request.content.data as any).doseInstanceId = 'di-1'

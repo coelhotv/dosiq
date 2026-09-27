@@ -10,10 +10,12 @@
 //
 // ADR-036: JS stack (não native-stack) por compatibilidade Android API 24.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { createStackNavigator } from '@react-navigation/stack'
 import { ROUTES } from '@navigation/routes'
 import { completeOnboarding } from '@profile/services/profileService'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { OnboardingContext } from './OnboardingContext'
 import OnboardingWelcomeStep from './screens/OnboardingWelcomeStep'
 import OnboardingMedicineStep from './screens/OnboardingMedicineStep'
@@ -24,11 +26,22 @@ import OnboardingStockInitialBalanceStep from './screens/OnboardingStockInitialB
 // TODO(040-strict): Stack.Navigator não tipado p/ rotas dinâmicas (nível B)
 const Stack: any = createStackNavigator()
 
+// Função hoisted (não handler do componente): lê as refs passadas, sem estado de render.
+function emitOnce(ref, skippedRef) {
+  if (ref.current || skippedRef.current) return
+  ref.current = true
+  logEvent(EVENTS.ONBOARDING_COMPLETE, { surface: SURFACES.MOBILE })
+}
+
 export default function OnboardingNavigator({ onComplete }) {
   // Medicamento criado no passo 1, consumido pelo passo 2.
   const [medicine, setMedicine] = useState(null)
   // Tratamento em configuração no passo 3.
   const [treatment, setTreatment] = useState(null)
+  // 065 C2 (G-4): `complete` sai UMA vez. Na opção 2 do passo de estoque `markCompleted` roda antes
+  // e `finish` depois (tela de saldo) — sem a ref, a mesma conclusão contaria duas vezes.
+  const completeEmitted = useRef(false)
+  const skipped = useRef(false)
 
   // Concluir OU pular: marca onboarding_completed e entrega o app. Mesmo se a
   // marcação falhar, não prende o usuário no wizard.
@@ -36,6 +49,16 @@ export default function OnboardingNavigator({ onComplete }) {
   // R-010 exige Memos ANTES de Handlers, e um useCallback aqui empurraria o `value` para
   // depois de um handler (erro de lint). O par é equivalente para uma função estável.
   const finish = useMemo(() => async () => {
+    await completeOnboarding()
+    emitOnce(completeEmitted, skipped)
+    onComplete?.()
+  }, [onComplete])
+
+  // Pular ≠ concluir (065 C2, G-4): antes o "Pular" de 3 telas chamava `finish` direto e as duas
+  // saídas eram indistinguíveis. `step` = posição do header (1..3) — onde a pessoa desistiu.
+  const skip = useMemo(() => async (step) => {
+    skipped.current = true
+    logEvent(EVENTS.ONBOARDING_SKIP, { surface: SURFACES.MOBILE, step })
     await completeOnboarding()
     onComplete?.()
   }, [onComplete])
@@ -52,12 +75,18 @@ export default function OnboardingNavigator({ onComplete }) {
   // setup". Marca-se a conclusão assim que as escritas do setup persistem.
   const markCompleted = useMemo(() => async () => {
     await completeOnboarding()
+    emitOnce(completeEmitted, skipped)
   }, [])
 
   const value = useMemo(
-    () => ({ medicine, setMedicine, treatment, setTreatment, finish, markCompleted }),
-    [medicine, treatment, finish, markCompleted],
+    () => ({ medicine, setMedicine, treatment, setTreatment, finish, skip, markCompleted }),
+    [medicine, treatment, finish, skip, markCompleted],
   )
+
+  // Entrou no wizard. Reabrir o app no meio conta nova tentativa (declarado, analysis-prC G-8).
+  useEffect(() => {
+    logEvent(EVENTS.ONBOARDING_START, { surface: SURFACES.MOBILE })
+  }, [])
 
   return (
     <OnboardingContext.Provider value={value}>

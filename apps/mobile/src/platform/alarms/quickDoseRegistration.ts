@@ -16,7 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getRawNow, parseISO, skipDose, isOutOfWindowError, extractOutOfWindowScheduledAt, createCriticalAuditService } from '@dosiq/core'
 import { registerDose } from '@dose/services/doseService'
 import { logEvent } from '@platform/analytics/productAnalytics'
-import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import { EVENTS, SURFACES, REMINDER_SOURCES } from '@platform/analytics/analyticsEvents'
+import { emitReminderOpened } from '@platform/analytics/reminderEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
@@ -412,6 +413,10 @@ async function dispatchCanonicalAction(pressActionId, data) {
       await alarmService.scheduleSnooze({
         ...rescheduleBase(data),
         currentSnoozeAttempt: parseInt(data.snoozeAttempt || '0', 10),
+        // Botão da notificação (canal push). A superfície de dose ativa chega mapeada para SNOOZE
+        // (SURFACE_TO_ALARM_ACTION): a origem sai do `data`, não do id da ação.
+        source: data.__surface === 'true' ? REMINDER_SOURCES.DOSE_ACTIVITY : REMINDER_SOURCES.ALARM,
+        surface: SURFACES.PUSH,
       })
       return { handled: true, action: ALARM_ACTION.SNOOZE }
     }
@@ -447,6 +452,8 @@ export async function handleAlarmAction(event) {
 
   // Superfície 039: "Registrar" NÃO registra silencioso — abre a modal bulk (sítio p/ injetável).
   if (rawActionId === SURFACE_ACTION.REGISTER) {
+    // 065 AD-8: gargalo das 3 entradas (fg, headless, cold) — o dedupe do helper conta o toque 1×.
+    emitReminderOpened(REMINDER_SOURCES.DOSE_ACTIVITY, data.doseInstanceId)
     navigateSurfaceRegister(data)
     return { handled: true, action: 'surface-open-register' }
   }

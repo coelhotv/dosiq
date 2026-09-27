@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native'
 import { useToast } from '@shared/components/feedback/Toast'
 import { successHaptic, errorHaptic } from '@shared/utils/haptics'
 import { medicineService } from '../services/medicineService'
+import { SURFACES } from '@platform/analytics/analyticsEvents'
 
 const MEDICINES_CACHE_KEY = '@dosiq/medicines-snapshot'
 const STOCK_CACHE_KEY = '@dosiq/stock-snapshot'
@@ -76,7 +77,7 @@ export function useMedicineDelete(medicine, stockTrackingEnabled = true) {
     if (!medicine?.id) return false
     setIsLoading(true)
     try {
-      await medicineService.delete(medicine.id)
+      await medicineService.delete(medicine.id, { surface: SURFACES.MOBILE })
       await AsyncStorage.multiRemove([MEDICINES_CACHE_KEY, STOCK_CACHE_KEY]).catch(() => {})
       successHaptic()
       show('Medicamento removido', { variant: 'success' })

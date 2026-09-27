@@ -30,6 +30,8 @@ import notifee, {
 import { Platform, Linking } from 'react-native'
 import * as Device from 'expo-device'
 import { debugLog } from '@shared/utils/debugLog'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS } from '@platform/analytics/analyticsEvents'
 
 // Canal Android é IMUTÁVEL após criado — bumpar o id força recriação com o som
 // correto (alarm_dose). v1 ficou no som padrão; v2 nasceu padrão em devices cujo
@@ -488,6 +490,15 @@ function _refuseSnoozeOutOfWindow({ doseInstanceId, medicineName, scheduledFor, 
   return true
 }
 
+// 065 AD-8: payload do `dose_snoozed` — chave ausente fica fora (A-1). Extraído p/ manter
+// `scheduleSnooze` sob o teto de complexidade do lint. @private
+function _emitSnoozed(source, surface) {
+  const props: Record<string, string> = {}
+  if (source) props.source = source
+  if (surface) props.surface = surface
+  logEvent(EVENTS.DOSE_SNOOZED, props)
+}
+
 /**
  * Soneca manual (FR-003 v2): o usuário toca "Soneca" → re-agenda a MESMA dose pra
  * +5min, máx 3 vezes. Reusa o id da instância (substitui a notif atual e PARA o
@@ -503,6 +514,10 @@ export async function scheduleSnooze({
   currentSnoozeAttempt = 0,
   isCritical = false,
   data = {} as Record<string, any>,
+  // 065 AD-8: origem do aviso (REMINDER_SOURCES) e canal do toque (SURFACES). SEM default (A-1):
+  // chamador que não informa manda o evento sem a chave.
+  source = null as string | null,
+  surface = null as string | null,
 }) {
   // Cancela primeiro: mata o loop do som da notif atual.
   await cancelAlarm(doseInstanceId)
@@ -565,6 +580,10 @@ export async function scheduleSnooze({
       ),
     )
   }
+
+  // 065 AD-8: `dose_snoozed` só quando a soneca FOI agendada (recusa fora da janela e teto estourado
+  // saem antes). 1 por ação, não por ocorrência agrupada. Fail-silent (CON-021).
+  _emitSnoozed(source, surface)
 
   debugLog('[alarmService] snooze', next, doseInstanceId)
   return true
