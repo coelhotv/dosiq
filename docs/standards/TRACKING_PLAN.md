@@ -318,8 +318,8 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
 | `dose_logged` | ✅ | dose registrada | **`treatment_id`** (do fato — §5.0), `medicine_id`, `action?`, `surface`, `entry_point: reminder` (**só** na modal aberta por um lembrete — 065 AD-8; ausente = abriu o app por conta própria) | querer a dose + **sucesso silencioso** por `surface`; adesão por tratamento |
-| `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, **`surface` (a adicionar)** | catch-up de doses atrasadas |
-| `dose_skipped` | 🔌 | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
+| `dose_logged_bulk` | ✅ | registro em lote | `count`, **`treatment_id?`**, `surface`, `entry_point?` | catch-up de doses atrasadas |
+| `dose_skipped` | ✅ mobile | dose marcada como pulada | **`treatment_id`**, `surface`, `medicine_id?` | aderência honesta (pulo ≠ esquecimento) |
 | `adherence_milestone_reached` | 🆕 | cruzamento de **marco/limiar** de adesão (não o score contínuo) | `treatment_id`, `milestone`, `surface` | **gostar** (celebrar progresso). **Fase 2 (web)** — verificado 2026-08-09: **sem gatilho no mobile** (só KPI passivo `adherence30d`/`streak`); a celebração é web (`MilestoneCelebration`/`BadgeDisplay`). Gatilho no mobile = mecânica nova, fora de escopo |
 
 > **O score de adesão em si NÃO é evento.** É **derivado** de `dose_logged`/`dose_skipped` (que
@@ -358,10 +358,10 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `biomarker_logged` | 🆕 | usuário registra uma medida | `surface`, **`biomarker_type`** | adoção do acompanhamento **por tipo**; correlação com adesão/retenção |
+| `biomarker_logged` | ✅ mobile (#842) | medida gravada — casca do `measuresRepo` (Hoje, Histórico, Medidas) | **`biomarker_type`** — ⚠️ **sem `surface`** (AD-5: entra com a 069-A) | adoção do acompanhamento **por tipo**; correlação com adesão/retenção |
 
 > **`biomarker_type` é necessário para interpretar, não opcional.** Valores verbatim hoje (enum de
-> 3 — usar exatos, R-021): `peso` · `glicemia` · `pressao_arterial`. Cada tipo tem cadência natural
+> 4 — usar exatos, R-021; `BIOMARKER_TYPES` do core): `peso` · `glicemia` · `pressao_arterial` · `batimentos`. Cada tipo tem cadência natural
 > diferente: **`pressao_arterial` pode ter várias medidas/dia** por protocolo, `glicemia` idem em
 > diabético, `peso` ~1/dia. Contar `biomarker_logged` bruto como "engajamento" leria um dia normal
 > de PA como pico de entusiasmo — ou de erro. Sem o tipo, a métrica é ruído; por isso ele entra.
@@ -381,9 +381,9 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `ai_assistant_opened` | 🆕 | abre o assistente | `surface` | adoção da feature |
-| `ai_assistant_message_sent` | 🆕 | envia uma mensagem | `surface`, `message_index?` | engajamento; correlação com retenção |
-| `ai_assistant_error` | 🆕 | falha na resposta | `surface`, `error_kind` | confiabilidade do Groq |
+| `ai_assistant_opened` | ⏸ não emitido | abre o assistente | — | adoção da feature — **coberto hoje por `$screen` da tela do chat** (autocapture); evento dedicado só se a leitura por tela falhar |
+| `ai_assistant_message_sent` | ✅ mobile (#842) | resposta recebida **ou** falha no envio | `has_error: boolean` — ⚠️ sem `surface`/`message_index` | engajamento + confiabilidade (substitui o `ai_assistant_error` proposto) |
+| `ai_assistant_error` | ⛔ absorvido | — | — | virou `ai_assistant_message_sent{has_error:true}` (065 PR D). `error_kind` não existe: gap G-8 (§5.12) |
 
 > 🔴 **Só meta-eventos.** O **texto** da pergunta e a **resposta** do Groq **jamais** entram no
 > payload (§6) — é a maior fonte de PII do app. Uso de software → **sem `treatment_id`**.
@@ -392,8 +392,8 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `profile_updated` | 🆕 | perfil criado/editado | `surface`, `field?` (enum, **nunca valor**) | investimento/ativação (preencheu perfil?) |
-| `mode_changed` | 🆕 | muda `complexity_override` (densidade) | `surface`, `mode: simple\|complex` | troca de persona; **re-registra a super property `mode`** (§3.2) |
+| `profile_updated` | ✅ mobile (#842) | perfil salvo | `{}` — ⚠️ sem `surface`/`field` | investimento/ativação (preencheu perfil?) |
+| `mode_changed` | ✅ mobile (#842) | muda `complexity_override` (densidade) | `mode: simple\|complex\|auto` — ⚠️ sem `surface` | troca de persona; **re-registra a super property `mode`** (§3.2) |
 
 > **Nunca** nome/data de nascimento/cidade/telefone (§6) — só que a *ação* ocorreu, no máximo o
 > `field` alterado como enum. Settings de notificação já vivem em `notification_preference_changed`
@@ -443,6 +443,29 @@ superfície.
 | Novos deste plano | `treatment_created`/`edited`/`paused`/`resumed`/`ended` (com `treatment_planned_end`), `biomarker_logged`, `ai_assistant_*`, `profile_updated`, `mode_changed` | Fase 1 |
 | Fora da Fase 1 | `adherence_milestone_reached` (sem gatilho mobile → Fase 2) · desmame `weaning_*` (diferido, engine) | Fase 2 / futura |
 | Decisão pendente do DPO | mecanismo do opt-in web — bloqueante vs. aviso (§6.2) | — |
+---
+
+### 5.12 Gaps de medição — revalidação pós-065 (2026-09-27)
+
+> Fonte: catálogo (`analyticsEvents.ts`, 44 eventos, todos com emissor) × este plano × PostHog
+> (HogQL, 30 dias, 42 eventos distintos). A série de 30d ainda é dominada pela frota 0.30.x
+> (`app_env` presente em só 24–28% de `cold_start`/`dose_logged`): **nada da 065 chegou a usuária
+> real** — só ao smoke do PO. Leitura de verdade começa no build 0.34.0.
+
+| # | Gap | Evidência | Impacto na pergunta | Prioridade / caminho |
+|---|---|---|---|---|
+| G-1 | **Wedge GLP-1 não é segmentável.** Nenhum evento de tratamento/dose carrega a forma (`presentation`: `injetavel`…) nem a classe do remédio | `treatment_created` = `medicine_id` UUID + `frequency`; `semanal` é proxy fraco | A tese 2026 (wedge GLP-1/injetáveis) não tem corte próprio no PostHog | 🔴 **alta** — decidir: `presentation` (enum de 7, categoria de forma, não de doença) em `treatment_created`/`dose_logged`, **ou** join `medicine_id`→`medicines` via data warehouse. Passa pela régua de postura do §5.7 |
+| G-2 | **`mode` registra `'auto'`** em vez da densidade efetiva (§3.2 manda resolver o adaptativo) | 30d: `['auto']` em quase todo evento | Segmentação por persona (Carlos × dona Maria) — o motivo de `mode` existir — não funciona para quem não escolheu densidade (a maioria) | 🔴 **alta** — `setMode` registrar `simple`/`complex` efetivo; `auto` vira prop à parte (`mode_source`) |
+| G-3 | **`surface` ausente** apesar de "obrigatória em todo evento" (§3) | 0% em `login`, `cold_start`, `stock_*` (044), `consent_*`, `account_deleted`, `biomarker_logged`, `ai_assistant_message_sent`, `profile_updated`, `mode_changed` | Baixo hoje (tudo é UI mobile), alto na Fase 2 (web/bot) — mistura superfícies | 🟡 média — ou emitir, ou rebaixar a regra para "obrigatória em evento que pode nascer em >1 superfície" (decisão de plano, não de código) |
+| G-4 | **Sucesso silencioso fora do app é invisível.** Dose registrada pelo **bot/web** e lembretes **enviados** (denominador do AD-8) vivem só no servidor | `notification_log`/`dose_critical_events` fora do PostHog | "Lembrete funcionou?" só tem numerador; usuária de Telegram parece churn | 🟡 média — Fase 2 (§5.11) ou warehouse; gated pela `059`/v0.4 |
+| G-5 | **Eventos sem nenhuma amostra real** | 30d: `stock_low_viewed` 0 (banner morto — 090 D-5), `stock_upsell_conversion` 0, `consent_prompt_dismissed` 0 | Série vazia não distingue "não usado" de "quebrado" | 🟢 baixa — `stock_low_viewed` depende da 090 D-5; os outros, gatilho manual no próximo smoke |
+| G-6 | **`titration_transition_postponed` sem `treatment_id`** (declarado) | tid = 0 | Fricção de titulação não se liga ao tratamento | 🟢 baixa — aceitar, ou ler `step_id`→tratamento via warehouse |
+| G-7 | **"Gostar" sem sinal direto** | nenhum evento de satisfação | Terceira variável do §1 só é inferida (push desligado + uso) | 🟢 baixa — `047` review prompt traz o 1º sinal explícito |
+| G-8 | **Assistente sem `error_kind`** | `has_error` booleano | Não separa timeout × 5xx × sem sessão | 🟢 baixa — enum curto se o chat entrar no wedge |
+| G-9 | **Colisão legada de super property** | `stock_onboarding_choice{mode}` sobrescreve a densidade | Evento sem persona | 🟢 baixa — exceção declarada; renomear só com a série da 044 encerrada |
+
+**Não é gap (conferido):** `$app_version` em 100% (SDK); PII limpa nos 42 eventos; `treatment_id`
+100% onde o plano exige; `dose_logged`/`dose_logged_bulk` com `surface` em todo evento pós-corte.
 
 ---
 
