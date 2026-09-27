@@ -11,26 +11,49 @@
  * Adiar NÃO é um evento da trilha: `revoked` é a retirada de um consentimento que EXISTIU. Quem
  * nunca consentiu e adia segue `missing` — o botão de adiar não escreve nada no banco.
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import HealthConsentCheckbox from './HealthConsentCheckbox'
 import ConsentLegalHeader from './ConsentLegalHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS } from '@platform/analytics/analyticsEvents'
+
+// 065 PR D / US9 — de onde este prompt foi renderizado (4 call-sites reais, achados no C1.5;
+// ConsentRegularizationSheet é aceite de política nova e usa componente PRÓPRIO, não este).
+export type ConsentPromptSource =
+  | 'prompt_blocking'      // Navigation.tsx — trava do guard (mode !== 'blocked_revoked')
+  | 'prompt_dismissible'   // Navigation.tsx — overlay até a 3ª sessão
+  | 'prompt_navigated'     // ConsentPromptScreen.tsx — opt-in voluntário via hub
+  | 'resolution_revoked'   // ConsentResolutionScreen.tsx — re-consentir após revogação
 
 interface ConsentPromptProps {
   blocking: boolean
+  source: ConsentPromptSource
   onGrant: () => Promise<{ ok: boolean; error?: string }>
   onDismiss?: () => void
   onGranted: () => void
 }
 
-export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted }: ConsentPromptProps) {
+export default function ConsentPrompt({ blocking, source, onGrant, onDismiss, onGranted }: ConsentPromptProps) {
   const [checked, setChecked] = useState(false)
   const [showError, setShowError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // 1x por montagem (não por render) — mesma disciplina do FR-1: `source`/`blocking` vêm de quem
+  // monta este componente, nunca de um default silencioso.
+  useEffect(() => {
+    void logEvent(EVENTS.CONSENT_PROMPT_SHOWN, { blocking, source })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function handleDismiss() {
+    void logEvent(EVENTS.CONSENT_PROMPT_DISMISSED, { source })
+    onDismiss?.()
+  }
 
   async function handleConfirm() {
     if (!checked) {
@@ -45,6 +68,7 @@ export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted 
         setError('Não foi possível registrar o consentimento agora. Tente de novo.')
         return
       }
+      void logEvent(EVENTS.CONSENT_GRANTED, { source })
       onGranted()
     } catch {
       // onGrant() rejeitou (ex.: rede) — sem isto o botão ficaria travado em loading.
@@ -95,7 +119,7 @@ export default function ConsentPrompt({ blocking, onGrant, onDismiss, onGranted 
         </Pressable>
 
         {!blocking && onDismiss ? (
-          <Pressable style={styles.dismiss} onPress={onDismiss} disabled={saving} accessibilityRole="button">
+          <Pressable style={styles.dismiss} onPress={handleDismiss} disabled={saving} accessibilityRole="button">
             <Text style={styles.dismissText}>Agora não</Text>
           </Pressable>
         ) : null}

@@ -9,8 +9,6 @@
 import { View, Text, Pressable, Linking, StyleSheet } from 'react-native'
 import { HEALTH_CONSENT_COPY } from '@dosiq/core'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
-import { logEvent } from '../../../platform/analytics/productAnalytics'
-import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 interface HealthConsentCheckboxProps {
   checked: boolean
@@ -26,14 +24,12 @@ export default function HealthConsentCheckbox({
   disabled = false,
   showError = false,
 }: HealthConsentCheckboxProps) {
-  // FR-008: instrumentação de atrito — só na recusa (desmarcar), nunca no marcar. Sem PII.
+  // 065 PR D / US9: `consent_health_declined` APOSENTADO (payload vazio, sem origem, 7
+  // ocorrências/180d) — a família consent_prompt_*/consent_granted/consent_blocked_attempt mede o
+  // custo do consentimento com contexto real. Ver CON-034 §5.
   const handleToggle = () => {
     if (disabled) return
-    const next = !checked
-    if (!next) {
-      logEvent(EVENTS.CONSENT_HEALTH_DECLINED, {})
-    }
-    onChange(next)
+    onChange(!checked)
   }
 
   const openPolicy = () => {

@@ -7,6 +7,19 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Biomarcador, assistente, perfil e conta medidos; consentimento com contexto real
+
+- **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de
+  loja). Nada muda na tela. O analytics passa a registrar: o lançamento de um biomarcador (só o
+  tipo — peso, glicemia ou pressão — nunca o valor), o envio de mensagem ao assistente (só se deu
+  certo ou errado — nunca a pergunta nem a resposta), a atualização de perfil e a troca de densidade da
+  interface (sem nenhum dado pessoal), e a exclusão de conta (com o resultado, mesmo quando falha).
+  O consentimento de dados de saúde passa a registrar quando o pedido aparece, quando a pessoa
+  adia, quando autoriza (e por qual caminho) e quando a sessão fica bloqueada por falta de
+  autorização — no lugar do evento antigo, que só media marcar/desmarcar um checkbox sem dizer de
+  onde vinha. A escolha de acompanhar estoque no primeiro acesso deixou de contar a mesma pessoa
+  duas vezes.
+
 ### Cadastro, estoque, primeiro acesso e lembretes medidos
 
 - **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de loja).

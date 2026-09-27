@@ -1,4 +1,4 @@
-import { getCurrentUser, logoutUser, updateNotificationSettings, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone, updateTimezone, hasFuturePendingDoses } from '../profileService'
+import { getCurrentUser, logoutUser, updateNotificationSettings, getUserSettings, generateTelegramToken, completeOnboarding, captureDeviceTimezone, updateTimezone, hasFuturePendingDoses, deleteAccount } from '../profileService'
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
 import { regenActiveProtocolsForTz, hasFuturePendingDoses as hasFuturePendingDosesCore } from '@dosiq/core'
 
@@ -116,6 +116,24 @@ describe('profileService', () => {
       mockedSupabase.from().upsert.mockResolvedValueOnce({ error: { message: 'x' } })
       await updateNotificationSettings(VALID_USER_ID, { notification_preference: 'none' }, { previous: null })
       expect(prefEvents()).toEqual([])
+    })
+  })
+
+  describe('deleteAccount — account_deleted (065 PR D / US9 / PO-12)', () => {
+    const accountEvents = () => mockLogEvent.mock.calls.filter(([n]) => n === 'account_deleted')
+
+    it('sucesso: emite account_deleted{result:"success"}', async () => {
+      mockedSupabase.rpc.mockResolvedValue({ data: { ok: true }, error: null })
+      const res = await deleteAccount()
+      expect(res.success).toBe(true)
+      expect(accountEvents()).toEqual([['account_deleted', { result: 'success' }]])
+    })
+
+    it('falha: emite account_deleted{result:"error"} — mede tentativa, não só êxito', async () => {
+      mockedSupabase.rpc.mockResolvedValue({ data: null, error: { message: 'active_treatments_block' } })
+      const res = await deleteAccount()
+      expect(res.success).toBe(false)
+      expect(accountEvents()).toEqual([['account_deleted', { result: 'error' }]])
     })
   })
 

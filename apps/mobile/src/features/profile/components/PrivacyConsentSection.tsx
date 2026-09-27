@@ -20,6 +20,8 @@ import { HEALTH_CONSENT_COPY, createConsentService, parseISO } from '@dosiq/core
 import type { ConsentState } from '@dosiq/core'
 import { useConsentGate } from '@platform/consent/useConsentGate'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { EVENTS } from '@platform/analytics/analyticsEvents'
 
 const consentService = createConsentService({ client: supabase as never })
 
@@ -189,6 +191,7 @@ export default function PrivacyConsentSection() {
     try {
       const res = await consentService.revoke('health_data', 'mobile')
       if (res.ok) {
+        void logEvent(EVENTS.CONSENT_REVOKED, {})
         await load()
         await gate.refresh()
       }

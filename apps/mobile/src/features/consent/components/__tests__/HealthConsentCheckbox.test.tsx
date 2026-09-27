@@ -30,7 +30,7 @@ describe('HealthConsentCheckbox', () => {
     expect(screen.getByText('Consentimento para dados de saúde')).toBeTruthy()
   })
 
-  it('marcar NÃO dispara analytics de recusa', () => {
+  it('marcar não dispara analytics — componente é puro (065 PR D)', () => {
     const onChange = jest.fn()
     render(<HealthConsentCheckbox checked={false} onChange={onChange} />)
 
@@ -40,14 +40,14 @@ describe('HealthConsentCheckbox', () => {
     expect(mockLogEvent).not.toHaveBeenCalled()
   })
 
-  it('desmarcar dispara consent_health_declined sem PII (FR-008)', () => {
+  it('desmarcar também não dispara analytics — consent_health_declined APOSENTADO (065 PR D / US9)', () => {
     const onChange = jest.fn()
     render(<HealthConsentCheckbox checked onChange={onChange} />)
 
     fireEvent.press(screen.getByRole('checkbox'))
 
     expect(onChange).toHaveBeenCalledWith(false)
-    expect(mockLogEvent).toHaveBeenCalledWith('consent_health_declined', {})
+    expect(mockLogEvent).not.toHaveBeenCalled()
   })
 
   it('accessibilityState reflete checked', () => {

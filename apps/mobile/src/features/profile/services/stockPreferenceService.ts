@@ -49,7 +49,11 @@ export async function chooseStockModeInOnboarding(enabled: boolean): Promise<voi
   // perguntar o saldo inicial — a tela do PO-3 nunca apareceria.
   await profileRepo.setStockTracking(enabled, { freeze: false })
   void logEvent(EVENTS.STOCK_ONBOARDING_CHOICE, { mode: enabled ? 'stock' : 'dose_only' })
-  if (enabled) void logEvent(EVENTS.STOCK_OPT_IN, { source: 'onboarding' })
+  // 065 PR D / US9 (dedupe): NÃO emitir stock_opt_in aqui. Escolher o modo é intenção (já medida
+  // por stock_onboarding_choice{mode}); o opt-in mensurável é activateStockWithInitialBalance, na
+  // tela de saldo OPCIONAL seguinte. Emitir nos dois pontos contava a pessoa 2× (SC-004 da 044).
+  // Consequência aceita pelo PO: quem escolhe estoque e toca "Cancelar" no saldo fica com o modo
+  // ligado SEM stock_opt_in — contar esse grupo por stock_onboarding_choice{mode:'stock'}.
 }
 
 /**

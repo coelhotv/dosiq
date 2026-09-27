@@ -46,7 +46,8 @@ import { usePushNotifications } from '../platform/notifications/usePushNotificat
 import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
-import { logScreenView, setUserId, resetUser } from '../platform/analytics/productAnalytics'
+import { logScreenView, setUserId, resetUser, logEvent } from '../platform/analytics/productAnalytics'
+import { EVENTS } from '../platform/analytics/analyticsEvents'
 import { clearStockTrackingCache } from '../platform/storage/stockTrackingCache'
 import { debugLog } from '@shared/utils/debugLog'
 
@@ -233,7 +234,7 @@ function ConsentLockedNavigator({ mode, onGrant, onGranted }) {
         <Stack.Screen name={ROUTES.CONSENT_RESOLUTION} component={ConsentResolutionScreen} />
       ) : (
         <Stack.Screen name={ROUTES.CONSENT_RESOLUTION}>
-          {() => <ConsentPrompt blocking onGrant={onGrant} onGranted={onGranted} />}
+          {() => <ConsentPrompt blocking source="prompt_blocking" onGrant={onGrant} onGranted={onGranted} />}
         </Stack.Screen>
       )}
       {/* Hub do 008: export + política + exclusão. É esta rota que sustenta o anti-deadlock.
@@ -319,6 +320,14 @@ function NavigationTree({
     consent,
     regularizationDismissed
   )
+
+  // 065 PR D / US9 (PO-12): 1x por ENTRADA na trava, não por render. `gate_mode` diz POR QUE travou
+  // (revogou × cortesia esgotada) — dado real do gate, nunca constante (boundary da PO-12). Chave
+  // `gate_mode`, NÃO `mode`: `mode` é super property (densidade) e seria sobrescrita no evento.
+  useEffect(() => {
+    if (consentLocked) void logEvent(EVENTS.CONSENT_BLOCKED_ATTEMPT, { gate_mode: consent.mode })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consentLocked])
 
   if (isLoading) {
     return (
@@ -424,6 +433,7 @@ function NavigationTree({
       <View style={styles.promptOverlay}>
         <ConsentPrompt
           blocking={false}
+          source="prompt_dismissible"
           onGrant={consent.grant}
           onDismiss={consent.dismiss}
           onGranted={() => consent.refresh()}
