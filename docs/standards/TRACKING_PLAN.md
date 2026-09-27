@@ -403,8 +403,20 @@ escada que termina em manutenção **não encerra**, e marcar `weaning_complete`
 
 | Evento | Status | Props | Pergunta |
 |---|---|---|---|
-| `consent_health_declined` | 🔤 | `{}` (sem PII, FR-008) | recusa de consentimento de saúde |
+| `consent_prompt_shown` | ✅ | `blocking`, `source` | o pedido de consentimento apareceu, e de onde |
+| `consent_prompt_dismissed` | ✅ | `source` | a pessoa adiou ("Agora não") — só existe quando não bloqueante |
+| `consent_granted` | ✅ | `source`: `prompt_blocking`\|`prompt_dismissible`\|`prompt_navigated`\|`resolution_revoked` | autorizou, por qual caminho (signup fica fora — 065 PO-12) |
+| `consent_revoked` | ✅ | `{}` | revogou em Privacidade |
+| `consent_blocked_attempt` | ✅ | `gate_mode`: `blocked_revoked`\|`prompt_blocking` | o app entrou na trava de consentimento |
+| `account_deleted` | ✅ | `result`: `success`\|`error` | exclusão de conta — mede a tentativa, não só o êxito |
+| ~~`consent_health_declined`~~ | ⛔ mobile · 🔤 web | `{}` | **aposentado no mobile** (065 PR D, #842): media só marcar→desmarcar, sem origem. Web legado ainda emite |
 | `dev_smoke_event` | 🔤 | `source`, `platform` | **não-produção** (DevHub); excluir de dashboards |
+
+> **Chave de payload ≠ super property.** `app_env`, `channel`, `is_internal`, `mode`, `runtime_version`
+> e `update_id` são registradas em todo evento; repetir a chave no payload **sobrescreve** o valor
+> global naquele evento (achado no smoke do 065 D: `mode` apagava a densidade). Guard:
+> `payloadPiiContract.test.ts`. Exceções declaradas: `mode_changed` (mesma semântica) e
+> `stock_onboarding_choice{mode}` (legado 044 — renomear quebra a série).
 
 ### 5.11 Faseamento e cobertura
 
