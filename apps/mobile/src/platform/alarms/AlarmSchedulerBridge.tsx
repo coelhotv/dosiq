@@ -28,6 +28,7 @@ import { navigationRef } from '@navigation/navigationRef'
 import { ROUTES } from '@navigation/routes'
 import { useAlarmScheduler } from './useAlarmScheduler'
 import { handleAlarmAction } from './quickDoseRegistration'
+import { emitReminderOpened, localReminderSource } from '@platform/analytics/reminderEvents'
 import { onAlarmResync } from './alarmResyncBus'
 import { cancelAlarm } from './alarmService'
 import { SURFACE_ACTION, endDoseActivity } from '@platform/doseActivity/doseActivitySurfaceService'
@@ -262,6 +263,11 @@ export default function AlarmSchedulerBridge() {
           await handleAlarmAction(event)
         } else if (event.type === EventType.PRESS || event.type === EventType.DELIVERED) {
           // tap no corpo OU entrega enquanto em foreground → tela cheia
+          // 065 AD-8 (G-5): só o TOQUE é "o lembrete abriu o app"; a ENTREGA com o app já aberto não.
+          if (event.type === EventType.PRESS) {
+            const data = event.detail?.notification?.data
+            emitReminderOpened(localReminderSource(data), data?.doseInstanceId)
+          }
           openAlarmScreen(event.detail?.notification)
           // Marca-passo da superfície: alarme entregue em foreground (fullScreen trouxe a app) →
           // reconcilia a cadeia de estados da dose (paridade com o bg handler; evita a race do T0).
@@ -293,6 +299,9 @@ export default function AlarmSchedulerBridge() {
         if (initial.pressAction?.id === SURFACE_ACTION.REGISTER) {
           handleAlarmAction({ detail: initial })
         } else {
+          // App aberto a partir do aviso (cold). "Registrar" emite dentro do handleAlarmAction.
+          const data = initial.notification?.data
+          emitReminderOpened(localReminderSource(data), data?.doseInstanceId)
           openAlarmScreen(initial.notification)
         }
       })

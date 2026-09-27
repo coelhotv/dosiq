@@ -409,6 +409,8 @@ export default function BulkDoseRegisterModal({
   initialProtocols = null,
   instancesByKey = null,
   instancedItems = null,
+  // 065 AD-8: 'reminder' quando a modal foi aberta por um lembrete (deeplink). Sem default.
+  entryPoint = null,
 }) {
   const { show } = useToast()
 
@@ -485,7 +487,7 @@ export default function BulkDoseRegisterModal({
 
     const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites)
 
-    const result = await registerDoseMany(logsData, { surface: SURFACES.MOBILE })
+    const result = await registerDoseMany(logsData, { surface: SURFACES.MOBILE, entryPoint })
     setLoading(false)
 
     const outcome = buildBulkOutcome(result)

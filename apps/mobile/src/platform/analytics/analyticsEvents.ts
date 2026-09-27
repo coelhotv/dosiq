@@ -41,6 +41,10 @@ export const EVENTS = {
   NOTIFICATION_PERMISSION_DENIED: 'notification_permission_denied',
   NOTIFICATION_PREFERENCE_CHANGED: 'notification_preference_changed', // new_preference
   PUSH_NOTIFICATION_TAPPED: 'push_notification_tapped',               // kind: kind do servidor, verbatim (enum fechado)
+  // 065 AD-8: o lembrete é UM só para a pessoa, qualquer que seja o canal. `source` é a origem do
+  // aviso (REMINDER_SOURCES); `surface` segue sendo o canal do toque.
+  REMINDER_OPENED: 'reminder_opened',   // source, surface — lembrete de dose abriu o app
+  DOSE_SNOOZED: 'dose_snoozed',         // source, surface — Adiar/Soneca num lembrete
 
   // App / consentimento
   COLD_START: 'cold_start',                        // duration_ms + bundle tags + env tags
@@ -78,6 +82,17 @@ export const SURFACES = {
 export const ENTRY_POINTS = {
   ONBOARDING: 'onboarding',
   TREATMENT_FORM: 'treatment_form',
+  // 065 AD-8: dose registrada na modal que um lembrete abriu (deeplink). Separa "abriu pelo aviso
+  // e tomou" de "abriu o app e tomou" — os dois saem `surface:'mobile'`.
+  REMINDER: 'reminder',
+}
+
+// Origem do LEMBRETE (065 AD-8). Eixo diferente de `surface`: o mesmo aviso chega por canais
+// distintos; a leitura principal ignora `source`.
+export const REMINDER_SOURCES = {
+  SERVER_PUSH: 'server_push',     // push remoto do servidor (expo)
+  ALARM: 'alarm',                 // alarme local do Notifee (dose crítica)
+  DOSE_ACTIVITY: 'dose_activity', // superfície de dose ativa (Notifee Android / Live Activity iOS)
 }
 
 // Ponto de TOQUE dentro do app (065 T046a). Eixo diferente de `surface` (canal): mesmo raciocínio do

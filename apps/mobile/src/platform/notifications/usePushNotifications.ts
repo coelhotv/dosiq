@@ -17,6 +17,7 @@ import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import { emitServerReminderOpened } from '@platform/analytics/reminderEvents'
 
 // Mapa de screen names do payload para rotas do navigator
 const SCREEN_TO_ROUTE = {
@@ -55,6 +56,8 @@ function navigateFromPush(data) {
     surface: SURFACES.PUSH,
     ...(typeof data.kind === 'string' ? { kind: data.kind } : {}),
   })
+  // 065 AD-8: push de LEMBRETE de dose também conta como "o lembrete abriu o app" (qualquer canal).
+  emitServerReminderOpened(data)
   const navigationData = data.navigation
   const screen = navigationData?.screen
   const params = navigationData?.params ?? {}

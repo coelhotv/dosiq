@@ -34,13 +34,15 @@ const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
  * continua sendo o fato quando o protocolo é editado ou trocado depois (R-299).
  * Ausência é resultado válido: id certo com nome vazio > nome errado (R-299 §4).
  */
-function _doseEventProps(base, { surface = null, treatmentId = null } = {}) {
+function _doseEventProps(base, { surface = null, treatmentId = null, entryPoint = null } = {}) {
   // Chave com valor ausente NÃO entra no payload — mesmo princípio do `surface`. Um
   // `medicine_id: undefined` viaja como propriedade existente e vazia, que no PostHog é pior que
   // ausência: aparece na lista de propriedades e polui qualquer contagem por medicamento.
   const props = Object.fromEntries(Object.entries(base).filter(([, v]) => v != null))
   if (surface) props.surface = surface
   if (treatmentId) props.treatment_id = treatmentId
+  // 065 AD-8: `entry_point: 'reminder'` só quando a modal foi aberta por um lembrete. Sem default.
+  if (entryPoint) props.entry_point = entryPoint
   return props
 }
 
@@ -125,7 +127,7 @@ function _isAlreadyResolved(err) {
  * @param {Object} [options]
  * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
  */
-export async function registerDose(logData, { instanceId = null, surface = null } = {}) {
+export async function registerDose(logData, { instanceId = null, surface = null, entryPoint } = {} as { instanceId?: string | null, surface?: string | null, entryPoint?: string }) {
   debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
   if (!parsed.success) {
@@ -143,7 +145,7 @@ export async function registerDose(logData, { instanceId = null, surface = null 
       EVENTS.DOSE_LOGGED,
       _doseEventProps(
         { medicine_id: logEntry.medicine_id },
-        { surface, treatmentId: (logEntry as any)?.protocol_id },
+        { surface, treatmentId: (logEntry as any)?.protocol_id, entryPoint },
       ),
     )
 
@@ -279,7 +281,7 @@ function _validateManyLogs(logsData) {
  * @param {Array<Object>} logsData
  * @returns {Promise<{ success: boolean, results: Array<Object>, error?: string }>}
  */
-export async function registerDoseMany(logsData, { surface = null } = {}) {
+export async function registerDoseMany(logsData, { surface = null, entryPoint } = {} as { surface?: string | null, entryPoint?: string }) {
   if (!logsData || logsData.length === 0) {
     return { success: false, results: [], error: 'Nenhuma dose selecionada.' }
   }
@@ -328,7 +330,7 @@ export async function registerDoseMany(logsData, { surface = null } = {}) {
         EVENTS.DOSE_LOGGED,
         _doseEventProps(
           { medicine_id: (res as any).data?.medicine_id },
-          { surface, treatmentId: (res as any).data?.protocol_id },
+          { surface, treatmentId: (res as any).data?.protocol_id, entryPoint },
         ),
       )
     }
@@ -339,7 +341,7 @@ export async function registerDoseMany(logsData, { surface = null } = {}) {
       // tratamento usa os `dose_logged` acima; quem quer "quantas doses de uma vez" usa este.
       await logEvent(
         EVENTS.DOSE_LOGGED_BULK,
-        _doseEventProps({ count: succeeded.length }, { surface }),
+        _doseEventProps({ count: succeeded.length }, { surface, entryPoint }),
       )
     }
 

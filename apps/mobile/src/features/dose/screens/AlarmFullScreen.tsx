@@ -15,7 +15,7 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { ROUTES } from '@navigation/routes'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { registerTaken, registerSkip } from '@platform/alarms/quickDoseRegistration'
-import { SURFACES } from '@platform/analytics/analyticsEvents'
+import { SURFACES, REMINDER_SOURCES } from '@platform/analytics/analyticsEvents'
 import { scheduleSnooze, cancelAlarm } from '@platform/alarms/alarmService'
 
 const BRAND_MARK = require('../../../../assets/dosiq-full-mono.png')
@@ -190,6 +190,9 @@ export default function AlarmFullScreen({ navigation, route }) {
         data: {
           ...data,
         },
+        // 065 AD-8: Adiar na tela cheia do alarme.
+        source: REMINDER_SOURCES.ALARM,
+        surface: SURFACES.ALARM,
       })
     } finally {
       close()

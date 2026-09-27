@@ -30,6 +30,7 @@ import DoseTimelineCard from '@dashboard/components/DoseTimelineCard'
 import EvolutionSwitchSection from '@dashboard/components/EvolutionSwitchSection'
 import HeroDoseCard from '@dashboard/components/HeroDoseCard'
 import StockAlertInline from '@dashboard/components/StockAlertInline'
+import { ENTRY_POINTS } from '@platform/analytics/analyticsEvents'
 import DoseRegisterModal from '@dose/components/DoseRegisterModal'
 import ChatEntryButton from '@features/chatbot/components/ChatEntryButton'
 import { lightTap } from '@shared/utils/haptics'
@@ -124,9 +125,13 @@ function _renderShiftDoses(items, handleOpenRegister) {
 }
 
 // Resolve o modal a abrir a partir dos params de deeplink
-function _resolveDeeplinkModal(params, protocols, setBulkModal, setModalProtocol, setModalScheduledTime) {
+// 065 AD-8: TODO deeplink que abre modal vem de um lembrete (push de dose do servidor, "Registrar"
+// da dose ativa no Android e na Live Activity do iOS — únicos produtores de `screen`). A dose
+// registrada ali sai com `entry_point: 'reminder'`.
+function _resolveDeeplinkModal(params, protocols, setBulkModal, setModalProtocol, setModalScheduledTime, setModalEntryPoint) {
   if (params.screen === 'bulk-plan' && params.planId) {
     setBulkModal({
+      entryPoint: ENTRY_POINTS.REMINDER,
       mode: 'plan',
       planId: params.planId,
       scheduledTime: params.at ?? '',
@@ -134,6 +139,7 @@ function _resolveDeeplinkModal(params, protocols, setBulkModal, setModalProtocol
     })
   } else if (params.screen === 'bulk-misc') {
     setBulkModal({
+      entryPoint: ENTRY_POINTS.REMINDER,
       mode: 'misc',
       protocolIds: params.protocolIds ?? [],
       scheduledTime: params.at ?? '',
@@ -143,6 +149,7 @@ function _resolveDeeplinkModal(params, protocols, setBulkModal, setModalProtocol
     if (protocol) {
       setModalProtocol(protocol)
       setModalScheduledTime(params.at ?? null)
+      setModalEntryPoint(ENTRY_POINTS.REMINDER)
     }
   }
 }
@@ -201,6 +208,7 @@ function TodayModals({
   modalProtocol,
   modalScheduledTime,
   modalInstanceId,
+  modalEntryPoint,
   medicineName,
   handleCloseRegister,
   handleRegisterSuccess,
@@ -219,6 +227,7 @@ function TodayModals({
         protocol={modalProtocol}
         scheduledTime={modalScheduledTime}
         instanceId={modalInstanceId}
+        entryPoint={modalEntryPoint}
         medicineName={medicineName}
         onClose={handleCloseRegister}
         onSuccess={handleRegisterSuccess}
@@ -234,6 +243,7 @@ function TodayModals({
         isComplex={isComplex}
         instancesByKey={instancesByKey}
         instancedItems={bulkModal?.items ?? null}
+        entryPoint={bulkModal?.entryPoint ?? null}
         onClose={() => setBulkModal(null)}
         onSuccess={() => { setBulkModal(null); refresh() }}
       />
@@ -354,7 +364,7 @@ function TodayScreenContent({
   timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
-  modalProtocol, modalScheduledTime, modalInstanceId, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
+  modalProtocol, modalScheduledTime, modalInstanceId, modalEntryPoint, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
   bulkModal, setBulkModal,
   handleOpenBulkDose,
   refreshTodayMeasures,
@@ -495,6 +505,7 @@ function TodayScreenContent({
         modalProtocol={modalProtocol}
         modalScheduledTime={modalScheduledTime}
         modalInstanceId={modalInstanceId}
+        modalEntryPoint={modalEntryPoint}
         medicineName={medicineName}
         handleCloseRegister={handleCloseRegister}
         handleRegisterSuccess={handleRegisterSuccess}
@@ -592,6 +603,8 @@ export default function TodayScreen({ route, navigation }) {
   const [modalProtocol, setModalProtocol] = useState(null)
   const [modalScheduledTime, setModalScheduledTime] = useState(null)
   const [modalInstanceId, setModalInstanceId] = useState(null)
+  // 065 AD-8: 'reminder' só enquanto a modal individual aberta por deeplink está na tela.
+  const [modalEntryPoint, setModalEntryPoint] = useState(null)
   // null | { mode, planId?, protocolIds?, scheduledTime, treatmentPlanName? }
   const [bulkModal, setBulkModal] = useState(null)
   const [expandedShifts, setExpandedShifts] = useState({})
@@ -654,7 +667,7 @@ export default function TodayScreen({ route, navigation }) {
   useEffect(() => {
     if (!routeParams?.screen) return
     setTimeout(() => {
-      _resolveDeeplinkModal(routeParams, protocols, setBulkModal, setModalProtocol, setModalScheduledTime)
+      _resolveDeeplinkModal(routeParams, protocols, setBulkModal, setModalProtocol, setModalScheduledTime, setModalEntryPoint)
       navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
     }, 0)
   }, [routeParams, navigation, protocols])
@@ -682,18 +695,21 @@ export default function TodayScreen({ route, navigation }) {
     setModalProtocol(protocol)
     setModalScheduledTime(scheduledTime)
     setModalInstanceId(instanceId)
+    setModalEntryPoint(null) // aberta pelo card, não por lembrete
   }, [])
 
   const handleCloseRegister = useCallback(() => {
     setModalProtocol(null)
     setModalScheduledTime(null)
     setModalInstanceId(null)
+    setModalEntryPoint(null)
   }, [])
 
   const handleRegisterSuccess = useCallback(() => {
     setModalProtocol(null)
     setModalScheduledTime(null)
     setModalInstanceId(null)
+    setModalEntryPoint(null)
     refresh()
   }, [refresh])
 
@@ -707,7 +723,7 @@ export default function TodayScreen({ route, navigation }) {
       refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}
-      modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime} modalInstanceId={modalInstanceId}
+      modalProtocol={modalProtocol} modalScheduledTime={modalScheduledTime} modalInstanceId={modalInstanceId} modalEntryPoint={modalEntryPoint}
       medicineName={medicineName} handleOpenRegister={handleOpenRegister}
       handleRegisterSuccess={handleRegisterSuccess} handleCloseRegister={handleCloseRegister}
       bulkModal={bulkModal} setBulkModal={setBulkModal}

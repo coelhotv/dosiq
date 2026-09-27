@@ -36,6 +36,12 @@ jest.mock('../alarmResyncBus', () => ({
   onAlarmResync: () => () => {},
 }))
 
+// 065 AD-8: dose_snoozed só quando a soneca foi de fato agendada.
+const mockLogEvent = jest.fn()
+jest.mock('@platform/analytics/productAnalytics', () => ({
+  logEvent: (...args: any[]) => mockLogEvent(...args),
+}))
+
 import { scheduleSnooze } from '../alarmService'
 
 const iso = (min: number) => new Date(Date.now() + min * 60000).toISOString()
@@ -71,6 +77,11 @@ describe('scheduleSnooze — soneca sobre alarme FORA DA JANELA (FR-006)', () =>
     await scheduleSnooze(ADIANTADA)
     expect(notifee.cancelNotification).toHaveBeenCalledWith('inst-1')
     expect(mockTriggerResync).toHaveBeenCalledTimes(1)
+  })
+
+  it('065 AD-8: recusa fora da janela NÃO emite dose_snoozed', async () => {
+    await scheduleSnooze({ ...ADIANTADA, source: 'alarm', surface: 'alarm' })
+    expect(mockLogEvent).not.toHaveBeenCalledWith('dose_snoozed', expect.anything())
   })
 
   it('registra a anomalia (trilha + aviso) — recusa nunca é silenciosa', async () => {
@@ -127,5 +138,22 @@ describe('scheduleSnooze — não-regressão da soneca legítima (AC-3.2)', () =
     const ok = await scheduleSnooze(legado as any)
     expect(ok).not.toBe(false)
     expect(mockSetSnoozedUntil).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('scheduleSnooze — dose_snoozed (065 AD-8)', () => {
+  const OK = {
+    doseInstanceId: 'inst-3', medicineName: 'X', scheduledFor: iso(-3),
+    toleranceMinutes: 120, earlyWindowMinutes: 90, currentSnoozeAttempt: 0, isCritical: false,
+  }
+
+  it('agendou → 1 evento com source e surface do chamador', async () => {
+    await scheduleSnooze({ ...OK, source: 'alarm', surface: 'alarm' })
+    expect(mockLogEvent).toHaveBeenCalledWith('dose_snoozed', { source: 'alarm', surface: 'alarm' })
+  })
+
+  it('chamador sem source/surface → evento sem as chaves (A-1, sem default)', async () => {
+    await scheduleSnooze(OK)
+    expect(mockLogEvent).toHaveBeenCalledWith('dose_snoozed', {})
   })
 })

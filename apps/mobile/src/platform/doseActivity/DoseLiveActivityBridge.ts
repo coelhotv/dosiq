@@ -49,6 +49,8 @@ import {
 } from './liveActivityService'
 import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
 import { syncActivityToken, forgetSyncedToken } from './syncActivityToken'
+import { emitReminderOpened } from '@platform/analytics/reminderEvents'
+import { REMINDER_SOURCES, SURFACES } from '@platform/analytics/analyticsEvents'
 
 const DEFAULT_TZ = 'America/Sao_Paulo'
 const LOOK_AHEAD_DAYS = 3
@@ -207,6 +209,10 @@ async function processPendingActions(tz) {
   if (!uid) return // sessão não-viva → não registra em conta errada (PO-SEC-2)
   let protocols = null
   for (const item of queue) {
+    if (item.action === 'register' || item.action === 'open') {
+      // 065 AD-8 (G-3): Live Activity é a superfície de dose ativa do iOS — mesmo `source` do Android.
+      emitReminderOpened(REMINDER_SOURCES.DOSE_ACTIVITY, item.instanceId)
+    }
     if (item.action === 'register') {
       // "Registrar" abre a modal bulk (sítio do injetável só selecionável lá) — paridade Android.
       // Resolve o doseItem p/ obter protocolId/treatmentPlanId/horário (o widget só tem instanceId).
@@ -233,6 +239,8 @@ async function processPendingActions(tz) {
             medicineName: doseItem.medicineName,
             scheduledFor: doseItem.scheduledFor,
           },
+          source: REMINDER_SOURCES.DOSE_ACTIVITY,
+          surface: SURFACES.PUSH,
         })
       }
     } else if (item.action === 'open') {
