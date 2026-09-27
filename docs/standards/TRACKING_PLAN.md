@@ -443,7 +443,6 @@ superfície.
 | Novos deste plano | `treatment_created`/`edited`/`paused`/`resumed`/`ended` (com `treatment_planned_end`), `biomarker_logged`, `ai_assistant_*`, `profile_updated`, `mode_changed` | Fase 1 |
 | Fora da Fase 1 | `adherence_milestone_reached` (sem gatilho mobile → Fase 2) · desmame `weaning_*` (diferido, engine) | Fase 2 / futura |
 | Decisão pendente do DPO | mecanismo do opt-in web — bloqueante vs. aviso (§6.2) | — |
----
 
 ### 5.12 Gaps de medição — revalidação pós-065 (2026-09-27)
 
