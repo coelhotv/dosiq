@@ -46,13 +46,26 @@ export const EVENTS = {
   REMINDER_OPENED: 'reminder_opened',   // source, surface — lembrete de dose abriu o app
   DOSE_SNOOZED: 'dose_snoozed',         // source, surface — Adiar/Soneca num lembrete
 
-  // App / consentimento
+  // App / consentimento (065 PR D / US9 — consent_health_declined APOSENTADO, ver CON-034 §5)
   COLD_START: 'cold_start',                        // duration_ms + bundle tags + env tags
-  CONSENT_HEALTH_DECLINED: 'consent_health_declined', // {} — sem PII (FR-008)
+  CONSENT_PROMPT_SHOWN: 'consent_prompt_shown',       // blocking: boolean, source (ver CONSENT_GRANTED)
+  CONSENT_PROMPT_DISMISSED: 'consent_prompt_dismissed', // source — só existe quando !blocking
+  CONSENT_GRANTED: 'consent_granted',                 // source: prompt_blocking|prompt_dismissible|prompt_navigated|resolution_revoked
+  CONSENT_REVOKED: 'consent_revoked',                 // {}
+  CONSENT_BLOCKED_ATTEMPT: 'consent_blocked_attempt', // gate_mode: blocked_revoked|prompt_blocking — NÃO `mode` (super property)
+
+  // Conta (065 PR D / US9)
+  ACCOUNT_DELETED: 'account_deleted',                 // result: 'success'|'error'
 
   // Estoque
   STOCK_ADDED: 'stock_added',
   STOCK_LOW_VIEWED: 'stock_low_viewed',
+
+  // Famílias novas (065 US6) — só meta/tipo, NUNCA valor/texto/PII (FR-8, R-042).
+  BIOMARKER_LOGGED: 'biomarker_logged',               // biomarker_type: BIOMARKER_TYPES do core (glicemia|peso|pressao_arterial|batimentos) — NUNCA value/value_secondary
+  AI_ASSISTANT_MESSAGE_SENT: 'ai_assistant_message_sent', // has_error: boolean — NUNCA a mensagem nem a resposta
+  PROFILE_UPDATED: 'profile_updated',                 // {} — NUNCA display_name/birth_date/city/phone
+  MODE_CHANGED: 'mode_changed',                       // mode: 'simple'|'complex'|'auto'
 
   // Modo dose-only (spec 044, FR-010) — insumo da métrica dos 90 dias (SC-004).
   // Emitidos SÓ pelo stockPreferenceService (origem comum): tela nenhuma loga preferência.

@@ -25,6 +25,7 @@ export default function ConsentPromptScreen() {
   return (
     <ConsentPrompt
       blocking={false}
+      source="prompt_navigated"
       onGrant={() => consentService.grant('health_data', 'mobile')}
       onDismiss={() => navigation.goBack()}
       onGranted={async () => {

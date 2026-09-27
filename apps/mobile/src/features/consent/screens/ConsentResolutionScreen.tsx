@@ -37,6 +37,7 @@ export default function ConsentResolutionScreen() {
     return (
       <ConsentPrompt
         blocking={false}
+        source="resolution_revoked"
         onGrant={() => consentService.grant('health_data', 'mobile')}
         onDismiss={() => setReconsenting(false)}
         onGranted={async () => {

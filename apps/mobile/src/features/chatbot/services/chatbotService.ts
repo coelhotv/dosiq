@@ -9,6 +9,8 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { nativeApiBaseUrl } from '../../../platform/config/nativePublicAppConfig'
 import { fetchChatbotContextData, buildPatientContext } from '@dosiq/core'
 import { CHATBOT_MAX_HISTORY } from '../config/chatbotConfig'
+import { logEvent } from '../../../platform/analytics/productAnalytics'
+import { EVENTS } from '../../../platform/analytics/analyticsEvents'
 
 const CHATBOT_ENDPOINT = `${nativeApiBaseUrl}/api/chatbot`
 
@@ -68,9 +70,12 @@ export async function sendChatMessage({ message, history = [], patientContext })
     }
 
     const data = await res.json()
+    // FR-8/R-042: só meta (has_error) — zero texto de pergunta/resposta.
+    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, { has_error: false })
     return { response: data.response, error: false }
   } catch (error) {
     if (__DEV__) console.warn('[chatbot] erro ao enviar mensagem:', error?.message || error)
+    void logEvent(EVENTS.AI_ASSISTANT_MESSAGE_SENT, { has_error: true })
     return {
       response: 'Desculpe, estou com dificuldades técnicas. Tente novamente em instantes.',
       error: true,
