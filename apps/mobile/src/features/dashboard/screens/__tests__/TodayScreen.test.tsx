@@ -1,4 +1,4 @@
-import { render, act } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import TodayScreen from '../TodayScreen';
 import { useTodayData } from '@dashboard/hooks/useTodayData';
 
@@ -123,8 +123,7 @@ describe('TodayScreen', () => {
       const { getByTestId } = render(
         <TodayScreen route={{ params: { screen: 'bulk-plan', planId: 'plan-1', at: '08:00' } } as any} navigation={nav} />
       )
-      await act(async () => { await new Promise((r) => setTimeout(r, 0)) })
-      expect(getByTestId('bulk-dose-modal').props.entryPoint).toBe('reminder')
+      await waitFor(() => expect(getByTestId('bulk-dose-modal').props.entryPoint).toBe('reminder'))
     })
 
     it('deeplink dose-individual → reminder; depois, aberta pelo card → entryPoint zerado', async () => {
@@ -132,8 +131,7 @@ describe('TodayScreen', () => {
       const { getByTestId, getAllByTestId } = render(
         <TodayScreen route={{ params: { screen: 'dose-individual', protocolId: 'p1', at: '08:00' } } as any} navigation={nav} />
       )
-      await act(async () => { await new Promise((r) => setTimeout(r, 0)) })
-      expect(getByTestId('dose-modal').props.entryPoint).toBe('reminder')
+      await waitFor(() => expect(getByTestId('dose-modal').props.entryPoint).toBe('reminder'))
       act(() => { getAllByTestId('dose-card')[0].props.onRegister({ id: 'p1', medicine_id: 'm1' }, '08:00') })
       expect(getByTestId('dose-modal').props.entryPoint).toBeNull()
     })
