@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Sair da conta apaga o que é seu do aparelho; conta excluída não fica aberta
+
+- **Mobile** (`patch` — correção de privacidade; **sem bump neste PR**: entra no bump único para
+  `0.34.0` do pacote de loja). Sair da conta, excluir a conta ou ter a sessão encerrada agora
+  apaga do aparelho tudo o que é da pessoa, inclusive a conversa com o assistente — antes, quem
+  entrasse depois no mesmo aparelho via essa conversa, e ela ia junto nas perguntas ao
+  assistente. A base de medicamentos e as configurações do aparelho continuam lá. Ao sair, o
+  aparelho também deixa de receber os lembretes da conta — antes eles seguiam chegando. Se houver
+  registro de alarme ainda não enviado, o app avisa antes de sair. Uma conta excluída em outro
+  aparelho (ou pelo site) agora leva ao login com "Sua sessão terminou. Entre de novo.", em vez de
+  continuar aberta mostrando a agenda como se faltasse internet; e o app não grava mais nada em
+  nome de uma conta que não existe. Sem internet, a agenda salva só aparece para a própria pessoa,
+  e o aviso ficou curto e sem termos técnicos: "Sem internet. Mostrando a última cópia no
+  aparelho; atualiza quando a conexão voltar."
+
 ### Biomarcador, assistente, perfil e conta medidos; consentimento com contexto real
 
 - **Mobile** (`minor`, **sem bump neste PR**: entra no bump único para `0.34.0` do pacote de

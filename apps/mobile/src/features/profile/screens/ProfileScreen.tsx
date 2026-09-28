@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
@@ -7,6 +7,7 @@ const { Bell, ChevronRight, Settings: SettingsIcon, UserCircle2, MapPin, Pencil 
 import Constants from 'expo-constants'
 import { useProfile } from '@profile/hooks/useProfile'
 import { logoutUser } from '../services/profileService'
+import { drainAuditQueue } from '@platform/session/endSession'
 import ScreenContainer from '@shared/components/ui/ScreenContainer'
 import LoadingState from '@shared/components/states/LoadingState'
 import LogoutSheet from '@profile/components/LogoutSheet'
@@ -59,7 +60,7 @@ export default function ProfileScreen() {
   // abrir o hub nativo (export + política + exclusão). A webview segue existindo, lá dentro.
   const handlePrivacyData = () => (navigation.navigate as any)(ROUTES.PRIVACY_DATA)
 
-  const handleConfirmLogout = async () => {
+  const runLogout = async () => {
     setLoggingOut(true)
     const { success, error: logoutErr } = await logoutUser()
     // Em sucesso, o listener SIGNED_OUT (Navigation) reseta para a Landing e
@@ -69,6 +70,27 @@ export default function ProfileScreen() {
       setLogoutSheetOpen(false)
       if (__DEV__) console.error('Erro ao fazer logout:', logoutErr)
     }
+  }
+
+  // Spec 091 (RC-SEC S-4, decisão do PO): o que a fila de auditoria não conseguir enviar é
+  // descartado na saída — sair nunca guarda dado da pessoa no aparelho. Se sobrou algo, a perda
+  // vira escolha informada, não silêncio. Fila vazia (o normal) = sai direto.
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true)
+    const { remaining } = await drainAuditQueue()
+    if (remaining === 0) {
+      await runLogout()
+      return
+    }
+    setLoggingOut(false)
+    Alert.alert(
+      'Registros não enviados',
+      `${remaining === 1 ? 'Há 1 registro de alarme que ainda não foi enviado' : `Há ${remaining} registros de alarme que ainda não foram enviados`}. Se sair agora sem internet, ${remaining === 1 ? 'ele será perdido' : 'eles serão perdidos'}.`,
+      [
+        { text: 'Tentar de novo', onPress: () => { void handleConfirmLogout() } },
+        { text: 'Sair mesmo assim', style: 'destructive', onPress: () => { void runLogout() } },
+      ],
+    )
   }
 
   if (loading) {

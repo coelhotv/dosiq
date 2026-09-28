@@ -56,7 +56,11 @@ interface Session {
  * o bug pego no smoke. O Provider dá uma fonte só, e qualquer superfície chama `refresh` após
  * grant/revoke para reavaliar a trava na hora.
  */
-function useConsentGateState(session: Session | null | undefined): ConsentGateValue {
+function useConsentGateState(
+  session: Session | null | undefined,
+  canAutoWrite: boolean,
+  verificationPending: boolean,
+): ConsentGateValue {
   const [state, setState] = useState<ConsentState | null>(null)
   const [promptSessions, setPromptSessions] = useState(0)
   const [ready, setReady] = useState(false)
@@ -70,20 +74,34 @@ function useConsentGateState(session: Session | null | undefined): ConsentGateVa
       return
     }
 
+    // Spec 091 (RC5): enquanto o servidor não respondeu se a conta existe, o gate NÃO decide. Ler a
+    // trilha antes de materializar o consentimento do cadastro dava `missing` ⇒ o pedido piscava
+    // para quem já tinha consentido, e a trava de quem esgotou a cortesia virava pedido dispensável
+    // (0 sessões). Sem `ready`, o Navigation segura no spinner — o mesmo de qualquer carga.
+    if (verificationPending) {
+      setReady(false)
+      return
+    }
+
     try {
       // Idempotente e defensivo: não materializa sobre um `revoked` e não escreve nada se não
       // conseguiu LER a trilha. `user_metadata` é carona da intenção — quem carimba é o RPC.
-      await consentService.materializeSignupIntent(
-        session.user?.user_metadata as { health_consent?: boolean; policy_version?: string } | undefined,
-        'mobile',
-      )
+      // Spec 091 (INV-3): só depois de o servidor confirmar que a conta existe. O `user_metadata`
+      // vem do TOKEN em cache — conta excluída em outro aparelho re-concedia consentimento (2×
+      // `consent_grant` no smoke, barradas só pela FK).
+      if (canAutoWrite) {
+        await consentService.materializeSignupIntent(
+          session.user?.user_metadata as { health_consent?: boolean; policy_version?: string } | undefined,
+          'mobile',
+        )
+      }
 
       const current = await consentService.getStatus('health_data')
 
       // Sessão de prompt só conta quando SABEMOS que o titular nunca se manifestou. Se a leitura
       // acima tivesse lançado, este trecho não rodaria — que é o ponto.
       let sessions = 0
-      if (current.status === 'missing') {
+      if (current.status === 'missing' && canAutoWrite) {
         const bumped = await profileRepo.bumpConsentPromptSession()
         sessions = bumped.sessions
       }
@@ -100,7 +118,7 @@ function useConsentGateState(session: Session | null | undefined): ConsentGateVa
       // reagiriam no próximo ciclo de foreground (alarme já agendado dispararia nesse meio-tempo).
       triggerConsentChange()
     }
-  }, [session])
+  }, [session, canAutoWrite, verificationPending])
 
   const grant = useCallback(async () => {
     const res = await consentService.grant('health_data', 'mobile')
@@ -163,12 +181,18 @@ const ConsentGateContext = createContext<ConsentGateValue>(DEFAULT_VALUE)
 
 export function ConsentGateProvider({
   session,
+  canAutoWrite = false,
+  verificationPending = false,
   children,
 }: {
   session: Session | null | undefined
+  /** Spec 091: servidor confirmou a conta — libera materialização e contagem de prompt. */
+  canAutoWrite?: boolean
+  /** Spec 091: servidor ainda não respondeu (`checking`) — o gate espera em vez de decidir. */
+  verificationPending?: boolean
   children: ReactNode
 }) {
-  const value = useConsentGateState(session)
+  const value = useConsentGateState(session, canAutoWrite, verificationPending)
   return <ConsentGateContext.Provider value={value}>{children}</ConsentGateContext.Provider>
 }
 

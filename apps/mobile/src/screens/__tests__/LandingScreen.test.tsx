@@ -80,3 +80,28 @@ describe('LandingScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith(ROUTES.SIGNUP);
   });
 });
+
+// Spec 091 — AC-2.1: encerramento por sessão inválida mostra a mensagem UMA vez e apaga a marca.
+describe('LandingScreen — sessão encerrada (spec 091)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const AsyncStorage = require('@react-native-async-storage/async-storage')
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  it('marca presente ⇒ mostra "Sua sessão terminou. Entre de novo." e apaga a marca', async () => {
+    AsyncStorage.getItem.mockImplementation(async (k) => (k === '@dosiq/session-ended-reason' ? 'invalid' : null))
+    const { findByText } = render(<LandingScreen navigation={mockNavigation} />)
+    expect(await findByText('Sua sessão terminou. Entre de novo.')).toBeTruthy()
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@dosiq/session-ended-reason')
+  })
+
+  it('sem marca ⇒ nenhuma mensagem', async () => {
+    AsyncStorage.getItem.mockResolvedValue(null)
+    const { queryByText } = render(<LandingScreen navigation={mockNavigation} />)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(queryByText('Sua sessão terminou. Entre de novo.')).toBeNull()
+  })
+})

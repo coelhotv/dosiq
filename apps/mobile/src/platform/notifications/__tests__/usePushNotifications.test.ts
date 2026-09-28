@@ -107,7 +107,11 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
   //
   // O que se trava aqui: TODO listener registrado tem que ser removido no cleanup. Se o registro
   // voltar para dentro do async, o `remove` do 1º ciclo deixa de ser chamado e este teste quebra.
-  it('re-render com nova sessão remove o listener anterior (sem acumular)', async () => {
+  // Regressão do smoke do 029 F5 (listener DUPLICADO a cada refresh de token) e spec 091: o efeito
+  // agora depende do ID da pessoa. Nova IDENTIDADE de sessão com o mesmo usuário (refresh de token,
+  // re-login da conferência de senha) NÃO re-roda o setup — nem re-registra o aparelho. Troca de
+  // PESSOA re-roda e remove o listener anterior. Em qualquer caso, nenhum listener sobra vivo.
+  it('refresh de token (mesmo usuário) não re-registra; troca de pessoa remove o listener anterior', async () => {
     const removes = []
     Notifications.addNotificationResponseReceivedListener.mockImplementation(() => {
       const remove = jest.fn()
@@ -115,24 +119,27 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       return { remove }
     })
 
+    // Client estável, como no app (constante de módulo) — `{}` novo a cada render mudaria a dep.
+    const client = {}
     const { rerender, unmount } = renderHook(
-      ({ session }) => usePushNotifications({ supabase: {}, session }),
+      ({ session }) => usePushNotifications({ supabase: client, session }),
       { initialProps: { session: makeSession() } }
     )
 
-    // Nova IDENTIDADE de sessão (mesmo usuário) — é o que o refresh de token produz.
     rerender({ session: makeSession() })
-
     await act(async () => {
       await new Promise((r) => setTimeout(r, 10))
     })
+    expect(removes).toHaveLength(1)
 
-    expect(removes.length).toBeGreaterThanOrEqual(2)
-    // Todos menos o vivo já foram removidos.
+    rerender({ session: { user: { id: 'user-outra' } } })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    expect(removes).toHaveLength(2)
     expect(removes[0]).toHaveBeenCalled()
 
     unmount()
-    // Depois do unmount NENHUM listener segue vivo.
     removes.forEach((r) => expect(r).toHaveBeenCalled())
   })
 
@@ -427,5 +434,47 @@ describe('usePushNotifications — push_notification_tapped (065)', () => {
       await new Promise((r) => setTimeout(r, 10))
     })
     expect(tapped()).toEqual([])
+  })
+})
+
+// Spec 091 — PO-4 / INV-3: registrar o aparelho é escrita em nome da pessoa. Com o token de uma
+// conta excluída em outro aparelho, o registro batia na FK de notification_devices. Só registra
+// depois de o servidor confirmar a conta (`canRegister`).
+describe('usePushNotifications — registro só com conta confirmada (spec 091)', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { syncNotificationDevice } = require('../syncNotificationDevice')
+
+  beforeEach(() => {
+    Notifications.getPermissionsAsync.mockResolvedValue({ status: 'granted', canAskAgain: true })
+    Notifications.addNotificationResponseReceivedListener.mockReturnValue({ remove: jest.fn() })
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  async function settle() {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+  }
+
+  it('conta não confirmada ⇒ não registra', async () => {
+    const { unmount } = renderHook(() =>
+      usePushNotifications({ supabase: {}, session: makeSession(), canRegister: false }),
+    )
+    await settle()
+    expect(syncNotificationDevice).not.toHaveBeenCalled()
+    unmount()
+  })
+
+  it('conta confirmada ⇒ registra (comportamento preservado)', async () => {
+    const { unmount } = renderHook(() =>
+      usePushNotifications({ supabase: {}, session: makeSession(), canRegister: true }),
+    )
+    await settle()
+    expect(syncNotificationDevice).toHaveBeenCalled()
+    unmount()
   })
 })

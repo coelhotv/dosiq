@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -12,9 +13,28 @@ import { Sun, UserPlus, LogIn, Bell, Package } from 'lucide-react-native';
 import { colors, spacing, typography, shadows } from '@shared/styles/tokens';
 import { ROUTES } from '@navigation/routes';
 import AdherenceRing from '@features/dashboard/components/AdherenceRing';
+import { SESSION_ENDED_REASON_KEY } from '@platform/session/localDataWipe';
+
+const SESSION_ENDED_MESSAGE = 'Sua sessão terminou. Entre de novo.';
 
 export default function LandingScreen({ navigation }) {
+  const [sessionEnded, setSessionEnded] = useState(false);
   const insets = useSafeAreaInsets();
+
+  // Spec 091 (AC-2.1): encerramento por sessão inválida (conta excluída em outro aparelho, sessão
+  // derrubada) deixa uma marca; mostrada uma vez e apagada. Sem ela, a pessoa cairia aqui sem saber
+  // por quê — e antes via a própria agenda sob "sem conexão".
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem(SESSION_ENDED_REASON_KEY)
+      .then((reason) => {
+        if (!reason) return;
+        if (active) setSessionEnded(true);
+        return AsyncStorage.removeItem(SESSION_ENDED_REASON_KEY);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const handleCreateAccount = () => {
     navigation.navigate(ROUTES.SIGNUP);
@@ -39,6 +59,7 @@ export default function LandingScreen({ navigation }) {
           />
           <Text style={styles.brandName}>dosiq</Text>
         </View>
+
 
         {/* 2. Hero Section Container */}
         <View style={styles.heroContainer}>
@@ -126,6 +147,12 @@ export default function LandingScreen({ navigation }) {
         styles.actionBar, 
         { paddingBottom: Math.max(insets.bottom, spacing[6]) }
       ]}>
+        {/* Spec 091: perto dos botões — é a ação que a pessoa precisa tomar (entrar de novo). */}
+        {sessionEnded && (
+          <Text style={styles.sessionEnded} accessibilityRole="alert">
+            {SESSION_ENDED_MESSAGE}
+          </Text>
+        )}
         <Pressable 
           style={styles.createAccountBtn} 
           onPress={handleCreateAccount}
@@ -151,6 +178,13 @@ export default function LandingScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  sessionEnded: {
+    color: colors.status.warning,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing[3],
+  },
   safe: {
     flex: 1,
     backgroundColor: colors.bg.screen,

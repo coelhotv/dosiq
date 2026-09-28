@@ -9,7 +9,6 @@ import * as Notifications from 'expo-notifications'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getPushPermissionStatus } from './pushPermission'
 import { registerPushToken, PUSH_TOKEN_KEY } from './registerPushToken'
-import { unregisterNotificationDevice } from './unregisterNotificationDevice'
 import { ensurePushChannel } from './ensurePushChannel'
 import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrationAction } from './titrationNotificationActions'
 import { navigationRef } from '../../navigation/navigationRef'
@@ -86,13 +85,17 @@ function navigateFromPush(data) {
   }, 100)
 }
 
-export function usePushNotifications({ supabase, session }) {
+export function usePushNotifications({ supabase, session, canRegister = false }) {
   // Flag para garantir que o cold start seja processado apenas uma vez por ciclo de vida do app,
   // mesmo que o useEffect re-execute em logout+login sem fechar o app.
   const coldStartProcessed = useRef(false)
+  // Spec 091: o efeito depende do ID da pessoa, não do objeto `session`. A identidade do objeto muda
+  // a cada renovação de token e a cada re-login — inclusive o da conferência de senha da exclusão de
+  // conta, que re-registrava o aparelho 0,2s DEPOIS do RPC de exclusão (smoke 28/09, iOS).
+  const userId = session?.user?.id ?? null
 
   useEffect(() => {
-    if (!session || !supabase) return
+    if (!userId || !supabase) return
 
     let isMounted = true
 
@@ -164,7 +167,10 @@ export function usePushNotifications({ supabase, session }) {
           return
         }
         if (!isMounted) return
-        await registerPushToken({ supabase, userId: session.user.id })
+        // Spec 091 (INV-3): registrar o aparelho é escrita em nome da pessoa — só com a conta
+        // confirmada no servidor (conta excluída batia na FK de notification_devices).
+        if (!canRegister) return
+        await registerPushToken({ supabase, userId })
       } catch (error) {
         if (isMounted && __DEV__) {
           console.warn('[usePushNotifications] Erro durante setup (não-fatal):', error.message)
@@ -178,18 +184,14 @@ export function usePushNotifications({ supabase, session }) {
       isMounted = false
       notificationSubscription.remove()
     }
-  }, [supabase, session])
+  }, [supabase, userId, canRegister])
 
-  // Cleanup durante logout: executa imediatamente quando session torna-se null,
-  // não como cleanup da próxima renderização (que só correria no unmount)
+  // Logout: o aparelho é desativado no `endSession`, COM a sessão de quem sai (spec 091, RC-SEC
+  // S-1). O cleanup que vivia aqui rodava com a sessão já nula e chamava
+  // `unregisterNotificationDevice({ userId: null })`, que retorna na guarda — o aparelho nunca foi
+  // desativado. Aqui fica só o esquecimento local do token.
   useEffect(() => {
-    if (session) return
-    ;(async () => {
-      const token = await AsyncStorage.getItem(PUSH_TOKEN_KEY)
-      if (token && supabase) {
-        await unregisterNotificationDevice({ supabase, userId: null, token })
-        await AsyncStorage.removeItem(PUSH_TOKEN_KEY)
-      }
-    })()
-  }, [session, supabase])
+    if (userId) return
+    AsyncStorage.removeItem(PUSH_TOKEN_KEY).catch(() => {})
+  }, [userId])
 }

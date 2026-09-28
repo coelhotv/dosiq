@@ -360,7 +360,7 @@ function TodayBannersSection({
 }
 
 function TodayScreenContent({
-  data, stale, isDaySegregated, loading, refresh,
+  data, stale, loading, refresh,
   timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
@@ -433,7 +433,7 @@ function TodayScreenContent({
 
   return (
     <ScreenContainer>
-      {stale && <StaleBanner isDaySegregated={isDaySegregated} />}
+      {stale && <StaleBanner />}
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={loading && !!data} onRefresh={() => { refresh(); refreshNudge(); setEvoRefreshTick((t) => t + 1) }} tintColor={colors.status.success} />}
@@ -610,7 +610,7 @@ export default function TodayScreen({ route, navigation }) {
   const [expandedShifts, setExpandedShifts] = useState({})
   const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
 
-  const { data, loading, error, stale, isDaySegregated, refresh } = useTodayData()
+  const { data, loading, error, stale, refresh } = useTodayData()
 
   // Pre-resolve optional chains do data para reduzir complexidade ciclomática
   const {
@@ -718,7 +718,7 @@ export default function TodayScreen({ route, navigation }) {
 
   return (
     <TodayScreenContent
-      data={data} stale={stale} isDaySegregated={isDaySegregated} loading={loading} refresh={refresh}
+      data={data} stale={stale} loading={loading} refresh={refresh}
       timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats}
       refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}

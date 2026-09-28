@@ -44,10 +44,9 @@ import {
   endLiveActivity,
   showDoneLiveActivity,
   drainPendingActions,
-  getPushToStartToken,
   liveActivitySupported,
 } from './liveActivityService'
-import { syncNotificationDevice } from '@platform/notifications/syncNotificationDevice'
+import { registerPushToStart, resetPushToStartDedupe } from './pushToStartRegistration'
 import { syncActivityToken, forgetSyncedToken } from './syncActivityToken'
 import { emitReminderOpened } from '@platform/analytics/reminderEvents'
 import { REMINDER_SOURCES, SURFACES } from '@platform/analytics/analyticsEvents'
@@ -112,28 +111,6 @@ async function deriveAndDrive({ userId, protocols, tz, prevInstanceId }) {
   // Fase 2: sincroniza o token per-Activity da LA ativa (idempotente; backend usa p/ update/end).
   await syncActivityToken(active.instanceId)
   return active.instanceId
-}
-
-/**
- * Spec 041 — registra o token push-to-start (iOS 17.2+) no backend p/ a LA iniciar com o app
- * fechado (ADR-076). Best-effort: token vazio (SO ainda não emitiu / iOS < 17.2) → no-op.
- * Sessão VIVA (PO-SEC-2): o RPC usa auth.uid() internamente — o token fica escopado ao dono. @private
- */
-// Cache do último par (userId,token) registrado com sucesso — evita upsert redundante no Supabase
-// a cada foreground/mount quando nada mudou. Escopado por usuário (login diferente re-registra).
-let lastRegistered = { userId: null, token: null }
-
-async function registerPushToStart(userId) {
-  if (!userId) return
-  try {
-    const token = await getPushToStartToken()
-    if (!token) return
-    if (userId === lastRegistered.userId && token === lastRegistered.token) return
-    await syncNotificationDevice({ supabase, userId, token, provider: 'apns_liveactivity' })
-    lastRegistered = { userId, token }
-  } catch (err) {
-    if (__DEV__) console.warn('[DoseLiveActivityBridge] registro push-to-start falhou', err?.message)
-  }
 }
 
 /** PO-SEC-2: confirma sessão VIVA antes de agir sobre uma ação da ilha. @private */
@@ -298,6 +275,10 @@ export default function DoseLiveActivityBridge() {
   // Logout → encerra a LA ativa.
   useEffect(() => {
     if (userId || !enabled) return
+    // Spec 091: o `endSession` desativou a linha push-to-start no servidor. Sem zerar o dedupe, a
+    // MESMA pessoa entrando de novo não re-registraria (mesmo userId+token) e o push-to-start ficaria
+    // morto para ela.
+    resetPushToStartDedupe()
     if (prevInstanceRef.current) {
       endLiveActivity()
       prevInstanceRef.current = null

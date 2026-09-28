@@ -8,10 +8,10 @@ import {
   hasFuturePendingDoses as hasFuturePendingDosesCore,
   regenActiveProtocolsForTz,
 } from '@dosiq/core'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { ALARM_ENABLED_KEY, ALARM_NUDGE_SEEN_KEY } from '@platform/alarms/alarmEnabledStore'
-import { logEvent, resetUser } from '@platform/analytics/productAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { endSession } from '@platform/session/endSession'
+import { classifyAuthUserResult } from '@platform/session/useSessionVerification'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 
 /**
@@ -57,44 +57,12 @@ export async function getCurrentUser() {
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
 export async function logoutUser() {
+  // Spec 091: casca do encerramento único. A ordem (auditoria → push → `logout` → signOut → wipe
+  // por allowlist → resetUser) e o motivo de cada passo moram em `endSession`. A denylist que vivia
+  // aqui (AP-213) e o retorno cedo SEM limpeza em "session missing" (E-2) morreram com ela.
   try {
-    // scope 'local': limpa a sessão local imediatamente e dispara SIGNED_OUT sem
-    // depender de chamada de rede (global revoga no servidor e pode pendurar/
-    // falhar silenciosamente no simulador iOS → tela não trocava).
-    // 065 US5: `logout` ANTES do `signOut` — o `signOut` dispara SIGNED_OUT de dentro dele, e o
-    // listener do Navigation roda `resetUser()` na hora. Emitir depois fazia o evento sair ANÔNIMO
-    // (visto no PostHog no smoke de 26/09: distinct_id novo, sem super properties). A intenção
-    // explícita é o fato; `scope:'local'` quase não falha.
-    await logEvent(EVENTS.LOGOUT, { surface: SURFACES.MOBILE })
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
-
-    if (error) {
-      if (error.message?.includes('session missing') || (error as any).__isAuthError) {
-        return { success: true, error: null }
-      }
-      throw error
-    }
-    // AsyncStorage é app-scoped, não per-user. Limpar tudo que é específico do
-    // usuário anterior: caches de dados + flags de feature (AP-213).
-    await AsyncStorage.multiRemove([
-      // flags legado de alarme
-      ALARM_ENABLED_KEY,
-      ALARM_NUDGE_SEEN_KEY,
-      // caches de dados do usuário (vazam para o próximo login)
-      '@dosiq/medicines-snapshot',
-      '@dosiq/protocols-snapshot',
-      '@dosiq/purchases-snapshot',
-      '@dosiq/stock-snapshot',
-      '@dosiq/today-snapshot',
-      '@dosiq/treatments-snapshot',
-      '@dosiq/recovery-flow',
-    ]).catch(() => {})
-    // 065/US4 (TC-4): `resetUser()` nos DOIS caminhos de logout. Cabear só um deixa, num device
-    // compartilhado, os eventos do PRÓXIMO usuário com a identidade e as super properties do
-    // anterior — mistura dado de saúde entre pessoas, que é justo o que `resetUser` existe para
-    // impedir. Fail-silent por contrato (CON-021): nunca altera o resultado do logout.
-    await resetUser()
-    return { success: true, error: null }
+    const { success } = await endSession('logout')
+    return success ? { success: true, error: null } : { success: false, error: 'Não foi possível sair. Tente de novo.' }
   } catch (err) {
     console.error('[profileService] erro ao fazer logout:', err)
     return { success: false, error: mapErrorToMessage(err) }
@@ -264,9 +232,14 @@ export async function generateTelegramToken() {
 // ───────────────────────────────────────────────────────────────────────────
 
 async function getUserId() {
-  const { data, error } = await supabase.auth.getUser()
-  const user = data?.user
-  if (error || !user) throw new Error('Sessão expirada. Faça login novamente.')
+  const result = await supabase.auth.getUser()
+  const user = result.data?.user
+  if (result.error || !user) {
+    // Spec 091 (AC-2.3, 4º gatilho): o Perfil é quem pergunta ao SERVIDOR pelo usuário. Antes, conta
+    // excluída aqui só virava string na tela. Sessão inválida encerra; erro de rede NÃO (`unknown`).
+    if (classifyAuthUserResult(result) === 'invalid') void endSession('invalid')
+    throw new Error('Sessão expirada. Faça login novamente.')
+  }
   return user.id
 }
 
