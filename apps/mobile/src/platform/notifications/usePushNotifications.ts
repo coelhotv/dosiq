@@ -6,9 +6,8 @@
 
 import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getPushPermissionStatus } from './pushPermission'
-import { registerPushToken, PUSH_TOKEN_KEY } from './registerPushToken'
+import { registerPushToken } from './registerPushToken'
 import { ensurePushChannel } from './ensurePushChannel'
 import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrationAction } from './titrationNotificationActions'
 import { navigationRef } from '../../navigation/navigationRef'
@@ -185,13 +184,4 @@ export function usePushNotifications({ supabase, session, canRegister = false })
       notificationSubscription.remove()
     }
   }, [supabase, userId, canRegister])
-
-  // Logout: o aparelho é desativado no `endSession`, COM a sessão de quem sai (spec 091, RC-SEC
-  // S-1). O cleanup que vivia aqui rodava com a sessão já nula e chamava
-  // `unregisterNotificationDevice({ userId: null })`, que retorna na guarda — o aparelho nunca foi
-  // desativado. Aqui fica só o esquecimento local do token.
-  useEffect(() => {
-    if (userId) return
-    AsyncStorage.removeItem(PUSH_TOKEN_KEY).catch(() => {})
-  }, [userId])
 }

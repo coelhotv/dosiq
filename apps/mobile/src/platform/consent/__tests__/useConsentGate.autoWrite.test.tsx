@@ -51,10 +51,19 @@ it('conta confirmada ⇒ materializa o consentimento do cadastro (comportamento 
   await waitFor(() => expect(rpc).toHaveBeenCalledWith('consent_grant', expect.anything()))
 })
 
-it('RC5: verificação pendente ⇒ gate não decide (sem ready, sem leitura) — o pedido não pisca', async () => {
+it('RC5: verificação pendente + trilha `missing` ⇒ gate espera (sem ready) — o pedido não pisca', async () => {
   const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(false, true) })
+  await waitFor(() => expect(supabase.from).toHaveBeenCalled())
   await new Promise((r) => setTimeout(r, 20))
   expect(result.current.ready).toBe(false)
-  expect(supabase.from).not.toHaveBeenCalled()
+  expect(rpc).not.toHaveBeenCalled()
+})
+
+it('RC6: verificação pendente + leitura falhando (offline) ⇒ decide na hora, boot não trava', async () => {
+  jest.mocked(supabase.from).mockImplementationOnce(() => {
+    throw new Error('Network request failed')
+  })
+  const { result } = renderHook(() => useConsentGate(), { wrapper: wrap(false, true) })
+  await waitFor(() => expect(result.current.ready).toBe(true))
   expect(rpc).not.toHaveBeenCalled()
 })

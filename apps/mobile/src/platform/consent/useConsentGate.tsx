@@ -74,15 +74,13 @@ function useConsentGateState(
       return
     }
 
-    // Spec 091 (RC5): enquanto o servidor não respondeu se a conta existe, o gate NÃO decide. Ler a
-    // trilha antes de materializar o consentimento do cadastro dava `missing` ⇒ o pedido piscava
-    // para quem já tinha consentido, e a trava de quem esgotou a cortesia virava pedido dispensável
-    // (0 sessões). Sem `ready`, o Navigation segura no spinner — o mesmo de qualquer carga.
-    if (verificationPending) {
-      setReady(false)
-      return
-    }
-
+    // Spec 091 (RC5 + RC6): `missing` lido ANTES de a conta ser confirmada não é decisão — a
+    // materialização do cadastro (que só roda com `confirmed`) ainda pode virá-lo `granted`, e as
+    // sessões de cortesia ainda não foram contadas. Decidir ali fazia o pedido piscar para quem já
+    // consentiu e trocava a trava por pedido dispensável. Então, SÓ nesse caso, o gate espera a
+    // verificação. Qualquer outro estado (ou leitura falhando, como offline) decide na hora — o
+    // boot não pode ficar preso numa ida à rede (AP-303: indeterminado não é bloqueio).
+    let awaitVerification = false
     try {
       // Idempotente e defensivo: não materializa sobre um `revoked` e não escreve nada se não
       // conseguiu LER a trilha. `user_metadata` é carona da intenção — quem carimba é o RPC.
@@ -97,6 +95,10 @@ function useConsentGateState(
       }
 
       const current = await consentService.getStatus('health_data')
+      if (current.status === 'missing' && verificationPending) {
+        awaitVerification = true
+        return
+      }
 
       // Sessão de prompt só conta quando SABEMOS que o titular nunca se manifestou. Se a leitura
       // acima tivesse lançado, este trecho não rodaria — que é o ponto.
@@ -112,7 +114,7 @@ function useConsentGateState(
       setState(null)
       setPromptSessions(0)
     } finally {
-      setReady(true)
+      setReady(!awaitVerification)
       // Avisa os bridges de superfície (fora do Provider) que o consentimento foi reavaliado —
       // grant/revoke in-app não passam por foreground, então sem este sinal as superfícies locais só
       // reagiriam no próximo ciclo de foreground (alarme já agendado dispararia nesse meio-tempo).
