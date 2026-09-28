@@ -46,9 +46,11 @@ import { usePushNotifications } from '../platform/notifications/usePushNotificat
 import { syncDeviceActivity } from '../platform/telemetry/syncDeviceActivity'
 import { VersionGateOverlay } from '../platform/versionGate/VersionGateOverlay'
 import { StockTrackingProvider } from '@shared/hooks/useStockTracking'
-import { logScreenView, setUserId, resetUser, logEvent } from '../platform/analytics/productAnalytics'
+import { logScreenView, setUserId, logEvent } from '../platform/analytics/productAnalytics'
 import { EVENTS } from '../platform/analytics/analyticsEvents'
-import { clearStockTrackingCache } from '../platform/storage/stockTrackingCache'
+import { ensureDeviceOwner } from '../platform/session/localDataWipe'
+import { handleExternalSignOut } from '../platform/session/endSession'
+import { useSessionVerification } from '../platform/session/useSessionVerification'
 import { debugLog } from '@shared/utils/debugLog'
 
 // TODO(040-strict): createStackNavigator<any>() — sem ParamList tipada, overload exige `id`
@@ -106,8 +108,15 @@ function useAuthSession() {
   const [session, setSession] = useState(undefined)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const [onboardingNeeded, setOnboardingNeeded] = useState(false)
+  // Spec 091 (FR-009): id para o qual a guarda de dono já rodou. A árvore autenticada só monta
+  // quando bate com a sessão — nenhuma tela lê cache antes de o aparelho ser limpo de outra pessoa.
+  const [ownerCheckedFor, setOwnerCheckedFor] = useState<string | null>(null)
+  // Spec 091 (FR-005/INV-3): escrita automática em nome da pessoa só depois de o SERVIDOR confirmar
+  // que ela existe. `unknown` (sem rede) segue offline, mas não escreve.
+  const verification = useSessionVerification(session?.user?.id)
+  const canAutoWrite = verification === 'confirmed'
 
-  usePushNotifications({ supabase, session })
+  usePushNotifications({ supabase, session, canRegister: canAutoWrite })
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -115,7 +124,7 @@ function useAuthSession() {
   }, [session?.user?.id])
 
   useEffect(() => {
-    if (!session?.user?.id) return
+    if (!session?.user?.id || !canAutoWrite) return
 
     syncDeviceActivity({ supabase })
 
@@ -125,6 +134,18 @@ function useAuthSession() {
       }
     })
     return () => subscription.remove()
+  }, [session?.user?.id, canAutoWrite])
+
+  // Guarda de dono: roda em TODA entrada (boot, login, recuperação de senha, deep link) — o caminho
+  // de recovery retorna cedo do listener e escaparia de uma guarda posta lá (analysis G-3).
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) return
+    let active = true
+    ensureDeviceOwner(userId).then(() => {
+      if (active) setOwnerCheckedFor(userId)
+    })
+    return () => { active = false }
   }, [session?.user?.id])
 
   useEffect(() => {
@@ -161,20 +182,11 @@ function useAuthSession() {
       }
 
       if (event === 'SIGNED_OUT') {
-        debugLog('Navigation', 'User signed out, clearing caches...')
-        resetUser()
-        await clearStockTrackingCache()
-        try {
-          await AsyncStorage.multiRemove([
-            '@dosiq/today-snapshot',
-            '@dosiq/treatments-snapshot',
-            '@dosiq/stock-snapshot'
-          ])
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Erro ao limpar caches no logout:', error)
-          }
-        }
+        // Spec 091: a limpeza é do `endSession` (allowlist). Aqui só chega o SIGNED_OUT que ninguém
+        // pediu — refresh negado, `session_not_found` — e ele é tratado como sessão inválida.
+        // No logout pedido, `isEndingSession()` faz disto um no-op.
+        debugLog('Navigation', 'SIGNED_OUT')
+        await handleExternalSignOut()
       }
       setSession(s ?? null)
     })
@@ -208,8 +220,13 @@ function useAuthSession() {
     return () => sub.remove()
   }, [])
 
+  const ownerReady = !session?.user?.id || ownerCheckedFor === session.user.id
+
   return {
     session,
+    ownerReady,
+    canAutoWrite,
+    verificationPending: verification === 'checking',
     setSession,
     isPasswordRecovery,
     setIsPasswordRecovery,
@@ -260,7 +277,11 @@ export default function Navigation() {
   // (PrivacyConsentSection, lá dentro) leem o MESMO estado. Revogar no card chama refresh do MESMO
   // gate → a trava aparece na hora, sem esperar o próximo foreground.
   return (
-    <ConsentGateProvider session={auth.session}>
+    <ConsentGateProvider
+      session={auth.session}
+      canAutoWrite={auth.canAutoWrite}
+      verificationPending={auth.verificationPending}
+    >
       <NavigationTree {...auth} />
       {/* Kill switch de versão mínima (spec 051-A FR-018) — IRMÃO de NavigationTree, não filho:
           cobre inclusive o spinner de carregamento (session===undefined) e o gate de consentimento,
@@ -277,10 +298,15 @@ function _resolveNavigationState(
   isPasswordRecovery: boolean,
   onboardingNeeded: boolean | null,
   consent: any,
-  regularizationDismissed: boolean
+  regularizationDismissed: boolean,
+  ownerReady: boolean
 ) {
   const consentPending = Boolean(session) && !isPasswordRecovery && !consent.ready
-  const isLoading = session === undefined || (session && !isPasswordRecovery && onboardingNeeded === null) || consentPending
+  const isLoading =
+    session === undefined ||
+    !ownerReady ||
+    (session && !isPasswordRecovery && onboardingNeeded === null) ||
+    consentPending
   const consentLocked = Boolean(session) && !isPasswordRecovery && consent.locked
   const showDismissiblePrompt =
     Boolean(session) &&
@@ -298,6 +324,7 @@ function _resolveNavigationState(
 
 function NavigationTree({
   session,
+  ownerReady,
   isPasswordRecovery,
   setIsPasswordRecovery,
   onboardingNeeded,
@@ -318,7 +345,8 @@ function NavigationTree({
     isPasswordRecovery,
     onboardingNeeded,
     consent,
-    regularizationDismissed
+    regularizationDismissed,
+    ownerReady
   )
 
   // 065 PR D / US9 (PO-12): 1x por ENTRADA na trava, não por render. `gate_mode` diz POR QUE travou

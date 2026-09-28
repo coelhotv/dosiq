@@ -21,7 +21,8 @@ import { useNavigation } from '@react-navigation/native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { ChevronLeft, AlertCircle, Layers, Package, CalendarClock, User, TriangleAlert, Eye, EyeOff, } = LucideIcons as any
-import { getDeletionSummary, deleteAccount, logoutUser } from '../services/profileService'
+import { getDeletionSummary, deleteAccount } from '../services/profileService'
+import { endSession, drainAuditQueue } from '@platform/session/endSession'
 import { verifyPassword } from '@platform/auth/authService'
 import { useConsentGate } from '@platform/consent/useConsentGate'
 import FormActions from '@shared/components/form/FormActions'
@@ -93,10 +94,14 @@ export default function DeleteAccountScreen() {
       return
     }
 
+    // Spec 091 (RC3 E-3): drena a fila de auditoria ANTES do RPC — depois dele o insert bate na FK
+    // da conta apagada e tudo seria descartado. O que não subir some junto com a conta.
+    await drainAuditQueue()
     const { success, error } = await deleteAccount()
     if (success) {
-      // SIGNED_OUT (Navigation) reseta para a Landing.
-      await logoutUser()
+      // Encerramento único: signOut + wipe por allowlist (o histórico do assistente ia sobreviver
+      // à exclusão). SIGNED_OUT (Navigation) leva para a Landing.
+      await endSession('deleted')
       return
     }
     setDeleting(false)

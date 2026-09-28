@@ -10,6 +10,8 @@ import { lightTap } from '@shared/utils/haptics'
 import { ROUTES } from '../../../navigation/routes'
 import { colors, spacing } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { isDeviceKey } from '@platform/session/localDataWipe'
 import {
   devFireAlarmNow,
   devScheduleAlarmIn,
@@ -52,6 +54,37 @@ function runTitrationTrigger(fn: () => Promise<unknown>, okMsg: string) {
  */
 function runEarly(fn: () => Promise<unknown>) {
   fn().catch((err) => Alert.alert('Dev — Guarda 067', err?.message ?? 'Falhou.'))
+}
+
+/**
+ * Spec 091 T014 — lista as chaves do AsyncStorage deste aparelho para classificar a allowlist do
+ * wipe. O console do Hermes roda no escopo global (sem `require`), então o dump mora aqui.
+ * ✓ = sobrevive à saída da conta; ✗ = apagada. Só nomes de chave, nunca valores.
+ */
+function DevSessionSection() {
+  const [dump, setDump] = useState<string | null>(null)
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Spec 091 — Chaves do aparelho</Text>
+      <TouchableOpacity
+        onPress={() => {
+          lightTap()
+          AsyncStorage.getAllKeys()
+            .then((keys) => {
+              const lines = [...keys].sort().map((k) => `${isDeviceKey(k) ? '✓' : '✗'} ${k}`)
+              const text = `${Platform.OS} · ${lines.length} chaves\n${lines.join('\n')}`
+              console.info(`[091 T014]\n${text}`)
+              setDump(text)
+            })
+            .catch((err) => Alert.alert('Dev — 091', err?.message ?? 'Falhou.'))
+        }}
+        style={styles.buttonCard}
+      >
+        <Text style={styles.buttonText}>🗝️ Listar chaves do AsyncStorage (T014)</Text>
+      </TouchableOpacity>
+      {dump && <Text selectable style={styles.note}>{dump}</Text>}
+    </View>
+  )
 }
 
 function DevAlarmSection() {
@@ -372,6 +405,7 @@ export default function DevHubScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        <DevSessionSection />
         <DevAlarmSection />
         <DevSpikeSection />
         <DevTitrationSection />

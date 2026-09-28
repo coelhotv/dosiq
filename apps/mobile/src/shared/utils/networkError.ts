@@ -23,8 +23,17 @@ const NETWORK_ERROR_PATTERNS = [
 ]
 
 export function isNetworkError(err: unknown): boolean {
+  // Spec 091: o PostgREST devolve erro como OBJETO PLANO (`{ message: 'TypeError: Network request
+  // failed', code: '' }`) e os services fazem `throw error` com ele — ler só `instanceof Error`
+  // classificava a queda de rede do Hoje como "outro erro" e sumia com o snapshot offline.
   const message =
-    err instanceof Error ? err.message : typeof err === 'string' ? err : ''
+    err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : typeof (err as { message?: unknown } | null)?.message === 'string'
+          ? (err as { message: string }).message
+          : ''
   if (!message) return false
   const normalized = message.toLowerCase()
   return NETWORK_ERROR_PATTERNS.some((pattern) => normalized.includes(pattern))

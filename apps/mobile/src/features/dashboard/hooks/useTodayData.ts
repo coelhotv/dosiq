@@ -17,6 +17,7 @@ import {
 } from '../services/dashboardService'
 import { useTodayDerived } from './_useTodayDerived'
 import { setMode } from '@platform/analytics/productAnalytics'
+import { isNetworkError } from '@shared/utils/networkError'
 
 const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
 
@@ -54,7 +55,7 @@ export function useTodayData() {
     setIsDaySegregated(false)
   }, [])
 
-  const handleCacheFallback = useCallback(async () => {
+  const handleCacheFallback = useCallback(async (expectedUserId: string | null) => {
     const cached = await AsyncStorage.getItem(TODAY_CACHE_KEY)
     // Sem cache pra tentar (1ª abertura do app, ou storage limpo) — NÃO relançar `originalErr` cru:
     // em modo avião/sem rede ele é um erro de fetch nativo (RN), sempre em inglês, e vazaria pra
@@ -62,6 +63,11 @@ export function useTodayData() {
     if (!cached) throw new Error('Não identificamos conexão com a Internet, nem dados salvos neste aparelho. Conecte-se a rede para continuar.')
     
     const parsed = JSON.parse(cached)
+    // Spec 091 (AC-2.4): snapshot só vale para o titular que o gravou. Sem dono no snapshot (formato
+    // antigo) ou dono diferente = trata como "sem dados salvos" — nunca exibe agenda de outra pessoa.
+    if (!expectedUserId || parsed?.user?.id !== expectedUserId) {
+      throw new Error('Não identificamos conexão com a Internet, nem dados salvos neste aparelho. Conecte-se a rede para continuar.')
+    }
     const diffHours = (getNow().getTime() - parseISO(parsed.capturedAt).getTime()) / (1000 * 60 * 60)
     // "Cache expirado" é jargão técnico — Dona Maria não sabe o que é cache (achado no smoke 055).
     if (diffHours >= 24) throw new Error('Não identificamos conexão com a Internet e seus dados no app estão desatualizados (mais de 24h). Conecte-se à rede para atualizar.')
@@ -95,8 +101,10 @@ export function useTodayData() {
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
+    let sessionUserId: string | null = null
     try {
       const { data: { session } } = await supabase.auth.getSession()
+      sessionUserId = session?.user?.id ?? null
       const user = session?.user || (await supabase.auth.getUser()).data.user
       if (!user) throw new Error('Sessão expirada')
 
@@ -122,8 +130,14 @@ export function useTodayData() {
       const medicines = await getMedicinesData([...new Set(protocols.map(p => p.medicine_id))])
       await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances)
     } catch (err) {
+      // Spec 091 (FR-006): só QUEDA DE REDE cai no snapshot. Erro de sessão/servidor/código mostrado
+      // como "sem conexão" escondia conta excluída atrás da própria agenda (smoke do 065 PR D).
+      if (!isNetworkError(err)) {
+        setError(describeLoadFailure(err, err))
+        return
+      }
       try {
-        await handleCacheFallback()
+        await handleCacheFallback(sessionUserId)
       } catch (fallbackErr) {
         // AP-314: erro de servidor (42703, 42501…) tem precedência sobre "Cache expirado" —
         // sem isso, schema quebrado em produção se disfarça de app offline.

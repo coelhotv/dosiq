@@ -59,25 +59,70 @@ describe('useTodayData', () => {
     );
   }, 10000);
 
-  it('fails online and loads from cache (stale mode)', async () => {
-    mockedSupabase.auth.getSession.mockRejectedValue(new Error('Network error'));
-    
-    const mockCache = {
+  // Spec 091 PO-6 (AC-2.4): só queda de REDE cai no snapshot, e só snapshot do titular da sessão.
+  describe('fallback de snapshot (spec 091)', () => {
+    // Erro de rede do PostgREST chega como objeto plano — é o formato real que os services relançam.
+    const networkErr = { message: 'TypeError: Network request failed', code: '' };
+    const snapshotOf = (userId: string | null) => JSON.stringify({
       protocols: [{ id: 'p1' }],
       logs: [],
       medicines: {},
+      user: userId ? { id: userId } : undefined,
       capturedAt: new Date().toISOString(),
-      localDay: new Date().toISOString().split('T')[0]
-    };
-    mockedAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockCache));
+      localDay: new Date().toISOString().split('T')[0],
+    });
 
-    const { result } = renderHook(() => useTodayData());
+    beforeEach(() => {
+      mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+      mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    });
 
-    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+    it('rede + snapshot do titular atual ⇒ snapshot + stale', async () => {
+      mockedDashboardService.getActiveProtocols.mockRejectedValue(networkErr);
+      mockedAsyncStorage.getItem.mockResolvedValue(snapshotOf('user-123'));
+      const { result } = renderHook(() => useTodayData());
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+      expect(result.current.stale).toBe(true);
+      expect(result.current.data.protocols).toHaveLength(1);
+    }, 20000);
 
-    expect(result.current.stale).toBe(true);
-    expect(result.current.data.protocols).toHaveLength(1);
-  }, 20000);
+    it('rede + snapshot de OUTRO titular ⇒ sem snapshot', async () => {
+      mockedDashboardService.getActiveProtocols.mockRejectedValue(networkErr);
+      mockedAsyncStorage.getItem.mockResolvedValue(snapshotOf('user-OUTRA'));
+      const { result } = renderHook(() => useTodayData());
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+      expect(result.current.data).toBeNull();
+      expect(result.current.error).toBeTruthy();
+    }, 20000);
+
+    it('rede + snapshot sem dono (formato antigo) ⇒ sem snapshot', async () => {
+      mockedDashboardService.getActiveProtocols.mockRejectedValue(networkErr);
+      mockedAsyncStorage.getItem.mockResolvedValue(snapshotOf(null));
+      const { result } = renderHook(() => useTodayData());
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+      expect(result.current.data).toBeNull();
+    }, 20000);
+
+    it('erro de autenticação ⇒ sem snapshot, nem lê o cache', async () => {
+      mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
+      mockedSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
+      mockedAsyncStorage.getItem.mockResolvedValue(snapshotOf('user-123'));
+      const { result } = renderHook(() => useTodayData());
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+      expect(result.current.data).toBeNull();
+      expect(result.current.stale).toBe(false);
+      expect(mockedAsyncStorage.getItem).not.toHaveBeenCalledWith('@dosiq/today-snapshot');
+    }, 20000);
+
+    it('erro de servidor (42703) ⇒ sem snapshot, código visível', async () => {
+      mockedDashboardService.getActiveProtocols.mockRejectedValue({ message: 'column x does not exist', code: '42703' });
+      mockedAsyncStorage.getItem.mockResolvedValue(snapshotOf('user-123'));
+      const { result } = renderHook(() => useTodayData());
+      await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 });
+      expect(result.current.data).toBeNull();
+      expect(result.current.error).toContain('42703');
+    }, 20000);
+  });
 
   it('returns error when both online and cache fail', async () => {
     mockedSupabase.auth.getSession.mockRejectedValue(new Error('Network error'));

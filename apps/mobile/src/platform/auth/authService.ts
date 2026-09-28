@@ -1,7 +1,8 @@
 // authService.js — serviço de autenticação com validação Zod
 import { z } from 'zod'
 import { CURRENT_POLICY_VERSION } from '@dosiq/core'
-import { logEvent, resetUser } from '@platform/analytics/productAnalytics'
+import { logEvent } from '@platform/analytics/productAnalytics'
+import { endSession } from '@platform/session/endSession'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 
@@ -240,25 +241,12 @@ export async function verifyPassword(password) {
  * Faz logout do usuário
  */
 export async function signOut() {
+  // Spec 091: casca do encerramento único (`endSession`) — mesma ordem e mesma limpeza por
+  // allowlist do `logoutUser`. Antes este caminho só fazia `resetUser()` e deixava todo o
+  // armazenamento local da pessoa para a próxima conta (RC3 E-1).
   try {
-    // scope 'local': limpa sessão local na hora, dispara SIGNED_OUT sem rede
-    // (global pode pendurar no simulador iOS — ver logoutUser).
-    // 065 US5: `logout` ANTES do `signOut` — o `signOut` dispara SIGNED_OUT de dentro dele, e o
-    // listener do Navigation roda `resetUser()` na hora. Emitir depois fazia o evento sair ANÔNIMO
-    // (visto no PostHog no smoke de 26/09: distinct_id novo, sem super properties). A intenção
-    // explícita é o fato; `scope:'local'` quase não falha.
-    await logEvent(EVENTS.LOGOUT, { surface: SURFACES.MOBILE })
-    const { error } = await supabase.auth.signOut({ scope: 'local' })
-    if (error) {
-      console.error('Erro ao fazer logout:', error.message)
-      return { success: false }
-    }
-    // 065/US4 (TC-4): `resetUser()` nos DOIS caminhos de logout. Cabear só um deixa, num device
-    // compartilhado, os eventos do PRÓXIMO usuário com a identidade e as super properties do
-    // anterior — mistura dado de saúde entre pessoas, que é justo o que `resetUser` existe para
-    // impedir. Fail-silent por contrato (CON-021): nunca altera o resultado do logout.
-    await resetUser()
-    return { success: true }
+    const { success } = await endSession('logout')
+    return { success }
   } catch (err) {
     console.error('Erro inesperado ao fazer logout:', err)
     return { success: false }
