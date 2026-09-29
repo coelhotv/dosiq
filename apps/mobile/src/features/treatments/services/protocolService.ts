@@ -5,7 +5,7 @@
 // detailSelect customizado pra trazer treatment_plan completo (ProtocolDetailScreen
 // renderiza emoji/name/etc; default da factory traz só medicine).
 
-import { createProtocolRepository } from '@dosiq/core'
+import { createProtocolRepository, deriveSchedulePreset } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { logEvent } from '../../../platform/analytics/productAnalytics'
 import { EVENTS } from '../../../platform/analytics/analyticsEvents'
@@ -103,6 +103,9 @@ function writeProps(row) {
     treatment_plan_id: row?.treatment_plan_id,
     // Re-emitida na edição: o valor novo supersede o anterior (TRACKING_PLAN §5.3.1).
     treatment_planned_end: row?.end_date,
+    // 086 FR-019: a FORMA do horário salvo (1x/12h/8h/6h/manual), nunca os horários (INV-7).
+    // Mesma função que marca o intervalo na tela; ausente em PRN e sem horário (`compact`).
+    schedule_preset: deriveSchedulePreset(row?.time_schedule, row?.frequency),
   }
 }
 

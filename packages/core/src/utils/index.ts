@@ -294,5 +294,8 @@ export {
   fetchIntervalCadenceAvailability,
 } from './cadenceRollout'
 export type { CadenceInstallRow } from './cadenceRollout'
+// 086: presets de horário (derivados, nunca persistidos).
+export { SCHEDULE_PRESETS, DEFAULT_ANCHORS, DAY_START, computePresetSchedule, deriveSchedulePreset, deriveAnchor, findEarlyMorningDose } from './schedulePresets'
+export type { SchedulePresetKey, SchedulePresetValue } from './schedulePresets'
 export { getDoseCycle, cycleDoseAmount, scheduleTimesPerDay } from './doseCycle'
 export type { DoseCycle } from './doseCycle'

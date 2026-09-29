@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### "8 em 8 horas" num toque; injeção do mês pelo nome e pela data do posto
+
+- **Mobile** (`minor` — funcionalidade nova no cadastro; **sem bump neste PR**: entra no bump único
+  para `0.34.0` do pacote de loja; canal: build de loja). Ao cadastrar ou editar um tratamento
+  diário ou em dias alternados, a pergunta "Quantas vezes ao dia?" oferece 1x ao dia, 12 em 12h,
+  8 em 8h e 6 em 6h: basta dizer a hora da primeira dose e os horários do dia são preenchidos,
+  igualmente espaçados, e continuam editáveis um a um. Se algum horário for mudado à mão, o app
+  passa a mostrar "Horários personalizados" em vez de afirmar um intervalo que não existe mais.
+  Quando uma dose cai de madrugada, um aviso discreto mostra o horário. O mesmo vale para o
+  primeiro tratamento no cadastro inicial. Para quem já tem a opção "A cada X dias", o cadastro
+  ganha "Mensal (a cada 30 dias)" — também no cadastro inicial —, que pergunta "Quando é a próxima
+  dose?" e mostra as próximas três datas com o dia da semana; se o horário de hoje já passou, o
+  app avisa quando será o primeiro lembrete. Nada muda para tratamentos já salvos até que sejam
+  editados.
+
 ### Tocar no lembrete leva à dose; conta nova recebe alarme; excluir a conta volta a funcionar com titulação
 
 - **Mobile** (`patch` — correções; **sem bump neste PR**: entra no bump único para `0.34.0` do

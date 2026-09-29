@@ -1,5 +1,5 @@
 // OnboardingTreatmentStep — passo 3 do wizard: primeiro tratamento (Fase 4 S4.2).
-// REUSA o fluxo da Fase 2: WeekdaySelector + TimeSchedulePicker + protocolCreateSchema
+// REUSA o fluxo da Fase 2: WeekdaySelector + SchedulePresetSection (086) + protocolCreateSchema
 // (PO-8). Mock: mock-onboarding-passo3.
 //
 // Spec 044: NÃO persiste — só valida e guarda no contexto. Medicamento, tratamento e push
@@ -20,7 +20,7 @@ import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
 import FormActions from '@shared/components/form/FormActions'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
-import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
+import SchedulePresetSection from '@treatments/components/SchedulePresetSection'
 import { useToast } from '@shared/components/feedback/Toast'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
@@ -215,10 +215,12 @@ export default function OnboardingTreatmentStep() {
               <Text style={styles.label}>Horários</Text>
               <Text style={styles.labelHint}>{timeCount} {timeCount === 1 ? 'horário' : 'horários'}</Text>
             </View>
-            <TimeSchedulePicker
+            {/* 086 FR-011: mesmo componente de presets do formulário completo (1x/12/8/6). */}
+            <SchedulePresetSection
               value={form.values.time_schedule as any}
               onChange={(next) => form.handleChange('time_schedule', next)}
-              error={form.touched.time_schedule ? form.errors.time_schedule : null}
+              error={form.touched.time_schedule ? (form.errors.time_schedule as any) : null}
+              showPresets={!isWeekly}
             />
           </View>
 

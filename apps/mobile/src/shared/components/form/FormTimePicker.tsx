@@ -14,6 +14,20 @@ const defaultFormat = (d) => {
   return `${hh}:${mm}`
 }
 
+export interface FormTimePickerProps {
+  name: string
+  label?: any
+  value?: Date | null
+  error?: any
+  onChange?: (name: string, value: Date) => void
+  onBlur?: (name: string) => void
+  disabled?: boolean
+  placeholder?: string
+  helperText?: string
+  required?: boolean
+  format?: (d: Date) => string
+}
+
 export default function FormTimePicker({
   name,
   label,
@@ -26,7 +40,7 @@ export default function FormTimePicker({
   helperText,
   required,
   format,
-}) {
+}: FormTimePickerProps) {
   const [open, setOpen] = useState(false)
   // Valor temporário usado no picker iOS antes de confirmar
   const [tempValue, setTempValue] = useState(() => value ?? getNow())

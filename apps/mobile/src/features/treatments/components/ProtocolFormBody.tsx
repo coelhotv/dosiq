@@ -29,7 +29,7 @@ import FormSelect from '@shared/components/form/FormSelect'
 import FormDatePicker from '@shared/components/form/FormDatePicker'
 import MedicineSelectorRow from '@treatments/components/MedicineSelectorRow'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
-import TimeSchedulePicker from '@treatments/components/TimeSchedulePicker'
+import SchedulePresetSection from '@treatments/components/SchedulePresetSection'
 import PlanSelectField from '@treatments/components/PlanSelectField'
 import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { colors, spacing } from '@shared/styles/tokens'
@@ -285,8 +285,12 @@ function toIntervalDays(raw) {
   return digits === '' ? null : Number(digits)
 }
 
+const PRESET_FREQUENCIES = new Set(['diário', 'dias_alternados'])
+
 function FrequencySection({ form, showWeekdays }) {
   const intervalAvailable = useIntervalCadenceAvailability()
+  // 086 FR-008: presets só onde há agenda diária (22/22 tratamentos com ≥2 horários são `diário`).
+  const showPresets = PRESET_FREQUENCIES.has(form.values.frequency)
   const handleFrequencyChange = useCallback(
     (name, value) => {
       form.handleChange(name, value)
@@ -335,11 +339,12 @@ function FrequencySection({ form, showWeekdays }) {
         </View>
       ) : null}
       <View style={styles.fieldBlock}>
-        <Text style={styles.fieldLabel}>Horários</Text>
-        <TimeSchedulePicker
+        {showPresets ? null : <Text style={styles.fieldLabel}>Horários</Text>}
+        <SchedulePresetSection
           value={form.values.time_schedule}
           onChange={(next) => form.handleChange('time_schedule', next)}
           error={form.touched.time_schedule ? form.errors.time_schedule : null}
+          showPresets={showPresets}
         />
       </View>
     </Section>

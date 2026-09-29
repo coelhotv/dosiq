@@ -113,6 +113,7 @@ describe('create', () => {
         interval_days: 3,
         treatment_plan_id: 'tp-1',
         treatment_planned_end: '2026-12-31',
+        schedule_preset: '1x',
       },
     ])
   })
@@ -153,7 +154,7 @@ describe('update — pausa ≠ edição ≠ encerramento (PO-3)', () => {
     mockRepo.update.mockResolvedValue({ ...ROW, dosage_per_intake: 2 })
     await protocolService.update('p-1', { ...ROW, dosage_per_intake: 2 }, { surface: 'mobile', previous: ROW })
     expect(eventsOf('treatment_edited')).toEqual([
-      { surface: 'mobile', treatment_id: 'p-1', medicine_id: 'm-1', change_kind: ['dose'], frequency: 'diário' },
+      { surface: 'mobile', treatment_id: 'p-1', medicine_id: 'm-1', change_kind: ['dose'], frequency: 'diário', schedule_preset: '1x' },
     ])
     expect(eventsOf('treatment_paused')).toEqual([])
   })
@@ -162,6 +163,45 @@ describe('update — pausa ≠ edição ≠ encerramento (PO-3)', () => {
     mockRepo.update.mockResolvedValue(ROW)
     await protocolService.update('p-1', { ...ROW }, { surface: 'mobile', previous: ROW })
     expect(mockLogEvent).not.toHaveBeenCalled()
+  })
+})
+
+describe('schedule_preset (086 PO-8) — forma do horário SALVO, nunca os horários', () => {
+  async function presetOf(row) {
+    mockRepo.create.mockResolvedValue({ ...ROW, ...row })
+    await protocolService.create({}, { surface: 'mobile' })
+    return eventsOf('treatment_created')[0]
+  }
+
+  it('12/12 digitado à mão (sem chip) → 12h: deriva da linha, não da tela', async () => {
+    expect((await presetOf({ time_schedule: ['20:00', '08:00'] })).schedule_preset).toBe('12h')
+  })
+
+  it('8/8 e 6/6 regulares → 8h / 6h', async () => {
+    expect((await presetOf({ time_schedule: ['05:30', '13:30', '21:30'] })).schedule_preset).toBe('8h')
+    jest.clearAllMocks()
+    expect((await presetOf({ time_schedule: ['00:00', '06:00', '12:00', '18:00'] })).schedule_preset).toBe('6h')
+  })
+
+  it('irregular → manual', async () => {
+    expect((await presetOf({ time_schedule: ['07:15', '12:00', '17:00'] })).schedule_preset).toBe('manual')
+  })
+
+  it('quando_necessário e horário vazio → chave AUSENTE', async () => {
+    expect(await presetOf({ frequency: 'quando_necessário', time_schedule: ['08:00'] })).not.toHaveProperty('schedule_preset')
+    jest.clearAllMocks()
+    expect(await presetOf({ time_schedule: [] })).not.toHaveProperty('schedule_preset')
+  })
+
+  it('nenhum valor do payload carrega horário (INV-7)', async () => {
+    const props = await presetOf({ time_schedule: ['07:00', '15:00', '23:00'] })
+    expect(JSON.stringify(props)).not.toMatch(/\d{2}:\d{2}/)
+  })
+
+  it('edição também emite (treatment_edited)', async () => {
+    mockRepo.update.mockResolvedValue({ ...ROW, time_schedule: ['08:00', '20:00'] })
+    await protocolService.update('p-1', { ...ROW, time_schedule: ['08:00', '20:00'] }, { surface: 'mobile', previous: ROW })
+    expect(eventsOf('treatment_edited')[0].schedule_preset).toBe('12h')
   })
 })
 
