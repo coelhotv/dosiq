@@ -136,7 +136,7 @@ Enums pt-BR **com acento** (o CHECK rejeita sem — 23514; valores verbatim em �
 ```
 1. /devflow bootstrap → 2. branch → 3. SQP (R-221) → 4. C1-C4
 5. validate:agent + strict-island.sh → 6. RC5 self-review (/devflow code-review) ANTES do PR
-7. C5 → 8. commit PT → 9. push + PR → 10. RC6 review independente (obrigatório Tier 1+)
+7. C5 → 8. commit PT → 9. push + PR (corpo: `docs/standards/PULL_REQUEST_TEMPLATE.md`) → 10. RC6 review independente (obrigatório Tier 1+)
 11. AGUARDAR aprovação → USER mergeia (R-060 — NUNCA auto-merge) → 12. C5 pós-merge
 ```
 
