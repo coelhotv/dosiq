@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import {
   ScrollView,
@@ -41,6 +41,9 @@ import { useNudges } from '@profile/hooks/useNudges'
 import { useOtaUpdate } from '@platform/updates/useOtaUpdate'
 import { useAlarmScreenActive } from '@platform/versionGate/useAlarmScreenActive'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
+import { useStock } from '@stock/hooks/useStock'
+import { subscribePendingDose } from '@navigation/navigateToDose'
+import { deriveStockAlerts } from '@dashboard/hooks/_useTodayDerived'
 import { navigateCrossTab } from '@navigation/navigateCrossTab'
 import { useStockUpsell } from '@dashboard/hooks/useStockUpsell'
 import StockUpsellCard from '@dashboard/components/StockUpsellCard'
@@ -331,9 +334,27 @@ function TodaySpeedDial({ protocols, speedDialOpen, setSpeedDialOpen, setMeasure
   )
 }
 
+// 090 D-5: o banner lê os itens da ABA ESTOQUE (INV-3 — uma fórmula de dias restantes). Componente
+// próprio para o `useStock` só montar com o controle de estoque LIGADO (sem fetch à toa quando
+// desligado); o snapshot `@dosiq/stock-snapshot` evita rede no 2º acesso.
+//
+// `refreshKey` = `capturedAt` do Hoje: cada recarga do Hoje (inclusive a que segue um registro de
+// dose) relê o estoque. Sem isto o banner congelava os dias do 1º render (achado no smoke 28/09).
+// A 1ª montagem já carrega pelo próprio `useStock`; `refresh(true)` fura o throttle de 10 s.
+function TodayStockAlert({ refreshKey }) {
+  const { data: stockData, refresh } = useStock()
+  const firstKey = useRef(refreshKey)
+  const alerts = useMemo(() => deriveStockAlerts(stockData?.active), [stockData])
+  useEffect(() => {
+    if (refreshKey === firstKey.current) return
+    refresh(true)
+  }, [refreshKey, refresh])
+  return <StockAlertInline alerts={alerts} />
+}
+
 function TodayBannersSection({
   stockTrackingEnabled,
-  stockAlerts,
+  stockRefreshKey,
   priorityDoses = [],
   heroItems,
   setBulkModal,
@@ -345,7 +366,7 @@ function TodayBannersSection({
 }: any) {
   return (
     <>
-      {stockTrackingEnabled && <StockAlertInline alerts={stockAlerts} />}
+      {stockTrackingEnabled && <TodayStockAlert refreshKey={stockRefreshKey} />}
       {priorityDoses.length > 0 ? (
         <HeroDoseCard doses={priorityDoses} onPress={() => setBulkModal({ mode: 'hero', items: heroItems })} />
       ) : (
@@ -361,7 +382,7 @@ function TodayBannersSection({
 
 function TodayScreenContent({
   data, stale, loading, refresh,
-  timeline, carryOver, lookAhead, stockAlerts, protocols, stats,
+  timeline, carryOver, lookAhead, protocols, stats,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, modalInstanceId, modalEntryPoint, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
@@ -443,7 +464,7 @@ function TodayScreenContent({
         <EvolutionSwitchSection timezone={data?.timezone} refreshToken={evoRefreshTick} />
         <TodayBannersSection
           stockTrackingEnabled={stockTrackingEnabled}
-          stockAlerts={stockAlerts}
+          stockRefreshKey={data?.capturedAt}
           priorityDoses={priorityDoses}
           heroItems={heroItems}
           setBulkModal={setBulkModal}
@@ -575,7 +596,6 @@ function _extractTodayScreenData(data) {
     timeline = [],
     carryOver = [],
     lookAhead = [],
-    stockAlerts = [],
     protocols = [],
     medicines = {},
     stats = { expected: 0, taken: 0, score: 0 },
@@ -588,7 +608,6 @@ function _extractTodayScreenData(data) {
     timeline,
     carryOver,
     lookAhead,
-    stockAlerts,
     protocols,
     medicines,
     stats,
@@ -609,6 +628,8 @@ export default function TodayScreen({ route, navigation }) {
   const [bulkModal, setBulkModal] = useState(null)
   const [expandedShifts, setExpandedShifts] = useState({})
   const [lastHeuristicDay, setLastHeuristicDay] = useState(null)
+  // 090 D-3: dose do lembrete recebida pelo canal (`subscribePendingDose`), consumida ao abrir a modal
+  const [deliveredDose, setDeliveredDose] = useState(null)
 
   const { data, loading, error, stale, refresh } = useTodayData()
 
@@ -617,7 +638,6 @@ export default function TodayScreen({ route, navigation }) {
     timeline,
     carryOver,
     lookAhead,
-    stockAlerts,
     protocols,
     medicines,
     stats,
@@ -662,15 +682,31 @@ export default function TodayScreen({ route, navigation }) {
     }, [refresh, refreshTodayMeasures])
   )
 
-  // 2. Deeplink params de push notification (N1.4 → N1.5)
-  const routeParams = route?.params
+  // 090 D-3: a dose chega por um canal assinado, não por params aninhados (que se perdiam no cold
+  // start). Montado: recebe na hora; montando depois: recebe a pendente. Vira ESTADO desta tela, não
+  // params: no cold start o Hoje monta com o navegador de abas ainda sem estado e o `setParams` feito
+  // na montagem é descartado em silêncio (smoke 28/09 21:11, log: entregue, `route.params` undefined).
+  useEffect(
+    () => subscribePendingDose((dose) => setDeliveredDose(dose)),
+    []
+  )
+
+  // 2. Deeplink de lembrete: dose entregue pelo canal ou params de rota (N1.4 → N1.5)
+  const routeParams = deliveredDose ?? route?.params
   useEffect(() => {
     if (!routeParams?.screen) return
+    // 090 C1.5 G-1: no cold start o deeplink chega antes dos tratamentos. Resolver agora não acha o
+    // protocolo e o `setParams` abaixo apaga o pedido — a modal se perdia mesmo navegando certo.
+    // Espera a carga; protocolo inexistente DEPOIS da carga limpa sem modal.
+    const awaitingProtocol = routeParams.screen === 'dose-individual'
+      && !protocols.some(p => p.id === routeParams.protocolId)
+    if (awaitingProtocol && loading) return
     setTimeout(() => {
       _resolveDeeplinkModal(routeParams, protocols, setBulkModal, setModalProtocol, setModalScheduledTime, setModalEntryPoint)
+      setDeliveredDose(null)
       navigation?.setParams({ screen: undefined, planId: undefined, protocolIds: undefined })
     }, 0)
-  }, [routeParams, navigation, protocols])
+  }, [routeParams, navigation, protocols, loading])
 
   // Handlers
   const toggleShift = useCallback((shift) => {
@@ -719,7 +755,7 @@ export default function TodayScreen({ route, navigation }) {
   return (
     <TodayScreenContent
       data={data} stale={stale} loading={loading} refresh={refresh}
-      timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} stockAlerts={stockAlerts} protocols={protocols} stats={stats}
+      timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} protocols={protocols} stats={stats}
       refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}

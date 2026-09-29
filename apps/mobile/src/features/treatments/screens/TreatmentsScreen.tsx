@@ -39,8 +39,10 @@ function useTreatmentsScreenState() {
     pausados,
     finalizados,
   } = useTreatments()
-  const { profile, refresh: refreshProfile } = useProfile()
-  const complexityOverride = profile?.complexity_override
+  // 090 D-8: `complexity_override` mora em `user_settings` (R-295) — `profile` (tabela profiles) não
+  // tem a coluna, e a densidade escolhida era ignorada aqui (sempre caía no adaptativo).
+  const { settings, refresh: refreshProfile } = useProfile()
+  const complexityOverride = settings?.complexity_override
   const [expandedGroups, setExpandedGroups] = useState({})
 
   const { isComplex, flatData } = useMemo(() => {

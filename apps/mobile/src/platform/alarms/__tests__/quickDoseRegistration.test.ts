@@ -54,13 +54,11 @@ const mockLogEvent = jest.fn()
 jest.mock('@platform/analytics/productAnalytics', () => ({
   logEvent: (...args: any[]) => mockLogEvent(...args),
 }))
-jest.mock('@navigation/navigationRef', () => ({
-  navigationRef: {
-    isReady: () => true,
-    navigate: (screen?: unknown, params?: unknown) => mockNavigate(screen, params),
-  },
+// 090 D-2: a navegação é do helper único (aninhamento TABS → Hoje, espera, allowlist — coberto em
+// navigation/__tests__/navigateToDose.test.ts). Aqui prova-se só que o "Registrar" ENTREGA o deeplink a ele.
+jest.mock('@navigation/navigateToDose', () => ({
+  navigateToDose: (params?: unknown) => mockNavigate(params),
 }))
-jest.mock('@navigation/routes', () => ({ ROUTES: { TODAY: 'Hoje' } }))
 
 // 067 A2: a trilha/aviso da anomalia é efeito colateral fail-open — mockada p/ asserir que foi
 // chamada sem arrastar notifee/expo-device/supabase reais para dentro deste teste.
@@ -76,6 +74,7 @@ jest.mock('../refusalNotice', () => ({
 }))
 
 import { handleAlarmAction, registerTaken, registerSkip } from '../quickDoseRegistration'
+import { isHandedOffToRegister, __resetRegisterHandoff } from '../registerHandoff'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
 
 function evt(pressActionId: string | undefined, data: Record<string, unknown>) {
@@ -316,7 +315,7 @@ describe('handleAlarmAction — superfície 039 "Registrar" abre modal bulk', ()
     const data = { ...BASE, treatmentId: 'plan-9', scheduledTime: '17:00', treatmentPlanName: 'Insulina' }
     const res = await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
     expect(res).toEqual({ handled: true, action: 'surface-open-register' })
-    expect(mockNavigate).toHaveBeenCalledWith('Hoje', {
+    expect(mockNavigate).toHaveBeenCalledWith({
       screen: 'bulk-plan',
       planId: 'plan-9',
       at: '17:00',
@@ -328,8 +327,19 @@ describe('handleAlarmAction — superfície 039 "Registrar" abre modal bulk', ()
   it('avulsa (sem treatmentId) → navega dose-individual', async () => {
     const data = { doseInstanceId: 'inst-1', protocolId: 'proto-1', scheduledTime: '08:00' }
     await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
-    expect(mockNavigate).toHaveBeenCalledWith('Hoje', { screen: 'dose-individual', protocolId: 'proto-1', at: '08:00' })
+    expect(mockNavigate).toHaveBeenCalledWith({ screen: 'dose-individual', protocolId: 'proto-1', at: '08:00' })
     expect(mockRegisterDose).not.toHaveBeenCalled()
+  })
+
+  // 090 S-3: sem a marca, a volta ao foreground reabria o alarme por cima da modal.
+  it('marca a dose (e as do grupo) como entregue ao registro', async () => {
+    __resetRegisterHandoff()
+    const data = { doseInstanceId: 'inst-1', doseInstanceIds: '["inst-1","inst-2"]', protocolId: 'proto-1' }
+    await handleAlarmAction(evt(SURFACE_ACTION.REGISTER, data))
+    expect(isHandedOffToRegister('inst-1')).toBe(true)
+    expect(isHandedOffToRegister('inst-2')).toBe(true)
+    expect(isHandedOffToRegister('inst-3')).toBe(false)
+    __resetRegisterHandoff()
   })
 })
 

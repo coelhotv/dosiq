@@ -10,15 +10,15 @@
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
 import { renderHook, act } from '@testing-library/react-native'
-import { ROUTES } from '../../../navigation/routes'
 
 // --- Mocks de módulo ---
 
-jest.mock('../../../navigation/navigationRef', () => ({
-  navigationRef: {
-    navigate: jest.fn(),
-    isReady: jest.fn(() => true),
-  },
+// 090 D-3: o toque entrega o destino ao helper único (aninhamento, espera de TABS e allowlist são
+// provados em navigation/__tests__/navigateToDose.test.ts). Aqui: QUAL helper recebe O QUÊ.
+jest.mock('@navigation/navigateToDose', () => ({
+  navigateToDose: jest.fn(),
+  navigateToHistory: jest.fn(),
+  navigateToPrivacyData: jest.fn(),
 }))
 
 const mockLogEvent = jest.fn()
@@ -59,7 +59,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 // Acesso às funções mock via require (após as declarações de mock)
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { navigationRef } = require('../../../navigation/navigationRef')
+const { navigateToDose, navigateToHistory, navigateToPrivacyData } = require('@navigation/navigateToDose')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Notifications = require('expo-notifications')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -88,7 +88,7 @@ function makeResponse(screen: string, params: Record<string, unknown> = { at: '0
 describe('usePushNotifications — deeplink (N1.4)', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    navigationRef.navigate.mockReset()
+    navigateToDose.mockReset()
     Notifications.getLastNotificationResponseAsync.mockResolvedValue(null)
     Notifications.addNotificationResponseReceivedListener.mockReturnValue({ remove: jest.fn() })
   })
@@ -144,7 +144,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
   })
 
   // Cenário 1: tap foreground com bulk-plan
-  it('tap com bulk-plan navega para TODAY com params', async () => {
+  it('tap com bulk-plan entrega ao helper de dose com params', async () => {
     const capturedHandler = { fn: null }
     Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
       capturedHandler.fn = fn
@@ -165,12 +165,12 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-plan', { planId: 'plan-1', at: '08:00' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-plan', planId: 'plan-1', at: '08:00' })
+    expect(navigateToDose).toHaveBeenCalledWith({ screen: 'bulk-plan', planId: 'plan-1', at: '08:00' })
     unmount()
   })
 
   // Cenário 2: tap foreground com bulk-misc
-  it('tap com bulk-misc navega para TODAY com params', async () => {
+  it('tap com bulk-misc entrega ao helper de dose com params', async () => {
     const capturedHandler = { fn: null }
     Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
       capturedHandler.fn = fn
@@ -189,12 +189,12 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('bulk-misc', { misc: 1, at: '14:00' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-misc', misc: 1, at: '14:00' })
+    expect(navigateToDose).toHaveBeenCalledWith({ screen: 'bulk-misc', misc: 1, at: '14:00' })
     unmount()
   })
 
   // Cenário 3: tap com dose-individual
-  it('tap com dose-individual navega para TODAY com params', async () => {
+  it('tap com dose-individual entrega ao helper de dose com params', async () => {
     const capturedHandler = { fn: null }
     Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
       capturedHandler.fn = fn
@@ -213,12 +213,12 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       capturedHandler.fn(makeResponse('dose-individual', { protocolId: 'proto-1' }))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'dose-individual', protocolId: 'proto-1' })
+    expect(navigateToDose).toHaveBeenCalledWith({ screen: 'dose-individual', protocolId: 'proto-1' })
     unmount()
   })
 
   // Cenário 4: tap sem navigation.screen → fallback TODAY com params vazios
-  it('tap sem navigation.screen aciona fallback para TODAY', async () => {
+  it('tap sem navigation.screen abre o Hoje sem modal (helper com null)', async () => {
     const capturedHandler = { fn: null }
     Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
       capturedHandler.fn = fn
@@ -240,7 +240,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       })
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, {})
+    expect(navigateToDose).toHaveBeenCalledWith(null)
     unmount()
   })
 
@@ -262,7 +262,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     act(() => {
       capturedHandler.fn({ notification: { request: { content: { data: {} } } } })
     })
-    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    expect(navigateToDose).not.toHaveBeenCalled()
     expect(mockLogEvent).not.toHaveBeenCalledWith('push_notification_tapped', expect.anything())
     unmount()
   })
@@ -290,12 +290,12 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       })
     })
 
-    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    expect(navigateToDose).not.toHaveBeenCalled()
     unmount()
   })
 
   // Cenário 5: cold start com resposta pendente
-  it('cold start com resposta pendente navega para TODAY', async () => {
+  it('cold start com resposta pendente entrega ao helper de dose', async () => {
     Notifications.getLastNotificationResponseAsync.mockResolvedValue(
       makeResponse('bulk-plan', { planId: 'plan-cold' })
     )
@@ -309,7 +309,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(Notifications.getLastNotificationResponseAsync).toHaveBeenCalled()
-    expect(navigationRef.navigate).toHaveBeenCalledWith(ROUTES.TODAY, { screen: 'bulk-plan', planId: 'plan-cold' })
+    expect(navigateToDose).toHaveBeenCalledWith({ screen: 'bulk-plan', planId: 'plan-cold' })
     unmount()
   })
 
@@ -326,7 +326,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     expect(Notifications.getLastNotificationResponseAsync).toHaveBeenCalled()
-    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    expect(navigateToDose).not.toHaveBeenCalled()
     unmount()
   })
 
@@ -346,8 +346,8 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
       await new Promise((r) => setTimeout(r, 20))
     })
 
-    expect(navigationRef.navigate).toHaveBeenCalledTimes(1)
-    navigationRef.navigate.mockClear()
+    expect(navigateToDose).toHaveBeenCalledTimes(1)
+    navigateToDose.mockClear()
 
     // Simular logout + novo login (re-executa o useEffect)
     rerender({ session: null })
@@ -359,7 +359,7 @@ describe('usePushNotifications — deeplink (N1.4)', () => {
     })
 
     // Cold start NÃO deve navegar novamente
-    expect(navigationRef.navigate).not.toHaveBeenCalled()
+    expect(navigateToDose).not.toHaveBeenCalled()
     unmount()
   })
 })
@@ -476,5 +476,47 @@ describe('usePushNotifications — registro só com conta confirmada (spec 091)'
     await settle()
     expect(syncNotificationDevice).toHaveBeenCalled()
     unmount()
+  })
+})
+
+// 090 C1.5 G-2: relatórios (`history`) e aviso de consentimento (`privacy-data`) também são destinos
+// aninhados — o `navigate` do root dava o mesmo "was not handled" do D-3.
+describe('usePushNotifications — destinos não-dose (090 G-2)', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  async function tap(screen: string) {
+    const captured = { fn: null }
+    Notifications.addNotificationResponseReceivedListener.mockImplementation((fn) => {
+      captured.fn = fn
+      return { remove: jest.fn() }
+    })
+    const { unmount } = renderHook(() => usePushNotifications({ supabase: {}, session: makeSession() }))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10))
+    })
+    act(() => {
+      captured.fn(makeResponse(screen, {}))
+    })
+    unmount()
+  }
+
+  it('history → helper do histórico (não o de dose)', async () => {
+    await tap('history')
+    expect(navigateToHistory).toHaveBeenCalledTimes(1)
+    expect(navigateToDose).not.toHaveBeenCalled()
+  })
+
+  it('privacy-data → helper de Privacidade', async () => {
+    await tap('privacy-data')
+    expect(navigateToPrivacyData).toHaveBeenCalledTimes(1)
+    expect(navigateToDose).not.toHaveBeenCalled()
+  })
+
+  it('screen desconhecido → helper de dose, que o recusa (Hoje sem modal)', async () => {
+    await tap('DeleteAccount')
+    expect(navigateToDose).toHaveBeenCalledWith({ screen: 'DeleteAccount' })
   })
 })

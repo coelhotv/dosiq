@@ -139,7 +139,9 @@ export default function DoseRegisterModal({
     setLoading(true)
     setError(null)
 
-    const qty = parseFloat((quantity ?? defaultQty).toString().replace(',', '.'))
+    // 090: `||`, não `??` — o campo nasce '' (a dose do tratamento é só placeholder) e `'' ?? x`
+    // devolve ''. Confirmar sem digitar dava "Quantidade deve ser maior que zero" (smoke 28/09).
+    const qty = parseFloat((quantity || defaultQty).toString().replace(',', '.'))
     if (!qty || qty <= 0) {
       setError('Quantidade deve ser maior que zero.')
       setLoading(false)

@@ -7,6 +7,23 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Tocar no lembrete leva à dose; conta nova recebe alarme; excluir a conta volta a funcionar com titulação
+
+- **Mobile** (`patch` — correções; **sem bump neste PR**: entra no bump único para `0.34.0` do
+  pacote de loja; canal: build de loja). Tocar em "Registrar" com o alarme em tela cheia aberto,
+  ou tocar no lembrete com o app fechado, agora abre a dose — antes o app parava no Hoje sem abrir
+  nada — e o alarme não volta mais para a frente da dose que se está registrando. O mesmo vale
+  para o "Registrar" da Live Activity no iPhone e para as notificações de relatório (abrem o
+  histórico) e de privacidade. Na tela de registro de dose, "Confirmar" sem digitar a quantidade
+  volta a registrar a dose do tratamento (antes mostrava "Quantidade deve ser maior que zero"). Conta recém-criada passa a receber o alarme do
+  primeiro tratamento sem precisar reabrir o app, e o Hoje não mostra mais erro para ela. O aviso
+  "Estoque Baixo" volta a aparecer no Hoje quando um remédio tem 7 dias ou menos, com os mesmos
+  dias mostrados na aba Estoque, e tocar nele abre o estoque daquele remédio. A densidade escolhida (simples ou completa) passa a valer na aba
+  Tratamentos e aparece marcada nas Configurações — antes era ignorada.
+- **Backend** (banco). Toda conta nova já nasce com as configurações salvas. Excluir um tratamento
+  leva junto a evolução de dose que era só dele, em vez de deixá-la solta. Quem tem evolução de
+  dose (titulação) voltou a conseguir excluir a conta — a exclusão falhava por inteiro.
+
 ### Sair da conta apaga o que é seu do aparelho; conta excluída não fica aberta
 
 - **Mobile** (`patch` — correção de privacidade; **sem bump neste PR**: entra no bump único para

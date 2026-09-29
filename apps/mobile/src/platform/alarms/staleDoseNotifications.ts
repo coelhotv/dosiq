@@ -17,6 +17,7 @@ import { endDoseActivity, DOSE_ACTIVITY_CHANNEL_ID } from '@platform/doseActivit
 // importa `alarmService` p/ cancelar, e o `alarmService` também precisa da guarda (FR-006) — manter a
 // regra aqui criaria um ciclo que em ESM resolve p/ `undefined` no caminho do alarme.
 import { evaluateDoseWindow, isDoseNotificationOutOfWindow, isOutOfWindowNotice } from './doseWindow'
+import { isHandedOffToRegister } from './registerHandoff'
 
 // Re-export: os consumidores históricos (e os testes) continuam importando daqui.
 export { evaluateDoseWindow, isDoseNotificationOutOfWindow, isOutOfWindowNotice }
@@ -102,6 +103,8 @@ export function pickPromotableAlarm(displayed, now = getRawNow()) {
         // O aviso informativo não é alarme: nunca vira takeover (Decisão 10).
         !isOutOfWindowNotice(n) &&
         Boolean(n?.data?.doseInstanceId) &&
+        // 090 S-3: dose entregue à modal pelo "Registrar" não volta ao takeover por cima dela.
+        !isHandedOffToRegister(n.data.doseInstanceId) &&
         !isDoseNotificationOutOfWindow(n.data, now)
     )
 }

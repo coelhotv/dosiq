@@ -211,3 +211,56 @@ describe('useTodayDerived — look-ahead "Em breve" (F4.3e bidirecional)', () =>
     expect(lookAhead).toHaveLength(0)
   })
 })
+
+// ── 090 D-5 (PO-8, PO-9 · INV-3) ─────────────────────────────────────────────────────────────
+// 🔴 Parte da saída REAL da aba Estoque (`transformStockData`), sem mock de componente nem `alerts`
+// prontos — o bug original morava exatamente na forma do dado (campo que o mapa do Hoje não tinha).
+import { deriveStockAlerts, STOCK_ALERT_MAX_DAYS } from '../_useTodayDerived'
+import { transformStockData } from '@stock/hooks/_stockDataTransformer'
+import { getTodayLocal } from '@dosiq/core'
+
+describe('deriveStockAlerts (090 D-5)', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.clearAllTimers()
+  })
+
+  // 1 comprimido 1x/dia ⇒ dias restantes = saldo. Datas locais (AP-270).
+  const med = (id: string, name: string, qty: number, protocols?: unknown[]) => ({
+    id, name, dosage_unit: 'mg', dosage_per_pill: 10,
+    medicine_stock_summary: [{ total_quantity: qty, stock_entries_count: 1 }],
+    protocols: protocols ?? [{ id: `p-${id}`, active: true, start_date: getTodayLocal(), end_date: null,
+      frequency: 'diário', time_schedule: ['08:00'], dosage_per_intake: 1 }],
+  })
+
+  it('≤7 entra, 8 não, consumo zero (Infinity) não — com id e nome da aba Estoque', () => {
+    const stock = transformStockData([
+      med('m7', 'Sete', 7),
+      med('m8', 'Oito', 8),
+      med('m0', 'Zero', 0),
+      med('mq', 'Quando precisar', 30, []),
+    ])
+    const alerts = deriveStockAlerts(stock)
+    expect(alerts).toEqual(expect.arrayContaining([
+      { medicineId: 'm7', medicineName: 'Sete', daysRemaining: 7 },
+      { medicineId: 'm0', medicineName: 'Zero', daysRemaining: 0 },
+    ]))
+    expect(alerts.map((a) => a.medicineId).sort()).toEqual(['m0', 'm7'])
+  })
+
+  it('dias do Hoje = dias exibidos na aba Estoque (floor da mesma fórmula) (PO-9)', () => {
+    // 2 comprimidos/dia, 13 no saldo ⇒ 6,5 dias ⇒ aba Estoque mostra 6 (StockLevelBadge: Math.floor)
+    const stock = transformStockData([med('mx', 'Meio', 13, [{ id: 'px', active: true, start_date: getTodayLocal(),
+      end_date: null, frequency: 'diário', time_schedule: ['08:00', '20:00'], dosage_per_intake: 1 }])])
+    const [alert] = deriveStockAlerts(stock)
+    expect(stock[0].daysRemaining).toBe(6.5)
+    expect(alert.daysRemaining).toBe(Math.floor(stock[0].daysRemaining))
+    expect(alert.daysRemaining).toBe(6)
+    expect(alert.daysRemaining).toBeLessThanOrEqual(STOCK_ALERT_MAX_DAYS)
+  })
+
+  it.each([[null], [undefined], [[]], [[null]], [[{ id: 'x', name: 'NaN', daysRemaining: NaN }]]])(
+    'entrada degenerada %p ⇒ []', (input) => {
+      expect(deriveStockAlerts(input as any)).toEqual([])
+    })
+})

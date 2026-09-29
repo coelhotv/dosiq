@@ -3,7 +3,7 @@
 // Framework: Jest (jest-expo) — rodar em apps/mobile/
 
 import React from 'react'
-import { render } from '@testing-library/react-native'
+import { render, fireEvent } from '@testing-library/react-native'
 
 const mockLogEvent = jest.fn()
 jest.mock('@platform/analytics/productAnalytics', () => ({
@@ -15,6 +15,11 @@ jest.mock('@react-navigation/native', () => {
   const { useEffect } = require('react')
   return { useFocusEffect: (cb) => useEffect(cb, [cb]) }
 })
+
+const mockCrossTab = jest.fn()
+jest.mock('@navigation/navigateCrossTab', () => ({
+  navigateCrossTab: (...args) => mockCrossTab(...args),
+}))
 
 import StockAlertInline from '../StockAlertInline'
 
@@ -49,5 +54,16 @@ describe('StockAlertInline — stock_low_viewed', () => {
     const alerts = [{ daysRemaining: 5 }, { daysRemaining: 1 }]
     render(<StockAlertInline alerts={alerts} />)
     expect(alerts[0].daysRemaining).toBe(5)
+  })
+})
+
+// 090 S-6: o banner prometia "leva ao remédio" e não tinha toque. Leva ao ESTOQUE do remédio.
+describe('StockAlertInline — toque', () => {
+  it('abre o detalhe de estoque do remédio mais crítico (aba Estoque)', () => {
+    const { getByTestId } = render(
+      <StockAlertInline alerts={[{ medicineId: 'm1', medicineName: 'X', daysRemaining: 5 }, { medicineId: 'm2', medicineName: 'Y', daysRemaining: 1 }]} />
+    )
+    fireEvent.press(getByTestId('stock-alert-banner'))
+    expect(mockCrossTab).toHaveBeenCalledWith('Estoque', 'StockDetail', { medicineId: 'm2', medicineName: 'Y' })
   })
 })

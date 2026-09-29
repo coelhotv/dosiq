@@ -21,11 +21,11 @@ import { emitReminderOpened } from '@platform/analytics/reminderEvents'
 import { supabase } from '@platform/supabase/nativeSupabaseClient'
 import { alarmService, ALARM_ACTION } from './alarmService'
 import { SURFACE_ACTION } from '@platform/doseActivity/doseActivitySurfaceService'
-import { navigationRef } from '@navigation/navigationRef'
-import { ROUTES } from '@navigation/routes'
+import { navigateToDose } from '@navigation/navigateToDose'
 import { evaluateDoseWindow } from './doseWindow'
 import { reportOutOfWindowAlarm } from './outOfWindowNotice'
 import { triggerAlarmResync } from './alarmResyncBus'
+import { markRegisterHandoff } from './registerHandoff'
 
 // 067 C.2 (FR-043): trilha do SKIP. Só o registrar emitia `resolved` (doseLogService.ts:311), então
 // a trilha de uma dose pulada terminava em `alarm_fired` — indistinguível de "tocou e ninguém fez
@@ -349,26 +349,23 @@ function buildRegisterDeeplink(data) {
 }
 
 // "Registrar" da superfície 039 → abre o app na modal bulk (sítio de aplicação do injetável só
-// é selecionável lá). launchActivity (na ação) traz o app ao foreground; aqui navegamos via
-// navigationRef. Cold start: o container pode não ter montado → guard isReady() + retry curto
-// (mesmo padrão de usePushNotifications.navigateFromPush). @private
-function navigateSurfaceRegister(data) {
-  const params = buildRegisterDeeplink(data)
-  const go = () => navigationRef.navigate(ROUTES.TODAY, params)
-  if (navigationRef.isReady?.()) {
-    go()
-    return
+// é selecionável lá). launchActivity (na ação) traz o app ao foreground; a navegação é do helper
+// único (090 D-2): tiro aninhado TABS → Hoje, que também tira o alarme em tela cheia da frente e
+// espera as abas existirem no cold start. @private
+// `doseInstanceIds` chega serializado no payload do Notifee (string JSON) ou como array. @private
+function parseIds(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw !== 'string' || raw === '') return []
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
   }
-  let waited = 0
-  const interval = setInterval(() => {
-    waited += 100
-    if (navigationRef.isReady?.()) {
-      clearInterval(interval)
-      go()
-    } else if (waited >= 5000) {
-      clearInterval(interval)
-    }
-  }, 100)
+}
+
+function navigateSurfaceRegister(data) {
+  navigateToDose(buildRegisterDeeplink(data))
 }
 
 /**
@@ -454,6 +451,8 @@ export async function handleAlarmAction(event) {
   if (rawActionId === SURFACE_ACTION.REGISTER) {
     // 065 AD-8: gargalo das 3 entradas (fg, headless, cold) — o dedupe do helper conta o toque 1×.
     emitReminderOpened(REMINDER_SOURCES.DOSE_ACTIVITY, data.doseInstanceId)
+    // 090 S-3: a volta ao foreground não pode reabrir o alarme desta dose por cima da modal.
+    markRegisterHandoff([data.doseInstanceId, ...parseIds(data.doseInstanceIds)])
     navigateSurfaceRegister(data)
     return { handled: true, action: 'surface-open-register' }
   }

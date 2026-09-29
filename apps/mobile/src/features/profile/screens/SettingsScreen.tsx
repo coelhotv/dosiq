@@ -235,14 +235,15 @@ export default function SettingsScreen() {
   const [tzApplying, setTzApplying] = useState<'travel' | 'move' | false>(false)
 
   // Memos/hooks de dados
-  const { profile, settings, loading: profileLoading, refresh, updateTimezone, checkFuturePendingDoses } = useProfile()
+  const { settings, loading: profileLoading, refresh, updateTimezone, checkFuturePendingDoses } = useProfile()
   const { setComplexity, loading: mutating } = useProfileMutation()
   const stock = useStockToggle()
   const toast = useToast()
 
+  // 090 D-8: a densidade vem de `user_settings` (R-295); ler de `profile` marcava sempre "Automático".
   const currentComplexity = useMemo(
-    () => profile?.complexity_override ?? null,
-    [profile],
+    () => settings?.complexity_override ?? null,
+    [settings],
   )
 
   const activeLabel = useMemo(

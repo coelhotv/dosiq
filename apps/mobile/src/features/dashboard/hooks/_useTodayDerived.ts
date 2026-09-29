@@ -38,6 +38,26 @@ function toTimelineStatus(item, nowRaw) {
  * que reintroduzia slot fantasma cross-meia-noite e tolerância fixa. tz default SP
  * (residual G1 mobile — auto-detecção/expat é follow-up).
  */
+/** Limiar do banner "Estoque Baixo" do Hoje (US4 da 090 — dias inteiros, como a aba Estoque exibe). */
+export const STOCK_ALERT_MAX_DAYS = 7
+
+/**
+ * Alertas de estoque do Hoje (090 D-5 · INV-3). Deriva dos itens da ABA ESTOQUE
+ * (`transformStockData` via `useStock().data.active`) — única fórmula de dias restantes do mobile.
+ * A versão anterior filtrava `data.medicines` por um `daysRemaining` que o mapa do dashboard nunca
+ * teve: `stockAlerts` era sempre `[]` e o banner nunca aparecia (desde a75d8c31).
+ *
+ * Dias em inteiros por `Math.floor`, como a aba Estoque exibe (`StockLevelBadge`). Consumo zero
+ * (`Infinity`, ex.: "quando necessário") ou valor não-finito fica fora.
+ */
+export function deriveStockAlerts(stockItems) {
+  if (!Array.isArray(stockItems)) return []
+  return stockItems
+    .filter((it) => it && Number.isFinite(it.daysRemaining))
+    .map((it) => ({ medicineId: it.id, medicineName: it.name, daysRemaining: Math.floor(it.daysRemaining) }))
+    .filter((a) => a.daysRemaining <= STOCK_ALERT_MAX_DAYS)
+}
+
 export function useTodayDerived(data) {
   return useMemo(() => {
     if (!data) return null
@@ -107,23 +127,12 @@ export function useTodayDerived(data) {
       hasPreviousData,
     }
 
-    // 3. Alertas de estoque
-    // TODO(040-strict): data.medicines não tipado (nível B)
-    const stockAlerts = (Object.values(data.medicines || {}) as any[])
-      .filter((m) => m && (m.daysRemaining ?? Infinity) <= 7)
-      .map((m) => ({
-        medicineId: m.id,
-        medicineName: m.name,
-        daysRemaining: m.daysRemaining,
-      }))
-
     return {
       ...data,
       stats: statsWithTrend,
       timeline,
       carryOver,
       lookAhead,
-      stockAlerts,
     }
   }, [data])
 }
