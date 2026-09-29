@@ -17,7 +17,11 @@ import {
   parseLocalDate,
   formatDoseHint,
   INTAKE_UNIT_LABELS,
-  frequencyOptionsFor,
+  cadenceChoicesFor,
+  cadenceChoiceLabel,
+  applyCadenceChoice,
+  isMonthlyCadence,
+  MONTHLY_CHOICE,
   FREQUENCY_LABELS,
   frequencyRequiresWeekdays,
   INTERVAL_DAYS_MIN,
@@ -30,6 +34,7 @@ import FormDatePicker from '@shared/components/form/FormDatePicker'
 import MedicineSelectorRow from '@treatments/components/MedicineSelectorRow'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import SchedulePresetSection from '@treatments/components/SchedulePresetSection'
+import NextDoseField from '@treatments/components/NextDoseField'
 import PlanSelectField from '@treatments/components/PlanSelectField'
 import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { colors, spacing } from '@shared/styles/tokens'
@@ -59,10 +64,12 @@ const GENERIC_MSG =
 // enxergava mudança nenhuma de vocabulário — só o smoke perceberia.
 // Depende da frequência ATUAL do form: um tratamento legado precisa continuar exibindo a
 // sua própria frequência, mesmo depreciada (FR-004) — ver `frequencyOptionsFor`.
-function buildFrequencyOptions(currentFrequency, intervalAvailable = false) {
-  return frequencyOptionsFor(currentFrequency, { intervalAvailable }).map((value) => ({
+// 086: as opções são ESCOLHAS de cadência — frequências + "Mensal (a cada 30 dias)", que grava
+// `intervalo_dias`/30 (`cadenceChoicesFor`/`applyCadenceChoice` do core; FR-012…FR-014).
+function buildFrequencyOptions(currentFrequency, intervalAvailable = false, monthlyAtLoad = false) {
+  return cadenceChoicesFor(currentFrequency, { intervalAvailable, monthlyAtLoad }).map((value) => ({
     value,
-    label: FREQUENCY_LABELS[value] || value,
+    label: cadenceChoiceLabel(value, FREQUENCY_LABELS),
   }))
 }
 
@@ -287,17 +294,26 @@ function toIntervalDays(raw) {
 
 const PRESET_FREQUENCIES = new Set(['diário', 'dias_alternados'])
 
-function FrequencySection({ form, showWeekdays }) {
-  const intervalAvailable = useIntervalCadenceAvailability()
+function FrequencySection({ form, showWeekdays, isEditMode, startDateAsDate, onStartDateChange }) {
+  // States — "Mensal" é derivado UMA vez, ao carregar (FR-014): digitar 30 em "A cada X dias" não
+  // troca a opção. Não entra em form.values (não é coluna nem grupo de change_kind).
+  const [monthlyAtLoad] = useState(() => isMonthlyCadence(form.values.frequency, form.values.interval_days))
+  const [monthlyChosen, setMonthlyChosen] = useState(monthlyAtLoad)
+  const { available: intervalAvailable } = useIntervalCadenceAvailability()
+  // Memos
   // 086 FR-008: presets só onde há agenda diária (22/22 tratamentos com ≥2 horários são `diário`).
   const showPresets = PRESET_FREQUENCIES.has(form.values.frequency)
+  const isDayCadence = form.values.frequency === 'intervalo_dias'
+  const selectedChoice = monthlyChosen && isDayCadence ? MONTHLY_CHOICE : form.values.frequency
+  // Handlers
   const handleFrequencyChange = useCallback(
-    (name, value) => {
-      form.handleChange(name, value)
-      // FM-8: sair de `intervalo_dias` leva o N junto (CHECK de coerência).
-      if (value !== 'intervalo_dias' && form.values.interval_days != null) {
-        form.handleChange('interval_days', null)
-      }
+    (_name, choice) => {
+      // Patch atômico {frequency, interval_days}: sair da cadência em dias leva o N junto (FM-8,
+      // CHECK de coerência); Mensal grava 30; "A cada X dias" conserva o N corrente.
+      const patch = applyCadenceChoice(choice, form.values.interval_days ?? null)
+      if (!patch) return
+      setMonthlyChosen(choice === MONTHLY_CHOICE)
+      form.setValues(patch)
     },
     [form]
   )
@@ -306,14 +322,14 @@ function FrequencySection({ form, showWeekdays }) {
       <FormSelect
         name="frequency"
         label="Periodicidade"
-        value={form.values.frequency}
-        options={buildFrequencyOptions(form.values.frequency, intervalAvailable)}
+        value={selectedChoice}
+        options={buildFrequencyOptions(form.values.frequency, intervalAvailable, monthlyAtLoad)}
         onChange={handleFrequencyChange}
         onBlur={form.handleBlur}
         error={form.touched.frequency ? form.errors.frequency : null}
         required
       />
-      {form.values.frequency === 'intervalo_dias' ? (
+      {isDayCadence && selectedChoice !== MONTHLY_CHOICE ? (
         <FormInput
           name="interval_days"
           label="A cada quantos dias?"
@@ -327,6 +343,17 @@ function FrequencySection({ form, showWeekdays }) {
           maxLength={3}
           required
         />
+      ) : null}
+      {isDayCadence ? (
+        <View style={styles.fieldBlock}>
+          <NextDoseField
+            values={form.values}
+            askDate={!isEditMode}
+            dateValue={startDateAsDate}
+            onDateChange={onStartDateChange}
+            error={form.touched.start_date ? form.errors.start_date : null}
+          />
+        </View>
       ) : null}
       {showWeekdays ? (
         <View style={styles.fieldBlock}>
@@ -351,19 +378,23 @@ function FrequencySection({ form, showWeekdays }) {
   )
 }
 
-function PrescriptionSection({ startDateAsDate, endDateAsDate, onStartDateChange, onEndDateChange, form }) {
+// 086 FR-016: na criação com cadência em dias, o início é perguntado como "próxima dose" junto da
+// cadência (NextDoseField) — um campo, um dono por vez: aqui ele some.
+function PrescriptionSection({ startDateAsDate, endDateAsDate, onStartDateChange, onEndDateChange, form, hideStartDate = false }) {
   return (
     <Section title="Prescrição">
       <View style={styles.dateRow}>
-        <View style={styles.flex}>
-          <FormDatePicker
-            name="start_date"
-            label="Data do início"
-            value={startDateAsDate}
-            onChange={onStartDateChange}
-            error={form.touched.start_date ? form.errors.start_date : null}
-          />
-        </View>
+        {hideStartDate ? null : (
+          <View style={styles.flex}>
+            <FormDatePicker
+              name="start_date"
+              label="Data do início"
+              value={startDateAsDate}
+              onChange={onStartDateChange}
+              error={form.touched.start_date ? form.errors.start_date : null}
+            />
+          </View>
+        )}
         <View style={styles.flex}>
           <FormDatePicker
             name="end_date"
@@ -627,7 +658,13 @@ export default function ProtocolFormBody({
         />
       </Section>
 
-      <FrequencySection form={form} showWeekdays={showWeekdays} />
+      <FrequencySection
+        form={form}
+        showWeekdays={showWeekdays}
+        isEditMode={isEditMode}
+        startDateAsDate={startDateAsDate}
+        onStartDateChange={onStartDateChange}
+      />
 
       {onOpenTitration ? (
         <TitrationSection
@@ -649,6 +686,7 @@ export default function ProtocolFormBody({
         onStartDateChange={onStartDateChange}
         onEndDateChange={onEndDateChange}
         form={form}
+        hideStartDate={!isEditMode && form.values.frequency === 'intervalo_dias'}
       />
 
       <Section title="Organização">

@@ -14,6 +14,11 @@ import {
   frequencyRequiresWeekdays,
   frequencyOptionsFor,
   protocolCreateSchema,
+  MONTHLY_CHOICE,
+  cadenceChoicesFor,
+  cadenceChoiceLabel,
+  isMonthlyCadence,
+  applyCadenceChoice,
 } from '../protocolSchema'
 
 afterEach(() => {
@@ -114,5 +119,60 @@ describe('refine do protocolCreateSchema usa o mesmo predicado', () => {
   it('aceita `diário` sem weekdays', () => {
     const r = protocolCreateSchema.safeParse({ ...baseProtocol, frequency: 'diário', weekdays: [] })
     expect(r.success).toBe(true)
+  })
+})
+
+describe('086 — escolha "Mensal (a cada 30 dias)" (FR-012…FR-014, PO-5)', () => {
+  it('trava false ⇒ nem Mensal nem "A cada X dias"', () => {
+    const choices = cadenceChoicesFor('diário', { intervalAvailable: false })
+    expect(choices).not.toContain(MONTHLY_CHOICE)
+    expect(choices).not.toContain('intervalo_dias')
+  })
+
+  it('trava true ⇒ Mensal logo após Semanal e antes de "A cada X dias"', () => {
+    const choices = cadenceChoicesFor('diário', { intervalAvailable: true })
+    const i = choices.indexOf('semanal')
+    expect(choices.slice(i, i + 3)).toEqual(['semanal', MONTHLY_CHOICE, 'intervalo_dias'])
+  })
+
+  it('valor corrente nunca some: Mensal salvo com trava hoje false continua oferecido', () => {
+    const choices = cadenceChoicesFor('intervalo_dias', { intervalAvailable: false, monthlyAtLoad: true })
+    expect(choices).toContain(MONTHLY_CHOICE)
+    expect(choices).toContain('intervalo_dias')
+  })
+
+  it('legado `personalizado` segue na lista (FR-004 da 085)', () => {
+    expect(cadenceChoicesFor('personalizado', { intervalAvailable: true })).toContain('personalizado')
+  })
+
+  it('rótulo sempre com o número (INV-6)', () => {
+    expect(cadenceChoiceLabel(MONTHLY_CHOICE)).toBe('Mensal (a cada 30 dias)')
+    expect(cadenceChoiceLabel('semanal')).toBe('Semanal')
+    expect(cadenceChoiceLabel('semanal', { semanal: 'Toda semana' })).toBe('Toda semana')
+  })
+
+  it('isMonthlyCadence: só intervalo_dias com 30', () => {
+    expect(isMonthlyCadence('intervalo_dias', 30)).toBe(true)
+    expect(isMonthlyCadence('intervalo_dias', 45)).toBe(false)
+    expect(isMonthlyCadence('intervalo_dias', null)).toBe(false)
+    expect(isMonthlyCadence('diário', 30)).toBe(false)
+  })
+
+  it('applyCadenceChoice: Mensal grava intervalo_dias/30; sair da cadência limpa interval_days', () => {
+    expect(applyCadenceChoice(MONTHLY_CHOICE)).toEqual({ frequency: 'intervalo_dias', interval_days: 30 })
+    expect(applyCadenceChoice('diário', 30)).toEqual({ frequency: 'diário', interval_days: null })
+    expect(applyCadenceChoice('semanal', 30)).toEqual({ frequency: 'semanal', interval_days: null })
+  })
+
+  it('Mensal → "A cada X dias" conserva o 30 (editável); desconhecida ⇒ null', () => {
+    expect(applyCadenceChoice('intervalo_dias', 30)).toEqual({ frequency: 'intervalo_dias', interval_days: 30 })
+    expect(applyCadenceChoice('intervalo_dias')).toEqual({ frequency: 'intervalo_dias', interval_days: null })
+    expect(applyCadenceChoice('mensal')).toBeNull()
+  })
+
+  it('o patch de Mensal passa no schema de criação (nenhum valor novo de enum — INV-1)', () => {
+    const patch = applyCadenceChoice(MONTHLY_CHOICE)
+    expect(protocolCreateSchema.safeParse({ ...baseProtocol, ...patch }).success).toBe(true)
+    expect(FREQUENCIES).not.toContain(MONTHLY_CHOICE)
   })
 })

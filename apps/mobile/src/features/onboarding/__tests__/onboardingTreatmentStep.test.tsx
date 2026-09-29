@@ -23,6 +23,16 @@ jest.mock('@features/onboarding/components/OnboardingHeader', () => ({ __esModul
 // Rodapé usa safe-area insets (fora do escopo deste teste).
 jest.mock('@shared/components/form/FormActions', () => ({ __esModule: true, default: () => null }))
 
+let mockGate = { available: true, settled: true }
+jest.mock('@treatments/hooks/useIntervalCadenceAvailability', () => ({
+  useIntervalCadenceAvailability: () => mockGate,
+}))
+// Seletores de data/hora nativos fora do escopo: o dublê mostra o rótulo (a pergunta) e mais nada.
+jest.mock('@shared/components/form', () => {
+  const { Text } = jest.requireActual('react-native')
+  return { FormDatePicker: ({ label }) => <Text>{label}</Text>, FormTimePicker: ({ label }) => <Text>{label}</Text> }
+})
+
 import OnboardingTreatmentStep from '../screens/OnboardingTreatmentStep'
 
 function lastSchedule() {
@@ -34,6 +44,7 @@ afterEach(() => {
   jest.clearAllMocks()
   jest.clearAllTimers()
   mockTreatment = null
+  mockGate = { available: true, settled: true }
 })
 
 describe('OnboardingTreatmentStep — presets (086)', () => {
@@ -59,9 +70,55 @@ describe('OnboardingTreatmentStep — presets (086)', () => {
     expect(lastSchedule()).toEqual(['07:00', '15:00', '23:00'])
   })
 
-  it('"Dias da semana" esconde os presets (FR-008)', () => {
-    const { getByText, queryByTestId } = render(<OnboardingTreatmentStep />)
-    fireEvent.press(getByText('Dias da semana'))
+  it('"Semanal" esconde os presets (FR-008; renomeado de "Dias da semana" — E-9)', () => {
+    const { getByText, queryByTestId, queryByText } = render(<OnboardingTreatmentStep />)
+    expect(queryByText('Dias da semana')).toBeNull()
+    fireEvent.press(getByText('Semanal'))
     expect(queryByTestId('schedule-presets')).toBeNull()
+  })
+})
+
+describe('OnboardingTreatmentStep — Mensal (086 FR-022 / PO-4b)', () => {
+  it('trava false ⇒ só "Todo dia" e "Semanal"', () => {
+    mockGate = { available: false, settled: true }
+    const { queryByTestId, getByTestId } = render(<OnboardingTreatmentStep />)
+    expect(queryByTestId('frequency-segment-mensal_30')).toBeNull()
+    expect(getByTestId('frequency-segment-semanal')).toBeTruthy()
+  })
+
+  it('trava ainda sem resposta ⇒ esqueleto, sem segmentos (D-8: nada salta sob o dedo)', () => {
+    mockGate = { available: false, settled: false }
+    const { getByTestId, queryByTestId } = render(<OnboardingTreatmentStep />)
+    expect(getByTestId('frequency-skeleton')).toBeTruthy()
+    expect(queryByTestId('frequency-segment-diário')).toBeNull()
+  })
+
+  it('Mensal ⇒ intervalo_dias/30 no contexto, número à vista, pergunta da próxima dose, sem presets', () => {
+    const { getByTestId, getByText, queryByTestId } = render(<OnboardingTreatmentStep />)
+    fireEvent.press(getByTestId('frequency-segment-mensal_30'))
+    const last = mockSetTreatment.mock.calls[mockSetTreatment.mock.calls.length - 1][0]
+    expect(last).toMatchObject({ frequency: 'intervalo_dias', interval_days: 30 })
+    expect(getByText('A cada 30 dias, a partir da próxima dose.')).toBeTruthy()
+    expect(getByText('Quando é a próxima dose?')).toBeTruthy()
+    expect(queryByTestId('schedule-presets')).toBeNull()
+    expect(getByTestId('frequency-segment-mensal_30').props.accessibilityState.checked).toBe(true)
+  })
+
+  it('Mensal → Todo dia limpa interval_days (sem 23514 no passo 4 — E-4)', () => {
+    const { getByTestId } = render(<OnboardingTreatmentStep />)
+    fireEvent.press(getByTestId('frequency-segment-mensal_30'))
+    fireEvent.press(getByTestId('frequency-segment-diário'))
+    const last = mockSetTreatment.mock.calls[mockSetTreatment.mock.calls.length - 1][0]
+    expect(last).toMatchObject({ frequency: 'diário', interval_days: null })
+  })
+
+  it('voltar ao passo com Mensal no contexto e trava hoje false ⇒ Mensal segue marcado', () => {
+    mockGate = { available: false, settled: false }
+    mockTreatment = {
+      medicine_id: 'm-1', name: 'Mesigyna', dosage_per_intake: 1, frequency: 'intervalo_dias', interval_days: 30,
+      weekdays: [], time_schedule: ['08:00'], start_date: '2026-10-20',
+    }
+    const { getByTestId } = render(<OnboardingTreatmentStep />)
+    expect(getByTestId('frequency-segment-mensal_30').props.accessibilityState.checked).toBe(true)
   })
 })

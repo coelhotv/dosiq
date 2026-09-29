@@ -15,45 +15,73 @@ import { ROUTES } from '@navigation/routes'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { Clock } = LucideIcons as any
-import { protocolCreateSchema, getTodayLocal } from '@dosiq/core'
+import {
+  protocolCreateSchema,
+  getTodayLocal,
+  parseLocalDate,
+  formatLocalDate,
+  applyCadenceChoice,
+  MONTHLY_CHOICE,
+  MONTHLY_INTERVAL_DAYS,
+} from '@dosiq/core'
 import { useFormState } from '@shared/hooks/useFormState'
 import FormInput from '@shared/components/form/FormInput'
 import FormActions from '@shared/components/form/FormActions'
 import WeekdaySelector from '@treatments/components/WeekdaySelector'
 import SchedulePresetSection from '@treatments/components/SchedulePresetSection'
+import NextDoseField from '@treatments/components/NextDoseField'
+import { useIntervalCadenceAvailability } from '@treatments/hooks/useIntervalCadenceAvailability'
 import { useToast } from '@shared/components/feedback/Toast'
 import { useOnboarding } from '../OnboardingContext'
 import OnboardingHeader from '@features/onboarding/components/OnboardingHeader'
 import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens'
 
-// "Dias da semana" → frequência 'semanal' (mostra seletor de dias). 'diário' = Todo dia.
+// Segmentos do passo 3 (086 FR-022): "Todo dia" · "Semanal" · "Mensal" (este só sob a trava da 085).
+// "Mensal" é a escolha `mensal_30` → `intervalo_dias`/30; o patch atômico vem do core
+// (`applyCadenceChoice`), que limpa `interval_days` ao voltar para "Todo dia" (RC3 E-4 — antes o
+// passo 4 bateria no CHECK de coerência, 23514).
 const FREQ_DAILY = 'diário'
 const FREQ_WEEKLY = 'semanal'
 
 const FAKE_UUID = '00000000-0000-0000-0000-000000000000'
 
-function FrequencySelectorSegment({ isWeekly, setFrequency }) {
+const SEGMENTS = [
+  { choice: FREQ_DAILY, label: 'Todo dia' },
+  { choice: FREQ_WEEKLY, label: 'Semanal' },
+  { choice: MONTHLY_CHOICE, label: 'Mensal' },
+]
+
+function FrequencySelectorSegment({ selected, monthlyAvailable, settled, onSelect }) {
+  const segments = monthlyAvailable ? SEGMENTS : SEGMENTS.filter((s) => s.choice !== MONTHLY_CHOICE)
   return (
     <View>
       <Text style={styles.label}>Frequência</Text>
-      <View style={styles.segment}>
-        <Pressable
-          style={[styles.segmentBtn, !isWeekly && styles.segmentBtnActive]}
-          onPress={() => setFrequency(FREQ_DAILY)}
-          accessibilityRole="button"
-          accessibilityState={{ selected: !isWeekly }}
-        >
-          <Text style={[styles.segmentText, !isWeekly && styles.segmentTextActive]}>Todo dia</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.segmentBtn, isWeekly && styles.segmentBtnActive]}
-          onPress={() => setFrequency(FREQ_WEEKLY)}
-          accessibilityRole="button"
-          accessibilityState={{ selected: isWeekly }}
-        >
-          <Text style={[styles.segmentText, isWeekly && styles.segmentTextActive]}>Dias da semana</Text>
-        </Pressable>
-      </View>
+      {/* D-8: espera a trava (teto 1,5 s) para "Mensal" não surgir depois e deslocar o toque. */}
+      {settled ? (
+        <View style={styles.segment} accessibilityRole="radiogroup">
+          {segments.map(({ choice, label }) => {
+            const active = selected === choice
+            return (
+              <Pressable
+                key={choice}
+                style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                onPress={() => onSelect(choice)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: active }}
+                testID={`frequency-segment-${choice}`}
+              >
+                <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
+      ) : (
+        <View style={styles.segmentSkeleton} accessibilityLabel="Carregando opções de frequência" testID="frequency-skeleton" />
+      )}
+      {/* INV-6: "Mensal" nunca sem o número à vista. */}
+      {selected === MONTHLY_CHOICE ? (
+        <Text style={styles.segmentHint}>{`A cada ${MONTHLY_INTERVAL_DAYS} dias, a partir da próxima dose.`}</Text>
+      ) : null}
     </View>
   )
 }
@@ -87,6 +115,7 @@ export default function OnboardingTreatmentStep() {
   const { show } = useToast()
   // Preserva a escolha do lembrete quando o usuário volta do passo 4 (o wizard só grava no fim).
   const [remind, setRemind] = useState(treatment?._remind ?? true)
+  const { available: monthlyAvailable, settled: cadenceSettled } = useIntervalCadenceAvailability()
 
   // Memos (R-010)
   const initialValues = useMemo(() => {
@@ -120,6 +149,13 @@ export default function OnboardingTreatmentStep() {
 
   // Memos
   const isWeekly = form.values.frequency === FREQ_WEEKLY
+  // No onboarding a única cadência em dias oferecida é "Mensal" (FR-022: "A cada X dias" fica fora).
+  const isMonthly = form.values.frequency === 'intervalo_dias'
+  const selectedChoice = isMonthly ? MONTHLY_CHOICE : form.values.frequency
+  const startDateAsDate = useMemo(
+    () => (form.values.start_date ? parseLocalDate(form.values.start_date as string) : null),
+    [form.values.start_date],
+  )
   const timeCount = Array.isArray(form.values.time_schedule) ? form.values.time_schedule.length : 0
   // Passo 3 de 3.
   const headerProps = useMemo(
@@ -133,7 +169,19 @@ export default function OnboardingTreatmentStep() {
   }, [form.values, setTreatment])
 
   // Handlers
-  const setFrequency = useCallback((freq) => form.handleChange('frequency', freq), [form])
+  const setCadenceChoice = useCallback(
+    (choice) => {
+      const patch = applyCadenceChoice(choice, null)
+      if (patch) form.setValues(patch)
+    },
+    [form],
+  )
+  const handleNextDoseChange = useCallback(
+    (_name, date) => {
+      if (date) form.handleChange('start_date', formatLocalDate(date))
+    },
+    [form],
+  )
 
   // Dose: converte para número já no onChange (paridade com ProtocolFormScreen).
   // Sem isto a string "1" valida contra z.number() no blur → "Use apenas números".
@@ -199,7 +247,22 @@ export default function OnboardingTreatmentStep() {
             Defina a frequência, os horários e a quantidade. A gente te avisa na hora certa.
           </Text>
 
-          <FrequencySelectorSegment isWeekly={isWeekly} setFrequency={setFrequency} />
+          <FrequencySelectorSegment
+            selected={selectedChoice}
+            monthlyAvailable={monthlyAvailable || isMonthly}
+            settled={cadenceSettled || isMonthly}
+            onSelect={setCadenceChoice}
+          />
+
+          {isMonthly ? (
+            <NextDoseField
+              values={form.values}
+              askDate
+              dateValue={startDateAsDate}
+              onDateChange={handleNextDoseChange}
+              error={form.touched.start_date ? (form.errors.start_date as any) : null}
+            />
+          ) : null}
 
           {isWeekly ? (
             <WeekdaySelector
@@ -220,7 +283,7 @@ export default function OnboardingTreatmentStep() {
               value={form.values.time_schedule as any}
               onChange={(next) => form.handleChange('time_schedule', next)}
               error={form.touched.time_schedule ? (form.errors.time_schedule as any) : null}
-              showPresets={!isWeekly}
+              showPresets={form.values.frequency === FREQ_DAILY}
             />
           </View>
 
@@ -294,9 +357,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[3],
   },
+  // FR-022/PO-10: altura MÍNIMA — com fonte grande o rótulo quebra em 2 linhas, nunca é cortado.
   segmentBtn: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[1],
     borderRadius: borderRadius.md,
     borderWidth: 1.5,
     borderColor: colors.border.default,
@@ -309,12 +375,23 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.primary,
   },
   segmentText: {
+    textAlign: 'center',
     fontSize: 15,
     fontWeight: '600',
     color: colors.text.primary,
   },
   segmentTextActive: {
     color: colors.text.inverse,
+  },
+  segmentSkeleton: {
+    minHeight: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.neutral[100],
+  },
+  segmentHint: {
+    marginTop: spacing[2],
+    fontSize: 13,
+    color: colors.text.secondary,
   },
   reminderCard: {
     flexDirection: 'row',
