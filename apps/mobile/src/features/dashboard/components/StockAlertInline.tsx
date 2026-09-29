@@ -1,9 +1,11 @@
 import React, { useCallback } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { colors } from '@shared/styles/tokens'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
+import { navigateCrossTab } from '@navigation/navigateCrossTab'
+import { ROUTES } from '@navigation/routes'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { PackageSearch, AlertTriangle } = LucideIcons as any
@@ -34,11 +36,26 @@ export default function StockAlertInline({ alerts = [] }) {
 
   if (!criticalItem) return null
 
+  // 090 S-6: o toque leva ao estoque do remédio do aviso (aba Estoque → detalhe), onde se registra
+  // a compra — não ao cadastro do remédio.
+  const openStock = () =>
+    navigateCrossTab(ROUTES.STOCK, ROUTES.STOCK_DETAIL, {
+      medicineId: criticalItem.medicineId,
+      medicineName: criticalItem.medicineName,
+    })
+
   return (
-    <View style={[
-      styles.container, 
-      isCritical ? styles.critical : styles.warning
-    ]}>
+    <Pressable
+      onPress={openStock}
+      accessibilityRole="button"
+      accessibilityLabel={`Estoque baixo: ${criticalItem.medicineName}. Abrir estoque`}
+      testID="stock-alert-banner"
+      style={({ pressed }) => [
+        styles.container,
+        isCritical ? styles.critical : styles.warning,
+        pressed && styles.pressed,
+      ]}
+    >
       <View style={styles.iconContainer}>
         {isCritical ? (
           <AlertTriangle size={20} color={colors.status.error} />
@@ -55,11 +72,14 @@ export default function StockAlertInline({ alerts = [] }) {
           Resta apenas para {criticalItem.daysRemaining} {criticalItem.daysRemaining === 1 ? 'dia' : 'dias'}.
         </Text>
       </View>
-    </View>
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.7,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',

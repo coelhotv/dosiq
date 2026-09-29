@@ -35,8 +35,7 @@ import { useConsentSuppressed } from '@platform/consent/useConsentSuppressed'
 import { getActiveProtocols, getUserSettings, getMedicinesData } from '@dashboard/services/dashboardService'
 import { onAlarmResync } from '@platform/alarms/alarmResyncBus'
 import { onDoseActivityRefresh } from './doseActivityRefreshBus'
-import { navigationRef } from '@navigation/navigationRef'
-import { ROUTES } from '@navigation/routes'
+import { navigateToDose } from '@navigation/navigateToDose'
 import { scheduleSnooze } from '@platform/alarms/alarmService'
 import {
   startLiveActivity,
@@ -159,25 +158,6 @@ function buildRegisterParams(doseItem, fallbackTreatmentId) {
   return null
 }
 
-/** Navega p/ Hoje com retry de isReady (cold start: container pode não ter montado — igual Android). @private */
-function navigateTodayWithRetry(params) {
-  const go = () => navigationRef.navigate(ROUTES.TODAY, params)
-  if (navigationRef.isReady?.()) {
-    go()
-    return
-  }
-  let waited = 0
-  const interval = setInterval(() => {
-    waited += 100
-    if (navigationRef.isReady?.()) {
-      clearInterval(interval)
-      go()
-    } else if (waited >= 5000) {
-      clearInterval(interval)
-    }
-  }, 100)
-}
-
 /** Processa a fila de ações do App Intent (App Group) com sessão viva. @private */
 async function processPendingActions(tz) {
   const queue = await drainPendingActions()
@@ -196,7 +176,8 @@ async function processPendingActions(tz) {
       if (!protocols) protocols = await fetchEnrichedProtocols(uid, tz).catch(() => [])
       const doseItem = await resolveDoseItem(uid, protocols, tz, item.instanceId).catch(() => null)
       const params = buildRegisterParams(doseItem, item.treatmentId)
-      if (params) navigateTodayWithRetry(params)
+      // 090 D-2 (RC3 F2): mesmo helper do Android — tiro aninhado TABS → Hoje, espera as abas.
+      if (params) navigateToDose(params)
     } else if (item.action === 'snooze') {
       // Enriquece a soneca com o doseItem (nome/horário/tolerância/criticidade) — senão a notif
       // reagendada fica genérica (sem nome do remédio). Paridade com o path de alarme do Android.
@@ -222,7 +203,7 @@ async function processPendingActions(tz) {
       }
     } else if (item.action === 'open') {
       // "Abrir" (later) — só traz o app pra Hoje, sem registrar.
-      navigateTodayWithRetry({})
+      navigateToDose(null)
     }
   }
 }

@@ -19,6 +19,7 @@ jest.mock('@platform/doseActivity/doseActivitySurfaceService', () => ({
   endDoseActivity: (...a) => mockEndSurface(...a),
 }))
 
+import { markRegisterHandoff, __resetRegisterHandoff } from '../registerHandoff'
 import {
   isDoseNotificationOutOfWindow,
   evaluateDoseWindow,
@@ -227,6 +228,27 @@ describe('pickPromotableAlarm', () => {
       },
     }
     expect(pickPromotableAlarm([aviso], NOW)).toBeUndefined()
+  })
+
+  // 090 S-3 (smoke 28/09 23:04): "Registrar" tirava o alarme da frente e a volta ao foreground o
+  // promovia de novo, 1,3 s depois, por cima da modal da dose.
+  describe('dose entregue ao "Registrar"', () => {
+    afterEach(() => __resetRegisterHandoff())
+
+    it('🔴 não volta ao takeover', () => {
+      markRegisterHandoff(['dose-1'])
+      expect(pickPromotableAlarm([alarme('dose-1')], NOW)).toBeUndefined()
+    })
+
+    it('alarme de OUTRA dose continua subindo', () => {
+      markRegisterHandoff(['dose-1'])
+      expect(pickPromotableAlarm([alarme('dose-1'), alarme('dose-2')], NOW)?.data?.doseInstanceId).toBe('dose-2')
+    })
+
+    it('a suspensão vence em 5 min', () => {
+      markRegisterHandoff(['dose-1'], Date.now() - 5 * 60_000 - 1)
+      expect(pickPromotableAlarm([alarme('dose-1')], NOW)?.data?.doseInstanceId).toBe('dose-1')
+    })
   })
 
   it('lista vazia ou entrada inválida → undefined (nunca lança)', () => {

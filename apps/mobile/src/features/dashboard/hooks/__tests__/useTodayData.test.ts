@@ -59,6 +59,24 @@ describe('useTodayData', () => {
     );
   }, 10000);
 
+  // 090 D-1 / PO-1: conta nova (antes do consentimento) não tem linha em user_settings. O serviço
+  // devolve `null`; o Hoje carrega ONLINE com os defaults (fuso SP) — nem erro, nem snapshot.
+  it('conta sem configuração (settings null) carrega online com defaults (090 PO-1)', async () => {
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+    mockedDashboardService.getUserSettings.mockResolvedValue(null as any);
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([{ id: 'p1', medicine_id: 'm1' }] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({ m1: { name: 'Pills' } });
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 5000 });
+
+    expect(result.current.error).toBeFalsy();
+    expect(result.current.stale).toBe(false);
+    expect(result.current.data.protocols).toHaveLength(1);
+    expect(result.current.data.timezone).toBe('America/Sao_Paulo');
+  }, 10000);
+
   // Spec 091 PO-6 (AC-2.4): só queda de REDE cai no snapshot, e só snapshot do titular da sessão.
   describe('fallback de snapshot (spec 091)', () => {
     // Erro de rede do PostgREST chega como objeto plano — é o formato real que os services relançam.

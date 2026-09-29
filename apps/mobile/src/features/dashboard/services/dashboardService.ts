@@ -116,6 +116,9 @@ export async function getMedicinesData(medicineIds) {
 /**
  * Busca as configurações do usuário, incluindo o nome.
  * @param {string} userId
+ * 090 D-1 (INV-1): "sem linha" devolve `null` (conta nova antes do consentimento — não é erro);
+ * falha real LANÇA. A versão com `.single()` fazia o contrário: 0 linhas (PGRST116) abortava os
+ * bridges de alarme e o erro real virava `null` em silêncio. Espelha `getUserTimezone`.
  * @returns {Promise<Object|null>}
  */
 export async function getUserSettings(userId) {
@@ -124,9 +127,8 @@ export async function getUserSettings(userId) {
     .from('user_settings')
     .select('display_name, timezone, complexity_override')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') return null
   if (error) throw error
   return data
 }

@@ -10,23 +10,12 @@ import { getPushPermissionStatus } from './pushPermission'
 import { registerPushToken } from './registerPushToken'
 import { ensurePushChannel } from './ensurePushChannel'
 import { ensureTitrationCategories, handleTitrationNotificationAction, isTitrationAction } from './titrationNotificationActions'
-import { navigationRef } from '../../navigation/navigationRef'
+import { navigateToDose, navigateToHistory, navigateToPrivacyData } from '@navigation/navigateToDose'
 import { ROUTES } from '../../navigation/routes'
 import { debugLog } from '@shared/utils/debugLog'
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS, SURFACES } from '@platform/analytics/analyticsEvents'
 import { emitServerReminderOpened } from '@platform/analytics/reminderEvents'
-
-// Mapa de screen names do payload para rotas do navigator
-const SCREEN_TO_ROUTE = {
-  'bulk-plan': ROUTES.TODAY,
-  'bulk-misc': ROUTES.TODAY,
-  'dose-individual': ROUTES.TODAY,
-  'history': ROUTES.DOSE_HISTORY,
-  // 046 Slice C — aviso de exclusão por consentimento revogado. Só passa a valer em build novo;
-  // nos binários já publicados o tap segue caindo em TODAY (o mesmo de antes, não uma regressão).
-  'privacy-data': ROUTES.PRIVACY_DATA,
-}
 
 // Navega para a tela correta a partir de um tap em push notification.
 // No cold start o NavigationContainer pode não ter montado ainda — navegar
@@ -56,32 +45,19 @@ function navigateFromPush(data) {
   })
   // 065 AD-8: push de LEMBRETE de dose também conta como "o lembrete abriu o app" (qualquer canal).
   emitServerReminderOpened(data)
+  // 090 D-3: destino aninhado sai pelo helper único (espera TABS existir, tiro aninhado a partir do
+  // root, allowlist + forma dos params — PO-SEC-3). Antes: `navigate(SCREEN_TO_ROUTE[screen])` do root,
+  // que o RootStack não resolvia ("'Hoje' was not handled" no cold start; `history` idem).
   const navigationData = data.navigation
   const screen = navigationData?.screen
-  const params = navigationData?.params ?? {}
-  const targetRoute = (screen && SCREEN_TO_ROUTE[screen]) ?? ROUTES.TODAY
-  const navParams = screen ? { screen, ...params } : params
-
-  const go = () => {
-    navigationRef.navigate(targetRoute, navParams)
-    debugLog('[usePushNotifications] Navegando para:', targetRoute, 'params:', params)
+  if (screen === 'history') {
+    navigateToHistory()
+  } else if (screen === 'privacy-data') {
+    navigateToPrivacyData()
+  } else {
+    navigateToDose(screen ? { screen, ...(navigationData?.params ?? {}) } : null)
   }
-
-  if (navigationRef.isReady?.()) {
-    go()
-    return
-  }
-  // Aguarda o container montar (cold start) — desiste após ~5s.
-  let waited = 0
-  const interval = setInterval(() => {
-    waited += 100
-    if (navigationRef.isReady?.()) {
-      clearInterval(interval)
-      go()
-    } else if (waited >= 5000) {
-      clearInterval(interval)
-    }
-  }, 100)
+  debugLog('[usePushNotifications] Navegando para:', screen ?? ROUTES.TODAY)
 }
 
 export function usePushNotifications({ supabase, session, canRegister = false }) {
