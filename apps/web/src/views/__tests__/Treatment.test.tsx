@@ -12,12 +12,13 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   })),
 }))
 
-// Mock useComplexityMode
+// Mock useComplexityMode — padrão 'simple' (layout sem grupos). 'moderate' agora é detalhado
+// (071: tudo que não é 'simple' agrupa por plano), coberto em useTreatmentsState.complexity.test.
 vi.mock('@dashboard/hooks/useComplexityMode', () => ({
   useComplexityMode: vi.fn(() => ({
-    mode: 'moderate',
+    mode: 'simple',
     isComplex: false,
-    ringGaugeSize: 'medium',
+    ringGaugeSize: 'large',
     defaultViewMode: 'time',
   })),
 }))

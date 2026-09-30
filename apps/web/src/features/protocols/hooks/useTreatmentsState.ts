@@ -30,7 +30,9 @@ export function useTreatmentsState(onClearInitialMedicine) {
     loading, error, refetch,
   } = useTreatmentList()
 
-  const isComplex = mode === 'complex'
+  // Tudo que não é 'simple' é detalhado — inclusive o 'moderate' do Automático (4–6 remédios),
+  // mesma regra do Hoje (DashboardColumnRight) e do rótulo de Configurações (_settingsHelpers).
+  const isComplex = mode !== 'simple'
 
   // Fetch initial medicine
   useEffect(() => {
