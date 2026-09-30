@@ -115,4 +115,13 @@ describe('086 PO-6 — prévia = gerador a partir de agora', () => {
     const p = protocolOf({ n: 30, start: shiftDays(500) })
     expect(getNextOccurrence(p, NOW)).toEqual({ date: shiftDays(500), time: '08:00' })
   })
+
+  it('getNextOccurrence: semanal com início além de 400 dias também é encontrado (ciclo 7, RC6 #845)', () => {
+    const start = shiftDays(500)
+    const p = { ...protocolOf({ n: 30, start }), frequency: 'semanal', interval_days: null, weekdays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].slice(0, 1) }
+    const occ = getNextOccurrence(p, NOW)
+    expect(occ).not.toBeNull()
+    expect(occ.date >= start).toBe(true)
+  })
 })
+

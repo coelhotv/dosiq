@@ -67,6 +67,7 @@ export async function getActiveProtocols(userId, dateStr) {
  */
 export async function getScheduledProtocols(userId, dateStr) {
   z.string().uuid().parse(userId)
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(dateStr) // R-121 (RC6 #845)
   const { data, error } = await supabase
     .from('protocols')
     .select('id, name, medicine_id, active, frequency, interval_days, time_schedule, start_date, end_date, weekdays')

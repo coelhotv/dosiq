@@ -546,7 +546,7 @@ function TodayScreenContent({
 
 // 086 D-13: há tratamento ativo, nenhuma dose hoje (começa no futuro, ou dia sem dose da cadência).
 // Medidas do dia seguem visíveis abaixo — o estado é da AGENDA de doses, não do dia inteiro.
-function NoDoseToday({ nextDoseLabel, measures }) {
+function NoDoseToday({ nextDoseLabel, measures = [] }) {
   return (
     <View>
       <EmptyState

@@ -33,10 +33,12 @@ export function useTodayData() {
 
   const handleOnlineSuccess = useCallback(async (user, protocols, logs, medicines, userSettings, today, doseInstances, scheduledProtocols = []) => {
     const enrichedProtocols = protocols.map(p => ({ ...p, medicine: medicines[p.medicine_id] || null }))
+    // RC6 #845: agendados também levam o medicamento — a "Próxima dose … · <nome>" usa o nome dele.
+    const enrichedScheduled = scheduledProtocols.map(p => ({ ...p, medicine: medicines[p.medicine_id] || null }))
     const newData = {
       protocols: enrichedProtocols,
       // 086 D-13: ativos que ainda não começaram — só para o estado "Nenhuma dose hoje".
-      scheduledProtocols,
+      scheduledProtocols: enrichedScheduled,
       logs,
       doseInstances: doseInstances ?? [],
       medicines,
@@ -133,7 +135,7 @@ export function useTodayData() {
       // F4.3f.1: localDay no fuso do perfil (segregação de cache cross-dia correta p/ expat).
       const tz = userSettings?.timezone || 'America/Sao_Paulo'
       const localDay = getTodayLocal(tz)
-      const medicines = await getMedicinesData([...new Set(protocols.map(p => p.medicine_id))])
+      const medicines = await getMedicinesData([...new Set([...protocols, ...scheduledProtocols].map(p => p.medicine_id))])
       await handleOnlineSuccess(user, protocols, logs, medicines, userSettings, localDay, doseInstances, scheduledProtocols)
     } catch (err) {
       // Spec 091 (FR-006): só QUEDA DE REDE cai no snapshot. Erro de sessão/servidor/código mostrado

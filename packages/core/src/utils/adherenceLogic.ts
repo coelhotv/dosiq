@@ -811,7 +811,9 @@ function _horizonDays(protocol: AdherenceProtocol | null | undefined, now: Date,
   const daysToStart = protocol?.start_date
     ? Math.max(0, _calendarDaysBetween(today, parseLocalDate(protocol.start_date)))
     : 0
-  const n = getIntervalDays(protocol) ?? 1
+  // Ciclo: N da cadência em dias; senão 7 (maior ciclo entre diário/alternado/semanal) — com 1, um
+  // semanal com início além de ~400 dias ficava sem ocorrência (RC6 #845).
+  const n = getIntervalDays(protocol) ?? 7
   return Math.max(NEXT_OCCURRENCE_HORIZON_DAYS, daysToStart + count * n + 1)
 }
 
