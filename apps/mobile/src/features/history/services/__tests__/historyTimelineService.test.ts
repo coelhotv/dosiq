@@ -38,7 +38,7 @@ jest.mock('@dosiq/core', () => {
 import { createTimelineService, biomarkersToEvents, buildTimeline } from '@dosiq/core'
 import { supabase } from '../../../../platform/supabase/nativeSupabaseClient'
 import { measuresRepo } from '../../../measures/services/measuresRepo'
-import { buildProtocolsById, mapToMobileShape, getHistoryTimeline } from '../historyTimelineService'
+import { buildProtocolsById, mapToMobileShape, getHistoryTimeline, HISTORY_FUTURE_DAYS } from '../historyTimelineService'
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -247,6 +247,19 @@ describe('getHistoryTimeline', () => {
     expect(measuresRepo.list).toHaveBeenCalledWith(
       expect.objectContaining({ fromTs: expect.any(String), toTs: expect.any(String) })
     )
+  })
+
+  test('086 D-15: janela futura padrão = 35 dias (cobre a próxima dose do Mensal)', async () => {
+    setupSupa([PROTOCOL])
+    mockGetTimeline.mockResolvedValue([])
+    jest.mocked(measuresRepo.list).mockResolvedValue([])
+    await getHistoryTimeline('user-1')
+    const { toTs } = mockGetTimeline.mock.calls[0][0]
+    const [y, m, d] = jest.requireActual('@dosiq/core').getTodayLocal().split('-').map(Number)
+    const expected = new Date(y, m - 1, d + HISTORY_FUTURE_DAYS + 1)
+    const expectedDay = `${expected.getFullYear()}-${String(expected.getMonth() + 1).padStart(2, '0')}-${String(expected.getDate()).padStart(2, '0')}`
+    expect(HISTORY_FUTURE_DAYS).toBe(35)
+    expect(toTs).toBe(`${expectedDay}T23:59:59Z`)
   })
 
   test('biomarkers vazia — retorna só doses sem chamar buildTimeline', async () => {

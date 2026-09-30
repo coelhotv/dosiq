@@ -106,6 +106,18 @@ export function formatWeekdayDayMonthPtBR(isoDate: string | Date | null | undefi
 }
 
 /**
+ * Formata uma data YYYY-MM-DD (ou Date) para "DD mmm" PT-BR lowercase — badge "Começa em 10 out" (086).
+ *
+ * @example formatDayMonthPtBR('2026-10-10') → '10 out'
+ */
+export function formatDayMonthPtBR(isoDate: string | Date | null | undefined): string {
+  if (!isoDate) return ''
+  const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTHS_PT_BR[d.getMonth()]}`
+}
+
+/**
  * Formata data de término de tratamento. null/undefined → "Uso contínuo".
  *
  * @example formatEndDate(null)         → 'Uso contínuo'

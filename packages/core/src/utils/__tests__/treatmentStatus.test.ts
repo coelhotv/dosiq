@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveTreatmentStatus, isTreatmentActive, isTreatmentSchedulableOn, TREATMENT_STATUS } from '../treatmentStatus'
+import { resolveTreatmentStatus, isTreatmentActive, isTreatmentSchedulableOn, isTreatmentScheduled, TREATMENT_STATUS } from '../treatmentStatus'
 
 describe('resolveTreatmentStatus', () => {
   // Teste 1: active: true, end_date: null → ATIVO
@@ -152,5 +152,24 @@ describe('TREATMENT_STATUS constants', () => {
     expect(() => {
       ;(TREATMENT_STATUS as any).ATIVO = 'modified'
     }).toThrow()
+  })
+})
+
+describe('isTreatmentScheduled (086 D-16)', () => {
+  const TODAY = '2026-09-30'
+  it('ativo com início futuro ⇒ agendado', () => {
+    expect(isTreatmentScheduled({ active: true, start_date: '2026-10-10', end_date: null }, TODAY)).toBe(true)
+  })
+  it('início hoje ou passado ⇒ não agendado', () => {
+    expect(isTreatmentScheduled({ active: true, start_date: TODAY, end_date: null }, TODAY)).toBe(false)
+    expect(isTreatmentScheduled({ active: true, start_date: '2026-09-01', end_date: null }, TODAY)).toBe(false)
+  })
+  it('pausado ou finalizado nunca é agendado', () => {
+    expect(isTreatmentScheduled({ active: false, start_date: '2026-10-10', end_date: null }, TODAY)).toBe(false)
+    expect(isTreatmentScheduled({ active: true, start_date: '2026-10-10', end_date: '2026-09-01' }, TODAY)).toBe(false)
+  })
+  it('sem start_date / nulo ⇒ false', () => {
+    expect(isTreatmentScheduled({ active: true, start_date: null }, TODAY)).toBe(false)
+    expect(isTreatmentScheduled(null, TODAY)).toBe(false)
   })
 })

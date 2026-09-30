@@ -105,11 +105,17 @@ describe('schedulePresets', () => {
   })
 
   describe('findEarlyMorningDose', () => {
-    it('primeira dose em [00:00, 05:00)', () => {
-      expect(findEarlyMorningDose(['00:00', '06:00', '12:00', '18:00'])).toBe('00:00')
-      expect(findEarlyMorningDose(['05:00', '13:00', '21:00'])).toBeNull()
-      expect(findEarlyMorningDose(['04:59', '16:59'])).toBe('04:59')
+    it('primeira dose na madrugada [00:01, 06:00) — meia-noite e 06:00 ficam fora', () => {
+      expect(findEarlyMorningDose(['00:00', '06:00', '12:00', '18:00'])).toBeNull()
+      expect(findEarlyMorningDose(['00:01', '12:01'])).toBe('00:01')
+      expect(findEarlyMorningDose(['05:30', '13:30', '21:30'])).toBe('05:30')
+      expect(findEarlyMorningDose(['05:59', '17:59'])).toBe('05:59')
+      expect(findEarlyMorningDose(['06:00', '14:00', '22:00'])).toBeNull()
       expect(findEarlyMorningDose([])).toBeNull()
+    })
+
+    it('todo preset sai da madrugada com primeira dose às 06:00 (texto do aviso é verdadeiro)', () => {
+      for (const n of [2, 3, 4]) expect(findEarlyMorningDose(computePresetSchedule(n, '06:00'))).toBeNull()
     })
   })
 })

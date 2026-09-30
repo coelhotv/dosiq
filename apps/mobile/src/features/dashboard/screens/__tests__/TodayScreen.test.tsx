@@ -122,6 +122,44 @@ describe('TodayScreen', () => {
     expect(getByTestId('empty-state')).toBeTruthy();
   });
 
+  // 086 RC2 D-13 / PO-12: quem TEM tratamento nunca vê "Comece seu primeiro tratamento".
+  it('sem nenhum tratamento (nem agendado) ⇒ estado de primeiro uso', () => {
+    jest.mocked(useTodayData).mockReturnValue({
+      data: { ...baseMockData, protocols: [], scheduledProtocols: [] },
+      loading: false, error: null, refresh: mockRefresh,
+    } as any);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
+    expect(getByTestId('empty-state').props.title).toBe('Comece seu primeiro tratamento');
+  });
+
+  it('só tratamento agendado (começa no futuro) ⇒ "Nenhuma dose hoje" + próxima dose, sem CTA de criar', () => {
+    jest.mocked(useTodayData).mockReturnValue({
+      data: {
+        ...baseMockData,
+        protocols: [],
+        scheduledProtocols: [{
+          id: 'p9', name: 'Mesigyna', active: true, frequency: 'intervalo_dias', interval_days: 30,
+          time_schedule: ['16:00'], start_date: '2031-10-10', end_date: null, // > 400 dias: horizonte calculado
+        }],
+      },
+      loading: false, error: null, refresh: mockRefresh,
+    } as any);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
+    const empty = getByTestId('empty-state');
+    expect(empty.props.title).toBe('Nenhuma dose hoje');
+    expect(empty.props.message).toMatch(/^Próxima dose: .+ às 16:00 · Mesigyna$/);
+    expect(empty.props.action.label).toBe('Ver tratamentos');
+  });
+
+  it('tratamento em curso sem dose hoje (cadência esparsa) ⇒ "Nenhuma dose hoje"', () => {
+    jest.mocked(useTodayData).mockReturnValue({
+      data: { ...baseMockData, protocols: [{ id: '1', name: 'A', medicine_id: 'm1' }], scheduledProtocols: [], timeline: [] },
+      loading: false, error: null, refresh: mockRefresh,
+    } as any);
+    const { getByTestId } = render(<TodayScreen route={{} as any} navigation={{} as any} />);
+    expect(getByTestId('empty-state').props.title).toBe('Nenhuma dose hoje');
+  });
+
   // 065 AD-8: modal aberta por DEEPLINK (lembrete) → entryPoint 'reminder'; aberta pelo card → null.
   describe('entry_point reminder (065 AD-8)', () => {
     const withProtocol = () => jest.mocked(useTodayData).mockReturnValue({

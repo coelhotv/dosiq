@@ -115,7 +115,7 @@ export default function OnboardingTreatmentStep() {
   const { show } = useToast()
   // Preserva a escolha do lembrete quando o usuário volta do passo 4 (o wizard só grava no fim).
   const [remind, setRemind] = useState(treatment?._remind ?? true)
-  const { available: monthlyAvailable, settled: cadenceSettled } = useIntervalCadenceAvailability()
+  const { available: monthlyAvailable, settled: cadenceSettled } = useIntervalCadenceAvailability({ holdLateAnswer: true })
 
   // Memos (R-010)
   const initialValues = useMemo(() => {

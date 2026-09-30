@@ -2,7 +2,12 @@
 //
 // Controlado por `value: string[]` (o `time_schedule`). O preset marcado, a âncora ("primeira dose do
 // dia") e o aviso de madrugada são DERIVADOS de `value` a cada render (FR-005, INV-2): não existe
-// estado de preset que sobreviva a uma edição manual. Tocar num chip só chama
+// estado de preset que sobreviva a uma edição manual.
+//
+// "Outro" (PO, smoke 2026-09-29) é o estado de EXCEÇÃO: marcado quando os horários não casam com
+// nenhum dos 4 presets. Tocá-lo limpa a lista para a pessoa escolher os próprios horários, e não tem
+// "primeira dose do dia". Único estado local: "tocou em Outro", válido SÓ com a lista vazia (senão o
+// chip se desmarcaria no instante do toque); com horários, a derivação volta a mandar. Tocar num chip só chama
 // `onChange(computePresetSchedule(n, âncora))`; editar um horário na lista é edição manual e o
 // conjunto deixa de ser reconhecido sozinho. Usado pelo formulário completo e pelo passo 3 do
 // onboarding (FR-011) — nunca duplicar para uma tela só.
@@ -13,7 +18,7 @@
 //   error?: string
 //   showPresets?: boolean — só `diário`/`dias_alternados` (FR-008); false ⇒ só a lista, como antes
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 — ver TimeSchedulePicker
 import * as LucideIcons from 'lucide-react-native'
@@ -36,19 +41,23 @@ import { colors, spacing, borderRadius, typography } from '@shared/styles/tokens
 const PRESET_KEYS = Object.keys(SCHEDULE_PRESETS) as SchedulePresetKey[]
 
 const PRESET_LABELS: Record<SchedulePresetKey, string> = {
+  // Contagem primeiro (responde "Quantas vezes ao dia?") + a expressão da receita/busca ("8 em 8h").
   '1x': '1x ao dia',
-  '12h': '12 em 12h',
-  '8h': '8 em 8h',
-  '6h': '6 em 6h',
+  '12h': '2x (12 em 12h)',
+  '8h': '3x (8 em 8h)',
+  '6h': '4x (6 em 6h)',
 }
 
 // Leitor de tela lê por extenso (FR-001).
 const PRESET_A11Y_LABELS: Record<SchedulePresetKey, string> = {
   '1x': 'Uma vez ao dia',
-  '12h': 'De 12 em 12 horas',
-  '8h': 'De 8 em 8 horas',
-  '6h': 'De 6 em 6 horas',
+  '12h': '2 vezes ao dia, de 12 em 12 horas',
+  '8h': '3 vezes ao dia, de 8 em 8 horas',
+  '6h': '4 vezes ao dia, de 6 em 6 horas',
 }
+
+const CUSTOM_LABEL = 'Outro'
+const CUSTOM_A11Y_LABEL = 'Outros horários, escolhidos por você'
 
 function earlyMorningNotice(time: string): string {
   return `A dose das ${time} cai de madrugada. Se preferir, ajuste a primeira dose do dia.`
@@ -80,25 +89,35 @@ export default function SchedulePresetSection({
   error?: string | null
   showPresets?: boolean
 }) {
-  // Memos — tudo derivado de `value` (PO-2: nenhum estado paralelo)
+  // States — "tocou em Outro"; só vale com a lista vazia (ver cabeçalho)
+  const [customIntent, setCustomIntent] = useState(false)
+  // Memos — tudo derivado de `value` (PO-2: nenhum estado paralelo que sobreviva à edição)
   const preset = useMemo(() => (showPresets ? deriveSchedulePreset(value) : null), [showPresets, value])
   const activeKey = isPresetKey(preset) ? preset : null
   const anchor = useMemo(() => (activeKey ? deriveAnchor(value) : null), [activeKey, value])
   const doses = activeKey ? SCHEDULE_PRESETS[activeKey] : 0
   const earlyDose = useMemo(() => (doses >= 2 ? findEarlyMorningDose(value) : null), [doses, value])
-  const isCustom = showPresets && preset === 'manual'
+  const isCustom = showPresets && (preset === 'manual' || (customIntent && value.length === 0))
 
   // Handlers
   const handlePresetPress = useCallback(
     (key: SchedulePresetKey) => {
       if (key === activeKey) return
       selectionTap()
+      setCustomIntent(false)
       // FR-004: troca preserva a âncora corrente; sem preset reconhecido, âncora padrão (FR-003).
       const nextAnchor = anchor ?? DEFAULT_ANCHORS[key]
       onChange(computePresetSchedule(SCHEDULE_PRESETS[key], nextAnchor))
     },
     [activeKey, anchor, onChange]
   )
+
+  const handleCustomPress = useCallback(() => {
+    if (isCustom) return
+    selectionTap()
+    setCustomIntent(true)
+    onChange([])
+  }, [isCustom, onChange])
 
   const handleAnchorChange = useCallback(
     (_name: string, date: Date) => {
@@ -130,6 +149,16 @@ export default function SchedulePresetSection({
                 </Pressable>
               )
             })}
+            <Pressable
+              onPress={handleCustomPress}
+              style={({ pressed }) => [styles.chip, isCustom && styles.chipActive, pressed && styles.chipPressed]}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isCustom }}
+              accessibilityLabel={CUSTOM_A11Y_LABEL}
+              testID="schedule-preset-custom"
+            >
+              <Text style={[styles.chipText, isCustom && styles.chipTextActive]}>{CUSTOM_LABEL}</Text>
+            </Pressable>
           </View>
         </View>
       ) : null}
@@ -142,12 +171,6 @@ export default function SchedulePresetSection({
           value={timeToDate(anchor)}
           onChange={handleAnchorChange}
         />
-      ) : null}
-
-      {isCustom ? (
-        <Text style={styles.customLabel} testID="schedule-custom">
-          Horários personalizados
-        </Text>
       ) : null}
 
       <TimeSchedulePicker value={value} onChange={onChange} error={error} />
@@ -205,10 +228,6 @@ const styles = StyleSheet.create({
     color: colors.primary[700],
     fontWeight: '700',
     fontFamily: typography.fontFamily.bold,
-  },
-  customLabel: {
-    fontSize: 13,
-    color: colors.text.muted,
   },
   // FR-009: informação, nunca erro.
   notice: {

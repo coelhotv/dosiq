@@ -7,7 +7,7 @@
 // qualquer máquina (Mac em São Paulo, CI em UTC). Datas de fixture locais, nunca toISOString (AP-270).
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { generateInstances } from '../doseInstanceGenerator'
-import { listUpcomingDoseDates } from '../adherenceLogic'
+import { listUpcomingDoseDates, getNextOccurrence } from '../adherenceLogic'
 import { formatLocalDate } from '../dateUtils'
 
 afterEach(() => {
@@ -109,5 +109,10 @@ describe('086 PO-6 — prévia = gerador a partir de agora', () => {
     ).toEqual([])
     expect(listUpcomingDoseDates(protocolOf({ n: 30, start: shiftDays(-90), end: shiftDays(-1) }), 3, NOW).dates).toEqual([])
     expect(listUpcomingDoseDates(null, 3, NOW)).toEqual({ dates: [], todayDropped: false })
+  })
+
+  it('getNextOccurrence: início além de 400 dias ainda é encontrado (horizonte calculado)', () => {
+    const p = protocolOf({ n: 30, start: shiftDays(500) })
+    expect(getNextOccurrence(p, NOW)).toEqual({ date: shiftDays(500), time: '08:00' })
   })
 })

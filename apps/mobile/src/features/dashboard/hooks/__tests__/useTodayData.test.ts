@@ -35,6 +35,7 @@ describe('useTodayData', () => {
     mockedAsyncStorage.setItem.mockResolvedValue();
     mockedDashboardService.getUserSettings.mockResolvedValue({ id: 'u1', name: 'Test' } as any);
     mockedDashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
+    mockedDashboardService.getScheduledProtocols.mockResolvedValue([]); // 086 D-13
   });
 
   it('loads data successfully from online service', async () => {

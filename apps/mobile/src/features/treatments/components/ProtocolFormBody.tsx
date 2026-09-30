@@ -295,11 +295,15 @@ function toIntervalDays(raw) {
 const PRESET_FREQUENCIES = new Set(['diário', 'dias_alternados'])
 
 function FrequencySection({ form, showWeekdays, isEditMode, startDateAsDate, onStartDateChange }) {
-  // States — "Mensal" é derivado UMA vez, ao carregar (FR-014): digitar 30 em "A cada X dias" não
-  // troca a opção. Não entra em form.values (não é coluna nem grupo de change_kind).
-  const [monthlyAtLoad] = useState(() => isMonthlyCadence(form.values.frequency, form.values.interval_days))
-  const [monthlyChosen, setMonthlyChosen] = useState(monthlyAtLoad)
+  // States — FR-014: até a usuária escolher uma opção, "Mensal" é DERIVADO dos valores carregados;
+  // depois vale a escolha dela (digitar 30 em "A cada X dias" não troca a opção). Não derivar UMA vez
+  // na montagem: na edição o prefill chega por `form.reset` num efeito DEPOIS do 1º render
+  // (useProtocolFormState) — congelado ali, Mensal reabriria como "A cada X dias" (RC5).
+  // Não entra em form.values (não é coluna nem grupo de change_kind).
+  const [chosen, setChosen] = useState(null)
   const { available: intervalAvailable } = useIntervalCadenceAvailability()
+  const monthlyChosen =
+    chosen === null ? isMonthlyCadence(form.values.frequency, form.values.interval_days) : chosen === MONTHLY_CHOICE
   // Memos
   // 086 FR-008: presets só onde há agenda diária (22/22 tratamentos com ≥2 horários são `diário`).
   const showPresets = PRESET_FREQUENCIES.has(form.values.frequency)
@@ -312,22 +316,22 @@ function FrequencySection({ form, showWeekdays, isEditMode, startDateAsDate, onS
       // CHECK de coerência); Mensal grava 30; "A cada X dias" conserva o N corrente.
       const patch = applyCadenceChoice(choice, form.values.interval_days ?? null)
       if (!patch) return
-      setMonthlyChosen(choice === MONTHLY_CHOICE)
+      setChosen(choice)
       form.setValues(patch)
     },
     [form]
   )
   return (
-    <Section title="Frequência">
+    <Section title="Frequência e Horários" required>
       <FormSelect
         name="frequency"
-        label="Periodicidade"
+        sheetTitle="Selecionar Frequência"
+        accessibilityLabel="Frequência"
         value={selectedChoice}
-        options={buildFrequencyOptions(form.values.frequency, intervalAvailable, monthlyAtLoad)}
+        options={buildFrequencyOptions(form.values.frequency, intervalAvailable, monthlyChosen)}
         onChange={handleFrequencyChange}
         onBlur={form.handleBlur}
         error={form.touched.frequency ? form.errors.frequency : null}
-        required
       />
       {isDayCadence && selectedChoice !== MONTHLY_CHOICE ? (
         <FormInput
@@ -723,10 +727,15 @@ export default function ProtocolFormBody({
   )
 }
 
-function Section({ title, children }) {
+// `required`: asterisco vermelho no título — a seção inteira é obrigatória (ex.: horários), mesmo
+// quando o campo dentro dela não tem rótulo próprio (086, smoke).
+function Section({ title, children, required = false }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle}>
+        {title}
+        {required ? <Text style={styles.sectionAsterisk}> *</Text> : null}
+      </Text>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   )
@@ -736,6 +745,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   section: {
     gap: spacing[2],
+  },
+  sectionAsterisk: {
+    color: colors.status.error,
   },
   sectionTitle: {
     fontSize: 12,

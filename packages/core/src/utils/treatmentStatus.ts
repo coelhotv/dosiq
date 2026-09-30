@@ -39,6 +39,22 @@ export function resolveTreatmentStatus(protocol: TreatmentStatusProtocol | null 
 }
 
 /**
+ * 086 (RC2 D-16): tratamento AGENDADO — ativo, mas ainda não começou (`start_date` > hoje). Fonte única
+ * do estado que a lista, o card ("Começa em …") e a aba Hoje ("Nenhuma dose hoje") consultam; antes
+ * cada tela comparava `start_date` sozinha e cada uma decidia diferente (smoke 086).
+ * Continua ATIVO para `resolveTreatmentStatus` (fica na aba Ativos).
+ *
+ * @param {{ active?: boolean|null, end_date?: string|null, start_date?: string|null }} protocol
+ * @param {string} [today] — YYYY-MM-DD; default = hoje local
+ * @returns {boolean}
+ */
+export function isTreatmentScheduled(protocol: TreatmentStatusProtocol | null | undefined, today?: string): boolean {
+  if (!protocol?.start_date) return false
+  const ref = today ?? formatLocalDate(getNow())
+  return resolveTreatmentStatus(protocol, ref) === TREATMENT_STATUS.ATIVO && protocol.start_date > ref
+}
+
+/**
  * Predicado canônico "tratamento operacionalmente ativo hoje" — evita repetir o
  * literal `=== 'ativo'` espalhado pelos callsites (modal bulk, listas, transformers).
  * Exclui FINALIZADO (end_date < hoje) e PAUSADO (active=false).

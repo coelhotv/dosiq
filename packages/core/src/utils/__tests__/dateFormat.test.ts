@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDatePtBR, formatDateShortPtBR, formatEndDate, formatWeekdayDayMonthPtBR } from '../dateFormat'
+import { formatDatePtBR, formatDateShortPtBR, formatEndDate, formatWeekdayDayMonthPtBR, formatDayMonthPtBR } from '../dateFormat'
 
 describe('formatDatePtBR', () => {
   it('formata string YYYY-MM-DD para DD MMM YYYY PT-BR lowercase', () => {
@@ -80,5 +80,13 @@ describe('formatWeekdayDayMonthPtBR (086 FR-018)', () => {
     expect(formatWeekdayDayMonthPtBR(null)).toBe('')
     expect(formatWeekdayDayMonthPtBR(undefined)).toBe('')
     expect(formatWeekdayDayMonthPtBR('lixo')).toBe('')
+  })
+})
+
+describe('formatDayMonthPtBR (086 D-14)', () => {
+  it('"DD mmm"', () => {
+    expect(formatDayMonthPtBR('2026-10-10')).toBe('10 out')
+    expect(formatDayMonthPtBR('2026-01-01')).toBe('01 jan')
+    expect(formatDayMonthPtBR(null)).toBe('')
   })
 })

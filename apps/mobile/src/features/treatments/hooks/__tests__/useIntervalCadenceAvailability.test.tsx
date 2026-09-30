@@ -52,10 +52,10 @@ describe('useIntervalCadenceAvailability (086)', () => {
     expect(result.current).toEqual({ available: false, settled: true })
   })
 
-  it('teto de 1,5 s ⇒ settled sem a opção; resposta tardia só vale no próximo foco', async () => {
+  it('onboarding (holdLateAnswer): teto ⇒ settled sem a opção; resposta tardia só vale no próximo foco', async () => {
     const d = deferred()
     mockFetch.mockReturnValueOnce(d.promise).mockResolvedValue(true)
-    const { result } = renderHook(() => useIntervalCadenceAvailability())
+    const { result } = renderHook(() => useIntervalCadenceAvailability({ holdLateAnswer: true }))
     await act(async () => { jest.advanceTimersByTime(CADENCE_GATE_TIMEOUT_MS) })
     expect(result.current).toEqual({ available: false, settled: true })
 
@@ -63,6 +63,16 @@ describe('useIntervalCadenceAvailability (086)', () => {
     expect(result.current).toEqual({ available: false, settled: true }) // sem salto com a tela desenhada
 
     await act(async () => { mockFocus() })
+    expect(result.current).toEqual({ available: true, settled: true })
+  })
+
+  it('formulário (padrão): resposta tardia é aplicada na hora — sem salto, opções só no seletor', async () => {
+    const d = deferred()
+    mockFetch.mockReturnValueOnce(d.promise)
+    const { result } = renderHook(() => useIntervalCadenceAvailability())
+    await act(async () => { jest.advanceTimersByTime(CADENCE_GATE_TIMEOUT_MS) })
+    expect(result.current).toEqual({ available: false, settled: true })
+    await act(async () => { d.resolve(true) })
     expect(result.current).toEqual({ available: true, settled: true })
   })
 

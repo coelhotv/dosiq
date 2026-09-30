@@ -158,6 +158,7 @@ export {
   formatDatePtBR,
   formatDateShortPtBR,
   formatWeekdayDayMonthPtBR,
+  formatDayMonthPtBR,
   WEEKDAYS_SHORT_PT_BR,
   formatEndDate,
   formatTimePtBR,
@@ -170,6 +171,7 @@ export {
   TREATMENT_STATUS,
   resolveTreatmentStatus,
   isTreatmentActive,
+  isTreatmentScheduled,
   isTreatmentSchedulableOn,
 } from './treatmentStatus'
 
@@ -298,7 +300,7 @@ export {
 } from './cadenceRollout'
 export type { CadenceInstallRow } from './cadenceRollout'
 // 086: presets de horário (derivados, nunca persistidos).
-export { SCHEDULE_PRESETS, DEFAULT_ANCHORS, DAY_START, computePresetSchedule, deriveSchedulePreset, deriveAnchor, findEarlyMorningDose } from './schedulePresets'
+export { SCHEDULE_PRESETS, DEFAULT_ANCHORS, DAY_START, EARLY_MORNING_START, EARLY_MORNING_END, computePresetSchedule, deriveSchedulePreset, deriveAnchor, findEarlyMorningDose } from './schedulePresets'
 export type { SchedulePresetKey, SchedulePresetValue } from './schedulePresets'
 export { getDoseCycle, cycleDoseAmount, scheduleTimesPerDay } from './doseCycle'
 export type { DoseCycle } from './doseCycle'

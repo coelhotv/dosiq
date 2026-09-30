@@ -71,8 +71,18 @@ describe('ProtocolFormBody — N da cadência por intervalo (085 C2)', () => {
 
 describe('ProtocolFormBody — "Mensal (a cada 30 dias)" e próxima dose (086 T026)', () => {
   function openPeriodicity(utils) {
-    fireEvent.press(utils.getByLabelText('Periodicidade'))
+    fireEvent.press(utils.getByLabelText('Frequência'))
   }
+
+  it('sem rótulo "Periodicidade"; seção "Frequência e Horários"; folha "Selecionar Frequência"', () => {
+    const utils = render(<ProtocolFormBody {...baseProps} form={makeForm()} />)
+    expect(utils.queryByText('Periodicidade')).toBeNull()
+    const title = utils.getByText(/Frequência e Horários/)
+    // seção obrigatória (horários): asterisco DENTRO do título
+    expect(utils.getAllByText(' *').some((el) => el.parent?.parent === title || el.parent === title)).toBe(true)
+    fireEvent.press(utils.getByLabelText('Frequência'))
+    expect(utils.getByText('Selecionar Frequência')).toBeTruthy()
+  })
 
   it('trava true ⇒ Mensal oferecida; escolher grava intervalo_dias/30 num patch só (PO-5)', () => {
     const form = makeForm()
@@ -104,6 +114,26 @@ describe('ProtocolFormBody — "Mensal (a cada 30 dias)" e próxima dose (086 T0
     )
     expect(utils.getAllByText('Mensal (a cada 30 dias)').length).toBeGreaterThan(0)
     expect(utils.queryByPlaceholderText('Ex.: 30')).toBeNull()
+  })
+
+  it('edição: prefill que chega DEPOIS do 1º render (form.reset em efeito) ainda abre como Mensal (RC5)', () => {
+    const utils = render(<ProtocolFormBody {...baseProps} isEditMode form={makeForm()} />)
+    utils.rerender(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getAllByText('Mensal (a cada 30 dias)').length).toBeGreaterThan(0)
+    expect(utils.queryByPlaceholderText('Ex.: 30')).toBeNull()
+  })
+
+  it('"A cada X dias" escolhido e 30 digitado NÃO vira Mensal (FR-014)', () => {
+    const form = makeForm({ frequency: 'intervalo_dias', interval_days: 45 })
+    const utils = render(<ProtocolFormBody {...baseProps} isEditMode form={form} />)
+    fireEvent.press(utils.getByLabelText('Frequência'))
+    fireEvent.press(utils.getAllByText('A cada X dias').pop())
+    utils.rerender(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getByPlaceholderText('Ex.: 30').props.value).toBe('30')
   })
 
   it('edição de intervalo_dias/30 com trava hoje false: Mensal segue exibida (valor corrente nunca some)', () => {

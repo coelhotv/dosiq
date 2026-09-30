@@ -6,9 +6,11 @@
 // caminho. Tolerância ZERO: `['08:00','20:01']` é 'manual', não '12h' — um preset "quase certo"
 // mostraria à usuária um intervalo que o alarme não cumpre.
 //
-// `DAY_START` é uma constante só, de propósito (spec §11): é a fronteira da "primeira dose do dia"
-// (âncora) E o fim da janela de madrugada (aviso de dose de madrugada). Separá-las deixaria as duas
-// regras divergirem sem teste vermelho.
+// Madrugada = [00:01, 06:00) — decisão do PO no smoke (2026-09-29), revendo o §11 da spec: meia-noite
+// é hora de dormir, não madrugada, e a faixa vale para todo mundo (não para o padrão de uma usuária).
+// A "primeira dose do dia" (âncora) segue a partir de `DAY_START` (05:00) — DESACOPLADA de propósito:
+// com a mesma fronteira das 06:00, um 8/8 às 05:30 mostraria "primeira dose 13:30". O texto do aviso
+// ("ajuste a primeira dose do dia") segue verdadeiro: primeira dose às 06:00 tira qualquer preset da faixa.
 //
 // PURO: sem I/O e sem relógio. Trabalha em minutos inteiros (1440 / n) — nada de float.
 
@@ -22,12 +24,16 @@ export type SchedulePresetValue = SchedulePresetKey | 'manual'
 export const DEFAULT_ANCHORS: Record<SchedulePresetKey, string> = {
   '1x': '08:00',
   '12h': '08:00',
-  '8h': '07:00',
+  '8h': '08:00',
   '6h': '06:00',
 }
 
-/** Início do dia: fronteira da primeira dose do dia e fim da janela de madrugada [00:00, 05:00). */
+/** Início do dia: fronteira da "primeira dose do dia" (âncora exibida). */
 export const DAY_START = '05:00'
+
+/** Faixa da madrugada, início inclusivo e fim exclusivo: [00:01, 06:00). */
+export const EARLY_MORNING_START = '00:01'
+export const EARLY_MORNING_END = '06:00'
 
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/
 const MINUTES_PER_DAY = 1440
@@ -101,7 +107,7 @@ export function deriveAnchor(schedule: unknown): string | null {
   return sorted.find((t) => t >= DAY_START) ?? sorted[0]
 }
 
-/** Primeiro horário em [00:00, DAY_START) — 05:00 exato NÃO conta. `null` se não houver. */
+/** Primeiro horário na madrugada [00:01, 06:00) — 00:00 e 06:00 NÃO contam. `null` se não houver. */
 export function findEarlyMorningDose(schedule: unknown): string | null {
-  return validSorted(schedule).find((t) => t < DAY_START) ?? null
+  return validSorted(schedule).find((t) => t >= EARLY_MORNING_START && t < EARLY_MORNING_END) ?? null
 }

@@ -798,7 +798,21 @@ const NEXT_OCCURRENCE_HORIZON_DAYS = 400
  * @returns {NextOccurrence|null} null para PRN, depreciado, sem horários ou fim antes da próxima
  */
 export function getNextOccurrence(protocol: AdherenceProtocol | null | undefined, now: Date = getNow()): NextOccurrence | null {
-  return _walkOccurrences(protocol, now, 1, NEXT_OCCURRENCE_HORIZON_DAYS).occurrences[0] ?? null
+  return _walkOccurrences(protocol, now, 1, _horizonDays(protocol, now, 1)).occurrences[0] ?? null
+}
+
+/**
+ * Horizonte da caminhada (086 RC3 E-2): max(400, dias até o início + count × N + 1). Os 400 fixos
+ * contavam a partir de HOJE — tratamento agendado além disso (ou N grande com início futuro) ficava
+ * sem próxima ocorrência. Dentro dos 400 dias o resultado é idêntico ao anterior.
+ */
+function _horizonDays(protocol: AdherenceProtocol | null | undefined, now: Date, count: number): number {
+  const today = parseLocalDate(formatLocalDate(now))
+  const daysToStart = protocol?.start_date
+    ? Math.max(0, _calendarDaysBetween(today, parseLocalDate(protocol.start_date)))
+    : 0
+  const n = getIntervalDays(protocol) ?? 1
+  return Math.max(NEXT_OCCURRENCE_HORIZON_DAYS, daysToStart + count * n + 1)
 }
 
 /**
@@ -857,13 +871,7 @@ export function listUpcomingDoseDates(
   count = 3,
   now: Date = getNow()
 ): UpcomingDoseDates {
-  const today = parseLocalDate(formatLocalDate(now))
-  const daysToStart = protocol?.start_date
-    ? Math.max(0, _calendarDaysBetween(today, parseLocalDate(protocol.start_date)))
-    : 0
-  const n = getIntervalDays(protocol) ?? 1
-  const horizon = Math.max(NEXT_OCCURRENCE_HORIZON_DAYS, daysToStart + count * n + 1)
-  const { occurrences, todayDropped } = _walkOccurrences(protocol, now, count, horizon)
+  const { occurrences, todayDropped } = _walkOccurrences(protocol, now, count, _horizonDays(protocol, now, count))
   return { dates: occurrences.map((o) => o.date), todayDropped }
 }
 

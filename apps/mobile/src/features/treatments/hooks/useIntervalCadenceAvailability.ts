@@ -20,11 +20,17 @@ export interface IntervalCadenceAvailability {
  * antiga — é ele que trataria a cadência como diária. Começa `false`; erro também é `false`.
  *
  * 086 (RC3 E-3): tri-estado. `settled` vira `true` com a resposta ou após o teto de 1,5 s (lado
- * seguro: segue sem a opção). Resposta que chega DEPOIS do teto não é aplicada na hora — o salto de
- * layout com a tela já desenhada é o que o D-8 quer evitar —, fica guardada e vale no próximo foco,
- * quando a trava também é consultada de novo (o heartbeat do aparelho pode ter gravado entretanto — U-1).
+ * seguro: segue sem a opção). A trava é reconsultada a cada foco (o heartbeat do aparelho pode ter
+ * gravado entretanto — U-1).
+ *
+ * `holdLateAnswer` (só o onboarding): resposta que chega DEPOIS do teto não é aplicada na hora — o
+ * salto de layout com os segmentos já desenhados é o que o D-8 quer evitar —, fica guardada e vale no
+ * próximo foco. O formulário completo NÃO segura: lá as opções só aparecem ao abrir o seletor, não há
+ * salto, e segurar esconderia a opção de quem tem rede lenta (smoke 086).
  */
-export function useIntervalCadenceAvailability(): IntervalCadenceAvailability {
+export function useIntervalCadenceAvailability(
+  { holdLateAnswer = false }: { holdLateAnswer?: boolean } = {}
+): IntervalCadenceAvailability {
   const [state, setState] = useState<IntervalCadenceAvailability>({ available: false, settled: false })
   const lateAnswerRef = useRef<boolean | null>(null)
 
@@ -53,7 +59,7 @@ export function useIntervalCadenceAvailability(): IntervalCadenceAvailability {
         .then((ok) => {
           if (cancelled) return
           clearTimeout(timer)
-          if (timedOut) lateAnswerRef.current = ok
+          if (timedOut && holdLateAnswer) lateAnswerRef.current = ok
           else setState({ available: ok, settled: true })
         })
 
@@ -61,7 +67,7 @@ export function useIntervalCadenceAvailability(): IntervalCadenceAvailability {
         cancelled = true
         clearTimeout(timer)
       }
-    }, [])
+    }, [holdLateAnswer])
   )
 
   return state
