@@ -7,6 +7,21 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Local da injeção escolhido no desenho do corpo (web)
+
+- **Web** (`minor` — funcionalidade nova no registro de dose; `4.26.0 → 4.27.0`). Ao registrar
+  ou editar a dose de um medicamento injetável, o local de aplicação deixa de ser uma lista
+  suspensa e passa a ser escolhido tocando no desenho do corpo, de frente e de costas lado a lado
+  (o glúteo fica na vista de costas). O bloco fica recolhido numa linha "Local de aplicação ·
+  opcional", que mostra o local escolhido ou a última aplicação; na edição de um registro ele já
+  abre expandido. Continuam valendo a última aplicação (marcada no desenho e escrita em texto), o
+  aviso quando o local é o mesmo da última vez e a dica de absorção. Para desmarcar, basta tocar
+  de novo no local escolhido ou em "Não informar". Quem usa teclado ou leitor de tela tem a lista
+  "Ou escolha pela lista" com os mesmos 8 locais, e cada região do desenho é anunciada pelo nome.
+- **Mobile** (**bump intermediário `0.33.4 → 0.33.5`** só para teste no TestFlight — sem mudança
+  de comportamento do app neste PR; o mapa chega ao app no PR 2 da spec 071. A versão de loja do
+  pacote continua sendo o `0.34.0`; canal: build de loja).
+
 ### "8 em 8 horas" num toque; injeção do mês pelo nome e pela data do posto
 
 - **Mobile** (`minor` — funcionalidade nova no cadastro; **bump intermediário `0.33.3 → 0.33.4`**

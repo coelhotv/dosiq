@@ -252,6 +252,19 @@ export {
   isInjectable,
 } from './injectionSites'
 
+// Mapa corporal de sítios — geometria pura compartilhada web↔mobile (071, ADR-096)
+export {
+  BODY_MAP_FACES,
+  BODY_MAP_SIDE_LETTERS,
+  BODY_MAP_SILHOUETTE,
+  INJECTION_BODY_MAP,
+  INJECTION_BODY_MAP_VIEWBOX,
+  getBodyMapRegion,
+  getBodyMapRegionsByFace,
+  findBodyMapParityGaps,
+} from './injectionBodyMap'
+export type { BodyMapFace, BodyMapRegion, BodyMapPoint, BodyMapBounds } from './injectionBodyMap'
+
 // SemVer utilities (026 — Nudges In-App)
 export { compareSemver, satisfiesSemver } from './semver'
 
