@@ -16,6 +16,7 @@ import InstallPrompt from '@shared/components/pwa/InstallPrompt'
 import { OfflineBanner } from '@shared/components/ui/OfflineBanner'
 import MobileAppBanner from '@shared/components/MobileAppBanner'
 import { SpeedInsights } from '@vercel/speed-insights/react'
+import { useDoseModalQueue } from '@shared/hooks/useDoseModalQueue'
 import MeasureLogModal from '@features/measures/components/MeasureLogModal'
 import { measuresRepo } from '@features/measures/services/measuresRepo'
 
@@ -49,6 +50,7 @@ function AppShell({
   isDoseModalOpen,
   doseModalInitialValues,
   setDoseModalInitialValues,
+  closeDoseModal,
   isMeasureModalOpen,
   handleSaveMeasure,
   isChatOpen,
@@ -130,6 +132,7 @@ function AppShell({
               setIsDoseModalOpen={setIsDoseModalOpen}
               doseModalInitialValues={doseModalInitialValues}
               setDoseModalInitialValues={setDoseModalInitialValues}
+              closeDoseModal={closeDoseModal}
               onRegisterMeasure={() => setIsMeasureModalOpen(true)}
             />
           )}
@@ -171,12 +174,8 @@ function AppInner() {
     return () => window.removeEventListener('mr:open-measure-log', open)
   }, [])
 
-  // Insight cards com CTA "Registrar dose" disparam este evento.
-  useEffect(() => {
-    const open = () => setIsDoseModalOpen(true)
-    window.addEventListener('mr:open-dose-modal', open)
-    return () => window.removeEventListener('mr:open-dose-modal', open)
-  }, [])
+  // Insight cards e o "Tomar" de dose injetável (071) abrem o modal global via evento.
+  const closeDoseModal = useDoseModalQueue(setIsDoseModalOpen, setDoseModalInitialValues)
 
   const { data: notifData } = useNotificationLog({ userId: session?.id, limit: 30, enabled: !!session?.id })
   const { unreadCount } = useUnreadNotificationCount(notifData)
@@ -312,6 +311,7 @@ function AppInner() {
       isDoseModalOpen={isDoseModalOpen}
       doseModalInitialValues={doseModalInitialValues}
       setDoseModalInitialValues={setDoseModalInitialValues}
+      closeDoseModal={closeDoseModal}
       isMeasureModalOpen={isMeasureModalOpen}
       handleSaveMeasure={handleSaveMeasure}
       isChatOpen={isChatOpen}

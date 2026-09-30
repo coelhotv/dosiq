@@ -14,17 +14,18 @@ export default function LogFormInjectionSiteSection({
   value,
   lastInjectionSite,
   handleChange,
-  isEditing = false,
+  defaultOpen = false,
   disabled = false,
 }: {
   value: string | null | undefined
   lastInjectionSite: string | null
   handleChange: (e: { target: { name: string; value: string } }) => void
-  isEditing?: boolean
+  /** Abre expandido: edição (D-2) ou vindo do "Tomar" de dose injetável no Hoje (071). */
+  defaultOpen?: boolean
   disabled?: boolean
 }) {
   // States
-  const [open, setOpen] = useState(isEditing)
+  const [open, setOpen] = useState(defaultOpen)
   const focusOnOpenRef = useRef(false)
   const panelRef = useRef<HTMLDivElement>(null)
   const panelId = useId()

@@ -104,19 +104,19 @@
 .body-map__silhouette circle,
 .body-map__silhouette rect,
 .body-map__silhouette path {
-  fill: var(--color-bg-tertiary);
+  fill: var(--color-border-dark);
   stroke: none;
 }
 
 .body-map__silhouette .body-map__limb {
   fill: none;
-  stroke: var(--color-bg-tertiary);
+  stroke: var(--color-border-dark);
   stroke-linecap: round;
 }
 
 .body-map__silhouette .body-map__back-line {
   fill: none;
-  stroke: var(--color-border-dark);
+  stroke: var(--color-text-tertiary);
   stroke-width: 1.2;
 }
 
@@ -141,7 +141,7 @@
 
 .body-map__region-shape {
   fill: var(--color-bg-card);
-  stroke: var(--color-border-dark);
+  stroke: var(--color-text-tertiary);
   stroke-width: 1.1;
 }
 

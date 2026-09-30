@@ -18,6 +18,10 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   aviso quando o local é o mesmo da última vez e a dica de absorção. Para desmarcar, basta tocar
   de novo no local escolhido ou em "Não informar". Quem usa teclado ou leitor de tela tem a lista
   "Ou escolha pela lista" com os mesmos 8 locais, e cada região do desenho é anunciada pelo nome.
+  Como já acontece no app, "Tomar" numa dose injetável do Hoje não registra mais direto: abre o
+  registro daquela dose com o desenho do corpo aberto, para informar o local. Em "Registrar
+  todas", as doses que não são injetáveis continuam em um clique e cada injetável abre o seu
+  registro, uma de cada vez.
 - **Mobile** (**bump intermediário `0.33.4 → 0.33.5`** só para teste no TestFlight — sem mudança
   de comportamento do app neste PR; o mapa chega ao app no PR 2 da spec 071. A versão de loja do
   pacote continua sendo o `0.34.0`; canal: build de loja).

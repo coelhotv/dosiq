@@ -57,7 +57,7 @@ export default function LogForm({
           value={formData.injection_site}
           lastInjectionSite={lastInjectionSite}
           handleChange={handleChange}
-          isEditing={!!formData.id}
+          defaultOpen={!!formData.id || !!initialValues?.expandInjectionSite}
           disabled={isSubmitting}
         />
       )}

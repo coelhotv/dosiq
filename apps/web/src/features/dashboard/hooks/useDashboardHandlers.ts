@@ -5,6 +5,7 @@ import { protocolService } from '@features/protocols/services/protocolService'
 import { dismissSuggestion } from '@features/protocols/services/reminderOptimizerService'
 import { errorLog } from '@shared/utils/logger'
 import { getNow, getServerTimestamp } from '@utils/dateUtils'
+import { isInjectable } from '@dosiq/core'
 
 /**
  * useDashboardHandlers - Hook para gerenciar handlers do dashboard
@@ -20,6 +21,23 @@ function friendlyRegisterError(err) {
   }
   return 'Não foi possível registrar a dose. Tente novamente.'
 }
+
+/**
+ * Dose injetável não é registrada em 1 clique (071): abre o modal global com o tratamento
+ * pré-selecionado, o mapa de local aberto e a dose_instance para ancorar o registro — como o
+ * mobile, que sempre abre o registro para injetável. Várias injetáveis = um modal por vez.
+ */
+function openInjectableDoseModals(doses) {
+  const queue = doses.map((dose) => ({
+    type: 'protocol',
+    protocol_id: dose.protocolId,
+    instance_id: dose.instanceId ?? null,
+    expandInjectionSite: true,
+  }))
+  window.dispatchEvent(new CustomEvent('mr:open-dose-modal', { detail: { queue } }))
+}
+
+const isInjectableDose = (dose) => isInjectable({ presentation: dose?.presentation })
 
 export function useDashboardHandlers({ refresh, reminderSuggestionData, protocols, setDismissedSuggestionId }) {
   // Erro de ação 1-click (Tomar/Confirmar agora): antes morria num throw sem
@@ -41,7 +59,11 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
 
   // Registra dose DIRETAMENTE sem modal (1-click experience)
   const handleRegisterDoseQuick = useCallback(
-    async (medicineId, protocolId, dosagePerIntake, instanceId = null) => {
+    async (medicineId, protocolId, dosagePerIntake, instanceId = null, presentation = null) => {
+      if (isInjectable({ presentation })) {
+        openInjectableDoseModals([{ protocolId, instanceId }])
+        return
+      }
       try {
         await logService.create(
           {
@@ -69,8 +91,13 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
   const handleRegisterDosesAll = useCallback(
     async (doses) => {
       if (!doses || doses.length === 0) return
+      // Injetáveis saem do lote e pedem o local, uma por vez (071); o resto segue em 1 clique.
+      const injectables = doses.filter(isInjectableDose)
+      const quickDoses = doses.filter((dose) => !isInjectableDose(dose))
+      if (injectables.length > 0) openInjectableDoseModals(injectables)
+      if (quickDoses.length === 0) return
       try {
-        for (const dose of doses) {
+        for (const dose of quickDoses) {
           await logService.create(
             {
               medicine_id: dose.medicineId,
@@ -84,7 +111,7 @@ export function useDashboardHandlers({ refresh, reminderSuggestionData, protocol
         analyticsService.track('doses_registered_batch', {
           timestamp: getNow().getTime(),
           method: 'priority-card',
-          count: doses.length,
+          count: quickDoses.length,
         })
         refresh()
       } catch (err) {

@@ -41,7 +41,8 @@ export default function DashboardColumnLeft({
                 dose.medicineId,
                 dose.protocolId,
                 dose.dosagePerIntake,
-                dose.instanceId
+                dose.instanceId,
+                dose.presentation
               )
             }
             onRegisterAll={handleRegisterDosesAll}

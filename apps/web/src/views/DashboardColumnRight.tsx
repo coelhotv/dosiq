@@ -28,7 +28,13 @@ export default function DashboardColumnRight({
 }) {
   const hasTimeline = scheduleAllDoses.length > 0 || measureItems.length > 0
   const onRegister = (dose) =>
-    handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake, dose.instanceId)
+    handleRegisterDoseQuick(
+      dose.medicineId,
+      dose.protocolId,
+      dose.dosagePerIntake,
+      dose.instanceId,
+      dose.presentation
+    )
   const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell()
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   return (
@@ -102,7 +108,8 @@ export default function DashboardColumnRight({
                 dose.medicineId,
                 dose.protocolId,
                 dose.dosagePerIntake,
-                dose.instanceId
+                dose.instanceId,
+                dose.presentation
               )
             }
             variant={complexityMode === 'simple' ? 'simple' : 'complex'}
