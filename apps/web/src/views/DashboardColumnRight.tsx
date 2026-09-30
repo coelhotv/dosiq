@@ -148,7 +148,7 @@ export default function DashboardColumnRight({
       )}
 
       {/* Stock Alert (Simple Mode: Bottom) */}
-      {complexityMode !== 'complex' && criticalStockItems.length > 0 && (
+      {complexityMode === 'simple' && criticalStockItems.length > 0 && (
         <section className="dashboard-footer-section" aria-label="Alertas de estoque">
           <StockAlertInline
             criticalItems={criticalStockItems}

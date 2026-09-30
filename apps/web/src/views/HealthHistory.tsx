@@ -171,8 +171,8 @@ function useHealthHistoryState() {
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
 
   const { protocols, refresh } = useDashboard()
-  const { mode: complexityMode } = useComplexityMode()
-  const isComplex = complexityMode === 'complex'
+  // Regra única de densidade (useComplexityMode): tudo que não é 'simple' é detalhado.
+  const { isDetailed: isComplex } = useComplexityMode()
 
   const { dailyAdherence, adherencePattern, loadAdherenceCharts } = useAdherenceCharts(isComplex)
 

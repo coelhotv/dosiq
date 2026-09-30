@@ -23,7 +23,9 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
   todas", as doses que não são injetáveis continuam em um clique e cada injetável abre o seu
   registro, uma de cada vez. Na aba Tratamentos, com a densidade em Automático e 4 a 6 remédios
   ativos, os tratamentos voltam a aparecer agrupados por plano, como no Hoje (antes só apareciam
-  agrupados no modo Detalhado).
+  agrupados no modo Detalhado). A mesma regra passa a valer em toda a web: no Automático, quem
+  tem 4 ou mais remédios ativos vê o layout Detalhado também no Histórico, e o aviso de estoque
+  baixo no rodapé do Hoje segue o do modo Detalhado (o estoque aparece em cada dose).
 - **Mobile** (**bump intermediário `0.33.4 → 0.33.5`** só para teste no TestFlight — sem mudança
   de comportamento do app neste PR; o mapa chega ao app no PR 2 da spec 071. A versão de loja do
   pacote continua sendo o `0.34.0`; canal: build de loja).

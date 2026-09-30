@@ -17,6 +17,7 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
 vi.mock('@dashboard/hooks/useComplexityMode', () => ({
   useComplexityMode: vi.fn(() => ({
     mode: 'simple',
+    isDetailed: false,
     isComplex: false,
     ringGaugeSize: 'large',
     defaultViewMode: 'time',
@@ -193,7 +194,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza tratamentos no modo simples', () => {
-    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple' } as any)
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple', isDetailed: false } as any)
     vi.mocked(useTreatmentList).mockReturnValue({
       activeItems: mockGroups[0].items,
       pausedItems: [],
@@ -213,7 +214,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza grupos no modo complexo', () => {
-    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'complex' } as any)
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'complex', isDetailed: true } as any)
     
     const mockGroup = {
       groupKey: 'plan:1',

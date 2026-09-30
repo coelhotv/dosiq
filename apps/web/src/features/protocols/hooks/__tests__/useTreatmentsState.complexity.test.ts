@@ -4,7 +4,7 @@ import { renderHook } from '@testing-library/react'
 let mockMode = 'simple'
 
 vi.mock('@dashboard/hooks/useComplexityMode', () => ({
-  useComplexityMode: () => ({ mode: mockMode }),
+  useComplexityMode: () => ({ mode: mockMode, isDetailed: mockMode !== 'simple' }),
 }))
 vi.mock('@dashboard/hooks/useDashboardContext', () => ({
   useDashboard: () => ({ refresh: vi.fn() }),

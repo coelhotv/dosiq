@@ -77,13 +77,19 @@ export function useComplexityMode() {
     }
   }, [])
 
+  // Regra única de densidade (071): tudo que não é 'simple' é detalhado. As Configurações só
+  // oferecem Padrão / Automático / Detalhado — o 'moderate' do Automático (4–6 remédios) é
+  // exibido ali como "Detalhado" (_settingsHelpers) e as telas precisam concordar.
+  const isDetailed = mode !== 'simple'
+
   return {
     mode,
+    isDetailed,
     medicineCount: activeMedicines.length,
     overrideMode,
     setOverride,
     // Derivados para uso direto no Dashboard
-    ringGaugeSize: mode === 'simple' ? 'large' : mode === 'moderate' ? 'medium' : 'compact',
-    defaultViewMode: mode === 'complex' ? 'plan' : 'time',
+    ringGaugeSize: isDetailed ? 'compact' : 'large',
+    defaultViewMode: isDetailed ? 'plan' : 'time',
   }
 }
