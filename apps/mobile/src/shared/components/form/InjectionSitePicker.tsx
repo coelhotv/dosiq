@@ -1,14 +1,20 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { AlertTriangle } from 'lucide-react-native'
-import { INJECTION_SITES, getInjectionSiteAbsorption, getInjectionSiteLabel } from '@dosiq/core'
+import * as LucideIcons from 'lucide-react-native'
+import { getInjectionSiteLabel } from '@dosiq/core'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
+import BodyMapSelector from './BodyMapSelector'
+
+// d.ts local do lucide é parcial — mesmo padrão dos hosts
+const { MapPin, ChevronDown, ChevronUp } = LucideIcons as any
 
 /**
- * Seletor de sítio de injeção (031/US1) — única cópia, usada no registro único, no lote e na
- * edição do histórico (071, extração E-5). Opcional e não-bloqueante: selecionar = último global
- * mostra alerta, nunca trava a dose (US3). Hint educacional de absorção (não-SaMD, ADR-062).
- * O container e o rótulo vêm do host (cada tela tem seu espaçamento).
+ * Bloco de sítio de injeção (031/US1) — única cópia, usada no registro único, no lote e na
+ * edição do histórico (071, extração E-5). Accordion fechado por padrão e aberto na edição ou
+ * no lote com uma única injeção marcada (071, D-2/D-5): o campo é opcional e não pode poluir quem
+ * só confirma a dose. Fechado, o subtexto mostra o valor escolhido ou a última aplicação —
+ * fechar nunca esconde o que foi registrado. Aberto: mapa corporal com última aplicação, alerta
+ * não-bloqueante de repetição e hint de absorção (031/US2-US4, não-SaMD). O container vem do host.
  */
 export default function InjectionSitePicker({
   value,
@@ -16,112 +22,89 @@ export default function InjectionSitePicker({
   disabled = false,
   lastInjectionSite = null,
   style = null,
-  labelStyle = null,
+  defaultOpen = false,
+  faceWidth,
 }: {
   value: string | null
   onChange: (value: string | null) => void
   disabled?: boolean
   lastInjectionSite?: string | null
   style?: object | null
-  labelStyle?: object | null
+  /** Abre expandido: edição (D-2) ou lote com exatamente 1 injeção marcada (D-5). */
+  defaultOpen?: boolean
+  faceWidth?: number
 }) {
-  const absorption = getInjectionSiteAbsorption(value)
-  const repeated = !!value && !!lastInjectionSite && value === lastInjectionSite
+  // States
+  const [open, setOpen] = useState(defaultOpen)
+
+  const subtitle = value
+    ? getInjectionSiteLabel(value)
+    : lastInjectionSite
+      ? `Última: ${getInjectionSiteLabel(lastInjectionSite)}`
+      : 'Não informado'
+
   return (
-    <View style={[styles.section, style]}>
-      <Text style={[styles.label, labelStyle]}>Local de aplicação (opcional)</Text>
-      {lastInjectionSite && (
-        <Text style={styles.siteLast}>
-          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
-        </Text>
-      )}
-      <View style={styles.siteChips}>
-        {INJECTION_SITES.map((site) => {
-          const isSel = value === site.value
-          return (
-            <Pressable
-              key={site.value}
-              style={[styles.siteChip, isSel && styles.siteChipSelected]}
-              onPress={() => onChange(isSel ? null : site.value)}
-              disabled={disabled}
-            >
-              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
-                {site.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-      {repeated && (
-        <View style={styles.siteAlert} accessibilityRole="alert">
-          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
-          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
+    <View style={[styles.section, value && styles.sectionFilled, style]}>
+      <Pressable
+        style={styles.toggle}
+        onPress={() => setOpen((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel={`Local de aplicação, opcional. ${subtitle}`}
+        accessibilityState={{ expanded: open }}
+        testID="injection-site-toggle"
+      >
+        <MapPin size={18} color={colors.primary[700]} strokeWidth={2} />
+        <View style={styles.toggleText}>
+          <Text style={styles.title}>
+            Local de aplicação <Text style={styles.optional}>· opcional</Text>
+          </Text>
+          <Text style={[styles.subtitle, value && styles.subtitleFilled]}>{subtitle}</Text>
+        </View>
+        {open ? (
+          <ChevronUp size={18} color={colors.text.secondary} strokeWidth={2} />
+        ) : (
+          <ChevronDown size={18} color={colors.text.secondary} strokeWidth={2} />
+        )}
+      </Pressable>
+      {open && (
+        <View style={styles.panel}>
+          <BodyMapSelector
+            value={value}
+            onChange={onChange}
+            lastUsedSite={lastInjectionSite}
+            disabled={disabled}
+            faceWidth={faceWidth}
+          />
         </View>
       )}
-      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing[2],
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.secondary,
-  },
-  siteChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  siteChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: 6,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border.default,
-    backgroundColor: colors.bg.screen,
+    backgroundColor: colors.bg.card,
   },
-  siteChipSelected: {
+  sectionFilled: {
     borderColor: colors.brand.primary,
-    backgroundColor: colors.primary[50],
   },
-  siteChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  siteChipTextSelected: {
-    color: colors.primary[700],
-  },
-  siteHint: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontStyle: 'italic',
-  },
-  siteLast: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-  siteLastValue: {
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  siteAlert: {
+  toggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing[2],
+    gap: spacing[3],
+    minHeight: 56,
     paddingHorizontal: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.status.warningLight,
   },
-  siteAlertText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.status.warning,
+  toggleText: { flex: 1, gap: 2 },
+  title: { fontSize: 13, fontWeight: '600', color: colors.text.primary },
+  optional: { fontWeight: '400', color: colors.text.muted },
+  subtitle: { fontSize: 12, color: colors.text.secondary },
+  subtitleFilled: { color: colors.primary[700], fontWeight: '700' },
+  panel: {
+    paddingHorizontal: spacing[3],
+    paddingBottom: spacing[3],
   },
 })

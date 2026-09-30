@@ -63,6 +63,12 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
     return { groupedPlans: Object.values(plans), flatList: others }
   }, [items, isComplex])
 
+  // D-5 (071): no lote, o bloco de local abre sozinho só com exatamente 1 injetável marcada.
+  const checkedInjectableCount = useMemo(
+    () => items.filter((i) => selected[i.id] && isInjectable(i.protocol?.medicine)).length,
+    [items, selected]
+  )
+
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
     const medicineName = item.protocol?.medicine?.name ?? item.protocol?.name ?? 'Medicamento'
@@ -108,7 +114,8 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
         {injectable && isChecked && (
           <InjectionSitePicker
             style={styles.siteSection}
-            labelStyle={styles.siteLabel}
+            defaultOpen={checkedInjectableCount === 1}
+            faceWidth={92}
             value={injectionSites?.[item.id] ?? null}
             onChange={(site) => onSiteChange(item.id, site)}
             disabled={loading}
@@ -686,15 +693,13 @@ const styles = StyleSheet.create({
   },
 
   // Sítio de injeção por item (031-B)
+  // Bloco de local indentado sob o medicamento, com trilho à esquerda (071 §5b)
   siteSection: {
-    paddingHorizontal: spacing[2],
-    paddingBottom: spacing[3],
-    gap: spacing[2],
-  },
-  siteLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.secondary,
+    marginLeft: spacing[4],
+    marginRight: spacing[2],
+    marginBottom: spacing[3],
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary[200],
   },
 
   // Custom Styles para agrupamento e horários

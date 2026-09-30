@@ -181,7 +181,6 @@ export default function DoseRegisterModal({
           {injectable && (
             <InjectionSitePicker
               style={styles.siteSection}
-              labelStyle={styles.label}
               value={injectionSite}
               onChange={setInjectionSite}
               disabled={loading}

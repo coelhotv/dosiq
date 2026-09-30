@@ -212,7 +212,7 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, on
       {injectable && (
         <InjectionSitePicker
           style={styles.formGroup}
-          labelStyle={styles.label}
+          defaultOpen
           value={injectionSite}
           onChange={onChangeSite}
           disabled={loading}
