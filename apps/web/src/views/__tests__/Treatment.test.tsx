@@ -12,12 +12,14 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
   })),
 }))
 
-// Mock useComplexityMode
+// Mock useComplexityMode — padrão 'simple' (layout sem grupos). 'moderate' agora é detalhado
+// (071: tudo que não é 'simple' agrupa por plano), coberto em useTreatmentsState.complexity.test.
 vi.mock('@dashboard/hooks/useComplexityMode', () => ({
   useComplexityMode: vi.fn(() => ({
-    mode: 'moderate',
+    mode: 'simple',
+    isDetailed: false,
     isComplex: false,
-    ringGaugeSize: 'medium',
+    ringGaugeSize: 'large',
     defaultViewMode: 'time',
   })),
 }))
@@ -192,7 +194,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza tratamentos no modo simples', () => {
-    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple' } as any)
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'simple', isDetailed: false } as any)
     vi.mocked(useTreatmentList).mockReturnValue({
       activeItems: mockGroups[0].items,
       pausedItems: [],
@@ -212,7 +214,7 @@ describe('Treatment', () => {
   })
 
   it('renderiza grupos no modo complexo', () => {
-    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'complex' } as any)
+    vi.mocked(useComplexityMode).mockReturnValue({ mode: 'complex', isDetailed: true } as any)
     
     const mockGroup = {
       groupKey: 'plan:1',

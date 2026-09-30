@@ -12,9 +12,9 @@ vi.mock('@dashboard/hooks/useDashboardContext.jsx', () => ({
 vi.mock('@dashboard/hooks/useComplexityMode', () => ({
   useComplexityMode: vi.fn(() => ({
     mode: 'moderate',
-    isComplex: false,
-    ringGaugeSize: 'medium',
-    defaultViewMode: 'time',
+    isDetailed: true, // 071: regra única — tudo que não é 'simple' é detalhado
+    ringGaugeSize: 'compact',
+    defaultViewMode: 'plan',
   })),
 }))
 

@@ -28,7 +28,13 @@ export default function DashboardColumnRight({
 }) {
   const hasTimeline = scheduleAllDoses.length > 0 || measureItems.length > 0
   const onRegister = (dose) =>
-    handleRegisterDoseQuick(dose.medicineId, dose.protocolId, dose.dosagePerIntake, dose.instanceId)
+    handleRegisterDoseQuick(
+      dose.medicineId,
+      dose.protocolId,
+      dose.dosagePerIntake,
+      dose.instanceId,
+      dose.presentation
+    )
   const { visible: stockUpsellVisible, dismiss: dismissStockUpsell } = useStockUpsell()
   const [showInitialBalance, setShowInitialBalance] = useState(false)
   return (
@@ -102,7 +108,8 @@ export default function DashboardColumnRight({
                 dose.medicineId,
                 dose.protocolId,
                 dose.dosagePerIntake,
-                dose.instanceId
+                dose.instanceId,
+                dose.presentation
               )
             }
             variant={complexityMode === 'simple' ? 'simple' : 'complex'}
@@ -141,7 +148,7 @@ export default function DashboardColumnRight({
       )}
 
       {/* Stock Alert (Simple Mode: Bottom) */}
-      {complexityMode !== 'complex' && criticalStockItems.length > 0 && (
+      {complexityMode === 'simple' && criticalStockItems.length > 0 && (
         <section className="dashboard-footer-section" aria-label="Alertas de estoque">
           <StockAlertInline
             criticalItems={criticalStockItems}

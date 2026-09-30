@@ -1,0 +1,379 @@
+/* BodyMapSelector (071) — cor das CSS vars do index.css (paridade estrutural, não cromática — SC-007).
+   Estados distintos por FORMA, não só cor: selecionado = chapado + ✓; última = hachura + tracejado. */
+
+.body-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.body-map--disabled {
+  opacity: 0.55;
+}
+
+.body-map__top {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.body-map__last {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.body-map__last strong {
+  color: var(--color-text-primary);
+}
+
+.body-map__clear {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border-default);
+  background: var(--color-bg-card);
+  color: var(--color-text-tertiary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.body-map__clear--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.body-map__clear:disabled,
+.body-map__list-item:disabled {
+  cursor: not-allowed;
+}
+
+.body-map__layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.body-map__figure {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: 14px;
+  padding: 0.875rem 0.625rem;
+}
+
+.body-map__faces {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.body-map__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.body-map__svg {
+  display: block;
+  width: 102px;
+  height: auto;
+  overflow: visible;
+}
+
+.body-map__face-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.body-map__face-note {
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.body-map__side-letters text {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--color-text-tertiary);
+  text-anchor: middle;
+}
+
+.body-map__silhouette circle,
+.body-map__silhouette rect,
+.body-map__silhouette path {
+  fill: var(--color-border-dark);
+  stroke: none;
+}
+
+.body-map__silhouette .body-map__limb {
+  fill: none;
+  stroke: var(--color-border-dark);
+  stroke-linecap: round;
+}
+
+.body-map__silhouette .body-map__back-line {
+  fill: none;
+  stroke: var(--color-text-tertiary);
+  stroke-width: 1.2;
+}
+
+.body-map__hatch-bg {
+  fill: var(--color-bg-card);
+}
+
+.body-map__hatch-line {
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  opacity: 0.42;
+}
+
+.body-map__region {
+  cursor: pointer;
+  outline: none;
+}
+
+.body-map--disabled .body-map__region {
+  cursor: default;
+}
+
+.body-map__region-shape {
+  fill: var(--color-bg-card);
+  stroke: var(--color-text-tertiary);
+  stroke-width: 1.1;
+}
+
+.body-map__region--selected .body-map__region-shape {
+  fill: var(--color-primary);
+  stroke: var(--color-primary);
+  stroke-width: 1.6;
+}
+
+.body-map__region--last .body-map__region-shape {
+  stroke: var(--color-primary);
+  stroke-width: 1.6;
+  stroke-dasharray: 3.5 2.5;
+}
+
+.body-map__region:focus-visible .body-map__region-shape {
+  stroke: var(--color-text-primary);
+  stroke-width: 2.2;
+}
+
+.body-map__hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.body-map__mark-selected circle {
+  fill: var(--color-primary);
+}
+
+.body-map__mark-selected path {
+  fill: none;
+  stroke: var(--color-text-inverse);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.body-map__mark-last-ring {
+  fill: var(--color-bg-card);
+  stroke: var(--color-primary);
+  stroke-width: 1.4;
+  stroke-dasharray: 2.6 2;
+}
+
+.body-map__mark-last-dot {
+  fill: var(--color-primary);
+}
+
+.body-map__legend {
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.625rem;
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary);
+}
+
+.body-map__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.body-map__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.body-map__swatch--selected {
+  background: var(--color-primary);
+}
+
+.body-map__swatch--last {
+  border: 1.4px dashed var(--color-primary);
+  background: var(--color-bg-card);
+}
+
+.body-map__side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.body-map__list-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.body-map__list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.body-map__list-item {
+  min-height: 44px;
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border-default);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.body-map__list-item span {
+  flex: 1;
+}
+
+.body-map__list-item--selected {
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+}
+
+.body-map__list-item--last {
+  border-style: dashed;
+}
+
+.body-map__summary {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+}
+
+.body-map__summary--filled {
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+}
+
+.body-map__summary-label {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.body-map__summary--filled .body-map__summary-label {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .body-map__layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Accordion do bloco (LogFormInjectionSiteSection) — fechado por padrão (D-2) */
+.injection-site-accordion__toggle {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  text-align: left;
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border-default);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+}
+
+.injection-site-accordion--open .injection-site-accordion__toggle {
+  border-radius: 12px 12px 0 0;
+  border-bottom-color: transparent;
+}
+
+.injection-site-accordion--filled .injection-site-accordion__toggle {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.injection-site-accordion__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.injection-site-accordion__title {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.injection-site-accordion__optional {
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.injection-site-accordion__subtitle {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.injection-site-accordion--filled .injection-site-accordion__subtitle {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.injection-site-accordion__panel {
+  padding: 0.875rem 1rem 1rem;
+  border: 1.5px solid var(--color-border-default);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  background: var(--color-bg-card);
+}
+
+.injection-site-accordion--filled .injection-site-accordion__panel {
+  border-color: var(--color-primary);
+}

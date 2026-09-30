@@ -58,13 +58,19 @@ export default function GlobalDoseModal({ isOpen, onClose, initialValues = null 
       if (Array.isArray(logData)) {
         await logService.createBulk(logData)
       } else {
-        await logService.create(logData)
+        // Aberto a partir de uma dose do Hoje (071): ancora o registro na dose_instance, mas só
+        // se o tratamento não foi trocado no formulário — senão a instância seria de outra dose.
+        const instanceId =
+          initialValues?.instance_id && logData.protocol_id === initialValues.protocol_id
+            ? initialValues.instance_id
+            : null
+        await logService.create(logData, { instanceId })
       }
       refresh()
       window.dispatchEvent(new CustomEvent('mr:dose-saved'))
       onClose()
     },
-    [refresh, onClose]
+    [refresh, onClose, initialValues]
   )
 
   return (

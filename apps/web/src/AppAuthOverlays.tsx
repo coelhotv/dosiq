@@ -17,6 +17,7 @@ export default function AppAuthOverlays({
   setIsDoseModalOpen,
   doseModalInitialValues,
   setDoseModalInitialValues,
+  closeDoseModal,
   onRegisterMeasure,
 }) {
   return (
@@ -46,9 +47,10 @@ export default function AppAuthOverlays({
       {isDoseModalOpen && (
         <Suspense fallback={null}>
           <GlobalDoseModal
+            key={doseModalInitialValues?.instance_id ?? 'dose-modal'}
             isOpen={isDoseModalOpen}
             initialValues={doseModalInitialValues}
-            onClose={() => { setIsDoseModalOpen(false); setDoseModalInitialValues(null) }}
+            onClose={closeDoseModal ?? (() => { setIsDoseModalOpen(false); setDoseModalInitialValues(null) })}
           />
         </Suspense>
       )}

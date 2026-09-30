@@ -60,10 +60,20 @@ describe('useComplexityMode', () => {
     expect(result.current.ringGaugeSize).toBe('large')
   })
 
-  it('ringGaugeSize corresponde ao mode (moderate → medium)', () => {
+  it('ringGaugeSize: moderate é detalhado (→ compact), regra única 071', () => {
     setup(5)
     const { result } = renderHook(() => useComplexityMode())
-    expect(result.current.ringGaugeSize).toBe('medium')
+    expect(result.current.ringGaugeSize).toBe('compact')
+  })
+
+  it.each([
+    [2, false],
+    [5, true],
+    [9, true],
+  ])('isDetailed com %i remédios ativos → %s (tudo que não é simple)', (count, expected) => {
+    setup(count)
+    const { result } = renderHook(() => useComplexityMode())
+    expect(result.current.isDetailed).toBe(expected)
   })
 
   it('ringGaugeSize corresponde ao mode (complex → compact)', () => {
@@ -78,14 +88,14 @@ describe('useComplexityMode', () => {
     expect(result.current.defaultViewMode).toBe('plan')
   })
 
-  it('defaultViewMode é time para simple e moderate', () => {
+  it('defaultViewMode é time para simple e plan para moderate (regra única 071)', () => {
     setup(1)
     const { result: r1 } = renderHook(() => useComplexityMode())
     expect(r1.current.defaultViewMode).toBe('time')
 
     setup(4)
     const { result: r2 } = renderHook(() => useComplexityMode())
-    expect(r2.current.defaultViewMode).toBe('time')
+    expect(r2.current.defaultViewMode).toBe('plan')
   })
 
   it('override via setOverride sobrescreve auto-detection', () => {

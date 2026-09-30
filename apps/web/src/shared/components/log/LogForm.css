@@ -205,13 +205,7 @@
   }
 }
 
-/* Sítio de injeção (031) — última aplicação + alerta de repetição + hint absorção */
-.injection-site-last {
-  font-size: 0.8125rem;
-  color: var(--color-text-secondary, #555);
-  margin: 0.25rem 0;
-}
-
+/* Sítio de injeção (031) — alerta de repetição + hint absorção (usados pelo BodyMapSelector, 071) */
 .injection-site-alert {
   display: flex;
   align-items: center;

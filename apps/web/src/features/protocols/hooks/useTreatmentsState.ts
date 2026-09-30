@@ -22,7 +22,7 @@ export function useTreatmentsState(onClearInitialMedicine) {
   const [deletePlanTarget, setDeletePlanTarget] = useState(null)
   const [deleteTreatmentTarget, setDeleteTreatmentTarget] = useState(null)
 
-  const { mode } = useComplexityMode()
+  const { isDetailed } = useComplexityMode()
   const { refresh } = useDashboard()
   const {
     activeItems, pausedItems, finishedItems,
@@ -30,7 +30,8 @@ export function useTreatmentsState(onClearInitialMedicine) {
     loading, error, refetch,
   } = useTreatmentList()
 
-  const isComplex = mode === 'complex'
+  // Regra única de densidade (useComplexityMode): tudo que não é 'simple' agrupa por plano.
+  const isComplex = isDetailed
 
   // Fetch initial medicine
   useEffect(() => {
