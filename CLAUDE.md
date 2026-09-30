@@ -79,6 +79,9 @@ junto, retroativamente, sem log nem teste vermelho. Identidade do medicamento de
 `dose_instances.medicine_id` via `resolveInstanceMedicine` (`@dosiq/core`); `instance.protocol.medicine`
 é o bug (spec 052 · ADR-084 · `docs/architecture/DOSE_INSTANCES.md` §3.1).
 
+### 🔴 SELECT "de tudo" trunca em ~1000 linhas, sem erro (AP-186)
+Varredura/migração/agregação/export que precisa do conjunto COMPLETO pagina com `.range()` até a página vir incompleta (ou prova que o conjunto < limite). Funciona em teste com pouco dado; só quebra no usuário grande.
+
 ### Antes de modificar arquivo
 `find apps/web/src -name "*Nome*"` (duplicatas) → `grep -r "from.*Nome"` (quem importa) → conferir alias.
 
