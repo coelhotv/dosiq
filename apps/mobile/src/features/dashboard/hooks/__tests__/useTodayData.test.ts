@@ -35,6 +35,7 @@ describe('useTodayData', () => {
     mockedAsyncStorage.setItem.mockResolvedValue();
     mockedDashboardService.getUserSettings.mockResolvedValue({ id: 'u1', name: 'Test' } as any);
     mockedDashboardService.getDoseInstancesForPeriod.mockResolvedValue([]);
+    mockedDashboardService.getScheduledProtocols.mockResolvedValue([]); // 086 D-13
   });
 
   it('loads data successfully from online service', async () => {
@@ -57,6 +58,21 @@ describe('useTodayData', () => {
       '@dosiq/today-snapshot',
       expect.stringContaining('"localDay"')
     );
+  }, 10000);
+
+  // 086 D-13 / RC6 #845: agendados carregam o medicamento (a "Próxima dose … · <nome>" usa o nome dele).
+  it('agendados vêm enriquecidos com o medicamento, buscado junto dos ativos', async () => {
+    mockedSupabase.auth.getSession.mockResolvedValue({ data: { session: { user: mockUser } }, error: null });
+    mockedDashboardService.getActiveProtocols.mockResolvedValue([] as any);
+    mockedDashboardService.getScheduledProtocols.mockResolvedValue([{ id: 'p9', medicine_id: 'm9', name: 'Meu tratamento' }] as any);
+    mockedDashboardService.getLogsForPeriod.mockResolvedValue([] as any);
+    mockedDashboardService.getMedicinesData.mockResolvedValue({ m9: { name: 'Mesigyna' } });
+
+    const { result } = renderHook(() => useTodayData());
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 5000 });
+
+    expect(mockedDashboardService.getMedicinesData).toHaveBeenCalledWith(['m9']);
+    expect(result.current.data.scheduledProtocols[0].medicine.name).toBe('Mesigyna');
   }, 10000);
 
   // 090 D-1 / PO-1: conta nova (antes do consentimento) não tem linha em user_settings. O serviço

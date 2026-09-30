@@ -56,6 +56,7 @@ export {
   getIntervalDays,
   getNextOccurrence,
   describeNextOccurrence,
+  listUpcomingDoseDates,
   getProtocolDays,
   getDailyDoseRate,
   // Leitura de adesão a partir de dose_instances (Fase 3 — ADR-048/050/052)
@@ -65,7 +66,7 @@ export {
   ADHERENCE_MODE,
   INSTANCE_STATUS,
 } from './adherenceLogic'
-export type { AdherenceProtocol, NextOccurrence } from './adherenceLogic'
+export type { AdherenceProtocol, NextOccurrence, UpcomingDoseDates } from './adherenceLogic'
 
 // Dose instance generation engine (ADR-048, Fase 2)
 export {
@@ -156,6 +157,9 @@ export {
 export {
   formatDatePtBR,
   formatDateShortPtBR,
+  formatWeekdayDayMonthPtBR,
+  formatDayMonthPtBR,
+  WEEKDAYS_SHORT_PT_BR,
   formatEndDate,
   formatTimePtBR,
   formatDateTimePtBR,
@@ -167,6 +171,7 @@ export {
   TREATMENT_STATUS,
   resolveTreatmentStatus,
   isTreatmentActive,
+  isTreatmentScheduled,
   isTreatmentSchedulableOn,
 } from './treatmentStatus'
 
@@ -294,5 +299,8 @@ export {
   fetchIntervalCadenceAvailability,
 } from './cadenceRollout'
 export type { CadenceInstallRow } from './cadenceRollout'
+// 086: presets de horário (derivados, nunca persistidos).
+export { SCHEDULE_PRESETS, DEFAULT_ANCHORS, DAY_START, EARLY_MORNING_START, EARLY_MORNING_END, computePresetSchedule, deriveSchedulePreset, deriveAnchor, findEarlyMorningDose } from './schedulePresets'
+export type { SchedulePresetKey, SchedulePresetValue } from './schedulePresets'
 export { getDoseCycle, cycleDoseAmount, scheduleTimesPerDay } from './doseCycle'
 export type { DoseCycle } from './doseCycle'

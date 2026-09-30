@@ -39,6 +39,7 @@ import StaleBanner from '@shared/components/feedback/StaleBanner'
 import NudgeBanner from '@shared/components/ui/NudgeBanner'
 import { useNudges } from '@profile/hooks/useNudges'
 import { useOtaUpdate } from '@platform/updates/useOtaUpdate'
+import { summarizeNextDose } from '@dashboard/utils/nextDoseSummary'
 import { useAlarmScreenActive } from '@platform/versionGate/useAlarmScreenActive'
 import { useStockTracking } from '@shared/hooks/useStockTracking'
 import { useStock } from '@stock/hooks/useStock'
@@ -382,7 +383,7 @@ function TodayBannersSection({
 
 function TodayScreenContent({
   data, stale, loading, refresh,
-  timeline, carryOver, lookAhead, protocols, stats,
+  timeline, carryOver, lookAhead, protocols, stats, hasAnyTreatment, nextDoseLabel,
   isComplex, shifts, groupedTimeline, countsByShift,
   expandedShifts, toggleShift,
   modalProtocol, modalScheduledTime, modalInstanceId, modalEntryPoint, medicineName, handleOpenRegister, handleRegisterSuccess, handleCloseRegister,
@@ -496,7 +497,8 @@ function TodayScreenContent({
           <Text style={styles.agendaTitle}>Agenda de Hoje</Text>
         </View>
         <TodayAgendaContent
-          protocols={protocols} isComplex={isComplex} timeline={timeline}
+          protocols={protocols} hasAnyTreatment={hasAnyTreatment} nextDoseLabel={nextDoseLabel}
+          isComplex={isComplex} timeline={timeline}
           shifts={shifts} groupedTimeline={groupedTimeline} countsByShift={countsByShift}
           expandedShifts={expandedShifts} toggleShift={toggleShift} handleOpenRegister={handleOpenRegister}
         />
@@ -542,9 +544,31 @@ function TodayScreenContent({
   )
 }
 
+// 086 D-13: há tratamento ativo, nenhuma dose hoje (começa no futuro, ou dia sem dose da cadência).
+// Medidas do dia seguem visíveis abaixo — o estado é da AGENDA de doses, não do dia inteiro.
+function NoDoseToday({ nextDoseLabel, measures = [] }) {
+  return (
+    <View>
+      <EmptyState
+        icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
+        title="Nenhuma dose hoje"
+        message={nextDoseLabel}
+        action={{ label: 'Ver tratamentos', onPress: () => navigateCrossTab(ROUTES.TREATMENTS) }}
+      />
+      {measures.length > 0 ? (
+        <View style={styles.simpleList}>
+          {measures.map((item) => <MeasureCard key={item.id} item={item.measure} variant="timeline" />)}
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
 // Renderiza a agenda de doses (Simple ou Complex mode)
-function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister }) {
-  if (protocols.length === 0) {
+function TodayAgendaContent({ protocols, hasAnyTreatment, nextDoseLabel, isComplex, timeline, shifts, groupedTimeline, countsByShift, expandedShifts, toggleShift, handleOpenRegister }) {
+  // 086 D-13: primeiro uso = nenhum tratamento ativo, nem agendado. Quem TEM tratamento (que começa
+  // no futuro, ou sem dose hoje) nunca é convidada a "criar o primeiro" — risco de cadastro duplicado.
+  if (!hasAnyTreatment) {
     return (
       <EmptyState
         icon={<CalendarClock size={48} color={colors.primary[500]} strokeWidth={1.5} />}
@@ -556,6 +580,9 @@ function TodayAgendaContent({ protocols, isComplex, timeline, shifts, groupedTim
         }}
       />
     )
+  }
+  if (protocols.length === 0 || !timeline.some((item) => item.kind !== 'measure')) {
+    return <NoDoseToday nextDoseLabel={nextDoseLabel} measures={timeline.filter((item) => item.kind === 'measure')} />
   }
   if (!isComplex) {
     return (
@@ -597,6 +624,7 @@ function _extractTodayScreenData(data) {
     carryOver = [],
     lookAhead = [],
     protocols = [],
+    scheduledProtocols = [],
     medicines = {},
     stats = { expected: 0, taken: 0, score: 0 },
     user = null,
@@ -609,6 +637,7 @@ function _extractTodayScreenData(data) {
     carryOver,
     lookAhead,
     protocols,
+    scheduledProtocols,
     medicines,
     stats,
     user,
@@ -639,12 +668,20 @@ export default function TodayScreen({ route, navigation }) {
     carryOver,
     lookAhead,
     protocols,
+    scheduledProtocols,
     medicines,
     stats,
     user,
     currentDay,
     timezone,
   } = useMemo(() => _extractTodayScreenData(data), [data])
+
+  // 086 RC2 D-13: "Nenhuma dose hoje" × "primeiro uso". Agendados = ativos que ainda não começaram.
+  const hasAnyTreatment = protocols.length > 0 || scheduledProtocols.length > 0
+  const nextDoseLabel = useMemo(
+    () => summarizeNextDose([...protocols, ...scheduledProtocols], getNow()),
+    [protocols, scheduledProtocols]
+  )
 
   // 1. Lógica de Persona: Threshold de complexidade adaptativa (Wave 10A)
   const complexityOverride = user?.complexity_override
@@ -756,6 +793,7 @@ export default function TodayScreen({ route, navigation }) {
     <TodayScreenContent
       data={data} stale={stale} loading={loading} refresh={refresh}
       timeline={timelineWithMeasures} carryOver={carryOver} lookAhead={lookAhead} protocols={protocols} stats={stats}
+      hasAnyTreatment={hasAnyTreatment} nextDoseLabel={nextDoseLabel}
       refreshTodayMeasures={refreshTodayMeasures} todayMeasures={todayMeasures}
       isComplex={isComplex} shifts={shifts} groupedTimeline={groupedTimeline}
       countsByShift={countsByShift} expandedShifts={expandedShifts} toggleShift={toggleShift}

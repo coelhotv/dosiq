@@ -15,8 +15,8 @@ export const EVENTS = {
   // Ciclo de vida do tratamento (spec 065 US3 / CON-034). Pausa ≠ encerramento: `active` true→false
   // é `treatment_paused` (reversível), nunca `treatment_ended`. Emitidos SÓ pela casca do
   // protocolService (+ `emitTitrationEdited`, chamado pelo titrationService) — tela nenhuma emite.
-  TREATMENT_CREATED: 'treatment_created',   // entry_point, frequency, interval_days, treatment_plan_id?, is_titration, treatment_planned_end?
-  TREATMENT_EDITED: 'treatment_edited',     // change_kind: string[] (dose|schedule|frequency|dates|alarm|plan|details|titration) — nunca o valor
+  TREATMENT_CREATED: 'treatment_created',   // entry_point, frequency, interval_days, treatment_plan_id?, is_titration, treatment_planned_end?, schedule_preset? (086)
+  TREATMENT_EDITED: 'treatment_edited',     // change_kind: string[] (dose|schedule|frequency|dates|alarm|plan|details|titration) — nunca o valor; + schedule_preset? (086)
   TREATMENT_PAUSED: 'treatment_paused',
   TREATMENT_RESUMED: 'treatment_resumed',
   TREATMENT_ENDED: 'treatment_ended',       // reason: 'deleted' (único ativo; prescription_end é derivado)

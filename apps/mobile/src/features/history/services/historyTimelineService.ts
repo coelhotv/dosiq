@@ -15,9 +15,12 @@ import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
 import { measuresRepo } from '../../measures/services/measuresRepo'
 
 
-// Dias padrão da janela de histórico (espelha constantes do hook)
-const HISTORY_PAST_DAYS = 30
-const HISTORY_FUTURE_DAYS = 7
+// Dias padrão da janela de histórico — FONTE ÚNICA (o hook importa daqui).
+// Futuro = 35 dias (086 RC2 D-15, opção B): cobre a próxima dose do "Mensal (a cada 30 dias)", que a
+// janela antiga de 7 dias escondia embora já existisse no banco. Cadência > 35 dias segue fora
+// (limite declarado; evolução = limite derivado da última instância materializada).
+export const HISTORY_PAST_DAYS = 30
+export const HISTORY_FUTURE_DAYS = 35
 
 // Desloca uma data YYYY-MM-DD em N dias (safe, ignora UTC drift usando T12:00:00)
 function shiftDateStr(dateStr, days) {

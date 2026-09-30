@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import SectionCard from '@shared/components/ui/SectionCard'
 import EvolutionBadge from './EvolutionBadge'
 import { colors, spacing } from '@shared/styles/tokens'
-import { formatDatePtBR, getProtocolDays, formatIntakeDose, formatConcentration, frequencyRequiresWeekdays, formatFrequencyLabel } from '@dosiq/core'
+import { formatDatePtBR, formatDayMonthPtBR, isTreatmentScheduled, getProtocolDays, formatIntakeDose, formatConcentration, frequencyRequiresWeekdays, formatFrequencyLabel } from '@dosiq/core'
 
 const VALID_TAB_STATUSES = ['ativo', 'pausado', 'finalizado']
 
@@ -57,7 +57,21 @@ function getFrequencyLabel(freq, treatment) {
   return label
 }
 
-function renderStatusBadge(isPaused, isFinished, endDate) {
+// Fora do componente: mantém a complexidade do TreatmentCard abaixo do teto do lint.
+function scheduledStartOf(treatment, resolvedStatus) {
+  if (resolvedStatus !== 'ativo' || !isTreatmentScheduled(treatment)) return null
+  return treatment.start_date
+}
+
+function renderStatusBadge(isPaused, isFinished, endDate, scheduledStart = null) {
+  // 086 D-14: ativo que ainda não começou — some da ambiguidade de "está valendo?".
+  if (scheduledStart) {
+    return (
+      <View style={styles.badgeScheduled}>
+        <Text style={styles.badgeText}>{`Começa em ${formatDayMonthPtBR(scheduledStart)}`}</Text>
+      </View>
+    )
+  }
   if (isPaused) {
     return (
       <View style={styles.badgePaused}>
@@ -90,6 +104,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
   const isPaused = resolvedStatus === 'pausado'
   const isFinished = resolvedStatus === 'finalizado'
   const isMuted = isPaused || isFinished
+  const scheduledStart = scheduledStartOf(treatment, resolvedStatus)
 
   const cardStyle = isFinished ? styles.cardFinished : undefined
   const iconMutedStyle = isMuted ? styles.iconMuted : undefined
@@ -114,7 +129,7 @@ export default function TreatmentCard({ treatment, onPress, tabStatus = 'ativo',
               </Text>
             </View>
           )}
-          {renderStatusBadge(isPaused, isFinished, endDate)}
+          {renderStatusBadge(isPaused, isFinished, endDate, scheduledStart)}
         </View>
       }
       headerAction={<EvolutionBadge steps={treatment.titration_steps} paused={isPaused} />}
@@ -186,6 +201,13 @@ const styles = StyleSheet.create({
   // Badge Pausado
   badgePaused: {
     backgroundColor: colors.neutral[200],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  // Badge Agendado (086 D-14) — neutro, mesma forma dos demais
+  badgeScheduled: {
+    backgroundColor: colors.neutral[100],
     paddingHorizontal: spacing[2],
     paddingVertical: 2,
     borderRadius: 4,

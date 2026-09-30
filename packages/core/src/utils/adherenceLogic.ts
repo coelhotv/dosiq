@@ -20,6 +20,7 @@ import {
 // `doseToMl` mora em doseUnit.ts (junto de `densityFor`, de quem depende): manter os dois
 // separados criava um ciclo doseUnit → adherenceLogic → doseUnit.
 import { doseToMl } from './doseUnit'
+import { WEEKDAYS_SHORT_PT_BR } from './dateFormat'
 import { INTERVAL_DAYS_MIN, INTERVAL_DAYS_MAX } from '../schemas/protocolSchema'
 
 export interface AdherenceProtocol {
@@ -789,7 +790,6 @@ export interface NextOccurrence {
 }
 
 const NEXT_OCCURRENCE_HORIZON_DAYS = 400
-const WEEKDAY_SHORT_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
 
 /**
  * 085 (FR-008a): próxima ocorrência a partir de `now`, pelo MESMO motor do gerador
@@ -798,24 +798,83 @@ const WEEKDAY_SHORT_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
  * @returns {NextOccurrence|null} null para PRN, depreciado, sem horários ou fim antes da próxima
  */
 export function getNextOccurrence(protocol: AdherenceProtocol | null | undefined, now: Date = getNow()): NextOccurrence | null {
-  if (!protocol) return null
+  return _walkOccurrences(protocol, now, 1, _horizonDays(protocol, now, 1)).occurrences[0] ?? null
+}
+
+/**
+ * Horizonte da caminhada (086 RC3 E-2): max(400, dias até o início + count × N + 1). Os 400 fixos
+ * contavam a partir de HOJE — tratamento agendado além disso (ou N grande com início futuro) ficava
+ * sem próxima ocorrência. Dentro dos 400 dias o resultado é idêntico ao anterior.
+ */
+function _horizonDays(protocol: AdherenceProtocol | null | undefined, now: Date, count: number): number {
+  const today = parseLocalDate(formatLocalDate(now))
+  const daysToStart = protocol?.start_date
+    ? Math.max(0, _calendarDaysBetween(today, parseLocalDate(protocol.start_date)))
+    : 0
+  // Ciclo: N da cadência em dias; senão 7 (maior ciclo entre diário/alternado/semanal) — com 1, um
+  // semanal com início além de ~400 dias ficava sem ocorrência (RC6 #845).
+  const n = getIntervalDays(protocol) ?? 7
+  return Math.max(NEXT_OCCURRENCE_HORIZON_DAYS, daysToStart + count * n + 1)
+}
+
+/**
+ * Laço único de "próximas ocorrências a partir de `now`" — `getNextOccurrence` e
+ * `listUpcomingDoseDates` o compartilham para nunca divergirem (086 INV-3). Mesmo predicado do
+ * gerador (`isProtocolActiveOnDate`); hoje só conta horário ainda por vir (>= minuto atual), que é
+ * o `fromTs = now` do gerador na escrita. Ignora `active` (retomada / formulário ainda não salvo).
+ */
+function _walkOccurrences(
+  protocol: AdherenceProtocol | null | undefined,
+  now: Date,
+  count: number,
+  horizonDays: number
+): { occurrences: NextOccurrence[]; todayDropped: boolean } {
+  const occurrences: NextOccurrence[] = []
+  let todayDropped = false
+  if (!protocol || count < 1) return { occurrences, todayDropped }
   const slots = (protocol.time_schedule ?? [])
     .filter((t): t is string => typeof t === 'string' && /^\d{2}:\d{2}$/.test(t))
     .sort()
-  if (slots.length === 0) return null
+  if (slots.length === 0) return { occurrences, todayDropped }
 
   const resumed = { ...protocol, active: true }
   const nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   const cursor = parseLocalDate(formatLocalDate(now)) // meia-noite local de hoje
-  for (let i = 0; i < NEXT_OCCURRENCE_HORIZON_DAYS; i++) {
+  for (let i = 0; i < horizonDays && occurrences.length < count; i++) {
     const dateStr = formatLocalDate(cursor)
     if (isProtocolActiveOnDate(resumed, dateStr)) {
       const time = i === 0 ? slots.find((s) => s >= nowHHMM) : slots[0]
-      if (time) return { date: dateStr, time }
+      if (time) occurrences.push({ date: dateStr, time })
+      else todayDropped = true // hoje é dia de dose, mas todos os horários já passaram
     }
     cursor.setDate(cursor.getDate() + 1)
   }
-  return null
+  return { occurrences, todayDropped }
+}
+
+/** Prévia das próximas datas de dose (086 FR-018). */
+export interface UpcomingDoseDates {
+  /** Datas locais YYYY-MM-DD, em ordem, no máximo `count`. */
+  dates: string[]
+  /** Hoje é dia de dose pela cadência, mas o(s) horário(s) de hoje já passaram — sem lembrete hoje. */
+  todayDropped: boolean
+}
+
+/**
+ * 086 FR-018: as próximas `count` datas em que o gerador de instâncias criará lembrete para este
+ * protocolo, a partir de AGORA (RC3 E-1: hoje só entra se ainda há horário por vir). Mesma fonte de
+ * recorrência do gerador (INV-3) — prévia com lógica própria seria promessa que o lembrete não cumpre.
+ *
+ * Horizonte CALCULADO (RC3 E-2): 3 ocorrências com N = 180 e âncora no futuro passam dos 400 dias
+ * fixos de `getNextOccurrence`; aqui = max(400, dias até o início + count × N + 1).
+ */
+export function listUpcomingDoseDates(
+  protocol: AdherenceProtocol | null | undefined,
+  count = 3,
+  now: Date = getNow()
+): UpcomingDoseDates {
+  const { occurrences, todayDropped } = _walkOccurrences(protocol, now, count, _horizonDays(protocol, now, count))
+  return { dates: occurrences.map((o) => o.date), todayDropped }
 }
 
 /**
@@ -829,7 +888,7 @@ export function describeNextOccurrence(occurrence: NextOccurrence, now: Date = g
   if (diff === 1) return `amanhã às ${occurrence.time}`
   const dd = String(target.getDate()).padStart(2, '0')
   const mm = String(target.getMonth() + 1).padStart(2, '0')
-  return `${WEEKDAY_SHORT_PT[target.getDay()]}, ${dd}/${mm} às ${occurrence.time}`
+  return `${WEEKDAYS_SHORT_PT_BR[target.getDay()]}, ${dd}/${mm} às ${occurrence.time}`
 }
 
 // ============================================================================

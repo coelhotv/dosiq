@@ -6,7 +6,7 @@ import {
   parseISO,
 } from '@dosiq/core'
 import { supabase } from '../../../platform/supabase/nativeSupabaseClient'
-import { getHistoryTimeline } from '../services/historyTimelineService'
+import { getHistoryTimeline, HISTORY_PAST_DAYS, HISTORY_FUTURE_DAYS } from '../services/historyTimelineService'
 
 function shiftDateStr(dateStr, days) {
   // T12:00:00 evita UTC-midnight (R-020); parseISO do core no lugar de new Date()
@@ -15,8 +15,6 @@ function shiftDateStr(dateStr, days) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const HISTORY_PAST_DAYS = 30
-const HISTORY_FUTURE_DAYS = 7
 
 export function useHistoryData() {
   const [allItems, setAllItems] = useState([])

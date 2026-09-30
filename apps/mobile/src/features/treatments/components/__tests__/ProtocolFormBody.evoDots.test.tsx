@@ -14,6 +14,11 @@ import React from 'react'
 import { render } from '@testing-library/react-native'
 import ProtocolFormBody from '../ProtocolFormBody'
 
+// 086: a trava agora reconsulta no foco (useFocusEffect) — fora de navegação, dublê resolvido.
+jest.mock('@treatments/hooks/useIntervalCadenceAvailability', () => ({
+  useIntervalCadenceAvailability: () => ({ available: false, settled: true }),
+}))
+
 jest.mock('@dosiq/core', () => {
   const actual = jest.requireActual('@dosiq/core')
   return actual

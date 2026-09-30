@@ -22,7 +22,7 @@ jest.mock('@platform/supabase/nativeSupabaseClient', () => ({
   },
 }))
 
-import { getUserSettings } from '../dashboardService'
+import { getUserSettings, getScheduledProtocols } from '../dashboardService'
 
 const USER_ID = '8c0633ef-a0f8-4b74-b1b8-92d4d47034e7'
 
@@ -54,5 +54,12 @@ describe('getUserSettings (090 D-1)', () => {
     const err = new TypeError('Network request failed')
     mockResult = { data: null, error: err }
     await expect(getUserSettings(USER_ID)).rejects.toBe(err)
+  })
+})
+
+describe('getScheduledProtocols (086 D-13) — R-121', () => {
+  it('dateStr fora do formato YYYY-MM-DD lança antes de consultar', async () => {
+    await expect(getScheduledProtocols(USER_ID, '30/09/2026')).rejects.toThrow()
+    await expect(getScheduledProtocols(USER_ID, undefined as any)).rejects.toThrow()
   })
 })

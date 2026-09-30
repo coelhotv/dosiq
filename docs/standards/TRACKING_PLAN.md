@@ -230,8 +230,8 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 
 | Evento | Status | Dispara quando | Props | Pergunta |
 |---|---|---|---|---|
-| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?` | **ativação real** (time to first value) |
-| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?` (re-emite) | manutenção vs. instabilidade do plano |
+| `treatment_created` | ✅ mobile | tratamento definido e ativado (`active=true`) | `surface`, `entry_point` (`onboarding`·`treatment_form`), `treatment_id`, `medicine_id`, `is_titration`, `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?` | **ativação real** (time to first value) |
+| `treatment_edited` | ✅ mobile | qualquer campo do tratamento alterado pela pessoa, ou a escada de titulação (**não** o toggle de pausa, **não** a troca de etapa pela RPC) | `surface`, `treatment_id`, `medicine_id`, `change_kind` (**lista**), `frequency`, `interval_days?`, `treatment_plan_id?`, `treatment_planned_end?`, `schedule_preset?` (re-emite) | manutenção vs. instabilidade do plano |
 | `treatment_paused` | ✅ mobile | usuário pausa (`active: true→false`) | `surface`, `treatment_id`, `medicine_id` | **pausa reversível ≠ abandono** — desliga notificação/geração de dose, sai da adesão |
 | `treatment_resumed` | ✅ mobile | usuário retoma (`active: false→true`) | `surface`, `treatment_id`, `medicine_id` | recuperação de pausa (pausa→retoma vs. pausa→abandono) |
 | `treatment_ended` | ✅ mobile | encerramento (`deleted` ativo; `prescription_end`/`weaning_complete` derivados — §5.3.1) | `surface`, `treatment_id`, `medicine_id`, `reason` | **churn de alta vs. abandono** |
@@ -260,6 +260,10 @@ segue essa hierarquia — o funil de ativação culmina em `treatment_created`, 
 >
 > **`treatment_planned_end`** viaja em `treatment_created`/`treatment_edited` (re-emitida na edição)
 > — a propriedade que torna o encerramento passivo `prescription_end` derivável sem scan (§5.3.1).
+> **`schedule_preset`** (spec 086, `created`/`edited`) ∈ `1x`·`12h`·`8h`·`6h`·`manual` — a **forma**
+> do horário salvo, derivada da linha persistida pela mesma função que marca o intervalo na tela
+> (`deriveSchedulePreset`, `@dosiq/core`). Ausente em `quando_necessário` e sem horário. Nunca os
+> horários nem a âncora (R-042). Mede adoção dos presets (SC-004, baseline 55% regulares).
 > **`weaning_terminal_date` está diferida** (§5.3.1) — não é emitida na Fase 1. São datas de agenda
 > (dado relacionado à saúde sob consentimento existente), nunca conteúdo clínico.
 

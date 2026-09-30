@@ -1,13 +1,14 @@
-// isProtocolInPeriod (period-only) em vez de isProtocolActiveOnDate (strict
-// adherence-aware). Listagem agrupada inclui quando_necessário, semanal, etc.
-import { getTodayLocal, isProtocolInPeriod, resolveTreatmentStatus, TREATMENT_STATUS } from '@dosiq/core'
+// Agrupa os tratamentos ATIVOS (já decididos por `resolveTreatmentStatus`) por plano/classe.
+// NÃO filtra por período: ativo com início no FUTURO (ex.: "Mensal" com a próxima dose daqui a 10 dias,
+// spec 086) é tratamento da pessoa e aparece na lista. O antigo `isProtocolInPeriod(p, hoje)` aqui
+// tirava justamente esse caso — o contador dizia "Ativos (1)" e a lista ficava vazia (smoke 086).
+// Vigência de HOJE é regra das superfícies de registrar dose (`isProtocolVigentOn`), não da listagem.
+import { resolveTreatmentStatus, TREATMENT_STATUS } from '@dosiq/core'
 
 export function groupTreatmentsByPlanOrClass(data) {
   if (!data) return null
-  const today = getTodayLocal()
 
-  const validProtocols = data
-    .filter(p => isProtocolInPeriod(p, today))
+  const validProtocols = [...data]
     .sort((a, b) => {
       const timeA = (a.time_schedule && a.time_schedule[0]) || '99:99'
       const timeB = (b.time_schedule && b.time_schedule[0]) || '99:99'

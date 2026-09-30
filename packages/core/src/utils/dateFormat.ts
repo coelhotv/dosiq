@@ -10,6 +10,10 @@ const MONTHS_PT_BR = [
   'jul', 'ago', 'set', 'out', 'nov', 'dez',
 ]
 
+// Dias da semana curtos, índice = Date#getDay() (0 = domingo). Fonte única (086 E-8): antes viviam
+// privados no adherenceLogic.
+export const WEEKDAYS_SHORT_PT_BR = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
+
 // Aceita Date | timestamp ISO completo (com hora). Hermes sem ICU → NÃO usar
 // toLocale*; parse manual via parseISO (timestamp) e tabela de meses.
 function toLocalDate(input: Date | string): Date | null {
@@ -85,6 +89,32 @@ export function formatDateShortPtBR(isoDate: string | Date | null | undefined): 
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = String(d.getFullYear()).slice(-2)
   return `${day}/${month}/${year}`
+}
+
+/**
+ * Formata uma data YYYY-MM-DD (ou Date) para "ddd, DD mmm" PT-BR lowercase — prévia das próximas
+ * doses (086 FR-018): o dia da semana importa porque posto de saúde não abre no fim de semana.
+ *
+ * @example formatWeekdayDayMonthPtBR('2026-10-28') → 'qua, 28 out'
+ * @example formatWeekdayDayMonthPtBR(null)         → ''
+ */
+export function formatWeekdayDayMonthPtBR(isoDate: string | Date | null | undefined): string {
+  if (!isoDate) return ''
+  const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${WEEKDAYS_SHORT_PT_BR[d.getDay()]}, ${String(d.getDate()).padStart(2, '0')} ${MONTHS_PT_BR[d.getMonth()]}`
+}
+
+/**
+ * Formata uma data YYYY-MM-DD (ou Date) para "DD mmm" PT-BR lowercase — badge "Começa em 10 out" (086).
+ *
+ * @example formatDayMonthPtBR('2026-10-10') → '10 out'
+ */
+export function formatDayMonthPtBR(isoDate: string | Date | null | undefined): string {
+  if (!isoDate) return ''
+  const d = typeof isoDate === 'string' ? parseLocalDate(isoDate) : isoDate
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return ''
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTHS_PT_BR[d.getMonth()]}`
 }
 
 /**

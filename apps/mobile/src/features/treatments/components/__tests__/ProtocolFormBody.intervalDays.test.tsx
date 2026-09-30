@@ -8,8 +8,9 @@ import React from 'react'
 import { render, fireEvent } from '@testing-library/react-native'
 import ProtocolFormBody from '../ProtocolFormBody'
 
+let mockAvailable = true
 jest.mock('@treatments/hooks/useIntervalCadenceAvailability', () => ({
-  useIntervalCadenceAvailability: () => true,
+  useIntervalCadenceAvailability: () => ({ available: mockAvailable, settled: true }),
 }))
 
 function makeForm(values = {}) {
@@ -20,6 +21,7 @@ function makeForm(values = {}) {
     setValue: jest.fn(),
     setFieldValue: jest.fn(),
     handleChange: jest.fn(),
+    setValues: jest.fn(),
     handleBlur: jest.fn(),
   }
 }
@@ -42,6 +44,7 @@ const baseProps = {
 afterEach(() => {
   jest.clearAllMocks()
   jest.clearAllTimers()
+  mockAvailable = true
 })
 
 describe('ProtocolFormBody — N da cadência por intervalo (085 C2)', () => {
@@ -63,5 +66,117 @@ describe('ProtocolFormBody — N da cadência por intervalo (085 C2)', () => {
     expect(form.handleChange).toHaveBeenLastCalledWith('interval_days', 3)
     fireEvent.changeText(input, '')
     expect(form.handleChange).toHaveBeenLastCalledWith('interval_days', null)
+  })
+})
+
+describe('ProtocolFormBody — "Mensal (a cada 30 dias)" e próxima dose (086 T026)', () => {
+  function openPeriodicity(utils) {
+    fireEvent.press(utils.getByLabelText('Frequência'))
+  }
+
+  it('sem rótulo "Periodicidade"; seção "Frequência e Horários"; folha "Selecionar Frequência"', () => {
+    const utils = render(<ProtocolFormBody {...baseProps} form={makeForm()} />)
+    expect(utils.queryByText('Periodicidade')).toBeNull()
+    const title = utils.getByText(/Frequência e Horários/)
+    // seção obrigatória (horários): asterisco DENTRO do título
+    expect(utils.getAllByText(' *').some((el) => el.parent?.parent === title || el.parent === title)).toBe(true)
+    fireEvent.press(utils.getByLabelText('Frequência'))
+    expect(utils.getByText('Selecionar Frequência')).toBeTruthy()
+  })
+
+  it('trava true ⇒ Mensal oferecida; escolher grava intervalo_dias/30 num patch só (PO-5)', () => {
+    const form = makeForm()
+    const utils = render(<ProtocolFormBody {...baseProps} form={form} />)
+    openPeriodicity(utils)
+    fireEvent.press(utils.getByText('Mensal (a cada 30 dias)'))
+    expect(form.setValues).toHaveBeenCalledWith({ frequency: 'intervalo_dias', interval_days: 30 })
+  })
+
+  it('trava false ⇒ nem Mensal nem "A cada X dias" (INV-5)', () => {
+    mockAvailable = false
+    const utils = render(<ProtocolFormBody {...baseProps} form={makeForm()} />)
+    openPeriodicity(utils)
+    expect(utils.queryByText('Mensal (a cada 30 dias)')).toBeNull()
+    expect(utils.queryByText('A cada X dias')).toBeNull()
+  })
+
+  it('sair de Mensal para Diário limpa interval_days no mesmo patch (FM-8 / E-4)', () => {
+    const form = makeForm({ frequency: 'intervalo_dias', interval_days: 30 })
+    const utils = render(<ProtocolFormBody {...baseProps} isEditMode form={form} />)
+    openPeriodicity(utils)
+    fireEvent.press(utils.getByText('Diário'))
+    expect(form.setValues).toHaveBeenCalledWith({ frequency: 'diário', interval_days: null })
+  })
+
+  it('edição de intervalo_dias/30 abre como "Mensal (a cada 30 dias)", sem o campo N (FR-014)', () => {
+    const utils = render(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getAllByText('Mensal (a cada 30 dias)').length).toBeGreaterThan(0)
+    expect(utils.queryByPlaceholderText('Ex.: 30')).toBeNull()
+  })
+
+  it('edição: prefill que chega DEPOIS do 1º render (form.reset em efeito) ainda abre como Mensal (RC5)', () => {
+    const utils = render(<ProtocolFormBody {...baseProps} isEditMode form={makeForm()} />)
+    utils.rerender(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getAllByText('Mensal (a cada 30 dias)').length).toBeGreaterThan(0)
+    expect(utils.queryByPlaceholderText('Ex.: 30')).toBeNull()
+  })
+
+  it('"A cada X dias" escolhido e 30 digitado NÃO vira Mensal (FR-014)', () => {
+    const form = makeForm({ frequency: 'intervalo_dias', interval_days: 45 })
+    const utils = render(<ProtocolFormBody {...baseProps} isEditMode form={form} />)
+    fireEvent.press(utils.getByLabelText('Frequência'))
+    fireEvent.press(utils.getAllByText('A cada X dias').pop())
+    utils.rerender(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getByPlaceholderText('Ex.: 30').props.value).toBe('30')
+  })
+
+  it('edição de intervalo_dias/30 com trava hoje false: Mensal segue exibida (valor corrente nunca some)', () => {
+    mockAvailable = false
+    const utils = render(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 30 })} />
+    )
+    expect(utils.getAllByText('Mensal (a cada 30 dias)').length).toBeGreaterThan(0)
+  })
+
+  it('edição de N=45 abre em "A cada X dias" com 45', () => {
+    const utils = render(
+      <ProtocolFormBody {...baseProps} isEditMode form={makeForm({ frequency: 'intervalo_dias', interval_days: 45 })} />
+    )
+    expect(utils.getByPlaceholderText('Ex.: 30').props.value).toBe('45')
+  })
+
+  it('criação em dias: pergunta "Quando é a próxima dose?" e NÃO há "Data do início" duplicado (PO-7)', () => {
+    const utils = render(
+      <ProtocolFormBody
+        {...baseProps}
+        form={makeForm({ frequency: 'intervalo_dias', interval_days: 30, start_date: '2026-10-10' })}
+      />
+    )
+    expect(utils.getByLabelText('Quando é a próxima dose?')).toBeTruthy()
+    expect(utils.queryByLabelText('Data do início')).toBeNull()
+  })
+
+  it('edição em dias: "Data do início", sem a pergunta de próxima dose (FR-017)', () => {
+    const utils = render(
+      <ProtocolFormBody
+        {...baseProps}
+        isEditMode
+        form={makeForm({ frequency: 'intervalo_dias', interval_days: 30, start_date: '2026-05-01' })}
+      />
+    )
+    expect(utils.getByLabelText('Data do início')).toBeTruthy()
+    expect(utils.queryByLabelText('Quando é a próxima dose?')).toBeNull()
+  })
+
+  it('criação diária mantém "Data do início" como hoje (guard PO-7)', () => {
+    const utils = render(<ProtocolFormBody {...baseProps} form={makeForm({ start_date: '2026-10-10' })} />)
+    expect(utils.getByLabelText('Data do início')).toBeTruthy()
+    expect(utils.queryByLabelText('Quando é a próxima dose?')).toBeNull()
   })
 })

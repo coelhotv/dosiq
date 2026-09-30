@@ -6,6 +6,30 @@ import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 
+export interface FormSelectProps {
+  name: string
+  label?: any
+  value: any
+  options: any
+  error?: any
+  onChange: any
+  onBlur?: any
+  disabled?: boolean
+  placeholder?: any
+  helperText?: any
+  required?: boolean
+  /** Sem label visível (o título da seção já nomeia o campo): título da folha de seleção. */
+  sheetTitle?: string
+  /** Idem: nome do campo para o leitor de tela. */
+  accessibilityLabel?: string
+}
+
+// Fora do componente: mantém a complexidade do FormSelect abaixo do teto do lint.
+function resolveSheetTitle(sheetTitle, label) {
+  if (sheetTitle) return sheetTitle
+  return label ? `Selecionar ${label}` : 'Selecionar'
+}
+
 export default function FormSelect({
   name,
   label,
@@ -18,7 +42,9 @@ export default function FormSelect({
   placeholder = undefined,
   helperText = undefined,
   required = false,
-}) {
+  sheetTitle,
+  accessibilityLabel,
+}: FormSelectProps) {
   const [open, setOpen] = useState(false)
 
   const selectedOption = options?.find(o => o.value === value)
@@ -82,7 +108,7 @@ export default function FormSelect({
         activeOpacity={0.8}
         disabled={disabled}
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={accessibilityLabel || label}
         accessibilityHint={placeholder}
         accessibilityState={{ disabled, expanded: open }}
       >
@@ -120,7 +146,7 @@ export default function FormSelect({
             <View style={styles.sheetHeader}>
               <View style={styles.sheetHeaderSpacer} />
               <Text style={styles.sheetTitle}>
-                {label ? `Selecionar ${label}` : 'Selecionar'}
+                {resolveSheetTitle(sheetTitle, label)}
               </Text>
               <TouchableOpacity
                 style={styles.closeButton}

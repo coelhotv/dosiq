@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDatePtBR, formatDateShortPtBR, formatEndDate } from '../dateFormat'
+import { formatDatePtBR, formatDateShortPtBR, formatEndDate, formatWeekdayDayMonthPtBR, formatDayMonthPtBR } from '../dateFormat'
 
 describe('formatDatePtBR', () => {
   it('formata string YYYY-MM-DD para DD MMM YYYY PT-BR lowercase', () => {
@@ -62,5 +62,31 @@ describe('formatEndDate', () => {
 
   it('formata data quando presente', () => {
     expect(formatEndDate('2026-12-31')).toBe('31 dez 2026')
+  })
+})
+
+describe('formatWeekdayDayMonthPtBR (086 FR-018)', () => {
+  it('data local → "ddd, DD mmm"', () => {
+    expect(formatWeekdayDayMonthPtBR('2026-10-28')).toBe('qua, 28 out')
+    expect(formatWeekdayDayMonthPtBR('2026-11-01')).toBe('dom, 01 nov')
+    expect(formatWeekdayDayMonthPtBR('2026-12-26')).toBe('sáb, 26 dez')
+  })
+
+  it('YYYY-MM-DD não escorrega um dia em GMT-3 (R-020)', () => {
+    expect(formatWeekdayDayMonthPtBR('2026-01-01')).toBe('qui, 01 jan')
+  })
+
+  it('vazio/inválido → ""', () => {
+    expect(formatWeekdayDayMonthPtBR(null)).toBe('')
+    expect(formatWeekdayDayMonthPtBR(undefined)).toBe('')
+    expect(formatWeekdayDayMonthPtBR('lixo')).toBe('')
+  })
+})
+
+describe('formatDayMonthPtBR (086 D-14)', () => {
+  it('"DD mmm"', () => {
+    expect(formatDayMonthPtBR('2026-10-10')).toBe('10 out')
+    expect(formatDayMonthPtBR('2026-01-01')).toBe('01 jan')
+    expect(formatDayMonthPtBR(null)).toBe('')
   })
 })

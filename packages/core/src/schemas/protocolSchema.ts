@@ -106,6 +106,63 @@ export function frequencyOptionsFor(
   return options
 }
 
+// ============================================================================
+// 086: "Mensal (a cada 30 dias)" — escolha de OFERTA, não valor de `frequency` (INV-1, A-3).
+// Persiste como `intervalo_dias` + 30. O formulário escolhe entre CHOICES (frequências + a chave
+// `mensal_30`) e aplica o patch atômico `{ frequency, interval_days }` — o mesmo nos dois lugares
+// (form completo e onboarding), para ninguém esquecer de limpar `interval_days` ao sair da cadência
+// em dias (RC3 E-4: o onboarding bateria no CHECK de coerência, 23514).
+// ============================================================================
+
+export const MONTHLY_INTERVAL_DAYS = 30
+export const MONTHLY_CHOICE = 'mensal_30'
+
+/** Rótulo SEMPRE com o número (INV-6): "Mensal" sozinho não existe. */
+export const CADENCE_CHOICE_LABELS: Record<string, string> = {
+  [MONTHLY_CHOICE]: `Mensal (a cada ${MONTHLY_INTERVAL_DAYS} dias)`,
+}
+
+/** O tratamento, como está salvo, é "Mensal"? (derivação AO CARREGAR — FR-014) */
+export function isMonthlyCadence(frequency: string | null | undefined, intervalDays: number | null | undefined): boolean {
+  return frequency === 'intervalo_dias' && intervalDays === MONTHLY_INTERVAL_DAYS
+}
+
+/**
+ * Escolhas de cadência a oferecer (FR-012/FR-013): as de `frequencyOptionsFor` + "Mensal" logo antes
+ * de "A cada X dias", exatamente onde a trava libera essa. `monthlyAtLoad` mantém "Mensal" para quem
+ * já o tem salvo mesmo com a trava hoje `false` (o valor corrente nunca some — FR-004 da 085).
+ */
+export function cadenceChoicesFor(
+  currentFrequency: string | null | undefined,
+  { intervalAvailable = false, monthlyAtLoad = false }: { intervalAvailable?: boolean; monthlyAtLoad?: boolean } = {}
+): string[] {
+  const choices = frequencyOptionsFor(currentFrequency, { intervalAvailable })
+  if (!intervalAvailable && !monthlyAtLoad) return choices
+  const at = choices.indexOf('intervalo_dias')
+  choices.splice(at === -1 ? choices.length : at, 0, MONTHLY_CHOICE)
+  return choices
+}
+
+/** Rótulo de uma escolha: "Mensal (a cada 30 dias)" ou o rótulo da frequência. */
+export function cadenceChoiceLabel(choice: string, labels: Record<string, string> = FREQUENCY_LABELS): string {
+  return CADENCE_CHOICE_LABELS[choice] ?? labels[choice] ?? choice
+}
+
+/**
+ * Escolha → patch atômico para `form.setValues`. Fora da cadência em dias, `interval_days` vai a
+ * `null` (CHECK de coerência). "A cada X dias" conserva o N corrente (Mensal → X mantém 30, editável).
+ * Escolha desconhecida ⇒ `null` (nenhuma mudança).
+ */
+export function applyCadenceChoice(
+  choice: string,
+  currentIntervalDays: number | null = null
+): { frequency: string; interval_days: number | null } | null {
+  if (choice === MONTHLY_CHOICE) return { frequency: 'intervalo_dias', interval_days: MONTHLY_INTERVAL_DAYS }
+  if (!(FREQUENCIES as readonly string[]).includes(choice)) return null
+  if (choice === 'intervalo_dias') return { frequency: choice, interval_days: currentIntervalDays }
+  return { frequency: choice, interval_days: null }
+}
+
 /**
  * Esta frequência é definida por dias da semana? Fonte única do predicado que vivia
  * copiado em 9 lugares entre web, mobile e o refine do Zod (085 FR-001c / RC3 F-3).

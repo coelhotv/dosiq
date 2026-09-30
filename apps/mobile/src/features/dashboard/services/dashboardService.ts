@@ -55,6 +55,31 @@ export async function getActiveProtocols(userId, dateStr) {
  * @param {string} dateStr  — formato YYYY-MM-DD
  * @returns {Promise<Array>}
  */
+/**
+ * 086 (RC2 D-13): tratamentos AGENDADOS — ativos que ainda não começaram (`start_date` > hoje).
+ * Só para a aba Hoje distinguir "nenhuma dose hoje" de "primeiro uso" e dizer a próxima dose.
+ * Separada de `getActiveProtocols` de propósito: aquela alimenta alarmes e Live Activity, que NÃO
+ * devem ver tratamento que não começou. Colunas = subconjunto do select de `getActiveProtocols`;
+ * gate R-295 executado em 2026-09-30 (REST 200).
+ * @param {string} userId
+ * @param {string} dateStr - YYYY-MM-DD (hoje local)
+ * @returns {Promise<Array>}
+ */
+export async function getScheduledProtocols(userId, dateStr) {
+  z.string().uuid().parse(userId)
+  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(dateStr) // R-121 (RC6 #845)
+  const { data, error } = await supabase
+    .from('protocols')
+    .select('id, name, medicine_id, active, frequency, interval_days, time_schedule, start_date, end_date, weekdays')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .gt('start_date', dateStr)
+    .order('start_date')
+
+  if (error) throw error
+  return data ?? []
+}
+
 export async function getTodayLogs(userId, dateStr) {
   z.string().uuid().parse(userId)
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(dateStr)
