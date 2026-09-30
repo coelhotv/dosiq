@@ -14,7 +14,8 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
-import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, INJECTION_SITES, getInjectionSiteLabel, getInjectionSiteAbsorption } from '@dosiq/core'
+import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, getInjectionSiteLabel } from '@dosiq/core'
+import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
 const { X, CircleCheckBig, XCircle, RedoDot, Clock, Trash2, ChevronRight, AlertTriangle, Calendar, LocateFixed } = LucideIcons as any
@@ -167,52 +168,6 @@ function SheetMainView({ instance, isTaken, isOrphan, takenTime, scheduledTime, 
   )
 }
 
-/**
- * Seletor de sítio de injeção na edição (031-B/FR-011). Renderiza para QUALQUER
- * status de dose injetável — inclusive `missed`/`pending`: editar uma perdida
- * registra retroativamente com o sítio (paciente sem app/conexão na hora). Opcional,
- * não-bloqueante; inclui hint educacional de absorção (não-SaMD, ADR-062).
- */
-function SheetSitePicker({ value, onChange, disabled, lastInjectionSite }) {
-  const absorption = getInjectionSiteAbsorption(value)
-  // US3: selecionar = último global → alerta NÃO-bloqueante (salvar nunca travado).
-  const repeated = value && lastInjectionSite && value === lastInjectionSite
-  return (
-    <View style={styles.formGroup}>
-      <Text style={styles.label}>Local de aplicação (opcional)</Text>
-      {lastInjectionSite && (
-        <Text style={styles.siteLast}>
-          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
-        </Text>
-      )}
-      <View style={styles.siteChips}>
-        {INJECTION_SITES.map((site) => {
-          const isSel = value === site.value
-          return (
-            <Pressable
-              key={site.value}
-              style={[styles.siteChip, isSel && styles.siteChipSelected]}
-              onPress={() => onChange(isSel ? null : site.value)}
-              disabled={disabled}
-            >
-              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
-                {site.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-      {repeated && (
-        <View style={styles.siteAlert} accessibilityRole="alert">
-          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
-          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
-        </View>
-      )}
-      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
-    </View>
-  )
-}
-
 function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, onChangeSite, lastInjectionSite, loading, onPickerPress, onChangeQty, onSave, onCancel }) {
   const injectable = isInjectable(instance)
   return (
@@ -255,7 +210,9 @@ function SheetEditView({ instance, takenAtDate, quantityTaken, injectionSite, on
       </View>
 
       {injectable && (
-        <SheetSitePicker
+        <InjectionSitePicker
+          style={styles.formGroup}
+          labelStyle={styles.label}
           value={injectionSite}
           onChange={onChangeSite}
           disabled={loading}
@@ -877,61 +834,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.secondary,
     marginTop: 4,
-  },
-  siteChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  siteChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.screen,
-  },
-  siteChipSelected: {
-    borderColor: colors.brand.primary,
-    backgroundColor: colors.primary[50],
-  },
-  siteChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  siteChipTextSelected: {
-    color: colors.primary[700],
-  },
-  siteHint: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  siteLast: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginBottom: 8,
-  },
-  siteLastValue: {
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  siteAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.status.warningLight,
-  },
-  siteAlertText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.status.warning,
   },
   siteValueRow: {
     flexDirection: 'row',
