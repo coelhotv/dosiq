@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { parseISO, getNow, cloneDate, formatActiveIngredientFormula, formatIntakeDose, formatConcentration, isLiquidMedicine, formatDose, isInjectable, getInjectionSiteLabel } from '@dosiq/core'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
@@ -577,19 +577,27 @@ export default function DoseActionSheet({
   })
 
   const statusBarHeight = StatusBar.currentHeight || 24
+  // Modal statusBarTranslucent desenha sob a barra de navegação do Android: sem o inset, o fim do
+  // conteúdo ("Cancelar" da edição com o mapa aberto) fica inalcançável atrás dela (071 PR2 smoke).
+  const { bottom: bottomInset } = useSafeAreaInsets()
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent>
-      <TouchableOpacity
-        style={[styles.overlay, { paddingTop: statusBarHeight }]}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.sheet}>
+      {/* Fundo é IRMÃO da sheet, não ancestral: um Touchable em volta do ScrollView vira o
+          responder JS no toque e pede ao pai nativo para não interceptar — no Android a rolagem
+          só acontecia quando o gesto nativo ganhava a corrida (071 PR2 smoke, getevent). */}
+      <View style={[styles.overlay, { paddingTop: statusBarHeight }]}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Fechar"
+        />
+        <View style={styles.sheet}>
           <View style={styles.handle} />
 
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + bottomInset }]}
             scrollEnabled={view !== 'main'}
             keyboardShouldPersistTaps="handled"
           >
@@ -639,8 +647,8 @@ export default function DoseActionSheet({
               />
             )}
           </ScrollView>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
 
       <DoseIOSDatePickerModal
         visible={showDatePicker}

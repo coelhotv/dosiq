@@ -77,22 +77,22 @@ export function useHistoryData() {
         return
       }
 
-      // Carrega timezone antes do service para passar o fuso correto ao core
-      const { data: settingsData } = await supabase
+      // Fuso sai em paralelo com protocolos/medidas dentro do service (não bloqueia a carga).
+      const tzPromise = supabase
         .from('user_settings')
         .select('timezone')
         .eq('user_id', userId)
         .single()
-
-      const tz = settingsData?.timezone || 'America/Sao_Paulo'
-      startTransition(() => setTimezone(tz))
+        .then(({ data }) => data?.timezone || 'America/Sao_Paulo', () => 'America/Sao_Paulo')
 
       const items = await getHistoryTimeline(userId, {
         pastDays: HISTORY_PAST_DAYS,
         futureDays: HISTORY_FUTURE_DAYS,
-        tz,
+        tz: tzPromise,
       })
 
+      const tz = await tzPromise
+      startTransition(() => setTimezone(tz))
       setAllItems(items)
     } catch (err) {
       setError(err?.message || 'Erro ao carregar histórico')

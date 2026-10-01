@@ -136,32 +136,42 @@ export function mapToMobileShape(events, protocolsById = {}) {
 
 // Ponto de entrada principal. Retorna itens flat (dose | biomarker) ordenados por occurred_at ASC.
 // Biomarkers: best-effort — falha não derruba doses (espelha padrão web getMonthTimeline).
+// `tz` aceita string ou Promise<string>: o caller pode disparar a leitura do fuso em paralelo.
+// Perf (071 PR2, smoke Android): protocolos, medidas e fuso não dependem um do outro — saem juntos;
+// só a timeline espera (precisa de protocolsById + tz). Antes eram 4 idas ao servidor em série.
 export async function getHistoryTimeline(userId, {
   pastDays = HISTORY_PAST_DAYS,
   futureDays = HISTORY_FUTURE_DAYS,
-  tz = 'America/Sao_Paulo',
-} = {}) {
+  tz: tzInput = 'America/Sao_Paulo',
+}: { pastDays?: number; futureDays?: number; tz?: string | PromiseLike<string> } = {}) {
   const today = getTodayLocal()
   // Janela expandida ±1 dia em UTC (AP-194: nunca wall-clock local para filtro)
   const fromTs = shiftDateStr(today, -(pastDays + 1)) + 'T00:00:00Z'
   const toTs   = shiftDateStr(today, futureDays + 1)  + 'T23:59:59Z'
 
-  const protocolsById = await buildProtocolsById(userId)
+  // Biomarkers: best-effort — falha não derruba doses (espelha padrão web getMonthTimeline).
+  const bioPromise = measuresRepo.list({ fromTs, toTs }).catch((err) => {
+    console.error('[historyTimelineService] merge biomarcadores falhou:', err?.message)
+    return null
+  })
+  const [protocolsById, tz] = await Promise.all([buildProtocolsById(userId), tzInput])
 
   // TODO(040-strict): supabase client local não tipado como Database (nível B)
   const coreTimeline = createTimelineService({ client: supabase as any })
-  const doseEvents = await coreTimeline.getTimeline({
-    userId,
-    fromTs,
-    toTs,
-    tz,
-    order: TIMELINE_ORDER.ASC,
-    protocolsById,
-  })
+  const [doseEvents, bioRows] = await Promise.all([
+    coreTimeline.getTimeline({
+      userId,
+      fromTs,
+      toTs,
+      tz,
+      order: TIMELINE_ORDER.ASC,
+      protocolsById,
+    }),
+    bioPromise,
+  ])
 
   let events = doseEvents
   try {
-    const bioRows = await measuresRepo.list({ fromTs, toTs })
     if (bioRows && bioRows.length > 0) {
       const bioEvents = biomarkersToEvents(bioRows)
       events = buildTimeline([...doseEvents, ...bioEvents], { tz, order: TIMELINE_ORDER.ASC })

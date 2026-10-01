@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
 import { parseISO, formatConcentration, isLiquidMedicine, formatDose, getInjectionSiteLabel } from '@dosiq/core'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob nodenext
 import * as LucideIcons from 'lucide-react-native'
@@ -25,7 +25,7 @@ function StatusIcon({ status }) {
   return <Clock size={22} color={COLORS.gray} strokeWidth={2} />
 }
 
-export default function DoseHistoryList({ instances = [], timezone = 'America/Sao_Paulo', onItemPress }) {
+export default function DoseHistoryList({ instances = [], timezone = 'America/Sao_Paulo', onItemPress, loading = false }) {
   // Já chegam ordenados pelo buildTimeline (ASC); mantém sort local como fallback defensivo
   const sorted = useMemo(() => (
     [...instances].sort((a, b) => {
@@ -117,6 +117,17 @@ export default function DoseHistoryList({ instances = [], timezone = 'America/Sa
   }
 
   if (sorted.length === 0) {
+    // Primeira carga: "Nada por aqui" só depois que os dados chegam — antes era afirmado por
+    // 3–5 s no Android enquanto a timeline ainda carregava. Recarga com lista na tela não pisca.
+    if (loading) {
+      return (
+        <View style={[styles.list, styles.emptyContent]}>
+          <View style={styles.empty} accessibilityLabel="Carregando histórico">
+            <ActivityIndicator color={COLORS.teal} size="large" />
+          </View>
+        </View>
+      )
+    }
     return (
       <View style={[styles.list, styles.emptyContent]}>
         <View style={styles.empty}>
