@@ -1,6 +1,6 @@
 #!/bin/bash
 # build-ios.sh — Prepara certificados e roda eas build local
-# Uso: bash build-ios.sh [development|preview|production]
+# Uso: bash build-ios.sh [development|preview|device|production] [--no-install]
 #
 # Perfis (spec 051-A · canais de OTA declarados em eas.json):
 #   development → .app (simulador) · canal `development` · uso diário
@@ -14,6 +14,11 @@
 #    `eas device:list`, sem passar pela Apple. O smoke
 #    do OTA em device real roda no Android (build-android.sh preview) — o mecanismo do
 #    expo-updates é o mesmo nas duas plataformas, e um device físico basta pra provar.
+#
+# Perfil `device` instala o .ipa no aparelho ao final (lib-install-device.sh; alvo em
+# DOSIQ_IOS_DEVICE). `--no-install` só gera o artefato.
+#
+# Log completo do build: ~/local/dev-builds/build-ios-<perfil>-v<versão>-<timestamp>.log
 
 set -euo pipefail
 
@@ -42,11 +47,20 @@ BUILD_NPMRC="$(mktemp -t dosiq-build-npmrc)"
 export npm_config_userconfig="$BUILD_NPMRC"
 trap 'rm -f "$BUILD_NPMRC"' EXIT
 
-PROFILE="${1:-development}"
+PROFILE="development"
+NO_INSTALL=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-install) NO_INSTALL=1 ;;
+    -*) echo "❌ Flag desconhecida: '$arg' (use --no-install)"; exit 1 ;;
+    *) PROFILE="$arg" ;;
+  esac
+done
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # R-307: procedencia do binario de loja (tag no git + arvore limpa)
 . "$SCRIPT_DIR/lib-release-tag.sh"
+. "$SCRIPT_DIR/lib-install-device.sh"
 
 # Falhar cedo e explícito: perfil desconhecido só apareceria como erro do EAS depois do
 # prebuild + pod install (minutos perdidos).
@@ -148,13 +162,11 @@ fi
 echo "-----------------------------"
 read -p "Confirma as informações acima? (Enter para rodar / Ctrl+C para cancelar) "
 
-# echo "🧹 Limpando cache e realizando Hard Reset do diretório nativo..."
-# Deletar pastas nativas para resolver conflitos de sincronização (iCloud)
+# Apaga o ios/ gerado: o Swift da bridge/widget de um prebuild anterior conflita com o novo.
 rm -rf "$SCRIPT_DIR/ios"
-# rm -rf "$SCRIPT_DIR/android"
 
 echo "Gerando prebuild pro iOS..."
-# Prebuild sem instalar pacotes nativos automaticamente (evita erro de path com espaços no iCloud)
+# Prebuild sem instalar pacotes nativos automaticamente (o eas build local roda o pod install)
 if npx expo prebuild --platform ios --no-install ; then
   echo "✅ Código nativo regenerado com sucesso."
 else
@@ -162,39 +174,33 @@ else
   exit 1
 fi
 
-# Instalação manual de Pods (mais resiliente a caminhos com espaços)
-# echo "📦 Instalando dependências nativas (CocoaPods)..."
-# cd "$SCRIPT_DIR/ios"
-# if pod install ; then
-#   cd "$SCRIPT_DIR"
-#   echo "✅ CocoaPods concluído."
-# else
-#   echo "⚠️ Erro no pod install automático, tentando forçar com repo update..."
-#   pod install --repo-update || {
-#     echo "❌ Falha crítica no CocoaPods. Verifique o caminho iCloud para conflitos."
-#     exit 1
-#   }
-#   cd "$SCRIPT_DIR"
-# fi
-
 rm -f "$TEMP_OUTPUT"
 
 echo "🚀 Iniciando build iOS ($PROFILE) para v$APP_VERSION..."
 # Build local via EAS - ignoramos o código de saída direto para checar o arquivo depois
 # pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
-eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache || true
+# A saída também vai para um log: o diretório temporário do EAS é apagado ao fim, então o log
+# é a única evidência de uma falha. pipefail + `|| true` mantêm a regra acima.
+BUILD_LOG="$TARGET_DIR/build-ios-$PROFILE-v$APP_VERSION-$(date +%Y%m%d-%H%M%S).log"
+echo "📝 Log do build: $BUILD_LOG"
+eas build --local --platform ios --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache 2>&1 | tee "$BUILD_LOG" || true
 
 if [ -f "$TEMP_OUTPUT" ]; then
   echo "✅ EAS build finalizado (arquivo gerado em $TEMP_OUTPUT)."
 else
   echo "❌ Erro crítico: O arquivo de saída não foi encontrado em $TEMP_OUTPUT."
-  echo "Verifique os logs do EAS acima para entender o porquê da falha na compilação."
+  echo "Verifique os logs do EAS acima (ou $BUILD_LOG) para entender o porquê da falha na compilação."
   exit 1
 fi
 
 # 4. Mover e renomear
 echo "💾 Movendo build para: $FINAL_PATH"
 mv "$TEMP_OUTPUT" "$FINAL_PATH"
+
+# 4.0 Instalação automática no aparelho físico (só `device`; falha não derruba o script)
+if [ "$PROFILE" = "device" ] && [ "$NO_INSTALL" -eq 0 ]; then
+  install_ios_device "$FINAL_PATH"
+fi
 
 # 4.1 Extração automática para Simulador
 # Só os perfis de SIMULADOR saem como tar.gz a extrair. `device` é .ipa assinado — extrair
