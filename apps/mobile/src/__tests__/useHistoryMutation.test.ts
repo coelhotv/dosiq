@@ -54,7 +54,7 @@ describe('useHistoryMutation', () => {
         quantity_taken: 1,
       }),
       // 065/US1: histórico é ação com o app aberto.
-      { instanceId: 'inst-1', surface: 'mobile' }
+      { instanceId: 'inst-1', surface: 'mobile', eventProps: {} }
     )
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
       '@dosiq/today-snapshot'

@@ -33,7 +33,7 @@ import { formatDateTime, buildBulkOutcome, useBulkLastSite, _buildConfirmLogs, _
 /**
  * Lista de protocolos para seleção em batch (Suporta layouts Simples e Complexo)
  */
-function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, injectionSites, onSiteChange, lastInjectionSite }) {
+function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, injectionSites, onSiteChange, onSiteMeta, lastInjectionSite }) {
   const [collapsedPlans, setCollapsedPlans] = useState({})
 
   const togglePlanCollapse = (planId) => {
@@ -118,6 +118,7 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
             faceWidth={92}
             value={injectionSites?.[item.id] ?? null}
             onChange={(site) => onSiteChange(item.id, site)}
+            onMetaChange={(meta) => onSiteMeta(item.id, meta)}
             disabled={loading}
             lastInjectionSite={lastInjectionSite}
           />
@@ -294,6 +295,8 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
   const [prevItems, setPrevItems] = useState([])
   const [selected, setSelected] = useState({})
   const [injectionSites, setInjectionSites] = useState({})
+  // Analytics 071 PR3: meta do bloco de local por item (abertura + meio), zerada junto dos locais
+  const [siteMetaById, setSiteMetaById] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [takenAtDate, setTakenAtDate] = useState(null)
@@ -309,6 +312,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
     if (!visible) {
       setSelected({})
       setInjectionSites({})
+      setSiteMetaById({})
       setError(null)
       setLoading(false)
       setTakenAtDate(null)
@@ -316,6 +320,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
       setTempDate(null)
     } else {
       setInjectionSites({})
+      setSiteMetaById({})
       const initial = {}
       expandedDoseItems.forEach(item => { initial[item.id] = !isComplex })
       setSelected(initial)
@@ -330,6 +335,7 @@ function useBulkDoseModalState({ visible, isComplex, expandedDoseItems }) {
   return {
     selected, setSelected,
     injectionSites, setInjectionSites,
+    siteMetaById, setSiteMetaById,
     loading, setLoading,
     error, setError,
     takenAtDate, setTakenAtDate,
@@ -402,6 +408,7 @@ export default function BulkDoseRegisterModal({
   const {
     selected, setSelected,
     injectionSites, setInjectionSites,
+    siteMetaById, setSiteMetaById,
     loading, setLoading,
     error, setError,
     takenAtDate, setTakenAtDate,
@@ -411,6 +418,10 @@ export default function BulkDoseRegisterModal({
 
   function toggleProtocol(id) {
     setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  function handleSiteMeta(id, meta) {
+    setSiteMetaById(prev => ({ ...prev, [id]: meta }))
   }
 
   function handleSiteChange(id, site) {
@@ -450,7 +461,7 @@ export default function BulkDoseRegisterModal({
     const finalTakenAt = takenAtDate ? takenAtDate.toISOString() : now.toISOString()
     const isBackdated = !!takenAtDate && takenAtDate.toDateString() !== now.toDateString()
 
-    const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites)
+    const logsData = _buildConfirmLogs(selectedIds, expandedDoseItems, finalTakenAt, isBackdated, instancesByKey, injectionSites, siteMetaById)
 
     const result = await registerDoseMany(logsData, { surface: SURFACES.MOBILE, entryPoint })
     setLoading(false)
@@ -511,6 +522,7 @@ export default function BulkDoseRegisterModal({
               isComplex={isComplex}
               injectionSites={injectionSites}
               onSiteChange={handleSiteChange}
+              onSiteMeta={handleSiteMeta}
               lastInjectionSite={lastInjectionSite}
             />
           )}

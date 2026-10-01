@@ -47,7 +47,7 @@ function BodyMapFaceView({
   value: string | null
   lastUsedSite: string | null
   disabled: boolean
-  onToggle: (site: string) => void
+  onToggle: (site: string, source: 'map' | 'list') => void
 }) {
   const { width: vw, height: vh } = INJECTION_BODY_MAP_VIEWBOX
   const hatchId = `bm-hatch-${face}`
@@ -95,7 +95,7 @@ function BodyMapFaceView({
               testID={`bodymap-region-${region.value}`}
               accessible
               accessibilityLabel={regionName(region.value, isSelected, isLast)}
-              onPress={disabled ? undefined : () => onToggle(region.value)}
+              onPress={disabled ? undefined : () => onToggle(region.value, 'map')}
             >
               <Path
                 d={region.path}
@@ -152,7 +152,8 @@ export default function BodyMapSelector({
   faceWidth = DEFAULT_FACE_WIDTH,
 }: {
   value: string | null
-  onChange: (value: string | null) => void
+  /** `source`: meio da escolha (analytics 071 PR3); 'clear' = "Não informar". */
+  onChange: (value: string | null, source?: 'map' | 'list' | 'clear') => void
   lastUsedSite?: string | null
   disabled?: boolean
   /** Largura de cada vista em px (lote usa menor). */
@@ -166,16 +167,16 @@ export default function BodyMapSelector({
 
   // Handlers
   const toggle = useCallback(
-    (site: string) => {
+    (site: string, source: 'map' | 'list') => {
       if (disabled) return
-      onChange(site === value ? null : site)
+      onChange(site === value ? null : site, source)
     },
     [disabled, onChange, value]
   )
 
   const clear = useCallback(() => {
     if (disabled) return
-    onChange(null)
+    onChange(null, 'clear')
   }, [disabled, onChange])
 
   return (
@@ -257,7 +258,7 @@ export default function BodyMapSelector({
                 key={site.value}
                 testID={`bodymap-list-${site.value}`}
                 style={[styles.listItem, isSel && styles.listItemSelected, isLast && !isSel && styles.listItemLast]}
-                onPress={() => toggle(site.value)}
+                onPress={() => toggle(site.value, 'list')}
                 disabled={disabled}
                 accessibilityRole="radio"
                 accessibilityLabel={regionName(site.value, false, isLast)}

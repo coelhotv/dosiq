@@ -26,6 +26,7 @@ import {
 import { registerDose, getLastInjectionSite } from '../services/doseService'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
 import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
+import { buildSiteEventProps, EMPTY_SITE_META } from '../utils/siteEventProps'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
 
@@ -44,6 +45,8 @@ export default function DoseRegisterModal({
   const [quantity, setQuantity] = useState('')
   const [injectionSite, setInjectionSite] = useState(null)
   const [lastInjectionSite, setLastInjectionSite] = useState(null)
+  // Analytics 071 PR3: abertura do bloco e meio da escolha (nunca o local)
+  const [siteMeta, setSiteMeta] = useState(EMPTY_SITE_META)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -106,7 +109,12 @@ export default function DoseRegisterModal({
         injection_site: injectable ? injectionSite : null,
       },
       // F4.3c: âncora direta na ocorrência da timeline (determinística); null → snap.
-      { instanceId, surface: SURFACES.MOBILE, entryPoint }
+      {
+        instanceId,
+        surface: SURFACES.MOBILE,
+        entryPoint,
+        eventProps: buildSiteEventProps({ injectable, site: injectionSite, meta: siteMeta }),
+      }
     )
 
     setLoading(false)
@@ -119,6 +127,7 @@ export default function DoseRegisterModal({
     // Limpar estado e notificar tela pai
     setQuantity('')
     setInjectionSite(null)
+    setSiteMeta(EMPTY_SITE_META)
     setError(null)
     onSuccess()
   }
@@ -126,6 +135,7 @@ export default function DoseRegisterModal({
   function handleClose() {
     setQuantity('')
     setInjectionSite(null)
+    setSiteMeta(EMPTY_SITE_META)
     setError(null)
     onClose()
   }
@@ -183,6 +193,7 @@ export default function DoseRegisterModal({
               style={styles.siteSection}
               value={injectionSite}
               onChange={setInjectionSite}
+              onMetaChange={setSiteMeta}
               disabled={loading}
               lastInjectionSite={lastInjectionSite}
             />

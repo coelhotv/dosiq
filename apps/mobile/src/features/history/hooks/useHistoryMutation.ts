@@ -11,7 +11,7 @@ const TODAY_CACHE_KEY = '@dosiq/today-snapshot'
  *
  * @param {{onSuccess?: () => void | Promise<void>}} options
  * @returns {{
- *   registerRetro: (logData: any, instanceId: string) => Promise<void>,
+ *   registerRetro: (logData: any, instanceId: string, eventProps?: Record<string, unknown>) => Promise<void>,
  *   undo: (instanceId: string) => Promise<void>,
  *   loading: boolean,
  *   error: string | null
@@ -22,12 +22,12 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
   const [error, setError] = useState(null)
 
   const registerRetro = useCallback(
-    async (logData, instanceId) => {
+    async (logData, instanceId, eventProps = {}) => {
       try {
         setLoading(true)
         setError(null)
 
-        const result = await registerDose(logData, { instanceId, surface: SURFACES.MOBILE })
+        const result = await registerDose(logData, { instanceId, surface: SURFACES.MOBILE, eventProps })
 
         if (result.success) {
           // Invalidar cache de snapshot do dia
@@ -82,13 +82,13 @@ export function useHistoryMutation({ onSuccess }: { onSuccess?: () => void | Pro
   )
 
   const updateLog = useCallback(
-    async (logId, logData) => {
+    async (logId, logData, eventProps = {}) => {
       try {
         setLoading(true)
         setError(null)
         // Mutação stock-aware no service (restaura/reconsome estoque FIFO) — não tocar
         // medicine_logs direto, senão o estoque dessincroniza (furos silenciosos).
-        const result = await updateOrphanLog(logId, logData, { surface: SURFACES.MOBILE })
+        const result = await updateOrphanLog(logId, logData, { surface: SURFACES.MOBILE, eventProps })
         if (!result.success) {
           setError(result.error || 'Erro ao atualizar registro')
           console.error('[useHistoryMutation] updateLog failed:', result.error)

@@ -17,6 +17,7 @@ import { logSchema, createDoseInstanceRepository, createDoseLogService, getRawNo
 import { logEvent } from '@platform/analytics/productAnalytics'
 import { EVENTS } from '@platform/analytics/analyticsEvents'
 import { debugLog } from '@shared/utils/debugLog'
+import { buildBulkSiteCounts } from '../utils/siteEventProps'
 
 // Repo de instâncias para a âncora de log e leituras locais
 const doseInstanceRepo = createDoseInstanceRepository({ client: supabase })
@@ -127,7 +128,7 @@ function _isAlreadyResolved(err) {
  * @param {Object} [options]
  * @returns {Promise<{ success: boolean, data?: Object, error?: string }>}
  */
-export async function registerDose(logData, { instanceId = null, surface = null, entryPoint } = {} as { instanceId?: string | null, surface?: string | null, entryPoint?: string }) {
+export async function registerDose(logData, { instanceId = null, surface = null, entryPoint, eventProps } = {} as { instanceId?: string | null, surface?: string | null, entryPoint?: string, eventProps?: Record<string, unknown> }) {
   debugLog('[doseService] registerDose — input:', JSON.stringify(logData))
   const parsed = logSchema.safeParse(logData)
   if (!parsed.success) {
@@ -144,7 +145,8 @@ export async function registerDose(logData, { instanceId = null, surface = null,
     await logEvent(
       EVENTS.DOSE_LOGGED,
       _doseEventProps(
-        { medicine_id: logEntry.medicine_id },
+        // eventProps: local de aplicação (071 PR3) — só comportamento, nunca o valor (siteEventProps)
+        { medicine_id: logEntry.medicine_id, ...eventProps },
         { surface, treatmentId: (logEntry as any)?.protocol_id, entryPoint },
       ),
     )
@@ -208,13 +210,15 @@ export async function undoDose(instanceId, { surface = null } = {}) {
  * @param {Object} updates
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export async function updateOrphanLog(logId, updates, { surface = null } = {}) {
+export async function updateOrphanLog(logId, updates, { surface = null, eventProps } = {} as { surface?: string | null, eventProps?: Record<string, unknown> }) {
   try {
     const logEntry = await doseLogCore.updateOrphanLog(logId, updates)
     await logEvent(
       EVENTS.DOSE_LOGGED,
       _doseEventProps(
-        { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id },
+        // `update_orphan` é nome herdado: cobre TODA edição de registro com log (órfão ou agendado
+        // já tomado). Série viva — não renomear (TRACKING_PLAN §2.1). eventProps: change_kind + local (071 PR3).
+        { action: 'update_orphan', medicine_id: (logEntry as any).medicine_id, ...eventProps },
         { surface, treatmentId: (logEntry as any)?.protocol_id },
       ),
     )
@@ -264,7 +268,8 @@ export async function deleteOrphanLog(logId, { surface = null } = {}) {
 function _validateManyLogs(logsData) {
   const validatedLogs = []
   for (const logData of logsData) {
-    const { instance_id: _omit, ...logForInsert } = logData
+    // instance_id e event_props (analytics 071 PR3) são metadados — fora do insert e do Zod
+    const { instance_id: _omit, event_props: _omitEvent, ...logForInsert } = logData
     const parsed = logSchema.safeParse(logForInsert)
     if (!parsed.success) {
       if (__DEV__) console.warn('[doseService] registerDoseMany Zod FAILED:', parsed.error.issues[0])
@@ -273,6 +278,29 @@ function _validateManyLogs(logsData) {
     validatedLogs.push(parsed.data)
   }
   return { validatedLogs, error: null }
+}
+
+// Um `dose_logged` por dose do lote bem-sucedida (065 FR-14). Local de aplicação (071 PR3):
+// `results[i]` ↔ `logsData[i]` — o core faz UM push por item, na ordem
+// (doseLogService.registerDoseMany). As props vêm de `logsData[i].event_props`, montadas na tela
+// (siteEventProps); o Zod não as vê (metadado, como o instance_id). Devolve as props dos itens
+// bem-sucedidos para as contagens do agregado.
+async function _emitBulkDoseEvents(results, logsData, { surface, entryPoint }) {
+  const succeededProps = []
+  for (let i = 0; i < results.length; i++) {
+    const res = results[i]
+    if (!res.success) continue
+    const itemProps = logsData[i]?.event_props ?? {}
+    succeededProps.push(itemProps)
+    await logEvent(
+      EVENTS.DOSE_LOGGED,
+      _doseEventProps(
+        { medicine_id: (res as any).data?.medicine_id, ...itemProps },
+        { surface, treatmentId: (res as any).data?.protocol_id, entryPoint },
+      ),
+    )
+  }
+  return succeededProps
 }
 
 /**
@@ -325,15 +353,7 @@ export async function registerDoseMany(logsData, { surface = null, entryPoint } 
     //
     // DEPOIS do laço de cancelamento de alarme, nunca antes: analytics não atrasa o cancelamento do
     // alarme de uma dose já registrada.
-    for (const res of succeeded) {
-      await logEvent(
-        EVENTS.DOSE_LOGGED,
-        _doseEventProps(
-          { medicine_id: (res as any).data?.medicine_id },
-          { surface, treatmentId: (res as any).data?.protocol_id, entryPoint },
-        ),
-      )
-    }
+    const succeededProps = await _emitBulkDoseEvents(results, logsData, { surface, entryPoint })
 
     if (succeeded.length > 0) {
       // O agregado PERMANECE, e continua sem `treatment_id`: o lote atravessa tratamentos por
@@ -341,7 +361,7 @@ export async function registerDoseMany(logsData, { surface = null, entryPoint } 
       // tratamento usa os `dose_logged` acima; quem quer "quantas doses de uma vez" usa este.
       await logEvent(
         EVENTS.DOSE_LOGGED_BULK,
-        _doseEventProps({ count: succeeded.length }, { surface, entryPoint }),
+        _doseEventProps({ count: succeeded.length, ...buildBulkSiteCounts(succeededProps) }, { surface, entryPoint }),
       )
     }
 
