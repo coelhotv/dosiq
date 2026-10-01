@@ -27,7 +27,7 @@ function formatDayHeader(dateStr) {
 
 export default function HistoryScreen() {
   const navigation = useNavigation()
-  const { instances, selectedDay, setSelectedDay, kpis, instancesForDay, timezone, minDay, maxDay, refresh } = useHistoryData()
+  const { instances, loading, selectedDay, setSelectedDay, kpis, instancesForDay, timezone, minDay, maxDay, refresh } = useHistoryData()
   const [sheetInstance, setSheetInstance] = useState(null)
   // detailMeasure: shape normalizado para MeasureDetailSheet ({id, type, value, ...})
   const [detailMeasure, setDetailMeasure] = useState(null)
@@ -37,6 +37,9 @@ export default function HistoryScreen() {
   const mutation = useHistoryMutation({ onSuccess: refresh })
 
   const dayLabel = useMemo(() => formatDayHeader(selectedDay), [selectedDay])
+  // Primeira carga (sem nenhum item ainda): KPIs, pontos e lista mostram "carregando", nunca "0"/"vazio".
+  // Recarga com dados na tela mantém o que está visível (sem piscar).
+  const initialLoading = loading && instances.length === 0
   // Chip conta só doses (FR-005, ADR-054 — biomarkers excluídos da contagem)
   const doseCount = useMemo(
     () => instancesForDay.filter(ev => ev.type === 'dose').length,
@@ -115,7 +118,7 @@ export default function HistoryScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <DoseHistoryKpis kpis={kpis} />
+        <DoseHistoryKpis kpis={kpis} pending={initialLoading} />
         <WeekCalendar
           selectedDay={selectedDay}
           onDaySelect={setSelectedDay}
@@ -123,6 +126,7 @@ export default function HistoryScreen() {
           minDay={minDay}
           maxDay={maxDay}
           timezone={timezone}
+          pending={initialLoading}
         />
 
         {/* Day header */}
@@ -139,6 +143,7 @@ export default function HistoryScreen() {
           instances={instancesForDay}
           timezone={timezone}
           onItemPress={handleItemPress}
+          loading={initialLoading}
         />
       </ScrollView>
 

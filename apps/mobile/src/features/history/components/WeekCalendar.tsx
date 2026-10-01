@@ -37,35 +37,32 @@ function formatDate(date) {
   return `${year}-${month}-${day}`
 }
 
-// Converte UTC ISO para "YYYY-MM-DD" no tz do usuário — espelha utcToLocalDateStr do hook.
-// Necessário para doses às 22h+ local (= dia seguinte em UTC) aparecerem no dia correto.
-function toLocalDateStr(utcIso, tz) {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(parseISO(utcIso))
-  } catch {
-    return utcIso.slice(0, 10)
+// Status do ponto por dia, numa única passada (perf 071 PR2: o cálculo antigo criava um
+// `Intl.DateTimeFormat` por item × 7 dias a cada render — 7,7 s no Android/Hermes com 190 itens).
+// O dia local vem de `localDay`, derivado pelo core no service (mesma fonte do filtro do hook);
+// fallback com UM formatter só, para item sem `localDay`. Doses às 22h+ local caem no dia certo.
+// skipped_paused filtrado aqui também; biomarkers (sem scheduled_for) ficam de fora (spec 033).
+function buildDotStatusByDay(instances, tz) {
+  let formatter = null
+  const toLocalDay = (utcIso) => {
+    try {
+      formatter = formatter || new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+      })
+      return formatter.format(parseISO(utcIso))
+    } catch {
+      return utcIso.slice(0, 10)
+    }
   }
-}
-
-// skipped_paused filtrado no hook; aqui só chegam taken/missed/pending/skipped_user.
-// Biomarkers não têm scheduled_for — guarda obrigatória (spec 033, type==='biomarker').
-function getDotStatus(dayStr, instances, tz) {
-  const dayInstances = instances.filter(i =>
-    i.type === 'dose' &&
-    i.scheduled_for &&
-    toLocalDateStr(i.scheduled_for, tz) === dayStr && i.status !== 'skipped_paused'
-  )
-  if (dayInstances.length === 0) return COLORS.gray
-
-  const allTaken = dayInstances.every(i => i.status === 'taken')
-  if (allTaken) return COLORS.teal
-
-  return COLORS.yellow
+  const byDay = new Map()
+  for (const i of instances) {
+    if (i.type !== 'dose' || !i.scheduled_for || i.status === 'skipped_paused') continue
+    const day = i.localDay || toLocalDay(i.scheduled_for)
+    const prev = byDay.get(day)
+    const allTaken = (prev === undefined || prev === COLORS.teal) && i.status === 'taken'
+    byDay.set(day, allTaken ? COLORS.teal : COLORS.yellow)
+  }
+  return byDay
 }
 
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -77,7 +74,7 @@ function getMonthLabel(weekStartStr) {
   return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
-export default function WeekCalendar({ selectedDay, onDaySelect, instances = [], minDay, maxDay, timezone = 'America/Sao_Paulo' }) {
+export default function WeekCalendar({ selectedDay, onDaySelect, instances = [], minDay, maxDay, timezone = 'America/Sao_Paulo', pending = false }) {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMondayOf(selectedDay))
 
   // Semana-limite para navegação: segunda da semana que contém minDay/maxDay
@@ -102,6 +99,7 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [],
   }, [currentWeekStart])
 
   const monthLabel = useMemo(() => getMonthLabel(currentWeekStart), [currentWeekStart])
+  const dotStatusByDay = useMemo(() => buildDotStatusByDay(instances, timezone), [instances, timezone])
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -139,7 +137,8 @@ export default function WeekCalendar({ selectedDay, onDaySelect, instances = [],
       <View style={styles.weekGrid} {...panResponder.panHandlers}>
         {weekDays.map(day => {
           const isSelected = day.dateStr === selectedDay
-          const dotColor = getDotStatus(day.dateStr, instances, timezone)
+          // Primeira carga: sem ponto (cinza afirmaria "sem doses" antes dos dados chegarem)
+          const dotColor = pending ? 'transparent' : (dotStatusByDay.get(day.dateStr) ?? COLORS.gray)
 
           return (
             <TouchableOpacity

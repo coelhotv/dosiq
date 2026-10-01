@@ -21,67 +21,13 @@ import {
   isLiquidMedicine,
   formatIntakeDose,
   isInjectable,
-  INJECTION_SITES,
-  getInjectionSiteAbsorption,
-  getInjectionSiteLabel,
   INTAKE_UNIT_LABELS,
 } from '@dosiq/core'
 import { registerDose, getLastInjectionSite } from '../services/doseService'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
-import { AlertTriangle } from 'lucide-react-native'
+import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { useOnlineStatus } from '@shared/hooks/useOnlineStatus'
-
-/**
- * @param {{
- *   visible: boolean,
- *   protocol: Object|null,       — protocolo seleccionado
- *   scheduledTime: string|null,  — horário agendado da dose
- *   medicineName: string,
- *   onClose: Function,
- *   onSuccess: Function,         — chamado após registo bem-sucedido
- * }} props
- */
-/** Seletor de sítio de injeção (chips) — só renderizado p/ injetáveis (031/US1). */
-function InjectionSitePicker({ value, onChange, disabled, lastInjectionSite }) {
-  const absorption = getInjectionSiteAbsorption(value)
-  // US3: selecionar = último global → alerta NÃO-bloqueante (dose confirma sempre).
-  const repeated = value && lastInjectionSite && value === lastInjectionSite
-  return (
-    <View style={styles.siteSection}>
-      <Text style={styles.label}>Local de aplicação (opcional)</Text>
-      {lastInjectionSite && (
-        <Text style={styles.siteLast}>
-          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
-        </Text>
-      )}
-      <View style={styles.siteChips}>
-        {INJECTION_SITES.map((site) => {
-          const selected = value === site.value
-          return (
-            <Pressable
-              key={site.value}
-              style={[styles.siteChip, selected && styles.siteChipSelected]}
-              onPress={() => onChange(selected ? null : site.value)}
-              disabled={disabled}
-            >
-              <Text style={[styles.siteChipText, selected && styles.siteChipTextSelected]}>
-                {site.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-      {repeated && (
-        <View style={styles.siteAlert} accessibilityRole="alert">
-          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
-          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
-        </View>
-      )}
-      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
-    </View>
-  )
-}
 
 export default function DoseRegisterModal({
   visible,
@@ -234,6 +180,7 @@ export default function DoseRegisterModal({
 
           {injectable && (
             <InjectionSitePicker
+              style={styles.siteSection}
               value={injectionSite}
               onChange={setInjectionSite}
               disabled={loading}
@@ -350,58 +297,6 @@ const styles = StyleSheet.create({
   },
   siteSection: {
     gap: spacing[2],
-  },
-  siteChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  siteChip: {
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.screen,
-  },
-  siteChipSelected: {
-    borderColor: colors.brand.primary,
-    backgroundColor: colors.primary[50],
-  },
-  siteChipText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-  },
-  siteChipTextSelected: {
-    color: colors.primary[700],
-    fontWeight: '600',
-  },
-  siteHint: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontStyle: 'italic',
-  },
-  siteLast: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-  siteLastValue: {
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  siteAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.status.warningLight,
-  },
-  siteAlertText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.status.warning,
   },
   actions: {
     flexDirection: 'row',

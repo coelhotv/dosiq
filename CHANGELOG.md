@@ -7,6 +7,34 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Local da injeção escolhido no desenho do corpo (app)
+
+- **Mobile** (`minor` — funcionalidade nova no registro de dose; **sem bump neste PR**: entra no
+  pacote de loja `0.34.0`, versão atual segue `0.33.5`; canal: build de loja). No app, o local de
+  aplicação de um injetável deixa de ser uma fileira de botões com nomes e passa a ser escolhido
+  tocando no desenho do corpo, de frente e de costas lado a lado (o glúteo fica nas costas), igual
+  à web. Vale nas três telas que registram o local: registro da dose, registro de várias doses de
+  uma vez e edição no histórico. O bloco fica recolhido numa linha "Local de aplicação · opcional",
+  que mostra o local escolhido ou a última aplicação; ele já abre expandido na edição de um
+  registro e no registro de várias doses quando só uma delas é injetável. Continuam valendo a
+  última aplicação (marcada no desenho e escrita em texto), o aviso quando o local é o mesmo da
+  última vez e a dica de absorção. Para desmarcar, basta tocar de novo no local escolhido ou em
+  "Não informar". Quem usa leitor de tela tem "Escolher pela lista", com os mesmos 8 locais
+  anunciados como opções, e cada região do desenho é anunciada pelo nome e pelo estado.
+
+### Histórico de doses mais rápido, rolagem livre e sem "0%" enquanto carrega
+
+- **Mobile** (`patch` — correções; **sem bump neste PR**: entra no pacote de loja `0.34.0`; canal:
+  build de loja). Abrir o Histórico de Doses no Android deixou de travar o app por vários segundos:
+  o calendário da semana recalculava todas as doses a cada toque, e agora faz isso uma vez só. A
+  carga também ficou um pouco mais rápida, porque as informações saem do servidor ao mesmo tempo
+  em vez de uma depois da outra. Enquanto carrega, a tela mostra que está carregando: os números
+  do topo aparecem como "—" em vez de "0%", o calendário fica sem pontos e a lista mostra a
+  animação de carregamento, em vez de "Nada por aqui". Na janela de ação de uma dose (editar,
+  excluir), arrastar para rolar funciona em qualquer ponto — antes, em vários lugares o arraste
+  não rolava — e o fim da janela ("Cancelar") não fica mais escondido atrás da barra de navegação
+  do Android.
+
 ### Local da injeção escolhido no desenho do corpo (web)
 
 - **Web** (`minor` — funcionalidade nova no registro de dose; `4.26.0 → 4.27.0`). Ao registrar

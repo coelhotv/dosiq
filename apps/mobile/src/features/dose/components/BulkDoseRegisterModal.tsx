@@ -18,61 +18,17 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 // TODO(040-strict): named imports do lucide-react-native batem em TS2305 sob
 // apps/mobile/tsconfig.json — ver nota em TreatmentsScreen.tsx (features/treatments)
 import * as LucideIcons from 'lucide-react-native'
-const { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp, AlertTriangle } = LucideIcons as any
+const { CheckCircle, Circle, Calendar, Clock, Folder, ChevronRight, ChevronUp } = LucideIcons as any
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { usePlanProtocols } from '@dose/hooks/usePlanProtocols'
 import { registerDoseMany } from '../services/doseService'
 import { SURFACES } from '@platform/analytics/analyticsEvents'
-import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable, INJECTION_SITES, getInjectionSiteAbsorption, getInjectionSiteLabel } from '@dosiq/core'
+import { getNow, cloneDate, formatIntakeDose, formatConcentration, isInjectable } from '@dosiq/core'
+import InjectionSitePicker from '@shared/components/form/InjectionSitePicker'
 import { useToast } from '@shared/components/feedback/Toast'
 import { colors, spacing, borderRadius } from '@shared/styles/tokens'
 import { formatDateTime, buildBulkOutcome, useBulkLastSite, _buildConfirmLogs, _expandDoseItems } from '../utils/bulkDoseHelpers'
 
-
-/**
- * Seletor de sítio por item injetável (031-B/US1). Canetas não podem partilhar o
- * mesmo sítio numa aplicação simultânea → cada injetável escolhe o seu. Opcional,
- * não-bloqueante. Só renderiza quando o item está marcado.
- */
-function BulkItemSitePicker({ value, onChange, disabled, lastInjectionSite }) {
-  const absorption = getInjectionSiteAbsorption(value)
-  // US3: selecionar = último global → alerta NÃO-bloqueante (registro nunca travado).
-  const repeated = value && lastInjectionSite && value === lastInjectionSite
-  return (
-    <View style={styles.siteSection}>
-      <Text style={styles.siteLabel}>Local de aplicação (opcional)</Text>
-      {lastInjectionSite && (
-        <Text style={styles.siteLast}>
-          Última aplicação: <Text style={styles.siteLastValue}>{getInjectionSiteLabel(lastInjectionSite)}</Text>
-        </Text>
-      )}
-      <View style={styles.siteChips}>
-        {INJECTION_SITES.map((site) => {
-          const isSel = value === site.value
-          return (
-            <Pressable
-              key={site.value}
-              style={[styles.siteChip, isSel && styles.siteChipSelected]}
-              onPress={() => onChange(isSel ? null : site.value)}
-              disabled={disabled}
-            >
-              <Text style={[styles.siteChipText, isSel && styles.siteChipTextSelected]}>
-                {site.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-      {repeated && (
-        <View style={styles.siteAlert} accessibilityRole="alert">
-          <AlertTriangle size={14} color={colors.status.warning} strokeWidth={2} />
-          <Text style={styles.siteAlertText}>Mesmo local da última aplicação — considere rotacionar.</Text>
-        </View>
-      )}
-      {absorption && <Text style={styles.siteHint}>{absorption}</Text>}
-    </View>
-  )
-}
 
 /**
  * Lista de protocolos para seleção em batch (Suporta layouts Simples e Complexo)
@@ -106,6 +62,12 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
     })
     return { groupedPlans: Object.values(plans), flatList: others }
   }, [items, isComplex])
+
+  // D-5 (071): no lote, o bloco de local abre sozinho só com exatamente 1 injetável marcada.
+  const checkedInjectableCount = useMemo(
+    () => items.filter((i) => selected[i.id] && isInjectable(i.protocol?.medicine)).length,
+    [items, selected]
+  )
 
   const renderItem = (item) => {
     const isChecked = !!selected[item.id]
@@ -150,7 +112,10 @@ function BulkDoseProtocolList({ items, selected, loading, onToggle, isComplex, i
           </View>
         </Pressable>
         {injectable && isChecked && (
-          <BulkItemSitePicker
+          <InjectionSitePicker
+            style={styles.siteSection}
+            defaultOpen={checkedInjectableCount === 1}
+            faceWidth={92}
             value={injectionSites?.[item.id] ?? null}
             onChange={(site) => onSiteChange(item.id, site)}
             disabled={loading}
@@ -728,67 +693,13 @@ const styles = StyleSheet.create({
   },
 
   // Sítio de injeção por item (031-B)
+  // Bloco de local indentado sob o medicamento, com trilho à esquerda (071 §5b)
   siteSection: {
-    paddingHorizontal: spacing[2],
-    paddingBottom: spacing[3],
-    gap: spacing[2],
-  },
-  siteLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.text.secondary,
-  },
-  siteChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  siteChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.bg.screen,
-  },
-  siteChipSelected: {
-    borderColor: colors.brand.primary,
-    backgroundColor: colors.primary[50],
-  },
-  siteChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  siteChipTextSelected: {
-    color: colors.primary[700],
-  },
-  siteHint: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontStyle: 'italic',
-  },
-  siteLast: {
-    fontSize: 12,
-    color: colors.text.secondary,
-  },
-  siteLastValue: {
-    fontWeight: '700',
-    color: colors.text.primary,
-  },
-  siteAlert: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.status.warningLight,
-  },
-  siteAlertText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.status.warning,
+    marginLeft: spacing[4],
+    marginRight: spacing[2],
+    marginBottom: spacing[3],
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary[200],
   },
 
   // Custom Styles para agrupamento e horários

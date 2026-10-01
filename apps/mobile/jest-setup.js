@@ -83,6 +83,10 @@ jest.mock('react-native-svg', () => ({
   Rect: 'Rect',
   G: 'G',
   Polyline: 'Polyline',
+  Line: 'Line',
+  Defs: 'Defs',
+  Pattern: 'Pattern',
+  Text: 'SvgText',
 }));
 
 // Picker nativo de data/hora: sem mock, o módulo resolve `undefined` no ambiente de teste e

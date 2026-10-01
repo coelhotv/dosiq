@@ -9,20 +9,28 @@ const COLORS = {
   card: colors.bg.card,
 }
 
-export default function DoseHistoryKpis({ kpis = { adherence30d: 0, streak: 0, dosesThisMonth: 0 } }) {
+/**
+ * `pending` = primeira carga ainda sem dados: mostra "—" em vez de 0. Um "0%" de adesão enquanto
+ * a timeline carrega afirma um fato falso (e alarmante) para quem tem adesão real.
+ */
+export default function DoseHistoryKpis({ kpis = { adherence30d: 0, streak: 0, dosesThisMonth: 0 }, pending = false }) {
   const { adherence30d = 0, streak = 0, dosesThisMonth = 0 } = kpis
 
   const cards = [
-    { value: `${adherence30d}%`, label: 'ADESÃO · 30D' },
-    { value: `${streak}`, label: 'SEQUÊNCIA' },
-    { value: `${dosesThisMonth}`, label: 'DOSES · MÊS' },
+    { value: pending ? '—' : `${adherence30d}%`, label: 'ADESÃO · 30D' },
+    { value: pending ? '—' : `${streak}`, label: 'SEQUÊNCIA' },
+    { value: pending ? '—' : `${dosesThisMonth}`, label: 'DOSES · MÊS' },
   ]
 
   return (
     <View style={styles.container}>
       {cards.map((card, index) => (
-        <View key={index} style={styles.card}>
-          <Text style={styles.value}>{card.value}</Text>
+        <View
+          key={index}
+          style={styles.card}
+          accessibilityLabel={pending ? `${card.label}: carregando` : undefined}
+        >
+          <Text style={[styles.value, pending && styles.valuePending]}>{card.value}</Text>
           <Text style={styles.label}>{card.label}</Text>
         </View>
       ))}
@@ -51,6 +59,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.teal,
     marginBottom: 4,
+  },
+  valuePending: {
+    color: COLORS.textSecondary,
   },
   label: {
     fontSize: 10,
