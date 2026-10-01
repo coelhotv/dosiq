@@ -16,6 +16,31 @@ release_tag_name() {
   echo "mobile-v$1"
 }
 
+# assert_clean_tree <título> <explicação> <ação>
+# Gate de árvore limpa, compartilhado por build de loja e publish OTA (ambos fotografam a working
+# tree). Retorna 1 (não faz exit) para o chamador decidir.
+assert_clean_tree() {
+  if [ -n "$(git status --porcelain)" ]; then
+    echo ""
+    echo "❌ $1"
+    echo "   $2"
+    echo ""
+    git status --short
+    echo ""
+    echo "   $3"
+    return 1
+  fi
+  return 0
+}
+
+# head_is_pushed
+# 0 = HEAD existe em algum branch remoto. Faz fetch antes (o cache local de refs remotas mente);
+# retorna 2 se o fetch falhar (offline) — "não sei" é diferente de "não está".
+head_is_pushed() {
+  git fetch origin --quiet 2>/dev/null || return 2
+  [ -n "$(git branch -r --contains HEAD 2>/dev/null)" ]
+}
+
 # Pré-condições de um build de loja. Chamar ANTES de compilar — falhar depois de 20 minutos de
 # gradle é desperdício, e falhar DEPOIS do submit é tarde demais.
 assert_taggable_build() {
@@ -25,17 +50,10 @@ assert_taggable_build() {
   # 1. Árvore limpa. Binário compilado de árvore suja é irrastreável: a tag apontaria para um
   #    commit cujo código NÃO é o que está no aparelho do usuário. Mesma classe do gate do
   #    publish-ota.sh — e aqui é pior, porque binário de loja não se corrige por OTA.
-  if [ -n "$(git status --porcelain)" ]; then
-    echo ""
-    echo "❌ Build de PRODUÇÃO exige working tree limpa."
-    echo "   O binário seria compilado de um estado que não existe em commit nenhum — e a tag"
-    echo "   $tag apontaria para um código diferente do que vai para a loja."
-    echo ""
-    git status --short
-    echo ""
-    echo "   Commite ou stashe antes de buildar."
-    return 1
-  fi
+  assert_clean_tree "Build de PRODUÇÃO exige working tree limpa." \
+    "O binário seria compilado de um estado que não existe em commit nenhum — e a tag
+   $tag apontaria para um código diferente do que vai para a loja." \
+    "Commite ou stashe antes de buildar." || return 1
 
   # 2. Colisão de tag = versão não bumpada. Se a tag já existe em OUTRO commit, alguém mudou
   #    código sem bumpar APP_VERSION — e duas builds diferentes passariam a se chamar igual,

@@ -20,23 +20,12 @@
 
 set -euo pipefail
 
-# Resiliência de ambiente (065 PR A): o `npm ci` que o EAS roda dentro do build morre com
-# `EALLOWSCRIPTS` quando o ambiente traz `npm_config_allow_scripts` — o npm >= 11.17 recusa esse
-# config vindo por ENV como se fosse flag de CLI em install de projeto ("--allow-scripts is not
-# allowed in project-scoped installs"). A variável não vem do repo: o `npx` converte o `~/.npmrc`
-# do operador em `npm_config_*` e as exporta ao processo filho.
-#
-# 🔴 `export npm_config_allow_scripts=` NÃO resolve (foi a primeira tentativa, e ela falha): o npx
-# relê o `~/.npmrc` e sobrescreve o valor vazio. Medido:
-#   export vazio + npx  → npm_config_allow_scripts=esbuild   (o arquivo vence)
-#   userconfig alternativo + npx → npm_config_allow_scripts= (vazio atravessa)
-# Por isso a neutralização é do ARQUIVO de config, não da variável: um userconfig vazio próprio do
-# build. O `npm ci` passa a avisar que não rodou o postinstall de esbuild — é warning, não erro
-# (exit 0 verificado), e o build do EAS não depende desse script.
-BUILD_NPMRC="$(mktemp -t dosiq-build-npmrc)"
-: > "$BUILD_NPMRC"
-export npm_config_userconfig="$BUILD_NPMRC"
-trap 'rm -f "$BUILD_NPMRC"' EXIT
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/lib-build-env.sh"
+
+# `npm ci` do EAS morre com EALLOWSCRIPTS por causa do ~/.npmrc do operador — detalhe e medição
+# em lib-build-env.sh.
+isolate_npm_userconfig
 
 # Garantir que o Android SDK é encontrado pelo Gradle
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
@@ -48,16 +37,7 @@ if [ ! -d "$ANDROID_HOME" ]; then
   exit 1
 fi
 
-PROFILE="development"
-NO_INSTALL=0
-for arg in "$@"; do
-  case "$arg" in
-    --no-install) NO_INSTALL=1 ;;
-    -*) echo "❌ Flag desconhecida: '$arg' (use --no-install)"; exit 1 ;;
-    *) PROFILE="$arg" ;;
-  esac
-done
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+parse_build_args "$@"
 
 # R-307: procedencia do binario de loja (tag no git + arvore limpa)
 . "$SCRIPT_DIR/lib-release-tag.sh"
@@ -75,7 +55,7 @@ case "$PROFILE" in
 esac
 
 # 1. Extrair versão do app.config.js
-APP_VERSION=$(node -p "require('$SCRIPT_DIR/app.config.js').expo.version")
+APP_VERSION=$(get_app_version "$SCRIPT_DIR")
 echo "📦 Versão detectada: v$APP_VERSION"
 
 # 2. Configurar credenciais (Arquivo único)
@@ -140,7 +120,7 @@ echo "🚀 Iniciando build Android ($PROFILE) para v$APP_VERSION..."
 # pois erros de cleanup (ENOTEMPTY) podem retornar 1 mesmo com build bem sucedida.
 # A saída também vai para um log: o diretório temporário do EAS é apagado ao fim, então o log
 # é a única evidência de uma falha. pipefail + `|| true` mantêm a regra acima.
-BUILD_LOG="$TARGET_DIR/build-android-$PROFILE-v$APP_VERSION-$(date +%Y%m%d-%H%M%S).log"
+BUILD_LOG="$(build_log_path "$TARGET_DIR" build-android "$PROFILE" "$APP_VERSION")"
 echo "📝 Log do build: $BUILD_LOG"
 rm -f "$TEMP_OUTPUT"  # resto de build anterior passaria pela checagem de existência abaixo
 eas build --local --platform android --profile "$PROFILE" --output "$TEMP_OUTPUT" --clear-cache 2>&1 | tee "$BUILD_LOG" || true
