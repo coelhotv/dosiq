@@ -1,7 +1,7 @@
 ---
 title: "Expo.dev e EAS para Android"
 description: "Guia prático para configuração do ecossistema Expo.dev, EAS Build e geração de builds de produção e testes para Android no Dosiq."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: operation
 audience:
@@ -12,7 +12,7 @@ tags:
   - eas
   - android
 created_at: "2026-04-14"
-updated_at: "2026-07-27"
+updated_at: "2026-10-01"
 ---
 
 # Guia Pratico - Expo.dev e EAS para Android
@@ -632,42 +632,45 @@ ios: {
 }
 ```
 
-### 13.2. Script Wrapper: `build-android.sh` (e iOS)
+### 13.2. Script `build-android.sh`
 
-Crie `apps/mobile/build-android.sh` (que também servirá de base para iOS):
+O script vive em `apps/mobile/build-android.sh` (o código é a fonte da verdade — este guia só descreve
+o que ele faz; leia o cabeçalho do script para o contrato completo). Uso:
 
 ```bash
-#!/bin/bash
-# Prepara credenciais Firebase e roda eas build local
-# Uso: bash build-android.sh [preview|development|production]
-
-PROFILE="${1:-preview}"
-ICLOUD_MOBILE="/Users/coelhotv/git-icloud/dosiq/apps/mobile"
-
-# production usa google-services.json (sem sufixo), demais usam google-services-{profile}.json
-if [ "$PROFILE" = "production" ]; then
-  CREDS_FILE="$ICLOUD_MOBILE/google-services.json"
-else
-  CREDS_FILE="$ICLOUD_MOBILE/google-services-${PROFILE}.json"
-fi
-
-if [ ! -f "$CREDS_FILE" ]; then
-  echo "❌ Credencial não encontrada: $CREDS_FILE"
-  echo "   Baixe o google-services.json do Firebase Console e salve nesse path."
-  exit 1
-fi
-
-echo "🔐 Exportando credencial Firebase: $CREDS_FILE"
-export GOOGLE_SERVICES_JSON_PATH="$CREDS_FILE"
-
-echo "🚀 Iniciando build ($PROFILE)..."
-eas build --local --platform android --profile "$PROFILE"
+cd apps/mobile
+bash build-android.sh [development|preview|production] [--no-install]
 ```
 
-**Tornar executável:**
-```bash
-chmod +x apps/mobile/build-android.sh
-```
+O que ele faz, na ordem:
+
+1. Valida o perfil, o Android SDK (`ANDROID_HOME`, padrão `~/Library/Android/sdk`) e a credencial
+   Firebase `apps/mobile/google-services.json` (única para todos os perfis).
+2. `production`: exige working tree limpa e `SENTRY_AUTH_TOKEN`, e confere a tag `mobile-v<versão>`
+   **antes** de compilar (R-307 — ver `GUIA_OTA_EAS_UPDATE.md` §6).
+3. Mostra o resumo e pede confirmação (Enter).
+4. Apaga `android/` e roda `expo prebuild --platform android --clean`.
+5. `eas build --local` com `--clear-cache`. A saída vai também para um **log**:
+   `~/local/dev-builds/build-android-<perfil>-v<versão>-<timestamp>.log`.
+   O sucesso é decidido pela **existência do artefato**, não pelo código de saída — o `ENOTEMPTY` de
+   cleanup devolve 1 mesmo com build bom.
+6. Move o artefato para `~/local/dev-builds/dosiq-v<versão>-<perfil>.<apk|aab>`.
+7. `development`/`preview`: **instala no aparelho** via `adb install -r` (ver abaixo).
+8. `production`: cria e publica a tag `mobile-v<versão>`.
+
+| Perfil | Saída | Canal OTA |
+|---|---|---|
+| `development` | `.apk` | `development` |
+| `preview` | `.apk` | `preview` |
+| `production` | `.aab` | `production` |
+
+**Instalação automática (`lib-install-device.sh`).** O serial vem de `DOSIQ_ANDROID_SERIAL`
+(`adb devices`), definido no `~/.bashrc`. Sem a variável: 1 aparelho autorizado → usa esse; vários →
+pergunta; nenhum → avisa e pula. `--no-install` só gera o APK. Falha de instalação não derruba o
+script (o APK fica em `~/local/dev-builds/` e o comando manual é impresso).
+
+⚠️ `INSTALL_FAILED_UPDATE_INCOMPATIBLE` = o Dosiq da Play Store está instalado (assinatura
+diferente). Desinstale-o antes — o script **não** faz isso sozinho, porque apagaria os dados do app.
 
 ### 13.3. Operacionalizar Builds
 

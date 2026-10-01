@@ -1,7 +1,7 @@
 ---
 title: "OTA com EAS Update"
 description: "Runbook operacional para publicar, escalonar, auditar e reverter atualizações OTA do app mobile via EAS Update."
-version: "1.0.0"
+version: "1.1.0"
 status: active
 category: operation
 audience:
@@ -13,7 +13,7 @@ tags:
   - ota
   - mobile
 created_at: "2026-07-27"
-updated_at: "2026-07-27"
+updated_at: "2026-10-01"
 epic: "051"
 ---
 
@@ -48,7 +48,7 @@ comando e ele reclamar do config dinâmico, **isso é o esperado**, não uma fal
 
 ```bash
 cd apps/mobile
-npx eas-cli@latest update:configure
+eas update:configure
 ```
 
 ### 1.2. `runtimeVersion` = `APP_VERSION` (ADR-082)
@@ -106,11 +106,26 @@ bump de `APP_VERSION`**, senão um JS incompatível pode alcançar um binário a
 
 | Profile | Canal | Formato | Como chega no device | Para quê |
 |---|---|---|---|---|
-| `development` | `development` | `.apk` / `.app` simulador | instalação manual | desenvolvimento diário |
-| `preview` | `preview` | `.apk` / `.app` simulador | instalação manual (internal) | **alvo do smoke de OTA**, incl. o teste destrutivo do PO-5 |
+| `development` | `development` | `.apk` / `.app` simulador | Android: **instalado pelo script** (`adb`) · iOS: simulador, manual | desenvolvimento diário |
+| `preview` | `preview` | `.apk` / `.app` simulador | Android: **instalado pelo script** (`adb`) · iOS: simulador, manual | **alvo do smoke de OTA**, incl. o teste destrutivo do PO-5 |
+| `device` | `device` | `.ipa` ad hoc (iOS) | **instalado pelo script** (`devicectl`) | smoke em **iPhone físico** (simulador não recebe push) — 065/PO-8 |
 | `production` | `production` | `.aab` / `.ipa` | Play Store / TestFlight | usuários reais |
 
-Os scripts locais aceitam os três: `bash build-android.sh preview` · `bash build-ios.sh preview`.
+Os scripts locais aceitam os perfis de cada plataforma: `bash build-android.sh <development|preview|production>`
+· `bash build-ios.sh <development|preview|device|production>`. O perfil `device` existe só no iOS.
+
+**Instalação automática no aparelho** (`lib-install-device.sh`): ao fim do build, `development`/`preview`
+no Android e `device` no iOS instalam o binário no aparelho de teste. O alvo vem de
+`DOSIQ_ANDROID_SERIAL` (serial do `adb devices`) e `DOSIQ_IOS_DEVICE` (nome/UDID do
+`xcrun devicectl list devices`), definidos no `~/.bashrc` do operador — nunca no repo. Sem a
+variável, o script usa o único aparelho disponível, pergunta se houver vários e pula se não houver.
+`--no-install` gera só o artefato. Falha de instalação **não** derruba o build: o binário fica em
+`~/local/dev-builds/` e o script imprime o comando manual. `production` nunca instala sozinho.
+Cabo ou Wi-Fi funcionam no iOS (o `devicectl` resolve o transporte).
+
+📝 **Log de cada build:** `~/local/dev-builds/build-<android|ios>-<perfil>-v<versão>-<timestamp>.log`.
+O diretório temporário do EAS é apagado ao fim do build, então o log é a única evidência de uma
+falha. Para a saída bruta de um build, abra o log — não rode o build de novo.
 
 🔴 **O canal é declarado em DOIS lugares, e os dois são obrigatórios** — cada um serve a uma ponta:
 
@@ -240,6 +255,20 @@ O SHA do commit entra na mensagem automaticamente (ADR-083 D4) e o script recusa
 working tree suja — o bundle é fotografia da árvore de arquivos, e árvore suja significa código no
 ar que não existe em commit nenhum.
 
+Gates do script, na ordem: (1) árvore limpa · (2) em `production`, `HEAD` descende de
+`mobile-v<APP_VERSION>` (§6) · (3) o commit existe no **origin** — se só existe nesta máquina, o SHA
+da mensagem não se resolve em lugar nenhum e a trilha de auditoria perde o sentido. O gate 3
+**bloqueia** em `production` (inclusive offline, quando não dá para confirmar) e só **avisa** em
+`preview`. Rollout é validado como inteiro de 1 a 100 antes de qualquer gate.
+
+O script usa o **`eas` global** (a mesma CLI dos builds locais), não `npx eas-cli@latest`: uma
+versão nova da CLI não muda flags no canal de produção sem você pedir. Instalação: `npm i -g eas-cli`.
+
+📝 **Log e `updateId`:** a saída do `eas update` vai também para
+`~/local/dev-builds/ota-<canal>-v<versão>-<timestamp>.log`, e o script re-imprime ao final as linhas
+com o ID do update — é ele que vai para o CHANGELOG (§7). Se o script não reconhecer o formato da
+saída, ele avisa e aponta o log.
+
 ### Escada de rollout: 0 → 1 → 10 → 100%
 
 Para updates não-críticos, o 3º argumento é a fração inicial; avance com `update:edit`:
@@ -248,8 +277,8 @@ Para updates não-críticos, o 3º argumento é a fração inicial; avance com `
 bash publish-ota.sh production "descrição curta" 1
 
 # observar (ver abaixo), depois avançar:
-npx eas-cli@latest update:edit --branch production --rollout-percentage 10
-npx eas-cli@latest update:edit --branch production --rollout-percentage 100
+eas update:edit --branch production --rollout-percentage 10
+eas update:edit --branch production --rollout-percentage 100
 ```
 
 **O que observar entre cada degrau** antes de avançar:
@@ -293,13 +322,13 @@ cd apps/mobile
 
 # SEM flag de branch (a CLI não aceita `--branch`: "Nonexistent flag").
 # Rodado sem argumento, pergunta tudo interativamente:
-npx eas-cli@latest update:rollback
+eas update:rollback
 
 # ou, direto ao ponto, passando o Update group ID DE DESTINO:
-npx eas-cli@latest update:rollback <GROUP_ID> --message "rollback: <motivo>"
+eas update:rollback <GROUP_ID> --message "rollback: <motivo>"
 
 # ou repontar o canal para uma branch anterior
-npx eas-cli@latest channel:edit production --branch <branch-anterior>
+eas channel:edit production --branch <branch-anterior>
 ```
 
 🔴 **O `GROUP_ID` é o DESTINO, não a coisa a desfazer.** Verificado na prática (2026-07-27, PO-2):
@@ -444,13 +473,14 @@ compile: ele não distingue correção de feature nova. A pergunta não é *"cab
 
 ### 5.2. Pré-publish (FR-015)
 
-Antes de publicar, confirmar todos. Os três primeiros o `publish-ota.sh` **já verifica e bloqueia**
+Antes de publicar, confirmar todos. Os quatro primeiros o `publish-ota.sh` **já verifica e bloqueia**
 sozinho — os demais dependem de você:
 
 - [x] ~~`git status` limpo~~ · **automático** (o script aborta com a árvore suja)
 - [x] ~~SHA do commit na mensagem~~ · **automático** (ADR-083 D4)
 - [x] ~~canal correto~~ · **automático** (o script publica por `--channel`, não por `--branch`)
-- [ ] HEAD é um commit da `main`
+- [x] ~~commit publicado no origin~~ · **automático** (bloqueia em `production`, avisa em `preview`)
+- [ ] HEAD é um commit da `main` — **ou**, para OTA de produção, o `hotfix/ota-*` cortado da tag (§6)
 - [ ] variáveis `EXPO_PUBLIC_*` conferidas para o ambiente-alvo (produção usa valores de produção,
       não os de preview)
 - [ ] grep de secrets no bundle exportado antes do publish (PO-SEC-2):
@@ -482,8 +512,10 @@ Faça a working tree voltar a ser o que está na loja, e só então aplique o fi
 # 1. voltar ao código exato que virou o build da loja
 git checkout -b hotfix/ota-0.30.0 mobile-v0.30.0
 
-# 2. trazer SÓ a correção (já revisada e mergeada na main)
+# 2. trazer SÓ a correção (já revisada e mergeada na main) e PUBLICAR o branch —
+#    o publish-ota.sh recusa `production` com HEAD que não existe no origin
 git cherry-pick <sha-do-fix>
+git push -u origin hotfix/ota-0.30.0
 
 # 3. staging-first, sempre
 bash publish-ota.sh preview "fix do cálculo de estoque"
@@ -509,7 +541,7 @@ honestidade.
 
 O `publish-ota.sh` recusa `production` quando o `HEAD` não descende da tag daquela versão, e avisa
 explicitamente quando a tag **não existe** (build feito antes da R-307, ou de outra máquina sem
-push da tag).
+push da tag). Recusa também quando o `HEAD` não está no origin (veja o `git push -u` do fluxo acima).
 
 ### Bônus: reproduzir um build antigo
 
